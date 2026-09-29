@@ -862,14 +862,15 @@ void AWandererCharacter::AdvanceSailboatReview(float Dt)
         }
         break;
     case 20:
-        if(Enter){ToggleSkateboard(FInputActionValue(true));Check(Skateboard->IsEquipped(),TEXT("skate equipped for water recovery"));}
+        if(Enter){ToggleSkateboard(FInputActionValue(true));Check(SkateRide->IsRiding(),TEXT("skate equipped for water recovery"));}
         break;
     case 18:case 21:case 22:
         if(Enter)
         {
             if(SailboatReviewStep==22)
             {
-                // Explicit no-checkpoint fixture exercises the first-fall fallback.
+                // Explicit no-checkpoint fixture exercises the first-fall fallback, on foot (step 21 ends back on the board).
+                SkateRide->StowImmediately();
                 bHasSafeCoastLocation=bHasSafeCityLocation=false;
                 SailboatReviewRecoveryTarget=Landscape->PlayerStart.GetLocation();
             }
@@ -880,9 +881,17 @@ void AWandererCharacter::AdvanceSailboatReview(float Dt)
             }
             // Start ABOVE the actual non-colliding water. Let ordinary gravity cross the threshold.
             bSailboatReviewObservedFall=false;
-            SetActorLocation(AJapanWorld::ToUE(-104,-258,2.0)+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),false,nullptr,ETeleportType::TeleportPhysics);
-            GetCharacterMovement()->SetMovementMode(MOVE_Falling);
-            GetCharacterMovement()->Velocity=FVector(130,40,0);
+            if(SailboatReviewStep==21&&SkateRide->IsRiding())
+            {
+                // The board owns the rider's position: set it down above the water and let it roll off into the sea.
+                SkateRide->PlaceAt(AJapanWorld::ToUE(-104,-258,2.0),80.f);SkateRide->Launch(FVector(130,40,0));
+            }
+            else
+            {
+                SetActorLocation(AJapanWorld::ToUE(-104,-258,2.0)+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),false,nullptr,ETeleportType::TeleportPhysics);
+                GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+                GetCharacterMovement()->Velocity=FVector(130,40,0);
+            }
             FallSpeed=1400;JumpBuffer=.2f;
             if(SailboatReviewStep==18)
             {
@@ -937,11 +946,13 @@ void AWandererCharacter::AdvanceSailboatReview(float Dt)
             const FString Mode=SailboatReviewStep==18?TEXT("on foot"):SailboatReviewStep==21?TEXT("skating"):TEXT("without checkpoint");
             Check(bSailboatReviewObservedFall,TEXT("water fall crosses sea surface under gravity: ")+Mode);
             Check(FVector::Dist2D(P,SailboatReviewRecoveryTarget)<100,TEXT("water recovery returns safely: ")+Mode);
-            Check(GetCharacterMovement()->IsMovingOnGround(),TEXT("water recovery grounded: ")+Mode);
+            // Riding into the sea puts the rider back on the board at the last dry spot (the board's own movement mode).
+            if(SailboatReviewStep==21)Check(SkateRide->IsRiding()&&SkateRide->GetMode()==ESkateMode::Ground,TEXT("water recovery puts the rider back on the board: ")+Mode);
+            else Check(GetCharacterMovement()->IsMovingOnGround(),TEXT("water recovery grounded: ")+Mode);
             Check(!Skateboard->IsEquipped()&&!Sailboat->IsEquipped(),TEXT("water recovery stows equipment: ")+Mode);
             Check(GetCharacterMovement()->Velocity.Size2D()<.1&&FallSpeed<.1&&JumpBuffer<.01&&!bPendingTakeoff,TEXT("water recovery clears momentum and fall state: ")+Mode);
             Check(!GetCharacterMovement()->CurrentRootMotion.HasActiveRootMotionSources(),TEXT("water recovery clears root motion: ")+Mode);
-            Check(GetMesh()->GetRelativeTransform().Equals(SailboatReviewInitialMesh,.1),TEXT("water recovery restores mesh: ")+Mode);
+            if(SailboatReviewStep!=21)Check(GetMesh()->GetRelativeTransform().Equals(SailboatReviewInitialMesh,.1),TEXT("water recovery restores mesh: ")+Mode);
         }
         break;
     }

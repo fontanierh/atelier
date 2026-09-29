@@ -16,7 +16,7 @@ import sys
 
 ROOT = yori.GAME
 PROJECT = ROOT / 'unreal'
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / 'tools'))
 from benchmark import other_render_processes
 
 

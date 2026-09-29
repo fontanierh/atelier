@@ -19,6 +19,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Parse.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Misc/Paths.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
@@ -333,6 +334,23 @@ namespace
     }
 }
 
+/** The bridge runs agent code, so it only ever listens on loopback: the game's DefaultEngine.ini must bind its port
+ *  there ([HTTPServer.Listeners] +ListenerOverrides=(Port=N,BindAddress=localhost), or a loopback DefaultBindAddress). */
+static bool LoopbackOnly(int32 Port)
+{
+    auto IsLoopback = [](const FString& Address) { return Address == TEXT("localhost") || Address == TEXT("127.0.0.1") || Address == TEXT("::1"); };
+    TArray<FString> Overrides;
+    GConfig->GetArray(TEXT("HTTPServer.Listeners"), TEXT("ListenerOverrides"), Overrides, GEngineIni);
+    for (const FString& Entry : Overrides)
+    {
+        FString Address; int32 EntryPort = 0;
+        if (FParse::Value(*Entry, TEXT("Port="), EntryPort) && EntryPort == Port && FParse::Value(*Entry, TEXT("BindAddress="), Address))
+            return IsLoopback(Address.TrimChar(TEXT(')')));
+    }
+    FString Default;
+    return GConfig->GetString(TEXT("HTTPServer.Listeners"), TEXT("DefaultBindAddress"), Default, GEngineIni) && IsLoopback(Default);
+}
+
 void AtelierLive::SetTeleport(TFunction<bool(APawn*, const FVector&, float)> InTeleport) { Teleport = MoveTemp(InTeleport); }
 
 void AtelierLive::Start(UWorld* World)
@@ -340,6 +358,11 @@ void AtelierLive::Start(UWorld* World)
     if (bStarted || !World || FParse::Param(FCommandLine::Get(), TEXT("nolive"))) return;
     bStarted = true;
     int32 Port = Settings().Port; FParse::Value(FCommandLine::Get(), TEXT("liveport="), Port);
+    if (!LoopbackOnly(Port))
+    {
+        UE_LOG(LogTemp, Error, TEXT("LIVE bridge not started: port %d is not bound to loopback. Add +ListenerOverrides=(Port=%d,BindAddress=localhost) under [HTTPServer.Listeners] in the game's DefaultEngine.ini."), Port, Port);
+        return;
+    }
     FHttpServerModule& Http = FHttpServerModule::Get();
     Router = Http.GetHttpRouter(Port, false);
     if (Router)

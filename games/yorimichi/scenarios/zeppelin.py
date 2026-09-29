@@ -2,8 +2,11 @@
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 import sys,json,subprocess
 from pathlib import Path
-ROOT = yori.GAME;sys.path.insert(0,str(ROOT))
-from zeppelin.layout import STATIONS
+ROOT = yori.GAME
+# This file is itself named zeppelin: load the region's layout by path, not as the zeppelin package.
+import importlib.util as _util
+_spec=_util.spec_from_file_location('zeppelin_layout',yori.REGIONS/'zeppelin'/'layout.py');_layout=_util.module_from_spec(_spec);_spec.loader.exec_module(_layout)
+STATIONS=_layout.STATIONS
 folder=yori.OUT/'zeppelin'/sys.argv[1];folder.mkdir(parents=True,exist_ok=False)
 index=int(sys.argv[2]) if len(sys.argv)>2 else 0;s=STATIONS[index];ox,oy,oz=s['origin']
 def p(x,y,z):return [ox+x,oy+y,oz+z]

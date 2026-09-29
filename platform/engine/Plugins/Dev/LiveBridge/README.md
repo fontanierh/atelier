@@ -14,6 +14,8 @@ every start).
 
 ## What a game provides
 
+- `[HTTPServer.Listeners] +ListenerOverrides=(Port=8830,BindAddress=localhost)` in its DefaultEngine.ini. The engine's
+  default binds every interface; the bridge refuses to start (an error in the log) unless its port is on loopback.
 - `[/Script/AtelierLive.AtelierLiveSettings]` in its DefaultGame.ini: `PropMaterial` (parameters `Tint` and `Tex`),
   `OverlayFolder`, `PythonFolder`, `PythonModule` (paths relative to the repository root), `Port`.
 - A call to `AtelierLive::Start(World)` once the player is ready, and optionally `AtelierLive::SetTeleport(...)` to
@@ -22,4 +24,4 @@ every start).
   `ULiveLibrary::CurrentMessage`.
 
 The CLI side is `atelier live state|py|shot` (`platform/studio/atelier/live.py`). The bridge has no authentication:
-it only listens on localhost, and must stay that way.
+it only listens on loopback (checked at start), and must stay that way.
