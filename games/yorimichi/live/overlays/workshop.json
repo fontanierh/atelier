@@ -1,0 +1,17 @@
+{
+	"overlay": "workshop",
+	"props": [
+		{
+			"id": "stone_lantern_1",
+			"glb": "games/yorimichi/assets/props/stone-lantern/stone_lantern.glb",
+			"collision": "box",
+			"location": [
+				-24986.44454733333,
+				9734.482302114442,
+				942.7979675275701
+			],
+			"yaw": 158.13494873046875,
+			"scale": 1.2506107091903687
+		}
+	]
+}

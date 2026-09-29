@@ -1,0 +1,28 @@
+{
+  "stage": "live_prop",
+  "slug": "stone_lantern",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 6000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9242026,
+    "texture_seed": 9242026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "b761649d58cde7bcc52a048fc46d038c42b35550da35adecb61f6db78a43aa89",
+  "submitted_at": "2026-09-24T15:03:25.882223+00:00",
+  "task_id": "1e298af8-52e6-4471-8b53-665848563e1d",
+  "status": "submitted",
+  "user_approval": "live_workshop",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-24T15:04:40.875615+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

@@ -120,7 +120,7 @@ def main(terrain=True,assets=None):
     unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
     identity=json.loads((OUT/'build-identity.json').read_text())
     def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
-    for source,digest in identity['sources'].items():assert sha(ROOT/source)==digest,'Rebuild changed village source: '+source
+    for source,digest in identity['sources'].items():assert sha(yori.REGIONS/source)==digest,'Rebuild changed village source: '+source
     assert sha(ROOT/'world.json')==identity['world_sha256'],'Rebuild village for current layout'
     assert sha(ROOT/'heightmap.npy')==identity['heightmap_sha256'],'Rebuild village for current terrain'
     for filename,digest in identity['exports'].items():assert sha(OUT/'assets'/filename)==digest,'Incomplete village export: '+filename

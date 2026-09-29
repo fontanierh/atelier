@@ -29,6 +29,8 @@ def main():
     editor = U.EditorAssetLibrary
     assets = U.AssetToolsHelpers.get_asset_tools()
     destination = '/Game/Experiments/CityTrees/'+tag
+    if editor.does_directory_exist(destination):   # a rebuild replaces the previous import of this tag
+        editor.delete_directory(destination)
     report = {}
     for name, entry in spec['sources'].items():
         original = editor.load_asset('/Game/Japan/Assets/'+name)

@@ -1,0 +1,4 @@
+# Tripo downloads and raw API responses stay local; the approved GLB, concept and records are committed.
+*/raw/
+*/api-private/
+*.part

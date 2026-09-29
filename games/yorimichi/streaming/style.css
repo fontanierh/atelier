@@ -1,0 +1,57 @@
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;color:#fff8df;background:#172620}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}#video{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#101b18}#video video{width:100%!important;height:100%!important;object-fit:contain}header{position:fixed;z-index:5;top:0;left:0;right:0;display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 10px) max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));background:linear-gradient(#12231ddd,transparent);font-size:12px}.brand{font:23px Georgia,serif;margin-right:8px}#status{flex:1;text-shadow:0 1px 5px #000}button{border:1px solid #fff4;background:#21342acc;color:#fff8df;border-radius:18px;padding:12px 17px;font-size:14px;font-weight:600;touch-action:none;cursor:pointer}button:active,button.held{background:#bb944eee}header button{padding:8px 12px}#welcome{position:fixed;z-index:10;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#152a20dc;text-align:center;padding:24px}#welcome h1{font:clamp(28px,5vw,48px) Georgia,serif;margin:0 0 14px}#welcome p{font-size:14px;max-width:420px;opacity:.8}#play{background:#e1b965;color:#253021;font-size:18px;padding:16px 32px;margin:12px}#welcome[hidden],#controls[hidden]{display:none}#stick{position:fixed;z-index:4;left:max(28px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 28px);width:136px;height:136px;border-radius:50%;background:#23362a55;border:2px solid #fff8;touch-action:none}#knob{position:absolute;width:54px;height:54px;left:39px;top:39px;background:#fff6d6aa;border:1px solid #fff8;border-radius:50%;pointer-events:none}#stick small{position:absolute;bottom:10px;width:100%;text-align:center;font-size:9px;letter-spacing:2px;opacity:.7;pointer-events:none}#look{position:fixed;left:38%;right:0;top:64px;bottom:0;z-index:2}#look span{position:absolute;top:8%;right:16%;font-size:10px;letter-spacing:2px;text-shadow:0 1px 4px #0009;opacity:.55;pointer-events:none}.actions{position:fixed;z-index:4;right:max(24px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 24px);display:grid;grid-template-columns:repeat(3,68px);gap:8px}.actions button{height:52px;padding:6px;background:#21342aaa;border-color:#fff8;text-shadow:0 1px 3px #0008}#jump{background:#c6a45fcc;color:#fff;border:1px solid #fff8}dialog{z-index:20;max-width:520px;width:90%;border:1px solid #bba769;border-radius:22px;background:#20372f;color:#fff6dd;padding:26px;touch-action:pan-y;font-size:14px;line-height:1.65}dialog::backdrop{background:#07160ca0}dialog h2{font:28px Georgia;margin:0}dialog button{width:100%;background:#c4a567;color:#15261d}@media(orientation:portrait){#stick{width:120px;height:120px;left:20px;bottom:45px}#knob{left:31px;top:31px}.actions{right:14px;grid-template-columns:repeat(2,62px);bottom:40px}header{flex-wrap:wrap}.brand{font-size:20px}#status{font-size:10px}}@media(max-height:390px){#stick{width:112px;height:112px;bottom:18px}#knob{left:27px;top:27px}.actions{bottom:14px}.actions button{height:44px}}
+
+/* Controls follow the visible viewport and protect the notch/home indicator. */
+body{height:100dvh}header{gap:8px}.brand{font-size:20px}header button{min-height:40px;padding:8px 10px}#install-hint{max-width:470px!important;color:#f3d496}dialog{max-height:calc(100dvh - 24px);overflow-y:auto}#screen-help li{margin-bottom:8px}@media(max-width:740px){.brand{display:none}#status{min-width:0;font-size:10px}header{gap:6px}header button{font-size:12px;padding:8px}#spawn{max-width:95px}}
+
+button,#stick,#look{-webkit-tap-highlight-color:transparent}
+
+#settings-dialog{width:min(680px,94vw);max-width:680px;padding:18px;overflow:hidden}#settings-dialog[open]{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}.settings-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}.settings-heading button{width:auto;margin:0}#settings-status,.settings-note{font-size:12px;margin:8px 0}#settings-rows{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;min-height:0}#settings-rows fieldset{border:0;border-top:1px solid #ffffff25;margin:10px 0 0;padding:12px 0}#settings-rows legend{color:#e1b965;padding-right:12px;font-weight:600}.setting-row{display:grid;grid-template-columns:minmax(145px,1fr) minmax(125px,1fr) 48px;align-items:center;gap:12px;min-height:48px;font-size:13px}.setting-row input{width:100%;accent-color:#e1b965;min-height:36px;touch-action:pan-y}.setting-row select{grid-column:2/4;width:100%;font:inherit;color:#fff6dd;background:#304b3e;border:1px solid #fff4;border-radius:8px;padding:10px}.setting-row output{text-align:right;font-variant-numeric:tabular-nums}.setting-row select+output{display:none}@media(max-width:600px){.setting-row{grid-template-columns:1fr 1fr 40px;gap:8px}.brand{display:none}header{padding-left:8px;padding-right:8px}#status{display:none}}
+
+#stick[hidden],#skate-steering[hidden]{display:none}#skate-steering{position:fixed;z-index:4;left:max(24px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 26px);display:flex;gap:12px}#skate-steering button{width:72px;height:68px;font-size:27px;background:#21342aaa;border-color:#fff8}#skate-steering button.held,.actions button.held{background:#bb944eee}#push,#brake{display:none}.skating [data-hide-skate]{display:none}.skating #push,.skating #brake{display:block}.skating #push{grid-column:1/3;background:#ad8a41dd}.skating #brake{grid-column:3;background:#714138cc}@media(max-height:390px){#skate-steering{bottom:18px}#skate-steering button{width:64px;height:60px}}
+
+.skating #push.held,.skating #brake.held{background:#dec17b;color:#15261d}@media(orientation:portrait){.skating .actions{grid-template-columns:repeat(3,56px);gap:6px}#skate-steering{left:12px;gap:8px}#skate-steering button{width:56px;height:60px}}
+
+/* World map: the painted sheet with numbered pins, the player arrow, and the list of places. */
+#map-dialog{width:min(1040px,96vw);max-width:1040px;padding:12px 14px}#map-dialog[open]{display:flex;flex-direction:column;max-height:calc(100dvh - 16px);height:calc(100dvh - 16px)}
+#map-layout{display:flex;gap:12px;flex:1;min-height:0;align-items:center;justify-content:center}
+#map-frame{position:relative;flex:none;background:#0f1a16;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px #0008}
+#map-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:fill}
+#map-pins{position:absolute;inset:0}
+.map-pin{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;padding:0;border-radius:50%;background:#b62f1f;border:2px solid #fff6d6;color:#fff;font-size:12px;font-weight:700;line-height:1;box-shadow:0 2px 6px #0007}
+.map-pin:active{background:#e1b965;color:#253021}
+#map-player{position:absolute;width:0;height:0;transform:translate(-50%,-50%) rotate(var(--heading,0deg));pointer-events:none}
+#map-player::before{content:"";position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;background:#ffd45a55;border:2px solid #ffd45a;animation:map-pulse 1.6s ease-in-out infinite}
+#map-player::after{content:"";position:absolute;left:-6px;top:-7px;border-style:solid;border-width:7px 0 7px 16px;border-color:transparent transparent transparent #1e3a8a;filter:drop-shadow(0 0 2px #fff)}
+@keyframes map-pulse{0%,100%{transform:scale(.8);opacity:.9}50%{transform:scale(1.25);opacity:.5}}
+#map-player[hidden]{display:none}
+#map-zones{list-style:none;margin:0;padding:0 2px 0 0;width:200px;flex:none;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;display:flex;flex-direction:column;gap:6px}
+#map-zones button{touch-action:pan-y;width:100%;text-align:left;padding:7px 9px;font-size:12px;border-radius:10px;background:#21342acc;color:#fff8df;display:flex;gap:8px;align-items:center;margin:0}
+#map-zones li{flex:none}
+#map-zones b{background:#b62f1f;border:1px solid #fff6d6;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+#map-zones small{display:block;opacity:.7;font-size:10px;font-weight:400}
+#map-status{margin:8px 0 0}
+#toast{position:fixed;z-index:30;left:50%;top:calc(env(safe-area-inset-top) + 58px);transform:translateX(-50%);background:#20372fee;color:#fff6dd;border:1px solid #bba769;border-radius:14px;padding:8px 16px;font-size:13px;pointer-events:none}
+#toast[hidden]{display:none}
+@media(orientation:portrait){#map-layout{flex-direction:column}#map-zones{width:100%;max-height:none;flex:1}}
+@media(max-height:390px){#map-dialog{padding:8px 12px}#map-dialog .settings-heading h2{font-size:22px}#map-zones button{padding:5px 8px}}
+
+#map-frame{touch-action:none;background:#e3deca}
+#map-canvas{position:absolute;transform-origin:0 0;will-change:transform}
+#map-controls{display:flex;gap:7px;justify-content:center;margin-top:7px}
+#map-controls button{padding:5px 13px;font-size:13px;min-height:40px}
+.map-pin{transform:translate(-50%,-50%) scale(var(--pin-scale,1))}
+#map-player{transform:translate(-50%,-50%) scale(var(--pin-scale,1)) rotate(var(--heading,0deg))}
+
+.sailing #sailboat{display:block}.sailing #dash,.sailing #jump,.sailing [data-bit="4"]{display:none}
+
+#ramp-hint{position:fixed;top:80px;left:25%;right:25%;text-align:center;color:#f5eed3;background:#14251ed9;border-radius:12px;padding:8px 12px;pointer-events:none;z-index:5;font-size:14px}
+
+#sprint{grid-column:1/4;background:#477347dd}#sprint.held{background:#8bb556;color:#102a18}
+#stamina{position:fixed;left:max(48px,env(safe-area-inset-left));bottom:180px;width:88px;height:88px;pointer-events:none;z-index:4;filter:drop-shadow(0 2px 3px #0009)}#stamina[hidden]{display:none}#stamina svg{width:100%;height:100%}.stamina-track{stroke:#183322cc}.stamina-fill{stroke:#a8de65;transition:stroke-dasharray .18s linear}.exhausted .stamina-fill{stroke:#e9a15e}.sprinting .stamina-fill{stroke:#c3ef79}@media(max-height:390px){#stamina{bottom:130px;left:36px}}
+
+/* Passenger travel keeps look and the arrival button; movement resumes on disembarkation. */
+#controls.aboard #stick,#controls.aboard #skate-steering,#controls.aboard .actions button:not(#use):not(#slower):not(#faster){display:none}
+#controls.aboard .actions button#slower[hidden],#controls.aboard .actions button#faster[hidden]{display:none}
+#controls.aboard #slower,#controls.aboard #faster{min-width:118px;background:#21342acc}
+#controls.aboard .actions{display:flex;gap:10px;justify-content:flex-end;align-items:flex-end}
+#controls.aboard #use{min-width:110px}

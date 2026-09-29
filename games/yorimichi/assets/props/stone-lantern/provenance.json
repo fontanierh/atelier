@@ -1,0 +1,23 @@
+{
+  "slug": "stone_lantern",
+  "description": "a small weathered granite stone lantern (ishi-doro) for a roadside shrine: a square base, a slim post, a lantern box with small window openings, a curved pagoda-like cap with a round knob on top, a little moss on the base and cap",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "created_at": "2026-09-24T15:03:05.782456+00:00",
+  "seconds": 38.8,
+  "concept_sha256": "b761649d58cde7bcc52a048fc46d038c42b35550da35adecb61f6db78a43aa89",
+  "usage": {
+    "input_tokens": 159,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 159
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1915
+  }
+}

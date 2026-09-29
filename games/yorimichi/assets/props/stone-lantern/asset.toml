@@ -1,0 +1,9 @@
+# A prop made from a sentence in the live workshop (atelier make prop): Sunburst concept, then a Tripo model.
+id = "stone-lantern"
+kind = "prop"
+model = "stone_lantern.glb"           # loaded at runtime by the live bridge (live/overlays/workshop.json)
+concept = "concept.png"               # gpt-image-2.5-sunburst, quality high (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 6000 faces, 120 credits
+collision = "box"
+approved = "2026-09-24"
+licence = "own"
