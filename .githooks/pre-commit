@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refuse commits that would publish credentials, personal paths or licence-restricted files (this repository is public).
+# Enable once per clone:  git config core.hooksPath .githooks
+ROOT="$(git rev-parse --show-toplevel)"
+PY="${ATELIER_PYTHON:-$(command -v python3)}"
+PYTHONPATH="$ROOT/platform/studio" "$PY" -m atelier.cli lint --staged || {
+  echo "atelier lint failed: fix the lines above (or unstage them) before committing." >&2
+  exit 1
+}

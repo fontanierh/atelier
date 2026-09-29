@@ -85,9 +85,11 @@ PERSONAL = [
 ]
 
 
-def lint():
-    """Checks for the public repository and for the platform's independence from games."""
-    tracked = subprocess.run(['git', 'ls-files'], cwd=paths.REPO, capture_output=True, text=True).stdout.split()
+def lint(staged=False):
+    """Checks for the public repository and for the platform's independence from games. `staged` checks the files
+    about to be committed (the pre-commit hook), reading their staged content."""
+    listing = ['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR'] if staged else ['git', 'ls-files']
+    tracked = subprocess.run(listing, cwd=paths.REPO, capture_output=True, text=True).stdout.split()
     problems = []
     games = sorted(p.name for p in paths.GAMES.iterdir() if p.is_dir())
     for rel in tracked:
@@ -100,7 +102,10 @@ def lint():
                                        '.cjs', '.html', '.css', '.sh', '.uproject', '.uplugin', '.yml', '.yaml', ''):
             continue
         try:
-            text = path.read_text(errors='ignore')
+            if staged:
+                text = subprocess.run(['git', 'show', f':{rel}'], cwd=paths.REPO, capture_output=True).stdout.decode(errors='ignore')
+            else:
+                text = path.read_text(errors='ignore')
         except OSError:
             continue
         for pattern, what in PERSONAL:
@@ -126,7 +131,7 @@ def main(argv=None):
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
     p.add_argument('--set', default='', help='settings overrides, key=value;key=value'); p.add_argument('extra', nargs='*')
-    sub.add_parser('lint')
+    p = sub.add_parser('lint'); p.add_argument('--staged', action='store_true', help='check the staged files only')
     p = sub.add_parser('live'); p.add_argument('rest', nargs=argparse.REMAINDER)
     p = sub.add_parser('qa'); p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
@@ -142,7 +147,7 @@ def main(argv=None):
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra)
     if args.command == 'lint':
-        return lint()
+        return lint(args.staged)
     if args.command == 'qa':
         script = paths.game_dir(args.game) / 'scenarios' / f'{args.scenario}.py'
         if not script.exists():

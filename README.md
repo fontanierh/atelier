@@ -31,6 +31,7 @@ reusable. [docs/MIGRATION.md](docs/MIGRATION.md) tracks the move from the origin
 ## Build and play Yorimichi from a fresh clone
 
 ```sh
+git config core.hooksPath .githooks     # the pre-commit lint (this repository is public)
 uv sync                                  # one Python environment (numpy, Pillow, httpx)
 uv run atelier doctor yorimichi          # checks Unreal, Blender, ffmpeg and the sources
 uv run atelier fetch yorimichi           # downloads the Sonniss sound masters (not redistributed here)
