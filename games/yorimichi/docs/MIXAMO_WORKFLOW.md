@@ -1,277 +1,243 @@
-# Mixamo → Yellow Boy: download, retarget and review
+# Mixamo to Cairo: how the sword combo was made
 
-> Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
+Cairo's sword fighting (three chained strikes, a charge, a parry) comes from one motion-capture clip in Adobe's free
+[Mixamo](https://www.mixamo.com/) library: **Great Sword Combo Slash**. Blender scripts move that capture onto Cairo's
+own skeleton, fix what his proportions break (a big head, short arms, a two-handed grip), then cut it into game clips,
+take out the capture's spin and speed it up. The raw Mixamo download is not in this repository; everything made from
+it is.
 
-> The workflow below is current. Its status lines date from 16 September 2026; the combat set it produced is in the game as game-r13/r14 ([SWORD_COMBAT.md](SWORD_COMBAT.md), [PLAN.md](../PLAN.md)).
+<table><tr>
+<td width="40%"><img src="../../../docs/media/character/06-mixamo-combo.gif" alt="Cairo performing the retargeted Mixamo great-sword combo, spinning through three cuts"></td>
+<td width="60%"><img src="../../../docs/media/character/06-despun.jpg" alt="The first strike after the de-spin: guard, raise, cut, contact, follow-through"><br><sub>Left: the capture on Cairo after retarget and head clearance (3.5 s, it spins a full turn). Above: the first game strike cut from it, de-spun and sped up (0.57 s, recovery included).</sub></td>
+</tr></table>
 
-Updated 16 September 2026. This is the workflow behind the accepted
-[sword combo in Asset Studio](<tailnet address>).
-Use captured skeletal motion, transfer it onto our existing rig, then adapt
-weapon contact and clearance for our proportions.
+## Why capture, and when to use video instead
 
-The accepted result is `sword-r01/stage1-bokken/mixamo-r02`, not the rejected
-reconstruction under `rebuild-*`. It is a review asset; the sword combo has not
-yet been installed as a gameplay attack. The current unarmed character and its
-complete gameplay library are in `game-r12`.
+The first sword attempt went the other way: an AI video (H3 Max) of Cairo swinging, rebuilt frame by frame into Blender
+poses. It never looked right (the elbows bent backward) and was rejected. The Mixamo capture has
+real body mechanics (weight shift, hip drive, a follow-through) that a video reconstruction could not recover, so it
+won.
 
-The combat set built from that combo (guard, draw, three-strike chain, parry, charge) is
-`game-r13` / `combat-r01`; its gameplay, controls, pipeline and limits are in
-[SWORD_COMBAT.md](SWORD_COMBAT.md). The original brief is the
-[Claude sword animation handoff](CLAUDE_SWORD_ANIMATIONS_HANDOFF.md).
+Video references are still the right tool when a library has no good match, or when the move should look like *this*
+character rather than an adult stuntman: the dodge roll came from an H3 Max reference, the sprint and the dive roll
+from Seedance ([H3 workflow](H3_ANIMATION_REFERENCE_WORKFLOW.md)). In both routes the game clip is
+authored in Blender on Cairo's rig, and a human reviews it in motion.
 
-## 1. Download a useful source
+## The chain at a glance
 
-1. Open [Mixamo](https://www.mixamo.com/) and sign in with an Adobe ID. No OpenAI,
-   Tripo or video-generation key is needed. Adobe documents free access without
-   a Creative Cloud subscription and royalty-free use in games in its
-   [Mixamo FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html), checked
-   on the date above.
-2. Select a rigged Mixamo library humanoid with complete hands/fingers. Search
-   Animations for `sword`, then choose the intended one-hand/two-hand mechanics.
-   Inspect the whole clip at normal speed, including recovery. A good preview on
-   an adult mannequin still needs adaptation for our large head and short arms.
-3. For our exact example, the catalog card was **Great Sword Slash**, with the
-   description **Great Sword Combo Slash**. Use full trim, Mirror off,
-   Overdrive **50**, and Character Arm-Space **50**. Record different controls
-   on another motion. Keep captured travel for the initial comparison; choose
-   in-place versus root-driven movement deliberately at game integration.
-4. Click **Download** and use the settings below. These are our tested project
-   settings, not a claim that Adobe prescribes them for every project.
-
-| Download field | Setting | Reason |
+| Step | Tool (in `games/yorimichi/assets/characters/tools/`) | Result |
 | --- | --- | --- |
-| Format | FBX Binary (`.fbx`) | Retains source skeleton, bind transforms and keys. |
-| Skin | With Skin | Allows direct source mannequin renders and contact inspection. |
-| Frames per Second | 60 | Matches our authoring timeline. |
-| Keyframe Reduction | None | Preserve the capture before optimization. |
+| 0. A sword in the hand | `cairo_sword_grip.py` (grip solver) | `hold-r14`: the right-hand grip and the bokken, approved on its own |
+| 1. Download | mixamo.com | `great-sword-combo-slash.fbx` (212 frames, 60 fps), kept locally |
+| 2. Retarget | `cairo_mixamo_test.py` | `mixamo-r01`: the combo on Cairo, both hands on the grip |
+| 3. Head clearance | `cairo_mixamo_clearance.py`, checked by `cairo_mixamo_clearance_check.py` | `mixamo-r02`: the overhead cuts miss the hair, accepted |
+| 4. Review | `cairo_mixamo_review.py` | videos, contact sheets and a GLB for the browser |
+| 5. A combat set | `cairo_sword_combat_build.py`, `cairo_sword_combat_check.py`, `cairo_sword_combat_review.py` | `game-r13`: guard, strikes, charge, parry cut from the combo |
+| 6. Facing, feet, speed | `cairo_sword_combat_r02.py` | `game-r15`: strikes that end facing the target, 1.6–2× faster |
+| 7. The sword in every move | `cairo_sword_locomotion.py` | `game-r16`: walk, sprint, jumps, roll with the sword in hand |
+| 8. Into the game | `atelier build yorimichi characters.cairo unreal.cairo` | the `A_Sword*` clips, `SM_Bokken`, root motion, aim data |
 
-5. Keep the original download in `build/yorimichi/mixamo-sword-test/source/`. That
-   directory is ignored by Git and excluded from Asset Studio's catalog and
-   file server. The example file is `great-sword-combo-slash.fbx`. Preserve it
-   unchanged; keep rendered comparisons and provenance with the processed revision.
-6. Record animation title, selected source character, URL, date, all controls,
-   download settings, frame rate/range, and SHA-256. Mixamo only retains the last
-   selected character, not a durable history of every download; Adobe recommends
-   keeping rigged characters locally. [Adobe FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html)
+Revisions `hold-r14` to `game-r16` live in the prototype archive (see [Revisions](#revisions-and-reproducing)); the
+current character, `Cairo-Game-r17.blend`, carries all of them and is in this repository.
 
-The original example's source-character display name was not recorded. Its exact
-FBX hash is the source identifier; a fresh download on another mannequin is a
-new input and should be revalidated:
+## 1. Download a source
+
+1. Sign in to [Mixamo](https://www.mixamo.com/) with an Adobe ID. Mixamo is free, and Adobe's
+   [FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html) allows royalty-free use of its animations in
+   games. No API key is needed.
+2. Pick one of Mixamo's own characters with full fingers, search the animations (`sword`), and watch the whole clip at
+   real speed, recovery included. Our choice: the card **Great Sword Slash** (description *Great Sword Combo Slash*),
+   full trim, Mirror off, Overdrive **50**, Character Arm-Space **50**.
+3. Download with these settings:
+
+| Field | Setting | Why |
+| --- | --- | --- |
+| Format | FBX Binary | keeps the source skeleton, its rest pose and every key |
+| Skin | With Skin | lets you render the source for comparison (keep those renders local) |
+| Frames per second | 60 | our authoring rate |
+| Keyframe reduction | None | keep the capture as it was |
+
+4. Save it as `build/yorimichi/mixamo-sword-test/source/great-sword-combo-slash.fbx` (ignored by git) and record the
+   title, controls, date and SHA-256. Mixamo does not keep a history of downloads, so the hash is the source's identity:
 
 ```text
-183b1451a518b3a738688f72f4ff94792f5a25abc4995e21e4d60b95daa32a13
-212 frames, frames 1–212 at 60 fps, 3.516667 seconds between first and last keys
+183b1451a518b3a738688f72f4ff94792f5a25abc4995e21e4d60b95daa32a13  great-sword-combo-slash.fbx
+212 frames, 1–212 at 60 fps (3.52 s)
 ```
 
-Our route downloads mannequin motion and retargets locally, preserving the
-existing Tripo/finger rig, skin weights, body swap and sockets. Uploading a
-rigged FBX is an alternative Adobe supports through automatic skeleton mapping,
-but was not the tested route here. See
-[Adobe's upload/mapping guide](https://helpx.adobe.com/creative-cloud/help/mixamo-rigging-animation.html).
+We download Mixamo's mannequin motion and retarget it ourselves, rather than uploading Cairo to Mixamo, so his Tripo
+rig, finger bones, skin weights and outfit stay exactly as they are.
 
-## 2. Which files to use
+## 2. Retarget onto Cairo
 
-Asset paths below are under `output/imagegen/yorimichi-yellow-boy-2026-09-12/`.
+`cairo_mixamo_test.py --source <fbx> --out <dir>` opens `hold-r14` (Cairo with the approved grip), imports the FBX next
+to him and writes `WarmOriginal-Mixamo-Slash.blend` plus `retarget.json`. Both skeletons use Mixamo's bone names
+(`mixamorig:Hips`, ...), which is why the humanoid [bone contract](../../../platform/conventions/rigs/humanoid.toml)
+keeps them: 52 bones map one to one, Cairo's extra `Root` stays put. Same names are not enough, though:
 
-| File or directory | Purpose |
+- **Align the bodies, not the axes.** Each skeleton gets an anatomical frame (left from the shoulders, up from hips to
+  neck). Each bone's *world* rotation change from its rest pose is carried across through that alignment, then
+  converted back through Cairo's own parent and rest transforms. Copying local rotations between bones of the same
+  name fails because the two rigs' rest poses and bone rolls differ.
+- **Rotations only.** Cairo keeps his bone lengths; only hip travel is copied, scaled by the ratio of hip heights
+  (0.39: the mannequin is an adult, Cairo is four heads tall). Timing is untouched.
+- **Palms separately.** Hands get their own frame from the wrist, index and pinky knuckles; with names alone the first
+  transfer had the palms turned wrong.
+- **The sword stays in the right hand** at the approved `hold-r14` socket, with its finger wrap. Blender parents to the
+  bone's tail, so the script offsets by the hand's length to keep the socket where it was approved.
+- **The left hand is re-solved onto the grip every frame**: a two-bone arm solve toward a fixed left-grip socket that
+  keeps the *captured* elbow direction, clamped to his reach. (An elbow direction taken from the sword gave the twisted,
+  backward arm of the rejected attempt.) The lower grip is lengthened by 72 mm so two small hands fit.
+- **Clean keys.** Quaternions keep one hemisphere from frame to frame, keys are linear, and the result is saved and
+  reopened before anything is measured.
+
+## 3. Clear the head
+
+Mixamo's mannequin has an adult head; Cairo's is much bigger, so the three overhead cuts went through his hair.
+`cairo_mixamo_clearance.py` adds a correction layer to the six arm bones only (upper arm, forearm, hand, both sides):
+during each overhead phase the blade tilts up by 28–64° and the wrist moves 2.5–4 cm away from the head, eased in
+before the moment of contact and out after it, with the captured elbow side kept and the support hand re-solved. The
+body, legs and timing do not change.
+
+`cairo_mixamo_clearance_check.py` then reopens the saved file and samples it at 240 Hz (845 samples, in-between poses
+included) against the evaluated head mesh:
+
+| Check | Result |
 | --- | --- |
-| `game-r12/WarmOriginal-Game-r12.blend` | Current full character/library, with frontflip waistband correction. Start here for new unarmed motions. |
-| `sword-r01/stage1-bokken/hold-r14/WarmOriginal-SwordHold-r14.blend` | Fixed input for reproducing the sword test: approved dominant-hand grip and sword. |
-| `sword-r01/stage1-bokken/mixamo-r01/` | Original retarget, source/target videos and provenance. High swings still clip the hair. |
-| `sword-r01/stage1-bokken/mixamo-r02/` | Accepted combo with head clearance: native blend, GLB/textures, video and saved-animation checks. |
-| `animation-review-r01/` | Current character's full library; references the sword as a separate model. |
-| `game-r13/`, `combat-r01/` | The combat clip set on the current body and its Studio/validation package (`SWORD_COMBAT.md`). |
+| blade or whole sword against head and hair | 0 overlapping samples (also with a 4 mm margin) |
+| closest blade point to the head | 12.4 mm |
+| support grip drift added by the correction | 0.8 mm at most |
+| bones outside the six arm bones | unchanged (0 difference) |
 
-The current hero and sword test have matching 53-bone names, hierarchy and bind
-matrices (`animation-review-r01/validation.json`). Matching skeletons allow
-animation transfer, but do not make outfit revisions identical or prove
-clearance on a different mesh. Validate the current body before promotion.
+It fails the run if the sword touches the head, other bones changed, or the grip drifts more than 4 mm. These are
+sampled checks, not a proof of continuous collision. The one known gap: the left wrist leaves the grip by up to 31 mm in
+the final recovery, as it already did before the correction.
 
-## 3. Reproduce the accepted sword pipeline
+## 4. Review
 
-Requirements: Blender **5.2.1** (tested version), its bundled Python/NumPy and
-FBX/glTF support, plus `ffmpeg` on PATH for optional videos. Node/npm are only
-needed to run Asset Studio. On this Mac, Blender is also at
-`/opt/homebrew/bin/blender`.
+`cairo_mixamo_review.py target --out <dir>` renders Cairo from front, back, side and three-quarter views;
+`source` renders the Mixamo mannequin for side-by-side comparison (keep those local: they show Adobe's character);
+`export` writes a GLB with textures for the browser review. Look at the skinned mesh, not only the bones: shoulders,
+elbows, wrists, the grip, blade against hair and clothes, planted feet, and the entry and recovery, first slowed down,
+then again at real speed.
 
-Run from the repository root. These commands write to an ignored scratch folder
-and preserve the approved `mixamo-r01`/`mixamo-r02` deliverables:
+## 5. Cut it into a combat set
 
-```sh
-MIXAMO_SOURCE="$PWD/build/yorimichi/mixamo-sword-test/source/great-sword-combo-slash.fbx"
-MIXAMO_WORK="$PWD/build/yorimichi/mixamo-sword-test/guide-check"
-test -f "$MIXAMO_SOURCE" || { echo "Download the source FBX first"; exit 1; }
-shasum -a 256 "$MIXAMO_SOURCE"
-mkdir -p "$MIXAMO_WORK"
+`cairo_sword_combat_build.py` builds the gameplay clips from the accepted combo on the current body, measured by phase
+(strikes at frames 29–65, 81–115 and 127–165, wind-up 137, rising cover 163–177, a hold 177–191):
+`SwordIdle` (the guard from frame 5, with breathing), `SwordAttack1-3`, `SwordChargeUp/Hold/Release`, `SwordParry`
+(the rising cover), `SwordParryHit` (an authored recoil) and `SwordCombo` (the whole capture, for reference).
 
-# Transfer source motion and fit the support hand.
-blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/cairo_mixamo_test.py -- \
-  --source "$MIXAMO_SOURCE" --out "$MIXAMO_WORK/r01"
+- **Root motion.** The capture's hip travel and turn move onto the `Root` bone, smoothed; the hips keep the rest. In
+  Unreal the strike then moves and turns the character exactly as the capture did.
+- **Only the links are authored**: short recoveries back to the guard (the support hand re-solved on every frame, feet
+  clamped to the guard's floor height), breathing on the holds, the parry recoil.
+- **Fingers** go through the rig's curl properties (`thumb_curl`, `index_curl`, ...), fitted to the approved wrap by
+  least squares, because the library's finger bones are driven by those properties and ignore keyed rotations.
 
-# Apply corrections authored for THIS combo's three overhead swings.
-blender -b --threads 4 --python-exit-code 1 \
-  --python japan/tools/warm_mixamo_clearance.py -- \
-  --source "$MIXAMO_WORK/r01/WarmOriginal-Mixamo-Slash.blend" \
-  --out "$MIXAMO_WORK/r02"
+`cairo_sword_combat_check.py` samples every clip at 240 Hz for blade against head, clothes and the free arm, fists
+against the head, grip error, joint flips, the garment against the floor and loop seams, and confirms the rest of the
+library is untouched. `cairo_sword_combat_review.py sheets|videos|export` makes the contact sheets, videos and a GLB.
 
-# Independently evaluate the saved corrected result at 240 Hz.
-blender -b --threads 4 --python-exit-code 1 \
-  --python japan/tools/warm_mixamo_clearance_check.py -- \
-  --out "$MIXAMO_WORK/r02"
+## 6. Take out the spin, speed it up, aim it
 
-# Export web/slash.glb + external texture images.
-blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- export \
-  --out "$MIXAMO_WORK/r02"
-```
+The combo is a spinning great-sword routine: 130–224° of body turn per strike, a full turn overall, so every strike
+ended facing away from the enemy, and it felt slow. `cairo_sword_combat_r02.py` rebuilds the strikes:
 
-The retarget tool also rewrites the ignored diagnostic
-`build/yorimichi/mixamo-sword-test/working.blend`, which contains the source mannequin.
-The delivered character blend removes imported source objects and retains only
-the new sword action. **Do not replace the full gameplay-library blend with
-this single-action output.**
+- **Facing.** Each strike keeps only a fraction `k` of its captured turn (0.28–0.35: enough to drive the hips into the
+  cut), and the recovery turns to where the cut landed.
+- **Feet.** Turning less than the capture makes planted feet pivot and slide. Feet that are planted in the capture are
+  pinned where they land in the new, less-turned world, the change is blended through the steps between, and each
+  leg is re-solved keeping its knee direction.
+- **Speed.** Each strike is re-timed by a smooth monotone curve through phase keys: wind-ups about 2× faster, cuts
+  1.6–1.8×, shorter recoveries. A strike with its recovery now lasts 0.52–0.60 s (31–36 frames at 60 fps), down
+  from 0.77–0.93 s.
+- **Aim.** Per strike, the build records where the blade meets a target (70 % of the way along the blade, where it
+  crosses the character's heading): `contact_yaw_degrees` and `contact_distance` in
+  [combat-build.json](../assets/characters/cairo/combat-build.json). The game uses them to turn and step in so the cut
+  lands.
 
-The clearance checker compares against the **committed** `mixamo-r01` baseline
-and assumes frames 1–212. It is for this exact combo, not an arbitrary motion.
-The initial support-contact report had a bug; use the saved-animation checker,
-not the old `retarget.json` grip figures.
+## 7. Keep the sword in every move
 
-Optional renders, using the same variables:
+With the sword out, every other clip keeps its own arm movement with the fist closed on the grip; the blade only turns
+where it would hit something (the rule for every armed clip). `cairo_sword_locomotion.py` makes the armed copies (`SwordWalk`,
+`SwordSprint`, `Sword<Jump/Roll/...>`) from the unarmed clips, changing only the right arm and the grip. Details and
+numbers: [SWORD_COMBAT.md](SWORD_COMBAT.md#armed-locomotion-game-r16-28-september-2026).
+
+## 8. Into Unreal
 
 ```sh
-# Source rendering uses the fixed local FBX filename above.
-blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- source --out "$MIXAMO_WORK/r01"
-blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- target --out "$MIXAMO_WORK/r01"
-blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- target --out "$MIXAMO_WORK/r02"
+atelier build yorimichi characters.cairo unreal.cairo      # export from Blender, import into Unreal
+atelier play yorimichi --profile swordqa                   # a scripted duel checks every sword mechanic
 ```
 
-Review videos are 30 fps; the native/exported animation remains 60 fps. Scratch
-outputs are excluded from the server. For browser review of a new candidate,
-put its processed character blend, GLB and **all sibling texture images** in a
-fresh revision under `output/imagegen/…`, then click **Rescan project assets**.
-A new `--out` directory does not create the bespoke historical `review.html`;
-the shared Asset Studio is the standard viewer now.
+The export ([export_unreal.py](../assets/characters/cairo/export_unreal.py) `--sword`) writes the clips and the bokken;
+[import_cairo_sword.py](../unreal/Scripts/import_cairo_sword.py) makes the `A_Sword*` clips, `SM_Bokken` and the sword
+fields of `DA_Cairo`. What the game side needs to get right:
 
-## 4. How the retarget works
+- **Root motion** is on for the sword clips only (`enable_root_motion`, root locked at the reference pose), and the anim
+  instance takes root motion from everything.
+- **The root bone's scale.** The FBX root carries the armature scale times 100 (148), so root-motion travel arrives 148×
+  too large; `WandererSword.cpp` sets the translation scale to 1/148.
+- **The sword attachment** is computed in the importer: the sword's exported rest transform times the inverse of
+  `hand_R`'s reference pose. It matches Blender to 6 µm.
+- **Aim**: `ContactYaw` and `ContactDistance` on each `FWandererSwordClip` come from `combat-build.json`.
 
-Implementation: [cairo_mixamo_test.py](../tools/cairo_mixamo_test.py).
+Gameplay (controls, chain windows, charge, parry, hits) is in [SWORD_COMBAT.md](SWORD_COMBAT.md); effects and sound in
+[COMBAT_FEEDBACK.md](COMBAT_FEEDBACK.md).
 
-1. **Read bind transforms before editing bones.** Import with
-   `automatic_bone_orientation=False`. Validate required `mixamorig:` names; our
-   extra `Root` stays on the target. Preserve the target armature and lengths.
-2. **Align anatomy, not guessed axes.** `anatomical_frame()` measures lateral
-   direction from shoulders and up from hips to neck. Transfer world-space
-   rotation changes relative to source rest, then resolve through target
-   parent/rest transforms. Copying local Euler/quaternion values between matching
-   names is insufficient when rest axes or bone roll differ.
-3. **Scale travel, not the skeleton.** Scale hip displacement by the ratio of
-   target/source hip-to-toe rest heights, then rotate through the anatomical
-   alignment. Keep timing. The measured ratio here is about 0.3905; recompute it
-   for another source character. Source travel and future game movement are
-   separate decisions.
-4. **Align palms separately.** `hand_frame()` uses wrist, index-knuckle and
-   pinky-knuckle landmarks. Matching hand names alone gave incorrectly oriented
-   hands in our first transfer.
-5. **Preserve the dominant-hand attachment.** Keep the approved right-hand sword
-   socket and finger wrap. Blender bone parenting is relative to the bone tail;
-   the script compensates to preserve the socket's head-space transform.
-6. **Fit the second hand anatomically.** `fit_support_hand()` uses a two-bone
-   solve with the captured elbow bend plane, clamped to actual reach. A
-   sword-derived elbow pole caused the earlier twisted/backward arm. This
-   recipe extends the lower handle by 72 mm and uses a fixed left-grip socket;
-   those choices are specific to this weapon and character.
-7. **Bake stable keys.** Use quaternion hemisphere continuity
-   (`dot(previous, current) >= 0`), linear interpolation, original timing and
-   only necessary translation tracks. Save/reload before measuring the result.
+## Revisions and reproducing
 
-## 5. Add another Mixamo animation
+The authoring tools read and write revision folders in the prototype archive, under
+`output/imagegen/yorimichi-yellow-boy-2026-09-12/` (`sword-r01/stage1-bokken/hold-r14`, `.../mixamo-r01`,
+`.../mixamo-r02`, `game-r13` to `game-r16`, `combat-r01`, `combat-r02`). Point `YORIMICHI_ARCHIVE` at a checkout of it
+([tools README](../assets/characters/tools/README.md)). Steps 2–3 need only `hold-r14` from it and your own download:
 
-These scripts are a tested **two-handed sword recipe**, not a universal retarget
-CLI. `--source`/`--out` do not change weapon assumptions, action names or the
-clearance envelopes. For the next motion:
+```sh
+export YORIMICHI_ARCHIVE=/path/to/the/prototype
+MIXAMO_SOURCE=build/yorimichi/mixamo-sword-test/source/great-sword-combo-slash.fbx
+WORK=build/yorimichi/mixamo-sword-test/check
+TOOLS=games/yorimichi/assets/characters/tools
+shasum -a 256 "$MIXAMO_SOURCE"                     # compare with the hash above
 
-1. Create a new source filename and provenance record; render the source first.
-   Use its actual frame range/FPS, not this example's 212-frame constant.
-2. Create a new recipe using the transform/hand-frame helpers above. Target a
-   copy of current `game-r12` (or a weapon-equipped copy built on that body), use
-   a new action name/output revision, and preserve the existing action library.
-3. For unarmed motion, omit the sword extension, fixed finger wrap and support-
-   hand solve. For one-handed attacks, preserve the captured free arm. For
-   two-handed motion, define grip sockets and when contact engages/releases.
-4. Check palms, shoulders, elbows and sleeves before extra IK. Preserve captured
-   timing and body mechanics. Full source skeletal motion is available; there
-   is no need to reconstruct it from 2D video landmarks.
-5. Measure head, clothing and weapon collisions. Blend in proportion corrections
-   before contact while keeping targets reachable. The three envelopes in
-   `warm_mixamo_clearance.py` only fit this combo; retune for a different motion.
-6. Adapt the checker to the new baseline, duration and contact phases. Export a
-   candidate for visual review before promotion; keep prior revisions.
+blender -b --python-exit-code 1 --python $TOOLS/cairo_mixamo_test.py -- --source "$MIXAMO_SOURCE" --out $WORK/r01
+blender -b --python-exit-code 1 --python $TOOLS/cairo_mixamo_clearance.py -- \
+  --source $WORK/r01/WarmOriginal-Mixamo-Slash.blend --out $WORK/r02
+blender -b --python-exit-code 1 --python $TOOLS/cairo_mixamo_clearance_check.py -- \
+  --baseline $WORK/r01/WarmOriginal-Mixamo-Slash.blend --out $WORK/r02
+blender -b --python-exit-code 1 --python $TOOLS/cairo_mixamo_review.py -- target --out $WORK/r02
+```
 
-## 6. Review and acceptance
+Last checked with Blender 5.2.1: the three steps take 22 seconds, and `clearance-checks.json` and
+`clearance-fit.json` match the accepted `mixamo-r02` exactly. (The first `retarget.json` recorded a support-hand error
+of 0.0002 mm; that was a measuring bug, since `Matrix.translation` returns a live view and the solver moved its own
+target. The fixed tool reports the real 31 mm, the same figure the independent check gives.) Steps 5–7 take their
+parent revision with `--parent`/`--revision`; write to a new revision, review it, then promote it with `promote.py`.
 
-In Asset Studio, inspect the actual new clip from front, back, side and three-
-quarter views. Use slow playback, frame stepping, rig/skin-weight display and
-hands/head close-ups. Loop/speed are sticky; speed multiplies the role's authored
-rate. Compare matching source/target phases, then watch again at real speed.
+## Adding another Mixamo move
 
-Check the visible skinned mesh, not only joint endpoints:
+These scripts are a tested recipe for this two-handed sword combo, not a general retarget command: the frame range,
+the grip, the clearance envelopes and the phase frames are specific to it. For the next move:
 
-- shoulder roll, elbow direction, continuous wrists and grip contact;
-- blade, guard and handle against hair/skin, body, free arm and clothing;
-- planted feet, pelvis/root travel, entry and recovery;
-- interpolated poses and linear skinning in the exported viewer;
-- unchanged unrelated bones/clips when applying local corrections.
+1. Download and record it as in step 1; render the source first and use its real frame range.
+2. Copy the retarget with a new action name and output revision, targeting the current game body. For an unarmed move,
+   drop the sword, the finger wrap and the support-hand solve. For a one-handed attack, keep the captured free arm.
+3. Look at palms, shoulders, elbows and sleeves before adding any IK; keep the captured timing and mechanics.
+4. Measure head, clothes and weapon collisions and correct them with a small layer eased in before contact, as in
+   step 3. Retune the envelopes; they fit only this combo.
+5. Cut game clips by measured phases, put travel on the root, and decide how much of the capture's turn to keep.
+6. Check the saved file independently, review from several views at real speed, then promote without replacing the
+   existing clips.
 
-The accepted correction edits six arm/forearm/hand rotations. Its
-[saved-animation report](../../output/imagegen/yorimichi-yellow-boy-2026-09-12/sword-r01/stage1-bokken/mixamo-r02/clearance-checks.json)
-checks **845 samples at 240 Hz**, with zero blade/head or whole-sword/head overlap
-samples and unchanged body/leg/root transforms. The 4 mm BVH margin passes too.
-These are sampled checks, not continuous whole-body collision guarantees.
+## Pitfalls met on the way
 
-Remaining limits: the support wrist separates by up to **31.4 mm** in final
-recovery; the correction adds less than **0.815 mm** to baseline grip error. The
-tassel is static, precise foot planting needs polish, and combat transitions,
-hit windows and game integration remain separate work. Details are in the
-[accepted revision notes](../../output/imagegen/yorimichi-yellow-boy-2026-09-12/sword-r01/stage1-bokken/mixamo-r02/README.md).
-
-Measurement lesson: `Matrix.translation` returns a wrapped vector. Use
-`goal = wanted.translation.copy()` before subsequently changing that matrix.
-The initial solver's residual looked perfect because it mutated its own target.
-Always remeasure the saved action independently.
-
-## 7. Promote and commit
-
-Add accepted actions to the current library/role manifest without replacing
-existing clips. Use [export_unreal.py](../assets/characters/cairo/export_unreal.py)
-and the game animation import path for new clips. The `reimport_warm_mesh.py`
-shortcut is **geometry-only**, not an animation installer. Decide root-motion
-policy, transitions, input/recovery, hit detection, notifies and sound in the
-game; a browser scenario does not implement those systems.
-
-Commit the recipe, provenance/settings, processed character native/export,
-textures, review captures and validation reports. Keep original mannequin
-downloads and diagnostic working scenes in the ignored local source area, and
-credentials out of Git. Stage explicit paths to keep unrelated parallel work
-separate; commit and push at completed task boundaries.
-
-The delivered native files, exports/textures, retarget/clearance tools, reports
-and Asset Studio are committed. A fresh clone can view the processed result;
-reproducing from capture requires the local source FBX described in section 1.
-
-## Reproduction check
-
-On 16 September, the source hash was verified and retarget → clearance →
-saved-pose validation → GLB export was rerun in the ignored scratch directory.
-The 845-sample clearance report exactly matches the approved revision, and the
-export contains the corrected combo and resolves all texture files. This run
-also fixed the clearance tool's report-writing failure with relative source
-paths. Accepted native/export assets were not overwritten.
-
-The commit audit found no missing deliverable files. Individual PNG render
-frames under the two Mixamo `captures/` folders remain intentionally ignored;
-the rendered contact sheets and review videos are tracked. Original downloads,
-working scenes and API credentials remain local.
+- **Blender action slots (4.4 and later).** Assigning an action whose slot name differs from the armature's last slot
+  leaves no slot assigned: the character silently plays the rest pose. Create new actions with the library's slot name.
+  This once produced a fake idle and a wrong export scale.
+- **Finger props, not finger bones.** Keying finger rotations does nothing on a rig whose fingers are driven by
+  properties.
+- **`Matrix.translation` is a live view.** Copy it (`.copy()`) before changing the matrix, or a solver measures
+  against a target it just moved.
+- **Blender's `--python` does not put the script's folder on the import path.** The tools add it themselves.
+- **Unreal root motion is 148× too large** without the root-scale fix above.
+- **Tripo's packed textures are JPEG bytes**: write them as `.jpg`, or Unreal imports them grey.

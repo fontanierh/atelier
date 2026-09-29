@@ -150,7 +150,7 @@ Code: `WandererSword.h/.cpp` (component, state machine, sweeps, dummy), `Wandere
   15 mm under the guard's contact height.
 - Mixamo login was not available in this session, so no dedicated sword-idle or block source was
   downloaded; the guard and the parry come from the combo's own stance and rising cover. With an Adobe
-  login, `games/yorimichi/docs/MIXAMO_WORKFLOW.md` §5 describes how to add such sources to the same build.
+  login, [MIXAMO_WORKFLOW.md](MIXAMO_WORKFLOW.md#adding-another-mixamo-move) describes how to add such sources to the same build.
 - The tassel is static. Damage and health exist only in the fox hunter fight (`FOX_HUNTER_COMBAT.md`); the dummy only counts.
 - Phone-stream input has no attack buttons yet.
 
