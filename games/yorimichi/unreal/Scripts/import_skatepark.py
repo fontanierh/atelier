@@ -28,8 +28,9 @@ def sha(p):
 build = json.loads((OUT / 'build-report.json').read_text())
 for rel, digest in build['identity']['exports'].items():
     assert sha(OUT / rel) == digest, 'Stale or incomplete skate pier export: ' + rel
-park = json.loads((JAPAN / 'skatepark/park.json').read_text())
-assert sha(JAPAN / 'skatepark/park.json') == build['identity']['park_json_sha256'], 'park.json changed after the build; rebuild'
+PARK = yori.REGIONS / 'skatepark' / 'park.json'   # the committed gameplay contract
+park = json.loads(PARK.read_text())
+assert sha(PARK) == build['identity']['park_json_sha256'], 'park.json changed after the build; rebuild'
 
 material = E.load_asset('/Game/Japan/Materials/M_Village')
 assert material, 'M_Village is missing: import the village first'
