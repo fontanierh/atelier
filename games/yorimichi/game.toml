@@ -1,0 +1,26 @@
+# Yorimichi, a painterly Japanese island. The one file that describes this game to Atelier.
+id = "yorimichi"
+title = "Yorimichi"
+atelier = "0.1"
+unreal_project = "unreal/Yorimichi.uproject"
+editor_target = "YorimichiEditor"
+player = "assets/characters/warm-original"
+build = "build.py"                      # the build recipe: `atelier build yorimichi --list`
+
+[fetch]
+# Downloads that may be used but not redistributed (Sonniss GDC bundles): into ~/.cache/atelier/sonniss.
+scripts = ["assets/audio/footsteps/fetch.py", "assets/audio/combat/fetch.py"]
+needs = ["sonniss/footsteps", "sonniss/combat"]
+
+[play.play]
+# The default: deferred Lumen at 1080p in a window.
+args = ["-game", "-windowed", "-resx=1920", "-resy=1080", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
+
+[play.desktop]
+# The measured desktop profile: forward renderer, 1440 pixels high, city tiles and tree LODs.
+script = "tools/desktop_preview.py"
+args = ["--shared-settings", "--windowed"]
+
+[play.desktop-1440]
+script = "tools/desktop_preview.py"
+args = ["--shared-settings"]

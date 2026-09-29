@@ -11,7 +11,7 @@ not block anything.
     with render_lock('benchmark spawn'):
         ...launch exactly one Unreal child...
 
-`YORIMICHI_RENDER_LOCK` moves the lock file and `YORIMICHI_RENDER_LOCK_SCAN=0` skips the foreign
+`ATELIER_RENDER_LOCK` moves the lock file and `ATELIER_RENDER_LOCK_SCAN=0` skips the foreign
 process scan. Both exist for the CPU tests; a real measurement uses the defaults.
 """
 import fcntl, json, os, subprocess, sys, time
@@ -21,12 +21,12 @@ from pathlib import Path
 
 from .memory_guard import usage
 
-DEFAULT_LOCK = Path.home()/'.cache/yorimichi/render.lock'
+DEFAULT_LOCK = Path.home()/'.cache/atelier/render.lock'
 RENDER_NAMES = ('UnrealEditor', 'UnrealEditor-Cmd', 'ShaderCompileWorker', 'blender', 'Blender')
 
 
 def lock_path():
-    return Path(os.environ.get('YORIMICHI_RENDER_LOCK') or DEFAULT_LOCK)
+    return Path(os.environ.get('ATELIER_RENDER_LOCK') or DEFAULT_LOCK)
 
 
 def render_processes(ignore=()):
@@ -86,7 +86,7 @@ def render_lock(purpose, wait=0., ignore=(), scan=None):
                                      f'stop it (or the phone stream) before starting this one')
                 time.sleep(.25)
         if scan is None:
-            scan = os.environ.get('YORIMICHI_RENDER_LOCK_SCAN', '1') != '0'
+            scan = os.environ.get('ATELIER_RENDER_LOCK_SCAN', '1') != '0'
         if scan:
             foreign = render_processes(ignore=ignore)
             if foreign:

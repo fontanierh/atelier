@@ -1,0 +1,157 @@
+"""The `atelier` command.
+
+    atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
+    atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
+    atelier build <game> [step ...]    build what changed; --list, --force, --dry-run
+    atelier play <game> [--profile P]  launch the game under the render lock and memory guard
+    atelier live state|py|shot         talk to the running game through the live bridge
+    atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
+    atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
+"""
+import argparse, datetime, importlib.util, os, re, shutil, subprocess, sys
+from pathlib import Path
+
+from . import manifest, paths
+from .build import Context, build, list_steps
+
+
+def _ok(flag, text):
+    print(('  ok    ' if flag else '  MISSING ') + text)
+    return flag
+
+
+def doctor(game):
+    ctx = Context(game)
+    data = manifest.game(game)
+    print(f'{data.get("title", game)}: {ctx.game_dir}')
+    good = True
+    good &= _ok(ctx.unreal_cmd.exists(), f'Unreal Engine at {ctx.unreal_root} (set UE_ROOT to move it)')
+    blender = shutil.which(ctx.blender) or (ctx.blender if Path(ctx.blender).exists() else None)
+    version = ''
+    if blender:
+        result = subprocess.run([blender, '--version'], capture_output=True, text=True)
+        version = (result.stdout.splitlines() or [''])[0]
+    good &= _ok(bool(blender), f'Blender ({version or "not found; put blender on PATH or set BLENDER"})')
+    good &= _ok(bool(shutil.which('ffmpeg')), 'ffmpeg on PATH')
+    for module in ('numpy', 'PIL'):
+        good &= _ok(importlib.util.find_spec(module) is not None, f'Python package {module} ({sys.executable})')
+    good &= _ok(ctx.uproject is not None and ctx.uproject.exists(), f'Unreal project {ctx.uproject}')
+    for fetch in data.get('fetch', {}).get('needs', []):
+        folder = paths.cache_dir(*fetch.split('/'))
+        good &= _ok(any(folder.rglob('*.wav')), f'downloaded {fetch} in {folder} (run `atelier fetch {game}`)')
+    print('ready' if good else 'fix the MISSING lines above')
+    return 0 if good else 1
+
+
+def fetch(game):
+    data = manifest.game(game)
+    for script in data.get('fetch', {}).get('scripts', []):
+        path = paths.game_dir(game) / script
+        print(f'-> {path.relative_to(paths.REPO)}')
+        code = subprocess.call([sys.executable, str(path)])
+        if code:
+            return code
+    return 0
+
+
+def play(game, profile, settings, extra):
+    ctx = Context(game)
+    data = manifest.game(game)
+    profiles = data.get('play', {})
+    if profile not in profiles:
+        raise SystemExit(f'no play profile {profile!r}; {game} has {sorted(profiles)}')
+    spec = profiles[profile]
+    stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    folder = ctx.out / 'logs' / f'play-{profile}-{stamp}'
+    folder.mkdir(parents=True, exist_ok=True)
+    if 'script' in spec:   # a game-specific launcher (for example the desktop profile)
+        command = [sys.executable, str(ctx.game_dir / spec['script']), *spec.get('args', []), *extra]
+        if settings:
+            command += ['--settings', settings]
+        return subprocess.call(command, env=ctx.env())
+    command = [str(ctx.unreal_app), str(ctx.uproject), *spec.get('args', []), '-stdout', f'-abslog={folder / "game.log"}', *extra]
+    if settings:
+        command.append(f'-set={settings}')
+    from .safety import guarded
+    print(f'playing {game} ({profile}); log {folder / "game.log"}')
+    return guarded.run(command, folder, purpose=f'atelier play {game}', env=ctx.env())
+
+
+PERSONAL = [
+    (re.compile(r'/Users/(?!Shared/)[A-Za-z0-9._-]+/'), 'a home-directory path'),
+    (re.compile(r'\b[a-z0-9-]+\.tail[0-9a-f]{4,}\.ts\.net\b'), 'a tailnet hostname'),
+    (re.compile(r'\b(sk-[A-Za-z0-9_-]{20,}|tsk_[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10,})'), 'an API token'),
+    (re.compile(r'SecurityToken=[A-Za-z0-9]{8,}'), 'an engine security token'),
+]
+
+
+def lint():
+    """Checks for the public repository and for the platform's independence from games."""
+    tracked = subprocess.run(['git', 'ls-files'], cwd=paths.REPO, capture_output=True, text=True).stdout.split()
+    problems = []
+    games = sorted(p.name for p in paths.GAMES.iterdir() if p.is_dir())
+    for rel in tracked:
+        path = paths.REPO / rel
+        if rel == '.env' or rel.startswith('.env.') and rel != '.env.example':
+            problems.append(f'{rel}: credentials file is tracked')
+        if path.suffix.lower() in ('.wav', '.mp3', '.flac', '.ogg'):
+            problems.append(f'{rel}: audio files are not committed (licences); build them from fetched masters')
+        if path.suffix.lower() not in ('.py', '.md', '.toml', '.json', '.ini', '.cpp', '.h', '.cs', '.txt', '.mjs', '.js',
+                                       '.cjs', '.html', '.css', '.sh', '.uproject', '.uplugin', '.yml', '.yaml', ''):
+            continue
+        try:
+            text = path.read_text(errors='ignore')
+        except OSError:
+            continue
+        for pattern, what in PERSONAL:
+            for match in pattern.finditer(text):
+                line = text.count('\n', 0, match.start()) + 1
+                problems.append(f'{rel}:{line}: {what}')
+        if rel.startswith('platform/') and rel != 'platform/studio/atelier/cli.py':
+            for game in games:
+                if game != 'sandbox' and re.search(rf'\b{re.escape(game)}\b', text, re.IGNORECASE):
+                    problems.append(f'{rel}: the platform names the game {game!r}')
+    for problem in problems:
+        print(problem)
+    print(f'{len(tracked)} files checked, {len(problems)} problems')
+    return 1 if problems else 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog='atelier', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest='command', required=True)
+    p = sub.add_parser('doctor'); p.add_argument('game')
+    p = sub.add_parser('fetch'); p.add_argument('game')
+    p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
+    p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
+    p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
+    p.add_argument('--set', default='', help='settings overrides, key=value;key=value'); p.add_argument('extra', nargs='*')
+    sub.add_parser('lint')
+    p = sub.add_parser('live'); p.add_argument('rest', nargs=argparse.REMAINDER)
+    p = sub.add_parser('qa'); p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
+    args = parser.parse_args(argv)
+    if args.command == 'doctor':
+        return doctor(args.game)
+    if args.command == 'fetch':
+        return fetch(args.game)
+    if args.command == 'build':
+        if args.list:
+            list_steps(args.game)
+            return 0
+        return build(args.game, args.steps, force=args.force, dry=args.dry_run)
+    if args.command == 'play':
+        return play(args.game, args.profile, args.set, args.extra)
+    if args.command == 'lint':
+        return lint()
+    if args.command == 'qa':
+        script = paths.game_dir(args.game) / 'scenarios' / f'{args.scenario}.py'
+        if not script.exists():
+            raise SystemExit(f'no scenario {script}')
+        return subprocess.call([sys.executable, str(script), *args.rest])
+    if args.command == 'live':
+        from . import live
+        return live.main(args.rest)
+
+
+if __name__ == '__main__':
+    sys.exit(main())

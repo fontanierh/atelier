@@ -60,10 +60,10 @@ class GuardedRunTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)/'report'
-        os.environ['YORIMICHI_RENDER_LOCK'] = str(Path(self.temp.name)/'render.lock')
-        os.environ['YORIMICHI_RENDER_LOCK_SCAN'] = '0'
-        self.addCleanup(os.environ.pop, 'YORIMICHI_RENDER_LOCK', None)
-        self.addCleanup(os.environ.pop, 'YORIMICHI_RENDER_LOCK_SCAN', None)
+        os.environ['ATELIER_RENDER_LOCK'] = str(Path(self.temp.name)/'render.lock')
+        os.environ['ATELIER_RENDER_LOCK_SCAN'] = '0'
+        self.addCleanup(os.environ.pop, 'ATELIER_RENDER_LOCK', None)
+        self.addCleanup(os.environ.pop, 'ATELIER_RENDER_LOCK_SCAN', None)
         self.seen = []
 
     def fake_attach(self, monitor=None, raises=None):
@@ -153,9 +153,9 @@ class ForeignProcessTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        os.environ['YORIMICHI_RENDER_LOCK'] = str(Path(self.temp.name)/'render.lock')
-        os.environ.pop('YORIMICHI_RENDER_LOCK_SCAN', None)
-        self.addCleanup(os.environ.pop, 'YORIMICHI_RENDER_LOCK', None)
+        os.environ['ATELIER_RENDER_LOCK'] = str(Path(self.temp.name)/'render.lock')
+        os.environ.pop('ATELIER_RENDER_LOCK_SCAN', None)
+        self.addCleanup(os.environ.pop, 'ATELIER_RENDER_LOCK', None)
 
     def test_an_unowned_render_process_refuses_the_slot(self):
         original = exclusive.render_processes
@@ -168,7 +168,7 @@ class ForeignProcessTests(unittest.TestCase):
 
     def test_a_stale_holder_record_does_not_block(self):
         import json
-        path = Path(os.environ['YORIMICHI_RENDER_LOCK'])
+        path = Path(os.environ['ATELIER_RENDER_LOCK'])
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(dict(pid=999999, started=1, purpose='ghost')))
         original = exclusive.render_processes
