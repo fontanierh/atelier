@@ -1,5 +1,5 @@
 #include "JapanWorld.h"
-#include "YoriData.h"
+#include "AtelierData.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkyLight.h"
@@ -27,7 +27,7 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
         const bool Enabled=Args[1]==TEXT("1");
         const FName TileTag(*FString::Printf(TEXT("CitySurfaceTiles_%s"),*Tag));
         FString Text;
-        const FString Filename=YoriDataPath(TEXT("city_surface_tiles")/Tag/TEXT("manifest.json"));
+        const FString Filename=AtelierDataPath(TEXT("city_surface_tiles")/Tag/TEXT("manifest.json"));
         TSharedPtr<FJsonObject> Manifest;
         if (!FFileHelper::LoadFileToString(Text,*Filename) ||
             !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Manifest) || !Manifest.IsValid() ||

@@ -1,5 +1,5 @@
 #include "JapanWorld.h"
-#include "YoriData.h"
+#include "AtelierData.h"
 #include "HarborLook.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -44,7 +44,7 @@ static UStaticMesh* LoadMesh(const FString& Name)
 void AJapanWorld::Load()
 {
     const double Started = FPlatformTime::Seconds();
-    const FString JsonPath = YoriDataPath(TEXT("world.json"));
+    const FString JsonPath = AtelierDataPath(TEXT("world.json"));
     FString Text;
     if (!FFileHelper::LoadFileToString(Text, *JsonPath)) { UE_LOG(LogTemp, Error, TEXT("world.json not found at %s"), *JsonPath); return; }
     TSharedPtr<FJsonObject> Root;
@@ -186,7 +186,7 @@ void AJapanWorld::Load()
     if (Root->TryGetArrayField(TEXT("wind_dir"), WD) && WD->Num() >= 2) WindDir = FVector((*WD)[0]->AsNumber(), -(*WD)[1]->AsNumber(), 0).GetSafeNormal();
     WindSpeed = Root->HasField(TEXT("wind_speed")) ? Root->GetNumberField(TEXT("wind_speed")) * 100.0 : 350.f;
     // The skate pier clears its own ground of trees, bushes, grass and litter (japan/skatepark/park.json).
-    const FString ParkPath = YoriDataPath(TEXT("skatepark/park.json"));
+    const FString ParkPath = AtelierDataPath(TEXT("skatepark/park.json"));
     const TArray<TArray<FVector2D>> ParkClearance = ASkatePark::LoadClearance(ParkPath);
     int32 Cleared = 0;
     const TSharedPtr<FJsonObject>* Inst = nullptr;

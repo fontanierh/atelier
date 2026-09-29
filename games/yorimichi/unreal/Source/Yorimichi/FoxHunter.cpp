@@ -14,7 +14,7 @@
 #include "CollisionQueryParams.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
-#include "JapanCombatFX.h"
+#include "YorimichiCombatFX.h"
 
 TSharedPtr<FFoxReview> CreateFoxReview(AFoxHunter* Fox);
 void AdvanceFoxReview(FFoxReview& Review, float Dt);
@@ -77,10 +77,10 @@ void AFoxHunter::BeginPlay()
 
 const FFoxHunterClip* AFoxHunter::Clip(FName Role) const { return Definition ? Definition->FindClip(Role) : nullptr; }
 void AFoxHunter::Note(const FString& Text) { Event = Text; EventTime = Clock; UE_LOG(LogTemp, Verbose, TEXT("Fox: %s"), *Text); }
-void AFoxHunter::Cue(FName Sound, const FVector& At, float Volume) { if (AJapanCombatFX* FX = AJapanCombatFX::Get(this)) FX->Play(Sound, At, Volume, .06f); }
+void AFoxHunter::Cue(FName Sound, const FVector& At, float Volume) { if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this)) FX->Play(Sound, At, Volume, .06f); }
 void AFoxHunter::DashDust()
 {
-    if (AJapanCombatFX* FX = AJapanCombatFX::Get(this))
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this))
     {
         const FVector Ground = GetActorLocation() - FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
         FX->Dust(Ground, 1.f, -GetActorForwardVector() * .5f); FX->Play(TEXT("dash"), Ground, .8f, .06f);
@@ -310,7 +310,7 @@ void AFoxHunter::Tick(float Dt)
         case EFoxState::Hurt: if (bClipDone) { Enter(EFoxState::Stalk, NAME_None, .14f); Cooldown = FMath::Max(Cooldown, .5f); } break;
         case EFoxState::Dead:
         {
-            AJapanCombatFX* FX = AJapanCombatFX::Get(this);
+            AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this);
             const FVector Ground = GetActorLocation() - FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
             if (!bDeathCues[0] && StateTime >= DeathFallTime) { bDeathCues[0] = true; Cue(TEXT("body_fall"), Ground); if (FX) FX->Dust(Ground + GetActorForwardVector() * 60.f, 1.3f); }
             if (!bDeathCues[1] && StateTime >= DissolveStart) { bDeathCues[1] = true; Cue(TEXT("fox_death"), Ground + FVector(0, 0, 40)); }

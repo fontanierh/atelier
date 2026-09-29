@@ -1,5 +1,5 @@
 #include "WandererCharacter.h"
-#include "YoriData.h"
+#include "AtelierData.h"
 #include "SkateboardComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -143,7 +143,7 @@ float AWandererCharacter::GetRoadSteering()
     {
         FString Text;
         TSharedPtr<FJsonObject> Json;
-        if (FFileHelper::LoadFileToString(Text,*(YoriDataPath(TEXT("world.json")))) &&
+        if (FFileHelper::LoadFileToString(Text,*(AtelierDataPath(TEXT("world.json")))) &&
             FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Json))
         {
             const TArray<TSharedPtr<FJsonValue>>* Route = &Json->GetArrayField(TEXT("road"));
@@ -170,7 +170,7 @@ float AWandererCharacter::GetRoadSteering()
             if(Requested==TEXT("park") || Requested==TEXT("north") || Requested==TEXT("hidamari") || Requested==TEXT("arcade") || Requested==TEXT("plaza") || Requested==TEXT("plaza_steps") || Requested==TEXT("harbor") || Requested==TEXT("harbor_pier"))
             {
                 FString CityText;
-                if(!FFileHelper::LoadFileToString(CityText,*(YoriDataPath(TEXT("hidamari/city.json")))) ||
+                if(!FFileHelper::LoadFileToString(CityText,*(AtelierDataPath(TEXT("hidamari/city.json")))) ||
                    !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(CityText),CityRoute))
                 {FPlatformMisc::RequestExitWithStatus(false,2);return 0.f;}
                 Route=&CityRoute->GetArrayField(Requested==TEXT("park") ? TEXT("park_route") : Requested==TEXT("north") ? TEXT("north_trail") : Requested==TEXT("harbor") ? TEXT("harbor_route") : Requested==TEXT("harbor_pier") ? TEXT("harbor_pier_route") : Requested==TEXT("arcade") ? TEXT("arcade_route") : Requested==TEXT("plaza") ? TEXT("plaza_route") : Requested==TEXT("plaza_steps") ? TEXT("plaza_steps") : TEXT("review_route"));

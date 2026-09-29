@@ -1,0 +1,11 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1 (experimental)",
+  "FriendlyName": "Atelier Core",
+  "Description": "Atelier's base: where runtime data lives, and small pieces of player logic every game can use.",
+  "Category": "Atelier",
+  "CreatedBy": "Atelier",
+  "CanContainContent": false,
+  "Modules": [{ "Name": "AtelierCore", "Type": "Runtime", "LoadingPhase": "Default" }]
+}

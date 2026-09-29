@@ -1,5 +1,5 @@
 #include "JapanMap.h"
-#include "YoriData.h"
+#include "AtelierData.h"
 #include "SkatePark.h"
 #include "WandererCharacter.h"
 #include "JapanWorld.h"
@@ -165,7 +165,7 @@ private:
 void UJapanMap::Initialize(AWandererCharacter* Pawn)
 {
     Owner = Pawn;
-    const FString Dir = YoriDataPath(TEXT("map"));
+    const FString Dir = AtelierDataPath(TEXT("map"));
     FString Text;
     if (!FFileHelper::LoadFileToString(Text,*(Dir/TEXT("map.json")))) { UE_LOG(LogTemp,Warning,TEXT("world map: %s/map.json missing (run atelier build yorimichi)"),*Dir); return; }
     TSharedPtr<FJsonObject> Root;
@@ -197,7 +197,7 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
     if (!Zones.ContainsByPredicate([](const FJapanMapZone& Zone) { return Zone.Key == TEXT("skatepier"); }))
     {
         FVector World; float Yaw = 0.f;
-        if (ASkatePark::ReadParkSpawn(YoriDataPath(TEXT("skatepark/park.json")), World, Yaw))
+        if (ASkatePark::ReadParkSpawn(AtelierDataPath(TEXT("skatepark/park.json")), World, Yaw))
         {
             FJapanMapZone Zone; Zone.Key = TEXT("skatepier"); Zone.Name = TEXT("Skate pier");
             Zone.Hint = TEXT("Concrete plaza on the sea: ramps, rails and ledges (B for the board)");

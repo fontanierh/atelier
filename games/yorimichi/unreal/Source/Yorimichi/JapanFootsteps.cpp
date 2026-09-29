@@ -1,5 +1,5 @@
 #include "JapanFootsteps.h"
-#include "JapanCombatFX.h"
+#include "YorimichiCombatFX.h"
 #include "JapanWorld.h"
 #include "SailboatComponent.h"
 #include "SkateboardComponent.h"
@@ -106,7 +106,7 @@ void UJapanFootstepComponent::Play(FName Surface,const FVector& At,float Volume,
     if(!Bank->Steps.IsValidIndex(Index) || !Bank->Steps[Index]) return;
     UGameplayStatics::PlaySoundAtLocation(this,Bank->Steps[Index],At,FRotator::ZeroRotator,
         Volume*Scale,Pitch,0.f,Set->Attenuation);
-    FJapanAudioLog::Record(Bank->Steps[Index],At,Volume*Scale,Pitch,false);
+    FAtelierAudioLog::Record(Bank->Steps[Index],At,Volume*Scale,Pitch,false);
     if(CVarFootstepDebug.GetValueOnGameThread())
         UE_LOG(LogTemp,Display,TEXT("footstep %s %s vol %.2f pitch %.2f"),*Surface.ToString(),
             *Bank->Steps[Index]->GetName(),Volume*Scale,Pitch);

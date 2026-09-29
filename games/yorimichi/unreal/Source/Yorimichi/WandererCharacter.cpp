@@ -1,7 +1,7 @@
 #include "WandererCharacter.h"
-#include "YoriData.h"
-#include "JapanCombatFX.h"
-#include "JapanLive.h"
+#include "AtelierData.h"
+#include "YorimichiCombatFX.h"
+#include "LiveLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundWave.h"
 TSharedPtr<struct FFightFilm> CreateFightFilm(AWandererCharacter* P);
@@ -545,7 +545,7 @@ void AWandererCharacter::Dodge(const FInputActionValue&)
     Source->FinishVelocityParams.Mode = bMovingRoll?ERootMotionFinishVelocityMode::MaintainLastRootMotionVelocity:ERootMotionFinishVelocityMode::ClampVelocity;
     Source->FinishVelocityParams.ClampVelocity = bRoll?20.f:80.f;
     GetCharacterMovement()->ApplyRootMotionSource(Source);
-    if(AJapanCombatFX* FX=AJapanCombatFX::Get(this))
+    if(AYorimichiCombatFX* FX=AYorimichiCombatFX::Get(this))
     {
         const FVector Ground=GetActorLocation()-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
         FX->Dust(Ground,.8f,-DodgeDirection*.4f); FX->Play(TEXT("dash"),Ground,.75f,.06f);
@@ -568,7 +568,7 @@ void AWandererCharacter::Dash(const FInputActionValue&)
     if (Air) bAirDashUsed=true;
     DashCooldown=1.f;
     SetAction(Name,false,.025f);
-    if(AJapanCombatFX* FX=AJapanCombatFX::Get(this))
+    if(AYorimichiCombatFX* FX=AYorimichiCombatFX::Get(this))
     {
         const FVector Ground=GetActorLocation()-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
         if(!Air) FX->Dust(Ground,.7f,-GetActorForwardVector()*.5f);
@@ -945,7 +945,7 @@ void AWandererCharacter::AdvanceSailboatReview(float Dt)
 }
 bool AWandererCharacter::LoadSouthwestData()
 {
-    FString Text; const FString Path = YoriDataPath(TEXT("world.json"));
+    FString Text; const FString Path = AtelierDataPath(TEXT("world.json"));
     if (!FFileHelper::LoadFileToString(Text,*Path)) return false;
     TSharedPtr<FJsonObject> Root; auto Reader = TJsonReaderFactory<>::Create(Text);
     if (!FJsonSerializer::Deserialize(Reader,Root) || !Root.IsValid()) return false;
@@ -1166,7 +1166,14 @@ void AWandererCharacter::Tick(float Dt)
     }
     if(bRemountSkate && GetCharacterMovement()->IsMovingOnGround()){bRemountSkate=false;if(!SkateRide->IsRiding())SkateRide->Toggle();}
     ReadyTime += Dt;
-    if (!bReady) { bReady = ReadyTime > 1.5f; if (bReady && IsPlayerControlled()) JapanLive::Start(GetWorld()); return; }
+    if (!bReady) { bReady = ReadyTime > 1.5f; if (bReady && IsPlayerControlled())
+    {
+        // Live bridge teleports go through the game's own travel (stows the board or boat, settles the camera).
+        AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
+        { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
+        AtelierLive::Start(GetWorld());
+    }
+    return; }
     if (bWarmReview) AdvanceWarmReview(Dt);
     if (bReview) AdvanceReview(Dt);
     if (bSkateReview) AdvanceSkateReview(Dt);

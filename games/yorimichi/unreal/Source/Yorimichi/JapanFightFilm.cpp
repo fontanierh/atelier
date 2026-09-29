@@ -2,7 +2,7 @@
 #include "WandererSword.h"
 #include "WandererDefinition.h"
 #include "FoxHunter.h"
-#include "JapanCombatFX.h"
+#include "YorimichiCombatFX.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/GameViewportClient.h"
@@ -192,11 +192,11 @@ static void UpdateCamera(FFightFilm& F, float Dt)
 static void Finish(FFightFilm& F)
 {
     FString Audio = TEXT("[\n");
-    for (int32 I = 0; I < FJapanAudioLog::Events.Num(); ++I)
+    for (int32 I = 0; I < FAtelierAudioLog::Events.Num(); ++I)
     {
-        const FJapanAudioEvent& E = FJapanAudioLog::Events[I];
+        const FAtelierAudioEvent& E = FAtelierAudioLog::Events[I];
         Audio += FString::Printf(TEXT("  {\"frame\":%d,\"sound\":\"%s\",\"source\":\"%s\",\"x\":%.1f,\"y\":%.1f,\"z\":%.1f,\"volume\":%.3f,\"pitch\":%.3f,\"2d\":%s}%s\n"), E.Frame, *E.Sound, *E.Source.Replace(TEXT("\\"), TEXT("/")),
-            E.At.X, E.At.Y, E.At.Z, E.Volume, E.Pitch, E.b2D ? TEXT("true") : TEXT("false"), I + 1 < FJapanAudioLog::Events.Num() ? TEXT(",") : TEXT(""));
+            E.At.X, E.At.Y, E.At.Z, E.Volume, E.Pitch, E.b2D ? TEXT("true") : TEXT("false"), I + 1 < FAtelierAudioLog::Events.Num() ? TEXT(",") : TEXT(""));
     }
     Audio += TEXT("]\n");
     FFileHelper::SaveStringToFile(Audio, *(F.Dir / TEXT("audio.json")));
@@ -204,10 +204,10 @@ static void Finish(FFightFilm& F)
     FString Lines; for (const FString& L : F.Log) { if (!Lines.IsEmpty()) Lines += TEXT(","); Lines += TEXT("\"") + L + TEXT("\""); }
     UWandererSwordComponent* S = F.S; AFoxHunter* Fox = F.Fox;
     const FString Result = FString::Printf(TEXT("{\"frames\":%d,\"fps\":60,\"fox_attacks\":%d,\"landed\":%d,\"parried\":%d,\"dodged\":%d,\"fox_hits_taken\":%d,\"fox_deaths\":%d,\"player_health\":%.0f,\"sounds\":%d,\"log\":[%s]}\n"),
-        F.Captured, Fox->Attacks, Fox->StrikesLanded, Fox->StrikesParried, Fox->StrikesDodged, Fox->HitsTaken, Fox->Deaths, S->GetHealth(), FJapanAudioLog::Events.Num(), *Lines);
+        F.Captured, Fox->Attacks, Fox->StrikesLanded, Fox->StrikesParried, Fox->StrikesDodged, Fox->HitsTaken, Fox->Deaths, S->GetHealth(), FAtelierAudioLog::Events.Num(), *Lines);
     FFileHelper::SaveStringToFile(Result, *(F.Dir / TEXT("film.json")));
     UE_LOG(LogTemp, Display, TEXT("FIGHT FILM COMPLETE %s"), *Result);
-    FJapanAudioLog::bRecording = false;
+    FAtelierAudioLog::bRecording = false;
     UGameViewportClient::OnScreenshotCaptured().Remove(F.Capture);
     FPlatformMisc::RequestExit(false);
 }
@@ -264,11 +264,11 @@ void AdvanceFightFilm(FFightFilm& F, float)
             Film->Pending = -1;
         });
         BuildSteps(F);
-        FJapanAudioLog::Events.Reset(); FJapanAudioLog::bRecording = true;
+        FAtelierAudioLog::Events.Reset(); FAtelierAudioLog::bRecording = true;
         F.Step = 0; F.StepTime = 0.f; F.Note(TEXT("step 0: settle"));
     }
     F.Clock += Dt; F.StepTime += Dt;
-    FJapanAudioLog::Frame = F.Captured;
+    FAtelierAudioLog::Frame = F.Captured;
     FFightFilm::FStep& Current = F.Steps[F.Step];
     // Keep the take on script: parry any attack this step did not ask to land.
     const FFoxHunterClip* C = F.Fox->GetDefinition()->FindClip(F.Fox->GetAnimationAction());

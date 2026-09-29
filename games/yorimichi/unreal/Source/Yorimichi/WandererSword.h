@@ -9,7 +9,7 @@ class UWandererDefinition;
 class UStaticMeshComponent;
 class UMaterialInstanceDynamic;
 class ASwordDummy;
-class UJapanSwordTrail;
+class UAtelierTrail;
 struct FWandererSwordClip;
 
 /** Weapon state. The sword is a rigid static mesh on the right hand; "Stowed" hides it. */
@@ -97,7 +97,7 @@ private:
     void UpdateSwordVisibility();
     UPROPERTY() TObjectPtr<AWandererCharacter> Character;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Blade;
-    UPROPERTY() TObjectPtr<UJapanSwordTrail> Trail;
+    UPROPERTY() TObjectPtr<UAtelierTrail> Trail;
     bool bSwingCue = false, bChargeReadyCue = false;
     void Effects(float Dt);
     ESwordState State = ESwordState::Stowed;

@@ -1,5 +1,5 @@
 #include "WandererCharacter.h"
-#include "YoriData.h"
+#include "AtelierData.h"
 #include "JapanWorld.h"
 #include "HidamariReview.h"
 #include "SkateboardComponent.h"
@@ -30,7 +30,7 @@ static bool ValidateVillage(UWorld* World,AActor* Player,const FString& Director
 {
     FString Text;
     TSharedPtr<FJsonObject> Root;
-    if (!FFileHelper::LoadFileToString(Text,*(YoriDataPath(TEXT("world.json")))) ||
+    if (!FFileHelper::LoadFileToString(Text,*(AtelierDataPath(TEXT("world.json")))) ||
         !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)) return false;
     const TSharedPtr<FJsonObject>* Village=nullptr;
     if (!Root->TryGetObjectField(TEXT("village"),Village)) return false;

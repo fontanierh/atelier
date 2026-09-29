@@ -1,0 +1,12 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1 (experimental)",
+  "FriendlyName": "Atelier Animation",
+  "Description": "Animation nodes written in C++ for humanoids that follow the humanoid bone contract: foot placement on uneven ground, feet and hands carried by a moving deck, a seated pose with a hand on a tiller.",
+  "Category": "Atelier",
+  "CreatedBy": "Atelier",
+  "CanContainContent": false,
+  "Modules": [{ "Name": "AtelierAnimation", "Type": "Runtime", "LoadingPhase": "Default" }],
+  "Plugins": [{ "Name": "AtelierCore", "Enabled": true }]
+}

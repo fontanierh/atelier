@@ -1,5 +1,5 @@
 #include "SkateComponent.h"
-#include "YoriData.h"
+#include "AtelierData.h"
 #include "SkatePark.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -19,7 +19,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Dom/JsonObject.h"
-#include "JapanCombatFX.h"
+#include "YorimichiCombatFX.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundWave.h"
@@ -160,7 +160,7 @@ void USkateComponent::PlayCue(FName Cue, float Volume, float Pitch)
     LastVariant = Pick;
     const FVector At = GetDeckWorld().GetLocation();
     UGameplayStatics::PlaySoundAtLocation(this, Waves[Pick], At, FRotator::ZeroRotator, Volume, Pitch, 0.f, Attenuation);
-    FJapanAudioLog::Record(Waves[Pick], At, Volume, Pitch, false);
+    FAtelierAudioLog::Record(Waves[Pick], At, Volume, Pitch, false);
 }
 
 void USkateComponent::UpdateAudio(float Dt)
@@ -195,7 +195,7 @@ void USkateComponent::LoadContacts()
 {
     // Limb contacts from the rider build (game-r17 skate-build.json): intervals when a foot is on the deck or a hand
     // holds the board. Without the file every foot counts as planted and no hand holds.
-    const FString Path = YoriDataPath(TEXT("characters/warm-original/skate-build.json"));
+    const FString Path = AtelierDataPath(TEXT("characters/warm-original/skate-build.json"));
     FString Text; TSharedPtr<FJsonObject> Root;
     if (!FFileHelper::LoadFileToString(Text, *Path) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid()) return;
     const TSharedPtr<FJsonObject>* Clips = nullptr;

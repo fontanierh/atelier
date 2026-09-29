@@ -1,0 +1,15 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1 (experimental)",
+  "FriendlyName": "Atelier FX",
+  "Description": "Cosmetic feedback without Niagara: camera-facing sprites on instanced quads, light flashes, hit-stop, slow motion, camera shake, sound banks with no back-to-back repeats, a ribbon trail, and a log of every sound for mixing filmed takes offline.",
+  "Category": "Atelier",
+  "CreatedBy": "Atelier",
+  "CanContainContent": false,
+  "Modules": [{ "Name": "AtelierFX", "Type": "Runtime", "LoadingPhase": "Default" }],
+  "Plugins": [
+    { "Name": "AtelierCore", "Enabled": true },
+    { "Name": "ProceduralMeshComponent", "Enabled": true }
+  ]
+}

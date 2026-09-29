@@ -15,7 +15,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "FoxHunter.h"
 #include "EngineUtils.h"
-#include "JapanCombatFX.h"
+#include "YorimichiCombatFX.h"
 
 UWandererSwordComponent::UWandererSwordComponent() { PrimaryComponentTick.bCanEverTick = false; }
 
@@ -33,7 +33,7 @@ void UWandererSwordComponent::Initialize(AWandererCharacter* Owner)
     Blade->AttachToComponent(Owner->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, D->SwordAttachBone);
     Blade->SetRelativeTransform(D->SwordAttach);
     Blade->SetVisibility(false, true);
-    Trail = NewObject<UJapanSwordTrail>(Owner, TEXT("SlashTrail"));
+    Trail = NewObject<UAtelierTrail>(Owner, TEXT("SlashTrail"));
     Trail->RegisterComponent();
     Trail->SetWorldTransform(FTransform::Identity);
     // The FBX skeleton keeps the authoring scale on its root bone (about 148). Root-motion translation comes
@@ -66,7 +66,7 @@ void UWandererSwordComponent::SetArmed(bool bArmed)
     State = bArmed ? ESwordState::Guard : ESwordState::Stowed; StateTime = 0.f; CurrentClip = NAME_None; bPendingDrawAttack = false; bFastCarry = true;
     if (!bArmed && Character->GetAnimationAction() == Stand) Character->SetAction(NAME_None, false, .12f);
     UpdateSwordVisibility(); SetFeedback(bArmed ? TEXT("sword drawn") : TEXT("sword tucked away"));
-    if (AJapanCombatFX* FX = AJapanCombatFX::Get(Character))
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
         FX->Play(bArmed ? TEXT("sword_draw") : TEXT("sword_sheathe"), Character->GetMesh() ? Character->GetMesh()->GetComponentLocation() + FVector(0, 0, 90) : Character->GetActorLocation(), .8f);
 }
 float UWandererSwordComponent::LastFeedbackAge() const { return Clock - FeedbackTime; }
@@ -115,7 +115,7 @@ void UWandererSwordComponent::Enter(ESwordState Next, FName ClipName, float Blen
 {
     State = Next; StateTime = 0.f; CurrentClip = ClipName; HitStop = 0.f; bSwingCue = false;
     if (Character)
-        if (AJapanCombatFX* FX = AJapanCombatFX::Get(Character))
+        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
         {
             const FVector Hand = Character->GetMesh() ? Character->GetMesh()->GetComponentLocation() + FVector(0, 0, 90) : Character->GetActorLocation();
             if (Next == ESwordState::Draw) FX->Play(TEXT("sword_draw"), Hand, .8f);
@@ -266,7 +266,7 @@ int32 UWandererSwordComponent::IncomingStrike(AActor* Source, float Damage, cons
     if (IsParryActive())
     {
         ++ParryCount; bCounter = true;
-        if (AJapanCombatFX* FX = AJapanCombatFX::Get(Character))
+        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
         {
             TArray<FVector> Points; BladePoints(Points);
             FX->Parry(Points.Num() ? Points[3] : Character->GetActorLocation() + FVector(0, 0, 40), Character, Source);
@@ -283,7 +283,7 @@ int32 UWandererSwordComponent::IncomingStrike(AActor* Source, float Damage, cons
     Health = FMath::Max(0.f, Health - Damage);
     ForceGuard();
     Invulnerable = .7f;
-    if (AJapanCombatFX* FX = AJapanCombatFX::Get(Character))
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
     {
         const FVector Chest = Character->GetActorLocation() + FVector(0, 0, 20);
         FX->PlayerHurt(Chest + (From - Chest).GetSafeNormal2D() * 18.f, From, Damage, Character, Source, Health <= 0.f);
@@ -346,7 +346,7 @@ void UWandererSwordComponent::SweepBlade(float Dt)
                 if (Dummy || Fox)
                 {
                     // Hit-stop, sparks, flash and sound live in the combat effects (a short freeze of both fighters, longer when charged).
-                    if (AJapanCombatFX* FX = AJapanCombatFX::Get(Character))
+                    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
                         FX->SwordHit(H.bStartPenetrating ? Now[I] : FVector(H.ImpactPoint), Now[I] - PreviousBlade[I], Strength, Character, A);
                     SetFeedback(Strength == 3 ? TEXT("heavy hit!") : Strength == 2 ? TEXT("charged hit") : TEXT("hit"));
                 }
@@ -449,7 +449,7 @@ void UWandererSwordComponent::Advance(float Dt)
             if (ChargeTime >= FullChargeTime && !bFullCharge)
             {
                 bFullCharge = true; SetFeedback(TEXT("charged: full"));
-                if (AJapanCombatFX* FX = AJapanCombatFX::Get(Character)) FX->ChargeReady(BladeTipWorld());
+                if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->ChargeReady(BladeTipWorld());
             }
             break;
         case ESwordState::ChargeRelease:
@@ -491,7 +491,7 @@ void UWandererSwordComponent::Effects(float Dt)
         Trail->Sample(FMath::Lerp(Points[0], Points[5], .55f), Tip, bCutting, Strength, Dt);
     }
     else Trail->Sample(FVector::ZeroVector, FVector::ZeroVector, false, 1, Dt);
-    AJapanCombatFX* FX = AJapanCombatFX::Get(Character);
+    AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
     if (!FX) return;
     if ((State == ESwordState::Attack || State == ESwordState::ChargeRelease) && C && !bSwingCue && T >= C->ActiveStart - .06f)
     {

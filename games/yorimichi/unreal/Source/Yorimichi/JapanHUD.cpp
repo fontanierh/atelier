@@ -9,7 +9,8 @@
 #include "MegaRamp.h"
 #include "WandererSword.h"
 #include "FoxHunter.h"
-#include "JapanLive.h"
+#include "LiveLibrary.h"
+#include "YorimichiLive.h"
 #include "EngineUtils.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
@@ -107,8 +108,8 @@ void AJapanHUD::DrawHUD()
         if (Ride->GetScore() > 0) DrawText(FString::Printf(TEXT("%d"), Ride->GetScore()), FLinearColor(1.f, .93f, .72f), Canvas->SizeX - 140 * Scale, 54 * Scale, Font, 1.3f * Scale);
     };
     // Filming the skating (ULiveLibrary::FilmHud): only the trick line.
-    if (ULiveLibrary::IsFilmHud()) { DrawSkateLine(); return; }
-    // Being hit washes the screen red for a moment (AJapanCombatFX::PlayerHurt).
+    if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); return; }
+    // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
     if (Pawn->GetDamageFlash()>0.f) DrawRect(FLinearColor(.75f,.08f,.04f,.13f*Pawn->GetDamageFlash()),0,0,Canvas->SizeX,Canvas->SizeY);
     // -fightfilm: the filmed fight keeps only the player's health and the fox's bar.
     const bool bFilm=FParse::Param(FCommandLine::Get(),TEXT("fightfilm"));

@@ -138,7 +138,9 @@ def steps(ctx):
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
              outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
         # ------------------------------------------------------------ Unreal
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject], heavy=True,
+        # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
+        # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [
                 UnrealScript(SCRIPTS / 'setup_project.py', 'level saved'),
@@ -152,7 +154,7 @@ def steps(ctx):
                                           'mountain_material.py', 'import_sailboat.py', 'sailboat_material.py', 'import_zeppelin.py',
                                           'import_southwest.py', 'import_mega.py', 'import_forest_lake.py', 'forest_lake_material.py',
                                           'import_skatepark.py')],
-             needs=['unreal.compile', 'world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari',
+             after=['unreal.compile'], needs=['world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari',
                     'world.zeppelin', 'world.terrain', 'world.village', 'world.southwest', 'world.mega', 'world.lake',
                     'world.skatepark', 'world.sailboat', 'characters.wanderer'],
              heavy=True, about='world assets, materials, the villager and the level (/Game/Japan, /Game/SkatePark)'),
@@ -161,12 +163,12 @@ def steps(ctx):
                 UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE'),
                 UnrealScript(SCRIPTS / 'import_skate_audio.py', 'SKATE AUDIO IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_footsteps.py', SCRIPTS / 'import_combat_audio.py', SCRIPTS / 'import_skate_audio.py'],
-             needs=['unreal.world', 'audio.footsteps', 'audio.combat', 'audio.skate'], heavy=True, about='footstep library, combat and skate sounds'),
+             after=['unreal.world'], needs=['audio.footsteps', 'audio.combat', 'audio.skate'], heavy=True, about='footstep library, combat and skate sounds'),
         Step('unreal.fx', [UnrealScript(SCRIPTS / 'import_combat_fx.py', 'COMBAT FX IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_combat_fx.py'], needs=['unreal.compile', 'fx.textures'], heavy=True, about='/Game/FX materials'),
+             inputs=[SCRIPTS / 'import_combat_fx.py'], after=['unreal.compile'], needs=['fx.textures'], heavy=True, about='/Game/FX materials'),
         Step('unreal.fox_hunter', [UnrealScript(SCRIPTS / 'import_fox_hunter.py', 'FOX HUNTER IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_fox_hunter.py', SCRIPTS / 'animation_compression.py'],
-             needs=['unreal.world', 'characters.fox_hunter'], heavy=True, about='/Game/FoxHunter'),
+             after=['unreal.world'], needs=['characters.fox_hunter'], heavy=True, about='/Game/FoxHunter'),
         Step('unreal.warm_original', [
                 UnrealScript(SCRIPTS / 'import_warm_original.py', 'WARM ORIGINAL IMPORT COMPLETE', null_rhi=True),
                 UnrealScript(SCRIPTS / 'import_warm_sword.py', 'WARM SWORD IMPORT COMPLETE', null_rhi=True),
@@ -174,12 +176,12 @@ def steps(ctx):
                 UnrealScript(SCRIPTS / 'import_warm_skate.py', 'WARM SKATE IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / n for n in ('import_warm_original.py', 'verify_warm_original.py', 'import_warm_sword.py',
                                           'import_warm_armed.py', 'import_warm_skate.py', 'animation_compression.py')],
-             needs=['unreal.world', 'characters.warm_original'], heavy=True, about='/Game/WarmOriginal in four layers'),
+             after=['unreal.world'], needs=['characters.warm_original'], heavy=True, about='/Game/WarmOriginal in four layers'),
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
-             needs=['unreal.world', 'world.city_tiles', 'world.city_trees'], heavy=True,
+             after=['unreal.world'], needs=['world.city_tiles', 'world.city_trees'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[REGIONS / 'skatepark' / 'park.json', CHARS / 'warm-original' / 'skate-build.json'],

@@ -8,7 +8,16 @@ import os
 import time
 import unreal
 
-L = unreal.LiveLibrary
+class _Verbs:
+    """Yorimichi's live verbs (unreal.YorimichiLive) first, then the platform's (unreal.LiveLibrary)."""
+    def __getattr__(self, name):
+        for library in (unreal.YorimichiLive, unreal.LiveLibrary):
+            if hasattr(library, name):
+                return getattr(library, name)
+        raise AttributeError(name)
+
+
+L = _Verbs()
 ROOT = L.live_root()
 
 

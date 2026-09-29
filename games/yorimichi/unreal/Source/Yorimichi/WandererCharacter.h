@@ -3,6 +3,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "SprintStamina.h"
+#include "AtelierFX.h"
 #include "WandererCharacter.generated.h"
 
 class UWandererDefinition;
@@ -24,7 +25,7 @@ class ASwordDummy;
 
 /** A skinned adventurer driven by CharacterMovement and the native animation graph. */
 UCLASS()
-class YORIMICHI_API AWandererCharacter : public ACharacter
+class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTarget
 {
     GENERATED_BODY()
 public:
@@ -71,7 +72,7 @@ public:
     float GetSprintSpeed() const;
     void ApplyCameraPreferences(float Sensitivity, float Distance, float FieldOfView);
     /** Combat feedback: camera trauma (0..1, decays; the shake grows with its square) and the red damage flash the HUD draws. */
-    void AddCameraShake(float Trauma) { ShakeTrauma = FMath::Min(1.f, ShakeTrauma + Trauma); }
+    virtual void AddCameraShake(float Trauma) override { ShakeTrauma = FMath::Min(1.f, ShakeTrauma + Trauma); }
     void FlashDamage(float Amount) { DamageFlash = FMath::Max(DamageFlash, Amount); }
     float GetDamageFlash() const { return DamageFlash; }
     /** The current shake as a camera-space offset (cm) and rotation (degrees). */

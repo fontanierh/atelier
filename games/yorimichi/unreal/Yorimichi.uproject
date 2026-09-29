@@ -14,6 +14,9 @@
       ]
     }
   ],
+  "AdditionalPluginDirectories": [
+    "../../../platform/engine/Plugins"
+  ],
   "Plugins": [
     {
       "Name": "EnhancedInput",
@@ -38,6 +41,22 @@
     {
       "Name": "AndroidFileServer",
       "Enabled": false
+    },
+    {
+      "Name": "AtelierCore",
+      "Enabled": true
+    },
+    {
+      "Name": "AtelierAnimation",
+      "Enabled": true
+    },
+    {
+      "Name": "LiveBridge",
+      "Enabled": true
+    },
+    {
+      "Name": "AtelierFX",
+      "Enabled": true
     }
   ]
 }
