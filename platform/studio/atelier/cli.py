@@ -70,12 +70,13 @@ def play(game, profile, settings, extra):
         if settings:
             command += ['--settings', settings]
         return subprocess.call(command, env=ctx.env())
-    command = [str(ctx.unreal_app), str(ctx.uproject), *spec.get('args', []), '-stdout', f'-abslog={folder / "game.log"}', *extra]
+    args = [a.replace('{run}', str(folder)) for a in spec.get('args', [])]   # {run}: this run's log folder (review output)
+    command = [str(ctx.unreal_app), str(ctx.uproject), *args, '-stdout', f'-abslog={folder / "game.log"}', *extra]
     if settings:
         command.append(f'-set={settings}')
     from .safety import guarded
     print(f'playing {game} ({profile}); log {folder / "game.log"}')
-    return guarded.run(command, folder, purpose=f'atelier play {game}', env=ctx.env())
+    return guarded.run(command, folder, timeout=float(spec.get('timeout', 0)), purpose=f'atelier play {game}', env=ctx.env())
 
 
 PERSONAL = [
