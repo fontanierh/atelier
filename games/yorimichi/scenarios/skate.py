@@ -275,9 +275,23 @@ live.behave('mouse', run)
     return 'Kickflip + Manual' in combos(rows) and first.get('manual') == '1', f'touchdown manual={first.get("manual")}; {combos(rows)}'
 
 
+def settle(minimum=50., seconds=3., limit=300.):
+    """Wait for a steady frame rate: a fresh project compiles shaders for minutes, and the mouse cases read gestures
+    frame by frame."""
+    start = time.monotonic(); steady = None
+    while time.monotonic() - start < limit:
+        fps = bridge.request('/state').get('fps', 0)
+        steady = steady or (time.monotonic() if fps >= minimum else None)
+        if fps < minimum: steady = None
+        if steady and time.monotonic() - steady >= seconds: return
+        time.sleep(.25)
+    print(f'warning: frame rate still under {minimum:.0f} fps after {limit:.0f} s', flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('name', nargs='?', default=time.strftime('%Y%m%d_%H%M%S')); ap.add_argument('--only')
     a = ap.parse_args()
+    settle()
     py(open(GAME / 'scenarios/skate_live_skate.py').read())
     py('live.L.skate_goofy(False); live.skate_park()')
     time.sleep(1.5)
