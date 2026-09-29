@@ -92,7 +92,7 @@ The first enemy that can be fought with this set is the fox-masked hunter: `FOX_
 its behaviour, the player's health, the flinch and knock-down, and the soft lock that turns the spinning
 strikes toward it. `ASwordDummy` remains as a deterministic training post for the sword harness: it takes
 hits, swings on request or every 3 s when spawned in play, and tells the player's sword when its swing
-lands. Launch with it: `JAPAN_EXTRA_ARGS=-sworddummy atelier play yorimichi --profile desktop-1440`.
+lands. Launch with it: `YORIMICHI_EXTRA_ARGS=-sworddummy atelier play yorimichi --profile desktop-1440`.
 
 ## Pipeline
 
@@ -137,7 +137,7 @@ Code: `WandererSword.h/.cpp` (component, state machine, sweeps, dummy), `Wandere
 - Studio: the `yellow-boy-combat` asset loads with 21 clips, the six presets play, phone layout checked
   at 375 × 812 with the sticky loop/speed controls intact; `npm test --prefix studio` and
   `format:check` pass.
-- Desktop: `JAPAN_EXTRA_ARGS=-sworddummy atelier play yorimichi --profile desktop-1440` launched at 1440p with the full HUD.
+- Desktop: `YORIMICHI_EXTRA_ARGS=-sworddummy atelier play yorimichi --profile desktop-1440` launched at 1440p with the full HUD.
 
 ## Known limits
 

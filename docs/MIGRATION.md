@@ -92,6 +92,13 @@ defeated; the player knocked down and back up); `swordqa` passes (16 strikes, 11
 checks; zeppelin; lake. With a local stream: the phone double jump, map travel, the 20 settings, the sailboat, and the
 plain player moving the character through Pixel Streaming's keyboard input.
 
+After the migration, code that nothing could reach was removed (the old cruiser skateboard, the mini-mega ride, their
+review modes and five rendering experiments; an audit traced every file's trigger and asset path), which brought back
+the "Skate stance" setting the old board's flag had hidden. Every scenario above passed again afterwards. Still in the
+game and runnable but not used by any tool or profile: the jump, ground-contact and locomotion reviews
+(`-jumpqa`, `-groundcontactqa`, `-locomotionqa`), the south-west demo and flyover (`-southwestdemo`, `-southwestfly`),
+the Warm Original film review (`-warmqa`, documented in BODY_SWAP_GUIDE.md) and the trailer capture (`tools/capture.py`).
+
 Fixed on the way, because the prototype's project had accumulated assets that hid them: the first import of a mesh
 with build warnings crashed the commandlet (a placeholder now makes it a reimport), Hidamari's terrain needed the
 south-west import's sand material, the skate pier import read `park.json` from the wrong folder. Scenario scripts that
