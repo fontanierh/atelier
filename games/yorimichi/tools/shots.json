@@ -1,0 +1,274 @@
+{
+  "valley": {
+    "kind": "world",
+    "character": "cape_boy",
+    "seconds": 7.2,
+    "road_index": 0,
+    "world_shot": 11,
+    "fov": 62,
+    "dolly": 450,
+    "slide": -650,
+    "pan": -4,
+    "tilt": -2,
+    "events": []
+  },
+  "road": {
+    "kind": "world",
+    "character": "cape_boy",
+    "seconds": 4.8,
+    "road_index": 0,
+    "world_shot": 4,
+    "fov": 58,
+    "dolly": 250,
+    "slide": 35,
+    "events": []
+  },
+  "cape_hero": {
+    "kind": "character",
+    "character": "cape_boy",
+    "seconds": 4.8,
+    "road_index": 48,
+    "fov": 48,
+    "orbit_start": -22,
+    "orbit_end": 18,
+    "distance_start": 275,
+    "distance_end": 245,
+    "focus_z": 35,
+    "camera_height": 10,
+    "events": []
+  },
+  "wanderer_hero": {
+    "kind": "character",
+    "character": "wanderer",
+    "seconds": 4.8,
+    "road_index": 310,
+    "fov": 48,
+    "orbit_start": -25,
+    "orbit_end": 10,
+    "distance_start": 325,
+    "distance_end": 290,
+    "focus_z": 25,
+    "camera_height": 10,
+    "events": [
+      {
+        "time": 0.4,
+        "action": "wave"
+      }
+    ]
+  },
+  "closing": {
+    "kind": "world",
+    "character": "cape_boy",
+    "seconds": 6,
+    "road_index": 0,
+    "world_shot": 6,
+    "fov": 55,
+    "dolly": 220,
+    "slide": -20,
+    "pan": 2,
+    "events": []
+  },
+  "board_detail": {
+    "kind": "skate",
+    "character": "cape_boy",
+    "seconds": 4,
+    "road_index": 50,
+    "fov": 52,
+    "orbit_start": -55,
+    "orbit_end": -75,
+    "distance_start": 220,
+    "distance_end": 240,
+    "focus_z": -62,
+    "camera_height": 35,
+    "move_start": 0.6,
+    "move_end": 3.4,
+    "events": [
+      {
+        "time": -2,
+        "action": "equip"
+      }
+    ]
+  },
+  "cape_skate_clean": {
+    "kind": "skate",
+    "character": "cape_boy",
+    "seconds": 9.2,
+    "road_index": 50,
+    "fov": 72,
+    "orbit_start": -55,
+    "orbit_end": -105,
+    "distance_start": 260,
+    "distance_end": 275,
+    "focus_z": -20,
+    "camera_height": 20,
+    "move_start": 0.6,
+    "move_end": 9.2,
+    "events": [
+      {
+        "time": -1,
+        "action": "equip"
+      },
+      {
+        "time": 6,
+        "action": "jump"
+      }
+    ]
+  },
+  "walking_clean": {
+    "kind": "character",
+    "character": "cape_boy",
+    "seconds": 3,
+    "road_index": 65,
+    "fov": 65,
+    "orbit_start": -65,
+    "orbit_end": -78,
+    "distance_start": 280,
+    "distance_end": 280,
+    "focus_z": 0,
+    "camera_height": 20,
+    "move_start": -1,
+    "move_end": 3,
+    "walk": 1,
+    "events": []
+  },
+  "jump_clean": {
+    "kind": "character",
+    "character": "cape_boy",
+    "seconds": 4.8,
+    "road_index": 65,
+    "fov": 75,
+    "orbit_start": -65,
+    "orbit_end": -82,
+    "distance_start": 230,
+    "distance_end": 235,
+    "focus_z": 0,
+    "camera_height": 20,
+    "move_start": -0.4,
+    "move_end": 4.8,
+    "events": [
+      {
+        "time": 1.2,
+        "action": "jump"
+      }
+    ]
+  },
+  "wanderer_skate_clean": {
+    "kind": "skate",
+    "character": "wanderer",
+    "seconds": 8.5,
+    "road_index": 285,
+    "fov": 78,
+    "orbit_start": -115,
+    "orbit_end": -140,
+    "distance_start": 260,
+    "distance_end": 270,
+    "focus_z": -10,
+    "camera_height": 55,
+    "move_start": 0.3,
+    "move_end": 8.5,
+    "events": [
+      {
+        "time": -1,
+        "action": "equip"
+      },
+      {
+        "time": 5.2,
+        "action": "jump"
+      }
+    ]
+  },
+  "dq_rear_run": {
+    "character": "cape_boy",
+    "settings": "desktop=1",
+    "events": [],
+    "kind": "character",
+    "seconds": 8,
+    "road_index": 40,
+    "fov": 65,
+    "orbit_start": 180,
+    "orbit_end": 180,
+    "distance_start": 300,
+    "distance_end": 300,
+    "focus_z": 10,
+    "camera_height": 40,
+    "move_start": 1.0,
+    "move_end": 6.0
+  },
+  "dq_camera_turn": {
+    "character": "cape_boy",
+    "settings": "desktop=1",
+    "events": [],
+    "kind": "character",
+    "seconds": 8,
+    "road_index": 40,
+    "fov": 65,
+    "orbit_start": 180,
+    "orbit_end": 55,
+    "distance_start": 300,
+    "distance_end": 300,
+    "focus_z": 10,
+    "camera_height": 40,
+    "move_start": 0.5,
+    "move_end": 8.0
+  },
+  "dq_skate": {
+    "character": "cape_boy",
+    "settings": "desktop=1",
+    "kind": "skate",
+    "seconds": 9,
+    "road_index": 50,
+    "fov": 72,
+    "orbit_start": 180,
+    "orbit_end": 170,
+    "distance_start": 320,
+    "distance_end": 330,
+    "focus_z": -10,
+    "camera_height": 35,
+    "move_start": 0.6,
+    "move_end": 9.0,
+    "events": [
+      {
+        "time": -1,
+        "action": "equip"
+      },
+      {
+        "time": 5,
+        "action": "jump"
+      }
+    ]
+  },
+  "dq_forest_push": {
+    "character": "cape_boy",
+    "settings": "desktop=1",
+    "events": [],
+    "kind": "world",
+    "seconds": 8,
+    "road_index": 0,
+    "world_shot": 4,
+    "fov": 60,
+    "dolly": 1500,
+    "slide": 0,
+    "lift": 140,
+    "tilt": 5
+  },
+  "dq_harbor_dolly": {
+    "character": "cape_boy",
+    "settings": "desktop=1",
+    "events": [],
+    "kind": "world",
+    "seconds": 8,
+    "road_index": 0,
+    "fov": 70,
+    "dolly": 900,
+    "camera_position": [
+      620,
+      -116,
+      5
+    ],
+    "camera_target": [
+      665,
+      -168,
+      2
+    ]
+  }
+}
