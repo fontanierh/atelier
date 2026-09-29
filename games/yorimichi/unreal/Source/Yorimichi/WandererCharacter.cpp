@@ -372,7 +372,18 @@ void AWandererCharacter::StickLook(const FInputActionValue& V)
 void AWandererCharacter::Sprint(const FInputActionValue& V) { bSprintHeld = V.Get<bool>(); }
 void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>(); }
 void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
-bool AWandererCharacter::IsMenuOpenForSkate() const { return bMenuOpen || (Map && Map->IsOpen()); }
+bool AWandererCharacter::IsSkateInputBlocked() const { return bMenuOpen || (Map && Map->IsOpen()); }
+UAnimSequence* AWandererCharacter::FindSkateClip(FName Role) const
+{
+    if (!Definition) return nullptr;
+    if (const TObjectPtr<UAnimSequence>* Clip = Definition->SkateActions.Find(Role)) if (*Clip) return *Clip;
+    return Definition->FindAction(Role);
+}
+void AWandererCharacter::PrepareToSkate()
+{
+    if (Sword && Sword->IsArmed()) Sword->SetArmed(false);
+    SetAction(NAME_None);
+}
 bool AWandererCharacter::CanAct() const { return bReady && !bMenuOpen && !Skateboard->IsEquipped() && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && GetCharacterMovement()->IsMovingOnGround() && !MovementLocked() && !bPendingTakeoff; }
 bool AWandererCharacter::StandForAction()
 {

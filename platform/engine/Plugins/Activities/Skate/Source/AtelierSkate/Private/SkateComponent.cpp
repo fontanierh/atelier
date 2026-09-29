@@ -1,9 +1,9 @@
 #include "SkateComponent.h"
 #include "AtelierData.h"
-#include "SkatePark.h"
-#include "WandererCharacter.h"
-#include "WandererDefinition.h"
-#include "WandererSword.h"
+#include "SkateRails.h"
+#include "SkateRider.h"
+#include "SkateSettings.h"
+#include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -19,7 +19,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Dom/JsonObject.h"
-#include "YorimichiCombatFX.h"
+#include "AtelierFX.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundWave.h"
@@ -29,7 +29,7 @@
 namespace SkateTune
 {
     constexpr float Gravity = 1100.f;             // a little heavier than walking, for snappy pops
-    constexpr float DeckHeight = 9.05f;           // deck top above the ground (docs/SKATE.md board contract)
+    constexpr float DeckHeight = 9.05f;           // deck top above the ground (the board contract in README.md)
     constexpr float WheelX = 18.f, WheelY = 9.3f, WheelRadius = 2.65f, HangerDrop = 7.3f, DeckThickness = 1.2f;
     constexpr float PushMax = 1250.f, PushAccel = 680.f, TopSpeed = 2200.f;   // pushing tops out at 45 km/h
     constexpr float Radius = 22.f, Half = 55.f, Clearance = 22.f;
@@ -53,7 +53,7 @@ static bool SkateDebug() { static const bool bOn = FParse::Param(FCommandLine::G
 namespace
 {
     float Ease(float U) { U = FMath::Clamp(U, 0.f, 1.f); return 1.f - (1.f - U) * (1.f - U); }
-    /** Ollie pop: the board pitches nose-up about the rear wheels, then levels (docs/SKATE.md, SkateOllie). */
+    /** Ollie pop: the board pitches nose-up about the rear wheels, then levels (README.md; the SkateOllie clip). */
     float PopPitch(float T)
     {
         if (T < 0.f) return 0.f;
@@ -77,20 +77,19 @@ USkateComponent::USkateComponent()
 
 UCharacterMovementComponent* USkateComponent::Movement() const { return Rider ? Rider->GetCharacterMovement() : nullptr; }
 
-void USkateComponent::Initialize(AWandererCharacter* Character)
+void USkateComponent::Initialize(ACharacter* Character)
 {
     Rider = Character;
+    RiderApi = Cast<ISkateRider>(Character);
+    checkf(RiderApi, TEXT("USkateComponent: the rider must implement ISkateRider"));
     RailSystem = GetWorld()->GetSubsystem<USkateRailSubsystem>();
     AddTickPrerequisiteComponent(Rider->GetCharacterMovement());
     AddTickPrerequisiteActor(Rider);
     Rider->GetMesh()->AddTickPrerequisiteComponent(this);
     BoardRoot = NewObject<USceneComponent>(Rider, TEXT("SkateBoardRoot"));
     BoardRoot->SetupAttachment(Rider->GetRootComponent()); BoardRoot->RegisterComponent();
-    auto Load = [](const TCHAR* Name, const TCHAR* Fallback) -> UStaticMesh*
-    {
-        UStaticMesh* M = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/SkatePark/Board/%s.%s"), Name, Name));
-        return M ? M : LoadObject<UStaticMesh>(nullptr, Fallback);
-    };
+    const USkateSettings* Settings = GetDefault<USkateSettings>();
+    auto Load = [](const FSoftObjectPath& Path) { return Path.IsNull() ? nullptr : Cast<UStaticMesh>(Path.TryLoad()); };
     auto Part = [&](const TCHAR* Name, UStaticMesh* Mesh, USceneComponent* Parent)
     {
         auto* C = NewObject<UStaticMeshComponent>(Rider, Name);
@@ -99,9 +98,9 @@ void USkateComponent::Initialize(AWandererCharacter* Character)
         C->SetRenderCustomDepth(true); C->SetCustomDepthStencilValue(2);
         C->RegisterComponent(); return C;
     };
-    UStaticMesh* DeckMesh = Load(TEXT("SM_SkateDeck"), TEXT("/Game/Skateboard/SM_Deck.SM_Deck"));
-    UStaticMesh* TruckMesh = Load(TEXT("SM_SkateTruck"), TEXT("/Game/Skateboard/SM_Truck.SM_Truck"));
-    UStaticMesh* WheelMesh = Load(TEXT("SM_SkateWheel"), TEXT("/Game/Skateboard/SM_Wheel.SM_Wheel"));
+    UStaticMesh* DeckMesh = Load(Settings->DeckMesh);
+    UStaticMesh* TruckMesh = Load(Settings->TruckMesh);
+    UStaticMesh* WheelMesh = Load(Settings->WheelMesh);
     Deck = Part(TEXT("SkateDeck"), DeckMesh, BoardRoot);
     for (int32 End = 0; End < 2; ++End)
     {
@@ -116,17 +115,22 @@ void USkateComponent::Initialize(AWandererCharacter* Character)
         }
     }
     BoardRoot->SetVisibility(false, true);
-    const UWandererDefinition* D = Rider->GetDefinition();
     // Riding needs the board and at least the stance; missing clips fall back so the ride can be tested early.
-    bAvailable = D && DeckMesh && TruckMesh && WheelMesh && (D->SkateActions.Contains(TEXT("SkateStance")) || D->FindAction(TEXT("Idle")));
+    const bool bStance = RiderApi->FindSkateClip(TEXT("SkateStance")) != nullptr;
+    bAvailable = DeckMesh && TruckMesh && WheelMesh && (bStance || RiderApi->FindSkateClip(TEXT("Idle")));
     LoadContacts();
     LoadSounds();
-    UE_LOG(LogTemp, Display, TEXT("SKATE available=%d clips=%d board=%s"), bAvailable, D ? D->SkateActions.Num() : 0, DeckMesh ? *DeckMesh->GetName() : TEXT("none"));
+    UE_LOG(LogTemp, Display, TEXT("SKATE available=%d stance=%d board=%s"), bAvailable, bStance, DeckMesh ? *DeckMesh->GetName() : TEXT("none"));
 }
 
 void USkateComponent::LoadSounds()
 {
-    auto Load = [](const FString& Name) { return LoadObject<USoundWave>(nullptr, *FString::Printf(TEXT("/Game/Audio/Skate/%s.%s"), *Name, *Name), nullptr, LOAD_NoWarn | LOAD_Quiet); };
+    const USkateSettings* Settings = GetDefault<USkateSettings>();
+    const FString Folder = Settings->SoundFolder;
+    auto Load = [&Folder](const FString& Name)
+    {
+        return Folder.IsEmpty() ? nullptr : LoadObject<USoundWave>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *Folder, *Name, *Name), nullptr, LOAD_NoWarn | LOAD_Quiet);
+    };
     Attenuation = NewObject<USoundAttenuation>(this);
     FSoundAttenuationSettings& A = Attenuation->Attenuation;
     A.bAttenuate = true; A.bSpatialize = true; A.AttenuationShape = EAttenuationShape::Sphere;
@@ -137,8 +141,8 @@ void USkateComponent::LoadSounds()
         for (int32 I = 1; I <= 8; ++I) if (USoundWave* W = Load(FString::Printf(TEXT("%s_%02d"), Cue, I))) Waves.Add(W);
         if (Waves.Num() > First) CueRange.Add(Cue, FIntPoint(First, Waves.Num() - First));
     }
-    for (const TCHAR* Name : {TEXT("body_fall_01"), TEXT("body_fall_02")})
-        if (USoundWave* W = LoadObject<USoundWave>(nullptr, *FString::Printf(TEXT("/Game/Audio/Combat/%s.%s"), Name, Name), nullptr, LOAD_NoWarn | LOAD_Quiet))
+    for (const FSoftObjectPath& Path : Settings->FallSounds)
+        if (USoundWave* W = Cast<USoundWave>(Path.TryLoad()))
         { const int32 First = CueRange.Contains(TEXT("fall")) ? CueRange[TEXT("fall")].X : Waves.Num(); Waves.Add(W); CueRange.FindOrAdd(TEXT("fall"), FIntPoint(First, 0)).Y++; }
     int32 Index = 0;
     for (const TCHAR* Name : {TEXT("roll_01"), TEXT("grind_01"), TEXT("slide_01"), TEXT("skid_01"), TEXT("scrape_01")})
@@ -193,9 +197,11 @@ void USkateComponent::UpdateAudio(float Dt)
 
 void USkateComponent::LoadContacts()
 {
-    // Limb contacts from the rider build (game-r17 skate-build.json): intervals when a foot is on the deck or a hand
+    // Limb contacts from the rider's build (its skate-build.json): intervals when a foot is on the deck or a hand
     // holds the board. Without the file every foot counts as planted and no hand holds.
-    const FString Path = AtelierDataPath(TEXT("characters/warm-original/skate-build.json"));
+    const FString File = RiderApi ? RiderApi->GetSkateContactsFile() : FString();
+    if (File.IsEmpty()) return;
+    const FString Path = AtelierDataPath(File);
     FString Text; TSharedPtr<FJsonObject> Root;
     if (!FFileHelper::LoadFileToString(Text, *Path) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid()) return;
     const TSharedPtr<FJsonObject>* Clips = nullptr;
@@ -223,14 +229,13 @@ void USkateComponent::LoadContacts()
 
 UAnimSequence* USkateComponent::FindClip(FName Name, bool bSwitch) const
 {
-    const UWandererDefinition* D = Rider ? Rider->GetDefinition() : nullptr;
-    if (!D || Name.IsNone()) return nullptr;
+    if (!RiderApi || Name.IsNone()) return nullptr;
     const bool bSkateClip = Name.ToString().StartsWith(TEXT("Skate"));
     if (bSkateClip)
     {
         const FName Key = bGoofy != bSwitch ? FName(Name.ToString() + TEXT("Goofy")) : Name;
-        if (const auto* Clip = D->SkateActions.Find(Key)) if (*Clip) return *Clip;
-        if (const auto* Clip = D->SkateActions.Find(Name)) if (*Clip) return *Clip;
+        if (UAnimSequence* Clip = RiderApi->FindSkateClip(Key)) return Clip;
+        if (UAnimSequence* Clip = RiderApi->FindSkateClip(Name)) return Clip;
         // Development fallbacks until every clip is authored.
         if (Name != TEXT("SkateStance") && Name.ToString().StartsWith(TEXT("SkateGrab"))) return FindClip(TEXT("SkateAir"));
         if (Name == TEXT("SkateStanceFakie") || Name == TEXT("SkateCarveToe") || Name == TEXT("SkateCarveHeel") || Name == TEXT("SkateBrake") || Name == TEXT("SkatePowerslide") ||
@@ -239,9 +244,9 @@ UAnimSequence* USkateComponent::FindClip(FName Name, bool bSwitch) const
         if (Name == TEXT("SkateNollie") || Name == TEXT("SkateFlip")) return FindClip(TEXT("SkateOllie"));
         if (Name == TEXT("SkateOllie") || Name == TEXT("SkateAir") || Name == TEXT("SkateLand") || Name == TEXT("SkateCrouch") || Name == TEXT("SkateNollieCrouch") || Name == TEXT("SkatePush"))
             return Name == TEXT("SkateStance") ? nullptr : FindClip(TEXT("SkateStance"));
-        return D->FindAction(TEXT("Idle"));
+        return RiderApi->FindSkateClip(TEXT("Idle"));
     }
-    return D->FindAction(Name);
+    return RiderApi->FindSkateClip(Name);
 }
 
 void USkateComponent::SetGoofy(bool bNewGoofy)
@@ -280,7 +285,7 @@ bool USkateComponent::Toggle()
     if (Mode == ESkateMode::Off)
     {
         if (!M->IsMovingOnGround() || Rider->bIsCrouched) return false;
-        if (Rider->GetSword() && Rider->GetSword()->IsArmed()) Rider->GetSword()->SetArmed(false);
+        RiderApi->PrepareToSkate();
         SavedRadius = Capsule->GetUnscaledCapsuleRadius(); SavedHalf = Capsule->GetUnscaledCapsuleHalfHeight();
         SavedMeshLocation = Rider->GetMesh()->GetRelativeLocation(); SavedMeshRotation = Rider->GetMesh()->GetRelativeRotation().Quaternion();
         SavedStep = M->MaxStepHeight;
@@ -292,8 +297,7 @@ bool USkateComponent::Toggle()
         Capsule->SetCapsuleSize(Radius, Half);
         BodyLift = Clearance + Half;
         SetMeshForRiding(true);
-        M->SetMovementMode(MOVE_Custom, 2);
-        Rider->SetAction(NAME_None);
+        M->SetMovementMode(MOVE_Custom, MovementMode);
         Flick.Reset(); Combo.Reset(); ComboPoints = 0;
         Enter(ESkateMode::Ground); LandTime = 0.f;
         FHitResult Hit; MoveBody(Hit);
@@ -490,18 +494,18 @@ float USkateComponent::ReadSurface() const
     FHitResult Hit;
     SurfaceName = TEXT("none");
     if (!GetWorld()->LineTraceSingleByChannel(Hit, Pos + Up() * 20.f, Pos - Up() * 20.f, ECC_Visibility, Params) || !Hit.GetComponent()) return 1.f;
-    if (Hit.GetActor() && Hit.GetActor()->IsA<ASkatePark>()) { SurfaceName = TEXT("park"); return 1.f; }
+    if (Hit.GetActor() && Hit.GetActor()->ActorHasTag(TEXT("SkatePark"))) { SurfaceName = TEXT("park"); return 1.f; }
     int32 Section = 0;
     const UMaterialInterface* Material = Hit.FaceIndex != INDEX_NONE ? Hit.GetComponent()->GetMaterialFromCollisionFaceIndex(Hit.FaceIndex, Section) : Hit.GetComponent()->GetMaterial(0);
     if (!Material) return 1.f;
     FString Name = Material->GetName();
     SurfaceName = FString::Printf(TEXT("%s#%d"), *Name, Hit.FaceIndex);
     Name.RemoveFromStart(TEXT("MI_")); Name.RemoveFromStart(TEXT("M_"));
-    auto Has = [&](std::initializer_list<const TCHAR*> Keys) { for (const TCHAR* K : Keys) if (Name.Contains(K)) return true; return false; };
-    if (Has({TEXT("Grass"), TEXT("Ground"), TEXT("Hills"), TEXT("Moss"), TEXT("Flower"), TEXT("FarForest"), TEXT("Litter"), TEXT("Leaf")})) return 20.f;
-    if (Has({TEXT("Water"), TEXT("Mud")})) return 25.f;
-    if (Has({TEXT("Sand"), TEXT("Dirt")})) return 12.f;
-    if (Has({TEXT("Lane"), TEXT("Rock")})) return 4.f;
+    for (const FSkateSurfaceRule& Rule : GetDefault<USkateSettings>()->Surfaces)
+    {
+        TArray<FString> Keys; Rule.Keywords.ParseIntoArray(Keys, TEXT(","));
+        for (FString& K : Keys) if (Name.Contains(K.TrimStartAndEnd())) return Rule.Drag;
+    }
     return 1.f;
 }
 
@@ -959,7 +963,8 @@ void USkateComponent::StartBail(const TCHAR* Why)
     Movement()->SetMovementMode(MOVE_Falling);
     Movement()->Velocity = Carry * (Flat.Size() > 300.f ? 1.35f : 1.f);
     // At speed he tumbles on through his dive-roll and the momentum carries him; slow, he sits down hard.
-    BailRoll = Flat.Size() > 300.f && Rider->GetDefinition() && Rider->GetDefinition()->FindAction(TEXT("Roll")) ? Rider->GetDefinition()->FindAction(TEXT("Roll"))->GetPlayLength() : 0.f;
+    const UAnimSequence* RollClip = Flat.Size() > 300.f && RiderApi ? RiderApi->FindSkateClip(TEXT("Roll")) : nullptr;
+    BailRoll = RollClip ? RollClip->GetPlayLength() : 0.f;
     SavedBraking = Movement()->BrakingDecelerationWalking; SavedFriction = Movement()->GroundFriction;
     if (BailRoll > 0.f) { Movement()->BrakingDecelerationWalking = 250.f; Movement()->GroundFriction = .6f; }
     BoardRoot->SetUsingAbsoluteLocation(true); BoardRoot->SetUsingAbsoluteRotation(true);
@@ -1014,8 +1019,8 @@ void USkateComponent::ReadInput(float Dt)
     if (bScripted) { In = Scripted; Flick.Power = -1.f; return; }
     APlayerController* PC = Rider ? Cast<APlayerController>(Rider->GetController()) : nullptr;
     FSkateInput I;
-    if (!PC || Rider->IsMenuOpenForSkate()) { In = I; MouseStick = FVector2D::ZeroVector; return; }
-    if (Rider->IsMouseReleased()) { In = I; return; }
+    if (!PC || RiderApi->IsSkateInputBlocked()) { In = I; MouseStick = FVector2D::ZeroVector; return; }
+    if (RiderApi->IsSkateMouseFree()) { In = I; return; }
     auto Down = [&](const FKey& K) { return PC->IsInputKeyDown(K); };
     I.Left.X = FMath::Clamp(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX) + ((Down(EKeys::D) || Down(EKeys::Right)) ? 1.f : 0.f) - ((Down(EKeys::A) || Down(EKeys::Left)) ? 1.f : 0.f), -1.f, 1.f);
     I.Left.Y = PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftY);
@@ -1030,7 +1035,7 @@ void USkateComponent::ReadInput(float Dt)
     if (Down(EKeys::LeftMouseButton))
     {
         float DX = 0.f, DY = 0.f; PC->GetInputMouseDelta(DX, DY);
-        const FVector2D Move = FVector2D(DX, DY) * MouseScale * FMath::Clamp(Rider->GetMouseSensitivity() / .4f, .25f, 4.f);
+        const FVector2D Move = FVector2D(DX, DY) * MouseScale * FMath::Clamp(RiderApi->GetSkateMouseSensitivity() / .4f, .25f, 4.f);
         // A quick flick of the mouse points the stick the way it moved (a hand swipes at 45 degrees, it does not trace
         // a chord across the stick's circle); slow movement moves the stick gradually (the load, a manual's tilt).
         if (Move.Size() > .22f) { MouseStick = Move.GetSafeNormal(); MouseQuiet = 0.f; }

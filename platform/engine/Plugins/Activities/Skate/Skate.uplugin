@@ -1,0 +1,15 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1 (experimental)",
+  "FriendlyName": "Atelier Skate",
+  "Description": "Skateboarding with skate.-style controls: the character rides a board in a custom movement mode, Flick-It tricks on the right stick or the mouse, manuals, grinds and slides on rails, bails, a trick line and score, and the board's rolling and trick sounds.",
+  "Category": "Atelier",
+  "CreatedBy": "Atelier",
+  "CanContainContent": false,
+  "Modules": [{ "Name": "AtelierSkate", "Type": "Runtime", "LoadingPhase": "Default" }],
+  "Plugins": [
+    { "Name": "AtelierCore", "Enabled": true },
+    { "Name": "AtelierFX", "Enabled": true }
+  ]
+}

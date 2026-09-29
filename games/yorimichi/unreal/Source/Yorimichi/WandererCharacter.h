@@ -4,6 +4,7 @@
 #include "InputActionValue.h"
 #include "SprintStamina.h"
 #include "AtelierFX.h"
+#include "SkateRider.h"
 #include "WandererCharacter.generated.h"
 
 class UWandererDefinition;
@@ -25,7 +26,7 @@ class ASwordDummy;
 
 /** A skinned adventurer driven by CharacterMovement and the native animation graph. */
 UCLASS()
-class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTarget
+class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTarget, public ISkateRider
 {
     GENERATED_BODY()
 public:
@@ -53,9 +54,16 @@ public:
     bool IsReady() const { return bReady; }
     bool IsMouseReleased() const { return bMouseReleased; }
     USkateboardComponent* GetSkateboard() const { return Skateboard; }
-    /** skate.-style skateboarding (docs/SKATE.md). */
+    /** skate.-style skateboarding (docs/SKATE.md; the platform's Skate plugin). */
     USkateComponent* GetSkate() const { return SkateRide; }
-    bool IsMenuOpenForSkate() const;
+    // ISkateRider: skate roles from the definition's SkateActions, other roles from its Actions; the sword is sheathed
+    // and any action stopped on mounting; the menu and the map take the board's input.
+    virtual UAnimSequence* FindSkateClip(FName Role) const override;
+    virtual void PrepareToSkate() override;
+    virtual bool IsSkateInputBlocked() const override;
+    virtual bool IsSkateMouseFree() const override { return bMouseReleased; }
+    virtual float GetSkateMouseSensitivity() const override { return MouseSensitivity; }
+    virtual FString GetSkateContactsFile() const override { return TEXT("characters/warm-original/skate-build.json"); }
     FVector2D GetMoveIntent() const { return MoveIntent; }
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
@@ -97,7 +105,6 @@ protected:
 
 private:
     friend class FJapanStreamingInput;
-    friend class USkateComponent;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     float MegaCameraGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;

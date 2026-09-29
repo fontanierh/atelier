@@ -57,6 +57,10 @@
     {
       "Name": "AtelierFX",
       "Enabled": true
+    },
+    {
+      "Name": "Skate",
+      "Enabled": true
     }
   ]
 }

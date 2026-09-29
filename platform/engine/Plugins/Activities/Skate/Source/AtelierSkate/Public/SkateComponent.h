@@ -4,7 +4,8 @@
 #include "SkateFlick.h"
 #include "SkateComponent.generated.h"
 
-class AWandererCharacter;
+class ACharacter;
+class ISkateRider;
 class UStaticMeshComponent;
 class USceneComponent;
 class UAnimSequence;
@@ -16,17 +17,21 @@ class USoundAttenuation;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
-/** Skateboarding with skate.-style controls (docs/SKATE.md): the actor is the board, the ride runs in the custom movement
- *  mode 2 of UJapanCharacterMovement, tricks come from Flick-It on the right stick. */
+/** Skateboarding with skate.-style controls (README.md): the actor is the board, the ride runs in a custom movement mode
+ *  of the game's movement component (its PhysCustom calls PhysSkate), tricks come from Flick-It on the right stick.
+ *  The rider is an ACharacter that implements ISkateRider. */
 UCLASS()
-class YORIMICHI_API USkateComponent : public UActorComponent
+class ATELIERSKATE_API USkateComponent : public UActorComponent
 {
     GENERATED_BODY()
 public:
     USkateComponent();
-    void Initialize(AWandererCharacter* Character);
+    /** The custom movement mode the ride runs in: the game's PhysCustom calls PhysSkate for it. */
+    static constexpr uint8 MovementMode = 2;
+    /** Character must implement ISkateRider. */
+    void Initialize(ACharacter* Character);
     bool IsAvailable() const { return bAvailable; }
-    /** On the board, including a bail (the component drives the character until he is back on it). */
+    /** On the board, including a bail (the component drives the character until they are back on it). */
     bool IsRiding() const { return Mode != ESkateMode::Off; }
     ESkateMode GetMode() const { return Mode; }
     /** Get on (from standing or running) or off. */
@@ -37,7 +42,7 @@ public:
     /** QA / live bridge: replace the player's controls; nullptr gives them back. */
     void SetScriptedInput(const FSkateInput* Input) { bScripted = Input != nullptr; if (Input) Scripted = *Input; }
     const FSkateInput& GetInput() const { return In; }
-    /** UJapanCharacterMovement::PhysCustom, custom mode 2: the whole ride. */
+    /** The whole ride, called from the movement component's PhysCustom in the game's skate mode. */
     void PhysSkate(float Dt);
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
     /** Teleport the rider (and board) to a spot, stopped, on the board. */
@@ -92,13 +97,14 @@ public:
     bool IsManual() const { return bManual; }
 
 private:
-    UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
+    UPROPERTY() TObjectPtr<ACharacter> Rider;
+    ISkateRider* RiderApi = nullptr;
     UPROPERTY() TObjectPtr<USceneComponent> BoardRoot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Deck;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Trucks;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Wheels;
     UPROPERTY() TObjectPtr<USkateRailSubsystem> RailSystem;
-    // Sounds (japan/audio/skate via Scripts/import_skate_audio.py): board-attached loops and one-shot variants.
+    // Sounds (USkateSettings::SoundFolder): board-attached loops and one-shot variants.
     UPROPERTY() TArray<TObjectPtr<UAudioComponent>> Loops;      // roll, grind, slide, skid, scrape
     UPROPERTY() TArray<TObjectPtr<USoundWave>> Waves;
     UPROPERTY() TObjectPtr<USoundAttenuation> Attenuation;

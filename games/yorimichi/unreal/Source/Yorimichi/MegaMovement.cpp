@@ -135,7 +135,7 @@ FString UJapanCharacterMovement::MegaStatus() const
 }
 void UJapanCharacterMovement::PhysCustom(float Dt,int32 Iterations)
 {
- if(CustomMovementMode==2){if(auto* Rider=Cast<AWandererCharacter>(CharacterOwner);Rider&&Rider->GetSkate())Rider->GetSkate()->PhysSkate(Dt);return;}
+ if(CustomMovementMode==USkateComponent::MovementMode){if(auto* Rider=Cast<AWandererCharacter>(CharacterOwner);Rider&&Rider->GetSkate())Rider->GetSkate()->PhysSkate(Dt);return;}
  if(!IsMega()||!Ramp){Super::PhysCustom(Dt,Iterations);return;}
  auto* Rider=Cast<AWandererCharacter>(CharacterOwner);auto* Skate=Rider->GetSkateboard();
  if(Skate->IsMenuOpen()){Velocity=FVector::ZeroVector;return;}

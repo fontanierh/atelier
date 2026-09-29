@@ -21,7 +21,7 @@ struct FSkateTrick
     bool MovesBoard() const { return Flips != 0.f || Shove != 0.f; }
 };
 
-/** Flick-It: reads the right stick and turns rim paths into tricks (docs/SKATE.md, "Flick-It").
+/** Flick-It: reads the right stick and turns rim paths into tricks (README.md, "Flick-It").
  *  Sectors are numbered clockwise from up: 0 U, 1 UR, 2 R, 3 DR, 4 D, 5 DL, 6 L, 7 UL. U and D are 60 degrees wide,
  *  the others about 37, so a straight flick is an ollie and a diagonal has to be meant. */
 struct FSkateFlick
