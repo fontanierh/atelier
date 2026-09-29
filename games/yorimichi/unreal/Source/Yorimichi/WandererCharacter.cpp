@@ -154,7 +154,7 @@ void AWandererCharacter::BeginPlay()
         PC->PlayerCameraManager->ViewPitchMax = 45.f;
     }
     bSailboatReview=FParse::Param(FCommandLine::Get(),TEXT("sailboatqa"));
-    bWarmReview = FParse::Param(FCommandLine::Get(),TEXT("warmqa"));
+    bCairoReview = FParse::Param(FCommandLine::Get(),TEXT("cairoqa"));
     bFixedView = FParse::Param(FCommandLine::Get(),TEXT("fixedview"));
     FParse::Value(FCommandLine::Get(),TEXT("benchmarkview="),BenchmarkView);
     FParse::Value(FCommandLine::Get(),TEXT("trailershot="),TrailerSpecPath);
@@ -171,7 +171,7 @@ void AWandererCharacter::BeginPlay()
         bFixedView = true;
         DisableInput(Cast<APlayerController>(Controller));
     }
-    if (bWarmReview || bMapReview || bSwordReview || !TrailerSpecPath.IsEmpty())
+    if (bCairoReview || bMapReview || bSwordReview || !TrailerSpecPath.IsEmpty())
     {
         FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory);
         if (ReviewDirectory.IsEmpty()) ReviewDirectory = FPaths::ProjectSavedDir()/TEXT("Screenshots/Wanderer")/FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"));
@@ -1032,7 +1032,7 @@ void AWandererCharacter::Tick(float Dt)
         AtelierLive::Start(GetWorld());
     }
     return; }
-    if (bWarmReview) AdvanceWarmReview(Dt);
+    if (bCairoReview) AdvanceCairoReview(Dt);
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview) AdvanceMapReview(Dt);
     if (bSwordReview) AdvanceSwordReview(Dt);

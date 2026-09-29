@@ -1,6 +1,6 @@
 # Naming
 
-- **Ids** are lowercase with hyphens: `warm-original`, `skate-pier`, `stone-lantern`.
+- **Ids** are lowercase with hyphens: `cairo`, `skate-pier`, `stone-lantern`.
 - **Unreal assets** keep Unreal's prefixes: `SK_` skeletal mesh, `SM_` static mesh, `A_` animation, `BS_` blend space,
   `M_` material, `MI_` material instance, `T_` texture, `DA_` data asset.
 - **Clip files** are `A_<Role>` (`A_SkateOllie`, `A_SwordAttack1`).

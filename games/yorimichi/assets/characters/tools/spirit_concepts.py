@@ -8,7 +8,7 @@ Writes PNGs, prompt files and provenance into output/imagegen/yorimichi-spirits-
 or a revision subfolder: r02 (threatening designs after the r01 review), r03 (per-type low-poly
 biped model sheets with turnaround and variants).
 Reference stills are the 11 September trailer location scouts (current world look) and the
-13 September Warm Original outfit-r04 capture (current player character).
+13 September Cairo outfit-r04 capture (current player character).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)

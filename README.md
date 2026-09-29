@@ -89,7 +89,7 @@ concepts and textures) are the author's. Third-party material is not redistribut
 - **Sounds** come from the Sonniss GDC Game Audio Bundles. Their licence allows shipping them inside a game but not
   redistributing them as files, so `atelier fetch` downloads the masters from the public archive and the build slices
   them. The licence also forbids using them with AI tools.
-- **Mixamo** motion was retargeted onto Warm Original's sword attacks and is baked into that character's source file;
+- **Mixamo** motion was retargeted onto Cairo's sword attacks and is baked into that character's source file;
   the downloaded Mixamo files are not included.
 - **Fonts**: Noto Sans JP, under the SIL Open Font License (`games/yorimichi/world/regions/hidamari/fonts/OFL.txt`).
 - **Engine content**: the sandbox references Unreal's basic shapes and textures; nothing from the engine is copied.

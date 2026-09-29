@@ -63,7 +63,7 @@ public:
     virtual bool IsSkateInputBlocked() const override;
     virtual bool IsSkateMouseFree() const override { return bMouseReleased; }
     virtual float GetSkateMouseSensitivity() const override { return MouseSensitivity; }
-    virtual FString GetSkateContactsFile() const override { return TEXT("characters/warm-original/skate-build.json"); }
+    virtual FString GetSkateContactsFile() const override { return TEXT("characters/cairo/skate-build.json"); }
     FVector2D GetMoveIntent() const { return MoveIntent; }
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
@@ -154,27 +154,27 @@ private:
     float BenchmarkTime = 0.f, BenchmarkSeconds = 25.f;
     bool bBenchmarkCapturing = false, bBenchmarkFinished = false;
     void AdvanceBenchmark(float Dt);
-    void AdvanceWarmReview(float Dt);
-    bool bWarmReview=false, WarmInverted=false;
-    float WarmTime=0.f, WarmMaxWaist=0.f, WarmMaxHair=0.f;
-    FVector WarmOrigin=FVector::ZeroVector;
-    FVector WarmRollOrigin=FVector::ZeroVector;
-    bool WarmRollInverted=false;
-    float WarmRollEntrySpeed=0.f, WarmRollMinSpeed=0.f;
-    float WarmRollEndDistance=0.f;
-    bool WarmRollWasAirborne=false;
-    int32 WarmRollGroundContacts=0;
-    float WarmRollMinEntrySpeed=0.f, WarmRollEndSpeed=0.f, WarmRollElapsed=0.f;
-    uint32 WarmRollChainSerial=0;
-    int32 WarmRollChainCount=0, WarmRollChainTucks=0;
-    float WarmRollChainSecondTime=-1.f;
-    FVector WarmAirVelocity=FVector::ZeroVector, WarmAirOrigin=FVector::ZeroVector;
-    float WarmAirLaunchTime=-1.f;
-    UPROPERTY() TObjectPtr<AActor> WarmRollObstacle;
-    TArray<FString> WarmErrors;
-    FString WarmTelemetry=TEXT("time,action,speed,height,falling,air_jump,air_dash,pelvis_up,waist_curve\n");
+    void AdvanceCairoReview(float Dt);
+    bool bCairoReview=false, CairoInverted=false;
+    float CairoTime=0.f, CairoMaxWaist=0.f, CairoMaxHair=0.f;
+    FVector CairoOrigin=FVector::ZeroVector;
+    FVector CairoRollOrigin=FVector::ZeroVector;
+    bool CairoRollInverted=false;
+    float CairoRollEntrySpeed=0.f, CairoRollMinSpeed=0.f;
+    float CairoRollEndDistance=0.f;
+    bool CairoRollWasAirborne=false;
+    int32 CairoRollGroundContacts=0;
+    float CairoRollMinEntrySpeed=0.f, CairoRollEndSpeed=0.f, CairoRollElapsed=0.f;
+    uint32 CairoRollChainSerial=0;
+    int32 CairoRollChainCount=0, CairoRollChainTucks=0;
+    float CairoRollChainSecondTime=-1.f;
+    FVector CairoAirVelocity=FVector::ZeroVector, CairoAirOrigin=FVector::ZeroVector;
+    float CairoAirLaunchTime=-1.f;
+    UPROPERTY() TObjectPtr<AActor> CairoRollObstacle;
+    TArray<FString> CairoErrors;
+    FString CairoTelemetry=TEXT("time,action,speed,height,falling,air_jump,air_dash,pelvis_up,waist_curve\n");
     void AdvanceSailboatReview(float Dt);
-    // Film frames for the character review (-warmfilm), numbered on a fixed clock.
+    // Film frames for the character review (-cairofilm), numbered on a fixed clock.
     void RecordFrame();
     bool bCinematic=false; int32 DemoFrame=0;
 public:

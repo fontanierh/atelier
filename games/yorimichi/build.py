@@ -29,9 +29,9 @@ SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,b
                     'boulder_a,boulder_b,boulder_c,stone_wall')
 
 
-def warm_roles():
+def cairo_roles():
     """Clip role groups of the player, from its manifest (the export partitions the prototype used)."""
-    manifest = json.loads((CHARS / 'warm-original' / 'source-manifest.json').read_text())
+    manifest = json.loads((CHARS / 'cairo' / 'source-manifest.json').read_text())
     roles = [r['role'] for r in manifest['roles']]
     combat = ['SwordIdle', 'SwordDraw', 'SwordSheath', 'SwordAttack1', 'SwordAttack2', 'SwordAttack3',
               'SwordChargeUp', 'SwordChargeHold', 'SwordChargeRelease', 'SwordParry', 'SwordParryHit', 'SwordCombo']
@@ -40,32 +40,32 @@ def warm_roles():
     return combat, armed, skate
 
 
+# Runtime files the game reads through AtelierDataPath, relative to unreal/Content/Data. Each is also an output of
+# data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
+STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
+          'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json', 'characters/cairo/skate-build.json')
+
+
+def staged_source(out, rel):
+    """Where a staged file comes from: build output, except the committed park and the player's skate contacts."""
+    return {'skatepark/park.json': REGIONS / 'skatepark' / 'park.json',
+            'characters/cairo/skate-build.json': CHARS / 'cairo' / 'skate-build.json'}.get(rel, out / rel)
+
+
 def stage_data(ctx, log):
-    """Copy the runtime files the game reads (YoriData.h) into unreal/Content/Data."""
-    out, data = ctx.out, paths.content_data(ctx.game)
-    files = {
-        'world.json': out / 'world.json',
-        'heightmap.bin': out / 'heightmap.bin',
-        'hidamari/city.json': out / 'hidamari' / 'city.json',
-        'skatepark/park.json': REGIONS / 'skatepark' / 'park.json',
-        'map/map.json': out / 'map' / 'map.json',
-        'map/map_lines.json': out / 'map' / 'map_lines.json',
-        'map/map.png': out / 'map' / 'map.png',
-        'map/map.jpg': out / 'map' / 'map.jpg',
-        'city_surface_tiles/v1_128m/manifest.json': out / 'city_surface_tiles' / 'v1_128m' / 'manifest.json',
-        'characters/warm-original/skate-build.json': CHARS / 'warm-original' / 'skate-build.json',
-    }
-    for rel, src in files.items():
+    """Copy the runtime files the game reads into unreal/Content/Data."""
+    data = paths.content_data(ctx.game)
+    for rel in STAGED:
         dst = data / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+        shutil.copy2(staged_source(ctx.out, rel), dst)
         log.write(f'staged {rel}\n')
 
 
 def steps(ctx):
     out = ctx.out
-    combat, armed, skate = warm_roles()
-    warm = CHARS / 'warm-original' / 'export_unreal.py'
+    combat, armed, skate = cairo_roles()
+    cairo = CHARS / 'cairo' / 'export_unreal.py'
     return [
         # ------------------------------------------------------------ world
         Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI],
@@ -117,12 +117,12 @@ def steps(ctx):
              inputs=[WORLD / 'city_tree_lods.py', REGIONS / 'hidamari' / 'arcade.py', REGIONS / 'hidamari' / 'plaza.py'],
              needs=['world.hidamari'], outputs=[out / 'city_tree_lods' / 'v4' / 'manifest.json'], about='desktop profile: city tree LODs'),
         # ------------------------------------------------------------ characters
-        Step('characters.warm_original', [
-                Blender(warm, ('--sword',), threads=4),
-                Blender(warm, ('--clips', ','.join(combat), '--clips-only', '--sword', '--report', 'export-sword.json'), threads=4),
-                Blender(warm, ('--clips', ','.join(armed), '--clips-only', '--report', 'export-armed.json'), threads=4),
-                Blender(warm, ('--clips', ','.join(skate), '--clips-only', '--report', 'export-skate.json'), threads=4)],
-             inputs=[CHARS / 'warm-original', NAMES], outputs=[out / 'warm_original' / 'export.json'],
+        Step('characters.cairo', [
+                Blender(cairo, ('--sword',), threads=4),
+                Blender(cairo, ('--clips', ','.join(combat), '--clips-only', '--sword', '--report', 'export-sword.json'), threads=4),
+                Blender(cairo, ('--clips', ','.join(armed), '--clips-only', '--report', 'export-armed.json'), threads=4),
+                Blender(cairo, ('--clips', ','.join(skate), '--clips-only', '--report', 'export-skate.json'), threads=4)],
+             inputs=[CHARS / 'cairo', NAMES], outputs=[out / 'cairo' / 'export.json'],
              about='the player: mesh, 110 clips and the bokken to FBX (full + sword, armed, skate records)'),
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips'),
@@ -175,14 +175,14 @@ def steps(ctx):
         Step('unreal.fox_hunter', [UnrealScript(SCRIPTS / 'import_fox_hunter.py', 'FOX HUNTER IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_fox_hunter.py', SCRIPTS / 'animation_compression.py'],
              after=['unreal.world'], needs=['characters.fox_hunter'], heavy=True, about='/Game/FoxHunter'),
-        Step('unreal.warm_original', [
-                UnrealScript(SCRIPTS / 'import_warm_original.py', 'WARM ORIGINAL IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SCRIPTS / 'import_warm_sword.py', 'WARM SWORD IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SCRIPTS / 'import_warm_armed.py', 'WARM ARMED IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SCRIPTS / 'import_warm_skate.py', 'WARM SKATE IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / n for n in ('import_warm_original.py', 'verify_warm_original.py', 'import_warm_sword.py',
-                                          'import_warm_armed.py', 'import_warm_skate.py', 'animation_compression.py')],
-             after=['unreal.world'], needs=['characters.warm_original'], heavy=True, about='/Game/WarmOriginal in four layers'),
+        Step('unreal.cairo', [
+                UnrealScript(SCRIPTS / 'import_cairo.py', 'CAIRO IMPORT COMPLETE', null_rhi=True),
+                UnrealScript(SCRIPTS / 'import_cairo_sword.py', 'CAIRO SWORD IMPORT COMPLETE', null_rhi=True),
+                UnrealScript(SCRIPTS / 'import_cairo_armed.py', 'CAIRO ARMED IMPORT COMPLETE', null_rhi=True),
+                UnrealScript(SCRIPTS / 'import_cairo_skate.py', 'CAIRO SKATE IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / n for n in ('import_cairo.py', 'verify_cairo.py', 'import_cairo_sword.py',
+                                          'import_cairo_armed.py', 'import_cairo_skate.py', 'animation_compression.py')],
+             after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo in four layers'),
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
@@ -190,7 +190,7 @@ def steps(ctx):
              after=['unreal.world'], needs=['world.city_tiles', 'world.city_trees'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         Step('data.stage', [Call('stage_data', stage_data)],
-             inputs=[REGIONS / 'skatepark' / 'park.json', CHARS / 'warm-original' / 'skate-build.json'],
+             inputs=[REGIONS / 'skatepark' / 'park.json', CHARS / 'cairo' / 'skate-build.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles'],
-             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'world.json'], about='runtime files into unreal/Content/Data'),
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in STAGED], about='runtime files into unreal/Content/Data'),
     ]

@@ -49,7 +49,7 @@ arm.matrix_world=align.inverted()@arm.matrix_world
 modifier=body.modifiers.new('Tripo skin weights','ARMATURE');modifier.object=arm
 modifier.use_deform_preserve_volume=False
 body_world=body.matrix_world.copy();body.parent=arm;body.matrix_world=body_world
-arm.name='Warm Original · Tripo body rig';arm.show_in_front=True;arm.data.display_type='OCTAHEDRAL'
+arm.name='Cairo · Tripo body rig';arm.show_in_front=True;arm.data.display_type='OCTAHEDRAL'
 for o in imported:
     if o!=arm:bpy.data.objects.remove(o,do_unlink=True)
 # The importer supplies custom-shape helper objects; the review uses ordinary bones.

@@ -7,7 +7,7 @@ Run after `export_fox_hunter_unreal.py`:
 Creates SK_FoxHunter with its skeleton and physics asset, M_FoxHunter_* with the colour map and a HitFlash
 parameter, the fifteen A_Fox* clips (root motion enabled where the export says so, root lock at the reference
 pose, the shared character compression), BS_FoxLocomotion (idle, creep, run by speed) and DA_FoxHunter. Nothing
-under /Game/WarmOriginal or the other character folders is touched.
+under /Game/Cairo or the other character folders is touched.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import json, sys

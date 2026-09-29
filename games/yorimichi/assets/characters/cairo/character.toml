@@ -1,0 +1,17 @@
+# The player. Source of truth: the current revision's .blend (textures packed inside) and its manifests.
+id = "cairo"
+display_name = "Cairo"        # named on 29 September 2026 (earlier: Warm Original, and before that the yellow boy)
+role = "player"
+rig = "humanoid"                      # platform/conventions/rigs/humanoid.toml
+rig_optional = ["fingers"]            # 23 core + 30 finger bones
+height_cm = 148
+revision = "game-r17"                 # r01-r16 stay in the prototype archive
+source = "Cairo-Game-r17.blend"
+source_prefix = "Cairo"               # promote.py names new revisions Cairo-<stage>-rNN.blend (the archive keeps WarmOriginal-*)
+manifest = "source-manifest.json"     # every clip role with its reference, timing and contacts
+clip_roles = 110
+export = "export_unreal.py"
+export_args = ["--sword"]             # also the bokken, bone-parented to hand_R
+runtime_data = ["skate-build.json"]   # deck contacts per skate clip, read by the skate code at runtime
+unreal_path = "/Game/Cairo"
+licence = "own; the sword attacks were retargeted from Mixamo motion, baked into the source (raw Mixamo files not included)"

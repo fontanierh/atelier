@@ -1,7 +1,7 @@
 #include "JapanGameMode.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
-#include "CapeBoyCharacter.h"
+#include "CairoCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "JapanHUD.h"
 #include "FoxHunter.h"
@@ -39,7 +39,7 @@ void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
 AJapanGameMode::AJapanGameMode()
 {
     // Wanderer is a village NPC; the yellow kid is the player character.
-    DefaultPawnClass = ACapeBoyCharacter::StaticClass();
+    DefaultPawnClass = ACairoCharacter::StaticClass();
     HUDClass = AJapanHUD::StaticClass();
 }
 

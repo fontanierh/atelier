@@ -106,7 +106,7 @@ mkdir -p "$MIXAMO_WORK"
 
 # Transfer source motion and fit the support hand.
 blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/warm_mixamo_test.py -- \
+  --python games/yorimichi/assets/characters/tools/cairo_mixamo_test.py -- \
   --source "$MIXAMO_SOURCE" --out "$MIXAMO_WORK/r01"
 
 # Apply corrections authored for THIS combo's three overhead swings.
@@ -122,7 +122,7 @@ blender -b --threads 4 --python-exit-code 1 \
 
 # Export web/slash.glb + external texture images.
 blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/warm_mixamo_review.py -- export \
+  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- export \
   --out "$MIXAMO_WORK/r02"
 ```
 
@@ -142,11 +142,11 @@ Optional renders, using the same variables:
 ```sh
 # Source rendering uses the fixed local FBX filename above.
 blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/warm_mixamo_review.py -- source --out "$MIXAMO_WORK/r01"
+  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- source --out "$MIXAMO_WORK/r01"
 blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/warm_mixamo_review.py -- target --out "$MIXAMO_WORK/r01"
+  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- target --out "$MIXAMO_WORK/r01"
 blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/warm_mixamo_review.py -- target --out "$MIXAMO_WORK/r02"
+  --python games/yorimichi/assets/characters/tools/cairo_mixamo_review.py -- target --out "$MIXAMO_WORK/r02"
 ```
 
 Review videos are 30 fps; the native/exported animation remains 60 fps. Scratch
@@ -158,7 +158,7 @@ the shared Asset Studio is the standard viewer now.
 
 ## 4. How the retarget works
 
-Implementation: [warm_mixamo_test.py](../tools/warm_mixamo_test.py).
+Implementation: [cairo_mixamo_test.py](../tools/cairo_mixamo_test.py).
 
 1. **Read bind transforms before editing bones.** Import with
    `automatic_bone_orientation=False`. Validate required `mixamorig:` names; our
@@ -246,7 +246,7 @@ Always remeasure the saved action independently.
 ## 7. Promote and commit
 
 Add accepted actions to the current library/role manifest without replacing
-existing clips. Use [export_warm_original_unreal.py](../tools/export_warm_original_unreal.py)
+existing clips. Use [export_unreal.py](../assets/characters/cairo/export_unreal.py)
 and the game animation import path for new clips. The `reimport_warm_mesh.py`
 shortcut is **geometry-only**, not an animation installer. Decide root-motion
 policy, transitions, input/recovery, hit detection, notifies and sound in the

@@ -1,0 +1,4926 @@
+{
+  "animation_source": "output/imagegen/yorimichi-yellow-boy-2026-09-12/animations-r01/WarmOriginal-Animations-r01.blend",
+  "animation_source_sha256": "0a85a94725dd984e5d6416dc56406f2216e6b04ee2e8e0cb1c9e3e679b4947b6",
+  "garment_source": "output/imagegen/yorimichi-yellow-boy-2026-09-12/body-swap-r02-headless/assembled/WarmOriginal-BodySwap-r02.blend",
+  "garment_source_sha256": "ff81adbddc69ccff180a739adbf2d2f9b383390b087d5649616910ad9a5a658b",
+  "native": "output/imagegen/yorimichi-yellow-boy-2026-09-12/game-r17/WarmOriginal-Game-r17.blend",
+  "native_sha256": "e64f6dca12d20c2918a43e9e03a22cad2e850020ec05c7b5db6c495ebe56da67",
+  "original_fable_curves_preserved": false,
+  "original_curve_signatures": {
+    "Climb \u00b7 library": "fd1051d9e8f4a3624b7f8e5e9c24c279f92c6389c0a499cc00bb15c5ae2673da",
+    "CrouchIdle \u00b7 library": "8bce628f5cd3defb34e6e9c2e8582c567dea55f1104f40c059492b5635bbf86e",
+    "CrouchWalk \u00b7 library": "6e649ecce382a786d487cd252d8ee4ded1de0a07ba4fcb20926de53b7e42d865",
+    "DashAir \u00b7 library": "33c78ed67b0f3229f1416f5a002815bc63d0ae7297d4bb096b589e760b0b00dd",
+    "DashGround \u00b7 library": "c4046234fc5ed15d3b2c2c0a42716af36632f14678b8ee09d24d86920f8c52c5",
+    "Dodge \u00b7 library": "ea5de4d694f2606582e1f9f6b5a4c84ab7a1fb304123623805bc649f9e979759",
+    "DoubleJump \u00b7 library": "8a4f020b48b5944c07e7729b3102c23047b624e7ca6f2c5cd50474c6980f4376",
+    "Fall \u00b7 library": "a1b41fcbe1262ede3c0fef03f377d4209415faa9e5838898009903d2ac817ea0",
+    "Glide \u00b7 library": "1dcf4188158a50fdf790acaef93320a74751a4c4a3a660205a404a52a551565b",
+    "HardLand \u00b7 library": "4f5149cfd49689dea3d9a927abc9c88c9063938fed3bf40cdbaa608d4694797e",
+    "Idle \u00b7 library": "1eaaa2c24655c517d72bb3593db42254fe924a47950ea9bdddf2a36f0c762829",
+    "Interact \u00b7 library": "51b9cf3f6f7b37798dd90540b10e51e0f2bcf865523d462a09adb4bdfa984218",
+    "JumpRise \u00b7 library": "580aac7e11299406138546a3cbfbc328e767a16a3c2801c974ca7452ae42b7af",
+    "JumpStart \u00b7 library": "cac7fbc2f15c835da3cfa677d575ec8e9cad6d408e22095e4385cae1b015c99a",
+    "Land \u00b7 library": "0366afbfa566364c6bca2e84f616fae6e85cefddf2d057af36fc335f7abeb82b",
+    "SitDown \u00b7 library": "9dfa50db56aa45815346e08d888abcb127e647db9537f4a0a9454867669d0061",
+    "SitIdle \u00b7 library": "30b561388cd5c6ef66fbf82434612efffc4f34c63fed0a979d75df788595f842",
+    "Sprint \u00b7 dressed": "83a00b734be192b5e129ee89c1d4be07a73ee4b13e527d90e8c7ae4e8b000b2a",
+    "Standing \u00b7 outfit review": "5ff6b253b538499dad65e64a1dad9aecd6c4942bf6e161c475636d6f7a6672f5",
+    "StandUp \u00b7 library": "51d725be6c5e5831e527812b0ce80ec691bf50f288c288b98c0179818882c4b7",
+    "TurnLeft \u00b7 library": "5c17efb1c8a990106187d51757c080ff8987fcdfa662a4f0fcd571b0533d5e3d",
+    "TurnRight \u00b7 library": "f524921c4a636c2feac32cd9526f36e4beeb8040703c2dd7feee06cfeccc4533",
+    "Walk \u00b7 library": "8d9e9adbf9125d43470eb5a8448c1d171fe09322009944e749d30bcdfdc4f3b5",
+    "Wave \u00b7 library": "835975fac4f41a975d216af6ca2fc7fdcb91118a0d3edd010ec11d4313cb9a80"
+  },
+  "white_volume_ranges": {
+    "Left": [
+      0.05478699505329132,
+      1.0
+    ],
+    "Right": [
+      0.056000836193561554,
+      1.0
+    ]
+  },
+  "waist_ranges": {
+    "Roll \u00b7 library": [
+      0.0,
+      0.0
+    ]
+  },
+  "waist_authoring_failures": [],
+  "bones": 53,
+  "finger_drivers": 40,
+  "roles": [
+    {
+      "role": "Idle",
+      "clip": "Idle \u00b7 library",
+      "mapping": "Idle",
+      "fps": 60,
+      "frames": 241,
+      "duration_seconds": 4.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "idle-sunburst-r01",
+      "reference_window_seconds": null,
+      "markers": [
+        {
+          "time": 0,
+          "label": "loop start"
+        },
+        {
+          "time": 2.0,
+          "label": "weight on right"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Sunburst stance with extra underarm ease after the user shoulder-fit feedback.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation_record": "validation.json"
+    },
+    {
+      "role": "Walk",
+      "clip": "Walk \u00b7 library",
+      "mapping": "Walk",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-walk-r01",
+      "reference_window_seconds": [
+        0.0,
+        6.0
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left heel strike"
+        },
+        {
+          "time": 0.5,
+          "label": "right heel strike"
+        }
+      ],
+      "travel": 0.62,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Relaxed heel-to-toe walk; in place, matched travel speed recorded for the moving-floor review.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "history": [
+        {
+          "revision": "game-r13",
+          "validation": {
+            "max_joint_step_degrees": 8.881298947757635,
+            "max_ground_penetration": 0.0003612637519836426,
+            "max_planted_hover": 0.0,
+            "loop_seam_max_vertex_distance": 0.0,
+            "garment_crossing_frames": 0,
+            "garment_frames_checked": 61
+          }
+        }
+      ],
+      "validation": {
+        "max_joint_step_degrees": 9.724,
+        "max_ground_penetration": 3e-05,
+        "max_planted_hover": 3e-06,
+        "hips_range": 0.02387,
+        "hips_lowest_frame": 8,
+        "record": "clip-transfer.json"
+      }
+    },
+    {
+      "role": "Run",
+      "clip": "Sprint \u00b7 dressed",
+      "mapping": "shared: Sprint \u00b7 dressed at 0.8\u00d7 (see rate slider)",
+      "fps": 60,
+      "frames": 41,
+      "duration_seconds": 0.6666667,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "sprint-reference-r04",
+      "reference_window_seconds": [
+        0,
+        6
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left push-off"
+        },
+        {
+          "time": 0.23333333333333334,
+          "label": "right landing"
+        },
+        {
+          "time": 0.5666666666666667,
+          "label": "left landing"
+        }
+      ],
+      "travel": 2.7546536,
+      "tested_play_rate": 0.8,
+      "period_seconds_at_rate": 0.8333333749999999,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "sprint cycle",
+      "exit_pose": "sprint cycle",
+      "notes": "Smooth cyclic pelvis motion with preserved original foot paths and cadence; dense leg bake retains contact between 60 Hz frames.",
+      "validation": "accepted r05 clip; see outfit-r05/validation.json",
+      "validation_record": "validation.json",
+      "export_sample_rate": 240
+    },
+    {
+      "role": "Sprint",
+      "clip": "Sprint \u00b7 dressed",
+      "mapping": "existing: Sprint \u00b7 dressed",
+      "fps": 60,
+      "frames": 41,
+      "duration_seconds": 0.6666667,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "sprint-reference-r04",
+      "reference_window_seconds": [
+        0,
+        6
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left push-off"
+        },
+        {
+          "time": 0.23333333333333334,
+          "label": "right landing"
+        },
+        {
+          "time": 0.5666666666666667,
+          "label": "left landing"
+        }
+      ],
+      "travel": 3.443317,
+      "tested_play_rate": 1.0,
+      "period_seconds_at_rate": 0.6666667,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "sprint cycle",
+      "exit_pose": "sprint cycle",
+      "notes": "Smooth cyclic pelvis motion with preserved original foot paths and cadence; dense leg bake retains contact between 60 Hz frames.",
+      "validation": "accepted r05 clip; see outfit-r05/validation.json",
+      "validation_record": "validation.json",
+      "export_sample_rate": 240
+    },
+    {
+      "role": "CrouchIdle",
+      "clip": "CrouchIdle \u00b7 library",
+      "mapping": "CrouchIdle",
+      "fps": 60,
+      "frames": 181,
+      "duration_seconds": 3.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-crouch-r01",
+      "reference_window_seconds": [
+        0.0,
+        2.0
+      ],
+      "markers": [],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "CrouchWalk/Idle",
+      "exit_pose": "CrouchWalk/Idle",
+      "notes": "Deep stable crouch, feet apart and turned out, hands ready in front; breathing and small sway.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 0.1251145157995564,
+        "max_ground_penetration": 3.0040740966796875e-05,
+        "max_planted_hover": 0.0,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 181
+      }
+    },
+    {
+      "role": "CrouchWalk",
+      "clip": "CrouchWalk \u00b7 library",
+      "mapping": "CrouchWalk",
+      "fps": 60,
+      "frames": 67,
+      "duration_seconds": 1.1,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-crouch-r01",
+      "reference_window_seconds": [
+        2.2,
+        5.6
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left heel strike"
+        },
+        {
+          "time": 0.55,
+          "label": "right heel strike"
+        }
+      ],
+      "travel": 0.42,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "CrouchIdle",
+      "exit_pose": "CrouchIdle",
+      "notes": "Low creeping gait at crouch height with short steps; arms held ready.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "history": [
+        {
+          "revision": "game-r13",
+          "validation": {
+            "max_joint_step_degrees": 12.838302750014499,
+            "max_ground_penetration": 7.140636444091797e-05,
+            "max_planted_hover": 0.0,
+            "loop_seam_max_vertex_distance": 0.0,
+            "garment_crossing_frames": 0,
+            "garment_frames_checked": 67
+          }
+        }
+      ],
+      "validation": {
+        "max_joint_step_degrees": 12.557,
+        "max_ground_penetration": 3.3e-05,
+        "max_planted_hover": -1.1e-05,
+        "hips_range": 0.00799,
+        "hips_lowest_frame": 9,
+        "record": "clip-transfer.json"
+      }
+    },
+    {
+      "role": "JumpStart",
+      "clip": "JumpStart \u00b7 library",
+      "mapping": "JumpStart",
+      "fps": 60,
+      "frames": 9,
+      "duration_seconds": 0.13333333333333333,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        0.85,
+        1.15
+      ],
+      "markers": [
+        {
+          "time": 0.06,
+          "label": "deepest load"
+        },
+        {
+          "time": 0.1333,
+          "label": "launch"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "JumpRise",
+      "notes": "Shallow loading then extension onto the toes; no foot repositioning so moving starts blend cleanly.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 23.43946236734167,
+        "max_ground_penetration": 0.0016966462135314941,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 9
+      }
+    },
+    {
+      "role": "JumpRise",
+      "clip": "JumpRise \u00b7 library",
+      "mapping": "JumpRise",
+      "fps": 60,
+      "frames": 34,
+      "duration_seconds": 0.55,
+      "loop": false,
+      "kind": "air",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        1.15,
+        1.5
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "launch pose"
+        },
+        {
+          "time": 0.55,
+          "label": "apex pose"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpStart",
+      "exit_pose": "Fall/DoubleJump/DashAir",
+      "notes": "Ascent: full extension, arms up, then knees drift forward into the apex pose shared with DoubleJump/Fall.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 10.399974875283316,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 34
+      }
+    },
+    {
+      "role": "DoubleJump",
+      "clip": "DoubleJump \u00b7 library",
+      "mapping": "DoubleJump",
+      "fps": 60,
+      "frames": 46,
+      "duration_seconds": 0.75,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-flip-r01",
+      "reference_window_seconds": [
+        0.85,
+        3.0
+      ],
+      "markers": [
+        {
+          "time": 0.08,
+          "label": "rotation starts"
+        },
+        {
+          "time": 0.6,
+          "label": "rotation complete (360\u00b0)"
+        },
+        {
+          "time": 0.633,
+          "label": "upright"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpRise/Fall",
+      "exit_pose": "Fall",
+      "notes": "Compact tuck and one forward somersault about the body centre (pelvis + 0.07 up); opens upright before the end into the fall pose.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 24.792930585826326,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 46,
+        "somersault": {
+          "total_turn_degrees": 358.0000051974561,
+          "max_step_degrees": 14.63009858892752,
+          "forward_only": true,
+          "backward_steps": [],
+          "upright_by_frame": 37
+        }
+      }
+    },
+    {
+      "role": "Fall",
+      "clip": "Fall \u00b7 library",
+      "mapping": "Fall",
+      "fps": 60,
+      "frames": 67,
+      "duration_seconds": 1.1,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        1.5,
+        1.85
+      ],
+      "markers": [],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpRise/DoubleJump/DashAir",
+      "exit_pose": "Land/HardLand",
+      "notes": "Airborne descent hold with gentle arm balance; safe entry from apex, ledge walk-off, air dash or double jump.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 0.9803771670975251,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 67
+      }
+    },
+    {
+      "role": "Land",
+      "clip": "Land \u00b7 library",
+      "mapping": "Land",
+      "fps": 60,
+      "frames": 27,
+      "duration_seconds": 0.43333333333333335,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        1.85,
+        2.4
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "contact"
+        },
+        {
+          "time": 0.12,
+          "label": "deepest absorption"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Fall",
+      "exit_pose": "Idle/Walk/Sprint",
+      "notes": "Soft landing: contact on frame 1, absorb, recover to idle; can be cut early for moving exits.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 5.08444019568362,
+        "max_ground_penetration": 0.0002980828285217285,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 27
+      }
+    },
+    {
+      "role": "HardLand",
+      "clip": "HardLand \u00b7 library",
+      "mapping": "HardLand",
+      "fps": 60,
+      "frames": 43,
+      "duration_seconds": 0.7,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        4.8,
+        5.9
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "contact"
+        },
+        {
+          "time": 0.13,
+          "label": "deepest crouch"
+        },
+        {
+          "time": 0.3,
+          "label": "hold ends"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Fall",
+      "exit_pose": "Idle",
+      "notes": "Heavy landing: deep squat with the torso folded and the right hand dropping toward the floor, slower recovery.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 7.40400792610981,
+        "max_ground_penetration": 0.00043785572052001953,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 43
+      }
+    },
+    {
+      "role": "Dodge",
+      "clip": "Dodge \u00b7 library",
+      "mapping": "Dodge",
+      "fps": 60,
+      "frames": 45,
+      "duration_seconds": 0.7333333333333333,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-dodge-r01",
+      "reference_window_seconds": [
+        0.7,
+        2.6
+      ],
+      "markers": [
+        {
+          "time": 0.09,
+          "label": "load"
+        },
+        {
+          "time": 0.2,
+          "label": "airborne hop"
+        },
+        {
+          "time": 0.32,
+          "label": "low landing"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Grounded evade: guard arms, quick hop to the left, low wide landing and recovery; distinct from the forward dash.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 19.386659040788327,
+        "max_ground_penetration": 0.0004260540008544922,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 45
+      }
+    },
+    {
+      "role": "Interact",
+      "clip": "Interact \u00b7 library",
+      "mapping": "Interact",
+      "fps": 60,
+      "frames": 82,
+      "duration_seconds": 1.35,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-interact-r01",
+      "reference_window_seconds": [
+        0.9,
+        4.4
+      ],
+      "markers": [
+        {
+          "time": 0.55,
+          "label": "hand at floor"
+        },
+        {
+          "time": 1.0,
+          "label": "hand at chest"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Half step, bend and reach the right hand to a floor spot ahead, grasp, lift to the chest and look, then return.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 20.831645887025342,
+        "max_ground_penetration": 0.0002090930938720703,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 82
+      }
+    },
+    {
+      "role": "Wave",
+      "clip": "Wave \u00b7 library",
+      "mapping": "Wave",
+      "fps": 60,
+      "frames": 145,
+      "duration_seconds": 2.4,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-wave-r01",
+      "reference_window_seconds": [
+        0.6,
+        5.0
+      ],
+      "markers": [
+        {
+          "time": 0.45,
+          "label": "arm up"
+        },
+        {
+          "time": 1.95,
+          "label": "lowering"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Right arm raised beside the head, three side-to-side waves with spread fingers, then lowered.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 13.508249518581898,
+        "max_ground_penetration": 1.233816146850586e-05,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 145
+      }
+    },
+    {
+      "role": "SitDown",
+      "clip": "SitDown \u00b7 library",
+      "mapping": "SitDown",
+      "fps": 60,
+      "frames": 73,
+      "duration_seconds": 1.2,
+      "loop": false,
+      "kind": "transition",
+      "reference_revision": "anim-ref-sit-r01",
+      "reference_window_seconds": [
+        0.4,
+        2.0
+      ],
+      "markers": [
+        {
+          "time": 0.95,
+          "label": "seat contact"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "SitIdle",
+      "notes": "Controlled descent to a seat 0.16 units above the floor (about knee height), feet moving forward.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 3.869237488509279,
+        "max_ground_penetration": 5.930662155151367e-05,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 73
+      },
+      "seat_height_units": 0.16
+    },
+    {
+      "role": "SitIdle",
+      "clip": "SitIdle \u00b7 library",
+      "mapping": "SitIdle",
+      "fps": 60,
+      "frames": 181,
+      "duration_seconds": 3.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-sit-r01",
+      "reference_window_seconds": [
+        2.0,
+        4.3
+      ],
+      "markers": [],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "SitDown",
+      "exit_pose": "StandUp",
+      "notes": "Seated breathing and a small look; hands on the thighs.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 0.15825874002676765,
+        "max_ground_penetration": 5.4836273193359375e-06,
+        "max_planted_hover": 0.0,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 181
+      },
+      "seat_height_units": 0.16
+    },
+    {
+      "role": "StandUp",
+      "clip": "StandUp \u00b7 library",
+      "mapping": "StandUp",
+      "fps": 60,
+      "frames": 67,
+      "duration_seconds": 1.1,
+      "loop": false,
+      "kind": "transition",
+      "reference_revision": "anim-ref-sit-r01",
+      "reference_window_seconds": [
+        4.4,
+        5.7
+      ],
+      "markers": [
+        {
+          "time": 0.35,
+          "label": "weight over feet"
+        },
+        {
+          "time": 0.7,
+          "label": "seat released"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "SitIdle",
+      "exit_pose": "Idle",
+      "notes": "Lean over the feet, push up through the legs, settle to idle.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 5.09028834960035,
+        "max_ground_penetration": 4.7087669372558594e-05,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 67
+      },
+      "seat_height_units": 0.16
+    },
+    {
+      "role": "Climb",
+      "clip": "Climb \u00b7 library",
+      "mapping": "Climb",
+      "fps": 60,
+      "frames": 73,
+      "duration_seconds": 1.2,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-climb-r01",
+      "reference_window_seconds": [
+        0.0,
+        6.0
+      ],
+      "markers": [],
+      "travel": 0.25,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "ladder attach",
+      "exit_pose": "ladder detach",
+      "notes": "Ladder climb, in place: vertical ladder plane 0.19 ahead, rungs 0.15 apart, climb speed 0.25 units/s.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 12.195015421493856,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 73
+      },
+      "fixture": {
+        "plane_x": 0.19,
+        "rung_spacing": 0.15,
+        "speed": 0.25
+      }
+    },
+    {
+      "role": "Glide",
+      "clip": "Glide \u00b7 library",
+      "mapping": "Glide",
+      "fps": 60,
+      "frames": 145,
+      "duration_seconds": 2.4,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-glide-r01",
+      "reference_window_seconds": [
+        0.0,
+        6.0
+      ],
+      "markers": [],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Fall",
+      "exit_pose": "Fall",
+      "notes": "Airborne balance hold: body inclined about 52\u00b0 with arms spread wide; slow balancing oscillation. No glider asset.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 0.38359400175997166,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 145
+      }
+    },
+    {
+      "role": "TurnLeft",
+      "clip": "TurnLeft \u00b7 library",
+      "mapping": "TurnLeft",
+      "fps": 60,
+      "frames": 43,
+      "duration_seconds": 0.7,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-turn-r01",
+      "reference_window_seconds": [
+        0.5,
+        2.1
+      ],
+      "markers": [
+        {
+          "time": 0.05,
+          "label": "left foot steps"
+        },
+        {
+          "time": 0.36,
+          "label": "right foot steps"
+        },
+        {
+          "time": 0.62,
+          "label": "both planted"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "clip animates 90\u00b0 visually; apply the same controller yaw when the clip ends",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "90\u00b0 left turn in place: the clip owns the visual yaw; apply +90\u00b0 controller yaw when it ends and the pose equals idle rotated about the origin.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 10.78432063365495,
+        "max_ground_penetration": 6.461143493652344e-05,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 43
+      }
+    },
+    {
+      "role": "TurnRight",
+      "clip": "TurnRight \u00b7 library",
+      "mapping": "TurnRight",
+      "fps": 60,
+      "frames": 43,
+      "duration_seconds": 0.7,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-turn-r01",
+      "reference_window_seconds": [
+        3.0,
+        4.6
+      ],
+      "markers": [
+        {
+          "time": 0.05,
+          "label": "right foot steps"
+        },
+        {
+          "time": 0.36,
+          "label": "left foot steps"
+        },
+        {
+          "time": 0.62,
+          "label": "both planted"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "clip animates -90\u00b0 visually; apply the same controller yaw when the clip ends",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Mirror of TurnLeft, inspected independently.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 10.784247950244195,
+        "max_ground_penetration": 6.67572021484375e-05,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 43
+      }
+    },
+    {
+      "role": "DashGround",
+      "clip": "DashGround \u00b7 library",
+      "mapping": "DashGround (new)",
+      "fps": 60,
+      "frames": 22,
+      "duration_seconds": 0.35,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": null,
+      "reference_window_seconds": null,
+      "markers": [
+        {
+          "time": 0.03333333333333333,
+          "label": "launch"
+        },
+        {
+          "time": 0.35,
+          "label": "release"
+        }
+      ],
+      "travel": "profile",
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle/Walk/Sprint/Fall",
+      "notes": "User-directed r02: fast head-back forward leap with trailing limbs.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "travel_profile_units_per_second": [
+        [
+          0,
+          1.5
+        ],
+        [
+          0.03333333333333333,
+          8.5
+        ],
+        [
+          0.08333333333333333,
+          10.0
+        ],
+        [
+          0.18333333333333332,
+          8.8
+        ],
+        [
+          0.2833333333333333,
+          6.5
+        ],
+        [
+          0.35,
+          3.0
+        ]
+      ],
+      "validation_record": "validation.json"
+    },
+    {
+      "role": "DashAir",
+      "clip": "DashAir \u00b7 library",
+      "mapping": "DashAir (new)",
+      "fps": 60,
+      "frames": 15,
+      "duration_seconds": 0.23333333333333334,
+      "loop": false,
+      "kind": "air",
+      "reference_revision": null,
+      "reference_window_seconds": null,
+      "markers": [
+        {
+          "time": 0.03333333333333333,
+          "label": "launch"
+        },
+        {
+          "time": 0.23333333333333334,
+          "label": "release"
+        }
+      ],
+      "travel": "profile",
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpRise/Fall/DoubleJump",
+      "exit_pose": "Fall/Land",
+      "notes": "User-directed r02: fast head-back forward leap with trailing limbs.",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "travel_profile_units_per_second": [
+        [
+          0,
+          11.0
+        ],
+        [
+          0.03333333333333333,
+          11.0
+        ],
+        [
+          0.13333333333333333,
+          9.0
+        ],
+        [
+          0.2,
+          6.0
+        ],
+        [
+          0.23333333333333334,
+          3.5
+        ]
+      ],
+      "validation_record": "validation.json"
+    },
+    {
+      "role": "Roll",
+      "clip": "Roll \u00b7 library",
+      "mapping": "Roll",
+      "fps": 60,
+      "loop": false,
+      "kind": "one-shot",
+      "root_motion": "in_place",
+      "duration_seconds": 1.2,
+      "frames": 73,
+      "validation_record": "validation.json",
+      "reference_revision": "seedance-dive-roll-r01",
+      "reference_window_seconds": [
+        1.25,
+        5.75
+      ],
+      "notes": "Continuous forward dive, anatomically hinged compact tuck, one forward rotation and planted recovery. User authorized reuse of existing Seedance after the new request was rejected for balance.",
+      "entry": "Idle/Locomotion",
+      "exit": "Idle/Locomotion",
+      "markers": [
+        {
+          "time": 0.05,
+          "label": "push off"
+        },
+        {
+          "time": 0.17,
+          "label": "airborne dive"
+        },
+        {
+          "time": 0.38,
+          "label": "contact and tuck"
+        },
+        {
+          "time": 0.53,
+          "label": "rounded back roll"
+        },
+        {
+          "time": 0.94,
+          "label": "feet recover"
+        },
+        {
+          "time": 1.2,
+          "label": "continue"
+        }
+      ],
+      "travel_profile_units_per_second": [
+        [
+          0,
+          2.8
+        ],
+        [
+          0.05,
+          4
+        ],
+        [
+          0.15,
+          4.4
+        ],
+        [
+          0.35,
+          4.4
+        ],
+        [
+          0.5,
+          3.8
+        ],
+        [
+          0.7,
+          3.2
+        ],
+        [
+          0.95,
+          2.8
+        ],
+        [
+          1.2,
+          2.2
+        ]
+      ],
+      "travel_distance_units": 4.16,
+      "dive_takeoff_seconds": 0.05,
+      "dive_touchdown_seconds": 0.38
+    },
+    {
+      "role": "SwordIdle",
+      "clip": "SwordIdle \u00b7 library",
+      "mapping": "SwordIdle",
+      "fps": 60,
+      "frames": 181,
+      "duration_seconds": 3.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "combo frame 5 stance + breathing",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "end_yaw_degrees": 0.0,
+      "end_travel": [
+        0.0,
+        0.0
+      ],
+      "support_hand_error_max_m": 0.0005967914723278421
+    },
+    {
+      "role": "SwordDraw",
+      "clip": "SwordDraw \u00b7 library",
+      "mapping": "SwordDraw",
+      "fps": 60,
+      "frames": 18,
+      "duration_seconds": 0.2833333333333333,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "authored blend: Idle \u00b7 library frame 1 -> guard (18 frames)",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "end_yaw_degrees": 0.0,
+      "end_travel": [
+        0.0,
+        0.0
+      ],
+      "support_hand_error_max_m": 0.03136077915797489,
+      "sword_visible_from_frame": 1
+    },
+    {
+      "role": "SwordSheath",
+      "clip": "SwordSheath \u00b7 library",
+      "mapping": "SwordSheath",
+      "fps": 60,
+      "frames": 20,
+      "duration_seconds": 0.31666666666666665,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "authored blend: guard -> Idle \u00b7 library frame 1 (20 frames)",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "end_yaw_degrees": 0.0,
+      "end_travel": [
+        0.0,
+        0.0
+      ],
+      "support_hand_error_max_m": 0.04190702895966307,
+      "sword_hidden_from_frame": 20
+    },
+    {
+      "role": "SwordAttack1",
+      "clip": "SwordAttack1 \u00b7 library",
+      "mapping": "SwordAttack1",
+      "fps": 60,
+      "frames": 34,
+      "duration_seconds": 0.55,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "root bone carries captured travel and turning",
+      "yaw_ownership": "clip root",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "combo frames 29-65 time-warped, turn x0.35, 12-frame recovery to the contact heading",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "active_window_seconds": [
+        0.14,
+        0.2592
+      ],
+      "link_window_seconds": [
+        0.2592,
+        0.55
+      ],
+      "cancel_after_seconds": 0.2592,
+      "capture_frames": [
+        29,
+        65
+      ],
+      "end_yaw_degrees": 27.732955954922975,
+      "end_travel": [
+        0.1690321943831099,
+        0.12803616352144864
+      ],
+      "support_hand_error_max_m": 2.5329498781908595e-05,
+      "contact_yaw_degrees": 27.732955954922975,
+      "contact_distance": 0.6641529937946228,
+      "contact_height": 0.30330043844878674,
+      "turn_fraction": 0.35,
+      "time_warp_keys": [
+        [
+          0.0,
+          29
+        ],
+        [
+          0.1,
+          40
+        ],
+        [
+          0.14,
+          45
+        ],
+        [
+          0.27,
+          58
+        ],
+        [
+          0.35,
+          65
+        ]
+      ]
+    },
+    {
+      "role": "SwordAttack2",
+      "clip": "SwordAttack2 \u00b7 library",
+      "mapping": "SwordAttack2",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "root bone carries captured travel and turning",
+      "yaw_ownership": "clip root",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "combo frames 81-116 time-warped, turn x0.35, 12-frame recovery to the contact heading",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "active_window_seconds": [
+        0.1216,
+        0.2505
+      ],
+      "link_window_seconds": [
+        0.2408,
+        0.5
+      ],
+      "cancel_after_seconds": 0.2408,
+      "capture_frames": [
+        81,
+        116
+      ],
+      "end_yaw_degrees": -23.928263847443404,
+      "end_travel": [
+        -0.17128550218720032,
+        -0.2117978041656982
+      ],
+      "support_hand_error_max_m": 2.5495899866224517e-05,
+      "contact_yaw_degrees": -23.928263847443404,
+      "contact_distance": 0.4715888416395217,
+      "contact_height": 0.33290973119437695,
+      "turn_fraction": 0.35,
+      "time_warp_keys": [
+        [
+          0.0,
+          81
+        ],
+        [
+          0.09,
+          93
+        ],
+        [
+          0.13,
+          98
+        ],
+        [
+          0.27,
+          113
+        ],
+        [
+          0.3,
+          116
+        ]
+      ]
+    },
+    {
+      "role": "SwordAttack3",
+      "clip": "SwordAttack3 \u00b7 library",
+      "mapping": "SwordAttack3",
+      "fps": 60,
+      "frames": 36,
+      "duration_seconds": 0.5833333333333334,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "root bone carries captured travel and turning",
+      "yaw_ownership": "clip root",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "combo frames 127-166 time-warped, turn x0.28, 15-frame recovery to the contact heading",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "active_window_seconds": [
+        0.1336,
+        0.2772
+      ],
+      "cancel_after_seconds": 0.465,
+      "capture_frames": [
+        127,
+        166
+      ],
+      "end_yaw_degrees": -46.6828621369098,
+      "end_travel": [
+        0.12641300619845422,
+        0.24814288729064618
+      ],
+      "support_hand_error_max_m": 2.5648816055779587e-05,
+      "contact_yaw_degrees": -46.6828621369098,
+      "contact_distance": 0.39204456898124385,
+      "contact_height": 0.35138016752898693,
+      "turn_fraction": 0.28,
+      "time_warp_keys": [
+        [
+          0.0,
+          127
+        ],
+        [
+          0.07,
+          133
+        ],
+        [
+          0.12,
+          143
+        ],
+        [
+          0.3,
+          163
+        ],
+        [
+          0.34,
+          166
+        ]
+      ]
+    },
+    {
+      "role": "SwordChargeUp",
+      "clip": "SwordChargeUp \u00b7 library",
+      "mapping": "SwordChargeUp",
+      "fps": 60,
+      "frames": 14,
+      "duration_seconds": 0.21666666666666667,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "authored blend: guard -> combo frame 137 (14 frames)",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "end_yaw_degrees": 0.0,
+      "end_travel": [
+        0.0,
+        0.0
+      ],
+      "support_hand_error_max_m": 0.03195755570647773
+    },
+    {
+      "role": "SwordChargeHold",
+      "clip": "SwordChargeHold \u00b7 library",
+      "mapping": "SwordChargeHold",
+      "fps": 60,
+      "frames": 121,
+      "duration_seconds": 2.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "combo frame 137 wind-up + breathing",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "end_yaw_degrees": 0.0,
+      "end_travel": [
+        0.0,
+        0.0
+      ],
+      "support_hand_error_max_m": 2.510428327641269e-05
+    },
+    {
+      "role": "SwordChargeRelease",
+      "clip": "SwordChargeRelease \u00b7 library",
+      "mapping": "SwordChargeRelease",
+      "fps": 60,
+      "frames": 33,
+      "duration_seconds": 0.5333333333333333,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "root bone carries captured travel and turning",
+      "yaw_ownership": "clip root",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "combo frames 137-166 time-warped, turn x0.3, 16-frame recovery to the contact heading",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "active_window_seconds": [
+        0.0553,
+        0.1977
+      ],
+      "cancel_after_seconds": 0.3933,
+      "capture_frames": [
+        137,
+        166
+      ],
+      "end_yaw_degrees": -29.132178508409623,
+      "end_travel": [
+        -0.11762895594969724,
+        0.12223007622971561
+      ],
+      "support_hand_error_max_m": 2.542784600170897e-05,
+      "contact_yaw_degrees": -29.132178508409623,
+      "contact_distance": 0.41927929613864934,
+      "contact_height": 0.35055881552398205,
+      "turn_fraction": 0.3,
+      "time_warp_keys": [
+        [
+          0.0,
+          137
+        ],
+        [
+          0.04,
+          143
+        ],
+        [
+          0.22,
+          163
+        ],
+        [
+          0.26,
+          166
+        ]
+      ]
+    },
+    {
+      "role": "SwordParry",
+      "clip": "SwordParry \u00b7 library",
+      "mapping": "SwordParry",
+      "fps": 60,
+      "frames": 30,
+      "duration_seconds": 0.48333333333333334,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "authored 3-frame link, combo 163-177 rise at 1.4x (in place), 5-frame settle, 191-199 lowering at 1.6x, 7-frame return",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "active_window_seconds": [
+        0.0333,
+        0.3
+      ],
+      "cancel_after_seconds": 0.3333,
+      "end_yaw_degrees": 0.0,
+      "end_travel": [
+        0.0,
+        0.0
+      ],
+      "support_hand_error_max_m": 0.0014005728919124225
+    },
+    {
+      "role": "SwordParryHit",
+      "clip": "SwordParryHit \u00b7 library",
+      "mapping": "SwordParryHit",
+      "fps": 60,
+      "frames": 10,
+      "duration_seconds": 0.15,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "authored recoil on combo frame 175",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "counter_from_seconds": 0.1,
+      "end_yaw_degrees": 0.0,
+      "end_travel": [
+        0.0,
+        0.0
+      ],
+      "support_hand_error_max_m": 2.500876970288389e-05
+    },
+    {
+      "role": "SwordCombo",
+      "clip": "SwordCombo \u00b7 reference",
+      "mapping": "SwordCombo",
+      "fps": 60,
+      "frames": 212,
+      "duration_seconds": 3.5166666666666666,
+      "loop": false,
+      "kind": "reference",
+      "reference_revision": "sword-r01/stage1-bokken/mixamo-r02",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "root bone carries captured travel and turning",
+      "yaw_ownership": "clip root",
+      "weapon": "bokken in the right hand, two-handed unless noted",
+      "entry_pose": "SwordIdle",
+      "exit_pose": "SwordIdle",
+      "notes": "accepted mixamo-r02 combo, complete (spinning, not used in play)",
+      "validation_record": "combat-validation.json",
+      "sword": true,
+      "capture_frames": [
+        1,
+        212
+      ],
+      "end_yaw_degrees": -360.0281956560664,
+      "end_travel": [
+        1.2346373548222302,
+        -0.015990285773349138
+      ],
+      "support_hand_error_max_m": 0.031403764901008095
+    },
+    {
+      "role": "SwordWalk",
+      "clip": "SwordWalk \u00b7 armed",
+      "mapping": "armed copy of Walk \u00b7 library",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-walk-r01",
+      "reference_window_seconds": [
+        0.0,
+        6.0
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left heel strike"
+        },
+        {
+          "time": 0.5,
+          "label": "right heel strike"
+        }
+      ],
+      "travel": 0.62,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Walk \u00b7 library with the right arm swinging the sword; played as the right-arm layer while armed",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "history": [
+        {
+          "revision": "game-r13",
+          "validation": {
+            "max_joint_step_degrees": 8.881298947757635,
+            "max_ground_penetration": 0.0003612637519836426,
+            "max_planted_hover": 0.0,
+            "loop_seam_max_vertex_distance": 0.0,
+            "garment_crossing_frames": 0,
+            "garment_frames_checked": 61
+          }
+        }
+      ],
+      "validation": {
+        "max_joint_step_degrees": 9.724,
+        "max_ground_penetration": 3e-05,
+        "max_planted_hover": 3e-06,
+        "hips_range": 0.02387,
+        "hips_lowest_frame": 8,
+        "record": "clip-transfer.json"
+      },
+      "sword": true,
+      "locomotion": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordSprint",
+      "clip": "SwordSprint \u00b7 armed",
+      "mapping": "armed copy of Sprint \u00b7 dressed",
+      "fps": 60,
+      "frames": 41,
+      "duration_seconds": 0.6666667,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "sprint-reference-r04",
+      "reference_window_seconds": [
+        0,
+        6
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left push-off"
+        },
+        {
+          "time": 0.23333333333333334,
+          "label": "right landing"
+        },
+        {
+          "time": 0.5666666666666667,
+          "label": "left landing"
+        }
+      ],
+      "travel": 3.443317,
+      "tested_play_rate": 1.0,
+      "period_seconds_at_rate": 0.6666667,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "sprint cycle",
+      "exit_pose": "sprint cycle",
+      "notes": "Sprint \u00b7 dressed with the right arm swinging the sword; played as the right-arm layer while armed",
+      "validation": "accepted r05 clip; see outfit-r05/validation.json",
+      "validation_record": "validation.json",
+      "export_sample_rate": 240,
+      "sword": true,
+      "locomotion": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordRun",
+      "clip": "SwordSprint \u00b7 armed",
+      "mapping": "shared: SwordSprint \u00b7 armed at 0.8x, as Run",
+      "fps": 60,
+      "frames": 41,
+      "duration_seconds": 0.6666667,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "sprint-reference-r04",
+      "reference_window_seconds": [
+        0,
+        6
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left push-off"
+        },
+        {
+          "time": 0.23333333333333334,
+          "label": "right landing"
+        },
+        {
+          "time": 0.5666666666666667,
+          "label": "left landing"
+        }
+      ],
+      "travel": 2.7546536,
+      "tested_play_rate": 0.8,
+      "period_seconds_at_rate": 0.8333333749999999,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "sprint cycle",
+      "exit_pose": "sprint cycle",
+      "notes": "Sprint \u00b7 dressed with the right arm swinging the sword; played as the right-arm layer while armed",
+      "validation": "accepted r05 clip; see outfit-r05/validation.json",
+      "validation_record": "validation.json",
+      "export_sample_rate": 240,
+      "sword": true,
+      "locomotion": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordStand",
+      "clip": "SwordStand \u00b7 armed",
+      "mapping": "armed copy of Idle \u00b7 library",
+      "fps": 60,
+      "frames": 241,
+      "duration_seconds": 4.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "idle-sunburst-r01",
+      "reference_window_seconds": null,
+      "markers": [
+        {
+          "time": 0,
+          "label": "loop start"
+        },
+        {
+          "time": 2.0,
+          "label": "weight on right"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "Idle with the sword in the right hand (arm unchanged, fist closed on the grip); the armed standing pose",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation_record": "validation.json",
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordCarry",
+      "clip": "SwordCarry \u00b7 armed",
+      "mapping": "armed copy of Idle \u00b7 library",
+      "fps": 60,
+      "frames": 241,
+      "duration_seconds": 4.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "idle-sunburst-r01",
+      "reference_window_seconds": null,
+      "markers": [
+        {
+          "time": 0,
+          "label": "loop start"
+        },
+        {
+          "time": 2.0,
+          "label": "weight on right"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle",
+      "notes": "one-handed hold in front of the belly, blade forward; the right-arm layer over crouching and any clip without an armed copy",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation_record": "validation.json",
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordJumpStart",
+      "clip": "SwordJumpStart \u00b7 armed",
+      "mapping": "armed copy of JumpStart \u00b7 library",
+      "fps": 60,
+      "frames": 9,
+      "duration_seconds": 0.13333333333333333,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        0.85,
+        1.15
+      ],
+      "markers": [
+        {
+          "time": 0.06,
+          "label": "deepest load"
+        },
+        {
+          "time": 0.1333,
+          "label": "launch"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "JumpRise",
+      "notes": "JumpStart with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 23.43946236734167,
+        "max_ground_penetration": 0.0016966462135314941,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 9
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordJumpRise",
+      "clip": "SwordJumpRise \u00b7 armed",
+      "mapping": "armed copy of JumpRise \u00b7 library",
+      "fps": 60,
+      "frames": 34,
+      "duration_seconds": 0.55,
+      "loop": false,
+      "kind": "air",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        1.15,
+        1.5
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "launch pose"
+        },
+        {
+          "time": 0.55,
+          "label": "apex pose"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpStart",
+      "exit_pose": "Fall/DoubleJump/DashAir",
+      "notes": "JumpRise with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 10.399974875283316,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 34
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordDoubleJump",
+      "clip": "SwordDoubleJump \u00b7 armed",
+      "mapping": "armed copy of DoubleJump \u00b7 library",
+      "fps": 60,
+      "frames": 46,
+      "duration_seconds": 0.75,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-flip-r01",
+      "reference_window_seconds": [
+        0.85,
+        3.0
+      ],
+      "markers": [
+        {
+          "time": 0.08,
+          "label": "rotation starts"
+        },
+        {
+          "time": 0.6,
+          "label": "rotation complete (360\u00b0)"
+        },
+        {
+          "time": 0.633,
+          "label": "upright"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpRise/Fall",
+      "exit_pose": "Fall",
+      "notes": "DoubleJump with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 24.792930585826326,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 46,
+        "somersault": {
+          "total_turn_degrees": 358.0000051974561,
+          "max_step_degrees": 14.63009858892752,
+          "forward_only": true,
+          "backward_steps": [],
+          "upright_by_frame": 37
+        }
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordFall",
+      "clip": "SwordFall \u00b7 armed",
+      "mapping": "armed copy of Fall \u00b7 library",
+      "fps": 60,
+      "frames": 67,
+      "duration_seconds": 1.1,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        1.5,
+        1.85
+      ],
+      "markers": [],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpRise/DoubleJump/DashAir",
+      "exit_pose": "Land/HardLand",
+      "notes": "Fall with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 0.9803771670975251,
+        "max_ground_penetration": null,
+        "max_planted_hover": null,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 67
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordLand",
+      "clip": "SwordLand \u00b7 armed",
+      "mapping": "armed copy of Land \u00b7 library",
+      "fps": 60,
+      "frames": 27,
+      "duration_seconds": 0.43333333333333335,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        1.85,
+        2.4
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "contact"
+        },
+        {
+          "time": 0.12,
+          "label": "deepest absorption"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Fall",
+      "exit_pose": "Idle/Walk/Sprint",
+      "notes": "Land with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 5.08444019568362,
+        "max_ground_penetration": 0.0002980828285217285,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 27
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordHardLand",
+      "clip": "SwordHardLand \u00b7 armed",
+      "mapping": "armed copy of HardLand \u00b7 library",
+      "fps": 60,
+      "frames": 43,
+      "duration_seconds": 0.7,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": "anim-ref-jump-r01",
+      "reference_window_seconds": [
+        4.8,
+        5.9
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "contact"
+        },
+        {
+          "time": 0.13,
+          "label": "deepest crouch"
+        },
+        {
+          "time": 0.3,
+          "label": "hold ends"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Fall",
+      "exit_pose": "Idle",
+      "notes": "HardLand with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 7.40400792610981,
+        "max_ground_penetration": 0.00043785572052001953,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 43
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordDashAir",
+      "clip": "SwordDashAir \u00b7 armed",
+      "mapping": "armed copy of DashAir \u00b7 library",
+      "fps": 60,
+      "frames": 15,
+      "duration_seconds": 0.23333333333333334,
+      "loop": false,
+      "kind": "air",
+      "reference_revision": null,
+      "reference_window_seconds": null,
+      "markers": [
+        {
+          "time": 0.03333333333333333,
+          "label": "launch"
+        },
+        {
+          "time": 0.23333333333333334,
+          "label": "release"
+        }
+      ],
+      "travel": "profile",
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "JumpRise/Fall/DoubleJump",
+      "exit_pose": "Fall/Land",
+      "notes": "DashAir with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "travel_profile_units_per_second": [
+        [
+          0,
+          11.0
+        ],
+        [
+          0.03333333333333333,
+          11.0
+        ],
+        [
+          0.13333333333333333,
+          9.0
+        ],
+        [
+          0.2,
+          6.0
+        ],
+        [
+          0.23333333333333334,
+          3.5
+        ]
+      ],
+      "validation_record": "validation.json",
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordDashGround",
+      "clip": "SwordDashGround \u00b7 armed",
+      "mapping": "armed copy of DashGround \u00b7 library",
+      "fps": 60,
+      "frames": 22,
+      "duration_seconds": 0.35,
+      "loop": false,
+      "kind": "one-shot",
+      "reference_revision": null,
+      "reference_window_seconds": null,
+      "markers": [
+        {
+          "time": 0.03333333333333333,
+          "label": "launch"
+        },
+        {
+          "time": 0.35,
+          "label": "release"
+        }
+      ],
+      "travel": "profile",
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "Idle/Walk/Sprint/Fall",
+      "notes": "DashGround with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "travel_profile_units_per_second": [
+        [
+          0,
+          1.5
+        ],
+        [
+          0.03333333333333333,
+          8.5
+        ],
+        [
+          0.08333333333333333,
+          10.0
+        ],
+        [
+          0.18333333333333332,
+          8.8
+        ],
+        [
+          0.2833333333333333,
+          6.5
+        ],
+        [
+          0.35,
+          3.0
+        ]
+      ],
+      "validation_record": "validation.json",
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordCrouchIdle",
+      "clip": "SwordCrouchIdle \u00b7 armed",
+      "mapping": "armed copy of CrouchIdle \u00b7 library",
+      "fps": 60,
+      "frames": 181,
+      "duration_seconds": 3.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-crouch-r01",
+      "reference_window_seconds": [
+        0.0,
+        2.0
+      ],
+      "markers": [],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "CrouchWalk/Idle",
+      "exit_pose": "CrouchWalk/Idle",
+      "notes": "CrouchIdle with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 0.1251145157995564,
+        "max_ground_penetration": 3.0040740966796875e-05,
+        "max_planted_hover": 0.0,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 181
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordCrouchWalk",
+      "clip": "SwordCrouchWalk \u00b7 armed",
+      "mapping": "armed copy of CrouchWalk \u00b7 library",
+      "fps": 60,
+      "frames": 67,
+      "duration_seconds": 1.1,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-crouch-r01",
+      "reference_window_seconds": [
+        2.2,
+        5.6
+      ],
+      "markers": [
+        {
+          "time": 0,
+          "label": "left heel strike"
+        },
+        {
+          "time": 0.55,
+          "label": "right heel strike"
+        }
+      ],
+      "travel": 0.42,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "CrouchIdle",
+      "exit_pose": "CrouchIdle",
+      "notes": "CrouchWalk with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "history": [
+        {
+          "revision": "game-r13",
+          "validation": {
+            "max_joint_step_degrees": 12.838302750014499,
+            "max_ground_penetration": 7.140636444091797e-05,
+            "max_planted_hover": 0.0,
+            "loop_seam_max_vertex_distance": 0.0,
+            "garment_crossing_frames": 0,
+            "garment_frames_checked": 67
+          }
+        }
+      ],
+      "validation": {
+        "max_joint_step_degrees": 12.557,
+        "max_ground_penetration": 3.3e-05,
+        "max_planted_hover": -1.1e-05,
+        "hips_range": 0.00799,
+        "hips_lowest_frame": 9,
+        "record": "clip-transfer.json"
+      },
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordSitDown",
+      "clip": "SwordSitDown \u00b7 armed",
+      "mapping": "armed copy of SitDown \u00b7 library",
+      "fps": 60,
+      "frames": 73,
+      "duration_seconds": 1.2,
+      "loop": false,
+      "kind": "transition",
+      "reference_revision": "anim-ref-sit-r01",
+      "reference_window_seconds": [
+        0.4,
+        2.0
+      ],
+      "markers": [
+        {
+          "time": 0.95,
+          "label": "seat contact"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "Idle",
+      "exit_pose": "SitIdle",
+      "notes": "SitDown with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 3.869237488509279,
+        "max_ground_penetration": 5.930662155151367e-05,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 73
+      },
+      "seat_height_units": 0.16,
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordSitIdle",
+      "clip": "SwordSitIdle \u00b7 armed",
+      "mapping": "armed copy of SitIdle \u00b7 library",
+      "fps": 60,
+      "frames": 181,
+      "duration_seconds": 3.0,
+      "loop": true,
+      "kind": "loop",
+      "reference_revision": "anim-ref-sit-r01",
+      "reference_window_seconds": [
+        2.0,
+        4.3
+      ],
+      "markers": [],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "SitDown",
+      "exit_pose": "StandUp",
+      "notes": "SitIdle with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 0.15825874002676765,
+        "max_ground_penetration": 5.4836273193359375e-06,
+        "max_planted_hover": 0.0,
+        "loop_seam_max_vertex_distance": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 181
+      },
+      "seat_height_units": 0.16,
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordStandUp",
+      "clip": "SwordStandUp \u00b7 armed",
+      "mapping": "armed copy of StandUp \u00b7 library",
+      "fps": 60,
+      "frames": 67,
+      "duration_seconds": 1.1,
+      "loop": false,
+      "kind": "transition",
+      "reference_revision": "anim-ref-sit-r01",
+      "reference_window_seconds": [
+        4.4,
+        5.7
+      ],
+      "markers": [
+        {
+          "time": 0.35,
+          "label": "weight over feet"
+        },
+        {
+          "time": 0.7,
+          "label": "seat released"
+        }
+      ],
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; controller owns translation",
+      "yaw_ownership": "controller",
+      "entry_pose": "SitIdle",
+      "exit_pose": "Idle",
+      "notes": "StandUp with its own right-arm movement and the sword in the fist; the blade turns clear of the body and floor",
+      "garment_torso_clearance_max": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "garment_unsolved_frames": 0,
+      "validation": {
+        "max_joint_step_degrees": 5.09028834960035,
+        "max_ground_penetration": 4.7087669372558594e-05,
+        "max_planted_hover": 0.0,
+        "garment_crossing_frames": 0,
+        "garment_frames_checked": 67
+      },
+      "seat_height_units": 0.16,
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SwordRoll",
+      "clip": "SwordRoll \u00b7 armed",
+      "mapping": "armed copy of Roll \u00b7 library",
+      "fps": 60,
+      "loop": false,
+      "kind": "one-shot",
+      "root_motion": "in_place",
+      "duration_seconds": 1.2,
+      "frames": 73,
+      "validation_record": "validation.json",
+      "reference_revision": "seedance-dive-roll-r01",
+      "reference_window_seconds": [
+        1.25,
+        5.75
+      ],
+      "notes": "Roll with the sword kept: the hand moves to the right side (blade out along the roll axis) through the dive",
+      "entry": "Idle/Locomotion",
+      "exit": "Idle/Locomotion",
+      "markers": [
+        {
+          "time": 0.05,
+          "label": "push off"
+        },
+        {
+          "time": 0.17,
+          "label": "airborne dive"
+        },
+        {
+          "time": 0.38,
+          "label": "contact and tuck"
+        },
+        {
+          "time": 0.53,
+          "label": "rounded back roll"
+        },
+        {
+          "time": 0.94,
+          "label": "feet recover"
+        },
+        {
+          "time": 1.2,
+          "label": "continue"
+        }
+      ],
+      "travel_profile_units_per_second": [
+        [
+          0,
+          2.8
+        ],
+        [
+          0.05,
+          4
+        ],
+        [
+          0.15,
+          4.4
+        ],
+        [
+          0.35,
+          4.4
+        ],
+        [
+          0.5,
+          3.8
+        ],
+        [
+          0.7,
+          3.2
+        ],
+        [
+          0.95,
+          2.8
+        ],
+        [
+          1.2,
+          2.2
+        ]
+      ],
+      "travel_distance_units": 4.16,
+      "dive_takeoff_seconds": 0.05,
+      "dive_touchdown_seconds": 0.38,
+      "sword": true,
+      "weapon": "bokken in the right hand"
+    },
+    {
+      "role": "SkateStance",
+      "clip": "SkateStance \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 121,
+      "duration_seconds": 2.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "riding stance, soft knees, weight centred, head to the nose, slow breathing sway",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateStanceFakie",
+      "clip": "SkateStanceFakie \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 121,
+      "duration_seconds": 2.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "riding stance looking back over the back shoulder toward the tail",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkatePush",
+      "clip": "SkatePush \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "front foot swivels on its ball to point along the board, body turns forward, back foot plants beside the front truck, strokes back 44 cm, returns to the tail",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.0167
+          ],
+          [
+            0.9,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": [],
+        "on_ground": {
+          "foot_R": [
+            [
+              0.3,
+              0.6167
+            ]
+          ]
+        }
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateCrouch",
+      "clip": "SkateCrouch \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 13,
+      "duration_seconds": 0.2,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "ollie load: deep crouch, back foot ball on the tail, front foot behind the front bolts",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateNollieCrouch",
+      "clip": "SkateNollieCrouch \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 13,
+      "duration_seconds": 0.2,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nollie load: front foot ball on the nose, back foot behind the back bolts",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateOllie",
+      "clip": "SkateOllie \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 28,
+      "duration_seconds": 0.45,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "pop, front foot drags up the grip, knees up; ends in SkateAir",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateNollie",
+      "clip": "SkateNollie \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 28,
+      "duration_seconds": 0.45,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nollie pop from the nose; ends in SkateAir",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateAir",
+      "clip": "SkateAir \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "air tuck, knees up, feet on the deck, arms out",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateFlip",
+      "clip": "SkateFlip \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 28,
+      "duration_seconds": 0.45,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "flick: both feet leave the deck, 15 cm up at 0.2 s, catch at 0.38 s",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.0167
+          ],
+          [
+            0.3667,
+            0.45
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.0167
+          ],
+          [
+            0.3667,
+            0.45
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateLand",
+      "clip": "SkateLand \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 22,
+      "duration_seconds": 0.35,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "touchdown from SkateAir: absorb, rise to the stance",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.35
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.35
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateBrake",
+      "clip": "SkateBrake \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 25,
+      "duration_seconds": 0.4,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "foot brake: back foot leaves the tail and drags its sole flat on the ground beside the tail, weight on the front leg",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.4
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": [],
+        "on_ground": {
+          "foot_R": [
+            [
+              0.3333,
+              0.4
+            ]
+          ]
+        }
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateManual",
+      "clip": "SkateManual \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "manual: hips over the back foot, arms out, balancing (the game tilts the board nose-up 11 deg)",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateNoseManual",
+      "clip": "SkateNoseManual \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nose manual: hips over the front foot, arms out, balancing (the game tilts the board nose-down 11 deg)",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrind",
+      "clip": "SkateGrind \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "50-50: crouched over the trucks, arms wide, looking down the line",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrindTail",
+      "clip": "SkateGrindTail \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "5-0 / smith / feeble: weight over the back truck",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrindNose",
+      "clip": "SkateGrindNose \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nosegrind / crooked: weight over the front truck",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateSlide",
+      "clip": "SkateSlide \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "boardslide family: lower, arms wide, square to +X and looking along the rail",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabIndy",
+      "clip": "SkateGrabIndy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "indy: back hand grabs the toe edge between the feet",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabMelon",
+      "clip": "SkateGrabMelon \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "melon: front hand reaches behind the front leg to the heel edge",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabNose",
+      "clip": "SkateGrabNose \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nose grab: front hand to the nose",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabTail",
+      "clip": "SkateGrabTail \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "tail grab: back hand to the tail",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabMethod",
+      "clip": "SkateGrabMethod \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "method: front hand on the heel edge, knees bent back, chest up",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabStalefish",
+      "clip": "SkateGrabStalefish \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "stalefish: back hand behind the back leg to the heel edge",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabDouble",
+      "clip": "SkateGrabDouble \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "double: indy with the back hand and melon with the front hand",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkatePowerslide",
+      "clip": "SkatePowerslide \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 37,
+      "duration_seconds": 0.6,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "powerslide: square to the travel (+X), weight back toward the heel edge, knees bent, arms forward",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.6
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.6
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateCarveToe",
+      "clip": "SkateCarveToe \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "toe-side carve: knees and hips toward the toe edge",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateCarveHeel",
+      "clip": "SkateCarveHeel \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "regular",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "heel-side carve: sitting back toward the heel edge",
+      "contacts": {
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_L": [],
+        "hand_R": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateStanceGoofy",
+      "clip": "SkateStanceGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 121,
+      "duration_seconds": 2.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "riding stance, soft knees, weight centred, head to the nose, slow breathing sway",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateStanceFakieGoofy",
+      "clip": "SkateStanceFakieGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 121,
+      "duration_seconds": 2.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "riding stance looking back over the back shoulder toward the tail",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkatePushGoofy",
+      "clip": "SkatePushGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "front foot swivels on its ball to point along the board, body turns forward, back foot plants beside the front truck, strokes back 44 cm, returns to the tail",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.0167
+          ],
+          [
+            0.9,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": [],
+        "on_ground": {
+          "foot_L": [
+            [
+              0.3,
+              0.6167
+            ]
+          ]
+        }
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateCrouchGoofy",
+      "clip": "SkateCrouchGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 13,
+      "duration_seconds": 0.2,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "ollie load: deep crouch, back foot ball on the tail, front foot behind the front bolts",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateNollieCrouchGoofy",
+      "clip": "SkateNollieCrouchGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 13,
+      "duration_seconds": 0.2,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nollie load: front foot ball on the nose, back foot behind the back bolts",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.2
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateOllieGoofy",
+      "clip": "SkateOllieGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 28,
+      "duration_seconds": 0.45,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "pop, front foot drags up the grip, knees up; ends in SkateAir",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateNollieGoofy",
+      "clip": "SkateNollieGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 28,
+      "duration_seconds": 0.45,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nollie pop from the nose; ends in SkateAir",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.45
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateAirGoofy",
+      "clip": "SkateAirGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "air tuck, knees up, feet on the deck, arms out",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateFlipGoofy",
+      "clip": "SkateFlipGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 28,
+      "duration_seconds": 0.45,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "flick: both feet leave the deck, 15 cm up at 0.2 s, catch at 0.38 s",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.0167
+          ],
+          [
+            0.3667,
+            0.45
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.0167
+          ],
+          [
+            0.3667,
+            0.45
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateLandGoofy",
+      "clip": "SkateLandGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 22,
+      "duration_seconds": 0.35,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "touchdown from SkateAir: absorb, rise to the stance",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.35
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.35
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateBrakeGoofy",
+      "clip": "SkateBrakeGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 25,
+      "duration_seconds": 0.4,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "foot brake: back foot leaves the tail and drags its sole flat on the ground beside the tail, weight on the front leg",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.4
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": [],
+        "on_ground": {
+          "foot_L": [
+            [
+              0.3333,
+              0.4
+            ]
+          ]
+        }
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateManualGoofy",
+      "clip": "SkateManualGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "manual: hips over the back foot, arms out, balancing (the game tilts the board nose-up 11 deg)",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateNoseManualGoofy",
+      "clip": "SkateNoseManualGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nose manual: hips over the front foot, arms out, balancing (the game tilts the board nose-down 11 deg)",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrindGoofy",
+      "clip": "SkateGrindGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "50-50: crouched over the trucks, arms wide, looking down the line",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrindTailGoofy",
+      "clip": "SkateGrindTailGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "5-0 / smith / feeble: weight over the back truck",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrindNoseGoofy",
+      "clip": "SkateGrindNoseGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nosegrind / crooked: weight over the front truck",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateSlideGoofy",
+      "clip": "SkateSlideGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 61,
+      "duration_seconds": 1.0,
+      "loop": true,
+      "kind": "loop",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "boardslide family: lower, arms wide, square to +X and looking along the rail",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabIndyGoofy",
+      "clip": "SkateGrabIndyGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "indy: back hand grabs the toe edge between the feet",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabMelonGoofy",
+      "clip": "SkateGrabMelonGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "melon: front hand reaches behind the front leg to the heel edge",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabNoseGoofy",
+      "clip": "SkateGrabNoseGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "nose grab: front hand to the nose",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabTailGoofy",
+      "clip": "SkateGrabTailGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "tail grab: back hand to the tail",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabMethodGoofy",
+      "clip": "SkateGrabMethodGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "method: front hand on the heel edge, knees bent back, chest up",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabStalefishGoofy",
+      "clip": "SkateGrabStalefishGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "stalefish: back hand behind the back leg to the heel edge",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateGrabDoubleGoofy",
+      "clip": "SkateGrabDoubleGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "one-shot",
+      "hold_last_frame": false,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "double: indy with the back hand and melon with the front hand",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [
+          [
+            0.1667,
+            0.5
+          ]
+        ],
+        "hand_L": [
+          [
+            0.1667,
+            0.5
+          ]
+        ]
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkatePowerslideGoofy",
+      "clip": "SkatePowerslideGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 37,
+      "duration_seconds": 0.6,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "powerslide: square to the travel (+X), weight back toward the heel edge, knees bent, arms forward",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.6
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.6
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateCarveToeGoofy",
+      "clip": "SkateCarveToeGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "toe-side carve: knees and hips toward the toe edge",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    },
+    {
+      "role": "SkateCarveHeelGoofy",
+      "clip": "SkateCarveHeelGoofy \u00b7 skate",
+      "mapping": "skate rider clip (SKATE.md)",
+      "fps": 60,
+      "frames": 31,
+      "duration_seconds": 0.5,
+      "loop": false,
+      "kind": "hold",
+      "hold_last_frame": true,
+      "skate": true,
+      "stance": "goofy",
+      "travel": null,
+      "tested_play_rate": 1.0,
+      "root_motion": "in place; the board actor owns translation and rotation",
+      "yaw_ownership": "board",
+      "notes": "heel-side carve: sitting back toward the heel edge",
+      "contacts": {
+        "foot_R": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "foot_L": [
+          [
+            0.0,
+            0.5
+          ]
+        ],
+        "hand_R": [],
+        "hand_L": []
+      },
+      "validation_record": "skate-build.json"
+    }
+  ],
+  "animation_files": {
+    "WarmOriginal-Animations-r01.blend": "0a85a94725dd984e5d6416dc56406f2216e6b04ee2e8e0cb1c9e3e679b4947b6",
+    "WarmOriginal-Animations-r01.glb": "ed26a555d1e7a854211d5fb6323520dfd6720ab7054f1728cdcfcdc6ef52b952"
+  },
+  "parent_source": "output/imagegen/yorimichi-yellow-boy-2026-09-12/game-r16/WarmOriginal-Game-r16.blend",
+  "parent_sha256": "86cc00cba374cd2f7e69bd32ff0ae614e9801bb6df0bec4aca256247eea7fb95",
+  "changed_actions": [
+    "SkateStance \u00b7 skate",
+    "SkateStanceFakie \u00b7 skate",
+    "SkatePush \u00b7 skate",
+    "SkateCrouch \u00b7 skate",
+    "SkateNollieCrouch \u00b7 skate",
+    "SkateOllie \u00b7 skate",
+    "SkateNollie \u00b7 skate",
+    "SkateAir \u00b7 skate",
+    "SkateFlip \u00b7 skate",
+    "SkateLand \u00b7 skate",
+    "SkateBrake \u00b7 skate",
+    "SkateManual \u00b7 skate",
+    "SkateNoseManual \u00b7 skate",
+    "SkateGrind \u00b7 skate",
+    "SkateGrindTail \u00b7 skate",
+    "SkateGrindNose \u00b7 skate",
+    "SkateSlide \u00b7 skate",
+    "SkateGrabIndy \u00b7 skate",
+    "SkateGrabMelon \u00b7 skate",
+    "SkateGrabNose \u00b7 skate",
+    "SkateGrabTail \u00b7 skate",
+    "SkateGrabMethod \u00b7 skate",
+    "SkateGrabStalefish \u00b7 skate",
+    "SkateGrabDouble \u00b7 skate",
+    "SkatePowerslide \u00b7 skate",
+    "SkateCarveToe \u00b7 skate",
+    "SkateCarveHeel \u00b7 skate",
+    "SkateStanceGoofy \u00b7 skate",
+    "SkateStanceFakieGoofy \u00b7 skate",
+    "SkatePushGoofy \u00b7 skate",
+    "SkateCrouchGoofy \u00b7 skate",
+    "SkateNollieCrouchGoofy \u00b7 skate",
+    "SkateOllieGoofy \u00b7 skate",
+    "SkateNollieGoofy \u00b7 skate",
+    "SkateAirGoofy \u00b7 skate",
+    "SkateFlipGoofy \u00b7 skate",
+    "SkateLandGoofy \u00b7 skate",
+    "SkateBrakeGoofy \u00b7 skate",
+    "SkateManualGoofy \u00b7 skate",
+    "SkateNoseManualGoofy \u00b7 skate",
+    "SkateGrindGoofy \u00b7 skate",
+    "SkateGrindTailGoofy \u00b7 skate",
+    "SkateGrindNoseGoofy \u00b7 skate",
+    "SkateSlideGoofy \u00b7 skate",
+    "SkateGrabIndyGoofy \u00b7 skate",
+    "SkateGrabMelonGoofy \u00b7 skate",
+    "SkateGrabNoseGoofy \u00b7 skate",
+    "SkateGrabTailGoofy \u00b7 skate",
+    "SkateGrabMethodGoofy \u00b7 skate",
+    "SkateGrabStalefishGoofy \u00b7 skate",
+    "SkateGrabDoubleGoofy \u00b7 skate",
+    "SkatePowerslideGoofy \u00b7 skate",
+    "SkateCarveToeGoofy \u00b7 skate",
+    "SkateCarveHeelGoofy \u00b7 skate"
+  ],
+  "other_game_r01_curves_preserved": true,
+  "revision": "game-r17",
+  "ground_dash_height_cm": 32.0,
+  "other_parent_actions_preserved": true,
+  "shirt_fit_revision": "Softer narrower shoulder caps, eased underarm and uniform inner white sleeve",
+  "roll_contact_fit": {
+    "maximum_interpolation_floor_margin_world_m": 0.010419404983520508,
+    "waist_dense_samples": 289,
+    "floor_dense_samples": 577
+  },
+  "dive_underlap": {
+    "morph": "Dive \u00b7 hidden sleeve underlap",
+    "maximum_displacement_m": 0.01638154653272043,
+    "scope": "Concealed white upper-sleeve only during the raised-arm dive; all pre-existing shapes and basis remain unchanged."
+  },
+  "added_morphs": [
+    "Hair fore",
+    "Hair side"
+  ],
+  "sprint_bounce": {
+    "method": "Cyclic balance + twice-per-stride vertical motion; preserve foot targets with two-bone IK",
+    "maximum_foot_target_error_m": 3.46567710277679e-05,
+    "waist_ranges": {
+      "Sprint \u00b7 dressed": [
+        0.32,
+        0.9
+      ]
+    }
+  },
+  "reference_phase_map": [
+    [
+      0,
+      1.25
+    ],
+    [
+      0.05,
+      1.5
+    ],
+    [
+      0.17,
+      2
+    ],
+    [
+      0.27,
+      2.75
+    ],
+    [
+      0.38,
+      3.125
+    ],
+    [
+      0.46,
+      3.5
+    ],
+    [
+      0.58,
+      4
+    ],
+    [
+      0.7,
+      4.25
+    ],
+    [
+      0.79,
+      4.5
+    ],
+    [
+      0.94,
+      5
+    ],
+    [
+      1.2,
+      5.75
+    ]
+  ],
+  "hair": {
+    "base_color_before": [
+      0.07323895394802094,
+      0.0450764074921608,
+      0.03468407690525055,
+      1.0
+    ],
+    "base_color_linear": [
+      0.009,
+      0.008,
+      0.007,
+      1
+    ],
+    "roughness": 0.9,
+    "specular": 0.1,
+    "runtime_morphs": [
+      "head_Hair_fore",
+      "head_Hair_side"
+    ],
+    "maximum_source_displacement_m": 0.003,
+    "driver": "damped head acceleration; vector weight bounded to one; fades out for floor contact and inversion"
+  },
+  "note": "game-r17: game-r16 plus the skateboarding rider clips (cairo_skate_clips.py). Meshes, weights, rig, sword and every other clip unchanged.",
+  "geometry_correction": "japan/tools/fix_warm_frontflip_waist.py",
+  "geometry_validation": "output/imagegen/yorimichi-yellow-boy-2026-09-12/game-r12/waist-validation.json",
+  "combat_source": {
+    "blend": "output/imagegen/yorimichi-yellow-boy-2026-09-12/sword-r01/stage1-bokken/mixamo-r02/WarmOriginal-Mixamo-Slash.blend",
+    "sha256": "d62f1a25089fb0489f1b3a904762a07a743ce7a150cbb8373ac512f9bf0e83a5",
+    "action": "Mixamo \u00b7 Great Sword Combo Slash \u00b7 head clearance",
+    "rest_matrix_max_error": 0.0
+  },
+  "sword": {
+    "object": "Bokken-stage1-r01",
+    "parent_bone": "mixamorig:RightHand",
+    "matrix_basis": [
+      [
+        3.139165016818879e-07,
+        -1.0000001192092896,
+        -1.5099580252808664e-07,
+        0.016699980944395065
+      ],
+      [
+        -1.0000001192092896,
+        -3.139165016818879e-07,
+        7.828907300222454e-09,
+        -0.05125812441110611
+      ],
+      [
+        -7.828955261857118e-09,
+        1.5099581673894136e-07,
+        -1.0,
+        0.0075635844841599464
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "hold_socket": {
+      "bone": "mixamorig:RightHand",
+      "rotation_rows": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      ],
+      "pivot_in_bone_frame": [
+        0.0167,
+        0.0724,
+        0.0076
+      ],
+      "guard_at_bone_z": -0.0697,
+      "axis_in_bone_frame": [
+        0.0167,
+        0.0724,
+        "along -Z"
+      ]
+    },
+    "blade_local_z": [
+      0.0995,
+      0.36
+    ],
+    "grip_props": {
+      "Left": {
+        "thumb_curl": 0.19182389674408126,
+        "index_curl": 0.6400000877979806,
+        "middle_curl": 0.6567902004788887,
+        "ring_curl": 0.7007407686729606,
+        "pinky_curl": 0.4740741547250455,
+        "thumb_opposition": 1.148506577198438e-16,
+        "finger_spread": 0.5
+      },
+      "Left_residual_degrees": 22.841806755425594,
+      "Right": {
+        "thumb_curl": 0.19182389674408126,
+        "index_curl": 0.6400000877979806,
+        "middle_curl": 0.6567902004788887,
+        "ring_curl": 0.7007407686729606,
+        "pinky_curl": 0.4740741547250455,
+        "thumb_opposition": 0.0,
+        "finger_spread": -0.5
+      },
+      "Right_residual_degrees": 22.841806755425594
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 > Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
 
-Skateboarding comes back for the player (Warm Original) with controls modelled on EA's *skate.* series: the left stick
+Skateboarding comes back for the player (Cairo) with controls modelled on EA's *skate.* series: the left stick
 steers and spins, the right stick does every trick (**Flick-It**), the triggers grab. This page is the design and the
 contract between the three parts: the native skate system (C++), the rider clips (Blender, game-r17) and the skate pier
 with its board (Blender + Unreal import).
@@ -27,9 +27,9 @@ mode, `ASkatePark` and the road guardrails add the rails, and `[/Script/AtelierS
 
 ## Rider clips (Blender, game-r17)
 
-Authored on the game-r16 revision with `games/yorimichi/assets/characters/tools/warm_rig.py`, saved as game-r17 with manifest roles, exported with
-`export_warm_original_unreal.py -- --revision game-r17 --clips <list> --clips-only --report export-skate.json` and
-installed by `Scripts/import_warm_skate.py` into `DA_WarmOriginal.SkateActions`.
+Authored on the game-r16 revision with `games/yorimichi/assets/characters/tools/cairo_rig.py`, saved as game-r17 with manifest roles, exported with
+`games/yorimichi/assets/characters/cairo/export_unreal.py -- --revision game-r17 --clips <list> --clips-only --report export-skate.json` and
+installed by `Scripts/import_cairo_skate.py` into `DA_Cairo.SkateActions`.
 
 **Frame.** The rig faces +X (Blender), left +Y, up +Z; the Root bone stays at the origin on the ground. The board lies
 across the rider: its long axis along Y with the **nose toward +Y (regular: left foot forward)**, the toe edge toward
@@ -89,7 +89,7 @@ maps those limbs through the board's current transform (IK) and leaves the other
 | SkateCarveHeel | 0.5 s hold | leaning into a heel-side turn: sitting back toward -X |
 
 Bails reuse the dive-roll and the knock-down clips (Roll; SitDown, SitIdle, StandUp). What the rider clips actually do,
-where they depart from this contract and their checks: `games/yorimichi/assets/characters/warm-original/README.md`.
+where they depart from this contract and their checks: `games/yorimichi/assets/characters/cairo/README.md`.
 
 ## Skate pier (Blender + Unreal)
 
@@ -111,10 +111,10 @@ From the repository root, Unreal closed for the imports:
 
 ```sh
 atelier build yorimichi unreal.world                                                        # pier, path, board: build + import
-blender -b --python games/yorimichi/assets/characters/tools/warm_skate_clips.py -- --parent game-r16 --revision game-r17   # rider clips
-blender -b --python games/yorimichi/assets/characters/warm-original/export_unreal.py -- --revision game-r17 --clips <Skate* roles> --clips-only --report export-skate.json
+blender -b --python games/yorimichi/assets/characters/tools/cairo_skate_clips.py -- --parent game-r16 --revision game-r17   # rider clips
+blender -b --python games/yorimichi/assets/characters/cairo/export_unreal.py -- --revision game-r17 --clips <Skate* roles> --clips-only --report export-skate.json
 <python with numpy> games/yorimichi/assets/audio/skate/make.py                               # sounds
-# then with UnrealEditor-Cmd -run=pythonscript: Scripts/import_warm_skate.py, Scripts/import_skate_audio.py
+# then with UnrealEditor-Cmd -run=pythonscript: Scripts/import_cairo_skate.py, Scripts/import_skate_audio.py
 atelier build yorimichi unreal.compile
 ```
 

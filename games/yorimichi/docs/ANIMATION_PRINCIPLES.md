@@ -148,7 +148,7 @@ arms on a different timing from the legs.
 
 ### Directly applicable — close to 1:1
 
-These map onto `warm_clips.py` / `fox_hunter_animate.py` with no translation:
+These map onto `cairo_clips.py` / `fox_hunter_animate.py` with no translation:
 
 - **The keys → extremes → breakdowns → layered passes order.** This is already roughly
   how the fox hunter clips are written (`keys_from([...])` with named poses). What is
@@ -235,7 +235,7 @@ The resolution is to split the library:
 
 ## 4. Where our current library departs from the book
 
-Two concrete things I found reading `warm_clips.py` against the walk chapter. Both are
+Two concrete things I found reading `cairo_clips.py` against the walk chapter. Both are
 worth a visual check before changing anything, but the reasoning is mechanical.
 
 **(a) The pelvis bob is a quarter-step early.**

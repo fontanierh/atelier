@@ -10,7 +10,7 @@ to take 0.77–0.93 s, and they end facing the target instead of 120–224° awa
 
 Gameplay changes that come with them:
 - **Aiming.** Each strike aims and steps in with its own measured contact point (`ContactYaw`,
-  `ContactDistance` on `FWandererSwordClip`, written by `import_warm_sword.py`). This replaces the hard-coded
+  `ContactDistance` on `FWandererSwordClip`, written by `import_cairo_sword.py`). This replaces the hard-coded
   offsets.
 - **Soft lock.** The lock also takes the training post.
 - **Charging.** Holding attack now cuts first, then winds up the charge from the follow-through. The cut is too
@@ -98,23 +98,23 @@ lands. Launch with it: `YORIMICHI_EXTRA_ARGS=-sworddummy atelier play yorimichi 
 
 ```sh
 # clips on the current body, validation, sheets, Studio GLB
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_sword_combat_build.py
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_sword_combat_check.py
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_sword_combat_review.py -- sheets
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_sword_combat_review.py -- export
+blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_build.py
+blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_check.py
+blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_review.py -- sheets
+blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_review.py -- export
 # Unreal: clips + bokken + attachment data, then the targeted installer
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/warm-original/export_unreal.py -- \
+blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/cairo/export_unreal.py -- \
   --revision game-r13 --clips SwordIdle,SwordDraw,SwordSheath,SwordAttack1,SwordAttack2,SwordAttack3,SwordChargeUp,SwordChargeHold,SwordChargeRelease,SwordParry,SwordParryHit,SwordCombo \
   --clips-only --sword --report export-sword.json
-python3 platform/studio/atelier/safety/guarded.py --report build/yorimichi/warm_original/sword-import --timeout 900 --purpose 'Sword clip import' -- \
+python3 platform/studio/atelier/safety/guarded.py --report build/yorimichi/cairo/sword-import --timeout 900 --purpose 'Sword clip import' -- \
   '/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor-Cmd' "$PWD/games/yorimichi/unreal/Yorimichi.uproject" \
-  -run=pythonscript "-script=$PWD/games/yorimichi/unreal/Scripts/import_warm_sword.py" -unattended -nosplash -NullRHI -stdout
+  -run=pythonscript "-script=$PWD/games/yorimichi/unreal/Scripts/import_cairo_sword.py" -unattended -nosplash -NullRHI -stdout
 atelier build yorimichi unreal.compile
 ```
 
-`import_warm_sword.py` adds the `A_Sword*` clips (root motion enabled where the manifest says so, root
+`import_cairo_sword.py` adds the `A_Sword*` clips (root motion enabled where the manifest says so, root
 lock at the reference pose), `SM_Bokken` with its two materials, and the sword fields of
-`DA_WarmOriginal`; it verifies that every other WarmOriginal asset file is byte-identical before and
+`DA_Cairo`; it verifies that every other Cairo asset file is byte-identical before and
 after. The attachment is computed in Unreal as the exported rest transform of the sword times the
 inverse of `hand_R`'s reference pose; the exported hand position matches the skeleton to 6 µm.
 
@@ -157,7 +157,7 @@ Code: `WandererSword.h/.cpp` (component, state machine, sweeps, dummy), `Wandere
 ## Armed locomotion (game-r16, 28 September 2026)
 
 User feedback: when running with the sword out, the sword arm was static and stiff, and it should do the usual
-arm animation with the sword in hand. `games/yorimichi/assets/characters/tools/warm_sword_locomotion.py` builds `SwordWalk · armed` and
+arm animation with the sword in hand. `games/yorimichi/assets/characters/tools/cairo_sword_locomotion.py` builds `SwordWalk · armed` and
 `SwordSprint · armed` as copies of `Walk · library` and `Sprint · dressed`. Only the right arm and the grip
 change.
 
@@ -174,9 +174,9 @@ change.
 - **Checks** (`game-r16/locomotion-build.json`): blade clearance to the clothes and head is at least 15.5 cm
   (walk) and 4.3 cm (sprint), and the loops close exactly. Review videos are in `armed-r01/captures/`.
 
-In Unreal, `Scripts/import_warm_armed.py` imports A_SwordWalk, A_SwordSprint and A_SwordRun (sprint at 0.8×).
+In Unreal, `Scripts/import_cairo_armed.py` imports A_SwordWalk, A_SwordSprint and A_SwordRun (sprint at 0.8×).
 It builds `BS_SwordLocomotion` (SwordIdle, SwordWalk, SwordRun, SwordSprint at BS_Locomotion's speeds) and sets
-`DA_WarmOriginal.ArmedLocomotion`. `WandererAnimInstance` plays that blend space in the "Stride" sync group,
+`DA_Cairo.ArmedLocomotion`. `WandererAnimInstance` plays that blend space in the "Stride" sync group,
 so the arm follows the body's step phase. Its right arm feeds the carry layer while grounded locomotion is
 playing. Actions and crouching fade back to the guard's carry pose over 0.17 s.
 

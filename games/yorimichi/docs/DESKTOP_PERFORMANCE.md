@@ -12,11 +12,11 @@ The local UE 5.8 shader `LumenIrradianceFieldInterpolation.ush` offsets its samp
 
 *(image in the prototype archive: desktop-performance-2026-09-14/flip-probe-offset.jpg)*
 
-Full 138-frame sequences: `build/yorimichi/warm_original/desktop-bias20/` and `desktop-bias08/`. The focused flip shortcut intentionally skips sprint, so its final waist-curve assertion reports false; these are visual diagnostics, not a full gameplay pass. Both use the same game-r10 source and 1600×900 capture settings. Frame 99 reproduces the hard bands with 2.0 and smooth shading with 0.8; later rotated/recovery frames were also inspected.
+Full 138-frame sequences: `build/yorimichi/cairo/desktop-bias20/` and `desktop-bias08/`. The focused flip shortcut intentionally skips sprint, so its final waist-curve assertion reports false; these are visual diagnostics, not a full gameplay pass. Both use the same game-r10 source and 1600×900 capture settings. Frame 99 reproduces the hard bands with 2.0 and smooth shading with 0.8; later rotated/recovery frames were also inspected.
 
 Three arcade A/B pairs retain the roof, shopfronts and foundation shading in the inspected images. Late medians are 36.45 vs 36.42 ms: this adjustment is not claimed as a performance saving. Earlier phases drift, so their apparent 3 ms gains are not attributed to the bias. The comparison is in `build/yorimichi/perf60/desktop-opt-bias-arcade/` and its [compact timing record](desktop-performance-2026-09-14/desktop-opt-bias-arcade.json).
 
-A separate complete opening gallery from simulation time 0 through 12 seconds passes all checks: walk/run/sprint speeds, ground dash, double jump, the waist corrective (0.9) and bounded hair flex (0.943536). This uses the actual default config with no bias override: `build/yorimichi/warm_original/desktop-lighting-gallery/`.
+A separate complete opening gallery from simulation time 0 through 12 seconds passes all checks: walk/run/sprint speeds, ground dash, double jump, the waist corrective (0.9) and bounded hair flex (0.943536). This uses the actual default config with no bias override: `build/yorimichi/cairo/desktop-lighting-gallery/`.
 
 ## Measure the actual desktop presentation
 
@@ -68,7 +68,7 @@ This establishes stable engine frame pacing for that visible desktop run. It is 
 
 ### Keep meaningful route validation
 
-The legacy `road_walk` benchmark enabled `bJog`. Warm Original maps that retired gait to Walk, only about 92 cm/s. The road recovery heuristic requires 150 cm of progress within 1.2 seconds, so two initial tests repeatedly recovered and never traversed the route. Those `desktop-opt-forward-city-walk` and `desktop-opt-forward-village-walk` runs are invalid performance evidence. The harness now selects the new character's actual Run (rate-scaled Sprint), around 406 cm/s. Recovery thresholds and normal game controls are unchanged. All three runs in the table pass the original movement checks.
+The legacy `road_walk` benchmark enabled `bJog`. Cairo maps that retired gait to Walk, only about 92 cm/s. The road recovery heuristic requires 150 cm of progress within 1.2 seconds, so two initial tests repeatedly recovered and never traversed the route. Those `desktop-opt-forward-city-walk` and `desktop-opt-forward-village-walk` runs are invalid performance evidence. The harness now selects the new character's actual Run (rate-scaled Sprint), around 406 cm/s. Recovery thresholds and normal game controls are unchanged. All three runs in the table pass the original movement checks.
 
 ### Rejected detail reduction
 
@@ -80,7 +80,7 @@ Current native fullscreen static checks are 8.32 / 8.67 / 9.27 ms at the harbor,
 
 *(image in the prototype archive: desktop-performance-2026-09-14/forward-lighting-views.jpg)*
 
-The current character also passes a complete opening gallery from time 0 through 12 seconds under forward: walk/run/sprint, ground dash, double jump, waist corrective 0.9 and bounded hair flex 0.943536. Sprint and inverted flip images were inspected for bands and clipping. Source: `build/yorimichi/warm_original/desktop-forward-lighting-gallery/`, with the [result](desktop-performance-2026-09-14/forward-lighting-gallery-result.json) preserved here. These 1600×900 fixed-step images validate appearance and animation, not performance. No character re-export was performed.
+The current character also passes a complete opening gallery from time 0 through 12 seconds under forward: walk/run/sprint, ground dash, double jump, waist corrective 0.9 and bounded hair flex 0.943536. Sprint and inverted flip images were inspected for bands and clipping. Source: `build/yorimichi/cairo/desktop-forward-lighting-gallery/`, with the [result](desktop-performance-2026-09-14/forward-lighting-gallery-result.json) preserved here. These 1600×900 fixed-step images validate appearance and animation, not performance. No character re-export was performed.
 
 ## Desktop launch and reproducibility
 

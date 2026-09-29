@@ -2,7 +2,7 @@
 
 > Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
 
-Process specification, 12 September 2026. Complements the [Tripo P2 production guide](TRIPO_P2_ASSET_WORKFLOW.md). A narrow Warm Original pilot is now implemented; the general runner and asset dependency system remain proposed.
+Process specification, 12 September 2026. Complements the [Tripo P2 production guide](TRIPO_P2_ASSET_WORKFLOW.md). A narrow Cairo pilot is now implemented; the general runner and asset dependency system remain proposed.
 
 **Current checkpoint, 13 September:** the user positively reviewed the authored sprint and selected the tailored r04 outfit after its waist/arm-clearance refinement. The subsequent r05 elbow correction has independent visual review and is ready for user inspection; it is the current handoff baseline. The root `.env` contains the OpenAI, Vercel H3 Max/Seedance and Tripo credentials. The [Claude animation handoff](CLAUDE_WARM_ORIGINAL_ANIMATIONS.md) is the current execution brief: remaining legacy motions, double jump and two forward dashes; no skateboarding, cloth simulation or separate Jog. The pilot/checkpoint paragraphs below preserve the chronology and do not override this latest state. The general reusable runner and engine integration remain separate work.
 

@@ -24,7 +24,7 @@ Ways to get around besides walking: a playable [sailboat](sailboat/README.md) an
 [zeppelin](docs/zeppelin/README.md) between the woodland and Hidamari. Ambient life: leaves, gulls and
 villagers.
 
-**Player: Warm Original**, revision `game-r17`. Assets are in
+**Player: Cairo**, revision `game-r17`. Assets are in
 `output/imagegen/yorimichi-yellow-boy-2026-09-12/`.
 
 - Outfit: the Tripo skate outfit, a yellow tee and cargo trousers ([body swap guide](docs/WARM_ORIGINAL_BODY_SWAP_GUIDE.md)).
@@ -41,7 +41,7 @@ villagers.
   shove tricks with nollie and fakie versions, spins, grabs, manuals, grinds and slides, powerslides, vert, bails and
   board sounds; B (or D-pad down) to get on ([docs/SKATE.md](docs/SKATE.md)).
 - Imported but not used in play: Climb, Glide and the Turn clips.
-- The class and launch name `cape_boy` / `ACapeBoyCharacter` is historical and loads Warm Original.
+- The class and launch name `cape_boy` / `ACairoCharacter` is historical and loads Cairo.
 
 **Enemy: the fox hunter**, animation `r05`. It waits up the road from the start and fights with claws and a
 kick, parries included ([docs/FOX_HUNTER_COMBAT.md](docs/FOX_HUNTER_COMBAT.md)). It has no navigation.
@@ -69,12 +69,12 @@ Other modes:
 - `assets` + `setup`: regenerate the world art and rebuild the level. These are slow and only needed for world
   changes.
 - `hidamari`, `southwest`, `village`, `mega`, `zeppelin`, `sailboat`: rebuild and import one area.
-- `warm-original`: full character export and import. Then add the sword with `Scripts/import_warm_sword.py`.
+- `cairo`: full character export and import. Then add the sword with `Scripts/import_cairo_sword.py`.
 - `footsteps`, `map`, `test`, `gate`: see the header of `run.sh`.
 
 For a change to a few clips, use the targeted route in
 [game-r14/README.md](../output/imagegen/yorimichi-yellow-boy-2026-09-12/game-r14/README.md)
-(`tools/warm_game_clip_transfer.py` + `Scripts/import_warm_clips.py`). It does not re-import the whole
+(`tools/cairo_game_clip_transfer.py` + `Scripts/import_cairo_clips.py`). It does not re-import the whole
 character. Unreal content is generated locally and not committed.
 
 ## Pipelines and where they are written up
@@ -85,7 +85,7 @@ character. Unreal content is generated locally and not committed.
 | Rendering and performance | [docs/DESKTOP_PERFORMANCE_2026_09_14.md](docs/DESKTOP_PERFORMANCE_2026_09_14.md) (current), [docs/WARM_ORIGINAL_STREAM_PERFORMANCE.md](docs/WARM_ORIGINAL_STREAM_PERFORMANCE.md) (phone), [docs/desktop-quality/](docs/desktop-quality/README.md); history in [AUDIT.md](AUDIT.md), [PERFORMANCE.md](PERFORMANCE.md), [PERFORMANCE_60FPS.md](PERFORMANCE_60FPS.md), [VISUAL_POLISH.md](VISUAL_POLISH.md), [GATE.md](GATE.md) |
 | Phone streaming | [streaming/README.md](streaming/README.md) |
 | New characters through Tripo | [docs/TRIPO_P2_ASSET_WORKFLOW.md](docs/TRIPO_P2_ASSET_WORKFLOW.md), [docs/ASSET_API_REVIEW_PROCESS.md](docs/ASSET_API_REVIEW_PROCESS.md), Smart UV: [docs/TRIPO_SMART_UV_API_RESEARCH.md](docs/TRIPO_SMART_UV_API_RESEARCH.md) |
-| Warm Original character | [docs/WARM_ORIGINAL_GAME_INTEGRATION.md](docs/WARM_ORIGINAL_GAME_INTEGRATION.md) (history to game-r10), [docs/WARM_ORIGINAL_BODY_SWAP_GUIDE.md](docs/WARM_ORIGINAL_BODY_SWAP_GUIDE.md), garment trials: [docs/GARMENT_MESH_SWAP_TRIAL.md](docs/GARMENT_MESH_SWAP_TRIAL.md) |
+| Cairo character | [docs/WARM_ORIGINAL_GAME_INTEGRATION.md](docs/WARM_ORIGINAL_GAME_INTEGRATION.md) (history to game-r10), [docs/WARM_ORIGINAL_BODY_SWAP_GUIDE.md](docs/WARM_ORIGINAL_BODY_SWAP_GUIDE.md), garment trials: [docs/GARMENT_MESH_SWAP_TRIAL.md](docs/GARMENT_MESH_SWAP_TRIAL.md) |
 | Animation | [docs/ANIMATION_PRINCIPLES.md](docs/ANIMATION_PRINCIPLES.md), [docs/MIXAMO_WORKFLOW.md](docs/MIXAMO_WORKFLOW.md), [docs/H3_ANIMATION_REFERENCE_WORKFLOW.md](docs/H3_ANIMATION_REFERENCE_WORKFLOW.md), [docs/FOX_HUNTER_ANIMATION.md](docs/FOX_HUNTER_ANIMATION.md) |
 | Audio | [docs/FOOTSTEPS.md](docs/FOOTSTEPS.md), [audio/combat/README.md](audio/combat/README.md), [docs/COMBAT_FEEDBACK.md](docs/COMBAT_FEEDBACK.md), [docs/SOUND_RESEARCH.md](docs/SOUND_RESEARCH.md) |
 | Review tools | Asset Studio (`studio/README.md` at the repository root), [docs/ASSET_REVIEW_TAILSCALE.md](docs/ASSET_REVIEW_TAILSCALE.md) |

@@ -1,4 +1,4 @@
-# Body swap guide: a new outfit for the Warm Original in one afternoon
+# Body swap guide: a new outfit for the Cairo in one afternoon
 
 > Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
 
@@ -29,7 +29,7 @@ All paths below are under `output/imagegen/yorimichi-yellow-boy-2026-09-12/`.
 
 ## 1. Design the outfit (Sunburst, cheap, iterate here)
 
-Use `games/yorimichi/assets/characters/tools/warm_back_concepts.py` with a new round (`--rev r05`, add the concepts to the script). Rules that
+Use `games/yorimichi/assets/characters/tools/cairo_back_concepts.py` with a new round (`--rev r05`, add the concepts to the script). Rules that
 made round 4 work: whole-outfit redesign on the identity captures, **flat solid colours only** (no prints,
 stripes, logos or patterns: graphics are added by hand later), at most four colours, no props, hair fully
 visible, two figures per panel (back view left, front three-quarter right), and a sentence about hands with
@@ -41,7 +41,7 @@ The user picks one image. That image is the only design input from here on.
 
 ```sh
 /Applications/Blender.app/Contents/MacOS/Blender -b --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/tools/warm_body_swap_references.py -- --mannequin $BODY_SWAP_DIR
+  --python games/yorimichi/assets/characters/tools/cairo_body_swap_references.py -- --mannequin $BODY_SWAP_DIR
 ```
 
 Writes `<rev>/references/naked-{front,back,left,right}.png`: a plain grey mannequin (body regions under the
@@ -51,7 +51,7 @@ cap is a clean flat disc and the wrists end flat; a torn cap makes Sunburst draw
 ## 3. Dress the mannequin (Sunburst, four views)
 
 ```sh
-~/.cache/yorimichi/imagegen-venv/bin/python games/yorimichi/assets/characters/tools/warm_body_swap_sunburst.py \
+~/.cache/yorimichi/imagegen-venv/bin/python games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py \
   --headless $BODY_SWAP_DIR --concept output/imagegen/yorimichi-yellow-boy-2026-09-12/back-concepts-r05/<pick>.png
 ```
 
@@ -81,10 +81,10 @@ Two to four minutes. `job.json` is the ledger; never delete it. The FBX lands in
 
 ```sh
 B=/Applications/Blender.app/Contents/MacOS/Blender
-$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_body_swap_fit.py
-$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_body_swap_assemble.py
-$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_body_swap_capture.py
-$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/warm_body_swap_export.py
+$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_body_swap_fit.py
+$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_body_swap_assemble.py
+$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_body_swap_capture.py
+$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_body_swap_export.py
 ```
 
 What each does and what to read afterwards:
@@ -127,12 +127,12 @@ R=output/imagegen/yorimichi-yellow-boy-2026-09-12
 mkdir -p $R/game-r13 && cp $R/$BODY_SWAP_DIR/assembled/$BODY_SWAP_STEM.blend $R/game-r13/WarmOriginal-Game-r13.blend
 # source-manifest.json: copy game-r11's, update native, native_sha256, garment_source(+sha256), note
 /Applications/Blender.app/Contents/MacOS/Blender -b --threads 4 --python-exit-code 1 \
-  --python games/yorimichi/assets/characters/warm-original/export_unreal.py -- --revision game-r13 > build/yorimichi/logs/warm-export-r13.log 2>&1
+  --python games/yorimichi/assets/characters/cairo/export_unreal.py -- --revision game-r13 > build/yorimichi/logs/warm-export-r13.log 2>&1
 "/Users/Shared/Epic Games/UE_5.8/Engine/Build/BatchFiles/Mac/Build.sh" YorimichiEditor Mac Development \
   -project="$PWD/games/yorimichi/unreal/Yorimichi.uproject" -WaitMutex        # only if C++ changed
-PYTHONPATH=platform/studio python3 -m atelier.safety.guarded --report build/yorimichi/warm_original/import-r13 -- \
+PYTHONPATH=platform/studio python3 -m atelier.safety.guarded --report build/yorimichi/cairo/import-r13 -- \
   "/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PWD/games/yorimichi/unreal/Yorimichi.uproject" \
-  -run=pythonscript -script="$PWD/games/yorimichi/unreal/Scripts/import_warm_original.py" -unattended -nosplash -NullRHI -stdout
+  -run=pythonscript -script="$PWD/games/yorimichi/unreal/Scripts/import_cairo.py" -unattended -nosplash -NullRHI -stdout
 ```
 
 The export selects meshes by `outfit_slot` or an unhidden `body_region`; the assembled outfit carries
@@ -143,16 +143,16 @@ for 25 clips and the import to end with exit 0.
 ## 8. Film it in the game
 
 ```sh
-E="/Users/Shared/Epic Games/UE_5.8"; P="$PWD/games/yorimichi/unreal"; OUT="$PWD/build/yorimichi/warm_original/film-r13"
+E="/Users/Shared/Epic Games/UE_5.8"; P="$PWD/games/yorimichi/unreal"; OUT="$PWD/build/yorimichi/cairo/film-r13"
 for VIEW in front back; do D="$OUT/$VIEW"; mkdir -p "$D"
   PYTHONPATH=platform/studio python3 -m atelier.safety.guarded --report "$D" -- "$E/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" \
-    "$P/Yorimichi.uproject" -game -windowed -resx=1280 -resy=720 -warmqa -warmfilm -framestride=2 \
-    -UseFixedTimeStep -FPS=60 -warmview=$VIEW "-reviewdir=$D" -stdout "-abslog=$D/game.log"
+    "$P/Yorimichi.uproject" -game -windowed -resx=1280 -resy=720 -cairoqa -cairofilm -framestride=2 \
+    -UseFixedTimeStep -FPS=60 -cairoview=$VIEW "-reviewdir=$D" -stdout "-abslog=$D/game.log"
 done
 python3 japan/tools/warm_film_assemble.py "$OUT"      # -> film-r13/warm-r13-front-back.mp4
 ```
 
-`-warmqa` drives walk, run, sprint, dash, jump, double jump and rolls on a flat floor and writes `warm.csv`
+`-cairoqa` drives walk, run, sprint, dash, jump, double jump and rolls on a flat floor and writes `warm.csv`
 (time, action, speed) and `result.json`; the film mode records one frame in two at a fixed 60 fps step (30 fps
 video). `warmview` accepts `front`, `back`, `side`. The assembler cuts run, sprint, dash, jump and roll and stacks
 front and back side by side. One QA check fails by design with a one-piece outfit ("waist corrective survives
@@ -160,7 +160,7 @@ runtime graph": the old shorts' morph no longer exists).
 
 ## 9. Constants that may need re-measuring for a different outfit
 
-All in `warm_body_swap_assemble.py` unless noted.
+All in `cairo_body_swap_assemble.py` unless noted.
 
 | What | Value now | Why | Re-measure when |
 | --- | --- | --- | --- |
@@ -201,13 +201,13 @@ All in `warm_body_swap_assemble.py` unless noted.
 
 ## Where things are
 
-- Tools: `japan/tools/warm_body_swap_{references,sunburst,fit,assemble,capture,export}.py`,
-  `warm_film_assemble.py`, `warm_back_concepts.py`, `tripo_asset.py`, `export_warm_original_unreal.py`,
-  `games/yorimichi/unreal/Scripts/import_warm_original.py`.
+- Tools: `japan/tools/cairo_body_swap_{references,sunburst,fit,assemble,capture,export}.py`,
+  `warm_film_assemble.py`, `cairo_back_concepts.py`, `tripo_asset.py`, `games/yorimichi/assets/characters/cairo/export_unreal.py`,
+  `games/yorimichi/unreal/Scripts/import_cairo.py`.
 - Revisions: `body-swap-r01` (cut-based, failed, kept for reference), `body-swap-r02-headless` (this guide),
   `game-r11` (in the game), `back-concepts-r04` (the design studies).
 - Reports: `body-swap-r02-headless/qa/findings-*.md`, the review page artifact from 14 Sep, the front/back film
-  `build/yorimichi/warm_original/film-r11/warm-r11-front-back.mp4`.
+  `build/yorimichi/cairo/film-r11/warm-r11-front-back.mp4`.
 
 ## 16 September: frontflip waistband clearance
 

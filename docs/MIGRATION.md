@@ -96,7 +96,7 @@ After the migration, code that nothing could reach was removed (the old cruiser 
 review modes and five rendering experiments; an audit traced every file's trigger and asset path), which brought back
 the "Skate stance" setting the old board's flag had hidden. Every scenario above passed again afterwards. The review
 harnesses no tool used went next (the jump, ground-contact and locomotion reviews, the south-west demo and flyover). Still
-runnable without a profile: the character film review (`-warmqa`, BODY_SWAP_GUIDE.md) and the trailer capture
+runnable without a profile: the character film review (`-cairoqa`, BODY_SWAP_GUIDE.md) and the trailer capture
 (`tools/capture.py`).
 
 Fixed on the way, because the prototype's project had accumulated assets that hid them: the first import of a mesh

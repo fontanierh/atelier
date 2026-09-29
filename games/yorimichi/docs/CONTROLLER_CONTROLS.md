@@ -21,7 +21,7 @@ The HUD selects controller hints while a gamepad is attached and returns to keyb
 | Equip sailboat / step ashore | D-pad Up | D-pad Up | D-pad Up |
 | Flight speed | LB / RB | L1 / R1 | L / R |
 
-Menu / Options and D-pad Up now invoke the existing settings and sailboat actions. D-pad Down is also mapped to the legacy skateboard toggle; Warm Original still rejects that action because its definition does not support skating. Nothing re-enables skateboarding on the new character. Stick-click sprint remains hold-to-sprint, matching the existing action binding.
+Menu / Options and D-pad Up now invoke the existing settings and sailboat actions. D-pad Down is also mapped to the legacy skateboard toggle; Cairo still rejects that action because its definition does not support skating. Nothing re-enables skateboarding on the new character. Stick-click sprint remains hold-to-sprint, matching the existing action binding.
 
 Vehicle hints describe steering, sail control and stepping off instead of on-foot actions. Ladder and zeppelin prompts use the active interaction button. Controller mode suppresses the mouse-release tip, while retaining stamina rings and FPS. The two hint rows measure their text and fit the viewport rather than relying on a fixed-width background.
 

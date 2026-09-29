@@ -24,7 +24,7 @@ This works for every clip, every blend and every play rate — walk, jog, run, s
 recovery — without a single authored marker.
 
 The two thresholds ride on the character's own `RestAnkleHeights`, because the rigs differ:
-Warm Original rests at 11.2 cm, the older Wanderer at about 14.7.
+Cairo rests at 11.2 cm, the older Wanderer at about 14.7.
 
 | | |
 | --- | --- |

@@ -141,7 +141,7 @@ segments=[{'id':'fist','label':'Open to fist','start_frame':361,'end_frame':432,
  {'id':'fingers','label':'Individual fingers','start_frame':505,'end_frame':744,'peak_frame':521},
  {'id':'pinch','label':'Thumb opposition','start_frame':745,'end_frame':816,'peak_frame':769}]
 for s in segments:scene.timeline_markers.new(s['label'],frame=s['start_frame'])
-scene.frame_end=816;arm.animation_data.action.name='Body and finger deformation checks';arm.name='Warm Original · Tripo body with articulated fingers'
+scene.frame_end=816;arm.animation_data.action.name='Body and finger deformation checks';arm.name='Cairo · Tripo body with articulated fingers'
 scene.frame_set(1);bpy.context.view_layer.update()
 ev=body.evaluated_get(bpy.context.evaluated_depsgraph_get())
 rest_error=max((ev.data.vertices[i].co-before_positions[i]).length for i in range(len(before_positions)))

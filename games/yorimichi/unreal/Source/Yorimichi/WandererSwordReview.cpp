@@ -51,7 +51,7 @@ void AWandererCharacter::AdvanceSwordReview(float Dt)
         Surface->GetStaticMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); Surface->GetStaticMeshComponent()->SetCastShadow(false);
         Surface->SetActorLocation(Floor->GetActorLocation()); Surface->SetActorScale3D(FVector(60, 60, 1));
         TravelTo(Origin - FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), 0, TEXT("Sword QA"));
-        WarmOrigin = GetActorLocation();
+        CairoOrigin = GetActorLocation();
         ReviewForward = FVector::ForwardVector; Controller->SetControlRotation(FRotator::ZeroRotator);
         FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
         const FVector Eye = GetActorLocation() + FVector(70, -320, 60), Look = GetActorLocation() + FVector(70, 0, 10);
@@ -59,7 +59,7 @@ void AWandererCharacter::AdvanceSwordReview(float Dt)
         SpawnSwordDummy();
         // Inside the reach of every strike arc (the first cut lands about 70 cm ahead and to the left); a wider post for the harness.
         if (SwordDummy) { SwordDummy->SetActorLocation(GetActorLocation() + FVector(95, -15, -GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 70)); SwordDummy->SetActorScale3D(FVector(1.3f, 1.3f, 1.f)); }
-        Check(Definition && Definition->HasSwordSet() && Sword && Sword->IsInstalled(), TEXT("sword set installed on DA_WarmOriginal"));
+        Check(Definition && Definition->HasSwordSet() && Sword && Sword->IsInstalled(), TEXT("sword set installed on DA_Cairo"));
         Check(SwordDummy != nullptr, TEXT("training dummy spawned"));
         Check(!Sword->IsArmed(), TEXT("starts unarmed"));
         SwordReviewStep = 0; SwordReviewTime = 0.f;
@@ -73,7 +73,7 @@ void AWandererCharacter::AdvanceSwordReview(float Dt)
     const int32 Strikes = Sword->Strikes().Num(); const int32 DummyHits = SwordDummy ? SwordDummy->HitsTaken : -1;
     static int32 MarkStrikes = 0, MarkHits = 0; auto Mark = [&]() { MarkStrikes = Strikes; MarkHits = DummyHits; };
     const int32 DS = Strikes - MarkStrikes, DH = DummyHits - MarkHits;
-    const FVector Where = GetActorLocation() - WarmOrigin; const FVector Tip = Sword->BladeTipWorld() - WarmOrigin;
+    const FVector Where = GetActorLocation() - CairoOrigin; const FVector Tip = Sword->BladeTipWorld() - CairoOrigin;
     SwordTelemetry += FString::Printf(TEXT("%.3f,%s,%s,%.3f,%d,%d,%d,%d,%d,%d,%.1f,%.1f,%.1f,%.1f,%d,%.1f,%.1f,%.1f,%.1f\n"), SwordReviewTime, *Sword->StateName(), *AnimationAction.ToString(), GetActionSourceTime(), MovementLocked(), Sword->IsArmed(), Strikes, DummyHits, Sword->HitsTaken(), Sword->ParriesMade(),
         Where.X, Where.Y, Where.Z, GetVelocity().Z, GetCharacterMovement()->IsFalling(), GetActorRotation().Yaw, Tip.X, Tip.Y, Tip.Z);
     // 1. draw

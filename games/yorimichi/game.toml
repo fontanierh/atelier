@@ -4,7 +4,7 @@ title = "Yorimichi"
 atelier = "0.1"
 unreal_project = "unreal/Yorimichi.uproject"
 editor_target = "YorimichiEditor"
-player = "assets/characters/warm-original"
+player = "assets/characters/cairo"
 build = "build.py"                      # the build recipe: `atelier build yorimichi --list`
 
 [fetch]
