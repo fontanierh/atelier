@@ -5,6 +5,8 @@
 - This repository is **public**. Never commit credentials, tokens, personal hostnames or home-directory paths, and
   never commit third-party files whose licence forbids redistribution (Sonniss sounds, raw Mixamo downloads, licensed
   music). `atelier lint` checks for the common cases; run it before pushing.
+- Run `atelier lint` and look at `git diff` before every commit. The Unreal editor rewrites `Config/*.ini` when it
+  starts (it once added the Android file server's generated token); keep only the changes you meant.
 - Commit and push completed work at task boundaries before starting the next task.
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
 - Generated files belong in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources.
