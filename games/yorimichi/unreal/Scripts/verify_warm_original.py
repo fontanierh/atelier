@@ -17,7 +17,6 @@ roles={r['role'] for r in config['roles']}
 actions={str(k) for k in definition.get_editor_property('actions')}
 # SwordRun is an alias of SwordSprint added by import_warm_armed.py, which runs after this check.
 assert roles-{'SwordRun'}<=actions<=roles,(sorted(roles-actions),sorted(actions-roles))
-assert not definition.get_editor_property('supports_skateboarding')
 assert definition.get_editor_property('use_authored_movement')
 run=E.load_asset('/Game/WarmOriginal/A_Run')
 assert abs(run.get_editor_property('rate_scale')-.8)<1e-6

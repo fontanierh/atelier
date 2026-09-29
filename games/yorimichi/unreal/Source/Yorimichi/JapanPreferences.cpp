@@ -1,7 +1,6 @@
 #include "JapanPreferences.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
-#include "SkateboardComponent.h"
 #include "WandererDefinition.h"
 #include "JapanWorld.h"
 #include "Engine/Engine.h"
@@ -53,8 +52,6 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         {TEXT("sun_height"),TEXT("Sun elevation"),48.f,5.f,80.f},
         {TEXT("sun_yaw"),TEXT("Sun direction"),15.f,-180.f,180.f}};
-    if (Owner->GetDefinition() && !Owner->GetDefinition()->SupportsSkateboarding)
-        Values.RemoveAll([](const auto& V){ return V.Key==TEXT("goofy"); });
     SettingsFile=FPaths::ProjectSavedDir()/TEXT("settings.txt");
     // Desktop previews keep menu edits in their own file; ordinary play/stream
     // keeps the existing shared path. The launcher seeds a separate copy.
@@ -113,7 +110,6 @@ void UJapanPreferences::Apply()
 {
     if (!Owner) return;
     Owner->SetStaminaRings(FMath::RoundToInt(Get(TEXT("stamina_rings"))));
-    Owner->GetSkateboard()->SetPreferredGoofy(Get(TEXT("goofy")) > .5f);
     if (Owner->GetSkate()) Owner->GetSkate()->SetGoofy(Get(TEXT("goofy")) > .5f);
     const int32 PerformanceMode = Get(TEXT("performance")) > .5f ? 1 : 0;
     const bool Desktop = Get(TEXT("desktop")) > .5f;
@@ -270,7 +266,6 @@ void UJapanPreferences::ToggleMenu()
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
     for (const FString Key : {FString(TEXT("performance")),FString(TEXT("show_fps")),FString(TEXT("goofy"))})
     {
-        if (Key==TEXT("goofy") && Owner->GetDefinition() && !Owner->GetDefinition()->SupportsSkateboarding) continue;
         TSharedRef<SButton> Button = SNew(SButton)
             .Text_Lambda([this,Key]
             {

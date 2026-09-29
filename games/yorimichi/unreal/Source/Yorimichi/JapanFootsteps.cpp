@@ -2,7 +2,6 @@
 #include "YorimichiCombatFX.h"
 #include "JapanWorld.h"
 #include "SailboatComponent.h"
-#include "SkateboardComponent.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
@@ -146,8 +145,7 @@ void UJapanFootstepComponent::TickComponent(float Dt,ELevelTick TickType,FActorC
 
     const UCharacterMovementComponent* Movement=Pawn->GetCharacterMovement();
     const float Speed=Pawn->GetVelocity().Size2D();
-    const bool bRiding=(Pawn->GetSkateboard() && Pawn->GetSkateboard()->IsEquipped())
-        || (Pawn->GetSailboat() && Pawn->GetSailboat()->IsEquipped());
+    const bool bRiding=Pawn->GetSailboat() && Pawn->GetSailboat()->IsEquipped();
     // Below a slow walk the feet shuffle in place and every crossing would be a phantom step.
     if(!Movement->IsMovingOnGround() || bRiding || Speed<40.f)
     {

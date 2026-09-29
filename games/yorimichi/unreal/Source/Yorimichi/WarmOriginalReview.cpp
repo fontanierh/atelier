@@ -1,6 +1,5 @@
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
-#include "SkateboardComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -54,8 +53,6 @@ void AWandererCharacter::AdvanceWarmReview(float Dt)
         Check(Definition->Actions.Num()==25 && Definition->FindAction(TEXT("Roll")),TEXT("all 25 animation roles including Roll"));
         Check(GetMesh()->GetNumBones()==53,TEXT("53 bones including fingers"));
         Check(Definition->Mesh->FindMorphTarget(TEXT("head_Hair_fore")) && Definition->Mesh->FindMorphTarget(TEXT("head_Hair_side")),TEXT("both hair tip fields imported"));
-        ToggleSkateboard(FInputActionValue(true));
-        Check(!Skateboard->IsEquipped()&&!Definition->SupportsSkateboarding,TEXT("skateboarding disabled"));
         if(MovingRollReview)WarmTime=63.f;
         if(RollChainReview)WarmTime=96.f;
         if(AirTurnReview)WarmTime=128.f;

@@ -33,8 +33,8 @@ The table below is the platform as built (29 September 2026); the rest of this p
 
 Still inside Yorimichi, to move when a second game needs them: the player character (on-foot movement, actions,
 camera), sword combat and the fox hunter, the sailboat, the zeppelin, the mini-mega ramp, footsteps, the world map,
-preferences and the HUD. The old cruiser skateboard (`SkateboardComponent`) is legacy: its assets stayed in the
-prototype archive and the skate button mounts the new board.
+preferences and the HUD. The old cruiser skateboard, the mini-mega ride and five rendering experiments were removed
+(29 September): their assets stayed in the prototype archive, so nothing could reach them.
 
 ## Who owns what
 

@@ -2,11 +2,8 @@
 #include "ZeppelinService.h"
 #include "WandererCharacter.h"
 #include "JapanPreferences.h"
-#include "SkateboardComponent.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
-#include "JapanCharacterMovement.h"
-#include "MegaRamp.h"
 #include "WandererSword.h"
 #include "FoxHunter.h"
 #include "LiveLibrary.h"
@@ -162,34 +159,27 @@ void AJapanHUD::DrawHUD()
     LastFrameTime = Now;
     if (Pawn->GetPreferences() && Pawn->GetPreferences()->ShowFrameRate() && DisplayedFrameRate > 0.f)
         DrawText(FString::Printf(TEXT("%.0f fps"),DisplayedFrameRate),FLinearColor(.94f,.92f,.84f),Canvas->SizeX-85,20,Font,1.f);
-    const bool bSkate = Pawn->GetSkateboard() && Pawn->GetSkateboard()->IsEquipped();
     const bool bSailboat = Pawn->GetSailboat() && Pawn->GetSailboat()->IsEquipped();
-    FString Controls = bSailboat ? FString::Printf(TEXT("K step ashore   A / D steer   W raise sail   S lower sail      %s   %.0f km/h"),*Pawn->GetSailboat()->GetStatus(),Pawn->GetSailboat()->GetSpeed()*.036f) : bSkate ? FString::Printf(TEXT("B step off   W push   A / D steer   S brake   Space ollie      %s   %.0f km/h"),*Pawn->GetSkateboard()->GetStatus(),Pawn->GetVelocity().Size2D()*.036f) : TEXT("WASD run   Alt / J walk   Shift sprint   Space jump / double jump   F dash   C crouch   Ctrl roll   K sailboat   M map");
+    FString Controls = bSailboat ? FString::Printf(TEXT("K step ashore   A / D steer   W raise sail   S lower sail      %s   %.0f km/h"),*Pawn->GetSailboat()->GetStatus(),Pawn->GetSailboat()->GetSpeed()*.036f) : TEXT("WASD run   Alt / J walk   Shift sprint   Space jump / double jump   F dash   C crouch   Ctrl roll   K sailboat   M map");
     if (bController)
         Controls = bSailboat ? FString::Printf(TEXT("D-pad Up step ashore   Left stick steer / raise or lower sail      %s   %.0f km/h"),*Pawn->GetSailboat()->GetStatus(),Pawn->GetSailboat()->GetSpeed()*.036f)
-            : bSkate ? FString::Printf(TEXT("D-pad Down step off   Left stick push / steer / brake   %s ollie      %s   %.0f km/h"),Pad.Jump,*Pawn->GetSkateboard()->GetStatus(),Pawn->GetVelocity().Size2D()*.036f)
             : FString::Printf(TEXT("Left stick move   Hold %s sprint   %s jump / double jump   %s dash   %s roll"),Pad.Sprint,Pad.Jump,Pad.Dash,Pad.Roll);
     FString Secondary = bController ? FString::Printf(TEXT("Right stick look   %s crouch   %s interact   %s map   %s settings   D-pad Up sailboat"),Pad.Crouch,Pad.Use,Pad.Map,Pad.Menu)
         : TEXT("Mouse look   M map & travel   Esc settings   Tab release mouse   F12 screenshot");
     const UWandererSwordComponent* Sword=Pawn->GetSword();
-    const bool bSwordSet=Sword && Sword->IsInstalled() && !bSkate && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding());
+    const bool bSwordSet=Sword && Sword->IsInstalled() && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding());
     if (bSwordSet)
     {
         // Sword hints replace the wave/interact tail so the line stays readable; the weapon line shows the live state.
         Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   %s parry   %s draw / sheathe sword   %s crouch   %s interact   %s map   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Crouch,Pad.Use,Pad.Map,Pad.Menu)
             : TEXT("Left click attack, hold to charge   Right click parry   R draw / sheathe sword   Mouse look   M map   Esc settings   Tab release mouse");
     }
-    if (bController && (bSkate || bSailboat || Pawn->IsZeppelinPassenger()))
+    if (bController && (bSailboat || Pawn->IsZeppelinPassenger()))
     {
         Secondary=FString::Printf(TEXT("Right stick look   %s map   %s settings"),Pad.Map,Pad.Menu);
         if (Pawn->IsZeppelinPassenger())
             Secondary+=FString::Printf(TEXT("   %s flight speed"),ControllerStyle==2?TEXT("L1 / R1"):ControllerStyle==3?TEXT("L / R"):TEXT("LB / RB"));
     }
-    if(const auto* M=Cast<UJapanCharacterMovement>(Pawn->GetCharacterMovement());M&&M->IsMega())
-        Controls=FString::Printf(TEXT("%s      %s   %.0f km/h"),bController?TEXT("Left stick drop in / steer / brake   D-pad Down step off"):TEXT("W drop in   A / D steer   S brake   B step off"),*M->MegaStatus(),Pawn->GetVelocity().Size()*.036f);
-    else for(TActorIterator<AMegaRamp> It(GetWorld());It;++It)
-        if(FVector::Dist2D(Pawn->GetActorLocation(),It->LadderBottom())<230)
-            Controls=FString::Printf(TEXT("%s climb ladder to the roll-in"),bController?Pad.Use:TEXT("E"));
     if(Pawn->GetZeppelin()) { const FString Hint=Pawn->GetZeppelin()->Hint(Pawn);if(!Hint.IsEmpty())Controls=Hint.Replace(TEXT("Use"),bController?Pad.Use:TEXT("E")); }
     const USkateComponent* Ride=Pawn->GetSkate();
     const bool bRide=Ride && Ride->IsRiding();
@@ -204,7 +194,7 @@ void AJapanHUD::DrawHUD()
             :TEXT("Flick the mouse like the stick: pull back then forward = ollie, forward-left = kickflip, forward-right = heelflip, pull back then sideways = shove-it   Mouse look");
         DrawSkateLine();
     }
-    if(!bSkate&&!bSailboat&&!Pawn->IsZeppelinPassenger())
+    if(!bSailboat&&!Pawn->IsZeppelinPassenger())
     {
         const auto& Stamina=Pawn->GetStamina();
         const FVector2D Centre(64,Canvas->SizeY-125);
@@ -217,7 +207,7 @@ void AJapanHUD::DrawHUD()
             DrawLine(Centre.X+Radius*FMath::Cos(A),Centre.Y+Radius*FMath::Sin(A),Centre.X+Radius*FMath::Cos(B),Centre.Y+Radius*FMath::Sin(B),Color,4.f);
         }
     }
-    if (Sword && !bSkate && !bSailboat && !Pawn->IsZeppelinPassenger())
+    if (Sword && !bSailboat && !Pawn->IsZeppelinPassenger())
     {
         // Health next to the stamina rings; the nearest living fox gets a line at the top once it is close.
         const float Health=FMath::Clamp(Sword->GetHealth()/UWandererSwordComponent::MaxHealth,0.f,1.f);

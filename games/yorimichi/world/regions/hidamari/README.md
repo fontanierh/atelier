@@ -33,7 +33,7 @@ For a targeted art iteration, set `HIDAMARI_ASSETS` to comma-separated mesh name
 ```sh
 python3 japan/hidamari/review.py SESSION --shots square --audit
 python3 japan/hidamari/review.py FUNCTIONAL_SESSION --shots '' --checks --wait 1200
-python3 japan/benchmark.py CITY_PERF --view village_skate --route hidamari --road-index 258 --seconds 30 --hide-hud
+python games/yorimichi/tools/benchmark.py CITY_PERF --view road_walk --route hidamari --road-index 258 --seconds 30 --hide-hud
 python3 japan/tools/render_map.py --proposal japan/docs/hidamari/location.json --built-city japan/out/hidamari/city.json --out japan/docs/hidamari/current-map.png
 ```
 

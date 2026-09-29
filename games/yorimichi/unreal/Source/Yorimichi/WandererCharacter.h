@@ -14,7 +14,6 @@ class UInputAction;
 class UInputMappingContext;
 class AJapanWorld;
 class UJapanPreferences;
-class USkateboardComponent;
 class USkateComponent;
 class USailboatComponent;
 class FJsonObject;
@@ -55,7 +54,6 @@ public:
     bool IsMouseReleased() const { return bMouseReleased; }
     /** The phone stream's touch page is driving the game (it draws its own controls and status). */
     bool IsPhoneTouchActive() const;
-    USkateboardComponent* GetSkateboard() const { return Skateboard; }
     /** skate.-style skateboarding (docs/SKATE.md; the platform's Skate plugin). */
     USkateComponent* GetSkate() const { return SkateRide; }
     // ISkateRider: skate roles from the definition's SkateActions, other roles from its Actions; the sword is sheathed
@@ -96,7 +94,7 @@ public:
     /** Live bridge: press a button through the real input handler: "jump", "jump_release", "roll", "crouch". */
     bool Live_Press(FName Button);
     /** Live bridge: leave the camera where it is (no automatic follow) for Seconds. */
-    void Live_HoldCamera(float Seconds) { MegaCameraGrace = Seconds; }
+    void Live_HoldCamera(float Seconds) { LookGrace = Seconds; }
     void Live_Drive(FVector2D Intent, int32 Gait) { MoveIntent = Intent; bWalk = Gait == 0; bJog = false; bSprintHeld = Gait == 2; }
     void Review_Dodge();
 
@@ -109,10 +107,9 @@ private:
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
-    float MegaCameraGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
+    float LookGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
     bool bRemountSkate=false;
     TSharedPtr<FYorimichiPhone> PhoneInput;
-    UPROPERTY() TObjectPtr<USkateboardComponent> Skateboard;
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
@@ -189,7 +186,6 @@ private:
     int32 GroundReviewStage=-1;
     FVector GroundReviewAnchor=FVector::ZeroVector;
     FString GroundReviewTelemetry=TEXT("stage,time,side,point,gap_cm,falling\n");
-    void AdvanceMegaReview(float Dt);
     void AdvanceSailboatReview(float Dt);
     // scripted demos of the south-west detour: a ground run from spawn to the temple, and a bird's-eye flyover
     void AdvanceSouthwestDemo(float Dt);
@@ -215,11 +211,6 @@ private:
     bool bSailboatReviewObservedFall=false;
     TArray<FString> SailboatReviewErrors;
     UPROPERTY() TObjectPtr<AActor> SailboatReviewObstacle;
-    void SaveMegaFilmFrame(int32 Width,int32 Height,const TArray<FColor>& Pixels);
-    int32 MegaFilmFrame=0,MegaFilmPending=-1;
-    bool bMegaReview=false;
-    float MegaReviewTime=0;
-    FString MegaTelemetry=TEXT("time,phase,section,s,speed,x,y,z,gap_landings,vert_landings,clip,head_distance,foot_error,grip_error\n");
     // Opt-in cinematic capture. Does not run in ordinary play.
     FVector LastSafeCoastLocation=FVector::ZeroVector;
     bool bHasSafeCoastLocation=false;
@@ -236,10 +227,6 @@ private:
     void AdvanceTrailer(float Dt);
     void SaveTrailerFilmFrame(int32 Width,int32 Height,const TArray<FColor>& Pixels);
     int32 TrailerPending=-1;
-    TSharedPtr<struct FVillageJourney> VillageJourney;
-    void AdvanceVillageJourney(float Dt);
-    void SaveJourneyFrame(int32 Width,int32 Height,const TArray<FColor>& Pixels);
-    void EndVillageJourney();
     void BuildInput();
     void Move(const FInputActionValue& Value);
     void MouseLook(const FInputActionValue& Value);
@@ -291,8 +278,6 @@ private:
     TArray<FString> JumpReviewErrors;
     bool bJumpReviewInverted=false;
     FString LocomotionTelemetry = TEXT("time,speed,walk,jog,head_z,pelvis_z,foot_l_x,foot_l_y,foot_l_z,foot_r_x,foot_r_y,foot_r_z\n");
-    void AdvanceSkateReview(float Dt);
-    void RecordSkatePose();
     float GetRoadSteering();
     TArray<FVector> SkateReviewRoad;
     // Review routes are open paths, not loops: the scripted rider patrols them so a long traversal
@@ -303,7 +288,4 @@ private:
     int32 SkateReviewRecoveries = 0;
     FVector SkateReviewStuckAt = FVector::ZeroVector;
     double SkateReviewStuckSince = -1.;
-    bool bSkateReview = false, bSkateVideo = false, bOllieVideo = false, bRearSkateVideo = false, bSkateStanceReview = false;
-    float SkateReviewTime = 0.f;
-    FString SkateTelemetry = TEXT("time,clip,pose_time,speed,equipped,falling,crouched,menu,yaw,x,y,z,left_x,left_y,left_z,right_x,right_y,right_z,foot_world_x,foot_world_y,foot_world_z,contact_x,contact_y,contact_z,contact_weight,velocity_z,board_left_z,board_right_z,board_pitch,board_z,bag_pitch,bag_z,cloth_pitch,board_stencil,character_stencil,goofy,preferred_goofy,continuous_push\n");
 };

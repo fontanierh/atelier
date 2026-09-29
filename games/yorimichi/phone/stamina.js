@@ -2,7 +2,7 @@
 const NS='http://www.w3.org/2000/svg';
 export function updateStamina(state){
  const gauge=document.getElementById('stamina');
- gauge.hidden=!state.ready||state.skating||state.sailboat;
+ gauge.hidden=!state.ready||state.sailboat;
  const rings=Math.max(1,Math.min(5,Math.round(state.staminaRings||2)));
  if(gauge.dataset.rings!==String(rings)){
   gauge.dataset.rings=String(rings);gauge.replaceChildren();

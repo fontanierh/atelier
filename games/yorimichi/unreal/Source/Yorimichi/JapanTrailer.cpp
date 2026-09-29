@@ -2,7 +2,7 @@
 #include "AtelierData.h"
 #include "JapanWorld.h"
 #include "HidamariReview.h"
-#include "SkateboardComponent.h"
+#include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "ZeppelinService.h"
 #include "Camera/CameraComponent.h"
@@ -173,8 +173,6 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         TrailerSpec->TryGetBoolField(TEXT("validate_village"),AuditVillage);
         if (AuditVillage && !ValidateVillage(GetWorld(),this,ReviewDirectory))
         { FPlatformMisc::RequestExitWithStatus(false,2); return; }
-        if (TrailerSpec->GetStringField(TEXT("kind")) == TEXT("village_journey"))
-        { AdvanceVillageJourney(Dt); return; }
         GetRoadSteering(); // Load the authored road using the existing capture helper.
         const int32 Road = FMath::Clamp(int32(TrailerSpec->GetNumberField(TEXT("road_index"))),0,SkateReviewRoad.Num()-2);
         if (!SkateReviewRoad.IsValidIndex(Road+1))
@@ -190,8 +188,6 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         GetCharacterMovement()->StopMovementImmediately();
         TrailerHeading = GetActorRotation().Yaw;
     }
-    if (TrailerSpec->GetStringField(TEXT("kind")) == TEXT("village_journey"))
-    { AdvanceVillageJourney(Dt); return; }
     auto Number = [&](const TCHAR* Name,double Default) { double Value=Default; TrailerSpec->TryGetNumberField(Name,Value); return Value; };
     const int32 Frames = FMath::RoundToInt(Number(TEXT("seconds"),5)*60);
     const int32 CaptureFPS=Number(TEXT("capture_fps"),60)==30?30:60;
@@ -282,8 +278,8 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
     {
         const FVector P = GetActorLocation();
         TrailerTelemetry += FString::Printf(TEXT("%d,%.4f,%.4f,%.4f,%.4f,%d,%d,%s,%.4f,%.4f,%.4f,%s,%d,%d,%.4f,%d,%.4f\n"),
-            TrailerFrame/CaptureStride,GetVelocity().Size2D(),P.X,P.Y,P.Z,GetCharacterMovement()->IsFalling(),Skateboard->IsEquipped(),
-            *Skateboard->GetClipName().ToString(),Camera.X,Camera.Y,Camera.Z,*AnimationAction.ToString(),
+            TrailerFrame/CaptureStride,GetVelocity().Size2D(),P.X,P.Y,P.Z,GetCharacterMovement()->IsFalling(),SkateRide->IsRiding(),
+            *SkateRide->GetClipName().ToString(),Camera.X,Camera.Y,Camera.Z,*AnimationAction.ToString(),
             Stamina.Sprinting,Sailing,Sailboat->GetSailAmount(),GetZeppelin()?GetZeppelin()->GetStage():-1,
             GetZeppelin()?GetZeppelin()->GetPropellerAngle():0.f);
         TrailerPending=TrailerFrame/CaptureStride;

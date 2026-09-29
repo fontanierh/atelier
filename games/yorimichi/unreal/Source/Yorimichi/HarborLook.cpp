@@ -11,7 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 
 static TAutoConsoleVariable<int32> HarborFillAuto(TEXT("japan.HarborFillAuto"),0,
-    TEXT("Harbor fill shadows: 0 original, 1 skip unreachable cascades, 2 experimental tiled receiver visibility, -1 manual."),ECVF_Cheat);
+    TEXT("Harbor fill shadows: 0 original, 1 skip unreachable cascades, -1 manual."),ECVF_Cheat);
 
 // Diagnostic controls for pricing the harbor-only fill outside the harbor.
 // Neither is called during ordinary play; the authored light stays enabled.
@@ -79,12 +79,6 @@ void UpdateHarborLook(AJapanWorld* World)
             if (Group && Group->LightingChannels.bChannel1 &&
                 Group->Bounds.GetBox().ComputeSquaredDistanceToPoint(Camera->GetCameraLocation())<=FMath::Square(Range))
             { Shadows=true; break; }
-    }
-    const bool Visible=Mode!=2 || ExperimentalHarborFillVisible(World);
-    if (Key->IsVisible()!=Visible)
-    {
-        Key->SetVisibility(Visible);
-        UE_LOG(LogTemp,Display,TEXT("HARBOR tiled visibility fill=%d"),Visible);
     }
 
     if (bool(Key->CastShadows)!=Shadows)

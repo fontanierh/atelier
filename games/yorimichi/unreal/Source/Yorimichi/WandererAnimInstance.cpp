@@ -1,11 +1,9 @@
 #include "WandererAnimInstance.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
-#include "SkateboardComponent.h"
 #include "SailboatComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimNodeSpaceConversions.h"
-#include "SkateContactNode.h"
 #include "SkateComponent.h"
 #include "SkateRiderNode.h"
 #include "GroundContactNode.h"
@@ -112,7 +110,6 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_LayeredBoneBlend CarryLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
     FGroundContactNode Feet;
-    FSkateContactNode PushFoot;
     FSailboatStanceNode Stance;
     // Skating (docs/SKATE.md): the clip, the load crouch and the carve lean over it, then the limbs carried with the board.
     FAnimNode_SequencePlayer_Standalone SkateCrouchPose, SkateLeanPose;
@@ -141,9 +138,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         ToComponent.LocalPose.SetLinkNode(&CarryLayer);
         Feet.ComponentPose.SetLinkNode(&ToComponent);
         Feet.Alpha=0.f;
-        PushFoot.ComponentPose.SetLinkNode(&Feet);
-        PushFoot.Alpha = 0.f;
-        Stance.ComponentPose.SetLinkNode(&PushFoot);
+        Stance.ComponentPose.SetLinkNode(&Feet);
         Stance.Alpha = 0.f;
         SkateRider.ComponentPose.SetLinkNode(&Stance);
         SkateRider.Alpha = 0.f;
@@ -156,7 +151,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return &ToLocal; }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &SkateCrouchPose, &SkateLeanPose, &SkateCrouch, &SkateLean, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &CarryLayer, &ToComponent, &Feet, &PushFoot, &Stance, &SkateRider, &ToLocal }; }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &SkateCrouchPose, &SkateLeanPose, &SkateCrouch, &SkateLean, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &CarryLayer, &ToComponent, &Feet, &Stance, &SkateRider, &ToLocal }; }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -181,15 +176,13 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         AuthoredTopSpeed = FMath::Max(1.f,FMath::Max(Pawn->GetDefinition()->RunSpeed,Pawn->GetDefinition()->SprintSpeed));
         AuthoredCrouchSpeed = FMath::Max(1.f,Pawn->GetDefinition()->CrouchSpeed);
         CrouchTarget = Pawn->bIsCrouched ? 1.f : 0.f;
-        const USkateboardComponent* Skate = Pawn->GetSkateboard();
-        const bool bSkating = Skate && Skate->IsEquipped();
         const USailboatComponent* SailboatC = Pawn->GetSailboat();
         const bool bSailing = SailboatC && SailboatC->IsEquipped();
         const USkateComponent* Ride = Pawn->GetSkate();
         const bool bRiding = Ride && Ride->IsRiding();
-        State.bAction = bSkating || bSailing || bRiding || !Pawn->GetAnimationAction().IsNone();
-        State.Serial = Pawn->GetActionSerial()+(Skate ? Skate->GetSerial() : 0)+(SailboatC ? SailboatC->GetSerial()*7919 : 0)+(Ride ? Ride->GetSerial()*104729 : 0);
-        State.BlendDuration = bRiding ? Ride->GetBlendTime() : bSkating ? Skate->GetBlendTime() : bSailing ? .2f : Pawn->GetActionBlendTime();
+        State.bAction = bSailing || bRiding || !Pawn->GetAnimationAction().IsNone();
+        State.Serial = Pawn->GetActionSerial()+(SailboatC ? SailboatC->GetSerial()*7919 : 0)+(Ride ? Ride->GetSerial()*104729 : 0);
+        State.BlendDuration = bRiding ? Ride->GetBlendTime() : bSailing ? .2f : Pawn->GetActionBlendTime();
         // Continue the gait clock during a moving roll. Once the feet recover,
         // blend into that live stride instead of translating a planted idle pose.
         const bool MovingRoll=Pawn->GetAnimationAction()==TEXT("Roll") && Pawn->HasMovementIntent() && Speed>80.f;
@@ -200,7 +193,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         // up. Finish blending shortly after steering returns at source .94.
         const float Recovery=MovingRoll?FMath::Clamp((Pawn->GetActionSourceTime()-.85f)/.15f,0.f,1.f):0.f;
         State.RecoveryAlpha=Recovery*Recovery*(3.f-2.f*Recovery);
-        const bool Grounded=Pawn->IsA<ACapeBoyCharacter>() && !bSkating && !bSailing &&
+        const bool Grounded=Pawn->IsA<ACapeBoyCharacter>() && !bSailing &&
             Pawn->GetCharacterMovement()->IsMovingOnGround() && Pawn->GetAnimationAction()!=TEXT("Roll");
         Feet.Alpha=Grounded?1.f:0.f;
         Feet.DeltaSeconds=Dt;
@@ -226,11 +219,6 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 }
             }
         }
-        PushFoot.Alpha = bSkating ? 1.f : 0.f;
-        PushFoot.bContact = bSkating && Skate->GetContactWeight() > .5f;
-        PushFoot.DeltaSeconds = Dt;
-        PushFoot.PushHipIndex = Skate && Skate->IsGoofy() ? 1 : 4;
-        if (!bSkating) PushFoot.PelvisDrop = 0.f;
         // Sailboat seating is solved in mesh space from the animated hull and tiller.
         StanceWeight = bSailing ? FMath::FInterpConstantTo(StanceWeight,1.f,Dt,5.f) : 0.f;
         Stance.Alpha = StanceWeight;
@@ -257,31 +245,24 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 Stance.KneePole[Side]=Point(FVector(-48,S*21+SeatShift,49));
             }
         }
-        if (PushFoot.bContact)
-        {
-            const FTransform& MeshTransform = Pawn->GetMesh()->GetComponentTransform();
-            PushFoot.EffectorLocation = MeshTransform.InverseTransformPosition(Skate->GetContactLocation());
-            const FVector Pole = Pawn->GetActorLocation()+Pawn->GetActorForwardVector()*90.f+Pawn->GetActorRightVector()*(Skate->IsGoofy() ? -24.f : 24.f);
-            PushFoot.JointTargetLocation = MeshTransform.InverseTransformPosition(Pole);
-        }
         if (State.bAction && AppliedSerial != State.Serial)
         {
-            if (UAnimSequence* Clip = bRiding ? Ride->GetSequence() : bSkating ? Skate->GetSequence() : bSailing ? SailboatC->GetSequence() : Pawn->GetDefinition()->FindAction(Pawn->GetAnimationClip()))
+            if (UAnimSequence* Clip = bRiding ? Ride->GetSequence() : bSailing ? SailboatC->GetSequence() : Pawn->GetDefinition()->FindAction(Pawn->GetAnimationClip()))
             {
-                Action.SetSequence(Clip); Action.SetAccumulatedTime(bRiding ? Ride->GetClipTime() : bSkating || bSailing?0.f:Pawn->GetActionSourceStartTime());
-                Action.SetLoopAnimation(bRiding ? Ride->IsClipLooping() : bSailing || (!bSkating && Pawn->DoesActionLoop()));
+                Action.SetSequence(Clip); Action.SetAccumulatedTime(bRiding ? Ride->GetClipTime() : bSailing?0.f:Pawn->GetActionSourceStartTime());
+                Action.SetLoopAnimation(bRiding ? Ride->IsClipLooping() : bSailing || Pawn->DoesActionLoop());
             }
-            AppliedClip = bSkating || bSailing || bRiding ? NAME_None : Pawn->GetAnimationClip();
+            AppliedClip = bSailing || bRiding ? NAME_None : Pawn->GetAnimationClip();
         }
         // The sword drawn or put away in the middle of an action swaps its armed copy in place, at the same time.
-        else if (State.bAction && !bSkating && !bSailing && !bRiding && Pawn->GetAnimationClip() != AppliedClip)
+        else if (State.bAction && !bSailing && !bRiding && Pawn->GetAnimationClip() != AppliedClip)
         {
             AppliedClip = Pawn->GetAnimationClip();
             if (UAnimSequence* Clip = Pawn->GetDefinition()->FindAction(AppliedClip))
             { const float Time = Action.GetAccumulatedTime(); Action.SetSequence(Clip); Action.SetAccumulatedTime(Time); }
         }
-        Action.SetPlayRate(bSkating || bRiding ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
-        CarryLayer.BlendWeights[0] = (!bSkating && !bSailing && !bRiding && Pawn->GetSword() && !Pawn->IsZeppelinPassenger()) ? Pawn->GetSword()->CarryWeight() : 0.f;
+        Action.SetPlayRate(bRiding ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
+        CarryLayer.BlendWeights[0] = (!bSailing && !bRiding && Pawn->GetSword() && !Pawn->IsZeppelinPassenger()) ? Pawn->GetSword()->CarryWeight() : 0.f;
         if (bRiding)
         {
             Action.SetAccumulatedTime(Ride->GetClipTime());
@@ -305,7 +286,6 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         }
         else { SkateCrouch.Alpha = SkateLean.Alpha = 0.f; SkateRider.Alpha = 0.f; }
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
-        if (bSkating && !bRiding) Action.SetAccumulatedTime(Skate->GetPoseTime());
         AppliedSerial = State.Serial;
     }
     virtual void Update(float Dt) override

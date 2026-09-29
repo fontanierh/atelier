@@ -262,7 +262,7 @@ ps = W['player_start']
 zones.append(dict(key='spawn', name='Coastal road (spawn)', x=ps[0], y=ps[1], z=ps[2], yaw=ps[3], hint='Where the walk begins'))
 centre = np.mean([b['position'][:2] for b in V['buildings']], axis=0)
 zones.append(zone('hamlet', V.get('name', 'Momiji Hamlet'), V['surface_paths'][-1], centre, hint='Tea house, cottages and the pottery workshop'))
-zones.append(zone('mega', 'Mini-mega ramp', M['trail'], M['trail'][-1][:2], face=M['origin'][:2], hint='The forest mini-mega: climb the ladder and drop in'))
+zones.append(zone('mega', 'Mini-mega ramp', M['trail'], M['trail'][-1][:2], face=M['origin'][:2], hint='The forest mini-mega ramp in its sunlit clearing'))
 if SW:
     zones.append(zone('fishing', 'Fishing village', SW['lane'], SW['terrace'][:2], hint='Fisher houses and the boat shed'))
     # The tested dry launch beside the stand; the old midpoint lay in the surf.

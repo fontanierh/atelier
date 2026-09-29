@@ -1,7 +1,7 @@
 #include "ZeppelinService.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
-#include "SkateboardComponent.h"
+#include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -138,7 +138,7 @@ bool AZeppelinService::TryInteract(AWandererCharacter* C)
 void AZeppelinService::BeginBoarding(AWandererCharacter* C)
 {
  Passenger=C;AddTickPrerequisiteActor(C);C->CameraArm->AddTickPrerequisiteActor(this);
- auto* M=C->GetCharacterMovement();C->Skateboard->StowImmediately();C->Sailboat->StowImmediately();C->UnCrouch();
+ auto* M=C->GetCharacterMovement();C->GetSkate()->StowImmediately();C->Sailboat->StowImmediately();C->UnCrouch();
  C->SetAction(NAME_None);C->MoveIntent=FVector2D::ZeroVector;C->bSprintHeld=false;C->JumpBuffer=0;C->bPendingTakeoff=false;C->StopJumping();
  M->StopMovementImmediately();M->ClearAccumulatedForces();M->CurrentRootMotion.Clear();M->SetMovementMode(MOVE_None);C->SetActorEnableCollision(false);
  StoredArm=C->CameraArm->TargetArmLength;StoredOffset=C->CameraArm->TargetOffset;StoredCameraCollision=C->CameraArm->bDoCollisionTest;

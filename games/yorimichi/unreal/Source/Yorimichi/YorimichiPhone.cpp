@@ -1,11 +1,9 @@
 #include "YorimichiPhone.h"
 #include "AtelierStream.h"
 #include "WandererCharacter.h"
-#include "SkateboardComponent.h"
 #include "SailboatComponent.h"
 #include "JapanPreferences.h"
 #include "JapanMap.h"
-#include "JapanCharacterMovement.h"
 #include "ZeppelinService.h"
 #include "Dom/JsonObject.h"
 #include "HAL/PlatformTime.h"
@@ -104,15 +102,15 @@ void FYorimichiPhone::Tick(float Dt)
     const FAtelierTouchControls In = Stream->Tick();
     if (In.bLeaseExpired)
     {
-        // On a lost connection, stop rather than coast out of view.
+        // On a lost connection, stop rather than drift out of view.
         C->GetCharacterMovement()->StopMovementImmediately(); C->Sailboat->EmergencyStop();
         C->MoveIntent = FVector2D::ZeroVector; C->bJog = C->bSprintHeld = false;
-        bBrakeAfterLease = C->Skateboard->IsEquipped() || C->Sailboat->IsEquipped();
+        bBrakeAfterLease = C->Sailboat->IsEquipped();
     }
     if (!In.bActive)
     {
         if (In.Released & Jump) C->ReleaseJump(FInputActionValue(false));
-        if (bBrakeAfterLease && (C->Skateboard->IsEquipped() || C->Sailboat->IsEquipped())) C->MoveIntent = FVector2D(0, -1);
+        if (bBrakeAfterLease && C->Sailboat->IsEquipped()) C->MoveIntent = FVector2D(0, -1);
         return;   // no touch page: the game's own input (or the plain player's) is in charge
     }
     bBrakeAfterLease = false;
@@ -130,7 +128,7 @@ void FYorimichiPhone::Tick(float Dt)
     if (C->Controller && !C->bMenuOpen)
     {
         FRotator R = C->Controller->GetControlRotation();
-        if (!Look.IsNearlyZero()) C->MegaCameraGrace = 2.f;
+        if (!Look.IsNearlyZero()) C->LookGrace = 2.f;
         R.Yaw += FMath::Clamp(Look.X * C->MouseSensitivity / .4f, -45., 45.);
         R.Pitch = FMath::Clamp(FRotator::NormalizeAxis(R.Pitch) - Look.Y * C->MouseSensitivity / .4f, -65., 45.);
         C->Controller->SetControlRotation(R);
@@ -153,14 +151,11 @@ void FYorimichiPhone::Tick(float Dt)
     {
         LastStatus = Now;
         const FVector P = C->GetActorLocation();
-        const auto* Mega = Cast<UJapanCharacterMovement>(C->GetCharacterMovement());
-        FString RampHint = C->GetZeppelin() ? C->GetZeppelin()->Hint(C) : FString();
-        if (RampHint.IsEmpty()) RampHint = Mega ? Mega->MegaEntryHint() : FString();
+        const FString RampHint = C->GetZeppelin() ? C->GetZeppelin()->Hint(C) : FString();
         AZeppelinService* Z = C->GetZeppelin();
         auto S = Object();
         S->SetBoolField(TEXT("ready"), C->IsReady());
         S->SetNumberField(TEXT("speed"), C->Sailboat->IsEquipped() ? C->Sailboat->GetSpeed() : C->GetVelocity().Size());
-        S->SetBoolField(TEXT("skating"), C->Skateboard->IsEquipped());
         S->SetBoolField(TEXT("sailboat"), C->Sailboat->IsEquipped());
         S->SetBoolField(TEXT("falling"), C->GetCharacterMovement()->IsFalling());
         S->SetNumberField(TEXT("x"), P.X); S->SetNumberField(TEXT("y"), P.Y); S->SetNumberField(TEXT("z"), P.Z);
@@ -175,7 +170,6 @@ void FYorimichiPhone::Tick(float Dt)
         S->SetNumberField(TEXT("flightSpeed"), Z ? Z->GetFlightSpeed() : 1.f);
         S->SetNumberField(TEXT("propellerAngle"), Z ? Z->GetPropellerAngle() : 0.f);
         S->SetNumberField(TEXT("zeppelinDock"), Z ? Z->GetDock() : -1);
-        S->SetNumberField(TEXT("megaStage"), Mega && Mega->IsMega() ? Mega->MegaStage() : -1);
         S->SetNumberField(TEXT("stamina"), C->Stamina.Units);
         S->SetNumberField(TEXT("staminaRings"), C->Stamina.Capacity);
         S->SetBoolField(TEXT("sprinting"), C->Stamina.Sprinting);

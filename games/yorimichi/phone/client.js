@@ -17,14 +17,14 @@ const clamp=v=>Math.max(-1,Math.min(1,v));
 // Buttons: 1 jump, 2 dash, 4 use, 8 sailboat, 16 wave, 32 walk, 64 back to spawn, 128 sprint, 256 roll.
 const keyboard=createKeyboard({Space:1,KeyF:2,KeyE:4,KeyK:8,KeyQ:16,KeyJ:32,ShiftLeft:128,ShiftRight:128,ControlLeft:256,ControlRight:256},()=>playing,()=>send());
 const holds=createHoldButtons(document.querySelectorAll('[data-bit]'),()=>send(),{beforePress:bit=>{if(bit===64)reset();}});
-// Riding (the board or the sailboat): hold buttons steer (turn) and push or brake (drive) instead of the stick.
+// Sailing: hold buttons steer (turn) and raise or lower the sail (drive) instead of the stick.
 const axes=createHoldAxes(document.querySelectorAll('[data-axis]'),()=>send());
 const stick=createStick($('stick'),$('knob'),(x,y)=>{mx=x;my=y;send();});
 const look=createLookPad($('look'),(ddx,ddy)=>{dx+=ddx;dy+=ddy;},{onEnd:()=>send()});
 function send(){
  if(!connected)return;
  const kx=(keyboard.has('KeyD')?1:0)-(keyboard.has('KeyA')?1:0),ky=(keyboard.has('KeyW')?1:0)-(keyboard.has('KeyS')?1:0);
- const riding=!!(lastState?.skating||lastState?.sailboat);
+ const riding=!!lastState?.sailboat;
  const braking=keyboard.has('KeyS')||axes.any('drive',v=>v<0);
  const pushing=keyboard.has('KeyW')||axes.any('drive',v=>v>0);
  const x=riding?axes.value('turn')+kx:mx+kx,y=riding?(braking?-1:pushing?1:0):my+ky;
@@ -53,19 +53,19 @@ on('teleport',state=>{const zone=map.data?.zones.find(z=>z.key===state.zone);toa
 on('status',state=>{
  const hint=state.rampHint;
  $('ramp-hint').textContent=hint||'';$('ramp-hint').hidden=!hint;
- $('use').textContent=hint?.startsWith('Flying to')?'Skip flight':hint?.startsWith('Use to board')?'Fly':hint?.startsWith('Use to call')?'Call ship':(state.megaStage===1||hint?.startsWith('Use to drop'))?'Drop in':hint?.includes('ladder')?'Climb':'Use';
+ $('use').textContent=hint?.startsWith('Flying to')?'Skip flight':hint?.startsWith('Use to board')?'Fly':hint?.startsWith('Use to call')?'Call ship':'Use';
  updateStamina(state);map.update(state);
  const aboard=state.zeppelinStage>=2&&state.zeppelinStage<=6;
  $('controls').classList.toggle('aboard',aboard);if(aboard)$('stamina').hidden=true;
  $('slower').hidden=!aboard;$('faster').hidden=!aboard;$('slower').textContent='Slower';$('faster').textContent='Faster · '+speedLabel(state.flightSpeed);
  window.yorimichi.flightSpeed=state.flightSpeed;
- const changedMode=!!lastState?.skating!==!!state.skating||!!lastState?.sailboat!==!!state.sailboat;
+ const changedMode=!!lastState?.sailboat!==!!state.sailboat;
  lastState=state;
- if(changedMode){reset();const riding=state.skating||state.sailboat;$('controls').classList.toggle('skating',!!riding);$('controls').classList.toggle('sailing',!!state.sailboat);$('stick').hidden=!!riding;$('skate-steering').hidden=!riding;}
+ if(changedMode){reset();const riding=!!state.sailboat;$('controls').classList.toggle('skating',!!riding);$('controls').classList.toggle('sailing',!!state.sailboat);$('stick').hidden=!!riding;$('skate-steering').hidden=!riding;}
  window.yorimichi.state=state;window.yorimichi.history.push({...state,time:Date.now()});if(window.yorimichi.history.length>200)window.yorimichi.history.shift();
  $('push').textContent=state.sailboat?'Raise sail':'Push';$('brake').textContent=state.sailboat?'Lower sail':'Brake';
- $('sailboat').textContent=state.sailboat?'Step ashore':'Sailboat';$('jump').textContent=state.skating?'Ollie':'Jump';
- status(state.ready?(aboard?(state.zeppelinStage===2?'Boarding the zeppelin':state.zeppelinStage===6?'Arriving':'Flying · '+speedLabel(state.flightSpeed)):(state.sailboat?'Sailing':state.skating?'Skating':'Exploring')+' · '+Math.round(state.speed*.036)+' km/h')+(state.showFps?' · '+Math.round(state.fps)+' FPS':''):'Loading the world…');
+ $('sailboat').textContent=state.sailboat?'Step ashore':'Sailboat';
+ status(state.ready?(aboard?(state.zeppelinStage===2?'Boarding the zeppelin':state.zeppelinStage===6?'Arriving':'Flying · '+speedLabel(state.flightSpeed)):(state.sailboat?'Sailing':'Exploring')+' · '+Math.round(state.speed*.036)+' km/h')+(state.showFps?' · '+Math.round(state.fps)+' FPS':''):'Loading the world…');
 });
 $('play').onclick=async()=>{if($('play').textContent==='Reconnect'){location.reload();return;}stream.play();playing=true;$('welcome').hidden=true;$('controls').hidden=false;try{await document.documentElement.requestFullscreen?.();}catch{}try{await navigator.wakeLock?.request('screen');}catch{}send();};
 $('sound').onclick=()=>{muted=!muted;for(const el of document.querySelectorAll('video,audio'))el.muted=muted;stream.play();$('sound').textContent=muted?'Sound off':'Sound on';};

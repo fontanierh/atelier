@@ -22,7 +22,7 @@ From the repository root, with Blender and Unreal 5.8 installed:
 # JAPAN_PYTHON must provide NumPy and Pillow, as required by the world generator.
 JAPAN_PYTHON=/path/to/python3 japan/run.sh village
 python3 japan/village/preview.py village-scout --scout --shots overview,entrance,square,workshop,forest
-python3 japan/benchmark.py village-skate --view village_skate --character cape_boy --seconds 25 --hide-hud
+python games/yorimichi/tools/benchmark.py village-walk --view road_walk --route village --seconds 25 --hide-hud
 ```
 
 `layout.py` integrates the settlement after the original seeded world is generated.

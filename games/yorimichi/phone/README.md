@@ -40,7 +40,7 @@ Safari → Share → Add to Home Screen → enable Open as Web App → Add. Clos
 
 - Settings: all Esc menu preferences, including camera, graphics, art, world lighting, FPS display. Values and limits come from Unreal; changes apply on slider release and persist in the same settings file as the desktop menu. Look sensitivity also controls phone dragging.
 - Map: the painted world map with numbered places and a pulsing arrow where you are (heading included). Tap a pin or a list entry to travel there; the game stows the board or sailboat and lands you on the ground at that place. The sheet is `/map/map.jpg` from `japan/out/map` (see `docs/WORLD_MAP.md`), the places and your position come from the game.
-- Back to spawn: return to the starting road on foot, clear momentum and queued jump input, and leave skating/sailing/custom ramp movement.
+- Back to spawn: return to the starting road on foot, clear momentum and queued jump input, and leave sailing.
 - On foot: left stick to move; Walk slows down and Sprint uses stamina. Sailboat mode uses left/right steering and raise/lower sail buttons.
 - Drag right side: camera, with independent pointer tracking so you can steer and look at the same time.
 - Dash: move forward on ground or once in the air. One-second cooldown; landing restores air dash. The separate double jump stays available if unused.
@@ -60,21 +60,23 @@ The launcher uses backbuffer capture and H.264 keyframes at a positive 120-frame
 
 The frontend and signalling packages are pinned in `package-lock.json`. A custom frontend is bundled with esbuild. Unreal's public Pixel Streaming 2 input-handler API receives the UI-interaction protocol; engine files are not modified. Logs, generated pages and process state live under `build/yorimichi/stream/`.
 
-Ordinary skating now caps at 50.4 km/h (previously 30.6), with substantially lower rolling resistance and stronger contact-driven pushes. Uphill slopes and collisions still remove speed; downhill slopes add it. The existing mini-mega surface and air motion are unchanged.
-
 ## Verification
 
-The historical skateboard harness `node games/yorimichi/phone/smoke.mjs` predates Warm Original and is not a current-character acceptance test. It connects a real Chrome WebRTC receiver at phone dimensions, checks decoded video, drives the character and skateboard, checks an ollie, checks spawn return on foot and mid-ollie (including a held-button single-trigger check), and saves screenshots plus actual RTC statistics. Set `STREAM_URL` to test the private HTTPS endpoint. It controls the running game, so use it before handing the session to the player.
+With a local stream (`atelier stream yorimichi start --local`), each test drives a real Chrome at phone size over
+WebRTC and checks the game's own telemetry; reports and screenshots go to `build/yorimichi/`:
 
-September 6 local relay test passed: touch running moved 8.5 m, skateboard motion and airborne ollie telemetry passed, and Chrome decoded 706 frames at 1280×720 (55 FPS at the final sample), with zero packet loss and zero recorded freezes. Disconnect triggered the native input timeout. Private HTTPS responds successfully. Safari-compatible WebKit also received continuous video through the HTTPS/Tailscale TCP route. The user subsequently confirmed live iPhone Safari playback with an in-game screenshot; the FPS measurements above remain local receiver measurements, not an iPhone/5G benchmark.
+- `jump-smoke.mjs`: multi-touch stick and jump: a held single jump, the double jump, a third tap refused.
+- `map-smoke.mjs`: the map sheet, pins and player marker, travel from a pin and from the list, back to spawn.
+- `settings-smoke.mjs`: every setting against the game's answers and the saved file, then restored (the session-only
+  `desktop` switch is left alone).
+- `sailboat-smoke.mjs`: launch, steer, raise and lower the sail, step ashore.
+- `sprint-smoke.mjs`, `forest-lake-smoke.mjs`: sprint stamina and rings; the woodland lake and its pier.
+- `map-scroll-smoke.mjs`: touch gestures on the map alone, without the game.
+- `performance-smoke.mjs`: decoded video and native frame rate at idle and running (a manual diagnostic).
 
-`node games/yorimichi/phone/map-smoke.mjs` opens the map, checks the sheet, pins and player marker, travels to the clock square from a pin and to the island landing from the list, verifies the game's position each time and the marker sitting on the travelled pin, then returns to spawn.
-
-`node games/yorimichi/phone/settings-smoke.mjs` checks all 19 settings against native responses and saved values, exercises the phone slider, and compares actual running distances at 1× and 1.8×. It restores the original settings and returns to spawn afterwards.
-
-`node games/yorimichi/phone/skate-smoke.mjs` follows the road while testing multi-touch steering/pushing, speed buildup beyond the old cap, coasting retention and simultaneous Push/Brake priority. It returns the character to spawn afterwards. Verified on the road: a sustained Push reached 1,400 cm/s (50.4 km/h); three seconds coasting retained 95.3% of speed (1,360.9 → 1,296.5 cm/s); holding Brake and Push together stopped at 0 cm/s.
-
-Before streaming, all feature branches were merged to main, including the southwest island/kite work and the complete harbor. The combined native build and southwest import passed. A fresh city audit checked 6,039 ground samples, 6,039 capsule sweeps, 567 bridge samples and three water tests with no errors.
+`node platform/web/stream/player-smoke.mjs` checks the plain player (`/play/`) on the same stream. Last run on the
+fresh Atelier build (29 September 2026): jump, map, settings, sailboat and the plain player pass. The phone page has no
+skateboard controls: the board reads the far device's controller or keyboard directly, so skate through `/play/`.
 
 Sources: [Epic setup](https://dev.epicgames.com/documentation/en-us/unreal-engine/getting-started-with-pixel-streaming-in-unreal-engine), [Epic infrastructure](https://github.com/EpicGamesExt/PixelStreamingInfrastructure/tree/UE5.8), [Tailscale Serve](https://tailscale.com/docs/reference/tailscale-cli/serve).
 

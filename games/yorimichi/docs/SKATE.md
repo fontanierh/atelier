@@ -13,7 +13,7 @@ bails, sounds, the rider clips (game-r17) and the skate pier all work in the gam
 against the running game. A filmed run is in `build/yorimichi/skatefilm/<take>/showreel.mp4` (see Checks).
 `-skatedebug` logs every change of mode with its reason and the wheel probes.
 
-Not done: touch controls for the phone stream (it still knows only the old cruiser), switch stance (fakie is
+Not done: skate controls on the phone page (skate through the plain player at `/play/` with a controller), switch stance (fakie is
 supported), tweaked grabs and lip tricks. The painted world map does not show
 the pier; its travel pin does.
 

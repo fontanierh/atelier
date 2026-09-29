@@ -14,7 +14,6 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "Misc/App.h"
 #include "WandererDefinition.h"
 #include "WandererAnimInstance.h"
-#include "SkateboardComponent.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "JapanCharacterMovement.h"
@@ -62,7 +61,6 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     : Super(ObjectInitializer.SetDefaultSubobjectClass<UJapanCharacterMovement>(ACharacter::CharacterMovementComponentName))
 {
     PrimaryActorTick.bCanEverTick = true;
-    Skateboard = CreateDefaultSubobject<USkateboardComponent>(TEXT("EquippedSkateboard"));
     SkateRide = CreateDefaultSubobject<USkateComponent>(TEXT("Skate"));
     Sailboat = CreateDefaultSubobject<USailboatComponent>(TEXT("EquippedSailboat"));
     Footsteps = CreateDefaultSubobject<UJapanFootstepComponent>(TEXT("Footsteps"));
@@ -138,7 +136,6 @@ void AWandererCharacter::BeginPlay()
         Sword->Initialize(this);
     }
     else UE_LOG(LogTemp,Error,TEXT("Character assets incomplete: %s. Run the matching character importer after building."),*DefinitionAssetPath);
-    Skateboard->Initialize(this);
     SkateRide->Initialize(this);
     Preferences = NewObject<UJapanPreferences>(this);
     Preferences->Initialize(this);
@@ -156,16 +153,10 @@ void AWandererCharacter::BeginPlay()
         PC->PlayerCameraManager->ViewPitchMin = -65.f;
         PC->PlayerCameraManager->ViewPitchMax = 45.f;
     }
-    bOllieVideo = FParse::Param(FCommandLine::Get(),TEXT("ollievideo"));
-    bMegaReview=FParse::Param(FCommandLine::Get(),TEXT("megaqa"));
     bSailboatReview=FParse::Param(FCommandLine::Get(),TEXT("sailboatqa"));
     bSouthwestDemo=FParse::Param(FCommandLine::Get(),TEXT("southwestdemo"));
     bSouthwestFly=FParse::Param(FCommandLine::Get(),TEXT("southwestfly"));
     if (bSouthwestDemo || bSouthwestFly) { bCinematic = true; int32 DemoFps = 60; FParse::Value(FCommandLine::Get(),TEXT("demofps="),DemoFps); FApp::SetFixedDeltaTime(1.0/FMath::Clamp(DemoFps,10,120)); FApp::SetUseFixedTimeStep(true); }
-    bRearSkateVideo = FParse::Param(FCommandLine::Get(),TEXT("rearskatevideo"));
-    bSkateVideo = bOllieVideo || bRearSkateVideo || FParse::Param(FCommandLine::Get(),TEXT("skatevideo"));
-    bSkateStanceReview = FParse::Param(FCommandLine::Get(),TEXT("skatestanceqa"));
-    bSkateReview = bSkateStanceReview || bSkateVideo || FParse::Param(FCommandLine::Get(),TEXT("skateqa"));
     bGroundContactReview=FParse::Param(FCommandLine::Get(),TEXT("groundcontactqa"));
     bWarmReview = FParse::Param(FCommandLine::Get(),TEXT("warmqa"));
     bJumpReview = FParse::Param(FCommandLine::Get(),TEXT("jumpqa"));
@@ -178,7 +169,7 @@ void AWandererCharacter::BeginPlay()
     FParse::Value(FCommandLine::Get(),TEXT("trailershot="),TrailerSpecPath);
     FParse::Value(FCommandLine::Get(),TEXT("buildingreview="),BuildingReviewSpecPath);
     // Explicit capture clock: command-line -FPS alone does not set fixed delta.
-    if (!TrailerSpecPath.IsEmpty() || FParse::Param(FCommandLine::Get(),TEXT("megafilm")))
+    if (!TrailerSpecPath.IsEmpty())
     { FApp::SetFixedDeltaTime(1.0/60.0);FApp::SetUseFixedTimeStep(true); }
     FParse::Value(FCommandLine::Get(),TEXT("benchmarkdir="),BenchmarkDirectory);
     FParse::Value(FCommandLine::Get(),TEXT("benchmarkseconds="),BenchmarkSeconds);
@@ -189,13 +180,12 @@ void AWandererCharacter::BeginPlay()
         bFixedView = true;
         DisableInput(Cast<APlayerController>(Controller));
     }
-    if (bWarmReview || bGroundContactReview || bReview || bSkateReview || bMegaReview || bMapReview || bSwordReview || !TrailerSpecPath.IsEmpty())
+    if (bWarmReview || bGroundContactReview || bReview || bMapReview || bSwordReview || !TrailerSpecPath.IsEmpty())
     {
         FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory);
         if (ReviewDirectory.IsEmpty()) ReviewDirectory = FPaths::ProjectSavedDir()/TEXT("Screenshots/Wanderer")/FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"));
         IFileManager::Get().MakeDirectory(*ReviewDirectory,true);
     }
-    if (bSkateReview) GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this,&AWandererCharacter::RecordSkatePose));
     if (bGroundContactReview) GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this,&AWandererCharacter::RecordGroundContactPose));
     if (bLocomotionReview) GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this,&AWandererCharacter::RecordLocomotionPose));
     SetMouseReleased(bReview || !BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty());
@@ -204,7 +194,7 @@ void AWandererCharacter::BeginPlay()
 void AWandererCharacter::EndPlay(const EEndPlayReason::Type Reason)
 {
     PhoneInput.Reset();
-    EndVillageJourney();
+    UGameViewportClient::OnScreenshotCaptured().RemoveAll(this);   // review and trailer frame capture
     if (Preferences) Preferences->CloseMenu();
     if (Map) Map->Close();
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -241,7 +231,6 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     auto* Movement = GetCharacterMovement();
     // Leave custom ramp physics before restoring the ordinary character pose.
     Movement->SetMovementMode(MOVE_Falling);
-    Skateboard->StowImmediately();
     SkateRide->StowImmediately();
     Sailboat->StowImmediately();
     MoveIntent = FVector2D::ZeroVector;
@@ -359,14 +348,14 @@ void AWandererCharacter::MouseLook(const FInputActionValue& V)
     if (SkateRide->IsRiding()) if (const APlayerController* PC = Cast<APlayerController>(Controller); PC && PC->IsInputKeyDown(EKeys::LeftMouseButton)) return;
     const FVector2D Delta = V.Get<FVector2D>()*MouseSensitivity;
     // MouseY is positive upward. Legacy pitch scaling is explicitly disabled in config.
-    if(!Delta.IsNearlyZero())MegaCameraGrace=2.f;
+    if(!Delta.IsNearlyZero())LookGrace=2.f;
     AddControllerYawInput(Delta.X); AddControllerPitchInput(Delta.Y);
 }
 void AWandererCharacter::StickLook(const FInputActionValue& V)
 {
     if (!bReady || bMenuOpen || bFixedView || bReview || SkateRide->IsRiding()) return;   // riding: the right stick is Flick-It
     const FVector2D Delta = V.Get<FVector2D>()*145.f*GetWorld()->GetDeltaSeconds();
-    if(!Delta.IsNearlyZero())MegaCameraGrace=2.f;
+    if(!Delta.IsNearlyZero())LookGrace=2.f;
     // SceneViewport negates Gamepad_RightY. Restore up-is-look-up with legacy scales disabled.
     AddControllerYawInput(Delta.X); AddControllerPitchInput(-Delta.Y);
 }
@@ -386,7 +375,7 @@ void AWandererCharacter::PrepareToSkate()
     if (Sword && Sword->IsArmed()) Sword->SetArmed(false);
     SetAction(NAME_None);
 }
-bool AWandererCharacter::CanAct() const { return bReady && !bMenuOpen && !Skateboard->IsEquipped() && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && GetCharacterMovement()->IsMovingOnGround() && !MovementLocked() && !bPendingTakeoff; }
+bool AWandererCharacter::CanAct() const { return bReady && !bMenuOpen && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && GetCharacterMovement()->IsMovingOnGround() && !MovementLocked() && !bPendingTakeoff; }
 bool AWandererCharacter::StandForAction()
 {
     UnCrouch();
@@ -410,7 +399,6 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
 {
     if (SkateRide->IsRiding()) return;   // Space loads and pops the board (read by the skate component)
     if (Sailboat->IsEquipped()) return;
-    if (bReady && !bMenuOpen && Skateboard->IsEquipped()) { Skateboard->RequestOllie(); return; }
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;   // a draw, sheathe or deflection finishes first
     if (!bReady || bMenuOpen || MovementLocked() || bPendingTakeoff) return;
     UCharacterMovementComponent* M = GetCharacterMovement();
@@ -440,7 +428,7 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
 void AWandererCharacter::ReleaseJump(const FInputActionValue&) { StopJumping(); }
 void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 {
-    if (!bReady || bMenuOpen || IsZeppelinPassenger() || Skateboard->IsEquipped() || SkateRide->IsRiding()) return;
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding()) return;
     if (Sailboat->IsEquipped()) { Sailboat->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
     if (CanAct() && StandForAction() && Sailboat->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
@@ -453,13 +441,7 @@ void AWandererCharacter::ToggleSkateboard(const FInputActionValue&)
         if (SkateRide->IsRiding()) { SkateRide->Toggle(); return; }
         if (Sword && !Sword->CancelForInterrupt(true)) return;
         if (CanAct() && StandForAction() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
-        return;
     }
-    if (!bReady || !Definition || !Definition->SupportsSkateboarding || bMenuOpen || IsZeppelinPassenger() || Sailboat->IsEquipped()) return;
-    if (Skateboard->IsEquipped()) { Skateboard->Toggle(); return; }
-    if (Sword && !Sword->CancelForInterrupt(true)) return;
-    if (CanAct() && StandForAction() && Skateboard->Toggle())
-    { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
 }
 void AWandererCharacter::ToggleCrouch(const FInputActionValue&)
 {
@@ -569,8 +551,7 @@ void AWandererCharacter::Dash(const FInputActionValue&)
 {
     if (SkateRide->IsRiding()) return;
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;
-    if (!bReady || bMenuOpen || !Definition || MovementLocked() || bPendingTakeoff ||
-        Skateboard->IsEquipped() || Sailboat->IsEquipped() || DashCooldown>0.f) return;
+    if (!bReady || bMenuOpen || !Definition || MovementLocked() || bPendingTakeoff || Sailboat->IsEquipped() || DashCooldown>0.f) return;
     auto* M=GetCharacterMovement();
     const bool Air=M->IsFalling();
     if ((!Air && !M->IsMovingOnGround()) || (Air && bAirDashUsed) ||
@@ -632,13 +613,13 @@ void AWandererCharacter::Dash(const FInputActionValue&)
     // Neither dash consumes nor restores the separate double-jump allowance.
 }
 void AWandererCharacter::Wave(const FInputActionValue&) { if (SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
-void AWandererCharacter::AttackPressed(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Skateboard->IsEquipped() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed(); }
+void AWandererCharacter::AttackPressed(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed(); }
 void AWandererCharacter::AttackReleased(const FInputActionValue&) { if (Sword) Sword->AttackReleased(); }
-void AWandererCharacter::ParryPressed(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Skateboard->IsEquipped() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ParryPressed(); }
-void AWandererCharacter::ToggleWeapon(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Skateboard->IsEquipped() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ToggleWeapon(); }
+void AWandererCharacter::ParryPressed(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ParryPressed(); }
+void AWandererCharacter::ToggleWeapon(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ToggleWeapon(); }
 void AWandererCharacter::FlightSlower(const FInputActionValue&) { if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(-1); }
 void AWandererCharacter::FlightFaster(const FInputActionValue&) { if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(1); }
-void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&Cast<UJapanCharacterMovement>(GetCharacterMovement())->TryMegaInteract()){SetAction(NAME_None);return;} if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
+void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {
     if (!bReady) return;
@@ -949,7 +930,7 @@ void AWandererCharacter::AdvanceSailboatReview(float Dt)
             // Riding into the sea puts the rider back on the board at the last dry spot (the board's own movement mode).
             if(SailboatReviewStep==21)Check(SkateRide->IsRiding()&&SkateRide->GetMode()==ESkateMode::Ground,TEXT("water recovery puts the rider back on the board: ")+Mode);
             else Check(GetCharacterMovement()->IsMovingOnGround(),TEXT("water recovery grounded: ")+Mode);
-            Check(!Skateboard->IsEquipped()&&!Sailboat->IsEquipped(),TEXT("water recovery stows equipment: ")+Mode);
+            Check(!Sailboat->IsEquipped(),TEXT("water recovery stows equipment: ")+Mode);
             Check(GetCharacterMovement()->Velocity.Size2D()<.1&&FallSpeed<.1&&JumpBuffer<.01&&!bPendingTakeoff,TEXT("water recovery clears momentum and fall state: ")+Mode);
             Check(!GetCharacterMovement()->CurrentRootMotion.HasActiveRootMotionSources(),TEXT("water recovery clears root motion: ")+Mode);
             if(SailboatReviewStep!=21)Check(GetMesh()->GetRelativeTransform().Equals(SailboatReviewInitialMesh,.1),TEXT("water recovery restores mesh: ")+Mode);
@@ -1121,7 +1102,6 @@ void AWandererCharacter::Landed(const FHitResult& Hit)
     GetCharacterMovement()->RemoveRootMotionSource(TEXT("ForwardDash"));
     SinceGrounded = 0.f;
     if (Sailboat->IsEquipped()) { FallSpeed = 0.f; return; }
-    if (Skateboard->IsEquipped()) { Skateboard->Landed(); FallSpeed = 0.f; return; }
     // The drop decides how hard the landing reads, before FallSpeed is cleared below.
     if (Footsteps) Footsteps->Land(Hit,FMath::GetMappedRangeValueClamped(FVector2f(200.f,1100.f),FVector2f(.55f,1.4f),FallSpeed));
     if (AnimationAction==TEXT("Roll") && ActionTime<ActionDuration) { FallSpeed=0.f; return; }
@@ -1200,8 +1180,6 @@ void AWandererCharacter::Tick(float Dt)
     return; }
     if (bWarmReview) AdvanceWarmReview(Dt);
     if (bReview) AdvanceReview(Dt);
-    if (bSkateReview) AdvanceSkateReview(Dt);
-    if (bMegaReview) AdvanceMegaReview(Dt);
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview) AdvanceMapReview(Dt);
     if (bSwordReview) AdvanceSwordReview(Dt);
@@ -1211,18 +1189,10 @@ void AWandererCharacter::Tick(float Dt)
     if (!TrailerSpecPath.IsEmpty()) AdvanceTrailer(Dt);
     if (PhoneInput) PhoneInput->Tick(Dt);
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
-    Skateboard->SetInput(MoveIntent,bMenuOpen); Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
-    if (!Skateboard->IsEquipped() && !Sailboat->IsEquipped() && !SkateRide->IsRiding()) { if (Sword) Sword->Advance(Dt); AdvanceAction(Dt); } // Keep state time aligned while settings are open.
+    Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
+    if (!Sailboat->IsEquipped() && !SkateRide->IsRiding()) { if (Sword) Sword->Advance(Dt); AdvanceAction(Dt); } // Keep state time aligned while settings are open.
     UCharacterMovementComponent* M = GetCharacterMovement();
-    MegaCameraGrace=FMath::Max(0.f,MegaCameraGrace-Dt);
-    if(const auto* Mega=Cast<UJapanCharacterMovement>(M);Mega&&Mega->IsMega()&&!Mega->IsMegaClimbing()&&Controller&&!bMenuOpen&&!bMegaReview&&MegaCameraGrace<=0)
-    {
-        // Keep the line visible after climbing and through the vert return.
-        // Looking with mouse, stick or phone gives the player a two-second override.
-        const float Pitch=M->Velocity.Z<-300.f&&M->Velocity.Size2D()>100.f?-25.f:-14.f;
-        const float Yaw=Mega->MegaStage()==1?0.f:GetActorRotation().Yaw;
-        Controller->SetControlRotation(FMath::RInterpTo(Controller->GetControlRotation(),FRotator(Pitch,Yaw,0),Dt,3.f));
-    }
+    LookGrace=FMath::Max(0.f,LookGrace-Dt);
     // Skating: the camera swings in behind the line of travel unless the player looked around in the last two seconds.
     float SkateYaw=0.f;
     // Riding, the camera comes lower and a little closer behind the board (skate. framing).
@@ -1235,17 +1205,17 @@ void AWandererCharacter::Tick(float Dt)
         CameraArm->TargetOffset.Z=Definition->CameraHeight-20.f*SkateCameraBlend;
         if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend);
     }
-    if(SkateRide->IsRiding()&&Controller&&!bMenuOpen&&MegaCameraGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
+    if(SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-8.f,SkateYaw,0),Dt,2.4f));
     }
-    const bool CanSprint=!bWalk&&!bJog&&!bIsCrouched&&!MovementLocked()&&!SkateRide->IsRiding()&&!Skateboard->IsEquipped()&&!Sailboat->IsEquipped()&&!MoveIntent.IsNearlyZero()&&M->Velocity.Size2D()>40.f;
+    const bool CanSprint=!bWalk&&!bJog&&!bIsCrouched&&!MovementLocked()&&!SkateRide->IsRiding()&&!Sailboat->IsEquipped()&&!MoveIntent.IsNearlyZero()&&M->Velocity.Size2D()>40.f;
     Stamina.Tick(Dt,bSprintHeld,CanSprint,bMenuOpen);
     M->MaxWalkSpeed = Definition->UseAuthoredMovement
         ? ((bWalk || bJog) ? Definition->WalkSpeed : Stamina.Sprinting ? GetSprintSpeed() : Definition->RunSpeed)
         : bWalk ? Definition->WalkSpeed : Definition->RunSpeed*(bJog?1.f:Stamina.Sprinting?2.5f:2.f);
-    if (!bMenuOpen && !MovementLocked() && !Skateboard->IsEquipped() && !Sailboat->IsEquipped() && !SkateRide->IsRiding())
+    if (!bMenuOpen && !MovementLocked() && !Sailboat->IsEquipped() && !SkateRide->IsRiding())
     {
         const FRotationMatrix Basis(FRotator(0,GetControlRotation().Yaw,0));
         if (bReview || bSouthwestDemo || !BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty()) AddMovementInput(ReviewForward,MoveIntent.Y);
@@ -1257,7 +1227,7 @@ void AWandererCharacter::Tick(float Dt)
     }
     // Riding fast widens the view a little (up to 9 degrees at 45 km/h).
     const float SkateFOV=SkateRide->IsRiding()?9.f*FMath::Clamp((SkateRide->GetSpeed()-500.f)/750.f,0.f,1.f):0.f;
-    FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,PreferredFOV+SkateFOV+(!bWalk && !bJog && !Skateboard->IsEquipped() && !SkateRide->IsRiding() && M->Velocity.Size2D()>Definition->JogSpeed+30.f ? 3.f : 0.f),Dt,5.f));
+    FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,PreferredFOV+SkateFOV+(!bWalk && !bJog && !SkateRide->IsRiding() && M->Velocity.Size2D()>Definition->JogSpeed+30.f ? 3.f : 0.f),Dt,5.f));
     // Combat camera shake: smooth noise scaled by trauma squared, decaying in real time (hit-stop freezes this actor's clock).
     {
         const float Real=FApp::GetDeltaTime();

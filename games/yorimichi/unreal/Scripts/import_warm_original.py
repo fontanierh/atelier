@@ -154,7 +154,7 @@ if set(clips)=={r['role'] for r in CONFIG['roles']}-{'Run','SwordRun'}:
     factory=U.DataAssetFactory();factory.set_editor_property('data_asset_class',U.WandererDefinition)
     definition=asset('DA_WarmOriginal',U.WandererDefinition,factory)
     for k,v in dict(mesh=mesh,locomotion=moving,crouching=crouching,actions=clips,
-        skate_actions={},supports_skateboarding=False,use_authored_movement=True,
+        skate_actions={},use_authored_movement=True,
         rest_ankle_heights=U.Vector2D(CONFIG['rest_ankles_cm']['L'],CONFIG['rest_ankles_cm']['R']),
         sole_height=CONFIG['sole_cm'],camera_height=35.,walk_speed=speed('Walk'),
         jog_speed=speed('Walk'),run_speed=speed('Run'),sprint_speed=speed('Sprint'),crouch_speed=speed('CrouchWalk'),

@@ -22,5 +22,5 @@ private:
     TWeakObjectPtr<AWandererCharacter> Rider;
     TSharedPtr<FAtelierStream> Stream;
     double LastStatus = 0.;
-    bool bBrakeAfterLease = false;   // the link dropped while riding the cruiser: brake it until touch input returns
+    bool bBrakeAfterLease = false;   // the link dropped while sailing: hold the sail down until touch input returns
 };

@@ -1,7 +1,7 @@
 #include "WandererCharacter.h"
 #include "JapanWorld.h"
 #include "SailboatComponent.h"
-#include "SkateboardComponent.h"
+#include "SkateComponent.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
@@ -190,7 +190,7 @@ void AWandererCharacter::AdvanceBuildingReview(float)
    }
   }
   if(S.Errors.IsEmpty())S.ProbeFailures=RunBuildingProbes(GetWorld(),this,S.Spec,ReviewDirectory);
-  bCinematic=true;MoveIntent=FVector2D::ZeroVector;Skateboard->StowImmediately();Sailboat->StowImmediately();
+  bCinematic=true;MoveIntent=FVector2D::ZeroVector;SkateRide->StowImmediately();Sailboat->StowImmediately();
   GetCharacterMovement()->StopMovementImmediately();GetCharacterMovement()->DisableMovement();SetActorHiddenInGame(true);SetActorEnableCollision(false);
   if(auto* PC=Cast<APlayerController>(Controller))
   {

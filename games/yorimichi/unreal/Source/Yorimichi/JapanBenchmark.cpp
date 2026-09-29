@@ -1,6 +1,6 @@
 #include "WandererCharacter.h"
+#include "SkateComponent.h"
 #include "JapanWorld.h"
-#include "SkateboardComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/GameViewportClient.h"
@@ -145,8 +145,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
             FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
             FollowCamera->SetWorldLocationAndRotation(Shot.Location,Shot.Rotation);
         }
-        if (BenchmarkView == TEXT("skate") || BenchmarkView == TEXT("ollie")) ToggleSkateboard(FInputActionValue());
-        if (BenchmarkView == TEXT("village_skate") || BenchmarkView == TEXT("road_walk"))
+        if (BenchmarkView == TEXT("road_walk"))
         {
             GetRoadSteering();
             if (SkateReviewRoad.Num() < 2)
@@ -157,7 +156,6 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
             ReviewForward = (SkateReviewRoad[Start+1]-SkateReviewRoad[Start]).GetSafeNormal2D();
             SetActorRotation(ReviewForward.Rotation());
             GetCharacterMovement()->StopMovementImmediately();
-            if (BenchmarkView == TEXT("village_skate")) ToggleSkateboard(FInputActionValue());
             Controller->SetControlRotation(FRotator(-12.f,ReviewForward.Rotation().Yaw,0.f));
         }
         UE_LOG(LogTemp,Display,TEXT("BENCHMARK warmup: %s, %.1f measured seconds"),*BenchmarkView,BenchmarkSeconds);
@@ -185,13 +183,6 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         FCsvProfiler::Get()->BeginCapture();
         bBenchmarkCapturing = true;
         SkateReviewStuckSince=-1.; // Warmup was intentionally stationary, not a route stall.
-    }
-    if (BenchmarkView == TEXT("skate") || BenchmarkView == TEXT("ollie"))
-    {
-        const float RideTime = BenchmarkTime-Warmup;
-        if (BenchmarkView == TEXT("ollie") && RideTime > 0.f && FMath::FloorToInt(RideTime/3.f) != FMath::FloorToInt((RideTime-Dt)/3.f)) Skateboard->RequestOllie();
-        MoveIntent = FVector2D(GetRoadSteering(),RideTime > 10.f && RideTime < 14.f ? 0.f : 1.f);
-        Controller->SetControlRotation(FRotator(-8.f,GetActorRotation().Yaw+85.f*FMath::Sin(BenchmarkTime*.18f),0.f));
     }
     if (!bBenchmarkCapturing) return;
     const float T = BenchmarkTime-Warmup;
@@ -228,11 +219,6 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         const FRotator Target(-12.f,ReviewForward.Rotation().Yaw,0.f);
         Controller->SetControlRotation(FMath::RInterpTo(Controller->GetControlRotation(),Target,Dt,5.f));
     }
-    if (BenchmarkView == TEXT("village_skate"))
-    {
-        MoveIntent = FVector2D(GetRoadSteering(),1.f);
-        Controller->SetControlRotation(FRotator(-12.f,GetActorRotation().Yaw,0.f));
-    }
     if (BenchmarkView == TEXT("traverse"))
     {
         MoveIntent.Y = 1.f;
@@ -247,7 +233,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
     const FRotator R = FollowCamera->GetComponentRotation();
     CSV_CUSTOM_STAT(JapanBenchmark,Seconds,T,ECsvCustomStatOp::Set);
     CSV_CUSTOM_STAT(JapanBenchmark,Speed,GetVelocity().Size2D(),ECsvCustomStatOp::Set);
-    CSV_CUSTOM_STAT(JapanBenchmark,Skating,Skateboard->IsEquipped()?1:0,ECsvCustomStatOp::Set);
+    CSV_CUSTOM_STAT(JapanBenchmark,Skating,SkateRide->IsRiding()?1:0,ECsvCustomStatOp::Set);
     CSV_CUSTOM_STAT(JapanBenchmark,Falling,GetCharacterMovement()->IsFalling()?1:0,ECsvCustomStatOp::Set);
     // Route progress, so a traversal claim can be checked against waypoints rather than a timer.
     CSV_CUSTOM_STAT(JapanBenchmark,RoadIndex,SkateReviewIndex,ECsvCustomStatOp::Set);

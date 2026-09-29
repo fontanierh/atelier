@@ -9,5 +9,3 @@ void UpdateHarborLook(AJapanWorld* World);
 // Keep the pond bridge's thin joinery free of screen-space GI occlusion streaks.
 void InitializeGardenBridgeLook(AJapanWorld* World);
 
-// Opt-in visibility experiment; requires runtime sea tiles.
-bool ExperimentalHarborFillVisible(AJapanWorld* World);

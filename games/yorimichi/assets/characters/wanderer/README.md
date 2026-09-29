@@ -76,7 +76,7 @@ artifact hashes. Rebuilding either rider requires rebuilding its skating clips.
 python3 japan/characters/cape_boy/locomotion_qa.py NAME --character wanderer
 python3 japan/items/skateboard/stance_qa.py NAME --character wanderer
 python3 japan/items/skateboard/qa.py NAME --character cape_boy
-python3 japan/benchmark.py NAME --character wanderer --view skate --seconds 25 --hide-hud
+python games/yorimichi/tools/benchmark.py NAME --view traverse --seconds 25 --hide-hud
 python3 japan/characters/wanderer/preview.py SESSION
 python3 japan/characters/wanderer/preview.py SESSION --encode-only
 ```

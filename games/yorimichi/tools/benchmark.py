@@ -74,7 +74,7 @@ def summarize(path, warmup=300, phase=None):
 # traversal is only allowed for the second group, and only if the telemetry shows it happened.
 STATIC_VIEWS = ('spawn', 'portrait', 'forest', 'coast', 'village', 'north_overview', 'park',
                 'station', 'lake', 'harbor', 'arcade', 'plaza', 'city', 'custom')
-MOVING_VIEWS = ('traverse', 'skate', 'ollie', 'village_skate', 'road_walk')
+MOVING_VIEWS = ('traverse', 'road_walk')
 # 0.3 m/s. The scripted traverse deliberately stages walk, jog and run, and its walk is 85 cm/s, so
 # a 1 m/s threshold failed a view that was moving exactly as intended. The idle soak that prompted
 # all of this drifted below 1 cm/s, so this still separates travel from standing still.
@@ -188,14 +188,13 @@ def main():
     p.add_argument('--wait-renderer', type=float, default=0,
                    help='Wait up to this many seconds for the shared render slot; default refuses immediately')
     p.add_argument('--seconds', type=float, default=25)
-    p.add_argument('--road-index',type=int,default=0,help='Starting route sample for a skate traversal')
+    p.add_argument('--road-index',type=int,default=0,help='Starting route sample for the road walk')
     p.add_argument('--boot', action='store_true', help='Use the original 900-frame boot capture')
     p.add_argument('--width', type=int, default=1920)
     p.add_argument('--height', type=int, default=1080)
     p.add_argument('--capped', action='store_true')
     p.add_argument('--desktop-fullscreen', action='store_true',
                    help='Measure the visible native 1440-high desktop viewport; width must match display aspect')
-    p.add_argument('--character', choices=('cape_boy',), default='cape_boy')
     args = p.parse_args()
     if args.desktop_fullscreen and (args.height != 1440 or args.boot):
         p.error('--desktop-fullscreen requires --height 1440 and a scene benchmark')
@@ -229,7 +228,7 @@ def main():
            # Retina scaling or a remote display. The PNG check below remains mandatory.
            str(PROJECT/'Yorimichi.uproject'), '-game',
            '-fullscreen' if args.desktop_fullscreen else '-RenderOffscreen', '-ForceRes',
-           f'-resx={args.width}', f'-resy={args.height}', '-character='+args.character, '-fixedview',
+           f'-resx={args.width}', f'-resy={args.height}', '-fixedview',
            '-csvGpuStats', '-csvCompression=0', '-ExitAfterCsvProfiling', '-unattended',
            '-nosplash', '-stdout', '-abslog='+str(folder/'game.log')]
     if args.desktop_fullscreen:
@@ -240,7 +239,7 @@ def main():
     if args.commands: commands += ','+args.commands
     cmd += ['-ExecCmds='+commands]
     if args.hide_hud: cmd += ['-benchmarkhidehud']
-    if args.view in ('village_skate','road_walk'): cmd += ['-reviewroute='+args.route,'-benchmarkroadindex='+str(args.road_index)]
+    if args.view == 'road_walk': cmd += ['-reviewroute='+args.route,'-benchmarkroadindex='+str(args.road_index)]
     if args.settings: cmd += ['-set='+args.settings]
     cmd += ['-ini:Engine:'+v for v in args.ini]
     cmd += args.launch_arg
@@ -286,10 +285,6 @@ def main():
     if resident_material.exists(): inputs.append(resident_material)
     grass_material=PROJECT/'Content/Japan/Materials/M_Grass.uasset'
     if grass_material.exists(): inputs.append(grass_material)
-    if args.view in ('skate','ollie','village_skate'):
-        inputs += sorted((PROJECT/'Content/Skateboard').rglob('*.uasset'))
-        character_folder='CapeBoy' if args.character=='cape_boy' else 'Wanderer'
-        inputs += [PROJECT/'Content'/character_folder/('DA_'+character_folder+'.uasset')]
     lod_manifest=yori.OUT/'foliage_lods/manifest.json'
     if lod_manifest.exists():
         inputs.append(lod_manifest)
