@@ -1,0 +1,32 @@
+Sonniss #GameAudioGDC Bundle — UNLIMITED USER LICENSE
+Full text: https://sonniss.com/gdc-bundle-license
+(archived: https://web.archive.org/web/20240128130531/https://sonniss.com/gdc-bundle-license)
+
+GRANT OF LICENSE
+  Worldwide, non-exclusive, royalty-free licence to use all or any of the sound effects.
+
+RIGHTS GRANTED
+  a) Use on an unlimited number of projects, for their entire lifetime.
+  b) Use AND MODIFY for personal and commercial projects, without attribution.
+  c) Publicly perform a reproduction over any medium.
+  d) Use in synchronisation with audio/visual projects, "which includes but is not
+     limited to: games, films, television & interactive projects."
+
+RESTRICTIONS
+  a) May not modify the sound effects with intent to claim authorship of the original
+     recording.
+  b) May not sell the sound effects as they come. (They MAY be sold as incorporated
+     into the licensee's project.)
+
+NO AI TRAINING OR USAGE
+  Expressly prohibited from using these sound effects to train artificial intelligence
+  technologies, including anything capable of generating sound effects in a similar
+  style, or to sublicense such rights.
+
+COPYRIGHT stays with the respective creators. Governed by English law.
+
+--
+What this means for Yorimichi: slicing these into one-shots and shipping them inside
+the game is exactly what the licence covers. What we must NOT do is ship them as a
+sound pack of their own, or feed them into any AI model as training or audio-to-audio
+conditioning input.

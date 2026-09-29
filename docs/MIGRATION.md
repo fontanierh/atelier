@@ -27,6 +27,8 @@ touch controls, the player shell and on-foot activity, skate, sail and ride, com
 |---|---|---|---|
 | Skeleton, conventions | — | `README.md`, `ARCHITECTURE.md`, `platform/conventions/` | done |
 | Studio core, machine safety | `japan/streaming/{exclusive,guard,memory_guard,provenance}.py`, `japan/tools/guarded_run.py` | `platform/studio/atelier/` | done, tests pass |
+| Characters (player, fox hunter, villager) | `output/imagegen/.../game-r17`, `.../animation-r05`, `japan/characters/wanderer` + shared cape boy modules, `japan/tools/export_*_unreal.py` | `games/yorimichi/assets/characters/` | done, exports verified |
+| Sound banks, effect textures | `japan/audio`, `japan/tools/{fetch_sonniss_*,slice_*,make_skate_sfx,gen_combat_fx_textures}.py` | `games/yorimichi/assets/{audio,fx}/` | done: all 593 WAVs and 5 textures byte-identical |
 | World generators, regions, map, sailboat | `japan/*.py`, `japan/{village,hidamari,southwest,mega,forest_lake,zeppelin,skatepark,sailboat}/`, `japan/tools/*map*.py` | `games/yorimichi/world/`, `games/yorimichi/assets/vehicles/sailboat/` | done, verified (below) |
 
 ### World verification (29 September)

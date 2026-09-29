@@ -1,0 +1,4 @@
+id = "combat"
+fetch = "fetch.py"                    # Sonniss masters (md5-checked) -> ~/.cache/atelier/sonniss/combat
+build = "slice.py"                    # -> build/yorimichi/audio/combat (39 one-shots in 17 cues + the countryside ambience)
+licence = "Sonniss GDC bundles: may ship inside the game; the files are not redistributed here; no AI use"
