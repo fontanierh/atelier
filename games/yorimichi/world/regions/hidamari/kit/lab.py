@@ -1,6 +1,6 @@
 """Reference-led building lab for Hidamari (see hidamari/kit/__init__.py).
 
-    PY=/Users/henryfontanier/.pyenv/versions/3.12.0/bin/python3   # NumPy/Pillow-enabled interpreter
+    PY='uv run python'   # any Python 3.11+ with NumPy and Pillow
     $PY games/yorimichi/world/regions/hidamari/kit/lab.py ref SLUG [--n 2]                # gpt-image-2.5-sunburst concept from the brief + game stills
     $PY games/yorimichi/world/regions/hidamari/kit/lab.py build SLUG                      # Blender build -> Unreal import -> in-game renders
     $PY games/yorimichi/world/regions/hidamari/kit/lab.py capture SLUG                    # renders only
