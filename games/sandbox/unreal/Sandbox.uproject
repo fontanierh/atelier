@@ -1,0 +1,34 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "",
+  "Description": "Sandbox: the smallest game on Atelier, a test ground for the platform (see games/sandbox/README.md).",
+  "Modules": [
+    {
+      "Name": "Sandbox",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": [
+        "Engine",
+        "EnhancedInput"
+      ]
+    }
+  ],
+  "AdditionalPluginDirectories": [
+    "../../../platform/engine/Plugins"
+  ],
+  "Plugins": [
+    { "Name": "EnhancedInput", "Enabled": true },
+    { "Name": "PythonScriptPlugin", "Enabled": true },
+    { "Name": "EditorScriptingUtilities", "Enabled": true },
+    { "Name": "PixelStreaming2", "Enabled": true },
+    { "Name": "Interchange", "Enabled": true },
+    { "Name": "AndroidFileServer", "Enabled": false },
+    { "Name": "AtelierCore", "Enabled": true },
+    { "Name": "LiveBridge", "Enabled": true },
+    { "Name": "AtelierAnimation", "Enabled": false },
+    { "Name": "AtelierFX", "Enabled": false },
+    { "Name": "Skate", "Enabled": false },
+    { "Name": "AtelierStream", "Enabled": false }
+  ]
+}

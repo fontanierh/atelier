@@ -1,0 +1,15 @@
+# Sandbox: the smallest game on Atelier, a flat test ground for the platform's plugins and commands. It shares no files
+# with any other game.
+id = "sandbox"
+title = "Sandbox"
+atelier = "0.1"
+unreal_project = "unreal/Sandbox.uproject"
+editor_target = "SandboxEditor"
+build = "build.py"
+
+[play.play]
+args = ["-game", "-windowed", "-resx=1600", "-resy=900"]
+
+[stream]
+# No touch page: the stream serves the platform's plain player (keyboard, mouse or a controller on the far device).
+protocol = "sandbox"

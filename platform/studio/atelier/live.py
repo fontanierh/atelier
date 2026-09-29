@@ -1,7 +1,8 @@
 """Talk to a running game through the live bridge (the game's HTTP bridge on localhost:8830).
 
     atelier live state                    # player, camera, aim point, live props
-    atelier live py "live.say('hello')"   # run Python in the game (shared namespace; `live`, `unreal` ready)
+    atelier live py "unreal.LiveLibrary.say('hello', 4.0)"   # run Python in the game (shared namespace; `unreal`
+                                          # ready, and the game's helper module as `live` when it has one)
     atelier live py - < script.py         # ... from stdin
     atelier live shot [out.png]           # screenshot of the game view (waits for the file)
 
@@ -45,7 +46,7 @@ def main(argv=None):
             path = Path(argv[2]).resolve() if len(argv) > 2 else build_root() / 'live' / 'shots' / (time.strftime('%Y%m%d_%H%M%S') + '.png')
             path.parent.mkdir(parents=True, exist_ok=True)
             if path.exists(): path.unlink()
-            if not run(f'live.shot(r"{path}")'): return 1
+            if not run(f'import unreal\nunreal.LiveLibrary.screenshot(r"{path}")'): return 1   # the generic verb: any game
             for _ in range(100):
                 if path.exists() and path.stat().st_size > 0:
                     time.sleep(.2); print(path); return 0

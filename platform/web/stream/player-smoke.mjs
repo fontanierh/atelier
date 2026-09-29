@@ -5,6 +5,10 @@
 import {chromium, CHROME, STREAM_URL} from './smoke.mjs';
 const LIVE = process.env.LIVE_URL || 'http://127.0.0.1:8830';
 const player = async () => (await (await fetch(LIVE + '/state')).json()).player;
+async function waitForBridge() {   // the game starts its bridge once the world is loaded, after the stream connects
+    for (let i = 0; i < 120; i++) { try { return await player(); } catch { await new Promise(r => setTimeout(r, 500)); } }
+    throw Error(`the live bridge at ${LIVE} never answered`);
+}
 const browser = await chromium.launch({executablePath: CHROME, headless: true, args: ['--autoplay-policy=no-user-gesture-required']});
 try {
     const page = await browser.newPage({viewport: {width: 1280, height: 720}});
@@ -14,6 +18,7 @@ try {
     await page.waitForFunction(() => { const v = document.querySelector('video'); return v && v.videoWidth > 0 && v.currentTime > 0; }, {}, {timeout: 60000});
     await page.mouse.click(640, 360);   // focus the video, as a player would
     await page.waitForTimeout(500);
+    await waitForBridge();
     const before = await player();
     await page.keyboard.down('KeyW'); await page.waitForTimeout(1500); await page.keyboard.up('KeyW');
     await page.waitForTimeout(500);
