@@ -5,6 +5,7 @@ is tested against the rest of the body and each whole arm against the other arm.
   depth:   how far a source vertex sits inside the target surface by ray parity (closed parts only).
 Plus the lateral position of each hand relative to the chest, to catch arms crossing the midline."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import bpy
 from mathutils import Vector

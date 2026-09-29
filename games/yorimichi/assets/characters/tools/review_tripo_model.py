@@ -5,6 +5,7 @@ No cleanup, remeshing or rigging is performed. The imported materials and mesh
 are packed into a review .blend; cameras use the provider's default +X front.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import argparse
 from collections import Counter

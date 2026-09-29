@@ -6,6 +6,7 @@ blender -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools
 Camera directions follow the sprint review: side = -Y, three-quarter = (1,-.7,.08).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 from pathlib import Path
 import argparse, json, subprocess, sys

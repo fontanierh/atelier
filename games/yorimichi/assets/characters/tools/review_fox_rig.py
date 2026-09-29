@@ -10,6 +10,7 @@ at 24 fps form one 360-frame diagnostic action. Rotations are authored in armatu
 its left is +Y, up is +Z) and converted into each bone's local frame, so the tests do not depend on bone rolls.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import argparse, base64, json, math, sys
 from pathlib import Path

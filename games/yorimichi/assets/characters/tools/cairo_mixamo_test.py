@@ -5,6 +5,7 @@ Raw Mixamo assets stay outside the published output. No video pose reconstructio
 or rejected sword action is used. Source rest transforms are measured per import.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import argparse
 import json
@@ -177,7 +178,8 @@ def main():
             'support_hand_error_max_m':max(support_errors),'support_hand_error_mean_m':sum(support_errors)/len(support_errors),
             'status':'Mocap test with anatomical hand mapping and support-hand fitting; pending visual review.'}
     (out/'retarget.json').write_text(json.dumps(report,indent=2)+'\n')
-    bpy.ops.wm.save_as_mainfile(filepath=str((yori.OUT / 'mixamo-sword-test/working.blend').resolve()))
+    working=(yori.OUT / 'mixamo-sword-test/working.blend').resolve(); working.parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(working))
     for obj in imported:bpy.data.objects.remove(obj,do_unlink=True)
     for a in list(bpy.data.actions):
         if a!=new:bpy.data.actions.remove(a)

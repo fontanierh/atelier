@@ -4,6 +4,7 @@ The raw provider GLB remains immutable. Transfer only its skeleton/weights to th
 native approved mesh, then author diagnostic poses rather than final animations.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 from pathlib import Path
 import bpy, json, math, sys

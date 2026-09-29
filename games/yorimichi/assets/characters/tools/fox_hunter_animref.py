@@ -10,6 +10,7 @@ Stage B (plain python):  python games/yorimichi/assets/characters/tools/fox_hunt
     animref/submit_all.sh (gh-hosted input URL, then platform/studio/node/h3_max_reference.mjs submit/status).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import hashlib, json, sys
 from pathlib import Path
