@@ -1,0 +1,1 @@
+"""Hidamari eastern city extension."""

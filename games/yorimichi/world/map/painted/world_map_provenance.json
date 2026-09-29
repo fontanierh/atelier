@@ -1,0 +1,62 @@
+{
+  "model": "mixed; local woodland lake by gpt-image-2.5-sunburst",
+  "quality": "high",
+  "parent": {
+    "generator": "GPT Image 2.5 Sunburst API via imagegen skill CLI; local registered patch",
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "high",
+    "size": "1536x1024",
+    "date": "2026-09-09T15:10:39.308212+00:00",
+    "scope": "Mini-mega landmark only. Rest of the previous mixed-provenance painting preserved.",
+    "parent_provenance": "japan/docs/map/mini-mega-fix/previous-provenance.json",
+    "parent_art_sha256": "7cb4e04d6020df71abebb5fc3239f057a2e28f8b5286f46e51a5003fc845d3ae",
+    "prompt_file": "output/imagegen/mini-mega-map/prompt.txt",
+    "generated_crop_sha256": "f14f27cd8e657c824480f3df8e02fc3e60e76924e2abe43f4aa17fefda14de45",
+    "art_sha256": "8eb093b74608fb351dd531a8dc9432f74d6d84a34539aefc09edacf50a95bb2e",
+    "registration_check": "output/imagegen/mini-mega-map/registration-check.json",
+    "registration": "japan/docs/map/world_map_registration.json",
+    "calibration": "japan/docs/map/world_map_calibration.json",
+    "inputs": [
+      {
+        "path": "tmp/imagegen/mini-mega-map/current-crop.png",
+        "sha256": "aefe1d5381dfd3a9322378e636558c5981e5c2f738b3c5589aed19608a417070"
+      },
+      {
+        "path": "japan/docs/map/mini-mega-fix/previous-map.png",
+        "sha256": "7cb4e04d6020df71abebb5fc3239f057a2e28f8b5286f46e51a5003fc845d3ae"
+      },
+      {
+        "path": "japan/docs/mini_mega_entry/phone-deck.png",
+        "sha256": "b19f97907bd6b575c428091443c2d54948e5678be1ccd97548ea34f8383dc01c"
+      },
+      {
+        "path": "japan/out/mega/final-grab-cape_boy-0/mega_0700.png",
+        "sha256": "1c4625d6a71d333a3568343efa2dfab9b508d7d2264a1088af64a1b43b077230"
+      },
+      {
+        "path": "tmp/imagegen/mini-mega-map/mask.png",
+        "sha256": "fdfb4d0ff151eb584ffff837bccf3288da77a9bc8687b96577bb604842eeece7"
+      }
+    ],
+    "candidate_file_sha256": "e843e9bd833c51b01c1d1665b0b347af566231c893c3a9b1bd79db673f03c3d8"
+  },
+  "local_edit": {
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "high",
+    "crop_box": [
+      175,
+      322,
+      343,
+      434
+    ],
+    "changed_bbox": [
+      203,
+      349,
+      343,
+      409
+    ],
+    "unchanged_percent": 99.69126383463541,
+    "parent_sha256": "e843e9bd833c51b01c1d1665b0b347af566231c893c3a9b1bd79db673f03c3d8"
+  },
+  "prompt": "output/imagegen/forest-lake/map/prompt.txt"
+}

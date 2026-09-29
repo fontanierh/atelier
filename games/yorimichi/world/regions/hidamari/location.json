@@ -1,0 +1,25 @@
+{
+  "status": "proposed, not built",
+  "coordinate_system": "Blender metres: x east, y north, z up; Unreal centimetres: (100*x, -100*y, 100*z)",
+  "map_bounds": [-350, -450, 1320, 420],
+  "city_bounds": [360, -240, 1260, 360],
+  "road_anchor": "eastmost sample in world.json road; never a hand-copied position",
+  "arrival_route_xyz": [[335,85,27], [390,140,26], [510,145,23], [650,140,20]],
+  "districts": [
+    {"name":"Arrival terraces", "bounds":[360,90,540,260], "color":"#d5c5a4"},
+    {"name":"Temple hillside", "bounds":[560,220,830,360], "color":"#d5b9a5"},
+    {"name":"Sunlit park", "bounds":[860,220,1120,360], "color":"#b8cf9b"},
+    {"name":"Station", "bounds":[1130,230,1260,360], "color":"#c0c1ce"},
+    {"name":"City center", "bounds":[630,90,900,200], "color":"#e5c174"},
+    {"name":"Shopping streets", "bounds":[460,-70,760,90], "color":"#e5bd97"},
+    {"name":"Canal quarter", "bounds":[780,-100,920,70], "color":"#a3c7c8"},
+    {"name":"Residential lanes", "bounds":[950,-80,1260,210], "color":"#cecbb0"},
+    {"name":"Fishing harbor", "bounds":[430,-240,900,-120], "color":"#9ebfd0"}
+  ],
+  "notes": [
+    "900 x 600 m planning envelope including harbor basin; not all land.",
+    "60 m separates the current east world boundary x=300 from the city boundary x=360.",
+    "Terrain, shoreline, district shapes and exact streets remain to be authored; colored rectangles are planning zones.",
+    "Southwest island coordinates have not been supplied. Do not invent an exact island footprint."
+  ]
+}

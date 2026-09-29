@@ -1,0 +1,110 @@
+{
+ "machiya": {
+  "title": "Machiya tea-and-kimono townhouse",
+  "assets": [
+   "HD_Shop_00",
+   "HD_Shop_08"
+  ],
+  "width": 22,
+  "depth": 16,
+  "floors": 2,
+  "brief": "A traditional two-storey Kyoto-style machiya townhouse pair filling the lot: a tea shop (sign お茶, green noren) attached to a kimono tailor (sign 呉服, purple noren); variant 1 swaps their order and wall tones. Deep dark-tile main roof with a second small tiled pent roof (hisashi) sheltering the whole ground floor; fine dark timber lattice (koshi) across the ground-floor front with a recessed entrance and an indigo noren curtain; second floor of ochre plaster with a long low mushiko lattice window; a small roofed shop sign; bamboo blind, a stone step, potted pine and a wooden bench at the door; side walls of dark charred timber boards."
+ },
+ "corner_cafe": {
+  "title": "Showa-era corner cafe block",
+  "assets": [
+   "HD_Shop_04",
+   "HD_Shop_12"
+  ],
+  "width": 22,
+  "depth": 16,
+  "floors": 3,
+  "brief": "A three-storey 1930s Showa-era stucco building housing a kissaten coffee house (variant 0, sign 喫茶 and a coffee cup mark) and a record/music shop (variant 1, sign レコード). Cream stucco with a chamfered corner entrance, tall arched ground-floor glazing, a red-and-white striped canvas awning, second and third floors with paired sash windows and thin iron balconies, a copper-green hipped tile roof with a small rooftop signboard frame, vertical banner sign hanging on the corner, a cafe table and two chairs and a bicycle by the entrance."
+ },
+ "sento": {
+  "title": "Neighbourhood bathhouse",
+  "assets": [
+   "HD_Shop_13",
+   "HD_Shop_05"
+  ],
+  "width": 23,
+  "depth": 16,
+  "floors": 2,
+  "brief": "A traditional sento public bathhouse: a broad temple-like dark tiled hip roof with a curved karahafu gable over the entrance porch, a big blue noren with the character ゆ, a tall square brick chimney rising behind the roof, small high windows, cream plaster walls with dark timber posts, a low bamboo fence and a row of potted plants, a coin laundry annex on one side (variant 1 has a red noren and the sign 湯). Variant 0 sign 松の湯."
+ },
+ "kura": {
+  "title": "Kura storehouse gallery",
+  "assets": [
+   "HD_Shop_09",
+   "HD_Shop_01"
+  ],
+  "width": 22,
+  "depth": 16,
+  "floors": 2,
+  "brief": "A thick-walled white plaster kura storehouse converted into a pottery gallery (variant 0, sign うつわ) or a sake shop (variant 1, sign 酒 with a cedar ball). Tall white plaster mass with the lower third in black namako-wall pattern (dark tiles with a raised white lattice), tiny deep-set barred windows with heavy plaster shutters, a heavy dark tiled gable roof with thick ridge, a low single-storey timber shop annex with a tiled pent roof and sliding glass front attached along the street, stacks of wooden crates and a cart, a persimmon tree in the side yard."
+ },
+ "izakaya": {
+  "title": "Ramen and izakaya pair",
+  "assets": [
+   "HD_Shop_02",
+   "HD_Shop_10"
+  ],
+  "width": 22,
+  "depth": 16,
+  "floors": 2,
+  "brief": "Two narrow eateries sharing one lot: a ramen shop (sign ラーメン, red noren) and a yakitori izakaya (sign 焼鳥, orange paper lanterns strung under the eave), with different heights and roof lines. Weathered timber and tin-panel fronts, a tiled pent roof over each entrance, a steam vent pipe and extractor hood on the side, stacked yellow beer crates, a vending machine glowing at the corner, a hand-painted menu board, a small kitchen window with steam, a barrel and a bicycle. Variant 1 swaps to a soba shop (sign そば) and an oden bar (sign おでん)."
+ },
+ "apartment": {
+  "title": "Wooden apartment over a bike shop",
+  "assets": [
+   "HD_Shop_15",
+   "HD_Shop_07"
+  ],
+  "width": 22,
+  "depth": 16,
+  "floors": 3,
+  "brief": "A three-storey wooden apato apartment building with a bicycle shop on the ground floor (variant 0, sign 自転車; variant 1 a barber, sign 床屋 with a striped pole). Ochre timber cladding with pale plaster upper floors, an external iron staircase on the side, long shared balconies with futons and laundry hanging out, wall-mounted air conditioners, a TV antenna, a shallow blue-grey tiled gable roof, a corrugated awning over the shop, parked bicycles and a red post box."
+ },
+ "bookshop": {
+  "title": "Bookshop with a bay window",
+  "assets": [
+   "HD_Shop_06",
+   "HD_Shop_14"
+  ],
+  "width": 22,
+  "depth": 16,
+  "floors": 2,
+  "brief": "A two-storey bookshop (variant 0, sign 本と文具 and a book emblem; variant 1 a sweets shop 和菓子) whose ground floor sits back under a timber colonnade, with a large projecting bay display window full of book stacks, a tiled hip roof with a small dormer, a painted signboard along the eave, wooden shutters folded beside the upper windows, a stone bench under the colonnade, ginkgo-yellow shrubs in planters and a small cat on the step."
+ },
+ "bakery_western": {
+  "title": "Meiji pseudo-western bakery",
+  "assets": [
+   "HD_Shop_03",
+   "HD_Shop_11"
+  ],
+  "width": 22,
+  "depth": 16,
+  "floors": 2,
+  "brief": "A Meiji-era pseudo-western (giyofu) timber building: pale sage-green clapboard walls with white corner boards, tall sash windows with dark green shutters, a small triangular pediment over the entrance, a copper-green metal mansard-like roof with a tiny turret at one corner, a bakery on the ground floor (variant 0, sign 焼きたてパン, a striped awning and a bread display in the window; variant 1 a florist, sign フラワー, with tiered flower buckets outside), a chalk menu board and a bench."
+ },
+ "station": {
+  "title": "Hidamari railway terminus",
+  "assets": [
+   "HD_Station"
+  ],
+  "width": 46,
+  "depth": 18,
+  "floors": 2,
+  "brief": "A small friendly railway terminus building 46 m wide: a central two-storey cream stucco entrance pavilion with a tall clock above the doors and a green-copper hipped roof, flanked by lower single-storey wings with dark tiled roofs, a long timber platform canopy on posts running along the back, a wide covered entrance porch with round wooden columns, big arched windows, a station name board ひだまり駅, a bicycle rack, benches, a red post box and a small ticket window."
+ },
+ "shrine": {
+  "title": "Neighbourhood shrine hall",
+  "assets": [
+   "HD_Shrine"
+  ],
+  "width": 7,
+  "depth": 7,
+  "floors": 1,
+  "brief": "A small neighbourhood Shinto shrine hall 7 m wide behind its existing vermilion torii: a raised timber floor on posts with a wooden stair, dark cypress-bark style hipped roof with forked chigi finials, vermilion posts and white plaster, a hanging bell rope and offering box, paired stone komainu guardian statues, a stone lantern, a small water basin and a pair of fluttering white banners."
+ }
+}

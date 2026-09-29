@@ -1,0 +1,16 @@
+[
+  {
+    "id": "paving",
+    "prompt": "Use case: stylized-concept. Asset: seamless square base-color texture for the stone paving in a stylized Unreal game. Input image is the arcade material/style reference ONLY, not a scene to repaint. Generate ONLY a perfectly top-down orthographic flat texture covering the whole square, no perspective. Match the reference arcade's warm buff limestone paving: staggered broad rectangular slabs, four rows by four slabs across, subtle warm ochre, gray sage and sandy taupe variations, narrow discreet grout, lightly softened irregular edges, very restrained broad stone wear. Elegant clean stylized surface, not noisy photoreal gravel. Neutral even unlit albedo illumination, no shadows, no highlights, no leaves/objects/text/border. Perfectly seamless periodic left/right and top/bottom edges. 1024 square.",
+    "source": "codex-generated-images/01a06ebc-156f-75e3-b4c7-85724e8e496f/exec-542affa1-9a56-4c54-84b4-f7753af91a04.png",
+    "reference": "../../docs/hidamari/reconciliation/generated/03-shopping-arcade.png",
+    "tool": "Built-in image_gen.imagegen"
+  },
+  {
+    "id": "timber",
+    "prompt": "Use case: stylized-concept. Asset: seamless square base-color texture for the timber frames in a stylized Unreal game. Input image is the arcade material/style reference ONLY. Generate ONLY a perfectly flat orthographic wood material swatch, filling the image edge to edge. Warm medium honey-brown cedar timber matching the reference; subtle long vertical grain in the image, a few broad growth lines, low contrast, smooth softly worn clean wood, no planks or seams, no knots that dominate, no decorative carvings. Neutral even unlit albedo illumination, no cast shadow, no bevelled frame, no perspective, no labels. Perfectly seamless repeating left/right and top/bottom edges. 1024 square.",
+    "source": "codex-generated-images/01a06ebc-156f-75e3-b4c7-85724e8e496f/exec-4652e9c6-9acb-416b-b3c4-b10f3535ec14.png",
+    "reference": "../../docs/hidamari/reconciliation/generated/03-shopping-arcade.png",
+    "tool": "Built-in image_gen.imagegen"
+  }
+]
