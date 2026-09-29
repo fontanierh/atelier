@@ -1,0 +1,10 @@
+# The villagers of Hidamari and Momiji Hamlet: a procedural model built entirely by build.py (no binary source).
+id = "wanderer"
+display_name = "Villager"
+role = "npc"
+rig = "wanderer-34"                   # an older compact rig, not the humanoid contract
+build = "build.py"
+build_args = ["--animations", "--export", "--no-render"]
+references = ["references/design-sheet.png", "references/motion-sheet.png", "references/skate-sheet.png"]
+unreal_path = "/Game/Wanderer/V2"
+licence = "own"

@@ -1,0 +1,15 @@
+# The first enemy. Source of truth: the animation revision's .blend (textures packed) and manifest.
+id = "fox-hunter"
+display_name = "Fox hunter"
+role = "enemy"
+rig = "humanoid"
+rig_optional = ["fingers"]
+height_cm = 170
+revision = "animation-r05"
+source = "FoxHunter-Anim-r05.blend"
+manifest = "manifest.json"
+clip_roles = 15
+fps = 30
+export = "export_unreal.py"
+unreal_path = "/Game/FoxHunter"
+licence = "own"

@@ -1,0 +1,1084 @@
+{
+  "rig": "output/imagegen/yorimichi-fox-hunter-2026-09-13/tripo-rig-r02/blender/FoxHunter-Rig-r02.blend",
+  "fps": 30,
+  "model_height_units": 0.9179,
+  "facing": "+X",
+  "floor_z": 0.0025,
+  "mirror_rest_error": 0.041991,
+  "house_rules": [
+    "hanging arms: palms face the body",
+    "loops are in place; travel speed recorded",
+    "dashes, turns and hurt carry Root motion"
+  ],
+  "clips": {
+    "Idle": {
+      "kind": "loop",
+      "seconds": 4.0,
+      "last_frame_exclusive": true,
+      "action": "Fox_Idle",
+      "frames": 119,
+      "fps": 30
+    },
+    "Creep": {
+      "kind": "loop",
+      "seconds": 1.5,
+      "last_frame_exclusive": true,
+      "travel_speed_units_per_s": 0.31927971217943274,
+      "action": "Fox_Creep",
+      "frames": 44,
+      "fps": 30
+    },
+    "Run": {
+      "kind": "loop",
+      "seconds": 0.6,
+      "last_frame_exclusive": true,
+      "travel_speed_units_per_s": 3.1927971217943276,
+      "action": "Fox_Run",
+      "frames": 17,
+      "fps": 30
+    },
+    "AttackR_A": {
+      "kind": "one-shot",
+      "seconds": 1.9,
+      "hit_window_seconds": [
+        0.52,
+        0.68
+      ],
+      "strike": "RightHand",
+      "action": "Fox_AttackR_A",
+      "frames": 57,
+      "fps": 30
+    },
+    "AttackL_A": {
+      "kind": "one-shot",
+      "seconds": 1.9,
+      "hit_window_seconds": [
+        0.52,
+        0.68
+      ],
+      "strike": "LeftHand",
+      "mirror_of": "AttackR_A",
+      "action": "Fox_AttackL_A",
+      "frames": 57,
+      "fps": 30
+    },
+    "AttackL_B": {
+      "kind": "one-shot",
+      "seconds": 1.9,
+      "hit_window_seconds": [
+        0.5,
+        0.63
+      ],
+      "strike": "LeftHand",
+      "action": "Fox_AttackL_B",
+      "frames": 57,
+      "fps": 30
+    },
+    "AttackR_B": {
+      "kind": "one-shot",
+      "seconds": 1.9,
+      "hit_window_seconds": [
+        0.5,
+        0.63
+      ],
+      "strike": "RightHand",
+      "mirror_of": "AttackL_B",
+      "action": "Fox_AttackR_B",
+      "frames": 57,
+      "fps": 30
+    },
+    "Kick": {
+      "kind": "one-shot",
+      "seconds": 1.1,
+      "hit_window_seconds": [
+        0.38,
+        0.48
+      ],
+      "strike": "RightFoot",
+      "action": "Fox_Kick",
+      "frames": 33,
+      "fps": 30
+    },
+    "DashForward": {
+      "kind": "one-shot",
+      "seconds": 1.6,
+      "root_motion": true,
+      "travel_units": 1.5963985608971638,
+      "action": "Fox_DashForward",
+      "frames": 48,
+      "fps": 30
+    },
+    "DashBackward": {
+      "kind": "one-shot",
+      "seconds": 1.5,
+      "root_motion": true,
+      "travel_units": -0.8979741905046545,
+      "action": "Fox_DashBackward",
+      "frames": 45,
+      "fps": 30
+    },
+    "TurnLeft": {
+      "kind": "one-shot",
+      "seconds": 1.3,
+      "root_motion": true,
+      "yaw_degrees": 180,
+      "action": "Fox_TurnLeft",
+      "frames": 39,
+      "fps": 30
+    },
+    "TurnRight": {
+      "kind": "one-shot",
+      "seconds": 1.3,
+      "root_motion": true,
+      "yaw_degrees": -180,
+      "mirror_of": "TurnLeft",
+      "action": "Fox_TurnRight",
+      "frames": 39,
+      "fps": 30
+    },
+    "Hurt": {
+      "kind": "one-shot",
+      "seconds": 1.2,
+      "root_motion": true,
+      "travel_units": -0.27936974815700366,
+      "action": "Fox_Hurt",
+      "frames": 36,
+      "fps": 30
+    },
+    "Death": {
+      "kind": "one-shot",
+      "seconds": 3.0,
+      "holds_last_pose": true,
+      "action": "Fox_Death",
+      "frames": 90,
+      "fps": 30
+    },
+    "Jump": {
+      "kind": "one-shot",
+      "seconds": 1.4,
+      "apex_seconds": 0.6,
+      "action": "Fox_Jump",
+      "frames": 42,
+      "fps": 30
+    }
+  },
+  "checks": {
+    "Idle": {
+      "left_sole_min": 0.0003,
+      "right_sole_min": -0.0,
+      "left_sole_max": 0.0003,
+      "right_sole_max": -0.0,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "max_yaw_step_deg": 0.0,
+      "frames_left_sole_over_6mm": 0,
+      "frames_right_sole_over_6mm": 0,
+      "end_hand_z": [
+        0.414,
+        0.365
+      ],
+      "end_head_z": 0.667,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.22,
+          "right_min_out": 0.247
+        }
+      }
+    },
+    "Creep": {
+      "left_sole_min": -0.0007,
+      "right_sole_min": -0.001,
+      "left_sole_max": 0.0452,
+      "right_sole_max": 0.0445,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "max_yaw_step_deg": 0.0,
+      "frames_left_sole_over_6mm": 20,
+      "frames_right_sole_over_6mm": 20,
+      "end_hand_z": [
+        0.242,
+        0.245
+      ],
+      "end_head_z": 0.625,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 33,
+          "frame": 0,
+          "frames_pierced": 3,
+          "max_depth": 0.0003
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 21,
+          "frame": 0,
+          "frames_pierced": 3,
+          "max_depth": 0.0004
+        },
+        "hands": {
+          "left_min_out": 0.149,
+          "right_min_out": 0.141
+        }
+      }
+    },
+    "Run": {
+      "left_sole_min": 0.0,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.2194,
+      "right_sole_max": 0.2212,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0,
+        "Right": 0.0
+      },
+      "max_yaw_step_deg": 0.0,
+      "frames_left_sole_over_6mm": 12,
+      "frames_right_sole_over_6mm": 11,
+      "end_hand_z": [
+        0.261,
+        0.119
+      ],
+      "end_head_z": 0.571,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 8,
+          "frame": 0,
+          "frames_pierced": 1,
+          "max_depth": 0.0002
+        },
+        "hands": {
+          "left_min_out": 0.12,
+          "right_min_out": 0.125
+        }
+      }
+    },
+    "AttackR_A": {
+      "left_sole_min": -0.0001,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.0703,
+      "right_sole_max": 0.0044,
+      "max_skate_step_while_grounded": {
+        "Left": 0.017,
+        "Right": 0.0013
+      },
+      "max_yaw_step_deg": 0.0,
+      "strike_path_in_window": [
+        [
+          16,
+          0.071,
+          -0.299,
+          0.965
+        ],
+        [
+          17,
+          0.393,
+          -0.248,
+          0.827
+        ],
+        [
+          18,
+          0.526,
+          -0.104,
+          0.584
+        ],
+        [
+          19,
+          0.509,
+          -0.023,
+          0.427
+        ],
+        [
+          20,
+          0.482,
+          0.007,
+          0.369
+        ]
+      ],
+      "strike_min_forward_in_window": 0.071,
+      "strike_lateral_range_in_window": [
+        -0.299,
+        0.007
+      ],
+      "strike_height_range_in_window": [
+        0.369,
+        0.965
+      ],
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.194,
+          "right_min_out": 0.008
+        }
+      }
+    },
+    "AttackL_A": {
+      "left_sole_min": 0.0,
+      "right_sole_min": -0.0004,
+      "left_sole_max": 0.0048,
+      "right_sole_max": 0.0697,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0027,
+        "Right": 0.0166
+      },
+      "max_yaw_step_deg": 0.0,
+      "strike_path_in_window": [
+        [
+          16,
+          0.04,
+          0.311,
+          0.967
+        ],
+        [
+          17,
+          0.382,
+          0.273,
+          0.864
+        ],
+        [
+          18,
+          0.553,
+          0.124,
+          0.632
+        ],
+        [
+          19,
+          0.557,
+          0.032,
+          0.469
+        ],
+        [
+          20,
+          0.537,
+          -0.002,
+          0.407
+        ]
+      ],
+      "strike_min_forward_in_window": 0.04,
+      "strike_lateral_range_in_window": [
+        -0.002,
+        0.311
+      ],
+      "strike_height_range_in_window": [
+        0.407,
+        0.967
+      ],
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": -0.002,
+          "right_min_out": 0.225
+        }
+      }
+    },
+    "AttackL_B": {
+      "left_sole_min": -0.0001,
+      "right_sole_min": -0.0011,
+      "left_sole_max": 0.0012,
+      "right_sole_max": 0.0697,
+      "max_skate_step_while_grounded": {
+        "Left": 0.002,
+        "Right": 0.0109
+      },
+      "max_yaw_step_deg": 0.0,
+      "strike_path_in_window": [
+        [
+          15,
+          0.473,
+          0.236,
+          0.555
+        ],
+        [
+          16,
+          0.497,
+          0.101,
+          0.817
+        ],
+        [
+          17,
+          0.487,
+          -0.005,
+          0.847
+        ],
+        [
+          18,
+          0.471,
+          -0.048,
+          0.858
+        ],
+        [
+          19,
+          0.488,
+          -0.097,
+          0.782
+        ]
+      ],
+      "strike_min_forward_in_window": 0.471,
+      "strike_lateral_range_in_window": [
+        -0.097,
+        0.236
+      ],
+      "strike_height_range_in_window": [
+        0.555,
+        0.858
+      ],
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": -0.145,
+          "right_min_out": 0.177
+        }
+      }
+    },
+    "AttackR_B": {
+      "left_sole_min": -0.0038,
+      "right_sole_min": -0.0001,
+      "left_sole_max": 0.0703,
+      "right_sole_max": 0.0005,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0103,
+        "Right": 0.0019
+      },
+      "max_yaw_step_deg": 0.0,
+      "strike_path_in_window": [
+        [
+          15,
+          0.43,
+          -0.225,
+          0.507
+        ],
+        [
+          16,
+          0.487,
+          -0.082,
+          0.766
+        ],
+        [
+          17,
+          0.481,
+          0.023,
+          0.795
+        ],
+        [
+          18,
+          0.468,
+          0.062,
+          0.807
+        ],
+        [
+          19,
+          0.474,
+          0.115,
+          0.729
+        ]
+      ],
+      "strike_min_forward_in_window": 0.43,
+      "strike_lateral_range_in_window": [
+        -0.225,
+        0.115
+      ],
+      "strike_height_range_in_window": [
+        0.507,
+        0.807
+      ],
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.174,
+          "right_min_out": -0.152
+        }
+      }
+    },
+    "Kick": {
+      "left_sole_min": -0.0,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.0084,
+      "right_sole_max": 0.5864,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0075,
+        "Right": 0.0075
+      },
+      "max_yaw_step_deg": 0.0,
+      "strike_path_in_window": [
+        [
+          11,
+          0.446,
+          -0.01,
+          0.404
+        ],
+        [
+          12,
+          0.441,
+          -0.01,
+          0.531
+        ],
+        [
+          13,
+          0.424,
+          -0.006,
+          0.586
+        ],
+        [
+          14,
+          0.451,
+          -0.003,
+          0.464
+        ]
+      ],
+      "strike_min_forward_in_window": 0.424,
+      "strike_lateral_range_in_window": [
+        -0.01,
+        -0.003
+      ],
+      "strike_height_range_in_window": [
+        0.404,
+        0.586
+      ],
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.172,
+          "right_min_out": 0.258
+        }
+      }
+    },
+    "DashForward": {
+      "left_sole_min": -0.0,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.6032,
+      "right_sole_max": 0.7056,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0116,
+        "Right": 0.1095
+      },
+      "max_yaw_step_deg": 0.0,
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 3,
+          "frame": 24,
+          "frames_pierced": 1,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.178,
+          "right_min_out": 0.171
+        }
+      }
+    },
+    "DashBackward": {
+      "left_sole_min": 0.0,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.1974,
+      "right_sole_max": 0.2179,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0043,
+        "Right": 0.0043
+      },
+      "max_yaw_step_deg": 0.0,
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.207,
+          "right_min_out": 0.218
+        }
+      }
+    },
+    "TurnLeft": {
+      "left_sole_min": -0.0,
+      "right_sole_min": -0.0001,
+      "left_sole_max": 0.0605,
+      "right_sole_max": 0.059,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0052,
+        "Right": 0.006
+      },
+      "max_yaw_step_deg": 16.1,
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.217,
+          "right_min_out": 0.219
+        }
+      }
+    },
+    "TurnRight": {
+      "left_sole_min": 0.0,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.0596,
+      "right_sole_max": 0.0595,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0053,
+        "Right": 0.0148
+      },
+      "max_yaw_step_deg": 16.1,
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.196,
+          "right_min_out": 0.232
+        }
+      }
+    },
+    "Hurt": {
+      "left_sole_min": 0.0,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.0903,
+      "right_sole_max": 0.0686,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0166,
+        "Right": 0.0265
+      },
+      "max_yaw_step_deg": 0.0,
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.159,
+          "right_min_out": 0.135
+        }
+      }
+    },
+    "Death": {
+      "left_sole_min": -0.0533,
+      "right_sole_min": -0.0743,
+      "left_sole_max": 0.1263,
+      "right_sole_max": 0.1364,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0056,
+        "Right": 0.0056
+      },
+      "max_yaw_step_deg": 0.0,
+      "end_hand_z": [
+        0.004,
+        0.076
+      ],
+      "end_head_z": 0.035,
+      "end_knee_z": [
+        0.029,
+        0.068
+      ],
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.188,
+          "right_min_out": 0.188
+        }
+      }
+    },
+    "Jump": {
+      "left_sole_min": 0.0,
+      "right_sole_min": 0.0,
+      "left_sole_max": 0.5382,
+      "right_sole_max": 0.386,
+      "max_skate_step_while_grounded": {
+        "Left": 0.0066,
+        "Right": 0.0187
+      },
+      "max_yaw_step_deg": 0.0,
+      "end_hand_z": [
+        0.426,
+        0.396
+      ],
+      "end_head_z": 0.694,
+      "clip": {
+        "Llower>torso+Rleg+Lleg+Rupper+Rlower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower>torso+Rleg+Lleg+Lupper+Llower": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Llower+Lupper>Rlower+Rupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "Rlower+Rupper>Llower+Lupper": {
+          "max_pierced": 0,
+          "frame": 0,
+          "frames_pierced": 0,
+          "max_depth": 0.0
+        },
+        "hands": {
+          "left_min_out": 0.197,
+          "right_min_out": 0.188
+        }
+      }
+    }
+  },
+  "sheets": {},
+  "exported_animations": [
+    "Idle",
+    "Creep",
+    "Run",
+    "AttackR_A",
+    "AttackL_A",
+    "AttackL_B",
+    "AttackR_B",
+    "Kick",
+    "DashForward",
+    "DashBackward",
+    "TurnLeft",
+    "TurnRight",
+    "Hurt",
+    "Death",
+    "Jump"
+  ]
+}
