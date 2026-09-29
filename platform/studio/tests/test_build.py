@@ -1,4 +1,5 @@
-import unittest
+import tempfile, unittest
+from pathlib import Path
 
 from atelier.build import Step, fingerprint, order
 
@@ -25,6 +26,16 @@ class BuildTests(unittest.TestCase):
         base = fingerprint(step, {'art': 'a1', 'compile': 'c1'})
         self.assertEqual(fingerprint(step, {'art': 'a1', 'compile': 'c2'}), base)
         self.assertNotEqual(fingerprint(step, {'art': 'a2', 'compile': 'c1'}), base)
+
+    def test_docs_in_a_source_folder_do_not_change_the_fingerprint(self):
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / 'build.py').write_text('print(1)')
+            step = Step('region', ['blender'], inputs=[Path(folder)])
+            base = fingerprint(step, {})
+            (Path(folder) / 'README.md').write_text('notes')
+            self.assertEqual(fingerprint(step, {}), base)
+            (Path(folder) / 'build.py').write_text('print(2)')
+            self.assertNotEqual(fingerprint(step, {}), base)
 
 
 if __name__ == '__main__':

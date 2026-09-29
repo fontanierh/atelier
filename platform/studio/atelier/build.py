@@ -15,6 +15,7 @@ from . import paths
 from .safety import guarded
 
 SKIP_PARTS = {'__pycache__', '.DS_Store'}
+SKIP_SUFFIXES = {'.md'}   # documentation next to sources never changes what a step makes
 
 
 # ---------------------------------------------------------------- commands
@@ -127,7 +128,7 @@ def _hash_path(digest, path):
                 digest.update(chunk)
     elif path.is_dir():
         for child in sorted(path.rglob('*')):
-            if child.is_file() and not SKIP_PARTS & set(child.parts):
+            if child.is_file() and not SKIP_PARTS & set(child.parts) and child.suffix not in SKIP_SUFFIXES:
                 digest.update(str(child.relative_to(path)).encode())
                 _hash_path(digest, child)
     else:
