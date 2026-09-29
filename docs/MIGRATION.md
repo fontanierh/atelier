@@ -27,9 +27,26 @@ touch controls, the player shell and on-foot activity, skate, sail and ride, com
 |---|---|---|---|
 | Skeleton, conventions | — | `README.md`, `ARCHITECTURE.md`, `platform/conventions/` | done |
 | Studio core, machine safety | `japan/streaming/{exclusive,guard,memory_guard,provenance}.py`, `japan/tools/guarded_run.py` | `platform/studio/atelier/` | done, tests pass |
+| Build engine and `atelier` command | `japan/run.sh` | `platform/studio/atelier/{build,cli}.py`, `games/yorimichi/{build.py,game.toml}` | done: 30 steps, incremental |
+| World generators, regions, map, sailboat | `japan/*.py`, `japan/{village,hidamari,southwest,mega,forest_lake,zeppelin,skatepark,sailboat}/`, `japan/tools/*map*.py` | `games/yorimichi/world/`, `games/yorimichi/assets/vehicles/sailboat/` | done, verified (below) |
 | Characters (player, fox hunter, villager) | `output/imagegen/.../game-r17`, `.../animation-r05`, `japan/characters/wanderer` + shared cape boy modules, `japan/tools/export_*_unreal.py` | `games/yorimichi/assets/characters/` | done, exports verified |
 | Sound banks, effect textures | `japan/audio`, `japan/tools/{fetch_sonniss_*,slice_*,make_skate_sfx,gen_combat_fx_textures}.py` | `games/yorimichi/assets/{audio,fx}/` | done: all 593 WAVs and 5 textures byte-identical |
-| World generators, regions, map, sailboat | `japan/*.py`, `japan/{village,hidamari,southwest,mega,forest_lake,zeppelin,skatepark,sailboat}/`, `japan/tools/*map*.py` | `games/yorimichi/world/`, `games/yorimichi/assets/vehicles/sailboat/` | done, verified (below) |
+| Unreal project | `japan/unreal/JapanProto` | `games/yorimichi/unreal` (module `Yorimichi`) | done: compiles; runtime data from `Content/Data` |
+| Live bridge, scenarios, streaming, tools | `japan/live`, `japan/skatepark/qa.py` and friends, `japan/{sailboat,zeppelin,forest_lake}/qa.py`, `japan/streaming`, `japan/{benchmark,desktop_preview}.py`, `japan/tools/{film_fight.sh,mix_fight_film.py,building_lab.py}`, `japan/trailer/capture.py` | `games/yorimichi/{live,scenarios,streaming,tools}`, `.../hidamari/kit/lab.py` | done |
+| Character authoring tools | 44 `japan/tools/*` + 6 helpers, `lib/renderdev.py` | `games/yorimichi/assets/characters/tools`, `platform/studio/atelier/{ai,review,blender}`, `platform/studio/node` | done (history via `YORIMICHI_ARCHIVE`) |
+| Docs | `japan/PLAN.md`, 19 current docs | `games/yorimichi/docs` | done, paths translated |
+| Fresh build and play | — | — | in progress |
+
+### Left in the prototype archive
+
+Kept out on purpose: the cape boy and the procedural Wanderer V1 (`japan/character`, most of
+`japan/characters/cape_boy`), the character kit, the old cruiser skateboard (`japan/items/skateboard` and its import
+scripts), the unused experiments (sky study, canopy normals, grass art, leaf-coverage trimming, harbor tiles), the
+kite, one-off revision scripts (about 110 `refine_*`, `validate_*`, `capture_*` and `author_*` tools), the rejected
+sword-from-video, cloth-simulation, Tripo-clothes and Smart UV trials, the female mechanic and the jacket, three
+trailer generations, the desktop-quality campaign, the look gate, all review images, captures and trailer takes
+(about 170 GB), and every character revision older than the current one. The prototype repository stays available as
+the archive.
 
 ### World verification (29 September)
 
