@@ -70,7 +70,12 @@ def head_dir(pts):
     else:
         top = pts[:, 2].max(); sl = pts[(pts[:, 2] > top - .16) & (pts[:, 2] < top - .06)]
     return float(np.sign((sl[:, 0].max() - sl[:, 0].mean()) - (sl[:, 0].mean() - sl[:, 0].min())))
-if head_dir(P) != head_dir(B):
+if HEADLESS:
+    # Tripo's multiview output faces +X (the front view's direction) every time; the toe test is only a warning:
+    # boots and long skirts fooled it (the long coat came out turned around)
+    if head_dir(P) != head_dir(B):
+        facing_note += ' (toe test disagrees; trusted the multiview front)'
+elif head_dir(P) != head_dir(B):
     P[:, 0] *= -1; P[:, 1] *= -1
     facing_note += ' + turned 180'
 if HEADLESS:

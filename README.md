@@ -82,7 +82,9 @@ blender -b --python games/yorimichi/assets/characters/tools/add_tripo_fingers.py
 
 **5. New clothes.** Change your mind about the outfit and keep the rig: the image model draws the new outfit, dresses a
 headless mannequin rendered from the rigged body, Tripo builds the clothes, and a script fits them onto the skeleton
-([body swap guide](games/yorimichi/docs/BODY_SWAP_GUIDE.md)).
+([body swap guide](games/yorimichi/docs/BODY_SWAP_GUIDE.md)). Four more outfits (a hoodie, a keikogi with hakama, a
+basketball jersey, a long coat) went through the same scripts with no per-outfit changes; what still needs work is in
+[its section 12](games/yorimichi/docs/BODY_SWAP_GUIDE.md#12-how-general-is-it-four-test-outfits).
 
 <img src="docs/media/character/05-outfit.jpg" alt="Outfit concept, the dressed mannequin, the final character">
 

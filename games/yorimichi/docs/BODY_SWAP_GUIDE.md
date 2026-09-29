@@ -1,9 +1,9 @@
-# Body swap guide: a new outfit for the Cairo in one afternoon
+# Body swap guide: a new outfit for Cairo
 
 > Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
 
-This is the procedure that produced the skate outfit on 14 Sep 2026 (`body-swap-r02-headless`, in the game as
-`game-r11`, with the frontflip waistband fix now in `game-r12`). It generates a whole clothed body with AI, keeps the character's own head, hands and skeleton, and
+This is the procedure that produced the skate outfit (`body-swap-r02-headless`, in the game as `game-r11`, with the
+frontflip waistband fix now in `game-r12`), since tried on four very different outfits (section 12). It generates a whole clothed body with AI, keeps the character's own head, hands and skeleton, and
 plays all existing clips unchanged. Follow it in order; every step is a script that leaves a ledger behind.
 
 The idea in one line: **ask Tripo for a body that has no head and no hands**, so nothing has to be cut off
@@ -50,14 +50,25 @@ cap is a clean flat disc and the wrists end flat; a torn cap makes Sunburst draw
 
 ## 3. Dress the mannequin (Sunburst, four views)
 
+Write an outfit spec, `games/yorimichi/assets/characters/cairo/outfits/<slug>.toml` (copy `hoodie.toml`): `concept`
+describes the outfit on the character, `outfit` the same outfit for the headless mannequin (open cuffs, empty
+neck opening), `pose` how it hangs in the T-pose, `front`/`back`/`left`/`right` what each view must show, and
+`skin` when the outfit leaves arms or legs bare. Then:
+
 ```sh
-~/.cache/yorimichi/imagegen-venv/bin/python games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py \
-  --headless $BODY_SWAP_DIR --concept output/imagegen/yorimichi-yellow-boy-2026-09-12/back-concepts-r05/<pick>.png
+T=games/yorimichi/assets/characters/tools
+cp output/imagegen/yorimichi-yellow-boy-2026-09-12/body-swap-r02-headless/references/naked-*.png \
+   output/imagegen/yorimichi-yellow-boy-2026-09-12/$BODY_SWAP_DIR/references/     # or render them (step 2)
+~/.cache/yorimichi/imagegen-venv/bin/python $T/cairo_body_swap_sunburst.py --headless $BODY_SWAP_DIR \
+  --outfit games/yorimichi/assets/characters/cairo/outfits/<slug>.toml --make-concept    # concept.png, about 30 s
+~/.cache/yorimichi/imagegen-venv/bin/python $T/cairo_body_swap_sunburst.py --headless $BODY_SWAP_DIR \
+  --outfit games/yorimichi/assets/characters/cairo/outfits/<slug>.toml                   # the four views
 ```
 
-The prompt already says: same T-pose, same proportions, same framing, no head, no hands, empty collar, open
-sleeve ends, flat colours. If the outfit differs a lot from the skate one (long coat, hood, skirt), update the
-garment sentence in `COMMON` so the four views agree on hem length, collar and sleeve ends.
+`--make-concept` redraws the approved skate concept sheet in the new outfit, so the character stays the same; pass
+`--concept <image>` instead to dress the mannequin from a design picked elsewhere. Without `--outfit` the tool
+writes the skate prompt exactly as it was for r02. About $0.07 per image at high quality (token usage is saved
+in the ignored `api-private/` folder).
 
 Look at all four images. They must agree on: hem height, collar shape, sleeve length, shoes, colours. If one
 view disagrees, rerun only that view with `--only back`. Do not send a disagreeing set to Tripo; it costs 120
@@ -103,6 +114,19 @@ What each does and what to read afterwards:
   `standing--front-left`, `standing--neck`, `standing--neck-back`, `standing--wrist-left`, `sprint27--back`,
   `crouch--back`, `sit--front`, `doublejump--back` before anything else.
 - **export** writes `assembled/<stem>.glb` with all clips.
+
+Then measure the clipping (about ten seconds, no rendering):
+
+```sh
+$B -b --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_body_swap_check.py
+```
+
+It poses the character through 14 library clips (8 frames each; 13 when the source has no Roll) and writes `qa/check.json`: the area of outfit triangles
+that pass more than 2 mm through other outfit triangles (a hem through a thigh, a skirt through a leg), and the
+area of kept skin (head, hands, forearm pieces, collar patch) that passes through the outfit, both minus what
+already crosses in the bind pose. Folded creases and the inside of the crotch count too, so read it against the
+skate outfit, which is in the game: cloth mean about 500 cm², skin mean about 1.7 cm², skin worst about 34 cm².
+The numbers cannot see stretching (a skirt webbing between the legs) or colour seams; the captures can.
 
 ## 6. Independent QA (do not skip)
 
@@ -172,6 +196,7 @@ All in `cairo_body_swap_assemble.py` unless noted.
 | hem copy | tee and band vertices below z −.04 copy the nearest trouser vertex within 4 cm | layers move together | a coat over bare legs (no trousers to copy) |
 | garment tags | tee: > 800 faces, top above z .15, wider than |y| .2; trousers: reaching below z −.4 | drives the rules above | anything that is not tee-over-trousers |
 | wrist stumps (references) | mannequin cut at |y| .335 (the r07 hands region) | Sunburst ends the sleeves there | never |
+| facing (fit) | headless: Tripo's multiview front is trusted; the toe test only warns | the toe test turned the long coat around (boots) | never |
 
 ## 10. Pitfalls that cost hours
 
@@ -199,17 +224,55 @@ All in `cairo_body_swap_assemble.py` unless noted.
   trousers in crouch (animation, not asset).
 - No corrective morphs on the outfit; one merged outfit slot replaces shirt, shorts, socks and shoes.
 
+## 12. How general is it: four test outfits
+
+To find out whether the pipeline only works for the skate outfit, four outfits were picked to break a different
+assumption each and run through steps 3 to 5 with no per-outfit changes (`body-swap-variants-r01/<slug>`, specs in
+`games/yorimichi/assets/characters/cairo/outfits/`): a hoodie with joggers (hood behind the neck), a keikogi with
+wide hakama (V collar, wide sleeves, near-skirt), a sleeveless basketball jersey with shorts (bare arms and legs)
+and a knee-length coat (a skirt between the legs).
+
+<img src="../../../docs/media/character/05-outfit-variants.jpg" alt="The skate outfit and the four test outfits: concept, standing, sprint, crouch, sit and a neck close-up">
+
+| Outfit | Ran as is | Clipping (cloth mean / skin worst, cm²) | What is wrong |
+| --- | --- | --- | --- |
+| Skate (in the game) | yes | 500 / 34 | the open items in section 11 |
+| Hoodie | yes | 115 / 52 | nothing obvious; ready for the QA reviewers |
+| Keikogi and hakama | yes | 827 / 22 | the V neckline shows the edge of the collar patch (a dark ring, grey mannequin under the white collar); its high clipping score is mostly out of sight, inside the hakama and at the sleeve seams |
+| Basketball jersey | yes | 155 / 59 | Tripo's baked skin on the arms and legs is paler than the head and hands: a colour seam at each wrist; the wide neckline shows the head's neck edge |
+| Long coat | after one fix | 271 / 39 | the fit turned it around (fixed for everyone, section 9); the skirt follows each thigh and turns into trouser legs in sprint and crouch; a skin notch under the stand collar |
+
+Cost per outfit: five Sunburst images (about $0.34) and one Tripo generation (120 credits); the machine time is
+Sunburst about 30 s per image, Tripo three to four minutes, fit and assemble two minutes, captures three minutes.
+
+So: generation, fitting, skinning and the sleeves are general. The weak spots are the three places where the rules
+still assume a round-necked tee over trousers:
+
+1. **The neckline.** The collar patch is a fixed disc (section 9). It should follow the outfit's actual neck
+   opening (its boundary loop around the neck), so V necks, wide necks and stand collars show skin up to the fabric
+   and never the head's cut edge.
+2. **Bare skin.** Faces that Tripo baked as skin should take the character's skin material (or be replaced by the
+   base body's own regions), so arms and legs match the hands and the head.
+3. **Skirts and coat tails.** Below the hips, a skirt must not take one thigh's weights: blend both thighs toward
+   the hips the way the tee's back hem already does, or give long garments a cloth simulation in Unreal.
+
+A UV tool does not help the fitting (fitting is geometry, weights and clipping). It helps the texture: Tripo's UVs
+are hundreds of small overlapping islands, so a repacked layout (Tripo Studio's Smart UV in `smart-uv-clothing-r01`
+in the archive: 407 overlapping islands to 33 clean ones) is what makes recolours, prints and repaints of an existing shell possible
+without a new generation.
+
 ## Where things are
 
-- Tools: `japan/tools/cairo_body_swap_{references,sunburst,fit,assemble,capture,export}.py`,
-  `warm_film_assemble.py`, `cairo_back_concepts.py`, `tripo_asset.py`, `games/yorimichi/assets/characters/cairo/export_unreal.py`,
-  `games/yorimichi/unreal/Scripts/import_cairo.py`.
+- Tools: `games/yorimichi/assets/characters/tools/cairo_body_swap_{references,sunburst,fit,assemble,capture,export,check}.py`,
+  `cairo_back_concepts.py`, `platform/studio/atelier/ai/tripo_asset.py`, `japan/tools/warm_film_assemble.py` (archive),
+  `games/yorimichi/assets/characters/cairo/export_unreal.py`, `games/yorimichi/unreal/Scripts/import_cairo.py`.
+- Outfit specs: `games/yorimichi/assets/characters/cairo/outfits/*.toml`.
 - Revisions: `body-swap-r01` (cut-based, failed, kept for reference), `body-swap-r02-headless` (this guide),
-  `game-r11` (in the game), `back-concepts-r04` (the design studies).
-- Reports: `body-swap-r02-headless/qa/findings-*.md`, the review page artifact from 14 Sep, the front/back film
+  `body-swap-variants-r01` (the four test outfits), `game-r11` (in the game), `back-concepts-r04` (the design studies).
+- Reports: `body-swap-r02-headless/qa/findings-*.md`, `*/qa/check.json`, the front/back film
   `build/yorimichi/cairo/film-r11/warm-r11-front-back.mp4`.
 
-## 16 September: frontflip waistband clearance
+## Frontflip waistband clearance
 
 The body swap needed a concealed-waist correction after review of the full
 double-jump tuck. `game-r12` lowers the upper trousers smoothly by 12 mm in

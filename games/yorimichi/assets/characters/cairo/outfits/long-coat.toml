@@ -1,0 +1,10 @@
+# Outfit spec for the body swap (tools/cairo_body_swap_sunburst.py --outfit). `concept` dresses the character in the
+# concept sheet; `outfit` is the same outfit worded for the headless, handless mannequin views.
+name = "Long coat"
+concept = "a long charcoal wool coat with a small stand-up collar and no hood, reaching just below his knees, closed down the front with pale wooden toggles, with a deep split at the back of the skirt and long sleeves to the wrists; slim black trousers; brown leather lace-up boots"
+outfit = "a long charcoal wool coat with a small stand-up collar around the empty neck opening and no hood, reaching just below the knees, closed down the front with pale wooden toggles, with a deep split at the back of the skirt; its long sleeves end at the wrists OPEN with no hand inside; slim black trousers under it; brown leather lace-up boots; the bare feet become those boots."
+pose = "In the T-pose the sleeves follow the outstretched arms, and the coat skirt hangs straight around the legs to just below the knees."
+front = "The collar, the toggles down the front, the coat skirt ending below the knees, the black trouser legs and the boot fronts are visible."
+back = "The collar, the plain back of the coat with the split in its skirt, the trouser legs and the boot heels are visible."
+left = "the left sleeve points at the camera so its open cuff is seen end-on in front of the body with no hand, the coat skirt is seen from the side down to below the knee, and the boots are seen from the side."
+right = "the right sleeve points at the camera so its open cuff is seen end-on in front of the body with no hand, the coat skirt is seen from the side down to below the knee, and the boots are seen from the side."

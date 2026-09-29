@@ -3,6 +3,10 @@
 
     set +x; set -a; source ./.env; set +a
     uv run python games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py [--only front,back] [--concept path]
+    ... --headless DIR --outfit games/yorimichi/assets/characters/cairo/outfits/hoodie.toml [--make-concept]
+
+With --outfit the garment text comes from an outfit spec instead of the skate outfit written below; --make-concept
+first redraws the approved concept sheet in that outfit (DIR/concept.png), which then serves as image 2.
 
 Image 1 per view is the real Blender render of the base body in its bind pose (`references/naked-<view>.png`);
 image 2 is the user's chosen outfit study. Only the clothing may change. Outputs are square 1024 PNGs named by
@@ -58,6 +62,65 @@ VIEWS = {
 }
 
 
+def private_reply(name, raw):
+    """The provider reply without the image (token usage for the cost record), in the ignored api-private folder."""
+    priv = OUT / 'api-private'; priv.mkdir(parents=True, exist_ok=True, mode=0o700); (priv / '.gitignore').write_text('*\n')
+    p = priv / f'{name}.response.json'; p.write_text(json.dumps(raw, indent=1)); p.chmod(0o600)
+
+
+# Generic headless prompt for an outfit spec: the r02 headless prompt with the skate garments taken out
+SPEC_COMMON = (
+    "Use case: clothing transfer onto a 3D character turnaround, one image. "
+    "Input image 1 is a real Blender render of our game character's base body in a wide horizontal T-pose, seen "
+    "from the {view}: a plain grey display MANNEQUIN of a boy's body WITHOUT A HEAD and WITHOUT HANDS: the neck ends "
+    "in a flat stump at collar height, the arms end in flat stumps at the wrists, the feet are bare. Input image 2 is "
+    "the APPROVED OUTFIT DESIGN on the same character standing relaxed. "
+    "Task: redraw image 1 with the character wearing the outfit from image 2, and change NOTHING else. Keep the "
+    "exact T-pose with both arms straight out horizontally and the exact body proportions. Do NOT add a head, hair, "
+    "face, neck or hands: the neck opening stays EMPTY (we see into it, the grey stump or nothing), and each arm ends "
+    "at the wrist with NOTHING coming out of it, the exact camera (orthographic, {view}), the exact scale, framing "
+    "and position in the frame, and the same plain light-gray background and soft even light. The grey fitting suit "
+    "is the body surface: the clothes are worn over it and {skin} "
+    "Outfit, exactly as in image 2: {outfit} Every garment is a flat solid colour: no printed graphics, logos, text, "
+    "stripes or patterns, no visible fabric texture. Softly sculpted matte 3D game-character finish, no shine, no "
+    "dramatic shadows. {pose} No text, labels, border or watermark. "
+)
+SPEC_VIEWS = {
+    'front': "View: TRUE FRONT view, camera directly in front, matching image 1 exactly. No head and no hands anywhere. ",
+    'back': "View: TRUE BACK view, camera directly behind, matching image 1 exactly. No head and no hands anywhere; no face. ",
+    'left': "View: TRUE LEFT side view, camera at the character's left, matching image 1 exactly: ",
+    'right': "View: TRUE RIGHT side view, camera at the character's right, matching image 1 exactly: ",
+}
+CONCEPT_PROMPT = (
+    "Use case: outfit redesign on an approved 3D character turnaround, one image. Input image 1 shows our game "
+    "character from the back and from the front, standing relaxed. Redraw image 1 with exactly the same character: "
+    "the same head, hair, face, skin, hands, body proportions, the same two poses, the same camera, framing, scale, "
+    "light and plain grey studio background. Change ONLY his clothes, to this outfit: {concept}. Every garment is a "
+    "flat solid colour: no printed graphics, logos, text, stripes or patterns, no visible fabric texture. Softly "
+    "sculpted matte 3D game-character finish in the same style as image 1. The clothes sit on his body the way real "
+    "clothes of that cut would; nothing floats. No text, labels, border or watermark."
+)
+
+
+def make_concept(spec):
+    prompt = CONCEPT_PROMPT.format(concept=spec['concept'])
+    (OUT.parent / 'concept.prompt.txt').write_text(prompt + '\n')
+    size = wb.SIZE; wb.SIZE = '1536x1024'
+    started = datetime.now(timezone.utc).isoformat()
+    blobs, raw, secs = wb.gpt_edit(prompt, [CONCEPT], 1)
+    wb.SIZE = size
+    out = OUT.parent / 'concept.png'; out.write_bytes(blobs[0]); private_reply('concept', raw)
+    prov = dict(stage='body-swap-outfit-concept', outfit=spec['name'], requested_model=wb.MODEL, quality=wb.QUALITY,
+                size='1536x1024', endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py --make-concept',
+                prompt_file='concept.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
+                reference_files={str(CONCEPT.relative_to(ROOT)): wb.sha(CONCEPT)}, started_at=started,
+                finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs, output_sha256=wb.sha(out),
+                approval='pending')
+    (OUT.parent / 'concept.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
+    print('concept', f'{secs}s')
+    return out
+
+
 def run(view):
     prompt = COMMON.format(view=view) + VIEWS[view]
     stills = [OUT / f'naked-{view}.png', CONCEPT]
@@ -65,6 +128,7 @@ def run(view):
     started = datetime.now(timezone.utc).isoformat()
     blobs, raw, secs = wb.gpt_edit(prompt, stills, 1)
     (OUT / f'{view}.png').write_bytes(blobs[0])
+    private_reply(view, raw)
     prov = dict(stage='body-swap-multiview-reference' + ('-headless' if 'headless' in str(OUT) else ''), view=view, requested_model=wb.MODEL, quality=wb.QUALITY,
                 size=wb.SIZE, endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py',
                 prompt_file=f'{view}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
@@ -77,6 +141,8 @@ def run(view):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(); ap.add_argument('--only', default=''); ap.add_argument('--concept', default='')
+    ap.add_argument('--outfit', default='', help='outfit spec (TOML: name, concept, outfit, pose, front/back/left/right, optional skin)')
+    ap.add_argument('--make-concept', action='store_true', help='redraw the concept sheet in the spec outfit first (DIR/concept.png)')
     ap.add_argument('--headless', default='', help='directory (under the character folder) holding mannequin references; dress them without head or hands')
     a = ap.parse_args()
     if a.concept:
@@ -91,6 +157,21 @@ if __name__ == '__main__':
             "worn over a white long-sleeve layer whose sleeves end at the wrists;",
             "worn over a white long-sleeve layer whose sleeves end at the wrists as open cuffs with no hand inside;")
         VIEWS = {k: v.replace("The face, ", "No head and no hands anywhere. ").replace("The back of the hair, ", "No head and no hands anywhere. ").replace("so the left hand is seen end-on in front of the body", "so the open sleeve end is seen end-on in front of the body with no hand").replace("so the right hand is seen end-on in front of the body", "so the open sleeve end is seen end-on in front of the body with no hand") for k, v in VIEWS.items()}
+    if a.outfit:
+        import tomllib
+        if not a.headless:
+            sys.exit('--outfit needs --headless DIR (the spec prompt is written for the mannequin views)')
+        spec = tomllib.loads(Path(a.outfit).read_text())
+        COMMON = SPEC_COMMON.replace('{skin}', spec.get('skin', 'it must not show anywhere except where skin would show.')).replace(
+            '{outfit}', spec['outfit']).replace('{pose}', spec['pose'])
+        VIEWS = {v: SPEC_VIEWS[v] + spec[v] for v in SPEC_VIEWS}
+        wb.key()
+        if a.make_concept:
+            CONCEPT = make_concept(spec)
+            if not a.only:
+                sys.exit(0)
+        elif not a.concept:
+            CONCEPT = OUT.parent / 'concept.png'
     views = [v for v in a.only.split(',') if v] or list(VIEWS)
     wb.key()
     with ThreadPoolExecutor(max_workers=len(views)) as ex:

@@ -324,7 +324,9 @@ def prep(path, maxw=1280):
     if im.width > maxw:
         im = im.resize((maxw, round(im.height * maxw / im.width)))
     out = tmp / (hashlib.sha256(str(path).encode()).hexdigest()[:10] + '.jpg')
-    im.save(out, quality=92)
+    part = out.with_name(f'{out.stem}.{uuid.uuid4().hex[:8]}.part.jpg')   # parallel views share image 2: write
+    im.save(part, quality=92)                                               # aside, then rename (atomic)
+    part.replace(out)
     return out
 
 

@@ -1,0 +1,10 @@
+# Outfit spec for the body swap (tools/cairo_body_swap_sunburst.py --outfit). `concept` dresses the character in the
+# concept sheet; `outfit` is the same outfit worded for the headless, handless mannequin views.
+name = "Keikogi and hakama"
+concept = "a deep-indigo cotton keikogi jacket that wraps left over right into a V at the chest, its wide straight sleeves reaching the wrists, tucked into very wide charcoal-grey pleated hakama trousers tied at the waist with a flat band, the hakama legs so wide they read almost like a skirt and falling to the ankles; white split-toe tabi socks and flat straw zori sandals with dark thongs"
+outfit = "a deep-indigo cotton keikogi jacket that wraps left over right into a V at the chest (the V ends at the empty neck opening), its wide straight sleeves reaching the wrists where they end OPEN with no hand inside; the jacket is tucked into very wide charcoal-grey pleated hakama trousers tied at the waist with a flat band, the hakama legs so wide they read almost like a skirt and falling to the ankles; white split-toe tabi socks and flat straw zori sandals with dark thongs; the bare feet become those socks and sandals."
+pose = "In the T-pose the wide sleeves hang in deep folds under the outstretched arms and the hakama pleats fall straight to the ankles."
+front = "The crossed V collar, the waist band, the front pleats of the hakama and the tabi and sandals are visible."
+back = "The plain back of the jacket, the back panel of the hakama with its waist band, and the heels of the tabi and sandals are visible."
+left = "the left sleeve points at the camera so its wide open mouth is seen end-on in front of the body with no hand, the hakama is seen from the side with its slit at the hip, and the sandals are seen from the side."
+right = "the right sleeve points at the camera so its wide open mouth is seen end-on in front of the body with no hand, the hakama is seen from the side with its slit at the hip, and the sandals are seen from the side."

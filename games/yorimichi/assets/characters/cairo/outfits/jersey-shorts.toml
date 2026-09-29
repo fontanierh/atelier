@@ -1,0 +1,12 @@
+# Outfit spec for the body swap (tools/cairo_body_swap_sunburst.py --outfit). `concept` dresses the character in the
+# concept sheet; `outfit` is the same outfit worded for the headless, handless mannequin views. `skin` replaces the
+# default "the grey suit must not show" rule for outfits that leave the arms or legs bare.
+name = "Basketball jersey and shorts"
+concept = "a loose sleeveless red basketball jersey with wide armholes and a round neck, hanging to the upper thigh; long, wide black basketball shorts reaching just below the knees; white crew socks to mid-shin; white and red basketball sneakers. His arms, knees and shins are bare"
+outfit = "a loose sleeveless red basketball jersey with wide armholes and a round neck, hanging to the upper thigh; long, wide black basketball shorts reaching just below the knees; white crew socks to mid-shin; white and red basketball sneakers; the bare feet become those socks and sneakers. The arms are bare from the shoulders to the flat wrist stumps, and the knees and shins between the shorts and the socks are bare."
+skin = "wherever the outfit leaves the body bare (the whole arms and the lower legs) the grey surface becomes the character's smooth warm peach skin from image 2, still with no hands: each bare arm ends in its flat wrist stump."
+pose = "In the T-pose the jersey hangs straight, its armholes open under the outstretched bare arms, and the shorts stay wide."
+front = "The jersey's round neckline, the armholes, the shorts, the bare knees, the socks and the sneaker fronts are visible."
+back = "The plain back of the jersey and the shorts, the bare backs of the knees, the socks and the sneaker heels are visible."
+left = "the bare left arm points at the camera so its flat wrist stump is seen end-on in front of the body with no hand, the jersey armhole and the side of the shorts are visible, and the sneakers are seen from the side."
+right = "the bare right arm points at the camera so its flat wrist stump is seen end-on in front of the body with no hand, the jersey armhole and the side of the shorts are visible, and the sneakers are seen from the side."

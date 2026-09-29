@@ -30,7 +30,7 @@ uv run atelier build yorimichi                            # re-exports and re-im
 | Motion capture | `cairo_mixamo_test.py` (retarget), `cairo_mixamo_clearance.py` + `cairo_mixamo_clearance_check.py` (head clearance), `cairo_mixamo_review.py`; the route is in [MIXAMO_WORKFLOW](../../../docs/MIXAMO_WORKFLOW.md) |
 | Fox hunter | `fox_hunter_animate.py` (pose language, leg solve, contacts), `fox_hunter_clip.py` (self-intersection), `fox_hunter_clipcheck.py`, `fox_hunter_captures.py`, `fox_hunter_animref.py` (H3 references), `fox_hunter_pipeline.py` (staged concepts for Tripo), `add_fox_fingers.py`, `review_fox_rig.py` |
 | Tripo | `review_tripo_model.py`, `review_tripo_rig.py`, `add_tripo_fingers.py`, `inspect_tripo_rig.py`; the API client is `atelier.ai.tripo_asset` |
-| Outfits | `cairo_body_swap_{references,sunburst,fit,assemble,capture,export}.py` |
+| Outfits | `cairo_body_swap_{references,sunburst,fit,assemble,capture,export,check}.py`; outfit specs in `../cairo/outfits/` |
 | Concepts | `cairo_back_concepts.py` (its Sunburst edit helper is shared), `spirit_concepts.py` (the spirit roster) |
 | Captures | `capture_cairo_clip.py`, `capture_cairo_revision.py`, `compare_cairo_sprint.py` |
 | Helpers kept for their functions | `prepare_cairo_game.py`, `refine_cairo_waist_overlap.py`, `validate_cairo_idle_dash.py`, `cairo_outfit_arm_clearance.py`, `cairo_waist_contact.py` (one-off revision scripts whose helpers the live tools import) |

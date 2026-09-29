@@ -1,0 +1,10 @@
+# Outfit spec for the body swap (tools/cairo_body_swap_sunburst.py --outfit). `concept` dresses the character in the
+# concept sheet; `outfit` is the same outfit worded for the headless, handless mannequin views.
+name = "Hoodie and joggers"
+concept = "a relaxed faded-teal pullover hoodie with the hood down lying on his upper back, a kangaroo pocket on the belly, ribbed cuffs at the wrists and a ribbed band at the hips; charcoal-grey jogger trousers, loose on the thighs and gathered into ribbed cuffs at the ankles; white high-top sneakers with a thick white sole"
+outfit = "a relaxed faded-teal pullover hoodie with the hood down, lying flat on the upper back behind the empty neck opening, a kangaroo pocket on the belly and a ribbed band at the hips; its long sleeves end at the wrists in ribbed cuffs that are OPEN with no hand inside; charcoal-grey jogger trousers, loose on the thighs and gathered into ribbed cuffs at the ankles; white high-top sneakers with white laces and a thick white sole; the bare feet become those sneakers."
+pose = "In the T-pose the sleeves follow the outstretched arms with soft folds hanging under them, the hoodie hangs straight to the hips and the joggers stay loose over the legs."
+front = "The hoodie's round neck opening with the edge of the hood just visible behind it, the kangaroo pocket, the ribbed hem, the ankle cuffs and the sneaker fronts are visible."
+back = "The hood lying flat on the upper back, the plain back of the hoodie and the joggers, and the sneaker heels are visible."
+left = "the left sleeve points at the camera so its open cuff is seen end-on in front of the body with no hand, the hood shows as a soft bump behind the neck opening, and the sneakers are seen from the side."
+right = "the right sleeve points at the camera so its open cuff is seen end-on in front of the body with no hand, the hood shows as a soft bump behind the neck opening, and the sneakers are seen from the side."
