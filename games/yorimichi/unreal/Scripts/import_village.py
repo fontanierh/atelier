@@ -87,7 +87,20 @@ def resident_material():
     MEL.recompile_material(m);EAL.save_loaded_asset(m)
 
 
+# The legacy FBX factory opens the Message Log whenever a new mesh has a build warning (nearly zero tangents, for
+# instance), which crashes an editor running as a commandlet. An existing asset takes the reimport path instead, which
+# only opens it on errors. So a mesh that does not exist yet is first created from a small placeholder that builds
+# cleanly, then imported for real as a reimport (the factory points the asset at the new file first).
+PLACEHOLDER=yori.OUT/'village'/'assets'/'Village_Sign.fbx'   # small, and builds without warnings
+
+
 def import_mesh(path,dest,name):
+    if not EAL.does_asset_exist(dest+'/'+name) and Path(path).resolve()!=PLACEHOLDER.resolve():
+        _import_mesh(PLACEHOLDER,dest,name)
+    return _import_mesh(path,dest,name)
+
+
+def _import_mesh(path,dest,name):
     task=unreal.AssetImportTask()
     task.filename=str(path);task.destination_path=dest;task.destination_name=name
     task.automated=True;task.replace_existing=True;task.replace_existing_settings=True;task.save=True

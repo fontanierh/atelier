@@ -52,7 +52,8 @@ def distance_lods(mesh,name,levels):
             'collision_lod':mesh.get_editor_property('lod_for_collision'),
             'simple_collision_count':collision[0],'convex_collision_count':collision[1]}
     assert all(n>0 for n in result['vertices']),(name,'empty LOD')
-    assert all(a>b for a,b in zip(result['vertices'],result['vertices'][1:])),(name,'LOD reduction failed',result)
+    # Small meshes bottom out (a 140-triangle pine keeps 180 vertices at LOD1 and LOD2): never grow, and end smaller.
+    assert all(a>=b for a,b in zip(result['vertices'],result['vertices'][1:])) and result['vertices'][-1]<result['vertices'][0],(name,'LOD reduction failed',result)
     assert result['triangles'][0]==original_triangles,(name,'LOD0 changed')
     assert len(result['screen_sizes'])==count
     assert all(abs(a-b)<1e-5 for a,b in zip(result['screen_sizes'],screen_sizes)),(name,'incorrect LOD screen sizes',result)
@@ -95,6 +96,8 @@ for name,entry in manifest.items():
     if lod_report:report[name]['lods']=lod_report
 if not only or os.environ.get('HIDAMARI_TERRAIN')=='1':
     mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
+    from import_southwest import sand_material
+    sand_material()   # the beach slot; the south-west import (later in a fresh build) owns it
     for i,slot in enumerate(mesh.static_materials):
         key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
         mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/MI_'+key)

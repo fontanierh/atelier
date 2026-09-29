@@ -127,6 +127,8 @@ def main():
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
     assert args.tag.replace('_', '').isalnum() and 32 <= args.size <= 256
     folder = yori.OUT / 'city_surface_tiles' / args.tag
+    if folder.exists():   # a rebuild replaces this tag's previous output
+        __import__('shutil').rmtree(folder)
     folder.mkdir(parents=True, exist_ok=False)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     expected = json.loads((yori.OUT / 'hidamari/manifest.json').read_text())
