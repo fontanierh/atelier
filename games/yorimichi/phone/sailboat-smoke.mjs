@@ -1,9 +1,10 @@
 // Actual Pixel Streaming transport, touch controls and modal reset regression.
-import {chromium} from '@playwright/test';
+import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
-const out=new URL('../out/pixel-streaming/',import.meta.url);
+const out=new URL('stream/smoke/',BUILD);
 await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true}),page=await context.newPage(),cdp=await context.newCDPSession(page);
 const report={};let touches=[];
 async function touch(id,selector,down){
@@ -16,7 +17,7 @@ const state=()=>page.evaluate(()=>window.yorimichi.state);
 async function drive(selector){await touch(7,selector,true);await page.waitForTimeout(160);await touch(7,selector,false);}
 const angleDelta=(a,b)=>((a-b+540)%360)-180;
 try{
- await page.goto(process.env.STREAM_URL||'http://127.0.0.1:8080');
+ await page.goto(STREAM_URL);
  await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:90000});await page.click('#play');
  await page.locator('#spawn').tap();await page.waitForTimeout(600);
  await page.locator('#map-button').tap();await page.waitForFunction(()=>window.yorimichi.map?.zones?.length);
@@ -32,10 +33,10 @@ try{
  await drive('#push');await page.waitForFunction(()=>window.yorimichi.state.speed>500,{},{timeout:10000});
  report.cruise=await state();
  await page.waitForTimeout(700);if((await state()).speed<500)throw Error('Released raise lost propulsion');
- await touch(1,'[data-turn="-1"]',true);await page.waitForTimeout(650);await touch(1,'[data-turn="-1"]',false);
+ await touch(1,'[data-axis="turn"][data-value="-1"]',true);await page.waitForTimeout(650);await touch(1,'[data-axis="turn"][data-value="-1"]',false);
  report.left=await state();if(Math.abs(angleDelta(report.left.yaw,report.cruise.yaw))<8)throw Error('Touch steering did not turn');
  // Simultaneous propulsion + steering, then cancellation clears all held controls.
- await touch(1,'#push',true);await touch(2,'[data-turn="1"]',true);await page.waitForTimeout(300);
+ await touch(1,'#push',true);await touch(2,'[data-axis="turn"][data-value="1"]',true);await page.waitForTimeout(300);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});touches=[];
  await page.waitForFunction(()=>document.querySelectorAll('.held').length===0,{},{timeout:2000});
  await page.locator('#settings-button').tap();

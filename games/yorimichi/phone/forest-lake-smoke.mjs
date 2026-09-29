@@ -1,13 +1,14 @@
 // Real streamed touch controls: woodland trail, porch, jetty and water recovery.
-import {chromium} from '@playwright/test';
+import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
-const out=new URL('../out/forest_lake/phone/',import.meta.url);await fs.mkdir(out,{recursive:true});
-const world=JSON.parse(await fs.readFile(new URL('../out/world.json',import.meta.url),'utf8'));
-const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const out=new URL('forest_lake/phone/',BUILD);await fs.mkdir(out,{recursive:true});
+const world=JSON.parse(await fs.readFile(new URL('world.json',BUILD),'utf8'));
+const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true});const page=await context.newPage();let active=false;
 const report={samples:[]};let yaw=0;
 try{
- await page.goto(process.env.STREAM_URL||'http://127.0.0.1:8080');await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:60000});await page.locator('#play').click();await page.waitForFunction(()=>document.querySelector('video')?.currentTime>0,{},{timeout:30000});
+ await page.goto(STREAM_URL);await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:60000});await page.locator('#play').click();await page.waitForFunction(()=>document.querySelector('video')?.currentTime>0,{},{timeout:30000});
  const cdp=await context.newCDPSession(page),b=await page.locator('#stick').boundingBox();const cx=b.x+b.width/2,cy=b.y+b.height/2;
  async function stop(){if(active){await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});active=false;}await page.waitForTimeout(250);}
  async function route(points,label){

@@ -128,9 +128,9 @@ mkdir -p $R/game-r13 && cp $R/$BODY_SWAP_DIR/assembled/$BODY_SWAP_STEM.blend $R/
 # source-manifest.json: copy game-r11's, update native, native_sha256, garment_source(+sha256), note
 /Applications/Blender.app/Contents/MacOS/Blender -b --threads 4 --python-exit-code 1 \
   --python games/yorimichi/assets/characters/warm-original/export_unreal.py -- --revision game-r13 > build/yorimichi/logs/warm-export-r13.log 2>&1
-"/Users/Shared/Epic Games/UE_5.8/Engine/Build/BatchFiles/Mac/Build.sh" JapanProtoEditor Mac Development \
+"/Users/Shared/Epic Games/UE_5.8/Engine/Build/BatchFiles/Mac/Build.sh" YorimichiEditor Mac Development \
   -project="$PWD/games/yorimichi/unreal/Yorimichi.uproject" -WaitMutex        # only if C++ changed
-python3 games/yorimichi/streaming/guarded_game.py build/yorimichi/warm_original/import-r13 \
+PYTHONPATH=platform/studio python3 -m atelier.safety.guarded --report build/yorimichi/warm_original/import-r13 -- \
   "/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PWD/games/yorimichi/unreal/Yorimichi.uproject" \
   -run=pythonscript -script="$PWD/games/yorimichi/unreal/Scripts/import_warm_original.py" -unattended -nosplash -NullRHI -stdout
 ```
@@ -145,7 +145,7 @@ for 25 clips and the import to end with exit 0.
 ```sh
 E="/Users/Shared/Epic Games/UE_5.8"; P="$PWD/games/yorimichi/unreal"; OUT="$PWD/build/yorimichi/warm_original/film-r13"
 for VIEW in front back; do D="$OUT/$VIEW"; mkdir -p "$D"
-  python3 games/yorimichi/streaming/guarded_game.py "$D" "$E/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" \
+  PYTHONPATH=platform/studio python3 -m atelier.safety.guarded --report "$D" -- "$E/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" \
     "$P/Yorimichi.uproject" -game -windowed -resx=1280 -resy=720 -warmqa -warmfilm -framestride=2 \
     -UseFixedTimeStep -FPS=60 -warmview=$VIEW "-reviewdir=$D" -stdout "-abslog=$D/game.log"
 done

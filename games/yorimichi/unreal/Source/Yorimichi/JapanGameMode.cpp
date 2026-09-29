@@ -15,7 +15,7 @@
 static bool ScriptedSession()
 {
     const TCHAR* Cmd = FCommandLine::Get();
-    for (const TCHAR* Key : { TEXT("qa"), TEXT("video"), TEXT("demo"), TEXT("fly"), TEXT("benchmark"), TEXT("trailershot"), TEXT("buildingreview"), TEXT("worldshots"), TEXT("megafilm"), TEXT("phonestreaming") })
+    for (const TCHAR* Key : { TEXT("qa"), TEXT("video"), TEXT("demo"), TEXT("fly"), TEXT("benchmark"), TEXT("trailershot"), TEXT("buildingreview"), TEXT("worldshots"), TEXT("megafilm"), TEXT("AtelierStream") })
         if (FCString::Stristr(Cmd, Key)) return true;
     return false;
 }

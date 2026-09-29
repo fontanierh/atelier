@@ -16,8 +16,8 @@ The map follows the same accurate rough-layout → Sunburst painting → local r
 - For a targeted update, `PYTHONPATH=japan python -m forest_lake.layout` snapshots the pre-lake world/heightmap in `out/forest_lake/source` and always reapplies edits from that snapshot. Do not overwrite that baseline with an already-integrated world.
 - `blender -b --threads 2 --python japan/forest_lake/build.py`
 - `blender -b --threads 2 --python japan/build_terrain.py`
-- Run `Scripts/import_forest_lake.py` through Unreal's Python commandlet, with the stream stopped and `streaming/guarded_game.py` as the memory guard.
-- Rebuild JapanProtoEditor after C++ changes.
+- Import with `atelier build yorimichi unreal.lake` (Unreal's Python commandlet under the render lock and memory guard), with the stream stopped.
+- Rebuild YorimichiEditor after C++ changes (`atelier build yorimichi unreal.compile`).
 - `python japan/forest_lake/qa.py <fresh-session>` captures twelve native views and collision probes under the same memory guard.
 - `node japan/streaming/forest-lake-smoke.mjs` exercises streamed touch movement along the forest trail, onto the porch and pier, and into shore recovery.
 

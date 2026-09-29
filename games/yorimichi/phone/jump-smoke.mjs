@@ -1,12 +1,13 @@
 // Real multi-touch input over the local iPhone streaming frontend.
-import {chromium} from 'playwright-core';
+import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
-const out=new URL('../out/cape_boy/double-jump/phone/',import.meta.url);
+const out=new URL('cape_boy/double-jump/phone/',BUILD);
 await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
 try {
  const context=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
- const page=await context.newPage();await page.goto('http://127.0.0.1:8080');
+ const page=await context.newPage();await page.goto(STREAM_URL);
  await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:60000});
  await page.click('#play');await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&v.videoWidth>0&&v.currentTime>0;},{},{timeout:60000});
  await page.evaluate(()=>{window.jumpEvents=[];for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture'])document.getElementById('jump').addEventListener(type,e=>window.jumpEvents.push({type,id:e.pointerId,time:Date.now()}));});

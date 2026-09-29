@@ -18,7 +18,7 @@ class USkateboardComponent;
 class USkateComponent;
 class USailboatComponent;
 class FJsonObject;
-class FJapanStreamingInput;
+class FYorimichiPhone;
 class UJapanMap;
 class UJapanFootstepComponent;
 class UWandererSwordComponent;
@@ -53,6 +53,8 @@ public:
     bool DoesActionLoop() const { return bActionLoops; }
     bool IsReady() const { return bReady; }
     bool IsMouseReleased() const { return bMouseReleased; }
+    /** The phone stream's touch page is driving the game (it draws its own controls and status). */
+    bool IsPhoneTouchActive() const;
     USkateboardComponent* GetSkateboard() const { return Skateboard; }
     /** skate.-style skateboarding (docs/SKATE.md; the platform's Skate plugin). */
     USkateComponent* GetSkate() const { return SkateRide; }
@@ -104,12 +106,12 @@ protected:
     float SprintSpeedMultiplier = 1.f;
 
 private:
-    friend class FJapanStreamingInput;
+    friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     float MegaCameraGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
     bool bRemountSkate=false;
-    TSharedPtr<FJapanStreamingInput> PhoneInput;
+    TSharedPtr<FYorimichiPhone> PhoneInput;
     UPROPERTY() TObjectPtr<USkateboardComponent> Skateboard;
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;

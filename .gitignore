@@ -22,7 +22,7 @@ platform/engine/Plugins/**/Intermediate/
 __pycache__/
 *.pyc
 .venv/
-node_modules/
+node_modules
 *.egg-info/
 
 # Blender autosaves, OS files

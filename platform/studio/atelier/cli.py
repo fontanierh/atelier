@@ -4,6 +4,7 @@
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
     atelier play <game> [--profile P]  launch the game under the render lock and memory guard
+    atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
     atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
@@ -132,6 +133,9 @@ def main(argv=None):
     p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
     p.add_argument('--set', default='', help='settings overrides, key=value;key=value'); p.add_argument('extra', nargs='*')
+    p = sub.add_parser('stream'); p.add_argument('game'); p.add_argument('action', choices=['start', 'stop', 'status', 'build-web'])
+    p.add_argument('--local', action='store_true', help='this machine only: no Tailscale Serve')
+    p.add_argument('--install', action='store_true', help='build-web: reinstall platform/web packages (npm ci)')
     p = sub.add_parser('lint'); p.add_argument('--staged', action='store_true', help='check the staged files only')
     p = sub.add_parser('live'); p.add_argument('rest', nargs=argparse.REMAINDER)
     p = sub.add_parser('qa'); p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
@@ -147,6 +151,9 @@ def main(argv=None):
         return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch)
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra)
+    if args.command == 'stream':
+        from . import stream
+        return stream.main(args.game, args.action, local=args.local, install=args.install)
     if args.command == 'lint':
         return lint(args.staged)
     if args.command == 'qa':

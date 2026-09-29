@@ -24,3 +24,11 @@ args = ["--shared-settings", "--windowed"]
 [play.desktop-1440]
 script = "tools/desktop_preview.py"
 args = ["--shared-settings"]
+
+[stream]
+# `atelier stream yorimichi start`: the phone page (touch controls, map, settings) at /, the platform's plain player
+# (keyboard, mouse or controller on the far device) at /play/. Messages use the "yorimichi" protocol key.
+protocol = "yorimichi"
+touch_page = "phone"
+routes = { map = "map" }                # /map serves build/yorimichi/map (the painted sheet the phone map shows)
+video = { width = 1280, height = 720, fps = 60 }

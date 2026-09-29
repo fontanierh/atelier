@@ -1,10 +1,11 @@
 // Exercise real touch gestures on the map UI without connecting to or moving the live game.
-import {chromium} from '@playwright/test';
+import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
 const here=new URL('./',import.meta.url);
-const mapData=JSON.parse(await fs.readFile(new URL('../out/map/map.json',here),'utf8'));
+const mapData=JSON.parse(await fs.readFile(new URL('map/map.json',BUILD),'utf8'));
 const data={...mapData,loaded:true,image:'/map/map.jpg'};
-const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+const browser=await chromium.launch({executablePath:CHROME,headless:true});
 try{
  for(const viewport of [{width:844,height:390},{width:390,height:844}]){
   const context=await browser.newContext({viewport,hasTouch:true,isMobile:true});
@@ -12,7 +13,7 @@ try{
   await page.route('http://map.test/**',async route=>{
    const path=new URL(route.request().url()).pathname;
    if(path==='/client.js')return route.fulfill({contentType:'text/javascript',body:`import {createMap} from '/map.js';window.travels=[];const map=createMap({send:m=>{if(m.action==='map')map.receive(${JSON.stringify(data)});else window.travels.push(m);}});map.open(true);`});
-   const files={'/':'index.html','/style.css':'style.css','/map.js':'map.js','/map/map.jpg':'../out/map/map.jpg'};
+   const files={'/':'index.html','/style.css':'style.css','/map.js':'map.js','/map/map.jpg':new URL('map/map.jpg',BUILD).href};
    if(!files[path])return route.fulfill({status:404,body:''});
    const contentType=path.endsWith('.css')?'text/css':path.endsWith('.js')?'text/javascript':path.endsWith('.jpg')?'image/jpeg':'text/html';
    const body=path==='/style.css'&&process.env.MAP_TEST_CSS?await fs.readFile(process.env.MAP_TEST_CSS):await fs.readFile(new URL(files[path],here));
@@ -66,7 +67,7 @@ try{
   if(await page.evaluate(()=>window.travels.length)!==1)throw Error('Map gesture accidentally travelled');
   await page.locator('#map-whole').tap();
   if(await page.locator('#map-frame').getAttribute('data-zoom')!=='1.000')throw Error('Whole map reset failed');
-  await page.screenshot({path:new URL(`../out/map/phone-${viewport.width}.png`,here).pathname});
+  await page.screenshot({path:new URL(`map/phone-${viewport.width}.png`,BUILD).pathname});
   console.log(`PASS ${viewport.width}x${viewport.height}: aspect, zoom, pinch, pan, whole map, no accidental travel`);
   await context.close();
  }

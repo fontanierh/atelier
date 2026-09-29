@@ -1,0 +1,11 @@
+:root { color-scheme: dark; --ink: #f2efe6; --shade: rgba(10, 12, 12, .72); }
+html, body { margin: 0; height: 100%; background: #000; color: var(--ink); font: 16px/1.4 system-ui, sans-serif; overflow: hidden; }
+#video, #video video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+#welcome { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; gap: .6rem; background: var(--shade); padding: 16px; }
+#welcome h1 { margin: 0; font-size: 2rem; font-weight: 600; }
+#welcome p { margin: 0; opacity: .8; max-width: 32rem; }
+button { font: inherit; color: var(--ink); background: #2a4a40; border: 0; border-radius: 8px; padding: .6rem 1.2rem; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+#bar { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); display: flex; gap: 6px; opacity: .35; transition: opacity .2s; }
+#bar:hover { opacity: 1; }
+#bar button { background: var(--shade); padding: .35rem .7rem; font-size: .85rem; }

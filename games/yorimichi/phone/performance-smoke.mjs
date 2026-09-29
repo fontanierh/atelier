@@ -1,13 +1,14 @@
 // Manual live-stream diagnostic. Uses the single player slot and returns to spawn.
 // Reports sampled native FPS separately from actual decoded video throughput.
-import {chromium} from '@playwright/test';
+import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
-const url=process.env.STREAM_URL||'http://127.0.0.1:8080';
+const url=STREAM_URL;
 const label=process.argv[2]||'stream-performance';
-const out=new URL('../out/pixel-streaming/',import.meta.url);
+const out=new URL('stream/smoke/',BUILD);await fs.mkdir(out,{recursive:true});
 const health=await(await fetch(new URL('/health',url))).json();
 if(health.players)throw Error('A player is already connected; do not displace the phone.');
-const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
 try{
  const page=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true});
  await page.addInitScript(()=>{window.testPeers=[];const Base=window.RTCPeerConnection;window.RTCPeerConnection=class extends Base{constructor(...args){super(...args);window.testPeers.push(this);}};});

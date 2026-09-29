@@ -101,8 +101,8 @@ uses the same path. `-mapqa -reviewdir=DIR` travels to every zone in turn, scree
 screenshots the open map (`map_overlay.png`) and writes `map_qa.json` (target, landed position, drift, on-ground).
 
 Phones get the data over the stream: `{action:"map"}` returns bounds, zones and the sheet URL (`/map/map.jpg`,
-served by `server.cjs` straight from `build/yorimichi/map`), `{action:"teleport", zone}` travels; the status message now
-carries `yaw`. `streaming/map.js` draws pins and the player on the sheet; `node games/yorimichi/streaming/map-smoke.mjs`
+served by the stream server straight from `build/yorimichi/map`, game.toml `[stream] routes`), `{action:"teleport", zone}`
+travels; the status message carries `yaw`. `phone/map.js` draws pins and the player on the sheet; `node games/yorimichi/phone/map-smoke.mjs`
 exercises it against a running stream.
 
 ### PR 4 integration validation

@@ -1,8 +1,8 @@
 {
-  "name": "yorimichi-phone-stream",
+  "name": "atelier-web",
   "private": true,
   "type": "module",
-  "scripts": {"build": "esbuild client.js --bundle --format=esm --outfile=../../../build/yorimichi/pixel-streaming/web/client.js", "start": "node server.cjs"},
+  "description": "Pages and servers for streamed games (stream/): Epic's Pixel Streaming frontend and signalling, bundled by esbuild; playwright-core drives the games' browser smoke tests. `atelier stream <game> build-web` installs and bundles.",
   "dependencies": {"@epicgames-ps/lib-pixelstreamingfrontend-ue5.8": "0.1.1", "@epicgames-ps/lib-pixelstreamingsignalling-ue5.8": "0.2.0", "express": "4.22.1"},
   "devDependencies": {"esbuild": "0.25.12", "@playwright/test": "1.58.2"}
 }

@@ -9,7 +9,8 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "JapanFootsteps.h"
 #include "WandererSword.h"
 #include "Algo/Find.h"
-#include "JapanStreamingInput.h"
+#include "YorimichiPhone.h"
+#include "AtelierStream.h"
 #include "Misc/App.h"
 #include "WandererDefinition.h"
 #include "WandererAnimInstance.h"
@@ -125,7 +126,7 @@ void AWandererCharacter::BeginPlay()
                 UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE viewport key=%s event=%d value=%.2f device=%d"),*Event.Key.ToString(),int32(Event.Event),Event.AmountDepressed,Event.InputDevice.GetId());
         });
     }
-    if (FParse::Param(FCommandLine::Get(),TEXT("phonestreaming"))) PhoneInput=MakeShared<FJapanStreamingInput>(this);
+    if (FAtelierStream::IsRequested()) PhoneInput=MakeShared<FYorimichiPhone>(this);
     Definition = LoadObject<UWandererDefinition>(nullptr,*DefinitionAssetPath);
     if (Definition && Definition->Mesh && Definition->Locomotion && Definition->Crouching)
     {
@@ -372,6 +373,7 @@ void AWandererCharacter::StickLook(const FInputActionValue& V)
 void AWandererCharacter::Sprint(const FInputActionValue& V) { bSprintHeld = V.Get<bool>(); }
 void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>(); }
 void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
+bool AWandererCharacter::IsPhoneTouchActive() const { return PhoneInput && PhoneInput->IsTouchActive(); }
 bool AWandererCharacter::IsSkateInputBlocked() const { return bMenuOpen || (Map && Map->IsOpen()); }
 UAnimSequence* AWandererCharacter::FindSkateClip(FName Role) const
 {

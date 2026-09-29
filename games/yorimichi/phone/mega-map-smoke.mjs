@@ -1,12 +1,13 @@
 // Verify the painted map while standing on the actual mini-mega deck.
-import {chromium} from '@playwright/test';
+import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
-const out=new URL('../out/map/mini-mega-fix/phone/',import.meta.url);await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const out=new URL('map/mini-mega-fix/phone/',BUILD);await fs.mkdir(out,{recursive:true});
+const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({viewport:{width:1280,height:589},hasTouch:true,isMobile:true});
 const page=await context.newPage();const report={};
 try {
- await page.goto(process.env.STREAM_URL||'http://127.0.0.1:8080');
+ await page.goto(STREAM_URL);
  await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:60000});await page.locator('#play').click();
  await page.waitForFunction(()=>document.querySelector('video')?.currentTime>0,{},{timeout:30000});
  await page.locator('#map-button').tap();

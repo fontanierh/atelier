@@ -1,29 +1,25 @@
 // World map on the phone page: opens the map, checks the sheet, the pins and the player marker, travels to a zone
 // by tapping its pin, confirms the game moved there, then returns to spawn. Needs a running stream
-// (python games/yorimichi/streaming/run.py start [--local]); STREAM_URL selects another endpoint or port.
-import {chromium} from '@playwright/test';
+// (atelier stream yorimichi start [--local]); STREAM_URL selects another endpoint or port.
+import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
-const out=new URL('../out/pixel-streaming/',import.meta.url);
-const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const out=new URL('stream/smoke/',BUILD);await fs.mkdir(out,{recursive:true});
+const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true});
 const page=await context.newPage();const events=[];
 page.on('console',m=>{events.push(m.type()+': '+m.text());if(m.type()==='error')console.log(m.text());});
 page.on('pageerror',e=>{events.push('PAGE ERROR '+e.message);console.log('PAGE ERROR',e.message)});
 const report={};
 try{
- await page.goto(process.env.STREAM_URL||'http://127.0.0.1:8080');
+ await page.goto(STREAM_URL);
  await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:90000});
  await page.click('#play');
  await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&v.videoWidth>0&&v.currentTime>0;},{},{timeout:60000});
  await page.waitForTimeout(1000);
  report.start=await page.evaluate(()=>window.yorimichi.state);
- // Travel must safely interrupt an active skate ride, not carry equipment or speed to the destination.
- await page.locator('#board').tap();
- await page.waitForFunction(()=>window.yorimichi.state.skating,{},{timeout:5000});
- await page.keyboard.down('KeyW');await page.waitForTimeout(3000);
- report.beforeTravel=await page.evaluate(()=>window.yorimichi.state);
- if(!report.beforeTravel.skating||report.beforeTravel.speed<100)throw Error('Skate setup did not reach riding speed');
- await page.keyboard.up('KeyW');
+ // (The phone page has had no skateboard button since the player changed on 7 September; the travel checks below still
+ // refuse carried equipment or momentum.)
  // open the map: the game answers with the sheet bounds and the zones, the page draws pins and the player
  await page.locator('#map-button').tap();
  await page.waitForFunction(()=>window.yorimichi.map?.zones?.length>0&&document.querySelectorAll('.map-pin').length>0,{},{timeout:10000});
