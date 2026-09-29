@@ -51,7 +51,7 @@ class UnrealScript:
 
     def argv(self, ctx):
         command = [str(ctx.unreal_cmd), str(ctx.uproject), '-run=pythonscript', f'-script={self.script}',
-                   '-unattended', '-nop4', '-nosplash', '-stdout']
+                   '-unattended', '-nop4', '-nosplash', '-stdout', '-AllowStdOutLogVerbosity']   # unreal.log lines reach stdout
         return command + (['-NullRHI'] if self.null_rhi else [])
 
 
@@ -77,7 +77,8 @@ class Step:
     name: str
     commands: list
     inputs: list = field(default_factory=list)     # files or folders, hashed by content
-    needs: list = field(default_factory=list)      # step names
+    needs: list = field(default_factory=list)      # step names whose results this step uses (their fingerprints feed its own)
+    after: list = field(default_factory=list)      # step names that only have to run first (a compiled editor): no rerun when they change
     outputs: list = field(default_factory=list)    # must exist after a run; a missing one forces a rerun
     heavy: bool = False                            # take the machine's render lock (Unreal, Blender renders)
     about: str = ''
@@ -156,7 +157,7 @@ def order(steps, wanted):
         if name in chosen:
             return
         chosen.add(name)
-        for need in by_name[name].needs:
+        for need in by_name[name].needs + by_name[name].after:
             add(need)
     for w in wanted or [s.name for s in steps]:
         for s in steps:
@@ -187,7 +188,7 @@ def run_command(ctx, step, command, log):
         raise RuntimeError(f'{step.name}: "{marker}" missing from the log')
 
 
-def build(game, wanted=(), force=False, dry=False, echo=print):
+def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
     ctx = Context(game)
     recipe = load_recipe(game)
     steps = recipe.steps(ctx)
@@ -213,6 +214,14 @@ def build(game, wanted=(), force=False, dry=False, echo=print):
         if dry:
             done[step.name] = current
             echo(f'{print_} would run')
+            continue
+        if touch:   # the outputs are known to be current (a refactor of the recipe): record them without running
+            if not outputs_ok:
+                echo(f'{print_} not touched: outputs missing')
+                continue
+            stamp.write_text(json.dumps({'fingerprint': current, 'seconds': previous.get('seconds'), 'time': time.time(), 'touched': True}) + '\n')
+            done[step.name] = current
+            echo(f'{print_} touched')
             continue
         t0 = time.monotonic()
         log_path = ctx.logs / f'{step.name}.log'
@@ -242,4 +251,5 @@ def list_steps(game, echo=print):
     ctx = Context(game)
     for s in load_recipe(game).steps(ctx):
         needs = f'  (needs {", ".join(s.needs)})' if s.needs else ''
+        needs += f'  (after {", ".join(s.after)})' if s.after else ''
         echo(f'{s.name:34s} {s.about}{needs}')

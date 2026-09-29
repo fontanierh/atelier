@@ -2,7 +2,7 @@
 
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
-    atelier build <game> [step ...]    build what changed; --list, --force, --dry-run
+    atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
     atelier play <game> [--profile P]  launch the game under the render lock and memory guard
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
@@ -129,6 +129,7 @@ def main(argv=None):
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
+    p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
     p.add_argument('--set', default='', help='settings overrides, key=value;key=value'); p.add_argument('extra', nargs='*')
     p = sub.add_parser('lint'); p.add_argument('--staged', action='store_true', help='check the staged files only')
@@ -143,7 +144,7 @@ def main(argv=None):
         if args.list:
             list_steps(args.game)
             return 0
-        return build(args.game, args.steps, force=args.force, dry=args.dry_run)
+        return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch)
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra)
     if args.command == 'lint':
