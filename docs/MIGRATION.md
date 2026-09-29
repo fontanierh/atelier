@@ -1,6 +1,6 @@
 # Migration from the prototype repository
 
-Yorimichi was built from 4 to 28 September 2026 in a private prototype repository (`japan/` inside a larger
+Yorimichi was built in a private prototype repository (`japan/` inside a larger
 experiments repo). This file tracks the move into Atelier. The prototype stays as a read-only archive.
 
 ## Definition of done

@@ -10,11 +10,10 @@ can play, with Blender, Unreal Engine 5 and today's generative models doing the 
 
 ---
 
-**Yorimichi**, the game in this repository, was made in about three weeks (4 to 28 September 2026) by one person
-directing AI coding agents. Almost everything in it (models, rigs, animation, the world, the code) came from prompts,
-scripts and review loops that the agents ran:
+**Yorimichi**, the game in this repository, was made by directing AI coding agents. Almost everything in it (models,
+rigs, animation, the world, the code) came from prompts, scripts and review loops that the agents ran:
 
-- **Cairo**, the player: from four AI concepts to a rigged 3D character in two hours, then 53 bones with articulated
+- **Cairo**, the player: from four AI concepts to a rigged 3D character, then 53 bones with articulated
   fingers and **110 animations** (running, rolling, a full sword set, and 54 skateboarding clips);
 - **a whole island** built by scripts: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake,
   a skate pier, a zeppelin line, and **204,000 plants** placed by a generator;
@@ -87,14 +86,15 @@ headless mannequin rendered from the rigged body, Tripo builds the clothes, and 
 
 <img src="docs/media/character/05-outfit.jpg" alt="Outfit concept, the dressed mannequin, the final character">
 
-**6. Motion from video.** AI video models act a move out with the character: [Seedance](https://seed.bytedance.com)
-for a sprint or a dive roll (about $1.40 a take), MiniMax H3 Max for sword moves (about $0.15 at 480p), both through
-the Vercel AI Gateway. The video is a reference, not the animation: an agent reads it frame by frame and writes the
-clip in Blender pose by pose, with foot planting and clipping checks, so it loops, lands and reads well in the game.
+**6. Motion from video.** AI video models act a move out with the character: MiniMax H3 Max for the dodge roll
+(about $0.15 at 480p), [Seedance](https://seed.bytedance.com) for the sprint and the dive roll (about $1.40 a take),
+both through the Vercel AI Gateway. The video is a reference, not the animation: an agent reads it frame by frame and
+writes the clip in Blender pose by pose, with foot planting and clipping checks, so it loops, lands and reads well in
+the game.
 
 <table><tr>
-<td width="70%"><img src="docs/media/character/06-motion.jpg" alt="Seedance sprint frames above, the authored Blender sprint below"></td>
-<td width="30%"><img src="docs/media/character/06-h3-sword.gif" alt="An H3 Max reference video of Cairo swinging a wooden sword"></td>
+<td width="62%"><img src="docs/media/character/06-motion.jpg" alt="Seedance sprint frames above, the authored Blender sprint below"></td>
+<td width="38%"><img src="docs/media/character/06-h3-roll.gif" alt="An H3 Max reference video of Cairo doing a forward shoulder roll"></td>
 </tr></table>
 
 ```sh
@@ -103,13 +103,34 @@ node --env-file=.env platform/studio/node/seedance_vercel.mjs submit --out <revi
 python platform/studio/atelier/review/video_reference.py <revision>        # timestamped frame sheets to author from
 ```
 
-**7. A library of clips, reviewed.** Every clip is rendered from several cameras and checked before it ships. Cairo
+**7. Motion capture, retargeted.** For the sword, a real capture beat any video: a great-sword combo from Adobe's free
+[Mixamo](https://www.mixamo.com/) library, moved onto Cairo's own skeleton by a Blender script. Bones are matched by
+anatomy (not by axes), travel is scaled to his height, palms are aligned separately, and the second hand is re-solved
+onto the grip every frame. A correction layer lifts the overhead cuts clear of his big head, checked at 240 samples a
+second. Then the combo is cut into strikes, a charge and a parry, the capture's full-turn spin is taken out with the
+feet re-planted, the strikes are sped up, and each one records where it lands so the game can aim it.
+
+<table><tr>
+<td width="34%"><img src="docs/media/character/06-mixamo-combo.gif" alt="Cairo performing the retargeted Mixamo great-sword combo"></td>
+<td width="66%"><img src="docs/media/character/06-despun.jpg" alt="The first game strike cut from the combo: guard, raise, cut, contact, follow-through"></td>
+</tr></table>
+
+```sh
+blender -b --python games/yorimichi/assets/characters/tools/cairo_mixamo_test.py -- --source combo.fbx --out <r01>
+blender -b --python games/yorimichi/assets/characters/tools/cairo_mixamo_clearance.py -- --source <r01>/... --out <r02>
+blender -b --python games/yorimichi/assets/characters/tools/cairo_sword_combat_r02.py   # strikes: de-spun, faster, aimed
+```
+
+The whole route, with the settings, the maths and the pitfalls, is in the
+[Mixamo guide](games/yorimichi/docs/MIXAMO_WORKFLOW.md).
+
+**8. A library of clips, reviewed.** Every clip is rendered from several cameras and checked before it ships. Cairo
 has 110 of them, named by [role](platform/conventions/clip-roles.toml) (`Run`, `SwordParry`, `SkateGrabIndy`...), so
 game code asks for a role, never for a file.
 
 <img src="docs/media/character/07-clip-review.jpg" alt="The indy grab from behind, the toe side and above, eight frames each">
 
-**8. Into the game.** `atelier build` exports the character from Blender (mesh, clips, sword, textures) and imports
+**9. Into the game.** `atelier build` exports the character from Blender (mesh, clips, sword, textures) and imports
 it into Unreal; scripted QA runs then check it in motion.
 
 ```sh
