@@ -145,14 +145,8 @@ private:
     float DashCooldown = 0.f;
     float RollCooldown = 0.f;
     float RollBuffer = 0.f;
-    bool bReview = false, bWorldReview = false, bFixedView = false, bRecordReview = false;
-    int32 ReviewFrame = 0;
-    int32 InputReviewStage = 0;
-    float InputReviewPitch = 0, UpPitchDelta = 0, DownPitchDelta = 0;
-    FString ReviewTelemetry = TEXT("time,step,speed,falling,crouched,pitch,foot_l_x,foot_l_y,foot_l_z,foot_r_x,foot_r_y,foot_r_z,capsule_half_height,mesh_offset_z\n");
+    bool bFixedView = false;
     FVector ReviewForward = FVector::ForwardVector;
-    float ReviewTime = 0.f;
-    int32 ReviewStep = -1;
     FString ReviewDirectory;
     FString BenchmarkView, BenchmarkDirectory;
     FString BenchmarkCompareBefore, BenchmarkCompareAfter;
@@ -179,22 +173,10 @@ private:
     UPROPERTY() TObjectPtr<AActor> WarmRollObstacle;
     TArray<FString> WarmErrors;
     FString WarmTelemetry=TEXT("time,action,speed,height,falling,air_jump,air_dash,pelvis_up,waist_curve\n");
-    void AdvanceGroundContactReview(float Dt);
-    void RecordGroundContactPose();
-    bool bGroundContactReview=false;
-    float GroundReviewTime=0.f;
-    int32 GroundReviewStage=-1;
-    FVector GroundReviewAnchor=FVector::ZeroVector;
-    FString GroundReviewTelemetry=TEXT("stage,time,side,point,gap_cm,falling\n");
     void AdvanceSailboatReview(float Dt);
-    // scripted demos of the south-west detour: a ground run from spawn to the temple, and a bird's-eye flyover
-    void AdvanceSouthwestDemo(float Dt);
-    void AdvanceSouthwestFly(float Dt);
-    bool LoadSouthwestData();
-    bool FollowTo(const FVector& Target, float Dt, float Tolerance = 110.f);
+    // Film frames for the character review (-warmfilm), numbered on a fixed clock.
     void RecordFrame();
-    bool bSouthwestDemo=false, bSouthwestFly=false, bCinematic=false; float DemoTime=0.f, PhaseTime=0.f; int32 DemoPhase=-1, DemoIndex=0, DemoFrame=0;
-    TArray<FVector> DemoLane, DemoRamp, DemoCrossing; FVector StuckAnchor=FVector::ZeroVector; float StuckTime=0.f; FVector DemoLanding=FVector::ZeroVector, DemoStand=FVector::ZeroVector, DemoSide=FVector::ZeroVector, DemoLaunch=FVector::ZeroVector, DemoSummit=FVector::ZeroVector;
+    bool bCinematic=false; int32 DemoFrame=0;
 public:
     bool IsCinematic() const { return bCinematic; }
     class AZeppelinService* GetZeppelin() const;
@@ -265,19 +247,6 @@ private:
     void SetAction(FName Action, bool bLoop = false, float BlendSeconds = .16f, bool bRestart = false);
     void SetMouseReleased(bool bReleased);
     void AdvanceAction(float Dt);
-    void AdvanceReview(float Dt);
-    void AdvanceLocomotionReview(float Dt);
-    void RecordLocomotionPose();
-    bool bLocomotionReview = false;
-    bool bJumpReview = false;
-    void AdvanceJumpReview(float Dt);
-    float JumpReviewTime=0.f, JumpReviewSinglePeak=0.f, JumpReviewDoublePeak=0.f;
-    float JumpReviewMinSpeed=100000.f;
-    FVector JumpReviewOrigin=FVector::ZeroVector;
-    FString JumpReviewTelemetry=TEXT("time,speed,z,vz,falling,air_used,action,root_up_z\n");
-    TArray<FString> JumpReviewErrors;
-    bool bJumpReviewInverted=false;
-    FString LocomotionTelemetry = TEXT("time,speed,walk,jog,head_z,pelvis_z,foot_l_x,foot_l_y,foot_l_z,foot_r_x,foot_r_y,foot_r_z\n");
     float GetRoadSteering();
     TArray<FVector> SkateReviewRoad;
     // Review routes are open paths, not loops: the scripted rider patrols them so a long traversal

@@ -154,16 +154,7 @@ void AWandererCharacter::BeginPlay()
         PC->PlayerCameraManager->ViewPitchMax = 45.f;
     }
     bSailboatReview=FParse::Param(FCommandLine::Get(),TEXT("sailboatqa"));
-    bSouthwestDemo=FParse::Param(FCommandLine::Get(),TEXT("southwestdemo"));
-    bSouthwestFly=FParse::Param(FCommandLine::Get(),TEXT("southwestfly"));
-    if (bSouthwestDemo || bSouthwestFly) { bCinematic = true; int32 DemoFps = 60; FParse::Value(FCommandLine::Get(),TEXT("demofps="),DemoFps); FApp::SetFixedDeltaTime(1.0/FMath::Clamp(DemoFps,10,120)); FApp::SetUseFixedTimeStep(true); }
-    bGroundContactReview=FParse::Param(FCommandLine::Get(),TEXT("groundcontactqa"));
     bWarmReview = FParse::Param(FCommandLine::Get(),TEXT("warmqa"));
-    bJumpReview = FParse::Param(FCommandLine::Get(),TEXT("jumpqa"));
-    bLocomotionReview = FParse::Param(FCommandLine::Get(),TEXT("locomotionqa")) || FParse::Param(FCommandLine::Get(),TEXT("locomotionvideo"));
-    bRecordReview = FParse::Param(FCommandLine::Get(),TEXT("wanderervideo")) || FParse::Param(FCommandLine::Get(),TEXT("locomotionvideo"));
-    bReview = bJumpReview || bGroundContactReview || bLocomotionReview || bRecordReview || FParse::Param(FCommandLine::Get(),TEXT("wandererqa"));
-    bWorldReview = FParse::Param(FCommandLine::Get(),TEXT("worldshots"));
     bFixedView = FParse::Param(FCommandLine::Get(),TEXT("fixedview"));
     FParse::Value(FCommandLine::Get(),TEXT("benchmarkview="),BenchmarkView);
     FParse::Value(FCommandLine::Get(),TEXT("trailershot="),TrailerSpecPath);
@@ -180,15 +171,13 @@ void AWandererCharacter::BeginPlay()
         bFixedView = true;
         DisableInput(Cast<APlayerController>(Controller));
     }
-    if (bWarmReview || bGroundContactReview || bReview || bMapReview || bSwordReview || !TrailerSpecPath.IsEmpty())
+    if (bWarmReview || bMapReview || bSwordReview || !TrailerSpecPath.IsEmpty())
     {
         FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory);
         if (ReviewDirectory.IsEmpty()) ReviewDirectory = FPaths::ProjectSavedDir()/TEXT("Screenshots/Wanderer")/FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"));
         IFileManager::Get().MakeDirectory(*ReviewDirectory,true);
     }
-    if (bGroundContactReview) GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this,&AWandererCharacter::RecordGroundContactPose));
-    if (bLocomotionReview) GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this,&AWandererCharacter::RecordLocomotionPose));
-    SetMouseReleased(bReview || !BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty());
+    SetMouseReleased(!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty());
 }
 
 void AWandererCharacter::EndPlay(const EEndPlayReason::Type Reason)
@@ -340,10 +329,10 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     }
 }
 
-void AWandererCharacter::Move(const FInputActionValue& V) { MoveIntent = (bMenuOpen || bFixedView || (bReview && !bLocomotionReview)) ? FVector2D::ZeroVector : V.Get<FVector2D>(); }
+void AWandererCharacter::Move(const FInputActionValue& V) { MoveIntent = (bMenuOpen || bFixedView) ? FVector2D::ZeroVector : V.Get<FVector2D>(); }
 void AWandererCharacter::MouseLook(const FInputActionValue& V)
 {
-    if (!bReady || bMenuOpen || bMouseReleased || bFixedView || (bReview && ReviewStep != 0)) return;
+    if (!bReady || bMenuOpen || bMouseReleased || bFixedView) return;
     // Riding: holding the left button turns the mouse into the right stick (Flick-It), not the camera.
     if (SkateRide->IsRiding()) if (const APlayerController* PC = Cast<APlayerController>(Controller); PC && PC->IsInputKeyDown(EKeys::LeftMouseButton)) return;
     const FVector2D Delta = V.Get<FVector2D>()*MouseSensitivity;
@@ -353,7 +342,7 @@ void AWandererCharacter::MouseLook(const FInputActionValue& V)
 }
 void AWandererCharacter::StickLook(const FInputActionValue& V)
 {
-    if (!bReady || bMenuOpen || bFixedView || bReview || SkateRide->IsRiding()) return;   // riding: the right stick is Flick-It
+    if (!bReady || bMenuOpen || bFixedView || SkateRide->IsRiding()) return;   // riding: the right stick is Flick-It
     const FVector2D Delta = V.Get<FVector2D>()*145.f*GetWorld()->GetDeltaSeconds();
     if(!Delta.IsNearlyZero())LookGrace=2.f;
     // SceneViewport negates Gamepad_RightY. Restore up-is-look-up with legacy scales disabled.
@@ -948,38 +937,6 @@ void AWandererCharacter::AdvanceSailboatReview(float Dt)
     UE_LOG(LogTemp,Display,TEXT("SAILBOAT QA COMPLETE: %d checks, %d failures"),SailboatReviewChecks,SailboatReviewErrors.Num());
     bSailboatReview=false;FPlatformMisc::RequestExit(false);
 }
-bool AWandererCharacter::LoadSouthwestData()
-{
-    FString Text; const FString Path = AtelierDataPath(TEXT("world.json"));
-    if (!FFileHelper::LoadFileToString(Text,*Path)) return false;
-    TSharedPtr<FJsonObject> Root; auto Reader = TJsonReaderFactory<>::Create(Text);
-    if (!FJsonSerializer::Deserialize(Reader,Root) || !Root.IsValid()) return false;
-    const TSharedPtr<FJsonObject>* SW = nullptr; if (!Root->TryGetObjectField(TEXT("southwest"),SW)) return false;
-    auto Points = [&](const TCHAR* Key, TArray<FVector>& Out){ const TArray<TSharedPtr<FJsonValue>>* A=nullptr; if ((*SW)->TryGetArrayField(Key,A)) for (auto& V : *A) { auto& P=V->AsArray(); if (P.Num()>=3) Out.Add(AJapanWorld::ToUE(P[0]->AsNumber(),P[1]->AsNumber(),P[2]->AsNumber())); } };
-    Points(TEXT("lane"),DemoLane); Points(TEXT("ramp"),DemoRamp); Points(TEXT("crossing"),DemoCrossing);
-    const TSharedPtr<FJsonObject>* Island=nullptr;
-    if ((*SW)->TryGetObjectField(TEXT("island"),Island))
-    {
-        const TArray<TSharedPtr<FJsonValue>>* A=nullptr;
-        if ((*Island)->TryGetArrayField(TEXT("landing"),A) && A->Num()>=3) DemoLanding = AJapanWorld::ToUE((*A)[0]->AsNumber(),(*A)[1]->AsNumber(),(*A)[2]->AsNumber());
-        if ((*Island)->TryGetArrayField(TEXT("summit"),A) && A->Num()>=3) DemoSummit = AJapanWorld::ToUE((*A)[0]->AsNumber(),(*A)[1]->AsNumber(),(*A)[2]->AsNumber());
-    }
-    DemoStand = AJapanWorld::ToUE(-221,-169.5,1.0); DemoSide = AJapanWorld::ToUE(-215.5,-164.5,1.0); DemoLaunch = AJapanWorld::ToUE(-214,-176,0.0);
-    // The rebuilt counter occupies the old lane endpoint. Stop in the open
-    // forecourt, then go around the east side to the water.
-    while (DemoLane.Num()>2 && DemoLane.Last().Y>16400.f) DemoLane.Pop();
-    DemoLane.Add(AJapanWorld::ToUE(-222,-164.5,1.0));
-    return DemoLane.Num()>2 && DemoRamp.Num()>2 && DemoCrossing.Num()>1;
-}
-bool AWandererCharacter::FollowTo(const FVector& Target, float Dt, float Tolerance)
-{
-    FVector To = Target-GetActorLocation(); To.Z = 0;
-    if (To.Size() < Tolerance) { MoveIntent = FVector2D::ZeroVector; return true; }
-    ReviewForward = To.GetSafeNormal();
-    const float Yaw = ReviewForward.Rotation().Yaw;
-    if (Controller) { FRotator R = Controller->GetControlRotation(); R.Yaw = FMath::FixedTurn(R.Yaw,Yaw,90.f*Dt); R.Pitch = FMath::FInterpTo(FRotator::NormalizeAxis(R.Pitch),-9.f,Dt,2.f); Controller->SetControlRotation(R); }
-    MoveIntent = FVector2D(0,1.f); return false;
-}
 void AWandererCharacter::RecordFrame()
 {
     // Frames are JPG like the village film; -framestride=N keeps one frame in N (a rehearsal at 60 is one every two seconds)
@@ -990,110 +947,7 @@ void AWandererCharacter::RecordFrame()
 }
 /** Ground demo: spawn, road, the lane through the fishing village, a wave at the coconut stand, the sailboat crossing with
  *  to the island landing, a cut to the last stretch of the stairway, the temple, a slow orbit. */
-void AWandererCharacter::AdvanceSouthwestDemo(float Dt)
-{
-    DemoTime += Dt; PhaseTime += Dt;
-    if (DemoPhase < 0)
-    {
-        if (!LoadSouthwestData()) { UE_LOG(LogTemp,Error,TEXT("DEMO: southwest data missing")); FPlatformMisc::RequestExit(false); return; }
-        DemoPhase = 0; FParse::Value(FCommandLine::Get(),TEXT("demostartphase="),DemoPhase); DemoPhase=FMath::Clamp(DemoPhase,0,8); PhaseTime = 0; DemoIndex = 0; bJog = false; bWalk = false;
-        if (Controller) Controller->SetControlRotation(FRotator(-9,GetActorRotation().Yaw,0));
-        UE_LOG(LogTemp,Display,TEXT("DEMO START lane %d ramp %d"),DemoLane.Num(),DemoRamp.Num());
-    }
-    auto Next = [&](){ DemoPhase++; PhaseTime = 0; DemoIndex = 0; UE_LOG(LogTemp,Display,TEXT("DEMO PHASE %d at %.1f s position %s"),DemoPhase,DemoTime,*GetActorLocation().ToCompactString()); };
-    // safety: no phase may run forever; a stuck follow skips ahead instead of filling the disk with frames
-    static const float Limits[] = {3.f,55.f,6.f,14.f,110.f,25.f,20.f,4.f,30.f};
-    // stuck detector: a follow phase that has not moved a metre in four seconds is skipped
-    if (DemoPhase==1 || DemoPhase==3 || DemoPhase==5 || DemoPhase==6) { if (FVector::DistSquared(GetActorLocation(),StuckAnchor) > 100.f*100.f) { StuckAnchor = GetActorLocation(); StuckTime = 0.f; } else if ((StuckTime += Dt) > 4.f) { UE_LOG(LogTemp,Warning,TEXT("DEMO phase %d stuck step %.1f floor %s"),DemoPhase,GetCharacterMovement()->MaxStepHeight,*GetNameSafe(GetCharacterMovement()->CurrentFloor.HitResult.GetComponent())); StuckTime = 0.f; Next(); } } else { StuckAnchor = GetActorLocation(); StuckTime = 0.f; }
-    if (DemoPhase < 9 && PhaseTime > Limits[DemoPhase]) { UE_LOG(LogTemp,Warning,TEXT("DEMO phase %d timed out"),DemoPhase); if (Sailboat->IsEquipped() && DemoPhase==4) Sailboat->Toggle(); Next(); }
-    if (DemoTime > 240.f) { UE_LOG(LogTemp,Display,TEXT("DEMO COMPLETE (time cap) %d frames"),DemoFrame); FPlatformMisc::RequestExit(false); bSouthwestDemo=false; return; }
-    switch (DemoPhase)
-    {
-    case 0: MoveIntent = FVector2D::ZeroVector; if (PhaseTime > 1.5f) Next(); break;
-    case 1: // along the road and down the lane to the stand
-        if (FollowTo(DemoLane[DemoIndex],Dt,DemoIndex==DemoLane.Num()-1 ? 90.f : 140.f)) { DemoIndex += 6; if (DemoIndex >= DemoLane.Num()) { DemoIndex = DemoLane.Num()-1; if (FollowTo(DemoLane.Last(),Dt,90.f)) Next(); } }
-        break;
-    case 2: // at the stand: face it, wave
-        MoveIntent = FVector2D::ZeroVector; bJog = true;
-        if (PhaseTime < .8f) { DemoIndex = -1; FVector To = DemoStand-GetActorLocation(); To.Z = 0; SetActorRotation(FRotator(0,To.Rotation().Yaw,0)); if (Controller) Controller->SetControlRotation(FRotator(-6,To.Rotation().Yaw+35.f,0)); }
-        if (PhaseTime > .8f && PhaseTime < 1.0f) Wave(FInputActionValue());
-        if (PhaseTime > 4.0f) Next();
-        break;
-    case 3: // to the water's edge and launch: round the stand's east side first (a straight line runs through the hut)
-        bJog = true;
-        if (DemoIndex == 0) { if (FollowTo(DemoSide,Dt,90.f)) DemoIndex = 1; break; }
-        if (FollowTo(DemoLaunch,Dt,70.f)) { if (!Sailboat->IsEquipped()) { ToggleSailboat(FInputActionValue());  } if (Sailboat->IsEquipped() && PhaseTime > 1.f) Next(); }
-        break;
-    case 4: // Follow the coastal crossing waypoints, then close on the cove
-    {
-        if (!Sailboat->IsEquipped()) { Next(); break; }
-        const FVector To = DemoCrossing[DemoIndex]-GetActorLocation();
-        const float Dist=To.Size2D();
-        if (Dist<600.f)
-        {
-            if (DemoIndex+1>=DemoCrossing.Num()) { if(Sailboat->Toggle()){Next();break;} }
-            else ++DemoIndex;
-        }
-        const float TargetYaw=(DemoCrossing[DemoIndex]-GetActorLocation()).Rotation().Yaw;
-        const float Err=FRotator::NormalizeAxis(TargetYaw-GetActorRotation().Yaw);
-        // Lower the sail for sharp turns, then raise it again toward the next waypoint.
-        MoveIntent=FVector2D(FMath::Clamp(Err/25.f,-1.f,1.f),FMath::Abs(Err)>40.f ? -1.f : 1.f);
-        if (Controller) { FRotator R = Controller->GetControlRotation(); R.Yaw = FMath::FixedTurn(R.Yaw,GetActorRotation().Yaw+8.f,60.f*Dt); R.Pitch = FMath::FInterpTo(FRotator::NormalizeAxis(R.Pitch),4.f,Dt,1.f); Controller->SetControlRotation(R); }
-        if (PhaseTime > 150.f) { Sailboat->Toggle(); Next(); }
-        break;
-    }
-    case 5: // wade to the cove
-        bJog = false; bWalk = false;
-        if (FollowTo(DemoLanding,Dt,120.f)) Next();
-        break;
-    case 6: // a cut to the top of the stairway on the summit terrace, then walk up to the temple
-        // the temple faces north (UE -Y), the island is rotated 15 degrees: start at the foot of the approach steps and walk to the veranda
-        if (PhaseTime < .1f) { const FVector Start = DemoSummit+FRotator(0,-15.f,0).RotateVector(FVector(0,-1900.f,0)); SetActorLocation(Start+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+40.f),false,nullptr,ETeleportType::TeleportPhysics); const FVector To=DemoSummit-Start; SetActorRotation(FRotator(0,To.Rotation().Yaw,0)); if (Controller) Controller->SetControlRotation(FRotator(-10,To.Rotation().Yaw,0)); bJog = true; }
-        else if (FollowTo(DemoSummit+FRotator(0,-15.f,0).RotateVector(FVector(0,-750.f,0)),Dt,120.f)) Next();
-        break;
-    case 7: // pause at the temple steps
-        MoveIntent = FVector2D::ZeroVector; if (PhaseTime > 2.f) Next();
-        break;
-    case 8: // slow orbit at the summit
-        MoveIntent = FVector2D::ZeroVector;
-        if (Controller) { FRotator R = Controller->GetControlRotation(); R.Yaw += 9.f*Dt; R.Pitch = FMath::FInterpTo(FRotator::NormalizeAxis(R.Pitch),-16.f,Dt,1.f); Controller->SetControlRotation(R); }
-        if (PhaseTime > 10.f) { UE_LOG(LogTemp,Display,TEXT("DEMO COMPLETE at %.1f s, %d frames"),DemoTime,DemoFrame); FPlatformMisc::RequestExit(false); bSouthwestDemo=false; return; }
-        break;
-    default: break;
-    }
-    RecordFrame();
-}
 /** Flyover: a detached camera along keyframes with look targets, easing per segment. */
-void AWandererCharacter::AdvanceSouthwestFly(float Dt)
-{
-    struct FKey { FVector At, Look; float Seconds; };
-    static const TArray<FKey> Keys = {
-        { AJapanWorld::ToUE(-262,-104,45), AJapanWorld::ToUE(-200,-96,12), 0.f },
-        { AJapanWorld::ToUE(-140,-115,70), AJapanWorld::ToUE(-40,-70,15), 14.f },       // east along the road, over the forest
-        { AJapanWorld::ToUE(-250,-150,42), AJapanWorld::ToUE(-262,-124,8), 14.f },      // back over the fishing village
-        { AJapanWorld::ToUE(-215,-195,26), AJapanWorld::ToUE(-221,-169,3), 9.f },       // the coconut stand from the water
-        { AJapanWorld::ToUE(-190,-320,70), AJapanWorld::ToUE(-150,-480,60), 12.f },     // out to sea, the island ahead
-        { AJapanWorld::ToUE(80,-470,150), AJapanWorld::ToUE(-150,-475,70), 12.f },      // around the island, east side
-        { AJapanWorld::ToUE(-150,-720,160), AJapanWorld::ToUE(-152,-472,80), 12.f },    // south
-        { AJapanWorld::ToUE(-380,-480,150), AJapanWorld::ToUE(-152,-472,80), 12.f },    // west
-        { AJapanWorld::ToUE(-185,-395,120), AJapanWorld::ToUE(-152,-472,100), 9.f },    // climb to the summit
-        { AJapanWorld::ToUE(-175,-440,112), AJapanWorld::ToUE(-152,-472,99), 8.f },     // the temple
-    };
-    if (DemoPhase < 0)
-    {
-        DemoPhase = 0; DemoTime = 0; FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-        GetCharacterMovement()->DisableMovement(); GetMesh()->SetVisibility(false,true);
-        UE_LOG(LogTemp,Display,TEXT("FLYOVER START"));
-    }
-    DemoTime += Dt;
-    float T = DemoTime; int32 Seg = 1;
-    while (Seg < Keys.Num() && T > Keys[Seg].Seconds) { T -= Keys[Seg].Seconds; Seg++; }
-    if (Seg >= Keys.Num()) { UE_LOG(LogTemp,Display,TEXT("FLYOVER COMPLETE %d frames"),DemoFrame); FPlatformMisc::RequestExit(false); bSouthwestFly=false; return; }
-    const float U = FMath::Clamp(T/Keys[Seg].Seconds,0.f,1.f); const float E = U*U*(3-2*U);
-    const FVector At = FMath::Lerp(Keys[Seg-1].At,Keys[Seg].At,E), Look = FMath::Lerp(Keys[Seg-1].Look,Keys[Seg].Look,E);
-    FollowCamera->SetWorldLocationAndRotation(At,(Look-At).Rotation());
-    RecordFrame();
-}
 void AWandererCharacter::Landed(const FHitResult& Hit)
 {
     Super::Landed(Hit);
@@ -1179,12 +1033,9 @@ void AWandererCharacter::Tick(float Dt)
     }
     return; }
     if (bWarmReview) AdvanceWarmReview(Dt);
-    if (bReview) AdvanceReview(Dt);
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview) AdvanceMapReview(Dt);
     if (bSwordReview) AdvanceSwordReview(Dt);
-    if (bSouthwestDemo) AdvanceSouthwestDemo(Dt);
-    if (bSouthwestFly) { AdvanceSouthwestFly(Dt); return; }
     if (!BenchmarkView.IsEmpty()) AdvanceBenchmark(Dt);
     if (!TrailerSpecPath.IsEmpty()) AdvanceTrailer(Dt);
     if (PhoneInput) PhoneInput->Tick(Dt);
@@ -1218,7 +1069,7 @@ void AWandererCharacter::Tick(float Dt)
     if (!bMenuOpen && !MovementLocked() && !Sailboat->IsEquipped() && !SkateRide->IsRiding())
     {
         const FRotationMatrix Basis(FRotator(0,GetControlRotation().Yaw,0));
-        if (bReview || bSouthwestDemo || !BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty()) AddMovementInput(ReviewForward,MoveIntent.Y);
+        if (!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty()) AddMovementInput(ReviewForward,MoveIntent.Y);
         else
         {
             AddMovementInput(Basis.GetUnitAxis(EAxis::X),MoveIntent.Y);
@@ -1248,106 +1099,6 @@ void AWandererCharacter::SampleShake(FVector& Offset,FRotator& Rotation) const
     Rotation=FRotator(FMath::PerlinNoise1D(ShakeClock*F+7.1f)*2.2f,FMath::PerlinNoise1D(ShakeClock*F+19.7f)*2.2f,FMath::PerlinNoise1D(ShakeClock*F+3.3f)*3.f)*A;
 }
 
-void AWandererCharacter::AdvanceReview(float Dt)
-{
-    if (bJumpReview) { AdvanceJumpReview(Dt); return; }
-    if (bGroundContactReview) { AdvanceGroundContactReview(Dt); return; }
-    if (bLocomotionReview) { AdvanceLocomotionReview(Dt); return; }
-    ReviewTime += Dt;
-    if (bWorldReview)
-    {
-        const int32 View = FMath::FloorToInt(ReviewTime/3.f);
-        if (View > Landscape->Shots.Num()) { UE_LOG(LogTemp,Display,TEXT("WANDERER QA COMPLETE")); FPlatformMisc::RequestExit(false); return; }
-        if (View != ReviewStep)
-        {
-            ReviewStep = View; GetCharacterMovement()->StopMovementImmediately();
-            FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-            FWorldShot Shot = Landscape->Shots[FMath::Min(View,Landscape->Shots.Num()-1)];
-            if (View == Landscape->Shots.Num())
-            {
-                Shot = Landscape->Shots[0];
-                const FVector Forward = FRotator(0,Shot.Rotation.Yaw,0).Vector();
-                Shot.Location += -Forward*120.f+FVector(0,0,45);
-                Shot.Rotation = FRotator(-2.f,Shot.Rotation.Yaw,0);
-            }
-            FollowCamera->SetWorldLocationAndRotation(Shot.Location,Shot.Rotation);
-        }
-        const float Local = FMath::Fmod(ReviewTime,3.f);
-        if (Local >= 2.5f && Local-Dt < 2.5f)
-            FScreenshotRequest::RequestScreenshot(ReviewDirectory/(View == Landscape->Shots.Num() ? TEXT("gate_road.png") : FString::Printf(TEXT("shot_%02d.png"),View)),false,false);
-        return;
-    }
-    const int32 Step = FMath::FloorToInt(ReviewTime/2.5f);
-    if (Step != ReviewStep)
-    {
-        ReviewStep = Step;
-        MoveIntent = FVector2D::ZeroVector; bJog = bWalk = bSprintHeld = false;
-        switch (Step)
-        {
-        case 0: SetMouseReleased(false); break;
-        case 1: bWalk = true; MoveIntent.Y = 1; break;
-        case 2: bJog = true; MoveIntent.Y = 1; break;
-        case 3: MoveIntent.Y = 1; break;
-        case 4: RequestJump(FInputActionValue()); break;
-        case 5: ToggleCrouch(FInputActionValue()); break;
-        case 6: MoveIntent.Y = 1; break;
-        case 7: ToggleCrouch(FInputActionValue()); Wave(FInputActionValue()); break;
-        case 8: Interact(FInputActionValue()); break;
-        case 9: Dodge(FInputActionValue()); break;
-        case 10:
-            FFileHelper::SaveStringToFile(ReviewTelemetry,*(ReviewDirectory/TEXT("telemetry.csv")));
-            FFileHelper::SaveStringToFile(FString::Printf(TEXT("{\"mouse_up_pitch_delta\":%.6f,\"mouse_down_pitch_delta\":%.6f}"),UpPitchDelta,DownPitchDelta),*(ReviewDirectory/TEXT("input.json")));
-            if (UpPitchDelta <= 0 || DownPitchDelta >= 0)
-            {
-                UE_LOG(LogTemp,Error,TEXT("WANDERER INPUT QA FAILED: up %f down %f"),UpPitchDelta,DownPitchDelta);
-                FPlatformMisc::RequestExitWithStatus(false,2); return;
-            }
-            UE_LOG(LogTemp,Display,TEXT("WANDERER QA COMPLETE"));
-            FPlatformMisc::RequestExit(false); return;
-        }
-        if (Step > 0)
-        {
-            const float Offset = Step == 2 || Step == 6 ? 0.f : Step == 4 ? 90.f : 145.f;
-            Controller->SetControlRotation(FRotator(-8,ReviewForward.Rotation().Yaw+Offset,0));
-        }
-        UE_LOG(LogTemp,Display,TEXT("WANDERER QA STEP %d"),Step);
-    }
-    if (Step == 0)
-    {
-        APlayerController* PC = CastChecked<APlayerController>(Controller);
-        if (InputReviewStage == 0 && ReviewTime > .15f)
-        {
-            InputReviewPitch = FRotator::NormalizeAxis(PC->GetControlRotation().Pitch);
-            PC->InputKey(FInputKeyEventArgs::CreateSimulated(EKeys::MouseY,IE_Axis,20.f,1)); InputReviewStage = 1;
-        }
-        else if (InputReviewStage == 1 && ReviewTime > .4f)
-        {
-            UpPitchDelta = FRotator::NormalizeAxis(PC->GetControlRotation().Pitch)-InputReviewPitch;
-            InputReviewPitch = FRotator::NormalizeAxis(PC->GetControlRotation().Pitch);
-            PC->InputKey(FInputKeyEventArgs::CreateSimulated(EKeys::MouseY,IE_Axis,-20.f,1)); InputReviewStage = 2;
-        }
-        else if (InputReviewStage == 2 && ReviewTime > .65f)
-        {
-            DownPitchDelta = FRotator::NormalizeAxis(PC->GetControlRotation().Pitch)-InputReviewPitch;
-            SetMouseReleased(true); InputReviewStage = 3;
-            Controller->SetControlRotation(FRotator(-8,ReviewForward.Rotation().Yaw+155.f,0));
-            UE_LOG(LogTemp,Display,TEXT("WANDERER INPUT: up %+f down %+f"),UpPitchDelta,DownPitchDelta);
-        }
-    }
-    const FVector Left = GetMesh()->GetBoneLocation(TEXT("foot_L"),EBoneSpaces::ComponentSpace);
-    const FVector Right = GetMesh()->GetBoneLocation(TEXT("foot_R"),EBoneSpaces::ComponentSpace);
-    ReviewTelemetry += FString::Printf(TEXT("%.4f,%d,%.4f,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n"),ReviewTime,Step,GetVelocity().Size2D(),GetCharacterMovement()->IsFalling(),bIsCrouched,FRotator::NormalizeAxis(GetControlRotation().Pitch),Left.X,Left.Y,Left.Z,Right.X,Right.Y,Right.Z,GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(),GetMesh()->GetRelativeLocation().Z);
-    // Video mode records consecutive game frames; launch with -UseFixedTimeStep -FPS=30.
-    if (bRecordReview)
-    {
-        FScreenshotRequest::RequestScreenshot(ReviewDirectory/FString::Printf(TEXT("frame_%05d.png"),ReviewFrame++),false,false);
-        return;
-    }
-    // Capture at three distinct phases of each action; filenames never overwrite manual captures.
-    const float Local = FMath::Fmod(ReviewTime,2.5f);
-    for (float T : {.30f,.65f,1.30f}) if (Local >= T && Local-Dt < T)
-        FScreenshotRequest::RequestScreenshot(ReviewDirectory/FString::Printf(TEXT("state_%02d_%03d.png"),Step,FMath::RoundToInt(T*100)),false,false);
-}
 
 void AWandererCharacter::AdvanceMapReview(float Dt)
 {

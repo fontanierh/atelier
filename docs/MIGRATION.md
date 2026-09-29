@@ -94,10 +94,10 @@ plain player moving the character through Pixel Streaming's keyboard input.
 
 After the migration, code that nothing could reach was removed (the old cruiser skateboard, the mini-mega ride, their
 review modes and five rendering experiments; an audit traced every file's trigger and asset path), which brought back
-the "Skate stance" setting the old board's flag had hidden. Every scenario above passed again afterwards. Still in the
-game and runnable but not used by any tool or profile: the jump, ground-contact and locomotion reviews
-(`-jumpqa`, `-groundcontactqa`, `-locomotionqa`), the south-west demo and flyover (`-southwestdemo`, `-southwestfly`),
-the Warm Original film review (`-warmqa`, documented in BODY_SWAP_GUIDE.md) and the trailer capture (`tools/capture.py`).
+the "Skate stance" setting the old board's flag had hidden. Every scenario above passed again afterwards. The review
+harnesses no tool used went next (the jump, ground-contact and locomotion reviews, the south-west demo and flyover). Still
+runnable without a profile: the character film review (`-warmqa`, BODY_SWAP_GUIDE.md) and the trailer capture
+(`tools/capture.py`).
 
 Fixed on the way, because the prototype's project had accumulated assets that hid them: the first import of a mesh
 with build warnings crashed the commandlet (a placeholder now makes it a reimport), Hidamari's terrain needed the
