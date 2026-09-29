@@ -1,5 +1,6 @@
 """The `atelier` command.
 
+    atelier new <game> [--title T]     start a new game from the sandbox (module, classes, project and paths renamed)
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
@@ -127,6 +128,7 @@ def lint(staged=False):
 def main(argv=None):
     parser = argparse.ArgumentParser(prog='atelier', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
+    p = sub.add_parser('new'); p.add_argument('game'); p.add_argument('--title')
     p = sub.add_parser('doctor'); p.add_argument('game')
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
@@ -141,6 +143,9 @@ def main(argv=None):
     p = sub.add_parser('live'); p.add_argument('rest', nargs=argparse.REMAINDER)
     p = sub.add_parser('qa'); p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
+    if args.command == 'new':
+        from . import new
+        return new.main(args.game, args.title)
     if args.command == 'doctor':
         return doctor(args.game)
     if args.command == 'fetch':

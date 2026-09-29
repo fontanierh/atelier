@@ -204,7 +204,7 @@ COMMIT=$(git rev-parse HEAD)
 for rev in $AREF/*-r0[0-9]; do
   [ -f "$rev/job.json" ] && continue
   mkdir -p "$rev/api-private"; chmod 700 "$rev/api-private"
-  url=$(gh api "repos/fontanierh/blender-asset-farm/contents/$rev/inputs/starting-frame.png?ref=$COMMIT" --jq .download_url)
+  url=$(gh api "repos/${ANIMREF_INPUT_REPO:?set ANIMREF_INPUT_REPO=owner/private-repo holding the inputs}/contents/$rev/inputs/starting-frame.png?ref=$COMMIT" --jq .download_url)
   [ -z "$url" ] && { echo "no url for $rev"; continue; }
   printf '{"url":"%s","commit":"%s"}\\n' "$url" "$COMMIT" > "$rev/api-private/starting-frame-url.json"; chmod 600 "$rev/api-private/starting-frame-url.json"
   echo "== submit $rev"; node --env-file=.env platform/studio/node/h3_max_reference.mjs submit --resolution 480p --out "$rev" || echo "submit failed: $rev"

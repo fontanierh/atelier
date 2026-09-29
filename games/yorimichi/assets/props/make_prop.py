@@ -65,7 +65,6 @@ def concept(slug, description):
 
 
 def model(slug, faces):
-    sys.path.insert(0, str(TOOLS))
     from atelier.ai.tripo_asset import call, credential, write_json, read_json, private_folder, fetch
     import httpx
     folder = OUT / slug; image = folder / 'concept.png'
@@ -97,7 +96,8 @@ def model(slug, faces):
     best = next((d for d in glbs if 'pbr' not in d['output_field']), glbs[0])
     target = folder / f'{slug}.glb'; shutil.copyfile(folder / best['file'], target)
     ignore = folder / '.gitignore'   # the raw GLB is a byte copy of <slug>.glb (downloads.json keeps its hash)
-    if 'raw/*.glb' not in ignore.read_text().splitlines(): ignore.write_text(ignore.read_text().rstrip() + '\nraw/*.glb\n')
+    lines = ignore.read_text().splitlines() if ignore.exists() else []
+    if 'raw/*.glb' not in lines: ignore.write_text('\n'.join([*lines, 'raw/', 'raw/*.glb']).strip() + '\n')
     print(target.relative_to(ROOT))
 
 

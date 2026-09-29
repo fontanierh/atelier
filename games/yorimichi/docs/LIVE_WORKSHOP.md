@@ -10,13 +10,13 @@ behaviours in the game you're playing, with nothing rebuilt or restarted.
 ## How it fits together
 
 ```
-agent (Claude Code) ── atelier live (platform/studio/atelier/live.py) ──HTTP 127.0.0.1:8830──▶ JapanLive.cpp in the game
+agent (Claude Code) ── atelier live (platform/studio/atelier/live.py) ──HTTP 127.0.0.1:8830──▶ the LiveBridge plugin in the game
                                                                      ├─ POST /python: runs code in the game's shared Python namespace
                                                                      └─ GET /state: player, camera, aim point, live props
-      games/yorimichi/assets/props/make_prop.py: sentence ─▶ Sunburst concept ─▶ Tripo model ─▶ output/imagegen/yorimichi-live/<slug>/<slug>.glb
+      games/yorimichi/assets/props/make_prop.py: sentence ─▶ Sunburst concept ─▶ Tripo model ─▶ games/yorimichi/assets/props/<slug>/<slug>.glb
 ```
 
-- **`JapanLive.h/.cpp`** starts once the world is ready, only for the player. It listens on loopback only
+- **The LiveBridge plugin** (`platform/engine/Plugins/Dev/LiveBridge`, with Yorimichi's own verbs in `YorimichiLive.h/.cpp`) starts once the world is ready, only for the player. It listens on loopback only
   (`[HTTPServer.Listeners]` in `DefaultEngine.ini`); `-nolive` turns it off and `-liveport=` moves it.
   - It boots the in-game helper module and reloads every overlay.
   - `ULiveLibrary` holds the verbs Python calls, as `unreal.LiveLibrary.*`: spawn a GLB, find, remove, aim point,
@@ -55,7 +55,7 @@ atelier live py "live.say('hello'); print(live.here())"
 atelier live shot                             # build/yorimichi/live/shots/<time>.png
 ~/.cache/yorimichi/imagegen-venv/bin/python games/yorimichi/assets/props/make_prop.py concept stone_lantern "a weathered stone lantern ..."
 ~/.cache/yorimichi/imagegen-venv/bin/python games/yorimichi/assets/props/make_prop.py model stone_lantern
-atelier live py "live.spawn('stone_lantern_1', 'output/imagegen/yorimichi-live/stone_lantern/stone_lantern.glb', at=live.in_front(500, -250), height=1.25); live.save()"
+atelier live py "live.spawn('stone_lantern_1', 'games/yorimichi/assets/props/stone-lantern/stone_lantern.glb', at=live.in_front(500, -250), height=1.25); live.save()"
 ```
 
 The first prop, on 24 September: a mossy stone lantern by the spawn road. The concept took about 40 s, the Tripo

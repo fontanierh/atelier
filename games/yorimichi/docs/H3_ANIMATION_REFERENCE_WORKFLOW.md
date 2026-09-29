@@ -53,7 +53,7 @@ Revise the prompt to address a concrete observed failure, keep other inputs fixe
 
 ## API execution and resumption
 
-Use [h3_max_reference.mjs](../tools/h3_max_reference.mjs). It loads the official SDK from `~/.cache/yorimichi/vercel-video/`; the working version is `@ai-sdk/gateway@4.0.80`. `AI_GATEWAY_API_KEY` is in the ignored repository-root `.env`. Never print or commit credentials.
+Use [h3_max_reference.mjs](../../../platform/studio/node/h3_max_reference.mjs). It loads the official SDK from `~/.cache/yorimichi/vercel-video/`; the working version is `@ai-sdk/gateway@4.0.80`. `AI_GATEWAY_API_KEY` is in the ignored repository-root `.env`. Never print or commit credentials.
 
 Prepare a **new** revision with:
 
@@ -61,7 +61,7 @@ Prepare a **new** revision with:
 - `.gitignore` excluding `api-private/`, `analysis-frames/` and `*.part`.
 - Private `api-private/starting-frame-url.json` containing `{"url":"https://…","commit":"…"}`. Keep the directory mode 0700 and private files 0600.
 
-The 969 KB PNG exceeded Gateway's **300 KB async persistence limit** when sent inline (r01, HTTP 413). Use a hosted HTTPS URL instead. Our working route commits the input to the existing private GitHub repo, retrieves its temporary scoped `download_url` with authenticated `gh api repos/fontanierh/blender-asset-farm/contents/<input-path>?ref=<commit>`, captures that response privately and verifies an unauthenticated download against the local SHA-256. Do not print the signed URL. Refresh it immediately before submission; for longer queues prefer appropriate existing signed storage. Never make the repository or Tailscale review public to host inputs.
+The 969 KB PNG exceeded Gateway's **300 KB async persistence limit** when sent inline (r01, HTTP 413). Use a hosted HTTPS URL instead. Our working route commits the input to a private GitHub repository, retrieves its temporary scoped `download_url` with authenticated `gh api repos/<owner>/<private-repo>/contents/<input-path>?ref=<commit>`, captures that response privately and verifies an unauthenticated download against the local SHA-256. Do not print the signed URL. Refresh it immediately before submission; for longer queues prefer appropriate existing signed storage. Never make the repository or Tailscale review public to host inputs.
 
 Vercel also requires **at least $10 of available balance to start video jobs**, independently of this clip's small price (r02, HTTP 402). The helper checks credits before submitting and retains financial account details privately.
 
