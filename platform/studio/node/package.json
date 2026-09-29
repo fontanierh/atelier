@@ -1,0 +1,7 @@
+{
+  "name": "atelier-node-tools",
+  "private": true,
+  "description": "Reference-video clients (H3 Max, Seedance) through the Vercel AI Gateway",
+  "type": "module",
+  "dependencies": { "@ai-sdk/gateway": "4.0.80" }
+}
