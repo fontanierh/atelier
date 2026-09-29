@@ -44,18 +44,10 @@ if MANNEQUIN:
     import bmesh
     grey = bpy.data.materials.new('Mannequin grey'); grey.use_nodes = True
     grey.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.45, .44, .43, 1); grey.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = .9
-    parts = [o for o in s.objects if o.get('body_region') in ('under_sweatshirt', 'under_shorts', 'lower_legs', 'under_socks', 'under_shoes')]
+    from cairo_body_key import mannequin   # the same mannequin the body key's depth test rebuilds
     mann = bpy.data.objects.new('Mannequin (no head, no hands)', bpy.data.meshes.new('mannequin'))
     s.collection.objects.link(mann)
-    bm = bmesh.new()
-    for o in parts:
-        tmp = o.data.copy()
-        tmp.transform(o.matrix_world)
-        bm.from_mesh(tmp); bpy.data.meshes.remove(tmp)
-    bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=.0005)
-    caps = bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)   # cap the neck and wrist openings
-    bmesh.ops.triangulate(bm, faces=caps['faces'])
-    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    bm = mannequin(list(s.objects))
     bm.to_mesh(mann.data); bm.free()
     mann.data.materials.append(grey)
     for pl in mann.data.polygons:

@@ -6,7 +6,9 @@
     ... --headless DIR --outfit games/yorimichi/assets/characters/cairo/outfits/hoodie.toml [--make-concept]
 
 With --outfit the garment text comes from an outfit spec instead of the skate outfit written below; --make-concept
-first redraws the approved concept sheet in that outfit (DIR/concept.png), which then serves as image 2.
+first redraws the approved concept sheet in that outfit (DIR/concept.png), which then serves as image 2. --key
+(after the views exist) repaints each dressed view with the visible mannequin body in flat green: DIR/key/key-<view>.png,
+the body mask the assembly step projects onto the Tripo model.
 
 Image 1 per view is the real Blender render of the base body in its bind pose (`references/naked-<view>.png`);
 image 2 is the user's chosen outfit study. Only the clothing may change. Outputs are square 1024 PNGs named by
@@ -100,6 +102,41 @@ CONCEPT_PROMPT = (
     "sculpted matte 3D game-character finish in the same style as image 1. The clothes sit on his body the way real "
     "clothes of that cut would; nothing floats. No text, labels, border or watermark."
 )
+# The body key: the dressed view repainted with every visible bit of mannequin (neck stump, chest inside the neckline,
+# wrist stumps, bare arms and legs) in flat green, everything else unchanged. Assembly projects it onto the Tripo model
+# to know which faces are body. The outfit text and the bare mannequin (image 2) are what stop Sunburst from keying
+# white under-layers: without them it turned the skate outfit's white sleeves green.
+KEY_PROMPT = (
+    "Use case: recolour one image into a body mask. Input image 1 shows an outfit worn by a display mannequin that has "
+    "no head and no hands, in a T-pose, on a light grey background. Input image 2 is the same mannequin with no "
+    "clothes, from the same camera: its plain grey surface is the BODY. The outfit in image 1 is: {outfit}\n"
+    "Redraw image 1 keeping everything exactly where it is: the same outline, the same clothes with the same colours "
+    "and folds, the same camera, framing, scale and background. Change ONE thing: every part of the mannequin BODY "
+    "that is still visible in image 1, not covered by the outfit, becomes flat pure green (#00FF00) with no shading. "
+    "That is the bare grey mannequin surface and any bare skin: the neck stump and whatever chest or throat shows "
+    "inside the neck opening, the flat wrist stumps at the arm ends, and bare arms, knees or shins where the outfit "
+    "leaves them bare. Every garment of the outfit listed above stays exactly as it is, even where it is white, grey, "
+    "beige, tan or skin-coloured: collars and their linings, undershirts and under-layers, the insides of sleeves, "
+    "socks, shoes, sandals, belts, buttons and toggles. No green anywhere else. No text, labels, border or watermark."
+)
+
+
+def run_key(view, outfit):
+    key_dir = OUT.parent / 'key'; key_dir.mkdir(exist_ok=True)
+    prompt = KEY_PROMPT.format(outfit=outfit)
+    stills = [OUT / f'{view}.png', OUT / f'naked-{view}.png']
+    (key_dir / f'key-{view}.prompt.txt').write_text(prompt + '\n')
+    started = datetime.now(timezone.utc).isoformat()
+    blobs, raw, secs = wb.gpt_edit(prompt, stills, 1)
+    out = key_dir / f'key-{view}.png'; out.write_bytes(blobs[0])
+    private_reply(f'key-{view}', raw)
+    prov = dict(stage='body-swap-body-key', view=view, requested_model=wb.MODEL, quality=wb.QUALITY, size=wb.SIZE,
+                endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py --key',
+                prompt_file=f'key-{view}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
+                reference_files={str(s.relative_to(ROOT)): wb.sha(s) for s in stills}, started_at=started,
+                finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs, output_sha256=wb.sha(out))
+    (key_dir / f'key-{view}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
+    return view, secs
 
 
 def make_concept(spec):
@@ -144,6 +181,7 @@ if __name__ == '__main__':
     ap.add_argument('--outfit', default='', help='outfit spec (TOML: name, concept, outfit, pose, front/back/left/right, optional skin)')
     ap.add_argument('--make-concept', action='store_true', help='redraw the concept sheet in the spec outfit first (DIR/concept.png)')
     ap.add_argument('--headless', default='', help='directory (under the character folder) holding mannequin references; dress them without head or hands')
+    ap.add_argument('--key', action='store_true', help='paint the visible mannequin body green in the dressed views (DIR/key/key-<view>.png); needs --outfit')
     a = ap.parse_args()
     if a.concept:
         CONCEPT = Path(a.concept)
@@ -162,6 +200,13 @@ if __name__ == '__main__':
         if not a.headless:
             sys.exit('--outfit needs --headless DIR (the spec prompt is written for the mannequin views)')
         spec = tomllib.loads(Path(a.outfit).read_text())
+        if a.key:
+            views = [v for v in a.only.split(',') if v] or list(SPEC_VIEWS)
+            wb.key()
+            with ThreadPoolExecutor(max_workers=len(views)) as ex:
+                for view, secs in ex.map(lambda v: run_key(v, spec['outfit']), views):
+                    print('key', view, f'{secs}s')
+            sys.exit(0)
         COMMON = SPEC_COMMON.replace('{skin}', spec.get('skin', 'it must not show anywhere except where skin would show.')).replace(
             '{outfit}', spec['outfit']).replace('{pose}', spec['pose'])
         VIEWS = {v: SPEC_VIEWS[v] + spec[v] for v in SPEC_VIEWS}

@@ -3,11 +3,39 @@
 > Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
 
 This is the procedure that produced the skate outfit (`body-swap-r02-headless`, in the game as `game-r11`, with the
-frontflip waistband fix now in `game-r12`), since tried on four very different outfits (section 12). It generates a whole clothed body with AI, keeps the character's own head, hands and skeleton, and
-plays all existing clips unchanged. Follow it in order; every step is a script that leaves a ledger behind.
+frontflip waistband fix now in `game-r12`), since run on four very different outfits (section 12) and fixed where
+they broke it (section 13). It generates a whole clothed body with AI, keeps the character's own head, hands and
+skeleton, and plays all existing clips unchanged. One command runs it (below); the numbered sections explain each
+stage, what to look at, and what to do when it goes wrong. Every stage leaves files and a ledger behind.
 
 The idea in one line: **ask Tripo for a body that has no head and no hands**, so nothing has to be cut off
 afterwards. Cutting a full generated body apart (the r01 attempt) never came out clean.
+
+## The short way: one command
+
+Write an outfit spec (section 3), then from the Atelier checkout:
+
+```sh
+export YORIMICHI_ARCHIVE=<prototype archive checkout>
+PY=~/.cache/yorimichi/imagegen-venv/bin/python
+T=games/yorimichi/assets/characters/tools; O=games/yorimichi/assets/characters/cairo/outfits
+$PY $T/cairo_outfit.py $O/<slug>.toml --spend                      # mannequin, concept, views, key; stops for review
+$PY $T/cairo_outfit.py $O/<slug>.toml --approve "<who looked, what they checked>"
+$PY $T/cairo_outfit.py $O/<slug>.toml --spend                      # Tripo, fit, assemble, captures, clipping check, review.jpg
+$PY $T/cairo_outfit.py $O/<slug>.toml --status                     # what is done, what is next
+```
+
+It writes `output/imagegen/yorimichi-yellow-boy-2026-09-12/body-swap-<slug>/` (`--dir` to choose), loads the API keys
+from the ignored `.env` of either checkout, sends Blender output to `<dir>/logs/<stage>.log` and records every stage in
+`<dir>/outfit-run.json`. Rerunning the same command continues where it stopped: a stage is skipped when its files
+exist and are newer than the stage before. `--redo assemble` reruns a stage and everything after it. Paid stages
+(concept, views and key on Sunburst, about $0.60 together; Tripo, 120 credits) run only with `--spend`, and Tripo
+only after `--approve` has recorded the hashes of the four views: nobody can pay for a model from images no one has
+looked at. `--concept <image>` uses a design picked elsewhere instead of redrawing the concept sheet; `--source
+game-r10/WarmOriginal-Game-r10.blend` for anything that goes to the game; `--until export` also writes the GLB.
+
+The result to look at first is `<dir>/review.jpg`: the concept, eight captures (standing front and back, neck, wrist,
+sprint, crouch, sit, double jump) and the numbers (garments found, skirt, kept skin, clipping).
 
 ## 0. Before you start
 
@@ -74,10 +102,24 @@ Look at all four images. They must agree on: hem height, collar shape, sleeve le
 view disagrees, rerun only that view with `--only back`. Do not send a disagreeing set to Tripo; it costs 120
 credits and comes back wrong.
 
+Then the **body key**, four more images (about $0.24):
+
+```sh
+~/.cache/yorimichi/imagegen-venv/bin/python $T/cairo_body_swap_sunburst.py --headless $BODY_SWAP_DIR \
+  --outfit games/yorimichi/assets/characters/cairo/outfits/<slug>.toml --key            # key/key-<view>.png
+```
+
+Each dressed view comes back unchanged except that every visible bit of bare mannequin is flat green: the neck stump
+and whatever chest shows in the neckline, the wrist stumps, bare arms and legs. The mannequin is Cairo's own body seen
+by known cameras, so the key tells the assembly, pixel for pixel, where the outfit leaves the body bare (section 13).
+Check that green covers the bare body and nothing else: a white under-collar, a lining, socks or a skin-coloured
+garment must stay as they are. The outfit text in the prompt is what keeps them; without it Sunburst keyed the skate
+outfit's white sleeves. Redo a wrong view with `--key --only <view>`.
+
 ## 4. Generate the body (Tripo)
 
-Write `references/approval.json` (see the r02 one: event, basis quoting the user's instruction, the four image
-hashes), then:
+Record the approval (`cairo_outfit.py ... --approve "..."` writes `references/approval.json` with the four view
+hashes, the key hashes and the basis; or write it by hand like the r02 one), then:
 
 ```sh
 ~/.cache/yorimichi/imagegen-venv/bin/python platform/studio/atelier/ai/tripo_asset.py generate \
@@ -105,11 +147,15 @@ What each does and what to read afterwards:
   `chest_front_clearance_mm` should be a few mm positive, `*_sleeve_slide_mm` typically 10 to 30 mm; look at
   `fit/both-*.png` (base body must be fully inside the outfit) and `fit/gen-*.png`.
 - **assemble** builds `assembled/<stem>.blend`: opens the neck stump cap if Tripo closed it, keeps the original
-  head, hands, a capped 3.5 cm of forearm inside each sleeve mouth and the front chest skin inside the collar,
-  transfers weights from the base body, applies per-garment rules (sleeves ride the arm, tee body never takes
-  leg weights, hems copy the trousers' weights), prunes to four influences, smooths, adds 2 mm cloth thickness,
-  dual-quaternion skinning. Read `assembled/assembly.json`: `garment_faces` must list the tee (1) and trousers
-  (3); `bones` 53; `actions` 25 for a game source.
+  head and hands, removes the Tripo faces the key marks as body, keeps Cairo's own body wherever the key shows it
+  bare (plus 2 cm tucked under the garment edges) in the same skin material as the head and hands, tags each garment
+  by shape, transfers weights from the base body, applies per-garment rules (sleeves ride the arm, tops never take
+  leg weights, hems copy the trousers' weights, skirts hang from the hips), prunes to four influences, smooths, adds
+  2 mm cloth thickness, dual-quaternion skinning. Read `assembled/assembly.json`: `keyed` true; `garment_faces` lists
+  the top (1) and the bottoms (3); `components.skirt_test` shows which pieces cover the midline between the legs
+  (a skirt at all three heights); `kept_skin` the bare body kept per region; `key.tripo` how many Tripo faces each
+  proof removed; `bones` 53; `actions` 25 for a game source. Without key images the older r02 rules run (a fixed
+  collar patch and forearm block, garments tagged by the skate outfit's colours).
 - **capture** renders 52 views (9 poses × 4 views + neck and wrist close-ups) into `captures/`. Look at
   `standing--front-left`, `standing--neck`, `standing--neck-back`, `standing--wrist-left`, `sprint27--back`,
   `crouch--back`, `sit--front`, `doublejump--back` before anything else.
@@ -184,7 +230,30 @@ runtime graph": the old shorts' morph no longer exists).
 
 ## 9. Constants that may need re-measuring for a different outfit
 
-All in `cairo_body_swap_assemble.py` unless noted.
+All in `cairo_body_swap_assemble.py` unless noted. The first block is for keyed swaps (the default now); none of
+it is per outfit, and none of it needed changing across the five outfits in section 13.
+
+| What | Value now | Why | Re-measure when |
+| --- | --- | --- | --- |
+| key reading (`cairo_body_key.py`) | green = G > .55 and G − max(R, B) > .3; 3×3 majority; the green shrunk 3 px (about 2 mm) for the Tripo model | Sunburst leaves soft green edges; garment edges lying on the skin keep their faces | never |
+| cloth in front of the green (`IN_FRONT`) | 1 cm along the view ray | green seen through a garment's edge belongs to the body behind it | never |
+| on bare skin (`ON_BODY`) | ±6 mm from a bare base face; unseen faces any depth inside | Tripo's copy of a bare arm sits a few mm off Cairo's | never |
+| plausible green (`plausible`) | a green key pixel counts only where the dressed view is skin-toned (R > .3, G/R .6–.9, B/R .4–.8) or plain grey | Sunburst painted a hoodie's whole ribbed cuff green in one key | never |
+| green past a garment | a green vote for a base face is dropped when the Tripo model stands more than 1 cm in front of it along the view ray | from the side, the green of a wrist deep in a sleeve's mouth, or of a neck behind a collar, marked covered skin bare | never |
+| bare specks (`_specks`) | bare islands under 8 cm² farther than 2 cm from the head and hands go back to covered | green spilled past a dark sleeve's mouth onto a dark coat left a skin patch on the chest | never |
+| skin colour (`FAR`, `SAME_COLOUR`) | only when the key faces' median colour is a skin tone from ≥ 30 faces; a face is skin-coloured when nearer that colour than the outfit faces within 6 cm, and within .3; never where that outfit is within .15 of skin; within .08 where no outfit is near | relative to the outfit around it, so Tripo's shading and a skin-toned garment never fool it | never |
+| hidden covered body | Tripo faces within 6 mm of a covered base face that no view shows as outfit make that face bare when skin-coloured faces cover more than half of it | the side of the chest inside a jersey's armhole: hidden by the arm from the side and by the jersey from the front | never |
+| colour proofs | a face within 2.5 cm of bare skin, or where the key is green but it stands in front of the mannequin, is body when skin-coloured; added after the thin-strip opening | the pale patches Tripo leaves beside a jersey's straps | never |
+| thin strips | body marks one face wide or smaller go back to outfit (`_open`) | the key's edge touching a cuff rim or a strap cut notches in the cloth | never |
+| smooth cut (`contour_cut`) | each vertex takes the share of removed faces around it, smoothed 3 times; faces are split where it crosses one half | removing whole Tripo triangles left a saw edge at every garment border over skin | never |
+| garment edges on the skin (`lift_garment_edges`) | cloth the views saw, over bare skin and up to 1.5 cm inside it, moves to 1 mm above the skin; the move fades over 4 rings (× .6 each) | Tripo's legs are thinner than Cairo's: the kept skin stood over the sock tops in a saw edge | never |
+| feet | faces below the top of the sock region are never bare | Sunburst once painted a tabi's ankle green | a barefoot outfit |
+| kept skin | bare base faces plus 2 cm, and 2 cm beyond the kept hands (not the head); each vertex 3 mm under the cloth along its normal, fading over 2 cm from the head and hands, but always at least 1 mm under it; bare vertices only under cloth within 6 mm | the skin continues under the garment edge and fills a cuff's mouth; unpushed skin beyond the head poked through a crew collar in motion | never |
+| garment tags (keyed) | top: > 300 faces, reaches above z .10, covers the chest; bottoms: from below z −.2 to under z .03; sleeves: out on the arms | shape, not colour | a one-piece suit |
+| skirt test | covers the midline between the thighs 5, 8 and 11 cm below the crotch | baggy trousers and shorts touch the midline at 5 and 8 cm, never at 11 | never |
+| skirt weights | below the crotch: hips, blending to 65 % thighs at the knee, split by side over ±7 cm around the midline; full from 2 cm below the crotch, only where the cloth is 5–20 mm off the legs | swings with the legs without splitting | a floor-length skirt (a cloth simulation) |
+
+The r02 rules below still run for swaps without a key:
 
 | What | Value now | Why | Re-measure when |
 | --- | --- | --- | --- |
@@ -200,8 +269,29 @@ All in `cairo_body_swap_assemble.py` unless noted.
 
 ## 10. Pitfalls that cost hours
 
-- **Never classify faces by baked colour.** Tripo paints skin colour onto the inside of cuffs and collars; a
-  colour rule shortened the sleeve once and punched a hole in the tee once. Geometry only.
+- **Never classify faces by baked colour alone.** Tripo paints skin colour onto the inside of cuffs and collars; a
+  colour rule shortened the sleeve once and punched a hole in the tee once. The body key is the evidence; the colour
+  rules left (section 9) only extend what the key already found, compare a face with the outfit right around it
+  rather than with a fixed colour, and stay off unless the key's own faces are skin-toned (on a hoodie their median
+  was teal and a fixed rule would have deleted the hoodie).
+- **Check the key against the dressed view.** Sunburst sometimes paints cloth green too (a hoodie's whole ribbed cuff
+  in one view). Green only counts where the dressed view shows skin or bare grey mannequin.
+- **Green can be seen past a garment.** From the side, the camera looks into a sleeve's mouth or behind a collar and
+  sees a bit of wrist or neck deep inside. That skin is covered in every pose; a green vote only counts when no Tripo
+  cloth stands more than 1 cm in front of the face.
+- **Render a bad border with each object in its own colour before fixing it.** The saw edge at the jersey's sock tops
+  looked like a bad cut in the Tripo mesh; two fixes aimed at the cut changed nothing. Rendered with Cairo's kept
+  skin in green, it was the skin standing over the sock (Tripo's legs are thinner than Cairo's).
+- **Links between revision folders are read-only.** A revision that reuses another's Tripo model links its files
+  (`body-swap-variants-r02` links r01's). Rerunning the fit wrote through the links into r01 once; `cairo_outfit.py`
+  now replaces a stage's linked outputs with its own files before it runs.
+- **Decide skin on the base body, not on Tripo.** The key lines up with Cairo's own body exactly (it is the mannequin
+  in the pictures) and only roughly with Tripo's. Deciding on the base body first, then asking which Tripo faces lie
+  on that bare skin, is what made the V neck and the bare arms clean.
+- **A key edge is not evidence.** Cutting Tripo faces on a strip of green one face wide notched the skate cuffs and
+  the jersey straps; body marks now have to be at least two faces thick.
+- **Skirts are found by where they are, not by name.** Trousers and shorts reached the midline between the legs just
+  below the crotch too; only the 11 cm height separates them from a skirt.
 - **Never cut a full generated body apart.** The hand grows out of the cuff as one surface. Generate headless
   and handless instead.
 - **Align on something that exists in both meshes.** Whole-mesh means are biased by baggy clothes; the head is
@@ -245,8 +335,8 @@ and a knee-length coat (a skirt between the legs).
 Cost per outfit: five Sunburst images (about $0.34) and one Tripo generation (120 credits); the machine time is
 Sunburst about 30 s per image, Tripo three to four minutes, fit and assemble two minutes, captures three minutes.
 
-So: generation, fitting, skinning and the sleeves are general. The weak spots are the three places where the rules
-still assume a round-necked tee over trousers:
+So: generation, fitting, skinning and the sleeves are general. The weak spots were the three places where the rules
+still assumed a round-necked tee over trousers (all three are fixed in section 13):
 
 1. **The neckline.** The collar patch is a fixed disc (section 9). It should follow the outfit's actual neck
    opening (its boundary loop around the neck), so V necks, wide necks and stand collars show skin up to the fabric
@@ -261,15 +351,81 @@ are hundreds of small overlapping islands, so a repacked layout (Tripo Studio's 
 in the archive: 407 overlapping islands to 33 clean ones) is what makes recolours, prints and repaints of an existing shell possible
 without a new generation.
 
+## 13. The three fixes
+
+`body-swap-variants-r02` reruns the five outfits (the skate outfit and the four of section 12) on the same Tripo models
+with the fixes below: no new Tripo credits, and 20 body key images from Sunburst (about $1.5 with prompt tests and
+redos). The constants are the same for all five; nothing is set per outfit.
+
+<img src="../../../docs/media/character/05-outfit-fixes.jpg" alt="Before and after the fixes: the keikogi's V collar, a jersey wrist, the long coat in a sprint and a crouch">
+
+**One idea behind the first two: ask Sunburst where the body is bare.** The four dressed views are Sunburst edits of
+renders of Cairo's own body (the headless mannequin) from known cameras. Asking Sunburst for the same four views with
+the bare mannequin painted flat green (section 3, `--key`) gives a map that lines up with Cairo's body pixel for pixel.
+The assembly reads it in two passes (`cairo_body_key.py`):
+
+1. **On Cairo's body:** which faces of the base body are bare (`exposed_skin`). Those faces, plus 2 cm tucked under the
+   garment edges, stay as Cairo's own skin, in the same material as the head and hands.
+2. **On the Tripo model:** which faces are Tripo's copy of the body, not the outfit (`tripo_body_faces`). Those are
+   removed, so the kept skin shows instead.
+
+What each weak spot became:
+
+- **Neckline.** No fixed collar disc any more. The skin kept is exactly what the outfit leaves bare, so a V neck shows
+  chest down to the under-collar, a hoodie or a stand collar shows none, and the head's cut edge is always under
+  cloth or skin.
+- **Bare skin.** Tripo's pale baked arms and legs are removed and Cairo's own replace them, in the hands' material:
+  no seam at the wrist or the knee.
+- **Skirts.** A garment that covers the midline between the thighs 5, 8 and 11 cm below the crotch is a skirt (baggy
+  trousers and shorts reach it at 5 and 8 cm, never at 11). Below the crotch it hangs from the hips and takes a
+  growing share of both thighs, split by side (65 % at the knee), so it swings with the legs instead of splitting into
+  trouser legs. The hakama counts as a skirt too, which is what it is. Floor-length skirts still want a cloth
+  simulation.
+
+**What the other outfits taught.** A rule that works on one outfit broke on the next; each rule below came from one
+outfit and runs on all five (constants in section 9):
+
+| Outfit | What went wrong with the key alone | Rule |
+| --- | --- | --- |
+| Skate | skin beyond the head, kept but not tucked under, poked through the crew collar in motion | kept skin extends 2 cm beyond the hands only, and never stands in front of the outfit |
+| Hoodie | Sunburst painted a whole ribbed cuff green; the cuff was cut away | green counts only where the dressed view is skin or grey |
+| Coat | from the side, green seen past the dark sleeve marked chest faces bare: a skin patch on the chest in the wave pose | green past more than 1 cm of Tripo cloth does not count, and small bare islands away from the head and hands are dropped |
+| Jersey | the side of the chest inside the armhole is hidden in every view (by the arm from the side, by the jersey from the front): a pale Tripo sheet stayed | Tripo faces lying on hidden body that are skin-coloured make it bare |
+| Jersey | pale patches beside the straps, and one flap of the shoulder taken for skin | skin colour judged against the outfit colour within 6 cm |
+| Jersey, keikogi | saw edges where cloth meets skin: the removed Tripo triangles at the border, and Cairo's thicker leg standing over the sock tops | the smooth cut, and garment edges lifted onto the skin |
+
+Results (clipping check of section 6, cm² at 1 m, minus the bind pose, 14 clips × 8 frames):
+
+| Outfit | r01 cloth mean / skin worst | r02 cloth mean / skin worst | Bare base faces kept | Look |
+| --- | --- | --- | --- | --- |
+| Skate | 500 / 34 (game-r11 source) | 501 / 35 | 20 (the neck ring) | unchanged, as it should be |
+| Hoodie | 115 / 52 | 115 / 52 | 0 | cuffs whole; nothing else changed |
+| Keikogi and hakama | 827 / 22 | 419 / 21 | 39 (the V) | the V shows skin down to the white under-collar; the hakama swings as one piece |
+| Basketball jersey | 155 / 59 | 92 / 196 | 860 (arms, legs) | no wrist seam; armholes, straps and sock tops clean in all poses |
+| Long coat | 271 / 39 | 382 / 33 | 0 | a coat in sprint and crouch; no skin patches |
+
+The check now also says where the crossings are (`summary_where` in `qa/check.json`). The jersey's skin number rose
+because its arms and legs are now Cairo's own skin, and the check counts every bit of it that passes more than 2 mm
+into cloth: per frame, 38 of its 55 cm² are the lower legs against the shorts' hems when the knees bend, 13 the arms
+and chest at the armholes. None of it shows in the captures; it is the first thing to look at in the game. The coat's
+cloth number rose because the skirt now hangs from the hips while the trousers under it follow each leg: 258 of its
+382 cm² are below the crotch, most when sitting, all under the coat in the captures.
+
+**To make a new outfit:** write the spec, run the one command at the top of this guide, look at the views and keys it
+stops on, approve, spend, and read `review.jpg`. The approval gate, the ledger and the timestamps make a stopped run
+safe to rerun; nothing in the rules needs editing per outfit.
+
 ## Where things are
 
-- Tools: `games/yorimichi/assets/characters/tools/cairo_body_swap_{references,sunburst,fit,assemble,capture,export,check}.py`,
+- Tools: `games/yorimichi/assets/characters/tools/cairo_outfit.py` (the one command),
+  `cairo_body_swap_{references,sunburst,fit,assemble,capture,export,check}.py`, `cairo_body_key.py` (reading the key),
   `cairo_back_concepts.py`, `platform/studio/atelier/ai/tripo_asset.py`, `japan/tools/warm_film_assemble.py` (archive),
   `games/yorimichi/assets/characters/cairo/export_unreal.py`, `games/yorimichi/unreal/Scripts/import_cairo.py`.
 - Outfit specs: `games/yorimichi/assets/characters/cairo/outfits/*.toml`.
 - Revisions: `body-swap-r01` (cut-based, failed, kept for reference), `body-swap-r02-headless` (this guide),
-  `body-swap-variants-r01` (the four test outfits), `game-r11` (in the game), `back-concepts-r04` (the design studies).
-- Reports: `body-swap-r02-headless/qa/findings-*.md`, `*/qa/check.json`, the front/back film
+  `body-swap-variants-r01` (the four test outfits), `body-swap-variants-r02` (the same five Tripo models with the
+  key and the fixes), `game-r11` (in the game), `back-concepts-r04` (the design studies).
+- Reports: `*/review.jpg` (per outfit, from `cairo_outfit.py`), `body-swap-r02-headless/qa/findings-*.md`, `*/qa/check.json`, the front/back film
   `build/yorimichi/cairo/film-r11/warm-r11-front-back.mp4`.
 
 ## Frontflip waistband clearance

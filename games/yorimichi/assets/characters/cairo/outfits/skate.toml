@@ -1,0 +1,13 @@
+# Outfit spec for the body swap (tools/cairo_body_swap_sunburst.py --outfit). `concept` dresses the character in the
+# concept sheet; `outfit` is the same outfit worded for the headless, handless mannequin views. This is the skate
+# outfit in the game (body-swap-r02-headless), whose views were made by the tool's built-in prompt with the same
+# garment wording; its concept is the approved study itself, so there is no --make-concept for it.
+name = "Skate: boxy tee, cargo trousers"
+concept_image = "back-concepts-r04/boxy-tee-cargo-nohat-1.png"
+concept = "a huge boxy mustard-yellow short-sleeve tee that hangs to mid-thigh, its wide short sleeves reaching past the elbow, worn over a white long-sleeve layer; extra-wide olive-drab cargo work trousers with one big flap pocket on the outside of each thigh; chunky skate shoes with a cream upper, black toe and side panels and a cream sole"
+outfit = "a huge boxy mustard-yellow short-sleeve tee that hangs to mid-thigh, its wide short sleeves reaching past the elbow, worn over a white long-sleeve layer whose sleeves end at the wrists as open cuffs with no hand inside; extra-wide olive-drab cargo work trousers with one big flap pocket on the outside of each thigh, the legs stacking in soft folds over chunky skate shoes with a cream upper, black toe and side panels and a cream sole; the bare feet become those shoes."
+pose = "In the T-pose the sleeves hang under the outstretched arms and the tee hangs straight; the trousers stay wide and straight."
+front = "The tee's round neckline with the white layer's collar just visible, the cargo pockets on both outer thighs and the shoe fronts are visible."
+back = "The plain back of the tee, the back of the trousers and the shoe heels are visible."
+left = "the left arm points at the camera so the open sleeve end is seen end-on in front of the body with no hand, the left cargo pocket faces the camera on the outer thigh, and the shoes are seen from the side."
+right = "the right arm points at the camera so the open sleeve end is seen end-on in front of the body with no hand, the right cargo pocket faces the camera on the outer thigh, and the shoes are seen from the side."
