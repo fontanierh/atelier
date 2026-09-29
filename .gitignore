@@ -1,0 +1,30 @@
+# Local credentials; only the empty template is versioned.
+.env
+.env.*
+!.env.example
+
+# Build output: regenerate with `atelier build <game>`.
+/build/
+/archive/
+
+# Unreal build products and imported content (rebuilt by the import scripts).
+games/*/unreal/Binaries/
+games/*/unreal/Intermediate/
+games/*/unreal/Saved/
+games/*/unreal/DerivedDataCache/
+games/*/unreal/Content/
+games/*/unreal/*.xcworkspace
+games/*/unreal/.vscode/
+platform/engine/Plugins/**/Binaries/
+platform/engine/Plugins/**/Intermediate/
+
+# Python and Node
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+*.egg-info/
+
+# Blender autosaves, OS files
+*.blend1
+.DS_Store

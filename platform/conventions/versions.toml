@@ -1,0 +1,6 @@
+# Tool versions every game here is built and tested with. `atelier doctor` checks them.
+unreal = "5.8"
+blender = "5.2"          # 5.2.1 LTS; Blender's bundled Python is 3.13
+python = ">=3.11"        # Unreal 5.8 embeds Python 3.11, so shared studio code stays 3.11-compatible
+node = ">=24"
+ffmpeg = ">=7"

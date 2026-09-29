@@ -1,0 +1,38 @@
+# Working rules
+
+## Repository
+
+- This repository is **public**. Never commit credentials, tokens, personal hostnames or home-directory paths, and
+  never commit third-party files whose licence forbids redistribution (Sonniss sounds, raw Mixamo downloads, licensed
+  music). `atelier lint` checks for the common cases; run it before pushing.
+- Commit and push completed work at task boundaries before starting the next task.
+- Never prefix pull request titles with `[codex]` unless explicitly asked.
+- Generated files belong in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources.
+- Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
+
+## Credentials
+
+- API keys live in the ignored repository-root `.env` (`OPENAI_API_KEY`, `AI_GATEWAY_API_KEY`, `TRIPO_API_KEY`;
+  template in `.env.example`). `atelier.env.load()` reads them into the environment. Never print their values.
+- Every paid call goes through `atelier.ai.ledger`: it is recorded before and after, and never retried blindly.
+
+## Image generation
+
+- Use **GPT Image 2.5 Sunburst** (`gpt-image-2.5-sunburst`) for new concepts, reference sheets, textures and map
+  paintings, with `quality=high` unless the task calls for another quality. Do not silently substitute another model.
+- Keep the model and prompt of every generated image in its provenance file.
+
+## Animation reference videos
+
+- Prefer **H3 Max at 480p** (`minimax/minimax-h3-max` via the Vercel AI Gateway) because of cost; keep Seedance for
+  when its quality justifies it (`platform/studio/node/`).
+- H3 prompts need appearance and camera, ordered and timed phases, support contacts, airborne impulses, rotation
+  direction and count, and recovery. Always require **constant framing** (no zoom, the character stays the same size)
+  and **real-time speed** (no slow motion). Inspect the motion before accepting a take.
+- Generated video is a reference for locally authored Blender animation, never the animation itself.
+
+## Running things
+
+- Heavy jobs (Unreal, Blender renders) go through the render lock and memory guard (`atelier.safety`). `atelier play`
+  and `atelier build` do this for you.
+- The live bridge (Unreal plugin, port 8830) stays loopback-only.

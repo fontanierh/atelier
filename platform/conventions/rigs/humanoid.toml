@@ -1,0 +1,33 @@
+# The humanoid bone contract. Platform code finds these bones by name on every humanoid.
+# The count is not the point: a strict core, optional groups, free extras.
+id = "humanoid"
+version = 1
+
+[required]   # 23 bones
+spine = ["root", "pelvis", "spine", "spine_mid", "chest", "neck", "head"]
+arm_L = ["clavicle_L", "upperarm_L", "forearm_L", "hand_L"]
+arm_R = ["clavicle_R", "upperarm_R", "forearm_R", "hand_R"]
+leg_L = ["thigh_L", "shin_L", "foot_L", "toe_L"]
+leg_R = ["thigh_R", "shin_R", "foot_R", "toe_R"]
+
+[optional.fingers]   # 15 per hand; Warm Original and the fox hunter have them
+per_hand = ["thumb", "thumb_tip", "thumb_end",
+            "finger_0", "finger_tip_0", "finger_end_0", "finger_1", "finger_tip_1", "finger_end_1",
+            "finger_2", "finger_tip_2", "finger_end_2", "finger_3", "finger_tip_3", "finger_end_3"]
+suffixes = ["_L", "_R"]
+
+[extras]
+allowed = true   # hair, tail, cape, bag: any bones hung under a required one
+
+[roles]   # what platform code asks for
+left_foot = "foot_L"
+right_foot = "foot_R"
+left_hand = "hand_L"
+right_hand = "hand_R"
+look_at = "head"
+carry_layer_root = "clavicle_R"
+
+[from_tripo]
+# Tripo's auto-rig returns Mixamo names; the exporter renames them (mixamorig:Hips -> pelvis, ...).
+spec = "mixamo"
+add_fingers = true

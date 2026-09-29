@@ -1,0 +1,10 @@
+# Cues platform code plays, by name. A game supplies sounds for them in its banks, and may add any cues of its own.
+# <surface> is the physical surface under the foot or wheel (grass, gravel, stone, wood, water, ...).
+"footstep.<surface>"      = { played_by = "AtelierAudio", space = "3d" }
+"skate.roll.<surface>"    = { played_by = "Skate", loop = true, params = ["speed"] }
+"skate.pop"               = { played_by = "Skate" }
+"skate.land"              = { played_by = "Skate", params = ["impact"] }
+"skate.grind.<material>"  = { played_by = "Skate", loop = true }
+"combat.hit"              = { played_by = "Combat", params = ["strength"] }
+"combat.parry"            = { played_by = "Combat" }
+"ui.confirm"              = { played_by = "AtelierCore", space = "2d" }
