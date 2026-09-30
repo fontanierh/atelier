@@ -72,6 +72,19 @@ interrupt ancestors, transition resolution and dotted-path search. `CompiledGrap
 the C++ controller's executable topology and compact operation IDs. Registered gameplay operations and
 their physical inputs still require porting; matching generic execution alone does not establish gameplay parity.
 
+## Native animation samples
+
+`AnimationSamples.*` reads the project's `ATCLIP01` tracks and `ATSKEL01` hierarchy/reference poses. Each
+scale, quaternion and translation component retains its original f32 bits. A constant component stores one
+word; a varying component stores one word per frame. There is no quantization, frame reduction or original
+compressed animation reader in the C++ runtime. Channel weights, loop transforms, timing, bank identities,
+parent/mirror indices and per-bank pose replacement order are preserved.
+
+The one-time exporter uses the original decoder on every clip and every reference-pose record. The conversion
+tool then packs native tracks. The C++ probe reconstructs the complete decoded output and compares every byte
+against the original export, including all frames and bones. Animation metadata, clocks, interpolation,
+blending and physical pose adjustments remain separate migration tasks.
+
 ## Validation completed
 
 On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
@@ -92,6 +105,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   compared with the unmodified original host compiler. Each executes 65 commands with the deterministic
   test operation host; every output byte matches the original controller. The compiler also rejects an
   unresolved transition target exactly as the reference does, even when binding disabled that transition.
+- Animation sample conversion: all 3,324 clips, 131,642 frames and 4,739,112 bone samples reconstruct exactly,
+  together with the full rig and reference poses. 833,087 of 1,196,640 component tracks are bit-identical
+  constants. Decoded sample files shrink from 190,365,107 bytes to 65,630,991 bytes without quantization.
 - The session comparator's five regression tests catch single-bit float differences, signed zero,
   nonfinite output, field/array omissions and integer differences without lossy float conversion.
 - A frozen build of reference `46513a6` reproduced all 8,286 published responses across 25 flat-ground
@@ -107,6 +123,9 @@ Run the generic controller comparison with `Tests/check_controller_parity.py --o
 `Tests/check_compiled_graph_parity.py` tests the full authored data-to-controller connection. It also takes
 `--assets ASSETS --output BUILD_DIRECTORY --target-dir CARGO_CACHE`; all original Rust implementation files
 come from the frozen Git revision. The temporary probe adds only its own target and dependency declarations.
+`Tests/check_animation_samples_parity.py` takes the same arguments and compares every original decoded sample
+against C++ reconstruction, including rig lookup and malformed-data checks. Generated native assets remain in
+the build directory during migration; the final native package must be tracked before the runtime switches.
 
 `Tests/build_reference.py` extracts the pinned source directly from Git, builds it with its locked Cargo
 dependencies, and records the compiler, source hashes and executable hash. `Tests/session_parity.py` requires

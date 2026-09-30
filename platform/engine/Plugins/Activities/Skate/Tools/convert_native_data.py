@@ -235,10 +235,55 @@ def encode_graph(elements):
     return bytes(data)
 
 
+def encode_clip_samples(raw):
+    """Lossless per-component tracks; constant tracks store one original bit word."""
+    if raw[:8]!=b'ATCLRAW1': raise ValueError('Invalid decoded clip export')
+    at=8
+    def word():
+        nonlocal at
+        value=struct.unpack_from('<I',raw,at)[0];at+=4;return value
+    length=word();at+=length
+    at+=4+8+4+7*4+4  # bank, record, fps, loop transforms, channel flag
+    weights=word();at+=weights*4
+    frames,bones=word(),word()
+    if frames==0 or bones==0 or bones!=weights or len(raw)-at!=frames*bones*40:
+        raise ValueError('Decoded clip frame layout mismatch')
+    words=struct.unpack_from(f'<{frames*bones*10}I',raw,at)
+    result=bytearray(b'ATCLIP01'+raw[8:at]);constant=0
+    for lane in range(bones*10):
+        track=words[lane::bones*10]
+        if all(value==track[0] for value in track):
+            track=track[:1];constant+=1
+        result.extend(struct.pack('<I',len(track)))
+        result.extend(struct.pack(f'<{len(track)}I',*track))
+    return bytes(result),dict(frames=frames,bones=bones,constant_tracks=constant,tracks=bones*10)
+
+
+def convert_animation_samples(source,output):
+    output.mkdir(parents=True,exist_ok=True)
+    rig=(source/'rig.raw').read_bytes()
+    if rig[:8]!=b'ATSKEL01': raise ValueError('Invalid decoded rig export')
+    (output/'rig.skate').write_bytes(rig)
+    entries=[]
+    for name in (source/'clips.txt').read_text().splitlines():
+        parts=name.split('/')
+        if len(parts)!=2 or parts[0] not in ('0','1') or not parts[1] or any(c not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_' for c in parts[1]):
+            raise ValueError('Invalid exported clip name')
+        raw=(source/'clips'/f'{name}.raw').read_bytes()
+        native,counts=encode_clip_samples(raw)
+        path=output/'clips'/f'{name}.skate';path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(native)
+        entries.append(dict(name=name,**counts,source_bytes=len(raw),native_bytes=len(native),
+                            decoded_sha256=hashlib.sha256(raw).hexdigest(),native_sha256=hashlib.sha256(native).hexdigest()))
+    manifest=dict(format='ATCLIP01',rig_sha256=hashlib.sha256(rig).hexdigest(),clips=entries)
+    (output/'samples-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+    return manifest
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True, help='reference assets root containing private/')
     parser.add_argument('--output', type=Path, required=True, help='generated migration output directory')
+    parser.add_argument('--animation-samples', type=Path, help='decoded sample export from the reference reader')
     args = parser.parse_args()
     source = args.source / 'private/stock/data/joystick'
     sets = gesture_sets(source)
@@ -248,6 +293,8 @@ def main():
     (args.output / 'settings.skate').write_bytes(encode_settings(args.source/'private/stock/skater-collections.json'))
     for name, relative in GRAPH_FILES:
         (args.output / f'{name}.graph').write_bytes(encode_graph(read_graph(args.source/'private/stock'/relative)))
+    if args.animation_samples:
+        convert_animation_samples(args.animation_samples,args.output/'animation')
     report = dict(format='ATGEST01', patterns=sum(len(group['patterns']) for group in sets),
                   sha256=hashlib.sha256(encoded).hexdigest(),
                   source_sha256={name: hashlib.sha256((source/name).read_bytes()).hexdigest()
