@@ -643,6 +643,15 @@ void AWandererCharacter::SetMouseReleased(bool bReleased)
     bMouseReleased = bReleased;
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
+        // An offscreen run never captures or locks the mouse (see Yorimichi.cpp).
+        if (FParse::Param(FCommandLine::Get(), TEXT("RenderOffscreen")))
+        {
+            PC->bShowMouseCursor = false;
+            FInputModeGameAndUI Mode; Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock); Mode.SetHideCursorDuringCapture(false);
+            PC->SetInputMode(Mode);
+            if (GEngine && GEngine->GameViewport) GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+            return;
+        }
         PC->bShowMouseCursor = bReleased;
         if (bReleased) { FInputModeGameAndUI Mode; Mode.SetHideCursorDuringCapture(false); PC->SetInputMode(Mode); }
         else { FInputModeGameOnly Mode; Mode.SetConsumeCaptureMouseDown(false); PC->SetInputMode(Mode); }
