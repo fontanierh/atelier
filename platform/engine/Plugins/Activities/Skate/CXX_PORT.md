@@ -96,7 +96,12 @@ compiled record only after the mass-response callback succeeds. `AggregateMass.*
 volume moments, principal-axis reduction and mass finalization. `DeckGeometry.*` reconstructs the
 deck's primitive/triangle children, including disabled children's mass and the final deck-frame override.
 `DriveFrames.*` computes the seven authored part poses, truck geometry and relative parent/child frames.
-Contact generation, joint/drive builders, complete body ownership and scheduling remain open.
+`ConstraintFrames.*`, `JointBuild.*` and `DriveBuild.*` preserve frame composition, joint limit modes,
+kinematic prediction, active-body mass gates and soft/hard drive targets. They emit the original full
+compiled records consumed by the shared solver, including opaque joint identifiers and carried lanes.
+Contact generation, complete body ownership and scheduling remain open. These comparisons establish
+parity with the frozen Rust reconstruction, including its documented unresolved retail joint-matrix
+gather and carry-lane interpretation; they do not independently verify those against the EA executable.
 
 `Input.*`, `InputIntentions.*`, `AnimationName.*` and `Intents.*` preserve pad history, Xbox conversion,
 retained controller fields, encoded-name aliases, ordered intent emissions, turn filters and slide state.
@@ -218,6 +223,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   all seven default body masses.
 - Authored part and drive frames: 1,927 cases and 140,880 exact words, including packed pose fourth lanes,
   truck rotation polynomials, dominant-quaternion ties, 1,024 relative-frame pairs and all stock defaults.
+- Joint and drive construction: 6,731 cases and 810,444 exact words, including 2,952 complete joint
+  records, 3,519 typed/packed drive records and 260 stock/custom parameter sets. All swing/twist branches,
+  active/kinematic body combinations, independent body bases, singular quaternion components, angular
+  cone boundaries and soft/hard/disabled drive coefficients are compared. The private original drive
+  packer is included unchanged in the reference probe; no candidate-generated expected values are used.
 - Controller input and intents: 58,508 commands and 31,515,955 exact output bytes, covering encoded byte
   names/aliases, Xbox packets, pad history, retained raw/derived fields, ordered producer callbacks,
   filter state and slide latches. This is core subsystem coverage, not full host scheduling.
