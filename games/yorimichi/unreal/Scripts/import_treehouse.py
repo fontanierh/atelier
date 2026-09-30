@@ -230,8 +230,16 @@ def trees(report):
 PIECES = ('TH_Frame', 'TH_Dressing')
 
 
-def full_precision_uvs(mesh):
+def mesh_editor():
+    """The static mesh editor subsystem; a commandlet has it only once its module is loaded."""
+    unreal.load_module('StaticMeshEditor')
     sub = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    assert sub is not None, 'StaticMeshEditor subsystem is unavailable'
+    return sub
+
+
+def full_precision_uvs(mesh):
+    sub = mesh_editor()
     settings = sub.get_lod_build_settings(mesh, 0)
     if settings.get_editor_property('use_full_precision_u_vs'): return
     settings.set_editor_property('use_full_precision_u_vs', True)
@@ -240,7 +248,7 @@ def full_precision_uvs(mesh):
 
 def uv_channels(mesh):
     """LOD 0's UV channels: 5 with the piece bake (AJapanWorld fades the pieces whole only then)."""
-    return unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem).get_num_uv_channels(mesh, 0)
+    return mesh_editor().get_num_uv_channels(mesh, 0)
 
 
 def main():
