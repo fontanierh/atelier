@@ -111,7 +111,8 @@ compiled records consumed by the shared solver, including opaque joint identifie
 the original definition-to-live body reversal and stock/custom parameter/frame words.
 `TruckDriveFrames.*`, `DrivePreparation.*` and `HookDrive.*` retain steering frame order, repeated
 normalization, untouched translation lanes and the live animation-drive lifecycle.
-Contact generation, complete body ownership and scheduling remain open. These comparisons establish
+`ContactGeneration.*` constructs the original tangents, copied force/inertia workspaces and typed
+compiled contact facade. Complete body ownership and scheduling remain open. These comparisons establish
 parity with the frozen Rust reconstruction, including its documented unresolved retail joint-matrix
 gather and carry-lane interpretation; they do not independently verify those against the EA executable.
 
@@ -243,6 +244,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   all primitive types, material combination, duplicates, deferred reduction and capacity drops.
   Paired imported-floor fixtures remove 774 internal seam contacts while retaining open edges/curbs.
   Body workspaces remain unpopulated until the simulation applies its current force queue.
+- Contact generation: 9,820 cases and 940,436 exact words, including velocity/normal tangent boundaries,
+  copied current force/torque workspaces, complete uncompiled/compiled records and independent body,
+  reaction and contact identifiers. Six invalid-timestep fixtures fail on both original and C++.
 - Contact retention: 6,268 cases and 3,733,259 exact words, including 756 stateful buffer streams.
   Every buffer field, all 50 complete records and each publication chunk are compared. Coverage includes
   10,743 capacity rejections, 320 duplicate rejections, 1,699 published chunks and source-order reduction,
