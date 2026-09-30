@@ -89,8 +89,11 @@ moments and volume. `ConstraintSolver.*` runs compiled contact, joint and drive 
 iteration order, preserving position/velocity reaction separation and carried lanes. It validates every
 reaction index before any mutation, including zero-iteration calls. `ContactBuild.*` preserves contact
 arm/inertia preparation, active-body gates, mass response and restitution targets. It publishes a
-compiled record only after the mass-response callback succeeds. Contact generation, joint/drive
-builders, aggregate construction and scheduling remain open.
+compiled record only after the mass-response callback succeeds. `AggregateMass.*` preserves compound
+volume moments, principal-axis reduction and mass finalization. `DeckGeometry.*` reconstructs the
+deck's primitive/triangle children, including disabled children's mass and the final deck-frame override.
+`DriveFrames.*` computes the seven authored part poses, truck geometry and relative parent/child frames.
+Contact generation, joint/drive builders, complete body ownership and scheduling remain open.
 
 `Input.*`, `InputIntentions.*`, `AnimationName.*` and `Intents.*` preserve pad history, Xbox conversion,
 retained controller fields, encoded-name aliases, ordered intent emissions, turn filters and slide state.
@@ -186,6 +189,14 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   preparation field and compiled row, active/inactive bodies, 3,072 default reciprocal responses,
   4,096 injected responses and 4,096 callback failures that preserve the original input record. Default
   reciprocal cases stay in the original builder's documented finite-input/intermediate domain.
+- Compound and part mass: 3,907 cases and 334,844 exact words, including transformed/accumulated moments,
+  mutated center-of-mass moments, unsorted principal axes, inverse frames, strict mass fallback and stock
+  wheel/truck finalizers. The corpus includes 1,024 compounds with one, two, four or eight children.
+- Deck construction: 902 cases and 259,682 exact words, including child shapes/order/transforms/flags,
+  triangle fat-AABB mass, disabled-child mass, zero/negative/end-fan counts, the deck-frame override and
+  all seven default body masses.
+- Authored part and drive frames: 1,927 cases and 140,880 exact words, including packed pose fourth lanes,
+  truck rotation polynomials, dominant-quaternion ties, 1,024 relative-frame pairs and all stock defaults.
 - Controller input and intents: 58,508 commands and 31,515,955 exact output bytes, covering encoded byte
   names/aliases, Xbox packets, pad history, retained raw/derived fields, ordered producer callbacks,
   filter state and slide latches. This is core subsystem coverage, not full host scheduling.
