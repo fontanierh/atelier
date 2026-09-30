@@ -22,7 +22,6 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 WALK = yori.OUT/'treehouse'/'walk'
 STEP = .25                    # route spacing (m)
-HUT = (3.4, 2.8)              # layout.HUT: width, depth
 UNREAL = Path(os.environ.get('UE_ROOT', '/Users/Shared/Epic Games/UE_5.8'))/'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
 PROJECT = REPO/'games/yorimichi/unreal'
 BRIDGE = 'http://127.0.0.1:8830'
@@ -55,15 +54,15 @@ class Route:
 
 def plan():
     lay = json.loads((yori.OUT/'treehouse'/'layout.json').read_text()); P = lay['places']; cr = lay['crow']; sl = lay['slide']
-    layout_heart_wall = lay['heart_wall']
+    dh = lay['door'][1]
     R = Route()
     # what hides Cairo without stopping a trace (cloth and lanterns have no collision), as (x, y, z, radius): the door
-    # curtains and the paper lantern on the post at each bridge end; the chase camera keeps them out of its view
-    curtains = []
-    for br in lay['bridges']:
-        A, B = np.array(br['start'], float), np.array(br['end'], float); u = (B-A)[:2]/np.linalg.norm((B-A)[:2]); v = np.array([-u[1], u[0]])
-        for q, sd in ((A, 1), (B, -1)):
-            curtains.append([*(q[:2]+v*sd*(lay['bridge_width']/2+.07)), q[2]+1.42, .3])
+    # curtains (noren) of every room and the paper lanterns on the bridges' end posts; the chase camera keeps them
+    # out of its view
+    curtains = [[*q[:2], q[2]+1.42, .3] for br in lay['bridges'] for q in br['lanterns']]
+    for p in P.values():
+        for d in p.get('room', {}).get('doors', []):
+            curtains.append([d[0], d[1], p['deck']+dh-.45, .55])
 
     def at(n, a, r, up=0.):
         p = P[n]; return [*(np.array(p['xy'])+unit(a)*r), p['deck']+up]
@@ -89,103 +88,65 @@ def plan():
         q = np.array(br['start'] if br['a'] == n else br['end'])[:2]-np.array(P[n]['xy'])
         return math.degrees(math.atan2(q[1], q[0]))
 
-    def hut(n):
-        p = P[n]; ang = p['open']; d2 = HUT[1]/2
-        diffs = [((l['angle']-ang+540) % 360)-180 for l in p['links']]
-        side = 1 if min(diffs, key=abs) > 0 else -1
-        c = np.array(p['xy'])+unit(ang)*(p['trunk']+.3+d2)
-        return lambda lx, sy, up=0.: [*(c+unit(ang)*lx+unit(ang+90)*side*sy), p['deck']+up]
+    def room(n, lx, ly, up=0.):
+        """A point in place n's room frame (layout room(): x out from the trunk, the doors at -y and +y)."""
+        r = P[n]['room']; a = r['angle']
+        return [*(np.array(r['center'])+unit(a)*lx+unit(a+90)*ly), P[n]['deck']+up]
 
-    def polar(n, q):
-        d = np.array(q[:2])-np.array(P[n]['xy']); return math.degrees(math.atan2(d[1], d[0])), float(np.linalg.norm(d))
+    def door(n, k, out=0.):
+        """Door k of place n's room, or a point `out` metres in front of it (negative: inside)."""
+        d = P[n]['room']['doors'][k]; return [*(np.array(d[:2])+unit(d[2])*out), P[n]['deck']]
 
-    def around(n, a0, a1, r, avoid=None):
-        """Arc from a0 to a1 at radius r, the way that does not cross the angle avoid (a hut)."""
-        d = ((a1-a0+540) % 360)-180
-        if avoid is not None:
-            rel = ((avoid-a0+540) % 360)-180
-            if 0 < rel < d or d < rel < 0: d = d-360 if d > 0 else d+360
-        return arc(n, a0, a0+d, r)
+    def through(n, k, stop, looks, mid=()):
+        """From the porch in by door k, along the way from door to door to the stop (a look round), and out by the
+        other door onto its porch. The rooms are big enough for the chase camera to follow him in."""
+        R.go([door(n, k, 1.4), door(n, k, .3)], 'run', .6)
+        R.go([door(n, k, -.8), *mid, stop], 'run', .5, ('follow', -8))
+        R.stop(3.4, *looks)
+        R.go([door(n, 1-k, -.8), door(n, 1-k, .3), door(n, 1-k, 1.4)], 'run', .55, ('follow', -8))
 
-    def room(n, inside, look_window, look_room, corner, walk=(), far=(1.15, -1.45, 1.95), mix=.45, enter=None):
-        """From the deck into hut n by its door, a look round, and back out. Coming in and at the look, the camera holds
-        in the top corner (lx, sy, height) by the door wall and turns with Cairo; going out it holds in the far corner,
-        so he walks away from it to the door. It cuts in as he crosses the door and out as he leaves, as a game's room
-        camera does. enter: a corner he walks in towards instead, cut to the door corner as he stops (where the door
-        corner would look along the door wall)."""
-        H = hut(n); w2 = HUT[0]/2; cam = ('room', *H(*corner), mix); out = ('room', *H(*far), mix)
-        R.go([H(0, w2+.6), H(0, w2+.1)], 'run', .42, ('follow', -8))
-        R.go([H(0, w2-.3)]+[H(*q) for q in walk]+[H(*inside)], 'run', .42, ('room', *H(*enter), 0.) if enter else cam)
-        if enter: R.go([H(*inside)], 'run', .42, cam)
-        R.stop(3.2, (0, H(*look_window, 1.3)), (1.7, H(*look_room, .9)))
-        R.go([H(*q) for q in walk[::-1]]+[H(0, w2-.3), H(0, w2+.6)], 'run', .5, out)     # seen through the door
-        curtains.append([*H(0, w2+.08, 1.5), .5])
-        return polar(n, H(0, w2+.6))[0]
-
-    # 1. the trail, the stepping stones and the entry steps
+    # 1. the trail, the stepping stones and the entry steps up to the little hut's north door
     st = [np.array(s) for s in lay['stones']]; back = st[0]+(st[0]-st[1])/np.linalg.norm(st[0]-st[1])*3.5
-    es = lay['entry_stairs']; ex = es['x']; E = P['entry']; x0, y0 = E['xy']; ze = E['deck']
+    es = lay['entry_stairs']; ex = es['x']; E = P['entry']; ze = E['deck']; ec = E['room']['center']
     R.go([back, back+(st[0]-back)*.05], 'walk', 1.)
-    R.stop(2.8, (0, (x0, y0, ze+2.5)), (1.5, (x0-2, y0, ze+1.2)))
+    R.stop(2.8, (0, (*ec, ze+2.5)), (1.5, (ec[0]-2, ec[1], ze+1.2)))
     R.go([*st[1:], es['foot'], (ex, es['top_y']-.15, ze)], 'run', .8, ('follow', -6))
     # 2. through the little hut (north door, south door) to the south porch and the view
-    door = x0+1.2; curtains.extend([[door, y0+1.53, ze+1.54, .5], [door, y0-1.53, ze+1.54, .5]])
-    cam = ('room', x0+1.75, y0-1.15, ze+1.9, .45)           # the south-east top corner: Cairo comes in towards it
-    R.go([(ex+.1, y0+1.9, ze), (ex+.55, y0+1.82, ze), (door, y0+1.95, ze)], 'run', .45, ('follow', -8))
-    R.go([(door, y0+1.4, ze), (door, y0+.35, ze)], 'run', .45, cam)
-    R.stop(1.8, (0, (x0-.6, y0-.2, ze+1.5)), (1.0, (x0-1.4, y0+.8, ze+1.1)))
-    R.go([(door, y0-.5, ze)], 'run', .45, cam)
-    R.go([(door, y0-1.6, ze), (door-.2, y0-2.35, ze)], 'run', .45, ('follow', -8))
+    R.go([door('entry', 0, .3)], 'run', .45, ('follow', -8))
+    R.go([door('entry', 0, -.8), room('entry', 0, 0)], 'run', .45, ('follow', -8))
+    R.stop(2.2, (0, room('entry', -1.8, .4, 1.5)), (1.2, room('entry', 1.8, -.6, 1.2)))
+    R.go([door('entry', 1, -.8), door('entry', 1, .3), door('entry', 1, 1.5)], 'run', .45, ('follow', -8))
     R.stop(3.0, (0, (-139, 165, 73.5)), (1.6, (-131, 168, 76.0)))
-    # 3. across to the Map room, inside, and round its deck to the sleeping nest
-    b = bridge('entry', 'library'); R.go([b[0]+[.45, .55, 0]]+b, 'run', 1.)
-    a_in = end_angle('library', 'entry'); H = hut('library'); a_door = polar('library', H(0, 2.3))[0]
-    R.go(around('library', a_in, a_door, 3.3, P['library']['open']), 'run', .75)
-    a_out = room('library', (0, -.55), (0, -3.5), (1.0, .4), (-1.15, 1.3, 1.95), enter=(1.15, -1.45, 1.95))
-    R.go(around('library', a_out, end_angle('library', 'sleep'), 3.35, P['library']['open']), 'run', .9)
+    # 3. across to the Map room: in by the door by the landing, a look at the map table and the shelves, out by the
+    # other door to the sleeping nest's bridge
+    R.go(bridge('entry', 'library'), 'run', 1.)
+    through('library', 0, room('library', 0, 0), ((0, room('library', 2.1, -.2, .9)), (1.7, room('library', -2.7, 0, 1.3))))
     R.go(bridge('library', 'sleep'), 'sprint', 1.)
-    # 4. the sleeping nest: in along the rug to the hammock, out, round to the pulley bridge
-    H = hut('sleep'); a_door = polar('sleep', H(0, 2.3))[0]
-    R.go(around('sleep', end_angle('sleep', 'library'), a_door, 3.3, P['sleep']['open']), 'run', .75)
-    a_out = room('sleep', (.6, -.75), (-.2, -3.5), (-.6, .3), (-1.15, 1.3, 1.95), walk=((.45, 1.35), (.55, .9)))
-    R.go(around('sleep', a_out, end_angle('sleep', 'pulley'), 3.3, P['sleep']['open']), 'run', .9)
+    # 4. the sleeping nest: a look at the futons and the hammocks, out to the pulley bridge
+    through('sleep', 0, room('sleep', .2, 0), ((0, room('sleep', -2.1, -1.2, .4)), (1.7, room('sleep', 2.0, 2.9, 1.0))))
     R.go(bridge('sleep', 'pulley'), 'sprint', 1.)
     # 5. the pulley deck: a look at the crane and its basket
     pu = P['pulley']; a_in = end_angle('pulley', 'sleep'); a_to = end_angle('pulley', 'heart')
     a_mid = a_in-((a_in-a_to) % 360)*.45
-    R.go(arc('pulley', a_in, a_mid, 2.2), 'run', .7)
+    R.go(arc('pulley', a_in, a_mid, 2.6), 'run', .7)
     tip = np.array(pu['xy'])+unit(pu['open'])*3.75
     R.stop(2.2, (0, (*tip, pu['deck']+1.4)), (1.3, (*tip, pu['deck']-1.5)))
-    R.go(arc('pulley', a_mid, a_to, 2.2, turn=-1), 'run', .8)
+    R.go(arc('pulley', a_mid, a_to, 2.6, turn=-1), 'run', .8)
     R.go(bridge('pulley', 'heart'), 'sprint', 1.)
-    # 6. the heart room: in by the south-west door, along the inner ring by the camphor to a look at the loft ladder
-    # (from inside the ladder's radius the camera has the room behind Cairo), out round the ladder to the kitchen
-    # Inside, the camera circles with him a little behind, high by the wall (the ring is too narrow for the chase
-    # camera: its wall test would pull it in to his hair), and cuts in and out at the doors.
-    a_in = end_angle('heart', 'pulley'); he = P['heart']; ring = ('ring', *he['xy'], 3.3, he['deck']+1.9, 48, .25)
-    R.go([at('heart', a_in+4, 4.85), at('heart', 225, 4.75), at('heart', 225, 3.95)], 'run', .5, ('follow', -8))
-    R.go([at('heart', 225, 3.4), at('heart', 222, 2.4)]+arc('heart', 222, 150, 2.35, turn=-1), 'run', .5, ring)
-    R.stop(4.0, (0, at('heart', 108, 2.7, 1.5)), (1.5, at('heart', 70, 3.6, 2.5)), (2.9, at('heart', 0, 0, 1.7)))
-    R.go(arc('heart', 150, 128, 2.35, turn=-1)+arc('heart', 118, 62, 3.25, turn=-1)+[at('heart', 45, 3.4)], 'run', .5, ring)
-    # out through the curtain, seen from the kitchen bridge (on the narrow balcony the chase camera has no room)
-    b = bridge('heart', 'kitchen'); back = ('room', *b[4][:2], b[4][2]+1.9, 0.)
-    R.go([at('heart', 45, 4.2), at('heart', 45, 4.75), at('heart', end_angle('heart', 'kitchen')+4, 4.9)]+b[:2], 'run', .6, back)
-    ap = layout_heart_wall*math.cos(math.radians(22.5))+.07
-    curtains.extend([*at('heart', a, ap, 1.59), .5] for a in (45, 135, 225))
-    R.go(b[2:], 'run', 1.)
-    # 7. the kitchen: in to the stove, out, round to the boat bridge
-    H = hut('kitchen'); a_door = polar('kitchen', H(0, 2.3))[0]
-    R.go(around('kitchen', end_angle('kitchen', 'heart'), a_door, 3.3, P['kitchen']['open']), 'run', .8)
-    a_out = room('kitchen', (.95, .95), (-.85, -1.1), (.3, -.1), (-1.15, 1.3, 1.95), walk=((.7, 1.35),), far=(1.2, -1.45, 2.0), mix=.3)
-    R.go(around('kitchen', a_out, end_angle('kitchen', 'boat'), 3.3, P['kitchen']['open']), 'run', .9)
+    # 6. the heart hall: in by the west door, a look round from the middle (the table by the front window, the
+    # camphor through the round window, the view window), out by the north door to the kitchen bridge
+    through('heart', 0, room('heart', 0, 0), ((0, room('heart', 2.0, 0, .6)), (1.4, room('heart', -4.5, 0, 1.6)),
+                                               (2.8, room('heart', 0, -4.5, 1.9))))
+    R.go(bridge('heart', 'kitchen'), 'run', 1.)
+    # 7. the kitchen: a look at the stove and the table, out to the boat bridge
+    through('kitchen', 1, room('kitchen', .2, 0), ((0, room('kitchen', -2.6, -1.1, .9)), (1.7, room('kitchen', 1.95, .5, .6))))
     R.go(bridge('kitchen', 'boat'), 'run', 1.)
-    # 8. round the trunk on the open side of the boat room, with a look in under the upturned hull
-    bo = P['boat']; c = np.array(bo['xy'])+unit(bo['open'])*(bo['trunk']+1.3); zb = bo['deck']
-    a_in = end_angle('boat', 'kitchen'); a_to = end_angle('boat', 'slide')
-    R.go(arc('boat', a_in, 168, 2.3, turn=1), 'run', .6, ('follow', -6))
-    R.stop(2.4, (0, (*c, zb+1.5)), (1.4, (*(c+unit(bo['open']+90)*1.6), zb+1.1)))
-    R.go(arc('boat', 168, a_to, 2.3, turn=1), 'run', .7)
-    R.go(bridge('boat', 'slide'), 'sprint', 1.)
+    # 8. in under the upturned hull from the trunk side, a look up at the lantern and the bunks, and out to the slide
+    bo = P['boat']; c = bo['room']['center']; zb = bo['deck']
+    R.go([[*c, zb]], 'run', .6, ('follow', -6))
+    R.stop(2.4, (0, (*c, zb+2.4)), (1.4, room('boat', 0, -1.2, .6)))
+    R.go(bridge('boat', 'slide')[:1], 'run', .7)
+    R.go(bridge('boat', 'slide')[1:], 'sprint', 1.)
     # 9. past the slide's mouth to the chime tree and the lookout
     a_in = end_angle('slide', 'boat'); a_to = end_angle('slide', 'chimes')
     R.go(arc('slide', a_in, a_to, 2.0, turn=1), 'run', .8)
@@ -199,7 +160,7 @@ def plan():
     lo = P['lookout']; cx, cy = lo['xy']; zl = lo['deck']; a_in = end_angle('lookout', 'chimes'); rs = 1.22
     helix = [[cx+rs*math.cos(math.radians(a)), cy+rs*math.sin(math.radians(a)), zl+(k+1)*cr['rise']]
              for k in range(cr['steps']) for a in (cr['start']+(k+.5)*cr['da'],)]
-    R.go([at('lookout', a_in+3, 2.55), at('lookout', 355, 2.3), at('lookout', 335, 2.3), at('lookout', 312, 2.0), at('lookout', 300, 1.5),
+    R.go([at('lookout', a_in+3, 2.55), at('lookout', 355, 2.5), at('lookout', 335, 2.5), at('lookout', 312, 2.2), at('lookout', 300, 1.5),
           at('lookout', 312, rs), at('lookout', cr['start']-4, rs)], 'run', .7)
     # up the spiral the camera circles outside it; the last ten treads, from the crow's nest floor ahead of him,
     # looking down the stairwell (from outside it would be under the floor)
@@ -208,10 +169,10 @@ def plan():
     R.go(helix[:-10], 'run', .75, ('orbit', cx, cy, 160, -20))
     R.go(helix[-10:]+[[cx+rs*math.cos(math.radians(a)), cy+rs*math.sin(math.radians(a)), top] for a in np.linspace(a_top, a_top+18, 4)],
          'run', .6, hatch)
-    R.go([[cx+r*math.cos(math.radians(a)), cy+r*math.sin(math.radians(a)), top] for a, r in ((a_top+45, 1.6), (180, 1.9), (266, 2.0))],
+    R.go([[cx+r*math.cos(math.radians(a)), cy+r*math.sin(math.radians(a)), top] for a, r in ((a_top+45, 1.45), (190, 1.55), (266, 2.0))],
          'run', .5, nest)
     R.stop(6.0, (0, (cx-6, cy-60, top-9)), (2.4, (cx+22, cy-50, top-12)), (4.2, (-131, 168, 79.0)))
-    R.go([[cx+r*math.cos(math.radians(a)), cy+r*math.sin(math.radians(a)), top] for a, r in ((180, 1.7), (a_top+50, 1.55))],
+    R.go([[cx+r*math.cos(math.radians(a)), cy+r*math.sin(math.radians(a)), top] for a, r in ((190, 1.55), (a_top+50, 1.55))],
          'run', .6, ('follow', -10, top+1.9))
     R.go([[cx+rs*math.cos(math.radians(a_top+14)), cy+rs*math.sin(math.radians(a_top+14)), top]]+helix[::-1][:7], 'run', .7, (*hatch[:5], -80, 0.))
     R.go(helix[::-1][7:], 'run', 1., ('orbit', cx, cy, 200, -22))
