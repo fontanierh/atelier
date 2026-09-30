@@ -72,6 +72,32 @@ interrupt ancestors, transition resolution and dotted-path search. `CompiledGrap
 the C++ controller's executable topology and compact operation IDs. Registered gameplay operations and
 their physical inputs still require porting; matching generic execution alone does not establish gameplay parity.
 
+## Native physics arithmetic and controller input
+
+`NativeMath.*` and `Geometry.*` preserve scalar estimates, recovered trigonometric polynomials,
+quaternion/matrix operations, point graphs, camera Bezier samples, closest triangle points and thin
+triangle queries. Explicit nonfinite paths preserve the frozen compiler's operand ordering, including
+NaN signs and payloads; the comparator does not canonicalize these results. Rounded sweeps, world
+acceleration structures and contact generation remain separate work.
+
+`RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
+inertia, point forces, drag, caps and cooldowns. Opaque lanes survive packed updates and reaction words
+are cleared in the original order. `BodyMass.*` preserves primitive sphere/capsule/rounded-box/cylinder
+moments and volume. `ConstraintSolver.*` runs compiled contact, joint and drive records in shared
+iteration order, preserving position/velocity reaction separation and carried lanes. It validates every
+reaction index before any mutation, including zero-iteration calls. Contact generation, constraint
+builders, aggregate construction and scheduling remain open.
+
+`Input.*`, `InputIntentions.*`, `AnimationName.*` and `Intents.*` preserve pad history, Xbox conversion,
+retained controller fields, encoded-name aliases, ordered intent emissions, turn filters and slide state.
+These cover the original core modules. Production host scheduling, camera-relative off-board remapping
+and the host's distinct sliding implementation still require their own ports and comparisons.
+
+Arithmetic source files disable implicit Clang FP contraction and use explicit fused operations where
+the reference does. The module disables unity compilation so internal helpers and FP settings remain
+isolated in the same translation units used by the standalone checks. Unreal compilation remains a
+separate integration check; standalone tests alone do not establish engine compatibility.
+
 ## Native physical skeleton
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
@@ -106,6 +132,16 @@ tool then packs native tracks. The C++ probe reconstructs the complete decoded o
 against the original export, including all frames and bones. Animation metadata, clocks, interpolation,
 blending and physical pose adjustments remain separate migration tasks.
 
+## Native animation playback
+
+`AnimationPlayback.*` ports clip clocks, event windows and curve sampling, attribute blending/mirroring,
+channel fade/resurrection state, frame selection and decoded-pose blending. It reuses the native sample
+and metadata readers. Retained payload lanes and duplicate attributes preserve their original behavior.
+Animation tree instances, host services, procedural pose adjustments and physical feedback remain separate
+work. `AnimationPlaybackParameters.*` preserves parameter sources/defaults and PlayAnimation lifecycle
+requests through an explicit service interface. That interface still needs the concrete animation tree
+service; a tested request facade does not establish full animation execution.
+
 ## Validation completed
 
 On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
@@ -126,6 +162,27 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   compared with the unmodified original host compiler. Each executes 65 commands with the deterministic
   test operation host; every output byte matches the original controller. The compiler also rejects an
   unresolved transition target exactly as the reference does, even when binding disabled that transition.
+- Rigid bodies and primitive mass: 41,020 cases and 2,460,235 exact output words (9,840,940 bytes), including
+  evolving packed and typed bodies, orientation/inertia, force application, caps/cooldowns, every opaque
+  body lane and sphere/capsule/rounded-box/cylinder moments.
+- Shared math and initial geometry: 34,309 cases and 525,369 exact output words (2,101,476 bytes),
+  including scalar/vector/quaternion/matrix/SQT arithmetic, point graphs, Bezier sampling, all seven
+  closest-triangle regions and 1,103 thin-triangle hits. The corpus includes finite boundaries, signed
+  zeros, infinities and NaN payloads; rounded-triangle sweeps remain a separate check.
+- Shared constraint solver: 7,967 cases and 3,682,300 exact words (14,729,200 bytes), including mixed
+  contact/joint/drive iterations over shared reactions, friction and limit boundaries, reversed body
+  indices, softness/carry preservation and invalid indices rejected before mutation. An independently
+  reviewed operand-order correction preserves the original signed-zero contact carry behavior.
+- Controller input and intents: 58,508 commands and 31,515,955 exact output bytes, covering encoded byte
+  names/aliases, Xbox packets, pad history, retained raw/derived fields, ordered producer callbacks,
+  filter state and slide latches. This is core subsystem coverage, not full host scheduling.
+- Animation playback: 7,115 cases and 41,311,421 exact bytes across clocks, curves, attribute operations,
+  channels and pose blending. All 3,324 native clips are sampled at eight boundary/normal/invalid times
+  against the frozen original core reading the independent decoded originals. Invalid-clock failures
+  preserve the original partial updates through explicit errors; the C++ check disables exceptions.
+- Animation parameters and PlayAnimation requests: 7,947 cases and 9,319,384 exact bytes, including
+  callback interleaving, source/default/normalized values, variant precedence, consumed transition
+  overrides, refusal/fallback/error handling and begin/update/end lifecycles.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
@@ -140,7 +197,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - A frozen build of reference `46513a6` reproduced all 8,286 published responses across 25 flat-ground
   scenarios exactly on a second run. States exercised: GroundAnimation, KnownAir, PhysicsGround,
   SlideGround, Teleporting and WipeoutGround. This establishes reference repeatability for that corpus;
-  there is not yet a complete C++ session candidate to compare. Transition/bowl/rail coverage remains open.
+  there is not yet a complete C++ session candidate to compare.
+- A second reference corpus adds 23 transition/bowl/rail/long-session cases and reproduces all 18,024
+  responses exactly. It reaches PhysicsAir, GrindFiftyFifty, GrindFiveO, GrindTipslide and Nonspecific in
+  addition to flat-ground states. Inputs cover both stances and all three difficulty settings. A pumping
+  input scenario is present; proving pumping energy behavior and internal solver state remains open.
 
 Generated reports and probe binaries live under `build/<game>/skate-cpp/`. Reproduce subsystem checks
 with `Tests/check_{gesture,name,settings,graph}_parity.py --assets ASSETS --output BUILD_DIRECTORY`, through
