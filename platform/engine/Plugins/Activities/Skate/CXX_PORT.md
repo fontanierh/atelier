@@ -394,6 +394,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   programs with four actual target bodies. Comparisons include 42,624 drive rows, target/follower
   updates, shared transition counters and invalid definition errors. Whole board/rider scheduling and
   collision response remain separate integration steps.
+- Physical skeleton collision policy/feedback: 2,030 cases and 17,434,526 exact words cover collision
+  groups, ragdoll materials/properties, body-pair culling, temporary contact disabling, 24 bone and
+  eight region records, the 20-plane limit, specific contacts, completed solver observations and
+  filtered pose errors. Three invalid report-part fixtures preserve explicit rejection. Geometric
+  pair generation and the complete actor's collision scheduling remain separate checks.
 - Animation metadata: both banks, 3,324 clips, 14,879 clip attributes, 1,183 phase blends, two blend spaces,
   98 selectors and 38 selection spaces. Every record word/order and 4,643 original lookup results match;
   33 duplicate/tie fixtures, two merge fixtures and nine malformed-format cases pass.
