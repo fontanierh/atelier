@@ -3,13 +3,13 @@ overlap. The depth test flips between two such faces from frame to frame, so the
 
     blender -b --python-exit-code 1 --python games/yorimichi/world/regions/treehouse/zfight.py -- [BUILD_DIR] [REPORT]
 
-Reads BUILD_DIR/Treehouse.blend (TH_Structure, TH_Trunks, TH_Dressing; BUILD_DIR defaults to build/yorimichi/treehouse)
-and every prop instance in BUILD_DIR/runtime.json, each TH_P_*.fbx placed as the game places it ([x, y, z, yaw,
-scale], turned counter-clockwise by yaw). A pair is two triangles whose normals are within ANGLE degrees, whose
-planes are within GAP metres, and whose overlap in that plane is over AREA square metres. Faces seen from opposite
-sides (a cloth built twice, a crate on a deck) are not pairs: one of them is always culled. Triangles of the same
-prop instance are not checked against each other. Writes REPORT (default build/yorimichi/review/treehouse/zfight.json)
-and exits 1 when any pair is found.
+Reads BUILD_DIR/Treehouse.blend (TH_Structure, TH_Frame, TH_Trunks, TH_Dressing; BUILD_DIR defaults to
+build/yorimichi/treehouse) and every prop instance in BUILD_DIR/runtime.json, each TH_P_*.fbx placed as the game
+places it ([x, y, z, yaw, scale], turned counter-clockwise by yaw). A pair is two triangles whose normals are within
+ANGLE degrees, whose planes are within GAP metres, and whose overlap in that plane is over AREA square metres.
+Faces seen from opposite sides (a cloth built twice, a crate on a deck) are not pairs: one of them is always culled.
+Triangles of the same prop instance are not checked against each other. Writes REPORT (default
+build/yorimichi/review/treehouse/zfight.json) and exits 1 when any pair is found.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
 import json, math, sys, time
@@ -19,7 +19,7 @@ import bpy
 import numpy as np
 
 ANGLE, GAP, AREA = 2.0, .0015, 1e-4
-KEYS = ('TH_Structure', 'TH_Trunks', 'TH_Dressing')
+KEYS = ('TH_Structure', 'TH_Frame', 'TH_Trunks', 'TH_Dressing')
 
 
 def triangles(ob, matrix=None):
