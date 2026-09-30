@@ -166,8 +166,11 @@ requests through an explicit service interface. `AnimationTrees.*` constructs ev
 preserves phase/blend/selection clocks, deferred selection, transition insertion/pruning, bind-pose flags
 and the main-tree owner lifecycle. `AnimationChannels.*` adds ordered persistent overlays with encoded
 key lookup, priority ties, retirement, transition resurrection and channel-weighted attributes/commands.
-Connecting these owners to the live graph host, pose evaluation and physical feedback remains separate
-work; matching tree commands does not establish full animation execution.
+`AnimationPose.*` executes the command stack, trajectory deltas, full bone poses and hierarchy. Stock
+poses use the verified native tracks. Project-authored custom/mod overrides retain their existing
+version-1 absolute-joint JSON interface, including baking and owner/conflict/precedence behavior; this
+is not an original EA data format. Connecting these owners to the live graph host and physical feedback
+remains separate work; matching pose commands does not establish full animation execution.
 
 ## Validation completed
 
@@ -257,6 +260,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Animation channel container: 169 multistep cases and 8,048,904 exact bytes covering ordered trees,
   priority/encoded-key ties, fades, replacement/resurrection, retirement, parameter/attribute forwarding,
   pose commands and partial outputs on failure against the original channel container.
+- Pose evaluator: 3,959 cases and 14,818,831 exact bytes across all 3,324 stock clips, complete poses and
+  hierarchy, trajectory/add/mirror operations, command stacks and all seven project-authored override
+  slots. Comparisons cover override ownership, conflicts, precedence, removal and representative schema,
+  skeleton, timing and matrix errors. OS file-read error text and exhaustive malformed JSON diagnostics
+  are not established by this corpus. The original evaluator and its authored-clip module are included
+  byte-for-byte; staged module aliases are separately hashed without editing original implementation.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
