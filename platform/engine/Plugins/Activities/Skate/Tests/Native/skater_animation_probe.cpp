@@ -32,15 +32,33 @@ struct Input:detail::DataReader
         p.board_present=Boolean();p.physical_28_byte75=Boolean();p.time_since_teleport=Float();return p;
     }
     ChannelSettings Channel() {return {std::int32_t(Word()),Boolean(),Boolean(),Float(),Float(),Boolean(),Float(),Boolean(),Boolean()};}
+    void ExtraPhysical(MotionGraphHost& host)
+    {
+        const auto mask=Word();
+        const MotionGraphRidingConditionInputs riding{Vector(),Vector(),Vector(),Float(),Float()};
+        const MotionGraphGrindConditionInputs grind{Boolean(),Word(),Word(),Word(),Boolean(),Float(),Boolean()};
+        const MotionGraphLandingInputs landing{Float(),Float(),Word(),Float()};
+        const bool over=Boolean();const auto collision=Float(),contact=Float();const auto profile=Word();const bool below=Boolean(),orientation=Boolean();const auto y=Float(),right=Float(),up=Float();
+        const MotionGraphWipeoutConditionInputs wipeout{over,collision,contact,profile,below,orientation?std::optional<float>(y):std::nullopt,right,up};
+        const MotionGraphPrelandingInputs prelanding{Boolean(),Float(),Float(),Float(),Boolean(),Boolean(),Float(),Boolean(),Float(),Float(),Float()};
+        host.riding_condition_inputs=(mask&1)?std::optional<MotionGraphRidingConditionInputs>(riding):std::nullopt;
+        host.grind_condition_inputs=(mask&2)?std::optional<MotionGraphGrindConditionInputs>(grind):std::nullopt;
+        host.landing_inputs=(mask&4)?std::optional<MotionGraphLandingInputs>(landing):std::nullopt;
+        host.wipeout_condition_inputs=(mask&8)?std::optional<MotionGraphWipeoutConditionInputs>(wipeout):std::nullopt;
+        host.prelanding_inputs=(mask&16)?std::optional<MotionGraphPrelandingInputs>(prelanding):std::nullopt;
+    }
 };
 struct Output
 {
     std::vector<std::uint8_t> bytes;
+    bool extended=false;
     void Word(std::uint32_t v) {for (unsigned i=0;i<4;++i) bytes.push_back(std::uint8_t(v>>(8*i)));}
     void Float(float v) {std::uint32_t word;std::memcpy(&word,&v,4);Word(word);}
     void String(std::string_view s) {Word(std::uint32_t(s.size()));bytes.insert(bytes.end(),s.begin(),s.end());}
     void Status(bool ok,std::string_view e) {Word(ok);if (!ok) String(e);}
     void Optional(std::optional<float> value) {Word(bool(value));if (value) Float(*value);}
+    void OptionalName(const std::optional<AttributeName>& value) {Word(bool(value));if (value) for (const auto w:*value) Word(w);}
+    void NamedVector(const std::optional<MotionGraphScorePacket::NamedVector>& value) {Word(bool(value));if (value) {for (const auto w:value->first) Word(w);for (const auto f:value->second) Float(f);}}
     void Map(const IntentMap& m,const std::vector<std::string>& names) {Word(std::uint32_t(m.Size()));for (const auto& name:names) {const auto p=m.Get(name);Optional(p?std::optional<float>(*p):std::nullopt);}}
     void Attribute(const AnimationAttribute& a) {for (auto word:a.name) Word(word);Word(a.kind);Word(a.status);Word(std::uint32_t(a.sequence_id));Float(a.begin_time);Float(a.end_time);for (const auto v:a.payload) {Word(bool(v));if (v) Word(*v);}}
     void Matrices(const std::vector<Mat4>& ms) {Word(std::uint32_t(ms.size()));for (const auto& m:ms) for (const auto& c:m) for (const auto f:c) Float(f);}
@@ -73,6 +91,13 @@ struct Output
         Word(std::uint32_t(a.pose.size()));for (const auto& p:a.pose) for (const auto* v:{&p.scale,&p.rotation,&p.translation}) for (const auto f:*v) Float(f);
         const auto& p=a.packet;Word(p.bone_count);Matrices(p.hierarchy);Matrices(p.local);Float(p.timestep);for (const auto f:p.foot_surface_ids) Word(f);Word(p.flags);
         for (const auto b:{p.board_flipped,p.mirrored,p.riding_switch,p.riding_fakie,p.weight_forwards,p.regular_stance}) Word(b);Word(std::uint32_t(p.air_dismount_revert_frames));Reset(reset);
+        if (extended)
+        {
+            const auto& score=a.motion.score_packet;NamedVector(score.handplant);NamedVector(score.grab);for (const auto& name:score.trick_names) OptionalName(name);
+            Word(bool(score.name));if (score.name) Word(*score.name);Word(score.flags);Word(a.motion.feedback_owner.allow_pumping);Word(a.motion.moving_objects.Active());
+            Word(std::uint32_t(anim.tree.construction_values.size()));for (const auto& value:anim.tree.construction_values) {for (const auto w:value.first) Word(w);for (const auto w:value.second) Word(w);}
+            for (const auto name:{"PUMP0","PUMP1","PUMP2","PUMP3","PUMP4"}) {Word(anim.channels.Has(name));Float(anim.channels.Elapsed(name));Float(anim.channels.Remaining(name));Word(anim.channels.InTransition(name));}
+        }
     }
 };
 bool LoadGraph(const std::filesystem::path& path,AnimationLoadedGraph& graph,std::string& error) {return graph.source.Load(File(path),error)&&graph.binding.Bind(graph.source,error)&&graph.runtime.FromBinding(graph.binding,error);}
@@ -80,6 +105,7 @@ bool LoadGraph(const std::filesystem::path& path,AnimationLoadedGraph& graph,std
 int main(int argc,char** argv)
 {
     if (argc!=6) return 2;const std::filesystem::path samples(argv[1]),metadata(argv[2]),fixtures(argv[3]),assets(argv[5]);const std::vector<std::uint8_t> bytes{std::istreambuf_iterator<char>(std::cin),{}};Input input(bytes);Output out;std::string error;
+    out.extended=bytes.size()>=8&&bytes[7]=='2';
     auto source=std::make_shared<AnimationSource>();AnimationMetadata other;AnimationPoseFrames frames;SettingsDatabase settings;
     if (!source->metadata.Load(File(metadata/"bank-0.skate"),error)||!other.Load(File(metadata/"bank-1.skate"),error)||!source->metadata.Merge(other,error)||!frames.rig.Load(File(samples/"rig.skate"),error)||!settings.Load(File(argv[4]),error)) {std::cerr<<error;return 2;}
     const auto clip_count=input.Word();for (std::uint32_t i=0;i<clip_count;++i) {const auto file=input.String();auto clip=std::make_shared<AnimationClipSamples>();if (!clip->Load(File(samples/"clips"/(file+".skate")),error)||!frames.RegisterClip(clip,error)) {std::cerr<<error;return 2;}}
@@ -105,6 +131,7 @@ int main(int argc,char** argv)
             case 5:{std::vector<Mat4> hierarchy;ok=actor->EvaluateInitialPose(hierarchy,error);out.Status(ok,error);if (ok) out.Matrices(hierarchy);break;}
             case 6:actor->animation.tree.posture.SetProfile(input.Word());out.Status(true,{});break;
             case 7:actor->action_controller.EndAllBehaviors(actor->action);actor->motion_controller.EndAllBehaviors(actor->motion);out.Status(true,{});break;
+            case 8:if (!out.extended) return 2;input.ExtraPhysical(actor->motion);out.Status(true,{});break;
             default:return 2;
             }
             out.Snapshot(*actor,reset,names);

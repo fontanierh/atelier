@@ -143,7 +143,8 @@ def build_probes(output, target_dir):
         'Graph', 'CompiledGraph', 'GraphController', 'GraphConditions', 'GraphGestureOperations', 'GraphIntentOperations',
         'GraphMotionSliding', 'AnimationSamples', 'AnimationMetadata', 'AnimationPlayback', 'AnimationPlaybackParameters',
         'AnimationTrees', 'AnimationChannels', 'MotionAnimation', 'MotionAnimationOperations', 'MotionFrame',
-        'GraphMotionName', 'GraphMotionConditions', 'MotionGraphHost')
+        'GraphMotionName', 'GraphMotionConditions', 'GraphMotionPhysicalConditions', 'GraphMotionSpecialConditions',
+        'RidingAnimation', 'RidingAnimationSettings', 'GraphMotionFeedbackOperations', 'GraphMotionScoreOperations', 'MotionGraphHost')
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions', '-fno-rtti',
         '-Wall', '-Wextra', '-Werror', '-I', str(native), *(str(native/f'{n}.cpp') for n in sources),
         str(PLUGIN/'Tests/Native/motion_host_probe.cpp'), '-o', str(cpp)], check=True)

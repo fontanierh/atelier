@@ -50,14 +50,26 @@ impl Input {
         AnimationPhysical{conditions,feedback,body_tilt,fakie,physical_stance,foot_frame,board_present:self.boolean(),physical_28_byte75:self.boolean(),time_since_teleport:self.float()}
     }
     fn channel(&mut self)->ChannelSettings {ChannelSettings{priority:self.word() as i32,keep_alive:self.boolean(),mirrored:self.boolean(),speed:self.float(),blend_in:self.float(),hold_during_blend_in:self.boolean(),blend_out:self.float(),hold_during_blend_out:self.boolean(),use_attributes:self.boolean()}}
+    fn extra_physical(&mut self,host:&mut graph_host::motion::MotionHost) {
+        let mask=self.word();
+        let riding=graph_host::motion_riding_conditions::RidingConditionInputs{com_velocity:self.vector(),skeleton_x:self.vector(),skeleton_z:self.vector(),skate_up_y:self.float(),surface_up_y:self.float()};
+        let grind=graph_host::motion_grind::conditions::Physical{filtered_grinding_80:self.boolean(),blunting_136:self.word(),approach_268:self.word(),trick_out_240:self.word(),air_grind_443:self.boolean(),air_time_184:self.float(),dropping_in_324:self.boolean()};
+        let landing=graph_host::motion_landing::Physical{height:self.float(),spin:self.float(),kind:self.word(),last_good_landing_velocity:self.float()};
+        let over_599=self.boolean();let collision_time_144=self.float();let no_support_time_548=self.float();let profile_148=self.word();let below_surface_82=self.boolean();let orientation=self.boolean();let y=self.float();let hips_right_angle_496=self.float();let hips_up_angle_500=self.float();
+        let wipeout=graph_host::motion_wipeout::Physical{over_599,collision_time_144,no_support_time_548,profile_148,below_surface_82,orientation_y:orientation.then_some(y),hips_right_angle_496,hips_up_angle_500};
+        let prelanding=graph_host::motion_spin::PrelandingPhysical{air_444:self.boolean(),air_normal_144_y:self.float(),animation_16_x:self.float(),com_velocity_y:self.float(),offboard_316:self.boolean(),offboard_319:self.boolean(),offboard_time_32:self.float(),air_437:self.boolean(),air_normal_36:self.float(),air_remaining_184:self.float(),animation_height_72:self.float()};
+        host.riding_conditions=(mask&1!=0).then_some(riding);host.grind_conditions=(mask&2!=0).then_some(grind);host.landing_physical=(mask&4!=0).then_some(landing);host.wipeout_physical=(mask&8!=0).then_some(wipeout);host.prelanding_physical=(mask&16!=0).then_some(prelanding);
+    }
 }
-struct Output(Vec<u8>);
+struct Output(Vec<u8>,bool);
 impl Output {
     fn word(&mut self,v:u32) {self.0.extend(v.to_le_bytes());}
     fn float(&mut self,v:f32) {self.word(v.to_bits());}
     fn string(&mut self,v:&str) {self.word(v.len() as u32);self.0.extend(v.as_bytes());}
     fn status(&mut self,r:Result<(),String>) {match r {Ok(())=>self.word(1),Err(e)=>{self.word(0);self.string(&e);}}}
     fn optional(&mut self,v:Option<f32>) {self.word(u32::from(v.is_some()));if let Some(v)=v {self.float(v);}}
+    fn optional_name(&mut self,v:Option<skate_core::animation::output::attributes::AttributeName>) {self.word(u32::from(v.is_some()));if let Some(v)=v {for w in v.0 {self.word(w);}}}
+    fn named_vector(&mut self,v:Option<(skate_core::animation::output::attributes::AttributeName,[f32;2])>) {self.word(u32::from(v.is_some()));if let Some((n,v))=v {for w in n.0 {self.word(w);}for f in v {self.float(f);}}}
     fn map(&mut self,m:&IntentMap,names:&[String]) {self.word(m.len() as u32);for n in names {self.optional(m.get(n).copied());}}
     fn attribute(&mut self,a:&AnimationAttribute) {for w in a.name.0 {self.word(w);}self.word(a.kind as u32);self.word(a.status as u32);self.word(a.sequence_id as u32);self.float(a.begin_time);self.float(a.end_time);for v in a.payload.0 {self.word(u32::from(v.is_some()));if let Some(v)=v {self.word(v);}}}
     fn matrices(&mut self,ms:&[NativeMatrix]) {self.word(ms.len() as u32);for m in ms {for c in m {for f in c {self.float(*f);}}}}
@@ -83,12 +95,18 @@ impl Output {
         self.word(a.pose.len() as u32);for p in &a.pose {for v in [p.scale,p.rotation,p.translation] {for f in v {self.float(f);}}}
         let p=&a.packet;self.word(p.bone_count);self.matrices(&p.hierarchy);self.matrices(&p.local);self.float(p.timestep);for f in p.foot_surface_ids {self.word(f);}self.word(p.flags);
         for b in [p.board_flipped,p.mirrored,p.riding_switch,p.riding_fakie,p.weight_forwards,p.regular_stance] {self.word(u32::from(b));}self.word(p.air_dismount_revert_frames as u32);self.reset(reset);
+        if self.1 {
+            let score=&a.motion.score_packet;self.named_vector(score.handplant);self.named_vector(score.grab);self.optional_name(score.trick_names.first);self.optional_name(score.trick_names.second);
+            self.word(u32::from(score.name.is_some()));if let Some(name)=score.name {self.word(name);}self.word(score.flags);self.word(u32::from(a.motion.allow_pumping));self.word(u32::from(a.motion.moving_objects.active()));
+            self.word(anim.construction_values.len() as u32);for (n,v) in &anim.construction_values {for w in n.0 {self.word(w);}for w in v.0 {self.word(w);}}
+            for n in ["PUMP0","PUMP1","PUMP2","PUMP3","PUMP4"] {self.word(u32::from(anim.channels.has(n)));self.float(anim.channels.elapsed(n));self.float(anim.channels.remaining(n));self.word(u32::from(anim.channels.in_transition(n)));}
+        }
     }
 }
 fn load_graph(path:&Path)->Result<graph_runtime::LoadedGraph,String> {let source=StateGraph::load(path).map_err(|e|e.to_string())?;let binding=Binding::from_graph(&source).map_err(|e|e.to_string())?;let runtime=graph_runtime::CompiledGraph::from_binding(&binding).map_err(|e|e.to_string())?;Ok(graph_runtime::LoadedGraph{source,binding,runtime})}
 fn run()->Result<(),String> {
     let args:Vec<_>=std::env::args().collect();let assets=Path::new(&args[1]);let fixtures=Path::new(&args[2]);let data=Collections::load(assets)?;let source=AnimationSource::load(assets)?;
-    let mut bytes=Vec::new();std::io::stdin().read_to_end(&mut bytes).unwrap();let mut input=Input{data:bytes,at:8};let mut out=Output(Vec::new());
+    let mut bytes=Vec::new();std::io::stdin().read_to_end(&mut bytes).unwrap();let extended=bytes.get(7)==Some(&b'2');let mut input=Input{data:bytes,at:8};let mut out=Output(Vec::new(),extended);
     for _ in 0..input.word() {let _=input.string();}let names:Vec<_>=(0..input.word()).map(|_|input.string()).collect();let count=input.word();out.word(count);
     for _ in 0..count {
         let id=input.word();let pro=input.string();let graphs=graph_runtime::StockGraphs{action:load_graph(&fixtures.join(format!("actor-{id}.action.reference")))?,motion:load_graph(&fixtures.join(format!("actor-{id}.motion.reference")))?};
@@ -105,6 +123,7 @@ fn run()->Result<(),String> {
                 5=>{match actor.evaluate_initial_pose() {Ok(h)=>{out.word(1);out.matrices(&h);},Err(e)=>out.status(Err(e))}},
                 6=>{actor.motion.animation.posture.set_profile(input.word());out.status(Ok(()));},
                 7=>{actor.action_controller.end_all_behaviors(&mut actor.action);actor.motion_controller.end_all_behaviors(&mut actor.motion);out.status(Ok(()));},
+                8=>{assert!(extended);input.extra_physical(&mut actor.motion);out.status(Ok(()));},
                 _=>unreachable!(),
             }
             out.snapshot(&actor,&reset,&names);

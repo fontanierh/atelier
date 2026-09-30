@@ -49,6 +49,7 @@ MotionGraphInstance InstanceFor(const MotionGraphOperation& operation)
     using K=MotionGraphOperation::Kind;
     switch (operation.kind)
     {
+    case K::Feedback:return CreateGraphMotionFeedbackInstance(operation.feedback);
     case K::Animation:return MotionAnimationOperationState{};
     case K::IntentFilter:return MotionIntentFilterState{};
     case K::SlideUpdate:return GraphMotionSlidingState{};
@@ -75,8 +76,19 @@ bool ParseMotionGraphOperation(GraphOperationKind source_kind,const GraphAttribu
     const auto number=[&](std::string_view key,std::uint32_t fallback){return Float(a.FloatBits(key,fallback));};
     if (source_kind==GraphOperationKind::Condition)
     {
-        if (!ParseGraphMotionCondition(a,op.condition,error)) return false;
-        op.kind=K::Condition;if (op.condition.kind==GraphMotionCondition::Kind::Unsupported) op.condition.operation_name=op.name;
+        bool recognized=false;
+        if (!ParseGraphMotionSpecialCondition(a,op.special_condition,recognized,error)) return false;
+        if (recognized) op.kind=K::SpecialCondition;
+        else
+        {
+            if (!ParseGraphMotionPhysicalCondition(a,op.physical_condition,recognized,error)) return false;
+            if (recognized) op.kind=K::PhysicalCondition;
+            else
+            {
+                if (!ParseGraphMotionCondition(a,op.condition,error)) return false;
+                op.kind=K::Condition;if (op.condition.kind==GraphMotionCondition::Kind::Unsupported) op.condition.operation_name=op.name;
+            }
+        }
     }
     else if (source_kind==GraphOperationKind::Hook)
     {
@@ -87,9 +99,13 @@ bool ParseMotionGraphOperation(GraphOperationKind source_kind,const GraphAttribu
     }
     else
     {
-        bool animation_recognized=false;
+        bool animation_recognized=false,feedback_recognized=false,score_recognized=false;
         if (!ParseMotionAnimationOperation(a,op.animation,animation_recognized,error)) return false;
+        if (!animation_recognized&&!ParseGraphMotionFeedbackOperation(a,op.feedback,feedback_recognized,error)) return false;
+        if (!animation_recognized&&!feedback_recognized&&!ParseGraphMotionScoreOperation(a,op.score,score_recognized,error)) return false;
         if (animation_recognized) op.kind=K::Animation;
+        else if (feedback_recognized) op.kind=K::Feedback;
+        else if (score_recognized) op.kind=K::Score;
         else if (name=="AttachIntent") {op.kind=K::Attach;op.attach=AttachIntentOperation::Parse(a);}
         else if (name=="FilterMotionGraphIntent") {op.kind=K::IntentFilter;op.filter=MotionIntentFilterOperation::Parse(a);}
         else if (name=="PrintText2D") op.kind=K::PrintText;
@@ -151,6 +167,8 @@ bool MotionGraphHost::FromGraph(const Graph& source,const GraphBinding& binding,
         parsed.push_back(std::move(out));
     }
     GraphMotionSlidingSettings sliding;if (!sliding.Load(data,error)) return false;sliding_settings=sliding;
+    GraphMotionFeedbackSettings feedback;if (!LoadGraphMotionFeedbackSettings(data,feedback,error)) return false;feedback_settings=feedback;
+    MotionGraphPrelandingConditionSettings prelanding;if (!prelanding.Load(data,error)) return false;prelanding_condition_settings=prelanding;
     operations=std::move(parsed);capabilities=std::move(report);remap_=compiled.operations;
     parents_.clear();for (const auto& state:binding.states) parents_.push_back(state.parent);
     automatic_fakie_conditions_.assign(binding.operations.size(),false);
@@ -164,6 +182,9 @@ bool MotionGraphHost::FromGraph(const Graph& source,const GraphBinding& binding,
     instances.clear();for (auto operation:remap_.behaviors) instances.push_back(InstanceFor(operations[operation]));
     next_instance_=1;condition_random=MotionConditionRandom{};physical={};flags={};trick_requests={};riding={};push_state=MotionGraphPushState{};
     slide_latch={};is_power_sliding=false;applying_body_tilt=false;hold_fakie=false;busy_hands={};keep_shove_channels=false;animation_phase=0;
+    feedback_owner={};score_packet={};moving_objects={};trick_height_settings={true,true};
+    turning_physical.reset();crouching_physical.reset();body_tilt_physical.reset();fakie_physical.reset();pumping_acceleration.reset();deck_yaw_pitch.reset();
+    riding_condition_inputs.reset();grind_condition_inputs.reset();landing_inputs.reset();wipeout_condition_inputs.reset();prelanding_inputs.reset();
     action_controls={};action_intents.Clear();turning_output={};state_requests.clear();time_tags.reset();errors.clear();diagnostics_overflowed=false;
     ground_projected_speed.reset();deck_velocity.reset();reckoning_z.reset();reckoning_ground.reset();error.clear();return true;
 }
@@ -186,8 +207,16 @@ std::uint32_t MotionGraphHost::ConditionActivation(graph::Id condition,const gra
 {
     if (condition>=remap_.conditions.size() || remap_.conditions[condition]>=operations.size()) {AddError("Unbound MotionGraph condition");return 0;}
     const auto id=remap_.conditions[condition];if (hold_fakie && automatic_fakie_conditions_[id]) return 0;
-    const auto& operation=operations[id];if (operation.kind!=MotionGraphOperation::Kind::Condition) {AddError("Unsupported MotionGraph condition "+operation.name);return 0;}
-    bool result;std::string error;if (!operation.condition.Evaluate(ConditionContext(),frame,result,error)) {AddError(std::move(error));return 0;}return result;
+    const auto& operation=operations[id];bool result=false;std::string error;bool success=false;
+    if (operation.kind==MotionGraphOperation::Kind::PhysicalCondition) success=operation.physical_condition.Evaluate({animation,physical,riding_condition_inputs},result,error);
+    else if (operation.kind==MotionGraphOperation::Kind::SpecialCondition)
+    {
+        if (!prelanding_condition_settings) {AddError("MotionGraph special conditions require loaded settings");return 0;}
+        success=operation.special_condition.Evaluate({grind_condition_inputs,landing_inputs,wipeout_condition_inputs,prelanding_inputs,*prelanding_condition_settings},result,error);
+    }
+    else if (operation.kind==MotionGraphOperation::Kind::Condition) success=operation.condition.Evaluate(ConditionContext(),frame,result,error);
+    else {AddError("Unsupported MotionGraph condition "+operation.name);return 0;}
+    if (!success) {AddError(std::move(error));return 0;}return result;
 }
 std::uint32_t MotionGraphHost::Allocate(graph::Id behavior,const graph::Frame&)
 {
@@ -216,6 +245,18 @@ bool MotionGraphHost::Execute(graph::Id behavior,const MotionGraphOperation& op,
     const auto set=[&](AttributeName name,float value){animation.SetAttribute({name,value,false,-1});};
     switch (op.kind)
     {
+    case K::Feedback:
+    {
+        auto* state=std::get_if<GraphMotionFeedbackInstance>(&instance);if (!state) {error="Physical feedback instance was not allocated";return false;}
+        if (!feedback_settings) {error="Physical feedback requires original settings";return false;}
+        GraphMotionFeedbackContext context{animation,feedback_owner,slide_latch,*feedback_settings};
+        context.turning=turning_physical?&*turning_physical:nullptr;context.crouching=crouching_physical?&*crouching_physical:nullptr;
+        context.body_tilt=body_tilt_physical?&*body_tilt_physical:nullptr;context.fakie=fakie_physical?&*fakie_physical:nullptr;
+        context.pumping_acceleration=pumping_acceleration?&*pumping_acceleration:nullptr;context.deck_yaw_pitch=deck_yaw_pitch?&*deck_yaw_pitch:nullptr;
+        context.mirrored=playback_context.is_mirrored;context.doing_trick=flags.doing_trick;context.is_power_sliding=is_power_sliding;context.applying_body_tilt=applying_body_tilt;
+        return ExecuteGraphMotionFeedbackOperation(op.feedback,*state,phase,frame,context,error);
+    }
+    case K::Score:return op.score.Execute({animation,condition_random,score_packet,moving_objects,playback_context,trick_height_settings},phase,error);
     case K::Unsupported:error="Unsupported MotionGraph Behavior "+op.name;return false;
     case K::Unported:error="Unported C++ MotionGraph behavior "+op.name;return false;
     case K::SourceMissingProducer:error="MotionGraph stock gameplay producer "+op.name+" is not implemented";return false;
@@ -271,7 +312,7 @@ bool MotionGraphHost::Execute(graph::Id behavior,const MotionGraphOperation& op,
         }break;
     case K::ForcePhysics:if (phase==0) riding.force_mode=op.ordinal;break;
     case K::SetSpeed:
-        if (phase==1) {if (!op.optional_value && !ground_projected_speed) {error="SetSpeed requires actual ground-projected speed";return false;}set(op.attribute,std::abs(op.optional_value?*op.optional_value:*ground_projected_speed));}break;
+        if (phase==1) {if (!op.optional_value && !crouching_physical) {error="SetSpeed requires actual ground-projected speed";return false;}set(op.attribute,std::abs(op.optional_value?*op.optional_value:crouching_physical->body_164));}break;
     case K::ApplyingBodyTilt:if (phase==0) applying_body_tilt=true;else if (phase==2) applying_body_tilt=false;break;
     case K::ResetAnimation:case K::ResetGivenStance:
         if (phase==0)

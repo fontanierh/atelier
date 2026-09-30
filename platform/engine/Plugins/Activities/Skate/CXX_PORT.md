@@ -373,6 +373,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   ordering, caches, pose/hierarchy evaluation, stance/checkpoints, selective resets and physics packets.
   The corpus observes 1,023 distinct poses and 24 matching missing-speed errors. Complete authored
   gameplay graphs and board/rider producer scheduling remain outside this supported-fixture boundary.
+- Connected animation with physical feedback: 12 supported graph pairs and 3,240 operations preserve
+  31,140,715 exact bytes through real action/motion controllers, registered feedback/physical/special
+  predicates and score operations, parameters, channels, poses, selective resets and physics packets.
+  The corpus observes actual completed records, retained score/registry/pump owners and changing trick
+  heights. The previous host, scheduler and feedback-operation corpora retain their exact output hashes.
+  Completed physical publications are supplied here; their producers and whole-session timing remain
+  separate integration steps.
 - Riding animation and physical feedback calculations: 594 cases, 15,874 steps and 660,004 exact bytes
   cover persistent crouching/auto-pump, body tilt, fakie, pump channels, ground acceleration/bump and
   turn conditioning, plus 358 loaded settings words. Graph registration and full-session physical

@@ -4,6 +4,10 @@
 #include "GraphIntentOperations.h"
 #include "GraphMotionConditions.h"
 #include "GraphMotionSliding.h"
+#include "GraphMotionPhysicalConditions.h"
+#include "GraphMotionSpecialConditions.h"
+#include "GraphMotionFeedbackOperations.h"
+#include "GraphMotionScoreOperations.h"
 #include "MotionAnimationOperations.h"
 #include <variant>
 
@@ -13,7 +17,7 @@ struct MotionGraphOperation
 {
     enum class Kind
     {
-        Unsupported,Unported,SourceMissingProducer,Condition,Animation,Attach,IntentFilter,PrintText,
+        Unsupported,Unported,SourceMissingProducer,Condition,PhysicalCondition,SpecialCondition,Feedback,Score,Animation,Attach,IntentFilter,PrintText,
         GrabType,Dark,MonitorUnderflip,Anticipating,Landing,Manualing,DoingTrick,DisableTricks,
         ManualOutTimer,SetManualOutTimer,TimeSinceTeleport,TimeSinceKickturn,ResetKickturn,
         DistComToBoard,ForcePhysics,SetSpeed,ApplyingBodyTilt,ResetAnimation,ResetGivenStance,
@@ -25,6 +29,10 @@ struct MotionGraphOperation
     GraphOperationKind source_kind=GraphOperationKind::Behavior;
     std::string name,text;
     GraphMotionCondition condition;
+    GraphMotionPhysicalCondition physical_condition;
+    GraphMotionSpecialCondition special_condition;
+    GraphMotionFeedbackOperation feedback;
+    GraphMotionScoreOperation score;
     MotionAnimationOperation animation;
     AttachIntentOperation attach;
     MotionIntentFilterOperation filter;
@@ -38,7 +46,8 @@ struct MotionGraphOperation
 struct MotionGraphLandingInstance {float value=0;bool complete=false;};
 struct MotionGraphJumpInstance {bool first_update=true;};
 using MotionGraphInstance=std::variant<std::monostate,MotionIntentFilterState,GraphMotionSlidingState,
-    float,std::int32_t,MotionGraphLandingInstance,MotionGraphJumpInstance,MotionAnimationOperationState>;
+    float,std::int32_t,MotionGraphLandingInstance,MotionGraphJumpInstance,MotionAnimationOperationState,
+    GraphMotionFeedbackInstance>;
 struct MotionGraphCapabilities
 {
     std::size_t supported=0;
@@ -67,6 +76,23 @@ public:
     bool keep_shove_channels=false;
     float animation_phase=0;
     std::optional<GraphMotionSlidingSettings> sliding_settings;
+    std::optional<GraphMotionFeedbackSettings> feedback_settings;
+    GraphMotionFeedbackOwner feedback_owner;
+    MotionGraphScorePacket score_packet;
+    MotionGraphMovingObjectRegistry moving_objects;
+    std::pair<bool,bool> trick_height_settings{true,true};
+    std::optional<SetTurningPhysical> turning_physical;
+    std::optional<AnimationCrouchingPhysical> crouching_physical;
+    std::optional<AnimationBodyTiltPhysical> body_tilt_physical;
+    std::optional<AnimationFakiePhysical> fakie_physical;
+    std::optional<float> pumping_acceleration;
+    std::optional<std::array<float,2>> deck_yaw_pitch;
+    std::optional<MotionGraphRidingConditionInputs> riding_condition_inputs;
+    std::optional<MotionGraphGrindConditionInputs> grind_condition_inputs;
+    std::optional<MotionGraphLandingInputs> landing_inputs;
+    std::optional<MotionGraphWipeoutConditionInputs> wipeout_condition_inputs;
+    std::optional<MotionGraphPrelandingInputs> prelanding_inputs;
+    std::optional<MotionGraphPrelandingConditionSettings> prelanding_condition_settings;
     // Required only by slide operations. Each is a completed physical field.
     std::optional<float> ground_projected_speed;
     std::optional<Vec4> deck_velocity,reckoning_z;

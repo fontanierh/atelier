@@ -2,13 +2,10 @@
 #pragma once
 #include "InputIntentions.h"
 #include "Settings.h"
+#include "AnimationPhysical.h"
 
 namespace atelier::skate
 {
-struct AnimationCrouchingPhysical;
-struct AnimationBodyTiltPhysical;
-struct AnimationFakiePhysical;
-struct AnimationPhysicalFeedback;
 struct AnimationAutoPumpSettings
 {
     PointGraph<4> maximum_crouch;
