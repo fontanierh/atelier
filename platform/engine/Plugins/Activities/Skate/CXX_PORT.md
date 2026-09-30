@@ -77,15 +77,19 @@ their physical inputs still require porting; matching generic execution alone do
 `NativeMath.*` and `Geometry.*` preserve scalar estimates, recovered trigonometric polynomials,
 quaternion/matrix operations, point graphs, camera Bezier samples, closest triangle points and thin
 triangle queries. Explicit nonfinite paths preserve the frozen compiler's operand ordering, including
-NaN signs and payloads; the comparator does not canonicalize these results. Rounded sweeps, world
-acceleration structures and contact generation remain separate work.
+NaN signs and payloads; the comparator does not canonicalize these results. `GeometrySweep.*` adds
+the rounded-triangle dispatcher, sphere/cylinder roots and bounded feature walk. Misses retain the same
+payload fields and partial updates as the reference. World acceleration structures and contact
+generation remain separate work.
 
 `RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
 inertia, point forces, drag, caps and cooldowns. Opaque lanes survive packed updates and reaction words
 are cleared in the original order. `BodyMass.*` preserves primitive sphere/capsule/rounded-box/cylinder
 moments and volume. `ConstraintSolver.*` runs compiled contact, joint and drive records in shared
 iteration order, preserving position/velocity reaction separation and carried lanes. It validates every
-reaction index before any mutation, including zero-iteration calls. Contact generation, constraint
+reaction index before any mutation, including zero-iteration calls. `ContactBuild.*` preserves contact
+arm/inertia preparation, active-body gates, mass response and restitution targets. It publishes a
+compiled record only after the mass-response callback succeeds. Contact generation, joint/drive
 builders, aggregate construction and scheduling remain open.
 
 `Input.*`, `InputIntentions.*`, `AnimationName.*` and `Intents.*` preserve pad history, Xbox conversion,
@@ -168,11 +172,19 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Shared math and initial geometry: 34,309 cases and 525,369 exact output words (2,101,476 bytes),
   including scalar/vector/quaternion/matrix/SQT arithmetic, point graphs, Bezier sampling, all seven
   closest-triangle regions and 1,103 thin-triangle hits. The corpus includes finite boundaries, signed
-  zeros, infinities and NaN payloads; rounded-triangle sweeps remain a separate check.
+  zeros, infinities and NaN payloads.
+- Rounded-triangle dispatcher: 17,156 cases and 205,872 exact words, including 4,121 hits and 13,035
+  misses. Every miss retains position/volume payloads; 12,054 also exercise the original normal/fraction
+  rewrites. Coverage includes faces/edges/vertices, both windings, degenerate geometry, overlap/tangency,
+  radius/fatness boundaries and opaque incoming output records.
 - Shared constraint solver: 7,967 cases and 3,682,300 exact words (14,729,200 bytes), including mixed
   contact/joint/drive iterations over shared reactions, friction and limit boundaries, reversed body
   indices, softness/carry preservation and invalid indices rejected before mutation. An independently
   reviewed operand-order correction preserves the original signed-zero contact carry behavior.
+- Contact construction: 11,264 cases and 1,464,320 exact words (5,857,280 bytes), including every exposed
+  preparation field and compiled row, active/inactive bodies, 3,072 default reciprocal responses,
+  4,096 injected responses and 4,096 callback failures that preserve the original input record. Default
+  reciprocal cases stay in the original builder's documented finite-input/intermediate domain.
 - Controller input and intents: 58,508 commands and 31,515,955 exact output bytes, covering encoded byte
   names/aliases, Xbox packets, pad history, retained raw/derived fields, ordered producer callbacks,
   filter state and slide latches. This is core subsystem coverage, not full host scheduling.
