@@ -1,6 +1,6 @@
 # Fox motion lab
 
-A local UniMate experiment on Yorimichi's fox hunter, with a Python inference runner and a browser playground.
+A local UniMate/Kimodo experiment on Yorimichi's fox hunter, with Python inference runners and a browser playground.
 The [experiment write-up](../docs/UNIMATE_EXPERIMENT.md) records what worked, the conditioning fix, measurements,
 and the current quality limits.
 
@@ -9,6 +9,67 @@ alongside shared [retargeting helpers](../../../platform/web/motion/README.md). 
 sprint policy, server, and UI stay here. Weights and generated artifacts go in ignored `build/yorimichi/unimate/`.
 No gameplay animation is replaced automatically. Quality varies: the prompt-only backflip worked well in user review;
 many other takes were poor, and the guided sprint was essentially the Run we already had.
+
+The [Kimodo experiment](../docs/KIMODO_EXPERIMENT.md) starts with a successful independent backflip. Its reusable
+runner lives in [`atelier.ai.kimodo`](../../../platform/studio/atelier/ai/kimodo/README.md). Use the
+[headless recipe below](#kimodo-headless-backflip) for generation without a browser; each backend has its own build
+directory and lab port. The sections after that recipe describe the original UniMate workflow.
+
+## Kimodo headless backflip
+
+From the repository root, with Git, `uv`, Node/npm and Blender on PATH:
+
+```sh
+uv sync
+uv run python games/yorimichi/animation_lab/setup.py --generator kimodo
+uv run python -m atelier.safety.guarded --no-lock \
+  --report build/yorimichi/kimodo/headless-health --timeout 1200 \
+  --purpose 'local headless Kimodo generation' -- \
+  build/yorimichi/kimodo/venv/bin/python games/yorimichi/animation_lab/kimodo_generate.py \
+  --prompt 'A person does a backflip.' --seed 99 --steps 100 --guidance 2 --duration 3
+```
+
+This writes a new `results/<id>/` containing `source-motion.npz` (raw SOMA output), `motion.json` (fox body motion),
+`job.json` and `provenance.json`. No HTTP server or browser is involved. The platform runner can also generate
+SOMA output directly for other targets; the fox's anatomical map stays in [`kimodo_engine.py`](kimodo_engine.py).
+
+Setup downloads about 17 GB of pinned weights. The tested macOS ARM runtime streams the 8B LLM2Vec encoder in
+fp32 on MPS and samples diffusion on CPU, within the unchanged 10 GiB memory guard. A prompt embedding is reused
+on later runs. The base weights use the public NousResearch Llama 3 distribution with the two released McGill
+adapters; the Llama licence still applies. Upstream MotionCorrection's x86 SIMD build fails here, so native
+foot-skate cleanup is disabled and recorded as `post_processing: false`. Check contacts before using a take.
+
+For the playground, run:
+
+```sh
+uv run python -m atelier.safety.guarded --no-lock \
+  --report build/yorimichi/kimodo/server-health --timeout 0 \
+  --purpose 'local Kimodo motion lab' -- \
+  build/yorimichi/kimodo/venv/bin/python games/yorimichi/animation_lab/server.py --generator kimodo
+```
+
+Open **http://127.0.0.1:8843/**. **Create new motion** lists independent Kimodo takes and accepts custom prompts,
+seeds, durations, guidance and steps. **Compare originals** groups Kimodo counterparts with authored clips.
+Comparison clips are visual references, with no authored gait constraint. Badges and export labels explicitly
+name Kimodo; UniMate stays at port 8842. Playback, phase matching, pose/GIF capture and skinned GLB export work
+the same way. Run the CLI and server one at a time to avoid loading two model instances.
+
+The HTTP API below also works at port 8843, with `steps: 100`, `duration: 3` and `guided_sprint: false`.
+Kimodo accepts 8–250 steps and 1–10 seconds at 30 fps. Rebuild its frontend with:
+
+```sh
+games/yorimichi/animation_lab/node_modules/.bin/esbuild games/yorimichi/animation_lab/app.js \
+  --bundle --format=esm --minify --outfile=build/yorimichi/kimodo/web/app.js
+```
+
+After generating a take, check source FK and every rendered fox body joint:
+
+```sh
+build/yorimichi/kimodo/venv/bin/python games/yorimichi/animation_lab/verify_kimodo.py
+build/yorimichi/kimodo/venv/bin/python -m unittest discover -s platform/studio/tests -p 'test_kimodo.py'
+```
+
+The selected backflip and its limits are documented in the [experiment write-up](../docs/KIMODO_EXPERIMENT.md).
 
 ## Setup and run
 
@@ -165,7 +226,7 @@ build/yorimichi/unimate/venv/bin/python games/yorimichi/animation_lab/verify.py
 .venv/bin/atelier lint
 ```
 
-The eight game tests and five shared Python tests run without inference. The two shared JavaScript tests use a
+The nine game tests and five shared UniMate Python tests run without inference. The two shared JavaScript tests use a
 synthetic skin with arbitrary bone names and explicit axes/rest transforms. `verify.py` needs at least one saved
 generated take; it compares the viewer retargeter to FK at every frame and checks hybrid gait preservation and
 loop closure. See the

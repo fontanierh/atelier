@@ -172,6 +172,23 @@ open **http://127.0.0.1:8842/** once started. The reusable
 [retargeting helpers](platform/web/motion/README.md) live in the platform; fox assets, policies, and UI stay with
 Yorimichi. No API key is needed, and generated output goes under `build/yorimichi/unimate/`.
 
+[Kimodo](https://research.nvidia.com/labs/sil/projects/kimodo/) now runs **headlessly on the same fox**. Its first
+backflip completes a backward rotation and recovers to standing; the fairly straight airborne legs and landing
+contacts still need polish. This is one promising take, with broader action quality still to be tested.
+
+<p align="center">
+  <img src="docs/media/kimodo-backflip.gif" width="640" alt="The owned fox performs a locally generated Kimodo backflip and returns to standing">
+  <br><sub><b>Headless Kimodo backflip.</b> “A person does a backflip.” · seed 99 · guidance [2, 2] · 100 steps.
+  Three seconds at normal speed, no authored constraint; the GIF repeats the full take.</sub>
+</p>
+
+The [Kimodo write-up](games/yorimichi/docs/KIMODO_EXPERIMENT.md) records the result and runtime limits.
+The [headless command and playground guide](games/yorimichi/animation_lab/README.md#kimodo-headless-backflip)
+includes custom prompts; its separate lab runs at **http://127.0.0.1:8843/**. The reusable
+[Kimodo runner](platform/studio/atelier/ai/kimodo/README.md) streams the 8B text encoder within the existing memory
+guard, then samples the SOMA motion and transfers it to the fox. Weights and takes stay in
+`build/yorimichi/kimodo/`; the browser is for inspection and export, not inference.
+
 ## A prop from a sentence, straight into the running game
 
 Type what you want; a couple of minutes later it stands in the world, while the game is running. No editor, no
@@ -248,7 +265,7 @@ Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, skate rider, sailboat stance), effects, skateboarding, streaming, the live bridge |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
-| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate experiments, original/counterpart comparisons, custom prompts, GLB/GIF export; shared platform runner |
+| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate/Kimodo experiments, headless generation, original/counterpart comparisons, custom prompts, GLB/GIF export; shared platform runners |
 | Games | [games/yorimichi](games/yorimichi), [games/sandbox](games/sandbox) | a full game, and the smallest one (the template for `atelier new`) |
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts fit and the rules that keep the platform reusable.

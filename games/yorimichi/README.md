@@ -37,12 +37,13 @@ it in Unreal's first shader compile.
 | `scenarios/` | tests and films driven through the live bridge |
 | `streaming/` | phone play over Pixel Streaming (to be split into streaming and touch controls) |
 | `tools/` | desktop profile launcher, benchmark, fight film |
-| [`animation_lab/`](animation_lab/README.md) | fox comparison/creation playground using the shared UniMate runner; setup, prompts, GLB/GIF export |
+| [`animation_lab/`](animation_lab/README.md) | fox comparison/creation playground using shared UniMate and Kimodo runners; headless generation, prompts, GLB/GIF export |
 | `docs/` | how the game works: skate, combat, fox hunter, animation principles, world map, sound, lore |
 
 The [UniMate experiment write-up](docs/UNIMATE_EXPERIMENT.md) records the successful prompt-only backflip, poor sprint
 results, platform extraction, measurements, and limits. The lab is an authoring experiment and does not replace
-the game's animation library.
+the game's animation library. The [Kimodo experiment](docs/KIMODO_EXPERIMENT.md) adds a locally generated backflip,
+a headless command, and a separately labelled playground using the same fox skin.
 
 ## Names still to settle
 

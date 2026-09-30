@@ -8,6 +8,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 
 const $ = (id) => document.getElementById(id);
+let generator = "UniMate";
 let results = [],
   presets = [],
   authored = [],
@@ -223,7 +224,7 @@ function makeCard(item) {
   const copies = results.filter((r) => r.reference_clip === item.id).length;
   const subtitle = item.authored
     ? `ORIGINAL · ${copies} counterpart${copies === 1 ? "" : "s"}`
-    : `UNIMATE ONLY · SEED ${item.seed}`;
+    : `${(item.generator || generator).toUpperCase()} ONLY · SEED ${item.seed}`;
   button.innerHTML = `<span class="clip-icon">${icons[item.category] || "◇"}</span><span><strong>${escape(item.title)}</strong><small>${subtitle}</small><small>${(item.clip?.duration || (item.frames - 1) / (item.fps || 30)).toFixed(2)}s${!item.authored && !item.conditioning_version ? " · earlier conditioning" : ""}</small></span><span class="arrow">↗</span>`;
   button.addEventListener("click", () =>
     (item.authored ? selectOriginal(item) : selectClip(item)).catch((e) =>
@@ -295,7 +296,7 @@ function updateMode() {
     b.setAttribute("aria-pressed", String(selected));
   });
   $("library-title").textContent =
-    mode === "compare" ? "Original animations" : "UniMate-only motions";
+    mode === "compare" ? "Original animations" : `${generator}-only motions`;
   $("library-help").textContent =
     mode === "compare"
       ? "Pick an original. Its counterparts stay grouped with it."
@@ -309,10 +310,10 @@ function updateMode() {
   $("prompt-help").textContent =
     mode === "create"
       ? "Describe a new motion. It will be saved independently in this library."
-      : reference?.id === "Fox_Run"
+      : generator === "UniMate" && reference?.id === "Fox_Run"
         ? "Reference: Forward sprint. Keep its gait, or uncheck the option for prompt-only generation."
         : `Reference: ${reference?.title || "—"}. Generate a prompt-only counterpart for side-by-side review.`;
-  $("guided-field").hidden = mode !== "compare" || reference?.id !== "Fox_Run";
+  $("guided-field").hidden = generator !== "UniMate" || mode !== "compare" || reference?.id !== "Fox_Run";
   setBusy(busy);
   renderLibrary();
 }
@@ -341,10 +342,10 @@ async function selectOriginal(item, preferred) {
   if (!take) {
     $("prompt").value = item.prompt;
     $("guidance").value = 2;
-    $("steps").value = 32;
+    $("steps").value = generator === "Kimodo" ? 100 : 32;
     updateOutputs();
   }
-  $("guided-sprint").checked = take ? !!take.guided : item.id === "Fox_Run";
+  $("guided-sprint").checked = generator === "UniMate" && (take ? !!take.guided : item.id === "Fox_Run");
   updateMode();
 }
 $("variant").onchange = () => {
@@ -386,7 +387,7 @@ document.querySelectorAll("[data-mode]").forEach(
           model.visible = false;
           comparison.visible = false;
           $("clip-title").textContent = "Your next motion";
-          $("clip-source").textContent = "UNIMATE ONLY";
+          $("clip-source").textContent = `${generator.toUpperCase()} ONLY`;
           $("export").disabled = true;
         }
         updateMode();
@@ -414,10 +415,10 @@ async function selectClip(item) {
   $("clip-title").textContent =
     mode === "compare" ? reference.title : item.title;
   $("clip-source").textContent =
-    mode === "compare" ? "ORIGINAL ↔ UNIMATE" : "UNIMATE ONLY / NEW MOTION";
+    mode === "compare" ? `ORIGINAL ↔ ${generator.toUpperCase()}` : `${generator.toUpperCase()} ONLY / NEW MOTION`;
   $("stage-label").textContent = item.authored
     ? "Fox hunter / authored baseline"
-    : "Fox hunter / in-place UniMate preview";
+    : `Fox hunter / in-place ${generator} preview`;
   $("frames").textContent = item.frames || 60;
   $("clip-seed").textContent = item.seed;
   $("duration").textContent = `${clip.duration.toFixed(2)}s`;
@@ -436,13 +437,14 @@ async function selectClip(item) {
     ? `HYBRID: authored gait + UniMate arm variation${variation ? ` (up to ${variation.toFixed(1)}°)` : ""}. `
     : "PROMPT ONLY: generated motion. ";
   $("review-note").textContent = item.authored
-    ? "The original is ready. Generate its first UniMate counterpart."
-    : `${kind}${item.prompt} · ${item.seconds}s inference.${!item.conditioning_version ? " Earlier conditioning; generate again with the corrected vocabulary." : ""}`;
+    ? `The original is ready. Generate its first ${generator} counterpart.`
+    : `${kind}${item.prompt} · ${item.seconds}s inference.${generator === "UniMate" && !item.conditioning_version ? " Earlier conditioning; generate again with the corrected vocabulary." : ""}`;
   if (!item.authored) {
     $("prompt").value = item.prompt;
     $("seed").value = item.seed;
     $("guidance").value = item.guidance;
     $("steps").value = item.steps;
+    if (generator === "Kimodo") $("motion-duration").value = item.frames / item.fps;
     updateOutputs();
   }
   renderLibrary();
@@ -476,13 +478,13 @@ function setComparison() {
     ? "NO COUNTERPART"
     : current?.guided
       ? "HYBRID · AUTHORED GAIT + UNIMATE ARMS"
-      : "UNIMATE · PROMPT ONLY";
+      : `${generator.toUpperCase()} · PROMPT ONLY`;
   $("stage-label-wrap").hidden = mode === "compare";
   $("export").disabled = !current || (current.authored && view !== "original");
   $("export").textContent =
     mode === "compare" && view === "original"
       ? "↓ Export original"
-      : "↓ Export UniMate";
+      : `↓ Export ${generator}`;
   updateSkeletons();
 }
 function updateSkeletons() {
@@ -555,9 +557,10 @@ function setBusy(value) {
     reference?.id === "Fox_Run" &&
     $("guided-sprint").checked
       ? "0.6-second loop"
-      : "2 seconds";
+      : generator === "Kimodo" ? `${$("motion-duration").value} seconds` : "2 seconds";
 }
 async function generate(params) {
+  if (generator === "Kimodo") params.duration = Number($("motion-duration").value);
   setBusy(true);
   $("job-status").textContent = "Encoding prompt…";
   $("job-progress").hidden = false;
@@ -636,6 +639,7 @@ $("prompt-form").onsubmit = (e) => {
     category: mode === "compare" ? reference.category : "Custom",
     reference_clip: mode === "compare" ? reference.id : null,
     guided_sprint:
+      generator === "UniMate" &&
       mode === "compare" &&
       reference.id === "Fox_Run" &&
       $("guided-sprint").checked,
@@ -694,11 +698,11 @@ function capturePose(item, width = renderer.domElement.width) {
           ? "NO COUNTERPART"
           : item.guided
             ? "HYBRID · ORIGINAL GAIT + UNIMATE ARMS"
-            : "UNIMATE · PROMPT ONLY",
+            : `${generator.toUpperCase()} · PROMPT ONLY`,
         view === "both" ? 0.75 : 0.5,
         "#d2e59c",
       );
-  } else drawLabel("UNIMATE ONLY · " + item.title, 0.5, "#d2e59c");
+  } else drawLabel(generator.toUpperCase() + " ONLY · " + item.title, 0.5, "#d2e59c");
   return canvas;
 }
 $("snapshot").onclick = () => {
@@ -854,7 +858,7 @@ async function status() {
     engineReady = s.status === "ready";
     $("model-status").classList.toggle("error", s.status === "error");
     $("model-status").innerHTML =
-      `<i></i>${s.status === "ready" ? `UniMate ready · ${escape(s.device.toUpperCase())}` : s.status === "error" ? "Model unavailable" : "Loading model"}`;
+      `<i></i>${s.status === "ready" ? `${generator} ready · ${escape(s.device.toUpperCase())}` : s.status === "error" ? "Model unavailable" : "Loading model"}`;
     if (!busy) {
       setBusy(false);
       $("job-status").textContent =
@@ -877,6 +881,17 @@ try {
   results = library.results;
   presets = library.presets;
   originalMetadata = library.originals;
+  generator = library.generator || "UniMate";
+  $("model-link").textContent = `Powered by ${generator} ↗`;
+  $("model-link").href = generator === "Kimodo" ? "https://research.nvidia.com/labs/sil/projects/kimodo/" : "https://github.com/Friedrich-M/UniMate";
+  $("duration-field").hidden = generator !== "Kimodo";
+  if (generator === "Kimodo") {
+    $("steps").max = 250; $("steps").min = 10; $("steps").step = 10; $("steps").value = 100;
+    $("guidance").value = 2;
+    $("model-provenance").textContent = "Kimodo SOMA RP v1.1. Headless local diffusion with cached, layer-streamed LLM2Vec text encoding in full precision. SOMA body motion retargets to the fox. No authored clip constraints; fingers retain the rest pose. Native foot-skate cleanup is disabled.";
+  }
+  $("motion-duration").oninput = () => setBusy(busy);
+  updateOutputs();
   renderRecipes();
   renderLibrary();
   await loadModel();

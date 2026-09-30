@@ -1,4 +1,4 @@
-"""Loopback animation playground: persistent UniMate model, serial jobs, owned assets only."""
+"""Loopback animation playground: persistent local models, serial jobs, owned assets only."""
 import argparse
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -55,19 +55,20 @@ PRESETS = [
 ]
 
 
-def validate_request(data):
+def validate_request(data, generator='unimate'):
     if not isinstance(data, dict):
         raise ValueError('Expected a JSON object')
     prompt = data.get('prompt')
     if not isinstance(prompt, str) or not 3 <= len(prompt.strip()) <= 1000:
         raise ValueError('Enter a prompt between 3 and 1000 characters')
     seed = data.get('seed', 42)
-    steps = data.get('steps', 32)
+    steps = data.get('steps', 100 if generator == 'kimodo' else 32)
     guidance = data.get('guidance', 3.)
     if type(seed) is not int or not 0 <= seed <= 2147483647:
         raise ValueError('Seed must be an integer from 0 to 2147483647')
-    if type(steps) is not int or not 8 <= steps <= 64:
-        raise ValueError('Steps must be an integer from 8 to 64')
+    maximum_steps = 250 if generator == 'kimodo' else 64
+    if type(steps) is not int or not 8 <= steps <= maximum_steps:
+        raise ValueError(f'Steps must be an integer from 8 to {maximum_steps}')
     if type(guidance) not in (int, float) or not 1.01 <= guidance <= 8:
         raise ValueError('Guidance must be between 1.01 and 8')
     reference = data.get('reference_clip')
@@ -76,23 +77,33 @@ def validate_request(data):
     guided = data.get('guided_sprint', False)
     if type(guided) is not bool or (guided and reference != 'Fox_Run'):
         raise ValueError('Guided sprint requires the Fox_Run reference')
-    return {'prompt': prompt.strip(), 'seed': seed, 'steps': steps, 'guidance': float(guidance),
-            'reference_clip': reference, 'guided_sprint': guided}
+    params = {'prompt': prompt.strip(), 'seed': seed, 'steps': steps, 'guidance': float(guidance),
+              'reference_clip': reference, 'guided_sprint': guided}
+    if generator == 'kimodo':
+        if guided:
+            raise ValueError('Kimodo uses prompt-only generation on SOMA')
+        duration = data.get('duration', 3)
+        if type(duration) not in (int, float) or not 1 <= duration <= 10:
+            raise ValueError('Duration must be between 1 and 10 seconds')
+        params['frames'] = round(duration * 30)
+    return params
 
 
 class Lab:
-    def __init__(self, root, device='mps', warm=True):
+    def __init__(self, root, device='mps', warm=True, generator='unimate'):
         self.root = Path(root).resolve()
+        self.generator = generator
+        self.generator_name = 'Kimodo' if generator == 'kimodo' else 'UniMate'
         (self.root / 'results').mkdir(parents=True, exist_ok=True)
         self.engine = None
         self.lock = threading.Lock()
-        self.state = {'status': 'loading', 'message': 'Loading UniMate and the fox rig…', 'device': device}
+        self.state = {'status': 'loading', 'message': f'Loading {self.generator_name} and the fox rig…', 'device': device}
         self.active = None
         self.jobs = {}
         for path in (self.root / 'results').glob('*/job.json'):
             try:
                 job = json.loads(path.read_text())
-                if job['status'] == 'complete':
+                if job['status'] == 'complete' and job.get('generator', 'UniMate') == self.generator_name:
                     # Organize the first experiment's known comparison targets.
                     # New jobs record an explicit choice, including None for a
                     # standalone generation; never infer over that choice.
@@ -106,17 +117,21 @@ class Lab:
 
     def load(self, device):
         try:
-            from engine import Engine
+            if self.generator == 'kimodo':
+                from kimodo_engine import Engine
+            else:
+                from engine import Engine
             self.engine = Engine(self.root, device)
-            self.state = {'status': 'ready', 'message': 'UniMate ready', 'device': self.engine.device,
-                          'model': 'UniMate f60 v2 · EMA 100000', 'frames': 60,
+            self.state = {'status': 'ready', 'message': f'{self.generator_name} ready', 'device': self.engine.device,
+                          'model': 'Kimodo SOMA RP v1.1' if self.generator == 'kimodo' else 'UniMate f60 v2 · EMA 100000',
+                          'frames': 90 if self.generator == 'kimodo' else 60,
                           'rig': self.engine.rig['conditioning_bones'], 'skin_bones': self.engine.rig['skin_bones']}
         except Exception as exc:
             self.state = {'status': 'error', 'message': 'Model could not load. Check the server log and run setup.py.', 'device': device}
             print(f'Model load failed: {exc}', flush=True)
 
     def create(self, data):
-        params = validate_request(data)
+        params = validate_request(data, self.generator)
         with self.lock:
             if self.state['status'] != 'ready':
                 raise RuntimeError(self.state['message'])
@@ -126,7 +141,7 @@ class Lab:
             job = {'id': job_id, 'status': 'queued', 'progress': 0, 'created': time.time(),
                    'title': data.get('title', 'Custom motion') if isinstance(data.get('title', 'Custom motion'), str) else 'Custom motion',
                    'category': data.get('category', 'Custom') if data.get('category') in ('Attacks', 'Movement') else 'Custom',
-                   **params}
+                   'generator': self.generator_name, **params}
             job['title'] = job['title'][:80]
             self.jobs[job_id] = job
             self.active = job_id
@@ -140,12 +155,16 @@ class Lab:
             job['status'] = 'running'
             def progress(i, total):
                 job['progress'] = round(i / total * 100)
+            duration_args = {'frames': job['frames']} if self.generator == 'kimodo' else {}
             features, motion, provenance = self.engine.generate(job['prompt'], job['seed'], job['guidance'], job['steps'], progress,
-                                                               guided_sprint=job['guided_sprint'])
+                                                               guided_sprint=job['guided_sprint'], **duration_args)
             provenance['reference_clip'] = job['reference_clip']
             provenance['reference_usage'] = ('authored gait constraint' if job['guided_sprint']
                                              else 'comparison only' if job['reference_clip'] else 'none')
-            self.engine.np.save(folder / 'features.npy', features)
+            if self.generator == 'kimodo':
+                self.engine.np.savez_compressed(folder / 'source-motion.npz', **features)
+            else:
+                self.engine.np.save(folder / 'features.npy', features)
             (folder / 'motion.json').write_text(json.dumps(motion))
             (folder / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
             job.update(status='complete', progress=100, seconds=provenance['seconds'], diagnostics=provenance['diagnostics'],
@@ -224,11 +243,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.json(403, {'error': 'Local access only'})
         path = unquote(urlsplit(self.path).path)
         if path == '/api/status':
-            return self.json(200, {**self.lab.state, 'active': self.lab.active})
+            return self.json(200, {**self.lab.state, 'generator': self.lab.generator_name, 'active': self.lab.active})
         if path == '/api/library':
             with self.lab.lock:
                 results = [j.copy() for j in self.lab.jobs.values() if j['status'] == 'complete']
-            return self.json(200, {'presets': [{'slug': s, 'title': t, 'category': c, 'prompt': p, 'seed': seed} for s,t,c,p,seed in PRESETS],
+            recipes = PRESETS
+            if self.lab.generator == 'kimodo':
+                recipes = [('backflip', 'Backflip', 'Movement', 'A person does a backflip.', 99), *PRESETS]
+            return self.json(200, {'generator': self.lab.generator_name,
+                                   'presets': [{'slug': s, 'title': t, 'category': c, 'prompt': p, 'seed': seed} for s,t,c,p,seed in recipes],
                                    'originals': original_library(), 'results': sorted(results, key=lambda j: j['created'], reverse=True)})
         if path.startswith('/api/jobs/'):
             job = self.lab.jobs.get(path.split('/')[-1])
@@ -243,7 +266,7 @@ class Handler(BaseHTTPRequestHandler):
                 source = self.lab.root / 'exports' / parts[2] / parts[3]
         if path.startswith('/results/'):
             parts = path.split('/')
-            if len(parts) == 4 and parts[2] in self.lab.jobs and parts[3] in ('motion.json', 'provenance.json', 'features.npy', 'job.json'):
+            if len(parts) == 4 and parts[2] in self.lab.jobs and parts[3] in ('motion.json', 'provenance.json', 'features.npy', 'source-motion.npz', 'job.json'):
                 source = self.lab.root / 'results' / parts[2] / parts[3]
         if source is None or not source.is_file():
             return self.json(404, {'error': 'File not found'})
@@ -264,11 +287,15 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--root', type=Path, default=REPO / 'build/yorimichi/unimate')
-    ap.add_argument('--port', type=int, default=8842)
-    ap.add_argument('--device', choices=['mps', 'cpu', 'cuda'], default='mps')
+    ap.add_argument('--root', type=Path)
+    ap.add_argument('--port', type=int)
+    ap.add_argument('--device', choices=['mps', 'cpu', 'cuda'])
+    ap.add_argument('--generator', choices=['unimate', 'kimodo'], default='unimate')
     args = ap.parse_args()
-    lab = Lab(args.root, args.device)
+    args.root = args.root or REPO / 'build/yorimichi' / args.generator
+    args.device = args.device or ('cpu' if args.generator == 'kimodo' else 'mps')
+    args.port = args.port or (8843 if args.generator == 'kimodo' else 8842)
+    lab = Lab(args.root, args.device, generator=args.generator)
     server = ThreadingHTTPServer(('127.0.0.1', args.port), partial(Handler, lab=lab))
     print(f'Fox motion lab: http://127.0.0.1:{args.port}', flush=True)
     server.serve_forever()

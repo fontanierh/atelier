@@ -17,10 +17,14 @@ def command(*args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--root', type=Path, default=REPO / 'build/yorimichi/unimate')
+    ap.add_argument('--root', type=Path)
+    ap.add_argument('--generator', choices=['unimate', 'kimodo'], default='unimate')
     args = ap.parse_args()
-    root = args.root.resolve()
-    from atelier.ai.unimate.install import install
+    root = (args.root or REPO / "build/yorimichi" / args.generator).resolve()
+    if args.generator == "kimodo":
+        from atelier.ai.kimodo.install import install
+    else:
+        from atelier.ai.unimate.install import install
     install(root, atelier_source=REPO)
     # This small export only samples transforms and writes glTF, without rendering.
     from atelier.safety import guarded
@@ -32,7 +36,8 @@ def main():
     if code:
         raise SystemExit(code)
     command('npm', 'ci', '--prefix', HERE, '--no-audit', '--no-fund')
-    command('node', HERE / 'export_reference.mjs', root)
+    if args.generator == 'unimate':
+        command('node', HERE / 'export_reference.mjs', root)
     command(HERE / 'node_modules/.bin/esbuild', HERE / 'app.js', '--bundle', '--format=esm',
             '--minify', f'--outfile={root / "web/app.js"}')
     print('Ready. Run the guarded server command in animation_lab/README.md.')
