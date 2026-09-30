@@ -42,8 +42,10 @@ PLACES = {
 BRIDGES = [('entry', 'library'), ('library', 'heart'), ('library', 'sleep'), ('heart', 'kitchen'),
            ('kitchen', 'boat'), ('boat', 'slide'), ('slide', 'chimes'), ('chimes', 'lookout'),
            ('heart', 'pulley'), ('sleep', 'pulley'), ('pulley', 'lookout'), ('heart', 'chimes')]
-# Stepping stones from the trail edge up the low gap in the bank, then plank steps to the little hut.
-GATE = [(-133.3, 211.0), (-133.6, 209.6), (-133.9, 208.2), (-134.2, 206.8), (-134.5, 205.4), (-134.8, 204.0)]
+# Stepping stones from the trail edge up the low gap in the bank, then plank steps to the little hut. They lie flush
+# with the ground; a last, wider stone (FOOT_STONE: half length across, half depth) lies against the lowest tread.
+GATE = [(-133.3, 211.0), (-133.6, 209.6), (-133.9, 208.2), (-134.2, 206.8), (-134.5, 205.4), (-134.8, 204.3)]
+FOOT_STONE = (.6, .4)
 ENTRY_BOX = (-2.45, 2.45, -4.2, 2.1)    # little hut deck, local metres: x0, x1, y0, y1 (hut 4.0 x 3.0, porch south)
 HEART_WALL = 4.3                        # octagonal room circumradius; the deck beyond it is the balcony
 HUT = (3.4, 2.8)                        # huts beside the trunk: width (tangential) and depth (radial)
@@ -156,7 +158,10 @@ def plan(h):
     for _ in range(6):
         n_steps = max(1, math.ceil((E['deck']-ground(h, x, top_y+n_steps*TREAD))/RISE))
     rise = (E['deck']-ground(h, x, top_y+n_steps*TREAD))/n_steps
-    stones = [[x, y, round(ground(h, x, y)+.07, 3)] for x, y in GATE]
+    # Each stone's z is the ground under its middle plus 3 cm (build.py tilts its top to the slope). The foot stone
+    # touches the lowest tread, and its z is the top of its south edge: one rise under that tread.
+    stones = [[sx, sy, round(ground(h, sx, sy)+.03, 3)] for sx, sy in GATE]
+    stones.append([x, round(top_y+(n_steps-1)*TREAD+.02+FOOT_STONE[1], 3), round(E['deck']-n_steps*rise, 3)])
     entry_stairs = dict(x=x, top_y=top_y, steps=n_steps, rise=round(rise, 4), tread=TREAD, width=1.1,
                         foot=[x, top_y+n_steps*TREAD, round(E['deck']-n_steps*rise, 3)])
     slide = slide_path(h, places['slide'])

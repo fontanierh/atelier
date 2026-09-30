@@ -1350,13 +1350,27 @@ def entry_way(m, d, pl):
             post(m, xs, yy, zz-.3, zz+1.05, .11, WOOD)
         tube(m, [(xs, ex['top_y']+.05, E['deck']+.95), (xs, fy-.1, fz+.95)], .032, ROPE_LT, 6)
     for i, (sx, sy, sz) in enumerate(pl['stones']):
-        rx, ry = R.uniform(.45, .55), R.uniform(.38, .46); rot_ = R.uniform(0, math.pi)
-        pts = [(sx+rx*math.cos(a)*math.cos(rot_)-ry*math.sin(a)*math.sin(rot_), sy+rx*math.cos(a)*math.sin(rot_)+ry*math.sin(a)*math.cos(rot_))
-               for a in np.linspace(0, 2*math.pi, 11)[:-1]]
+        foot = i == len(pl['stones'])-1
+        if foot:    # the stone at the stair foot: wider, square to the stair, against the lowest tread
+            (rx, ry), rot_ = L.FOOT_STONE, 0.
+        else:
+            rx, ry = R.uniform(.45, .55), R.uniform(.38, .46); rot_ = R.uniform(0, math.pi)
+        pts = ccw([(sx+rx*math.cos(a)*math.cos(rot_)-ry*math.sin(a)*math.sin(rot_), sy+rx*math.cos(a)*math.sin(rot_)+ry*math.sin(a)*math.cos(rot_))
+                   for a in np.linspace(0, 2*math.pi, 11)[:-1]])
+        # Flush with the ground: the top is the plane that fits the ground under the stone, 3 cm above it (tilted at
+        # most 35 degrees). The foot stone's plane passes through sz at its south edge, one rise under the lowest tread.
+        sample = [(sx, sy)]+pts+[(sx+(px-sx)*.5, sy+(py-sy)*.5) for px, py in pts]
+        A = np.array([[1., px-sx, py-sy] for px, py in sample]); b = np.array([ground(px, py) for px, py in sample])
+        c0, gx, gy = np.linalg.lstsq(A, b, rcond=None)[0]
+        k = min(1., math.tan(math.radians(35))/max(1e-6, math.hypot(gx, gy))); gx, gy = gx*k, gy*k
+        c0 = sz+gy*ry if foot else c0+.03
+        top = [(px, py, c0+gx*(px-sx)+gy*(py-sy)) for px, py in pts]
+        zb = min(q[2] for q in top)-.4
         with m.use('stone', jitter=True):
-            prism(m, pts, sz-.4, sz, vary(STONE, .1), vary(STONE, .18))
-        with d.use('moss'):
-            d.poly([(sx+(px-sx)*1.08, sy+(py-sy)*1.08, sz-.06) for px, py in ccw(pts)], vary(MOSS, .1))
+            m.poly(top, vary(STONE, .1))
+            m.poly([(px, py, zb) for px, py in pts[::-1]], vary(STONE, .18))
+            for a, b_ in zip(top, top[1:]+top[:1]):
+                m.poly([(a[0], a[1], zb), (b_[0], b_[1], zb), b_, a], vary(STONE, .18))
     # no rope fence along the stones: the way from the trail onto them stays open
     sx, sy, sz = pl['stones'][0]; post(d, sx-.8, sy, sz-.2, sz+1.3, .1, WOOD)
     andon(d, sx-.8, sy, sz+1.3, .26, 300)

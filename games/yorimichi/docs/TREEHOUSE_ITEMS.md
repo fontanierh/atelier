@@ -25,7 +25,7 @@ Walkable, with collision. Counts come from `world/regions/treehouse/layout.py`.
 | Decks | 10 | Plank strips with gaps, moss in the corners, dark joists and knee braces, a thick rim board |
 | Rails | all deck edges | Square dark posts, two timber rails, rope lashings wound round each post top |
 | Rope bridges | 12 | Plank floor, two thick rope handrails, thin rope or stick balusters, rope suspenders, a lantern post at each end |
-| Entry way | 1 | 6 flat stepping stones, 10 plank steps with stringers, rope handrail on short posts, one post lantern |
+| Entry way | 1 | 7 stepping stones flush with the ground (the last against the lowest step), 10 plank steps with stringers, rope handrail on short posts, one post lantern |
 | Little hut | 1 | Plank walls on a timber frame, gable roof, doors north and south, round window, paper window; the maple trunk goes up through the roof |
 | Small huts | 3 | Map room, Kitchen, Sleeping nest: the same kit as the little hut, gable roof, door on the bridge side, round window, six-pane window |
 | Heart room | 1 | Eight walls with posts, three doors, round and six-pane windows, the big open round window, cone roof with rafters, balcony all round |
