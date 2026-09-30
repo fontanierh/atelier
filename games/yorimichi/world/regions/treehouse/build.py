@@ -1254,100 +1254,211 @@ def furnish_entry(m, d, p):
         R = shared
 
 
+def hall_frame(p):
+    """The heart hall (layout HALL): its centre at the deck, the angle of its local x (out from the camphor), apothem,
+    wall height, and a map from hall-local metres (x out from the camphor, y to its left) to world."""
+    r = p['room']; c = np.array([*r['center'], p['deck']], float); ang = r['angle']
+    return c, ang, r['apothem'], r['wall'], (lambda lx, ly, lz=0.: local(c, ang, lx, ly, lz))
+
+
+def hall_wall(c, ang, A, f):
+    """The hall's flat facing f degrees from its x: (the middle of the wall's centre line at the deck, the direction
+    along it, counter-clockwise seen from above, the inward normal), in world. Offsets along it are positive toward
+    the corner at f+22.5."""
+    a = math.radians(ang+f); out = np.array([math.cos(a), math.sin(a), 0.])
+    return c+out*A, np.array([-out[1], out[0], 0.]), -out
+
+
+def on_wall(frame, s, depth, zz=0.):
+    """A point s along a wall frame, depth in from its centre line, zz up."""
+    o, u, n = frame
+    return o+u*s+n*depth+np.array([0., 0., zz])
+
+
+def wall_yaw(frame):
+    """The frame's yaw: a local x along the wall and local y into the room."""
+    return math.degrees(math.atan2(frame[1][1], frame[1][0]))
+
+
+def slab_table(m, x, y, z, r=.75, h=.38):
+    """A low round table for sitting round on cushions: a thick slice of a big log, bark round its edge and a pale
+    sawn top, on three stubby log legs."""
+    with m.use('bark', grain=(0, 0, 1), jitter=True):
+        for k in range(3):
+            a = 2*math.pi*k/3+.4
+            m.lathe((x+r*.5*math.cos(a), y+r*.5*math.sin(a), z), [(0, .13), (.05, .12), (h-.09, .1)], vary(BARK, .06), 10)
+        m.lathe((x, y, z), [(h-.1, r*.95), (h-.07, r), (h, r)], vary(BARK, .05), 24)
+    ring_ = [(math.cos(a), math.sin(a)) for a in np.linspace(0, 2*math.pi, 25)[:-1]]
+    with m.use('wood_pale'):
+        m.poly([(x+r*cx, y+r*cy, z+h) for cx, cy in ring_], vary(PALE, .05))
+        m.poly([(x+r*.95*cx, y+r*.95*cy, z+h-.1) for cx, cy in ring_][::-1], vary(PALE, .05))
+    for k in (1, 2, 3):      # growth rings on the top
+        ring(m, (x, y), r*(.22*k+.05), z+h+.002, .004, vary(WOOD, .05), 20, 'wood_timber')
+
+
+def window_bench(m, d, frame, s, length, z, depth=.5, h=.42, back=.1):
+    """A built-in bench along a wall under a window: a plank box with a seat board, stiles down its front and an
+    indigo pad."""
+    q = on_wall(frame, s, back+depth/2); yaw = wall_yaw(frame)
+    with m.at((q[0], q[1], z), yaw):
+        with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
+            m.box((0, -.01, (h-.035)/2), (length-.08, depth-.06, h-.045), vary(BOARD, .06))
+            m.box((0, 0, h-.02), (length, depth, .04), vary(PLANK, .06))
+        with m.use('wood_timber', grain=(0, 0, 1), jitter=True):
+            for x in np.linspace(-length/2+.07, length/2-.07, 4):
+                m.box((x, depth/2-.045, (h-.05)/2), (.08, .06, h-.05), DARK)
+    with d.at((q[0], q[1], z+h), yaw):
+        with d.use('indigo', grain=(1, 0, 0)):
+            d.box((0, .01, .045), (length-.12, depth-.1, .08), INDIGO, .03)
+
+
+def tansu(m, d, frame, s, length, z, depth=.45, h=.55, back=.1):
+    """A low chest of drawers against a wall: dark wood, three drawers with iron pulls."""
+    q = on_wall(frame, s, back+depth/2); yaw = wall_yaw(frame)
+    with m.at((q[0], q[1], z), yaw):
+        with m.use('wood_timber', grain=(1, 0, 0), jitter=True):
+            m.box((0, 0, h/2), (length, depth, h), vary(WOOD, .06))
+            m.box((0, 0, h+.015), (length+.04, depth+.03, .03), DARK)
+        w = (length-.08)/3
+        for k in range(3):
+            x = -length/2+.04+w*(k+.5)
+            with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
+                m.box((x, depth/2+.008, h/2), (w-.03, .016, h-.1), vary(PLANK, .08))
+            with m.use('iron'):
+                m.box((x, depth/2+.03, h/2+.05), (.12, .025, .025), IRON)
+
+
+def loft(m, d, frame, A, s0, z, top=2.8, deep=.8):
+    """A sleeping shelf high on a wall (from s0 to the corner), on knee braces, with a low rail, folded quilts, one
+    hanging over the edge, and a ladder fixed flat to the wall beside it. Everything on it is above head height."""
+    t = math.tan(math.radians(22.5)); o, u, n = frame
+    far = lambda dd: (A-dd)*t-.16                  # the adjacent wall cuts the corner end at 45 degrees
+    q = lambda s_, dd, zz: on_wall(frame, s_, dd, zz)
+    base = [q(s0, .1, 0), q(far(.1), .1, 0), q(far(deep), deep, 0), q(s0, deep, 0)]
+    with m.use('wood_plank', grain=tuple(u), jitter=True):
+        hexa(m, [b+[0, 0, top-.08] for b in base]+[b+[0, 0, top] for b in base], vary(PLANK, .08))
+    board(m, q(s0+.02, deep-.06, top-.08), q(far(deep)-.02, deep-.06, top-.08), .1, .12, DARK, 'wood_timber')
+    board(m, q(s0+.02, .16, top-.08), q(far(.16)-.02, .16, top-.08), .1, .1, DARK, 'wood_timber')
+    for s_ in (s0+.35, far(deep)-.3):             # knee braces from the wall to the front beam
+        strut(m, q(s_, .15, top-.95), q(s_, deep-.1, top-.19), .08, .08, u, WOOD)
+    # a low rail along the front, the quilts, one hanging 20 cm over the edge
+    xs = [s0+.06, (s0+far(deep))/2, far(deep)-.08]
+    for s_ in xs: post(m, *q(s_, deep-.05, 0)[:2], z+top, z+top+.3, .06, WOOD)
+    board(m, q(xs[0], deep-.05, top+.32), q(xs[-1], deep-.05, top+.32), .07, .04, WOOD, 'wood_timber')
+    for k, s_ in enumerate(np.linspace(s0+.4, far(.45)-.35, 3)):
+        c_ = q(s_, .45, top); yaw = wall_yaw(frame)+R.uniform(-6, 6)
+        with d.at(tuple(c_), yaw):
+            with d.use('quilt' if k != 1 else 'canvas', grain=(1, 0, 0)):
+                d.box((0, 0, .08), (.6, .5, .15-.02*k), WHITE if k != 1 else vary(CANVAS, .05), .04)
+    e0, e1 = q(s0+.55, deep+.02, top+.01), q(s0+1.25, deep+.02, top+.01)
+    with d.use('quilt'):
+        cloth(d, [tuple(e0-[0, 0, .2]), tuple(e1-[0, 0, .2]), tuple(e1), tuple(e0)], [(0, 0), (1, 0), (1, .3), (0, .3)], [0, 0, 0, 0])
+    # the ladder, flat to the wall beside the loft's end
+    for s_ in (s0-.5, s0-.1):
+        post(m, *q(s_, .15, 0)[:2], z, z+top+.35, .06, WOOD)
+    for k in range(1, 12):
+        zz = .28*k
+        if zz > top+.2: break
+        tube(m, [q(s0-.47, .15, zz), q(s0-.13, .15, zz)], .02, WOOD, 6, 'wood_timber')
+
+
 def furnish_heart(m, d, p):
-    x0, y0 = p['xy']; z = p['deck']; Rw = L.HEART_WALL
-    P = lambda a, r, zz=0.: np.array([x0+r*math.cos(math.radians(a)), y0+r*math.sin(math.radians(a)), z+zz])
-    q = P(45, 2.2); rug(d, q[0], q[1], z, 1.3, 2.3, 45, 'rug')
-    prop('stump_kettle', q[0], q[1], z+.012, 20)
-    for a, r in ((45+30, 2.2), (45-30, 2.25), (47, 3.0)):
-        cq = P(a, r); cushion(d, cq[0], cq[1], z+.012, .6, a)
-    q = P(103, 2.95); rug(d, q[0], q[1], z, 1.1, 1.8, 103, 'rug_blue')
-    q = P(296, 2.5); rug(d, q[0], q[1], z, 1.5, 2.2, 296, 'rug')
-    for a, r in ((296+20, 2.3), (296-22, 2.35)):
-        cq = P(a, r); cushion(d, cq[0], cq[1], z+.012, .55, a)
-    ap = Rw*math.cos(math.radians(22.5))
-    def on_panel(mid, off, depth):
-        a = math.radians(mid); nrm = np.array([math.cos(a), math.sin(a)]); t = np.array([-nrm[1], nrm[0]])
-        return np.array([x0, y0])+nrm*(ap-depth)+t*off, t, -nrm
-    for mid, off in ((180, -1.05), (180, 1.05), (0, 1.05)):
-        q, t, nin = on_panel(mid, off, .24); prop('bookshelf', q[0], q[1], z, face_yaw(*nin), .95)
-    q = P(205, Rw-.5); prop('backpack', q[0], q[1], z, face_yaw(x0-q[0], y0-q[1]))
-    q = P(62, Rw-.55); crate(m, q[0], q[1], z, (.55, .42, .42), 62); q2 = P(70, Rw-.5); crate(m, q2[0], q2[1], z, (.45, .4, .36), 80)
-    q, t, nin = on_panel(45, -1.12, .245); prop('bell', q[0], q[1], z+1.45, face_yaw(*nin), .8)   # its plate on the wall
-    # map and kite on the panels beside the round windows
-    for mid, off, pic, w, z0, z1 in ((180, 1.1, 'map', .75, 1.0, 1.85), (0, -1.05, 'kite', .7, 1.15, 1.85), (225, -1.1, 'pictures', .45, 1.25, 1.7)):
-        q, t, nin = on_panel(mid, off, .075)
-        wall_picture(d, (np.array([q[0], q[1], z]), np.r_[t, 0], np.r_[nin, 0]), 0, z0, z1, .0, pic, w)
-    # a hammock from turns of rope round the camphor (over the shimenawa) to a peg on the panel beside the open
-    # round window, its bag 0.6 m over the floor; lanterns strung from the trunk to the posts
-    _, rad, wob, _, _ = trunk_shape(x0, y0, p['trunk'], p['trunk_top'], z, len('heart'))
-    hz = z+1.72; o = np.array([x0, y0])+wob(hz); rr = rad(hz)*1.06+.03; a_ = math.radians(242)
-    pc = math.radians(270); ap = Rw*math.cos(math.radians(22.5))-.045
-    hammock(d, np.array([o[0]+rr*math.cos(a_), o[1]+rr*math.sin(a_), hz]), P(252, ap/math.cos(math.radians(252-270)), 1.74),
-            .95, .42, (('wrap', o, rr), ('wall', (-math.cos(pc), -math.sin(pc)))))
-    for k in range(8):
-        a = 22.5+45*k; s0, s1 = P(a, p['trunk']+.15, 2.75), P(a, Rw-.1, 2.72)
-        pts = [s0+(s1-s0)*t-[0, 0, .3*math.sin(math.pi*t)] for t in np.linspace(0, 1, 7)]
-        tube(d, pts, .007, DARK, 4, 'wood_timber')
-        for t in (.35, .7):
-            q = s0+(s1-s0)*t-[0, 0, .3*math.sin(math.pi*t)]
-            chochin(d, q[0], q[1], q[2]-.2, .2, .14)
-    for a in (90, 270, 0):
-        q = P(a, Rw-.35); glass_float(d, q[0], q[1], z+2.2, .13, .45)
-    q = P(150, Rw-.6); basket(d, q[0], q[1], z, .2, .26, scrolls=4)
-    q = P(58, 3.0); book_stack(d, q[0], q[1], z+.012, 4, 58)
-    q = P(312, 3.25); book_stack(d, q[0], q[1], z+.012, 3, 10)
-    q = P(120, Rw-.6); basket(d, q[0], q[1], z, .22, .24, fruit=6)
-    # the loft shelf high on the north side, quilts folded on it (looks only)
-    a0_, a1_ = 67.5, 112.5
-    for f in (a0_+6, a1_-6):
-        board(m, tuple(P(f, Rw-.15, 1.55)), tuple(P(f, 3.25, 2.18)), .1, .1, WOOD, 'wood_timber')
-    pts = [P(a0_, Rw-.05)[:2], P(a1_, Rw-.05)[:2], P(a1_, 3.05)[:2], P(a0_, 3.05)[:2]]
-    with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
-        prism(m, pts, z+2.2, z+2.28, vary(PLANK, .08), DARK)
-    # The ladder stands square to the loft's straight front edge at its west end, clear of the window and of the
-    # cushions round the stump: square rails leaning on the edge and standing on 0.85 m past it as handholds, round
-    # rungs, and a low rail along the rest of the edge.
-    u = np.array([0., 1., 0.]); v = np.array([1., 0., 0.]); c0 = np.array([x0, y0, z])
-    edge = 3.05*math.cos(math.radians(22.5)); half = 3.05*math.sin(math.radians(22.5)); lean = 1/math.tan(math.radians(74))
-    foot = edge-.06-2.28*lean; l0, l1 = -1.1, -.7
-    for f in (l0, l1):
-        strut(m, c0+u*foot+v*f, c0+u*(foot+3.13*lean)+v*f+[0, 0, 3.13], .075, .085, v)
-    for k in range(1, 9):
-        h = .26*k; q = c0+u*(foot+h*lean)+[0, 0, h]
-        tube(m, [q+v*l0, q+v*l1], .022, WOOD, 6, 'wood_timber')
-    rail = c0+u*(edge-.05)+[0, 0, 2.28]
-    for f in (-.5, .3, half-.06):
-        post(m, *(rail+v*f)[:2], rail[2], rail[2]+.62, .07, WOOD)
-    board(m, tuple(rail+v*-.54+[0, 0, .64]), tuple(rail+v*(half-.02)+[0, 0, .64]), .08, .045, WOOD, 'wood_timber')
-    tube(d, [rail+v*f+[0, 0, .3] for f in (-.5, half-.06)], .014, ROPE, 5)
-    for k in range(3):
-        q = P(80+10*k, 3.7); c = [(.20, .27, .48), (.80, .74, .62), (.62, .20, .12)][k]
-        with d.use('quilt' if k != 1 else 'canvas', grain=(1, 0, 0)):
-            d.box((q[0], q[1], z+2.28+.08+.0*k), (.55, .5, .16), WHITE if k != 1 else c, .04)
+    """The hall where the children meet, big and open in the middle, everything low against the walls: a low round
+    log table on a rug toward the front window with cushions round it and the kettle stump; a window bench on the
+    camphor side between the doors; bookshelves with the island map over them; a quilt hammock across the corner;
+    a sleeping loft high on the wall with its ladder, a chest under the window; the view window left clear."""
+    c, ang, A, h, H_ = hall_frame(p); z = c[2]
+    W = {f: hall_wall(c, ang, A, f) for f in range(0, 360, 45)}
+    # the table group, off the middle toward the front window (the door lanes end in the middle, clear)
+    tx = 2.0; q = H_(tx, 0); rug(d, q[0], q[1], z, 2.9, 2.9, ang, 'rug')
+    slab_table(m, q[0], q[1], z, .75, .38)
+    k_ = H_(tx+1.22, 0); prop('stump_kettle', k_[0], k_[1], z+.012, face_yaw(*(q-k_)[:2]))
+    for a in (60, 120, 240, 300):
+        cq = H_(tx+1.15*math.cos(math.radians(a)), 1.15*math.sin(math.radians(a)))
+        cushion(d, cq[0], cq[1], z+.012, .7, ang+a+R.uniform(-8, 8))
+    # the window bench under the round window onto the camphor, between the doors
+    window_bench(m, d, W[180], 0., 2.6, z)
+    for s_ in (-.8, .8):
+        cq = on_wall(W[180], s_, .38); cushion(d, cq[0], cq[1], z+.5, .45, wall_yaw(W[180])+R.uniform(-10, 10))
+    # the shelf wall: two bookshelves side by side, the island map above them; the bell beside the front window
+    for s_ in (-.5, .5):
+        bq = on_wall(W[90], s_, .1+.225); prop('bookshelf', bq[0], bq[1], z, face_yaw(*W[90][2][:2]))
+    wall_picture(d, W[90], 0., 2.0, 2.85, .1, 'map', 1.15)
+    bq = on_wall(W[0], -1.4, .3); prop('bell', bq[0], bq[1], z+1.4, face_yaw(*W[0][2][:2]), .8)
+    # the quilt hammock across the corner in front of the flat at 45, on pegs in the flats either side
+    a0 = on_wall(W[0], 1.25, .055, 1.75); a1 = on_wall(W[90], -1.25, .055, 1.75)
+    hammock(d, a0, a1, .85, .5, (('wall', W[0][2][:2]), ('wall', W[90][2][:2])))
+    wall_picture(d, W[45], 0., 1.95, 2.75, .1, 'pictures', .8, True)
+    # the loft over the flat at 315, its ladder beside it, a low chest and a plant under the window
+    loft(m, d, W[315], A, -.95, z)
+    tansu(m, d, W[315], .25, 1.3, z)
+    q = on_wall(W[315], .55, .33, .58); potted_plant(d, q[0], q[1], q[2], .9)
+    q = on_wall(W[315], -.05, .3, .58); book_stack(d, q[0], q[1], q[2], 3, wall_yaw(W[315]))
+    # beside the doors: the kite and the children's drawings flat on the walls; the backpack and the scroll basket
+    # on the floor in the corners past them
+    wall_picture(d, W[225], 1.3, 1.15, 1.95, .062, 'kite', .6)
+    wall_picture(d, W[135], -1.3, 1.25, 1.75, .062, 'pictures', .5, True)
+    q = H_(*(3.9*np.array([math.cos(math.radians(112.5)), math.sin(math.radians(112.5))])))
+    prop('backpack', q[0], q[1], z, face_yaw(*(c-q)[:2]))
+    q = H_(*(3.95*np.array([math.cos(math.radians(247.5)), math.sin(math.radians(247.5))])))
+    basket(d, q[0], q[1], z, .22, .26, scrolls=4)
+    # a wind bell in the top of the view window
+    q = on_wall(W[270], 0., 0.); fuurin(d, q[0], q[1], z+2.23, .1)
 
 
 def furnish_boat(m, d, p, c, ang):
-    z = c[2]
-    q = local(c, ang+90, 0, 0); rug(d, q[0], q[1], z, 1.3, 2.6, ang, 'rug_blue')
-    for s in (-1, 1):
-        q = local(c, ang+90, .3, s*.72); crate(m, q[0], q[1], z, (1.2, .4, .38), ang+90)
-        cushion(d, *local(c, ang+90, .0, s*.72)[:2], z+.38, .4, ang); cushion(d, *local(c, ang+90, .55, s*.72)[:2], z+.38, .4, ang+5)
-    for s in (-1, 1):   # oars laid along the ribs
-        a = local(c, ang+90, -1.3, s*.5, 1.72); b = local(c, ang+90, 1.1, s*.55, 1.78)
-        board(d, a, b, .06, .04, PALE, 'wood_pale')
+    """Under the hull: two bunks end to end along the outer gunwale (away from the trunk and the bridges), each with a
+    quilt and a pillow, under one plank back; a sea chest with the rolled sail and a rope coil on the trunk side at
+    the ends; a blue rug down the middle; oars lashed up in the hull, the fishing net slung under the keel and glass
+    floats hanging from it, all above 2.9 m. The middle, end to end, and the trunk side stay clear."""
+    z = c[2]; half = L.BOAT['length']/2
+    B = lambda lx, ly, lz=0.: local(c, ang+90, lx, ly, lz)
+    q = B(0, 0); rug(d, q[0], q[1], z, 1.3, 4.6, ang, 'rug_blue')
+    # the bunks: x -2.05..2.05, y -1.42..-0.82 (the middle lane is |y| < 0.7)
+    with m.at(tuple(B(0, -1.12)), ang+90):
+        with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
+            m.box((0, .03, .2), (3.98, .48, .4), vary(BOARD, .06))              # the body, set back from the front
+            m.box((0, .03, .43), (4.1, .56, .05), vary(PLANK, .06))             # the seat
+            m.box((0, -.28, .45), (4.1, .05, .9), vary(BOARD, .06))             # the back, both faces planked
+        with m.use('wood_timber', grain=(1, 0, 0), jitter=True):
+            m.box((0, -.28, .92), (4.16, .09, .05), DARK)                       # the cap on the back
+            for x in (-2.04, 0., 2.04):
+                m.box((x, .03, .3325), (.06, .6, .655), DARK)                  # the ends and the middle board, arm high
+    with d.at(tuple(B(0, -1.09, .455)), ang+90):
+        with d.use('quilt', grain=(1, 0, 0)):
+            for x in (-1., 1.):                                                 # two bunks, a quilt on each
+                d.box((x, 0, .06), (1.86, .48, .11), WHITE, .03)
+        with d.use('canvas', grain=(1, 0, 0)):
+            for x in (-1.6, 1.62):
+                d.box((x, -.06, .19), (.5, .3, .15), vary(CANVAS, .05), .05)
+    # the sea chest and the rolled sail at the stern, a rope coil at the bow, both on the trunk side under the gunwale
+    q = B(-2.7, 1.0); crate(m, q[0], q[1], z, (.9, .45, .45), ang+90, vary((.42, .25, .14), .05))
+    sail = [B(-3.12+.84*t, 1.0, .45+.13) for t in np.linspace(0, 1, 5)]
+    tube(d, sail, .13, vary(CANVAS, .04), 10, 'canvas')
+    for t in (.2, .8):
+        x = -3.12+.84*t
+        tube(d, [B(x, 1.0+.14*math.cos(a), .58+.14*math.sin(a)) for a in np.linspace(0, 2*math.pi, 11)], .012, ROPE, 4)
+    q = B(2.7, 1.05); rope_coil(d, q[0], q[1], z)
+    # two oars up in the hull, one each side, lashed to the ribs
+    for sgn in (-1, 1):
+        y = sgn*.85; zz = min(hull_z(x, y) for x in np.linspace(-1.6, 1.4, 7))-.1
+        a, b = B(-1.6, y, zz), B(1.1, y, zz)
+        board(d, a, b, .06, .05, PALE, 'wood_pale')
         with d.at(tuple(b), ang+90):
             with d.use('wood_pale', grain=(1, 0, 0)):
-                d.box((.25, 0, 0), (.5, .16, .03), PALE)
-    # a fishing net hung under the hull, sagging between the posts
-    for k in range(6):
-        a = local(c, ang+90, -1.6+.55*k, -.75, 1.72); b = local(c, ang+90, -1.6+.55*k, .75, 1.72)
-        tube(d, [a+(b-a)*t-[0, 0, .35*math.sin(math.pi*t)] for t in np.linspace(0, 1, 7)], .008, ROPE, 4)
-    for k in range(5):
-        pts = [local(c, ang+90, -1.6+2.75*t, -.75+.3*k+.05, 1.72-.35*math.sin(math.pi*(.3*k+.05)/1.5)) for t in np.linspace(0, 1, 7)]
-        tube(d, pts, .008, ROPE, 4)
-    for k in range(3):
-        q = local(c, ang+90, -1.2+.6*k, .3*(k-1), 1.45); glass_float(d, q[0], q[1], q[2], .11, .2)
+                d.box((.27, 0, -.025), (.55, .16, .025), PALE)
+        for x in (-.95, .45):
+            tube(d, [B(x, y, zz-.06), B(x, y, hull_z(x, y)-.01)], .012, ROPE, 4)
+    # the fishing net slung under the keel toward the bow, floats hanging from it
+    xs, ys = np.linspace(.5, 2.3, 7), np.linspace(-.55, .55, 5)
+    net = lambda x, y: hull_z(x, y)-.07-.2*math.sin(math.pi*(x-xs[0])/(xs[-1]-xs[0]))*math.sin(math.pi*(y-ys[0])/(ys[-1]-ys[0]))
+    fine = np.linspace(0, 1, 9)
+    for x in xs:
+        tube(d, [B(x, y, net(x, y)) for y in ys[0]+(ys[-1]-ys[0])*fine], .008, ROPE, 4)
+    for y in ys:
+        tube(d, [B(x, y, net(x, y)) for x in xs[0]+(xs[-1]-xs[0])*fine], .008, ROPE, 4)
+    for x, y in ((1.1, -.3), (1.7, .28), (2.05, -.1)):
+        zt = net(x, y); q = B(x, y); glass_float(d, q[0], q[1], z+zt-.1-.11, .11, .1)
 
 
 # ---------------------------------------------------------------------------------------------- special rooms
@@ -1554,79 +1665,156 @@ def shimenawa(d, p, name, h):
             two_sided(d, zig[:4], SHIDE); two_sided(d, [zig[2], zig[3], zig[5], zig[4]], SHIDE)
 
 
+HALL_OPENINGS = {   # the hall's flats (degrees from its x, out from the camphor): what is in each wall
+    0: (1.8, .85, 2.1, 'window'),           # the front window over the table
+    45: None,                               # the hammock and the drawings
+    90: None,                               # the bookshelves and the map
+    135: 'door', 225: 'door',               # the doors, facing back past the camphor to the bridges
+    180: (1.2, 1.0, 2.2, 'round'),          # onto the camphor and its rope, over the window bench
+    270: (1.9, .55, 2.45, 'open-round'),    # the view window: the chime tree and the lookout
+    315: (1.3, .85, 2.1, 'window'),         # under the loft
+}
+
+
 def heart_room(m, d, p):
-    x0, y0 = p['xy']; z = p['deck']; Rw = L.HEART_WALL; h = 2.8; top = z+L.ROOF_TOP['heart']
-    ring8 = L.octagon(Rw); panel = 2*Rw*math.sin(math.radians(22.5))
-    kinds = {45: 'door', 135: 'door', 225: 'door', 270: 'open-round', 0: 'round', 180: 'round', 90: 'window', 315: 'window'}
-    with m.at((x0, y0, z), 0):
-        for k in range(8):
-            a, b = ring8[k], ring8[(k+1) % 8]; mid = round(45*(k+1)) % 360; kind = kinds[mid]
-            op = {'door': (panel/2, .95, 0., 1.95, 'door'), 'open-round': (panel/2, 1.5, .65, 2.15, 'open-round'),
-                  'round': (panel/2, 1.25, .75, 2.0, 'round'), 'window': (panel/2, 1.7, .8, 1.95, 'window')}[kind]
-            wall(m, a, b, h, [op], outside='plaster', turn=45.)
-            post(m, a[0], a[1], -.04, h+.05, .22, DARK)
-    for k, mid in enumerate((45, 135, 225)):
-        a = math.radians(mid); r = Rw*math.cos(math.radians(22.5))+.07
-        noren(d, x0+r*math.cos(a), y0+r*math.sin(a), z+1.95, .92, .72, mid+90, 'noren_indigo' if k != 1 else 'noren_cream')
-    eave = [(x0+x*(Rw+.85)/Rw, y0+y*(Rw+.85)/Rw) for x, y in ring8]
-    collar = [(x0+x*1.45/Rw, y0+y*1.45/Rw) for x, y in ring8]
-    ze = z+h-.05
-    for k in range(8):
-        a, b = eave[k], eave[(k+1) % 8]; ca, cb = collar[k], collar[(k+1) % 8]
-        shingled(m, d, [(*a, ze), (*b, ze), (*cb, top), (*ca, top)])
-        dz = .005*(k % 2)        # neighbouring fascias and plates overlap in the corners: every other one lower
-        board(m, (*a, ze+.02-dz), (*b, ze+.02-dz), .1, .16, DARK, 'wood_timber')
-        board(m, (*ca, top-.12), (*a, ze-.08), .12, .14, WOOD, 'wood_timber')          # rafter, seen from inside
-        mid = (np.array(a)+np.array(b))/2; mc = (np.array(ca)+np.array(cb))/2
-        board(m, (*mc, top-.14), (*mid, ze-.08), .08, .1, WOOD, 'wood_timber')
-        glass_float(d, a[0], a[1], ze-.35, .13, .28) if k % 2 else chochin(d, a[0], a[1], ze-.42, .26, .3, 260)
+    """The heart hall beside the camphor (layout HALL): eight plastered walls 3.2 m high, the two doors in the flats
+    facing back toward the camphor, and an eight-sided shingle roof open to its rafters inside, a king post hanging
+    from the top with lantern strings to the corners (all above 2.8 m). The eave comes within HALL['gap'] of the
+    bark; the rope round the camphor is at 2.5 m, over the ways round it."""
+    c, ang, A, h, H_ = hall_frame(p); z = c[2]; dw, dh = L.DOOR
+    t22 = math.tan(math.radians(22.5)); side = 2*A*t22
+    corner = lambda rho, a: (rho/math.cos(math.radians(22.5))*math.cos(math.radians(a)),
+                             rho/math.cos(math.radians(22.5))*math.sin(math.radians(a)))
+    with m.at(tuple(c), ang):
+        for f in range(0, 360, 45):
+            o = HALL_OPENINGS[f]
+            ops = [] if o is None else [(side/2, dw, 0., dh, 'door')] if o == 'door' else [(side/2, *o)]
+            wall(m, corner(A, f-22.5), corner(A, f+22.5), h, ops, outside='plaster', turn=45.)
+            with m.at((*corner(A, f+22.5), 0), f+22.5):       # the corner post, square to the corner
+                post(m, 0, 0, -.04, h-.03, .22, DARK)
+    # The roof: eight planes through the wall plate's outer top edge up to a moss cap, the eaves HALL['over'] out.
+    r0, z0 = A+.09, h+.18; rt, ztop = .5, L.ROOF_TOP['heart']-.35
+    k = (ztop-z0)/(r0-rt); zr = lambda rho: z0+(r0-rho)*k; under = lambda rho: zr(rho)-.03
+    re = A+L.HALL['over']
+    P = lambda rho, a, zz: H_(*corner(rho, a), zz)
+    for i, f in enumerate(range(0, 360, 45)):
+        a0, a1 = f-22.5, f+22.5
+        shingled(m, d, [P(re, a0, zr(re)), P(re, a1, zr(re)), P(rt, a1, ztop), P(rt, a0, ztop)], phase=i % 2)
+        dz = .005*(i % 2)       # neighbouring fascias overlap in the corners: every other one lower
+        board(m, P(re, a0, zr(re)+.02-dz), P(re, a1, zr(re)+.02-dz), .1, .16, DARK, 'wood_timber')
+        board(m, P(re+.02, a1, zr(re)+.13), P(rt+.1, a1, ztop+.12), .14, .1, DARK, 'wood_timber')     # the hip cap
+        # the wall plate, mitred at the corners, its top under the roof's underside
+        lo, hi = A-.09, A+.09
+        hexa(m, [P(lo, a0, h-.04), P(lo, a1, h-.04), P(hi, a1, h-.04), P(hi, a0, h-.04),
+                 P(lo, a0, under(lo)-.004), P(lo, a1, under(lo)-.004), P(hi, a1, under(hi)-.004), P(hi, a0, under(hi)-.004)], DARK)
+        # rafters seen from inside: along the hip and down the middle of the flat
+        board(m, P(A-.12, a1, under(A-.12)-.005), P(.8, a1, under(.8)-.005), .1, .12, WOOD, 'wood_timber')
+        mid = lambda rho, zz: H_(rho*math.cos(math.radians(f)), rho*math.sin(math.radians(f)), zz)
+        board(m, mid(A-.12, under(A-.12)-.005), mid(.8, under(.8)-.005), .08, .1, WOOD, 'wood_timber')
+    # the cap over the top: dark wood under (seen from inside, round the king post), moss over, a short finial
+    with m.use('wood_timber'):
+        prism(m, [tuple(P(.66, 22.5+45*j, 0)[:2]) for j in range(8)], z+ztop-.18, z+ztop-.06, DARK)
     with m.use('moss'):
-        prism(m, [(x0+x*1.55/Rw, y0+y*1.55/Rw) for x, y in ring8], top-.08, top+.08, vary(MOSS), vary(MOSS, .1))
-    for k in range(8):
-        a, b = ring8[k], ring8[(k+1) % 8]; dz = .005*(k % 2)
-        board(m, (x0+a[0], y0+a[1], z+h+.02-dz), (x0+b[0], y0+b[1], z+h+.02-dz), .16, .16, DARK, 'wood_timber')
-    shimenawa(d, p, 'heart', 1.38)
-    interior((x0, y0, z+1.5), radius=round(Rw*math.cos(math.radians(22.5))+.1, 2), half_height=h-1.5+.35)
-    leaves_on(d, [(x0+x*(Rw-.3)/Rw, y0+y*(Rw-.3)/Rw) for x, y in ring8], z, 16)
-    shimenawa(d, p, 'heart', L.ROOF_TOP['heart']+.55)          # and where the camphor leaves the roof
-    for k in (1, 3, 5, 7):
-        a = math.radians(45*k); chochin(d, x0+(Rw+.5)*math.cos(a), y0+(Rw+.5)*math.sin(a), z+2.3, .3, .2, 300)
-    for a in (20, 110, 200, 290):      # the room's warm light, from the lantern strings round the trunk
-        r_ = (p['trunk']+Rw)/2; light(x0+r_*math.cos(math.radians(a)), y0+r_*math.sin(math.radians(a)), z+2.3, 850, 5.5, int(a == 290))
+        prism(m, [tuple(P(.7, 22.5+45*j, 0)[:2]) for j in range(8)], z+ztop-.06, z+ztop+.12, vary(MOSS), vary(MOSS, .1))
+    with m.use('wood_timber', grain=(0, 0, 1)):
+        m.lathe(tuple(H_(0, 0, ztop+.12)), [(0, .09), (.08, .06), (.13, .08), (.2, .035), (.23, .001)], DARK, 8)
+    # the king post, its ring at 4 m and the lantern strings to the corners at the wall plate
+    post(m, *H_(0, 0)[:2], z+4.0, z+ztop-.12, .16, WOOD)
+    hub = H_(0, 0, 4.05); ring(d, hub[:2], .12, hub[2], .025, ROPE, 12)
+    for f in range(0, 360, 45):
+        a = f+22.5; s0 = H_(*corner(.1, a), 4.05); s1 = H_(*corner(A-.11, a), h+.05)
+        pts = [s0+(s1-s0)*t-[0, 0, .3*math.sin(math.pi*t)] for t in np.linspace(0, 1, 9)]
+        tube(d, pts, .009, ROPE, 4)
+        q = s0+(s1-s0)*.5-[0, 0, .3]; chochin(d, q[0], q[1], q[2]-.25, .24, .1)
+    # the doors: noren just outside the header, a lantern under the eave beside each (on the front side, off the way
+    # to the bridges), glass floats at the four front corners
+    for i, f in enumerate((135, 225)):
+        W = hall_wall(c, ang, A, f); q = on_wall(W, 0, -.14)
+        noren(d, q[0], q[1], z+dh-.06, 1.2, .62, wall_yaw(W), 'noren_indigo' if i == 0 else 'noren_cream')
+        q = on_wall(W, -1.15 if f == 135 else 1.15, -.45); chochin(d, q[0], q[1], z+2.72, .28, .15, 280)
+    for a in (22.5, 67.5, 292.5, 337.5):
+        q = P(5.1, a, 0); glass_float(d, q[0], q[1], z+under(5.1)-.31, .13, .18)
+    shimenawa(d, p, 'heart', 2.5)
+    interior((c[0], c[1], z+h/2), radius=round(A+.1, 2), half_height=h/2+.35)
+    leaves_on(d, [tuple(H_(*corner(A-.35, 22.5+45*j))[:2]) for j in range(8)], z, 8)
+    for a in (45, 135, 225, 315):      # the room's warm light, as from the lantern strings
+        q = H_(2.4*math.cos(math.radians(a)), 2.4*math.sin(math.radians(a))); light(q[0], q[1], z+2.6, 850, 5.5, int(a == 45))
     furnish_heart(m, d, p)
 
 
+def boat_shape(s):
+    """The upturned rowboat (L.BOAT) at s along it, -1 at the transom and 1 at the bow: half beam, gunwale height and
+    keel height over the deck. Upside down, the gunwale dips toward the ends (the sheer, never under BOAT['gunwale'])
+    and the keel runs nearly level along the top."""
+    B, G = L.BOAT['beam']/2, L.BOAT['gunwale']
+    hb = max(.03, B*math.sqrt(max(0., 1-s**2.2))) if s > 0 else B*(1-.55*(-s)**2.5)
+    return hb, G+.25-(.25 if s > 0 else .17)*s*s, G+.95-.08*s*s
+
+
+def hull_at(s, f, k=1., drop=0.):
+    """A point of the hull's skin in boat-local metres (x along it, y across toward the trunk): s along, f round from
+    the gunwale on the trunk side (0) over the keel to the other gunwale (pi); k < 1 and drop pull it inside."""
+    hb, zg, zk = boat_shape(s)
+    return np.array([s*L.BOAT['length']/2, hb*math.cos(f)*k, zg+(zk-zg)*max(0., math.sin(f))**.7*k-drop])
+
+
+def hull_z(x, y):
+    """The height of the hull's inside over boat-local (x, y)."""
+    hb, zg, zk = boat_shape(x/(L.BOAT['length']/2))
+    return zg+(zk-zg)*max(0., 1-min(1., (y/hb)**2))**.35
+
+
 def boat_room(m, d, p):
-    x0, y0 = p['xy']; z = p['deck']; ang = p['open']; rc = p['trunk']+1.3
-    c = np.array([x0+rc*math.cos(math.radians(ang)), y0+rc*math.sin(math.radians(ang)), z])
-    xs = np.linspace(-2.1, 2.1, 17); fs = np.linspace(0, math.pi, 12)
-    hb = lambda s: .95*math.sqrt(max(0., 1-max(0., s)**2.5))
-    zg = lambda s: 1.72+.28*max(0., s)**2
-    dp = lambda s: .78*(1-.2*max(0., s)**2)
-    sec = [[(x, hb(x/2.1)*math.cos(f), zg(x/2.1)+dp(x/2.1)*math.sin(f)) for f in fs] for x in xs]
+    """The boat room: a 7 m rowboat upturned over the deck beside its trunk (layout BOAT), on four posts under its
+    gunwales, open all round underneath. Faded blue planks outside with a pale strake at the gunwale, planking, ribs,
+    a keelson and two thwarts inside, a pointed bow and a transom. The gunwale is 2.6 m over the deck at the ends and
+    2.85 m in the middle, so the camera follows under it; the bridges land on the trunk side, which stays clear."""
+    r = p['room']; c = np.array([*r['center'], p['deck']], float); ang = r['angle']; z = c[2]
+    half = L.BOAT['length']/2; B = lambda lx, ly, lz=0.: local(c, ang+90, lx, ly, lz)
+    S = np.sin(np.linspace(-math.pi/2, math.pi/2, 27)); F = np.linspace(0, math.pi, 17)
+    sec = [[hull_at(s, f) for f in F] for s in S]
     with m.at(tuple(c), ang+90):
-        for i in range(len(xs)-1):
-            for j in range(len(fs)-1):
+        for i in range(len(S)-1):
+            for j in range(len(F)-1):
                 q = [sec[i][j], sec[i+1][j], sec[i+1][j+1], sec[i][j+1]]
-                mid = np.mean(q, axis=0); axis = np.array([mid[0], 0, zg(mid[0]/2.1)])
-                nrm = np.cross(np.subtract(q[1], q[0]), np.subtract(q[3], q[0]))
-                out = q if nrm@(mid-axis) > 0 else q[::-1]
-                if j in (0, len(fs)-2):
+                mid = np.mean(q, axis=0); axis = np.array([mid[0], 0, boat_shape(mid[0]/half)[1]])
+                out = q if np.cross(q[2]-q[0], q[3]-q[1])@(mid-axis) > 0 else q[::-1]
+                out = [tuple(v) for v in out]
+                if j in (0, len(F)-2):
                     with m.use('wood_pale', grain=(1, 0, 0)): m.poly(out, (.78, .74, .64))
                 else:
                     with m.use('hull', grain=(1, 0, 0)): m.poly(out, WHITE)
                 with m.use('wood_plank', grain=(1, 0, 0)): m.poly(out[::-1], vary(PLANK, .08))
-        with m.use('hull', grain=(0, 1, 0)):
-            two_sided(m, sec[0], WHITE, vary(PLANK))
-        for x in np.linspace(-1.9, 1.9, 9):      # ribs inside the hull
-            s = x/2.1; pts = [(x, hb(s)*math.cos(f)*.96, zg(s)+dp(s)*math.sin(f)*.96-.02) for f in np.linspace(0, math.pi, 10)]
-            tube(m, pts, .035, WOOD, 4, 'wood_timber')
-        tube(m, [(x, 0, zg(x/2.1)+dp(x/2.1)+.03) for x in np.linspace(-2.1, 2.05, 12)], .06, DARK, 6, 'wood_timber')  # keel
-        for x in (-1.75, 1.15):
-            for s in (-1, 1): post(m, x, s*hb(x/2.1)*.9, 0, zg(x/2.1)+.02, .13, WOOD)
-        for x in (-1.75, 1.15):
-            board(m, (x, -hb(x/2.1)*.9, zg(x/2.1)), (x, hb(x/2.1)*.9, zg(x/2.1)), .12, .12, DARK, 'wood_timber')
-    q = local(c, ang+90, 0, 0); chochin(d, q[0], q[1], z+1.95, .3, .45, 1000)
+        # the transom: painted outside, planked inside
+        tr = [tuple(v) for v in sec[0]]
+        nrm = sum(np.cross(np.array(tr[i]), np.array(tr[(i+1) % len(tr)])) for i in range(len(tr)))
+        if nrm[0] > 0: tr = tr[::-1]
+        with m.use('hull', grain=(0, 1, 0)): m.poly(tr, WHITE)
+        with m.use('wood_plank', grain=(0, 1, 0)): m.poly(tr[::-1], vary(PLANK, .08))
+        # rub rails along both gunwales and across the transom, the keel and stem outside, the keelson inside
+        for sgn, f in ((1, 0.), (-1, math.pi)):
+            tube(m, [hull_at(s, f)+[0, sgn*.03, -.01] for s in S], .045, DARK, 6, 'wood_timber')
+        tube(m, [sec[0][0]+[-.03, .03, -.01], sec[0][-1]+[-.03, -.03, -.01]], .045, DARK, 6, 'wood_timber')
+        tube(m, [(s*half, 0, boat_shape(s)[2]+.03) for s in S], .06, DARK, 6, 'wood_timber')
+        top = boat_shape(1.)
+        tube(m, [(half+.07*math.sin(math.pi*t*.5), 0, top[1]-.02+(top[2]-top[1]+.06)*t) for t in np.linspace(0, 1, 6)], .05, DARK, 6, 'wood_timber')
+        tube(m, [(s*half*.97, 0, boat_shape(s*.97)[2]-.05) for s in np.linspace(-.96, .9, 12)], .05, WOOD, 6, 'wood_timber')
+        for s in np.linspace(-.86, .86, 11):         # ribs
+            tube(m, [hull_at(s, f, .965, .03) for f in np.linspace(.06, math.pi-.06, 12)], .03, WOOD, 4, 'wood_timber')
+        for x in (-1.25, 1.25):                       # thwarts, high over the camera
+            y = .96*max(yy for yy in np.linspace(0, 1.6, 81) if hull_z(x, yy) >= 3.17)
+            board(m, (x, -y, 3.14), (x, y, 3.14), .24, .05, PALE, 'wood_pale')
+        # four posts under the gunwales, clear of the ways in from the bridges (they come from the trunk side)
+        for x in (-2.2, 2.2):
+            hb = boat_shape(x/half)[0]
+            for sgn in (-1, 1):
+                y = sgn*(hb-.15); zt = min(hull_z(x+dx, y+dy) for dx in (-.08, .08) for dy in (-.08, .08))-.015
+                post(m, x, y, -.04, zt, .16, WOOD)
+    # the lantern from the keel, its bottom 2.75 m up; a low warm fill
+    q = B(-.5, 0); zk = hull_z(-.5, 0)
+    chochin(d, q[0], q[1], z+2.97, .3, zk-2.97-.19-.02, 1000)
+    q = B(.5, 0); light(q[0], q[1], z+1.2, 250, 3.5)
+    interior((c[0], c[1], z+L.BOAT['gunwale']/2), (L.BOAT['beam']/2-.05, half-.05, L.BOAT['gunwale']/2+.35), ang)
     furnish_boat(m, d, p, c, ang)
 
 
