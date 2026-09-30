@@ -1357,9 +1357,7 @@ def entry_way(m, d, pl):
             prism(m, pts, sz-.4, sz, vary(STONE, .1), vary(STONE, .18))
         with d.use('moss'):
             d.poly([(sx+(px-sx)*1.08, sy+(py-sy)*1.08, sz-.06) for px, py in ccw(pts)], vary(MOSS, .1))
-    rail = [(sx+.75, sy, sz) for sx, sy, sz in pl['stones'][::2]]+[(x+W/2+.3, fy+.2, fz)]
-    for (px, py, pz) in rail: post(d, px, py, pz-.2, pz+.85, .08, WOOD)
-    tube(d, [(px, py, pz+.78) for px, py, pz in rail], .03, ROPE_LT, 6)
+    # no rope fence along the stones: the way from the trail onto them stays open
     sx, sy, sz = pl['stones'][0]; post(d, sx-.8, sy, sz-.2, sz+1.3, .1, WOOD)
     andon(d, sx-.8, sy, sz+1.3, .26, 300)
 
