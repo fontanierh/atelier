@@ -960,33 +960,123 @@ def furnish_sleep(m, d, c, ang, side, W):
 
 
 def furnish_entry(m, d, p):
-    """As painted: the trunk in the middle with its rope, shelves of jars under the round window on the west wall,
-    a straw hat and the backpack on pegs, crates and a rug; the porch bench and lantern outside the south door.
-    Nothing stands on the way from door to door, east of the trunk, or on the porch between the south door and the
-    bridge."""
-    x0, y0 = p['xy']; z = p['deck']; w2, l2 = ENTRY
-    L_ = lambda lx, ly: np.array([x0-ly, y0+lx])          # hut local (x north) to world
-    west = (np.array([x0-w2+.06, y0-l2, z]), np.array([0, 1., 0]), np.array([1., 0, 0]))
-    shelf(m, d, west, .6, 1.2, .8, 2)
-    for k, dy in enumerate((-.52, .02, .56)):      # a row of crates under the round window, a hand apart
-        crate(m, x0-w2+.35, y0+dy, z, (.46, .42, .42 if k != 1 else .5), 90+R.uniform(-6, 6))
-    q = np.array([x0-w2+.35, y0+.05]); andon(d, q[0], q[1], z+.5, .2, 200)
-    hat = np.array([x0-w2+.14, y0+.95, z+1.78])
-    with d.use('straw'):
-        d.lathe(tuple(hat), [(-.02, .0), (-.02, .21), (0, .22), (.06, .1), (.1, .01)], vary(STRAW, .05), 12)
-    q = np.array([x0-w2+.3, y0+.95]); prop('backpack', q[0], q[1], z+.85, face_yaw(1, 0), .85)      # on a peg
-    board(d, (x0-w2+.06, y0+.95, z+1.45), (x0-w2+.2, y0+.95, z+1.47), .03, .03, DARK, 'wood_timber')
-    q = np.array([x0-.6, y0+l2-.3]); crate(m, q[0], q[1], z, (.5, .45, .45), -8); crate(m, q[0], q[1], z+.45, (.4, .36, .32), 10)
-    q = np.array([x0+DOOR, y0]); rug(d, q[0], q[1], z, 1.0, 2.3, 0, 'rug_blue')
-    q = np.array([x0-1.15, y0-1.1]); cushion(d, q[0], q[1], z, .5, 15)    # west of the trunk: the way door to door is clear
-    # porch: the way from the south door to the bridge (south-west corner) stays clear. A crate bench with cushions
-    # along the east rail, the lantern in the south-east corner, a banner on the east wall, a plant on the north porch.
-    _, sx1, sy0, _ = L.ENTRY_BOX
-    q = np.array([x0+sx1-.45, y0-l2-1.2]); crate(m, q[0], q[1], z, (1.0, .42, .38), 90)
-    cushion(d, q[0], q[1]-.22, z+.38, .42, 90); cushion(d, q[0], q[1]+.22, z+.38, .42, 95)
-    q = np.array([x0+sx1-.4, y0+sy0+.4]); andon(d, q[0], q[1], z, .3, 300)
-    picture(d, [(x0+w2+.06, y0-l2+.1, z+1.0), (x0+w2+.06, y0-l2+.7, z+1.0), (x0+w2+.06, y0-l2+.7, z+1.95), (x0+w2+.06, y0-l2+.1, z+1.95)], 'flag')
-    q = L_(l2+.3, 1.85); potted_plant(d, q[0], q[1], z, 1.)
+    """The genkan of a children's secret base, everything against the walls: the way from door to door stays open
+    (1.7 m between the shoe cupboard and the bench, 3.5 m in the middle), and so do the landing at the steps and the
+    porch between the south door and the bridge. North wall: the shoe cupboard with the children's shoes and a
+    lantern on it, slippers waiting on the floor; a bench under a peg rail with the straw hat, a red scarf, the
+    backpack and a coil of rope. West wall: the island map over the treasure chest, a basket of rolled maps under the
+    round window, crates and a rolled rug in the corner. East wall: the window seat with cushions under the big
+    window, a shelf of jars of acorns and shells. By the south door the umbrella stand; the kite and the children's
+    drawings high on the gables; a mat at the north door, a rug in the middle, the big lantern from the ridge.
+    Outside: a crate bench against the south wall facing the view, a post lantern and a planter in the porch's far
+    corner, a potted plant by the landing, the banner on the east wall."""
+    global R
+    shared, R = R, random.Random(ENTRY_SEED+1)
+    try:
+        (X0, X1, Y0, Y1), walls = entry_walls(p)
+        N, S, Wl, E = walls['north'], walls['south'], walls['west'], walls['east']
+        x0, y0 = p['xy']; z = p['deck']; dx = L.ENTRY_DOOR; dw, dh = L.DOOR
+        cx, cy = (X0+X1)/2, (Y0+Y1)/2; jamb = dw/2+.1         # the door jambs' outer faces from the doors' line
+        W = lambda x, y, zz=0.: np.array([x0+x, y0+y, z+zz])
+        at = wall_point
+        # North wall, west of the door: the shoe cupboard (open shelves, a back, a top), shoes on every shelf
+        a0, a1 = X0+.15, dx-jamb-.1; B, D, H = .1, .38, .9
+        with m.use('wood_plank', grain=(0, 0, 1), jitter=True):
+            for a in (a0, a1-.03): slab(m, N, a, a+.03, B, B+D, 0., H-.03, vary(PLANK, .06))
+            slab(m, N, a0+.03, a1-.03, B+.003, B+.015, .06, H-.03, vary(BOARD, .05))
+        with m.use('wood_plank', grain=tuple(N[1]), jitter=True):
+            slab(m, N, a0-.02, a1+.02, B+.005, B+D+.02, H-.03, H, vary(PLANK, .05))
+            for zz in (.06, .36, .64): slab(m, N, a0+.03, a1-.03, B+.015, B+D-.01, zz, zz+.025, vary(PLANK, .08))
+        with m.use('wood_timber', grain=tuple(N[1])):
+            slab(m, N, a0+.03, a1-.03, B+D-.035, B+D-.01, 0., .06, DARK)
+        kinds = [('boots', 'sneakers', 'geta', 'boots'), ('geta', 'zori', 'sneakers', 'zori'), ('zori', 'geta', 'zori', 'sneakers')]
+        for row, zz in zip(kinds, (.085, .385, .665)):
+            for k, kind in enumerate(row):
+                a = a0+.22+.32*k
+                if a < a1-.15: entry_shoes(d, N, a, B+.05, zz, kind)
+        q = at(N, a0+.3, B+D/2); andon(d, q[0], q[1], z+H, .22, 200)
+        q = at(N, a1-.3, B+D/2); book_stack(d, q[0], q[1], z+H, 3, R.uniform(-10, 10))
+        entry_shoes(d, N, a0+.55, B+D+.12, 0., 'zori'); entry_shoes(d, N, a0+.95, B+D+.1, 0., 'sneakers')
+        # North wall, east of the door: a bench, and over it a peg rail with the hat, a scarf, the backpack and rope
+        a0, a1 = dx+jamb+.1, X1-.15
+        with m.use('wood_plank', grain=tuple(N[1]), jitter=True):
+            slab(m, N, a0, a1, .12, .52, .38, .43, vary(PLANK, .06))
+        with m.use('wood_timber', grain=(0, 0, 1), jitter=True):
+            for a in (a0+.08, a1-.13): slab(m, N, a, a+.05, .15, .49, 0., .38, WOOD)
+        with d.use('wood_timber', grain=tuple(N[1]), jitter=True):
+            slab(d, N, a0, a1, .1, .13, 1.52, 1.62, DARK)
+        pegs = [a0+.2+(a1-a0-.4)*k/3 for k in range(4)]
+        for a in pegs: tube(d, [at(N, a, .12, 1.57), at(N, a, .27, 1.61)], .017, WOOD, 6, 'wood_timber')
+        with along_axis(d, at(N, pegs[0], .16, 1.45), N[2]):        # the straw hat, its crown to the room
+            with d.use('straw'):
+                d.lathe((0, 0, 0), [(0, .001), (0, .21), (.02, .22), (.07, .1), (.11, .01)], vary(STRAW, .05), 14)
+        red = vary((.72, .16, .10), .05)
+        with d.use('canvas', grain=(0, 0, 1)):                        # the scarf, both ends hanging from the peg
+            for s, b, lo in ((-.03, .2, .98), (.04, .215, 1.1)):
+                two_sided(d, [tuple(at(N, pegs[1]+s-.065, b, lo)), tuple(at(N, pegs[1]+s+.065, b, lo)),
+                              tuple(at(N, pegs[1]+s+.065, b, 1.6)), tuple(at(N, pegs[1]+s-.065, b, 1.6))], red)
+        q = at(N, pegs[2], .33); prop('backpack', q[0], q[1], z+1.02, 0., .85)
+        with along_axis(d, at(N, pegs[3], .2, 1.41), N[2]):          # a coil of rope
+            for k, (r, off) in enumerate(((.17, 0.), (.15, .03), (.16, .055))):
+                ring(d, (.01*k, -.01*k), r, off, .022, ROPE, 16)
+        # West wall: the island map over the treasure chest; a basket of rolled maps under the round window; crates
+        # and a rolled rug in the corner by the south door
+        a0, a1 = cy-.55, cy+.55
+        with m.use('wood_plank', grain=tuple(Wl[1]), jitter=True):
+            slab(m, Wl, a0, a1, .12, .6, 0., .4, vary((.42, .21, .1), .05))
+            slab(m, Wl, a0-.02, a1+.02, .1, .62, .4, .52, vary((.36, .18, .08), .05))
+        with m.use('iron'):
+            for a in (a0+.14, a1-.18): slab(m, Wl, a, a+.04, .115, .605, .003, .53, IRON)
+            slab(m, Wl, cy-.06, cy+.06, .6, .635, .3, .45, IRON)
+        on_wall(d, Wl, cy, .1, 1.2, 1.15, 2.35, 'map')
+        q = at(Wl, entry_round_window(), .32); basket(d, q[0], q[1], z, .2, .26, scrolls=4)
+        q = W(X0+.45, Y0+.42); crate(m, q[0], q[1], z, (.6, .5, .45), R.uniform(-3, 3))
+        crate(m, q[0], q[1], z+.45, (.46, .38, .32), R.uniform(-8, 8))
+        with along_axis(d, W(X0+.1, Y0+.44, .86), (1, 0, 0)):
+            with d.use('canvas'):
+                d.lathe((0, 0, 0), [(0, .001), (0, .09), (.7, .09), (.7, .001)], vary((.62, .22, .12), .05), 12)
+        # East wall: the window seat (two crates and a board) with cushions, a shelf of jars toward the south door
+        for a in (cy-.5, cy+.5):
+            q = at(E, a, .345); crate(m, q[0], q[1], z, (.95, .45, .38), 90)
+        with m.use('wood_plank', grain=tuple(E[1]), jitter=True):
+            slab(m, E, cy-1.05, cy+1.05, .1, .62, .38, .42, vary(PLANK, .06))
+        for a in (cy-.62, cy, cy+.62):
+            q = at(E, a, .36); cushion(d, q[0], q[1], z+.42, .48, 90+R.uniform(-6, 6))
+        shelf(m, d, (E[0]+E[2]*.09, E[1], E[2]), (Y0+cy-.95)/2, 1.1, 1.0, 2)
+        # South wall, east of the door: the umbrella stand, a tub with two closed paper umbrellas leaning in it
+        q = at(S, dx+jamb+.35, .3)
+        with m.use('wood_plank', grain=(0, 0, 1), jitter=True):
+            m.lathe(tuple(q), [(0., .001), (.002, .15), (.44, .165), (.46, .165), (.46, .14), (.12, .13), (.12, .001)], vary(WOOD, .08), 12)
+        for zz, r in ((.1, .158), (.36, .167)): ring(d, q[:2], r, q[2]+zz, .012, IRON, 12, 'iron')
+        for off, lean, col in ((-.05, 7., (.75, .2, .12)), (.05, -6., (.25, .32, .55))):
+            tilt = math.radians(lean); axis = -S[2]*abs(math.sin(tilt))*.8+S[1]*math.sin(tilt)*.6+np.array([0, 0, math.cos(tilt)])
+            with along_axis(d, q+S[1]*off+[0, 0, .12], axis):
+                with d.use('wood_timber'):
+                    d.lathe((0, 0, 0), [(0., .012), (.32, .012)], DARK, 6)
+                with d.use('paper'):
+                    d.lathe((0, 0, 0), [(.26, .001), (.27, .05), (.4, .07), (.8, .075), (.95, .035), (.99, .001)], vary(col, .05), 12)
+                with d.use('wood_timber'):
+                    d.lathe((0, 0, 0), [(.98, .012), (1.05, .003)], DARK, 6)
+        # the gables over the doors: the kite, the children's drawings; the mat at the north door, the rug, the lantern
+        on_wall(d, S, dx, .1, .75, 3.0, 3.75, 'kite', frame=False)
+        on_wall(d, N, dx, .1, .7, 3.0, 3.7, 'pictures')
+        q = W(dx, Y1-.55); rug(d, q[0], q[1], z, dw+.1, .8, 0, 'rug_blue')
+        q = W(cx, cy); rug(d, q[0], q[1], z, 1.9, 2.8, 0, 'rug')
+        chochin(d, q[0], q[1], z+3.3, .36, L.ROOF_TOP['entry']-.3-3.3-.36*.63+.02, 700)
+        # Outside. A crate bench against the south wall east of the door, facing the view, under the door lantern.
+        q = at(S, (dx+jamb+.15+X1-.12)/2, -.285); crate(m, q[0], q[1], z, (1.3, .42, .38), 0)
+        for s in (-.32, .32): cushion(d, q[0]+s, q[1], z+.38, .42, R.uniform(-8, 8))
+        # The porch's far (south-east) corner: a post lantern and a planter, clear of the view from the south door
+        # and of the way to the bridge; a potted plant in the landing's east corner, the banner on the east wall.
+        bx0, bx1, by0, by1 = L.ENTRY_BOX
+        q = W(bx1-.45, by0+1.5); andon(d, q[0], q[1], z, .3, 300)
+        q = W(bx1-.85, by0+.8); prop('planter', q[0], q[1], z, face_yaw(-1, 1), .95)
+        q = W(bx1-.65, by1-.85); potted_plant(d, q[0], q[1], z, 1.)
+        on_wall(d, E, .4, -.08, .8, 1.35, 2.15, 'flag', frame=False)
+        tube(d, [at(E, .4-.47, -.105, 2.18), at(E, .4+.47, -.105, 2.18)], .015, DARK, 6, 'wood_timber')
+        for s in (-.43, .43): tube(d, [at(E, .4+s, -.03, 2.18), at(E, .4+s, -.12, 2.18)], .012, DARK, 6, 'wood_timber')
+    finally:
+        R = shared
 
 
 def furnish_heart(m, d, p):
@@ -1087,32 +1177,150 @@ def furnish_boat(m, d, p, c, ang):
 
 # ---------------------------------------------------------------------------------------------- special rooms
 
-ENTRY = (2.0, 1.5)     # the little hut's half sizes: east-west, north-south (the deck is L.ENTRY_BOX)
-DOOR = 1.2             # both doors this far east of the trunk
+ENTRY_SEED = 1107       # the little hut's own random streams: changing it never reshuffles what is built after it
+
+
+def entry_walls(p):
+    """The little hut's walls in metres from its maple (L.ENTRY_HUT: x0, x1 east, y0, y1 north), and each wall as
+    (a point of its centre line at the deck, the direction along it, the direction into the hut). Along the north and
+    south walls a position is x from the maple, along the west and east walls y."""
+    x, y = p['xy']; X0, X1, Y0, Y1 = L.ENTRY_HUT; O = np.array([x, y, p['deck']])
+    ex, ey = np.array([1., 0, 0]), np.array([0, 1., 0])
+    return (X0, X1, Y0, Y1), dict(north=(O+ey*Y1, ex, -ey), south=(O+ey*Y0, ex, ey), west=(O+ex*X0, ey, ex),
+                                  east=(O+ex*X1, ey, -ex))
+
+
+def entry_round_window():
+    """Where the west wall's round window is (y from the maple): level with the maple, clear of the corners."""
+    X0, X1, Y0, Y1 = L.ENTRY_HUT
+    return min(Y1-.8, max(Y0+.8, 0.))
+
+
+def wall_point(wall, a, b, zz=0.):
+    """A point a along a wall (entry_walls), b in from its centre line (outside if negative), zz over the deck."""
+    o, u, n = wall
+    return o+u*a+n*b+np.array([0, 0, zz])
+
+
+def slab(m, wall, a0, a1, b0, b1, z0, z1, color):
+    """A box square to a wall (entry_walls): a0..a1 along it, b0..b1 in from its centre line, z0..z1 over the deck."""
+    q = lambda a, b, zz: tuple(wall_point(wall, a, b, zz))
+    hexa(m, [q(a0, b0, z0), q(a1, b0, z0), q(a1, b1, z0), q(a0, b1, z0), q(a0, b0, z1), q(a1, b0, z1), q(a1, b1, z1),
+             q(a0, b1, z1)], color)
+
+
+def on_wall(d, wall, a, b, w, z0, z1, pic, frame=True):
+    """A picture flat on a wall (entry_walls), w wide from z0 to z1, centred a along it, b in from its centre line (on
+    the outside if negative), upright seen from that side; a dark frame round it, 2 cm proud."""
+    f = wall[2]*math.copysign(1., b); r = np.cross([0, 0, 1.], f); c = wall_point(wall, a, b)
+    q = lambda s, zz, t=0.: tuple(c+r*s+f*t+[0, 0, zz])
+    picture(d, [q(-w/2, z0), q(w/2, z0), q(w/2, z1), q(-w/2, z1)], pic)
+    if frame:
+        fw = .05
+        with d.use('wood_timber'):
+            for s0, s1, za, zb in ((-w/2-fw, w/2+fw, z0-fw, z0), (-w/2-fw, w/2+fw, z1, z1+fw), (-w/2-fw, -w/2, z0, z1),
+                                   (w/2, w/2+fw, z0, z1)):
+                hexa(d, [q(s0, za, -.015), q(s1, za, -.015), q(s1, za, .02), q(s0, za, .02),
+                         q(s0, zb, -.015), q(s1, zb, -.015), q(s1, zb, .02), q(s0, zb, .02)], DARK)
+
+
+class along_axis:
+    """`with along_axis(mesh, point, axis):` builds in a frame at point whose z runs along axis (lathes, rings)."""
+    def __init__(self, mesh, point, axis):
+        from mathutils import Matrix
+        v = Vector(tuple(float(c) for c in axis)).normalized()
+        M = v.to_track_quat('Z', 'Y' if abs(v.y) < .9 else 'X').to_matrix().to_4x4()
+        M.translation = Vector(tuple(float(c) for c in point))
+        self.mesh, self.M = mesh, Matrix(M)
+
+    def __enter__(self):
+        self.old = self.mesh.transform; self.mesh.transform = self.old@self.M
+
+    def __exit__(self, *_):
+        self.mesh.transform = self.old
+
+
+def entry_shoes(d, wall, a, b, zz, kind):
+    """A pair of small shoes side by side, a along a wall, from b to b+23 cm in from it (toes out), on zz: geta,
+    straw zori, rain boots or canvas sneakers."""
+    for s in (-.06, .06):
+        A = a+s
+        if kind == 'geta':
+            with d.use('wood_pale', grain=tuple(wall[2])):
+                slab(d, wall, A-.045, A+.045, b, b+.22, zz+.04, zz+.065, vary(PALE, .06))
+                for t in (.03, .165): slab(d, wall, A-.04, A+.04, b+t, b+t+.025, zz+.002, zz+.04, WOOD)
+        elif kind == 'zori':
+            with d.use('straw', grain=tuple(wall[2])):
+                slab(d, wall, A-.045, A+.045, b, b+.23, zz+.002, zz+.022, vary(STRAW, .06))
+            with d.use('canvas'):
+                slab(d, wall, A-.035, A+.035, b+.17, b+.19, zz+.022, zz+.036, (.62, .12, .08))
+        elif kind == 'boots':
+            with d.use('flat'):
+                c = vary((.85, .62, .12), .05)
+                slab(d, wall, A-.045, A+.045, b, b+.23, zz+.002, zz+.07, c)
+                slab(d, wall, A-.042, A+.042, b+.005, b+.1, zz+.07, zz+.2, c)
+        else:
+            with d.use('flat'):
+                slab(d, wall, A-.045, A+.045, b, b+.23, zz+.002, zz+.022, (.9, .88, .82))
+            with d.use('canvas'):
+                slab(d, wall, A-.04, A+.04, b+.01, b+.22, zz+.022, zz+.075, vary((.25, .34, .6), .06))
 
 
 def entry_hut(m, d, p):
-    x0, y0 = p['xy']; z = p['deck']; w2, l2 = ENTRY; h = 2.25
-    with m.at((x0, y0, z), 90):          # local x = world north, so the ridge runs north-south
-        wall(m, (l2, w2), (l2, -w2), h, [(w2+DOOR, .88, 0., 1.9, 'door')])
-        wall(m, (-l2, -w2), (-l2, w2), h, [(w2-DOOR, .88, 0., 1.9, 'door')])
-        wall(m, (-l2, w2), (l2, w2), h, [(l2, .9, .9, 1.8, 'round')])
-        wall(m, (l2, -w2), (-l2, -w2), h, [(l2, 1.1, .92, 1.7, 'window')])
-        for x in (-l2, l2):
-            for y in (-w2, w2): post(m, x, y, -.04, h+.05, .16, DARK)
-        gable_roof(m, d, 2*l2, 2*w2, h-.08, L.ROOF_TOP['entry'])
-    # doors on the north and south walls at world (x0+DOOR, y0 +- l2), clear of the big trunk
-    noren(d, x0+DOOR, y0+l2+.03, z+1.9, .84, .72, 0, 'noren_indigo')
-    noren(d, x0+DOOR, y0-l2-.03, z+1.9, .84, .72, 180, 'noren_cream')
-    chochin(d, x0+DOOR-.64, y0+l2+.32, z+2.0, .26, .25, 300)
-    chochin(d, x0+DOOR-.64, y0-l2-.32, z+2.0, .26, .25, 300)
-    chochin(d, x0-.9, y0-.55, z+2.2, .24, .3, 700)
-    interior((x0, y0, z+h/2), (w2-.05, l2-.05, h/2+.35))
-    for gx, gy in ((-w2-.35, l2+.3), (w2+.35, -l2-.3)):
-        glass_float(d, x0+gx, y0+gy, z+1.85, .12, .3)
-    fuurin(d, x0+w2+.25, y0+.2, z+1.95)
-    shimenawa(d, p, 'entry', 1.35)
-    furnish_entry(m, d, p)
+    """The little hut east of its maple, L.ENTRY_HUT from the trunk: plank walls L.WALL high on a timber frame, open to
+    the rafters under a gable roof whose ridge runs north-south. A door L.DOOR in each gable at L.ENTRY_DOOR, with its
+    noren, a plank sliding door parked open against the wall west of it and a lantern on a bracket east of it; a
+    six-pane window in the east wall over the window seat, a round window in the west wall looking at the maple.
+    Nothing stands on the landing at the steps or on the porch's way from the south door to the bridge."""
+    global R
+    shared, R = R, random.Random(ENTRY_SEED)
+    try:
+        (X0, X1, Y0, Y1), walls = entry_walls(p)
+        x0, y0 = p['xy']; z = p['deck']; h = L.WALL; dw, dh = L.DOOR; dx = L.ENTRY_DOOR
+        cx, cy, hx, hy = (X0+X1)/2, (Y0+Y1)/2, (X1-X0)/2, (Y1-Y0)/2
+        W = lambda x, y, zz=0.: np.array([x0+x, y0+y, z+zz])
+        with m.at(tuple(W(cx, cy)), 90):      # local x north, local y west: the ridge runs north-south
+            wall(m, (hy, hx), (hy, -hx), h, [(dx-X0, dw, 0., dh, 'door')])                  # north gable, west to east
+            wall(m, (-hy, -hx), (-hy, hx), h, [(X1-dx, dw, 0., dh, 'door')])                # south gable, east to west
+            wall(m, (-hy, hx), (hy, hx), h, [(entry_round_window()-Y0, .9, 1.3, 2.2, 'round')])   # west, south to north
+            wall(m, (hy, -hx), (-hy, -hx), h, [(Y1-cy, 1.6, .85, 2.0, 'window')])           # east, north to south
+            for u in (-hy, hy):
+                for v in (-hx, hx): post(m, u, v, -.04, h+.05, .16, DARK)
+            # the roof on a stream of its own: the two slopes' top courses meet at the ridge, and a stream whose
+            # shingle runs never end at the same place on both sides (checked by zfight.py) stays that way
+            hut_R, R = R, random.Random(ENTRY_SEED+3)
+            gable_roof(m, d, 2*hy, 2*hx, h-.08, L.ROOF_TOP['entry'])
+            R = hut_R
+        for wl, yaw, pic in ((walls['north'], 0, 'noren_indigo'), (walls['south'], 180, 'noren_cream')):
+            # the noren's rod in the door head, the strips hanging to 1.7 m
+            q = wall_point(wl, dx, -.03, dh-.03); noren(d, q[0], q[1], q[2], dw-.04, .8, yaw, pic)
+            # the sliding door, parked open west of the doorway on its track over the door head
+            a0, a1 = dx-dw/2-dw-.1, dx-dw/2; k = round((a1-a0)/.2)
+            with m.use('wood_plank', grain=(0, 0, 1), jitter=True):
+                for i in range(k):
+                    slab(m, wl, a0+(a1-a0)*i/k, a0+(a1-a0)*(i+1)/k-.006, -.15, -.11, .02, dh+.08, vary(BOARD, .09))
+            with m.use('wood_timber', grain=(1, 0, 0), jitter=True):
+                for zz in (.4, dh-.3): slab(m, wl, a0+.05, a1-.05, -.18, -.15, zz, zz+.1, DARK)
+                slab(m, wl, a0-.1, dx+dw/2+.12, -.18, -.105, dh+.1, dh+.17, DARK)
+            with m.use('iron'):
+                for a in (a0+.2, a1-.2): slab(m, wl, a-.02, a+.02, -.145, -.115, dh+.06, dh+.11, IRON)
+            # the lantern east of the door, on a bracket at the top of the wall: all of it over 2.5 m
+            a = dx+dw/2+.5
+            with d.use('wood_timber', grain=tuple(-wl[2])):
+                slab(d, wl, a-.025, a+.025, -.5, -.03, dh+.42, dh+.47, DARK)
+                slab(d, wl, a-.06, a+.06, -.075, -.045, dh+.18, dh+.48, DARK)     # under the wall's top (3 m)
+            q = wall_point(wl, a, -.42, dh+.2); chochin(d, q[0], q[1], q[2], .26, .08, 300)
+        # a glass float at both eastern eave corners and a wind chime under the east eave, off every walk and hung
+        # short from the eave (3 m), so nothing hangs lower than 2.5 m
+        for y in (Y1+.2, Y0-.2):
+            q = W(X1+.22, y); glass_float(d, q[0], q[1], z+2.7, .12, .18)
+        q = W(X1+.22, cy); fuurin(d, q[0], q[1], z+2.84, .06)
+        interior(tuple(W(cx, cy, h/2)), (hx-.05, hy-.05, h/2+.35))
+        q = W(cx, cy); light(q[0], q[1], z+1.2, 250, 3.8)      # warm fill low in the room
+        leaves_on(d, [tuple(W(x, y)[:2]) for x, y in ((X0+.3, Y0+.3), (X1-.3, Y0+.3), (X1-.3, Y1-.3), (X0+.3, Y1-.3))], z, 6)
+        furnish_entry(m, d, p)
+    finally:
+        R = shared
 
 
 def shimenawa(d, p, name, h):
@@ -1394,47 +1602,57 @@ def lookout(m, d, pl):
 
 
 def entry_way(m, d, pl):
-    ex = pl['entry_stairs']; E = pl['places']['entry']; x = ex['x']; W = ex['width']
-    for k in range(ex['steps']-1):
-        y0 = ex['top_y']+k*ex['tread']; t = E['deck']-(k+1)*ex['rise']
-        with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
-            m.box((x, y0+ex['tread']/2, t-.03), (W, ex['tread']+.02, .06), vary(PLANK, .1))
-    fy, fz = ex['foot'][1], ex['foot'][2]
-    for s in (-1, 1):
-        xs = x+s*(W/2+.04)
-        board(m, (xs, ex['top_y'], E['deck']-.02), (xs, fy, fz), .07, .26, DARK, 'wood_timber')
-        for yy, zz in ((ex['top_y']+.05, E['deck']), (fy-.1, fz)):
-            post(m, xs, yy, zz-.3, zz+1.05, .11, WOOD)
-        tube(m, [(xs, ex['top_y']+.05, E['deck']+.95), (xs, fy-.1, fz+.95)], .032, ROPE_LT, 6)
-    # Every stone is level (layout.entry_way() sets its top). Stones at one height keep a gap between them; up the bank,
-    # where each is a step over the last, they overlap like a flight cut into the slope. Each is long across the way.
-    st = pl['stones']; last = len(st)-1
-    for i, (sx, sy, sz) in enumerate(st):
-        if i == last:       # the stone at the stair foot: wider, square to the stair, against the lowest tread
-            (rx, ry), rot_ = L.FOOT_STONE, 0.
-        else:
-            u = np.array(st[i+1][:2])-np.array(st[max(i-1, 0)][:2])
-            half = []
-            for j in (i-1, i+1) if i else (i+1,):
-                qx, qy, qz = st[j]; dist = math.hypot(qx-sx, qy-sy)
-                if j == last: half.append(dist-L.FOOT_STONE[1]-.05)
-                elif abs(qz-sz) < .06: half.append(dist/2-.05)
-                else: half.append(dist/2+.08)
-            rx, ry = R.uniform(.44, .5), float(np.clip(min(half), .2, .42))
-            rot_ = math.atan2(u[1], u[0])-math.pi/2+R.uniform(-.12, .12)
-        wob = [1.+R.uniform(-.05, .05) for _ in range(10)] if i != last else [1.]*10
-        pts = ccw([(sx+w*(rx*math.cos(a)*math.cos(rot_)-ry*math.sin(a)*math.sin(rot_)), sy+w*(rx*math.cos(a)*math.sin(rot_)+ry*math.sin(a)*math.cos(rot_)))
-                   for a, w in zip(np.linspace(0, 2*math.pi, 11)[:-1], wob)])
-        top = [(px, py, sz) for px, py in pts]
-        zb = min([sz]+[ground(px, py) for px, py in pts])-.3
-        with m.use('stone', jitter=True):
-            m.poly(top, vary(STONE, .1))
-            m.poly([(px, py, zb) for px, py in pts[::-1]], vary(STONE, .18))
-            for a, b_ in zip(top, top[1:]+top[:1]):
-                m.poly([(a[0], a[1], zb), (b_[0], b_[1], zb), b_, a], vary(STONE, .18))
-    # no rope fence along the stones: the way from the trail onto them stays open
-    sx, sy, sz = pl['stones'][0]; post(d, sx-.8, sy, ground(sx-.8, sy)-.2, sz+1.3, .1, WOOD)
-    andon(d, sx-.8, sy, sz+1.3, .26, 300)
+    """The plank steps down north from the little hut's north door (layout.entry_way(): L.STAIR_WIDTH wide, their
+    stringers, rope handrails on short posts) and the stepping stones exactly where the layout puts them, each level;
+    a post lantern beside the first stone. Its own random stream, so the stones keep their shapes whatever is built
+    before them."""
+    global R
+    shared, R = R, random.Random(ENTRY_SEED+2)
+    try:
+        ex = pl['entry_stairs']; E = pl['places']['entry']; x = ex['x']; W = ex['width']
+        for k in range(ex['steps']-1):
+            y0 = ex['top_y']+k*ex['tread']; t = E['deck']-(k+1)*ex['rise']
+            with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
+                m.box((x, y0+ex['tread']/2, t-.03), (W, ex['tread']+.02, .06), vary(PLANK, .1))
+        fy, fz = ex['foot'][1], ex['foot'][2]
+        for s in (-1, 1):
+            xs = x+s*(W/2+.04); xp = x+s*(W/2+.075)      # posts just outside the treads: the way stays W clear
+            board(m, (xs, ex['top_y'], E['deck']-.02), (xs, fy, fz), .07, .26, DARK, 'wood_timber')
+            for yy, zz in ((ex['top_y']+.05, E['deck']), (fy-.1, fz)):
+                post(m, xp, yy, zz-.3, zz+1.05, .11, WOOD)
+            tube(m, [(xp, ex['top_y']+.05, E['deck']+.95), (xp, fy-.1, fz+.95)], .032, ROPE_LT, 6)
+        # Every stone is level (layout.entry_way() sets its top). Stones at one height keep a gap between them; up the
+        # bank, where each is a step over the last, they overlap like a flight cut into the slope. Each is long across
+        # the way.
+        st = pl['stones']; last = len(st)-1
+        for i, (sx, sy, sz) in enumerate(st):
+            if i == last:       # the stone at the stair foot: wider, square to the stair, against the lowest tread
+                (rx, ry), rot_ = L.FOOT_STONE, 0.
+            else:
+                u = np.array(st[i+1][:2])-np.array(st[max(i-1, 0)][:2])
+                half = []
+                for j in (i-1, i+1) if i else (i+1,):
+                    qx, qy, qz = st[j]; dist = math.hypot(qx-sx, qy-sy)
+                    if j == last: half.append(dist-L.FOOT_STONE[1]-.05)
+                    elif abs(qz-sz) < .06: half.append(dist/2-.05)
+                    else: half.append(dist/2+.08)
+                rx, ry = R.uniform(.44, .5), float(np.clip(min(half), .2, .42))
+                rot_ = math.atan2(u[1], u[0])-math.pi/2+R.uniform(-.12, .12)
+            wob = [1.+R.uniform(-.05, .05) for _ in range(10)] if i != last else [1.]*10
+            pts = ccw([(sx+w*(rx*math.cos(a)*math.cos(rot_)-ry*math.sin(a)*math.sin(rot_)), sy+w*(rx*math.cos(a)*math.sin(rot_)+ry*math.sin(a)*math.cos(rot_)))
+                       for a, w in zip(np.linspace(0, 2*math.pi, 11)[:-1], wob)])
+            top = [(px, py, sz) for px, py in pts]
+            zb = min([sz]+[ground(px, py) for px, py in pts])-.3
+            with m.use('stone', jitter=True):
+                m.poly(top, vary(STONE, .1))
+                m.poly([(px, py, zb) for px, py in pts[::-1]], vary(STONE, .18))
+                for a, b_ in zip(top, top[1:]+top[:1]):
+                    m.poly([(a[0], a[1], zb), (b_[0], b_[1], zb), b_, a], vary(STONE, .18))
+        # no rope fence along the stones: the way from the trail onto them stays open
+        sx, sy, sz = pl['stones'][0]; post(d, sx-.8, sy, ground(sx-.8, sy)-.2, sz+1.3, .1, WOOD)
+        andon(d, sx-.8, sy, sz+1.3, .26, 300)
+    finally:
+        R = shared
 
 
 # ---------------------------------------------------------------------------------------------- trunks
