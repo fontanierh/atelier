@@ -73,6 +73,8 @@ materials = {}
 for mat_name, cfg in sword_cfg['materials'].items():
     mat = asset(mat_name, U.Material, U.MaterialFactoryNew())
     M.delete_all_material_expressions(mat)
+    # Opaque until see_through.py masks it again: the opacity mask may still point at its deleted nodes.
+    mat.set_editor_property('blend_mode', U.BlendMode.BLEND_OPAQUE)
     mat.set_editor_property('two_sided', cfg['two_sided'])
     if cfg['texture']:
         task = U.AssetImportTask()

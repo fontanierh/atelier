@@ -51,6 +51,8 @@ def parent(default):
     path = MAT+'/M_TreeHouse'
     m = E.load_asset(path) if E.does_asset_exist(path) else AT.create_asset('M_TreeHouse', MAT, unreal.Material, unreal.MaterialFactoryNew())
     MEL.delete_all_material_expressions(m)
+    # Opaque until add_mask masks it again: the opacity mask may still point at the deleted see-through.
+    m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_OPAQUE)
 
     def node(cls, x, y, **kw):
         e = MEL.create_material_expression(m, cls, x, y)

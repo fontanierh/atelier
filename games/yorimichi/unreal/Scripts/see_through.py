@@ -218,10 +218,14 @@ def done(m):
     return any(e.get_editor_property('desc') == TAG for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
 
 
-def broken(m):
-    """Whether the opacity mask leads to a see-through shadow switch that lost an input. import_cairo.py rebuilds its
-    materials with delete_all_material_expressions, which leaves the opacity mask on the deleted switch: done() still
-    finds the tag, and the material fails to compile (Missing input Shadow) and renders as the default grey."""
+def stale(m, blend=True):
+    """Whether m's opacity mask still leads to a see-through that a rebuild deleted. import_treehouse.py,
+    import_cairo.py and import_cairo_sword.py rebuild their materials with delete_all_material_expressions, which leaves
+    the opacity mask on the deleted nodes: done() still finds the tag, and the material fails to compile (Missing input
+    Shadow) and renders as the default. Those imports reset the material to opaque, and the see-through (blend) always
+    leaves it masked; a shadow switch that lost an input is stale too."""
+    if not done(m): return False
+    if blend and m.get_editor_property('blend_mode') == unreal.BlendMode.BLEND_OPAQUE: return True
     return any(isinstance(e, unreal.MaterialExpressionShadowReplace) and None in MEL.get_inputs_for_material_expression(m, e)
                for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
 
@@ -274,7 +278,8 @@ def add_mask(m, room=False, blend=True, scale=None, x=-900, y=1400):
     instances switch to masked (mask_instance). room: also the room cutaway, weighted by the
     scalar parameter RoomCut (1; the trunks' instance sets 0 so the old camphor is never cut at ceiling height).
     scale: the scaled cut instead (SCALED, no room), with the vector parameter CutScale defaulting to scale."""
-    if done(m) or (blend and not masked(m)): return False
+    old = stale(m, blend)       # a rebuilt material: its opacity mask is the see-through's alone (into_mask)
+    if (done(m) and not old) or (blend and not masked(m)): return False
     assert not (room and scale), 'the scaled cut has no room cutaway'
     names = ['P', 'C', 'F', 'X'] + (['R', 'S', 'H', 'M'] if room else []) + (['K'] if scale else [])
     code = SCALED + BODY + KEEP_SCALED if scale else BODY + (ROOM if room else '') + KEEP
@@ -290,7 +295,7 @@ def add_mask(m, room=False, blend=True, scale=None, x=-900, y=1400):
         k = node(m, unreal.MaterialExpressionVectorParameter, x-450, y+760, parameter_name='CutScale',
                  default_value=unreal.LinearColor(*scale))
         link(k, 'RGBA', cut, 'K')
-    into_mask(m, cut, x+300, y)
+    into_mask(m, cut, x+300, y, alone=old)
     return True
 
 
@@ -308,14 +313,14 @@ def mask_instance(mi):
 
 def character(m):
     """Cairo and the bokken: masked, dithered out within 60 cm of the camera. Their opacity mask is the see-through's
-    alone, so a broken one is replaced."""
-    stale = broken(m)
-    if (done(m) and not stale) or not masked(m): return False
+    alone, so a stale one is replaced."""
+    old = stale(m)
+    if (done(m) and not old) or not masked(m): return False
     keep = custom(m, -900, 900, NEAR + ' ' + DITHER, ['P', 'C', 'X'])
     link(node(m, unreal.MaterialExpressionWorldPosition, -1300, 900), '', keep, 'P')
     link(node(m, unreal.MaterialExpressionCameraPositionWS, -1300, 1000), '', keep, 'C')
     link(params(m, -1300, 1100, 'Cut')[0], '', keep, 'X')
-    into_mask(m, keep, -600, 900, alone=stale)
+    into_mask(m, keep, -600, 900, alone=old)
     return True
 
 
@@ -392,7 +397,7 @@ def main():
         if isinstance(m, unreal.Material) and character(m):
             save(m); changed.append(name)
     tree = '/Game/Japan/Treehouse/Materials/M_TreeHouse'
-    ready = E.does_asset_exist(tree) and done(E.load_asset(tree))
+    ready = E.does_asset_exist(tree) and done(E.load_asset(tree)) and not stale(E.load_asset(tree))
     unreal.log(f'SEE-THROUGH COMPLETE patched {len(changed)}: {", ".join(changed) or "nothing new"}; '
                f'M_TreeHouse {"has it" if ready else "needs unreal.treehouse"}')
 
