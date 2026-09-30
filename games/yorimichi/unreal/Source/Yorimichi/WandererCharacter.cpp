@@ -18,6 +18,8 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "SailboatComponent.h"
 #include "JapanCharacterMovement.h"
 #include "JapanWorld.h"
+#include "JapanCameraArm.h"
+#include "SeeThrough.h"
 #include "ZeppelinService.h"
 #include "JapanPreferences.h"
 #include "JapanMap.h"
@@ -88,7 +90,8 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     GetMesh()->SetCustomDepthStencilValue(1);
     GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     GetMesh()->bEnableUpdateRateOptimizations = false;
-    CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("FollowArm"));
+    // The arm eases back out after an obstacle and passes the tree house while the see-through cuts it (docs/CAMERA.md).
+    CameraArm = CreateDefaultSubobject<UJapanCameraArm>(TEXT("FollowArm"));
     CameraArm->SetupAttachment(GetRootComponent());
     CameraArm->TargetOffset = FVector(0,0,35);
     CameraArm->TargetArmLength = 420.f;
@@ -104,6 +107,7 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
     FollowCamera->FieldOfView = PreferredFOV;
+    SeeThrough = CreateDefaultSubobject<USeeThroughComponent>(TEXT("SeeThrough"));
 }
 
 void AWandererCharacter::BeginPlay()

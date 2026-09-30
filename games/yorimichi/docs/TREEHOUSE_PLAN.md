@@ -107,6 +107,9 @@ the crow's nest to every bridge. Ground plants go along the stepping stones and 
 - Light: 69 warm lantern lights, sunbeams through every window (a soft shaft, the window's shape on the floor and a
   gentle glow in the opening) and a warmer colour grade inside the rooms. `build.py` writes them to
   `treehouse/runtime.json`, which the game merges into the world data at load.
+- Camera: the rooms are small, so the camera stays back and what hides Cairo dithers away: walls, rails, props, and
+  the near walls and roof of the room he is in. The noren part round him and swing back
+  ([CAMERA.md](CAMERA.md)).
 
 ## Build
 

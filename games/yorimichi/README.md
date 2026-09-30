@@ -37,7 +37,7 @@ it in Unreal's first shader compile.
 | `scenarios/` | tests and films driven through the live bridge |
 | `streaming/` | phone play over Pixel Streaming (to be split into streaming and touch controls) |
 | `tools/` | desktop profile launcher, benchmark, fight film |
-| `docs/` | how the game works: skate, combat, fox hunter, animation principles, world map, sound, lore |
+| `docs/` | how the game works: skate, combat, fox hunter, animation principles, world map, camera see-through, sound, lore |
 
 ## Names still to settle
 

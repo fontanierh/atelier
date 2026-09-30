@@ -3,7 +3,10 @@
 - Textures from build/yorimichi/treehouse/textures (tools/treehouse_textures.py finish) become T_TH_<slug>.
 - M_TreeHouse: the village material's look (distance haze, matte, cloth wind from vertex alpha), with the palette in sRGB
   with a texture: base colour = vertex colour x texture x Gain, so a surface's neutral detail map (Gain 2) keeps the
-  calibrated palette and a picture's Gain sets its brightness. Glow lights paper from inside.
+  calibrated palette and a picture's Gain sets its brightness. Glow lights paper from inside. It carries the camera
+  see-through with the room cutaway, and its cloth (the door curtains) swings out of Cairo's way (see_through.py,
+  docs/CAMERA.md). MI_TH_trunk is the bark of TH_Trunks without the room cutaway (RoomCut 0): the old camphor rises
+  through the heart room and must not vanish above Cairo's head.
 - One instance MI_TH_<slot> per material slot the build uses (slot name = texture slug), and one per prop.
 - TH_Structure and TH_Trunks use their own triangles as collision; TH_Dressing has none. Props (build/yorimichi/treehouse/props,
   world/regions/treehouse/props.py) get their UCX boxes, if any.
@@ -15,6 +18,7 @@ from pathlib import Path
 import unreal
 HERE = Path(__file__).resolve().parent
 helper = runpy.run_path(str(HERE/'import_village.py'))
+_sys.path.insert(0, str(HERE)); import see_through  # noqa: E402
 E = unreal.EditorAssetLibrary; MEL = unreal.MaterialEditingLibrary; AT = unreal.AssetToolsHelpers.get_asset_tools()
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 OUT = yori.OUT/'treehouse'; TEX = '/Game/Japan/Treehouse/Textures'; MAT = '/Game/Japan/Treehouse/Materials'
@@ -82,11 +86,11 @@ def parent(default):
     assert MEL.connect_material_property(emit, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop, v, y in ((unreal.MaterialProperty.MP_ROUGHNESS, 1., 600), (unreal.MaterialProperty.MP_SPECULAR, 0., 700)):
         c = node(unreal.MaterialExpressionConstant, -50, y, r=v); MEL.connect_material_property(c, '', prop)
-    wind = custom(-50, 850, 'float phase=T*1.7+P.x*.002+P.y*.003; return float3(sin(phase)*2.2,cos(phase*.81)*1.3,sin(phase*1.3)*.4)*W*W;',
-                  ['T', 'P', 'W'])
+    # Wind and Cairo's push on hanging cloth, both weighted by vertex alpha (0 = fixed, 1 = the free hem).
     t = node(unreal.MaterialExpressionTime, -300, 850); p = node(unreal.MaterialExpressionWorldPosition, -300, 950)
-    link(t, '', wind, 'T'); link(p, '', wind, 'P'); link(vc, 'A', wind, 'W')
+    wind = see_through.cloth(m, t, p, (vc, 'A'), -50, 850)
     assert MEL.connect_material_property(wind, '', unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
+    see_through.add_mask(m, room=True)
     m.set_editor_property('used_with_instanced_static_meshes', True)
     MEL.recompile_material(m); E.save_loaded_asset(m)
     return m
@@ -221,6 +225,11 @@ def main():
     par = parent(tex['wood_plank'])
     mis = {slug: instance(f'MI_TH_{slug}', par, tex[slug], d['gain'], GLOW.get(slug, 0.)) for slug, d in info.items()}
     mis.update(light_parent())
+    trunk = None
+    if 'bark' in info:
+        trunk = instance('MI_TH_trunk', par, tex['bark'], info['bark']['gain'])
+        MEL.set_material_instance_scalar_parameter_value(trunk, 'RoomCut', 0.)
+        MEL.update_material_instance(trunk); E.save_loaded_asset(trunk)
     manifest = json.loads((OUT/'manifest.json').read_text())
     for name, solid in (('TH_Structure', True), ('TH_Trunks', True), ('TH_Dressing', False)):
         # A reimport keeps the old material slot list, so faces of a new material land in a stale slot:
@@ -232,7 +241,7 @@ def main():
             if old != sorted(manifest[name]['slots']):
                 E.delete_asset(path); report.setdefault('fresh', []).append(name)
         mesh = import_mesh(OUT/'assets'/f'{name}.fbx', '/Game/Japan/Assets', name)
-        used = assign(mesh, mis, report)
+        used = assign(mesh, {**mis, 'bark': trunk} if name == 'TH_Trunks' and trunk else mis, report)
         flag = unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if solid else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag', flag)
         E.save_loaded_asset(mesh)

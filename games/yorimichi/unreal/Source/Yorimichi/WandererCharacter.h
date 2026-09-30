@@ -22,6 +22,7 @@ class UJapanMap;
 class UJapanFootstepComponent;
 class UWandererSwordComponent;
 class ASwordDummy;
+class USeeThroughComponent;
 
 /** A skinned adventurer driven by CharacterMovement and the native animation graph. */
 UCLASS()
@@ -87,6 +88,8 @@ public:
     void SampleShake(FVector& Offset, FRotator& Rotation) const;
     UCameraComponent* GetFollowCamera() const { return FollowCamera; }
     USpringArmComponent* GetCameraArm() const { return CameraArm; }
+    /** A fixed review or trailer view (-fixedview, benchmarkview=, trailershot=): the camera does not follow Cairo. */
+    bool IsFixedView() const { return bFixedView; }
     /** -fightfilm: the scripted, filmed fight against the fox hunter (JapanFightFilm.cpp). */
     TSharedPtr<struct FFightFilm> FightFilm;
     void Review_Move(FVector2D Intent) { MoveIntent = Intent; }
@@ -122,6 +125,8 @@ private:
     UPROPERTY() TObjectPtr<UWandererDefinition> Definition;
     UPROPERTY() TObjectPtr<USpringArmComponent> CameraArm;
     UPROPERTY() TObjectPtr<UCameraComponent> FollowCamera;
+    // Camera see-through: dithers away what hides Cairo, opens his tree house room, parts the noren (docs/CAMERA.md).
+    UPROPERTY() TObjectPtr<USeeThroughComponent> SeeThrough;
     UPROPERTY() TObjectPtr<UInputMappingContext> Mapping;
     UPROPERTY() TMap<FName,TObjectPtr<UInputAction>> Inputs;
     UPROPERTY() TObjectPtr<UJapanPreferences> Preferences;

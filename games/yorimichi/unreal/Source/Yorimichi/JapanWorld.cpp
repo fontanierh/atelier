@@ -22,6 +22,7 @@
 #include "MegaRamp.h"
 #include "SkatePark.h"
 #include "ZeppelinService.h"
+#include "SeeThrough.h"
 
 AJapanWorld::AJapanWorld()
 {
@@ -260,6 +261,14 @@ void AJapanWorld::Load()
                 else if (bBush) H->SetCullDistances(30000, 36000);
                 else if (bLitter) H->SetCullDistances(7000, 9000);
                 if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);
+                // The tree house: the camera see-through cuts it where it hides Cairo, so the camera probe may pass it
+                // (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.
+                if (Key.StartsWith(TEXT("TH_")))
+                {
+                    H->ComponentTags.Add(JapanSeeThrough::Tag);
+                    SeeThroughGroups.Add(H);
+                    if (Key == TEXT("TH_Dressing")) H->SetBoundsScale(1.05f);
+                }
                 H->bAutoRebuildTreeOnInstanceChanges = false;
                 H->RegisterComponent();
                 H->AddInstances(Xs, false, false, false);
@@ -371,6 +380,23 @@ void AJapanWorld::Load()
                 Shape->SetupAttachment(RootComponent);
                 Shape->SetRelativeLocation(ToUE(C[0]->AsNumber(),C[1]->AsNumber(),C[2]->AsNumber()));
                 Shape->SetRelativeRotation(FRotator(0,-Room->GetNumberField(TEXT("yaw")),0));
+                FSeeThroughRoom& Cut=SeeThroughRooms.AddDefaulted_GetRef();
+                Cut.Center=ToUE(C[0]->AsNumber(),C[1]->AsNumber(),C[2]->AsNumber());
+                Cut.Yaw=FMath::DegreesToRadians(-Room->GetNumberField(TEXT("yaw")));
+                Cut.bRound=Room->HasField(TEXT("radius"));
+                if (Cut.bRound)
+                {
+                    // A round room's height comes apart from its radius; older runtime files had none: 1.8 m.
+                    const double Radius=Room->GetNumberField(TEXT("radius"));
+                    double Half=1.8;
+                    Room->TryGetNumberField(TEXT("half_height"),Half);
+                    Cut.Extent=FVector(Radius,Radius,Half)*100.;
+                }
+                else
+                {
+                    const auto& X=Room->GetArrayField(TEXT("extent"));
+                    Cut.Extent=FVector(X[0]->AsNumber(),X[1]->AsNumber(),X[2]->AsNumber())*100.;
+                }
                 Shape->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
                 Shape->SetCollisionResponseToAllChannels(ECR_Ignore);
                 Shape->SetGenerateOverlapEvents(false);
@@ -438,6 +464,35 @@ void AJapanWorld::Load()
     // gulls over the sea, a little off the middle of the road
     AGullFlock* Flock = GetWorld()->SpawnActor<AGullFlock>(ToUE(20, -170, 45), FRotator::ZeroRotator);
     UE_LOG(LogTemp, Log, TEXT("world loaded: %d groups, %d instances, %d shots, flock %d, %.1f ms"), Groups.Num(), TotalInstances, Shots.Num(), Flock ? 1 : 0, (FPlatformTime::Seconds() - Started) * 1000.0);
+}
+
+bool AJapanWorld::IsInSeeThroughRoom(int32 Index, const FVector& P, float Margin) const
+{
+    if (!SeeThroughRooms.IsValidIndex(Index)) return false;
+    const FSeeThroughRoom& R = SeeThroughRooms[Index];
+    const FVector D = P - R.Center;
+    if (FMath::Abs(D.Z) > R.Extent.Z + Margin) return false;
+    if (R.bRound) return FVector2D(D.X, D.Y).Size() <= R.Extent.X + Margin;
+    // Into the room's frame (the same turn as the material's): x along the room's yaw.
+    const double C = FMath::Cos(R.Yaw), S = FMath::Sin(R.Yaw);
+    const double X = D.X * C + D.Y * S, Y = D.Y * C - D.X * S;
+    return FMath::Abs(X) <= R.Extent.X + Margin && FMath::Abs(Y) <= R.Extent.Y + Margin;
+}
+
+int32 AJapanWorld::FindSeeThroughRoom(const FVector& P, float Margin) const
+{
+    for (int32 I = 0; I < SeeThroughRooms.Num(); ++I)
+        if (IsInSeeThroughRoom(I, P, Margin)) return I;
+    return INDEX_NONE;
+}
+
+void AJapanWorld::SetSeeThroughProbe(bool bIgnore)
+{
+    // Only the chase camera's arm reads this (UJapanCameraArm sweeps again without these groups): the groups keep
+    // their collision, so other camera-channel traces still see the tree house.
+    if (bIgnore == bSeeThroughProbeIgnored) return;
+    bSeeThroughProbeIgnored = bIgnore;
+    UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH camera probe %s the tree house (%d groups)"), bIgnore ? TEXT("passes") : TEXT("stops at"), SeeThroughGroups.Num());
 }
 
 bool AJapanWorld::SampleGroundHeight(const FVector& Position, float& Height) const

@@ -50,6 +50,12 @@ python games/yorimichi/scenarios/treehouse_walk.py cut TAKE      # ... with its 
   after it.
 - Every material on the instanced props needs "used with instanced static meshes", or it renders as the grid.
 - The palette is sRGB and decoded in the material, like the rest of the world's vertex colours.
+- The camera see-through ([docs/CAMERA.md](../../../docs/CAMERA.md)) makes `M_TreeHouse` masked: what hides Cairo
+  dithers away, and his room's near walls and roof open. While it is on, the chase camera's probe passes the whole
+  tree house. The rooms it opens are the room-grade `rooms` in runtime.json; a round room also needs `half_height`.
+- Noren are a band and six strips, and the material finds a vertex's strip from its u in sixths, so keep six. Vertex
+  alpha is how freely a vertex hangs (0 down the band, 1 at the hem): the material parts the strips round Cairo and
+  swings them by it. Other geometry in `M_TreeHouse` keeps alpha 0 and does not move.
 - Sunbeams are three extra material slots of TH_Dressing drawn additive: the shaft (fades where seen edge-on and
   toward its edges), the pool on the floor (the window's shape and its cross) and a soft glow in the opening.
 - The forest the tree house adds round itself keeps 7.5 m off the air-station trail and clear of the station, as the

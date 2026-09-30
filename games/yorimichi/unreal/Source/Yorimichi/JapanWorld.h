@@ -6,6 +6,16 @@
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMeshComponent;
 
+/** A tree house room for the camera see-through (docs/CAMERA.md): Unreal centre (cm), half size (cm; a round room has
+ *  its radius on every axis), yaw (radians). */
+struct FSeeThroughRoom
+{
+    FVector Center = FVector::ZeroVector;
+    FVector Extent = FVector::ZeroVector;
+    float Yaw = 0.f;
+    bool bRound = false;
+};
+
 USTRUCT()
 struct FWorldShot
 {
@@ -55,6 +65,19 @@ public:
     // Diagnosis only: honours japan.HideGroups so one foliage family can be priced at a time.
     void ApplyGroupDiagnostics();
 
+    // Camera see-through (SeeThrough.h, docs/CAMERA.md): the tree house's instance groups (tagged
+    // JapanSeeThrough::Tag) and its rooms from treehouse/runtime.json.
+    UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> SeeThroughGroups;
+    TArray<FSeeThroughRoom> SeeThroughRooms;
+    /** Whether P (Unreal cm) is inside room Index grown by Margin cm (negative: shrunk). False for no room. */
+    bool IsInSeeThroughRoom(int32 Index, const FVector& P, float Margin) const;
+    /** The first room P is inside (grown by Margin cm), or INDEX_NONE. */
+    int32 FindSeeThroughRoom(const FVector& P, float Margin) const;
+    /** true: the chase camera's probe passes the tree house, which the see-through cuts instead; false: it stops
+     *  there (UJapanCameraArm reads this). */
+    void SetSeeThroughProbe(bool bIgnore);
+    bool IsSeeThroughProbeIgnored() const { return bSeeThroughProbeIgnored; }
+
 private:
     TArray<float> GroundHeights;
     int32 GroundResolution = 0;
@@ -62,5 +85,6 @@ private:
     FString AppliedHideGroups;
     float AppliedBackdropCull = 0.f;
     int32 AppliedPerformanceMode = -1;
+    bool bSeeThroughProbeIgnored = false;
     void Load();
 };

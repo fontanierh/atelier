@@ -188,7 +188,7 @@ def steps(ctx):
              inputs=[SCRIPTS / 'import_forest_lake.py', SCRIPTS / 'forest_lake_material.py'], needs=['unreal.world', 'world.lake'],
              heavy=True, about='the woodland lake and cabin'),
         Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_treehouse.py'],
+             inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'see_through.py'],
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
@@ -214,6 +214,11 @@ def steps(ctx):
              inputs=[SCRIPTS / n for n in ('import_cairo.py', 'verify_cairo.py', 'import_cairo_sword.py',
                                           'import_cairo_armed.py', 'import_cairo_skate.py', 'animation_compression.py')],
              after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo in four layers'),
+        # The camera see-through (docs/CAMERA.md) patches materials the world and Cairo imports make, so it reruns after
+        # either; the tree house builds its own with it (unreal.treehouse).
+        Step('unreal.see_through', [UnrealScript(SCRIPTS / 'see_through.py', 'SEE-THROUGH COMPLETE')],
+             inputs=[SCRIPTS / 'see_through.py'], needs=['unreal.world', 'unreal.cairo'], heavy=True,
+             about='camera see-through on leaves, trunks and Cairo (/Game/SeeThrough)'),
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],

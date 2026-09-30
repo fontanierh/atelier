@@ -60,9 +60,13 @@ def light(x, y, z, lumens=300., radius=3.5, shadows=0):
     LIGHTS.append([round(float(x), 2), round(float(y), 2), round(float(z), 2), lumens, radius, shadows])
 
 
-def interior(centre, extent=None, yaw=0., radius=None):
+def interior(centre, extent=None, yaw=0., radius=None, half_height=None):
+    """A room for the room grade and the camera see-through (docs/CAMERA.md): a box (half extent) or a round room
+    (radius; half_height up to 35 cm over its walls, for the see-through's roof cut)."""
     r = dict(center=[round(float(v), 2) for v in centre], yaw=round(float(yaw), 2))
-    if radius is not None: r['radius'] = radius
+    if radius is not None:
+        r['radius'] = radius
+        if half_height is not None: r['half_height'] = round(float(half_height), 2)
     else: r['extent'] = [round(float(v), 2) for v in extent]
     ROOMS.append(r)
 
@@ -333,21 +337,46 @@ def potted_plant(d, x, y, z, s=1.):
             two_sided(d, [tuple(base), tuple(mid+side), tuple(tip), tuple(mid-side)], vary((.22, .38, .10), .15))
 
 
+def cloth(d, quad, uv, alphas):
+    """A cloth face, both sides. Vertex alpha says how freely each corner hangs (0 where it is sewn, 1 at the hem):
+    the tree house material sways and parts cloth by it (unreal/Scripts/see_through.py, docs/CAMERA.md)."""
+    for pts, tex, al in ((quad, uv, alphas), (quad[::-1], uv[::-1], alphas[::-1])):
+        before = len(d.faces)
+        d.poly(pts, WHITE, uv=tex)
+        if len(d.faces) > before and len(d.faces[-1]) == len(al):
+            d.colors[-len(al):] = [(*WHITE, a) for a in al]
+
+
 def noren(d, x, y, z, width, drop, yaw, pic='noren_cream'):
-    """Split door curtain hanging from a rod at z, across a doorway facing yaw; two panels, gently waved."""
+    """Split door curtain hanging from a rod at z, across a doorway facing yaw, gently waved: a band joined under the
+    rod, then six strips with slits between them (one in the middle, where Cairo walks through), each strip two
+    columns by six rows so the material can bend it. The picture runs on across the strips. The material finds a
+    vertex's strip from its u in sixths and parts each strip whole, so keep six strips; alpha is 0 down the band and
+    rises to 1 at the hem, where the strips hang free."""
+    strips, rows, band, slit = 6, 8, 2, .012
+    x0, x1 = -width/2+.01, width/2-.01
+    step = (x1-x0+slit)/strips
+
+    def wave(u): return .015*math.sin(u*18.+.6)
+
+    def free(zz): return max(0., (-zz-drop*band/rows)/(drop-drop*band/rows))    # 0 down the band, 1 at the hem
     with d.at((x, y, z), yaw):
         post_rod = [(-width/2-.05, 0, .02), (width/2+.05, 0, .02)]
         tube(d, post_rod, .018, DARK, 6, 'wood_timber')
         with d.use(pic):
-            for p, (u0, u1) in enumerate(((0, .5), (.5, 1.))):
-                x0 = -width/2+p*width/2+.01; x1 = x0+width/2-.02; cols = 4
-                for k in range(cols):
-                    xa, xb = x0+(x1-x0)*k/cols, x0+(x1-x0)*(k+1)/cols
-                    wa, wb = .025*math.sin(k*1.7+p), .025*math.sin((k+1)*1.7+p)
-                    ua, ub = u0+(u1-u0)*k/cols, u0+(u1-u0)*(k+1)/cols
-                    quad = [(xa, wa, -drop), (xb, wb, -drop), (xb, wb, 0), (xa, wa, 0)]
-                    uv = [(ua, 0), (ub, 0), (ub, 1), (ua, 1)]
-                    d.poly(quad, WHITE, uv=uv); d.poly(quad[::-1], WHITE, uv=uv[::-1])
+            columns = []                        # (left, right, is a slit)
+            for k in range(strips):
+                a = x0+k*step; b = a+step-slit; m = (a+b)/2
+                columns += [(a, m, False), (m, b, False)] + ([(b, b+slit, True)] if k < strips-1 else [])
+            for i in range(rows):
+                za, zb = -drop*i/rows, -drop*(i+1)/rows
+                for xa, xb, gap in columns:
+                    if gap and i >= band: continue
+                    ua, ub = (xa-x0)/(x1-x0), (xb-x0)/(x1-x0)
+                    quad = [(xa, wave(xa), zb), (xb, wave(xb), zb), (xb, wave(xb), za), (xa, wave(xa), za)]
+                    uv = [(ua, 1+zb/drop), (ub, 1+zb/drop), (ub, 1+za/drop), (ua, 1+za/drop)]
+                    fa, fb = free(za), free(zb)
+                    cloth(d, quad, uv, [fb, fb, fa, fa])
 
 
 def picture(d, corners, pic, color=WHITE):
@@ -1093,7 +1122,7 @@ def heart_room(m, d, p):
         a, b = ring8[k], ring8[(k+1) % 8]
         board(m, (x0+a[0], y0+a[1], z+h+.02), (x0+b[0], y0+b[1], z+h+.02), .16, .16, DARK, 'wood_timber')
     shimenawa(d, p, 'heart', 1.38)
-    interior((x0, y0, z+1.5), radius=round(Rw*math.cos(math.radians(22.5))+.1, 2))
+    interior((x0, y0, z+1.5), radius=round(Rw*math.cos(math.radians(22.5))+.1, 2), half_height=h-1.5+.35)
     leaves_on(d, [(x0+x*(Rw-.3)/Rw, y0+y*(Rw-.3)/Rw) for x, y in ring8], z+.01, 16)
     shimenawa(d, p, 'heart', L.ROOF_TOP['heart']+.55)          # and where the camphor leaves the roof
     for k in (1, 3, 5, 7):
