@@ -47,7 +47,8 @@ timing of each push. The loaded flat-ground ollie turns about 250° in the nativ
 The skating worker starts about two seconds into play, with the collision around the player, so the first mount
 does not wait for the animation banks. While riding, the collision around the rider is gathered again once they
 leave its inner area; the file is written and built off the game thread, and the worker switches to it between
-steps.
+steps. The view eases into the native skating camera over about 0.6 s after mounting, out of it when the right
+stick looks around, and back two seconds after the stick is released.
 
 Triangle / Y (or keyboard B) mounts/steps off; D-pad Down interacts on foot. Running onto the board preserves position, heading of travel and speed. W pushes, S brakes,
 A/D steer or spin. Hold/release Space for an ollie, or hold the left mouse button and flick for tricks. C holds a
