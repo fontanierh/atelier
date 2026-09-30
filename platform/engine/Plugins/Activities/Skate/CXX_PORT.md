@@ -287,6 +287,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   any body's integration. Attached bodies here are explicit fixtures, not the gameplay skeleton producer.
   Optional debug capture retains its source cadence/lifecycle; C++ exposes typed diagnostics instead
   of the unused original formatted string, and this corpus checks diagnostic presence rather than text.
+- Connected board/world runtime: original stock settings, live child colliders, world contact generation
+  and board stepping preserve 3,795,340 exact words across 128 streams and 4,096 ticks. Stock/custom
+  fixtures publish 57,280 volumes across all four primitive types, 5,910 contacts, 5,206 solved rows,
+  2,813 reports and 563 capacity drops. The board runs on slopes with active/frozen/static body states;
+  live rider/gameplay producers and malformed settings diagnostics remain outside this corpus.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
