@@ -79,8 +79,9 @@ quaternion/matrix operations, point graphs, camera Bezier samples, closest trian
 triangle queries. Explicit nonfinite paths preserve the frozen compiler's operand ordering, including
 NaN signs and payloads; the comparator does not canonicalize these results. `GeometrySweep.*` adds
 the rounded-triangle dispatcher, sphere/cylinder roots and bounded feature walk. Misses retain the same
-payload fields and partial updates as the reference. World acceleration structures and contact
-generation remain separate work.
+payload fields and partial updates as the reference. `WorldGeometry.*` preserves static triangle caches,
+authored metadata, mesh acceleration, ordered candidate traversal and nearest thin/swept line queries.
+Primitive contact generation and retention remain separate work.
 
 `RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
 inertia, point forces, drag, caps and cooldowns. Opaque lanes survive packed updates and reaction words
@@ -189,6 +190,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   misses. Every miss retains position/volume payloads; 12,054 also exercise the original normal/fraction
   rewrites. Coverage includes faces/edges/vertices, both windings, degenerate geometry, overlap/tangency,
   radius/fatness boundaries and opaque incoming output records.
+- Static world geometry: 3,669 cases, 8,815 line queries and 1,206,140 exact words, including 157 worlds
+  requiring hierarchy splits, source-order nearest-hit ties, conservative bounds and all seven metadata
+  diagnostic messages. PrimitiveBounds and primitive-contact integration are not established by these
+  line-query checks and remain pending their original public contact-path comparison.
 - Shared constraint solver: 7,967 cases and 3,682,300 exact words (14,729,200 bytes), including mixed
   contact/joint/drive iterations over shared reactions, friction and limit boundaries, reversed body
   indices, softness/carry preservation and invalid indices rejected before mutation. An independently
