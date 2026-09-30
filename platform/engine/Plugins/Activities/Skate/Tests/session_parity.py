@@ -187,8 +187,12 @@ def record(args):
         raise ValueError('Recording already exists; use a new directory to preserve the reference')
     output.mkdir(parents=True)
     world = output/'world.json'
-    world.write_text(json.dumps(flat_world(), separators=(',', ':'))+'\n')
-    plan = scenarios()
+    if args.suite == 'terrain':
+        from session_terrain import terrain_world, terrain_scenarios
+        geometry, plan = terrain_world(), terrain_scenarios()
+    else:
+        geometry, plan = flat_world(), scenarios()
+    world.write_text(json.dumps(geometry, separators=(',', ':'))+'\n')
     (output/'inputs.json').write_text(json.dumps(plan, separators=(',', ':'))+'\n')
     (output/'reference-build.json').write_text(json.dumps(provenance,indent=2)+'\n')
     worker = Worker(reference, args.assets.resolve(), world, output/'reference.log')
@@ -209,7 +213,7 @@ def record(args):
         completed = True
     finally:
         worker.close(require_clean=completed)
-    manifest = dict(format=1, reference_revision=revision, reference_binary_sha256=digest(reference),
+    manifest = dict(format=1, suite=args.suite, reference_revision=revision, reference_binary_sha256=digest(reference),
                     architecture=platform.machine(), cases=len(plan), responses=count+1, states=sorted(states),
                     comparison='all response fields; exact f32 bits; integer/string/bool values and structure exact',
                     files={name:digest(output/name) for name in ('world.json','inputs.json','reference.jsonl.gz','reference-build.json')},
@@ -278,6 +282,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='mode', required=True)
     capture = commands.add_parser('record')
+    capture.add_argument('--suite', choices=('flat','terrain'), default='flat')
     capture.add_argument('--reference', type=Path, required=True)
     capture.add_argument('--reference-provenance', type=Path, required=True)
     for name in ('compare','repeat-reference'):
