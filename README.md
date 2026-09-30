@@ -138,10 +138,6 @@ game code asks for a role, never for a file.
 **9. Into the game.** `atelier build` exports the character from Blender (mesh, clips, sword, textures) and imports
 it into Unreal; scripted QA runs then check it in motion.
 
-Try text-driven motion on the fox hunter in the [Fox motion lab](games/yorimichi/animation_lab/README.md): a local
-UniMate playground with generated attack and movement experiments, a custom prompt box, 3D playback, comparison
-against the authored clips, and animated GLB exports.
-
 ```sh
 atelier build yorimichi characters.cairo unreal.cairo
 atelier play yorimichi --profile swordqa     # a scripted duel: draws, chains, charges, parries, 16 strikes checked
@@ -151,6 +147,20 @@ The tools for each step, their options and the lessons learned are in
 [games/yorimichi/assets/characters/tools](games/yorimichi/assets/characters/tools/README.md) and
 [games/yorimichi/docs](games/yorimichi/docs). The second character, the fox hunter, went through the same steps
 (`fox_hunter_pipeline.py`).
+
+## Text-driven motion experiments
+
+The [Fox motion lab](games/yorimichi/animation_lab/README.md) runs [UniMate](https://github.com/Friedrich-M/UniMate)
+locally on the fox hunter's own rig. Compare each authored animation with its generated counterparts in a 3D
+playground, or create independent animations with a custom prompt and seed. Playback, phase matching, rig overlays,
+labeled snapshots, and skinned GLB export make each take easy to inspect.
+
+The strongest sprint result is a guided hybrid: the original stride, contacts, and 0.6-second loop, with a small
+UniMate arm variation. Prompt-only motions remain experimental. The
+[write-up](games/yorimichi/docs/UNIMATE_EXPERIMENT.md) covers the conditioning fix, approach, measured results,
+verification, and limits. The [setup/run and API guide](games/yorimichi/animation_lab/README.md) includes the code
+entry points and commands to reproduce it; the playground opens at **http://127.0.0.1:8842/** once started.
+No API key is needed. Source stays with Yorimichi and generated output goes under `build/yorimichi/unimate/`.
 
 ## A prop from a sentence, straight into the running game
 
@@ -228,6 +238,7 @@ Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, skate rider, sailboat stance), effects, skateboarding, streaming, the live bridge |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
+| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate inference, original/counterpart comparisons, guided sprint variations, custom prompts and GLB export |
 | Games | [games/yorimichi](games/yorimichi), [games/sandbox](games/sandbox) | a full game, and the smallest one (the template for `atelier new`) |
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts fit and the rules that keep the platform reusable.
