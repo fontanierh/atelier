@@ -377,6 +377,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   crouching, turning, tilt, fakie, pumping permissions, real pump-channel ownership/fades, consumed
   parameters and pose commands. Live flags and missing-owner partial effects preserve original order;
   registration into the C++ host and complete physical producer scheduling remain separate checks.
+- Motion-graph pushing behaviors: 12 authored configurations, all seven factory names and 360 ordered
+  callbacks preserve 275,233 exact bytes against the unchanged original full host. The check observes
+  real regular/mongo clip metrics, switch/foot selection, teleport timing, held/released cycles,
+  retained blend/out state and five actual animation proof channels. Complete controller registration
+  and the physical producer that supplies these inputs remain separate integration steps.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
