@@ -1105,6 +1105,21 @@ void AWandererCharacter::Tick(float Dt)
     if(FightFilm) AdvanceFightFilm(*FightFilm,Dt);
 }
 
+void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
+{
+    Super::CalcCamera(DeltaTime,OutResult);
+    FTransform Camera; float FOV=0;
+    if (!bFixedView && LookGrace<=0 && SkateRide && SkateRide->GetRetailCamera(Camera,FOV))
+    {
+        OutResult.Location=Camera.GetLocation(); OutResult.Rotation=Camera.Rotator();
+        // Session publishes the vertical FOV used by its Bevy host. UE expects horizontal FOV.
+        int32 Width=16,Height=9;
+        if (APlayerController* PC=Cast<APlayerController>(Controller)) PC->GetViewportSize(Width,Height);
+        const float Aspect=Height>0?float(Width)/Height:16.f/9.f;
+        OutResult.FOV=FMath::RadiansToDegrees(2.f*FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FOV)*.5f)*Aspect));
+    }
+}
+
 void AWandererCharacter::SampleShake(FVector& Offset,FRotator& Rotation) const
 {
     const float A=ShakeTrauma*ShakeTrauma,F=23.f;

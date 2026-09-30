@@ -120,6 +120,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     float AuthoredTopSpeed = 300.f, AuthoredCrouchSpeed = 50.f;
     uint32 AppliedSerial = MAX_uint32;
     FName AppliedClip;
+    TArray<FTransform> RetailSkatePose;
     bool bArmedCrouch = false;
 
     explicit FWandererAnimProxy(UAnimInstance* Owner) : FAnimInstanceProxy(Owner)
@@ -263,6 +264,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         }
         Action.SetPlayRate(bRiding ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
         CarryLayer.BlendWeights[0] = (!bSailing && !bRiding && Pawn->GetSword() && !Pawn->IsZeppelinPassenger()) ? Pawn->GetSword()->CarryWeight() : 0.f;
+        RetailSkatePose = bRiding ? Ride->GetRetailPose() : TArray<FTransform>();
         if (bRiding)
         {
             Action.SetAccumulatedTime(Ride->GetClipTime());
@@ -287,6 +289,18 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         else { SkateCrouch.Alpha = SkateLean.Alpha = 0.f; SkateRider.Alpha = 0.f; }
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
+    }
+    virtual bool Evaluate(FPoseContext& Output) override
+    {
+        if (RetailSkatePose.IsEmpty()) return false;
+        Output.ResetToRefPose();
+        const FBoneContainer& Required=Output.Pose.GetBoneContainer();
+        for (FCompactPoseBoneIndex Bone : Output.Pose.ForEachBoneIndex())
+        {
+            const int32 Index=Required.MakeMeshPoseIndex(Bone).GetInt();
+            if (RetailSkatePose.IsValidIndex(Index)) Output.Pose[Bone]=RetailSkatePose[Index];
+        }
+        return true;
     }
     virtual void Update(float Dt) override
     {

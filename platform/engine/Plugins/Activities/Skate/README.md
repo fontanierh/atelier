@@ -5,11 +5,16 @@ mouse with the left button held) does every trick (**Flick-It**), the triggers g
 rails, ledges and coping, powerslides, vert, bails, a trick line with a score, and the board's rolling and trick sounds.
 Experimental. A game documents its own side (rider clips, parks, checks) in its docs.
 
+When `Content/Data/SkateRuntime` contains the local runtime executable and converted banks, the recovered Rust
+session owns board/rider physics, animation, tricks, score and camera. Otherwise the C++ controller backend runs.
+See [NATIVE_PORT.md](NATIVE_PORT.md) for source pins, setup, adapter boundaries and validation.
+
 | Piece | What |
 |---|---|
 | `USkateComponent` | the ride: board frame, ground, air, grinds, bails, input, clip choice, sounds, score |
 | `ISkateRider` | what the component needs from the character (clips by role, mount hook, input gates, contacts file) |
 | `SkateNative.h` / `SkateNativeTuning.h` | ported controllers, retail point curves and 78 Flick-It patterns |
+| `SkateRuntime.cpp` / `ThirdParty/skate-runtime` | full native session, terrain/pipe adapter and pose retargeting |
 | `FSkateFlick` (`SkateFlick.h`) | input/trick types and crouch/manual input conditioning |
 | `USkateRailSubsystem` (`SkateRails.h`) | every grindable line in the world |
 | `USkateSettings` | board meshes, sound folder, fall sounds, rolling resistance by material name |
@@ -187,4 +192,3 @@ landing (a manual or grind keeps it going) and scores its points times the numbe
   flip clip is timed by the board rather than the clock: the ollie's snap for 0.04 s, the feet leave the board in the
   next 0.06 s before it turns, stay up while it turns (however long the trick) and catch it as it finishes; a second
   flick in the air turns the board on from where it is and lifts the feet again.
-

@@ -20,6 +20,8 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
+    /** Use the complete recovered runtime when its local binary and converted banks are installed. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") bool UseRetailRuntime = true;
     /** Original controller preset: easy, normal or hardcore. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
     /** 0 loose / 1 tight; feeds the original steering scalar. */

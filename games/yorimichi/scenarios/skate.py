@@ -229,7 +229,7 @@ def axis(t, k, v, n=3):
     for i in range(n): ev.append((t + i * .017, lambda k=k, v=v: L.input_key(k, 'axis', v)))
 key(0.0, 'B', True); key(0.05, 'B', False)
 key(0.6, 'W', True); key(2.4, 'W', False)
-key(2.6, 'LeftMouseButton', True); axis(2.63, 'MouseY', -300); axis(2.85, 'MouseX', 330); axis(2.85, 'MouseY', 330); key(3.05, 'LeftMouseButton', False)
+key(2.6, 'LeftMouseButton', True); axis(2.63, 'MouseY', -300); axis(2.85, 'MouseX', -330); axis(2.85, 'MouseY', 330); key(3.05, 'LeftMouseButton', False)
 key(4.2, 'SpaceBar', True); key(4.5, 'SpaceBar', False)
 key(5.6, 'B', True); key(5.65, 'B', False)
 ev.sort(key=lambda e: e[0]); st = {'t': 0.0, 'i': 0}; live.REC = []
@@ -258,7 +258,7 @@ ev = []
 def key(t, k, down): ev.append((t, lambda: L.input_key(k, 'press' if down else 'release', 1.0)))
 def axis(t, k, v, n=3):
     for i in range(n): ev.append((t + i * .017, lambda k=k, v=v: L.input_key(k, 'axis', v)))
-key(0.2, 'LeftMouseButton', True); axis(0.23, 'MouseY', -300); axis(0.45, 'MouseX', 330); axis(0.45, 'MouseY', 330)
+key(0.2, 'LeftMouseButton', True); axis(0.23, 'MouseY', -300); axis(0.45, 'MouseX', -330); axis(0.45, 'MouseY', 330)
 axis(0.85, 'MouseY', -30, 12)
 key(2.4, 'LeftMouseButton', False)
 ev.sort(key=lambda e: e[0]); st = {'t': 0.0, 'i': 0}; live.REC = []

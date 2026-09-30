@@ -4,10 +4,10 @@
 
 Skateboarding comes back for the player (Cairo) with controls modelled on EA's *skate.* series: the left stick
 steers and spins, the right stick does every trick (**Flick-It**), the triggers grab. This page is the design and the
-contract between the three parts: the native skate system (C++), the rider clips (Blender, game-r17) and the skate pier
-with its board (Blender + Unreal import).
+contract between the skating runtime, Cairo and the skate pier. The recovered Rust Session supplies physics and
+animation when its local data is installed; the standalone C++ controller port and game-r17 clips are the fallback.
 
-Status (30 Sep 2026): playable end to end and not yet reviewed by the user. The ride, retail Flick-It with thirty named ollie/nollie tricks and
+C++ fallback validation (30 Sep 2026): the ride, retail Flick-It with thirty named ollie/nollie tricks and
 their fakie versions, spins, grabs, manuals, grinds and slides on rails, ledges and coping, powerslides, vert,
 bails, sounds, the rider clips (game-r17) and the skate pier all work in the game; `games/yorimichi/scenarios/skate.py` passes 22/22
 against the running game. A filmed run is in `build/yorimichi/skatefilm/<take>/showreel.mp4` (see Checks).
@@ -17,11 +17,43 @@ Not done: skate controls on the phone page (skate through the plain player at `/
 supported), tweaked grabs and lip tricks. The painted world map does not show
 the pier; its travel pin does.
 
-## Native controller port
+## Recovered runtime
+
+The full Rust session can now supply the board/rider constraint solver, animation graphs, tricks, scoring and
+camera. Cairo receives the solved pose through a reference-pose retargeter, and the board parts follow native
+bones. Retargeting preserves Cairo's bone lengths and shoe scale, then fits foot contacts with leg IK.
+The original C++ system below remains the fallback when the runtime data/executable are absent, or when
+`UseRetailRuntime=false` is set under `[/Script/AtelierSkate.SkateSettings]`. Its 22/22 QA result above applies to
+that fallback; the complete-session smoke check is separate.
+
+Install once from the repository root (the local disc data stays in ignored Content):
+
+```sh
+python3 games/yorimichi/tools/import_skate_runtime.py --game /path/to/extracted/game --engine /path/to/skate-3-rust-engine
+python3 games/yorimichi/tools/build_skate_runtime.py --toolchain 1.97.1
+uv run atelier build yorimichi unreal.compile
+python3 games/yorimichi/tools/check_skate_runtime.py
+# With the game running and runtime installed:
+uv run atelier qa yorimichi skate_runtime
+```
+
+The upstream tools checkout must contain `tools/asset_pipeline`; the disc folder contains `default.xex` and
+`data/`. Rust >=1.95 is needed to build; omit `--toolchain` if the default Rust is recent enough. Source crates and
+Cargo.lock are vendored, so building the worker needs no further upstream Git checkout. The first mount loads
+animation banks for several seconds; subsequent rides reuse the process. The ordinary Unreal build does not
+invoke Cargo or the importer. Live `skate_state()` includes `retail=<physical state> tick=<number>` when active.
+The importer was verified with upstream tools commit `60efdef86600d8d8d4feb4b7c608fa0efd0643d7`.
+
+The complete backend currently targets editor builds with static mesh CPU buffers. Nearby render triangles and
+registered rails become its collision world; dynamic obstacles, detailed surface materials and packaged mesh
+buffer retention remain follow-ups. See the exact boundaries and provenance in
+[NATIVE_PORT.md](../../../platform/engine/Plugins/Activities/Skate/NATIVE_PORT.md).
+
+## Native controller fallback
 
 The Rust-engine port and its exact scope are documented in the plugin's
 [NATIVE_PORT.md](../../../platform/engine/Plugins/Activities/Skate/NATIVE_PORT.md).
-Retail tuning and all 78 input-pattern variants are committed C++ data; no extracted game is needed to run.
+Retail tuning and all 78 input-pattern variants are committed C++ data; no extracted game is needed for this backend.
 `Difficulty=normal` (also `easy`, `hardcore`) and `TruckTightness=0.5` live under
 `[/Script/AtelierSkate.SkateSettings]`. The old sector-gesture and random-balance descriptions are superseded by this port.
 

@@ -1,13 +1,71 @@
-# Skate controller port
+# Recovered Skate runtime and controller port
 
-The riding controller now uses C++ adaptations of the recovered Skate 3 routines in
+The skating implementation uses the recovered Skate 3 routines in
 [2010-rust-rewrite-mashup/skate](https://github.com/chasmlol/2010-rust-rewrite-mashup/tree/7842b9e70e9aac22ed176b655dd63302618ee023/skate).
 The reference commit is `7842b9e70e9aac22ed176b655dd63302618ee023`; its skate engine originated in
 [SK8-ENGINE/skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine).
-This is a controller port into the host game's existing Unreal movement, collision and animation system.
-It does **not** reproduce the full board/rider rigid-body solver or claim original-console numerical parity.
+There are two backends: the complete Rust Session when its local data and executable are installed, and a C++
+controller port when they are absent. Neither implementation claims original-console numerical parity.
 
-## What is in the game
+## Complete session
+
+`ThirdParty/skate-runtime` vendors the four original crates. Its headless `atelier-host` wraps the mashup's existing
+`skate_host::bridge::Session`. The session owns the seven-body deck/truck/wheel assembly, physical rider skeleton,
+constraints, contact solver, collision BVH, steering/push/pump/manual forces, trajectory and grind selection,
+Flick-It recognizers, gameplay states, landing quality, bails, scoring, stock animation graphs/banks, procedural
+pose adjustments, and the stock camera. These systems run together at the session's native fixed period. They are
+not reimplemented as independent Unreal approximations.
+
+`SkateRuntime.cpp` supplies Unreal terrain and controls, consumes the solved transforms, and retargets the
+36-bone animation output onto the host character's bind pose. Bone lengths and skin scale stay authored;
+leg IK fits the source foot targets without stretching the neck, torso or shoes. The game anim proxy evaluates that local pose
+directly while the session is active; the fallback clips/IK do not modify it. The deck, both trucks and four wheels
+follow the native bones. Native camera position, orientation and FOV are available to the game camera, with its
+normal mouse-look override. Keyboard/mouse controls remain available, including Space as a straight ollie.
+
+The retained child process loads banks once per world. Pipes carry controller packets and poses, with one step
+outstanding to prevent an accumulating input backlog. It runs without a network listener. Stowing suspends input;
+remounting resets the native session; EndPlay closes it. A failed worker logs the reason and returns to walking.
+`UseRetailRuntime=false` selects the fallback explicitly. Missing executable/data also select the fallback.
+
+The game's `tools/import_skate_runtime.py` converts local banks, graphs, VLT settings and skeleton records using
+upstream tools. `tools/build_skate_runtime.py` builds the pinned Cargo workspace and stages its executable.
+Both write into ignored `Content/Data/SkateRuntime` and build folders. This complete backend therefore requires
+a one-time local import and Rust >=1.95 for building the executable. Subsequent launches need neither the source
+disc nor a Rust installation. The separate committed C++ tables remain usable on a clean checkout.
+
+### Adapter boundaries
+
+- Collision is a 100 m snapshot of nearby registered, pawn-blocking static mesh LOD0 triangles and registered rail
+  polylines. It refreshes after travelling 60 m. This uses render triangles, not authored Chaos simple collision.
+  Moving objects, skeletal obstacles, procedural meshes, collision material IDs and streamed-out terrain need
+  additional adapters. CPU mesh buffers must be retained for packaged builds; editor builds are the validated path.
+- The native session currently receives one default collision material. The fallback's named grass/sand drag is
+  not part of this backend. Rails use the source host's line-to-grind provider, not original disc collision metadata.
+- Retargeting fits source reference-bone directions, scales the root/foot targets to the host's leg height, and
+  preserves local bone lengths and skin scale. Two-bone leg IK keeps those targets within the avatar's reach;
+  sole-height and deck/truck/wheel pivot offsets fit the host meshes. Unmapped fingers retain their bind pose.
+  The physical skeleton keeps the source proportions; this retargeter changes the rendered avatar. Different
+  proportions still require visual contact review, particularly grabs, low overhead obstacles and extreme poses.
+- Unreal keeps walking, mounting, world streaming, audio assets and the HUD. Native score/trick/state drive the
+  existing HUD, and mode transitions trigger the host sounds; original audio and UI are not reproduced.
+- A first mount decodes the banks asynchronously (about 7–8 seconds measured locally). The process stays resident
+  for subsequent rides. Static collision export currently runs on the game thread and can cause a mount/refresh hitch.
+
+`tools/check_skate_runtime.py` tests both stances through 480 native ticks each: support, push, ollie, landing,
+changing finite poses, teleport reset, deliberate bail/recovery and a sub-tick pipe acknowledgement. The full-runtime and fallback checks
+are separate: fallback QA results do not prove every native graph transition in the Unreal adapter.
+The in-game runtime scenario validates push/flip/landing, steering direction, manual entry/exit, rails, vert,
+bail/recovery, preserved bone lengths and head direction, keyboard-driven foot motion, stow/remount and goofy
+push/ollie. Its final pass reports 11/11; the standalone controller scenario reports 22/22.
+
+The unmodified vendored core's full test suite currently reports 604 passes and one failure on Mac ARM64:
+`physics::board_world::broadphase_tests::predictive_contacts_and_retention_match_full_scan_for_every_primitive`.
+The compared source and test are byte-identical to the pinned upstream. Its linear scan produces extra contacts
+on distant triangles that the indexed scan rejects. This upstream discrepancy remains recorded rather than
+changing the recovered contact kernel to force agreement.
+
+## Standalone C++ fallback
 
 | Mechanism | Rust source under `skate/crates/skate-core/src` | Integration |
 |---|---|---|
@@ -25,8 +83,9 @@ It does **not** reproduce the full board/rider rigid-body solver or claim origin
 `SkateNative.h` contains the engine-independent functions. `SkateNativeTuning.h` contains the selected retail
 numeric constants/curves and **all 78 skater.pat variants** (30 unique names). These are committed source data, as
 requested; no disc extraction, network access or Rust runtime is needed to build or play. Duplicate pattern names
-are intentional: the original recognizer scores multiple paths for the same trick. Regular kickflips now flick
-right/up; heelflips left/up. Goofy mirrors horizontally. The live bridge's `FLICKS` dictionary uses these paths.
+are intentional: the original recognizer scores multiple paths for the same trick. After the native graph's stance
+mapping, regular kickflips flick left/up and heelflips right/up. Goofy mirrors horizontally. The live bridge's
+`FLICKS` dictionary uses the regular-stance paths, rather than the raw PAT names.
 
 The presets `easy`, `normal` (default) and `hardcore`, plus `TruckTightness` from 0 to 1, are exposed through
 `USkateSettings` / `[/Script/AtelierSkate.SkateSettings]`. The selected preset currently changes the ported push,
@@ -37,7 +96,7 @@ collision use two 120 Hz substeps per tick to follow steep transitions. Input is
 frame time carries forward. Each rendered frame still updates animation/audio. Mounting or
 teleporting resets controller histories. A hitch contributes at most 100 ms, avoiding a large catch-up teleport.
 
-## Unreal adapters and remaining differences
+### Fallback adapters and remaining differences
 
 - The actor remains a board frame with four wheel probes and swept capsule collision. EA's seven-body board,
   physical rider skeleton, wheel/truck constraint solver, contact caching and collision broadphase are not ported.
@@ -61,7 +120,7 @@ teleporting resets controller histories. A hitch contributes at most 100 ms, avo
 - Host `sin`, `acos`, vector normalization and float conversion are used. The recovered Xenon reciprocal estimate
   and trigonometric kernels are deliberately not claimed as bit-exact.
 
-## Checking and refreshing
+## Checking and refreshing the C++ fallback
 
 From the repository root:
 
@@ -81,8 +140,8 @@ This is numerical/controller evidence; subjective controller feel still needs ha
 `tools/import_skate_native.py --game /path/to/extracted/game --engine /path/to/skate-3-rust-engine` can audit another
 owned copy. It uses the upstream VLT converter (including schema defaults and inheritance), decodes big-endian
 point-graph data and reads PAT patterns. Its JSON output and intermediate files stay in ignored Content/build
-folders; gameplay uses the committed tables, not the JSON. Original models, sounds, clips and executables are not
-part of this change.
+folders; fallback gameplay uses the committed tables, not the JSON. Original models, sounds, clips and executables
+are not committed. The complete backend uses the locally imported animation banks and settings described above.
 
 ## Attribution
 

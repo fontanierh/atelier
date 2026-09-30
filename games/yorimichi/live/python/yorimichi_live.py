@@ -170,7 +170,7 @@ def skate_park():
 # Retail skater.pat paths; input API uses Y up, PAT uses Y down.
 # Basic flips start at a full crouch inside the tolerance circle, outside the manual band.
 FLICKS = {
-    'ollie': [(-0.245714, -0.942857), (0.371429, 0.908571)],
+    'ollie': [(0.0, -1.0), (0.0, 1.0)],   # canonical straight flick works in both stances
     'nollie': [(-0.005714, 0.988571), (-0.005714, -1.0)],
     'kickflip': [(0.0, -1.0), (0.908571, 0.417143)],
     'heelflip': [(-0.1, -0.94), (-0.68, 0.714286)],
@@ -187,6 +187,8 @@ FLICKS = {
     '360_hardflip': [(0.977143, -0.177143), (0.577143, -0.817143), (-0.12, -0.988571), (0.702857, 0.691429)],
     '360_inward_heelflip': [(-0.977143, -0.177143), (-0.634286, -0.76), (0.051429, -0.977143), (-0.497143, 0.828571)],
 }
+# The original graph's regular stance mirrors the raw PAT names. These public helpers use regular stance.
+FLICKS = {name: [(-x, y) for x, y in points] for name, points in FLICKS.items()}
 
 
 def skate_script(steps, name='skate_script', done=None):

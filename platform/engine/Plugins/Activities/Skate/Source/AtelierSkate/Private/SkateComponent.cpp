@@ -252,6 +252,7 @@ void USkateComponent::SetGoofy(bool bNewGoofy)
 {
     if (bGoofy == bNewGoofy) return;
     bGoofy = bNewGoofy;
+    if (bRetailActive) ConfigureRetail();
     if (IsRiding() && Mode != ESkateMode::Bail) { SetMeshForRiding(true); ++Serial; }
 }
 
@@ -302,6 +303,7 @@ bool USkateComponent::Toggle()
         Enter(ESkateMode::Ground); LandTime = 0.f;
         FHitResult Hit; MoveBody(Hit);
         BoardRoot->SetVisibility(true, true);
+        StartRetailRuntime();
         return true;
     }
     if (Mode != ESkateMode::Ground) return false;    // step off from the ground only
@@ -315,6 +317,8 @@ bool USkateComponent::Toggle()
 
 void USkateComponent::StowImmediately()
 {
+    const bool bWasRetail = bRetailActive;
+    SuspendRetailRuntime();
     if (Mode == ESkateMode::Off || !Rider) return;
     UCharacterMovementComponent* M = Movement();
     const bool bWasBail = Mode == ESkateMode::Bail;
@@ -323,7 +327,7 @@ void USkateComponent::StowImmediately()
     bManual = bPowerslide = bPushing = bBraking = false;
     BoardRoot->SetVisibility(false, true);
     for (int32 I = 0; I < Loops.Num(); ++I) { if (Loops[I]) Loops[I]->Stop(); LoopVolume[I] = 0.f; }
-    if (!bWasBail)
+    if (!bWasBail || bWasRetail)
     {
         UCapsuleComponent* Capsule = Rider->GetCapsuleComponent();
         Capsule->SetCapsuleSize(SavedRadius, SavedHalf);
@@ -334,11 +338,20 @@ void USkateComponent::StowImmediately()
         M->Velocity = FVector::ZeroVector;
     }
     M->MaxStepHeight = SavedStep;
+    if (bWasRetail)
+    {
+        Deck->SetRelativeTransform(FTransform::Identity);
+        for (int32 I=0; I<Trucks.Num(); ++I)
+            Trucks[I]->SetRelativeTransform(FTransform(FRotator(0,I==0?0.f:180.f,0),FVector(I==0?WheelX:-WheelX,0,-DeckThickness)));
+        for (int32 I=0; I<Wheels.Num(); ++I)
+            Wheels[I]->SetRelativeTransform(FTransform(FVector(0,I%2==0?-WheelY:WheelY,-(DeckHeight-DeckThickness-WheelRadius))));
+    }
     ++Serial;
 }
 
 void USkateComponent::Launch(const FVector& Velocity)
 {
+    if (bRetailActive) { LaunchRetail(Velocity); return; }
     if (Mode == ESkateMode::Ground || Mode == ESkateMode::Air) Vel = Velocity;
 }
 
@@ -353,11 +366,12 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
         Movement()->FindFloor(Movement()->UpdatedComponent->GetComponentLocation(), Movement()->CurrentFloor, false);
         if (!Toggle()) return false;
     }
-    if (Mode == ESkateMode::Bail) EndBail();
+    if (Mode == ESkateMode::Bail && !bRetailActive) EndBail();
     ResetControllers();
     Pos = GroundPoint; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector; bFakie = false; RevertLeft = 0.f;
     Enter(ESkateMode::Ground);
     Rider->SetActorLocationAndRotation(Pos + Up() * BodyLift, Rot, false, nullptr, ETeleportType::TeleportPhysics);
+    StartRetailRuntime();
     return true;
 }
 
@@ -475,6 +489,7 @@ bool USkateComponent::ProbeGround(const FVector& At, const FQuat& Q, FVector& Ou
 
 void USkateComponent::PhysSkate(float Dt)
 {
+    if (bRetailActive) { StepRetailRuntime(Dt); return; }
     if (!Rider || Mode == ESkateMode::Off || Mode == ESkateMode::Bail) return;
     ReadInput(Dt);
     if (Mode == ESkateMode::Off || Mode == ESkateMode::Bail) return;
@@ -1063,9 +1078,9 @@ void USkateComponent::ReadInput(float Dt)
     // zone on each axis (DefaultInput.ini) squeezes the stick (half-way reads as a third, diagonals bend); Flick-It and
     // the manual's balance are laid out in real stick positions, so undo it and keep a small round dead zone instead.
     auto Unsqueeze = [](float A) { return FMath::Abs(A) > 1e-4f ? FMath::Sign(A) * (.25f + .75f * FMath::Abs(A)) : 0.f; };
+    if (bRetailActive) { I.Left.X=Unsqueeze(I.Left.X); I.Left.Y=Unsqueeze(I.Left.Y); }
     FVector2D Pad(Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightX)), -Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightY)));
-    if (Pad.Size() < .15f) Pad = FVector2D::ZeroVector;
-    Pad = Pad.GetClampedToMaxSize(1.f);
+    if (!bRetailActive) { if (Pad.Size() < .15f) Pad = FVector2D::ZeroVector; Pad = Pad.GetClampedToMaxSize(1.f); }
     // Mouse: hold the left button and move it like the right stick (skate. on PC).
     if (Down(EKeys::LeftMouseButton))
     {
@@ -1108,6 +1123,7 @@ void USkateComponent::TickComponent(float Dt, ELevelTick Type, FActorComponentTi
 {
     Super::TickComponent(Dt, Type, Tick);
     if (!Rider || Mode == ESkateMode::Off) return;
+    if (bRetailActive) { UpdateAudio(Dt); return; }
     if (Mode == ESkateMode::Bail) { ReadInput(Dt); StepBail(Dt); }
     UpdateClip(Dt);
     UpdateBoard(Dt);
@@ -1413,6 +1429,7 @@ void USkateComponent::EndCombo(bool bLanded)
 
 FString USkateComponent::GetComboLine() const
 {
+    if (bRetailActive) return ShownCombo;
     if (Mode == ESkateMode::Air)
     {
         FString Live = Trick.IsValid() ? Trick.Name.ToString() : FString();
@@ -1433,6 +1450,7 @@ float USkateComponent::GetComboAlpha() const
 
 FString USkateComponent::GetStatus() const
 {
+    if (bRetailActive && RetailPose.IsEmpty()) return TEXT("Loading skater");
     switch (Mode)
     {
     case ESkateMode::Air: return TEXT("Airborne");
@@ -1444,6 +1462,7 @@ FString USkateComponent::GetStatus() const
     if (bManual) return bNoseManual ? TEXT("Nose manual") : TEXT("Manual");
     if (bPushing) return TEXT("Pushing");
     if (bBraking) return TEXT("Braking");
+    if (GetSpeed()<15.f) return TEXT("On board");
     return bFakie ? TEXT("Rolling fakie") : TEXT("Rolling");
 }
 
@@ -1468,5 +1487,5 @@ FString USkateComponent::GetDebug() const
 {
     const UCharacterMovementComponent* M = Movement();
     return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d manual=%d slide=%d push=%d clip=%s t=%.2f load=%.2f trick=%s flick=[%s] rail=%d spin=%.0f air=%.2f z=%.0f surf=%s/%.1f lt=%.2f ps=%d rv=%.0f up=(%.2f,%.2f,%.2f)"),
-        M ? int32(M->MovementMode) : -1, M ? int32(M->CustomMovementMode) : -1, int32(Mode), Vel.Size(), bFakie, bManual, bPowerslide, bPushing, *ClipName.ToString(), ClipTime, Flick.Load, *Trick.Name.ToString(), *Flick.LastDebug, Rail, SpinTotal, AirTime, Pos.Z, *SurfaceName, SurfaceDrag, LandTime, In.bPowerslide, RevertLeft, Up().X, Up().Y, Up().Z);
+        M ? int32(M->MovementMode) : -1, M ? int32(M->CustomMovementMode) : -1, int32(Mode), Vel.Size(), bFakie, bManual, bPowerslide, bPushing, *ClipName.ToString(), ClipTime, Flick.Load, *Trick.Name.ToString(), *Flick.LastDebug, Rail, SpinTotal, AirTime, Pos.Z, *SurfaceName, SurfaceDrag, LandTime, In.bPowerslide, RevertLeft, Up().X, Up().Y, Up().Z) + (bRetailActive ? TEXT(" retail=")+GetRetailState() : FString());
 }

@@ -24,7 +24,8 @@ FSkateTrick USkateComponent::ReadNativeFlick(float Dt)
     // Keep the existing load/crouch and mouse diagnostics. Recognition comes exclusively
     // from the authored point patterns, including their duplicate-name alternatives.
     Flick.UpdateLoad(In.Right, Dt);
-    const SkateNative::Point Sample{float(In.Right.X) * (bGoofy ? -1.f : 1.f), -float(In.Right.Y)};
+    // The native graph mirrors the PAT trick names for regular stance (kickflip is down then up-left).
+    const SkateNative::Point Sample{float(In.Right.X) * (bGoofy ? 1.f : -1.f), -float(In.Right.Y)};
     const auto Result = NativeGestures.Update(Sample, GetDefault<USkateSettings>()->Difficulty == TEXT("hardcore"));
     if (Result.Index < 0) return {};
     FString Name = UTF8_TO_TCHAR(NativeGestures.Patterns[Result.Index].Name.c_str());

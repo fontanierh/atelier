@@ -15,6 +15,7 @@ class UCharacterMovementComponent;
 class UAudioComponent;
 class USoundWave;
 class USoundAttenuation;
+class FSkateRuntime;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -45,6 +46,11 @@ public:
     const FSkateInput& GetInput() const { return In; }
     /** The whole ride, called from the movement component's PhysCustom in the game's skate mode. */
     void PhysSkate(float Dt);
+    virtual void EndPlay(const EEndPlayReason::Type Reason) override;
+    bool IsUsingRetailRuntime() const { return bRetailActive; }
+    const TArray<FTransform>& GetRetailPose() const { return RetailPose; }
+    FString GetRetailState() const;
+    bool GetRetailCamera(FTransform& Out, float& FOV) const;
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
     /** Teleport the rider (and board) to a spot, stopped, on the board. */
     bool PlaceAt(const FVector& GroundPoint, float Yaw);
@@ -77,7 +83,7 @@ public:
     FString GetComboLine() const;
     float GetComboAlpha() const;
     int32 GetScore() const { return Score; }
-    bool ShowBalance() const { return bManual || Mode == ESkateMode::Grind; }
+    bool ShowBalance() const { return !bRetailActive && (bManual || Mode == ESkateMode::Grind); }
     float GetBalance() const { return Balance; }
     FString GetStatus() const;
     float GetSpeed() const { return Vel.Size(); }
@@ -133,6 +139,15 @@ private:
     float PushHeld = 0.f, PushTarget = 0.f, LandingRecovery = 0.f, ManualPitch = 0.f;
     float RailOffset = 0.f, RailSideSpeed = 0.f;
     FVector AirAssistOffset = FVector::ZeroVector;
+    TSharedPtr<FSkateRuntime> RetailRuntime;
+    bool bRetailActive = false;
+    TArray<FTransform> RetailPose;
+    void StartRetailRuntime();
+    void SuspendRetailRuntime();
+    void StepRetailRuntime(float Dt);
+    void LaunchRetail(const FVector& V);
+    void ConfigureRetail();
+    void RetargetRetailPose();
     void ResetControllers();
     void StepControls(float Dt);
     FSkateTrick ReadNativeFlick(float Dt);

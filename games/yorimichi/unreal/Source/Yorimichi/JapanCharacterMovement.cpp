@@ -21,7 +21,7 @@ void UJapanCharacterMovement::PhysicsRotation(float Dt)
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) return;
-    if (Rider && Rider->GetSkate() && Rider->GetSkate()->IsOnBoard()) return;   // the board frame is the actor's rotation
+    if (Rider && Rider->GetSkate() && (Rider->GetSkate()->IsOnBoard() || Rider->GetSkate()->IsUsingRetailRuntime())) return;   // the board frame is the actor's rotation
     Super::PhysicsRotation(Dt);
 }
 
