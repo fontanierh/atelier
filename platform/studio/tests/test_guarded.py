@@ -159,7 +159,7 @@ class ForeignProcessTests(unittest.TestCase):
 
     def test_an_unowned_render_process_refuses_the_slot(self):
         original = exclusive.render_processes
-        exclusive.render_processes = lambda ignore=(): [{'pid': 4242, 'command': '/x/UnrealEditor'}]
+        exclusive.render_processes = lambda ignore=(), table=None: [{'pid': 4242, 'command': '/x/UnrealEditor'}]
         self.addCleanup(setattr, exclusive, 'render_processes', original)
         with self.assertRaises(RenderBusy) as caught:
             with render_lock('scan'):
@@ -172,7 +172,7 @@ class ForeignProcessTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(dict(pid=999999, started=1, purpose='ghost')))
         original = exclusive.render_processes
-        exclusive.render_processes = lambda ignore=(): []
+        exclusive.render_processes = lambda ignore=(), table=None: []
         self.addCleanup(setattr, exclusive, 'render_processes', original)
         with render_lock('after a ghost'):
             pass

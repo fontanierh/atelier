@@ -6,6 +6,11 @@ it needs; `build/<game>/stamps/<step>.json` remembers the last good one. Logs go
 
 Commands are plain data (`Python`, `Blender`, `UnrealScript`, `UnrealCompile`, `Call`), so the fingerprint changes
 when a command does.
+
+A `heavy` step's commands run under `atelier.safety.guarded`: a render slot and the memory guard, whose report is
+`logs/<step>.guard/memory-health.json`. When two render slots are on (`atelier.safety.render_lock`), a step whose last
+guard reports peaked at 3 GiB or less asks for the small slot; a compile, or a step with no report yet, takes the big
+one. The step's log names the slot each command used, and the summary line names it too when two slots are on.
 """
 import hashlib, importlib.util, json, os, shutil, subprocess, sys, time
 from dataclasses import dataclass, field
@@ -13,6 +18,7 @@ from pathlib import Path
 
 from . import paths
 from .safety import guarded
+from .safety.render_lock import GiB, slot_count
 
 SKIP_PARTS = {'__pycache__', '.DS_Store'}
 SKIP_SUFFIXES = {'.md'}   # documentation next to sources never changes what a step makes
@@ -81,7 +87,7 @@ class Step:
     needs: list = field(default_factory=list)      # step names whose results this step uses (their fingerprints feed its own)
     after: list = field(default_factory=list)      # step names that only have to run first (a compiled editor): no rerun when they change
     outputs: list = field(default_factory=list)    # must exist after a run; a missing one forces a rerun
-    heavy: bool = False                            # take the machine's render lock (Unreal, Blender renders)
+    heavy: bool = False                            # take a render slot and the memory guard (Unreal, Blender renders)
     about: str = ''
 
 
@@ -167,7 +173,34 @@ def order(steps, wanted):
     return [s for s in steps if s.name in chosen]
 
 
-def run_command(ctx, step, command, log):
+def report_peak(path):
+    """The peak footprint in bytes recorded in a guard report, or None."""
+    try:
+        value = json.loads(Path(path).read_text()).get('peak_bytes')
+    except (OSError, ValueError, AttributeError):
+        return None
+    return value if isinstance(value, (int, float)) and value > 0 else None
+
+
+def expected_peak_gib(folder):
+    """A heavy step's expected peak in GiB, from its last guard reports: memory-health.json (the last command run) and
+    step-peak.json (every command of the last complete run), whichever is higher. None before any report."""
+    peaks = [p for p in (report_peak(folder / 'memory-health.json'), report_peak(folder / 'step-peak.json')) if p]
+    return max(peaks) / GiB if peaks else None
+
+
+def slot_request(ctx, step):
+    """How a heavy step asks for a render slot: (kind, expected peak in GiB). A compile always takes the big slot (and
+    holds the small one); a step with no guard report has no expected peak and takes the big one. render_lock decides
+    the rest (the 3 GiB bound, the switch, free memory)."""
+    if any(isinstance(c, UnrealCompile) for c in step.commands):
+        return 'compile', None
+    return 'job', expected_peak_gib(ctx.logs / f'{step.name}.guard')
+
+
+def run_command(ctx, step, command, log, request=None, slots=None):
+    """Run one command of a step. A heavy step's command runs under guarded.run, in a render slot asked for with
+    `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
     env = ctx.env(getattr(command, 'env', ()))
@@ -175,9 +208,27 @@ def run_command(ctx, step, command, log):
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
         folder = ctx.logs / f'{step.name}.guard'
-        code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env)
+        kind, small_gib = request or slot_request(ctx, step)
+        used = []
+
+        def note(slot, why):
+            used.append(slot)
+            if slots is not None:
+                slots.append(slot)
+            why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
+            log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
+        code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
+                           small_gib=small_gib, kind=kind, on_slot=note)
         text = (folder / 'stdout.log').read_text(errors='ignore')
         log.write(text)
+        if code and used == ['small']:
+            try:
+                stopped = json.loads((folder / 'memory-health.json').read_text()).get('state') == 'memory_limit'
+            except (OSError, ValueError, AttributeError):
+                stopped = False
+            if stopped:
+                raise RuntimeError(f'{step.name}: stopped at the small render slot\'s memory limit; '
+                                   f'its report now sends it to the big slot, run it again')
     else:
         result = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, text=True, errors='ignore')
         code, text = result.returncode, result.stdout
@@ -187,6 +238,15 @@ def run_command(ctx, step, command, log):
     marker = getattr(command, 'marker', None)
     if marker and marker not in text:
         raise RuntimeError(f'{step.name}: "{marker}" missing from the log')
+
+
+def slot_summary(slots):
+    """', small slot' for the summary line when two render slots are on (or a step used the small one)."""
+    if not slots or (slot_count() != 2 and 'small' not in slots):
+        return ''
+    if len(set(slots)) == 1:
+        return f', {slots[0]} slot'
+    return f', slots {" then ".join(slots)}'
 
 
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
@@ -226,10 +286,14 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
             continue
         t0 = time.monotonic()
         log_path = ctx.logs / f'{step.name}.log'
+        slots, peaks = [], []
         with open(log_path, 'w') as log:
             try:
+                request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in step.commands:
-                    run_command(ctx, step, command, log)
+                    run_command(ctx, step, command, log, request, slots)
+                    if step.heavy and not isinstance(command, Call):
+                        peaks.append(report_peak(ctx.logs / f'{step.name}.guard' / 'memory-health.json'))
                 missing = [str(o) for o in step.outputs if not Path(o).exists()]
                 if missing:
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
@@ -240,10 +304,13 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
                 stamp.unlink(missing_ok=True)
                 return 1
         seconds = time.monotonic() - t0
+        if peaks and None not in peaks:   # a step with several commands: its report keeps only the last one's peak
+            (ctx.logs / f'{step.name}.guard' / 'step-peak.json').write_text(
+                json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
         stamp.write_text(json.dumps({'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}) + '\n')
         done[step.name] = current
         ran += 1
-        echo(f'{print_} done in {seconds:.1f} s')
+        echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
     echo(f'{len(plan)} steps, {ran} ran, {time.monotonic() - started:.0f} s')
     return 0
 

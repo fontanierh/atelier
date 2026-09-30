@@ -37,4 +37,10 @@
 
 - Heavy jobs (Unreal, Blender renders) go through the render lock and memory guard (`atelier.safety`). `atelier play`
   and `atelier build` do this for you.
+- The render lock has one big slot, and a small one beside it when `~/.cache/atelier/render-slots.json` says
+  `{"slots": 2}` (`ATELIER_RENDER_SLOTS` overrides it; no file means one slot). The small slot takes a job expected to
+  peak at 3 GiB or less, never a game or a compile, when at least 10 GiB is free and the big slot's job is in another
+  checkout; its memory ceiling is 4 GiB. `atelier build` sends a heavy step there when its last guard report allows
+  it and says which slot each step used. A compile waits for a small job to finish. Code older than the slots stays
+  safe but refuses to start while a small job runs, so merge main in every checkout before switching to two.
 - The live bridge (Unreal plugin, port 8830) stays loopback-only.
