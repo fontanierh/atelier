@@ -86,3 +86,10 @@ direct shadows to avoid unstable Lumen indirect-light patches on the large, thin
 riding transitions, crossing the park and bailing. It records mean FPS, 95th/99th-percentile frame time,
 long frames and repeated native poses in `build/yorimichi/skateqa/performance.json`; it does not use fixed-step
 video capture. The park origin anchors collision snapshots so moving between its corners does not rebuild them.
+
+The six live cases on an Apple M3 Pro with 36 GB RAM, at 1920 × 1080 and 100% screen percentage, measured
+59.96–59.99 fps across 2,325 frame intervals. The worst per-case 99th percentile was 17.55 ms; the longest frame
+was 33.35 ms during the park crossing. There were no frames over 50 ms and no repeated native poses. The bail
+case includes its initial skinned-vertex cache preparation and peaked at 24.40 ms. These measurements use
+normal frame timing with Cairo's hair morphs enabled and the park's local lighting; they exclude initial asset
+loading and debug teleports. Other hardware and resolutions need their own measurements.

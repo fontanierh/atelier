@@ -105,7 +105,12 @@ print(json.dumps({'head_forward':look.x*forward.x+look.y*forward.y+look.z*forwar
     record('goofy_push_ollie',rows,max(float(r['speed']) for r in rows)>300 and 'Ollie' in qa.combos(rows) and '2' in qa.modes(rows) and rows[-1]['mode']=='1' and not qa.count(rows,'bails'),qa.combos(rows))
     qa.py('live.L.skate_goofy(False)')
     for direction in (-1,1):
-        rows=qa.run_scenario(f"-25,38,0,500,[(2.5,('flick','ollie',({direction},0),.3)),(4.25,{{}})],duration=5.3",5.3)
+        # Match the native regression: load for .3s, adding the turn .133s before the pop.
+        # Steering throughout the whole crouch changes the takeoff and measures a different input.
+        turn=(direction,0)
+        events=[(2.5,{'right':(0,-1)}),(2.666667,{'right':(0,-1),'left':turn}),
+                (2.8,{'right':(0,1),'left':turn}),(2.833333,{'left':turn}),(4.25,{})]
+        rows=qa.run_scenario(f'-25,38,0,500,{events!r},duration=5.3',5.3)
         angle=0
         for prev,row in zip(rows,rows[1:]):
             if row['mode']=='2': angle+=(float(row['yaw'])-float(prev['yaw'])+180)%360-180

@@ -27,6 +27,9 @@ executable belongs to the current host platform and is staged with the bundled d
 `unreal/Content/Data/SkateRuntime`. The first mount decodes the banks; subsequent mounts reuse the session.
 A failed runtime reports an error and returns to walking. There is no fallback skating engine.
 
+The Mac renderer enables Unreal's GPU skin cache for Cairo's animated hair. This avoids the UE 5.8
+morph-buffer startup assertion observed with inline skinning while keeping the hair animation enabled.
+
 The offline importer remains as an optional provenance/reconversion tool. It is not a build requirement.
 Its converted data was produced with upstream tools commit `60efdef86600d8d8d4feb4b7c608fa0efd0643d7`.
 
