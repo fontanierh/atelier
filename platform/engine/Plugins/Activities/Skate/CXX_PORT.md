@@ -147,8 +147,10 @@ and metadata readers. Retained payload lanes and duplicate attributes preserve t
 `AnimationPlaybackParameters.*` preserves parameter sources/defaults and PlayAnimation lifecycle
 requests through an explicit service interface. `AnimationTrees.*` constructs every authored tree and
 preserves phase/blend/selection clocks, deferred selection, transition insertion/pruning, bind-pose flags
-and the main-tree owner lifecycle. Channels, the live graph host, pose evaluation and physical feedback
-remain separate work; matching tree commands does not establish full animation execution.
+and the main-tree owner lifecycle. `AnimationChannels.*` adds ordered persistent overlays with encoded
+key lookup, priority ties, retirement, transition resurrection and channel-weighted attributes/commands.
+Connecting these owners to the live graph host, pose evaluation and physical feedback remains separate
+work; matching tree commands does not establish full animation execution.
 
 ## Validation completed
 
@@ -211,6 +213,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   112 synthetic trees, 120 owner lifecycle sequences and six pending-posture sequences. Recursive
   clocks, pose commands, attributes, partial error output and construction behavior match the original.
   Owner comparisons use an empty original channel container; live channel integration is still pending.
+- Animation channel container: 169 multistep cases and 8,048,904 exact bytes covering ordered trees,
+  priority/encoded-key ties, fades, replacement/resurrection, retirement, parameter/attribute forwarding,
+  pose commands and partial outputs on failure against the original channel container.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
