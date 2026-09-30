@@ -83,6 +83,8 @@ payload fields and partial updates as the reference. `WorldGeometry.*` preserves
 authored metadata, mesh acceleration, ordered candidate traversal and nearest thin/swept line queries.
 `GeometryFeatures.*` adds primitive projection intervals, separating axes and capsule/triangle/box
 point/edge/face selection, retaining incoming scratch lanes and original partial writes.
+`GeometryPrism.*` intersects those features into ordered contact pairs, preserving clipping scratch,
+header updates, normal correction and the original 16-pair capacity contract.
 `GeometryTriangleFixup.*` preserves face/edge/vertex classification, sidedness, convexity and disabled
 vertices, including normal bending and contact reprojection. Complete primitive contact generation
 and retention remain separate work.
@@ -215,6 +217,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Triangle contact correction: 23,342 cases and 2,169,222 exact words across all seven regions,
   sidedness/edge-cosine/convexity/disabled-vertex flags, reverse/object handling and all 16 contact slots.
   Coverage includes 6,606 accepted contacts, 113 normal bends, 99 pair reprojections and unchanged tails.
+- Feature intersections: 10,376 valid cases and 3,018,956 exact words across all eight public prism
+  helpers and every dispatcher feature-count pair. Complete prism records, mutated feature headers,
+  clipping intervals and untouched scratch are compared. Three synthetic raw-feature cases exceed the
+  original 16-point capacity; each is retained separately and both implementations must reject it.
 - Shared constraint solver: 7,967 cases and 3,682,300 exact words (14,729,200 bytes), including mixed
   contact/joint/drive iterations over shared reactions, friction and limit boundaries, reversed body
   indices, softness/carry preservation and invalid indices rejected before mutation. An independently
