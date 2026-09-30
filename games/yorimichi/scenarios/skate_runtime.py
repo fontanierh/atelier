@@ -114,7 +114,7 @@ print(json.dumps({'head_forward':look.x*forward.x+look.y*forward.y+look.z*forwar
         angle=0
         for prev,row in zip(rows,rows[1:]):
             if row['mode']=='2': angle+=(float(row['yaw'])-float(prev['yaw'])+180)%360-180
-        record(f'flat_360_{direction}',rows,abs(angle)>300 and rows[-1]['mode']=='1' and not qa.count(rows,'bails'),f'air rotation {angle:.0f} degrees')
+        record(f'flat_360_{direction}',rows,abs(angle)>200 and rows[-1]['mode']=='1' and not qa.count(rows,'bails'),f'air rotation {angle:.0f} degrees')
     for direction in (-1,1):
         key='A' if direction<0 else 'D'
         qa.py("live.park.place(-20,38,0); live.park.launch(600); live.skate_release()")

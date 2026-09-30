@@ -34,7 +34,7 @@ the normal Unreal compile step, verifies the data and builds the executable with
 data cache, disc or upstream checkout is needed. The optional importer documents the original conversion;
 its review candidates and compiled executables remain generated outputs.
 
-The host game's `PopHeightScale=1.15` scales the original launch-height presets. `AirSpinScale=2.15` scales the
+The host game's `PopHeightScale=1.15` scales the original launch-height presets. `AirSpinScale=1.6` scales the
 PhysicsAir/KnownAir speed target and BodySpin proportional/acceleration curves; derivative history and
 constraint solving remain recovered code. `PushPowerScale=1.45` and `PushSpeedScale=1.15` scale the native
 animation-timed propulsion and push speed limit. Reconfiguration uses the stock values, so scales never compound.
@@ -49,9 +49,14 @@ original normals. The two isolated `vert_departure.rs` tests and park collision 
 
 ### Adapter boundaries
 
-- Collision is a 100 m half-extent snapshot of nearby registered, pawn-blocking static mesh LOD0 triangles and registered rail
-  polylines. It refreshes on leaving its inner 60 m cube. Inside a tagged skate park the snapshot stays anchored
-  at the park origin, covering the entire pier without rebuilding collision between lines. This uses render triangles, not authored Chaos simple collision.
+- Collision is a snapshot of nearby registered, pawn-blocking static meshes and registered rail polylines,
+  up to 100 m around the rider and shrunk to 60, 35 or 20 m when the area exceeds the worker's 500,000-triangle
+  limit. Meshes whose collision is their surface (complex as simple) contribute their collision LOD triangles; the
+  others contribute their authored simple shapes (boxes, capsules, spheres and convex hulls). Faces thinner than
+  the worker can normalize are dropped. The snapshot refreshes when the rider leaves its inner 60% region: the
+  game thread gathers the triangles, a worker thread writes the file, and the Rust process builds the new world on
+  its own thread and installs it between steps. Inside a tagged skate park the snapshot stays anchored at the park
+  origin, covering the entire pier without rebuilding collision between lines.
   Moving objects, skeletal obstacles, procedural meshes, collision material IDs and streamed-out terrain need
   additional adapters. The park importer retains CPU buffers; other world mesh importers still need the same treatment before
   packaged builds are supported. Editor builds are the validated path.
@@ -66,9 +71,9 @@ original normals. The two isolated `vert_departure.rs` tests and park collision 
   CPU vertices for this pass. Different proportions still require visual review for grabs and low overhead obstacles.
 - Unreal keeps walking, mounting, world streaming, audio assets and the HUD. Native score/trick/state drive the
   existing HUD, and mode transitions trigger the host sounds; original audio and UI are not reproduced.
-- A first mount decodes the banks asynchronously (about 7–8 seconds measured locally). The process stays resident
-  for subsequent rides. Static collision export currently runs on the game thread and can cause a first-mount hitch or a
-  refresh hitch on long rides outside the park. The complete park remains inside one anchored snapshot.
+- The worker is started about two seconds into play with the collision around the player, so bank decoding
+  (about 6.5 seconds measured locally) is finished before a normal first mount. The process stays resident for
+  subsequent rides. A mount farther than the preloaded region exports its collision synchronously.
 
 `tools/check_skate_runtime.py` tests both stances through 480 native ticks each: support, push, ollie, landing,
 changing finite poses, teleport reset, deliberate bail/recovery and a sub-tick pipe acknowledgement. Additional

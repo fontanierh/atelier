@@ -23,7 +23,7 @@ enum Command {
     Configure { goofy: bool, difficulty: String, trucks: f32,
         #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32,
         #[serde(default = "one")] push_speed: f32, #[serde(default = "one")] push_power: f32 },
-    World { path: String },
+    World { path: String, #[serde(default)] background: bool },
     Launch { velocity: [f32; 3] },
     Suspend {},
     Quit {},
@@ -70,12 +70,15 @@ fn run() -> Result<(), String> {
     let mut generation = 0;
     publish(&session, true, generation)?;
     let mut elapsed = 0.;
+    // Collision built on another thread while riding; installed at the next step.
+    let (built_tx, built) = std::sync::mpsc::channel();
     for line in io::stdin().lock().lines() {
         let line = line.map_err(|e| e.to_string())?;
         if line.len() > 16_384 { return Err("Input packet is too large".into()); }
         match serde_json::from_str::<Command>(&line).map_err(|e| e.to_string())? {
             Command::Step {dt,buttons,left,right,triggers} => {
                 if !dt.is_finite() || dt < 0. { return Err("Invalid frame interval".into()); }
+                while let Ok(prepared) = built.try_recv() { session.install_collision(prepared?)?; }
                 elapsed = (elapsed + dt).min(0.1);
                 while elapsed + 1e-7 >= session.period() {
                     elapsed -= session.period();
@@ -96,9 +99,16 @@ fn run() -> Result<(), String> {
                 elapsed = 0.;
                 publish(&session, false, generation)?;
             }
-            Command::World {path} => {
+            Command::World {path, background: false} => {
                 let w = world(Path::new(&path))?;
                 session.install_collision(session.collision_builder().build(w.triangles,w.rails)?)?;
+            }
+            // The rider keeps the current collision (it still covers him) until this one is parsed and built.
+            Command::World {path, background: true} => {
+                let (builder, sender) = (session.collision_builder(), built_tx.clone());
+                std::thread::Builder::new().name("atelier-skate-world".into()).stack_size(32*1024*1024)
+                    .spawn(move || { let _ = sender.send(world(Path::new(&path)).and_then(|w| builder.build(w.triangles,w.rails))); })
+                    .map_err(|e| e.to_string())?;
             }
             Command::Configure {goofy,difficulty,trucks,pop,spin,push_speed,push_power} => {
                 if !trucks.is_finite() { return Err("Invalid equipment".into()); }

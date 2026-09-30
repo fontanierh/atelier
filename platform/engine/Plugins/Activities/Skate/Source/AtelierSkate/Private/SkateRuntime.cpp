@@ -8,6 +8,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
+#include "PhysicsEngine/BodySetup.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
@@ -24,6 +25,7 @@
 #include "Rendering/SkinWeightVertexBuffer.h"
 #include "TwoBoneIK.h"
 #include "UObject/UObjectIterator.h"
+#include "Async/Async.h"
 
 namespace
 {
@@ -78,58 +80,195 @@ namespace
         return Position;
     }
 
-    /** Snapshot nearby static collision. The native worker owns its narrow phase, BVH and contact solver. */
-    bool ExportWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FString& Path)
+    /** One collision snapshot. Add takes UE-space triangles facing out of their solid ((B-A)x(C-A) points outward) and
+     *  keeps them as native points, three per triangle. Plain data, so a worker thread can write it. */
+    struct FSnapshot
     {
-        constexpr double Radius = 10000.;
-        const FBox Region(Centre-FVector(Radius),Centre+FVector(Radius));
-        TArray<TSharedPtr<FJsonValue>> Triangles, Lines;
-        for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
+        FBox Region=FBox(ForceInit);
+        int32 Budget=500000;
+        TArray<FVector3f> Points;
+        TArray<TArray<FVector3f>> Rails;
+        FVector3f Spawn=FVector3f::ZeroVector;
+        float Heading=0;
+        int32 Num() const { return Points.Num()/3; }
+        bool Full() const { return Num()>Budget; }
+        void Add(const FVector& A, FVector B, FVector C)
         {
-            UStaticMeshComponent* C = *It;
-            if (C->GetWorld()!=World || C->GetOwner()==Rider || !C->IsRegistered() || !C->IsCollisionEnabled() ||
-                C->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block || !C->Bounds.GetBox().Intersect(Region)) continue;
-            UStaticMesh* Mesh=C->GetStaticMesh();
-            if (!Mesh || !Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) continue;
-            const FStaticMeshLODResources& LOD=Mesh->GetRenderData()->LODResources[0];
-            if (!LOD.VertexBuffers.PositionVertexBuffer.GetVertexData() || LOD.VertexBuffers.PositionVertexBuffer.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) continue;
-            TArray<FTransform> Instances;
-            if (auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
-            {
-                for (int32 Index : ISM->GetInstancesOverlappingBox(Region,true))
-                { FTransform T; if (ISM->GetInstanceTransform(Index,T,true)) Instances.Add(T); }
-            }
-            else Instances.Add(C->GetComponentTransform());
+            if (Full()) return;
+            FBox Bounds(ForceInit); Bounds+=A; Bounds+=B; Bounds+=C;
+            if (!Bounds.Intersect(Region) || FVector::CrossProduct(B-A,C-A).SizeSquared()<.0001) return;
+            Swap(B,C); // The coordinate reflection reverses winding.
+            // The worker takes each normal from its own f32 points and refuses a flat one: drop slivers at that precision.
+            const FVector3f P[3]={FVector3f(ToNative(A)),FVector3f(ToNative(B)),FVector3f(ToNative(C))};
+            const FVector3d E1(P[1]-P[0]),E2(P[2]-P[0]);
+            const double Twice=FVector3d::CrossProduct(E1,E2).Size();
+            if (Twice<1e-9 || Twice<1e-6*E1.Size()*E2.Size()) return;
+            Points.Append(P,3);
+        }
+        // A face of a convex solid, turned away from the solid's centre.
+        void AddFacing(const FVector& Centre, const FVector& A, const FVector& B, const FVector& C)
+        {
+            if (FVector::DotProduct(FVector::CrossProduct(B-A,C-A),(A+B+C)/3.-Centre)<0) Add(A,C,B); else Add(A,B,C);
+        }
+        // The surface of a mesh whose collision is its own triangles, from its collision LOD.
+        void AddSurface(UStaticMesh* Mesh, const FTransform& T)
+        {
+            if (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return;
+            const auto& LODs=Mesh->GetRenderData()->LODResources;
+            const FStaticMeshLODResources& LOD=LODs[FMath::Clamp(Mesh->LODForCollision,0,LODs.Num()-1)];
+            const FPositionVertexBuffer& Positions=LOD.VertexBuffers.PositionVertexBuffer;
+            if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) return;
             const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();
-            for (const FTransform& T : Instances) for (int32 I=0; I+2<Indices.Num(); I+=3)
+            for (int32 I=0; I+2<Indices.Num() && !Full(); I+=3)
             {
-                FVector P[3]; FBox Bounds(ForceInit);
-                for (int32 K=0;K<3;++K) { P[K]=T.TransformPosition(FVector(LOD.VertexBuffers.PositionVertexBuffer.VertexPosition(Indices[I+K]))); Bounds+=P[K]; }
-                if (!Bounds.Intersect(Region)) continue;
-                FVector N=FVector::CrossProduct(P[1]-P[0],P[2]-P[0]);
-                if (N.SizeSquared()<.0001) continue;
+                FVector P[3];
+                for (int32 K=0;K<3;++K) P[K]=T.TransformPosition(FVector(Positions.VertexPosition(Indices[I+K])));
                 const FVector Authored=T.TransformVectorNoScale(FVector(LOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(Indices[I])));
-                if (FVector::DotProduct(N,Authored)<0) Swap(P[1],P[2]);
-                Swap(P[1],P[2]); // The coordinate reflection reverses winding.
-                TArray<TSharedPtr<FJsonValue>> Points;
-                for (const FVector& Point : P) Points.Add(MakeShared<FJsonValueArray>(VectorJSON(ToNative(Point))));
-                Triangles.Add(MakeShared<FJsonValueArray>(Points));
-                if (Triangles.Num()>=500000) return false;
+                if (FVector::DotProduct(FVector::CrossProduct(P[1]-P[0],P[2]-P[0]),Authored)<0) Swap(P[1],P[2]);
+                Add(P[0],P[1],P[2]);
             }
         }
-        if (Triangles.IsEmpty()) return false;
-        if (Rails) for (const FSkateRail& Rail : Rails->Rails) if (Rail.Bounds.Intersect(Region) && Rail.Points.Num()>=2)
+        void AddBox(const FTransform& T, const FVector& Half)
         {
-            TArray<TSharedPtr<FJsonValue>> Points;
-            for (const FVector& P : Rail.Points) Points.Add(MakeShared<FJsonValueArray>(VectorJSON(ToNative(P))));
-            Lines.Add(MakeShared<FJsonValueArray>(Points));
+            auto Corner=[&](int32 I){ return T.TransformPosition(FVector(I&1?Half.X:-Half.X,I&2?Half.Y:-Half.Y,I&4?Half.Z:-Half.Z)); };
+            static const int32 Faces[6][4]={{0,2,6,4},{1,5,7,3},{0,4,5,1},{2,3,7,6},{0,1,3,2},{4,6,7,5}};
+            for (const auto& Q : Faces)
+            {
+                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[1]),Corner(Q[2]));
+                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[2]),Corner(Q[3]));
+            }
         }
-        auto Root=MakeShared<FJsonObject>(); Root->SetArrayField(TEXT("triangles"),Triangles); Root->SetArrayField(TEXT("rails"),Lines);
-        Root->SetArrayField(TEXT("spawn"),VectorJSON(ToNative(Spawn))); Root->SetNumberField(TEXT("heading"),-FMath::DegreesToRadians(Yaw));
+        // A capsule along local Z whose hemisphere centres sit Half above and below the origin; Half 0 is a sphere.
+        void AddCapsule(const FTransform& T, double Radius, double Half)
+        {
+            constexpr int32 Segments=10, Steps=4;
+            TArray<TArray<FVector>> Rings;
+            for (int32 Top=0;Top<2;++Top) for (int32 I=0;I<=Steps;++I)
+            {
+                const double Lat=(Top ? double(I) : double(I-Steps))/Steps*UE_DOUBLE_HALF_PI, Ring=Radius*FMath::Cos(Lat);
+                const double Z=Radius*FMath::Sin(Lat)+(Top ? Half : -Half);
+                TArray<FVector>& Row=Rings.AddDefaulted_GetRef();
+                for (int32 S=0;S<Segments;++S) Row.Add(T.TransformPosition(FVector(Ring*FMath::Cos(UE_DOUBLE_TWO_PI*S/Segments),Ring*FMath::Sin(UE_DOUBLE_TWO_PI*S/Segments),Z)));
+            }
+            for (int32 R=0;R+1<Rings.Num();++R) for (int32 S=0;S<Segments;++S)
+            {
+                const int32 N=(S+1)%Segments;
+                AddFacing(T.GetLocation(),Rings[R][S],Rings[R][N],Rings[R+1][N]);
+                AddFacing(T.GetLocation(),Rings[R][S],Rings[R+1][N],Rings[R+1][S]);
+            }
+        }
+        void AddHull(const FKConvexElem& Hull, const FTransform& T)
+        {
+            if (Hull.VertexData.IsEmpty()) return;
+            const TArray<int32> Indices=Hull.IndexData.Num() ? Hull.IndexData : Hull.GetChaosConvexIndices();
+            TArray<FVector> P; FVector Centre=FVector::ZeroVector;
+            for (const FVector& V : Hull.VertexData) Centre+=P.Add_GetRef(T.TransformPosition(V));
+            Centre/=P.Num();
+            for (int32 I=0;I+2<Indices.Num();I+=3)
+                if (P.IsValidIndex(Indices[I]) && P.IsValidIndex(Indices[I+1]) && P.IsValidIndex(Indices[I+2]))
+                    AddFacing(Centre,P[Indices[I]],P[Indices[I+1]],P[Indices[I+2]]);
+        }
+    };
+
+    /** Snapshot the static collision a walker meets near Centre: the triangles of meshes whose collision is their own
+     *  surface, and the boxes, spheres, capsules and hulls of the others (a tree's trunk, not its leaves). A dense
+     *  area shrinks the snapshot until it fits the budget; Reach is how far the rider may go from Centre before the
+     *  next one. The native worker owns its narrow phase, BVH and contact solver. */
+    bool GatherWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FSnapshot& Snapshot, double& Reach)
+    {
+        double Radius=0;
+        for (const double Try : {10000.,6000.,3500.,2000.})
+        {
+            Radius=Try; Snapshot.Region=FBox(Centre-FVector(Radius),Centre+FVector(Radius)); Snapshot.Points.Reset();
+            for (TObjectIterator<UStaticMeshComponent> It; It && !Snapshot.Full(); ++It)
+            {
+                UStaticMeshComponent* C = *It;
+                if (C->GetWorld()!=World || C->GetOwner()==Rider || !C->IsRegistered() || !C->IsCollisionEnabled() ||
+                    C->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block || !C->Bounds.GetBox().Intersect(Snapshot.Region)) continue;
+                UStaticMesh* Mesh=C->GetStaticMesh();
+                UBodySetup* Body=Mesh ? Mesh->GetBodySetup() : nullptr;
+                if (!Body) continue;
+                TArray<FTransform> Instances;
+                if (auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
+                {
+                    for (int32 Index : ISM->GetInstancesOverlappingBox(Snapshot.Region,true))
+                    { FTransform T; if (ISM->GetInstanceTransform(Index,T,true)) Instances.Add(T); }
+                }
+                else Instances.Add(C->GetComponentTransform());
+                const bool bSurface=Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple;
+                const FKAggregateGeom& Geom=Body->AggGeom;
+                for (const FTransform& T : Instances)
+                {
+                    if (bSurface) { Snapshot.AddSurface(Mesh,T); continue; }
+                    for (const FKBoxElem& E : Geom.BoxElems) Snapshot.AddBox(E.GetTransform()*T,FVector(E.X,E.Y,E.Z)*.5);
+                    for (const FKSphereElem& E : Geom.SphereElems) Snapshot.AddCapsule(E.GetTransform()*T,E.Radius,0);
+                    for (const FKSphylElem& E : Geom.SphylElems) Snapshot.AddCapsule(E.GetTransform()*T,E.Radius,E.Length*.5);
+                    for (const FKConvexElem& E : Geom.ConvexElems) Snapshot.AddHull(E,E.GetTransform()*T);
+                }
+            }
+            if (!Snapshot.Full()) break;
+        }
+        if (Snapshot.Num()==0 || Snapshot.Full()) return false;
+        Reach=Radius*.6;
+        if (Rails) for (const FSkateRail& Rail : Rails->Rails) if (Rail.Bounds.Intersect(Snapshot.Region) && Rail.Points.Num()>=2)
+        {
+            TArray<FVector3f>& Line=Snapshot.Rails.AddDefaulted_GetRef();
+            for (const FVector& P : Rail.Points) Line.Add(FVector3f(ToNative(P)));
+        }
+        Snapshot.Spawn=FVector3f(ToNative(Spawn)); Snapshot.Heading=-FMath::DegreesToRadians(Yaw);
+        UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails within %.0f m"),Snapshot.Num(),Snapshot.Rails.Num(),Radius/100.);
+        return true;
+    }
+
+    FString NewSnapshotPath()
+    {
         const FString Folder=RuntimeFolder()/TEXT("sessions"); IFileManager::Get().MakeDirectory(*Folder,true);
-        Path=Folder/(FGuid::NewGuid().ToString()+TEXT(".json"));
-        UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails"),Triangles.Num(),Lines.Num());
-        return FFileHelper::SaveStringToFile(Encode(Root),*Path,FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+        return Folder/(FGuid::NewGuid().ToString()+TEXT(".json"));
+    }
+
+    /** The worker's JSON snapshot, written directly (a few hundred milliseconds instead of seconds of JSON value trees):
+     *  metres to 0.1 um, finer than f32 beyond 1 m, so the worker reads back the points Add checked. */
+    bool WriteSnapshot(const FSnapshot& Snapshot, const FString& Path)
+    {
+        TArray<uint8> Out; Out.Reserve(Snapshot.Points.Num()*40+Snapshot.Rails.Num()*256+256);
+        auto Text=[&](const char* T){ while (*T) Out.Add(uint8(*T++)); };
+        auto Number=[&](float V)
+        {
+            constexpr int64 Scale=10000000;
+            int64 Q=FMath::RoundToInt64(double(V)*Scale);
+            if (Q<0) { Out.Add('-'); Q=-Q; }
+            char Digits[24]; int32 N=0;
+            for (int64 Whole=Q/Scale; ; Whole/=10) { Digits[N++]=char('0'+Whole%10); if (Whole<10) break; }
+            while (N) Out.Add(uint8(Digits[--N]));
+            Out.Add('.'); const int64 Frac=Q%Scale;
+            for (int64 Div=Scale/10; Div; Div/=10) Out.Add(uint8('0'+Frac/Div%10));
+        };
+        auto Point=[&](const FVector3f& P){ Out.Add('['); Number(P.X); Out.Add(','); Number(P.Y); Out.Add(','); Number(P.Z); Out.Add(']'); };
+        Text("{\"triangles\":[");
+        for (int32 I=0;I<Snapshot.Points.Num();I+=3)
+        {
+            if (I) Out.Add(',');
+            Out.Add('['); Point(Snapshot.Points[I]); Out.Add(','); Point(Snapshot.Points[I+1]); Out.Add(','); Point(Snapshot.Points[I+2]); Out.Add(']');
+        }
+        Text("],\"rails\":[");
+        for (int32 R=0;R<Snapshot.Rails.Num();++R)
+        {
+            if (R) Out.Add(',');
+            Out.Add('[');
+            for (int32 I=0;I<Snapshot.Rails[R].Num();++I) { if (I) Out.Add(','); Point(Snapshot.Rails[R][I]); }
+            Out.Add(']');
+        }
+        Text("],\"spawn\":"); Point(Snapshot.Spawn); Text(",\"heading\":"); Number(Snapshot.Heading); Out.Add('}');
+        return FFileHelper::SaveArrayToFile(Out,*Path);
+    }
+
+    /** Gather and write a snapshot on this thread (a mount or the preload, where the worker needs it at once). */
+    bool ExportWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FString& Path, double& Reach)
+    {
+        FSnapshot Snapshot;
+        if (!GatherWorld(World,Rider,Centre,Spawn,Yaw,Rails,Snapshot,Reach)) return false;
+        Path=NewSnapshotPath();
+        return WriteSnapshot(Snapshot,Path);
     }
 }
 
@@ -149,6 +288,9 @@ public:
     float FrameTime=0;
     FString Buffer,State=TEXT("Loading skater"),Error,Trick;
     FVector CollisionCentre=FVector::ZeroVector,Spawn=FVector::ZeroVector,Velocity=FVector::ZeroVector;
+    double CollisionReach=6000.;  // how far from CollisionCentre the rider goes before the next snapshot
+    TFuture<bool> PendingWorld;   // a snapshot being written on a worker thread while riding
+    FString PendingPath;
     TOptional<FVector> PendingLaunch;
     float SpawnYaw=0,Score=0,ManualBalance=0;
     uint64 Tick=0;
@@ -159,6 +301,7 @@ public:
     TArray<FString> Files;
     ~FSkateRuntime()
     {
+        if (PendingWorld.IsValid()) PendingWorld.Wait();
         if (Process.IsValid())
         {
             SendSimple(TEXT("quit"));
@@ -172,6 +315,25 @@ public:
     }
     void Send(const TSharedPtr<FJsonObject>& O) { if (Write) FPlatformProcess::WritePipe(Write,Encode(O)); }
     void SendSimple(const TCHAR* Op) { auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),Op); Send(O); }
+    // Background: the worker parses and builds it on its own thread and keeps riding the old one meanwhile.
+    void SendWorld(const FString& File, bool bBackground)
+    {
+        auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("world")); O->SetStringField(TEXT("path"),File);
+        O->SetBoolField(TEXT("background"),bBackground); Send(O);
+    }
+    // Keep the last three snapshots on disk (the worker may still be reading the newest two); each is tens of MB.
+    void AddFile(const FString& File)
+    {
+        Files.Add(File);
+        while (Files.Num()>3) { IFileManager::Get().Delete(*Files[0]); Files.RemoveAt(0); }
+    }
+    // Finish a snapshot still being written (a mount right after riding): hand it over before anything else.
+    void FinishPendingWorld(bool bBackground)
+    {
+        if (!PendingWorld.IsValid()) return;
+        if (PendingWorld.Get()) SendWorld(PendingPath,bBackground);
+        PendingWorld=TFuture<bool>();
+    }
     void Activate(bool Goofy)
     {
         PendingActivation=true;
@@ -247,33 +409,53 @@ public:
     }
 };
 
-bool USkateComponent::StartRetailRuntime()
+bool USkateComponent::LaunchRetailProcess(const FVector& Where, float Yaw, FString& Failure)
 {
     if (!FPaths::FileExists(RuntimeBinary()) ||
         !FPaths::FileExists(RuntimeFolder()/TEXT("assets/private/game.json")))
-    { RuntimeFailure(TEXT("Skating runtime is missing from this build. Rebuild the game.")); return false; }
-    if (!RetailRuntime)
+    { Failure=TEXT("Skating runtime is missing from this build. Rebuild the game."); return false; }
+    FString File; double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Where);
+    if (!ExportWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,File,Reach))
+    { Failure=TEXT("Skating could not load nearby collision."); return false; }
+    RetailRuntime=MakeShared<FSkateRuntime>();
+    RetailRuntime->AddFile(File); RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
+    void *ChildWrite=nullptr,*ChildRead=nullptr,*ChildError=nullptr;
+    FPlatformProcess::CreatePipe(RetailRuntime->Read,ChildWrite);
+    FPlatformProcess::CreatePipe(ChildRead,RetailRuntime->Write,true);
+    FPlatformProcess::CreatePipe(RetailRuntime->ErrorRead,ChildError);
+    const FString Args=FString::Printf(TEXT("\"%s\" \"%s\""),*(RuntimeFolder()/TEXT("assets")),*File);
+    RetailRuntime->Process=FPlatformProcess::CreateProc(*RuntimeBinary(),*Args,false,true,true,nullptr,0,nullptr,ChildWrite,ChildRead,ChildError);
+    FPlatformProcess::ClosePipe(ChildRead,ChildWrite); FPlatformProcess::ClosePipe(nullptr,ChildError);
+    if (!RetailRuntime->Process.IsValid()) { RetailRuntime.Reset(); Failure=TEXT("Skating worker could not start."); return false; }
+    return true;
+}
+void USkateComponent::PreloadRetailRuntime()
+{
+    // Decoding the animation banks takes seconds; do it while the player walks, so the first mount is immediate.
+    bRetailPreloaded=true;
+    FString Failure;
+    if (!LaunchRetailProcess(Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,Failure))
+    { UE_LOG(LogTemp,Display,TEXT("SKATE preload skipped: %s"),*Failure); }
+    else { UE_LOG(LogTemp,Display,TEXT("SKATE preload started")); }
+}
+void USkateComponent::PollIdleRetail()
+{
+    if (!RetailRuntime || bRetailActive) return;
+    RetailRuntime->Poll();
+    if (!RetailRuntime->Error.IsEmpty())
+    { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded worker failed: %s"),*RetailRuntime->Error); RetailRuntime.Reset(); }
+}
+bool USkateComponent::StartRetailRuntime()
+{
+    FString Failure;
+    if (!RetailRuntime && !LaunchRetailProcess(Pos,Rot.Rotator().Yaw,Failure)) { RuntimeFailure(Failure); return false; }
+    RetailRuntime->FinishPendingWorld(false);
+    if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
     {
-        FString File; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
-        if (!ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File))
-        { RuntimeFailure(TEXT("Skating could not load nearby collision.")); return false; }
-        RetailRuntime=MakeShared<FSkateRuntime>();
-        RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Centre;
-        void *ChildWrite=nullptr,*ChildRead=nullptr,*ChildError=nullptr;
-        FPlatformProcess::CreatePipe(RetailRuntime->Read,ChildWrite);
-        FPlatformProcess::CreatePipe(ChildRead,RetailRuntime->Write,true);
-        FPlatformProcess::CreatePipe(RetailRuntime->ErrorRead,ChildError);
-        const FString Args=FString::Printf(TEXT("\"%s\" \"%s\""),*(RuntimeFolder()/TEXT("assets")),*File);
-        RetailRuntime->Process=FPlatformProcess::CreateProc(*RuntimeBinary(),*Args,false,true,true,nullptr,0,nullptr,ChildWrite,ChildRead,ChildError);
-        FPlatformProcess::ClosePipe(ChildRead,ChildWrite); FPlatformProcess::ClosePipe(nullptr,ChildError);
-        if (!RetailRuntime->Process.IsValid()) { RetailRuntime.Reset(); RuntimeFailure(TEXT("Skating worker could not start.")); return false; }
-    }
-    else if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>6000.f)
-    {
-        FString File; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
-        if (!ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File)) { RuntimeFailure(TEXT("Skating could not refresh nearby collision.")); return false; }
-        RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Centre;
-        auto Update=MakeShared<FJsonObject>(); Update->SetStringField(TEXT("op"),TEXT("world")); Update->SetStringField(TEXT("path"),File); RetailRuntime->Send(Update);
+        FString File; double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
+        if (!ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File,Reach)) { RuntimeFailure(TEXT("Skating could not refresh nearby collision.")); return false; }
+        RetailRuntime->AddFile(File); RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
+        RetailRuntime->SendWorld(File,false);
     }
     RetailRuntime->Spawn=Pos; RetailRuntime->SpawnYaw=Rot.Rotator().Yaw;
     ++RetailRuntime->Generation; RetailRuntime->HasPose=false; RetailRuntime->FrameTime=0;
@@ -412,15 +594,24 @@ void USkateComponent::StepRetailRuntime(float Dt)
         Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I]));
     }
     RetargetRetailPose();
-    // Rebuild before leaving the snapshot's inner 60 m cube; keep 40 m of query margin.
-    if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>6000.f)
+    // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
+    // gathers here, writes on a worker thread, and the skating worker loads it on its own thread.
+    if (RetailRuntime->PendingWorld.IsValid())
     {
-        FString File; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
-        if (ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File))
+        if (RetailRuntime->PendingWorld.IsReady()) RetailRuntime->FinishPendingWorld(true);
+    }
+    else if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
+    {
+        auto Snapshot=MakeShared<FSnapshot>(); double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
+        if (GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,*Snapshot,Reach))
         {
-            RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Centre;
-            auto Update=MakeShared<FJsonObject>(); Update->SetStringField(TEXT("op"),TEXT("world")); Update->SetStringField(TEXT("path"),File); RetailRuntime->Send(Update);
+            const FString File=NewSnapshotPath();
+            RetailRuntime->AddFile(File); RetailRuntime->PendingPath=File;
+            RetailRuntime->PendingWorld=Async(EAsyncExecution::ThreadPool,[Snapshot,File]{ return WriteSnapshot(*Snapshot,File); });
+            RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
         }
+        // Nothing to snapshot (open water): keep the old one and try again 20 m on, not on every frame.
+        else { RetailRuntime->CollisionCentre=Pos; RetailRuntime->CollisionReach=2000.; }
     }
 }
 
