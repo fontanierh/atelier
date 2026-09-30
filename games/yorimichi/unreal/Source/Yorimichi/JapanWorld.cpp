@@ -253,16 +253,28 @@ void AJapanWorld::Load()
                 H->SetCanEverAffectNavigation(false);
                 const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
                 H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
-                // Leaf cards must not retract the chase camera as the player walks past.
-                if (bTree || bBush || bGrass || bLitter || Key==TEXT("HD_ArcadeTree") || Key.StartsWith(TEXT("HD_PlazaTree"))) H->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+                // Camera see-through (docs/CAMERA.md): solid things stop the chase camera. Thin things (trees, bushes,
+                // poles, lanterns, the torii, the tree house's props and thin pieces) let it through and fade whole
+                // where they hide Cairo; the materials read how in custom primitive data 0. The far backdrop never
+                // comes between, so it skips the fade's vertex work.
+                const int32 Fade = bBackdrop ? JapanSeeThrough::FadeSolid : JapanSeeThrough::FadeMode(Key, Mesh);
+                if (Fade != JapanSeeThrough::FadeSolid)
+                {
+                    H->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+                    H->SetCustomPrimitiveDataFloat(0, float(Fade));
+                }
+                if (Key == TEXT("TH_Frame") || Key == TEXT("TH_Dressing"))
+                    UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,
+                        Fade == JapanSeeThrough::FadePieces ? TEXT("fades piece by piece") : TEXT("fades at the lens only, no piece bake"),
+                        Mesh->GetNumTexCoords(0));
                 H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
                 if (bGrass || bLitter || bBackdrop) H->bAffectDistanceFieldLighting = false;
                 if (bGrass) H->SetCullDistances(6000, 8000);
                 else if (bBush) H->SetCullDistances(30000, 36000);
                 else if (bLitter) H->SetCullDistances(7000, 9000);
                 if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);
-                // The tree house: the camera see-through cuts it where it hides Cairo, so the camera probe may pass it
-                // (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.
+                // The tree house: the camera arm keeps above the floor Cairo stands on there, and in hole mode its probe
+                // passes the house (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.
                 if (Key.StartsWith(TEXT("TH_")))
                 {
                     H->ComponentTags.Add(JapanSeeThrough::Tag);
@@ -488,8 +500,8 @@ int32 AJapanWorld::FindSeeThroughRoom(const FVector& P, float Margin) const
 
 void AJapanWorld::SetSeeThroughProbe(bool bIgnore)
 {
-    // Only the chase camera's arm reads this (UJapanCameraArm sweeps again without these groups): the groups keep
-    // their collision, so other camera-channel traces still see the tree house.
+    // Hole mode only (japan.SeeThroughHole 1). Only the chase camera's arm reads this (UJapanCameraArm sweeps without
+    // these groups): the groups keep their collision, so other camera-channel traces still see the tree house.
     if (bIgnore == bSeeThroughProbeIgnored) return;
     bSeeThroughProbeIgnored = bIgnore;
     UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH camera probe %s the tree house (%d groups)"), bIgnore ? TEXT("passes") : TEXT("stops at"), SeeThroughGroups.Num());
