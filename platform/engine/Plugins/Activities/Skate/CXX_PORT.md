@@ -89,7 +89,8 @@ header updates, normal correction and the original 16-pair capacity contract.
 vertices, including normal bending and contact reprojection. `WorldPrimitiveContact.*` composes the
 typed sphere/capsule/triangle/box path, the original triangle/box separating-axis specialization,
 velocity-based separation allowance and complete contact manifolds. World candidate traversal,
-material combination, duplicate retention and body-workspace preparation remain separate work.
+and body-workspace preparation remain separate work. `ContactRetention.*` preserves ordered material
+combination, duplicate rejection, coplanar reduction, point selection and capacity/flush behavior.
 
 `RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
 inertia, point forces, drag, caps and cooldowns. Opaque lanes survive packed updates and reaction words
@@ -232,6 +233,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   produce both hits and misses (5,026 hits total); all 16 manifold slots are compared, including unused
   zeros. Packing and the private triangle/box specialization are exercised through the original public
   typed contact query. Complete world traversal and retention are not established by this check.
+- Contact retention: 6,268 cases and 3,733,259 exact words, including 756 stateful buffer streams.
+  Every buffer field, all 50 complete records and each publication chunk are compared. Coverage includes
+  10,743 capacity rejections, 320 duplicate rejections, 1,699 published chunks and source-order reduction,
+  plus scalar float-copy NaN quieting with integer body IDs/tags retained verbatim.
 - Shared constraint solver: 7,967 cases and 3,682,300 exact words (14,729,200 bytes), including mixed
   contact/joint/drive iterations over shared reactions, friction and limit boundaries, reversed body
   indices, softness/carry preservation and invalid indices rejected before mutation. An independently
