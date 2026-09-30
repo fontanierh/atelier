@@ -24,8 +24,10 @@ Graphs made here:
 - character(material): Cairo's and the bokken's materials dither out within 60 cm of the camera (22 cm: gone).
 
 Run as a script (`atelier build yorimichi unreal.see_through`), it patches what other imports build without it:
-M_Foliage (leaves), M_Painted's mask pin with the instances in PAINTED switched to masked (tree trunks, the village's
-roofs, walls and props), and /Game/Cairo's materials.
+M_Foliage (leaves, bushes, flowers, litter), M_Grass (the grass tufts), M_Painted's mask pin with the instances in
+PAINTED switched to masked (tree trunks, the road's guardrail, poles, torii), and /Game/Cairo's materials.
+M_Grass and M_Painted carry the scaled cut (add_mask(scale=...)): a CutScale vector parameter per material or
+instance (SCALES), and code that skips the pixels no cut can reach.
 import_treehouse.py builds M_TreeHouse with it. Every patch is idempotent.
 """
 import unreal
@@ -38,10 +40,17 @@ VECTORS = (('Focus', (0., 0., -100000., 90.)), ('Cut', (55., 35., 0., 0.)), ('Ro
            ('RoomSize', (100., 100., 100., 0.)), ('RoomShape', (0., 60., 90., 0.)),
            *((name, (0., 0., -100000., 10.)) for name in TRAIL))
 OPACITY = unreal.MaterialProperty.MP_OPACITY_MASK
-# M_Painted's instances (setup_project.py) that may stand between the camera and Cairo: tree trunks and what the
-# village's houses, shrines and props are made of. The ground, road, water, rock and stone, the far forest and the sky
-# stay opaque (he stands on them, or they are too big or far to matter, and masking costs on every pixel drawn).
+# M_Painted's instances (setup_project.py) that may stand between the camera and Cairo: tree trunks (Bark), the road's
+# guardrail (Paint, a slot of the terrain mesh), poles (Metal, Wood), the torii (Vermilion, Tile). RoofTile, Plaster
+# and Lattice have no mesh in the world today. The ground, road, water, rock and stone, the far forest and the sky stay
+# opaque (he stands on them, or they are too big or far to matter, and masking costs on every pixel drawn). The
+# houses and the village kit use M_Village, which is not cut: see docs/CAMERA.md.
 PAINTED = ('Bark', 'RoofTile', 'Tile', 'Plaster', 'Wood', 'Lattice', 'Vermilion', 'Paint', 'Metal')
+# CutScale (radius, front margin, near-camera fade distances, unused) on the materials with the scaled cut. M_Grass:
+# blades fade from 1 m from the camera (gone at 25 cm), so a tuft by the lens never fills the screen. MI_Paint, the
+# guardrail: the cut starts 9 cm in front of him instead of 35 cm, so the rail is gone even when he walks along it
+# (his capsule keeps him 22 cm from it); the rail under his feet when he grinds stays, being under his feet.
+SCALES = {'M_Grass': (1., 1., 2.5, 1.), 'M_Painted': (1., 1., 1., 1.), 'MI_Paint': (1., .25, 1., 1.)}
 
 # The pixel's dither threshold: interleaved gradient noise, stepped every frame so TAA blends it into a soft fade.
 DITHER = ('float2 px = Parameters.SvPosition.xy + float(View.StateFrameIndexMod8) * float2(32.665, 11.815);'
@@ -83,6 +92,20 @@ KEEP = (' float keep = 1.0 - saturate(cut * X.w);'
 
 NEAR = ('float s = length(P - C);'
         ' float keep = lerp(1.0, smoothstep(22.0, 60.0, s), saturate(X.z));')
+
+# The scaled cut (add_mask(scale=...)), for materials without the room cutaway: K is the material's CutScale. Before
+# BODY, it scales the radius and the front margin, then leaves at once, keeping the pixel, when no cut can reach it:
+# every ray the hole takes passes within R (half height + radius) of his centre, so a pixel beyond that sphere, or
+# outside the cone the sphere makes from the camera, stays, unless the near-camera fade reaches it. On grass and bark
+# that is almost every pixel drawn, which then costs a few instructions instead of the whole cut.
+SCALED = ('X = X * float4(K.x, K.y, 1.0, 1.0);'
+          ' float3 e0 = P - C; float ee = dot(e0, e0); float3 f0 = F.xyz - C; float ff = dot(f0, f0);'
+          ' float R = F.w + max(X.x, 1.0); float fa = dot(e0, f0); float fr = sqrt(ff) + R; float nr = 40.0 * K.z;'
+          ' float clear = max(step(fr * fr, ee), step(R * R, ff) * max(step(fa, 0.0), step(fa * fa, ee * (ff - R * R))));'
+          ' [branch] if (max(clear, step(X.w, 0.0)) * max(step(nr * nr, ee), step(X.z, 0.0)) > 0.5) return 1.0; ')
+
+KEEP_SCALED = (' float keep = 1.0 - saturate(cut * X.w);'
+               ' keep = keep * lerp(1.0, smoothstep(10.0 * K.z, 40.0 * K.z, s), saturate(X.z));')
 
 # T time, P vertex (rest), W vertex-colour alpha (how freely it hangs), A vertex tangent (the way the picture's u runs
 # across the curtain), U its uv, F body centre + half height, T0..T3 the trail (the newest first; w: age in s). Only
@@ -179,16 +202,38 @@ def params(m, x, y, *names):
             for k, n in enumerate(names)]
 
 
+def upstream(m, e):
+    """e and every expression feeding it."""
+    seen, todo = {}, [e]
+    while todo:
+        x = todo.pop()
+        if x is None or x.get_path_name() in seen: continue
+        seen[x.get_path_name()] = x
+        todo.extend(MEL.get_inputs_for_material_expression(m, x))
+    return list(seen.values())
+
+
 def done(m):
     """Whether the opacity mask already has the see-through somewhere upstream (another patch may have wrapped it)."""
-    seen, todo = set(), [MEL.get_material_property_input_node(m, OPACITY)]
-    while todo:
-        e = todo.pop()
-        if e is None or e.get_path_name() in seen: continue
-        seen.add(e.get_path_name())
-        if e.get_editor_property('desc') == TAG: return True
-        todo.extend(MEL.get_inputs_for_material_expression(m, e))
-    return False
+    return any(e.get_editor_property('desc') == TAG for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
+
+
+def scaled(m):
+    """Whether m's see-through is the scaled cut (its Custom node reads K)."""
+    return any(isinstance(e, unreal.MaterialExpressionCustom) and e.get_editor_property('description') == TAG
+               and 'K' in [str(i.get_editor_property('input_name')) for i in e.get_editor_property('inputs')]
+               for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
+
+
+def strip(m):
+    """Take an earlier add_mask off a material whose opacity mask had nothing else (M_Painted, patched before the
+    scaled cut): the mask's input is then the see-through's own shadow switch, and all that feeds it is the
+    see-through's. Anything else is left alone (False)."""
+    out = MEL.get_material_property_input_node(m, OPACITY)
+    if not isinstance(out, unreal.MaterialExpressionShadowReplace) or out.get_editor_property('desc') != TAG:
+        return False
+    for e in upstream(m, out): MEL.delete_material_expression(m, e)
+    return True
 
 
 def masked(m):
@@ -216,13 +261,16 @@ def into_mask(m, keep, x, y):
     assert MEL.connect_material_property(out, '', OPACITY)
 
 
-def add_mask(m, room=False, blend=True, x=-900, y=1400):
+def add_mask(m, room=False, blend=True, scale=None, x=-900, y=1400):
     """The see-through on material m. blend: make an opaque m masked (clip 0.5); leave it off for an opaque parent whose
     instances switch to masked (mask_instance). room: also the room cutaway, weighted by the
-    scalar parameter RoomCut (1; the trunks' instance sets 0 so the old camphor is never cut at ceiling height)."""
+    scalar parameter RoomCut (1; the trunks' instance sets 0 so the old camphor is never cut at ceiling height).
+    scale: the scaled cut instead (SCALED, no room), with the vector parameter CutScale defaulting to scale."""
     if done(m) or (blend and not masked(m)): return False
-    names = ['P', 'C', 'F', 'X'] + (['R', 'S', 'H', 'M'] if room else [])
-    cut = custom(m, x, y, BODY + (ROOM if room else '') + KEEP + ' ' + DITHER, names)
+    assert not (room and scale), 'the scaled cut has no room cutaway'
+    names = ['P', 'C', 'F', 'X'] + (['R', 'S', 'H', 'M'] if room else []) + (['K'] if scale else [])
+    code = SCALED + BODY + KEEP_SCALED if scale else BODY + (ROOM if room else '') + KEEP
+    cut = custom(m, x, y, code + ' ' + DITHER, names)
     link(node(m, unreal.MaterialExpressionWorldPosition, x-450, y), '', cut, 'P')
     link(node(m, unreal.MaterialExpressionCameraPositionWS, x-450, y+100), '', cut, 'C')
     vectors = params(m, x-450, y+200, 'Focus', 'Cut', *(('Room', 'RoomSize', 'RoomShape') if room else ()))
@@ -230,6 +278,10 @@ def add_mask(m, room=False, blend=True, x=-900, y=1400):
     if room:
         share = node(m, unreal.MaterialExpressionScalarParameter, x-450, y+760, parameter_name='RoomCut', default_value=1.)
         link(share, '', cut, 'M')
+    if scale:
+        k = node(m, unreal.MaterialExpressionVectorParameter, x-450, y+760, parameter_name='CutScale',
+                 default_value=unreal.LinearColor(*scale))
+        link(k, 'RGBA', cut, 'K')
     into_mask(m, cut, x+300, y)
     return True
 
@@ -276,20 +328,44 @@ def save(m):
     MEL.recompile_material(m); E.save_loaded_asset(m)
 
 
+def cut_scale(mi, value):
+    """Give an instance its own CutScale; False when it has it already or its parent has no scaled cut."""
+    want = unreal.LinearColor(*value)
+    have = MEL.get_material_instance_vector_parameter_value(mi, 'CutScale')
+    if all(abs(getattr(have, c) - getattr(want, c)) < 1e-4 for c in 'rgba'): return False
+    if not MEL.set_material_instance_vector_parameter_value(mi, 'CutScale', want):
+        unreal.log_warning(f'SEE-THROUGH {mi.get_name()}: no CutScale on its parent'); return False
+    MEL.update_material_instance(mi)
+    return True
+
+
+def material(name):
+    path = '/Game/Japan/Materials/' + name
+    return E.load_asset(path) if E.does_asset_exist(path) else None
+
+
 def main():
     collection()
     changed = []
-    foliage = E.load_asset('/Game/Japan/Materials/M_Foliage') if E.does_asset_exist('/Game/Japan/Materials/M_Foliage') else None
+    foliage = material('M_Foliage')
     if foliage and add_mask(foliage, blend=False):          # masked already, with its own clip value
         save(foliage); changed.append('M_Foliage')
-    painted = E.load_asset('/Game/Japan/Materials/M_Painted') if E.does_asset_exist('/Game/Japan/Materials/M_Painted') else None
-    if painted and add_mask(painted, blend=False):          # opaque: only its masked instances use the pin
+    grass = material('M_Grass')
+    if grass and add_mask(grass, scale=SCALES['M_Grass']):  # masked already (its instance fade), so it stays masked
+        save(grass); changed.append('M_Grass')
+    painted = material('M_Painted')
+    if painted and done(painted) and not scaled(painted) and not strip(painted):
+        unreal.log_warning('SEE-THROUGH M_Painted keeps its earlier cut: something else feeds its opacity mask')
+    if painted and add_mask(painted, blend=False, scale=SCALES['M_Painted']):   # opaque: only masked instances use it
         save(painted); changed.append('M_Painted')
     for name in PAINTED:
-        path = f'/Game/Japan/Materials/MI_{name}'
-        mi = E.load_asset(path) if E.does_asset_exist(path) else None
+        mi = material(f'MI_{name}')
         if mi and painted and mask_instance(mi):
             E.save_loaded_asset(mi); changed.append(f'MI_{name}')
+    for name, value in SCALES.items():
+        mi = material(name) if name.startswith('MI_') else None
+        if mi and cut_scale(mi, value):
+            E.save_loaded_asset(mi); changed.append(f'{name} CutScale')
     for path in sorted(E.list_assets('/Game/Cairo', recursive=False)):
         name = path.rsplit('/', 1)[-1].split('.')[0]
         if not name.startswith(('M_Cairo', 'M_Bokken')): continue

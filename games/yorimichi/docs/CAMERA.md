@@ -7,8 +7,10 @@ room that puts it inside Cairo's head), the game keeps the camera where it is an
 ## What the player sees
 
 - **A hole round Cairo.** Whatever stands between the camera and Cairo dithers away in a soft round hole around his
-  body: leaves, trunks, the village's roofs, walls and props, and all of the tree house. The hole starts 35 cm in
-  front of him, so nothing touching him is cut. The floor under his feet and everything behind him stay.
+  body: leaves, bushes, grass, trunks, the road's guardrail, poles, the torii, and all of the tree house. The hole
+  starts 35 cm in front of him, so nothing touching him is cut. On the guardrail it starts 9 cm in front of him, so
+  the rail is gone even when he walks along it. The floor under his feet and everything behind him stay. The houses
+  and the rest of the village kit are not cut (see Limits).
 - **Rooms open on the camera's side.** Inside a tree house room, the walls between the camera and him and the
   ceiling and roof over his head open while the camera is outside or above the room. The far walls stay. A change
   of room closes the old one before it opens the new one.
@@ -17,7 +19,7 @@ room that puts it inside Cairo's head), the game keeps the camera where it is an
   the arm pulls in at once and eases back out once the way is clear, with no snapping. On the tree house, the
   camera stays at least 40 cm above the floor he stands on.
 - **Near the camera.** Anything closer than 40 cm to the camera fades out and is gone at 10 cm, so you never see
-  half-clipped planks.
+  half-clipped planks. Grass fades from 1 m and is gone at 25 cm, so a tuft by the lens never fills the screen.
   Cairo and his bokken dither out from 60 cm away and are gone at 22 cm.
 - **Fades, not pops.** The cut fades in over a third of a second and a room opens over a quarter. The dither
   changes every frame and temporal anti-aliasing turns it into a soft fade.
@@ -52,9 +54,18 @@ passes keep every pixel, so a cut-away roof still casts its shadow.
 | --- | --- |
 | `M_TreeHouse`: the structure, the dressing and the 13 props | the hole and the room walls and roof |
 | `MI_TH_trunk`: the camphor's trunk through the rooms | the hole only (`RoomCut` 0), so it is never cut at ceiling height |
-| `M_Foliage` (all leaves) | the hole |
-| `M_Painted` through `MI_Bark` (tree trunks) and the village's `MI_RoofTile`, `MI_Tile`, `MI_Plaster`, `MI_Wood`, `MI_Lattice`, `MI_Vermilion`, `MI_Paint`, `MI_Metal` | the hole; these instances are switched to masked (`PAINTED` in see_through.py), the ground, road, water, rock, stone and far forest stay opaque |
+| `M_Foliage` (leaves, bushes, flowers, litter) | the hole |
+| `M_Grass` (the grass tufts, already masked for their distance fade) | the hole; the near-camera fade reaches 1 m |
+| `M_Painted` through `MI_Bark` (tree trunks), `MI_Paint` (the road's guardrail, part of the terrain mesh), `MI_Metal` and `MI_Wood` (poles), `MI_Vermilion` and `MI_Tile` (the torii); `MI_RoofTile`, `MI_Plaster`, `MI_Lattice` have no mesh today | the hole; these instances are switched to masked (`PAINTED` in see_through.py), the ground, road, water, rock, stone and far forest stay opaque. On `MI_Paint` the hole starts 9 cm in front of him |
 | `M_Cairo_*`, `M_Bokken_*` | dither out near the camera |
+
+`M_Grass` and `M_Painted` carry the scaled cut. Its vector parameter `CutScale` multiplies the hole's radius (x),
+how far in front of him it starts (y) and the near-camera fade distances (z), per material or instance (`SCALES`
+in see_through.py: `M_Grass` (1, 1, 2.5, 1), `MI_Paint` (1, 0.25, 1, 1)). It also leaves early, keeping the pixel,
+wherever no cut can reach: every ray the hole takes passes closer to his centre than his half height plus the
+hole's radius, so a pixel beyond that sphere, or outside the cone it makes from the camera, costs a few
+instructions instead of the whole cut. In a chase view over grass that is more than 99% of the pixels. The tree house and the leaves keep the
+first version, without the early exit.
 
 The rooms are the room-grade boxes and round rooms from `treehouse/runtime.json`. A round room gives its height
 as `half_height`. Cairo must be 10 cm inside a room to enter it and 25 cm outside to leave it, so the walls do not
@@ -107,8 +118,9 @@ atelier build yorimichi unreal.compile world.treehouse unreal.treehouse unreal.s
 - `unreal.compile`: the component, the camera arm and the tree house groups.
 - `world.treehouse` (Blender): the noren strips, their alpha, and the round room's `half_height`.
 - `unreal.treehouse`: rebuilds `M_TreeHouse` with the cut and the cloth, and makes `MI_TH_trunk`.
-- `unreal.see_through`: patches the leaves, the trunks and Cairo. It reruns after `unreal.world` or `unreal.cairo`,
-  which rebuild those materials.
+- `unreal.see_through`: patches the leaves, the grass, the trunks, the guardrail, the poles and torii, and Cairo. It
+  reruns after `unreal.world` or `unreal.cairo`, which rebuild those materials. On a project patched before the
+  scaled cut it takes `M_Painted`'s earlier cut off and puts the scaled one on.
 - `data.stage`: copies the new runtime.json.
 
 The camera probe passes the tree house only while `M_TreeHouse` is masked, that is, while it has the cut. An old
@@ -116,9 +128,13 @@ tree house import keeps the old camera.
 
 ## What to check in game
 
-- Walk the forest and the villages with trees, eaves, shrines and props between you and the camera. Cairo should
+- Walk the forest and the villages with trees, bushes, poles and the torii between you and the camera. Cairo should
   show through a soft round hole, with no hard edges and no shimmer once you stop moving. The ground under him
   should stay.
+- Walk the main road along the guardrail with the camera swung out over the drop. The rail should be gone in
+  front of him, even with him right against it. Grind the rail: the rail under his feet should stay.
+- Push the camera into tall grass by the road. No blade should fill the screen, and the grass further off and the
+  grass round his feet should stay.
 - In each tree house room, the round Heart room included, swing the camera round Cairo. The near wall and the
   roof should open, and the far wall and the floor should stay. Walk from room to room and across the bridges:
   the opening should follow without jumping, and nothing outside should be cut away.
@@ -137,6 +153,9 @@ tree house import keeps the old camera.
 
 - The hole is a round shape. A long wall or roof between the camera and Cairo shows a round window, not the whole
   wall gone.
+- The houses on the main road, the village, the lake, the skate pier, part of the city and the other kit-built
+  places share one opaque material, `M_Village`, and are not cut. Masking it would take early depth rejection away
+  from everything built with it. A cheaper way would be a masked copy of it given to the houses and huts alone.
 - A strip he walks into the exact middle of (within 4 cm) cannot part: there it would have to drape over him. When
   he runs past a strip's middle at an angle, that strip flicks across quickly.
 - The see-through has no memory of what it cut. A thin rail passing across the hole's edge dithers in and out.

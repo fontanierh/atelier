@@ -218,7 +218,7 @@ def steps(ctx):
         # either; the tree house builds its own with it (unreal.treehouse).
         Step('unreal.see_through', [UnrealScript(SCRIPTS / 'see_through.py', 'SEE-THROUGH COMPLETE')],
              inputs=[SCRIPTS / 'see_through.py'], needs=['unreal.world', 'unreal.cairo'], heavy=True,
-             about='camera see-through on leaves, trunks, village buildings and Cairo (/Game/SeeThrough)'),
+             about='camera see-through on leaves, grass, trunks, the guardrail, poles, torii and Cairo (/Game/SeeThrough)'),
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
