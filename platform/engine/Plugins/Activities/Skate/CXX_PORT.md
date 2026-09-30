@@ -23,6 +23,8 @@ playback does not satisfy this migration.
 The reference integration is `46513a6`, including the current 1.6 spin scale, collision-shape export and
 asynchronous collision refresh/preload changes. Data tracking is inherited from `02233f1`. Reference
 scenarios include the current 1.6 spin setting as well as the previous 2.15 regression cases.
+The migration branch also includes `68e384a`'s walking/skating camera easing. That change is entirely
+in the Unreal adapter; the worker source remains identical to the pinned reference.
 
 ## Work remaining
 
@@ -81,6 +83,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Graph decoding, lookup and binding: all three authored graphs (18,364 elements), 12 additional valid and
   invalid fixtures, and 203,374 hash inputs. Includes a real collision between differently spelled keys,
   raw boolean bytes, duplicate attributes, nonfinite float payloads, dotted paths and a 1,501-level tree.
+- Generic graph execution: 128 generated hierarchies and 20,736 commands, preserving all 36,855,872
+  output bytes from the reference. Comparisons include lazy condition calls, masks, priorities, self/ancestor
+  transitions, state timer bits, allocation/begin/update/end/hook/release order, opaque contexts and immediate
+  host side effects. Concrete gameplay operation hosts and their physical producers remain to be ported.
 - The session comparator's five regression tests catch single-bit float differences, signed zero,
   nonfinite output, field/array omissions and integer differences without lossy float conversion.
 - A frozen build of reference `46513a6` reproduced all 8,286 published responses across 25 flat-ground
@@ -92,6 +98,7 @@ Generated reports and probe binaries live under `build/<game>/skate-cpp/`. Repro
 with `Tests/check_{gesture,name,settings,graph}_parity.py --assets ASSETS --output BUILD_DIRECTORY`, through
 the shared render lock and memory guard. Temporary Rust oracles compile the unmodified original source;
 the graph probe stages its original module layout verbatim in the build directory.
+Run the generic controller comparison with `Tests/check_controller_parity.py --output BUILD_DIRECTORY`.
 
 `Tests/build_reference.py` extracts the pinned source directly from Git, builds it with its locked Cargo
 dependencies, and records the compiler, source hashes and executable hash. `Tests/session_parity.py` requires
