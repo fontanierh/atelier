@@ -1,4 +1,5 @@
 import { retargetMotion } from "./retarget.js";
+import { closeLoop } from "./loop.js";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
@@ -9,12 +10,22 @@ const $ = (id) => document.getElementById(id);
 let results = [],
   presets = [],
   authored = [],
-  source = "generated",
+  mode = "compare",
+  reference = null,
+  originalMetadata = [],
   filter = "All",
   current = null;
-let model, mixer, action, comparison, comparisonMixer, rigHelper;
+let model,
+  mixer,
+  action,
+  comparison,
+  comparisonMixer,
+  comparisonAction,
+  rigHelper,
+  comparisonRigHelper;
 let comparisonDuration = 1;
 let rootBoneName;
+let selectionRequest = 0;
 let rest = new Map(),
   playing = true,
   looping = true,
@@ -48,7 +59,9 @@ controls.minDistance = 1.6;
 controls.maxDistance = 12;
 controls.maxPolarAngle = Math.PI * 0.52;
 function resetCamera() {
-  camera.position.set(3.5, 1.8, 3.2);
+  camera.position.set(
+    ...(mode === "compare" ? [4.4, 2.1, 4] : [3.5, 1.8, 3.2]),
+  );
   controls.target.set(0, 0.85, 0);
   controls.update();
 }
@@ -155,14 +168,6 @@ async function loadModel() {
   scene.add(model);
   mixer = new THREE.AnimationMixer(model);
   comparison = clone(model);
-  comparison.traverse((o) => {
-    if (o.isMesh) {
-      o.material = o.material.clone();
-      o.material.color.setHex(0xa4b89b);
-      o.material.transparent = true;
-      o.material.opacity = 0.46;
-    }
-  });
   comparison.visible = false;
   scene.add(comparison);
   comparisonMixer = new THREE.AnimationMixer(comparison);
@@ -170,33 +175,58 @@ async function loadModel() {
   rigHelper.visible = false;
   rigHelper.material.depthTest = false;
   scene.add(rigHelper);
-  authored = gltf.animations.map((clip) => ({
-    id: clip.name,
-    title: clip.name
-      .replace("Fox_", "")
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replaceAll("_", " "),
-    category: /Attack|Kick/.test(clip.name)
-      ? "Attacks"
-      : /Idle|Hurt|Death/.test(clip.name)
-        ? "Custom"
-        : "Movement",
-    authored: true,
-    clip,
-    frames: Math.round(clip.duration * 30) + 1,
-    seed: "—",
-  }));
+  comparisonRigHelper = new THREE.SkeletonHelper(comparison);
+  comparisonRigHelper.visible = false;
+  comparisonRigHelper.material.depthTest = false;
+  scene.add(comparisonRigHelper);
+  authored = gltf.animations.map((loaded) => {
+    const meta = originalMetadata.find((m) => m.id === loaded.name);
+    const clip =
+      meta?.kind === "loop" ? closeLoop(loaded, meta.seconds) : loaded;
+    return {
+      id: clip.name,
+      title:
+        clip.name === "Fox_Run"
+          ? "Forward sprint"
+          : clip.name
+              .replace("Fox_", "")
+              .replace(/([a-z])([A-Z])/g, "$1 $2")
+              .replaceAll("_", " "),
+      category: /Attack|Kick/.test(clip.name)
+        ? "Attacks"
+        : /Idle|Hurt|Death/.test(clip.name)
+          ? "Custom"
+          : "Movement",
+      authored: true,
+      clip,
+      frames: Math.round(clip.duration * 30) + 1,
+      seed: "—",
+      prompt: meta?.prompt,
+      travel_speed: meta?.travel_speed_units_per_s,
+    };
+  });
   $("loading-view").hidden = true;
-  await selectClip(results[0] || authored.find((x) => x.id === "Fox_Idle"));
+  await selectOriginal(authored.find((x) => x.id === "Fox_Run") || authored[0]);
+  updateMode();
   renderLibrary();
 }
 function makeCard(item) {
   const button = document.createElement("button");
-  button.className = "clip-card" + (current?.id === item.id ? " selected" : "");
+  button.className =
+    "clip-card" +
+    ((mode === "compare" ? reference?.id : current?.id) === item.id
+      ? " selected"
+      : "");
   button.dataset.id = item.id;
-  button.innerHTML = `<span class="clip-icon">${icons[item.category] || "◇"}</span><span><strong>${escape(item.title)}</strong><small>${item.authored ? "AUTHORED" : `SEED ${item.seed}`} <span>·</span> ${((item.frames || 60) / 30).toFixed(1)}s</small></span><span class="arrow">↗</span>`;
+  const copies = results.filter((r) => r.reference_clip === item.id).length;
+  const subtitle = item.authored
+    ? `ORIGINAL · ${copies} counterpart${copies === 1 ? "" : "s"}`
+    : `UNIMATE ONLY · SEED ${item.seed}`;
+  button.innerHTML = `<span class="clip-icon">${icons[item.category] || "◇"}</span><span><strong>${escape(item.title)}</strong><small>${subtitle}</small><small>${(item.clip?.duration || (item.frames - 1) / (item.fps || 30)).toFixed(2)}s${!item.authored && !item.conditioning_version ? " · earlier conditioning" : ""}</small></span><span class="arrow">↗</span>`;
   button.addEventListener("click", () =>
-    selectClip(item).catch((e) => toast(e.message)),
+    (item.authored ? selectOriginal(item) : selectClip(item)).catch((e) =>
+      toast(e.message),
+    ),
   );
   const wrapper = document.createElement("div");
   wrapper.setAttribute("role", "listitem");
@@ -204,23 +234,35 @@ function makeCard(item) {
   return wrapper;
 }
 function renderLibrary() {
-  $("generated-count").textContent = results.length;
-  $("result-count").textContent = `${results.length + authored.length} clips`;
+  const standalone = results.filter((r) => !r.reference_clip);
+  $("result-count").textContent =
+    mode === "compare"
+      ? `${authored.length} originals`
+      : `${standalone.length} motions`;
   const list = $("clip-list");
   list.replaceChildren();
-  const items = (source === "generated" ? results : authored).filter(
+  const items = (mode === "compare" ? authored : standalone).filter(
     (x) => filter === "All" || x.category === filter,
   );
   if (!items.length) {
     const empty = document.createElement("div");
     empty.className = "empty-library";
     empty.innerHTML =
-      source === "generated"
+      mode === "create"
         ? "Your next move starts with a sentence.<br>Generate an experiment below or write your own prompt."
         : "No motions in this category.";
     list.append(empty);
   }
   for (const item of items) list.append(makeCard(item));
+  const selected = list.querySelector(".selected");
+  if (selected)
+    list.scrollTop = Math.max(
+      0,
+      selected.offsetTop -
+        list.offsetTop -
+        list.clientHeight / 2 +
+        selected.offsetHeight / 2,
+    );
 }
 function renderRecipes() {
   $("recipes").replaceChildren();
@@ -232,7 +274,7 @@ function renderRecipes() {
     b.onclick = () => {
       fillPrompt(p);
       const found = results.find(
-        (r) => r.title === p.title && r.seed === p.seed,
+        (r) => !r.reference_clip && r.title === p.title && r.seed === p.seed,
       );
       if (found) selectClip(found).catch((e) => toast(e.message));
       else toast("Prompt loaded. Generate to try this motion.");
@@ -244,13 +286,122 @@ function fillPrompt(p) {
   $("prompt").value = p.prompt;
   $("seed").value = p.seed;
 }
+function updateMode() {
+  document.querySelectorAll("[data-mode]").forEach((b) => {
+    const selected = b.dataset.mode === mode;
+    b.classList.toggle("selected", selected);
+    b.setAttribute("aria-pressed", String(selected));
+  });
+  $("library-title").textContent =
+    mode === "compare" ? "Original animations" : "UniMate-only motions";
+  $("library-help").textContent =
+    mode === "compare"
+      ? "Pick an original. Its counterparts stay grouped with it."
+      : "Independent generations, with no original attached.";
+  $("comparison-tools").hidden = mode !== "compare";
+  $("recipe-section").hidden = mode !== "create";
+  $("prompt-suggestions").hidden = mode !== "create";
+  $("motion-name-field").hidden = mode !== "create";
+  $("prompt-title").textContent =
+    mode === "compare" ? "Generate a counterpart" : "Create a new animation";
+  $("prompt-help").textContent =
+    mode === "create"
+      ? "Describe a new motion. It will be saved independently in this library."
+      : reference?.id === "Fox_Run"
+        ? "Reference: Forward sprint. Keep its gait, or uncheck the option for prompt-only generation."
+        : `Reference: ${reference?.title || "—"}. Generate a prompt-only counterpart for side-by-side review.`;
+  $("guided-field").hidden = mode !== "compare" || reference?.id !== "Fox_Run";
+  setBusy(busy);
+  renderLibrary();
+}
+async function selectOriginal(item, preferred) {
+  reference = item;
+  const variants = results.filter((r) => r.reference_clip === item.id);
+  $("variant").replaceChildren();
+  for (const take of variants) {
+    const option = document.createElement("option");
+    option.value = take.id;
+    const title = take.title.replace(/(?: ·| \/) seed \d+$/, "");
+    option.textContent = `${take.guided ? "HYBRID" : "PROMPT ONLY"} · ${title} · seed ${take.seed}${!take.conditioning_version ? " · earlier conditioning" : ""}`;
+    $("variant").append(option);
+  }
+  if (!variants.length) {
+    const option = document.createElement("option");
+    option.textContent = "No counterpart yet";
+    option.value = "";
+    $("variant").append(option);
+  }
+  $("variant").disabled = !variants.length;
+  const take = variants.find((r) => r.id === preferred) || variants[0];
+  if (take) $("variant").value = take.id;
+  const selected = await selectClip(take || item);
+  if (!selected || reference !== item) return;
+  if (!take) {
+    $("prompt").value = item.prompt;
+    $("guidance").value = 2;
+    $("steps").value = 32;
+    updateOutputs();
+  }
+  $("guided-sprint").checked = take ? !!take.guided : item.id === "Fox_Run";
+  updateMode();
+}
+$("variant").onchange = () => {
+  const take = results.find((r) => r.id === $("variant").value);
+  $("guided-sprint").checked = !!take.guided;
+  selectClip(take).catch((e) => toast(e.message));
+  setBusy(busy);
+};
+$("comparison-view").onchange = () => {
+  setComparison();
+  resetCamera();
+};
+$("guided-sprint").onchange = () => setBusy(busy);
+document.querySelectorAll("[data-mode]").forEach(
+  (b) =>
+    (b.onclick = async () => {
+      const previousMode = mode;
+      mode = b.dataset.mode;
+      if (mode === "compare" && mode !== previousMode)
+        $("comparison-view").value = "both";
+      filter = "All";
+      document
+        .querySelectorAll("[data-filter]")
+        .forEach((x) =>
+          x.classList.toggle("selected", x.dataset.filter === "All"),
+        );
+      if (mode === "compare")
+        await selectOriginal(
+          reference || authored.find((a) => a.id === "Fox_Run"),
+        );
+      else {
+        reference = null;
+        const standalone = results.find((r) => !r.reference_clip);
+        if (standalone) await selectClip(standalone);
+        else {
+          current = null;
+          selectionRequest++;
+          action = null;
+          model.visible = false;
+          comparison.visible = false;
+          $("clip-title").textContent = "Your next motion";
+          $("clip-source").textContent = "UNIMATE ONLY";
+          $("export").disabled = true;
+        }
+        updateMode();
+        setComparison();
+      }
+      resetCamera();
+    }),
+);
 async function selectClip(item) {
-  if (!model || !item) return;
+  if (!model || !item) return false;
+  const request = ++selectionRequest;
   let clip = item.clip;
   if (!clip) {
     if (!cache.has(item.id)) cache.set(item.id, await api(item.motion));
     clip = generatedClip(cache.get(item.id), item.title);
   }
+  if (request !== selectionRequest) return false;
   mixer.stopAllAction();
   current = item;
   selectedClip = clip;
@@ -258,25 +409,33 @@ async function selectClip(item) {
   action.play();
   clockTime = 0;
   setComparison();
-  $("clip-title").textContent = item.title;
-  $("clip-source").textContent = item.authored
-    ? "ORIGINAL"
-    : "UNIMATE / EXPERIMENT";
+  $("clip-title").textContent =
+    mode === "compare" ? reference.title : item.title;
+  $("clip-source").textContent =
+    mode === "compare" ? "ORIGINAL ↔ UNIMATE" : "UNIMATE ONLY / NEW MOTION";
   $("stage-label").textContent = item.authored
     ? "Fox hunter / authored baseline"
     : "Fox hunter / in-place UniMate preview";
   $("frames").textContent = item.frames || 60;
   $("clip-seed").textContent = item.seed;
   $("duration").textContent = `${clip.duration.toFixed(2)}s`;
-  $("travel").textContent = item.diagnostics
-    ? `${(item.diagnostics.root_travel_m * displayScale).toFixed(2)} m`
-    : "—";
-  $("export").disabled = false;
+  $("travel-label").textContent = item.travel_speed
+    ? "IN-PLACE SPEED"
+    : "ROOT TRAVEL";
+  $("travel").textContent = item.travel_speed
+    ? `${(item.travel_speed * displayScale).toFixed(2)} m/s`
+    : item.diagnostics
+      ? `${(item.diagnostics.root_travel_m * displayScale).toFixed(2)} m`
+      : "—";
   $("provenance").hidden = !item.provenance;
   if (item.provenance) $("provenance").href = item.provenance;
+  const variation = item.guided?.actual_max_joint_change_degrees;
+  const kind = item.guided
+    ? `HYBRID: authored gait + UniMate arm variation${variation ? ` (up to ${variation.toFixed(1)}°)` : ""}. `
+    : "PROMPT ONLY: generated motion. ";
   $("review-note").textContent = item.authored
-    ? "Authored animation from the current fox hunter rig. Use Compare to inspect the reference alongside a generated take."
-    : `${item.prompt} · ${item.seconds}s inference. Experimental take: inspect foot contact and balance.`;
+    ? "The original is ready. Generate its first UniMate counterpart."
+    : `${kind}${item.prompt} · ${item.seconds}s inference.${!item.conditioning_version ? " Earlier conditioning; generate again with the corrected vocabulary." : ""}`;
   if (!item.authored) {
     $("prompt").value = item.prompt;
     $("seed").value = item.seed;
@@ -285,26 +444,50 @@ async function selectClip(item) {
     updateOutputs();
   }
   renderLibrary();
+  return true;
 }
 function setComparison() {
   if (!comparison) return;
   comparisonMixer.stopAllAction();
-  if (current) {
-    const reference =
-      authored.find(
-        (a) =>
-          a.id ===
-          (current.category === "Attacks" ? "Fox_AttackR_A" : "Fox_Run"),
-      ) || authored[0];
-    if (reference) {
-      comparisonDuration = reference.clip.duration;
-      comparisonMixer.clipAction(reference.clip).play();
-    }
+  if (mode === "compare" && reference) {
+    comparisonDuration = reference.clip.duration;
+    comparisonAction = comparisonMixer.clipAction(reference.clip);
+    comparisonAction.setLoop(THREE.LoopOnce, 1);
+    comparisonAction.clampWhenFinished = true;
+    comparisonAction.play();
   }
-  comparison.visible = $("compare").classList.contains("active");
-  comparison.position.z = comparison.visible ? 1.35 : 0;
-  model.position.z = comparison.visible ? -0.55 : 0;
-  $("comparison-label").hidden = !comparison.visible;
+  const view = $("comparison-view").value;
+  $("viewport").dataset.view = view;
+  comparison.visible = mode === "compare" && view !== "generated";
+  model.visible =
+    !!current &&
+    !current.authored &&
+    (mode === "create" || view !== "original");
+  $("comparison-label").hidden = mode !== "compare";
+  $("missing-counterpart").hidden =
+    mode !== "compare" || !current?.authored || view === "original";
+  $("original-label").textContent = reference?.title || "—";
+  $("generated-label").textContent = current?.authored
+    ? "Not generated"
+    : current?.title || "—";
+  $("generated-kind").textContent = current?.authored
+    ? "NO COUNTERPART"
+    : current?.guided
+      ? "HYBRID · AUTHORED GAIT + UNIMATE ARMS"
+      : "UNIMATE · PROMPT ONLY";
+  $("stage-label-wrap").hidden = mode === "compare";
+  $("export").disabled = !current || (current.authored && view !== "original");
+  $("export").textContent =
+    mode === "compare" && view === "original"
+      ? "↓ Export original"
+      : "↓ Export UniMate";
+  updateSkeletons();
+}
+function updateSkeletons() {
+  const show = $("skeleton").classList.contains("active");
+  if (rigHelper) rigHelper.visible = show && model.visible;
+  if (comparisonRigHelper)
+    comparisonRigHelper.visible = show && comparison.visible;
 }
 function updateOutputs() {
   $("guidance-value").textContent = Number($("guidance").value).toFixed(1);
@@ -316,13 +499,9 @@ $("random-seed").onclick = () => {
   $("seed").value = crypto.getRandomValues(new Uint32Array(1))[0] % 2147483648;
 };
 $("reset-camera").onclick = resetCamera;
-$("compare").onclick = () => {
-  $("compare").classList.toggle("active");
-  setComparison();
-};
 $("skeleton").onclick = () => {
   $("skeleton").classList.toggle("active");
-  if (rigHelper) rigHelper.visible = $("skeleton").classList.contains("active");
+  updateSkeletons();
 };
 $("play").onclick = () => {
   playing = !playing;
@@ -351,16 +530,6 @@ document.querySelectorAll("[data-filter]").forEach(
       renderLibrary();
     }),
 );
-document.querySelectorAll("[data-source]").forEach(
-  (b) =>
-    (b.onclick = () => {
-      source = b.dataset.source;
-      document
-        .querySelectorAll("[data-source]")
-        .forEach((x) => x.classList.toggle("selected", x === b));
-      renderLibrary();
-    }),
-);
 document
   .querySelectorAll("[data-prompt]")
   .forEach(
@@ -372,9 +541,19 @@ function setBusy(value) {
   busy = value;
   $("generate").disabled = busy || !engineReady;
   $("generate-presets").disabled = busy || !engineReady;
-  $("generate").firstChild.textContent = busy
-    ? "✳ Generating… "
-    : "✳ Generate animation ";
+  $("generate").textContent = busy
+    ? "✳ Generating…"
+    : mode === "create"
+      ? "✳ Generate new motion ↗"
+      : reference?.id === "Fox_Run" && $("guided-sprint").checked
+        ? "✳ Generate guided sprint ↗"
+        : "✳ Generate counterpart ↗";
+  $("generation-duration").textContent =
+    mode === "compare" &&
+    reference?.id === "Fox_Run" &&
+    $("guided-sprint").checked
+      ? "0.6-second loop"
+      : "2 seconds";
 }
 async function generate(params) {
   setBusy(true);
@@ -402,19 +581,19 @@ async function pollJob() {
   $("job-progress").value = job.progress;
   if (job.status === "complete") {
     results = [job, ...results.filter((r) => r.id !== job.id)];
-    source = "generated";
     filter = "All";
-    document
-      .querySelectorAll("[data-source]")
-      .forEach((b) =>
-        b.classList.toggle("selected", b.dataset.source === source),
+    document.querySelectorAll("[data-filter]").forEach((b) =>
+      b.classList.toggle("selected", b.dataset.filter === "All"),
+    );
+    mode = job.reference_clip ? "compare" : "create";
+    if (job.reference_clip)
+      await selectOriginal(
+        authored.find((a) => a.id === job.reference_clip),
+        job.id,
       );
-    document
-      .querySelectorAll("[data-filter]")
-      .forEach((b) =>
-        b.classList.toggle("selected", b.dataset.filter === filter),
-      );
-    await selectClip(job);
+    else await selectClip(job);
+    updateMode();
+    resetCamera();
     $("job-status").textContent = `Ready in ${job.seconds}s · seed ${job.seed}`;
     activeJob = null;
     setBusy(false);
@@ -447,11 +626,25 @@ $("prompt-form").onsubmit = (e) => {
     seed: Number($("seed").value),
     guidance: Number($("guidance").value),
     steps: Number($("steps").value),
+    title:
+      mode === "compare"
+        ? `${reference.title} · seed ${$("seed").value}`
+        : $("motion-name").value.trim() ||
+          $("prompt").value.trim().slice(0, 60),
+    category: mode === "compare" ? reference.category : "Custom",
+    reference_clip: mode === "compare" ? reference.id : null,
+    guided_sprint:
+      mode === "compare" &&
+      reference.id === "Fox_Run" &&
+      $("guided-sprint").checked,
   });
 };
 $("generate-presets").onclick = () => {
   sequence = presets.filter(
-    (p) => !results.some((r) => r.title === p.title && r.seed === p.seed),
+    (p) =>
+      !results.some(
+        (r) => !r.reference_clip && r.title === p.title && r.seed === p.seed,
+      ),
   );
   if (!sequence.length)
     return toast("All eight experiments are already in the library.");
@@ -481,17 +674,42 @@ $("snapshot").onclick = () => {
   context.fillStyle = "#252d21";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(renderer.domElement, 0, 0);
+  // Keep exported comparisons as legible as the viewer: preserve source labels.
+  const ratio = canvas.width / renderer.domElement.clientWidth;
+  context.textAlign = "center";
+  context.font = `${11 * ratio}px sans-serif`;
+  const drawLabel = (text, x, color) => {
+    context.fillStyle = color;
+    context.fillText(text, canvas.width * x, 28 * ratio);
+  };
+  const view = $("comparison-view").value;
+  if (mode === "compare") {
+    if (view !== "generated")
+      drawLabel("ORIGINAL · AUTHORED", view === "both" ? 0.25 : 0.5, "#eff0e5");
+    if (view !== "original")
+      drawLabel(
+        item.authored
+          ? "NO COUNTERPART"
+          : item.guided
+            ? "HYBRID · ORIGINAL GAIT + UNIMATE ARMS"
+            : "UNIMATE · PROMPT ONLY",
+        view === "both" ? 0.75 : 0.5,
+        "#d2e59c",
+      );
+  } else drawLabel("UNIMATE ONLY · " + item.title, 0.5, "#d2e59c");
   canvas.toBlob((blob) =>
-    download(blob, `fox-${item.title}.png`, "pose.png", item.id).catch(
-      (e) => toast(e.message),
+    download(blob, `fox-${item.title}.png`, "pose.png", item.id).catch((e) =>
+      toast(e.message),
     ),
   );
 };
 $("export").onclick = async () => {
   try {
-    const item = current;
-    const clip = selectedClip;
-    const copy = clone(model);
+    const original =
+      mode === "compare" && $("comparison-view").value === "original";
+    const item = original ? reference : current;
+    const clip = original ? reference.clip : selectedClip;
+    const copy = clone(original ? comparison : model);
     copy.position.set(0, model.position.y, 0); // Exclude comparison layout.
     const target = new THREE.AnimationMixer(copy);
     target.clipAction(clip).play();
@@ -516,14 +734,21 @@ $("export").onclick = async () => {
 let lastTime = performance.now();
 // Keep locomotion in the review frame. The clip and exported GLB retain travel.
 function centerPreview(character, side) {
-  character.position.x = 0;
-  character.position.z = side;
+  const right = new THREE.Vector3(
+    camera.position.z - controls.target.z,
+    0,
+    -(camera.position.x - controls.target.x),
+  )
+    .normalize()
+    .multiplyScalar(side);
+  character.position.x = right.x;
+  character.position.z = right.z;
   character.updateMatrixWorld(true);
   const hips = character.getObjectByName(rootBoneName);
   const point = hips.getWorldPosition(new THREE.Vector3());
   const origin = rest.get("mixamorig:Hips").worldPos;
-  character.position.x -= point.x - origin.x * displayScale;
-  character.position.z -= point.z - (origin.z * displayScale + side);
+  character.position.x -= point.x - (origin.x * displayScale + right.x);
+  character.position.z -= point.z - (origin.z * displayScale + right.z);
 }
 renderer.setAnimationLoop((now) => {
   const dt = Math.min((now - lastTime) / 1000, 0.05);
@@ -537,10 +762,17 @@ renderer.setAnimationLoop((now) => {
     action.clampWhenFinished = true;
     action.paused = false;
     mixer.setTime(clockTime);
-    centerPreview(model, comparison.visible ? -0.55 : 0);
-    if (comparison.visible)
-      comparisonMixer.setTime(clockTime % Math.max(comparisonDuration, 0.1));
-    if (comparison.visible) centerPreview(comparison, 1.35);
+    const both = mode === "compare" && $("comparison-view").value === "both";
+    centerPreview(model, both ? 0.78 : 0);
+    if (comparison.visible) {
+      comparisonAction.paused = false;
+      comparisonMixer.setTime(
+        $("phase-sync").checked
+          ? (clockTime / Math.max(duration, 0.1)) * comparisonDuration
+          : clockTime % Math.max(comparisonDuration, 0.1),
+      );
+    }
+    if (comparison.visible) centerPreview(comparison, both ? -0.78 : 0);
     $("scrub").value = duration ? clockTime / duration : 0;
     $("time").textContent = `${clockTime.toFixed(2)}s`;
   }
@@ -575,6 +807,7 @@ try {
   const library = await api("/api/library");
   results = library.results;
   presets = library.presets;
+  originalMetadata = library.originals;
   renderRecipes();
   renderLibrary();
   await loadModel();

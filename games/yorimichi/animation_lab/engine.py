@@ -22,6 +22,7 @@ class Engine:
         from unimate.configs.schema import MainConfig
         from unimate.models.factory import create_model
         from data_process.utils.motion_features import build_topology_cond
+        from data_process.joint_annotation.names_clean_rule import clean_joint_name, post_process
         from unimate.dataset.transforms import apply_normalization, build_parent_features
         self.np, self.torch = np, torch
         torch.set_num_threads(4)
@@ -30,6 +31,11 @@ class Engine:
         self.device = device
         self.config = c = MainConfig.from_json(self.root / 'model/config.json')
         self.rig = rig = json.loads((self.root / 'assets/rig.json').read_text())
+        # Joint-name embeddings are learned on the anatomical training vocabulary,
+        # including capitalization. Reuse upstream cleaning rather than guessing
+        # from CamelCase: Mixamo Leg means Shin, Arm means Upper Arm, and all
+        # numbered spine segments are named Spine.
+        rig['clean_names'] = [post_process(clean_joint_name(name, 'mixamo')) for name in rig['names']]
         parents = np.array(rig['parents'])
         points = np.array(rig['positions'], dtype=np.float32)
         n = len(parents)
@@ -98,7 +104,7 @@ class Engine:
             mask = tokens.attention_mask.unsqueeze(-1)
             return ((hidden * mask).sum(1) / mask.sum(1).clamp(min=1)).cpu().numpy().astype('float32')
 
-    def generate(self, prompt, seed, guidance=3.0, steps=32, progress=None):
+    def generate(self, prompt, seed, guidance=3.0, steps=32, progress=None, guided_sprint=False):
         from unimate.dataset.mixture.collate import mixture_batch_collate
         from unimate.utils.motion_utils import recover_unimate_anim_from_rot
         np, torch = self.np, self.torch
@@ -109,6 +115,24 @@ class Engine:
         # CPU generator makes identical initial noise available on MPS and CPU.
         noise = torch.Generator(device='cpu').manual_seed(seed)
         x = torch.randn((1, len(self.rig['names']), 12, 60), generator=noise).to(self.device)
+        reference = None
+        start_t = 0.
+        if guided_sprint:
+            from guided import reference_features
+            reference = json.loads((self.root / 'assets/run-reference.json').read_text())
+            if reference['source_sha256'] != self.rig['source_sha256'] or reference['names'] != self.rig['names']:
+                raise ValueError('Run reference does not match the exported fox rig; rerun setup')
+            known, keep, reference_error = reference_features(reference, self.rig, self.scale, self.floor_offset)
+            known = torch.from_numpy((known - self.base['mean']) / self.base['std']).permute(1, 2, 0)[None].to(self.device)
+            mask = torch.from_numpy(keep)[None, :, None, None].to(self.device)
+            eps = x.clone()
+            start_t = .55
+            x = (1 - start_t) * eps + start_t * known
+            def replace(state, t):
+                return torch.where(mask, (1 - t) * eps + t * known, state)
+        else:
+            def replace(state, t):
+                return state
         # Fixed midpoint flow ODE: bounded latency; record solver and step count.
         def velocity(state, t):
             ts = torch.full((1,), t, device=self.device)
@@ -117,9 +141,12 @@ class Engine:
             return b + guidance * (a - b)
         with torch.inference_mode():
             for i in range(steps):
-                t = i / steps
+                dt = (1 - start_t) / steps
+                t = start_t + i * dt
+                x = replace(x, t)
                 v = velocity(x, t)
-                x = x + velocity(x + v / (2 * steps), t + 0.5 / steps) / steps
+                middle = replace(x + v * dt / 2, t + dt / 2)
+                x = replace(x + velocity(middle, t + dt / 2) * dt, t + dt)
                 if progress:
                     progress(i + 1, steps)
         features = x[0].permute(2, 0, 1).cpu().numpy()
@@ -137,6 +164,7 @@ class Engine:
                   'rotations': q[:, :, [1, 2, 3, 0]].round(7).tolist(),
                   'root_positions': root.round(7).tolist(),
                   'rest_root': self.rig['positions'][0], 'frames': len(q),
+                  'conditioning_version': 'canonical-names-v2',
                   'canonical_to_gltf': [0, 2**-0.5, 0, 2**-0.5]}
         from Animation import positions_global
         pos = positions_global(anim) / self.scale
@@ -145,10 +173,18 @@ class Engine:
         diagnostics = {'root_travel_m': float(np.linalg.norm(root[-1, [0, 2]] - root[0, [0, 2]])),
                        'foot_height_range_m': [float(floor.min()), float(floor.max())],
                        'finite': True, 'review': 'experimental; inspect feet, contacts and recovery before game use'}
+        if reference:
+            from guided import make_sprint_loop
+            motion = make_sprint_loop(motion, reference)
+            diagnostics.update(root_travel_m=0., reference_fk_error_m=reference_error,
+                review='hybrid sprint: authored gait and contacts; bounded UniMate arm variation')
         return features, motion, {'prompt': prompt, 'seed': seed, 'guidance': guidance, 'steps': steps,
             'solver': 'fixed midpoint flow ODE', 'model': 'UniMate uniml3d f60 v2 EMA step 100000',
+            'start_time': start_t,
             'checkpoint_sha256': self.checkpoint_sha, 'upstream_revision': self.revision,
             'source_sha256': self.rig['source_sha256'], 'device': self.device,
+            'conditioning_version': 'canonical-names-v2', 'joint_names': self.rig['clean_names'],
+            'guided': motion.get('guided'), 'reference_clip': motion.get('reference_clip'),
             'text_encoder_revision': TEXT_REVISION,
             'seconds': round(time.monotonic() - start, 2), 'diagnostics': diagnostics}
 

@@ -45,7 +45,6 @@ def main():
     parents = [names.index(b.parent.name) if b.parent and b.parent.name in selected else -1 for b in ordered]
     positions = [list(p - center) for p in points]
     rig = {'names': names, 'parents': parents, 'positions': positions,
-           'clean_names': [b.name.replace('mixamorig:', '').replace('Left', 'left ').replace('Right', 'right ').replace('UpLeg', 'upper leg').replace('ForeArm', 'forearm').replace('ToeBase', 'toe').lower() for b in ordered],
            'source_sha256': hashlib.sha256(args.source.read_bytes()).hexdigest(), 'fps': 30,
            'conditioning_bones': len(ordered), 'skin_bones': len(arm.data.bones),
            'armature': arm.name, 'canonical_center': list(center)}

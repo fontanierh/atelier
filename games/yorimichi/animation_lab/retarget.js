@@ -49,6 +49,26 @@ export function retargetMotion(motion, name, rest) {
   tracks.push(
     new THREE.VectorKeyframeTrack(`${r.name}.position`, times, values),
   );
+  // Guided takes preserve the owned wrist/finger detail that UniMate's
+  // body-only representation cannot generate. Keep that origin explicit.
+  for (const [name, quaternions] of Object.entries(motion.local_tracks || {})) {
+    const r = rest.get(name);
+    if (!r) throw new Error(`Missing reference-detail bone: ${name}`);
+    const key = `${r.name}.quaternion`;
+    const index = tracks.findIndex((t) => t.name === key);
+    const values = quaternions.flat();
+    for (let f = 1; f < quaternions.length; f++) {
+      if (
+        values
+          .slice((f - 1) * 4, f * 4)
+          .reduce((sum, x, i) => sum + x * values[f * 4 + i], 0) < 0
+      )
+        for (let i = 0; i < 4; i++) values[f * 4 + i] *= -1;
+    }
+    const track = new THREE.QuaternionKeyframeTrack(key, times, values);
+    if (index >= 0) tracks[index] = track;
+    else tracks.push(track);
+  }
   return new THREE.AnimationClip(
     name,
     (motion.frames - 1) / motion.fps,

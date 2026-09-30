@@ -27,6 +27,13 @@ class RequestTests(unittest.TestCase):
                 with self.subTest(field=field, value=value), self.assertRaises(ValueError):
                     validate_request({'prompt': 'jump forward', field: value})
 
+    def test_guided_generation_requires_the_owned_run(self):
+        for reference, guided in [('Fox_Jump', True), (None, True), ('../Fox_Run', False), ('Fox_Run', 'true')]:
+            with self.subTest(reference=reference, guided=guided), self.assertRaises(ValueError):
+                validate_request({'prompt': 'sprint forward', 'reference_clip': reference, 'guided_sprint': guided})
+        result = validate_request({'prompt': 'sprint forward', 'reference_clip': 'Fox_Run', 'guided_sprint': True})
+        self.assertTrue(result['guided_sprint'])
+
     def test_generation_failure_releases_slot(self):
         with tempfile.TemporaryDirectory() as temp:
             lab = Lab(temp, warm=False)
@@ -42,6 +49,17 @@ class RequestTests(unittest.TestCase):
             self.assertIsNone(lab.active)
             self.assertEqual(lab.jobs[job['id']]['status'], 'failed')
             self.assertEqual(json.loads((Path(temp)/'results'/job['id']/'job.json').read_text())['status'], 'failed')
+
+    def test_reload_preserves_explicit_standalone_choice(self):
+        with tempfile.TemporaryDirectory() as temp:
+            for job in [{'id': 'legacy', 'title': 'Forward sprint', 'status': 'complete'},
+                        {'id': 'standalone', 'title': 'Forward sprint', 'status': 'complete', 'reference_clip': None}]:
+                folder = Path(temp) / 'results' / job['id']
+                folder.mkdir(parents=True)
+                (folder / 'job.json').write_text(json.dumps(job))
+            lab = Lab(temp, warm=False)
+            self.assertEqual(lab.jobs['legacy']['reference_clip'], 'Fox_Run')
+            self.assertIsNone(lab.jobs['standalone']['reference_clip'])
 
     def test_http_origin_host_and_file_boundaries(self):
         with tempfile.TemporaryDirectory() as temp:

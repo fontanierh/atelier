@@ -14,6 +14,35 @@ import uuid
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 
+ORIGINAL_PROMPTS = {
+    'Idle': 'A person stands in a relaxed fighting stance.',
+    'Creep': 'A person takes short crouching steps forward.',
+    'Run': 'A person sprints forward at full speed.',
+    'AttackR_A': 'A fighter slashes diagonally downward with the right hand.',
+    'AttackL_A': 'A fighter slashes diagonally downward with the left hand.',
+    'AttackL_B': 'A fighter swings the left hand across the body.',
+    'AttackR_B': 'A fighter swings the right hand across the body.',
+    'Kick': 'A fighter kicks forward with the right foot.',
+    'DashForward': 'A fighter dashes forward.',
+    'DashBackward': 'A fighter quickly steps backwards.',
+    'TurnLeft': 'A person turns left by half a turn.',
+    'TurnRight': 'A person turns right by half a turn.',
+    'Hurt': 'A person recoils backwards after a hit.',
+    'Death': 'A person collapses to the ground.',
+    'Jump': 'A person jumps up and lands on both feet.',
+}
+LEGACY_COMPARISONS = {
+    'Forward sprint': 'Fox_Run', 'Sprint · corrected vocabulary / seed 10': 'Fox_Run',
+    'Sprint · corrected vocabulary / seed 19': 'Fox_Run', 'Diagonal claw': 'Fox_AttackR_A',
+    'Diagonal claw · corrected vocabulary': 'Fox_AttackR_A', 'Roundhouse kick': 'Fox_Kick',
+    'Low sweep': 'Fox_Kick', 'Retreating steps': 'Fox_DashBackward', 'Jump & land': 'Fox_Jump',
+}
+
+
+def original_library():
+    clips = json.loads((REPO / 'games/yorimichi/assets/characters/fox-hunter/manifest.json').read_text())['clips']
+    return [{'id': 'Fox_' + name, 'prompt': ORIGINAL_PROMPTS[name], **meta} for name, meta in clips.items()]
+
 PRESETS = [
     ('diagonal-claw', 'Diagonal claw', 'Attacks', 'A human fighter winds up the right arm, slashes diagonally down across the body with the right hand, then returns to a fighting stance.', 42),
     ('double-strike', 'Double strike', 'Attacks', 'A human fighter throws a quick left punch followed by a powerful right punch, then returns to a fighting stance.', 117),
@@ -41,7 +70,14 @@ def validate_request(data):
         raise ValueError('Steps must be an integer from 8 to 64')
     if type(guidance) not in (int, float) or not 1.01 <= guidance <= 8:
         raise ValueError('Guidance must be between 1.01 and 8')
-    return {'prompt': prompt.strip(), 'seed': seed, 'steps': steps, 'guidance': float(guidance)}
+    reference = data.get('reference_clip')
+    if reference is not None and (not isinstance(reference, str) or reference not in {'Fox_' + name for name in ORIGINAL_PROMPTS}):
+        raise ValueError('Unknown original comparison clip')
+    guided = data.get('guided_sprint', False)
+    if type(guided) is not bool or (guided and reference != 'Fox_Run'):
+        raise ValueError('Guided sprint requires the Fox_Run reference')
+    return {'prompt': prompt.strip(), 'seed': seed, 'steps': steps, 'guidance': float(guidance),
+            'reference_clip': reference, 'guided_sprint': guided}
 
 
 class Lab:
@@ -57,6 +93,11 @@ class Lab:
             try:
                 job = json.loads(path.read_text())
                 if job['status'] == 'complete':
+                    # Organize the first experiment's known comparison targets.
+                    # New jobs record an explicit choice, including None for a
+                    # standalone generation; never infer over that choice.
+                    if 'reference_clip' not in job:
+                        job['reference_clip'] = LEGACY_COMPARISONS.get(job['title'])
                     self.jobs[job['id']] = job
             except (OSError, ValueError, KeyError):
                 continue
@@ -99,12 +140,18 @@ class Lab:
             job['status'] = 'running'
             def progress(i, total):
                 job['progress'] = round(i / total * 100)
-            features, motion, provenance = self.engine.generate(job['prompt'], job['seed'], job['guidance'], job['steps'], progress)
+            features, motion, provenance = self.engine.generate(job['prompt'], job['seed'], job['guidance'], job['steps'], progress,
+                                                               guided_sprint=job['guided_sprint'])
+            provenance['reference_clip'] = job['reference_clip']
+            provenance['reference_usage'] = ('authored gait constraint' if job['guided_sprint']
+                                             else 'comparison only' if job['reference_clip'] else 'none')
             self.engine.np.save(folder / 'features.npy', features)
             (folder / 'motion.json').write_text(json.dumps(motion))
             (folder / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
             job.update(status='complete', progress=100, seconds=provenance['seconds'], diagnostics=provenance['diagnostics'],
-                       motion=f'/results/{job["id"]}/motion.json', provenance=f'/results/{job["id"]}/provenance.json', frames=60, fps=30)
+                       conditioning_version=provenance['conditioning_version'],
+                       guided=motion.get('guided'), loop=motion.get('loop', False), travel_speed=motion.get('travel_speed'),
+                       motion=f'/results/{job["id"]}/motion.json', provenance=f'/results/{job["id"]}/provenance.json', frames=motion['frames'], fps=motion['fps'])
         except Exception as exc:
             job.update(status='failed', message='Generation failed; see the server log for details.')
             print(f'Generation {job["id"]} failed: {exc}', flush=True)
@@ -180,7 +227,7 @@ class Handler(BaseHTTPRequestHandler):
             with self.lab.lock:
                 results = [j.copy() for j in self.lab.jobs.values() if j['status'] == 'complete']
             return self.json(200, {'presets': [{'slug': s, 'title': t, 'category': c, 'prompt': p, 'seed': seed} for s,t,c,p,seed in PRESETS],
-                                   'results': sorted(results, key=lambda j: j['created'], reverse=True)})
+                                   'originals': original_library(), 'results': sorted(results, key=lambda j: j['created'], reverse=True)})
         if path.startswith('/api/jobs/'):
             job = self.lab.jobs.get(path.split('/')[-1])
             return self.json(200 if job else 404, job.copy() if job else {'error': 'Unknown job'})

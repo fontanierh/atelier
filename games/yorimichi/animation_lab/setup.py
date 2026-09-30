@@ -69,6 +69,7 @@ def main():
     if code:
         raise SystemExit(code)
     command('npm', 'ci', '--prefix', HERE, '--no-audit', '--no-fund')
+    command('node', HERE / 'export_reference.mjs', root)
     command(HERE / 'node_modules/.bin/esbuild', HERE / 'app.js', '--bundle', '--format=esm',
             '--minify', f'--outfile={root / "web/app.js"}')
     print('Ready. Run the guarded server command in animation_lab/README.md.')
