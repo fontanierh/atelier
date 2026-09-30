@@ -89,10 +89,8 @@ def trace_coverage(data):
     return dict(commands=commands,callbacks=dict(zip(('condition','allocate','begin','update','end','hook','release'),events)))
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args(); output=args.output.resolve(); output.mkdir(parents=True,exist_ok=True)
+def build_probes(output):
+    output.mkdir(parents=True,exist_ok=True)
     code=PLUGIN/'Source/AtelierSkate/Private/Native'; cpp=output/'controller-cpp'; rust=output/'controller-reference'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror',
                     '-I',str(code),str(code/'GraphController.cpp'),str(PLUGIN/'Tests/Native/controller_probe.cpp'),'-o',str(cpp)],check=True)
@@ -103,6 +101,14 @@ def main():
     for name in modules: shutil.copyfile(source/f'{name}.rs',oracle/'graph'/f'{name}.rs')
     shutil.copyfile(PLUGIN/'Tests/Reference/controller_probe.rs',oracle/'main.rs')
     subprocess.run(['rustc','+1.97.1','--edition=2024','-O',str(oracle/'main.rs'),'-o',str(rust)],check=True)
+    return cpp,rust
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output',type=Path,required=True)
+    args=parser.parse_args(); output=args.output.resolve(); output.mkdir(parents=True,exist_ok=True)
+    cpp,rust=build_probes(output)
     inputs,cases=corpus(); (output/'input.bin').write_bytes(inputs)
     (output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     expected=subprocess.check_output([str(rust)],input=inputs)
@@ -118,7 +124,8 @@ def main():
     report=dict(passed=True,cases=len(cases),**coverage,output_bytes=len(expected),
                 comparison='every callback, context, timer, state, active instance and side effect; exact bits',
                 inputs_sha256=hashlib.sha256(inputs).hexdigest(),outputs_sha256=hashlib.sha256(expected).hexdigest(),
-                reference_sources={f'{name}.rs':hashlib.sha256((source/f'{name}.rs').read_bytes()).hexdigest() for name in modules})
+                reference_sources={p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                                   for p in sorted((output/'oracle/graph').glob('*.rs'))})
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n'); print(json.dumps(report,indent=2),flush=True)
 
 

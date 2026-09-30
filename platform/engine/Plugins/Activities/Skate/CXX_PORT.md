@@ -68,8 +68,9 @@ implementation. The game will not parse the original JSON or its big-endian hexa
 `ATGRPH01` stores a preorder element arena, interned strings, all attribute representations and ordered
 child indices. Duplicate attributes remain in the data, while lookup keeps the first hashed key, including
 collisions. `GraphBinding` preserves operation order, disabled ancestry, condition masks, priority,
-interrupt ancestors, transition resolution and dotted-path search. Graph execution and registered gameplay
-operations still require porting; matching bindings alone does not establish gameplay parity.
+interrupt ancestors, transition resolution and dotted-path search. `CompiledGraph` maps those bindings into
+the C++ controller's executable topology and compact operation IDs. Registered gameplay operations and
+their physical inputs still require porting; matching generic execution alone does not establish gameplay parity.
 
 ## Validation completed
 
@@ -87,6 +88,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   output bytes from the reference. Comparisons include lazy condition calls, masks, priorities, self/ancestor
   transitions, state timer bits, allocation/begin/update/end/hook/release order, opaque contexts and immediate
   host side effects. Concrete gameplay operation hosts and their physical producers remain to be ported.
+- Authored graph compilation: exact controller programs and operation IDs for action, motion and camera
+  compared with the unmodified original host compiler. Each executes 65 commands with the deterministic
+  test operation host; every output byte matches the original controller. The compiler also rejects an
+  unresolved transition target exactly as the reference does, even when binding disabled that transition.
 - The session comparator's five regression tests catch single-bit float differences, signed zero,
   nonfinite output, field/array omissions and integer differences without lossy float conversion.
 - A frozen build of reference `46513a6` reproduced all 8,286 published responses across 25 flat-ground
@@ -99,6 +104,9 @@ with `Tests/check_{gesture,name,settings,graph}_parity.py --assets ASSETS --outp
 the shared render lock and memory guard. Temporary Rust oracles compile the unmodified original source;
 the graph probe stages its original module layout verbatim in the build directory.
 Run the generic controller comparison with `Tests/check_controller_parity.py --output BUILD_DIRECTORY`.
+`Tests/check_compiled_graph_parity.py` tests the full authored data-to-controller connection. It also takes
+`--assets ASSETS --output BUILD_DIRECTORY --target-dir CARGO_CACHE`; all original Rust implementation files
+come from the frozen Git revision. The temporary probe adds only its own target and dependency declarations.
 
 `Tests/build_reference.py` extracts the pinned source directly from Git, builds it with its locked Cargo
 dependencies, and records the compiler, source hashes and executable hash. `Tests/session_parity.py` requires
