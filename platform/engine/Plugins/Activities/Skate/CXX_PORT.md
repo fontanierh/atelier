@@ -105,6 +105,8 @@ deck's primitive/triangle children, including disabled children's mass and the f
 `ConstraintFrames.*`, `JointBuild.*` and `DriveBuild.*` preserve frame composition, joint limit modes,
 kinematic prediction, active-body mass gates and soft/hard drive targets. They emit the original full
 compiled records consumed by the shared solver, including opaque joint identifiers and carried lanes.
+`JointRecords.*` constructs the six authored deck/truck/wheel constraints in registration order, with
+the original definition-to-live body reversal and stock/custom parameter/frame words.
 Contact generation, complete body ownership and scheduling remain open. These comparisons establish
 parity with the frozen Rust reconstruction, including its documented unresolved retail joint-matrix
 gather and carry-lane interpretation; they do not independently verify those against the EA executable.
@@ -244,8 +246,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   all seven default body masses.
 - Authored part and drive frames: 1,927 cases and 140,880 exact words, including packed pose fourth lanes,
   truck rotation polynomials, dominant-quaternion ties, 1,024 relative-frame pairs and all stock defaults.
-- Joint and drive construction: 6,731 cases and 810,444 exact words, including 2,952 complete joint
-  records, 3,519 typed/packed drive records and 260 stock/custom parameter sets. All swing/twist branches,
+- Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
+  workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
+  record sets with stock/custom settings. All swing/twist branches,
   active/kinematic body combinations, independent body bases, singular quaternion components, angular
   cone boundaries and soft/hard/disabled drive coefficients are compared. The private original drive
   packer is included unchanged in the reference probe; no candidate-generated expected values are used.

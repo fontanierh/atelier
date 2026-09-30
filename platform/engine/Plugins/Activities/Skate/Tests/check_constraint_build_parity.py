@@ -111,6 +111,9 @@ def corpus():
             add(2, [linear, hard, bits(10.), bits(0.), bits(11.)], 24, stock=True)
             for _ in range(64):
                 add(2, [linear, hard, *map(bits, [rng.uniform(0, 100), rng.uniform(0, 100), rng.uniform(0, 100)])], 24)
+    add(3, [1, 0, 0, 0], 240, stock=True)
+    for _ in range(512):
+        add(3, [0, *map(bits, [rng.uniform(-180, 180), rng.uniform(-180, 180), rng.uniform(0, 1000000)])], 240)
     words = [len(cases)]
     for case in cases:
         words.extend(case)
@@ -133,12 +136,14 @@ def main():
     code.mkdir()
     for name in ('NativeMath.h', 'NativeMath.cpp', 'RigidBody.h', 'GeometryTypes.h', 'DriveFrames.h',
                  'ConstraintFrames.h', 'ConstraintFrames.cpp', 'ConstraintSolver.h', 'JointBuild.h',
-                 'JointBuild.cpp', 'DriveBuild.h', 'DriveBuild.cpp'):
+                 'JointBuild.cpp', 'DriveBuild.h', 'DriveBuild.cpp', 'BoardTypes.h', 'JointRecords.h', 'JointRecords.cpp',
+                 'DriveFrames.cpp', 'BodyMass.h', 'BodyMass.cpp', 'AggregateMass.h', 'AggregateMass.cpp', 'DeckGeometry.h', 'DeckGeometry.cpp'):
         shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Native'/name, code/name)
     candidate = output/'constraint-build-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-exceptions',
                     '-Wall', '-Wextra', '-Werror', '-I', str(code),
-                    *[str(code/name) for name in ('NativeMath.cpp', 'ConstraintFrames.cpp', 'JointBuild.cpp', 'DriveBuild.cpp')],
+                    *[str(code/name) for name in ('NativeMath.cpp', 'ConstraintFrames.cpp', 'JointBuild.cpp', 'DriveBuild.cpp',
+                                                'JointRecords.cpp', 'DriveFrames.cpp', 'BodyMass.cpp', 'AggregateMass.cpp', 'DeckGeometry.cpp')],
                     str(PLUGIN/'Tests/Native/constraint_build_probe.cpp'), '-o', str(candidate)], check=True)
     source, labels, output_words = corpus()
     (output/'inputs.bin').write_bytes(source)
@@ -158,7 +163,7 @@ def main():
         raise AssertionError(report)
     result = dict(passed=True, cases=len(labels), output_words=output_words, output_bytes=len(actual),
                   operations=dict(Counter(c['operation'] for c in labels)), sha256=hashlib.sha256(actual).hexdigest(),
-                  comparison='exact complete joint packed workspaces, typed drive rows and private production packing, plus stock/custom drive parameters')
+                  comparison='exact complete joint packed workspaces, typed drive rows and private production packing, stock/custom drive parameters, all six authored joint records')
     (output/'result.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2), flush=True)
 

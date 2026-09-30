@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "DriveBuild.h"
 #include "JointBuild.h"
+#include "JointRecords.h"
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -61,6 +62,16 @@ int main()
             TruckDriveSettings s;s.use_linear=Word()!=0;s.use_hard_linear=Word()!=0;
             s.angular_displacement=Float();s.angular_damping=Float();s.angular_strength=Float();
             Out(TruckDriveDynamics(s));Out(WheelDriveDynamics(false));Out(WheelDriveDynamics(true));break;
+        }
+        case 3:
+        {
+            const bool stock=Word()!=0;JointSettings s{Float(),Float(),Float()};
+            for(const auto& j:stock?DefaultJointRecords():JointRecords(s))
+            {
+                Out(static_cast<std::uint32_t>(j.definition_body_0));Out(static_cast<std::uint32_t>(j.definition_body_1));
+                Out(static_cast<std::uint32_t>(j.LiveBodyA()));Out(static_cast<std::uint32_t>(j.LiveBodyB()));Out(j.parameters);Out(j.frames);
+            }
+            break;
         }
         default:return 2;
         }
