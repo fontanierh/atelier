@@ -138,6 +138,9 @@ bool ParseGraphCondition(const GraphAttributes& a,bool motion,GraphCondition& ou
     else if ((motion ? motion_name : name) == "InParentStateForTime") c.kind = K::InParentStateForTime;
     else if (!motion && name == "PhysicsRequestsDismount") c.kind = K::PhysicsRequestsDismount;
     else if (!motion && name == "IsLandingOnBoard") c.kind = K::IsLandingOnBoard;
+    else if (!motion && name == "HasGestureIntent")
+    { c.kind=K::HasGestureIntent;if (!ParseGestureGroup(a.Text("group").value_or(""),c.gesture_group,error)) return false; }
+    else if (!motion && name == "IsInLocomotion") c.kind=K::IsInLocomotion;
     out = std::move(c); return true;
 }
 void BindGraphConditionTarget(const Graph& source,const GraphBinding& binding,const GraphOperation& operation,GraphCondition& condition)
@@ -210,6 +213,10 @@ bool GraphCondition::Evaluate(const GraphConditionInputs& in,const IntentMap& ac
     case K::IsLandingOnBoard:
         if (!Require(bool(in.physical_state_16),"IsLandingOnBoard requires actual State16",error)) return false;
         result = *in.physical_state_16 == 503; break;
+    case K::HasGestureIntent:result=atelier::skate::HasGestureIntent(gesture_group,action);break;
+    // Original factory82BC3F68 installs8231ED5C; predicate8274CA90 is
+    // li r3,0;blr. This resolved constant is separate from unsupported leaves.
+    case K::IsInLocomotion:result=false;break;
     default: error = "Unsupported graph condition `"+operation_name+"`"; return false;
     }
     return true;

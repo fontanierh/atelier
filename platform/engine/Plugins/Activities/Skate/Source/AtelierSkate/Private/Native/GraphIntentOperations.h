@@ -21,13 +21,15 @@ struct ActionIntentParameter
 ActionIntentParameter ParseActionIntentParameter(const GraphAttributes&);
 struct ActionIntentOperation
 {
-    enum class Kind : std::uint32_t { Unsupported, Condition, CreateMgIntent, CreateMgTimeIntent, CreateConstMgIntent, BoardAdjust, JuiceHook, BodyFlippingSignal, PrintText };
+    enum class Kind : std::uint32_t { Unsupported, Condition, CreateMgIntent, CreateMgTimeIntent, CreateConstMgIntent, BoardAdjust, JuiceHook, BodyFlippingSignal, PrintText, CreateTrickFromGesture };
     Kind kind = Kind::Unsupported;
     GraphOperationKind source_kind = GraphOperationKind::Behavior;
     std::string name, presentation_text;
     ActionIntentParameter config;
     std::vector<ActionIntentParameter> parameters;
     GraphCondition condition;
+    GestureGroup gesture_group=GestureGroup::Square;
+    std::optional<std::string> gesture_override;
 };
 bool CompileActionIntentOperations(const Graph&, const GraphBinding&, std::vector<ActionIntentOperation>&, std::string& error);
 struct ConstMgIntentState
@@ -86,6 +88,7 @@ private:
     std::vector<BoardAdjustIntentState> board_adjust_;
     std::vector<BodyFlipState> body_flip_;
     std::vector<std::string> juice_pending_;
+    std::vector<GestureTrickState> gesture_tricks_;
     const ActionIntentOperation* Operation(graph::Id behavior) const;
     void Unsupported(graph::Id behavior,const ActionIntentOperation&);
     void AddError(std::string message);

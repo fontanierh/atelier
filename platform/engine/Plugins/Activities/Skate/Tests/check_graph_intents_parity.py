@@ -269,7 +269,7 @@ def build_probes(output, target_dir):
     native = PLUGIN/'Source/AtelierSkate/Private/Native'
     cpp = output/'graph-intents-cpp'
     sources = ('NativeMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions', 'NameId', 'Settings',
-               'Graph', 'CompiledGraph', 'GraphController', 'GraphConditions', 'GraphIntentOperations', 'GraphMotionSliding')
+               'Graph', 'CompiledGraph', 'GraphController', 'GraphConditions', 'GraphGestureOperations', 'GraphIntentOperations', 'GraphMotionSliding')
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-Wall', '-Wextra', '-Werror',
                     '-I', str(native), *(str(native/f'{name}.cpp') for name in sources), str(PLUGIN/'Tests/Native/graph_intents_probe.cpp'), '-o', str(cpp)], check=True)
     root = Path(subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], cwd=PLUGIN, text=True).strip())

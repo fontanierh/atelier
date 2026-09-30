@@ -3,6 +3,7 @@
 #include "AnimationPlayback.h"
 #include "Graph.h"
 #include "GraphController.h"
+#include "GraphGestureOperations.h"
 #include "Intents.h"
 #include <optional>
 #include <string>
@@ -47,7 +48,8 @@ struct GraphCondition
         Unsupported, HasActionIntent, TimeSinceLastInput, Speed, SpeedAndSlope,
         FilteredState, Grinding, Mirrored, RidingFakie, DisablePushBrake, CurrentState,
         HasMotionIntent, HasFilteredIntent, HasAnimationAttribute,
-        InStateForTime, InParentStateForTime, PhysicsRequestsDismount, IsLandingOnBoard
+        InStateForTime, InParentStateForTime, PhysicsRequestsDismount, IsLandingOnBoard,
+        HasGestureIntent, IsInLocomotion
     };
     Kind kind = Kind::Unsupported;
     std::string operation_name, name;
@@ -58,6 +60,7 @@ struct GraphCondition
     std::uint32_t expected_category = 0;
     AttributeName attribute{};
     std::int32_t sequence_id = -1;
+    GestureGroup gesture_group=GestureGroup::Square;
     // bool return reports evaluation success; result remains distinct from an
     // absent required physical producer. Unsupported leaves carry diagnostics.
     bool Evaluate(const GraphConditionInputs&, const IntentMap& action, const IntentMap& motion,

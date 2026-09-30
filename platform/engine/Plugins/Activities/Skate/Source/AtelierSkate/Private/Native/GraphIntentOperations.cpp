@@ -69,6 +69,8 @@ bool CompileActionIntentOperations(const Graph& source,const GraphBinding& bindi
             else if (*name == "JuiceHook") out.kind = K::JuiceHook;
             else if (*name == "BodyFlippingSignal") out.kind = K::BodyFlippingSignal;
             else if (*name == "PrintText2D") { out.kind = K::PrintText; out.presentation_text = a.Text("text").value_or(""); }
+            else if (*name == "CreateTrickIntentFromGesture")
+            {out.kind=K::CreateTrickFromGesture;if (!ParseGestureGroup(a.Text("group").value_or("Square"),out.gesture_group,error)) return false;out.gesture_override=Text(a,"override");}
         }
         for (auto element : operation.parameters) out.parameters.push_back(ParseActionIntentParameter(GraphAttributes(source.elements[element].attributes)));
         result.push_back(std::move(out));
@@ -112,7 +114,7 @@ bool ActionIntentGraphHost::FromGraph(const Graph& source,const GraphBinding& bi
         assert(operation < operations.size());
         const auto& p = operations[operation].config; constants_.push_back({p.float_bits ? Float(*p.float_bits) : 0.0f,p.on_update,false});
     }
-    times_.assign(count,{}); board_adjust_.assign(count,{}); body_flip_.assign(count,{}); juice_pending_.assign(count,{}); next_instance_ = 1;
+    times_.assign(count,{}); board_adjust_.assign(count,{}); body_flip_.assign(count,{}); juice_pending_.assign(count,{}); gesture_tricks_.assign(count,{}); next_instance_ = 1;
     action_intents.Clear(); motion_intents.Clear(); filtered_intents.Clear(); condition_inputs = {}; animation_attributes.clear(); stance.reset(); errors.clear(); diagnostics_overflowed = false;
     return true;
 }
@@ -166,7 +168,7 @@ std::uint32_t ActionIntentGraphHost::ConditionActivation(graph::Id id,const grap
 std::uint32_t ActionIntentGraphHost::Allocate(graph::Id id,const graph::Frame&)
 {
     assert(id < created_.size());
-    created_[id] = false; times_[id] = {}; body_flip_[id] = {}; juice_pending_[id].clear();
+    created_[id] = false; times_[id] = {}; body_flip_[id] = {}; juice_pending_[id].clear();gesture_tricks_[id]={};
     const auto result = next_instance_; ++next_instance_; if (next_instance_ == 0) next_instance_ = 1; return result;
 }
 void ActionIntentGraphHost::Begin(graph::Id id,graph::Context,const graph::Frame&)
@@ -174,6 +176,9 @@ void ActionIntentGraphHost::Begin(graph::Id id,graph::Context,const graph::Frame
     const auto* operation = Operation(id); if (!operation) return; const auto& p = operation->config; using K = ActionIntentOperation::Kind;
     switch (operation->kind)
     {
+    case K::CreateTrickFromGesture:
+        if (stance) gesture_tricks_[id].Begin(operation->gesture_group,operation->gesture_override?std::optional<std::string_view>(*operation->gesture_override):std::nullopt,action_intents,motion_intents,stance->second);
+        else AddError("CreateTrickIntentFromGesture requires published skater stance");break;
     case K::Unsupported: Unsupported(id,*operation); break;
     case K::PrintText: if (presentation) presentation(operation->presentation_text); break;
     case K::BodyFlippingSignal:
@@ -195,6 +200,7 @@ void ActionIntentGraphHost::Update(graph::Id id,graph::Context,const graph::Fram
 {
     const auto* operation = Operation(id); if (!operation) return; const auto& p = operation->config; using K = ActionIntentOperation::Kind;
     if (operation->kind == K::Unsupported) { Unsupported(id,*operation); return; }
+    if (operation->kind == K::CreateTrickFromGesture) {gesture_tricks_[id].Update(motion_intents);return;}
     if (operation->kind == K::JuiceHook) { motion_intents.Remove(juice_pending_[id]); juice_pending_[id].clear(); return; }
     if (operation->kind == K::BodyFlippingSignal)
     {
@@ -225,6 +231,7 @@ void ActionIntentGraphHost::Update(graph::Id id,graph::Context,const graph::Fram
 void ActionIntentGraphHost::End(graph::Id id,graph::Context,const graph::Frame&)
 {
     const auto* operation = Operation(id); if (!operation) return; const auto& p = operation->config;
+    if (operation->kind == ActionIntentOperation::Kind::CreateTrickFromGesture) {gesture_tricks_[id].End(motion_intents);return;}
     if (operation->kind == ActionIntentOperation::Kind::BoardAdjust)
     { if (p.mg_intent_mag) motion_intents.Remove(*p.mg_intent_mag); if (p.mg_intent_angle) motion_intents.Remove(*p.mg_intent_angle); return; }
     if (p.mg_intent) Apply(*p.mg_intent,{IntentMutation::Kind::Remove,0});

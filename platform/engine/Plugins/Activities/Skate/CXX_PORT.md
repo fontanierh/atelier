@@ -114,7 +114,7 @@ intent publication, and the original host's distinct slide state/direction/decel
 Unported graph leaves retain explicit diagnostics rather than silently supplying a neutral result.
 `GraphGestureOperations.*` preserves all authored gesture-to-trick mappings, encoded-key bucket
 priority, mirror/dark-catch/underflip selection and the later flip-hold intent lifecycle. Its action-host
-registration remains an integration step.
+registration now runs through the real C++ controller, with fresh per-instance state and owned cleanup.
 `GestureInputPublication.*` owns the seven recognizers over the native gesture bank, original stick
 deadzone/Y conversion, held-pattern ordering and graph permission gates. The frame scheduler must still
 call it at the original point between mapped controller input and action-graph evaluation.
@@ -247,6 +247,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Gesture trick operations: all 270 authored mapping rows, 19,480 commands and 16,384 lifecycle frames
   preserve 14,890,874 output bytes, including selected names, map ordering, alias/collision priority,
   mirrored tricks and hold successors.
+- Action-host gesture integration: 21 live graph fixtures and 1,344 controller ticks preserve 206,283
+  output bytes. All seven groups exercise membership conditions, state selection, fresh instances,
+  launch/hold progression, missing-stance errors and owned cleanup. The earlier action-host baseline
+  also passes after registration; complete actor scheduling remains open.
 - Stick gesture publication: 141,873 commands and 141,782 publication frames preserve 68,857,168 output
   bytes against the original host loading the original PAT/settings. Coverage includes 6,078 trick
   publications, 21,803 held-pattern frames and isolated permission gates. Hidden recognizer state is
