@@ -234,7 +234,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   queries, velocity-based separation limits and triangle-volume transforms. All four primitive types
   produce both hits and misses (5,026 hits total); all 16 manifold slots are compared, including unused
   zeros. Packing and the private triangle/box specialization are exercised through the original public
-  typed contact query. Complete world traversal and retention are not established by this check.
+  typed contact query. Complete world traversal and retention are checked separately below.
+- Complete world contact production: 2,809 worlds, 4,755 queries and 2,371,281 exact words.
+  The full original public query supplies every expected seed, including candidate/culling order,
+  all primitive types, material combination, duplicates, deferred reduction and capacity drops.
+  Paired imported-floor fixtures remove 774 internal seam contacts while retaining open edges/curbs.
+  Body workspaces remain unpopulated until the simulation applies its current force queue.
 - Contact retention: 6,268 cases and 3,733,259 exact words, including 756 stateful buffer streams.
   Every buffer field, all 50 complete records and each publication chunk are compared. Coverage includes
   10,743 capacity rejections, 320 duplicate rejections, 1,699 published chunks and source-order reduction,

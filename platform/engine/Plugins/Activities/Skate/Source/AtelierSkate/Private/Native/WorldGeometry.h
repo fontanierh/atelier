@@ -67,6 +67,8 @@ public:
     static std::optional<WorldGeometry> WithQueryMetadata(std::vector<WorldTriangle> triangles,
                                                          QueryMetadata metadata,const char*& error);
     const std::vector<WorldTriangle>& Triangles() const { return triangles_; }
+    const std::vector<Bounds>& TriangleBounds() const { return triangle_bounds_; }
+    float MaximumFatness() const { return maximum_fatness_; }
     const QueryMetadata* Metadata(const char*& error) const;
     std::vector<IndexRange> CandidateRanges(std::optional<Bounds> bounds) const;
     std::optional<Bounds> LineCandidateBounds(Vec3 start,Vec3 end,float radius) const;
