@@ -816,43 +816,77 @@ def furnish_library(m, d, c, ang, side, W):
     q = Hl(.9, .95); book_stack(d, q[0], q[1], z, 3, ang+40)
 
 
-def hammock(d, a0, a1, sag, width, pic='quilt'):
-    """A quilt hammock slung from a0 to a1: a deep bag, gathered to a point at both ends, with its ropes."""
-    ax = (a1-a0)/np.linalg.norm(a1-a0); across = np.cross(ax, [0, 0, 1]); across /= np.linalg.norm(across)
-    ts = np.linspace(.1, .9, 13); fs = np.linspace(-1, 1, 7)
+def block(m, c, u, n, su, sn, sz, color, kind='wood_timber'):
+    """An upright block centred on c: su along the horizontal u, sn along the horizontal n, sz tall."""
+    c, u, n = np.asarray(c, float), np.asarray(u, float), np.asarray(n, float)
+    corners = [c+u*a*su/2+n*b*sn/2 for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    with m.use(kind, grain=(0, 0, 1), jitter=True):
+        hexa(m, [q-[0, 0, sz/2] for q in corners]+[q+[0, 0, sz/2] for q in corners], color)
+
+
+def strut(m, a, b, w, t, side, color=WOOD, kind='wood_timber'):
+    """A square timber centred on the line a-b: w across the horizontal side direction, t across the other."""
+    a, b = np.asarray(a, float), np.asarray(b, float); ax = (b-a)/np.linalg.norm(b-a)
+    s = np.asarray(side, float); s = s-ax*(s@ax); s /= np.linalg.norm(s); n = np.cross(ax, s)
+    ring_ = [s*i*w/2+n*j*t/2 for i, j in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    with m.use(kind, grain=tuple(ax), jitter=True):
+        hexa(m, [a+q for q in ring_]+[b+q for q in ring_], color)
+
+
+def hammock(d, a0, a1, sag, width, ends, pic='quilt'):
+    """A quilt hammock slung between two fixings: a deep bag gathered to a point at both ends, a fan of strings into
+    each end and one rope to the fixing. Each end is ('wall', inward normal): a peg on a wooden plate at a0/a1 on the
+    wall's inside face; or ('wrap', centre, radius): turns of rope round a trunk or post, a0/a1 on the rope."""
+    fix = []
+    for a, e in ((a0, ends[0]), (a1, ends[1])):
+        a = np.asarray(a, float)
+        if e[0] == 'wall':
+            n = np.array([e[1][0], e[1][1], 0.]); n /= np.linalg.norm(n); u = np.cross(n, [0, 0, 1])
+            block(d, a+n*.02, u, n, .12, .04, .3, DARK)
+            tube(d, [a+n*.03+[0, 0, .03], a+n*.16+[0, 0, .05]], .022, DARK, 6, 'wood_timber')
+            tube(d, [a+n*.1+[0, 0, .04], a+n*.14+[0, 0, .045]], .034, ROPE, 6)
+            fix.append(a+n*.12+[0, 0, .03])
+        else:
+            c, r = e[1], e[2]
+            for dz in (-.025, .025): ring(d, c, r, a[2]+dz, .02, ROPE, 18)
+            fix.append(a)
+    e0, e1 = fix; ax = (e1-e0)/np.linalg.norm(e1-e0); across = np.cross(ax, [0, 0, 1]); across /= np.linalg.norm(across)
+    ts = np.linspace(.12, .88, 13); fs = np.linspace(-1, 1, 7)
     def pt(t, f):
-        w = width*math.sin(math.pi*(t-.1)/.8)**.6          # gathered at the ends
-        return a0+(a1-a0)*t-[0, 0, sag*math.sin(math.pi*t)+.16*w/width*(1-f*f)]+across*f*w/2
+        w = width*math.sin(math.pi*(t-.12)/.76)**.5          # gathered at the ends
+        return e0+(e1-e0)*t-[0, 0, sag*math.sin(math.pi*t)+.16*w/width*(1-f*f)]+across*f*w/2
     with d.use(pic):
         for i in range(len(ts)-1):
             for j in range(len(fs)-1):
                 quad = [pt(ts[i], fs[j]), pt(ts[i+1], fs[j]), pt(ts[i+1], fs[j+1]), pt(ts[i], fs[j+1])]
                 uv = [(i/12, j/6), ((i+1)/12, j/6), ((i+1)/12, (j+1)/6), (i/12, (j+1)/6)]
                 d.poly([tuple(x) for x in quad], WHITE, uv=uv); d.poly([tuple(x) for x in quad[::-1]], WHITE, uv=uv[::-1])
-    for e, t in ((a0, ts[0]), (a1, ts[-1])):
-        tube(d, [e, e+[0, 0, .3]], .015, ROPE, 4)
-        for f in (-1, 0, 1): tube(d, [pt(t, f), e], .009, ROPE, 4)
+    for e, t0, t1 in ((e0, .12, .03), (e1, .88, .97)):
+        knot = e0+(e1-e0)*t1-[0, 0, sag*math.sin(math.pi*t1)]
+        tube(d, [e, knot], .014, ROPE, 5)
+        for f in (-1, -.5, 0, .5, 1): tube(d, [knot, pt(t0+(ts[1]-ts[0])*(1 if t0 < .5 else -1), f)], .006, ROPE, 4)
 
 
 def furnish_sleep(m, d, c, ang, side, W):
-    """As painted: two futons side by side, pillows to the far wall under the window, a quilt hammock slung
-    across the far corner in front of the round window, shelves and pictures, a crate of folded quilts."""
+    """As painted: a quilt hammock slung low along the far wall under the window, from the back wall to the outer
+    wall; two futons side by side in front of it, pillows to the back wall, and a rug along the outer wall to the
+    round window; shelves and pictures, a crate of folded quilts."""
     z = c[2]; outer, back, s_m, s_p = W; far = s_m if side > 0 else s_p; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
     Hl = room(c, ang, side)
-    for lx in (-.7, .62):
-        q = Hl(lx, -w2+.97); prop('futon', q[0], q[1], z, ang-90*side, .9)
-    a0, a1 = Hl(-.35, -w2+.14, 2.0), Hl(d2-.14, -.15, 2.0)
-    hammock(d, a0, a1, .72, .36)
-    shelf(m, d, frame3(back, z), w2+side*.9, 1.3, 1.1, 2)
+    for sy in (-.6, .56):           # 1.6 x 1.13 m each; the strip by the outer wall stays free to walk in
+        q = Hl(-d2+.86, sy); prop('futon', q[0], q[1], z, ang+180, .8)
+    hy = -w2+.3                     # the bag (hanging 0.55 m over the floor) stays clear of the wall and the futons
+    hammock(d, Hl(-d2+.045, hy, 1.55), Hl(d2-.045, hy, 1.55), .84, .42, (('wall', rot((1, 0), ang)), ('wall', rot((-1, 0), ang))))
+    shelf(m, d, frame3(back, z), w2-side*.45, 1.3, 1.1, 2)      # over the pillows, clear of the hammock's peg
     fo, fu, fn = frame3(far, z)
     wall_picture(d, (fo, fu, fn), .45, 1.15, 1.6, .075, 'pictures', .42, True)
     q = Hl(d2-.32, w2-.42); crate(m, q[0], q[1], z, (.5, .45, .42), ang)
     with d.use('quilt', grain=(1, 0, 0)):
         d.box((q[0], q[1], z+.42+.07), (.45, .4, .12), WHITE, .03)
-    q = Hl(-.25, .75); rug(d, q[0], q[1], z, 1.2, 1.7, ang, 'rug')
-    q = Hl(.4, w2-.5); cushion(d, q[0], q[1], z, .5, ang+12)
+    q = Hl(d2-.62, -.15); rug(d, q[0], q[1], z, .95, 2.1, ang, 'rug')
+    q = Hl(.72, .8); cushion(d, q[0], q[1], z, .5, ang+12)
     o, u, n = frame3(outer, z); wall_picture(d, (o, u, n), w2+side*.95, 1.1, 1.7, .075, 'kite', .5)
-    q = Hl(-1.0, .3); book_stack(d, q[0], q[1], z, 4, ang)
+    q = Hl(-d2+.3, w2-.3); book_stack(d, q[0], q[1], z, 4, ang)
     q = Hl(d2-.3, .45); basket(d, q[0], q[1], z, .18, .22, scrolls=2)
 
 
@@ -909,9 +943,13 @@ def furnish_heart(m, d, p):
     for mid, off, pic, w, z0, z1 in ((180, 1.1, 'map', .75, 1.0, 1.85), (0, -1.05, 'kite', .7, 1.15, 1.85), (225, -1.1, 'pictures', .45, 1.25, 1.7)):
         q, t, nin = on_panel(mid, off, .075)
         wall_picture(d, (np.array([q[0], q[1], z]), np.r_[t, 0], np.r_[nin, 0]), 0, z0, z1, .0, pic, w)
-    # hammock from the trunk to a wall post, lanterns strung from the trunk to the posts
-    a0 = P(242, p['trunk']+.12, 1.95); a1 = P(252, Rw-.15, 2.0)
-    hammock(d, a0, a1, .75, .4)
+    # a hammock from turns of rope round the camphor (over the shimenawa) to a peg on the panel beside the open
+    # round window, its bag 0.6 m over the floor; lanterns strung from the trunk to the posts
+    _, rad, wob, _, _ = trunk_shape(x0, y0, p['trunk'], p['trunk_top'], z, len('heart'))
+    hz = z+1.72; o = np.array([x0, y0])+wob(hz); rr = rad(hz)*1.06+.03; a_ = math.radians(242)
+    pc = math.radians(270); ap = Rw*math.cos(math.radians(22.5))-.045
+    hammock(d, np.array([o[0]+rr*math.cos(a_), o[1]+rr*math.sin(a_), hz]), P(252, ap/math.cos(math.radians(252-270)), 1.74),
+            .95, .42, (('wrap', o, rr), ('wall', (-math.cos(pc), -math.sin(pc)))))
     for k in range(8):
         a = 22.5+45*k; s0, s1 = P(a, p['trunk']+.15, 2.75), P(a, Rw-.1, 2.72)
         pts = [s0+(s1-s0)*t-[0, 0, .3*math.sin(math.pi*t)] for t in np.linspace(0, 1, 7)]
@@ -932,11 +970,22 @@ def furnish_heart(m, d, p):
     pts = [P(a0_, Rw-.05)[:2], P(a1_, Rw-.05)[:2], P(a1_, 3.05)[:2], P(a0_, 3.05)[:2]]
     with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
         prism(m, pts, z+2.2, z+2.28, vary(PLANK, .08), DARK)
-    lo, hi = P(80, 2.35), P(80, 3.08, 2.28); a_ = math.radians(80); t = np.array([-math.sin(a_), math.cos(a_), 0.])   # ladder to the loft
-    for f in (-1, 1): board(m, tuple(lo+t*f*.22), tuple(hi+(hi-lo)*.2+t*f*.22), .06, .07, WOOD, 'wood_timber')
-    for k in range(1, 8):
-        q = lo+(hi-lo)*k/8
-        board(m, tuple(q-t*.22), tuple(q+t*.22), .045, .045, WOOD, 'wood_timber')
+    # The ladder stands square to the loft's straight front edge at its west end, clear of the window and of the
+    # cushions round the stump: square rails leaning on the edge and standing on 0.85 m past it as handholds, round
+    # rungs, and a low rail along the rest of the edge.
+    u = np.array([0., 1., 0.]); v = np.array([1., 0., 0.]); c0 = np.array([x0, y0, z])
+    edge = 3.05*math.cos(math.radians(22.5)); half = 3.05*math.sin(math.radians(22.5)); lean = 1/math.tan(math.radians(74))
+    foot = edge-.06-2.28*lean; l0, l1 = -1.1, -.7
+    for f in (l0, l1):
+        strut(m, c0+u*foot+v*f, c0+u*(foot+3.13*lean)+v*f+[0, 0, 3.13], .075, .085, v)
+    for k in range(1, 9):
+        h = .26*k; q = c0+u*(foot+h*lean)+[0, 0, h]
+        tube(m, [q+v*l0, q+v*l1], .022, WOOD, 6, 'wood_timber')
+    rail = c0+u*(edge-.05)+[0, 0, 2.28]
+    for f in (-.5, .3, half-.06):
+        post(m, *(rail+v*f)[:2], rail[2], rail[2]+.62, .07, WOOD)
+    board(m, tuple(rail+v*-.54+[0, 0, .64]), tuple(rail+v*(half-.02)+[0, 0, .64]), .08, .045, WOOD, 'wood_timber')
+    tube(d, [rail+v*f+[0, 0, .3] for f in (-.5, half-.06)], .014, ROPE, 5)
     for k in range(3):
         q = P(80+10*k, 3.7); c = [(.20, .27, .48), (.80, .74, .62), (.62, .20, .12)][k]
         with d.use('quilt' if k != 1 else 'canvas', grain=(1, 0, 0)):
@@ -1143,11 +1192,18 @@ def slide(m, d, pl):
         with m.use('wood_pale'): sector(m, c, f0, f1, rc-hw, rc+hw, p0[2], p1[2], .07, vary(PALE, .05))
         for r0, r1 in ((rc-hw-.07, rc-hw), (rc+hw, rc+hw+.07)):
             with m.use('wood_plank'): sector(m, c, f0, f1, r0, r1, p0[2]+.38, p1[2]+.38, .45, vary(BOARD, .06))
-    for k, q in enumerate(path[::10]):
-        if q[2]-q[4] < .6: continue
-        a = math.radians(q[3])
-        for r in (rc-hw+.1, rc+hw-.1):
-            x, y = c[0]+r*math.cos(a), c[1]+r*math.sin(a); post(m, x, y, ground(x, y)-.2, q[2]-.07, .12, WOOD)
+    # Columns stand outside both side walls, every 30 degrees; each carries every turn that passes it on a cross-beam
+    # under the bed, so no post rises through the chute of the turn below.
+    ang, bed, gnd = (np.array([q[i] for q in path]) for i in (3, 2, 4))
+    ri_, ro_ = rc-hw-.2, rc+hw+.2
+    for A in np.arange(ang[0]+12, ang[0]+360, 30):
+        levels = [float(np.interp(B, ang, bed)) for B in (A, A+360) if B <= ang[-1] and np.interp(B, ang, bed)-np.interp(B, ang, gnd) > .6]
+        if not levels: continue
+        a = math.radians(A); e = np.array([math.cos(a), math.sin(a), 0.]); t = np.array([-e[1], e[0], 0.])
+        for r in (ri_, ro_):
+            x, y = c[0]+r*e[0], c[1]+r*e[1]; post(m, x, y, ground(x, y)-.2, max(levels)-.07, .12, WOOD)
+        for lv in levels:
+            board(m, (c[0]+(ri_-.06)*e[0], c[1]+(ri_-.06)*e[1], lv-.07), (c[0]+(ro_+.06)*e[0], c[1]+(ro_+.06)*e[1], lv-.07), .1, .12, DARK, 'wood_timber')
     last = np.array(path[-1][:3]); pts = [last]+[np.array(q) for q in s['runout']]
     for q0, q1 in zip(pts[:-1], pts[1:]):
         board(m, q0, q1, 2*hw, .08, vary(PALE), 'wood_pale')
@@ -1167,12 +1223,21 @@ def slide(m, d, pl):
 
 def lookout(m, d, pl):
     p = pl['places']['lookout']; cr = pl['crow']; x0, y0 = p['xy']; z = p['deck']; top = cr['floor']
+    # The treads run into the trunk (which narrows as it climbs) and are housed in a helical outer string that stands
+    # a little above them; a knee brace from the trunk under every third tread.
+    _, rad, wob, _, _ = trunk_shape(x0, y0, p['trunk'], p['trunk_top'], z, len('lookout'))
+    inner = lambda h: rad(h)*.95-float(np.linalg.norm(wob(h)))-.04
+    ro, da, rise = cr['ro'], cr['da'], cr['rise']
     for k in range(cr['steps']):
-        a = cr['start']+k*cr['da']; t = z+(k+1)*cr['rise']
-        with m.use('wood_plank'): sector(m, (x0, y0), a, a+cr['da']+1.5, cr['ri'], cr['ro'], t, t, .07, vary(PLANK, .12))
+        a = cr['start']+k*da; t = z+(k+1)*rise
+        with m.use('wood_plank'): sector(m, (x0, y0), a, a+da+1.5, inner(t), ro, t, t, .07, vary(PLANK, .12))
+        with m.use('wood_timber'): sector(m, (x0, y0), a, a+da, ro-.01, ro+.07, z+(k+.6)*rise, z+(k+1.6)*rise, .32, DARK)
         if k % 2 == 0:
-            x, y = x0+(cr['ro']+.03)*math.cos(math.radians(a)), y0+(cr['ro']+.03)*math.sin(math.radians(a))
+            x, y = x0+(ro+.03)*math.cos(math.radians(a)), y0+(ro+.03)*math.sin(math.radians(a))
             post(m, x, y, t-.07, t+1.0, .07, DARK)
+        if k % 3 == 1:
+            am = math.radians(a+da/2); e = np.array([math.cos(am), math.sin(am), 0.]); tg = np.array([-e[1], e[0], 0.])
+            strut(m, np.array([x0, y0, t-.62])+e*inner(t-.62), np.array([x0, y0, t-.1])+e*(ro-.3), .06, .06, tg)
     helix = [(x0+(cr['ro']+.03)*math.cos(math.radians(cr['start']+k*cr['da'])),
               y0+(cr['ro']+.03)*math.sin(math.radians(cr['start']+k*cr['da'])), z+(k+1)*cr['rise']+.92)
              for k in range(0, cr['steps']+1)]

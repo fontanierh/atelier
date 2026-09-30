@@ -69,9 +69,9 @@ small and hanging things get none.
 |---|---|
 | Little hut | Shelf with jars of acorns and shells, pegs with a straw hat and **the backpack**, a scarf, a small lantern, a rolled rug, a box of scrolls, a crate by the door; porch: crate bench with cushion, sail awning, banner |
 | Map room | Island map on the wall, desk made from a crate with a compass, magnifying glass, lamp and rolled charts, bookshelves, a small globe, a paper kite, **the backpack**, star cushion on a patchwork rug, toy sailboat, pinned drawings |
-| Heart room | Stump table with **the brazier and kettle**, star cushions, patchwork rugs, a hammock from the trunk to a wall post, shelves of jars, shells and books, the island map, a kite, **the backpack**, a hanging bell, strings of round lanterns, a loft shelf with quilts high on the north side (for looks only: no ladder, the player cannot climb) |
+| Heart room | Stump table with **the brazier and kettle**, star cushions, patchwork rugs, a hammock from rope turns round the camphor to a wall peg, shelves of jars, shells and books, the island map, a kite, **the backpack**, a hanging bell, strings of round lanterns, a loft shelf with quilts high on the north side and a leaning ladder at its west end (for looks only: the player cannot climb) |
 | Kitchen | **The clay stove with pot and kettle**, its iron chimney pipe, log stools round a log table, shelves of bowls, jars and baskets, a counter with a cutting board, a water barrel with a ladle, hanging herbs and persimmons, tea towels |
-| Sleeping nest | Two futons with patchwork quilts and pillows, a hammock across the hut, a shelf with a picture book, a framed picture and a toy boat, a hanging lantern |
+| Sleeping nest | Two futons with patchwork quilts and pillows, a hammock on wall pegs along the window wall with the futons in front of it, a shelf with a picture book, a framed picture and a toy boat, a hanging lantern |
 | Boat room | Fishing net under the hull, two oars on the ribs, a lantern from the keel, crate benches with cushions, a rolled sail, a blue rug |
 | Slide tree | Start gate, lanterns, straw landing heap at the bottom |
 | Pulley deck | Woven basket on the rope, crates, rope coil |
@@ -102,6 +102,6 @@ place reference that shows it, so it matches the room it goes in.
 ## 5. What not to follow in the references
 
 - A shimenawa on every trunk: only the Heart room's camphor has one.
-- A ladder to the Heart room loft: the loft is for looks only.
+- A climbable loft: the Heart room ladder and loft are for looks only.
 - A second tower in a few views, and rooms painted larger than the 3.4 x 2.8 m huts: the layout sizes stand.
   Hut furniture goes along the walls, keeping a clear path from the door to the window.

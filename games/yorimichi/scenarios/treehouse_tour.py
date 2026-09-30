@@ -91,7 +91,7 @@ def shots(pl, h):
     out.append(('map-room', 'The map room', room('library-inside', 16, -14, .25, 6.5, 84, 80)))
     # 6. toward the heart room
     out.append(('bridge-heart', '', along_bridge('library', 'heart', .1, .78, (centre('heart', 2.4), centre('heart', 1.9)), 7, 72)))
-    # 7. round the camphor inside the heart room (the loft ladder stands at 80 degrees, the hammock at 245)
+    # 7. round the camphor inside the heart room (the loft ladder stands at 108 degrees, the hammock at 242-252)
     H = P['heart']; hx, hy = H['xy']; hz = H['deck']
     keys = []
     for i, ang in enumerate(np.linspace(170, 115, 4)):
