@@ -384,6 +384,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   hats, all four inertia modes, pose mapping, animation/physical COM history and 128 persistent 26-body
   programs with actual integration. The corpus includes 88 original volume errors and 64 mapping-bounds
   errors. Skeleton joints, drives, collision policy and whole-rider scheduling remain separate steps.
+- Physical skeleton constraints/targets: 1,668 cases and 29,306,908 exact words cover all authored
+  joint records, ordered active rows, six drive modes, repeated frame preparation and 96 live rider
+  programs with four actual target bodies. Comparisons include 42,624 drive rows, target/follower
+  updates, shared transition counters and invalid definition errors. Whole board/rider scheduling and
+  collision response remain separate integration steps.
 - Animation metadata: both banks, 3,324 clips, 14,879 clip attributes, 1,183 phase blends, two blend spaces,
   98 selectors and 38 selection spaces. Every record word/order and 4,643 original lookup results match;
   33 duplicate/tie fixtures, two merge fixtures and nine malformed-format cases pass.
