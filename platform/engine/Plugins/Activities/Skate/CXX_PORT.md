@@ -316,6 +316,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   89,583 exact bytes against the original host's factories and activation. Each configuration exercises
   both truth values; required missing publications retain their errors. Host registration and actual
   gameplay publishers are separate steps; malformed raw-name panic translation is not established.
+- Specialized motion-graph predicates: the remaining 12 supported names, 29 authored configurations
+  and 4,640 evaluations preserve 41,698 exact bytes. Landing, grind, prelanding and wipeout inputs
+  exercise boundaries, NaNs, validity gates and independent missing owners through the unchanged
+  original host. Registration and completed physical publishers remain pending.
 - Stick gesture publication: 141,873 commands and 141,782 publication frames preserve 68,857,168 output
   bytes against the original host loading the original PAT/settings. Coverage includes 6,078 trick
   publications, 21,803 held-pattern frames and isolated permission gates. Hidden recognizer state is
