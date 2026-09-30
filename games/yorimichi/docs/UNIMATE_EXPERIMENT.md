@@ -109,6 +109,10 @@ cap (6.3° final cap). This explains why the result was essentially the existing
 state, and provenance under `build/yorimichi/unimate/results/<id>/`. The viewer groups original/counterpart comparisons
 separately from independent creations, labels authored/prompt-only/hybrid origins, and exports GLB, PNG, and GIF.
 It serves only allowed artifacts on loopback; weights and the rest of the repository are outside its file routes.
+The playground now includes Kimodo in the same library and comparison workflow. Its generator selector chooses
+the next model, while cards, counterpart options and capture/export labels retain each take's actual source.
+The shared server runs guarded workers in separate inference environments and preserves both models' existing
+output directories. See the [lab guide](../animation_lab/README.md) for the common launch command and API.
 
 The [upstream code](https://github.com/Friedrich-M/UniMate) and [checkpoint](https://huggingface.co/Linzhan/UniMate)
 are MIT licensed. No UniML3D characters, raw Mixamo downloads, or Truebones motions are redistributed. The fox is owned.

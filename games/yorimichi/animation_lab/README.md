@@ -1,26 +1,99 @@
 # Fox motion lab
 
-A local UniMate/Kimodo experiment on Yorimichi's fox hunter, with Python inference runners and a browser playground.
-The [experiment write-up](../docs/UNIMATE_EXPERIMENT.md) records what worked, the conditioning fix, measurements,
-and the current quality limits.
+One local playground for **UniMate and Kimodo** on Yorimichi's owned fox hunter. Compare an authored animation
+with counterparts from either model, or create independent animations with a custom prompt. Every generated card,
+counterpart option, preview capture and export names its actual model. A model filter lets you inspect both libraries
+together or isolate one; the prompt form's **Generate with** selector chooses the next take's generator.
 
-The model installer and inference runner live in [the platform](../../../platform/studio/atelier/ai/unimate/README.md),
-alongside shared [retargeting helpers](../../../platform/web/motion/README.md). The fox exporter, clip manifest,
-sprint policy, server, and UI stay here. Weights and generated artifacts go in ignored `build/yorimichi/unimate/`.
-No gameplay animation is replaced automatically. Quality varies: the prompt-only backflip worked well in user review;
-many other takes were poor, and the guided sprint was essentially the Run we already had.
+The [UniMate write-up](../docs/UNIMATE_EXPERIMENT.md) records mixed results, a useful independent backflip, and a guided
+sprint that was essentially the Run already available. The [Kimodo write-up](../docs/KIMODO_EXPERIMENT.md) records a
+headless backflip and the user's forward roll. User review found Kimodo worked quite well on these takes. Generated
+motion still needs contact and recovery review before game use; the lab does not replace gameplay clips automatically.
 
-The [Kimodo experiment](../docs/KIMODO_EXPERIMENT.md) starts with a successful independent backflip. Its reusable
-runner lives in [`atelier.ai.kimodo`](../../../platform/studio/atelier/ai/kimodo/README.md). Use the
-[headless recipe below](#kimodo-headless-backflip) for generation without a browser; each backend has its own build
-directory and lab port. The sections after that recipe describe the original UniMate workflow.
-
-## Kimodo headless backflip
+## Setup and run the shared playground
 
 From the repository root, with Git, `uv`, Node/npm and Blender on PATH:
 
 ```sh
 uv sync
+uv run python games/yorimichi/animation_lab/setup.py
+uv run python -m atelier.safety.guarded --no-lock \
+  --report build/yorimichi/motion_lab/server-health --timeout 0 \
+  --purpose 'shared fox motion lab' -- \
+  .venv/bin/python games/yorimichi/animation_lab/server.py
+```
+
+Open **http://127.0.0.1:8843/**. This is the same UI for both models. Setup installs each pinned model into its own
+Python 3.11 environment, exports the owned 53-bone fox skin and 15 original clips, samples the Run reference for
+UniMate, and builds one frontend. Existing takes remain in their original directories and appear together without
+copying or renaming their files. A fresh checkout has no saved takes; generate them through the prompt form.
+
+The shared server starts two loopback workers on private ephemeral ports, using each model's own interpreter.
+Each worker has the unchanged 10 GiB memory guard; only one generation runs at a time across both models.
+Ctrl-C stops the shared server and reaps its workers and monitors. No inference request goes to a hosted demo.
+No API key or paid service is needed. If Blender is not on PATH, set `BLENDER` to its executable before setup.
+Unreal is not needed. Setup and inference do not take the render slot; the small Blender operation exports without
+rendering. Failed/uninstalled models report their status while saved takes remain browsable.
+
+UniMate downloads about 1.2 GB of checkpoint weights, plus its pinned Flan-T5 encoder on first load. Kimodo downloads
+about 17 GB of weights. The tested macOS ARM configuration uses MPS for UniMate and the streamed Kimodo text encoder,
+with CPU diffusion for Kimodo. Its native MotionCorrection build fails on ARM, so foot-skate cleanup is disabled
+and recorded as `post_processing: false`. The public NousResearch Llama 3 base distribution and both released McGill
+adapters retain their licences. No weights or third-party training assets are redistributed here.
+
+To install just one backend, pass `--generator unimate` or `--generator kimodo` to setup. Then run `npm run --prefix
+games/yorimichi/animation_lab build` for the shared frontend. The shared server can browse saved takes even when a
+worker is unavailable; the selected model must be ready to generate. Its `--unimate-root` and `--kimodo-root`
+options accept existing custom model directories. The exports must use the same fox source revision.
+
+## Compare originals and generated counterparts
+
+1. In **Compare originals**, choose an authored clip. **Forward sprint** is the initial selection.
+2. Choose a **Generated counterpart**. Options identify UniMate/Kimodo, prompt-only/hybrid origin and seed.
+   The **Show generated from** filter narrows counterparts and independent takes by model.
+3. Review the two textured foxes together. **Match phase** maps their normalized progress; disable it to keep native
+   timing. Scrub, change speed, orbit/zoom, or show the rigs. **Original only** and **Generated only** isolate a side.
+4. For a new counterpart, choose **Generate with**, write its prompt and press **Generate counterpart**. The original
+   is a visual comparison, not an inference constraint. The new take stays grouped with that authored clip.
+
+Labels distinguish **Original · authored**, **UniMate/Kimodo · prompt only** and **Hybrid · authored gait + UniMate
+arms**. Earlier UniMate takes display **earlier conditioning**. The optional **Keep the authored sprint gait**
+checkbox appears only for UniMate when comparing Run. It preserves the authored stride, root, torso, head and hand
+tracks with bounded arm changes; it did not produce a useful independent sprint. It is off unless selecting an
+existing hybrid take. Kimodo never uses that constraint.
+
+## Create an independent animation
+
+Switch to **Create new motion**. The **Generated motions** library contains independent takes from both models,
+with no original attached. Select a take to replay it or choose **Generate with** for a new model, then enter a name,
+prompt, seed, guidance and steps. Kimodo also accepts a duration. Model-specific controls update when switching
+models; viewing a take always retains its own source labels even when the next generation uses another model.
+Browsing takes does not change the model chosen for the next generation. Controls copy a take's sampling settings
+only when its source matches that chosen model, so a UniMate take cannot overwrite Kimodo's step range or duration.
+
+Useful recipes:
+
+| Model / action | Prompt | Seed | Guidance | Steps | Duration |
+| --- | --- | --- | --- | --- | --- |
+| UniMate backflip | `A person does a backflip` | 99 | 2 | 32 | 2 seconds (fixed) |
+| Kimodo backflip | `A person does a backflip.` | 99 | 2 | 100 | 3 seconds |
+| User's Kimodo forward roll | `A person crouches down and performs one forward roll on the ground, rolling over their shoulders with tucked knees, then stands back up.` | 56 | 5 | 100 | 3 seconds |
+
+Presets and **Generate missing experiments** use the selected model and sampling controls. A take from another
+model does not count as completing that model's preset. Prompt-only UniMate outputs 60 frames at 30 fps; Kimodo
+accepts 1–10 seconds at 30 fps. Fingers retain their rest pose and no loop seam is synthesized.
+
+**Export UniMate/Kimodo** saves the selected animation as a skinned GLB, preserving its generated root travel.
+**Export original** saves the authored side. The camera button captures a labelled pose PNG; **Preview GIF** captures
+all frames at native timing, independent of playback speed. The preview centers horizontal travel for inspection.
+Check feet, balance, intersections and recovery before accepting a take. The selected backflip and forward roll GIFs
+and their provenance are retained in `docs/media/`; other captures and generated artifacts stay in ignored build output.
+
+## Kimodo headless backflip
+
+Generation itself needs neither the playground nor a browser. After installing/exporting the Kimodo assets:
+
+```sh
 uv run python games/yorimichi/animation_lab/setup.py --generator kimodo
 uv run python -m atelier.safety.guarded --no-lock \
   --report build/yorimichi/kimodo/headless-health --timeout 1200 \
@@ -29,211 +102,89 @@ uv run python -m atelier.safety.guarded --no-lock \
   --prompt 'A person does a backflip.' --seed 99 --steps 100 --guidance 2 --duration 3
 ```
 
-This writes a new `results/<id>/` containing `source-motion.npz` (raw SOMA output), `motion.json` (fox body motion),
-`job.json` and `provenance.json`. No HTTP server or browser is involved. The platform runner can also generate
-SOMA output directly for other targets; the fox's anatomical map stays in [`kimodo_engine.py`](kimodo_engine.py).
+This writes a new `build/yorimichi/kimodo/results/<id>/` containing `source-motion.npz`, `motion.json`, `job.json` and
+`provenance.json`. The shared playground discovers it on reload. Stop the playground before using this standalone
+command to avoid loading another model instance. A cached embedding avoids repeating the streamed text pass.
+The reusable [`atelier.ai.kimodo.Engine`](../../../platform/studio/atelier/ai/kimodo/README.md) can produce raw SOMA
+motion for other characters; the fox's anatomical map belongs in [`kimodo_engine.py`](kimodo_engine.py).
 
-Setup downloads about 17 GB of pinned weights. The tested macOS ARM runtime streams the 8B LLM2Vec encoder in
-fp32 on MPS and samples diffusion on CPU, within the unchanged 10 GiB memory guard. A prompt embedding is reused
-on later runs. The base weights use the public NousResearch Llama 3 distribution with the two released McGill
-adapters; the Llama licence still applies. Upstream MotionCorrection's x86 SIMD build fails here, so native
-foot-skate cleanup is disabled and recorded as `post_processing: false`. Check contacts before using a take.
+## Generate through the shared HTTP API
 
-For the playground, run:
+With the guarded shared server running:
 
 ```sh
-uv run python -m atelier.safety.guarded --no-lock \
-  --report build/yorimichi/kimodo/server-health --timeout 0 \
-  --purpose 'local Kimodo motion lab' -- \
-  build/yorimichi/kimodo/venv/bin/python games/yorimichi/animation_lab/server.py --generator kimodo
-```
-
-Open **http://127.0.0.1:8843/**. **Create new motion** lists independent Kimodo takes and accepts custom prompts,
-seeds, durations, guidance and steps. **Compare originals** groups Kimodo counterparts with authored clips.
-Comparison clips are visual references, with no authored gait constraint. Badges and export labels explicitly
-name Kimodo; UniMate stays at port 8842. Playback, phase matching, pose/GIF capture and skinned GLB export work
-the same way. Run the CLI and server one at a time to avoid loading two model instances.
-
-The HTTP API below also works at port 8843, with `steps: 100`, `duration: 3` and `guided_sprint: false`.
-Kimodo accepts 8–250 steps and 1–10 seconds at 30 fps. Rebuild its frontend with:
-
-```sh
-games/yorimichi/animation_lab/node_modules/.bin/esbuild games/yorimichi/animation_lab/app.js \
-  --bundle --format=esm --minify --outfile=build/yorimichi/kimodo/web/app.js
-```
-
-After generating a take, check source FK and every rendered fox body joint:
-
-```sh
-build/yorimichi/kimodo/venv/bin/python games/yorimichi/animation_lab/verify_kimodo.py
-build/yorimichi/kimodo/venv/bin/python -m unittest discover -s platform/studio/tests -p 'test_kimodo.py'
-```
-
-The selected backflip and its limits are documented in the [experiment write-up](../docs/KIMODO_EXPERIMENT.md).
-
-## Setup and run
-
-From the repository root, with Git, `uv`, Node/npm, and Blender on PATH. The tested environment is macOS arm64 with
-PyTorch MPS. No API key, paid service, training dataset, or separately downloaded character is required.
-
-```sh
-uv sync
-uv run python games/yorimichi/animation_lab/setup.py
-uv run python -m atelier.safety.guarded --no-lock \
-  --report build/yorimichi/unimate/server-health --timeout 0 \
-  --purpose 'local UniMate motion lab' -- \
-  build/yorimichi/unimate/venv/bin/python games/yorimichi/animation_lab/server.py
-```
-
-Open **http://127.0.0.1:8842/** and wait for **UniMate ready**. Press Ctrl-C in the server terminal to stop it.
-If Blender is not on PATH, set `BLENDER` to its executable before running setup. Unreal is not needed for the lab.
-
-Setup downloads about 1.2 GB of checkpoint weights, creates a separate Python 3.11 inference environment, exports
-the owned fox skin and 15 original clips, samples the Run reference, and bundles the viewer. The pinned Flan-T5
-encoder downloads on the first server launch into the normal Hugging Face cache. Subsequent launches reuse it.
-A fresh checkout has no generated takes; create a counterpart or a new motion through the prompt form.
-
-The server stays on loopback, keeps the model warm, and runs one inference at a time. The existing 10 GiB memory
-guard stays enabled; the server and the small non-rendering Blender export do not take the render slot.
-The server accepts `--device cpu` and `--device cuda`, but the packaged dependencies and measurements here were
-validated on macOS/MPS. `--port` changes the localhost port.
-
-## Compare an original with its counterpart
-
-1. In **Compare originals**, choose an authored clip from the left library. The default is **Forward sprint**.
-2. Select a saved **UniMate counterpart**, or generate the first one with the prompt form. Each original keeps its
-   counterparts grouped together. Missing counterparts have an explicit empty state.
-3. Review the two opaque, textured foxes together. **Match phase** maps their clip progress to the same normalized
-   phase; disable it to keep each clip's native timing. Scrub, change speed, orbit/zoom, or show the rigs.
-4. Use **Original only** or **UniMate only** to isolate a character. **Export original** or **Export UniMate** saves
-   the selected animation as a skinned GLB. The camera button saves a labeled pose PNG; **Preview GIF** captures
-   the current view at the clip's original timing, independent of playback speed.
-
-The source labels distinguish **Original · authored**, **UniMate · prompt only**, and **Hybrid · authored gait +
-UniMate arms**. Older takes made before the joint-name fix show **earlier conditioning**.
-
-For prompt-generated counterparts, uncheck **Keep the authored sprint gait** when comparing Run. Other originals
-also use prompt-only generation; the original is a visual comparison rather than an inference constraint.
-
-The retained **Keep the authored sprint gait** option is the earlier hybrid experiment. It copies the original
-stride, root, torso, head, and wrist/finger detail into a 0.6-second loop with only bounded arm changes (at most 6.3°).
-It did not add a useful new sprint and should not be read as successful independent generation. Seed 117, guidance 2,
-32 steps, and `A person sprints forward at full speed with bent elbows and alternating arm swings.` reproduce it.
-
-## Create an independent animation
-
-Switch to **Create new motion**, enter a name, describe the action, and set a seed/guidance/step count. For example:
-
-```text
-A person does a backflip
-```
-
-Seed **99**, guidance **2**, and **32** steps reproduce the useful user-reviewed backflip. It has no authored reference.
-Press **Generate new motion**. The result is saved in the separate **UniMate-only motions** library with no original
-reference attached. Changing the seed creates another take. The eight attack/movement presets and **Generate missing
-experiments** are available here; a preset batch can be continued after a reload with the same button.
-
-Prompt-only generation produces 60 frames at 30 fps, with the last sample at 1.967 seconds. Fingers keep their rest
-pose and the loop seam is not synthesized. The viewer centers horizontal root travel for inspection, while the
-travel metric and exported GLB retain it. Check balance, feet, intersections, action timing, and recovery before
-accepting a take for game use.
-
-## Use the runner without the UI
-
-The playground's HTTP API uses the same warm model and artifact/provenance path. With the guarded server running,
-this submits the standalone backflip:
-
-```sh
-curl -fsS http://127.0.0.1:8842/api/generate \
+curl -fsS http://127.0.0.1:8843/api/generate \
   -H 'Content-Type: application/json' --data-binary @- <<'JSON'
 {
+  "generator": "kimodo",
   "title": "Backflip",
   "category": "Movement",
-  "prompt": "A person does a backflip",
+  "prompt": "A person does a backflip.",
   "seed": 99,
   "guidance": 2,
-  "steps": 32,
+  "steps": 100,
+  "duration": 3,
   "reference_clip": null,
   "guided_sprint": false
 }
 JSON
 ```
 
-The response is HTTP 202 with an `id`. Put that ID into the following read-only requests:
+The response is HTTP 202 with a model-prefixed `id`, such as `kimodo_<id>`. Use that full ID:
 
 ```sh
 motion_job_id='paste-the-returned-id'
-curl -fsS "http://127.0.0.1:8842/api/jobs/$motion_job_id"
-curl -fsS "http://127.0.0.1:8842/results/$motion_job_id/provenance.json"
+curl -fsS "http://127.0.0.1:8843/api/jobs/$motion_job_id"
+curl -fsS "http://127.0.0.1:8843/results/$motion_job_id/provenance.json"
 ```
 
-Poll the job route until `status` is `complete`; the final job contains motion/provenance URLs and diagnostics.
-`GET /api/status` reports readiness and the active job, while `GET /api/library` returns originals, presets, and saved
-takes. The API returns 409 while loading or busy and 400 for invalid input.
+Poll until `status` is `complete`. Published motion/provenance URLs are ready then. For UniMate, use
+`"generator": "unimate"`, 32 steps, and omit duration. A counterpart sets `reference_clip` to an owned ID such as
+`Fox_Jump`; an independent take uses `null`. Guided requests require UniMate and `Fox_Run`.
 
-For a prompt-only counterpart, set `guided_sprint` to `false` and retain the selected `reference_clip`. For standalone
-generation, set `reference_clip` to `null` and `guided_sprint` to `false`. Guidance is 1.01–8, steps are integer 8–64,
-and seeds are integer 0–2147483647. Prompt text must contain 3–1000 characters. A guided request requires `Fox_Run`.
+`GET /api/status` reports both model states and the one active job. `GET /api/library` returns originals, presets
+by model and all saved takes. IDs are namespaced in the shared API so collisions cannot mix models; files retain
+their original IDs in each backend directory. Exports route back to the selected take's backend. The API returns
+409 while loading or busy and 400 for invalid input. Seeds are integer 0–2147483647, guidance 1.01–8 and prompt
+length 3–1000 characters. Steps are integer 8–64 for UniMate and 8–250 for Kimodo; its duration is 1–10 seconds.
 
-The numerical runner is the shared [`atelier.ai.unimate.Engine`](../../../platform/studio/atelier/ai/unimate/README.md).
-The local [`Engine`](engine.py) supplies fox inputs and the optional sprint policy, returning `(features, motion,
-provenance)`. Use the HTTP API to retain the job lifecycle and avoid loading a second model. The shared browser
-[`retargetMotion`](../../../platform/web/motion/retarget.js) turns published motion into tracks on the original skin;
-GLB/GIF export happens in the viewer, not in the HTTP generation request.
+## Source and outputs
 
-## Code and outputs
-
-| Source | Responsibility |
+| Location | Responsibility |
 | --- | --- |
-| [`platform/studio/atelier/ai/unimate/`](../../../platform/studio/atelier/ai/unimate/README.md) | Pinned installer/dependencies, topology/text conditioning, local inference, decoding, provenance |
-| [`platform/web/motion/`](../../../platform/web/motion/README.md) | Rest-frame retargeting, root conversion, quaternion continuity, loop endpoint restoration |
-| [`setup.py`](setup.py), [`package-lock.json`](package-lock.json) | Invoke shared installation, export owned assets, build frontend |
-| [`export_rig.py`](export_rig.py) | Full skin and authored GLB clips; 22-joint canonical conditioning rig |
-| [`engine.py`](engine.py) | Fox vocabulary/axes/diagnostics adapter and retained authored-sprint policy |
-| [`export_reference.mjs`](export_reference.mjs), [`guided.py`](guided.py) | Sample/validate the owned Run and make bounded hybrid variations |
-| [`server.py`](server.py) | Loopback HTTP server, serialized jobs, persistence, allowed artifact routes |
-| [`index.html`](index.html), [`app.js`](app.js), [`style.css`](style.css) | Comparison/creation playground, playback, snapshots, GLB/GIF export |
-| [`verify.py`](verify.py), [`check_retarget.mjs`](check_retarget.mjs), [`test_server.py`](test_server.py), [`test_guided.py`](test_guided.py) | FK/retarget verification and request/gait contracts |
+| [`platform/studio/atelier/ai/unimate/`](../../../platform/studio/atelier/ai/unimate/README.md), [`platform/studio/atelier/ai/kimodo/`](../../../platform/studio/atelier/ai/kimodo/README.md) | Reusable installers, inference, decoding/retargeting and provenance |
+| [`platform/web/motion/`](../../../platform/web/motion/README.md) | Skin rest-frame transfer, axes, quaternion continuity and loop endpoints |
+| [`engine.py`](engine.py), [`kimodo_engine.py`](kimodo_engine.py), [`guided.py`](guided.py) | Fox-specific vocabulary, anatomy, diagnostics and optional gait policy |
+| [`export_rig.py`](export_rig.py), [`export_reference.mjs`](export_reference.mjs), [`setup.py`](setup.py) | Owned character/clip export, Run sampling, backend setup and shared frontend build |
+| [`server.py`](server.py), [`unified.py`](unified.py) | Loopback API, job persistence, guarded worker lifecycle, shared library and artifact routing |
+| [`kimodo_generate.py`](kimodo_generate.py) | Standalone headless fox generation |
+| [`index.html`](index.html), [`app.js`](app.js), [`style.css`](style.css) | Shared comparison/creation UI, playback, labelled captures and GLB/GIF export |
 
-Setup and generation write the following under `build/yorimichi/unimate/`:
+`build/yorimichi/unimate/` and `build/yorimichi/kimodo/` each retain their own code, weights, inference environment,
+owned exported assets, prompt caches, `results/<id>/` and `exports/<id>/`. Raw output is `features.npy` for UniMate
+and `source-motion.npz` for Kimodo. Every take has motion, job and provenance JSON. Hybrid features/published output
+have different frame counts; the provenance records the reference, preserved channels and angular bound.
 
-| Output | Contents |
-| --- | --- |
-| `upstream/`, `venv/`, `model/` | Pinned UniMate code, inference environment, checkpoint/config/statistics |
-| `assets/fox.glb`, `assets/rig.json`, `assets/run-reference.json` | Owned skin/original clips, body skeleton, sampled Run reference |
-| `web/app.js` | Bundled playground JavaScript |
-| `results/<id>/features.npy` | Actual 60-frame model features, before the hybrid loop postprocessing |
-| `results/<id>/motion.json` | Published body rotations/root positions; hybrid reference/detail tracks and blend metadata |
-| `results/<id>/job.json`, `results/<id>/provenance.json` | Persisted request, source grouping, progress, settings, hashes, timings, diagnostics |
-| `exports/<id>/fox.glb`, `exports/<id>/pose.png`, `exports/<id>/preview.gif` | Viewer exports, also offered as browser downloads |
-| `export-health/`, `server-health/` | Memory-guard reports |
-
-The raw feature file and published hybrid have different frame counts: 60 model frames versus 18 gait frames plus
-the closing endpoint. Guided provenance names the reference, preserved channels, blend strength, and angular bound.
-Raw provenance records whether the original is only a comparison reference or absent.
+`build/yorimichi/motion_lab/` contains the shared `web/app.js`, `workers/<model>/` logs, address files and memory
+reports, the shared server guard report, and exports of authored clips. Nothing moves out of its backend directory
+just to appear in the shared library. The source fox is owned; upstream code and weights keep their respective
+licences and stay in ignored build output.
 
 ## Development and verification
 
-After changing the frontend, run `npm run --prefix games/yorimichi/animation_lab build` and reload the page. After
-changing the fox source or inference code, stop the server, rerun setup if assets changed, and restart it. A missing
-or mismatched Run reference requires setup again. Model-load or generation failures are described in the server log.
-
 ```sh
+npm run --prefix games/yorimichi/animation_lab build
 .venv/bin/python -m unittest discover -s games/yorimichi/animation_lab -p 'test_*.py'
 .venv/bin/python -m unittest discover -s platform/studio/tests -p 'test_unimate.py'
+build/yorimichi/kimodo/venv/bin/python -m unittest discover -s platform/studio/tests -p 'test_kimodo.py'
 node platform/web/motion/test_motion.mjs games/yorimichi/animation_lab/node_modules/three/build/three.module.js
 build/yorimichi/unimate/venv/bin/python games/yorimichi/animation_lab/verify.py
+build/yorimichi/kimodo/venv/bin/python games/yorimichi/animation_lab/verify_kimodo.py
 .venv/bin/atelier lint
 ```
 
-The nine game tests and five shared UniMate Python tests run without inference. The two shared JavaScript tests use a
-synthetic skin with arbitrary bone names and explicit axes/rest transforms. `verify.py` needs at least one saved
-generated take; it compares the viewer retargeter to FK at every frame and checks hybrid gait preservation and
-loop closure. See the
-[experiment write-up](../docs/UNIMATE_EXPERIMENT.md) for the recorded results and what those checks establish.
-
-The [upstream code](https://github.com/Friedrich-M/UniMate) and
-[checkpoint](https://huggingface.co/Linzhan/UniMate) are MIT licensed. Setup does not download or redistribute
-UniML3D characters, raw Mixamo motions, or Truebones assets. The source fox is owned; upstream code, weights,
-generated takes, captures, and exports stay in ignored build output. The selected backflip GIF and its provenance
-are retained in `docs/media/` as the README illustration.
+The game tests cover request bounds, origin/file restrictions, hybrid gait, shared identities/artifact routing and
+serialization across models. Platform tests cover the independent runners and streamed/full PEFT parity. The two
+JavaScript tests use a synthetic skin with explicit axes/rest transforms. Each verifier needs saved generated takes;
+it compares rendered body joints with FK at every frame. After Python changes, restart the shared server; after
+frontend changes, rebuild and reload. If the fox source changes, rerun setup for both backends.

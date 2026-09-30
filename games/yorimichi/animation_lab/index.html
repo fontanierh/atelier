@@ -15,11 +15,11 @@
       >
       <div class="top-right">
         <a
-          id="model-link"
           href="https://github.com/Friedrich-M/UniMate"
           target="_blank"
           rel="noopener"
-          >Powered by UniMate ↗</a
+          >UniMate ↗</a
+        ><a href="https://research.nvidia.com/labs/sil/projects/kimodo/" target="_blank" rel="noopener">Kimodo ↗</a
         ><span id="model-status" class="status"><i></i> Loading model</span>
       </div>
     </header>
@@ -61,6 +61,13 @@
             ><button data-filter="Attacks">Attacks</button
             ><button data-filter="Movement">Movement</button>
           </div>
+          <label class="model-filter" for="library-generator">SHOW GENERATED FROM
+            <select id="library-generator">
+              <option value="all">All models</option>
+              <option value="UniMate">UniMate</option>
+              <option value="Kimodo">Kimodo</option>
+            </select>
+          </label>
           <p id="library-help" class="library-help">
             Pick an original to compare its counterparts.
           </p>
@@ -187,6 +194,9 @@
             Compare with the selected original.
           </p>
           <form id="prompt-form">
+            <label class="generator-field" for="generator">GENERATE WITH
+              <select id="generator" aria-label="Generation model"></select>
+            </label>
             <div id="motion-name-field" hidden>
               <label for="motion-name">MOTION NAME</label
               ><input
@@ -284,13 +294,14 @@ A human fighter winds up the right arm, slashes diagonally down across the body 
             </div>
           </div>
           <details>
-            <summary>Model & provenance</summary>
+            <summary>Models & provenance</summary>
             <p id="model-provenance">
               UniMate f60 v2, EMA step 100000. Flan-T5 text conditioning, fixed
               midpoint flow sampler. Generated on the fox’s own body topology;
               prompt-only fingers retain the rest pose. Guided sprint uses the
               authored gait and hand detail with a bounded UniMate arm
-              variation.
+              variation. Kimodo SOMA RP v1.1 uses local diffusion and streamed LLM2Vec text encoding.
+              Its body motion transfers to the fox; native foot cleanup is disabled on this ARM runtime.
             </p>
             <a id="provenance" hidden target="_blank"
               >View this take’s provenance ↗</a

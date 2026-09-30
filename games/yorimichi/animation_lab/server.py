@@ -4,7 +4,6 @@ from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
-import re
 from pathlib import Path
 import threading
 import time
@@ -53,6 +52,15 @@ PRESETS = [
     ('backstep', 'Retreating steps', 'Movement', 'A human fighter takes quick steps backwards with bent knees while holding both hands up in a defensive guard.', 312),
     ('jump', 'Jump & land', 'Movement', 'A human bends the knees, jumps straight up with both feet leaving the ground, then lands and bends the knees to absorb the impact.', 56),
 ]
+
+
+def presets_for(generator):
+    recipes = PRESETS
+    if generator == 'kimodo':
+        recipes = [('backflip', 'Backflip', 'Movement', 'A person does a backflip.', 99), *PRESETS]
+    else:
+        recipes = [('backflip', 'Backflip', 'Movement', 'A person does a backflip', 99), *PRESETS]
+    return [{'slug': s, 'title': t, 'category': c, 'prompt': p, 'seed': seed} for s,t,c,p,seed in recipes]
 
 
 def validate_request(data, generator='unimate'):
@@ -114,6 +122,35 @@ class Lab:
                 continue
         if warm:
             threading.Thread(target=self.load, args=(device,), daemon=True).start()
+
+    @property
+    def asset_root(self):
+        return self.root
+
+    def status_payload(self):
+        return {**self.state, 'generator': self.generator_name, 'active': self.active,
+                'models': {self.generator: {**self.state, 'name': self.generator_name}}}
+
+    def library_payload(self):
+        with self.lock:
+            results = [j.copy() for j in self.jobs.values() if j['status'] == 'complete']
+        return {'generator': self.generator_name, 'default_generator': self.generator,
+                'generators': [{'id': self.generator, 'name': self.generator_name}],
+                'presets': presets_for(self.generator),
+                'presets_by_generator': {self.generator: presets_for(self.generator)},
+                'originals': original_library(), 'results': sorted(results, key=lambda j: j['created'], reverse=True)}
+
+    def get_job(self, job_id):
+        job = self.jobs.get(job_id)
+        return job.copy() if job else None
+
+    def result_folder(self, job_id):
+        return self.root / 'results' / job_id if job_id in self.jobs else None
+
+    def output_folder(self, job_id):
+        if job_id in self.jobs or job_id in {item['id'] for item in original_library()}:
+            return self.root / 'exports' / job_id
+        return None
 
     def load(self, device):
         try:
@@ -207,8 +244,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.json(403, {'error': 'This playground accepts local requests only'})
         if self.path.startswith('/api/save/'):
             parts = self.path.split('/')
-            allowed_originals = {'Fox_' + c for c in json.loads((REPO / 'games/yorimichi/assets/characters/fox-hunter/manifest.json').read_text())['clips']}
-            if len(parts) != 5 or (parts[3] not in self.lab.jobs and parts[3] not in allowed_originals) or parts[4] not in ('fox.glb', 'pose.png', 'preview.gif'):
+            folder = self.lab.output_folder(parts[3]) if len(parts) == 5 else None
+            if folder is None or parts[4] not in ('fox.glb', 'pose.png', 'preview.gif'):
                 return self.json(404, {'error': 'Unknown motion or artifact'})
             try:
                 size = int(self.headers.get('Content-Length', 0))
@@ -219,7 +256,6 @@ class Handler(BaseHTTPRequestHandler):
                               'preview.gif': (b'GIF87a', b'GIF89a')}
                 if not body.startswith(signatures[parts[4]]):
                     raise ValueError('Expected an exported GLB, PNG, or GIF')
-                folder = self.lab.root / 'exports' / parts[3]
                 folder.mkdir(parents=True, exist_ok=True)
                 (folder / parts[4]).write_bytes(body)
                 return self.json(201, {'url': f'/exports/{parts[3]}/{parts[4]}'})
@@ -243,31 +279,26 @@ class Handler(BaseHTTPRequestHandler):
             return self.json(403, {'error': 'Local access only'})
         path = unquote(urlsplit(self.path).path)
         if path == '/api/status':
-            return self.json(200, {**self.lab.state, 'generator': self.lab.generator_name, 'active': self.lab.active})
+            return self.json(200, self.lab.status_payload())
         if path == '/api/library':
-            with self.lab.lock:
-                results = [j.copy() for j in self.lab.jobs.values() if j['status'] == 'complete']
-            recipes = PRESETS
-            if self.lab.generator == 'kimodo':
-                recipes = [('backflip', 'Backflip', 'Movement', 'A person does a backflip.', 99), *PRESETS]
-            return self.json(200, {'generator': self.lab.generator_name,
-                                   'presets': [{'slug': s, 'title': t, 'category': c, 'prompt': p, 'seed': seed} for s,t,c,p,seed in recipes],
-                                   'originals': original_library(), 'results': sorted(results, key=lambda j: j['created'], reverse=True)})
+            return self.json(200, self.lab.library_payload())
         if path.startswith('/api/jobs/'):
-            job = self.lab.jobs.get(path.split('/')[-1])
+            job = self.lab.get_job(path.split('/')[-1])
             return self.json(200 if job else 404, job.copy() if job else {'error': 'Unknown job'})
         files = {'/': HERE / 'index.html', '/style.css': HERE / 'style.css',
-                 '/app.js': self.lab.root / 'web/app.js', '/assets/fox.glb': self.lab.root / 'assets/fox.glb',
-                 '/assets/rig.json': self.lab.root / 'assets/rig.json'}
+                 '/app.js': self.lab.root / 'web/app.js', '/assets/fox.glb': self.lab.asset_root / 'assets/fox.glb',
+                 '/assets/rig.json': self.lab.asset_root / 'assets/rig.json'}
         source = files.get(path)
         if path.startswith('/exports/'):
             parts = path.split('/')
-            if len(parts) == 4 and re.fullmatch(r'[A-Za-z0-9_]+', parts[2]) and parts[3] in ('fox.glb', 'pose.png', 'preview.gif'):
-                source = self.lab.root / 'exports' / parts[2] / parts[3]
+            if len(parts) == 4 and parts[3] in ('fox.glb', 'pose.png', 'preview.gif'):
+                folder = self.lab.output_folder(parts[2])
+                source = folder / parts[3] if folder else None
         if path.startswith('/results/'):
             parts = path.split('/')
-            if len(parts) == 4 and parts[2] in self.lab.jobs and parts[3] in ('motion.json', 'provenance.json', 'features.npy', 'source-motion.npz', 'job.json'):
-                source = self.lab.root / 'results' / parts[2] / parts[3]
+            if len(parts) == 4 and parts[3] in ('motion.json', 'provenance.json', 'features.npy', 'source-motion.npz', 'job.json'):
+                folder = self.lab.result_folder(parts[2])
+                source = folder / parts[3] if folder else None
         if source is None or not source.is_file():
             return self.json(404, {'error': 'File not found'})
         body = source.read_bytes()
@@ -285,17 +316,41 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-if __name__ == '__main__':
+def main():
+    from contextlib import ExitStack
+    import signal
+    def stop(*_):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, stop)
     ap = argparse.ArgumentParser()
     ap.add_argument('--root', type=Path)
     ap.add_argument('--port', type=int)
     ap.add_argument('--device', choices=['mps', 'cpu', 'cuda'])
-    ap.add_argument('--generator', choices=['unimate', 'kimodo'], default='unimate')
+    ap.add_argument('--generator', choices=['both', 'unimate', 'kimodo'], default='both')
+    ap.add_argument('--unimate-root', type=Path, default=REPO / 'build/yorimichi/unimate')
+    ap.add_argument('--kimodo-root', type=Path, default=REPO / 'build/yorimichi/kimodo')
+    ap.add_argument('--port-file', type=Path, help=argparse.SUPPRESS)
     args = ap.parse_args()
-    args.root = args.root or REPO / 'build/yorimichi' / args.generator
-    args.device = args.device or ('cpu' if args.generator == 'kimodo' else 'mps')
-    args.port = args.port or (8843 if args.generator == 'kimodo' else 8842)
-    lab = Lab(args.root, args.device, generator=args.generator)
-    server = ThreadingHTTPServer(('127.0.0.1', args.port), partial(Handler, lab=lab))
-    print(f'Fox motion lab: http://127.0.0.1:{args.port}', flush=True)
-    server.serve_forever()
+    args.root = args.root or REPO / 'build/yorimichi' / ('motion_lab' if args.generator == 'both' else args.generator)
+    port = args.port if args.port is not None else (8842 if args.generator == 'unimate' else 8843)
+    with ExitStack() as stack:
+        if args.generator == 'both':
+            from unified import UnifiedLab
+            lab = UnifiedLab(args.root, {'unimate': args.unimate_root, 'kimodo': args.kimodo_root})
+            stack.callback(lab.close)
+        else:
+            device = args.device or ('cpu' if args.generator == 'kimodo' else 'mps')
+            lab = Lab(args.root, device, generator=args.generator)
+        server = ThreadingHTTPServer(('127.0.0.1', port), partial(Handler, lab=lab))
+        stack.callback(server.server_close)
+        if args.port_file:
+            args.port_file.write_text(json.dumps({'port': server.server_port}))
+        print(f'Fox motion lab: http://127.0.0.1:{server.server_port}', flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+
+
+if __name__ == '__main__':
+    main()

@@ -43,7 +43,8 @@ it in Unreal's first shader compile.
 The [UniMate experiment write-up](docs/UNIMATE_EXPERIMENT.md) records the successful prompt-only backflip, poor sprint
 results, platform extraction, measurements, and limits. The lab is an authoring experiment and does not replace
 the game's animation library. The [Kimodo experiment](docs/KIMODO_EXPERIMENT.md) adds a locally generated backflip,
-a headless command, and a separately labelled playground using the same fox skin.
+the user's forward roll and a headless command. Both models share one playground, library and comparison workflow,
+with explicit model labels and a generator selector for new takes.
 
 ## Names still to settle
 

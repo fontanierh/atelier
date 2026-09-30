@@ -3,6 +3,7 @@
 **The first proper headless backflip works.** The fox anticipates, takes off, completes a backward rotation, lands
 and returns to standing. Its legs remain fairly straight in flight and its contacts need polish. This is a promising
 motion sketch, not evidence that Kimodo will handle every action well or outperform UniMate across the library.
+User review found Kimodo worked quite well, and a subsequent user-generated forward roll is another useful result.
 The [earlier UniMate experiment](UNIMATE_EXPERIMENT.md) had mixed results and a useful independent backflip;
 its near-copy guided sprint remains of little value.
 
@@ -11,6 +12,18 @@ its near-copy guided sprint remains of little value.
 The selected take uses `A person does a backflip.`, seed **99**, **100** denoising steps, guidance **[2, 2]** and
 **90 frames at 30 fps**. There is no authored animation constraint. The GIF shows all three seconds at normal
 speed and repeats the take; its restart is not a synthesized loop. Fingers and the tail keep their rest pose.
+
+## User-generated forward roll
+
+![User-generated Kimodo forward roll](../../../docs/media/kimodo-forward-roll.gif)
+
+The user generated this take directly in the playground with:
+
+> A person crouches down and performs one forward roll on the ground, rolling over their shoulders with tucked knees, then stands back up.
+
+Seed **56**, guidance **[5, 5]**, **100** steps and **three seconds** (90 frames at 30 fps). It crouches, rolls over
+the shoulders with tucked knees, and returns to standing. The GIF captures that exact saved take at normal speed;
+its prompt/settings, model revisions and source hash are in `docs/media/kimodo-forward-roll.json`.
 
 ## What actually ran
 
@@ -50,14 +63,21 @@ The landing therefore still deserves contact review.
   with a maximum error of **0.00059 mm**.
 - The root completes approximately **359°** of backward rotation and finishes upright. Those numerical checks
   establish transfer fidelity; visual inspection establishes that this particular take resembles a backflip.
+- The shared playground generated a Kimodo jump counterpart and a UniMate backflip through the same API;
+  the latter reproduced the existing UniMate features exactly. Cross-model overlap returned HTTP 409, both
+  skinned GLB exports retained 53 bones, and a shared-server shutdown reaped both guarded workers.
+  All 14 game tests passed. Subsequent FK checks covered **18,480 Kimodo** and **27,654 UniMate** joint samples,
+  including the user's forward roll, with maximum errors of **0.00059 mm** and **0.00088 mm** respectively.
 
 ## Reproduce and inspect
 
 Follow the [Kimodo setup and headless commands](../animation_lab/README.md#kimodo-headless-backflip).
-Open the Kimodo playground at `http://127.0.0.1:8843/` after starting it. **Create new motion** shows the independent
-backflip and accepts a custom prompt, seed, duration, guidance and step count. **Compare originals** groups generated
-counterparts with the owned authored clips. The source badges and export labels name Kimodo; the UniMate lab
-continues separately at port 8842. The preview centers horizontal travel, while the GLB preserves root motion.
+Open the shared playground at `http://127.0.0.1:8843/` after starting it. **Create new motion** shows independent
+UniMate and Kimodo takes and accepts a custom prompt, model, seed, duration, guidance and step count.
+**Compare originals** groups counterparts from both models with the owned authored clips. Model filters, source
+badges, counterpart options and export labels identify the actual generator of each take. The preview centers
+horizontal travel, while the GLB preserves root motion. Inference stays in each model's isolated environment;
+the shared server starts and guards both workers and accepts one generation at a time.
 
 The reusable installer, streamed encoder, diffusion runner and explicit retargeting helper live in
 [`platform/studio/atelier/ai/kimodo/`](../../../platform/studio/atelier/ai/kimodo/README.md).
