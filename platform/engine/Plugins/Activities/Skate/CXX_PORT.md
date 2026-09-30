@@ -387,6 +387,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   real regular/mongo clip metrics, switch/foot selection, teleport timing, held/released cycles,
   retained blend/out state and five actual animation proof channels. Complete controller registration
   and the physical producer that supplies these inputs remain separate integration steps.
+- Motion-graph gestures/shove: 1,059 full-host callbacks preserve 572,106 exact bytes across all 37
+  stock gesture selections and three hand variants, actual INTO/CYC/OUT stages, retained publication,
+  held/start priorities, allocation and global EndGesture teardown. Shove checks anticipation/board
+  selection, busy/retrieve/keep-channel paths, signed direction boundaries and applied animation
+  parameters. Complete controller registration and live physical producers remain separate steps.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
