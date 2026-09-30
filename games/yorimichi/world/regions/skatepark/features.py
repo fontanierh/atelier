@@ -227,10 +227,12 @@ def gardens():
     m=MeshData('SM_SkateParkFurniture'); plants=MeshData('SM_SkateParkPlanting')
     rng=np.random.default_rng(184)
     # Timber benches / grass boxes alternating along the sunset promenade and entry.
-    for x,y in [(-46,-39),(-30,-39),(-14,-39),(3,-39),(36,-39),(-26,41),(-12,41),(22,41),(38,41),(51,-17),(51,1)]:
+    for x,y in [(-46,-39),(2,-39),(36,-39),(-26,41),(-12,41),(22,41),(38,41),(54,-17),(54,1)]:
+        start,plant_start=len(m.verts),len(plants.verts)
         m.box((x-2,y-.5,0),(x+2,y+.5,.35),'concrete_dark')
         for j in range(5):m.box((x-2.1,y-.5+j*.21,.35),(x+2.1,y-.32+j*.21,.46),'timber','wood')
         for j in range(3):m.box((x-2.1,y+.48,.65+j*.15),(x+2.1,y+.6,.76+j*.15),'timber','wood')
+        if (x,y) in ((2,-39),(22,41)):continue  # adjacent rounded garden already supplies planting
         px=x+3.8;py=y
         m.box((px-.9,py-.7,0),(px+.9,py+.7,.58),'concrete_light')
         m.box((px-.79,py-.59,.58),(px+.79,py+.59,.59),'soil','soil')
@@ -240,13 +242,17 @@ def gardens():
             plants.poly([(xx-dy*w,yy+dx*w,.6),(xx+dy*w,yy-dx*w,.6),(xx+dx*.28,yy+dy*.28,.6+hh)],'grass_light' if rng.random()<.3 else 'grass','leaves')
             # Double sided leaf for both Unreal and review.
             plants.faces.append(plants.faces[-1][::-1]);plants.colors.append(plants.colors[-1]);plants.smooth.append(False);plants.tags.append('leaves')
+        if x==54:
+            # Align east-edge seats with the promenade, beyond the bowl's outer bank.
+            for mesh,first in [(m,start),(plants,plant_start)]:
+                mesh.verts[first:]=[(x-(py-y),y+(px-x),z) for px,py,z in mesh.verts[first:]]
     # Long timber pergola looking out over the water.
     for x in (13.,20.5,28.):
         for y in (-41.,-35.):m.box((x-.12,y-.12,0),(x+.12,y+.12,3.2),'timber','wood')
     for y in (-41.,-35.):m.box((12.5,y-.12,3.05),(28.5,y+.12,3.35),'timber','wood')
     for x in np.arange(12.5,28.6,.5):m.box((x-.065,-41.4,3.35),(x+.065,-34.6,3.50),'timber','wood')
     # Rounded garden seats provide a stronger silhouette than scattered square pots.
-    for cx,cy,span in [(-46,39,8),(31,40,9),(50,-25,7),(-49,-29,6),(8,-39,6)]:
+    for cx,cy,span in [(-46,39,8),(31,40,9),(51,-28,7),(-49,-29,6),(8,-39,6)]:
         ring=[]
         for end,angle in [(span/2-1, -90),(-span/2+1,90)]:
             for k in range(25):

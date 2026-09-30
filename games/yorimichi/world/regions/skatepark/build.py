@@ -49,6 +49,27 @@ def bounds(m):
 
 
 # ----------------------------------------------------------------------------- checks
+def check_furniture_clearance(furniture, riding):
+    """Promenade furniture must sit on the pier flat, never inside a rideable bank."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    tree=BVHTree.FromPolygons(riding.verts,riding.faces,all_triangles=False)
+    samples=set()
+    for face in furniture.faces:
+        points=[np.array(furniture.verts[i]) for i in face]
+        for a,b in zip(points,points[1:]+points[:1]):
+            if abs(a[2])<.001 and abs(b[2])<.001:
+                for t in np.linspace(0,1,max(2,math.ceil(np.linalg.norm(b-a)/.25)+1)):
+                    p=a+(b-a)*t;samples.add((round(float(p[0]),4),round(float(p[1]),4)))
+    blocked=[]
+    for x,y in samples:
+        hit,_,_,_=tree.ray_cast(Vector((x,y,10)),Vector((0,0,-1)),10)
+        if hit is not None and hit.z>.02:blocked.append((x,y,round(hit.z,3)))
+        assert abs(x)<L.HALF_X-L.RAIL_INSET and abs(y)<L.HALF_Y-L.RAIL_INSET,('furniture crosses perimeter',x,y)
+    assert not blocked,('furniture intersects a riding surface',blocked[:12])
+    return dict(ground_samples=len(samples),riding_surface_overlaps=len(blocked))
+
+
 def check_board(deck, truck, wheel):
     c = board.contract(); out = {}
     lo, hi = bounds(deck)
@@ -290,6 +311,7 @@ def main():
     path, ss, rows = features.path(pl, h)
     paint = features.decals()
     furniture,planting = features.gardens()
+    report['furniture_clearance']=check_furniture_clearance(furniture,feats)
     park_meshes=(pier,feats,piles,path,furniture,planting,paint)
     t1 = time.time()
     ao = geom.bake_ao([pier, feats], [pier, feats], skip_tags=('rail', 'railing', 'pole', 'lamp', 'coping'))
