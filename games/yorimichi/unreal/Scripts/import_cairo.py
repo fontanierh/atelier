@@ -97,7 +97,7 @@ def fbx(filename,name,skeleton=None,sample_rate=60):
 
 mesh=fbx('Cairo.fbx','SK_Cairo')
 # The skating retargeter samples the rider skin for bail contact clearance.
-unreal.SkeletalMeshEditorSubsystem.set_allow_cpu_access(mesh, True)
+U.SkeletalMeshEditorSubsystem.set_allow_cpu_access(mesh, True)
 skeleton=mesh.skeleton
 slots=list(mesh.materials)
 for slot in slots:
