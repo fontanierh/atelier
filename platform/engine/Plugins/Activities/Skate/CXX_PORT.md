@@ -292,6 +292,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   fixtures publish 57,280 volumes across all four primitive types, 5,910 contacts, 5,206 solved rows,
   2,813 reports and 563 capacity drops. The board runs on slopes with active/frozen/static body states;
   live rider/gameplay producers and malformed settings diagnostics remain outside this corpus.
+- Board ground/probes/motion toolkit: 1,405 cases and 2,212,211 exact words cover retained wheel-query
+  misses, 18,587 completed contact reports, old-velocity impact selection, physical contact counts,
+  normals/drag, surface flags, elapsed/reset state, deck/wall probe gates and all four toolkit lanes.
+  Live seven-body poses supply 1,536 output ticks in both effective stances. The ground corpus observes
+  1,161 distinct retained wheel normals; the complete gameplay owner's scheduling remains separate.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
