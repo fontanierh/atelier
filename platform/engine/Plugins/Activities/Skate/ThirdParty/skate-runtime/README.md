@@ -12,7 +12,8 @@ dependencies; write Cargo outputs to the repository's ignored build directory, n
 Atelier changes to the imported crates:
 
 - `skate-host/src/physics/bridge.rs`: expose the reference pose, difficulty/equipment/stance configuration, score
-  snapshot, current manual balance and a diagnostic whole-assembly launch. Physics, animation graphs and frame scheduling remain in Session.
+  snapshot, manual balance, host tuning and whole-assembly running-mount/QA velocity. Physics, animation graphs and frame scheduling remain in Session.
+- `skate-host/src/physics/known_air.rs` and `air_reckoning.rs`: expose stock-based spin speed/response tuning.
 - `skate-host/src/scoring_runtime.rs`: read-only current trick accessor.
 
 `atelier-host` is the new headless pipe adapter. It loads collision triangles and rail lines from a local JSON
@@ -21,6 +22,6 @@ Commands and poses use newline-delimited JSON on stdin/stdout; upstream diagnost
 network listener. EOF and quit terminate the process. The Unreal owner retains it between rides and closes it
 when the world ends. Only one step packet is outstanding, bounding controller latency and pipe memory.
 
-Animation banks, state graphs and the full settings database are installed locally by the game's importer.
-They are generated data in ignored Content, not vendored source. Selected numeric tuning and gesture points
-for the standalone C++ fallback are committed separately in `SkateNativeTuning.h`.
+Animation banks, state graphs, gesture patterns and the settings database are committed in the game's
+`assets/skate` bundle. Its build verifies and stages those data alongside the compiled worker. Only generated
+copies live in ignored Content. The old C++ skating backend has been removed.

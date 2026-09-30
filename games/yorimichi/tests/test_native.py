@@ -7,10 +7,6 @@ HERE = Path(__file__).resolve().parent
 
 class NativeTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which('clang++'), 'clang++ not installed')
-    def test_skate_native(self):
-        self.compile_and_run('skate_native')
-
-    @unittest.skipUnless(shutil.which('clang++'), 'clang++ not installed')
     def test_sprint_stamina(self):
         self.compile_and_run('sprint_stamina')
 

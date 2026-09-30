@@ -16,13 +16,17 @@ struct World {
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Command {
     Step { dt: f32, buttons: u16, left: [i16; 2], right: [i16; 2], triggers: [u8; 2] },
-    Activate { spawn: [f32; 3], heading: f32, goofy: bool, difficulty: String, trucks: f32 },
-    Configure { goofy: bool, difficulty: String, trucks: f32 },
+    Activate { spawn: [f32; 3], heading: f32, goofy: bool, difficulty: String, trucks: f32,
+        #[serde(default)] generation: u32, #[serde(default)] velocity: [f32; 3],
+        #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32 },
+    Configure { goofy: bool, difficulty: String, trucks: f32,
+        #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32 },
     World { path: String },
     Launch { velocity: [f32; 3] },
     Suspend {},
     Quit {},
 }
+fn one() -> f32 { 1. }
 fn world(path: &Path) -> Result<World, String> {
     let w: World = serde_json::from_slice(&std::fs::read(path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
     if w.triangles.is_empty() || w.triangles.len() > 500_000 || !w.heading.is_finite()
@@ -38,13 +42,13 @@ fn emit(v: Value) -> Result<(), String> {
     serde_json::to_writer(&mut output, &v).map_err(|e| e.to_string())?;
     writeln!(output).and_then(|_| output.flush()).map_err(|e| e.to_string())
 }
-fn publish(s: &Session, ready: bool) -> Result<(), String> {
+fn publish(s: &Session, ready: bool, generation: u32) -> Result<(), String> {
     let p = s.pose();
     if !p.root.is_finite() || !p.velocity.is_finite() || p.bones.iter().any(|b| !b.is_finite()) {
         return Err("The skating session produced a nonfinite pose".into());
     }
     let (score, reward, trick) = s.score();
-    let mut value = json!({"type": if ready {"ready"} else {"pose"}, "tick": p.tick,
+    let mut value = json!({"type": if ready {"ready"} else {"pose"}, "tick": p.tick, "generation": generation,
         "root": p.root.to_cols_array(), "bones": p.bones.iter().map(|b| b.to_cols_array()).collect::<Vec<_>>(),
         "velocity": p.velocity.to_array(), "state": p.state, "score": score, "reward": reward, "trick": trick,
         "manual": s.manual_balance(),
@@ -61,7 +65,8 @@ fn run() -> Result<(), String> {
     let w = world(Path::new(&args[2]))?;
     let mut session = Session::new(Path::new(&args[1]), w.triangles, w.rails, w.spawn, w.heading)?;
     session.activate(w.spawn, w.heading)?;
-    publish(&session, true)?;
+    let mut generation = 0;
+    publish(&session, true, generation)?;
     let mut elapsed = 0.;
     for line in io::stdin().lock().lines() {
         let line = line.map_err(|e| e.to_string())?;
@@ -75,24 +80,28 @@ fn run() -> Result<(), String> {
                     session.tick(Controls {buttons,left,right,triggers})?;
                 }
                 // Also acknowledge sub-tick frames so the host can bound outstanding pipe traffic.
-                publish(&session, false)?;
+                publish(&session, false, generation)?;
             }
-            Command::Activate {spawn,heading,goofy,difficulty,trucks} => {
-                if spawn.iter().any(|v| !v.is_finite()) || !heading.is_finite() || !trucks.is_finite() {
+            Command::Activate {spawn,heading,goofy,difficulty,trucks,generation: ride,velocity,pop,spin} => {
+                if spawn.iter().any(|v| !v.is_finite()) || !heading.is_finite() || !trucks.is_finite() || velocity.iter().any(|v| !v.is_finite()) {
                     return Err("Invalid spawn or equipment".into());
                 }
                 session.configure(&difficulty, goofy, trucks)?;
+                session.tune(pop, spin)?;
                 session.activate(spawn, heading)?;
+                session.launch(velocity);
+                generation = ride;
                 elapsed = 0.;
-                publish(&session, false)?;
+                publish(&session, false, generation)?;
             }
             Command::World {path} => {
                 let w = world(Path::new(&path))?;
                 session.install_collision(session.collision_builder().build(w.triangles,w.rails)?)?;
             }
-            Command::Configure {goofy,difficulty,trucks} => {
+            Command::Configure {goofy,difficulty,trucks,pop,spin} => {
                 if !trucks.is_finite() { return Err("Invalid equipment".into()); }
                 session.configure(&difficulty, goofy, trucks)?;
+                session.tune(pop, spin)?;
             }
             Command::Launch {velocity} => {
                 if velocity.iter().any(|v| !v.is_finite()) { return Err("Invalid launch velocity".into()); }

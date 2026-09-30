@@ -58,14 +58,11 @@ public:
     bool IsPhoneTouchActive() const;
     /** skate.-style skateboarding (docs/SKATE.md; the platform's Skate plugin). */
     USkateComponent* GetSkate() const { return SkateRide; }
-    // ISkateRider: skate roles from the definition's SkateActions, other roles from its Actions; the sword is sheathed
-    // and any action stopped on mounting; the menu and the map take the board's input.
-    virtual UAnimSequence* FindSkateClip(FName Role) const override;
+    // ISkateRider: stop actions on mounting; menus take the board's input.
     virtual void PrepareToSkate() override;
     virtual bool IsSkateInputBlocked() const override;
     virtual bool IsSkateMouseFree() const override { return bMouseReleased; }
     virtual float GetSkateMouseSensitivity() const override { return MouseSensitivity; }
-    virtual FString GetSkateContactsFile() const override { return TEXT("characters/cairo/skate-build.json"); }
     FVector2D GetMoveIntent() const { return MoveIntent; }
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }

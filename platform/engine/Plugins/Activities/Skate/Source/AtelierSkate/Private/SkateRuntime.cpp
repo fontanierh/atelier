@@ -1,4 +1,5 @@
 #include "SkateComponent.h"
+#include "Engine/Engine.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
 #include "SkateRails.h"
@@ -125,7 +126,8 @@ class FSkateRuntime
 public:
     FProcHandle Process;
     void *Read=nullptr,*Write=nullptr,*ErrorRead=nullptr;
-    bool Ready=false,PendingActivation=false,AwaitingPose=false;
+    bool Ready=false,PendingActivation=false,AwaitingPose=false,HasPose=false;
+    uint32 Generation=0;
     float FrameTime=0;
     FString Buffer,State=TEXT("Loading skater"),Error,Trick;
     FVector CollisionCentre=FVector::ZeroVector,Spawn=FVector::ZeroVector,Velocity=FVector::ZeroVector;
@@ -159,12 +161,11 @@ public:
         auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("activate")); O->SetArrayField(TEXT("spawn"),VectorJSON(ToNative(Spawn)));
         O->SetNumberField(TEXT("heading"),-FMath::DegreesToRadians(SpawnYaw)); O->SetBoolField(TEXT("goofy"),Goofy);
         O->SetStringField(TEXT("difficulty"),GetDefault<USkateSettings>()->Difficulty); O->SetNumberField(TEXT("trucks"),GetDefault<USkateSettings>()->TruckTightness);
-        Send(O); PendingActivation=false;
-        if (PendingLaunch)
-        {
-            auto Launch=MakeShared<FJsonObject>(); Launch->SetStringField(TEXT("op"),TEXT("launch"));
-            Launch->SetArrayField(TEXT("velocity"),VectorJSON(ToNative(*PendingLaunch))); Send(Launch); PendingLaunch.Reset();
-        }
+        O->SetNumberField(TEXT("generation"),Generation);
+        O->SetArrayField(TEXT("velocity"),VectorJSON(ToNative(PendingLaunch.Get(FVector::ZeroVector))));
+        O->SetNumberField(TEXT("pop"),GetDefault<USkateSettings>()->PopHeightScale);
+        O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
+        Send(O); PendingActivation=false; AwaitingPose=true; PendingLaunch.Reset();
     }
     bool Poll()
     {
@@ -181,6 +182,8 @@ public:
             const FString Type=O->GetStringField(TEXT("type"));
             if (Type==TEXT("error")) { Error=O->GetStringField(TEXT("message")); continue; }
             if (Type!=TEXT("ready") && Type!=TEXT("pose")) continue;
+            // A suspended ride may still have a step in the pipe. Only the new activation can move us.
+            if (Type==TEXT("pose") && uint32(O->GetNumberField(TEXT("generation")))!=Generation) continue;
             AwaitingPose=false;
             const auto& Matrices=O->GetArrayField(TEXT("bones"));
             if (Matrices.IsEmpty() || Matrices.Num()>256) { Error=TEXT("Invalid native skeleton"); continue; }
@@ -208,7 +211,8 @@ public:
                     CameraFOV=(*Cam)->GetNumberField(TEXT("fov"));
                 }
             }
-            Changed=true;
+            HasPose=uint32(O->GetNumberField(TEXT("generation")))==Generation && !PendingActivation;
+            Changed=HasPose;
         }
         if (Error.IsEmpty() && !FPlatformProcess::IsProcRunning(Process)) Error=TEXT("The skating worker stopped");
         return Changed;
@@ -223,15 +227,16 @@ public:
     }
 };
 
-void USkateComponent::StartRetailRuntime()
+bool USkateComponent::StartRetailRuntime()
 {
-    if (!GetDefault<USkateSettings>()->UseRetailRuntime || !FPaths::FileExists(RuntimeBinary()) ||
-        !FPaths::FileExists(RuntimeFolder()/TEXT("assets/private/game.json"))) return;
+    if (!FPaths::FileExists(RuntimeBinary()) ||
+        !FPaths::FileExists(RuntimeFolder()/TEXT("assets/private/game.json")))
+    { RuntimeFailure(TEXT("Skating runtime is missing from this build. Rebuild the game.")); return false; }
     if (!RetailRuntime)
     {
         FString File;
         if (!ExportWorld(GetWorld(),Rider,Pos,Rot.Rotator().Yaw,RailSystem,File))
-        { UE_LOG(LogTemp,Error,TEXT("SKATE retail: could not export nearby collision")); return; }
+        { RuntimeFailure(TEXT("Skating could not load nearby collision.")); return false; }
         RetailRuntime=MakeShared<FSkateRuntime>();
         RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Pos;
         void *ChildWrite=nullptr,*ChildRead=nullptr,*ChildError=nullptr;
@@ -241,21 +246,24 @@ void USkateComponent::StartRetailRuntime()
         const FString Args=FString::Printf(TEXT("\"%s\" \"%s\""),*(RuntimeFolder()/TEXT("assets")),*File);
         RetailRuntime->Process=FPlatformProcess::CreateProc(*RuntimeBinary(),*Args,false,true,true,nullptr,0,nullptr,ChildWrite,ChildRead,ChildError);
         FPlatformProcess::ClosePipe(ChildRead,ChildWrite); FPlatformProcess::ClosePipe(nullptr,ChildError);
-        if (!RetailRuntime->Process.IsValid()) { RetailRuntime.Reset(); return; }
+        if (!RetailRuntime->Process.IsValid()) { RetailRuntime.Reset(); RuntimeFailure(TEXT("Skating worker could not start.")); return false; }
     }
     else if (FVector::DistSquared(Pos,RetailRuntime->CollisionCentre)>FMath::Square(6000.f))
     {
         FString File;
-        if (!ExportWorld(GetWorld(),Rider,Pos,Rot.Rotator().Yaw,RailSystem,File)) { StowImmediately(); return; }
+        if (!ExportWorld(GetWorld(),Rider,Pos,Rot.Rotator().Yaw,RailSystem,File)) { RuntimeFailure(TEXT("Skating could not refresh nearby collision.")); return false; }
         RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Pos;
         auto Update=MakeShared<FJsonObject>(); Update->SetStringField(TEXT("op"),TEXT("world")); Update->SetStringField(TEXT("path"),File); RetailRuntime->Send(Update);
     }
     RetailRuntime->Spawn=Pos; RetailRuntime->SpawnYaw=Rot.Rotator().Yaw;
+    ++RetailRuntime->Generation; RetailRuntime->HasPose=false; RetailRuntime->FrameTime=0;
+    RetailRuntime->PendingLaunch=Vel;
     RetailRuntime->Activate(bGoofy); bRetailActive=true; RetailPose.Reset();
+    return true;
 }
 void USkateComponent::SuspendRetailRuntime()
 {
-    if (RetailRuntime) { RetailRuntime->SendSimple(TEXT("suspend")); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; }
+    if (RetailRuntime) { RetailRuntime->SendSimple(TEXT("suspend")); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
     bRetailActive=false; RetailPose.Reset();
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
@@ -273,12 +281,14 @@ void USkateComponent::ConfigureRetail()
     if (!RetailRuntime) return;
     auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("configure")); O->SetBoolField(TEXT("goofy"),bGoofy);
     O->SetStringField(TEXT("difficulty"),GetDefault<USkateSettings>()->Difficulty); O->SetNumberField(TEXT("trucks"),GetDefault<USkateSettings>()->TruckTightness);
+    O->SetNumberField(TEXT("pop"),GetDefault<USkateSettings>()->PopHeightScale);
+    O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
     RetailRuntime->Send(O);
 }
 
 bool USkateComponent::GetRetailCamera(FTransform& Out, float& FOV) const
 {
-    if (!bRetailActive || !RetailRuntime || !RetailRuntime->Ready || RetailRuntime->CameraFOV<=0) return false;
+    if (!bRetailActive || !RetailRuntime || !RetailRuntime->HasPose || RetailRuntime->CameraFOV<=0) return false;
     Out=RetailRuntime->Camera; FOV=RetailRuntime->CameraFOV; return true;
 }
 FString USkateComponent::GetRetailState() const
@@ -294,7 +304,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     const bool Changed=RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
     {
-        UE_LOG(LogTemp,Error,TEXT("SKATE retail failed: %s"),*RetailRuntime->Error);
+        RuntimeFailure(RetailRuntime->Error);
         StowImmediately(); RetailRuntime.Reset(); return;
     }
     if (!RetailRuntime->Ready) return;
@@ -322,7 +332,9 @@ void USkateComponent::StepRetailRuntime(float Dt)
         }
     O->SetNumberField(TEXT("buttons"),Buttons);
     auto Stick=[](FVector2D V){return TArray<TSharedPtr<FJsonValue>>{Number(FMath::RoundToInt(FMath::Clamp(V.X,-1.,1.)*32767)),Number(FMath::RoundToInt(FMath::Clamp(V.Y,-1.,1.)*32767))};};
-    O->SetArrayField(TEXT("left"),Stick(In.bPowerslide?FVector2D(In.Left.X,-1):In.Left)); O->SetArrayField(TEXT("right"),Stick(In.Right));
+    // The native start query requires a rear diagonal, not straight down (angle must be nonzero).
+    const FVector2D Left=In.bPowerslide && Mode==ESkateMode::Ground ? FVector2D(In.Left.X<0?-.6:.6,-.8) : In.Left;
+    O->SetArrayField(TEXT("left"),Stick(Left)); O->SetArrayField(TEXT("right"),Stick(In.Right));
     O->SetArrayField(TEXT("triggers"),{Number(LeftTrigger),Number(RightTrigger)}); RetailRuntime->Send(O);
     RetailRuntime->AwaitingPose=true; RetailRuntime->FrameTime=0;
     }
@@ -347,6 +359,8 @@ void USkateComponent::StepRetailRuntime(float Dt)
     bManual=Mode==ESkateMode::Ground && FMath::Abs(RetailRuntime->ManualBalance)>.0001f;
     bNoseManual=bManual && RetailRuntime->Trick.Contains(TEXT("Nose"));
     bPushing=In.bPush; bBraking=In.bBrake; bPowerslide=S==TEXT("SlideGround");
+    const FVector Travel=FVector(Vel.X,Vel.Y,0).GetSafeNormal();
+    SlideAngle=bPowerslide ? FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(float(FMath::Abs(FVector::DotProduct(Travel,Rot.GetForwardVector()))),0.f,1.f))) : 0.f;
     bSlide=S==TEXT("GrindBoardslide") || S==TEXT("GrindTipslide") || S==TEXT("GrindDarkslide");
     if (ShownCombo!=RetailRuntime->Trick || Score!=FMath::RoundToInt(RetailRuntime->Score) ||
         Mode==ESkateMode::Air || Mode==ESkateMode::Grind || bManual) ComboFade=1.5f;
@@ -414,7 +428,12 @@ void USkateComponent::RetargetRetailPose()
     if (Hip<0 || Foot<0 || SHip<0 || SFoot<0) { RetailPose.Reset(); return; }
     const float Ratio=(Bind[Hip].GetLocation().Z-Bind[Foot].GetLocation().Z)*Mesh->GetComponentScale().Z /
         FMath::Max(1.,RetailRuntime->Reference[SHip].GetLocation().Z-RetailRuntime->Reference[SFoot].GetLocation().Z);
-    const FTransform RootToMesh=RetailRuntime->Root.GetRelativeTransform(Mesh->GetComponentTransform());
+    // PhysCustom runs inside CharacterMovement's scoped move. The capsule already has the new pose, but its
+    // children's cached world transforms are not propagated until the scope closes. Using that stale mesh world
+    // transform adds the frame's travel to the bones a second time: at uneven frame rates the rider flickers
+    // back and forth over the board. Compose from the current parent and the authored mesh-local transform.
+    const FTransform MeshWorld=Mesh->GetRelativeTransform()*Rider->GetActorTransform();
+    const FTransform RootToMesh=RetailRuntime->Root.GetRelativeTransform(MeshWorld);
     // Preserve sole height: the source ankle is much farther above its sole than this character's ankle.
     const float SoleOffset=(Bind[Foot].GetLocation().Z-Bind[0].GetLocation().Z)*Mesh->GetComponentScale().Z -
         (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio;
@@ -488,4 +507,10 @@ void USkateComponent::RetargetRetailPose()
         RetailPose[I]=Parent>=0?Output[I].GetRelativeTransform(Output[Parent]):Output[I];
         RetailPose[I].NormalizeRotation();
     }
+}
+
+void USkateComponent::RuntimeFailure(const FString& Message)
+{
+    UE_LOG(LogTemp,Error,TEXT("SKATE: %s"),*Message);
+    if (GEngine) GEngine->AddOnScreenDebugMessage(INDEX_NONE,10.f,FColor::Orange,Message);
 }

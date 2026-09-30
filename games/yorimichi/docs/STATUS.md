@@ -42,7 +42,7 @@ villagers.
   ([docs/COMBAT_FEEDBACK.md](docs/COMBAT_FEEDBACK.md)). `games/yorimichi/tools/film_fight.sh` films a scripted fight.
 - Skateboarding (game-r17): skate.-style controls with Flick-It on the right stick or the mouse, fourteen flip and
   shove tricks with nollie and fakie versions, spins, grabs, manuals, grinds and slides, powerslides, vert, bails and
-  board sounds; B (or D-pad down) to get on ([docs/SKATE.md](docs/SKATE.md)).
+  board sounds; B (or Triangle / Y) to get on ([docs/SKATE.md](docs/SKATE.md)).
 - Imported but not used in play: Climb, Glide and the Turn clips.
 - The class and launch name `cape_boy` / `ACairoCharacter` is historical and loads Cairo.
 

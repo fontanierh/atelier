@@ -46,8 +46,6 @@ public:
     // The same for Crouching: the crouch clips' own right arm with the sword.
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UBlendSpace> ArmedCrouching;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName, TObjectPtr<UAnimSequence>> Actions;
-    // The skate clips (the Skate plugin's roles), kept apart so the base character can be reimported alone.
-    UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName, TObjectPtr<UAnimSequence>> SkateActions;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) bool UseAuthoredMovement = false;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FVector2D RestAnkleHeights = FVector2D(11.2,11.2);
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float SoleHeight = .65f;

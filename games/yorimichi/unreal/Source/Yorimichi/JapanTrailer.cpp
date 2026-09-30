@@ -299,7 +299,7 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         const FVector P = GetActorLocation();
         TrailerTelemetry += FString::Printf(TEXT("%d,%.4f,%.4f,%.4f,%.4f,%d,%d,%s,%.4f,%.4f,%.4f,%s,%d,%d,%.4f,%d,%.4f\n"),
             TrailerFrame/CaptureStride,GetVelocity().Size2D(),P.X,P.Y,P.Z,GetCharacterMovement()->IsFalling(),SkateRide->IsRiding(),
-            *SkateRide->GetClipName().ToString(),Camera.X,Camera.Y,Camera.Z,*AnimationAction.ToString(),
+            *SkateRide->GetRetailState(),Camera.X,Camera.Y,Camera.Z,*AnimationAction.ToString(),
             Stamina.Sprinting,Sailing,Sailboat->GetSailAmount(),GetZeppelin()?GetZeppelin()->GetStage():-1,
             GetZeppelin()?GetZeppelin()->GetPropellerAngle():0.f);
         TrailerPending=TrailerFrame/CaptureStride;

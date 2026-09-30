@@ -19,6 +19,7 @@ pub struct Session {
     input: ControllerInput,
     camera: CameraRuntime,
     markers: crate::session_marker::Runtime,
+    stock_spin_speed: f32,
 }
 pub struct Pose {
     pub root: Mat4,
@@ -51,7 +52,9 @@ impl Session {
         );
         let skater = SkaterRuntime::load(root, &graphs, &physics, "easy")?;
         eprintln!("IW4L_SKATE_LOAD skater {}ms", started.elapsed().as_millis());
+        let stock_spin_speed = skater.air_settings.state.body_spin_scale_428;
         Ok(Self {
+            stock_spin_speed,
             physics,
             skater,
             controls: PlayerControls::load(root)?,
@@ -80,6 +83,17 @@ impl Session {
         self.physics.set_difficulty(crate::difficulty::Difficulty::parse(difficulty)?);
         self.physics.set_equipment_preferences(trucks, 0.5);
         self.skater.animation.set_customisation(u32::from(goofy), 0);
+        Ok(())
+    }
+    /// Host preferences scale the stock launch height and air-spin target; constraints remain native.
+    pub fn tune(&mut self, pop: f32, spin: f32) -> Result<(), String> {
+        if !pop.is_finite() || !spin.is_finite() || !(0.5..=2.).contains(&pop) || !(0.5..=3.).contains(&spin) {
+            return Err("Invalid skating tuning".into());
+        }
+        self.physics.trainer.pop = pop;
+        self.skater.air_settings.state.body_spin_scale_428 = self.stock_spin_speed * spin;
+        self.skater.known_air.set_spin_speed(self.stock_spin_speed * spin);
+        self.skater.air_reckoning.set_spin_scale(spin);
         Ok(())
     }
     pub fn reference_pose(&self) -> Result<Vec<Mat4>, String> {

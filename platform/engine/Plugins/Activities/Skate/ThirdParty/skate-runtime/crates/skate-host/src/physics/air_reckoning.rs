@@ -14,6 +14,8 @@ pub(crate) struct AirReckoning {
     pub state: AirState,
     settings: Settings,
     modes: [settings::Mode; 5],
+    stock_spin_curves: [skate_core::point_graph::PointGraph<8>; 7],
+    stock_spin_acceleration: f32,
 }
 impl AirReckoning {
     pub fn update_plant(&mut self,riding:&mut RidingOutputs,p:&ProcessedPhysicsInput,up:[f32;4],heading:[f32;4]) {
@@ -23,10 +25,19 @@ impl AirReckoning {
     pub fn load(data: &Collections) -> Result<Self, String> {
         let (settings, modes) = settings::load(data)?;
         Ok(Self {
+            stock_spin_curves: settings.body_spin.curves,
+            stock_spin_acceleration: settings.body_spin.acceleration_limit,
             state: AirState::new(),
             settings,
             modes,
         })
+    }
+    /// Atelier preference: scale velocity and acceleration together, preserving the native wind-up curve.
+    pub fn set_spin_scale(&mut self, scale: f32) {
+        for index in [0, 1, 5, 6] {
+            self.settings.body_spin.curves[index].y = self.stock_spin_curves[index].y.map(|v| v * scale);
+        }
+        self.settings.body_spin.acceleration_limit = self.stock_spin_acceleration * scale;
     }
     ///The Ground/PhysicsAir lifecycles borrow this canonical pair for their
     ///native spin resets. Filters and matrix1008 remain owned by RidingOutputs.

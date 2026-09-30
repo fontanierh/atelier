@@ -67,6 +67,8 @@ impl KnownAir {
             },
         })
     }
+    // Atelier preference; the recovered KnownAir spin solver remains unchanged.
+    pub fn set_spin_speed(&mut self, speed: f32) { self.settings.max_spin_speed_428 = speed; }
     fn mode(&self, index: u32) -> Result<KnownAirModeSettings, String> {
         self.modes
             .get(index as usize)

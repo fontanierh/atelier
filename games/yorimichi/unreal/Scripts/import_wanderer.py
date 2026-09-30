@@ -145,7 +145,6 @@ definition=E.load_asset(definition_path) if E.does_asset_exist(definition_path) 
 if definition is None: definition=AT.create_asset('DA_Wanderer','/Game/Wanderer',U.WandererDefinition,factory)
 old_mesh=definition.get_editor_property('mesh')
 if old_mesh is None or old_mesh.get_editor_property('skeleton')!=skeleton:
-    definition.set_editor_property('skate_actions',{})
 for prop,value in dict(mesh=mesh,locomotion=moving,crouching=crouching,actions=clips,
         camera_height=35.,
         walk_speed=settings['Walk']['speed']*100,jog_speed=settings['Jog']['speed']*100,

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Exercise the complete local Rust session: physical support, push, ollie, landing and reset.
 
-Requires build_skate_runtime.py and import_skate_runtime.py; results go to build/yorimichi.
+Requires the normal Yorimichi build; results go to build/yorimichi.
 """
+import argparse
 import json
 import math
 from pathlib import Path
@@ -15,6 +16,9 @@ RUNTIME = ROOT / 'games/yorimichi/unreal/Content/Data/SkateRuntime'
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--assets', type=Path, default=RUNTIME / 'assets')
+    args = parser.parse_args()
     output = ROOT / 'build/yorimichi/skate-runtime/check'
     output.mkdir(parents=True, exist_ok=True)
     world = output / 'world.json'
@@ -25,7 +29,7 @@ def main():
     if not binary.is_file():
         binary = binary.with_suffix('.exe')
     with (output / 'worker.log').open('w') as log:
-        proc = subprocess.Popen([str(binary), str(RUNTIME / 'assets'), str(world)], stdin=subprocess.PIPE,
+        proc = subprocess.Popen([str(binary), str(args.assets), str(world)], stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1)
         selector = selectors.DefaultSelector()
         selector.register(proc.stdout, selectors.EVENT_READ)
@@ -70,6 +74,61 @@ def main():
                 assert records[80]['bones'] != records[0]['bones'], 'Animation pose never changed'
                 cases.append({'goofy': goofy, 'ticks': 480, 'max_speed_mps': speed,
                               'states': sorted(states), 'elapsed_seconds': time.monotonic() - started})
+            def matrix_product(a, b):
+                return [sum(a[k*4+r]*b[c*4+k] for k in range(4)) for c in range(4) for r in range(4)]
+            deck = ready['names'].index('SKATEBOARD_ROOT')
+            def yaw(row):
+                m = matrix_product(row['root'], row['bones'][deck])
+                return math.degrees(math.atan2(m[8], m[10]))
+            def exercise(goofy, direction, pop, spin, slide=False):
+                send('activate', spawn=[0,0,0], heading=0, goofy=goofy, difficulty='normal', trucks=.5,
+                     pop=pop, spin=spin, generation=9, velocity=[0,0,5])
+                first=read()
+                assert first['generation']==9 and abs(first['root'][12])<.02 and abs(first['root'][14])<.02
+                assert first['velocity']==[0.,0.,5.], first['velocity']
+                rows=[]; angle=0.; previous=yaw(first)
+                for frame in range(330):
+                    if slide:
+                        left=[int(direction*.6*32767),int(-.8*32767)] if 150<=frame<210 else [0,0]
+                        right=[0,0]
+                    else:
+                        left=[direction*32767 if 160<=frame<270 and abs(angle)<350 else 0,0]
+                        right=[0,-32767] if 150<=frame<168 else [0,32767] if 168<=frame<170 else [0,0]
+                    send('step',dt=1/60,buttons=0,left=left,right=right,triggers=[0,0])
+                    row=read(); current=yaw(row)
+                    if 'Air' in row['state']: angle+=(current-previous+180)%360-180
+                    previous=current; rows.append(row)
+                assert not any('Wipeout' in r['state'] for r in rows), {r['state'] for r in rows}
+                assert rows[-1]['state']=='PhysicsGround', rows[-1]['state']
+                height=max(matrix_product(r['root'],r['bones'][deck])[13] for r in rows)
+                return rows,dict(goofy=goofy,direction=direction,height_m=height,air_rotation_degrees=angle,
+                                 airtime_s=sum('Air' in r['state'] for r in rows)/60)
+            _, stock=exercise(False,0,1.,1.)
+            _, tuned=exercise(False,0,1.15,2.6)
+            assert .15<tuned['height_m']-stock['height_m']<.4,(stock,tuned)
+            assert tuned['airtime_s']>stock['airtime_s']+.08,(stock,tuned)
+            feedback={'stock_pop':stock,'tuned_pop':tuned,'spins':[],'slides':[]}
+            for goofy in (False,True):
+                for direction in (-1,1):
+                    rows, result=exercise(goofy,direction,1.15,2.6)
+                    assert abs(result['air_rotation_degrees'])>330,result
+                    feedback['spins'].append(result)
+                    rows, result=exercise(goofy,direction,1.15,2.6,slide=True)
+                    assert any(r['state']=='SlideGround' for r in rows)
+                    assert math.hypot(rows[-1]['velocity'][0],rows[-1]['velocity'][2])<3.5
+                    feedback['slides'].append(result)
+            # A retained session mounts at the new feet position, never the previous ride, with a running start.
+            for generation,spawn in [(10,[15,0,10]),(11,[-12,0,-8])]:
+                send('activate',spawn=spawn,heading=0,goofy=False,difficulty='normal',trucks=.5,
+                     generation=generation,velocity=[0,0,4.2],pop=1.15,spin=2.6)
+                mounted=read()
+                assert mounted['generation']==generation
+                assert math.hypot(mounted['root'][12]-spawn[0],mounted['root'][14]-spawn[2])<.02
+                assert abs(mounted['velocity'][2]-4.2)<1e-6,mounted['velocity']
+                send('step',dt=1/30,buttons=0,left=[0,0],right=[0,0],triggers=[0,0])
+                moved=read()
+                assert moved['generation']==generation and moved['velocity'][2]>3.5
+                assert 0<moved['root'][14]-spawn[2]<.25
             # Stock deliberate-bail chord, then push-button recovery (not a host-authored ragdoll).
             send('activate', spawn=[0, 0, 0], heading=0, goofy=False, difficulty='normal', trucks=.5)
             read()
@@ -88,7 +147,7 @@ def main():
             send('suspend')
             send('quit')
             assert proc.wait(timeout=10) == 0
-            report = {'ready_seconds': loading, 'cases': cases, 'bail_recovery': sorted(bail_states), 'passed': True}
+            report = {'ready_seconds': loading, 'cases': cases, 'bail_recovery': sorted(bail_states), 'feedback': feedback, 'passed': True}
             (output / 'result.json').write_text(json.dumps(report, indent=2) + '\n')
             print(json.dumps(report, indent=2))
         finally:

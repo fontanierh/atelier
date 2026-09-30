@@ -15,7 +15,7 @@ From the repository root (requirements in the [top-level README](../../README.md
 uv run atelier fetch yorimichi      # Sonniss sound masters, once per machine
 uv run atelier build yorimichi      # everything; only changed steps rerun
 uv run atelier play yorimichi       # 1080p window; --profile desktop or desktop-1440 for the measured desktop profile
-uv run atelier qa yorimichi skate   # 22 C++ fallback skateboarding cases against the running game
+uv run atelier qa yorimichi skate   # recovered skating runtime checks against the running game
 ```
 
 `uv run atelier build yorimichi --list` shows every step: world data and meshes, characters, sounds, effects, the C++
