@@ -936,7 +936,7 @@ def sack(d, q, r=.2, h=.5):
     ring(d, q[:2], r*.33, q[2]+h+.01, .016, ROPE, 8)
 
 
-def tansu(m, d, q, ang, w=1.0, dp=.42, h=.85):
+def drawer_chest(m, d, q, ang, w=1.0, dp=.42, h=.85):
     """A chest of three drawers against a wall: its back along hut-local y, its front toward +x."""
     q = np.asarray(q, float); n, u = rot((1, 0), ang), rot((0, 1), ang)
     block(m, q+[0, 0, h/2], u, n, w, dp, h, vary(WOOD, .05))
@@ -1105,7 +1105,7 @@ def furnish_sleep(m, d, c, ang, side, W):
     shelf(m, d, frame3(back, z), 4.55, 1.3, 1.5, 2)       # over the pillows (back wall s = w2-y)
     q = Hl(-d2+.35, 1.2); andon(d, q[0], q[1], z, .26, 220)
     q = Hl(-.35, -1.15); rug(d, q[0], q[1], z, 1.3, 3.4, ang, 'rug')
-    tansu(m, d, Hl(-d2+.27, 2.5), ang)                   # under the back window, quilts folded on it
+    drawer_chest(m, d, Hl(-d2+.27, 2.5), ang)                   # under the back window, quilts folded on it
     with d.at(tuple(Hl(-d2+.27, 2.5, .85)), ang), d.use('quilt', grain=(1, 0, 0)):
         d.box((0, 0, .07), (.36, .7, .12), WHITE, .03)
     q = Hl(-1.75, 1.6); cushion(d, q[0], q[1], z, .55, ang+12)
@@ -1199,7 +1199,7 @@ def furnish_entry(m, d, p):
         with m.use('iron'):
             for a in (a0+.14, a1-.18): slab(m, Wl, a, a+.04, .115, .605, .003, .53, IRON)
             slab(m, Wl, cy-.06, cy+.06, .6, .635, .3, .45, IRON)
-        on_wall(d, Wl, cy, .1, 1.2, 1.15, 2.35, 'map')
+        wall_picture_at(d, Wl, cy, .1, 1.2, 1.15, 2.35, 'map')
         q = at(Wl, entry_round_window(), .32); basket(d, q[0], q[1], z, .2, .26, scrolls=4)
         q = W(X0+.45, Y0+.42); crate(m, q[0], q[1], z, (.6, .5, .45), R.uniform(-3, 3))
         crate(m, q[0], q[1], z+.45, (.46, .38, .32), R.uniform(-8, 8))
@@ -1229,8 +1229,8 @@ def furnish_entry(m, d, p):
                 with d.use('wood_timber'):
                     d.lathe((0, 0, 0), [(.98, .012), (1.05, .003)], DARK, 6)
         # the gables over the doors: the kite, the children's drawings; the mat at the north door, the rug, the lantern
-        on_wall(d, S, dx, .1, .75, 3.0, 3.75, 'kite', frame=False)
-        on_wall(d, N, dx, .1, .7, 3.0, 3.7, 'pictures')
+        wall_picture_at(d, S, dx, .1, .75, 3.0, 3.75, 'kite', frame=False)
+        wall_picture_at(d, N, dx, .1, .7, 3.0, 3.7, 'pictures')
         q = W(dx, Y1-.55); rug(d, q[0], q[1], z, dw+.1, .8, 0, 'rug_blue')
         q = W(cx, cy); rug(d, q[0], q[1], z, 1.9, 2.8, 0, 'rug')
         chochin(d, q[0], q[1], z+3.3, .36, L.ROOF_TOP['entry']-.3-3.3-.36*.63+.02, 700)
@@ -1243,7 +1243,7 @@ def furnish_entry(m, d, p):
         q = W(bx1-.45, by0+1.5); andon(d, q[0], q[1], z, .3, 300)
         q = W(bx1-.85, by0+.8); prop('planter', q[0], q[1], z, face_yaw(-1, 1), .95)
         q = W(bx1-.65, by1-.85); potted_plant(d, q[0], q[1], z, 1.)
-        on_wall(d, E, .4, -.08, .8, 1.35, 2.15, 'flag', frame=False)
+        wall_picture_at(d, E, .4, -.08, .8, 1.35, 2.15, 'flag', frame=False)
         tube(d, [at(E, .4-.47, -.105, 2.18), at(E, .4+.47, -.105, 2.18)], .015, DARK, 6, 'wood_timber')
         for s in (-.43, .43): tube(d, [at(E, .4+s, -.03, 2.18), at(E, .4+s, -.12, 2.18)], .012, DARK, 6, 'wood_timber')
         # The west wall outside, seen from the bridge: a woodpile along its southern half, clear of the way round the
@@ -1495,7 +1495,7 @@ def slab(m, wall, a0, a1, b0, b1, z0, z1, color):
              q(a0, b1, z1)], color)
 
 
-def on_wall(d, wall, a, b, w, z0, z1, pic, frame=True):
+def wall_picture_at(d, wall, a, b, w, z0, z1, pic, frame=True):
     """A picture flat on a wall (entry_walls), w wide from z0 to z1, centred a along it, b in from its centre line (on
     the outside if negative), upright seen from that side; a dark frame round it, 2 cm proud."""
     f = wall[2]*math.copysign(1., b); r = np.cross([0, 0, 1.], f); c = wall_point(wall, a, b)
