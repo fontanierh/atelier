@@ -1,104 +1,95 @@
-# Skate pier and trick skateboard
+# Sunset Pier
 
-A concrete street plaza with transitions on a pier over the sea, south of the spawn road,
-reached by a skateable concrete path, plus the modern trick board the native skate system
-rides (docs/SKATE.md has the controls, physics and contracts). Everything is generated here:
-geometry, faded paint, baked ambient occlusion in vertex colours, `park.json` and the checks.
+A 112 × 88 m concrete skate park over the sea, reached by the existing 111 m downhill path. The north entrance
+stays at the same world position; the pier grows east, west and seaward. Warm stone, sage transitions, rust tile,
+red rails and timber seating follow five [Sunburst references](../../../assets/skatepark/concepts/prompts.json).
+The reference images and their individual model/prompt provenance are committed alongside that file. The last
+two use actual in-game captures to improve the original layout: connected terraces, a horseshoe return, a
+rounded central wave and a bowl with skateable outer shoulders.
 
-## Files
+![Sunburst overview](../../../assets/skatepark/concepts/flow-overview.jpg)
 
-| File | What it is |
+## Layout and lines
+
+Coordinates below are park-local metres: east +X, north +Y, up +Z. The deck is at world `(-110, -212, 1.8)`.
+Unreal converts world metres `(x,y,z)` to centimetres `(100x,-100y,100z)`.
+
+| Area | Features and approach |
 | --- | --- |
-| `layout.py` | every dimension (pure numpy): site, feature profiles, grid lines, the path route and profile, rails |
-| `features.py` | park geometry (pier, features, pilings, path, floor paint) as `geom.MeshData` |
-| `board.py` | deck, truck and wheel |
-| `geom.py` | mesh builder, painterly shading, AO bake (ray cast), FBX export |
-| `build.py` | builds all, runs the checks, exports, writes `park.json` and the report |
-| `review.py` | EEVEE review renders (`build.py -- --review`) |
-| `park.json` | the gameplay contract read by `ASkatePark` (committed) |
+| Entry / north street | A wide arrival plaza at `(6,36)`. Two successive 8 m manual pads, 22 and 38 cm high, sit along Y=27.5 with a 6 m gap. Steel edges support manuals, slides and grinds. |
+| West street terraces | A four-stair plaza at Y=6–17 and seven-stair plaza at Y=21–36. Each has a 14 m approach deck, two handrails with flat lead-ins and run-outs, two steel-edged hubbas, and a long filleted bank facing into the park. Stairs descend east into open flat. A smooth rise joins the two levels, with additional west and side banks for continuous lines. |
+| Technical street | An additional 10 m ledge at Y=12–15. Three 8 m flat bars: 38 cm round red at Y=20, 30 cm square sage at Y=20, and 45 cm round red at Y=29. Bars occupy separate lanes with clear approaches. |
+| Centre wave | An 85 cm hip at X=-21.1–1.1, Y=-8–5. Rounded banks meet a 6 m top; the sides taper smoothly to flat for diagonal transfers. |
+| East return | A 16 m wide quarter at X=46, Y=18–34: 2 m radius, 15 cm vertical extension, coping and a 3 m deck. A south access bank connects the deck to the flat. |
+| Horseshoe mini | Two 10 m straight opposing walls at X=-36 and -10, Y=-23–-13, joined by a 180° southern return. Each has a 2.5 m radius plus 15 cm of vert, with 21 m between the toes. The north side opens toward the centre wave; a bank reaches the west deck. The curved return has a skateable outer shoulder. |
+| Bowl | Rounded rectangular bowl centred at `(29,-10)`. The floor spans 20 × 16 m at its widest; the coping spans 26 × 22 m. A 3 m transition radius plus 20 cm of vert gives 3.2 m depth. A 1.5 m perimeter deck meets a smooth 7 m wide bank on every exterior face. The floor stays at pier level, above the sea. |
+| Promenade | A flowing terracotta floor ribbon, rounded garden planters, edge benches, grasses, lamps and a timber pergola overlooking the sea. Furniture stays outside the skating approaches. |
 
-Outputs (disposable, `japan/out/skatepark/`): `assets/*.fbx` (park), `board/*.fbx`,
-`SkatePark.blend`, `build-report.json` (all checks and numbers), `review/*.png`,
-`import-report.json` (written by the Unreal import).
+The broad banks supply speed for lines through the park. The bowl bank, for example, takes a 2 m/s start on its
+upper deck to over 8 m/s on the flat without pushing in the native regression. Roll down facing the open flat,
+then link into street or return transitions. A vertical coping lip is a drop-in/trick edge; it is not a mellow bank.
 
-## Rebuild
+## Transitions and pumping
+
+The quarter pipes and bowl reach **90°**, followed by a short vertical extension. They turn horizontal travel
+upwards before the wheels leave the lip. The recovered air/trajectory solver then selects a return into the
+transition. The steel coping is a continuous rounded shoulder, with no tube overlapping the riding surface or projecting into the front truck. Near a vertical departure the host removes the small averaged floor-normal tilt before native trajectory selection; this avoids falsely selecting a forward deck transfer. Explicit forward transfer input is retained. Low speeds can stall at the lip;
+use the banks, push on the flat and pump to carry speed. The curved bowl corners support continuous carving.
+
+On a controller, **hold either L2 or R2 to compress, then release to extend**. On keyboard, use **Q or E**.
+Approach a wall compressed and release as you ride through its lower/middle transition. On the way back down,
+compress high on the wall and extend through the lower curve. Compress again for the next wall. Stay off the
+right-stick ollie input when practising pumping; it performs a separate pop. Triggers become grabs in the air,
+so release them before the air unless you want a grab.
+
+Pumping comes from the recovered centre-of-mass/ground-curvature controller. Timing matters: holding a trigger
+continuously is not a speed boost. `check_skatepark_runtime.py` compares an identical 8.5 m/s bowl approach after
+settling the rider. Releasing at 1.25 m board height gives an apex of 5.21 m versus 3.96 m while coasting, and a
+return speed of 11.46 m/s versus 10.95 m/s. These are regression measurements for this geometry and tuning, not a
+promise of those exact numbers for every player input or frame history.
+
+## Build and verification
 
 ```sh
-blender -b --threads 6 --python-exit-code 1 --python japan/skatepark/build.py            # ~10 s
-blender -b --threads 6 --python-exit-code 1 --python japan/skatepark/build.py -- --review # + renders
-japan/run.sh skatepark     # build, compile the module, import (Unreal closed)
+uv run atelier build yorimichi world.skatepark unreal.skatepark
+python3 games/yorimichi/tools/check_skatepark_runtime.py
+uv run atelier qa yorimichi skate_runtime
+uv run atelier qa yorimichi skatepark
+uv run atelier qa yorimichi skate_performance
 ```
 
-`Scripts/import_skatepark.py` imports the park meshes to `/Game/SkatePark/` and the board
-to `/Game/SkatePark/Board/` with `/Game/Japan/Materials/M_Village` (loaded, not rebuilt),
-complex-as-simple collision on blocking park meshes, none on the paint and the board. It
-refuses stale exports (hashes in the build report) and checks units and axes on every mesh.
-The terrain and `world.json` are not touched: the game removes trees, bushes, grass and
-litter inside `park.json`'s clearance polygons.
+The normal build owns the render lock and memory guard. Wait for the shared render slot when another job is
+using it. Review renders are available through `build.py --review`, also under `atelier.safety`.
 
-## Frames
+- `layout.py` owns dimensions, profiles, floor grid, rail contact lines and the terrain-following path.
+- `features.py` builds the riding geometry, pier, path, furniture and planting; `geom.py` supplies mesh/export tools.
+- `board.py` builds the 80 × 20.5 cm deck, trucks and wheels used by the solved board rig.
+- `build.py` checks tangent joins, rail-to-mesh alignment, path grades/terrain clearance and FBX units/axes.
+- `park.json` is the committed placement, spawn, clearance, asset and rail contract consumed by `ASkatePark`.
+- `review.py` renders overview, street, bowl, mini-ramp, entrance and rail-plan views.
 
-Park-local metres, Blender axes (x east, y north, z up), origin on the deck top at the
-platform centre, world origin `(-110, -195, 1.80)`, yaw 0. Unreal: world metres
-`(x, y, z)` land at `(100x, -100y, 100z)` cm, the same route as the mega and the village
-(FBX forward -Y, up Z, legacy importer). Spawn one actor at the origin for every park mesh.
-`yaw_deg` values are counter-clockwise from +x (Unreal yaw = -yaw_deg).
+Disposable FBX files, blend scene, review images, collision snapshot and reports go to `build/yorimichi/skatepark/`.
+The Unreal importer stages the generated meshes in ignored Content with the existing vertex-colour material.
+All blocking park meshes use their render triangles for collision. Planting and floor paint are visual only.
+The pier is about 151k triangles including its piles, path, furniture and paint; rail contact lines match the
+modelled surface within 0.03 mm. The path remains below a 10% grade on both edges and clears the terrain by 5 cm.
 
-## Site
+The native regression verifies upward launch, an apex above coping and recontact on the curved face, plus
+consecutive mini-ramp airs, the bank roll-in and the pumping comparison. The in-game suite also covers walking
+mounts, Triangle toggling, coasting pose stability, tricks, rails, slides, retargeting and bail skin clearance.
 
-- Pier deck x in [-150, -70], y in [-222, -168] world, top at z = 1.80 (80 x 54 m). The
-  beach under the north edge is 0.1-1.0 m, the sea bed falls to -12 m by the south edge.
-  70 piles (0.6 m) on an 8 m grid into the sea bed, pile caps, 0.7 m edge beam, perimeter
-  railing 1.1 m (posts every 2 m, blocks, not grindable), six lamp posts, 5 m deck joints.
-- Path: 111 m, 4 m wide, from the road's south edge at (-155.0, -83.6, 9.31) through the
-  guardrail gap at the level pad beside the road, down to the pier's north edge at
-  (-104, -168, 1.80). Straights and arcs (radii 20, 10, 20, 25 m), grade <= 9 % on the
-  centre line and <= 9.7 % on both edges, at least 5 cm above the upper envelope of both
-  terrain triangulations everywhere, level first metre off the road and level last 4 m
-  onto the deck. Its end ring shares the deck's edge vertices (no lip). Skirts run 0.45 m
-  below the ground on both sides; it stands on a retaining wall up to ~1.5 m where it
-  leaves the level pad, and ~1 m on the pier abutment. The build reports its distance to the nearest house roof
-  and lot (`world/regions/houses`) and fails if it crosses a lot.
+Flying leaves are excluded from the pier footprint, including when viewed from the approach. Their simulation
+is suspended while the player is inside. Park-local lighting uses the authored vertex shading, skylight and
+direct shadows to avoid unstable Lumen indirect-light patches on the large, thin riding surfaces.
 
-## Features (park-local metres)
+`skate_performance` measures wall-clock frame intervals at the normal frame cap while pushing, flipping,
+riding transitions, crossing the park and bailing. It records mean FPS, 95th/99th-percentile frame time,
+long frames and repeated native poses in `build/yorimichi/skateqa/performance.json`; it does not use fixed-step
+video capture. The park origin anchors collision snapshots so moving between its corners does not rebuild them.
 
-| Feature | Where | Dimensions |
-| --- | --- | --- |
-| Big quarter pipe | coping x = 35, y -6..6, faces west | 1.8 m: transition radius 2.2 m at the floor tightening to 1.34 m, vertical at 1.65 m, 0.15 m of vert; 5 cm round coping 1 cm proud; 2 m deck with guard rail |
-| Mini quarter pipe | coping x = -35, y -5..5, faces east | 1.0 m, radius 1.5 m (70.5 deg at the lip), coping, 2 m deck, guard rail |
-| Kicker | x -11.5..-9.5, y 0.1..1.7 | 0.5 m over 2 m (radius 4.25 m, 28 deg lip), steel lip, 1 m before the funbox |
-| Funbox | x -8.74..2.74, y -1.75..1.75 | 0.6 m, 2.5 m banks (13.5 deg, filleted), 5.7 m flat top, steel ledges both sides |
-| Upper deck | x -30..-18, y -26.85..-18.85 | 1.2 m platform, 7.4 m bank (10.5 deg) from the north, own railing on the sea sides |
-| Stairs | x -18..-16.25, y -25..-20, down east | 6 risers of 0.20 m, treads 0.35 m; red 5 cm handrail at y -22.5, 0.85 m over the nosings |
-| Hubba | y -25.8..-25.0 | 0.35 m over the nosing line, 1 m flat on the platform, steel edges |
-| Flat bars | y -4.5 x 10..16 (red), y 4.5 x 10.5..15.5 (yellow) | 0.35 m x 6 m and 0.25 m x 5 m, 5 cm round |
-| Manual pad | x 16..20, y 11.75..14.25 | 0.18 m, steel edged all round |
-| Benches | y 22.25..22.75, x -25..-20, -14..-9, 20..25 | 0.45 m, steel on both long edges |
-| South bank | x 4..24, top edge y -25.85 | 1.5 m, 35 deg with a 2 m concave toe, steel top edge (listed as coping) |
-| Floor paint | sun disc at (-25, 12), three wave strokes | separate non-blocking mesh 4 mm above the deck |
-
-Lines: the entrance (x = 6) runs straight south to the south bank; the mini quarter feeds
-the kicker, funbox and the flat bars into the big quarter; the path entrance line to the
-upper-deck bank, across the platform and down the stairs, hubba or rail, out east along the
-south bank. Every ramp starts tangent to the floor on a floor grid line (shared vertices),
-transitions step at most 2.5 deg per segment, and complex collision is the render mesh.
-
-## park.json
-
-`origin`, `yaw_deg`, `deck`, `meshes` (name, asset, blocks), `board` (asset paths and
-offsets), `rails` (id, kind rail|ledge|coping|curb, points along the top contact line in
-park-local metres, `radius` for round rails and coping, `side` for ledges, curbs and coping),
-`spawns.park` (park-local) and `spawns.path_top` (world), `clearance` (world polygons: the
-pier + 4 m and the path corridor +-5 m), `surfaces`, `features` (footprints). The build
-checks every rail point against the modelled surface (worst 0.01 mm).
-
-## Board
-
-Deck 80 x 20.5 cm popsicle, kicks rising 4.5 cm over the last 13 cm (9.6 cm bend then
-22 deg), 0.9 cm concave, 1.2 cm thick, 5-ply maple edge, black grip, off-white bottom with
-a red sun and indigo waves. Trucks: kingpin pivot at (+-18, 0, -1.2), axle 5.15 cm below
-(-6.35 on the deck), silver hanger, dark baseplate, amber bushings; the mesh is the front
-truck (kingpin toward -X), the back truck is it turned 180 deg. Wheels: 2.65 cm radius,
-3.2 cm wide, cream. About 2.7k triangles assembled. Unreal axes: nose +X, toe side +Y
-(Blender -Y). With the contract's axle height and wheel radius the wheels touch at
--9.00 cm, 0.5 mm above the -9.05 ground stated in docs/SKATE.md.
+The six live cases on an Apple M3 Pro with 36 GB RAM, at 1920 × 1080 and 100% screen percentage, measured
+59.96–59.99 fps across 2,325 frame intervals. The worst per-case 99th percentile was 17.55 ms; the longest frame
+was 33.35 ms during the park crossing. There were no frames over 50 ms and no repeated native poses. The bail
+case includes its initial skinned-vertex cache preparation and peaked at 24.40 ms. These measurements use
+normal frame timing with Cairo's hair morphs enabled and the park's local lighting; they exclude initial asset
+loading and debug teleports. Other hardware and resolutions need their own measurements.

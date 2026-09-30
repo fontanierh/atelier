@@ -1,9 +1,9 @@
 """Skate pier, its path and the trick skateboard (docs/SKATE.md).
 
-blender -b --threads 6 --python-exit-code 1 --python japan/skatepark/build.py [-- --review]
+blender -b --threads 6 --python-exit-code 1 --python games/yorimichi/world/regions/skatepark/build.py [-- --review]
 
 Writes build/yorimichi/skatepark/{assets,board}/*.fbx, SkatePark.blend, build-report.json and the
-committed gameplay contract japan/skatepark/park.json. --review also renders the review
+committed gameplay contract games/yorimichi/world/regions/skatepark/park.json. --review also renders the review
 images into build/yorimichi/skatepark/review/ (EEVEE).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
@@ -29,7 +29,9 @@ PARK_MESHES = [('SM_SkatePier', True, 'concrete deck, edge beam, perimeter raili
                ('SM_SkatePierPilings', True, 'concrete piles and pile caps under the deck'),
                ('SM_SkateParkFeatures', True, 'ramps (painted concrete), ledges, stairs, steel coping/edges, painted rails'),
                ('SM_SkatePath', True, 'concrete path from the road to the pier, with retaining skirts'),
-               ('SM_SkateParkDecals', False, 'faded floor paint 4 mm above the deck (visual only, no collision)')]
+               ('SM_SkateParkFurniture', True, 'timber seating, pergola and concrete planters along the promenade'),
+               ('SM_SkateParkPlanting', False, 'ornamental grasses, outside all skating lines'),
+               ('SM_SkateParkDecals', False, 'faded floor paint 25 mm above the deck (visual only, no collision)')]
 
 
 def material():
@@ -47,6 +49,27 @@ def bounds(m):
 
 
 # ----------------------------------------------------------------------------- checks
+def check_furniture_clearance(furniture, riding):
+    """Promenade furniture must sit on the pier flat, never inside a rideable bank."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    tree=BVHTree.FromPolygons(riding.verts,riding.faces,all_triangles=False)
+    samples=set()
+    for face in furniture.faces:
+        points=[np.array(furniture.verts[i]) for i in face]
+        for a,b in zip(points,points[1:]+points[:1]):
+            if abs(a[2])<.001 and abs(b[2])<.001:
+                for t in np.linspace(0,1,max(2,math.ceil(np.linalg.norm(b-a)/.25)+1)):
+                    p=a+(b-a)*t;samples.add((round(float(p[0]),4),round(float(p[1]),4)))
+    blocked=[]
+    for x,y in samples:
+        hit,_,_,_=tree.ray_cast(Vector((x,y,10)),Vector((0,0,-1)),10)
+        if hit is not None and hit.z>.02:blocked.append((x,y,round(hit.z,3)))
+        assert abs(x)<L.HALF_X-L.RAIL_INSET and abs(y)<L.HALF_Y-L.RAIL_INSET,('furniture crosses perimeter',x,y)
+    assert not blocked,('furniture intersects a riding surface',blocked[:12])
+    return dict(ground_samples=len(samples),riding_surface_overlaps=len(blocked))
+
+
 def check_board(deck, truck, wheel):
     c = board.contract(); out = {}
     lo, hi = bounds(deck)
@@ -89,25 +112,21 @@ def segment_angles(prof):
 
 def check_profiles():
     out = {}
-    p, toe, radii = L.big_qp_profile()
-    s, a0, a1 = segment_angles(p[:-1])
-    out['big_quarter'] = {'toe_x': toe, 'lip_x': L.BIG_QP['lip_x'], 'height': p[-1][1], 'transition_height': p[-2][1], 'vertical_extension': p[-1][1] - p[-2][1],
-                          'radius_floor_to_top': radii, 'max_step_deg': s, 'toe_angle_deg': a0, 'top_angle_deg': a1, 'width': L.BIG_QP['y1'] - L.BIG_QP['y0']}
-    p, toe, top = L.mini_qp_profile(); s, a0, a1 = segment_angles(p)
-    out['mini_quarter'] = {'toe_x': toe, 'lip_x': L.MINI_QP['lip_x'], 'height': p[-1][1], 'radius': L.MINI_QP['radius'], 'max_step_deg': s,
-                           'toe_angle_deg': a0, 'top_angle_deg': top, 'width': L.MINI_QP['y1'] - L.MINI_QP['y0']}
-    p, r, ang = L.kicker_profile(); s, a0, a1 = segment_angles(p)
-    out['kicker'] = {'height': p[-1][1], 'run': p[-1][0] - p[0][0], 'radius': r, 'exit_angle_deg': ang, 'max_step_deg': s, 'toe_angle_deg': a0}
-    p, flat = L.funbox_profile(); s, a0, a1 = segment_angles(p)
-    out['funbox'] = {'height': L.FUNBOX['height'], 'flat_top': flat, 'length': p[-1][0] - p[0][0], 'max_step_deg': s, 'toe_angle_deg': a0,
-                     'bank_angle_deg': math.degrees(math.atan2(L.FUNBOX['height'], L.FUNBOX['top0'] - L.FUNBOX['x0']))}
-    p = L.platform_bank_profile(); s, a0, a1 = segment_angles(p)
-    out['platform_bank'] = {'toe_y': p[0][0], 'top_y': p[-1][0], 'height': p[-1][1], 'length': p[0][0] - p[-1][0], 'max_step_deg': s, 'toe_angle_deg': a0, 'top_angle_deg': a1}
-    p = L.south_bank_profile(); s, a0, a1 = segment_angles(p)
-    out['south_bank'] = {'toe_y': p[0][0], 'top_y': p[-1][0], 'height': p[-1][1], 'max_step_deg': s, 'toe_angle_deg': a0, 'face_angle_deg': a1}
-    for k, v in out.items():
-        assert v['max_step_deg'] <= 5.0 + 1e-6, (k, v['max_step_deg'])
-        assert abs(v['toe_angle_deg']) < 3.0, (k, 'ramp does not meet the floor tangentially')
+    for q in L.QUARTERS:
+        p=L.quarter_profile(q); step,a0,a1=segment_angles(p[:47])
+        out[q['id']]=dict(height=p[-1][1],toe=p[0][0],radius=q['radius'],max_step_deg=step,toe_angle_deg=a0,exit_angle_deg=a1)
+        assert a1>89.9 and q['vert']>=.1
+    for b in L.BANKS:
+        p=L.bank_profile(b);step,a0,a1=segment_angles(p)
+        out[b['id']]=dict(height=p[-1][1],max_step_deg=step,toe_angle_deg=a0,exit_angle_deg=a1)
+        assert abs(p[-1][0]-b['top'])<1e-6
+    p,_=L.funbox_profile();step,a0,a1=segment_angles(p)
+    out['flow_table']=dict(max_step_deg=step,toe_angle_deg=a0,exit_angle_deg=a1)
+    for name,profile in out.items():
+        assert profile['max_step_deg']<=5.01,(name,profile)
+        assert abs(profile['toe_angle_deg'])<3.,(name,profile)
+    b=L.BOWL
+    out['bowl']=dict(radius=b['radius'],depth=b['radius']+b['vert'],exit_angle_deg=90.,flat_width=2*(b['core_x']+b['floor_radius']),flat_length=2*(b['core_y']+b['floor_radius']))
     return out
 
 
@@ -253,7 +272,9 @@ def park_json(pl, rails):
                   'back_truck_yaw_deg': 180, 'wheel_offsets_from_truck_cm': [[0, 9.3, -5.15], [0, -9.3, -5.15]], 'wheel_radius_cm': 2.65},
         'rails': rails,
         'spawns': {
-            'park': {'pos': [-8.0, 10.0, 0.0], 'yaw_deg': -10.0, 'note': 'park-local; faces the funbox lane and the big quarter pipe'},
+            'park': {'pos': [6.0, 36.0, 0.0], 'yaw_deg': -90.0, 'note': 'park-local; entry plaza, looking down the street lines'},
+            'bowl': {'pos': [29.0, -10.0, 0.0], 'yaw_deg': 0.0, 'note': 'park-local bowl floor'},
+            'mini': {'pos': [-23.0, -28.0, 0.0], 'yaw_deg': 0.0, 'note': 'park-local mini-ramp floor'},
             'path_top': {'pos': [round(float(pl['P'][k, 0]), 3), round(float(pl['P'][k, 1]), 3), round(float(pl['z'][k]), 3)],
                          'yaw_deg': round(math.degrees(math.atan2(t[1], t[0])), 2), 'note': 'world metres, 3 m down the path from the road edge'},
         },
@@ -289,28 +310,38 @@ def main():
     piles = features.pilings(h)
     path, ss, rows = features.path(pl, h)
     paint = features.decals()
+    furniture,planting = features.gardens()
+    report['furniture_clearance']=check_furniture_clearance(furniture,feats)
+    park_meshes=(pier,feats,piles,path,furniture,planting,paint)
     t1 = time.time()
     ao = geom.bake_ao([pier, feats], [pier, feats], skip_tags=('rail', 'railing', 'pole', 'lamp', 'coping'))
     report['ao_seconds'] = round(time.time() - t1, 1)
     report['ao'] = {k: {'mean': round(float(np.mean([c for f in v for c in f])), 3), 'max': round(float(np.max([c for f in v for c in f])), 3),
                         'corners_over_0.3': int(sum(c > 0.3 for f in v for c in f))} for k, v in ao.items()}
     park = {}
-    for m in (pier, feats, piles, path, paint):
+    for m in park_meshes:
         cols = geom.shade(m, ao.get(m.name))
         park[m.name] = geom.to_object(m, mat, cols)
         geom.export_fbx(park[m.name], OUT / 'assets' / f'{m.name}.fbx')
     report['meshes'] = {m.name: {'triangles': m.triangles, 'vertices': len(m.verts), 'min': list(np.round(bounds(m)[0], 3)), 'max': list(np.round(bounds(m)[1], 3))}
-                        for m in (pier, feats, piles, path, paint, deck, truck, wheel)}
+                        for m in (*park_meshes, deck, truck, wheel)}
 
     # contract + checks
     rails = L.rails()
     report['rails'] = check_rails(rails, [feats])
+    # Same triangulated riding geometry for repeatable native trajectory/pumping checks.
+    triangles=[]
+    for m in (pier,feats):
+        for f in m.faces:
+            for i in range(1,len(f)-1):
+                triangles.append([[m.verts[k][1],m.verts[k][2],m.verts[k][0]] for k in (f[0],f[i],f[i+1])])
+    (OUT / 'collision.json').write_text(json.dumps(dict(triangles=triangles,rails=[[[p[1],p[2],p[0]] for p in r['points']] for r in rails],spawn=[-28,0,-23],heading=0),separators=(',',':')))
     report['profiles'] = check_profiles()
     report['path'] = check_path(pl, rows, h)
     report['path']['house_roof_clearance_m'], report['path']['house_lot_clearance_m'] = house_clearance(pl, world)
     assert report['path']['house_lot_clearance_m'] > 0, 'the skate path crosses a house lot'
     report['joins'] = check_joins(pier, feats, path)
-    report['fbx_roundtrip'] = fbx_roundtrip([(m, OUT / 'assets' / f'{m.name}.fbx') for m in (pier, feats, piles, path, paint)] +
+    report['fbx_roundtrip'] = fbx_roundtrip([(m, OUT / 'assets' / f'{m.name}.fbx') for m in park_meshes] +
                                             [(m, OUT / 'board' / f'{m.name}.fbx') for m in (deck, truck, wheel)])
     data = park_json(pl, rails)
     (HERE / 'park.json').write_text(json.dumps(data, indent=1) + '\n')

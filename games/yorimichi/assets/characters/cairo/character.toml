@@ -12,6 +12,5 @@ manifest = "source-manifest.json"     # every clip role with its reference, timi
 clip_roles = 110
 export = "export_unreal.py"
 export_args = ["--sword"]             # also the bokken, bone-parented to hand_R
-runtime_data = ["skate-build.json"]   # deck contacts per skate clip, read by the skate code at runtime
 unreal_path = "/Game/Cairo"
 licence = "own; the sword attacks were retargeted from Mixamo motion, baked into the source (raw Mixamo files not included)"

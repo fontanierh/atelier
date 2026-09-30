@@ -73,135 +73,6 @@ def steel_side_band_sloped(m, axis, w, top_uz, out_sign, zlen=L.STEEL_BAND, prou
         m.poly([P(axis, u0, ww, z0 - zlen), P(axis, u1, ww, z1 - zlen), P(axis, u1, ww, z1), P(axis, u0, ww, z0)], 'steel', 'steel', want=want)
 
 
-# ----------------------------------------------------------------------------- features
-def big_quarter(m):
-    q = L.BIG_QP; prof, toe, _ = L.big_qp_profile(); ys = wl(YS, q['y0'], q['y1'])
-    ramp(m, prof, 'x', ys, 'teal', want=(-1, 0, 1))
-    lip, h, back = q['lip_x'], q['height'], q['deck_x']
-    flat(m, lip, back, q['y0'], q['y1'], h, 'concrete', xl=[lip, lip + .5, lip + 1.0, lip + 1.5, back], yl=ys)
-    wall(m, 'x', back, q['y0'], q['y1'], -0.05, h, 'concrete', (1, 0, 0), wlines=ys)
-    for y, s in ((q['y0'], -1), (q['y1'], 1)):
-        side_fan(m, 'x', y, prof + [(back, h)], (back, -0.05), 'concrete', (0, s, 0))
-    cx, cz = L.big_coping()
-    m.tube([(cx, q['y0'], cz), (cx, q['y1'], cz)], L.COPING_R, 'coping', 'coping', sides=10)
-    rx = back - 0.1
-    railing(m, [(rx, q['y0'] + .05, h), (rx, q['y1'] - .05, h)], q['rail_h'], post_every=3.0)
-
-
-def mini_quarter(m):
-    q = MINI = L.MINI_QP; prof, toe, _ = L.mini_qp_profile(); ys = wl(YS, q['y0'], q['y1'])
-    ramp(m, prof, 'x', ys, 'salmon', want=(1, 0, 1))
-    lip, h, back = q['lip_x'], q['height'], q['deck_x']
-    flat(m, back, lip, q['y0'], q['y1'], h, 'concrete', xl=[back, back + .5, back + 1.0, back + 1.5, lip], yl=ys)
-    wall(m, 'x', back, q['y0'], q['y1'], -0.05, h, 'concrete', (-1, 0, 0), wlines=ys)
-    for y, s in ((q['y0'], -1), (q['y1'], 1)):
-        side_fan(m, 'x', y, prof + [(back, h)], (back, -0.05), 'concrete', (0, s, 0))
-    cx, cz = L.mini_coping()
-    m.tube([(cx, q['y0'], cz), (cx, q['y1'], cz)], L.COPING_R, 'coping', 'coping', sides=10)
-    rx = back + 0.1
-    railing(m, [(rx, q['y0'] + .05, h), (rx, q['y1'] - .05, h)], q['rail_h'], post_every=2.5)
-
-
-def kicker(m):
-    k = L.KICKER; prof, r, ang = L.kicker_profile()
-    # a 6 cm steel lip plate at the top of the curve
-    t_band = 0.06 / r; a_end = math.radians(ang)
-    band = (k['toe_x'] + r * math.sin(a_end - t_band), r * (1 - math.cos(a_end - t_band)))
-    prof = [p for p in prof if p[0] < band[0] - 1e-4] + [band, prof[-1]]
-    ys = wl(YS, k['y0'], k['y1'])
-    n = len(prof) - 1
-    ramp(m, prof, 'x', ys, 'salmon', want=(-1, 0, 2), color_fn=lambda i, j: 'steel' if i == n - 1 else 'salmon')
-    wall(m, 'x', k['lip_x'], k['y0'], k['y1'], -0.05, k['height'], 'concrete', (1, 0, 0), wlines=ys, zsteps=1)
-    for y, s in ((k['y0'], -1), (k['y1'], 1)):
-        side_fan(m, 'x', y, prof, (k['lip_x'], -0.05), 'concrete', (0, s, 0))
-
-
-def funbox(m):
-    f = L.FUNBOX; prof, (t0, t1) = L.funbox_profile()
-    ys = wl(YS, f['y0'], f['y1'], extra=(f['y0'] + L.STEEL_BAND, f['y1'] - L.STEEL_BAND))
-    on_top = [i for i in range(len(prof) - 1) if prof[i][0] >= t0 - 1e-6 and prof[i + 1][0] <= t1 + 1e-6]
-    last = len(ys) - 2
-    def col(i, j):
-        if i in on_top and j in (0, last): return 'steel'
-        if i in on_top: return 'concrete_light'
-        return 'mustard'
-    ids = ramp(m, prof, 'x', ys, 'mustard', want=(0, 0, 1), color_fn=col)
-    # the flat top reads as concrete, not paint
-    xm = (t0 + t1) / 2
-    for y, s in ((f['y0'], -1), (f['y1'], 1)):
-        side_fan(m, 'x', y, prof, (xm, -0.05), 'concrete', (0, s, 0))
-        steel_side_band(m, 'x', y, t0, t1, f['height'], s)
-
-
-def platform(m):
-    p = L.PLATFORM; b = L.PLATFORM_BANK; s = L.STAIRS; hb = L.HUBBA; h = p['height']
-    xs = wl(XS, p['x0'], p['x1'], extra=(hb['x0'],)); ys = wl(YS, p['y0'], p['y1'], extra=(hb['y0'], hb['y1'], s['y0'], s['y1']))
-    flat(m, p['x0'], p['x1'], p['y0'], p['y1'], h, 'concrete', xl=xs, yl=ys)
-    # walls: west, south, the part of the north wall beside the bank, the east wall around the stairs
-    wall(m, 'x', p['x0'], p['y0'], p['y1'], -0.05, h, 'concrete', (-1, 0, 0), wlines=ys)
-    wall(m, 'y', p['y0'], p['x0'], p['x1'], -0.05, h, 'concrete', (0, -1, 0), wlines=xs)
-    wall(m, 'y', p['y1'], b['x1'], p['x1'], -0.05, h, 'concrete', (0, 1, 0), wlines=wl(xs, b['x1'], p['x1']))
-    top_riser = h - s['rise']
-    wall(m, 'x', p['x1'], p['y0'], hb['y0'], -0.05, h, 'concrete', (1, 0, 0), wlines=wl(ys, p['y0'], hb['y0']))
-    wall(m, 'x', p['x1'], s['y0'], s['y1'], top_riser, h, 'concrete', (1, 0, 0), wlines=wl(ys, s['y0'], s['y1']), zsteps=1)
-    wall(m, 'x', p['x1'], s['y1'], p['y1'], -0.05, h, 'concrete', (1, 0, 0), wlines=wl(ys, s['y1'], p['y1']))
-    # the long bank up to the platform (rises southward)
-    prof = L.platform_bank_profile(); bx = wl(XS, b['x0'], b['x1'])
-    ramp(m, prof, 'y', bx, 'teal', want=(0, 1, 3))
-    for x, sgn in ((b['x0'], -1), (b['x1'], 1)):
-        side_fan(m, 'y', x, prof, (p['y1'], -0.05), 'concrete', (sgn, 0, 0))
-    # own railing on the sea and west sides
-    rail_h = L.RAILING_H
-    railing(m, [(p['x0'] + .1, p['y0'] + .1, h), (p['x1'] - .1, p['y0'] + .1, h)], rail_h)
-    railing(m, [(p['x0'] + .1, p['y0'] + .1, h), (p['x0'] + .1, p['y1'] - .1, h)], rail_h)
-
-
-def stairs(m):
-    s = L.STAIRS; h = L.PLATFORM['height']
-    ys = wl(YS, s['y0'], s['y1'])
-    for k in range(1, s['risers']):
-        xa = s['x_top'] + s['tread'] * (k - 1); xb = xa + s['tread']; z = h - s['rise'] * k
-        nose = 0.06
-        flat(m, xa, xb, s['y0'], s['y1'], z, 'concrete', xl=[xa, xb - nose, xb], yl=ys,
-             color_fn=lambda i, j: 'concrete_dark' if i == 1 else 'concrete')
-        wall(m, 'x', xb, s['y0'], s['y1'], z - s['rise'], z, 'concrete', (1, 0, 0), wlines=ys, zsteps=1)
-        # open north side of the flight
-        m.poly([(xa, s['y1'], -0.05), (xb, s['y1'], -0.05), (xb, s['y1'], z), (xa, s['y1'], z)], 'concrete', 'wall', want=(0, 1, 0))
-    # handrail down the middle: axis offset below the top contact line, three round posts
-    hr = L.HANDRAIL; axis = L.offset_polyline(L.handrail_top(), hr['r'])
-    m.tube([(x, hr['y'], z) for x, z in axis], hr['r'], 'red', 'rail', sides=10)
-    def axis_z(x):
-        a = np.array(axis); return float(np.interp(x, a[:, 0], a[:, 1]))
-    def ground(x):
-        if x <= s['x_top']: return h
-        k = int((x - s['x_top']) // s['tread']) + 1
-        return h - s['rise'] * k if k < s['risers'] else 0.0
-    for x in (hr['x0'] + 0.2, s['x_top'] + s['tread'] * 2.5, hr['x1'] - 0.15):
-        m.tube([(x, hr['y'], ground(x) - 0.03), (x, hr['y'], axis_z(x) - hr['r'] * .5)], 0.024, 'red', 'rail', sides=8, caps=False)
-
-
-def hubba(m):
-    hb = L.HUBBA; s = L.STAIRS; h = L.PLATFORM['height']
-    top = L.hubba_top()                                  # (x, z) flat on the platform, then down the stairs
-    y0, y1 = hb['y0'], hb['y1']; b = L.STEEL_BAND
-    ys = [y0, y0 + b, (y0 + y1) / 2, y1 - b, y1]
-    xs = sorted(set([top[0][0], top[1][0], top[2][0]] + [x for x in XS if top[0][0] < x < top[2][0]]))
-    zt = lambda x: float(np.interp(x, [p[0] for p in top], [p[1] for p in top]))
-    rows = [[(x, y, zt(x)) for y in ys] for x in xs]
-    m.grid(rows, 'concrete_light', 'concrete', False, (0, 0, 1), color_fn=lambda i, j: 'steel' if j in (0, 3) else 'concrete_light')
-    # sides: the block sits on the platform (x < x_top) and on the floor beyond
-    for y, sgn in ((y0, -1), (y1, 1)):
-        pts = [(x, zt(x)) for x in xs]
-        side = [(x, y, z) for x, z in pts]
-        # platform part: rectangle over z in [h, top]
-        m.poly([(top[0][0], y, h), (s['x_top'], y, h), (s['x_top'], y, top[1][1]), (top[0][0], y, top[0][1])], 'concrete_light', 'wall', want=(0, sgn, 0))
-        # floor part: fan from the bottom corner under the stair top
-        m.fan_polygon([(x, y, zt(x)) for x in xs if x >= s['x_top'] - 1e-9] + [(top[2][0], y, -0.05)], (s['x_top'], y, -0.05), 'concrete_light', 'wall', (0, sgn, 0))
-        steel_side_band_sloped(m, 'x', y, [(x, zt(x)) for x in xs], sgn)
-    m.poly([(top[0][0], y0, h), (top[0][0], y1, h), (top[0][0], y1, top[0][1]), (top[0][0], y0, top[0][1])], 'concrete_light', 'wall', want=(-1, 0, 0))
-    m.poly([(top[2][0], y0, -0.05), (top[2][0], y1, -0.05), (top[2][0], y1, top[2][1]), (top[2][0], y0, top[2][1])], 'concrete_light', 'wall', want=(1, 0, 0))
-
-
 def ledge_box(m, x0, x1, y0, y1, h, top_color='concrete_light', side_color='concrete_light', steel_x=False, steel_y=True):
     b = L.STEEL_BAND
     xs = wl(XS, x0, x1, extra=((x0 + b, x1 - b) if steel_x else ()))
@@ -222,62 +93,199 @@ def ledge_box(m, x0, x1, y0, y1, h, top_color='concrete_light', side_color='conc
         steel_side_band(m, 'y', x0, y0, y1, h, -1); steel_side_band(m, 'y', x1, y0, y1, h, 1)
 
 
-def manual_pad(m):
-    p = L.MANUAL_PAD
-    ledge_box(m, p['x0'], p['x1'], p['y0'], p['y1'], p['height'], top_color='dusty_blue', side_color='concrete', steel_x=True, steel_y=True)
+
+# ----------------------------------------------------------------------------- rideable structures
+def quarter(m,q):
+    prof=L.quarter_profile(q); ys=wl(YS,q['y0'],q['y1']); h=prof[-1][1]; sign=q['sign']; lip=q['lip']; back=lip+sign*q['deck']
+    ramp(m,prof,'x',ys,'sage',(-sign,0,1),'transition',lambda i,j: 'coping' if i>=46 else 'tile' if i==45 else 'sage')
+    edge=prof[-1][0]
+    flat(m,min(edge,back),max(edge,back),q['y0'],q['y1'],h,'concrete_light',yl=ys)
+    wall(m,'x',back,q['y0'],q['y1'],0,h,'sage',(sign,0,0),wlines=ys)
+    for y,side in [(q['y0'],-1),(q['y1'],1)]:
+        if q['id'].startswith('mini') and side==-1:continue  # continuous curved return
+        side_fan(m,'x',y,prof,(lip,0),'sage',(0,side,0))
+        if not ((q['id']=='east_return' and side==-1) or (q['id']=='mini_west' and side==1)):
+            m.poly([(edge,y,0),(back,y,0),(back,y,h),(edge,y,h)],'sage',want=(0,side,0))
 
 
-def benches(m):
-    b = L.BENCH
-    for x0, x1 in L.BENCHES:
-        ledge_box(m, x0, x1, b['y0'], b['y1'], b['height'])
+def mini_return(m):
+    # A continuous 180-degree corner links the two mini walls into an open horseshoe.
+    q=L.QUARTERS[1];h=q['radius']+q['vert']; prof=[(x+23,z) for x,z in L.quarter_profile(q)]
+    prof += [(15.5,h)]
+    # The rounded south back is a rideable skirt, rather than a vertical wall.
+    prof += [(15.5+3*u,h*(1-3*u*u+2*u*u*u)) for u in np.linspace(0,1,25)[1:]]
+    angles=np.linspace(math.pi,2*math.pi,121)
+    rows=[[( -23+r*math.cos(a),-23+r*math.sin(a),z) for a in angles] for r,z in prof]
+    ids=[[m.vert(p) for p in row] for row in rows]
+    for i in range(len(ids)-1):
+        for k in range(len(angles)-1):
+            p=rows[i][k];want=(-23-p[0],-23-p[1],1) if i<64 else (0,0,1)
+            color='tile' if i==45 else 'coping' if 46<=i<64 else 'terracotta' if i==64 else 'sage'
+            m.face([ids[i][k],ids[i][k+1],ids[i+1][k+1],ids[i+1][k]],color,'transition',True,want)
+    # A west 50cm deck flare joins the wider access deck without leaving a crack.
+    m.poly([(-39,-23,h),(-38.5,-23,h),(-38.5,-22,h),(-39,-22,h)],'concrete_light',want=(0,0,1))
 
 
-def flat_bars(m):
-    for bar in L.BARS:
-        cz = bar['top'] - L.BAR_R
-        m.tube([(bar['x0'], bar['y'], cz), (bar['x1'], bar['y'], cz)], L.BAR_R, bar['color'], 'rail', sides=10)
-        for x in (bar['x0'] + 0.25, (bar['x0'] + bar['x1']) / 2, bar['x1'] - 0.25):
-            m.box((x - .025, bar['y'] - .025, -0.03), (x + .025, bar['y'] + .025, cz), bar['color'], 'rail')
+def bank(m,b):
+    prof=L.bank_profile(b);axis=b['axis']; widths=wl(YS if axis=='x' else XS,b['w0'],b['w1'])
+    ramp(m,prof,axis,widths,'concrete',P(axis,b['sign'],0,2),'paint')
+    for w,sign in [(b['w0'],-1),(b['w1'],1)]:
+        side_fan(m,axis,w,prof,(b['top'],0),'sage',P(axis,0,sign,0))
 
 
-def south_bank(m):
-    b = L.SOUTH_BANK; prof = L.south_bank_profile(); xs = wl(XS, b['x0'], b['x1'])
-    back = -L.HALF_Y + L.RAIL_INSET; h = b['height']; n = len(prof) - 1
-    ramp(m, prof, 'y', xs, 'dusty_blue', want=(0, 1, 1), color_fn=lambda i, j: 'steel' if i == n - 1 else 'dusty_blue')
-    rows = [[(x, y, h) for x in xs] for y in (b['top_y'], b['top_y'] - L.STEEL_BAND, b['top_y'] - .5, back)]
-    m.grid(rows, 'concrete', 'concrete', False, (0, 0, 1), color_fn=lambda i, j: 'steel' if i == 0 else 'concrete')
-    wall(m, 'y', back, b['x0'], b['x1'], -0.05, h, 'concrete', (0, -1, 0), wlines=xs)
-    for x, s in ((b['x0'], -1), (b['x1'], 1)):
-        side_fan(m, 'y', x, prof + [(back, h)], (back, -0.05), 'concrete', (s, 0, 0))
-    railing(m, [(b['x0'] + .1, back + .1, h), (b['x1'] - .1, back + .1, h)], L.RAILING_H)
+def terraces(m):
+    for t in L.TERRACES:
+        x0,x1,y0,y1,h=[t[k] for k in ('x0','x1','y0','y1','height')]
+        flat(m,x0,x1,y0,y1,h,'concrete_light')
+        # West side opens onto its return bank.
+        access=next(b for b in L.BANKS if b['id']==t['id']+'_access')
+        for y,side in [(y0,-1),(y1,1)]:
+            if y not in (17.,21.) and (access['axis']!='y' or abs(y-access['top'])>1e-6):wall(m,'y',y,x0,x1,0,h,'terracotta',(0,side,0))
+        for a,b in [(t['stair0']-.7,t['stair0']),(t['stair1'],t['stair1']+.7)]:
+            wall(m,'x',x1,a,b,0,h,'terracotta',(1,0,0))
+        ys=wl(YS,t['stair0'],t['stair1']);rise=h/t['steps']
+        for k in range(t['steps']):
+            x=x1+k*t['tread'];z=h-k*rise
+            wall(m,'x',x,t['stair0'],t['stair1'],z-rise,z,'concrete',(1,0,0),wlines=ys,zsteps=1)
+            if k<t['steps']-1:
+                flat(m,x,x+t['tread'],t['stair0'],t['stair1'],z-rise,'concrete',xl=[x,x+t['tread']],yl=ys)
+                for y,side in [(t['stair0'],-1),(t['stair1'],1)]:wall(m,'y',y,x,x+t['tread'],0,z-rise,'terracotta',(0,side,0))
+        for y,top in L.terrace_rails(t):
+            axis=L.offset_polyline(top,L.BAR_R)
+            m.tube([(x,y,z) for x,z in axis],L.BAR_R,'red','rail',sides=10)
+            for i in (0,2,3):
+                x,z=axis[i]; ground=h if i==0 else 0
+                m.box((x-.025,y-.025,ground),(x+.025,y+.025,z),'red','rail')
+        prof=L.hubba_profile(t)
+        for a in (t['stair0']-.7,t['stair1']):
+            ramp(m,prof,'x',[a,a+.05,a+.65,a+.7],'concrete_light',(0,0,1),'concrete',lambda i,j:'steel' if j in (0,2) else 'concrete_light')
+            for y,side in [(a,-1),(a+.7,1)]:
+                side_fan(m,'x',y,prof,(prof[0][0],0),'terracotta',(0,side,0))
+                # Close the base of the sloped side and the two end caps.
+                m.poly([(prof[0][0],y,0),(prof[-1][0],y,0),(prof[-1][0],y,prof[-1][1])],'terracotta',want=(0,side,0))
+            for x,z in [prof[0],prof[-1]]:wall(m,'x',x,a,a+.7,0,z,'terracotta',(-1 if x==prof[0][0] else 1,0,0))
 
 
-PAINTS = {PAL[k] for k in ('teal', 'salmon', 'mustard', 'dusty_blue')}
-STEELS = {PAL['steel'], PAL['coping']}
-CONCRETES = {PAL[k] for k in ('concrete', 'concrete_light', 'concrete_dark')}
+def street_link(m):
+    profiles=[]
+    for name in ('four','seven'):
+        back=L.bank_profile(next(b for b in L.BANKS if b['id']==name+'_back'))
+        front=L.bank_profile(next(b for b in L.BANKS if b['id']==name+'_left'))
+        profiles.append(sorted(back+front))
+    xs=sorted(set([x for prof in profiles for x,z in prof]+list(np.linspace(L.footprints()['street_link'][0],L.footprints()['street_link'][1],113))))
+    ys=np.linspace(17,21,33)
+    rows=[]
+    for y in ys:
+        t=(y-17)/4;t=t*t*(3-2*t)
+        low,high=[np.interp(xs,[p[0] for p in prof],[p[1] for p in prof],left=0,right=0) for prof in profiles]
+        rows.append([(x,y,float(z)) for x,z in zip(xs,low*(1-t)+high*t)])
+    m.grid(rows,'concrete_light','transition',True,(0,0,1))
 
 
-def retag(m):
-    """Surface tags follow the base colour: steel stays steel, paint wears, concrete varies."""
-    for fi, cols in enumerate(m.colors):
-        c = tuple(cols[0])
-        if c in STEELS: m.tags[fi] = 'steel' if m.tags[fi] != 'coping' else 'coping'
-        elif c in PAINTS: m.tags[fi] = 'paint'
-        elif c in CONCRETES and m.tags[fi] in ('paint',): m.tags[fi] = 'concrete'
+def flow_table(m):
+    f=L.FUNBOX; prof,_=L.funbox_profile()
+    ys=sorted(set(wl(YS,f['y0'],f['y1'])+list(np.linspace(f['y0'],f['y1'],53))))
+    def cross(y):
+        t=min(1.,(y-f['y0'])/3.,(f['y1']-y)/3.)
+        return t*t*(3-2*t)
+    rows=[[(x,y,z*cross(y)) for y in ys] for x,z in prof]
+    m.grid(rows,'sage','transition',True,(0,0,1))
+
+
+def bowl(m):
+    b=L.BOWL;r=b['radius'];h=r+b['vert'];rf=b['floor_radius'];cr=L.COPING_R
+    rings=[L.bowl_ring(rf+r*math.sin(a),r*(1-math.cos(a))) for a in np.linspace(0,math.pi/2,46)]
+    rings += [L.bowl_ring(rf+r,h-cr)]
+    rings += [L.bowl_ring(rf+r+cr*(1-math.cos(a)),h-cr+cr*math.sin(a)) for a in np.linspace(math.pi/36,math.pi/2,18)]
+    rings += [L.bowl_ring(rf+r+.6,h),L.bowl_ring(rf+r+b['deck'],h)]
+    # S-curve wraps every outside face, giving multiple roll-ins and return lines.
+    rings += [L.bowl_ring(rf+r+b['deck']+b['skirt']*u,h*(1-3*u*u+2*u*u*u)) for u in np.linspace(0,1,57)[1:]]
+    ids=[[m.vert(p) for p in row] for row in rings];n=len(ids[0])
+    for j in range(len(ids)-1):
+        for k in range(n):
+            kn=(k+1)%n
+            color='tile' if j==45 else 'coping' if 46<=j<64 else 'terracotta' if j==64 else 'concrete_light' if j==65 else 'sage'
+            m.face([ids[j][k],ids[j][kn],ids[j+1][kn],ids[j+1][k]],color,'transition',True,(b['x']-rings[j][k][0],b['y']-rings[j][k][1],1) if j<64 else (0,0,1))
 
 
 def park_features():
-    m = MeshData('SM_SkateParkFeatures')
-    for fn in (big_quarter, mini_quarter, kicker, funbox, platform, stairs, hubba, manual_pad, benches, flat_bars, south_bank):
-        fn(m)
-    retag(m)
+    m=MeshData('SM_SkateParkFeatures')
+    for q in L.QUARTERS:quarter(m,q)
+    for b in L.BANKS:bank(m,b)
+    terraces(m);street_link(m);flow_table(m);bowl(m);mini_return(m)
+    for p in L.PADS:ledge_box(m,p['x0'],p['x1'],p['y0'],p['y1'],p['height'],side_color='sage',steel_x=True)
+    for bar in L.BARS:
+        x0,x1,y,h=[bar[k] for k in ('x0','x1','y','top')];r=L.BAR_R
+        if bar['square']:m.box((x0,y-r,h-2*r),(x1,y+r,h),bar['color'],'rail')
+        else:m.tube([(x0,y,h-r),(x1,y,h-r)],r,bar['color'],'rail',sides=10)
+        for x in (x0+.3,(x0+x1)/2,x1-.3):m.box((x-r,y-r,0),(x+r,y+r,h-r),bar['color'],'rail')
     return m
 
 
+def gardens():
+    """Furniture occupies the edge promenade, leaving all skate approaches open."""
+    m=MeshData('SM_SkateParkFurniture'); plants=MeshData('SM_SkateParkPlanting')
+    rng=np.random.default_rng(184)
+    # Timber benches / grass boxes alternating along the sunset promenade and entry.
+    for x,y in [(-46,-39),(2,-39),(36,-39),(-26,41),(-12,41),(22,41),(38,41),(54,-17),(54,1)]:
+        start,plant_start=len(m.verts),len(plants.verts)
+        m.box((x-2,y-.5,0),(x+2,y+.5,.35),'concrete_dark')
+        for j in range(5):m.box((x-2.1,y-.5+j*.21,.35),(x+2.1,y-.32+j*.21,.46),'timber','wood')
+        for j in range(3):m.box((x-2.1,y+.48,.65+j*.15),(x+2.1,y+.6,.76+j*.15),'timber','wood')
+        if (x,y) in ((2,-39),(22,41)):continue  # adjacent rounded garden already supplies planting
+        px=x+3.8;py=y
+        m.box((px-.9,py-.7,0),(px+.9,py+.7,.58),'concrete_light')
+        m.box((px-.79,py-.59,.58),(px+.79,py+.59,.59),'soil','soil')
+        for _ in range(24):
+            a=rng.uniform(0,2*math.pi);xx=px+rng.uniform(-.65,.65);yy=py+rng.uniform(-.48,.48);hh=rng.uniform(.3,.85)
+            dx,dy=math.cos(a),math.sin(a);w=.06
+            plants.poly([(xx-dy*w,yy+dx*w,.6),(xx+dy*w,yy-dx*w,.6),(xx+dx*.28,yy+dy*.28,.6+hh)],'grass_light' if rng.random()<.3 else 'grass','leaves')
+            # Double sided leaf for both Unreal and review.
+            plants.faces.append(plants.faces[-1][::-1]);plants.colors.append(plants.colors[-1]);plants.smooth.append(False);plants.tags.append('leaves')
+        if x==54:
+            # Align east-edge seats with the promenade, beyond the bowl's outer bank.
+            for mesh,first in [(m,start),(plants,plant_start)]:
+                mesh.verts[first:]=[(x-(py-y),y+(px-x),z) for px,py,z in mesh.verts[first:]]
+    # Long timber pergola looking out over the water.
+    for x in (13.,20.5,28.):
+        for y in (-41.,-35.):m.box((x-.12,y-.12,0),(x+.12,y+.12,3.2),'timber','wood')
+    for y in (-41.,-35.):m.box((12.5,y-.12,3.05),(28.5,y+.12,3.35),'timber','wood')
+    for x in np.arange(12.5,28.6,.5):m.box((x-.065,-41.4,3.35),(x+.065,-34.6,3.50),'timber','wood')
+    # Rounded garden seats provide a stronger silhouette than scattered square pots.
+    for cx,cy,span in [(-46,39,8),(31,40,9),(51,-28,7),(-49,-29,6),(8,-39,6)]:
+        ring=[]
+        for end,angle in [(span/2-1, -90),(-span/2+1,90)]:
+            for k in range(25):
+                a=math.radians(angle+k*180/24);ring.append((cx+end+math.cos(a),cy+math.sin(a)))
+        outer=[(x,y,.55) for x,y in ring];inner=[(cx+(x-cx)*.89,cy+(y-cy)*.70,.55) for x,y in ring]
+        for k,p in enumerate(outer):
+            j=(k+1)%len(outer);q=outer[j]
+            m.poly([p,q,inner[j],inner[k]],'concrete_light',want=(0,0,1))
+            m.poly([(p[0],p[1],0),(q[0],q[1],0),q,p],'terracotta',want=(p[0]-cx,p[1]-cy,0))
+        m.fan_polygon([(x,y,.51) for x,y,z in inner],(cx,cy,.51),'soil','soil',(0,0,1))
+        for _ in range(80):
+            xx=cx+rng.uniform(-span/2+.9,span/2-.9); yy=cy+rng.uniform(-.55,.55)
+            hh=rng.uniform(.35,1.2);a=rng.uniform(0,math.tau);dx,dy=math.cos(a),math.sin(a);w=.04
+            for off in (0,math.pi/2):
+                ux,uy=math.cos(a+off),math.sin(a+off)
+                plants.poly([(xx-uy*w,yy+ux*w,.51),(xx+uy*w,yy-ux*w,.51),(xx+dx*.22,yy+dy*.22,.51+hh)],'grass_light' if hh>.9 else 'grass','leaves')
+                plants.faces.append(plants.faces[-1][::-1]);plants.colors.append(plants.colors[-1]);plants.smooth.append(False);plants.tags.append('leaves')
+    return m,plants
+
 def decals():
-    """Faded floor paint: the Yorimichi sun and three wave strokes (4 mm above the deck, no collision)."""
+    """Faded floor paint: the Yorimichi sun and three wave strokes (25 mm above the deck, no collision)."""
     m = MeshData('SM_SkateParkDecals'); z = L.DECAL_Z
+    path=[(-46,31),(-25,38),(8,35),(35,30),(40,17),(23,10),(5,4),(-4,-10),(-3,-28),(-23,-40),(-43,-27),(-47,0)]
+    points=[]
+    for i,p1 in enumerate(path):
+        p0=np.array(path[(i-1)%len(path)]);p1=np.array(p1);p2=np.array(path[(i+1)%len(path)]);p3=np.array(path[(i+2)%len(path)])
+        for t in np.linspace(0,1,33)[:-1]:
+            points.append(.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t))
+    rows=[]
+    for i,p in enumerate(points):
+        d=points[(i+1)%len(points)]-points[(i-1)%len(points)];d=d/np.linalg.norm(d);normal=np.array([-d[1],d[0]])
+        rows.append([(* (p+normal*w),z) for w in (-.85,.85)])
+    rows.append(rows[0]);m.grid(rows,'terracotta','decal',False,(0,0,1))
     sun = L.FLOOR_SUN; n = 48
     red = (0.42, 0.075, 0.048); ink = (0.055, 0.10, 0.18)
     radii = list(np.linspace(sun['r'] / 6, sun['r'], 6))
@@ -327,9 +335,8 @@ def pier():
     # perimeter railing (blocks, not grindable) with the entrance gap; the platform and the
     # south bank carry their own railings where they meet the edge
     e = hx - L.RAIL_INSET; f = hy - L.RAIL_INSET; gap = (L.ENTRANCE_X - 2.5, L.ENTRANCE_X + 2.5)
-    p = L.PLATFORM; sb = L.SOUTH_BANK
     runs = [((-e, f), (gap[0], f)), ((gap[1], f), (e, f)), ((e, f), (e, -f)), ((-e, f), (-e, -f)),
-            ((-e, -f), (p['x0'], -f)), ((p['x1'], -f), (sb['x0'], -f)), ((sb['x1'], -f), (e, -f))]
+            ((-e, -f), (e, -f))]
     for a, b_ in runs:
         railing(m, [(a[0], a[1], 0.0), (b_[0], b_[1], 0.0)], L.RAILING_H)
     for x, y in L.LAMPS:
@@ -351,7 +358,7 @@ def pilings(h_world):
     from village.layout import sample
     m = MeshData('SM_SkatePierPilings')
     ox, oy, oz = L.ORIGIN
-    xs = np.linspace(-36, 36, 10); ys = np.linspace(-24, 24, 7)
+    xs = np.linspace(-52, 52, 14); ys = np.linspace(-40, 40, 11)
     cap_top, cap_bot = -L.SLAB, -1.0
     for y in ys:
         m.box((-L.HALF_X + .3, y - .3, cap_bot), (L.HALF_X - .3, y + .3, cap_top), 'underside', 'pile', bottom=True)

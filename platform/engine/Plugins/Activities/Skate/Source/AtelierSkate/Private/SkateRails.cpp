@@ -31,7 +31,7 @@ int32 USkateRailSubsystem::FindNear(const FVector& P, float MaxFlat, float MinAb
     for (int32 R = 0; R < Rails.Num(); ++R)
     {
         const FSkateRail& Rail = Rails[R];
-        if (!Rail.Bounds.IsInsideOrOn(P)) continue;
+        if (!Rail.Bounds.ExpandBy(FMath::Max3(MaxFlat, FMath::Abs(MinAbove), FMath::Abs(MaxAbove))).IsInsideOrOn(P)) continue;
         for (int32 I = 1; I < Rail.Points.Num(); ++I)
         {
             const FVector A = Rail.Points[I - 1], B = Rail.Points[I];

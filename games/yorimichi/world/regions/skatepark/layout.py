@@ -1,103 +1,60 @@
-"""Skate pier layout: every dimension the meshes, park.json and the checks share.
-
-Pure numpy (no bpy). Park-local metres: origin at the platform centre on the deck
-top, x east, y north, z up (the Blender world axes, yaw 0). World = ORIGIN + local.
-"""
-import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
+"""Sunset Pier: shared geometry/gameplay dimensions, park-local metres (east, north, up)."""
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori
 import json
 import math
-from pathlib import Path
 import numpy as np
-
 JAPAN = yori.REGIONS
+ORIGIN = (-110., -212., 1.8)
+HALF_X, HALF_Y = 56., 44.
+RAIL_INSET, RAILING_H, SLAB = .15, 1.1, .5
+ENTRANCE_X, PATH_HALF = 6., 2.
+COPING_R = .025  # flush rounded steel shoulder; no undercut for wheels to catch
+STEEL_BAND, DECAL_Z, JOINT_W = .05, .025, .025
+JOINTS_X = list(np.arange(-50., 51., 5.))
+JOINTS_Y = list(np.arange(-40., 41., 5.))
+LAMPS = [(x,y) for x in (-53.,0.,53.) for y in (-41.,41.)]
+FLOOR_SUN = dict(x=-28., y=-10., r=3.2)
+FLOOR_WAVES = [(-21.,-11.,-9.),(-20.5,-10.5,-11.),(-20.,-10.,-13.)]
+# Every return transition reaches vertical; the flat decks sit beyond its coping.
+QUARTERS = [dict(id='mini_west', lip=-36., sign=-1, y0=-23., y1=-13., radius=2.5, vert=.15, deck=3.),
+            dict(id='mini_east', lip=-10., sign=1, y0=-23., y1=-13., radius=2.5, vert=.15, deck=2.5),
+            dict(id='east_return', lip=46., sign=1, y0=18., y1=34., radius=2., vert=.15, deck=3.)]
+BOWL = dict(x=29., y=-10., core_x=7., core_y=5., floor_radius=3., radius=3., vert=.2, deck=1.5, skirt=7.)
+TERRACES = [dict(id='seven', x0=-44., x1=-30., y0=21., y1=36., height=1.26, steps=7, tread=.4, stair0=24., stair1=30., bank_sign=1, bank_run=8.),
+            dict(id='four', x0=-44., x1=-30., y0=6., y1=17., height=.72, steps=4, tread=.4, stair0=9., stair1=15., bank_sign=-1, bank_run=7.)]
+PADS = [dict(id='manny_low',x0=-18.,x1=-10.,y0=26.,y1=29.,height=.22),
+        dict(id='manny_high',x0=-2.,x1=6.,y0=26.,y1=29.,height=.38),
+        dict(id='long_ledge',x0=-18.,x1=-8.,y0=12.,y1=15.,height=.32)]
+BARS = [dict(id='flatbar_red',x0=-15.,x1=-7.,y=20.,top=.38,color='red',square=False),
+        dict(id='flatbar_square',x0=3.,x1=11.,y=20.,top=.30,color='sage',square=True),
+        dict(id='flatbar_long',x0=16.,x1=24.,y=29.,top=.45,color='red',square=False)]
+BAR_R=.025
+FUNBOX=dict(x0=-21.,x1=1.,top0=-13.,top1=-7.,y0=-8.,y1=5.,height=.85)
+# Approach banks end on the decks, with 2m fillets at both ends.
+BANKS=[dict(id='mini_access',axis='y',top=-13.,sign=1,run=11.,w0=-39.,w1=-36.,height=2.65),
+       dict(id='return_access',axis='y',top=18.,sign=-1,run=9.,w0=46.,w1=49.,height=2.15)]
+for t in TERRACES:
+    if t['id']=='seven':
+        BANKS.append(dict(id='seven_access',axis='x',top=t['x1'],sign=1,run=8.,w0=30.7,w1=36.,height=t['height']))
+        continue
+    BANKS.append(dict(id=t['id']+'_access',axis='y',top=t['y1'] if t['bank_sign']>0 else t['y0'],sign=t['bank_sign'],run=t['bank_run'],w0=t['x0'],w1=t['x1'],height=t['height']))
 
-ORIGIN = (-110.0, -195.0, 1.80)          # Blender world metres, deck top
-HALF_X, HALF_Y = 40.0, 27.0              # deck x in [-40, 40], y in [-27, 27]
-RAIL_INSET = 0.15                         # perimeter railing line inside the deck edge
-RAILING_H = 1.10
-SLAB = 0.50                               # deck slab thickness under the floor
-ENTRANCE_X = 6.0                          # path arrives on the north edge at this local x
-PATH_HALF = 2.0                           # 4 m path
-
-# ----------------------------------------------------------------------------- features
-BIG_QP = dict(lip_x=35.0, y0=-6.0, y1=6.0, height=1.80, vert=0.15, r0=2.20, deck_x=37.0, rail_h=1.0)
-MINI_QP = dict(lip_x=-35.0, y0=-5.0, y1=5.0, height=1.00, radius=1.50, deck_x=-37.0, rail_h=1.0)
-COPING_R = 0.025                          # 5 cm round steel coping
-COPING_OUT = 0.010                        # pipe stands 1 cm proud of the face
-COPING_UP = 0.005                         # and 5 mm above the deck
-KICKER = dict(toe_x=-11.5, lip_x=-9.5, y0=0.1, y1=1.7, height=0.5)
-FUNBOX = dict(x0=-8.5, x1=2.5, top0=-6.0, top1=0.0, y0=-1.75, y1=1.75, height=0.6, r_bottom=2.0, r_top=1.2)
-PLATFORM = dict(x0=-30.0, x1=-18.0, y0=-26.85, y1=-18.85, height=1.2)
-PLATFORM_BANK = dict(x0=-30.0, x1=-22.0, corner_y=-12.35, radius=5.0)   # rises south to y1 of the platform
-STAIRS = dict(x_top=-18.0, y0=-25.0, y1=-20.0, risers=6, rise=0.20, tread=0.35)
-HANDRAIL = dict(y=-22.5, x0=-19.5, x1=-15.9, above=0.85, r=0.025)
-HUBBA = dict(y0=-25.8, y1=-25.0, x0=-19.0, above=0.35, x1=-15.9)
-BARS = [dict(id='flatbar_high', x0=10.0, x1=16.0, y=-4.5, top=0.35, color='red'),
-        dict(id='flatbar_low', x0=10.5, x1=15.5, y=4.5, top=0.25, color='yellow')]
-BAR_R = 0.025
-MANUAL_PAD = dict(x0=16.0, x1=20.0, y0=11.75, y1=14.25, height=0.18)
-BENCHES = [(-25.0, -20.0), (-14.0, -9.0), (20.0, 25.0)]
-BENCH = dict(y0=22.25, y1=22.75, height=0.45)
-SOUTH_BANK = dict(x0=4.0, x1=24.0, top_y=-25.85, height=1.5, angle=35.0, radius=2.0)
-DECAL_Z = 0.004                           # painted floor motif (separate, non-blocking mesh)
-FLOOR_SUN = dict(x=-25.0, y=12.0, r=3.2)
-FLOOR_WAVES = [(-19.6, -12.6, 10.6), (-19.2, -12.2, 12.0), (-18.8, -11.8, 13.4)]   # x0, x1, y
-LAMPS = [(-38.5, 25.5), (0.0, 25.5), (38.5, 25.5), (-38.5, -25.5), (0.0, -25.5), (38.5, -25.5)]
-STEEL_BAND = 0.05                         # width of the flush steel angle on ledge corners
-JOINT_W = 0.04                            # sawn expansion joints in the deck, painted dark (flush)
-JOINTS_X = [float(x) for x in np.arange(-35.0, 35.1, 5.0)]
-JOINTS_Y = [float(y) for y in np.arange(-25.0, 25.1, 5.0)]
-
-
-def nosing_z(x):
-    """Stair nosing line (platform edge to the last nosing), local metres."""
-    s = STAIRS
-    return PLATFORM['height'] - (x - s['x_top']) * s['rise'] / s['tread']
+# Back banks connect both street decks to a shared west circulation lane.
+for t in TERRACES:
+    BANKS.append(dict(id=t['id']+'_back',axis='x',top=t['x0'],sign=-1,run=5.,w0=t['y0'],w1=t['y1'],height=t['height']))
+    BANKS.append(dict(id=t['id']+'_left',axis='x',top=t['x1'],sign=1,run=8.,w0=t['y0'],w1=t['stair0']-.7,height=t['height']))
+    if t['id']=='four':
+        BANKS.append(dict(id='four_right',axis='x',top=t['x1'],sign=1,run=8.,w0=t['stair1']+.7,w1=t['y1'],height=t['height']))
 
 
 def world(p):
-    return [ORIGIN[0] + p[0], ORIGIN[1] + p[1], ORIGIN[2] + (p[2] if len(p) > 2 else 0.0)]
+    return [ORIGIN[0]+p[0],ORIGIN[1]+p[1],ORIGIN[2]+(p[2] if len(p)>2 else 0)]
 
-
-# ----------------------------------------------------------------------------- profiles
-def big_qp_profile(step_deg=2.5):
-    """(x, z) from the toe to the lip: radius runs 2.2 m at the floor down to 1.34 m where it
-    reaches vertical at 1.65 m, then 0.15 m of true vertical. Exact ends."""
-    q = BIG_QP
-    a = q['r0']; tall = q['height'] - q['vert']
-    b = tall - a                                       # r(phi) = a + b*phi: height a+b, run a+b(pi/2-1)
-    run = a + b * (math.pi / 2 - 1)
-    toe = q['lip_x'] - run
-    n = int(math.ceil(90 / step_deg))
-    pts = []
-    for k in range(n + 1):
-        t = (math.pi / 2) * k / n
-        x = a * math.sin(t) + b * (t * math.sin(t) + math.cos(t) - 1)
-        z = a * (1 - math.cos(t)) + b * (math.sin(t) - t * math.cos(t))
-        pts.append((toe + x, z))
-    pts[-1] = (q['lip_x'], tall)
-    pts.append((q['lip_x'], q['height']))
-    return pts, toe, (a, a + b * math.pi / 2)
-
-
-def mini_qp_profile(step_deg=2.5):
-    q = MINI_QP; r = q['radius']; h = q['height']
-    top = math.acos(1 - h / r); run = r * math.sin(top)
-    toe = q['lip_x'] + run
-    n = int(math.ceil(math.degrees(top) / step_deg))
-    pts = [(toe - r * math.sin(top * k / n), r * (1 - math.cos(top * k / n))) for k in range(n + 1)]
-    pts[-1] = (q['lip_x'], h)
-    return pts, toe, math.degrees(top)
-
-
-def kicker_profile(step_deg=2.0):
-    k = KICKER; run = k['lip_x'] - k['toe_x']; h = k['height']
-    ang = 2 * math.atan2(h, run); r = run / math.sin(ang)
-    n = int(math.ceil(math.degrees(ang) / step_deg))
-    pts = [(k['toe_x'] + r * math.sin(ang * i / n), r * (1 - math.cos(ang * i / n))) for i in range(n + 1)]
-    pts[-1] = (k['lip_x'], h)
-    return pts, r, math.degrees(ang)
-
+def quarter_profile(q, step_deg=2.):
+    r=q['radius']; n=math.ceil(90/step_deg); toe=q['lip']-q['sign']*r
+    pts=[(toe+q['sign']*r*math.sin(i*math.pi/2/n),r*(1-math.cos(i*math.pi/2/n))) for i in range(n+1)]
+    h=r+q['vert']; cr=COPING_R
+    return pts+[(q['lip'],h-cr)]+[(q['lip']+q['sign']*cr*(1-math.cos(a)),h-cr+cr*math.sin(a)) for a in np.linspace(math.pi/36,math.pi/2,18)]
 
 def fillet_polyline(corners, radii, step_deg=2.5):
     """2D polyline (u, z) with circular fillets at interior corners; exact tangent points."""
@@ -130,101 +87,78 @@ def fillet_polyline(corners, radii, step_deg=2.5):
     return [tuple(map(float, p)) for p in clean]
 
 
+
+def bank_profile(b):
+    # Shift corner positions to put the final tangent exactly at the deck join.
+    h=b['height']; a=math.atan2(h,b['run']); t=2*math.tan(a/2); sign=b['sign']; top=b['top']
+    pts=fillet_polyline([(-1.,0),(0.,0),(b['run'],h),(b['run']+1,h)],[2.,2.])[1:-1]
+    return [(top+sign*(b['run']+t-u),z) for u,z in pts]
+
 def funbox_profile():
-    """(x, z) along the box from the west toe to the east toe (fillets included)."""
-    f = FUNBOX; h = f['height']
-    corners = [(f['x0'] - 1.0, 0), (f['x0'], 0), (f['top0'], h), (f['top1'], h), (f['x1'], 0), (f['x1'] + 1.0, 0)]
-    pts = fillet_polyline(corners, [f['r_bottom'], f['r_top'], f['r_top'], f['r_bottom']])[1:-1]
-    ang = math.atan2(h, f['top0'] - f['x0'])
-    top_flat = (f['top0'] + f['r_top'] * math.tan(ang / 2), f['top1'] - f['r_top'] * math.tan(ang / 2))
-    return pts, top_flat
+    f=FUNBOX; h=f['height']
+    pts=fillet_polyline([(f['x0']-1,0),(f['x0'],0),(f['top0'],h),(f['top1'],h),(f['x1'],0),(f['x1']+1,0)],[2.,2.,2.,2.])[1:-1]
+    return pts,(pts[len(pts)//2-1][0],pts[len(pts)//2][0])
 
-
-def platform_bank_profile():
-    """(y, z) from the north toe up (southward) to the platform edge, where the top fillet ends
-    exactly at the platform's height (no lip)."""
-    b = PLATFORM_BANK; p = PLATFORM; h = p['height']; r = b['radius']
-    run = b['corner_y'] - p['y1']                        # corner-to-corner run before the shift
-    ang = math.atan2(h, run); t = r * math.tan(ang / 2)
-    top_c = p['y1'] + t; bot_c = top_c + run
-    corners = [(bot_c + 1.0, 0), (bot_c, 0), (top_c, h), (p['y1'] - 1.0, h)]
-    pts = fillet_polyline(corners, [r, r])[1:-1]
-    assert abs(pts[-1][0] - p['y1']) < 1e-9 and abs(pts[-1][1] - h) < 1e-9
-    return pts
-
-
-def south_bank_profile():
-    """(y, z) from the toe (north) up to the steel top edge at top_y; a point 5 cm below the
-    top edge (along the face) bounds the steel band."""
-    b = SOUTH_BANK; h = b['height']; ang = math.radians(b['angle'])
-    corner = b['top_y'] + h / math.tan(ang)
-    pts = fillet_polyline([(corner + 1.0, 0), (corner, 0), (b['top_y'], h)], [b['radius']])[1:]
-    band = (b['top_y'] + STEEL_BAND * math.cos(ang), h - STEEL_BAND * math.sin(ang))
-    return pts[:-1] + [band, pts[-1]]
-
-
-def handrail_top():
-    """Top contact line of the stair handrail (x, z)."""
-    h = HANDRAIL; s = STAIRS
-    top = PLATFORM['height'] + h['above']
-    return [(h['x0'], top), (s['x_top'], top), (h['x1'], nosing_z(h['x1']) + h['above'])]
-
-
-def hubba_top():
-    h = HUBBA; s = STAIRS
-    top = PLATFORM['height'] + h['above']
-    return [(h['x0'], top), (s['x_top'], top), (h['x1'], nosing_z(h['x1']) + h['above'])]
-
-
-# ----------------------------------------------------------------------------- footprints
-def footprints():
-    """Axis-aligned floor areas covered by solid features (the floor has holes there)."""
-    _, big_toe, _ = big_qp_profile(); _, mini_toe, _ = mini_qp_profile()
-    fb, _ = funbox_profile(); pb = platform_bank_profile(); sb = south_bank_profile()
-    q, m, k, f, p, b, s, hb, mp, bn, sbk = BIG_QP, MINI_QP, KICKER, FUNBOX, PLATFORM, PLATFORM_BANK, STAIRS, HUBBA, MANUAL_PAD, BENCH, SOUTH_BANK
-    out = {
-        'big_qp': (big_toe, q['deck_x'], q['y0'], q['y1']),
-        'mini_qp': (m['deck_x'], mini_toe, m['y0'], m['y1']),
-        'kicker': (k['toe_x'], k['lip_x'], k['y0'], k['y1']),
-        'funbox': (fb[0][0], fb[-1][0], f['y0'], f['y1']),
-        'platform': (p['x0'], p['x1'], p['y0'], p['y1']),
-        'platform_bank': (b['x0'], b['x1'], p['y1'], pb[0][0]),
-        'stairs': (s['x_top'], s['x_top'] + (s['risers'] - 1) * s['tread'], s['y0'], s['y1']),
-        'hubba': (s['x_top'], hb['x1'], hb['y0'], hb['y1']),
-        'manual_pad': (mp['x0'], mp['x1'], mp['y0'], mp['y1']),
-        'south_bank': (sbk['x0'], sbk['x1'], -HALF_Y + RAIL_INSET, sb[0][0]),
-    }
-    for i, (x0, x1) in enumerate(BENCHES):
-        out[f'bench_{i + 1}'] = (x0, x1, bn['y0'], bn['y1'])
+def bowl_ring(radius,z):
+    """Consistent CCW rings: quarter-circle corners and subdivided straight sections."""
+    b=BOWL; out=[]
+    corners=[(b['core_x'],b['core_y'],0),(-b['core_x'],b['core_y'],90),(-b['core_x'],-b['core_y'],180),(b['core_x'],-b['core_y'],270)]
+    for i,(cx,cy,angle) in enumerate(corners):
+        for k in range(37):
+            a=math.radians(angle+90*k/36); out.append((b['x']+cx+radius*math.cos(a),b['y']+cy+radius*math.sin(a),z))
+        nx,ny,na=corners[(i+1)%4]; a=math.radians(angle+90)
+        end=np.array([b['x']+nx+radius*math.cos(a),b['y']+ny+radius*math.sin(a),z]); start=np.array(out[-1]); n=math.ceil(np.linalg.norm(end-start)/.75)
+        fractions=set(k/n for k in range(1,n))
+        if i==1: fractions.update((.1,.9))  # exact west bank entrance boundaries
+        out.extend([tuple(start+(end-start)*f) for f in sorted(fractions)])
     return out
 
+def terrace_rails(t):
+    x=t['x1']; h=t['height']; end=x+(t['steps']-1)*t['tread']
+    # Horizontal lead-in, sloped stair section, horizontal run-out. Height .65m over each nosing.
+    z=lambda u: h-(u-x)*h/t['steps']/t['tread']
+    top=[(x-1.5,h+.65),(x,h+.65),(end,z(end)+.65),(end+1.1,z(end)+.65)]
+    return [(t['stair0']+1.5,top),(t['stair1']-1.5,top)]
 
-def grid_lines(spacing=0.625):
-    """Floor grid lines: every footprint edge, the path's end ring, the deck joints (exact, 'hard'
-    lines), filled with a uniform grid that yields to them. Ramps sample their width on these
-    same lines so ramp toes and the floor share vertices (no T-cracks, no lips)."""
-    hx, hy = set(), set()
-    for x0, x1, y0, y1 in footprints().values():
-        hx |= {round(x0, 6), round(x1, 6)}; hy |= {round(y0, 6), round(y1, 6)}
-    hx |= {round(ENTRANCE_X + o, 6) for o in PATH_OFFSETS}
-    hx |= {-HALF_X, HALF_X, round(-HALF_X + RAIL_INSET, 6), round(HALF_X - RAIL_INSET, 6)}
-    hy |= {-HALF_Y, HALF_Y, round(-HALF_Y + RAIL_INSET, 6), round(HALF_Y - RAIL_INSET, 6)}
-    hy |= {round(FUNBOX['y0'] + STEEL_BAND, 6), round(FUNBOX['y1'] - STEEL_BAND, 6)}
-    for j in JOINTS_X: hx |= {round(j - JOINT_W / 2, 6), round(j + JOINT_W / 2, 6)}
-    for j in JOINTS_Y: hy |= {round(j - JOINT_W / 2, 6), round(j + JOINT_W / 2, 6)}
-    def fill(hard, half):
-        hard = sorted(hard)
-        assert min(np.diff(hard)) > 0.009, ('grid lines too close', min(np.diff(hard)))
-        uni = np.linspace(-half, half, int(round(2 * half / spacing)) + 1)
-        h = np.array(hard)
-        keep = [u for u in uni if np.min(np.abs(h - u)) > 0.12]
-        return np.array(sorted(set(hard) | set(round(float(u), 6) for u in keep)))
-    return fill(hx, HALF_X), fill(hy, HALF_Y)
+def hubba_profile(t):
+    x=t['x1']; end=x+(t['steps']-1)*t['tread']
+    return [(x-1.5,t['height']+.32),(x,t['height']+.32),(end+.7,.32)]
 
+def footprints():
+    out={}
+    for q in QUARTERS:
+        p=quarter_profile(q); back=q['lip']+q['sign']*q['deck']
+        out[q['id']]=(min(p[0][0],back),max(p[0][0],back),q['y0'],q['y1'])
+    for b in BANKS:
+        p=bank_profile(b); ends=sorted([p[0][0],p[-1][0]])
+        out[b['id']]=(*ends,b['w0'],b['w1']) if b['axis']=='x' else (b['w0'],b['w1'],*ends)
+    for t in TERRACES:
+        out[t['id']+'_terrace']=(t['x0'],t['x1'],t['y0'],t['y1'])
+        out[t['id']+'_stairs']=(t['x1'],t['x1']+(t['steps']-1)*t['tread'],t['stair0'],t['stair1'])
+        for side in (-1,1):
+            y=t['stair0']-.7 if side<0 else t['stair1']
+            out[t['id']+'_hubba_'+str(side)]=(t['x1'],hubba_profile(t)[-1][0],y,y+.7)
+    back=bank_profile(next(b for b in BANKS if b['id']=='seven_back'))
+    front=bank_profile(next(b for b in BANKS if b['id']=='seven_left'))
+    out['street_link']=(back[0][0],front[0][0],17.,21.)
+    for p in PADS: out[p['id']]=(p['x0'],p['x1'],p['y0'],p['y1'])
+    p,_=funbox_profile(); out['flow_table']=(p[0][0],p[-1][0],FUNBOX['y0'],FUNBOX['y1'])
+    return out
 
-def lines_between(lines, a, b):
-    return [float(v) for v in lines if a - 1e-6 <= v <= b + 1e-6]
+def grid_lines(spacing=1.25):
+    hx={-HALF_X,HALF_X}; hy={-HALF_Y,HALF_Y}
+    for x0,x1,y0,y1 in footprints().values(): hx|={round(x0,6),round(x1,6)};hy|={round(y0,6),round(y1,6)}
+    hx|={round(ENTRANCE_X+o,6) for o in PATH_OFFSETS}
+    hy|={FUNBOX['y0']+.05,FUNBOX['y1']-.05}
+    for j in JOINTS_X: hx|={round(j-JOINT_W/2,6),round(j+JOINT_W/2,6)}
+    for j in JOINTS_Y: hy|={round(j-JOINT_W/2,6),round(j+JOINT_W/2,6)}
+    def fill(hard,half):
+        h=np.array(sorted(hard)); uni=np.linspace(-half,half,math.ceil(2*half/spacing)+1)
+        return np.array(sorted(hard|{round(float(u),6) for u in uni if np.min(np.abs(h-u))>.12}))
+    return fill(hx,HALF_X),fill(hy,HALF_Y)
 
+def lines_between(lines,a,b):
+    return [float(v) for v in lines if a-1e-6<=v<=b+1e-6]
 
 # ----------------------------------------------------------------------------- path
 PATH_OFFSETS = [-2.0, -1.85, -0.95, 0.0, 0.95, 1.85, 2.0]
@@ -340,22 +274,6 @@ def path_ring(pl, k):
     return [(pl['P'][k, 0] + pl['n'][k, 0] * o, pl['P'][k, 1] + pl['n'][k, 1] * o, pl['z'][k]) for o in PATH_OFFSETS]
 
 
-# ----------------------------------------------------------------------------- coping, rails
-def big_coping():
-    """Coping pipe centre (x, z): 1 cm proud of the vertical face, 5 mm above the deck."""
-    q = BIG_QP
-    return (q['lip_x'] - COPING_OUT + COPING_R, q['height'] + COPING_UP - COPING_R)
-
-
-def mini_coping():
-    q = MINI_QP; r = q['radius']; h = q['height']
-    top = math.acos(1 - h / r)
-    n = (math.sin(top), math.cos(top))                  # face normal toward the riding side
-    cz = h + COPING_UP - COPING_R
-    cx = q['lip_x'] + ((COPING_OUT - COPING_R) - (cz - h) * n[1]) / n[0]
-    return (cx, cz)
-
-
 def offset_polyline(top, r):
     """Axis of a round rail whose top contact line is `top` [(x, z)...] (perpendicular offset)."""
     top = [np.array(p, float) for p in top]
@@ -384,36 +302,30 @@ def _dense(poly, step):
     return [[round(float(c), 4) for c in p] for p in out]
 
 
+
 def rails():
-    out = []
-    def add(id_, kind, pts, step, side=None, radius=None):
-        r = {'id': id_, 'kind': kind, 'points': _dense(pts, step)}
-        if radius is not None: r['radius'] = radius
-        if side is not None: r['side'] = [round(float(side[0]), 4), round(float(side[1]), 4)]
+    out=[]
+    def add(id,kind,pts,side=None,radius=None):
+        r=dict(id=id,kind=kind,points=_dense(pts,.5))
+        if side is not None:r['side']=side
+        if radius is not None:r['radius']=radius
         out.append(r)
-    q = BIG_QP; cx, cz = big_coping()
-    add('coping_big_quarter', 'coping', [(cx, q['y0'], cz + COPING_R), (cx, q['y1'], cz + COPING_R)], 0.5, (-1, 0), COPING_R)
-    q = MINI_QP; cx, cz = mini_coping()
-    add('coping_mini_quarter', 'coping', [(cx, q['y0'], cz + COPING_R), (cx, q['y1'], cz + COPING_R)], 0.5, (1, 0), COPING_R)
-    b = SOUTH_BANK
-    add('coping_south_bank', 'coping', [(b['x0'], b['top_y'], b['height']), (b['x1'], b['top_y'], b['height'])], 0.5, (0, 1))
-    f = FUNBOX; _, (t0, t1) = funbox_profile()
-    add('funbox_ledge_north', 'ledge', [(t0, f['y1'], f['height']), (t1, f['y1'], f['height'])], 0.5, (0, 1))
-    add('funbox_ledge_south', 'ledge', [(t0, f['y0'], f['height']), (t1, f['y0'], f['height'])], 0.5, (0, -1))
-    h = HUBBA; top = hubba_top()
-    add('hubba_stairs_side', 'ledge', [(x, h['y1'], z) for x, z in top], 0.25, (0, 1))
-    add('hubba_outer_side', 'ledge', [(x, h['y0'], z) for x, z in top], 0.25, (0, -1))
-    hr = HANDRAIL
-    add('stair_handrail', 'rail', [(x, hr['y'], z) for x, z in handrail_top()], 0.25, None, hr['r'])
-    for bar in BARS:
-        add(bar['id'], 'rail', [(bar['x0'], bar['y'], bar['top']), (bar['x1'], bar['y'], bar['top'])], 0.5, None, BAR_R)
-    mp = MANUAL_PAD; z = mp['height']
-    add('manual_pad_north', 'curb', [(mp['x0'], mp['y1'], z), (mp['x1'], mp['y1'], z)], 0.5, (0, 1))
-    add('manual_pad_south', 'curb', [(mp['x0'], mp['y0'], z), (mp['x1'], mp['y0'], z)], 0.5, (0, -1))
-    add('manual_pad_west', 'curb', [(mp['x0'], mp['y0'], z), (mp['x0'], mp['y1'], z)], 0.5, (-1, 0))
-    add('manual_pad_east', 'curb', [(mp['x1'], mp['y0'], z), (mp['x1'], mp['y1'], z)], 0.5, (1, 0))
-    bn = BENCH
-    for i, (x0, x1) in enumerate(BENCHES):
-        add(f'bench_{i + 1}_south', 'ledge', [(x0, bn['y0'], bn['height']), (x1, bn['y0'], bn['height'])], 0.5, (0, -1))
-        add(f'bench_{i + 1}_north', 'ledge', [(x0, bn['y1'], bn['height']), (x1, bn['y1'], bn['height'])], 0.5, (0, 1))
+    for q in QUARTERS:
+        x=q['lip']+q['sign']*COPING_R; z=q['radius']+q['vert']
+        add(q['id']+'_coping','coping',[(x,q['y0'],z),(x,q['y1'],z)],[-q['sign'],0],COPING_R)
+    b=BOWL; ring=bowl_ring(b['floor_radius']+b['radius']+COPING_R,b['radius']+b['vert'])
+    add('bowl_coping','coping',ring+[ring[0]],radius=COPING_R)
+    for t in TERRACES:
+        for i,(y,p) in enumerate(terrace_rails(t)):add(t['id']+'_handrail_'+str(i),'rail',[(x,y,z) for x,z in p],radius=BAR_R)
+        for side in (-1,1):
+            y=t['stair0']-.7 if side<0 else t['stair1']
+            for offset,sgn in [(0,-1),(.7,1)]:add(t['id']+'_hubba_'+str(side)+'_'+str(sgn),'ledge',[(x,y+offset,z) for x,z in hubba_profile(t)],[0,sgn])
+    for bar in BARS:add(bar['id'],'rail',[(bar['x0'],bar['y'],bar['top']),(bar['x1'],bar['y'],bar['top'])],radius=None if bar['square'] else BAR_R)
+    for p in PADS:
+        for y,sgn in [(p['y0'],-1),(p['y1'],1)]:add(p['id']+str(sgn),'ledge',[(p['x0'],y,p['height']),(p['x1'],y,p['height'])],[0,sgn])
+        for x,sgn in [(p['x0'],-1),(p['x1'],1)]:add(p['id']+'_end'+str(sgn),'curb',[(x,p['y0'],p['height']),(x,p['y1'],p['height'])],[sgn,0])
+    # The wave has rolling shoulders, not an artificial ledge along the curved side.
+    q=QUARTERS[0]; rr=13+COPING_R; z=q['radius']+q['vert']
+    arc=[(-23+rr*math.cos(a),-23+rr*math.sin(a),z) for a in np.linspace(math.pi,2*math.pi,121)]
+    add('mini_curve_coping','coping',arc,radius=COPING_R)
     return out

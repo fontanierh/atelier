@@ -277,12 +277,12 @@ void AWandererCharacter::BuildInput()
         {TEXT("FlightSlower"),EKeys::LeftBracket},{TEXT("FlightFaster"),EKeys::RightBracket},
         {TEXT("Attack"),EKeys::LeftMouseButton},{TEXT("Parry"),EKeys::RightMouseButton},{TEXT("Weapon"),EKeys::R}})
         Key(Axis(Pair.Key,EInputActionValueType::Boolean),Pair.Value);
-    // Triggers and D-pad Left are free on every pad; face buttons, sticks and shoulders keep their existing roles.
+    // The top face button always mounts/steps off; interaction uses D-pad Down.
     Key(Inputs[TEXT("Attack")],EKeys::Gamepad_RightTrigger);
     Key(Inputs[TEXT("Parry")],EKeys::Gamepad_LeftTrigger);
     Key(Inputs[TEXT("Weapon")],EKeys::Gamepad_DPad_Left);
     Key(Inputs[TEXT("Dash")],EKeys::Gamepad_FaceButton_Left);
-    Key(Inputs[TEXT("Interact")],EKeys::Gamepad_FaceButton_Top);
+    Key(Inputs[TEXT("Interact")],EKeys::Gamepad_DPad_Down);
     Key(Inputs[TEXT("Jump")],EKeys::Gamepad_FaceButton_Bottom);
     Key(Inputs[TEXT("Sprint")],EKeys::Gamepad_LeftThumbstick);
     Key(Inputs[TEXT("Dodge")],EKeys::Gamepad_FaceButton_Right);
@@ -290,7 +290,7 @@ void AWandererCharacter::BuildInput()
     Key(Inputs[TEXT("Map")],EKeys::Gamepad_Special_Left);
     Key(Inputs[TEXT("Menu")],EKeys::Gamepad_Special_Right);
     Key(Inputs[TEXT("Sailboat")],EKeys::Gamepad_DPad_Up);
-    Key(Inputs[TEXT("Skateboard")],EKeys::Gamepad_DPad_Down);
+    Key(Inputs[TEXT("Skateboard")],EKeys::Gamepad_FaceButton_Top);
     Key(Inputs[TEXT("FlightSlower")],EKeys::Gamepad_LeftShoulder);
     Key(Inputs[TEXT("FlightFaster")],EKeys::Gamepad_RightShoulder);
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -356,12 +356,6 @@ void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>();
 void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
 bool AWandererCharacter::IsPhoneTouchActive() const { return PhoneInput && PhoneInput->IsTouchActive(); }
 bool AWandererCharacter::IsSkateInputBlocked() const { return bMenuOpen || (Map && Map->IsOpen()); }
-UAnimSequence* AWandererCharacter::FindSkateClip(FName Role) const
-{
-    if (!Definition) return nullptr;
-    if (const TObjectPtr<UAnimSequence>* Clip = Definition->SkateActions.Find(Role)) if (*Clip) return *Clip;
-    return Definition->FindAction(Role);
-}
 void AWandererCharacter::PrepareToSkate()
 {
     if (Sword && Sword->IsArmed()) Sword->SetArmed(false);
@@ -1102,6 +1096,21 @@ void AWandererCharacter::Tick(float Dt)
         }
     }
     if(FightFilm) AdvanceFightFilm(*FightFilm,Dt);
+}
+
+void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
+{
+    Super::CalcCamera(DeltaTime,OutResult);
+    FTransform Camera; float FOV=0;
+    if (!bFixedView && LookGrace<=0 && SkateRide && SkateRide->GetRetailCamera(Camera,FOV))
+    {
+        OutResult.Location=Camera.GetLocation(); OutResult.Rotation=Camera.Rotator();
+        // Session publishes the vertical FOV used by its Bevy host. UE expects horizontal FOV.
+        int32 Width=16,Height=9;
+        if (APlayerController* PC=Cast<APlayerController>(Controller)) PC->GetViewportSize(Width,Height);
+        const float Aspect=Height>0?float(Width)/Height:16.f/9.f;
+        OutResult.FOV=FMath::RadiansToDegrees(2.f*FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FOV)*.5f)*Aspect));
+    }
 }
 
 void AWandererCharacter::SampleShake(FVector& Offset,FRotator& Rotation) const

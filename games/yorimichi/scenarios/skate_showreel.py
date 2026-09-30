@@ -29,21 +29,21 @@ def ue(lx, ly, lz=0.0):
 # (name, start (x, y) park metres, heading degrees ccw from east, launch cm/s, seconds, camera, events)
 # camera: ('follow',) or ('hold', pitch, yaw) ; events: (time, inputs) or (time, ('flick', name, left, load))
 SHOTS = [
-    ('push and kickflip', (-28, 6), 0, 0, 5.0, ('follow',),
+    ('push and kickflip', (-28, 38), 0, 0, 5.0, ('follow',),
      [(0.0, {'push': True}), (2.4, {}), (2.8, ('flick', 'kickflip', (0, 0), .22))]),
-    ('flat bar 50-50, kickflip out', (2, -4.5), 0, 520, 4.2, ('follow',),
+    ('flat bar 50-50, kickflip out', (-23, 20), 0, 520, 4.2, ('follow',),
      [(0.98, ('flick', 'ollie', (0, 0), .16)), (1.95, ('flick', 'kickflip', (0, 0), .12))]),
-    ('boardslide', (2.5, 4.5), 0, 500, 4.0, ('hold', -6, 35),
+    ('boardslide', (-4.5, 20), 0, 500, 4.0, ('hold', -6, 35),
      [(0.98, ('flick', 'ollie', (1, 0), .16)), (1.32, {})]),
-    ('kicker indy', (-22, .9), 0, 760, 3.6, ('hold', -4, 60),
-     [(1.5, {'grab_right': True}), (1.95, {})]),
-    ('vert melon', (21, 0), 0, 960, 4.6, ('hold', -3, 90),
+    ('bowl air', (29, -10), 0, 900, 4.8, ('hold', -8, 40),
+     [(0, {'grab_right': True}), (1.5, {})]),
+    ('vert melon', (33, 25), 0, 960, 4.6, ('hold', -3, 90),
      [(1.2, {'grab_left': True}), (1.6, {})]),
-    ('handrail', (-28.5, -22.5), 0, 520, 3.6, ('follow',),
-     [(1.02, ('flick', 'ollie', (0, 0), .36))]),
-    ('360 flip', (-12, 10), 0, 520, 2.9, ('hold', -6, 40),
+    ('handrail', (-40, 25.5), 0, 520, 3.6, ('follow',),
+     [(.8, ('flick', 'ollie', (0, 0), .2))]),
+    ('360 flip', (-12, 38), 0, 520, 2.9, ('hold', -6, 40),
      [(0.5, ('flick', '360_flip', (0, 0), .2))]),
-    ('powerslide', (-12, -10), 0, 760, 2.9, ('follow',),
+    ('powerslide', (-12, 38), 0, 760, 2.9, ('follow',),
      [(0.8, {'slide': True}), (2.4, {})]),
 ]
 SETTLE = 24          # frames standing still at the start of a shot while the camera settles (not recorded)

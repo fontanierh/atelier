@@ -7,9 +7,9 @@ $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build
 The Unreal imports run in the order the prototype established: `setup_project.py` rebuilds everything under
 /Game/Japan (textures, props, terrain, foliage, the villager, Momiji Hamlet, Hidamari, the sailboat, the zeppelin and
 the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
-after it. The player is installed in the prototype's four layers (full, sword, armed, skate) from one r17 source.
+after it. The player is installed in the prototype's three layers (full, sword, armed) from one r17 source.
 """
-import json, shutil
+import json, shutil, os
 from pathlib import Path
 
 from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, Call
@@ -38,21 +38,19 @@ def cairo_roles():
     combat = ['SwordIdle', 'SwordDraw', 'SwordSheath', 'SwordAttack1', 'SwordAttack2', 'SwordAttack3',
               'SwordChargeUp', 'SwordChargeHold', 'SwordChargeRelease', 'SwordParry', 'SwordParryHit', 'SwordCombo']
     armed = [r for r in roles if r.startswith('Sword') and r not in combat and r != 'SwordRun']
-    skate = [r for r in roles if r.startswith('Skate')]
-    return combat, armed, skate
+    return combat, armed, [r for r in roles if not r.startswith('Skate')]
 
 
 # Runtime files the game reads through AtelierDataPath, relative to unreal/Content/Data. Each is also an output of
 # data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
 STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
-          'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json', 'characters/cairo/skate-build.json',
+          'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json',
           'treehouse/runtime.json')
 
 
 def staged_source(out, rel):
-    """Where a staged file comes from: build output, except the committed park and the player's skate contacts."""
-    return {'skatepark/park.json': REGIONS / 'skatepark' / 'park.json',
-            'characters/cairo/skate-build.json': CHARS / 'cairo' / 'skate-build.json'}.get(rel, out / rel)
+    """Where a staged file comes from: build output, except the committed park."""
+    return {'skatepark/park.json': REGIONS / 'skatepark' / 'park.json'}.get(rel, out / rel)
 
 
 def stage_data(ctx, log):
@@ -67,7 +65,7 @@ def stage_data(ctx, log):
 
 def steps(ctx):
     out = ctx.out
-    combat, armed, skate = cairo_roles()
+    combat, armed, locomotion = cairo_roles()
     cairo = CHARS / 'cairo' / 'export_unreal.py'
     return [
         # ------------------------------------------------------------ world
@@ -141,12 +139,11 @@ def steps(ctx):
              needs=['world.hidamari'], outputs=[out / 'city_tree_lods' / 'v4' / 'manifest.json'], about='desktop profile: city tree LODs'),
         # ------------------------------------------------------------ characters
         Step('characters.cairo', [
-                Blender(cairo, ('--sword',), threads=4),
+                Blender(cairo, ('--sword', '--clips', ','.join(locomotion)), threads=4),
                 Blender(cairo, ('--clips', ','.join(combat), '--clips-only', '--sword', '--report', 'export-sword.json'), threads=4),
-                Blender(cairo, ('--clips', ','.join(armed), '--clips-only', '--report', 'export-armed.json'), threads=4),
-                Blender(cairo, ('--clips', ','.join(skate), '--clips-only', '--report', 'export-skate.json'), threads=4)],
+                Blender(cairo, ('--clips', ','.join(armed), '--clips-only', '--report', 'export-armed.json'), threads=4)],
              inputs=[CHARS / 'cairo', NAMES], outputs=[out / 'cairo' / 'export.json'],
-             about='the player: mesh, 110 clips and the bokken to FBX (full + sword, armed, skate records)'),
+             about='the player: mesh, locomotion/action clips and the bokken to FBX (full + sword and armed records)'),
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips'),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
@@ -163,7 +160,13 @@ def steps(ctx):
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS], heavy=True,
+        Step('skate.runtime', [Python(TOOLS / 'build_skate_runtime.py')],
+             inputs=[TOOLS / 'build_skate_runtime.py', ASSETS / 'skate', paths.ENGINE_PLUGINS / 'Activities/Skate/ThirdParty/skate-runtime'],
+             outputs=[paths.content_data(ctx.game) / 'SkateRuntime/bin' / ('atelier-skate-runtime.exe' if os.name=='nt' else 'atelier-skate-runtime'),
+                      *[paths.content_data(ctx.game) / 'SkateRuntime/assets' / name
+                        for name in json.loads((ASSETS / 'skate/runtime.json').read_text())['sha256']]],
+             heavy=True, about='recovered Skate solver, animation banks and settings'),
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              inputs=[SCRIPTS / n for n in ('setup_project.py', 'painterly_kernel.py', 'foliage_material.py', 'import_foliage_lods.py',
@@ -209,11 +212,10 @@ def steps(ctx):
         Step('unreal.cairo', [
                 UnrealScript(SCRIPTS / 'import_cairo.py', 'CAIRO IMPORT COMPLETE', null_rhi=True),
                 UnrealScript(SCRIPTS / 'import_cairo_sword.py', 'CAIRO SWORD IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SCRIPTS / 'import_cairo_armed.py', 'CAIRO ARMED IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SCRIPTS / 'import_cairo_skate.py', 'CAIRO SKATE IMPORT COMPLETE', null_rhi=True)],
+                UnrealScript(SCRIPTS / 'import_cairo_armed.py', 'CAIRO ARMED IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / n for n in ('import_cairo.py', 'verify_cairo.py', 'import_cairo_sword.py',
-                                          'import_cairo_armed.py', 'import_cairo_skate.py', 'animation_compression.py')],
-             after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo in four layers'),
+                                          'import_cairo_armed.py', 'animation_compression.py')],
+             after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo in three layers'),
         # The camera see-through (docs/CAMERA.md) patches materials the world and Cairo imports make, so it reruns after
         # either; the tree house builds its own with it (unreal.treehouse).
         Step('unreal.see_through', [UnrealScript(SCRIPTS / 'see_through.py', 'SEE-THROUGH COMPLETE')],
@@ -226,7 +228,7 @@ def steps(ctx):
              after=['unreal.world'], needs=['world.city_tiles', 'world.city_trees'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         Step('data.stage', [Call('stage_data', stage_data)],
-             inputs=[REGIONS / 'skatepark' / 'park.json', CHARS / 'cairo' / 'skate-build.json'],
+             inputs=[REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in STAGED], about='runtime files into unreal/Content/Data'),
     ]

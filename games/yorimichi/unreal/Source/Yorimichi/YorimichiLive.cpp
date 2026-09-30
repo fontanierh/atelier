@@ -43,8 +43,8 @@ FString UYorimichiLive::SkateState()
 {
     USkateComponent* S = PlayerSkate(); if (!S) return TEXT("no skate");
     const FVector P = S->GetOwner()->GetActorLocation();
-    return FString::Printf(TEXT("%s | combo=%s | last=%s landed=%d bails=%d grinds=%d score=%d flick=%s | pos=(%.0f,%.0f,%.0f)"), *S->GetDebug(), *S->GetComboLine(),
-        *S->GetLastTrick().ToString(), S->GetLandedCount(), S->GetBailCount(), S->GetGrindCount(), S->GetScore(), *S->GetLastFlick(), P.X, P.Y, P.Z);
+    return FString::Printf(TEXT("%s | combo=%s | last=%s landed=%d bails=%d grinds=%d score=%d | pos=(%.0f,%.0f,%.0f)"), *S->GetDebug(), *S->GetComboLine(),
+        *S->GetLastTrick().ToString(), S->GetLandedCount(), S->GetBailCount(), S->GetGrindCount(), S->GetScore(), P.X, P.Y, P.Z);
 }
 bool UYorimichiLive::SkateGoofy(bool bGoofy) { USkateComponent* S = PlayerSkate(); if (!S) return false; S->SetGoofy(bGoofy); return true; }
 bool UYorimichiLive::SkateLaunch(FVector Velocity) { USkateComponent* S = PlayerSkate(); if (!S) return false; S->Launch(Velocity); return true; }

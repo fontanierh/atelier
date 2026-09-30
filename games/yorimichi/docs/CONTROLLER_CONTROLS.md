@@ -15,7 +15,8 @@ The HUD selects controller hints while a gamepad is attached and returns to keyb
 | Dash | X | Square | Y |
 | Roll | B | Circle | A |
 | Crouch | Right stick click | R3 | Right stick click |
-| Interact / board zeppelin | Y | Triangle | X |
+| Mount / step off skateboard | Y | Triangle | X |
+| Interact / board zeppelin | D-pad Down | D-pad Down | D-pad Down |
 | Map | View | Touchpad | Minus |
 | Settings | Menu | Options | Plus |
 | Equip sailboat / step ashore | D-pad Up | D-pad Up | D-pad Up |
@@ -24,7 +25,7 @@ The HUD selects controller hints while a gamepad is attached and returns to keyb
 | Map: pan / zoom | Right stick / LB, RB | Right stick / L1, R1 | Right stick / L, R |
 | Map: travel / close | A / B | Cross / Circle | B / A |
 
-Menu / Options and D-pad Up now invoke the existing settings and sailboat actions. D-pad Down is also mapped to the legacy skateboard toggle; Cairo still rejects that action because its definition does not support skating. Nothing re-enables skateboarding on the new character. Stick-click sprint remains hold-to-sprint, matching the existing action binding.
+Menu / Options and D-pad Up invoke settings and sailboat actions. Triangle / Y mounts or steps off the skateboard through one shared action; D-pad Down interacts. Mounting during a run transfers the running speed to the board. Stick-click sprint remains hold-to-sprint. See [skating controls](SKATE.md).
 
 Vehicle hints describe steering, sail control and stepping off instead of on-foot actions. Ladder and zeppelin prompts use the active interaction button. Controller mode suppresses the mouse-release tip, while retaining stamina rings and FPS. The two hint rows measure their text and fit the viewport rather than relying on a fixed-width background.
 

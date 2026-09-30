@@ -5,7 +5,6 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimNodeSpaceConversions.h"
 #include "SkateComponent.h"
-#include "SkateRiderNode.h"
 #include "GroundContactNode.h"
 #include "ZeppelinService.h"
 #include "CairoCharacter.h"
@@ -111,23 +110,18 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
     FGroundContactNode Feet;
     FSailboatStanceNode Stance;
-    // Skating (docs/SKATE.md): the clip, the load crouch and the carve lean over it, then the limbs carried with the board.
-    FAnimNode_SequencePlayer_Standalone SkateCrouchPose, SkateLeanPose;
-    FAnimNode_TwoWayBlend SkateCrouch, SkateLean;
-    FSkateRiderNode SkateRider;
     FAnimNode_ConvertComponentToLocalSpace ToLocal;
     float Speed = 0.f, CrouchTarget = 0.f, CrouchWeight = 0.f, StanceWeight = 0.f, ArmedTarget = 0.f, ArmedWeight = 0.f;
     float AuthoredTopSpeed = 300.f, AuthoredCrouchSpeed = 50.f;
     uint32 AppliedSerial = MAX_uint32;
     FName AppliedClip;
+    TArray<FTransform> RetailSkatePose;
     bool bArmedCrouch = false;
 
     explicit FWandererAnimProxy(UAnimInstance* Owner) : FAnimInstanceProxy(Owner)
     {
         Ground.A.SetLinkNode(&Moving); Ground.B.SetLinkNode(&Crouching);
-        SkateCrouch.A.SetLinkNode(&Action); SkateCrouch.B.SetLinkNode(&SkateCrouchPose); SkateCrouch.Alpha = 0.f;
-        SkateLean.A.SetLinkNode(&SkateCrouch); SkateLean.B.SetLinkNode(&SkateLeanPose); SkateLean.Alpha = 0.f;
-        State.Ground.SetLinkNode(&Ground); State.Action.SetLinkNode(&SkateLean);
+        State.Ground.SetLinkNode(&Ground); State.Action.SetLinkNode(&Action);
         CarryLayer.BasePose.SetLinkNode(&State);
         ArmedGround.A.SetLinkNode(&ArmedMoving); ArmedGround.B.SetLinkNode(&ArmedCrouching); ArmedGround.Alpha = 0.f;
         CarryPose.A.SetLinkNode(&Carry); CarryPose.B.SetLinkNode(&ArmedGround); CarryPose.Alpha = 0.f;
@@ -140,9 +134,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         Feet.Alpha=0.f;
         Stance.ComponentPose.SetLinkNode(&Feet);
         Stance.Alpha = 0.f;
-        SkateRider.ComponentPose.SetLinkNode(&Stance);
-        SkateRider.Alpha = 0.f;
-        ToLocal.ComponentPose.SetLinkNode(&SkateRider);
+        ToLocal.ComponentPose.SetLinkNode(&Stance);
         Moving.SetGroupName(TEXT("Stride")); Crouching.SetGroupName(TEXT("Stride"));
         Moving.SetGroupMethod(EAnimSyncMethod::SyncGroup); Crouching.SetGroupMethod(EAnimSyncMethod::SyncGroup);
         // Same samples and lengths as Moving, so the sword arm swings on the body's stride phase.
@@ -151,7 +143,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return &ToLocal; }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &SkateCrouchPose, &SkateLeanPose, &SkateCrouch, &SkateLean, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &CarryLayer, &ToComponent, &Feet, &Stance, &SkateRider, &ToLocal }; }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -180,9 +172,9 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         const bool bSailing = SailboatC && SailboatC->IsEquipped();
         const USkateComponent* Ride = Pawn->GetSkate();
         const bool bRiding = Ride && Ride->IsRiding();
-        State.bAction = bSailing || bRiding || !Pawn->GetAnimationAction().IsNone();
+        State.bAction = bSailing || !Pawn->GetAnimationAction().IsNone();
         State.Serial = Pawn->GetActionSerial()+(SailboatC ? SailboatC->GetSerial()*7919 : 0)+(Ride ? Ride->GetSerial()*104729 : 0);
-        State.BlendDuration = bRiding ? Ride->GetBlendTime() : bSailing ? .2f : Pawn->GetActionBlendTime();
+        State.BlendDuration = bSailing ? .2f : Pawn->GetActionBlendTime();
         // Continue the gait clock during a moving roll. Once the feet recover,
         // blend into that live stride instead of translating a planted idle pose.
         const bool MovingRoll=Pawn->GetAnimationAction()==TEXT("Roll") && Pawn->HasMovementIntent() && Speed>80.f;
@@ -247,10 +239,10 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         }
         if (State.bAction && AppliedSerial != State.Serial)
         {
-            if (UAnimSequence* Clip = bRiding ? Ride->GetSequence() : bSailing ? SailboatC->GetSequence() : Pawn->GetDefinition()->FindAction(Pawn->GetAnimationClip()))
+            if (UAnimSequence* Clip = bSailing ? SailboatC->GetSequence() : Pawn->GetDefinition()->FindAction(Pawn->GetAnimationClip()))
             {
-                Action.SetSequence(Clip); Action.SetAccumulatedTime(bRiding ? Ride->GetClipTime() : bSailing?0.f:Pawn->GetActionSourceStartTime());
-                Action.SetLoopAnimation(bRiding ? Ride->IsClipLooping() : bSailing || Pawn->DoesActionLoop());
+                Action.SetSequence(Clip); Action.SetAccumulatedTime(bSailing?0.f:Pawn->GetActionSourceStartTime());
+                Action.SetLoopAnimation(bSailing || Pawn->DoesActionLoop());
             }
             AppliedClip = bSailing || bRiding ? NAME_None : Pawn->GetAnimationClip();
         }
@@ -263,30 +255,21 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         }
         Action.SetPlayRate(bRiding ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
         CarryLayer.BlendWeights[0] = (!bSailing && !bRiding && Pawn->GetSword() && !Pawn->IsZeppelinPassenger()) ? Pawn->GetSword()->CarryWeight() : 0.f;
-        if (bRiding)
-        {
-            Action.SetAccumulatedTime(Ride->GetClipTime());
-            // The load crouch and the carve lean are held poses blended over the clip.
-            const float Crouch = Ride->GetCrouch(), Lean = Ride->GetLean();
-            SkateCrouch.Alpha = Crouch;
-            if (Crouch > .01f)
-                if (UAnimSequence* Pose = Ride->FindClip(Ride->GetInput().Right.Y > 0.f ? TEXT("SkateNollieCrouch") : TEXT("SkateCrouch")))
-                { if (SkateCrouchPose.GetSequence() != Pose) SkateCrouchPose.SetSequence(Pose); SkateCrouchPose.SetPlayRate(0.f); SkateCrouchPose.SetAccumulatedTime(.1f); }
-            SkateLean.Alpha = FMath::Abs(Lean);
-            if (FMath::Abs(Lean) > .01f)
-                if (UAnimSequence* Pose = Ride->FindClip(Lean > 0.f ? TEXT("SkateCarveToe") : TEXT("SkateCarveHeel")))
-                { if (SkateLeanPose.GetSequence() != Pose) SkateLeanPose.SetSequence(Pose); SkateLeanPose.SetPlayRate(0.f); SkateLeanPose.SetAccumulatedTime(.25f); }
-            // Limbs on the board follow its motion away from where the clip assumes it.
-            const bool bOn = Ride->IsOnBoard();
-            SkateRider.Alpha = bOn ? 1.f : 0.f;
-            const FTransform& MeshTransform = Pawn->GetMesh()->GetComponentTransform();
-            SkateRider.DeckNow = Ride->GetDeckCarryWorld().GetRelativeTransform(MeshTransform);
-            SkateRider.DeckRest = Ride->GetDeckRestWorld().GetRelativeTransform(MeshTransform);
-            for (int32 L = 0; L < 4; ++L) SkateRider.Weight[L] = Ride->GetLimbContact(L);
-        }
-        else { SkateCrouch.Alpha = SkateLean.Alpha = 0.f; SkateRider.Alpha = 0.f; }
+        RetailSkatePose = bRiding ? Ride->GetRetailPose() : TArray<FTransform>();
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
+    }
+    virtual bool Evaluate(FPoseContext& Output) override
+    {
+        if (RetailSkatePose.IsEmpty()) return false;
+        Output.ResetToRefPose();
+        const FBoneContainer& Required=Output.Pose.GetBoneContainer();
+        for (FCompactPoseBoneIndex Bone : Output.Pose.ForEachBoneIndex())
+        {
+            const int32 Index=Required.MakeMeshPoseIndex(Bone).GetInt();
+            if (RetailSkatePose.IsValidIndex(Index)) Output.Pose[Bone]=RetailSkatePose[Index];
+        }
+        return true;
     }
     virtual void Update(float Dt) override
     {

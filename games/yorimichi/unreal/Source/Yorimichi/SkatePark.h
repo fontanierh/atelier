@@ -25,7 +25,10 @@ public:
     FVector PathTop = FVector::ZeroVector;
     float PathTopYaw = 0.f;
     int32 RailCount = 0;
+    /** The pier footprint, shared by local lighting and ambient-effect exclusion. */
+    bool ContainsPlanar(const FVector& Position, float Margin = 0.f) const;
 private:
+    FVector2D DeckHalfSize = FVector2D::ZeroVector;
     FVector Origin = FVector::ZeroVector;   // UE cm
     float Yaw = 0.f;                         // degrees, Blender convention (counter-clockwise from above)
     FVector LocalToWorld(double X, double Y, double Z) const;

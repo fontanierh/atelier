@@ -167,16 +167,28 @@ def skate_park():
     return L.skate_place(t.translation, t.rotation.rotator().yaw)
 
 
-# Flick-It gestures as right-stick key points (regular stance), each held for one short step.
+# Retail skater.pat paths; input API uses Y up, PAT uses Y down.
+# Basic flips start at a full crouch inside the tolerance circle, outside the manual band.
 FLICKS = {
-    'ollie': [(0, -1), (0, 1)], 'nollie': [(0, 1), (0, -1)],
-    'kickflip': [(0, -1), (-.72, .72)], 'heelflip': [(0, -1), (.72, .72)],
-    'shove': [(0, -1), (-.72, -.72), (-1, 0), (-1, 0)], 'fs_shove': [(0, -1), (.72, -.72), (1, 0), (1, 0)],
-    '360_shove': [(1, 0), (.72, -.72), (0, -1), (0, 1)], 'fs_360_shove': [(-1, 0), (-.72, -.72), (0, -1), (0, 1)],
-    'varial_kickflip': [(.72, -.72), (-.72, .72)], 'varial_heelflip': [(-.72, -.72), (.72, .72)],
-    'hardflip': [(0, -1), (-.72, -.72), (0, 1)], 'inward_heelflip': [(0, -1), (.72, -.72), (0, 1)],
-    '360_flip': [(1, 0), (.72, -.72), (0, -1), (-.72, .72)], 'laser_flip': [(-1, 0), (-.72, -.72), (0, -1), (.72, .72)],
+    'ollie': [(0.0, -1.0), (0.0, 1.0)],   # canonical straight flick works in both stances
+    'nollie': [(-0.005714, 0.988571), (-0.005714, -1.0)],
+    'kickflip': [(0.0, -1.0), (0.908571, 0.417143)],
+    'heelflip': [(-0.1, -0.94), (-0.68, 0.714286)],
+    'shove': [(0.257143, -0.942857), (0.862857, -0.451429), (0.908571, 0.36)],
+    'fs_shove': [(-0.2, -0.965714), (-0.851429, -0.52), (-0.942857, 0.28)],
+    '360_shove': [(-0.874286, -0.485714), (0.165714, -0.988571), (0.954286, -0.245714)],
+    'fs_360_shove': [(0.862857, -0.485714), (-0.165714, -0.988571), (-0.965714, -0.257143)],
+    'varial_kickflip': [(-0.702857, -0.702857), (0.234286, -0.954286), (0.851429, 0.508571)],
+    'varial_heelflip': [(0.725714, -0.702857), (-0.131429, -0.977143), (-0.497143, 0.84)],
+    'hardflip': [(0.737143, -0.668571), (-0.142857, -0.988571), (0.6, 0.771429)],
+    'inward_heelflip': [(-0.714286, -0.714286), (0.211429, -0.977143), (-0.737143, 0.645714)],
+    '360_flip': [(-0.965714, -0.268571), (-0.497143, -0.84), (0.211429, -0.988571), (0.908571, 0.405714)],
+    'laser_flip': [(1.0, -0.177143), (0.657143, -0.76), (0.04, -0.988571), (-0.84, 0.485714)],
+    '360_hardflip': [(0.977143, -0.177143), (0.577143, -0.817143), (-0.12, -0.988571), (0.702857, 0.691429)],
+    '360_inward_heelflip': [(-0.977143, -0.177143), (-0.634286, -0.76), (0.051429, -0.977143), (-0.497143, 0.828571)],
 }
+# The original graph's regular stance mirrors the raw PAT names. These public helpers use regular stance.
+FLICKS = {name: [(-x, y) for x, y in points] for name, points in FLICKS.items()}
 
 
 def skate_script(steps, name='skate_script', done=None):

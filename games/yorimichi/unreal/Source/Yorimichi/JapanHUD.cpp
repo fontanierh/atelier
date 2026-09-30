@@ -41,7 +41,7 @@ static int32 ConnectedControllerStyle()
 
 struct FControllerLabels
 {
-    const TCHAR *Jump, *Roll, *Dash, *Use, *Map, *Menu, *Sprint, *Crouch, *Attack, *Parry, *Weapon;
+    const TCHAR *Jump, *Roll, *Dash, *Skate, *Map, *Menu, *Sprint, *Crouch, *Attack, *Parry, *Weapon;
 };
 
 static FControllerLabels ControllerLabels(int32 Style)
@@ -85,7 +85,7 @@ void AJapanHUD::DrawHUD()
             DrawText(Line, FLinearColor(1.f, .93f, .78f, Alpha), X, Y, Font, S);
         }
     }
-    // The skate trick line and balance needle (docs/SKATE.md).
+    // The skate trick line (docs/SKATE.md).
     auto DrawSkateLine = [&]()
     {
         const USkateComponent* Ride = Pawn->GetSkate();
@@ -99,14 +99,6 @@ void AJapanHUD::DrawHUD()
             const float X = Canvas->SizeX * .5f - W * S * .5f, Y = Canvas->SizeY * .84f;
             DrawText(Line, FLinearColor(0, 0, 0, .55f * Alpha), X + 2, Y + 2, Font, S);
             DrawText(Line, FLinearColor(1.f, .93f, .72f, Alpha), X, Y, Font, S);
-        }
-        if (Ride->ShowBalance())
-        {
-            const float W = 260 * Scale, X = Canvas->SizeX * .5f - W * .5f, Y = Canvas->SizeY * .84f - 22 * Scale;
-            DrawRect(FLinearColor(0, 0, 0, .4f), X, Y, W, 6 * Scale);
-            DrawRect(FLinearColor(.95f, .9f, .75f, .5f), X + W * .5f - 1, Y - 6 * Scale, 2, 18 * Scale);
-            const float B = FMath::Clamp(Ride->GetBalance(), -1.f, 1.f);
-            DrawRect(FMath::Abs(B) > .7f ? FLinearColor(.95f, .35f, .2f) : FLinearColor(1.f, .85f, .45f), X + W * .5f + B * W * .5f - 3 * Scale, Y - 8 * Scale, 6 * Scale, 22 * Scale);
         }
         if (Ride->GetScore() > 0) DrawText(FString::Printf(TEXT("%d"), Ride->GetScore()), FLinearColor(1.f, .93f, .72f), Canvas->SizeX - 140 * Scale, 54 * Scale, Font, 1.3f * Scale);
     };
@@ -169,14 +161,14 @@ void AJapanHUD::DrawHUD()
     if (bController)
         Controls = bSailboat ? FString::Printf(TEXT("D-pad Up step ashore   Left stick steer / raise or lower sail      %s   %.0f km/h"),*Pawn->GetSailboat()->GetStatus(),Pawn->GetSailboat()->GetSpeed()*.036f)
             : FString::Printf(TEXT("Left stick move   Hold %s sprint   %s jump / double jump   %s dash   %s roll"),Pad.Sprint,Pad.Jump,Pad.Dash,Pad.Roll);
-    FString Secondary = bController ? FString::Printf(TEXT("Right stick look   %s crouch   %s interact   %s map   %s settings   D-pad Up sailboat"),Pad.Crouch,Pad.Use,Pad.Map,Pad.Menu)
+    FString Secondary = bController ? FString::Printf(TEXT("Right stick look   %s crouch   %s interact   %s map   %s settings   D-pad Up sailboat"),Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
         : TEXT("Mouse look   M map & travel   Esc settings   Tab release mouse   F12 screenshot");
     const UWandererSwordComponent* Sword=Pawn->GetSword();
     const bool bSwordSet=Sword && Sword->IsInstalled() && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding());
     if (bSwordSet)
     {
         // Sword hints replace the wave/interact tail so the line stays readable; the weapon line shows the live state.
-        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   %s parry   %s draw / sheathe sword   %s crouch   %s interact   %s map   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Crouch,Pad.Use,Pad.Map,Pad.Menu)
+        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   %s parry   %s draw / sheathe sword   %s crouch   %s interact   %s map   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
             : TEXT("Left click attack, hold to charge   Right click parry   R draw / sheathe sword   Mouse look   M map   Esc settings   Tab release mouse");
     }
     if (bController && (bSailboat || Pawn->IsZeppelinPassenger()))
@@ -185,16 +177,18 @@ void AJapanHUD::DrawHUD()
         if (Pawn->IsZeppelinPassenger())
             Secondary+=FString::Printf(TEXT("   %s flight speed"),ControllerStyle==2?TEXT("L1 / R1"):ControllerStyle==3?TEXT("L / R"):TEXT("LB / RB"));
     }
-    if(Pawn->GetZeppelin()) { const FString Hint=Pawn->GetZeppelin()->Hint(Pawn);if(!Hint.IsEmpty())Controls=Hint.Replace(TEXT("Use"),bController?Pad.Use:TEXT("E")); }
+    if(Pawn->GetZeppelin()) { const FString Hint=Pawn->GetZeppelin()->Hint(Pawn);if(!Hint.IsEmpty())Controls=Hint.Replace(TEXT("Use"),bController?TEXT("D-pad Down"):TEXT("E")); }
     const USkateComponent* Ride=Pawn->GetSkate();
     const bool bRide=Ride && Ride->IsRiding();
+    if (!bRide && !bSailboat && !Pawn->IsZeppelinPassenger() && Ride && Ride->IsAvailable())
+        Secondary += bController ? FString::Printf(TEXT("   %s skateboard"),Pad.Skate) : TEXT("   B skateboard");
     if(bRide)
     {
         // skate. controls (docs/SKATE.md): Flick-It on the right stick or the mouse with the left button held.
         const float Kmh=Ride->GetSpeed()*.036f;
         Controls=bController
-            ? FString::Printf(TEXT("A push   B brake   LS steer / spin / pull back to powerslide   RS flick tricks, hold part-way to manual   LT / RT grab   Y step off      %s   %.0f km/h"),*Ride->GetStatus(),Kmh)
-            : FString::Printf(TEXT("W push   S brake   A / D steer / spin   C powerslide   hold left mouse + flick: tricks, hold part-way: manual   Space ollie   Q / E grab   B step off      %s   %.0f km/h"),*Ride->GetStatus(),Kmh);
+            ? FString::Printf(TEXT("%s push   %s brake   Left stick steer / spin / down-diagonal powerslide   Right stick tricks / manual   %s / %s pump / grab   %s step off      %s   %.0f km/h"),Pad.Jump,Pad.Roll,Pad.Parry,Pad.Attack,Pad.Skate,*Ride->GetStatus(),Kmh)
+            : FString::Printf(TEXT("W push   S brake   A / D steer / spin   C powerslide   hold left mouse + flick: tricks, hold part-way: manual   Space ollie   Q / E pump / grab   B step off      %s   %.0f km/h"),*Ride->GetStatus(),Kmh);
         Secondary=bController?TEXT("Flick: down-up ollie   down-up-left kickflip   down-up-right heelflip   down-left / down-right shove-its   sweep around for 360s   start from up for nollies")
             :TEXT("Flick the mouse like the stick: pull back then forward = ollie, forward-left = kickflip, forward-right = heelflip, pull back then sideways = shove-it   Mouse look");
         DrawSkateLine();

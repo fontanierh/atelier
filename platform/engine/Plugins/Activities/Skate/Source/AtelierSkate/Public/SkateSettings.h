@@ -3,16 +3,6 @@
 #include "Engine/DeveloperSettings.h"
 #include "SkateSettings.generated.h"
 
-/** Rolling resistance for surfaces whose material name contains one of Keywords (comma-separated). */
-USTRUCT()
-struct FSkateSurfaceRule
-{
-    GENERATED_BODY()
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Keywords;
-    /** 1 is smooth concrete; grass is about 20. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") float Drag = 1.f;
-};
-
 /** What skateboarding needs from the game, set in its DefaultGame.ini under [/Script/AtelierSkate.SkateSettings]. */
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Atelier Skate"))
 class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
@@ -20,6 +10,17 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
+    /** Original controller preset: easy, normal or hardcore. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
+    /** 0 loose / 1 tight; feeds the original steering scalar. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1")) float TruckTightness = .5f;
+    /** Multiplier on the recovered jump-height presets (1 is stock). */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PopHeightScale = 1.f;
+    /** Multiplier on the recovered air-spin target (1 is stock). */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float AirSpinScale = 1.f;
+    /** Multipliers on the native animation-timed push target and planted-foot propulsion. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PushSpeedScale = 1.f;
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float PushPowerScale = 1.f;
     /** The board parts (the board contract in the plugin README: deck top 9.05 cm above the ground, X nose). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;
@@ -29,6 +30,4 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString SoundFolder;
     /** Body hitting the ground in a bail (the "fall" cue). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") TArray<FSoftObjectPath> FallSounds;
-    /** First matching rule wins; anything else rolls as smooth concrete. Actors tagged SkatePark are always smooth. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") TArray<FSkateSurfaceRule> Surfaces;
 };

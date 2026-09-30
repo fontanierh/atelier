@@ -1,5 +1,7 @@
 #include "SkatePark.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/PostProcessComponent.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
@@ -73,6 +75,12 @@ bool ASkatePark::Inside(const TArray<TArray<FVector2D>>& Polygons, const FVector
     return false;
 }
 
+bool ASkatePark::ContainsPlanar(const FVector& Position, float Margin) const
+{
+    const FVector Local = GetActorTransform().InverseTransformPosition(Position);
+    return FMath::Abs(Local.X) <= DeckHalfSize.X + Margin && FMath::Abs(Local.Y) <= DeckHalfSize.Y + Margin;
+}
+
 bool ASkatePark::Initialize(const FString& Path)
 {
     const TSharedPtr<FJsonObject> Root = ReadJson(Path);
@@ -82,6 +90,22 @@ bool ASkatePark::Initialize(const FString& Path)
     Yaw = Root->HasField(TEXT("yaw_deg")) ? Root->GetNumberField(TEXT("yaw_deg")) : 0.f;
     SetActorLocationAndRotation(Origin, FRotator(0, -Yaw, 0));
     RootComponent->SetMobility(EComponentMobility::Static);
+    const auto Deck = Root->GetObjectField(TEXT("deck"));
+    DeckHalfSize = FVector2D(Deck->GetArrayField(TEXT("x"))[1]->AsNumber(), Deck->GetArrayField(TEXT("y"))[1]->AsNumber()) * 100.;
+    auto* Bounds = NewObject<UBoxComponent>(this, TEXT("PierLookBounds"));
+    Bounds->SetMobility(EComponentMobility::Static); Bounds->SetupAttachment(RootComponent);
+    Bounds->SetBoxExtent(FVector(DeckHalfSize.X+400, DeckHalfSize.Y+400, 10000));
+    Bounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly); Bounds->SetCollisionResponseToAllChannels(ECR_Ignore);
+    Bounds->SetGenerateOverlapEvents(false); Bounds->SetCanEverAffectNavigation(false); Bounds->RegisterComponent();
+    auto* Look = NewObject<UPostProcessComponent>(this, TEXT("PierLook"));
+    Look->SetupAttachment(Bounds); Look->bUnbound=false; Look->BlendRadius=400; Look->Priority=4;
+    // Lumen's cache of these large thin riding surfaces leaks coarse tan patches
+    // across the decks. Baked vertex AO, skylight and direct shadows provide the
+    // park's matte lighting without that unstable indirect pass.
+    Look->Settings.bOverride_DynamicGlobalIlluminationMethod=true;
+    Look->Settings.DynamicGlobalIlluminationMethod=EDynamicGlobalIlluminationMethod::None;
+    Look->RegisterComponent();
+
     int32 Meshes = 0;
     for (const auto& Entry : Root->GetArrayField(TEXT("meshes")))
     {
