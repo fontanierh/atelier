@@ -33,6 +33,9 @@ atelier build yorimichi unreal.treehouse data.stage
 python games/yorimichi/scenarios/treehouse.py LABEL              # the 22 reference views beside their paintings
 python games/yorimichi/scenarios/treehouse_tour.py film LABEL    # the tour, rendered in the game
 python games/yorimichi/scenarios/treehouse_tour.py cut LABEL     # ... cut into build/yorimichi/treehouse/tour/LABEL.mp4
+python games/yorimichi/scenarios/treehouse_walk.py plan          # a player's route through every place
+python games/yorimichi/scenarios/treehouse_walk.py film TAKE     # Cairo walks it in the game (--rehearse: no frames)
+python games/yorimichi/scenarios/treehouse_walk.py cut TAKE      # ... with its footsteps: walk/TAKE/treehouse-walk.mp4
 ```
 
 ## Things to know

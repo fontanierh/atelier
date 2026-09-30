@@ -37,6 +37,11 @@ MATERIAL_SURFACES = {
     # Foliage rarely has collision, but the litter and leaf cards read as forest floor if it does.
     'Litter': 'leaves', 'LeafBroad': 'leaves', 'LeafCedar': 'leaves', 'LeafPine': 'leaves',
     'LeafOchre': 'leaves', 'LeafMaple': 'leaves', 'LeafGinkgo': 'leaves', 'LeafSmall': 'leaves',
+    # The tree house (import_treehouse.py): one MI_TH_<slot> per texture slug.
+    'TH_wood_plank': 'wood', 'TH_wood_timber': 'wood', 'TH_wood_pale': 'wood', 'TH_bark': 'wood', 'TH_hull': 'wood',
+    'TH_shingle': 'wood', 'TH_rope': 'wood', 'TH_stone': 'stone', 'TH_tile': 'stone', 'TH_plaster': 'stone',
+    'TH_moss': 'grass', 'TH_straw': 'leaves', 'TH_rug': 'barefoot', 'TH_rug_blue': 'barefoot', 'TH_cushion': 'barefoot',
+    'TH_quilt': 'barefoot',
 }
 
 

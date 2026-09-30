@@ -884,7 +884,7 @@ def furnish_sleep(m, d, c, ang, side, W):
     with d.use('quilt', grain=(1, 0, 0)):
         d.box((q[0], q[1], z+.42+.07), (.45, .4, .12), WHITE, .03)
     q = Hl(d2-.62, -.15); rug(d, q[0], q[1], z, .95, 2.1, ang, 'rug')
-    q = Hl(.72, .8); cushion(d, q[0], q[1], z, .5, ang+12)
+    q = Hl(.95, -.95); cushion(d, q[0], q[1], z, .5, ang+12)     # under the round window, clear of the door-to-hammock path
     o, u, n = frame3(outer, z); wall_picture(d, (o, u, n), w2+side*.95, 1.1, 1.7, .075, 'kite', .5)
     q = Hl(-d2+.3, w2-.3); book_stack(d, q[0], q[1], z, 4, ang)
     q = Hl(d2-.3, .45); basket(d, q[0], q[1], z, .18, .22, scrolls=2)
