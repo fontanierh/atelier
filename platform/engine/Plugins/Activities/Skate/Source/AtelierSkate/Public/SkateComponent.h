@@ -103,6 +103,7 @@ private:
     TSharedPtr<FSkateRuntime> RetailRuntime;
     bool bRetailActive=false;
     TArray<FTransform> RetailPose;
+    float BailVisualLift=0.f,RetailFloorClearance=0.f;
     bool StartRetailRuntime();
     void SuspendRetailRuntime();
     void StepRetailRuntime(float Dt);

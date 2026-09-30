@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""In-game checks for the complete recovered skating session (requires its local data and worker).
+"""In-game checks for the complete recovered skating session (requires the normal game build).
 
 atelier qa yorimichi skate_runtime --port 8830
 """
@@ -35,20 +35,20 @@ def main():
         results[name] = {'ok': bool(passed), 'note': note, 'frames': len(rows)}
         print(('PASS' if passed else 'FAIL') + ' ' + name + ': ' + note, flush=True)
 
-    rows = qa.run_scenario("-28,6,0,0,[(0,{'push':True}),(2.4,{}),(2.8,('flick','kickflip',(0,0),.3))],duration=5", 5)
+    rows = qa.run_scenario("-28,38,0,0,[(0,{'push':True}),(2.4,{}),(2.8,('flick','kickflip',(0,0),.3))],duration=5", 5)
     record('push_flip_land', rows, max(float(r['speed']) for r in rows)>400 and 'Kickflip' in qa.combos(rows)
            and '2' in qa.modes(rows) and rows[-1]['mode']=='1' and int(rows[-1]['score'])>0, qa.combos(rows))
-    rows = qa.run_scenario("-20,8,0,500,[(.2,{'left':(.6,0)}),(1.2,{})],duration=1.5", 1.5)
+    rows = qa.run_scenario("-20,38,0,500,[(.2,{'left':(.6,0)}),(1.2,{})],duration=1.5", 1.5)
     dy=position(rows[-1])[1]-position(rows[0])[1]
     record('steer_right', rows, dy>40 and rows[-1]['mode']=='1', f'rightward displacement {dy:.0f} cm')
-    rows = qa.run_scenario("-10,8,0,480,[(.3,{'right':(0,-.5)}),(1.5,{})],duration=2", 2)
+    rows = qa.run_scenario("-10,38,0,480,[(.3,{'right':(0,-.5)}),(1.5,{})],duration=2", 2)
     record('manual', rows, qa.ever(rows,'manual','1') and rows[-1]['manual']=='0' and not qa.count(rows,'bails'), qa.combos(rows))
-    rows = qa.run_scenario("2,-4.5,0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
+    rows = qa.run_scenario("-23,20,0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
     record('rail', rows, '3' in qa.modes(rows) and 'Ollie' in qa.combos(rows), 'states '+','.join(sorted(qa.modes(rows)))+'; '+qa.combos(rows))
-    rows = qa.run_scenario("22,0,0,950,[],duration=5", 5)
+    rows = qa.run_scenario("33,25,0,950,[],duration=5", 5)
     record('vert', rows, '2' in qa.modes(rows) and not qa.count(rows,'bails'), 'states '+','.join(sorted(qa.modes(rows))))
     # The original engine can recover a sideways drop. Exercise its deliberate bail chord instead.
-    qa.py("live.park.place(-10,8,0); live.park.launch(500); live.skate_release(); live.REC=[]; live.behave('rec',lambda dt: live.REC.append(live.skate_state()))")
+    qa.py("live.park.place(-10,38,0); live.park.launch(500); live.skate_release(); live.REC=[]; live.behave('rec',lambda dt: live.REC.append(live.skate_state()))")
     qa.py("live.L.input_key('Gamepad_LeftThumbstick','press',1); live.L.input_key('Gamepad_RightThumbstick','press',1); live.L.input_key('Gamepad_LeftTriggerAxis','axis',1); live.L.input_key('Gamepad_RightTriggerAxis','axis',1)")
     time.sleep(.6)
     qa.py("live.L.input_key('Gamepad_LeftThumbstick','release',0); live.L.input_key('Gamepad_RightThumbstick','release',0); live.L.input_key('Gamepad_LeftTriggerAxis','axis',0); live.L.input_key('Gamepad_RightTriggerAxis','axis',0)")
@@ -59,7 +59,11 @@ def main():
     time.sleep(4)
     rows = [qa.parse(r) for r in json.loads(qa.py("live.stop('rec'); print(json.dumps(live.REC))").strip().splitlines()[-1])]
     record('bail_recovery', rows, '4' in qa.modes(rows) and rows[-1]['mode']=='1', 'states '+','.join(sorted(qa.modes(rows))))
-    qa.py("live.skate_input(); live.park.place(-10,8,0)")
+    bailed=[r for r in rows if r['mode']=='4']
+    clearance=min(float(r['skin_clearance']) for r in bailed)
+    lift=max(float(r['skin_lift']) for r in bailed)
+    record('bail_skin_clearance',bailed,clearance>=.45 and lift<100,f'minimum skin clearance {clearance:.2f} cm; peak visual lift {lift:.2f} cm')
+    qa.py("live.skate_input(); live.park.place(-10,38,0)")
     time.sleep(.5)
     # The imported Cairo mesh faces -X before its authored mesh-rotation correction.
     text = qa.py('''
@@ -86,7 +90,7 @@ print(json.dumps({'head_forward':look.x*forward.x+look.y*forward.y+look.z*forwar
     text=qa.py("live.L.input_key('W','release',0); live.stop('ankles'); print(json.dumps({'excursion':max(max(a[i] for a in live.ANKLES)-min(a[i] for a in live.ANKLES) for i in [0,1]),'state':live.skate_state()}))")
     movement=json.loads(text.strip().splitlines()[-1])
     record('keyboard_push_animation',[],movement['excursion']>8 and float(qa.parse(movement['state'])['speed'])>300,str(movement))
-    qa.py("live.park.place(-10,8,0)")
+    qa.py("live.park.place(-10,38,0)")
     time.sleep(.3)
     qa.py('live.skate(); live.skate_release()')
     time.sleep(.3)
@@ -97,18 +101,18 @@ print(json.dumps({'head_forward':look.x*forward.x+look.y*forward.y+look.z*forwar
     remount=qa.py('print(live.skate_state())')
     record('remount', [], 'retail=PhysicsGround' in remount, remount.strip())
     qa.py('live.L.skate_goofy(True)')
-    rows = qa.run_scenario("-28,6,0,0,[(0,{'push':True}),(1.5,{}),(1.8,('flick','ollie'))],duration=4",4)
+    rows = qa.run_scenario("-28,38,0,0,[(0,{'push':True}),(1.5,{}),(1.8,('flick','ollie'))],duration=4",4)
     record('goofy_push_ollie',rows,max(float(r['speed']) for r in rows)>300 and 'Ollie' in qa.combos(rows) and '2' in qa.modes(rows) and rows[-1]['mode']=='1' and not qa.count(rows,'bails'),qa.combos(rows))
     qa.py('live.L.skate_goofy(False)')
     for direction in (-1,1):
-        rows=qa.run_scenario(f"-25,8,0,500,[(2.5,('flick','ollie',({direction},0),.3)),(4.25,{{}})],duration=5.3",5.3)
+        rows=qa.run_scenario(f"-25,38,0,500,[(2.5,('flick','ollie',({direction},0),.3)),(4.25,{{}})],duration=5.3",5.3)
         angle=0
         for prev,row in zip(rows,rows[1:]):
             if row['mode']=='2': angle+=(float(row['yaw'])-float(prev['yaw'])+180)%360-180
-        record(f'flat_360_{direction}',rows,abs(angle)>330 and rows[-1]['mode']=='1' and not qa.count(rows,'bails'),f'air rotation {angle:.0f} degrees')
+        record(f'flat_360_{direction}',rows,abs(angle)>300 and rows[-1]['mode']=='1' and not qa.count(rows,'bails'),f'air rotation {angle:.0f} degrees')
     for direction in (-1,1):
         key='A' if direction<0 else 'D'
-        qa.py("live.park.place(-20,8,0); live.park.launch(600); live.skate_release()")
+        qa.py("live.park.place(-20,38,0); live.park.launch(600); live.skate_release()")
         time.sleep(1.5)
         qa.py(f"live.REC=[]; live.behave('rec',lambda dt: live.REC.append(live.skate_state())); live.L.input_key('C','press',1); live.L.input_key('{key}','press',1)")
         time.sleep(.7)
@@ -117,11 +121,11 @@ print(json.dumps({'head_forward':look.x*forward.x+look.y*forward.y+look.z*forwar
         rows=[qa.parse(r) for r in json.loads(qa.py("live.stop('rec'); print(json.dumps(live.REC))").strip().splitlines()[-1])]
         record(f'keyboard_powerslide_{direction}',rows,qa.ever(rows,'slide','1') and rows[-1]['slide']=='0' and not qa.count(rows,'bails'),qa.combos(rows))
     # Move away from the retained session before mounting, then run through the actual B-key transition.
-    qa.py("live.park.place(-25,8,0); live.skate_release()")
+    qa.py("live.park.place(-25,38,0); live.skate_release()")
     time.sleep(.4)
     qa.py("live.skate(); p=unreal.GameplayStatics.get_player_character(live.L.game_world(),0)")
     time.sleep(.3)
-    qa.py("p.set_actor_location(live.L.ground_at(live.park.ue(-10,8,3))+unreal.Vector(0,0,p.capsule_component.get_scaled_capsule_half_height()+2),False,True); live.park.look(-12,0); live.L.input_key('W','press',1)")
+    qa.py("p.set_actor_location(live.L.ground_at(live.park.ue(-10,38,3))+unreal.Vector(0,0,p.capsule_component.get_scaled_capsule_half_height()+2),False,True); live.park.look(-12,0); live.L.input_key('W','press',1)")
     time.sleep(.8)
     qa.py("live.MOUNT=[]; live.behave('mount',lambda dt: live.MOUNT.append([p.get_actor_location().x,p.get_actor_location().y,p.get_velocity().length(),live.skate_state()])); live.L.input_key('B','press',1)")
     time.sleep(.1)
@@ -144,7 +148,7 @@ print(json.dumps({'head_forward':look.x*forward.x+look.y*forward.y+look.z*forwar
     on=qa.parse(qa.py('print(live.skate_state())').strip())
     record('triangle_mount_stow',[],off['mode']=='0' and on['mode']=='1',f"off={off['mode']} on={on['mode']}")
     # A coasting rider's planted feet must stay over the deck at uneven render/simulation rates.
-    qa.py("live.park.place(-28,8,0); live.park.launch(500); live.skate_input()")
+    qa.py("live.park.place(-28,38,0); live.park.launch(500); live.skate_input()")
     time.sleep(1.5)
     qa.py("live.CONTACTS=[]; live.behave('contacts',lambda dt: live.CONTACTS.append([[q.x,q.y,q.z] for q in [p.get_actor_transform().inverse_transform_location(p.mesh.get_socket_location(n)) for n in ['foot_L','foot_R']]]))")
     time.sleep(2)

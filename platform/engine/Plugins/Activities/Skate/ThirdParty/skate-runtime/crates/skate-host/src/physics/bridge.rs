@@ -86,11 +86,15 @@ impl Session {
         Ok(())
     }
     /// Host preferences scale the stock launch height and air-spin target; constraints remain native.
-    pub fn tune(&mut self, pop: f32, spin: f32) -> Result<(), String> {
-        if !pop.is_finite() || !spin.is_finite() || !(0.5..=2.).contains(&pop) || !(0.5..=3.).contains(&spin) {
+    pub fn tune(&mut self, pop: f32, spin: f32, push_speed: f32, push_power: f32) -> Result<(), String> {
+        if !pop.is_finite() || !spin.is_finite() || !(0.5..=2.).contains(&pop) || !(0.5..=3.).contains(&spin)
+            || !push_speed.is_finite() || !(0.5..=2.).contains(&push_speed)
+            || !push_power.is_finite() || !(0.5..=3.).contains(&push_power) {
             return Err("Invalid skating tuning".into());
         }
         self.physics.trainer.pop = pop;
+        self.physics.trainer.push_speed = push_speed;
+        self.physics.trainer.push_power = push_power;
         self.skater.air_settings.state.body_spin_scale_428 = self.stock_spin_speed * spin;
         self.skater.known_air.set_spin_speed(self.stock_spin_speed * spin);
         self.skater.air_reckoning.set_spin_scale(spin);

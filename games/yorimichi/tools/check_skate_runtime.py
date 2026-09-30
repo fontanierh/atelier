@@ -104,23 +104,37 @@ def main():
                 return rows,dict(goofy=goofy,direction=direction,height_m=height,air_rotation_degrees=angle,
                                  airtime_s=sum('Air' in r['state'] for r in rows)/60)
             _, stock=exercise(False,0,1.,1.)
-            _, tuned=exercise(False,0,1.15,2.6)
+            _, tuned=exercise(False,0,1.15,2.15)
             assert .15<tuned['height_m']-stock['height_m']<.4,(stock,tuned)
             assert tuned['airtime_s']>stock['airtime_s']+.08,(stock,tuned)
             feedback={'stock_pop':stock,'tuned_pop':tuned,'spins':[],'slides':[]}
+            def pushes(power, target):
+                send('activate',spawn=[0,0,0],heading=0,goofy=False,difficulty='normal',trucks=.5,
+                     push_power=power,push_speed=target)
+                read();speeds=[]
+                for frame in range(300):
+                    send('step',dt=1/60,buttons=0x1000 if frame>=60 else 0,left=[0,0],right=[0,0],triggers=[0,0])
+                    r=read()
+                    if frame>=60:speeds.append(math.hypot(r['velocity'][0],r['velocity'][2]))
+                return dict(at_two_seconds_mps=speeds[119],at_four_seconds_mps=speeds[-1])
+            stock_push=pushes(1.,1.); tuned_push=pushes(1.45,1.15)
+            assert tuned_push['at_two_seconds_mps']>stock_push['at_two_seconds_mps']*1.1,(stock_push,tuned_push)
+            assert tuned_push['at_four_seconds_mps']>stock_push['at_four_seconds_mps'],(stock_push,tuned_push)
+            feedback['pushes']=dict(stock=stock_push,tuned=tuned_push)
+
             for goofy in (False,True):
                 for direction in (-1,1):
-                    rows, result=exercise(goofy,direction,1.15,2.6)
-                    assert abs(result['air_rotation_degrees'])>330,result
+                    rows, result=exercise(goofy,direction,1.15,2.15)
+                    assert 300<abs(result['air_rotation_degrees'])<370,result
                     feedback['spins'].append(result)
-                    rows, result=exercise(goofy,direction,1.15,2.6,slide=True)
+                    rows, result=exercise(goofy,direction,1.15,2.15,slide=True)
                     assert any(r['state']=='SlideGround' for r in rows)
                     assert math.hypot(rows[-1]['velocity'][0],rows[-1]['velocity'][2])<3.5
                     feedback['slides'].append(result)
             # A retained session mounts at the new feet position, never the previous ride, with a running start.
             for generation,spawn in [(10,[15,0,10]),(11,[-12,0,-8])]:
                 send('activate',spawn=spawn,heading=0,goofy=False,difficulty='normal',trucks=.5,
-                     generation=generation,velocity=[0,0,4.2],pop=1.15,spin=2.6)
+                     generation=generation,velocity=[0,0,4.2],pop=1.15,spin=2.15)
                 mounted=read()
                 assert mounted['generation']==generation
                 assert math.hypot(mounted['root'][12]-spawn[0],mounted['root'][14]-spawn[2])<.02

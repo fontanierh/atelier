@@ -3,7 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "LeafStorm.generated.h"
 
-class UInstancedStaticMeshComponent; class AJapanWorld;
+class UInstancedStaticMeshComponent; class AJapanWorld; class ASkatePark;
 
 struct FStormLeaf { FVector P = FVector::ZeroVector, V = FVector::ZeroVector; FRotator R = FRotator::ZeroRotator; FVector Spin = FVector::ZeroVector; float Phase = 0.f; float RestT = -1.f; float Size = 1.f; int32 Tick = 0; };
 
@@ -19,6 +19,7 @@ public:
     virtual void Tick(float Dt) override;
     UPROPERTY() UInstancedStaticMeshComponent* Leaves = nullptr;
     UPROPERTY() AJapanWorld* World = nullptr;
+    TWeakObjectPtr<ASkatePark> SkatePark;
     TArray<FStormLeaf> L; TArray<FTransform> Xf; int32 Count = 900; int32 Frame = 0;
     void Respawn(FStormLeaf& Leaf, const FVector& Player, bool bInitial);
     float GroundZ(const FVector& P) const;

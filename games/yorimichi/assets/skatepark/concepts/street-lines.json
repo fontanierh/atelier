@@ -1,0 +1,30 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: stylized-concept. Asset type: buildable architectural reference for Yorimichi's Japanese seaside skate pier, 3:2 landscape. Show a beautifully crafted street skate plaza in a low three-quarter wide view at skater eye level, with the calm sea visible through dark bronze guardrails behind. Warm chalk concrete and pale stone, red powder-coated handrails, muted terracotta stair cheeks, sparse sage-green accents; soft painterly low-poly 3D game finish in golden afternoon light, autumn Japanese coast in the distance. Clear readable skate obstacles and long smooth runways: a wide four-step staircase descending from a long 0.72m-high terrace with two straight red round handrails, an adjacent seven-step staircase at 1.26m with a pale stone hubba, and a long bank feeding both terraces. Put the obstacles side by side with 5m separation and broad landings, not crowded into one obstacle. In the foreground a 6m-long 0.22m-high rectangular manual pad with a rounded steel edge; farther along a longer 0.38m-high pad with ledges. Include one low round flat bar and one square flat bar, each on independent unobstructed 20m approach lines. Banks at the far end carry you back into these lines, with a low bank-to-bank hip in a separate lane. Surface joints flush and subtle, no holes, no random props on riding lines. Small timber shelter, benches and coastal grasses only outside the skating approaches. Composition must show obstacles from toes through tops and their approach and landing space; no cut-off foreground objects, no fisheye, no labels, no UI. Beautiful understated public-space architecture designed by people who skate.",
+  "purpose": "skate pier design reference",
+  "status": "done",
+  "started_at": "2026-09-30T15:18:05.337319+00:00",
+  "usage": {
+    "input_tokens": 356,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 356
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1728
+  },
+  "png_sha256": "54e69298ca0275476ccc3171e8b0112c9d68cac5eb7ed8e71b8320bdb20f138b",
+  "output": {
+    "file": "street-lines.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-09-30T15:18:38.667942+00:00"
+}

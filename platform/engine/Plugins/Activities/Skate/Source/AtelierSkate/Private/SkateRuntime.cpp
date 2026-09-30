@@ -9,6 +9,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -19,6 +20,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "StaticMeshResources.h"
+#include "Rendering/SkeletalMeshRenderData.h"
+#include "Rendering/SkinWeightVertexBuffer.h"
 #include "TwoBoneIK.h"
 #include "UObject/UObjectIterator.h"
 
@@ -65,8 +68,18 @@ namespace
             ;
     }
 
+    // A park fits inside the snapshot's inner cube. Keep that cube at the park origin, so
+    // skating between its corners does not rebuild identical collision on the game thread.
+    FVector SnapshotCentre(UWorld* World, const FVector& Position)
+    {
+        for (TActorIterator<AActor> It(World); It; ++It)
+            if (It->ActorHasTag(TEXT("SkatePark")) && (Position-It->GetActorLocation()).GetAbsMax()<=6000.f)
+                return It->GetActorLocation();
+        return Position;
+    }
+
     /** Snapshot nearby static collision. The native worker owns its narrow phase, BVH and contact solver. */
-    bool ExportWorld(UWorld* World, ACharacter* Rider, FVector Centre, float Yaw, USkateRailSubsystem* Rails, FString& Path)
+    bool ExportWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FString& Path)
     {
         constexpr double Radius = 10000.;
         const FBox Region(Centre-FVector(Radius),Centre+FVector(Radius));
@@ -83,7 +96,7 @@ namespace
             TArray<FTransform> Instances;
             if (auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
             {
-                for (int32 Index : ISM->GetInstancesOverlappingSphere(Centre,Radius,true))
+                for (int32 Index : ISM->GetInstancesOverlappingBox(Region,true))
                 { FTransform T; if (ISM->GetInstanceTransform(Index,T,true)) Instances.Add(T); }
             }
             else Instances.Add(C->GetComponentTransform());
@@ -112,7 +125,7 @@ namespace
             Lines.Add(MakeShared<FJsonValueArray>(Points));
         }
         auto Root=MakeShared<FJsonObject>(); Root->SetArrayField(TEXT("triangles"),Triangles); Root->SetArrayField(TEXT("rails"),Lines);
-        Root->SetArrayField(TEXT("spawn"),VectorJSON(ToNative(Centre))); Root->SetNumberField(TEXT("heading"),-FMath::DegreesToRadians(Yaw));
+        Root->SetArrayField(TEXT("spawn"),VectorJSON(ToNative(Spawn))); Root->SetNumberField(TEXT("heading"),-FMath::DegreesToRadians(Yaw));
         const FString Folder=RuntimeFolder()/TEXT("sessions"); IFileManager::Get().MakeDirectory(*Folder,true);
         Path=Folder/(FGuid::NewGuid().ToString()+TEXT(".json"));
         UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails"),Triangles.Num(),Lines.Num());
@@ -124,6 +137,11 @@ namespace
 class FSkateRuntime
 {
 public:
+    // Bind-space samples from the actual rendered rider. Kept only while this mesh is in use.
+    struct Influence { int32 Bone; FVector Position; float Weight; };
+    struct Vertex { TArray<Influence,TInlineAllocator<4>> Influences; };
+    TWeakObjectPtr<USkeletalMesh> ContactMesh;
+    TArray<Vertex> ContactVertices;
     FProcHandle Process;
     void *Read=nullptr,*Write=nullptr,*ErrorRead=nullptr;
     bool Ready=false,PendingActivation=false,AwaitingPose=false,HasPose=false;
@@ -165,6 +183,8 @@ public:
         O->SetArrayField(TEXT("velocity"),VectorJSON(ToNative(PendingLaunch.Get(FVector::ZeroVector))));
         O->SetNumberField(TEXT("pop"),GetDefault<USkateSettings>()->PopHeightScale);
         O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
+        O->SetNumberField(TEXT("push_speed"),GetDefault<USkateSettings>()->PushSpeedScale);
+        O->SetNumberField(TEXT("push_power"),GetDefault<USkateSettings>()->PushPowerScale);
         Send(O); PendingActivation=false; AwaitingPose=true; PendingLaunch.Reset();
     }
     bool Poll()
@@ -234,11 +254,11 @@ bool USkateComponent::StartRetailRuntime()
     { RuntimeFailure(TEXT("Skating runtime is missing from this build. Rebuild the game.")); return false; }
     if (!RetailRuntime)
     {
-        FString File;
-        if (!ExportWorld(GetWorld(),Rider,Pos,Rot.Rotator().Yaw,RailSystem,File))
+        FString File; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
+        if (!ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File))
         { RuntimeFailure(TEXT("Skating could not load nearby collision.")); return false; }
         RetailRuntime=MakeShared<FSkateRuntime>();
-        RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Pos;
+        RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Centre;
         void *ChildWrite=nullptr,*ChildRead=nullptr,*ChildError=nullptr;
         FPlatformProcess::CreatePipe(RetailRuntime->Read,ChildWrite);
         FPlatformProcess::CreatePipe(ChildRead,RetailRuntime->Write,true);
@@ -248,11 +268,11 @@ bool USkateComponent::StartRetailRuntime()
         FPlatformProcess::ClosePipe(ChildRead,ChildWrite); FPlatformProcess::ClosePipe(nullptr,ChildError);
         if (!RetailRuntime->Process.IsValid()) { RetailRuntime.Reset(); RuntimeFailure(TEXT("Skating worker could not start.")); return false; }
     }
-    else if (FVector::DistSquared(Pos,RetailRuntime->CollisionCentre)>FMath::Square(6000.f))
+    else if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>6000.f)
     {
-        FString File;
-        if (!ExportWorld(GetWorld(),Rider,Pos,Rot.Rotator().Yaw,RailSystem,File)) { RuntimeFailure(TEXT("Skating could not refresh nearby collision.")); return false; }
-        RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Pos;
+        FString File; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
+        if (!ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File)) { RuntimeFailure(TEXT("Skating could not refresh nearby collision.")); return false; }
+        RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Centre;
         auto Update=MakeShared<FJsonObject>(); Update->SetStringField(TEXT("op"),TEXT("world")); Update->SetStringField(TEXT("path"),File); RetailRuntime->Send(Update);
     }
     RetailRuntime->Spawn=Pos; RetailRuntime->SpawnYaw=Rot.Rotator().Yaw;
@@ -283,6 +303,8 @@ void USkateComponent::ConfigureRetail()
     O->SetStringField(TEXT("difficulty"),GetDefault<USkateSettings>()->Difficulty); O->SetNumberField(TEXT("trucks"),GetDefault<USkateSettings>()->TruckTightness);
     O->SetNumberField(TEXT("pop"),GetDefault<USkateSettings>()->PopHeightScale);
     O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
+    O->SetNumberField(TEXT("push_speed"),GetDefault<USkateSettings>()->PushSpeedScale);
+    O->SetNumberField(TEXT("push_power"),GetDefault<USkateSettings>()->PushPowerScale);
     RetailRuntime->Send(O);
 }
 
@@ -390,13 +412,13 @@ void USkateComponent::StepRetailRuntime(float Dt)
         Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I]));
     }
     RetargetRetailPose();
-    // Rebuild before leaving the snapshot's inner 60 m; construction occurs in the worker.
-    if (FVector::DistSquared(Pos,RetailRuntime->CollisionCentre)>FMath::Square(6000.f))
+    // Rebuild before leaving the snapshot's inner 60 m cube; keep 40 m of query margin.
+    if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>6000.f)
     {
-        FString File;
-        if (ExportWorld(GetWorld(),Rider,Pos,Rot.Rotator().Yaw,RailSystem,File))
+        FString File; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
+        if (ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File))
         {
-            RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Pos;
+            RetailRuntime->Files.Add(File); RetailRuntime->CollisionCentre=Centre;
             auto Update=MakeShared<FJsonObject>(); Update->SetStringField(TEXT("op"),TEXT("world")); Update->SetStringField(TEXT("path"),File); RetailRuntime->Send(Update);
         }
     }
@@ -501,6 +523,78 @@ void USkateComponent::RetargetRetailPose()
         for (int32 I=C+1;I<Ref.GetNum();++I)
             if (Ref.GetParentIndex(I)==C) Output[I]=Ref.GetRefBonePose()[I]*Output[C];
     }
+    // The source physical rider has adult proportions; Cairo's head and clothing extend beyond it.
+    // During a bail, keep the retargeted skin above the supporting surface without changing bone lengths
+    // or feeding visual corrections back into the recovered rigid-body solver.
+    RetailFloorClearance=0.f;
+    if (Mode==ESkateMode::Bail)
+    {
+        USkeletalMesh* Asset=Mesh->GetSkeletalMeshAsset();
+        if (RetailRuntime->ContactMesh.Get()!=Asset)
+        {
+            RetailRuntime->ContactMesh=Asset; RetailRuntime->ContactVertices.Reset();
+            const FSkeletalMeshRenderData* Data=Asset->GetResourceForRendering();
+            if (Data && !Data->LODRenderData.IsEmpty())
+            {
+                const FSkeletalMeshLODRenderData& LOD=Data->LODRenderData[0];
+                const auto& Positions=LOD.StaticVertexBuffers.PositionVertexBuffer;
+                const FSkinWeightVertexBuffer* Weights=LOD.GetSkinWeightVertexBuffer();
+                if (Positions.GetVertexData() && Weights && Weights->GetDataVertexBuffer()->GetWeightData())
+                    for (const FSkelMeshRenderSection& Section : LOD.RenderSections)
+                    {
+                        const TConstArrayView<FBoneIndexType> Bones=Section.HasUnifiedBoneMap()?LOD.GetUnifiedBoneMap():MakeArrayView(Section.BoneMap);
+                        for (uint32 V=Section.BaseVertexIndex;V<Section.BaseVertexIndex+Section.NumVertices;++V)
+                        {
+                            FSkateRuntime::Vertex Vertex; float Sum=0;
+                            for (uint32 K=0;K<Weights->GetMaxBoneInfluences();++K)
+                            {
+                                const float Weight=Weights->GetBoneWeight(V,K)/65535.f;
+                                if (Weight<=0) continue;
+                                const uint32 LocalBone=Weights->GetBoneIndex(V,K);
+                                if (!Bones.IsValidIndex(LocalBone) || !Bind.IsValidIndex(Bones[LocalBone])) continue;
+                                const int32 Bone=Bones[LocalBone];
+                                Vertex.Influences.Add({Bone,Bind[Bone].InverseTransformPosition(FVector(Positions.VertexPosition(V))),Weight}); Sum+=Weight;
+                            }
+                            if (Sum>0)
+                            {
+                                for (auto& Influence : Vertex.Influences) Influence.Weight/=Sum;
+                                RetailRuntime->ContactVertices.Add(MoveTemp(Vertex));
+                            }
+                        }
+                    }
+            }
+        }
+        // Keep the lowest skinned vertex in each 12cm footprint cell. This includes shoes, hands, hair
+        // and the enlarged head, and bounds the scene-query count without a coarse whole-body hover box.
+        TMap<FIntPoint,FVector> Support;
+        for (const auto& Vertex : RetailRuntime->ContactVertices)
+        {
+            FVector Point=FVector::ZeroVector;
+            for (const auto& I : Vertex.Influences) Point+=Output[I.Bone].TransformPosition(I.Position)*I.Weight;
+            Point=MeshWorld.TransformPosition(Point);
+            const FIntPoint Cell(FMath::FloorToInt(Point.X/12.),FMath::FloorToInt(Point.Y/12.));
+            FVector* Existing=Support.Find(Cell);
+            if (!Existing) Support.Add(Cell,Point);
+            else if (Point.Z<Existing->Z) *Existing=Point;
+        }
+        double Clearance=MAX_dbl;
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(SkateBailSkin),true,Rider);
+        for (const auto& Sample : Support)
+        {
+            const FVector Point=Sample.Value; FHitResult Hit;
+            if (GetWorld()->LineTraceSingleByChannel(Hit,Point+FVector(0,0,200),Point-FVector(0,0,200),ECC_Pawn,Query) && Hit.ImpactNormal.Z>.25)
+                Clearance=FMath::Min(Clearance,Point.Z-Hit.ImpactPoint.Z);
+        }
+        if (Clearance!=MAX_dbl)
+        {
+            const float Required=FMath::Max(0.,.5-Clearance);
+            BailVisualLift=FMath::Max(Required,FMath::FInterpTo(BailVisualLift,Required,GetWorld()->GetDeltaSeconds(),14.f));
+            RetailFloorClearance=Clearance+BailVisualLift;
+        }
+        const FVector Lift=MeshWorld.InverseTransformVector(FVector(0,0,BailVisualLift));
+        for (FTransform& Bone : Output) Bone.AddToTranslation(Lift);
+    }
+    else BailVisualLift=0.f;
     for (int32 I=0;I<Ref.GetNum();++I)
     {
         const int32 Parent=Ref.GetParentIndex(I);

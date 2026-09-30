@@ -32,23 +32,41 @@ Its converted data was produced with upstream tools commit `60efdef86600d8d8d4fe
 
 ## Feel and controls
 
-Yorimichi sets `PopHeightScale=1.15`, `AirSpinScale=2.6`, normal difficulty and medium trucks in `DefaultGame.ini`.
-These scale the recovered height and spin-response curves, including their acceleration, without replacing the
-solver. Holding a spin through a loaded flat-ground ollie allows a 360. Release the stick to line up the landing.
+Yorimichi sets `PopHeightScale=1.15`, `AirSpinScale=2.15`, `PushPowerScale=1.45`,
+`PushSpeedScale=1.15`, normal difficulty and medium trucks in `DefaultGame.ini`.
+These scale the recovered height, spin-response and push curves without replacing the solver or the animation
+timing of each push. The loaded flat-ground ollie turns about 330–340° in the native checks; a little setup turn
+completes a 360. Release the stick to line up the landing. From rest, the tuned push reaches 9.12 m/s after two
+seconds versus 6.99 m/s with stock values. Spin response is about 17% lower than the earlier 2.6 tuning.
 
 Triangle / Y (or keyboard B) mounts/steps off; D-pad Down interacts on foot. Running onto the board preserves position, heading of travel and speed. W pushes, S brakes,
 A/D steer or spin. Hold/release Space for an ollie, or hold the left mouse button and flick for tricks. C holds a
-powerslide (A/D chooses its side); controllers use the left stick down-left/down-right. Q/E or triggers grab.
+powerslide (A/D chooses its side); controllers use the left stick down-left/down-right. Q/E or triggers compress for pumping on the ground and grab in the air.
 See the [plugin controls](../../../platform/engine/Plugins/Activities/Skate/README.md) for the full input contract.
 
 `scenarios/skate_runtime.py` checks push/flip/landing, steering, manuals, rails, vert, bail/recovery, retargeted
 bone lengths and head direction, actual keyboard input, mounting, spins, slides and both stances. Scripted input
 is always released when a check finishes. The live state includes `retail=<physical state> tick=<number>`.
 
+## Sunset Pier and pumping
+
+The [park guide](../world/regions/skatepark/README.md) describes the new street plazas, manual pads, bars,
+mini-ramp, bowl and roll-ins, with the Sunburst references and build/physics checks.
+
+Hold L2/R2 (Q/E on keyboard) to compress, then release as you pass through the lower/middle transition to extend.
+Compress high on the descent and extend through the bottom curve; repeat for the next wall. Release the triggers
+before leaving the lip unless you want a grab. The native centre-of-mass and curvature controller supplies the
+acceleration, so timing matters. The measured bowl comparison gains about 1.25 m of apex height and 0.51 m/s on return.
+
+During bails, the retargeter samples Cairo's actual skinned surface and lifts the visual pose above supporting
+geometry. This accounts for his larger head and clothing while preserving bone lengths and the native physical
+rider's motion. The coasting pose uses the current parent transform even inside Unreal's scoped movement update,
+which prevents the previous rider/board flicker.
+
 ## Integration boundaries
 
-Nearby pawn-blocking static meshes and registered rails supply native collision. Dynamic objects, individual
-collision surface materials and packaged static-mesh CPU buffer retention still need adapters. Editor builds
+Nearby pawn-blocking static meshes and registered rails supply native collision. The park importer retains CPU mesh data for collision export. Dynamic objects, individual
+collision surface materials and buffer retention on other imported world meshes still need adapters. Editor builds
 are the validated path. Cairo keeps its authored visual proportions; the solver uses the recovered rider's
 physical proportions. Grabs and extreme poses can therefore still need visual contact adjustments.
 

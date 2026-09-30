@@ -373,7 +373,7 @@ float USkateComponent::GetComboAlpha() const { return FMath::Clamp(ComboFade*1.6
 FString USkateComponent::GetDebug() const
 {
     const UCharacterMovementComponent* M=Movement();
-    return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f"),
+    return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f skin_clearance=%.2f skin_lift=%.2f"),
         M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),bFakie,bManual,bPowerslide,bPushing,
-        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z)+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
+        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,RetailFloorClearance,BailVisualLift)+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
 }

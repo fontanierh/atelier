@@ -300,13 +300,13 @@ if C:
 if W.get('forest_lake'):
     lake=W['forest_lake'];safe=lake['safe_shore']
     zones.append(dict(key='forest_lake',name='Hidden woodland lake',x=safe[0],y=safe[1],z=safe[2],yaw=180.,hint='A quiet fishing cabin and timber jetty deep in the woods'))
-# the skate pier (japan/skatepark/park.json): its spawn on the plaza floor
+# Sunset Pier: its current entrance plaza, shared with the park contract.
 PARK = str(yori.REGIONS / 'skatepark' / 'park.json')
 if os.path.exists(PARK):
     P = json.load(open(PARK)); o = P['origin']; sp = P['spawns']['park']; pr = math.radians(P.get('yaw_deg', 0.))
     px = o[0] + sp['pos'][0] * math.cos(pr) - sp['pos'][1] * math.sin(pr); py = o[1] + sp['pos'][0] * math.sin(pr) + sp['pos'][1] * math.cos(pr)
-    zones.append(dict(key='skatepier', name='Skate pier', x=round(px, 2), y=round(py, 2), z=round(o[2] + sp['pos'][2], 2), yaw=round(sp['yaw_deg'] + P.get('yaw_deg', 0.), 1),
-                      hint='Concrete plaza on the sea: ramps, rails and ledges (B for the board)'))
+    zones.append(dict(key='skatepier', name='Sunset Pier · skate park', x=round(px, 2), y=round(py, 2), z=round(o[2] + sp['pos'][2], 2), yaw=round(sp['yaw_deg'] + P.get('yaw_deg', 0.), 1),
+                      hint='Seaside street plaza, bowl and mini-ramp. Triangle / Y or B for the board'))
 if W.get('zeppelin'):
     for station in W['zeppelin']['stations']:
         p=station['safe']

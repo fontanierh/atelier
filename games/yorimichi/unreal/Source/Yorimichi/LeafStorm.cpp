@@ -1,5 +1,6 @@
 #include "LeafStorm.h"
 #include "JapanWorld.h"
+#include "SkatePark.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -24,11 +25,13 @@ void ALeafStorm::BeginPlay()
     Super::BeginPlay();
     TActorIterator<AJapanWorld> It(GetWorld()); if (It) World = *It;
     if (UStaticMesh* M = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Japan/Assets/Leaf.Leaf"))) Leaves->SetStaticMesh(M);
+    TActorIterator<ASkatePark> Park(GetWorld()); if (Park) SkatePark=*Park;
     L.SetNum(Count); Xf.SetNum(Count);
     const APawn* P = UGameplayStatics::GetPlayerPawn(this, 0);
     const FVector Player = P ? P->GetActorLocation() : FVector::ZeroVector;
     for (int32 i = 0; i < Count; i++) { Respawn(L[i], Player, true); Xf[i] = FTransform(L[i].R, L[i].P, FVector(L[i].Size)); }
     Leaves->AddInstances(Xf, false, true, false);
+    Leaves->SetVisibility(!SkatePark.IsValid() || !SkatePark->ContainsPlanar(Player));
 }
 
 float ALeafStorm::GroundZ(const FVector& P) const
@@ -64,6 +67,9 @@ void ALeafStorm::Tick(float Dt)
     const APawn* P = UGameplayStatics::GetPlayerPawn(this, 0);
     if (!P) return;
     const FVector Player = P->GetActorLocation(); const FVector PlayerVel = P->GetVelocity();
+    const bool bOnPier = SkatePark.IsValid() && SkatePark->ContainsPlanar(Player);
+    Leaves->SetVisibility(!bOnPier);
+    if (bOnPier) return; // No drifting leaves or simulation work while skating the pier.
     const float T = GetWorld()->GetTimeSeconds();
     Dt = FMath::Min(Dt, 0.05f);
     for (int32 i = 0; i < Count; i++)
@@ -103,7 +109,7 @@ void ALeafStorm::Tick(float Dt)
             FMath::Min((f.P.Y+21800.f)/1000.f,(-12200.f-f.P.Y)/1000.f));
         const float Shelter=FMath::Max(FMath::Clamp(ArcadeInterior,0.f,1.f)*FMath::Clamp((2300.f-f.P.Z)/200.f,0.f,1.f),
             FMath::Clamp(PlazaInterior,0.f,1.f)*.85f);
-        const float ShelterScale=FMath::Lerp(1.f,i%5==0?.85f:0.f,Shelter);
+        const float ShelterScale=SkatePark.IsValid() && SkatePark->ContainsPlanar(f.P,150.f) ? 0.f : FMath::Lerp(1.f,i%5==0?.85f:0.f,Shelter);
         Xf[i] = FTransform(f.R, f.P, FVector(f.Size*ShelterScale));
     }
     Leaves->BatchUpdateInstancesTransforms(0, Xf, true, true, true);

@@ -166,39 +166,18 @@ def render_all(outdir, park, board_objs, data, world, h, pl):
     def at(dist):
         k = int(np.searchsorted(s, dist)); return Vector((P[k, 0], P[k, 1], Z[k]))
     shots = {
-        'overview': ((-62, 62, 42), (2, -4, 0), 30),
-        'overview_sea': ((55, -75, 30), (-2, 2, 0), 32),
-        'arrival': (tuple(at(s[-1] - 14) + Vector((0, 0, 1.65))), (6, -5, 0.6), 30),
-        'stairs_top': ((-23.5, -22.9, 1.2 + 1.65), (-8, -22.4, 0.2), 32),
-        'stairs_floor': ((-7.5, -15.5, 1.6), (-18.5, -23.2, 0.8), 32),
-        'big_quarter': ((21, -2.5, 1.6), (35, 0.5, 1.2), 32),
-        'big_quarter_side': ((30.5, 11, 1.9), (34.8, 0, 0.9), 30),
-        'funbox_kicker': ((-20, 6, 2.2), (-2, -0.5, 0.2), 32),
-        'path_overview': ((25, 55, 38), (-30, 85, 4), 26),
-        'path_top': (tuple(at(1.0) + Vector((0, 0, 1.7)) - Vector((*(pl['t'][0] * 3), 0))), tuple(at(25.0)), 30),
-        'path_mid': (tuple(at(40) + Vector((6, 4, 2.2))), tuple(at(62)), 28),
+        'overview': ((-92, 98, 78), (0, 0, 0), 35),
+        'overview_sea': ((82, -104, 66), (0, 0, 0), 35),
+        'street': ((-6, 5, 7), (-30, 24, 1), 28),
+        'bowl': ((6, -35, 15), (29, -10, 1), 30),
+        'mini': ((-4, -41, 7), (-24, -28, .4), 30),
+        'arrival': (tuple(at(s[-1] - 10) + Vector((0, 0, 1.7))), (6, 8, .7), 30),
     }
     for name, (loc, tgt, lens) in shots.items():
         render(sc, camera('cam_' + name, loc, tgt, lens), outdir / f'{name}.png', (1600, 1000))
     rails.hide_render = False
-    render(sc, camera('cam_plan', (0, 0, 120), (0, 0, 0), ortho=86), outdir / 'plan_rails.png', (2000, 1400))
-    cam = camera('cam_plan_rails_zoom', (-17, -21, 60), (-17, -21, 0), ortho=14); render(sc, cam, outdir / 'plan_rails_stairs.png', (1400, 1400))
-    rails.hide_render = True; clear.hide_render = False
-    c = (P[0] + P[-1]) / 2
-    render(sc, camera('cam_plan_path', (c[0] - 5, c[1] - 12, 150), (c[0] - 5, c[1] - 12, 0), ortho=150), outdir / 'plan_path.png', (1400, 1400))
-    clear.hide_render = True
-    # albedo pass: the baked vertex colours (variation, paint wear, ambient occlusion) without lighting
-    emat = bpy.data.materials.new('review_albedo'); emat.use_nodes = True
-    nt = emat.node_tree; nt.nodes.clear()
-    vc = nt.nodes.new('ShaderNodeVertexColor'); vc.layer_name = 'Color'
-    em = nt.nodes.new('ShaderNodeEmission'); out = nt.nodes.new('ShaderNodeOutputMaterial')
-    nt.links.new(vc.outputs['Color'], em.inputs['Color']); nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
-    for ob in park.values():
-        ob.data.materials.clear(); ob.data.materials.append(emat)
-    sc.view_settings.view_transform = 'Standard'; sc.view_settings.look = 'None'; sc.view_settings.exposure = 0.0
-    for name in ('overview', 'stairs_floor', 'big_quarter_side', 'funbox_kicker'):
-        render(sc, bpy.data.objects['cam_' + name], outdir / f'albedo_{name}.png', (1600, 1000))
-    board_review(outdir, board_objs)
+    render(sc, camera('cam_plan', (0, 0, 120), (0, 0, 0), ortho=120), outdir / 'plan_rails.png', (2000, 1400))
+    rails.hide_render = True
 
 
 def board_review(outdir, objs):

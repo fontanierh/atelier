@@ -1,6 +1,8 @@
 //! Real stock-settings and BoardWorld adapter for the player trajectory selector.
 mod grind;
 mod settings;
+mod vert_departure;
+use vert_departure::vert_departure_normal;
 use crate::grind_world::StaticProvider;
 pub(crate) use grind::GrindContext;
 use std::sync::Arc;
@@ -47,6 +49,13 @@ impl AirTrajectoryRuntime {
         input: SelectorInput,
         world: &BoardWorld,
     ) -> Result<bool, String> {
+        // A rounded coping shoulder can leave a nearly vertical *averaged* contact
+        // normal. Its small Y component leaks upward speed into the stock launch
+        // calculation's horizontal residual and sends a neutral air onto the deck.
+        // Interpret an upward departure from this near-vertical band as a vert air.
+        // Pushing towards a transfer retains the original trajectory calculation.
+        let mut input = input;
+        input.ground_normal = vert_departure_normal(input.ground_normal, info.start_velocity, input.directional_input);
         let launched = self.selector.launch(info, input, &self.settings)?;
         if launched {
             self.submit(world)?;

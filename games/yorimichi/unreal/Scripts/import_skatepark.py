@@ -17,6 +17,8 @@ HERE = Path(__file__).resolve().parent
 JAPAN = yori.OUT
 OUT = JAPAN / 'skatepark'
 helper = runpy.run_path(str(HERE / 'import_village.py'))     # import_mesh only; its main() does not run
+# Targeted park imports have their own small, clean seed; they do not require village build intermediates.
+helper['import_mesh'].__globals__['PLACEHOLDER'] = OUT / 'board/SM_SkateWheel.fbx'
 E = unreal.EditorAssetLibrary
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 
@@ -58,6 +60,7 @@ for entry in park['meshes']:
     mesh = helper['import_mesh'](OUT / 'assets' / f'{name}.fbx', '/Game/SkatePark', name)
     assert len(mesh.static_materials) == 1, (name, 'expected one material slot')
     mesh.set_material(0, material)
+    mesh.set_editor_property('allow_cpu_access', True)  # Native collision snapshots also need vertices in cooked builds.
     body = mesh.get_editor_property('body_setup'); assert body, name
     flag = unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if entry['blocks'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
     body.set_editor_property('collision_trace_flag', flag)

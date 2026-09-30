@@ -16,7 +16,7 @@ board meshes, audio and HUD. There is one simulation and animation path.
 | Load / ollie | Right stick down, then up | Hold Space, release to pop |
 | Flick-It | Right stick gesture | Hold left mouse button and flick |
 | Manual / nose manual | Right stick partly down / up | Hold the mouse gesture part-way |
-| Grab | Left / right trigger | Q / E |
+| Pump (ground) / grab (air) | Left / right trigger | Q / E |
 | Look | Host camera controls | Mouse when not flicking |
 
 Regular kickflips flick down then up-left; heelflips finish up-right. Goofy mirrors the gestures. The original
@@ -40,7 +40,8 @@ frame; the bridge converts positions, rotations and collision winding to Unreal 
 
 `Difficulty` accepts `easy`, `normal` or `hardcore`; `TruckTightness` ranges from 0 to 1. `PopHeightScale` scales
 stock launch-height presets and `AirSpinScale` scales spin targets and manual spin acceleration/velocity curves.
-Both default to 1 in the plugin; The host game sets 1.15 and 2.6. The recovered constraints and timing remain active.
+`PushPowerScale` and `PushSpeedScale` adjust native push propulsion and speed limits. All default to 1 in the
+plugin; the host game selects its own tuning. The recovered constraints and animation timing remain active.
 
 Mounting starts at the player's feet, aligns with running velocity and transfers that velocity to the whole
 physical assembly. Each activation identifies its poses so an old response cannot move a newly mounted rider.
@@ -48,3 +49,7 @@ The retained worker loads banks once per world; stowing suspends it and world sh
 Missing/corrupt runtime files report an error and leave the player walking.
 
 See [NATIVE_PORT.md](NATIVE_PORT.md) for provenance and remaining adapter boundaries.
+
+Grounded triggers compress the rider for the recovered pumping controller; releasing extends. In the air they
+grab. The retargeter uses skinned contact samples during bails to keep a differently proportioned visual rider
+above the supporting scene. Rider LODs should retain CPU vertex data for these contact samples.

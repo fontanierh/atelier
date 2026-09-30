@@ -18,6 +18,9 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PopHeightScale = 1.f;
     /** Multiplier on the recovered air-spin target (1 is stock). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float AirSpinScale = 1.f;
+    /** Multipliers on the native animation-timed push target and planted-foot propulsion. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PushSpeedScale = 1.f;
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float PushPowerScale = 1.f;
     /** The board parts (the board contract in the plugin README: deck top 9.05 cm above the ground, X nose). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;

@@ -18,9 +18,11 @@ enum Command {
     Step { dt: f32, buttons: u16, left: [i16; 2], right: [i16; 2], triggers: [u8; 2] },
     Activate { spawn: [f32; 3], heading: f32, goofy: bool, difficulty: String, trucks: f32,
         #[serde(default)] generation: u32, #[serde(default)] velocity: [f32; 3],
-        #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32 },
+        #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32,
+        #[serde(default = "one")] push_speed: f32, #[serde(default = "one")] push_power: f32 },
     Configure { goofy: bool, difficulty: String, trucks: f32,
-        #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32 },
+        #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32,
+        #[serde(default = "one")] push_speed: f32, #[serde(default = "one")] push_power: f32 },
     World { path: String },
     Launch { velocity: [f32; 3] },
     Suspend {},
@@ -82,12 +84,12 @@ fn run() -> Result<(), String> {
                 // Also acknowledge sub-tick frames so the host can bound outstanding pipe traffic.
                 publish(&session, false, generation)?;
             }
-            Command::Activate {spawn,heading,goofy,difficulty,trucks,generation: ride,velocity,pop,spin} => {
+            Command::Activate {spawn,heading,goofy,difficulty,trucks,generation: ride,velocity,pop,spin,push_speed,push_power} => {
                 if spawn.iter().any(|v| !v.is_finite()) || !heading.is_finite() || !trucks.is_finite() || velocity.iter().any(|v| !v.is_finite()) {
                     return Err("Invalid spawn or equipment".into());
                 }
                 session.configure(&difficulty, goofy, trucks)?;
-                session.tune(pop, spin)?;
+                session.tune(pop, spin, push_speed, push_power)?;
                 session.activate(spawn, heading)?;
                 session.launch(velocity);
                 generation = ride;
@@ -98,10 +100,10 @@ fn run() -> Result<(), String> {
                 let w = world(Path::new(&path))?;
                 session.install_collision(session.collision_builder().build(w.triangles,w.rails)?)?;
             }
-            Command::Configure {goofy,difficulty,trucks,pop,spin} => {
+            Command::Configure {goofy,difficulty,trucks,pop,spin,push_speed,push_power} => {
                 if !trucks.is_finite() { return Err("Invalid equipment".into()); }
                 session.configure(&difficulty, goofy, trucks)?;
-                session.tune(pop, spin)?;
+                session.tune(pop, spin, push_speed, push_power)?;
             }
             Command::Launch {velocity} => {
                 if velocity.iter().any(|v| !v.is_finite()) { return Err("Invalid launch velocity".into()); }

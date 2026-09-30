@@ -32,34 +32,47 @@ checksums and conversion provenance. `skate.runtime`, a dependency of the normal
 Rust 1.97.1 and stages the executable plus verified data automatically. No disc or upstream checkout is needed.
 The optional importer documents the original conversion. Build outputs stay in ignored Content/build folders.
 
-The host game's `PopHeightScale=1.15` scales the original launch-height presets. `AirSpinScale=2.2` scales the
+The host game's `PopHeightScale=1.15` scales the original launch-height presets. `AirSpinScale=2.15` scales the
 PhysicsAir/KnownAir speed target and BodySpin proportional/acceleration curves; derivative history and
-constraint solving remain recovered code. Reconfiguration uses the stock values, so scales never compound.
+constraint solving remain recovered code. `PushPowerScale=1.45` and `PushSpeedScale=1.15` scale the native
+animation-timed propulsion and push speed limit. Reconfiguration uses the stock values, so scales never compound.
 Running mounts transfer the full planar velocity to board and skeleton. Activation generations prevent stale
 poses or camera frames from a previous ride from being applied. C sends the native rear-diagonal slide gesture;
 skid audio uses the angle between board heading and travel.
 
+Near-vertical departures canonicalize the contact normal to the wall plane before calling the native
+trajectory selector. This removes the small floor-normal contribution that otherwise redirects a straight-up
+air across the coping onto the deck. Banks, descending motion and explicit forward-transfer input retain their
+original normals. The two isolated `vert_departure.rs` tests and park collision regressions cover this adapter.
+
 ### Adapter boundaries
 
-- Collision is a 100 m snapshot of nearby registered, pawn-blocking static mesh LOD0 triangles and registered rail
-  polylines. It refreshes after travelling 60 m. This uses render triangles, not authored Chaos simple collision.
+- Collision is a 100 m half-extent snapshot of nearby registered, pawn-blocking static mesh LOD0 triangles and registered rail
+  polylines. It refreshes on leaving its inner 60 m cube. Inside a tagged skate park the snapshot stays anchored
+  at the park origin, covering the entire pier without rebuilding collision between lines. This uses render triangles, not authored Chaos simple collision.
   Moving objects, skeletal obstacles, procedural meshes, collision material IDs and streamed-out terrain need
-  additional adapters. CPU mesh buffers must be retained for packaged builds; editor builds are the validated path.
+  additional adapters. The park importer retains CPU buffers; other world mesh importers still need the same treatment before
+  packaged builds are supported. Editor builds are the validated path.
 - The native session currently receives one default collision material. Named grass/sand drag is
   not yet mapped to native surface IDs. Rails use the source host's line-to-grind provider, not original disc collision metadata.
 - Retargeting fits source reference-bone directions, scales the root/foot targets to the host's leg height, and
   preserves local bone lengths and skin scale. Two-bone leg IK keeps those targets within the avatar's reach;
   sole-height and deck/truck/wheel pivot offsets fit the host meshes. Unmapped fingers retain their bind pose.
-  The physical skeleton keeps the source proportions; this retargeter changes the rendered avatar. Different
-  proportions still require visual contact review, particularly grabs, low overhead obstacles and extreme poses.
+  The physical skeleton keeps the source proportions; this retargeter changes the rendered avatar.
+  During bails, the actual skinned surface supplies supporting-ground samples for a whole-pose visual lift,
+  keeping the larger head and clothing out of the floor without changing the native bodies. Rider LODs retain
+  CPU vertices for this pass. Different proportions still require visual review for grabs and low overhead obstacles.
 - Unreal keeps walking, mounting, world streaming, audio assets and the HUD. Native score/trick/state drive the
   existing HUD, and mode transitions trigger the host sounds; original audio and UI are not reproduced.
 - A first mount decodes the banks asynchronously (about 7–8 seconds measured locally). The process stays resident
-  for subsequent rides. Static collision export currently runs on the game thread and can cause a mount/refresh hitch.
+  for subsequent rides. Static collision export currently runs on the game thread and can cause a first-mount hitch or a
+  refresh hitch on long rides outside the park. The complete park remains inside one anchored snapshot.
 
 `tools/check_skate_runtime.py` tests both stances through 480 native ticks each: support, push, ollie, landing,
 changing finite poses, teleport reset, deliberate bail/recovery and a sub-tick pipe acknowledgement. Additional
-checks compare stock/tuned pop, both spin directions and powerslides in both stances, and running mounts.
+checks compare stock/tuned pop and push, both spin directions and powerslides in both stances, and running mounts.
+`check_skatepark_runtime.py` exercises the exported park collision: bowl and quarter re-entry, opposite mini-ramp
+airs, an ollie through coping, a downhill roll-in, stair handrail grinds, and a timed pump/coast comparison.
 The in-game runtime scenario validates push/flip/landing, steering direction, manual entry/exit, rails, vert,
 bail/recovery, preserved bone lengths and head direction, keyboard-driven foot motion, stow/remount and goofy
 push/ollie, flat-ground rotation, powerslide input and running mounts.
