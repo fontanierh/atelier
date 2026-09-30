@@ -77,7 +77,8 @@ def play(game, profile, settings, extra):
         command.append(f'-set={settings}')
     from .safety import guarded
     print(f'playing {game} ({profile}); log {folder / "game.log"}')
-    return guarded.run(command, folder, timeout=float(spec.get('timeout', 0)), purpose=f'atelier play {game}', env=ctx.env())
+    return guarded.run(command, folder, timeout=float(spec.get('timeout', 0)), purpose=f'atelier play {game}', env=ctx.env(),
+                       kind='game')
 
 
 PERSONAL = [

@@ -20,7 +20,7 @@ The table below is the platform as built (29 September 2026); the rest of this p
 
 | Piece | Where | What | Used by |
 |---|---|---|---|
-| `atelier` command | `platform/studio/atelier` | `doctor`, `fetch`, `build` (incremental steps), `play` (profiles), `stream`, `live`, `qa`, `lint`; render lock and memory guard around every heavy process | both games |
+| `atelier` command | `platform/studio/atelier` | `doctor`, `fetch`, `build` (incremental steps), `play` (profiles), `stream`, `live`, `qa`, `lint`; render lock (one big slot, optionally a small one beside it) and memory guard around every heavy process | both games |
 | AI and review tools | `platform/studio/atelier/{ai,review,blender}`, `platform/studio/node` | Tripo, Sunburst, H3 and Seedance helpers, contact sheets, glTF previews | Yorimichi's authoring tools |
 | Conventions | `platform/conventions` | units, humanoid bones, clip roles, sound cues, naming | the studio, Yorimichi's characters |
 | AtelierCore | `engine/Plugins/AtelierCore` | runtime data files (`AtelierDataPath`), sprint stamina | Yorimichi, sandbox |
