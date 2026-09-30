@@ -70,6 +70,12 @@ struct AnimationTree::State
     template<class T> explicit State(T state):value(std::move(state)) {}
     State(const State&)=default;
 };
+bool AnimationTree::AppendBindPoseMirrorMode(std::uint32_t mode,std::string& error)
+{
+    auto* bind=state_?std::get_if<BindState>(&state_->value):nullptr;
+    if (!bind) {error="Animation mirror mode requires bind pose";return false;}
+    bind->mirror_modes.push_back(mode);error.clear();return true;
+}
 std::optional<PosturePose> PosturePoseFromProfile(std::uint32_t value)
 {return value>=1 && value<=3?std::optional<PosturePose>(PosturePose(value-1)):std::nullopt;}
 std::string_view PosturePoseName(PosturePose value)

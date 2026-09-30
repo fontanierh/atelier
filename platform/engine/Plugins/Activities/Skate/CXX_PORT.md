@@ -177,8 +177,10 @@ key lookup, priority ties, retirement, transition resurrection and channel-weigh
 `AnimationPose.*` executes the command stack, trajectory deltas, full bone poses and hierarchy. Stock
 poses use the verified native tracks. Project-authored custom/mod overrides retain their existing
 version-1 absolute-joint JSON interface, including baking and owner/conflict/precedence behavior; this
-is not an original EA data format. Connecting these owners to the live graph host and physical feedback
-remains separate work; matching pose commands does not establish full animation execution.
+is not an original EA data format. `MotionAnimation.*` combines the main tree and live channels with
+parameter sources, graph attributes, reset/stance and PlayAnimation/CreateAttribute factories and
+lifecycle. Connecting that owner to the complete graph host and physical feedback remains separate
+work; matching pose commands does not establish full animation execution.
 
 ## Validation completed
 
@@ -291,6 +293,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   skeleton, timing and matrix errors. OS file-read error text and exhaustive malformed JSON diagnostics
   are not established by this corpus. The original evaluator and its authored-clip module are included
   byte-for-byte; staged module aliases are separately hashed without editing original implementation.
+- Combined motion-animation owner: 338 multistep cases and 20,916,488 exact bytes covering main-tree
+  and channel ordering, parameters, cached attributes, pose commands, reset/stance and immediate graph
+  side effects. PlayAnimation/CreateAttribute factories and lifecycle use real service callbacks.
+  Original tested method bodies and factory arms are extracted verbatim with recorded byte boundaries
+  and hashes; the remaining gameplay graph and physical publication are separate integration steps.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.

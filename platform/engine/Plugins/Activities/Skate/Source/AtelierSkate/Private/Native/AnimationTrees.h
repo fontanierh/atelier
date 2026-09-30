@@ -63,6 +63,7 @@ public:
     static AnimationTree Transition(AnimationTree from,AnimationTree to,TransitionSettings settings);
     static AnimationTree BindPose(AnimationTree motion,std::optional<PosturePose> posture,bool board_backwards,std::vector<std::uint32_t> mirror_modes,std::shared_ptr<const AttributeMirror> mirror);
     PlaybackTreeKind Kind() const;
+    bool AppendBindPoseMirrorMode(std::uint32_t mode,std::string& error);
     float Length() const;
     float Time() const;
     void SetTime(float time);
@@ -113,6 +114,7 @@ public:
     AdvanceResult property{false,-1,-1};
     std::vector<AnimationAttribute> tree_attributes;
     SettableAttributes settable;
+    const AnimationMetadata& Metadata() const {return metadata_;}
     bool SetHierarchy(const std::vector<std::string>& names,const std::vector<std::int32_t>& mirror_indices,std::string& error);
     void SetConstructionValue(AttributeName name,AttributeName value);
     bool BuildTree(std::string_view name,AnimationTree& output,std::string& error) const;
