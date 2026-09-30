@@ -308,6 +308,14 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   output bytes. All seven groups exercise membership conditions, state selection, fresh instances,
   launch/hold progression, missing-stance errors and owned cleanup. The earlier action-host baseline
   also passes after registration; complete actor scheduling remains open.
+- Motion-host controller integration: eight supported graph fixtures and 1,024 ticks preserve 1,027,586
+  exact bytes, including fresh behavior instances, gameplay/foot publications, AG intent handoff, clip
+  parameters, clocks, caches, flags and final cleanup. This is the first dispatch slice; remaining
+  physical behavior owners and complete authored graph/session execution are still pending.
+- Physical motion-graph predicates: 41 names, 64 authored configurations and 10,240 evaluations preserve
+  89,583 exact bytes against the original host's factories and activation. Each configuration exercises
+  both truth values; required missing publications retain their errors. Host registration and actual
+  gameplay publishers are separate steps; malformed raw-name panic translation is not established.
 - Stick gesture publication: 141,873 commands and 141,782 publication frames preserve 68,857,168 output
   bytes against the original host loading the original PAT/settings. Coverage includes 6,078 trick
   publications, 21,803 held-pattern frames and isolated permission gates. Hidden recognizer state is
