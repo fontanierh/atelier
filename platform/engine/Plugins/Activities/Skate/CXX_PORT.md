@@ -280,6 +280,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Connected board constraint assembly: 2,048 cases and 4,452,352 exact words across all 256 board/hook
   activation masks. Comparisons include repeated frame preparation, full typed/packed rows, shared
   solver iterations and resulting body updates (9,216 joint and 4,608 drive rows).
+- Persistent board runtime: 96 command streams, 8,379 snapshots and 7,464,452 exact words across
+  active/frozen/static construction, force queues, resets, transform changes and shared attached-body
+  solves. Comparisons include all body state, 9,269 solved contact rows, 1,892 reports and 384 force
+  capacity rejections. Contacts use the current force workspace; all constraint families finish before
+  any body's integration. Attached bodies here are explicit fixtures, not the gameplay skeleton producer.
+  Optional debug capture retains its source cadence/lifecycle; C++ exposes typed diagnostics instead
+  of the unused original formatted string, and this corpus checks diagnostic presence rather than text.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
