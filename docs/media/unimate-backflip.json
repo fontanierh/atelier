@@ -1,0 +1,71 @@
+{
+  "prompt": "A person does a backflip",
+  "seed": 99,
+  "guidance": 2.0,
+  "steps": 32,
+  "solver": "fixed midpoint flow ODE",
+  "model": "UniMate uniml3d f60 v2 EMA step 100000",
+  "start_time": 0.0,
+  "checkpoint_sha256": "cbcfb7a057e45f967d5964fecf6b3f83358096f1306f25831e1644a18a50eb34",
+  "upstream_revision": "5d6aabedd947297b5ba6706d8e9113e68c0c3e4f",
+  "source_sha256": "8103d0bf2c970d4adcd6d9af32f109e376b29433b3cc3597387efd75a3a6219c",
+  "device": "mps",
+  "conditioning_version": "canonical-names-v2",
+  "joint_names": [
+    "Hips",
+    "Spine",
+    "Left Thigh",
+    "Right Thigh",
+    "Spine",
+    "Left Shin",
+    "Right Shin",
+    "Spine",
+    "Left Foot",
+    "Right Foot",
+    "Neck",
+    "Left Shoulder",
+    "Right Shoulder",
+    "Left Toe",
+    "Right Toe",
+    "Head",
+    "Left Upper Arm",
+    "Right Upper Arm",
+    "Left Forearm",
+    "Right Forearm",
+    "Left Hand",
+    "Right Hand"
+  ],
+  "guided": null,
+  "reference_clip": null,
+  "text_encoder_revision": "7bcac572ce56db69c1ea7c8af255c5d7c9672fc2",
+  "seconds": 11.58,
+  "diagnostics": {
+    "root_travel_m": 0.08440039733433023,
+    "foot_height_range_m": [
+      0.007849048251828606,
+      0.9774527158261377
+    ],
+    "finite": true,
+    "review": "experimental; inspect feet, contacts and recovery before game use"
+  },
+  "reference_usage": "none",
+  "artifact": "unimate-backflip.gif",
+  "take_id": "220f6f9e6f75407685e67b0c1583489a",
+  "source": "games/yorimichi/assets/characters/fox-hunter/FoxHunter-Anim-r05.blend",
+  "license": "Owned character; generated motion from the MIT-licensed UniMate checkpoint",
+  "capture": {
+    "method": "Motion Lab Preview GIF",
+    "frames": 60,
+    "source_fps": 30,
+    "dimensions": [
+      640,
+      466
+    ],
+    "duration_ms": 2000,
+    "camera": "fixed",
+    "root_display": "horizontal travel centered for inspection",
+    "loop": "repeat full take; no seam synthesis",
+    "colors": 256
+  },
+  "gif_sha256": "aa5cb42a941a5265daab56215d6a36bdcd38564a2e18835bc0532c1bcc394c59"
+}
