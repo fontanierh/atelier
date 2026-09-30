@@ -21,6 +21,7 @@ and Tripo models are in [assets/treehouse](../../../assets/treehouse/README.md).
 | `tmesh.py` | The mesh builder `build.py` uses: material slots, UVs, vertex colours. |
 | `plan_views.py` | The plan map and section drawings. |
 | `preview.py` | Quick Workbench previews of the built blend. |
+| `screen.py` | Sight lines from every walk to the lookout, and the grove of tall trees that hides it from the lake trail. `python games/yorimichi/world/regions/treehouse/screen.py [--eye 1.6]` prints where it still shows. |
 
 The Unreal side is `unreal/Scripts/import_treehouse.py` (meshes, the tree house materials, textures, props, canopy
 trees) and the tree house block in `AJapanWorld`, which merges `runtime.json` at load: props as instanced meshes,
@@ -57,3 +58,11 @@ python games/yorimichi/scenarios/treehouse_walk.py cut TAKE      # ... with its 
 - The canopy trees stand with their crown tops about a metre under to 3.5 m over the nearest deck and keep 2.5 m of
   headroom over every deck and roof; the lookout's crow's nest (89 m) stands over them, with the crowns on its
   sight lines to every bridge cleared.
+- The lookout should not show over the forest from the lake trail. `screen.py` checks sight lines from eye and camera
+  height (1.6 and 2.6 m, the middle and both edges of the walk) to points up the tower, through the terrain, the
+  rooms and every tree crown, and adds a few tall cedars and amber canopy trees where they hide the most. They keep
+  7.5 m off every walk and the road, 22 m from every place, clear of the lake, the cabin and the station, and may
+  take the spot of a short maple, ginkgo or broadleaf. `world['treehouse']` records them (`forest_screen`,
+  `forest_screen_replaced`, `screen` with the seen metres before and after). The air-station trail's last stretch
+  before the entry still sees the tower down the porch reveal on purpose, and the crow's nest still looks over the
+  grove to the bridges and the sea.

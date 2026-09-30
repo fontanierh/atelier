@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 from village.layout import sample
 from zeppelin.layout import clear as clear_zeppelin
+from treehouse.screen import screen, sightlines, summary
 
 
 # deck: floor height (absolute m). R: octagon circumradius. trunk: anchor trunk radius at the deck.
@@ -399,6 +400,16 @@ def integrate(world, h):
     for c in pl['crowns']:
         x, y = pl['places'][c['place']]['xy']
         world['instances'].setdefault(c['key'], []).append([x, y, c['base'], c['yaw'], c['scale']])
+    # a few tall cedars and canopy trees keep the lookout out of sight from the lake trail and the first part of the
+    # air-station trail (screen.py); the crow's nest still looks over them to the bridges and the sea
+    before = summary(sightlines(world, pl, h, SPECIES), pl)
+    grove, found = screen(world, pl, h, SPECIES, np.random.default_rng(37))
+    for k, v in grove.items(): world['instances'].setdefault(k, []).extend(v)
+    after = summary(sightlines(world, pl, h, SPECIES), pl)
+    pl['forest_screen'] = {k: len(v) for k, v in grove.items()}
+    pl['forest_screen_replaced'] = found.get('replaced', {})
+    pl['screen'] = dict(trees=[[k, *q] for k, v in grove.items() for q in v],
+                        seen=[dict(walk=w, before=before[w], after=after[w]) for w in before if before[w]['seen_m']])
     for name in KEYS:
         world['instances'][name] = [[0, 0, 0, 0, 1]]
     world['treehouse'] = dict(pl, removed=removed)
