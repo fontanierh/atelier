@@ -165,7 +165,7 @@ def steps(ctx):
              outputs=[paths.content_data(ctx.game) / 'SkateRuntime/bin' / ('atelier-skate-runtime.exe' if os.name=='nt' else 'atelier-skate-runtime'),
                       *[paths.content_data(ctx.game) / 'SkateRuntime/assets' / name
                         for name in json.loads((ASSETS / 'skate/runtime.json').read_text())['sha256']]],
-             about='recovered Skate solver, animation banks and settings'),
+             heavy=True, about='recovered Skate solver, animation banks and settings'),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
