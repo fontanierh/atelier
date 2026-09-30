@@ -24,7 +24,8 @@ Graphs made here:
 - character(material): Cairo's and the bokken's materials dither out within 60 cm of the camera (22 cm: gone).
 
 Run as a script (`atelier build yorimichi unreal.see_through`), it patches what other imports build without it:
-M_Foliage (leaves), M_Painted's mask pin with MI_Bark switched to masked (tree trunks), and /Game/Cairo's materials.
+M_Foliage (leaves), M_Painted's mask pin with the instances in PAINTED switched to masked (tree trunks, the village's
+roofs, walls and props), and /Game/Cairo's materials.
 import_treehouse.py builds M_TreeHouse with it. Every patch is idempotent.
 """
 import unreal
@@ -37,6 +38,10 @@ VECTORS = (('Focus', (0., 0., -100000., 90.)), ('Cut', (55., 35., 0., 0.)), ('Ro
            ('RoomSize', (100., 100., 100., 0.)), ('RoomShape', (0., 60., 90., 0.)),
            *((name, (0., 0., -100000., 10.)) for name in TRAIL))
 OPACITY = unreal.MaterialProperty.MP_OPACITY_MASK
+# M_Painted's instances (setup_project.py) that may stand between the camera and Cairo: tree trunks and what the
+# village's houses, shrines and props are made of. The ground, road, water, rock and stone, the far forest and the sky
+# stay opaque (he stands on them, or they are too big or far to matter, and masking costs on every pixel drawn).
+PAINTED = ('Bark', 'RoofTile', 'Tile', 'Plaster', 'Wood', 'Lattice', 'Vermilion', 'Paint', 'Metal')
 
 # The pixel's dither threshold: interleaved gradient noise, stepped every frame so TAA blends it into a soft fade.
 DITHER = ('float2 px = Parameters.SvPosition.xy + float(View.StateFrameIndexMod8) * float2(32.665, 11.815);'
@@ -280,9 +285,11 @@ def main():
     painted = E.load_asset('/Game/Japan/Materials/M_Painted') if E.does_asset_exist('/Game/Japan/Materials/M_Painted') else None
     if painted and add_mask(painted, blend=False):          # opaque: only its masked instances use the pin
         save(painted); changed.append('M_Painted')
-    bark = E.load_asset('/Game/Japan/Materials/MI_Bark') if E.does_asset_exist('/Game/Japan/Materials/MI_Bark') else None
-    if bark and painted and mask_instance(bark):
-        E.save_loaded_asset(bark); changed.append('MI_Bark')
+    for name in PAINTED:
+        path = f'/Game/Japan/Materials/MI_{name}'
+        mi = E.load_asset(path) if E.does_asset_exist(path) else None
+        if mi and painted and mask_instance(mi):
+            E.save_loaded_asset(mi); changed.append(f'MI_{name}')
     for path in sorted(E.list_assets('/Game/Cairo', recursive=False)):
         name = path.rsplit('/', 1)[-1].split('.')[0]
         if not name.startswith(('M_Cairo', 'M_Bokken')): continue

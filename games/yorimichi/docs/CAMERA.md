@@ -7,8 +7,8 @@ room that puts it inside Cairo's head), the game keeps the camera where it is an
 ## What the player sees
 
 - **A hole round Cairo.** Whatever stands between the camera and Cairo dithers away in a soft round hole around his
-  body. The hole starts 35 cm in front of him, so nothing touching him is cut. The floor under his feet and
-  everything behind him stay.
+  body: leaves, trunks, the village's roofs, walls and props, and all of the tree house. The hole starts 35 cm in
+  front of him, so nothing touching him is cut. The floor under his feet and everything behind him stay.
 - **Rooms open on the camera's side.** Inside a tree house room, the walls between the camera and him and the
   ceiling and roof over his head open while the camera is outside or above the room. The far walls stay. A change
   of room closes the old one before it opens the new one.
@@ -53,7 +53,7 @@ passes keep every pixel, so a cut-away roof still casts its shadow.
 | `M_TreeHouse`: the structure, the dressing and the 13 props | the hole and the room walls and roof |
 | `MI_TH_trunk`: the camphor's trunk through the rooms | the hole only (`RoomCut` 0), so it is never cut at ceiling height |
 | `M_Foliage` (all leaves) | the hole |
-| `M_Painted` through `MI_Bark` (tree trunks) | the hole; only MI_Bark is switched to masked, the other painted instances stay opaque |
+| `M_Painted` through `MI_Bark` (tree trunks) and the village's `MI_RoofTile`, `MI_Tile`, `MI_Plaster`, `MI_Wood`, `MI_Lattice`, `MI_Vermilion`, `MI_Paint`, `MI_Metal` | the hole; these instances are switched to masked (`PAINTED` in see_through.py), the ground, road, water, rock, stone and far forest stay opaque |
 | `M_Cairo_*`, `M_Bokken_*` | dither out near the camera |
 
 The rooms are the room-grade boxes and round rooms from `treehouse/runtime.json`. A round room gives its height
@@ -116,8 +116,9 @@ tree house import keeps the old camera.
 
 ## What to check in game
 
-- Walk the forest and the village with trees and huts between you and the camera. Cairo should show through a
-  soft round hole, with no hard edges and no shimmer once you stop moving. The ground under him should stay.
+- Walk the forest and the villages with trees, eaves, shrines and props between you and the camera. Cairo should
+  show through a soft round hole, with no hard edges and no shimmer once you stop moving. The ground under him
+  should stay.
 - In each tree house room, the round Heart room included, swing the camera round Cairo. The near wall and the
   roof should open, and the far wall and the floor should stay. Walk from room to room and across the bridges:
   the opening should follow without jumping, and nothing outside should be cut away.
