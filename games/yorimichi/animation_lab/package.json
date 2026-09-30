@@ -6,6 +6,7 @@
     "build": "esbuild app.js --bundle --format=esm --minify --outfile=../../../build/yorimichi/unimate/web/app.js"
   },
   "dependencies": {
+    "gifenc": "1.0.3",
     "three": "0.183.2"
   },
   "devDependencies": {

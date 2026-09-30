@@ -81,11 +81,22 @@ class RequestTests(unittest.TestCase):
                 # Artifact uploads are limited to known takes and valid file types.
                 for path, body, code in [('/api/save/unknown/fox.glb', b'glTF', 404),
                                          ('/api/save/Fox_Idle/fox.glb', b'bad', 400),
+                                         ('/api/save/Fox_Idle/preview.gif', b'<html>bad</html>', 400),
                                          ('/api/save/Fox_Idle/../../.env', b'bad', 404)]:
                     request = urllib.request.Request(base+path, data=body, method='POST')
                     with self.subTest(path=path), self.assertRaises(urllib.error.HTTPError) as error:
                         urllib.request.urlopen(request)
                     self.assertEqual(error.exception.code, code)
+                from io import BytesIO
+                from PIL import Image
+                gif = BytesIO()
+                Image.new('RGB', (2, 2)).save(gif, format='GIF')
+                request = urllib.request.Request(base+'/api/save/Fox_Idle/preview.gif', data=gif.getvalue(), method='POST')
+                with urllib.request.urlopen(request) as response:
+                    self.assertEqual(response.status, 201)
+                with urllib.request.urlopen(base+'/exports/Fox_Idle/preview.gif') as response:
+                    self.assertEqual(response.headers['Content-Type'], 'image/gif')
+                    self.assertEqual(response.read(), gif.getvalue())
             finally:
                 server.shutdown()
                 server.server_close()

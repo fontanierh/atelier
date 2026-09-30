@@ -4,9 +4,11 @@ A local UniMate experiment on Yorimichi's fox hunter, with a Python inference ru
 The [experiment write-up](../docs/UNIMATE_EXPERIMENT.md) records what worked, the conditioning fix, measurements,
 and the current quality limits.
 
-This stays game-local because it uses the fox's rig, clip manifest, and authored Run constraint. All source is here;
-weights and generated artifacts go in the ignored `build/yorimichi/unimate/` directory. No gameplay animation is
-replaced automatically.
+The model installer and inference runner live in [the platform](../../../platform/studio/atelier/ai/unimate/README.md),
+alongside shared [retargeting helpers](../../../platform/web/motion/README.md). The fox exporter, clip manifest,
+sprint policy, server, and UI stay here. Weights and generated artifacts go in ignored `build/yorimichi/unimate/`.
+No gameplay animation is replaced automatically. Quality varies: the prompt-only backflip worked well in user review;
+many other takes were poor, and the guided sprint was essentially the Run we already had.
 
 ## Setup and run
 
@@ -43,31 +45,29 @@ validated on macOS/MPS. `--port` changes the localhost port.
 3. Review the two opaque, textured foxes together. **Match phase** maps their clip progress to the same normalized
    phase; disable it to keep each clip's native timing. Scrub, change speed, orbit/zoom, or show the rigs.
 4. Use **Original only** or **UniMate only** to isolate a character. **Export original** or **Export UniMate** saves
-   the selected animation as a skinned GLB. The camera button saves a labeled pose PNG.
+   the selected animation as a skinned GLB. The camera button saves a labeled pose PNG; **Preview GIF** captures
+   the current view at the clip's original timing, independent of playback speed.
 
 The source labels distinguish **Original · authored**, **UniMate · prompt only**, and **Hybrid · authored gait +
 UniMate arms**. Older takes made before the joint-name fix show **earlier conditioning**.
 
-For the tested sprint, leave **Keep the authored sprint gait** checked and try:
+For prompt-generated counterparts, uncheck **Keep the authored sprint gait** when comparing Run. Other originals
+also use prompt-only generation; the original is a visual comparison rather than an inference constraint.
 
-```text
-A person sprints forward at full speed with bent elbows and alternating arm swings.
-```
-
-Use seed **117**, guidance **2**, and **32** steps. Guided output retains the original stride, foot contacts, root,
-torso, head, and local wrist/finger animation in a closed **0.6-second** loop. UniMate shoulder/arm variation is
-bounded to 6.3 degrees per joint; this tested seed reached 3.7 degrees. This is a modest hybrid variation of an
-existing good sprint. Uncheck the option for fully prompt-generated body motion. Other originals currently support
-prompt-only counterparts, with the original used for comparison rather than as an inference constraint.
+The retained **Keep the authored sprint gait** option is the earlier hybrid experiment. It copies the original
+stride, root, torso, head, and wrist/finger detail into a 0.6-second loop with only bounded arm changes (at most 6.3°).
+It did not add a useful new sprint and should not be read as successful independent generation. Seed 117, guidance 2,
+32 steps, and `A person sprints forward at full speed with bent elbows and alternating arm swings.` reproduce it.
 
 ## Create an independent animation
 
 Switch to **Create new motion**, enter a name, describe the action, and set a seed/guidance/step count. For example:
 
 ```text
-A person sprints forward at full speed.
+A person does a backflip
 ```
 
+Seed **99**, guidance **2**, and **32** steps reproduce the useful user-reviewed backflip. It has no authored reference.
 Press **Generate new motion**. The result is saved in the separate **UniMate-only motions** library with no original
 reference attached. Changing the seed creates another take. The eight attack/movement presets and **Generate missing
 experiments** are available here; a preset batch can be continued after a reload with the same button.
@@ -80,20 +80,20 @@ accepting a take for game use.
 ## Use the runner without the UI
 
 The playground's HTTP API uses the same warm model and artifact/provenance path. With the guarded server running,
-this submits a guided sprint:
+this submits the standalone backflip:
 
 ```sh
 curl -fsS http://127.0.0.1:8842/api/generate \
   -H 'Content-Type: application/json' --data-binary @- <<'JSON'
 {
-  "title": "Guided sprint",
+  "title": "Backflip",
   "category": "Movement",
-  "prompt": "A person sprints forward at full speed with bent elbows and alternating arm swings.",
-  "seed": 117,
+  "prompt": "A person does a backflip",
+  "seed": 99,
   "guidance": 2,
   "steps": 32,
-  "reference_clip": "Fox_Run",
-  "guided_sprint": true
+  "reference_clip": null,
+  "guided_sprint": false
 }
 JSON
 ```
@@ -114,21 +114,24 @@ For a prompt-only counterpart, set `guided_sprint` to `false` and retain the sel
 generation, set `reference_clip` to `null` and `guided_sprint` to `false`. Guidance is 1.01–8, steps are integer 8–64,
 and seeds are integer 0–2147483647. Prompt text must contain 3–1000 characters. A guided request requires `Fox_Run`.
 
-The numerical runner is [`Engine.generate`](engine.py), which returns `(features, motion, provenance)` and accepts
-`guided_sprint=True`. Use the HTTP API to retain the job lifecycle and avoid loading a second model. The browser's
-[`retargetMotion`](retarget.js) turns the published motion into tracks on the original skin; GLB export happens in
-the viewer, not in the HTTP generation request.
+The numerical runner is the shared [`atelier.ai.unimate.Engine`](../../../platform/studio/atelier/ai/unimate/README.md).
+The local [`Engine`](engine.py) supplies fox inputs and the optional sprint policy, returning `(features, motion,
+provenance)`. Use the HTTP API to retain the job lifecycle and avoid loading a second model. The shared browser
+[`retargetMotion`](../../../platform/web/motion/retarget.js) turns published motion into tracks on the original skin;
+GLB/GIF export happens in the viewer, not in the HTTP generation request.
 
 ## Code and outputs
 
 | Source | Responsibility |
 | --- | --- |
-| [`setup.py`](setup.py), [`requirements.txt`](requirements.txt), [`package-lock.json`](package-lock.json) | Pinned environment, upstream/checkpoint installation, owned-asset export, frontend build |
+| [`platform/studio/atelier/ai/unimate/`](../../../platform/studio/atelier/ai/unimate/README.md) | Pinned installer/dependencies, topology/text conditioning, local inference, decoding, provenance |
+| [`platform/web/motion/`](../../../platform/web/motion/README.md) | Rest-frame retargeting, root conversion, quaternion continuity, loop endpoint restoration |
+| [`setup.py`](setup.py), [`package-lock.json`](package-lock.json) | Invoke shared installation, export owned assets, build frontend |
 | [`export_rig.py`](export_rig.py) | Full skin and authored GLB clips; 22-joint canonical conditioning rig |
-| [`engine.py`](engine.py) | Topology/text conditioning, local inference, rotation decoding, provenance |
-| [`export_reference.mjs`](export_reference.mjs), [`loop.js`](loop.js), [`guided.py`](guided.py) | Sample/validate the owned Run and make bounded hybrid variations |
+| [`engine.py`](engine.py) | Fox vocabulary/axes/diagnostics adapter and retained authored-sprint policy |
+| [`export_reference.mjs`](export_reference.mjs), [`guided.py`](guided.py) | Sample/validate the owned Run and make bounded hybrid variations |
 | [`server.py`](server.py) | Loopback HTTP server, serialized jobs, persistence, allowed artifact routes |
-| [`index.html`](index.html), [`app.js`](app.js), [`style.css`](style.css), [`retarget.js`](retarget.js) | Comparison/creation playground, skin retargeting, playback, snapshots, GLB export |
+| [`index.html`](index.html), [`app.js`](app.js), [`style.css`](style.css) | Comparison/creation playground, playback, snapshots, GLB/GIF export |
 | [`verify.py`](verify.py), [`check_retarget.mjs`](check_retarget.mjs), [`test_server.py`](test_server.py), [`test_guided.py`](test_guided.py) | FK/retarget verification and request/gait contracts |
 
 Setup and generation write the following under `build/yorimichi/unimate/`:
@@ -141,7 +144,7 @@ Setup and generation write the following under `build/yorimichi/unimate/`:
 | `results/<id>/features.npy` | Actual 60-frame model features, before the hybrid loop postprocessing |
 | `results/<id>/motion.json` | Published body rotations/root positions; hybrid reference/detail tracks and blend metadata |
 | `results/<id>/job.json`, `results/<id>/provenance.json` | Persisted request, source grouping, progress, settings, hashes, timings, diagnostics |
-| `exports/<id>/fox.glb`, `exports/<id>/pose.png` | Viewer exports, also offered as browser downloads |
+| `exports/<id>/fox.glb`, `exports/<id>/pose.png`, `exports/<id>/preview.gif` | Viewer exports, also offered as browser downloads |
 | `export-health/`, `server-health/` | Memory-guard reports |
 
 The raw feature file and published hybrid have different frame counts: 60 model frames versus 18 gait frames plus
@@ -156,15 +159,20 @@ or mismatched Run reference requires setup again. Model-load or generation failu
 
 ```sh
 .venv/bin/python -m unittest discover -s games/yorimichi/animation_lab -p 'test_*.py'
+.venv/bin/python -m unittest discover -s platform/studio/tests -p 'test_unimate.py'
+node platform/web/motion/test_motion.mjs games/yorimichi/animation_lab/node_modules/three/build/three.module.js
 build/yorimichi/unimate/venv/bin/python games/yorimichi/animation_lab/verify.py
 .venv/bin/atelier lint
 ```
 
-The eight unit tests run without inference. `verify.py` needs at least one saved generated take; it compares the
-viewer retargeter to FK at every frame and checks hybrid gait preservation and loop closure. See the
+The eight game tests and five shared Python tests run without inference. The two shared JavaScript tests use a
+synthetic skin with arbitrary bone names and explicit axes/rest transforms. `verify.py` needs at least one saved
+generated take; it compares the viewer retargeter to FK at every frame and checks hybrid gait preservation and
+loop closure. See the
 [experiment write-up](../docs/UNIMATE_EXPERIMENT.md) for the recorded results and what those checks establish.
 
 The [upstream code](https://github.com/Friedrich-M/UniMate) and
 [checkpoint](https://huggingface.co/Linzhan/UniMate) are MIT licensed. Setup does not download or redistribute
 UniML3D characters, raw Mixamo motions, or Truebones assets. The source fox is owned; upstream code, weights,
-generated takes, captures, and exports stay in ignored build output.
+generated takes, captures, and exports stay in ignored build output. The selected backflip GIF and its provenance
+are retained in `docs/media/` as the README illustration.

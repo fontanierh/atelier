@@ -189,15 +189,17 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.startswith('/api/save/'):
             parts = self.path.split('/')
             allowed_originals = {'Fox_' + c for c in json.loads((REPO / 'games/yorimichi/assets/characters/fox-hunter/manifest.json').read_text())['clips']}
-            if len(parts) != 5 or (parts[3] not in self.lab.jobs and parts[3] not in allowed_originals) or parts[4] not in ('fox.glb', 'pose.png'):
+            if len(parts) != 5 or (parts[3] not in self.lab.jobs and parts[3] not in allowed_originals) or parts[4] not in ('fox.glb', 'pose.png', 'preview.gif'):
                 return self.json(404, {'error': 'Unknown motion or artifact'})
             try:
                 size = int(self.headers.get('Content-Length', 0))
                 if not 1 <= size <= 16 * 1024 * 1024:
                     raise ValueError('Artifact exceeds the 16 MiB limit')
                 body = self.rfile.read(size)
-                if not body.startswith(b'glTF' if parts[4] == 'fox.glb' else b'\x89PNG\r\n\x1a\n'):
-                    raise ValueError('Expected an exported GLB or PNG')
+                signatures = {'fox.glb': (b'glTF',), 'pose.png': (b'\x89PNG\r\n\x1a\n',),
+                              'preview.gif': (b'GIF87a', b'GIF89a')}
+                if not body.startswith(signatures[parts[4]]):
+                    raise ValueError('Expected an exported GLB, PNG, or GIF')
                 folder = self.lab.root / 'exports' / parts[3]
                 folder.mkdir(parents=True, exist_ok=True)
                 (folder / parts[4]).write_bytes(body)
@@ -237,7 +239,7 @@ class Handler(BaseHTTPRequestHandler):
         source = files.get(path)
         if path.startswith('/exports/'):
             parts = path.split('/')
-            if len(parts) == 4 and re.fullmatch(r'[A-Za-z0-9_]+', parts[2]) and parts[3] in ('fox.glb', 'pose.png'):
+            if len(parts) == 4 and re.fullmatch(r'[A-Za-z0-9_]+', parts[2]) and parts[3] in ('fox.glb', 'pose.png', 'preview.gif'):
                 source = self.lab.root / 'exports' / parts[2] / parts[3]
         if path.startswith('/results/'):
             parts = path.split('/')

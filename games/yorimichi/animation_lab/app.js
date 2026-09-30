@@ -1,6 +1,7 @@
-import { retargetMotion } from "./retarget.js";
-import { closeLoop } from "./loop.js";
+import { retargetMotion } from "../../../platform/web/motion/retarget.js";
+import { closeLoop } from "../../../platform/web/motion/loop.js";
 import * as THREE from "three";
+import { GIFEncoder, quantize, applyPalette } from "gifenc";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -37,6 +38,7 @@ let selectedClip,
   activeJob,
   sequence = [];
 let displayScale = 1;
+let exportingPreview = false;
 const cache = new Map();
 const icons = { Attacks: "↗", Movement: "↝", Custom: "✳", Original: "◇" };
 const renderer = new THREE.WebGLRenderer({
@@ -133,7 +135,7 @@ function escape(text) {
 }
 
 function generatedClip(motion, name) {
-  return retargetMotion(motion, name, rest);
+  return retargetMotion(THREE, motion, name, rest);
 }
 
 async function loadModel() {
@@ -182,7 +184,7 @@ async function loadModel() {
   authored = gltf.animations.map((loaded) => {
     const meta = originalMetadata.find((m) => m.id === loaded.name);
     const clip =
-      meta?.kind === "loop" ? closeLoop(loaded, meta.seconds) : loaded;
+      meta?.kind === "loop" ? closeLoop(THREE, loaded, meta.seconds) : loaded;
     return {
       id: clip.name,
       title:
@@ -664,16 +666,16 @@ async function download(blob, name, file, id) {
   a.download = name;
   a.click();
 }
-$("snapshot").onclick = () => {
-  const item = current;
-  if (!item) return;
+function capturePose(item, width = renderer.domElement.width) {
   const canvas = document.createElement("canvas");
-  canvas.width = renderer.domElement.width;
-  canvas.height = renderer.domElement.height;
+  canvas.width = width;
+  canvas.height = Math.round(
+    width * renderer.domElement.height / renderer.domElement.width,
+  );
   const context = canvas.getContext("2d");
   context.fillStyle = "#252d21";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(renderer.domElement, 0, 0);
+  context.drawImage(renderer.domElement, 0, 0, canvas.width, canvas.height);
   // Keep exported comparisons as legible as the viewer: preserve source labels.
   const ratio = canvas.width / renderer.domElement.clientWidth;
   context.textAlign = "center";
@@ -697,7 +699,12 @@ $("snapshot").onclick = () => {
         "#d2e59c",
       );
   } else drawLabel("UNIMATE ONLY · " + item.title, 0.5, "#d2e59c");
-  canvas.toBlob((blob) =>
+  return canvas;
+}
+$("snapshot").onclick = () => {
+  const item = current;
+  if (!item) return;
+  capturePose(item).toBlob((blob) =>
     download(blob, `fox-${item.title}.png`, "pose.png", item.id).catch((e) =>
       toast(e.message),
     ),
@@ -750,11 +757,8 @@ function centerPreview(character, side) {
   character.position.x -= point.x - (origin.x * displayScale + right.x);
   character.position.z -= point.z - (origin.z * displayScale + right.z);
 }
-renderer.setAnimationLoop((now) => {
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
+function renderPose() {
   if (action) {
-    if (playing) clockTime += dt * speed;
     const duration = selectedClip.duration;
     if (clockTime > duration)
       clockTime = looping ? clockTime % duration : duration;
@@ -778,7 +782,72 @@ renderer.setAnimationLoop((now) => {
   }
   controls.update();
   renderer.render(scene, camera);
+}
+renderer.setAnimationLoop((now) => {
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+  if (exportingPreview) return;
+  if (action && playing) clockTime += dt * speed;
+  renderPose();
 });
+// Sample the selected clip deterministically at its native rate, independent of
+// playback speed. GIF time is quantized to centiseconds, with accumulated rounding.
+$("preview-gif").onclick = async () => {
+  if (!current || !selectedClip || exportingPreview) return;
+  const item = current;
+  const originalTime = clockTime;
+  const fps = item.fps || 30;
+  const count = Math.round(selectedClip.duration * fps) + 1;
+  const button = $("preview-gif");
+  exportingPreview = true;
+  document.body.inert = true;
+  button.disabled = true;
+  button.textContent = "Encoding…";
+  try {
+    const frames = [];
+    for (let f = 0; f < count; f++) {
+      clockTime = Math.min(f / fps, selectedClip.duration);
+      renderPose();
+      const canvas = capturePose(item, 640);
+      frames.push(
+        canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height),
+      );
+      // Let the browser paint progress while preserving the captured clip time.
+      if (f % 10 === 0) await new Promise(requestAnimationFrame);
+    }
+    // One palette across evenly spaced frames avoids color flicker.
+    const samples = frames.filter((_, i) => i % 5 === 0);
+    const rgba = new Uint8Array(samples.length * samples[0].data.length);
+    samples.forEach((frame, i) => rgba.set(frame.data, i * frame.data.length));
+    const palette = quantize(rgba, 256);
+    const gif = GIFEncoder();
+    frames.forEach((frame, i) =>
+      gif.writeFrame(
+        applyPalette(frame.data, palette), frame.width, frame.height,
+        {
+          ...(i === 0 ? { palette } : {}),
+          delay: 10 * (Math.round((i + 1) * 100 / fps) - Math.round(i * 100 / fps)),
+          repeat: 0,
+        },
+      ),
+    );
+    gif.finish();
+    await download(
+      new Blob([gif.bytes()], { type: "image/gif" }),
+      `fox-${item.title}.gif`, "preview.gif", item.id,
+    );
+    toast("GIF saved locally at the clip's original speed.");
+  } catch (e) {
+    toast(`GIF export failed: ${e.message}`);
+  } finally {
+    clockTime = originalTime;
+    exportingPreview = false;
+    document.body.inert = false;
+    button.disabled = false;
+    button.textContent = "↓ Preview GIF";
+    renderPose();
+  }
+};
 async function status() {
   try {
     const s = await api("/api/status");

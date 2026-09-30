@@ -1,8 +1,6 @@
-import * as THREE from "three";
-
 // Source loop exports omit their duplicate final frame. Restore that endpoint
 // at the manifest period so playback uses the intended cadence and closes.
-export function closeLoop(clip, period) {
+export function closeLoop(THREE, clip, period) {
   const tracks = clip.tracks.map((track) => {
     const size = track.getValueSize();
     const count = Array.from(track.times).filter(

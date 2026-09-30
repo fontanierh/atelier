@@ -155,12 +155,22 @@ locally on the fox hunter's own rig. Compare each authored animation with its ge
 playground, or create independent animations with a custom prompt and seed. Playback, phase matching, rig overlays,
 labeled snapshots, and skinned GLB export make each take easy to inspect.
 
-The strongest sprint result is a guided hybrid: the original stride, contacts, and 0.6-second loop, with a small
-UniMate arm variation. Prompt-only motions remain experimental. The
-[write-up](games/yorimichi/docs/UNIMATE_EXPERIMENT.md) covers the conditioning fix, approach, measured results,
-verification, and limits. The [setup/run and API guide](games/yorimichi/animation_lab/README.md) includes the code
-entry points and commands to reproduce it; the playground opens at **http://127.0.0.1:8842/** once started.
-No API key is needed. Source stays with Yorimichi and generated output goes under `build/yorimichi/unimate/`.
+Some prompts produce useful new motion: a user-generated **backflip** worked well. Many other actions still look
+poor, and generated sprints fell below the authored Run. The guided sprint was essentially the animation we already
+had, with tiny arm changes; it added little useful variation.
+
+<p align="center">
+  <img src="docs/media/unimate-backflip.gif" width="640" alt="The owned fox performs a new prompt-only UniMate backflip and lands">
+  <br><sub><b>Prompt-only backflip.</b> “A person does a backflip” · seed 99 · guidance 2 · 32 steps. No authored reference.
+  The GIF repeats the full two-second take; its restart is not a synthesized loop.</sub>
+</p>
+
+The [write-up](games/yorimichi/docs/UNIMATE_EXPERIMENT.md) records the mixed results, conditioning fix, and limitations.
+The [setup/run and API guide](games/yorimichi/animation_lab/README.md) includes the playground and backflip recipe;
+open **http://127.0.0.1:8842/** once started. The reusable
+[UniMate installer/runner](platform/studio/atelier/ai/unimate/README.md) and
+[retargeting helpers](platform/web/motion/README.md) live in the platform; fox assets, policies, and UI stay with
+Yorimichi. No API key is needed, and generated output goes under `build/yorimichi/unimate/`.
 
 ## A prop from a sentence, straight into the running game
 
@@ -238,7 +248,7 @@ Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, skate rider, sailboat stance), effects, skateboarding, streaming, the live bridge |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
-| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate inference, original/counterpart comparisons, guided sprint variations, custom prompts and GLB export |
+| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate experiments, original/counterpart comparisons, custom prompts, GLB/GIF export; shared platform runner |
 | Games | [games/yorimichi](games/yorimichi), [games/sandbox](games/sandbox) | a full game, and the smallest one (the template for `atelier new`) |
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts fit and the rules that keep the platform reusable.

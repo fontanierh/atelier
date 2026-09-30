@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as THREE from "three";
-import { closeLoop } from "./loop.js";
+import { closeLoop } from "../../../platform/web/motion/loop.js";
 const root = process.argv[2] || "build/yorimichi/unimate";
 const bytes = fs.readFileSync(path.join(root, "assets/fox.glb"));
 const jsonSize = bytes.readUInt32LE(12);
@@ -68,7 +68,7 @@ const manifest = JSON.parse(
   fs.readFileSync("games/yorimichi/assets/characters/fox-hunter/manifest.json"),
 );
 const period = manifest.clips.Run.seconds;
-const clip = closeLoop(new THREE.AnimationClip("Fox_Run", -1, tracks), period);
+const clip = closeLoop(THREE, new THREE.AnimationClip("Fox_Run", -1, tracks), period);
 const mixer = new THREE.AnimationMixer(scene);
 mixer.clipAction(clip).play();
 const rig = JSON.parse(fs.readFileSync(path.join(root, "assets/rig.json")));

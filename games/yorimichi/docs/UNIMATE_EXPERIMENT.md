@@ -1,24 +1,37 @@
 # UniMate on the fox hunter
 
-Experiment: September 30, 2026. The runnable implementation and browser playground are in
-[`../animation_lab/`](../animation_lab/README.md).
+Experiment: September 30, 2026. See the [Motion Lab usage guide](../animation_lab/README.md) for installation,
+the comparison/creation playground, prompts, code usage, and exports.
 
-## What we wanted to establish
+## Result: useful for some new motions, inconsistent overall
 
-Can a released text-to-motion model produce attack and movement variations on Yorimichi's owned fox hunter rig,
-while keeping its skinned character intact? The first quality target was a forward sprint close to the existing
-Run clip. The playground makes that comparison explicit: original and counterpart together, and independent
-prompt-only generation in a separate workflow.
+UniMate can produce useful **new, prompt-only animations** on our owned fox rig. The clearest positive example
+is the backflip the user generated and judged successful: `A person does a backflip`, seed **99**, guidance **2**,
+**32** steps. It used no authored reference and took **11.58 seconds** with a warm local model.
 
-The useful result is a guided sprint variation. It retains the authored gait and lets UniMate change the arms
-within a small bound. Fully prompt-generated body motion improved after correcting conditioning, but has not
-matched the authored sprint's quality. Neither path replaces a gameplay clip automatically.
+Many other attacks/movements looked poor. Correcting joint-name conditioning helped, but fully generated sprints
+still did not approach the existing authored Run. Quality depends on the action and take; this experiment does
+not establish a success rate or reliable coverage of a whole animation set. Use it to generate candidates, keep
+the useful ones, and reject or author the rest.
 
-## Inputs and reproducibility
+The **guided sprint was not a useful new animation**. It preserved almost all of the sprint we already had and
+introduced only tiny arm changes. Its similarity to the original follows from copying/constraining that original;
+it is not evidence that UniMate learned a comparable sprint. The earlier write-up overstated this as the useful
+result. We retain the labeled hybrid and its implementation as a record of that unsuccessful variation approach.
 
-The source is [`FoxHunter-Anim-r05.blend`](../assets/characters/fox-hunter/FoxHunter-Anim-r05.blend), with 53 skin bones,
-22 anatomical body joints for generation, and 15 authored comparison clips. The Run period and travel speed come
-from its [manifest](../assets/characters/fox-hunter/manifest.json).
+<p align="center">
+  <img src="../../../docs/media/unimate-backflip.gif" width="640" alt="The owned fox performs a prompt-only UniMate backflip, jumping, rotating backwards, landing and recovering">
+</p>
+
+The GIF shows the saved standalone take, sampled at 30 fps with a fixed camera. The viewer centers horizontal
+travel, as it does during inspection; the exported animation retains root motion. It repeats the full two-second
+sample sequence for presentation, with a visible restart rather than a synthesized seamless loop.
+
+## Inputs and reproduction
+
+The source is [`FoxHunter-Anim-r05.blend`](../assets/characters/fox-hunter/FoxHunter-Anim-r05.blend), with **53 skin
+bones**, **22 anatomical body joints** for generation, and **15 authored clips** for comparison. Run cadence and
+travel speed come from its [manifest](../assets/characters/fox-hunter/manifest.json).
 
 | Input | Pinned value |
 | --- | --- |
@@ -28,118 +41,97 @@ from its [manifest](../assets/characters/fox-hunter/manifest.json).
 | Checkpoint SHA-256 | `cbcfb7a057e45f967d5964fecf6b3f83358096f1306f25831e1644a18a50eb34` |
 | Flan-T5 revision | `7bcac572ce56db69c1ea7c8af255c5d7c9672fc2` |
 | Fox source SHA-256 | `8103d0bf2c970d4adcd6d9af32f109e376b29433b3cc3597387efd75a3a6219c` |
-| Sampler | Fixed midpoint flow ODE, 32 steps, prompt guidance 2 for the sprint comparisons |
+| Solver | Fixed midpoint flow ODE; recorded examples use guidance 2 and 32 steps |
 | Tested backend | PyTorch MPS on macOS arm64; local inference, no paid API |
 
-The raw sprint prompt was `A person sprints forward at full speed.` The guided prompt was
-`A person sprints forward at full speed with bent elbows and alternating arm swings.`
-The [setup script](../animation_lab/setup.py) installs pinned Python/Node dependencies and checks the checkpoint hash.
-Each generated take records the prompt, seed, vocabulary, solver settings, flow start time, reference usage, device,
-rig hash, and model/text revisions in provenance. Seeds fix initial noise; different hardware can still produce
-numerical differences.
+To reproduce the positive example, select **Create new motion**, enter `A person does a backflip`, set seed **99**,
+guidance **2**, and steps **32**, then generate. The [HTTP example](../animation_lab/README.md#use-the-runner-without-the-ui)
+uses the same request. Its saved take ID is `220f6f9e6f75407685e67b0c1583489a`; generated takes stay in ignored build
+output. The README [GIF provenance](../../../docs/media/unimate-backflip.json) records that ID, settings, hashes,
+and capture details. **Preview GIF** reproduces the capture from a selected take.
 
-## Findings
+Every take records settings, vocabulary, solver, flow start time, reference usage, backend, source hash, and model/text
+revisions. Seeds fix initial noise, although numerical results can differ across hardware. A fresh checkout must
+run setup and generation; the README GIF is the small documentation illustration, not an installed animation asset.
 
-Uses the recommended [UniMate f60 v2 checkpoint](https://huggingface.co/Linzhan/UniMate), EMA step 100000, on our own
-unseen fox topology. The first attack/movement experiments were weak. Investigation found a conditioning bug:
-hand-written lowercase joint labels did not match the training vocabulary. The engine now uses upstream’s actual
-name cleaning (`Left Thigh`, `Left Shin`, `Left Upper Arm`, `Spine`, etc.). New provenance records
-`canonical-names-v2`; older takes remain available with an **earlier conditioning** label.
+## What we tried
 
-Corrected names and a short sprint prompt improved the raw gait, but it still fell below the authored Run in visual
-quality. The constrained sprint was then checked against that source:
+The initial attack/movement results were weak. Investigation found an integration bug: hand-written lowercase joint
+labels differed from the training vocabulary. The fox adapter now uses upstream name cleaning (`Left Thigh`,
+`Left Shin`, `Left Upper Arm`, `Spine`, etc.). New provenance records `canonical-names-v2`; old takes remain labeled
+**earlier conditioning**. The fix removed an avoidable input error but did not make all generated motion good.
 
-| Sprint experiment | Seed | Inference | Result |
+| Experiment | Seed | Inference | Finding |
 | --- | ---: | ---: | --- |
-| Prompt only, corrected names | 10 | 10.34 s | Recognizable running; contacts, hands, and seam still need work |
-| Prompt only, corrected names | 19 | 10.02 s | Similar limitations |
-| Guided hybrid | 10 | 11.97 s | Original gait with up to 4.2° arm variation |
-| Guided hybrid, generated through UI | 117 | 19.45 s | Original gait with up to 3.7° arm variation |
-| Independent prompt only, generated through UI | 99 | 13.15 s | Saved in the standalone library |
+| Prompt-only sprint, corrected names | 10 | 10.34 s | Recognizable running, below authored quality; contacts/hands/seam need work |
+| Prompt-only sprint, corrected names | 19 | 10.02 s | Similar limitations |
+| Guided sprint | 10 | 11.97 s | Near-copy of authored Run; up to 4.2° arm change, little new value |
+| Guided sprint, generated through UI | 117 | 19.45 s | Near-copy; up to 3.7° arm change, little new value |
+| Independent prompt-only sprint, generated through UI | 99 | 13.15 s | Standalone generation works, but sprint quality target remains unmet |
+| Independent prompt-only backflip, user-generated/reviewed | 99 | 11.58 s | Useful new motion; no authored reference |
 
-These runs used guidance 2 and 32 fixed midpoint steps. Both hybrids preserve the original **0.6-second** cycle and
-its in-place speed (5.91 m/s at the viewer’s display scale). Independent FK verification measured a maximum
-**0.00053 mm** deviation in preserved body joints. Exported hybrid GLBs retain all **53 skin bones**, **53 animation
-channels**, and identical first/last transforms. This establishes preservation of the owned gait, not raw-model quality.
+The backflip is a qualitative, user-reviewed success. It does not imply that all acrobatics work or that this take
+needs no further polish. Contact, balance, intersections, timing, and recovery remain acceptance decisions.
 
-Raw generation still produces 60 frames at 30 fps (last sample at 1.967 seconds), with no synthesized loop seam and
-rest-pose fingers. Guided output contains 18 unique frames plus the closing endpoint, and copies authored wrist/finger
-tracks. The viewport centers horizontal root travel for inspection; prompt-only travel distances and exported GLBs
-retain the motion. None of these experiments has replaced a gameplay animation.
+Raw generation produces **60 frames at 30 fps**, with the last sample at 1.967 seconds. Fingers outside the body
+representation keep their rest pose; no loop seam is synthesized. Guided sprint output has 18 unique gait frames
+plus a closing endpoint and copies authored wrist/finger tracks. Neither workflow replaces gameplay clips automatically.
 
-Retarget verification covered **23,276 body-joint samples**, maximum error **0.00088 mm** in source mesh world units.
-That measures conversion accuracy. Prompt adherence, balance, contacts, and recovery still require visual review.
+## Implementation and repository placement
 
-## Implementation
+Reusable code now lives in the platform:
 
-`export_rig.py` keeps the complete 53-bone skin and exports the 22 anatomical body joints used for generation.
-It converts the fox’s +X-forward/Z-up rest pose to UniMate’s +Z-forward/Y-up coordinates. `engine.py` canonicalizes
-bone lengths to the training convention, builds upstream graph/spectral conditioning, uses the released humanoid
-normalization statistics and Flan-T5 joint/prompt embeddings, and samples the EMA model. Two upstream fixed padding
-sizes are set to the actual joint count for compact spectral attention; no learned weights are changed.
+| Shared code | Responsibility / explicit caller inputs |
+| --- | --- |
+| [`platform/studio/atelier/ai/unimate/`](../../../platform/studio/atelier/ai/unimate/README.md) | Pinned installer and optional inference environment; topology/text conditioning, EMA sampling, decoding, provenance. Caller supplies the rig, anatomical labels, normalization key, axes, and optional constraint features/mask. |
+| [`platform/web/motion/`](../../../platform/web/motion/README.md) | Rest-frame retargeting, root conversion, quaternion continuity, and loop endpoint restoration. Caller supplies Three.js, the source-to-target transform, and target rest transforms. |
 
-`export_reference.mjs` samples the owned Run clip, restoring the duplicate endpoint at its manifest period.
-`guided.py` validates its source-to-model FK conversion, adds the manifest’s virtual forward travel for conditioning,
-and leaves six arm-related feature slots free. Guided inference starts at flow time 0.55 and clamps the remaining
-slots to the reference’s noise-to-motion path. The published loop keeps the source gait, averages generated arm
-rotations by gait phase, and blends them at strength 0.35 with an 18° input cap (at most 6.3° final change per joint).
-This constraint and blend are specific to the current owned sprint, rather than a general contact solver.
+These are experimental utilities, tested with explicit inputs and a synthetic rig; extraction is not a claim of
+validated motion quality on a second character. Heavy model dependencies stay in a separate environment.
+The existing platform memory guard is reused.
 
-`retarget.js` conjugates those canonical rotation deltas into each original bone’s rest frame, converts root
-translation, and builds an animation clip on the original skin. Quaternion signs are made continuous before glTF
-interpolation. The original finger bones and source blend are preserved.
+The [fox lab](../animation_lab/README.md) retains the owned-source exporter, upstream Mixamo vocabulary selection,
+axis transform, named-foot diagnostics, clip manifest, reference exporter, sprint policy, loopback server,
+playground, and fox-specific verification. Platform code does not import a game or know its asset paths.
 
-`server.py` keeps the model warm, validates prompts/seeds/steps, serializes jobs, reports progress, and saves each
-take to `build/yorimichi/unimate/results/<id>/`. Every take includes raw `features.npy`, the browser motion, job state,
-and provenance with prompt, seed, guidance, solver, step count, flow start time, device, elapsed time, checkpoint hash,
-upstream revision, text encoder revision, joint vocabulary, and rig source hash. Guided provenance also records the
-reference and blend. Its raw 60-frame features precede the published 19-frame loop and are retained for inspection.
-The viewer only serves explicitly allowed files; checkpoints, credentials and the rest of the repository are outside
-its file routes. A preset batch can be continued after a reload with **Generate missing experiments**.
+`export_rig.py` keeps the full skin and exports canonical +Z-forward/Y-up body points from the fox's +X-forward/Z-up
+source. The shared engine normalizes tree length, builds graph/spectral conditioning, embeds names/prompt with
+Flan-T5, and samples the released humanoid checkpoint. Two padding sizes use the actual joint count without changing
+learned weights. The shared retargeter conjugates canonical deltas into original bone rest frames and translates
+root positions to the original skin, preserving quaternion sign continuity.
 
-The [upstream code](https://github.com/Friedrich-M/UniMate) and checkpoint are MIT licensed. No UniML3D character,
-Mixamo download, or Truebones motion is downloaded or redistributed. The fox is an owned asset. Upstream code,
-weights, generated takes, captures and exports stay in ignored build output.
+The game-specific guided path converts the owned Run into reference features, validates FK, adds manifest travel
+for conditioning, leaves six arm-related slots free, and starts flow at 0.55 with the other slots locked. Final
+postprocessing restores the authored gait and blends phase-averaged arm changes at strength 0.35 with an 18° input
+cap (6.3° final cap). This explains why the result was essentially the existing sprint. It is not a general contact solver.
 
-## What the checks establish
+`server.py` keeps the model warm, validates inputs, serializes jobs, and saves raw features, published motion, job
+state, and provenance under `build/yorimichi/unimate/results/<id>/`. The viewer groups original/counterpart comparisons
+separately from independent creations, labels authored/prompt-only/hybrid origins, and exports GLB, PNG, and GIF.
+It serves only allowed artifacts on loopback; weights and the rest of the repository are outside its file routes.
 
-Eight tests cover request validation, failed-job cleanup, local host/origin and file boundaries, comparison
-persistence, guided request restrictions, bounded arm changes, and loop closure. `verify.py` independently samples
-source positions and checks the published hybrid's preserved body joints and cadence. It then compares every
-saved take against the same Three.js retargeter used by the playground. Browser checks covered both generation
-forms, persistence, source labels, comparison views, playback, scrubbing, filtering, rig overlays, and exports.
+The [upstream code](https://github.com/Friedrich-M/UniMate) and [checkpoint](https://huggingface.co/Linzhan/UniMate)
+are MIT licensed. No UniML3D characters, raw Mixamo downloads, or Truebones motions are redistributed. The fox is owned.
+Weights, upstream checkouts, generated clips, full captures, and exports stay in ignored build output; the selected
+README GIF and its provenance are kept alongside the repository's existing documentation media.
 
-The tiny FK errors establish correct conversion and preservation of the reference gait. They do not measure
-perceived motion quality or prove that arbitrary prompts, attacks, or new rigs work well. The 10–20 second timings
-are measured warm-model runs, rather than a performance guarantee.
+## What validation establishes
 
-The guided result is specific to this source Run. It preserves in-place locomotion; the manifest supplies travel
-speed. The arm variation is intentionally modest, and the loop blends pose endpoints without a general velocity
-or contact optimization. Prompt-only clips can still have floating feet, intersections, weak hands, incomplete
-sequences, and an abrupt loop seam. Export creates a skinned GLB for review; gameplay import and acceptance remain
-separate.
+Retarget/FK checks cover **26,334 body-joint samples** across saved takes including the backflip, with maximum error
+**0.00088 mm** in source mesh world units. Guided preservation checks found at most **0.00053 mm** deviation in
+locked body joints and a closed
+**0.6-second** cycle. Its GLB kept all 53 skin bones and 53 animation channels. These show conversion and copying
+accuracy; they do not score perceived quality or show useful novelty in the guided sprint.
 
-## Repository placement
+Tests cover request validation, local host/origin/file boundaries, persistence, failed-job cleanup, constrained
+motion bounds, and loop closure. Shared input tests cover explicit rig axes/vocabulary, invalid trees and constraint
+shapes, and checksum-safe installation. A differently named synthetic skin exercises retargeting under rotated/scaled
+parents, quaternion continuity, root translation, and local detail overrides. Browser checks cover generation,
+source labels, playback/scrubbing, comparison views, and exports. The backflip GIF captures all 60 samples at native
+timing. Regenerating the backflip and seed-117 guided sprint through the extracted runner produced exactly the same
+raw features and published motion as their saved predecessors on MPS.
 
-All inference, export, verification, and playground source lives in `games/yorimichi/animation_lab/`. This experiment
-knows the fox's source file, joint naming, authored clips, and sprint constraint, so it remains game-local under
-[Atelier's architecture rules](../../../ARCHITECTURE.md#rules). It has not yet demonstrated a shared interface in a
-second game. Weights, upstream checkouts, generated clips, captures, and exports live under the ignored
-`build/yorimichi/unimate/`; they are reproduced with setup and generation rather than redistributed in this PR.
-
-The candidates for a later platform extraction are concrete:
-
-| Shared candidate | Platform destination | Game input that must become explicit |
-| --- | --- | --- |
-| Checkpoint installer and environment setup | `platform/studio/atelier/ai/` | Model revision, dependency environment, output directory; owned-character export stays in the game |
-| Topology/text conditioning and inference runner | `platform/studio/atelier/ai/` | Skeleton, canonical axes, joint-name vocabulary, normalization statistics, optional reference constraint |
-| Rest-frame rotation conversion and skin retargeting | `platform/web/` | Bone mapping, rest transforms, root translation, canonical-to-model transform |
-
-The current runner still assumes Mixamo anatomical labels/statistics, the fox's canonical orientation, and named
-feet for diagnostics. The sprint constraint is authored motion data plus fox-specific policy, not a shared contact
-solver. The existing memory guard is already reused from the platform. Validation on another owned rig or a sandbox
-fixture should precede promoting the remaining candidates; the generic model dependencies can stay optional so
-ordinary Atelier installs do not acquire the inference environment.
-
-For setup commands, the two UI workflows, HTTP usage, outputs, and validation commands, use the
-[Motion Lab usage guide](../animation_lab/README.md).
+Good numerical checks do not remove floating feet, weak hands, incomplete actions, or abrupt clip restarts. The
+original trials took 10–20 seconds with a warm model; later regression runs took 29–39 seconds. Latency varies with
+system load, and these observations are not a performance guarantee. Gameplay import, polish, and acceptance
+remain separate.

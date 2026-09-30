@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as THREE from "three";
-import { retargetMotion } from "./retarget.js";
+import { retargetMotion } from "../../../platform/web/motion/retarget.js";
 const root = process.argv[2] || "build/yorimichi/unimate";
 const buffer = fs.readFileSync(path.join(root, "assets/fox.glb"));
 const gltf = JSON.parse(
@@ -47,7 +47,7 @@ for (const id of fs.readdirSync(path.join(root, "results"))) {
   const expected = JSON.parse(
     fs.readFileSync(path.join(folder, "expected-joints.json")),
   );
-  const clip = retargetMotion(motion, "QA", rest);
+  const clip = retargetMotion(THREE, motion, "QA", rest);
   const mixer = new THREE.AnimationMixer(scene);
   const action = mixer.clipAction(clip).play();
   for (let f = 0; f < motion.frames; f++) {
