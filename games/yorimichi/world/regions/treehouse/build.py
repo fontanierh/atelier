@@ -969,7 +969,8 @@ def furnish_entry(m, d, p):
     window, a shelf of jars of acorns and shells. By the south door the umbrella stand; the kite and the children's
     drawings high on the gables; a mat at the north door, a rug in the middle, the big lantern from the ridge.
     Outside: a crate bench against the south wall facing the view, a post lantern and a planter in the porch's far
-    corner, a potted plant by the landing, the banner on the east wall."""
+    corner, a potted plant by the landing, the banner on the east wall, a woodpile on the west wall, the name board
+    over the north door."""
     global R
     shared, R = R, random.Random(ENTRY_SEED+1)
     try:
@@ -1075,6 +1076,10 @@ def furnish_entry(m, d, p):
         on_wall(d, E, .4, -.08, .8, 1.35, 2.15, 'flag', frame=False)
         tube(d, [at(E, .4-.47, -.105, 2.18), at(E, .4+.47, -.105, 2.18)], .015, DARK, 6, 'wood_timber')
         for s in (-.43, .43): tube(d, [at(E, .4+s, -.03, 2.18), at(E, .4+s, -.12, 2.18)], .012, DARK, 6, 'wood_timber')
+        # The west wall outside, seen from the bridge: a woodpile along its southern half, clear of the way round the
+        # corner to the bridge; the hut's name board over the north door, above the sliding door's track.
+        entry_woodpile(m, Wl, Y0+.3, Y0+1.9)
+        entry_sign(d, N, dx, dh+.21, dh+.46, 1.0)
     finally:
         R = shared
 
@@ -1264,6 +1269,45 @@ def entry_shoes(d, wall, a, b, zz, kind):
                 slab(d, wall, A-.045, A+.045, b, b+.23, zz+.002, zz+.022, (.9, .88, .82))
             with d.use('canvas'):
                 slab(d, wall, A-.04, A+.04, b+.01, b+.22, zz+.022, zz+.075, vary((.25, .34, .6), .06))
+
+
+def entry_woodpile(m, wall, a0, a1, depth=.42, rows=4):
+    """Split logs stacked outside a wall (entry_walls) from a0 to a1 along it, their cut ends out, on two sleepers
+    and held by a pair of posts at each end. Logs lie a finger apart, so no two cut ends share a plane and touch."""
+    r, step, rise = .075, .16, .14
+    with m.use('wood_timber', grain=tuple(wall[1])):
+        for b in (-.14, -.07-depth+.07): slab(m, wall, a0, a1, b-.03, b+.03, 0., .03, DARK)
+    for row in range(rows):
+        off = step/2*(row % 2); n = int((a1-a0-.16-off)/step)
+        for k in range(n):
+            a = a0+.08+r+off+k*step; rr = r*R.uniform(.85, 1.05); zz = .03+r+row*rise
+            with along_axis(m, wall_point(wall, a, -.07, zz), -wall[2]):
+                ln = depth*R.uniform(.9, 1.)
+                with m.use('bark'):
+                    m.lathe((0, 0, 0), [(0., rr), (ln, rr)], vary(BARK, .12), 7)
+                with m.use('wood_pale'):
+                    m.poly([(rr*math.cos(t), rr*math.sin(t), ln) for t in np.linspace(0, 2*math.pi, 8)[:-1]], vary(PALE, .08))
+    for a in (a0+.03, a1-.03):
+        for b in (-.1, -.07-depth+.03):
+            q = wall_point(wall, a, b); post(m, q[0], q[1], -.02+q[2], q[2]+.03+rows*rise+.08, .05, WOOD)
+
+
+def entry_sign(d, wall, a, z0, z1, w):
+    """The hut's name board: a pale plank in a dark frame flat on the outside of a wall (entry_walls), a along it,
+    with a red maple leaf painted on it."""
+    with d.use('wood_pale', grain=tuple(wall[1]), jitter=True):
+        slab(d, wall, a-w/2, a+w/2, -.09, -.055, z0, z1, vary(PALE, .04))
+    with d.use('wood_timber', grain=tuple(wall[1])):
+        for a0, a1, zb, zt in ((a-w/2-.03, a+w/2+.03, z0-.03, z0), (a-w/2-.03, a+w/2+.03, z1, z1+.02),
+                               (a-w/2-.03, a-w/2, z0, z1), (a+w/2, a+w/2+.03, z0, z1)):
+            slab(d, wall, a0, a1, -.1, -.055, zb, zt, DARK)
+    f = -wall[2]; r = np.cross([0, 0, 1.], f); c = wall_point(wall, a, -.096, (z0+z1)/2); s = (z1-z0)*.4
+    pts = []
+    for k in range(10):
+        rr = s*(1 if k % 2 == 0 else .45)*(1.15 if k == 0 else 1); t = math.pi/2+2*math.pi*k/10
+        pts.append(tuple(c+r*rr*math.cos(t)+np.array([0, 0, rr*math.sin(t)])))
+    with d.use('flat'):
+        d.poly(pts, vary((.78, .2, .08), .04))
 
 
 def entry_hut(m, d, p):
