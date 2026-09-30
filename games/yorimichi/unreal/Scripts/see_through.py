@@ -334,7 +334,16 @@ def cut_scale(mi, value):
     have = MEL.get_material_instance_vector_parameter_value(mi, 'CutScale')
     if all(abs(getattr(have, c) - getattr(want, c)) < 1e-4 for c in 'rgba'): return False
     if not MEL.set_material_instance_vector_parameter_value(mi, 'CutScale', want):
-        unreal.log_warning(f'SEE-THROUGH {mi.get_name()}: no CutScale on its parent'); return False
+        # The parent patched earlier in this run: the lookup by name uses its parameter list from before the patch, so
+        # write the override itself (the parent's CutScale is there once it is saved).
+        if not scaled(mi.get_editor_property('parent')):
+            unreal.log_warning(f'SEE-THROUGH {mi.get_name()}: no CutScale on its parent'); return False
+        info = unreal.MaterialParameterInfo(name='CutScale', association=unreal.MaterialParameterAssociation.GLOBAL_PARAMETER,
+                                            index=-1)
+        values = [v for v in mi.get_editor_property('vector_parameter_values')
+                  if str(v.get_editor_property('parameter_info').get_editor_property('name')) != 'CutScale']
+        values.append(unreal.VectorParameterValue(parameter_info=info, parameter_value=want))
+        mi.set_editor_property('vector_parameter_values', values)
     MEL.update_material_instance(mi)
     return True
 
