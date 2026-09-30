@@ -362,6 +362,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   cover persistent crouching/auto-pump, body tilt, fakie, pump channels, ground acceleration/bump and
   turn conditioning, plus 358 loaded settings words. Graph registration and full-session physical
   producer feedback remain separate checks.
+- Motion-graph feedback behavior lifecycle: 12 fixtures, 3,072 ticks and 22,320 ordered calls preserve
+  6,042,619 exact bytes against the original full host factories/instances. Comparisons include
+  crouching, turning, tilt, fakie, pumping permissions, real pump-channel ownership/fades, consumed
+  parameters and pose commands. Live flags and missing-owner partial effects preserve original order;
+  registration into the C++ host and complete physical producer scheduling remain separate checks.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
