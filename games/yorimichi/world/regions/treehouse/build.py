@@ -39,8 +39,8 @@ LIGHTS = []                         # [x, y, z, lumens, radius m, shadows]: warm
 ROOMS = []                          # interiors that get the room grade (AJapanWorld): boxes or spheres
 # inside the rooms the paintings are dim wood lit by lanterns and window light: less saturated, a little darker
 ROOM_GRADE = dict(tint=[1., .93, .80], saturation=1.08, contrast=1.1, exposure=.1, blend=.6)
-WINDOWS = []                        # (inside corners, inward, along, floor z): every glazed opening, for sunlight()
-SUN = dict(down=36., skew=18., colour=(1., .80, .52), window=.95, floor=.4)   # beam slope and skew (degrees), alpha
+WINDOWS = []                        # (inside corners, inward, along, floor z, kind): every glazed opening, for panes()
+SUN = (1., .80, .52)                # the colour of the day in the windows
 
 
 def vary(c, a=.08):
@@ -214,9 +214,9 @@ def andon(d, x, y, z, s=.26, lit=0.):
     with d.use('paper'):
         d.box((x, y, z+.05+h/2), (s*.9, s*.9, h), vary(LANTERN, .04))
     for dx in (-1, 1):
-        for dy in (-1, 1): post(d, x+dx*s*.47, y+dy*s*.47, z, z+h+.1, .035, DARK)
+        for dy in (-1, 1): post(d, x+dx*s*.47, y+dy*s*.47, z+.02, z+h+.1, .035, DARK)
     with d.use('wood_timber', grain=(1, 0, 0)):
-        d.box((x, y, z+.03), (s*1.05, s*1.05, .06), WOOD)
+        d.box((x, y, z+.03), (s*1.2, s*1.2, .06), WOOD)
         for k in range(2): d.box((x, y, z+h+.12+k*.05), (s*(1.35-.35*k), s*(1.35-.35*k), .05), DARK)
         d.box((x, y, z+h+.25), (.06, .06, .08), DARK)
 
@@ -233,7 +233,7 @@ def glass_float(d, x, y, z, r=.13, hang=.3):
                for t in np.linspace(-math.pi/2, math.pi/2, 7)]
         tube(d, pts, .007, ROPE, 4)
         tube(d, [(2*x-px, 2*y-py, pz) for px, py, pz in pts], .007, ROPE, 4)
-    if hang > 0: tube(d, [(x, y, z+r), (x, y, z+r+hang)], .01, ROPE, 4)
+    if hang > 0: tube(d, [(x, y, z+r), (x, y, z+r+hang)], .007, ROPE, 4)
 
 
 def fuurin(d, x, y, z, hang=.18):
@@ -303,7 +303,14 @@ def rope_coil(d, x, y, z, r=.28):
         ring(d, (x+R.uniform(-.01, .01), y+R.uniform(-.01, .01)), r-.035*k*(k % 2), z+.025+.045*k, .025, ROPE, 16)
 
 
+LEAVES = []     # (x, y, z, size) of every fallen leaf: a leaf never lies on another in the same plane
+
+
 def maple_leaf(d, x, y, z, s=.09):
+    """A flat fallen maple leaf; skipped where it would overlap another leaf at the same height (they would flicker)."""
+    if any(abs(z-lz) < .004 and math.hypot(x-lx, y-ly) < s+ls for lx, ly, lz, ls in LEAVES):
+        return
+    LEAVES.append((x, y, z, s))
     a = R.uniform(0, 2*math.pi); c = vary(R.choice(LEAF), .08)
     pts = []
     for k in range(10):
@@ -318,7 +325,7 @@ def leaves_on(d, poly, z, n):
     for _ in range(n*4):
         if n <= 0: break
         x, y = R.uniform(min(xs), max(xs)), R.uniform(min(ys), max(ys))
-        if inside(poly, x, y): maple_leaf(d, x, y, z+.012, R.uniform(.06, .1)); n -= 1
+        if inside(poly, x, y): maple_leaf(d, x, y, z+.006, R.uniform(.06, .1)); n -= 1
 
 
 def inside(poly, x, y):
@@ -402,7 +409,8 @@ def wall_picture(d, frame, s, z0, z1, depth, pic, w=None, framed=False):
 
 
 def rug(d, cx, cy, z, w, l, yaw, pic='rug'):
-    with d.at((cx, cy, z+.012), yaw):
+    """A rug 14 mm over the floor: over the fallen leaves (6 mm), under what stands on it (12 mm and up)."""
+    with d.at((cx, cy, z+.014), yaw):
         with d.use(pic):
             d.poly([(-w/2, -l/2, 0), (w/2, -l/2, 0), (w/2, l/2, 0), (-w/2, l/2, 0)], WHITE, uv=[(0, 0), (1, 0), (1, 1), (0, 1)])
 
@@ -464,23 +472,28 @@ def world_poly(p):
     return ccw([(x0+a, y0+b) for a, b in p['poly']])
 
 
-def railing(m, d, pts, z, gaps=(), height=.95, closed=True, lanterns=0):
-    """Chunky square posts with caps and rope lashings, a top rail and a lower rail, open at the gaps."""
+def railing(m, d, pts, z, gaps=(), height=.95, closed=True, avoid=()):
+    """Chunky square posts with caps and rope lashings, a top rail and a lower rail, open at the gaps. A corner
+    shared by two edges gets one post, and no post stands within 30 cm of a point in avoid (a bridge's end post
+    already stands there). Rails stop 6 cm short of the posts' centres, so two rails never overlap in a corner."""
     edges = list(zip(pts, pts[1:]+pts[:1])) if closed else list(zip(pts[:-1], pts[1:]))
-    count = 0
+    placed = []
     for a, b in edges:
         for p, q in free_spans(a[:2], b[:2], gaps):
             n = max(1, math.ceil(np.linalg.norm(q-p)/1.3))
             for k in range(n+1):
-                x, y = p+(q-p)*k/n; post(m, x, y, z-.05, z+height+.1, .12, vary(WOOD, .1))
+                x, y = p+(q-p)*k/n
+                if any(math.hypot(x-px, y-py) < .05 for px, py in placed): continue
+                if any(math.hypot(x-ax, y-ay) < .3 for ax, ay in avoid): continue
+                placed.append((x, y)); post(m, x, y, z-.05, z+height+.1, .12, vary(WOOD, .1))
                 with m.use('wood_timber', grain=(1, 0, 0)):
                     m.box((x, y, z+height+.13), (.15, .15, .05), DARK)
                 ring(d, (x, y), .09, z+height-.02, .018, ROPE_LT, 8)
                 ring(d, (x, y), .09, z+height-.07, .018, ROPE_LT, 8)
-                count += 1
-            board(m, (*p, z+height+.035), (*q, z+height+.035), .11, .08, vary(WOOD, .08), 'wood_timber')
-            board(m, (*p, z+.5), (*q, z+.5), .06, .06, vary(WOOD, .08), 'wood_timber')
-    return count
+            e = (q-p)/np.linalg.norm(q-p); p_, q_ = p+e*.06, q-e*.06
+            board(m, (*p_, z+height+.035), (*q_, z+height+.035), .11, .08, vary(WOOD, .08), 'wood_timber')
+            board(m, (*p_, z+.5), (*q_, z+.5), .06, .06, vary(WOOD, .08), 'wood_timber')
+    return len(placed)
 
 
 def deck(m, d, p):
@@ -495,15 +508,22 @@ def deck(m, d, p):
                 prism(m, piece, z-.06, z, vary(PLANK, .12), vary(DARK, .1))
         k += .23
     # Joists to every corner, a rim, and knee braces down to the trunk.
-    r = p['trunk']
+    r = p['trunk']; lashed = []
     for k, (vx, vy) in enumerate(poly):
         dd = np.array([vx-x0, vy-y0]); n = float(np.linalg.norm(dd)); w = dd/n
-        board(m, (*(c+w*r*.8), z-.06), (*(c+w*(n-.08)), z-.06), .12, .16, WOOD, 'wood_timber')
+        dj = .0025 if len(poly) % 2 and k == len(poly)-1 else .005*(k % 2)     # joists meet at the trunk: staggered
+        board(m, (*(c+w*r*.8), z-.06-dj), (*(c+w*(n-.08)), z-.06-dj), .12, .16, WOOD, 'wood_timber')
         if k % 2 == 0:
-            board(m, (*(c+w*r*.85), z-1.9-.1*n), (*(c+w*n*.72), z-.22), .12, .12, WOOD, 'wood_timber')
-            ring(d, c, r+.06, z-1.9-.1*n+.05, .03, ROPE, 16)
-    for a, b in zip(poly, poly[1:]+poly[:1]):
-        board(m, (*a, z-.02), (*b, z-.02), .09, .26, DARK, 'wood_timber')
+            zb = z-1.9-.1*n
+            board(m, (*(c+w*r*.85), zb), (*(c+w*n*.72), z-.22), .12, .12, WOOD, 'wood_timber')
+            if all(abs(zb-q) > .08 for q in lashed):      # one lashing per height: braces of equal length share it
+                lashed.append(zb); ring(d, c, r+.06, zb+.05, .03, ROPE, 16)
+    # the rim: neighbouring boards overlap in the corners, so every other one sits 5 mm lower (and a third height
+    # closes an odd ring)
+    for i, (a, b) in enumerate(zip(poly, poly[1:]+poly[:1])):
+        dz = .0025 if len(poly) % 2 and i == len(poly)-1 else .005*(i % 2)
+        e = (np.array(b)-np.array(a))/np.linalg.norm(np.array(b)-np.array(a))*.03
+        board(m, (*(np.array(a)-e), z-.02-dz), (*(np.array(b)+e), z-.02-dz), .09, .26, DARK, 'wood_timber')
     # Moss creeping in from the rim at a few corners, and the season's leaves.
     for k in R.sample(range(len(poly)), min(3, len(poly))):
         a = np.array(poly[k]); inward = (c-a)/np.linalg.norm(c-a)
@@ -546,9 +566,11 @@ def bridge(m, d, b):
         tube(m, [at(t, off, .95) for t in ts], .05, ROPE_LT, 8)
         tube(m, [at(t, off, .5) for t in ts], .034, ROPE_LT, 6)
         for e in (0, 1):
-            q = at(e, side*(W/2+.07)); post(m, q[0], q[1], q[2]-.35, q[2]+1.18, .14, WOOD)
-            with m.use('wood_timber'):
-                m.box((q[0], q[1], q[2]+1.21), (.18, .18, .05), DARK)
+            q = at(e, side*(W/2+.07))
+            with m.at((q[0], q[1], 0), math.degrees(math.atan2(u[1], u[0]))):     # square to the bridge
+                post(m, 0, 0, q[2]-.35, q[2]+1.18, .14, WOOD)
+                with m.use('wood_timber'):
+                    m.box((0, 0, q[2]+1.21), (.18, .18, .05), DARK)
             ring(d, q[:2], .085, q[2]+.95, .02, ROPE_LT, 8)
         nk = max(3, round(b['span']/.55))
         for k in range(1, nk):          # suspender ropes from the handrail down to the stringer
@@ -562,7 +584,7 @@ def bridge(m, d, b):
     for e, side in ((0, 1), (1, -1)):
         q = at(e, side*(W/2+.07)); andon(d, q[0], q[1], q[2]+1.24, .24, 260)
     for _ in range(max(2, int(b['span']/2))):
-        t = R.uniform(.05, .95); q = at(t, R.uniform(-.4, .4)); maple_leaf(d, q[0], q[1], q[2]+.012, R.uniform(.06, .09))
+        t = R.uniform(.05, .95); q = at(t, R.uniform(-.4, .4)); maple_leaf(d, q[0], q[1], q[2]+.006, R.uniform(.06, .09))
 
 
 # ---------------------------------------------------------------------------------------------- walls, roofs
@@ -575,17 +597,30 @@ def xz_face(m, pts, y, color, facing):
     m.poly(pts, color)
 
 
-def wall(m, a, b, h, openings=(), t=.1, color=BOARD, centre=(0, 0), frames=None, outside='boards'):
+def wall(m, a, b, h, openings=(), t=.1, color=BOARD, centre=(0, 0), frames=None, outside='boards', turn=90.):
     """A board wall from a to b (current frame), h high, with openings (centre along the wall, width, bottom,
     top, kind); kind is 'door', 'window' (open, with mullions), 'round' (open, with a cross) or 'open-round'.
-    Outside: vertical boards. Inside (towards centre): a board wainscot, a rail, and cream plaster above."""
+    Outside: vertical boards. Inside (towards centre): a board wainscot, a rail, and cream plaster above.
+    turn is the angle to the next wall at both ends: the boards stop 3 cm short of the corner and the plaster, rail
+    and plate stop where the neighbour's begin, so nothing of two walls lies in the same plane in a corner (it
+    would flicker); the corner post covers the ends. Timbers that meet (jamb and header, sill and wall, mullion and
+    transom) never share a face plane either. At a door or window the plaster and rail end in the middle of the jamb;
+    the rail and the top plate stop a few millimetres short of the plaster's (and the boards') ends; the plaster stops
+    a centimetre short of an opening's head or sill: no end of one lies in the face of the other."""
     a, b = np.asarray(a, float), np.asarray(b, float); n = float(np.linalg.norm(b-a))
     e = (b-a)/n; cn = np.asarray(centre, float)-a; inward = 1 if e[0]*cn[1]-e[1]*cn[0] > 0 else -1
     ang = math.degrees(math.atan2(b[1]-a[1], b[0]-a[0]))
+    tb, ti = .03, .105*math.tan(math.radians(turn/2))+.006       # end trims: boards, inside finish
     if frames is not None:   # the inside face in the current frame, for pictures and shelves
         frames.append((a, e, np.array([-e[1], e[0]])*inward, n))
+    jambed = [o for o in openings if o[4] not in ('round', 'open-round')]
+
+    def finish(x, lo):      # where the plaster and rail stop at the cut x: the middle of a jamb, or the corner trim
+        if any(abs(x-(o[0]-o[1]/2)) < 1e-6 for o in jambed): return x-.05
+        if any(abs(x-(o[0]+o[1]/2)) < 1e-6 for o in jambed): return x+.05
+        return max(x, ti) if lo else min(x, n-ti)
     with m.at((a[0], a[1], 0), ang):
-        cuts = sorted({0., n, *[o[0]-o[1]/2 for o in openings], *[o[0]+o[1]/2 for o in openings]})
+        cuts = sorted({tb, n-tb, *[o[0]-o[1]/2 for o in openings], *[o[0]+o[1]/2 for o in openings]})
         for s0, s1 in zip(cuts[:-1], cuts[1:]):
             if s1-s0 < 1e-3: continue
             mid = (s0+s1)/2; hit = [o for o in openings if abs(o[0]-mid) < o[1]/2]
@@ -598,14 +633,16 @@ def wall(m, a, b, h, openings=(), t=.1, color=BOARD, centre=(0, 0), frames=None,
                     with m.use('wood_plank', grain=(0, 0, 1), jitter=True):
                         m.box(((xa+xb)/2, -inward*.012, (zb+zt)/2), (xb-xa-.006, t-.024, zt-zb), vary(color, .09))
                 # inside (and outside too for a plastered wall): plaster above the rail
+                p0, p1 = finish(s0, True), finish(s1, False)
+                if p1-p0 < .02: continue
                 for f in ((inward, -inward) if outside == 'plaster' else (inward,)):
-                    pz0, pz1 = max(zb, .95), min(zt, h-.1)
+                    pz0, pz1 = max(zb+(.01 if zb > 0 else 0.), .95), min(zt-(.01 if zt < h else 0.), h-.1)
                     if pz1-pz0 > .05:
                         with m.use('plaster', jitter=True):
-                            m.box(((s0+s1)/2, f*(t/2-.008), (pz0+pz1)/2), (s1-s0, .02, pz1-pz0), vary(PLASTER, .04))
+                            m.box(((p0+p1)/2, f*(t/2-.008), (pz0+pz1)/2), (p1-p0, .02, pz1-pz0), vary(PLASTER, .04))
                     if zb < .95 < zt:
                         with m.use('wood_timber', grain=(1, 0, 0), jitter=True):
-                            m.box(((s0+s1)/2, f*(t/2+.01), .95), (s1-s0, .05, .07), WOOD)
+                            m.box(((p0+p1)/2, f*(t/2+.01), .95), (p1-p0-.012, .05, .07), WOOD)
         # inside timber framing over the plaster: studs about every 85 cm clear of the openings, and a top plate
         k = max(1, round(n/.85))
         for f in ((inward, -inward) if outside == 'plaster' else (inward,)):
@@ -613,9 +650,9 @@ def wall(m, a, b, h, openings=(), t=.1, color=BOARD, centre=(0, 0), frames=None,
                 x = n*i/k
                 if any(abs(x-o[0]) < o[1]/2+.12 for o in openings): continue
                 with m.use('wood_timber', grain=(0, 0, 1), jitter=True):
-                    m.box((x, f*(t/2+.02), (.98+h-.12)/2), (.08, .04, h-.12-.98), vary(WOOD, .06))
+                    m.box((x, f*(t/2+.022), (.98+h-.12)/2), (.08, .038, h-.12-.98), vary(WOOD, .06))
             with m.use('wood_timber', grain=(1, 0, 0), jitter=True):
-                m.box((n/2, f*(t/2+.025), h-.14), (n, .05, .09), WOOD)
+                m.box((n/2, f*(t/2+.025), h-.14), (n-2*ti-.006, .05, .09), WOOD)
         for s, w, zb, zt, kind in openings:
             if kind in ('window', 'round'):
                 X = m.transform; y = inward*t/2; zc = (zb+zt)/2
@@ -637,24 +674,24 @@ def wall(m, a, b, h, openings=(), t=.1, color=BOARD, centre=(0, 0), frames=None,
                         hexa(m, [(x, -t/2-.04, z) for x, z in rg]+[(x, t/2+.04, z) for x, z in rg], DARK)
                 if kind == 'round':
                     with m.use('wood_timber'):
-                        m.box((s, 0, zc), (.045, .06, w), DARK); m.box((s, 0, zc), (w, .06, .045), DARK)
+                        m.box((s, 0, zc), (.045, .06, w), DARK); m.box((s, 0, zc), (w, .05, .045), DARK)
                 else:
                     with m.use('wood_timber'):
                         m.box((s, 0, zc), (.06, t+.02, w), DARK)
                 continue
             with m.use('wood_timber', grain=(0, 0, 1)):
                 for x in (s-w/2-.05, s+w/2+.05): m.box((x, 0, (zb+zt)/2), (.1, t+.06, zt-zb+.04), DARK)
-            with m.use('wood_timber', grain=(1, 0, 0)):
-                m.box((s, 0, zt+.05), (w+.22, t+.06, .1), DARK)
+            with m.use('wood_timber', grain=(1, 0, 0)):      # the header, its underside a little inside the opening
+                m.box((s, 0, zt+.03), (w+.22, t+.08, .12), DARK)
             if kind == 'window':
-                with m.use('wood_timber', grain=(1, 0, 0)):
-                    m.box((s, 0, zb-.03), (w+.24, t+.12, .06), WOOD)
+                with m.use('wood_timber', grain=(1, 0, 0)):    # the sill, its top a little over the wall below
+                    m.box((s, 0, zb-.02), (w+.24, t+.12, .06), WOOD)
                 with m.use('wood_timber', grain=(0, 0, 1)):
                     for i in (1, 2): m.box((s-w/2+w*i/3, 0, (zb+zt)/2), (.035, .06, zt-zb), DARK)
-                    m.box((s, 0, (zb+zt)/2), (w, .06, .035), DARK)
+                    m.box((s, 0, (zb+zt)/2), (w, .05, .035), DARK)
 
 
-def shingled(m, d, quad, rows=None, moss=.25, tiles=.1, ridge=None):
+def shingled(m, d, quad, rows=None, moss=.25, tiles=.1, ridge=None, phase=0):
     """A roof plane of overlapping shingle courses: quad = eave-left, eave-right, top-right, top-left.
     Each course is a thin slab lapping the one below, split into runs of shingle, moss or blue tile."""
     q = [np.asarray(x, float) for x in quad]
@@ -666,7 +703,8 @@ def shingled(m, d, quad, rows=None, moss=.25, tiles=.1, ridge=None):
     for i in range(rows):
         b0, b1 = i/rows, min(1., (i+1.35)/rows)
         width = float(np.linalg.norm(P(1, b0)-P(0, b0))); runs = max(1, round(width/R.uniform(.7, 1.1)))
-        cuts = sorted([0., 1.]+[R.uniform(.1, .9) for _ in range(runs-1)])
+        ext = .008*((i+phase) % 2)/width    # every other row a little past the sides: lapping rows' ends not in one plane
+        cuts = sorted([-ext, 1.+ext]+[R.uniform(.1, .9) for _ in range(runs-1)])
         for a0, a1 in zip(cuts[:-1], cuts[1:]):
             c = R.random(); edge = i == 0 or i == rows-1
             kind, col = (('moss', vary(MOSS, .15)) if c < moss*(1.6 if edge else .7) else
@@ -688,22 +726,24 @@ def gable_roof(m, d, length, width, eave, top, over=.36):
     for s in (-1, 1):
         quad = [(-l2, s*w2, eave), (l2, s*w2, eave), (l2, 0, top), (-l2, 0, top)]
         if s < 0: quad = [quad[1], quad[0], quad[3], quad[2]]
-        shingled(m, d, quad)
+        shingled(m, d, quad, phase=int(s < 0))     # the two sides' top rows meet at the ridge: opposite phases
         board(m, (-l2, s*w2, eave+.02), (l2, s*w2, eave+.02), .1, .16, DARK, 'wood_timber')
-        for k in range(5):                 # rafters seen from inside
-            x = -length/2+length*k/4
-            board(m, (x, s*(width/2-.05), eave-.02), (x, 0, top-.14), .08, .1, WOOD, 'wood_timber')
+        for k in range(5):                 # rafters seen from inside; a pair meets at the ridge side by side
+            x = -length/2+length*k/4+s*.004
+            board(m, (x, s*(width/2-.07), eave-.02), (x, 0, top-.14), .08, .1, WOOD, 'wood_timber')
     with m.use('moss', grain=(1, 0, 0)):
         board(m, (-l2-.05, 0, top+.11), (l2+.05, 0, top+.11), .26, .12, vary(MOSS, .1), 'moss')
-    board(m, (-l2, 0, top+.02), (l2, 0, top+.02), .18, .12, DARK, 'wood_timber')
+    board(m, (-l2-.03, 0, top+.02), (l2+.03, 0, top+.02), .18, .12, DARK, 'wood_timber')
     board(m, (-length/2, 0, top-.16), (length/2, 0, top-.16), .12, .14, WOOD, 'wood_timber')
     for x in (-length/2, length/2):
-        for f in (-1, 1):
-            tri = [(x+f*.05, -width/2, eave+.02), (x+f*.05, width/2, eave+.02), (x+f*.05, 0, top-.02)]
+        o = 1 if x > 0 else -1             # the gable's outer side
+        for f in (-1, 1):                  # outside, clear of the wall boards' face under it (5 cm out)
+            xf = x+f*(.056 if f == o else .05)
+            tri = [(xf, -width/2, eave+.02), (xf, width/2, eave+.02), (xf, 0, top-.02)]
             with m.use('wood_plank', grain=(0, 0, 1)):
                 m.poly(tri if f > 0 else tri[::-1], BOARD)
-        for f in (-1, 1):   # barge boards
-            board(m, (x+f*.0, f*w2, eave), (x, 0, top+.06), .08, .16, DARK, 'wood_timber')
+        for f in (-1, 1):   # barge boards, the pair side by side where they meet at the apex
+            board(m, (x+f*.004, f*w2, eave), (x+f*.004, 0, top+.06), .08, .16, DARK, 'wood_timber')
 
 
 def hut_frame(p, depth):
@@ -729,7 +769,7 @@ def hut(m, d, p, depth, width, name, wall_h=2.25, top=L.ROOF_TOP['hut']):
             ops = [(d2, .86, 0., 1.86, 'door')] if s == side else [(d2, 1.3, .88, 1.8, 'window')]
             wall(m, (-d2, s*w2), (d2, s*w2), wall_h, ops, frames=frames)
         for x in (-d2, d2):
-            for y in (-w2, w2): post(m, x, y, 0, wall_h+.05, .16, DARK)
+            for y in (-w2, w2): post(m, x, y, -.04, wall_h+.05, .16, DARK)
         gable_roof(m, d, depth, width, wall_h-.08, top)
     # world-space inside frames: (origin, along, inward, length) per wall, in order outer, back, side -1, side +1
     W = [(local(c, ang, *f[0]), rot(f[1], ang), rot(f[2], ang), f[3]) for f in frames]
@@ -741,7 +781,7 @@ def hut(m, d, p, depth, width, name, wall_h=2.25, top=L.ROOF_TOP['hut']):
     q = local(c, ang, d2+.36, .45); fuurin(d, q[0], q[1], c[2]+wall_h-.3)
     inside = local(c, ang, 0, 0); chochin(d, inside[0], inside[1], c[2]+2.05, .24, .35, 650)
     interior((inside[0], inside[1], c[2]+wall_h/2), (d2-.05, w2-.05, wall_h/2+.35), ang)
-    leaves_on(d, [tuple(local(c, ang, sx*(d2-.2), sy*(w2-.2))[:2]) for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))], c[2]+.01, 7)
+    leaves_on(d, [tuple(local(c, ang, sx*(d2-.2), sy*(w2-.2))[:2]) for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))], c[2], 7)
     q = local(c, ang, d2*.6, 0); light(q[0], q[1], c[2]+1.2, 250, 3.2)      # warm fill low in the room
     return c, ang, side, W
 
@@ -926,7 +966,7 @@ def furnish_entry(m, d, p):
     L_ = lambda lx, ly: np.array([x0-ly, y0+lx])          # hut local (x north) to world
     west = (np.array([x0-w2+.06, y0-l2, z]), np.array([0, 1., 0]), np.array([1., 0, 0]))
     shelf(m, d, west, .6, 1.2, .8, 2)
-    for k, dy in enumerate((-.45, .05, .5)):       # a row of crates under the round window
+    for k, dy in enumerate((-.52, .02, .56)):      # a row of crates under the round window, a hand apart
         crate(m, x0-w2+.35, y0+dy, z, (.46, .42, .42 if k != 1 else .5), 90+R.uniform(-6, 6))
     q = np.array([x0-w2+.35, y0+.05]); andon(d, q[0], q[1], z+.5, .2, 200)
     hat = np.array([x0-w2+.14, y0+.95, z+1.78])
@@ -967,7 +1007,7 @@ def furnish_heart(m, d, p):
         q, t, nin = on_panel(mid, off, .24); prop('bookshelf', q[0], q[1], z, face_yaw(*nin), .95)
     q = P(205, Rw-.5); prop('backpack', q[0], q[1], z, face_yaw(x0-q[0], y0-q[1]))
     q = P(62, Rw-.55); crate(m, q[0], q[1], z, (.55, .42, .42), 62); q2 = P(70, Rw-.5); crate(m, q2[0], q2[1], z, (.45, .4, .36), 80)
-    q, t, nin = on_panel(45, -1.12, .24); prop('bell', q[0], q[1], z+1.45, face_yaw(*nin), .8)   # its plate on the wall
+    q, t, nin = on_panel(45, -1.12, .245); prop('bell', q[0], q[1], z+1.45, face_yaw(*nin), .8)   # its plate on the wall
     # map and kite on the panels beside the round windows
     for mid, off, pic, w, z0, z1 in ((180, 1.1, 'map', .75, 1.0, 1.85), (0, -1.05, 'kite', .7, 1.15, 1.85), (225, -1.1, 'pictures', .45, 1.25, 1.7)):
         q, t, nin = on_panel(mid, off, .075)
@@ -1058,7 +1098,7 @@ def entry_hut(m, d, p):
         wall(m, (-l2, w2), (l2, w2), h, [(l2, .9, .9, 1.8, 'round')])
         wall(m, (l2, -w2), (-l2, -w2), h, [(l2, 1.1, .92, 1.7, 'window')])
         for x in (-l2, l2):
-            for y in (-w2, w2): post(m, x, y, 0, h+.05, .16, DARK)
+            for y in (-w2, w2): post(m, x, y, -.04, h+.05, .16, DARK)
         gable_roof(m, d, 2*l2, 2*w2, h-.08, L.ROOF_TOP['entry'])
     # doors on the north and south walls at world (x0+DOOR, y0 +- l2), clear of the big trunk
     noren(d, x0+DOOR, y0+l2+.03, z+1.9, .84, .72, 0, 'noren_indigo')
@@ -1100,8 +1140,8 @@ def heart_room(m, d, p):
             a, b = ring8[k], ring8[(k+1) % 8]; mid = round(45*(k+1)) % 360; kind = kinds[mid]
             op = {'door': (panel/2, .95, 0., 1.95, 'door'), 'open-round': (panel/2, 1.5, .65, 2.15, 'open-round'),
                   'round': (panel/2, 1.25, .75, 2.0, 'round'), 'window': (panel/2, 1.7, .8, 1.95, 'window')}[kind]
-            wall(m, a, b, h, [op], outside='plaster')
-            post(m, a[0], a[1], 0, h+.05, .2, DARK)
+            wall(m, a, b, h, [op], outside='plaster', turn=45.)
+            post(m, a[0], a[1], -.04, h+.05, .22, DARK)
     for k, mid in enumerate((45, 135, 225)):
         a = math.radians(mid); r = Rw*math.cos(math.radians(22.5))+.07
         noren(d, x0+r*math.cos(a), y0+r*math.sin(a), z+1.95, .92, .72, mid+90, 'noren_indigo' if k != 1 else 'noren_cream')
@@ -1111,7 +1151,8 @@ def heart_room(m, d, p):
     for k in range(8):
         a, b = eave[k], eave[(k+1) % 8]; ca, cb = collar[k], collar[(k+1) % 8]
         shingled(m, d, [(*a, ze), (*b, ze), (*cb, top), (*ca, top)])
-        board(m, (*a, ze+.02), (*b, ze+.02), .1, .16, DARK, 'wood_timber')
+        dz = .005*(k % 2)        # neighbouring fascias and plates overlap in the corners: every other one lower
+        board(m, (*a, ze+.02-dz), (*b, ze+.02-dz), .1, .16, DARK, 'wood_timber')
         board(m, (*ca, top-.12), (*a, ze-.08), .12, .14, WOOD, 'wood_timber')          # rafter, seen from inside
         mid = (np.array(a)+np.array(b))/2; mc = (np.array(ca)+np.array(cb))/2
         board(m, (*mc, top-.14), (*mid, ze-.08), .08, .1, WOOD, 'wood_timber')
@@ -1119,11 +1160,11 @@ def heart_room(m, d, p):
     with m.use('moss'):
         prism(m, [(x0+x*1.55/Rw, y0+y*1.55/Rw) for x, y in ring8], top-.08, top+.08, vary(MOSS), vary(MOSS, .1))
     for k in range(8):
-        a, b = ring8[k], ring8[(k+1) % 8]
-        board(m, (x0+a[0], y0+a[1], z+h+.02), (x0+b[0], y0+b[1], z+h+.02), .16, .16, DARK, 'wood_timber')
+        a, b = ring8[k], ring8[(k+1) % 8]; dz = .005*(k % 2)
+        board(m, (x0+a[0], y0+a[1], z+h+.02-dz), (x0+b[0], y0+b[1], z+h+.02-dz), .16, .16, DARK, 'wood_timber')
     shimenawa(d, p, 'heart', 1.38)
     interior((x0, y0, z+1.5), radius=round(Rw*math.cos(math.radians(22.5))+.1, 2), half_height=h-1.5+.35)
-    leaves_on(d, [(x0+x*(Rw-.3)/Rw, y0+y*(Rw-.3)/Rw) for x, y in ring8], z+.01, 16)
+    leaves_on(d, [(x0+x*(Rw-.3)/Rw, y0+y*(Rw-.3)/Rw) for x, y in ring8], z, 16)
     shimenawa(d, p, 'heart', L.ROOF_TOP['heart']+.55)          # and where the camphor leaves the roof
     for k in (1, 3, 5, 7):
         a = math.radians(45*k); chochin(d, x0+(Rw+.5)*math.cos(a), y0+(Rw+.5)*math.sin(a), z+2.3, .3, .2, 300)
@@ -1212,7 +1253,8 @@ def slide(m, d, pl):
     a0, a1 = s['landing']
     for k in range(8):
         f0, f1 = a0+(a1-a0)*k/8, a0+(a1-a0)*(k+1)/8
-        with m.use('wood_plank'): sector(m, c, f0, f1, 2.45, rc+hw, z, z, .08, vary(PLANK, .1))
+        # 12 mm under the deck's planks, which it runs under near the trunk (the same plane would flicker)
+        with m.use('wood_plank'): sector(m, c, f0, f1, 2.45, rc+hw, z-.012, z-.012, .08, vary(PLANK, .1))
         with m.use('wood_timber'): sector(m, c, f0, f1, rc+hw, rc+hw+.07, z+.42, z+.42, .5, DARK)
     with m.use('wood_timber'): sector(m, c, a0-2, a0, rc-hw, rc+hw+.07, z+.42, z+.42, .5, DARK)
     path = s['path']
@@ -1230,7 +1272,7 @@ def slide(m, d, pl):
         if not levels: continue
         a = math.radians(A); e = np.array([math.cos(a), math.sin(a), 0.]); t = np.array([-e[1], e[0], 0.])
         for r in (ri_, ro_):
-            x, y = c[0]+r*e[0], c[1]+r*e[1]; post(m, x, y, ground(x, y)-.2, max(levels)-.07, .12, WOOD)
+            x, y = c[0]+r*e[0], c[1]+r*e[1]; post(m, x, y, ground(x, y)-.2, max(levels)-.09, .12, WOOD)
         for lv in levels:
             board(m, (c[0]+(ri_-.06)*e[0], c[1]+(ri_-.06)*e[1], lv-.07), (c[0]+(ro_+.06)*e[0], c[1]+(ro_+.06)*e[1], lv-.07), .1, .12, DARK, 'wood_timber')
     last = np.array(path[-1][:3]); pts = [last]+[np.array(q) for q in s['runout']]
@@ -1259,11 +1301,12 @@ def lookout(m, d, pl):
     ro, da, rise = cr['ro'], cr['da'], cr['rise']
     for k in range(cr['steps']):
         a = cr['start']+k*da; t = z+(k+1)*rise
-        with m.use('wood_plank'): sector(m, (x0, y0), a, a+da+1.5, inner(t), ro, t, t, .07, vary(PLANK, .12))
+        tt = t-.004 if k == cr['steps']-1 else t        # the top tread meets the crow's nest floor, a hair under it
+        with m.use('wood_plank'): sector(m, (x0, y0), a, a+da+1.5, inner(t), ro, tt, tt, .07, vary(PLANK, .12))
         with m.use('wood_timber'): sector(m, (x0, y0), a, a+da, ro-.01, ro+.07, z+(k+.6)*rise, z+(k+1.6)*rise, .32, DARK)
         if k % 2 == 0:
             x, y = x0+(ro+.03)*math.cos(math.radians(a)), y0+(ro+.03)*math.sin(math.radians(a))
-            post(m, x, y, t-.07, t+1.0, .07, DARK)
+            post(m, x, y, t-.05, t+1.0, .07, DARK)
         if k % 3 == 1:
             am = math.radians(a+da/2); e = np.array([math.cos(am), math.sin(am), 0.]); tg = np.array([-e[1], e[0], 0.])
             strut(m, np.array([x0, y0, t-.62])+e*inner(t-.62), np.array([x0, y0, t-.1])+e*(ro-.3), .06, .06, tg)
@@ -1313,7 +1356,7 @@ def lookout(m, d, pl):
     posts = [(x0+2.55*math.cos(math.radians(cr['start']+90*k)), y0+2.55*math.sin(math.radians(cr['start']+90*k))) for k in range(4)]
     for k in range(4):    # beams along the canopy edge
         (xa, ya), (xb, yb) = posts[k], posts[(k+1) % 4]
-        board(m, (xa, ya, top+2.04), (xb, yb, top+2.04), .1, .12, DARK, 'wood_timber')
+        board(m, (xa, ya, top+2.04+.005*(k % 2)), (xb, yb, top+2.04+.005*(k % 2)), .1, .12, DARK, 'wood_timber')
     # the bell on a hanging board under the canopy beam that faces the sea, turned to the floor
     k = min(range(4), key=lambda k: abs(((cr['start']+90*k+45-283.88+540) % 360)-180))
     mid = (np.array(posts[k])+np.array(posts[(k+1) % 4]))/2; inw = (np.array([x0, y0])-mid)/np.linalg.norm(np.array([x0, y0])-mid)
@@ -1349,74 +1392,52 @@ def entry_way(m, d, pl):
         for yy, zz in ((ex['top_y']+.05, E['deck']), (fy-.1, fz)):
             post(m, xs, yy, zz-.3, zz+1.05, .11, WOOD)
         tube(m, [(xs, ex['top_y']+.05, E['deck']+.95), (xs, fy-.1, fz+.95)], .032, ROPE_LT, 6)
-    for i, (sx, sy, sz) in enumerate(pl['stones']):
-        foot = i == len(pl['stones'])-1
-        if foot:    # the stone at the stair foot: wider, square to the stair, against the lowest tread
+    # Every stone is level (layout.entry_way() sets its top). Stones at one height keep a gap between them; up the bank,
+    # where each is a step over the last, they overlap like a flight cut into the slope. Each is long across the way.
+    st = pl['stones']; last = len(st)-1
+    for i, (sx, sy, sz) in enumerate(st):
+        if i == last:       # the stone at the stair foot: wider, square to the stair, against the lowest tread
             (rx, ry), rot_ = L.FOOT_STONE, 0.
         else:
-            rx, ry = R.uniform(.45, .55), R.uniform(.38, .46); rot_ = R.uniform(0, math.pi)
-        pts = ccw([(sx+rx*math.cos(a)*math.cos(rot_)-ry*math.sin(a)*math.sin(rot_), sy+rx*math.cos(a)*math.sin(rot_)+ry*math.sin(a)*math.cos(rot_))
-                   for a in np.linspace(0, 2*math.pi, 11)[:-1]])
-        # Flush with the ground: the top is the plane that fits the ground under the stone, 3 cm above it (tilted at
-        # most 35 degrees). The foot stone's plane passes through sz at its south edge, one rise under the lowest tread.
-        sample = [(sx, sy)]+pts+[(sx+(px-sx)*.5, sy+(py-sy)*.5) for px, py in pts]
-        A = np.array([[1., px-sx, py-sy] for px, py in sample]); b = np.array([ground(px, py) for px, py in sample])
-        c0, gx, gy = np.linalg.lstsq(A, b, rcond=None)[0]
-        k = min(1., math.tan(math.radians(35))/max(1e-6, math.hypot(gx, gy))); gx, gy = gx*k, gy*k
-        c0 = sz+gy*ry if foot else c0+.03
-        top = [(px, py, c0+gx*(px-sx)+gy*(py-sy)) for px, py in pts]
-        zb = min(q[2] for q in top)-.4
+            u = np.array(st[i+1][:2])-np.array(st[max(i-1, 0)][:2])
+            half = []
+            for j in (i-1, i+1) if i else (i+1,):
+                qx, qy, qz = st[j]; dist = math.hypot(qx-sx, qy-sy)
+                if j == last: half.append(dist-L.FOOT_STONE[1]-.05)
+                elif abs(qz-sz) < .06: half.append(dist/2-.05)
+                else: half.append(dist/2+.08)
+            rx, ry = R.uniform(.44, .5), float(np.clip(min(half), .2, .42))
+            rot_ = math.atan2(u[1], u[0])-math.pi/2+R.uniform(-.12, .12)
+        wob = [1.+R.uniform(-.05, .05) for _ in range(10)] if i != last else [1.]*10
+        pts = ccw([(sx+w*(rx*math.cos(a)*math.cos(rot_)-ry*math.sin(a)*math.sin(rot_)), sy+w*(rx*math.cos(a)*math.sin(rot_)+ry*math.sin(a)*math.cos(rot_)))
+                   for a, w in zip(np.linspace(0, 2*math.pi, 11)[:-1], wob)])
+        top = [(px, py, sz) for px, py in pts]
+        zb = min([sz]+[ground(px, py) for px, py in pts])-.3
         with m.use('stone', jitter=True):
             m.poly(top, vary(STONE, .1))
             m.poly([(px, py, zb) for px, py in pts[::-1]], vary(STONE, .18))
             for a, b_ in zip(top, top[1:]+top[:1]):
                 m.poly([(a[0], a[1], zb), (b_[0], b_[1], zb), b_, a], vary(STONE, .18))
     # no rope fence along the stones: the way from the trail onto them stays open
-    sx, sy, sz = pl['stones'][0]; post(d, sx-.8, sy, sz-.2, sz+1.3, .1, WOOD)
+    sx, sy, sz = pl['stones'][0]; post(d, sx-.8, sy, ground(sx-.8, sy)-.2, sz+1.3, .1, WOOD)
     andon(d, sx-.8, sy, sz+1.3, .26, 300)
 
 
 # ---------------------------------------------------------------------------------------------- trunks
 
-def sunlight(d):
-    """Shafts of sun through every window and the patch they light on the floor, as in the paintings: a prism from
-    the window's inside face down into the room, and the window's shape projected on the floor. Both are faces of
-    two extra slots of TH_Dressing that M_TH_Light draws additive: the shaft faces fade where they are seen edge-on,
-    toward their long edges (u) and from the window to the floor (v), so the prism reads as soft light, not glass;
-    the patch fades from its middle and keeps the shadow of the window's cross. A third slot, the pane, glows
-    softly in the opening itself, so the day outside reads brighter than the room, as painted."""
-    dz = -math.sin(math.radians(SUN['down'])); h = math.cos(math.radians(SUN['down']))
-    sk = math.radians(SUN['skew']); col = SUN['colour']
+def panes(d):
+    """The day seen through every window: one face in the opening, a little inside it, in the pane slot of
+    TH_Dressing, which M_TH_Light draws additive and unlit, so the outside reads brighter than the room, as painted.
+    There are no sunbeam shafts or floor pools: they flickered through the walls and hid the rooms."""
     for corners, inward, along, floor, kind in WINDOWS:
-        n, a = np.array(inward), np.array(along)
-        ray = n*h*math.cos(sk)+a*h*math.sin(sk)+np.array([0, 0, dz])
-        top = [np.array(q)+n*.02 for q in corners]
-        hit = [q+ray*((q[2]-floor-.035)/-ray[2]) for q in top]
-        k = len(top)
-
-        def paint(count, alphas):
-            d.colors[-count:] = [(*col, al) for al in alphas]
-        with d.use('beam'):
-            for i in range(k):
-                j = (i+1) % k; before = len(d.faces)
-                # u across a flat face fades it to its long edges; a round shaft is soft from its curve alone
-                u0, u1 = (.5, .5) if kind == 'round' else (0, 1)
-                d.poly([top[i], top[j], hit[j], hit[i]], col, uv=[(u0, 0), (u1, 0), (u1, 1), (u0, 1)])
-                # a round shaft has no edges to fade toward, so it is drawn at half strength
-                sw = .5 if kind == 'round' else 1.
-                if len(d.faces) > before: paint(4, (SUN['window']*sw, SUN['window']*sw, SUN['floor']*sw, SUN['floor']*sw))
+        n = np.array(inward); k = len(corners)
         if kind == 'round':
             uv = [(.5+.5*math.cos(f), .5+.5*math.sin(f)) for f in np.linspace(0, 2*math.pi, k+1)[:-1]]
         else:
             uv = [(0, 0), (1, 0), (1, 1), (0, 1)]
-        with d.use('pane'):        # the bright day outside: a soft glow across the opening, dark on the cross
-            before = len(d.faces); d.poly([tuple(np.array(q)-n*.01) for q in corners], col, uv=uv)
-            if len(d.faces) > before: paint(k, [1.]*k)
-        with d.use('pool'):
-            pts = hit if np.cross(hit[1]-hit[0], hit[2]-hit[0])[2] > 0 else hit[::-1]
-            uv = uv if pts is hit else uv[::-1]
-            before = len(d.faces); d.poly(pts, col, uv=uv)
-            if len(d.faces) > before: paint(k, [1.]*k)
+        with d.use('pane'):        # a soft glow across the opening, dark on the cross
+            before = len(d.faces); d.poly([tuple(np.array(q)-n*.01) for q in corners], SUN, uv=uv)
+            if len(d.faces) > before: d.colors[-k:] = [(*SUN, 1.)]*k
 
 
 def trunk_shape(x, y, r, z1, deck, seed):
@@ -1473,6 +1494,12 @@ def main():
     mats = material_factory()
     pl = L.plan(H); P = pl['places']
     m, trunks, d = TMesh('TH_Structure', 'wood_plank'), TMesh('TH_Trunks', 'bark'), TMesh('TH_Dressing', 'wood_timber')
+    # where the bridges' end posts and the entry stair's top posts stand, the deck railings have none
+    avoid = []
+    for b in pl['bridges']:
+        A, B = np.array(b['start'][:2], float), np.array(b['end'][:2], float); u = (B-A)/np.linalg.norm(B-A); v = np.array([-u[1], u[0]])
+        avoid += [tuple(q+v*f*(L.BRIDGE_WIDTH/2+.07)) for q in (A, B) for f in (-1, 1)]
+    ex = pl['entry_stairs']; avoid += [(ex['x']+f*(ex['width']/2+.04), ex['top_y']+.05) for f in (-1, 1)]
     for name, p in P.items():
         deck(m, d, p)
         extra = []
@@ -1481,7 +1508,7 @@ def main():
         if name == 'slide':
             mid = math.radians(sum(pl['slide']['landing'])/2); q = L.ray_exit(p['poly'], math.degrees(mid))
             extra.append((p['xy'][0]+q[0], p['xy'][1]+q[1], .75))
-        railing(m, d, world_poly(p), p['deck'], gaps_for(p, pl, extra))
+        railing(m, d, world_poly(p), p['deck'], gaps_for(p, pl, extra), avoid=avoid)
         big = name == 'heart'
         trunk(trunks, *p['xy'], p['trunk'], p['trunk_top'], p['deck'], 8 if big else 5, BARK_OLD if big else BARK, len(name))
         moss_on_trunk(d, *p['xy'], p['trunk'], ground(*p['xy']), p['deck'])
@@ -1513,7 +1540,7 @@ def main():
     slide(m, d, pl)
     lookout(m, d, pl)
     entry_way(m, d, pl)
-    sunlight(d); report = {'windows': len(WINDOWS)}
+    panes(d); report = {'windows': len(WINDOWS)}
     for mesh in (m, trunks, d):
         _, report[mesh.name] = export(mesh, mats, OUT/'assets')
     report['props'] = {k: len(v) for k, v in PLACED.items()}

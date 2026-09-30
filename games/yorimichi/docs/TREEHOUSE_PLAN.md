@@ -17,8 +17,10 @@ All positions are Blender metres (x east, y north); heights are absolute, in met
 ## How you find it
 
 The trail runs along the top of the hillside in a cutting, so the woods below it cannot be seen from the path. At
-about (-133, 211) there is a low gap in the south bank: six stepping stones lead down through it, flush with the
-ground, to a wider seventh stone against the lowest plank step; the steps climb 1.7 m to the little hut's north door. The hut sits 3 m above the ground in its maple, half inside the
+about (-133, 211) there is a low gap in the south bank: level stepping stones lead up through it, a stride apart
+on the flat and a short flight of stone steps cut into the steep part of the bank (each top flush with the ground on
+its uphill side, no rise over 17 cm), to a wider foot stone against the lowest plank step; the steps climb 1.4 m to
+the little hut's north door. The hut sits 3 m above the ground in its maple, half inside the
 leaves. That is all you see from the trail.
 
 Step through the hut onto its south porch and the hillside opens up: the ground drops away, and bridges run out to
@@ -104,9 +106,8 @@ the crow's nest to every bridge. Ground plants go along the stepping stones and 
   (noren, maps, quilts, rugs, the flag) that keep their colours.
 - Hero props: 13 Tripo models, each from its own Sunburst reference (`tools/treehouse_props.py`), reduced and
   given calibrated colour gains in Blender (`world/regions/treehouse/props.py`).
-- Light: 69 warm lantern lights, sunbeams through every window (a soft shaft, the window's shape on the floor and a
-  gentle glow in the opening) and a warmer colour grade inside the rooms. `build.py` writes them to
-  `treehouse/runtime.json`, which the game merges into the world data at load.
+- Light: 69 warm lantern lights, a gentle glow in every window's opening and a warmer colour grade inside the
+  rooms. `build.py` writes them to `treehouse/runtime.json`, which the game merges into the world data at load.
 - Camera: the rooms are small, so the camera stays back and what hides Cairo dithers away: walls, rails, props, and
   the near walls and roof of the room he is in. The noren part round him and swing back
   ([CAMERA.md](CAMERA.md)).

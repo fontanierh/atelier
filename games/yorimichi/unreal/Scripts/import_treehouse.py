@@ -119,9 +119,11 @@ def assign(mesh, mis, report):
     return used
 
 
-# Sunlight through the windows (treehouse/build.py sunlight()): additive and unlit, so it only brightens what is behind.
+# The day seen through the windows (treehouse/build.py panes()): a soft additive, unlit glow in each opening, so the
+# outside reads brighter than the room. Only the panes remain: the sunbeam shafts and floor pools are gone (they
+# flickered and hid the rooms). The material keeps its beam shape (Shape 0) unused; Shape 1 is the pane.
 SUN_TINT = (1., .74, .42)      # linear warm gold, the paintings' window light
-LIGHT = {'beam': dict(Shape=0., Intensity=.32), 'pool': dict(Shape=1., Intensity=1.3), 'pane': dict(Shape=1., Intensity=.06)}
+LIGHT = {'pane': dict(Shape=1., Intensity=.06)}
 
 
 def light_parent():

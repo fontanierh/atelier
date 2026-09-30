@@ -42,9 +42,12 @@ PLACES = {
 BRIDGES = [('entry', 'library'), ('library', 'heart'), ('library', 'sleep'), ('heart', 'kitchen'),
            ('kitchen', 'boat'), ('boat', 'slide'), ('slide', 'chimes'), ('chimes', 'lookout'),
            ('heart', 'pulley'), ('sleep', 'pulley'), ('pulley', 'lookout'), ('heart', 'chimes')]
-# Stepping stones from the trail edge up the low gap in the bank, then plank steps to the little hut. They lie flush
-# with the ground; a last, wider stone (FOOT_STONE: half length across, half depth) lies against the lowest tread.
+# Stepping stones from the trail edge up the low gap in the bank (along GATE), then plank steps to the little hut.
+# Every stone is level, its top flush with the highest ground under it. On the flat they lie a stride apart; up the
+# bank they are a flight of stone steps cut into it, at least `least` apart and at most `rise` over the one below.
+# The last, wider stone (FOOT_STONE: half length across, half depth) lies against the lowest tread, one rise under it.
 GATE = [(-133.3, 211.0), (-133.6, 209.6), (-133.9, 208.2), (-134.2, 206.8), (-134.5, 205.4), (-134.8, 204.3)]
+STONES = dict(stride=1.3, least=.4, rise=.17, proud=.02)
 FOOT_STONE = (.6, .4)
 ENTRY_BOX = (-2.45, 2.45, -4.2, 2.1)    # little hut deck, local metres: x0, x1, y0, y1 (hut 4.0 x 3.0, porch south)
 HEART_WALL = 4.3                        # octagonal room circumradius; the deck beyond it is the balcony
@@ -152,18 +155,7 @@ def plan(h):
                             clearance=round((ends[0][2]+ends[1][2])/2-sag-ground(h, *mid), 2)))
     for p in places.values():
         p['open'] = round(widest_gap([l['angle'] for l in p['links']]), 2)
-    # Plank steps from the top stepping stone up to the north lip of the little hut's deck.
-    E = places['entry']; ex, ey = E['xy']; top_y = ey+ENTRY_BOX[3]; x = GATE[-1][0]
-    n_steps = 1
-    for _ in range(6):
-        n_steps = max(1, math.ceil((E['deck']-ground(h, x, top_y+n_steps*TREAD))/RISE))
-    rise = (E['deck']-ground(h, x, top_y+n_steps*TREAD))/n_steps
-    # Each stone's z is the ground under its middle plus 3 cm (build.py tilts its top to the slope). The foot stone
-    # touches the lowest tread, and its z is the top of its south edge: one rise under that tread.
-    stones = [[sx, sy, round(ground(h, sx, sy)+.03, 3)] for sx, sy in GATE]
-    stones.append([x, round(top_y+(n_steps-1)*TREAD+.02+FOOT_STONE[1], 3), round(E['deck']-n_steps*rise, 3)])
-    entry_stairs = dict(x=x, top_y=top_y, steps=n_steps, rise=round(rise, 4), tread=TREAD, width=1.1,
-                        foot=[x, top_y+n_steps*TREAD, round(E['deck']-n_steps*rise, 3)])
+    stones, entry_stairs = entry_way(h, places['entry'])
     slide = slide_path(h, places['slide'])
     L = places['lookout']
     steps = math.ceil((L['crow']-L['deck'])/RISE); rise_c = (L['crow']-L['deck'])/steps
@@ -186,6 +178,50 @@ def plan(h):
     L['trunk_top'] = L['crow']-.05          # the trunk ends under the crow's nest floor; posts carry the awning
     return dict(places=places, bridges=bridges, stones=stones, entry_stairs=entry_stairs, slide=slide, crow=crow,
                 crowns=crowns, rise=RISE, tread=TREAD, bridge_width=BRIDGE_WIDTH, heart_wall=HEART_WALL, hut=HUT)
+
+
+def entry_way(h, E):
+    """The stepping stones [x, y, top z] and the plank steps from the trail to the little hut's north lip. Every stone
+    is level, its top flush with the highest ground under it (the uphill edge on the bank) and proud of the rest: on
+    the flat a stride apart, where the bank climbs (or falls) closer together, no stone more than STONES['rise'] over
+    or under the last. The foot stone, a wider block like a genkan's step stone, lies against the lowest plank step,
+    one rise under it, and the plank steps climb from it in equal rises."""
+    ex, ey = E['xy']; top_y = ey+ENTRY_BOX[3]; x = GATE[-1][0]; S = STONES; rx, ry = FOOT_STONE; n = 1
+    for _ in range(4):       # where the foot stone lies depends on the number of steps, and that on its top
+        fy = top_y+(n-1)*TREAD+.02+ry
+        zf = max(ground(h, x+a*rx, fy+b*ry) for a in (-1, -.5, 0, .5, 1) for b in (-1, -.5, 0, .5, 1))+S['proud']
+        n = max(1, math.ceil((E['deck']-zf)/RISE))
+    rise = (E['deck']-zf)/n; fy = top_y+(n-1)*TREAD+.02+ry
+    path = [np.array(q, float) for q in GATE]+[np.array([x, fy])]
+    seg = [float(np.linalg.norm(b-a)) for a, b in zip(path[:-1], path[1:])]; total = sum(seg)
+
+    def at(s):
+        s = min(max(s, 0.), total)
+        for a, b, l in zip(path[:-1], path[1:], seg):
+            if s <= l or b is path[-1]:
+                return a+(b-a)*min(1., s/l), (b-a)/l
+            s -= l
+
+    def level(s):            # the highest ground under a stone at s (0.9 m across, 0.6 m along the way)
+        q, u = at(s); v = np.array([-u[1], u[0]])
+        return max(ground(h, *(q+u*b+v*a)) for a in (-.45, 0., .45) for b in (-.3, 0., .3))+S['proud']
+    end = total-ry-S['least']*.8           # the last loose stone's centre, clear of the foot stone
+    stones = []; s = 0.; z = level(0.)
+    for _ in range(80):
+        q, _ = at(s); stones.append([round(float(q[0]), 3), round(float(q[1]), 3), z])
+        if end-s < S['least'] or (total-s <= S['stride']+ry and abs(zf-z) <= S['rise']):
+            break
+        nxt = s+max(S['least'], min(S['stride'], end-s))
+        while nxt-s > S['least']+1e-6 and abs(level(nxt)-z) > S['rise']:
+            nxt = max(s+S['least'], nxt-.05)
+        s = nxt; z = min(max(level(s), z-S['rise']), z+S['rise'])
+    stones.append([x, round(fy, 3), zf])
+    for k in range(len(stones)-2, -1, -1):     # and no step over the rise into the foot stone either
+        stones[k][2] = min(max(stones[k][2], stones[k+1][2]-S['rise']), stones[k+1][2]+S['rise'])
+    for q in stones: q[2] = round(q[2], 3)
+    stairs = dict(x=x, top_y=top_y, steps=n, rise=round(rise, 4), tread=TREAD, width=1.1,
+                  foot=[x, round(top_y+n*TREAD, 3), round(zf, 3)])
+    return stones, stairs
 
 
 def slide_path(h, p):

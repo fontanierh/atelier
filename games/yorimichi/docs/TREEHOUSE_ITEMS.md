@@ -25,7 +25,7 @@ Walkable, with collision. Counts come from `world/regions/treehouse/layout.py`.
 | Decks | 10 | Plank strips with gaps, moss in the corners, dark joists and knee braces, a thick rim board |
 | Rails | all deck edges | Square dark posts, two timber rails, rope lashings wound round each post top |
 | Rope bridges | 12 | Plank floor, two thick rope handrails, thin rope or stick balusters, rope suspenders, a lantern post at each end |
-| Entry way | 1 | 7 stepping stones flush with the ground (the last against the lowest step), 10 plank steps with stringers, rope handrail on short posts, one post lantern |
+| Entry way | 1 | 13 level stepping stones (a flight of stone steps up the bank, no rise over 17 cm; the last, wider one against the lowest step), 8 plank steps with stringers, rope handrail on short posts, one post lantern |
 | Little hut | 1 | Plank walls on a timber frame, gable roof, doors north and south, round window, paper window; the maple trunk goes up through the roof |
 | Small huts | 3 | Map room, Kitchen, Sleeping nest: the same kit as the little hut, gable roof, door on the bridge side, round window, six-pane window |
 | Heart room | 1 | Eight walls with posts, three doors, round and six-pane windows, the big open round window, cone roof with rafters, balcony all round |
@@ -35,7 +35,7 @@ Walkable, with collision. Counts come from `world/regions/treehouse/layout.py`.
 | Chime hoop | 1 | Wooden ring round the trunk on four arms, 12 fuurin (see 2) |
 | Lookout | 1 | Four-legged timber tower with cross braces, 91 treads spiralling round the trunk, crow's nest ring deck, rail, awning posts |
 | Roofs | 5 | Bark shingles in rows, moss patches, a few blue-grey tiles, ridge board, eave boards |
-| Windows and doors | all | Round windows with a cross frame, six-pane windows, sunbeams through them onto the floor, plank doors |
+| Windows and doors | all | Round windows with a cross frame, six-pane windows, a soft glow in each pane, plank doors |
 | Trunks | 10 | Thick bark trunks with a flared base and roots; crowns are the game's own trees |
 | Canopy trees | about 130 | Tall maple, crimson, amber and ginkgo trees whose crowns stand at deck height (`world/regions/treehouse/trees.py`) |
 | Shimenawa | 1 | Thick straw rope with paper shide, on the Heart room camphor only |

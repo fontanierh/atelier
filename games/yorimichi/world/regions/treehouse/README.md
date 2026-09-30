@@ -17,10 +17,11 @@ and Tripo models are in [assets/treehouse](../../../assets/treehouse/README.md).
 | `layout.py` | The single source of truth: places, bridges, stairs, slide, crow's nest, anchor trunks, the canopy trees round the house and the existing trees that must go. `gen_world.py` calls `integrate()` last, after every other region, and it writes `world['treehouse']` and `build/yorimichi/treehouse/layout.json`. |
 | `trees.py` | Blender: the four tall canopy trees (maple, crimson, amber, ginkgo) and their recoloured leaf atlases, made like the rest of the forest. |
 | `props.py` | Blender: the 13 Tripo props, reduced, sized and given a calibrated colour gain. |
-| `build.py` | Blender: TH_Structure (walkable, with collision), TH_Trunks, TH_Dressing (rooms, kit, sunbeams), the prop placements, and `runtime.json` (props, 69 lantern lights, room boxes and their colour grade). |
+| `build.py` | Blender: TH_Structure (walkable, with collision), TH_Trunks, TH_Dressing (rooms, kit, window panes), the prop placements, and `runtime.json` (props, 69 lantern lights, room boxes and their colour grade). |
 | `tmesh.py` | The mesh builder `build.py` uses: material slots, UVs, vertex colours. |
 | `plan_views.py` | The plan map and section drawings. |
 | `preview.py` | Quick Workbench previews of the built blend. |
+| `zfight.py` | Blender: finds faces of the built tree house and its placed props that lie in the same plane, face the same way and overlap, which flicker in the game. It exits 1 while any remain. |
 | `screen.py` | Sight lines from every walk to the lookout, and the grove of tall trees that hides it from the lake trail. `python games/yorimichi/world/regions/treehouse/screen.py [--eye 1.6]` prints where it still shows. |
 
 The Unreal side is `unreal/Scripts/import_treehouse.py` (meshes, the tree house materials, textures, props, canopy
@@ -56,8 +57,11 @@ python games/yorimichi/scenarios/treehouse_walk.py cut TAKE      # ... with its 
 - Noren are a band and six strips, and the material finds a vertex's strip from its u in sixths, so keep six. Vertex
   alpha is how freely a vertex hangs (0 down the band, 1 at the hem): the material parts the strips round Cairo and
   swings them by it. Other geometry in `M_TreeHouse` keeps alpha 0 and does not move.
-- Sunbeams are three extra material slots of TH_Dressing drawn additive: the shaft (fades where seen edge-on and
-  toward its edges), the pool on the floor (the window's shape and its cross) and a soft glow in the opening.
+- Each window has a pane: an extra material slot of TH_Dressing drawn additive, a soft glow in the opening. There are
+  no sunbeam shafts or floor pools: they flickered on the floors and hid the rooms from the camera.
+- Nothing may lie in the plane of another face that faces the same way (a rug on a floor, a rail end in a post, two
+  wall boards at a corner): the depth test flips between them and they flicker. Lift or shorten one, and run
+  `zfight.py` on the build before committing.
 - The forest the tree house adds round itself keeps 7.5 m off the air-station trail and clear of the station, as the
   zeppelin region cleared them (`zeppelin.layout.clear`). A cedar's crown is solid down to head height, so one on the
   trail is an invisible wall across it.
