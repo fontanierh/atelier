@@ -279,6 +279,25 @@ def convert_animation_samples(source,output):
     return manifest
 
 
+
+def encode_physics_skeletons(source):
+    """Keep every physical bone word and record identity; no original JSON at runtime."""
+    value=json.loads(source.read_text())
+    if value['version']!=1:raise ValueError('Unknown physics skeleton version')
+    data=bytearray(b'ATPHYS01')
+    def word(v):data.extend(struct.pack('<I',v))
+    def string(v):
+        raw=v.encode('utf-8');word(len(raw));data.extend(raw)
+    string(value['source_sha256']);word(len(value['skeletons']))
+    for skeleton in value['skeletons']:
+        string(skeleton['name']);data.extend(struct.pack('<Q',skeleton['source_offset']));word(len(skeleton['bones']))
+        for bone in skeleton['bones']:
+            if len(bone['words'])!=28:raise ValueError('Invalid physics bone word count')
+            string(bone['name']);data.extend(struct.pack('<Q',bone['source_offset']))
+            for v in bone['words']:word(v)
+    return bytes(data)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True, help='reference assets root containing private/')
@@ -291,6 +310,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / 'gestures.skate').write_bytes(encoded)
     (args.output / 'settings.skate').write_bytes(encode_settings(args.source/'private/stock/skater-collections.json'))
+    (args.output / 'physics-skeletons.skate').write_bytes(encode_physics_skeletons(args.source/'private/stock/physics-skeletons.json'))
     for name, relative in GRAPH_FILES:
         (args.output / f'{name}.graph').write_bytes(encode_graph(read_graph(args.source/'private/stock'/relative)))
     if args.animation_samples:

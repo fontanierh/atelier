@@ -72,6 +72,14 @@ interrupt ancestors, transition resolution and dotted-path search. `CompiledGrap
 the C++ controller's executable topology and compact operation IDs. Registered gameplay operations and
 their physical inputs still require porting; matching generic execution alone does not establish gameplay parity.
 
+## Native physical skeleton
+
+`PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
+plus the source bank identity. Size, rotation and translation are derived without decimal conversion.
+Lookup preserves ASCII case-insensitivity; native loading validates bounds and retains the current package
+if a replacement fails. The runtime no longer needs a JSON parser for these records. Body construction,
+constraints and collision remain separate migration work.
+
 ## Native animation samples
 
 `AnimationSamples.*` reads the project's `ATCLIP01` tracks and `ATSKEL01` hierarchy/reference poses. Each
@@ -105,6 +113,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   compared with the unmodified original host compiler. Each executes 65 commands with the deterministic
   test operation host; every output byte matches the original controller. The compiler also rejects an
   unresolved transition target exactly as the reference does, even when binding disabled that transition.
+- Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
+  record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
+  lookups and malformed native data are rejected.
 - Animation sample conversion: all 3,324 clips, 131,642 frames and 4,739,112 bone samples reconstruct exactly,
   together with the full rig and reference poses. 833,087 of 1,196,640 component tracks are bit-identical
   constants. Decoded sample files shrink from 190,365,107 bytes to 65,630,991 bytes without quantization.
