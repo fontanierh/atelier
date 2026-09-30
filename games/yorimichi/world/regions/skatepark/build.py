@@ -169,18 +169,26 @@ def check_path(pl, rows, h):
 
 
 def house_clearance(pl, world):
-    """Distance from the path's edges to the house beside the road gap (roof footprint)."""
-    ox, oy, _ = L.ORIGIN
-    hx, hy, _, yaw = world['instances']['House'][[i for i, p in enumerate(world['instances']['House']) if abs(p[0] + 145) < 3 and abs(p[1] + 89.4) < 3][0]][:4]
-    a = math.radians(yaw); c, s = math.cos(a), math.sin(a)
-    fx0, fx1, fy0, fy1 = world['house_vegetation_clearance']['tree_roof_footprint']
-    P = pl['P']; n = pl['n']; d = []
-    for o in (-L.PATH_HALF, L.PATH_HALF):
-        E = P + n * o
-        lx = (E[:, 0] - hx) * c + (E[:, 1] - hy) * s; ly = -(E[:, 0] - hx) * s + (E[:, 1] - hy) * c
-        dx = np.maximum(0, np.maximum(fx0 - lx, lx - fx1)); dy = np.maximum(0, np.maximum(fy0 - ly, ly - fy1))
-        d.append(float(np.hypot(dx, dy).min()))
-    return min(d)
+    """Distances from the path's edges to the houses on the main road (world['houses']): to the nearest roof
+    footprint and to the nearest lot outline (hedge, kerb and walls). Lots are in their own frame (houses/layout.py)."""
+    P = pl['P']; n = pl['n']; E = np.concatenate([P + n * o for o in (-L.PATH_HALF, L.PATH_HALF)])[:, :2]
+    roof, lot_edge = [], []
+    for lot in world['houses']['lots']:
+        a = math.radians(lot['yaw']); c, s = math.cos(a), math.sin(a)
+        dx = E[:, 0] - lot['centre'][0]; dy = E[:, 1] - lot['centre'][1]
+        lx = dx * c + dy * s; ly = -dx * s + dy * c
+        fx0, fx1, fy0, fy1 = lot['house_roof']
+        roof.append(float(np.hypot(np.maximum(0, np.maximum(fx0 - lx, lx - fx1)), np.maximum(0, np.maximum(fy0 - ly, ly - fy1))).min()))
+        Q = np.array(lot['polygon'], float); A = Q; B = np.roll(Q, -1, axis=0); D = B - A
+        X = np.stack([lx, ly], 1)[:, None, :]
+        t = np.clip(((X - A) * D).sum(-1) / (D * D).sum(-1), 0, 1)
+        dist = np.linalg.norm(X - (A + t[..., None] * D), axis=-1).min(1)
+        inside = np.zeros(len(X), bool)                       # even-odd rule
+        for (x0, y0), (x1, y1) in zip(A, B):
+            cross = (y0 > ly) != (y1 > ly)
+            inside ^= cross & (lx < x0 + (ly - y0) * (x1 - x0) / np.where(y1 == y0, 1e-9, y1 - y0))
+        lot_edge.append(float(np.where(inside, -dist, dist).min()))
+    return min(roof), min(lot_edge)
 
 
 def check_joins(pier, feats, path):
@@ -299,7 +307,8 @@ def main():
     report['rails'] = check_rails(rails, [feats])
     report['profiles'] = check_profiles()
     report['path'] = check_path(pl, rows, h)
-    report['path']['house_roof_clearance_m'] = house_clearance(pl, world)
+    report['path']['house_roof_clearance_m'], report['path']['house_lot_clearance_m'] = house_clearance(pl, world)
+    assert report['path']['house_lot_clearance_m'] > 0, 'the skate path crosses a house lot'
     report['joins'] = check_joins(pier, feats, path)
     report['fbx_roundtrip'] = fbx_roundtrip([(m, OUT / 'assets' / f'{m.name}.fbx') for m in (pier, feats, piles, path, paint)] +
                                             [(m, OUT / 'board' / f'{m.name}.fbx') for m in (deck, truck, wheel)])

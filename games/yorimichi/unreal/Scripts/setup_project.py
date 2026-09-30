@@ -537,8 +537,8 @@ def main():
         bs = terrain.get_editor_property("body_setup")
         if bs: bs.set_editor_property("collision_trace_flag", unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
         EAL.save_loaded_asset(terrain)
-    # props need collision too (trees, poles, rails, houses): complex-as-simple is fine for a demo
-    for name in ("Pole", "Pole_Lamp", "Guardrail", "Lantern", "Torii", "House", "Tree_Broad_A", "Tree_Broad_B", "Tree_Broad_C", "Tree_Pine_A", "Tree_Pine_B", "Tree_Cedar_A", "Tree_Cedar_B"):
+    # props need collision too (trees, poles, rails): complex-as-simple is fine for a demo; the houses have their own import
+    for name in ("Pole", "Pole_Lamp", "Guardrail", "Lantern", "Torii", "Tree_Broad_A", "Tree_Broad_B", "Tree_Broad_C", "Tree_Pine_A", "Tree_Pine_B", "Tree_Cedar_A", "Tree_Cedar_B"):
         m = EAL.load_asset(f"/Game/Japan/Assets/{name}")
         if m:
             bs = m.get_editor_property("body_setup")

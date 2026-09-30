@@ -225,7 +225,11 @@ if SW:
 # ---------- buildings, landmarks, props
 NAVY, NAVY_OUT = (52, 58, 92), (20, 22, 36)
 for b in V['buildings']: rect(b['position'][0], b['position'][1], b['width'], b['depth'], b['yaw'], NAVY, NAVY_OUT)
-for h in W['instances'].get('House', []): rect(h[0], h[1], 9, 7, h[3], NAVY, NAVY_OUT)
+for lot in W.get('houses', {}).get('lots', []):   # the houses on the main road: the lot (hedge outline), then the roof
+    a = math.radians(lot['yaw']); c, s = math.cos(a), math.sin(a); (lx, ly) = lot['centre']
+    d.polygon([wp(lx + u * c - v * s, ly + u * s + v * c) for u, v in lot['polygon']], fill=(196, 184, 150), outline=(62, 96, 48))
+    fx0, fx1, fy0, fy1 = lot['house_roof']; u, v = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+    rect(lx + u * c - v * s, ly + u * s + v * c, fx1 - fx0, fy1 - fy0, lot['yaw'], NAVY, NAVY_OUT)
 if SW:
     for b in SW['buildings']: rect(b['position'][0], b['position'][1], b['width'], b['depth'], b['yaw'], NAVY, NAVY_OUT)
     for p in W['instances'].get('SW_CoconutStand', []): rect(p[0], p[1], 3.2, 2.6, p[3], (196, 120, 60), (80, 40, 10))

@@ -10,6 +10,7 @@ narrow road climbing along the hillside from a shore hamlet to a shrine knoll. P
 import os, json, math
 import numpy as np
 from PIL import Image
+from houses import layout as houses_layout
 
 HERE = str(yori.WORLD)
 OUT = str(yori.OUT)
@@ -97,11 +98,12 @@ side = ((X - RX[ni]) * NX[ni] + (Y - RY[ni]) * NY[ni]) * UP[ni]
 target = RZ[ni] + np.where(side > 3.2, (side - 3.2) * 1.1, np.where(side < -3.2, (side + 3.2) * 0.7, 0.0))      # steep earth bank uphill
 H = np.where(mask, H * (1 - w) + target * w, H)
 
-# flat pads: shrine knoll and two house lots
-def flatten(cx, cy, r, z=None):
+# flat pads: the shrine knoll (and, on a copy of the ground, the five former house spots: see below)
+def flatten(cx, cy, r, z=None, ground=None):
+    ground = H if ground is None else ground
     d = np.hypot(X - cx, Y - cy); w = smooth((r + 8 - d) / 8)
     zz = sample_h(cx, cy) if z is None else z
-    H[:] = H * (1 - w) + zz * w
+    ground[:] = ground * (1 - w) + zz * w
     return zz
 
 SLOPE = np.hypot(*np.gradient(H, STEP))
@@ -122,23 +124,33 @@ def slope(x, y):
     i = int(np.clip((x + SIZE / 2) / STEP, 0, N - 1)); j = int(np.clip((y + SIZE / 2) / STEP, 0, N - 1)); return SLOPE[j, i]
 
 use("houses")
-# houses at the shore end (downhill side), shrine on the knoll
-houses = []
-for s, side in ((96, -1), (150, -1), (185, +1), (300, -1), (338, +1)):
+# Houses on the main road: five level lots facing the road (regions/houses). The scatter below still decides where
+# trees, bushes and bank plants go from the ground and the clearings of the five former house spots (H_LEGACY), so the
+# forest and the verges everywhere else stay exactly as they were; what lands on a lot is cleared at the end.
+H_LEGACY = H.copy()
+LEGACY_SPOTS, LEGACY_HOUSES = [], []
+for s, side in houses_layout.LEGACY:
     x, y, z, tx, ty, ux, uy = road_frame(s)
     hx, hy = x + ux * side * 11, y + uy * side * 11
-    hz = flatten(hx, hy, 7.5, z - 0.4 if side < 0 else z + 0.6)
+    hz = flatten(hx, hy, 7.5, z - 0.4 if side < 0 else z + 0.6, H_LEGACY)
+    if s in houses_layout.KEEP_LEGACY_PAD:
+        flatten(hx, hy, 7.5, hz)                         # the skate path was laid on this pad
+    LEGACY_SPOTS.append((hx, hy))
     yaw = math.degrees(math.atan2(ty, tx)) + (90 if side < 0 else -90)
-    houses.append((hx, hy, hz, yaw))
+    LEGACY_HOUSES.append((round(float(hx), 2), round(float(hy), 2), round(float(yaw), 1)))
+LOTS = houses_layout.plan(RX, RY, RZ, NX, NY, UP)
+houses_layout.grade(H, X, Y, D, NEAR, RZ, ((X - RX[NEAR]) * NX[NEAR] + (Y - RY[NEAR]) * NY[NEAR]) * UP[NEAR], LOTS)
 sz = flatten(*SHRINE, 16)
-SLOPE = np.hypot(*np.gradient(H, STEP))
-for (hx, hy, hz, yaw) in houses:
-    put("House", hx, hy, hz, yaw)
-    for k in range(3):                                   # tall pines and a maple behind each house
-        a = math.radians(yaw + 180 + rng.uniform(-50, 50)); rr = rng.uniform(7, 11)
-        px_, py_ = hx + math.cos(a) * rr, hy + math.sin(a) * rr
-        put("Tree_Pine_A" if k < 2 else "Tree_Maple_A", px_, py_, sample_h(px_, py_) - 0.15, scale=rng.uniform(1.0, 1.3))
-    put("Lantern", hx + math.cos(math.radians(yaw)) * 5.5, hy + math.sin(math.radians(yaw)) * 5.5, sample_h(hx, hy), yaw)
+flatten(*SHRINE, 16, sz, H_LEGACY)
+SLOPE = np.hypot(*np.gradient(H_LEGACY, STEP))           # scatter decisions only
+def sample_legacy(x, y):
+    fx = (x + SIZE / 2) / STEP; fy = (y + SIZE / 2) / STEP
+    i = int(np.clip(fx, 0, N - 2)); j = int(np.clip(fy, 0, N - 2)); u = fx - i; v = fy - j
+    G = H_LEGACY
+    return (G[j, i] * (1 - u) * (1 - v) + G[j, i + 1] * u * (1 - v) + G[j + 1, i] * (1 - u) * v + G[j + 1, i + 1] * u * v)
+for lot in LOTS:
+    put(lot["house"], *lot["centre"], lot["level"], lot["yaw"])
+    put(lot["name"], *lot["centre"], lot["level"], lot["yaw"])
 put("Torii", SHRINE[0] - 14, SHRINE[1] - 6, sz, 25)
 # Keep the pair on the flat knoll, flanking the approach behind the gate.
 # The former positions were outside the plateau and floated 2–6 metres.
@@ -173,7 +185,7 @@ rail_runs = []; cur = []
 for s in np.arange(1, L - 1, 1.0):
     x, y, z, tx, ty, ux, uy = road_frame(s)
     drop = z - sample_h(x - ux * 9, y - uy * 9)
-    if drop > 1.2:
+    if drop > 1.2 and not houses_layout.rail_blocked(LOTS, s):
         cur.append([round(float(x - ux * 3.1), 3), round(float(y - uy * 3.1), 3), round(float(z), 3), round(float(-ux), 4), round(float(-uy), 4)])
     elif cur:
         if len(cur) > 6: rail_runs.append(cur)
@@ -191,7 +203,7 @@ def scatter(spacing, fn, jitter=0.45):
 
 def trees(x, y, h, d, sl):
     if d < 8.5 or sl > 1.6: return
-    if any(math.hypot(x - hx, y - hy) < 12 for hx, hy, _, _ in houses): return
+    if any(math.hypot(x - hx, y - hy) < 12 for hx, hy in LEGACY_SPOTS): return
     if math.hypot(x - SHRINE[0], y - SHRINE[1]) < 18: return
     r = rng.random()
     if d < 26:                       # roadside: pines, maples, ginkgo
@@ -224,7 +236,7 @@ def bushes(x, y, h, d, sl):
     if d < 4.3 or sl > 1.8: return
     p = 0.9 if d < 9 else (0.35 if d < 40 else 0.08)
     if rng.random() > p: return
-    near_house = any(math.hypot(x - hx, y - hy) < 14 for hx, hy, _, _ in houses)
+    near_house = any(math.hypot(x - hx, y - hy) < 14 for hx, hy in LEGACY_SPOTS)
     if near_house and rng.random() < 0.5:
         name = rng.choice(["Bush_Flower_A", "Bush_Flower_B"])
     else:
@@ -238,7 +250,7 @@ for s_ in np.arange(2, L - 2, 1.0):
     x, y, z, tx, ty, ux, uy = road_frame(s_)
     for off in (3.5, 4.8, 6.3, 8.0):
         bx, by = x + ux * off + rng.uniform(-0.3, 0.3), y + uy * off + rng.uniform(-0.3, 0.3)
-        if sample_h(bx, by) - z < 0.3 and off > 5: continue
+        if sample_legacy(bx, by) - z < 0.3 and off > 5: continue
         put("Grass_A" if rng.random() < 0.5 else "Grass_B", bx, by, sample_h(bx, by) - 0.03, scale=rng.uniform(1.4, 1.9))
     if rng.random() < 0.25:
         off = rng.uniform(4.5, 8.5); bx, by = x + ux * off, y + uy * off
@@ -250,7 +262,7 @@ for s_ in np.arange(6, L - 6, 3.0):
     if rng.random() > 0.6: continue
     x, y, z, tx, ty, ux, uy = road_frame(s_)
     off = rng.uniform(3.9, 8.0); rx, ry = x + ux * off, y + uy * off
-    if sample_h(rx, ry) - z < 0.6: continue
+    if sample_legacy(rx, ry) - z < 0.6: continue
     put(rng.choice(["Rock_A", "Rock_B", "Rock_C"]), rx, ry, sample_h(rx, ry) - 0.45, scale=rng.uniform(0.45, 0.9))
 
 def grass(x, y, h, d, sl):
@@ -274,9 +286,10 @@ x, y, z, tx, ty, ux, uy = road_frame(0.45 * L)
 shots.append([round(x - tx * 90, 2), round(y - ty * 90, 2), round(z + 88, 2), round(math.degrees(math.atan2(ty, tx)) + 20, 1), -12.0])   # bird's eye toward the hills, sky in frame
 
 shots.append([round(x, 2), round(y, 2), round(z + 1.7, 2), 0.0, 55.0])                      # straight up: sky check
-hx, hy, hz, hyaw = houses[0]
-x, y, z, tx, ty, ux, uy = road_frame(96)                                                       # from the road, looking at the first house's front
-shots.append([round(x + tx * 4, 2), round(y + ty * 4, 2), z + 4.5, round(math.degrees(math.atan2(hy - y, hx - x)), 1), -10.0])   # house from the road, roof in view
+hx, hy = LOTS[0]["centre"]
+x, y, z, tx, ty, ux, uy = road_frame(LOTS[0]["s"] - 6)                                        # from the far verge, looking at the first house's front
+x, y = x + ux * 2.0, y + uy * 2.0
+shots.append([round(x, 2), round(y, 2), round(z + 1.7, 2), round(math.degrees(math.atan2(hy - y, hx - x)), 1), -4.0])   # house from the road at eye height
 x, y, z, tx, ty, ux, uy = road_frame(0.2 * L)
 shots.append([round(x, 2), round(y, 2), round(z + 1.7, 2), round(math.degrees(math.atan2(uy, ux)), 1), 14.0])          # looking up the bank at the trees
 use("far")
@@ -305,7 +318,7 @@ for gy in np.arange(-1300, 2600, 11.0):
 
 road = [[round(float(a), 2), round(float(b), 2), round(float(c), 2)] for a, b, c in zip(RX, RY, RZ)]
 world = {"size": SIZE, "n": N, "sea_level": 0.0, "wind_dir": [0.30, 0.95], "wind_speed": 3.5, "rail_runs": rail_runs, "road": road, "road_width": 5.2, "anchors": anchors,
-         "instances": inst, "player_start": player_start, "shots": shots}
+         "instances": inst, "player_start": player_start, "shots": shots, "houses": {"lots": LOTS}}
 from village.layout import integrate
 integrate(world, H)
 from mega.layout import integrate as integrate_mega
@@ -316,13 +329,14 @@ from forest_lake.layout import integrate as integrate_forest_lake
 integrate_forest_lake(world, H)
 from zeppelin.layout import integrate as integrate_zeppelin
 integrate_zeppelin(world, H)
-from house_clearance import clear_house_vegetation
-clear_house_vegetation(world)
+houses_layout.legacy_tree_gaps(world, LEGACY_HOUSES)
 from torii_clearance import clear_torii_vegetation
 clear_torii_vegetation(world)
-# The tree house plans its canopy trees and clearings on the finished forest, so it goes last.
+# The tree house plans its canopy trees and clearings on the finished forest, so it goes last but for the house
+# lots, which are cleared and planted after it: its canopy draws run over the whole map's tree lists in order.
 from treehouse.layout import integrate as integrate_treehouse
 integrate_treehouse(world, H)
+houses_layout.clear_and_dress(world, sample_h)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))
 H.astype("<f4").tofile(os.path.join(OUT, "heightmap.bin"))  # runtime cosmetic-particle ground sampling
 with open(os.path.join(OUT, "world.json"), "w") as fh:

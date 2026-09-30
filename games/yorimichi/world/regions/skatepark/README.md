@@ -51,13 +51,14 @@ platform centre, world origin `(-110, -195, 1.80)`, yaw 0. Unreal: world metres
   70 piles (0.6 m) on an 8 m grid into the sea bed, pile caps, 0.7 m edge beam, perimeter
   railing 1.1 m (posts every 2 m, blocks, not grindable), six lamp posts, 5 m deck joints.
 - Path: 111 m, 4 m wide, from the road's south edge at (-155.0, -83.6, 9.31) through the
-  guardrail gap on the west side of the house, down to the pier's north edge at
+  guardrail gap at the level pad beside the road, down to the pier's north edge at
   (-104, -168, 1.80). Straights and arcs (radii 20, 10, 20, 25 m), grade <= 9 % on the
   centre line and <= 9.7 % on both edges, at least 5 cm above the upper envelope of both
   terrain triangulations everywhere, level first metre off the road and level last 4 m
   onto the deck. Its end ring shares the deck's edge vertices (no lip). Skirts run 0.45 m
   below the ground on both sides; it stands on a retaining wall up to ~1.5 m where it
-  leaves the house's level pad, and ~1 m on the pier abutment.
+  leaves the level pad, and ~1 m on the pier abutment. The build reports its distance to the nearest house roof
+  and lot (`world/regions/houses`) and fails if it crosses a lot.
 
 ## Features (park-local metres)
 

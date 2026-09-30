@@ -7,7 +7,7 @@ Run after district scatter, without changing terrain or random streams.
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent)); import yori  # noqa: E402,F401
 import math
 import numpy as np
-from house_clearance import BUSH_RADII
+from houses.layout import REACH as BUSH_RADII
 
 GATE_FOOTPRINTS=((-0.55,0.55,-1.8,1.8),)
 LANTERN_FOOTPRINTS=((-0.35,0.35,-0.35,0.35),)

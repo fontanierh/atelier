@@ -1,0 +1,42 @@
+{
+  "stage": "house-concept",
+  "concept": "street",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/house_concepts.py",
+  "prompt_file": "street.prompt.txt",
+  "prompt_sha256": "55b4b13926db714567bc7c25f72b67cdab9d7ace41be5e41795a939f87e0a4d3",
+  "reference_files": {
+    "build/yorimichi/houses/refs/playtest-road-house.webp": "1f82d50cc76f5a6f74203ae099ea9ced3859b5b50e03b3ec1c967fe410a7913d",
+    "build/yorimichi/houses/refs/playtest-bank-house.webp": "ab0a5cc495e6a8ce63a5a28dfcbc3308682c3a65cb34ef689e9769e0a5578126"
+  },
+  "status": "done",
+  "started_at": "2026-09-30T11:51:33.763966+00:00",
+  "usage": {
+    "input_tokens": 2826,
+    "input_tokens_details": {
+      "image_tokens": 2080,
+      "text_tokens": 746
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4198
+  },
+  "outputs": {
+    "street.png": "77620de6554bd423e271555bc9d37184e672c16df99bf2e1688879c1a59a4e3d"
+  },
+  "compact_copy": {
+    "file": "street.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "error": null,
+  "finished_at": "2026-09-30T11:52:10.788674+00:00",
+  "elapsed_seconds": 37.0
+}

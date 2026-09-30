@@ -16,7 +16,7 @@ Needs only NumPy and Pillow (no matplotlib). Rendering takes a few seconds.
 
 | File | What the map takes from it |
 | --- | --- |
-| `out/world.json` | `size` (600 m), `road` (624 samples with height), `road_width`, `rail_runs` (guardrail polylines), `instances` (every placed prop by asset name: x, y, z, yaw, scale), `player_start`, `shots` (scripted camera positions), `village` (lanes as `surface_paths`, `buildings` with footprint and yaw, `planting_beds`, `residents`, signs), `mega` (trail polyline and start point), `wind_dir`, `wind_speed` |
+| `out/world.json` | `size` (600 m), `road` (624 samples with height), `road_width`, `rail_runs` (guardrail polylines), `instances` (every placed prop by asset name: x, y, z, yaw, scale), `player_start`, `shots` (scripted camera positions), `houses` (the lots of the houses on the main road: centre, yaw, outline and roof footprint in the lot frame), `village` (lanes as `surface_paths`, `buildings` with footprint and yaw, `planting_beds`, `residents`, signs), `mega` (trail polyline and start point), `wind_dir`, `wind_speed` |
 | `out/heightmap.npy` | 301 × 301 heights in metres over the square, 2 m spacing, row 0 = south, column 0 = west |
 | `out/farhills.npy` | 96 × 96 heights of the 6.4 km scenery ring around the square (inset only) |
 
@@ -35,7 +35,7 @@ the map stays in the Blender frame with north up, so it matches `gen_world.py` a
 5. **Guardrail runs**, then the **road** (dark casing, asphalt fill, centre line), at true width.
 6. **Hamlet**: lanes at their 2.6 m width, planting beds, building footprints rotated by yaw and labelled,
    residents, waymark signs. **Mega ramp trail** at its 8 m width with its start point.
-7. **Props**: roadside houses (footprint rotated by yaw), poles, torii, lanterns. **Spawn** and **camera shots**.
+7. **Props**: the houses on the main road (lot outline with its hedge, then the roof footprint, rotated by yaw), poles, torii, lanterns. **Spawn** and **camera shots**.
 8. **Labels**, title, legend, counts, scale bar, north arrow, wind rose (the arrow points where the wind blows),
    and the surroundings inset with the playable square outlined.
 

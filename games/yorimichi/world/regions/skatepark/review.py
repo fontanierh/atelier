@@ -68,10 +68,12 @@ def context_terrain(world, h, vmat):
     for i in range(len(R) - 1):
         a = 2 * i; F.append((a, a + 2, a + 3, a + 1))
     _mesh('ReviewRoad', V, F, None, _mat('road', (0.10, 0.10, 0.105)))
-    for x, y, z, yaw, *_ in world['instances']['House']:
+    for lot in world['houses']['lots']:                  # the houses on the main road, as their roof footprints
+        (x, y), z, yaw = lot['centre'], lot['level'], lot['yaw']
         if abs(x - ox) < 150 and abs(y - oy) < 150:
             a = math.radians(yaw); c, s = math.cos(a), math.sin(a)
-            corners = [(-4.8, -3.5), (4.8, -3.5), (4.8, 3.5), (-4.8, 3.5)]
+            fx0, fx1, fy0, fy1 = lot['house_roof']
+            corners = [(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)]
             base = [(x + u * c - v * s - ox, y + u * s + v * c - oy) for u, v in corners]
             V = [(bx, by, z - oz) for bx, by in base] + [(bx, by, z - oz + 4.5) for bx, by in base]
             F = [(0, 1, 2, 3), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]

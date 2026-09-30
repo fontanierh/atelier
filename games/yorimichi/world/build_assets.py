@@ -414,51 +414,6 @@ def torii(name):
     return M.build()
 
 
-def house(name):
-    """minka: deep hipped kawara roof with rafters, timber frame over cream plaster, wide shoji windows, engawa"""
-    M = Mesh(name); w = MATS["Plaster"]; t = MATS["Tile"]; d = MATS["Wood"]; tile = MATS["RoofTile"]; lat = MATS["Lattice"]
-    L, D, H = 9.0, 6.4, 2.9
-    M.box((0, 0, 0.22), (L + 0.6, D + 0.6, 0.44), MATS["Stone"])
-    M.box((0, 0, 0.44 + H / 2), (L, D, H), w)
-    # timber frame: corner posts, intermediate posts, sill and lintel beams on every wall
-    for x in (-L / 2 + 0.1, -L / 4, 0, L / 4, L / 2 - 0.1):
-        for y in (-D / 2, D / 2):
-            M.box((x, y, 0.44 + H / 2), (0.22, 0.18, H), d)
-    for y in (-D / 4, 0, D / 4):
-        for x in (-L / 2, L / 2):
-            M.box((x, y, 0.44 + H / 2), (0.18, 0.22, H), d)
-    for z in (0.62, 0.44 + H - 0.12):
-        M.box((0, -D / 2, z), (L + 0.1, 0.2, 0.18), d); M.box((0, D / 2, z), (L + 0.1, 0.2, 0.18), d)
-        M.box((-L / 2, 0, z), (0.2, D + 0.1, 0.18), d); M.box((L / 2, 0, z), (0.2, D + 0.1, 0.18), d)
-    # shoji windows on the road side: wide grids
-    for x in (-L / 4 - 1.15, L / 4 + 1.15):
-        M.box((x, -D / 2 - 0.03, 1.75), (2.0, 0.06, 1.5), lat)
-        for k in range(6): M.box((x - 0.9 + k * 0.36, -D / 2 - 0.07, 1.75), (0.035, 0.03, 1.5), MATS["Paint"])
-        for k in range(4): M.box((x, -D / 2 - 0.07, 1.15 + k * 0.4), (2.0, 0.03, 0.035), MATS["Paint"])
-    M.box((0, -D / 2 - 0.03, 1.56), (1.5, 0.06, 2.0), lat)                      # door meets engawa
-    M.box((0, -D / 2 - 0.55, 0.5), (L + 0.4, 1.1, 0.12), d)                     # engawa
-    for x in (-L / 2 + 0.3, 0, L / 2 - 0.3): M.box((x, -D / 2 - 1.0, 0.25), (0.14, 0.14, 0.5), d)
-    # Reach the 56 cm porch with three ordinary risers, including the porch edge.
-    for step, y in enumerate((-D / 2 - 1.73, -D / 2 - 1.31), 1):
-        top = .56 * step / 3
-        M.box((0, y, (top - .02) / 2), (2.0, .44, top + .02), MATS["Stone"])
-    # roof: deep eaves (1.1 m), hipped, tiles UV-tiled per 0.5 m, rafters under the eave, ridge tiles
-    e = 1.15; hz = 0.44 + H; top = hz + 2.35; ridge = L / 2 - D / 2 - 0.3
-    b0, b1 = L / 2 + e, D / 2 + e
-    A = [(-b0, -b1, hz - 0.15), (b0, -b1, hz - 0.15), (b0, b1, hz - 0.15), (-b0, b1, hz - 0.15)]
-    R = [(-ridge, 0, top), (ridge, 0, top)]
-    M.quad([A[0], A[1], R[1], R[0]], tile, [(0, 0), (L * 2.4, 0), (L * 2.4, 6.5), (0, 6.5)])
-    M.quad([A[2], A[3], R[0], R[1]], tile, [(0, 0), (L * 2.4, 0), (L * 2.4, 6.5), (0, 6.5)])
-    M.quad([A[1], A[2], R[1]], tile, [(0, 0), (D * 2.4, 0), (D * 1.2, 6.5)]); M.quad([A[3], A[0], R[0]], tile, [(0, 0), (D * 2.4, 0), (D * 1.2, 6.5)])
-    M.quad([A[3], A[2], A[1], A[0]], t)                                          # underside of the eave
-    M.box((0, 0, top + 0.08), (ridge * 2 + 0.5, 0.5, 0.3), t)
-    for x in np.linspace(-b0 + 0.3, b0 - 0.3, 20):                              # rafters
-        M.box((x, -D / 2 - e / 2, hz - 0.28), (0.1, e, 0.1), d); M.box((x, D / 2 + e / 2, hz - 0.28), (0.1, e, 0.1), d)
-    M.box((0, -b1 + 0.08, hz - 0.35), (L + 2 * e, 0.16, 0.22), d)                # fascia
-    M.box((0, b1 - 0.08, hz - 0.35), (L + 2 * e, 0.16, 0.22), d)
-    return M.build()
-
-
 def leaf_mesh(name):
     """one small leaf card for the wind-blown leaf system (origin at the centre, lying in the XY plane)"""
     M = Mesh(name); rng = random.Random(77)
@@ -548,7 +503,7 @@ def main():
         "Grass_A": lambda: grass_tuft("Grass_A", 12), "Grass_B": lambda: grass_tuft("Grass_B", 13),
         "Pole": lambda: pole("Pole"), "Pole_Lamp": lambda: pole("Pole_Lamp", lamp=True),
         "Guardrail": lambda: guardrail("Guardrail"), "Lantern": lambda: lantern("Lantern"), "Torii": lambda: torii("Torii"),
-        "House": lambda: house("House"), "SkyDome": lambda: sky_dome("SkyDome"),
+        "SkyDome": lambda: sky_dome("SkyDome"),
     }
     built = {}
     for name, fn in builders.items():
