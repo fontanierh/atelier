@@ -28,7 +28,7 @@ Walkable, with collision. Counts come from `world/regions/treehouse/layout.py`.
 | Entry way | 1 | 13 level stepping stones (a flight of stone steps up the bank, no rise over 17 cm; the last, wider one against the lowest step), 8 plank steps with stringers, rope handrail on short posts, one post lantern |
 | Little hut | 1 | Plank walls on a timber frame, gable roof, doors north and south, round window, paper window; the maple trunk goes up through the roof |
 | Small huts | 3 | Map room, Kitchen, Sleeping nest: the same kit as the little hut, gable roof, door on the bridge side, round window, six-pane window |
-| Heart room | 1 | Eight walls with posts, three doors, round and six-pane windows, the big open round window, cone roof with rafters, balcony all round |
+| Heart room | 1 | A 9 m eight-sided hall beside the camphor: plaster walls 3.2 m high with dark posts and planks along the bottom, two doors on the camphor side (one for the Kitchen and Map room bridges, one for the Pulley and Chime bridges) with noren and lanterns, two paned windows, a round window onto the camphor, the big open round window, an eight-sided shingle roof with its rafters showing inside, a moss cap and a finial |
 | Boat room | 1 | Upturned rowboat as a roof: faded blue hull with a pale stripe, ribs and planks showing underneath, on four posts |
 | Slide | 1 | Pale wooden chute, one turn round the trunk, low side walls, posts to the ground, start gate on the deck, straw and leaf landing |
 | Pulley crane | 1 | Timber arm and brace, pulley wheel, rope to the ground, basket (see 3) |
@@ -38,7 +38,7 @@ Walkable, with collision. Counts come from `world/regions/treehouse/layout.py`.
 | Windows and doors | all | Round windows with a cross frame, six-pane windows, a soft glow in each pane, plank doors |
 | Trunks | 10 | Thick bark trunks with a flared base and roots; crowns are the game's own trees |
 | Canopy trees | about 130 | Tall maple, crimson, amber and ginkgo trees whose crowns stand at deck height (`world/regions/treehouse/trees.py`) |
-| Shimenawa | 1 | Thick straw rope with paper shide, on the Heart room camphor only |
+| Shimenawa | 1 | Thick straw rope with paper shide round the Heart room camphor, 2.5 m up so the camera passes under it |
 
 ## 2. The kit, repeated everywhere (script)
 
@@ -69,7 +69,7 @@ small and hanging things get none.
 |---|---|
 | Little hut | Shelf with jars of acorns and shells, pegs with a straw hat and **the backpack**, a scarf, a small lantern, a rolled rug, a box of scrolls, a crate by the door; porch: crate bench with cushion, sail awning, banner |
 | Map room | Island map on the wall, desk made from a crate with a compass, magnifying glass, lamp and rolled charts, bookshelves, a small globe, a paper kite, **the backpack**, star cushion on a patchwork rug, toy sailboat, pinned drawings |
-| Heart room | Stump table with **the brazier and kettle**, star cushions, patchwork rugs, a hammock from rope turns round the camphor to a wall peg, shelves of jars, shells and books, the island map, a kite, **the backpack**, a hanging bell, strings of round lanterns, a loft shelf with quilts high on the north side and a leaning ladder at its west end (for looks only: the player cannot climb) |
+| Heart room | A few big pieces, all against the walls, so the middle and the ways from both doors stay open: a round slab table on a rug under the front window with four cushions round it and the stump with **the brazier and kettle**; a window bench with cushions under the round window; two tall bookshelves under the island map; a hammock across a corner on wall pegs; a low chest of drawers with a plant and books under a loft with quilts, its ladder flat on the wall (for looks only: the player cannot climb); a hanging bell, framed drawings, a kite, **the backpack** and a basket of scrolls; strings of round lanterns from the king post, all above 2.9 m; a fuurin in the open round window |
 | Kitchen | **The clay stove with pot and kettle**, its iron chimney pipe, log stools round a log table, shelves of bowls, jars and baskets, a counter with a cutting board, a water barrel with a ladle, hanging herbs and persimmons, tea towels |
 | Sleeping nest | Two futons with patchwork quilts and pillows, a hammock on wall pegs along the window wall with the futons in front of it, a shelf with a picture book, a framed picture and a toy boat, a hanging lantern |
 | Boat room | Fishing net under the hull, two oars on the ribs, a lantern from the keel, crate benches with cushions, a rolled sail, a blue rug |

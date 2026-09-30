@@ -2,7 +2,7 @@
 
 A children's secret base hidden on the west hillside below the Woodland air-station trail. From the trail you see one
 small hut in a maple; through it, twelve rope bridges join ten places in the canopy: the Map room, the big Heart room
-round an old camphor, the Kitchen, the Sleeping nest, the Boat room under an upturned rowboat, a spiral slide down to
+beside an old camphor, the Kitchen, the Sleeping nest, the Boat room under an upturned rowboat, a spiral slide down to
 the forest floor, a pulley deck, a ring of wind chimes, and a lookout whose crow's nest stands over the crowns and
 looks out to the sea.
 
