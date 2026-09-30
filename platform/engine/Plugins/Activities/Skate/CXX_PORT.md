@@ -141,10 +141,11 @@ blending and physical pose adjustments remain separate migration tasks.
 `AnimationPlayback.*` ports clip clocks, event windows and curve sampling, attribute blending/mirroring,
 channel fade/resurrection state, frame selection and decoded-pose blending. It reuses the native sample
 and metadata readers. Retained payload lanes and duplicate attributes preserve their original behavior.
-Animation tree instances, host services, procedural pose adjustments and physical feedback remain separate
-work. `AnimationPlaybackParameters.*` preserves parameter sources/defaults and PlayAnimation lifecycle
-requests through an explicit service interface. That interface still needs the concrete animation tree
-service; a tested request facade does not establish full animation execution.
+`AnimationPlaybackParameters.*` preserves parameter sources/defaults and PlayAnimation lifecycle
+requests through an explicit service interface. `AnimationTrees.*` constructs every authored tree and
+preserves phase/blend/selection clocks, deferred selection, transition insertion/pruning, bind-pose flags
+and the main-tree owner lifecycle. Channels, the live graph host, pose evaluation and physical feedback
+remain separate work; matching tree commands does not establish full animation execution.
 
 ## Validation completed
 
@@ -195,6 +196,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Animation parameters and PlayAnimation requests: 7,947 cases and 9,319,384 exact bytes, including
   callback interleaving, source/default/normalized values, variant precedence, consumed transition
   overrides, refusal/fallback/error handling and begin/update/end lifecycles.
+- Animation trees: 4,881 cases and 4,633,249 exact bytes, including all 4,643 authored tree lookups,
+  112 synthetic trees, 120 owner lifecycle sequences and six pending-posture sequences. Recursive
+  clocks, pose commands, attributes, partial error output and construction behavior match the original.
+  Owner comparisons use an empty original channel container; live channel integration is still pending.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
