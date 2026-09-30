@@ -25,8 +25,8 @@ Walkable, with collision. Counts come from `world/regions/treehouse/layout.py`.
 | Decks | 10 | Plank strips with gaps, moss in the corners, dark joists and knee braces, a thick rim board |
 | Rails | all deck edges | Square dark posts, two timber rails, rope lashings wound round each post top |
 | Rope bridges | 12 | Plank floor, two thick rope handrails, thin rope or stick balusters, rope suspenders, a lantern post at each end |
-| Entry way | 1 | 13 level stepping stones (a flight of stone steps up the bank, no rise over 17 cm; the last, wider one against the lowest step), 8 plank steps with stringers, rope handrail on short posts, one post lantern |
-| Little hut | 1 | Plank walls on a timber frame, gable roof, doors north and south, round window, paper window; the maple trunk goes up through the roof |
+| Entry way | 1 | 5 level stepping stones from the trail (a flight of stone steps up the bank, no rise over 17 cm; the last, wider one against the lowest step), 9 plank treads 1.4 m wide with stringers, rope handrails on short posts just outside the treads, one post lantern beside the first stone |
+| Little hut | 1 | 4.8 x 6.1 m beside the maple: plank walls 3 m high on a timber frame, open to the rafters under a gable roof whose ridge runs north-south, 2.5 m doors in both gables with plank sliding doors parked open beside them and a lantern on a bracket over head height, a round window toward the maple, a six-pane window over the window seat |
 | Small huts | 3 | Map room, Kitchen, Sleeping nest: the same kit as the little hut, gable roof, door on the bridge side, round window, six-pane window |
 | Heart room | 1 | Eight walls with posts, three doors, round and six-pane windows, the big open round window, cone roof with rafters, balcony all round |
 | Boat room | 1 | Upturned rowboat as a roof: faded blue hull with a pale stripe, ribs and planks showing underneath, on four posts |
@@ -49,12 +49,12 @@ These give the house one look. They are in nearly every reference.
 | Paper lanterns | 60 | Two shapes: round hanging ones (inside, on strings) and upright ones with wooden caps (rail posts, bridge ends). Glow colour |
 | Glass floats in rope nets | 25 | Teal-green sphere, dark rope net lines, hanging from posts and eaves |
 | Fuurin chimes | 20 | Clear glass bell, a paper tail; 12 on the chime hoop, the rest in windows and on the crow's nest |
-| Noren | 8 | Split cloth in doorways: cream outside, indigo with a white maple leaf inside and at the little hut |
+| Noren | 8 | Split cloth in doorways: cream outside, indigo with a white maple leaf inside and at the little hut's north door |
 | Crates | 30 | Plain crates, crate planters with flowers, a crate bench with an indigo cushion |
 | Potted plants | 15 | Clay pots with a few leaf cards |
 | Rope coils | 8 | On decks by the bridges |
 | Buckets and barrels | 6 | Wooden staves and hoops, one with a ladle |
-| Sail awnings | 4 | Cream triangles tied between posts (little hut porch, sleeping nest, pulley deck, crow's nest) |
+| Sail awnings | 3 | Cream triangles tied between posts (sleeping nest, pulley deck, crow's nest) |
 | Flags and banners | 4 | Indigo with a white maple leaf (crow's nest flag, banners on the lookout and the little hut) |
 | Quilts on rails | 4 | Patchwork squares, indigo, cream and red, over the Sleeping nest rail |
 | Persimmon strings | 3 | Orange fruit on strings under the Kitchen eaves |
@@ -67,7 +67,7 @@ small and hanging things get none.
 
 | Place | Items |
 |---|---|
-| Little hut | Shelf with jars of acorns and shells, pegs with a straw hat and **the backpack**, a scarf, a small lantern, a rolled rug, a box of scrolls, a crate by the door; porch: crate bench with cushion, sail awning, banner |
+| Little hut | A genkan, everything against the walls and a 3.5 m clear middle from door to door: a shoe cupboard of children's geta, zori, rain boots and sneakers with a lantern on top, a bench under a peg rail with a straw hat, a red scarf, **the backpack** and a rope coil; the island map over a treasure chest, a basket of rolled maps, crates and a rolled rug; a window seat with cushions, a shelf of jars of acorns and shells; an umbrella stand; a kite and the children's drawings high on the gables; a mat at the north door, a rug, a big lantern from the ridge. Porch: crate bench with cushions against the south wall, a post lantern and a planter in the far corner, a potted plant by the landing, the banner on the east wall, a woodpile on the west wall, a name board with a red maple leaf over the north door; nothing on the landing or the way to the bridge |
 | Map room | Island map on the wall, desk made from a crate with a compass, magnifying glass, lamp and rolled charts, bookshelves, a small globe, a paper kite, **the backpack**, star cushion on a patchwork rug, toy sailboat, pinned drawings |
 | Heart room | Stump table with **the brazier and kettle**, star cushions, patchwork rugs, a hammock from rope turns round the camphor to a wall peg, shelves of jars, shells and books, the island map, a kite, **the backpack**, a hanging bell, strings of round lanterns, a loft shelf with quilts high on the north side and a leaning ladder at its west end (for looks only: the player cannot climb) |
 | Kitchen | **The clay stove with pot and kettle**, its iron chimney pipe, log stools round a log table, shelves of bowls, jars and baskets, a counter with a cutting board, a water barrel with a ladle, hanging herbs and persimmons, tea towels |
