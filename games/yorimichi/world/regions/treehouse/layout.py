@@ -19,9 +19,9 @@ from treehouse.screen import screen, sightlines, summary
 # (slide, pulley, chimes, lookout). The rooms stand beside their trunk, never round it (room()), on a deck that is a
 # chamfered rectangle round both. crown: an existing painted-card tree (no collision) seated over the trunk.
 PLACES = {
-    'entry':   dict(xy=(-135.0, 198.5), deck=77.0, trunk=.72, kind='entry', crown=('Tree_Maple_A', 1.6),
+    'entry':   dict(xy=(-135.0, 198.5), deck=76.7, trunk=.72, kind='entry', crown=('Tree_Maple_A', 1.6),
                     label='Little hut', role='the only part seen from the trail; its south porch is the reveal'),
-    'library': dict(xy=(-144.0, 185.0), deck=75.8, trunk=.52, kind='hut', crown=('Tree_Ginkgo', 1.35),
+    'library': dict(xy=(-144.0, 185.0), deck=76.1, trunk=.52, kind='hut', crown=('Tree_Ginkgo', 1.35),
                     label='Map room', role='maps, books and treasures; first stop, first junction'),
     'heart':   dict(xy=(-131.0, 168.0), deck=74.2, trunk=1.15, kind='heart', crown=('Tree_Ginkgo', 1.9),
                     label='Heart room', role='the big hall beside the old camphor with the shimenawa rope'),
@@ -53,8 +53,9 @@ DOOR = (1.3, 2.5)
 # wall; porch: past each door; chamfer: the deck's corners
 HUT_DECK = dict(gap=.85, back=2.4, front=1.5, porch=2.4, chamfer=1.5)
 # The heart hall: an octagon beside the camphor (apothem, wall height, eave overhang, eave to camphor), its doors in
-# the two flats that face back toward the camphor, and the deck round both (back, front, side, chamfer).
-HALL = dict(apothem=4.5, wall=3.2, over=.8, gap=.35, back=2.6, front=1.4, side=1.7, chamfer=2.0)
+# the two flats that face back toward the camphor, and the deck round both (back, front, side, chamfer). way: the
+# clear way past the camphor from a bridge that comes in behind it (aim()).
+HALL = dict(apothem=4.5, wall=3.2, over=.8, gap=.35, back=2.6, front=1.4, side=1.7, chamfer=2.0, way=1.4)
 # The boat room: the hull upside down on posts beside its trunk, long side across, gunwale high enough to walk under.
 BOAT = dict(length=7.0, beam=3.2, gunwale=2.6, gap=.9, back=2.4, front=1.5, side=1.4, chamfer=1.3)
 # The little hut stands east of its maple, the trunk out on the deck past the west eave. World axes, metres from the
@@ -73,7 +74,11 @@ STONES = dict(stride=1.3, least=.4, rise=.17, proud=.02)
 FOOT_STONE = (.6, .4)
 STAIR_WIDTH = 1.4
 BRIDGE_WIDTH = 1.4
-RISE, TREAD = .19, .29                  # every stair in the tree house (the pawn steps 45 cm)
+# A bridge's end posts stand on the deck's edge, splayed this far out past its handrails so they and their lanterns
+# stay off the way onto the deck; the mouth between them is planked out to the edge. A bridge that would leave a
+# deck's edge more than 90 - SQUARE degrees off square lands instead on the edge that faces the other end.
+BRIDGE_SPLAY, SQUARE = .35, 50.
+RISE, TREAD = .18, .29                  # every stair in the tree house, at most (the pawn steps 45 cm)
 SLIDE = dict(width=1.0, slope=30.)      # the chute runs 0.95 m outside the slide tree's deck
 CROW = dict(ri=.72, ro=1.85, R=2.7)
 ROOF_TOP = {'heart': 6.8, 'hut': 5.6, 'entry': 5.2, 'boat': 3.8}   # highest roof above the deck
@@ -211,14 +216,63 @@ def ray_exit(poly, angle, origin=(0., 0.)):
 
 
 def aim(p, other):
-    """The point a bridge to `other` is aimed through, relative to the trunk: the trunk itself, or on a hut's deck the
+    """The point a bridge to `other` is aimed through, relative to the trunk: the trunk itself; on a hut's deck the
     point beside the trunk in line with the gable wall on the other place's side, so the bridge lands on the corner of
-    that door's porch with the trunk off to one side of the way in, not straight ahead."""
-    if p['kind'] != 'hut':
-        return np.zeros(2)
-    a = math.radians(p['room']['angle']); v = np.array([-math.sin(a), math.cos(a)])
-    s = 1 if (np.array(other['xy'], float)-np.array(p['xy'], float))@v >= 0 else -1
-    return v*s*HUT[0]/2
+    that door's porch with the trunk off to one side of the way in, not straight ahead; on the hall's deck, for a
+    bridge from behind the camphor, a point beside it on that bridge's side, so the landing looks past the camphor
+    at the hall and the way to the door on that side goes by it with HALL['way'] to spare."""
+    d = np.array(other['xy'], float)-np.array(p['xy'], float); d /= np.linalg.norm(d)
+    if p['kind'] == 'hut':
+        a = math.radians(p['room']['angle']); v = np.array([-math.sin(a), math.cos(a)])
+        return v*(1 if d@v >= 0 else -1)*HUT[0]/2
+    if p['kind'] == 'heart':
+        a = math.radians(p['open']); u = np.array([math.cos(a), math.sin(a)]); v = np.array([-u[1], u[0]])
+        if d@u < -.7:
+            return v*(1 if d@v >= 0 else -1)*(p['trunk']*1.1+HALL['way']*.85)
+    return np.zeros(2)
+
+
+def along_exit(poly, E, o, v, off):
+    """Where the line E + v*off + o*s leaves the convex polygon going along o: the largest s at which it crosses
+    the boundary (negative when that is behind E), or None when it misses the polygon."""
+    P0 = np.asarray(E, float)[:2]+np.asarray(v, float)*off; o = np.asarray(o, float); best = None
+    for a, b in zip(poly, poly[1:]+poly[:1]):
+        a, b = np.asarray(a, float), np.asarray(b, float); e = b-a
+        m = np.array([[o[0], -e[0]], [o[1], -e[1]]])
+        if abs(np.linalg.det(m)) < 1e-12: continue
+        s, t = np.linalg.solve(m, a-P0)
+        if -1e-9 <= t <= 1+1e-9 and (best is None or s > best): best = float(s)
+    return best
+
+
+def mouth_half():
+    """A bridge's end posts, off its middle line."""
+    return BRIDGE_WIDTH/2+.07+BRIDGE_SPLAY
+
+
+def square_landing(poly, q, target):
+    """A landing on the convex deck poly (relative to its trunk) for a bridge from q toward target: q itself if the
+    bridge leaves q's edge within 90 - SQUARE degrees of square, or else the point, nearest the bridge's line, of the
+    edge that faces the target best (a chamfer too short for the mouth still takes it: the mouth's posts then stand on
+    the edges either side), whichever of those the bridge leaves most squarely."""
+    q = np.asarray(q, float); target = np.asarray(target, float); n = len(poly)
+
+    def crossing(q):          # sine of the angle the bridge from q leaves q's edge at (negative: back over the deck)
+        d = (target-q)/np.linalg.norm(target-q)
+        k = min(range(n), key=lambda i: seg_distance(q[0], q[1], poly[i], poly[(i+1) % n])[0])
+        e = np.asarray(poly[(k+1) % n], float)-np.asarray(poly[k], float); e /= np.linalg.norm(e)
+        return e[1]*d[0]-e[0]*d[1]
+    if crossing(q) >= math.sin(math.radians(SQUARE)): return q
+    best = q
+    for _ in range(2):
+        d = (target-best)/np.linalg.norm(target-best); tries = [best]
+        for i in range(n):
+            a, b = np.asarray(poly[i], float), np.asarray(poly[(i+1) % n], float); ln = float(np.linalg.norm(b-a))
+            e = (b-a)/ln; k = min(ln/2, .8); m = np.array([[d[0], -e[0]], [d[1], -e[1]]])
+            s = float(np.linalg.solve(m, a-best)[1]) if abs(np.linalg.det(m)) > 1e-9 else ln/2
+            tries += [a+e*min(max(s, k), ln-k), a+e*ln/2]
+        best = max(tries, key=crossing)
+    return best
 
 
 def heading(a, b):
@@ -262,8 +316,15 @@ def plan(h):
         world = {}
         for p, other in ((A, B), (B, A)):
             if p['kind'] != 'hut':
-                link = next(l for l in p['links'] if l['to'] == other['name'])
-                world[p['name']] = np.array(p['xy'])+ray_exit(p['poly'], link['angle'])
+                link = next(l for l in p['links'] if l['to'] == other['name']); o = aim(p, other)
+                t = np.array(other['xy'])+aim(other, p)-np.array(p['xy'])
+                ang = link['angle'] if not o.any() else math.degrees(math.atan2(*(t-o)[::-1]))
+                world[p['name']] = np.array(p['xy'])+ray_exit(p['poly'], ang, o)
+        for p, other in ((A, B), (B, A)):      # too far off square: onto the edge that faces the other end
+            if p['kind'] != 'hut':
+                t = world[other['name']] if other['name'] in world else np.array(other['xy'])+aim(other, p)
+                world[p['name']] = np.array(p['xy'])+square_landing(p['poly'], world[p['name']]-np.array(p['xy']),
+                                                                     t-np.array(p['xy']))
         for p, other in ((A, B), (B, A)):
             if p['kind'] == 'hut':
                 o = aim(p, other); ow = np.array(p['xy'])+o
@@ -276,10 +337,22 @@ def plan(h):
             ends.append([float(world[p['name']][0]), float(world[p['name']][1]), p['deck']])
             link['local'] = [round(float(q[0]), 4), round(float(q[1]), 4)]
         span = float(math.hypot(ends[1][0]-ends[0][0], ends[1][1]-ends[0][1]))
-        sag = .032*span
+        # a sag of 3.2 % of the span, less where it would tilt an end more than 1 in 4 (a short bridge between
+        # decks at different heights hangs straight)
+        dz = abs(ends[1][2]-ends[0][2]); sag = min(.032*span, max(0., (.25*span-dz)/4))
         mid = [(ends[0][0]+ends[1][0])/2, (ends[0][1]+ends[1][1])/2]
+        # the end posts on the deck's edge where the lines mouth_half() either side of the bridge leave it: at the
+        # start, left and right of the way from start to end, then at the end; a paper lantern on the first and last
+        u = np.array(ends[1][:2])-np.array(ends[0][:2]); u /= np.linalg.norm(u); v = np.array([-u[1], u[0]]); posts = []
+        for p, E, o in ((A, ends[0], u), (B, ends[1], -u)):
+            poly = [(p['xy'][0]+x, p['xy'][1]+y) for x, y in p['poly']]
+            for f in (1, -1):
+                s = along_exit(poly, E, o, v, f*mouth_half())
+                q = np.array(E[:2])+v*f*mouth_half()+o*(s if s is not None else 0.)
+                posts.append([round(float(q[0]), 3), round(float(q[1]), 3), p['deck']])
         bridges.append(dict(a=a, b=b, start=ends[0], end=ends[1], span=round(span, 3), sag=round(sag, 3),
-                            clearance=round((ends[0][2]+ends[1][2])/2-sag-ground(h, *mid), 2)))
+                            clearance=round((ends[0][2]+ends[1][2])/2-sag-ground(h, *mid), 2), posts=posts,
+                            lanterns=[posts[0], posts[3]]))
     stones, entry_stairs = entry_way(h, places['entry'])
     slide = slide_path(h, places['slide'])
     L = places['lookout']
@@ -324,7 +397,7 @@ def entry_way(h, E):
                      for k in range(n-1)), default=1.)
         return fy, zf, rise, clear
     fits = {n: fit(n) for n in range(2, 25)}
-    good = [n for n, f in fits.items() if f[2] <= RISE*1.06 and f[3] >= .02]
+    good = [n for n, f in fits.items() if f[2] <= RISE and f[3] >= .02]
     n = min(good) if good else max(fits, key=lambda n: fits[n][3])
     fy, zf, rise, _ = fits[n]
     path = [np.array(TRAIL_STONE, float), np.array([x, fy])]
@@ -611,7 +684,7 @@ def integrate(world, h):
     world['treehouse']['grade'] = dict(center=[*((lo+hi)/2).round(2).tolist(), round(float(np.mean(decks)), 2)],
                                        extent=[*((hi-lo)/2).round(2).tolist(), 45.], blend=14., tint=[1.04, .97, .88],
                                        saturation=1.2, contrast=1.08, bloom=.9)
-    world['shots'] += [[-128.5, 214.5, 75.8, -118., -6.], [-135.5, 195.0, 78.6, -103., -10.]]
+    world['shots'] += [[-128.5, 214.5, 75.8, -118., -6.], [-135.5, 195.0, 78.3, -103., -10.]]
     out = yori.OUT/'treehouse'; out.mkdir(parents=True, exist_ok=True)
     (out/'layout.json').write_text(json.dumps(world['treehouse'], indent=1)+'\n')
     (out/'removed.json').write_text(json.dumps(gone)+'\n')

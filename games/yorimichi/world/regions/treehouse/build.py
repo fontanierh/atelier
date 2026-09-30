@@ -577,55 +577,159 @@ def deck_frame(m, d, p):
 
 
 def gaps_for(p, pl, extra=()):
-    x0, y0 = p['xy']; hw = L.BRIDGE_WIDTH/2+.1
-    return [(x0+l['local'][0], y0+l['local'][1], hw) for l in p['links']]+list(extra)
+    """Where the deck's railing opens: at each bridge's mouth, a circle round its landing out past its end posts."""
+    out = []
+    for b in pl['bridges']:
+        for end, name in enumerate((b['a'], b['b'])):
+            if name != p['name']: continue
+            E = np.array((b['start'], b['end'])[end][:2], float)
+            r = max(float(np.linalg.norm(np.array(q[:2])-E)) for q in b['posts'][2*end:2*end+2])+.08
+            out.append((E[0], E[1], r))
+    return out+list(extra)
 
 
 # ---------------------------------------------------------------------------------------------- bridges
 
-def bridge(m, d, b):
-    A, B = np.array(b['start'], float), np.array(b['end'], float); W = L.BRIDGE_WIDTH
-    dd = B[:2]-A[:2]; u = dd/np.linalg.norm(dd); v = np.array([-u[1], u[0]])
+def half_plane(poly, a, e, keep):
+    """A convex polygon cut to one side of the line through a along e: keep 1 its left, -1 its right."""
+    out, n = [], len(poly)
+    for i in range(n):
+        P, Q = poly[i], poly[(i+1) % n]
+        sp = keep*(e[0]*(P[1]-a[1])-e[1]*(P[0]-a[0])); sq = keep*(e[0]*(Q[1]-a[1])-e[1]*(Q[0]-a[0]))
+        if sp >= 0: out.append(P)
+        if sp*sq < 0: out.append(P+(Q-P)*sp/(sp-sq))
+    return out
 
-    def at(t, off=0., dz=0.):
-        q = A+(B-A)*t; q[2] += -4*b['sag']*t*(1-t)+dz; q[:2] += v*off
-        return q
-    n = max(2, round(b['span']/.27))
+
+def minus(poly, hole):
+    """A convex polygon less a convex counter-clockwise one, as disjoint convex pieces."""
+    pieces, rest = [], [np.asarray(q, float) for q in poly]
+    for i in range(len(hole)):
+        a = np.asarray(hole[i], float); e = np.asarray(hole[(i+1) % len(hole)], float)-a
+        out = half_plane(rest, a, e, -1)
+        if len(out) >= 3: pieces.append(out)
+        rest = half_plane(rest, a, e, 1)
+        if len(rest) < 3: break
+    return pieces
+
+
+def grown(poly, d):
+    """A convex counter-clockwise polygon with every edge moved d outward."""
+    n = len(poly); lines = []
+    for i in range(n):
+        a, b = np.asarray(poly[i], float), np.asarray(poly[(i+1) % n], float); e = (b-a)/np.linalg.norm(b-a)
+        lines.append((a+np.array([e[1], -e[0]])*d, e))
+    out = []
+    for (a, e), (c, f) in zip(lines[-1:]+lines[:-1], lines):
+        t = np.linalg.solve(np.array([[e[0], -f[0]], [e[1], -f[1]]]), c-a)[0]; out.append(a+e*t)
+    return out
+
+
+def area(poly):
+    return abs(sum(poly[i-1][0]*poly[i][1]-poly[i][0]*poly[i-1][1] for i in range(len(poly))))/2
+
+
+def bridge_z(b, S):
+    """The planks' top S metres along the bridge from its start (level on the decks past its ends)."""
+    t = min(max(S/b['span'], 0.), 1.)
+    return b['start'][2]+(b['end'][2]-b['start'][2])*t-4*b['sag']*t*(1-t)
+
+
+def mouth(b, P, end):
+    """A bridge's end (0: at the start, on b['a']'s deck): the landing E, o along the bridge off the deck, v the
+    bridge's left, the deck (world, counter-clockwise), the end posts (left, right) as (across, along o) from E on the
+    deck's edge (layout: splayed past the handrails), and sj, where the handrails from them meet the bridge's."""
+    A, B = np.array(b['start'], float), np.array(b['end'], float)
+    u = (B-A)[:2]/np.linalg.norm((B-A)[:2]); v = np.array([-u[1], u[0]])
+    name, E, o = (b['a'], A, u) if end == 0 else (b['b'], B, -u)
+    posts = [(float((np.array(q[:2])-E[:2])@v), float((np.array(q[:2])-E[:2])@o)) for q in b['posts'][2*end:2*end+2]]
+    return E, o, v, world_poly(P[name]), posts, max(0., posts[0][1], posts[1][1])+.9
+
+
+def mouth_planks(m, b, P, end):
+    """The mouth planked out to the deck's edge: between the edge, the line across the landing and the two
+    handrails' way in from the splayed posts, less the deck and the bridge's own planks, in strips on the planks'
+    rhythm, level on the deck and following the bridge past it; a board under each side. They stop 5 cm off the
+    deck, clear of its rim boards (which stand 4.5 cm out, a little under the deck's top)."""
+    E, o, v, poly, ((ol, sl), (orr, sr)), sj = mouth(b, P, end)
+    W = L.BRIDGE_WIDTH; n = max(2, round(b['span']/.27)); g = b['span']/n; lo = min(sl, sr, 0.)-.05
+    X = lambda off, s: E[:2]+v*off+o*s
+    M = ccw([X(ol, sl), X(ol, lo), X(orr, lo), X(orr, sr), X(-W/2, sj), X(W/2, sj)])
+    walk = ccw([X(-W/2, 0), X(W/2, 0), X(W/2, b['span']), X(-W/2, b['span'])])
+    deck_ccw = grown(ccw(poly), .05); ph = 0. if end == 0 else .18
+    for j in range(math.floor(lo/g)-1, math.ceil(sj/g)+1):
+        s0, s1 = (j+ph)*g, (j+ph+.82)*g
+        strip = ccw([X(-3, s0), X(3, s0), X(3, s1), X(-3, s1)])
+        piece = clip(strip, M)
+        if len(piece) < 3: continue
+        S = (s0+s1)/2 if end == 0 else b['span']-(s0+s1)/2; z = bridge_z(b, S)
+        for q in minus(piece, deck_ccw):
+            for r in minus(q, walk):
+                if area(r) < 5e-4: continue
+                with m.use('wood_plank', grain=(v[0], v[1], 0), jitter=True):
+                    prism(m, r, z-.05, z, vary(PLANK, .14), vary(DARK, .1))
+    for off, s in ((ol, sl), (orr, sr)):
+        a = X(off, s); b_ = X(math.copysign(W/2-.1, off), sj)
+        Sa, Sb = (s, sj) if end == 0 else (b['span']-s, b['span']-sj)
+        board(m, (*a, bridge_z(b, Sa)-.05), (*b_, bridge_z(b, Sb)-.05), .08, .1, DARK, 'wood_timber')
+
+
+def bridge(m, d, b, P):
+    """A plank bridge with rope handrails, sagging between its landings; its ends' posts stand on the decks' edges
+    splayed out past the handrails (layout), the handrails come in from them to the bridge, and the mouths are
+    planked out to the edge (mouth_planks())."""
+    A, B = np.array(b['start'], float), np.array(b['end'], float); W = L.BRIDGE_WIDTH; span = b['span']
+    dd = B[:2]-A[:2]; u = dd/np.linalg.norm(dd); v = np.array([-u[1], u[0]])
+    ends = [mouth(b, P, e) for e in (0, 1)]; sj0, sj1 = ends[0][5], span-ends[1][5]    # the joins, from the start
+
+    def pt(S, off=0., dz=0.):
+        return np.array([*(A[:2]+u*S+v*off), bridge_z(b, S)+dz])
+    n = max(2, round(span/.27)); g = span/n
     for k in range(n):
-        q0, q1 = at(k/n), at((k+.82)/n); mid = (q0+q1)/2
+        q0, q1 = pt(k*g), pt((k+.82)*g); mid = (q0+q1)/2
         # boards run across the bridge: grain along v
-        w = W*R.uniform(.95, 1.); a_ = mid-np.r_[v*w/2, 0]; b_ = mid+np.r_[v*w/2, 0]; th = float(np.linalg.norm(q1-q0))
+        w = W*R.uniform(.95, 1.); a_ = mid-np.r_[v*w/2, 0]; b_ = mid+np.r_[v*w/2, 0]
         with m.use('wood_plank', grain=(v[0], v[1], 0), jitter=True):
-            sd = np.r_[u*th/2, 0]; dn = np.array([0, 0, .05]); sl = (q1-q0)/2
+            dn = np.array([0, 0, .05]); sl = (q1-q0)/2
             hexa(m, [a_-sl-dn, b_-sl-dn, b_+sl-dn, a_+sl-dn, a_-sl, b_-sl, b_+sl, a_+sl], vary(PLANK, .14))
-            _ = sd
-    ts = np.linspace(0, 1, 25)
+    for e in (0, 1): mouth_planks(m, b, P, e)
     for side in (-1, 1):
-        for t0, t1 in zip(ts[:-1], ts[1:]):
-            board(m, at(t0, side*(W/2-.1), -.05), at(t1, side*(W/2-.1), -.05), .08, .1, DARK, 'wood_timber')
-        off = side*(W/2+.03)
-        tube(m, [at(t, off, .95) for t in ts], .05, ROPE_LT, 8)
-        tube(m, [at(t, off, .5) for t in ts], .034, ROPE_LT, 6)
-        for e in (0, 1):
-            q = at(e, side*(W/2+.07))
+        off = side*(W/2-.1)       # the stringers, from deck edge to deck edge
+        S0 = L.along_exit(ends[0][3], A, u, v, off); S1 = L.along_exit(ends[1][3], B, -u, v, off)
+        S0 = 0. if S0 is None else S0; S1 = span-(0. if S1 is None else S1)
+        Ss = [S0]+[S for S in np.linspace(0, span, 25) if S0+.05 < S < S1-.05]+[S1]
+        for s0, s1 in zip(Ss[:-1], Ss[1:]):
+            board(m, pt(s0, off, -.05), pt(s1, off, -.05), .08, .1, DARK, 'wood_timber')
+        k = 0 if side > 0 else 1          # this side's post at each end (layout: left, right)
+        p0, p1 = np.array(b['posts'][k], float), np.array(b['posts'][2+k], float)
+        rail = side*(W/2+.03); mids = np.linspace(sj0, sj1, max(2, round((sj1-sj0)/.4)))
+        for zr, r in ((.95, .05), (.5, .034)):
+            pts = [p0+[0, 0, zr]]+[pt(S, rail, zr) for S in mids]+[p1+[0, 0, zr]]
+            tube(m, pts, r, ROPE_LT, 8 if r > .04 else 6)
+        for q in (p0, p1):
             with m.at((q[0], q[1], 0), math.degrees(math.atan2(u[1], u[0]))):     # square to the bridge
                 post(m, 0, 0, q[2]-.35, q[2]+1.18, .14, WOOD)
                 with m.use('wood_timber'):
                     m.box((0, 0, q[2]+1.21), (.18, .18, .05), DARK)
             ring(d, q[:2], .085, q[2]+.95, .02, ROPE_LT, 8)
-        nk = max(3, round(b['span']/.55))
+        nk = max(3, round(span/.55))
+        inside = lambda S: sj0+.1 < S < sj1-.1
         for k in range(1, nk):          # suspender ropes from the handrail down to the stringer
-            q = at(k/nk, off); tube(d, [q+[0, 0, -.04], q+[0, 0, .95]], .012, ROPE, 4)
-            if k % 2: tube(d, [at(k/nk, off, .5), at((k+1)/nk, off, .95)], .01, ROPE, 4)
-    # Hanging lanterns along one handrail, a float here and there, a lantern post at each end.
-    nl = max(1, round(b['span']/3.4))
+            S = span*k/nk
+            if not inside(S): continue
+            q = pt(S, rail); tube(d, [q+[0, 0, -.04], q+[0, 0, .95]], .012, ROPE, 4)
+            if k % 2 and inside(span*(k+1)/nk): tube(d, [pt(S, rail, .5), pt(span*(k+1)/nk, rail, .95)], .01, ROPE, 4)
+    # Hanging lanterns along one handrail, a float here and there, a paper lantern on the first and last post.
+    nl = max(1, round(span/3.4))
     for k in range(1, nl+1):
-        t = k/(nl+1); q = at(t, (W/2+.03)*(1 if k % 2 else -1), .95-.36)
+        S = span*k/(nl+1)
+        if not sj0 < S < sj1: continue
+        q = pt(S, (W/2+.03)*(1 if k % 2 else -1), .95-.36)
         chochin(d, q[0], q[1], q[2], .2, .12) if k % 3 else glass_float(d, q[0], q[1], q[2]+.06, .1, .12)
-    for e, side in ((0, 1), (1, -1)):
-        q = at(e, side*(W/2+.07)); andon(d, q[0], q[1], q[2]+1.24, .24, 260)
-    for _ in range(max(2, int(b['span']/2))):
-        t = R.uniform(.05, .95); q = at(t, R.uniform(-.4, .4)); maple_leaf(d, q[0], q[1], q[2]+.006, R.uniform(.06, .09))
+    for q in b['lanterns']:
+        andon(d, q[0], q[1], q[2]+1.24, .24, 260)
+    for _ in range(max(2, int(span/2))):
+        q = pt(R.uniform(.05, .95)*span, R.uniform(-.4, .4)); maple_leaf(d, q[0], q[1], q[2]+.006, R.uniform(.06, .09))
 
 
 # ---------------------------------------------------------------------------------------------- walls, roofs
@@ -750,7 +854,9 @@ def moss_pad(d, S, nrm, am, bm, ra, rb, h, n=9):
 def shingled(m, d, quad, rows=None, moss=.25, tiles=.1, ridge=None, phase=0):
     """A roof plane of overlapping shingle courses: quad = eave-left, eave-right, top-right, top-left.
     Each course is a thin slab lapping the one below, split into runs of shingle or blue tile; on some runs a
-    cushion of moss (more along the eaves and the ridge)."""
+    cushion of moss (more along the eaves and the ridge). ridge: a list shared by the slopes that meet at a ridge
+    (the top edge): the top course's cuts go into it, and none comes within 6 cm of one already there, so the two
+    slopes' run ends, which meet at the ridge, never lie in one plane."""
     q = [np.asarray(x, float) for x in quad]
     slope = float(np.linalg.norm((q[3]+q[2])/2-(q[0]+q[1])/2)); rows = rows or max(3, round(slope/.34))
     P = lambda a, b: q[0]+(q[1]-q[0])*a+(q[3]-q[0])*b+(q[2]-q[1]-q[3]+q[0])*a*b
@@ -765,9 +871,11 @@ def shingled(m, d, quad, rows=None, moss=.25, tiles=.1, ridge=None, phase=0):
         ext = .008*((i+phase) % 2)/width    # every other row a little past the sides: lapping rows' ends not in one plane
         # runs at least 25 cm long (a sliver's two ends would lie in its neighbours' end faces), and no cut within
         # 4 cm of one in the row below (their ends overlap where the rows lap)
-        inner = []
+        inner = []; top = ridge is not None and i == rows-1
         for a in [R.uniform(.1, .9) for _ in range(runs-1)]:
+            if top and any(np.linalg.norm(P(a, 1.)-r) < .06 for r in ridge): continue
             if all(abs(a-x)*width > .25 for x in inner) and all(abs(a-x)*width > .04 for x in prev): inner.append(a)
+        if top: ridge += [P(a, 1.) for a in inner]
         cuts = sorted([-ext, 1.+ext]+inner); prev = inner
         for a0, a1 in zip(cuts[:-1], cuts[1:]):
             c = R.random(); edge = i == 0 or i == rows-1
@@ -798,11 +906,11 @@ def shingled(m, d, quad, rows=None, moss=.25, tiles=.1, ridge=None, phase=0):
 
 def gable_roof(m, d, length, width, eave, top, over=.36):
     """Ridge along local x; eaves along +-y. length and width are the walls' outside sizes."""
-    l2, w2 = length/2+over, width/2+over
+    l2, w2 = length/2+over, width/2+over; ridge = []
     for s in (-1, 1):
         quad = [(-l2, s*w2, eave), (l2, s*w2, eave), (l2, 0, top), (-l2, 0, top)]
         if s < 0: quad = [quad[1], quad[0], quad[3], quad[2]]
-        shingled(m, d, quad, phase=int(s < 0))     # the two sides' top rows meet at the ridge: opposite phases
+        shingled(m, d, quad, phase=int(s < 0), ridge=ridge)     # the top rows meet at the ridge: opposite phases
         board(m, (-l2, s*w2, eave+.02), (l2, s*w2, eave+.02), .1, .16, DARK, 'wood_timber')
         for k in range(5):                 # rafters seen from inside; a pair meets at the ridge side by side
             x = -length/2+length*k/4+s*.004
@@ -991,8 +1099,8 @@ def furnish_kitchen(m, d, c, ang, side, W):
             d.lathe(tuple(top+rot((lx, ly), ang)), [(0, .01), (.02, r*.6), (r*.7, r), (r*.75, r*.95)], R.choice([(.32, .40, .55), (.62, .58, .50)]), 10)
     q = Hl(-1.6, 2.2, .8); basket(d, q[0], q[1], q[2], .15, .16, fruit=4)
     q = Hl(-1.6, 1.75); crate(m, q[0], q[1], z, (.45, .4, .36), ang+4)          # under the table, between its legs
-    # sacks of rice and a basket by the front corner (the lane and the door stay clear)
-    for lx, ly, r, hh in ((1.45, -2.95, .22, .52), (1.9, -3.0, .2, .46), (1.62, -2.5, .19, .42)):
+    # sacks of rice in a row against the outer wall under the six-pane window, away from both doors
+    for lx, ly, r, hh in ((d2-.27, -2.15, .22, .52), (d2-.25, -1.68, .2, .46), (d2-.24, -1.25, .19, .42)):
         sack(d, Hl(lx, ly), r, hh)
     # outer wall (s = y+w2): a shelf between the windows; persimmons and herbs hung in front of the six-pane window
     o, u, n = frame3(outer, z)
@@ -1062,20 +1170,15 @@ def strut(m, a, b, w, t, side, color=WOOD, kind='wood_timber'):
 def hammock(d, a0, a1, sag, width, ends, pic='quilt'):
     """A quilt hammock slung between two fixings: a deep bag gathered to a point at both ends, a fan of strings into
     each end and one rope to the fixing. Each end is ('wall', inward normal): a peg on a wooden plate at a0/a1 on the
-    wall's inside face; or ('wrap', centre, radius): turns of rope round a trunk or post, a0/a1 on the rope."""
+    wall's inside face (a hammock never hangs from a post standing in a room)."""
     fix = []
     for a, e in ((a0, ends[0]), (a1, ends[1])):
         a = np.asarray(a, float)
-        if e[0] == 'wall':
-            n = np.array([e[1][0], e[1][1], 0.]); n /= np.linalg.norm(n); u = np.cross(n, [0, 0, 1])
-            block(d, a+n*.02, u, n, .12, .04, .3, DARK)
-            tube(d, [a+n*.03+[0, 0, .03], a+n*.16+[0, 0, .05]], .022, DARK, 6, 'wood_timber')
-            tube(d, [a+n*.1+[0, 0, .04], a+n*.14+[0, 0, .045]], .034, ROPE, 6)
-            fix.append(a+n*.12+[0, 0, .03])
-        else:
-            c, r = e[1], e[2]
-            for dz in (-.025, .025): ring(d, c, r, a[2]+dz, .02, ROPE, 18)
-            fix.append(a)
+        n = np.array([e[1][0], e[1][1], 0.]); n /= np.linalg.norm(n); u = np.cross(n, [0, 0, 1])
+        block(d, a+n*.02, u, n, .12, .04, .3, DARK)
+        tube(d, [a+n*.03+[0, 0, .03], a+n*.16+[0, 0, .05]], .022, DARK, 6, 'wood_timber')
+        tube(d, [a+n*.1+[0, 0, .04], a+n*.14+[0, 0, .045]], .034, ROPE, 6)
+        fix.append(a+n*.12+[0, 0, .03])
     e0, e1 = fix; ax = (e1-e0)/np.linalg.norm(e1-e0); across = np.cross(ax, [0, 0, 1]); across /= np.linalg.norm(across)
     ts = np.linspace(.12, .88, 13); fs = np.linspace(-1, 1, 7)
     def pt(t, f):
@@ -1095,9 +1198,10 @@ def hammock(d, a0, a1, sag, width, ends, pic='quilt'):
 
 def furnish_sleep(m, d, c, ang, side, W):
     """As painted: three futons side by side along the back wall, pillows to it, a shelf over them and a floor
-    lantern; in the front half two quilt hammocks slung low along the outer wall, from each gable wall to a post in
-    the middle; a rug in front of the futons, a crate of folded quilts, pictures and the kite. Hut-local x runs from
-    the back wall (-d2) to the outer wall (+d2); the lane from door to door (|x| < 0.75) stays clear."""
+    lantern; in the front half two quilt hammocks slung low across the corners, each from a peg on the outer wall to
+    one on the gable wall (no post stands in the room); a rug in front of the futons, a crate of folded quilts and the
+    toy crate against the outer wall, pictures and the kite. Hut-local x runs from the back wall (-d2) to the outer
+    wall (+d2); the lane from door to door (|x| < 0.75) stays clear."""
     z = c[2]; outer, back, gm, gp = W; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
     Hl = room(c, ang, side)
     for y in (-2.35, -1.15, .05):   # 1.6 x 1.13 m each
@@ -1111,17 +1215,15 @@ def furnish_sleep(m, d, c, ang, side, W):
     q = Hl(-1.75, 1.6); cushion(d, q[0], q[1], z, .55, ang+12)
     q = Hl(-1.9, 2.6); book_stack(d, q[0], q[1], z, 4, ang)
     q = Hl(-1.3, 2.45); basket(d, q[0], q[1], z, .18, .22, scrolls=2)
-    q = Hl(1.25, 2.7); crate(m, q[0], q[1], z, (.45, .4, .34), ang-5)      # the toy crate, a ball on it
+    q = Hl(d2-.28, -1.3); crate(m, q[0], q[1], z, (.45, .4, .34), ang-5)   # the toy crate under the window, a ball on it
     with d.use('flat'):
         d.lathe(tuple(q+[0, 0, .34]), [(0, .005), (.03, .07), (.1, .1), (.17, .07), (.2, .005)], (.75, .22, .12), 10)
-    # the hammocks: a post under the ridge's side, the bags hanging about 0.6 m over the floor, clear of the outer
-    # wall; their ropes round the post 10 cm apart in height (turns at the same height would lie in one another)
-    hx, py = 2.05, .45; pc = Hl(hx, py)
-    post(m, pc[0], pc[1], z-.02, z+hut_roof_z(hx)-.01, .14, WOOD)
-    for a0, a1, ends in ((Hl(hx, -w2+.045, 1.55), Hl(hx, py-.12, 1.55), (('wall', rot((0, 1), ang)), ('wrap', pc[:2], .1))),
-                         (Hl(hx, py+.12, 1.65), Hl(hx, w2-.045, 1.65), (('wrap', pc[:2], .1), ('wall', rot((0, -1), ang))))):
-        hammock(d, a0, a1, .8, .42, ends)
-    q = Hl(d2-.32, w2-.42); crate(m, q[0], q[1], z, (.5, .45, .42), ang)
+    # the hammocks across the front corners: a peg on the gable wall past the door's frame, one on the outer wall
+    # past the window's (the six-pane one at -y, the round one at +y), the bags about 0.65 m over the floor
+    for sy in (-1, 1):
+        a0, a1 = Hl(1.05, sy*(w2-.045), 1.5), Hl(d2-.045, sy*2.7, 1.5)
+        hammock(d, a0, a1, .7, .42, (('wall', rot((0, -sy), ang)), ('wall', rot((-1, 0), ang))))
+    q = Hl(d2-.3, .6); crate(m, q[0], q[1], z, (.5, .45, .42), ang)        # under the pictures
     with d.at((q[0], q[1], z+.42), ang), d.use('quilt', grain=(1, 0, 0)):
         d.box((0, 0, .07), (.45, .4, .12), WHITE, .03)
     o, u, n = frame3(outer, z)
@@ -2132,8 +2234,7 @@ def main():
     # where the bridges' end posts and the entry stair's top posts stand, the deck railings have none
     avoid = []
     for b in pl['bridges']:
-        A, B = np.array(b['start'][:2], float), np.array(b['end'][:2], float); u = (B-A)/np.linalg.norm(B-A); v = np.array([-u[1], u[0]])
-        avoid += [tuple(q+v*f*(L.BRIDGE_WIDTH/2+.07)) for q in (A, B) for f in (-1, 1)]
+        avoid += [tuple(q[:2]) for q in b['posts']]
     ex = pl['entry_stairs']; avoid += [(ex['x']+f*(ex['width']/2+.04), ex['top_y']+.05) for f in (-1, 1)]
     avoid += [foot[:2] for foot, _ in tower_legs(pl)]          # the lookout tower's legs are those corners' posts
     for name, p in P.items():
@@ -2168,7 +2269,7 @@ def main():
             corner = np.array(poly[k2]); q = corner+(c-corner)/np.linalg.norm(c-corner)*.65
             rope_coil(d, q[0], q[1], p['deck'])
     for b in pl['bridges']:
-        bridge(m, d, b)
+        bridge(m, d, b, P)
     entry_hut(m, d, P['entry'])
     rooms = {}
     for name in ('library', 'kitchen', 'sleep'):
