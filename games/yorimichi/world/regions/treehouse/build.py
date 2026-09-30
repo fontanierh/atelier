@@ -961,7 +961,9 @@ def furnish_sleep(m, d, c, ang, side, W):
 
 def furnish_entry(m, d, p):
     """As painted: the trunk in the middle with its rope, shelves of jars under the round window on the west wall,
-    a straw hat and the backpack on pegs, crates and a rug; the porch bench and lantern outside the south door."""
+    a straw hat and the backpack on pegs, crates and a rug; the porch bench and lantern outside the south door.
+    Nothing stands on the way from door to door, east of the trunk, or on the porch between the south door and the
+    bridge."""
     x0, y0 = p['xy']; z = p['deck']; w2, l2 = ENTRY
     L_ = lambda lx, ly: np.array([x0-ly, y0+lx])          # hut local (x north) to world
     west = (np.array([x0-w2+.06, y0-l2, z]), np.array([0, 1., 0]), np.array([1., 0, 0]))
@@ -976,16 +978,15 @@ def furnish_entry(m, d, p):
     board(d, (x0-w2+.06, y0+.95, z+1.45), (x0-w2+.2, y0+.95, z+1.47), .03, .03, DARK, 'wood_timber')
     q = np.array([x0-.6, y0+l2-.3]); crate(m, q[0], q[1], z, (.5, .45, .45), -8); crate(m, q[0], q[1], z+.45, (.4, .36, .32), 10)
     q = np.array([x0+DOOR, y0]); rug(d, q[0], q[1], z, 1.0, 2.3, 0, 'rug_blue')
-    q = np.array([x0+w2-.35, y0+.55]); cushion(d, q[0], q[1], z, .5, 15)
-    q = np.array([x0+w2-.3, y0-.6]); crate(m, q[0], q[1], z, (.42, .5, .4), 90)
-    # porch: a crate bench with cushions against the south wall, the lantern post, potted plants, a banner
-    q = L_(-l2-.3, 1.05); crate(m, q[0], q[1], z, (1.0, .42, .38), 0)
-    cushion(d, q[0]-.22, q[1], z+.38, .42, 0); cushion(d, q[0]+.22, q[1], z+.38, .42, 5)
-    lantern_post = L_(-l2-1.5, 1.4); andon(d, lantern_post[0], lantern_post[1], z, .3, 300)
+    q = np.array([x0-1.15, y0-1.1]); cushion(d, q[0], q[1], z, .5, 15)    # west of the trunk: the way door to door is clear
+    # porch: the way from the south door to the bridge (south-west corner) stays clear. A crate bench with cushions
+    # along the east rail, the lantern in the south-east corner, a banner on the east wall, a plant on the north porch.
+    _, sx1, sy0, _ = L.ENTRY_BOX
+    q = np.array([x0+sx1-.45, y0-l2-1.2]); crate(m, q[0], q[1], z, (1.0, .42, .38), 90)
+    cushion(d, q[0], q[1]-.22, z+.38, .42, 90); cushion(d, q[0], q[1]+.22, z+.38, .42, 95)
+    q = np.array([x0+sx1-.4, y0+sy0+.4]); andon(d, q[0], q[1], z, .3, 300)
     picture(d, [(x0+w2+.06, y0-l2+.1, z+1.0), (x0+w2+.06, y0-l2+.7, z+1.0), (x0+w2+.06, y0-l2+.7, z+1.95), (x0+w2+.06, y0-l2+.1, z+1.95)], 'flag')
-    q = L_(-l2-2.3, 1.9); potted_plant(d, q[0], q[1], z, 1.2)
     q = L_(l2+.3, 1.85); potted_plant(d, q[0], q[1], z, 1.)
-    q = L_(-l2-.35, -1.9); potted_plant(d, q[0], q[1], z, .9)
 
 
 def furnish_heart(m, d, p):
@@ -1242,8 +1243,8 @@ def chime_hoop(m, d, p):
     for k in range(12):
         a = math.radians(30*k+8); x, y = x0+r*math.cos(a), y0+r*math.sin(a)
         fuurin(d, x, y, z+1.9, .22)
-    for k in range(2):
-        a = math.radians(p['open']+120+120*k); x, y = x0+2.3*math.cos(a), y0+2.3*math.sin(a)
+    for off in (-50, 30):           # both lanterns on the open side, off the walks between the bridges
+        a = math.radians(p['open']+off); x, y = x0+2.3*math.cos(a), y0+2.3*math.sin(a)
         if inside(world_poly(p), x, y): andon(d, x, y, z, .28, 300)
     a = math.radians(p['open']+60); prop('planter', x0+2.0*math.cos(a), y0+2.0*math.sin(a), z, face_yaw(-math.cos(a), -math.sin(a)), 1.)
 
@@ -1292,6 +1293,22 @@ def slide(m, d, pl):
     for _ in range(25): maple_leaf(d, end[0]+R.uniform(-1.4, 1.4), end[1]+R.uniform(-1.4, 1.4), gz+.28, R.uniform(.07, .11))
 
 
+def tower_legs(pl):
+    """The crow's nest tower's four legs (foot, head). The feet stand in every other corner of the lookout deck, in
+    place of the railing's corner posts, on the set of corners furthest from the bridges, so no leg stands on the
+    deck's walk or in front of a bridge; the heads are under the crow's nest floor."""
+    p = pl['places']['lookout']; x0, y0 = p['xy']; z = p['deck']; top = pl['crow']['floor']
+    corners = world_poly(p)
+    ang = lambda q: math.degrees(math.atan2(q[1]-y0, q[0]-x0))
+    clear = lambda q: min(abs((ang(q)-l['angle']+540) % 360-180) for l in p['links'])
+    feet = max((corners[0::2], corners[1::2]), key=lambda s: min(clear(q) for q in s))
+    legs = []
+    for fx, fy in feet:
+        a = math.radians(ang((fx, fy)))
+        legs.append(((fx, fy, z-.3), (x0+2.45*math.cos(a), y0+2.45*math.sin(a), top-.14)))
+    return legs
+
+
 def lookout(m, d, pl):
     p = pl['places']['lookout']; cr = pl['crow']; x0, y0 = p['xy']; z = p['deck']; top = cr['floor']
     # The treads run into the trunk (which narrows as it climbs) and are housed in a helical outer string that stands
@@ -1324,11 +1341,8 @@ def lookout(m, d, pl):
         with m.use('wood_plank'): sector(m, (x0, y0), f0, f1, cr['ro']+.05 if inside_ else .45, cr['R'], top, top, .14, vary(PLANK, .1))
     rim = [(x0+cr['R']*math.cos(a), y0+cr['R']*math.sin(a)) for a in np.linspace(0, 2*math.pi, 13)[:-1]]
     railing(m, d, rim, top, height=1.0)
-    legs = []
-    for k in range(4):
-        a = math.radians(cr['start']+45+90*k)
-        lo = (x0+3.0*math.cos(a), y0+3.0*math.sin(a), z-.1); hi = (x0+2.45*math.cos(a), y0+2.45*math.sin(a), top-.14)
-        legs.append((lo, hi))
+    legs = tower_legs(pl)
+    for lo, hi in legs:
         with m.use('wood_timber', grain=tuple(np.subtract(hi, lo)), jitter=True):
             hexa(m, [np.add(lo, dd) for dd in ((-.09, -.09, 0), (.09, -.09, 0), (.09, .09, 0), (-.09, .09, 0))] +
                  [np.add(hi, dd) for dd in ((-.09, -.09, 0), (.09, -.09, 0), (.09, .09, 0), (-.09, .09, 0))], WOOD)
@@ -1500,6 +1514,7 @@ def main():
         A, B = np.array(b['start'][:2], float), np.array(b['end'][:2], float); u = (B-A)/np.linalg.norm(B-A); v = np.array([-u[1], u[0]])
         avoid += [tuple(q+v*f*(L.BRIDGE_WIDTH/2+.07)) for q in (A, B) for f in (-1, 1)]
     ex = pl['entry_stairs']; avoid += [(ex['x']+f*(ex['width']/2+.04), ex['top_y']+.05) for f in (-1, 1)]
+    avoid += [foot[:2] for foot, _ in tower_legs(pl)]          # the lookout tower's legs are those corners' posts
     for name, p in P.items():
         deck(m, d, p)
         extra = []
