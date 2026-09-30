@@ -13,6 +13,8 @@ import time
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNTIME = ROOT / 'games/yorimichi/unreal/Content/Data/SkateRuntime'
+# AirSpinScale in unreal/Config/DefaultGame.ini.
+SPIN = 1.6
 
 
 def main():
@@ -104,7 +106,7 @@ def main():
                 return rows,dict(goofy=goofy,direction=direction,height_m=height,air_rotation_degrees=angle,
                                  airtime_s=sum('Air' in r['state'] for r in rows)/60)
             _, stock=exercise(False,0,1.,1.)
-            _, tuned=exercise(False,0,1.15,2.15)
+            _, tuned=exercise(False,0,1.15,SPIN)
             assert .15<tuned['height_m']-stock['height_m']<.4,(stock,tuned)
             assert tuned['airtime_s']>stock['airtime_s']+.08,(stock,tuned)
             feedback={'stock_pop':stock,'tuned_pop':tuned,'spins':[],'slides':[]}
@@ -124,17 +126,17 @@ def main():
 
             for goofy in (False,True):
                 for direction in (-1,1):
-                    rows, result=exercise(goofy,direction,1.15,2.15)
-                    assert 300<abs(result['air_rotation_degrees'])<370,result
+                    rows, result=exercise(goofy,direction,1.15,SPIN)
+                    assert 200<abs(result['air_rotation_degrees'])<370,result
                     feedback['spins'].append(result)
-                    rows, result=exercise(goofy,direction,1.15,2.15,slide=True)
+                    rows, result=exercise(goofy,direction,1.15,SPIN,slide=True)
                     assert any(r['state']=='SlideGround' for r in rows)
                     assert math.hypot(rows[-1]['velocity'][0],rows[-1]['velocity'][2])<3.5
                     feedback['slides'].append(result)
             # A retained session mounts at the new feet position, never the previous ride, with a running start.
             for generation,spawn in [(10,[15,0,10]),(11,[-12,0,-8])]:
                 send('activate',spawn=spawn,heading=0,goofy=False,difficulty='normal',trucks=.5,
-                     generation=generation,velocity=[0,0,4.2],pop=1.15,spin=2.15)
+                     generation=generation,velocity=[0,0,4.2],pop=1.15,spin=SPIN)
                 mounted=read()
                 assert mounted['generation']==generation
                 assert math.hypot(mounted['root'][12]-spawn[0],mounted['root'][14]-spawn[2])<.02

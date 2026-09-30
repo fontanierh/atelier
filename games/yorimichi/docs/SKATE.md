@@ -35,12 +35,17 @@ Its converted data was produced with upstream tools commit `60efdef86600d8d8d4fe
 
 ## Feel and controls
 
-Yorimichi sets `PopHeightScale=1.15`, `AirSpinScale=2.15`, `PushPowerScale=1.45`,
+Yorimichi sets `PopHeightScale=1.15`, `AirSpinScale=1.6`, `PushPowerScale=1.45`,
 `PushSpeedScale=1.15`, normal difficulty and medium trucks in `DefaultGame.ini`.
 These scale the recovered height, spin-response and push curves without replacing the solver or the animation
-timing of each push. The loaded flat-ground ollie turns about 330–340° in the native checks; a little setup turn
-completes a 360. Release the stick to line up the landing. From rest, the tuned push reaches 9.12 m/s after two
-seconds versus 6.99 m/s with stock values. Spin response is about 17% lower than the earlier 2.6 tuning.
+timing of each push. The loaded flat-ground ollie turns about 250° in the native checks (330–340° with the earlier
+2.15), so a 360 needs a setup turn. Release the stick to line up the landing. From rest, the tuned push reaches
+9.11 m/s after two seconds versus 6.99 m/s with stock values.
+
+The skating worker starts about two seconds into play, with the collision around the player, so the first mount
+does not wait for the animation banks. While riding, the collision around the rider is gathered again once they
+leave its inner area; the file is written and built off the game thread, and the worker switches to it between
+steps.
 
 Triangle / Y (or keyboard B) mounts/steps off; D-pad Down interacts on foot. Running onto the board preserves position, heading of travel and speed. W pushes, S brakes,
 A/D steer or spin. Hold/release Space for an ollie, or hold the left mouse button and flick for tricks. C holds a
