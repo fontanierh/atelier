@@ -218,6 +218,14 @@ def done(m):
     return any(e.get_editor_property('desc') == TAG for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
 
 
+def broken(m):
+    """Whether the opacity mask leads to a see-through shadow switch that lost an input. import_cairo.py rebuilds its
+    materials with delete_all_material_expressions, which leaves the opacity mask on the deleted switch: done() still
+    finds the tag, and the material fails to compile (Missing input Shadow) and renders as the default grey."""
+    return any(isinstance(e, unreal.MaterialExpressionShadowReplace) and None in MEL.get_inputs_for_material_expression(m, e)
+               for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
+
+
 def scaled(m):
     """Whether m's see-through is the scaled cut (its Custom node reads K)."""
     return any(isinstance(e, unreal.MaterialExpressionCustom) and e.get_editor_property('description') == TAG
@@ -245,10 +253,10 @@ def masked(m):
     return mode in (unreal.BlendMode.BLEND_OPAQUE, unreal.BlendMode.BLEND_MASKED)
 
 
-def into_mask(m, keep, x, y):
+def into_mask(m, keep, x, y, alone=False):
     """Switch the dither off in shadow passes (the cut-away still casts its shadow) and multiply it into whatever
-    already feeds the opacity mask."""
-    source = MEL.get_material_property_input_node(m, OPACITY)
+    already feeds the opacity mask (alone: replace it)."""
+    source = None if alone else MEL.get_material_property_input_node(m, OPACITY)
     output = MEL.get_material_property_input_node_output_name(m, OPACITY) if source is not None else ''
     switch = node(m, unreal.MaterialExpressionShadowReplace, x, y)
     one = node(m, unreal.MaterialExpressionConstant, x-200, y+120, r=1.)
@@ -299,13 +307,15 @@ def mask_instance(mi):
 
 
 def character(m):
-    """Cairo and the bokken: masked, dithered out within 60 cm of the camera."""
-    if done(m) or not masked(m): return False
+    """Cairo and the bokken: masked, dithered out within 60 cm of the camera. Their opacity mask is the see-through's
+    alone, so a broken one is replaced."""
+    stale = broken(m)
+    if (done(m) and not stale) or not masked(m): return False
     keep = custom(m, -900, 900, NEAR + ' ' + DITHER, ['P', 'C', 'X'])
     link(node(m, unreal.MaterialExpressionWorldPosition, -1300, 900), '', keep, 'P')
     link(node(m, unreal.MaterialExpressionCameraPositionWS, -1300, 1000), '', keep, 'C')
     link(params(m, -1300, 1100, 'Cut')[0], '', keep, 'X')
-    into_mask(m, keep, -600, 900)
+    into_mask(m, keep, -600, 900, alone=stale)
     return True
 
 

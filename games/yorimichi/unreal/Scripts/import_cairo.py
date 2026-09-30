@@ -23,6 +23,8 @@ materials={}
 for name,cfg in CONFIG['materials'].items():
     mat=asset(name,U.Material,U.MaterialFactoryNew())
     M.delete_all_material_expressions(mat)
+    # Opaque until see_through.py masks it again: the opacity mask may still point at its deleted nodes.
+    mat.set_editor_property('blend_mode',U.BlendMode.BLEND_OPAQUE)
     mat.set_editor_property('two_sided',cfg['two_sided'])
     mat.set_editor_property('used_with_skeletal_mesh',True)
     mat.set_editor_property('used_with_morph_targets',True)
