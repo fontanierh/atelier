@@ -106,6 +106,9 @@ Unported graph leaves retain explicit diagnostics rather than silently supplying
 `GraphGestureOperations.*` preserves all authored gesture-to-trick mappings, encoded-key bucket
 priority, mirror/dark-catch/underflip selection and the later flip-hold intent lifecycle. Its action-host
 registration remains an integration step.
+`GestureInputPublication.*` owns the seven recognizers over the native gesture bank, original stick
+deadzone/Y conversion, held-pattern ordering and graph permission gates. The frame scheduler must still
+call it at the original point between mapped controller input and action-graph evaluation.
 
 Arithmetic source files disable implicit Clang FP contraction and use explicit fused operations where
 the reference does. The module disables unity compilation so internal helpers and FP settings remain
@@ -221,6 +224,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Gesture trick operations: all 270 authored mapping rows, 19,480 commands and 16,384 lifecycle frames
   preserve 14,890,874 output bytes, including selected names, map ordering, alias/collision priority,
   mirrored tricks and hold successors.
+- Stick gesture publication: 141,873 commands and 141,782 publication frames preserve 68,857,168 output
+  bytes against the original host loading the original PAT/settings. Coverage includes 6,078 trick
+  publications, 21,803 held-pattern frames and isolated permission gates. Hidden recognizer state is
+  exercised through later outputs; whole-session sampling order remains a separate check.
 - Animation playback: 7,115 cases and 41,311,421 exact bytes across clocks, curves, attribute operations,
   channels and pose blending. All 3,324 native clips are sampled at eight boundary/normal/invalid times
   against the frozen original core reading the independent decoded originals. Invalid-clock failures
