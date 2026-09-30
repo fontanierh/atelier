@@ -114,7 +114,9 @@ normalization, untouched translation lanes and the live animation-drive lifecycl
 `BoardPose.*` preserves part/mass-frame conversion, both distinct orthonormalization paths,
 live body/inertia updates and whole-board movement with the separate original hook request.
 `ContactGeneration.*` constructs the original tangents, copied force/inertia workspaces and typed
-compiled contact facade. Complete body ownership and scheduling remain open. These comparisons establish
+compiled contact facade. `BoardAssembly.*` builds the ordered six-joint/two-truck/hook assembly from
+live snapshots, preserving active-body filtering and live hook normalization. Complete body ownership
+and scheduling remain open. These comparisons establish
 parity with the frozen Rust reconstruction, including its documented unresolved retail joint-matrix
 gather and carry-lane interpretation; they do not independently verify those against the EA executable.
 
@@ -275,6 +277,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Board/part pose operations: 6,070 cases and 1,018,929 exact words, including 1,072 reused optional
   part programs, all eight body/mass/inertia presence masks and 765 complete board/hook requests.
   Full raw pose/body/inertia records retain the original fourth lanes and unrelated live rates/forces.
+- Connected board constraint assembly: 2,048 cases and 4,452,352 exact words across all 256 board/hook
+  activation masks. Comparisons include repeated frame preparation, full typed/packed rows, shared
+  solver iterations and resulting body updates (9,216 joint and 4,608 drive rows).
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
