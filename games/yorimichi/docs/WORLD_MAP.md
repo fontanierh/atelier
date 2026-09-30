@@ -140,3 +140,42 @@ are preserved in `docs/map/mini-mega-fix/`.
   map while standing at the destination (`streaming/mega-map-smoke.mjs`).
 - Do not repaint the entire map just to fix a landmark. New image generation uses Sunburst; untouched historical
   pixels retain their original provenance. The earlier GPT Image 2 references above describe the original process.
+
+### South-west island repaint
+
+The painted sheet showed the old round island after `southwest/island.py` was redesigned. Only the island was
+repainted, the same way as the mini-mega fix, with `games/yorimichi/world/map/repaint_island.py`:
+
+1. **prepare.** It keeps the committed sheet as the parent. It finds the old painted island and the new data island
+   (the heightfield through the map projection) and picks a 3:2 crop box around both, `[0, 707, 476, 1024]`. It
+   writes that crop of the sheet and a plain plan of the new island in the same frame:
+   - the coastline, rock and cove;
+   - every placed tree crown, by species;
+   - the stair with its torii, and the temple.
+2. **paint.** One **GPT Image 2.5 Sunburst** call (quality high, `/v1/images/edits`) takes the two crops and the
+   aerial island concept. The repository has no shared ledger module, so
+   `painted/island_repaint.provenance.json` is the call's ledger: it holds the prompt, the input and output hashes
+   and the usage, and is written before and after the call.
+3. **register.** It fits the painting to the projection: a scale and offset that lay the painted island on the data
+   island. The fit's intersection over union with the data island's main body is 0.937. It shifts the painting's
+   sea colour to the sheet's, measured on the open water around the island. It then blends the painting in through
+   a feathered mask that covers only the old island, the new island with its stacks, and their shallows.
+
+The result:
+
+- **Outside the mask, every pixel is identical to the parent.** The script checks this over the whole sheet.
+- **94.70% of the sheet's pixels are unchanged.** The edit's bounding box is `[36, 735, 376, 1024]`.
+- **Bounds, projection, registration and calibration are unchanged.** `build_map.py` still selects the registered
+  painted sheet.
+- **The zones keep their positions and yaws.** Only the temple's height follows the lower terrace. The landing pin
+  sits on the painted cove and the temple pin on the painted temple.
+
+`register` writes `paint_provenance.json` next to the candidate, with the parent's record nested under `parent`.
+`promote_map.py` promoted the candidate and copied that file to `painted/world_map_provenance.json`. The work files
+are in `build/yorimichi/map/island_repaint/`:
+
+- the parent sheet;
+- the crops;
+- the generated painting;
+- `registration-check.json`;
+- `registration-check.jpg`, which draws the data coastline and stair over the parent and the result.

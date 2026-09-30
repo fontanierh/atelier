@@ -1,0 +1,43 @@
+{
+  "stage": "world-map-island-repaint",
+  "status": "done",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/world/map/repaint_island.py",
+  "prompt": "Image 1 is a crop of the hand-painted watercolour world map of Yorimichi, a stylised Japanese autumn exploration game: a top-down map, north up, showing a small round wooded island in a blue sea. Image 2 is the exact plan of the redesigned island as it is now built in the game, at the same scale and in the same place in the frame: a flat diagram with blue sea, green grass, grey rock cliffs, a pale sand cove, one coloured disc for every tree crown (dark green pines and cedars, red and orange maples, gold ginkgo), the pale stone stairway with red torii marks, and the temple (dark indigo roof) on its round stone terrace. Image 3 is a concept painting of the same island from the air, for its character.\n\nPaint the same map crop as Image 1 with the new island: keep Image 1's framing, scale, paper texture, colours and watercolour style exactly, and keep the sea and anything else outside the island as it is in Image 1. Replace the old round island with the island of Image 2, following its plan exactly: the same outline and size, the rocky headlands, the small pale sand cove on the north-west side, the small rocky sea stacks, the zigzag stone stairway from the cove up to the temple terrace, and the temple, all exactly where Image 2 has them. Paint it in Image 1's map style with Image 3's character: dark grey-brown rock cliffs with a thin line of white surf along the whole shore, fallen boulders at their feet, the forest in the masses and colours of Image 2 (dark green pine and cedar, drifts of red-orange maple and gold ginkgo, a few grassy glades) drawn as small painted trees seen from above like the trees of Image 1, a small temple with a dark indigo roof, and tiny vermilion torii along the stair.\n\nTop-down map view like Image 1, not the oblique view of Image 3. No text, labels, pins, markers, frames, compass or legend, no other islands, boats or buildings besides the temple and the torii, and no diagram look: a painted map.",
+  "prompt_sha256": "34f39264dcc4b9934c80e0a34bf9a5aae49bdbc4eeba8c92433b8f35178a9515",
+  "reference_files": {
+    "build/yorimichi/map/island_repaint/current-crop.png": "08780336696ab713d85af02d04387054f05afb11d5558fc6d51872c1084a379b",
+    "build/yorimichi/map/island_repaint/layout-crop.png": "f3e410fa05e1281c5d9b334a1bddeeca793ed7d9fb4e570683cc09248a1eea5e",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg": "d662419759c122a5ae5ff80b378be1030b2c5c8f3eb41bd88866abd2dd339b2a"
+  },
+  "crop_box": [
+    0,
+    707,
+    476,
+    1024
+  ],
+  "started_at": "2026-09-30T12:11:41.767235+00:00",
+  "usage": {
+    "input_tokens": 3745,
+    "input_tokens_details": {
+      "image_tokens": 3240,
+      "text_tokens": 505
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 5117
+  },
+  "output": {
+    "build/yorimichi/map/island_repaint/generated.png": "600e16cba8d49afda44db29e538f467a136bde9b284bfa152ac9fb6691c6c243"
+  },
+  "error": null,
+  "finished_at": "2026-09-30T12:12:15.865803+00:00",
+  "elapsed_seconds": 34.1,
+  "hashes": "of the files as the API saw and returned them; the generated crop is kept outside the repository, its blend is the committed sheet"
+}

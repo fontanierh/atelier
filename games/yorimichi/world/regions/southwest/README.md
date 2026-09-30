@@ -14,32 +14,81 @@ boat model, controller, reference and regression checks are documented in
 `island.py` authors the island (`SW_Island`, origin (-150, -480), yaw 15 degrees in
 the world) as a heightfield in island-local metres, and its placements:
 
-- **Shape.** A wooded crown (about 123 m) with a lower west top and an east hump,
-  and headlands and points on every side, so the outline is uneven from any bearing.
-  Four sea stacks stand off the headlands.
-- **Cliffs.** Dark rock cliffs, mostly 4-30 m high and lowest at the cove, run
-  around the coast; their height changes with the bearing and the tall ones break
-  into a ledge. Above them the slope is capped at a steep but wooded grade, so bare
-  rock stays at the rim and on a few knobs.
+- **Shape.** A broad, low wooded crown (about 99 m) with a lower west top and an east
+  hump, and headlands and points on every side, so the outline is uneven from any
+  bearing. Four sea stacks, 14-19 m high, stand off the headlands.
+- **Cliffs.** Dark rock cliffs run around the coast. They are mostly 8-31 m high, up
+  to 38 m under the headlands, and lowest at the cove. Their height changes with the
+  bearing and the tall ones break into a ledge. Above them the slope is capped at a
+  steep but wooded grade, so bare rock stays at the rim and on a few knobs.
 - **Cove and stair.** The pale sand cove on the north side is the sailboat landing.
   A valley climbs from it, and the stairway ramp zig-zags up the north face, through
-  five torii, to the temple terrace on the crown's north spur (104 m). The stair's
+  five torii, to the temple terrace on the crown's north spur (82 m). The stair's
   cut banks are painted moss and wooded, not bare rock.
 - **Forest.** The wood grows in masses (`forest()`): black pines along the cliff tops
   and headlands, a tall cedar grove on the crown behind the temple, and maple and
   ginkgo drifts in the hollows and on the lower slopes, with a few glades. The hearts
   of the drifts use the tree house's big autumn crowns (`Tree_Canopy_*`).
-- **Leaning pines.** `SW_PineLean_A`/`B` (built by `build.py`, like the boulders) lean
-  out over the cliff edges on the headlands and top every sea stack.
+- **Leaning pines.** `Tree_PineLean_A`/`B` (built by `build.py`, like the boulders)
+  lean out over the cliff edges on the headlands and top every sea stack.
 - **Boulders.** Boulders sit at the foot of the cliffs, on the steep lower faces and
   on the knobs.
 
-Island trees are backdrop instances (no collision). `SW_*` props (the island,
-boulders and leaning pines) collide like the other southwest props.
+### Collision near the stair
+
+The game treats every `Tree*` instance the same way:
+
+- **Near trees collide with the player.** Within 450 m of the world centre on both
+  axes, a tree gets query collision down to its crown's lowest leaves. The camera
+  ignores it.
+- **Far trees are backdrop.** Beyond 450 m on either axis, a tree has no collision
+  and no shadow.
+
+The island's north half, with the whole stair (world y -377 to -461), is inside that
+line: about 965 of its 3060 trees collide. A crown hanging over a walk is an invisible
+wall, as a tree once was on another trail. So `scatter()` keeps every island tree clear
+of the stair:
+
+- `stair_blocked()` tests the trunk and crown of each tree against every stretch of
+  the stair within reach. It uses each species' size (`TREE_DIMS`), the walk's
+  half-width with the player's radius (2.7 m) and head height.
+- The cove's sand and the temple terrace have their own tree-free rings.
+- Leaning pines also keep 12 m off the stair. They are named `Tree_PineLean_*` so
+  that, like the other trees, they never stop the camera.
+- Boulders are `SW_*` props and block the camera, so each keeps its own width off
+  the stair.
+
+This leaves no tree, trunk or crown, and no boulder in the stair's walk, on the cove's
+sand or on the terrace.
+
+### Concepts
 
 `games/yorimichi/tools/island_concepts.py` paints concept views of the island with
-GPT Image 2.5 Sunburst, steered by in-game stills. It writes the images, prompts and
-provenance to `games/yorimichi/assets/southwest/concepts/`.
+GPT Image 2.5 Sunburst (quality high), steered by stills. It writes the images, prompts
+and provenance to `games/yorimichi/assets/southwest/concepts/`:
+
+- `far.jpg`: the view from the mainland hilltop;
+- `boat.jpg`: the view from the dinghy at the cove;
+- `aerial.jpg`: the whole island from the air.
+
+The stills are two in-game screenshots (the island from a hilltop and the game's
+look) and the Blender previews of `island.py` from the same cameras, used as layout
+guides.
+
+The repository has no shared ledger module, so each provenance file is the ledger of
+its paid call. The script writes it with status `submitted` before the call and
+completes it, or marks it failed, afterwards. The call is never sent again once that
+file exists.
+
+The shape follows the concepts where a heightfield can:
+
+- the low, broad crown;
+- taller rock headlands and stacks;
+- the cove between two headlands;
+- more ginkgo gold in the drifts.
+
+The painted world map shows the new island too. See the island repaint in
+`../../../docs/WORLD_MAP.md`.
 
 ## The sea at a distance
 

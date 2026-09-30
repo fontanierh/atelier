@@ -1,9 +1,11 @@
-"""The island: a wooded crown (about 123 m) with a lower west top and an east hump, headlands and points pushing
-out on every side and four sea stacks off them, so the silhouette is uneven from any bearing. The coast is a band
-of dark rock cliffs, mostly 4-30 m high and lowest at the cove, whose height changes with the bearing and which
+"""The island, shaped after the Sunburst concepts (games/yorimichi/assets/southwest/concepts/): a broad, low wooded
+crown (about 99 m) with a lower west top and an east hump, headlands and points pushing out on every side and four
+sea stacks off them, so the silhouette is uneven from any bearing. The coast is a band of dark rock cliffs, mostly
+8-31 m high (up to 38 m under the headlands) and lowest at the cove, whose height changes with the bearing and which
 break into a ledge where they are tall; the ground above them is capped at a steep but wooded slope, so the rock
-stays at the rim and on a few knobs. A pale sand cove on the north side (toward the beach) is the landing; a valley climbs from it and the
-stairway ramp zig-zags up the north face to the temple terrace on the crown's north spur (104 m).
+stays at the rim and on a few knobs. A pale sand cove on the north side (toward the beach) is the landing; a valley
+climbs from it and the stairway ramp zig-zags up the north face to the temple terrace on the crown's north spur
+(82 m).
 `height(x,y)` is the authored heightfield in island-local metres (numpy-vectorised) so the layout can seat props
 and trees on it; `build()` makes the vertex-coloured mesh with one flat colour per triangle (crisp facets);
 `boulder_*()` are the faceted rock props and `pine_lean_*()` the pines that lean out over the cliff edges;
@@ -19,11 +21,11 @@ PALETTE={'sand':(.42,.35,.21),'rock':(.048,.044,.040),'rock_light':(.076,.069,.0
          'pine':(.028,.058,.034),'pine_dark':(.015,.034,.021),'bark':(.050,.034,.022)}
 
 SIZE=(340.0,316.0)        # grid extent (x,y): the coast with its headlands and stacks, and a margin of sea floor
-PEAK=124.0                # the wooded crown behind the temple
+PEAK=100.0                # the wooded crown behind the temple: a broad low dome (as in the concepts), not a cone
 CROWN=(10.0,-20.0)        # its top
 SUMMIT=(0.0,8.0)          # the temple terrace, on the crown's north spur
 SUMMIT_R=15.0             # flat radius: a 30 m circle, enough for the 26 x 20 m temple set
-SUMMIT_Z=104.0
+SUMMIT_Z=82.0
 LANDING=(-20.0,112.0)     # cove on the north side (toward the beach); island local y is north like the world
 COVE_R=16.0               # sand only here
 CENTRE=(0.0,-6.0)         # the coastline is a radius around this point, by bearing
@@ -44,16 +46,16 @@ def _lobe(th,at,width,amount):
 # the east side is a broad cliffed shoulder, the south a scalloped line of coves and spurs
 HEADLANDS=[(-95.0,34.0,10.0),(70.0,9.0,36.0),(126.0,8.0,30.0),(186.0,11.0,20.0),(-14.0,16.0,12.0),(-58.0,9.0,-14.0),(-104.0,7.0,-10.0),(-128.0,12.0,10.0),(28.0,8.0,-8.0)]
 COVE_BEARING=math.degrees(math.atan2(LANDING[1]-CENTRE[1],LANDING[0]-CENTRE[0]))
-STACKS=[((80.0,140.0),9.0,15.0),((-104.0,124.0),8.0,12.0),((-146.0,-96.0),7.5,10.0),((152.0,-86.0),10.0,14.0)]   # sea stacks: (centre, radius, height)
+STACKS=[((80.0,140.0),9.0,19.0),((-104.0,124.0),8.0,16.0),((-146.0,-96.0),7.5,14.0),((152.0,-86.0),10.0,18.0)]   # sea stacks: (centre, radius, height)
 # the hills behind the cliffs, heights above the sea: (centre, radii west/east/south/north, height, profile exponents
 # (top, flank), footprint exponent: 2 an ellipse, higher a rounded rectangle). Rounded domes joined by a soft maximum,
 # so they meet in saddles: the crown; the stair face under the temple terrace, broad and even so the switchbacks climb
 # it steadily; a lower west shoulder; an east hump across a saddle; low tops on the headlands and the west point.
-HILLS=[(CROWN,(100.0,118.0,116.0,120.0),PEAK,(1.6,1.6),2),
+HILLS=[(CROWN,(118.0,132.0,122.0,126.0),PEAK,(2.0,1.6),2),
        ((0.0,16.0),(120.0,100.0,60.0,104.0),SUMMIT_Z-1.0,(1.25,1.0),4),
-       ((-94.0,6.0),(64.0,56.0,74.0,66.0),98.0,(1.7,1.5),2),((104.0,-8.0),(52.0,50.0,62.0,60.0),72.0,(1.8,1.5),2),
-       ((-142.0,8.0),(36.0,40.0,34.0,36.0),24.0,(1.6,1.5),2),((-118.0,80.0),(34.0,36.0,30.0,30.0),30.0,(1.6,1.5),2),
-       ((64.0,116.0),(30.0,30.0,26.0,24.0),30.0,(1.6,1.5),2)]
+       ((-94.0,6.0),(64.0,56.0,74.0,66.0),80.0,(1.7,1.5),2),((104.0,-8.0),(52.0,50.0,62.0,60.0),62.0,(1.8,1.5),2),
+       ((-142.0,8.0),(36.0,40.0,34.0,36.0),28.0,(1.6,1.5),2),((-118.0,80.0),(34.0,36.0,30.0,30.0),34.0,(1.6,1.5),2),
+       ((64.0,116.0),(30.0,30.0,26.0,24.0),34.0,(1.6,1.5),2)]
 VALLEY=((-20.0,114.0),(-27.0,88.0),7.0,.8,.85)   # a wooded ravine behind the cove: mouth, head, half floor width, floor and side grades
 OUTCROPS=[((-58.0,-44.0),9.0,12.0),((84.0,-58.0),8.0,10.0),((-30.0,-84.0),7.0,9.0),((122.0,30.0),7.0,9.0)]   # rock knobs in the forest
 
@@ -64,8 +66,8 @@ def coast_radius(th):
 
 def cliff_height(th):
     """Height of the sea cliff by bearing: low at the cove, highest on the exposed south and east."""
-    h=17.0+9.0*np.sin(3*th+1.0)+5.0*np.sin(5*th+2.0)+3.0*np.sin(9*th+.5)+_lobe(th,70.0,10.0,8.0)+_lobe(th,126.0,9.0,6.0)
-    return np.maximum(h,4.0)*(1-.8*np.exp(-(np.degrees(np.angle(np.exp(1j*(th-np.radians(COVE_BEARING)))))/20.0)**2))
+    h=20.0+9.0*np.sin(3*th+1.0)+5.0*np.sin(5*th+2.0)+3.0*np.sin(9*th+.5)+_lobe(th,70.0,10.0,14.0)+_lobe(th,126.0,9.0,8.0)
+    return np.maximum(h,8.0)*(1-.8*np.exp(-(np.degrees(np.angle(np.exp(1j*(th-np.radians(COVE_BEARING)))))/20.0)**2))
 
 def _dome(x,y,c,r,h,e,n):
     dx=np.abs(x-c[0])/np.where(x<c[0],r[0],r[1]);dy=np.abs(y-c[1])/np.where(y<c[1],r[2],r[3])
@@ -285,8 +287,9 @@ def _pine_lean(name,seed,height,lean):
             pad(c,rng.uniform(1.8,2.6)*(1-.12*k),rng.uniform(.55,.8))
     pad((pts[-1][0]+.3,pts[-1][1],pts[-1][2]+.2),2.2,.8)
     return m
-def pine_lean_a():return _pine_lean('SW_PineLean_A',41,9.0,5.5)    # far out over the edge
-def pine_lean_b():return _pine_lean('SW_PineLean_B',43,11.0,3.2)   # taller, leaning less
+# Tree_ names: the game treats them as trees (the camera ignores them; collision only near the playable square)
+def pine_lean_a():return _pine_lean('Tree_PineLean_A',41,9.0,5.5)    # far out over the edge
+def pine_lean_b():return _pine_lean('Tree_PineLean_B',43,11.0,3.2)   # taller, leaning less
 
 # ---- placements for the layout (island-local metres; the layout applies the island origin and yaw)
 PINES=(['Tree_Pine_B','Tree_Pine_A'],[.65,.35])
@@ -295,7 +298,28 @@ MAPLES=(['Tree_Maple_lo','Tree_Maple_A'],[.75,.25])
 GINKGOS=(['Tree_Ginkgo_lo','Tree_Ginkgo'],[.8,.2])
 BROADS=(['Tree_Broad_lo'],[1.0])
 CANOPY=(['Tree_Canopy_Crimson','Tree_Canopy_Maple'],['Tree_Canopy_Ginkgo','Tree_Canopy_Amber'])   # the tree house's big autumn crowns
-GROVE_R=38.0              # the dark cedar grove on the crown, behind the temple
+GROVE_R=46.0              # the dark cedar grove on the crown, behind the temple
+# Tree sizes at scale 1 for the stair clearance (trunk top, crown bottom, crown top, crown radius; metres above the
+# base): the painted trees as in treehouse/layout.py SPECIES, the big autumn crowns from the tree house build's
+# trees.json (rounded up), the leaning pines measured on their own model (the radius takes in the whole lean).
+TREE_DIMS={'Tree_Maple_lo':(3.6,2.3,7.1,3.6),'Tree_Maple_A':(3.6,2.3,7.1,3.6),'Tree_Broad_lo':(4.7,3.1,9.1,3.1),
+           'Tree_Ginkgo_lo':(5.0,3.4,9.6,2.7),'Tree_Ginkgo':(5.0,3.4,9.6,2.7),'Tree_Cedar_A':(15.2,2.1,16.6,4.0),
+           'Tree_Cedar_B':(12.4,1.7,13.6,3.6),'Tree_Pine_A':(13.0,6.0,13.6,4.4),'Tree_Pine_B':(11.0,5.0,11.6,4.0),
+           'Tree_Canopy':(10.5,8.9,19.0,4.5),'Tree_PineLean_A':(9.0,3.5,10.0,11.4),'Tree_PineLean_B':(11.0,4.3,12.0,9.1)}
+STAIR_HW=2.7              # the stair's walkable half-width: the lanterns 2.2 m out, and the player's own radius
+HEADROOM=2.6              # a crown this high over the stair clears the player
+WALK_DZ=1.0               # the ground across the walk is within a metre of the stair's centre
+
+def stair_blocked(asset,x,y,z,s):
+    """True where a tree would stand on the stair or hang its crown across it at head height, anywhere along it
+    (every stretch of the stair within reach, not only the nearest: the stair climbs under a wide crown). In the
+    game a Tree_* instance near the playable square collides down to its crown's lowest leaves (only the camera
+    ignores it), so a crown over the walk is an invisible wall. z: the tree's base as placed, s: its scale."""
+    t_top,c_lo,c_hi,r=TREE_DIMS['Tree_Canopy' if asset.startswith('Tree_Canopy') else asset]
+    px,py,pt=_path_arrays();d=np.hypot(px-x,py-y);zp=_ramp();lo,hi=zp-WALK_DZ,zp+WALK_DZ+HEADROOM
+    trunk=(d<STAIR_HW+.35*s+.3)&(z+t_top*s>lo)&(z<hi)
+    crown=(d<STAIR_HW+r*s)&(z+c_hi*s>lo)&(z+c_lo*s<hi)
+    return bool((trunk|crown).any())
 
 def inland(x,y):
     """Metres from the coastline, positive inland."""
@@ -312,7 +336,7 @@ def forest(x,y,z):
     coast=(1-_smooth((d-8.0)/14.0))*np.clip((cliff_height(th)-5.0)/8.0,0,1)
     grove=1-_smooth((np.hypot(x-CROWN[0],y-CROWN[1])-GROVE_R)/14.0)
     maple=np.maximum(_smooth((_noise(x*1.5,y*1.5,21)-.10)/.35),hollow)
-    ginkgo=_smooth((_noise(x*1.3+40.0,y*1.3,33)-.20)/.3)*(1-_smooth((z-80.0)/20.0))*(1-maple)
+    ginkgo=_smooth((_noise(x*1.3+40.0,y*1.3,33)+.05)/.3)*(1-_smooth((z-75.0)/20.0))*(1-maple)
     free=(1-coast)*(1-grove)
     p=np.stack([.08+coast*.85+free*.18,.03+grove*.85+free*.10,.02+free*maple*.90,.02+free*ginkgo*.80,.02+free*.08])
     p=p*p;return p/p.sum(0)                                                       # squared: each wood keeps to its own ground
@@ -324,13 +348,15 @@ def glade(x,y,sl):
 def scatter(seed=1207,tree_attempts=36000,shrub_attempts=7000,boulders=140):
     """Returns dict(trees=[(asset,x,y,z,yaw,scale)],understory=[...],boulders=[...]). Trees only on the grass band
     (slope below the rock threshold, or below 80 degrees on the stair's mossy cut banks; above the wet shore, outside
-    the cove, the stair strip, the summit clearing and a few glades), 3 m apart so the canopy is continuous. The forest is in masses (see forest()): pines on the
-    cliff tops, cedars on the crown (1.3-1.6x), maple and ginkgo drifts. Leaning pines (SW_PineLean_*) grow out over
-    the cliff edges on the headlands and top the sea stacks, yawed toward the sea. Boulders sit at the foot of the
-    cliffs, on the steep lower faces and on the rock knobs."""
+    the cove, the stair strip, the summit clearing and a few glades), 3 m apart so the canopy is continuous. The forest
+    is in masses (see forest()): pines on the cliff tops, cedars on the crown (1.15-1.4x), maple and ginkgo drifts.
+    Leaning pines (Tree_PineLean_*) grow out over the cliff edges on the headlands, at least 12 m off the stair, and
+    top the sea stacks, yawed toward the sea. Near trees collide with the player in the game, so no trunk or crown may
+    reach into the stair's walk at head height (stair_blocked). Boulders sit at the foot of the cliffs, on the steep
+    lower faces and on the rock knobs, clear of the stair by their size."""
     rng=np.random.default_rng(seed);trees=[];under=[];rocks=[]
     def ok_band(lx,ly,z,sl,bank=False):
-        if z<SHORE_ROCK_Z+1.0 or z>SUMMIT_Z-4 and math.hypot(lx-CROWN[0],ly-CROWN[1])>GROVE_R:return False
+        if z<SHORE_ROCK_Z+1.0:return False
         if sl>(80.0 if bank and z>SHORE_ROCK_Z+6 else ROCK_SLOPE):return False    # the stair's mossy cut banks are wooded too
         if math.hypot(lx-SUMMIT[0],ly-SUMMIT[1])<SUMMIT_R+8:return False
         if math.hypot(lx-LANDING[0],ly-LANDING[1])<COVE_R+3:return False
@@ -352,14 +378,18 @@ def scatter(seed=1207,tree_attempts=36000,shrub_attempts=7000,boulders=140):
     near=(d>7.0)&(d<16.0)&(hc>9.0);xs,ys,th=xs[near],ys[near],th[near]
     zs=height(xs,ys);sls=slope_deg(xs,ys);pds=path_distance(xs,ys);leaning=0
     for lx,ly,a,z,sl,pd in zip(xs,ys,th,zs,sls,pds):
-        if leaning>=34 or sl>50 or pd<8 or not ok_band(lx,ly,z,sl) or not free(lx,ly,11.0):continue
+        # never on or next to the walk: 12 m off the stair (and so off the landing, where it starts), and the whole
+        # lean clear of it at head height
+        if leaning>=34 or sl>50 or pd<12 or not ok_band(lx,ly,z,sl) or not free(lx,ly,11.0):continue
         head=max(float(_lobe(a,at,w*1.6,1.0)) for at,w,amt in HEADLANDS if amt>0)
         if rng.random()>.25+.75*head:continue
+        asset='Tree_PineLean_A' if rng.random()<.55 else 'Tree_PineLean_B';scale=rng.uniform(.85,1.2)
+        if stair_blocked(asset,lx,ly,z-.6,scale):continue
         take(lx,ly);leaning+=1
-        add(trees,'SW_PineLean_A' if rng.random()<.55 else 'SW_PineLean_B',lx,ly,z-.3,math.degrees(a)+rng.uniform(-30,30),rng.uniform(.85,1.2))
+        add(trees,asset,lx,ly,z-.3,math.degrees(a)+rng.uniform(-30,30),scale)
     for (sx,sy),sr,sh in STACKS:                                                   # every stack wears a pine
         a=math.atan2(sy-CENTRE[1],sx-CENTRE[0]);z=float(height(sx,sy))
-        add(trees,'SW_PineLean_A',sx-math.cos(a)*sr*.25,sy-math.sin(a)*sr*.25,z-.3,math.degrees(a)+rng.uniform(-20,20),rng.uniform(.8,1.0));take(sx,sy)
+        add(trees,'Tree_PineLean_A',sx-math.cos(a)*sr*.25,sy-math.sin(a)*sr*.25,z-.3,math.degrees(a)+rng.uniform(-20,20),rng.uniform(.8,1.0));take(sx,sy)
         add(trees,'Tree_Pine_B',sx+math.sin(a)*sr*.3,sy-math.cos(a)*sr*.3,z-.3,rng.uniform(0,360),rng.uniform(.7,.9))
     # the wood
     xs=rng.uniform(-SIZE[0]/2,SIZE[0]/2,tree_attempts);ys=rng.uniform(-SIZE[1]/2,SIZE[1]/2,tree_attempts)
@@ -371,8 +401,10 @@ def scatter(seed=1207,tree_attempts=36000,shrub_attempts=7000,boulders=140):
         asset=rng.choice(group[0],p=group[1]);scale=rng.uniform(.9,1.25)
         if g in (2,3) and P[g,k]>.5 and rng.random()<.22:                     # the heart of a drift: a big autumn crown
             asset=rng.choice(CANOPY[g-2]);scale=rng.uniform(.75,.95)
-        if g<2 and z>PEAK*.62:scale=rng.uniform(1.3,1.6)                       # the crown stands tall
-        take(lx,ly);add(trees,asset,lx,ly,z-.3-.03*max(sl-30.0,0),rng.uniform(0,360),scale)   # sunk deeper on steep ground: no root in the air
+        if g<2 and z>PEAK*.7:scale=rng.uniform(1.15,1.4)                       # the crown stands a little taller
+        base=z-.3-.03*max(sl-30.0,0)                                            # sunk deeper on steep ground: no root in the air
+        if pd<30 and stair_blocked(str(asset),lx,ly,base-.3,scale):continue   # (the layout sinks trees another .3 m)
+        take(lx,ly);add(trees,asset,lx,ly,base,rng.uniform(0,360),scale)
     xs=rng.uniform(-SIZE[0]/2,SIZE[0]/2,shrub_attempts);ys=rng.uniform(-SIZE[1]/2,SIZE[1]/2,shrub_attempts)
     zs=height(xs,ys);sls=slope_deg(xs,ys);pds=path_distance(xs,ys)
     for lx,ly,z,sl,pd in zip(xs,ys,zs,sls,pds):
@@ -393,12 +425,13 @@ def scatter(seed=1207,tree_attempts=36000,shrub_attempts=7000,boulders=140):
                 (kx,ky),ks,kh=OUTCROPS[int(rng.integers(len(OUTCROPS)))] if rng.random()<.7 else (CROWN,SUMMIT_R+10,0)
                 lx=kx+rng.normal(0,ks*.8);ly=ky+rng.normal(0,ks*.8)
             z=float(height(lx,ly));sl=float(slope_deg(lx,ly))
-            if math.hypot(lx-LANDING[0],ly-LANDING[1])<COVE_R+10 or float(path_distance(lx,ly))<6:continue
+            scale=rng.uniform(2.5,7.5) if kind=='ring' else rng.uniform(2.0,5.0)     # unit rocks are ~2 m: 5-15 m at the water
+            # boulders collide and stop the camera: the widest (a slab 1.8 m per unit of scale) stays off the stair
+            if math.hypot(lx-LANDING[0],ly-LANDING[1])<COVE_R+10 or float(path_distance(lx,ly))<max(6.0,STAIR_HW+1.8*scale+.5):continue
             if kind=='ring' and not (-3.0<z<6.0):continue
             if kind=='slope' and not (6.0<z<PEAK*.55 and sl>ROCK_SLOPE-4):continue
             if kind=='peak' and not (z>PEAK*.4 and sl>ROCK_SLOPE-12 and math.hypot(lx-SUMMIT[0],ly-SUMMIT[1])>SUMMIT_R+6):continue
             asset=rng.choice(['SW_Boulder_A','SW_Boulder_B','SW_Boulder_C'],p=[.45,.35,.2])
-            scale=rng.uniform(2.5,7.5) if kind=='ring' else rng.uniform(2.0,5.0)     # unit rocks are ~2 m: 5-15 m at the water
             add(rocks,asset,lx,ly,z-.12*scale,rng.uniform(0,360),scale)
             made+=1
     return dict(trees=trees,understory=under,boulders=rocks)
