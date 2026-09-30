@@ -21,6 +21,7 @@
 #include "VillageLife.h"
 #include "MegaRamp.h"
 #include "SkatePark.h"
+#include "SuperUltraMegaPark.h"
 #include "ZeppelinService.h"
 #include "SeeThrough.h"
 
@@ -451,6 +452,8 @@ void AJapanWorld::Load()
         if(auto* Ramp=GetWorld()->SpawnActor<AMegaRamp>()) Ramp->Initialize(*Mega);
     if(FPaths::FileExists(ParkPath))
         if(auto* Park=GetWorld()->SpawnActor<ASkatePark>()) Park->Initialize(ParkPath);
+    // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
+    ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK cleared %d vegetation instances"), Cleared);
     // The road guardrails are grindable: the W-beam's top edge is 85 cm over the rail line.
     if (USkateRailSubsystem* Rails = GetWorld()->GetSubsystem<USkateRailSubsystem>())

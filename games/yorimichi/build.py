@@ -45,7 +45,7 @@ def cairo_roles():
 # data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
 STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
           'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json',
-          'treehouse/runtime.json')
+          'treehouse/runtime.json', 'megapark/park.json')
 
 
 def staged_source(out, rel):
@@ -89,7 +89,8 @@ def steps(ctx):
              inputs=[WORLD / 'build_foliage_lods.py', WORLD / 'build_assets.py'], needs=['world.textures'],
              outputs=[out / 'foliage_lods' / 'manifest.json'], about='seeded LOD chains for trees, bushes and grass'),
         Step('world.hidamari', [Blender(REGIONS / 'hidamari' / 'build.py')],
-             inputs=[REGIONS / 'hidamari', REGIONS / 'village' / 'build.py', REGIONS / 'zeppelin' / 'layout.py'],
+             inputs=[REGIONS / 'hidamari', REGIONS / 'village' / 'build.py', REGIONS / 'zeppelin' / 'layout.py',
+                     REGIONS / 'megapark' / 'placement.py'],
              needs=['world.layout'], outputs=[out / 'hidamari' / 'city.json', out / 'hidamari' / 'manifest.json'],
              about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains'),
         Step('world.zeppelin', [Blender(REGIONS / 'zeppelin' / 'build.py', threads=2)],
@@ -107,7 +108,8 @@ def steps(ctx):
              needs=['world.layout'], outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json'],
              about='the tree house: ten places, bridges, rooms and their dressing, lights, sunbeams'),
         Step('world.terrain', [Blender(WORLD / 'build_terrain.py')],
-             inputs=[WORLD / 'build_terrain.py', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py'],
+             inputs=[WORLD / 'build_terrain.py', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
+                     REGIONS / 'megapark' / 'placement.py'],
              needs=['world.layout', 'world.hidamari', 'world.textures'],
              outputs=[out / 'terrain.fbx', out / 'assets' / 'Sea.fbx'], about='terrain, road, wires, far hills, sea'),
         Step('world.village', [Blender(REGIONS / 'village' / 'build.py')], inputs=[REGIONS / 'village'], needs=['world.layout'],
@@ -121,8 +123,8 @@ def steps(ctx):
         Step('world.mega', [Blender(REGIONS / 'mega' / 'build.py')], inputs=[REGIONS / 'mega', REGIONS / 'village' / 'build.py'],
              needs=['world.layout'], outputs=[out / 'mega' / 'manifest.json'], about='the mini-mega ramp and its trail'),
         Step('world.megapark', [Blender(REGIONS / 'megapark' / 'build.py', threads=4)],
-             inputs=[REGIONS / 'megapark' / 'build.py', ASSETS / 'megapark', YORI],
-             outputs=[out / 'megapark' / 'build.json', out / 'megapark' / 'fbx' / 'SM_MP_ImportSeed.fbx'],
+             inputs=[REGIONS / 'megapark' / 'build.py', REGIONS / 'megapark' / 'placement.py', ASSETS / 'megapark', YORI],
+             outputs=[out / 'megapark' / 'build.json', out / 'megapark' / 'park.json', out / 'megapark' / 'fbx' / 'SM_MP_ImportSeed.fbx'],
              about='original Super Ultra Mega Park geometry, riding collision and grind curves -> FBX'),
         Step('world.lake', [Blender(REGIONS / 'forest_lake' / 'build.py')], inputs=[REGIONS / 'forest_lake', REGIONS / 'village' / 'build.py'],
              needs=['world.layout'], outputs=[out / 'forest_lake' / 'manifest.json'], about='the woodland lake and cabin'),
@@ -132,7 +134,7 @@ def steps(ctx):
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy'),
-        Step('world.map', [Python(WORLD / 'map' / 'build_map.py')], inputs=[WORLD / 'map'],
+        Step('world.map', [Python(WORLD / 'map' / 'build_map.py')], inputs=[WORLD / 'map', REGIONS / 'megapark' / 'placement.py'],
              needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin'],
              outputs=[out / 'map' / 'map.json', out / 'map' / 'map.png'], about='map zones and the painted sheet'),
         Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'))],
@@ -237,6 +239,6 @@ def steps(ctx):
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[REGIONS / 'skatepark' / 'park.json'],
-             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse'],
+             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in STAGED], about='runtime files into unreal/Content/Data'),
     ]

@@ -6,7 +6,9 @@ and authoritative riding collision stay separate, and neither is simplified.
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
+from megapark import placement
 
 import bpy
 import hashlib
@@ -119,6 +121,43 @@ def sample_rail(rail):
             'closed': rail['closed'], 'points': points, 'original_segments': rail['native_segment_payloads']}
 
 
+def ue(point):
+    return [point[0] * 100., point[2] * 100., point[1] * 100.]
+
+
+def island_runs(points):
+    """The parts of a grind path over the park's own ground: a few road rails ran on into the left-out campus."""
+    over = placement.contains(*placement.native_to_island(np.asarray(points))[:, :2].T, margin=3.)
+    if over.all():
+        return [('', points)]
+    runs, start = [], None
+    for i, inside in enumerate(list(over) + [False]):
+        if inside and start is None: start = i
+        if not inside and start is not None:
+            if i - start >= 2: runs.append(points[start:i])
+            start = None
+    return [(f'_{k}', run) for k, run in enumerate(runs)]
+
+
+def write_island(report):
+    """The park in the island for ASuperUltraMegaPark::Spawn (docs/MEGAPARK.md, "Placement"): the actor transform, the
+    park's own render and collision meshes at their native origins, every grind path and the upper deck start."""
+    models, sections = placement.kept()
+    render = {'SM_MP_' + m['asset_id'][2:] for m in models}
+    collision = {'UC_MP_' + c['id'] for c in sections}
+    t = placement.unreal_transform()
+    spawn = report['spawn']
+    island = {'source_sha256': report['source_sha256'], 'location_cm': t['location_cm'], 'yaw_deg': t['yaw_deg'],
+        'placement': placement.summary(),
+        'render': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['render'] if e['name'] in render],
+        'collision': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['collision'] if e['name'] in collision],
+        'rails': [{'id': r['id'] + suffix, 'closed': r['closed'] and not suffix, 'points_cm': [ue(p) for p in points]}
+                  for r in report['rails'] for suffix, points in island_runs(r['points'])],
+        'spawn': {'location_cm': placement.to_unreal(spawn['position']).tolist(), 'yaw_deg': spawn['heading_degrees'] + t['yaw_deg']}}
+    assert len(island['render']) == len(render) and len(island['collision']) == len(collision)
+    (OUT / 'park.json').write_text(json.dumps(island) + '\n')
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / 'fbx').mkdir(exist_ok=True)
@@ -187,6 +226,7 @@ def main():
                 np.asarray([[0,2,1]], dtype='u4'), ['M_Collision'], [0],
                 {'UVMap': np.asarray([[0,0],[1,0],[0,1]], dtype='f4')})
     (OUT / 'build.json').write_text(json.dumps(report, indent=1) + '\n')
+    write_island(report)
     print('MEGAPARK BUILD COMPLETE', source['summary'], flush=True)
 
 

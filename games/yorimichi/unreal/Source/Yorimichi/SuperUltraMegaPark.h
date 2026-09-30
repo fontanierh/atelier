@@ -22,7 +22,8 @@ struct FMegaParkRail
     UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FString> OriginalSegments;
 };
 
-/** Level-owned grind paths. Render and collision geometry are ordinary StaticMeshActors. */
+/** The park's grind paths. In the standalone level, render and collision geometry are ordinary StaticMeshActors; in the
+ *  island, Spawn places the park from its manifest and owns the meshes as components (docs/MEGAPARK.md). */
 UCLASS()
 class YORIMICHI_API ASuperUltraMegaPark : public AActor
 {
@@ -30,8 +31,17 @@ class YORIMICHI_API ASuperUltraMegaPark : public AActor
 public:
     ASuperUltraMegaPark();
     virtual void BeginPlay() override;
+    /** Places the park in the island from Content/Data/megapark/park.json: the actor transform, the kept render and
+     *  collision meshes from /Game/MegaPark/Meshes, and the original grind paths. Null if the file is missing. */
+    static ASuperUltraMegaPark* Spawn(UWorld* World, const FString& Path);
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") FString SourceManifestHash;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") TArray<FMegaParkRail> Rails;
+    /** The upper deck start, in Unreal world space. */
+    FVector SpawnLocation = FVector::ZeroVector;
+    float SpawnYaw = 0.f;
+private:
+    void RegisterRails();
+    bool bRailsRegistered = false;
 };
 
 /** Standalone park level: uses the existing player without spawning the island over the imported park. */

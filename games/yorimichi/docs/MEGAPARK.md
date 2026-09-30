@@ -1,9 +1,10 @@
 # Super Ultra Mega Park
 
-The original Skate 3 Super Ultra Mega Park is an editable, standalone Unreal level at
-`/Game/MegaPark/Maps/SuperUltraMegaPark`. It has not been redesigned or moved into the island.
-The original mountain, wooden transitions, large gaps, bowls, coping, lower vert section,
-grandstands and surrounding source geometry are retained at their original scale and positions.
+The original Skate 3 Super Ultra Mega Park sits in the island's western foothills, about a
+kilometre north of the forest lake. It also remains an editable, standalone Unreal level at
+`/Game/MegaPark/Maps/SuperUltraMegaPark`, the parity reference for the placed park.
+The wooden transitions, large gaps, bowls, coping, lower vert section and grandstands keep their
+original scale and shape; in the island the whole park is turned and moved as one body.
 
 Build with `atelier build yorimichi world.megapark unreal.megapark`, then open that level in the
 editor or run `atelier play yorimichi --profile megapark`. A fresh checkout also needs the usual
@@ -11,6 +12,38 @@ player and board asset imports (`atelier build yorimichi` installs everything). 
 build does not require an extracted game, downloaded asset bundle, Python retail decoder or
 external Rust map loader. It uses only the committed source below.
 Use `--profile megapark-fullscreen` for a fullscreen controller playtest.
+
+## Placement
+
+`world/regions/megapark/placement.py` is the single source for where the park is: the terrain, the
+forest, the park build and the review tool all read it. It is pure NumPy.
+
+- The island keeps the park itself: the 32 models with authored `_MP` materials, and the 20
+  collision sections that lie within the bounds of those models in their own stream tile (117,143
+  triangles). The campus, roads and outer hills around it are left out. All 151 grind paths are
+  kept; five road rails that ran on into the left-out campus end at the park's edge.
+- The park turns 60 degrees clockwise about its centre, which lands at Blender (-150, 1300); its
+  lowest collision point is at 49.3 m. The riding collision and grind paths are the original
+  triangles and curves under that one rigid transform, so the ramps ride as they did.
+- The spot was chosen by sight lines from every map place. With the terrain reshaped around it,
+  the park is hidden from the city, the hamlet, the beaches, the pier and the lake; from the island
+  temple, 1.75 km away, about 5% of it shows against the volcano's lower western flank. Its open,
+  low side faces west across a forested valley to the 200 m western ridge; the volcano rises behind
+  its high rims. It reads as a rocky canyon in the forest from the air, the volcano's flank and the
+  western hills.
+- The foothills meet the park: under it the terrain stays a metre below the park's lowest surface
+  within 20 m; around it the natural relief is offset to the park's edge height and eases back
+  over a skirt that widens with the height it makes up (35 to 220 m). Trees are cleared from the
+  footprint (`hidamari/layout.py`).
+- `world.megapark` writes `megapark/park.json`, staged into `Content/Data`: the actor transform,
+  the kept meshes at their native origins, the grind paths and the upper deck start.
+  `ASuperUltraMegaPark::Spawn` (called by `AJapanWorld`) builds the park from it, using the meshes
+  `unreal.megapark` imports.
+
+`python games/yorimichi/tools/review_megapark.py --island` checks the placed park in the island
+the same way as the standalone review below, then captures it in the game's own look: from the air,
+from its deck, from the hills around it, and at eye height from the lake, the woodland air station,
+the mini-mega ramp, the temple, the foothills and the plaza (whose volcano view it must not touch).
 
 ## What is bundled
 
