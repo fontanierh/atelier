@@ -90,13 +90,12 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     GetMesh()->SetCustomDepthStencilValue(1);
     GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     GetMesh()->bEnableUpdateRateOptimizations = false;
-    // The arm eases back out after an obstacle and passes the tree house while the see-through cuts it (docs/CAMERA.md).
+    // The arm stops on solid things only, pulls in fast and eases back out; thin things fade whole (docs/CAMERA.md).
     CameraArm = CreateDefaultSubobject<UJapanCameraArm>(TEXT("FollowArm"));
     CameraArm->SetupAttachment(GetRootComponent());
     CameraArm->TargetOffset = FVector(0,0,35);
     CameraArm->TargetArmLength = 420.f;
     CameraArm->bUsePawnControlRotation = true;
-    CameraArm->ProbeSize = 12.f;
     CameraArm->bEnableCameraLag = true;
     CameraArm->CameraLagSpeed = 14.f;
     CameraArm->CameraLagMaxDistance = 40.f;
