@@ -507,9 +507,11 @@ def deck(m, d, p):
             with m.use('wood_plank', grain=(u[0], u[1], 0), jitter=True):
                 prism(m, piece, z-.06, z, vary(PLANK, .12), vary(DARK, .1))
         k += .23
-    # Joists to every corner, a rim, and knee braces down to the trunk.
     r = p['trunk']; lashed = []
-    for k, (vx, vy) in enumerate(poly):
+    if 'box' in p:
+        deck_frame(m, d, p)
+    # A landing: joists to every corner and knee braces down to the trunk.
+    for k, (vx, vy) in enumerate(poly if 'box' not in p else []):
         dd = np.array([vx-x0, vy-y0]); n = float(np.linalg.norm(dd)); w = dd/n
         dj = .0025 if len(poly) % 2 and k == len(poly)-1 else .005*(k % 2)     # joists meet at the trunk: staggered
         board(m, (*(c+w*r*.8), z-.06-dj), (*(c+w*(n-.08)), z-.06-dj), .12, .16, WOOD, 'wood_timber')
@@ -524,15 +526,54 @@ def deck(m, d, p):
         dz = .0025 if len(poly) % 2 and i == len(poly)-1 else .005*(i % 2)
         e = (np.array(b)-np.array(a))/np.linalg.norm(np.array(b)-np.array(a))*.03
         board(m, (*(np.array(a)-e), z-.02-dz), (*(np.array(b)+e), z-.02-dz), .09, .26, DARK, 'wood_timber')
-    # Moss creeping in from the rim at a few corners, and the season's leaves.
+    # Cushions of moss in a few corners, inside the rim, and the season's leaves.
     for k in R.sample(range(len(poly)), min(3, len(poly))):
-        a = np.array(poly[k]); inward = (c-a)/np.linalg.norm(c-a)
-        blob = [a+inward*.1+np.array([math.cos(t), math.sin(t)])*R.uniform(.18, .32) for t in np.linspace(0, 2*math.pi, 9)[:-1]]
-        blob = [q for q in blob if inside(poly, *q)]
-        if len(blob) >= 3:
-            with d.use('moss'):
-                d.poly([(*q, z+.008) for q in ccw(blob)], vary(MOSS, .12))
+        a = np.array(poly[k]); inward = (c-a)/np.linalg.norm(c-a); q = a+inward*.45
+        moss_pad(d, lambda x, y: np.array([x, y, z]), np.array([0, 0, 1.]), q[0], q[1], R.uniform(.18, .26), R.uniform(.16, .24), .035)
     leaves_on(d, poly, z, 14)
+
+
+def deck_frame(m, d, p):
+    """Under a room's deck (a chamfered rectangle round the trunk and the room, layout.box()): joists along its
+    length every metre or so, on girders across it; the two end girders stand on stilts down to the ground at the
+    corners away from the trunk, each with a knee brace and ties between them, and the girders either side of the
+    trunk hang on knee braces from it. The joists stop at the bark."""
+    x0, y0 = p['xy']; z = p['deck']; r = p['trunk']; ang, u0, u1, v0, v1, ch = p['box']
+    a = math.radians(ang); U = np.array([math.cos(a), math.sin(a)]); V = np.array([-U[1], U[0]]); c = np.array([x0, y0])
+    at = lambda u, v, zz: (*(c+U*u+V*v), zz)
+    cut = lambda t0, t1: max(0., ch-t0, ch-t1)       # how far a chamfer cuts in, at distances t0, t1 from two edges
+    nv = max(2, math.ceil((v1-v0-.3)/1.1))
+    for i in range(nv+1):
+        v = v0+.15+(v1-v0-.3)*i/nv; k = cut(v-v0, v1-v); lo, hi = u0+k+.08, u1-k-.08
+        spans = [(lo, hi)]
+        if abs(v) < r+.15:
+            e = math.sqrt((r+.15)**2-v*v); spans = [(lo, -e), (e, hi)]
+        for ua, ub in spans:
+            if ub-ua > .3: board(m, at(ua, v, z-.06), at(ub, v, z-.06), .1, .16, WOOD, 'wood_timber')
+    inset = max(.9, (ch+.5)/2)
+    ends = [u0+inset, u1-inset]; mids = [u for u in (-(r+.25), r+.25) if all(abs(u-e) > .8 for e in ends)]
+    for u in ends+mids:
+        k = cut(u-u0, u1-u)
+        board(m, at(u, v0+k+.1, z-.22), at(u, v1-k-.1, z-.22), .16, .2, DARK, 'wood_timber')
+    for u in mids+[e for e in ends if abs(e) < r+1.6]:      # knee braces from the trunk to the girders near it
+        s = 1 if u > 0 else -1
+        for v in (-1.3, 1.3):
+            board(m, at(s*r*.85, v*.2, z-2.1), at(u, v, z-.44), .12, .12, WOOD, 'wood_timber')
+    ring(d, c, r+.06, z-2.1+.05, .03, ROPE, 16)
+    for u in ends:
+        feet = [v for _, _, us, v in p['stilts'] if abs(us-u) < .01]      # layout.stilts()
+        for v in feet:
+            q = at(u, v, 0); g = ground(q[0], q[1])
+            post(m, q[0], q[1], g-.3, z-.42, .2, WOOD)
+            s = -1 if v > 0 else 1                       # a knee brace in toward the middle of the girder
+            board(m, at(u, v, z-1.7), at(u, v+s*1.2, z-.44), .1, .1, WOOD, 'wood_timber')
+            ring(d, q[:2], .15, z-1.72, .025, ROPE, 10)
+        if len(feet) == 2 and z-max(ground(*at(u, v, 0)[:2]) for v in feet) > 3.5:   # a tie and a cross between them
+            zt = z-2.6
+            board(m, at(u, feet[0], zt), at(u, feet[1], zt), .1, .12, WOOD, 'wood_timber')
+            gl = max(ground(*at(u, v, 0)[:2]) for v in feet)+1.2
+            if zt-gl > 1.5:
+                board(m, at(u, feet[0], zt-.14), at(u, feet[1], gl), .09, .09, WOOD, 'wood_timber')
 
 
 def gaps_for(p, pl, extra=()):
@@ -691,29 +732,64 @@ def wall(m, a, b, h, openings=(), t=.1, color=BOARD, centre=(0, 0), frames=None,
                     m.box((s, 0, (zb+zt)/2), (w, .05, .035), DARK)
 
 
+def moss_pad(d, S, nrm, am, bm, ra, rb, h, n=9):
+    """A cushion of moss on a surface: S(a, b) is its point at surface coordinates (a, b), nrm its up side, and the
+    ellipse (am, bm, ra, rb) turns anticlockwise seen from there. An irregular rim just proud of the surface and a
+    dome h high: moss that stands up off the shingles or boards instead of lying flat on them."""
+    ts = sorted(2*math.pi*k/n+R.uniform(-.25, .25) for k in range(n)); fs = [R.uniform(.75, 1.15) for _ in ts]
+    rim = [S(am+ra*f*math.cos(t), bm+rb*f*math.sin(t))+nrm*.006 for t, f in zip(ts, fs)]
+    mid = [S(am+ra*f*.6*math.cos(t), bm+rb*f*.6*math.sin(t))+nrm*h*R.uniform(.65, .85) for t, f in zip(ts, fs)]
+    top = S(am, bm)+nrm*h; col = vary(MOSS, .15)
+    with d.use('moss'):
+        for k in range(n):
+            j = (k+1) % n
+            d.poly([tuple(rim[k]), tuple(rim[j]), tuple(mid[j]), tuple(mid[k])], col)
+            d.poly([tuple(mid[k]), tuple(mid[j]), tuple(top)], col)
+
+
 def shingled(m, d, quad, rows=None, moss=.25, tiles=.1, ridge=None, phase=0):
     """A roof plane of overlapping shingle courses: quad = eave-left, eave-right, top-right, top-left.
-    Each course is a thin slab lapping the one below, split into runs of shingle, moss or blue tile."""
+    Each course is a thin slab lapping the one below, split into runs of shingle or blue tile; on some runs a
+    cushion of moss (more along the eaves and the ridge)."""
     q = [np.asarray(x, float) for x in quad]
     slope = float(np.linalg.norm((q[3]+q[2])/2-(q[0]+q[1])/2)); rows = rows or max(3, round(slope/.34))
     P = lambda a, b: q[0]+(q[1]-q[0])*a+(q[3]-q[0])*b+(q[2]-q[1]-q[3]+q[0])*a*b
     along = (q[1]-q[0])/np.linalg.norm(q[1]-q[0])
     nrm = np.cross(q[1]-q[0], q[3]-q[0]); nrm /= np.linalg.norm(nrm)
+    turn = 1 if nrm[2] > 0 else -1       # a pad's ellipse must turn anticlockwise seen from above
     if nrm[2] < 0: nrm = -nrm
+    prev, pads = [], []
     for i in range(rows):
         b0, b1 = i/rows, min(1., (i+1.35)/rows)
         width = float(np.linalg.norm(P(1, b0)-P(0, b0))); runs = max(1, round(width/R.uniform(.7, 1.1)))
         ext = .008*((i+phase) % 2)/width    # every other row a little past the sides: lapping rows' ends not in one plane
-        cuts = sorted([-ext, 1.+ext]+[R.uniform(.1, .9) for _ in range(runs-1)])
+        # runs at least 25 cm long (a sliver's two ends would lie in its neighbours' end faces), and no cut within
+        # 4 cm of one in the row below (their ends overlap where the rows lap)
+        inner = []
+        for a in [R.uniform(.1, .9) for _ in range(runs-1)]:
+            if all(abs(a-x)*width > .25 for x in inner) and all(abs(a-x)*width > .04 for x in prev): inner.append(a)
+        cuts = sorted([-ext, 1.+ext]+inner); prev = inner
         for a0, a1 in zip(cuts[:-1], cuts[1:]):
             c = R.random(); edge = i == 0 or i == rows-1
-            kind, col = (('moss', vary(MOSS, .15)) if c < moss*(1.6 if edge else .7) else
-                         ('tile', vary(TILE, .1)) if c < moss+tiles else ('shingle', vary(SHINGLE, .12)))
+            mossy = c < moss*(1.6 if edge else .7)
+            kind, col = (('tile', vary(TILE, .1)) if not mossy and c < moss+tiles else ('shingle', vary(SHINGLE, .12)))
             lo = [P(a0, b0), P(a1, b0)]; hi = [P(a1, b1), P(a0, b1)]
             tip = .045+.015*R.random()
             pts = [lo[0]+nrm*tip, lo[1]+nrm*tip, hi[0]+nrm*.012, hi[1]+nrm*.012]
             with m.use(kind, grain=tuple(along), jitter=True):
                 hexa(m, [pts[0]-nrm*.03, pts[1]-nrm*.03, pts[2]-nrm*.03, pts[3]-nrm*.03]+pts, col)
+            if mossy:        # on the course's visible band, b0 to the next course's lower edge
+                band = min(b1, (i+1)/rows)-b0
+                top_of = lambda a, b, b0=b0, b1=b1, tip=tip: P(a, b)+nrm*(tip+(.012-tip)*(b-b0)/(b1-b0))
+                fb = R.uniform(.38, .55); rb = min(R.uniform(.28, .4), fb-.1)
+                pads.append((top_of, nrm, (a0+a1)/2+R.uniform(-.1, .1)*(a1-a0), b0+band*fb,
+                             R.uniform(.3, .42)*(a1-a0), turn*band*rb, R.uniform(.045, .08)))
+    # quad is in m's frame (the caller's m.at()), which d does not share: the pads go into d in that frame
+    old, d.transform = d.transform, m.transform.copy()
+    try:
+        for pad in pads: moss_pad(d, *pad)
+    finally:
+        d.transform = old
     under = [tuple(x-nrm*.03) for x in q]
     if np.cross(q[1]-q[0], q[3]-q[0])@nrm > 0: under = under[::-1]
     with m.use('wood_plank', grain=tuple(along)):
@@ -746,12 +822,11 @@ def gable_roof(m, d, length, width, eave, top, over=.36):
             board(m, (x+f*.004, f*w2, eave), (x+f*.004, 0, top+.06), .08, .16, DARK, 'wood_timber')
 
 
-def hut_frame(p, depth):
-    x0, y0 = p['xy']; z = p['deck']; ang = p['open']; r0 = p['trunk']+.3
-    diffs = [((l['angle']-ang+540) % 360)-180 for l in p['links']]
-    side = 1 if min(diffs, key=abs) > 0 else -1
-    c = np.array([x0+(r0+depth/2)*math.cos(math.radians(ang)), y0+(r0+depth/2)*math.sin(math.radians(ang)), z])
-    return c, ang, side
+def hut_frame(p):
+    """A hut's centre at deck height and the angle of its local x (layout.room(): out from the trunk, which stands
+    behind the back wall), and side = 1: the furnishing works in plain hut-local y."""
+    r = p['room']
+    return np.array([*r['center'], p['deck']], float), r['angle'], 1
 
 
 def local(c, ang, lx, ly, lz=0.):
@@ -759,30 +834,56 @@ def local(c, ang, lx, ly, lz=0.):
     return np.array([c[0]+lx*math.cos(a)-ly*math.sin(a), c[1]+lx*math.sin(a)+ly*math.cos(a), c[2]+lz])
 
 
-def hut(m, d, p, depth, width, name, wall_h=2.25, top=L.ROOF_TOP['hut']):
-    c, ang, side = hut_frame(p, depth); d2, w2 = depth/2, width/2
+def hut_roof_z(lx):
+    """Height over the floor of a hut roof's underside at hut-local x (the ridge runs across at lx = 0)."""
+    d2 = L.HUT[1]/2; eave = L.WALL-.08
+    return eave+(L.ROOF_TOP['hut']-eave)*(1-abs(lx)/(d2+.36))
+
+
+def hut(m, d, p, name):
+    """A hut beside its trunk (layout.room()): 7 m across between the doors in its two gable ends, 6 m deep from the
+    back wall, which faces the trunk, to the outer wall, 3 m to the wall plate and open to the rafters. The ridge
+    runs across, over both doors (1.3 x 2.5 m, each with a noren and a lantern). The outer wall has a six-pane window
+    and a round one; the back wall two windows either side of the trunk, so it is never blank from the bridges; each
+    gable a round window on the back side of its door, battens and a lantern. Inside, a lane 1.5 m wide runs from
+    door to door through the middle (hut-local |x| < 0.75); the furniture keeps to the back and front halves."""
+    c, ang, side = hut_frame(p); d2, w2 = p['room']['half']; h = L.WALL; dw, dh = L.DOOR; top = L.ROOF_TOP['hut']
     frames = []
     with m.at(tuple(c), ang):
-        wall(m, (d2, -w2), (d2, w2), wall_h, [(w2-side*.5, 1.12, .78, 1.9, 'round')], frames=frames)
-        wall(m, (-d2, w2), (-d2, -w2), wall_h, frames=frames)
-        for s in (-1, 1):
-            ops = [(d2, .86, 0., 1.86, 'door')] if s == side else [(d2, 1.3, .88, 1.8, 'window')]
-            wall(m, (-d2, s*w2), (d2, s*w2), wall_h, ops, frames=frames)
+        # wall positions: outer s = y+w2, back s = w2-y, gable -y s = x+d2, gable +y s = d2-x
+        wall(m, (d2, -w2), (d2, w2), h, [(w2-1.6, 1.6, .9, 2.2, 'window'), (w2+1.9, 1.1, 1.1, 2.2, 'round')], frames=frames)
+        # (the sill's underside clear of the plaster's, which starts at the rail, 0.95 m)
+        wall(m, (-d2, w2), (-d2, -w2), h, [(w2-y, .9, 1.05, 2.05, 'window') for y in (2.5, -2.5)], frames=frames)
+        wall(m, (-d2, -w2), (d2, -w2), h, [(d2, dw, 0., dh, 'door'), (d2-1.9, .8, 1.2, 2.0, 'round')], frames=frames)
+        wall(m, (d2, w2), (-d2, w2), h, [(d2, dw, 0., dh, 'door'), (d2+1.9, .8, 1.2, 2.0, 'round')], frames=frames)
         for x in (-d2, d2):
-            for y in (-w2, w2): post(m, x, y, -.04, wall_h+.05, .16, DARK)
-        gable_roof(m, d, depth, width, wall_h-.08, top)
-    # world-space inside frames: (origin, along, inward, length) per wall, in order outer, back, side -1, side +1
+            for y in (-w2, w2): post(m, x, y, -.04, h+.05, .16, DARK)
+    with m.at(tuple(c), ang+90):          # roof frame: x along the ridge (hut-local y), y = -(hut-local x)
+        gable_roof(m, d, 2*w2, 2*d2, h-.08, top)
+    with d.at(tuple(c), ang+90):          # vertical battens on both gables, outside the gable boards
+        e0 = h+.04                        # the gable board's top edge: gable_roof()'s triangle, eave+.02 to top-.02
+        for o in (-1, 1):
+            for yy in np.arange(-d2+.45, d2-.3, .5):
+                z1 = (h-.06)+(top-.02-(h-.06))*(1-abs(yy)/d2)-.16
+                if z1-e0 > .25:
+                    with d.use('wood_timber', grain=(0, 0, 1)):
+                        d.box((o*(w2+.08), yy, (e0+z1)/2), (.035, .07, z1-e0), DARK)
+    # world-space inside frames: (origin, along, inward, length) per wall, in order outer, back, gable -y, gable +y
     W = [(local(c, ang, *f[0]), rot(f[1], ang), rot(f[2], ang), f[3]) for f in frames]
-    door = local(c, ang, 0, side*(w2+.08))
-    noren(d, door[0], door[1], c[2]+1.86, .8, .72, ang, 'noren_indigo' if name == 'library' else 'noren_cream')
-    lan = local(c, ang, d2*.55, side*(w2+.32)); chochin(d, lan[0], lan[1], c[2]+1.72, .26, .3, 320)
-    for lx, ly in ((d2+.34, -w2-.34), (-d2-.1, -side*(w2+.34))):
-        q = local(c, ang, lx, ly); glass_float(d, q[0], q[1], c[2]+wall_h-.45, .12, .3)
-    q = local(c, ang, d2+.36, .45); fuurin(d, q[0], q[1], c[2]+wall_h-.3)
-    inside = local(c, ang, 0, 0); chochin(d, inside[0], inside[1], c[2]+2.05, .24, .35, 650)
-    interior((inside[0], inside[1], c[2]+wall_h/2), (d2-.05, w2-.05, wall_h/2+.35), ang)
-    leaves_on(d, [tuple(local(c, ang, sx*(d2-.2), sy*(w2-.2))[:2]) for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))], c[2], 7)
-    q = local(c, ang, d2*.6, 0); light(q[0], q[1], c[2]+1.2, 250, 3.2)      # warm fill low in the room
+    for s in (-1, 1):
+        q = local(c, ang, 0, s*(w2+.08))
+        noren(d, q[0], q[1], c[2]+dh, dw-.1, .85, ang, 'noren_indigo' if name == 'library' else 'noren_cream')
+        q = local(c, ang, .98, s*(w2+.3)); chochin(d, q[0], q[1], c[2]+2.35, .26, .3, 320)
+    for lx, ly in ((d2+.34, -w2-.34), (d2+.34, w2+.34), (-d2-.3, -w2+.8), (-d2-.3, w2-.8)):
+        q = local(c, ang, lx, ly); glass_float(d, q[0], q[1], c[2]+h-.5, .12, .3)
+    q = local(c, ang, -d2-.3, 0); chochin(d, q[0], q[1], c[2]+h-.55, .26, .3, 260)     # on the back wall, by the trunk
+    q = local(c, ang, d2+.36, .45); fuurin(d, q[0], q[1], c[2]+h-.3)
+    for lx in (-1.8, 1.8):                # over the furniture, off the lane
+        q = local(c, ang, lx, 0); chochin(d, q[0], q[1], c[2]+2.45, .24, .35, 420)
+    interior((c[0], c[1], c[2]+h/2), (d2-.05, w2-.05, h/2+.35), ang)
+    # leaves blown in through the doors, along the lane (never under the furniture)
+    leaves_on(d, [tuple(local(c, ang, sx*.7, sy*(w2-.15))[:2]) for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))], c[2], 6)
+    light(c[0], c[1], c[2]+1.2, 300, 4.)      # warm fill low in the room
     return c, ang, side, W
 
 
@@ -812,77 +913,133 @@ def along(frame):
     return math.degrees(math.atan2(frame[1][1], frame[1][0]))
 
 
+def persimmon(d, q):
+    with d.use('flat'):
+        d.lathe(tuple(q), [(-.035, .005), (-.03, .03), (0, .042), (.03, .03), (.035, .005)], vary((.92, .42, .08), .06), 8)
+
+
+def table(m, q, ang, su, sn, h, color=None):
+    """A plain plank table su x sn (su along hut-local x for the hut angle ang), h high, on four square legs."""
+    q = np.asarray(q, float); u, n = rot((1, 0), ang), rot((0, 1), ang)
+    block(m, q+[0, 0, h-.025], u, n, su, sn, .05, color or vary(PLANK, .06), 'wood_plank')
+    for a in (-1, 1):
+        for b in (-1, 1):
+            block(m, q+u*a*(su/2-.07)+n*b*(sn/2-.07)+[0, 0, (h-.05)/2], u, n, .06, .06, h-.05, WOOD)
+    return q+[0, 0, h]
+
+
+def sack(d, q, r=.2, h=.5):
+    """A tied sack of rice or flour standing on the floor."""
+    q = np.asarray(q, float)
+    with d.use('canvas'):
+        d.lathe(tuple(q), [(0, r*.8), (h*.3, r), (h*.7, r*.92), (h*.9, r*.5), (h, r*.3), (h+.07, r*.42)], vary(CANVAS, .08), 10)
+    ring(d, q[:2], r*.33, q[2]+h+.01, .016, ROPE, 8)
+
+
+def tansu(m, d, q, ang, w=1.0, dp=.42, h=.85):
+    """A chest of three drawers against a wall: its back along hut-local y, its front toward +x."""
+    q = np.asarray(q, float); n, u = rot((1, 0), ang), rot((0, 1), ang)
+    block(m, q+[0, 0, h/2], u, n, w, dp, h, vary(WOOD, .05))
+    for k in range(3):
+        f = q+n*(dp/2+.009)+[0, 0, .08+k*(h-.12)/3+(h-.12)/6]
+        block(d, f, u, n, w-.08, .018, (h-.12)/3-.04, vary(PLANK, .05), 'wood_plank')
+        for sgn in (-1, 1):
+            block(d, f+u*sgn*w/4+n*.03, u, n, .1, .02, .03, IRON, 'iron')
+
+
 def furnish_kitchen(m, d, c, ang, side, W):
-    """As painted: the clay stove and its pipe in the back corner, a counter under the far window, the log table
-    and stools on a blue rug in the middle, the water barrel by the door, persimmons drying from the rafters."""
-    z = c[2]; outer, back, s_m, s_p = W; far = s_m if side > 0 else s_p; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
+    """As painted: the clay stove against the back wall with its pipe up through the roof and split logs beside it,
+    a counter of crates under a shelf, the water barrel in the back corner; the log table and stools on a blue rug in
+    the front half; persimmons and herbs drying in front of the six-pane window. Hut-local x runs from the back wall
+    (-d2) to the outer wall (+d2); the lane from door to door (|x| < 0.75) stays clear."""
+    z = c[2]; outer, back, gm, gp = W; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
     Hl = room(c, ang, side)
-    q = Hl(-d2+.55, -w2+.6); prop('kamado', q[0], q[1], z, lyaw(ang, .7, side*.8), 1.)
-    pipe = Hl(-d2+.2, -w2+.42)
-    tube(m, [(pipe[0], pipe[1], z+.95), (pipe[0], pipe[1], z+L.ROOF_TOP['hut']+.55)], .075, IRON, 8, 'iron')
-    for zz in (1.9, 3.0): ring(m, pipe[:2], .08, z+zz, .015, IRON, 8, 'iron')
-    for k in range(7):            # split logs stacked by the stove
-        q = Hl(-d2+.2+.13*(k % 4), -w2+1.45, .07+.12*(k//4)); e = rot((0, .45), ang)
+    q = Hl(-d2+.42, -1.1); prop('kamado', q[0], q[1], z, lyaw(ang, 1, 0), 1.)
+    pipe = Hl(-d2+.2, -1.1)
+    tube(m, [(pipe[0], pipe[1], z+.95), (pipe[0], pipe[1], z+hut_roof_z(-d2+.2)+.9)], .075, IRON, 8, 'iron')
+    for zz in (1.9, 2.75): ring(m, pipe[:2], .08, z+zz, .015, IRON, 8, 'iron')
+    for k in range(10):           # split logs stacked by the stove, under the back window
+        q = Hl(-d2+.2+.13*(k % 4), -2.45, .07+.12*(k//4)); e = rot((0, .45), ang)
         tube(m, [q-e/2, q+e/2], .06, vary(WOOD, .15), 6, 'wood_timber')
-    q = Hl(.3, -.1); rug(d, q[0], q[1], z, 1.7, 2.1, ang+90, 'rug_blue'); prop('log_table', q[0], q[1], z+.012, ang+25, 1.)
-    q = Hl(-d2+.45, w2-1.0); prop('barrel', q[0], q[1], z, lyaw(ang, 1, 0), .95)
-    for lx, sy in ((-.48, 0.), (1.08, -.5), (.42, .8)):     # log stools round the table
-        q = Hl(lx, sy); stool(m, q[0], q[1], z)
-    fo, fu, fn = frame3(far, z); yaw = along(far)
-    for sc in (1.55, 2.3):         # a counter of two crates under the far window, a board top
-        q = fo+fu*sc+fn*.3; crate(m, q[0], q[1], z, (.72, .5, .78), yaw)
-    top = [fo+fu*1.15+fn*.31+[0, 0, .8], fo+fu*2.7+fn*.31+[0, 0, .8]]
+    q = Hl(-d2+.5, 2.85); prop('barrel', q[0], q[1], z, lyaw(ang, 1, 0), .95)
+    # the counter along the back wall (back wall s = w2-y): two crates, a board top, bowls; a shelf over it
+    bo, bu, bn = frame3(back, z); yaw = along(back)
+    for sc in (2.05, 2.8):
+        q = bo+bu*sc+bn*.3; crate(m, q[0], q[1], z, (.72, .5, .78), yaw)
+    top = [bo+bu*1.65+bn*.31+[0, 0, .8], bo+bu*3.2+bn*.31+[0, 0, .8]]
     board(m, tuple(top[0]), tuple(top[1]), .6, .05, vary(PLANK, .05), 'wood_plank')
-    for k, sc in enumerate((1.35, 1.6, 2.05, 2.45)):
-        q = fo+fu*sc+fn*.3+[0, 0, .8]
+    for k, sc in enumerate((1.85, 2.15, 2.6, 3.0)):
+        q = bo+bu*sc+bn*.3+[0, 0, .8]
         with d.use('flat'):
             if k == 2:             # a bowl of persimmons
                 d.lathe(tuple(q), [(0, .02), (.03, .12), (.08, .15)], (.55, .35, .22), 10)
-                for j in range(4):
-                    d.lathe(tuple(q+[.05*math.cos(j*1.6), .05*math.sin(j*1.6), .08]), [(-.035, .005), (-.03, .03), (0, .042), (.03, .03), (.035, .005)], vary((.92, .42, .08), .06), 8)
+                for j in range(4): persimmon(d, q+[.05*math.cos(j*1.6), .05*math.sin(j*1.6), .08])
             else:
                 d.lathe(tuple(q), [(0, .01), (.02, .06), (.14+.04*k, .065), (.18+.04*k, .04)], R.choice([(.32, .40, .55), (.62, .58, .50), (.55, .35, .22)]), 10)
-    towel = fo+fu*2.0+fn*.58
+    towel = bo+bu*2.3+bn*.58
     with d.use('canvas'):
-        two_sided(d, [tuple(towel+[0, 0, .82]), tuple(towel+fu*.3+[0, 0, .82]), tuple(towel+fu*.3+[0, 0, .45]), tuple(towel+[0, 0, .45])], vary(CANVAS, .05))
-    # wall positions: outer s = w2+side*sy, back s = w2-side*sy, far s = lx+d2
-    shelf(m, d, frame3(outer, z), w2+side*.8, 1.05, .8, 2)
-    shelf(m, d, frame3(back, z), w2+side*.55, 1.45, .7, 2)     # over the stove's side, clear of the door camera
-    for k in range(4):     # persimmons and herbs hung from the rafters along the far wall
-        q = fo+fu*(.9+.45*k)+fn*.45
-        tube(d, [q+[0, 0, 1.5], q+[0, 0, 2.3]], .008, ROPE, 4)
-        for j in range(4 if k % 2 == 0 else 0):
-            with d.use('flat'):
-                d.lathe(tuple(q+[0, 0, 1.55+.1*j]), [(-.035, .005), (-.03, .03), (0, .042), (.03, .03), (.035, .005)], vary((.92, .42, .08), .06), 8)
+        two_sided(d, [tuple(towel+[0, 0, .82]), tuple(towel+bu*.3+[0, 0, .82]), tuple(towel+bu*.3+[0, 0, .45]), tuple(towel+[0, 0, .45])], vary(CANVAS, .05))
+    shelf(m, d, frame3(back, z), 2.4, 1.4, 1.4, 2)
+    q = Hl(-d2+.35, -.2); basket(d, q[0], q[1], z, .2, .22, fruit=5)
+    # the table in the front half, on a rug, three log stools round it
+    q = Hl(1.95, .5); rug(d, q[0], q[1], z, 2.0, 2.6, ang, 'rug_blue'); prop('log_table', q[0], q[1], z+.012, ang+25, 1.)
+    # a work table in the back half, between the counter and the lane: a chopping board, bowls, a basket of greens
+    top = table(m, Hl(-1.6, 1.75), ang, .6, 1.25, .8)
+    block(d, top+rot((0, -.3), ang)+[0, 0, .015], rot((1, 0), ang), rot((0, 1), ang), .32, .45, .03, vary(PALE, .05), 'wood_pale')
+    for lx, ly, r in ((-.12, .1, .12), (.13, .2, .09)):
+        with d.use('flat'):
+            d.lathe(tuple(top+rot((lx, ly), ang)), [(0, .01), (.02, r*.6), (r*.7, r), (r*.75, r*.95)], R.choice([(.32, .40, .55), (.62, .58, .50)]), 10)
+    q = Hl(-1.6, 2.2, .8); basket(d, q[0], q[1], q[2], .15, .16, fruit=4)
+    q = Hl(-1.6, 1.75); crate(m, q[0], q[1], z, (.45, .4, .36), ang+4)          # under the table, between its legs
+    # sacks of rice and a basket by the front corner (the lane and the door stay clear)
+    for lx, ly, r, hh in ((1.45, -2.95, .22, .52), (1.9, -3.0, .2, .46), (1.62, -2.5, .19, .42)):
+        sack(d, Hl(lx, ly), r, hh)
+    # outer wall (s = y+w2): a shelf between the windows; persimmons and herbs hung in front of the six-pane window
+    o, u, n = frame3(outer, z)
+    shelf(m, d, (o, u, n), 3.65, 1.3, 1.1, 2)
+    for k in range(5):
+        q = o+u*(.75+.45*k)+n*.42
+        tube(d, [q+[0, 0, 1.5], q+[0, 0, 2.6]], .008, ROPE, 4)
+        for j in range(5 if k % 2 == 0 else 0): persimmon(d, q+[0, 0, 1.55+.1*j])
         if k % 2:
-            potted = q+[0, 0, 1.55]
+            potted = q+[0, 0, 1.6]
             for j in range(6):
                 a_ = j*1.05; tip = potted+[.12*math.cos(a_), .12*math.sin(a_), -.18]
                 two_sided(d, [tuple(potted), tuple((potted+tip)/2+[.03, 0, 0]), tuple(tip), tuple((potted+tip)/2-[.03, 0, 0])], vary((.30, .42, .14), .12))
-    q = Hl(d2-.55, w2-.55, 1.75); glass_float(d, q[0], q[1], q[2], .14, .35)
-    q = Hl(d2-.3, .35); basket(d, q[0], q[1], z, .2, .22, fruit=5)
+    q = Hl(d2-.55, w2-.55, 2.1); glass_float(d, q[0], q[1], q[2], .14, .35)
+    q = Hl(d2-.35, -w2+.4); crate(m, q[0], q[1], z, (.5, .42, .4), ang+6)
+    q = Hl(d2-.35, -w2+.4, .4); basket(d, q[0], q[1], q[2], .18, .2, fruit=4)
 
 
 def furnish_library(m, d, c, ang, side, W):
-    """As painted: the desk under the far window with the map and lamp, bookshelves along the back wall, the globe
-    on a crate in the corner, a rug and cushion, the backpack and crates by the door, pictures and the kite."""
-    z = c[2]; outer, back, s_m, s_p = W; far = s_m if side > 0 else s_p; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
+    """As painted: bookshelves along the back wall between its windows, the desk under the six-pane window with the
+    map beside it, the globe on a crate in the corner, a reading rug with cushions under the round window, the
+    backpack and crates in the back corners, pictures and the kite on the gables. Hut-local x runs from the back
+    wall (-d2) to the outer wall (+d2); the lane from door to door (|x| < 0.75) stays clear."""
+    z = c[2]; outer, back, gm, gp = W; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
     Hl = room(c, ang, side)
-    q = Hl(0., -w2+.47); prop('crate_desk', q[0], q[1], z, lyaw(ang, 0, side), 1.)
-    for sy in (-1.15, -.15):      # toward the far wall, so the doorway corner looks along them
-        q = Hl(-d2+.26, sy); prop('bookshelf', q[0], q[1], z, lyaw(ang, 1, 0), 1.)
-    q = Hl(d2-.36, -w2+.38); crate(m, q[0], q[1], z, (.45, .45, .45), ang); prop('globe', q[0], q[1], z+.45, ang+200, 1.)
-    q = Hl(.35, .25); rug(d, q[0], q[1], z, 1.3, 1.8, ang, 'rug'); cushion(d, q[0], q[1], z+.012, .55, ang+10)
-    q = Hl(-d2+.38, w2-.42); prop('backpack', q[0], q[1], z, lyaw(ang, 1, -side*.3), .95)
-    q = Hl(d2-.4, w2-.5); crate(m, q[0], q[1], z, (.5, .42, .4), ang+8); crate(m, q[0], q[1], z+.4, (.4, .36, .3), ang-6)
+    for y, sc in ((-.56, 1.), (.56, 1.), (-1.5, .9), (1.5, .9)):      # a wall of books between the two windows
+        q = Hl(-d2+.26, y); prop('bookshelf', q[0], q[1], z, lyaw(ang, 1, 0), sc)
+    q = Hl(-2.1, -2.35); basket(d, q[0], q[1], z, .19, .26, scrolls=4)
+    q = Hl(-d2+.35, 2.8); prop('backpack', q[0], q[1], z, lyaw(ang, 1, -.3), .95)
+    q = Hl(-d2+.4, -2.85); crate(m, q[0], q[1], z, (.5, .42, .4), ang+8); crate(m, q[0], q[1], z+.4, (.4, .36, .3), ang-6)
+    q = Hl(-1.8, -1.9); book_stack(d, q[0], q[1], z, 5, ang)
+    q = Hl(d2-.45, -1.6); prop('crate_desk', q[0], q[1], z, lyaw(ang, -1, 0), 1.)
+    q = Hl(1.55, -1.6); cushion(d, q[0], q[1], z, .5, ang+8)
+    q = Hl(d2-.35, -w2+.4); crate(m, q[0], q[1], z, (.45, .45, .45), ang); prop('globe', q[0], q[1], z+.45, ang+200, 1.)
+    q = Hl(1.85, 1.75); rug(d, q[0], q[1], z, 1.7, 2.3, ang, 'rug')
+    for lx, ly, a in ((1.55, 1.3, 10), (2.25, 2.35, -20)):
+        q = Hl(lx, ly); cushion(d, q[0], q[1], z+.012, .55, ang+a)
+    q = Hl(2.4, 1.05); book_stack(d, q[0], q[1], z+.012, 3, ang+40)
+    # the map table in front of the wall map: a chart spread out, a book and a lantern on it
+    top = table(m, Hl(2.05, -.15), ang, .7, 1.1, .76)
+    cs = [top+rot((a, b), ang)+[0, 0, .006] for a, b in ((-.3, -.45), (.3, -.45), (.3, .45), (-.3, .45))]
+    picture(d, [tuple(x) for x in cs], 'map')
+    q = top+rot((-.12, .35), ang); book_stack(d, q[0], q[1], q[2]+.012, 2, ang+15)
     o, u, n = frame3(outer, z)
-    wall_picture(d, (o, u, n), w2+side*.95, 1.1, 1.85, .075, 'kite', .6)
-    fo, fu, fn = frame3(far, z)
-    wall_picture(d, (fo, fu, fn), .47, 1.0, 1.9, .07, 'map', .75)
-    wall_picture(d, (fo, fu, fn), 2.33, 1.2, 1.7, .075, 'pictures', .5, True)
-    q = Hl(d2-.3, .3); basket(d, q[0], q[1], z, .19, .26, scrolls=4)
-    q = Hl(-.62, -.5); book_stack(d, q[0], q[1], z, 5, ang)
-    q = Hl(.9, .95); book_stack(d, q[0], q[1], z, 3, ang+40)
+    wall_picture(d, (o, u, n), 3.35, 1.0, 1.9, .075, 'map', .75)
+    wall_picture(d, frame3(gm, z), 4.9, 1.2, 2.0, .075, 'kite', .6)       # gable -y s = x+d2, gable +y s = d2-x
+    wall_picture(d, frame3(gp, z), 1.1, 1.3, 1.8, .075, 'pictures', .5, True)
 
 
 def block(m, c, u, n, su, sn, sz, color, kind='wood_timber'):
@@ -937,26 +1094,39 @@ def hammock(d, a0, a1, sag, width, ends, pic='quilt'):
 
 
 def furnish_sleep(m, d, c, ang, side, W):
-    """As painted: a quilt hammock slung low along the far wall under the window, from the back wall to the outer
-    wall; two futons side by side in front of it, pillows to the back wall, and a rug along the outer wall to the
-    round window; shelves and pictures, a crate of folded quilts."""
-    z = c[2]; outer, back, s_m, s_p = W; far = s_m if side > 0 else s_p; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
+    """As painted: three futons side by side along the back wall, pillows to it, a shelf over them and a floor
+    lantern; in the front half two quilt hammocks slung low along the outer wall, from each gable wall to a post in
+    the middle; a rug in front of the futons, a crate of folded quilts, pictures and the kite. Hut-local x runs from
+    the back wall (-d2) to the outer wall (+d2); the lane from door to door (|x| < 0.75) stays clear."""
+    z = c[2]; outer, back, gm, gp = W; d2, w2 = L.HUT[1]/2, L.HUT[0]/2
     Hl = room(c, ang, side)
-    for sy in (-.6, .56):           # 1.6 x 1.13 m each; the strip by the outer wall stays free to walk in
-        q = Hl(-d2+.86, sy); prop('futon', q[0], q[1], z, ang+180, .8)
-    hy = -w2+.3                     # the bag (hanging 0.55 m over the floor) stays clear of the wall and the futons
-    hammock(d, Hl(-d2+.045, hy, 1.55), Hl(d2-.045, hy, 1.55), .84, .42, (('wall', rot((1, 0), ang)), ('wall', rot((-1, 0), ang))))
-    shelf(m, d, frame3(back, z), w2-side*.45, 1.3, 1.1, 2)      # over the pillows, clear of the hammock's peg
-    fo, fu, fn = frame3(far, z)
-    wall_picture(d, (fo, fu, fn), .45, 1.15, 1.6, .075, 'pictures', .42, True)
+    for y in (-2.35, -1.15, .05):   # 1.6 x 1.13 m each
+        q = Hl(-d2+.86, y); prop('futon', q[0], q[1], z, ang+180, .8)
+    shelf(m, d, frame3(back, z), 4.55, 1.3, 1.5, 2)       # over the pillows (back wall s = w2-y)
+    q = Hl(-d2+.35, 1.2); andon(d, q[0], q[1], z, .26, 220)
+    q = Hl(-.35, -1.15); rug(d, q[0], q[1], z, 1.3, 3.4, ang, 'rug')
+    tansu(m, d, Hl(-d2+.27, 2.5), ang)                   # under the back window, quilts folded on it
+    with d.at(tuple(Hl(-d2+.27, 2.5, .85)), ang), d.use('quilt', grain=(1, 0, 0)):
+        d.box((0, 0, .07), (.36, .7, .12), WHITE, .03)
+    q = Hl(-1.75, 1.6); cushion(d, q[0], q[1], z, .55, ang+12)
+    q = Hl(-1.9, 2.6); book_stack(d, q[0], q[1], z, 4, ang)
+    q = Hl(-1.3, 2.45); basket(d, q[0], q[1], z, .18, .22, scrolls=2)
+    q = Hl(1.25, 2.7); crate(m, q[0], q[1], z, (.45, .4, .34), ang-5)      # the toy crate, a ball on it
+    with d.use('flat'):
+        d.lathe(tuple(q+[0, 0, .34]), [(0, .005), (.03, .07), (.1, .1), (.17, .07), (.2, .005)], (.75, .22, .12), 10)
+    # the hammocks: a post under the ridge's side, the bags hanging about 0.6 m over the floor, clear of the outer
+    # wall; their ropes round the post 10 cm apart in height (turns at the same height would lie in one another)
+    hx, py = 2.05, .45; pc = Hl(hx, py)
+    post(m, pc[0], pc[1], z-.02, z+hut_roof_z(hx)-.01, .14, WOOD)
+    for a0, a1, ends in ((Hl(hx, -w2+.045, 1.55), Hl(hx, py-.12, 1.55), (('wall', rot((0, 1), ang)), ('wrap', pc[:2], .1))),
+                         (Hl(hx, py+.12, 1.65), Hl(hx, w2-.045, 1.65), (('wrap', pc[:2], .1), ('wall', rot((0, -1), ang))))):
+        hammock(d, a0, a1, .8, .42, ends)
     q = Hl(d2-.32, w2-.42); crate(m, q[0], q[1], z, (.5, .45, .42), ang)
-    with d.use('quilt', grain=(1, 0, 0)):
-        d.box((q[0], q[1], z+.42+.07), (.45, .4, .12), WHITE, .03)
-    q = Hl(d2-.62, -.15); rug(d, q[0], q[1], z, .95, 2.1, ang, 'rug')
-    q = Hl(.95, -.95); cushion(d, q[0], q[1], z, .5, ang+12)     # under the round window, clear of the door-to-hammock path
-    o, u, n = frame3(outer, z); wall_picture(d, (o, u, n), w2+side*.95, 1.1, 1.7, .075, 'kite', .5)
-    q = Hl(-d2+.3, w2-.3); book_stack(d, q[0], q[1], z, 4, ang)
-    q = Hl(d2-.3, .45); basket(d, q[0], q[1], z, .18, .22, scrolls=2)
+    with d.at((q[0], q[1], z+.42), ang), d.use('quilt', grain=(1, 0, 0)):
+        d.box((0, 0, .07), (.45, .4, .12), WHITE, .03)
+    o, u, n = frame3(outer, z)
+    wall_picture(d, (o, u, n), 3.65, 1.75, 2.2, .075, 'pictures', .42, True)
+    wall_picture(d, frame3(back, z), 2.5, 1.2, 1.8, .075, 'kite', .5)
 
 
 def furnish_entry(m, d, p):
@@ -1210,10 +1380,11 @@ def boat_room(m, d, p):
 
 def pulley_crane(m, d, p):
     x0, y0 = p['xy']; z = p['deck']; a = math.radians(p['open']); u = np.array([math.cos(a), math.sin(a)]); c = np.array([x0, y0])
-    board(m, (*(c+u*.2), z+3.1), (*(c+u*3.9), z+3.1), .16, .18, WOOD, 'wood_timber')
-    board(m, (*(c+u*p['trunk']*.9), z+1.5), (*(c+u*2.1), z+3.0), .14, .14, WOOD, 'wood_timber')
+    edge = float(np.linalg.norm(L.ray_exit(p['poly'], p['open'])))      # the arm reaches 0.7 m past the deck's edge
+    board(m, (*(c+u*.2), z+3.1), (*(c+u*(edge+.85)), z+3.1), .16, .18, WOOD, 'wood_timber')
+    board(m, (*(c+u*p['trunk']*.9), z+1.5), (*(c+u*edge*.6), z+3.0), .14, .14, WOOD, 'wood_timber')
     ring(d, c, p['trunk']+.06, z+3.05, .035, ROPE, 16); ring(d, c, p['trunk']+.06, z+1.5, .035, ROPE, 16)
-    tip = c+u*3.75; v = np.array([-u[1], u[0]])
+    tip = c+u*(edge+.7); v = np.array([-u[1], u[0]])
     for s in (-1, 1): board(d, (*(tip+v*s*.1), z+3.02), (*(tip+v*s*.1), z+2.75), .03, .1, DARK, 'wood_timber')
     wheel = [(*(tip+v*.045), ), (*(tip-v*.045),)]
     pts = [np.array([tip[0], tip[1], z+2.82])+np.r_[u*.15*math.cos(t), .15*math.sin(t)] for t in np.linspace(0, 2*math.pi, 13)]
@@ -1528,26 +1699,31 @@ def main():
         trunk(trunks, *p['xy'], p['trunk'], p['trunk_top'], p['deck'], 8 if big else 5, BARK_OLD if big else BARK, len(name))
         moss_on_trunk(d, *p['xy'], p['trunk'], ground(*p['xy']), p['deck'])
         ring(d, p['xy'], p['trunk']+.05, p['deck']-.3, .04, ROPE, 16)
-        if name in ('library', 'kitchen', 'sleep', 'chimes'):
-            # a crate and a planter or rope coil in the deck corners furthest from the bridges and the hut
+        if name in ('library', 'kitchen', 'sleep'):
+            # a crate and a planter or rope coil in the deck's front corners, past the outer wall and off the porches
+            c, ang, _ = hut_frame(p); d2, w2 = p['room']['half']
+            q = local(c, ang, d2+.45, -(w2+1.1)); crate(m, q[0], q[1], p['deck'], (.5, .4, .38), ang+R.uniform(-15, 15))
+            q = local(c, ang, d2+.45, w2+1.1)
+            if name in ('library', 'sleep'): prop('planter', q[0], q[1], p['deck'], lyaw(ang, -1, 0), .9)
+            else: rope_coil(d, q[0], q[1], p['deck'])
+        if name == 'chimes':
+            # a crate and a rope coil in the deck corners furthest from the bridges
             poly = world_poly(p); c = np.array(p['xy'])
-            busy = [l['angle'] for l in p['links']]+([p['open']]*2 if name != 'chimes' else [])
+            busy = [l['angle'] for l in p['links']]
             gap = lambda q: min(abs(((math.degrees(math.atan2(q[1]-c[1], q[0]-c[0]))-b+540) % 360)-180) for b in busy)
             corners = sorted(range(len(poly)), key=lambda k: -gap(poly[k]))
             k1 = corners[0]; k2 = next(k for k in corners[1:] if min(abs(k-k1), len(poly)-abs(k-k1)) > 1)
             corner = np.array(poly[k1]); q = corner+(c-corner)/np.linalg.norm(c-corner)*.6
             crate(m, q[0], q[1], p['deck'], (.5, .4, .38), R.uniform(0, 90))
             corner = np.array(poly[k2]); q = corner+(c-corner)/np.linalg.norm(c-corner)*.65
-            if name in ('library', 'sleep'): prop('planter', q[0], q[1], p['deck'], face_yaw(*(c-q)), .9)
-            else: rope_coil(d, q[0], q[1], p['deck'])
+            rope_coil(d, q[0], q[1], p['deck'])
     for b in pl['bridges']:
         bridge(m, d, b)
     entry_hut(m, d, P['entry'])
     rooms = {}
     for name in ('library', 'kitchen', 'sleep'):
-        rooms[name] = hut(m, d, P[name], L.HUT[1], L.HUT[0], name)
+        rooms[name] = hut(m, d, P[name], name)
     furnish_library(m, d, *rooms['library']); furnish_kitchen(m, d, *rooms['kitchen']); furnish_sleep(m, d, *rooms['sleep'])
-    # quilts over the sleeping nest's rail, persimmons under the kitchen eaves
     heart_room(m, d, P['heart'])
     boat_room(m, d, P['boat'])
     pulley_crane(m, d, P['pulley'])

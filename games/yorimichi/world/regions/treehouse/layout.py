@@ -144,6 +144,20 @@ def box(p):
     return None
 
 
+def stilts(p):
+    """The stilts under a room's deck, [x, y, u, v] (u, v in the box's axes from the trunk): at the corners of the two
+    end girders (inset from the deck's ends past the chamfers) that are more than 4 m from the trunk. build.py stands
+    them on the ground; the trunk carries the rest on knee braces."""
+    if box(p) is None: return []
+    ang, u0, u1, v0, v1, ch = box(p); inset = max(.9, (ch+.5)/2); a = math.radians(ang)
+    U = np.array([math.cos(a), math.sin(a)]); V = np.array([-U[1], U[0]]); out = []
+    for u in (u0+inset, u1-inset):
+        for v in (v0+inset, v1-inset):
+            if math.hypot(u, v) > 4.:
+                q = np.array(p['xy'])+U*u+V*v; out.append([round(float(q[0]), 3), round(float(q[1]), 3), round(u, 3), round(v, 3)])
+    return out
+
+
 def hall_distance(p):
     """Camphor to the hall's centre: the eave stops HALL['gap'] short of the bark."""
     return p['trunk']+HALL['gap']+HALL['over']+HALL['apothem']
@@ -182,18 +196,29 @@ def room(p):
     return None
 
 
-def ray_exit(poly, angle):
-    """Where a ray from the place's centre leaves its convex deck."""
-    d = np.array([math.cos(math.radians(angle)), math.sin(math.radians(angle))])
+def ray_exit(poly, angle, origin=(0., 0.)):
+    """Where a ray from the place's centre (or from origin, inside the deck, relative to it) leaves its convex deck."""
+    d = np.array([math.cos(math.radians(angle)), math.sin(math.radians(angle))]); o = np.asarray(origin, float)
     best = None
     for a, b in zip(poly, poly[1:]+poly[:1]):
-        a, b = np.array(a), np.array(b); e = b-a
+        a, b = np.array(a)-o, np.array(b)-o; e = b-a
         m = np.array([[d[0], -e[0]], [d[1], -e[1]]])
         if abs(np.linalg.det(m)) < 1e-9: continue
         t, s = np.linalg.solve(m, a)
         if t > 0 and -1e-6 <= s <= 1+1e-6 and (best is None or t < best):
             best = t
-    return d*best
+    return o+d*best
+
+
+def aim(p, other):
+    """The point a bridge to `other` is aimed through, relative to the trunk: the trunk itself, or on a hut's deck the
+    point beside the trunk in line with the gable wall on the other place's side, so the bridge lands on the corner of
+    that door's porch with the trunk off to one side of the way in, not straight ahead."""
+    if p['kind'] != 'hut':
+        return np.zeros(2)
+    a = math.radians(p['room']['angle']); v = np.array([-math.sin(a), math.cos(a)])
+    s = 1 if (np.array(other['xy'], float)-np.array(p['xy'], float))@v >= 0 else -1
+    return v*s*HUT[0]/2
 
 
 def heading(a, b):
@@ -221,7 +246,8 @@ def plan(h):
         for p, other in ((places[a], places[b]), (places[b], places[a])):
             p['links'].append(dict(angle=round(heading(p['xy'], other['xy']), 2), to=other['name']))
     # The room goes in the widest arc no bridge uses; the deck is shaped round the trunk and the room, and each bridge
-    # lands where the line from the trunk to the other place leaves it.
+    # lands where the line from the trunk to the other place leaves it; on a hut's deck, where the bridge's line
+    # through aim() leaves it (toward the other end's landing, or between the aim points of two huts).
     for p in places.values():
         p['open'] = round(widest_gap([l['angle'] for l in p['links']]), 2)
         p['poly'] = deck_polygon(p)
@@ -229,14 +255,25 @@ def plan(h):
         if b is not None: p['box'] = [round(float(v), 3) for v in b]
         r = room(p)
         if r is not None: p['room'] = r
+        if b is not None: p['stilts'] = stilts(p)
     bridges = []
     for a, b in BRIDGES:
         A, B = places[a], places[b]
+        world = {}
+        for p, other in ((A, B), (B, A)):
+            if p['kind'] != 'hut':
+                link = next(l for l in p['links'] if l['to'] == other['name'])
+                world[p['name']] = np.array(p['xy'])+ray_exit(p['poly'], link['angle'])
+        for p, other in ((A, B), (B, A)):
+            if p['kind'] == 'hut':
+                o = aim(p, other); ow = np.array(p['xy'])+o
+                t = world[other['name']] if other['name'] in world else np.array(other['xy'])+aim(other, p)
+                world[p['name']] = np.array(p['xy'])+ray_exit(p['poly'], math.degrees(math.atan2(*(t-ow)[::-1])), o)
         ends = []
         for p, other in ((A, B), (B, A)):
             link = next(l for l in p['links'] if l['to'] == other['name'])
-            q = ray_exit(p['poly'], link['angle'])
-            ends.append([p['xy'][0]+float(q[0]), p['xy'][1]+float(q[1]), p['deck']])
+            q = world[p['name']]-np.array(p['xy'])
+            ends.append([float(world[p['name']][0]), float(world[p['name']][1]), p['deck']])
             link['local'] = [round(float(q[0]), 4), round(float(q[1]), 4)]
         span = float(math.hypot(ends[1][0]-ends[0][0], ends[1][1]-ends[0][1]))
         sag = .032*span
@@ -356,6 +393,8 @@ def volumes(pl):
         else:
             discs.append((x, y, p['R']+.35, p['deck']-1.2, top))
         ground_zones.append((x, y, p['trunk']*1.4+1.8))
+        for sx, sy, _, _ in p.get('stilts', []):       # the stilts under a room's deck (clear() keeps trunks off them)
+            ground_zones.append((sx, sy, .9))
     L = pl['places']['lookout']
     discs.append((L['xy'][0], L['xy'][1], pl['crow']['R']+.4, L['deck'], pl['crow']['floor']+2.6))
     for b in pl['bridges']:
@@ -408,6 +447,7 @@ def clear(instances, pl, h=None):
     bushes and grass on the paths that touch the ground. Returns counts and the removed placements."""
     segs, discs, ground_zones = volumes(pl)
     anchors = [p['xy'] for p in pl['places'].values()]
+    posts = [(q[0], q[1]) for p in pl['places'].values() for q in p.get('stilts', [])]
     removed, gone = {}, {}
     for name, placements in list(instances.items()):
         tree = name.startswith('Tree')
@@ -429,6 +469,8 @@ def clear(instances, pl, h=None):
             lift = CANOPY['headroom'] if name.startswith('Tree_Canopy') else 0.
             for ax, ay in anchors:
                 drop |= np.hypot(x-ax, y-ay) < 3.2
+            for sx, sy in posts:         # a stilt may stand in a crown, not in a trunk
+                drop |= np.hypot(x-sx, y-sy) < trunk_r+.45
             for a0, a1, hw, lo, hi in segs:
                 d, t = seg_distance(x, y, a0, a1)
                 zlo = lo[0]+(lo[1]-lo[0])*t; zhi = hi[0]+(hi[1]-hi[0])*t
