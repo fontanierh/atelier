@@ -1,0 +1,26 @@
+[
+  {
+    "id": "restyle-west",
+    "references": [
+      "megapark/concepts/before-west.png",
+      "megapark/concepts/style-lake.png"
+    ],
+    "prompt": "Use case: stylized-concept, restyle of an existing game location. Image 1 is an in-game screenshot of the Mega Park, a large skate park set into a forested valley of the island in the game Yorimichi, seen from the western hills with the volcano on the left. Image 2 is another place in the same game and shows the art direction to match: soft painterly low-poly shapes, flat matte shading, pale lavender-grey rocks, autumn maples and ginkgos in rust, orange and gold, dark green pines, soft green grass, a clean blue sky. Repaint image 1 as the AFTER concept from exactly the same camera and composition. Every skating structure stays exactly as it is, in the same place with the same shape: the concrete decks, ramps, bowls, retaining walls, stairs, rails, the grandstand building and the big roll-in. Only the scenery changes: the red desert sandstone cliffs, hoodoos and grey rock peaks become weathered volcanic rock in the island's lavender-grey, still rugged, layered and blocky like Mount Myogi in Japan, with moss, ferns and small autumn maples rooted in the ledges; the thin dead-looking poles, cacti and desert shrubs become the island's autumn trees and pines; the pale scrubland ground becomes the same soft green grass with fallen leaves as the hills around; the white SHARKS letters become a large weathered wooden sign board with a few Japanese characters. Keep the concrete pale and weathered. Keep the park rugged, with a raw skate-spot character, but make it look like it was always part of this island. No people, no UI, no labels."
+  },
+  {
+    "id": "restyle-inside",
+    "references": [
+      "megapark/concepts/before-riding.png",
+      "megapark/concepts/style-lake.png"
+    ],
+    "prompt": "Use case: stylized-concept, restyle of an existing game location. Image 1 is an in-game screenshot of the boy Cairo skating inside the Mega Park in the game Yorimichi. Image 2 is another place in the same game and shows the art direction to match: soft painterly low-poly shapes, flat matte shading, pale lavender-grey rocks, autumn maples and ginkgos in rust, orange and gold, dark green pines, soft green grass, a clean blue sky. Repaint image 1 as the AFTER concept from exactly the same camera, with the same skater in the same pose. Every skating surface stays exactly as it is: the concrete bank, the bowl with its coping, the wooden deck and the painted ledge edges keep their shapes and places. The concrete keeps its pale weathered look with a softer, cleaner, slightly painterly texture; the bright blue paint becomes a faded indigo; the plywood becomes a warm honey-coloured wood. The scenery changes: the red sandstone cliffs become rugged lavender-grey volcanic rock with moss, ferns and small autumn maples in its ledges; the cacti, thin dead trees and desert scrub become the island's autumn trees; the beer billboard becomes a wooden notice board with a paper poster under a small roof; the metal scaffold light towers become tall wooden lantern poles; the shark banners become indigo cloth banners with a simple white wave crest. Keep it a raw, rugged skate spot. No UI, no labels, no extra text."
+  },
+  {
+    "id": "restyle-flank",
+    "references": [
+      "megapark/concepts/before-flank.png",
+      "megapark/concepts/style-lake.png"
+    ],
+    "prompt": "Use case: stylized-concept, restyle of an existing game location. Image 1 is an in-game screenshot of the Mega Park, a large skate park set into a forested valley of the island in the game Yorimichi, seen from the volcano's lower flank. Image 2 is another place in the same game and shows the art direction to match: soft painterly low-poly shapes, flat matte shading, pale lavender-grey rocks, autumn maples and ginkgos in rust, orange and gold, dark green pines, soft green grass, a clean blue sky. Repaint image 1 as the AFTER concept from exactly the same camera and composition, keeping the low-poly autumn forest around the park as it is. Every skating structure stays exactly as it is, in the same place with the same shape: the concrete bowls, decks, banks, walls, stairs, rails and white buildings. Only the scenery changes: the red and brown desert sandstone cliffs and hoodoos around the park become weathered volcanic rock in the island's lavender-grey, still rugged, layered and blocky like Mount Myogi in Japan, with moss and small autumn maples and pines growing on its ledges and tops so the rim melts into the forest; the thin dead-looking poles and cacti become the island's autumn trees; bare dirt becomes soft green grass with fallen leaves. Keep the park rugged, with a raw skate-spot character, but make it look like it was always part of this island. No people, no UI, no labels."
+  }
+]
