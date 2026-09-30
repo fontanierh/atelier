@@ -1,0 +1,44 @@
+{
+  "stage": "southwest-island-concept",
+  "concept": "far",
+  "status": "done",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/island_concepts.py",
+  "prompt_file": "far.prompt.txt",
+  "prompt_sha256": "4d97e86eb8400e5683601f0c70e08061f2ae77cdafc73302b56922189da177e7",
+  "reference_files": {
+    "build/yorimichi/southwest/stills/hilltop-island.png": "d6e4b9ac2be6f51eb7e33a440cb9ee9f1a2d935f547b7bfa851b7c9b145f2da7",
+    "build/yorimichi/southwest/stills/game-look.png": "82edaff920363e54c37bd8e3775f781c7e65257e95dd83c0e77226636f16cc5f",
+    "build/yorimichi/southwest/stills/layout-far.png": "8767b11c8e0f89084753c827370d34a586a4c5d4d5c6a7fd0af7f8c3fd5ae74c"
+  },
+  "started_at": "2026-09-30T11:48:48.895004+00:00",
+  "usage": {
+    "input_tokens": 3877,
+    "input_tokens_details": {
+      "image_tokens": 3000,
+      "text_tokens": 877
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 5249
+  },
+  "outputs": {
+    "far.png": "01aa28d6a78802494548375e26146b65156660e7be475c03854ec87df6466dbe"
+  },
+  "compact_copy": {
+    "file": "far.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "error": null,
+  "finished_at": "2026-09-30T11:49:23.341541+00:00",
+  "elapsed_seconds": 34.4,
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository"
+}

@@ -1,0 +1,44 @@
+{
+  "stage": "southwest-island-concept",
+  "concept": "boat",
+  "status": "done",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/island_concepts.py",
+  "prompt_file": "boat.prompt.txt",
+  "prompt_sha256": "9eeb62a4e07177e1652a696c03dd794afdf98ff1259cf12387ea35caab499c6d",
+  "reference_files": {
+    "games/yorimichi/assets/southwest/concepts/far.jpg": "66b4bf6a8bba64065ba48e7ef7ba3fa1de609cf50a2d45d6c025beb8ea1a025a",
+    "build/yorimichi/southwest/stills/layout-boat.png": "c7f3bd30ac267bfcb27f06aa13c5c84494617217a27e2caa10e574e838f3049b",
+    "build/yorimichi/southwest/stills/game-look.png": "82edaff920363e54c37bd8e3775f781c7e65257e95dd83c0e77226636f16cc5f"
+  },
+  "started_at": "2026-09-30T11:50:12.741304+00:00",
+  "usage": {
+    "input_tokens": 3920,
+    "input_tokens_details": {
+      "image_tokens": 3040,
+      "text_tokens": 880
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 5292
+  },
+  "outputs": {
+    "boat.png": "53c301d46e3a9e9699db6ddd684718cee3b2cf1c726face667567defcebc345b"
+  },
+  "compact_copy": {
+    "file": "boat.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "error": null,
+  "finished_at": "2026-09-30T11:50:49.403588+00:00",
+  "elapsed_seconds": 36.7,
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository"
+}

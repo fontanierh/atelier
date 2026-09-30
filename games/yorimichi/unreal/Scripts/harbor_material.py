@@ -6,9 +6,14 @@ is evaluated in the game; no capture colour correction or painted reflections.
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 from pathlib import Path
 import unreal
+import sea_look
 
 EAL=unreal.EditorAssetLibrary
 MEL=unreal.MaterialEditingLibrary
+
+# HD_Sea's rectangle in Blender metres (x0, y0, x1, y1: hidamari/build.py sea_mesh) and the width of its calm border (m)
+SEA_RECT=(300,-1600,1800,600)
+EDGE=200
 
 
 def texture(name):
@@ -53,6 +58,16 @@ def material(water=False):
     pos=node(unreal.MaterialExpressionWorldPosition)
     time=node(unreal.MaterialExpressionTime)
     if water:
+        FLOAT1=unreal.CustomMaterialOutputType.CMOT_FLOAT1
+        # E: 0 on the rectangle's outline .. 1 once EDGE m inside. The waves, the swell colour, roughness and
+        # specular calm to the open sea's (M_Sea) there, so the rectangle does not show on the sea around it.
+        x0,y0,x1,y1=SEA_RECT
+        edge=custom(f'''
+float x=P.x*.01, y=-P.y*.01;     // Blender metres: Unreal's y is negated
+return smoothstep(0,1,saturate(min(min(x-{x0}.,{x1}.-x),min(y-({y0}.),{y1}.-y))/{EDGE}.));
+''',[('P',pos,'')],FLOAT1)
+        # F: with distance the lit water gives way to the sky dome's horizon colour, as on M_Sea (sea_look.py).
+        far=custom(sea_look.FAR_FADE,[('D',node(unreal.MaterialExpressionPixelDepth),'')],FLOAT1)
         # Analytic slope of crossing gravity/capillary waves; world-space normal
         # avoids dependence on huge sea-plane UVs and animates without textures.
         normal=custom('''
@@ -67,8 +82,8 @@ for(int i=0;i<9;i++) {
     float warp=sin(dot(p,float2(-d.y,d.x))*k*.53+T*.4+i)*2.7;
     slope+=d*cos(dot(p,d)*k+warp+T*sqrt(9.81*k)+i*2.1)*amp;
 }
-return normalize(float3(-slope,1));
-''',[('P',pos,''),('T',time,'')])
+return normalize(float3(-slope*E,1));
+''',[('P',pos,''),('T',time,''),('E',edge,'')])
         prop(normal,unreal.MaterialProperty.MP_NORMAL)
         m.set_editor_property('tangent_space_normal',False)
         color=custom('''
@@ -79,12 +94,13 @@ float swell=.5+.20*sin(p.x*.38+p.y*.61+T*.8)+.17*sin(p.x*.71-p.y*.37-T*.6)
              +.12*sin(p.x*.23-p.y*.17+T*.31)+.09*sin(p.y*1.13+p.x*.29-T*1.05);
 float3 water=lerp(float3(.002,.012,.040),float3(.006,.048,.115),saturate(swell));
 float tide=sin(p.x*.061-p.y*.048+T*.05)*.5+.5;
-return water*lerp(.90,1.10,tide);
-''',[('P',pos,''),('T',time,'')])
+return lerp(float3%s,water*lerp(.90,1.10,tide),E)*(1-F);
+''' % (sea_look.DEEP,),[('P',pos,''),('T',time,''),('E',edge,''),('F',far,'')])
         prop(color,unreal.MaterialProperty.MP_BASE_COLOR)
-        prop(node(unreal.MaterialExpressionConstant,r=.20),unreal.MaterialProperty.MP_ROUGHNESS)
-        prop(node(unreal.MaterialExpressionConstant,r=.5),unreal.MaterialProperty.MP_SPECULAR)
+        prop(custom(f'return lerp({sea_look.ROUGHNESS},.20,E);',[('E',edge,'')],FLOAT1),unreal.MaterialProperty.MP_ROUGHNESS)
+        prop(custom(f'return lerp({sea_look.SPECULAR},.5,E)*(1-F);',[('E',edge,''),('F',far,'')],FLOAT1),unreal.MaterialProperty.MP_SPECULAR)
         prop(node(unreal.MaterialExpressionConstant,r=0.0),unreal.MaterialProperty.MP_METALLIC)
+        prop(custom('return float3%s*F;' % (sea_look.HORIZON,),[('F',far,'')]),unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     else:
         paving=node(unreal.MaterialExpressionTextureObject,texture=texture('paving'))
         timber=node(unreal.MaterialExpressionTextureObject,texture=texture('timber'))

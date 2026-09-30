@@ -1,0 +1,43 @@
+{
+  "stage": "southwest-island-concept",
+  "concept": "aerial",
+  "status": "done",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/island_concepts.py",
+  "prompt_file": "aerial.prompt.txt",
+  "prompt_sha256": "1ec79784567918568bbe92e157e819ddd2a665c35a98edbee02e36fedbc7b03d",
+  "reference_files": {
+    "games/yorimichi/assets/southwest/concepts/far.jpg": "66b4bf6a8bba64065ba48e7ef7ba3fa1de609cf50a2d45d6c025beb8ea1a025a",
+    "build/yorimichi/southwest/stills/layout-aerial.png": "be2690b3b53c388cda610ce5d7e4da6b0f2455b3aabac230f09693885e2c067d"
+  },
+  "started_at": "2026-09-30T11:50:49.406317+00:00",
+  "usage": {
+    "input_tokens": 2813,
+    "input_tokens_details": {
+      "image_tokens": 2000,
+      "text_tokens": 813
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4185
+  },
+  "outputs": {
+    "aerial.png": "f5343dc29650d7a0b1709ee92bba82995051e7d5c7d27b57521b129892f27129"
+  },
+  "compact_copy": {
+    "file": "aerial.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "error": null,
+  "finished_at": "2026-09-30T11:51:24.766893+00:00",
+  "elapsed_seconds": 35.4,
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository"
+}
