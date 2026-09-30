@@ -8,8 +8,9 @@ Walking and the transition onto/off the board remain in Unreal.
 ## Build and run
 
 The required animation banks, graphs, gesture patterns, settings and skeleton data are committed in
-[`assets/skate/runtime.zip`](../assets/skate/runtime.zip), with file hashes in `runtime.json`. The normal build
-compiles the pinned Rust worker and verifies/unpacks that bundle into the game's generated Content directory.
+[`unreal/Content/Data/SkateRuntime/assets`](../unreal/Content/Data/SkateRuntime/assets) as individual files,
+with hashes in [`assets/skate/runtime.json`](../assets/skate/runtime.json). That directory is explicitly
+excluded from Content's ignore rule. The normal build verifies those files in place and compiles the pinned Rust worker.
 No extracted game, upstream tools checkout or separate data installation is needed.
 
 ```sh
@@ -23,14 +24,15 @@ uv run atelier qa yorimichi skate
 ```
 
 `skate.runtime` is a dependency of `unreal.compile` and is also available as a named build step. The generated
-executable belongs to the current host platform and is staged with the bundled data in
-`unreal/Content/Data/SkateRuntime`. The first mount decodes the banks; subsequent mounts reuse the session.
+executable belongs to the current host platform and is staged in the ignored `unreal/Content/Data/SkateRuntime/bin`.
+The game reads the tracked `assets` directory directly. The first mount decodes the banks; subsequent mounts reuse the session.
 A failed runtime reports an error and returns to walking. There is no fallback skating engine.
 
 The Mac renderer enables Unreal's GPU skin cache for Cairo's animated hair. This avoids the UE 5.8
 morph-buffer startup assertion observed with inline skinning while keeping the hair animation enabled.
 
-The offline importer remains as an optional provenance/reconversion tool. It is not a build requirement.
+The offline importer remains as an optional provenance/reconversion tool. It writes a candidate conversion to
+`build/yorimichi/skate-runtime/reconverted` for review, never over the tracked data. It is not a build requirement.
 Its converted data was produced with upstream tools commit `60efdef86600d8d8d4feb4b7c608fa0efd0643d7`.
 
 ## Feel and controls

@@ -1,8 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "source": "Skate 3 animation banks, state graphs, input patterns and converted VLT/skeleton records",
   "converter_commit": "60efdef86600d8d8d4feb4b7c608fa0efd0643d7",
-  "archive_sha256": "85adf3a254a5145839f242f8a7fe04991b70a105bd2f4e34a183912f171d9b7a",
   "sha256": {
     "private/game.json": "ec93cb2d11a2f004b18223ed64b8e8e67195ad44e7c7e0f4f41a4f4aaf27e55e",
     "private/headless.glb": "3522cd64f98b150c43db6174f5fa1ae5ca148bfc802ad33d4d41d0233a478706",

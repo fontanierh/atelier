@@ -13,6 +13,14 @@ games/*/unreal/Intermediate/
 games/*/unreal/Saved/
 games/*/unreal/DerivedDataCache/
 games/*/unreal/Content/
+# Skate's runtime data is source-controlled at the exact path the game reads.
+!games/yorimichi/unreal/Content/
+games/yorimichi/unreal/Content/*
+!games/yorimichi/unreal/Content/Data/
+games/yorimichi/unreal/Content/Data/*
+!games/yorimichi/unreal/Content/Data/SkateRuntime/
+games/yorimichi/unreal/Content/Data/SkateRuntime/*
+!games/yorimichi/unreal/Content/Data/SkateRuntime/assets/
 games/*/unreal/*.xcworkspace
 games/*/unreal/.vscode/
 platform/engine/Plugins/**/Binaries/

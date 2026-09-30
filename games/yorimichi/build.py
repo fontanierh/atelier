@@ -161,10 +161,9 @@ def steps(ctx):
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
         Step('skate.runtime', [Python(TOOLS / 'build_skate_runtime.py')],
-             inputs=[TOOLS / 'build_skate_runtime.py', ASSETS / 'skate', paths.ENGINE_PLUGINS / 'Activities/Skate/ThirdParty/skate-runtime'],
-             outputs=[paths.content_data(ctx.game) / 'SkateRuntime/bin' / ('atelier-skate-runtime.exe' if os.name=='nt' else 'atelier-skate-runtime'),
-                      *[paths.content_data(ctx.game) / 'SkateRuntime/assets' / name
-                        for name in json.loads((ASSETS / 'skate/runtime.json').read_text())['sha256']]],
+             inputs=[TOOLS / 'build_skate_runtime.py', ASSETS / 'skate', paths.content_data(ctx.game) / 'SkateRuntime/assets',
+                     paths.ENGINE_PLUGINS / 'Activities/Skate/ThirdParty/skate-runtime'],
+             outputs=[paths.content_data(ctx.game) / 'SkateRuntime/bin' / ('atelier-skate-runtime.exe' if os.name=='nt' else 'atelier-skate-runtime')],
              heavy=True, about='recovered Skate solver, animation banks and settings'),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),

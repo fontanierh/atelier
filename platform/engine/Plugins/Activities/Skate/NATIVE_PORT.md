@@ -27,10 +27,12 @@ outstanding to prevent an accumulating input backlog. It runs without a network 
 remounting resets the native session; EndPlay closes it. A failed worker logs the reason and returns to walking.
 Missing/corrupt executable or data reports an error and leaves the rider walking.
 
-The game commits all 19 required data files in `assets/skate/runtime.zip` (8.8 MB compressed), with SHA-256
-checksums and conversion provenance. `skate.runtime`, a dependency of the normal Unreal compile step, builds
-Rust 1.97.1 and stages the executable plus verified data automatically. No disc or upstream checkout is needed.
-The optional importer documents the original conversion. Build outputs stay in ignored Content/build folders.
+The game tracks all 19 required data files individually in `unreal/Content/Data/SkateRuntime/assets` (25.8 MB),
+with SHA-256 checksums and conversion provenance in `assets/skate/runtime.json`. The data directory is exempt
+from the Content ignore rule and is the exact directory the worker reads. `skate.runtime`, a dependency of
+the normal Unreal compile step, verifies the data and builds the executable with Rust 1.97.1. No ZIP, external
+data cache, disc or upstream checkout is needed. The optional importer documents the original conversion;
+its review candidates and compiled executables remain generated outputs.
 
 The host game's `PopHeightScale=1.15` scales the original launch-height presets. `AirSpinScale=2.15` scales the
 PhysicsAir/KnownAir speed target and BodySpin proportional/acceleration curves; derivative history and

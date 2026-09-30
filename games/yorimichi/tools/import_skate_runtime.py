@@ -3,7 +3,7 @@
 
 --game is an extracted disc containing default.xex and data/.
 --engine is a checkout of SK8-ENGINE/skate-3-rust-engine containing tools/.
-Converted files stay in ignored Content/Data and build folders.
+Candidate files and a checksum manifest go to build/ for review; tracked runtime data is never overwritten.
 """
 import argparse
 import hashlib
@@ -11,17 +11,22 @@ import json
 from pathlib import Path
 import shutil
 import struct
+import subprocess
 import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[3]
+MANIFEST = ROOT / 'games/yorimichi/assets/skate/runtime.json'
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--game', type=Path, required=True)
     parser.add_argument('--engine', type=Path, required=True)
+    parser.add_argument('--output', type=Path, default=ROOT / 'build/yorimichi/skate-runtime/reconverted')
     args = parser.parse_args()
+    if args.output.exists():
+        parser.error('Candidate output already exists; choose a new --output directory.')
     if not (args.game / 'default.xex').is_file() or not (args.engine / 'tools/asset_pipeline').is_dir():
         parser.error('Expected an extracted disc and the upstream tools checkout.')
     sys.path.insert(0, str(args.engine.resolve()))
@@ -32,13 +37,17 @@ def main():
 
     staging = ROOT / 'build/yorimichi/skate-runtime'
     staging.mkdir(parents=True, exist_ok=True)
-    destination = ROOT / 'games/yorimichi/unreal/Content/Data/SkateRuntime/assets'
+    provenance = json.loads(MANIFEST.read_text())
+    provenance['converter_commit'] = subprocess.check_output(
+        ['git', '-C', str(args.engine), 'rev-parse', 'HEAD'], text=True).strip()
+    required_stock = {name.removeprefix('private/stock/').lower() for name in provenance['sha256']
+                      if name.startswith('private/stock/data/')}
     with tempfile.TemporaryDirectory(prefix='import-', dir=staging) as temporary:
         work = Path(temporary)
         private = work / 'assets/private'
         stock = private / 'stock'
         extract(args.game / 'data/big/miscload.big', stock,
-                lambda e: e.path.lower().startswith(('data/anim/', 'data/state/', 'data/joystick/', 'data/script/camera/', 'data/camera/')))
+                lambda e: e.path.lower() in required_stock)
         extract(args.game / 'data/big/miscboot.big', stock,
                 lambda e: e.path.lower() == 'data/config/input.cfg')
         for name in ('OnBoard.abin', 'OffBoard.abin'):
@@ -67,14 +76,12 @@ def main():
                     'action_graph': 'private/stock/data/state/ActionGraph_OnBoard.stategraph',
                     'motion_graph': 'private/stock/data/state/MotionGraph_OnBoard.stategraph'}
         (private / 'game.json').write_text(json.dumps(manifest))
-        hashes = {str(p.relative_to(private)): hashlib.sha256(p.read_bytes()).hexdigest()
-                  for p in sorted(private.rglob('*')) if p.is_file()}
-        (private / 'provenance.json').write_text(json.dumps({'version': 1, 'sha256': hashes}, indent=2))
-        if destination.exists():
-            raise SystemExit('Runtime assets already exist; move that generated assets folder aside before reimporting.')
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(work / 'assets', destination)
-    print(f'Imported {len(hashes)} runtime files. Run build_skate_runtime.py to install the worker.')
+        provenance['sha256'] = {name: hashlib.sha256((work / 'assets' / name).read_bytes()).hexdigest()
+                                for name in provenance['sha256']}
+        args.output.mkdir(parents=True)
+        shutil.move(work / 'assets', args.output / 'assets')
+        (args.output / 'runtime.json').write_text(json.dumps(provenance, indent=2) + '\n')
+    print(f'Converted {len(provenance["sha256"])} candidate files in {args.output}. Review before replacing tracked data.')
 
 
 if __name__ == '__main__':

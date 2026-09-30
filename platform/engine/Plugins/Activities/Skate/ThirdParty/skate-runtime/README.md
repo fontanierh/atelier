@@ -23,5 +23,6 @@ network listener. EOF and quit terminate the process. The Unreal owner retains i
 when the world ends. Only one step packet is outstanding, bounding controller latency and pipe memory.
 
 Animation banks, state graphs, gesture patterns and the settings database are committed in the game's
-`assets/skate` bundle. Its build verifies and stages those data alongside the compiled worker. Only generated
-copies live in ignored Content. The old C++ skating backend has been removed.
+`unreal/Content/Data/SkateRuntime/assets` directory, with checksums in `assets/skate/runtime.json`. Its build
+verifies those tracked files in place and stages only the compiled worker in the ignored `bin` directory.
+The data directory is explicitly exempt from Content's ignore rule. The old C++ skating backend has been removed.
