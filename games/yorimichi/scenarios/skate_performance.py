@@ -7,13 +7,19 @@ import skate as qa
 
 
 def summarize(rows):
+    if len(rows)<2: raise RuntimeError('Frame sampler did not record a running game')
     intervals=[(b[0]-a[0])*1000 for a,b in zip(rows,rows[1:])]
     ordered=sorted(intervals)
     def percentile(p): return ordered[min(len(ordered)-1,round((len(ordered)-1)*p))]
+    repeated=longest=0
+    for a,b in zip(rows,rows[1:]):
+        repeated=repeated+1 if a[1]==b[1] else 0
+        longest=max(longest,repeated)
     return dict(frames=len(intervals),fps=1000/(sum(intervals)/len(intervals)),
                 p95_ms=percentile(.95),p99_ms=percentile(.99),worst_ms=max(intervals),
                 over_33ms=sum(t>33.34 for t in intervals),over_50ms=sum(t>50 for t in intervals),
                 repeated_native_frames=sum(a[1]==b[1] for a,b in zip(rows,rows[1:])),
+                longest_repeated_native_run=longest,
                 modes=sorted({r[2] for r in rows}))
 
 
@@ -49,6 +55,9 @@ def performance_pump(dt):
         heading=-90 if name=='street_to_mini' else 0
         qa.py(f'live.park.place({x},{y},{heading});live.skate_input();live.park.look(-12,{heading})')
         time.sleep(1.5)
+        # Start before the action, including the first bail's skinned vertex cache preparation.
+        qa.py("live.PERF=[];live.behave('perf_sample',sample_performance)")
+        time.sleep(.1)
         qa.py(f'live.park.launch({speed},{heading})')
         if name=='bail':
             qa.py("live.skate_release();live.L.input_key('Gamepad_LeftThumbstick','press',1);live.L.input_key('Gamepad_RightThumbstick','press',1);live.L.input_key('Gamepad_LeftTriggerAxis','axis',1);live.L.input_key('Gamepad_RightTriggerAxis','axis',1)")
@@ -57,15 +66,18 @@ def performance_pump(dt):
                 qa.py("live.skate_script([(2.4,{'push':True}),(.4,{}),(.3,{'right':(0,-1)}),(.03,{'right':(-1,1)}),(2.37,{})])")
             if name=='bowl_pump_air':qa.py("live.behave('perf_pump',performance_pump)")
             if name=='mini_air':qa.py('live.skate_input(grab_right=True)')
-        qa.py("live.PERF=[];live.behave('perf_sample',sample_performance)")
         time.sleep(seconds)
         raw=json.loads(qa.py("live.stop('perf_sample');live.stop('perf_pump');print(json.dumps(live.PERF))").strip().splitlines()[-1])
         report[name]=summarize(raw)
+        modes=set(report[name]['modes'])
+        required={'4'} if name=='bail' else {'1'} if name=='street_to_mini' else {'1','2'}
+        report[name]['activity_observed']=required<=modes and (name=='bail' or '4' not in modes)
         print(name+': '+json.dumps(report[name]),flush=True)
         qa.py("live.skate_input();live.L.input_key('Gamepad_LeftThumbstick','release',0);live.L.input_key('Gamepad_RightThumbstick','release',0);live.L.input_key('Gamepad_LeftTriggerAxis','axis',0);live.L.input_key('Gamepad_RightTriggerAxis','axis',0)")
     output=qa.yori.OUT/'skateqa/performance.json';output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(report,indent=2)+'\n')
-    return 0 if all(r['fps']>=58.5 and r['p95_ms']<20 and r['p99_ms']<33.34 and not r['over_50ms'] for r in report.values()) else 1
+    return 0 if all(r['activity_observed'] and r['fps']>=58.5 and r['p95_ms']<20 and r['p99_ms']<33.34
+                    and not r['over_50ms'] and r['longest_repeated_native_run']<3 for r in report.values()) else 1
 
 
 if __name__=='__main__':
