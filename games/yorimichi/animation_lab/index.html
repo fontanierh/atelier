@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Fox Motion Lab · Atelier</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Atelier home"
+        ><span class="brand-mark">a</span>atelier<span class="brand-divider"
+          >/</span
+        ><span class="brand-section">motion lab</span></a
+      >
+      <div class="top-right">
+        <a
+          href="https://github.com/Friedrich-M/UniMate"
+          target="_blank"
+          rel="noopener"
+          >Powered by UniMate ↗</a
+        ><span id="model-status" class="status"><i></i> Loading model</span>
+      </div>
+    </header>
+    <main>
+      <div class="intro">
+        <div>
+          <div class="eyebrow">YORIMICHI / CHARACTER EXPERIMENTS</div>
+          <h1>A little more bite<span>.</span></h1>
+          <p>
+            New moves for the fox hunter. Explore, compare, and direct the next
+            one.
+          </p>
+        </div>
+        <div class="rig-chip">
+          <span>◈</span>
+          <div>
+            <strong>Fox hunter</strong
+            ><small>53 skin bones · 22 body joints</small>
+          </div>
+          <span class="rig-tag">OWN RIG</span>
+        </div>
+      </div>
+      <div class="workspace">
+        <aside class="library">
+          <div class="panel-heading">
+            <h2>Motion library</h2>
+            <span id="result-count">—</span>
+          </div>
+          <div class="filters" aria-label="Filter animations">
+            <button class="selected" data-filter="All">All</button
+            ><button data-filter="Attacks">Attacks</button
+            ><button data-filter="Movement">Movement</button>
+          </div>
+          <div class="source-switch">
+            <button class="selected" data-source="generated">
+              UniMate <span id="generated-count">0</span></button
+            ><button data-source="authored">Original <span>15</span></button>
+          </div>
+          <div id="clip-list" role="list" class="clip-list"></div>
+          <div class="library-footer">
+            <span class="tiny-dot"></span
+            ><span>Experiments stay outside the game</span>
+          </div>
+        </aside>
+        <section class="stage-panel">
+          <div class="stage-top">
+            <div class="stage-name">
+              <span id="clip-source" class="source-label">ORIGINAL</span>
+              <h2 id="clip-title">Idle</h2>
+            </div>
+            <div class="view-options">
+              <button
+                id="compare"
+                title="Compare against the original fox animation"
+              >
+                Compare</button
+              ><button id="skeleton" title="Show skeleton">Rig</button
+              ><button
+                id="snapshot"
+                title="Download a still of this pose"
+                aria-label="Download pose snapshot"
+              >
+                ◉</button
+              ><button id="reset-camera" title="Reset camera">↺ View</button>
+            </div>
+          </div>
+          <div id="viewport">
+            <div class="stage-label">
+              <span class="tiny-dot"></span
+              ><span id="stage-label">Fox hunter / authored baseline</span>
+            </div>
+            <div id="loading-view" class="loading-view">
+              Loading the fox rig…
+            </div>
+            <div class="stage-hint">
+              Drag to orbit <span>·</span> Scroll to zoom
+            </div>
+            <div id="comparison-label" hidden>Original baseline</div>
+          </div>
+          <div class="transport">
+            <button id="play" aria-label="Pause animation" class="play-button">
+              Ⅱ
+            </button>
+            <div class="timeline">
+              <input
+                id="scrub"
+                aria-label="Animation timeline"
+                type="range"
+                min="0"
+                max="1"
+                value="0"
+                step="0.001"
+              />
+              <div class="timeline-labels">
+                <span id="time">0.00s</span><span id="duration">—</span>
+              </div>
+            </div>
+            <select id="speed" aria-label="Playback speed">
+              <option value="0.25">0.25×</option>
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.5">1.5×</option></select
+            ><button
+              id="loop"
+              class="active"
+              title="Loop playback"
+              aria-pressed="true"
+            >
+              ↻
+            </button>
+          </div>
+          <div class="clip-info">
+            <div><span>FRAMES</span><strong id="frames">120</strong></div>
+            <div><span>SEED</span><strong id="clip-seed">—</strong></div>
+            <div><span>ROOT TRAVEL</span><strong id="travel">—</strong></div>
+            <button id="export" class="download" disabled>↓ Export GLB</button>
+          </div>
+          <div id="review-note" class="review-note">
+            Select a generated motion to inspect its prompt and diagnostics.
+          </div>
+        </section>
+        <aside class="prompt-panel">
+          <div class="panel-heading">
+            <h2>Direct a motion</h2>
+            <span class="spark">✳</span>
+          </div>
+          <p class="prompt-help">
+            Describe what the hunter does, from anticipation to recovery.
+          </p>
+          <form id="prompt-form">
+            <label for="prompt">ANIMATION PROMPT</label
+            ><textarea id="prompt" maxlength="1000" required>
+A human fighter winds up the right arm, slashes diagonally down across the body with the right hand, then returns to a fighting stance.</textarea
+            >
+            <div class="prompt-suggestions">
+              <button type="button" data-prompt="roundhouse">
+                Roundhouse kick ↗</button
+              ><button type="button" data-prompt="sidestep">
+                Lateral dodge ↗</button
+              ><button type="button" data-prompt="jump">Jump & land ↗</button>
+            </div>
+            <div class="rule"></div>
+            <div class="seed-row">
+              <label for="seed">SEED</label
+              ><button id="random-seed" type="button" title="Random seed">
+                ↺ Randomize
+              </button>
+            </div>
+            <input
+              id="seed"
+              type="number"
+              min="0"
+              max="2147483647"
+              value="42"
+              required
+            />
+            <div class="slider-heading">
+              <label for="guidance">PROMPT GUIDANCE</label
+              ><output id="guidance-value">3.0</output>
+            </div>
+            <input
+              id="guidance"
+              type="range"
+              min="1.1"
+              max="8"
+              step="0.1"
+              value="3"
+            />
+            <div class="range-captions">
+              <span>More freedom</span><span>Closer to prompt</span>
+            </div>
+            <div class="slider-heading">
+              <label for="steps">SAMPLING STEPS</label
+              ><output id="steps-value">32</output>
+            </div>
+            <input
+              id="steps"
+              type="range"
+              min="8"
+              max="64"
+              step="8"
+              value="32"
+            />
+            <div class="generation-details">
+              <span>2 seconds</span><span>30 fps</span
+              ><span>Local inference</span>
+            </div>
+            <button class="generate" id="generate" type="submit" disabled>
+              ✳ Generate animation <span>↗</span>
+            </button>
+            <div id="job-status" class="job-status" aria-live="polite">
+              Warming up UniMate…
+            </div>
+            <progress id="job-progress" max="100" value="0" hidden></progress>
+          </form>
+          <div class="experiment-note">
+            <span>↳</span>
+            <div>
+              <strong>A motion sketch, ready to inspect.</strong>
+              <p>
+                Preview weights can miss contacts or distort poses. Check the
+                feet, balance, and recovery before using a take in the game.
+              </p>
+            </div>
+          </div>
+          <details>
+            <summary>Model & provenance</summary>
+            <p>
+              UniMate f60 v2, EMA step 100000. Flan-T5 text conditioning, fixed
+              midpoint flow sampler. Generated on the fox’s own body topology;
+              fingers retain the rest pose.
+            </p>
+            <a id="provenance" hidden target="_blank"
+              >View this take’s provenance ↗</a
+            >
+          </details>
+        </aside>
+      </div>
+      <section class="recipe-section">
+        <div class="recipe-heading">
+          <div>
+            <span class="eyebrow">A PLACE TO START</span>
+            <h2>Eight ways to move differently.</h2>
+          </div>
+          <button id="generate-presets">Generate missing experiments ↗</button>
+        </div>
+        <div id="recipes" class="recipes"></div>
+      </section>
+      <footer>
+        <span>ATELIER <span class="footer-slash">/</span> FOX MOTION LAB</span
+        ><span>Owned character. New skeleton. One unified model.</span>
+      </footer>
+    </main>
+    <div id="toast" role="status" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

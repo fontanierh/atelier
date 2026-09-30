@@ -138,6 +138,10 @@ game code asks for a role, never for a file.
 **9. Into the game.** `atelier build` exports the character from Blender (mesh, clips, sword, textures) and imports
 it into Unreal; scripted QA runs then check it in motion.
 
+Try text-driven motion on the fox hunter in the [Fox motion lab](games/yorimichi/animation_lab/README.md): a local
+UniMate playground with generated attack and movement experiments, a custom prompt box, 3D playback, comparison
+against the authored clips, and animated GLB exports.
+
 ```sh
 atelier build yorimichi characters.cairo unreal.cairo
 atelier play yorimichi --profile swordqa     # a scripted duel: draws, chains, charges, parries, 16 strikes checked

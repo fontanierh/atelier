@@ -1,0 +1,14 @@
+{
+  "name": "yorimichi-motion-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild app.js --bundle --format=esm --minify --outfile=../../../build/yorimichi/unimate/web/app.js"
+  },
+  "dependencies": {
+    "three": "0.183.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}
