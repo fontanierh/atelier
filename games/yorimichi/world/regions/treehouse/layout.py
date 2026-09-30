@@ -100,7 +100,7 @@ DETAILED = {'Tree_Maple_lo': (('Tree_Maple_A', .45), ('Tree_Maple_B', .35), ('Tr
             'Tree_Broad_lo': (('Tree_Maple_A', .55), ('Tree_Ginkgo', .15), ('Tree_Broad_A', .3))}
 FOREST = dict(radius=50., spacing=3.6, gap=2.8, turn=130.,
               mix=(('Tree_Maple_A', .30), ('Tree_Maple_B', .25), ('Tree_Ginkgo', .27), ('Tree_Cedar_B', .18)))
-KEYS = ['TH_Structure', 'TH_Trunks', 'TH_Dressing']
+KEYS = ['TH_Structure', 'TH_Frame', 'TH_Trunks', 'TH_Dressing']
 # The tall canopy trees (treehouse/trees.py) hold red and gold crowns at deck height round every place, as in the
 # paintings: each is scaled so its crown top stands `above` metres over the nearest deck (more further out), so
 # the houses stand just over a carpet of crowns seen from above and the crowns frame the walks at railing height.

@@ -2,10 +2,15 @@
 
     atelier build yorimichi world.treehouse
 
-Everything is placed from treehouse/layout.py in world space (Blender metres) and exported as three meshes that
-AJapanWorld instances once at the origin: TH_Structure (walked on and bumped into: complex collision), TH_Trunks
-(the ten anchor trunks: complex collision) and TH_Dressing (lanterns, thin ropes, cloth: no collision). Every face
-has a vertex colour (the game's palette) and a material slot named after its texture (treehouse/tmesh.py,
+Everything is placed from treehouse/layout.py in world space (Blender metres) and exported as four meshes that
+AJapanWorld instances once at the origin: TH_Structure (floors, decks, joists, stringers, treads, walls, roofs:
+complex collision, and they stop the camera), TH_Frame (rails, posts, hand ropes, stair handrails, the lookout's
+legs, ladders, free poles and exposed braces: complex collision, but the camera passes them), TH_Trunks (the ten
+anchor trunks: complex collision) and TH_Dressing (lanterns, thin ropes, cloth: no collision). The thin things in
+TH_Frame and TH_Dressing are drawn in pieces (a post with its cap and lashings, a rail from post to post, a length
+of hand rope, a lantern with its cord, a whole noren), baked into their UV layers Piece1 to Piece4, so each fades
+out whole when it comes between the camera and Cairo (treehouse/tmesh.py, docs/CAMERA.md). Every face has a vertex
+colour (the game's palette) and a material slot named after its texture (treehouse/tmesh.py,
 tools/treehouse_textures.py); M_TreeHouse multiplies the two. Faces are single-sided with outward winding, so every
 thin part seen from both sides is a closed solid or is built twice.
 
@@ -16,13 +21,15 @@ beside the meshes and AJapanWorld merges into world.json at load: every prop ins
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
 import json, math, random, sys
 from collections import defaultdict
+from contextlib import nullcontext
+from functools import wraps
 from pathlib import Path
 import bpy
 import numpy as np
 from mathutils import Vector
 from village.layout import sample
 from treehouse import layout as L
-from treehouse.tmesh import TMesh, export, material_factory
+from treehouse.tmesh import Pieces, TMesh, export, material_factory
 
 OUT = yori.OUT/'treehouse'
 R = random.Random(1729)
@@ -104,8 +111,9 @@ def post(m, x, y, z0, z1, w=.1, color=WOOD, kind='wood_timber'):
         m.box((x, y, (z0+z1)/2), (w, w, z1-z0), color)
 
 
-def tube(m, pts, r, color=ROPE, n=6, kind='rope', closed=False):
-    """A round tube along a polyline (rope, rings, pipes): u along its length, v round it."""
+def tube(m, pts, r, color=ROPE, n=6, kind='rope', closed=False, split=None):
+    """A round tube along a polyline (rope, rings, pipes): u along its length, v round it. split: a new piece every
+    split metres along it (TMesh.piece()), so a long rope fades a length at a time."""
     pts = [np.asarray(q, float) for q in pts]
     if closed: pts = pts+[pts[0]]
     t = {'rope': .3, 'straw': .8}.get(kind, 1.); s = 0.; rings = []
@@ -115,12 +123,17 @@ def tube(m, pts, r, color=ROPE, n=6, kind='rope', closed=False):
         a = np.cross(d, up); a /= np.linalg.norm(a); b = np.cross(d, a)
         if i: s += float(np.linalg.norm(q-pts[i-1]))
         rings.append((s, [q+r*(math.cos(2*math.pi*k/n)*a+math.sin(2*math.pi*k/n)*b) for k in range(n)]))
+    segs = list(zip(rings[:-1], rings[1:]))
+    part = [int((s0+s1)/2//split) if split else 0 for (s0, _), (s1, _) in segs]
     with m.use(kind):
-        for (s0, ra), (s1, rb) in zip(rings[:-1], rings[1:]):
-            for k in range(n):
-                quad = [ra[k], ra[(k+1) % n], rb[(k+1) % n], rb[k]]
-                uv = [(s0/t, k/n), (s0/t, (k+1)/n), (s1/t, (k+1)/n), (s1/t, k/n)]
-                m.poly([tuple(q) for q in quad], color, uv=uv)
+        for j in sorted(set(part)):
+            with m.piece() if split else nullcontext():
+                for ((s0, ra), (s1, rb)), pj in zip(segs, part):
+                    if pj != j: continue
+                    for k in range(n):
+                        quad = [ra[k], ra[(k+1) % n], rb[(k+1) % n], rb[k]]
+                        uv = [(s0/t, k/n), (s0/t, (k+1)/n), (s1/t, (k+1)/n), (s1/t, k/n)]
+                        m.poly([tuple(q) for q in quad], color, uv=uv)
 
 
 def ring(m, c, r, z, rr, color=ROPE, n=14, kind='rope'):
@@ -190,6 +203,17 @@ def free_spans(a, b, gaps):
 
 # ---------------------------------------------------------------------------------------------- the kit
 
+def whole(draw):
+    """For a thing drawn in the dressing that the camera fades out whole (TMesh.piece()): a lantern with its cord, a
+    float in its net, a wind bell, a noren, a hammock."""
+    @wraps(draw)
+    def run(d, *a, **k):
+        with d.piece():
+            return draw(d, *a, **k)
+    return run
+
+
+@whole
 def chochin(d, x, y, z, s=.3, hang=.25, lit=0.):
     """A round paper lantern: ribbed paper body, dark wooden caps, a cord up; lit (lumens) adds a point light."""
     if lit: light(x, y, z-.05, lit, 2.5+lit/250)
@@ -207,6 +231,7 @@ def chochin(d, x, y, z, s=.3, hang=.25, lit=0.):
         post(d, x, y, z+s*.63, z+s*.63+hang, .014, DARK)
 
 
+@whole
 def andon(d, x, y, z, s=.26, lit=0.):
     """A square post lantern: paper box in a wooden frame with a little roof, standing at z."""
     h = s*1.25
@@ -221,6 +246,7 @@ def andon(d, x, y, z, s=.26, lit=0.):
         d.box((x, y, z+h+.25), (.06, .06, .08), DARK)
 
 
+@whole
 def glass_float(d, x, y, z, r=.13, hang=.3):
     """A teal glass fishing float in a rope net, hanging on a cord."""
     with d.use('glass'):
@@ -236,6 +262,7 @@ def glass_float(d, x, y, z, r=.13, hang=.3):
     if hang > 0: tube(d, [(x, y, z+r), (x, y, z+r+hang)], .007, ROPE, 4)
 
 
+@whole
 def fuurin(d, x, y, z, hang=.18):
     with d.use('glass'):
         d.lathe((x, y, z), [(0, .05), (.03, .055), (.075, .04), (.10, .012)], vary(GLASS, .15), 10)
@@ -354,6 +381,7 @@ def cloth(d, quad, uv, alphas):
             d.colors[-len(al):] = [(*WHITE, a) for a in al]
 
 
+@whole
 def noren(d, x, y, z, width, drop, yaw, pic='noren_cream'):
     """Split door curtain hanging from a rod at z, across a doorway facing yaw, gently waved: a band joined under the
     rod, then six strips with slits between them (one in the middle, where Cairo walks through), each strip two
@@ -472,10 +500,12 @@ def world_poly(p):
     return ccw([(x0+a, y0+b) for a, b in p['poly']])
 
 
-def railing(m, d, pts, z, gaps=(), height=.95, closed=True, avoid=()):
-    """Chunky square posts with caps and rope lashings, a top rail and a lower rail, open at the gaps. A corner
-    shared by two edges gets one post, and no post stands within 30 cm of a point in avoid (a bridge's end post
-    already stands there). Rails stop 6 cm short of the posts' centres, so two rails never overlap in a corner."""
+def railing(fr, d, pts, z, gaps=(), height=.95, closed=True, avoid=()):
+    """Chunky square posts with caps and rope lashings, a top rail and a lower rail, open at the gaps: in the frame
+    (fr), the lashings in the dressing. A corner shared by two edges gets one post, and no post stands within 30 cm
+    of a point in avoid (a bridge's end post already stands there). Each post with its cap and lashings is a piece,
+    and each rail a piece from post to post: the rails stop 6 cm short of the posts' centres at the ends of a run,
+    so two rails never overlap in a corner, and 2 cm either side of the centre of a post between."""
     edges = list(zip(pts, pts[1:]+pts[:1])) if closed else list(zip(pts[:-1], pts[1:]))
     placed = []
     for a, b in edges:
@@ -485,18 +515,24 @@ def railing(m, d, pts, z, gaps=(), height=.95, closed=True, avoid=()):
                 x, y = p+(q-p)*k/n
                 if any(math.hypot(x-px, y-py) < .05 for px, py in placed): continue
                 if any(math.hypot(x-ax, y-ay) < .3 for ax, ay in avoid): continue
-                placed.append((x, y)); post(m, x, y, z-.05, z+height+.1, .12, vary(WOOD, .1))
-                with m.use('wood_timber', grain=(1, 0, 0)):
-                    m.box((x, y, z+height+.13), (.15, .15, .05), DARK)
-                ring(d, (x, y), .09, z+height-.02, .018, ROPE_LT, 8)
-                ring(d, (x, y), .09, z+height-.07, .018, ROPE_LT, 8)
-            e = (q-p)/np.linalg.norm(q-p); p_, q_ = p+e*.06, q-e*.06
-            board(m, (*p_, z+height+.035), (*q_, z+height+.035), .11, .08, vary(WOOD, .08), 'wood_timber')
-            board(m, (*p_, z+.5), (*q_, z+.5), .06, .06, vary(WOOD, .08), 'wood_timber')
+                placed.append((x, y))
+                with fr.piece():
+                    post(fr, x, y, z-.05, z+height+.1, .12, vary(WOOD, .1))
+                    with fr.use('wood_timber', grain=(1, 0, 0)):
+                        fr.box((x, y, z+height+.13), (.15, .15, .05), DARK)
+                    ring(d, (x, y), .09, z+height-.02, .018, ROPE_LT, 8)
+                    ring(d, (x, y), .09, z+height-.07, .018, ROPE_LT, 8)
+            e = (q-p)/np.linalg.norm(q-p)
+            between = [c for c in (p+(q-p)*k/n for k in range(1, n)) if any(math.hypot(c[0]-px, c[1]-py) < .05 for px, py in placed)]
+            stops = [p+e*.06]+[c+e*s for c in between for s in (-.02, .02)]+[q-e*.06]
+            for zr, w, t, color in ((z+height+.035, .11, .08, vary(WOOD, .08)), (z+.5, .06, .06, vary(WOOD, .08))):
+                for s0, s1 in zip(stops[0::2], stops[1::2]):
+                    with fr.piece():
+                        board(fr, (*s0, zr), (*s1, zr), w, t, color, 'wood_timber')
     return len(placed)
 
 
-def deck(m, d, p):
+def deck(m, fr, d, p):
     x0, y0 = p['xy']; z = p['deck']; poly = world_poly(p)
     th = math.radians(p['open']+90); u = np.array([math.cos(th), math.sin(th)]); v = np.array([-u[1], u[0]])
     Rm = max(math.hypot(a-x0, b-y0) for a, b in poly)+.5; k = -Rm; c = np.array([x0, y0])
@@ -509,7 +545,7 @@ def deck(m, d, p):
         k += .23
     r = p['trunk']; lashed = []
     if 'box' in p:
-        deck_frame(m, d, p)
+        deck_frame(m, fr, d, p)
     # A landing: joists to every corner and knee braces down to the trunk.
     for k, (vx, vy) in enumerate(poly if 'box' not in p else []):
         dd = np.array([vx-x0, vy-y0]); n = float(np.linalg.norm(dd)); w = dd/n
@@ -517,7 +553,8 @@ def deck(m, d, p):
         board(m, (*(c+w*r*.8), z-.06-dj), (*(c+w*(n-.08)), z-.06-dj), .12, .16, WOOD, 'wood_timber')
         if k % 2 == 0:
             zb = z-1.9-.1*n
-            board(m, (*(c+w*r*.85), zb), (*(c+w*n*.72), z-.22), .12, .12, WOOD, 'wood_timber')
+            with fr.piece():
+                board(fr, (*(c+w*r*.85), zb), (*(c+w*n*.72), z-.22), .12, .12, WOOD, 'wood_timber')
             if all(abs(zb-q) > .08 for q in lashed):      # one lashing per height: braces of equal length share it
                 lashed.append(zb); ring(d, c, r+.06, zb+.05, .03, ROPE, 16)
     # the rim: neighbouring boards overlap in the corners, so every other one sits 5 mm lower (and a third height
@@ -533,11 +570,11 @@ def deck(m, d, p):
     leaves_on(d, poly, z, 14)
 
 
-def deck_frame(m, d, p):
+def deck_frame(m, fr, d, p):
     """Under a room's deck (a chamfered rectangle round the trunk and the room, layout.box()): joists along its
     length every metre or so, on girders across it; the two end girders stand on stilts down to the ground at the
     corners away from the trunk, each with a knee brace and ties between them, and the girders either side of the
-    trunk hang on knee braces from it. The joists stop at the bark."""
+    trunk hang on knee braces from it. The joists stop at the bark. The stilts, braces and ties are frame (fr)."""
     x0, y0 = p['xy']; z = p['deck']; r = p['trunk']; ang, u0, u1, v0, v1, ch = p['box']
     a = math.radians(ang); U = np.array([math.cos(a), math.sin(a)]); V = np.array([-U[1], U[0]]); c = np.array([x0, y0])
     at = lambda u, v, zz: (*(c+U*u+V*v), zz)
@@ -558,22 +595,27 @@ def deck_frame(m, d, p):
     for u in mids+[e for e in ends if abs(e) < r+1.6]:      # knee braces from the trunk to the girders near it
         s = 1 if u > 0 else -1
         for v in (-1.3, 1.3):
-            board(m, at(s*r*.85, v*.2, z-2.1), at(u, v, z-.44), .12, .12, WOOD, 'wood_timber')
+            with fr.piece():
+                board(fr, at(s*r*.85, v*.2, z-2.1), at(u, v, z-.44), .12, .12, WOOD, 'wood_timber')
     ring(d, c, r+.06, z-2.1+.05, .03, ROPE, 16)
     for u in ends:
         feet = [v for _, _, us, v in p['stilts'] if abs(us-u) < .01]      # layout.stilts()
         for v in feet:
             q = at(u, v, 0); g = ground(q[0], q[1])
-            post(m, q[0], q[1], g-.3, z-.42, .2, WOOD)
+            with fr.piece():                             # the stilt with the lashing of its brace
+                post(fr, q[0], q[1], g-.3, z-.42, .2, WOOD)
+                ring(d, q[:2], .15, z-1.72, .025, ROPE, 10)
             s = -1 if v > 0 else 1                       # a knee brace in toward the middle of the girder
-            board(m, at(u, v, z-1.7), at(u, v+s*1.2, z-.44), .1, .1, WOOD, 'wood_timber')
-            ring(d, q[:2], .15, z-1.72, .025, ROPE, 10)
+            with fr.piece():
+                board(fr, at(u, v, z-1.7), at(u, v+s*1.2, z-.44), .1, .1, WOOD, 'wood_timber')
         if len(feet) == 2 and z-max(ground(*at(u, v, 0)[:2]) for v in feet) > 3.5:   # a tie and a cross between them
             zt = z-2.6
-            board(m, at(u, feet[0], zt), at(u, feet[1], zt), .1, .12, WOOD, 'wood_timber')
+            with fr.piece():
+                board(fr, at(u, feet[0], zt), at(u, feet[1], zt), .1, .12, WOOD, 'wood_timber')
             gl = max(ground(*at(u, v, 0)[:2]) for v in feet)+1.2
             if zt-gl > 1.5:
-                board(m, at(u, feet[0], zt-.14), at(u, feet[1], gl), .09, .09, WOOD, 'wood_timber')
+                with fr.piece():
+                    board(fr, at(u, feet[0], zt-.14), at(u, feet[1], gl), .09, .09, WOOD, 'wood_timber')
 
 
 def gaps_for(p, pl, extra=()):
@@ -674,10 +716,11 @@ def mouth_planks(m, b, P, end):
         board(m, (*a, bridge_z(b, Sa)-.05), (*b_, bridge_z(b, Sb)-.05), .08, .1, DARK, 'wood_timber')
 
 
-def bridge(m, d, b, P):
+def bridge(m, fr, d, b, P):
     """A plank bridge with rope handrails, sagging between its landings; its ends' posts stand on the decks' edges
     splayed out past the handrails (layout), the handrails come in from them to the bridge, and the mouths are
-    planked out to the edge (mouth_planks())."""
+    planked out to the edge (mouth_planks()). The posts and hand ropes are frame (fr): each post a piece with its
+    cap, lashing and lantern, the hand ropes a piece every 1.2 m, and each suspender rope a piece."""
     A, B = np.array(b['start'], float), np.array(b['end'], float); W = L.BRIDGE_WIDTH; span = b['span']
     dd = B[:2]-A[:2]; u = dd/np.linalg.norm(dd); v = np.array([-u[1], u[0]])
     ends = [mouth(b, P, e) for e in (0, 1)]; sj0, sj1 = ends[0][5], span-ends[1][5]    # the joins, from the start
@@ -693,6 +736,7 @@ def bridge(m, d, b, P):
             dn = np.array([0, 0, .05]); sl = (q1-q0)/2
             hexa(m, [a_-sl-dn, b_-sl-dn, b_+sl-dn, a_+sl-dn, a_-sl, b_-sl, b_+sl, a_+sl], vary(PLANK, .14))
     for e in (0, 1): mouth_planks(m, b, P, e)
+    held = {}                             # the end posts' pieces, by their index in b['posts']
     for side in (-1, 1):
         off = side*(W/2-.1)       # the stringers, from deck edge to deck edge
         S0 = L.along_exit(ends[0][3], A, u, v, off); S1 = L.along_exit(ends[1][3], B, -u, v, off)
@@ -705,20 +749,25 @@ def bridge(m, d, b, P):
         rail = side*(W/2+.03); mids = np.linspace(sj0, sj1, max(2, round((sj1-sj0)/.4)))
         for zr, r in ((.95, .05), (.5, .034)):
             pts = [p0+[0, 0, zr]]+[pt(S, rail, zr) for S in mids]+[p1+[0, 0, zr]]
-            tube(m, pts, r, ROPE_LT, 8 if r > .04 else 6)
-        for q in (p0, p1):
-            with m.at((q[0], q[1], 0), math.degrees(math.atan2(u[1], u[0]))):     # square to the bridge
-                post(m, 0, 0, q[2]-.35, q[2]+1.18, .14, WOOD)
-                with m.use('wood_timber'):
-                    m.box((0, 0, q[2]+1.21), (.18, .18, .05), DARK)
-            ring(d, q[:2], .085, q[2]+.95, .02, ROPE_LT, 8)
+            tube(fr, pts, r, ROPE_LT, 8 if r > .04 else 6, split=1.2)
+        for j, q in ((k, p0), (2+k, p1)):
+            with fr.piece() as held[j]:
+                with fr.at((q[0], q[1], 0), math.degrees(math.atan2(u[1], u[0]))):     # square to the bridge
+                    post(fr, 0, 0, q[2]-.35, q[2]+1.18, .14, WOOD)
+                    with fr.use('wood_timber'):
+                        fr.box((0, 0, q[2]+1.21), (.18, .18, .05), DARK)
+                ring(d, q[:2], .085, q[2]+.95, .02, ROPE_LT, 8)
         nk = max(3, round(span/.55))
         inside = lambda S: sj0+.1 < S < sj1-.1
         for k in range(1, nk):          # suspender ropes from the handrail down to the stringer
             S = span*k/nk
             if not inside(S): continue
-            q = pt(S, rail); tube(d, [q+[0, 0, -.04], q+[0, 0, .95]], .012, ROPE, 4)
-            if k % 2 and inside(span*(k+1)/nk): tube(d, [pt(S, rail, .5), pt(span*(k+1)/nk, rail, .95)], .01, ROPE, 4)
+            q = pt(S, rail)
+            with d.piece():
+                tube(d, [q+[0, 0, -.04], q+[0, 0, .95]], .012, ROPE, 4)
+            if k % 2 and inside(span*(k+1)/nk):
+                with d.piece():
+                    tube(d, [pt(S, rail, .5), pt(span*(k+1)/nk, rail, .95)], .01, ROPE, 4)
     # Hanging lanterns along one handrail, a float here and there, a paper lantern on the first and last post.
     nl = max(1, round(span/3.4))
     for k in range(1, nl+1):
@@ -726,8 +775,10 @@ def bridge(m, d, b, P):
         if not sj0 < S < sj1: continue
         q = pt(S, (W/2+.03)*(1 if k % 2 else -1), .95-.36)
         chochin(d, q[0], q[1], q[2], .2, .12) if k % 3 else glass_float(d, q[0], q[1], q[2]+.06, .1, .12)
-    for q in b['lanterns']:
-        andon(d, q[0], q[1], q[2]+1.24, .24, 260)
+    for q in b['lanterns']:              # on end posts (layout), in their pieces
+        j = min(held, key=lambda j: math.dist(q[:2], b['posts'][j][:2]))
+        with fr.piece(held[j]):
+            andon(d, q[0], q[1], q[2]+1.24, .24, 260)
     for _ in range(max(2, int(span/2))):
         q = pt(R.uniform(.05, .95)*span, R.uniform(-.4, .4)); maple_leaf(d, q[0], q[1], q[2]+.006, R.uniform(.06, .09))
 
@@ -1167,6 +1218,7 @@ def strut(m, a, b, w, t, side, color=WOOD, kind='wood_timber'):
         hexa(m, [a+q for q in ring_]+[b+q for q in ring_], color)
 
 
+@whole
 def hammock(d, a0, a1, sag, width, ends, pic='quilt'):
     """A quilt hammock slung between two fixings: a deep bag gathered to a point at both ends, a fan of strings into
     each end and one rope to the fixing. Each end is ('wall', inward normal): a peg on a wooden plate at a0/a1 on the
@@ -1430,9 +1482,10 @@ def tansu(m, d, frame, s, length, z, depth=.45, h=.55, back=.1):
                 m.box((x, depth/2+.03, h/2+.05), (.12, .025, .025), IRON)
 
 
-def loft(m, d, frame, A, s0, z, top=2.8, deep=.8):
+def loft(m, fr, d, frame, A, s0, z, top=2.8, deep=.8):
     """A sleeping shelf high on a wall (from s0 to the corner), on knee braces, with a low rail, folded quilts, one
-    hanging over the edge, and a ladder fixed flat to the wall beside it. Everything on it is above head height."""
+    hanging over the edge, and a ladder fixed flat to the wall beside it. Everything on it is above head height. The
+    braces, the rail and the ladder are frame (fr), each a piece."""
     t = math.tan(math.radians(22.5)); o, u, n = frame
     far = lambda dd: (A-dd)*t-.16                  # the adjacent wall cuts the corner end at 45 degrees
     q = lambda s_, dd, zz: on_wall(frame, s_, dd, zz)
@@ -1442,11 +1495,15 @@ def loft(m, d, frame, A, s0, z, top=2.8, deep=.8):
     board(m, q(s0+.02, deep-.06, top-.08), q(far(deep)-.02, deep-.06, top-.08), .1, .12, DARK, 'wood_timber')
     board(m, q(s0+.02, .16, top-.08), q(far(.16)-.02, .16, top-.08), .1, .1, DARK, 'wood_timber')
     for s_ in (s0+.35, far(deep)-.3):             # knee braces from the wall to the front beam
-        strut(m, q(s_, .15, top-.95), q(s_, deep-.1, top-.19), .08, .08, u, WOOD)
+        with fr.piece():
+            strut(fr, q(s_, .15, top-.95), q(s_, deep-.1, top-.19), .08, .08, u, WOOD)
     # a low rail along the front, the quilts, one hanging 20 cm over the edge
     xs = [s0+.06, (s0+far(deep))/2, far(deep)-.08]
-    for s_ in xs: post(m, *q(s_, deep-.05, 0)[:2], z+top, z+top+.3, .06, WOOD)
-    board(m, q(xs[0], deep-.05, top+.32), q(xs[-1], deep-.05, top+.32), .07, .04, WOOD, 'wood_timber')
+    for s_ in xs:
+        with fr.piece():
+            post(fr, *q(s_, deep-.05, 0)[:2], z+top, z+top+.3, .06, WOOD)
+    with fr.piece():
+        board(fr, q(xs[0], deep-.05, top+.32), q(xs[-1], deep-.05, top+.32), .07, .04, WOOD, 'wood_timber')
     for k, s_ in enumerate(np.linspace(s0+.4, far(.45)-.35, 3)):
         c_ = q(s_, .45, top); yaw = wall_yaw(frame)+R.uniform(-6, 6)
         with d.at(tuple(c_), yaw):
@@ -1455,16 +1512,17 @@ def loft(m, d, frame, A, s0, z, top=2.8, deep=.8):
     e0, e1 = q(s0+.55, deep+.02, top+.01), q(s0+1.25, deep+.02, top+.01)
     with d.use('quilt'):
         cloth(d, [tuple(e0-[0, 0, .2]), tuple(e1-[0, 0, .2]), tuple(e1), tuple(e0)], [(0, 0), (1, 0), (1, .3), (0, .3)], [0, 0, 0, 0])
-    # the ladder, flat to the wall beside the loft's end
-    for s_ in (s0-.5, s0-.1):
-        post(m, *q(s_, .15, 0)[:2], z, z+top+.35, .06, WOOD)
-    for k in range(1, 12):
-        zz = .28*k
-        if zz > top+.2: break
-        tube(m, [q(s0-.47, .15, zz), q(s0-.13, .15, zz)], .02, WOOD, 6, 'wood_timber')
+    # the ladder, flat to the wall beside the loft's end: one piece
+    with fr.piece():
+        for s_ in (s0-.5, s0-.1):
+            post(fr, *q(s_, .15, 0)[:2], z, z+top+.35, .06, WOOD)
+        for k in range(1, 12):
+            zz = .28*k
+            if zz > top+.2: break
+            tube(fr, [q(s0-.47, .15, zz), q(s0-.13, .15, zz)], .02, WOOD, 6, 'wood_timber')
 
 
-def furnish_heart(m, d, p):
+def furnish_heart(m, fr, d, p):
     """The hall where the children meet, big and open in the middle, everything low against the walls: a low round
     log table on a rug toward the front window with cushions round it and the kettle stump; a window bench on the
     camphor side between the doors; bookshelves with the island map over them; a quilt hammock across the corner;
@@ -1492,7 +1550,7 @@ def furnish_heart(m, d, p):
     hammock(d, a0, a1, .85, .5, (('wall', W[0][2][:2]), ('wall', W[90][2][:2])))
     wall_picture(d, W[45], 0., 1.95, 2.75, .1, 'pictures', .8, True)
     # the loft over the flat at 315, its ladder beside it, a low chest and a plant under the window
-    loft(m, d, W[315], A, -.95, z)
+    loft(m, fr, d, W[315], A, -.95, z)
     tansu(m, d, W[315], .25, 1.3, z)
     q = on_wall(W[315], .55, .33, .58); potted_plant(d, q[0], q[1], q[2], .9)
     q = on_wall(W[315], -.05, .3, .58); book_stack(d, q[0], q[1], q[2], 3, wall_yaw(W[315]))
@@ -1778,7 +1836,7 @@ HALL_OPENINGS = {   # the hall's flats (degrees from its x, out from the camphor
 }
 
 
-def heart_room(m, d, p):
+def heart_room(m, fr, d, p):
     """The heart hall beside the camphor (layout HALL): eight plastered walls 3.2 m high, the two doors in the flats
     facing back toward the camphor, and an eight-sided shingle roof open to its rafters inside, a king post hanging
     from the top with lantern strings to the corners (all above 2.8 m). The eave comes within HALL['gap'] of the
@@ -1841,7 +1899,7 @@ def heart_room(m, d, p):
     leaves_on(d, [tuple(H_(*corner(A-.35, 22.5+45*j))[:2]) for j in range(8)], z, 8)
     for a in (45, 135, 225, 315):      # the room's warm light, as from the lantern strings
         q = H_(2.4*math.cos(math.radians(a)), 2.4*math.sin(math.radians(a))); light(q[0], q[1], z+2.6, 850, 5.5, int(a == 45))
-    furnish_heart(m, d, p)
+    furnish_heart(m, fr, d, p)
 
 
 def boat_shape(s):
@@ -1866,7 +1924,7 @@ def hull_z(x, y):
     return zg+(zk-zg)*max(0., 1-min(1., (y/hb)**2))**.35
 
 
-def boat_room(m, d, p):
+def boat_room(m, fr, d, p):
     """The boat room: a 7 m rowboat upturned over the deck beside its trunk (layout BOAT), on four posts under its
     gunwales, open all round underneath. Faded blue planks outside with a pale strake at the gunwale, planking, ribs,
     a keelson and two thwarts inside, a pointed bow and a transom. The gunwale is 2.6 m over the deck at the ends and
@@ -1906,12 +1964,14 @@ def boat_room(m, d, p):
         for x in (-1.25, 1.25):                       # thwarts, high over the camera
             y = .96*max(yy for yy in np.linspace(0, 1.6, 81) if hull_z(x, yy) >= 3.17)
             board(m, (x, -y, 3.14), (x, y, 3.14), .24, .05, PALE, 'wood_pale')
-        # four posts under the gunwales, clear of the ways in from the bridges (they come from the trunk side)
+    # four posts under the gunwales, clear of the ways in from the bridges (they come from the trunk side): frame
+    with fr.at(tuple(c), ang+90):
         for x in (-2.2, 2.2):
             hb = boat_shape(x/half)[0]
             for sgn in (-1, 1):
                 y = sgn*(hb-.15); zt = min(hull_z(x+dx, y+dy) for dx in (-.08, .08) for dy in (-.08, .08))-.015
-                post(m, x, y, -.04, zt, .16, WOOD)
+                with fr.piece():
+                    post(fr, x, y, -.04, zt, .16, WOOD)
     # the lantern from the keel, its bottom 2.75 m up; a low warm fill
     q = B(-.5, 0); zk = hull_z(-.5, 0)
     chochin(d, q[0], q[1], z+2.97, .3, zk-2.97-.19-.02, 1000)
@@ -1920,20 +1980,26 @@ def boat_room(m, d, p):
     furnish_boat(m, d, p, c, ang)
 
 
-def pulley_crane(m, d, p):
+def pulley_crane(m, fr, d, p):
+    """The crane arm out from the trunk over the deck's edge on a knee brace (frame, fr), the pulley at its tip with
+    the basket's rope and the rope to the ground, crates, a rope coil and a sail awning on two posts (frame)."""
     x0, y0 = p['xy']; z = p['deck']; a = math.radians(p['open']); u = np.array([math.cos(a), math.sin(a)]); c = np.array([x0, y0])
     edge = float(np.linalg.norm(L.ray_exit(p['poly'], p['open'])))      # the arm reaches 0.7 m past the deck's edge
-    board(m, (*(c+u*.2), z+3.1), (*(c+u*(edge+.85)), z+3.1), .16, .18, WOOD, 'wood_timber')
-    board(m, (*(c+u*p['trunk']*.9), z+1.5), (*(c+u*edge*.6), z+3.0), .14, .14, WOOD, 'wood_timber')
+    with fr.piece():
+        board(fr, (*(c+u*.2), z+3.1), (*(c+u*(edge+.85)), z+3.1), .16, .18, WOOD, 'wood_timber')
+    with fr.piece():
+        board(fr, (*(c+u*p['trunk']*.9), z+1.5), (*(c+u*edge*.6), z+3.0), .14, .14, WOOD, 'wood_timber')
     ring(d, c, p['trunk']+.06, z+3.05, .035, ROPE, 16); ring(d, c, p['trunk']+.06, z+1.5, .035, ROPE, 16)
     tip = c+u*(edge+.7); v = np.array([-u[1], u[0]])
-    for s in (-1, 1): board(d, (*(tip+v*s*.1), z+3.02), (*(tip+v*s*.1), z+2.75), .03, .1, DARK, 'wood_timber')
-    wheel = [(*(tip+v*.045), ), (*(tip-v*.045),)]
-    pts = [np.array([tip[0], tip[1], z+2.82])+np.r_[u*.15*math.cos(t), .15*math.sin(t)] for t in np.linspace(0, 2*math.pi, 13)]
-    tube(d, pts, .03, WOOD, 6, 'wood_timber'); _ = wheel
+    with d.piece():                       # the pulley block: its cheeks and wheel
+        for s in (-1, 1): board(d, (*(tip+v*s*.1), z+3.02), (*(tip+v*s*.1), z+2.75), .03, .1, DARK, 'wood_timber')
+        pts = [np.array([tip[0], tip[1], z+2.82])+np.r_[u*.15*math.cos(t), .15*math.sin(t)] for t in np.linspace(0, 2*math.pi, 13)]
+        tube(d, pts, .03, WOOD, 6, 'wood_timber')
     g = ground(*tip)
-    tube(d, [(tip[0], tip[1], z+2.8), (tip[0], tip[1], z+1.62)], .018, ROPE, 5)
-    tube(d, [(tip[0]+u[0]*.15, tip[1]+u[1]*.15, z+2.82), (tip[0]+u[0]*.15, tip[1]+u[1]*.15, g)], .018, ROPE, 5)
+    with d.piece():
+        tube(d, [(tip[0], tip[1], z+2.8), (tip[0], tip[1], z+1.62)], .018, ROPE, 5)
+    with d.piece():
+        tube(d, [(tip[0]+u[0]*.15, tip[1]+u[1]*.15, z+2.82), (tip[0]+u[0]*.15, tip[1]+u[1]*.15, g)], .018, ROPE, 5)
     prop('basket', tip[0], tip[1], z+.75, math.degrees(a), 1.)
     q = c+u*1.6+v*1.3; crate(m, q[0], q[1], z, (.55, .42, .42), math.degrees(a)+15)
     q = c+u*1.9+v*1.35; crate(m, q[0], q[1], z+.42, (.4, .35, .3), math.degrees(a)-10)
@@ -1941,7 +2007,9 @@ def pulley_crane(m, d, p):
     # a sail awning between the crane mast and two posts
     for s in (-1, 1):
         q = c-u*.2+v*s*1.9
-        if inside(world_poly(p), *q): post(m, q[0], q[1], z, z+2.3, .1, WOOD)
+        if inside(world_poly(p), *q):
+            with fr.piece():
+                post(fr, q[0], q[1], z, z+2.3, .1, WOOD)
     q0, q1, q2 = c-u*.2+v*1.9, c-u*.2-v*1.9, c+u*1.2
     with d.use('canvas'):
         two_sided(d, [(*q0, z+2.3), (*q1, z+2.3), (*q2, z+3.05)], vary(CANVAS, .05))
@@ -1962,7 +2030,7 @@ def chime_hoop(m, d, p):
     a = math.radians(p['open']+60); prop('planter', x0+2.0*math.cos(a), y0+2.0*math.sin(a), z, face_yaw(-math.cos(a), -math.sin(a)), 1.)
 
 
-def slide(m, d, pl):
+def slide(m, fr, d, pl):
     s = pl['slide']; P = pl['places']['slide']; c = s['center']; rc, hw = s['rc'], s['width']/2; z = P['deck']
     a0, a1 = s['landing']
     for k in range(8):
@@ -1978,7 +2046,7 @@ def slide(m, d, pl):
         for r0, r1 in ((rc-hw-.07, rc-hw), (rc+hw, rc+hw+.07)):
             with m.use('wood_plank'): sector(m, c, f0, f1, r0, r1, p0[2]+.38, p1[2]+.38, .45, vary(BOARD, .06))
     # Columns stand outside both side walls, every 30 degrees; each carries every turn that passes it on a cross-beam
-    # under the bed, so no post rises through the chute of the turn below.
+    # under the bed, so no post rises through the chute of the turn below. Columns and beams are frame, each a piece.
     ang, bed, gnd = (np.array([q[i] for q in path]) for i in (3, 2, 4))
     ri_, ro_ = rc-hw-.2, rc+hw+.2
     for A in np.arange(ang[0]+12, ang[0]+360, 30):
@@ -1986,18 +2054,23 @@ def slide(m, d, pl):
         if not levels: continue
         a = math.radians(A); e = np.array([math.cos(a), math.sin(a), 0.]); t = np.array([-e[1], e[0], 0.])
         for r in (ri_, ro_):
-            x, y = c[0]+r*e[0], c[1]+r*e[1]; post(m, x, y, ground(x, y)-.2, max(levels)-.09, .12, WOOD)
+            x, y = c[0]+r*e[0], c[1]+r*e[1]
+            with fr.piece():
+                post(fr, x, y, ground(x, y)-.2, max(levels)-.09, .12, WOOD)
         for lv in levels:
-            board(m, (c[0]+(ri_-.06)*e[0], c[1]+(ri_-.06)*e[1], lv-.07), (c[0]+(ro_+.06)*e[0], c[1]+(ro_+.06)*e[1], lv-.07), .1, .12, DARK, 'wood_timber')
+            with fr.piece():
+                board(fr, (c[0]+(ri_-.06)*e[0], c[1]+(ri_-.06)*e[1], lv-.07), (c[0]+(ro_+.06)*e[0], c[1]+(ro_+.06)*e[1], lv-.07), .1, .12, DARK, 'wood_timber')
     last = np.array(path[-1][:3]); pts = [last]+[np.array(q) for q in s['runout']]
     for q0, q1 in zip(pts[:-1], pts[1:]):
         board(m, q0, q1, 2*hw, .08, vary(PALE), 'wood_pale')
-    # the start gate: two posts, a crossbar, a little flag; a straw heap where the run-out ends
+    # the start gate: two posts, a crossbar, a lantern on it and one hanging from it, all one piece (frame and
+    # dressing); a straw heap where the run-out ends
     ga = math.radians(a0); gx, gy = c[0]+rc*math.cos(ga), c[1]+rc*math.sin(ga); t = np.array([math.cos(ga), math.sin(ga)])
-    for f in (-1, 1): post(m, gx+t[0]*f*(hw+.12), gy+t[1]*f*(hw+.12), z, z+1.9, .12, WOOD)
-    board(m, (gx-t[0]*(hw+.2), gy-t[1]*(hw+.2), z+1.95), (gx+t[0]*(hw+.2), gy+t[1]*(hw+.2), z+1.95), .14, .14, DARK, 'wood_timber')
-    andon(d, gx+t[0]*(hw+.12), gy+t[1]*(hw+.12), z+1.97, .22, 260)
-    chochin(d, gx-t[0]*.1, gy-t[1]*.1, z+1.55, .2, .26, 220)
+    with fr.piece():
+        for f in (-1, 1): post(fr, gx+t[0]*f*(hw+.12), gy+t[1]*f*(hw+.12), z, z+1.9, .12, WOOD)
+        board(fr, (gx-t[0]*(hw+.2), gy-t[1]*(hw+.2), z+1.95), (gx+t[0]*(hw+.2), gy+t[1]*(hw+.2), z+1.95), .14, .14, DARK, 'wood_timber')
+        andon(d, gx+t[0]*(hw+.12), gy+t[1]*(hw+.12), z+1.97, .22, 260)
+        chochin(d, gx-t[0]*.1, gy-t[1]*.1, z+1.55, .2, .26, 220)
     end = np.array(s['runout'][-1]); gz = ground(end[0], end[1])
     with d.use('straw'):
         for k in range(7):
@@ -2022,7 +2095,10 @@ def tower_legs(pl):
     return legs
 
 
-def lookout(m, d, pl):
+def lookout(m, fr, d, pl):
+    """The spiral stair round the lookout trunk (treads and strings in the structure; its baluster posts, struts and
+    the handrail, a piece from post to post, in the frame, fr), the crow's nest on four legs with braces (frame),
+    its railing, the awning on four posts (frame) with its beams, the bell, the flag, the telescope and banners."""
     p = pl['places']['lookout']; cr = pl['crow']; x0, y0 = p['xy']; z = p['deck']; top = cr['floor']
     # The treads run into the trunk (which narrows as it climbs) and are housed in a helical outer string that stands
     # a little above them; a knee brace from the trunk under every third tread.
@@ -2036,14 +2112,16 @@ def lookout(m, d, pl):
         with m.use('wood_timber'): sector(m, (x0, y0), a, a+da, ro-.01, ro+.07, z+(k+.6)*rise, z+(k+1.6)*rise, .32, DARK)
         if k % 2 == 0:
             x, y = x0+(ro+.03)*math.cos(math.radians(a)), y0+(ro+.03)*math.sin(math.radians(a))
-            post(m, x, y, t-.05, t+1.0, .07, DARK)
+            with fr.piece():
+                post(fr, x, y, t-.05, t+1.0, .07, DARK)
         if k % 3 == 1:
             am = math.radians(a+da/2); e = np.array([math.cos(am), math.sin(am), 0.]); tg = np.array([-e[1], e[0], 0.])
-            strut(m, np.array([x0, y0, t-.62])+e*inner(t-.62), np.array([x0, y0, t-.1])+e*(ro-.3), .06, .06, tg)
+            with fr.piece():
+                strut(fr, np.array([x0, y0, t-.62])+e*inner(t-.62), np.array([x0, y0, t-.1])+e*(ro-.3), .06, .06, tg)
     helix = [(x0+(cr['ro']+.03)*math.cos(math.radians(cr['start']+k*cr['da'])),
               y0+(cr['ro']+.03)*math.sin(math.radians(cr['start']+k*cr['da'])), z+(k+1)*cr['rise']+.92)
              for k in range(0, cr['steps']+1)]
-    tube(m, helix, .04, ROPE_LT, 6)
+    tube(fr, helix, .04, ROPE_LT, 6, split=2*math.dist(helix[0], helix[1]))      # cut at every other tread's post
     for k in range(0, cr['steps'], 9):
         a = math.radians(cr['start']+k*cr['da']); x, y = x0+(cr['ro']+.15)*math.cos(a), y0+(cr['ro']+.15)*math.sin(a)
         chochin(d, x, y, z+(k+1)*cr['rise']+1.25, .18, .2, 200)
@@ -2053,48 +2131,59 @@ def lookout(m, d, pl):
         inside_ = ((mid-h0) % 360) < ((h1-h0) % 360)
         with m.use('wood_plank'): sector(m, (x0, y0), f0, f1, cr['ro']+.05 if inside_ else .45, cr['R'], top, top, .14, vary(PLANK, .1))
     rim = [(x0+cr['R']*math.cos(a), y0+cr['R']*math.sin(a)) for a in np.linspace(0, 2*math.pi, 13)[:-1]]
-    railing(m, d, rim, top, height=1.0)
-    legs = tower_legs(pl)
+    railing(fr, d, rim, top, height=1.0)
+    legs = tower_legs(pl); leg = []       # each leg a piece, with its lashings and banner
     for lo, hi in legs:
-        with m.use('wood_timber', grain=tuple(np.subtract(hi, lo)), jitter=True):
-            hexa(m, [np.add(lo, dd) for dd in ((-.09, -.09, 0), (.09, -.09, 0), (.09, .09, 0), (-.09, .09, 0))] +
+        with fr.piece() as pid, fr.use('wood_timber', grain=tuple(np.subtract(hi, lo)), jitter=True):
+            hexa(fr, [np.add(lo, dd) for dd in ((-.09, -.09, 0), (.09, -.09, 0), (.09, .09, 0), (-.09, .09, 0))] +
                  [np.add(hi, dd) for dd in ((-.09, -.09, 0), (.09, -.09, 0), (.09, .09, 0), (-.09, .09, 0))], WOOD)
+        leg.append(pid)
     for k in range(4):
         (l0, h0_), (l1, h1_) = legs[k], legs[(k+1) % 4]
-        for f in (.3, .65):
-            pa = np.add(l0, np.subtract(h0_, l0)*f); pb = np.add(l1, np.subtract(h1_, l1)*(f+.3))
-            board(m, pa, pb, .09, .09, WOOD, 'wood_timber')
-            ring(d, pa[:2], .1, pa[2]-.02, .02, ROPE, 8)
+        for f_ in (.3, .65):
+            pa = np.add(l0, np.subtract(h0_, l0)*f_); pb = np.add(l1, np.subtract(h1_, l1)*(f_+.3))
+            with fr.piece():
+                board(fr, pa, pb, .09, .09, WOOD, 'wood_timber')
+            with fr.piece(leg[k]):
+                ring(d, pa[:2], .1, pa[2]-.02, .02, ROPE, 8)
+    awning = []                           # each awning post a piece, with the float or wind bell at it
     for k in range(4):
         a = math.radians(cr['start']+90*k)
-        x, y = x0+2.55*math.cos(a), y0+2.55*math.sin(a); post(m, x, y, top, top+2.15, .11, WOOD)
+        x, y = x0+2.55*math.cos(a), y0+2.55*math.sin(a)
+        with fr.piece() as pid:
+            post(fr, x, y, top, top+2.15, .11, WOOD)
+        awning.append(pid)
         nxt = math.radians(cr['start']+90*(k+1)); xn, yn = x0+2.55*math.cos(nxt), y0+2.55*math.sin(nxt)
         with d.use('canvas'):
             two_sided(d, [(x, y, top+2.1), (xn, yn, top+2.1), (x0, y0, top+2.75)], vary(CANVAS, .08), vary(CANVAS, .05))
-        glass_float(d, x, y, top+1.75, .12, .3) if k % 2 else fuurin(d, x*.97+x0*.03, y*.97+y0*.03, top+1.85)
-    post(d, x0, y0, top+2.7, top+4.8, .07, WOOD)
-    with d.use('flag'):
-        fl = [(x0, y0, top+4.05), (x0+1.2, y0+.12, top+4.05), (x0+1.2, y0+.12, top+4.75), (x0, y0, top+4.75)]
-        uv = [(0, 0), (1, 0), (1, 1), (0, 1)]
-        d.poly(fl, WHITE, uv=uv); d.poly(fl[::-1], WHITE, uv=uv[::-1])
+        with fr.piece(pid):
+            glass_float(d, x, y, top+1.75, .12, .3) if k % 2 else fuurin(d, x*.97+x0*.03, y*.97+y0*.03, top+1.85)
+    with d.piece():                       # the flag on its pole
+        post(d, x0, y0, top+2.7, top+4.8, .07, WOOD)
+        with d.use('flag'):
+            fl = [(x0, y0, top+4.05), (x0+1.2, y0+.12, top+4.05), (x0+1.2, y0+.12, top+4.75), (x0, y0, top+4.75)]
+            uv = [(0, 0), (1, 0), (1, 1), (0, 1)]
+            d.poly(fl, WHITE, uv=uv); d.poly(fl[::-1], WHITE, uv=uv[::-1])
     # the telescope at the south rail, looking out to sea over the islet
     a = math.radians(300); x, y = x0+2.2*math.cos(a), y0+2.2*math.sin(a)
     prop('telescope', x, y, top, face_yaw(-.15, -1)+180, 1.)
     posts = [(x0+2.55*math.cos(math.radians(cr['start']+90*k)), y0+2.55*math.sin(math.radians(cr['start']+90*k))) for k in range(4)]
     for k in range(4):    # beams along the canopy edge
         (xa, ya), (xb, yb) = posts[k], posts[(k+1) % 4]
-        board(m, (xa, ya, top+2.04+.005*(k % 2)), (xb, yb, top+2.04+.005*(k % 2)), .1, .12, DARK, 'wood_timber')
+        with fr.piece():
+            board(fr, (xa, ya, top+2.04+.005*(k % 2)), (xb, yb, top+2.04+.005*(k % 2)), .1, .12, DARK, 'wood_timber')
     # the bell on a hanging board under the canopy beam that faces the sea, turned to the floor
     k = min(range(4), key=lambda k: abs(((cr['start']+90*k+45-283.88+540) % 360)-180))
     mid = (np.array(posts[k])+np.array(posts[(k+1) % 4]))/2; inw = (np.array([x0, y0])-mid)/np.linalg.norm(np.array([x0, y0])-mid)
     along_ = np.array([-inw[1], inw[0]])
-    with m.use('wood_plank', grain=(0, 0, 1)):
-        hexa(m, [(*(mid+along_*f*.12+inw*g), top+zz) for zz in (1.22, 2.0) for f, g in ((-1, -.03), (1, -.03), (1, .03), (-1, .03))], WOOD)
+    with fr.piece(), fr.use('wood_plank', grain=(0, 0, 1)):
+        hexa(fr, [(*(mid+along_*f*.12+inw*g), top+zz) for zz in (1.22, 2.0) for f, g in ((-1, -.03), (1, -.03), (1, .03), (-1, .03))], WOOD)
     q = mid+inw*.29; prop('bell', q[0], q[1], top+1.3, face_yaw(*inw), .75)
     k = min(range(4), key=lambda k: abs(((cr['start']+90*k-58.88+540) % 360)-180))       # the banner on the post over the city
     px, py = posts[k]; inw = np.array([x0-px, y0-py])/math.hypot(x0-px, y0-py); tg = np.array([-inw[1], inw[0]])
     fq = np.array([px, py])+inw*.07
-    picture(d, [(*(fq-tg*.28), top+.75), (*(fq+tg*.28), top+.75), (*(fq+tg*.28), top+1.95), (*(fq-tg*.28), top+1.95)], 'flag')
+    with fr.piece(awning[k]):
+        picture(d, [(*(fq-tg*.28), top+.75), (*(fq+tg*.28), top+.75), (*(fq+tg*.28), top+1.95), (*(fq-tg*.28), top+1.95)], 'flag')
     k = min(range(4), key=lambda k: abs(((cr['start']+90*k+45-103.88+540) % 360)-180))
     mid = (np.array(posts[k])+np.array(posts[(k+1) % 4]))/2; chochin(d, mid[0], mid[1], top+1.78, .21, .25, 320)
     a = math.radians(cr['start']+200); x, y = x0+2.1*math.cos(a), y0+2.1*math.sin(a); crate(m, x, y, top, (.5, .4, .4), math.degrees(a))   # clear of the view back
@@ -2103,14 +2192,15 @@ def lookout(m, d, pl):
     # banner down one tower leg
     lo, hi = legs[1]; q = np.add(lo, np.subtract(hi, lo)*.55)
     t = np.array([-(q[1]-y0), q[0]-x0, 0]); t /= np.linalg.norm(t)
-    picture(d, [tuple(q-t*.3+[0, 0, -.9]), tuple(q+t*.3+[0, 0, -.9]), tuple(q+t*.3+[0, 0, .3]), tuple(q-t*.3+[0, 0, .3])], 'flag')
+    with fr.piece(leg[1]):
+        picture(d, [tuple(q-t*.3+[0, 0, -.9]), tuple(q+t*.3+[0, 0, -.9]), tuple(q+t*.3+[0, 0, .3]), tuple(q-t*.3+[0, 0, .3])], 'flag')
 
 
-def entry_way(m, d, pl):
+def entry_way(m, fr, d, pl):
     """The plank steps down north from the little hut's north door (layout.entry_way(): L.STAIR_WIDTH wide, their
-    stringers, rope handrails on short posts) and the stepping stones exactly where the layout puts them, each level;
-    a post lantern beside the first stone. Its own random stream, so the stones keep their shapes whatever is built
-    before them."""
+    stringers, rope handrails on short posts: frame, fr, each post and rope a piece) and the stepping stones exactly
+    where the layout puts them, each level; a post lantern beside the first stone. Its own random stream, so the
+    stones keep their shapes whatever is built before them."""
     global R
     shared, R = R, random.Random(ENTRY_SEED+2)
     try:
@@ -2124,8 +2214,10 @@ def entry_way(m, d, pl):
             xs = x+s*(W/2+.04); xp = x+s*(W/2+.075)      # posts just outside the treads: the way stays W clear
             board(m, (xs, ex['top_y'], E['deck']-.02), (xs, fy, fz), .07, .26, DARK, 'wood_timber')
             for yy, zz in ((ex['top_y']+.05, E['deck']), (fy-.1, fz)):
-                post(m, xp, yy, zz-.3, zz+1.05, .11, WOOD)
-            tube(m, [(xp, ex['top_y']+.05, E['deck']+.95), (xp, fy-.1, fz+.95)], .032, ROPE_LT, 6)
+                with fr.piece():
+                    post(fr, xp, yy, zz-.3, zz+1.05, .11, WOOD)
+            with fr.piece():
+                tube(fr, [(xp, ex['top_y']+.05, E['deck']+.95), (xp, fy-.1, fz+.95)], .032, ROPE_LT, 6)
         # Every stone is level (layout.entry_way() sets its top). Stones at one height keep a gap between them; up the
         # bank, where each is a step over the last, they overlap like a flight cut into the slope. Each is long across
         # the way.
@@ -2154,8 +2246,10 @@ def entry_way(m, d, pl):
                 for a, b_ in zip(top, top[1:]+top[:1]):
                     m.poly([(a[0], a[1], zb), (b_[0], b_[1], zb), b_, a], vary(STONE, .18))
         # no rope fence along the stones: the way from the trail onto them stays open
-        sx, sy, sz = pl['stones'][0]; post(d, sx-.8, sy, ground(sx-.8, sy)-.2, sz+1.3, .1, WOOD)
-        andon(d, sx-.8, sy, sz+1.3, .26, 300)
+        sx, sy, sz = pl['stones'][0]
+        with d.piece():
+            post(d, sx-.8, sy, ground(sx-.8, sy)-.2, sz+1.3, .1, WOOD)
+            andon(d, sx-.8, sy, sz+1.3, .26, 300)
     finally:
         R = shared
 
@@ -2230,7 +2324,8 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     mats = material_factory()
     pl = L.plan(H); P = pl['places']
-    m, trunks, d = TMesh('TH_Structure', 'wood_plank'), TMesh('TH_Trunks', 'bark'), TMesh('TH_Dressing', 'wood_timber')
+    m, trunks = TMesh('TH_Structure', 'wood_plank'), TMesh('TH_Trunks', 'bark')
+    shared = Pieces(); fr, d = TMesh('TH_Frame', 'wood_timber', shared), TMesh('TH_Dressing', 'wood_timber', shared)
     # where the bridges' end posts and the entry stair's top posts stand, the deck railings have none
     avoid = []
     for b in pl['bridges']:
@@ -2238,14 +2333,14 @@ def main():
     ex = pl['entry_stairs']; avoid += [(ex['x']+f*(ex['width']/2+.04), ex['top_y']+.05) for f in (-1, 1)]
     avoid += [foot[:2] for foot, _ in tower_legs(pl)]          # the lookout tower's legs are those corners' posts
     for name, p in P.items():
-        deck(m, d, p)
+        deck(m, fr, d, p)
         extra = []
         if name == 'entry':
             ex = pl['entry_stairs']; extra.append((ex['x'], ex['top_y'], ex['width']/2+.1))
         if name == 'slide':
             mid = math.radians(sum(pl['slide']['landing'])/2); q = L.ray_exit(p['poly'], math.degrees(mid))
             extra.append((p['xy'][0]+q[0], p['xy'][1]+q[1], .75))
-        railing(m, d, world_poly(p), p['deck'], gaps_for(p, pl, extra), avoid=avoid)
+        railing(fr, d, world_poly(p), p['deck'], gaps_for(p, pl, extra), avoid=avoid)
         big = name == 'heart'
         trunk(trunks, *p['xy'], p['trunk'], p['trunk_top'], p['deck'], 8 if big else 5, BARK_OLD if big else BARK, len(name))
         moss_on_trunk(d, *p['xy'], p['trunk'], ground(*p['xy']), p['deck'])
@@ -2269,21 +2364,21 @@ def main():
             corner = np.array(poly[k2]); q = corner+(c-corner)/np.linalg.norm(c-corner)*.65
             rope_coil(d, q[0], q[1], p['deck'])
     for b in pl['bridges']:
-        bridge(m, d, b, P)
+        bridge(m, fr, d, b, P)
     entry_hut(m, d, P['entry'])
     rooms = {}
     for name in ('library', 'kitchen', 'sleep'):
         rooms[name] = hut(m, d, P[name], name)
     furnish_library(m, d, *rooms['library']); furnish_kitchen(m, d, *rooms['kitchen']); furnish_sleep(m, d, *rooms['sleep'])
-    heart_room(m, d, P['heart'])
-    boat_room(m, d, P['boat'])
-    pulley_crane(m, d, P['pulley'])
+    heart_room(m, fr, d, P['heart'])
+    boat_room(m, fr, d, P['boat'])
+    pulley_crane(m, fr, d, P['pulley'])
     chime_hoop(m, d, P['chimes'])
-    slide(m, d, pl)
-    lookout(m, d, pl)
-    entry_way(m, d, pl)
+    slide(m, fr, d, pl)
+    lookout(m, fr, d, pl)
+    entry_way(m, fr, d, pl)
     panes(d); report = {'windows': len(WINDOWS)}
-    for mesh in (m, trunks, d):
+    for mesh in (m, fr, trunks, d):
         _, report[mesh.name] = export(mesh, mats, OUT/'assets')
     report['props'] = {k: len(v) for k, v in PLACED.items()}
     runtime = dict(instances=PLACED, lights=LIGHTS, rooms=ROOMS, room_grade=ROOM_GRADE)

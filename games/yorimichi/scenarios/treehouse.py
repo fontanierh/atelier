@@ -70,30 +70,35 @@ def cameras(pl, h, trees=None):
         return [*P[n]['xy'], P[n]['deck']+up]
 
     def hut(n):
-        p = P[n]; u = unit(p['open']); v = np.array([-u[1], u[0]]); d2, w2 = L.HUT[1]/2, L.HUT[0]/2
-        diffs = [((l['angle']-p['open']+540) % 360)-180 for l in p['links']]
-        side = 1 if min(diffs, key=abs) > 0 else -1
-        c = np.array(p['xy'])+u*(p['trunk']+.3+d2)
-        return c, u, v*side, d2, w2
+        """The room frame from the layout: its centre, the unit x out from the trunk, the unit y towards the door
+        nearest the room's first bridge, and the half sizes."""
+        r = P[n]['room']; u = unit(r['angle']); v = unit(r['angle']+90); c = np.array(r['center'])
+        link = unit(P[n]['links'][0]['angle']) if P[n].get('links') else v
+        return c, u, v*(1 if link@v >= 0 else -1), *r['half']
+
+    def local(c, u, v, x, y):
+        return c+u*x+v*y
 
     E = P['entry']; ex, ey = E['xy']; z = E['deck']
     g = float(sample(h, *L.GLIMPSE))
     add('entry-glimpse', (*L.GLIMPSE, g+EYE), (ex, ey, z+1.4), 70)
-    add('entry-inside', (ex+1.82, ey+1.33, z+1.5), (ex-.43, ey-1.33, z+1.15), 90)
+    c, u, _, d2, w2 = hut('entry'); v = unit(90)   # in the corner by the north door, across to the south door and the east wall
+    add('entry-inside', (*local(c, u, v, -d2+.45, w2-.45), z+1.5), (*local(c, u, v, d2*.5, -w2), z+1.15), 90)
     add('entry-reveal', (ex+.4, ey-2.6, z+EYE), (-139, 165, 72.5), 80)
     add('library-approach', on_bridge('entry', 'library', .2), centre('library', 1.4), 70)
     for n in ('library', 'kitchen', 'sleep'):
-        c, u, s, d2, w2 = hut(n); z = P[n]['deck']
-        pos = c-u*(d2-.35)+s*(w2-.25); tgt = c+u*d2*.35-s*w2   # in the corner by the door, looking across the room to the window
-        add(f'{n}-inside', (*pos, z+1.55), (*tgt, z+1.0), 84)
+        c, u, v, d2, w2 = hut(n); z = P[n]['deck']
+        # in the back corner by the door, looking across the room to the far gable and the outer wall's windows
+        add(f'{n}-inside', (*local(c, u, v, -d2+.35, w2-.3), z+1.55), (*local(c, u, v, d2*.45, -w2), z+1.0), 84)
     add('heart-approach', on_bridge('library', 'heart', .35), centre('heart', 2.2), 72)
-    hx, hy = P['heart']['xy']; z = P['heart']['deck']
-    add('heart-inside', (*(np.array([hx, hy])+unit(135)*3.55), z+1.55), (*(np.array([hx, hy])+unit(350)*3.3), z+1.15), 90)
+    r = P['heart']['room']; c = np.array(r['center']); a = r['angle']; A = r['apothem']; z = P['heart']['deck']
+    # inside the west door, across the hall to the table by the front window and the view window
+    add('heart-inside', (*(c+unit(a-150)*(A-.6)), z+1.55), (*(c+unit(a+25)*A), z+1.15), 90)
     add('kitchen-approach', on_bridge('heart', 'kitchen', .12), centre('kitchen', 1.4), 72)
     add('sleep-approach', on_bridge('library', 'sleep', .3), centre('sleep', 1.4), 72)
     add('boat-approach', on_bridge('kitchen', 'boat', .3), centre('boat', 1.4), 72)
-    b = P['boat']; u = unit(b['open']); t = unit(b['open']+90); c = np.array(b['xy'])+u*(b['trunk']+1.3)
-    add('boat-inside', (*(c-t*3.1+u*.5), b['deck']+1.35), (*(c+t*1.2), b['deck']+1.35), 85)
+    b = P['boat']; r = b['room']; u = unit(r['angle']); t = unit(r['angle']+90); c = np.array(r['center'])
+    add('boat-inside', (*(c-t*(r['half'][1]-.4)), b['deck']+1.35), (*(c+t*1.2), b['deck']+1.35), 85)
     add('slide-approach', on_bridge('boat', 'slide', .3), centre('slide', -2.5), 75)
     s = pl['slide']; tgt = np.array([*s['center'][:2], P['slide']['deck']-4])
     foot = open_spot(s['center'][:2], tgt, h, trees or [])

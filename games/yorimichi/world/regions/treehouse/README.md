@@ -17,7 +17,7 @@ and Tripo models are in [assets/treehouse](../../../assets/treehouse/README.md).
 | `layout.py` | The single source of truth: places, bridges, stairs, slide, crow's nest, anchor trunks, the canopy trees round the house and the existing trees that must go. `gen_world.py` calls `integrate()` last, after every other region, and it writes `world['treehouse']` and `build/yorimichi/treehouse/layout.json`. |
 | `trees.py` | Blender: the four tall canopy trees (maple, crimson, amber, ginkgo) and their recoloured leaf atlases, made like the rest of the forest. |
 | `props.py` | Blender: the 13 Tripo props, reduced, sized and given a calibrated colour gain. |
-| `build.py` | Blender: TH_Structure (walkable, with collision), TH_Trunks, TH_Dressing (rooms, kit, window panes), the prop placements, and `runtime.json` (props, 69 lantern lights, room boxes and their colour grade). |
+| `build.py` | Blender: TH_Structure (walkable, with collision), TH_Trunks, TH_Dressing (rooms, kit, window panes), the prop placements, and `runtime.json` (props, the lantern lights, room boxes and their colour grade). |
 | `tmesh.py` | The mesh builder `build.py` uses: material slots, UVs, vertex colours. |
 | `plan_views.py` | The plan map and section drawings. |
 | `preview.py` | Quick Workbench previews of the built blend. |
@@ -59,6 +59,13 @@ python games/yorimichi/scenarios/treehouse_walk.py cut TAKE      # ... with its 
   swings them by it. Other geometry in `M_TreeHouse` keeps alpha 0 and does not move.
 - Each window has a pane: an extra material slot of TH_Dressing drawn additive, a soft glow in the opening. There are
   no sunbeam shafts or floor pools: they flickered on the floors and hid the rooms from the camera.
+- The sizes the player walks through are in `layout.py`: the side huts 7 x 6 m inside (`HUT`), doors 1.3 x 2.5 m
+  (`DOOR`), walls 3 m to the plate (`WALL`), bridges and stairs 1.4 m wide, no stair rise over 18 cm (`RISE`) and no
+  bridge end steeper than 1 in 4. A bridge leaves its deck no more than 40 degrees off square (`SQUARE`; else it
+  lands on the edge facing the other end), and its end posts stand splayed `BRIDGE_SPLAY` past the handrails, off
+  the way on. In a room the furniture stands against the walls and a 1.4 m lane runs from door to door; no post
+  stands free in a room (the hammocks hang from wall pegs), and nothing stands in a lane, a doorway or a bridge
+  mouth.
 - Nothing may lie in the plane of another face that faces the same way (a rug on a floor, a rail end in a post, two
   wall boards at a corner): the depth test flips between them and they flicker. Lift or shorten one, and run
   `zfight.py` on the build before committing.

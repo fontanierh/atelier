@@ -71,31 +71,33 @@ def shots(pl, h):
     a = np.array(L.GLIMPSE); b = a+.6*(np.array(st[0][:2])-a)
     out.append(('glimpse', 'A gap in the bank', [(0, (*a, g(*a)+1.6), (ex, ey, z+1.6), 62), (7, (*b, g(*b)+1.6), (ex, ey+.5, z+1.3), 62)]))
     # 2. down the stepping stones and up the plank steps to the north door
-    es = pl['entry_stairs']; door = (ex+1.2, ey+1.5)
+    es = pl['entry_stairs']; north, south = E['room']['doors']; door = tuple(north[:2])
     stair_z = lambda y: es['foot'][2]+(es['foot'][1]-y)/(es['foot'][1]-es['top_y'])*(z-es['foot'][2])
     out.append(('stones', '', [
         (0, (st[1][0], st[1][1], st[1][2]+1.5), (*door, z+1.3), 66),
         (3.5, (st[4][0], st[4][1], st[4][2]+1.5), (*door, z+1.2), 66),
         (7, (es['x']+.1, 201.5, stair_z(201.5)+1.45), (door[0], door[1]-.5, z+1.0), 66)]))
-    # 3. through the little hut at a child's eye height and out onto the porch: the reveal
-    x = ex+1.2
+    # 3. through the little hut at a child's eye height, from the north door to the south door, and out onto the
+    # south porch: the reveal
+    x, yn, ys = north[0], north[1], south[1]
     out.append(('porch', 'The little hut', [
-        (0, (x, ey+2.7, z+1.1), (x, ey-2.5, z+1.0), 72),
-        (2.5, (x, ey+1.3, z+1.1), (x-.05, ey-4.0, z+.95), 72),
-        (5, (x, ey, z+1.1), (x-.5, ey-8.5, z+.6), 74),
-        (7.5, (x-.05, ey-1.5, z+1.15), (x-2.2, ey-16.5, z-.5), 76),
-        (10.5, (x-.5, ey-3.2, z+1.5), (-138.5, 168, 74.8), 78)]))
+        (0, (x, yn+1.2, z+1.1), (x, yn-4.0, z+1.0), 72),
+        (2.5, (x, yn-.2, z+1.1), (x-.05, ys, z+.95), 72),
+        (5, (x, (yn+ys)/2, z+1.1), (x-.5, ys-4.0, z+.6), 74),
+        (7.5, (x-.05, ys+.3, z+1.15), (x-2.2, ys-12.0, z-.5), 76),
+        (10.5, (x-.5, ys-1.3, z+1.5), (-138.5, 168, 74.8), 78)]))
     # 4. over the first rope bridge to the map room
     out.append(('bridge-map', '', along_bridge('entry', 'library', .12, .8, (centre('library', 1.4), centre('library', 1.1)), 6.5)))
     # 5. inside the map room
     out.append(('map-room', 'The map room', room('library-inside', 16, -14, .25, 6.5, 84, 80)))
     # 6. toward the heart room
     out.append(('bridge-heart', '', along_bridge('library', 'heart', .1, .78, (centre('heart', 2.4), centre('heart', 1.9)), 7, 72)))
-    # 7. round the camphor inside the heart room (the loft ladder stands at 108 degrees, the hammock at 242-252)
-    H = P['heart']; hx, hy = H['xy']; hz = H['deck']
+    # 7. round the inside of the heart hall, from by the west door to the back wall's round window onto the camphor,
+    # looking across the hall
+    H = P['heart']; hc = np.array(H['room']['center']); ha = H['room']['angle']; hz = H['deck']
     keys = []
-    for i, ang in enumerate(np.linspace(170, 115, 4)):
-        keys.append((8*i/3, (*(np.array([hx, hy])+unit(ang)*3.3), hz+1.55), (*(np.array([hx, hy])+unit(ang-145)*3.3), hz+1.2), 88))
+    for i, ang in enumerate(np.linspace(ha+215, ha+160, 4)):
+        keys.append((8*i/3, (*(hc+unit(ang)*3.3), hz+1.55), (*(hc+unit(ang-145)*3.3), hz+1.2), 88))
     out.append(('heart-room', 'The heart room', keys))
     # 8, 9. the kitchen and the sleeping nest
     out.append(('kitchen', 'The kitchen', room('kitchen-inside', 14, -16, .2, 6, 84, 80)))

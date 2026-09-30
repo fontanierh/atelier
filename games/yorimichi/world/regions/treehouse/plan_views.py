@@ -93,15 +93,14 @@ def plan_map(w, h, pl, gone, path, X=(-178., -96.), Y=(130., 219.), S=12):
     for i, p in enumerate(pl['places'].values()):
         x, y = p['xy']
         d.polygon([P(x+a, y+b) for a, b in p['poly']], fill=(*WOOD, 235), outline=(*INK, 255))
-        if p['kind'] in ('hut', 'boat'):
-            wdt, dep = L.HUT; ang = math.radians(p['open']); r0 = p['trunk']+.3
-            u = np.array([math.cos(ang), math.sin(ang)]); v = np.array([-u[1], u[0]])
-            corners = [u*r0-v*wdt/2, u*(r0+dep)-v*wdt/2, u*(r0+dep)+v*wdt/2, u*r0+v*wdt/2]
-            d.polygon([P(x+c[0], y+c[1]) for c in corners], fill=(*HUT, 255) if p['kind'] == 'hut' else (70, 96, 120, 255))
-        if p['kind'] == 'entry':
-            d.rectangle([P(x-1.5, y+1.3), P(x+1.5, y-1.3)], fill=(*HUT, 255))
-        if p['kind'] == 'heart':
-            d.polygon([P(x+a, y+b) for a, b in L.octagon(L.HEART_WALL)], fill=(*HUT, 255))
+        r = p.get('room')
+        if r is not None:              # the room's walls from the layout: the hall an octagon, the others rectangles
+            cx, cy = r['center']
+            if p['kind'] == 'heart':
+                outline = L.turn(L.octagon(r['apothem']/math.cos(math.radians(22.5))), r['angle'])
+            else:
+                hx, hy = r['half']; outline = L.turn([(-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy)], r['angle'])
+            d.polygon([P(cx+a, cy+b) for a, b in outline], fill=(*HUT, 255) if p['kind'] != 'boat' else (70, 96, 120, 255))
         if p['kind'] == 'pulley':
             a = math.radians(p['open']); d.line([P(x, y), P(x+4.6*math.cos(a), y+4.6*math.sin(a))], fill=(*INK, 255), width=4)
         if p['kind'] == 'lookout':
@@ -127,7 +126,7 @@ def plan_map(w, h, pl, gone, path, X=(-178., -96.), Y=(130., 219.), S=12):
     lx = W+22; ly = 24
     d.text((lx, ly), 'Tree house plan', fill=INK, font=font(24, True)); ly += 36
     d.text((lx, ly), 'west hillside, below the air-station trail', fill=INK, font=font(14)); ly += 34
-    for c, t in [(WOOD, 'deck (octagon round its tree)'), (HUT, 'hut or room'), ((70, 96, 120), 'upturned rowboat room'), (ROPE, 'rope bridge (1.15 m wide)'),
+    for c, t in [(WOOD, 'deck (octagon round its tree)'), (HUT, 'hut or room'), ((70, 96, 120), 'upturned rowboat room'), (ROPE, f"rope bridge ({pl['bridge_width']:.1f} m wide)"),
                  ((236, 212, 150), 'spiral slide to the ground'), ((150, 150, 140), 'stepping stones in the bank gap')]:
         d.rectangle([lx, ly+3, lx+22, ly+17], fill=c, outline=INK); d.text((lx+32, ly), t, fill=INK, font=font(14)); ly += 24
     d.line([lx, ly+10, lx+22, ly+10], fill=(40, 90, 170), width=2); d.text((lx+32, ly), 'reveal sightline: porch to crow\'s nest', fill=INK, font=font(14)); ly += 24
@@ -186,7 +185,7 @@ def section(w, h, pl, path):
             c = next(c for c in pl['crowns'] if c['place'] == n); r = c['radius']
             d.ellipse([P(s0-r, c['crown'][1]), P(s0+r, c['crown'][0])], fill=(*species(c['key']), 110), outline=(*species(c['key']), 200))
         if p['kind'] in ('hut', 'entry', 'heart'):
-            half = {'heart': L.HEART_WALL, 'entry': 1.5}.get(p['kind'], 1.2); wall = {'heart': 2.8}.get(p['kind'], 2.1); top = p['deck']+L.ROOF_TOP[p['kind']]
+            half = p['room']['half'][0]; wall = p['room']['wall']; top = p['deck']+L.ROOF_TOP[p['kind']]
             d.rectangle([P(s0-half, p['deck']+wall), P(s0+half, p['deck'])], fill=(*HUT, 255))
             d.polygon([P(s0-half-.5, p['deck']+wall-.2), P(s0, top), P(s0+half+.5, p['deck']+wall-.2)], fill=(64, 70, 84, 255))
         d.text((P(s0, 0)[0]-40, 8), p['label'], fill=INK, font=font(14, True))

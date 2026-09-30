@@ -11,10 +11,11 @@ modes, as the route asks:
   collision, would hide him);
   on the crow's nest it stays under the canvas roof;
 - orbit: on the spiral stairs it circles outside the trunk with its wall test off, with the same view check;
-- room: inside the small huts it holds still in a top corner of the room and turns to keep Cairo in frame (the arm's
-  length and socket offset put it exactly there), cutting in and out at the door like a game's room camera;
-- ring: the same free camera circling a place's centre at a set radius and height, a set angle from Cairo (in the
-  heart room, and over the stairwell at the top of the spiral).
+- room: a free camera held still in a top corner of a room, turning to keep Cairo in frame (the arm's length and
+  socket offset put it exactly there), cutting in and out at the door like a game's room camera; the current route
+  does not use it, since the rooms are big enough for the chase camera to follow him in;
+- ring: the same free camera circling a place's centre at a set radius and height, a set angle from Cairo (over the
+  stairwell at the top of the spiral).
 At a stop Cairo stands, turns to what he looks at, and the camera eases through its look targets (the chase camera
 stays about level: looking up would drop it to the floor behind his head). With FILM every
 frame is saved as a JPG with the camera (camera.csv) and the sounds the game starts (audio.json); a rehearsal keeps a
