@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild app.js --bundle --format=esm --minify --outfile=../../../build/yorimichi/unimate/web/app.js"
+    "build": "esbuild app.js --bundle --format=esm --minify --outfile=../../../build/yorimichi/motion_lab/web/app.js"
   },
   "dependencies": {
     "gifenc": "1.0.3",

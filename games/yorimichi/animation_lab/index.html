@@ -18,7 +18,8 @@
           href="https://github.com/Friedrich-M/UniMate"
           target="_blank"
           rel="noopener"
-          >Powered by UniMate ↗</a
+          >UniMate ↗</a
+        ><a href="https://research.nvidia.com/labs/sil/projects/kimodo/" target="_blank" rel="noopener">Kimodo ↗</a
         ><span id="model-status" class="status"><i></i> Loading model</span>
       </div>
     </header>
@@ -28,7 +29,7 @@
           <div class="eyebrow">YORIMICHI / CHARACTER EXPERIMENTS</div>
           <h1>A little more bite<span>.</span></h1>
           <p>
-            Compare the authored motion with its UniMate variations. Then try a
+            Compare the authored motion with generated counterparts. Then try a
             new move.
           </p>
         </div>
@@ -43,7 +44,7 @@
       </div>
       <div class="workflow-switch" aria-label="Motion lab workflow">
         <button class="selected" data-mode="compare" aria-pressed="true">
-          Compare originals <small>Original + UniMate, together</small>
+          Compare originals <small>Original + generated, together</small>
         </button>
         <button data-mode="create" aria-pressed="false">
           Create new motion <small>Independent, prompt-only animations</small>
@@ -60,6 +61,13 @@
             ><button data-filter="Attacks">Attacks</button
             ><button data-filter="Movement">Movement</button>
           </div>
+          <label class="model-filter" for="library-generator">SHOW GENERATED FROM
+            <select id="library-generator">
+              <option value="all">All models</option>
+              <option value="UniMate">UniMate</option>
+              <option value="Kimodo">Kimodo</option>
+            </select>
+          </label>
           <p id="library-help" class="library-help">
             Pick an original to compare its counterparts.
           </p>
@@ -88,15 +96,15 @@
           </div>
           <div id="comparison-tools" class="comparison-tools">
             <label
-              >UNIMATE COUNTERPART
-              <select id="variant" aria-label="UniMate counterpart"></select
+              >GENERATED COUNTERPART
+              <select id="variant" aria-label="Generated counterpart"></select
             ></label>
             <label
               >VIEW
               <select id="comparison-view" aria-label="Comparison view">
                 <option value="both">Side by side</option>
                 <option value="original">Original only</option>
-                <option value="generated">UniMate only</option>
+                <option value="generated">Generated only</option>
               </select></label
             >
             <label class="phase-option"
@@ -186,6 +194,9 @@
             Compare with the selected original.
           </p>
           <form id="prompt-form">
+            <label class="generator-field" for="generator">GENERATE WITH
+              <select id="generator" aria-label="Generation model"></select>
+            </label>
             <div id="motion-name-field" hidden>
               <label for="motion-name">MOTION NAME</label
               ><input
@@ -256,6 +267,10 @@ A human fighter winds up the right arm, slashes diagonally down across the body 
               step="8"
               value="32"
             />
+            <div id="duration-field" hidden>
+              <label for="motion-duration">DURATION (SECONDS)</label>
+              <input id="motion-duration" type="number" min="1" max="10" step="0.5" value="3" />
+            </div>
             <div class="generation-details">
               <span id="generation-duration">2 seconds</span><span>30 fps</span
               ><span>Local inference</span>
@@ -264,7 +279,7 @@ A human fighter winds up the right arm, slashes diagonally down across the body 
               ✳ Generate animation <span>↗</span>
             </button>
             <div id="job-status" class="job-status" aria-live="polite">
-              Warming up UniMate…
+              Warming up the model…
             </div>
             <progress id="job-progress" max="100" value="0" hidden></progress>
           </form>
@@ -279,13 +294,14 @@ A human fighter winds up the right arm, slashes diagonally down across the body 
             </div>
           </div>
           <details>
-            <summary>Model & provenance</summary>
-            <p>
+            <summary>Models & provenance</summary>
+            <p id="model-provenance">
               UniMate f60 v2, EMA step 100000. Flan-T5 text conditioning, fixed
               midpoint flow sampler. Generated on the fox’s own body topology;
               prompt-only fingers retain the rest pose. Guided sprint uses the
               authored gait and hand detail with a bounded UniMate arm
-              variation.
+              variation. Kimodo SOMA RP v1.1 uses local diffusion and streamed LLM2Vec text encoding.
+              Its body motion transfers to the fox; native foot cleanup is disabled on this ARM runtime.
             </p>
             <a id="provenance" hidden target="_blank"
               >View this take’s provenance ↗</a
@@ -297,7 +313,7 @@ A human fighter winds up the right arm, slashes diagonally down across the body 
         <div class="recipe-heading">
           <div>
             <span class="eyebrow">A PLACE TO START</span>
-            <h2>Eight ways to move differently.</h2>
+            <h2>A few ways to move differently.</h2>
           </div>
           <button id="generate-presets">Generate missing experiments ↗</button>
         </div>
@@ -305,7 +321,7 @@ A human fighter winds up the right arm, slashes diagonally down across the body 
       </section>
       <footer>
         <span>ATELIER <span class="footer-slash">/</span> FOX MOTION LAB</span
-        ><span>Owned character. New skeleton. One unified model.</span>
+        ><span>Owned character. Local models. Inspect every take.</span>
       </footer>
     </main>
     <div id="toast" role="status" hidden></div>

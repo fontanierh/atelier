@@ -491,6 +491,26 @@ input[type="range"] {
   line-height: 1.65;
   margin: 0 0 19px;
 }
+.generator-field,
+.model-filter {
+  display: block;
+  margin-bottom: 18px;
+}
+.generator-field select,
+.model-filter select {
+  display: block;
+  width: 100%;
+  margin-top: 9px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #11150f;
+  color: var(--text);
+}
+.model-filter {
+  padding: 0 18px;
+  margin: 16px 0 10px;
+}
 label {
   font: 9px var(--mono);
   letter-spacing: 0.85px;

@@ -8,6 +8,14 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 
 const $ = (id) => document.getElementById(id);
+let generator = "UniMate";
+let modelStates = {}, presetCatalog = {};
+const modelSettings = {
+  UniMate: { steps: 32, guidance: 2, duration: 3 },
+  Kimodo: { steps: 100, guidance: 2, duration: 3 },
+};
+const modelOf = (item) => item?.generator || "UniMate";
+const shownResults = () => results.filter((r) => $("library-generator").value === "all" || modelOf(r) === $("library-generator").value);
 let results = [],
   presets = [],
   authored = [],
@@ -220,10 +228,10 @@ function makeCard(item) {
       ? " selected"
       : "");
   button.dataset.id = item.id;
-  const copies = results.filter((r) => r.reference_clip === item.id).length;
+  const copies = shownResults().filter((r) => r.reference_clip === item.id).length;
   const subtitle = item.authored
     ? `ORIGINAL · ${copies} counterpart${copies === 1 ? "" : "s"}`
-    : `UNIMATE ONLY · SEED ${item.seed}`;
+    : `${modelOf(item).toUpperCase()} ONLY · SEED ${item.seed}`;
   button.innerHTML = `<span class="clip-icon">${icons[item.category] || "◇"}</span><span><strong>${escape(item.title)}</strong><small>${subtitle}</small><small>${(item.clip?.duration || (item.frames - 1) / (item.fps || 30)).toFixed(2)}s${!item.authored && !item.conditioning_version ? " · earlier conditioning" : ""}</small></span><span class="arrow">↗</span>`;
   button.addEventListener("click", () =>
     (item.authored ? selectOriginal(item) : selectClip(item)).catch((e) =>
@@ -236,7 +244,7 @@ function makeCard(item) {
   return wrapper;
 }
 function renderLibrary() {
-  const standalone = results.filter((r) => !r.reference_clip);
+  const standalone = shownResults().filter((r) => !r.reference_clip);
   $("result-count").textContent =
     mode === "compare"
       ? `${authored.length} originals`
@@ -276,7 +284,7 @@ function renderRecipes() {
     b.onclick = () => {
       fillPrompt(p);
       const found = results.find(
-        (r) => !r.reference_clip && r.title === p.title && r.seed === p.seed,
+        (r) => modelOf(r) === generator && !r.reference_clip && r.title === p.title && r.seed === p.seed,
       );
       if (found) selectClip(found).catch((e) => toast(e.message));
       else toast("Prompt loaded. Generate to try this motion.");
@@ -295,11 +303,11 @@ function updateMode() {
     b.setAttribute("aria-pressed", String(selected));
   });
   $("library-title").textContent =
-    mode === "compare" ? "Original animations" : "UniMate-only motions";
+    mode === "compare" ? "Original animations" : "Generated motions";
   $("library-help").textContent =
     mode === "compare"
       ? "Pick an original. Its counterparts stay grouped with it."
-      : "Independent generations, with no original attached.";
+      : "Independent UniMate and Kimodo takes. Each card names its model.";
   $("comparison-tools").hidden = mode !== "compare";
   $("recipe-section").hidden = mode !== "create";
   $("prompt-suggestions").hidden = mode !== "create";
@@ -309,22 +317,22 @@ function updateMode() {
   $("prompt-help").textContent =
     mode === "create"
       ? "Describe a new motion. It will be saved independently in this library."
-      : reference?.id === "Fox_Run"
+      : generator === "UniMate" && reference?.id === "Fox_Run"
         ? "Reference: Forward sprint. Keep its gait, or uncheck the option for prompt-only generation."
         : `Reference: ${reference?.title || "—"}. Generate a prompt-only counterpart for side-by-side review.`;
-  $("guided-field").hidden = mode !== "compare" || reference?.id !== "Fox_Run";
+  $("guided-field").hidden = generator !== "UniMate" || mode !== "compare" || reference?.id !== "Fox_Run";
   setBusy(busy);
   renderLibrary();
 }
 async function selectOriginal(item, preferred) {
   reference = item;
-  const variants = results.filter((r) => r.reference_clip === item.id);
+  const variants = shownResults().filter((r) => r.reference_clip === item.id);
   $("variant").replaceChildren();
   for (const take of variants) {
     const option = document.createElement("option");
     option.value = take.id;
     const title = take.title.replace(/(?: ·| \/) seed \d+$/, "");
-    option.textContent = `${take.guided ? "HYBRID" : "PROMPT ONLY"} · ${title} · seed ${take.seed}${!take.conditioning_version ? " · earlier conditioning" : ""}`;
+    option.textContent = `${modelOf(take)} · ${take.guided ? "HYBRID" : "PROMPT ONLY"} · ${title} · seed ${take.seed}${!take.conditioning_version ? " · earlier conditioning" : ""}`;
     $("variant").append(option);
   }
   if (!variants.length) {
@@ -341,15 +349,15 @@ async function selectOriginal(item, preferred) {
   if (!take) {
     $("prompt").value = item.prompt;
     $("guidance").value = 2;
-    $("steps").value = 32;
+    $("steps").value = generator === "Kimodo" ? 100 : 32;
     updateOutputs();
   }
-  $("guided-sprint").checked = take ? !!take.guided : item.id === "Fox_Run";
+  $("guided-sprint").checked = generator === "UniMate" && !!take?.guided;
   updateMode();
 }
 $("variant").onchange = () => {
   const take = results.find((r) => r.id === $("variant").value);
-  $("guided-sprint").checked = !!take.guided;
+  $("guided-sprint").checked = generator === "UniMate" && !!take.guided;
   selectClip(take).catch((e) => toast(e.message));
   setBusy(busy);
 };
@@ -386,7 +394,7 @@ document.querySelectorAll("[data-mode]").forEach(
           model.visible = false;
           comparison.visible = false;
           $("clip-title").textContent = "Your next motion";
-          $("clip-source").textContent = "UNIMATE ONLY";
+          $("clip-source").textContent = `${generator.toUpperCase()} ONLY`;
           $("export").disabled = true;
         }
         updateMode();
@@ -414,10 +422,10 @@ async function selectClip(item) {
   $("clip-title").textContent =
     mode === "compare" ? reference.title : item.title;
   $("clip-source").textContent =
-    mode === "compare" ? "ORIGINAL ↔ UNIMATE" : "UNIMATE ONLY / NEW MOTION";
+    item.authored ? "ORIGINAL · AUTHORED" : mode === "compare" ? `ORIGINAL ↔ ${modelOf(item).toUpperCase()}` : `${modelOf(item).toUpperCase()} ONLY / NEW MOTION`;
   $("stage-label").textContent = item.authored
     ? "Fox hunter / authored baseline"
-    : "Fox hunter / in-place UniMate preview";
+    : `Fox hunter / in-place ${modelOf(item)} preview`;
   $("frames").textContent = item.frames || 60;
   $("clip-seed").textContent = item.seed;
   $("duration").textContent = `${clip.duration.toFixed(2)}s`;
@@ -436,13 +444,16 @@ async function selectClip(item) {
     ? `HYBRID: authored gait + UniMate arm variation${variation ? ` (up to ${variation.toFixed(1)}°)` : ""}. `
     : "PROMPT ONLY: generated motion. ";
   $("review-note").textContent = item.authored
-    ? "The original is ready. Generate its first UniMate counterpart."
-    : `${kind}${item.prompt} · ${item.seconds}s inference.${!item.conditioning_version ? " Earlier conditioning; generate again with the corrected vocabulary." : ""}`;
-  if (!item.authored) {
+    ? `The original is ready. Generate its first ${generator} counterpart.`
+    : `${modelOf(item)} · ${kind}${item.prompt} · ${item.seconds}s inference.${modelOf(item) === "UniMate" && !item.conditioning_version ? " Earlier conditioning; generate again with the corrected vocabulary." : ""}`;
+  if (!item.authored && !busy) {
     $("prompt").value = item.prompt;
     $("seed").value = item.seed;
-    $("guidance").value = item.guidance;
-    $("steps").value = item.steps;
+    if (generator === modelOf(item)) {
+      $("guidance").value = item.guidance;
+      $("steps").value = item.steps;
+      if (generator === "Kimodo") $("motion-duration").value = item.frames / item.fps;
+    }
     updateOutputs();
   }
   renderLibrary();
@@ -476,13 +487,13 @@ function setComparison() {
     ? "NO COUNTERPART"
     : current?.guided
       ? "HYBRID · AUTHORED GAIT + UNIMATE ARMS"
-      : "UNIMATE · PROMPT ONLY";
+      : `${modelOf(current).toUpperCase()} · PROMPT ONLY`;
   $("stage-label-wrap").hidden = mode === "compare";
   $("export").disabled = !current || (current.authored && view !== "original");
   $("export").textContent =
     mode === "compare" && view === "original"
       ? "↓ Export original"
-      : "↓ Export UniMate";
+      : `↓ Export ${current?.authored ? "GLB" : modelOf(current)}`;
   updateSkeletons();
 }
 function updateSkeletons() {
@@ -495,6 +506,36 @@ function updateOutputs() {
   $("guidance-value").textContent = Number($("guidance").value).toFixed(1);
   $("steps-value").textContent = $("steps").value;
 }
+function setGenerator(name, remember = true) {
+  if (remember) modelSettings[generator] = {
+    steps: Number($("steps").value), guidance: Number($("guidance").value),
+    duration: Number($("motion-duration").value),
+  };
+  generator = name;
+  $("generator").value = name.toLowerCase();
+  $("duration-field").hidden = name !== "Kimodo";
+  $("steps").max = name === "Kimodo" ? 250 : 64;
+  $("steps").min = name === "Kimodo" ? 10 : 8;
+  $("steps").step = name === "Kimodo" ? 10 : 8;
+  $("steps").value = modelSettings[name].steps;
+  $("guidance").value = modelSettings[name].guidance;
+  $("motion-duration").value = modelSettings[name].duration;
+  if (name !== "UniMate") $("guided-sprint").checked = false;
+  presets = presetCatalog[name.toLowerCase()] || [];
+  engineReady = modelStates[name.toLowerCase()]?.status === "ready";
+  updateOutputs();
+  renderRecipes();
+  updateMode();
+}
+$("generator").onchange = () => {
+  const option = $("generator").selectedOptions[0];
+  setGenerator(option.textContent);
+  status();
+};
+$("library-generator").onchange = () => {
+  if (mode === "compare") selectOriginal(reference).catch((e) => toast(e.message));
+  else renderLibrary();
+};
 $("guidance").oninput = updateOutputs;
 $("steps").oninput = updateOutputs;
 $("random-seed").onclick = () => {
@@ -541,23 +582,27 @@ document
   );
 function setBusy(value) {
   busy = value;
+  $("generator").disabled = busy;
   $("generate").disabled = busy || !engineReady;
   $("generate-presets").disabled = busy || !engineReady;
   $("generate").textContent = busy
     ? "✳ Generating…"
     : mode === "create"
       ? "✳ Generate new motion ↗"
-      : reference?.id === "Fox_Run" && $("guided-sprint").checked
+      : generator === "UniMate" && reference?.id === "Fox_Run" && $("guided-sprint").checked
         ? "✳ Generate guided sprint ↗"
         : "✳ Generate counterpart ↗";
   $("generation-duration").textContent =
     mode === "compare" &&
+    generator === "UniMate" &&
     reference?.id === "Fox_Run" &&
     $("guided-sprint").checked
       ? "0.6-second loop"
-      : "2 seconds";
+      : generator === "Kimodo" ? `${$("motion-duration").value} seconds` : "2 seconds";
 }
 async function generate(params) {
+  params.generator ||= generator.toLowerCase();
+  if (params.generator === "kimodo") params.duration ??= Number($("motion-duration").value);
   setBusy(true);
   $("job-status").textContent = "Encoding prompt…";
   $("job-progress").hidden = false;
@@ -584,6 +629,7 @@ async function pollJob() {
   if (job.status === "complete") {
     results = [job, ...results.filter((r) => r.id !== job.id)];
     filter = "All";
+    $("library-generator").value = "all";
     document.querySelectorAll("[data-filter]").forEach((b) =>
       b.classList.toggle("selected", b.dataset.filter === "All"),
     );
@@ -602,7 +648,7 @@ async function pollJob() {
     $("job-progress").hidden = true;
     if (sequence.length) {
       const next = sequence.shift();
-      await generate({ ...next, steps: 32, guidance: 3 });
+      await generate(presetRequest(next));
     }
   } else if (job.status === "failed") {
     throw new Error(job.message);
@@ -636,6 +682,7 @@ $("prompt-form").onsubmit = (e) => {
     category: mode === "compare" ? reference.category : "Custom",
     reference_clip: mode === "compare" ? reference.id : null,
     guided_sprint:
+      generator === "UniMate" &&
       mode === "compare" &&
       reference.id === "Fox_Run" &&
       $("guided-sprint").checked,
@@ -645,14 +692,19 @@ $("generate-presets").onclick = () => {
   sequence = presets.filter(
     (p) =>
       !results.some(
-        (r) => !r.reference_clip && r.title === p.title && r.seed === p.seed,
+        (r) => modelOf(r) === generator && !r.reference_clip && r.title === p.title && r.seed === p.seed,
       ),
   );
   if (!sequence.length)
-    return toast("All eight experiments are already in the library.");
+    return toast(`All ${generator} experiments are already in the library.`);
   const first = sequence.shift();
-  generate({ ...first, steps: 32, guidance: 3 });
+  generate(presetRequest(first));
 };
+function presetRequest(preset) {
+  return { ...preset, generator: generator.toLowerCase(),
+    steps: Number($("steps").value), guidance: Number($("guidance").value),
+    duration: Number($("motion-duration").value), reference_clip: null, guided_sprint: false };
+}
 async function download(blob, name, file, id) {
   const r = await fetch(`/api/save/${id}/${file}`, {
     method: "POST",
@@ -665,6 +717,11 @@ async function download(blob, name, file, id) {
   a.href = data.url;
   a.download = name;
   a.click();
+}
+function artifactName(item, extension) {
+  const source = item.authored ? "original" : modelOf(item).toLowerCase();
+  const title = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  return `fox-${source}-${title}.${extension}`;
 }
 function capturePose(item, width = renderer.domElement.width) {
   const canvas = document.createElement("canvas");
@@ -694,18 +751,18 @@ function capturePose(item, width = renderer.domElement.width) {
           ? "NO COUNTERPART"
           : item.guided
             ? "HYBRID · ORIGINAL GAIT + UNIMATE ARMS"
-            : "UNIMATE · PROMPT ONLY",
+            : `${modelOf(item).toUpperCase()} · PROMPT ONLY`,
         view === "both" ? 0.75 : 0.5,
         "#d2e59c",
       );
-  } else drawLabel("UNIMATE ONLY · " + item.title, 0.5, "#d2e59c");
+  } else drawLabel(modelOf(item).toUpperCase() + " ONLY · " + item.title, 0.5, "#d2e59c");
   return canvas;
 }
 $("snapshot").onclick = () => {
   const item = current;
   if (!item) return;
   capturePose(item).toBlob((blob) =>
-    download(blob, `fox-${item.title}.png`, "pose.png", item.id).catch((e) =>
+    download(blob, artifactName(item, "png"), "pose.png", item.id).catch((e) =>
       toast(e.message),
     ),
   );
@@ -729,7 +786,7 @@ $("export").onclick = async () => {
     });
     await download(
       new Blob([data], { type: "model/gltf-binary" }),
-      `fox-${item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.glb`,
+      artifactName(item, "glb"),
       "fox.glb",
       item.id,
     );
@@ -834,7 +891,7 @@ $("preview-gif").onclick = async () => {
     gif.finish();
     await download(
       new Blob([gif.bytes()], { type: "image/gif" }),
-      `fox-${item.title}.gif`, "preview.gif", item.id,
+      artifactName(item, "gif"), "preview.gif", item.id,
     );
     toast("GIF saved locally at the clip's original speed.");
   } catch (e) {
@@ -851,14 +908,15 @@ $("preview-gif").onclick = async () => {
 async function status() {
   try {
     const s = await api("/api/status");
-    engineReady = s.status === "ready";
-    $("model-status").classList.toggle("error", s.status === "error");
-    $("model-status").innerHTML =
-      `<i></i>${s.status === "ready" ? `UniMate ready · ${escape(s.device.toUpperCase())}` : s.status === "error" ? "Model unavailable" : "Loading model"}`;
+    modelStates = s.models || { [generator.toLowerCase()]: s };
+    const selected = modelStates[generator.toLowerCase()];
+    engineReady = selected?.status === "ready";
+    $("model-status").classList.toggle("error", selected?.status === "error");
+    $("model-status").innerHTML = `<i></i>${Object.entries(modelStates).map(([id, state]) => `${escape(state.name || id)} ${state.status === "ready" ? "ready" : state.status === "loading" ? "loading" : "unavailable"}`).join(" · ")}`;
     if (!busy) {
       setBusy(false);
       $("job-status").textContent =
-        s.status === "ready" ? "Ready for your next move." : s.message;
+        engineReady ? `${generator} ready · ${selected.device.toUpperCase()}` : selected?.message || "Model is unavailable. Run setup.";
     }
     // Recover an in-flight local job after a page reload.
     if (s.active && !activeJob) {
@@ -875,8 +933,16 @@ async function status() {
 try {
   const library = await api("/api/library");
   results = library.results;
-  presets = library.presets;
+  presetCatalog = library.presets_by_generator || { [library.generator.toLowerCase()]: library.presets };
   originalMetadata = library.originals;
+  for (const entry of library.generators) {
+    const option = document.createElement("option");
+    option.value = entry.id; option.textContent = entry.name;
+    $("generator").append(option);
+  }
+  setGenerator(library.generators.find((entry) => entry.id === library.default_generator).name, false);
+  $("motion-duration").oninput = () => setBusy(busy);
+  updateOutputs();
   renderRecipes();
   renderLibrary();
   await loadModel();

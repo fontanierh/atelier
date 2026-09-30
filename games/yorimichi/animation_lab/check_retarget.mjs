@@ -1,4 +1,4 @@
-// Compare all rendered body-joint transforms against upstream UniMate FK.
+// Compare all rendered body-joint transforms against independently evaluated FK.
 import fs from "node:fs";
 import path from "node:path";
 import * as THREE from "three";
@@ -77,6 +77,7 @@ for (const id of fs.readdirSync(path.join(root, "results"))) {
   mixer.stopAllAction();
   mixer.uncacheRoot(scene);
 }
+if (!count) throw new Error("No expected joint samples found; run the generator verifier first");
 console.log(
   `Verified ${count} body-joint samples; max retarget error ${(worst * 1000).toFixed(5)} mm`,
 );

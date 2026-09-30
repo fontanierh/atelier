@@ -167,10 +167,36 @@ had, with tiny arm changes; it added little useful variation.
 
 The [write-up](games/yorimichi/docs/UNIMATE_EXPERIMENT.md) records the mixed results, conditioning fix, and limitations.
 The [setup/run and API guide](games/yorimichi/animation_lab/README.md) includes the playground and backflip recipe;
-open **http://127.0.0.1:8842/** once started. The reusable
+open the shared **http://127.0.0.1:8843/** playground once started. Choose UniMate or Kimodo in the prompt form;
+the library and counterpart selector show takes from both, with model labels and a model filter. The reusable
 [UniMate installer/runner](platform/studio/atelier/ai/unimate/README.md) and
 [retargeting helpers](platform/web/motion/README.md) live in the platform; fox assets, policies, and UI stay with
 Yorimichi. No API key is needed, and generated output goes under `build/yorimichi/unimate/`.
+
+[Kimodo](https://research.nvidia.com/labs/sil/projects/kimodo/) now runs **headlessly on the same fox**. Its first
+backflip completes a backward rotation and recovers to standing; the fairly straight airborne legs and landing
+contacts still need polish. User review found Kimodo worked quite well; the generated forward roll below is another
+useful example. Quality across the full action library remains unmeasured.
+
+<p align="center">
+  <img src="docs/media/kimodo-backflip.gif" width="640" alt="The owned fox performs a locally generated Kimodo backflip and returns to standing">
+  <br><sub><b>Headless Kimodo backflip.</b> “A person does a backflip.” · seed 99 · guidance [2, 2] · 100 steps.
+  Three seconds at normal speed, no authored constraint; the GIF repeats the full take.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/media/kimodo-forward-roll.gif" width="640" alt="The owned fox performs the user-generated Kimodo forward roll and stands back up">
+  <br><sub><b>User-generated forward roll.</b> “A person crouches down and performs one forward roll on the ground,
+  rolling over their shoulders with tucked knees, then stands back up.”<br>
+  Seed 56 · guidance [5, 5] · 100 steps · three seconds at normal speed. No authored constraint.</sub>
+</p>
+
+The [Kimodo write-up](games/yorimichi/docs/KIMODO_EXPERIMENT.md) records the result and runtime limits.
+The [headless command and playground guide](games/yorimichi/animation_lab/README.md#kimodo-headless-backflip)
+includes custom prompts in the same **http://127.0.0.1:8843/** lab as UniMate. The reusable
+[Kimodo runner](platform/studio/atelier/ai/kimodo/README.md) streams the 8B text encoder within the existing memory
+guard, then samples the SOMA motion and transfers it to the fox. Weights and takes stay in
+`build/yorimichi/kimodo/`; the browser is for inspection and export, not inference.
 
 ## A prop from a sentence, straight into the running game
 
@@ -248,7 +274,7 @@ Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, skate rider, sailboat stance), effects, skateboarding, streaming, the live bridge |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
-| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate experiments, original/counterpart comparisons, custom prompts, GLB/GIF export; shared platform runner |
+| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate/Kimodo experiments, headless generation, original/counterpart comparisons, custom prompts, GLB/GIF export; shared platform runners |
 | Games | [games/yorimichi](games/yorimichi), [games/sandbox](games/sandbox) | a full game, and the smallest one (the template for `atelier new`) |
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts fit and the rules that keep the platform reusable.

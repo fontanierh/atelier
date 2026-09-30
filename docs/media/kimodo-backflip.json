@@ -1,0 +1,84 @@
+{
+  "generator": "Kimodo",
+  "model": "nvidia/Kimodo-SOMA-RP-v1.1",
+  "upstream_revision": "58e781898b3d7e328a676a75d3e338c45dce3ad9",
+  "weights": {
+    "NousResearch/Meta-Llama-3-8B-Instruct": "53346005fb0ef11d3b6a83b12c895cca40156b6c",
+    "McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp": "31474e395ada192e8ed1586db6be79fb3b70c9c0",
+    "McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp-supervised": "baa8ebf04a1c2500e61288e7dad65e8ae42601a7",
+    "nvidia/Kimodo-SOMA-RP-v1.1": "6c9233af1180b8151e3c4703477104af5dce9dd5"
+  },
+  "prompt": "A person does a backflip.",
+  "seed": 99,
+  "steps": 100,
+  "guidance": [
+    2.0,
+    2.0
+  ],
+  "frames": 90,
+  "fps": 30,
+  "device": "cpu",
+  "text_device": "mps",
+  "text_encoder": "LLM2Vec with MNTP + supervised adapters, streamed fp32, bidirectional attention",
+  "post_processing": false,
+  "reference_usage": "none",
+  "seconds": 106.804,
+  "diagnostics": {
+    "root_travel_m": 0.9525669093395832,
+    "scale": 0.46198153479024223,
+    "floor_offset_m": 0.012721917885402445,
+    "root_height_range_m": [
+      0.34682019791687735,
+      0.6308668114010388
+    ],
+    "hip_rotation_degrees": -359.31396484375,
+    "foot_clearance_max_m": 0.8820925313380822
+  },
+  "conditioning_version": "soma-canonical-to-fox-v1",
+  "source_sha256": "8103d0bf2c970d4adcd6d9af32f109e376b29433b3cc3597387efd75a3a6219c",
+  "joint_map": {
+    "Hips": "Hips",
+    "Spine": "Spine1",
+    "Spine1": "Spine2",
+    "Spine2": "Chest",
+    "Neck": "Neck1",
+    "Head": "Head",
+    "LeftUpLeg": "LeftLeg",
+    "LeftLeg": "LeftShin",
+    "RightUpLeg": "RightLeg",
+    "RightLeg": "RightShin",
+    "LeftShoulder": "LeftShoulder",
+    "LeftArm": "LeftArm",
+    "LeftForeArm": "LeftForeArm",
+    "LeftHand": "LeftHand",
+    "LeftFoot": "LeftFoot",
+    "LeftToeBase": "LeftToeBase",
+    "RightShoulder": "RightShoulder",
+    "RightArm": "RightArm",
+    "RightForeArm": "RightForeArm",
+    "RightHand": "RightHand",
+    "RightFoot": "RightFoot",
+    "RightToeBase": "RightToeBase"
+  },
+  "retarget": "canonical deltas, mapped parent folding, leg-height scale, constant floor offset",
+  "reference_clip": null,
+  "artifact": "kimodo-backflip.gif",
+  "take_id": "21d98a16309b4f30bea30bb73c1867b9",
+  "source": "games/yorimichi/assets/characters/fox-hunter/FoxHunter-Anim-r05.blend",
+  "license": "Owned character; motion generated locally with NVIDIA Kimodo SOMA RP v1.1 (NVIDIA Open Model License); Llama 3 text weights retain their licence",
+  "gif_sha256": "b3063f18f4de90979ddbe5db90ab6a4c4c1f96f39223d27ce936f24e33e52103",
+  "capture": {
+    "method": "Motion Lab Preview GIF",
+    "frames": 90,
+    "source_fps": 30,
+    "dimensions": [
+      640,
+      452
+    ],
+    "duration_ms": 3000,
+    "camera": "fixed",
+    "root_display": "horizontal travel centered for inspection",
+    "loop": "repeat full take; no seam synthesis",
+    "colors": 256
+  }
+}
