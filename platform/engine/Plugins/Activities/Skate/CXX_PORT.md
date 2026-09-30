@@ -82,8 +82,10 @@ the rounded-triangle dispatcher, sphere/cylinder roots and bounded feature walk.
 payload fields and partial updates as the reference. `WorldGeometry.*` preserves static triangle caches,
 authored metadata, mesh acceleration, ordered candidate traversal and nearest thin/swept line queries.
 `GeometryFeatures.*` adds primitive projection intervals, separating axes and capsule/triangle/box
-point/edge/face selection, retaining incoming scratch lanes and original partial writes. Complete
-primitive contact generation and retention remain separate work.
+point/edge/face selection, retaining incoming scratch lanes and original partial writes.
+`GeometryTriangleFixup.*` preserves face/edge/vertex classification, sidedness, convexity and disabled
+vertices, including normal bending and contact reprojection. Complete primitive contact generation
+and retention remain separate work.
 
 `RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
 inertia, point forces, drag, caps and cooldowns. Opaque lanes survive packed updates and reaction words
@@ -210,6 +212,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Collision feature arithmetic: 13,917 cases and 1,664,030 exact words across single/batch projection,
   separating-axis generation/selection, segment construction, maximum features and edge planes.
   Includes speculative rejected-axis stores, every opaque scratch word and incoming box-plane lanes.
+- Triangle contact correction: 23,342 cases and 2,169,222 exact words across all seven regions,
+  sidedness/edge-cosine/convexity/disabled-vertex flags, reverse/object handling and all 16 contact slots.
+  Coverage includes 6,606 accepted contacts, 113 normal bends, 99 pair reprojections and unchanged tails.
 - Shared constraint solver: 7,967 cases and 3,682,300 exact words (14,729,200 bytes), including mixed
   contact/joint/drive iterations over shared reactions, friction and limit boundaries, reversed body
   indices, softness/carry preservation and invalid indices rejected before mutation. An independently
