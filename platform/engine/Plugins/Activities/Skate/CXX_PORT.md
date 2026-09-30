@@ -86,8 +86,10 @@ point/edge/face selection, retaining incoming scratch lanes and original partial
 `GeometryPrism.*` intersects those features into ordered contact pairs, preserving clipping scratch,
 header updates, normal correction and the original 16-pair capacity contract.
 `GeometryTriangleFixup.*` preserves face/edge/vertex classification, sidedness, convexity and disabled
-vertices, including normal bending and contact reprojection. Complete primitive contact generation
-and retention remain separate work.
+vertices, including normal bending and contact reprojection. `WorldPrimitiveContact.*` composes the
+typed sphere/capsule/triangle/box path, the original triangle/box separating-axis specialization,
+velocity-based separation allowance and complete contact manifolds. World candidate traversal,
+material combination, duplicate retention and body-workspace preparation remain separate work.
 
 `RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
 inertia, point forces, drag, caps and cooldowns. Opaque lanes survive packed updates and reaction words
@@ -221,6 +223,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   helpers and every dispatcher feature-count pair. Complete prism records, mutated feature headers,
   clipping intervals and untouched scratch are compared. Three synthetic raw-feature cases exceed the
   original 16-point capacity; each is retained separately and both implementations must reject it.
+- Primitive/world triangle contacts: 15,052 cases and 1,332,852 exact words, including 12,560 contact
+  queries, velocity-based separation limits and triangle-volume transforms. All four primitive types
+  produce both hits and misses (5,026 hits total); all 16 manifold slots are compared, including unused
+  zeros. Packing and the private triangle/box specialization are exercised through the original public
+  typed contact query. Complete world traversal and retention are not established by this check.
 - Shared constraint solver: 7,967 cases and 3,682,300 exact words (14,729,200 bytes), including mixed
   contact/joint/drive iterations over shared reactions, friction and limit boundaries, reversed body
   indices, softness/carry preservation and invalid indices rejected before mutation. An independently
