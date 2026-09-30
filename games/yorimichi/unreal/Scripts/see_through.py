@@ -1,75 +1,180 @@
-"""Camera see-through (docs/CAMERA.md): what stands between the chase camera and Cairo dithers away, Cairo fades when
-the camera comes close to him, and the tree house's door curtains bend round him.
+"""Camera see-through (docs/CAMERA.md), the way Breath of the Wild does it. A thin thing between the chase camera and
+Cairo (a trunk, a bush, a post, a rail, a lantern, a noren) fades out whole and comes back once it has passed.
+Everything fades right at the lens. Cairo fades when the camera comes close to him. Solid things are never faded,
+because the camera arm (JapanCameraArm.cpp) stays in front of them. The tree house's door curtains also bend round
+him.
 
 The game's USeeThroughComponent (Source/Yorimichi/SeeThrough.cpp) writes /Game/SeeThrough/MPC_SeeThrough every frame:
 
 - Focus: Cairo's capsule centre (cm) and its half height.
-- Cut: the cut's radius round him (cm), how far in front of him it starts (cm), the near-camera fade (0/1) and the
-  cut's strength (0..1; 0 in the editor and the fixed review views).
+- Fade: how strong the whole fades are (0..1), how much the sight lines widen toward him (cm), the range of the whole
+  fade round the lens (cm), and how far from the camera a big thing still fades (cm).
+- Eye: the camera position, smoothed (cm). The sight lines to him start there.
+- Cut: the old hole's radius (cm), how far in front of him it starts (cm), the lens fade's strength (0..1), and the
+  old hole's strength (0..1; 0 unless japan.SeeThroughHole is 1).
 - Room, RoomSize, RoomShape: the tree house room he is in (centre, yaw in radians; half size, blend; round, wall band,
-  eaves) from treehouse/runtime.json.
+  eaves), for the old room cutaway (hole mode only).
 - Trail0..Trail3: where he was every 0.3 s (cm) and how long ago (s): the path the curtains swing from.
+
+Every mesh group gives its fade mode in custom primitive data 0 (FadeMode, which AJapanWorld sets from
+JapanSeeThrough::FadeMode):
+- 0, solid: only the lens fade, 5 to 15 cm (the camera stays 20 cm off solid things);
+- 1: each instance fades whole, from its own position and bounds;
+- 2: each piece of a merged mesh fades whole, from the centre and axis baked in its UV channels 1 to 4;
+- 3: only the lens fade, 10 to 40 cm.
 
 The collection lives outside /Game/Japan, which the world import clears, so the Cairo materials keep a valid reference.
 Graphs made here:
 
-- add_mask(material, room): a masked, temporally dithered cut. A pixel goes where the ray from the camera through it
-  passes within the radius of Cairo's body axis and the pixel is in front of him, above his feet (the floor he stands
-  on stays); with room, also the walls of his room on the camera's side and its roof over his head while the camera
-  is outside it. Within 40 cm of the camera everything fades (no half-clipped planks). Shadow passes keep every pixel.
-- CLOTH: the tree house's world position offset: its wind, plus, for vertices whose vertex-colour alpha says how
-  freely they hang (the noren: 0 down to the bottom of the band under the rod, 1 at the hem), each strip moved whole
-  to one side of Cairo as he passes (the strips part round him) and a swing along his trail: cloth he walked through
-  is dragged his way, swings back and settles within a second.
-- character(material): Cairo's and the bokken's materials dither out within 60 cm of the camera (22 cm: gone).
+- add_mask(material, ...): a masked, temporally dithered fade. In the vertex shader, WHOLE finds how much this
+  instance or piece hides Cairo or crowds the lens. It passes the result through a vertex interpolator to the pixel
+  shader, where KEEP applies it with the lens fade (and, in hole mode, the old hole and room cutaway). Shadow passes
+  keep every pixel.
+- CLOTH: the tree house's world position offset. It keeps the tree house's wind. Vertices whose vertex-colour alpha
+  says how freely they hang (the noren: 0 down to the bottom of the band under the rod, 1 at the hem) also move: each
+  strip moves whole to one side of Cairo as he passes (the strips part round him), and swings along his trail (cloth
+  he walked through is dragged his way, swings back and settles within a second).
+- character(material): Cairo's and the bokken's materials dither out within 60 cm of the camera (gone at 22 cm).
 
 Run as a script (`atelier build yorimichi unreal.see_through`), it patches what other imports build without it:
-M_Foliage (leaves, bushes, flowers, litter), M_Grass (the grass tufts), M_Painted's mask pin with the instances in
-PAINTED switched to masked (tree trunks, the road's guardrail, poles, torii), and /Game/Cairo's materials.
-M_Grass and M_Painted carry the scaled cut (add_mask(scale=...)): a CutScale vector parameter per material or
-instance (SCALES), and code that skips the pixels no cut can reach.
-import_treehouse.py builds M_TreeHouse with it. Every patch is idempotent.
+- M_Foliage (leaves, bushes, flowers, litter);
+- M_Grass (the grass tufts: lens fade only);
+- M_Painted's mask pin, with the instances in PAINTED switched to masked (tree trunks, the road's guardrail, poles,
+  stone lanterns, the torii);
+- /Game/Cairo's materials.
+It also upgrades an M_TreeHouse carrying the first version. import_treehouse.py builds M_TreeHouse with
+add_mask(pieces=True). A material carrying the first version (OLD, the hole round Cairo) is upgraded in place. Every
+patch is idempotent.
 """
 import unreal
 
 E = unreal.EditorAssetLibrary; MEL = unreal.MaterialEditingLibrary
 FOLDER = '/Game/SeeThrough'; MPC = FOLDER+'/MPC_SeeThrough'
-TAG = 'Japan see-through'
+TAG = 'Japan see-through 2'
+OLD = 'Japan see-through'          # the first version: a round hole round Cairo, cut per pixel
 TRAIL = ('Trail0', 'Trail1', 'Trail2', 'Trail3')
 VECTORS = (('Focus', (0., 0., -100000., 90.)), ('Cut', (55., 35., 0., 0.)), ('Room', (0., 0., -100000., 0.)),
            ('RoomSize', (100., 100., 100., 0.)), ('RoomShape', (0., 60., 90., 0.)),
-           *((name, (0., 0., -100000., 10.)) for name in TRAIL))
+           *((name, (0., 0., -100000., 10.)) for name in TRAIL),
+           ('Fade', (0., 30., 60., 250.)), ('Eye', (0., 0., -100000., 0.)))
 OPACITY = unreal.MaterialProperty.MP_OPACITY_MASK
-# M_Painted's instances (setup_project.py) that may stand between the camera and Cairo: tree trunks (Bark), the road's
-# guardrail (Paint, a slot of the terrain mesh), poles (Metal, Wood), the torii (Vermilion, Tile). RoofTile, Plaster
-# and Lattice have no mesh in the world today. The ground, road, water, rock and stone, the far forest and the sky stay
-# opaque (he stands on them, or they are too big or far to matter, and masking costs on every pixel drawn). The
-# houses and the village kit use M_Village, which is not cut: see docs/CAMERA.md.
-PAINTED = ('Bark', 'RoofTile', 'Tile', 'Plaster', 'Wood', 'Lattice', 'Vermilion', 'Paint', 'Metal')
-# CutScale (radius, front margin, near-camera fade distances, unused) on the materials with the scaled cut. M_Grass:
-# blades fade from 1 m from the camera (gone at 25 cm), so a tuft by the lens never fills the screen. MI_Paint, the
-# guardrail: the cut starts 9 cm in front of him instead of 35 cm, so the rail is gone even when he walks along it
-# (his capsule keeps him 22 cm from it); the rail under his feet when he grinds stays, being under his feet.
-SCALES = {'M_Grass': (1., 1., 2.5, 1.), 'M_Painted': (1., 1., 1., 1.), 'MI_Paint': (1., .25, 1., 1.)}
+# The instances of M_Painted (setup_project.py) that may stand between the camera and Cairo:
+# - tree trunks (Bark);
+# - the road's guardrail (Paint, a slot of the terrain mesh);
+# - poles (Concrete, Metal, Wood, Paint);
+# - stone lanterns (Stone);
+# - the torii (Vermilion, Tile).
+# RoofTile, Plaster and Lattice have no mesh in the world today. The ground, road, water, rock, far forest and sky
+# stay opaque: he stands on them, or they are too big or far to matter, and masking costs on every pixel drawn. The
+# houses and the village kit use M_Village, which is not patched (docs/CAMERA.md).
+PAINTED = ('Bark', 'RoofTile', 'Tile', 'Plaster', 'Wood', 'Lattice', 'Vermilion', 'Paint', 'Metal', 'Stone', 'Concrete')
+# CutScale, per material or instance:
+# - x: the old hole's radius;
+# - y: how far in front of him the old hole starts;
+# - z: the lens fade's distances;
+# - w: unused.
+# M_Foliage: leaves fade from 80 cm off the lens, so a branch by the camera never fills the screen. M_Grass: blades
+# fade from 1 m (gone at 25 cm). MI_Paint, the guardrail: in hole mode the hole starts 9 cm in front of him.
+SCALES = {'M_Foliage': (1., 1., 2., 1.), 'M_Grass': (1., 1., 2.5, 1.), 'M_Painted': (1., 1., 1., 1.),
+          'MI_Paint': (1., .25, 1., 1.)}
 
 # The pixel's dither threshold: interleaved gradient noise, stepped every frame so TAA blends it into a soft fade.
 DITHER = ('float2 px = Parameters.SvPosition.xy + float(View.StateFrameIndexMod8) * float2(32.665, 11.815);'
           ' float n = frac(52.9829189 * frac(dot(px, float2(0.06711056, 0.00583715))));'
           ' return keep > n ? 1.0 : 0.0;')
 
-# P pixel, C camera, F body centre + half height, X radius / front margin / near fade / strength (cm, world space).
-BODY = ('float3 v = P - C; float s = length(v); float3 d = v / max(s, 0.001);'
+# WHOLE, in the vertex shader. The piece a vertex belongs to is a segment A..B with a radius r (cm, world space).
+# - INSTANCE (mode 1): from the instance's mesh bounds, turned and scaled by the instance. A thin thing (at most
+#   1.5 m across) is a vertical capsule inside its box. A big one (a tree's crown, the torii) is its box's height.
+# - PIECE (mode 2): from the bake in UV1..UV4 (metres, Blender axes; the import flipped every v, which 1 - v undoes,
+#   and Blender's y is Unreal's -y). A vertex with nothing baked (UV4.v 1 after the flip) does not fade.
+# O instance origin, P vertex (rest), U1..U4 the bake.
+INSTANCE = (' float3 bc = GetPrimitiveData(Parameters).InstanceLocalBoundsCenter;'
+            ' float3 be = GetPrimitiveData(Parameters).InstanceLocalBoundsExtent;'
+            ' float3 c = O + TransformLocalVectorToWorld(Parameters, bc);'
+            ' float3 e = abs(TransformLocalVectorToWorld(Parameters, float3(be.x, 0.0, 0.0)))'
+            ' + abs(TransformLocalVectorToWorld(Parameters, float3(0.0, be.y, 0.0)))'
+            ' + abs(TransformLocalVectorToWorld(Parameters, float3(0.0, 0.0, be.z)));'
+            ' r = max(e.x, e.y); float h = r > 150.0 ? e.z : max(e.z - r, 0.0);'
+            ' A = c - float3(0.0, 0.0, h); B = c + float3(0.0, 0.0, h);')
+PIECE = (' if (U4.y > 0.5) return 0.0;'
+         ' float3 c = P + TransformLocalVectorToWorld(Parameters, float3(U1.x, U1.y - 1.0, U2.x) * 100.0);'
+         ' float3 x = TransformLocalVectorToWorld(Parameters, float3(U3.x, U3.y - 1.0, U4.x) * 100.0);'
+         ' r = (1.0 - U2.y) * 100.0; A = c - x; B = c + x;')
+# Then, for a piece anywhere near the camera or the way to him:
+# - near: the piece's surface within 30 to 60 cm of the camera (G.z) fades it whole, before the lens clips it;
+# - between: the closest approach between the piece's segment and three sight lines, from the smoothed camera (E) to
+#   his head, chest and knees. The lines widen toward him by G.y (his body), and the piece must be in front of him.
+#   Within 30 cm, it fades. A big thing counts only by a 40 cm core along its axis (a trunk), and only within G.w
+#   (2.5 m, gone by 3.5 m) of the camera: further off it may hide him for a moment, as a tree does in BotW, rather
+#   than a whole crown vanishing next to him.
+# C camera, E smoothed camera, F body centre + half height, G Fade, M the group's fade mode.
+BETWEEN = (' float3 ab = B - A; float ab2 = dot(ab, ab); bool big = r > 150.0; float rb = big ? 40.0 : r;'
+           ' [branch] if (length((A + B) * 0.5 - C) < sqrt(ab2) * 0.5 + r + length(F.xyz - C) + F.w + 300.0)'
+           ' {'
+           ' float t0 = saturate(dot(C - A, ab) / max(ab2, 1.0));'
+           ' float nearness = 1.0 - smoothstep(G.z * 0.5, G.z, length(A + ab * t0 - C) - rb);'
+           ' float cover = 0.0; float3 w = E.xyz - A;'
+           ' for (int k = 0; k < 3; k++)'
+           ' {'
+           ' float3 d1 = F.xyz + float3(0.0, 0.0, (k == 0 ? 0.8 : (k == 1 ? 0.15 : -0.55)) * F.w) - E.xyz;'
+           ' float aa = max(dot(d1, d1), 1.0); float bb = dot(d1, ab); float cc = dot(d1, w); float ff = dot(ab, w);'
+           # closest points between the sight line E + d1 sv and the piece A + ab tv (sv, tv in 0..1)
+           ' float sv = saturate(-cc / aa); float tv = 0.0;'
+           ' if (ab2 > 1.0)'
+           ' {'
+           ' float den = aa * ab2 - bb * bb;'
+           ' sv = den > aa * ab2 * 0.0001 ? saturate((bb * ff - cc * ab2) / den) : 0.0;'
+           ' tv = (bb * sv + ff) / ab2;'
+           ' if (tv < 0.0) { tv = 0.0; sv = saturate(-cc / aa); }'
+           ' else if (tv > 1.0) { tv = 1.0; sv = saturate((bb - cc) / aa); }'
+           ' }'
+           ' float3 q = A + ab * tv; float len = sqrt(aa);'
+           ' float gap = length(E.xyz + d1 * sv - q) - rb - G.y * sv;'
+           ' float depth = dot(q - E.xyz, d1) / len;'
+           ' float front = 1.0 - smoothstep(len - 30.0, len - 5.0, depth);'
+           ' float reach = big ? 1.0 - smoothstep(G.w, G.w + 100.0, depth) : 1.0;'
+           ' cover = max(cover, (1.0 - smoothstep(0.0, 30.0, gap)) * front * reach);'
+           ' }'
+           ' fade = G.x * max(nearness, cover);'
+           ' }')
+
+
+def whole(pieces):
+    """WHOLE's code: modes 1 (and 2 with pieces) fade; the others return 0 at once."""
+    shape = ' if (M < 1.5) {' + INSTANCE + ' }' + (' else {' + PIECE + ' }' if pieces else '')
+    return ('float fade = 0.0;'
+            f' [branch] if (G.x > 0.0 && M > 0.5 && M < {2.5 if pieces else 1.5})'
+            ' {'
+            ' float3 A = O; float3 B = O; float r = 0.0;' + shape + BETWEEN +
+            ' }'
+            ' return fade;')
+
+
+# KEEP, in the pixel shader. P pixel, C camera, X Cut, W the whole fade, M fade mode, K CutScale. Then the lens fade:
+# solid things (the camera stays 20 cm off them) within 15 cm, the rest within 40 cm, times K.z.
+LENS = ('float3 v = P - C; float s = length(v);'
+        ' float keep = 1.0 - saturate(W);'
+        ' float2 lens = (M > 0.5 ? float2(10.0, 40.0) : float2(5.0, 15.0)) * K.z;'
+        ' keep = keep * lerp(1.0, smoothstep(lens.x, lens.y, s), saturate(X.z));')
+
+# The old hole (hole mode, X.w > 0), F body centre + half height. A pixel goes where the ray from the camera through
+# it passes within the radius of Cairo's body axis, and the pixel is in front of him and above his feet.
+HOLE = (' [branch] if (X.w > 0.0)'
+        ' {'
+        ' float4 Y = X * float4(K.x, K.y, 1.0, 1.0); float3 d = v / max(s, 0.001);'
         ' float3 foot = F.xyz - float3(0.0, 0.0, F.w); float3 w0 = C - foot; float b = d.z;'
         # closest approach between the view ray and the body's axis (feet to head)
         ' float t = (b * w0.z - dot(d, w0)) / max(1.0 - b * b, 0.0001);'
         ' float u = clamp(w0.z + t * b, 0.0, 2.0 * F.w);'
         ' t = max(dot(foot + float3(0.0, 0.0, u) - C, d), 0.0);'
         ' float gap = length(C + d * t - foot - float3(0.0, 0.0, u));'
-        ' float rad = max(X.x, 1.0);'
+        ' float rad = max(Y.x, 1.0);'
         ' float above = smoothstep(foot.z + 5.0, foot.z + 30.0, P.z);'
-        ' float cut = (1.0 - smoothstep(rad * 0.6, rad, gap)) * smoothstep(X.y * 0.5, X.y * 1.5, t - s) * above;')
+        ' float cut = (1.0 - smoothstep(rad * 0.6, rad, gap)) * smoothstep(Y.y * 0.5, Y.y * 1.5, t - s) * above;')
 
-# R room centre + yaw, S half size + blend, H round / wall band / eaves, M this material's share of the room cut.
+# The old room cutaway (hole mode). R room centre + yaw, S half size + blend, H round / wall band / eaves, RM this
+# material's share of the room cut.
 ROOM = (' float cy = cos(R.w); float sy = sin(R.w);'
         ' float2 q = P.xy - R.xy; q = float2(q.x * cy + q.y * sy, q.y * cy - q.x * sy);'
         ' float2 qc = C.xy - R.xy; qc = float2(qc.x * cy + qc.y * sy, qc.y * cy - qc.x * sy);'
@@ -85,27 +190,12 @@ ROOM = (' float cy = cos(R.w); float sy = sin(R.w);'
         ' float lid = max(head + 15.0, top - 60.0);'
         ' float roof = smoothstep(lid, lid + 30.0, P.z) * (1.0 - smoothstep(H.z + 60.0, H.z + 100.0, o))'
         ' * (1.0 - smoothstep(top + 300.0, top + 360.0, P.z)) * smoothstep(lid - 20.0, lid + 40.0, C.z);'
-        ' cut = max(cut, M * S.w * away * max(walls, roof));')
+        ' cut = max(cut, RM * S.w * away * max(walls, roof));')
 
-KEEP = (' float keep = 1.0 - saturate(cut * X.w);'
-        ' keep = keep * lerp(1.0, smoothstep(10.0, 40.0, s), saturate(X.z));')
+HOLE_END = ' keep = keep * (1.0 - saturate(cut * X.w)); }'
 
 NEAR = ('float s = length(P - C);'
         ' float keep = lerp(1.0, smoothstep(22.0, 60.0, s), saturate(X.z));')
-
-# The scaled cut (add_mask(scale=...)), for materials without the room cutaway: K is the material's CutScale. Before
-# BODY, it scales the radius and the front margin, then leaves at once, keeping the pixel, when no cut can reach it:
-# every ray the hole takes passes within R (half height + radius) of his centre, so a pixel beyond that sphere, or
-# outside the cone the sphere makes from the camera, stays, unless the near-camera fade reaches it. On grass and bark
-# that is almost every pixel drawn, which then costs a few instructions instead of the whole cut.
-SCALED = ('X = X * float4(K.x, K.y, 1.0, 1.0);'
-          ' float3 e0 = P - C; float ee = dot(e0, e0); float3 f0 = F.xyz - C; float ff = dot(f0, f0);'
-          ' float R = F.w + max(X.x, 1.0); float fa = dot(e0, f0); float fr = sqrt(ff) + R; float nr = 40.0 * K.z;'
-          ' float clear = max(step(fr * fr, ee), step(R * R, ff) * max(step(fa, 0.0), step(fa * fa, ee * (ff - R * R))));'
-          ' [branch] if (max(clear, step(X.w, 0.0)) * max(step(nr * nr, ee), step(X.z, 0.0)) > 0.5) return 1.0; ')
-
-KEEP_SCALED = (' float keep = 1.0 - saturate(cut * X.w);'
-               ' keep = keep * lerp(1.0, smoothstep(10.0 * K.z, 40.0 * K.z, s), saturate(X.z));')
 
 # T time, P vertex (rest), W vertex-colour alpha (how freely it hangs), A vertex tangent (the way the picture's u runs
 # across the curtain), U its uv, F body centre + half height, T0..T3 the trail (the newest first; w: age in s). Only
@@ -156,24 +246,24 @@ CLOTH = ('if (W <= 0.001) return float3(0.0, 0.0, 0.0);'
 
 
 def collection():
-    """The parameter collection, made once. An existing one is kept as it is when its parameters match, so the
-    materials that read it stay valid."""
-    names = [n for n, _ in VECTORS]
+    """The parameter collection. Missing parameters are appended, and the existing ones are kept as they are (with
+    their ids), so the materials that read them stay valid."""
     if E.does_asset_exist(MPC):
         mpc = E.load_asset(MPC)
-        if [str(p.get_editor_property('parameter_name')) for p in mpc.get_editor_property('vector_parameters')] == names:
-            return mpc
     else:
         E.make_directory(FOLDER)
         mpc = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
             'MPC_SeeThrough', FOLDER, unreal.MaterialParameterCollection, unreal.MaterialParameterCollectionFactoryNew())
-    ps = []
-    for name, value in VECTORS:
+    ps = list(mpc.get_editor_property('vector_parameters'))
+    have = {str(p.get_editor_property('parameter_name')) for p in ps}
+    missing = [(name, value) for name, value in VECTORS if name not in have]
+    if not missing: return mpc
+    for name, value in missing:
         q = unreal.CollectionVectorParameter(); q.set_editor_property('parameter_name', name)
         q.set_editor_property('default_value', unreal.LinearColor(*value)); ps.append(q)
     mpc.set_editor_property('vector_parameters', ps)
     E.save_loaded_asset(mpc)
-    unreal.log(f'SEE-THROUGH collection {MPC}: {", ".join(names)}')
+    unreal.log(f'SEE-THROUGH collection {MPC}: added {", ".join(n for n, _ in missing)}')
     return mpc
 
 
@@ -213,9 +303,16 @@ def upstream(m, e):
     return list(seen.values())
 
 
+def tag(m):
+    """Which see-through m's opacity mask has somewhere upstream (another patch may have wrapped it): TAG, OLD or
+    None."""
+    descs = {str(e.get_editor_property('desc')) for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY))}
+    return TAG if TAG in descs else OLD if OLD in descs else None
+
+
 def done(m):
-    """Whether the opacity mask already has the see-through somewhere upstream (another patch may have wrapped it)."""
-    return any(e.get_editor_property('desc') == TAG for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
+    """Whether the opacity mask has a see-through, of either version."""
+    return tag(m) is not None
 
 
 def stale(m, blend=True):
@@ -230,22 +327,24 @@ def stale(m, blend=True):
                for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
 
 
-def scaled(m):
-    """Whether m's see-through is the scaled cut (its Custom node reads K)."""
-    return any(isinstance(e, unreal.MaterialExpressionCustom) and e.get_editor_property('description') == TAG
-               and 'K' in [str(i.get_editor_property('input_name')) for i in e.get_editor_property('inputs')]
-               for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY)))
-
-
-def strip(m):
-    """Take an earlier add_mask off a material whose opacity mask had nothing else (M_Painted, patched before the
-    scaled cut): the mask's input is then the see-through's own shadow switch, and all that feeds it is the
-    see-through's. Anything else is left alone (False)."""
-    out = MEL.get_material_property_input_node(m, OPACITY)
-    if not isinstance(out, unreal.MaterialExpressionShadowReplace) or out.get_editor_property('desc') != TAG:
-        return False
-    for e in upstream(m, out): MEL.delete_material_expression(m, e)
-    return True
+def unwrap(m):
+    """Take the first version (OLD) off m. Its own nodes are deleted. Its root is returned to take the new one: the
+    Multiply that holds whatever fed the mask before, or the shadow switch when nothing did. Whatever the root feeds
+    (the opacity mask, or the instance distance fade that foliage_material.py wraps round it) stays connected. None
+    when the graph is not the one the first version made."""
+    root = next((e for e in upstream(m, MEL.get_material_property_input_node(m, OPACITY))
+                 if str(e.get_editor_property('desc')) == OLD), None)
+    if isinstance(root, unreal.MaterialExpressionMultiply):
+        inputs = MEL.get_inputs_for_material_expression(m, root)
+        switch = inputs[1] if len(inputs) > 1 else None
+        if not isinstance(switch, unreal.MaterialExpressionShadowReplace): return None
+        gone = upstream(m, switch)
+    elif isinstance(root, unreal.MaterialExpressionShadowReplace):
+        gone = [e for e in upstream(m, root) if e.get_path_name() != root.get_path_name()]
+    else:
+        return None
+    for e in gone: MEL.delete_material_expression(m, e)
+    return root
 
 
 def masked(m):
@@ -257,14 +356,19 @@ def masked(m):
     return mode in (unreal.BlendMode.BLEND_OPAQUE, unreal.BlendMode.BLEND_MASKED)
 
 
-def into_mask(m, keep, x, y, alone=False):
-    """Switch the dither off in shadow passes (the cut-away still casts its shadow) and multiply it into whatever
-    already feeds the opacity mask (alone: replace it)."""
-    source = None if alone else MEL.get_material_property_input_node(m, OPACITY)
+def into_mask(m, keep, x, y, alone=False, root=None):
+    """Switch the dither off in shadow passes (what fades still casts its shadow) and multiply it into whatever
+    already feeds the opacity mask (alone: replace it). root: the first version's root (unwrap), which takes the new
+    switch in place."""
+    source = None if alone or root is not None else MEL.get_material_property_input_node(m, OPACITY)
     output = MEL.get_material_property_input_node_output_name(m, OPACITY) if source is not None else ''
-    switch = node(m, unreal.MaterialExpressionShadowReplace, x, y)
+    switch = root if isinstance(root, unreal.MaterialExpressionShadowReplace) else node(m, unreal.MaterialExpressionShadowReplace, x, y)
     one = node(m, unreal.MaterialExpressionConstant, x-200, y+120, r=1.)
     link(keep, '', switch, 'Default'); link(one, '', switch, 'Shadow')
+    if root is not None:
+        if switch is not root: link(switch, '', root, 'B')
+        root.set_editor_property('desc', TAG)
+        return
     out = switch
     if source is not None:
         out = node(m, unreal.MaterialExpressionMultiply, x+250, y)
@@ -273,29 +377,59 @@ def into_mask(m, keep, x, y, alone=False):
     assert MEL.connect_material_property(out, '', OPACITY)
 
 
-def add_mask(m, room=False, blend=True, scale=None, x=-900, y=1400):
-    """The see-through on material m. blend: make an opaque m masked (clip 0.5); leave it off for an opaque parent whose
-    instances switch to masked (mask_instance). room: also the room cutaway, weighted by the
-    scalar parameter RoomCut (1; the trunks' instance sets 0 so the old camphor is never cut at ceiling height).
-    scale: the scaled cut instead (SCALED, no room), with the vector parameter CutScale defaulting to scale."""
+def add_mask(m, room=False, blend=True, scale=None, whole_fade=True, pieces=False, x=-900, y=1400):
+    """The see-through on material m.
+    - blend: make an opaque m masked (clip 0.5). Leave it off for an opaque parent whose instances switch to masked
+      (mask_instance).
+    - whole_fade: WHOLE in the vertex shader, so instances (and, with pieces, baked pieces) fade whole. Without it
+      (grass), only the lens fade.
+    - pieces: also fade mode 2, from the bake in UV1..UV4 (the tree house).
+    - scale: CutScale's default (1, 1, 1, 1 when None).
+    - room: in hole mode, also the old room cutaway, weighted by the scalar parameter RoomCut. RoomCut is 1; the
+      trunks' instance sets 0, so the old camphor is never cut at ceiling height.
+    A material with the first version is upgraded in place."""
     old = stale(m, blend)       # a rebuilt material: its opacity mask is the see-through's alone (into_mask)
-    if (done(m) and not old) or (blend and not masked(m)): return False
-    assert not (room and scale), 'the scaled cut has no room cutaway'
-    names = ['P', 'C', 'F', 'X'] + (['R', 'S', 'H', 'M'] if room else []) + (['K'] if scale else [])
-    code = SCALED + BODY + KEEP_SCALED if scale else BODY + (ROOM if room else '') + KEEP
-    cut = custom(m, x, y, code + ' ' + DITHER, names)
-    link(node(m, unreal.MaterialExpressionWorldPosition, x-450, y), '', cut, 'P')
-    link(node(m, unreal.MaterialExpressionCameraPositionWS, x-450, y+100), '', cut, 'C')
-    vectors = params(m, x-450, y+200, 'Focus', 'Cut', *(('Room', 'RoomSize', 'RoomShape') if room else ()))
-    for pin, e in zip(names[2:], vectors): link(e, '', cut, pin)
+    root = None
+    if not old and tag(m) == OLD:
+        root = unwrap(m)
+        if root is None:
+            unreal.log_warning(f'SEE-THROUGH {m.get_name()} keeps the first version: its graph is not the one it made')
+            return False
+    elif (done(m) and not old) or (blend and not masked(m)):
+        return False
+    names = ['P', 'C', 'F', 'X', 'W', 'M', 'K'] + (['R', 'S', 'H', 'RM'] if room else [])
+    keep = custom(m, x, y, LENS + HOLE + (ROOM if room else '') + HOLE_END + ' ' + DITHER, names)
+    p = node(m, unreal.MaterialExpressionWorldPosition, x-450, y)
+    c = node(m, unreal.MaterialExpressionCameraPositionWS, x-450, y+100)
+    link(p, '', keep, 'P'); link(c, '', keep, 'C')
+    focus, cut, *rooms = params(m, x-450, y+200, 'Focus', 'Cut', *(('Room', 'RoomSize', 'RoomShape') if room else ()))
+    link(focus, '', keep, 'F'); link(cut, '', keep, 'X')
+    for pin, e in zip(('R', 'S', 'H'), rooms): link(e, '', keep, pin)
+    # The group's fade mode (AJapanWorld sets it); 0, solid, where nothing sets it.
+    mode = node(m, unreal.MaterialExpressionScalarParameter, x-450, y+560, parameter_name='FadeMode', default_value=0.,
+                use_custom_primitive_data=True, primitive_data_index=0)
+    link(mode, '', keep, 'M')
+    k = node(m, unreal.MaterialExpressionVectorParameter, x-450, y+660, parameter_name='CutScale',
+             default_value=unreal.LinearColor(*(scale or (1., 1., 1., 1.))))
+    link(k, 'RGBA', keep, 'K')
     if room:
         share = node(m, unreal.MaterialExpressionScalarParameter, x-450, y+760, parameter_name='RoomCut', default_value=1.)
-        link(share, '', cut, 'M')
-    if scale:
-        k = node(m, unreal.MaterialExpressionVectorParameter, x-450, y+760, parameter_name='CutScale',
-                 default_value=unreal.LinearColor(*scale))
-        link(k, 'RGBA', cut, 'K')
-    into_mask(m, cut, x+300, y, alone=old)
+        link(share, '', keep, 'RM')
+    if whole_fade:
+        inputs = ['M', 'O', 'P', 'C', 'E', 'F', 'G'] + (['U1', 'U2', 'U3', 'U4'] if pieces else [])
+        fade = custom(m, x-900, y-400, whole(pieces), inputs)
+        link(mode, '', fade, 'M'); link(p, '', fade, 'P'); link(c, '', fade, 'C'); link(focus, '', fade, 'F')
+        link(node(m, unreal.MaterialExpressionObjectPositionWS, x-1350, y-400), '', fade, 'O')
+        eye, amount = params(m, x-1350, y-300, 'Eye', 'Fade')
+        link(eye, '', fade, 'E'); link(amount, '', fade, 'G')
+        for i in range(1, 5 if pieces else 1):
+            link(node(m, unreal.MaterialExpressionTextureCoordinate, x-1350, y-100+100*i, coordinate_index=i), '', fade, f'U{i}')
+        # Per vertex, handed to the pixels: the value is the same over a whole instance or piece.
+        between = node(m, unreal.MaterialExpressionVertexInterpolator, x-450, y-400)
+        link(fade, '', between, ''); link(between, '', keep, 'W')
+    else:
+        link(node(m, unreal.MaterialExpressionConstant, x-450, y-100, r=0.), '', keep, 'W')
+    into_mask(m, keep, x+300, y, alone=old, root=root)
     return True
 
 
@@ -313,7 +447,7 @@ def mask_instance(mi):
 
 def character(m):
     """Cairo and the bokken: masked, dithered out within 60 cm of the camera. Their opacity mask is the see-through's
-    alone, so a stale one is replaced."""
+    alone, so a stale one is replaced. The first version's is the same and is kept."""
     old = stale(m)
     if (done(m) and not old) or not masked(m): return False
     keep = custom(m, -900, 900, NEAR + ' ' + DITHER, ['P', 'C', 'X'])
@@ -340,18 +474,22 @@ def cloth(m, t, p, w, x=-300, y=1100):
 
 
 def save(m):
-    MEL.recompile_material(m); E.save_loaded_asset(m)
+    """Recompile and save m; the translator's errors go to the log (the shader compiler's come later, as usual)."""
+    errors = MEL.recompile_material(m)
+    if errors: unreal.log_error(f'SEE-THROUGH {m.get_name()} does not compile: {"; ".join(str(e) for e in errors)}')
+    E.save_loaded_asset(m)
+    return not errors
 
 
 def cut_scale(mi, value):
-    """Give an instance its own CutScale; False when it has it already or its parent has no scaled cut."""
+    """Give an instance its own CutScale; False when it has it already or its parent has no CutScale."""
     want = unreal.LinearColor(*value)
     have = MEL.get_material_instance_vector_parameter_value(mi, 'CutScale')
     if all(abs(getattr(have, c) - getattr(want, c)) < 1e-4 for c in 'rgba'): return False
     if not MEL.set_material_instance_vector_parameter_value(mi, 'CutScale', want):
         # The parent patched earlier in this run: the lookup by name uses its parameter list from before the patch, so
         # write the override itself (the parent's CutScale is there once it is saved).
-        if not scaled(mi.get_editor_property('parent')):
+        if tag(mi.get_editor_property('parent')) != TAG:
             unreal.log_warning(f'SEE-THROUGH {mi.get_name()}: no CutScale on its parent'); return False
         info = unreal.MaterialParameterInfo(name='CutScale', association=unreal.MaterialParameterAssociation.GLOBAL_PARAMETER,
                                             index=-1)
@@ -368,18 +506,19 @@ def material(name):
     return E.load_asset(path) if E.does_asset_exist(path) else None
 
 
+TREE = '/Game/Japan/Treehouse/Materials/M_TreeHouse'
+
+
 def main():
     collection()
     changed = []
     foliage = material('M_Foliage')
-    if foliage and add_mask(foliage, blend=False):          # masked already, with its own clip value
+    if foliage and add_mask(foliage, blend=False, scale=SCALES['M_Foliage']):    # masked already, with its own clip
         save(foliage); changed.append('M_Foliage')
     grass = material('M_Grass')
-    if grass and add_mask(grass, scale=SCALES['M_Grass']):  # masked already (its instance fade), so it stays masked
+    if grass and add_mask(grass, scale=SCALES['M_Grass'], whole_fade=False):     # masked already (its instance fade)
         save(grass); changed.append('M_Grass')
     painted = material('M_Painted')
-    if painted and done(painted) and not scaled(painted) and not strip(painted):
-        unreal.log_warning('SEE-THROUGH M_Painted keeps its earlier cut: something else feeds its opacity mask')
     if painted and add_mask(painted, blend=False, scale=SCALES['M_Painted']):   # opaque: only masked instances use it
         save(painted); changed.append('M_Painted')
     for name in PAINTED:
@@ -396,8 +535,11 @@ def main():
         m = E.load_asset(path)
         if isinstance(m, unreal.Material) and character(m):
             save(m); changed.append(name)
-    tree = '/Game/Japan/Treehouse/Materials/M_TreeHouse'
-    ready = E.does_asset_exist(tree) and done(E.load_asset(tree)) and not stale(E.load_asset(tree))
+    # The tree house: import_treehouse.py builds it; an earlier import carries the first version, upgraded here.
+    tree = E.load_asset(TREE) if E.does_asset_exist(TREE) else None
+    if tree and tag(tree) == OLD and not stale(tree) and add_mask(tree, room=True, pieces=True):
+        save(tree); changed.append('M_TreeHouse')
+    ready = tree is not None and tag(tree) == TAG and not stale(tree)
     unreal.log(f'SEE-THROUGH COMPLETE patched {len(changed)}: {", ".join(changed) or "nothing new"}; '
                f'M_TreeHouse {"has it" if ready else "needs unreal.treehouse"}')
 

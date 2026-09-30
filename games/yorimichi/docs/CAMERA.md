@@ -1,28 +1,46 @@
-# Camera see-through and the noren
+# Camera, see-through and the noren
 
 The island is crowded and the tree house rooms are small, so the chase camera keeps ending up behind something:
-leaves, trunks, posts, rails, props, a hut's roof. Rather than pull the camera in front of every obstacle (in a small
-room that puts it inside Cairo's head), the game keeps the camera where it is and lets what hides him go.
+leaves, trunks, posts, rails, props, a hut's wall. The camera works the way Breath of the Wild's does. Solid things
+push it in. Thin things between it and Cairo fade out whole and come back. Nothing is ever cut open: there is no hole
+round him, no room cutaway and no silhouette.
 
 ## What the player sees
 
-- **A hole round Cairo.** Whatever stands between the camera and Cairo dithers away in a soft round hole around his
-  body: leaves, bushes, grass, trunks, the road's guardrail, poles, the torii, and all of the tree house. The hole
-  starts 35 cm in front of him, so nothing touching him is cut. On the guardrail it starts 9 cm in front of him, so
-  the rail is gone even when he walks along it. The floor under his feet and everything behind him stay. The houses
-  and the rest of the village kit are not cut (see Limits).
-- **Rooms open on the camera's side.** Inside a tree house room, the walls between the camera and him and the
-  ceiling and roof over his head open while the camera is outside or above the room. The far walls stay. A change
-  of room closes the old one before it opens the new one.
-- **A camera that stays back.** The camera's probe passes the whole tree house and the see-through deals with it,
-  so the arm stays long. The ground and the rest of the world still stop the camera. When something does stop it,
-  the arm pulls in at once and eases back out once the way is clear, with no snapping. On the tree house, the
-  camera stays at least 40 cm above the floor he stands on.
-- **Near the camera.** Anything closer than 40 cm to the camera fades out and is gone at 10 cm, so you never see
-  half-clipped planks. Grass fades from 1 m and is gone at 25 cm, so a tuft by the lens never fills the screen.
-  Cairo and his bokken dither out from 60 cm away and are gone at 22 cm.
-- **Fades, not pops.** The cut fades in over a third of a second and a room opens over a quarter. The dither
-  changes every frame and temporal anti-aliasing turns it into a soft fade.
+- **Solid things stop the camera.** These are the terrain and cliffs, rocks, houses, the road's guardrail (part of the
+  terrain), and the tree house's floors, decks, walls, roofs and trunks. When one comes between, the camera moves in
+  front of it at once. When it clears, the camera eases back out over about a second. Swung into a wall, the camera
+  slides in along it.
+- **Squeezed, the camera rises.** When the arm is pulled in shorter than 1.6 m, the camera rises over Cairo and looks
+  down at him instead of going into his head. It rises by up to 50 cm, reached at 64 cm. It does not rise when
+  looking up from below, and never goes through a ceiling.
+- **Never under the floor.** On the tree house, the camera stays at least 40 cm above the floor he stands on.
+- **Thin things fade whole.** These are trees (trunk and crown together), bushes, poles, street lamps, stone lanterns,
+  the torii and the tree house's props. Once the tree house build splits them out, they also include its rails,
+  posts, ropes, lanterns, floats and noren. They do not stop the camera. When one hides Cairo, or comes close to the
+  lens, the whole thing dithers out, and it comes back once it has passed. Which things fade depends on size and
+  distance:
+  - A thing at most 1.5 m across fades when it comes within 30 cm of one of three sight lines and stands in front of
+    him. These are posts, poles, bushes, lanterns, props and thin trunks. The sight lines run from the camera to his
+    head, chest and knees, and they widen toward him by 30 cm, his body.
+  - A big thing counts only by a 40 cm core along its axis, its trunk or post, and only near the camera. It counts
+    fully within 2.5 m and not at all beyond 3.5 m. Big things are a tree's crown or the torii. Further off, a big
+    thing may hide him for a moment, as a tree does in BotW. A whole crown vanishing next to him would be the bigger
+    jolt.
+  - Anything thin whose surface comes within 60 cm of the camera fades whole, fully at 30 cm, before the lens clips
+    it.
+- **Near the lens.** Everything, solid or thin, also dithers out right at the lens:
+  - solid things from 15 cm, gone at 5 cm (the camera keeps at least 14 cm off them anyway);
+  - thin things from 40 cm, gone at 10 cm;
+  - leaves from 80 cm;
+  - grass from 1 m, gone at 25 cm.
+
+  Cairo and his bokken dither out from 60 cm and are gone at 22 cm.
+- **Fades, not pops.** The sight lines start from the camera's position, followed at 10/s. A thing swept across the
+  view therefore fades over about a quarter of a second, not in the frames it takes to cross. The 30 cm band makes
+  the fade gradual both ways. The dither changes every frame, and temporal anti-aliasing turns it into a soft fade.
+  Shadows stay: a faded tree still casts its shadow.
+- **Rooms.** The tree house rooms keep their colour grade. Nothing in them is cut away.
 - **Noren move.** Each strip of a door curtain moves away from him as a whole. It swings ahead of him as he comes,
   aside as he passes and behind as he leaves. Once he has gone, the cloth he walked through is dragged his way,
   swings back past rest and settles within a second. A light wind moves them the rest of the time. The noren
@@ -30,51 +48,98 @@ room that puts it inside Cairo's head), the game keeps the camera where it is an
 
 ## How it works
 
-`USeeThroughComponent` (`unreal/Source/Yorimichi/SeeThrough.cpp`) sits on the player's character. Every frame it
-writes the material parameter collection `/Game/SeeThrough/MPC_SeeThrough`:
+### The camera arm
+
+The camera arm is `UJapanCameraArm` (`unreal/Source/Yorimichi/JapanCameraArm.cpp`), a spring arm. The engine
+places the camera where it wants it to be, with its lag, rotation and socket offset, but without its own probe.
+The arm then works in four steps:
+
+1. **Sweep.** It sweeps a 20 cm sphere (`ProbeRadius`) from the arm's origin, 35 cm over Cairo's centre, to that
+   camera. The first hit is the hard limit. 20 cm keeps the near plane's corners (about 13 cm off at a 70° field of
+   view) out of the wall. If his head is already within 20 cm of something (a low beam), it sweeps a 4 cm sphere and
+   stops 16 cm short of that hit. The engine's `ProbeSize` is not used.
+2. **Floor.** On the tree house, the hard limit keeps the camera `FloorClearance` (40 cm) over the floor he stands
+   on. This applies when his movement base is tagged `JapanSeeThrough`, and through a jump or fall from it. It fades
+   in and out over 0.4 s.
+3. **Length.** A critically damped spring (Unity's SmoothDamp) takes the arm's length to the hard limit. It takes
+   0.06 s going in (`PullInTime`) and 0.3 s going out (`EaseOutTime`), so it settles in about a second. The length
+   never goes more than 6 cm past the hard limit, so the camera stays at least 14 cm off anything solid. A gap in
+   the arm's updates, such as a camera cut or the zeppelin's free camera, starts it afresh.
+4. **Squeeze.** Below `SqueezeLength` (1.6 m), once pulled in by 50 cm or more, the camera rises by up to
+   `LiftHeight` (50 cm). The rise eases at 5/s, and an upward sweep keeps it under any ceiling. The camera then
+   re-aims at the point it was looking at.
+
+Only what blocks the camera channel stops the arm. `AJapanWorld` makes every thin group ignore it.
+
+### Fade modes
+
+`JapanSeeThrough::FadeMode` (`SeeThrough.cpp`) gives each world.json group a fade mode. `AJapanWorld` writes it
+into the group's custom primitive data 0, which the materials read as the scalar parameter `FadeMode`:
+
+| Mode | Groups | Camera | Fade |
+| --- | --- | --- | --- |
+| 0, solid | everything else: the terrain (with the guardrail), rocks, houses, `TH_Structure`, `TH_Trunks` | stops it | lens only, 5 to 15 cm |
+| 1, instances | `Tree*`, `HD_NorthTree*`, `HD_ArcadeTree`, `HD_PlazaTree*`, `Bush*`, `Pole`, `Pole_Lamp`, `Lantern`, `Torii`, `TH_P_*` (the tree house props) | passes | each instance whole, from its own position and mesh bounds |
+| 2, pieces | `TH_Frame`, `TH_Dressing` with the piece bake (5 UV channels or more) | passes | each piece whole, from the bake in UV channels 1 to 4 |
+| 3, near only | `Grass*`, `Litter`, `Lake_Plants`; `TH_Frame`, `TH_Dressing` without the bake | passes | lens only, 10 to 40 cm |
+
+### The collection
+
+`USeeThroughComponent` (`SeeThrough.cpp`) sits on the player's character. Every frame it writes the material
+parameter collection `/Game/SeeThrough/MPC_SeeThrough`:
 
 | Parameter | Value |
 | --- | --- |
 | `Focus` | Cairo's capsule centre (cm) and its half height |
-| `Cut` | the hole's radius (cm), how far in front of him it starts (35 cm), the near-camera fade (0/1), strength (0..1) |
-| `Room`, `RoomSize`, `RoomShape` | the tree house room he is in: centre and yaw, half size and how open it is, round or box |
+| `Eye` | the camera position, followed at 10/s; a jump of more than 3 m is taken at once |
+| `Fade` | the whole fades' strength (0..1), his body's clearance (30 cm), the lens range (60 cm), the big things' reach (250 cm) |
+| `Cut` | the old hole's radius and front margin (cm), the lens fade's strength (0..1), the old hole's strength (0 unless in hole mode) |
+| `Room`, `RoomSize`, `RoomShape` | hole mode only: the tree house room he is in, for the old room cutaway |
 | `Trail0`..`Trail3` | where he was every 0.3 s and how long ago: the path the noren swing from |
 
 The collection lives outside `/Game/Japan`, so the world import (which clears that folder) never leaves the Cairo
-materials pointing at a missing asset. With no game running (in the editor), the defaults put the cut far away
-with no strength, so nothing is cut.
+materials pointing at a missing asset. With no game running, as in the editor, the defaults leave everything whole.
 
-Each material that reads it (`unreal/Scripts/see_through.py`) becomes masked and gets one extra calculation per
-pixel. It finds the closest point between the ray from the camera through that pixel and Cairo's body axis, from
-his feet to his head. If the ray passes within the radius, and the pixel is in front of him and above his feet, the
-pixel is dropped. The dither compares that result with interleaved gradient noise that shifts every frame. Shadow
-passes keep every pixel, so a cut-away roof still casts its shadow.
+### The materials
 
-| Material | Cut |
+Each patched material (`unreal/Scripts/see_through.py`) becomes masked. Its vertex shader works out one number for
+the whole instance or piece: how much it hides Cairo or crowds the lens (`WHOLE`). It computes the piece's axis as a
+segment with a radius, from the instance's bounds (mode 1) or from the bake (mode 2). It then measures the segment's
+closest approach to the camera and to the three sight lines. Every vertex of a piece gets the same number, and a
+vertex interpolator hands it to the pixels. So the piece fades evenly, with no edge. The pixel shader multiplies it
+with the lens fade (`KEEP`) and dithers against interleaved gradient noise that shifts every frame. Shadow passes
+keep every pixel. Modes 0 and 3 skip the vertex work.
+
+| Material | Fades |
 | --- | --- |
-| `M_TreeHouse`: the structure, the dressing and the 13 props | the hole and the room walls and roof |
-| `MI_TH_trunk`: the camphor's trunk through the rooms | the hole only (`RoomCut` 0), so it is never cut at ceiling height |
-| `M_Foliage` (leaves, bushes, flowers, litter) | the hole |
-| `M_Grass` (the grass tufts, already masked for their distance fade) | the hole; the near-camera fade reaches 1 m |
-| `M_Painted` through `MI_Bark` (tree trunks), `MI_Paint` (the road's guardrail, part of the terrain mesh), `MI_Metal` and `MI_Wood` (poles), `MI_Vermilion` and `MI_Tile` (the torii); `MI_RoofTile`, `MI_Plaster`, `MI_Lattice` have no mesh today | the hole; these instances are switched to masked (`PAINTED` in see_through.py), the ground, road, water, rock, stone and far forest stay opaque. On `MI_Paint` the hole starts 9 cm in front of him |
+| `M_TreeHouse`: the structure, frame, dressing and the props | by the group's mode (the props 1, the frame and dressing 2 once baked), and the noren cloth |
+| `MI_TH_trunk`: the trunks through the rooms | the lens fade (the trunks are solid), with `RoomCut` 0 for hole mode |
+| `M_Foliage` (leaves, bushes, flowers, litter) | mode 1; the lens fade reaches 80 cm |
+| `M_Grass` (the grass tufts) | the lens fade only, reaching 1 m |
+| `M_Painted` through its instances, switched to masked (`PAINTED` in see_through.py): `MI_Bark` (trunks), `MI_Paint` (the guardrail), `MI_Concrete`, `MI_Metal`, `MI_Wood` (poles), `MI_Stone` (stone lanterns), `MI_Vermilion`, `MI_Tile` (the torii) | by the group's mode |
 | `M_Cairo_*`, `M_Bokken_*` | dither out near the camera |
 
-`M_Grass` and `M_Painted` carry the scaled cut. Its vector parameter `CutScale` multiplies the hole's radius (x),
-how far in front of him it starts (y) and the near-camera fade distances (z), per material or instance (`SCALES`
-in see_through.py: `M_Grass` (1, 1, 2.5, 1), `MI_Paint` (1, 0.25, 1, 1)). It also leaves early, keeping the pixel,
-wherever no cut can reach: every ray the hole takes passes closer to his centre than his half height plus the
-hole's radius, so a pixel beyond that sphere, or outside the cone it makes from the camera, costs a few
-instructions instead of the whole cut. In a chase view over grass that is more than 99% of the pixels. The tree house and the leaves keep the
-first version, without the early exit.
+The vector parameter `CutScale` scales the lens fade's distances (z) per material or instance (`SCALES` in
+see_through.py). Its x and y scale the old hole. Running `unreal.see_through` on a project patched with the first
+version upgrades it in place. The first version's nodes go, and whatever fed the mask before, such as the leaves'
+distance fade, stays connected.
 
-The rooms are the room-grade boxes and round rooms from `treehouse/runtime.json`. A round room gives its height
-as `half_height`. Cairo must be 10 cm inside a room to enter it and 25 cm outside to leave it, so the walls do not
-flicker at a doorway.
+### The piece bake
 
-The camera arm is `UJapanCameraArm` (`JapanCameraArm.cpp`), a spring arm. Its probe hits the tree house's collision
-as before. When the see-through is on, it sweeps again, ignoring the tree house's instance groups (tagged
-`JapanSeeThrough`), and only the terrain and the rest of the world count. The tree house keeps its collision, so
-Cairo still walks on it and other traces still see it.
+`TH_Frame` and `TH_Dressing` are merged meshes, so their instance bounds cover the whole house. To fade a rail or a
+lantern whole, the tree house build writes each vertex's piece into four more UV layers, after `UVMap`. The values
+are in Blender metres and axes:
+
+| Layer | u | v |
+| --- | --- | --- |
+| `Piece1` | centre x − vertex x | centre y − vertex y |
+| `Piece2` | centre z − vertex z | the piece's radius round its axis |
+| `Piece3` | half axis x | half axis y |
+| `Piece4` | half axis z | 1 (0: the vertex belongs to no piece and never fades) |
+
+The FBX import flips every v, and `PIECE` in see_through.py undoes it. The import keeps both meshes' UVs at full
+precision, so every vertex of a piece finds the same centre. A mesh with fewer than 5 UV channels is not read this
+way: the game gives it mode 3 and logs `SEE-THROUGH TH_Frame: fades at the lens only, no piece bake`.
 
 ### The noren
 
@@ -97,66 +162,78 @@ house material's world position offset (`CLOTH` in `see_through.py`) moves only 
 
 The cloth moves whether or not the see-through is on. It only needs the component running.
 
+### Hole mode, the fallback
+
+`japan.SeeThroughHole 1` brings back the first version:
+- a soft round hole round Cairo, cut per pixel, instead of the whole fades;
+- the near walls and roof of the tree house room he is in, opened on the camera's side;
+- the camera probe passing the tree house (`AJapanWorld::SetSeeThroughProbe`).
+
+The rooms are the room-grade boxes and round rooms from `treehouse/runtime.json`. The switch blends over a quarter
+of a second.
+
 ## Switches
 
 | Console variable | Default | |
 | --- | --- | --- |
-| `japan.SeeThrough` | 1 | 0 turns off the hole, the rooms and the near fades (over a third of a second), and the camera probe stops at the tree house again |
-| `japan.SeeThroughRadius` | 55 | the hole's radius round Cairo, in cm (10 to 300) |
+| `japan.SeeThrough` | 1 | 0 turns every fade off, over a third of a second. The arm still stops at solid things, and thin things still let it through |
+| `japan.SeeThroughHole` | 0 | 1: the old hole and room cutaway instead of the whole fades, and the camera probe passes the tree house |
+| `japan.SeeThroughRadius` | 55 | the old hole's radius round Cairo, in cm (10 to 300), in hole mode |
 
-At start the log says `SEE-THROUGH active: radius 55 cm, N tree house rooms, N tree house groups, tree house cut
-yes, switch japan.SeeThrough 1`. If the collection is missing, it says `SEE-THROUGH off: ... missing`. When the
-probe changes, it says `SEE-THROUGH camera probe passes the tree house`. The fixed review and trailer views have
-no cut.
+At start the log says `SEE-THROUGH active: whole fades like Breath of the Wild (japan.SeeThroughHole 0), N tree
+house rooms, N tree house groups, tree house material ready, switch japan.SeeThrough 1`. A change of mode logs
+`SEE-THROUGH now ...`. At load, the world logs `SEE-THROUGH TH_Dressing: fades piece by piece (5 uv channels)`, or
+`fades at the lens only, no piece bake`. If the collection is missing, it says `SEE-THROUGH off: ... missing`. The
+fixed review and trailer views have no fades.
 
 ## Build
 
 ```sh
-atelier build yorimichi unreal.compile world.treehouse unreal.treehouse unreal.see_through data.stage
+atelier build yorimichi unreal.compile unreal.treehouse unreal.see_through data.stage
 ```
 
-- `unreal.compile`: the component, the camera arm and the tree house groups.
-- `world.treehouse` (Blender): the noren strips, their alpha, and the round room's `half_height`.
-- `unreal.treehouse`: rebuilds `M_TreeHouse` with the cut and the cloth, and makes `MI_TH_trunk`.
-- `unreal.see_through`: patches the leaves, the grass, the trunks, the guardrail, the poles and torii, and Cairo. It
-  reruns after `unreal.world` or `unreal.cairo`, which rebuild those materials. On a project patched before the
-  scaled cut it takes `M_Painted`'s earlier cut off and puts the scaled one on.
-- `data.stage`: copies the new runtime.json.
-
-The camera probe passes the tree house only while `M_TreeHouse` is masked, that is, while it has the cut. An old
-tree house import keeps the old camera.
+- `unreal.compile`: the camera arm, the component and the groups' fade modes.
+- `unreal.treehouse`: rebuilds `M_TreeHouse` with the whole fades and the cloth, and imports `TH_Frame` when the
+  build makes it. Add `world.treehouse` before it once the tree house build splits out `TH_Frame` and writes the
+  piece bake.
+- `unreal.see_through`: patches the leaves, the grass, the trunks, the guardrail, the poles, lanterns and torii, and
+  Cairo, and adds `Fade` and `Eye` to the collection. It reruns after `unreal.world` or `unreal.cairo`, which rebuild
+  those materials.
+- `data.stage`: copies the runtime data.
 
 ## What to check in game
 
-- Walk the forest and the villages with trees, bushes, poles and the torii between you and the camera. Cairo should
-  show through a soft round hole, with no hard edges and no shimmer once you stop moving. The ground under him
-  should stay.
-- Walk the main road along the guardrail with the camera swung out over the drop. The rail should be gone in
-  front of him, even with him right against it. Grind the rail: the rail under his feet should stay.
-- Push the camera into tall grass by the road. No blade should fill the screen, and the grass further off and the
-  grass round his feet should stay.
-- In each tree house room, the round Heart room included, swing the camera round Cairo. The near wall and the
-  roof should open, and the far wall and the floor should stay. Walk from room to room and across the bridges:
-  the opening should follow without jumping, and nothing outside should be cut away.
-- Swing the camera low and high on the bridges and decks. It should stay out of Cairo's head, and should not
-  dive under the floor.
-- Run against a cliff or a big wall. The camera should still stop there, pull in, and ease back out once clear.
+- Swing the camera behind trees, bushes, poles, stone lanterns and the torii. Each should fade out whole and come
+  back over about a quarter of a second, with no hole and no pop. A big tree 4 m or more from the camera may hide
+  him for a moment.
+- Run along walls, cliffs and houses, and through the tree house rooms and doorways. The camera should slide in,
+  never through a wall, and ease back out without jitter. In a tight corner it should rise a little and look down
+  at him rather than go into his head.
+- Swing the camera low and high on the bridges and decks. It should never go under the floor.
+- Walk the main road along the guardrail with the camera swung out over the drop. The camera should stay on the
+  road side or ride over the rail, with no hole.
+- Push the camera into tall grass and into a bush. No blade or leaf should fill the screen.
 - Push the camera into Cairo. He should fade out smoothly, and the bokken with him.
+- In the tree house rooms the colour grade should still change, and no wall or roof should open.
 - Walk and run through every noren, straight, at an angle and slowly. The strips should part round his head
   without passing through it, and swing back and settle after. Stand under one, and check the band under the rod
   stays still.
-- `japan.SeeThrough 0` and `1`, and `japan.SeeThroughRadius 100`.
-- Performance: every leaf is now masked with one extra calculation per pixel. Compare frame times in a dense
-  forest view (`japan.SeeThrough 0` does not remove that cost, only the hole).
+- `japan.SeeThroughHole 1` and back to 0, and `japan.SeeThrough 0` and 1.
+- Performance: compare frame times in a dense forest view. The pixel work is smaller than the old hole's; the
+  vertex shader does a little more on thin things.
 
 ## Limits
 
-- The hole is a round shape. A long wall or roof between the camera and Cairo shows a round window, not the whole
-  wall gone.
 - The houses on the main road, the village, the lake, the skate pier, part of the city and the other kit-built
-  places share one opaque material, `M_Village`, and are not cut. Masking it would take early depth rejection away
-  from everything built with it. A cheaper way would be a masked copy of it given to the houses and huts alone.
+  places share one opaque material, `M_Village`. It does not fade, so their groups are solid. Their thin parts, such
+  as fences and signs, push the camera in like walls.
+- A solid thing that comes between the middle of the arm and Cairo (a house corner as he walks past) moves the camera
+  in within a frame or two. The camera never waits behind it.
+- Until the tree house build splits out `TH_Frame`, the rails and posts are in `TH_Structure` and push the camera
+  like walls. The dressing gets only the lens fade.
+- The fade is spatial, and has no timer. A thing that stops at the edge of the 30 cm band stays half faded.
+- A piece that is long and bent (a rope along a whole bridge) fades as one straight segment. The build should
+  split long runs at their posts.
 - A strip he walks into the exact middle of (within 4 cm) cannot part: there it would have to drape over him. When
   he runs past a strip's middle at an angle, that strip flicks across quickly.
-- The see-through has no memory of what it cut. A thin rail passing across the hole's edge dithers in and out.
-- Scene captures (none today) would also see the cut: the parameters are global to the world.
+- Scene captures (none today) would also see the fades: the parameters are global to the world.

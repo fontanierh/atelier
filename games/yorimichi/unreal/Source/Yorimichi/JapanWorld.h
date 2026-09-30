@@ -6,8 +6,8 @@
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMeshComponent;
 
-/** A tree house room for the camera see-through (docs/CAMERA.md): Unreal centre (cm), half size (cm; a round room has
- *  its radius on every axis), yaw (radians). */
+/** A tree house room for the camera see-through's hole mode (docs/CAMERA.md): Unreal centre (cm), half size (cm; a
+ *  round room has its radius on every axis), yaw (radians). */
 struct FSeeThroughRoom
 {
     FVector Center = FVector::ZeroVector;
@@ -73,8 +73,8 @@ public:
     bool IsInSeeThroughRoom(int32 Index, const FVector& P, float Margin) const;
     /** The first room P is inside (grown by Margin cm), or INDEX_NONE. */
     int32 FindSeeThroughRoom(const FVector& P, float Margin) const;
-    /** true: the chase camera's probe passes the tree house, which the see-through cuts instead; false: it stops
-     *  there (UJapanCameraArm reads this). */
+    /** true (hole mode, japan.SeeThroughHole 1): the chase camera's probe passes the tree house, which the hole cuts
+     *  instead; false (the default): it stops there like any solid thing (UJapanCameraArm reads this). */
     void SetSeeThroughProbe(bool bIgnore);
     bool IsSeeThroughProbeIgnored() const { return bSeeThroughProbeIgnored; }
 

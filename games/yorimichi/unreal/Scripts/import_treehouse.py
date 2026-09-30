@@ -1,16 +1,21 @@
 """Tree house meshes, textures and props into the game (29 Sep 2026).
 
 - Textures from build/yorimichi/treehouse/textures (tools/treehouse_textures.py finish) become T_TH_<slug>.
-- M_TreeHouse: the village material's look (distance haze, matte, cloth wind from vertex alpha), with the palette in sRGB
-  with a texture: base colour = vertex colour x texture x Gain, so a surface's neutral detail map (Gain 2) keeps the
-  calibrated palette and a picture's Gain sets its brightness. Glow lights paper from inside. It carries the camera
-  see-through with the room cutaway, and its cloth (the door curtains) swings out of Cairo's way (see_through.py,
-  docs/CAMERA.md). MI_TH_trunk is the bark of TH_Trunks without the room cutaway (RoomCut 0): the old camphor rises
-  through the heart room and must not vanish above Cairo's head.
+- M_TreeHouse has the village material's look: distance haze, matte, and cloth wind from vertex alpha.
+  - Its palette is in sRGB with a texture: base colour = vertex colour x texture x Gain. A surface's neutral detail
+    map (Gain 2) keeps the calibrated palette, and a picture's Gain sets its brightness. Glow lights paper from inside.
+  - It carries the camera see-through (see_through.py, docs/CAMERA.md). Its props fade whole, and so do the thin
+    pieces of TH_Frame and TH_Dressing once their UV channels 1 to 4 carry the piece bake. Its cloth (the door
+    curtains) swings out of Cairo's way.
+  - MI_TH_trunk is the bark of TH_Trunks with RoomCut 0. In hole mode (japan.SeeThroughHole 1) the room cutaway must
+    not cut away the old camphor that rises through the heart room above Cairo's head.
 - One instance MI_TH_<slot> per material slot the build uses (slot name = texture slug), and one per prop.
-- TH_Structure and TH_Trunks use their own triangles as collision; TH_Dressing has none. Props (build/yorimichi/treehouse/props,
+- TH_Structure, TH_Trunks and TH_Frame (the thin rails, posts and ropes, when the build makes it) use their own
+  triangles as collision. TH_Dressing has none. Props (build/yorimichi/treehouse/props,
   world/regions/treehouse/props.py) get their UCX boxes, if any.
-Writes build/yorimichi/treehouse/import-report.json.
+- TH_Frame and TH_Dressing keep their UVs at full precision once they carry the bake, so every vertex of a piece
+  finds the same centre.
+Writes build/yorimichi/treehouse/import-report.json, with each mesh's UV channel count.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import json, runpy
@@ -92,9 +97,9 @@ def parent(default):
     t = node(unreal.MaterialExpressionTime, -300, 850); p = node(unreal.MaterialExpressionWorldPosition, -300, 950)
     wind = see_through.cloth(m, t, p, (vc, 'A'), -50, 850)
     assert MEL.connect_material_property(wind, '', unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
-    see_through.add_mask(m, room=True)
+    see_through.add_mask(m, room=True, pieces=True)
     m.set_editor_property('used_with_instanced_static_meshes', True)
-    MEL.recompile_material(m); E.save_loaded_asset(m)
+    see_through.save(m)
     return m
 
 
@@ -220,6 +225,24 @@ def trees(report):
         report.setdefault('trees', []).append(name)
 
 
+# The merged meshes whose thin pieces fade whole (see_through.py PIECE). The build bakes each piece's centre, axis and
+# radius into UV channels 1 to 4. Half-precision UVs would round them differently from vertex to vertex.
+PIECES = ('TH_Frame', 'TH_Dressing')
+
+
+def full_precision_uvs(mesh):
+    sub = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    settings = sub.get_lod_build_settings(mesh, 0)
+    if settings.get_editor_property('use_full_precision_u_vs'): return
+    settings.set_editor_property('use_full_precision_u_vs', True)
+    sub.set_lod_build_settings(mesh, 0, settings)
+
+
+def uv_channels(mesh):
+    """LOD 0's UV channels: 5 with the piece bake (AJapanWorld fades the pieces whole only then)."""
+    return unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem).get_num_uv_channels(mesh, 0)
+
+
 def main():
     report = {'textures': 0, 'meshes': {}, 'props': {}}
     if (OUT/'trees/trees.json').exists(): trees(report)
@@ -235,7 +258,8 @@ def main():
         MEL.set_material_instance_scalar_parameter_value(trunk, 'RoomCut', 0.)
         MEL.update_material_instance(trunk); E.save_loaded_asset(trunk)
     manifest = json.loads((OUT/'manifest.json').read_text())
-    for name, solid in (('TH_Structure', True), ('TH_Trunks', True), ('TH_Dressing', False)):
+    for name, solid in (('TH_Structure', True), ('TH_Trunks', True), ('TH_Frame', True), ('TH_Dressing', False)):
+        if name not in manifest: continue      # TH_Frame: only once the build splits the thin pieces out
         # A reimport keeps the old material slot list, so faces of a new material land in a stale slot:
         # start the asset afresh whenever the build's slots changed.
         path = f'/Game/Japan/Assets/{name}'
@@ -248,8 +272,10 @@ def main():
         used = assign(mesh, {**mis, 'bark': trunk} if name == 'TH_Trunks' and trunk else mis, report)
         flag = unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if solid else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag', flag)
+        channels = uv_channels(mesh)
+        if name in PIECES and channels >= 5: full_precision_uvs(mesh)
         E.save_loaded_asset(mesh)
-        report['meshes'][name] = {'slots': used, 'collision': 'complex' if solid else 'none'}
+        report['meshes'][name] = {'slots': used, 'collision': 'complex' if solid else 'none', 'uv_channels': channels}
     props = OUT/'props/props.json'
     if props.exists():
         for key, d in json.loads(props.read_text()).items():
