@@ -29,49 +29,41 @@ def sand_material():
     MEL.set_material_instance_vector_parameter_value(mi,'Tint',unreal.LinearColor(0.24,0.185,0.10,1.0))
     MEL.update_material_instance(mi);EAL.save_loaded_asset(mi);return mi
 def sea_material():
-    """M_Sea: flat painterly water. Deep blue-teal base that turns lighter teal where the water is shallow (scene depth
-    behind the surface), a white foam band right at the shoreline and low roughness for a sky sheen. With distance the
-    lit colour and the sheen give way to the sky dome's own horizon colour (sea_look.py), so the far sea melts into the
-    sky with no line."""
+    """M_Sea: the open sea (sea_look.py). Its colour is emissive: a deep blue-teal body, lighter teal in the shallows,
+    a Fresnel reflection of the painted dome on world-space wave normals, white surf where the water meets anything
+    (the scene depth behind the surface) and a haze toward a colour a little darker than the dome's horizon. The
+    engine lights it for sun glints only (black base colour, specular .02), so its grazing reflection of the sky
+    light's capture no longer turns the whole sea the sky's colour."""
     U=unreal;m=_create('M_Sea',U.Material,U.MaterialFactoryNew());MEL.delete_all_material_expressions(m)
-    deep=_node(m,U.MaterialExpressionConstant3Vector,-900,-100,constant=U.LinearColor(*sea_look.DEEP,1))
-    shallow=_node(m,U.MaterialExpressionConstant3Vector,-900,100,constant=U.LinearColor(0.022,0.115,0.135,1))
-    depth=_node(m,U.MaterialExpressionDepthFade,-900,300);depth.set_editor_property('fade_distance_default',900.0)
-    inv=_node(m,U.MaterialExpressionOneMinus,-700,300);_link(depth,'',inv,'')
-    col=_node(m,U.MaterialExpressionLinearInterpolate,-550,0);_link(deep,'',col,'A');_link(shallow,'',col,'B');_link(inv,'',col,'Alpha')
-    foamd=_node(m,U.MaterialExpressionDepthFade,-900,500);foamd.set_editor_property('fade_distance_default',12.0)
-    foam=_node(m,U.MaterialExpressionOneMinus,-700,500);_link(foamd,'',foam,'')
-    foamc=_node(m,U.MaterialExpressionConstant3Vector,-700,650,constant=U.LinearColor(0.55,0.58,0.58,1))
-    col2=_node(m,U.MaterialExpressionLinearInterpolate,-350,100);_link(col,'',col2,'A');_link(foamc,'',col2,'B');_link(foam,'',col2,'Alpha')
-    # With distance the lit colour and the sheen fade out and the dome's horizon colour fades in. (This used to be a
-    # haze toward a pale lavender base colour: lit by the sun and the sky light it made the far sea paler than the sky,
-    # a flat pale sheet ending in a bright strip under the horizon.)
-    pd=_node(m,U.MaterialExpressionPixelDepth,-350,550)
-    far=_node(m,U.MaterialExpressionCustom,-200,550,code=sea_look.FAR_FADE,output_type=U.CustomMaterialOutputType.CMOT_FLOAT1)
-    d=U.CustomInput();d.set_editor_property('input_name','D');far.set_editor_property('inputs',[d]);_link(pd,'',far,'D')
-    near=_node(m,U.MaterialExpressionOneMinus,-60,550);_link(far,'',near,'')
-    base=_node(m,U.MaterialExpressionMultiply,260,300);_link(col2,'',base,'A');_link(near,'',base,'B')
-    MEL.connect_material_property(base,'',U.MaterialProperty.MP_BASE_COLOR)
-    hcol=_node(m,U.MaterialExpressionConstant3Vector,-60,700,constant=U.LinearColor(*sea_look.HORIZON,1.0))
-    glow=_node(m,U.MaterialExpressionMultiply,260,700);_link(hcol,'',glow,'A');_link(far,'',glow,'B')
-    MEL.connect_material_property(glow,'',U.MaterialProperty.MP_EMISSIVE_COLOR)
-    rough=_node(m,U.MaterialExpressionConstant,260,450,r=sea_look.ROUGHNESS);MEL.connect_material_property(rough,'',U.MaterialProperty.MP_ROUGHNESS)
-    spec=_node(m,U.MaterialExpressionMultiply,260,520,const_b=sea_look.SPECULAR);_link(near,'',spec,'A')
-    MEL.connect_material_property(spec,'',U.MaterialProperty.MP_SPECULAR)
-    # scene depth is only readable from translucent materials: translucent, fully opaque, forward shaded for the specular sheen
+    F1=U.CustomMaterialOutputType.CMOT_FLOAT1;F3=U.CustomMaterialOutputType.CMOT_FLOAT3
+    def link(a,b,key):assert MEL.connect_material_expressions(a,'',b,key),key
+    def prop(n,p):assert MEL.connect_material_property(n,'',p),p
+    def custom(code,inputs,x,y,kind=F3):
+        n=_node(m,U.MaterialExpressionCustom,x,y,code=code,output_type=kind)
+        args=[]
+        for key,_ in inputs:
+            a=U.CustomInput();a.set_editor_property('input_name',key);args.append(a)
+        n.set_editor_property('inputs',args)
+        for key,src in inputs:link(src,n,key)
+        return n
+    po=_node(m,U.MaterialExpressionWorldPosition,-900,0);ti=_node(m,U.MaterialExpressionTime,-900,150)
+    cam=_node(m,U.MaterialExpressionCameraVectorWS,-900,300);pd=_node(m,U.MaterialExpressionPixelDepth,-900,450)
+    # scene depth is only readable from translucent materials: translucent, fully opaque
+    sd=_node(m,U.MaterialExpressionSceneDepth,-900,600)
+    behind=_node(m,U.MaterialExpressionSubtract,-700,550);link(sd,behind,'A');link(pd,behind,'B')
+    waves=custom(sea_look.WAVES,[('P',po),('T',ti)],-600,0)
+    prop(custom(sea_look.NORMAL,[('W',waves)],-250,0),U.MaterialProperty.MP_NORMAL)
+    m.set_editor_property('tangent_space_normal',False)
+    look=custom(sea_look.LOOK,[('W',waves),('V',cam),('D',pd),('L',behind),('P',po),('T',ti)],-250,250)
+    prop(look,U.MaterialProperty.MP_EMISSIVE_COLOR)
+    prop(_node(m,U.MaterialExpressionConstant3Vector,-250,500,constant=U.LinearColor(*sea_look.BASE,1.0)),U.MaterialProperty.MP_BASE_COLOR)
+    prop(_node(m,U.MaterialExpressionConstant,-250,600,r=sea_look.ROUGHNESS),U.MaterialProperty.MP_ROUGHNESS)
+    prop(custom('return %s*(1-H);'%sea_look.num(sea_look.SPECULAR),[('H',custom(sea_look.HAZE,[('D',pd)],-600,700,F1))],-250,700,F1),
+         U.MaterialProperty.MP_SPECULAR)
+    prop(_node(m,U.MaterialExpressionConstant,-250,800,r=1.0),U.MaterialProperty.MP_OPACITY)
     m.set_editor_property('blend_mode',U.BlendMode.BLEND_TRANSLUCENT)
+    # forward shaded: the sun's specular on the wave normals gives the glints
     m.set_editor_property('translucency_lighting_mode',U.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
-    op=_node(m,U.MaterialExpressionConstant,260,600,r=1.0);MEL.connect_material_property(op,'',U.MaterialProperty.MP_OPACITY)
-    # Low, travelling ripples keep the broad sea calm without looking like a solid plane.
-    normal=_node(m,U.MaterialExpressionCustom,450,800,
-        code='float a=T*.85+P.x*.022+P.y*.015; float b=T*1.25-P.x*.017+P.y*.027; float fade=1/(1+pow(D/4500,2)); return normalize(float3((.025*cos(a)+.012*cos(b))*fade,(.018*cos(a)-.015*cos(b))*fade,1));',
-        output_type=U.CustomMaterialOutputType.CMOT_FLOAT3)
-    args=[]
-    for key in ('T','P','D'):
-        a=U.CustomInput();a.set_editor_property('input_name',key);args.append(a)
-    normal.set_editor_property('inputs',args)
-    ti=_node(m,U.MaterialExpressionTime,0,800);po=_node(m,U.MaterialExpressionWorldPosition,0,950)
-    _link(ti,'',normal,'T');_link(po,'',normal,'P');_link(pd,'',normal,'D');MEL.connect_material_property(normal,'',U.MaterialProperty.MP_NORMAL)
     MEL.recompile_material(m);EAL.save_loaded_asset(m);return m
 def main():
     unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
