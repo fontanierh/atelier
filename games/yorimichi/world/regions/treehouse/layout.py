@@ -15,48 +15,68 @@ from zeppelin.layout import clear as clear_zeppelin
 from treehouse.screen import screen, sightlines, summary
 
 
-# deck: floor height (absolute m). R: octagon circumradius. trunk: anchor trunk radius at the deck.
-# crown: an existing painted-card tree (no collision) seated over the roof to give the anchor its leaves.
+# deck: floor height (absolute m). trunk: anchor trunk radius at the deck. R: octagon circumradius of the landings
+# (slide, pulley, chimes, lookout). The rooms stand beside their trunk, never round it (room()), on a deck that is a
+# chamfered rectangle round both. crown: an existing painted-card tree (no collision) seated over the trunk.
 PLACES = {
-    'entry':   dict(xy=(-135.0, 198.5), deck=77.0, trunk=.72, kind='entry', crown=('Tree_Maple_A', 1.45),
+    'entry':   dict(xy=(-135.0, 198.5), deck=77.0, trunk=.72, kind='entry', crown=('Tree_Maple_A', 1.6),
                     label='Little hut', role='the only part seen from the trail; its south porch is the reveal'),
-    'library': dict(xy=(-144.0, 185.0), deck=75.8, R=4.5, trunk=.52, kind='hut', crown=('Tree_Ginkgo', 1.35),
+    'library': dict(xy=(-144.0, 185.0), deck=75.8, trunk=.52, kind='hut', crown=('Tree_Ginkgo', 1.35),
                     label='Map room', role='maps, books and treasures; first stop, first junction'),
-    'heart':   dict(xy=(-131.0, 168.0), deck=74.2, R=5.6, trunk=1.15, kind='heart', crown=('Tree_Ginkgo', 1.9),
-                    label='Heart room', role='the big room round the old camphor with the shimenawa rope'),
-    'kitchen': dict(xy=(-117.0, 175.0), deck=74.8, R=4.5, trunk=.55, kind='hut', crown=('Tree_Maple_A', 1.5),
+    'heart':   dict(xy=(-131.0, 168.0), deck=74.2, trunk=1.15, kind='heart', crown=('Tree_Ginkgo', 1.9),
+                    label='Heart room', role='the big hall beside the old camphor with the shimenawa rope'),
+    'kitchen': dict(xy=(-117.0, 175.0), deck=74.8, trunk=.55, kind='hut', crown=('Tree_Maple_A', 1.5),
                     label='Kitchen', role='clay stove, kettle, drying persimmons'),
-    'sleep':   dict(xy=(-160.0, 172.0), deck=74.8, R=4.5, trunk=.55, kind='hut', crown=('Tree_Ginkgo', 1.5),
+    'sleep':   dict(xy=(-160.0, 172.0), deck=74.8, trunk=.55, kind='hut', crown=('Tree_Ginkgo', 1.5),
                     label='Sleeping nest', role='hammocks, futons and quilts'),
-    'boat':    dict(xy=(-110.0, 161.0), deck=73.8, R=3.6, trunk=.55, kind='boat', crown=('Tree_Maple_A', 1.6),
+    'boat':    dict(xy=(-110.0, 161.0), deck=73.8, trunk=.55, kind='boat', crown=('Tree_Maple_A', 1.6),
                     label='Boat room', role='an old rowboat hauled up the tree as a room'),
-    'slide':   dict(xy=(-122.0, 149.0), deck=72.8, R=3.0, trunk=.55, kind='slide', crown=('Tree_Maple_A', 1.55),
+    'slide':   dict(xy=(-122.0, 149.0), deck=72.8, R=3.4, trunk=.55, kind='slide', crown=('Tree_Maple_A', 1.55),
                     label='Slide tree', role='a spiral slide down to the forest floor, the back door'),
-    'pulley':  dict(xy=(-150.0, 157.0), deck=73.2, R=3.1, trunk=.52, kind='pulley', crown=('Tree_Ginkgo', 1.45),
+    'pulley':  dict(xy=(-150.0, 157.0), deck=73.2, R=4.0, trunk=.52, kind='pulley', crown=('Tree_Ginkgo', 1.45),
                     label='Pulley deck', role='a crane arm and a basket on a rope to the ground'),
-    'chimes':  dict(xy=(-135.0, 145.0), deck=72.4, R=2.5, trunk=.45, kind='ring', crown=('Tree_Maple_A', 1.35),
-                    label='Chime tree', role='a small ring landing hung with wind chimes, where three bridges meet'),
-    'lookout': dict(xy=(-148.0, 140.0), deck=71.8, R=3.5, trunk=.62, kind='lookout', crow=89.0,
+    'chimes':  dict(xy=(-135.0, 145.0), deck=72.4, R=3.4, trunk=.45, kind='ring', crown=('Tree_Maple_A', 1.35),
+                    label='Chime tree', role='a ring landing hung with wind chimes, where three bridges meet'),
+    'lookout': dict(xy=(-148.0, 140.0), deck=71.8, R=4.4, trunk=.62, kind='lookout', crow=89.0,
                     label='Lookout', role='spiral stairs to the crow\'s nest: telescope, bell, flag, the sea'),
 }
 BRIDGES = [('entry', 'library'), ('library', 'heart'), ('library', 'sleep'), ('heart', 'kitchen'),
            ('kitchen', 'boat'), ('boat', 'slide'), ('slide', 'chimes'), ('chimes', 'lookout'),
            ('heart', 'pulley'), ('sleep', 'pulley'), ('pulley', 'lookout'), ('heart', 'chimes')]
-# Stepping stones from the trail edge up the low gap in the bank (along GATE), then plank steps to the little hut.
-# Every stone is level, its top flush with the highest ground under it. On the flat they lie a stride apart; up the
-# bank they are a flight of stone steps cut into it, at least `least` apart and at most `rise` over the one below.
-# The last, wider stone (FOOT_STONE: half length across, half depth) lies against the lowest tread, one rise under it.
-GATE = [(-133.3, 211.0), (-133.6, 209.6), (-133.9, 208.2), (-134.2, 206.8), (-134.5, 205.4), (-134.8, 204.3)]
+# The rooms are sized for the player's camera, which follows 2.5 to 3 m behind: every room is at least 4.8 m across,
+# 3 m high to the wall plate and open to the rafters, the furniture against the walls and a lane of 1.4 m or more
+# from door to door. The doors are 2.5 m high so the camera, a little over head height, follows through them.
+HUT = (7.0, 6.0)                        # huts: width across (the doors are in these gable ends), depth out from the trunk
+WALL = 3.0                              # huts and the little hut, to the wall plate
+DOOR = (1.3, 2.5)
+# gap: trunk to the back wall, so the back eave clears the trunk; back: deck behind the trunk; front: past the front
+# wall; porch: past each door; chamfer: the deck's corners
+HUT_DECK = dict(gap=.85, back=2.4, front=1.5, porch=2.4, chamfer=1.5)
+# The heart hall: an octagon beside the camphor (apothem, wall height, eave overhang, eave to camphor), its doors in
+# the two flats that face back toward the camphor, and the deck round both (back, front, side, chamfer).
+HALL = dict(apothem=4.5, wall=3.2, over=.8, gap=.35, back=2.6, front=1.4, side=1.7, chamfer=2.0)
+# The boat room: the hull upside down on posts beside its trunk, long side across, gunwale high enough to walk under.
+BOAT = dict(length=7.0, beam=3.2, gunwale=2.6, gap=.9, back=2.4, front=1.5, side=1.4, chamfer=1.3)
+# The little hut stands east of its maple, the trunk out on the deck past the west eave. World axes, metres from the
+# trunk: the deck (a landing north at the steps, the porch south) and the hut's walls (4.8 x 6.1 m, its gables north
+# and south; it grows south, away from the trail); both doors this far east, and the steps.
+ENTRY_BOX = (-2.7, 7.6, -7.9, 2.8)
+ENTRY_HUT = (1.6, 6.4, -4.6, 1.5)
+ENTRY_DOOR = 4.0
+# Stepping stones from the trail's south edge (TRAIL_STONE) through the low gap in the bank to the foot of the plank
+# steps, which come down north from the little hut's door. Every stone is level, its top flush with the highest ground
+# under it. On the flat they lie a stride apart; where the ground climbs they are a flight of stone steps cut into it,
+# at least `least` apart and at most `rise` over the one below. The last, wider stone (FOOT_STONE: half length across,
+# half depth) lies against the lowest tread, one rise under it.
+TRAIL_STONE = (-131.6, 207.6)
 STONES = dict(stride=1.3, least=.4, rise=.17, proud=.02)
 FOOT_STONE = (.6, .4)
-ENTRY_BOX = (-2.45, 2.45, -4.2, 2.1)    # little hut deck, local metres: x0, x1, y0, y1 (hut 4.0 x 3.0, porch south)
-HEART_WALL = 4.3                        # octagonal room circumradius; the deck beyond it is the balcony
-HUT = (3.4, 2.8)                        # huts beside the trunk: width (tangential) and depth (radial)
-BRIDGE_WIDTH = 1.15
+STAIR_WIDTH = 1.4
+BRIDGE_WIDTH = 1.4
 RISE, TREAD = .19, .29                  # every stair in the tree house (the pawn steps 45 cm)
-SLIDE = dict(rc=3.55, width=1.0, slope=30.)
+SLIDE = dict(width=1.0, slope=30.)      # the chute runs 0.95 m outside the slide tree's deck
 CROW = dict(ri=.72, ro=1.85, R=2.7)
-ROOF_TOP = {'heart': 5.0, 'hut': 3.75, 'entry': 3.75, 'boat': 3.0}   # highest roof above the deck
+ROOF_TOP = {'heart': 6.8, 'hut': 5.6, 'entry': 5.2, 'boat': 3.8}   # highest roof above the deck
 # Existing trees in metres at scale 1: trunk top, crown bottom, crown top, crown radius. Cedars and pines have
 # complex collision on their leaves, so they keep their full crown; the painted-card trees are not solid.
 SPECIES = {
@@ -96,11 +116,70 @@ def octagon(R, phase=22.5):
     return [(R*math.cos(math.radians(phase+45*k)), R*math.sin(math.radians(phase+45*k))) for k in range(8)]
 
 
+def chamfered(u0, u1, v0, v1, c):
+    """A rectangle with its corners cut, counter-clockwise."""
+    return [(u0+c, v0), (u1-c, v0), (u1, v0+c), (u1, v1-c), (u1-c, v1), (u0+c, v1), (u0, v1-c), (u0, v0+c)]
+
+
+def turn(pts, ang):
+    a = math.radians(ang); ca, sa = math.cos(a), math.sin(a)
+    return [(round(x*ca-y*sa, 4), round(x*sa+y*ca, 4)) for x, y in pts]
+
+
+def box(p):
+    """A room place's deck as (angle of its u axis, u0, u1, v0, v1, chamfer), metres from the trunk; the room stands
+    out along u, in the direction no bridge uses (p['open']). None for the octagon landings."""
+    k = p['kind']
+    if k == 'entry':
+        return (0., *ENTRY_BOX, .9)
+    if k == 'hut':
+        W, D = HUT; g = HUT_DECK; u0 = p['trunk']+g['gap']
+        return (p['open'], -g['back'], u0+D+g['front'], -(W/2+g['porch']), W/2+g['porch'], g['chamfer'])
+    if k == 'heart':
+        g = HALL; far = hall_distance(p)+g['apothem']+g['front']; s = g['apothem']+g['side']
+        return (p['open'], -g['back'], far, -s, s, g['chamfer'])
+    if k == 'boat':
+        g = BOAT; u1 = p['trunk']+g['gap']+g['beam']+g['front']; s = g['length']/2+g['side']
+        return (p['open'], -g['back'], u1, -s, s, g['chamfer'])
+    return None
+
+
+def hall_distance(p):
+    """Camphor to the hall's centre: the eave stops HALL['gap'] short of the bark."""
+    return p['trunk']+HALL['gap']+HALL['over']+HALL['apothem']
+
+
 def deck_polygon(p):
-    if p['kind'] == 'entry':
-        x0, x1, y0, y1 = ENTRY_BOX
-        return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    return octagon(p['R'])
+    b = box(p)
+    if b is None:
+        return octagon(p['R'])
+    return turn(chamfered(*b[1:]), b[0])
+
+
+def room(p):
+    """The room beside the trunk, in world metres: its centre, the angle of its local x, its half sizes (or the hall's
+    apothem), wall height, and its doors [x, y, facing] (facing: the outward direction in degrees)."""
+    x, y = p['xy']; k = p['kind']; ang = p['open']
+    d = np.array([math.cos(math.radians(ang)), math.sin(math.radians(ang))]); v = np.array([-d[1], d[0]])
+    rnd = lambda q: [round(float(c), 3) for c in q]
+    if k == 'entry':
+        x0, x1, y0, y1 = ENTRY_HUT
+        return dict(center=rnd((x+(x0+x1)/2, y+(y0+y1)/2)), angle=0., half=[(x1-x0)/2, (y1-y0)/2], wall=WALL,
+                    doors=[[*rnd((x+ENTRY_DOOR, y+y1)), 90.], [*rnd((x+ENTRY_DOOR, y+y0)), 270.]])
+    if k == 'hut':
+        W, D = HUT; c = np.array([x, y])+d*(p['trunk']+HUT_DECK['gap']+D/2)
+        return dict(center=rnd(c), angle=ang, half=[D/2, W/2], wall=WALL,
+                    doors=[[*rnd(c+v*s*W/2), round((ang+90*s) % 360, 2)] for s in (-1, 1)])
+    if k == 'heart':
+        A = HALL['apothem']; c = np.array([x, y])+d*hall_distance(p); out = []
+        for s in (-1, 1):
+            a = ang+135*s; e = np.array([math.cos(math.radians(a)), math.sin(math.radians(a))])
+            out.append([*rnd(c+e*A), round(a % 360, 2)])
+        return dict(center=rnd(c), angle=ang, apothem=A, half=[A, A], wall=HALL['wall'], doors=out)
+    if k == 'boat':
+        c = np.array([x, y])+d*(p['trunk']+BOAT['gap']+BOAT['beam']/2)
+        return dict(center=rnd(c), angle=ang, half=[BOAT['beam']/2, BOAT['length']/2], wall=BOAT['gunwale'], doors=[])
+    return None
 
 
 def ray_exit(poly, angle):
@@ -136,25 +215,34 @@ def plan(h):
         p = dict(spec, name=name)
         x, y = p['xy']
         p['ground'] = ground(h, x, y)
-        p['poly'] = deck_polygon(p)
         p['links'] = []
         places[name] = p
+    for a, b in BRIDGES:
+        for p, other in ((places[a], places[b]), (places[b], places[a])):
+            p['links'].append(dict(angle=round(heading(p['xy'], other['xy']), 2), to=other['name']))
+    # The room goes in the widest arc no bridge uses; the deck is shaped round the trunk and the room, and each bridge
+    # lands where the line from the trunk to the other place leaves it.
+    for p in places.values():
+        p['open'] = round(widest_gap([l['angle'] for l in p['links']]), 2)
+        p['poly'] = deck_polygon(p)
+        b = box(p)
+        if b is not None: p['box'] = [round(float(v), 3) for v in b]
+        r = room(p)
+        if r is not None: p['room'] = r
     bridges = []
     for a, b in BRIDGES:
         A, B = places[a], places[b]
         ends = []
         for p, other in ((A, B), (B, A)):
-            ang = heading(p['xy'], other['xy'])
-            q = ray_exit(p['poly'], ang)
+            link = next(l for l in p['links'] if l['to'] == other['name'])
+            q = ray_exit(p['poly'], link['angle'])
             ends.append([p['xy'][0]+float(q[0]), p['xy'][1]+float(q[1]), p['deck']])
-            p['links'].append(dict(angle=round(ang, 2), local=[float(q[0]), float(q[1])], to=other['name']))
+            link['local'] = [round(float(q[0]), 4), round(float(q[1]), 4)]
         span = float(math.hypot(ends[1][0]-ends[0][0], ends[1][1]-ends[0][1]))
         sag = .032*span
         mid = [(ends[0][0]+ends[1][0])/2, (ends[0][1]+ends[1][1])/2]
         bridges.append(dict(a=a, b=b, start=ends[0], end=ends[1], span=round(span, 3), sag=round(sag, 3),
                             clearance=round((ends[0][2]+ends[1][2])/2-sag-ground(h, *mid), 2)))
-    for p in places.values():
-        p['open'] = round(widest_gap([l['angle'] for l in p['links']]), 2)
     stones, entry_stairs = entry_way(h, places['entry'])
     slide = slide_path(h, places['slide'])
     L = places['lookout']
@@ -177,22 +265,32 @@ def plan(h):
         p['trunk_top'] = round(max(c['crown'][0]+1.1, top+.9), 3)
     L['trunk_top'] = L['crow']-.05          # the trunk ends under the crow's nest floor; posts carry the awning
     return dict(places=places, bridges=bridges, stones=stones, entry_stairs=entry_stairs, slide=slide, crow=crow,
-                crowns=crowns, rise=RISE, tread=TREAD, bridge_width=BRIDGE_WIDTH, heart_wall=HEART_WALL, hut=HUT)
+                crowns=crowns, rise=RISE, tread=TREAD, bridge_width=BRIDGE_WIDTH, hut=HUT, wall=WALL, door=DOOR,
+                hall=HALL, boat=BOAT)
 
 
 def entry_way(h, E):
-    """The stepping stones [x, y, top z] and the plank steps from the trail to the little hut's north lip. Every stone
-    is level, its top flush with the highest ground under it (the uphill edge on the bank) and proud of the rest: on
-    the flat a stride apart, where the bank climbs (or falls) closer together, no stone more than STONES['rise'] over
-    or under the last. The foot stone, a wider block like a genkan's step stone, lies against the lowest plank step,
-    one rise under it, and the plank steps climb from it in equal rises."""
-    ex, ey = E['xy']; top_y = ey+ENTRY_BOX[3]; x = GATE[-1][0]; S = STONES; rx, ry = FOOT_STONE; n = 1
-    for _ in range(4):       # where the foot stone lies depends on the number of steps, and that on its top
-        fy = top_y+(n-1)*TREAD+.02+ry
-        zf = max(ground(h, x+a*rx, fy+b*ry) for a in (-1, -.5, 0, .5, 1) for b in (-1, -.5, 0, .5, 1))+S['proud']
-        n = max(1, math.ceil((E['deck']-zf)/RISE))
-    rise = (E['deck']-zf)/n; fy = top_y+(n-1)*TREAD+.02+ry
-    path = [np.array(q, float) for q in GATE]+[np.array([x, fy])]
+    """The plank steps down north from the little hut's north door, and the stepping stones [x, y, top z] from the
+    trail to their foot. The steps stop where they first come down to the ground (the bank's lip), so no tread is
+    buried. Every stone is level, its top flush with the highest ground under it (the uphill edge on a slope) and
+    proud of the rest: on the flat a stride apart, where the ground climbs (or falls) closer together, no stone more
+    than STONES['rise'] over or under the last. The foot stone, a wider block like a genkan's step stone, lies against
+    the lowest plank step, one rise under it, and the plank steps climb from it in equal rises."""
+    ex, ey = E['xy']; x = ex+ENTRY_DOOR; top_y = ey+ENTRY_BOX[3]; S = STONES; rx, ry = FOOT_STONE
+
+    def top(q, a, b):        # the highest ground under a level block of half sizes a (across) and b (along)
+        return max(ground(h, q[0]+i*a, q[1]+j*b) for i in (-1, -.5, 0, .5, 1) for j in (-1, -.5, 0, .5, 1))
+
+    def fit(n):              # the foot stone's centre and top, the rise, and the lowest clearance of a tread
+        fy = top_y+(n-1)*TREAD+.02+ry; zf = top((x, fy), rx, ry)+S['proud']; rise = (E['deck']-zf)/n
+        clear = min((E['deck']-(k+1)*rise-top((x, top_y+(k+.5)*TREAD), STAIR_WIDTH/2, TREAD/2)
+                     for k in range(n-1)), default=1.)
+        return fy, zf, rise, clear
+    fits = {n: fit(n) for n in range(2, 25)}
+    good = [n for n, f in fits.items() if f[2] <= RISE*1.06 and f[3] >= .02]
+    n = min(good) if good else max(fits, key=lambda n: fits[n][3])
+    fy, zf, rise, _ = fits[n]
+    path = [np.array(TRAIL_STONE, float), np.array([x, fy])]
     seg = [float(np.linalg.norm(b-a)) for a, b in zip(path[:-1], path[1:])]; total = sum(seg)
 
     def at(s):
@@ -219,14 +317,14 @@ def entry_way(h, E):
     for k in range(len(stones)-2, -1, -1):     # and no step over the rise into the foot stone either
         stones[k][2] = min(max(stones[k][2], stones[k+1][2]-S['rise']), stones[k+1][2]+S['rise'])
     for q in stones: q[2] = round(q[2], 3)
-    stairs = dict(x=x, top_y=top_y, steps=n, rise=round(rise, 4), tread=TREAD, width=1.1,
+    stairs = dict(x=x, top_y=top_y, steps=n, rise=round(rise, 4), tread=TREAD, width=STAIR_WIDTH,
                   foot=[x, round(top_y+n*TREAD, 3), round(zf, 3)])
     return stones, stairs
 
 
 def slide_path(h, p):
     """Spiral chute round the slide tree: a flat landing, then 30 degrees down until it meets the slope."""
-    cx, cy = p['xy']; rc = SLIDE['rc']; slope = math.tan(math.radians(SLIDE['slope']))
+    cx, cy = p['xy']; rc = round(p['R']*math.cos(math.radians(22.5))+.95, 3); slope = math.tan(math.radians(SLIDE['slope']))
     start = p['open']+12.; landing = [start-24., start]
     pts = []; a = start; z = p['deck']; step = 3.
     while True:
@@ -239,7 +337,7 @@ def slide_path(h, p):
     ta = math.radians(pts[-1][3]); tangent = (-math.sin(ta), math.cos(ta))
     runout = [[pts[-1][0]+tangent[0]*d, pts[-1][1]+tangent[1]*d] for d in (.8, 1.6)]
     runout = [[x, y, round(ground(h, x, y)+.04, 3)] for x, y in runout]
-    return dict(SLIDE, start=start, center=[cx, cy], landing=landing, path=pts, runout=runout,
+    return dict(SLIDE, rc=rc, start=start, center=[cx, cy], landing=landing, path=pts, runout=runout,
                 turns=round((pts[-1][3]-start)/360, 2))
 
 
@@ -249,8 +347,14 @@ def volumes(pl):
     for p in pl['places'].values():
         x, y = p['xy']
         top = p['deck']+ROOF_TOP.get(p['kind'], 2.7)+.2
-        R = p.get('R', 3.2) if p['kind'] != 'entry' else 4.0
-        discs.append((x, y, R+.35, p['deck']-1.2, top))
+        if 'box' in p:      # a rectangular deck: a flat capsule along its long side
+            ang, u0, u1, v0, v1, _ = p['box']
+            d = np.array([math.cos(math.radians(ang)), math.sin(math.radians(ang))]); w = np.array([-d[1], d[0]])
+            c = np.array([x, y])+d*(u0+u1)/2+w*(v0+v1)/2; lu, lv = (u1-u0)/2, (v1-v0)/2
+            ax, hw = (d, lu-lv) if lu > lv else (w, lv-lu)
+            segs.append((tuple(c-ax*hw), tuple(c+ax*hw), min(lu, lv)+.35, (p['deck']-1.2,)*2, (top, top)))
+        else:
+            discs.append((x, y, p['R']+.35, p['deck']-1.2, top))
         ground_zones.append((x, y, p['trunk']*1.4+1.8))
     L = pl['places']['lookout']
     discs.append((L['xy'][0], L['xy'][1], pl['crow']['R']+.4, L['deck'], pl['crow']['floor']+2.6))
@@ -284,7 +388,8 @@ GLIMPSE = (-128.5, 214.5)      # where the trail first shows the little hut
 def reveal_lines(pl, h=None):
     """The designed views, kept clear of crowns (and, from the trail, of trunks): the porch reveal, where the whole
     city opens up from the entry hut's back door; the crow's nest looking back over every place; the trail glimpse."""
-    P = pl['places']; ex, ey = P['entry']['xy']; eye = np.array([ex+.4, ey-2.6, P['entry']['deck']+1.55])
+    P = pl['places']; ex, ey = P['entry']['xy']
+    eye = np.array([ex+ENTRY_DOOR, ey+ENTRY_HUT[2]-1.8, P['entry']['deck']+1.55])
     ends = [(n, P[n]['deck']+2.) for n in P if n != 'entry'] + [('lookout', pl['crow']['floor']+1.5)]
     lines = [(eye, np.array([*P[n]['xy'], z])) for n, z in ends]
     lx, ly = P['lookout']['xy']; crow = np.array([lx, ly, pl['crow']['floor']+1.75])
@@ -293,7 +398,8 @@ def reveal_lines(pl, h=None):
     lines += [(crow, (np.array(b['start'])+np.array(b['end']))/2+[0, 0, 1.]) for b in pl['bridges']]
     if h is not None:
         g = np.array([*GLIMPSE, ground(h, *GLIMPSE)+1.6])
-        lines += [(g, np.array([ex+dx, ey, P['entry']['deck']+dz])) for dx in (-1.5, 0, 1.5) for dz in (.5, 2.5)]
+        hx, hy = P['entry']['room']['center']
+        lines += [(g, np.array([hx+dx, hy, P['entry']['deck']+dz])) for dx in (-2., 0, 2.) for dz in (.5, 2.5)]
     return lines
 
 
