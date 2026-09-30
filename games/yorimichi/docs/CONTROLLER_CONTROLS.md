@@ -20,6 +20,9 @@ The HUD selects controller hints while a gamepad is attached and returns to keyb
 | Settings | Menu | Options | Plus |
 | Equip sailboat / step ashore | D-pad Up | D-pad Up | D-pad Up |
 | Flight speed | LB / RB | L1 / R1 | L / R |
+| Map: choose a pin | Left stick / D-pad | Left stick / D-pad | Left stick / D-pad |
+| Map: pan / zoom | Right stick / LB, RB | Right stick / L1, R1 | Right stick / L, R |
+| Map: travel / close | A / B | Cross / Circle | B / A |
 
 Menu / Options and D-pad Up now invoke the existing settings and sailboat actions. D-pad Down is also mapped to the legacy skateboard toggle; Cairo still rejects that action because its definition does not support skating. Nothing re-enables skateboarding on the new character. Stick-click sprint remains hold-to-sprint, matching the existing action binding.
 

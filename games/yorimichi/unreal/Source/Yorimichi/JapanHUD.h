@@ -10,6 +10,8 @@ class YORIMICHI_API AJapanHUD : public AHUD
     GENERATED_BODY()
 public:
     virtual void DrawHUD() override;
+    /** The label style for the controls: 0 keyboard, 1 Xbox, 2 PlayStation, 3 Nintendo, 4 generic (japan.ControllerHUD overrides). */
+    static int32 CurrentControllerStyle();
 private:
     double LastFrameTime = 0., FrameWindowTime = 0.;
     int32 FrameWindowCount = 0;

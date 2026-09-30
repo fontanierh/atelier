@@ -100,6 +100,12 @@ kite, clears momentum, traces the ground and places the character facing the zon
 uses the same path. `-mapqa -reviewdir=DIR` travels to every zone in turn, screenshots each (`map_NN_key.png`),
 screenshots the open map (`map_overlay.png`) and writes `map_qa.json` (target, landed position, drift, on-ground).
 
+With a controller the map opens and closes on View / Touchpad / Minus. The sheet keeps Slate focus while open and
+reads the pad itself: the left stick moves a reticle that catches the nearest pin (and settles on it when let go), the
+d-pad hops to the nearest pin in that direction, the right stick pans, the shoulders zoom about the reticle, the bottom
+button travels and the right button closes. Other pad buttons are swallowed, so nothing fires behind the map. Moving
+the mouse hands the sheet back to hover and click; the header and hint lines name the buttons of the connected pad.
+
 Phones get the data over the stream: `{action:"map"}` returns bounds, zones and the sheet URL (`/map/map.jpg`,
 served by the stream server straight from `build/yorimichi/map`, game.toml `[stream] routes`), `{action:"teleport", zone}`
 travels; the status message carries `yaw`. `phone/map.js` draws pins and the player on the sheet; `node games/yorimichi/phone/map-smoke.mjs`

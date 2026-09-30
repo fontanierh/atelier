@@ -55,6 +55,12 @@ static FControllerLabels ControllerLabels(int32 Style)
     }
 }
 
+int32 AJapanHUD::CurrentControllerStyle()
+{
+    const int32 Override=CVarControllerHUD.GetValueOnGameThread();
+    return Override<0?ConnectedControllerStyle():FMath::Clamp(Override,0,4);
+}
+
 void AJapanHUD::DrawHUD()
 {
     Super::DrawHUD();
@@ -137,10 +143,9 @@ void AJapanHUD::DrawHUD()
     const double Now = FPlatformTime::Seconds();
     if (Now >= NextControllerCheck)
     {
-        const int32 Override=CVarControllerHUD.GetValueOnGameThread();
-        const int32 Style=Override<0?ConnectedControllerStyle():FMath::Clamp(Override,0,4);
+        const int32 Style=CurrentControllerStyle();
         if (Style!=ControllerStyle)
-            UE_LOG(LogTemp,Display,TEXT("CONTROLS HUD style=%d automatic=%d"),Style,Override<0);
+            UE_LOG(LogTemp,Display,TEXT("CONTROLS HUD style=%d automatic=%d"),Style,CVarControllerHUD.GetValueOnGameThread()<0);
         ControllerStyle=Style;
         NextControllerCheck=Now+.25;
     }

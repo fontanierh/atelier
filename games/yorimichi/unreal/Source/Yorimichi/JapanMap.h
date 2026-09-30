@@ -17,8 +17,9 @@ struct FJapanMapZone
 };
 
 /** The world map (Content/Data/map: the painted sheet plus map.json with its bounds and the teleport zones).
- *  Desktop: M opens a full-screen overlay showing the whole world, the player's position and heading, and the zones
- *  as pins; clicking a pin travels there. Phones get the same data over the stream and draw the map themselves. */
+ *  Desktop: M (or the controller's View / Touchpad) opens a full-screen overlay showing the whole world, the player's
+ *  position and heading, and the zones as pins; clicking a pin travels there. With a controller, the left stick or d-pad
+ *  picks a pin and the bottom button travels. Phones get the same data over the stream and draw the map themselves. */
 UCLASS()
 class YORIMICHI_API UJapanMap : public UObject
 {
