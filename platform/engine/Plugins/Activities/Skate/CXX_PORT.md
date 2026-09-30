@@ -80,6 +80,19 @@ Lookup preserves ASCII case-insensitivity; native loading validates bounds and r
 if a replacement fails. The runtime no longer needs a JSON parser for these records. Body construction,
 constraints and collision remain separate migration work.
 
+## Native animation metadata
+
+`AnimationMetadata.*` reads `ATMETA01` banks containing clip timing/flags/attributes, phase blends,
+blend-space simplexes, selectors and selection spaces. It preserves raw attribute payloads and every
+record, including overwritten names. Direct clip lookup and tree lookup keep their distinct tie-breaking
+rules; bank merging rejects namespace collisions and preserves source identity.
+
+The temporary exporter reads through the frozen original decoder. It exposes overwritten records by
+renaming headers in an input copy, then verifies the complete payload of every winning clip/tree against
+the untouched bank. Both the independent exporter and C++ dump must agree with the native converter.
+Run `Tests/check_animation_metadata_parity.py` with the same assets/output/target-dir arguments as the
+animation sample check. The final runtime consumes the native banks, not original ABIN or metadata JSON.
+
 ## Native animation samples
 
 `AnimationSamples.*` reads the project's `ATCLIP01` tracks and `ATSKEL01` hierarchy/reference poses. Each
@@ -116,6 +129,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
+- Animation metadata: both banks, 3,324 clips, 14,879 clip attributes, 1,183 phase blends, two blend spaces,
+  98 selectors and 38 selection spaces. Every record word/order and 4,643 original lookup results match;
+  33 duplicate/tie fixtures, two merge fixtures and nine malformed-format cases pass.
 - Animation sample conversion: all 3,324 clips, 131,642 frames and 4,739,112 bone samples reconstruct exactly,
   together with the full rig and reference poses. 833,087 of 1,196,640 component tracks are bit-identical
   constants. Decoded sample files shrink from 190,365,107 bytes to 65,630,991 bytes without quantization.
