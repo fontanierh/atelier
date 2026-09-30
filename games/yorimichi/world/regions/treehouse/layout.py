@@ -11,6 +11,7 @@ import json, math
 from pathlib import Path
 import numpy as np
 from village.layout import sample
+from zeppelin.layout import clear as clear_zeppelin
 
 
 # deck: floor height (absolute m). R: octagon circumradius. trunk: anchor trunk radius at the deck.
@@ -389,6 +390,10 @@ def integrate(world, h):
     added = autumn(world['instances'], pl, h)
     removed, gone = clear(world['instances'], pl, h)
     clear(added, pl, h)
+    # the added forest keeps off the air-station trail and the station as the zeppelin region cleared them (7.5 m):
+    # a cedar's crown is solid down to head height, so one on the trail is an invisible wall across it
+    off = clear_zeppelin(added, path=np.array(world['zeppelin']['trail']))
+    pl['forest_off_trail'] = {k: n for k, n in off.items() if n}
     for k, v in added.items(): world['instances'].setdefault(k, []).extend(v)
     pl['forest_added'] = {k: len(v) for k, v in added.items()}
     for c in pl['crowns']:

@@ -51,6 +51,9 @@ python games/yorimichi/scenarios/treehouse_walk.py cut TAKE      # ... with its 
 - The palette is sRGB and decoded in the material, like the rest of the world's vertex colours.
 - Sunbeams are three extra material slots of TH_Dressing drawn additive: the shaft (fades where seen edge-on and
   toward its edges), the pool on the floor (the window's shape and its cross) and a soft glow in the opening.
+- The forest the tree house adds round itself keeps 7.5 m off the air-station trail and clear of the station, as the
+  zeppelin region cleared them (`zeppelin.layout.clear`). A cedar's crown is solid down to head height, so one on the
+  trail is an invisible wall across it.
 - The canopy trees stand with their crown tops about a metre under to 3.5 m over the nearest deck and keep 2.5 m of
   headroom over every deck and roof; the lookout's crow's nest (89 m) stands over them, with the crowns on its
   sight lines to every bridge cleared.
