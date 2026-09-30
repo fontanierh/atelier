@@ -90,21 +90,48 @@ The shape follows the concepts where a heightfield can:
 The painted world map shows the new island too. See the island repaint in
 `../../../docs/WORLD_MAP.md`.
 
-## The sea at a distance
+## The sea
 
 `unreal/Scripts/sea_look.py` holds the open-sea look shared by the sea plane's
 `M_Sea` (`import_southwest.py`) and the Hidamari harbour's `M_HarborWater`
-(`harbor_material.py`):
+(`harbor_material.py`). It holds the waves, the colour and the haze as HLSL for
+Custom nodes, and the values they use.
 
-- deep colour, roughness and specular;
-- the horizon colour;
-- the far fade, a function of pixel depth.
+The sea's colour is authored as emissive, not left to the engine's lighting.
+From eye height nearly all the sea is seen at grazing angles, where water's
+Fresnel reflectance runs to 1. The lit sea (specular .6) mirrored the sky light's
+capture of the dome, and the whole sea came out one flat sheet in the sky's colour
+with no horizon. The dome is unlit and the exposure is fixed, so an emissive
+colour given in the dome's own units shows exactly as chosen, next to the sky:
 
-Beyond 70 m, both materials fade their base colour and specular out: about a third
-by 1 km, two thirds by 3 km and all of it by about 12 km. Emissive takes over with
-the horizon colour, so the far sea meets the sky's haze smoothly with no band. The
-near-shore water keeps its look. The harbour water calms to the open
-sea's inputs within 200 m of its edge, so its rectangle does not show from afar.
+- a deep blue-teal body, lighter teal over the first 5 m behind the surface;
+- a reflection of the painted dome, by water's Fresnel term on the wave normals,
+  scaled down so the body shows. Facets turned toward the viewer mirror the bluer
+  sky higher up, so the waves read;
+- where the view grazes the far, flat sea the reflection strengthens (`GRAZE`),
+  and a haze comes in with distance (`HAZE_CM`, a tenth at 1 km, a third at 4 km)
+  toward the dome's horizon colour times `FAR`. The sea gets lighter toward the
+  horizon but stays a little darker than the sky, so the horizon is a soft line;
+- white surf where the water meets the cliffs, stacks, beaches, piles and hulls.
+  It comes from the scene depth behind the translucent surface, in a band 1.6 m
+  deep near the camera that widens to about a pixel and a half far away, and
+  none beyond 2.5 to 4 km;
+- a few white flecks on the short wave crests, in slow, kilometre-wide gusts.
+
+The waves are nine crossing trains in world space, spread about the world's wind,
+21 m down to 1.1 m long, at deep-water speeds. Each train fades before its phase
+changes too fast across a pixel, so the far sea goes flat rather than noisy.
+
+The engine lights the surface only for the sun's glints: black base colour,
+roughness .15, specular .02. Below a specular of .25 the engine scales its
+grazing reflection by 50 x F0 (here .08), so the captured sky no longer washes
+out the authored colour.
+
+On its outline the harbour water is exactly this sea: the same waves, emissive
+colour, base colour, roughness and specular. It is opaque, so it has no surf or
+shallows there. Its own lit water takes over within 200 m of the outline, and
+only the haze applies over it. `refresh_water_materials.py` rebuilds both
+materials, and the forest lake's, without reimporting any mesh.
 
 The sea plane (`build_terrain.py`) reaches 24 km from the centre, past the 20 km sky
 dome, so the dome's lower half never shows below the horizon.
