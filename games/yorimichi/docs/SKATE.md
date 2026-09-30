@@ -7,8 +7,8 @@ steers and spins, the right stick does every trick (**Flick-It**), the triggers 
 contract between the three parts: the native skate system (C++), the rider clips (Blender, game-r17) and the skate pier
 with its board (Blender + Unreal import).
 
-Status (28 Sep 2026): playable end to end and not yet reviewed by the user. The ride, Flick-It with fourteen tricks and
-their nollie and fakie versions, spins, grabs, manuals, grinds and slides on rails, ledges and coping, powerslides, vert,
+Status (30 Sep 2026): playable end to end and not yet reviewed by the user. The ride, retail Flick-It with thirty named ollie/nollie tricks and
+their fakie versions, spins, grabs, manuals, grinds and slides on rails, ledges and coping, powerslides, vert,
 bails, sounds, the rider clips (game-r17) and the skate pier all work in the game; `games/yorimichi/scenarios/skate.py` passes 22/22
 against the running game. A filmed run is in `build/yorimichi/skatefilm/<take>/showreel.mp4` (see Checks).
 `-skatedebug` logs every change of mode with its reason and the wheel probes.
@@ -16,6 +16,14 @@ against the running game. A filmed run is in `build/yorimichi/skatefilm/<take>/s
 Not done: skate controls on the phone page (skate through the plain player at `/play/` with a controller), switch stance (fakie is
 supported), tweaked grabs and lip tricks. The painted world map does not show
 the pier; its travel pin does.
+
+## Native controller port
+
+The Rust-engine port and its exact scope are documented in the plugin's
+[NATIVE_PORT.md](../../../platform/engine/Plugins/Activities/Skate/NATIVE_PORT.md).
+Retail tuning and all 78 input-pattern variants are committed C++ data; no extracted game is needed to run.
+`Difficulty=normal` (also `easy`, `hardcore`) and `TruckTightness=0.5` live under
+`[/Script/AtelierSkate.SkateSettings]`. The old sector-gesture and random-balance descriptions are superseded by this port.
 
 ## Controls, Flick-It and physics
 

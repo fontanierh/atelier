@@ -19,7 +19,8 @@ from atelier import live as bridge  # noqa: E402
 GESTURES = {'ollie': 'Ollie', 'nollie': 'Nollie', 'kickflip': 'Kickflip', 'heelflip': 'Heelflip', 'shove': 'Pop Shove-it',
             'fs_shove': 'Frontside Pop Shove-it', '360_shove': '360 Shove-it', 'fs_360_shove': 'Frontside 360 Shove-it',
             'varial_kickflip': 'Varial Kickflip', 'varial_heelflip': 'Varial Heelflip', 'hardflip': 'Hardflip',
-            'inward_heelflip': 'Inward Heelflip', '360_flip': '360 Flip', 'laser_flip': 'Laser Flip'}
+            'inward_heelflip': 'Inward Heelflip', '360_flip': '360 Flip', 'laser_flip': 'Laser Flip',
+            '360_hardflip': '360 Hardflip', '360_inward_heelflip': '360 Inward Heelflip'}
 
 
 def py(code):
@@ -164,8 +165,8 @@ def sideways_landing():
     import re
     ok_rows = run_scenario("-10, 8, 0, 500, [(0.2, ('flick', 'ollie', (0, 0), .3)), (0.55, {'left': (1, 0)}), (0.70, {})], duration=2.0", 2.0)
     spin = [float(r.get('spin', 0)) for r in ok_rows if r.get('mode') == '2']
-    bad_rows = run_scenario("-10, 8, 0, 500, [(0.2, ('flick', 'ollie', (0, 0), .3)), (0.55, {'left': (1, 0)}), (0.78, {})], duration=2.0", 2.0)
-    # The spin comes from wall-clock stick timing sent over the bridge, so it lands 36-47 degrees off from run to run.
+    bad_rows = run_scenario("-10, 8, 0, 500, [], duration=2.0, height=3.0, velocity_heading=90", 2.0)
+    # The first path allows a sketchy recovery; the second drops at a measured 90-degree heading error.
     ok = not count(ok_rows, 'bails') and spin and abs(spin[-1]) > 30 and count(bad_rows, 'bails') == 1
     return ok, f'{abs(spin[-1]) if spin else 0:.0f} deg off landed, a bigger miss bailed {count(bad_rows, "bails") == 1}'
 
@@ -200,7 +201,7 @@ def grab():
 
 @case
 def bail():
-    rows = run_scenario("-11.5, 14, 90, 650, [], duration=3.6", 3.6)
+    rows = run_scenario("-10, 8, 0, 500, [], duration=3.6, height=3.0, velocity_heading=90", 3.6)
     return count(rows, 'bails') == 1 and rows[-1].get('mode') == '1', f'{combos(rows)}, back on the board {rows[-1].get("mode") == "1"}'
 
 
@@ -228,7 +229,7 @@ def axis(t, k, v, n=3):
     for i in range(n): ev.append((t + i * .017, lambda k=k, v=v: L.input_key(k, 'axis', v)))
 key(0.0, 'B', True); key(0.05, 'B', False)
 key(0.6, 'W', True); key(2.4, 'W', False)
-key(2.6, 'LeftMouseButton', True); axis(2.63, 'MouseY', -300); axis(2.85, 'MouseX', -330); axis(2.85, 'MouseY', 330); key(3.05, 'LeftMouseButton', False)
+key(2.6, 'LeftMouseButton', True); axis(2.63, 'MouseY', -300); axis(2.85, 'MouseX', 330); axis(2.85, 'MouseY', 330); key(3.05, 'LeftMouseButton', False)
 key(4.2, 'SpaceBar', True); key(4.5, 'SpaceBar', False)
 key(5.6, 'B', True); key(5.65, 'B', False)
 ev.sort(key=lambda e: e[0]); st = {'t': 0.0, 'i': 0}; live.REC = []
@@ -257,7 +258,7 @@ ev = []
 def key(t, k, down): ev.append((t, lambda: L.input_key(k, 'press' if down else 'release', 1.0)))
 def axis(t, k, v, n=3):
     for i in range(n): ev.append((t + i * .017, lambda k=k, v=v: L.input_key(k, 'axis', v)))
-key(0.2, 'LeftMouseButton', True); axis(0.23, 'MouseY', -300); axis(0.45, 'MouseX', -330); axis(0.45, 'MouseY', 330)
+key(0.2, 'LeftMouseButton', True); axis(0.23, 'MouseY', -300); axis(0.45, 'MouseX', 330); axis(0.45, 'MouseY', 330)
 axis(0.85, 'MouseY', -30, 12)
 key(2.4, 'LeftMouseButton', False)
 ev.sort(key=lambda e: e[0]); st = {'t': 0.0, 'i': 0}; live.REC = []
@@ -291,8 +292,11 @@ def settle(minimum=50., seconds=3., limit=300.):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('name', nargs='?', default=time.strftime('%Y%m%d_%H%M%S')); ap.add_argument('--only')
+    ap.add_argument('--minimum-fps', type=float, default=50., help='readiness threshold; scripted fixed-step cases also run below 60 fps')
+    ap.add_argument('--port', type=int, default=8830, help='loopback live bridge port')
     a = ap.parse_args()
-    settle()
+    bridge.URL = f'http://127.0.0.1:{a.port}'
+    settle(minimum=a.minimum_fps)
     py(open(GAME / 'scenarios/skate_live_skate.py').read())
     py('live.L.skate_goofy(False); live.skate_park()')
     time.sleep(1.5)

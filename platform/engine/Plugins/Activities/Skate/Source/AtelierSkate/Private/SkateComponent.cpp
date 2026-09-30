@@ -28,10 +28,9 @@
 
 namespace SkateTune
 {
-    constexpr float Gravity = 1100.f;             // a little heavier than walking, for snappy pops
     constexpr float DeckHeight = 9.05f;           // deck top above the ground (the board contract in README.md)
     constexpr float WheelX = 18.f, WheelY = 9.3f, WheelRadius = 2.65f, HangerDrop = 7.3f, DeckThickness = 1.2f;
-    constexpr float PushMax = 1250.f, PushAccel = 680.f, TopSpeed = 2200.f;   // pushing tops out at 45 km/h
+    constexpr float TopSpeed = 2800.f; // downhill safety ceiling; pushing uses the retail 8.5 m/s limit
     constexpr float Radius = 22.f, Half = 55.f, Clearance = 22.f;
     constexpr float ProbeUp = 25.f, Reach = 14.f, MaxStep = 3.5f;
     constexpr float PlantTime = .30f, ReleaseTime = .62f, StrokeLength = 44.f, PushLength = 1.f;
@@ -41,7 +40,6 @@ namespace SkateTune
     // Mouse deltas as PlayerInput reports them (about 20-40 per centimetre of travel): a full stick is ~1.5 cm of mouse,
     // scaled with the player's mouse sensitivity (0.4 is the default).
     constexpr float MouseScale = 1.f / 40.f;
-    constexpr float PopMin = 250.f, PopMax = 520.f;   // 28 cm to 1.2 m: a hard flick clears a handrail with room, as in skate.
     constexpr float SpinMax = 420.f, SpinAccel = 1300.f, SpinWindUp = 300.f;
     constexpr float FlipDelay = .06f;             // the feet leave the board before it turns
 }
@@ -52,6 +50,7 @@ static bool SkateDebug() { static const bool bOn = FParse::Param(FCommandLine::G
 
 namespace
 {
+    SkateNative::Vec NativeVector(const FVector& V) { return {float(V.X), float(V.Y), float(V.Z)}; }
     float Ease(float U) { U = FMath::Clamp(U, 0.f, 1.f); return 1.f - (1.f - U) * (1.f - U); }
     /** Ollie pop: the board pitches nose-up about the rear wheels, then levels (README.md; the SkateOllie clip). */
     float PopPitch(float T)
@@ -299,6 +298,7 @@ bool USkateComponent::Toggle()
         SetMeshForRiding(true);
         M->SetMovementMode(MOVE_Custom, MovementMode);
         Flick.Reset(); Combo.Reset(); ComboPoints = 0;
+        ResetControllers();
         Enter(ESkateMode::Ground); LandTime = 0.f;
         FHitResult Hit; MoveBody(Hit);
         BoardRoot->SetVisibility(true, true);
@@ -354,6 +354,7 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
         if (!Toggle()) return false;
     }
     if (Mode == ESkateMode::Bail) EndBail();
+    ResetControllers();
     Pos = GroundPoint; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector; bFakie = false; RevertLeft = 0.f;
     Enter(ESkateMode::Ground);
     Rider->SetActorLocationAndRotation(Pos + Up() * BodyLift, Rot, false, nullptr, ETeleportType::TeleportPhysics);
@@ -377,6 +378,7 @@ void USkateComponent::Enter(ESkateMode Next)
     Mode = Next;
     if (Next == ESkateMode::Air)
     {
+        NativePump = {}; RideCrouch = 0.f; AirAssistOffset = FVector::ZeroVector;
         AirTime = 0.f; PredictClock = 0; LandingNormal = Up();
         // Leaving a wall (quarter pipe above ~70 degrees): a vert air.
         bVertAir = FMath::Abs(Up().Z) < .35f; VertNormal = Up(); VertPoint = Pos;
@@ -386,6 +388,7 @@ void USkateComponent::Enter(ESkateMode Next)
     }
     if (Next == ESkateMode::Ground)
     {
+        NativePushAcceleration = NativePumpAcceleration = 0.f;
         bPopped = false; Trick = FSkateTrick(); TrickTime = TrickDuration = 0.f; SpinRate = 0.f;
         Grab = NAME_None; Rail = INDEX_NONE; GroundTime = 0.f;
     }
@@ -473,15 +476,27 @@ bool USkateComponent::ProbeGround(const FVector& At, const FQuat& Q, FVector& Ou
 void USkateComponent::PhysSkate(float Dt)
 {
     if (!Rider || Mode == ESkateMode::Off || Mode == ESkateMode::Bail) return;
-    float Remaining = FMath::Min(Dt, .1f);
-    while (Remaining > KINDA_SMALL_NUMBER && (Mode == ESkateMode::Ground || Mode == ESkateMode::Air || Mode == ESkateMode::Grind))
+    ReadInput(Dt);
+    if (Mode == ESkateMode::Off || Mode == ESkateMode::Bail) return;
+    // Native filters are per-call at 60 Hz. Carry fractional time between render frames.
+    const int32 Steps = SimulationClock.Advance(Dt);
+    for (int32 I = 0; I < Steps && IsOnBoard(); ++I)
     {
-        const float H = FMath::Min(Remaining, 1.f / 120.f); Remaining -= H;
-        LeaveRailCooldown = FMath::Max(0.f, LeaveRailCooldown - H);
-        BumpCooldown = FMath::Max(0.f, BumpCooldown - H);
-        if (Mode == ESkateMode::Ground) StepGround(H);
-        else if (Mode == ESkateMode::Air) StepAir(H);
-        else StepGrind(H);
+        const float H = SkateNative::Step;
+        RideClock += H;
+        StepControls(H);
+        Previous = In;
+        // Keep wheel/capsule travel small on steep transitions. Native controller state
+        // advances once per pair; forces remain constant across the two collision steps.
+        for (int32 Substep = 0; Substep < 2 && IsOnBoard(); ++Substep)
+        {
+            const float CollisionStep = H * .5f;
+            LeaveRailCooldown = FMath::Max(0.f, LeaveRailCooldown - CollisionStep);
+            BumpCooldown = FMath::Max(0.f, BumpCooldown - CollisionStep);
+            if (Mode == ESkateMode::Ground) StepGround(CollisionStep, Substep == 0);
+            else if (Mode == ESkateMode::Air) StepAir(CollisionStep);
+            else if (Mode == ESkateMode::Grind) StepGrind(CollisionStep);
+        }
     }
     if (Movement()) Movement()->Velocity = Vel;
 }
@@ -509,7 +524,7 @@ float USkateComponent::ReadSurface() const
     return 1.f;
 }
 
-void USkateComponent::StepGround(float H)
+void USkateComponent::StepGround(float H, bool bControllerTick)
 {
     GroundTime += H;
     SurfaceClock -= H;
@@ -538,38 +553,58 @@ void USkateComponent::StepGround(float H)
             Rot = (FQuat(N, FMath::DegreesToRadians(RevertSign * Step)) * Rot).GetNormalized();
             RevertLeft -= Step;
         }
-        const float SteerIn = bManual ? In.Left.X * .6f : Flick.Load > .3f ? In.Left.X * .75f : In.Left.X;
-        Steering = FMath::FInterpTo(Steering, SteerIn, H, 9.f);
-        if (Speed < 30.f)
+        const float Flip = bFakie ? -1.f : 1.f;
+        if (bControllerTick) NativeSteering.Update(Native, In.Left.X, 0.f, Speed * .01f, Flip, bManual,
+            FMath::Clamp(GetDefault<USkateSettings>()->TruckTightness, 0.f, 1.f), bPushing,
+            !bManual || bNoseManual, !bManual || !bNoseManual);
+        Steering = NativeSteering.DampedTurn;
+        // UE contact adapter: truck lean becomes curvature across the measured wheelbase.
+        // Heading and momentum evolve separately; lateral wheel grip redirects velocity below.
+        const float TruckAngle = .5f * (NativeSteering.Targets[0] + NativeSteering.Targets[1]);
+        float YawRate = (2.f * FMath::Tan(TruckAngle) / (2.f * WheelX)) * FVector::DotProduct(Vel, Forward());
+        // Finite lateral grip in the UE adapter: the rider cannot redirect arbitrarily fast.
+        const float MaxYaw = 800.f / FMath::Max(Speed, 150.f);
+        YawRate = FMath::Clamp(YawRate, -MaxYaw, MaxYaw);
+        if (Speed < 30.f) YawRate = In.Left.X * FMath::DegreesToRadians(100.f) * (bManual ? 1.f : .3f);
+        Rot = (FQuat(N, YawRate * H) * Rot).GetNormalized();
+        if (LandingRecovery > 0.f && Speed > 20.f && RevertLeft <= 0.f)
         {
-            // Kickturn on the back wheels when stopped.
-            Rot = FQuat(N, FMath::DegreesToRadians(In.Left.X * 160.f * H)) * Rot;
-            Vel = Forward() * FVector::DotProduct(Vel, Forward());
+            // Gradual wheel scrub, retaining a sketchy landing's momentum and body heading.
+            const FVector Desired = Vel.GetSafeNormal() * Flip;
+            const float Error = FMath::Atan2(FVector::DotProduct(FVector::CrossProduct(Forward(), Desired), N), FVector::DotProduct(Forward(), Desired));
+            const float Correction = FMath::Clamp(Error * (NativeLanding.Kind == 2 ? 5.f : 8.f) * H, -.06f, .06f);
+            Rot = (FQuat(N, Correction) * Rot).GetNormalized();
+            LandingRecovery = FMath::Max(0.f, LandingRecovery - H);
         }
-        else
-        {
-            const float Rate = FMath::Lerp(150.f, 60.f, FMath::Clamp(Speed / 1200.f, 0.f, 1.f)) * (bPushContact ? .35f : 1.f);
-            const FQuat Turn(N, FMath::DegreesToRadians(Steering * Rate * H));
-            Rot = (Turn * Rot).GetNormalized(); Vel = Turn.RotateVector(Vel);
-        }
-        const FVector G(0, 0, -Gravity);
+        const FVector G(0, 0, -Native.Gravity * 100.f);
         const FVector Along = G - FVector::DotProduct(G, N) * N;
         const FVector Fwd = Forward(), Right = Rot.GetRightVector();
         const float VF = FVector::DotProduct(Vel, Fwd);
         float VL = FVector::DotProduct(Vel, Right);
         float A = FVector::DotProduct(Along, Fwd);
         const float Dir = FMath::Abs(VF) > 1.f ? FMath::Sign(VF) : (bFakie ? -1.f : 1.f);
-        // At speed the planted foot is on the ground for less time (the stroke follows the distance rolled), so it pushes
-        // harder for it: every stroke adds about the same, fading toward the push limit.
-        if (bPushContact) A += Dir * PushAccel * FMath::Max(0.f, 1.f - FMath::Abs(VF) / PushMax) * FMath::Max(1.f, FMath::Abs(VF) / 150.f);
-        // Grass and sand stop a board quickly; concrete barely slows it.
-        float Resist = (10.f + FMath::Abs(VF) * .01f) * SurfaceDrag + VF * VF * 3.5e-5f;
+        // A stroke has a speed target. CalcPushForce approaches it during foot contact;
+        // it does not create another full impulse on every substep.
+        if (bControllerTick)
+        {
+            NativePushAcceleration = bPushContact ? 100.f * SkateNative::PushDelta(Native, PushTarget, FMath::Abs(VF) * .01f, Speed * .01f) / SkateNative::Step : 0.f;
+            const float TargetCrouch = bManual ? 0.f : FMath::Max(Flick.Load, NativePump.MinimumCrouch * .75f);
+            RideCrouch = FMath::FInterpConstantTo(RideCrouch, TargetCrouch, SkateNative::Step, 3.5f);
+            const float PumpDV = NativePump.Update(Native, NativeVector(Pos * .01f), NativeVector(N), .85f - RideCrouch * .38f, 0.f, Flick.Load > .1f || RideCrouch > .1f);
+            NativePumpAcceleration = PumpDV * 100.f / SkateNative::Step;
+        }
+        A += Dir * ((bPushContact ? NativePushAcceleration : 0.f) + NativePumpAcceleration);
+        NoInputTime = In.bPush || !In.Left.IsNearlyZero() || Flick.Load > .1f ? 0.f : NoInputTime + H;
+        float Resist = Native.SurfaceDrag.At(FMath::Abs(VF) * .01f) * 100.f;
+        if (NoInputTime > Native.NoInputTime) Resist += Native.CoastDrag.At(FMath::Abs(VF) * .01f) * 100.f;
+        if (bManual) Resist += Native.ManualDrag.At(FMath::Abs(VF) * .01f) * 100.f;
+        // the host game surface mapping: retain the park's smooth ride and off-road slowdown.
+        Resist += FMath::Max(SurfaceDrag - 1.f, 0.f) * 15.f;
         if (bBraking) Resist += 480.f + FMath::Abs(VF) * .5f;
-        if (bManual) Resist += 8.f;
         float NewVF = VF + A * H;
         const float Drop = Resist * H;
         NewVF = FMath::Abs(NewVF) <= Drop ? 0.f : NewVF - FMath::Sign(NewVF) * Drop;
-        if (RevertLeft <= 0.f) VL *= FMath::Exp(-20.f * H);   // the wheels grip sideways, except while skidding round in a revert
+        if (RevertLeft <= 0.f) VL *= FMath::Exp(-(LandingRecovery > 0.f ? 3.f : 12.f) * H);   // the wheels grip sideways, except while skidding round in a revert
         Vel = (Fwd * NewVF + Right * VL).GetClampedToMaxSize(TopSpeed);
     }
     if (!bPowerslide && RevertLeft <= 0.f && Vel.SizeSquared() > 400.f) bFakie = FVector::DotProduct(Vel, Forward()) < 0.f;
@@ -600,7 +635,7 @@ void USkateComponent::StepGround(float H)
         // only while gravity can supply v^2 * curvature. Seams and pebbles (under a centimetre) do not count.
         const float Curvature = 2.f * -LeadRise / (WheelX * WheelX);
         const float Need = Speed * Speed * Curvature;
-        const float Hold = Gravity * FMath::Max(0.f, float(Normal.Z)) + 350.f;
+        const float Hold = Native.Gravity * 100.f * FMath::Max(0.f, float(Normal.Z)) + 350.f;
         if (Need > Hold) { if (SkateDebug()) AirWhy = FString::Printf(TEXT("convex edge drop %.1f need %.0f hold %.0f"), LeadRise, Need, Hold); Pos = Next; Enter(ESkateMode::Air); return; }
     }
     Pos = Point;
@@ -623,7 +658,7 @@ void USkateComponent::StepGround(float H)
 void USkateComponent::StepAir(float H)
 {
     AirTime += H; PopTime += H;
-    Vel.Z -= Gravity * H;
+    Vel.Z -= Native.Gravity * 100.f * H;
     // Spin: the left stick winds the body and board around the board's up axis.
     const float SpinTarget = In.Left.X * SpinMax;
     SpinRate = FMath::FInterpConstantTo(SpinRate, SpinTarget, H, FMath::Abs(SpinTarget) > 1.f ? SpinAccel : SpinAccel * .45f);
@@ -638,8 +673,8 @@ void USkateComponent::StepAir(float H)
         for (int32 I = 0; I < 40; ++I)
         {
             const float Step = .04f;
-            const FVector NextP = P + V * Step + FVector(0, 0, -.5f * Gravity * Step * Step);
-            V.Z -= Gravity * Step;
+            const FVector NextP = P + V * Step + FVector(0, 0, -.5f * Native.Gravity * 100.f * Step * Step);
+            V.Z -= Native.Gravity * 100.f * Step;
             FHitResult Hit;
             if (GetWorld()->SweepSingleByChannel(Hit, P, NextP, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(12.f), Params))
             { LandingNormal = Hit.ImpactNormal; break; }
@@ -651,6 +686,7 @@ void USkateComponent::StepAir(float H)
     if (bVertAir && FromWall > 90.f) bVertAir = false;
     if (bVertAir) Rot = AlignUp(Rot, VertNormal, 1.f - FMath::Exp(-8.f * H));
     else if (AirTime > .1f) Rot = AlignUp(Rot, LandingNormal, 1.f - FMath::Exp(-4.f * H));
+    AssistGrind(H);
     if (TryGrind()) return;
     if (bVertAir && Vel.Z < 0.f)
     {
@@ -740,18 +776,11 @@ void USkateComponent::TryLand(const FVector& Point, const FVector& InNormal)
     if (Speed > 20.f) bFakie = YawErr >= 90.f;
     // Rolling over a crest leaves the ground for a moment: no landing to show for it.
     const bool bSilent = !bPopped && AirTime < .15f && AirName.IsEmpty() && Grab.IsNone();
-    // Land: keep the speed along the new surface, lose a little to the impact, and square the board to the line.
+    NativeLanding = SkateNative::LandingQuality(Native, NativeVector(N), NativeVector(Vel * .01f), NativeVector(Forward()), FMath::DegreesToRadians(SpinRate), bFakie);
+    LandingRecovery = NativeLanding.Kind == 0 ? .08f : .25f + FMath::Abs(NativeLanding.Adjust) * .35f;
     Pos = Point;
     Rot = AlignUp(Rot, N, 1.f);
-    if (Speed > 20.f)
-    {
-        const FVector Line = Tangent / Speed * (bFakie ? -1.f : 1.f);
-        Rot = FRotationMatrix::MakeFromXZ(Line, N).ToQuat();
-    }
-    Vel = Tangent * FMath::Clamp(1.f - Impact * 1e-4f, .8f, .98f);
-    // Landed a little sideways: the wheels scrub round to the line and it costs speed.
-    const float Off = FMath::Min(YawErr, 180.f - YawErr);
-    if (Off > 25.f) Vel *= 1.f - .3f * FMath::SmoothStep(25.f, 60.f, Off);
+    Vel = Tangent * FMath::Clamp(1.f - FMath::Max(Impact, 0.f) * 3e-5f, .88f, 1.f);
     // Name what was done in the air.
     FString Name;
     int32 Points = 0;
@@ -781,9 +810,8 @@ void USkateComponent::TryLand(const FVector& Point, const FVector& InNormal)
     const int32 Band = FSkateFlick::ManualBand(In.Right);
     if (Band != 0 && Speed > 80.f && !bManualLock)
     {
-        bManual = true; bNoseManual = Band < 0; ManualHold = 0.f; bPushing = false;
+        bManual = true; bNoseManual = Band < 0; NativeManual = {}; ManualPitch = (bNoseManual ? -8.f : 8.f); ManualHold = 0.f; bPushing = false;
         Balance = FMath::Clamp(Impact / 5000.f, 0.f, .12f);   // a heavy landing rocks it back a little
-        DriftClock = .4f;
     }
 }
 
@@ -846,6 +874,9 @@ bool USkateComponent::TryGrind()
     }
     GrindName = FName(*((bBackwards && !bSlide ? FString(TEXT("Fakie ")) : FString(Side)) + Name + (Line.Kind == ESkateRailKind::Coping ? TEXT(" (coping)") : TEXT(""))));
     Rail = Best; RailS = S; RailSpeed = FMath::Abs(Along);
+    const FVector Across = FVector::CrossProduct(FVector::UpVector, T).GetSafeNormal();
+    RailOffset = FMath::Clamp(float(FVector::DotProduct(Pos - Point, Across)), -8.f, 8.f);
+    RailSideSpeed = FMath::Clamp(float(FVector::DotProduct(Vel, Across)), -50.f, 50.f);
     // The way in counts ("Kickflip + 50-50"); a plain ollie onto the rail is just the grind.
     FString Way = Trick.IsValid() && Trick.Name != TEXT("Ollie") ? Trick.Name.ToString() : FString();
     // The turn that sets the board across the rail (a slide) or backwards on it is part of the grind, not a spin.
@@ -869,18 +900,19 @@ bool USkateComponent::TryGrind()
 void USkateComponent::StepGrind(float H)
 {
     const FSkateRail& Line = RailSystem->Rails[Rail];
-    FVector Tangent; const FVector P = RailSystem->Sample(Rail, RailS, Tangent);
+    FVector Tangent; RailSystem->Sample(Rail, RailS, Tangent);
     const FVector T = Tangent * RailDir;
-    const float Friction = bSlide ? 130.f + RailSpeed * .10f : 45.f + RailSpeed * .04f;
-    RailSpeed += (-Gravity * T.Z - Friction) * H;
+    // Native support-load friction and lateral pin replace the unrelated random meter.
+    const float Friction = SkateNative::GrindFriction(FMath::Sqrt(FMath::Max(0.f, 1.f - float(T.Z * T.Z))), bSlide ? 55.f : (Line.IsSlideSurface() ? 40.f : 50.f), 1.3f) / 80.f * 100.f;
+    RailSpeed += (-Native.Gravity * 100.f * T.Z - Friction) * H;
     GrindTime += H;
     if (H > 0.f && RailSpeed < 40.f) { LeaveGrind(false, 0.f); return; }
     RailS += RailDir * RailSpeed * H;
     if (RailS < 0.f || RailS > Line.Length()) { LeaveGrind(false, 0.f); return; }
-    // Balance needle: it drifts and tips further the further it leans; the left stick pulls it back.
-    DriftClock -= H;
-    if (DriftClock <= 0.f) { Drift = (FMath::RandBool() ? 1.f : -1.f) * FMath::FRandRange(.35f, .8f); DriftClock = FMath::FRandRange(.5f, 1.1f); }
-    Balance += (Drift + Balance * 1.2f + In.Left.X * 2.6f) * H;
+    const float SideAcceleration = SkateNative::GrindPin(-RailOffset * .01f, RailSideSpeed * .01f) / 80.f;
+    RailSideSpeed += (SideAcceleration * 100.f + In.Left.X * 100.f) * H;
+    RailOffset += RailSideSpeed * H;
+    Balance = RailOffset / (bSlide ? 18.f : 12.f);
     if (FMath::Abs(Balance) > 1.f) { LeaveGrind(false, FMath::Sign(Balance)); return; }
     const FVector UpV = (FVector::UpVector - T * T.Z).GetSafeNormal();
     const FVector Heading = FQuat(UpV, FMath::DegreesToRadians(GrindYaw)).RotateVector(T);
@@ -889,7 +921,9 @@ void USkateComponent::StepGrind(float H)
     // board rides a few centimetres in from the edge.
     const float Drop = bSlide ? DeckThickness : HangerDrop;
     const FVector Inward = Line.IsSlideSurface() ? -Line.Side * 5.f : FVector::ZeroVector;
-    Pos = P + Inward + UpV * (Drop - DeckHeight);
+    FVector CurrentTangent;
+    const FVector CurrentPoint = RailSystem->Sample(Rail, RailS, CurrentTangent);
+    Pos = CurrentPoint + Inward + UpV * (Drop - DeckHeight) + FVector::CrossProduct(UpV, T).GetSafeNormal() * RailOffset;
     Vel = T * RailSpeed;
     FHitResult Hit;
     if (H > 0.f && MoveBody(Hit) && FVector::DotProduct(FVector(Hit.ImpactNormal), T) < -.5f) LeaveGrind(false, 0.f);
@@ -916,12 +950,14 @@ void USkateComponent::LeaveGrind(bool bPopOff, float SideKick)
 void USkateComponent::Pop(const FSkateTrick& Flicked, const FVector& Base, float Scale)
 {
     const FVector N = Mode == ESkateMode::Grind ? FVector::UpVector : Up();
-    const float Speed = FMath::Lerp(PopMin, PopMax, Flicked.Strength) * Scale;
+    const auto LaunchVelocity = SkateNative::GroundJump(Native, NativeVector(Base * .01f), NativeVector(N), Base.Size() * .01f,
+        Flicked.Strength, .85f - RideCrouch * .38f);
+    const FVector JumpVelocity(LaunchVelocity.X * 100.f, LaunchVelocity.Y * 100.f, LaunchVelocity.Z * 100.f);
     const bool bFromGrind = Mode == ESkateMode::Grind;
     if (bFromGrind) LeaveGrind(true, 0.f);
     if (bManual) AddCombo(bNoseManual ? TEXT("Nose Manual") : TEXT("Manual"), 40 + int32(60.f * ManualHold));
     bManual = false;
-    Vel = Base + N * Speed;
+    Vel = Base + (JumpVelocity - Base) * Scale;
     PlayCue(TEXT("pop"), .75f + .35f * Flicked.Strength, FMath::FRandRange(.95f, 1.05f));
     bPopped = true; bNolliePop = Flicked.bNollie; PopTime = 0.f; bCaught = false;
     SpinTotal = 0.f; SpinRate = In.Left.X * SpinWindUp;   // the wind-up
@@ -974,7 +1010,7 @@ void USkateComponent::StepBail(float Dt)
 {
     BailTime += Dt;
     // The board tumbles on by itself, bouncing on whatever is below.
-    BoardFreeVel.Z -= Gravity * Dt;
+    BoardFreeVel.Z -= Native.Gravity * 100.f * Dt;
     FVector Next = BoardFreePos + BoardFreeVel * Dt;
     FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(SkateLooseBoard), false, Rider);
     if (GetWorld()->SweepSingleByChannel(Hit, BoardFreePos, Next, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(5.f), Params))
@@ -1015,7 +1051,6 @@ void USkateComponent::EndBail()
 
 void USkateComponent::ReadInput(float Dt)
 {
-    Previous = In;
     if (bScripted) { In = Scripted; Flick.Power = -1.f; return; }
     APlayerController* PC = Rider ? Cast<APlayerController>(Rider->GetController()) : nullptr;
     FSkateInput I;
@@ -1073,12 +1108,19 @@ void USkateComponent::TickComponent(float Dt, ELevelTick Type, FActorComponentTi
 {
     Super::TickComponent(Dt, Type, Tick);
     if (!Rider || Mode == ESkateMode::Off) return;
-    ReadInput(Dt);
-    if (Mode == ESkateMode::Bail) { StepBail(Dt); UpdateClip(Dt); UpdateBoard(Dt); UpdateAudio(Dt); return; }
+    if (Mode == ESkateMode::Bail) { ReadInput(Dt); StepBail(Dt); }
+    UpdateClip(Dt);
+    UpdateBoard(Dt);
+    UpdateAudio(Dt);
+}
+
+void USkateComponent::StepControls(float Dt)
+{
     const float Speed = Vel.Size();
+    if (In.bPush) PushHeld = Previous.bPush ? PushHeld + Dt : Dt;
     LandTime += Dt; ComboFade = FMath::Max(0.f, ComboFade - Dt * .4f);
     // Flick-It
-    const FSkateTrick Flicked = Flick.Update(In.Right, Dt, bGoofy);
+    const FSkateTrick Flicked = ReadNativeFlick(Dt);
     if (Flicked.IsValid() && bMouseRight) bMouseSwiped = true;
     if (Flicked.IsValid())
     {
@@ -1136,20 +1178,18 @@ void USkateComponent::TickComponent(float Dt, ELevelTick Type, FActorComponentTi
         {
             if (In.Right.Size() < .2f) bManualLock = false;   // after a scrape, let go of the stick before the next manual
             if (Band != 0 && Speed > 80.f && !bPowerslide && LandTime > .15f && StickSpeed < 2.5f && !bManualLock) ManualHold += Dt; else ManualHold = 0.f;
-            if (ManualHold > .1f) { bManual = true; bNoseManual = Band < 0; Balance = 0.f; ManualHold = 0.f; bPushing = false; }
+            if (ManualHold > .1f) { bManual = true; bNoseManual = Band < 0; NativeManual = {}; ManualPitch = 0.f; Balance = 0.f; ManualHold = 0.f; bPushing = false; }
         }
         else
         {
             ManualHold += Dt;
             const float Mag = In.Right.Size();
-            const float Tilt = (bNoseManual ? In.Right.Y : -In.Right.Y);
-            DriftClock -= Dt;
-            // A slow wander to correct and a gentle tip-over away from the middle: held attentively it lasts, left alone
-            // it goes in about three seconds.
-            if (DriftClock <= 0.f) { Drift = (FMath::RandBool() ? 1.f : -1.f) * FMath::FRandRange(.1f, .25f); DriftClock = FMath::FRandRange(.9f, 1.6f); }
-            const float Control = Mag > .8f ? 0.f : (Tilt - .53f) * 4.f;
-            Balance += (Drift + Balance * .35f + Control) * Dt;
-            if (Mag < .2f || FMath::Abs(Balance) > 1.f || Speed < 40.f)
+
+            const float SignedBalance = FMath::Clamp(-float(In.Right.Y), -1.f, 1.f);
+            const float Correction = NativeManual.Update(Native, SignedBalance, FMath::DegreesToRadians(ManualPitch), Speed * .01f, RideClock, !bNoseManual, bNoseManual);
+            ManualPitch += FMath::RadiansToDegrees(Correction);
+            Balance = FMath::Clamp((FMath::Abs(ManualPitch) - 14.f) / 10.f, -1.2f, 1.2f);
+            if (Mag < .2f || FMath::Abs(ManualPitch) > Native.ManualMaxAngle || Speed < 40.f)
             {
                 AddCombo(bNoseManual ? TEXT("Nose Manual") : TEXT("Manual"), 40 + int32(60.f * ManualHold));
                 bManual = false; ManualHold = 0.f;
@@ -1171,7 +1211,7 @@ void USkateComponent::TickComponent(float Dt, ELevelTick Type, FActorComponentTi
         }
         bBraking = !bPowerslide && In.bBrake && Speed > 5.f;
         // Pushing: each press starts a stroke; holding keeps pushing.
-        if (In.bPush && !bPushing && !bManual && !bPowerslide && !bBraking && Flick.Load < .2f && LandTime > .3f && Speed < PushMax)
+        if (In.bPush && !bPushing && !bManual && !bPowerslide && !bBraking && Flick.Load < .2f && LandTime > .3f && Speed < Native.MaxPushSpeed * 100.f)
         { bPushing = true; PushTime = 0.f; PushStroke = 0.f; bPushAgain = false; }
         if (bPushing)
         {
@@ -1188,10 +1228,10 @@ void USkateComponent::TickComponent(float Dt, ELevelTick Type, FActorComponentTi
                 const bool bRecover = In.bPush && (PushTime >= ReleaseTime || bPushAgain);
                 PushTime += Dt * (bRecover ? PushRecover : 1.f);
             }
-            if (Before < PlantTime && PushTime >= PlantTime) { PushTime = PlantTime; PushStroke = 0.f; PlayCue(TEXT("push"), .55f, FMath::FRandRange(.92f, 1.08f)); }
-            if (Before < PushSwingFrom && PushTime >= PushSwingFrom && In.bPush && Speed < PushMax && Flick.Load < .2f)
+            if (Before < PlantTime && PushTime >= PlantTime) { PushTime = PlantTime; PushStroke = 0.f; PushTarget = Speed * .01f + FMath::Min(SkateNative::PushStrength(Native, PushHeld, Speed * .01f), Native.PushHoldingMax); PlayCue(TEXT("push"), .55f, FMath::FRandRange(.92f, 1.08f)); }
+            if (Before < PushSwingFrom && PushTime >= PushSwingFrom && In.bPush && Speed < Native.MaxPushSpeed * 100.f && Flick.Load < .2f)
             { PushTime = PushSwingTo + (PushTime - PushSwingFrom); bPushAgain = true; ++Serial; }   // blends across (ClipBlend)
-            if (PushTime >= PushLength) { if (In.bPush && Speed < PushMax) PushTime -= PushLength; else bPushing = false; }
+            if (PushTime >= PushLength) { if (In.bPush && Speed < Native.MaxPushSpeed * 100.f) PushTime -= PushLength; else bPushing = false; }
             if (Flick.Load > .3f || bManual || bPowerslide || bBraking) bPushing = false;
         }
         // The combo ends after a moment of plain rolling.
@@ -1199,9 +1239,6 @@ void USkateComponent::TickComponent(float Dt, ELevelTick Type, FActorComponentTi
         if (ComboIdle > .35f && !Combo.IsEmpty()) EndCombo(true);
     }
     else ComboIdle = 0.f;
-    UpdateClip(Dt);
-    UpdateBoard(Dt);
-    UpdateAudio(Dt);
 }
 
 // ---------------------------------------------------------------------------------------------------- animation
@@ -1253,7 +1290,7 @@ void USkateComponent::UpdateClip(float Dt)
     ClipTime = Time; bClipLoops = bLoop; ClipBlend = Blend;
     // Crouch (the load) and the carve lean only while simply riding.
     const bool bStance = Mode == ESkateMode::Ground && !bManual && !bPowerslide && !bPushing && LandTime > .2f;
-    CrouchAlpha = FMath::FInterpTo(CrouchAlpha, bStance ? Flick.Load : 0.f, Dt, 18.f);
+    CrouchAlpha = FMath::FInterpTo(CrouchAlpha, bStance ? FMath::Max(Flick.Load, RideCrouch) : 0.f, Dt, 18.f);
     const float Lean = bStance ? Steering * StanceSign() * (bFakie ? -1.f : 1.f) * FMath::Clamp(Vel.Size() / 450.f, 0.f, 1.f) * .9f : 0.f;
     LeanAlpha = FMath::FInterpTo(LeanAlpha, Lean, Dt, 7.f);
     // Limb contacts (goofy clips are mirrored, so the left and right limbs swap).
@@ -1298,7 +1335,7 @@ void USkateComponent::UpdateBoard(float Dt)
     // Manual tilt, eased: rocking up into a manual, setting the nose down after it, and tipping onto the back (or front)
     // wheels on the way down with the manual held, so the board lands into it.
     float TiltGoal = 0.f;
-    if (Mode == ESkateMode::Ground && bManual) TiltGoal = (11.f + Balance * 4.f) * (bNoseManual ? -1.f : 1.f);
+    if (Mode == ESkateMode::Ground && bManual) TiltGoal = ManualPitch;
     else if (Mode == ESkateMode::Air && Vel.Z < 0.f && Grab.IsNone() && (!bPopped || PopTime > .24f) && (!Trick.MovesBoard() || TrickTime >= TrickDuration))
     {
         const int32 Band = FSkateFlick::ManualBand(In.Right);
@@ -1315,7 +1352,7 @@ void USkateComponent::UpdateBoard(float Dt)
         Yaw = StanceSign() * (ShoveBase + (Trick.Shove - ShoveBase) * U);           // backside shove: the tail swings behind the heels
     }
     // Carving leans the deck over its trucks (toe or heel edge down), a few degrees at speed.
-    DeckLean = FMath::FInterpTo(DeckLean, Mode == ESkateMode::Ground && !bPowerslide ? Steering * 7.f * FMath::Clamp(Vel.Size() / 500.f, 0.f, 1.f) * (bFakie ? -1.f : 1.f) : 0.f, Dt, 8.f);
+    DeckLean = FMath::FInterpTo(DeckLean, Mode == ESkateMode::Ground && !bPowerslide ? FMath::RadiansToDegrees(NativeSteering.DeckTilt) : 0.f, Dt, 8.f);
     Roll += DeckLean;
     const FQuat PitchQ = FRotator(Pitch, 0, 0).Quaternion();
     const FQuat FlipQ = FQuat(FVector::UpVector, FMath::DegreesToRadians(Yaw)) * FQuat(FVector::ForwardVector, FMath::DegreesToRadians(Roll));
@@ -1328,7 +1365,7 @@ void USkateComponent::UpdateBoard(float Dt)
     // Trucks steer with the lean; wheels roll with the distance.
     const bool bRolling = Mode == ESkateMode::Ground;
     WheelAngle = FMath::Fmod(WheelAngle + (bRolling ? FMath::RadiansToDegrees(Vel.Size() * Dt / WheelRadius) * (bFakie ? -1.f : 1.f) : 0.f), 360.f);
-    for (int32 I = 0; I < Trucks.Num(); ++I) Trucks[I]->SetRelativeRotation(FRotator(0, (I == 0 ? 0.f : 180.f) + Steering * 6.f, I == 0 ? -DeckLean : DeckLean));
+    for (int32 I = 0; I < Trucks.Num(); ++I) Trucks[I]->SetRelativeRotation(FRotator(0, (I == 0 ? 0.f : 180.f) + FMath::RadiansToDegrees(NativeSteering.Targets[I % 2]), I == 0 ? -DeckLean : DeckLean));
     for (int32 I = 0; I < Wheels.Num(); ++I) Wheels[I]->SetRelativeRotation(FRotator(I < 2 ? -WheelAngle : WheelAngle, 0, 0));
 }
 

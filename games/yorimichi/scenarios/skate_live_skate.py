@@ -39,9 +39,12 @@ class _Park:
 live.park = _Park
 
 
-def scenario(lx, ly, heading, speed, events, duration=4.0, pitch=-12, cam=None):
+def scenario(lx, ly, heading, speed, events, duration=4.0, pitch=-12, cam=None, height=0.0, velocity_heading=None):
     live.park.place(lx, ly, heading); live.park.look(pitch, heading if cam is None else cam)
-    live.park.launch(speed, heading)
+    if height:
+        ground = live.L.ground_at(live.park.ue(lx, ly, 3.0))
+        live.skate_place(ground + unreal.Vector(0, 0, height * 100), -heading)
+    live.park.launch(speed, heading if velocity_heading is None else velocity_heading)
     expanded = []
     for when, what in events:
         if isinstance(what, tuple) and what[0] == 'flick':

@@ -20,6 +20,10 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
+    /** Original controller preset: easy, normal or hardcore. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
+    /** 0 loose / 1 tight; feeds the original steering scalar. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1")) float TruckTightness = .5f;
     /** The board parts (the board contract in the plugin README: deck top 9.05 cm above the ground, X nose). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;

@@ -9,7 +9,8 @@ Experimental. A game documents its own side (rider clips, parks, checks) in its 
 |---|---|
 | `USkateComponent` | the ride: board frame, ground, air, grinds, bails, input, clip choice, sounds, score |
 | `ISkateRider` | what the component needs from the character (clips by role, mount hook, input gates, contacts file) |
-| `FSkateFlick` (`SkateFlick.h`) | Flick-It: stick paths to tricks |
+| `SkateNative.h` / `SkateNativeTuning.h` | ported controllers, retail point curves and 78 Flick-It patterns |
+| `FSkateFlick` (`SkateFlick.h`) | input/trick types and crouch/manual input conditioning |
 | `USkateRailSubsystem` (`SkateRails.h`) | every grindable line in the world |
 | `USkateSettings` | board meshes, sound folder, fall sounds, rolling resistance by material name |
 
@@ -72,39 +73,35 @@ Directions are the right stick as seen by the player: **D** pulled toward you, *
 diagonals **DL, DR, UL, UR**. Everything below is **regular stance**; goofy mirrors left and right. Riding fakie
 prefixes the name ("Fakie Kickflip"), and a nollie pops from the nose.
 
-Pull the stick back to crouch (the load). The pop comes when the stick is flicked into the upper half. How hard the flick
-is (the stick's speed, or the mouse swipe's) sets most of the pop height and how long the load was held (up to 0.3 s)
-the rest: 28 cm for a gentle flick up to 1.2 m for a hard one (mouse swipes measured 57, 80 and 104 cm for gentle,
-medium and hard). A hard flick clears a handrail with room.
-A flick has to reach the rim within 0.25 s of leaving the load; a side flick (shove-it) has to rest at the side for
-50 ms or be let go there. U and D are 60 degrees wide, so a straight flick is an ollie and a diagonal has to be meant.
-While loaded, the left stick still steers (three quarters of the usual turn) and winds up a spin for the pop.
+The recognizer uses the original `skater.pat` points and tolerance circles: 78 path variants producing 30 named
+ollie/nollie-family tricks. It scores matching paths by their length, distance error and elapsed samples, and computes
+strength from sample timing. Holding the loaded point does not age the gesture. All recognition runs at 60 Hz.
+The exact primary paths are exposed in `live.FLICKS`; the committed definitions are in `SkateNativeTuning.h`.
 
-| Motion | Trick |
+| Motion (approximate; regular stance) | Trick |
 | --- | --- |
 | D, then U | Ollie |
-| D, then UL | Kickflip |
-| D, then UR | Heelflip |
-| D, then L | Backside pop shove-it |
-| D, then R | Frontside pop shove-it |
-| R, D, then U (sweep into the load from the right) | 360 backside shove-it |
-| L, D, then U | 360 frontside shove-it |
-| DR, then UL | Varial kickflip |
-| DL, then UR | Varial heelflip |
-| D, DL, then U | Hardflip |
-| D, DR, then U | Inward heelflip |
-| R, D, then UL | 360 flip (tre flip) |
-| L, D, then UR | Laser flip |
-| D, then UL, UL again before landing | Double kickflip (a second flick in the air adds a rotation) |
-| U, then D / DL / DR / L / R … | Nollie, nollie kickflip, nollie heelflip, nollie shove-its … (the same table turned upside down) |
+| D, then UR | Kickflip |
+| D, then UL | Heelflip |
+| D, DR, then UR | Backside pop shove-it |
+| D, DL, then UL | Frontside pop shove-it |
+| L, D, then UR | Varial kickflip / 360 flip, depending on the starting point and scoop |
+| R, D, then UL | Varial heelflip / laser flip |
+| R, D, then UR | Hardflip / 360 hardflip |
+| L, D, then UL | Inward heelflip / 360 inward heelflip |
+| U, then D | Nollie; other nose-loaded paths have their own authored variants |
+
+Pop height uses the retail speed/strength curves and subtracts the rider's current COM height before calculating the
+launch impulse. It also responds to ramp inclination. The host game supplies the COM estimate and its own animation.
+See [NATIVE_PORT.md](NATIVE_PORT.md) for exactly which computations are ported and which remain UE adapters.
 
 Flip and shove rotations are the board's; the rider's body only spins with the left stick. Tricks can be done off
 any pop: from flat, a manual, a grind (flick to pop out) or the lip of a ramp.
 
 **Manuals.** Tilt the right stick part-way down (manual) or up (nose manual), 30–75% of its travel, and hold it. A
-balance needle drifts slowly; keep it centred with small stick movements (balanced is a little past half-way). Held at
-half-way without correcting, a manual lasts about 5 s; a tenth of the travel off, about 2 s. Too far and the tail (or
-nose) touches and you ride out of it. Flick to pop out of a manual.
+pitch controller follows that stick position with the retail proportional, integral, derivative and procedural-noise
+settings. The needle reflects deck pitch. Excess tilt scrapes and ends the manual; neutral releases it. Flick to pop
+out of a manual. A stationary half-stick no longer loses balance due to an unrelated random timer.
 Hold the manual on the way down and the trick lands straight into it: the board tips onto its back wheels (front
 wheels for a nose manual) in the air and touches down in the manual, with no flat landing first. The tilt eases in and
 out (into a manual, and setting the nose down after one) rather than snapping.
@@ -159,13 +156,13 @@ landing (a manual or grind keeps it going) and scores its points times the numbe
   surfaces' own normals under the wheels (a plane through the hit points tips on every seam) at the hits' height.
   Gravity along the surface, rolling resistance by the material under the board (`USkateSettings::Surfaces`: for example roads,
   concrete, wood and the park 1x, rough lanes 4x, sand and dirt 12x, grass 20x, mud 25x), air drag, lateral grip (the wheels roll only along the
-  heading). Steering turns the heading and the velocity together about the normal, less at speed. A wheel meeting a
+  heading). The native steering/truck curves turn the heading; finite lateral grip redirects momentum, with a lateral acceleration cap in the UE adapter. A wheel meeting a
   rise over 3.5 cm that is not a ramp coming up ahead is a step: a bump, or a trip at speed.
 - **Transitions and edges.** Concave (the leading wheels' surfaces tip back against the travel): the board always
   follows, up to vertical; carving leans the deck a few degrees over its trucks. Convex: it leaves the ground when the leading wheels' ground falls away (over 1 cm) faster
   than gravity can bend the path (v^2 x curvature > g x cos + 3.5 m/s^2); with no ground at all under the wheels (a lip,
   the coping, a kicker) it simply flies.
-- **Air.** Ballistic at 11 m/s^2, spins integrate a yaw rate about the board's up. The board turns toward the normal
+- **Air.** Ballistic at the retail 9.8 m/s^2, spins integrate a yaw rate about the board's up. The board turns toward the normal
   of the landing surface found by sweeping the flight path; off a wall (a vert air) it stays square to the wall and
   touches back down on it, riding away fakie unless it spun.
 - **Landing.** Checks the angle between board heading and velocity (fakie allowed), the flip/shove state, grabs and the
@@ -173,13 +170,15 @@ landing (a manual or grind keeps it going) and scores its points times the numbe
 - **Grinds.** Rails are whatever the game adds to `USkateRailSubsystem` (a park's rails, ledges and coping, road guardrails). While
   falling, a truck within 22 cm horizontally and 0–35 cm above a rail captures the board; it then moves along the rail
   (grinds lose speed slowly, slides faster), with a balance needle.
-- **Pushing** adds speed only while the pushing foot is on the ground (plant to release in the push clip, stretched to the
-  distance rolled so the foot stays planted), about the same for every stroke and fading to nothing at 1250 cm/s
-  (45 km/h); hills can take you faster (hard limit 2200 cm/s). Held from a standstill: 240 cm/s after 1 s, 600 after
-  3 s, 830 after 6 s. Held, it keeps pushing: after the stroke the foot swings straight back to its plant beside the
-  front truck (the clip from its lift at 0.72 s, blended to its swing at 0.21 s) instead of returning to the tail, and
-  the swing plays at 0.28 speed so there is a push about every 0.6 s, not a scramble. Rolling fakie, a push is a switch
-  push: the other stance's clip (the other foot on the ground), so it drives the board the way it is rolling.
+- **Pushing** uses the retail held-time/strength curves and speed-target force limits only while the foot is planted.
+  Pushing stops at 8.5 m/s (30.6 km/h); downhill travel can exceed that, with a UE safety ceiling of 28 m/s.
+  The existing Cairo push clip supplies contact and swing timing. Fakie uses the opposite stance's pushing clip.
+- **Pumping** uses the change in rider COM height and ground-normal angular speed. Crouch into a transition and
+  extend through it (release the right stick toward neutral). Flat-ground crouching cannot generate speed.
+- **Landings** retain the board heading and tangent velocity. Retail landing quality classifies sideways speed and
+  remaining spin; the UE grip adapter then recovers alignment over time.
+- **Timing** is a fixed 60 Hz accumulator for input recognition and gameplay, with 120 Hz collision substeps. Animation and audio are
+  presented each render frame. At most 0.1 s is simulated after a hitch; teleport/mount resets controller history.
 - **Rider.** The mesh stands by its Root bone on the board's ground point, turned so the nose is on the rider's left
   (regular) or right (goofy). The anim graph plays the state's clip at the component's time, blends the load crouch
   and the carve lean over it, then carries every limb the clip has on the board through the board's motion

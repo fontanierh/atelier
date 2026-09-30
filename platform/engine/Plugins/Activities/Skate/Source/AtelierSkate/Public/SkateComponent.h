@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "SkateFlick.h"
+#include "SkateNativeTuning.h"
 #include "SkateComponent.generated.h"
 
 class ACharacter;
@@ -120,6 +121,22 @@ private:
     ESkateMode Mode = ESkateMode::Off;
     FSkateInput In, Scripted, Previous;
     FSkateFlick Flick;
+    SkateNative::Settings Native;
+    SkateNative::Steering NativeSteering;
+    SkateNative::Pumping NativePump;
+    SkateNative::Manual NativeManual;
+    SkateNative::Gestures NativeGestures;
+    SkateNative::Landing NativeLanding;
+    SkateNative::FixedClock SimulationClock;
+    float RideClock = 0.f, RideCrouch = 0.f, NoInputTime = 0.f;
+    float NativePushAcceleration = 0.f, NativePumpAcceleration = 0.f;
+    float PushHeld = 0.f, PushTarget = 0.f, LandingRecovery = 0.f, ManualPitch = 0.f;
+    float RailOffset = 0.f, RailSideSpeed = 0.f;
+    FVector AirAssistOffset = FVector::ZeroVector;
+    void ResetControllers();
+    void StepControls(float Dt);
+    FSkateTrick ReadNativeFlick(float Dt);
+    void AssistGrind(float H);
     FVector2D MouseStick = FVector2D::ZeroVector;
     // The mouse stick springs back to the centre a moment after a flick it made (not after the load's pull).
     float MouseQuiet = 0.f; bool bMouseSwiped = false, bMouseRight = false;
@@ -141,7 +158,7 @@ private:
     FVector SlideTravel = FVector::ForwardVector;
     bool bPushing = false, bPushAgain = false; float PushTime = 0.f, PushStroke = 0.f;
     float LandTime = 10.f, SinceGrounded = 0.f, GroundTime = 0.f;
-    float Balance = 0.f, Drift = 0.f, DriftClock = 0.f;
+    float Balance = 0.f;
     float ManualTilt = 0.f;   // degrees the board is tipped on its back (+) or front (-) wheels, eased
     float BumpCooldown = 0.f;
     float RevertLeft = 0.f, RevertSign = 1.f, DeckLean = 0.f;   // a revert still turning (degrees left); the carve's deck roll
@@ -198,7 +215,7 @@ private:
     float StanceSign() const { return bGoofy ? -1.f : 1.f; }
     void ReadInput(float Dt);
     void Enter(ESkateMode Next);
-    void StepGround(float H);
+    void StepGround(float H, bool bControllerTick);
     void StepAir(float H);
     void StepGrind(float H);
     void StepBail(float H);
