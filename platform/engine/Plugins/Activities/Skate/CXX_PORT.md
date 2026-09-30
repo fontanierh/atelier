@@ -111,6 +111,8 @@ compiled records consumed by the shared solver, including opaque joint identifie
 the original definition-to-live body reversal and stock/custom parameter/frame words.
 `TruckDriveFrames.*`, `DrivePreparation.*` and `HookDrive.*` retain steering frame order, repeated
 normalization, untouched translation lanes and the live animation-drive lifecycle.
+`BoardPose.*` preserves part/mass-frame conversion, both distinct orthonormalization paths,
+live body/inertia updates and whole-board movement with the separate original hook request.
 `ContactGeneration.*` constructs the original tangents, copied force/inertia workspaces and typed
 compiled contact facade. Complete body ownership and scheduling remain open. These comparisons establish
 parity with the frozen Rust reconstruction, including its documented unresolved retail joint-matrix
@@ -270,6 +272,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Truck/hook drive frames and lifecycle: 8,022 cases and 941,372 exact words, including 612 stateful
   hook programs, 16,819 duplicate and 2,920 null registrations, carried translation lanes and
   non-normalizing hook setters. Four invalid registration fixtures fail on both original and C++.
+- Board/part pose operations: 6,070 cases and 1,018,929 exact words, including 1,072 reused optional
+  part programs, all eight body/mass/inertia presence masks and 765 complete board/hook requests.
+  Full raw pose/body/inertia records retain the original fourth lanes and unrelated live rates/forces.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
