@@ -1,0 +1,44 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "entry-glimpse",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "entry-glimpse.prompt.txt",
+  "prompt_sha256": "ec4a5da56b28de31dc5121f42535e4e1998dc22b923ed221d7c0f34418863b91",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/entry-glimpse.jpg": "f8ce51cd7df7adad686c0540d5a78fd81be1ee2c674045319dd7d4952f68d03a",
+    "games/yorimichi/assets/treehouse/concepts/glimpse-day.jpg": "6220db9b44ca3a14f59f433042ea908a781a1182074b8effa7bd2bdc28cf07de",
+    "build/yorimichi/treehouse/scout/player/P1-upper-slope-down.png": "d9f933f34623836f58c0e8f70af72e422226220cb0cba7d67e7ac3a0446eebda",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T20:47:06.032413+00:00",
+  "finished_at": "2026-09-29T20:47:41.564066+00:00",
+  "elapsed_seconds": 35.5,
+  "usage": {
+    "input_tokens": 5167,
+    "input_tokens_details": {
+      "image_tokens": 3840,
+      "text_tokens": 1327
+    },
+    "output_tokens": 1372,
+    "total_tokens": 6539,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "entry-glimpse.png": "96c5ec12a4a9464cd39fa46f6c8c8aaa16bddbd26fbe83d4c938f66d28c5548f"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "entry-glimpse.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

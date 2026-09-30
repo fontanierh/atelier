@@ -19,6 +19,9 @@ This page is the current state and an index. Updated 24 September 2026. Details 
 - the [Hidamari city](hidamari/README.md): arcade, plaza, harbor, park and station, with residents but no
   interiors
 - the [southwest](southwest/README.md) fishing village, beach and island temple
+- the hidden [tree house](../world/regions/treehouse/README.md) on the west hillside: one small hut seen from the
+  trail, then ten places in the canopy joined by twelve rope bridges, with furnished rooms, a slide and a lookout
+  ([plan](TREEHOUSE_PLAN.md), [items](TREEHOUSE_ITEMS.md))
 
 Ways to get around besides walking: a playable [sailboat](sailboat/README.md) and the
 [zeppelin](docs/zeppelin/README.md) between the woodland and Hidamari. Ambient life: leaves, gulls and

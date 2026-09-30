@@ -1,0 +1,336 @@
+{
+ "shots": [
+  {
+   "id": "entry-glimpse",
+   "camera_position": [
+    -128.5,
+    214.5,
+    78.445
+   ],
+   "camera_target": [
+    -135.0,
+    198.5,
+    78.4
+   ],
+   "fov": 70
+  },
+  {
+   "id": "entry-inside",
+   "camera_position": [
+    -133.9,
+    199.45,
+    78.45
+   ],
+   "camera_target": [
+    -136.4,
+    197.8,
+    78.1
+   ],
+   "fov": 90
+  },
+  {
+   "id": "entry-reveal",
+   "camera_position": [
+    -134.6,
+    196.2,
+    78.55
+   ],
+   "camera_target": [
+    -139.0,
+    165.0,
+    72.5
+   ],
+   "fov": 80
+  },
+  {
+   "id": "library-approach",
+   "camera_position": [
+    -137.954,
+    194.069,
+    78.115
+   ],
+   "camera_target": [
+    -144.0,
+    185.0,
+    77.2
+   ],
+   "fov": 70
+  },
+  {
+   "id": "library-inside",
+   "camera_position": [
+    -144.263,
+    187.267,
+    77.3
+   ],
+   "camera_target": [
+    -146.561,
+    185.707,
+    76.8
+   ],
+   "fov": 88
+  },
+  {
+   "id": "kitchen-inside",
+   "camera_position": [
+    -117.87,
+    177.134,
+    76.3
+   ],
+   "camera_target": [
+    -115.103,
+    176.898,
+    75.8
+   ],
+   "fov": 88
+  },
+  {
+   "id": "sleep-inside",
+   "camera_position": [
+    -161.506,
+    173.745,
+    76.3
+   ],
+   "camera_target": [
+    -162.553,
+    171.173,
+    75.8
+   ],
+   "fov": 88
+  },
+  {
+   "id": "heart-approach",
+   "camera_position": [
+    -139.272,
+    178.817,
+    76.414
+   ],
+   "camera_target": [
+    -131.0,
+    168.0,
+    76.4
+   ],
+   "fov": 72
+  },
+  {
+   "id": "heart-inside",
+   "camera_position": [
+    -133.51,
+    170.51,
+    75.7
+   ],
+   "camera_target": [
+    -129.539,
+    164.384,
+    75.45
+   ],
+   "fov": 92
+  },
+  {
+   "id": "kitchen-approach",
+   "camera_position": [
+    -125.393,
+    170.803,
+    75.73
+   ],
+   "camera_target": [
+    -117.0,
+    175.0,
+    76.2
+   ],
+   "fov": 72
+  },
+  {
+   "id": "sleep-approach",
+   "camera_position": [
+    -149.809,
+    180.28,
+    76.67
+   ],
+   "camera_target": [
+    -160.0,
+    172.0,
+    76.2
+   ],
+   "fov": 72
+  },
+  {
+   "id": "boat-approach",
+   "camera_position": [
+    -114.303,
+    169.607,
+    75.815
+   ],
+   "camera_target": [
+    -110.0,
+    161.0,
+    75.2
+   ],
+   "fov": 72
+  },
+  {
+   "id": "boat-inside",
+   "camera_position": [
+    -108.177,
+    157.564,
+    75.15
+   ],
+   "camera_target": [
+    -107.982,
+    161.888,
+    75.15
+   ],
+   "fov": 85
+  },
+  {
+   "id": "slide-approach",
+   "camera_position": [
+    -114.658,
+    156.342,
+    74.758
+   ],
+   "camera_target": [
+    -122.0,
+    149.0,
+    70.3
+   ],
+   "fov": 75
+  },
+  {
+   "id": "slide-foot",
+   "camera_position": [
+    -116.215,
+    142.106,
+    57.282
+   ],
+   "camera_target": [
+    -122.0,
+    149.0,
+    68.8
+   ],
+   "fov": 78
+  },
+  {
+   "id": "pulley-approach",
+   "camera_position": [
+    -140.354,
+    162.584,
+    74.931
+   ],
+   "camera_target": [
+    -150.0,
+    157.0,
+    74.8
+   ],
+   "fov": 72
+  },
+  {
+   "id": "chimes-approach",
+   "camera_position": [
+    -133.519,
+    153.516,
+    74.186
+   ],
+   "camera_target": [
+    -135.0,
+    145.0,
+    73.8
+   ],
+   "fov": 72
+  },
+  {
+   "id": "lookout-approach",
+   "camera_position": [
+    -139.174,
+    143.395,
+    73.608
+   ],
+   "camera_target": [
+    -148.0,
+    140.0,
+    77.3
+   ],
+   "fov": 78
+  },
+  {
+   "id": "crow-sea",
+   "camera_position": [
+    -148.3,
+    138.55,
+    84.3
+   ],
+   "camera_target": [
+    -156.0,
+    80.0,
+    72.6
+   ],
+   "fov": 80
+  },
+  {
+   "id": "crow-back",
+   "camera_position": [
+    -147.6,
+    138.1,
+    84.4
+   ],
+   "camera_target": [
+    -132.0,
+    172.0,
+    71.0
+   ],
+   "fov": 80
+  },
+  {
+   "id": "overview-south",
+   "camera_position": [
+    -128.0,
+    100.0,
+    112.0
+   ],
+   "camera_target": [
+    -134.0,
+    168.0,
+    70.0
+   ],
+   "fov": 55
+  },
+  {
+   "id": "overview-east",
+   "camera_position": [
+    -68.0,
+    158.0,
+    102.0
+   ],
+   "camera_target": [
+    -135.0,
+    168.0,
+    70.0
+   ],
+   "fov": 55
+  }
+ ],
+ "from_labels": {
+  "entry-glimpse": "blockout-r01",
+  "entry-inside": "blockout-r01",
+  "entry-reveal": "blockout-r02",
+  "library-approach": "blockout-r01",
+  "library-inside": "blockout-r03",
+  "kitchen-inside": "blockout-r03",
+  "sleep-inside": "blockout-r03",
+  "heart-approach": "blockout-r01",
+  "heart-inside": "blockout-r01",
+  "kitchen-approach": "blockout-r01",
+  "sleep-approach": "blockout-r01",
+  "boat-approach": "blockout-r01",
+  "boat-inside": "blockout-r01",
+  "slide-approach": "blockout-r01",
+  "slide-foot": "blockout-r03",
+  "pulley-approach": "blockout-r01",
+  "chimes-approach": "blockout-r01",
+  "lookout-approach": "blockout-r01",
+  "crow-sea": "blockout-r02",
+  "crow-back": "blockout-r01",
+  "overview-south": "blockout-r01",
+  "overview-east": "blockout-r01"
+ }
+}

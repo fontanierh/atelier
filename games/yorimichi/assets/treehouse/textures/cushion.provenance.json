@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "cushion",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "94c226f469451d854b5ae112bd848c20100140a5f38ad2fa9b861a7876dc923f",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/heart-inside.jpg": "1fb76e3958c2e3b8c5a4c8ebeb82703a60f5698ab8551eb10aa205421465c27f"
+  },
+  "started_at": "2026-09-29T21:23:08.300393+00:00",
+  "finished_at": "2026-09-29T21:23:45.981449+00:00",
+  "elapsed_seconds": 37.7,
+  "usage": {
+    "input_tokens": 1207,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 127
+    },
+    "output_tokens": 1756,
+    "total_tokens": 2963,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "78b0df107772a3f1aa644ec342a6617a1933157cd545f349d3c0caeed4b3fcf4",
+  "error": null,
+  "compact_copy": {
+    "file": "cushion.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

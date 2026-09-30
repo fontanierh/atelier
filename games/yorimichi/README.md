@@ -28,7 +28,7 @@ it in Unreal's first shader compile.
 |---|---|
 | `game.toml` | this game's description for Atelier: project, fetches, play profiles |
 | `build.py` | the build recipe |
-| `world/` | island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` (Momiji Hamlet, Hidamari, the southwest, the mini-mega ramp, the woodland lake, the zeppelin stations, the skate pier); `world/map` (map tools and the painted sheet) |
+| `world/` | island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` (Momiji Hamlet, Hidamari, the southwest, the mini-mega ramp, the woodland lake, the zeppelin stations, the skate pier, the tree house); `world/map` (map tools and the painted sheet) |
 | `assets/characters/` | the player (`cairo`), the enemy (`fox-hunter`) and the villagers (`wanderer`): source files, manifests, exporters |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds themselves are built, not committed) |
 | `assets/fx/`, `assets/props/`, `assets/vehicles/` | effect sprites, live-workshop props, the sailboat |

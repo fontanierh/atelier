@@ -1,0 +1,47 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "entry-reveal",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "entry-reveal.prompt.txt",
+  "prompt_sha256": "16d96ba879efc16f2fedb659f0cc61ce0c755a3eee58589632e3b7c99e240b84",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/entry-reveal.jpg": "b19792263bd36047a329e65a4cf31cd6af262a2e5885a5296db7757a858aa750",
+    "games/yorimichi/assets/treehouse/refs/master.jpg": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103",
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "games/yorimichi/assets/treehouse/concepts/reveal-day.jpg": "09dd1e3cf493432137ad186bcd243aa5b5d560e9d0325dbd750c44377ae395f3",
+    "build/yorimichi/treehouse/scout/player/P1-upper-slope-down.png": "d9f933f34623836f58c0e8f70af72e422226220cb0cba7d67e7ac3a0446eebda",
+    "games/yorimichi/assets/treehouse/refs/overview-south.jpg": "3f28caa84d2acd2a47b815cea1bb28dcee373c38f02a627c9f94351c921e5d75",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T20:43:10.745365+00:00",
+  "finished_at": "2026-09-29T20:43:47.983551+00:00",
+  "elapsed_seconds": 37.2,
+  "usage": {
+    "input_tokens": 8754,
+    "input_tokens_details": {
+      "image_tokens": 7280,
+      "text_tokens": 1474
+    },
+    "output_tokens": 1372,
+    "total_tokens": 10126,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "entry-reveal.png": "5856d02247d91acf52f27981204bc50fb79706bbefec932014acb8b93aeae019"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "entry-reveal.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

@@ -1,0 +1,36 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "bark",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "ca1f7915881cde66e58a7e93230cf2bf2ec38a9e97be17cbf1c3360bef206c85",
+  "reference_files": {},
+  "started_at": "2026-09-29T21:21:37.029509+00:00",
+  "finished_at": "2026-09-29T21:22:25.427037+00:00",
+  "elapsed_seconds": 48.4,
+  "usage": {
+    "input_tokens": 140,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 140
+    },
+    "output_tokens": 1756,
+    "total_tokens": 1896,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "75c65d0aacd608a808aaee02b8a85d5f8a147cd3e1b000aaa59b657adb185abe",
+  "error": null,
+  "compact_copy": {
+    "file": "bark.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

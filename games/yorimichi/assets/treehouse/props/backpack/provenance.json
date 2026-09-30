@@ -1,0 +1,39 @@
+{
+  "stage": "treehouse-prop-concept",
+  "slug": "backpack",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_props.py",
+  "prompt_sha256": "339d69b2f87ab08de832bc8a32acd2ad38e555dc28ab9f8f8105a903f871a374",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/entry-inside.jpg": "6022135f71736691bb8faecfae3fdd50f7ba104b0850cdba68adadd36d76ca62",
+    "games/yorimichi/assets/treehouse/refs/library-inside.jpg": "f05b13f8c2b15ec2c6bc37c12e379216839f4448b972b28eccd0cf88273d1944"
+  },
+  "started_at": "2026-09-29T21:17:26.119433+00:00",
+  "finished_at": "2026-09-29T21:18:01.321716+00:00",
+  "elapsed_seconds": 35.2,
+  "usage": {
+    "input_tokens": 2401,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 241
+    },
+    "output_tokens": 1756,
+    "total_tokens": 4157,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "concept_sha256": "9bcd2a0f9d445fc02cef268533c7024a6a6ce2db434b115a76cb699775debe83",
+  "error": null,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

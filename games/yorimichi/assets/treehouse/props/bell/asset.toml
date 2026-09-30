@@ -1,0 +1,9 @@
+# Tree house prop: a brass ship's bell hanging from a short curved wooden bracket, with a braided rope pull hanging from its clapper.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-bell"
+kind = "prop"
+model = "bell.glb"                    # fitted to 0.75 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs crow-sea, heart-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

@@ -87,6 +87,11 @@ def main():
     EAL.save_loaded_asset(terrain)
     # the sea plane (re-exported by build_terrain): a real water material instead of the painted tile
     sea=V.import_mesh(ROOT/'assets/Sea.fbx','/Game/Japan/Assets','Sea')
+    if sea.get_bounding_box().max.x<100000:
+        # The world setup imports the sea through Interchange, and the first FBX reimport over that import data skips
+        # the unit conversion (a sea 100 times too small); the second finds FBX data to update and imports in metres.
+        sea=V.import_mesh(ROOT/'assets/Sea.fbx','/Game/Japan/Assets','Sea')
+    assert sea.get_bounding_box().max.x>100000,'Sea imported at the wrong scale'
     sea.set_material(0,sea_material())
     EAL.save_loaded_asset(sea)
     (OUT/'import-report.json').write_text(json.dumps(report,indent=2));unreal.log('SOUTHWEST IMPORT COMPLETE %d meshes'%len(report))

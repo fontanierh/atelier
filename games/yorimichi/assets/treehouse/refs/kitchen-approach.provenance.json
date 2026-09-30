@@ -1,0 +1,47 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "kitchen-approach",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "kitchen-approach.prompt.txt",
+  "prompt_sha256": "021c078476b79a9fa25f2fab19b9ec850ce45e55ccd2062929947b9c0e3cbbf0",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/kitchen-approach.jpg": "ff5f4c4642ae5f6cf1cae6ff6856ac5dc92d29e0cfd8e34dae694c768f6682c8",
+    "games/yorimichi/assets/treehouse/refs/master.jpg": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103",
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "games/yorimichi/assets/treehouse/concepts/overview-day.jpg": "13d39b9ef3f1034da5e71ce13f01bd6a563017ba108ddafe915d937dc8fe7d05",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8",
+    "games/yorimichi/assets/treehouse/refs/crow-back.jpg": "d82d315318c92fe7cb9edcd4c2e7567372c0ec464fbf40be35d8876de25d6f0d",
+    "games/yorimichi/assets/treehouse/refs/overview-east.jpg": "ab227745a6a63d9dc7f66d2c659e8a7c352253098d747caa787c21ac0bddbf70"
+  },
+  "started_at": "2026-09-29T20:43:56.247767+00:00",
+  "finished_at": "2026-09-29T20:44:47.567348+00:00",
+  "elapsed_seconds": 51.3,
+  "usage": {
+    "input_tokens": 8777,
+    "input_tokens_details": {
+      "image_tokens": 7440,
+      "text_tokens": 1337
+    },
+    "output_tokens": 1372,
+    "total_tokens": 10149,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "kitchen-approach.png": "df1d045584f70f21ddc3b54a268b8ad39367c52383f4164bfb26e37db3882baf"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "kitchen-approach.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

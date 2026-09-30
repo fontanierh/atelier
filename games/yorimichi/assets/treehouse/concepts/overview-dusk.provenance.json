@@ -1,0 +1,43 @@
+{
+  "stage": "treehouse-concept",
+  "concept": "overview-dusk",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_concepts.py",
+  "prompt_file": "overview-dusk.prompt.txt",
+  "prompt_sha256": "87dbae2d735f3dcb3e23133f5992ee8b8014a5c353a8a1c12601b95953423256",
+  "reference_files": {
+    "build/yorimichi/treehouse/scout/r01/A3-aerial.png": "d2252d99024413fd0f5998f62d3ae977f4a23f76156d2cfc96135cd098861a82",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8",
+    "build/yorimichi/treehouse/scout/player/P1-upper-slope-down.png": "d9f933f34623836f58c0e8f70af72e422226220cb0cba7d67e7ac3a0446eebda"
+  },
+  "started_at": "2026-09-29T19:47:11.905494+00:00",
+  "finished_at": "2026-09-29T19:47:53.896514+00:00",
+  "elapsed_seconds": 42.0,
+  "usage": {
+    "input_tokens": 3446,
+    "input_tokens_details": {
+      "image_tokens": 2760,
+      "text_tokens": 686
+    },
+    "output_tokens": 1372,
+    "total_tokens": 4818,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "overview-dusk.png": "e97e64afe554127025eb68274c4c4c864857aa35a49bf003ac49f95f90770e8d"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "overview-dusk.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

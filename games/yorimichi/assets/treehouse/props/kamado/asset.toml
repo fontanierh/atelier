@@ -1,0 +1,9 @@
+# Tree house prop: a small rounded clay-and-stone kamado cooking stove, grey-brown plastered body with a glowing arched fire opening at the front, a black cast-iron kettle and a black iron pot with a wooden lid sitting on top, a few split logs stacked against its base.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-kamado"
+kind = "prop"
+model = "kamado.glb"                  # fitted to 1.05 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs kitchen-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

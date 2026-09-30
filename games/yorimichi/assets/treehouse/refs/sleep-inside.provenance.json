@@ -1,0 +1,46 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "sleep-inside",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "sleep-inside.prompt.txt",
+  "prompt_sha256": "4364659c4c5a5cbff887ee66b861d83790664293be6b1c70f10f8c22ee1d3132",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/sleep-inside.jpg": "ecff80c86078875297b3c8e05b019d88e2c30f4d8f818914264c9e8438302036",
+    "games/yorimichi/assets/treehouse/refs/master.jpg": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103",
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "games/yorimichi/assets/treehouse/concepts/room-day.jpg": "164affa3f6dfb77c59f3f98002e70b052d0dfc37544a781678dee7be6f323db9",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8",
+    "games/yorimichi/assets/treehouse/refs/sleep-approach.jpg": "3af8284081207e6e0367d0c764e817a856026cd2eb712d88463d1b9fc2fec870"
+  },
+  "started_at": "2026-09-29T20:45:14.127310+00:00",
+  "finished_at": "2026-09-29T20:45:50.978999+00:00",
+  "elapsed_seconds": 36.9,
+  "usage": {
+    "input_tokens": 7546,
+    "input_tokens_details": {
+      "image_tokens": 6360,
+      "text_tokens": 1186
+    },
+    "output_tokens": 1372,
+    "total_tokens": 8918,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "sleep-inside.png": "e74b4873b38f1f44990566807ca1ca44601060daa4d5ac1081d1a065a77e3801"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "sleep-inside.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

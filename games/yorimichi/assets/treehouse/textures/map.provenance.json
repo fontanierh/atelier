@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "map",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "5afa41c292092ed3cb216e870111ab4235f6e0c4476e34c22f8fa2df7e56e742",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/library-inside.jpg": "f05b13f8c2b15ec2c6bc37c12e379216839f4448b972b28eccd0cf88273d1944"
+  },
+  "started_at": "2026-09-29T21:22:32.270453+00:00",
+  "finished_at": "2026-09-29T21:23:15.064655+00:00",
+  "elapsed_seconds": 42.8,
+  "usage": {
+    "input_tokens": 1232,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 152
+    },
+    "output_tokens": 1756,
+    "total_tokens": 2988,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "99a02d5fe66f5d9901c2eec4c96e408679cfd22823bd7f1c3a336fa4f6dd6314",
+  "error": null,
+  "compact_copy": {
+    "file": "map.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-prop-concept",
+  "slug": "basket",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_props.py",
+  "prompt_sha256": "ebdf04da659decf72294556e4877cb0cfb290bc7c34bf6d84bdd2db73a73391c",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/pulley-approach.jpg": "9898e0e94d600535095b011bfb2285a135d86710f2758dbca301088a709c628d"
+  },
+  "started_at": "2026-09-29T21:17:26.119787+00:00",
+  "finished_at": "2026-09-29T21:17:57.641722+00:00",
+  "elapsed_seconds": 31.5,
+  "usage": {
+    "input_tokens": 1298,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 218
+    },
+    "output_tokens": 1756,
+    "total_tokens": 3054,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "concept_sha256": "129cac241318917e09685c10cf2a2fb14de840765e4752a48a3ee3817cded5c3",
+  "error": null,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

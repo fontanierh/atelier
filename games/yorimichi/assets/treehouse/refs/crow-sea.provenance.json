@@ -1,0 +1,45 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "crow-sea",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "crow-sea.prompt.txt",
+  "prompt_sha256": "70edcb5c1cbf58c6cb800919e475ea1d921b6f81ebe64c64c398bf3317c59f89",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/crow-sea.jpg": "c118b92fb8723717075849ce70f2b97bc5b34f4bd3dab22360b884d4580c0aea",
+    "games/yorimichi/assets/treehouse/concepts/lookout-day.jpg": "73652813e6ba55c107b6a8e572ab5ba036759cd7386834158c8ca4d6aeba71ab",
+    "build/yorimichi/treehouse/scout/r02/A10-canopy-low-end.png": "e97b42c7315d8262af9a5f9b4e2f04338fde208952bb5dc0a45437417359f591",
+    "games/yorimichi/assets/treehouse/refs/lookout-approach.jpg": "46c2fd1044f27d308fa016fe2dbdbbc5c82711d597a8454cab366b4eb0867f47",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T20:48:58.393361+00:00",
+  "finished_at": "2026-09-29T20:49:34.926010+00:00",
+  "elapsed_seconds": 36.5,
+  "usage": {
+    "input_tokens": 6079,
+    "input_tokens_details": {
+      "image_tokens": 4920,
+      "text_tokens": 1159
+    },
+    "output_tokens": 1372,
+    "total_tokens": 7451,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "crow-sea.png": "3cbc1ccc56fe739e8695e4ae7ea80dc63e6bcdacb9336f9f3b880157e5bed09e"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "crow-sea.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-prop-concept",
+  "slug": "log_table",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_props.py",
+  "prompt_sha256": "fcbf0d3ddff5410f229b8499a32ba763b2eb31a59b6e47bb22ab4a100d413ad0",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/kitchen-inside.jpg": "34bd6c2478be6da6dc06f408b5acb82a3bb2a4416eb4cc8eb7209cb94b297845"
+  },
+  "started_at": "2026-09-29T21:17:59.154676+00:00",
+  "finished_at": "2026-09-29T21:18:33.175664+00:00",
+  "elapsed_seconds": 34.0,
+  "usage": {
+    "input_tokens": 1318,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 238
+    },
+    "output_tokens": 1756,
+    "total_tokens": 3074,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "concept_sha256": "6eb6e87a1142a85fd72810aa3eba51b564d0baa4e020298ec93d38e7c34aed56",
+  "error": null,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

@@ -5,6 +5,7 @@
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Engine/StaticMesh.h"
@@ -50,6 +51,27 @@ void AJapanWorld::Load()
     TSharedPtr<FJsonObject> Root;
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Text);
     if (!FJsonSerializer::Deserialize(Reader, Root) || !Root.IsValid()) { UE_LOG(LogTemp, Error, TEXT("world.json parse failed")); return; }
+
+    // The tree house's build (world/regions/treehouse/build.py) writes what depends on its meshes to a file of its
+    // own: prop instances join the world's, and its lights and rooms join world['treehouse'].
+    FString HouseText;
+    TSharedPtr<FJsonObject> HouseRuntime;
+    const TSharedPtr<FJsonObject>* HouseLayout=nullptr;
+    if(Root->TryGetObjectField(TEXT("treehouse"),HouseLayout) &&
+       FFileHelper::LoadFileToString(HouseText,*(FPaths::GetPath(JsonPath)/TEXT("treehouse/runtime.json"))) &&
+       FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(HouseText),HouseRuntime) && HouseRuntime.IsValid())
+    {
+        auto Instances=Root->GetObjectField(TEXT("instances"));
+        for(const auto& Pair:HouseRuntime->GetObjectField(TEXT("instances"))->Values)
+        {
+            TArray<TSharedPtr<FJsonValue>> Combined;
+            const TArray<TSharedPtr<FJsonValue>>* Prior=nullptr;
+            if(Instances->TryGetArrayField(Pair.Key,Prior)) Combined=*Prior;
+            Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
+        }
+        for(const auto& Pair:HouseRuntime->Values)
+            if(Pair.Key!=TEXT("instances")) (*HouseLayout)->SetField(Pair.Key,Pair.Value);
+    }
 
     // Optional independently generated eastern district. Keep the original world
     // and southwest work untouched; append instance groups before creating HISMs.
@@ -268,6 +290,107 @@ void AJapanWorld::Load()
         Sea->RegisterComponent();
     }
     bLoaded = true;
+    // The tree house (world/regions/treehouse): warm lantern and room lights, [x, y, z, lumens, radius m, shadows],
+    // a local golden grade inside its box (layout.py) and a dimmer look inside each room (build.py, runtime.json).
+    const TSharedPtr<FJsonObject>* House=nullptr;
+    if (Root->TryGetObjectField(TEXT("treehouse"),House))
+    {
+        const TArray<TSharedPtr<FJsonValue>>* Lights=nullptr;
+        int32 Count=0;
+        if ((*House)->TryGetArrayField(TEXT("lights"),Lights))
+            for (const auto& V:*Lights)
+            {
+                const auto& P=V->AsArray();
+                if (P.Num()<5) continue;
+                UPointLightComponent* Light=NewObject<UPointLightComponent>(this);
+                Light->SetupAttachment(RootComponent);
+                Light->SetRelativeLocation(ToUE(P[0]->AsNumber(),P[1]->AsNumber(),P[2]->AsNumber()));
+                Light->SetMobility(EComponentMobility::Movable);
+                Light->SetIntensityUnits(ELightUnits::Lumens);
+                Light->SetIntensity(P[3]->AsNumber());
+                Light->SetLightColor(FLinearColor(1.f,.74f,.48f));
+                Light->SetAttenuationRadius(P[4]->AsNumber()*100.f);
+                Light->SetSourceRadius(6.f);
+                Light->SetCastShadows(P.Num()>5 && P[5]->AsNumber()>0);
+                Light->SetVolumetricScatteringIntensity(0.f);
+                Light->SetMaxDrawDistance(12000.f);
+                Light->SetMaxDistanceFadeRange(3000.f);
+                Light->RegisterComponent();
+                ++Count;
+            }
+        const TSharedPtr<FJsonObject>* Grade=nullptr;
+        if ((*House)->TryGetObjectField(TEXT("grade"),Grade))
+        {
+            const auto& C=(*Grade)->GetArrayField(TEXT("center"));
+            const auto& X=(*Grade)->GetArrayField(TEXT("extent"));
+            const auto& T=(*Grade)->GetArrayField(TEXT("tint"));
+            UBoxComponent* Bounds=NewObject<UBoxComponent>(this);
+            Bounds->SetupAttachment(RootComponent);
+            Bounds->SetRelativeLocation(ToUE(C[0]->AsNumber(),C[1]->AsNumber(),C[2]->AsNumber()));
+            Bounds->SetBoxExtent(FVector(X[0]->AsNumber(),X[1]->AsNumber(),X[2]->AsNumber())*100.);
+            Bounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+            Bounds->SetCollisionResponseToAllChannels(ECR_Ignore);
+            Bounds->SetGenerateOverlapEvents(false);
+            Bounds->SetCanEverAffectNavigation(false);
+            Bounds->RegisterComponent();
+            UPostProcessComponent* Look=NewObject<UPostProcessComponent>(this);
+            Look->SetupAttachment(Bounds);
+            Look->bUnbound=false;Look->BlendRadius=(*Grade)->GetNumberField(TEXT("blend"))*100.;Look->Priority=2;
+            Look->Settings.bOverride_SceneColorTint=true;
+            Look->Settings.SceneColorTint=FLinearColor(T[0]->AsNumber(),T[1]->AsNumber(),T[2]->AsNumber());
+            const double Sat=(*Grade)->GetNumberField(TEXT("saturation")),Con=(*Grade)->GetNumberField(TEXT("contrast"));
+            Look->Settings.bOverride_ColorSaturation=true;Look->Settings.ColorSaturation=FVector4(Sat,Sat,Sat,1);
+            Look->Settings.bOverride_ColorContrast=true;Look->Settings.ColorContrast=FVector4(Con,Con,Con,1);
+            Look->Settings.bOverride_BloomIntensity=true;Look->Settings.BloomIntensity=(*Grade)->GetNumberField(TEXT("bloom"));
+            Look->RegisterComponent();
+        }
+        // Inside each room a lower-key, less saturated look (the paintings' rooms are dim wood lit by lanterns and
+        // window light): boxes [centre, half extent, yaw] or spheres [centre, radius] from treehouse/build.py.
+        const TSharedPtr<FJsonObject>* RoomLook=nullptr;
+        const TArray<TSharedPtr<FJsonValue>>* Rooms=nullptr;
+        int32 RoomCount=0;
+        if ((*House)->TryGetObjectField(TEXT("room_grade"),RoomLook) && (*House)->TryGetArrayField(TEXT("rooms"),Rooms))
+            for (const auto& V:*Rooms)
+            {
+                const auto& Room=V->AsObject();
+                const auto& C=Room->GetArrayField(TEXT("center"));
+                UShapeComponent* Shape=nullptr;
+                if (Room->HasField(TEXT("radius")))
+                {
+                    USphereComponent* Sphere=NewObject<USphereComponent>(this);
+                    Sphere->SetSphereRadius(Room->GetNumberField(TEXT("radius"))*100.);
+                    Shape=Sphere;
+                }
+                else
+                {
+                    const auto& X=Room->GetArrayField(TEXT("extent"));
+                    UBoxComponent* Box=NewObject<UBoxComponent>(this);
+                    Box->SetBoxExtent(FVector(X[0]->AsNumber(),X[1]->AsNumber(),X[2]->AsNumber())*100.);
+                    Shape=Box;
+                }
+                Shape->SetupAttachment(RootComponent);
+                Shape->SetRelativeLocation(ToUE(C[0]->AsNumber(),C[1]->AsNumber(),C[2]->AsNumber()));
+                Shape->SetRelativeRotation(FRotator(0,-Room->GetNumberField(TEXT("yaw")),0));
+                Shape->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+                Shape->SetCollisionResponseToAllChannels(ECR_Ignore);
+                Shape->SetGenerateOverlapEvents(false);
+                Shape->SetCanEverAffectNavigation(false);
+                Shape->RegisterComponent();
+                const auto& T=(*RoomLook)->GetArrayField(TEXT("tint"));
+                UPostProcessComponent* Look=NewObject<UPostProcessComponent>(this);
+                Look->SetupAttachment(Shape);
+                Look->bUnbound=false;Look->BlendRadius=(*RoomLook)->GetNumberField(TEXT("blend"))*100.;Look->Priority=3;
+                Look->Settings.bOverride_SceneColorTint=true;
+                Look->Settings.SceneColorTint=FLinearColor(T[0]->AsNumber(),T[1]->AsNumber(),T[2]->AsNumber());
+                const double Sat=(*RoomLook)->GetNumberField(TEXT("saturation")),Con=(*RoomLook)->GetNumberField(TEXT("contrast"));
+                Look->Settings.bOverride_ColorSaturation=true;Look->Settings.ColorSaturation=FVector4(Sat,Sat,Sat,1);
+                Look->Settings.bOverride_ColorContrast=true;Look->Settings.ColorContrast=FVector4(Con,Con,Con,1);
+                Look->Settings.bOverride_AutoExposureBias=true;Look->Settings.AutoExposureBias=(*RoomLook)->GetNumberField(TEXT("exposure"));
+                Look->RegisterComponent();
+                ++RoomCount;
+            }
+        UE_LOG(LogTemp,Display,TEXT("TREEHOUSE lights %d grade %d rooms %d"),Count,Grade!=nullptr,RoomCount);
+    }
     const TSharedPtr<FJsonObject>* Village=nullptr;
     if (Root->TryGetObjectField(TEXT("village"),Village))
         if (auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,*Village);

@@ -1,0 +1,48 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "heart-approach",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "heart-approach.prompt.txt",
+  "prompt_sha256": "b4332ad23ff86d81a8a4d2d698634cc7310c6c942791d26eeed1ae27cceb035d",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/heart-approach.jpg": "2f72a5b938cea2701bf42508733710cd15fb9931de30e910def4da2d49fbad08",
+    "games/yorimichi/assets/treehouse/refs/master.jpg": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103",
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "games/yorimichi/assets/treehouse/concepts/overview-day.jpg": "13d39b9ef3f1034da5e71ce13f01bd6a563017ba108ddafe915d937dc8fe7d05",
+    "games/yorimichi/assets/treehouse/concepts/room-day.jpg": "164affa3f6dfb77c59f3f98002e70b052d0dfc37544a781678dee7be6f323db9",
+    "games/yorimichi/assets/treehouse/refs/entry-reveal.jpg": "5856d02247d91acf52f27981204bc50fb79706bbefec932014acb8b93aeae019",
+    "games/yorimichi/assets/treehouse/refs/crow-back.jpg": "d82d315318c92fe7cb9edcd4c2e7567372c0ec464fbf40be35d8876de25d6f0d",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T20:43:56.247457+00:00",
+  "finished_at": "2026-09-29T20:44:35.056970+00:00",
+  "elapsed_seconds": 38.8,
+  "usage": {
+    "input_tokens": 9973,
+    "input_tokens_details": {
+      "image_tokens": 8520,
+      "text_tokens": 1453
+    },
+    "output_tokens": 1372,
+    "total_tokens": 11345,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "heart-approach.png": "bbaebdd9e943af53b7d8ae619f111e6fb2b5ee82e24f46e5f4a580446069f503"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "heart-approach.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

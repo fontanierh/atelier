@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "quilt",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "fdaa1ffd1ea5ee0b5f25da0e74a2b6986ab6c243d7ff0aa35f255a60ba9cbb99",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/sleep-inside.jpg": "e74b4873b38f1f44990566807ca1ca44601060daa4d5ac1081d1a065a77e3801"
+  },
+  "started_at": "2026-09-29T21:22:38.595946+00:00",
+  "finished_at": "2026-09-29T21:23:14.389609+00:00",
+  "elapsed_seconds": 35.8,
+  "usage": {
+    "input_tokens": 1230,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 150
+    },
+    "output_tokens": 1756,
+    "total_tokens": 2986,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "664fd28aaee3864362c282905bfe63c66848c1ea759cca9597cfd14cae32e416",
+  "error": null,
+  "compact_copy": {
+    "file": "quilt.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

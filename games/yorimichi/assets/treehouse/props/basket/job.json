@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "basket",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "129cac241318917e09685c10cf2a2fb14de840765e4752a48a3ee3817cded5c3",
+  "submitted_at": "2026-09-29T21:21:32.610393+00:00",
+  "task_id": "f7355a1c-68d9-4291-95a0-585d9ef72b7a",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:23:08.796933+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

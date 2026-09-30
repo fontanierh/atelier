@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-prop-concept",
+  "slug": "futon",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_props.py",
+  "prompt_sha256": "85d3c5a5706aa1c9fc09981e7466a0aee6586fc6b8710a3b146d4c564cf9b9d0",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/sleep-inside.jpg": "e74b4873b38f1f44990566807ca1ca44601060daa4d5ac1081d1a065a77e3801"
+  },
+  "started_at": "2026-09-29T21:19:00.684408+00:00",
+  "finished_at": "2026-09-29T21:19:33.990503+00:00",
+  "elapsed_seconds": 33.3,
+  "usage": {
+    "input_tokens": 1338,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 258
+    },
+    "output_tokens": 1756,
+    "total_tokens": 3094,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "concept_sha256": "44709adbc4af730f6a77438a366c4ec6fa52a5370b3076b81d540c17203e1b7d",
+  "error": null,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

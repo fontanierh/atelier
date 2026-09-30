@@ -320,6 +320,9 @@ from house_clearance import clear_house_vegetation
 clear_house_vegetation(world)
 from torii_clearance import clear_torii_vegetation
 clear_torii_vegetation(world)
+# The tree house plans its canopy trees and clearings on the finished forest, so it goes last.
+from treehouse.layout import integrate as integrate_treehouse
+integrate_treehouse(world, H)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))
 H.astype("<f4").tofile(os.path.join(OUT, "heightmap.bin"))  # runtime cosmetic-particle ground sampling
 with open(os.path.join(OUT, "world.json"), "w") as fh:

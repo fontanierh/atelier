@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "stump_kettle",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "c9f2a44c54c936a964d1479bbfdc3feee872d2f50c78f43b28bc9e59b3eb9292",
+  "submitted_at": "2026-09-29T21:19:46.282579+00:00",
+  "task_id": "6c212ab8-36a1-4845-9dc5-e16b5e544fb5",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:22:05.488361+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

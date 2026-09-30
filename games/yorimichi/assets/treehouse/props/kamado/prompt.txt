@@ -1,0 +1,5 @@
+Paint ONE object alone for 3D reconstruction: shown whole, in a three-quarter front view from slightly above, centred with a clear margin all round, on a plain flat light-grey background, soft even light, no cast shadow, no floor, no text, nothing else in the picture. Keep the exact look of the object in the reference painting: the same colours, materials, proportions and hand-made character, in the same warm painterly style of a Japanese countryside adventure game: chunky readable shapes, gently rounded edges, matte hand-painted colours with soft variation, clear wood grain and weave where they belong, no photographic noise, no glossy highlights. Every part must be solid and connected; nothing floating. 
+
+Image 1 is a finished painting of the tree house; the object is right of centre, under the black chimney pipe.
+
+The object: a small rounded clay-and-stone kamado cooking stove, grey-brown plastered body with a glowing arched fire opening at the front, a black cast-iron kettle and a black iron pot with a wooden lid sitting on top, a few split logs stacked against its base.

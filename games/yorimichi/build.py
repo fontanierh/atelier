@@ -22,6 +22,8 @@ ASSETS = GAME / 'assets'
 CHARS = ASSETS / 'characters'
 AUDIO = ASSETS / 'audio'
 SCRIPTS = GAME / 'unreal' / 'Scripts'
+TOOLS = GAME / 'tools'
+TREEHOUSE = REGIONS / 'treehouse'
 SOURCE = GAME / 'unreal' / 'Source'
 NAMES = paths.STUDIO / 'atelier' / 'character'
 YORI = WORLD / 'yori.py'
@@ -43,7 +45,8 @@ def cairo_roles():
 # Runtime files the game reads through AtelierDataPath, relative to unreal/Content/Data. Each is also an output of
 # data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
 STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
-          'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json', 'characters/cairo/skate-build.json')
+          'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json', 'characters/cairo/skate-build.json',
+          'treehouse/runtime.json')
 
 
 def staged_source(out, rel):
@@ -70,11 +73,16 @@ def steps(ctx):
         # ------------------------------------------------------------ world
         Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI],
              outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
+        # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
+        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'build_assets.py'],
+             needs=['world.textures'], outputs=[out / 'treehouse' / 'trees' / 'trees.json'],
+             about='tree house canopy trees (four autumn crowns) and their recoloured leaf atlases'),
         Step('world.layout', [Python(WORLD / 'gen_world.py')],
              inputs=[WORLD / 'gen_world.py', WORLD / 'house_clearance.py', WORLD / 'torii_clearance.py', YORI,
                      REGIONS / 'village' / 'layout.py', REGIONS / 'mega' / 'layout.py', REGIONS / 'southwest',
-                     REGIONS / 'forest_lake' / 'layout.py', REGIONS / 'zeppelin' / 'layout.py'],
-             outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin'],
+                     REGIONS / 'forest_lake' / 'layout.py', REGIONS / 'zeppelin' / 'layout.py', TREEHOUSE / 'layout.py'],
+             needs=['world.treehouse_trees'],
+             outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'treehouse' / 'layout.json'],
              about='terrain heightfield, road, scatter and every region layout -> world.json'),
         Step('world.props', [Blender(WORLD / 'build_assets.py')], inputs=[WORLD / 'build_assets.py'], needs=['world.textures'],
              outputs=[out / 'assets' / 'House.fbx'], about='trees, bushes, grass, rocks, house, torii, lanterns, birds, sky dome'),
@@ -88,6 +96,17 @@ def steps(ctx):
         Step('world.zeppelin', [Blender(REGIONS / 'zeppelin' / 'build.py', threads=2)],
              inputs=[REGIONS / 'zeppelin', REGIONS / 'village' / 'build.py'], needs=['world.layout', 'world.hidamari'],
              outputs=[out / 'zeppelin' / 'manifest.json'], about='airship and its two stations'),
+        Step('world.treehouse_textures', [Python(TOOLS / 'treehouse_textures.py', ('finish',))],
+             inputs=[TOOLS / 'treehouse_textures.py', ASSETS / 'treehouse' / 'textures'],
+             outputs=[out / 'treehouse' / 'textures' / 'textures.json'],
+             about='tree house textures: seamless detail maps and pictures from the Sunburst paintings'),
+        Step('world.treehouse_props', [Blender(TREEHOUSE / 'props.py', threads=4)],
+             inputs=[TREEHOUSE / 'props.py', TOOLS / 'treehouse_props.py', ASSETS / 'treehouse' / 'props'],
+             outputs=[out / 'treehouse' / 'props' / 'props.json'], about='the 13 Tripo props fitted to their sizes'),
+        Step('world.treehouse', [Blender(TREEHOUSE / 'build.py', threads=4)],
+             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', TREEHOUSE / 'layout.py', REGIONS / 'village' / 'build.py'],
+             needs=['world.layout'], outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json'],
+             about='the tree house: ten places, bridges, rooms and their dressing, lights, sunbeams'),
         Step('world.terrain', [Blender(WORLD / 'build_terrain.py')],
              inputs=[WORLD / 'build_terrain.py', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py'],
              needs=['world.layout', 'world.hidamari', 'world.textures'],
@@ -161,6 +180,10 @@ def steps(ctx):
         Step('unreal.lake', [UnrealScript(SCRIPTS / 'import_forest_lake.py', 'LAKE IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_forest_lake.py', SCRIPTS / 'forest_lake_material.py'], needs=['unreal.world', 'world.lake'],
              heavy=True, about='the woodland lake and cabin'),
+        Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE')],
+             inputs=[SCRIPTS / 'import_treehouse.py'],
+             needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
+             heavy=True, about='the tree house meshes, textures, props and canopy trees'),
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['unreal.world', 'world.skatepark'],
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
@@ -169,7 +192,8 @@ def steps(ctx):
                 UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE'),
                 UnrealScript(SCRIPTS / 'import_skate_audio.py', 'SKATE AUDIO IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_footsteps.py', SCRIPTS / 'import_combat_audio.py', SCRIPTS / 'import_skate_audio.py'],
-             after=['unreal.world'], needs=['audio.footsteps', 'audio.combat', 'audio.skate'], heavy=True, about='footstep library, combat and skate sounds'),
+             # The footstep library lives in /Game/Japan, which the world import clears, so a world import reruns this.
+             needs=['unreal.world', 'audio.footsteps', 'audio.combat', 'audio.skate'], heavy=True, about='footstep library, combat and skate sounds'),
         Step('unreal.fx', [UnrealScript(SCRIPTS / 'import_combat_fx.py', 'COMBAT FX IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_combat_fx.py'], after=['unreal.compile'], needs=['fx.textures'], heavy=True, about='/Game/FX materials'),
         Step('unreal.fox_hunter', [UnrealScript(SCRIPTS / 'import_fox_hunter.py', 'FOX HUNTER IMPORT COMPLETE')],
@@ -191,6 +215,6 @@ def steps(ctx):
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[REGIONS / 'skatepark' / 'park.json', CHARS / 'cairo' / 'skate-build.json'],
-             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles'],
+             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in STAGED], about='runtime files into unreal/Content/Data'),
     ]

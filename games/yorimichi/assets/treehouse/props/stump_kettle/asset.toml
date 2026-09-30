@@ -1,0 +1,9 @@
+# Tree house prop: a short thick tree-stump side table with rough bark on the sides and a pale ring-cut top, a black cast-iron tetsubin teapot and a small blue-glazed cup on top.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-stump-kettle"
+kind = "prop"
+model = "stump_kettle.glb"            # fitted to 0.55 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs heart-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-prop-concept",
+  "slug": "telescope",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_props.py",
+  "prompt_sha256": "232a82f78ee8e3642379da145128dde85c99432659f7543d0cd32327f6261bca",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/crow-sea.jpg": "3cbc1ccc56fe739e8695e4ae7ea80dc63e6bcdacb9336f9f3b880157e5bed09e"
+  },
+  "started_at": "2026-09-29T21:17:26.119298+00:00",
+  "finished_at": "2026-09-29T21:17:56.261899+00:00",
+  "elapsed_seconds": 30.1,
+  "usage": {
+    "input_tokens": 1300,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 220
+    },
+    "output_tokens": 1756,
+    "total_tokens": 3056,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "concept_sha256": "41a8bb25e4f32681f019003e4b527dd96e4a60baaebc921c3e692460d5026e64",
+  "error": null,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

@@ -1,0 +1,48 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "master",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "master.prompt.txt",
+  "prompt_sha256": "db36cc9b173b417039f754a1105b92d155417abaa46c2988c9b3a92d8f8d1baf",
+  "reference_files": {
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "build/yorimichi/review/treehouse/plan/plan-section.png": "613b8908b9c2dba3357286d4afb75efffc919b116629b357b57ff66b5e1d8c1c",
+    "games/yorimichi/assets/treehouse/concepts/overview-day.jpg": "13d39b9ef3f1034da5e71ce13f01bd6a563017ba108ddafe915d937dc8fe7d05",
+    "games/yorimichi/assets/treehouse/concepts/reveal-day.jpg": "09dd1e3cf493432137ad186bcd243aa5b5d560e9d0325dbd750c44377ae395f3",
+    "games/yorimichi/assets/treehouse/concepts/lookout-day.jpg": "73652813e6ba55c107b6a8e572ab5ba036759cd7386834158c8ca4d6aeba71ab",
+    "build/yorimichi/treehouse/scout/r01/A3-aerial.png": "d2252d99024413fd0f5998f62d3ae977f4a23f76156d2cfc96135cd098861a82",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T20:26:22.354863+00:00",
+  "finished_at": "2026-09-29T20:27:04.345613+00:00",
+  "elapsed_seconds": 42.0,
+  "usage": {
+    "input_tokens": 8275,
+    "input_tokens_details": {
+      "image_tokens": 7080,
+      "text_tokens": 1195
+    },
+    "output_tokens": 1372,
+    "total_tokens": 9647,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "master.png": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "master.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository",
+  "note": "master-b of two masters painted from the same prompt; chosen as the look guide"
+}

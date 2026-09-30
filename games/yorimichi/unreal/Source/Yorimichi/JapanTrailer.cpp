@@ -239,7 +239,27 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
     FRotator Rotation;
     const TArray<TSharedPtr<FJsonValue>>* CustomCamera=nullptr;
     const TArray<TSharedPtr<FJsonValue>>* CustomTarget=nullptr;
-    if(Environment && TrailerSpec->TryGetArrayField(TEXT("camera_position"),CustomCamera) && CustomCamera->Num()==3 &&
+    const TArray<TSharedPtr<FJsonValue>>* Keys=nullptr;
+    if(Environment && TrailerSpec->TryGetArrayField(TEXT("keys"),Keys) && Keys->Num()>=2)
+    {
+        // A camera path: keys [seconds, camera x y z, target x y z, fov] in Blender metres, through which camera and
+        // target follow Catmull-Rom curves (the tree house tour glides along bridges and up the lookout stairs).
+        auto Key=[&](int32 I)->const TArray<TSharedPtr<FJsonValue>>& { return (*Keys)[FMath::Clamp(I,0,Keys->Num()-1)]->AsArray(); };
+        int32 I=0;
+        while(I<Keys->Num()-2 && Key(I+1)[0]->AsNumber()<=T) ++I;
+        const double T0=Key(I)[0]->AsNumber(),T1=Key(I+1)[0]->AsNumber();
+        const double U=FMath::Clamp((T-T0)/FMath::Max(T1-T0,1e-3),0.,1.);
+        auto At=[&](int32 J,int32 O){ const auto& K=Key(J); return AJapanWorld::ToUE(K[O]->AsNumber(),K[O+1]->AsNumber(),K[O+2]->AsNumber()); };
+        auto Curve=[&](int32 O)
+        {
+            const FVector P0=At(I-1,O),P1=At(I,O),P2=At(I+1,O),P3=At(I+2,O);
+            return .5*(2.*P1+(P2-P0)*U+(2.*P0-5.*P1+4.*P2-P3)*U*U+(3.*P1-P0-3.*P2+P3)*U*U*U);
+        };
+        Camera=Curve(1);
+        Rotation=(Curve(4)-Camera).Rotation();
+        if(Key(I).Num()>7 && Key(I+1).Num()>7) PreferredFOV=FMath::Lerp(Key(I)[7]->AsNumber(),Key(I+1)[7]->AsNumber(),U*U*(3.-2.*U));
+    }
+    else if(Environment && TrailerSpec->TryGetArrayField(TEXT("camera_position"),CustomCamera) && CustomCamera->Num()==3 &&
        TrailerSpec->TryGetArrayField(TEXT("camera_target"),CustomTarget) && CustomTarget->Num()==3)
     {
         Camera=AJapanWorld::ToUE((*CustomCamera)[0]->AsNumber(),(*CustomCamera)[1]->AsNumber(),(*CustomCamera)[2]->AsNumber());

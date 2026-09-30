@@ -1,0 +1,9 @@
+# Tree house prop: a child's olive-green canvas adventurer backpack with a rolled blanket strapped on top, two front pockets with leather straps and brass buckles, standing upright.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-backpack"
+kind = "prop"
+model = "backpack.glb"                # fitted to 0.55 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs entry-inside, library-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

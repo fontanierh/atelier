@@ -1,0 +1,48 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "slide-foot",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "slide-foot.prompt.txt",
+  "prompt_sha256": "bd688a77c5f7037fb685c43183c839704e5d1f3efacbf7140141fa5d769be7c2",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/slide-foot.jpg": "b0721a2d66085361ce2bf4949a66e454c55b6ad3c165dac1ca2e772d7176a89f",
+    "games/yorimichi/assets/treehouse/refs/master.jpg": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103",
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "build/yorimichi/treehouse/scout/player/P1-upper-slope-down.png": "d9f933f34623836f58c0e8f70af72e422226220cb0cba7d67e7ac3a0446eebda",
+    "games/yorimichi/assets/treehouse/concepts/overview-day.jpg": "13d39b9ef3f1034da5e71ce13f01bd6a563017ba108ddafe915d937dc8fe7d05",
+    "games/yorimichi/assets/treehouse/refs/slide-approach.jpg": "71c0abb5e752792e2c0abe93b635cae1c8d69554a91ac57b50b2ec274ec49fe4",
+    "games/yorimichi/assets/treehouse/refs/crow-back.jpg": "d82d315318c92fe7cb9edcd4c2e7567372c0ec464fbf40be35d8876de25d6f0d",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T20:45:49.462375+00:00",
+  "finished_at": "2026-09-29T20:46:26.245593+00:00",
+  "elapsed_seconds": 36.8,
+  "usage": {
+    "input_tokens": 9835,
+    "input_tokens_details": {
+      "image_tokens": 8360,
+      "text_tokens": 1475
+    },
+    "output_tokens": 1372,
+    "total_tokens": 11207,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "slide-foot.png": "dd9db9c1e502f6a30708f1232776e7e5b8467b3b393ee7121ac26b512ac84594"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "slide-foot.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "crate_desk",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "5bf8dbb557483b0bc2ccc1fc0ac37f0c5349bd55ccb4b00dfa76b6daa78160cf",
+  "submitted_at": "2026-09-29T21:23:51.989771+00:00",
+  "task_id": "8954d037-9d5a-4334-953f-f2e5069fb834",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:25:28.418621+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

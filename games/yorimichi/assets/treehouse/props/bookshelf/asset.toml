@@ -1,0 +1,9 @@
+# Tree house prop: a tall narrow rustic wooden bookshelf with four shelves filled with old books in muted blue, red, green and brown, glass jars of acorns and shells, a spiral sea shell and a small potted plant on top.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-bookshelf"
+kind = "prop"
+model = "bookshelf.glb"               # fitted to 1.9 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs library-inside, heart-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

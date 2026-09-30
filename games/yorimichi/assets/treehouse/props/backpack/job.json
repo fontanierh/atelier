@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "backpack",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "9bcd2a0f9d445fc02cef268533c7024a6a6ce2db434b115a76cb699775debe83",
+  "submitted_at": "2026-09-29T21:19:46.464513+00:00",
+  "task_id": "dfc24aaa-c75b-47b5-a39e-f21c869cfae1",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:21:44.185787+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

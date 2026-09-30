@@ -1,0 +1,43 @@
+{
+  "stage": "treehouse-concept",
+  "concept": "glimpse-dusk",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_concepts.py",
+  "prompt_file": "glimpse-dusk.prompt.txt",
+  "prompt_sha256": "e84dd7569663325def97c1613790a1fcf553ab5b8b57f7a26d801db58f9cdaed",
+  "reference_files": {
+    "build/yorimichi/treehouse/scout/player/P5-air-station-trail.png": "b0195a520d88cddab06a4bf8631b86d80b3ebeabc687758cc4ab5661190ed697",
+    "build/yorimichi/treehouse/scout/player/P1-upper-slope-down.png": "d9f933f34623836f58c0e8f70af72e422226220cb0cba7d67e7ac3a0446eebda",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T19:46:34.031360+00:00",
+  "finished_at": "2026-09-29T19:47:11.904076+00:00",
+  "elapsed_seconds": 37.9,
+  "usage": {
+    "input_tokens": 3486,
+    "input_tokens_details": {
+      "image_tokens": 2760,
+      "text_tokens": 726
+    },
+    "output_tokens": 1372,
+    "total_tokens": 4858,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "glimpse-dusk.png": "63014bf45ec60d4619d6959da43661812913ee0c8da187e680ecf241d40240e6"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "glimpse-dusk.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

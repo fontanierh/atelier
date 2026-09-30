@@ -1,0 +1,9 @@
+# Tree house prop: a brass telescope on a wooden tripod with three splayed legs, the tube tilted up towards the sea, a dark leather grip band and a small brass eyepiece.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-telescope"
+kind = "prop"
+model = "telescope.glb"               # fitted to 1.45 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs crow-sea (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

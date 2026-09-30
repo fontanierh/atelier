@@ -1,0 +1,36 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "hull",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "0a545fa62ddfda5ba0f7fdfe06015d4e0c8a5ebc0259081bc89c7813ed618e94",
+  "reference_files": {},
+  "started_at": "2026-09-29T21:22:15.795759+00:00",
+  "finished_at": "2026-09-29T21:22:56.679822+00:00",
+  "elapsed_seconds": 40.9,
+  "usage": {
+    "input_tokens": 130,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 130
+    },
+    "output_tokens": 1756,
+    "total_tokens": 1886,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "a3b7969c714fd9694ff89ff328aa8028e437b645e4a29f480245f753380ff62b",
+  "error": null,
+  "compact_copy": {
+    "file": "hull.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

@@ -1,0 +1,9 @@
+# Tree house prop: a thick Japanese futon on the floor with a puffy patchwork quilt of large squares: indigo cotton with small white hemp-leaf and star stitching, cream, persimmon orange, faded red with one white maple leaf; no stripes and nothing like a national flag; a plump cream buckwheat pillow at the head.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-futon"
+kind = "prop"
+model = "futon.glb"                   # fitted to 2.0 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs sleep-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

@@ -1,0 +1,46 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "kitchen-inside",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "kitchen-inside.prompt.txt",
+  "prompt_sha256": "11fdad660422d77141dafa343047d4100d93fb819b0a51f846215bc79d63d85a",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/kitchen-inside.jpg": "2dc6a6adc55bb0d805da3b061a56cad334fa6584d3d6a1be630c6146621126d7",
+    "games/yorimichi/assets/treehouse/refs/master.jpg": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103",
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "games/yorimichi/assets/treehouse/concepts/room-day.jpg": "164affa3f6dfb77c59f3f98002e70b052d0dfc37544a781678dee7be6f323db9",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8",
+    "games/yorimichi/assets/treehouse/refs/kitchen-approach.jpg": "df1d045584f70f21ddc3b54a268b8ad39367c52383f4164bfb26e37db3882baf"
+  },
+  "started_at": "2026-09-29T20:45:14.126001+00:00",
+  "finished_at": "2026-09-29T20:45:50.563605+00:00",
+  "elapsed_seconds": 36.4,
+  "usage": {
+    "input_tokens": 7563,
+    "input_tokens_details": {
+      "image_tokens": 6360,
+      "text_tokens": 1203
+    },
+    "output_tokens": 1372,
+    "total_tokens": 8935,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "kitchen-inside.png": "34bd6c2478be6da6dc06f408b5acb82a3bb2a4416eb4cc8eb7209cb94b297845"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "kitchen-inside.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

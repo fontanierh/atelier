@@ -1,0 +1,9 @@
+# Tree house prop: a weathered wooden crate planter full of soil with small autumn flowers in orange, yellow and white and green herbs spilling over the edge.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-planter"
+kind = "prop"
+model = "planter.glb"                 # fitted to 0.7 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs kitchen-approach, chimes-approach (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

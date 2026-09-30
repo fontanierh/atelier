@@ -1,0 +1,36 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "plaster",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "426a3dbb9def79aa4147c96fdc194bc38cab9b0a830d438aa6de8c38373229a6",
+  "reference_files": {},
+  "started_at": "2026-09-29T21:21:37.029922+00:00",
+  "finished_at": "2026-09-29T21:22:22.664884+00:00",
+  "elapsed_seconds": 45.6,
+  "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 118
+    },
+    "output_tokens": 1756,
+    "total_tokens": 1874,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "162c7f7110fb9d901a88f8e65e03fdcae3dffa654f946bf25e31eebd72b639b6",
+  "error": null,
+  "compact_copy": {
+    "file": "plaster.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

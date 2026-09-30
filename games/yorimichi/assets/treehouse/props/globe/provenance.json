@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-prop-concept",
+  "slug": "globe",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_props.py",
+  "prompt_sha256": "ded2ca922af24acf72e91b842534c15c42b6a31338d633a154d4a5e9541e5af0",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/library-inside.jpg": "f05b13f8c2b15ec2c6bc37c12e379216839f4448b972b28eccd0cf88273d1944"
+  },
+  "started_at": "2026-09-29T21:17:26.119685+00:00",
+  "finished_at": "2026-09-29T21:17:59.151813+00:00",
+  "elapsed_seconds": 33.0,
+  "usage": {
+    "input_tokens": 1300,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 220
+    },
+    "output_tokens": 1756,
+    "total_tokens": 3056,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "concept_sha256": "fd1e0cd46d350ec6d39440a4bdebafac430c470845a6bbbd2a67ce1072396a2f",
+  "error": null,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

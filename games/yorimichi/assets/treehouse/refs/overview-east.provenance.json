@@ -1,0 +1,47 @@
+{
+  "stage": "treehouse-reference",
+  "reference": "overview-east",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_refs.py",
+  "prompt_file": "overview-east.prompt.txt",
+  "prompt_sha256": "b0ac09b7a5d33d8fe9f288a03bfb753f69218bf8a0ce3596ebb723dba43646ac",
+  "reference_files": {
+    "build/yorimichi/treehouse/captures/blockout-r01/overview-east.jpg": "48117790401641e9fa9c2022305d6da22ccbee6f116cf07c84f7c330d3413144",
+    "games/yorimichi/assets/treehouse/refs/master.jpg": "5f4a4c2418ae63aa91625d00b51853e396c85a1965ba15b6f7839aeaa1f49103",
+    "build/yorimichi/review/treehouse/plan/plan-map.png": "033d89566f3627863a7bb67ee47739dc7f23807f2bd03c5d362ca2c2355786ae",
+    "games/yorimichi/assets/treehouse/concepts/overview-day.jpg": "13d39b9ef3f1034da5e71ce13f01bd6a563017ba108ddafe915d937dc8fe7d05",
+    "build/yorimichi/treehouse/scout/r01/A3-aerial.png": "d2252d99024413fd0f5998f62d3ae977f4a23f76156d2cfc96135cd098861a82",
+    "games/yorimichi/assets/treehouse/refs/overview-south.jpg": "3f28caa84d2acd2a47b815cea1bb28dcee373c38f02a627c9f94351c921e5d75",
+    "build/yorimichi/treehouse/scout/r01/S1-lake-cabin.png": "b90d924d2d501d4428f688885be8346537582c378ccbefddacb144e2107408c8"
+  },
+  "started_at": "2026-09-29T20:43:10.745918+00:00",
+  "finished_at": "2026-09-29T20:43:56.245440+00:00",
+  "elapsed_seconds": 45.5,
+  "usage": {
+    "input_tokens": 8729,
+    "input_tokens_details": {
+      "image_tokens": 7280,
+      "text_tokens": 1449
+    },
+    "output_tokens": 1372,
+    "total_tokens": 10101,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    }
+  },
+  "outputs": {
+    "overview-east.png": "ab227745a6a63d9dc7f66d2c659e8a7c352253098d747caa787c21ac0bddbf70"
+  },
+  "error": null,
+  "compact_copy": {
+    "file": "overview-east.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

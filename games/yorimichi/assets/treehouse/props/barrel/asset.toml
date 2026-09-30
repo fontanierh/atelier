@@ -1,0 +1,9 @@
+# Tree house prop: a wooden water barrel of vertical staves held by two dark bamboo hoops, a round plank lid half open, and a long-handled wooden ladle resting across it.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-barrel"
+kind = "prop"
+model = "barrel.glb"                  # fitted to 0.8 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs kitchen-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"
