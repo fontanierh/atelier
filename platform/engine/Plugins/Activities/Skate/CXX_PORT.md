@@ -88,8 +88,9 @@ header updates, normal correction and the original 16-pair capacity contract.
 `GeometryTriangleFixup.*` preserves face/edge/vertex classification, sidedness, convexity and disabled
 vertices, including normal bending and contact reprojection. `WorldPrimitiveContact.*` composes the
 typed sphere/capsule/triangle/box path, the original triangle/box separating-axis specialization,
-velocity-based separation allowance and complete contact manifolds. World candidate traversal
-and body-workspace preparation remain separate work. `ContactRetention.*` preserves ordered material
+velocity-based separation allowance and complete contact manifolds. `WorldContactProducer.*` connects
+ordered candidate traversal, primitive queries, material combination, retention and imported-floor
+seam suppression. Body-workspace preparation remains separate work. `ContactRetention.*` preserves ordered material
 combination, duplicate rejection, coplanar reduction, point selection and capacity/flush behavior.
 
 `RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
@@ -108,6 +109,8 @@ kinematic prediction, active-body mass gates and soft/hard drive targets. They e
 compiled records consumed by the shared solver, including opaque joint identifiers and carried lanes.
 `JointRecords.*` constructs the six authored deck/truck/wheel constraints in registration order, with
 the original definition-to-live body reversal and stock/custom parameter/frame words.
+`TruckDriveFrames.*`, `DrivePreparation.*` and `HookDrive.*` retain steering frame order, repeated
+normalization, untouched translation lanes and the live animation-drive lifecycle.
 Contact generation, complete body ownership and scheduling remain open. These comparisons establish
 parity with the frozen Rust reconstruction, including its documented unresolved retail joint-matrix
 gather and carry-lane interpretation; they do not independently verify those against the EA executable.
@@ -260,6 +263,9 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   all seven default body masses.
 - Authored part and drive frames: 1,927 cases and 140,880 exact words, including packed pose fourth lanes,
   truck rotation polynomials, dominant-quaternion ties, 1,024 relative-frame pairs and all stock defaults.
+- Truck/hook drive frames and lifecycle: 8,022 cases and 941,372 exact words, including 612 stateful
+  hook programs, 16,819 duplicate and 2,920 null registrations, carried translation lanes and
+  non-normalizing hook setters. Four invalid registration fixtures fail on both original and C++.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
