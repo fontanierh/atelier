@@ -7,6 +7,7 @@ import unreal
 ROOT = yori.OUT;OUT=ROOT/'southwest'
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import import_village as V
+import sea_look
 EAL=unreal.EditorAssetLibrary
 
 MEL=unreal.MaterialEditingLibrary
@@ -29,10 +30,11 @@ def sand_material():
     MEL.update_material_instance(mi);EAL.save_loaded_asset(mi);return mi
 def sea_material():
     """M_Sea: flat painterly water. Deep blue-teal base that turns lighter teal where the water is shallow (scene depth
-    behind the surface), a white foam band right at the shoreline, low roughness for a sky sheen, and the same
-    aerial-perspective haze as the painted master so the horizon softens."""
+    behind the surface), a white foam band right at the shoreline and low roughness for a sky sheen. With distance the
+    lit colour and the sheen give way to the sky dome's own horizon colour (sea_look.py), so the far sea melts into the
+    sky with no line."""
     U=unreal;m=_create('M_Sea',U.Material,U.MaterialFactoryNew());MEL.delete_all_material_expressions(m)
-    deep=_node(m,U.MaterialExpressionConstant3Vector,-900,-100,constant=U.LinearColor(0.006,0.030,0.078,1))
+    deep=_node(m,U.MaterialExpressionConstant3Vector,-900,-100,constant=U.LinearColor(*sea_look.DEEP,1))
     shallow=_node(m,U.MaterialExpressionConstant3Vector,-900,100,constant=U.LinearColor(0.022,0.115,0.135,1))
     depth=_node(m,U.MaterialExpressionDepthFade,-900,300);depth.set_editor_property('fade_distance_default',900.0)
     inv=_node(m,U.MaterialExpressionOneMinus,-700,300);_link(depth,'',inv,'')
@@ -41,16 +43,21 @@ def sea_material():
     foam=_node(m,U.MaterialExpressionOneMinus,-700,500);_link(foamd,'',foam,'')
     foamc=_node(m,U.MaterialExpressionConstant3Vector,-700,650,constant=U.LinearColor(0.55,0.58,0.58,1))
     col2=_node(m,U.MaterialExpressionLinearInterpolate,-350,100);_link(col,'',col2,'A');_link(foamc,'',col2,'B');_link(foam,'',col2,'Alpha')
+    # With distance the lit colour and the sheen fade out and the dome's horizon colour fades in. (This used to be a
+    # haze toward a pale lavender base colour: lit by the sun and the sky light it made the far sea paler than the sky,
+    # a flat pale sheet ending in a bright strip under the horizon.)
     pd=_node(m,U.MaterialExpressionPixelDepth,-350,550)
-    hz0=_node(m,U.MaterialExpressionSubtract,-200,550,const_b=7000.0);_link(pd,'',hz0,'A')
-    hz1=_node(m,U.MaterialExpressionDivide,-80,550,const_b=220000.0);_link(hz0,'',hz1,'A')
-    hz2=_node(m,U.MaterialExpressionSaturate,40,550);_link(hz1,'',hz2,'')
-    hz3=_node(m,U.MaterialExpressionMultiply,140,550,const_b=0.35);_link(hz2,'',hz3,'A')
-    hcol=_node(m,U.MaterialExpressionConstant3Vector,-80,700,constant=U.LinearColor(0.60,0.66,0.78,1.0))
-    lerp=_node(m,U.MaterialExpressionLinearInterpolate,260,300);_link(col2,'',lerp,'A');_link(hcol,'',lerp,'B');_link(hz3,'',lerp,'Alpha')
-    MEL.connect_material_property(lerp,'',U.MaterialProperty.MP_BASE_COLOR)
-    rough=_node(m,U.MaterialExpressionConstant,260,450,r=0.32);MEL.connect_material_property(rough,'',U.MaterialProperty.MP_ROUGHNESS)
-    spec=_node(m,U.MaterialExpressionConstant,260,520,r=0.6);MEL.connect_material_property(spec,'',U.MaterialProperty.MP_SPECULAR)
+    far=_node(m,U.MaterialExpressionCustom,-200,550,code=sea_look.FAR_FADE,output_type=U.CustomMaterialOutputType.CMOT_FLOAT1)
+    d=U.CustomInput();d.set_editor_property('input_name','D');far.set_editor_property('inputs',[d]);_link(pd,'',far,'D')
+    near=_node(m,U.MaterialExpressionOneMinus,-60,550);_link(far,'',near,'')
+    base=_node(m,U.MaterialExpressionMultiply,260,300);_link(col2,'',base,'A');_link(near,'',base,'B')
+    MEL.connect_material_property(base,'',U.MaterialProperty.MP_BASE_COLOR)
+    hcol=_node(m,U.MaterialExpressionConstant3Vector,-60,700,constant=U.LinearColor(*sea_look.HORIZON,1.0))
+    glow=_node(m,U.MaterialExpressionMultiply,260,700);_link(hcol,'',glow,'A');_link(far,'',glow,'B')
+    MEL.connect_material_property(glow,'',U.MaterialProperty.MP_EMISSIVE_COLOR)
+    rough=_node(m,U.MaterialExpressionConstant,260,450,r=sea_look.ROUGHNESS);MEL.connect_material_property(rough,'',U.MaterialProperty.MP_ROUGHNESS)
+    spec=_node(m,U.MaterialExpressionMultiply,260,520,const_b=sea_look.SPECULAR);_link(near,'',spec,'A')
+    MEL.connect_material_property(spec,'',U.MaterialProperty.MP_SPECULAR)
     # scene depth is only readable from translucent materials: translucent, fully opaque, forward shaded for the specular sheen
     m.set_editor_property('blend_mode',U.BlendMode.BLEND_TRANSLUCENT)
     m.set_editor_property('translucency_lighting_mode',U.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)

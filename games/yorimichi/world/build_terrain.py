@@ -158,7 +158,10 @@ def main():
                              object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False, path_mode="COPY", embed_textures=False)
     print("terrain:", len(terrain.data.polygons), "faces, road", len(road.data.polygons), "wires", len(wires.data.polygons), "->", path)
     # sea plane (separate asset, no collision)
-    s2 = 3400.0   # the sea reaches past the scenery ring so no seabed shows beyond the playable square
+    # The sea reaches past the sky dome (a 20 km sphere, JapanWorld.cpp): every view ray that goes below the horizon meets
+    # water, never the dome's lower half. At 3.4 km it stopped short, and a band of the dome's below-horizon colour showed
+    # between the sea's far edge and the horizon.
+    s2 = 24000.0
     sea = obj("Sea", [(-s2, -s2, 0), (s2, -s2, 0), (s2, s2, 0), (-s2, s2, 0)], [(0, 1, 2, 3)], water, uvs=lambda co: (co.x / 24.0, co.y / 24.0), smooth=False)
     bpy.ops.object.select_all(action="DESELECT"); sea.select_set(True); bpy.context.view_layer.objects.active = sea
     os.makedirs(os.path.join(OUT, "assets"), exist_ok=True)

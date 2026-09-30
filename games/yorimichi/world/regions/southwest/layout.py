@@ -153,6 +153,6 @@ def integrate(world,h):
         [-221.0,-183.0,3.0,90.0,4.0],          # from the water's edge back at the coconut stand
         [-205.0,-176.0,2.6,-80.0,-2.0],        # the island from the beach
         [-150.0,-560.0,120.0,90.0,-24.0],      # the island from the south, high
-        [-160.0,-455.0,101.0,-65.0,-4.0],      # the temple terrace at the summit
+        [-160.0,-455.0,103.0,-65.0,-4.0],      # the temple terrace at the summit (ground 101.2)
     ])
     print('southwest: %d island trees, removed %s, adjusted %d'%(count,removed,adjusted))

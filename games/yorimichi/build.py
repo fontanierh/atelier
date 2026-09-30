@@ -28,7 +28,7 @@ SOURCE = GAME / 'unreal' / 'Source'
 NAMES = paths.STUDIO / 'atelier' / 'character'
 YORI = WORLD / 'yori.py'
 SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,'
-                    'boulder_a,boulder_b,boulder_c,stone_wall')
+                    'boulder_a,boulder_b,boulder_c,stone_wall,pine_lean_a,pine_lean_b')
 
 
 def cairo_roles():
@@ -165,7 +165,7 @@ def steps(ctx):
              inputs=[SCRIPTS / n for n in ('setup_project.py', 'painterly_kernel.py', 'foliage_material.py', 'import_foliage_lods.py',
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
                                           'import_hidamari.py', 'import_southwest.py', 'arcade_material.py', 'plaza_material.py',
-                                          'harbor_material.py', 'mountain_material.py', 'import_sailboat.py', 'sailboat_material.py',
+                                          'harbor_material.py', 'sea_look.py', 'mountain_material.py', 'import_sailboat.py', 'sailboat_material.py',
                                           'import_zeppelin.py')],
              after=['unreal.compile'], needs=['world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari',
                     'world.zeppelin', 'world.terrain', 'world.village', 'world.sailboat', 'characters.wanderer'],
@@ -173,7 +173,7 @@ def steps(ctx):
         # The regions below layer onto the world (the south-west import replaces the terrain's and the sea's materials),
         # so they rerun when it is reimported.
         Step('unreal.southwest', [UnrealScript(SCRIPTS / 'import_southwest.py', 'SOUTHWEST IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_southwest.py'], needs=['unreal.world', 'world.southwest', 'world.terrain'], heavy=True,
+             inputs=[SCRIPTS / 'import_southwest.py', SCRIPTS / 'sea_look.py'], needs=['unreal.world', 'world.southwest', 'world.terrain'], heavy=True,
              about='south-west props, the terrain and the sea'),
         Step('unreal.mega', [UnrealScript(SCRIPTS / 'import_mega.py', 'MEGA IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_mega.py'], needs=['unreal.world', 'world.mega'], heavy=True, about='the mini-mega ramp'),
