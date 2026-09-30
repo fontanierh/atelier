@@ -109,6 +109,9 @@ private:
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     float LookGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
+    // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
+    float BoardCameraBlend=0.f;
+    FMinimalViewInfo BoardCamera;
     bool bRemountSkate=false;
     TSharedPtr<FYorimichiPhone> PhoneInput;
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;

@@ -1102,14 +1102,26 @@ void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult
 {
     Super::CalcCamera(DeltaTime,OutResult);
     FTransform Camera; float FOV=0;
-    if (!bFixedView && LookGrace<=0 && SkateRide && SkateRide->GetRetailCamera(Camera,FOV))
+    const bool bBoard=SkateRide && SkateRide->GetRetailCamera(Camera,FOV);
+    if (bBoard)
     {
-        OutResult.Location=Camera.GetLocation(); OutResult.Rotation=Camera.Rotator();
+        BoardCamera.Location=Camera.GetLocation(); BoardCamera.Rotation=Camera.Rotator();
         // Session publishes the vertical FOV used by its Bevy host. UE expects horizontal FOV.
         int32 Width=16,Height=9;
         if (APlayerController* PC=Cast<APlayerController>(Controller)) PC->GetViewportSize(Width,Height);
         const float Aspect=Height>0?float(Width)/Height:16.f/9.f;
-        OutResult.FOV=FMath::RadiansToDegrees(2.f*FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FOV)*.5f)*Aspect));
+        BoardCamera.FOV=FMath::RadiansToDegrees(2.f*FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FOV)*.5f)*Aspect));
+    }
+    // Ease between the follow camera and the native skating camera over about 0.6 s when mounting, stepping off,
+    // or looking around with the right stick, instead of cutting between them.
+    const bool bWantBoard=bBoard && !bFixedView && LookGrace<=0;
+    BoardCameraBlend=bFixedView?0.f:FMath::FInterpConstantTo(BoardCameraBlend,bWantBoard?1.f:0.f,DeltaTime,1.7f);
+    if (BoardCameraBlend>0.f)
+    {
+        const float A=FMath::SmoothStep(0.f,1.f,BoardCameraBlend);
+        OutResult.Location=FMath::Lerp(OutResult.Location,BoardCamera.Location,A);
+        OutResult.Rotation=FQuat::Slerp(OutResult.Rotation.Quaternion(),BoardCamera.Rotation.Quaternion(),A).Rotator();
+        OutResult.FOV=FMath::Lerp(OutResult.FOV,BoardCamera.FOV,A);
     }
 }
 
