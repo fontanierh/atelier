@@ -88,7 +88,7 @@ header updates, normal correction and the original 16-pair capacity contract.
 `GeometryTriangleFixup.*` preserves face/edge/vertex classification, sidedness, convexity and disabled
 vertices, including normal bending and contact reprojection. `WorldPrimitiveContact.*` composes the
 typed sphere/capsule/triangle/box path, the original triangle/box separating-axis specialization,
-velocity-based separation allowance and complete contact manifolds. World candidate traversal,
+velocity-based separation allowance and complete contact manifolds. World candidate traversal
 and body-workspace preparation remain separate work. `ContactRetention.*` preserves ordered material
 combination, duplicate rejection, coplanar reduction, point selection and capacity/flush behavior.
 
@@ -181,7 +181,9 @@ version-1 absolute-joint JSON interface, including baking and owner/conflict/pre
 is not an original EA data format. `MotionAnimation.*` combines the main tree and live channels with
 parameter sources, graph attributes, reset/stance and PlayAnimation/CreateAttribute factories and
 lifecycle. Connecting that owner to the complete graph host and physical feedback remains separate
-work; matching pose commands does not establish full animation execution.
+work; matching pose commands does not establish full animation execution. `AnimationPublication.*`
+preserves actor stance/events and the selective animation-to-physics packet reset/publication boundary,
+including consumed request flags, signal hashing and retained matrix tails.
 
 ## Validation completed
 
@@ -303,6 +305,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   side effects. PlayAnimation/CreateAttribute factories and lifecycle use real service callbacks.
   Original tested method bodies and factory arms are extracted verbatim with recorded byte boundaries
   and hashes; the remaining gameplay graph and physical publication are separate integration steps.
+- Animation/physics publication: 1,363 cases and 1,150,750 exact bytes for selective resets, complete
+  packets, consumed requests, retained tails and flags, signed reset versus unsigned publication extents,
+  stance/events/cull state, checkpoint requests and signed-byte signal hashing. Invocation order within
+  the complete actor scheduler and live physical feedback remain separate checks.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
