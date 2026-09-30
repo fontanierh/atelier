@@ -1142,26 +1142,58 @@ def furnish_heart(m, d, p):
 
 
 def furnish_boat(m, d, p, c, ang):
-    z = c[2]
-    q = local(c, ang+90, 0, 0); rug(d, q[0], q[1], z, 1.3, 2.6, ang, 'rug_blue')
-    for s in (-1, 1):
-        q = local(c, ang+90, .3, s*.72); crate(m, q[0], q[1], z, (1.2, .4, .38), ang+90)
-        cushion(d, *local(c, ang+90, .0, s*.72)[:2], z+.38, .4, ang); cushion(d, *local(c, ang+90, .55, s*.72)[:2], z+.38, .4, ang+5)
-    for s in (-1, 1):   # oars laid along the ribs
-        a = local(c, ang+90, -1.3, s*.5, 1.72); b = local(c, ang+90, 1.1, s*.55, 1.78)
-        board(d, a, b, .06, .04, PALE, 'wood_pale')
+    """Under the hull: two bunks end to end along the outer gunwale (away from the trunk and the bridges), each with a
+    quilt and a pillow, under one plank back; a sea chest with the rolled sail and a rope coil on the trunk side at
+    the ends; a blue rug down the middle; oars lashed up in the hull, the fishing net slung under the keel and glass
+    floats hanging from it, all above 2.9 m. The middle, end to end, and the trunk side stay clear."""
+    z = c[2]; half = L.BOAT['length']/2
+    B = lambda lx, ly, lz=0.: local(c, ang+90, lx, ly, lz)
+    q = B(0, 0); rug(d, q[0], q[1], z, 1.3, 4.6, ang, 'rug_blue')
+    # the bunks: x -2.05..2.05, y -1.42..-0.82 (the middle lane is |y| < 0.7)
+    with m.at(tuple(B(0, -1.12)), ang+90):
+        with m.use('wood_plank', grain=(1, 0, 0), jitter=True):
+            m.box((0, .03, .2), (3.98, .48, .4), vary(BOARD, .06))              # the body, set back from the front
+            m.box((0, .03, .43), (4.1, .56, .05), vary(PLANK, .06))             # the seat
+            m.box((0, -.28, .45), (4.1, .05, .9), vary(BOARD, .06))             # the back, both faces planked
+        with m.use('wood_timber', grain=(1, 0, 0), jitter=True):
+            m.box((0, -.28, .92), (4.16, .09, .05), DARK)                       # the cap on the back
+            for x in (-2.04, 0., 2.04):
+                m.box((x, .03, .3325), (.06, .6, .655), DARK)                  # the ends and the middle board, arm high
+    with d.at(tuple(B(0, -1.09, .455)), ang+90):
+        with d.use('quilt', grain=(1, 0, 0)):
+            for x in (-1., 1.):                                                 # two bunks, a quilt on each
+                d.box((x, 0, .06), (1.86, .48, .11), WHITE, .03)
+        with d.use('canvas', grain=(1, 0, 0)):
+            for x in (-1.6, 1.62):
+                d.box((x, -.06, .19), (.5, .3, .15), vary(CANVAS, .05), .05)
+    # the sea chest and the rolled sail at the stern, a rope coil at the bow, both on the trunk side under the gunwale
+    q = B(-2.7, 1.0); crate(m, q[0], q[1], z, (.9, .45, .45), ang+90, vary((.42, .25, .14), .05))
+    sail = [B(-3.12+.84*t, 1.0, .45+.13) for t in np.linspace(0, 1, 5)]
+    tube(d, sail, .13, vary(CANVAS, .04), 10, 'canvas')
+    for t in (.2, .8):
+        x = -3.12+.84*t
+        tube(d, [B(x, 1.0+.14*math.cos(a), .58+.14*math.sin(a)) for a in np.linspace(0, 2*math.pi, 11)], .012, ROPE, 4)
+    q = B(2.7, 1.05); rope_coil(d, q[0], q[1], z)
+    # two oars up in the hull, one each side, lashed to the ribs
+    for sgn in (-1, 1):
+        y = sgn*.85; zz = min(hull_z(x, y) for x in np.linspace(-1.6, 1.4, 7))-.1
+        a, b = B(-1.6, y, zz), B(1.1, y, zz)
+        board(d, a, b, .06, .05, PALE, 'wood_pale')
         with d.at(tuple(b), ang+90):
             with d.use('wood_pale', grain=(1, 0, 0)):
-                d.box((.25, 0, 0), (.5, .16, .03), PALE)
-    # a fishing net hung under the hull, sagging between the posts
-    for k in range(6):
-        a = local(c, ang+90, -1.6+.55*k, -.75, 1.72); b = local(c, ang+90, -1.6+.55*k, .75, 1.72)
-        tube(d, [a+(b-a)*t-[0, 0, .35*math.sin(math.pi*t)] for t in np.linspace(0, 1, 7)], .008, ROPE, 4)
-    for k in range(5):
-        pts = [local(c, ang+90, -1.6+2.75*t, -.75+.3*k+.05, 1.72-.35*math.sin(math.pi*(.3*k+.05)/1.5)) for t in np.linspace(0, 1, 7)]
-        tube(d, pts, .008, ROPE, 4)
-    for k in range(3):
-        q = local(c, ang+90, -1.2+.6*k, .3*(k-1), 1.45); glass_float(d, q[0], q[1], q[2], .11, .2)
+                d.box((.27, 0, -.025), (.55, .16, .025), PALE)
+        for x in (-.95, .45):
+            tube(d, [B(x, y, zz-.06), B(x, y, hull_z(x, y)-.01)], .012, ROPE, 4)
+    # the fishing net slung under the keel toward the bow, floats hanging from it
+    xs, ys = np.linspace(.5, 2.3, 7), np.linspace(-.55, .55, 5)
+    net = lambda x, y: hull_z(x, y)-.07-.2*math.sin(math.pi*(x-xs[0])/(xs[-1]-xs[0]))*math.sin(math.pi*(y-ys[0])/(ys[-1]-ys[0]))
+    fine = np.linspace(0, 1, 9)
+    for x in xs:
+        tube(d, [B(x, y, net(x, y)) for y in ys[0]+(ys[-1]-ys[0])*fine], .008, ROPE, 4)
+    for y in ys:
+        tube(d, [B(x, y, net(x, y)) for x in xs[0]+(xs[-1]-xs[0])*fine], .008, ROPE, 4)
+    for x, y in ((1.1, -.3), (1.7, .28), (2.05, -.1)):
+        zt = net(x, y); q = B(x, y); glass_float(d, q[0], q[1], z+zt-.1-.11, .11, .1)
 
 
 # ---------------------------------------------------------------------------------------------- special rooms
@@ -1288,37 +1320,79 @@ def heart_room(m, d, p):
     furnish_heart(m, d, p)
 
 
+def boat_shape(s):
+    """The upturned rowboat (L.BOAT) at s along it, -1 at the transom and 1 at the bow: half beam, gunwale height and
+    keel height over the deck. Upside down, the gunwale dips toward the ends (the sheer, never under BOAT['gunwale'])
+    and the keel runs nearly level along the top."""
+    B, G = L.BOAT['beam']/2, L.BOAT['gunwale']
+    hb = max(.03, B*math.sqrt(max(0., 1-s**2.2))) if s > 0 else B*(1-.55*(-s)**2.5)
+    return hb, G+.25-(.25 if s > 0 else .17)*s*s, G+.95-.08*s*s
+
+
+def hull_at(s, f, k=1., drop=0.):
+    """A point of the hull's skin in boat-local metres (x along it, y across toward the trunk): s along, f round from
+    the gunwale on the trunk side (0) over the keel to the other gunwale (pi); k < 1 and drop pull it inside."""
+    hb, zg, zk = boat_shape(s)
+    return np.array([s*L.BOAT['length']/2, hb*math.cos(f)*k, zg+(zk-zg)*max(0., math.sin(f))**.7*k-drop])
+
+
+def hull_z(x, y):
+    """The height of the hull's inside over boat-local (x, y)."""
+    hb, zg, zk = boat_shape(x/(L.BOAT['length']/2))
+    return zg+(zk-zg)*max(0., 1-min(1., (y/hb)**2))**.35
+
+
 def boat_room(m, d, p):
-    x0, y0 = p['xy']; z = p['deck']; ang = p['open']; rc = p['trunk']+1.3
-    c = np.array([x0+rc*math.cos(math.radians(ang)), y0+rc*math.sin(math.radians(ang)), z])
-    xs = np.linspace(-2.1, 2.1, 17); fs = np.linspace(0, math.pi, 12)
-    hb = lambda s: .95*math.sqrt(max(0., 1-max(0., s)**2.5))
-    zg = lambda s: 1.72+.28*max(0., s)**2
-    dp = lambda s: .78*(1-.2*max(0., s)**2)
-    sec = [[(x, hb(x/2.1)*math.cos(f), zg(x/2.1)+dp(x/2.1)*math.sin(f)) for f in fs] for x in xs]
+    """The boat room: a 7 m rowboat upturned over the deck beside its trunk (layout BOAT), on four posts under its
+    gunwales, open all round underneath. Faded blue planks outside with a pale strake at the gunwale, planking, ribs,
+    a keelson and two thwarts inside, a pointed bow and a transom. The gunwale is 2.6 m over the deck at the ends and
+    2.85 m in the middle, so the camera follows under it; the bridges land on the trunk side, which stays clear."""
+    r = p['room']; c = np.array([*r['center'], p['deck']], float); ang = r['angle']; z = c[2]
+    half = L.BOAT['length']/2; B = lambda lx, ly, lz=0.: local(c, ang+90, lx, ly, lz)
+    S = np.sin(np.linspace(-math.pi/2, math.pi/2, 27)); F = np.linspace(0, math.pi, 17)
+    sec = [[hull_at(s, f) for f in F] for s in S]
     with m.at(tuple(c), ang+90):
-        for i in range(len(xs)-1):
-            for j in range(len(fs)-1):
+        for i in range(len(S)-1):
+            for j in range(len(F)-1):
                 q = [sec[i][j], sec[i+1][j], sec[i+1][j+1], sec[i][j+1]]
-                mid = np.mean(q, axis=0); axis = np.array([mid[0], 0, zg(mid[0]/2.1)])
-                nrm = np.cross(np.subtract(q[1], q[0]), np.subtract(q[3], q[0]))
-                out = q if nrm@(mid-axis) > 0 else q[::-1]
-                if j in (0, len(fs)-2):
+                mid = np.mean(q, axis=0); axis = np.array([mid[0], 0, boat_shape(mid[0]/half)[1]])
+                out = q if np.cross(q[2]-q[0], q[3]-q[1])@(mid-axis) > 0 else q[::-1]
+                out = [tuple(v) for v in out]
+                if j in (0, len(F)-2):
                     with m.use('wood_pale', grain=(1, 0, 0)): m.poly(out, (.78, .74, .64))
                 else:
                     with m.use('hull', grain=(1, 0, 0)): m.poly(out, WHITE)
                 with m.use('wood_plank', grain=(1, 0, 0)): m.poly(out[::-1], vary(PLANK, .08))
-        with m.use('hull', grain=(0, 1, 0)):
-            two_sided(m, sec[0], WHITE, vary(PLANK))
-        for x in np.linspace(-1.9, 1.9, 9):      # ribs inside the hull
-            s = x/2.1; pts = [(x, hb(s)*math.cos(f)*.96, zg(s)+dp(s)*math.sin(f)*.96-.02) for f in np.linspace(0, math.pi, 10)]
-            tube(m, pts, .035, WOOD, 4, 'wood_timber')
-        tube(m, [(x, 0, zg(x/2.1)+dp(x/2.1)+.03) for x in np.linspace(-2.1, 2.05, 12)], .06, DARK, 6, 'wood_timber')  # keel
-        for x in (-1.75, 1.15):
-            for s in (-1, 1): post(m, x, s*hb(x/2.1)*.9, 0, zg(x/2.1)+.02, .13, WOOD)
-        for x in (-1.75, 1.15):
-            board(m, (x, -hb(x/2.1)*.9, zg(x/2.1)), (x, hb(x/2.1)*.9, zg(x/2.1)), .12, .12, DARK, 'wood_timber')
-    q = local(c, ang+90, 0, 0); chochin(d, q[0], q[1], z+1.95, .3, .45, 1000)
+        # the transom: painted outside, planked inside
+        tr = [tuple(v) for v in sec[0]]
+        nrm = sum(np.cross(np.array(tr[i]), np.array(tr[(i+1) % len(tr)])) for i in range(len(tr)))
+        if nrm[0] > 0: tr = tr[::-1]
+        with m.use('hull', grain=(0, 1, 0)): m.poly(tr, WHITE)
+        with m.use('wood_plank', grain=(0, 1, 0)): m.poly(tr[::-1], vary(PLANK, .08))
+        # rub rails along both gunwales and across the transom, the keel and stem outside, the keelson inside
+        for sgn, f in ((1, 0.), (-1, math.pi)):
+            tube(m, [hull_at(s, f)+[0, sgn*.03, -.01] for s in S], .045, DARK, 6, 'wood_timber')
+        tube(m, [sec[0][0]+[-.03, .03, -.01], sec[0][-1]+[-.03, -.03, -.01]], .045, DARK, 6, 'wood_timber')
+        tube(m, [(s*half, 0, boat_shape(s)[2]+.03) for s in S], .06, DARK, 6, 'wood_timber')
+        top = boat_shape(1.)
+        tube(m, [(half+.07*math.sin(math.pi*t*.5), 0, top[1]-.02+(top[2]-top[1]+.06)*t) for t in np.linspace(0, 1, 6)], .05, DARK, 6, 'wood_timber')
+        tube(m, [(s*half*.97, 0, boat_shape(s*.97)[2]-.05) for s in np.linspace(-.96, .9, 12)], .05, WOOD, 6, 'wood_timber')
+        for s in np.linspace(-.86, .86, 11):         # ribs
+            tube(m, [hull_at(s, f, .965, .03) for f in np.linspace(.06, math.pi-.06, 12)], .03, WOOD, 4, 'wood_timber')
+        for x in (-1.25, 1.25):                       # thwarts, high over the camera
+            y = .96*max(yy for yy in np.linspace(0, 1.6, 81) if hull_z(x, yy) >= 3.17)
+            board(m, (x, -y, 3.14), (x, y, 3.14), .24, .05, PALE, 'wood_pale')
+        # four posts under the gunwales, clear of the ways in from the bridges (they come from the trunk side)
+        for x in (-2.2, 2.2):
+            hb = boat_shape(x/half)[0]
+            for sgn in (-1, 1):
+                y = sgn*(hb-.15); zt = min(hull_z(x+dx, y+dy) for dx in (-.08, .08) for dy in (-.08, .08))-.015
+                post(m, x, y, -.04, zt, .16, WOOD)
+    # the lantern from the keel, its bottom 2.75 m up; a low warm fill
+    q = B(-.5, 0); zk = hull_z(-.5, 0)
+    chochin(d, q[0], q[1], z+2.97, .3, zk-2.97-.19-.02, 1000)
+    q = B(.5, 0); light(q[0], q[1], z+1.2, 250, 3.5)
+    interior((c[0], c[1], z+L.BOAT['gunwale']/2), (L.BOAT['beam']/2-.05, half-.05, L.BOAT['gunwale']/2+.35), ang)
     furnish_boat(m, d, p, c, ang)
 
 

@@ -29,7 +29,7 @@ Walkable, with collision. Counts come from `world/regions/treehouse/layout.py`.
 | Little hut | 1 | Plank walls on a timber frame, gable roof, doors north and south, round window, paper window; the maple trunk goes up through the roof |
 | Small huts | 3 | Map room, Kitchen, Sleeping nest: the same kit as the little hut, gable roof, door on the bridge side, round window, six-pane window |
 | Heart room | 1 | A 9 m eight-sided hall beside the camphor: plaster walls 3.2 m high with dark posts and planks along the bottom, two doors on the camphor side (one for the Kitchen and Map room bridges, one for the Pulley and Chime bridges) with noren and lanterns, two paned windows, a round window onto the camphor, the big open round window, an eight-sided shingle roof with its rafters showing inside, a moss cap and a finial |
-| Boat room | 1 | Upturned rowboat as a roof: faded blue hull with a pale stripe, ribs and planks showing underneath, on four posts |
+| Boat room | 1 | A 7 m rowboat upturned as a roof, 2.6 m up at the ends and 2.85 m in the middle, on four posts and open all round: faded blue hull with a pale stripe, a transom and a pointed bow; planks, ribs, a keelson and two thwarts showing underneath |
 | Slide | 1 | Pale wooden chute, one turn round the trunk, low side walls, posts to the ground, start gate on the deck, straw and leaf landing |
 | Pulley crane | 1 | Timber arm and brace, pulley wheel, rope to the ground, basket (see 3) |
 | Chime hoop | 1 | Wooden ring round the trunk on four arms, 12 fuurin (see 2) |
@@ -72,7 +72,7 @@ small and hanging things get none.
 | Heart room | A few big pieces, all against the walls, so the middle and the ways from both doors stay open: a round slab table on a rug under the front window with four cushions round it and the stump with **the brazier and kettle**; a window bench with cushions under the round window; two tall bookshelves under the island map; a hammock across a corner on wall pegs; a low chest of drawers with a plant and books under a loft with quilts, its ladder flat on the wall (for looks only: the player cannot climb); a hanging bell, framed drawings, a kite, **the backpack** and a basket of scrolls; strings of round lanterns from the king post, all above 2.9 m; a fuurin in the open round window |
 | Kitchen | **The clay stove with pot and kettle**, its iron chimney pipe, log stools round a log table, shelves of bowls, jars and baskets, a counter with a cutting board, a water barrel with a ladle, hanging herbs and persimmons, tea towels |
 | Sleeping nest | Two futons with patchwork quilts and pillows, a hammock on wall pegs along the window wall with the futons in front of it, a shelf with a picture book, a framed picture and a toy boat, a hanging lantern |
-| Boat room | Fishing net under the hull, two oars on the ribs, a lantern from the keel, crate benches with cushions, a rolled sail, a blue rug |
+| Boat room | Two bunks end to end along the far side with quilts, pillows and a plank back; a sea chest with the rolled sail and a rope coil at the ends; a blue rug down the middle; two oars lashed up on the ribs, the fishing net slung under the keel with glass floats, and a lantern from the keel, all above 2.7 m. The middle, end to end, and the trunk side where the bridges come in stay clear |
 | Slide tree | Start gate, lanterns, straw landing heap at the bottom |
 | Pulley deck | Woven basket on the rope, crates, rope coil |
 | Chime tree | The chime hoop, two lanterns, a potted plant |
