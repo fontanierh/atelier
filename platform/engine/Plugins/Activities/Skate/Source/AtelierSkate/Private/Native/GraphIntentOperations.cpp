@@ -115,7 +115,7 @@ bool ActionIntentGraphHost::FromGraph(const Graph& source,const GraphBinding& bi
         const auto& p = operations[operation].config; constants_.push_back({p.float_bits ? Float(*p.float_bits) : 0.0f,p.on_update,false});
     }
     times_.assign(count,{}); board_adjust_.assign(count,{}); body_flip_.assign(count,{}); juice_pending_.assign(count,{}); gesture_tricks_.assign(count,{}); next_instance_ = 1;
-    action_intents.Clear(); motion_intents.Clear(); filtered_intents.Clear(); condition_inputs = {}; animation_attributes.clear(); stance.reset(); errors.clear(); diagnostics_overflowed = false;
+    action_intents.Clear(); motion_intents.Clear(); filtered_intents.Clear(); condition_inputs = {}; animation_attributes.clear(); stance.reset();is_tricking.reset();tick=0; errors.clear(); diagnostics_overflowed = false;
     return true;
 }
 void ActionIntentGraphHost::PrepareInput(IntentMap action,IntentMap prior,std::vector<AnimationAttribute> attributes)
@@ -153,6 +153,7 @@ std::uint32_t ActionIntentGraphHost::ConditionActivation(graph::Id id,const grap
     if (id >= remap_.conditions.size() || remap_.conditions[id] >= operations.size())
     { AddError("ActionGraph condition "+std::to_string(id)+" is unbound"); return 0; }
     const auto& operation = operations[remap_.conditions[id]]; bool result = false; std::string error;
+    condition_inputs.is_tricking=is_tricking;
     if (!operation.condition.Evaluate(condition_inputs,action_intents,motion_intents,filtered_intents,animation_attributes,frame,parents_,result,error))
     {
         // The original core Condition branch adds the compact condition ID;

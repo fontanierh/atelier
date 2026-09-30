@@ -40,6 +40,7 @@ struct GraphConditionInputs
     std::optional<GraphPushBrakeInputs> push_brake;
     std::optional<bool> physics_requests_dismount;
     std::optional<std::uint32_t> physical_state_16;
+    std::optional<bool> is_tricking;
 };
 struct GraphCondition
 {
@@ -49,7 +50,7 @@ struct GraphCondition
         FilteredState, Grinding, Mirrored, RidingFakie, DisablePushBrake, CurrentState,
         HasMotionIntent, HasFilteredIntent, HasAnimationAttribute,
         InStateForTime, InParentStateForTime, PhysicsRequestsDismount, IsLandingOnBoard,
-        HasGestureIntent, IsInLocomotion
+        HasGestureIntent, IsInLocomotion, IsTricking
     };
     Kind kind = Kind::Unsupported;
     std::string operation_name, name;

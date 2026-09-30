@@ -353,6 +353,15 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   packets, consumed requests, retained tails and flags, signed reset versus unsigned publication extents,
   stance/events/cull state, checkpoint requests and signed-byte signal hashing. Invocation order within
   the complete actor scheduler and live physical feedback remain separate checks.
+- Connected animation scheduler: 12 supported graph pairs, 1,704 operations and 1,512 successful
+  advances preserve 15,232,081 exact bytes through action/motion controllers, parameter and clock
+  ordering, caches, pose/hierarchy evaluation, stance/checkpoints, selective resets and physics packets.
+  The corpus observes 1,023 distinct poses and 24 matching missing-speed errors. Complete authored
+  gameplay graphs and board/rider producer scheduling remain outside this supported-fixture boundary.
+- Riding animation and physical feedback calculations: 594 cases, 15,874 steps and 660,004 exact bytes
+  cover persistent crouching/auto-pump, body tilt, fakie, pump channels, ground acceleration/bump and
+  turn conditioning, plus 358 loaded settings words. Graph registration and full-session physical
+  producer feedback remain separate checks.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.

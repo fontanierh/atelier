@@ -7,6 +7,8 @@
 
 namespace atelier::skate
 {
+struct ActionGraphInput;
+struct ActionGraphOutput;
 struct ActionIntentParameter
 {
     std::optional<std::string> name, mg_intent, mg_intent_mag, mg_intent_angle, ag_intent, text;
@@ -62,6 +64,8 @@ public:
     GraphConditionInputs condition_inputs;
     std::vector<AnimationAttribute> animation_attributes;
     std::optional<Stance> stance;
+    std::optional<bool> is_tricking;
+    std::uint64_t tick=0;
     std::optional<BodyFlipSettings> body_flip_settings;
     std::vector<std::string> errors;
     bool diagnostics_overflowed = false;
@@ -69,6 +73,8 @@ public:
     std::function<void(std::string_view)> presentation;
     bool FromGraph(const Graph&,const GraphBinding&,const CompiledGraph&,const SettingsDatabase&,std::string& error);
     void PrepareInput(IntentMap action, IntentMap prior_motion, std::vector<AnimationAttribute> attributes);
+    void PrepareInput(const ActionGraphInput& input);
+    ActionGraphOutput Output() const;
     graph::Context GetContext() const override { return {}; }
     std::uint32_t ConditionActivation(graph::Id condition,const graph::Frame&) override;
     std::uint32_t Allocate(graph::Id behavior,const graph::Frame&) override;

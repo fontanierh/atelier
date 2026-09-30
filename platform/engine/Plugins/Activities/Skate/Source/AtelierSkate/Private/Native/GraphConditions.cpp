@@ -141,6 +141,7 @@ bool ParseGraphCondition(const GraphAttributes& a,bool motion,GraphCondition& ou
     else if (!motion && name == "HasGestureIntent")
     { c.kind=K::HasGestureIntent;if (!ParseGestureGroup(a.Text("group").value_or(""),c.gesture_group,error)) return false; }
     else if (!motion && name == "IsInLocomotion") c.kind=K::IsInLocomotion;
+    else if (!motion && name == "IsTricking") c.kind=K::IsTricking;
     out = std::move(c); return true;
 }
 void BindGraphConditionTarget(const Graph& source,const GraphBinding& binding,const GraphOperation& operation,GraphCondition& condition)
@@ -217,6 +218,10 @@ bool GraphCondition::Evaluate(const GraphConditionInputs& in,const IntentMap& ac
     // Original factory82BC3F68 installs8231ED5C; predicate8274CA90 is
     // li r3,0;blr. This resolved constant is separate from unsupported leaves.
     case K::IsInLocomotion:result=false;break;
+    // action_conditions.rs consumes the previous MotionGraph owner's bit27.
+    case K::IsTricking:
+        if (!Require(bool(in.is_tricking),"IsTricking requires actual MotionGraph flag27",error)) return false;
+        result=*in.is_tricking;break;
     default: error = "Unsupported graph condition `"+operation_name+"`"; return false;
     }
     return true;
