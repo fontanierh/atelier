@@ -497,6 +497,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   all seven projection failure prefixes and eleven resulting write orders. All fourteen output
   boolean publications exercise both values. Signed zero and subnormal lanes are covered; the full
   active Ground input/state/physical lifecycle remains separate.
+- Ground board composition: 163 histories and 338 callbacks preserve 1,839,879 exact bytes across
+  ordinary/manual-correction, wall-jump animation and collision branches. All 25 required services,
+  each branch's complete failure prefixes, full/refused force queues and detached inertia errors
+  execute against unchanged original core modules. Successful stock loading covers all 25 mode/surface
+  profiles and trainer tuning; 652 launch snapshots verify all 70 ground/selector lanes. World hung
+  results and external publication are explicit fixture boundaries. Concrete GroundRuntime bindings
+  and malformed whole-profile diagnostics remain separate; partial state/body/manual writes are observed.
 - Ground state/correction scheduling: 701 streams preserve 2,606,229 exact words across all
   55 state fields, entry/capture/reset, wrapping counters, anti-flip nudges, coping wheel catches,
   hung-up recovery/wipeout, spawn pinning and shared inertia drag groups/tails. Every required
