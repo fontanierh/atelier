@@ -347,6 +347,18 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Controller input and intents: 58,508 commands and 31,515,955 exact output bytes, covering encoded byte
   names/aliases, Xbox packets, pad history, retained raw/derived fields, ordered producer callbacks,
   filter state and slide latches. This is core subsystem coverage, not full host scheduling.
+- Canonical player input phase: 220 retained histories and 494 operations preserve 11,446,219 exact
+  bytes across all five stock modes, captured pre-teleport state/category, split continuations, wheel
+  pairs, surface selection, counters, external physics caches, deck angles and twist publication.
+  The comparison embeds the unchanged original initialization, selective reset and output reset;
+  all twelve mandatory service calls retain their arguments, order and partial writes on failure.
+  Completed snapshots survive later reset without mutation. Services have explicitly supplied
+  observations here; concrete world, toolkit, skeleton and grind producers remain separate checks.
+- Animation phase packet owner: 44 histories and 401 operations preserve 602,390 exact bytes for
+  stock profile loading, publication, borrowed packets, selective reset, external reply extents and
+  retained failure state. Six malformed settings fixtures preserve the original error text. The
+  complete unchanged host packet owner is the oracle; its inactive external providers remain inactive.
+  Whole actor scheduling and concrete physical publication remain separate integration checks.
 - Action host, conditions and production slide logic: 8,512 subsystem commands, 3,072 live controller
   ticks, 3,072 bound-condition frames and authored action parameters preserve 2,979,481 output bytes.
   All 12 host fixtures have distinct traces; oracle coverage requires actual state transitions,
