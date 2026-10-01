@@ -364,6 +364,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   and packed board pose updates. Teleport reset retains cached curve selection exactly. The complete
   unchanged core implementation is compared; current board poses and trigger calls are supplied
   upstream inputs, and the complete player output schedule remains separate.
+- Board animation and air/plant root frames: 178 histories and 22,474 commands preserve
+  5,083,760 exact words for shared rotation-error capture, slow/fast blending, selective reset,
+  all four target-velocity lanes, animated and COM-controlled air frames, unsigned dismount
+  revert counts, heading retention and plant anchors. The complete unchanged core implementations
+  are compared, including signed-zero velocity division and unordered curve completion. Curves
+  and upstream transforms are explicit inputs; host skeleton updates and the full physical
+  scheduling remain separate checks.
 - Action host, conditions and production slide logic: 8,512 subsystem commands, 3,072 live controller
   ticks, 3,072 bound-condition frames and authored action parameters preserve 2,979,481 output bytes.
   All 12 host fixtures have distinct traces; oracle coverage requires actual state transitions,
