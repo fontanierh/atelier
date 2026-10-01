@@ -10,7 +10,7 @@ arm_R = ["clavicle_R", "upperarm_R", "forearm_R", "hand_R"]
 leg_L = ["thigh_L", "shin_L", "foot_L", "toe_L"]
 leg_R = ["thigh_R", "shin_R", "foot_R", "toe_R"]
 
-[optional.fingers]   # 15 per hand; Cairo and the fox hunter have them
+[optional.fingers]   # 15 per hand
 per_hand = ["thumb", "thumb_tip", "thumb_end",
             "finger_0", "finger_tip_0", "finger_end_0", "finger_1", "finger_tip_1", "finger_end_1",
             "finger_2", "finger_tip_2", "finger_end_2", "finger_3", "finger_tip_3", "finger_end_3"]

@@ -194,7 +194,8 @@ to check that it is deterministic.
 - Rails reach the session as polylines only; their kind, side and radius are not used.
 - A complex-as-simple mesh is seen in a cooked build only if its importer enables CPU access. Editor builds are the
   checked path; cooked loading of the bundle is unverified.
-- The solver keeps the recovered rider's proportions, so grabs and contacts near low obstacles can need visual
-  review on a differently proportioned character.
+- The solver keeps the recovered rider's proportions, so contacts near low obstacles can need visual review on a
+  differently proportioned character. Grab grips scale with the host's hand, but the finger curl angles are fixed:
+  on a hand with short fingers for its knuckle spacing, the fingertips end at the rail rather than under the deck.
 - Only the `pop`, `land` and `clatter` sounds play; `catch`, `push`, `flick` and `fall` are loaded but not
   triggered. The original audio and interface are not part of the runtime.
