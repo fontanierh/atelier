@@ -115,6 +115,11 @@ transform leave the seam out, so the seam does not move the park.
   grass, leaves and a few rocks, as in the Sunburst concept `assets/megapark/concepts/seam-gate`;
   only that undergrowth comes closer to the park than the 4 m `hidamari/layout.py` clears.
 
+- **The rest of the rim.** Elsewhere the park's own banks and hillsides end at its rim, and the
+  ground outside meets them lower than their tops. The park's rock, stone, earth and grass
+  materials are drawn from both sides (`import_megapark.py`, `NATURAL`), so from the forest those
+  banks read as hill rather than as a window into the park.
+
 The park build writes the seam as `SM_MP_Seam` and `UC_MP_Seam` with the island's meshes in
 `park.json`; `import_megapark.py` imports them, but the standalone level stays the parity reference
 without them.

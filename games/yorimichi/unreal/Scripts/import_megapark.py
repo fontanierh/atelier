@@ -18,6 +18,10 @@ ROOT = '/Game/MegaPark'
 # The rock and stone textures (tools/megapark_textures.py SURFACES rock, rock_smooth, stone_cut): their materials grow
 # moss where they face up.
 MOSSY = {'0x2c70170a001d0133', '0x2c70170a001d0135', '0x2c70170a001d014f'}
+# The natural surfaces: the rock and stone, the earth and the grass. Their banks and hillsides end at the park's rim, and
+# the island's ground outside meets the rim lower than their tops, so from the forest the backs of those sheets show.
+# Drawn from both sides they read as the hill there instead of a window into the park (docs/MEGAPARK.md, "Seam").
+NATURAL = MOSSY | {'0x2c70170a001d00aa', '0x2c70170a00040094'}
 LEVEL = ROOT + '/Maps/SuperUltraMegaPark'
 E = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
@@ -200,6 +204,10 @@ def materials(report):
                    'LightmapNorm': restyle['lightmaps'].get(channels.get('lightmap'), 3.),
                    'Moss': float(channels.get('diffuse') in MOSSY)}
         for k, v in scalars.items(): MEL.set_material_instance_scalar_parameter_value(mi, k, v)
+        natural = p.get('alpha_mode', 0) == 0 and channels.get('diffuse') in NATURAL
+        overrides = mi.get_editor_property('base_property_overrides')
+        overrides.set_editor_property('override_two_sided', natural); overrides.set_editor_property('two_sided', natural)
+        mi.set_editor_property('base_property_overrides', overrides)
         MEL.update_material_instance(mi); E.save_loaded_asset(mi); result[key] = mi
     return result
 
