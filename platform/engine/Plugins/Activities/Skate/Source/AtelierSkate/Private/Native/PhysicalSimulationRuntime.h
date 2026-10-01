@@ -145,6 +145,8 @@ public:
     std::uint64_t ticks=0;
     std::uint32_t processed_flags_2468=0x2000;
     bool board_wiping_out=false,failed=false;
+    // Host override: no value preserves the original right-trigger action.
+    std::optional<bool> transfer=std::nullopt;
     std::optional<PhysicalSimulationDiagnostic> diagnostic;
     static std::optional<PhysicalSimulationRuntime> Initialize(PhysicalSimulationSettings,const SettingsDatabase&,
         const std::vector<Mat4>& initial_hierarchy,WorldGeometry,AffineTransform spawn,std::string& error);

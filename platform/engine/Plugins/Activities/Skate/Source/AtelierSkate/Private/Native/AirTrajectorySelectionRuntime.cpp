@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "AirTrajectoryRuntime.h"
 #include "AirTrajectorySelectorSettings.h"
+#include <algorithm>
+#include <cmath>
 #if defined(__clang__)
 #pragma clang fp contract(off)
 #endif
@@ -35,13 +37,24 @@ private:
   AirTrajectoryGrindContext context_;
 };
 } // namespace
-Vec4 AirTrajectoryVertDepartureNormal(Vec4 n, Vec4 v, float direction) {
+std::pair<Vec4,Vec4> AirTrajectoryVertDeparture(Vec4 n, Vec4 v,
+                                              float direction, float assist) {
   const float speed = std::sqrt((v[0] * v[0] + v[1] * v[1]) + v[2] * v[2]);
   const float horizontal = std::sqrt(n[0] * n[0] + n[2] * n[2]);
-  if (std::abs(n[1]) < 0.25f && v[1] > 0.8f * speed &&
-      direction < 0.5f && horizontal > 0.9f)
-    return {n[0] / horizontal, 0, n[2] / horizontal, 0};
-  return n;
+  if (direction >= 0.5f || horizontal < 1.0e-6f) return {n,v};
+  const Vec4 wall{n[0]/horizontal,0.0f,n[2]/horizontal,0.0f};
+  if (std::abs(n[1]) < 0.25f && v[1] > 0.8f * speed && horizontal > 0.9f)
+    return {wall,v};
+  const float reach=0.25f+0.4f*std::clamp(assist,0.0f,1.0f);
+  const float into=v[0]*wall[0]+v[2]*wall[2];
+  const float climb=v[1]/VectorMax(std::sqrt(v[1]*v[1]+into*into),1.0e-6f);
+  if (assist <= 0.0f || n[1] <= 0.0f || n[1] >= reach || v[1] <= 0.0f
+      || climb < std::sqrt(1.0f-reach*reach)-0.1f) return {n,v};
+  const float out=VectorMin(into,0.0f);
+  return {wall,Vec4{v[0]-wall[0]*out,v[1],v[2]-wall[2]*out,v[3]}};
+}
+Vec4 AirTrajectoryVertDepartureNormal(Vec4 n, Vec4 v, float direction) {
+  return AirTrajectoryVertDeparture(n,v,direction,0.0f).first;
 }
 bool AirTrajectoryRuntime::Load(const SettingsDatabase &data,
                                 std::string &error) {
@@ -56,8 +69,9 @@ bool AirTrajectoryRuntime::Load(const SettingsDatabase &data,
 bool AirTrajectoryRuntime::Launch(AirLaunchInfo info, AirSelectorInput input,
                                   const WorldGeometry &world, bool &launched,
                                   std::string &error) {
-  input.ground_normal = AirTrajectoryVertDepartureNormal(
-      input.ground_normal, info.start_velocity, input.directional_input);
+  const auto departure=AirTrajectoryVertDeparture(
+      input.ground_normal,info.start_velocity,input.directional_input,vert_assist);
+  input.ground_normal=departure.first;info.start_velocity=departure.second;
   bool did_launch;
   if (!selector.Launch(info, input, settings, did_launch, error))
     return false;

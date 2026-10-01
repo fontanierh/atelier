@@ -77,7 +77,11 @@ bool GameplaySession::Advance(std::string& error)
 bool GameplaySession::AdvancePublished(std::string& error)
 {markers.Advance(input,*gameplay);return gameplay->Advance(input.PublishedInput(),error);}
 bool GameplaySession::Tick(XboxState state,std::string& error)
-{input.Sample(state);return AdvancePublished(error);}
+{
+    gameplay->physical->transfer=(state.buttons&GameplayTransferButton)!=0;
+    state.buttons=static_cast<std::uint16_t>(state.buttons&~GameplayTransferButton);
+    input.Sample(state);return AdvancePublished(error);
+}
 float GameplaySession::Period() const
 {return float(gameplay->clock.PeriodNanoseconds())/1000000000.0f;}
 bool GameplaySession::Step(XboxState state,float dt,std::string& error)

@@ -11,6 +11,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import re
 import shutil
@@ -37,7 +38,7 @@ def intention_names():
     # including conditional literal names. Candidate output is never used.
     return {name for relative in INTENTION_FILES
             for name in re.findall(r'"([A-Za-z][A-Za-z0-9_]*)"',
-                                   (PLUGIN/'ThirdParty/skate-runtime'/relative).read_text())}
+                                   historical.source_text(relative))}
 
 
 def corpus(sets):
@@ -229,12 +230,9 @@ def stage_native(output):
 
 
 def audit_originals():
-    root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip())
     identities={}
     for relative in (*ALIASES.values(),*INTENTION_FILES):
-        path=PLUGIN/'ThirdParty/skate-runtime'/relative;raw=path.read_bytes()
-        frozen=subprocess.check_output(['git','show',REFERENCE_REVISION+':'+path.relative_to(root).as_posix()],cwd=root)
-        assert raw==frozen, 'Original source differs from pinned revision: '+relative
+        raw=historical.source_bytes(relative)
         identities[relative]=hashlib.sha256(raw).hexdigest()
     return identities
 
@@ -268,4 +266,4 @@ def main():
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

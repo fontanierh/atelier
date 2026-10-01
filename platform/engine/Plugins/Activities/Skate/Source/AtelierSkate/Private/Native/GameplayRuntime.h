@@ -35,7 +35,9 @@ public:
     bool Advance(const TickInput&,std::string& error);
     bool TravelTo(Mat4,std::string& error);
     bool InstallWorld(WorldGeometry,std::shared_ptr<const PlayerGrindStaticProvider>,std::string& error);
-    bool Tune(float pop,float spin,float push_speed,float push_power,std::string& error);
+    bool Tune(float pop,float spin,float push_speed,float push_power,float vert_assist,std::string& error);
+    bool Tune(float pop,float spin,float push_speed,float push_power,std::string& error)
+    {return Tune(pop,spin,push_speed,push_power,0.0f,error);}
     void Launch(Vec3 velocity);
 
     std::shared_ptr<const GameplayResources> resources;

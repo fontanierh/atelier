@@ -10,6 +10,7 @@ import hashlib
 import itertools
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import re
 import struct
@@ -19,9 +20,9 @@ from check_input_parity import Record, PLUGIN
 
 
 def authored_rows():
-    source = PLUGIN/'ThirdParty/skate-runtime/crates/skate-host/src/input/gesture_mapping_data.rs'
+    source = historical.source_text('crates/skate-host/src/input/gesture_mapping_data.rs')
     pattern = re.compile(r'\(\s*"([^"]*)",\s*"([^"]*)",\s*"([^"]*)",\s*(\d+),?\s*\)')
-    rows = [pattern.findall(chunk) for chunk in source.read_text().split('&[')[2:]]
+    rows = [pattern.findall(chunk) for chunk in source.split('&[')[2:]]
     assert [len(group) for group in rows] == [30, 30, 30, 45, 45, 45, 45]
     return rows
 
@@ -164,4 +165,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    historical.run_cli(main)

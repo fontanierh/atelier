@@ -41,7 +41,9 @@ bool AdvancePlayerInputHostPhase(PlayerInputHostPhaseOwners owners,PlayerInputHo
     owners.contact.BeginInput();
     owners.landing_deck.manager.can_land_256=false;
     std::memcpy(input.player.manager_1852_vector_176.data(),owners.landing_deck.manager.ik_offset_176.data(),16);
-    PlayerInputHostFrame host{0,0,frame.input_available,frame.actions.Value(71),f.DeckFrame(),
+    const float transition_action=f.transfer.has_value()
+        ? static_cast<float>(*f.transfer) : frame.actions.Value(71);
+    PlayerInputHostFrame host{0,0,frame.input_available,transition_action,f.DeckFrame(),
         owners.player.state.selector.post_grind_jump_counter};
     if(input.physical.state.flag_61!=0)
     {

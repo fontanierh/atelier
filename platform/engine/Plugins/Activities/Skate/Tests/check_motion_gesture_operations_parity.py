@@ -10,6 +10,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import re
 import struct
 import subprocess
@@ -54,8 +55,8 @@ def fixture_metadata():
 
 
 def original_catalog():
-    path = PLUGIN/'ThirdParty/skate-runtime/crates/skate-host/src/graph_host/motion_character_gesture.rs'
-    names = re.findall(r'"([A-Z0-9_]+)"',path.read_text().split('const NAMES:')[1])
+    source = historical.source_text('crates/skate-host/src/graph_host/motion_character_gesture.rs')
+    names = re.findall(r'"([A-Z0-9_]+)"',source.split('const NAMES:')[1])
     assert len(names) == 37
     return names
 
@@ -221,4 +222,4 @@ def main():
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

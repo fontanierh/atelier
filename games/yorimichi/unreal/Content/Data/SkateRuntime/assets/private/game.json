@@ -1,1 +1,0 @@
-{"version": 1, "character_scene": "private/headless.glb", "initial_animation": "R_IDLE_HCOM_000", "action_graph": "private/stock/data/state/ActionGraph_OnBoard.stategraph", "motion_graph": "private/stock/data/state/MotionGraph_OnBoard.stategraph"}

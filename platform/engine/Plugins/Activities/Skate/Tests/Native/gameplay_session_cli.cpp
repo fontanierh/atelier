@@ -376,17 +376,18 @@ bool Run(int argc,char** argv,std::string& error)
             const bool activate=op=="activate";
             if(activate)
             {
-                if(!Fields(command,{"op","spawn","heading","goofy","difficulty","trucks","generation","velocity","pop","spin","push_speed","push_power"},
+                if(!Fields(command,{"op","spawn","heading","goofy","difficulty","trucks","generation","velocity","pop","spin","push_speed","push_power","vert_assist"},
                     {"op","spawn","heading","goofy","difficulty","trucks"},error))return false;
             }
-            else if(!Fields(command,{"op","goofy","difficulty","trucks","pop","spin","push_speed","push_power"},
+            else if(!Fields(command,{"op","goofy","difficulty","trucks","pop","spin","push_speed","push_power","vert_assist"},
                 {"op","goofy","difficulty","trucks"},error))return false;
-            bool goofy=false;std::string difficulty;float trucks=0,pop=1,spin=1,speed=1,power=1,heading=0;
+            bool goofy=false;std::string difficulty;float trucks=0,pop=1,spin=1,speed=1,power=1,vert_assist=0,heading=0;
             Vec3 spawn{},velocity{};std::uint32_t ride=0;
             if(!Boolean(*Field(command,"goofy"),goofy,error) || !String(*Field(command,"difficulty"),difficulty,error)
                 || !Float(*Field(command,"trucks"),trucks,error) || !FloatField(command,"pop",pop,error)
                 || !FloatField(command,"spin",spin,error) || !FloatField(command,"push_speed",speed,error)
-                || !FloatField(command,"push_power",power,error))return false;
+                || !FloatField(command,"push_power",power,error)
+                || !FloatField(command,"vert_assist",vert_assist,error))return false;
             if(activate)
             {
                 if(!Vector(*Field(command,"spawn"),spawn,error) || !Float(*Field(command,"heading"),heading,error))return false;
@@ -396,7 +397,7 @@ bool Run(int argc,char** argv,std::string& error)
                 {error="Invalid spawn or equipment";return false;}
             }
             else if(!std::isfinite(trucks)){error="Invalid equipment";return false;}
-            if(!session.Configure(difficulty,goofy,trucks,error) || !session.Tune(pop,spin,speed,power,error))return false;
+            if(!session.Configure(difficulty,goofy,trucks,error) || !session.Tune(pop,spin,speed,power,vert_assist,error))return false;
             if(activate)
             {
                 if(!session.Activate(spawn,heading,error))return false;

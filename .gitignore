@@ -18,9 +18,6 @@ games/*/unreal/Content/
 games/yorimichi/unreal/Content/*
 !games/yorimichi/unreal/Content/Data/
 games/yorimichi/unreal/Content/Data/*
-!games/yorimichi/unreal/Content/Data/SkateRuntime/
-games/yorimichi/unreal/Content/Data/SkateRuntime/*
-!games/yorimichi/unreal/Content/Data/SkateRuntime/assets/
 !games/yorimichi/unreal/Content/Data/SkateNative/
 games/*/unreal/*.xcworkspace
 games/*/unreal/.vscode/

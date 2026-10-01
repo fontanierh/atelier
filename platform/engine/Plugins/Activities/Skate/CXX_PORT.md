@@ -39,10 +39,10 @@ in the Unreal adapter; the worker source remains identical to the pinned referen
 - [x] C++ camera and complete session scheduling.
 - [x] Finish focused LandingOnDeck acceptance, including original constructor rejection and loaders.
 - [x] Finish physical wipeout acceptance, including release/recovery and loader failures.
-- [ ] Compare the latest-main vert changes.
+- [x] Compare the latest-main vert changes.
 - [ ] In-process Unreal ownership, background world refresh, mounting, retargeting and shutdown.
 - [x] Commit the verified project-native data package.
-- [ ] Remove Rust worker/build dependencies and original-format assets from the shipping checkout.
+- [x] Remove Rust worker/build dependencies and original-format assets from the shipping checkout.
 - [ ] Complete latest-main comparisons, in-game scenarios, visual checks and frame-pacing checks; submit the PR.
 
 ## Complete native session
@@ -77,13 +77,28 @@ Actual air transitions generate four Begin, 438 Update and four End callbacks,
 26 distinct simulation periods and four returns to the stock period. All 1,264
 ticks verify that the preceding tick's requests reach the clock in source order.
 This proves dynamic scheduling under an authored resource, not a stock feature.
+The latest `1536531` Session comparison also passes: 23 histories, 4,824 commands and
+233 direct departure-helper cases preserve 673,545,400 exact bytes (SHA256
+`18d4b82b168a7c530ce84b99ce07f75592ef0ae921693551ab349c53288f93a6`).
+All nine baseline histories remain, with only the new zero-assist Tune argument.
+The full owners exercise both stances, 50–90° quarters, pumping, grabs and explicit
+transfers, reactivation, invalid tuning and command failure retention. Transfer
+bit 0x0800 is captured before pad sampling and stripped from the actual raw input.
+The retained selector observations include 98 first-completed launch publications,
+seven vert alignments, four assisted slope launches and seven velocity adjustments.
+The original phases call Launch then Update within a frame, so observation occurs
+at completed pass 1; pass 2 rewrites are excluded. Acceptance reuses the actual
+matched replay after that coverage-only decoder repair, verifying unchanged source
+snapshots, corpus, resources, probe templates and every raw output byte. No input,
+numerical source, completed producer or required witness was changed.
+
 OS polling, asynchronous world-builder timing, Unreal presentation
 and in-game performance remain separate integration checks.
 
 `Tests/build_native_session_cli.py` builds an offline QA transport directly from all
 native C++ sources and `Tests/Native/gameplay_session_cli.cpp`. It requires neither
 Rust nor historical Git objects. This test executable is not a second game backend;
-Unreal will own the same `GameplaySession` in process.
+Unreal owns the same `GameplaySession` in process; live engine acceptance remains below.
 
 `HostScalar.*` preserves the former Unreal command conversion (`%.17g` double
 formatting followed by the pinned default serde_json f32 reader). A direct cast

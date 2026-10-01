@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import shutil
 import struct
@@ -95,8 +96,9 @@ def build_probes(output):
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror',
                     '-I',str(code),str(code/'GraphController.cpp'),str(PLUGIN/'Tests/Native/controller_probe.cpp'),'-o',str(cpp)],check=True)
     oracle=output/'oracle'; (oracle/'graph').mkdir(parents=True,exist_ok=True)
-    source=PLUGIN/'ThirdParty/skate-runtime/crates/skate-core/src/graph'
     modules=('activation','controller','expression','selection')
+    source=historical.stage_source_files(output, (
+        'crates/skate-core/src/graph/'+name+'.rs' for name in modules))/'crates/skate-core/src/graph'
     (oracle/'graph/mod.rs').write_text(''.join(f'pub mod {name};\n' for name in modules))
     for name in modules: shutil.copyfile(source/f'{name}.rs',oracle/'graph'/f'{name}.rs')
     shutil.copyfile(PLUGIN/'Tests/Reference/controller_probe.rs',oracle/'main.rs')
@@ -129,4 +131,4 @@ def main():
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n'); print(json.dumps(report,indent=2),flush=True)
 
 
-if __name__=='__main__': main()
+if __name__=='__main__': historical.run_cli(main)

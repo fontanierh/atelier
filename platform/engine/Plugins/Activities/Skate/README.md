@@ -1,8 +1,9 @@
 # Skate
 
-The recovered Skate 3 Rust Session is the skating engine. It owns the board/rider solver, animation graphs,
-Flick-It, riding states, tricks, scoring and camera. Unreal supplies terrain, player controls, the Cairo mesh,
-board meshes, audio and HUD. There is one simulation and animation path.
+The skating engine is one in-process C++ `GameplaySession`. It owns the board/rider solver, animation graphs,
+Flick-It, riding states, tricks, scoring and camera. Unreal supplies terrain, player controls, the host mesh,
+board meshes, audio and HUD. Project-native data is loaded directly; the normal build has no Rust worker.
+The native Unreal adapter and latest-main transfer/assist port remain under validation before adoption.
 
 ## Controls
 
@@ -21,7 +22,7 @@ board meshes, audio and HUD. There is one simulation and animation path.
 | Look | Host camera controls | Mouse when not flicking |
 
 Regular kickflips flick down then up-left; heelflips finish up-right. Goofy mirrors the gestures. The original
-seven gesture files and both animation banks are included in the game's runtime bundle. Grind selection,
+seven gesture sets and both animation banks are included in the project's native runtime bundle. Grind selection,
 manuals, reverts, landing assists, bails and recovery use the recovered graphs and physical state machines.
 
 ## Game integration
@@ -51,8 +52,10 @@ bit 0x0800, which the native pad ignores). The recovered constraints and animati
 
 Mounting starts at the player's feet, aligns with running velocity and transfers that velocity to the whole
 physical assembly. Each activation identifies its poses so an old response cannot move a newly mounted rider.
-The retained worker loads banks once per world; stowing suspends it and world shutdown terminates it.
-Missing/corrupt runtime files report an error and leave the player walking.
+The retained native owner loads banks once per world; stowing suspends input and world shutdown releases it.
+Missing/corrupt native data reports an error and leaves the player walking. Runtime data under
+`Data/SkateNative` must be staged as loose NonUFS files because the loader uses standard filesystem reads.
+The offline C++ CLI is a QA transport over the same Session and is not a game backend or fallback.
 
 See [NATIVE_PORT.md](NATIVE_PORT.md) for provenance and remaining adapter boundaries.
 

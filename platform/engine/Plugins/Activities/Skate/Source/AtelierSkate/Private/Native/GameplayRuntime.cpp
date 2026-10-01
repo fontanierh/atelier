@@ -143,12 +143,14 @@ bool GameplayRuntime::InstallWorld(WorldGeometry world,std::shared_ptr<const Pla
     grab_registry=std::move(*registry);physical->ReplaceWorld(std::move(world));
     grind_world=std::move(grind);trajectory.BindGrindWorld(grind_world);error.clear();return true;
 }
-bool GameplayRuntime::Tune(float pop,float spin,float push_speed,float push_power,std::string& error)
+bool GameplayRuntime::Tune(float pop,float spin,float push_speed,float push_power,float vert_assist,std::string& error)
 {
     if(!std::isfinite(pop) || !std::isfinite(spin) || pop<0.5f || pop>2.0f || spin<0.5f || spin>3.0f
         || !std::isfinite(push_speed) || push_speed<0.5f || push_speed>2.0f
-        || !std::isfinite(push_power) || push_power<0.5f || push_power>3.0f)
+        || !std::isfinite(push_power) || push_power<0.5f || push_power>3.0f
+        || !(vert_assist>=0.0f && vert_assist<=1.0f))
     {error="Invalid skating tuning";return false;}
+    trajectory.vert_assist=vert_assist;
     trainer.pop=pop;trainer.push_speed=push_speed;trainer.push_power=push_power;
     air_settings.state.body_spin_scale_428=stock_spin_speed_*spin;
     known_air.SetSpinSpeed(stock_spin_speed_*spin);air_reckoning.SetSpinScale(spin);

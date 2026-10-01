@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import string
 import subprocess
@@ -40,7 +41,9 @@ def main():
     cpp, rust = output/'name-cpp', output/'name-reference'
     subprocess.run(['clang++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-I',str(code),str(code/'NameId.cpp'),
                     str(PLUGIN/'Tests/Native/name_probe.cpp'),'-o',str(cpp)],check=True)
-    subprocess.run(['rustc','+1.97.1','--edition=2024','-O',str(PLUGIN/'Tests/Reference/name_probe.rs'),'-o',str(rust)],check=True)
+    rust_source = historical.stage_path_probe(PLUGIN/'Tests/Reference/name_probe.rs', output, {
+        '../../ThirdParty/skate-runtime/crates/skate-data/src/attrib_hash.rs': 'crates/skate-data/src/attrib_hash.rs'})
+    subprocess.run(['rustc','+1.97.1','--edition=2024','-O',str(rust_source),'-o',str(rust)],check=True)
     expected = subprocess.check_output([str(rust)],input=corpus)
     actual = subprocess.check_output([str(cpp)],input=corpus)
     converted = ''.join(f'{converter.name_hash(name):016x} {converter.name_id(name):016x}\n' for name in names).encode()
@@ -58,4 +61,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    historical.run_cli(main)

@@ -2,8 +2,11 @@
 #pragma once
 #include "GameplayWorld.h"
 #include "SessionMarkerRuntime.h"
+#include <cstdint>
 namespace atelier::skate
 {
+// Host-only button; strip it before publishing the original Xbox pad.
+inline constexpr std::uint16_t GameplayTransferButton=0x0800;
 struct GameplayPose
 {
     Mat4 root;
@@ -25,8 +28,10 @@ public:
     ControllerInputRuntime input;
     SessionMarkerRuntime markers;
     bool Configure(std::string_view difficulty,bool goofy,float trucks,std::string& error);
+    bool Tune(float pop,float spin,float speed,float power,float vert_assist,std::string& error)
+    {return gameplay->Tune(pop,spin,speed,power,vert_assist,error);}
     bool Tune(float pop,float spin,float speed,float power,std::string& error)
-    {return gameplay->Tune(pop,spin,speed,power,error);}
+    {return Tune(pop,spin,speed,power,0.0f,error);}
     bool Activate(Vec3,float heading,std::string& error);
     void SuspendInput();
     void Collect(const std::array<DeviceSample,InputDeviceSlots>&,float dt);
