@@ -4,6 +4,8 @@ use bevy::prelude::*;
 use skate_data::skate_map::{Collision, Geometry, Rail, SkateMap};
 use std::path::Path;
 
+/// Atelier host button for a transfer (the native pad ignores bit 11): a grab no longer asks for one.
+pub const TRANSFER: u16 = 0x0800;
 #[derive(Clone, Copy, Default)]
 pub struct Controls {
     pub buttons: u16,
@@ -86,12 +88,14 @@ impl Session {
         Ok(())
     }
     /// Host preferences scale the stock launch height and air-spin target; constraints remain native.
-    pub fn tune(&mut self, pop: f32, spin: f32, push_speed: f32, push_power: f32) -> Result<(), String> {
+    /// `vert_assist` (0 is stock) lets quarters short of vertical launch vert airs.
+    pub fn tune(&mut self, pop: f32, spin: f32, push_speed: f32, push_power: f32, vert_assist: f32) -> Result<(), String> {
         if !pop.is_finite() || !spin.is_finite() || !(0.5..=2.).contains(&pop) || !(0.5..=3.).contains(&spin)
             || !push_speed.is_finite() || !(0.5..=2.).contains(&push_speed)
-            || !push_power.is_finite() || !(0.5..=3.).contains(&push_power) {
+            || !push_power.is_finite() || !(0.5..=3.).contains(&push_power) || !(0. ..=1.).contains(&vert_assist) {
             return Err("Invalid skating tuning".into());
         }
+        self.skater.trajectory.vert_assist = vert_assist;
         self.physics.trainer.pop = pop;
         self.physics.trainer.push_speed = push_speed;
         self.physics.trainer.push_power = push_power;
@@ -192,12 +196,13 @@ impl Session {
             &mut self.camera,
         )
     }
-    /// Deterministic raw-packet entry point for playback/diagnostics.
+    /// Deterministic raw-packet entry point for playback/diagnostics. The transfer intent comes from `TRANSFER`.
     pub fn tick(&mut self, input: Controls) -> Result<(), String> {
+        self.physics.transfer = Some(input.buttons & TRANSFER != 0);
         crate::input::sample(
             &mut self.input,
             skate_core::input::xbox::XboxState {
-                buttons: input.buttons,
+                buttons: input.buttons & !TRANSFER,
                 triggers: input.triggers,
                 left: input.left,
                 right: input.right,

@@ -19,10 +19,12 @@ enum Command {
     Activate { spawn: [f32; 3], heading: f32, goofy: bool, difficulty: String, trucks: f32,
         #[serde(default)] generation: u32, #[serde(default)] velocity: [f32; 3],
         #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32,
-        #[serde(default = "one")] push_speed: f32, #[serde(default = "one")] push_power: f32 },
+        #[serde(default = "one")] push_speed: f32, #[serde(default = "one")] push_power: f32,
+        #[serde(default)] vert_assist: f32 },
     Configure { goofy: bool, difficulty: String, trucks: f32,
         #[serde(default = "one")] pop: f32, #[serde(default = "one")] spin: f32,
-        #[serde(default = "one")] push_speed: f32, #[serde(default = "one")] push_power: f32 },
+        #[serde(default = "one")] push_speed: f32, #[serde(default = "one")] push_power: f32,
+        #[serde(default)] vert_assist: f32 },
     World { path: String, #[serde(default)] background: bool },
     Launch { velocity: [f32; 3] },
     Suspend {},
@@ -87,12 +89,12 @@ fn run() -> Result<(), String> {
                 // Also acknowledge sub-tick frames so the host can bound outstanding pipe traffic.
                 publish(&session, false, generation)?;
             }
-            Command::Activate {spawn,heading,goofy,difficulty,trucks,generation: ride,velocity,pop,spin,push_speed,push_power} => {
+            Command::Activate {spawn,heading,goofy,difficulty,trucks,generation: ride,velocity,pop,spin,push_speed,push_power,vert_assist} => {
                 if spawn.iter().any(|v| !v.is_finite()) || !heading.is_finite() || !trucks.is_finite() || velocity.iter().any(|v| !v.is_finite()) {
                     return Err("Invalid spawn or equipment".into());
                 }
                 session.configure(&difficulty, goofy, trucks)?;
-                session.tune(pop, spin, push_speed, push_power)?;
+                session.tune(pop, spin, push_speed, push_power, vert_assist)?;
                 session.activate(spawn, heading)?;
                 session.launch(velocity);
                 generation = ride;
@@ -110,10 +112,10 @@ fn run() -> Result<(), String> {
                     .spawn(move || { let _ = sender.send(world(Path::new(&path)).and_then(|w| builder.build(w.triangles,w.rails))); })
                     .map_err(|e| e.to_string())?;
             }
-            Command::Configure {goofy,difficulty,trucks,pop,spin,push_speed,push_power} => {
+            Command::Configure {goofy,difficulty,trucks,pop,spin,push_speed,push_power,vert_assist} => {
                 if !trucks.is_finite() { return Err("Invalid equipment".into()); }
                 session.configure(&difficulty, goofy, trucks)?;
-                session.tune(pop, spin, push_speed, push_power)?;
+                session.tune(pop, spin, push_speed, push_power, vert_assist)?;
             }
             Command::Launch {velocity} => {
                 if velocity.iter().any(|v| !v.is_finite()) { return Err("Invalid launch velocity".into()); }
@@ -141,5 +143,11 @@ mod tests {
     fn rejects_out_of_range_controller_packets() {
         assert!(serde_json::from_str::<Command>(r#"{"op":"step","dt":0.02,"buttons":0,"left":[40000,0],"right":[0,0],"triggers":[0,0]}"#).is_err());
         assert!(serde_json::from_str::<Command>(r#"{"op":"quit","unexpected":true}"#).is_err());
+    }
+    #[test]
+    fn hosts_without_the_vert_assist_keep_the_original() {
+        let Ok(Command::Configure { vert_assist, .. }) = serde_json::from_str(r#"{"op":"configure","goofy":false,"difficulty":"normal","trucks":0.5}"#)
+            else { panic!("configure") };
+        assert_eq!(vert_assist, 0.);
     }
 }

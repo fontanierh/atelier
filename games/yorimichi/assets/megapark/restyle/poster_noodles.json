@@ -1,0 +1,33 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Image 1 shows the art direction of a stylised game set on a Japanese volcanic island in autumn: soft painterly shapes, flat matte colour, warm light. Paint a flat straight-on image in that style, filling the whole frame edge to edge, to be printed on a sign in a skate park: no frame, no perspective, no shadows, no lettering or text of any kind. The image: a noodle stall poster: a steaming bowl of ramen with a soft egg, green onion and a maple leaf on the rim, indigo noren curtain behind, warm cream background.",
+  "references": {
+    "build/yorimichi/megapark/restyle/style.png": "c28c71c95f91f0eacb156aaf85a7ad3150b783701d99e3111d20d964926e3fa2"
+  },
+  "purpose": "Mega Park restyle texture",
+  "status": "done",
+  "started_at": "2026-09-30T23:48:40.479191+00:00",
+  "usage": {
+    "input_tokens": 710,
+    "input_tokens_details": {
+      "image_tokens": 576,
+      "text_tokens": 134
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2082
+  },
+  "png_sha256": "bfc056379f2dc10d6c8dd68c1c0a51bb06661b8b41d6ed8d862c5b4c8fa9a37d",
+  "output": {
+    "file": "poster_noodles.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-09-30T23:49:12.349981+00:00"
+}

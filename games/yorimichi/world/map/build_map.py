@@ -218,6 +218,14 @@ for profile in M['profiles']:
         d.line([wp(mega_x+p[0],mega_y+side*M['width']/2) for p in profile],fill=(75,57,38),width=max(1,round(PX)))
 line([[mega_x+p[0],mega_y+p[1],p[2]] for p in M['rollout']],(190,154,103),3)
 line([[mega_x-2.05,mega_y-5.55,0],[mega_x-1.8,mega_y,10.7]],(90,64,37),1.2)
+# The Mega Park: its riding footprint in 5 m cells, concrete shaded by height so the bowls and canyons read.
+_sys.path.insert(0, str(yori.REGIONS)); from megapark import placement as megapark  # noqa: E402
+fx0, fy0, cell, _, top, mask = megapark.footprint()
+low, high = np.nanmin(top[mask]), np.nanmax(top[mask])
+for j, i in zip(*np.nonzero(mask)):
+    shade = int(70 * ((top[j, i] if np.isfinite(top[j, i]) else low) - low) / (high - low))
+    x, y = fx0 + i * cell, fy0 + j * cell
+    d.polygon([wp(x, y), wp(x + cell, y), wp(x + cell, y + cell), wp(x, y + cell)], fill=(150 + shade, 146 + shade, 140 + shade))
 if SW:
     line(SW['lane'], (120, 96, 60), 3.2); line(SW['lane'], (206, 178, 128), 2.2)
     stair = [island_world(p[0], p[1]) for p in ISL.path_points()]
@@ -300,6 +308,17 @@ if C:
 if W.get('forest_lake'):
     lake=W['forest_lake'];safe=lake['safe_shore']
     zones.append(dict(key='forest_lake',name='Hidden woodland lake',x=safe[0],y=safe[1],z=safe[2],yaw=180.,hint='A quiet fishing cabin and timber jetty deep in the woods'))
+# Mega Park: the very top of the park, the crest of its access road at about 130 m, looking down the road. From there the
+# road runs under the white gate and curves down past the car park to the upper deck and the roll-in.
+sx, sy = -149.0, 1474.0
+t = megapark.place(megapark.collision_triangles()); a, b, c = t[:, 0], t[:, 1], t[:, 2]
+den = (b[:, 1] - c[:, 1]) * (a[:, 0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (a[:, 1] - c[:, 1]); den[den == 0] = np.inf
+u = ((b[:, 1] - c[:, 1]) * (sx - c[:, 0]) + (c[:, 0] - b[:, 0]) * (sy - c[:, 1])) / den
+v = ((c[:, 1] - a[:, 1]) * (sx - c[:, 0]) + (a[:, 0] - c[:, 0]) * (sy - c[:, 1])) / den
+hit = np.isfinite(den) & (u >= 0) & (v >= 0) & (u + v <= 1)
+sz = float((u * a[:, 2] + v * b[:, 2] + (1 - u - v) * c[:, 2])[hit].max())   # the road under the spot
+zones.append(dict(key='megapark', name='Mega Park', x=sx, y=sy, z=round(sz, 2), yaw=round(facing(-110.0, 1469.0, sx, sy), 1),
+                  hint='The canyon skate park in the western foothills. Triangle / Y or B for the board'))
 # Sunset Pier: its current entrance plaza, shared with the park contract.
 PARK = str(yori.REGIONS / 'skatepark' / 'park.json')
 if os.path.exists(PARK):

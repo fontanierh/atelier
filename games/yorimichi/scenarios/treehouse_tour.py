@@ -240,9 +240,10 @@ def film(label):
     print(len(frames), 'frames;', next((l.split('Display: ')[-1] for l in (folder/'game.log').read_text(errors='replace').splitlines() if 'TRAILER SHOT COMPLETE' in l), 'no completion line'))
 
 
-def cut(label, captions=True):
+def cut(label, captions=True, root=OUT):
+    """The film root/LABEL.mp4 from the frames in root/LABEL (scenarios/megapark_tour.py cuts its tour here too)."""
     from PIL import Image, ImageDraw, ImageFont
-    folder = OUT/label; spans = json.loads((folder/'shots.json').read_text())
+    folder = root/label; spans = json.loads((folder/'shots.json').read_text())
     frames = {int(p.stem.split('_')[1]): p for p in folder.glob('frame_*.jpg')}
     font = next((ImageFont.truetype(str(f), 38) for f in (Path('/System/Library/Fonts/Supplemental/Georgia Italic.ttf'),
                  Path('/System/Library/Fonts/Supplemental/Georgia.ttf')) if f.exists()), ImageFont.load_default())
@@ -272,7 +273,7 @@ def cut(label, captions=True):
         fade = min(1., i/(1.*FPS), (total-1-i)/(1.2*FPS))
         if fade < 1: im = Image.blend(Image.new('RGB', im.size), im, max(fade, 0.))
         im.save(work/f'{i:05d}.jpg', quality=94)
-    seconds = total/FPS; film = OUT/f'{label}.mp4'
+    seconds = total/FPS; film = root/f'{label}.mp4'
     audio = [('-stream_loop', '-1', '-i', str(AMBIENCE))]+[('-i', str(BELL)) for _ in bells]
     mix = '[1:a]volume=0.55,afade=t=in:d=1.5,afade=t=out:st=%.2f:d=2[amb]' % (seconds-2)
     parts = ['[amb]']

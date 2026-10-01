@@ -318,6 +318,8 @@ void USkateComponent::ReadInput(float Dt)
     I.bPowerslide = Down(EKeys::C);
     I.bGrabLeft = Down(EKeys::Q) || PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis) > .35f;
     I.bGrabRight = Down(EKeys::E) || PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis) > .35f;
+    // Shift, or the left stick pushed forward (it steers sideways and powerslides back, never forward).
+    I.bTransfer = Down(EKeys::LeftShift) || Down(EKeys::RightShift) || (I.Left.Y > .7f && FMath::Abs(I.Left.X) < I.Left.Y);
     In = I;
 }
 
