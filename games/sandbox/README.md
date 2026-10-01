@@ -1,14 +1,14 @@
 # Sandbox
 
-The smallest game on Atelier: a flat test ground with a few blocks and a capsule character, used to try the platform's
-plugins and commands without Yorimichi. It shares no files with other games; everything it uses from the platform goes
-through the same doors a new game would use.
+The smallest game on Atelier: a flat test ground with a few blocks and a character made of basic shapes, used to try
+the platform's plugins and commands without Yorimichi. It shares no files with other games; everything it uses from the
+platform goes through the same doors a new game would use.
 
 ```sh
 atelier build sandbox                    # compiles the module and makes the level (a couple of minutes)
 atelier play sandbox                     # WASD or a left stick to move, mouse or right stick to look, Space jumps
 atelier live state                       # the live bridge answers (LiveBridge plugin)
-atelier stream sandbox start --local     # the plain player at http://127.0.0.1:8080/ (Streaming)
+atelier stream sandbox start --local     # the plain player at http://127.0.0.1:8080/ (Pixel Streaming 2)
 ```
 
 What it shows about the platform:

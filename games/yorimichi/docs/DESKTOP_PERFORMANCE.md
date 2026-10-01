@@ -1,104 +1,174 @@
-# Desktop performance and lighting — September 14
+# Desktop performance
 
-> Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
+The desktop target is the game at its native 1440-pixel height, 100% render scale, at a steady 60 fps. The `desktop`
+and `desktop-1440` play profiles reach it on the reference machine (an M3 Pro) with the forward renderer, city surfaces
+split into visibility tiles and lighter city-tree LODs. The default `play` profile keeps the deferred Lumen look at
+1080p in a window. This page covers the desktop profiles, the settings that matter, how to measure with
+`tools/benchmark.py`, the scripted routes it drives, and the reference measurements.
 
-The target is the native desktop game at 1440 pixels high and stable 60 FPS. Phone streaming is off. A future phone preview should mirror desktop play; it is not the performance acceptance target.
-
-## Correct the lighting without expensive screen probes
-
-The hard patches on the inverted character come from the irradiance-field interpolation offset. `r.Lumen.IrradianceFieldGather.ProbeOcclusionBias` had been raised from the engine default 0.8 to 2.0 to address building-foundation shading. Restoring **0.8** removes the abrupt patches in matched game-r10 flip captures, while retaining medium GI's cheaper gather method 0. Neither the mesh, animation, skin roughness nor hair is changed. No screen-probe override is restored.
-
-The local UE 5.8 shader `LumenIrradianceFieldInterpolation.ush` offsets its sample by a combination of the surface normal and view direction, proportional to the cell size and this bias. The first clipmap spans 100 m with a 64-cell grid. The excessive offset can sample substantially different lighting across a bent or inverted body. The diagnosis is supported by a single-variable reproduction, not merely by that source explanation.
-
-*(image in the prototype archive: desktop-performance-2026-09-14/flip-probe-offset.jpg)*
-
-Full 138-frame sequences: `build/yorimichi/cairo/desktop-bias20/` and `desktop-bias08/`. The focused flip shortcut intentionally skips sprint, so its final waist-curve assertion reports false; these are visual diagnostics, not a full gameplay pass. Both use the same game-r10 source and 1600×900 capture settings. Frame 99 reproduces the hard bands with 2.0 and smooth shading with 0.8; later rotated/recovery frames were also inspected.
-
-Three arcade A/B pairs retain the roof, shopfronts and foundation shading in the inspected images. Late medians are 36.45 vs 36.42 ms: this adjustment is not claimed as a performance saving. Earlier phases drift, so their apparent 3 ms gains are not attributed to the bias. The comparison is in `build/yorimichi/perf60/desktop-opt-bias-arcade/` and its [compact timing record](desktop-performance-2026-09-14/desktop-opt-bias-arcade.json).
-
-A separate complete opening gallery from simulation time 0 through 12 seconds passes all checks: walk/run/sprint speeds, ground dash, double jump, the waist corrective (0.9) and bounded hair flex (0.943536). This uses the actual default config with no bias override: `build/yorimichi/cairo/desktop-lighting-gallery/`.
-
-## Measure the actual desktop presentation
-
-The offscreen spawn captures on this machine measured 29–35 ms at 2228×1440. A fox animation preview was running in Claude; closing its pane improved a subsequent run but did not explain the entire difference. CPU process scans alone do not establish that the GPU is free: they miss browser and application previews. No unrelated Claude task or command-line job was stopped.
-
-The benchmark now supports `--desktop-fullscreen`. It uses the same separate scene target, fixed native render height, display aspect and full HUD as `run.sh desktop-1440`, and still rejects a PNG dimension mismatch. A first attempt omitted the viewport initialization command and captured 2056×1329; that run is rejected, not counted as 1440p evidence.
-
-The verified visible baseline, uncapped and with dynamic resolution disabled, is **2228×1440** (2232×1440 padded scene allocation): **17.23 ms median / 19.97 ms p95 / 20.60 ms p99**, about 58 FPS median. Only 11% of frames meet 16.67 ms. This establishes the user's desktop shortfall, without conflating it with slower offscreen execution. It does not establish a precise OS scheduling cause for the difference. [Baseline record](desktop-performance-2026-09-14/desktop-opt-visible-native.json).
+## Desktop play profiles
 
 ```sh
-python3 games/yorimichi/tools/benchmark.py UNIQUE_NAME --desktop-fullscreen \
+atelier build yorimichi                                   # includes unreal.desktop: city tiles and tree LODs
+atelier play yorimichi --profile desktop-1440             # fullscreen
+atelier play yorimichi --profile desktop                  # in a window
+atelier play yorimichi --profile desktop --set 'show_fps=0'
+```
+
+Both profiles run `tools/desktop_preview.py --shared-settings` (`desktop` adds `--windowed`); `--set` is passed on as
+`--settings`. The launcher starts the editor binary with `-game` at `-resx=2560 -resy=1440`, under the render lock and
+the 10 GiB memory guard, and chooses the renderer per process with Unreal's `-ini:` override, so `DefaultEngine.ini` is
+never rewritten.
+
+| Flag | Effect |
+|---|---|
+| `--windowed` | a window instead of fullscreen |
+| `--shared-settings` | use and save the game's own `unreal/Saved/settings.txt` (camera, controls, art); only `desktop=1;performance=1;render_scale=100` are set for the session. Without it, the session gets a copy of that file and a fixed look (painterly 0.35, exposure 0.9, sun 48°/15°, FPS shown) |
+| `--settings 'key=value;...'` | extra preference overrides for this session |
+| `--baseline` | the deferred renderer with the full sky light and the same commands, for comparison |
+| `--dry-run` | print the launch command |
+
+`YORIMICHI_EXTRA_ARGS` appends Unreal arguments. Each run writes `build/yorimichi/logs/desktop-<YYYYmmdd-HHMMSS>/`:
+`game.log`, `stdout.log`, the guard's `memory-health.json`, `ready.png` (the game buffer a few seconds after startup)
+and, without `--shared-settings`, the session's `settings.txt`. When the game exits, the launcher checks the log and
+prints `verified: {...}` or `not verified: ...` (exit code 1):
+
+- the viewport is 1440 high, 1600 to 3840 wide, in the requested window mode;
+- the log reports `r.ForwardShading = "1"`;
+- each desktop feature reported itself loaded: `CITY TILES tag=v1_128m enabled=1 originals=3 tiles=85`,
+  `CITY TREE LODS tag=v4 enabled=1 forced=0 groups=3` and `FORWARD FILL nominal_lux=3.000 lights=1`. A missing marker
+  means the imports are missing: `atelier build yorimichi unreal.desktop`.
+
+This is a local build run from the editor binary, not a cooked package.
+
+## Settings that matter
+
+Set by the launcher (`desktop_preview.py`):
+
+| Setting | Value | Why |
+|---|---|---|
+| `r.ForwardShading` (`-ini:` override) | True | the forward renderer: no Lumen, and none of its irradiance-field bands on the character |
+| `-desktopnative1440`, `DesktopPreviewViewportClient` | | a separate scene target fixed at 1440 high and the window's aspect, independent of macOS's scaled window drawable |
+| `r.SkylightIntensityMultiplier` | 0.33 | forward has no Lumen bounce; the full sky light washes out the ambient and the water |
+| `japan.ForwardHarborFill` | 3 (lux) | a warm, shadowless spot light standing in for the harbor's second directional fill, which forward cannot render |
+| `japan.CitySurfaceTiles` | `v1_128m 1` | the city surfaces split into 85 tiles of 128 m for culling, with every polygon and attribute kept |
+| `japan.CityTreeLODs` | `v4 1` | city-tree LOD1/2 that keep every leaf and simplify only the leaf outlines |
+| `r.DynamicRes.OperationMode`, `r.ScreenPercentage` | 0, 100 | native resolution, no dynamic resolution |
+| `t.MaxFPS`, `r.VSync` | 60, 1 | the 60 fps cap |
+| `r.Shadow.CSMCaching` | 0 | caching saved −0.18 / +0.11 / −0.14 ms in three fullscreen spawn pairs, with no consistent tail gain: not worth its shadow differences |
+| `r.RHISetGPUCaptureOptions` | 0 | Metal's per-frame GPU-capture labels otherwise accumulate in a development build |
+
+It also sets `r.Shadow.CSMSlopeScaleDepthBias 3` and runs `japan.PreviewInfo`, which logs the viewport for the check above.
+
+Set by the game's preferences with `desktop=1` and `performance=1` (`JapanPreferences.cpp`):
+
+| Setting | Value | Why |
+|---|---|---|
+| `foliage.LODDistanceScale` | 0.75 | 0.6 saves only about 0.3 ms on the city approach and visibly simplifies building detail |
+| `sg.GlobalIlluminationQuality` | 1 | medium GI (the irradiance field) in the deferred path |
+| `r.Shadow.CSM.MaxCascades`, `r.Shadow.MaxCSMResolution`, `r.Shadow.DistanceScale`, `r.DistanceFieldShadowing` | 2, 1024, 0.5, 0 | performance-mode shadows |
+| `r.SceneColorFormat` | 2 (R11G11B10) | HDR at half the bandwidth: about 1 ms in the forest and harbor at native 1440 |
+| `r.TemporalAA.Quality` | 3 | about 0.3 ms, character edges kept in sprint and double-jump frames |
+| `r.InstanceCulling.OcclusionCull` | 1 | culls instances the depth buffer hides (both profiles) |
+| `japan.HarborFillAuto` | 1 | no cascades for the harbor's second directional light when every receiver is beyond cascade range |
+
+In `unreal/Config/DefaultEngine.ini`, for the deferred path: `r.Lumen.IrradianceFieldGather.ProbeOcclusionBias=0.8`,
+the engine's default. A larger offset puts opposite sides of the inverted character into different probe cells and
+bands the lighting during flips; 0.8 costs nothing measurable (arcade medians 36.45 against 36.42 ms).
+
+## Measuring with benchmark.py
+
+`tools/benchmark.py` runs one real-time capture of the game and writes `build/yorimichi/perf60/<name>/` (the name must be
+new): `manifest.json` (command, commit, settings, engine config, binary and asset hashes), `game.log`, `stdout.log`,
+`memory-health.json`, `view.png`, `frames.csv`, `route.json` and `results.json` (median, p95, p99, median and average
+fps, the share of frames within 16.67 ms, and GPU stat medians). The game settles for 8 s, takes `view.png`, then
+records `--seconds` (10 to 1800, default 25).
+
+It refuses to start while another Unreal, shader-compile or Blender process runs (`--wait-renderer S` waits up to S
+seconds), takes the render lock and the 10 GiB memory guard, and fails a run that another render job overlapped.
+
+```sh
+# The desktop profile, visible fullscreen at native 1440 (width = 1440 x the display's aspect, rounded to even).
+uv run python games/yorimichi/tools/benchmark.py desktop-spawn-01 --desktop-fullscreen \
   --view spawn --width 2228 --height 1440 --seconds 25 \
   --settings 'desktop=1;performance=1;render_scale=100' \
-  --commands 'r.DynamicRes.OperationMode 0,r.ScreenPercentage 100,r.RHISetGPUCaptureOptions 0' \
+  --ini '[/Script/Engine.RendererSettings]:r.ForwardShading=True' \
+  --commands 'r.DynamicRes.OperationMode 0,r.ScreenPercentage 100,r.RHISetGPUCaptureOptions 0,r.Shadow.CSMCaching 0,r.Shadow.CSMSlopeScaleDepthBias 3,r.SkylightIntensityMultiplier .33,japan.CitySurfaceTiles v1_128m 1,japan.CityTreeLODs v4 1,japan.ForwardHarborFill 3' \
   --launch-arg=-noshaderworker
+
+# Running along a scripted route, offscreen at 1920x1080.
+uv run python games/yorimichi/tools/benchmark.py village-walk-01 --view road_walk --route village --seconds 45 --hide-hud
 ```
 
-The width must match the current display aspect. Keep one heavy render job under the existing render lock and 10 GiB memory guard. The game is visible during this test and exits automatically. Screenshot/settling frames are excluded from timing. Native fullscreen timing is required before claiming desktop improvements; fixed-step animation captures remain visual evidence only.
+| Option | Meaning |
+|---|---|
+| `--view` | static cameras: `spawn` (default), `portrait`, `forest`, `coast`, `village`, `north_overview`, `park`, `station`, `lake`, `harbor`, `arcade`, `plaza`, `city`, `custom` (with `--camera X Y Z PITCH YAW FOV`, player hidden); moving: `traverse` (walk, jog, run and a jump), `road_walk` (runs a scripted route) |
+| `--route` | with `road_walk`: `village` (default), `village_loop`, `mega`, `hidamari`, `arcade`, `plaza`, `harbor`, `harbor_pier`, `north`; `--road-index N` starts at route sample N |
+| `--desktop-fullscreen` | the visible fullscreen game with the desktop viewport client; needs `--height 1440` and a `--width` matching the display's aspect. Without it the capture renders offscreen at `--width` × `--height` (default 1920×1080) |
+| `--capped` | `t.MaxFPS 60` instead of uncapped; VSync stays off unless `--commands` adds `r.VSync 1` |
+| `--settings`, `--commands`, `--ini`, `--launch-arg` | preferences (`-set=`), console commands at startup, `-ini:Engine:` overrides, extra Unreal arguments |
+| `--compare-before`, `--compare-after` | a paired ABABAB test on a static view: six phases of `--seconds`, each after 8 s of settling; settling and screenshots are excluded from timing; `results.json` gets the three paired savings |
+| `--hide-hud` | a clean `view.png`; timings are unchanged |
+| `--boot` | the 900-frame boot capture instead of a scene view |
 
-## Rejected optimization
+Rules for numbers:
 
-With the corrected probe offset, three fullscreen spawn shadow-cache pairs save **−0.18 / +0.11 / −0.14 ms**, with no consistent tail improvement. `r.Shadow.CSMCaching` stays off. There is no reason to accept its additional shadow-behavior differences for these results. [Comparison record](desktop-performance-2026-09-14/desktop-opt-shadow-cache.json).
+- Desktop claims need `--desktop-fullscreen`. Offscreen captures run slower on the reference machine (29 to 35 ms
+  against 17 ms visible, deferred spawn at 2228×1440), and fixed-step captures (`capture.py`, the QA scenarios) are
+  visual evidence only.
+- A moving view fails unless the character moved for at least 90% of the window, never stalled over 2 s, travelled at
+  least 10 m, and needed at most one stall recovery per 30 s (`route.json` has the distance, stalls and waypoints).
+- Uncapped runs measure headroom; `--capped` with `r.VSync 1` measures frame pacing. The share of frames within
+  16.67 ms is meaningless for a capped run, whose frames hover around 16.667 ms.
+- Separate launches drift: compare settings with `--compare-before/--compare-after`, or alternate several runs.
 
-## Optimized desktop renderer
+## The benchmark and trailer routes
 
-Normal desktop launches now use the prepared forward renderer with sky intensity 0.33, the forward-compatible harbor fill at nominal 3 lux, 85 full-detail city visibility tiles and correctly scaled v4 city-tree LODs. It renders at 100% of the actual 1440-high scene, with dynamic resolution disabled. Character meshes, materials, hair motion, outfit correctives and animations are unchanged. Original grass and painterly strength are retained. The source/experiment receipt verifies all 413 files before starting; this is not an unvalidated swap of generated packages.
+A scripted character follows an authored path: `road_walk` in `benchmark.py`, and trailer shots (`capture.py`, shot
+files with `road_index`, `follow_road` and skate shots). `-reviewroute=<name>` picks the path
+(`AWandererCharacter::GetRoadSteering`, `JapanSkateReview.cpp`); `benchmark.py --route` and a shot's `route` field
+pass it.
 
-The renderer avoids the old irradiance-field character bands entirely. The 0.8 bias fix above remains useful for the deferred comparison path. Forward still differs in ambient bounce, covered shade and water contacts because it lacks Lumen bounce and screen-space reflections. Sky intensity 0.33 corrects the washed-out ambient/water; the harbor spot restores the warm fill that forward's single directional light cannot provide. It does not reproduce the old second directional light's shadows. See the September 12 [renderer study](performance-1440/FORWARD-DESKTOP-PREVIEW.md) for provenance and limitations.
+| `-reviewroute` | Path | Read from |
+|---|---|---|
+| none or unknown | the island road | `world.json` `road` |
+| `village`, `village_loop` | the village's first and second paths | `world.json` `village.paths` |
+| `mega` | the woodland trail to the mini-mega | `world.json` `mega.trail` |
+| `hidamari` | the city arrival and the central street | `hidamari/city.json` `review_route` |
+| `arcade`, `plaza`, `plaza_steps` | the shopping arcade, the clock square, the square's steps | `arcade_route`, `plaza_route`, `plaza_steps` |
+| `harbor`, `harbor_pier` | the fishing harbor quay, the pier | `harbor_route`, `harbor_pier_route` |
+| `park`, `north` | the city park, the northern foothills trail | `park_route`, `north_trail` |
 
-All following tests use **visible fullscreen 2228×1440**, 100% scale, dynamic resolution off, uncapped, on this M3 Pro. There is no fixed timestep. These are measured runs, not sums of savings from separate studies:
+The character steers six samples ahead and patrols: it turns around eight samples short of either end, so a long run
+keeps moving. If it has not moved 1.5 m in 1.2 s, it is turned around and put back on the route eight samples behind,
+logged as `ROUTE RECOVERY` and counted (harness runs only, never a player session). `road_walk` runs at the default
+run gait.
 
-| Scene / route | Median | p95 | p99 | Frames ≤16.67 ms |
+## Reference measurements
+
+Measured on the M3 Pro, visible fullscreen at 2228×1440, 100% scale, dynamic resolution off, uncapped, no fixed
+timestep. Moving runs cover 182.7 m in 45 s with no stalls or recoveries.
+
+| Scene | Median | p95 | p99 | Frames ≤ 16.67 ms |
 |---|---:|---:|---:|---:|
-| Original desktop, spawn | 17.23 ms | 19.97 ms | 20.60 ms | 11.00% |
-| Optimized desktop, spawn | 11.53 ms | 13.93 ms | 14.83 ms | 99.77% |
-| Forest village, 45 s running | 10.77 ms | 13.20 ms | 14.32 ms | 99.98% |
-| City centre/plaza, 45 s running | 12.47 ms | 15.20 ms | 15.80 ms | 99.77% |
-| Wide city approach, 45 s running | 12.27 ms | 16.41 ms | 18.75 ms | 96.97% |
+| Deferred (`play` renderer), spawn | 17.23 ms | 19.97 ms | 20.60 ms | 11.00% |
+| Desktop profile, spawn | 11.53 ms | 13.93 ms | 14.83 ms | 99.77% |
+| Desktop profile, village, running | 10.77 ms | 13.20 ms | 14.32 ms | 99.98% |
+| Desktop profile, city centre and plaza, running | 12.47 ms | 15.20 ms | 15.80 ms | 99.77% |
+| Desktop profile, wide city approach, running | 12.27 ms | 16.41 ms | 18.75 ms | 96.97% |
+| Desktop profile, harbor, static | 8.32 ms | 8.67 ms | 9.27 ms | |
+| Desktop profile, lake, static | 12.03 ms | 14.84 ms | 15.15 ms | |
+| Desktop profile, arcade, static | 11.32 ms | 14.05 ms | 14.38 ms | |
 
-Each moving run covers **182.7 m** with 100% moving time and zero stalls or recoveries. The village loops six times; the plaza reverses twice. The approach advances from waypoint 0 to 123 of 559 and does not reach the town centre in 45 seconds; the separate plaza run supplies that coverage. Compact records are in [desktop-performance-2026-09-14](desktop-performance-2026-09-14/). Raw CSV, command, settings, exact output dimensions and memory telemetry remain in the correspondingly named `build/yorimichi/perf60/desktop-opt-*` folders.
+Capped (`--capped`, `r.VSync 1`) on the wide city approach: 59.995 fps average, 16.667 ms median, 16.681 ms p95,
+16.698 ms p99, slowest frame 16.72 ms.
 
-The baseline and candidate spawn runs are separate launches, so their difference is not presented as a paired causal measurement immune to machine drift. The actual candidate routes establish useful headroom, but **not a universal locked 60 FPS**: the approach's first wide views still contain occasional 19–23 ms frames. Its game thread remains about 1.8–1.9 ms, while distant geometry makes the base pass and depth prepass more expensive. Do not attribute this residual to the character's dense sprint bake or reduce animation fidelity to address it.
+## Limits
 
-### Capped desktop presentation
-
-A final run uses the normal desktop cap/VSync settings on the same city-approach route: `--capped` plus `r.VSync 1`, native 2228×1440, 100% scale, DRS off, no fixed timestep. Across 45 seconds and 182.7 m it measures **59.995 FPS average**, **16.6671 ms median / 16.6806 ms p95 / 16.6975 ms p99**, with a maximum measured frame of **16.7217 ms**. Every measured frame is within 17.2 ms. Movement validation passes with zero stalls or recoveries. [Capped record](desktop-performance-2026-09-14/desktop-opt-city-capped.json).
-
-This establishes stable engine frame pacing for that visible desktop run. It is not a hardware display scanout measurement or a guarantee for every route, weather setting, background workload or a 2560×1440 external display. The tiny fluctuations around 16.6667 ms make the strict “≤1000/60” percentage unsuitable as a dropped-frame metric for a capped test. Keep the uncapped route results above as the separate headroom measurement.
-
-### Keep meaningful route validation
-
-The legacy `road_walk` benchmark enabled `bJog`. Cairo maps that retired gait to Walk, only about 92 cm/s. The road recovery heuristic requires 150 cm of progress within 1.2 seconds, so two initial tests repeatedly recovered and never traversed the route. Those `desktop-opt-forward-city-walk` and `desktop-opt-forward-village-walk` runs are invalid performance evidence. The harness now selects the new character's actual Run (rate-scaled Sprint), around 406 cm/s. Recovery thresholds and normal game controls are unchanged. All three runs in the table pass the original movement checks.
-
-### Rejected detail reduction
-
-At the slow city-approach camera, changing `foliage.LODDistanceScale` from 0.75 to 0.6 saves only 0.370 / 0.299 / 0.290 ms across three alternating pairs. It visibly simplifies some building detail. Keep 0.75: the small gain does not justify that difference. No further foliage-distance reduction is installed. [A/B record](desktop-performance-2026-09-14/desktop-opt-distant-lods.json).
-
-### Scene lighting checks
-
-Current native fullscreen static checks are 8.32 / 8.67 / 9.27 ms at the harbor, 12.03 / 14.84 / 15.15 ms at the lake, and 11.32 / 14.05 / 14.38 ms in the arcade (median / p95 / p99). The inspected harbor retains warm paving/boats and blue water; the lake is no longer pale white; the covered arcade retains legible warm wood, roof detail and ground shadows. Those images establish these views only, not equivalence to deferred everywhere. Their on-image FPS labels are cold startup values from the pre-measurement screenshot and are not the measured rates.
-
-*(image in the prototype archive: desktop-performance-2026-09-14/forward-lighting-views.jpg)*
-
-The current character also passes a complete opening gallery from time 0 through 12 seconds under forward: walk/run/sprint, ground dash, double jump, waist corrective 0.9 and bounded hair flex 0.943536. Sprint and inverted flip images were inspected for bands and clipping. Source: `build/yorimichi/cairo/desktop-forward-lighting-gallery/`, with the [result](desktop-performance-2026-09-14/forward-lighting-gallery-result.json) preserved here. These 1600×900 fixed-step images validate appearance and animation, not performance. No character re-export was performed.
-
-## Desktop launch and reproducibility
-
-```sh
-# Normal game: fullscreen, native 1440-high, full HUD, saved player preferences.
-atelier play yorimichi --profile desktop-1440
-
-# Windowed counterpart.
-atelier play yorimichi --profile desktop
-
-# Previous deferred renderer for comparison/fallback.
-atelier play yorimichi --profile desktop-1440-baseline
-```
-
-The forward override is per process; neither normal launch nor comparison rewrites `DefaultEngine.ini`. Normal desktop play uses `JapanProto/Saved/settings.txt`, preserving the player's camera, controls and art preferences, and saves menu edits there. Only the session defaults for desktop/performance/native 100% are selected by the launcher. Optional second-argument `key=value;...` overrides remain supported. Direct `python3 games/yorimichi/tools/desktop_preview.py` comparison launches still seed an isolated preference file; use `--shared-settings` for normal-play behavior.
-
-READY requires the correct renderer, all three asset/fill operations, separate scene target, actual 1440-high viewport, a matching nonempty capture and the requested preference path. Runs keep `manifest.json`, `ready.json`, `ready.png`, `game.log` and memory telemetry under `build/yorimichi/desktop-preview/<timestamp>/`. The shared render lock and independent 10 GiB guard remain active. Phone streaming remains off.
-
-This is the **prepared local desktop build**, not a cooked distributable. A clean checkout must generate the original assets and prepare/validate the tile and city-tree packages according to [city tiles](performance-1440/CITY-SURFACE-TILES.md) and [tree LODs](performance-1440/CITY-TREE-LOD-STUDY.md). The launcher refuses missing or modified receipt files; do not regenerate a receipt merely to silence the guard. Shipping packaging, all-weather/all-location acceptance and a universal 60-FPS guarantee remain outside the evidence established here.
-
-Validation: native C++ Development Editor build succeeds with two compile actions; 6 desktop-launcher tests, 11 benchmark tests and 5 performance-pipeline tests pass. Shell syntax and diff whitespace checks pass. The settings menu now describes Quality as increasing shadow detail instead of promising lighting features unavailable in forward.
+- Forward shading has no Lumen bounce or screen-space reflections, so ambient bounce, covered shade and water contacts
+  differ from the deferred look. The harbor fill has no shadows.
+- Uncapped, the wide city approach still has occasional 19 to 23 ms frames in its first wide views: distant geometry
+  makes the base pass and depth prepass expensive, while the game thread stays at 1.8 to 1.9 ms. Do not lower the
+  character's animation fidelity for it.
+- These numbers hold for the measured views and routes on the reference machine, not for every route, weather,
+  background load or external display.

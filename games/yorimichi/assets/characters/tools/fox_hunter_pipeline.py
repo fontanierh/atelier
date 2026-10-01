@@ -8,8 +8,7 @@
 
 Asset root: output/imagegen/yorimichi-fox-hunter-2026-09-13/. Each stage writes its own revision folder
 with prompts, provenance (input/output hashes) and an approval.json that stays "pending" until the user
-decides in chat. Images for Tripo are produced by gpt-image-2.5-sunburst at quality=high, 1024 x 1024,
-following games/yorimichi/docs/TRIPO_P2_ASSET_WORKFLOW.md and ASSET_API_REVIEW_PROCESS.md.
+decides in chat. Images for Tripo are produced by gpt-image-2.5-sunburst at quality=high, 1024 x 1024.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
