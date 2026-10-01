@@ -41,9 +41,14 @@ forest, the park build and the review tool all read it. It is pure NumPy.
   220 m of the footprint, which takes in the hills the park is seen from, fewer and fewer out to
   320 m. New detailed trees fill that band to a touching canopy in clumps of one family (dark
   conifers above red maples and yellow ginkgos), with a few glades, and bushes and grass grow
-  between the trunks at the park's edge. Beyond it the island's opaque crowns close the gaps out to
-  850 m, over the north forest's thinned slopes and the far western hills, up to the forest line.
-  The ground under the canopy is dark forest floor, fading into the island's own ground by 650 m
+  between the trunks at the park's edge. Beyond it the island's opaque crowns close the canopy out
+  to 1250 m, over the north forest's thinned slopes and the steep face west of the park and the
+  plateau on top of it, the park's skyline, up to the forest line. The crowns grow in the same
+  clumps (pine, rust, gold), a little warmer than the fill, and the north forest's own crowns there
+  take them too, so the hills read as patches of one colour. The pines grow closer together and
+  stand above the broadleaf crowns. Where the crowns grow west of the north forest, they replace
+  the far forest's painted cards (`clear_far_forest`, called last by `gen_world.py`), which stood
+  over the plateau's canopy as a pale skyline. The ground under the canopy is dark forest floor, fading into the island's own ground by 650 m
   (`hidamari/mountains.py`). `city.json` lists the area as `near_trees`, so `AJapanWorld` gives the
   detailed trees shadows, collision and the camera fade instead of treating them as distant backdrop.
 - `world.megapark` writes `megapark/park.json`, staged into `Content/Data`: the actor transform,

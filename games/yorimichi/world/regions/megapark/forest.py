@@ -37,10 +37,22 @@ FAMILIES = (                    # (members with weights, scale range); a clump p
 CLUMPS = (-.2, .6)              # clump noise thresholds between the families: about 43, 32 and 25 per cent
 MIX = .25                       # share of trees from another family than their clump's
 # Beyond the detailed band the island's opaque crowns close the canopy out to OUTER metres, over the north forest's
-# thinned slopes and the far hills west of it that the park looks out on, up to the forest line.
-OUTER = 850.
-CANOPY = dict(spacing=7.5, gap=6.)
-CROWNS = (('Pine', .4), ('Rust', .35), ('Gold', .25))
+# thinned slopes and the far hills west of it that the park looks out on, up to the forest line. OUTER takes in the
+# plateau on top of the steep face west of the park, the park's skyline from the upper deck. The crowns keep the fill's
+# clumps (conifers, maples, ginkgos -> Pine, Rust, Gold) and the island's own crowns in the band take them too, so the
+# hills read as patches of one colour rather than confetti. Pines are slimmer than the broadleaf crowns, so they grow
+# closer together and taller, standing above the maples and ginkgos as in the paintovers.
+OUTER = 1250.
+CANOPY = dict(spacing=4.4, gap=4.8, pine_gap=3.4, pine=.8, broadleaf=.5)   # pine, broadleaf: the grid points they take
+CROWNS = ('Pine', 'Rust', 'Gold')
+CROWN_CLUMPS = (-.5, .45)       # the clump noise's thresholds for the crowns: about 29, 39 and 32 per cent, warmer than
+                                # the fill, since the dense, tall pines fill more of a distant view than their share
+CROWN_MIX = .15                 # share of crowns from another kind than their clump's
+PINE = 1.25                     # a pine crown's scale over a broadleaf one's
+# West of the north forest the far hills carry the island's painted-card far forest (gen_world.py), big cards of every
+# kind at random with pale broadleaves and cool conifers among them, taller than the crowns. Where the crowns grow they
+# replace it, so it no longer stands over the plateau's canopy as a pale skyline.
+FAR_FOREST = ('Tree_Maple_lo', 'Tree_Broad_lo', 'Tree_Ginkgo_lo', 'Tree_Cedar_B', 'Tree_Pine_B')
 FOREST_LINE = 215.              # metres, wavering by 25 (hidamari/layout.py stops the north forest at 210 +- 30)
 FLOOR = 650.                    # metres: the forest floor's colour fades into the island's ground by here
 # Undergrowth where the forest meets the park: bushes, and grass tufts closest in.
@@ -115,9 +127,7 @@ def grow(instances, height, trail_distance):
     p = p[keep]
     z = np.asarray(height(p[:, 0], p[:, 1]), 'f8')
     p, z = p[z > 2], z[z > 2]
-    clump = np.digitize(np.sin(p[:, 0] * .031 + np.sin(p[:, 1] * .027) * 1.9) + .7 * np.cos(p[:, 1] * .035 - p[:, 0] * .012),
-                        CLUMPS)
-    clump = np.where(rng.random(len(p)) < MIX, rng.integers(0, len(FAMILIES), len(p)), clump)
+    clump = np.where(rng.random(len(p)) < MIX, rng.integers(0, len(FAMILIES), len(p)), _clump(p[:, 0], p[:, 1]))
     cell = _bins(have, 8)
     for q, ground, family in zip(p, z, clump):
         if _near(cell, q, FILL['gap'], 8):
@@ -128,7 +138,7 @@ def grow(instances, height, trail_distance):
                                                round(float(rng.uniform(0, 360)), 1), round(float(rng.uniform(*scale)), 3)])
         cell.setdefault((math.floor(q[0] / 8), math.floor(q[1] / 8)), []).append(q)
         done[name] = done.get(name, 0) + 1
-    _close(instances, height, trail_distance, rng, done)
+    _close(instances, height, trail_distance, np.random.default_rng(SEED + 1), done)
     # Undergrowth at the park's edge, between the trunks.
     trunks = _bins(np.array([q[:2] for name, rows in instances.items() if name.startswith('Tree') for q in rows
                              if x0 < q[0] < x1 and y0 < q[1] < y1], 'f8').reshape(-1, 2), 4)
@@ -155,31 +165,80 @@ def grow(instances, height, trail_distance):
     return done
 
 
-def _close(instances, height, trail_distance, rng, done):
-    """Opaque crowns in the gaps of the forest from the detailed band out to OUTER: the north forest's own kinds
-    inside its bounds, the backdrop kinds on the far hills west of it."""
+def _clump(x, y, edges=CLUMPS):
+    """The clump of each point: 0 conifers, 1 maples, 2 ginkgos (FAMILIES), or with CROWN_CLUMPS Pine, Rust, Gold."""
+    return np.digitize(np.sin(x * .031 + np.sin(y * .027) * 1.9) + .7 * np.cos(y * .035 - x * .012), edges)
+
+
+def _box(reach, south=650.):
+    """[x0, y0, x1, y1]: the footprint's bounds grown by `reach`, not south of `south`."""
     fx0, fy0, cell, _, _, mask = placement.footprint()
     j, i = np.nonzero(mask)
-    box = (fx0 + i.min() * cell - OUTER, max(fy0 + j.min() * cell - OUTER, 650.),
-           fx0 + (i.max() + 1) * cell + OUTER, fy0 + (j.max() + 1) * cell + OUTER)
+    return (fx0 + i.min() * cell - reach, max(fy0 + j.min() * cell - reach, south),
+            fx0 + (i.max() + 1) * cell + reach, fy0 + (j.max() + 1) * cell + reach)
+
+
+def _outer(d):
+    """0..1: how much of the canopy the crowns close at `d` metres from the footprint, fading out by OUTER."""
+    return 1 - _smooth((d - OUTER + 250) / 250)
+
+
+def clear_far_forest(world):
+    """Drop the far forest's painted cards where the crowns replace them: west of the north forest, inside OUTER.
+    `world` is gen_world.py's world.json; the tree house has already planned its canopy on the full forest."""
+    rng = np.random.default_rng(SEED + 2)
+    x0, y0, x1, y1 = _box(OUTER)
+    for name in FAR_FOREST:
+        if name not in world['instances']:
+            continue
+        a = np.asarray(world['instances'][name], 'f8').reshape(-1, 5)
+        box = (a[:, 0] > x0) & (a[:, 0] < min(x1, mountains.BOUNDS[0])) & (a[:, 1] > y0) & (a[:, 1] < y1)
+        drop = np.zeros(len(a), bool)
+        if box.any():
+            drop[box] = rng.random(box.sum()) < _outer(distance(a[box, 0], a[box, 1]))
+        world['instances'][name] = [q for q, gone in zip(world['instances'][name], drop) if not gone]
+
+
+def _close(instances, height, trail_distance, rng, done):
+    """Opaque crowns in the gaps of the forest from the detailed band out to OUTER, in the fill's clumps: the north
+    forest's own kinds inside its bounds, the backdrop kinds on the far hills west of it. The north forest's crowns in
+    the band take the clump of where they stand, less and less towards OUTER."""
+    box = _box(OUTER)
+    fade = lambda d: _smooth((d - NEAR - 30) / 60) * _outer(d)
+    kinds = {'HD_NorthTree' + k: [] for k in CROWNS}
+    for name in kinds:
+        a = np.asarray(instances.get(name, []), 'f8').reshape(-1, 5)
+        inside = (a[:, 0] > box[0]) & (a[:, 0] < box[2]) & (a[:, 1] > box[1]) & (a[:, 1] < box[3])
+        turn = np.zeros(len(a), bool)
+        if inside.any():
+            turn[inside] = rng.random(inside.sum()) < (1 - CROWN_MIX) * fade(distance(a[inside, 0], a[inside, 1]))
+        kinds[name].append(a[~turn])
+        clump = _clump(a[turn, 0], a[turn, 1], CROWN_CLUMPS)
+        for k, kind in enumerate(CROWNS):
+            kinds['HD_NorthTree' + kind].append(a[turn][clump == k])
+    for name, parts in kinds.items():
+        instances[name] = np.concatenate(parts).tolist()
     p = _grid(rng, box, CANOPY['spacing'])
+    kind = np.where(rng.random(len(p)) < CROWN_MIX, rng.integers(0, len(CROWNS), len(p)),
+                    _clump(p[:, 0], p[:, 1], CROWN_CLUMPS))
     d = distance(p[:, 0], p[:, 1])
-    density = .95 * _smooth((d - NEAR - 30) / 60) * (1 - _smooth((d - OUTER + 200) / 200))
-    keep = (rng.random(len(p)) < density) & (trail_distance(p[:, 0], p[:, 1]) > 15)
-    p = p[keep]
+    share = np.where(kind == CROWNS.index('Pine'), CANOPY['pine'], CANOPY['broadleaf'])
+    keep = (rng.random(len(p)) < .97 * share * fade(d)) & (trail_distance(p[:, 0], p[:, 1]) > 15)
+    p, kind = p[keep], kind[keep]
     z = np.asarray(height(p[:, 0], p[:, 1]), 'f8')
     line = FOREST_LINE + 25 * np.sin(p[:, 0] * .008) + 10 * np.sin(p[:, 1] * .021)
-    p, z = p[(z > 4) & (z < line)], z[(z > 4) & (z < line)]
+    grows = (z > 4) & (z < line)
+    p, z, kind = p[grows], z[grows], kind[grows]
     have = _bins(np.array([q[:2] for name, rows in instances.items() if name.startswith(('Tree', 'HD_NorthTree'))
                            for q in rows if box[0] - 8 < q[0] < box[2] + 8 and box[1] - 8 < q[1] < box[3] + 8],
                           'f8').reshape(-1, 2), 8)
     west = p[:, 0] < mountains.BOUNDS[0]
-    kind = rng.choice(len(CROWNS), size=len(p), p=[w for _, w in CROWNS])
     for q, ground, k, far in zip(p, z, kind, west):
-        if _near(have, q, CANOPY['gap'], 8):
+        pine = CROWNS[k] == 'Pine'
+        if _near(have, q, CANOPY['pine_gap' if pine else 'gap'], 8):
             continue
-        name = ('HD_NorthTreeBackdrop' if far else 'HD_NorthTree') + CROWNS[k][0]
-        scale = rng.uniform(1.25, 1.75) if far else rng.uniform(.8, 1.2)
+        name = ('HD_NorthTreeBackdrop' if far else 'HD_NorthTree') + CROWNS[k]
+        scale = (rng.uniform(1.35, 1.85) if far else rng.uniform(1., 1.45)) * (PINE if pine else 1.)
         instances.setdefault(name, []).append([round(float(q[0]), 3), round(float(q[1]), 3),
                                                round(float(ground) - (.2 * scale if far else .3), 3),
                                                round(float(rng.uniform(0, 360)), 1), round(float(scale), 3)])
