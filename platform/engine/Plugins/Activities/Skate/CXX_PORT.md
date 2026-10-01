@@ -302,6 +302,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   normals/drag, surface flags, elapsed/reset state, deck/wall probe gates and all four toolkit lanes.
   Live seven-body poses supply 1,536 output ticks in both effective stances. The ground corpus observes
   1,161 distinct retained wheel normals; the complete gameplay owner's scheduling remains separate.
+- Riding reckoning frames: 2,501 cases and 1,903,746 exact words cover retained ground/system
+  translations, body-flip composition, full matrices/inverses, heading reprojection, one-refinement
+  signed angles, dynamic lean, conditional lateral tilt and reset recovery. Persistent streams observe
+  6,140 lean angles, 6,054 tilt records and 6,306 system matrices, including degenerate axes. Actual
+  producers of these frames and the full riding state schedule remain separate integration steps.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
