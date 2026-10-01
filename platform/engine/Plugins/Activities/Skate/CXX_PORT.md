@@ -195,6 +195,14 @@ including consumed request flags, signal hashing and retained matrix tails.
 
 ## Validation completed
 
+`SlideFriction.*`, `Straighten.*`, `Heading.*` and `AntiFlip.*` preserve the four original grounded
+force/torque kernels, including caller-owned board heading history and fourth lanes. `GroundTorqueSettings.*`
+loads their actual five surface profiles from native settings. The independent ground torque comparison
+passes 2,810 records and 97,708 exact bytes, with 320 retained manual-heading updates, 40 general-branch
+history clears and 130 disabled anti-flip returns. Matrices are consumed as supplied rather than
+orthogonalized. These checks establish valid stock setting values; malformed loader diagnostics and
+full GroundBoard queue/service scheduling are separate checks.
+
 `GroundControlSettings.*` loads the immutable native manual, propulsion, linear-drag, speed-model and
 wall-ride settings before gameplay tuning. The six leaf loaders preserve the original first failed read,
 numeric aliases, inheritance and diagnostic strings; successful output is published only after the whole
