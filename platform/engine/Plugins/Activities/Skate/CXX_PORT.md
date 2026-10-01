@@ -1130,3 +1130,19 @@ The successful comparison compiles from committed dependencies and only these
 five new source files. Processed contacts and actual incoming pose/root frames
 are explicit upstream fixtures; complete Biped movement, queries and global
 physical scheduling require their separate connected comparisons.
+
+### Native controller sampling
+
+`PlayerControls` now owns the original derived controller, ordered intentions,
+gesture recognition, wrapping tick and per-tick camera-relative offboard axes.
+Animation and physical input borrow the same sampled axes; later camera or
+state changes cannot rotate this packet a second time. The complete unchanged
+original host, including its actual sample system, matches C++ for 1,930
+commands and 2,526,551 output bytes (SHA256
+`5bf321deee0e01403d051b293a0fe80b2a2a379353ec0e0e98e72b8d6bcfabdc`).
+Coverage includes 14 authored gesture streams, cached action replay, axis pole
+boundaries, counter wrap and actual missing-camera failures with retained state.
+The comparison uses committed dependencies and only the two new controller
+sources. Completed physical and camera inputs are caller records in this proof;
+their production, complete frame scheduling and malformed original asset
+construction remain outside its scope.
