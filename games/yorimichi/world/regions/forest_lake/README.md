@@ -1,30 +1,46 @@
 # Hidden woodland lake
 
-A secluded 68 × 46 m inland lake at Blender world (-90, 235), west of the mini-mega. A winding dirt trail connects the ramp clearing to the fisher cabin. Existing autumn trees enclose the clearing; no new tree asset family is added.
+A secluded 68 × 46 m lake in the woods at Blender (-90, 235), west of the mini-mega, with a fisher's cabin and a
+timber jetty on its shore. A winding dirt trail leads from the ramp clearing to the cabin; the existing autumn trees
+close round the clearing. The boat and the fishing gear are scenery: there is no fishing or rowing. The world map's
+**Hidden woodland lake** zone lands on dry ground beside the cabin.
 
-The cabin includes a tiled roof, shoji windows, roof dormer, tiled covered porch with timber braces, ground-access step, bench, wood store, fishing pier, bucket, rod and a decorative moored rowboat. Water uses a separate opaque material with animated ripple normals and jade shallows. Stepping into deep water returns the player to the dry cabin approach. The boat and fishing gear are scenery; this does not introduce a fishing or rowing mechanic.
+## Build and check
 
-## Design and map
+```sh
+uv run atelier build yorimichi unreal.lake data.stage
+uv run atelier qa yorimichi lake LABEL [shot ...]
+```
 
-`output/imagegen/forest-lake/concept.png` was generated with **gpt-image-2.5-sunburst**, quality high, through the imagegen CLI, using current game stills and the current map. Prompt and provenance are alongside it.
+- `world.layout` calls `forest_lake.layout.integrate` from `gen_world.py`, after the village, the mini-mega and the
+  south-west. It digs the lake bed, levels the cabin pad, carves the trail and clears the trees in the way, and
+  writes `world['forest_lake']` (centre, radii, water height, cabin, trail, safe shore) and
+  `build/yorimichi/forest_lake/layout.json`.
+- `world.lake` ([`build.py`](build.py), Blender) builds five meshes in `build/yorimichi/forest_lake/assets/`:
+  `Lake_Cabin`, `Lake_Water`, `Lake_Trail`, `Lake_Shore` and `Lake_Plants`. [`details.py`](details.py) holds the
+  cabin's joinery and the shoreline pieces.
+- `unreal.lake` (`unreal/Scripts/import_forest_lake.py`) imports them into `/Game/Japan/Assets` with `M_Village`,
+  and gives `Lake_Water` its own material (`forest_lake_material.py`).
+- The `lake` scenario launches its own game under the render guard, captures twelve views (hero, overview, the four
+  cabin sides, wood store, jetty, boat interior, rock islet, shore, trail, aerial) and probes seven jetty and step
+  heights to 4 cm, into `build/yorimichi/forest_lake/LABEL/`. It fails if a probe fails.
+- [`phone/forest-lake-smoke.mjs`](../../../phone/forest-lake-smoke.mjs) drives the streamed touch controls along the
+  trail, onto the porch and the jetty, and into deep water to check the recovery.
 
-The map follows the same accurate rough-layout → Sunburst painting → local registration process. `register_map.py` composites only the lake and trail, preserving 99.69% of the previous painting. Existing zone coordinates and map projection are preserved. The added **Hidden woodland lake** destination leads to dry ground beside the cabin.
+Running `python -m forest_lake.layout` on its own (from `games/yorimichi/world/regions`) snapshots the pre-lake world
+into `build/yorimichi/forest_lake/source/` and reapplies the lake to that snapshot. `integrate` refuses a world that
+already has a lake, so never overwrite the snapshot with an integrated world.
 
-## Rebuild
+## Reference
 
-- Full world generation calls `forest_lake.layout.integrate` after the existing regional integrations.
-- For a targeted update, `PYTHONPATH=japan python -m forest_lake.layout` snapshots the pre-lake world/heightmap in `out/forest_lake/source` and always reapplies edits from that snapshot. Do not overwrite that baseline with an already-integrated world.
-- `blender -b --threads 2 --python japan/forest_lake/build.py`
-- `blender -b --threads 2 --python japan/build_terrain.py`
-- Import with `atelier build yorimichi unreal.lake` (Unreal's Python commandlet under the render lock and memory guard), with the stream stopped.
-- Rebuild YorimichiEditor after C++ changes (`atelier build yorimichi unreal.compile`).
-- `python japan/forest_lake/qa.py <fresh-session>` captures twelve native views and collision probes under the same memory guard.
-- `node japan/streaming/forest-lake-smoke.mjs` exercises streamed touch movement along the forest trail, onto the porch and pier, and into shore recovery.
+| Thing | Value |
+| --- | --- |
+| Lake | Centre (-90, 235), radii 34 × 23 m with a wavy shore, water at 75 m |
+| Cabin | (-56, 215), floor 75.65 m, on a levelled pad |
+| Safe shore | (-54, 223, 75.65), where deep water returns the player |
+| Collision | The cabin, shore rocks and jetty collide; water and plants do not |
 
-The build adds five static meshes, sharing the existing village material except for the independent water material. Water and planting have no collision; building, shore rocks and jetty retain complex query collision. No second rendering process is required.
-
-## Validation
-
-Native editor target compiled successfully. Eleven final inspection views plus a separate overview capture cover all four cabin sides, porch, wood store, boat interior, pier, islet, shore, trail and clearing. All seven native step/deck collision probes passed. The streamed touch test traversed the entire trail, mounted the porch and jetty, stepped into deep water and recovered to the shore, and used the new map destination. All 432 sampled movement states remained grounded along the trail and pier; reported stream frame rate was 59.9–60 FPS. The final native capture stayed around 7.2 GiB, below the 10 GiB process guard.
-
-Follow-up detail fixes include the upward-facing dry boat floor, solid roof underlay, dormer, tiled canopy, stone footing, touching stacked logs, porch braces, fishing creel, rain barrel, rope bindings, and a planted rocky islet using an existing maple mesh.
+The cabin has a tiled roof with a dormer, shoji windows, a tiled covered porch on timber braces, a step, a bench, a
+wood store, the jetty with a bucket and rod, and a moored rowboat. The water is opaque, with jade shallows and
+animated ripples. When the player's feet sink 45 cm under the surface inside the shore, the game moves them to the
+safe shore (`AWandererCharacter`).

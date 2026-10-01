@@ -1,35 +1,40 @@
 # Forest mini-mega
 
-A woodland trail continues beyond Momiji Hamlet to a separate sunlit clearing.
-The ramp uses Sloanyard-scale dimensions: **10.7 m roll-in platform, 10.4 m open
-gap, 6.1 m vert quarter pipe, 8 m riding width**. The actual riding line runs
-from the tower through the takeoff and descending landing to a circular vert
-transition. A side ladder reaches the tower; a walking route surrounds the ramp.
+A full-scale plywood mega ramp in a sunlit clearing in the woods, at the end of a trail that continues beyond Momiji
+Hamlet. The riding line runs from the roll-in tower through the takeoff, over the open gap and down the landing into
+a circular vert quarter pipe; a side ladder reaches the tower, a rollout returns to the clearing, and a walking route
+surrounds the ramp. The ramp is scenery with collision: `AMegaRamp` places `Mega_Ramp` from `world.json` `mega`, and
+there is no scripted ride on it.
 
-The dimensions are based on [Elliot Sloan's description of Sloanyard](https://www.monsterenergy.com/en-us/skateboard/elliot-sloan-talks-sloanyard/).
-The built-in imagegen tool designed `references/forest-mega.png` using three
-actual game screenshots, then `references/motion-sheet.png` using the character
-and environment references. `references/grab-sheet.png` develops the rear-hand
-grab and 180 re-entry using the actual yellow rider as reference. Exact prompts
-are beside the images. The generated
-sheet's horizontal width annotation is misplaced: width is across the ramp,
-while the actual model and physics share the explicit dimensions in `layout.py`.
+The dimensions follow [Elliot Sloan's description of Sloanyard](https://www.monsterenergy.com/en-us/skateboard/elliot-sloan-talks-sloanyard/).
 
-## State
+## Build
 
-The ramp is scenery and collision now: `AMegaRamp` places `Mega_Ramp` from `world.json` and the trail and clearing are
-walkable. Its scripted ride (ladder, drop-in, gap, vert 180 and rollout on the old cruiser skateboard,
-`MegaMovement.cpp`, `-megaqa`) stayed in the prototype archive with that board; a ride on the new board would be built
-on the platform's Skate plugin.
+```sh
+uv run atelier build yorimichi world.mega unreal.mega
+```
 
-## Implementation
+- `world.layout` calls `mega.layout.integrate` from `gen_world.py`, after the village: it lays the trail from the
+  hamlet's last lane, levels the oval clearing, clears the trees and plants in the way, and writes `world['mega']`
+  (origin, width, gap, the riding profiles, rollout, ladder and trail).
+- `world.mega` ([`build.py`](build.py), Blender) builds `Mega_Ramp` and `Mega_Trail` in `build/yorimichi/mega/`
+  with the village kit's single vertex-colour material.
+- `unreal.mega` (`unreal/Scripts/import_mega.py`) imports them into `/Game/Japan/Assets` with `M_Village`.
 
-`layout.py` is the shared metre-space profile for the generated plywood geometry. The terrain edit and scatter
-exclusions are local to the new trail and clearing. Meshes use one existing opaque vertex-colour material.
+`python games/yorimichi/tools/benchmark.py NAME --view road_walk --route mega --seconds 55` walks the trail with
+frame-time measurements.
 
-## Rebuild and verification
+## Reference
 
-`atelier build yorimichi world.mega unreal.mega` regenerates and imports the ramp and trail.
+[`layout.py`](layout.py) is the one metre-space profile both the mesh and the collision come from.
 
-- `python games/yorimichi/tools/benchmark.py NAME --view road_walk --route mega --seconds 55`: walking the connecting
-  trail with real-time frame measurements.
+| Dimension | Value |
+| --- | --- |
+| Roll-in platform | 10.7 m |
+| Open gap | 10.4 m (`GAP`) |
+| Vert quarter pipe | 6.1 m, an exact circular transition ending in true vertical |
+| Riding width | 8 m (`WIDTH`) |
+| Origin | (65, 242), deck base at 66.8 m (`ORIGIN`) |
+
+The world map draws the two riding sections, the gap, the rollout and the ladder from `world['mega']`
+([WORLD_MAP.md](../../../docs/WORLD_MAP.md)).

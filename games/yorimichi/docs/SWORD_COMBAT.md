@@ -1,212 +1,218 @@
-# Sword combat: the game-r13 set and its gameplay
+# Sword combat
 
-> Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
+Cairo, the player, carries a bokken (a wooden sword). It has a three-strike chain, a charged strike, a parry with a
+counter, and armed copies of the locomotion and action clips so the sword stays in hand while running, jumping,
+rolling or crouching. `UWandererSwordComponent` (`WandererSword.h/.cpp`) runs the state machine, the blade sweeps and
+the player's health. The clips are cut from a Mixamo combo and carry root motion, so a strike turns and advances the
+capsule as authored. The fox hunter ([FOX_HUNTER_COMBAT.md](FOX_HUNTER_COMBAT.md)) is the enemy, and a training post
+(`ASwordDummy`) is there for practice and the QA run. Effects and sound are in [COMBAT_FEEDBACK.md](COMBAT_FEEDBACK.md).
 
-## Update 24 September 2026: combat-r02 (game-r15)
+## Build and try it
 
-The clips are rebuilt without the capture's spin and play faster. Strikes last 0.50–0.58 s where they used
-to take 0.77–0.93 s, and they end facing the target instead of 120–224° away
-([game-r15/README.md](../../output/imagegen/yorimichi-yellow-boy-2026-09-12/game-r15/README.md)).
+```sh
+atelier build yorimichi characters.cairo unreal.cairo   # clips, bokken and DA_Cairo sword fields
+atelier play yorimichi                                  # the fox hunter waits up the road from the start
+atelier play yorimichi -- -sworddummy                   # plus a training post 1.3 m ahead, swinging every 3 s
+atelier play yorimichi --profile swordqa                # the scripted sword check (see below)
+```
 
-Gameplay changes that come with them:
-- **Aiming.** Each strike aims and steps in with its own measured contact point (`ContactYaw`,
-  `ContactDistance` on `FWandererSwordClip`, written by `import_cairo_sword.py`). This replaces the hard-coded
-  offsets.
-- **Soft lock.** The lock also takes the training post.
-- **Charging.** Holding attack now cuts first, then winds up the charge from the follow-through. The cut is too
-  fast to charge before it lands, and it counts as its own strike. A parry or the menu still cancels a charge
-  safely.
-- **Hit-stop.** It applies to every hit and freezes both fighters (`AJapanCombatFX`). It no longer works by
-  pausing the clip's play rate.
+Script profiles such as `desktop-1440` take extra Unreal arguments through the environment:
+`YORIMICHI_EXTRA_ARGS=-sworddummy atelier play yorimichi --profile desktop-1440`.
 
-Effects, sound and the filmed fight are in [COMBAT_FEEDBACK.md](COMBAT_FEEDBACK.md). `-swordqa` passes all 37
-checks and `-foxqa` all of its checks on game-r15. The harness timeline moved with the new clip lengths.
-
-The rest of this document describes the game-r13 set as installed on 16 September. Its "Known limits" about
-the 130° turn and the slow recoveries no longer apply.
-
-Originally written 16 September 2026. This installs a playable sword set for Yellow Boy built only from the
-accepted Mixamo combo. Assets are under `output/imagegen/yorimichi-yellow-boy-2026-09-12/`; the
-rejected video reconstruction (`rebuild-*`, `anim-r0*`) is not used anywhere.
-
-Review links (workstation awake, Tailscale for the phone):
-
-- Studio, local: `http://127.0.0.1:8794/?asset=yellow-boy-combat`
-- Studio, phone or desktop on Tailscale: `<tailnet address>
-- Scenarios tab presets: `sword-chain`, `sword-charge-early`, `sword-charge-full`, `sword-charge-cancel`,
-  `sword-parry`, `sword-draw-run`. The untouched combo stays at `?asset=yellow-boy-sword`.
-- Contact sheets and validation: `combat-r01/captures/`, `combat-r01/combat-validation.json`.
-
-## What is in the set
-
-`game-r13/README.md` lists the twelve clips with source frames and windows. In short: a breathing
-guard, draw/sheathe from the library idle, three captured strikes with recoveries, a charge (raise,
-breathing hold, captured release), a parry from the captured rising cover with a recoil, and the whole
-combo as a reference clip. Facing and hip travel of captured phases live on the root bone; the game
-plays them as root motion, so a strike turns and advances the capsule exactly as the capture did.
+`characters.cairo` exports the sword clips from `Cairo-Game-r18.blend` with the bokken and its attachment data
+(`--sword --report export-sword.json`), then the armed copies. `unreal.cairo` runs `import_cairo.py`,
+`import_cairo_sword.py` and `import_cairo_armed.py`. The sword import adds the `A_Sword*` clips (root motion where the
+manifest asks for it, root lock at the reference pose), `SM_Bokken` with its two materials, and the sword fields of
+`DA_Cairo`: the `FWandererSwordClip` table with each clip's windows, link, cancel, counter and contact point. The
+bokken's attachment is its exported rest transform times the inverse of `hand_R`'s reference pose.
 
 ## Controls
 
-| Action | Keyboard / mouse | Controller |
+| Action | Keyboard and mouse | Controller |
 | --- | --- | --- |
-| Attack (tap) / charge (hold) | Left mouse button | Right trigger |
+| Attack (tap), charge (hold) | Left mouse button | Right trigger |
 | Parry | Right mouse button | Left trigger |
-| Draw / sheathe | R | D-pad Left |
+| Draw or sheathe | R | D-pad Left |
 
-Existing bindings are untouched: jump, roll, dash and interact stay on the face buttons, L3 sprints,
-R3 crouches, shoulders keep the airship speed. Both triggers and D-pad Left were free on every pad.
-The HUD's second line shows the sword hints and a weapon-state line (state, charge percentage, last
-event, dummy counters) whenever the sword set is installed and the player is on foot.
+All other bindings are in [CONTROLLER_CONTROLS.md](CONTROLLER_CONTROLS.md). Sword input is ignored on the
+skateboard, on the sailboat and as a zeppelin passenger. While the sword is installed and the player is on foot, the
+HUD shows the sword hints and a weapon line (state, charge percentage, the last event and, with the training post,
+its counters). The health bar sits beside the stamina rings.
 
-## Behaviour
+## How it plays
 
-- **Draw.** Attacking while the sword is put away draws it first; the attack press is buffered and
-  fires when the draw ends (0.45 s). The bokken is visible from the first draw frame at the hip (there
-  is no scabbard); sheathing hides it on the last frame.
-- **Quick attack and chain.** A tap starts `SwordAttack1` at once, facing the stick direction or the
-  camera forward if the character was facing away. Contact is swept from 0.27 s. A press inside the
-  last 0.3 s before a clip's link window (0.47 s on strikes 1 and 2) chains to the next strike; the
-  chain ends after strike 3. Movement input after the cancel time returns control to locomotion.
-- **Charge.** Holding the button through the wind-up (0.22 s, before the cut lands) turns the strike
-  into `SwordChargeUp`, then the breathing hold loops for as long as the button is held. Release plays
-  `SwordChargeRelease`: early releases at 1.0×; after 0.9 s in the hold the release is a full charge at
-  1.05× with a 90 ms hit-stop on contact and a 0.8× settle. Parry, roll, dash, jump, opening the menu
-  or losing the button (menu focus) cancel the charge back to guard without a strike.
-- **Parry.** `SwordParry` is active between 0.08 s and 0.33 s. A strike landing in that window is
-  deflected: the recoil `SwordParryHit` plays and the counter (`SwordAttack1`) starts from 0.13 s.
-  Outside the window the strike counts as a hit on the player (no health system yet).
-- **Weapon policy.** Armed locomotion, jumps, falls, landings, crouching and dashes keep the sword in
-  hand through a right-arm layer (clavicle_R branch). Walking, running and sprinting play the arm of the armed
-  locomotion (game-r16, below), so the sword swings in step with the stride. With the sword out, jumps, falls,
-  landings, dashes, the double jump, the roll, crouching and the knock-down play armed copies with their own arm
-  movement, and standing still plays `SwordStand` (the idle with the sword in hand). Rolling keeps the sword, and
-  draw and sheathe are instant with no clip (28 Sep). Dodging,
-  interacting, waving, boarding a vehicle or the airship tuck the sword away; the next attack
-  press draws again. Draws, sheathes and the parry recoil finish before another action can interrupt.
-- **Hits.** In each clip's active window the blade segment (guard to tip) is swept with six spheres
-  between frames; the wielder is excluded and a target is hit at most once per strike. Strength is 1
-  (quick), 2 (charged) or 3 (full charge). Timing uses clip source seconds, so it does not depend on
-  the frame interval.
+### Drawing and sheathing
 
-The first enemy that can be fought with this set is the fox-masked hunter: `FOX_HUNTER_COMBAT.md` covers
-its behaviour, the player's health, the flinch and knock-down, and the soft lock that turns the spinning
-strikes toward it. `ASwordDummy` remains as a deterministic training post for the sword harness: it takes
-hits, swings on request or every 3 s when spawned in play, and tells the player's sword when its swing
-lands. Launch with it: `YORIMICHI_EXTRA_ARGS=-sworddummy atelier play yorimichi --profile desktop-1440`.
+Drawing and sheathing are instant: `SetArmed` shows or hides the bokken in the hand, plays `sword_draw` or
+`sword_sheathe`, and blends the carry layer in fast. The toggle draws when the sword is away and sheathes from guard.
+An attack press with the sword away draws and starts strike 1 in the same frame. Interacting, waving, boarding the
+sailboat or the skateboard stows the sword; the next attack press draws it again. The `SwordDraw` and `SwordSheath`
+clips are imported but not played.
 
-## Pipeline
+### Strikes and the chain
 
-```sh
-# clips on the current body, validation, sheets, Studio GLB
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_build.py
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_check.py
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_review.py -- sheets
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/tools/cairo_sword_combat_review.py -- export
-# Unreal: clips + bokken + attachment data, then the targeted installer
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/cairo/export_unreal.py -- \
-  --revision game-r13 --clips SwordIdle,SwordDraw,SwordSheath,SwordAttack1,SwordAttack2,SwordAttack3,SwordChargeUp,SwordChargeHold,SwordChargeRelease,SwordParry,SwordParryHit,SwordCombo \
-  --clips-only --sword --report export-sword.json
-python3 platform/studio/atelier/safety/guarded.py --report build/yorimichi/cairo/sword-import --timeout 900 --purpose 'Sword clip import' -- \
-  '/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor-Cmd' "$PWD/games/yorimichi/unreal/Yorimichi.uproject" \
-  -run=pythonscript "-script=$PWD/games/yorimichi/unreal/Scripts/import_cairo_sword.py" -unattended -nosplash -NullRHI -stdout
-atelier build yorimichi unreal.compile
-```
+- A tap starts `SwordAttack1` at once (0.07 s blend). Each strike faces the stick direction, or the camera forward
+  when the character faces away from it (dot below −0.2).
+- The blade sweeps inside each clip's active window (table below). Movement input is ignored until the clip's cancel
+  time; after it, movement returns to guard and locomotion.
+- From a clip's link time, a press made within the last 0.3 s (and after the strike started) starts the next strike.
+  The chain stops at three. Presses during a strike are buffered, so mashing gives at most three strikes.
+- Roll, dash and jump are refused during a strike before its cancel time and during the parry recoil.
 
-`import_cairo_sword.py` adds the `A_Sword*` clips (root motion enabled where the manifest says so, root
-lock at the reference pose), `SM_Bokken` with its two materials, and the sword fields of
-`DA_Cairo`; it verifies that every other Cairo asset file is byte-identical before and
-after. The attachment is computed in Unreal as the exported rest transform of the sword times the
-inverse of `hand_R`'s reference pose; the exported hand position matches the skeleton to 6 µm.
+### Soft lock and step-in
 
-Code: `WandererSword.h/.cpp` (component, state machine, sweeps, dummy), `WandererSwordReview.cpp`
-(harness), `WandererDefinition.h` (`FWandererSwordClip`, sword fields), `WandererAnimInstance.cpp`
-(carry layer, root motion mode), `WandererCharacter.cpp` (inputs, cancels, movement lock),
-`JapanHUD.cpp` (hints).
+Each strike looks for the nearest living fox hunter or training post within 3 m that is roughly ahead: within
+about 72° of the stick direction (dot above 0.3), or within about 107° of the current facing without stick input
+(dot above −0.3). The character turns at 900°/s for 0.15 s so the clip's measured contact point (`ContactYaw`,
+`ContactDistance`) passes through the target, and steps in by `distance − ContactDistance` (0 to 70 cm) at 350 cm/s
+until 0.05 s after the active window opens. The step-in is a swept offset because the strike's root motion overrides
+velocity. Clips without contact data fall back to 65 cm and 25° (strike 1), 95 cm and 0° (strike 2), 90 cm and −36°
+(strike 3).
 
-## Validation performed
+### Charge
 
-- Blender, saved file, 240 Hz: no blade/sword against head, outfit or free skin overlap samples on any
-  gameplay clip; fists clear the head; support grip ≤ 1.9 mm on two-handed captured frames; library
-  curves byte-identical to game-r12 (`combat-r01/combat-validation.json`).
-- Unreal, `-swordqa` at 60 and 30 fps (`build/yorimichi/logs/swordqa-60`, `swordqa-30`): scripted presses
-  through the real handlers check draw, single tap, buffered chain, early/full charge with hit-stop,
-  charge cancel by parry and by the menu, parry miss, parry success with counter, late parry, movement
-  cancel with the carry layer, roll stow and redraw, mashing, sheathe, and that every registered strike
-  target matches a dummy hit. Results are in `sword_qa.json` next to `sword_telemetry.csv` and the
-  screenshots.
-- Studio: the `yellow-boy-combat` asset loads with 21 clips, the six presets play, phone layout checked
-  at 375 × 812 with the sticky loop/speed controls intact; `npm test --prefix studio` and
-  `format:check` pass.
-- Desktop: `YORIMICHI_EXTRA_ARGS=-sworddummy atelier play yorimichi --profile desktop-1440` launched at 1440p with the full HUD.
+- If the attack button is still held 0.25 s after strike 1 started, once that cut's active window has ended, the
+  strike turns into `SwordChargeUp`. The cut has already landed and counts as its own strike. The counter strike
+  never charges.
+- `SwordChargeHold` loops while the button is held. After 0.9 s in the hold the charge is full: a flash, a ring and
+  the `charge_ready` bell.
+- Release plays `SwordChargeRelease`: at 1.0× for an early release (strength 2), at 1.05× for a full charge
+  (strength 3), which then drops to 0.8× after its active window for a heavier settle.
+- Parry cancels a charge back to guard. Roll, dash, jump, the menu and teleports cancel it without a strike, and the
+  menu also drops the held button so a later release does nothing.
 
-## Known limits
+### Parry and counter
 
-- The combo is a spinning capture: after a quick attack the character faces about 130° left of where
-  it started (the capture's own turn). The next attack re-faces the stick or camera during its wind-up
-  at 900°/s; when the player moves, the controller orients as usual.
-- The charge raise leaves the support hand up to 33 mm off the grip for six frames (0.1 s); the draw
-  and sheathe are one-handed until the last 40 %.
-- Attack recoveries are authored blends of about 0.27 s; a recovery frame of strike 2 has a shoe toe
-  15 mm under the guard's contact height.
-- Mixamo login was not available in this session, so no dedicated sword-idle or block source was
-  downloaded; the guard and the parry come from the combo's own stance and rising cover. With an Adobe
-  login, [MIXAMO_WORKFLOW.md](MIXAMO_WORKFLOW.md#adding-another-mixamo-move) describes how to add such sources to the same build.
-- The tassel is static. Damage and health exist only in the fox hunter fight (`FOX_HUNTER_COMBAT.md`); the dummy only counts.
-- Phone-stream input has no attack buttons yet.
+Parry works from guard and faces the target like a strike. `SwordParry` is active from 0.03 s to 0.30 s. A strike
+arriving inside the window is deflected: `SwordParryHit` plays, the counter (`SwordAttack1`) starts 0.1 s into it, and
+the parry effects play. A parried fox staggers into Hurt; a parried training post staggers for 1.2 s. Outside the
+window the strike is a hit.
 
-## Armed locomotion (game-r16, 28 September 2026)
+### Hits
 
-User feedback: when running with the sword out, the sword arm was static and stiff, and it should do the usual
-arm animation with the sword in hand. `games/yorimichi/assets/characters/tools/cairo_sword_locomotion.py` builds `SwordWalk · armed` and
-`SwordSprint · armed` as copies of `Walk · library` and `Sprint · dressed`. Only the right arm and the grip
-change.
+During the active window the blade (six points from `SwordBladeStart` to `SwordBladeEnd`) is swept between frames as
+6 cm spheres on the Visibility channel. The wielder is excluded and each target is hit at most once per strike.
+Strength is 1 for a quick strike, 2 for a charged release and 3 for a full charge. Timing uses clip source seconds, so
+it does not depend on the frame rate. A fox takes `Strength` points of damage ([FOX_HUNTER_COMBAT.md](FOX_HUNTER_COMBAT.md)).
 
-- **Walk.** The clip's own arm. The hand grips with the palm toward the body, so the blade points forward:
-  11° down at the back of the swing, 36° up at the front, 8° out from the legs. The wrist bends at most 16°.
-- **Sprint (and the run, which is the sprint at 0.8×).** A full sprint pump would bring the blade over the
-  head. The swing keeps its timing at 70% of its size about its middle. The elbow keeps the forearm pointing
-  down and forward (−86° at the back, −40° at the front), so the blade is level at the back and rises to 42°
-  at the front.
-- **Width.** Seen from behind, the elbow and wrist stay at the unarmed sprint arm's distance from the body,
-  plus 1.5 cm (hand 19 cm out from the centre line; the free hand is at 16). The first version held the hand
-  28 cm out; the user said it hung too wide and should look like the other arm from the back. The blade
-  angles up to 15° out at the back of the swing to clear the hip, and the wrist bends at most 21°.
-- **Checks** (`game-r16/locomotion-build.json`): blade clearance to the clothes and head is at least 15.5 cm
-  (walk) and 4.3 cm (sprint), and the loops close exactly. Review videos are in `armed-r01/captures/`.
+### Player health
 
-In Unreal, `Scripts/import_cairo_armed.py` imports A_SwordWalk, A_SwordSprint and A_SwordRun (sprint at 0.8×).
-It builds `BS_SwordLocomotion` (SwordIdle, SwordWalk, SwordRun, SwordSprint at BS_Locomotion's speeds) and sets
-`DA_Cairo.ArmedLocomotion`. `WandererAnimInstance` plays that blend space in the "Stride" sync group,
-so the arm follows the body's step phase. Its right arm feeds the carry layer while grounded locomotion is
-playing. Actions and crouching fade back to the guard's carry pose over 0.17 s.
+`IncomingStrike(Source, Damage, From)` decides what a strike does to the player:
 
-Checked in game at the beach with the live bridge (`live.sword()`, `live.drive(0, -1, 'sprint')`). Not reviewed
-by the user yet.
+| Result | When |
+| --- | --- |
+| Parried (1) | the parry window is active |
+| Dodged (2) | a roll or dodge is playing and less than 0.9 s in |
+| Absorbed (3) | the player is invulnerable or knocked down |
+| Hit (0) | anything else |
 
-### Jumps, roll, stand and instant draw (28 September 2026)
+The player has 100 health. A hit takes the damage, drops any sword clip to guard, plays a short flinch (the `Land`
+clip) with a 260 cm/s shove away from the striker, and gives 0.7 s of invulnerability. At zero health the player is
+knocked down: `SitDown`, `SitIdle` and `StandUp` play over 4.1 s, nothing else runs, and the player stands up with 100
+health, the sword still drawn and 1.5 s of invulnerability. The training post's swing does no damage; it only counts.
 
-User feedback, in order:
-1. The jump should reset the sword arm.
-2. The roll should keep the sword.
-3. Jumps should use the arm's usual movement.
-4. There should be no draw or sheathe animation, and drawing should not move the arm.
-5. Every animation, crouching included, should keep its own arm movement.
+## Armed animation
 
-The armed copies (`Sword<Action>`) and how their blades are kept clear are described in `game-r16/README.md`.
+With the sword out, the right arm keeps the sword in hand through a carry layer: a layered blend on the `clavicle_R`
+branch in `WandererAnimInstance`. On the ground it takes the arm from the armed locomotion, so the sword swings in step
+with the stride.
 
-In the game:
-- `AWandererCharacter::GetAnimationClip()` picks the copy for Roll, DoubleJump, JumpStart, JumpRise, Fall, Land,
-  HardLand, DashAir, DashGround, SitDown, SitIdle and StandUp while armed, and the anim instance swaps it in place
-  when the sword changes mid-action.
-- Crouching plays `BS_SwordCrouching` (`ArmedCrouching`) through the carry layer.
-- The carry layer is off during a copy and returns at 12/s after it.
-- `UWandererSwordComponent::SetArmed` shows or hides the sword at once, with the draw or sheathe sound. It is used
-  by the toggle, by an attack press while sheathed (which now strikes at once) and by stowing.
-- `StandClip()` is `SwordStand`.
-- `-swordqa` at 60 fps passes all 36 checks (`build/yorimichi/logs/swordqa-60-r16b`), with the draw, roll and sheathe
-  checks updated.
-- The live bridge gained `live.press('jump' | 'jump_release' | 'roll')`.
+- **Locomotion.** `BS_SwordLocomotion` (`DA_Cairo.ArmedLocomotion`) holds `SwordIdle`, `SwordWalk`, `SwordRun` and
+  `SwordSprint` at the unarmed blend space's speeds; `SwordRun` is the sprint at 0.8×. It plays in the "Stride" sync
+  group with the body, so the arm follows the step phase. Crouching plays `BS_SwordCrouching`
+  (`ArmedCrouching`). Actions fade back to the guard's carry pose (`SwordCarry`) over 0.17 s.
+- **Actions.** While armed, `AWandererCharacter::GetAnimationClip()` plays the armed copy (`Sword<Action>`) of Roll,
+  DoubleJump, JumpStart, JumpRise, Fall, Land, HardLand, DashAir, DashGround, SitDown, SitIdle and StandUp, and swaps
+  it in place if the sword changes mid-action. The carry layer is off during a copy and returns at 12/s after it.
+  Standing still plays `SwordStand` (`StandClip()`, falling back to `SwordIdle`).
+- **Design rules for the armed walk and sprint.** Only the right arm and the grip differ from the unarmed clips. The
+  walk keeps the clip's own swing with the palm toward the body, so the blade points forward (about −11° to +36°).
+  The sprint keeps its timing at 70% of its swing so the blade never rises over the head, and its forearm points down
+  and forward so the blade is level at the back of the swing and rises to about 42° at the front. Seen from behind,
+  the sword hand stays at the unarmed arm's distance from the body plus 1.5 cm. Blade clearance to the clothes and
+  head is at least 15.5 cm (walk) and 4.3 cm (sprint); the numbers are in
+  `assets/characters/cairo/locomotion-build.json`.
 
-Checked in game at the beach: the draw shows the sword in the hanging hand with no arm change, and standing and
-running jumps keep the jump's arm movement.
+The carry is zeroed while sailing, riding the skateboard or travelling as a zeppelin passenger.
 
+## Clip reference
+
+Times are clip source seconds, from `assets/characters/cairo/source-manifest.json`. Contact yaw is the bearing of the
+measured contact point, positive to the left.
+
+| Clip | Length | Active window | Link from | Cancel | Notes |
+| --- | --- | --- | --- | --- | --- |
+| SwordAttack1 | 0.55 s | 0.140–0.259 | 0.259 | 0.259 | contact yaw +27.7° |
+| SwordAttack2 | 0.50 s | 0.122–0.251 | 0.241 | 0.241 | contact yaw −23.9° |
+| SwordAttack3 | 0.583 s | 0.134–0.277 | | 0.465 | contact yaw −46.7°; ends the chain |
+| SwordChargeUp | 0.217 s | | | | |
+| SwordChargeHold | 2.0 s | | | | loop |
+| SwordChargeRelease | 0.533 s | 0.055–0.198 | | 0.393 | contact yaw −29.1° |
+| SwordParry | 0.483 s | 0.033–0.300 (parry) | | 0.333 | |
+| SwordParryHit | 0.15 s | | | | counter from 0.1 |
+| SwordIdle | 3.0 s | | | | loop; carry fallback |
+| SwordCombo | 3.52 s | | | | the whole source combo, reference only |
+
+Armed copies: SwordWalk, SwordSprint, SwordRun, SwordStand, SwordCarry, SwordJumpStart, SwordJumpRise,
+SwordDoubleJump, SwordFall, SwordLand, SwordHardLand, SwordDashAir, SwordDashGround, SwordCrouchIdle,
+SwordCrouchWalk, SwordSitDown, SwordSitIdle, SwordStandUp and SwordRoll.
+
+The clips are authored in Blender by `assets/characters/tools/cairo_sword_combat_build.py`,
+`cairo_sword_combat_r02.py` and `cairo_sword_locomotion.py`, which read the earlier character revisions from the
+archive (`YORIMICHI_ARCHIVE`, see `assets/characters/tools/_archive.py`). [MIXAMO_WORKFLOW.md](MIXAMO_WORKFLOW.md)
+describes the Mixamo source and how to add another move.
+
+## Sword QA run (swordqa profile)
+
+`atelier play yorimichi --profile swordqa` starts the game with `-swordqa -swordqafps=60 -reviewdir={run}`.
+`WandererSwordReview.cpp` steps the game on a fixed clock (`-swordqafps`, clamped to 15–240, default 60), puts the
+player on a flat 60 × 60 m floor 20 m above the world with a fixed camera and the training post about 1 m away, and
+presses buttons through the real input handlers. It spawns no fox.
+
+It runs 36 checks in order: the set is installed, the post is there, the player starts unarmed; the toggle draws at
+once and settles into guard; a tap gives one strike and one hit with movement locked; buffered presses chain into
+strikes 2 and 3; a held press winds up a charge; an early release is charged but not full and the cut and the release
+each land once; the hold reaches full after 0.9 s and the full release lands once; parry cancels a charge and the
+later release does not attack; the parry is active within 0.15 s; a missed parry returns to guard; a timed parry
+deflects the post's swing and the counter lands once; an unparried swing is a hit; movement is locked before the
+cancel time and returns control after it; armed running keeps the carry; the roll keeps the sword and plays
+`SwordRoll`, and an attack after it strikes at once; the menu cancels a charge and the release after it does not
+attack; six mashed presses give at most three strikes; the toggle sheathes at once; the player ends unarmed and
+unlocked; every strike's target matches a hit on the post.
+
+It writes to the run folder (`build/yorimichi/logs/play-swordqa-<stamp>/`) and exits:
+
+- `sword_qa.json`: `passed`, `errors`, `strikes`, `dummy_hits`, `hits_taken`, `parries`, `fixed_fps`.
+- `sword_telemetry.csv`: per step, the sword state, clip and clip time, movement lock, the running counters, the
+  player's position and yaw, and the blade tip.
+- Screenshots: `sword_draw.png`, `sword_attack1_contact.png`, `sword_attack3.png`, `sword_charge_hold.png`,
+  `sword_charge_release.png`, `sword_parry_active.png`, `sword_counter.png`.
+
+## Training post
+
+`ASwordDummy` is a 50 cm × 140 cm post. It counts hits (it flashes red), and swings at the player with a 0.6 s
+wind-up: it grows taller and turns yellow, then strikes if the player is within 190 cm. A parried
+swing staggers it for 1.2 s (blue). A full charge interrupts its wind-up and staggers it for 0.8 s. With
+`-sworddummy` it stands 1.3 m ahead of the player and swings every 3 s; the QA run triggers its swings itself.
+
+## Files
+
+All under `games/yorimichi/`.
+
+| What | Where |
+| --- | --- |
+| State machine, sweeps, soft lock, player health, training post | `unreal/Source/Yorimichi/WandererSword.h/.cpp` |
+| Sword QA run and `-sworddummy` | `unreal/Source/Yorimichi/WandererSwordReview.cpp` |
+| `FWandererSwordClip` and the sword fields | `unreal/Source/Yorimichi/WandererDefinition.h` |
+| Carry layer and armed blend spaces | `unreal/Source/Yorimichi/WandererAnimInstance.cpp` |
+| Inputs, cancels, armed clip swaps | `unreal/Source/Yorimichi/WandererCharacter.cpp` |
+| Hints, weapon line, health bar | `unreal/Source/Yorimichi/JapanHUD.cpp` |
+| Source clips and their timings | `assets/characters/cairo/Cairo-Game-r18.blend`, `source-manifest.json`, `combat-build.json`, `locomotion-build.json` |
+| Unreal import | `unreal/Scripts/import_cairo_sword.py`, `unreal/Scripts/import_cairo_armed.py` |
+| Live bridge helpers | `live/python/yorimichi_live.py` (`sword()`, `press(...)`, `drive(...)`) |
+
+## Limits
+
+- The tassel is static.
+- The phone stream has no sword buttons.
+- The training post's swing does no damage; only the fox hunter hurts the player.

@@ -8,7 +8,7 @@ fills the other front corner. Where the ground falls away, battered dry-stone wa
 uphill lots are cut into the bank and reached by three steps up through the gate. Trees and bushes are kept off the
 walls, the roofs and the path.
 
-The concept paintings behind the design are in `games/yorimichi/assets/houses/`.
+The concept paintings behind the design are in [assets/houses](../../../assets/houses/README.md).
 
 | Lot | Road s | Side | House | Centre (x, y) | Level |
 | --- | --- | --- | --- | --- | --- |
@@ -43,8 +43,10 @@ The world instance of a house and of its lot share the same position and yaw, so
 
 ## Build and check
 
-    atelier build yorimichi world.layout world.houses
-    blender -b --python-exit-code 1 --python games/yorimichi/world/regions/houses/preview.py -- [OUT_DIR] [LOTS]
+```sh
+uv run atelier build yorimichi world.layout world.houses
+blender -b --python-exit-code 1 --python games/yorimichi/world/regions/houses/preview.py -- [OUT_DIR] [LOTS]
+```
 
 `world.houses` writes `build/yorimichi/houses/`: the FBX files in `assets/`, `Houses.blend` (every house on its
 lot), `manifest.json` (triangles, materials, collision boxes, bounds) and `build-identity.json`. The preview writes
@@ -58,7 +60,9 @@ shoulders, nor the ground the skate path was laid on (the level pad by the road 
 
 ## Unreal
 
-    atelier build yorimichi unreal.houses
+```sh
+uv run atelier build yorimichi unreal.houses
+```
 
 `unreal/Scripts/import_houses.py` imports the eight meshes into `/Game/Japan/Assets`, checks they were built for the
 current layout and terrain, gives the houses M_Village and their UCX boxes (simple and complex), and gives the lots

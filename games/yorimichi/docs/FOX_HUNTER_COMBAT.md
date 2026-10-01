@@ -1,165 +1,180 @@
-# Fox hunter combat: the first enemy in the game
+# Fox hunter combat
 
-> Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
+The fox-masked hunter is the game's enemy. One hunter waits 12 m up the road from the player start, notices the player
+at 9 m, runs in, stalks to range and attacks with four claw swipes and a kick. The player fights it with the sword
+([SWORD_COMBAT.md](SWORD_COMBAT.md)): parry into a counter, roll through its strikes, and cut it down with quick or
+charged strikes. It dies, burns away and returns home 10 s later. `AFoxHunter` (`FoxHunter.h/.cpp`) is a state machine
+over the fifteen clips described in [FOX_HUNTER_ANIMATION.md](FOX_HUNTER_ANIMATION.md); effects and sounds are in
+[COMBAT_FEEDBACK.md](COMBAT_FEEDBACK.md).
 
-Written 16 September 2026; the clips were updated to animation-r05 on 23 September 2026 (see below). The
-fox-masked hunter (`games/yorimichi/docs/FOX_HUNTER_ANIMATION.md`) is installed in the Unreal project and fights the player with the sword set of `SWORD_COMBAT.md`. This note
-covers the import, the enemy's behaviour, what the player can do to it, the validation performed and the
-limits.
-
-Try it: `atelier play yorimichi --profile desktop-1440` (or `play`). The hunter waits 12 m up the road from the start, a little
-to the left, and notices the player at 9 m. Draw the sword with R (D-pad Left on a pad) or just attack.
-
-## Import
+## Build and try it
 
 ```sh
-blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/fox-hunter/export_unreal.py
-atelier build yorimichi unreal.compile
-python3 platform/studio/atelier/safety/guarded.py --report build/yorimichi/logs/fox-import --timeout 900 --purpose 'Fox import' -- \
-  '/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor-Cmd' "$PWD/games/yorimichi/unreal/Yorimichi.uproject" \
-  -run=pythonscript "-script=$PWD/games/yorimichi/unreal/Scripts/import_fox_hunter.py" -unattended -nosplash -NullRHI -stdout
+atelier build yorimichi characters.fox_hunter unreal.fox_hunter   # export the mesh and clips, build /Game/FoxHunter
+atelier play yorimichi                                            # the hunter is up the road, a little to the left
+atelier play yorimichi --profile foxqa                            # the scripted fight (see below)
 ```
 
-`export_fox_hunter_unreal.py` opens `animation-r05/FoxHunter-Anim-r05.blend` (r04 until 23 September), scales the 0.918-unit body to
-1.70 m (scale 1.852; the player is 1.48 m), puts the floor 0.65 cm under the soles like the player export,
-renames the bones with the player's aliases (`root`, `pelvis`, `hand_R`, `finger_end_1_R`...), writes the
-colour map as the JPEG it is, and bakes the fifteen clips at 30 fps. Loops get their seam frame (frame N is
-frame 0), so Idle, Creep and Run are exactly 4.0, 1.5 and 0.6 s and wrap over one frame step. The report
-`build/yorimichi/fox_hunter/export.json` records, per clip, the duration, root travel and yaw measured after the
-export, the hit window, striking bone and reach of each attack, and the authored travel speeds of the loops.
+Draw the sword with R (D-pad Left) or just attack. `atelier play yorimichi -- -nofox` starts without the hunter.
 
-`import_fox_hunter.py` builds `/Game/FoxHunter`: `SK_FoxHunter` (skeleton, physics asset), the material with
-the player's small albedo fill plus a `HitFlash` scalar the game drives, `A_Fox*` (root motion enabled on the
-dashes, turns and Hurt, root lock at the reference pose, the shared character compression), `BS_FoxLocomotion`
-(Idle 0, Creep 59, Run 591 cm/s) and `DA_FoxHunter` (`UFoxHunterDefinition`: mesh, blend space, actions, the
-per-clip gameplay table, capsule 26 × 86 cm). Nothing under the other character folders is touched. The
-reference pose is checked against the exported bone positions (sub-millimetre).
+`characters.fox_hunter` runs `assets/characters/fox-hunter/export_unreal.py` in Blender on `FoxHunter-Anim-r05.blend`.
+It scales the 0.918-unit body to 1.70 m (scale 1.852; the player is 1.48 m), puts the floor 0.65 cm under the soles
+as the player export does, renames the bones with the player's aliases (`root`, `pelvis`, `hand_R`,
+`finger_end_1_R`...), and bakes the fifteen clips at 30 fps. Loops keep their seam frame, so Idle, Creep and Run wrap
+over one frame step. It writes `build/yorimichi/fox_hunter/{fbx,textures,export.json}`; the report records per clip
+the duration, the root travel and yaw measured after export, and for each attack its hit window, striking bones and
+reach. `--clips` and `--clips-only` limit the export.
 
-Measured from the export (cm, at the game scale):
+`unreal.fox_hunter` runs `unreal/Scripts/import_fox_hunter.py`, which builds `/Game/FoxHunter`:
 
-| Clip | Length | Hit window | Reach from the root | Notes |
-| --- | --- | --- | --- | --- |
-| AttackR_A / AttackL_A | 1.9 s | 0.52 to 0.68 s | 103 / 106 | diagonal claw, hand 73 to 174 cm high |
-| AttackL_B / AttackR_B | 1.9 s | 0.50 to 0.63 s | 96 / 97 | rising backhand, 98 to 153 cm high |
-| Kick | 1.1 s | 0.38 to 0.48 s (r04: 0.56) | 95 | chest height; hard accent since r05 |
-| DashForward | 1.6 s | | | root travel 296 |
-| DashBackward | 1.5 s | | | root travel 166 back |
-| TurnLeft / TurnRight | 1.3 s | | | root yaw 180 |
-| Hurt | 1.2 s | | | root travel 52 back |
-| Death | 3.0 s | | | holds its last pose; no root motion, the body pitches over in the mesh |
-
-## Code
-
-- `FoxHunter.h/.cpp`: `UFoxHunterDefinition`, `FFoxHunterClip`, `AFoxHunter` (state machine, strike sweeps,
-  hit reactions, death and return).
-- `FoxHunterAnimInstance.h/.cpp`: the native graph, a speed blend space under the player's velocity-preserving
-  state node, `RootMotionFromEverything`. The FBX root bone carries the export scale, so root-motion
-  translation is normalised with `SetAnimRootMotionTranslationScale`, as for the player's sword clips.
-- `FoxHunterReview.cpp`: the `-foxqa` harness.
-- `WandererSword.h/.cpp`: the player side. `IncomingStrike(Source, Damage, From)` returns hit, parried,
-  dodged or absorbed; health, the flinch, the knock-down, the soft lock in `FaceInput`, fox hits in
-  `SweepBlade`.
-- `JapanGameMode.cpp`: spawns the hunter in ordinary play (`-nofox` suppresses it; scripted sessions get it
-  only with `-foxhunter` or `-foxqa`). `JapanHUD.cpp`: the health bar and the fox line.
+- `SK_FoxHunter` with its skeleton and physics asset.
+- The material, with a `HitFlash` scalar for hits and a `Dissolve` scalar that burns the body away with world-space
+  noise and an ember edge.
+- The `A_Fox*` clips: root motion on the dashes, turns and Hurt, root lock at the reference pose, the shared character
+  compression.
+- `BS_FoxLocomotion`: Idle at 0, Creep at 59 and Run at 591 cm/s.
+- `DA_FoxHunter` (`UFoxHunterDefinition`): mesh, blend space, the per-clip gameplay table (`FFoxHunterClip`: hit
+  window, striking bones, travel), capsule radius 26 cm and half-height 86 cm.
 
 ## How the hunter fights
 
-The fox has no controller and no navigation; the state machine feeds movement input directly on open ground
-(`bRunPhysicsWithNoController`) and sets facing explicitly, because root-motion clips must not be re-oriented
-by their own velocity (the backward dash would spin it round).
+The fox has no controller and no navigation. The state machine feeds movement input on open ground
+(`bRunPhysicsWithNoController`, gravity scale 1.5) and sets the facing itself, because root-motion clips must not be
+turned by their own velocity (the backward dash would spin it round). The capsule blocks the Visibility channel so the
+blade can hit it, and ignores the camera.
 
-- **Idle** until the player is within 9 m, then **Approach**: runs in (480 cm/s, the Run clip scaled by the
-  blend space) until 2.5 m, with a chance of a **Lunge** (DashForward, 3 m of authored travel) from 3 to 3.8 m.
-- **Stalk**: creeps the last stretch at 75 cm/s, faces the player at 360°/s, stops at 0.92 m. If the player is
-  behind it, it plays TurnLeft/TurnRight (root yaw) instead of pivoting on the spot.
-- **Attack** when within 1.1 m and facing: one of the four claws or the kick (weighted, the harness can force
-  one). The hand or foot is swept with spheres (r 14 cm, four points from the wrist to beyond the claw tip)
-  between frames inside the clip's hit window, once per attack, on the Pawn channel. The wind-up tracks the
-  player at 150°/s and stops tracking 0.15 s before the window: that is the moment to step aside. After the
-  clip: a 45 % chance of an immediate second claw (at most three in a row), a 30 % chance of springing back
-  (DashBackward), otherwise a 0.3 s recovery and a 0.9 to 1.8 s cooldown.
-- **Contact** goes through the player's sword: parry-active deflects it (the fox staggers into Hurt for 1.2 s
-  and the player's counter starts), a roll or dodge in progress makes it miss, a hit takes 20 (claw) or 30
-  (kick) health with a short flinch (the library's Land clip) and a shove; 0.7 s of grace follows a hit.
-- **Taking hits**: six points of health; quick strikes take one, charged two, full charges three. A hit
-  staggers the fox (Hurt, 52 cm back) unless it is armored: mid-strike after the wind-up, out of poise (two
-  wind-up interruptions in 2.5 s), or dashing. Charged hits stagger through anything. At zero it plays Death
-  and holds the pose; the capsule stops blocking so the player walks past; after 6 s the body fades and 10 s
-  later the hunter is back at its home spot at full health.
-- **Knocking the player down**: at zero health the player sits down dazed (SitDown, SitIdle, StandUp, 4.1 s),
-  the fox springs back, runs home and ignores the player for 4 s; the player gets up restored with 1.5 s of
-  grace. Nothing else runs while down.
-- **Soft lock**: an attack or counter faces the nearest living fox within 3 m and roughly ahead of the stick
-  (or of the current facing with no stick), so the spinning strike clips land on it. Stick input still wins
-  when it points away.
+| State | What it does |
+| --- | --- |
+| Idle | Stands at home. Notices the player within 9 m (`fox_alert`), unless the player is knocked down or the notice block is running. |
+| Approach | Faces the player at 420°/s and runs at 480 cm/s until 2.5 m. At 3.0–3.8 m, facing within 12°, it may lunge (about 1.5 chances a second). Beyond 26 m, or with the player down, it returns home. |
+| Lunge | DashForward: a 3 m dive. Armoured. Then Stalk with a 0.15 s cooldown. |
+| Stalk | Faces at 360°/s and creeps at 75 cm/s, stopping at 0.92 m. Back to Approach beyond 3.8 m. Plays TurnLeft or TurnRight when the player is more than 130° off and it is nearly still. Attacks within 1.1 m, facing within 30°, when the cooldown is over. |
+| Attack | One of five strikes (below). Tracks the player at 150°/s until 0.15 s before the hit window, then commits: that is the moment to step aside. |
+| Recover | 0.3 s facing the player, then Stalk with a 0.9–1.8 s cooldown. |
+| Retreat | DashBackward: springs 1.66 m back. Armoured. Cooldown 1 s. |
+| Hurt | The Hurt clip (1.2 s, 52 cm back). Cooldown at least 0.5 s after it. |
+| Turn | TurnLeft or TurnRight, a 180° root-yaw turn. |
+| Withdraw | DashBackward after knocking the player down. Armoured. Then Return. |
+| Return | Walks home at 336 cm/s. At home it goes Idle and ignores the player for 4 s. |
+| Dead | See below. |
 
-## Validation performed
+### Attacks
 
-`-foxqa` (`FoxHunterReview.cpp`) on a flat floor at a fixed 60 Hz and 30 Hz, driving the real handlers:
+| Clip | Weight | Hit window | Striking part | Damage |
+| --- | --- | --- | --- | --- |
+| AttackR_A | 24% | 0.52–0.68 s | right hand | 20 |
+| AttackL_A | 24% | 0.52–0.68 s | left hand | 20 |
+| AttackL_B | 18% | 0.50–0.63 s | left hand | 20 |
+| AttackR_B | 18% | 0.50–0.63 s | right hand | 20 |
+| Kick | 16% | 0.38–0.48 s | right foot | 30 |
 
-```sh
-python3 platform/studio/atelier/safety/guarded.py --report build/yorimichi/logs/foxqa-60 --timeout 900 --purpose 'Fox QA' -- \
-  '/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor' "$PWD/games/yorimichi/unreal/Yorimichi.uproject" \
-  -game -windowed -resx=1280 -resy=720 -character=cape_boy -foxqa -foxqafps=60 "-reviewdir=$PWD/build/yorimichi/logs/foxqa-60" -stdout "-abslog=$PWD/build/yorimichi/logs/foxqa-60/game.log"
-```
+The swipe or kick sound plays 0.07 s before the window. Inside the window four points along the striking hand or foot
+(bone, midpoint, tip, 8 cm past the tip) are swept between frames as 14 cm spheres on the Pawn channel, once per
+attack. The player's sword component decides the outcome (`IncomingStrike`):
 
-Both runs pass all sixteen checks with the same counts (8 fox attacks: 5 landed, 1 parried, 1 dodged,
-1 missed; 4 blade hits and 1 death on the fox; 5 hits and 1 parry on the player; 51.5 s): the fox starts
-idle at its world spot, notices and runs in at 480 cm/s, stalks to range and claws; a parry timed from
-the clip's window deflects it and the counter takes one point; an unparried claw takes 20 health and
-plays the flinch; a roll toward the fox during the wind-up is a clean dodge; quick strikes bring it to
-three, a full charge kills it, the body holds and fades, the hunter returns home at full health; standing
-still the player is knocked down in four hits, the fox withdraws, the player stands up restored and still
-armed. Results in `build/yorimichi/logs/foxqa-60` and `foxqa-30` (`fox_qa.json`, `fox_telemetry.csv`, screenshots
-of the approach, parry, counter, hit, roll, charge, death, knock-down and recovery).
+- **Parried**: the fox staggers into Hurt with a quarter of its authored step, so the counter can reach, and waits
+  1.3 s before attacking again.
+- **Dodged**: a roll in its first 0.9 s makes the strike miss ("swipes at air").
+- **Absorbed**: the player is invulnerable or down; it counts as a miss.
+- **Hit**: the player loses 20 (claw) or 30 (kick) health.
 
-The sword harness (`-swordqa`, 60 Hz) still passes after the sword-component changes; it spawns no fox.
+After the clip: if the player went down, the fox withdraws. Otherwise a claw has a 45% chance of an immediate
+follow-up (within 1.35 m and 40°, at most three attacks in a row). Failing that, within 2.2 m it springs back 30% of
+the time, and otherwise recovers.
 
-Desktop: `atelier play yorimichi --profile desktop` (the windowed 2560 × 1440 variant of the validated desktop profile) reached
-the world with the hunter spawned on traced ground 12 m up the road, visible from the start with its HUD line
-(`build/yorimichi/desktop-preview/20260916-180451/ready.png`). The fullscreen `desktop-1440` variant was tried twice in
-this unattended session and both times the game thread stayed inside macOS's fullscreen transition
-(`FMacWindow::UpdateFullScreenState`) until the launcher's four-minute deadline; the same command worked
-earlier in the day with someone at the machine, so this is a display-state condition, not a change in the
-build. Run it from the desk to see the fight at native 1440p.
+### Taking hits
 
-Three rounds of the fox harness were needed before it passed, and the telemetry decided each change: the
-counter never reached the fox until the parry stagger kept only a quarter of its authored 52 cm step and
-strikes stepped in during the wind-up; the step-in had to be a swept offset because the strike clips'
-root motion overrides any velocity (and `LaunchCharacter` puts the character in the air for a frame, so the
-landing replaced the parry with the Land clip); and the first cut's contact zone is 55 cm ahead and to the
-left, not straight ahead, which is why the soft lock carries a per-strike distance and yaw offset.
+- Six health. A sword hit takes its strength: 1 for a quick strike, 2 charged, 3 full charge. The material flashes for
+  0.22 s.
+- The fox cries (`fox_hurt`) on the first hit, on charged hits and on death, and otherwise on every other hit.
+- A hit staggers it into Hurt unless it is armoured. It is armoured while lunging, retreating or withdrawing, during
+  an attack once the wind-up is over, and during a wind-up when it is out of poise. Poise is 2, each interrupted
+  wind-up costs 1, and it regains 1 every 2.5 s. Charged and full-charge hits stagger it through armour.
+- At zero health it plays Death and holds the last pose. Movement stops and the capsule stops blocking pawns and the
+  blade. The body lands at 1.95 s (`body_fall` and dust); from 2.45 s it burns away over 1.7 s with rising embers
+  (`fox_death`), ending in a burst and a flash. At 4.3 s it is hidden, and 10 s later it reappears at home with full
+  health and ignores the player for 2 s.
 
-## Known limits
+With these numbers, five claws or four kicks knock the player down, and two sword chains, or a chain and a full
+charge, kill the fox.
 
-- No navigation: the fox walks straight at the player and can be blocked by a tree or a wall; it forgets the
-  player beyond 26 m and walks home.
-- The Jump clip is not used yet (a leap over a low sweep would be a natural use).
-- Damage numbers are first values: five claws or three kicks knock the player down, two sword chains or a
-  chain and a full charge kill the fox.
-- One hunter, placed by the game mode near the start; no encounter design, no loot, no sound.
-- The motions are the r04 set the user reviewed on the Fox Hunter Build page plus the r05 timing changes, which
-  the user has not reviewed; the gameplay timings (windows, reach) come from the manifest and have not been
-  re-tuned for play.
+### The player's side
 
-## animation-r05 (23 September 2026)
+The player has 100 health, a short flinch and 0.7 s of grace after each hit, and is knocked down at zero for 4.1 s
+before standing up restored with 1.5 s of grace ([SWORD_COMBAT.md](SWORD_COMBAT.md#player-health)). The soft lock
+turns each strike and the counter toward the nearest living fox within 3 m that is roughly ahead, and steps in so the
+clip's contact point lands on it.
 
-`fox_hunter_animate.py` changed four clips after the animation-principles pass (commit c044bff,
-`ANIMATION_PRINCIPLES.md`), and r05 rebuilds all fifteen from it:
+The HUD shows the health bar beside the stamina rings, a red wash when the player is hit, and, for the nearest fox
+that is engaged or within 15 m, a line at the top with its state, its last event and six health pips.
 
-- **Creep:** the swing foot follows a solved 4.5 cm arc. The old forward-kinematic swing reached 8 cm under
-  the floor, so the contact pass lifted the whole body and dropped it 8 cm at each heel strike. The pelvis
-  now bobs, lowest a quarter step after each strike.
-- **Kick:** a hard accent. The foot overshoots for one frame after the hit and rebounds, and the hit window
-  shortens from 0.38–0.56 s to 0.38–0.48 s.
-- **Hurt and Death:** the displaced hit pose lands on the frame after contact with no ease-in.
+### Spawning
 
-The other eleven clips are unchanged. Clipping check (`manifest.json`): the Creep leg graze drops from
-56 to 33 edges (0.5 to 0.3 mm deep), and every other clip is the same as r04.
+`JapanGameMode` spawns the hunter 12 m ahead of the player start and 3.5 m to the left, on traced ground, facing the
+player. `-nofox` suppresses it. Scripted sessions (a command line containing `qa`, `benchmark`, `trailershot`,
+`buildingreview` or `AtelierStream`) get no fox unless `-foxhunter` or `-foxqa` is given, so the phone stream has
+none.
 
-- Export: `blender -b --threads 4 --python-exit-code 1 --python games/yorimichi/assets/characters/fox-hunter/export_unreal.py`.
-  The default is now `--rev animation-r05`.
-- Import: `import_fox_hunter.py` as above. 15 clips, 0 errors.
-- `-foxqa` at 60 Hz passes every check (`build/yorimichi/logs/foxqa-60-r05`): 7 fox attacks, 5 landed, 1 parried,
-  1 dodged, 4 blade hits, 1 death, a knock-down and recovery, in 52.3 s. The r04 run had 8 attacks with one
-  miss.
+### Animation
+
+`UFoxHunterAnimInstance` plays the speed blend space under an action node, with `RootMotionFromEverything`. Above the
+Run sample (591 cm/s) only the playback rate rises. The FBX root bone carries the export scale, so root-motion
+translation is normalised with `SetAnimRootMotionTranslationScale`. Death has no root motion: the body pitches over in
+the mesh.
+
+## Fox QA run (foxqa profile)
+
+`atelier play yorimichi --profile foxqa` starts the game with `-foxqa -foxqafps=60 -reviewdir={run}`.
+`FoxHunterReview.cpp` steps the game on a fixed clock (`-foxqafps`, clamped to 15–240), puts the player on a flat floor
+20 m above the world and the fox 5.2 m ahead (random seed 7), and drives both through the real handlers. Attacks are
+forced where a check needs a particular one.
+
+Its 16 checks:
+
+1. The fox definition (`DA_FoxHunter`) is installed.
+2. The fox starts idle at its spot.
+3. The sword set is installed on the player.
+4. The fox runs in (peak above 300 cm/s).
+5. The player parries a forced AttackR_A (parry pressed 0.2 s before the window) and takes no hit.
+6. The counter takes one point.
+7. A forced AttackL_B takes health.
+8. The hit plays the flinch.
+9. Rolling through a forced AttackR_B costs no health.
+10. Quick strikes bring the fox to 3 or less while it is passive.
+11. A full charge kills it.
+12. The body holds its pose, then fades.
+13. It returns to its home spot at full health.
+14. Standing still, the player is knocked down.
+15. The fox withdraws.
+16. The player stands up with full health, still armed.
+
+It writes to the run folder (`build/yorimichi/logs/play-foxqa-<stamp>/`) and exits:
+
+- `fox_qa.json`: `passed`, `errors`, `fox_attacks`, `landed`, `parried`, `dodged`, `missed`, `fox_hits_taken`,
+  `fox_deaths`, `player_hits_taken`, `player_parries`, `fixed_fps`, `seconds`.
+- `fox_telemetry.csv`: per step, the fox's state, clip, health, position, speed and strike point, the distance, the
+  player's state, clip, health and position, and the running outcome counters.
+- Screenshots: `fox_approach.png`, `fox_parry.png`, `fox_counter.png`, `fox_hit.png`, `fox_roll.png`,
+  `fox_charge.png`, `fox_death.png`, `fox_down.png`, `fox_up.png`.
+
+## Files
+
+All under `games/yorimichi/`.
+
+| What | Where |
+| --- | --- |
+| State machine, strikes, hit reactions, death and return | `unreal/Source/Yorimichi/FoxHunter.h/.cpp` |
+| Animation graph | `unreal/Source/Yorimichi/FoxHunterAnimInstance.h/.cpp` |
+| Fox QA run | `unreal/Source/Yorimichi/FoxHunterReview.cpp` |
+| Player side: `IncomingStrike`, health, soft lock | `unreal/Source/Yorimichi/WandererSword.h/.cpp` |
+| Spawning | `unreal/Source/Yorimichi/JapanGameMode.cpp` |
+| Health bar and fox line | `unreal/Source/Yorimichi/JapanHUD.cpp` |
+| Source, manifest, export | `assets/characters/fox-hunter/` (`FoxHunter-Anim-r05.blend`, `manifest.json`, `character.toml`, `export_unreal.py`) |
+| Unreal import | `unreal/Scripts/import_fox_hunter.py` |
+
+## Limits
+
+- No navigation: the fox moves straight at the player and can be blocked by a tree or a wall.
+- One hunter, placed by the game mode near the start; no encounter design and no loot.
+- The Jump clip is imported but not used.
+- The gameplay timings (hit windows, reach) come from the animation manifest and have not been tuned for play.

@@ -1,6 +1,6 @@
 # House art
 
-The concept paintings behind the houses on the main road (`games/yorimichi/world/regions/houses/`). Each image is a
+The concept paintings behind the [houses on the main road](../../world/regions/houses/README.md). Each image is a
 compact JPEG copy of the PNG the image model returned; the full-size originals stay outside the repository
 (`build/yorimichi/houses/originals/`).
 
@@ -11,7 +11,7 @@ compact JPEG copy of the PNG the image model returned; the full-size originals s
 | `concepts/uphill.jpg` | An uphill lot cut into the bank: steps up through the gate, the hedge on a stone kerb, the bank behind. |
 
 All three are `gpt-image-2.5-sunburst`, quality high, 1536 x 1024, through `/v1/images/edits` with two playtest
-screenshots of the game as style references (the old roadside house seen from the road and beside the uphill bank).
+screenshots of the game as style references (a roadside house seen from the road and beside the uphill bank).
 Each painting has its prompt (`*.prompt.txt`) and its provenance (`*.provenance.json`): model, quality, size, the
 reference images and their hashes, token usage, the hash of the returned PNG and how the JPEG was made. A provenance
 file is written with status `submitted` before the call and completed when it returns.

@@ -29,7 +29,37 @@ too. A native mobile build would be a third way to play and needs neither.
 | `platform/engine/Plugins/Streaming` | the game's end (module AtelierStream): `FAtelierStream` routes action messages to the game's handlers and holds touch controls under a lease |
 
 The packages (Epic's frontend and signalling libraries, express, esbuild, playwright-core) are pinned in
-`platform/web/package-lock.json`; `build-web` runs `npm ci` there the first time.
+`platform/web/package-lock.json`; `build-web` runs `npm ci` there the first time, and `start` runs it when the pages
+are missing. The relay needs coturn (`brew install coturn`).
+
+## Network
+
+| Port | What | Listens on |
+|---|---|---|
+| 8080 | the pages, `/health` and `/diagnostics` (`server.cjs`) | loopback |
+| 8888 | the game's signalling connection | loopback |
+| 3478 | coturn | loopback |
+| 54000–54100 | TURN relay ports | loopback |
+| 8443 | Tailscale Serve HTTPS (and WSS) to the pages | the tailnet |
+| 3479 | Tailscale Serve TCP forwarder to coturn | the tailnet |
+
+`ATELIER_STREAM_HTTP_PORT`, `ATELIER_STREAM_STREAMER_PORT`, `ATELIER_STREAM_TURN_PORT` and `ATELIER_STREAM_RELAY_MIN`
+move the loopback ports, and `ATELIER_STREAM_OUTPUT` the output folder, so a second stream can run beside the first
+with `--local`; `stop` and `status` need the same environment.
+
+- Every connection goes through the relay (`iceTransportPolicy: relay`). Remote browsers use TURN over TCP through the
+  3479 forwarder; the game uses TURN over UDP on loopback. Direct TURN to the Mac's Tailscale address stalls, which is
+  why the forwarder exists. Both peers take relay ports on loopback, so relay-to-relay traffic stays on the Mac.
+- coturn accepts loopback peers only and a credential generated at each start, kept in mode-0600 files
+  (`peer-options.json`, `turn.conf`) in the output folder.
+- The game runs offscreen with backbuffer capture, H.264 keyframes every 120 frames (VideoToolbox needs a positive
+  interval), a 3 Mbps starting bitrate adapting between 0.5 and 8 Mbps, and the frame rate of game.toml `video`.
+  `caffeinate` keeps the Mac awake for as long as the game runs, and the memory guard stops the game above 10 GiB.
+- `server.cjs` accepts one viewer at a time (`maxSubscribers: 1`): a hidden test tab holds the slot too.
+- `FAtelierStream::Send` replies to one page with `SendPlayerMessage`: UE 5.8's broadcast holds the participants lock
+  during a synchronous RTC send and deadlocks against incoming data.
+- Devices need Tailscale connected. TCP and relayed Tailscale paths can add latency on lossy mobile links.
+  `tailscale serve --tcp=3479 off` removes the forwarder.
 
 ## What a game provides
 

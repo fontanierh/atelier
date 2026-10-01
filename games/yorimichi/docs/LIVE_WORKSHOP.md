@@ -1,73 +1,120 @@
-# Live workshop: changing the running game without a rebuild
+# Live workshop
 
-> Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
-
-Started 24 September 2026. The game always runs uncooked, from the editor binary (`atelier play yorimichi` / `desktop`,
-the phone stream too). That means three things are available inside the running game: Unreal's Python, the
-engine's runtime glTF parser, and an HTTP server. The live workshop uses them so the agent can place new assets and
-behaviours in the game you're playing, with nothing rebuilt or restarted.
-
-## How it fits together
+The live workshop changes the running game without a rebuild or restart: the agent places new props, moves them,
+drives the player and adds small per-frame behaviours while you play. The game runs uncooked from the editor binary
+(`atelier play yorimichi`, every profile, and the phone stream), so Unreal's Python, the engine's glTF reader and an
+HTTP server are all available inside it. The platform's [LiveBridge plugin](../../../platform/engine/Plugins/Dev/LiveBridge/README.md)
+puts them behind a loopback HTTP server on port 8830; the game's side lives in `games/yorimichi/live/`.
 
 ```
-agent (Claude Code) ── atelier live (platform/studio/atelier/live.py) ──HTTP 127.0.0.1:8830──▶ the LiveBridge plugin in the game
-                                                                     ├─ POST /python: runs code in the game's shared Python namespace
-                                                                     └─ GET /state: player, camera, aim point, live props
-      games/yorimichi/assets/props/make_prop.py: sentence ─▶ Sunburst concept ─▶ Tripo model ─▶ games/yorimichi/assets/props/<slug>/<slug>.glb
+agent ── atelier live ── HTTP 127.0.0.1:8830 ──▶ LiveBridge in the game
+                                                 ├─ POST /python: code in the game's shared Python namespace
+                                                 └─ GET /state: player, camera, aim point, live props, fps
+make_prop.py: sentence ─▶ Sunburst concept ─▶ Tripo model ─▶ games/yorimichi/assets/props/<slug>/<slug>.glb
 ```
-
-- **The LiveBridge plugin** (`platform/engine/Plugins/Dev/LiveBridge`, with Yorimichi's own verbs in `YorimichiLive.h/.cpp`) starts once the world is ready, only for the player. It listens on loopback only
-  (`[HTTPServer.Listeners]` in `DefaultEngine.ini`); `-nolive` turns it off and `-liveport=` moves it.
-  - It boots the in-game helper module and reloads every overlay.
-  - `ULiveLibrary` holds the verbs Python calls, as `unreal.LiveLibrary.*`: spawn a GLB, find, remove, aim point,
-    ground height, teleport, say a line on the HUD, screenshot, save and load overlays.
-  - `ALiveProp` is a placed GLB.
-- **Runtime GLB loading.** The engine's glTF reader (Interchange `GLTFCore`) parses the file. Every mesh node is
-  merged into one static mesh, built in memory. Each glTF material becomes an instance of the world's
-  `M_Painted`, with its base-colour texture and factor, so live props get the same matte painterly shading and
-  distance haze as the baked world.
-  - Loaded models are cached by file and modification time: overwrite a GLB and the next spawn picks it up.
-  - A prop's origin is the middle of its footprint at its lowest point, so `Location` is where it stands.
-  - Collision: `box` (default), `complex` or `none`.
-- **`games/yorimichi/live/python/yorimichi_live.py`** is imported in the game as `live`. It gives short verbs in game
-  units (cm and degrees): `live.spawn(id, glb, at=None|'aim'|(x, y), height=m, yaw=…)`, `live.move`,
-  `live.remove`, `live.props()`, `live.here()`, `live.in_front(d, side)`, `live.save('workshop')`, `live.say()`,
-  `live.shot()`, `live.teleport()`, `live.drive(forward, right, gait)` (hold the stick: 'walk', 'run' or
-  'sprint'; `drive(0)` stops, and player input takes over) `live.sword()` (draw or sheathe) and `live.press('jump' | 'jump_release' | 'roll' | 'crouch')`.
-  - `live.behave(name, fn)` runs `fn(dt)` every frame and replaces the function when it's registered again: hot
-    behaviours. A behaviour that raises is dropped with a warning.
-- **Overlays** live in `games/yorimichi/live/overlays/<name>.json`: id, GLB path, location, yaw, scale and collision for
-  each prop. All overlays load on every start, so accepted work survives restarts without a bake. `workshop` is
-  the default overlay.
-- **`games/yorimichi/assets/props/make_prop.py`** makes a prop in two stages, so the concept can be checked before paying for a
-  model.
-  - `concept`: Sunburst (`gpt-image-2.5-sunburst`, high) with a fixed style preamble.
-  - `model`: Tripo P2 image-to-model, 6,000-face default, colour texture. The task is resumed by id and never
-    re-posted.
-  - Run it with `~/.cache/yorimichi/imagegen-venv/bin/python` (it needs httpx). Keys come from `.env`.
 
 ## Using it
 
 ```sh
-atelier play yorimichi                                            # the game, with the bridge
-atelier live state
+atelier play yorimichi                     # the game, with the bridge
+atelier live state                         # player, camera, aim point, live props
 atelier live py "live.say('hello'); print(live.here())"
-atelier live shot                             # build/yorimichi/live/shots/<time>.png
-~/.cache/yorimichi/imagegen-venv/bin/python games/yorimichi/assets/props/make_prop.py concept stone_lantern "a weathered stone lantern ..."
-~/.cache/yorimichi/imagegen-venv/bin/python games/yorimichi/assets/props/make_prop.py model stone_lantern
-atelier live py "live.spawn('stone_lantern_1', 'games/yorimichi/assets/props/stone-lantern/stone_lantern.glb', at=live.in_front(500, -250), height=1.25); live.save()"
+atelier live py - < script.py              # Python from stdin
+atelier live shot [out.png]                # screenshot; default build/live/shots/<time>.png
 ```
 
-The first prop, on 24 September: a mossy stone lantern by the spawn road. The concept took about 40 s, the Tripo
-model about 70 s (120 credits), and it was placed in the running game with no restart.
+Making and placing a prop:
 
-## Limits and next steps
+```sh
+uv run python games/yorimichi/assets/props/make_prop.py concept paper-lantern "a red paper lantern on a short post"
+uv run python games/yorimichi/assets/props/make_prop.py model paper-lantern
+atelier live py "live.spawn('paper-lantern-1', 'games/yorimichi/assets/props/paper-lantern/paper-lantern.glb', at=live.in_front(500, -250), height=1.25); live.save()"
+```
 
-- Live props are static meshes without Nanite, LODs or baked lighting. Keep to the face budget until they are
-  baked. The bake step, which would import accepted overlay props through the normal pipeline, isn't built yet.
-- Rigged and animated models (creatures, NPCs) aren't loaded yet. The skeleton path of the glTF reader is next.
-- The desktop launcher refuses to start while `DefaultEngine.ini` differs from what's committed, so commit config
-  changes before `atelier play yorimichi --profile desktop`.
-- The bridge runs any Python the agent sends. It exists only in uncooked sessions and listens only on this Mac.
-- Planned next: an in-game prompt box, new areas as "openings", and the bake to the normal pipeline
-  (see the proposal in the chat of 24 September).
+`atelier live` exits with 1 when the game is unreachable or the Python raised.
+
+## In the game
+
+The character starts the bridge once the world is ready, for the player only, and routes its teleports through the
+game's own travel. The bridge listens on loopback only (`[HTTPServer.Listeners]` in `DefaultEngine.ini`) and refuses
+to start, with an error in the log, when its port is not bound to loopback. On start it imports the helper module and
+loads every overlay.
+
+`-nolive` on the Unreal command line turns the bridge off. `-liveport=N` moves it, for a second game running beside the
+first; add `-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost` so the new port is loopback too (as
+`tools/review_megapark.py` does). `atelier live` always talks to port 8830.
+
+The bridge's settings are in `DefaultGame.ini` under `[/Script/AtelierLive.AtelierLiveSettings]`:
+
+| Setting | Value |
+| --- | --- |
+| `PropMaterial` | `/Game/Japan/Materials/M_Painted` (the world's painterly material) |
+| `OverlayFolder` | `games/yorimichi/live/overlays` |
+| `PythonFolder` | `games/yorimichi/live/python` |
+| `PythonModule` | `yorimichi_live`, imported as `live` |
+| `Port` | 8830 |
+
+Verbs come from two function libraries: the platform's `unreal.LiveLibrary` (props, traces, screenshots, overlays,
+HUD text) and the game's `unreal.YorimichiLive` (`YorimichiLive.h/.cpp`: player input, the sword, skating, film HUD,
+audio logging, camera hold). The helper module looks a verb up in the game's library first.
+
+### Runtime props
+
+A prop is a GLB loaded while the game runs. The engine's glTF reader (Interchange `GLTFCore`) parses it and every mesh
+node is merged into one static mesh built in memory. Each glTF material becomes an instance of `M_Painted` with its
+base-colour texture and factor, so a live prop gets the same matte painterly shading and distance haze as the baked
+world.
+
+- Models are cached by file and modification time: overwrite a GLB and the next spawn picks it up.
+- A prop's origin is the middle of its footprint at its lowest point, so its location is where it stands.
+- Collision is `box` (default), `complex` or `none`.
+
+### The `live` module
+
+`games/yorimichi/live/python/yorimichi_live.py`, imported in the game as `live`. Units are Unreal's (centimetres,
+degrees); paths are relative to the repository root.
+
+| Function | Does |
+| --- | --- |
+| `here()`, `player()`, `ground(x, y)`, `in_front(distance=300, side=0)`, `aim()`, `size(glb)` | where things are |
+| `spawn(id, glb, at=None, yaw=None, scale=None, height=None, collision='box', overlay='workshop')` | place a GLB: `at` is 3 m in front of the player by default, `'aim'` for where the camera looks, or a ground point `(x, y)`; `height` in metres scales it; `yaw` faces the player by default |
+| `move(id, at, yaw)`, `remove(id)`, `props()` | edit placed props |
+| `save(overlay='workshop')` | write the overlay to disk |
+| `say(text, seconds=4)` | a line of text on the HUD |
+| `teleport(at, yaw)` | move the player |
+| `drive(forward, right, gait)` | hold the stick (−1 to 1, camera-relative) with gait `'walk'`, `'run'` or `'sprint'`; `drive(0)` stops and player input takes over |
+| `press(button)` | `'jump'`, `'jump_release'`, `'roll'`, `'crouch'` (toggles), `'interact'`, `'stop_previous'`, `'stop_next'` |
+| `sword()` | draw or sheathe the sword |
+| `skate()`, `skate_input(...)`, `skate_release()`, `skate_state()`, `skate_place(at, yaw)`, `skate_park()`, `skate_script(steps)`, `flick(trick)` | get on the board and ride it from scripts ([SKATE.md](SKATE.md)) |
+| `shot(path=None)` | screenshot, by default into `build/yorimichi/live/shots/` |
+| `behave(name, fn)`, `stop(name=None)` | run `fn(dt)` every frame under a name; registering the name again replaces it. A behaviour that raises is dropped with a warning |
+
+### Overlays
+
+`games/yorimichi/live/overlays/<name>.json` lists each prop's id, GLB path, location, yaw, scale and collision. Every
+overlay loads at each start, so accepted props survive restarts without a bake. `workshop` is the default overlay; it
+holds a stone lantern by the spawn road
+([assets/props/stone-lantern](../assets/props/stone-lantern/asset.toml)).
+
+## Making a prop
+
+`games/yorimichi/assets/props/make_prop.py` makes a prop in two stages, so the concept can be checked before paying for
+a model:
+
+- `concept <slug> "<description>"`: a GPT Image 2.5 Sunburst image (`gpt-image-2.5-sunburst`, quality high) with a
+  fixed style preamble (an isolated object on a plain background).
+- `model <slug> [--faces 6000]`: Tripo P2 image-to-model with a colour texture. The task is submitted once and resumed
+  by id; an uncertain request is never repeated.
+- `make <slug> "<description>"`: both, without stopping.
+
+Everything lands in `games/yorimichi/assets/props/<slug>/`: `concept.png`, `prompt.txt`, `provenance.json`, `job.json`,
+`raw/` (the Tripo outputs, ignored) and `<slug>.glb`, the file to place. Keys come from the environment or the ignored
+`.env`: `OPENAI_API_KEY` and `TRIPO_API_KEY`.
+
+## Limits
+
+- Live props are static meshes without Nanite, LODs or baked lighting; keep to the face budget. There is no step that
+  bakes accepted overlay props into the normal pipeline.
+- Rigged and animated models (creatures, characters) do not load.
+- The bridge runs any Python the agent sends and has no authentication. It exists only in uncooked sessions and
+  listens only on loopback.
