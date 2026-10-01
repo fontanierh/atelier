@@ -479,6 +479,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   Unicode whitespace, numeric aliases, inheritance/cycles and untouched output on failure.
   The native reader consumes converted settings; malformed raw JSON and invalid numeric
   hex rejected during conversion are outside this reader comparison.
+- Powerslide host lifecycle/board schedule: 30 histories and 586 callbacks preserve 1,255,217
+  exact bytes across launch, collision, ordinary and full-queue branches, all 343 board body
+  lanes, retained collision forces and six partial failures. Steering, manual, deck accumulation,
+  wall riding and force queue mutations use their actual native implementations. Completed
+  skeleton/reckoning/world/trajectory observations are explicit service boundaries; their real
+  producer composition and Slide post-physics publication remain separate integration checks.
 - PhysicsAir state/math and input bindings: 1,012 records preserve 340,920 exact bytes for
   entry/exit, trajectory integration, launch setters, repeated skeleton-fill ordering, fresh
   collision normals, apex latch and all consumed stock/processed inputs. The original launch
