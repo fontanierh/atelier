@@ -443,6 +443,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   activation/deactivation and all eight retained words. Nonboolean active bytes and opaque bits
   survive unchanged. Valid stock curves/scalars and five modes match; complete ground scheduling,
   tuning and malformed stock-setting diagnostics remain separate checks.
+- Ground state/correction scheduling: 701 streams preserve 2,606,229 exact words across all
+  55 state fields, entry/capture/reset, wrapping counters, anti-flip nudges, coping wheel catches,
+  hung-up recovery/wipeout, spawn pinning and shared inertia drag groups/tails. Every required
+  service has an observed partial-failure case; invalid drag bindings prevent earlier writes.
+  Geometry calculations use the accepted kernels, with query results supplied at the original
+  mandatory world boundary. Full GroundBoard and live world/physical scheduling remain separate.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
