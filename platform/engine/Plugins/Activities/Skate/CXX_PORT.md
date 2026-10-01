@@ -347,6 +347,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Controller input and intents: 58,508 commands and 31,515,955 exact output bytes, covering encoded byte
   names/aliases, Xbox packets, pad history, retained raw/derived fields, ordered producer callbacks,
   filter state and slide latches. This is core subsystem coverage, not full host scheduling.
+- Physical phase buffers, output exchange and COM filter: eight histories and 5,672 operations
+  preserve 3,518,287 exact bytes across all 26 state identities, all command/event variants, full
+  output records, 64-bit tick boundaries, 552 rejected operations and four-lane retained COM
+  filtering/reset. The complete unchanged implementations are compared. The exchange preserves
+  even a mismatched output tick; validation belongs to its consumer. State selection, physical
+  output production and the global coordinator remain separate integration checks.
 - Canonical player input phase: 220 retained histories and 494 operations preserve 11,446,219 exact
   bytes across all five stock modes, captured pre-teleport state/category, split continuations, wheel
   pairs, surface selection, counters, external physics caches, deck angles and twist publication.
