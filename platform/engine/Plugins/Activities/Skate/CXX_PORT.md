@@ -1114,3 +1114,19 @@ Coverage includes 30,720 ordered passes, 2,400 record copies, 324 distinct latch
 lifetimes and 13 unsigned counter wraps. Independent grind, trajectory and
 heading service results are explicit upstream inputs in this kernel proof;
 the actual host producers and frame coordinator need their connected comparison.
+
+### Native Biped foot contacts and IK targets
+
+The Ground/Air foot owner now retains the original support selection, planted
+foot latch, smoothing, contact-normal history, delayed bad-support counters and
+FootIK target publication. Its math is shared through `OffboardVectorMath`;
+the extraction moves the existing operations verbatim and avoids depending on
+the unaccepted air-selector owner. The complete unchanged original feet modules
+and wrappers match for 146 histories, 18,018 commands and 13,406,499 output
+words (SHA256
+`fd2cf06b01e2d8be2d4d335f07dfcebb75d06ba807b0ee9d5901eb60bfdbf427`).
+All four support modes and ten retained normal-blend states are exercised.
+The successful comparison compiles from committed dependencies and only these
+five new source files. Processed contacts and actual incoming pose/root frames
+are explicit upstream fixtures; complete Biped movement, queries and global
+physical scheduling require their separate connected comparisons.
