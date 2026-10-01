@@ -39,7 +39,7 @@ def apply_to(sequence):
 
 if __name__=='__main__':
     paths=[]
-    for folder in ('/Game/CapeBoy','/Game/Wanderer','/Game/Skateboard'):
+    for folder in ('/Game/CapeBoy','/Game/Wanderer'):
         for path in U.EditorAssetLibrary.list_assets(folder,recursive=True,include_folder=False):
             asset=U.load_asset(path)
             if isinstance(asset,U.AnimSequence):
