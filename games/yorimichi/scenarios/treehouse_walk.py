@@ -14,7 +14,7 @@ build/yorimichi/treehouse/walk/TAKE. --rehearse runs the same route without savi
 stuck. cut mixes the footsteps under the ambience (tools/mix_fight_film.py) and makes a phone copy under 30 MB.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
-import json, math, os, shutil, subprocess, sys, time, urllib.request
+import importlib.util, json, math, os, shutil, subprocess, sys, time, urllib.request
 from pathlib import Path
 import numpy as np
 
@@ -215,7 +215,9 @@ def send(code):
 
 
 def film(take, rehearse):
-    sys.path.insert(0, str(HERE)); import treehouse as views      # the capture look (SETTINGS, COMMANDS)
+    # the capture look (SETTINGS, COMMANDS) from the reference views, loaded by path: `import treehouse` is the region
+    spec = importlib.util.spec_from_file_location('treehouse_views', HERE/'treehouse.py')
+    views = importlib.util.module_from_spec(spec); spec.loader.exec_module(views)
     out = WALK/take
     if out.exists(): shutil.rmtree(out)
     out.mkdir(parents=True)
@@ -257,7 +259,7 @@ def film(take, rehearse):
 def cut(take):
     """The game's own sounds mixed under the ambience, and a wind bell where Cairo stops under the chimes and on the
     crow's nest (as in the tour)."""
-    sys.path.insert(0, str(HERE)); import treehouse_tour as tour
+    import treehouse_tour as tour                                 # this script's folder is on the path
     out = WALK/take; done = json.loads((out/'done.json').read_text()); route = json.loads((WALK/'route.json').read_text())
     subprocess.run([sys.executable, str(REPO/'games/yorimichi/tools/mix_fight_film.py'), str(out), '--out', 'mix'], check=True)
     lay = json.loads((yori.OUT/'treehouse'/'layout.json').read_text()); P = lay['places']
