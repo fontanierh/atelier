@@ -1036,3 +1036,32 @@ These include 19 distinct periods, 74 normal-period resets, 59 wrapping default
 counters and 2,481 failures retaining both owner fields. The preceding 18
 histories and 5,370 commands remain verbatim. Actual camera queue dispatch,
 network-mode handling and the final frame boundary remain coordinator work.
+
+### Native ground animation and ground phase
+
+`GroundAnimationRuntime`, `GroundJump` and `GroundPhaseRuntime` retain the
+original ground animation, jump selection, board control, entry, reset and
+input-phase updates. They borrow the existing board, rider, animated skeleton,
+FootIK, trajectory, handplant, grab and processed-input owners. The shared
+`SkeletonController` preserves the requested/effective ground and air gates.
+
+The complete original ground animation matches C++ over four histories,
+4,340 commands, 47 loader fixtures and 116,205,300 output bytes (SHA256
+`b201a476a4d1721c767ae8a70ad36b0c103e15c4509bd84317417d275132a447`).
+Coverage distinguishes 131 genuine contact selections, 83 completed misses,
+four pending results and eight actual short-pose IK errors.
+
+The complete original ground phase matches over four histories, 4,328 commands
+and 137,197,932 output bytes (SHA256
+`35e4685b334cb1e1addca6f6b9eadcfd9b71949cb0c283cb51c366c00b637630`).
+It performs real board probes, static rail queries, handplant submission and
+consumption, trajectory updates, force queues, skeleton updates and airborne
+error capture. All 17 partial failures retain the original earlier writes.
+The eight short-pose failures include three observable root-velocity clears
+and five idempotent prefixes; downstream IK and drive records remain unchanged.
+
+Both comparisons also compile and execute a proposed clean source tree using
+committed dependencies and only these new ground sources. Authored geometry,
+completed processed records, current toolkit and pose requests remain explicit
+upstream inputs. Complete state selection, shared-solve scheduling and gameplay
+sessions require the separate frame coordinator comparison.
