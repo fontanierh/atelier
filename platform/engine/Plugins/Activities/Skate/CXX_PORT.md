@@ -536,6 +536,16 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   preserve errors; three invalid contracts separately require original panic and explicit native
   abort. Completed physical/animation observations remain typed caller inputs; complete shared
   scheduling and gameplay transitions are separate integration checks.
+- Combined physical simulation: 120 retained histories, 2,560 commands and 1,936 successful
+  ticks preserve 37,623,807 exact words across the board, rider, targets, contact/drive rows,
+  root and COM histories, orientation filters, collision feedback and live possession.
+  Coverage includes 48,372 solved contacts, 4,910 remote contacts, 120,192 observed drive
+  rows, 88 terrain replacements and the original pending-query/selector errors. Replacing
+  terrain clears that world's imported floor seam state while preserving submitted query
+  results. The oracle retains the original active physical host modules and evaluates four
+  actual authored poses. Gameplay fields and engine triangles are explicit inputs;
+  upstream pose adjustment/FootIK and complete gameplay scheduling remain separate checks.
+  Invalid physical diagnostics use native typed records rather than copying Rust Debug text.
 - Skeleton root/board frames: 1,735 streams preserve 4,304,114 exact words through heading,
   prediction consumption, ground/teleport targets, COM publication, retained resets and lift limits.
   All 211 stored words are observed after each command. The local heading sine preserves the
