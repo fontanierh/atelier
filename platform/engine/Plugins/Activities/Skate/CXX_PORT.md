@@ -479,6 +479,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   Unicode whitespace, numeric aliases, inheritance/cycles and untouched output on failure.
   The native reader consumes converted settings; malformed raw JSON and invalid numeric
   hex rejected during conversion are outside this reader comparison.
+- PhysicsAir state/math and input bindings: 1,012 records preserve 340,920 exact bytes for
+  entry/exit, trajectory integration, launch setters, repeated skeleton-fill ordering, fresh
+  collision normals, apex latch and all consumed stock/processed inputs. The original launch
+  matrix's zero translation W lane is preserved. Real trajectory selection, air reckoning,
+  skeleton/collision/wipeout producers and the full active-host schedule remain separate
+  integration checks; this state comparison records explicit completed service observations.
 - Ground state/correction scheduling: 701 streams preserve 2,606,229 exact words across all
   55 state fields, entry/capture/reset, wrapping counters, anti-flip nudges, coping wheel catches,
   hung-up recovery/wipeout, spawn pinning and shared inertia drag groups/tails. Every required
