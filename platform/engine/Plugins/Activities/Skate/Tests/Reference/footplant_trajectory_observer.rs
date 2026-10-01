@@ -1,0 +1,11 @@
+// Data-only observer appended to the unchanged original AirTrajectoryRuntime.
+impl AirTrajectoryRuntime {
+ pub(crate) fn migration_footplant_trace(&self,o:&mut crate::Output){
+  fn trajectory(o:&mut crate::Output,t:skate_core::air::trajectory::Trajectory){o.floats(t.position);o.floats(t.velocity);o.floats(t.acceleration);o.float(t.duration);}
+  fn result(o:&mut crate::Output,r:QueryResult){o.floats(r.contact_position);o.floats(r.contact_normal);o.floats(r.landing_normal);o.float(r.contact_time);o.matrix(r.contact_transform);o.word(r.contact_frame as u32);o.word(r.surface);o.word(r.geometry);}
+  fn launch(o:&mut crate::Output,v:LaunchInfo){o.matrix(v.reckoning_transform);o.matrix(v.reckoning_inverse);for a in [v.start_velocity,v.com_velocity,v.skeleton_vector_160,v.skeleton_vector_176,v.board_position,v.animation_com_position,v.start_position_override,v.board_position_override]{o.floats(a)}o.floats([v.cone_angle_x,v.cone_angle_z,v.timestep]);o.word(v.player_jumped as u32);o.word(v.use_position_override as u32);o.word(v.trajectory_count as u32);}
+  let s=&self.selector;let [pass,adjusted]=s.migration_footplant_stage();for v in [s.pending(),s.valid(),s.just_changed(),s.all_predictions_missed(),s.grind_locked_to_middle(),adjusted!=0]{o.word(v as u32)}o.word(pass);o.word(s.selected_index().map(|v|v as u32).unwrap_or(u32::MAX));o.word(s.launch_info().is_some()as u32);if let Some(v)=s.launch_info(){launch(o,*v)}o.word(s.requests().len()as u32);for r in s.requests(){trajectory(o,r.trajectory);o.floats([r.radius,r.start_error,r.end_error]);}
+  o.word(s.selection().is_some()as u32);if let Some(v)=s.selection(){o.word(v.candidate_index as u32);result(o,v.prediction.result);trajectory(o,v.prediction.request.trajectory);o.floats([v.prediction.request.radius,v.prediction.request.start_error,v.prediction.request.end_error]);for x in [v.start_velocity,v.landing_normal,v.collision_velocity,v.collision_position]{o.floats(x)}trajectory(o,v.com_trajectory);o.word(v.surface_category);o.word(v.wall_ride as u32);o.word(v.grind.is_some()as u32);}
+  o.word(self.pending_results.is_some()as u32);if let Some(results)=&self.pending_results{o.word(results.len()as u32);for r in results{result(o,*r)}}o.word(self.grind_world.is_some()as u32);o.word(self.nearby_grinds.len()as u32);for v in &self.nearby_grinds{o.word(*v as u32)}
+ }
+}

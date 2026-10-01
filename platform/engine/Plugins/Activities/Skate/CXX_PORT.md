@@ -988,3 +988,19 @@ remain upstream boundaries. Global state selection, full shared-solve scheduling
 and complete gameplay sessions still require their connected verification.
 Independent reference cases retain source order and constructors and each use
 an identified-process 2 GiB guard within the root's shared render slot.
+
+### Native footplant lifecycle
+
+`FootplantRuntime` now owns the original retained prediction, contact lock,
+foot IK, collision suppression and launch state. It borrows the shared physical
+board, rider, animation, trajectory and processed player owners. Its ground
+entry/update and post-physics paths preserve source call order, partial writes
+and reset retention. Settings use the original stock field order and curves.
+
+The pinned original host and C++ agree byte for byte over 4 world histories,
+4,364 operations and 110,609,428 output bytes. These exercise actual triangle
+queries, 612 successful starts, 144 successful ground updates, 211 live launch
+rows, foot locks and query/pose/toolkit/physics-mode failures. The complete
+handplant and skeleton helpers are reused without replacing original methods.
+Caller-selected toes and KnownAir packets remain explicit upstream inputs in
+this focused proof; the complete game frame remains a separate integration.
