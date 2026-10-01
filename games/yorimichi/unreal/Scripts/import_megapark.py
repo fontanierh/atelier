@@ -121,9 +121,12 @@ def material(alpha, defaults):
                       unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     rough = custom('return lerp(1.0,clamp(1.0-S*.6,.25,1.0),Gloss);', {'S': (samples['Specular'], 'R'), 'Gloss': (scalar('Gloss', .5), '')},
                    unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    # No emissive, said explicitly: deleting the expressions leaves an older graph's emissive input pointing at a
+    # half-deleted node, which then fails the whole material's compile.
+    dark = node(unreal.MaterialExpressionConstant3Vector, constant=unreal.LinearColor(0., 0., 0., 1.))
     for n, prop in ((colour, unreal.MaterialProperty.MP_BASE_COLOR), (normal, unreal.MaterialProperty.MP_NORMAL),
                     (occlusion, unreal.MaterialProperty.MP_AMBIENT_OCCLUSION), (specular, unreal.MaterialProperty.MP_SPECULAR),
-                    (rough, unreal.MaterialProperty.MP_ROUGHNESS)):
+                    (rough, unreal.MaterialProperty.MP_ROUGHNESS), (dark, unreal.MaterialProperty.MP_EMISSIVE_COLOR)):
         assert MEL.connect_material_property(n, '', prop)
     if alpha:
         opacity = custom('return lerp(A,T,HasTransparent);', {'A': (samples['Diffuse'], 'A'), 'T': (samples['Transparent'], 'A'),
