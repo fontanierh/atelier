@@ -16,7 +16,7 @@ public:
     /** Move the player as if the stick were held: Intent is camera-relative (Y forward, X right), Gait 0 walk, 1 run, 2 sprint.
      *  Zero intent stops. Any player input takes over again. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Drive(FVector2D Intent, int32 Gait = 1);
-    /** Press a button through the character's input handler: "jump", "jump_release" or "roll". */
+    /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
     /** Draw or sheathe the sword, as the draw button does. False when the character has no sword. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool ToggleSword();

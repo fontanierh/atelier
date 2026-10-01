@@ -104,35 +104,62 @@ def natural_height(x,y):
     target=apron+foothills+np.maximum(cone+relief,0)
     return 47+(target-47)*smooth(north/180)
 
-def raw_height(x,y,base):
+def raw_height(x,y,base,shoulder=None):
     x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
     north=np.maximum(y-500,0)
     # The Mega Park sits in the western foothills; the relief around it is eased to meet its edges.
     target=megapark.terrain(x,y,natural_height(x,y),natural_height)
-    edge=smooth((x-BOUNDS[0])/200)*smooth((BOUNDS[2]-x)/200)*smooth((BOUNDS[3]-y)/210)*smooth(north/180)
+    leave=smooth(north/180)
+    if shoulder is not None:
+        # West of the city the far hills' shoulder (`shoulder`, the base at y=500) stood 40-60 m over the apron, a trough
+        # across the Mega Park trail; the ground now leaves the shoulder within 60 m, before the far hills rise again,
+        # and falls gently from it north to the foothills.
+        west=smooth((420-x)/220)
+        d=np.asarray(shoulder)-.11*north-target
+        target=target+west*(1-smooth((y-760)/160))*(d+np.sqrt(d*d+36))/2
+        leave=leave*(1-west)+smooth(north/60)*west
+    edge=smooth((x-BOUNDS[0])/200)*smooth((BOUNDS[2]-x)/200)*smooth((BOUNDS[3]-y)/210)*leave
     return np.asarray(base)*(1-edge)+target*edge
 
 @lru_cache(maxsize=4)
 def surface_grid(base_sampler):
     xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
     x,y=np.meshgrid(xs,ys)
-    return x,y,raw_height(x,y,base_sampler(x,y))
+    z=raw_height(x,y,base_sampler(x,y),base_sampler(x,np.full_like(y,BOUNDS[1])))
+    # The Mega Park trail's bed (megapark/trail.py) runs through the western foothills, and the Mega Park air station
+    # stands on a levelled pad by the park's top road (zeppelin/layout.py).
+    from megapark import trail as park_trail
+    from zeppelin.layout import megapark_pad
+    # Neither raises the ground under the park (megapark.terrain keeps it below the park's surfaces).
+    carved=park_trail.carve(x,y,z,reach=park_trail.CARVE_COARSE[0],fade=park_trail.CARVE_COARSE[1])
+    z=np.where(megapark.contains(x,y),np.minimum(z,carved),carved)
+    return x,y,megapark_pad(x,y,z)
 
-def height(x,y,base_sampler):
-    """Barycentric sampling of the single cached grid exported as actual collision."""
+def _cell(x,y):
     x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
     ix=np.clip(np.floor((x-BOUNDS[0])/STEP).astype(int),0,int((BOUNDS[2]-BOUNDS[0])/STEP)-1)
     iy=np.clip(np.floor((y-BOUNDS[1])/STEP).astype(int),0,int((BOUNDS[3]-BOUNDS[1])/STEP)-1)
-    u=np.clip((x-BOUNDS[0])/STEP-ix,0,1);v=np.clip((y-BOUNDS[1])/STEP-iy,0,1)
-    z=surface_grid(base_sampler)[2]
-    z00=z[iy,ix];z10=z[iy,ix+1];z01=z[iy+1,ix];z11=z[iy+1,ix+1]
+    return ix,iy,np.clip((x-BOUNDS[0])/STEP-ix,0,1),np.clip((y-BOUNDS[1])/STEP-iy,0,1)
+
+def _barycentric(z00,z10,z01,z11,u,v):
     return np.where(u>=v,z00*(1-u)+z10*(u-v)+z11*v,z00*(1-v)+z11*u+z01*(v-u))
 
-def mesh(base_sampler):
-    from village.build import Mesh
-    m=Mesh('HD_NorthMountains')
-    xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
-    x,y,z=surface_grid(base_sampler)
+def height(x,y,base_sampler):
+    """Barycentric sampling of the single cached grid exported as actual collision."""
+    ix,iy,u,v=_cell(x,y)
+    z=surface_grid(base_sampler)[2]
+    return _barycentric(z[iy,ix],z[iy,ix+1],z[iy+1,ix],z[iy+1,ix+1],u,v)
+
+def on_grid(x,y,field):
+    """field(x, y) at the grid's nodes round each (x, y), sampled as height() samples the grid: what the ground would be
+    if field were the grid."""
+    ix,iy,u,v=_cell(x,y)
+    def node(i,j):
+        return field(BOUNDS[0]+i*STEP,BOUNDS[1]+j*STEP)
+    return _barycentric(node(ix,iy),node(ix+1,iy),node(ix,iy+1),node(ix+1,iy+1),u,v)
+
+def colours(x,y,z):
+    """The ground's vertex colours: grass on the apron, forest green, and rock high up."""
     rock_noise=noise(x,y,26,9)*.65+noise(x,y,85,20)*.35
     forest=smooth((z-140+noise(x,y,125,27)*28)/75)
     # Muted warm/slate rock planes sit behind the warm tree canopy.
@@ -146,7 +173,15 @@ def mesh(base_sampler):
     under=megapark_forest.floor(x,y)*(1-smooth((z-205)/30))
     litter=noise(x,y,40,41)
     floor=np.stack([.066+.018*litter,.062+.014*litter,np.full_like(x,.026)],axis=-1)
-    colors=colors*(1-under[...,None])+floor*under[...,None]
+    return colors*(1-under[...,None])+floor*under[...,None]
+
+def mesh(base_sampler):
+    from village.build import Mesh
+    m=Mesh('HD_NorthMountains')
+    xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
+    x,y,z=surface_grid(base_sampler)
+    rock_noise=noise(x,y,26,9)*.65+noise(x,y,85,20)*.35
+    colors=colours(x,y,z)
     radius=np.hypot(x-550,y-1930)
     # Snow collects in broken, tapering gullies instead of long uniform ribbons.
     # Preserve a continuous crown, then expose irregular rock islands downslope.

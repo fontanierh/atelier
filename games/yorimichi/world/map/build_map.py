@@ -189,7 +189,7 @@ if C:
     for r in C['roads']: line(r, (214, 206, 190), 16)
     for r in C['roads']: line(r, (120, 118, 122), 7.6)
     line(C['arrival'], (58, 54, 52), ROAD_W + 2.4); line(C['arrival'], (150, 148, 150), ROAD_W)
-    for key, w, colr in (('north_trail', 4, (206, 178, 128)), ('plaza_route', 4, (214, 206, 190)), ('arcade_route', 5, (214, 206, 190)), ('harbor_route', 5, (200, 190, 170)), ('harbor_pier_route', 3, (150, 120, 84))):
+    for key, w, colr in (('north_trail', 4, (206, 178, 128)), ('park_trail', 3, (206, 178, 128)), ('plaza_route', 4, (214, 206, 190)), ('arcade_route', 5, (214, 206, 190)), ('harbor_route', 5, (200, 190, 170)), ('harbor_pier_route', 3, (150, 120, 84))):
         line(C.get(key, []), colr, w)
 V = W['village']
 for path in V['surface_paths']:

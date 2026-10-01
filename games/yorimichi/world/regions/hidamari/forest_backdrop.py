@@ -6,6 +6,7 @@ unchanged. Dedicated opaque low-detail trees use the existing distant-tree gate.
 import math
 import numpy as np
 from hidamari import mountains
+from megapark import trail as park_trail
 
 
 def triangular(u,v,z00,z10,z01,z11):
@@ -15,13 +16,13 @@ def triangular(u,v,z00,z10,z01,z11):
 def ground(x,y,height,backdrop_grid,terrain_axes,north_height):
     """Sample the exported triangle surfaces, including the lowered far-hill grid."""
     far=backdrop_grid().copy();axis=np.linspace(-3200,3200,far.shape[0])
-    xx,yy=np.meshgrid(axis,axis);mask=mountains.contains(xx,yy)
+    xx,yy=np.meshgrid(axis,axis);mask=mountains.contains(xx,yy)|park_trail.in_approach(xx,yy)
     far[mask]=np.minimum(far[mask],north_height(xx,yy)[mask]-25)
     fx=np.clip((x+3200)/6400*(len(axis)-1),0,len(axis)-1.001)
     fy=np.clip((y+3200)/6400*(len(axis)-1),0,len(axis)-1.001)
     ix=fx.astype(int);iy=fy.astype(int);u=fx-ix;v=fy-iy
     z=triangular(u,v,far[iy,ix],far[iy,ix+1],far[iy+1,ix],far[iy+1,ix+1])
-    mask=mountains.contains(x,y)
+    mask=mountains.contains(x,y)|park_trail.in_approach(x,y)
     z[mask]=north_height(x[mask],y[mask])
     mask=(x>=300)&(x<=1420)&(y>=-300)&(y<=500)
     if np.any(mask):

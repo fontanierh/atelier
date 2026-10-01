@@ -451,6 +451,9 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("jump_release")) ReleaseJump(FInputActionValue(false));
     else if (Button == TEXT("roll")) Dodge(FInputActionValue(true));
     else if (Button == TEXT("crouch")) ToggleCrouch(FInputActionValue(true));
+    else if (Button == TEXT("interact")) Interact(FInputActionValue(true));
+    else if (Button == TEXT("stop_previous")) ZeppelinStep(-1);
+    else if (Button == TEXT("stop_next")) ZeppelinStep(1);
     else return false;
     return true;
 }
@@ -603,8 +606,15 @@ void AWandererCharacter::AttackPressed(const FInputActionValue&) { if (Sword && 
 void AWandererCharacter::AttackReleased(const FInputActionValue&) { if (Sword) Sword->AttackReleased(); }
 void AWandererCharacter::ParryPressed(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ParryPressed(); }
 void AWandererCharacter::ToggleWeapon(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ToggleWeapon(); }
-void AWandererCharacter::FlightSlower(const FInputActionValue&) { if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(-1); }
-void AWandererCharacter::FlightFaster(const FInputActionValue&) { if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(1); }
+void AWandererCharacter::FlightSlower(const FInputActionValue&) { ZeppelinStep(-1); }
+void AWandererCharacter::FlightFaster(const FInputActionValue&) { ZeppelinStep(1); }
+// Aboard, the two flight buttons change the ride's speed; at a docked ship they choose its next stop.
+void AWandererCharacter::ZeppelinStep(int32 Direction)
+{
+    if(!GetZeppelin())return;
+    if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
+    else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
+}
 void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {

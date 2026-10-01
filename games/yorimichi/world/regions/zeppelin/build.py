@@ -7,7 +7,7 @@ from mathutils import Matrix
 ROOT=yori.REGIONS
 from village import build as v
 from village.layout import upper_surface
-from zeppelin.layout import STATIONS,PROPELLER_CENTERS,PROPELLER_RADIUS
+from zeppelin.layout import STATIONS,MESHES,PARK_WALK,PARK_BRIDGE,PROPELLER_CENTERS,PROPELLER_RADIUS
 M=v.Mesh;OUT=yori.OUT/'zeppelin';R=random.Random(980)
 CREAM=(.68,.61,.46);SAGE=(.19,.245,.14);GOLD=(.50,.32,.09);WOOD=(.18,.075,.026);PLANK=(.32,.17,.067);DARK=(.055,.027,.012);STONE=(.25,.25,.22)
 
@@ -172,11 +172,14 @@ def gate():
  return m
 
 def station(index,h):
- s=STATIONS[index];ox,oy,oz=s['origin'];m=M('ZP_City' if index else 'ZP_Woodland')
+ s=STATIONS[index];ox,oy,oz=s['origin'];m=M(MESHES[index])
  def ground(x,y):
-  if index:
+  if index==1:
    from hidamari.layout import height
    return float(height(x+ox,y+oy))-oz
+  if index==2:
+   from hidamari.layout import north_height
+   return float(north_height(x+ox,y+oy))-oz
   return float(upper_surface(h,x+ox,y+oy))-oz
  with m.at(s['origin']):
   # Detailed ticket hut; its front sill and every furnishing share the slab datum.
@@ -219,7 +222,7 @@ def station(index,h):
   for xx in np.arange(-10,11,1.):
    for yy in np.arange(-8.8,-5.1,1.):
     z=ground(float(xx),float(yy));top=.03
-    m.box((float(xx)+.5,float(yy)+.5,(top+min(z-.2,-.2))/2),(1.,1.,top-min(z-.2,-.2)),tuple(c*R.uniform(.97,1.03) for c in (STONE if index else (.23,.15,.075))))
+    m.box((float(xx)+.5,float(yy)+.5,(top+min(z-.2,-.2))/2),(1.,1.,top-min(z-.2,-.2)),tuple(c*R.uniform(.97,1.03) for c in (STONE if index==1 else (.23,.15,.075))))
   # A continuous small staircase, with ten 16.5cm rises, leads to the boarding pier.
   for k in range(10):
    top=(k+1)*.165;y=-7.9+k*.49
@@ -262,7 +265,24 @@ def station(index,h):
    m.box((x,-2.86,2.52),(.12,.12,1.74),WOOD)
    m.beam((x,-2.86,3.37),(x,-3.03,3.37),.08,.08,WOOD)
    v.lantern(m,x,-3.03,2.95,.42)
+ if index==2:park_walk(m,oz)
  return m
+
+def park_walk(m,z):
+ # Earth footpath from the apron along the levelled strip, then a level footbridge onto the Mega Park's road deck.
+ from hidamari.layout import north_height
+ (x0,y),(x1,_)=PARK_WALK
+ for x in np.arange(x0-.3,x1,.5):
+  xx=min(x+.5,x1+.2);m.poly([(a,b,float(north_height(a,b))+.04) for a,b in [(x,y-1.25),(xx,y-1.25),(xx,y+1.25),(x,y+1.25)]],(.25,.16,.079))
+ (b0,_),(b1,_)=PARK_BRIDGE;top=z+.03
+ for x in np.arange(b0,b1,.24):m.box((float(x)+.11,y,top-.03),(.22,2.2,.06),tuple(c*R.uniform(.95,1.05) for c in PLANK),.008)
+ for side in [-1,1]:
+  m.beam((b0,y+side*.85,top-.16),(b1,y+side*.85,top-.16),.14,.2,WOOD)
+  for x in [b0+1.3,b0+5.8,b0+10.3,b1-1.9]:
+   bottom=float(north_height(x,y+side*.98))-z-.35
+   m.box((x,y+side*.98,z+(bottom-.06)/2),(.2,.2,-.06-bottom),WOOD)
+   m.box((x,y+side*.98,z+bottom+.25),(.5,.5,.5),STONE,.04)
+  rail(m,(b0+.2,y+side*1.08),(b1-1.6,y+side*1.08),top)
 
 def gangway():
  m=M('ZP_Gangway')
@@ -275,7 +295,7 @@ def main():
  bpy.ops.wm.read_factory_settings(use_empty=True)
  mat=bpy.data.materials.new('ZeppelinPalette');mat.use_nodes=True;vc=mat.node_tree.nodes.new('ShaderNodeVertexColor');vc.layer_name='Color';mat.node_tree.links.new(vc.outputs['Color'],mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
  h=np.load(yori.OUT/'heightmap.npy');report={}
- for m in [ship(),motors(),propeller(),gate(),gangway(),station(0,h),station(1,h)]:
+ for m in [ship(),motors(),propeller(),gate(),gangway(),*[station(i,h) for i in range(len(STATIONS))]]:
   ob,report[m.name]=v.export(m,mat)
   report[m.name]['materials']=len(ob.data.materials)
  m=M('ZP_Trail');world=json.loads((yori.OUT/'world.json').read_text());path=np.array(world['zeppelin']['trail']);d=np.gradient(path[:,:2],axis=0);d/=np.linalg.norm(d,axis=1)[:,None];n=np.column_stack([-d[:,1],d[:,0]])

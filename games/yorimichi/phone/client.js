@@ -31,7 +31,8 @@ function send(){
  message({paused:!playing,x:playing?clamp(x):0,y:playing?clamp(y):(riding?-1:0),dx:playing?dx:0,dy:playing?dy:0,buttons:playing?holds.mask()|keyboard.bits():0});dx=dy=0;
 }
 function reset(){mx=my=dx=dy=0;keyboard.reset();holds.reset();axes.reset();stick.reset();look.reset();document.querySelectorAll('.held').forEach(b=>b.classList.remove('held'));send();}
-// The ride speed the passenger picked, shown on the status line and set by the two flight buttons.
+// The ride speed the passenger picked, shown on the status line and set by the two flight buttons. At a docked ship
+// with more than two stops the same buttons choose the next stop.
 const speedLabel=value=>(value&&value!==1?String(Number(value.toFixed(2))):'1')+'×';
 for(const [id,delta] of [['slower',-1],['faster',1]]){
  const button=$(id);
@@ -57,7 +58,9 @@ on('status',state=>{
  updateStamina(state);map.update(state);
  const aboard=state.zeppelinStage>=2&&state.zeppelinStage<=6;
  $('controls').classList.toggle('aboard',aboard);if(aboard)$('stamina').hidden=true;
- $('slower').hidden=!aboard;$('faster').hidden=!aboard;$('slower').textContent='Slower';$('faster').textContent='Faster · '+speedLabel(state.flightSpeed);
+ const choose=!aboard&&!!state.zeppelinChoose;
+ $('slower').hidden=!aboard&&!choose;$('faster').hidden=!aboard&&!choose;
+ $('slower').textContent=choose?'‹ Stop':'Slower';$('faster').textContent=choose?'Stop ›':'Faster · '+speedLabel(state.flightSpeed);
  window.yorimichi.flightSpeed=state.flightSpeed;
  const changedMode=!!lastState?.sailboat!==!!state.sailboat;
  lastState=state;

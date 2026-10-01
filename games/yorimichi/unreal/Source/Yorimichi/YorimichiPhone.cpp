@@ -44,8 +44,9 @@ FYorimichiPhone::FYorimichiPhone(AWandererCharacter* InRider) : Rider(InRider), 
     Stream->OnAction(TEXT("flightSpeed"), [this](const FString&, const FJsonObject& J)
     {
         AWandererCharacter* C = Rider.Get(); double Delta = 0;
-        if (C && J.TryGetNumberField(TEXT("delta"), Delta) && FMath::IsFinite(Delta) && C->GetZeppelin() && C->IsZeppelinPassenger())
-            C->GetZeppelin()->AdjustFlightSpeed(Delta < 0 ? -1 : 1);
+        // Aboard it changes the ride's speed; at the docked ship it chooses the next stop.
+        if (C && J.TryGetNumberField(TEXT("delta"), Delta) && FMath::IsFinite(Delta) && Delta != 0)
+            C->ZeppelinStep(Delta < 0 ? -1 : 1);
     });
 }
 
@@ -170,6 +171,7 @@ void FYorimichiPhone::Tick(float Dt)
         S->SetNumberField(TEXT("flightSpeed"), Z ? Z->GetFlightSpeed() : 1.f);
         S->SetNumberField(TEXT("propellerAngle"), Z ? Z->GetPropellerAngle() : 0.f);
         S->SetNumberField(TEXT("zeppelinDock"), Z ? Z->GetDock() : -1);
+        S->SetBoolField(TEXT("zeppelinChoose"), Z && Z->CanChooseStop(C));
         S->SetNumberField(TEXT("stamina"), C->Stamina.Units);
         S->SetNumberField(TEXT("staminaRings"), C->Stamina.Capacity);
         S->SetBoolField(TEXT("sprinting"), C->Stamina.Sprinting);

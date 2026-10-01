@@ -68,6 +68,23 @@ makes `build/yorimichi/megapark/tour/<label>.mp4`: over the west hills, through 
 the roll-in behind a rider's line, the canyon, the snake bowl, the bowls, the 寄り道 letters and an aerial
 pull-back toward the volcano.
 
+## Getting there
+
+- **On foot.** A secluded forest trail (`world/regions/megapark/trail.py`) leaves the woodland air
+  station's footpath beside its pad and climbs through the woodland and a switchback over the far
+  hills' shoulder. It drops down their north side into the valley west of the park and follows the
+  valley to the park's low west deck, about 1.2 km in all. Eight timber steps climb from its end
+  onto the deck. The path is a 2.4 m earth bed at walking grades (at most about 25% over 10 m): the
+  ground along it smoothed, then carved into the square's 2 m ground, the 2 m approach band north
+  of the square, and the foothills' 10 m grid. In the foothills the bed follows the ground as that
+  grid will have it, so it meets the park's stamp at the deck edge. The trees and plants on the
+  path are cleared and the woods close in beside it. The world map draws it.
+- **By air.** The zeppelin's third stop, the Mega Park air station
+  ([zeppelin](../world/regions/zeppelin/README.md#the-mega-park-stop)), stands on a levelled pad
+  beside the park's top road, at about 130 m. A footpath and a short footbridge lead from it onto
+  the road deck. The line runs Woodland, Hidamari, Mega Park. At any station, before boarding, the
+  passenger can pick another stop with the flight speed buttons.
+
 ## Restyle
 
 In the island the park keeps every ridden surface, rail and collision triangle, and wears the
