@@ -427,6 +427,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   6,144 manual commands. Actual signed-angle measurements, contact/PID histories, correction
   forces, five-field resets, partial error writes and capacity drops match. Angle normalization
   preserves the rounded FMA's signed zero. Live ground inputs and scheduling remain separate.
+- Pumping and ground forces: 2,534 records preserve 265,785 exact bytes, including 1,588
+  persistent controller updates, both acceleration/absorption branches, all five stock modes,
+  fixed ground versus processed timesteps, retained intentional-pump bytes and actual geometry.
+  The corpus proves all 20 selected-mode clamps and 118 stock settings words. Ground sample
+  production/force scheduling and malformed stock-setting diagnostics remain separate checks.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
