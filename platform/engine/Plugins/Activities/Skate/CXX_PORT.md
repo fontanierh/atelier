@@ -426,6 +426,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   mapped ancestors through 24/48-bone hierarchies, cached mass/history and eight diagnostic asset
   variants. C++ reads only native settings/physical-skeleton banks. Live rig evaluation and solve
   scheduling remain separate integration steps.
+- Rider contact producers: 929 cases preserve 8,128,561 exact words for live collision volumes,
+  world filtering, ordered board/rider and directed rider self pairs, and completed contact reports.
+  Coverage includes 6,081 pair contacts, 1,441 reports, original group/material tables, static-body
+  retention and the 16-report capacity. Unsupported original cylinder/hat queries retain explicit
+  errors. The original full host producer modules are unchanged; full solve scheduling is separate.
 - Physical skeleton bodies: 3,164 cases and 9,340,512 exact words cover definition/mass construction,
   hats, all four inertia modes, pose mapping, animation/physical COM history and 128 persistent 26-body
   programs with actual integration. The corpus includes 88 original volume errors and 64 mapping-bounds
