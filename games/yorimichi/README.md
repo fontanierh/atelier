@@ -6,6 +6,8 @@ skate.-style Flick-It controls, and fight the fox hunter with a wooden sword. Th
 spirits come out of openings across the island ([docs/LORE.md](docs/LORE.md), a draft).
 
 Current state and what is in the game: [docs/STATUS.md](docs/STATUS.md).
+The [skating guide](docs/SKATE.md) covers the native C++ module, bundled data, controls, pumping and validation;
+the reusable [Skate plugin](../../platform/engine/Plugins/Activities/Skate/README.md) documents the host integration.
 
 ## Build and play
 
@@ -32,7 +34,7 @@ it in Unreal's first shader compile.
 | `assets/characters/` | the player (`cairo`), the enemy (`fox-hunter`) and the villagers (`wanderer`): source files, manifests, exporters |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds themselves are built, not committed) |
 | `assets/fx/`, `assets/props/`, `assets/vehicles/` | effect sprites, live-workshop props, the sailboat |
-| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output |
+| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating data in `Content/Data/SkateNative` |
 | `live/` | the live bridge's in-game Python and saved overlays |
 | `scenarios/` | tests and films driven through the live bridge |
 | `streaming/` | phone play over Pixel Streaming (to be split into streaming and touch controls) |
