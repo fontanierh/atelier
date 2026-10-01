@@ -43,7 +43,12 @@ skid audio uses the angle between board heading and travel.
 Near-vertical departures canonicalize the contact normal to the wall plane before calling the native
 trajectory selector. This removes the small floor-normal contribution that otherwise redirects a straight-up
 air across the coping onto the deck. Banks, descending motion and explicit forward-transfer input retain their
-original normals. The two isolated `vert_departure.rs` tests and park collision regressions cover this adapter.
+original normals. `VertAssist` widens this band to lips short of vertical (down to about 50° at 1) and removes
+the speed such a lip throws towards the deck. The isolated `vert_departure.rs` tests and park collision regressions
+cover this adapter.
+
+The transfer intent (the selector's directional input) comes from the host's transfer button, bit 0x0800 of the
+step packet, instead of the right trigger (action 71), which still grabs. The bit is masked before the pad sample.
 
 ### Adapter boundaries
 

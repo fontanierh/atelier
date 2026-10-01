@@ -36,7 +36,8 @@ Its converted data was produced with upstream tools commit `60efdef86600d8d8d4fe
 ## Feel and controls
 
 Yorimichi sets `PopHeightScale=1.15`, `AirSpinScale=1.6`, `PushPowerScale=1.45`,
-`PushSpeedScale=1.15`, normal difficulty and medium trucks in `DefaultGame.ini`.
+`PushSpeedScale=1.15`, `VertAssist=1`, normal difficulty and medium trucks in `DefaultGame.ini`. `VertAssist` keeps
+straight airs over the Mega Park's quarters, which end short of vertical, inside the ramp; 0 is the original.
 These scale the recovered height, spin-response and push curves without replacing the solver or the animation
 timing of each push. The loaded flat-ground ollie turns about 250° in the native checks (330–340° with the earlier
 2.15), so a 360 needs a setup turn. Release the stick to line up the landing. From rest, the tuned push reaches
@@ -51,6 +52,7 @@ stick looks around, and back two seconds after the stick is released.
 Triangle / Y (or keyboard B) mounts/steps off; D-pad Down interacts on foot. Running onto the board preserves position, heading of travel and speed. W pushes, S brakes,
 A/D steer or spin. Hold/release Space for an ollie, or hold the left mouse button and flick for tricks. C holds a
 powerslide (A/D chooses its side); controllers use the left stick down-left/down-right. Q/E or triggers compress for pumping on the ground and grab in the air.
+Hold Shift (or push the left stick forward) through the takeoff to transfer over the coping; a grab never does.
 See the [plugin controls](../../../platform/engine/Plugins/Activities/Skate/README.md) for the full input contract.
 
 `scenarios/skate_runtime.py` checks push/flip/landing, steering, manuals, rails, vert, bail/recovery, retargeted

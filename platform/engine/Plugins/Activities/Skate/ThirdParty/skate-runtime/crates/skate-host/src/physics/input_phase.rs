@@ -49,7 +49,7 @@ pub(super) fn advance(
         actor_query_56: 0,
         actor_query_44: 0,
         input_available,
-        transition_action: actions.value(71),
+        transition_action: physics.transfer.map_or_else(|| actions.value(71), |held| f32::from(u8::from(held))),
         published_board_transform: if skater.player_input.physical.state.flag_61 != 0 {
             skater
                 .player_input

@@ -187,8 +187,8 @@ void AJapanHUD::DrawHUD()
         // skate. controls (docs/SKATE.md): Flick-It on the right stick or the mouse with the left button held.
         const float Kmh=Ride->GetSpeed()*.036f;
         Controls=bController
-            ? FString::Printf(TEXT("%s push   %s brake   Left stick steer / spin / down-diagonal powerslide   Right stick tricks / manual   %s / %s pump / grab   %s step off      %s   %.0f km/h"),Pad.Jump,Pad.Roll,Pad.Parry,Pad.Attack,Pad.Skate,*Ride->GetStatus(),Kmh)
-            : FString::Printf(TEXT("W push   S brake   A / D steer / spin   C powerslide   hold left mouse + flick: tricks, hold part-way: manual   Space ollie   Q / E pump / grab   B step off      %s   %.0f km/h"),*Ride->GetStatus(),Kmh);
+            ? FString::Printf(TEXT("%s push   %s brake   Left stick steer / spin / down-diagonal powerslide / forward transfer   Right stick tricks / manual   %s / %s pump / grab   %s step off      %s   %.0f km/h"),Pad.Jump,Pad.Roll,Pad.Parry,Pad.Attack,Pad.Skate,*Ride->GetStatus(),Kmh)
+            : FString::Printf(TEXT("W push   S brake   A / D steer / spin   C powerslide   hold left mouse + flick: tricks, hold part-way: manual   Space ollie   Q / E pump / grab   Shift transfer   B step off      %s   %.0f km/h"),*Ride->GetStatus(),Kmh);
         Secondary=bController?TEXT("Flick: down-up ollie   down-up-left kickflip   down-up-right heelflip   down-left / down-right shove-its   sweep around for 360s   start from up for nollies")
             :TEXT("Flick the mouse like the stick: pull back then forward = ollie, forward-left = kickflip, forward-right = heelflip, pull back then sideways = shove-it   Mouse look");
         DrawSkateLine();

@@ -112,6 +112,8 @@ pub(crate) struct GamePhysics {
     /// Toolkit ctor82C0680C clears8384bit7; wipeout entry/exit owns changes.
     pub board_wiping_out: bool,
     pub trainer: crate::tuning::TrainerTuning,
+    /// Atelier host: the deliberate transfer input this tick. None keeps the stock intent, the right trigger.
+    pub transfer: Option<bool>,
 }
 
 /// Cross-phase records for the current fixed tick. Subsystems retain their
@@ -341,6 +343,7 @@ impl GamePhysics {
             processed_flags_2468,
             board_wiping_out: false,
             trainer: Default::default(),
+            transfer: None,
         })
     }
 
