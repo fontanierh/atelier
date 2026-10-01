@@ -32,6 +32,15 @@ struct Input:detail::DataReader
         p.board_present=Boolean();p.physical_28_byte75=Boolean();p.time_since_teleport=Float();return p;
     }
     ChannelSettings Channel() {return {std::int32_t(Word()),Boolean(),Boolean(),Float(),Float(),Boolean(),Float(),Boolean(),Boolean()};}
+    void InteractionPhysical(MotionGraphHost& host)
+    {
+        const auto mask=Word();const bool ground=Boolean(),offboard=Boolean(),has_selections=Boolean();
+        std::array<std::uint32_t,4> selections;for (auto& value:selections) value=Word();
+        const MotionGraphCharacterGesturePhysical gesture{ground,offboard,has_selections?std::optional<std::array<std::uint32_t,4>>(selections):std::nullopt,Boolean(),Boolean()};
+        const MotionGraphShovePhysical shove{Boolean(),Vector(),Boolean(),Boolean(),Float()};
+        host.gesture_physical=(mask&1)?std::optional<MotionGraphCharacterGesturePhysical>(gesture):std::nullopt;
+        host.shove_physical=(mask&2)?std::optional<MotionGraphShovePhysical>(shove):std::nullopt;
+    }
     void ExtraPhysical(MotionGraphHost& host)
     {
         const auto mask=Word();
@@ -51,7 +60,7 @@ struct Input:detail::DataReader
 struct Output
 {
     std::vector<std::uint8_t> bytes;
-    bool extended=false;
+    bool extended=false,interactions=false;
     void Word(std::uint32_t v) {for (unsigned i=0;i<4;++i) bytes.push_back(std::uint8_t(v>>(8*i)));}
     void Float(float v) {std::uint32_t word;std::memcpy(&word,&v,4);Word(word);}
     void String(std::string_view s) {Word(std::uint32_t(s.size()));bytes.insert(bytes.end(),s.begin(),s.end());}
@@ -98,6 +107,22 @@ struct Output
             Word(std::uint32_t(anim.tree.construction_values.size()));for (const auto& value:anim.tree.construction_values) {for (const auto w:value.first) Word(w);for (const auto w:value.second) Word(w);}
             for (const auto name:{"PUMP0","PUMP1","PUMP2","PUMP3","PUMP4"}) {Word(anim.channels.Has(name));Float(anim.channels.Elapsed(name));Float(anim.channels.Remaining(name));Word(anim.channels.InTransition(name));}
         }
+        if (interactions)
+        {
+            Word(bool(a.motion.push_state));if (a.motion.push_state)
+            {
+                const auto& push=*a.motion.push_state;Float(push.out_factor);Float(push.current_push_dv);
+                for (const auto value:{push.current.hstr_vel_b,push.current.lstr_vel_b,push.current.vel_e,push.target.hstr_vel_b,push.target.lstr_vel_b,push.target.vel_e}) Float(value);
+                Word(push.continue_push);
+            }
+            Word(bool(a.motion.gesture_publication));if (a.motion.gesture_publication) {Word(a.motion.gesture_publication->gesture);Word(a.motion.gesture_publication->down);}
+            for (const auto name:{"GestureBoth","GestureRight","GestureLeft","SkitchAntic","Shove","RetrieveBoard","WipeoutPushOff"})
+            {Word(anim.channels.Has(name));Float(anim.channels.Elapsed(name));Float(anim.channels.Remaining(name));Word(anim.channels.InTransition(name));}
+            // Query the actual channel even though Shove disables cached
+            // attribute publication in its channel settings.
+            auto attribute=MotionGraphAttribute{EncodeAnimationName("ShoveDirection"),0}.ToAnimation();bool found=false;
+            const bool queried=anim.channels.QueryAttribute(attribute.name,15,attribute,found,error);Status(queried,error);Word(found);Attribute(attribute);
+        }
     }
 };
 bool LoadGraph(const std::filesystem::path& path,AnimationLoadedGraph& graph,std::string& error) {return graph.source.Load(File(path),error)&&graph.binding.Bind(graph.source,error)&&graph.runtime.FromBinding(graph.binding,error);}
@@ -105,7 +130,7 @@ bool LoadGraph(const std::filesystem::path& path,AnimationLoadedGraph& graph,std
 int main(int argc,char** argv)
 {
     if (argc!=6) return 2;const std::filesystem::path samples(argv[1]),metadata(argv[2]),fixtures(argv[3]),assets(argv[5]);const std::vector<std::uint8_t> bytes{std::istreambuf_iterator<char>(std::cin),{}};Input input(bytes);Output out;std::string error;
-    out.extended=bytes.size()>=8&&bytes[7]=='2';
+    out.interactions=bytes.size()>=8&&bytes[7]=='3';out.extended=bytes.size()>=8&&(bytes[7]=='2'||out.interactions);
     auto source=std::make_shared<AnimationSource>();AnimationMetadata other;AnimationPoseFrames frames;SettingsDatabase settings;
     if (!source->metadata.Load(File(metadata/"bank-0.skate"),error)||!other.Load(File(metadata/"bank-1.skate"),error)||!source->metadata.Merge(other,error)||!frames.rig.Load(File(samples/"rig.skate"),error)||!settings.Load(File(argv[4]),error)) {std::cerr<<error;return 2;}
     const auto clip_count=input.Word();for (std::uint32_t i=0;i<clip_count;++i) {const auto file=input.String();auto clip=std::make_shared<AnimationClipSamples>();if (!clip->Load(File(samples/"clips"/(file+".skate")),error)||!frames.RegisterClip(clip,error)) {std::cerr<<error;return 2;}}
@@ -132,6 +157,7 @@ int main(int argc,char** argv)
             case 6:actor->animation.tree.posture.SetProfile(input.Word());out.Status(true,{});break;
             case 7:actor->action_controller.EndAllBehaviors(actor->action);actor->motion_controller.EndAllBehaviors(actor->motion);out.Status(true,{});break;
             case 8:if (!out.extended) return 2;input.ExtraPhysical(actor->motion);out.Status(true,{});break;
+            case 9:if (!out.interactions) return 2;input.InteractionPhysical(actor->motion);out.Status(true,{});break;
             default:return 2;
             }
             out.Snapshot(*actor,reset,names);

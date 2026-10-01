@@ -8,6 +8,8 @@
 #include "GraphMotionSpecialConditions.h"
 #include "GraphMotionFeedbackOperations.h"
 #include "GraphMotionScoreOperations.h"
+#include "GraphMotionPushOperations.h"
+#include "GraphMotionGestureOperations.h"
 #include "MotionAnimationOperations.h"
 #include <variant>
 
@@ -17,7 +19,7 @@ struct MotionGraphOperation
 {
     enum class Kind
     {
-        Unsupported,Unported,SourceMissingProducer,Condition,PhysicalCondition,SpecialCondition,Feedback,Score,Animation,Attach,IntentFilter,PrintText,
+        Unsupported,Unported,SourceMissingProducer,Condition,PhysicalCondition,SpecialCondition,Feedback,Score,Push,CharacterGesture,EndGesture,Shove,Animation,Attach,IntentFilter,PrintText,
         GrabType,Dark,MonitorUnderflip,Anticipating,Landing,Manualing,DoingTrick,DisableTricks,
         ManualOutTimer,SetManualOutTimer,TimeSinceTeleport,TimeSinceKickturn,ResetKickturn,
         DistComToBoard,ForcePhysics,SetSpeed,ApplyingBodyTilt,ResetAnimation,ResetGivenStance,
@@ -33,6 +35,9 @@ struct MotionGraphOperation
     GraphMotionSpecialCondition special_condition;
     GraphMotionFeedbackOperation feedback;
     GraphMotionScoreOperation score;
+    GraphMotionPushOperation push;
+    MotionGraphGestureOperation gesture=MotionGraphGestureOperation::Character;
+    GraphMotionShoveOperation shove;
     MotionAnimationOperation animation;
     AttachIntentOperation attach;
     MotionIntentFilterOperation filter;
@@ -47,7 +52,7 @@ struct MotionGraphLandingInstance {float value=0;bool complete=false;};
 struct MotionGraphJumpInstance {bool first_update=true;};
 using MotionGraphInstance=std::variant<std::monostate,MotionIntentFilterState,GraphMotionSlidingState,
     float,std::int32_t,MotionGraphLandingInstance,MotionGraphJumpInstance,MotionAnimationOperationState,
-    GraphMotionFeedbackInstance>;
+    GraphMotionFeedbackInstance,GraphMotionPushInstance,MotionGraphCharacterGestureState,MotionGraphShoveState>;
 struct MotionGraphCapabilities
 {
     std::size_t supported=0;
@@ -81,6 +86,11 @@ public:
     MotionGraphScorePacket score_packet;
     MotionGraphMovingObjectRegistry moving_objects;
     std::pair<bool,bool> trick_height_settings{true,true};
+    std::optional<GraphMotionPushSettings> pushing;
+    std::optional<MotionGraphPushPhysical> push_physical;
+    std::optional<MotionGraphCharacterGesturePhysical> gesture_physical;
+    std::optional<MotionGraphGesturePublication> gesture_publication;
+    std::optional<MotionGraphShovePhysical> shove_physical;
     std::optional<SetTurningPhysical> turning_physical;
     std::optional<AnimationCrouchingPhysical> crouching_physical;
     std::optional<AnimationBodyTiltPhysical> body_tilt_physical;

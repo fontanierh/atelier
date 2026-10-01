@@ -394,6 +394,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   heights. The previous host, scheduler and feedback-operation corpora retain their exact output hashes.
   Completed physical publications are supplied here; their producers and whole-session timing remain
   separate integration steps.
+- Connected animation interactions: 12 graph pairs and 4,776 operations preserve 48,319,438 exact
+  bytes with registered push, gesture and shove owners, real selected stock channels, applied
+  parameters, complete sampled poses and packets. Every fixture proves changing coefficients,
+  gesture publications/teardown and queried shove directions. The host, scheduler and connected
+  feedback regression corpora remain exact. Completed interaction records are supplied at the
+  original public boundary; full gameplay producers and authored-session parity remain separate.
 - Riding animation and physical feedback calculations: 594 cases, 15,874 steps and 660,004 exact bytes
   cover persistent crouching/auto-pump, body tilt, fakie, pump channels, ground acceleration/bump and
   turn conditioning, plus 358 loaded settings words. Graph registration and full-session physical

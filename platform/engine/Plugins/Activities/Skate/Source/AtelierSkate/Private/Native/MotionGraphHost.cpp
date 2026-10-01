@@ -50,6 +50,9 @@ MotionGraphInstance InstanceFor(const MotionGraphOperation& operation)
     switch (operation.kind)
     {
     case K::Feedback:return CreateGraphMotionFeedbackInstance(operation.feedback);
+    case K::Push:return GraphMotionPushInstance{};
+    case K::CharacterGesture:return MotionGraphCharacterGestureState{};
+    case K::Shove:return MotionGraphShoveState{};
     case K::Animation:return MotionAnimationOperationState{};
     case K::IntentFilter:return MotionIntentFilterState{};
     case K::SlideUpdate:return GraphMotionSlidingState{};
@@ -99,11 +102,19 @@ bool ParseMotionGraphOperation(GraphOperationKind source_kind,const GraphAttribu
     }
     else
     {
+        bool push_recognized=false,gesture_recognized=false,shove_recognized=false;
         bool animation_recognized=false,feedback_recognized=false,score_recognized=false;
-        if (!ParseMotionAnimationOperation(a,op.animation,animation_recognized,error)) return false;
-        if (!animation_recognized&&!ParseGraphMotionFeedbackOperation(a,op.feedback,feedback_recognized,error)) return false;
-        if (!animation_recognized&&!feedback_recognized&&!ParseGraphMotionScoreOperation(a,op.score,score_recognized,error)) return false;
-        if (animation_recognized) op.kind=K::Animation;
+        if (!ParseGraphMotionPushOperation(a,op.push,push_recognized,error)) return false;
+        if (!push_recognized&&!ParseMotionGraphGestureOperation(a,op.gesture,gesture_recognized,error)) return false;
+        if (!push_recognized&&!gesture_recognized&&!ParseGraphMotionShoveOperation(a,op.shove,shove_recognized,error)) return false;
+        const bool specialized=push_recognized||gesture_recognized||shove_recognized;
+        if (!specialized&&!ParseMotionAnimationOperation(a,op.animation,animation_recognized,error)) return false;
+        if (!specialized&&!animation_recognized&&!ParseGraphMotionFeedbackOperation(a,op.feedback,feedback_recognized,error)) return false;
+        if (!specialized&&!animation_recognized&&!feedback_recognized&&!ParseGraphMotionScoreOperation(a,op.score,score_recognized,error)) return false;
+        if (push_recognized) op.kind=K::Push;
+        else if (gesture_recognized) op.kind=op.gesture==MotionGraphGestureOperation::Character?K::CharacterGesture:K::EndGesture;
+        else if (shove_recognized) op.kind=K::Shove;
+        else if (animation_recognized) op.kind=K::Animation;
         else if (feedback_recognized) op.kind=K::Feedback;
         else if (score_recognized) op.kind=K::Score;
         else if (name=="AttachIntent") {op.kind=K::Attach;op.attach=AttachIntentOperation::Parse(a);}
@@ -169,6 +180,7 @@ bool MotionGraphHost::FromGraph(const Graph& source,const GraphBinding& binding,
     GraphMotionSlidingSettings sliding;if (!sliding.Load(data,error)) return false;sliding_settings=sliding;
     GraphMotionFeedbackSettings feedback;if (!LoadGraphMotionFeedbackSettings(data,feedback,error)) return false;feedback_settings=feedback;
     MotionGraphPrelandingConditionSettings prelanding;if (!prelanding.Load(data,error)) return false;prelanding_condition_settings=prelanding;
+    GraphMotionPushSettings push;if (!push.Load(data,animation.tree.Metadata(),error)) return false;pushing=std::move(push);
     operations=std::move(parsed);capabilities=std::move(report);remap_=compiled.operations;
     parents_.clear();for (const auto& state:binding.states) parents_.push_back(state.parent);
     automatic_fakie_conditions_.assign(binding.operations.size(),false);
@@ -183,6 +195,7 @@ bool MotionGraphHost::FromGraph(const Graph& source,const GraphBinding& binding,
     next_instance_=1;condition_random=MotionConditionRandom{};physical={};flags={};trick_requests={};riding={};push_state=MotionGraphPushState{};
     slide_latch={};is_power_sliding=false;applying_body_tilt=false;hold_fakie=false;busy_hands={};keep_shove_channels=false;animation_phase=0;
     feedback_owner={};score_packet={};moving_objects={};trick_height_settings={true,true};
+    push_physical.reset();gesture_physical.reset();gesture_publication.reset();shove_physical.reset();
     turning_physical.reset();crouching_physical.reset();body_tilt_physical.reset();fakie_physical.reset();pumping_acceleration.reset();deck_yaw_pitch.reset();
     riding_condition_inputs.reset();grind_condition_inputs.reset();landing_inputs.reset();wipeout_condition_inputs.reset();prelanding_inputs.reset();
     action_controls={};action_intents.Clear();turning_output={};state_requests.clear();time_tags.reset();errors.clear();diagnostics_overflowed=false;
@@ -257,6 +270,26 @@ bool MotionGraphHost::Execute(graph::Id behavior,const MotionGraphOperation& op,
         return ExecuteGraphMotionFeedbackOperation(op.feedback,*state,phase,frame,context,error);
     }
     case K::Score:return op.score.Execute({animation,condition_random,score_packet,moving_objects,playback_context,trick_height_settings},phase,error);
+    case K::Push:
+    {
+        auto* state=std::get_if<GraphMotionPushInstance>(&instance);if (!state) {error="Push operation/instance mismatch";return false;}
+        if (!pushing) {error="Push operations require loaded stock pushing settings";return false;}
+        return op.push.Execute(*state,{*pushing,push_state,animation,push_physical,riding.time_since_teleport,frame.dt},phase,error);
+    }
+    case K::CharacterGesture:
+    {
+        auto* state=std::get_if<MotionGraphCharacterGestureState>(&instance);if (!state) {error="CharacterGesture operation/instance mismatch";return false;}
+        const auto category=physical.conditions.physical_state?std::optional<std::uint32_t>(physical.conditions.physical_state->category):std::nullopt;
+        const auto height=crouching_physical?std::optional<float>(crouching_physical->animation_height_72):std::nullopt;
+        return ExecuteMotionGraphCharacterGesture(*state,{animation,busy_hands,gesture_physical,category,playback_context,height,gesture_publication},phase,error);
+    }
+    case K::EndGesture:
+        if (phase==0) {for (auto& entry:instances) if (auto* state=std::get_if<MotionGraphCharacterGestureState>(&entry)) state->End(animation);gesture_publication.reset();}break;
+    case K::Shove:
+    {
+        auto* state=std::get_if<MotionGraphShoveState>(&instance);if (!state) {error="Shove operation/instance mismatch";return false;}
+        return ExecuteGraphMotionShoveOperation(op.shove,*state,{animation,shove_physical,busy_hands,playback_context,keep_shove_channels},phase,error);
+    }
     case K::Unsupported:error="Unsupported MotionGraph Behavior "+op.name;return false;
     case K::Unported:error="Unported C++ MotionGraph behavior "+op.name;return false;
     case K::SourceMissingProducer:error="MotionGraph stock gameplay producer "+op.name+" is not implemented";return false;
@@ -318,7 +351,7 @@ bool MotionGraphHost::Execute(graph::Id behavior,const MotionGraphOperation& op,
         if (phase==0)
         {
             if (op.kind==K::ResetAnimation)
-            {action_intents.Clear();action_controls={};flags={};is_power_sliding=false;riding.last_good_landing_velocity=0;riding.manual_out_timer=0;busy_hands={};animation.ResetFromStock();}
+            {action_intents.Clear();action_controls={};flags={};is_power_sliding=false;riding.last_good_landing_velocity=0;riding.manual_out_timer=0;busy_hands={};gesture_publication.reset();animation.ResetFromStock();}
             else if (!animation.ResetToGivenStance(error)) return false;
             playback_context.is_mirrored=animation.tree.skater_animation_flags?std::optional<bool>((*animation.tree.skater_animation_flags&0x40000000)!=0):std::nullopt;
             playback_context.is_switch=animation.relative_stance==1;

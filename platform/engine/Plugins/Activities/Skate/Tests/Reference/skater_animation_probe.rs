@@ -50,6 +50,12 @@ impl Input {
         AnimationPhysical{conditions,feedback,body_tilt,fakie,physical_stance,foot_frame,board_present:self.boolean(),physical_28_byte75:self.boolean(),time_since_teleport:self.float()}
     }
     fn channel(&mut self)->ChannelSettings {ChannelSettings{priority:self.word() as i32,keep_alive:self.boolean(),mirrored:self.boolean(),speed:self.float(),blend_in:self.float(),hold_during_blend_in:self.boolean(),blend_out:self.float(),hold_during_blend_out:self.boolean(),use_attributes:self.boolean()}}
+    fn interaction_physical(&mut self,host:&mut graph_host::motion::MotionHost) {
+        let mask=self.word();let ground321=self.boolean();let state_offboard75=self.boolean();let has_selections=self.boolean();let selections=core::array::from_fn(|_|self.word());
+        let gesture=graph_host::motion_native::GesturePhysical{ground321,state_offboard75,selections:has_selections.then_some(selections),suppress_up:self.boolean(),force_brake_bypass:self.boolean()};
+        let shove=graph_host::motion_shove::ShovePhysical{interaction_trigger:self.boolean(),direction:self.vector(),in_biped_category:self.boolean(),board_on_ground:self.boolean(),animation_height:self.float()};
+        host.gesture_physical=(mask&1!=0).then_some(gesture);host.shove_physical=(mask&2!=0).then_some(shove);
+    }
     fn extra_physical(&mut self,host:&mut graph_host::motion::MotionHost) {
         let mask=self.word();
         let riding=graph_host::motion_riding_conditions::RidingConditionInputs{com_velocity:self.vector(),skeleton_x:self.vector(),skeleton_z:self.vector(),skate_up_y:self.float(),surface_up_y:self.float()};
@@ -61,7 +67,7 @@ impl Input {
         host.riding_conditions=(mask&1!=0).then_some(riding);host.grind_conditions=(mask&2!=0).then_some(grind);host.landing_physical=(mask&4!=0).then_some(landing);host.wipeout_physical=(mask&8!=0).then_some(wipeout);host.prelanding_physical=(mask&16!=0).then_some(prelanding);
     }
 }
-struct Output(Vec<u8>,bool);
+struct Output(Vec<u8>,bool,bool);
 impl Output {
     fn word(&mut self,v:u32) {self.0.extend(v.to_le_bytes());}
     fn float(&mut self,v:f32) {self.word(v.to_bits());}
@@ -101,12 +107,25 @@ impl Output {
             self.word(anim.construction_values.len() as u32);for (n,v) in &anim.construction_values {for w in n.0 {self.word(w);}for w in v.0 {self.word(w);}}
             for n in ["PUMP0","PUMP1","PUMP2","PUMP3","PUMP4"] {self.word(u32::from(anim.channels.has(n)));self.float(anim.channels.elapsed(n));self.float(anim.channels.remaining(n));self.word(u32::from(anim.channels.in_transition(n)));}
         }
+        if self.2 {
+            self.word(u32::from(a.motion.push_state.is_some()));if let Some(push)=a.motion.push_state {
+                self.float(push.out_factor);self.float(push.current_push_dv);
+                for value in [push.current.hstr_vel_b,push.current.lstr_vel_b,push.current.vel_e,push.target.hstr_vel_b,push.target.lstr_vel_b,push.target.vel_e] {self.float(value);}self.word(u32::from(push.continue_push));
+            }
+            self.word(u32::from(a.motion.gesture_publication.is_some()));if let Some(publication)=a.motion.gesture_publication {self.word(publication.gesture);self.word(u32::from(publication.down));}
+            for n in ["GestureBoth","GestureRight","GestureLeft","SkitchAntic","Shove","RetrieveBoard","WipeoutPushOff"] {self.word(u32::from(anim.channels.has(n)));self.float(anim.channels.elapsed(n));self.float(anim.channels.remaining(n));self.word(u32::from(anim.channels.in_transition(n)));}
+            // Original channel queries bypass use_attributes; Shove deliberately
+            // excludes its attributes from the cached publication.
+            let mut attribute=skate_core::animation::output::attributes::MotionGraphAttribute{name:skate_core::animation::skeleton_input::name::encode(b"ShoveDirection"),value:0.}.to_animation();
+            let result=anim.channels.query_attribute(attribute.name,15,&mut attribute);let found=result.as_ref().copied().unwrap_or(false);
+            self.status(result.map(|_|()));self.word(u32::from(found));self.attribute(&attribute);
+        }
     }
 }
 fn load_graph(path:&Path)->Result<graph_runtime::LoadedGraph,String> {let source=StateGraph::load(path).map_err(|e|e.to_string())?;let binding=Binding::from_graph(&source).map_err(|e|e.to_string())?;let runtime=graph_runtime::CompiledGraph::from_binding(&binding).map_err(|e|e.to_string())?;Ok(graph_runtime::LoadedGraph{source,binding,runtime})}
 fn run()->Result<(),String> {
     let args:Vec<_>=std::env::args().collect();let assets=Path::new(&args[1]);let fixtures=Path::new(&args[2]);let data=Collections::load(assets)?;let source=AnimationSource::load(assets)?;
-    let mut bytes=Vec::new();std::io::stdin().read_to_end(&mut bytes).unwrap();let extended=bytes.get(7)==Some(&b'2');let mut input=Input{data:bytes,at:8};let mut out=Output(Vec::new(),extended);
+    let mut bytes=Vec::new();std::io::stdin().read_to_end(&mut bytes).unwrap();let interactions=bytes.get(7)==Some(&b'3');let extended=bytes.get(7)==Some(&b'2')||interactions;let mut input=Input{data:bytes,at:8};let mut out=Output(Vec::new(),extended,interactions);
     for _ in 0..input.word() {let _=input.string();}let names:Vec<_>=(0..input.word()).map(|_|input.string()).collect();let count=input.word();out.word(count);
     for _ in 0..count {
         let id=input.word();let pro=input.string();let graphs=graph_runtime::StockGraphs{action:load_graph(&fixtures.join(format!("actor-{id}.action.reference")))?,motion:load_graph(&fixtures.join(format!("actor-{id}.motion.reference")))?};
@@ -124,6 +143,7 @@ fn run()->Result<(),String> {
                 6=>{actor.motion.animation.posture.set_profile(input.word());out.status(Ok(()));},
                 7=>{actor.action_controller.end_all_behaviors(&mut actor.action);actor.motion_controller.end_all_behaviors(&mut actor.motion);out.status(Ok(()));},
                 8=>{assert!(extended);input.extra_physical(&mut actor.motion);out.status(Ok(()));},
+                9=>{assert!(interactions);input.interaction_physical(&mut actor.motion);out.status(Ok(()));},
                 _=>unreachable!(),
             }
             out.snapshot(&actor,&reset,&names);

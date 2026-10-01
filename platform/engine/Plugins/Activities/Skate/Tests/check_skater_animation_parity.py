@@ -80,9 +80,9 @@ class Writer(Stream):
         for name,v in values:self.string(name);self.float(v)
     def vector(self,values):
         for v in values:self.float(v)
-    def physical(self,case,tick,complete=True):
+    def physical(self,case,tick,complete=True,forward_speed=None):
         self.word(complete)
-        if complete:self.vector((.731+case,(-1 if tick%2 else 1)*.317,.137+tick*.03125))
+        if complete:self.vector((.731+case,(-1 if tick%2 else 1)*.317 if forward_speed is None else forward_speed,.137+tick*.03125))
         self.word(1);self.word((1,2,5,6)[(tick//13+case)%4]);self.word(tick%11==0);self.string('FiftyFifty' if tick%11==0 else '')
         self.word(1);self.float(tick*.137)
         for v in ((tick//5+case)%2,(tick//7+case)%2):self.word(1);self.word(v)
@@ -156,7 +156,7 @@ def build_reference(output,target):
 def build_native(output):
     live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
     if code.exists():shutil.rmtree(code)
-    code.mkdir();files=('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','CompiledGraph','GraphController','GraphConditions','GraphGestureOperations','GraphIntentOperations','ActionGraphFrame','GraphMotionSliding','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','MotionAnimationOperations','MotionFrame','GraphMotionName','GraphMotionConditions','GraphMotionPhysicalConditions','GraphMotionSpecialConditions','RidingAnimation','RidingAnimationSettings','GraphMotionFeedbackOperations','GraphMotionScoreOperations','MotionGraphHost','AnimationPose','AnimationPoseAuthored','AnimationPoseJson','AnimationPublication','SkaterAnimation')
+    code.mkdir();files=('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','CompiledGraph','GraphController','GraphConditions','GraphGestureOperations','GraphIntentOperations','ActionGraphFrame','GraphMotionSliding','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','MotionAnimationOperations','MotionFrame','GraphMotionName','GraphMotionConditions','GraphMotionPhysicalConditions','GraphMotionSpecialConditions','RidingAnimation','RidingAnimationSettings','GraphMotionFeedbackOperations','GraphMotionScoreOperations','GraphMotionPushOperations','GraphMotionGestureOperations','MotionGraphHost','AnimationPose','AnimationPoseAuthored','AnimationPoseJson','AnimationPublication','SkaterAnimation')
     for path in list(live.glob('*.h'))+[live/(f+'.cpp') for f in files]:shutil.copyfile(path,code/path.name)
     probe=code/'skater_animation_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/skater_animation_probe.cpp',probe);snapshot={p.name:digest(p) for p in sorted(code.iterdir())};(output/'native-source-provenance.json').write_text(json.dumps(snapshot,indent=2)+'\n')
     binary=output/'skater-animation-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(f+'.cpp')) for f in files],str(probe),'-o',str(binary)],check=True);return binary

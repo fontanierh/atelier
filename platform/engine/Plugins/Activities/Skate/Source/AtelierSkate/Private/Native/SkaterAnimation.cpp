@@ -55,6 +55,7 @@ bool SkaterAnimation::PublishPhysical(const AnimationPhysical& p,std::string& er
     motion.playback_context.is_mirrored=state.Mirrored();motion.playback_context.is_switch=state.Switch();motion.playback_context.board_available=p.board_present;
     completed_physical=p;motion.physical.physical_stance=p.physical_stance;motion.physical.foot_frame=p.foot_frame;motion.physical.animation_height_72=p.feedback.crouching.animation_height_72;
     motion.turning_physical=p.feedback.turning;motion.crouching_physical=p.feedback.crouching;motion.body_tilt_physical=p.body_tilt;motion.fakie_physical=p.fakie;motion.pumping_acceleration=p.feedback.pumping_acceleration;
+    motion.push_physical=MotionGraphPushPhysical{p.conditions.speeds->forward_speed,state.Switch(),p.foot_frame};
     motion.ground_projected_speed=p.fakie.ground_projected_speed;motion.deck_velocity=p.fakie.deck_velocity;
     const bool board_attached_or_onboard=p.board_present||!p.physical_28_byte75;
     state.flags=(state.flags&~(std::uint32_t(1)<<17))|(std::uint32_t(board_attached_or_onboard)<<17);animation.tree.skater_animation_flags=state.flags;error.clear();return true;
