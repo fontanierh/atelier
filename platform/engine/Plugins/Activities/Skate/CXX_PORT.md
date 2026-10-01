@@ -195,6 +195,14 @@ including consumed request flags, signal hashing and retained matrix tails.
 
 ## Validation completed
 
+`DeckAngularCorrections.*` applies axis/limited angular displacement and the original ground-body torque
+to the shared deck accumulator. It preserves both fixed-step divisions, the rounded inverse-inertia
+cofactor pair, the source polynomial and cooldown writes. `Tests/check_deck_angular_corrections_parity.py`
+passes 1,926 persistent streams and 2,737,452 exact words against unchanged original numerical modules,
+including overshoot, reversed angular motion, normalization thresholds, signed zero and finite light/heavy
+inertias. Every independent body lane remains unchanged. This corpus uses positive nondegenerate tensors;
+full ground/slide caller scheduling is tested separately.
+
 `SlideFriction.*`, `Straighten.*`, `Heading.*` and `AntiFlip.*` preserve the four original grounded
 force/torque kernels, including caller-owned board heading history and fourth lanes. `GroundTorqueSettings.*`
 loads their actual five surface profiles from native settings. The independent ground torque comparison
