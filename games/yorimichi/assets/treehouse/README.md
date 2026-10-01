@@ -1,6 +1,6 @@
 # Tree house art
 
-The paintings and models behind the hidden tree house on the west hillside. Every image here is a compact JPEG copy
+The paintings and models behind the hidden [tree house](../../docs/TREEHOUSE_PLAN.md) on the west hillside. Every image here is a compact JPEG copy
 of the PNG the image model returned, and every model has its texture made smaller, so the folder stays small enough
 for git. The full-size originals are kept outside the repository.
 
@@ -13,9 +13,9 @@ for git. The full-size originals are kept outside the repository.
 
 Each painting has its prompt (`*.prompt.txt`, or `prompt.txt` for a prop) and its provenance (`*.provenance.json`):
 the model, quality, size, the context images it was given, token usage and hashes. `compact_copy` in the provenance
-says how the JPEG was made. For the paintings made before this folder existed, the hashes are of the full-size files
-the API saw and returned, not of the JPEGs here. The models keep their geometry exactly as Tripo made it; only the
-embedded texture was re-encoded.
+says how the JPEG was made. Where a provenance file has a `hashes` note, its hashes are of the full-size files the API
+saw and returned, not of the JPEGs here. The models keep their geometry exactly as Tripo made it; only the embedded
+texture is re-encoded.
 
 ## Making them again
 

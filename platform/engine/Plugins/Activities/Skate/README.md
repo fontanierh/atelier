@@ -1,70 +1,145 @@
 # Skate
 
-The skating engine is one in-process C++ `GameplaySession`. It owns the board/rider solver, animation graphs,
-Flick-It, riding states, tricks, scoring and camera. Unreal supplies terrain, player controls, the host mesh,
-board meshes, audio and HUD. Project-native data is loaded directly; the normal build has no Rust worker.
-The native Unreal editor integration and latest-main transfer/assist port are validated. The recorded checks
-establish equivalence to the recovered implementation within their corpora, not original-console parity.
+The Atelier Skate plugin (module `AtelierSkate`) puts an Unreal character on a skateboard. One C++
+`atelier::skate::GameplaySession` runs in process and simulates the deck, trucks, wheels and physical rider together:
+contacts and constraints, steering and pushes, Flick-It gestures, manuals and powerslides, grinds, pumping, airs,
+landings and bails, with the recovered animation graphs, trick scoring and skating camera. The game supplies nearby
+static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
+`Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two and retargets the solved rider onto the game's
+character. [RUNTIME.md](RUNTIME.md) lists the session's systems, the data bundle and how both are verified.
+
+## Adding it to a game
+
+1. Enable `Skate` in the `.uproject`, with `platform/engine/Plugins` in its `AdditionalPluginDirectories`. The plugin
+   depends on AtelierCore and AtelierFX.
+2. Track the native data bundle in the game's `unreal/Content/Data/SkateNative` and stage it as loose files. The
+   loader reads it with standard file reads, so a pak alone is not enough:
+
+   ```ini
+   [/Script/UnrealEd.ProjectPackagingSettings]
+   +DirectoriesToAlwaysStageAsNonUFS=(Path="Data")
+   ```
+
+3. Make the player an `ACharacter` that implements `ISkateRider`, give it a `USkateComponent` and call
+   `Initialize(Character)`. Bind a button to `Toggle()`.
+4. In the character movement component's `PhysCustom`, call `PhysSkate(Dt)` for custom mode
+   `USkateComponent::MovementMode` (2), and leave the actor's rotation alone while `IsRiding()` (true during a bail).
+5. In the animation instance, use `GetRetailPose()` while riding: local transforms for every bone of the host
+   skeleton.
+6. Optionally drive the camera from `GetRetailCamera(Transform, FOV)`. The FOV is vertical; convert it to Unreal's
+   horizontal FOV with the viewport aspect.
+7. Register grindable lines with `USkateRailSubsystem::Add`: rails, ledge and box edges, coping and curbs, as their top
+   contact line in centimetres.
+8. Set the board meshes, sounds and tuning in `DefaultGame.ini` (below).
+
+| `ISkateRider` | Meaning |
+| --- | --- |
+| `PrepareToSkate()` | Getting on: put away what the hands hold, stop any action in progress |
+| `IsSkateInputBlocked()` | A menu has the controls: the board gets no input and the mouse stick recentres |
+| `IsSkateMouseFree()` | The mouse is released to the desktop: the board gets no input |
+| `GetSkateMouseSensitivity()` | The player's mouse sensitivity (default 0.4); scales the mouse flick |
+
+`Toggle()` mounts only on the ground and not crouched. The board starts at the player's feet, aligned with their
+travel above 30 cm/s, and keeps their velocity. Stepping off works only on the ground (not in the air, on a rail or
+in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `StowImmediately()`, `SetGoofy()`,
+`PlaceAt()` and `Launch()` serve the game and QA; `SetScriptedInput()` replaces the player's controls.
+
+## Settings
+
+`USkateSettings`, section `[/Script/AtelierSkate.SkateSettings]` of the game's `DefaultGame.ini`:
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `Difficulty` | `normal` | Recovered controller preset: `easy`, `normal` or `hardcore` |
+| `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the recovered steering scalar |
+| `PopHeightScale` | 1 | 0.5 to 2; scales the recovered jump-height presets |
+| `AirSpinScale` | 1 | 0.5 to 3; scales the air-spin target and the spin response curves |
+| `PushSpeedScale` | 1 | 0.5 to 2; scales the animation-timed push speed target |
+| `PushPowerScale` | 1 | 0.5 to 3; scales the planted-foot push propulsion |
+| `VertAssist` | 0 | 0 to 1; how far short of vertical a quarter pipe still sends a straight air back into it (1 reaches lips of about 50°) |
+| `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
+| `SoundFolder` | none | Content folder of the board sounds |
+| `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue) |
+
+The scales apply to the stock values each time the session is configured, so they never compound. A scale outside
+its range is an error and the board does not start.
+
+`SoundFolder` holds the loops `roll_01`, `grind_01`, `slide_01`, `skid_01` (powerslide) and `scrape_01` (foot brake),
+and one-shot variants `<cue>_01` to `<cue>_08` for `pop`, `land`, `catch`, `push`, `flick` and `clatter`. The loops
+follow the board with volume and pitch set by mode and speed; a one-shot never repeats the previous variant. Sounds
+attenuate over a 500 cm inner radius and 4500 cm falloff.
 
 ## Controls
 
-| Action | Controller | Keyboard / mouse |
-|---|---|---|
-| Mount / step off | Triangle / Y (host action) | B |
-| Push / mongo | A / X | W |
-| Brake | B | S |
-| Steer / spin | Left stick | A / D |
-| Powerslide | Left stick down-left / down-right | Hold C; A / D chooses the side |
-| Load / ollie | Right stick down, then up | Hold Space, release to pop |
-| Flick-It | Right stick gesture | Hold left mouse button and flick |
-| Manual / nose manual | Right stick partly down / up | Hold the mouse gesture part-way |
-| Pump (ground) / grab (air) | Left / right trigger | Q / E |
-| Transfer (leave a ramp over its coping) | Left stick forward | Hold Shift |
-| Look | Host camera controls | Mouse when not flicking |
+| Action | Controller | Keyboard and mouse |
+| --- | --- | --- |
+| Get on / off | The game's button | The game's key |
+| Push | A (X pushes mongo) | W or Up |
+| Brake | B | S or Down |
+| Steer, spin | Left stick | A / D or Left / Right |
+| Powerslide | Left stick down-left / down-right | Hold C; A chooses the left side |
+| Load, ollie | Right stick down, then up | Hold Space, release to pop |
+| Flick-It tricks | Right stick gestures | Hold the left mouse button and flick |
+| Manual, nose manual | Right stick partly down / up | Hold the left mouse button and move slowly |
+| Pump (ground), grab (air) | Left / right trigger | Q / E |
+| Transfer over the coping | Left stick forward | Hold Shift |
 
-Regular kickflips flick down then up-left; heelflips finish up-right. Goofy mirrors the gestures. The original
-seven gesture sets and both animation banks are included in the project's native runtime bundle. Grind selection,
-manuals, reverts, landing assists, bails and recovery use the recovered graphs and physical state machines.
+Kickflips flick down then up-left, heelflips down then up-right; goofy mirrors the gestures. A grab never requests a
+transfer: the transfer has its own input. LB, RB and both stick clicks pass through to the recovered pad; clicking
+both sticks with both triggers held is the deliberate bail. The adapter undoes the project's 0.25 per-axis stick dead
+zone, because Flick-It and the manual balance read real stick positions. A fast mouse flick points the stick in its
+direction and springs back after 0.1 s; slow movement moves it gradually.
 
-## Game integration
+## Board contract
 
-- An `ACharacter` implements `ISkateRider`: prepare for mounting, menu/input gating and mouse sensitivity.
-- Its movement component calls `PhysSkate` for custom movement mode 2 and leaves actor rotation to skating
-  while `IsRiding()`, including a bail.
-- Its animation proxy evaluates `GetRetailPose()` directly as local bone transforms. The retargeter preserves
-  the host bind lengths, head facing and shoe scale, then fits the foot contacts with two-bone IK.
-- Its camera may use `GetRetailCamera()`. The returned FOV is vertical; convert to horizontal for Unreal.
-- `USkateSettings` supplies the deck/truck/wheel meshes, board sound folder, fall sounds, difficulty and tuning.
-- Register rail polylines with `USkateRailSubsystem`. Static mesh triangles within 100 m supply collision.
+The board meshes are separate static meshes, in centimetres:
 
-The board contract is +X nose, +Z up, deck top 9.05 cm above the ground. The native adapter fits the individual
-truck and wheel pivots and drives them with solved source bones. The runtime uses metres and a left/up/forward
-frame; the bridge converts positions, rotations and collision winding to Unreal centimetres.
+| Mesh | Origin | Axes |
+| --- | --- | --- |
+| Deck | Centre of the deck top | +X nose, +Z up |
+| Truck | Kingpin pivot on the deck underside, modelled as the front truck | +X nose, +Z up; the back truck is the same mesh turned 180° |
+| Wheel | Wheel centre | Axle along Y |
 
-`Difficulty` accepts `easy`, `normal` or `hardcore`; `TruckTightness` ranges from 0 to 1. `PopHeightScale` scales
-stock launch-height presets and `AirSpinScale` scales spin targets and manual spin acceleration/velocity curves.
-`PushPowerScale` and `PushSpeedScale` adjust native push propulsion and speed limits. All default to 1 in the
-plugin; the host game selects its own tuning. `VertAssist` (0 to 1, default 0, stock) lets quarter pipes that end
-short of vertical send a straight air back down into the ramp, down to lips of about 50° at 1.
+The deck top rides 9.05 cm above the ground. The adapter places each part on its solved bone (`SKATEBOARD_ROOT`,
+`TRUCK_FRONT`, `TRUCK_BACK` and the four wheel bones), fits the truck mesh to the solved axle and scales the wheels
+from a 2.65 cm host radius to the session's 3.1 cm. Board parts render with custom depth stencil 2.
 
-A grab never asks for a transfer. The original reads the right trigger as transfer intent at takeoff, so a grab or a
-pump released at the lip sent the rider over the coping; the plugin sends a separate transfer button instead (host
-bit 0x0800, which the native pad ignores). The recovered constraints and animation timing remain active.
+## How a ride runs
 
-Mounting starts at the player's feet, aligns with running velocity and transfers that velocity to the whole
-physical assembly. Each activation identifies its poses so an old response cannot move a newly mounted rider.
-The retained native owner loads banks once per world; stowing suspends input and world shutdown releases it.
-Missing/corrupt native data reports an error and leaves the player walking. Runtime data under
-`Data/SkateNative` must be staged as loose NonUFS files because the loader uses standard filesystem reads.
-The offline C++ CLI is a QA transport over the same Session and is not a game backend or fallback.
+The session runs on its own thread, `AtelierSkateNative` (32 MiB stack), which owns every mutable simulation object.
+The game thread sends it typed commands (activate, configure, step, world, launch, suspend) and reads back the root,
+bones, velocity, state, trick, score, manual balance and camera. Each activation carries a generation number so that
+output from a previous ride never moves a new one.
 
-See [NATIVE_PORT.md](NATIVE_PORT.md) for provenance and remaining adapter boundaries.
+- **Loading.** Two seconds after play begins the component preloads the data and nearby collision, so the first mount
+  is immediate. The session stays loaded between rides: getting off suspends its input, `EndPlay` releases it.
+- **Collision.** The adapter snapshots registered, collision-enabled static meshes that block `Pawn` within a 100 m
+  cube around the rider, shrinking it to 60, 35 or 20 m when it exceeds 500,000 triangles. Complex-as-simple meshes
+  give their collision triangles; other meshes give their boxes, spheres, capsules and convex hulls. Instanced meshes
+  count; the rider's own components do not. Registered rails within the cube go with it. When the rider leaves the
+  inner 60%, the game thread gathers the next snapshot, a background task builds it and the session installs it
+  between steps. Within 60 m of an actor tagged `SkatePark` the snapshot stays centred on that actor, so riding
+  around a park never rebuilds it. Over open water, where there is nothing to snapshot, the old one stays and the
+  rebuild is retried 20 m further on.
+- **Input.** Each frame the component samples the controls into an Xbox-style packet and steps the session with the
+  frame time; the session runs whole 60 Hz ticks.
+- **Retargeting.** The solved skeleton is mapped onto the host's `root`, `pelvis`, `spine`, `spine_mid`, `chest`,
+  `neck`, `head`, clavicles, arms, hands, thighs, shins, feet and toes (`_L` / `_R`). The pose is scaled by the
+  hip-to-foot height ratio, keeps the host's bind bone lengths and scale, and fits the feet to the solved targets with
+  two-bone leg IK; unmapped bones keep their bind pose. During a bail, skinned LOD0 vertices are sampled in 12 cm cells
+  and traced down, and the whole pose is lifted to keep at least 0.5 cm above the ground, so a differently
+  proportioned character stays out of the floor. This needs CPU-accessible skin data on the rider's mesh.
+- **Modes.** The session's state name sets the component mode: `Wipeout` states are a bail, `Grind` states a grind,
+  `Air` states the air, anything else the ground. The HUD getters (`GetComboLine`, `GetComboAlpha`, `GetScore`,
+  `GetStatus`, `GetSpeed`, `GetCameraYaw`) read from it.
+- **Errors.** Missing or corrupt data, or a session error, logs `SKATE: <message>`, shows it on screen and stows the
+  board; the player keeps walking.
 
-The actual native Unreal build passes, along with all 19 live runtime checks, seven park checks and six
-real-time performance activities. Frame rates span 59.7568–59.9965 fps with no frames over 33 ms or repeated
-native poses. The island's Mega Park also passes collision refresh and a six-second push after a far teleport.
-These are editor results; cooked/package loading and other world-mesh CPU-buffer retention remain unvalidated.
+## Data and limits
 
-Grounded triggers compress the rider for the recovered pumping controller; releasing extends. In the air they
-grab. The retargeter uses skinned contact samples during bails to keep a differently proportioned visual rider
-above the supporting scene. Rider LODs should retain CPU vertex data for these contact samples.
+The session reads the game's tracked `unreal/Content/Data/SkateNative` bundle: settings, graphs, gesture sets,
+physical skeletons, the animation rig, clips, metadata banks and camera shots, listed with their sizes and SHA-256 in
+`package-manifest.json`. The game's `skate.runtime` build step checks every file against that manifest before Unreal
+compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
+[verification](RUNTIME.md#verification), and lists the [limits](RUNTIME.md#limits): collision is a static snapshot
+with one surface material, and editor builds are the checked path.

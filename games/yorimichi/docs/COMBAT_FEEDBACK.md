@@ -1,105 +1,105 @@
-# Combat feedback: effects, sound and the filmed fight
+# Combat feedback
 
-> Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
+The sword fight's effects, sounds and filmed fight. `AYorimichiCombatFX` (`YorimichiCombatFX.h/.cpp`) composes each
+combat event (a swing, a hit, a parry, a charge, the player getting hurt, a fox burning away) from the primitives of
+the platform's AtelierFX plugin ([README](../../../platform/engine/Plugins/AtelierFX/README.md)): instanced sprites,
+point-light flashes, hit-stop, slow motion, camera shake, sound cues and a ribbon trail. It is all cosmetic; gameplay
+never reads it. The rules of the fight are in [SWORD_COMBAT.md](SWORD_COMBAT.md) and
+[FOX_HUNTER_COMBAT.md](FOX_HUNTER_COMBAT.md).
 
-Written 24 September 2026, alongside the combat-r02 sword clips (`game-r15`, see
-[SWORD_COMBAT.md](SWORD_COMBAT.md)). Everything here is cosmetic: gameplay never reads it.
+## Build
 
-## Effects (`JapanCombatFX.h/.cpp`)
+```sh
+atelier fetch yorimichi                                    # sound masters into ~/.cache/atelier/sonniss
+atelier build yorimichi audio.combat unreal.sounds         # cut the combat sounds, import /Game/Audio/Combat
+atelier build yorimichi fx.textures unreal.fx              # sprite and trail masks, /Game/FX materials
+```
 
-`AJapanCombatFX` is one actor per world, spawned on first use.
+`fx.textures` runs `assets/fx/gen_textures.py`, which writes deterministic greyscale masks to
+`build/yorimichi/combat_fx/`: `T_FX_Glow`, `T_FX_Spark`, `T_FX_Ring`, `T_FX_Dust` and `T_FX_Trail` (broken brush
+streaks for a painted look). `unreal.fx` runs `unreal/Scripts/import_combat_fx.py`, which builds `/Game/FX`:
 
-**Sprites.** Camera-facing quads, drawn as four instanced layers:
-- glow, spark, ring: additive
-- dust: translucent
+- `M_FX_Additive`: unlit, additive, two-sided, for the sprites, with colour and intensity from per-instance data and
+  the texture's red channel as the mask. Instances `MI_FX_Glow`, `MI_FX_Spark` and `MI_FX_Ring`.
+- `M_FX_Dust` and `MI_FX_Dust`: the same inputs, translucent, so dust covers rather than adds light.
+- `M_FX_Trail`: unlit, additive, two-sided, for the slash ribbon: vertex colour times vertex alpha times the streak
+  texture times an `Intensity` parameter.
 
-Each sprite's colour and intensity come from per-instance custom data. A sprite never grows past about 16
-degrees of the view, so an impact next to the lens can't white out the frame. All colours share one damping
-factor (0.45), because the scene runs at daylight exposure.
+`DefaultGame.ini` points AtelierFX at these, at `/Game/Audio/Combat` for sounds, and at
+`/Script/Yorimichi.YorimichiCombatFX` as the effects class (`[/Script/AtelierFX.AtelierFXSettings]`).
 
-**Point-light flashes.** 300–700 lm, the same range as the city's shop lights.
+## Events
 
-**Hit-stop.** `CustomTimeDilation` freezes both fighters for 55–130 ms of real time.
-
-**Slow motion.** Global dilation (0.3) for about a third of a second on parries and full charges, easing back.
-
-**Camera shake.** Trauma-squared Perlin noise on the follow camera (`AWandererCharacter::AddCameraShake`),
-plus a brief red wash on the HUD when the player is hit.
-
-**What each event does:**
-
-| Event | Picture | Sound |
+| Event | Picture and timing | Sound |
 | --- | --- | --- |
-| Strike (light / charged / full) | flash, 14–24 sparks thrown along the swing, radiating impact streaks, a ring when charged, dust at the target's feet | `hit_body` / `hit_heavy` |
-| Parry | white-gold flash, sparks, streaks, two rings, 0.34 s slow motion | `parry` |
-| Player hit / knocked down | red-orange sparks, shake, red wash; a body-fall thud and dust 0.55 s later | `player_hurt`, `body_fall` |
-| Swing (just before contact) | slash trail | `sword_swing` / `sword_swing_heavy` |
-| Charge | embers rising off the blade and a glow gathering at the tip; a flash and ring when full | `sword_charge`, `charge_ready` (a wind bell) |
-| Roll, dash, fox dashes | dust puff | `dash` |
-| Draw / sheathe / parry raise | | `sword_draw`, `sword_sheathe`, a soft `sword_swing` |
-| Fox notices, claws, kicks, is hurt | hit flash on its material | `fox_alert`, `claw_swipe`, `kick_swing`, `fox_hurt` (first hit, heavy hits, every other hit) |
-| Fox dies | falls (thud and dust at 1.95 s), then burns away into rising embers from 2.45 s over 1.7 s | `body_fall`, `fox_death` |
+| Swing, 0.06 s before the active window | the slash trail | `sword_swing`, or `sword_swing_heavy` for a charged strike |
+| Sword hit (quick, charged, full) | hit-stop 55, 80 or 130 ms on both fighters; two flashes; 14, 17 or 20 sparks thrown along the swing; 4 streaks (7 when charged); a ring when charged; a 495–718 lm light flash; shake 0.28, 0.45 or 0.75; dust at the target's feet; 0.32 s of slow motion (0.3×) on a full charge | `hit_body`, or `hit_heavy` when charged |
+| Parry | hit-stop 90 ms; white-gold flashes, 30 sparks, 7 streaks, two rings; a 720 lm flash; shake 0.5; 0.34 s of slow motion (0.28×) | `parry` |
+| Parry raise | | a soft `sword_swing` |
+| Player hit | hit-stop 70 ms; 12 red-orange sparks and streaks; a 405 lm flash; shake 0.6; a red wash on the HUD | `player_hurt` |
+| Player knocked down | as a hit with 120 ms hit-stop, shake 0.9 and a full wash; a thud and dust 0.55 s later | `player_hurt`, `body_fall` |
+| Charge winding up and held | embers rising off the blade (26 to 96 a second as the charge fills) and a glow gathering at the tip | `sword_charge` |
+| Charge full | a flash, a ring, 14 sparks, a 360 lm flash | `charge_ready` (a wind bell) |
+| Roll, dash, fox dashes | a dust puff | `dash` |
+| Draw, sheathe | | `sword_draw`, `sword_sheathe` |
+| Fox notices, claws, kicks | | `fox_alert`, `claw_swipe`, `kick_swing` |
+| Fox hit | its material flashes for 0.22 s | `fox_hurt` (first hit, charged hits, every other hit) |
+| Fox dies | the body lands at 1.95 s with dust, then burns away from 2.45 s over 1.7 s into rising embers, ending in a burst and a flash | `body_fall`, `fox_death` |
 
-**Slash trail.** `UJapanSwordTrail` is a procedural ribbon between 55% of the blade and just past the tip.
-- It is sampled each frame from 0.05 s before the active window to 0.04 s after.
-- Catmull-Rom smoothing keeps a 20 cm-per-frame cut as a clean arc.
-- A painted streak texture gives it a brush look. It fades over 0.13 s (light), 0.19 s (charged) or 0.24 s
-  (full).
+Hit-stop sets `CustomTimeDilation` on both fighters for real time; slow motion is global and eases back. Camera shake is trauma-squared Perlin noise on the follow camera
+(`AWandererCharacter`, which implements `IAtelierFXTarget::AddCameraShake`).
 
-**Fox dissolve.** The fox's material is masked. World-space noise against a `Dissolve` parameter burns the body
-away, and an ember-orange band follows the edge (`Scripts/import_fox_hunter.py`).
+**Slash trail.** The sword component's `UAtelierTrail` runs from 55% along the blade to just past the tip. It is
+sampled from 0.05 s before the active window to 0.04 s after, smoothed with Catmull-Rom so a 20 cm-per-frame cut stays
+a clean arc, and fades over 0.13 s (quick), 0.19 s (charged) or 0.24 s (full).
 
-**Assets.** `games/yorimichi/assets/fx/gen_textures.py` makes the sprite and trail masks (deterministic).
-`Scripts/import_combat_fx.py` builds `/Game/FX` (M_FX_Additive, M_FX_Dust, M_FX_Trail and the MI_FX_*
-instances).
+**Fox dissolve.** The fox's material (`unreal/Scripts/import_fox_hunter.py`) is masked: world-space noise against a
+`Dissolve` parameter burns the body away, with an ember-orange band along the edge.
 
 ## Sound
 
-The library is in `games/yorimichi/assets/audio/combat/`: 39 one-shots in 17 cues, plus a countryside ambience loop.
-- **Source:** all from the Sonniss GDC bundles, royalty-free. Nothing is generated.
-- **Rebuild:** `games/yorimichi/assets/audio/combat/fetch.py` restores the masters (gitignored) and
-  `games/yorimichi/assets/audio/combat/slice.py` rebuilds the files exactly.
-- **Details:** the README and `manifest.json` in that folder list sources, cuts and levels. Each cue has an
-  audition file in `preview/`.
-- **Import:** `Scripts/import_combat_audio.py` puts them at `/Game/Audio/Combat/<cue>_<nn>`.
-- **Playback:** `AJapanCombatFX::Play` picks a variant without back-to-back repeats, with a small pitch
-  spread, spatialized (full inside 4.5 m, −48 dB at 50 m).
-- **Ambience:** the loop plays in 2D under everything from the start of play.
+The combat sounds are in `assets/audio/combat/` ([README](../assets/audio/combat/README.md)): 38 one-shots in 17
+cues plus the countryside ambience loop, all cut from Sonniss GDC bundle masters. `unreal.sounds` imports them as
+`/Game/Audio/Combat/<cue>_<nn>`; the ambience is imported looping.
 
-Nobody has listened to the picks yet. The sound agent flagged these as worth hearing first:
-- the fox's cry (a real fox scream)
-- the `fox_alert` growl-and-drum mix
-- the draw/sheathe balance
-- the ambience's high hiss
+Each cue plays a random variant from a shuffled bag (every variant once per round), with a small pitch spread,
+spatialised: full volume inside 4.5 m, then a natural falloff over 50 m down to −48 dB. The ambience
+(`/Game/Audio/Combat/ambience_countryside_01`) plays in 2D at half volume from the start of play.
 
-## Filming the fight (`JapanFightFilm.cpp`, `-fightfilm`)
+## Filming the fight
+
+`-fightfilm` (`JapanFightFilm.cpp`) films a scripted fight against the fox through the real input handlers on a fixed
+60 Hz step:
 
 ```sh
-games/yorimichi/tools/film_fight.sh take01                      # 1080p60 frames + camera.csv + audio.json + film.json
-python3 games/yorimichi/tools/mix_fight_film.py build/yorimichi/fightfilm/take01   # soundtrack + fight.mp4 and fight-720p.mp4
+games/yorimichi/tools/film_fight.sh take01                                        # frames, camera.csv, audio.json, film.json
+python3 games/yorimichi/tools/mix_fight_film.py build/yorimichi/fightfilm/take01  # soundtrack, fight.mp4 and fight-720p.mp4
 ```
 
-**Staging.** The film runs the real input handlers on a fixed 60 Hz clock. The fight is staged on the middle of
-the spawn road:
-- Downward traces find the `Road` material's edges, 20 cm apart. The road is under 5 m wide.
-- The player starts on the centreline and the fox waits 11 m ahead of the spawn, not on its grass verge.
+`film_fight.sh <take> [extra -set= preferences]` runs the game offscreen at 1920 × 1080 under the memory guard
+(`atelier.safety.guarded`) and writes `build/yorimichi/fightfilm/<take>/`: `frame_NNNNN.jpg`, `camera.csv`,
+`audio.json` (every sound the game started, by captured frame), `film.json` (the counts and the step log) and
+`game.log`.
 
-**Script:** walk up, draw when the fox notices, parry its claw into a counter, roll back out of the kick, take
-one claw, a three-strike chain, then a cut held into a full charge that kills it. Any attack the script didn't
-ask to land is parried.
-
-**Camera.** A follow camera looks along the road from behind the player at a three-quarter angle, and pushes in
-on parries and charges. It switches sides if a pole blocks the view, and ends on a side view of the body
-burning away.
-
-**Sound.** Every sound the game starts is logged by captured frame. The mixer rebuilds the soundtrack from the
-source WAVs with the same falloff, pans each sound by its bearing in the camera frame, adds the ambience,
-limits to −1 dBFS and encodes H.264/AAC with half-second fades.
-
-The final take on 24 September is `build/yorimichi/fightfilm/final/` (ignored; 23 s).
+- **Staging.** Traces every 20 cm across the road, 2 m behind and 10 m ahead of the spawn, find the edges of the
+  `Road` material. The player starts on the centreline; the fox waits about 11 m ahead, on the road (seed 11).
+- **Script.** Settle, walk up, draw, parry a claw into a counter, roll back out of a kick, draw again, take a claw,
+  recover, a three-strike chain, breathe, a cut held into a full charge that kills the fox, sheathe, hold. Any attack
+  the script did not ask to land is parried 0.19 s before its window. The film stops after 70 s at most.
+- **Camera.** A three-quarter view from behind the player along the road, held within 35° of it, pushing in on
+  parries and charges. It changes side when the view is blocked for 0.2 s and ends on a side view of the body burning
+  away.
+- **Mix.** `mix_fight_film.py <take folder> [--out fight]` rebuilds the soundtrack from the WAVs in
+  `build/yorimichi/audio/combat/` and the footsteps: each sound is pitched, attenuated by its distance from the camera
+  with the game's falloff, and panned by its bearing in the camera frame; the ambience loops underneath. A soft limiter
+  peaks at −1 dBFS. The output is H.264/AAC at 1080p60 plus a 720p copy, with a 0.5 s fade in and a 1.2 s fade out.
 
 ## Limits
 
-- The effects are procedural sprites, not Niagara. They are cheap (a few hundred quads at most) but CPU-driven.
-- The film mixer approximates Unreal's attenuation and panning. It is not a recording of the audio engine.
+- The effects are CPU-driven instanced sprites, not Niagara: cheap (a few hundred quads at most) but on the game
+  thread.
+- The film mixer approximates Unreal's attenuation and panning; it is not a recording of the audio engine.
 - Sound in play is untested on the phone stream.
+- Reading the film script: the roll keeps the sword drawn, so the "draw again" step sheathes it, and the steps that
+  wait for guard (recover, the chain, the full charge) would time out with the fox alive. Check a take before relying
+  on it.

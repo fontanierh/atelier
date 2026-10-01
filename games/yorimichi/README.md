@@ -1,55 +1,118 @@
 # Yorimichi
 
-A painterly Japanese island in Unreal 5.8: walk, run, sprint and roll through a coastal countryside, a forest hamlet,
-the city of Hidamari, a fishing cove and an island temple; sail a dinghy, ride the zeppelin, skate the pier with
-skate.-style Flick-It controls, and fight the fox hunter with a wooden sword. The direction is a sword brawler where
-spirits come out of openings across the island ([docs/LORE.md](docs/LORE.md), a draft).
-
-Current state and what is in the game: [docs/STATUS.md](docs/STATUS.md).
-The [skating guide](docs/SKATE.md) covers the native C++ module, bundled data, controls, pumping and validation;
-the reusable [Skate plugin](../../platform/engine/Plugins/Activities/Skate/README.md) documents the host integration.
+Yorimichi (寄り道, "a detour on the way home") is a painterly Japanese island in Unreal Engine 5.8. You walk, run and
+roll through a coastal countryside, a forest hamlet, the city of Hidamari, a fishing cove and an island temple; sail
+a dinghy, ride the zeppelin, skate the pier and the Mega Park with skate.-style Flick-It controls, and fight the fox
+hunter with a wooden sword. Blender and Python generate the world, characters and animation; Unreal runs the game.
+The story and setting are drafted in [docs/LORE.md](docs/LORE.md).
 
 ## Build and play
 
-From the repository root (requirements in the [top-level README](../../README.md)):
+From the repository root (requirements in the [top-level README](../../README.md#requirements)):
 
 ```sh
-uv run atelier fetch yorimichi      # Sonniss sound masters, once per machine
+uv run atelier fetch yorimichi      # the sound masters, once per machine
 uv run atelier build yorimichi      # everything; only changed steps rerun
-uv run atelier play yorimichi       # 1080p window; --profile desktop or desktop-1440 for the measured desktop profile
-uv run atelier qa yorimichi skate   # recovered skating runtime checks against the running game
+uv run atelier play yorimichi       # 1080p window
 ```
 
-`uv run atelier build yorimichi --list` shows every step: world data and meshes, characters, sounds, effects, the C++
-module, the Unreal imports and the runtime data. A clean build from nothing takes about half an hour on an M3 Pro, most of
-it in Unreal's first shader compile.
+`uv run atelier build yorimichi --list` shows every step: world data and meshes (`world.*`), characters
+(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating data check (`skate.runtime`), the C++
+module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
+just it and what it needs. Most of a clean build is Unreal's first shader compile.
+
+Play profiles (`--profile`, defined in [game.toml](game.toml)):
+
+| Profile | What |
+|---|---|
+| `play` | the default: deferred Lumen, 1080p window |
+| `desktop`, `desktop-1440` | the desktop profile: forward renderer, city tiles and tree LODs, 1440 pixels high, windowed or fullscreen ([docs/DESKTOP_PERFORMANCE.md](docs/DESKTOP_PERFORMANCE.md)) |
+| `megapark`, `megapark-fullscreen` | the Super Ultra Mega Park in its own level |
+| `foxqa`, `swordqa` | scripted fights at a fixed 60 Hz that write `fox_qa.json` / `sword_qa.json` to the run folder |
+
+Scenarios run against the game from another terminal: `uv run atelier qa yorimichi <scenario>` runs
+[scenarios/](scenarios)`<scenario>.py`.
+
+| Scenario | What |
+|---|---|
+| `skate_runtime`, `skatepark`, `skate_performance` | skating checks: controls, animation, mounting, bails and stances; the pier's banks, handrail and bowl; real-time frame pacing |
+| `sailboat`, `zeppelin`, `lake` | regression checks and captures for the dinghy, the zeppelin stations and the woodland lake |
+| `treehouse`, `treehouse_walk`, `treehouse_tour` | the tree house's reference views, a filmed walk through it and a camera tour |
+| `skate_showreel`, `megapark_tour`, `megapark_access_film` | filmed takes, with `*_mix.py` scripts to cut them |
+
+## What is in the game
+
+**World.** A painted world map with travel points ([docs/WORLD_MAP.md](docs/WORLD_MAP.md)) covers:
+
+- the coastal road where the walk begins, [Momiji Hamlet](world/regions/village/README.md), the
+  [houses on the main road](world/regions/houses/README.md) and the [mini-mega ramp](world/regions/mega/README.md);
+- [Sunset Pier](world/regions/skatepark/README.md), a skate plaza on the sea below the road;
+- the [woodland lake](world/regions/forest_lake/README.md) and its cabin;
+- the city of [Hidamari](world/regions/hidamari/README.md): arcade, clock square, harbour, park, temple hillside and
+  station;
+- the [south-west](world/regions/southwest/README.md): fishing village, beach and island temple;
+- the hidden [tree house](world/regions/treehouse/README.md) in the west hillside canopy
+  ([docs/TREEHOUSE_PLAN.md](docs/TREEHOUSE_PLAN.md));
+- the [Super Ultra Mega Park](docs/MEGAPARK.md) in the western foothills, reached by a forest trail or the zeppelin.
+
+You get around on foot, in the [sailboat](assets/vehicles/sailboat/README.md), on the
+[zeppelin](world/regions/zeppelin/README.md) between its three stations, or on the skateboard. Leaves, gulls and
+villagers ([wanderer](assets/characters/wanderer/README.md)) keep the island moving.
+
+**Cairo, the player** ([assets/characters/cairo](assets/characters/cairo/README.md)): walk, run, sprint with stamina,
+double jump, ground and air dash, chained rolls, crouch, wave and interact, with foot placement on slopes and
+[footsteps by surface](docs/FOOTSTEPS.md). Controls are in [docs/CONTROLLER_CONTROLS.md](docs/CONTROLLER_CONTROLS.md);
+the chase camera and its see-through in [docs/CAMERA.md](docs/CAMERA.md).
+
+**Sword** ([docs/SWORD_COMBAT.md](docs/SWORD_COMBAT.md)): draw and sheathe, a three-hit chain, hold to charge, parry,
+health and knock-downs. Hits carry trails, sparks, hit-stop, slow motion on parries, camera shake and sound
+([docs/COMBAT_FEEDBACK.md](docs/COMBAT_FEEDBACK.md)).
+
+**The fox hunter** ([docs/FOX_HUNTER_COMBAT.md](docs/FOX_HUNTER_COMBAT.md),
+[docs/FOX_HUNTER_ANIMATION.md](docs/FOX_HUNTER_ANIMATION.md)) waits up the road from the start and fights with claws
+and a kick, parries included.
+
+**Skateboarding** ([docs/SKATE.md](docs/SKATE.md)) runs on the platform's native
+[Skate plugin](../../platform/engine/Plugins/Activities/Skate/README.md): Flick-It tricks, grabs, manuals, grinds,
+powerslides, pumping, vert and bails, with the solved rider retargeted onto Cairo every frame.
+
+**Phone play**: `atelier stream yorimichi start` serves the [phone page](phone/README.md) (touch controls, the
+painted map, settings) and the platform's plain player.
+
+**Live workshop** ([docs/LIVE_WORKSHOP.md](docs/LIVE_WORKSHOP.md)): change the running game through the live bridge,
+including props made from a sentence by `assets/props/make_prop.py`.
 
 ## Where things are
 
 | Folder | What |
 |---|---|
-| `game.toml` | this game's description for Atelier: project, fetches, play profiles |
+| `game.toml` | the game's description for Atelier: project, fetches, play profiles, streaming |
 | `build.py` | the build recipe |
-| `world/` | island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` (Momiji Hamlet, Hidamari, the southwest, the mini-mega ramp, the woodland lake, the zeppelin stations, the skate pier, the tree house, the houses on the main road); `world/map` (map tools and the painted sheet) |
-| `assets/characters/` | the player (`cairo`), the enemy (`fox-hunter`) and the villagers (`wanderer`): source files, manifests, exporters |
-| `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds themselves are built, not committed) |
-| `assets/fx/`, `assets/props/`, `assets/vehicles/` | effect sprites, live-workshop props, the sailboat |
+| `world/` | the island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` one folder per region; `world/map/` the map tools and painted sheet |
+| `assets/characters/` | the player (`cairo`), the enemy (`fox-hunter`), the villagers (`wanderer`) and the shared character [tools](assets/characters/tools/README.md) |
+| `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
+| `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park, and the skating runtime pins (`skate`) |
 | `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating data in `Content/Data/SkateNative` |
 | `live/` | the live bridge's in-game Python and saved overlays |
-| `scenarios/` | tests and films driven through the live bridge |
-| `streaming/` | phone play over Pixel Streaming (to be split into streaming and touch controls) |
-| `tools/` | desktop profile launcher, benchmark, fight film |
-| [`animation_lab/`](animation_lab/README.md) | fox comparison/creation playground using shared UniMate and Kimodo runners; headless generation, prompts, GLB/GIF export |
-| `docs/` | how the game works: skate, combat, fox hunter, animation principles, world map, camera see-through, sound, lore |
+| `scenarios/` | checks and films driven through the live bridge |
+| `tests/` | Python and C++ tests for the skating data, the Mega Park and sprint stamina |
+| `phone/` | the phone page served by `atelier stream` |
+| `tools/` | the desktop profile launcher, benchmark, captures, fight film, concept and texture generators |
+| [`animation_lab/`](animation_lab/README.md) | a local playground for text-to-motion models (UniMate, Kimodo) on the fox hunter's rig |
+| `docs/` | how the game's systems work |
 
-The [UniMate experiment write-up](docs/UNIMATE_EXPERIMENT.md) records the successful prompt-only backflip, poor sprint
-results, platform extraction, measurements, and limits. The lab is an authoring experiment and does not replace
-the game's animation library. The [Kimodo experiment](docs/KIMODO_EXPERIMENT.md) adds a locally generated backflip,
-the user's forward roll and a headless command. Both models share one playground, library and comparison workflow,
-with explicit model labels and a generator selector for new takes.
+## Docs
 
-## Names still to settle
+| Area | Docs |
+|---|---|
+| World | [WORLD_MAP](docs/WORLD_MAP.md), [TREEHOUSE_PLAN](docs/TREEHOUSE_PLAN.md), [MEGAPARK](docs/MEGAPARK.md), [CAMERA](docs/CAMERA.md), [DESKTOP_PERFORMANCE](docs/DESKTOP_PERFORMANCE.md) |
+| Play | [CONTROLLER_CONTROLS](docs/CONTROLLER_CONTROLS.md), [SKATE](docs/SKATE.md), [FOOTSTEPS](docs/FOOTSTEPS.md), [LIVE_WORKSHOP](docs/LIVE_WORKSHOP.md) |
+| Combat | [SWORD_COMBAT](docs/SWORD_COMBAT.md), [FOX_HUNTER_COMBAT](docs/FOX_HUNTER_COMBAT.md), [COMBAT_FEEDBACK](docs/COMBAT_FEEDBACK.md) |
+| Characters and animation | [BODY_SWAP_GUIDE](docs/BODY_SWAP_GUIDE.md), [MIXAMO_WORKFLOW](docs/MIXAMO_WORKFLOW.md), [H3_ANIMATION_REFERENCE_WORKFLOW](docs/H3_ANIMATION_REFERENCE_WORKFLOW.md), [ANIMATION_PRINCIPLES](docs/ANIMATION_PRINCIPLES.md), [FOX_HUNTER_ANIMATION](docs/FOX_HUNTER_ANIMATION.md), [UNIMATE_EXPERIMENT](docs/UNIMATE_EXPERIMENT.md), [KIMODO_EXPERIMENT](docs/KIMODO_EXPERIMENT.md) |
+| Story | [LORE](docs/LORE.md) |
 
-The player is still called by its concept-sheet name, Cairo (`cairo`, `/Game/Cairo`), and several
-C++ classes carry prototype names (`ACairoCharacter` is the player, `AWandererCharacter` its base, `Japan*` the
-rest). They are renamed in one pass once the new names are chosen.
+## Names in the code
+
+The player is Cairo: `assets/characters/cairo`, `/Game/Cairo` and `ACairoCharacter`, built on `AWandererCharacter`.
+Most other game classes and console variables carry the `Japan` prefix (`AJapanWorld`, `japan.SeeThrough`), and the
+island's Unreal content is under `/Game/Japan`.

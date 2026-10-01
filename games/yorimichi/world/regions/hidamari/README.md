@@ -1,54 +1,62 @@
-# Hidamari city
+# Hidamari
 
-Eastern city extension at the approved 900 × 600 m footprint. Build from the existing generated forest world:
+The city at the eastern end of the coastal road: arrival terraces, a clock hall and fountain square, a covered
+shopping arcade, two temples and a shrine on the hillside, a sunlit park with a pond and a cedar bridge, the station
+district, and a fishing harbour with a fish market, lighthouse, breakwater and canal. Street lamps, benches, flower
+beds, street trees and resident groups fill it. North of it rise the foothills and a distant volcano, with a trail
+up from the park. Buildings are exteriors; there is no shopping, fishing or train travel.
+
+## Build and check
 
 ```sh
-japan/run.sh hidamari
+uv run atelier build yorimichi world.hidamari unreal.world data.stage
+uv run atelier build yorimichi world.city_tiles world.city_trees unreal.desktop   # desktop profile
 ```
 
-This generates `out/hidamari/city.json`, 55 modular FBX assets, collision surfaces and an import report, rebuilds the native module, and imports the city plus a terrain backdrop with space for the eastern extension. The original `world.json`, heightfield and far-hill source array remain unchanged. The runtime merges the optional city sidecar before creating instanced mesh groups. Full `assets` / `setup` rebuilds also include the city. Generated FBX and Unreal assets follow the repository's existing ignored-output convention; rebuild them after a fresh checkout.
+- `world.hidamari` ([`build.py`](build.py), Blender) runs [`layout.py`](layout.py), which lays the city out from the
+  seeded world (the eastern road end is read from `world.json`'s road, never copied by hand) and writes
+  `build/yorimichi/hidamari/city.json`; then it builds the modular meshes, their collision and `manifest.json`. Streets
+  and the terrain under them share one height profile, intersections included, and the far terrain is lowered
+  smoothly round the city.
+- `unreal.world` imports them with `unreal/Scripts/import_hidamari.py`, keeping the authored collision.
+- `data.stage` stages `city.json`; the game merges it into the world when it builds the instanced meshes.
+- `world.city_tiles` and `world.city_trees` build the desktop profile's 128 m city surface tiles and city tree LODs,
+  and `unreal.desktop` imports them into `/Game/Experiments`.
 
-Current content: 247 shop/residential placements, including 26 narrow arcade bays and six additional shop identities, clock hall and fountain square, station, two temples and local shrine, covered shopping arcade, two fish-market shelters, 12 fishing boats, lighthouse and breakwater, pond park with bridge and pavilions, playground, canal banks, street lamps, flower beds, benches, street trees and 35 cosmetic residents in independently proximity-gated groups. Shop signs combine names and pictorial marks. Interiors and functional fishing/commerce/train travel are not implemented.
+For an art iteration on a few meshes, set `HIDAMARI_ASSETS` to comma-separated mesh names for both the Blender build
+and the importer, and `HIDAMARI_TERRAIN=1` on the importer to replace the base terrain too. A layout or height
+change can need `HD_Terrain`, `HD_Streets` and the ground-anchored public spaces rebuilt; rerun the collision audit
+after it.
 
-Coordinates, scene references and the approved planning envelope: `../docs/hidamari/`.
-
-Completed captures and measured results: [implementation review](review/README.md).
-
-Review captures:
-
-```sh
-python3 japan/hidamari/review.py SESSION
-```
-
-Uses the existing trailer capture system and live Unreal scene; no image postprocessing. Optional trailer field `validate_hidamari: true` runs the live collision audit and writes `hidamari-physics.json`. `-reviewroute=hidamari` selects the actual city arrival and central street for the existing movement and benchmark helpers. Capture playback at fixed 60 Hz is not frame-rate evidence; use `benchmark.py` for real-time measurements.
-
-## Integration and iteration
-
-The eastern road endpoint is read from the actual generated road. Streets and their underlying terrain share one height profile, including level intersections. The original distant terrain is smoothly lowered around the city, and backdrop trees are replaced at the corresponding surface heights. The southwest branch can continue to own its separate layout; it must preserve the city sidecar merge and terrain hook when combining loaders.
-
-The harbor has protected quay/pier edges. Falling into the harbor, canal or pond returns the player to their last grounded city position. Inland water is a separate collision-free mesh; banks and bridges retain collision. Boats are decorative and do not have collision. Existing running, skating, ollies and mini-mega code paths are retained.
-
-For a targeted art iteration, set `HIDAMARI_ASSETS` to comma-separated mesh names for both the Blender builder and Unreal importer. Set `HIDAMARI_TERRAIN=1` on the importer when also replacing the base terrain FBX. A layout/height change may require rebuilding `HD_Terrain`, `HD_Streets` and any ground-anchored public spaces; always rerun the collision audit.
+A capture shot spec with `"validate_hidamari": true` (`tools/capture.py SESSION --file SHOTS.json`) makes the game
+audit the city's live collision before filming and write `hidamari-physics.json` (`HidamariReview.cpp`): ground
+samples along every street and the north trail, character capsule sweeps along three lateral tracks, the park bridge
+every half metre, building entrances, and no collision on the water. `tools/benchmark.py` measures frame time on the
+`hidamari`, `arcade`, `plaza`, `harbor`, `harbor_pier` and `north` routes, for example:
 
 ```sh
-python3 japan/hidamari/review.py SESSION --shots square --audit
-python3 japan/hidamari/review.py FUNCTIONAL_SESSION --shots '' --checks --wait 1200
 python games/yorimichi/tools/benchmark.py CITY_PERF --view road_walk --route hidamari --road-index 258 --seconds 30 --hide-hud
-python3 japan/tools/render_map.py --proposal japan/docs/hidamari/location.json --built-city japan/out/hidamari/city.json --out japan/docs/hidamari/current-map.png
 ```
 
-Use a NumPy/Pillow-enabled Python for the generation and map tools. Do not overlap performance captures with Blender or another Unreal session. The benchmark rejects contaminated runs.
+Do not run a benchmark beside Blender or another Unreal session; it rejects contaminated runs.
 
-The live audit samples every street, sweeps a character capsule along three lateral tracks, checks the park bridge at half-metre intervals, and rejects collision on water. Functional captures assert that water recovery returns the player to shore, both bridges keep the player grounded, default running reaches travel speed, and a moving skateboard ollie takes off and lands. These tests exercise the real native scene and character movement; they are not offline geometry-only checks.
+## Files
 
-The first environment uses repeated facade modules and a broad street grid. The footprint includes water and public space, not 900 × 600 m of continuous buildings. Additional hero interiors, harbor work animations, shop interactions and fishing are separate future milestones.
+| File | Holds |
+| --- | --- |
+| [`layout.py`](layout.py) | Roads, heights, building and resident placements, routes, water probes |
+| [`location.json`](location.json) | District bounds; the world map centres its city zones on them |
+| [`public_spaces.py`](public_spaces.py) | Positions shared by the layout and the mesh builders |
+| [`arcade.py`](arcade.py), [`plaza.py`](plaza.py), [`harbor.py`](harbor.py) | The arcade, clock-square and harbour kits |
+| [`living_streets.py`](living_streets.py), [`living_plaza.py`](living_plaza.py), [`working_harbor.py`](working_harbor.py) | Street details, plaza furniture, the fish market |
+| [`pond_garden.py`](pond_garden.py), [`garden_bridge.py`](garden_bridge.py), [`civic_gardens.py`](civic_gardens.py), [`hero_approaches.py`](hero_approaches.py) | The park, its bridge, temple gardens, the station forecourt and the stone approaches |
+| [`mountains.py`](mountains.py), [`forest_backdrop.py`](forest_backdrop.py) | The north foothills, volcano and trail; tree cover on the eastern hills |
+| [`kit/`](kit/GUIDE.md) | The building kit (see its guide) |
+| [`textures/`](textures/prompts.json) | `paving.png` and `timber.png`, with their prompts |
+| [`fonts/`](fonts/README.md) | The Japanese font for signs |
 
-Reference-led arcade pass, captures, materials and independent differences review: [arcade review](review/arcade/README.md).
+## Rules
 
-Latest arcade: [polish, comparison and demo](review/arcade-polish/README.md).
-
-Reference-led clock square rebuild, visual iterations and movement checks: [plaza review](review/plaza/README.md).
-
-Reference-led harbor kit, before/after stills, independent differences and runtime checks: [harbor review](review/harbor/README.md).
-
-Combined checkout checks: [integration review](review/integration/README.md). Final arcade, square and harbor film: [Hidamari demo](review/demo/README.md).
+- Falling into the harbour, the canal or the pond returns the player to their last grounded position in the city.
+- Inland water is a separate mesh with no collision; banks, quay edges and bridges collide.
+- Keep the main plaza route (y 150), the pond's crossing and its 5 m perimeter walk clear.

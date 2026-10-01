@@ -1,101 +1,154 @@
 # Skateboarding
 
-Yorimichi's skating backend is a single in-process C++ runtime that preserves the recovered
-Skate 3 physics, animation, gameplay and camera behavior. Cairo receives the solved rider pose through a
-retargeter; board parts follow the solved deck, trucks and wheels. Component differential proofs are recorded
-in the [C++ migration notes](../../../platform/engine/Plugins/Activities/Skate/CXX_PORT.md).
-Complete baseline/latest-main Session comparisons and native Unreal editor integration pass their recorded
-checks. This establishes finite-corpus equivalence to the recovered implementation, not original-console parity.
-
-## Build and run
-
-The native animation samples, metadata, graphs, gesture patterns, camera, settings and skeleton data are
-committed in [`unreal/Content/Data/SkateNative`](../unreal/Content/Data/SkateNative). The bundle has 3,334 payloads,
-including 3,324 clips and 131,642 animation frames. Its manifest records each path, byte size and SHA-256;
-[`assets/skate/runtime.json`](../assets/skate/runtime.json) pins that manifest and the required native formats.
-The normal build verifies these files in place. It requires no extracted game, upstream tools checkout,
-Rust toolchain or separate data installation.
+Cairo can ride a skateboard anywhere there is ground, with skate.-style controls: Flick-It tricks on the right stick
+or the mouse, manuals, grinds, powerslides, pumping, airs and bails. The riding runs in the platform's
+[Skate plugin](../../../platform/engine/Plugins/Activities/Skate/README.md), which simulates the board and a physical
+rider, then fits the solved pose onto Cairo and the board meshes. This page covers what the game adds: the controls
+as the player sees them, the tuning, the board, the skate pier, the sounds and the checks. The plugin's
+[runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md) covers the native data and its
+verification.
 
 ```sh
-uv run atelier build yorimichi unreal.compile
+uv run atelier build yorimichi skate.runtime unreal.compile   # verify the tracked native data, compile
 uv run atelier play yorimichi
-# Native bundle integrity only:
-python3 games/yorimichi/tools/verify_skate_native.py
-# Against the running game:
-uv run atelier qa yorimichi skate
+uv run atelier qa yorimichi skate                              # with the game running
 ```
 
-`skate.runtime` is a light verification dependency of `unreal.compile` and is available as a named build step.
-Its report goes to `build/yorimichi/skate-native/verification.json`; it produces no runtime executable or
-converted assets. The Unreal module builds the C++ backend against the committed native data. No worker
-build or fallback backend is part of the normal build. Bundle verification does not establish runtime equivalence.
+## Getting on and off
 
-The Mac renderer enables Unreal's GPU skin cache for Cairo's animated hair. This avoids the UE 5.8
-morph-buffer startup assertion observed with inline skinning while keeping the hair animation enabled.
+**Triangle / Y** (keyboard **B**) gets on or off the board; the on-foot controls line shows it whenever the board is
+available. Getting on works while standing, walking or running on the ground (crouching stands up first), but not
+in a menu, as a zeppelin passenger or with the sailboat out. It sheathes the sword. Running onto the board keeps the
+position, the direction of travel and the speed. Getting off works while the board is on the ground (not in the air,
+on a rail or in a bail) and keeps a jog's worth of speed.
 
-Original-format assets and pinned Rust source are restored from historical Git into ignored build output
-only for independent differential proofs. They are absent from the shipping checkout. The one-time native
-conversion/assembly tools live under the Skate plugin's `Tools/` directory and
-write candidates under `build/`; they are not normal build dependencies. Runtime settings and graph loading
-consume the project-native formats directly.
+Riding into the sea puts Cairo back on the board at the last dry spot.
 
-## Feel and controls
+## Controls
 
-Yorimichi sets `PopHeightScale=1.15`, `AirSpinScale=1.6`, `PushPowerScale=1.45`,
-`PushSpeedScale=1.15`, `VertAssist=1`, normal difficulty and medium trucks in `DefaultGame.ini`.
-`VertAssist` keeps straight airs over quarters that end short of vertical inside the ramp; 0 retains the
-original near-vertical band. The transfer and assist port follows main's `1536531` behavior and passes its
-separate full Session/quarter-pipe and departure-helper comparisons.
-These scale the recovered height, spin-response and push curves without replacing the solver or the animation
-timing of each push. The loaded flat-ground ollie turns about 250° in the earlier reference checks (330–340° with the earlier
-2.15), so a 360 needs a setup turn. Release the stick to line up the landing. From rest, the tuned push reaches
-9.11 m/s after two seconds versus 6.99 m/s with stock values.
+| Action | Controller | Keyboard and mouse |
+| --- | --- | --- |
+| Push | Cross / A (Square / X pushes mongo) | W |
+| Brake | Circle / B | S |
+| Steer, spin | Left stick | A / D |
+| Powerslide | Left stick down-left / down-right | Hold C (A picks the left side) |
+| Ollie | Right stick down, then up | Hold Space, release |
+| Tricks | Right stick gestures | Hold the left mouse button and flick |
+| Manual, nose manual | Right stick partly down / up | Hold the left mouse button, move part-way |
+| Pump on the ground, grab in the air | L2 / R2 (LT / RT) | Q / E |
+| Transfer over the coping | Left stick forward | Hold Shift |
+| Look | (follows the board) | Mouse, without the left button |
 
-The Unreal integration supplies nearby collision and registered rails to the native runtime and presents
-the solved camera and rider pose. Its complete frame/session behavior passes the recorded comparisons against
-the pinned recovered implementation. The host view eases into the skating camera over about 0.6 s after mounting,
-out while the right stick looks around, and back two seconds after the stick is released. These presentation transitions remain in the Unreal adapter.
+The flicks: down-up ollie, down-up-left kickflip, down-up-right heelflip, down-left or down-right shove-its, a sweep
+around for 360s, and starting from up for nollies. With the mouse, pull back then forward for an ollie, forward-left
+for a kickflip, forward-right for a heelflip, and back then sideways for a shove-it. The mouse flick scales with the
+game's mouse sensitivity. Goofy stance mirrors the gestures.
 
-Triangle / Y (or keyboard B) mounts/steps off; D-pad Down interacts on foot. Running onto the board preserves position, heading of travel and speed. W pushes, S brakes,
-A/D steer or spin. Hold/release Space for an ollie, or hold the left mouse button and flick for tricks. C holds a
-powerslide (A/D chooses its side); controllers use the left stick down-left/down-right. Q/E or triggers compress for pumping on the ground and grab in the air.
-Hold Shift (or push the left stick forward) through takeoff to transfer over the coping; a grab does not
-request a transfer.
-See the [plugin controls](../../../platform/engine/Plugins/Activities/Skate/README.md) for the full input contract.
+A grab never sends Cairo over the coping; only the transfer input does.
 
-`scenarios/skate_runtime.py` checks push/flip/landing, steering, manuals, rails, vert, bail/recovery, retargeted
-bone lengths and head direction, actual keyboard input, mounting, spins, slides and both stances. Scripted input
-is always released when a check finishes. The live state includes `retail=<physical state> tick=<number>`.
+### Trick line and HUD
 
-## Sunset Pier and pumping
+While riding, the controls line at the bottom lists the riding controls and shows the board's status (rolling,
+pushing, manual, grinding, airborne, bail...) and speed in km/h. The trick line shows the current trick in large
+text, centred at 84% of the screen height, and fades out about 1.5 s after the trick, grind or manual ends. Trick
+names are the session's trick IDs without their prefixes, in title case: `ID_TRICK_GRIND_FS_50_50` reads "FS 50-50".
+The score sits at the top right once it is above zero. The film HUD (`UYorimichiLive::FilmHud`) keeps only the trick
+line.
 
-The [park guide](../world/regions/skatepark/README.md) describes the new street plazas, manual pads, bars,
-mini-ramp, bowl and roll-ins, with the Sunburst references and build/physics checks.
+### Pumping
 
-Hold L2/R2 (Q/E on keyboard) to compress, then release as you pass through the lower/middle transition to extend.
-Compress high on the descent and extend through the bottom curve; repeat for the next wall. Release the triggers
-before leaving the lip unless you want a grab. The native centre-of-mass and curvature controller supplies the
-acceleration, so timing matters. The measured bowl comparison gains about 1.25 m of apex height and 0.51 m/s on return.
+Hold a trigger (Q / E) to compress and release it to extend. On a ramp, compress high on the descent and release
+through the bottom of the curve; compress again for the next wall. Timing matters: holding a trigger is not a boost.
+Release the triggers before leaving the lip unless you want a grab, and keep off the right stick, which pops.
 
-During bails, the retargeter samples Cairo's actual skinned surface and lifts the visual pose above supporting
-geometry. This accounts for his larger head and clothing while preserving bone lengths and the native physical
-rider's motion. The coasting pose uses the current parent transform even inside Unreal's scoped movement update,
-which prevents the previous rider/board flicker.
+### Camera
 
-## Integration boundaries
+The follow camera comes 20 cm lower and 22% closer while riding, and its field of view widens by up to 9° between
+18 and 45 km/h. Without mouse look it turns to follow the board and eases into the skating camera over about 0.6 s.
+Looking with the mouse takes the view back for two seconds. The right stick never looks while riding: it is the
+trick stick.
 
-The actual native Unreal build passes all 419 actions. Native CLI command, flat-ground and exported-park
-checks pass. The live reports in `build/yorimichi/skateqa/` record 19/19 runtime checks and 7/7 park checks,
-including a 5.10846 m bowl apex and return at park x=41.68899 m. All six real-time performance activities pass
-at 59.7568–59.9965 fps, with maximum p95 17.202 ms and p99 17.724 ms, no frames over 33 ms or 50 ms,
-and no repeated native simulation frames. After a far teleport into the island's Mega Park, collision refresh and a
-six-second push also pass: 49.5369 m travelled, retained PhysicsGround and no new bail.
+## Tuning
 
-These are editor checks, not cooked/package validation or a claim about every possible ride.
+`unreal/Config/DefaultGame.ini`, section `[/Script/AtelierSkate.SkateSettings]` (the plugin README lists every key):
 
-Nearby pawn-blocking static meshes and registered rails supply native collision. The park importer retains CPU mesh data for collision export. Dynamic objects, individual
-collision surface materials and buffer retention on other imported world meshes still need adapters. Editor builds
-are the validated path. Cairo keeps its authored visual proportions; the solver uses the recovered rider's
-physical proportions. Grabs and extreme poses can therefore still need visual contact adjustments.
+| Key | Value | Effect |
+| --- | --- | --- |
+| `PopHeightScale` | 1.15 | Higher ollies than stock |
+| `AirSpinScale` | 1.6 | Faster air spins |
+| `PushSpeedScale` | 1.15 | Higher push speed target |
+| `PushPowerScale` | 1.45 | Stronger pushes |
+| `VertAssist` | 1 | Straight airs on quarters short of vertical (down to about 50°) come back into the ramp |
+| `DeckMesh`, `TruckMesh`, `WheelMesh` | `/Game/SkatePark/Board/SM_Skate{Deck,Truck,Wheel}` | The pier's board |
+| `SoundFolder` | `/Game/Audio/Skate` | Board loops and one-shots |
+| `FallSounds` | `/Game/Audio/Combat/body_fall_01`, `_02` | Body falls for bails |
 
-Detailed provenance and limits are in the [native port notes](../../../platform/engine/Plugins/Activities/Skate/NATIVE_PORT.md).
+`Difficulty` and `TruckTightness` are not set, so the plugin defaults apply: `normal` and 0.5.
+`tools/check_skate_runtime.py` assumes `AirSpinScale` 1.6; change both together.
+
+## Board contract
+
+`world/regions/skatepark/board.py` builds the board as three meshes, in Blender metres; the importer turns Blender
+(x, y, z) into Unreal (x, -y, z) centimetres:
+
+| Mesh | Origin | Shape |
+| --- | --- | --- |
+| `SM_SkateDeck` | Centre of the deck top; nose +X, up +Z | 80 × 20.5 cm, 22° kicks |
+| `SM_SkateTruck` | Kingpin pivot on the deck underside; modelled as the front truck | Trucks sit at x = ±18 cm, 1.2 cm under the deck top; the back truck is turned 180° about Z |
+| `SM_SkateWheel` | Wheel centre; axle along Y | 2.65 cm radius, 3.2 cm wide, at y = ±9.3 cm, 6.35 cm under the deck top |
+
+The plugin places the deck top 9.05 cm above the ground and fits the trucks and wheels to the solved axle and wheel
+bones (see the [plugin's board contract](../../../platform/engine/Plugins/Activities/Skate/README.md#board-contract)).
+`unreal.skatepark` imports the three parts into `/Game/SkatePark/Board` without collision.
+
+## Skate pier
+
+Sunset Pier is a 112 × 88 m concrete skate park over the sea, below the road: street terraces with stairs, handrails
+and hubbas, manual pads, flat bars, a central wave, a horseshoe mini-ramp, a return quarter and a deep bowl. The
+[park guide](../world/regions/skatepark/README.md) gives its layout and build. `ASkatePark` loads its meshes and
+spawn from `Content/Data/skatepark/park.json`, registers its rails, ledges, coping and curbs with the plugin, and is
+tagged `SkatePark`, so the collision snapshot stays centred on the pier while Cairo rides it. Drifting leaves are
+hidden and not simulated on the pier, and a post-process volume over it turns off Lumen global illumination, whose
+cache leaves patches on the large thin decks.
+
+## Sounds
+
+`audio.skate` (`assets/audio/skate/make.py`) builds the board sounds into `build/yorimichi/audio/skate/`, 48 kHz mono:
+
+- loops `roll`, `grind`, `slide`, `skid` and `scrape`, synthesised as shaped noise so they loop without a seam;
+- three variants each of `pop`, `land`, `catch`, `push`, `flick` and `clatter`, built from two wooden stick hits in the
+  Sonniss combat masters (`atelier fetch yorimichi`) with synthetic thumps and clicks.
+
+`unreal.sounds` imports them into `/Game/Audio/Skate` (`Scripts/import_skate_audio.py`), with the loops set to loop.
+In the game the roll loop follows speed on the ground, grind or slide plays on a rail, skid in a powerslide and
+scrape while braking; `pop` plays on take-off, `land` on landing and `clatter` on a bail.
+
+## QA
+
+With the game running (`atelier play yorimichi`):
+
+| Scenario | What it checks | Report in `build/yorimichi/` |
+| --- | --- | --- |
+| `skate`, `skate_runtime` | 19 checks: push, flip and landing; steering; manual; rail; vert; deliberate bail and recovery; skin clearance during the bail (at least 0.45 cm); retargeted bone lengths, head direction and camera; keyboard pushing; stow and remount; goofy push and ollie; flat 360s both ways; keyboard powerslides both ways; running mount; Triangle mount and stow; coasting pose stability | `skateqa/runtime.json` |
+| `skatepark` | Roll-ins on the bowl, mini, return, seven-stair and four-stair banks; the stair handrail; an air up and back in the bowl (apex above 3.5 m, landing back on the wall) | `skateqa/park.json` |
+| `skate_performance` | Real-time frame pacing through six activities (push and flip, bowl air, mini air, quarter air, street to mini, bail): at least 58.5 fps, p95 under 20 ms, p99 under 33.34 ms, no frame over 50 ms, no native pose repeated three frames running | `skateqa/performance.json` |
+| `skate_showreel` | A filmed line of shots at the pier, at a fixed 60 fps step; run through the live bridge (see the script) | `skatefilm/<take>/` |
+| `skate_mix_showreel` | Mixes a showreel take's sounds and encodes 1080p and 720p MP4s | `skatefilm/<take>/` |
+
+`skate` runs `skate_runtime` and always gives the controls back. `skate_live_skate.py` is the in-game helper module
+the others load (`live.park.place`, `live.park.launch`, `live.scenario`). The live module also has `live.skate()`,
+`skate_input()`, `skate_release()`, `skate_state()`, `skate_place()`, `skate_park()`, `skate_script()` and the
+gesture paths in `FLICKS`.
+
+Offline, without Unreal, after building the native QA executable (see the plugin's
+[runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md#reference-build)):
+
+```sh
+python3 games/yorimichi/tools/verify_skate_native.py      # the tracked bundle against its manifest
+python3 games/yorimichi/tools/check_skate_runtime.py      # flat ground, both stances -> build/yorimichi/skate-native/check
+python3 games/yorimichi/tools/check_skatepark_runtime.py  # the pier's exported collision -> build/yorimichi/skatepark/physics
+```
+
+`check_skatepark_runtime.py` needs `world.skatepark` built. It rides the bowl, the mini-ramp, the return quarter, a
+bowl roll-in, an ollie over the bowl coping and the seven-stair handrail, and requires a pumped 8.5 m/s bowl run to
+peak at least 0.5 m higher and come back at least 0.4 m/s faster than coasting.
