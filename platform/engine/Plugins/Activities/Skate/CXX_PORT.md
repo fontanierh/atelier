@@ -491,6 +491,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   matrix's zero translation W lane is preserved. Real trajectory selection, air reckoning,
   skeleton/collision/wipeout producers and the full active-host schedule remain separate
   integration checks; this state comparison records explicit completed service observations.
+- Physics animation input: 472 histories and 2,137 commands preserve 2,850,713 exact bytes
+  through all 151 scalar names, actual rig bone events, trajectory-derived push speed, jump
+  caches, five physics modes, selective reset and output publication. Thirteen malformed
+  settings fixtures and three alternative live settings profiles preserve errors and action
+  routing; 61 failures observe original partial writes. Evaluated animation hierarchy and
+  input-map values are explicit upstream inputs; adjusted pose/FootIK and the complete
+  player-input schedule remain separate integration checks.
 - Wipeout/runout requests: 254 histories and 15,472 commands preserve 1,171,351 exact words
   across all 34 reason/value pairs, individual wrapping request counts, eligibility gates,
   cooldown, contact and balance histories, and selective initialization/teleport/selection resets.
