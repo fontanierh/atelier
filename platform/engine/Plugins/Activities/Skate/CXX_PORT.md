@@ -38,7 +38,8 @@ in the Unreal adapter; the worker source remains identical to the pinned referen
 - [x] C++ ground/air/grind/manual/slide/pump/off-board/wipeout state owners and scoring.
 - [x] C++ camera and complete session scheduling.
 - [x] Finish focused LandingOnDeck acceptance, including original constructor rejection and loaders.
-- [ ] Finish physical wipeout acceptance, then compare the latest-main vert changes.
+- [x] Finish physical wipeout acceptance, including release/recovery and loader failures.
+- [ ] Compare the latest-main vert changes.
 - [ ] In-process Unreal ownership, background world refresh, mounting, retargeting and shutdown.
 - [x] Commit the verified project-native data package.
 - [ ] Remove Rust worker/build dependencies and original-format assets from the shipping checkout.
@@ -392,8 +393,8 @@ The complete wipeout histories and all 253 loader fixtures also pass again
 after exposing that helper.
 
 Completed observation frames are explicit inputs to this leaf check. It does not establish parity of
-the physical/skeleton observation producer or ragdoll state owners. Their physical Wipeout300
-acceptance remains pending; the complete frame comparison does not cover that state.
+the physical/skeleton observation producer or ragdoll state owners. Their connected physical Wipeout300
+comparison is recorded below; the complete-frame corpus does not cover that state.
 
 ## Native score accounting
 
@@ -540,7 +541,7 @@ including consumed request flags, signal hashing and retained matrix tails.
 The focused comparisons below retain their own supplied-input domains. A statement that a producer or
 schedule is outside a focused corpus is a proof boundary, not an implementation TODO. The accepted
 complete-frame and Session corpora exercise the same concrete owners together within their recorded
-world and input domains. Physical wipeout, latest-main changes and Unreal validation remain pending.
+world and input domains. Latest-main changes and Unreal validation remain pending.
 
 `DeckAngularCorrections.*` applies axis/limited angular displacement and the original ground-body torque
 to the shared deck accumulator. It preserves both fixed-step divisions, the rounded inverse-inertia
@@ -1035,8 +1036,7 @@ packet's final pose. The accepted complete-frame and Session probes also observe
 state, graph execution and physical/animation publication without supplying their outputs.
 
 These focused comparisons are complemented by the accepted complete native frame and Session
-comparisons. The playable Unreal switch, physical wipeout, latest-main changes and live validation remain
-pending. The final runtime will contain only the C++ backend.
+comparisons. The playable Unreal switch, latest-main changes and live validation remain pending. The final runtime will contain only the C++ backend.
 
 ## Native walking controller and settings
 
@@ -1321,8 +1321,7 @@ Coverage includes grounded/airborne skating, offboard ground/air and landing
 states, stance changes, controller histories, tuning, travel and retained errors.
 The fixture world is a flat floor with an empty grind provider. Rail admission,
 physical wipeout and climbing have focused connected checks. The grind result
-is recorded below; LandingOnDeck acceptance is recorded at the end of this document, while physical
-wipeout acceptance remains pending.
+is recorded below; LandingOnDeck and physical wipeout acceptance are recorded at the end of this document.
 Host Session timing passes its comparison above. Live Unreal collision export
 and rendering remain separate acceptance steps. The playable adapter still uses
 the existing backend at this checkpoint.
@@ -1362,4 +1361,27 @@ snapshot. Fresh original, observed and native source trees match the complete sa
 fresh loaders run both actual compiled implementations. Canonical processed/attribute packets,
 authored evaluated poses, engine triangles/metadata and the registry remain explicit upstream fixture
 boundaries. This focused result does not establish every global transition, rendered pose or live
-Unreal landing outcome. Physical wipeout, latest-main changes and Unreal acceptance remain pending.
+Unreal landing outcome. Latest-main changes and Unreal acceptance remain pending.
+
+### Connected physical wipeout owners
+
+The unchanged original active Wipeout300 and its shared physical, pose, IK, contact and query owners
+match over 45 histories and 4,025 callbacks: 177,539,768 exact bytes, SHA-256
+`495b8ec389fcd7df493186a442f6bfd50e2b20ed48e364fbfdaafead7fb773b3`.
+All 193 actual settings fixtures match, including 192 ordered first-failed reads. The comparison
+observes all five profiles, material-10 phases 0 through 4, actual solved materials 10/11/12,
+501 body-solve writes, 2,758 real query hits, 1,267 misses and five partial-failure writes.
+
+The original 43 histories remain byte-identical. A 24-callback history releases the actual upstream
+response flag and observes the counter reach eight, publish its one-tick completion, then clear it.
+An additional 11-callback history supplies finite XYZ motion with a nonfinite fourth position lane;
+the original XYZ query gates pass and the actual four-lane world adapter rejects after consuming
+pending completion. All prior 44 input histories remain exact apart from the outer count. The
+complete input SHA-256 is
+`bccfdae1a4d4f21282482db33f50a5c2e75879317539c237a2d1d6b91033f823`.
+
+The native IK adapter retains its prior drive frames when IK fails, matching the original fallible
+temporary assignment. Completed canonical input/animation attributes and explicit prior retained
+State300 remain caller boundaries; world triangles and metadata are authored inputs. Contact feedback,
+query results and solver outputs are produced by the actual owners. This focused result does not
+establish every global transition, rendered bail or live Unreal recovery outcome.

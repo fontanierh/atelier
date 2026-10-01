@@ -29,6 +29,9 @@ WIPEOUT_UNITS=('WipeoutPhysicalState','WipeoutDrives','WipeoutPhysicalSettings',
 UNITS=tuple(dict.fromkeys((*reset.UNITS,*grind.ACTOR_UNITS,'WipeoutSettings','WipeoutObservations','WipeoutRuntime','PlayerStateSelector','PhysicalPhase',*WIPEOUT_UNITS)))
 BLOCKS=('shared','wipeout','settings')
 OPS={0:'completed_packets',1:'actual_reset',6:'actual_solve_feedback',10:'enter',11:'exit',12:'actual_toolkit',13:'advance',14:'output',17:'post_physics',18:'remove_toolkit',21:'explicit_initial_retained_state',22:'authored_pose_attributes',24:'invalid_imported_ik_bone',31:'authored_query_world',34:'actual_wheel_publication',35:'ragdoll_request',36:'restore_normal',37:'actual_body_initial_velocity',38:'actual_request_history',39:'actual_body_initial_position'}
+OLD_HISTORIES=43
+OLD_INPUT_BYTES=2630912
+OLD_INPUT_SHA256='2da5b3814d473f0f96011fae71c9272354970dd3704ac7edb8ac7eac06e0eb54'
 
 def source_fields(path,struct_name):
  raw=reset.source(path);body=reset.block(raw,'pub struct '+struct_name+' {')
@@ -56,7 +59,7 @@ def observers():
 def native_plan(output):
  snap,report=reset.native_plan(output)
  for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),snap/(u+'.cpp'))
- raw=(snap/'player_teleport_runtime_probe.cpp').read_text();prefix=raw[:raw.index('int main(')]
+ raw=(snap/'player_teleport_runtime_probe.cpp').read_text();prefix=grind.reset_observer_cpp(raw[:raw.index('int main(')])
  initialization=raw[raw.index(' if(argc!=6)'):raw.index(' Input i{{')]
  construction=raw[raw.index(' for(unsigned c=0;c<count;++c){')+len(' for(unsigned c=0;c<count;++c){'):raw.index('const auto rows=i.Word();')]
  construction=construction.replace('World(i)','WipeoutWorld(i)').replace('SkeletonControllerState controller;bool elapsed=false;std::uint8_t animated=0;','GroundPhaseLifecycle life;auto& controller=life.skeleton_controller;auto& elapsed=life.skeleton_elapsed_16505;auto& animated=life.board_animated_290;').replace('WipeoutRequests wipeout;','WipeoutRuntime checks;auto& wipeout=checks.state;')
@@ -87,10 +90,22 @@ pub(crate) fn migration_load(a:&std::path::Path,settings:&std::path::Path,o:&mut
 
 def reference_plan(output):
  original,observed,crate,cargo,report=reset.reference_plan(output)
+ # Local privacy/type declarations for borrowed reset observations. Neither
+ # the shared observer template nor any original production prefix is edited.
+ # Both nested appended observer modules inherit this root-module alias.
+ input_phase=crate/'src/physics/input_phase.rs';before=input_phase.read_bytes()
+ original_prefix=(original/(HOST+'input_phase.rs')).read_bytes()
+ assert before.startswith(original_prefix)
+ initial=b's.ground_runtime.retained_board_normal=[0.317,0.731,-0.137,-0.];'
+ setter=b's.ground_runtime.migration_wipeout_initial_retained_normal([0.317,0.731,-0.137,-0.]);'
+ borrowed=before[len(original_prefix):];assert borrowed.count(initial)==1
+ borrowed=borrowed.replace(initial,setter)
+ input_phase.write_bytes(original_prefix+borrowed)
+ local=dict(input_phase_before_sha256=hashlib.sha256(before).hexdigest(),input_phase_after_sha256=digest(input_phase),original_prefix_bytes=len(original_prefix),original_prefix_sha256=hashlib.sha256(original_prefix).hexdigest(),initial_assignment_sha256=hashlib.sha256(initial).hexdigest(),setter_call_sha256=hashlib.sha256(setter).hexdigest(),boundary='Declaration/access repair only in the inherited appended test fixture; exact initial four lanes unchanged. The original input_phase implementation prefix is byte-identical.')
  generated,_=reset.generated_observer();prefix=generated[generated.index('use super::*;'):generated.index('pub(super) fn run(')]
  cases=generated[generated.index(' 0=>'):generated.index(' 2=>')]
  observer=(PLUGIN/'Tests/Reference/wipeout_physical_runtime_observer.rs').read_text().replace('// GENERATED_ORIGINAL_OWNER_PREFIX',prefix).replace('// GENERATED_ORIGINAL_PACKET_RESET_CASES',cases)
- extensions={'physics/input_phase.rs':'\n'+observer,'physics.rs':'\npub(crate) fn migration_wipeout_physical_run(a:&std::path::Path,f:&std::path::Path,i:&mut crate::Input,o:&mut crate::Output)->Result<(),String>{input_phase::migration_wipeout_physical_run(a,f,i,o)}\npub(crate) fn migration_wipeout_physical_load(a:&std::path::Path,f:&std::path::Path,o:&mut crate::Output){wipeout_states::migration_load(a,f,o)}\n','physics/wipeout_states/mod.rs':RUNTIME,'physics/wipeout_states/ragdoll.rs':RAGDOLL,'physics/wipeout_states/prediction.rs':PREDICTION}
+ extensions={'physics/input_phase.rs':'\nuse crate::physics;\n'+observer,'physics/ground_runtime/mod.rs':'\nimpl GroundRuntime{pub(crate) fn migration_wipeout_initial_retained_normal(&mut self,value:[f32;4]){self.retained_board_normal=value;}}\n','physics.rs':'\npub(crate) fn migration_wipeout_physical_run(a:&std::path::Path,f:&std::path::Path,i:&mut crate::Input,o:&mut crate::Output)->Result<(),String>{input_phase::migration_wipeout_physical_run(a,f,i,o)}\npub(crate) fn migration_wipeout_physical_load(a:&std::path::Path,f:&std::path::Path,o:&mut crate::Output){wipeout_states::migration_load(a,f,o)}\n','physics/wipeout_states/mod.rs':RUNTIME,'physics/wipeout_states/ragdoll.rs':RAGDOLL,'physics/wipeout_states/prediction.rs':PREDICTION}
  hashes={}
  for rel,extra in extensions.items():
   p=crate/'src'/rel;p.write_bytes(p.read_bytes()+extra.encode());hashes[rel]=dict(original_prefix_sha256=digest(original/('crates/skate-host/src/'+rel)),generated_sha256=digest(p),append_sha256=hashlib.sha256(extra.encode()).hexdigest())
@@ -99,7 +114,7 @@ def reference_plan(output):
   p=observed/rel;p.write_bytes(p.read_bytes()+extra.encode());hashes[rel]=dict(original_prefix_sha256=digest(original/rel),generated_sha256=digest(p),append_sha256=hashlib.sha256(extra.encode()).hexdigest())
  template=PLUGIN/'Tests/Reference/wipeout_physical_runtime_probe.rs';code=(crate/'src/migration_probe.rs').read_text();code=code[:code.index('fn main()')]+observers()[1]+'\n'+template.read_text();(crate/'src/migration_probe.rs').write_text(code)
  cargo.write_text(cargo.read_text().replace('name="player-teleport-reference"','name="wipeout-physical-reference"'))
- report.update(wipeout_extensions=hashes,generated_probe_sha256=digest(crate/'src/migration_probe.rs'),observer_sha256=digest(PLUGIN/'Tests/Reference/wipeout_physical_runtime_observer.rs'),scope='Complete untouched original Wipeout300 host/core, actual stock GamePhysics/SkaterRuntime constructors, original ragdoll/IK/solve/contact/query bodies. Append-only data observations and caller/wire adapters.')
+ report.update(wipeout_extensions=hashes,wipeout_local_declaration_adapters=local,generated_probe_sha256=digest(crate/'src/migration_probe.rs'),observer_sha256=digest(PLUGIN/'Tests/Reference/wipeout_physical_runtime_observer.rs'),scope='Complete untouched original Wipeout300 host/core, actual stock GamePhysics/SkaterRuntime constructors, original ragdoll/IK/solve/contact/query bodies. Append-only data observations and caller/wire adapters.')
  return original,observed,crate,cargo,report
 
 def build_native(output):
@@ -191,6 +206,20 @@ def corpus():
   commands=setup()+[dict(op=10)]
   for request in(8,9,10,11,6,7,0,99):commands += [dict(op=35,request=request,override=override),dict(op=14)]
   commands += [dict(op=36),dict(op=11),dict(op=14)];add('full requested/effective controller transition '+str(override),commands)
+ # The continuously asserted response flag in the old pulse histories resets
+ # response_frames every six updates. Clear that real upstream publication
+ # after one trigger so the unchanged counter can reach eight and then clear
+ # its one-tick completion. No retained state or completed result is supplied.
+ commands=setup(response=0x100)+[dict(op=10)]+[dict(op=13)]*6
+ commands += [packet(response=0,timer=6/60)]+[dict(op=13)]*8
+ commands += [dict(op=14),dict(op=13),dict(op=14)]
+ add('one actual response pulse completes after upstream release',commands,[])
+ # The original query gates use XYZ only, while the host line adapter validates
+ # all four lanes. Keep finite XYZ motion and make only the supplied position W
+ # nonfinite, so the actual line callback rejects after consuming completion.
+ commands=setup(velocity=(0.,-2.,0.,0.),position=(0.,.37,0.,0.))+[dict(op=10)]+tick()
+ commands += [packet(velocity=(0.,-2.,0.,0.),position=(0.,.37,0.,float('inf')),timer=1/60)]+tick()
+ add('actual nonfinite fourth position lane reaches line after consuming completion',commands)
  w=Stream();w.word(len(cases))
  for case in cases:
   write_world(w,case['world']);w.word(len(case['commands']))
@@ -226,7 +255,13 @@ def corpus():
    elif op==38:w.word(cmd['reason']);w.float(cmd['value'])
    elif op==39:
     for v in cmd['delta']:w.float(v)
- return bytes(w.data),cases
+ raw=bytes(w.data)
+ # All prior worlds, commands and per-history framing remain byte-for-byte
+ # identical. The sole old-prefix change is the outer history count word.
+ preserved=struct.pack('<I',OLD_HISTORIES)+raw[4:OLD_INPUT_BYTES]
+ assert len(cases)==OLD_HISTORIES+2 and hashlib.sha256(preserved).hexdigest()==OLD_INPUT_SHA256
+ assert hashlib.sha256(struct.pack('<I',44)+raw[4:2644960]).hexdigest()=='bfd8cc6e3cc2141145b412bc32ae08d84bb4e98b7c3c990250a3458af79f72f8'
+ return raw,cases
 
 class Reader(grind.Reader):
  def state(self):
@@ -251,6 +286,7 @@ def shared(words):
 
 def coverage(frames,cases):
  counts=Counter();errors=Counter();profiles=set();phases=set();controllers=set();real_material=Counter();pending=0;hits=0;misses=0;below=0;retained=0;finished=0;countdown=set();partial=0;enter=0;exit=0;normal=0;writes=0;resets=0
+ response_progress=[];response_outputs=[]
  for rows,case in zip(frames,cases):
   for row,cmd in zip(rows,case['commands']):
    counts[OPS[cmd['op']]]+=1;errors.update([row['error']]if row['error']else[]);s,a,b,q,p=owner(row['state']['wipeout']);old=owner(row['previous']['wipeout']);same=shared(row['state']['shared']);before=shared(row['previous']['shared'])
@@ -267,6 +303,16 @@ def coverage(frames,cases):
     assert s['prevent_manual']==0;assert same['collision']==before['collision'];exit+=1
    if cmd['op']==36:normal+=same['collision']!=before['collision']
    if cmd['op']==10 and b[-1]:resets+=1
+   if case['index']==OLD_HISTORIES:
+    assert not row['error'],row['error']
+    assert cmd['op'] not in(21,24)
+    if cmd['op']==13:response_progress.append((s['response_frames'],s['response_finished']))
+    if cmd['op']==14:
+     output=protocol.Reader(struct.pack('<'+'I'*len(row['extra']),*row['extra']))
+     values={f:output.value(k,{})for f,k in schemas()['Output']}
+     assert output.at==len(output.data)
+     assert values['response_change_588']==(s['response_change']if s['response_finished']else None)
+     response_outputs.append(values['response_change_588'])
  assert set(range(5))<=profiles,profiles
  assert {0,1,2,3,4}<=phases,phases
  assert real_material['material_10']>0 and real_material['material_11']>0 and real_material['material_12']>0,real_material
@@ -276,7 +322,10 @@ def coverage(frames,cases):
  assert errors['Wipeout board force requires the current BoardToolkit']>0 and errors['IK original joint is absent from the current pose']>0,errors
  assert errors['Non-finite trajectory collision request or invalid radius']>0,errors
  assert partial>0 and enter>0 and exit>0 and normal>0 and writes>0 and resets>0,(partial,enter,exit,normal,writes,resets)
- return dict(operations=dict(counts),errors=dict(errors),profiles=sorted(profiles),material10_phases=sorted(phases),effective_controllers=sorted(controllers),real_solved_material_frames=dict(real_material),pending_predictions=pending,real_query_hits=hits,real_query_misses=misses,below_surface_frames=below,retained_velocity_frames=retained,response_finished_frames=finished,teleport_countdowns=sorted(countdown),partial_failure_writes=partial,successful_enters=enter,exits=exit,actual_restore_normal_writes=normal,solved_body_writes=writes,material11_active_preserved_on_enter=resets)
+ assert [v[0]for v in response_progress]==[0xffffffff]*5+[0]+list(range(1,8))+[0xffffffff]*2,response_progress
+ assert [v[1]for v in response_progress]==[0]*13+[1,0],response_progress
+ assert len(response_outputs)==2 and response_outputs[0]is not None and response_outputs[1]is None,response_outputs
+ return dict(operations=dict(counts),errors=dict(errors),profiles=sorted(profiles),material10_phases=sorted(phases),effective_controllers=sorted(controllers),real_solved_material_frames=dict(real_material),pending_predictions=pending,real_query_hits=hits,real_query_misses=misses,below_surface_frames=below,retained_velocity_frames=retained,response_finished_frames=finished,actual_response_counter_progress=response_progress,response_completion_outputs=response_outputs,preserved_histories=OLD_HISTORIES,preserved_input_sha256=OLD_INPUT_SHA256,teleport_countdowns=sorted(countdown),partial_failure_writes=partial,successful_enters=enter,exits=exit,actual_restore_normal_writes=normal,solved_body_writes=writes,material11_active_preserved_on_enter=resets)
 
 def feedback_flags(collision):
  # The independent accepted collision observer ends with collision_flags. Its
@@ -313,6 +362,7 @@ def check_settings(output,path,physics_native,identity,assets,native,reference):
   v=copy.deepcopy(independent)
   for later in queries[at:]:stock.mutate(v,later,dict(type='EA::Reflection::Int32',data='00000000')if later[3]in('float','bool')else dict(type='EA::Reflection::Float',data='00000000'))
   fixtures.append(v);labels.append('first-failed '+str(q))
+ output.mkdir(parents=True,exist_ok=True)
  folder=stock.prepare_fixtures(output,fixtures,path);errors=Counter();records=[]
  for n,label in enumerate(labels):
   expected=subprocess.check_output([str(reference),str(assets),str(folder/str(n)),'--settings-only']);actual=subprocess.check_output([str(native),str(folder/str(n)/'settings.native'),str(physics_native),identity,'--settings-only'])

@@ -22,7 +22,7 @@ pub(super) fn run(assets:&std::path::Path,fixtures:&std::path::Path,i:&mut Input
  35=>{let request=i.word();s.ground_lifecycle.skeleton_controller.override_enabled=i.word()!=0;s.wipeout_state.ragdoll.request(&mut s.ground_lifecycle.skeleton_controller,request,&mut s.skeleton,&mut s.skeleton_joints,&mut s.skeleton_collision)},
  36=>{s.wipeout_state.ragdoll.restore_normal(&mut s.skeleton,&mut s.skeleton_joints,&mut s.skeleton_collision,&mut s.collision_feedback);Ok(())},
  37=>{let part=i.word()as usize;let v=i.floats::<3>();s.skeleton.bodies_mut()[part].rates.linear_velocity=Vector3::new(v[0],v[1],v[2]);Ok(())},
- 38=>{s.wipeout.state.request(i.word(),i.float());Ok(())},
+ 38=>{s.wipeout.state.request(i.word()as usize,i.float());Ok(())},
  39=>{let v=i.floats::<3>();for part in s.skeleton.bodies_mut(){part.rates.position.x+=v[0];part.rates.position.y+=v[1];part.rates.position.z+=v[2];}s.skeleton.publish_physical_record(super::super::solve::deck_frame(&p.board));Ok(())},
  _=>panic!("wipeout physical operation")};c=collision(&s);o.status(result);o.word(extra.len()as u32);o.0.extend(extra);live_snapshot(o,&p,&s,&c,teleported,&actions);
  }
