@@ -1101,3 +1101,16 @@ dependencies and exactly the 21 new or updated production sources. Completed
 physical publications are explicit caller inputs; their upstream producers, the
 full shared physical frame and complete gameplay sessions remain separate work.
 This commit does not switch the playable game's Rust backend.
+
+### Native PostInput kernel
+
+The complete `RunPostInput` kernel retains wrapping counters, jump-reference
+copy, source flag latches, candidate registration order and staged publication.
+`CopyGrabRecord` preserves the original unmodified padding and masked bits.
+The complete unchanged original core and C++ match over 96 retained histories,
+33,120 commands and 5,801,092 output bytes (SHA256
+`5b20a30913570a5a764cfeeef2bc11137b75dd9ba08237f7e6aaaa62f8761c79`).
+Coverage includes 30,720 ordered passes, 2,400 record copies, 324 distinct latch
+lifetimes and 13 unsigned counter wraps. Independent grind, trajectory and
+heading service results are explicit upstream inputs in this kernel proof;
+the actual host producers and frame coordinator need their connected comparison.
