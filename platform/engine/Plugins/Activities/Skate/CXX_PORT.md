@@ -195,6 +195,17 @@ including consumed request flags, signal hashing and retained matrix tails.
 
 ## Validation completed
 
+`GroundControlSettings.*` loads the immutable native manual, propulsion, linear-drag, speed-model and
+wall-ride settings before gameplay tuning. The six leaf loaders preserve the original first failed read,
+numeric aliases, inheritance and diagnostic strings; successful output is published only after the whole
+leaf loads. The surface selector requires the original normalized modes 1 through 5.
+`Tests/check_ground_control_settings_parity.py` compares verbatim frozen host binding expressions and
+unchanged Collections readers with the native loaders: 522 loads over 355 fixtures and all 25 stock
+mode/surface combinations, producing 47,476 identical bytes. It covers every first failed field,
+missing/type/nonfinite/size/bool/curve failures, numeric aliases, inheritance cycles and retained text
+payloads with malformed hex or Unicode whitespace. Invalid raw JSON and numeric hex are a conversion
+boundary; full profile ordering, trainer tuning and gameplay scheduling remain separate work.
+
 On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 
 - Gesture data and recognizer: all 285 patterns, 13,722 cases, 551,088 input records and 47,908 matches;
