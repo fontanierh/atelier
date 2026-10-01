@@ -59,8 +59,8 @@ the mini-mega ramp, the temple, the foothills and the plaza (whose volcano view 
 `python games/yorimichi/scenarios/megapark_tour.py plan` prints the camera path of the park's
 presentation film and its clearance from the park, the ground and the tree crowns;
 `film <label>` shoots it in a guarded game (`--preview` for a quick 960x540 pass) and `cut <label>`
-makes `build/yorimichi/megapark/tour/<label>.mp4`: over the west hills, through the canopy, the
-roll-in and the drop, the canyon, the snake bowl, the bowls, the 寄り道 letters and an aerial
+makes `build/yorimichi/megapark/tour/<label>.mp4`: over the west hills, through the canopy, down
+the roll-in behind a rider's line, the canyon, the snake bowl, the bowls, the 寄り道 letters and an aerial
 pull-back toward the volcano.
 
 ## Restyle
