@@ -22,9 +22,11 @@ This page is the current state and an index. Updated 24 September 2026. Details 
 - the hidden [tree house](../world/regions/treehouse/README.md) on the west hillside: one small hut seen from the
   trail, then ten places in the canopy joined by twelve rope bridges, with furnished rooms, a slide and a lookout
   ([plan](TREEHOUSE_PLAN.md), [items](TREEHOUSE_ITEMS.md))
+- the Skate 3 [Super Ultra Mega Park](MEGAPARK.md) in the western foothills, reached by a forest trail from the woodland
+  air station or by the zeppelin
 
 Ways to get around besides walking: a playable [sailboat](sailboat/README.md) and the
-[zeppelin](docs/zeppelin/README.md) between the woodland and Hidamari. Ambient life: leaves, gulls and
+[zeppelin](../world/regions/zeppelin/README.md) between the woodland, Hidamari and the Mega Park. Ambient life: leaves, gulls and
 villagers.
 
 **Player: Cairo**, revision `game-r17`. Assets are in

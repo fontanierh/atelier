@@ -177,7 +177,14 @@ void AJapanHUD::DrawHUD()
         if (Pawn->IsZeppelinPassenger())
             Secondary+=FString::Printf(TEXT("   %s flight speed"),ControllerStyle==2?TEXT("L1 / R1"):ControllerStyle==3?TEXT("L / R"):TEXT("LB / RB"));
     }
-    if(Pawn->GetZeppelin()) { const FString Hint=Pawn->GetZeppelin()->Hint(Pawn);if(!Hint.IsEmpty())Controls=Hint.Replace(TEXT("Use"),bController?TEXT("D-pad Down"):TEXT("E")); }
+    if(const AZeppelinService* Zeppelin=Pawn->GetZeppelin())
+    {
+        const FString Hint=Zeppelin->Hint(Pawn);
+        if(!Hint.IsEmpty())Controls=Hint.Replace(TEXT("Use"),bController?TEXT("D-pad Down"):TEXT("E"));
+        // The flight speed buttons choose the stop before boarding.
+        if(Zeppelin->CanChooseStop(Pawn))
+            Controls+=FString::Printf(TEXT("   %s change stop"),!bController?TEXT("[ / ]"):ControllerStyle==2?TEXT("L1 / R1"):ControllerStyle==3?TEXT("L / R"):TEXT("LB / RB"));
+    }
     const USkateComponent* Ride=Pawn->GetSkate();
     const bool bRide=Ride && Ride->IsRiding();
     if (!bRide && !bSailboat && !Pawn->IsZeppelinPassenger() && Ride && Ride->IsAvailable())

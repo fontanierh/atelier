@@ -140,11 +140,13 @@ def main():
     if os.path.exists(os.path.join(OUT,"hidamari","city.json")):
         from hidamari.layout import backdrop_grid,north_height
         from hidamari.mountains import contains
+        from megapark.trail import in_approach
         FZ=backdrop_grid().copy()
         # The detailed northern surface replaces this coarse, textured backdrop.
         # Cover the entire replacement footprint, including the final coarse row.
         # The old inset rectangle exposed a tall pale wall at the northern edge.
-        mask=contains(FX,FY)
+        # So does the Mega Park trail's approach ground north of the square (megapark/trail.py).
+        mask=contains(FX,FY)|in_approach(FX,FY)
         FZ[mask]=np.minimum(FZ[mask],north_height(FX,FY)[mask]-25)
     fverts = [(float(FX[j, i]), float(FY[j, i]), float(FZ[j, i])) for j in range(fn) for i in range(fn)]
     ffaces = [(j * fn + i, j * fn + i + 1, (j + 1) * fn + i + 1, (j + 1) * fn + i) for j in range(fn - 1) for i in range(fn - 1)]

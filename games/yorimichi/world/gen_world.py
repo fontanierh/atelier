@@ -337,6 +337,9 @@ clear_torii_vegetation(world)
 from treehouse.layout import integrate as integrate_treehouse
 integrate_treehouse(world, H)
 houses_layout.clear_and_dress(world, sample_h)
+# The Mega Park trail leaves the woodland air station's footpath north, over the far hills' shoulder to the park.
+from megapark.trail import integrate as integrate_park_trail
+integrate_park_trail(world, H)
 # The Mega Park's crowns replace the far forest's painted cards on the hills west of it (after the tree house's draws).
 from megapark.forest import clear_far_forest
 clear_far_forest(world)
