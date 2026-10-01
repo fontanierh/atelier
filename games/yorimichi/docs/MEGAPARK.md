@@ -92,6 +92,34 @@ into a BS Grab about 11 m over the pool's north-west quarter, and takes that qua
 Kickflip. `scenarios/megapark_access_film_mix.py` builds its soundtrack (game sounds, a synthesized
 airship drone and wind, the ambience) and the 1080p MP4. Both docstrings give the commands.
 
+## Seam
+
+Where the park meets the air station's footbridge, the gate's rock used to end in a drop to the pit
+the left-out hills had covered, and the island's forest floor showed through as a hole. The park
+keeps that piece of them (`placement.SEAM`): the earth hillside between the rock and the old road
+and the concrete wall that held it above the road (three render parts of one source model), and
+the 333 collision triangles of their section that lie on them (`seam_mask`, within 25 cm of the
+render surface). The park's own frame and transform leave the seam out, so the park stays where it
+was.
+
+- **Skirt.** Wherever the hillside stops in the air, a skirt of its own earth or concrete hangs
+  45 m under the edge and faces outward, so no edge shows the void from any side
+  (`placement.seam_skirt`, 33 edges). Edges shared with the park or the rest of the seam, and
+  walls' tops, get none. The skirt is in the seam's render and collision meshes.
+- **Terrain.** The terrain stamp counts the seam as part of the footprint: under it the ground
+  stays below its lowest surface within one terrain cell, so the hillside
+  meets the island ground along its edges. The eased skirt round the park still starts from the
+  park's own rim, so the ground past the seam, the air station's pad and the footpath are unchanged.
+- **Plants.** `plants.seam()` plants the hillside by the ledge rules (forest on the earth, shrubs at
+  the wall's foot) and lays rocks where the earth meets the concrete. Where the hillside meets the
+  station's clearing, `forest.py` grows a denser undergrowth of ochre bushes, red shrub maples,
+  grass, leaves and a few rocks, as in the Sunburst concept `assets/megapark/concepts/seam-gate`;
+  only that undergrowth comes closer to the park than the 4 m `hidamari/layout.py` clears.
+
+The park build writes the seam as `SM_MP_Seam` and `UC_MP_Seam` with the island's meshes in
+`park.json`; `import_megapark.py` imports them, but the standalone level stays the parity reference
+without them.
+
 ## Restyle
 
 In the island the park keeps every ridden surface, rail and collision triangle, and wears the
@@ -134,9 +162,20 @@ island's look instead of the original desert campus. Concepts painted with Sunbu
   them from a Black instance of the island's Noto Sans JP and swaps their collision: the 2,172
   triangles of the old letters leave their section and the new letters' 2,008 take their place.
   No rail ran on the letters.
+- **Cars.** The car park's four photo-textured traffic cars (two sedans, an SUV and a sports car)
+  leave the park build (`world/regions/megapark/cars.py`), and so do their 762 collision
+  triangles; the bays' ground stays. Four kei cars, from the Sunburst sheet
+  `assets/megapark/concepts/kei-sheet` and the car park painting `kei-carpark`, take their bays:
+  a sage pickup with a crate and a board in its bed, an ochre and cream wagon, a vermilion retro
+  car with a cream roof, and an indigo microvan with two boards on its roof rack. They are built
+  in Blender with flat vertex colours, like the village props (`assets/vehicles/kei/build.py`,
+  the `world.kei` and `unreal.kei` steps). `cars.py` stands each on a plane fitted to its bay's
+  ground. `park.json` lists them as props, and `ASuperUltraMegaPark::Spawn` places them with
+  their box collision, so Cairo walks round them and the board stops against them.
 
-`verify_import.py` checks every built triangle against the source with the plants left out and
-the letters swapped; every other render and collision triangle must still match exactly.
+`verify_import.py` checks every built triangle against the source with the plants and cars left
+out, the letters swapped and the seam added (its parts, its collision triangles and the skirt);
+every other render and collision triangle must still match exactly.
 
 ## What is bundled
 

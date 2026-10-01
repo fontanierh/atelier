@@ -3,14 +3,16 @@
 Run with Blender. There is no game-data decoder in this stage. Render geometry
 and authoritative riding collision stay separate, and neither is simplified.
 The restyle (docs/MEGAPARK.md) leaves out the desert plants (plants.py) and
-turns the SHARKS letters into 寄り道 (sign.py); every other triangle is kept.
+the traffic cars (cars.py) and turns the SHARKS letters into 寄り道 (sign.py);
+every other triangle is kept. The seam (placement.py) gives the park in the
+island a piece of the source's hills, with a skirt under its open edges.
 """
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
-from megapark import placement, plants, sign
+from megapark import cars, placement, plants, sign
 
 import bpy
 import bmesh
@@ -93,6 +95,78 @@ def export_mesh(name, vertices, faces, materials, face_materials, channels=None,
         'vertices': len(vertices), 'triangles': len(faces), 'materials': materials}
     bpy.data.meshes.remove(data, do_unlink=True)
     return result
+
+
+def channels(arrays, i, v, f):
+    """(normals, uvs, lightmap uvs, decal uvs) of source part i with vertices v and faces f."""
+    n = arrays.get(f'retail_normals_{i}', arrays.get(f'normals_{i}'))
+    if n is None:
+        n = np.zeros_like(v)
+        face_normals = np.cross(v[f[:,1]]-v[f[:,0]], v[f[:,2]]-v[f[:,0]])
+        for corner in range(3):
+            np.add.at(n, f[:,corner], face_normals)
+    n = n/np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-20)
+    uv = arrays.get(f'uvs_{i}', np.zeros((len(v),2), dtype='f4'))
+    return n, uv, np.abs(arrays.get(f'lightmap_uvs_{i}', uv)), arrays.get(f'decal_uvs_{i}', uv)
+
+
+def export_seam(source, report):
+    """The seam (placement.SEAM, docs/MEGAPARK.md "Seam"): its parts and the skirt under their open edges as one
+    render mesh, its collision triangles and the skirt as one collision mesh. Only the island places them."""
+    models = {m['asset_id']: m for m in source['models']}
+    skirt = {}
+    for asset, i, a, b, out in placement.seam_skirt():
+        skirt.setdefault((asset, i), []).append((a, b, out))
+    drop = np.array([0., placement.SKIRT_DROP, 0.])
+    vertices, faces, normals, uvs, lightmaps, decals, material_indices, slots = [], [], [], [], [], [], [], []
+    offset = 0
+    for asset, i, _, f in placement.seam_parts():
+        part = next(p for p in models[asset]['meshes'] if p['index'] == i)
+        key = material_key(part)
+        if key not in slots:
+            slots.append(key)
+        report['materials'].setdefault(key, part)
+        with np.load(SOURCE / models[asset]['npz'], allow_pickle=False) as arrays:
+            v = arrays[f'vertices_{i}']
+            n, uv, lightmap, decal = channels(arrays, i, v, f)
+        vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
+        normals.append(n); uvs.append(uv); lightmaps.append(lightmap); decals.append(decal)
+        offset += len(v)
+        # The skirt: a, b, b', a' under each open edge, its texture running on past the edge (away from the face) at the
+        # part's own density, the lightmap's edge texels drawn down with it, and a level normal facing out.
+        t = v[f].astype('f8'); q = uv[f].astype('f8')
+        world = np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1)
+        texels = np.abs(np.cross(q[:,1]-q[:,0], q[:,2]-q[:,0]))
+        density = float(np.median(np.sqrt(texels[world > 1e-6]/world[world > 1e-6])))
+        third = {(int(face[k]), int(face[(k+1) % 3])): int(face[(k+2) % 3]) for face in f for k in range(3)}
+        for a, b, out in skirt.get((asset, i), ()):
+            o = third.get((a, b), third.get((b, a)))
+            along = (uv[b]-uv[a]).astype('f8')
+            across = np.array([-along[1], along[0]])/max(np.linalg.norm(along), 1e-9)
+            if np.dot(across, uv[o]-uv[a]) > 0:
+                across = -across
+            down = across*placement.SKIRT_DROP*density
+            vertices.append(np.stack([v[a], v[b], v[b]-drop, v[a]-drop]).astype(v.dtype))
+            faces.append(np.array([[0, 1, 2], [0, 2, 3]])+offset); material_indices.extend([slots.index(key)]*2)
+            normals.append(np.tile([out[0], 0., out[1]], (4, 1)))
+            uvs.append(np.stack([uv[a], uv[b], uv[b]+down, uv[a]+down]).astype(uv.dtype))
+            lightmaps.append(lightmap[[a, b, b, a]]); decals.append(decal[[a, b, b, a]])
+            offset += 4
+    render = export_mesh('SM_MP_Seam', np.concatenate(vertices), np.concatenate(faces), slots, material_indices,
+        {'UVMap': np.concatenate(uvs), 'RetailLightmap': np.concatenate(lightmaps), 'RetailDecal': np.concatenate(decals)},
+        np.concatenate(normals))
+    render['seam_parts'] = {asset: list(parts) for asset, parts in placement.SEAM.items()}
+    render['skirt_edges'] = len(placement.seam_skirt())
+    section = next(c for c in source['collision'] if c['id'] == placement.SEAM_SECTION)
+    with np.load(SOURCE / section['npz'], allow_pickle=False) as arrays:
+        triangles = arrays['triangles']
+    kept = np.concatenate([triangles[placement.seam_mask()], placement.skirt_triangles().astype(triangles.dtype)])
+    vertices = kept.reshape(-1, 3)
+    collision = export_mesh('UC_MP_Seam', vertices, np.arange(len(vertices), dtype='u4').reshape(-1, 3), ['M_Collision'],
+        np.zeros(len(kept), dtype='i4'))
+    collision['source_id'] = section['id']; collision['seam_triangles'] = int(placement.seam_mask().sum())
+    collision['one_sided'] = bool(section['mesh_flags'] & 0x10)
+    return [render, collision]
 
 
 def letters():
@@ -208,9 +282,10 @@ def island_runs(points):
 
 
 def write_island(report):
-    """The park in the island for ASuperUltraMegaPark::Spawn (docs/MEGAPARK.md, "Placement" and "Restyle"): the actor
-    transform, the park's own render and collision meshes at their native origins, every grind path, the upper deck
-    start and the island trees that replace the original plants ([x, y, z cm, yaw, scale] in the park's frame)."""
+    """The park in the island for ASuperUltraMegaPark::Spawn (docs/MEGAPARK.md, "Placement", "Seam" and "Restyle"):
+    the actor transform, the park's own render and collision meshes and the seam's at their native origins, every grind
+    path, the upper deck start, the island trees that replace the original plants ([x, y, z cm, yaw, scale] in the
+    park's frame) and the kei cars that replace its traffic cars (props: mesh, location, forward and up)."""
     models, sections = placement.kept()
     render = {'SM_MP_' + m['asset_id'][2:] for m in models}
     collision = {'UC_MP_' + c['id'] for c in sections}
@@ -223,9 +298,12 @@ def write_island(report):
         'rails': [{'id': r['id'] + suffix, 'closed': r['closed'] and not suffix, 'points_cm': [ue(p) for p in points]}
                   for r in report['rails'] for suffix, points in island_runs(r['points'])],
         'spawn': {'location_cm': placement.to_unreal(spawn['position']).tolist(), 'yaw_deg': spawn['heading_degrees'] + t['yaw_deg']},
-        'trees': {name: [ue(p[:3]) + p[3:] for p in items] for name, items in plants.trees().items()}}
+        'trees': {name: [ue(p[:3]) + p[3:] for p in items] for name, items in plants.trees().items()},
+        'props': cars.props()}
     assert len(island['render']) + len(render & set(report['foliage_only'])) == len(render)
     assert len(island['collision']) == len(collision)
+    for e in report['seam']:
+        island['collision' if e['name'].startswith('UC_') else 'render'].append({'name': e['name'], 'origin_cm': ue(e['native_origin'])})
     (OUT / 'park.json').write_text(json.dumps(island) + '\n')
 
 
@@ -243,13 +321,17 @@ def main():
     for model in source['models']:
         assert sha(SOURCE/model['npz']) == model['sha256'], model['npz']
         vertices, faces, normals, uvs, lightmaps, decals, material_indices, slots = [], [], [], [], [], [], [], []
-        offset = 0; degenerates = 0; foliage = 0
+        offset = 0; degenerates = 0; foliage = 0; car = 0
         with np.load(SOURCE / model['npz'], allow_pickle=False) as arrays:
             for part in model['meshes']:
                 i = part['index']; v = arrays[f'vertices_{i}']; f = arrays[f'faces_{i}']
                 if plants.is_foliage(part):
                     # The desert plants give way to island trees, planted by the park actor (write_island).
                     foliage += len(f)
+                    continue
+                if cars.is_car(model, part):
+                    # The traffic cars give way to the kei cars, parked by the park actor (write_island).
+                    car += len(f)
                     continue
                 if sign.is_letters(model, part):
                     v, f, n, uv = new_letters
@@ -271,18 +353,8 @@ def main():
                     slots.append(key)
                 report['materials'].setdefault(key, part)
                 vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
-                n = arrays.get(f'retail_normals_{i}', arrays.get(f'normals_{i}'))
-                if n is None:
-                    n = np.zeros_like(v)
-                    face_normals = np.cross(v[f[:,1]]-v[f[:,0]], v[f[:,2]]-v[f[:,0]])
-                    for corner in range(3):
-                        np.add.at(n, f[:,corner], face_normals)
-                n = n/np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-20)
-                normals.append(n)
-                uv = arrays.get(f'uvs_{i}', np.zeros((len(v),2), dtype='f4'))
-                uvs.append(uv)
-                lightmaps.append(np.abs(arrays.get(f'lightmap_uvs_{i}', uv)))
-                decals.append(arrays.get(f'decal_uvs_{i}', uv))
+                n, uv, lightmap, decal = channels(arrays, i, v, f)
+                normals.append(n); uvs.append(uv); lightmaps.append(lightmap); decals.append(decal)
                 offset += len(v)
         if not vertices:
             if foliage:
@@ -293,6 +365,8 @@ def main():
         entry['source_asset_id'] = model['asset_id']
         entry['degenerate_faces_removed'] = degenerates
         entry['foliage_faces_removed'] = foliage
+        if car:
+            entry['car_faces_removed'] = car
         report['render'].append(entry)
         print('Exported', entry['name'], flush=True)
     for mesh in source['collision']:
@@ -307,12 +381,17 @@ def main():
             if mesh['id'] == sign.SECTION:
                 # SHARKS gives way to 寄り道, solid like the letters it replaces (sign.py).
                 kept = np.concatenate([kept[~sign.letters_mask(kept)], new_letters[0][new_letters[1]].astype(kept.dtype)])
+            car = cars.collision_mask(kept) if mesh['id'] == cars.SECTION else np.zeros(len(kept), bool)
+            kept = kept[~car]     # the kei cars bring their own collision
             vertices = kept.reshape(-1,3)
             faces = np.arange(len(vertices), dtype='u4').reshape(-1,3)
             entry = export_mesh('UC_MP_'+mesh['id'], vertices, faces, ['M_Collision'], np.zeros(len(faces), dtype='i4'))
             entry['source_id'] = mesh['id']; entry['degenerate_faces_removed'] = int((~valid).sum())
+            if car.any():
+                entry['car_faces_removed'] = int(car.sum())
             entry['one_sided'] = bool(mesh['mesh_flags'] & 0x10)
             report['collision'].append(entry)
+    report['seam'] = export_seam(source, report)
     report['rails'] = [sample_rail(rail) for rail in source['rails']]
     # Seed the existing FBX factory's safe reimport route with a clean triangle.
     export_mesh('SM_MP_ImportSeed', np.asarray([[0,0,0],[1,0,0],[0,0,1]], dtype='f4'),

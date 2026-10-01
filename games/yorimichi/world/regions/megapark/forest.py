@@ -58,6 +58,14 @@ FLOOR = 650.                    # metres: the forest floor's colour fades into t
 # Undergrowth where the forest meets the park: bushes, and grass tufts closest in.
 UNDER = dict(bush=(55., 2.2, .5), grass=(30., 1.6, .55))   # (reach from the footprint, spacing, density)
 BUSHES = (('Bush_Green_A', .3), ('Bush_Green_B', .2), ('Bush_Ochre_A', .25), ('Bush_Ochre_B', .15), ('Bush_Flower_A', .1))
+# The seam (placement.SEAM) meets the forest floor in the air station's clearing, which the station's own clearance
+# leaves bare: there the ground gets a denser undergrowth like the concept (assets/megapark/concepts/seam-gate), ochre
+# bushes, red shrub maples, grass, fallen leaves and a few rocks, within REACH metres of the footprint in BOX.
+SEAM_DRESS = dict(box=(-250., 1365., -130., 1500.), reach=18., spacing=1.5, density=.75, seed=1302)
+SEAM_PLANTS = (('Bush_Ochre_A', .17, (.8, 1.4)), ('Bush_Ochre_B', .12, (.8, 1.3)), ('Bush_Green_A', .08, (.8, 1.3)),
+               ('Tree_Maple_B', .08, (.3, .5)), ('Grass_A', .19, (.8, 1.2)), ('Grass_B', .17, (.8, 1.2)),
+               ('Litter', .11, (.9, 1.4)), ('Rock_B', .05, (.5, 1.)), ('Rock_A', .03, (.4, .8)))
+SINK = {'Bush': .15, 'Tree': .3, 'Grass': .08, 'Litter': -.02, 'Rock': .35}   # metres under the ground, Rock per scale
 SEED = 1300
 
 
@@ -162,7 +170,49 @@ def grow(instances, height, trail_distance):
                                                    round(float(ground) - (.15 if kind == 'bush' else .08), 3),
                                                    round(float(rng.uniform(0, 360)), 1), round(float(size), 3)])
             done[name] = done.get(name, 0) + 1
+    _dress_seam(instances, height, trunks, done)
     return done
+
+
+def seam_undergrowth(name, x, y):
+    """Whether instances of `name` at (x, y) are undergrowth by the seam, which comes within a metre of the park
+    (hidamari/layout.py keeps everything else 4 m off it)."""
+    x, y = np.asarray(x, 'f8'), np.asarray(y, 'f8')
+    if not name.startswith(('Bush', 'Grass', 'Litter', 'Rock')):
+        return np.zeros(x.shape, bool)
+    x0, y0, x1, y1 = SEAM_DRESS['box']
+    box = (x > x0) & (x < x1) & (y > y0) & (y < y1)
+    out = np.zeros(x.shape, bool)
+    if box.any():
+        out[box] = distance(x[box], y[box]) > .5
+    return out
+
+
+def _dress_seam(instances, height, trunks, done):
+    """The undergrowth where the seam meets the forest floor (SEAM_DRESS), off the air station's pad."""
+    from zeppelin.layout import PARK_PAD
+    rng = np.random.default_rng(SEAM_DRESS['seed'])
+    p = _grid(rng, SEAM_DRESS['box'], SEAM_DRESS['spacing'])
+    d = distance(p[:, 0], p[:, 1])
+    patch = .5 + .5 * np.sin(p[:, 0] * .13 + np.sin(p[:, 1] * .11) * 2.) * np.sin(p[:, 1] * .12 + np.sin(p[:, 0] * .09))
+    x0, y0, x1, y1 = PARK_PAD
+    pad = (p[:, 0] > x0 - 3) & (p[:, 0] < x1 + 3) & (p[:, 1] > y0 - 3) & (p[:, 1] < y1 + 3)
+    keep = (d > .5) & ~pad & (rng.random(len(p)) < SEAM_DRESS['density'] * (.35 + .65 * patch)
+                              * (1 - _smooth((d - SEAM_DRESS['reach'] * .6) / (SEAM_DRESS['reach'] * .4))))
+    p, d = p[keep], d[keep]
+    z = np.asarray(height(p[:, 0], p[:, 1]), 'f8')
+    weights = np.array([w for _, w, _ in SEAM_PLANTS])
+    shrubs = weights * np.array([not name.startswith('Tree') for name, _, _ in SEAM_PLANTS])   # trees keep CLEAR
+    for q, ground, far in zip(p, z, d > CLEAR):
+        if _near(trunks, q, 1.1, 4):
+            continue
+        w = weights if far else shrubs
+        name, _, scale = SEAM_PLANTS[rng.choice(len(SEAM_PLANTS), p=w / w.sum())]
+        size = rng.uniform(*scale)
+        sink = next(s for k, s in SINK.items() if name.startswith(k)) * (size if name.startswith('Rock') else 1)
+        instances.setdefault(name, []).append([round(float(q[0]), 3), round(float(q[1]), 3), round(float(ground - sink), 3),
+                                               round(float(rng.uniform(0, 360)), 1), round(float(size), 3)])
+        done[name] = done.get(name, 0) + 1
 
 
 def _clump(x, y, edges=CLUMPS):

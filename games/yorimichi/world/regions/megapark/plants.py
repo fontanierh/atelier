@@ -70,6 +70,9 @@ LEDGE_SHRUBS = ([('Tree_Maple_B', 5), ('Tree_Pine_B', 2), ('Bush_Ochre_A', 1), (
 # read pale yellow against the rock.
 SHRUB_SCALE = {'Tree_Maple_B': (.3, .45), 'Tree_Pine_B': (.18, .28)}
 BUILT_CLEAR = (6., 1.4)         # metres from any built surface (concrete, wood, paint, metal) for a tree, a shrub
+# The seam's rocks (seam()): meshes, scale range, rocks per square metre tried, the least gap between two, and the band
+# of distance from the concrete they lie in (metres).
+SEAM_ROCKS = (('Rock_A', 'Rock_B', 'Rock_C'), (.55, 1.1), 1 / 18., 3.5, (1.2, 6.))
 # The rock is ridden too, so the plants on it keep off the lines: the grind rails and copings (the source's rail
 # splines) and the roll-in from the deck spawn (native x, z; the points tools/review_megapark.py probes). Metres in
 # plan, and the height band a rail clears.
@@ -156,10 +159,11 @@ def plants():
 
 
 def trees():
-    """Every plant of the park: the replacements and the ledge plants, {mesh: [[x, y, z, yaw, scale], ...]}."""
+    """Every plant of the park: the replacements, the ledge plants and the seam's, {mesh: [[x, y, z, yaw, scale], ...]}."""
     out = {name: list(rows) for name, rows in replacements().items()}
-    for name, rows in ledges().items():
-        out.setdefault(name, []).extend(rows)
+    for group in (ledges(), seam()):
+        for name, rows in group.items():
+            out.setdefault(name, []).extend(rows)
     return out
 
 
@@ -185,26 +189,29 @@ def replacements(seed=11):
     return out
 
 
-def _surfaces():
+def _surfaces(seam=False):
     """(natural, built): natural up-facing triangles as (kind, triangle, up) lists, and points on every other opaque
-    surface of the kept park, all native metres (y up)."""
-    models, _ = placement.kept()
+    surface, all native metres (y up). The natural ones are the kept park's, or with `seam` the seam's
+    (placement.SEAM); the built ones are both's, so either keeps clear of the other's walls and roads."""
     natural, built = [], []
-    for model in models:
+    for model in placement.source()['models']:
+        own = placement.SEAM.get(model['asset_id'], ())
+        if not (own or placement.is_park_model(model)):
+            continue
         with np.load(placement.SOURCE / model['npz'], allow_pickle=False) as arrays:
             for part in model['meshes']:
                 tid = part.get('retail_texture_ids', {}).get('diffuse')
                 i = part['index']; f = arrays[f'faces_{i}']
-                if tid in FOLIAGE or not len(f):
+                if tid in FOLIAGE or not len(f) or (own and i not in own):
                     continue
                 v = arrays[f'vertices_{i}'].astype('f8'); t = v[f]
-                if tid in NATURAL:
+                if tid in NATURAL and bool(own) == seam:
                     n = arrays[f'normals_{i}'][f].astype('f8').mean(1)
                     up = n[:, 1] / np.maximum(np.linalg.norm(n, axis=1), 1e-9)
                     kind = NATURAL[tid]
                     keep = up > min(LEDGE_TREES[kind][3], LEDGE_SHRUBS[3])
                     natural += [(kind, q, u) for q, u in zip(t[keep], up[keep])]
-                elif part.get('alpha_mode', 0) == 0:
+                elif tid not in NATURAL and part.get('alpha_mode', 0) == 0:
                     built.append(t)
     built = placement.surface_samples(np.concatenate(built), 1.2) if built else np.zeros((0, 3))
     return natural, built
@@ -245,8 +252,43 @@ def _ridden(q, margin):
 @lru_cache(maxsize=1)
 def ledges(seed=12):
     """Plants on the park's own rock, earth and grass: {mesh: [[x, y, z, yaw, scale], ...]} native metres (y up)."""
-    rng = np.random.default_rng(seed)
     natural, built = _surfaces()
+    return _plant(natural, built, np.random.default_rng(seed), [(np.array(p['base'])[[0, 2]], 2.) for p in plants()])
+
+
+@lru_cache(maxsize=1)
+def seam(seed=13):
+    """Plants on the seam's earth (placement.SEAM) by the same rules, clear of the park's own plants: the hillside
+    between the gate's rock and the air station's footbridge gets its forest, shrubs at the wall's foot and bare
+    patches (assets/megapark/concepts/seam-gate). {mesh: [[x, y, z, yaw, scale], ...]} native metres (y up)."""
+    natural, built = _surfaces(seam=True)
+    taken = [(np.array(p['base'])[[0, 2]], 2.) for p in plants()]
+    for rows in ledges().values():
+        taken += [(np.array(r)[[0, 2]], 1.3) for r in rows]
+    rng = np.random.default_rng(seed)
+    out = _plant(natural, built, rng, taken)
+    # Rocks where the earth meets the concrete, as in the concept: between the shrubs' and the trees' clearances.
+    clear = _clearance(built)
+    names, (lo, hi), per, gap, near = SEAM_ROCKS
+    rocks = []
+    for kind, (a, b, c), up in natural:
+        want = np.linalg.norm(np.cross(b - a, c - a)) / 2 * per
+        for _ in range(int(want) + (rng.random() < want % 1)):
+            u, v = rng.random(2)
+            if u + v > 1: u, v = 1 - u, 1 - v
+            q = a + u * (b - a) + v * (c - a)
+            if not near[0] < clear(q) < near[1] or any(np.hypot(*(q - o)[[0, 2]]) < gap for o in rocks):
+                continue
+            rocks.append(q)
+            size = rng.uniform(lo, hi)
+            out.setdefault(names[rng.integers(len(names))], []).append(
+                [round(float(q[0]), 3), round(float(q[1]) - .3 * size, 3), round(float(q[2]), 3),
+                 round(float(rng.uniform(0, 360)), 1), round(float(size), 3)])
+    return out
+
+
+def _clearance(built):
+    """clear(q): metres from native point q to the nearest `built` point, 99 beyond 6 m or so."""
     grid = {}
     for q in built:
         grid.setdefault(tuple(np.floor(q / 6.).astype(int)), []).append(q)
@@ -255,7 +297,12 @@ def ledges(seed=12):
         near = [o for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)
                 for o in grid.get((k[0] + dx, k[1] + dy, k[2] + dz), ())]
         return float(np.linalg.norm(np.asarray(near) - q, axis=1).min()) if near else 99.
-    taken = [(np.array(p['base'])[[0, 2]], 2.) for p in plants()]
+    return clear
+
+
+def _plant(natural, built, rng, taken):
+    """Plant `natural` [(kind, triangle, up)] clear of the `built` points and of `taken` [(plan point, gap)]."""
+    clear = _clearance(built)
     placed = ({}, {})              # trees, shrubs: plan cell -> [(point, gap)]
     out = {}
     def free(q, gap, tree):

@@ -449,12 +449,13 @@ def generate():
     from zeppelin.layout import clear as clear_air_station,PARK_WALK,PARK_BRIDGE
     clear_air_station(inst,1)
     clear_air_station(inst,2,path=[*PARK_WALK,PARK_BRIDGE[1]])
-    # The Mega Park's own ground, rock and ramps replace the forest on its footprint.
+    # The Mega Park's own ground, rock and ramps replace the forest on its footprint; only the undergrowth by the seam
+    # comes closer than 4 m (megapark/forest.py).
     from megapark import placement as megapark
     for name,placements in list(inst.items()):
         if not placements:continue
         a=np.asarray(placements,float)
-        inst[name]=a[~megapark.contains(a[:,0],a[:,1],margin=4.)].tolist()
+        inst[name]=a[~megapark.contains(a[:,0],a[:,1],margin=4.)|megapark_forest.seam_undergrowth(name,a[:,0],a[:,1])].tolist()
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
     return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 

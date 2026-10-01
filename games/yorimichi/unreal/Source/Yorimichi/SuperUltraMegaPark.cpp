@@ -115,11 +115,31 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
             H->AddInstances(Xs, false, false, false);
             Trees += Xs.Num();
         }
+    // The kei cars in the car park's bays, where the original traffic cars stood. They are solid, so Cairo walks round
+    // them and the board stops against them (docs/MEGAPARK.md, "Restyle").
+    int32 Props = 0;
+    const TArray<TSharedPtr<FJsonValue>>* PropList = nullptr;
+    if (Root->TryGetArrayField(TEXT("props"), PropList))
+        for (const TSharedPtr<FJsonValue>& Value : *PropList)
+        {
+            const TSharedPtr<FJsonObject> Entry = Value->AsObject();
+            const FString Name = Entry->GetStringField(TEXT("mesh"));
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name));
+            if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing prop mesh %s"), *Name); continue; }
+            const FMatrix Basis = FRotationMatrix::MakeFromXZ(JsonVector(Entry->GetArrayField(TEXT("forward"))),
+                                                               JsonVector(Entry->GetArrayField(TEXT("up"))));
+            auto* C = NewObject<UStaticMeshComponent>(Park, *Name);
+            C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(Park->GetRootComponent());
+            C->SetRelativeTransform(FTransform(Basis.Rotator(), JsonVector(Entry->GetArrayField(TEXT("location_cm")))));
+            C->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+            C->SetCanEverAffectNavigation(false);
+            C->RegisterComponent(); ++Props;
+        }
     const TSharedPtr<FJsonObject> Start = Root->GetObjectField(TEXT("spawn"));
     Park->SpawnLocation = JsonVector(Start->GetArrayField(TEXT("location_cm")));
     Park->SpawnYaw = Start->GetNumberField(TEXT("yaw_deg"));
-    UE_LOG(LogTemp, Display, TEXT("MEGAPARK placed at %s yaw %.1f: %d meshes (%d not imported), %d rails, %d trees"),
-        *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Rails.Num(), Trees);
+    UE_LOG(LogTemp, Display, TEXT("MEGAPARK placed at %s yaw %.1f: %d meshes (%d not imported), %d rails, %d trees, %d props"),
+        *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Rails.Num(), Trees, Props);
     return Park;
 }
 

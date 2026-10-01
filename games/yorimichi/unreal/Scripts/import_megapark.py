@@ -245,7 +245,8 @@ def import_mesh(path, name):
     return mesh
 
 
-def mesh_actor(entry, collision, mis, actors, editor, results):
+def mesh_actor(entry, collision, mis, actors, editor, results, place=True):
+    """Import one mesh, check it, and (when place) stand it in the standalone level."""
     assert sha(OUT/entry['fbx']) == entry['sha256'], entry['name']
     mesh = import_mesh(OUT/entry['fbx'], entry['name'])
     triangles = mesh.get_num_triangles(0)
@@ -265,6 +266,16 @@ def mesh_actor(entry, collision, mis, actors, editor, results):
     E.save_loaded_asset(mesh)
     audit = OUT/'imported-geometry'; audit.mkdir(exist_ok=True)
     assert unreal.MegaParkValidation.dump_mesh_triangles(mesh, ue(entry['native_origin']), str(audit/(entry['name']+'.bin')))
+    actual = mesh.get_bounding_box()
+    expected_lo = ue(entry['bounds']['minimum']) - ue(entry['native_origin'])
+    expected_hi = ue(entry['bounds']['maximum']) - ue(entry['native_origin'])
+    error = max((actual.min-expected_lo).length(), (actual.max-expected_hi).length())
+    assert error < .05, (entry['name'], error, actual)
+    results.append({'name': entry['name'], 'triangles': triangles, 'bounds_error_cm': error,
+                    'uv_channels': editor.get_num_uv_channels(mesh, 0), 'collision': collision, 'placed': place})
+    print('MEGAPARK mesh', entry['name'], triangles, flush=True)
+    if not place:
+        return
     actor = actors.spawn_actor_from_class(unreal.StaticMeshActor, ue(entry['native_origin']))
     actor.set_actor_label(entry['name']); actor.set_folder_path('OriginalCollision' if collision else 'OriginalGeometry')
     actor.set_mobility(unreal.ComponentMobility.STATIC)
@@ -274,14 +285,6 @@ def mesh_actor(entry, collision, mis, actors, editor, results):
     if collision:
         actor.set_actor_hidden_in_game(True); component.set_visibility(False)
         component.set_editor_property('cast_shadow', False)
-    actual = mesh.get_bounding_box()
-    expected_lo = ue(entry['bounds']['minimum']) - ue(entry['native_origin'])
-    expected_hi = ue(entry['bounds']['maximum']) - ue(entry['native_origin'])
-    error = max((actual.min-expected_lo).length(), (actual.max-expected_hi).length())
-    assert error < .05, (entry['name'], error, actual)
-    results.append({'name': entry['name'], 'triangles': triangles, 'bounds_error_cm': error,
-                    'uv_channels': editor.get_num_uv_channels(mesh, 0), 'collision': collision})
-    print('MEGAPARK mesh', entry['name'], triangles, flush=True)
 
 
 def main():
@@ -298,6 +301,9 @@ def main():
     mis = materials(report); results = []
     for entry in report['render']: mesh_actor(entry, False, mis, actors, editor, results)
     for entry in report['collision']: mesh_actor(entry, True, mis, actors, editor, results)
+    # The seam (docs/MEGAPARK.md, "Seam") is a piece of the source's own hills: the standalone level keeps them whole, so
+    # only the island places it.
+    for entry in report['seam']: mesh_actor(entry, entry['name'].startswith('UC_'), mis, actors, editor, results, place=False)
     anchor = actors.spawn_actor_from_class(unreal.SuperUltraMegaPark, unreal.Vector())
     anchor.set_actor_label('OriginalGrindPaths')
     anchor.set_editor_property('source_manifest_hash', report['source_sha256'])

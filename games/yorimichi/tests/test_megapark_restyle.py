@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world' / 'regions'))
-from megapark import forest, placement, plants, sign  # noqa: E402
+from megapark import cars, forest, placement, plants, sign  # noqa: E402
 
 
 class PlantTests(unittest.TestCase):
@@ -28,6 +28,16 @@ class PlantTests(unittest.TestCase):
         base = np.array([p[:3] for items in plants.trees().values() for p in items])
         island = placement.native_to_island(base)
         self.assertTrue(placement.contains(island[:, 0], island[:, 1]).all())
+
+    def test_the_seam_is_planted_on_its_own_hillside(self):
+        seam = plants.seam()
+        rows = np.array([p[:3] for items in seam.values() for p in items])
+        self.assertGreater(len(rows), 200)
+        self.assertTrue({'Rock_A', 'Rock_B', 'Rock_C'} & set(seam))
+        island = placement.native_to_island(rows)
+        self.assertTrue(placement.contains(island[:, 0], island[:, 1]).all())
+        lo, hi = placement.seam_render().reshape(-1, 3).min(0) - 1, placement.seam_render().reshape(-1, 3).max(0) + 1
+        self.assertTrue(((rows >= lo) & (rows <= hi)).all())
 
     def test_every_foliage_texture_is_in_the_park(self):
         models, _ = placement.kept()
@@ -94,7 +104,7 @@ class ForestTests(unittest.TestCase):
         added = {k: np.array(v) for k, v in instances.items() if k.startswith('Tree')}
         self.assertLessEqual(set(added), set(forest.HEIGHT))
         under = {k for k in instances if not k.startswith(('Tree', 'HD_NorthTree'))}
-        self.assertLessEqual(under, {n for n, _ in forest.BUSHES} | {'Grass_A', 'Grass_B'})
+        self.assertLessEqual(under, {n for n, _ in forest.BUSHES} | {'Grass_A', 'Grass_B'} | {n for n, _, _ in forest.SEAM_PLANTS})
         new = np.concatenate(list(added.values()))
         self.assertTrue((forest.distance(new[:, 0], new[:, 1]) > forest.CLEAR).all())
         self.assertGreater(len(new), int((self.d[off] < forest.NEAR).sum()))
@@ -117,6 +127,36 @@ class ForestTests(unittest.TestCase):
         inner = ((kept[:, 0] < forest.mountains.BOUNDS[0]) & (kept[:, 1] > 650)
                  & (forest.distance(kept[:, 0], kept[:, 1]) < forest.OUTER - 250))
         self.assertFalse(inner.any())
+
+
+class CarTests(unittest.TestCase):
+    def test_the_traffic_cars_are_the_cars_park_cars(self):
+        models = {m['asset_id']: m for m in placement.kept()[0]}
+        self.assertLessEqual(set(cars.CARS), set(models))
+        names = [p['material_name'].lower() for a in cars.CARS for p in models[a]['meshes'] if cars.is_car(models[a], p)]
+        self.assertEqual(len(names), 5)
+        self.assertTrue(all(any(k in n for k in ('traf', 'sport', 'sedan', 'suv', 'tire')) for n in names), names)
+        self.assertEqual(len(cars.bays()), len(cars.KEI))
+
+    def test_only_the_cars_leave_the_collision(self):
+        section = next(c for c in placement.source()['collision'] if c['id'] == cars.SECTION)
+        triangles = np.load(placement.SOURCE / section['npz'])['triangles']
+        mask = cars.collision_mask(triangles)
+        self.assertEqual(int(mask.sum()), 762)
+        for lo, hi in cars.bays():      # the bays' ground stays
+            self.assertTrue(np.isfinite(cars._ground(triangles[~mask].astype('f8'), (lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2)))
+        for other in placement.kept()[1]:
+            if other['id'] != cars.SECTION:
+                self.assertFalse(cars.collision_mask(np.load(placement.SOURCE / other['npz'])['triangles']).any(), other['id'])
+
+    def test_kei_cars_stand_on_the_ground_in_their_bays(self):
+        for prop, (lo, hi) in zip(cars.props(), cars.bays()):
+            x, z, y = np.array(prop['location_cm']) / 100
+            self.assertTrue(lo[0] < x < hi[0] and lo[2] < z - cars.KEI_LENGTH / 2 and z + cars.KEI_LENGTH / 2 < hi[2], prop)
+            self.assertLess(abs(y - lo[1]), .2, prop)
+            forward, up = np.array(prop['forward']), np.array(prop['up'])
+            self.assertGreater(up[2], .99); self.assertGreater(forward[1], .99)
+            self.assertAlmostEqual(float(forward @ up), 0., 6)
 
 
 class LetterTests(unittest.TestCase):
