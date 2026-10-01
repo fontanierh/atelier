@@ -126,9 +126,12 @@ output from a previous ride never moves a new one.
 - **Retargeting.** The solved skeleton is mapped onto the host's `root`, `pelvis`, `spine`, `spine_mid`, `chest`,
   `neck`, `head`, clavicles, arms, hands, thighs, shins, feet and toes (`_L` / `_R`). The pose is scaled by the
   hip-to-foot height ratio, keeps the host's bind bone lengths and scale, and fits the feet to the solved targets with
-  two-bone leg IK; unmapped bones keep their bind pose. During a bail, skinned LOD0 vertices are sampled in 12 cm cells
-  and traced down, and the whole pose is lifted to keep at least 0.5 cm above the ground, so a differently
-  proportioned character stays out of the floor. This needs CPU-accessible skin data on the rider's mesh.
+  two-bone leg IK; unmapped bones keep their bind pose. In a grab, where the solved hand reaches its deck, the host's
+  hand holds the nearest edge of the board (knuckles outside the rail, fingers hooked under, thumb on the grip tape)
+  and the arm is solved to it. The grip is sized in the host's finger widths (its knuckle spacing), uses whichever
+  fingers the rig has, and is tunable live through `skate.Grip`. During a bail, skinned LOD0 vertices are sampled
+  in 12 cm cells and traced down, and the whole pose is lifted to keep at least 0.5 cm above the ground, so a
+  differently proportioned character stays out of the floor. This needs CPU-accessible skin data on the rider's mesh.
 - **Modes.** The session's state name sets the component mode: `Wipeout` states are a bail, `Grind` states a grind,
   `Air` states the air, anything else the ground. The HUD getters (`GetComboLine`, `GetComboAlpha`, `GetScore`,
   `GetStatus`, `GetSpeed`, `GetCameraYaw`) read from it.
