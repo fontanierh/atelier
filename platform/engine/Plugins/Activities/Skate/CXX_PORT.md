@@ -312,6 +312,22 @@ failures that consume the batch, and eight batch-size failures after partial
 submission. All queries execute against actual authored geometry; completed hits
 are never seeded. Whole air-state and player-session scheduling remain separate.
 
+## Native wipeout checks
+
+`WipeoutRuntime.*`, `WipeoutSettings.*` and `WipeoutObservations.*` connect the
+sole shared request history to the ground, air, collision, plant and animated
+ground checks. The leaf comparison passes 320 retained histories and 12,480
+commands, preserving 3,779,156 exact stock output bytes (SHA-256
+`f7b513ded210efedb011dd8d5e9d4b96343bad3119d48916d4a53e0e74afac01`).
+All 253 settings fixtures also match, including original Boolean prefix-byte
+reads, valid padded/one-byte layouts, rejected prefixes and ordered compound
+failures. The aggregate comparison contains 963,396 exact words.
+
+Completed observation frames are explicit inputs to this leaf check. The
+actual physical/skeleton observation producer, ragdoll state owners and global
+frame scheduling require separate composition checks; this result does not
+establish their parity. Native adapters are included for those callers.
+
 ## Native physical skeleton data
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
