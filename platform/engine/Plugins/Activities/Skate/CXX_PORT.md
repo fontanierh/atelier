@@ -418,6 +418,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   limiting, projected/wrapped runout angles, first-update seek and retained output. Seven actual
   parameter witnesses change, and 32 End callbacks prove the original host republishes runout data.
   Complete controller registration and physical producers remain separate integration steps.
+- Ground corrections and wall riding: 14,125 cases preserve 218,165 exact words, including
+  degenerate edges, four carried lanes, scalar divisions/refinements, pinning, wheel catches,
+  2,304 force applications to persistent actual body snapshots and separate force/auto-jump gates.
+  Retained velocity and untouched body fields are checked. Ground state scheduling remains separate.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
