@@ -1,7 +1,7 @@
 # Super Ultra Mega Park
 
 The original Skate 3 Super Ultra Mega Park sits in the island's western foothills, about a
-kilometre north of the forest lake. It also remains an editable, standalone Unreal level at
+kilometre north of the forest lake. It is also an editable, standalone Unreal level at
 `/Game/MegaPark/Maps/SuperUltraMegaPark`, the parity reference for the placed park.
 The wooden transitions, large gaps, bowls, coping, lower vert section and grandstands keep their
 original scale and shape; in the island the whole park is turned and moved as one body.
@@ -46,9 +46,9 @@ forest, the park build and the review tool all read it. It is pure NumPy.
   plateau on top of it, the park's skyline, up to the forest line. The crowns grow in the same
   clumps (pine, rust, gold), a little warmer than the fill, and the north forest's own crowns there
   take them too, so the hills read as patches of one colour. The pines grow closer together and
-  stand above the broadleaf crowns. Where the crowns grow west of the north forest, they replace
-  the far forest's painted cards (`clear_far_forest`, called last by `gen_world.py`), which stood
-  over the plateau's canopy as a pale skyline. The ground under the canopy is dark forest floor, fading into the island's own ground by 650 m
+  stand above the broadleaf crowns. Where the crowns grow west of the north forest,
+  `clear_far_forest` (called last by `gen_world.py`) removes the far forest's painted cards, which
+  would stand over the plateau's canopy as a pale skyline. The ground under the canopy is dark forest floor, fading into the island's own ground by 650 m
   (`hidamari/mountains.py`). `city.json` lists the area as `near_trees`, so `AJapanWorld` gives the
   detailed trees shadows, collision and the camera fade instead of treating them as distant backdrop.
 - `world.megapark` writes `megapark/park.json`, staged into `Content/Data`: the actor transform,
@@ -146,7 +146,7 @@ island's look instead of the original desert campus. Concepts painted with Sunbu
   `finish` (the `world.megapark_restyle` step) makes the surfaces seamless at a dark grey-violet
   rock and olive grass, regrades the rock decals and the macro overlay to match, recolours the
   teal and sky-blue paint, banners and decals to indigo, ochre and moss exactly (layout and alpha
-  untouched), fits the paintings to the old billboards, shark logos and lettering, and writes
+  untouched), fits the paintings to the original billboards, shark logos and lettering, and writes
   `build/yorimichi/megapark/textures/`. Concrete, wood and metal stay as they were.
 - **Moss.** The rock and cut stone materials grow moss where they face up, in patches broken by
   two world-space noises, as on the paintovers' ledges; the walls stay bare
@@ -155,11 +155,11 @@ island's look instead of the original desert campus. Concepts painted with Sunbu
   it, matte with a little of the original specular. The baked irradiance stays only as ambient
   occlusion: each material divides it by its lightmap page's sunlit level (the 95th percentile,
   at least 1) and applies it at `LightmapOcclusion` strength, so corners stay grounded without
-  the old desert sun's shadows.
+  the original desert sun's shadows.
 - **寄り道.** The SHARKS letters on the hill above the bowls become 寄り道 in the same concrete,
   plane, height and support trusses (`world/regions/megapark/sign.py`). The park build extrudes
-  them from a Black instance of the island's Noto Sans JP and swaps their collision: the 2,172
-  triangles of the old letters leave their section and the new letters' 2,008 take their place.
+  them from a Black instance of the island's Noto Sans JP and swaps their collision: the original
+  letters' 2,172 triangles leave their section and the 寄り道 letters' 2,008 take their place.
   No rail ran on the letters.
 - **Cars.** The car park's four photo-textured traffic cars (two sedans, an SUV and a sports car)
   leave the park build (`world/regions/megapark/cars.py`), and so do their 762 collision
@@ -212,21 +212,20 @@ render mesh. CPU access is retained for the skating backend's world queries. Ori
 attributes remain in the committed arrays; standard Chaos collision does not itself reproduce
 EA's feature-edge and surface-ID solver behavior.
 
-The level-owned `SuperUltraMegaPark` actor registers the original grind curves with the current
-skating subsystem. Curves are sampled with at most 2 mm control-point chord deviation and
-50 cm segments; the untouched original cubics are also serialized in the level. The current
-subsystem treats these as rail contact paths. Their original flags remain available for the
-native skating port to interpret more deeply.
+The level-owned `SuperUltraMegaPark` actor registers the original grind curves with the skating
+subsystem. Curves are sampled with at most 2 mm control-point chord deviation and 50 cm segments;
+the untouched original cubics are also serialized in the level. The subsystem treats these as rail
+contact paths; their original flags are kept with them.
 
 Materials retain original texture bindings and UVs, with the restyled images in place of the
-originals they replace. Shared Unreal graphs translate diffuse, decal, macro overlay,
+originals. Shared Unreal graphs translate diffuse, decal, macro overlay,
 normal/detail, specular and alpha into lit native materials, and the baked irradiance
 (`4*L*L`) into ambient occlusion (see "Restyle"). Lightmaps use UV1, decals UV2; UVs are stored
 at full precision. This is not a reproduction of EA's renderer: reflection cubemaps, animated
 tree shaders and special shader effects remain source data. A texture is reimported when its
 source image changes (its hash is kept in the asset's metadata).
 
-`MegaParkGameMode` uses Cairo and the existing skating backend. `MegaParkWorld` supplies the
+`MegaParkGameMode` uses Cairo and the skating backend. `MegaParkWorld` supplies the
 player's world services without generating the island, leaf storm, villagers or other island
 effects. The level and asset paths are independent of the skating runtime implementation.
 
@@ -238,28 +237,26 @@ The one-time extraction uses SK8-ENGINE/skate-3-rust-engine tools pinned to
 the raw texture cache, then run `world/regions/megapark/extract.py --cache <cache> --upstream <tools>`.
 This is an optional provenance workflow; normal builds consume the committed native source.
 
-The old Python collision decoder needed a correction: compressed deltas are unsigned 16-bit
-values, with saturating signed base addition, integer-to-f32 rounding, then f32 multiplication.
-`extract.py` applies that interpretation before converting collision. `verify_source.py`
-independently compared the converted collision against the unmodified Rust retail reader,
-reading the untouched original RX2 sections: every vertex float word, surface/group ID,
-edge code and sidedness byte matched across all 147,660 triangles. It also checked all
-3,718,591 render-array elements and every decoded pixel of all 405 textures, and confirmed
-coverage of all 32 authored park model resources.
+Collision decoding: compressed deltas are unsigned 16-bit values, with saturating signed base
+addition, integer-to-f32 rounding, then f32 multiplication. `extract.py` applies that
+interpretation before converting collision. `verify_source.py` independently compares the
+converted collision against the unmodified Rust retail reader, reading the untouched original RX2
+sections: every vertex float word, surface/group ID, edge code and sidedness byte matches across
+all 147,660 triangles. It also checks all 3,718,591 render-array elements and every decoded pixel
+of all 405 textures, and confirms coverage of all 32 authored park model resources.
 
 The Unreal importer fails if source/export hashes disagree, any material slot is unresolved,
-any imported mesh loses triangles, or any world bounds drift by 0.05 cm or more. Its current
-import report and captures are generated under `build/yorimichi/megapark`, outside source control.
+any imported mesh loses triangles, or any world bounds drift by 0.05 cm or more. Its import
+report and captures go to `build/yorimichi/megapark`, outside source control.
 `world/regions/megapark/verify_import.py` additionally compares every built Unreal LOD triangle
 against the source, accepting at most 0.05 cm float-conversion error and requiring identical
 triangle connectivity despite FBX section reordering.
 
-The completed import compared 361,100 built triangles with a maximum vertex error of
-0.00177002 cm. All render meshes retained their three UV channels. The reproducible runtime
-review is `python games/yorimichi/tools/review_megapark.py`: it launches its own guarded game,
-checks original ground heights at 11 deck/transition/bowl sites, records a push session on the upper deck,
-captures the park, and quits that game. Run it only when the shared render board permits.
-The completed review matched all 11 heights within 0.0013 cm, registered 151 grind paths,
-and rode 48.5 metres on the original deck without bailing. The final view ran at approximately
-60 fps on the development machine. This is a map import check, not proof that the current
-skating backend handles every original mega gap or transition identically to Skate 3.
+The import compares 361,100 built triangles, with a maximum vertex error of 0.00177 cm, and
+every render mesh keeps its three UV channels. The runtime review is
+`python games/yorimichi/tools/review_megapark.py`: it launches its own game under the render
+guard, checks original ground heights at 11 deck/transition/bowl sites, records a push session on
+the upper deck, captures the park, and quits that game. It matches all 11 heights within
+0.0013 cm, registers 151 grind paths, and rides 48.5 metres on the original deck without bailing.
+This is a map import check, not proof that the skating backend handles every original mega gap or
+transition identically to Skate 3.

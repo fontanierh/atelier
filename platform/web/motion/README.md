@@ -2,7 +2,11 @@
 
 Small browser/Node helpers for applying canonical world-axis rotation deltas to an existing skin and restoring
 an authored loop's duplicate endpoint. They accept the caller's Three.js namespace so they use the same classes
-as its viewer/exporter, with no dependency on a character or a game package.
+as its viewer/exporter, with no dependency on a character or a game package. The
+[local UniMate runner](../../studio/atelier/ai/unimate/README.md) and the
+[Kimodo adapter](../../studio/atelier/ai/kimodo/README.md) publish the motion representation they read.
+
+## Use
 
 ```js
 import * as THREE from 'three';
@@ -33,6 +37,8 @@ The caller owns their source/provenance. Missing target bones fail explicitly.
 endpoint. It does not synthesize velocity continuity or improve contacts. Applying it to generated motion is a
 caller policy; a successful conversion does not establish motion quality.
 
+## Tests
+
 To run the synthetic-rig tests, pass an installed Three.js module path:
 
 ```sh
@@ -41,4 +47,3 @@ node platform/web/motion/test_motion.mjs "$THREE_MODULE_PATH"
 
 Tests exercise a differently named rig under a rotated/scaled parent, non-identity rest rotations and canonical
 axes, root translation, antipodal quaternion continuity, local detail overrides, and loop endpoint/source preservation.
-The [local UniMate runner](../../studio/atelier/ai/unimate/README.md) publishes this motion representation.

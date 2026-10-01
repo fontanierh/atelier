@@ -1,46 +1,66 @@
-# Connected-controller HUD
+# Controller controls
 
-> Moved from the prototype repository on 29 September 2026. Paths are translated to this repository where the file moved; paths still starting with `japan/` or `output/imagegen/` refer to the prototype archive (authoring tools, earlier revisions, review images). See [docs/MIGRATION.md](../../../docs/MIGRATION.md).
+The game plays with a keyboard and mouse or with a gamepad, through one set of Enhanced Input actions
+(`AWandererCharacter::BuildInput`, `WandererCharacter.cpp`). The HUD shows hints for whichever is in use: controller
+hints, lettered for the connected pad, while a gamepad is attached, and keyboard hints otherwise. Skating has its own
+controls: see [SKATE.md](SKATE.md).
 
-The HUD selects controller hints while a gamepad is attached and returns to keyboard hints after disconnect. It checks the platform connection state every 0.25 seconds; it does not require a button press or switch back when the mouse moves. This includes controllers attached before startup.
+## Bindings
 
-`FSlateApplication::IsGamepadAttached` supplies the connection state. UE 5.8's connected-device registry supplies the controller name when available. Recognized Xbox, PlayStation and Nintendo devices get their own lettering; unknown devices use physical positions (“Bottom button”, “Right button”, etc.) instead of guessing. On macOS, Unreal registers PS4/PS5/Xbox names when connecting through Apple's GameController backend. Its PlayStation SpecialLeft binding is the touchpad click.
+| Action | Keyboard and mouse | Xbox | PlayStation | Nintendo |
+|---|---|---|---|---|
+| Move | WASD or arrows | Left stick | Left stick | Left stick |
+| Look | Mouse | Right stick | Right stick | Right stick |
+| Sprint (hold) | Left Shift | Left stick click | L3 | Left stick click |
+| Walk (hold) | Left Alt or J | | | |
+| Jump / double jump | Space | A | Cross | B |
+| Dash | F | X | Square | Y |
+| Roll | Left Ctrl | B | Circle | A |
+| Crouch | C | Right stick click | R3 | Right stick click |
+| Get on / step off the skateboard | B | Y | Triangle | X |
+| Interact, board the zeppelin | E | D-pad Down | D-pad Down | D-pad Down |
+| Sailboat / step ashore | K | D-pad Up | D-pad Up | D-pad Up |
+| Attack (hold to charge) | Left click | RT | R2 | ZR |
+| Parry | Right click | LT | L2 | ZL |
+| Draw / sheathe the sword | R | D-pad Left | D-pad Left | D-pad Left |
+| Flight speed aboard, choose the stop before boarding | [ / ] | LB / RB | L1 / R1 | L / R |
+| Map | M | View | Touchpad click | Minus |
+| Settings | Esc | Menu | Options | Plus |
+| Wave | Q | | | |
+| Release the mouse | Tab | | | |
+| Screenshot | F12 | | | |
 
-| Action | Xbox | PlayStation | Nintendo / Switch |
-|---|---|---|---|
-| Move | Left stick | Left stick | Left stick |
-| Look | Right stick | Right stick | Right stick |
-| Sprint | Hold left stick click | Hold L3 | Hold left stick click |
-| Jump / double jump | A | Cross | B |
-| Dash | X | Square | Y |
-| Roll | B | Circle | A |
-| Crouch | Right stick click | R3 | Right stick click |
-| Mount / step off skateboard | Y | Triangle | X |
-| Interact / board zeppelin | D-pad Down | D-pad Down | D-pad Down |
-| Map | View | Touchpad | Minus |
-| Settings | Menu | Options | Plus |
-| Equip sailboat / step ashore | D-pad Up | D-pad Up | D-pad Up |
-| Flight speed | LB / RB | L1 / R1 | L / R |
-| Map: choose a pin | Left stick / D-pad | Left stick / D-pad | Left stick / D-pad |
-| Map: pan / zoom | Right stick / LB, RB | Right stick / L1, R1 | Right stick / L, R |
-| Map: travel / close | A / B | Cross / Circle | B / A |
+Getting on the board while running carries the running speed onto it. Riding, the right stick (or the mouse with the
+left button held) is Flick-It, not the camera. On the sailboat the left stick steers and raises or lowers the sail.
 
-Menu / Options and D-pad Up invoke settings and sailboat actions. Triangle / Y mounts or steps off the skateboard through one shared action; D-pad Down interacts. Mounting during a run transfers the running speed to the board. Stick-click sprint remains hold-to-sprint. See [skating controls](SKATE.md).
+The map takes the controller while it is open: left stick or D-pad to choose a pin, the bottom face button to travel
+there, the right face button to close, LB / RB (L1 / R1, L / R) to zoom and the right stick to pan when zoomed in. The
+map and settings buttons pass through to the game, which closes the map; every other gamepad button is swallowed.
 
-Vehicle hints describe steering, sail control and stepping off instead of on-foot actions. Ladder and zeppelin prompts use the active interaction button. Controller mode suppresses the mouse-release tip, while retaining stamina rings and FPS. The two hint rows measure their text and fit the viewport rather than relying on a fixed-width background.
+Right-stick look: UE 5.8's `FSceneViewport` negates `Gamepad_RightY` before player input, and the project disables
+legacy input scales, so `StickLook` applies `-Delta.Y` to the pitch. Right stick up looks up; mouse look keeps its own
+sign.
 
-For visual QA only, `japan.ControllerHUD` supports `-1` automatic (default), `0` keyboard, `1` Xbox, `2` PlayStation, `3` Nintendo, `4` generic. This changes labels only and does not fake input or controller connection. Restore `-1` after QA. It is not a saved preference. State changes log `CONTROLS HUD style=... automatic=...`.
+## Controller hints
 
-## Validation
+Every 0.25 s the HUD reads `FSlateApplication::IsGamepadAttached` and the engine's connected-device registry, so a pad
+attached before startup or unplugged later switches the hints without a button press. Device names pick the lettering:
+PS4, PS5, DualShock or DualSense for PlayStation; Xbox or XInput for Xbox; Nintendo or Switch for Nintendo. An unknown
+pad gets physical positions ("Bottom button", "Right button", ...) rather than guessed letters. On macOS, Unreal
+names PS4, PS5 and Xbox pads through Apple's GameController backend, and its PlayStation `Special Left` is the touchpad
+click.
 
-Native Development Editor build passes. The real connected DualSense registers as `PS5 Wireless Controller` at startup, followed by `CONTROLS HUD style=2 automatic=1` before any gamepad input is required. The full 2228×1440 `ready.png` confirms both PlayStation hint rows, stamina rings and FPS; live desktop inspection shows 60 FPS. Evidence: `build/yorimichi/desktop-preview/20260914-095903/`. The six desktop-launcher tests pass. No forced HUD style is left enabled. Other physical controller families and unplug/replug were not manually exercised in this session; their labels/detection follow the same platform connection/registry path.
+The hints follow the situation: sailboat steering and sail, zeppelin boarding and flight speed with the interaction
+button, the sword's attack, parry and draw while it is installed, and the skate controls while riding. With a
+controller the mouse-release tip is hidden; stamina rings and the FPS counter stay. The two hint rows measure their
+text and shrink to fit the viewport.
 
-## September 14: camera direction and physical buttons
+## Debugging
 
-The user reported inverted right-stick look and unresponsive buttons. `FSceneViewport::OnAnalogValueChanged` in UE 5.8 negates `Gamepad_RightY` before forwarding it to player input. This project disables legacy input scales, so `StickLook` must apply `-Delta.Y` to camera pitch. Right-stick up now looks up; horizontal look and mouse look retain their existing signs.
-
-The button mappings were already present. After rebuilding and restarting the desktop game, real DualSense Cross and Circle press/release events reached Slate, the game viewport and the Jump/Dodge action bindings. Circle entered the roll state. Keyboard Escape also opened and closed settings. The user then confirmed “it works.” The original button failure did not reproduce after restart; its underlying cause was not established, and no replacement button-routing workaround was added.
-
-For a recurrence, append `-controllertrace` to the Unreal launch arguments. It logs `CONTROLLER TRACE` at Slate key-down (editor builds), viewport press/release, and Boolean action start/completion, including ready/menu/movement-lock state. Raw key logging is restricted to gamepad keys and Escape. Tracing observes events without consuming or injecting them; it is off in normal launches. Check the entire path rather than inferring working controls from controller HUD detection. Actions can correctly reject a press during another locked action, such as a jump pressed before a roll finishes.
-
-Validation: native Development Editor build succeeded; `build/yorimichi/desktop-preview/20260914-103540/game.log` contains the physical input trace and `ready.json` verifies fullscreen 2228×1440 with the forward renderer. The corrected playtest was left running. The existing 60 FPS cap, native render scale, faster sprint and keyboard mappings are unchanged.
+- `japan.ControllerHUD` forces the hint lettering for visual checks: `-1` automatic (default), `0` keyboard, `1` Xbox,
+  `2` PlayStation, `3` Nintendo, `4` generic. It changes labels only (no input, no fake connection) and is not saved.
+  Style changes log `CONTROLS HUD style=<n> automatic=<0|1>`.
+- `-controllertrace` on the Unreal command line logs `CONTROLLER TRACE` lines for gamepad keys and Esc at each step:
+  Slate key-down (editor binary), viewport press and release, and every button action's start and completion with the
+  ready, menu and movement-lock state. It only observes. Follow a press through all three before blaming the bindings:
+  an action can rightly refuse a press during a locked action, such as a jump pressed before a roll finishes.

@@ -1,14 +1,13 @@
 # Fox motion lab
 
-One local playground for **UniMate and Kimodo** on Yorimichi's owned fox hunter. Compare an authored animation
-with counterparts from either model, or create independent animations with a custom prompt. Every generated card,
-counterpart option, preview capture and export names its actual model. A model filter lets you inspect both libraries
-together or isolate one; the prompt form's **Generate with** selector chooses the next take's generator.
+One local playground for **UniMate and Kimodo**, two text-to-motion models, on the game's fox hunter. Compare an
+authored clip with generated counterparts from either model, or create independent animations from a custom prompt.
+Every generated card, counterpart option, preview capture and export names the model that made it. A model filter
+shows both libraries together or one alone; the prompt form's **Generate with** selector chooses the next take's model.
 
-The [UniMate write-up](../docs/UNIMATE_EXPERIMENT.md) records mixed results, a useful independent backflip, and a guided
-sprint that was essentially the Run already available. The [Kimodo write-up](../docs/KIMODO_EXPERIMENT.md) records a
-headless backflip and the user's forward roll. User review found Kimodo worked quite well on these takes. Generated
-motion still needs contact and recovery review before game use; the lab does not replace gameplay clips automatically.
+What each model is good for, with settings and measurements, is in the [UniMate](../docs/UNIMATE_EXPERIMENT.md) and
+[Kimodo](../docs/KIMODO_EXPERIMENT.md) write-ups. Generated motion needs contact and recovery review before game use;
+the lab never replaces gameplay clips automatically.
 
 ## Setup and run the shared playground
 
@@ -29,7 +28,7 @@ UniMate, and builds one frontend. Existing takes remain in their original direct
 copying or renaming their files. A fresh checkout has no saved takes; generate them through the prompt form.
 
 The shared server starts two loopback workers on private ephemeral ports, using each model's own interpreter.
-Each worker has the unchanged 10 GiB memory guard; only one generation runs at a time across both models.
+Each worker runs under the 10 GiB memory guard; only one generation runs at a time across both models.
 Ctrl-C stops the shared server and reaps its workers and monitors. No inference request goes to a hosted demo.
 No API key or paid service is needed. If Blender is not on PATH, set `BLENDER` to its executable before setup.
 Unreal is not needed. Setup and inference do not take the render slot; the small Blender operation exports without
@@ -57,9 +56,9 @@ options accept existing custom model directories. The exports must use the same 
    is a visual comparison, not an inference constraint. The new take stays grouped with that authored clip.
 
 Labels distinguish **Original · authored**, **UniMate/Kimodo · prompt only** and **Hybrid · authored gait + UniMate
-arms**. Earlier UniMate takes display **earlier conditioning**. The optional **Keep the authored sprint gait**
-checkbox appears only for UniMate when comparing Run. It preserves the authored stride, root, torso, head and hand
-tracks with bounded arm changes; it did not produce a useful independent sprint. It is off unless selecting an
+arms**. UniMate takes generated without the training-vocabulary joint labels display **earlier conditioning**.
+The optional **Keep the authored sprint gait** checkbox appears only for UniMate when comparing Run. It preserves the authored stride, root, torso, head and hand
+tracks with bounded arm changes; it does not produce a useful independent sprint. It is off unless selecting an
 existing hybrid take. Kimodo never uses that constraint.
 
 ## Create an independent animation

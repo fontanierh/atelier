@@ -65,7 +65,7 @@ def main():
     record('bail_skin_clearance',bailed,clearance>=.45 and lift<100,f'minimum skin clearance {clearance:.2f} cm; peak visual lift {lift:.2f} cm')
     qa.py("live.skate_input(); live.park.place(-10,38,0)")
     time.sleep(.5)
-    # The imported Cairo mesh faces -X before its authored mesh-rotation correction.
+    # The player's imported mesh faces -X before its authored mesh-rotation correction.
     text = qa.py('''
 import json
 p=unreal.GameplayStatics.get_player_character(live.L.game_world(),0)
