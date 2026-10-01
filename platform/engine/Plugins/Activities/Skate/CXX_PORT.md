@@ -41,6 +41,28 @@ in the Unreal adapter; the worker source remains identical to the pinned referen
 - [ ] Remove the Rust worker/build dependency and original runtime data formats; commit all native data.
 - [ ] Run whole-session comparisons, in-game scenarios, visual checks and frame-pacing checks; submit the PR.
 
+## Native camera data and runtime
+
+`ATCAM001` stores the authored camera shot sample arrays as original f32 words, including
+their order, component counts and retained fourth lanes. Settings and camera graph records use
+the existing `ATATTR01` and `ATGRPH01` banks. The C++ camera reads these native packages;
+the temporary independent exporter reads the original data through the frozen Rust decoder.
+
+The complete camera runtime comparison passes 27 histories and 7,196 operations, preserving
+48,559,101 exact bytes (SHA256 `10451eb242b6bf22229addf1446746a7196bc6fe768a0965cac2c4774f3a737b`).
+It observes all 243 stock shots, 66 state record types and 528 fields, including settings,
+tracking, subject history, shot positioning, collision queries, shake, graph callbacks, slow
+motion and partial failures. Sixty-nine transitions preserve the source's ordered End, Begin,
+Update simulation-rate requests. Authored world triangles and 0/1/2/50 moving obstacles exercise
+the actual query implementations. Independent conversion, native decoding and malformed
+package rejection are included.
+
+Completed physical and animation subject records, authored region membership, query gravity
+and moving obstacle records are explicit upstream inputs in this comparison. Complete session
+scheduling and Unreal camera presentation remain separate checks. Original inputs that hang
+or panic are excluded from valid-domain parity; additional native guards for those inputs are
+not claimed as matching original error behavior.
+
 ## Gesture port
 
 `Source/AtelierSkate/Private/Native/Gestures.*` ports the reference recognizer into C++ with preserved

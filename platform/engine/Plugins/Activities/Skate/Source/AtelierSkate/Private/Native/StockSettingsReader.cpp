@@ -78,4 +78,24 @@ bool StockSettingsReader::Curve8(std::string_view c,std::string_view k,std::stri
 {const auto ok=ReadCurve(data_,c,k,n,output,error);if (ok) error.clear();return ok;}
 bool StockSettingsReader::Curve8Layout20(std::string_view c,std::string_view k,std::string_view n,PointGraph<8>& output,std::string& error) const
 {const auto ok=ReadCurve(data_,c,k,n,output,error,true);if (ok) error.clear();return ok;}
+bool StockSettingsReader::Words(std::string_view c,std::string_view k,std::string_view n,std::size_t count,std::vector<std::uint32_t>& output,std::string& error) const
+{
+    const auto* field=ReadField(data_,c,k,n,error);if (!field) return false;
+    std::vector<std::uint32_t> next(count);
+    if (!field->is_text)
+    {
+        const std::uint32_t* words=nullptr;if (!field->Words(count,words)) {error="Expected "+std::to_string(count)+" big-endian words, found "+std::to_string(field->byte_count*2)+" bytes of hex";return false;}
+        std::copy_n(words,count,next.begin());
+    }
+    else
+    {
+        std::string hex;for (std::size_t at=0;at<field->text.size();) {const auto space=Whitespace(field->text,at);if (space) at+=space;else hex+=field->text[at++];}
+        if (hex.size()!=count*8||std::any_of(hex.begin(),hex.end(),[](unsigned char value) {return value>=128;})) {error="Expected "+std::to_string(count)+" big-endian words, found "+std::to_string(hex.size())+" bytes of hex";return false;}
+        for (std::size_t i=0;i<count;++i)
+        {
+            std::uint32_t word=0;for (std::size_t j=0;j<8;++j) {const auto value=hex[i*8+j];const int digit=value>='0'&&value<='9'?value-'0':value>='a'&&value<='f'?value-'a'+10:value>='A'&&value<='F'?value-'A'+10:-1;if (digit<0) {error="Invalid collection payload: invalid digit found in string";return false;}word=(word<<4)|std::uint32_t(digit);}next[i]=word;
+        }
+    }
+    output=std::move(next);error.clear();return true;
+}
 }
