@@ -1,4 +1,5 @@
-"""The Mega Park restyle: desert plants become island trees where they stood, SHARKS becomes 寄り道 in its place."""
+"""The Mega Park restyle: desert plants become island trees where they stood, the forest round the park turns
+detailed, SHARKS becomes 寄り道 in its place."""
 from pathlib import Path
 import sys
 import tempfile
@@ -7,7 +8,7 @@ import unittest
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world' / 'regions'))
-from megapark import placement, plants, sign  # noqa: E402
+from megapark import forest, placement, plants, sign  # noqa: E402
 
 
 class PlantTests(unittest.TestCase):
@@ -32,6 +33,49 @@ class PlantTests(unittest.TestCase):
         models, _ = placement.kept()
         used = {p.get('retail_texture_ids', {}).get('diffuse') for m in models for p in m['meshes']}
         self.assertLessEqual(set(plants.FOLIAGE), used)
+
+    def test_park_trees_are_the_detailed_kind(self):
+        trees = plants.trees()
+        self.assertFalse([name for name in trees if name.endswith('_lo')])
+        tall = sum(p['kind'] in ('longtree', 'poplar') and p['height'] >= plants.TALL for p in plants.plants())
+        canopy = sum(len(v) for k, v in trees.items() if k.startswith('Tree_Canopy'))
+        self.assertTrue(.7 * tall < canopy <= tall, (canopy, tall))
+
+
+class ForestTests(unittest.TestCase):
+    def setUp(self):
+        x0, y0, x1, y1 = forest.near_box()
+        gx, gy = np.meshgrid(np.arange(x0 - 60, x1 + 60, 9.), np.arange(y0 - 60, y1 + 60, 9.))
+        self.xy = np.stack([gx.ravel(), gy.ravel()], 1)
+        self.d = forest.distance(self.xy[:, 0], self.xy[:, 1])
+
+    def test_distance_is_zero_on_the_park_and_grows_off_it(self):
+        x, y = self.xy.T
+        self.assertTrue((self.d[placement.contains(x, y)] == 0).all())
+        self.assertTrue((self.d[~placement.contains(x, y, margin=10.)] > 2.5).all())
+        x0, y0, x1, y1 = forest.near_box()
+        inside = (x > x0) & (x < x1) & (y > y0) & (y < y1)
+        self.assertTrue(inside[self.d < forest.FAR - 5].all())
+
+    def test_low_poly_crowns_turn_detailed_round_the_park(self):
+        off = self.d > forest.CLEAR
+        rows = [[x, y, 50., 0., 1.] for x, y in self.xy[off]]
+        instances = {'HD_NorthTreeRust': [list(r) for r in rows]}
+        flat = lambda x, y: np.full(np.shape(x), 50.)
+        far = lambda x, y: np.full(np.shape(x), 1e3)
+        forest.grow(instances, flat, far)
+        left = np.array(instances['HD_NorthTreeRust'])[:, :2]
+        d = forest.distance(left[:, 0], left[:, 1])
+        self.assertTrue((d >= forest.NEAR).all())
+        self.assertEqual(int((d >= forest.FAR).sum()), int((self.d[off] >= forest.FAR).sum()))
+        added = {k: np.array(v) for k, v in instances.items() if k != 'HD_NorthTreeRust'}
+        self.assertLessEqual(set(added), set(forest.HEIGHT))
+        new = np.concatenate(list(added.values()))
+        self.assertTrue((forest.distance(new[:, 0], new[:, 1]) > forest.CLEAR).all())
+        self.assertGreater(len(new), int((self.d[off] < forest.NEAR).sum()))
+        again = {'HD_NorthTreeRust': [list(r) for r in rows]}
+        forest.grow(again, flat, far)
+        self.assertEqual(again, instances)
 
 
 

@@ -213,6 +213,18 @@ void AJapanWorld::Load()
     const FString ParkPath = AtelierDataPath(TEXT("skatepark/park.json"));
     const TArray<TArray<FVector2D>> ParkClearance = ASkatePark::LoadClearance(ParkPath);
     int32 Cleared = 0;
+    // Playable ground far from the origin, such as the forest round the Mega Park (megapark/forest.py): the detailed
+    // trees there are near ones, with shadows, collision and the camera fade; the low-poly crowns stay backdrop.
+    TArray<FBox2D> NearTrees;
+    const TArray<TSharedPtr<FJsonValue>>* NearBoxes = nullptr;
+    if (City.IsValid() && City->TryGetArrayField(TEXT("near_trees"), NearBoxes))
+        for (const TSharedPtr<FJsonValue>& V : *NearBoxes)
+        {
+            const TArray<TSharedPtr<FJsonValue>>& B = V->AsArray();
+            if (B.Num() < 4) continue;
+            const FVector A = ToUE(B[0]->AsNumber(), B[1]->AsNumber(), 0), C = ToUE(B[2]->AsNumber(), B[3]->AsNumber(), 0);
+            NearTrees.Add(FBox2D(FVector2D(FMath::Min(A.X, C.X), FMath::Min(A.Y, C.Y)), FVector2D(FMath::Max(A.X, C.X), FMath::Max(A.Y, C.Y))));
+        }
     const TSharedPtr<FJsonObject>* Inst = nullptr;
     if (Root->TryGetObjectField(TEXT("instances"), Inst))
     {
@@ -240,7 +252,8 @@ void AJapanWorld::Load()
                 // The new trail is playable: nearby trunks cast shadows and
                 // keep collision, while the distant summit forest stays cheap.
                 const bool bNorthTrailTree=City.IsValid() && Position.X>85000 && Position.X<130000 && Position.Y>-125000 && Position.Y<=-50000;
-                const bool bBackdrop = bTree && !bCityTree && !bNorthTrailTree && FMath::Max(FMath::Abs(Position.X), FMath::Abs(Position.Y)) > GroundSize * 0.75f;
+                const bool bNearTree = Key.StartsWith(TEXT("Tree")) && NearTrees.ContainsByPredicate([&](const FBox2D& B) { return B.IsInside(FVector2D(Position)); });
+                const bool bBackdrop = bTree && !bCityTree && !bNorthTrailTree && !bNearTree && FMath::Max(FMath::Abs(Position.X), FMath::Abs(Position.Y)) > GroundSize * 0.75f;
                 (bBackdrop ? Distant : Near).Add(FTransform(FRotator(0, -A[3]->AsNumber(), 0), Position, FVector(Sc)));
             }
             auto AddGroup = [&](const TArray<FTransform>& Xs, bool bBackdrop)

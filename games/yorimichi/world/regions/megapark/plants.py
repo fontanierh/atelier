@@ -22,18 +22,23 @@ FOLIAGE = {
 LINK = {'longtree': 2.6, 'poplar': 2.0, 'birch': 1.0, 'shrub': 1.2, 'shrubpot': 1.5, 'ocotillo': 1.0, 'saguaro': .8,
         'treewall': 3.0}
 
-# Island meshes (/Game/Japan/Assets): height and crown radius in metres at scale 1 (world/build_assets.py).
+# Island meshes (/Game/Japan/Assets): height and crown radius in metres at scale 1 (world/build_assets.py; the tall
+# canopy trees are the tree house's, treehouse/trees.py). All are the detailed leaf-card kind the island uses where the
+# player gets close; the painted-card _lo trees are for the far forest.
 MESHES = {
-    'Tree_Maple_A': (6.5, 3.0), 'Tree_Maple_B': (5.2, 2.3), 'Tree_Ginkgo': (9.0, 2.2), 'Tree_Pine_A': (13.0, 2.6),
-    'Tree_Pine_B': (11.0, 2.4), 'Tree_Cedar_B': (13.0, 2.2), 'Tree_Maple_lo': (6.5, 3.0), 'Tree_Ginkgo_lo': (9.0, 2.1),
-    'Tree_Broad_lo': (8.5, 2.5), 'Bush_Ochre_A': (1.5, 1.5), 'Bush_Ochre_B': (1.1, 1.1), 'Bush_Green_A': (1.4, 1.4),
-    'Bush_Green_B': (1.0, 1.0), 'Bush_Flower_A': (1.2, 1.2),
+    'Tree_Maple_A': (6.5, 3.0), 'Tree_Maple_B': (5.2, 2.3), 'Tree_Ginkgo': (9.0, 2.2), 'Tree_Broad_A': (8.5, 2.3),
+    'Tree_Broad_B': (7.0, 1.9), 'Tree_Broad_C': (10., 2.7), 'Tree_Pine_A': (13.0, 2.6), 'Tree_Pine_B': (11.0, 2.4),
+    'Tree_Cedar_B': (13.0, 2.2), 'Tree_Canopy_Maple': (16.4, 4.5), 'Tree_Canopy_Crimson': (15.2, 4.3),
+    'Tree_Canopy_Amber': (17.6, 4.2), 'Tree_Canopy_Ginkgo': (18.5, 3.3), 'Bush_Ochre_A': (1.5, 1.5),
+    'Bush_Ochre_B': (1.1, 1.1), 'Bush_Green_A': (1.4, 1.4), 'Bush_Green_B': (1.0, 1.0), 'Bush_Flower_A': (1.2, 1.2),
 }
-# Original plant -> (mesh, weight) choices and the scale range. The rock rims get pines, cedars and big maples like the
-# forest around the park; the groves and canyons get the painted maples and ginkgos; the shrubs become bushes.
+# Original plant -> (mesh, weight) choices and the scale range. The rock rims get pines, cedars and broadleaves like the
+# forest round the park; the groves and canyons get the painted maples and ginkgos; the shrubs become bushes. A tree
+# TALL metres or more becomes one of the tall canopy trees, or a big conifer.
 CHOICES = {
-    'longtree': ([('Tree_Pine_B', 3), ('Tree_Cedar_B', 2), ('Tree_Maple_lo', 3), ('Tree_Ginkgo_lo', 1), ('Tree_Pine_A', 1)], (.9, 2.2)),
-    'poplar': ([('Tree_Maple_A', 4), ('Tree_Maple_B', 2), ('Tree_Ginkgo', 2), ('Tree_Maple_lo', 2), ('Tree_Broad_lo', 1)], (.8, 2.2)),
+    'longtree': ([('Tree_Pine_B', 3), ('Tree_Cedar_B', 2), ('Tree_Broad_C', 2), ('Tree_Broad_A', 2), ('Tree_Maple_A', 1),
+                  ('Tree_Pine_A', 1)], (.9, 2.2)),
+    'poplar': ([('Tree_Maple_A', 4), ('Tree_Maple_B', 2), ('Tree_Ginkgo', 3), ('Tree_Broad_A', 1), ('Tree_Broad_B', 1)], (.8, 2.0)),
     'treewall': ([('Tree_Cedar_B', 2), ('Tree_Pine_B', 1)], (1., 1.4)),
     'birch': ([('Tree_Ginkgo', 1)], (.7, 1.0)),
     'ocotillo': ([('Tree_Maple_B', 3), ('Bush_Ochre_A', 2), ('Tree_Maple_A', 1)], (.7, 1.2)),
@@ -41,6 +46,9 @@ CHOICES = {
     'shrub': ([('Bush_Ochre_A', 3), ('Bush_Ochre_B', 2), ('Bush_Green_A', 2), ('Bush_Green_B', 1), ('Bush_Flower_A', 1)], (.9, 2.2)),
     'shrubpot': ([('Bush_Flower_A', 1)], (1.2, 1.6)),
 }
+TALL = 12.
+TALL_CHOICES = ([('Tree_Canopy_Maple', 3), ('Tree_Canopy_Crimson', 3), ('Tree_Canopy_Amber', 2), ('Tree_Canopy_Ginkgo', 2),
+                 ('Tree_Pine_A', 1), ('Tree_Cedar_B', 1)], (.8, 1.6))
 SINK = .3           # metres the trunk base goes under the original card base, so slopes never show a gap
 
 
@@ -121,7 +129,8 @@ def trees(seed=11):
     rng = np.random.default_rng(seed)
     out = {}
     for plant in plants():
-        options, (smin, smax) = CHOICES[plant['kind']]
+        options, (smin, smax) = TALL_CHOICES if plant['kind'] in ('longtree', 'poplar') and plant['height'] >= TALL \
+            else CHOICES[plant['kind']]
         names = [n for n, _ in options]; weights = np.array([w for _, w in options], 'f8')
         name = names[rng.choice(len(names), p=weights / weights.sum())]
         height, crown = MESHES[name]

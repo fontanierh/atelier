@@ -35,6 +35,12 @@ forest, the park build and the review tool all read it. It is pure NumPy.
   within 20 m; around it the natural relief is offset to the park's edge height and eases back
   over a skirt that widens with the height it makes up (35 to 220 m). Trees are cleared from the
   footprint (`hidamari/layout.py`).
+- The forest round it is the detailed kind the skater gets close to (`megapark/forest.py`): the
+  north forest's low-poly crowns become the island's leaf-card maples, ginkgos, broadleaves, pines
+  and cedars within 70 m of the footprint, fewer and fewer out to 140 m, and new trees fill in
+  thickest at the park's edge, thinning to the forest's own density by 70 m so no ring shows from
+  afar. `city.json` lists the area as `near_trees`, so `AJapanWorld` gives those trees shadows,
+  collision and the camera fade instead of treating them as distant backdrop.
 - `world.megapark` writes `megapark/park.json`, staged into `Content/Data`: the actor transform,
   the kept meshes at their native origins, the grind paths and the upper deck start.
   `ASuperUltraMegaPark::Spawn` (called by `AJapanWorld`) builds the park from it, using the meshes
@@ -53,9 +59,10 @@ island's look instead of the original desert campus. Concepts painted with Sunbu
 
 - **Plants.** The desert trees, cacti and shrubs are camera-facing cards (11 textures). The park
   build leaves those render parts out, and `world/regions/megapark/plants.py` turns each original
-  plant (card groups joined by kind) into one of the island's own trees or bushes at its foot:
-  pines, cedars and big maples on the rock rims, painted maples and ginkgos in the groves and
-  canyons, bushes for the shrubs, sized to the original. `ASuperUltraMegaPark::Spawn` plants them
+  plant (card groups joined by kind) into one of the island's own detailed trees or bushes at its
+  foot: pines, cedars and broadleaves on the rock rims, painted maples and ginkgos in the groves
+  and canyons, the tree house's tall canopy trees for any 12 m or taller, bushes for the shrubs,
+  sized to the original. None are the far forest's painted-card `_lo` trees. `ASuperUltraMegaPark::Spawn` plants them
   as instanced meshes with the island's see-through fade and no collision, so the skate world
   snapshot never sees them.
 - **Textures.** `tools/megapark_textures.py paint` repaints the five big natural surfaces (rock,

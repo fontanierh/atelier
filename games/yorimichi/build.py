@@ -90,7 +90,7 @@ def steps(ctx):
              outputs=[out / 'foliage_lods' / 'manifest.json'], about='seeded LOD chains for trees, bushes and grass'),
         Step('world.hidamari', [Blender(REGIONS / 'hidamari' / 'build.py')],
              inputs=[REGIONS / 'hidamari', REGIONS / 'village' / 'build.py', REGIONS / 'zeppelin' / 'layout.py',
-                     REGIONS / 'megapark' / 'placement.py'],
+                     REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py'],
              needs=['world.layout'], outputs=[out / 'hidamari' / 'city.json', out / 'hidamari' / 'manifest.json'],
              about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains'),
         Step('world.zeppelin', [Blender(REGIONS / 'zeppelin' / 'build.py', threads=2)],
