@@ -1004,3 +1004,19 @@ rows, foot locks and query/pose/toolkit/physics-mode failures. The complete
 handplant and skeleton helpers are reused without replacing original methods.
 Caller-selected toes and KnownAir packets remain explicit upstream inputs in
 this focused proof; the complete game frame remains a separate integration.
+
+### Native climbing clip and contact core
+
+The authored climbing extension now has native SQT clip storage, validation,
+remapping, sampling, hierarchy evaluation, wrist placement and two-bone hand IK.
+`SKCLIP1` preserves the original source values and ordered validation; an absent
+optional clip package remains absent. The arithmetic follows the pinned host's
+Bevy/glam AArch64 backend, independently of the recovered board math.
+
+The complete original clip/contact modules and C++ match exactly for 1,185
+operations, 42 loader fixtures and 1,595,942 output bytes, including both wrists,
+reflected transforms, shortest quaternion interpolation, unused invalid clips,
+ordered bone errors and failure retention. Other CPU SIMD backends need their
+own comparison. Original assertion-only invalid limb domains receive explicit
+native diagnostics; they are outside this successful-behaviour comparison.
+World admission, the retained climb session and global resume remain separate.
