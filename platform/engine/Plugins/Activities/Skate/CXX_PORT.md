@@ -1020,3 +1020,19 @@ ordered bone errors and failure retention. Other CPU SIMD backends need their
 own comparison. Original assertion-only invalid limb domains receive explicit
 native diagnostics; they are outside this successful-behaviour comparison.
 World admission, the retained climb session and global resume remain separate.
+
+### Native simulation clock
+
+`SimulationClock` retains the original offline timer period and wrapping reset
+counter. Ordered camera requests stop at the first error while retaining earlier
+successful writes. Reciprocal rounding, the saturating integer boundary, signed
+tick interpretation and shortest decimal diagnostics follow the pinned host.
+The timer period is separate from the physical integration timestep.
+
+The entire original clock module and C++ match for 19 histories, 5,460 commands
+and 274,523 output bytes (SHA256
+`e9d5485c92c9a48ec5fcfa248a82d2009f50f1803ca579871295bf02bd1c5163`).
+These include 19 distinct periods, 74 normal-period resets, 59 wrapping default
+counters and 2,481 failures retaining both owner fields. The preceding 18
+histories and 5,370 commands remain verbatim. Actual camera queue dispatch,
+network-mode handling and the final frame boundary remain coordinator work.
