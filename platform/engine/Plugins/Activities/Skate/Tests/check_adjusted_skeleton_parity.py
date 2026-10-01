@@ -11,6 +11,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import shutil
 import struct
@@ -109,12 +110,7 @@ def prepare_oracle(probe):
  # inner module documentation; Rust include! would reject those inner docs.
  frozen={}
  for name in ('animated_skeleton','foot_ik'):
-  source=PLUGIN/f'ThirdParty/skate-runtime/crates/skate-host/src/physics/{name}.rs'
-  root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip())
-  relative=source.relative_to(root).as_posix()
-  raw=subprocess.check_output(['git','show',f'{REFERENCE_REVISION}:{relative}'],cwd=root)
-  assert raw==source.read_bytes(),f'{name} differs from frozen source'
-  frozen[name]=raw.decode()
+  frozen[name]=historical.source_text('crates/skate-host/src/physics/'+name+'.rs')
  module=' pub mod animated_skeleton{\n'+frozen['animated_skeleton']+\
   '\npub fn observer(a:&AnimatedSkeleton)->(&PointGraph<8>,&[usize;4],&LandingSettings){(&a.landing_on_board_blend,&a.target_bones,&a.landing_settings)}pub fn replace_target(a:&mut AnimatedSkeleton,v:usize)->usize{std::mem::replace(&mut a.target_bones[0],v)}\n}\n'+\
   ' pub(crate) use animated_skeleton::AnimatedSkeleton as Animated;\n pub mod foot_ik{\n'+frozen['foot_ik']+\
@@ -156,7 +152,7 @@ def preflight():
    else:at+={0:23,1:1,2:0,3:16,4:2,5:0,6:0,7:10,8:28,10:4,11:24,12:408,13:1}[op]
  assert at==len(w),(at,len(w))
  for n in UNITS:assert (PLUGIN/f'Source/AtelierSkate/Private/Native/{n}.cpp').is_file(),n
- for n in aliases().values():assert (PLUGIN/'ThirdParty/skate-runtime'/n).is_file(),n
+ for n in aliases().values():historical.source_bytes(n)
  return data,cases
 
 def decode(raw,cases):
@@ -180,4 +176,4 @@ def main():
   report=dict(passed=False,first_word=first,case=c,command=command,reference_bytes=len(expected),cpp_bytes=len(actual));(o/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
  result=dict(passed=True,streams=len(cases),exact_words=len(expected)//4,coverage=coverage,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),comparison='Complete source authored hierarchy→offset/landing/COM→world foot queries→all FootIK stages→shared body solve→post-IK physical setters and final owner histories; full numeric source unchanged, no tolerance',limitations='Gameplay processed scalar/flag requests, external IK target events, selected GrindAir target/orientation and engine triangles are explicit upstream fixtures. Full lifecycle dispatcher, Wipeout/FootPhysical/render output remains separately owned; pose hierarchy, contacts, IK, drives and bodies are produced live.')
  (o/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

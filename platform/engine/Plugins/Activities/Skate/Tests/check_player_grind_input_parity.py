@@ -11,6 +11,7 @@ from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import re
 import shutil
@@ -31,9 +32,7 @@ UNITS=('PlayerGrindSurface','PlayerGrindInputWorld','PlayerGrindContact','Player
 
 @lru_cache(None)
 def source(path):
-    raw=trees.source_at_reference(path)
-    assert raw.encode()==(PLUGIN/'ThirdParty/skate-runtime'/path).read_bytes(),path
-    return raw
+    return historical.source_text(path)
 
 def struct_fields(raw,name):
     m=re.search(r'\bstruct '+name+r'(?:<[^{}]+>)?\s*\{',raw);assert m,name
@@ -319,4 +318,4 @@ def main():
         x=subprocess.check_output([str(reference),str(root),'--settings-only']);y=subprocess.check_output([str(native),str(settings),'--settings-only']);assert x==y,(query,x,y);r=protocol.Reader(x);assert r.word()==0;error=bytes(r.word()for _ in range(r.word())).decode();assert error and r.at==len(x);negative.append(dict(query=query,error=error))
     result=dict(passed=True,programs=len(programs),commands=sum(len(p['commands'])for p in programs),exact_bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=proof,settings_failures=negative,boundary='Complete original grind pre/post manager and real world queries. Global player scheduling, moving grind providers and native converter parser are separate boundaries.');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

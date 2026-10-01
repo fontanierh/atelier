@@ -11,6 +11,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import re
 import shutil
@@ -26,11 +27,7 @@ UNITS=adjusted.UNITS+('StockSettingsReader','PlayerInputTypes','WipeoutOrientati
 OPERATIONS=('process_and_update','reset_teleport','trigger_wobble','seed_lifecycle','external_ik','grind_target','replace_world','finish_attributes','select_mode','seed_sleeping_bodies')
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def source(path):
- root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip())
- p=PLUGIN/'ThirdParty/skate-runtime'/path
- raw=subprocess.check_output(['git','show',f'{adjusted.REFERENCE_REVISION}:{p.relative_to(root).as_posix()}'],cwd=root)
- assert raw==p.read_bytes(),path
- return raw.decode()
+ return historical.source_text(path)
 def declarations():
  definitions,_=protocol.declarations()
  return definitions
@@ -176,4 +173,4 @@ def main():
  if expected!=actual:
   first=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;case=next((c for c in cases if c['first_output_word']<=first<c['first_output_word']+c['output_words']),None);report=dict(passed=False,first_word=first,case=case,reference_bytes=len(expected),cpp_bytes=len(actual));(o/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
  result=dict(passed=True,streams=len(cases),exact_words=len(expected)//4,coverage=coverage,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),comparison='Complete frozen ProcessData/GeneralUpdate/Ground/Teleport/reset with actual AnimationInput, AnimatedSkeleton, FootIK, loaded physical owners and shared solve. No numerical source modifications or tolerance.',limitations='Ordered authored attributes/action maps and current processed gameplay requests/flags are explicit producer inputs. World triangles are engine geometry inputs. Full session/ground lifecycle dispatch remains separate.');(o/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

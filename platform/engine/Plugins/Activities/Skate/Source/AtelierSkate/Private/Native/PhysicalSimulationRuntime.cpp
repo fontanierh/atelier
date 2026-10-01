@@ -231,6 +231,18 @@ Mat4 PhysicalSimulationRuntime::DeckFrame() const
 }
 bool PhysicalSimulationRuntime::BeginBoardQueries(std::string& error){board.ClearForces();return riding.StartWheelQueries(board,world,error);}
 bool PhysicalSimulationRuntime::FinishBoardQueries(std::string& error){return riding.FinishWheelQueries(error);}
+bool PhysicalSimulationRuntime::AdvanceClimbingBoardOnly(float dt,std::string& error)
+{
+    board.ClearForces();
+    if(!riding.StartWheelQueries(board,world,error))return false;
+    if(!riding.FinishWheelQueries(error))return false;
+    const auto volumes=BoardWorldVolumes(board,settings.board.collision);
+    const auto contacts=world_contacts_.Query(world,volumes,settings.query,settings.retention);
+    contact_count=contacts.size();generated_contacts=contacts;
+    board.Advance(contacts,{0.0f,0.0f},settings.board.step);
+    riding.FinishPostPhysics(board,board_wiping_out,processed_flags_2468,dt);
+    error.clear();return true;
+}
 Mat4 PhysicalSimulationRuntime::PrepareGroundSkeleton(const Mat4& animation_board,const Mat4& reckoning,float dt)
 {
     roots.initialize_heading=true;roots.Update(DeckFrame(),Lanes(board.Bodies()[6].rates.linear_velocity),dt,animation_board,reckoning);

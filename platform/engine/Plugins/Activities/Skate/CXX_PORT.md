@@ -1188,3 +1188,27 @@ The source tables retain their MIT notice and source identities. Invalid UTF-8
 has no Rust string equivalent; 426 separately scoped native checks verify its
 rejection and output retention. Session error formatting uses this helper;
 complete Session construction and gameplay still require their own comparison.
+
+### Complete native gameplay frame
+
+The native owning runtime now joins the actual controller, player-state,
+physics, animation, scoring and camera phases in their original order. All
+phases borrow the same retained owners; decoded native clips and graphs supply
+the real resource producers. The complete unchanged original frame comparison
+passes 12 histories, 3,730 operations and 3,682 frames: 436,110,372 exact output
+bytes (SHA-256
+`c860373dd0e1a8a4b571121482b4f58c16b2a7a7c7406b89146800dfbd1be9dc`).
+The corpus SHA-256 is
+`3fd00deb6ed98808cad56a0a0e2a5a561e2bdfb2072a22ed92278c01a8415346`.
+Its 404 native compilation units include the concrete frame schedule. The
+comparison preserves all original source bodies and appends read-only observers.
+A publication repair copies the actual held/free board flags into the motion
+graph, preserving the original running clip and resulting physical trajectory.
+
+Coverage includes grounded/airborne skating, offboard ground/air and landing
+states, stance changes, controller histories, tuning, travel and retained errors.
+The fixture world is a flat floor with an empty grind provider. Rail admission,
+physical wipeout and climbing require their focused connected checks; host
+Session timing, live Unreal collision export and rendering remain separate
+acceptance steps. The playable adapter still uses the existing backend at this
+checkpoint.

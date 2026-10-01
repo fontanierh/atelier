@@ -20,6 +20,7 @@ public:
     void Clear() { values_.clear(); }
     std::size_t Size() const { return values_.size(); }
     bool Empty() const { return values_.empty(); }
+    const std::map<IntentKey,float>& Entries() const { return values_; }
 private:
     std::map<IntentKey,float> values_;
 };

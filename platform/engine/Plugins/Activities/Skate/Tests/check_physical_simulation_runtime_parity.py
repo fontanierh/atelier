@@ -14,6 +14,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import historical_oracle as historical
 import random
 import shutil
 import struct
@@ -90,8 +91,7 @@ def corpus():
 def preflight():
     native=PLUGIN/'Source/AtelierSkate/Private/Native';missing=[str(native/f'{n}.cpp') for n in UNITS if not(native/f'{n}.cpp').is_file()]
     if missing:raise AssertionError(missing)
-    source=PLUGIN/'ThirdParty/skate-runtime'
-    if any(not(source/p).is_file() for p in aliases().values()):raise AssertionError('Missing original forwarding source')
+    for relative in aliases().values():historical.source_bytes(relative)
     data,cases=corpus();words=struct.unpack('<'+'I'*(len(data)//4),data);at=1
     def skip_world():
         nonlocal at
@@ -158,4 +158,4 @@ def main():
         report=dict(passed=False,first_word=first//4,case=c,command=command,reference_length=len(expected),cpp_length=len(actual),reference_hex=expected[max(0,aligned-16):aligned+32].hex(),cpp_hex=actual[max(0,aligned-16):aligned+32].hex());(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
     result=dict(passed=True,streams=len(cases),exact_words=len(expected)//4,groups=dict(Counter(c['label'] for c in cases)),coverage=coverage,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),settings_source_sha256=digest(stock/'skater-collections.json'),physics_source_sha256=digest(stock/'physics-skeletons.json'),native_rig_sha256=digest(samples/'native/rig.skate'),comparison='All actual board/rider/target/proxy bodies, physical/animation/COM histories, root predictions, contact and retained drive rows, collision feedback, pose errors, wheel/probe/orientation/filter/motion state and live possession/material publications exact; no tolerance; full original host producer modules unchanged',limitations='Current gameplay Processed fields and engine triangles are explicit inputs. Actual authored pose hierarchy is evaluated in both backends; upstream pose adjustment/FootIK and complete gameplay lifecycle scheduling remain separate integration work. Remote body/wire requests are explicit; fingerprint construction/capture format remains a separately documented boundary. Finite valid simulation and original query/collision-selector diagnostics covered; Rust Debug text for invalid physical diagnostics is not reproduced byte-for-byte by the typed native diagnostic.')
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

@@ -11,6 +11,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import shutil
 import struct
@@ -68,17 +69,13 @@ def corpus():
   for failure in (1,2):add('explicit producer failure and retained caller output',4,args+[failure])
  return struct.pack('<I',len(records))+b''.join(records),cases
 def build(out):
- root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip())
- relative=(PLUGIN/'ThirdParty/skate-runtime/crates/skate-core/src').relative_to(root).as_posix()
- archive=subprocess.check_output(['git','archive',f'{REFERENCE_REVISION}:{relative}'],cwd=root)
+ archive=historical.source_archive('crates/skate-core/src')
  source=out/'reference-source'
  if source.exists():shutil.rmtree(source)
  source.mkdir()
  with tarfile.open(fileobj=io.BytesIO(archive))as stream:stream.extractall(source,filter='data')
  original={p.relative_to(source).as_posix():digest(p)for p in source.rglob('*.rs')}
- world_path=(PLUGIN/'ThirdParty/skate-runtime'/WORLD).relative_to(root).as_posix()
- world=subprocess.check_output(['git','show',f'{REFERENCE_REVISION}:{world_path}'],cwd=root)
- assert world==(PLUGIN/'ThirdParty/skate-runtime'/WORLD).read_bytes()
+ world=historical.source_bytes(WORLD)
  (source/'air-host-world.rs').write_bytes(world)
  rust=PLUGIN/'Tests/Reference/air_trajectory_query_probe.rs';main=source/'air-trajectory-query-oracle.rs'
  main.write_text((source/'lib.rs').read_text()+rust.read_text());reference=out/'air-trajectory-query-reference'
@@ -135,4 +132,4 @@ def main():
   byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=byte,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Complete trajectory/world query differs')
  result=dict(passed=True,cases=len(cases),exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,cases),boundary='Whole unchanged core trajectory query/prediction and complete host world leaves. Real triangle broadphase, rounded line tests and full triangle/AABB SAT collector execute. Explicit callback failures separately check propagation and retained caller output. Selection/scoring/grind admission and complete gameplay scheduling remain separate. Original nonadvancing/hanging query inputs are outside this parity corpus; the native nonadvancing guard is not claimed as an original error.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

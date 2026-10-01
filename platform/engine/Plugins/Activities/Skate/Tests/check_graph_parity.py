@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import shutil
 import struct
@@ -88,7 +89,10 @@ def main():
                     str(PLUGIN/'Tests/Native/graph_probe.cpp'),'-o',str(cpp)],check=True)
     # Preserve Rust's module-directory layout; all source files are copied verbatim.
     oracle=output/'oracle'; (oracle/'state_graph').mkdir(parents=True,exist_ok=True)
-    original=PLUGIN/'ThirdParty/skate-runtime/crates/skate-data/src'
+    original=historical.stage_source_files(output, (
+        'crates/skate-data/src/state_graph.rs',
+        'crates/skate-data/src/state_graph/attributes.rs',
+        'crates/skate-data/src/state_graph/binding.rs'))/'crates/skate-data/src'
     shutil.copyfile(PLUGIN/'Tests/Reference/graph_probe.rs',oracle/'main.rs')
     shutil.copyfile(original/'state_graph.rs',oracle/'state_graph.rs')
     for filename in ('attributes.rs','binding.rs'):
@@ -152,4 +156,4 @@ def main():
     print(json.dumps(report,indent=2),flush=True)
 
 
-if __name__=='__main__': main()
+if __name__=='__main__': historical.run_cli(main)

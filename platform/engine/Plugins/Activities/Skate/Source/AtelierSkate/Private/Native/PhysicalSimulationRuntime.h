@@ -153,6 +153,9 @@ public:
     Mat4 DeckFrame() const;
     bool BeginBoardQueries(std::string& error);
     bool FinishBoardQueries(std::string& error);
+    // Climbing's dropped board advances independently of the attached rider.
+    // It uses this owner's world contact history and the caller's current dt.
+    bool AdvanceClimbingBoardOnly(float dt,std::string& error);
     Mat4 PrepareGroundSkeleton(const Mat4& animation_board,const Mat4& reckoning,float processed_dt);
     void UpdateRootDerivative(float processed_dt);
     void ResetPhysicalPose();

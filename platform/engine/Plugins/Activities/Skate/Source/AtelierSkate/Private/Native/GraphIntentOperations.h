@@ -2,6 +2,7 @@
 #pragma once
 #include "CompiledGraph.h"
 #include "GraphConditions.h"
+#include "GraphActionPhysicalConditions.h"
 #include "InputIntentions.h"
 #include "Settings.h"
 
@@ -23,13 +24,14 @@ struct ActionIntentParameter
 ActionIntentParameter ParseActionIntentParameter(const GraphAttributes&);
 struct ActionIntentOperation
 {
-    enum class Kind : std::uint32_t { Unsupported, Condition, CreateMgIntent, CreateMgTimeIntent, CreateConstMgIntent, BoardAdjust, JuiceHook, BodyFlippingSignal, PrintText, CreateTrickFromGesture };
+    enum class Kind : std::uint32_t { Unsupported, Condition, CreateMgIntent, CreateMgTimeIntent, CreateConstMgIntent, BoardAdjust, JuiceHook, BodyFlippingSignal, PrintText, CreateTrickFromGesture, PhysicalCondition };
     Kind kind = Kind::Unsupported;
     GraphOperationKind source_kind = GraphOperationKind::Behavior;
     std::string name, presentation_text;
     ActionIntentParameter config;
     std::vector<ActionIntentParameter> parameters;
     GraphCondition condition;
+    GraphActionPhysicalCondition physical_condition;
     GestureGroup gesture_group=GestureGroup::Square;
     std::optional<std::string> gesture_override;
 };
@@ -62,6 +64,7 @@ public:
     std::vector<ActionIntentOperation> operations;
     IntentMap action_intents, motion_intents, filtered_intents;
     GraphConditionInputs condition_inputs;
+    GraphActionPhysicalInputs physical_inputs;
     std::vector<AnimationAttribute> animation_attributes;
     std::optional<Stance> stance;
     std::optional<bool> is_tricking;

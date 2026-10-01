@@ -10,6 +10,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import historical_oracle as historical
 import re
 import shutil
 import struct
@@ -20,10 +21,9 @@ import check_animation_trees_parity as trees
 from check_gesture_parity import PLUGIN,converter
 from session_parity import REFERENCE_REVISION
 UNITS=(*pure.UNITS,'AirTrajectoryRuntime','AirTrajectoryGrindRuntime','AirTrajectorySelectionRuntime')
-ROOT=PLUGIN/'ThirdParty/skate-runtime'
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def frozen(path):
- raw=trees.source_at_reference(path);assert raw.encode()==(ROOT/path).read_bytes();return raw
+ return historical.source_text(path)
 
 def block(raw,marker):return trees.extract_block(raw,marker)[0]
 CORE_WRAPPERS='''
@@ -232,4 +232,4 @@ def main():
   data=struct.pack('<I',1);expected=subprocess.check_output([str(reference),str(fixture['assets'])],input=data);actual=subprocess.check_output([str(native),str(fixture['bank'])],input=data);assert expected==actual,fixture['label'];r=Read(struct.unpack('<'+'I'*(len(expected)//4),expected));assert r.word()==0;size=r.word();end=r.at+size;okay,error=r.status();assert not okay and error;assert r.at==end==len(r.w);reports.append(dict(label=fixture['label'],error=error,exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest()))
  result=dict(passed=True,cases=len(cases),commands=sum(len(c['commands'])for c in cases),exact_words=len(e)//4+sum(r['exact_words']for r in reports),stock_output_sha256=hashlib.sha256(e).hexdigest(),coverage=coverage,loader_fixtures=reports,comparison='Complete unchanged original active host selector/launch/grind/settings/query/provider owners and all retained state/errors match exact words. Actual original StaticProvider constructs from rails/native blob/WMET independently of native converted transport.',limitations='Authored triangle/rail/package geometry is the explicit engine input boundary; no completed hits or neutral services are seeded. This proves the active trajectory host family, not whole air-state/session scheduling. Nonadvancing source query inputs are excluded from executable valid-domain histories.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)

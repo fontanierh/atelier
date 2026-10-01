@@ -10,6 +10,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import historical_oracle as historical
 import random
 import struct
 import subprocess
@@ -99,7 +100,10 @@ def main():
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-Wall', '-Wextra', '-Werror',
                     '-I', str(code), str(code/'Gestures.cpp'), str(PLUGIN/'Tests/Native/gesture_probe.cpp'),
                     '-o', str(cpp)], check=True)
-    subprocess.run(['rustc', '+1.97.1', '--edition=2024', '-O', str(PLUGIN/'Tests/Reference/gesture_probe.rs'),
+    rust_source = historical.stage_path_probe(PLUGIN/'Tests/Reference/gesture_probe.rs', output, {
+        '../../ThirdParty/skate-runtime/crates/skate-core/src/input/gesture.rs': 'crates/skate-core/src/input/gesture.rs',
+        '../../ThirdParty/skate-runtime/crates/skate-data/src/gesture_patterns.rs': 'crates/skate-data/src/gesture_patterns.rs'})
+    subprocess.run(['rustc', '+1.97.1', '--edition=2024', '-O', str(rust_source),
                     '-o', str(rust)], check=True)
     reference_data = execute([str(rust), str(source), 'dump'], output/'reference-data.bin')
     cpp_data = execute([str(cpp), str(native), 'dump'], output/'cpp-data.bin')
@@ -137,12 +141,12 @@ def main():
                   patterns=sum(len(group['patterns']) for group in sets), cases=len(spans), records=count, matches=matches,
                   native_data_sha256=hashlib.sha256(reference_data).hexdigest(),
                   inputs_sha256=hashlib.sha256(stream).hexdigest(), outputs_sha256=hashlib.sha256(reference).hexdigest(),
-                  reference_sources={str(p.relative_to(PLUGIN)): hashlib.sha256(p.read_bytes()).hexdigest() for p in (
-                      PLUGIN/'ThirdParty/skate-runtime/crates/skate-core/src/input/gesture.rs',
-                      PLUGIN/'ThirdParty/skate-runtime/crates/skate-data/src/gesture_patterns.rs')})
+                  reference_sources={'ThirdParty/skate-runtime/'+relative: hashlib.sha256(historical.source_bytes(relative)).hexdigest() for relative in (
+                      'crates/skate-core/src/input/gesture.rs',
+                      'crates/skate-data/src/gesture_patterns.rs')})
     (output/'result.json').write_text(json.dumps(report, indent=2)+'\n')
     print(json.dumps(report, indent=2), flush=True)
 
 
 if __name__ == '__main__':
-    main()
+    historical.run_cli(main)

@@ -12,6 +12,7 @@ import io
 import json
 import math
 from pathlib import Path
+import historical_oracle as historical
 import random
 import re
 import shutil
@@ -21,12 +22,11 @@ import tarfile
 from check_gesture_parity import PLUGIN,converter
 from session_parity import REFERENCE_REVISION
 UNITS=('NativeMath','Geometry','GeometrySweep','WorldGeometry','AirTrajectoryQuery','PlayerGrindSurface','PlayerGrindInputWorld','Settings','NameId','StockSettingsReader','AirTrajectoryLaunch','AirTrajectoryGrind','AirTrajectoryScoring','AirTrajectorySelector','AirTrajectorySelectorSettings')
-RUNTIME=PLUGIN/'ThirdParty/skate-runtime'
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def bits(v):return struct.unpack('<I',struct.pack('<f',v))[0]
 def fs(v):return list(map(bits,v))
 def fields():
- text=(RUNTIME/'crates/skate-core/src/air/trajectory/types.rs').read_text().split('pub struct SelectorSettings {',1)[1].split('\n}',1)[0]
+ text=historical.source_text('crates/skate-core/src/air/trajectory/types.rs').split('pub struct SelectorSettings {',1)[1].split('\n}',1)[0]
  return re.findall(r'pub (\w+): (f32|i32|PointGraph<\d+>)',text)
 SETTINGS_WORDS=sum(2*int(ty[11:-1])if ty.startswith('PointGraph')else 1 for _,ty in fields())
 def matrix(angle=0,translation=(0,0,0,0)):
@@ -124,7 +124,7 @@ use skate_core::air::trajectory::migration_probe as probe;
 fn main(){let assets=std::path::PathBuf::from(std::env::args().nth(1).unwrap());let data=skate_data::collections::Collections::load(&assets).unwrap();let settings=selector_settings::load(&data);let mut out=Vec::new();match settings{Ok(s)=>{probe::status(&mut out,None);probe::settings(&mut out,&s);let mut bytes=Vec::new();std::io::stdin().read_to_end(&mut bytes).unwrap();out.extend(probe::run(bytes,&s));},Err(e)=>probe::status(&mut out,Some(&e))};let mut stdout=std::io::BufWriter::new(std::io::stdout().lock());for w in out{stdout.write_all(&w.to_le_bytes()).unwrap();}}
 '''
 def prepare(output):
- root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip());relative=RUNTIME.relative_to(root).as_posix();revision=subprocess.check_output(['git','rev-parse',REFERENCE_REVISION],cwd=root,text=True).strip();archive=subprocess.check_output(['git','archive',f'{revision}:{relative}'],cwd=root)
+ revision=historical.reference_identity()['reference_commit'];archive=historical.source_archive()
  source=output/'original-source';observed=output/'reference-source'
  for p in (source,observed):
   if p.exists():shutil.rmtree(p)
@@ -246,7 +246,7 @@ def annotate_cases(data,cases):
 
 def variants(output,assets):
  data=json.loads((assets/'private/stock/skater-collections.json').read_text());spec=[]
- host=(RUNTIME/'crates/skate-host/src/physics/air_trajectory/settings.rs').read_text()
+ host=historical.source_text('crates/skate-host/src/physics/air_trajectory/settings.rs')
  # Every field's local failure is checked after all preceding original reads.
  ordered=[('physics_trajectory',name,'scalar')for name in re.findall(r't\("([^"]+)"\)',host)]
  ordered +=[('physics_reckoning',name,'scalar')for name in re.findall(r'r\("([^"]+)"\)',host)]
@@ -294,4 +294,4 @@ def main():
   assert r.at==len(r.w);fixture_reports.append(dict(label=fixture['label'],success=bool(okay),error=error,exact_words=len(e)//4,sha256=hashlib.sha256(e).hexdigest()))
  result=dict(passed=True,cases=len(cases),exact_words=len(expected)//4+sum(r['exact_words']for r in fixture_reports),stock_output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=fixture_reports,comparison='All complete retained owner fields, ordered callbacks and loader values/errors exact. Original numerical source prefixes and complete unchanged modules hash verified.',limitations='Pure selector service proof uses explicit canonical primitive-vector provider boundary and real original/native geometry surface probes plus candidate/admission. This is not the full host provider broadphase/nearby retention/metadata error or AirTrajectoryRuntime pending-batch scheduling proof; root owns those. No completed trajectory or grind hits are seeded. Nonadvancing original query horizons remain outside the valid source execution corpus.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
-if __name__=='__main__':main()
+if __name__=='__main__':historical.run_cli(main)
