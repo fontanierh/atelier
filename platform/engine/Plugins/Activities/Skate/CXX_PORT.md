@@ -37,10 +37,12 @@ in the Unreal adapter; the worker source remains identical to the pinned referen
 - [x] C++ collision/BVH, bodies, contacts, constraints, board and rider solver.
 - [x] C++ ground/air/grind/manual/slide/pump/off-board/wipeout state owners and scoring.
 - [x] C++ camera and complete session scheduling.
-- [ ] Finish focused landing and physical wipeout acceptance, then compare the latest-main vert changes.
+- [x] Finish focused LandingOnDeck acceptance, including original constructor rejection and loaders.
+- [ ] Finish physical wipeout acceptance, then compare the latest-main vert changes.
 - [ ] In-process Unreal ownership, background world refresh, mounting, retargeting and shutdown.
-- [ ] Remove the Rust worker/build dependency and original runtime data formats; commit all native data.
-- [ ] Run whole-session comparisons, in-game scenarios, visual checks and frame-pacing checks; submit the PR.
+- [x] Commit the verified project-native data package.
+- [ ] Remove Rust worker/build dependencies and original-format assets from the shipping checkout.
+- [ ] Complete latest-main comparisons, in-game scenarios, visual checks and frame-pacing checks; submit the PR.
 
 ## Complete native session
 
@@ -110,8 +112,9 @@ the actual query implementations. Independent conversion, native decoding and ma
 package rejection are included.
 
 Completed physical and animation subject records, authored region membership, query gravity
-and moving obstacle records are explicit upstream inputs in this comparison. Complete session
-scheduling and Unreal camera presentation remain separate checks. Original inputs that hang
+and moving obstacle records are explicit upstream inputs in this comparison. Complete Session
+scheduling passes its separate comparison above; Unreal camera presentation remains pending.
+Original inputs that hang
 or panic are excluded from valid-domain parity; additional native guards for those inputs are
 not claimed as matching original error behavior.
 
@@ -143,8 +146,9 @@ implementation. The game will not parse the original JSON or its big-endian hexa
 child indices. Duplicate attributes remain in the data, while lookup keeps the first hashed key, including
 collisions. `GraphBinding` preserves operation order, disabled ancestry, condition masks, priority,
 interrupt ancestors, transition resolution and dotted-path search. `CompiledGraph` maps those bindings into
-the C++ controller's executable topology and compact operation IDs. Registered gameplay operations and
-their physical inputs still require porting; matching generic execution alone does not establish gameplay parity.
+the C++ controller's executable topology and compact operation IDs. The complete gameplay hosts and
+physical publications are implemented; their connected comparisons are recorded below. Generic execution
+alone does not establish gameplay parity.
 
 ## Native physics arithmetic and controller input
 
@@ -164,7 +168,8 @@ vertices, including normal bending and contact reprojection. `WorldPrimitiveCont
 typed sphere/capsule/triangle/box path, the original triangle/box separating-axis specialization,
 velocity-based separation allowance and complete contact manifolds. `WorldContactProducer.*` connects
 ordered candidate traversal, primitive queries, material combination, retention and imported-floor
-seam suppression. Body-workspace preparation remains separate work. `ContactRetention.*` preserves ordered material
+seam suppression. The connected physical runtime supplies the live body workspaces.
+`ContactRetention.*` preserves ordered material
 combination, duplicate rejection, coplanar reduction, point selection and capacity/flush behavior.
 
 `RigidBody.*` preserves the packed body update, typed body adapters, quaternion integration, inverse
@@ -189,24 +194,25 @@ normalization, untouched translation lanes and the live animation-drive lifecycl
 live body/inertia updates and whole-board movement with the separate original hook request.
 `ContactGeneration.*` constructs the original tangents, copied force/inertia workspaces and typed
 compiled contact facade. `BoardAssembly.*` builds the ordered six-joint/two-truck/hook assembly from
-live snapshots, preserving active-body filtering and live hook normalization. Complete body ownership
-and scheduling remain open. These comparisons establish
+live snapshots, preserving active-body filtering and live hook normalization. The connected board and
+physical runtimes supply body ownership and scheduling. These comparisons establish
 parity with the frozen Rust reconstruction, including its documented unresolved retail joint-matrix
 gather and carry-lane interpretation; they do not independently verify those against the EA executable.
 
 `Input.*`, `InputIntentions.*`, `AnimationName.*` and `Intents.*` preserve pad history, Xbox conversion,
 retained controller fields, encoded-name aliases, ordered intent emissions, turn filters and slide state.
-These cover the original core modules. Production host scheduling, camera-relative off-board remapping
-and complete motion gameplay remain open. `GraphConditions.*`, `GraphIntentOperations.*` and
+These cover the original core modules. `PlayerControls` and the complete frame supply host scheduling
+and camera-relative off-board remapping. `GraphConditions.*`, `GraphIntentOperations.*` and
 `GraphMotionSliding.*` add typed action-host factories/conditions/lifecycle, ordered action-to-motion
 intent publication, and the original host's distinct slide state/direction/deceleration behavior.
-Unported graph leaves retain explicit diagnostics rather than silently supplying a neutral result.
+Original unsupported graph nodes and missing physical publications retain explicit diagnostics rather
+than silently supplying a neutral result.
 `GraphGestureOperations.*` preserves all authored gesture-to-trick mappings, encoded-key bucket
 priority, mirror/dark-catch/underflip selection and the later flip-hold intent lifecycle. Its action-host
 registration now runs through the real C++ controller, with fresh per-instance state and owned cleanup.
 `GestureInputPublication.*` owns the seven recognizers over the native gesture bank, original stick
-deadzone/Y conversion, held-pattern ordering and graph permission gates. The frame scheduler must still
-call it at the original point between mapped controller input and action-graph evaluation.
+deadzone/Y conversion, held-pattern ordering and graph permission gates. The complete frame calls it
+at the original point between mapped controller input and action-graph evaluation.
 
 Arithmetic source files disable implicit Clang FP contraction and use explicit fused operations where
 the reference does. The module disables unity compilation so internal helpers and FP settings remain
@@ -223,8 +229,8 @@ foot queries, every FootIK stage, live target drives, shared body solve and post
 setters. Terrain replacements, retained resets, external target events, grind-air pose
 adjustment, two-bone reach boundaries and malformed owner/ancestor cases are included.
 Gameplay scalar/flag requests, external IK target events, selected grind targets and engine
-triangles remain explicit upstream inputs. The full skeleton lifecycle dispatcher and
-complete gameplay/render scheduling are separate checks.
+triangles remain explicit upstream inputs. The separate skeleton-input and complete-frame comparisons
+exercise the full lifecycle dispatcher and gameplay/render ordering.
 
 The complete skeleton-input lifecycle adds 372 histories and 1,200 ProcessData calls,
 preserving 29,009,143 exact words (SHA256
@@ -234,16 +240,16 @@ ground/teleport/general updates, wake/drive restoration and retained grind-air s
 through the original full dispatcher. The comparison observes 888 shared solves,
 16,399 contact rows, 42,624 drive rows and 61 partial failures. Forty-eight terrain
 replacements and teleport resets retain the original histories. Attribute/action values,
-processed gameplay requests and engine triangles are explicit upstream inputs; complete
-session and Ground lifecycle dispatch remain separate checks.
+processed gameplay requests and engine triangles are explicit upstream inputs. Ground lifecycle and
+Session dispatch are exercised by their connected comparisons below and above.
 
 `PlayerStateRegistry.*` preserves the complete original host support table,
 including the three unsupported states and Sleeping's restricted transition.
 `Tests/check_player_state_registry_parity.py` compares all 26 capabilities and
 676 transition pairs: 2,132 exact words, SHA-256
 `e65b2246c4be46289509c0d13e75d25457bb0a21978696983fab103c714858e5`.
-The actual lifecycle effects and global state publication remain separate
-concrete-owner checks.
+This registry comparison does not invoke lifecycle effects or global state publication; the
+concrete-owner and complete-frame comparisons exercise those paths.
 
 `PlayerStateSelector.*`, `PlayerStateLifecycle.*` and `PlayerStateMachine.*`
 preserve the complete core decision tree, transition callbacks, pre-state packet
@@ -277,9 +283,9 @@ match all 265,785 and 313,888 bytes respectively.
 
 This verifies the concrete ground owners. Handplant dispatch, trajectory
 Launch/Update continuation and later SkeletonAir capture are explicitly
-observed pending phase boundaries. Processed gameplay flags, edge observations
-and authored world triangles are supplied inputs. The complete player frame,
-scene grab execution and live Unreal session remain separate checks.
+observed continuation boundaries in this focused proof. Processed gameplay flags, edge observations
+and authored world triangles are supplied inputs. GroundPhase and the complete frame exercise the
+connected dispatch; live Unreal validation remains pending.
 
 ## Native airborne reckoning and spin
 
@@ -315,7 +321,8 @@ The focused comparison passes 797 cases and 31,294 exact words (SHA256
 It observes 406 line and 60 nearby callbacks, 145 trajectory contacts, 147 misses,
 127 direct line hits and 22 failures. Caller outputs remain intact on producer errors.
 The original complete core source and host world adapter remain byte-identical.
-Selection and grind admission have separate comparisons below; full gameplay scheduling remains open.
+Selection and grind admission have separate comparisons below; complete gameplay scheduling is
+covered by the accepted frame and Session corpora.
 Original nonadvancing query walks can hang; those inputs are excluded from valid-domain
 parity, and the additional native guard is not claimed as an original error.
 
@@ -335,7 +342,7 @@ comparison passes 2,349 cases, preserving all 9,165,664 stock output bytes
 (SHA-256 `7f964dc730404bd3157d5befe35364e23c746a98238eaaf2301a357ab60b6c66`),
 plus 197 loader fixtures. It includes 16,000 batch requests, real surface probes,
 368 selected grind targets, callback ordering and partial failures. The primitive
-provider is an explicit input here; full host trajectory scheduling remains separate.
+provider is an explicit input here; the complete host trajectory scheduling comparison follows below.
 
 `PlayerGrindInput.*` connects actual geometry queries, all six grind families,
 permission/history, coping admission, balance, entry correction, material changes
@@ -349,8 +356,9 @@ preserving 4,767,148 exact bytes (SHA-256
 `21acd56fd86a60a59e99ac629533fc48f93409e537779cf8c1cc1bd050cc0e84`).
 All 11 ordered loader failures match, together with 293 hit observations, the
 40-candidate limit, 71 selective resets and nine partial mutation failures.
-Moving providers, final native geometry packaging, physical grind-state execution
-and complete player-frame scheduling still require integration checks.
+Moving providers remain outside this corpus. Authored geometry construction, physical grind-state
+execution and complete player-frame scheduling have their connected comparisons below; live Unreal
+geometry export remains an engine integration boundary.
 
 `AirTrajectoryRuntime.*` and `AirTrajectoryGrindRuntime.*` also pass the complete
 active-host scheduling comparison: 168 histories and 8,336 operations preserve
@@ -362,7 +370,8 @@ operation. It covers 864 provider rebinds retaining pending batches, actual
 second-pass submission/completion, 720 selected grind targets, 16 missing-provider
 failures that consume the batch, and eight batch-size failures after partial
 submission. All queries execute against actual authored geometry; completed hits
-are never seeded. Whole air-state and player-session scheduling remain separate.
+are never seeded. Whole air-state and player-session scheduling are outside this focused corpus;
+the accepted complete frame and Session results record their integrated scope.
 
 ## Native wipeout checks
 
@@ -382,10 +391,9 @@ ordered NaN operands, signed zero, equality thresholds and all eight regions
 The complete wipeout histories and all 253 loader fixtures also pass again
 after exposing that helper.
 
-Completed observation frames are explicit inputs to this leaf check. The
-actual physical/skeleton observation producer, ragdoll state owners and global
-frame scheduling require separate composition checks; this result does not
-establish their parity. Native adapters are included for those callers.
+Completed observation frames are explicit inputs to this leaf check. It does not establish parity of
+the physical/skeleton observation producer or ragdoll state owners. Their physical Wipeout300
+acceptance remains pending; the complete frame comparison does not cover that state.
 
 ## Native score accounting
 
@@ -400,10 +408,9 @@ suppressed credit, unsigned clock rollover, early completion, conversion,
 near-one timer holds, expiry edges, multiplier threshold crossings and the
 saturating-then-wrapping delay cast, including exceptional float inputs.
 
-Authored scoring definitions/tuning, trick recognition and the physical-frame
-collector remain separate host owners. This establishes accounting parity;
-complete gameplay scoring and global scheduling still need their composition
-checks.
+Authored scoring definitions/tuning, trick recognition and the physical-frame collector are distinct
+host owners. This establishes accounting parity; their connected loader, collector and complete-frame
+comparisons are recorded below.
 
 ## Native scoring definitions and tuning
 
@@ -424,8 +431,8 @@ destinations and recovery. Repeated initialization retains all 316 scoring
 stock records unchanged; removing unrelated classes preserves every byte
 against 129 previously recorded complete-bank cases.
 
-The physical-frame collector and complete gameplay scheduling remain separate
-composition checks. This establishes the consumed data and loader behavior.
+This establishes the consumed data and loader behavior. The physical-frame collector and complete
+gameplay scheduling have their connected comparisons below.
 
 ## Native scoring gameplay runtime
 
@@ -433,8 +440,8 @@ composition checks. This establishes the consumed data and loader behavior.
 metrics, air and grind tricks, offboard/special recognition, conversion and
 grab chains, landing rewards, sequence publication and line settlement. It
 uses the same native data, carrier and accounting owners above. Its frame
-record receives the actual physical and conditioner publications; connecting
-that record to the full gameplay frame remains separate integration work.
+record receives the actual physical and conditioner publications from the same owners in the complete
+gameplay frame. The focused comparison below supplies those upstream records explicitly.
 
 The complete unchanged original host comparison passes 12 retained histories
 and 38,804 commands, preserving 122,417,556 exact bytes (SHA-256
@@ -460,7 +467,8 @@ previous filtered-state header.
 `LandingQuality.*` reads the two original four-point curves and preserves
 landing classification, twist/side-speed response, all fourth lanes and the
 valid-data latch. Nonlanding core updates retain every output field. The host
-adapter's separate reset/publication order remains an integration check.
+adapter has a distinct reset/publication order; this core comparison does not observe it. The complete
+frame exercises the actual host publication path.
 
 The unchanged original core and stock-loader comparison passes 29 retained
 histories, 4,104 commands and 26 loader fixtures with 1,067,780 exact output
@@ -470,15 +478,16 @@ classification thresholds, degenerate vectors, exceptional float words and
 ordered loader errors. The original 28 histories and all 4,056 commands remain
 an exact input prefix; the final history adds genuinely distinct grind names.
 Completed physical inputs are explicit at this boundary. Actual selected-state
-Fill, physical/animation publication and the full frame are separate checks.
+Fill and physical/animation publication are outside this core corpus; they execute in the accepted
+complete-frame comparison.
 
 ## Native physical skeleton data
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
 plus the source bank identity. Size, rotation and translation are derived without decimal conversion.
 Lookup preserves ASCII case-insensitivity; native loading validates bounds and retains the current package
-if a replacement fails. The runtime no longer needs a JSON parser for these records. Body construction,
-constraints and collision remain separate migration work.
+if a replacement fails. The runtime no longer needs a JSON parser for these records. The physical
+skeleton construction, constraints and collision comparisons are recorded separately in this document.
 
 ## Native animation metadata
 
@@ -503,8 +512,8 @@ parent/mirror indices and per-bank pose replacement order are preserved.
 
 The one-time exporter uses the original decoder on every clip and every reference-pose record. The conversion
 tool then packs native tracks. The C++ probe reconstructs the complete decoded output and compares every byte
-against the original export, including all frames and bones. Animation metadata, clocks, interpolation,
-blending and physical pose adjustments remain separate migration tasks.
+against the original export, including all frames and bones. The metadata, playback, pose evaluator
+and adjusted-skeleton comparisons below exercise the consuming native owners.
 
 ## Native animation playback
 
@@ -521,12 +530,17 @@ poses use the verified native tracks. Project-authored custom/mod overrides reta
 version-1 absolute-joint JSON interface, including baking and owner/conflict/precedence behavior; this
 is not an original EA data format. `MotionAnimation.*` combines the main tree and live channels with
 parameter sources, graph attributes, reset/stance and PlayAnimation/CreateAttribute factories and
-lifecycle. Connecting that owner to the complete graph host and physical feedback remains separate
-work; matching pose commands does not establish full animation execution. `AnimationPublication.*`
+lifecycle. The complete motion host and actor comparisons connect it to physical feedback; matching
+pose commands alone does not establish full animation execution. `AnimationPublication.*`
 preserves actor stance/events and the selective animation-to-physics packet reset/publication boundary,
 including consumed request flags, signal hashing and retained matrix tails.
 
 ## Validation completed
+
+The focused comparisons below retain their own supplied-input domains. A statement that a producer or
+schedule is outside a focused corpus is a proof boundary, not an implementation TODO. The accepted
+complete-frame and Session corpora exercise the same concrete owners together within their recorded
+world and input domains. Physical wipeout, latest-main changes and Unreal validation remain pending.
 
 `DeckAngularCorrections.*` applies axis/limited angular displacement and the original ground-body torque
 to the shared deck accumulator. It preserves both fixed-step divisions, the rounded inverse-inertia
@@ -553,7 +567,8 @@ unchanged Collections readers with the native loaders: 522 loads over 355 fixtur
 mode/surface combinations, producing 47,476 identical bytes. It covers every first failed field,
 missing/type/nonfinite/size/bool/curve failures, numeric aliases, inheritance cycles and retained text
 payloads with malformed hex or Unicode whitespace. Invalid raw JSON and numeric hex are a conversion
-boundary; full profile ordering, trainer tuning and gameplay scheduling remain separate work.
+boundary. Full profile ordering, trainer tuning and gameplay scheduling are covered by the connected
+ground and complete-frame comparisons; this loader corpus establishes only its stated read boundary.
 
 On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 
@@ -568,7 +583,8 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Generic graph execution: 128 generated hierarchies and 20,736 commands, preserving all 36,855,872
   output bytes from the reference. Comparisons include lazy condition calls, masks, priorities, self/ancestor
   transitions, state timer bits, allocation/begin/update/end/hook/release order, opaque contexts and immediate
-  host side effects. Concrete gameplay operation hosts and their physical producers remain to be ported.
+  host side effects. This generic corpus does not use concrete gameplay hosts; their connected
+  comparisons are recorded below.
 - Authored graph compilation: exact controller programs and operation IDs for action, motion and camera
   compared with the unmodified original host compiler. Each executes 65 commands with the deterministic
   test operation host; every output byte matches the original controller. The compiler also rejects an
@@ -661,16 +677,18 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   misses, 18,587 completed contact reports, old-velocity impact selection, physical contact counts,
   normals/drag, surface flags, elapsed/reset state, deck/wall probe gates and all four toolkit lanes.
   Live seven-body poses supply 1,536 output ticks in both effective stances. The ground corpus observes
-  1,161 distinct retained wheel normals; the complete gameplay owner's scheduling remains separate.
+  1,161 distinct retained wheel normals. Scheduling is outside this toolkit corpus and runs through
+  the same owner in the accepted complete frame.
 - Riding reckoning frames: 2,501 cases and 1,903,746 exact words cover retained ground/system
   translations, body-flip composition, full matrices/inverses, heading reprojection, one-refinement
   signed angles, dynamic lean, conditional lateral tilt and reset recovery. Persistent streams observe
-  6,140 lean angles, 6,054 tilt records and 6,306 system matrices, including degenerate axes. Actual
-  producers of these frames and the full riding state schedule remain separate integration steps.
+  6,140 lean angles, 6,054 tilt records and 6,306 system matrices, including degenerate axes. This corpus
+  supplies frame inputs explicitly; the complete frame invokes the actual riding producers.
 - Riding collision response: 4,251 cases and 63,482 exact words preserve early absence versus late
   false publication, clamped forces, authored force points, corrected target velocity and signed
   angular corrections. Coverage includes 1,370 late false responses which still publish targets and
-  1,364 applied forces. Live collision producers and the riding state schedule remain separate.
+  1,364 applied forces. Live collision production and riding scheduling are outside this leaf corpus
+  and execute in the accepted complete-frame comparison.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
@@ -685,31 +703,35 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   output records, 64-bit tick boundaries, 552 rejected operations and four-lane retained COM
   filtering/reset. The complete unchanged implementations are compared. The exchange preserves
   even a mismatched output tick; validation belongs to its consumer. State selection, physical
-  output production and the global coordinator remain separate integration checks.
+  output production and the global coordinator are outside this buffer corpus and run in the
+  accepted complete frame.
 - Canonical player input phase: 220 retained histories and 494 operations preserve 11,446,219 exact
   bytes across all five stock modes, captured pre-teleport state/category, split continuations, wheel
   pairs, surface selection, counters, external physics caches, deck angles and twist publication.
   The comparison embeds the unchanged original initialization, selective reset and output reset;
   all twelve mandatory service calls retain their arguments, order and partial writes on failure.
   Completed snapshots survive later reset without mutation. Services have explicitly supplied
-  observations here; concrete world, toolkit, skeleton and grind producers remain separate checks.
+  observations here. Concrete world, toolkit, skeleton and grind producers have their own connected
+  comparisons and are used by the accepted complete frame.
 - Animation phase packet owner: 44 histories and 401 operations preserve 602,390 exact bytes for
   stock profile loading, publication, borrowed packets, selective reset, external reply extents and
   retained failure state. Six malformed settings fixtures preserve the original error text. The
   complete unchanged host packet owner is the oracle; its inactive external providers remain inactive.
-  Whole actor scheduling and concrete physical publication remain separate integration checks.
+  This packet-owner corpus does not activate those providers; the complete actor and frame comparisons
+  exercise the actual scheduling and physical publication.
 - Skeleton board wobble: 128 histories and 10,136 commands preserve 285,577 exact words for
   all four stock/configured curves, takeoff/landing selection, expiry, retriggering, teleport resets
   and packed board pose updates. Teleport reset retains cached curve selection exactly. The complete
   unchanged core implementation is compared; current board poses and trigger calls are supplied
-  upstream inputs, and the complete player output schedule remains separate.
+  upstream inputs. Player output scheduling is outside this leaf corpus and executes in the accepted
+  complete frame.
 - Board animation and air/plant root frames: 178 histories and 22,474 commands preserve
   5,083,760 exact words for shared rotation-error capture, slow/fast blending, selective reset,
   all four target-velocity lanes, animated and COM-controlled air frames, unsigned dismount
   revert counts, heading retention and plant anchors. The complete unchanged core implementations
   are compared, including signed-zero velocity division and unordered curve completion. Curves
-  and upstream transforms are explicit inputs; host skeleton updates and the full physical
-  scheduling remain separate checks.
+  and upstream transforms are explicit inputs; the connected plant/air and complete-frame comparisons
+  exercise host skeleton updates and physical scheduling.
 - Action host, conditions and production slide logic: 8,512 subsystem commands, 3,072 live controller
   ticks, 3,072 bound-condition frames and authored action parameters preserve 2,979,481 output bytes.
   All 12 host fixtures have distinct traces; oracle coverage requires actual state transitions,
@@ -721,28 +743,31 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Action-host gesture integration: 21 live graph fixtures and 1,344 controller ticks preserve 206,283
   output bytes. All seven groups exercise membership conditions, state selection, fresh instances,
   launch/hold progression, missing-stance errors and owned cleanup. The earlier action-host baseline
-  also passes after registration; complete actor scheduling remains open.
+  also passes after registration; complete actor scheduling passes its separate comparison below.
 - Motion-host controller integration: eight supported graph fixtures and 1,024 ticks preserve 1,027,586
   exact bytes, including fresh behavior instances, gameplay/foot publications, AG intent handoff, clip
-  parameters, clocks, caches, flags and final cleanup. This is the first dispatch slice; remaining
-  physical behavior owners and complete authored graph/session execution are still pending.
+  parameters, clocks, caches, flags and final cleanup. This first dispatch corpus covers supported
+  fixtures; the later complete motion-host, actor, frame and Session comparisons extend that scope.
 - Physical motion-graph predicates: 41 names, 64 authored configurations and 10,240 evaluations preserve
   89,583 exact bytes against the original host's factories and activation. Each configuration exercises
   both truth values; required missing publications retain their errors. Host registration and actual
-  gameplay publishers are separate steps; malformed raw-name panic translation is not established.
+  gameplay publication run through the complete host/frame; malformed raw-name panic translation is
+  not established by this predicate corpus.
 - Specialized motion-graph predicates: the remaining 12 supported names, 29 authored configurations
   and 4,640 evaluations preserve 41,698 exact bytes. Landing, grind, prelanding and wipeout inputs
   exercise boundaries, NaNs, validity gates and independent missing owners through the unchanged
-  original host. Registration and completed physical publishers remain pending.
+  original host. The complete motion host registers these predicates; this focused corpus supplies
+  their physical records explicitly.
 - Motion scoring/attribute behaviors: 69 authored configurations and 2,432 lifecycle calls preserve
   1,895,573 exact bytes through original full-host factories and dispatch. Comparisons cover grab
   trigonometry/sector boundaries, score flags/names, real height/tweak tree output, shared random
-  state, fading shimmy channels and moving-object registry names/errors. Host registration remains
-  separate; trick-height settings cover the original host's fixed true/true choice.
+  state, fading shimmy channels and moving-object registry names/errors. The complete motion host
+  registers these operations; trick-height settings cover the original host's fixed true/true choice.
 - Stick gesture publication: 141,873 commands and 141,782 publication frames preserve 68,857,168 output
   bytes against the original host loading the original PAT/settings. Coverage includes 6,078 trick
   publications, 21,803 held-pattern frames and isolated permission gates. Hidden recognizer state is
-  exercised through later outputs; whole-session sampling order remains a separate check.
+  exercised through later outputs. The accepted Frame/Session comparisons exercise the actual
+  sampling order; this recognizer corpus remains a focused input-domain check.
 - Animation playback: 7,115 cases and 41,311,421 exact bytes across clocks, curves, attribute operations,
   channels and pose blending. All 3,324 native clips are sampled at eight boundary/normal/invalid times
   against the frozen original core reading the independent decoded originals. Invalid-clock failures
@@ -753,7 +778,8 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Animation trees: 4,881 cases and 4,633,249 exact bytes, including all 4,643 authored tree lookups,
   112 synthetic trees, 120 owner lifecycle sequences and six pending-posture sequences. Recursive
   clocks, pose commands, attributes, partial error output and construction behavior match the original.
-  Owner comparisons use an empty original channel container; live channel integration is still pending.
+  Owner comparisons use an empty original channel container; the combined motion-animation and
+  complete-actor comparisons below exercise live channel integration.
 - Animation channel container: 169 multistep cases and 8,048,904 exact bytes covering ordered trees,
   priority/encoded-key ties, fades, replacement/resurrection, retirement, parameter/attribute forwarding,
   pose commands and partial outputs on failure against the original channel container.
@@ -767,11 +793,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   and channel ordering, parameters, cached attributes, pose commands, reset/stance and immediate graph
   side effects. PlayAnimation/CreateAttribute factories and lifecycle use real service callbacks.
   Original tested method bodies and factory arms are extracted verbatim with recorded byte boundaries
-  and hashes; the remaining gameplay graph and physical publication are separate integration steps.
+  and hashes. Complete gameplay graph execution and physical publication are outside this focused
+  owner corpus and are exercised by the complete actor/frame comparisons.
 - Animation/physics publication: 1,363 cases and 1,150,750 exact bytes for selective resets, complete
   packets, consumed requests, retained tails and flags, signed reset versus unsigned publication extents,
-  stance/events/cull state, checkpoint requests and signed-byte signal hashing. Invocation order within
-  the complete actor scheduler and live physical feedback remain separate checks.
+  stance/events/cull state, checkpoint requests and signed-byte signal hashing. This packet corpus
+  does not establish complete actor invocation order or live physical feedback; the complete
+  actor/frame comparisons exercise those paths.
 - Connected animation scheduler: 12 supported graph pairs, 1,704 operations and 1,512 successful
   advances preserve 15,232,081 exact bytes through action/motion controllers, parameter and clock
   ordering, caches, pose/hierarchy evaluation, stance/checkpoints, selective resets and physics packets.
@@ -782,57 +810,64 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   predicates and score operations, parameters, channels, poses, selective resets and physics packets.
   The corpus observes actual completed records, retained score/registry/pump owners and changing trick
   heights. The previous host, scheduler and feedback-operation corpora retain their exact output hashes.
-  Completed physical publications are supplied here; their producers and whole-session timing remain
-  separate integration steps.
+  Completed physical publications are supplied here; the complete frame invokes their actual
+  producers, and the Session comparison covers host timing within its recorded input domain.
 - Connected animation interactions: 12 graph pairs and 4,776 operations preserve 48,319,438 exact
   bytes with registered push, gesture and shove owners, real selected stock channels, applied
   parameters, complete sampled poses and packets. Every fixture proves changing coefficients,
   gesture publications/teardown and queried shove directions. The host, scheduler and connected
   feedback regression corpora remain exact. Completed interaction records are supplied at the
-  original public boundary; full gameplay producers and authored-session parity remain separate.
+  original public boundary. Complete-frame and Session comparisons exercise actual gameplay
+  producers within their recorded world and input domains.
 - Riding animation and physical feedback calculations: 594 cases, 15,874 steps and 660,004 exact bytes
   cover persistent crouching/auto-pump, body tilt, fakie, pump channels, ground acceleration/bump and
-  turn conditioning, plus 358 loaded settings words. Graph registration and full-session physical
-  producer feedback remain separate checks.
+  turn conditioning, plus 358 loaded settings words. Registration and producer feedback are outside
+  this arithmetic corpus and execute through the complete host and frame.
 - Motion-graph feedback behavior lifecycle: 12 fixtures, 3,072 ticks and 22,320 ordered calls preserve
   6,042,619 exact bytes against the original full host factories/instances. Comparisons include
   crouching, turning, tilt, fakie, pumping permissions, real pump-channel ownership/fades, consumed
   parameters and pose commands. Live flags and missing-owner partial effects preserve original order;
-  registration into the C++ host and complete physical producer scheduling remain separate checks.
+  the complete C++ host registers these operations, and the complete frame invokes their physical
+  producers. This focused corpus supplies their input records explicitly.
 - Motion-graph pushing behaviors: 12 authored configurations, all seven factory names and 360 ordered
   callbacks preserve 275,233 exact bytes against the unchanged original full host. The check observes
   real regular/mongo clip metrics, switch/foot selection, teleport timing, held/released cycles,
-  retained blend/out state and five actual animation proof channels. Complete controller registration
-  and the physical producer that supplies these inputs remain separate integration steps.
+  retained blend/out state and five actual animation proof channels. The complete controller registers
+  these operations; their physical records are explicit inputs in this focused corpus.
 - Motion-graph gestures/shove: 1,059 full-host callbacks preserve 572,106 exact bytes across all 37
   stock gesture selections and three hand variants, actual INTO/CYC/OUT stages, retained publication,
   held/start priorities, allocation and global EndGesture teardown. Shove checks anticipation/board
   selection, busy/retrieve/keep-channel paths, signed direction boundaries and applied animation
-  parameters. Complete controller registration and live physical producers remain separate steps.
+  parameters. The complete controller registers these operations; live physical publication is
+  outside this focused corpus and executes in the complete frame.
 - Motion-graph offboard timing/runout: six configurations and 234 full-host callbacks preserve
   235,500 exact bytes for cadence, captured phase, air-time matching, original standard-sqrt translation
   limiting, projected/wrapped runout angles, first-update seek and retained output. Seven actual
   parameter witnesses change, and 32 End callbacks prove the original host republishes runout data.
-  Complete controller registration and physical producers remain separate integration steps.
+  The complete controller registers these operations; this focused corpus supplies their physical
+  records explicitly.
 - Ground corrections and wall riding: 14,125 cases preserve 218,165 exact words, including
   degenerate edges, four carried lanes, scalar divisions/refinements, pinning, wheel catches,
   2,304 force applications to persistent actual body snapshots and separate force/auto-jump gates.
-  Retained velocity and untouched body fields are checked. Ground state scheduling remains separate.
+  Retained velocity and untouched body fields are checked. Ground scheduling is outside this leaf
+  corpus and passes the connected ground and complete-frame comparisons.
 - Ground propulsion/manual/speed control: 7,779 cases preserve 654,072 exact words for push,
   braking, low-speed drag, 8,192 persistent speed updates, 2,304 force-queue submissions and
   6,144 manual commands. Actual signed-angle measurements, contact/PID histories, correction
   forces, five-field resets, partial error writes and capacity drops match. Angle normalization
-  preserves the rounded FMA's signed zero. Live ground inputs and scheduling remain separate.
+  preserves the rounded FMA's signed zero. Live ground inputs and scheduling are outside this leaf
+  corpus and run through the connected ground and complete-frame owners.
 - Pumping and ground forces: 2,534 records preserve 265,785 exact bytes, including 1,588
   persistent controller updates, both acceleration/absorption branches, all five stock modes,
   fixed ground versus processed timesteps, retained intentional-pump bytes and actual geometry.
   The corpus proves all 20 selected-mode clamps and 118 stock settings words. Ground sample
-  production/force scheduling and malformed stock-setting diagnostics remain separate checks.
+  production/force scheduling and malformed stock-setting diagnostics have their own connected
+  ground and loader comparisons; they are outside this leaf corpus.
 - Steering/truck wobble: 144 configurations and 13,101 callbacks preserve 313,888 exact bytes
   for optional steering history pointers, hard/manual turns, axle contact transitions, wobble
   activation/deactivation and all eight retained words. Nonboolean active bytes and opaque bits
-  survive unchanged. Valid stock curves/scalars and five modes match; complete ground scheduling,
-  tuning and malformed stock-setting diagnostics remain separate checks.
+  survive unchanged. Valid stock curves/scalars and five modes match; connected ground scheduling,
+  tuning and malformed stock-setting diagnostics have their own comparisons.
 - Powerslide core/settings: 46 cases and 2,851 commands preserve 108,236 exact bytes for
   angular correction, friction forces, lifecycle resets and all five stock surfaces/materials.
   Coverage includes four carried lanes, signed-zero and nonfinite angle boundaries and 1,401
@@ -847,71 +882,78 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   lanes, retained collision forces and six partial failures. Steering, manual, deck accumulation,
   wall riding and force queue mutations use their actual native implementations. Completed
   skeleton/reckoning/world/trajectory observations are explicit service boundaries; their real
-  producer composition and Slide post-physics publication remain separate integration checks.
+  producer composition and Slide post-physics publication are outside this focused lifecycle corpus.
+  The accepted complete frame includes actual Slide state dispatch.
 - PhysicsAir state/math and input bindings: 1,012 records preserve 340,920 exact bytes for
   entry/exit, trajectory integration, launch setters, repeated skeleton-fill ordering, fresh
   collision normals, apex latch and all consumed stock/processed inputs. The original launch
   matrix's zero translation W lane is preserved. Real trajectory selection, air reckoning,
-  skeleton/collision/wipeout producers and the full active-host schedule remain separate
-  integration checks; this state comparison records explicit completed service observations.
+  skeleton/collision/wipeout producers and the active-host schedule are outside this state corpus,
+  which records explicit completed service observations. The accepted complete frame invokes the
+  concrete air owners; focused physical wipeout acceptance remains pending.
 - Physics animation input: 472 histories and 2,137 commands preserve 2,850,713 exact bytes
   through all 151 scalar names, actual rig bone events, trajectory-derived push speed, jump
   caches, five physics modes, selective reset and output publication. Thirteen malformed
   settings fixtures and three alternative live settings profiles preserve errors and action
   routing; 61 failures observe original partial writes. Evaluated animation hierarchy and
-  input-map values are explicit upstream inputs; adjusted pose/FootIK and the complete
-  player-input schedule remain separate integration checks.
+  input-map values are explicit upstream inputs; adjusted pose/FootIK and player-input scheduling
+  have their connected comparisons and run through the accepted complete frame.
 - Wipeout/runout requests: 254 histories and 15,472 commands preserve 1,171,351 exact words
   across all 34 reason/value pairs, individual wrapping request counts, eligibility gates,
   cooldown, contact and balance histories, and selective initialization/teleport/selection resets.
   Repeated requests, signed zero, NaNs and the strict upright threshold are covered. Two invalid
   reason indices require the original panic and explicit native abort. Complete collision/pose
-  wipeout checks and the shared gameplay schedule remain separate integration checks.
+  wipeout checks are covered by their focused request comparison; physical Wipeout300 acceptance
+  remains pending. The complete-frame corpus does not exercise that physical state.
 - Ground entry/output helpers: 5,048 cases preserve 144,084 exact words for direct angular projection,
   speed seeding, landing tag 19, ordered future-deck force prediction and all output fields/conditional
   writes. Manual entry/removal observes every body read/projection/write, shared body-slot aliases,
   all seven projection failure prefixes and eleven resulting write orders. All fourteen output
   boolean publications exercise both values. Signed zero and subnormal lanes are covered; the full
-  active Ground input/state/physical lifecycle remains separate.
+  active Ground input/state/physical lifecycle has its connected ground and complete-frame comparisons.
 - Ground board composition: 163 histories and 338 callbacks preserve 1,839,879 exact bytes across
   ordinary/manual-correction, wall-jump animation and collision branches. All 25 required services,
   each branch's complete failure prefixes, full/refused force queues and detached inertia errors
   execute against unchanged original core modules. Successful stock loading covers all 25 mode/surface
   profiles and trainer tuning; 652 launch snapshots verify all 70 ground/selector lanes. World hung
   results and external publication are explicit fixture boundaries. Concrete GroundRuntime bindings
-  and malformed whole-profile diagnostics remain separate; partial state/body/manual writes are observed.
+  and malformed whole-profile diagnostics have their connected runtime/loader comparisons; partial
+  state/body/manual writes are observed at this focused boundary.
 - Ground state/correction scheduling: 701 streams preserve 2,606,229 exact words across all
   55 state fields, entry/capture/reset, wrapping counters, anti-flip nudges, coping wheel catches,
   hung-up recovery/wipeout, spawn pinning and shared inertia drag groups/tails. Every required
   service has an observed partial-failure case; invalid drag bindings prevent earlier writes.
   Geometry calculations use the accepted kernels, with query results supplied at the original
-  mandatory world boundary. Full GroundBoard and live world/physical scheduling remain separate.
+  mandatory world boundary. Full GroundBoard and live world/physical scheduling are outside this
+  state corpus and execute through the connected ground and complete-frame owners.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
 - Physical skeleton settings bindings: 221 cases preserve 607,825 exact words from the original
   stock body, collision, feedback, joint and drive loaders. Tests cover all authored hats, closest
   mapped ancestors through 24/48-bone hierarchies, cached mass/history and eight diagnostic asset
-  variants. C++ reads only native settings/physical-skeleton banks. Live rig evaluation and solve
-  scheduling remain separate integration steps.
+  variants. C++ reads only native settings/physical-skeleton banks. This loader corpus does not run
+  live rig evaluation or solve scheduling; connected skeleton/frame comparisons exercise those paths.
 - Rider contact producers: 929 cases preserve 8,128,561 exact words for live collision volumes,
   world filtering, ordered board/rider and directed rider self pairs, and completed contact reports.
   Coverage includes 6,081 pair contacts, 1,441 reports, original group/material tables, static-body
   retention and the 16-report capacity. Unsupported original cylinder/hat queries retain explicit
-  errors. The original full host producer modules are unchanged; full solve scheduling is separate.
+  errors. The original full host producer modules are unchanged; the connected physical and complete
+  frame comparisons exercise the full shared-solve schedule.
 - Remote physical proxies: 2,002 cases preserve 6,904,585 exact words for COM-bound shapes,
   482 registrations, repeated normalization, ragdoll mass selection, strict distance gates,
   retained body caches and 196,421 ordered remote contact rows. Fingerprint/wire identities
   and stock world volumes are explicit caller transports. Schema hash construction, network
-  capture/encoding/socket/interpolation and the full shared solve schedule remain separate.
+  capture/encoding/socket/interpolation remain outside this comparison. The complete frame exercises
+  local shared-solve scheduling; this does not establish network interoperability.
 - Board possession: 1,536 core histories preserve 4,421,091 exact words for held/throw/recall/hide
   state, retained hand/retrieval records, quadrants, teleport reset and ordered effects. The actual
   live owner comparison adds 653 cases and 32,470,471 exact words, including 2,432 packed hand/deck
   drive rows, body/hook/material/shape mutations, fixed retrieval timing versus processed timestep,
   publication and immediate transition callbacks. Seventy-six malformed settings/curve fixtures
   preserve errors; three invalid contracts separately require original panic and explicit native
-  abort. Completed physical/animation observations remain typed caller inputs; complete shared
-  scheduling and gameplay transitions are separate integration checks.
+  abort. Completed physical/animation observations remain typed caller inputs in this focused corpus;
+  the complete frame exercises actual possession scheduling and gameplay transitions.
 - Combined physical simulation: 120 retained histories, 2,560 commands and 1,936 successful
   ticks preserve 37,623,807 exact words across the board, rider, targets, contact/drive rows,
   root and COM histories, orientation filters, collision feedback and live possession.
@@ -920,27 +962,31 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   terrain clears that world's imported floor seam state while preserving submitted query
   results. The oracle retains the original active physical host modules and evaluates four
   actual authored poses. Gameplay fields and engine triangles are explicit inputs;
-  upstream pose adjustment/FootIK and complete gameplay scheduling remain separate checks.
+  upstream pose adjustment/FootIK and gameplay scheduling are outside this physical corpus. The
+  connected adjusted-skeleton and complete-frame comparisons exercise those paths.
   Invalid physical diagnostics use native typed records rather than copying Rust Debug text.
 - Skeleton root/board frames: 1,735 streams preserve 4,304,114 exact words through heading,
   prediction consumption, ground/teleport targets, COM publication, retained resets and lift limits.
   All 211 stored words are observed after each command. The local heading sine preserves the
   frozen producer's final negated FMA. Fixtures use explicit finite nondegenerate input frames;
-  complete animation/physical scheduling remains separate.
+  complete animation/physical scheduling is outside this finite-frame corpus and executes in the
+  accepted complete frame.
 - Physical skeleton bodies: 3,164 cases and 9,340,512 exact words cover definition/mass construction,
   hats, all four inertia modes, pose mapping, animation/physical COM history and 128 persistent 26-body
   programs with actual integration. The corpus includes 88 original volume errors and 64 mapping-bounds
-  errors. Skeleton joints, drives, collision policy and whole-rider scheduling remain separate steps.
+  errors. Skeleton joints, drives and collision policy have their own comparisons; the complete frame
+  supplies whole-rider scheduling within its recorded input domain.
 - Physical skeleton constraints/targets: 1,668 cases and 29,306,908 exact words cover all authored
   joint records, ordered active rows, six drive modes, repeated frame preparation and 96 live rider
   programs with four actual target bodies. Comparisons include 42,624 drive rows, target/follower
-  updates, shared transition counters and invalid definition errors. Whole board/rider scheduling and
-  collision response remain separate integration steps.
+  updates, shared transition counters and invalid definition errors. Connected physical and
+  complete-frame comparisons exercise board/rider scheduling and collision response.
 - Physical skeleton collision policy/feedback: 2,030 cases and 17,434,526 exact words cover collision
   groups, ragdoll materials/properties, body-pair culling, temporary contact disabling, 24 bone and
   eight region records, the 20-plane limit, specific contacts, completed solver observations and
   filtered pose errors. Three invalid report-part fixtures preserve explicit rejection. Geometric
-  pair generation and the complete actor's collision scheduling remain separate checks.
+  pair generation and actor collision scheduling are outside this policy corpus; the contact-producer
+  and complete-frame comparisons exercise those paths.
 - Animation metadata: both banks, 3,324 clips, 14,879 clip attributes, 1,183 phase blends, two blend spaces,
   98 selectors and 38 selection spaces. Every record word/order and 4,643 original lookup results match;
   33 duplicate/tie fixtures, two merge fixtures and nine malformed-format cases pass.
@@ -950,7 +996,8 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   extension values, 146/147 height values, 20 states on each actual stock spin channel and all twelve
   missing-input errors. Stock metadata/settings feed the native candidate; synthetic clips observe
   parameter publication. Completed airborne records are explicit fixture inputs, so this verifies
-  behavior composition, not the complete physical producer or live scheduler registration.
+  behavior composition at supplied airborne records. Complete host registration and actual physical
+  publication are exercised by the complete actor/frame comparisons.
 - Animation sample conversion: all 3,324 clips, 131,642 frames and 4,739,112 bone samples reconstruct exactly,
   together with the full rig and reference poses. 833,087 of 1,196,640 component tracks are bit-identical
   constants. Decoded sample files shrink from 190,365,107 bytes to 65,630,991 bytes without quantization.
@@ -959,11 +1006,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - A frozen build of reference `46513a6` reproduced all 8,286 published responses across 25 flat-ground
   scenarios exactly on a second run. States exercised: GroundAnimation, KnownAir, PhysicsGround,
   SlideGround, Teleporting and WipeoutGround. This establishes reference repeatability for that corpus;
-  there is not yet a complete C++ session candidate to compare.
+  the accepted complete C++ Session comparison is recorded above and uses its own full-owner corpus.
 - A second reference corpus adds 23 transition/bowl/rail/long-session cases and reproduces all 18,024
   responses exactly. It reaches PhysicsAir, GrindFiftyFifty, GrindFiveO, GrindTipslide and Nonspecific in
   addition to flat-ground states. Inputs cover both stances and all three difficulty settings. A pumping
-  input scenario is present; proving pumping energy behavior and internal solver state remains open.
+  input scenario is present. This historical repeatability corpus does not prove pumping energy
+  behavior; the native complete-frame/Session comparisons observe actual retained solver state. Live
+  pumping-energy and Unreal presentation checks remain pending.
 
 Generated reports and probe binaries live under `build/<game>/skate-cpp/`. Reproduce subsystem checks
 with `Tests/check_{gesture,name,settings,graph}_parity.py --assets ASSETS --output BUILD_DIRECTORY`, through
@@ -975,16 +1024,19 @@ Run the generic controller comparison with `Tests/check_controller_parity.py --o
 come from the frozen Git revision. The temporary probe adds only its own target and dependency declarations.
 `Tests/check_animation_samples_parity.py` takes the same arguments and compares every original decoded sample
 against C++ reconstruction, including rig lookup and malformed-data checks. Generated native assets remain in
-the build directory during migration; the final native package must be tracked before the runtime switches.
+the build directory during conversion; the final native package is tracked under `Content/Data/SkateNative`.
+The playable runtime switch and live validation remain pending.
 
 `Tests/build_reference.py` extracts the pinned source directly from Git, builds it with its locked Cargo
 dependencies, and records the compiler, source hashes and executable hash. `Tests/session_parity.py` requires
 that provenance when recording. `repeat-reference` checks reference determinism; `compare` refuses to
 accept the reference executable as a C++ candidate. The current external worker protocol exposes each
-packet's final pose; probes for intermediate ticks, solver state and graph execution remain to be added.
+packet's final pose. The accepted complete-frame and Session probes also observe retained solver
+state, graph execution and physical/animation publication without supplying their outputs.
 
-These are migration foundations. The production game still uses the existing backend until the complete
-C++ session passes the remaining verification contract. The final runtime will contain only the C++ backend.
+These focused comparisons are complemented by the accepted complete native frame and Session
+comparisons. The playable Unreal switch, physical wipeout, latest-main changes and live validation remain
+pending. The final runtime will contain only the C++ backend.
 
 ## Native walking controller and settings
 
@@ -1003,8 +1055,9 @@ ordered failures. The original controller and settings bodies are unchanged.
 
 Ground jobs, placement, controller requests and completed animation motion are
 explicit upstream inputs here. World contact production, feet, possession,
-skeleton updates and complete off-board frame scheduling require their separate
-connected comparisons; this test does not establish whole-session parity.
+skeleton updates and off-board frame scheduling are outside this focused controller corpus. The
+accepted complete frame/Session comparisons exercise those concrete owners within their recorded input
+domains; this controller test alone does not establish whole-session parity.
 
 ## Handplant, plant skeleton and airborne skeleton owners
 
@@ -1037,7 +1090,8 @@ words. Comparisons never canonicalize NaNs or apply numeric tolerances.
 
 Authored geometry, explicit processed inputs and the caller's pose requests
 remain upstream boundaries. Global state selection, full shared-solve scheduling
-and complete gameplay sessions still require their connected verification.
+and gameplay sessions are outside these focused owner corpora and pass their complete comparisons
+recorded above and below.
 Independent reference cases retain source order and constructors and each use
 an identified-process 2 GiB guard within the root's shared render slot.
 
@@ -1055,7 +1109,8 @@ queries, 612 successful starts, 144 successful ground updates, 211 live launch
 rows, foot locks and query/pose/toolkit/physics-mode failures. The complete
 handplant and skeleton helpers are reused without replacing original methods.
 Caller-selected toes and KnownAir packets remain explicit upstream inputs in
-this focused proof; the complete game frame remains a separate integration.
+this focused proof. The accepted complete frame invokes the same concrete Footplant owner; its
+recorded Flat-world inputs do not exhaust every plant fixture above.
 
 ### Native climbing clip and contact core
 
@@ -1087,7 +1142,9 @@ and 274,523 output bytes (SHA256
 These include 19 distinct periods, 74 normal-period resets, 59 wrapping default
 counters and 2,481 failures retaining both owner fields. The preceding 18
 histories and 5,370 commands remain verbatim. Actual camera queue dispatch,
-network-mode handling and the final frame boundary remain coordinator work.
+network-mode handling and the final frame boundary are outside this clock corpus. Offline camera
+request draining and frame completion execute in the accepted complete Session comparisons; network
+operation is not claimed.
 
 ### Native ground animation and ground phase
 
@@ -1115,8 +1172,8 @@ and five idempotent prefixes; downstream IK and drive records remain unchanged.
 Both comparisons also compile and execute a proposed clean source tree using
 committed dependencies and only these new ground sources. Authored geometry,
 completed processed records, current toolkit and pose requests remain explicit
-upstream inputs. Complete state selection, shared-solve scheduling and gameplay
-sessions require the separate frame coordinator comparison.
+upstream inputs. Complete state selection, shared-solve scheduling and gameplay sessions execute
+in the accepted frame coordinator and Session comparisons within their recorded input domains.
 
 ### Native complete motion graph and animation actor
 
@@ -1151,7 +1208,8 @@ and push/gesture/shove interactions 48,319,438 bytes.
 Each comparison compiles a proposed clean checkout containing committed
 dependencies and exactly the 21 new or updated production sources. Completed
 physical publications are explicit caller inputs; their upstream producers, the
-full shared physical frame and complete gameplay sessions remain separate work.
+full shared physical frame and gameplay sessions are outside these actor corpora and pass their
+complete comparisons within the recorded world and input domains.
 This commit does not switch the playable game's Rust backend.
 
 ### Native PostInput kernel
@@ -1165,15 +1223,15 @@ The complete unchanged original core and C++ match over 96 retained histories,
 Coverage includes 30,720 ordered passes, 2,400 record copies, 324 distinct latch
 lifetimes and 13 unsigned counter wraps. Independent grind, trajectory and
 heading service results are explicit upstream inputs in this kernel proof;
-the actual host producers and frame coordinator need their connected comparison.
+the actual host producers and frame coordinator execute in the accepted complete-frame comparison.
 
 ### Native Biped foot contacts and IK targets
 
 The Ground/Air foot owner now retains the original support selection, planted
 foot latch, smoothing, contact-normal history, delayed bad-support counters and
 FootIK target publication. Its math is shared through `OffboardVectorMath`;
-the extraction moves the existing operations verbatim and avoids depending on
-the unaccepted air-selector owner. The complete unchanged original feet modules
+the extraction moves the existing operations verbatim and keeps this focused feet comparison
+independent of the air-selector owner. The complete unchanged original feet modules
 and wrappers match for 146 histories, 18,018 commands and 13,406,499 output
 words (SHA256
 `fd2cf06b01e2d8be2d4d335f07dfcebb75d06ba807b0ee9d5901eb60bfdbf427`).
@@ -1181,7 +1239,7 @@ All four support modes and ten retained normal-blend states are exercised.
 The successful comparison compiles from committed dependencies and only these
 five new source files. Processed contacts and actual incoming pose/root frames
 are explicit upstream fixtures; complete Biped movement, queries and global
-physical scheduling require their separate connected comparisons.
+physical scheduling are outside this focused feet corpus and execute in the accepted complete frame.
 
 ### Native controller sampling
 
@@ -1214,7 +1272,8 @@ controller failures/repeated packets and counter wrap. The closest-triangle
 calculation preserves coefficient negation before multiplication, including NaN
 payload signs that compiler FNMUL folding would otherwise change. This proof
 compiles 14 native units using committed dependencies; original full Session
-construction, frame scheduling and live SDK polling remain separate checks.
+construction and frame scheduling pass their complete comparisons above. Live SDK polling remains
+a separate engine integration check.
 
 ### Prepared native data bundle
 
@@ -1262,7 +1321,8 @@ Coverage includes grounded/airborne skating, offboard ground/air and landing
 states, stance changes, controller histories, tuning, travel and retained errors.
 The fixture world is a flat floor with an empty grind provider. Rail admission,
 physical wipeout and climbing have focused connected checks. The grind result
-is recorded below; final physical wipeout and landing acceptance remain pending.
+is recorded below; LandingOnDeck acceptance is recorded at the end of this document, while physical
+wipeout acceptance remains pending.
 Host Session timing passes its comparison above. Live Unreal collision export
 and rendering remain separate acceptance steps. The playable adapter still uses
 the existing backend at this checkpoint.
@@ -1284,3 +1344,22 @@ focused manager snapshots are explicit fixture boundaries. Provider admission
 uses real authored geometry and the actual Pre/Post callbacks. No completed
 query, contact, force or solver result is supplied. Whole-game rail behavior
 and Unreal presentation remain separate integration checks.
+
+
+### Connected LandingOnDeck owners
+
+The unchanged original Landing503 host/core and shared Biped501/500 owners match the native
+candidate over 20 requested histories and 8,118 requested callbacks. Nineteen actual successful
+constructions execute 7,688 callbacks, preserving 380,520,740 exact output bytes (SHA-256
+`3c153e419bf459d3ccf6e24777dbda594706dc4d15f1c3ee70b4eafc4670e777`). All 91 actual loader
+pairs, including 80 invalid fixtures, match; 53 partial-error mutations retain the original earlier writes.
+The input SHA-256 remains
+`87fe718a0979f09990e265f88c715fa69cb929fb8be6df0125b34c7882e005d0`.
+
+One world genuinely rejects construction with `Canonical world has no authored query metadata`.
+Its 430 requested commands are decoded without invoking landing callbacks or fabricating an owner
+snapshot. Fresh original, observed and native source trees match the complete saved replay source;
+fresh loaders run both actual compiled implementations. Canonical processed/attribute packets,
+authored evaluated poses, engine triangles/metadata and the registry remain explicit upstream fixture
+boundaries. This focused result does not establish every global transition, rendered pose or live
+Unreal landing outcome. Physical wipeout, latest-main changes and Unreal acceptance remain pending.
