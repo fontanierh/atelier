@@ -375,6 +375,27 @@ against 129 previously recorded complete-bank cases.
 The physical-frame collector and complete gameplay scheduling remain separate
 composition checks. This establishes the consumed data and loader behavior.
 
+## Native scoring gameplay runtime
+
+`ScoringRuntime.*` implements the complete original host collector: grounded
+metrics, air and grind tricks, offboard/special recognition, conversion and
+grab chains, landing rewards, sequence publication and line settlement. It
+uses the same native data, carrier and accounting owners above. Its frame
+record receives the actual physical and conditioner publications; connecting
+that record to the full gameplay frame remains separate integration work.
+
+The complete unchanged original host comparison passes 12 retained histories
+and 38,804 commands, preserving 122,417,556 exact bytes (SHA-256
+`5386d448ceed39e484a2ffd9b3243cdf7ed49e973cd18b56bc754d5985ff903c`).
+It observes every retained collector field, optional carrier, all 678 private
+accounting history entries, timers, output names and event flags. Coverage
+includes all six collectors, all 332 supplied catalog identities, 300 actual
+carrier identities, 181 publications, 348 partial missing-definition errors,
+stance changes, unsigned clock rollover and exceptional caller floats.
+An additional 12,068,608-byte complete-stock session agrees exactly with the
+focused scoring bank in both implementations. Every scoring record and parent
+is retained unchanged when unrelated classes are omitted for repeated setup.
+
 ## Native physical skeleton data
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
