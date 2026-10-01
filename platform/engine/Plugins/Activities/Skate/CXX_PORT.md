@@ -413,6 +413,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   held/start priorities, allocation and global EndGesture teardown. Shove checks anticipation/board
   selection, busy/retrieve/keep-channel paths, signed direction boundaries and applied animation
   parameters. Complete controller registration and live physical producers remain separate steps.
+- Motion-graph offboard timing/runout: six configurations and 234 full-host callbacks preserve
+  235,500 exact bytes for cadence, captured phase, air-time matching, original standard-sqrt translation
+  limiting, projected/wrapped runout angles, first-update seek and retained output. Seven actual
+  parameter witnesses change, and 32 End callbacks prove the original host republishes runout data.
+  Complete controller registration and physical producers remain separate integration steps.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
