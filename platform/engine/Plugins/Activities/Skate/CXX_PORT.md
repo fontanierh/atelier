@@ -281,6 +281,18 @@ All 11 ordered loader failures match, together with 293 hit observations, the
 Moving providers, final native geometry packaging, physical grind-state execution
 and complete player-frame scheduling still require integration checks.
 
+`AirTrajectoryRuntime.*` and `AirTrajectoryGrindRuntime.*` also pass the complete
+active-host scheduling comparison: 168 histories and 8,336 operations preserve
+57,893,148 exact stock output bytes (SHA-256
+`9e75a5444d2a40401a85ef86fadec701605e691725763759c305ef47e7a043d6`),
+plus all 57 host loader fixtures. The test observes the full selector, completed
+query batches, settings, provider metadata and nearby-grind history after every
+operation. It covers 864 provider rebinds retaining pending batches, actual
+second-pass submission/completion, 720 selected grind targets, 16 missing-provider
+failures that consume the batch, and eight batch-size failures after partial
+submission. All queries execute against actual authored geometry; completed hits
+are never seeded. Whole air-state and player-session scheduling remain separate.
+
 ## Native physical skeleton data
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
