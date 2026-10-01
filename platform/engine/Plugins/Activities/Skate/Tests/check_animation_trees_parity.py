@@ -8,6 +8,7 @@ No original implementation file is modified. Run under atelier.safety.
 """
 import argparse
 from collections import Counter
+from functools import lru_cache
 import hashlib
 import importlib.util
 import itertools
@@ -24,6 +25,7 @@ spec=importlib.util.spec_from_file_location('metadata_converter',PLUGIN/'Tools/c
 converter=importlib.util.module_from_spec(spec);spec.loader.exec_module(converter)
 
 
+@lru_cache(maxsize=None)
 def source_at_reference(relative):
     root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip())
     path=(PLUGIN/'ThirdParty/skate-runtime'/relative).relative_to(root).as_posix()

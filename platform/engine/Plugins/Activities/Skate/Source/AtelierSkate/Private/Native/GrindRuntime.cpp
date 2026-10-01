@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "GrindRuntime.h"
 #include "GrindRuntimeInternal.h"
 #include "WipeoutObservations.h"
 #ifdef __clang__

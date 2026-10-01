@@ -25,13 +25,27 @@ PLUGIN=reset.PLUGIN
 CODE=reset.CODE
 HOST=reset.HOST
 _actor=ast.parse((PLUGIN/'Tests/check_skater_animation_parity.py').read_text())
-ACTOR_UNITS=next(ast.literal_eval(n.value)for f in _actor.body if isinstance(f,ast.FunctionDef)and f.name=='build_native'for n in ast.walk(f)if isinstance(n,ast.Assign)and any(isinstance(t,ast.Name)and t.id=='files'for t in n.targets))
+_actor_build=next(f for f in _actor.body if isinstance(f,ast.FunctionDef)and f.name=='build_native')
+# Include the actor's later continuation extension as well as its first tuple.
+ACTOR_UNITS=tuple(dict.fromkeys(v.value for n in ast.walk(_actor_build)if isinstance(n,ast.Assign)and any(isinstance(t,ast.Name)and t.id=='files'for t in n.targets)for v in ast.walk(n.value)if isinstance(v,ast.Constant)and isinstance(v.value,str)))
+ACTOR_UNITS=tuple(dict.fromkeys((*ACTOR_UNITS,'GraphActionPhysicalConditions')))
 GRIND_UNITS=('GrindForces','GrindReckoning','GrindPost','GrindRuntimeSettings','GrindNames','GrindChromosome','GrindCamera','GrindRuntime','GrindRuntimeOutput','GrindRuntimeExecute','GrindRuntimeContact')
 UNITS=tuple(dict.fromkeys((*reset.UNITS,*ACTOR_UNITS,*GRIND_UNITS,'WipeoutSettings','WipeoutObservations','WipeoutRuntime','PlayerStateSelector','PhysicalPhase')))
 BLOCKS=('shared','grind','camera','settings')
 OPS={0:'completed_packets',1:'real_reset',6:'real_solve_feedback',10:'enter',11:'exit',12:'real_toolkit',13:'advance',14:'fill',15:'chromosome',16:'camera',17:'post',18:'remove_toolkit',19:'remove_manager',20:'completed_manager',21:'jumper_cache',22:'actual_pose_and_publication',23:'queue_capacity',24:'invalid_ik_bone',25:'filtered',26:'stock_vertical_and_side',27:'all384_names',28:'retained_air_spin',30:'real_manager_world',31:'actual_world',32:'clear_queue',34:'real_wheel_publication'}
 
 def block(raw,marker):return reset.block(raw,marker)
+def reset_observer_cpp(prefix):
+ # Repair only the copied observer's local writer/record name collision.
+ # The original output order and every observed retained lane stay unchanged.
+ lines=[line for line in prefix.splitlines()if 'const auto& o=r.reckoning;'in line]
+ assert len(lines)==1
+ old=lines[0];new=old.replace('const auto& o=r.reckoning;','const auto& reckoning=r.reckoning;').replace('o.','reckoning.')
+ prefix=prefix.replace(old,new)
+ marker='void ResetOutGround(Output& o,const PhysicalRidingOutputs& r)'
+ assert prefix.count(marker)==1
+ overload='void ResetOut(Output& o,const Basis3& value){for(const auto& column:value.columns)ResetOut(o,column);}\n'
+ return prefix.replace(marker,overload+marker)
 def provider_helpers():
  cpp=block((PLUGIN/'Tests/Native/player_grind_input_probe.cpp').read_text(),'PlayerGrindStaticProvider ReadProvider(')
  cpp=cpp.replace('i.Text()','TextRead(i)').replace('i.Vector()','Vec3{i.Float(),i.Float(),i.Float()}')
@@ -49,7 +63,7 @@ def world_helpers():
 def native_plan(output):
  snap,report=reset.native_plan(output)
  for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),snap/(u+'.cpp'))
- raw=(snap/'player_teleport_runtime_probe.cpp').read_text();prefix=raw[:raw.index('int main(')]
+ raw=(snap/'player_teleport_runtime_probe.cpp').read_text();prefix=reset_observer_cpp(raw[:raw.index('int main(')])
  initialization=raw[raw.index(' if(argc!=6)'):raw.index(' Input i{{')]
  construction=raw[raw.index(' for(unsigned c=0;c<count;++c){')+len(' for(unsigned c=0;c<count;++c){'):raw.index('const auto rows=i.Word();')]
  construction=construction.replace('World(i)','GrindWorld(i.Word())').replace('SkeletonControllerState controller;bool elapsed=false;std::uint8_t animated=0;','GroundPhaseLifecycle life;auto& controller=life.skeleton_controller;auto& elapsed=life.skeleton_elapsed_16505;auto& animated=life.board_animated_290;')
@@ -83,14 +97,25 @@ pub(crate) fn migration_settings(o:&mut crate::Output,r:&Runtime){let s=&r.setti
 
 def reference_plan(output):
  original,observed,crate,cargo,report=reset.reference_plan(output)
+ # Repair only the appended, borrowed reset fixture. Its private retained
+ # normal belongs to GroundRuntime; preserve the original module prefix and
+ # put the exact fixture write behind an accessor in that owning scope.
+ phase=crate/'src/physics/input_phase.rs';phase_original=(original/(HOST+'input_phase.rs')).read_bytes()
+ phase_raw=phase.read_bytes();assert phase_raw[:len(phase_original)]==phase_original
+ appended=phase_raw[len(phase_original):].decode()
+ old='s.ground_runtime.retained_board_normal=[0.317,0.731,-0.137,-0.];'
+ new='s.ground_runtime.migration_grind_seed_board_normal([0.317,0.731,-0.137,-0.]);'
+ assert appended.count(old)==1
+ phase.write_bytes(phase_original+appended.replace(old,new).encode())
  generated,_=reset.generated_observer();prefix=generated[generated.index('use super::*;'):generated.index('pub(super) fn run(')]
  cases=generated[generated.index(' 0=>'):generated.index(' 2=>')]
  observer=(PLUGIN/'Tests/Reference/grind_runtime_observer.rs').read_text().replace('// GENERATED_ORIGINAL_OWNER_PREFIX',prefix).replace('// GENERATED_ORIGINAL_PACKET_RESET_CASES',cases).replace('// GENERATED_PROVIDER_READER',provider_helpers()[1]).replace('// GENERATED_GRIND_WORLD',world_helpers()[1])
  manager=block((PLUGIN/'Tests/Reference/player_grind_input_probe.rs').read_text(),'fn observe_observation(').replace('fn observe_observation(','fn migration_manager(').replace('physics::grind::ManagerObservation','crate::physics::grind::ManagerObservation').replace('o:&mut Output','o:&mut crate::Output')
  extensions={
- 'physics/input_phase.rs':'\n'+observer,
- 'physics.rs':'\npub(crate) fn migration_grind_runtime_run(a:&std::path::Path,f:&std::path::Path,i:&mut crate::Input,o:&mut crate::Output)->Result<(),String>{input_phase::migration_grind_runtime_run(a,f,i,o)}\n',
- 'physics/grind/runtime.rs':'\n'+manager+RUNTIME_OBSERVER,
+ 'physics/input_phase.rs':'\nuse crate::{physics,grind_world};\n'+observer,
+ 'physics.rs':'\npub(crate) fn migration_grind_runtime_run(a:&std::path::Path,f:&std::path::Path,i:&mut crate::Input,o:&mut crate::Output)->Result<(),String>{input_phase::migration_grind_runtime_run(a,f,i,o)}\npub(crate) fn migration_grind_runtime_load(a:&std::path::Path,o:&mut crate::Output){grind::migration_load(a,o)}\n',
+ 'physics/grind/runtime.rs':'\nimpl Runtime{pub(crate) fn migration_grind_clear_manager(&mut self){self.manager=None;}}\n'+manager+RUNTIME_OBSERVER,
+ 'physics/ground_runtime/mod.rs':'\nimpl GroundRuntime{pub(crate) fn migration_grind_seed_board_normal(&mut self,value:[f32;4]){self.retained_board_normal=value;}}\n',
  'physics/grind/rng.rs':'\nimpl OrientationRandom{pub(super) fn migration_words(&self)->[u32;8]{self.words}}\n',
  'physics/grind.rs':'\npub(crate) use runtime::{migration_owner,migration_settings};\npub(crate) fn migration_vertical(i:&mut crate::Input,o:&mut crate::Output,r:&Runtime){substate::migration_vertical(i,o,r)}\npub(crate) fn migration_load(a:&std::path::Path,o:&mut crate::Output){let data=skate_data::collections::Collections::load(a).unwrap();match Runtime::load(&data){Ok(r)=>{o.status(Ok(()));migration_settings(o,&r)},Err(e)=>o.status(Err(e))}}\n',
  'physics/grind/substate/settings.rs':SUBSTATE_OBSERVER,
@@ -102,7 +127,13 @@ def reference_plan(output):
   p=crate/'src'/rel;p.write_bytes(p.read_bytes()+extra.encode());hashes[rel]=dict(original_prefix_sha256=digest(original/('crates/skate-host/src/'+rel)),generated_sha256=digest(p),append_sha256=hashlib.sha256(extra.encode()).hexdigest())
  template=PLUGIN/'Tests/Reference/grind_runtime_probe.rs';code=(crate/'src/migration_probe.rs').read_text();code=code[:code.index('fn main()')]+template.read_text();code=code.replace('fn word(&mut self)->u32','fn text(&mut self)->String{let n=self.word();String::from_utf8((0..n).map(|_|self.word()as u8).collect()).unwrap()}\n fn word(&mut self)->u32');(crate/'src/migration_probe.rs').write_text(code)
  cargo.write_text(cargo.read_text().replace('name="player-teleport-reference"','name="grind-runtime-reference"'))
- report.update(grind_extensions=hashes,generated_probe_sha256=digest(crate/'src/migration_probe.rs'),observer_sha256=digest(PLUGIN/'Tests/Reference/grind_runtime_observer.rs'),scope='Full untouched host: real GamePhysics/SkaterRuntime constructors; six grind states/Nonspecific, all original core forces/reckoning/chromosome/camera/settings and original skeleton/world/IK/solve owners. Append-only read observers and explicit caller/transport adapters.')
+ # Inherited records name files that the Grind append step also extends.
+ # Refresh their final generated hashes so the immutable report describes the
+ # actual compiled observer files, while retaining every original prefix hash.
+ for rel,row in report['staged_host_original_prefixes'].items():
+  path=crate/'src'/rel
+  if path.is_file():row['generated_sha256']=digest(path)
+ report.update(grind_extensions=hashes,generated_probe_sha256=digest(crate/'src/migration_probe.rs'),observer_sha256=digest(PLUGIN/'Tests/Reference/grind_runtime_observer.rs'),grind_fixture_visibility=dict(borrowed_reset_replacement=dict(old=old,new=new,original_prefix_sha256=hashlib.sha256(phase_original).hexdigest()),bindings=['crate::physics and crate::grind_world imports in appended input_phase scope','parent physics loader forwarding into private grind module','GroundRuntime retained_board_normal exact owning-scope fixture setter','Runtime manager exact owning-scope fixture clear','AttributeName.0 five-word observation','GamePhysics.grind_materials authoritative material table']),scope='Full untouched host: real GamePhysics/SkaterRuntime constructors; six grind states/Nonspecific, all original core forces/reckoning/chromosome/camera/settings and original skeleton/world/IK/solve owners. Append-only read observers and explicit caller/transport adapters.')
  return original,observed,crate,cargo,report
 
 def build_native(output):
@@ -218,6 +249,36 @@ def corpus():
   p=packet();out=p['physical']['grinds'];out['words_136_140']=[999 if names=='family'else 0,1]
   if names!='family':out[names+'_name_156'if names=='animation'else'scoring_name_176']=None
   add('completed filtered/condition error '+names,[p,dict(op=15 if names=='family'else 25)])
+ # Append the accepted 50-50 acquisition at its actual physical deck height.
+ # horizontal_spawn adds .1 to the requested Y: the earlier -.035 reset
+ # leaves depth .145 above the -.08 rail, outside the source's <.13 gate.
+ # Requesting -.1 gives the accepted identity frame through the REAL reset.
+ witness=next(p for p in producer_programs if p['label']=='explicit authored fifty-fifty witness')
+ p=packet(401);p['processed']=copy.deepcopy(witness['commands'][0]['p'])
+ def empty(value):
+  if isinstance(value,dict):return {k:empty(v)for k,v in value.items()}
+  if isinstance(value,list):return [empty(v)for v in value]
+  return None if value is None else 0
+ p['processed']['grind']=empty(p['processed']['grind'])
+ r=copy.deepcopy(reset_cmd);r.update(pose=0,attributes=[],actions=[0.]*18,target=[[1.,0.,0.,0.],[0.,1.,0.,0.],[0.,0.,1.,0.],[0.,-.1,0.,0.]])
+ commands=[copy.deepcopy(p),r,copy.deepcopy(p),dict(op=22,pose=0,fakie=False,jump_fix=1000,pop=1.),dict(op=12),dict(op=34)]
+ # Only PreUpdate/PostUpdate can construct the admitted manager. No op20/21,
+ # contact, query-result, velocity/body or force-queue observer is installed.
+ for _ in range(4):commands += [dict(op=30,air_counter=20,target=False),dict(op=12)]
+ commands += [dict(op=10,state=401)]+step()+[dict(op=17),dict(op=11)]
+ add('actual 50-50 provider admission through source horizontal reset',commands,witness['provider'],witness['world'])
+ # Keep every preceding history intact. Condition first observes category400
+ # without an active grind, so the next active publication starts its pending
+ # chromosome at0 rather than the first-entry13. Repeating that same actual
+ # Condition raises it to1: source publishes animation (>0), while scoring
+ # (>12) and its missing caller name remain unwritten. Filter therefore reaches
+ # the second name check using the canonical name produced by the real owner.
+ p=packet();p['physical']['grinds']['words_136_140']=[0,0]
+ p['physical']['grinds']['animation_name_156']=None
+ p['physical']['grinds']['scoring_name_176']=None
+ active=copy.deepcopy(p);active['physical']['grinds']['words_136_140']=[0,1]
+ add('actual delayed animation publication with missing scoring name',
+     [p,dict(op=15),active,dict(op=15),dict(op=15),dict(op=25)])
  w=input_grind.Stream();w.word(len(cases))
  for case in cases:
   w.word(case['world']);input_grind.encode_provider(w,case['provider']);w.word(len(case['commands']))
@@ -288,6 +349,11 @@ def retained(words):
  return dict(states=states,active=family,nonspecific=nonspecific,jumped=jumped,jump=jump,random=random,manager=manager_words,pending=impulse,history=history,saved=saved,initialized=initialized,approach=approach,previous_category=previous_category,previous_kind=previous_kind,away=away,reversed=reversed_,orientation=orientation,candidate=candidate,pending_frames=pending_frames,animation=animation,scoring=scoring,jumper=jumper_)
 
 def coverage(frames,cases):
+ # All 384 table entries are required; many intentionally share a trick name.
+ # Derive their ordered attributes from the pinned original tables rather than
+ # requiring an invented minimum number of unique names.
+ source_names=[name for table in range(8)for name in re.findall(r'attribute:\s*"([^"]+)"',protocol.trees.source_at_reference(f'crates/skate-host/src/physics/grind_names/table{table}.rs'))]
+ assert len(source_names)==384
  counts=Counter();errors=Counter();families=Counter();substates=Counter();noise_changes=0;body_writes=0;tip=set();slide=0;air_pops=0;partial=0;queue_counts=set();queue_proofs=0;collision_precedence=0;history=set();orientations=set();camera_changes=0;published_names=set();actual_manager=0;post_success=0;wheel_publication=0
  for rows,case in zip(frames,cases):
   # The original read observer ends its fixed RidingOutputs block with the
@@ -324,7 +390,8 @@ def coverage(frames,cases):
     r=Reader(struct.pack('<'+'I'*len(row['extra']),*row['extra']));records=[]
     for _ in range(384):
      skating=r.word();attribute=bytes(r.take(r.word())).decode();display=bytes(r.take(r.word())).decode();scorable=r.word();encoded=r.take(5);records.append((skating,attribute,display,scorable,encoded))
-    assert r.take(6)==[0]*6 and r.at==len(r.words);assert len({n[1]for n in records})>100
+    assert r.take(6)==[0]*6 and r.at==len(r.words)
+    assert [n[1]for n in records]==source_names
  assert all(families[f]>0 for f in range(6)),families
  assert noise_changes>0 and body_writes>0 and slide>0 and air_pops>0,(noise_changes,body_writes,slide,air_pops)
  assert substates[1]>0 and substates[2]>0 and any(t[0]for t in tip)and any(t[1]for t in tip),(substates,tip)
@@ -334,7 +401,7 @@ def coverage(frames,cases):
   assert errors[e]>0,(e,errors)
  assert partial>0
  assert queue_proofs==4 and collision_precedence==4 and {0,20,21}<=queue_counts,(queue_proofs,collision_precedence,queue_counts)
- return dict(operations=dict(counts),errors=dict(errors),families=dict(families),substates=dict(substates),orientation_rng_changed=noise_changes,actual_body_writes=body_writes,tipslide_latches=[list(t)for t in sorted(tip)],slide_wipeout_frames=slide,pop_latches=air_pops,partial_writes=partial,force_queue_counts=sorted(queue_counts),capacity_proofs=queue_proofs,collision_precedes_pop=collision_precedence,chromosome_history_lengths=sorted(history),orientations=sorted(o for o in orientations if o is not None),distinct_name_chromosomes=len(published_names),camera_history_writes=camera_changes,real_provider_admissions=actual_manager,completed_post_frames=post_success,real_wheel_publications=wheel_publication)
+ return dict(operations=dict(counts),errors=dict(errors),families=dict(families),substates=dict(substates),orientation_rng_changed=noise_changes,actual_body_writes=body_writes,tipslide_latches=[list(t)for t in sorted(tip)],slide_wipeout_frames=slide,pop_latches=air_pops,partial_writes=partial,force_queue_counts=sorted(queue_counts),capacity_proofs=queue_proofs,collision_precedes_pop=collision_precedence,chromosome_history_lengths=sorted(history),orientations=sorted(o for o in orientations if o is not None),distinct_name_chromosomes=len(published_names),original_name_entries=len(source_names),distinct_original_names=len(set(source_names)),camera_history_writes=camera_changes,real_provider_admissions=actual_manager,completed_post_frames=post_success,real_wheel_publications=wheel_publication)
 
 def settings_queries():
  q=[('physics_grinds','default',n,'words')for n in('PinVsSlope','ExitAssistVsLeanAngle')]
@@ -359,6 +426,7 @@ def check_settings(output,path,native,reference):
   value=copy.deepcopy(independent)
   for later in queries[at:]:stock.mutate(value,later,dict(type='EA::Reflection::Int32',data='00000000')if later[3]=='float'else dict(type='EA::Reflection::Float',data='00000000'))
   fixtures.append(value);labels.append('first failed read '+str(q))
+ output.mkdir(parents=True,exist_ok=True)
  folder=stock.prepare_fixtures(output,fixtures,path);errors=Counter();records=[]
  for n,label in enumerate(labels):
   expected=subprocess.check_output([str(reference),str(folder/str(n)),'--settings-only']);actual=subprocess.check_output([str(native),str(folder/str(n)/'settings.native'),'--settings-only'])

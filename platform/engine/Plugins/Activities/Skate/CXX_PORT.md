@@ -26,17 +26,18 @@ scenarios include the current 1.6 spin setting as well as the previous 2.15 regr
 The migration branch also includes `68e384a`'s walking/skating camera easing. That change is entirely
 in the Unreal adapter; the worker source remains identical to the pinned reference.
 
-## Work remaining
+## Migration checklist
 
-- [ ] Whole-session record/replay comparator and pinned reference traces.
-- [ ] Data conversion: settings, skeleton, gestures, graphs, camera samples, animation hierarchy,
+- [x] Whole-session record/replay comparator and pinned reference traces.
+- [x] Data conversion: settings, skeleton, gestures, graphs, camera samples, animation hierarchy,
   poses, clips, blend/selection definitions and attributes.
-- [ ] C++ scalar/geometry/curve kernels and controller input.
-- [ ] C++ graph execution, action/motion conditions, behaviors and intent publication.
-- [ ] C++ animation decoding, clocks, blending, procedural adjustments and physical feedback.
-- [ ] C++ collision/BVH, bodies, contacts, constraints, board and rider solver.
-- [ ] C++ ground/air/grind/manual/slide/pump/off-board/wipeout state owners and scoring.
-- [ ] C++ camera and complete session scheduling.
+- [x] C++ scalar/geometry/curve kernels and controller input.
+- [x] C++ graph execution, action/motion conditions, behaviors and intent publication.
+- [x] C++ animation decoding, clocks, blending, procedural adjustments and physical feedback.
+- [x] C++ collision/BVH, bodies, contacts, constraints, board and rider solver.
+- [x] C++ ground/air/grind/manual/slide/pump/off-board/wipeout state owners and scoring.
+- [x] C++ camera and complete session scheduling.
+- [ ] Finish focused landing and physical wipeout acceptance, then compare the latest-main vert changes.
 - [ ] In-process Unreal ownership, background world refresh, mounting, retargeting and shutdown.
 - [ ] Remove the Rust worker/build dependency and original runtime data formats; commit all native data.
 - [ ] Run whole-session comparisons, in-game scenarios, visual checks and frame-pacing checks; submit the PR.
@@ -1225,8 +1226,9 @@ manifest pins every relative path, byte size and SHA-256; its SHA-256 is
 `add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d`.
 `Tools/assemble_native_package.py` is a one-time migration tool, independent of
 the normal runtime. Bundle integrity and layout checks pass for all payloads.
-Committing this prepared package does not switch the playable backend or claim
-complete gameplay/session equivalence; those comparisons remain in progress.
+The package is committed and its native gameplay frame and host Session
+comparisons pass as documented here. Switching the playable Unreal adapter and
+validating it in game remain separate acceptance steps.
 
 ### Native diagnostic string formatting
 
@@ -1237,8 +1239,8 @@ and 5,329 multiscalar commands: 21,012,097 exact output bytes (SHA-256
 `18ef853b565ae1b971d85b5c401f9c3659d9e7e989a454c7eefeea18852b70ed`).
 The source tables retain their MIT notice and source identities. Invalid UTF-8
 has no Rust string equivalent; 426 separately scoped native checks verify its
-rejection and output retention. Session error formatting uses this helper;
-complete Session construction and gameplay still require their own comparison.
+rejection and output retention. Session error formatting uses this helper.
+Complete Session construction and gameplay pass their separate comparison above.
 
 ### Complete native gameplay frame
 
@@ -1259,7 +1261,26 @@ graph, preserving the original running clip and resulting physical trajectory.
 Coverage includes grounded/airborne skating, offboard ground/air and landing
 states, stance changes, controller histories, tuning, travel and retained errors.
 The fixture world is a flat floor with an empty grind provider. Rail admission,
-physical wipeout and climbing require their focused connected checks; host
-Session timing, live Unreal collision export and rendering remain separate
-acceptance steps. The playable adapter still uses the existing backend at this
-checkpoint.
+physical wipeout and climbing have focused connected checks. The grind result
+is recorded below; final physical wipeout and landing acceptance remain pending.
+Host Session timing passes its comparison above. Live Unreal collision export
+and rendering remain separate acceptance steps. The playable adapter still uses
+the existing backend at this checkpoint.
+
+### Connected physical grind owners
+
+The complete original physical Grind host comparison passes 52 histories and
+5,662 callbacks: all 247,347,208 output bytes match exactly (SHA-256
+`798040b06ae9e287dad6b9a71e48a08bb6d3dcfbe084993ffb2ea045402bb7d3`).
+Its corpus SHA-256 is
+`2c76ecf20493861238fda86e22d9e2ab512350f918206edbafb3125a75e8b313`.
+The comparison includes six grind families, shared physical/pose/IK/solve
+owners, force-queue capacity and ordering, names, scoring, chromosomes and
+camera history. Four actual provider admissions are required. All 384 ordered
+name entries and 48 first-failed settings reads match the original loaders.
+
+Completed upstream input/animation packets, selected lifecycle states and
+focused manager snapshots are explicit fixture boundaries. Provider admission
+uses real authored geometry and the actual Pre/Post callbacks. No completed
+query, contact, force or solver result is supplied. Whole-game rail behavior
+and Unreal presentation remain separate integration checks.

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "LandingDeck.h"
 #include "LandingDeckMath.h"
 #include "StockSettingsReader.h"
 #if defined(__clang__)

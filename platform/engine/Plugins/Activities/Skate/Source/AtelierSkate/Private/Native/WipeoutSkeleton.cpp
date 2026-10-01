@@ -20,7 +20,9 @@ bool WipeoutPhysicalRuntime::UpdateSkeleton(WipeoutPhysicalOwners o,float start,
         p.extra_target_positions={positions.com,positions.lifted_com,positions.following_com};p.pose_errors.SetTargets(positions);}
     frames.skate_root=roots.animation_to_world;frames.UpdateComLift(roots.animation_to_world,frames.centre_of_mass,0);
     if(processed.state_timer_2664==0){
-        if(!o.ik.Update(o.animated,{p.animation_record,p.roots,p.board_frames},o.globals,processed,o.animation_input.contacts.bone,p.board_frames.physical_board,p.skeleton.PartTransforms()[23][3],p.drive_frames,error))return false;
+        std::array<Mat4,24> updated_drives;
+        if(!o.ik.Update(o.animated,{p.animation_record,p.roots,p.board_frames},o.globals,processed,o.animation_input.contacts.bone,p.board_frames.physical_board,p.skeleton.PartTransforms()[23][3],updated_drives,error))return false;
+        p.drive_frames=updated_drives;
     }
     const WipeoutDriveWeights weights{start,end,controlled,(processed.flags_2484&0x20)?extra:0,(processed.flags_2484&0x10)?extra:0};
     if(!UpdateWipeoutDrives(p.skeleton_drives,p.drive_frames,drives,weights,residual,error))return false;o.animated.motion.next_trajectory=SkeletonIdentity;return true;

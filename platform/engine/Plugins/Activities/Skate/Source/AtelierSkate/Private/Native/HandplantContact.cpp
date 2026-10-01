@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "HandplantContact.h"
 #include "Handplant.h"
 #include "PlantMath.h"
 #include <algorithm>

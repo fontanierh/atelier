@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "FootplantPrediction.h"
 #include "AirReckoning.h"
 #include "FootplantRuntime.h"
 #include "PlantMath.h"
