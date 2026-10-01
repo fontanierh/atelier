@@ -308,10 +308,16 @@ if C:
 if W.get('forest_lake'):
     lake=W['forest_lake'];safe=lake['safe_shore']
     zones.append(dict(key='forest_lake',name='Hidden woodland lake',x=safe[0],y=safe[1],z=safe[2],yaw=180.,hint='A quiet fishing cabin and timber jetty deep in the woods'))
-# Mega Park: the upper deck start, where the original game drops the skater in, looking out over the park.
-start = megapark.source()['spawn']; sx, sy, sz = megapark.native_to_island(start['position'])
-zones.append(dict(key='megapark', name='Mega Park', x=round(float(sx), 2), y=round(float(sy), 2), z=round(float(sz), 2),
-                  yaw=round(facing(*megapark.CENTRE, sx, sy), 1),
+# Mega Park: the very top of the park, the crest of its access road at about 130 m, looking down the road. From there the
+# road runs under the white gate and curves down past the car park to the upper deck and the roll-in.
+sx, sy = -149.0, 1474.0
+t = megapark.place(megapark.collision_triangles()); a, b, c = t[:, 0], t[:, 1], t[:, 2]
+den = (b[:, 1] - c[:, 1]) * (a[:, 0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (a[:, 1] - c[:, 1]); den[den == 0] = np.inf
+u = ((b[:, 1] - c[:, 1]) * (sx - c[:, 0]) + (c[:, 0] - b[:, 0]) * (sy - c[:, 1])) / den
+v = ((c[:, 1] - a[:, 1]) * (sx - c[:, 0]) + (a[:, 0] - c[:, 0]) * (sy - c[:, 1])) / den
+hit = np.isfinite(den) & (u >= 0) & (v >= 0) & (u + v <= 1)
+sz = float((u * a[:, 2] + v * b[:, 2] + (1 - u - v) * c[:, 2])[hit].max())   # the road under the spot
+zones.append(dict(key='megapark', name='Mega Park', x=sx, y=sy, z=round(sz, 2), yaw=round(facing(-110.0, 1469.0, sx, sy), 1),
                   hint='The canyon skate park in the western foothills. Triangle / Y or B for the board'))
 # Sunset Pier: its current entrance plaza, shared with the park contract.
 PARK = str(yori.REGIONS / 'skatepark' / 'park.json')
