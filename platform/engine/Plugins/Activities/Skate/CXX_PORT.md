@@ -193,6 +193,18 @@ including the three unsupported states and Sleeping's restricted transition.
 The actual lifecycle effects and global state publication remain separate
 concrete-owner checks.
 
+`PlayerStateSelector.*`, `PlayerStateLifecycle.*` and `PlayerStateMachine.*`
+preserve the complete core decision tree, transition callbacks, pre-state packet
+publication, controller/board update ordering and retained phase timer. Their
+comparison passes 166 histories and 16,940 commands, preserving 3,617,084 exact
+bytes (SHA-256
+`6efc13a9231548ed939dd3bb0af28d83582da783d95ab77a5a1a601583b124b8`).
+It includes all 26 identities, all 676 lifecycle pairs, counter wrapping,
+controller modes, unknown-state rejection and ordered IEEE timer operand cases.
+Concrete state bodies, physical controller operations and upstream producers
+are mandatory external boundaries here; this does not establish complete host
+player-frame scheduling.
+
 ## Native ground owner composition
 
 `GroundStateRuntime.*`, `GroundRuntime.*`, `GroundInput.*`, `GroundSettings.*`,
