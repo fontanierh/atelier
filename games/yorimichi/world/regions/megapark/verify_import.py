@@ -11,7 +11,9 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
+from megapark import plants, sign
 
 SOURCE = yori.ASSETS/'megapark'
 OUT = yori.OUT/'megapark'
@@ -24,6 +26,11 @@ def expected_triangles(entry, source):
         parts = []
         with np.load(SOURCE/model['npz'], allow_pickle=False) as arrays:
             for p in model['meshes']:
+                if plants.is_foliage(p):
+                    continue   # replaced by island trees (build.py)
+                if sign.is_letters(model, p):
+                    parts.append(letters())   # SHARKS -> 寄り道 (build.py)
+                    continue
                 i = p['index']
                 parts.append(arrays[f'vertices_{i}'][arrays[f'faces_{i}']])
         triangles = np.concatenate(parts).astype('f8')
@@ -32,6 +39,14 @@ def expected_triangles(entry, source):
         return triangles[valid]
     model = next(m for m in source['collision'] if m['id'] == entry['source_id'])
     with np.load(SOURCE/model['npz'], allow_pickle=False) as arrays:
+        triangles = arrays['triangles']
+    if model['id'] == sign.SECTION:
+        triangles = np.concatenate([triangles[~sign.letters_mask(triangles)], letters().astype(triangles.dtype)])
+    return triangles
+
+
+def letters():
+    with np.load(OUT/'letters.npz', allow_pickle=False) as arrays:
         return arrays['triangles']
 
 

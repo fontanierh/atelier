@@ -32,7 +32,8 @@ public:
     ASuperUltraMegaPark();
     virtual void BeginPlay() override;
     /** Places the park in the island from Content/Data/megapark/park.json: the actor transform, the kept render and
-     *  collision meshes from /Game/MegaPark/Meshes, and the original grind paths. Null if the file is missing. */
+     *  collision meshes from /Game/MegaPark/Meshes, the original grind paths and the island trees that replace the
+     *  original plants. Null if the file is missing. */
     static ASuperUltraMegaPark* Spawn(UWorld* World, const FString& Path);
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") FString SourceManifestHash;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") TArray<FMegaParkRail> Rails;

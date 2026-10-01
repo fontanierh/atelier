@@ -13,6 +13,7 @@ import unreal
 
 OUT = yori.OUT / 'megapark'
 SOURCE = yori.ASSETS / 'megapark'
+RESTYLE = OUT / 'textures'
 ROOT = '/Game/MegaPark'
 LEVEL = ROOT + '/Maps/SuperUltraMegaPark'
 E = unreal.EditorAssetLibrary
@@ -29,15 +30,19 @@ def ue(point):
 
 
 def texture(path, name, linear=False, normal=False, clamp=False):
+    """Import once, and again whenever the source image changes (its hash is kept in the asset's metadata)."""
     dest = ROOT + '/Textures'
     asset = dest + '/' + name
+    digest = sha(Path(path))
     tex = E.load_asset(asset) if E.does_asset_exist(asset) else None
-    if tex is None:
+    if tex is None or E.get_metadata_tag(tex, 'AtelierSourceSha256') != digest:
         task = unreal.AssetImportTask()
         task.filename = str(path); task.destination_path = dest; task.destination_name = name
-        task.automated = True; task.save = True
+        task.automated = True; task.save = True; task.replace_existing = True
         AT.import_asset_tasks([task])
         tex = E.load_asset(asset)
+        assert tex, path
+        E.set_metadata_tag(tex, 'AtelierSourceSha256', digest)
     assert tex, path
     tex.set_editor_property('srgb', not linear and not normal)
     tex.set_editor_property('compression_settings', unreal.TextureCompressionSettings.TC_NORMALMAP if normal
@@ -50,11 +55,12 @@ def texture(path, name, linear=False, normal=False, clamp=False):
 
 
 def material(alpha, defaults):
-    """Translate original texture bindings into a shared Unreal material graph.
+    """Translate original texture bindings into a shared, lit Unreal material graph.
 
-    Original baked irradiance is decoded as 4*L*L, using UV1. Diffuse and decals
-    use their authored UVs; macro overlay and detail retain their source scale.
-    This is a material translation, not a recreation of EA's shader renderer.
+    Diffuse and decals use their authored UVs; macro overlay and detail retain their source scale. The island's sun,
+    sky and Lumen light the park like the terrain around it (docs/MEGAPARK.md, "Restyle"). The original baked
+    irradiance (4*L*L, UV1) stays only as ambient occlusion: divided by the lightmap's sunlit level (LightmapNorm)
+    and applied at LightmapOcclusion strength, so its baked sun shadows never compete with the island's.
     """
     name = ('M_RetailOpaque', 'M_RetailMasked', 'M_RetailTranslucent')[alpha]
     dest = ROOT + '/Materials'
@@ -104,15 +110,21 @@ def material(alpha, defaults):
          'M': (samples['Macro'], 'RGB'), 'UseDecal': (scalar('UseDecal', 0.), ''), 'MacroOpacity': (scalar('MacroOpacity', 0.), '')})
     normal = custom('float3 T=float3(N.xy+D.xy,N.z*D.z); return normalize(T);',
                     {'N': (samples['Normal'], 'RGB'), 'D': (samples['Detail'], 'RGB')})
-    baked = custom('return B*lerp(float3(0.12,0.12,0.12),4.0*L*L,HasLightmap)*0.85;',
-                   {'B': (base, ''), 'L': (samples['Lightmap'], 'RGB'), 'HasLightmap': (scalar('HasLightmap', 0.), '')})
-    lit = node(unreal.MaterialExpressionMultiply, const_b=.15)
-    link(base, '', lit, 'A')
-    for n, output, prop in ((lit, '', unreal.MaterialProperty.MP_BASE_COLOR), (baked, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR),
-                            (normal, '', unreal.MaterialProperty.MP_NORMAL), (samples['Specular'], 'R', unreal.MaterialProperty.MP_SPECULAR)):
-        assert MEL.connect_material_property(n, output, prop)
-    rough = custom('return clamp(1.0-S*.6,.25,1.0);', {'S': (samples['Specular'], 'R')}, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
-    MEL.connect_material_property(rough, '', unreal.MaterialProperty.MP_ROUGHNESS)
+    occlusion = custom('float l=dot(4.0*L*L,float3(.2126,.7152,.0722))/max(Norm,.001);'
+                       'return lerp(1.0,sqrt(saturate(l)),Strength*HasLightmap);',
+                       {'L': (samples['Lightmap'], 'RGB'), 'Norm': (scalar('LightmapNorm', 3.), ''),
+                        'Strength': (scalar('LightmapOcclusion', .45), ''), 'HasLightmap': (scalar('HasLightmap', 0.), '')},
+                       unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    colour = custom('return B*Albedo;', {'B': (base, ''), 'Albedo': (scalar('Albedo', 1.), '')})
+    # Matte like the terrain; the original specular map keeps a little sheen on polished concrete and metal.
+    specular = custom('return S*SpecularScale;', {'S': (samples['Specular'], 'R'), 'SpecularScale': (scalar('SpecularScale', .35), '')},
+                      unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    rough = custom('return lerp(1.0,clamp(1.0-S*.6,.25,1.0),Gloss);', {'S': (samples['Specular'], 'R'), 'Gloss': (scalar('Gloss', .5), '')},
+                   unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    for n, prop in ((colour, unreal.MaterialProperty.MP_BASE_COLOR), (normal, unreal.MaterialProperty.MP_NORMAL),
+                    (occlusion, unreal.MaterialProperty.MP_AMBIENT_OCCLUSION), (specular, unreal.MaterialProperty.MP_SPECULAR),
+                    (rough, unreal.MaterialProperty.MP_ROUGHNESS)):
+        assert MEL.connect_material_property(n, '', prop)
     if alpha:
         opacity = custom('return lerp(A,T,HasTransparent);', {'A': (samples['Diffuse'], 'A'), 'T': (samples['Transparent'], 'A'),
                          'HasTransparent': (scalar('HasTransparent', 0.), '')}, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
@@ -125,11 +137,17 @@ def materials(report):
     role = {}
     for p in report['materials'].values():
         for key, tid in p.get('retail_texture_ids', {}).items(): role.setdefault(tid, set()).add(key)
+    # The restyle (tools/megapark_textures.py finish): island-style images in place of some originals, and each
+    # lightmap's sunlit level.
+    restyle = json.loads((RESTYLE/'textures.json').read_text())
+    for tid, r in restyle['textures'].items():
+        assert sha(RESTYLE/r['png']) == r['sha256'], tid
     textures = {}
     for tid, t in report['textures'].items():
         assert sha(SOURCE/t['png']) == t['sha256'], tid
         roles = role.get(tid, set())
-        textures[tid] = texture(SOURCE/t['png'], 'T_'+tid[2:], linear=bool(roles & {'lightmap', 'normal', 'detail', 'specular'}),
+        path = RESTYLE/restyle['textures'][tid]['png'] if tid in restyle['textures'] else SOURCE/t['png']
+        textures[tid] = texture(path, 'T_'+tid[2:], linear=bool(roles & {'lightmap', 'normal', 'detail', 'specular'}),
                                 normal=bool(roles & {'normal', 'detail'}), clamp='lightmap' in roles)
     # Tiny fallback pixels are generated by the build, not an external dependency.
     white = texture(OUT/'white.png', 'T_DefaultWhite')
@@ -156,7 +174,8 @@ def materials(report):
         scalars = {'MacroScale': number('macroOverlayUVScale', 1.), 'DetailScale': number('detailNormalUVScale', 1.),
                    'MacroOpacity': number('macroOverlayOpacity', 0.) if 'macrooverlay' in channels else 0.,
                    'UseDecal': float('decal' in channels), 'HasLightmap': float('lightmap' in channels),
-                   'HasTransparent': float('transparent' in channels)}
+                   'HasTransparent': float('transparent' in channels),
+                   'LightmapNorm': restyle['lightmaps'].get(channels.get('lightmap'), 3.)}
         for k, v in scalars.items(): MEL.set_material_instance_scalar_parameter_value(mi, k, v)
         MEL.update_material_instance(mi); E.save_loaded_asset(mi); result[key] = mi
     return result

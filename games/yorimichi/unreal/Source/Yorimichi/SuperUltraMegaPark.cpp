@@ -13,6 +13,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
+#include "SeeThrough.h"
 #include "Engine/CollisionProfile.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
@@ -82,11 +84,42 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         for (const TSharedPtr<FJsonValue>& Point : Entry->GetArrayField(TEXT("points_cm"))) Rail.Points.Add(JsonVector(Point->AsArray()));
     }
     Park->RegisterRails();
+    // The island trees and bushes where the original desert plants stood. They have no collision, so the riding
+    // surfaces and the skating snapshot stay the original ones (docs/MEGAPARK.md, "Restyle").
+    int32 Trees = 0;
+    const TSharedPtr<FJsonObject>* TreeGroups = nullptr;
+    if (Root->TryGetObjectField(TEXT("trees"), TreeGroups))
+        for (const auto& Pair : (*TreeGroups)->Values)
+        {
+            const FString Key(Pair.Key);
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
+            if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing tree mesh %s"), *Key); continue; }
+            TArray<FTransform> Xs;
+            for (const TSharedPtr<FJsonValue>& Value : Pair.Value->AsArray())
+            {
+                const TArray<TSharedPtr<FJsonValue>>& A = Value->AsArray();
+                if (A.Num() < 5) continue;
+                Xs.Add(FTransform(FRotator(0., A[3]->AsNumber(), 0.), FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()),
+                    FVector(A[4]->AsNumber())));
+            }
+            auto* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(Park, *Key);
+            H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(Park->GetRootComponent());
+            H->SetCanEverAffectNavigation(false);
+            H->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            // Like the island's trees, they fade where they hide Cairo (docs/CAMERA.md).
+            const int32 Fade = JapanSeeThrough::FadeMode(Key, Mesh);
+            if (Fade != JapanSeeThrough::FadeSolid) H->SetCustomPrimitiveDataFloat(0, float(Fade));
+            if (Key.StartsWith(TEXT("Bush"))) H->SetCullDistances(30000, 36000);
+            H->SetWorldPositionOffsetDisableDistance(18000);
+            H->RegisterComponent();
+            H->AddInstances(Xs, false, false, false);
+            Trees += Xs.Num();
+        }
     const TSharedPtr<FJsonObject> Start = Root->GetObjectField(TEXT("spawn"));
     Park->SpawnLocation = JsonVector(Start->GetArrayField(TEXT("location_cm")));
     Park->SpawnYaw = Start->GetNumberField(TEXT("yaw_deg"));
-    UE_LOG(LogTemp, Display, TEXT("MEGAPARK placed at %s yaw %.1f: %d meshes (%d not imported), %d rails"),
-        *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Rails.Num());
+    UE_LOG(LogTemp, Display, TEXT("MEGAPARK placed at %s yaw %.1f: %d meshes (%d not imported), %d rails, %d trees"),
+        *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Rails.Num(), Trees);
     return Park;
 }
 

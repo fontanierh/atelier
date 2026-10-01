@@ -45,6 +45,42 @@ the same way as the standalone review below, then captures it in the game's own 
 from its deck, from the hills around it, and at eye height from the lake, the woodland air station,
 the mini-mega ramp, the temple, the foothills and the plaza (whose volcano view it must not touch).
 
+## Restyle
+
+In the island the park keeps every ridden surface, rail and collision triangle, and wears the
+island's look instead of the original desert campus. Concepts painted with Sunburst are in
+`assets/megapark/concepts/` (`tools/megapark_concepts.py`).
+
+- **Plants.** The desert trees, cacti and shrubs are camera-facing cards (11 textures). The park
+  build leaves those render parts out, and `world/regions/megapark/plants.py` turns each original
+  plant (card groups joined by kind) into one of the island's own trees or bushes at its foot:
+  pines, cedars and big maples on the rock rims, painted maples and ginkgos in the groves and
+  canyons, bushes for the shrubs, sized to the original. `ASuperUltraMegaPark::Spawn` plants them
+  as instanced meshes with the island's see-through fade and no collision, so the skate world
+  snapshot never sees them.
+- **Textures.** `tools/megapark_textures.py paint` repaints the five big natural surfaces (rock,
+  smooth rock, cut stone, earth, grass) as Sunburst edits of the originals in the concept's style,
+  so they keep their layout on the park's UVs, and paints the posters, a wave cloth and a maple
+  and waves crest for the signs (`assets/megapark/restyle/`, prompts in each provenance file).
+  `finish` (the `world.megapark_restyle` step) makes the surfaces seamless at the island palette's
+  mean colour, recolours the teal and sky-blue paint, banners and decals to indigo, ochre and moss
+  exactly (layout and alpha untouched), fits the paintings to the old billboards, shark logos and
+  lettering, and writes `build/yorimichi/megapark/textures/`. Concrete, wood and metal stay as
+  they were.
+- **Light.** The park material is lit by the island's sun, sky and Lumen like the terrain around
+  it, matte with a little of the original specular. The baked irradiance stays only as ambient
+  occlusion: each material divides it by its lightmap page's sunlit level (the 95th percentile,
+  at least 1) and applies it at `LightmapOcclusion` strength, so corners stay grounded without
+  the old desert sun's shadows.
+- **寄り道.** The SHARKS letters on the hill above the bowls become 寄り道 in the same concrete,
+  plane, height and support trusses (`world/regions/megapark/sign.py`). The park build extrudes
+  them from a Black instance of the island's Noto Sans JP and swaps their collision: the 2,172
+  triangles of the old letters leave their section and the new letters' 2,008 take their place.
+  No rail ran on the letters.
+
+`verify_import.py` checks every built triangle against the source with the plants left out and
+the letters swapped; every other render and collision triangle must still match exactly.
+
 ## What is bundled
 
 `assets/megapark/map.json` is the source contract. Everything it references is committed:
@@ -87,12 +123,13 @@ skating subsystem. Curves are sampled with at most 2 mm control-point chord devi
 subsystem treats these as rail contact paths. Their original flags remain available for the
 native skating port to interpret more deeply.
 
-Materials retain original texture bindings and UVs. Shared Unreal graphs translate diffuse,
-decal, macro overlay, normal/detail, specular, alpha and baked irradiance (`4*L*L`) into native
-materials. Lightmaps use UV1, decals UV2; UVs are stored at full precision. This preserves the
-original artwork but is not a bit-identical reproduction of EA's renderer: reflection cubemaps,
-animated tree shaders and special shader effects remain source data rather than equivalent
-EA shading. The native sky and lighting are a neutral preview setup, not a style redesign.
+Materials retain original texture bindings and UVs, with the restyled images in place of the
+originals they replace. Shared Unreal graphs translate diffuse, decal, macro overlay,
+normal/detail, specular and alpha into lit native materials, and the baked irradiance
+(`4*L*L`) into ambient occlusion (see "Restyle"). Lightmaps use UV1, decals UV2; UVs are stored
+at full precision. This is not a reproduction of EA's renderer: reflection cubemaps, animated
+tree shaders and special shader effects remain source data. A texture is reimported when its
+source image changes (its hash is kept in the asset's metadata).
 
 `MegaParkGameMode` uses Cairo and the existing skating backend. `MegaParkWorld` supplies the
 player's world services without generating the island, leaf storm, villagers or other island

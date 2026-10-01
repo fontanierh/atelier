@@ -1,0 +1,33 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Image 1 shows the art direction of a stylised game set on a Japanese volcanic island in autumn: soft painterly shapes, flat matte colour, warm light. Paint a flat straight-on image in that style, filling the whole frame edge to edge, to be printed on a sign in a skate park: no frame, no perspective, no shadows, no lettering or text of any kind. The image: a travel poster of the island: a snow-capped volcano above hills of autumn forest in rust, orange and gold, a winding road and a small skate park carved into grey rocks in the foreground, clear blue sky with one soft cloud.",
+  "references": {
+    "build/yorimichi/megapark/restyle/style.png": "c28c71c95f91f0eacb156aaf85a7ad3150b783701d99e3111d20d964926e3fa2"
+  },
+  "purpose": "Mega Park restyle texture",
+  "status": "done",
+  "started_at": "2026-09-30T23:47:32.677904+00:00",
+  "usage": {
+    "input_tokens": 722,
+    "input_tokens_details": {
+      "image_tokens": 576,
+      "text_tokens": 146
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2094
+  },
+  "png_sha256": "def9b78325215e81af1f1c6f5ac12f77628c3741a6a19dd9b99eda13d4069d12",
+  "output": {
+    "file": "poster_volcano.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-09-30T23:48:04.950929+00:00"
+}

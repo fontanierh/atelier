@@ -2,15 +2,18 @@
 
 Run with Blender. There is no game-data decoder in this stage. Render geometry
 and authoritative riding collision stay separate, and neither is simplified.
+The restyle (docs/MEGAPARK.md) leaves out the desert plants (plants.py) and
+turns the SHARKS letters into 寄り道 (sign.py); every other triangle is kept.
 """
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
-from megapark import placement
+from megapark import placement, plants, sign
 
 import bpy
+import bmesh
 import hashlib
 import json
 import struct
@@ -92,6 +95,71 @@ def export_mesh(name, vertices, faces, materials, face_materials, channels=None,
     return result
 
 
+def letters():
+    """寄り道 where SHARKS stood (sign.py): native vertices (float32, one per face corner so the concrete keeps crisp
+    edges), triangles, normals and UVs."""
+    curve = bpy.data.curves.new('letters', 'FONT')
+    curve.body = sign.TEXT
+    curve.font = bpy.data.fonts.load(str(OUT / sign.BLACK), check_existing=True)
+    curve.align_x = 'CENTER'; curve.space_character = sign.SPACING; curve.resolution_u = 4
+    ob = bpy.data.objects.new('letters', curve)
+    bpy.context.collection.objects.link(ob)
+
+    def evaluate():
+        bpy.context.view_layer.update()
+        data = bpy.data.meshes.new_from_object(ob.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+        bm = bmesh.new(); bm.from_mesh(data); bpy.data.meshes.remove(data)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        v = np.array([x.co[:] for x in bm.verts], 'f8'); f = np.array([[x.index for x in t.verts] for t in bm.faces], 'i8')
+        bm.free()
+        return v, f
+    frame = sign.frame()
+    try:
+        v, _ = evaluate()
+        curve.size = min(sign.HEIGHT / np.ptp(v[:, 1]), frame['length'] / np.ptp(v[:, 0]))
+        curve.extrude = sign.DEPTH / 2
+        v, f = evaluate()
+    finally:
+        bpy.data.objects.remove(ob, do_unlink=True); bpy.data.curves.remove(curve)
+    local = v - [(v[:, 0].min() + v[:, 0].max()) / 2, v[:, 1].min(), -sign.DEPTH / 2]
+    t = local[f]
+    t = t[np.linalg.norm(np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1) > 1e-6]
+    # Blender fills the caps with the union of overlapping strokes, but every stroke keeps its own walls: walls
+    # inside the union are dropped, and the few that face into the letters are turned round.
+    front = (np.abs(t[:, :, 2] - sign.DEPTH) < 1e-4).all(1)
+    wall = ~front & ~(np.abs(t[:, :, 2]) < 1e-4).all(1)
+    caps = t[front][:, :, :2]
+    a, b, c = caps[:, 0], caps[:, 1], caps[:, 2]
+    cross = lambda u, w: u[..., 0] * w[..., 1] - u[..., 1] * w[..., 0]
+    det = cross(b - a, c - a)
+
+    def filled(points):
+        p = points[:, None, :]
+        w1 = cross(b - p, c - p) / det; w2 = cross(c - p, a - p) / det
+        return ((w1 >= -1e-9) & (w2 >= -1e-9) & (1 - w1 - w2 >= -1e-9)).any(1)
+    n = np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0])[:, :2]
+    n /= np.linalg.norm(n, axis=1, keepdims=True) + 1e-12
+    middle = t.mean(1)[:, :2]
+    outside = np.zeros(len(t), bool); inside = np.zeros(len(t), bool)
+    outside[wall] = filled(middle[wall] + n[wall] * .01); inside[wall] = filled(middle[wall] - n[wall] * .01)
+    t[wall & outside & ~inside] = t[wall & outside & ~inside][:, ::-1]
+    t = t[~(wall & outside & inside)]
+    normals = np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0])
+    normals = np.repeat(normals / np.linalg.norm(normals, axis=1, keepdims=True), 3, 0)
+    corners = t.reshape(-1, 3)
+    native = sign.place(corners).astype('f4')
+    assert abs(frame['bottom'] - native[:, 1].min()) < 1e-3
+    world_normals = (sign.place(normals) - sign.place(np.zeros(3))).astype('f4')
+    return native, np.arange(len(native), dtype='u4').reshape(-1, 3), world_normals, sign.uvs(corners, normals).astype('f4')
+
+
+def letters_material(part):
+    """The original letters' concrete without their lightmap page, which belonged to the old shapes."""
+    drop = ('lightmap',)
+    return dict(part, retail_texture_ids={k: v for k, v in part['retail_texture_ids'].items() if k not in drop},
+                retail_parameters={k: v for k, v in part['retail_parameters'].items() if k not in drop})
+
+
 def sample_rail(rail):
     """Bound chord error by subdividing the original cubic's Bezier controls."""
     points = []
@@ -140,8 +208,9 @@ def island_runs(points):
 
 
 def write_island(report):
-    """The park in the island for ASuperUltraMegaPark::Spawn (docs/MEGAPARK.md, "Placement"): the actor transform, the
-    park's own render and collision meshes at their native origins, every grind path and the upper deck start."""
+    """The park in the island for ASuperUltraMegaPark::Spawn (docs/MEGAPARK.md, "Placement" and "Restyle"): the actor
+    transform, the park's own render and collision meshes at their native origins, every grind path, the upper deck
+    start and the island trees that replace the original plants ([x, y, z cm, yaw, scale] in the park's frame)."""
     models, sections = placement.kept()
     render = {'SM_MP_' + m['asset_id'][2:] for m in models}
     collision = {'UC_MP_' + c['id'] for c in sections}
@@ -153,8 +222,10 @@ def write_island(report):
         'collision': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['collision'] if e['name'] in collision],
         'rails': [{'id': r['id'] + suffix, 'closed': r['closed'] and not suffix, 'points_cm': [ue(p) for p in points]}
                   for r in report['rails'] for suffix, points in island_runs(r['points'])],
-        'spawn': {'location_cm': placement.to_unreal(spawn['position']).tolist(), 'yaw_deg': spawn['heading_degrees'] + t['yaw_deg']}}
-    assert len(island['render']) == len(render) and len(island['collision']) == len(collision)
+        'spawn': {'location_cm': placement.to_unreal(spawn['position']).tolist(), 'yaw_deg': spawn['heading_degrees'] + t['yaw_deg']},
+        'trees': {name: [ue(p[:3]) + p[3:] for p in items] for name, items in plants.trees().items()}}
+    assert len(island['render']) + len(render & set(report['foliage_only'])) == len(render)
+    assert len(island['collision']) == len(collision)
     (OUT / 'park.json').write_text(json.dumps(island) + '\n')
 
 
@@ -163,17 +234,33 @@ def main():
     (OUT / 'fbx').mkdir(exist_ok=True)
     write_fallbacks()
     source = json.loads((SOURCE / 'map.json').read_text())
-    report = {'source_sha256': sha(SOURCE / 'map.json'), 'render': [], 'collision': [], 'materials': {}, 'rails': [],
+    report = {'source_sha256': sha(SOURCE / 'map.json'), 'render': [], 'foliage_only': [], 'collision': [], 'materials': {}, 'rails': [],
         'spawn': source['spawn'], 'summary': source['summary'], 'textures': source['textures']}
     scene = bpy.context.scene
     scene.unit_settings.system='METRIC'; scene.unit_settings.scale_length=1.
+    new_letters = letters()
+    np.savez(OUT / 'letters.npz', triangles=new_letters[0][new_letters[1]])
     for model in source['models']:
         assert sha(SOURCE/model['npz']) == model['sha256'], model['npz']
         vertices, faces, normals, uvs, lightmaps, decals, material_indices, slots = [], [], [], [], [], [], [], []
-        offset = 0; degenerates = 0
+        offset = 0; degenerates = 0; foliage = 0
         with np.load(SOURCE / model['npz'], allow_pickle=False) as arrays:
             for part in model['meshes']:
                 i = part['index']; v = arrays[f'vertices_{i}']; f = arrays[f'faces_{i}']
+                if plants.is_foliage(part):
+                    # The desert plants give way to island trees, planted by the park actor (write_island).
+                    foliage += len(f)
+                    continue
+                if sign.is_letters(model, part):
+                    v, f, n, uv = new_letters
+                    key = material_key(letters_material(part))
+                    if key not in slots:
+                        slots.append(key)
+                    report['materials'].setdefault(key, letters_material(part))
+                    vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
+                    normals.append(n); uvs.append(uv); lightmaps.append(np.zeros_like(uv)); decals.append(uv)
+                    offset += len(v)
+                    continue
                 t = v[f].astype('f8')
                 valid = np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1) > 1e-12
                 degenerates += int((~valid).sum()); f = f[valid]
@@ -198,11 +285,14 @@ def main():
                 decals.append(arrays.get(f'decal_uvs_{i}', uv))
                 offset += len(v)
         if not vertices:
+            if foliage:
+                report['foliage_only'].append('SM_MP_'+model['asset_id'][2:])
             continue
         entry = export_mesh('SM_MP_'+model['asset_id'][2:], np.concatenate(vertices), np.concatenate(faces), slots,
             material_indices, {'UVMap': np.concatenate(uvs), 'RetailLightmap': np.concatenate(lightmaps), 'RetailDecal': np.concatenate(decals)}, np.concatenate(normals))
         entry['source_asset_id'] = model['asset_id']
         entry['degenerate_faces_removed'] = degenerates
+        entry['foliage_faces_removed'] = foliage
         report['render'].append(entry)
         print('Exported', entry['name'], flush=True)
     for mesh in source['collision']:
@@ -214,6 +304,9 @@ def main():
             # Only geometrically degenerate faces cannot be represented in Chaos.
             # Opposite-wound contacts and feature boundaries remain untouched.
             kept = triangles[valid]
+            if mesh['id'] == sign.SECTION:
+                # SHARKS gives way to 寄り道, solid like the letters it replaces (sign.py).
+                kept = np.concatenate([kept[~sign.letters_mask(kept)], new_letters[0][new_letters[1]].astype(kept.dtype)])
             vertices = kept.reshape(-1,3)
             faces = np.arange(len(vertices), dtype='u4').reshape(-1,3)
             entry = export_mesh('UC_MP_'+mesh['id'], vertices, faces, ['M_Collision'], np.zeros(len(faces), dtype='i4'))
