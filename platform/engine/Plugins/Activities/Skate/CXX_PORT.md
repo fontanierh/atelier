@@ -251,9 +251,35 @@ The focused comparison passes 797 cases and 31,294 exact words (SHA256
 It observes 406 line and 60 nearby callbacks, 145 trajectory contacts, 147 misses,
 127 direct line hits and 22 failures. Caller outputs remain intact on producer errors.
 The original complete core source and host world adapter remain byte-identical.
-Selection, scoring, grind admission and full gameplay scheduling remain separate checks.
+Selection and grind admission have separate comparisons below; full gameplay scheduling remains open.
 Original nonadvancing query walks can hang; those inputs are excluded from valid-domain
 parity, and the additional native guard is not claimed as an original error.
+
+## Native trajectory selection and grind input
+
+`AirTrajectoryLaunch.*`, `AirTrajectoryGrind.*`, `AirTrajectoryScoring.*` and
+`AirTrajectorySelector.*` preserve launch candidates, collision ranking, grind
+target acquisition, repeat selection and retained pending batches. The focused
+comparison passes 2,349 cases, preserving all 9,165,664 stock output bytes
+(SHA-256 `7f964dc730404bd3157d5befe35364e23c746a98238eaaf2301a357ab60b6c66`),
+plus 197 loader fixtures. It includes 16,000 batch requests, real surface probes,
+368 selected grind targets, callback ordering and partial failures. The primitive
+provider is an explicit input here; full host trajectory scheduling remains separate.
+
+`PlayerGrindInput.*` connects actual geometry queries, all six grind families,
+permission/history, coping admission, balance, entry correction, material changes
+and publication. `PlayerGrindInputWorld.*` preserves original static-provider
+octree construction and bounded query order, authored spline bounds, source
+section identity and GUID metadata. Its independent oracle constructs the original
+provider from package/WMET fixtures rather than reading the native transport.
+
+The full grind-input comparison passes 67 retained histories and 1,372 operations,
+preserving 4,767,148 exact bytes (SHA-256
+`21acd56fd86a60a59e99ac629533fc48f93409e537779cf8c1cc1bd050cc0e84`).
+All 11 ordered loader failures match, together with 293 hit observations, the
+40-candidate limit, 71 selective resets and nine partial mutation failures.
+Moving providers, final native geometry packaging, physical grind-state execution
+and complete player-frame scheduling still require integration checks.
 
 ## Native physical skeleton data
 
