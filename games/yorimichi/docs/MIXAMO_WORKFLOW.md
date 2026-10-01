@@ -37,8 +37,8 @@ authored in Blender on Cairo's rig, and a human reviews it in motion.
 | 7. The sword in every move | `cairo_sword_locomotion.py` | `game-r16`: walk, sprint, jumps, roll with the sword in hand |
 | 8. Into the game | `atelier build yorimichi characters.cairo unreal.cairo` | the `A_Sword*` clips, `SM_Bokken`, root motion, aim data |
 
-Revisions `hold-r14` to `game-r16` live in the prototype archive (see [Revisions](#revisions-and-reproducing)); the
-current character, `Cairo-Game-r17.blend`, carries all of them and is in this repository.
+Revisions `hold-r14` to `game-r17` live in the prototype archive (see [Revisions](#revisions-and-reproducing)); the
+current character, `Cairo-Game-r18.blend`, carries all of them and is in this repository.
 
 ## 1. Download a source
 

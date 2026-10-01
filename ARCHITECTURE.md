@@ -24,7 +24,7 @@ The table below is the platform as built (29 September 2026); the rest of this p
 | AI and review tools | `platform/studio/atelier/{ai,review,blender}`, `platform/studio/node` | Tripo, Sunburst, H3 and Seedance helpers, contact sheets, glTF previews | Yorimichi's authoring tools |
 | Conventions | `platform/conventions` | units, humanoid bones, clip roles, sound cues, naming | the studio, Yorimichi's characters |
 | AtelierCore | `engine/Plugins/AtelierCore` | runtime data files (`AtelierDataPath`), sprint stamina | Yorimichi, sandbox |
-| AtelierAnimation | `engine/Plugins/AtelierAnimation` | ground contact, skate rider and sailboat stance anim nodes | Yorimichi |
+| AtelierAnimation | `engine/Plugins/AtelierAnimation` | ground contact and sailboat stance anim nodes | Yorimichi |
 | AtelierFX | `engine/Plugins/AtelierFX` | sprites, light flashes, hit-stop, slow motion, shake, sound cues, blade trails | Yorimichi (sword) |
 | Skate | `engine/Plugins/Activities/Skate` | skate.-style skateboarding behind `ISkateRider` | Yorimichi |
 | AtelierStream | `engine/Plugins/Streaming` | the game's end of a browser stream: actions and leased touch controls | Yorimichi's phone page |

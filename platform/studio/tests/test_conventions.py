@@ -25,7 +25,6 @@ class ConventionTests(unittest.TestCase):
         roles = conventions.clip_roles()
         self.assertTrue(roles['SwordAttack1']['root_motion'])
         self.assertFalse(roles['Walk']['root_motion'])
-        self.assertNotIn('SkateOllieGoofy', roles)
 
     def test_repo_layout(self):
         self.assertTrue((paths.REPO / 'ARCHITECTURE.md').is_file())

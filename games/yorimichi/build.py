@@ -7,7 +7,7 @@ $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build
 The Unreal imports run in the order the prototype established: `setup_project.py` rebuilds everything under
 /Game/Japan (textures, props, terrain, foliage, the villager, Momiji Hamlet, Hidamari, the sailboat, the zeppelin and
 the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
-after it. The player is installed in the prototype's three layers (full, sword, armed) from one r17 source.
+after it. The player is installed in the prototype's three layers (full, sword, armed) from one source blend.
 """
 import json, shutil, os
 from pathlib import Path
@@ -38,7 +38,7 @@ def cairo_roles():
     combat = ['SwordIdle', 'SwordDraw', 'SwordSheath', 'SwordAttack1', 'SwordAttack2', 'SwordAttack3',
               'SwordChargeUp', 'SwordChargeHold', 'SwordChargeRelease', 'SwordParry', 'SwordParryHit', 'SwordCombo']
     armed = [r for r in roles if r.startswith('Sword') and r not in combat and r != 'SwordRun']
-    return combat, armed, [r for r in roles if not r.startswith('Skate')]
+    return combat, armed, roles
 
 
 # Runtime files the game reads through AtelierDataPath, relative to unreal/Content/Data. Each is also an output of

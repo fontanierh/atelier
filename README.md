@@ -14,7 +14,7 @@ can play, with Blender, Unreal Engine 5 and today's generative models doing the 
 rigs, animation, the world, the code) came from prompts, scripts and review loops that the agents ran:
 
 - **Cairo**, the player: from four AI concepts to a rigged 3D character, then 53 bones with articulated
-  fingers and **110 animations** (running, rolling, a full sword set, and 54 skateboarding clips);
+  fingers and **56 animations** (running, rolling, dashing and a full sword set);
 - **a whole island** built by scripts: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake,
   a skate pier, a zeppelin line, and **204,000 plants** placed by a generator;
 - **a fox-masked hunter** that notices you, stalks, claws, gets parried and falls;
@@ -27,7 +27,7 @@ builds the whole game in 11 minutes (35 steps, [verified](docs/MIGRATION.md)).
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/media/skate.gif" alt="Kicker indy grab and a push across the skate pier"><br><sub><b>Skateboarding.</b> Flick the right stick (or the mouse) like in skate.: ollies, kickflips, grabs, 360 flips, grinds. 54 rider clips, authored by an agent from AI pose sheets.</sub></td>
+    <td width="50%"><img src="docs/media/skate.gif" alt="Kicker indy grab and a push across the skate pier"><br><sub><b>Skateboarding.</b> Flick the right stick (or the mouse) like in skate.: ollies, kickflips, grabs, 360 flips, grinds. The skating runtime solves the rider and its pose is retargeted onto Cairo every frame.</sub></td>
     <td width="50%"><img src="docs/media/fight.gif" alt="A parry with a spark flash, a counter, then a charged strike on the fox hunter"><br><sub><b>Sword fighting.</b> Parry windows, counters, charged strikes, hit-stop, camera shake, knock-downs. A scripted duel checks every fight mechanic after each change.</sub></td>
   </tr>
   <tr>
@@ -130,10 +130,10 @@ The whole route, with the settings, the maths and the pitfalls, is in the
 [Mixamo guide](games/yorimichi/docs/MIXAMO_WORKFLOW.md).
 
 **8. A library of clips, reviewed.** Every clip is rendered from several cameras and checked before it ships. Cairo
-has 110 of them, named by [role](platform/conventions/clip-roles.toml) (`Run`, `SwordParry`, `SkateGrabIndy`...), so
+has 56 of them, named by [role](platform/conventions/clip-roles.toml) (`Run`, `DashAir`, `SwordParry`...), so
 game code asks for a role, never for a file.
 
-<img src="docs/media/character/07-clip-review.jpg" alt="The indy grab from behind, the toe side and above, eight frames each">
+<img src="docs/media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
 
 **9. Into the game.** `atelier build` exports the character from Blender (mesh, clips, sword, textures) and imports
 it into Unreal; scripted QA runs then check it in motion.
@@ -271,7 +271,7 @@ Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/
 | Part | Where | What |
 |---|---|---|
 | The `atelier` command | [platform/studio](platform/studio/atelier) | new, doctor, fetch, build, play, stream, live, qa, lint; AI helpers for Tripo, Sunburst, H3 and Seedance; review sheets; machine safety (one heavy job at a time, optionally a small one beside it, a memory guard) |
-| Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, skate rider, sailboat stance), effects, skateboarding, streaming, the live bridge |
+| Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance), effects, skateboarding, streaming, the live bridge |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
 | Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate/Kimodo experiments, headless generation, original/counterpart comparisons, custom prompts, GLB/GIF export; shared platform runners |

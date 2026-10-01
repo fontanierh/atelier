@@ -1,6 +1,6 @@
 # Clip roles: names are the animation API. Platform code asks for clips by role; a character supplies them.
-# loop: the clip repeats. root_motion: the root bone carries travel (otherwise the controller or board moves).
-# A game may add roles of its own; it may not redefine these. Skate roles also exist with a Goofy suffix.
+# loop: the clip repeats. root_motion: the root bone carries travel (otherwise the controller moves the character).
+# A game may add roles of its own; it may not redefine these.
 
 Idle = { loop = true, root_motion = false }
 Walk = { loop = true, root_motion = false }
@@ -58,30 +58,3 @@ SwordSitDown = { loop = false, root_motion = false }
 SwordSitIdle = { loop = true, root_motion = false }
 SwordStandUp = { loop = false, root_motion = false }
 SwordRoll = { loop = false, root_motion = false }
-SkateStance = { loop = true, root_motion = false }
-SkateStanceFakie = { loop = true, root_motion = false }
-SkatePush = { loop = true, root_motion = false }
-SkateCrouch = { loop = false, root_motion = false }
-SkateNollieCrouch = { loop = false, root_motion = false }
-SkateOllie = { loop = false, root_motion = false }
-SkateNollie = { loop = false, root_motion = false }
-SkateAir = { loop = true, root_motion = false }
-SkateFlip = { loop = false, root_motion = false }
-SkateLand = { loop = false, root_motion = false }
-SkateBrake = { loop = false, root_motion = false }
-SkateManual = { loop = true, root_motion = false }
-SkateNoseManual = { loop = true, root_motion = false }
-SkateGrind = { loop = true, root_motion = false }
-SkateGrindTail = { loop = true, root_motion = false }
-SkateGrindNose = { loop = true, root_motion = false }
-SkateSlide = { loop = true, root_motion = false }
-SkateGrabIndy = { loop = false, root_motion = false }
-SkateGrabMelon = { loop = false, root_motion = false }
-SkateGrabNose = { loop = false, root_motion = false }
-SkateGrabTail = { loop = false, root_motion = false }
-SkateGrabMethod = { loop = false, root_motion = false }
-SkateGrabStalefish = { loop = false, root_motion = false }
-SkateGrabDouble = { loop = false, root_motion = false }
-SkatePowerslide = { loop = false, root_motion = false }
-SkateCarveToe = { loop = false, root_motion = false }
-SkateCarveHeel = { loop = false, root_motion = false }

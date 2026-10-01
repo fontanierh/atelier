@@ -7,7 +7,7 @@ OUT=yori.OUT/'wanderer'
 SOURCES=('build.py','pipeline.py','wanderer_mesh.py','wanderer_hair.py','wanderer_rig.py','wanderer_motion.py','accessories.py',
          'kit/mesh_tools.py','kit/shoe.py','kit/rig.py','kit/animate.py','kit/hair.py','kit/head.py',
          'kit/motion.py','kit/motion_profiles.py',
-         'references/design-sheet.png','references/motion-sheet.png','references/skate-sheet.png')
+         'references/design-sheet.png','references/motion-sheet.png')
 def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def source_hashes():return {name:digest(HERE/name) for name in SOURCES}
 def mark(sources):
