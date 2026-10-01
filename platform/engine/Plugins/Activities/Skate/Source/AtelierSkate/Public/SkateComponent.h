@@ -105,7 +105,7 @@ private:
     TArray<FTransform> RetailPose;
     float BailVisualLift=0.f,RetailFloorClearance=0.f;
     bool bRetailPreloaded=false;
-    bool LaunchRetailProcess(const FVector& Where, float Yaw, FString& Failure);
+    bool LaunchNativeSession(const FVector& Where, float Yaw, FString& Failure);
     void PreloadRetailRuntime();
     void PollIdleRetail();
     bool StartRetailRuntime();

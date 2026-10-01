@@ -1,4 +1,8 @@
 #include "SkateComponent.h"
+#include "Native/GameplaySession.h"
+#include "Native/HostScalar.h"
+#include <limits>
+#include <cfenv>
 #include "Engine/Engine.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
@@ -16,10 +20,12 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformProcess.h"
-#include "Misc/FileHelper.h"
+#include "HAL/Runnable.h"
+#include "HAL/Event.h"
+#include "HAL/RunnableThread.h"
+#include "Containers/Queue.h"
+#include <atomic>
 #include "Misc/Paths.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "StaticMeshResources.h"
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "Rendering/SkinWeightVertexBuffer.h"
@@ -29,26 +35,57 @@
 
 namespace
 {
+    // Match the standalone runtime's startup floating environment, and restore
+    // the caller's complete environment before returning to Unreal.
+    class FScopedNativeFloatEnvironment
+    {
+    public:
+        FScopedNativeFloatEnvironment()
+        {
+#if defined(__clang__)
+#pragma STDC FENV_ACCESS ON
+#elif defined(_MSC_VER)
+#pragma fenv_access(on)
+#endif
+            SavedOkay_=std::fegetenv(&Saved_)==0;
+            Ready_=SavedOkay_&&std::fesetenv(FE_DFL_ENV)==0;
+        }
+        ~FScopedNativeFloatEnvironment()
+        {
+#if defined(__clang__)
+#pragma STDC FENV_ACCESS ON
+#elif defined(_MSC_VER)
+#pragma fenv_access(on)
+#endif
+            if(SavedOkay_)std::fesetenv(&Saved_);
+        }
+        FScopedNativeFloatEnvironment(const FScopedNativeFloatEnvironment&)=delete;
+        FScopedNativeFloatEnvironment& operator=(const FScopedNativeFloatEnvironment&)=delete;
+        bool IsReady() const {return Ready_;}
+    private:
+        std::fenv_t Saved_{};
+        bool SavedOkay_=false,Ready_=false;
+    };
+
     // Native left/up/forward metres -> UE forward/right/up centimetres (change handedness).
     FVector FromNative(const FVector& V) { return FVector(V.Z, -V.X, V.Y) * 100.; }
     FVector ToNative(const FVector& V) { return FVector(-V.Y, V.Z, V.X) * .01; }
-    TSharedPtr<FJsonValue> Number(double V) { return MakeShared<FJsonValueNumber>(V); }
-    TArray<TSharedPtr<FJsonValue>> VectorJSON(FVector V) { return {Number(V.X), Number(V.Y), Number(V.Z)}; }
-    FVector VectorValue(const TArray<TSharedPtr<FJsonValue>>& A) { return A.Num() == 3 ? FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()) : FVector::ZeroVector; }
-    FTransform MatrixValue(const TSharedPtr<FJsonValue>& Value)
+    FTransform MatrixValue(const atelier::skate::Mat4& M)
     {
-        const auto& A = Value->AsArray();
-        if (A.Num() != 16) return FTransform::Identity;
-        auto Axis = [&](int I) { return FVector(A[I+2]->AsNumber(), -A[I]->AsNumber(), A[I+1]->AsNumber()); };
-        // Conjugate rotation by the axis mapping: local UE +Y is native -X as well.
-        return FTransform(FMatrix(FPlane(Axis(8),0), FPlane(-Axis(0),0), FPlane(Axis(4),0), FPlane(Axis(12)*100.,1)));
+        auto Axis=[&](int I){return FVector(M[I][2],-M[I][0],M[I][1]);};
+        return FTransform(FMatrix(FPlane(Axis(2),0),FPlane(-Axis(0),0),FPlane(Axis(1),0),FPlane(Axis(3)*100.,1)));
     }
-    FString Encode(const TSharedPtr<FJsonObject>& O)
+    atelier::skate::Vec3 NativeVector(FVector V)
     {
-        FString Text; FJsonSerializer::Serialize(O.ToSharedRef(), TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&Text));
-        return Text;
+        const FVector P=ToNative(V);
+        const auto Scalar=[](double Value)
+        {
+            float Result=std::numeric_limits<float>::quiet_NaN();std::string Error;
+            atelier::skate::ConvertHostScalar(Value,Result,Error);return Result;
+        };
+        return {Scalar(P.X),Scalar(P.Y),Scalar(P.Z)};
     }
-    FString RuntimeFolder() { return FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Data/SkateRuntime")); }
+    FString RuntimeFolder() { return FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()/TEXT("Data/SkateNative")); }
     FString TrickLabel(FString Name)
     {
         Name.RemoveFromStart(TEXT("ID_TRICK_"));
@@ -61,15 +98,6 @@ namespace
         }
         return FString::Join(Words,TEXT(" ")).Replace(TEXT("50 50"),TEXT("50-50"));
     }
-    FString RuntimeBinary()
-    {
-        return RuntimeFolder() / TEXT("bin/atelier-skate-runtime")
-#if PLATFORM_WINDOWS
-            TEXT(".exe")
-#endif
-            ;
-    }
-
     // A park fits inside the snapshot's inner cube. Keep that cube at the park origin, so
     // skating between its corners does not rebuild identical collision on the game thread.
     FVector SnapshotCentre(UWorld* World, const FVector& Position)
@@ -98,7 +126,7 @@ namespace
             FBox Bounds(ForceInit); Bounds+=A; Bounds+=B; Bounds+=C;
             if (!Bounds.Intersect(Region) || FVector::CrossProduct(B-A,C-A).SizeSquared()<.0001) return;
             Swap(B,C); // The coordinate reflection reverses winding.
-            // The worker takes each normal from its own f32 points and refuses a flat one: drop slivers at that precision.
+            // The solver takes each normal from its own f32 points and refuses a flat one: drop slivers at that precision.
             const FVector3f P[3]={FVector3f(ToNative(A)),FVector3f(ToNative(B)),FVector3f(ToNative(C))};
             const FVector3d E1(P[1]-P[0]),E2(P[2]-P[0]);
             const double Twice=FVector3d::CrossProduct(E1,E2).Size();
@@ -173,7 +201,7 @@ namespace
     /** Snapshot the static collision a walker meets near Centre: the triangles of meshes whose collision is their own
      *  surface, and the boxes, spheres, capsules and hulls of the others (a tree's trunk, not its leaves). A dense
      *  area shrinks the snapshot until it fits the budget; Reach is how far the rider may go from Centre before the
-     *  next one. The native worker owns its narrow phase, BVH and contact solver. */
+     *  next one. The native solver owns its narrow phase, BVH and contact solver. */
     bool GatherWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FSnapshot& Snapshot, double& Reach)
     {
         double Radius=0;
@@ -220,59 +248,170 @@ namespace
         return true;
     }
 
-    FString NewSnapshotPath()
+    // Preserve the former collision snapshot's seven decimal places before f32
+    // publication. Removing the disk transport must not change its geometry.
+    float SnapshotScalar(float V)
+    {return float(double(FMath::RoundToInt64(double(V)*10000000.))/10000000.);}
+    atelier::skate::Vec3 SnapshotPoint(FVector3f P)
+    {return {SnapshotScalar(P.X),SnapshotScalar(P.Y),SnapshotScalar(P.Z)};}
+    atelier::skate::GameplayWorldSnapshot NativeSnapshot(const FSnapshot& S)
     {
-        const FString Folder=RuntimeFolder()/TEXT("sessions"); IFileManager::Get().MakeDirectory(*Folder,true);
-        return Folder/(FGuid::NewGuid().ToString()+TEXT(".json"));
-    }
-
-    /** The worker's JSON snapshot, written directly (a few hundred milliseconds instead of seconds of JSON value trees):
-     *  metres to 0.1 um, finer than f32 beyond 1 m, so the worker reads back the points Add checked. */
-    bool WriteSnapshot(const FSnapshot& Snapshot, const FString& Path)
-    {
-        TArray<uint8> Out; Out.Reserve(Snapshot.Points.Num()*40+Snapshot.Rails.Num()*256+256);
-        auto Text=[&](const char* T){ while (*T) Out.Add(uint8(*T++)); };
-        auto Number=[&](float V)
+        atelier::skate::GameplayWorldSnapshot Out;Out.triangles.reserve(S.Num());
+        for(int32 I=0;I<S.Points.Num();I+=3)
+            Out.triangles.push_back({SnapshotPoint(S.Points[I]),SnapshotPoint(S.Points[I+1]),SnapshotPoint(S.Points[I+2])});
+        for(const auto& Rail:S.Rails)
         {
-            constexpr int64 Scale=10000000;
-            int64 Q=FMath::RoundToInt64(double(V)*Scale);
-            if (Q<0) { Out.Add('-'); Q=-Q; }
-            char Digits[24]; int32 N=0;
-            for (int64 Whole=Q/Scale; ; Whole/=10) { Digits[N++]=char('0'+Whole%10); if (Whole<10) break; }
-            while (N) Out.Add(uint8(Digits[--N]));
-            Out.Add('.'); const int64 Frac=Q%Scale;
-            for (int64 Div=Scale/10; Div; Div/=10) Out.Add(uint8('0'+Frac/Div%10));
-        };
-        auto Point=[&](const FVector3f& P){ Out.Add('['); Number(P.X); Out.Add(','); Number(P.Y); Out.Add(','); Number(P.Z); Out.Add(']'); };
-        Text("{\"triangles\":[");
-        for (int32 I=0;I<Snapshot.Points.Num();I+=3)
-        {
-            if (I) Out.Add(',');
-            Out.Add('['); Point(Snapshot.Points[I]); Out.Add(','); Point(Snapshot.Points[I+1]); Out.Add(','); Point(Snapshot.Points[I+2]); Out.Add(']');
+            auto& Line=Out.rails.emplace_back();Line.reserve(Rail.Num());
+            for(const auto& P:Rail) {const auto V=SnapshotPoint(P);Line.push_back({V.x,V.y,V.z});}
         }
-        Text("],\"rails\":[");
-        for (int32 R=0;R<Snapshot.Rails.Num();++R)
-        {
-            if (R) Out.Add(',');
-            Out.Add('[');
-            for (int32 I=0;I<Snapshot.Rails[R].Num();++I) { if (I) Out.Add(','); Point(Snapshot.Rails[R][I]); }
-            Out.Add(']');
-        }
-        Text("],\"spawn\":"); Point(Snapshot.Spawn); Text(",\"heading\":"); Number(Snapshot.Heading); Out.Add('}');
-        return FFileHelper::SaveArrayToFile(Out,*Path);
-    }
-
-    /** Gather and write a snapshot on this thread (a mount or the preload, where the worker needs it at once). */
-    bool ExportWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FString& Path, double& Reach)
-    {
-        FSnapshot Snapshot;
-        if (!GatherWorld(World,Rider,Centre,Spawn,Yaw,Rails,Snapshot,Reach)) return false;
-        Path=NewSnapshotPath();
-        return WriteSnapshot(Snapshot,Path);
+        return Out;
     }
 }
 
-/** A retained process isolates native faults and keeps decoded banks resident between rides. */
+namespace skate_native=atelier::skate;
+
+// All mutable simulation owners stay on this native thread. The game thread
+// exchanges typed commands and completed snapshots, with no process or JSON.
+class FNativeSkateWorker final : public FRunnable
+{
+public:
+    struct FPreferences
+    {std::string Difficulty;bool Goofy=false;float Trucks=.5f,Pop=1,Spin=1,PushSpeed=1,PushPower=1,VertAssist=0;};
+    enum class ECommand {Step,Activate,Configure,World,Launch,Suspend};
+    struct FCommand
+    {
+        ECommand Kind=ECommand::Step;skate_native::XboxState Input{};float Dt=0,Heading=0;
+        skate_native::Vec3 Spawn{},Velocity{};uint32 Generation=0;FPreferences Preferences;
+        std::optional<skate_native::GameplayWorldSnapshot> Snapshot;
+        std::optional<skate_native::PreparedGameplayWorld> World;std::string Error;bool Background=false;
+    };
+    struct FOutput
+    {
+        bool Ready=false;uint32 Generation=0;uint64 Tick=0;std::string Error,State,Trick;
+        skate_native::Mat4 Root{};skate_native::Vec3 Velocity{};float Score=0,Manual=0;
+        std::vector<skate_native::Mat4> Bones,Reference;std::vector<std::string> Names;
+        std::optional<skate_native::camera::CameraFrame> Camera;
+        skate_native::ContactMaterial Floor;
+    };
+    FNativeSkateWorker(FString Folder,skate_native::GameplayWorldSnapshot World,
+        skate_native::Vec3 Spawn,float Heading)
+        :Folder_(MoveTemp(Folder)),InitialWorld_(std::move(World)),Spawn_(Spawn),Heading_(Heading)
+    {Wake_=FPlatformProcess::GetSynchEventFromPool(false);}
+    ~FNativeSkateWorker()
+    {
+        Stop();if(Thread_){Thread_->WaitForCompletion();delete Thread_;}
+        FPlatformProcess::ReturnSynchEventToPool(Wake_);
+    }
+    bool Start()
+    {Thread_=FRunnableThread::Create(this,TEXT("AtelierSkateNative"),32*1024*1024);return Thread_!=nullptr;}
+    void Stop() override {Stopping_.store(true);Wake_->Trigger();}
+    void Enqueue(FCommand Command) {Commands_.Enqueue(MoveTemp(Command));Wake_->Trigger();}
+    bool Poll(FOutput& Output) {return Outputs_.Dequeue(Output);}
+    bool Finished() const {return Finished_.load();}
+    uint32 Run() override
+    {
+        FScopedNativeFloatEnvironment FloatEnvironment;
+        if(!FloatEnvironment.IsReady())
+        {Fail("Native skating floating-point environment setup failed");Finished_.store(true);return 1;}
+        std::string Error;std::shared_ptr<const skate_native::GameplayResources> Resources;
+        if(!skate_native::LoadGameplayResources(std::filesystem::u8path(TCHAR_TO_UTF8(*Folder_)),Resources,Error)
+            ||!skate_native::GameplaySession::Create(Resources,InitialWorld_,Spawn_,Heading_,Session_,Error)
+            ||!Session_->Activate(Spawn_,Heading_,Error)||!Publish(true,Error))
+        {Fail(Error);Finished_.store(true);return 1;}
+        // Initial collision points can be large; their immutable copy is no
+        // longer needed after the BVH and spline provider have been built.
+        InitialWorld_={};
+        while(!Stopping_.load())
+        {
+            FCommand Command;
+            if(!Commands_.Dequeue(Command)){Wake_->Wait();continue;}
+            bool Okay=true;
+            switch(Command.Kind)
+            {
+            case ECommand::Step:
+                if(!std::isfinite(Command.Dt)||Command.Dt<0)
+                {Error="Invalid frame interval";Okay=false;break;}
+                for(auto& Pending:PendingCollisions_)
+                    if(!InstallWorld(Pending,Error)){Okay=false;break;}
+                PendingCollisions_.clear();
+                if(Okay)Okay=Session_->Step(Command.Input,Command.Dt,Error);
+                if(Okay)Okay=Publish(false,Error);
+                break;
+            case ECommand::Configure:
+                if(!std::isfinite(Command.Preferences.Trucks)){Error="Invalid equipment";Okay=false;}
+                else Okay=Configure(Command.Preferences,Error);
+                break;
+            case ECommand::Activate:
+                if(!Finite(Command.Spawn)||!Finite(Command.Velocity)||!std::isfinite(Command.Heading)
+                    ||!std::isfinite(Command.Preferences.Trucks))
+                {Error="Invalid spawn or equipment";Okay=false;break;}
+                Okay=Configure(Command.Preferences,Error)
+                    &&Session_->Activate(Command.Spawn,Command.Heading,Error);
+                if(Okay){Session_->Launch(Command.Velocity);Generation_=Command.Generation;Okay=Publish(false,Error);}
+                break;
+            case ECommand::World:
+                if(Command.Background)PendingCollisions_.push_back(std::move(Command));
+                else Okay=InstallWorld(Command,Error);
+                break;
+            case ECommand::Launch:
+                if(!Finite(Command.Velocity)){Error="Invalid launch velocity";Okay=false;}
+                else Session_->Launch(Command.Velocity);
+                break;
+            case ECommand::Suspend:Session_->SuspendInput();break;
+            }
+            if(!Okay){Fail(Error);break;}
+        }
+        Session_.reset();Finished_.store(true);return 0;
+    }
+private:
+    static bool Finite(skate_native::Vec3 V)
+    {return std::isfinite(V.x)&&std::isfinite(V.y)&&std::isfinite(V.z);}
+    bool InstallWorld(FCommand& Command,std::string& Error)
+    {
+        if(!Command.Error.empty()){Error=std::move(Command.Error);return false;}
+        if(Command.Snapshot)
+        {
+            auto Board=skate_native::BoardPhysicsSettings::Load(Session_->gameplay->resources->settings,Error);
+            if(!Board||!skate_native::BuildGameplayWorld(*Command.Snapshot,Board->floor_material,Command.World,Error))return false;
+        }
+        return Command.World&&Session_->InstallCollision(std::move(*Command.World),Error);
+    }
+    bool Configure(const FPreferences& P,std::string& Error)
+    {
+        // The former JSON command parser rejected nonfinite numbers before configuration.
+        // Finite range errors still follow Configure, matching the original command order.
+        if(!std::isfinite(P.Pop)||!std::isfinite(P.Spin)||!std::isfinite(P.PushSpeed)
+            ||!std::isfinite(P.PushPower)||!std::isfinite(P.VertAssist))
+        {Error="Invalid skating tuning";return false;}
+        return Session_->Configure(P.Difficulty,P.Goofy,P.Trucks,Error)
+            &&Session_->Tune(P.Pop,P.Spin,P.PushSpeed,P.PushPower,P.VertAssist,Error);
+    }
+    bool Publish(bool Ready,std::string& Error)
+    {
+        if(!Session_->CheckPublishedPose(Error))return false;
+        const auto& G=*Session_->gameplay;FOutput Out;Out.Ready=Ready;Out.Generation=Generation_;
+        auto Pose=Session_->Pose();Out.Root=Pose.root;Out.Bones=std::move(Pose.bones);
+        Out.Velocity=Pose.velocity;Out.Tick=Pose.tick;Out.State=std::move(Pose.state);
+        Out.Trick=G.scoring.CurrentTrick();const auto& Score=G.scoring.session.holder.State().snapshot;
+        Out.Score=Score.completed_lines+Score.line;Out.Manual=G.animation_input.fields.balance;Out.Camera=Pose.camera;
+        if(Ready)
+        {
+            Out.Names=std::move(Pose.names);
+            if(!Session_->ReferencePose(Out.Reference,Error))return false;
+            auto Board=skate_native::BoardPhysicsSettings::Load(G.resources->settings,Error);if(!Board)return false;
+            Out.Floor=Board->floor_material;
+        }
+        Outputs_.Enqueue(MoveTemp(Out));return true;
+    }
+    void Fail(const std::string& Error) {FOutput Out;Out.Error=Error.empty()?"Native skating failed":Error;Outputs_.Enqueue(MoveTemp(Out));}
+    FString Folder_;skate_native::GameplayWorldSnapshot InitialWorld_;skate_native::Vec3 Spawn_;float Heading_;
+    FEvent* Wake_=nullptr;FRunnableThread* Thread_=nullptr;std::atomic<bool> Stopping_{false},Finished_{false};
+    TQueue<FCommand,EQueueMode::Mpsc> Commands_;TQueue<FOutput,EQueueMode::Spsc> Outputs_;
+    std::unique_ptr<skate_native::GameplaySession> Session_;uint32 Generation_=0;
+    std::vector<FCommand> PendingCollisions_;
+};
+
+/** Retain the native session and decoded clips between rides. */
 class FSkateRuntime
 {
 public:
@@ -281,124 +420,79 @@ public:
     struct Vertex { TArray<Influence,TInlineAllocator<4>> Influences; };
     TWeakObjectPtr<USkeletalMesh> ContactMesh;
     TArray<Vertex> ContactVertices;
-    FProcHandle Process;
-    void *Read=nullptr,*Write=nullptr,*ErrorRead=nullptr;
+    struct FWorldResult
+    {std::optional<skate_native::PreparedGameplayWorld> World;std::string Error;};
+    TUniquePtr<FNativeSkateWorker> Worker;
     bool Ready=false,PendingActivation=false,AwaitingPose=false,HasPose=false;
-    uint32 Generation=0;
-    float FrameTime=0;
-    FString Buffer,State=TEXT("Loading skater"),Error,Trick;
+    uint32 Generation=0;float FrameTime=0;
+    FString State=TEXT("Loading skater"),Error,Trick;
     FVector CollisionCentre=FVector::ZeroVector,Spawn=FVector::ZeroVector,Velocity=FVector::ZeroVector;
-    double CollisionReach=6000.;  // how far from CollisionCentre the rider goes before the next snapshot
-    TFuture<bool> PendingWorld;   // a snapshot being written on a worker thread while riding
-    FString PendingPath;
+    double CollisionReach=6000.;
+    TFuture<TSharedPtr<FWorldResult,ESPMode::ThreadSafe>> PendingWorld;
+    skate_native::ContactMaterial Floor;
     TOptional<FVector> PendingLaunch;
     float SpawnYaw=0,Score=0,ManualBalance=0;
     uint64 Tick=0;
-    FTransform Root=FTransform::Identity,Camera=FTransform::Identity;
-    float CameraFOV=0;
-    TArray<FName> Names;
-    TArray<FTransform> Reference,Bones;
-    TArray<FString> Files;
-    ~FSkateRuntime()
+    FTransform Root=FTransform::Identity,Camera=FTransform::Identity;float CameraFOV=0;
+    TArray<FName> Names;TArray<FTransform> Reference,Bones;
+    ~FSkateRuntime() {if(PendingWorld.IsValid())PendingWorld.Wait();Worker.Reset();}
+    FNativeSkateWorker::FPreferences Preferences(bool Goofy) const
     {
-        if (PendingWorld.IsValid()) PendingWorld.Wait();
-        if (Process.IsValid())
-        {
-            SendSimple(TEXT("quit"));
-            FPlatformProcess::ClosePipe(nullptr,Write); Write=nullptr;
-            // No game state is stored in the worker. Ensure shutdown never leaves an orphan.
-            if (FPlatformProcess::IsProcRunning(Process)) FPlatformProcess::TerminateProc(Process,true);
-            FPlatformProcess::CloseProc(Process);
-        }
-        FPlatformProcess::ClosePipe(Read,Write); FPlatformProcess::ClosePipe(ErrorRead,nullptr);
-        for (const FString& File : Files) IFileManager::Get().Delete(*File);
+        const USkateSettings* S=GetDefault<USkateSettings>();FNativeSkateWorker::FPreferences P;
+        P.Difficulty=TCHAR_TO_UTF8(*S->Difficulty);P.Goofy=Goofy;P.Trucks=S->TruckTightness;
+        P.Pop=S->PopHeightScale;P.Spin=S->AirSpinScale;P.PushSpeed=S->PushSpeedScale;P.PushPower=S->PushPowerScale;P.VertAssist=S->VertAssist;return P;
     }
-    void Send(const TSharedPtr<FJsonObject>& O) { if (Write) FPlatformProcess::WritePipe(Write,Encode(O)); }
-    void SendSimple(const TCHAR* Op) { auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),Op); Send(O); }
-    // Background: the worker parses and builds it on its own thread and keeps riding the old one meanwhile.
-    void SendWorld(const FString& File, bool bBackground)
+    void FinishPendingWorld(bool Background)
     {
-        auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("world")); O->SetStringField(TEXT("path"),File);
-        O->SetBoolField(TEXT("background"),bBackground); Send(O);
+        if(!PendingWorld.IsValid())return;
+        const auto Result=PendingWorld.Get();PendingWorld={};
+        FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::World;
+        Command.World=std::move(Result->World);Command.Error=std::move(Result->Error);Command.Background=Background;
+        Worker->Enqueue(MoveTemp(Command));
     }
-    // Keep the last three snapshots on disk (the worker may still be reading the newest two); each is tens of MB.
-    void AddFile(const FString& File)
+    void SendWorld(const FSnapshot& Snapshot)
     {
-        Files.Add(File);
-        while (Files.Num()>3) { IFileManager::Get().Delete(*Files[0]); Files.RemoveAt(0); }
-    }
-    // Finish a snapshot still being written (a mount right after riding): hand it over before anything else.
-    void FinishPendingWorld(bool bBackground)
-    {
-        if (!PendingWorld.IsValid()) return;
-        if (PendingWorld.Get()) SendWorld(PendingPath,bBackground);
-        PendingWorld=TFuture<bool>();
+        FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::World;
+        Command.Snapshot=NativeSnapshot(Snapshot);Worker->Enqueue(MoveTemp(Command));
     }
     void Activate(bool Goofy)
     {
-        PendingActivation=true;
-        if (!Ready) return;
-        auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("activate")); O->SetArrayField(TEXT("spawn"),VectorJSON(ToNative(Spawn)));
-        O->SetNumberField(TEXT("heading"),-FMath::DegreesToRadians(SpawnYaw)); O->SetBoolField(TEXT("goofy"),Goofy);
-        O->SetStringField(TEXT("difficulty"),GetDefault<USkateSettings>()->Difficulty); O->SetNumberField(TEXT("trucks"),GetDefault<USkateSettings>()->TruckTightness);
-        O->SetNumberField(TEXT("generation"),Generation);
-        O->SetArrayField(TEXT("velocity"),VectorJSON(ToNative(PendingLaunch.Get(FVector::ZeroVector))));
-        O->SetNumberField(TEXT("pop"),GetDefault<USkateSettings>()->PopHeightScale);
-        O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
-        O->SetNumberField(TEXT("push_speed"),GetDefault<USkateSettings>()->PushSpeedScale);
-        O->SetNumberField(TEXT("push_power"),GetDefault<USkateSettings>()->PushPowerScale);
-        O->SetNumberField(TEXT("vert_assist"),GetDefault<USkateSettings>()->VertAssist);
-        Send(O); PendingActivation=false; AwaitingPose=true; PendingLaunch.Reset();
+        PendingActivation=true;if(!Ready)return;
+        FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::Activate;
+        Command.Spawn=NativeVector(Spawn);Command.Heading=-FMath::DegreesToRadians(SpawnYaw);
+        Command.Generation=Generation;Command.Preferences=Preferences(Goofy);
+        Command.Velocity=NativeVector(PendingLaunch.Get(FVector::ZeroVector));Worker->Enqueue(MoveTemp(Command));
+        PendingActivation=false;AwaitingPose=true;PendingLaunch.Reset();
     }
     bool Poll()
     {
-        const FString Errors=FPlatformProcess::ReadPipe(ErrorRead);
-        if (!Errors.IsEmpty()) UE_LOG(LogTemp,Verbose,TEXT("SKATE retail: %s"),*Errors.Left(4096));
-        Buffer+=FPlatformProcess::ReadPipe(Read);
-        bool Changed=false; FString Line;
-        int32 End;
-        while (Buffer.FindChar('\n',End))
+        bool Changed=false;FNativeSkateWorker::FOutput Out;
+        while(Worker->Poll(Out))
         {
-            Line=Buffer.Left(End); Buffer.RightChopInline(End+1);
-            TSharedPtr<FJsonObject> O;
-            if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Line),O) || !O) continue;
-            const FString Type=O->GetStringField(TEXT("type"));
-            if (Type==TEXT("error")) { Error=O->GetStringField(TEXT("message")); continue; }
-            if (Type!=TEXT("ready") && Type!=TEXT("pose")) continue;
-            // A suspended ride may still have a step in the pipe. Only the new activation can move us.
-            if (Type==TEXT("pose") && uint32(O->GetNumberField(TEXT("generation")))!=Generation) continue;
+            if(!Out.Error.empty()){Error=UTF8_TO_TCHAR(Out.Error.c_str());continue;}
+            if(!Out.Ready&&Out.Generation!=Generation)continue;
             AwaitingPose=false;
-            const auto& Matrices=O->GetArrayField(TEXT("bones"));
-            if (Matrices.IsEmpty() || Matrices.Num()>256) { Error=TEXT("Invalid native skeleton"); continue; }
-            Root=MatrixValue(O->Values[TEXT("root")]); Bones.Reset();
-            for (const auto& M : Matrices) Bones.Add(MatrixValue(M));
-            Velocity=FromNative(VectorValue(O->GetArrayField(TEXT("velocity")))); State=O->GetStringField(TEXT("state"));
-            Trick=TrickLabel(O->GetStringField(TEXT("trick"))); Score=O->GetNumberField(TEXT("score")); Tick=uint64(O->GetNumberField(TEXT("tick")));
-            ManualBalance=O->GetNumberField(TEXT("manual"));
-            if (Root.ContainsNaN() || Velocity.ContainsNaN() || Bones.ContainsByPredicate([](const FTransform& T){return T.ContainsNaN();}))
-            { Error=TEXT("Nonfinite native output"); continue; }
-            if (Type==TEXT("ready"))
+            if(Out.Bones.empty()||Out.Bones.size()>256){Error=TEXT("Invalid native skeleton");continue;}
+            Root=MatrixValue(Out.Root);Bones.Reset();for(const auto& M:Out.Bones)Bones.Add(MatrixValue(M));
+            Velocity=FromNative(FVector(Out.Velocity.x,Out.Velocity.y,Out.Velocity.z));State=UTF8_TO_TCHAR(Out.State.c_str());
+            Trick=TrickLabel(UTF8_TO_TCHAR(Out.Trick.c_str()));Score=Out.Score;Tick=Out.Tick;ManualBalance=Out.Manual;
+            if(Root.ContainsNaN()||Velocity.ContainsNaN()||Bones.ContainsByPredicate([](const FTransform& T){return T.ContainsNaN();}))
+            {Error=TEXT("Nonfinite native output");continue;}
+            if(Out.Ready)
             {
-                for (const auto& N : O->GetArrayField(TEXT("names"))) Names.Add(FName(N->AsString()));
-                for (const auto& M : O->GetArrayField(TEXT("reference"))) Reference.Add(MatrixValue(M));
-                Ready=Names.Num()==Bones.Num() && Reference.Num()==Bones.Num();
+                Names.Reset();Reference.Reset();for(const auto& N:Out.Names)Names.Add(FName(UTF8_TO_TCHAR(N.c_str())));
+                for(const auto& M:Out.Reference)Reference.Add(MatrixValue(M));
+                Ready=Names.Num()==Bones.Num()&&Reference.Num()==Bones.Num();Floor=Out.Floor;
             }
-            const TSharedPtr<FJsonObject>* Cam=nullptr;
-            if (O->TryGetObjectField(TEXT("camera"),Cam))
+            if(Out.Camera)
             {
-                const auto& B=(*Cam)->GetArrayField(TEXT("basis"));
-                if (B.Num()==9)
-                {
-                    auto Axis=[&](int I){return FVector(B[I+2]->AsNumber(),-B[I]->AsNumber(),B[I+1]->AsNumber());};
-                    Camera=FTransform(FRotationMatrix::MakeFromXZ(Axis(6),Axis(3)).ToQuat(),FromNative(VectorValue((*Cam)->GetArrayField(TEXT("position")))));
-                    CameraFOV=(*Cam)->GetNumberField(TEXT("fov"));
-                }
+                const auto& C=*Out.Camera;auto Axis=[&](int I){const auto& V=C.basis.columns[I];return FVector(V[2],-V[0],V[1]);};
+                Camera=FTransform(FRotationMatrix::MakeFromXZ(Axis(2),Axis(1)).ToQuat(),FromNative(FVector(C.position[0],C.position[1],C.position[2])));
+                CameraFOV=C.field_of_view_degrees;
             }
-            HasPose=uint32(O->GetNumberField(TEXT("generation")))==Generation && !PendingActivation;
-            Changed=HasPose;
+            HasPose=Out.Generation==Generation&&!PendingActivation;Changed=HasPose;
         }
-        if (Error.IsEmpty() && !FPlatformProcess::IsProcRunning(Process)) Error=TEXT("The skating worker stopped");
-        return Changed;
+        if(Error.IsEmpty()&&Worker->Finished())Error=TEXT("The native skating thread stopped");return Changed;
     }
     FTransform Bone(FName Name) const
     {
@@ -410,24 +504,17 @@ public:
     }
 };
 
-bool USkateComponent::LaunchRetailProcess(const FVector& Where, float Yaw, FString& Failure)
+bool USkateComponent::LaunchNativeSession(const FVector& Where,float Yaw,FString& Failure)
 {
-    if (!FPaths::FileExists(RuntimeBinary()) ||
-        !FPaths::FileExists(RuntimeFolder()/TEXT("assets/private/game.json")))
-    { Failure=TEXT("Skating runtime is missing from this build. Rebuild the game."); return false; }
-    FString File; double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Where);
-    if (!ExportWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,File,Reach))
-    { Failure=TEXT("Skating could not load nearby collision."); return false; }
-    RetailRuntime=MakeShared<FSkateRuntime>();
-    RetailRuntime->AddFile(File); RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
-    void *ChildWrite=nullptr,*ChildRead=nullptr,*ChildError=nullptr;
-    FPlatformProcess::CreatePipe(RetailRuntime->Read,ChildWrite);
-    FPlatformProcess::CreatePipe(ChildRead,RetailRuntime->Write,true);
-    FPlatformProcess::CreatePipe(RetailRuntime->ErrorRead,ChildError);
-    const FString Args=FString::Printf(TEXT("\"%s\" \"%s\""),*(RuntimeFolder()/TEXT("assets")),*File);
-    RetailRuntime->Process=FPlatformProcess::CreateProc(*RuntimeBinary(),*Args,false,true,true,nullptr,0,nullptr,ChildWrite,ChildRead,ChildError);
-    FPlatformProcess::ClosePipe(ChildRead,ChildWrite); FPlatformProcess::ClosePipe(nullptr,ChildError);
-    if (!RetailRuntime->Process.IsValid()) { RetailRuntime.Reset(); Failure=TEXT("Skating worker could not start."); return false; }
+    if(!FPaths::FileExists(RuntimeFolder()/TEXT("package-manifest.json")))
+    {Failure=TEXT("Native skating data is missing from this build.");return false;}
+    FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Where);
+    if(!GatherWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Snapshot,Reach))
+    {Failure=TEXT("Skating could not load nearby collision.");return false;}
+    RetailRuntime=MakeShared<FSkateRuntime>();RetailRuntime->CollisionCentre=Centre;RetailRuntime->CollisionReach=Reach;
+    RetailRuntime->Worker=MakeUnique<FNativeSkateWorker>(RuntimeFolder(),NativeSnapshot(Snapshot),
+        SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading));
+    if(!RetailRuntime->Worker->Start()){RetailRuntime.Reset();Failure=TEXT("Native skating thread could not start.");return false;}
     return true;
 }
 void USkateComponent::PreloadRetailRuntime()
@@ -435,7 +522,7 @@ void USkateComponent::PreloadRetailRuntime()
     // Decoding the animation banks takes seconds; do it while the player walks, so the first mount is immediate.
     bRetailPreloaded=true;
     FString Failure;
-    if (!LaunchRetailProcess(Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,Failure))
+    if (!LaunchNativeSession(Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,Failure))
     { UE_LOG(LogTemp,Display,TEXT("SKATE preload skipped: %s"),*Failure); }
     else { UE_LOG(LogTemp,Display,TEXT("SKATE preload started")); }
 }
@@ -444,19 +531,19 @@ void USkateComponent::PollIdleRetail()
     if (!RetailRuntime || bRetailActive) return;
     RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
-    { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded worker failed: %s"),*RetailRuntime->Error); RetailRuntime.Reset(); }
+    { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded session failed: %s"),*RetailRuntime->Error); RetailRuntime.Reset(); }
 }
 bool USkateComponent::StartRetailRuntime()
 {
     FString Failure;
-    if (!RetailRuntime && !LaunchRetailProcess(Pos,Rot.Rotator().Yaw,Failure)) { RuntimeFailure(Failure); return false; }
+    if (!RetailRuntime && !LaunchNativeSession(Pos,Rot.Rotator().Yaw,Failure)) { RuntimeFailure(Failure); return false; }
     RetailRuntime->FinishPendingWorld(false);
     if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
     {
-        FString File; double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
-        if (!ExportWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,File,Reach)) { RuntimeFailure(TEXT("Skating could not refresh nearby collision.")); return false; }
-        RetailRuntime->AddFile(File); RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
-        RetailRuntime->SendWorld(File,false);
+        FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Pos);
+        if(!GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,Snapshot,Reach))
+        {RuntimeFailure(TEXT("Skating could not refresh nearby collision."));return false;}
+        RetailRuntime->SendWorld(Snapshot);RetailRuntime->CollisionCentre=Centre;RetailRuntime->CollisionReach=Reach;
     }
     RetailRuntime->Spawn=Pos; RetailRuntime->SpawnYaw=Rot.Rotator().Yaw;
     ++RetailRuntime->Generation; RetailRuntime->HasPose=false; RetailRuntime->FrameTime=0;
@@ -466,7 +553,7 @@ bool USkateComponent::StartRetailRuntime()
 }
 void USkateComponent::SuspendRetailRuntime()
 {
-    if (RetailRuntime) { RetailRuntime->SendSimple(TEXT("suspend")); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
+    if (RetailRuntime) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
     bRetailActive=false; RetailPose.Reset();
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
@@ -477,19 +564,12 @@ void USkateComponent::LaunchRetail(const FVector& V)
 {
     if (!bRetailActive || !RetailRuntime) return;
     if (!RetailRuntime->Ready || RetailRuntime->PendingActivation) { RetailRuntime->PendingLaunch=V; return; }
-    auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("launch")); O->SetArrayField(TEXT("velocity"),VectorJSON(ToNative(V))); RetailRuntime->Send(O);
+    FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Launch;C.Velocity=NativeVector(V);RetailRuntime->Worker->Enqueue(MoveTemp(C));
 }
 void USkateComponent::ConfigureRetail()
 {
-    if (!RetailRuntime) return;
-    auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("configure")); O->SetBoolField(TEXT("goofy"),bGoofy);
-    O->SetStringField(TEXT("difficulty"),GetDefault<USkateSettings>()->Difficulty); O->SetNumberField(TEXT("trucks"),GetDefault<USkateSettings>()->TruckTightness);
-    O->SetNumberField(TEXT("pop"),GetDefault<USkateSettings>()->PopHeightScale);
-    O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
-    O->SetNumberField(TEXT("push_speed"),GetDefault<USkateSettings>()->PushSpeedScale);
-    O->SetNumberField(TEXT("push_power"),GetDefault<USkateSettings>()->PushPowerScale);
-    O->SetNumberField(TEXT("vert_assist"),GetDefault<USkateSettings>()->VertAssist);
-    RetailRuntime->Send(O);
+    if(!RetailRuntime)return;FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Configure;
+    C.Preferences=RetailRuntime->Preferences(bGoofy);RetailRuntime->Worker->Enqueue(MoveTemp(C));
 }
 
 bool USkateComponent::GetRetailCamera(FTransform& Out, float& FOV) const
@@ -518,8 +598,8 @@ void USkateComponent::StepRetailRuntime(float Dt)
     RetailRuntime->FrameTime=FMath::Min(.1f,RetailRuntime->FrameTime+Dt);
     if (!RetailRuntime->AwaitingPose)
     {
-    auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("step")); O->SetNumberField(TEXT("dt"),RetailRuntime->FrameTime);
-    // 0x0800 is the host's transfer button: the native pad ignores it, and the right trigger no longer means it.
+    FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::Step;Command.Dt=RetailRuntime->FrameTime;
+    // Host transfer bit is stripped by GameplaySession before Xbox sampling.
     int32 Buttons=(In.bPush?0x1000:0)|(In.bBrake?0x2000:0)|(In.bTransfer?0x0800:0);
     int32 LeftTrigger=In.bGrabLeft?255:0,RightTrigger=In.bGrabRight?255:0;
     if (!bScripted && RiderApi && !RiderApi->IsSkateInputBlocked() && !RiderApi->IsSkateMouseFree())
@@ -537,12 +617,11 @@ void USkateComponent::StepRetailRuntime(float Dt)
             LeftTrigger=PC->IsInputKeyDown(EKeys::Q)?255:FMath::Clamp(FMath::RoundToInt(255*PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis)),0,255);
             RightTrigger=PC->IsInputKeyDown(EKeys::E)?255:FMath::Clamp(FMath::RoundToInt(255*PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis)),0,255);
         }
-    O->SetNumberField(TEXT("buttons"),Buttons);
-    auto Stick=[](FVector2D V){return TArray<TSharedPtr<FJsonValue>>{Number(FMath::RoundToInt(FMath::Clamp(V.X,-1.,1.)*32767)),Number(FMath::RoundToInt(FMath::Clamp(V.Y,-1.,1.)*32767))};};
-    // The native start query requires a rear diagonal, not straight down (angle must be nonzero).
-    const FVector2D Left=In.bPowerslide && Mode==ESkateMode::Ground ? FVector2D(In.Left.X<0?-.6:.6,-.8) : In.Left;
-    O->SetArrayField(TEXT("left"),Stick(Left)); O->SetArrayField(TEXT("right"),Stick(In.Right));
-    O->SetArrayField(TEXT("triggers"),{Number(LeftTrigger),Number(RightTrigger)}); RetailRuntime->Send(O);
+    Command.Input.buttons=uint16(Buttons);Command.Input.triggers={uint8(LeftTrigger),uint8(RightTrigger)};
+    auto Stick=[](FVector2D V){return std::array<std::int16_t,2>{int16(FMath::RoundToInt(FMath::Clamp(V.X,-1.,1.)*32767)),int16(FMath::RoundToInt(FMath::Clamp(V.Y,-1.,1.)*32767))};};
+    // The start query requires a rear diagonal, including a nonzero angle.
+    const FVector2D Left=In.bPowerslide&&Mode==ESkateMode::Ground?FVector2D(In.Left.X<0?-.6:.6,-.8):In.Left;
+    Command.Input.left=Stick(Left);Command.Input.right=Stick(In.Right);RetailRuntime->Worker->Enqueue(MoveTemp(Command));
     RetailRuntime->AwaitingPose=true; RetailRuntime->FrameTime=0;
     }
     if (!Changed) return;
@@ -598,7 +677,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     }
     RetargetRetailPose();
     // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
-    // gathers here, writes on a worker thread, and the skating worker loads it on its own thread.
+    // gathers here, builds on a background thread, and installs the completed world between simulation ticks.
     if (RetailRuntime->PendingWorld.IsValid())
     {
         if (RetailRuntime->PendingWorld.IsReady()) RetailRuntime->FinishPendingWorld(true);
@@ -608,9 +687,15 @@ void USkateComponent::StepRetailRuntime(float Dt)
         auto Snapshot=MakeShared<FSnapshot>(); double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
         if (GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,*Snapshot,Reach))
         {
-            const FString File=NewSnapshotPath();
-            RetailRuntime->AddFile(File); RetailRuntime->PendingPath=File;
-            RetailRuntime->PendingWorld=Async(EAsyncExecution::ThreadPool,[Snapshot,File]{ return WriteSnapshot(*Snapshot,File); });
+            auto Native=NativeSnapshot(*Snapshot);const auto Material=RetailRuntime->Floor;
+            RetailRuntime->PendingWorld=AsyncThread([Native=std::move(Native),Material]() mutable -> TSharedPtr<FSkateRuntime::FWorldResult,ESPMode::ThreadSafe>
+            {
+                FScopedNativeFloatEnvironment FloatEnvironment;
+                auto Result=MakeShared<FSkateRuntime::FWorldResult,ESPMode::ThreadSafe>();
+                if(!FloatEnvironment.IsReady())
+                {Result->Error="Native world floating-point environment setup failed";return Result;}
+                skate_native::BuildGameplayWorld(Native,Material,Result->World,Result->Error);return Result;
+            },32*1024*1024);
             RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
         }
         // Nothing to snapshot (open water): keep the old one and try again 20 m on, not on every frame.

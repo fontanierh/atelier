@@ -1,0 +1,8 @@
+use riding::collision_response::{CollisionResponseSettings,CollisionResponsePhysical,collision_response};use point_graph::PointGraph;use std::io::{Read,Write};
+struct Input{w:Vec<u32>,at:usize}
+impl Input{fn word(&mut self)->u32{let w=self.w[self.at];self.at+=1;w}fn float(&mut self)->f32{f32::from_bits(self.word())}fn four(&mut self)->[f32;4]{std::array::from_fn(|_|self.float())}fn curve(&mut self)->PointGraph<8>{PointGraph{x:std::array::from_fn(|_|self.float()),y:std::array::from_fn(|_|self.float())}}}
+fn floats(o:&mut Vec<u32>,v:impl IntoIterator<Item=f32>){o.extend(v.into_iter().map(f32::to_bits));}
+fn main(){let mut bytes=Vec::new();std::io::stdin().read_to_end(&mut bytes).unwrap();let mut i=Input{w:bytes.chunks_exact(4).map(|b|u32::from_le_bytes(b.try_into().unwrap())).collect(),at:0};let mut o=Vec::new();let cases=i.word();for c in 0..cases{let op=i.word();assert_eq!(op,0);o.extend([c,op,0]);let size=o.len()-1;
+ let settings=CollisionResponseSettings{maximum_velocity_delta:i.float(),force_y_offset:i.float(),force_scalar:i.float(),target_displacement_velocity:i.float(),torque_vs_angle:i.curve()};
+ let input=CollisionResponsePhysical{flags_2472:i.word(),collision_displacement:i.four(),velocity:i.four(),forward:i.four(),up:i.four(),ground_normal:i.four(),time_step:i.float(),mass:i.float()};
+ let result=collision_response(&settings,input);o.push(result.is_some() as u32);if let Some(r)=result{o.push(r.applied as u32);for v in [r.force,r.point,r.angular_displacement,r.target_velocity]{floats(&mut o,v);}}o[size]=(o.len()-size-1) as u32;}assert_eq!(i.at,i.w.len());let mut stdout=std::io::BufWriter::new(std::io::stdout().lock());for w in o{stdout.write_all(&w.to_le_bytes()).unwrap();}}

@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
-"""Exercise Sunset Pier's exported collision with the bundled Skate Session (no Unreal window).
+"""Exercise Sunset Pier's exported collision with the native offline QA session.
 
-Build world.skatepark and skate.runtime first. Results: build/yorimichi/skatepark/physics/.
+Build world.skatepark and verify skate.runtime first, then explicitly build the
+test-only gameplay-session-cli under the render guard. This does not select a
+shipping backend. Results: build/yorimichi/skatepark/physics/.
 """
+import argparse
 import json
 import math
 from pathlib import Path
 import selectors
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[3]
-RUNTIME = ROOT / 'games/yorimichi/unreal/Content/Data/SkateRuntime'
+NATIVE_PACKAGE = ROOT / 'games/yorimichi/unreal/Content/Data/SkateNative'
+BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
 OUT = ROOT / 'build/yorimichi/skatepark'
 
 
@@ -19,15 +24,21 @@ def product(a, b):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--native-package', type=Path, default=NATIVE_PACKAGE)
+    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline native QA executable')
+    args = parser.parse_args()
+    if not args.binary.is_file():
+        parser.error('Native QA executable is missing; build Tests/build_native_session_cli.py --compile under the render lock and memory guard first')
+    if not (args.native_package / 'package-manifest.json').is_file():
+        parser.error('Native bundle manifest is missing: ' + str(args.native_package))
     output = OUT / 'physics'; output.mkdir(parents=True, exist_ok=True)
-    binary = RUNTIME / 'bin/atelier-skate-runtime'
-    if not binary.exists(): binary = binary.with_suffix('.exe')
-    with (output / 'worker.log').open('w') as log:
-        proc = subprocess.Popen([str(binary), str(RUNTIME/'assets'), str(OUT/'collision.json')],
+    with (output / 'native-session.log').open('w') as log:
+        proc = subprocess.Popen([str(args.binary), str(args.native_package), str(OUT/'collision.json')],
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1)
         selector = selectors.DefaultSelector(); selector.register(proc.stdout, selectors.EVENT_READ)
         def read():
-            if not selector.select(60): raise TimeoutError('Skate worker timed out')
+            if not selector.select(60): raise TimeoutError('Native QA session timed out')
             row = json.loads(proc.stdout.readline())
             if row['type'] == 'error': raise RuntimeError(row['message'])
             return row

@@ -369,7 +369,7 @@ void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTick
 {
     Super::TickComponent(Dt,Type,Tick);
     if (IsRiding()) UpdateAudio(Dt);
-    // Start the skating worker a moment after play begins, so it is ready by the first mount (SkateRuntime.cpp).
+    // Preload the native skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
     if (bAvailable && Rider && !RetailRuntime && !bRetailPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadRetailRuntime();
     PollIdleRetail();
 }

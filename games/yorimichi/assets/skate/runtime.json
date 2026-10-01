@@ -1,27 +1,36 @@
 {
-  "version": 1,
-  "source": "Skate 3 animation banks, state graphs, input patterns and converted VLT/skeleton records",
-  "converter_commit": "60efdef86600d8d8d4feb4b7c608fa0efd0643d7",
-  "archive_sha256": "85adf3a254a5145839f242f8a7fe04991b70a105bd2f4e34a183912f171d9b7a",
-  "sha256": {
-    "private/game.json": "ec93cb2d11a2f004b18223ed64b8e8e67195ad44e7c7e0f4f41a4f4aaf27e55e",
-    "private/headless.glb": "3522cd64f98b150c43db6174f5fa1ae5ca148bfc802ad33d4d41d0233a478706",
-    "private/stock/data/anim/OffBoard.abin": "4c7e33fd054b621f24ca9394d29b82ee40108700a7b8cc6ce1dc9aa4f5a5e00d",
-    "private/stock/data/anim/OnBoard.abin": "30aa324d6d7c51c325d53e9268c1ad91783b0154d21bbef5dc5a61eae8333bd7",
-    "private/stock/data/camera/1.shk": "f6a4746d455183418c23446215300c336f513b728fe206fa492885120a7e581e",
-    "private/stock/data/camera/2.shk": "3ff94278ce5710793649065f4746e9d6b70bbae71c4b94e0076d21fcc3de3b3e",
-    "private/stock/data/config/input.cfg": "95190eb82edd34232ea9797bf19ce1c3053519f39476a41647a819c36fce5242",
-    "private/stock/data/joystick/skater.pat": "8d01a8246a05ba7f796174ee6c96219822c376a067bb5c3b96e50a9cd3923bcd",
-    "private/stock/data/joystick/skater90.pat": "43432ba702a10cb3055e648f7f90d92e39b74e747ce9003858e770e402e5ec15",
-    "private/stock/data/joystick/skaterN90.pat": "8133ad5085036d4e491698cb76cd4925141746853781f81df6f34dc0ae283cd1",
-    "private/stock/data/joystick/skater_air.pat": "7edc70a4719e77d1ba7ab8a0216acff02f912909adf46eb70f48400c0cb751d0",
-    "private/stock/data/joystick/skater_fingerflip.pat": "17166257329b0230ebb5eba3aea3eeb288b231a1b6573f9f476da09a44f7350b",
-    "private/stock/data/joystick/skaterls.pat": "03487fc2c609f655444b62edfc53802b6ea7d69b1048b172d192b9a7b4c06ec8",
-    "private/stock/data/joystick/skaterstep.pat": "942685cd8d8c8b57461ac98372d081b5634fb867f4fc9213036d1afcc64645d6",
-    "private/stock/data/script/camera/Default_cameragraph.stategraph": "2b2e08c49190a9967785025a86d60122e5f35054cafb7bd7a3c21959688cdd8f",
-    "private/stock/data/state/ActionGraph_OnBoard.stategraph": "3317c17985928b54055a56df5f7d03b2a57f90de2a8cc7854a6b90b5a01b8752",
-    "private/stock/data/state/MotionGraph_OnBoard.stategraph": "806b2665e435be4e313d70a06fab4538e0adf60a2dfd3e80e82ae8d0b4a2e7c1",
-    "private/stock/physics-skeletons.json": "0caa0bc2a9042e992ac0adda020734660f7b0ee2bd78c63dedc5836ed4833ce8",
-    "private/stock/skater-collections.json": "18c9b4251ef5e769b65b16b8ed62b533ab439495c6f96a60cb7690bc8692ab47"
+  "version": 3,
+  "backend": "in-process-cpp",
+  "data_directory": "unreal/Content/Data/SkateNative",
+  "manifest": "package-manifest.json",
+  "manifest_sha256": "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d",
+  "source": "Project-native conversion of Skate 3 animation, graph, input, camera and physics records",
+  "source_identity": "30aa324d6d7c51c325d53e9268c1ad91783b0154d21bbef5dc5a61eae8333bd7",
+  "formats": [
+    "ATATTR01",
+    "ATGEST01",
+    "ATGRPH01",
+    "ATPHYS01",
+    "ATSKEL01",
+    "ATCLIP01",
+    "ATMETA01",
+    "ATCAM001"
+  ],
+  "expected": {
+    "payloads": 3334,
+    "clips": 3324,
+    "animation_frames": 131642,
+    "patterns": 285,
+    "metadata_banks": 2,
+    "bytes": 70695340
+  },
+  "migration": {
+    "reference_revision": "46513a6",
+    "assembler": "platform/engine/Plugins/Activities/Skate/Tools/assemble_native_package.py",
+    "normal_build_requires_conversion": false
+  },
+  "validation": {
+    "status": "editor-validated",
+    "scope": "Native data conversion and complete baseline/latest-main Session comparisons passed, followed by native Unreal editor compilation, live gameplay/park scenarios and real-time frame-pacing checks. This is finite-corpus equivalence to the recovered implementation, not original-console parity or packaged/cooked validation."
   }
 }

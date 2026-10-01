@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Exercise the complete local Rust session: physical support, push, ollie, landing and reset.
+"""Exercise the native offline QA session: support, push, ollie, landing and reset.
 
-Requires the normal Yorimichi build; results go to build/yorimichi.
+Requires SkateNative and the explicitly built test-only gameplay-session-cli.
+This check does not select a shipping backend. Results go to build/yorimichi.
 """
 import argparse
 import json
@@ -9,38 +10,42 @@ import math
 from pathlib import Path
 import selectors
 import subprocess
+import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[3]
-RUNTIME = ROOT / 'games/yorimichi/unreal/Content/Data/SkateRuntime'
+NATIVE_PACKAGE = ROOT / 'games/yorimichi/unreal/Content/Data/SkateNative'
+BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
 # AirSpinScale in unreal/Config/DefaultGame.ini.
 SPIN = 1.6
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--assets', type=Path, default=RUNTIME / 'assets')
+    parser.add_argument('--native-package', type=Path, default=NATIVE_PACKAGE)
+    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline native QA executable')
     args = parser.parse_args()
-    output = ROOT / 'build/yorimichi/skate-runtime/check'
+    if not args.binary.is_file():
+        parser.error('Native QA executable is missing; build Tests/build_native_session_cli.py --compile under the render lock and memory guard first')
+    if not (args.native_package / 'package-manifest.json').is_file():
+        parser.error('Native bundle manifest is missing: ' + str(args.native_package))
+    output = ROOT / 'build/yorimichi/skate-native/check'
     output.mkdir(parents=True, exist_ok=True)
     world = output / 'world.json'
     world.write_text(json.dumps({'triangles': [[[-100, 0, -100], [-100, 0, 100], [100, 0, 100]],
                                                [[-100, 0, -100], [100, 0, 100], [100, 0, -100]]],
                                  'rails': [], 'spawn': [0, 0, 0], 'heading': 0}))
-    binary = RUNTIME / 'bin/atelier-skate-runtime'
-    if not binary.is_file():
-        binary = binary.with_suffix('.exe')
-    with (output / 'worker.log').open('w') as log:
-        proc = subprocess.Popen([str(binary), str(args.assets), str(world)], stdin=subprocess.PIPE,
+    with (output / 'native-session.log').open('w') as log:
+        proc = subprocess.Popen([str(args.binary), str(args.native_package), str(world)], stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1)
         selector = selectors.DefaultSelector()
         selector.register(proc.stdout, selectors.EVENT_READ)
         def read():
             if not selector.select(60):
-                raise TimeoutError('No worker response within 60 seconds')
+                raise TimeoutError('No native QA response within 60 seconds')
             line = proc.stdout.readline()
             if not line:
-                raise RuntimeError('Worker exited; see worker.log')
+                raise RuntimeError('Native QA exited; see native-session.log')
             result = json.loads(line)
             if result['type'] == 'error':
                 raise RuntimeError(result['message'])

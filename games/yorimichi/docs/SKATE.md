@@ -1,58 +1,66 @@
 # Skateboarding
 
-Yorimichi uses the recovered Skate 3 Rust Session for all skating physics and animation. Cairo receives the
-solved rider pose through a retargeter; the board parts follow the solved deck, trucks and wheels. The earlier
-C++ simulation, gesture recognizer, procedural tricks, clip player and skating IK node have been removed.
-Walking and the transition onto/off the board remain in Unreal.
+Yorimichi's skating backend is a single in-process C++ runtime that preserves the recovered
+Skate 3 physics, animation, gameplay and camera behavior. Cairo receives the solved rider pose through a
+retargeter; board parts follow the solved deck, trucks and wheels. Component differential proofs are recorded
+in the [C++ migration notes](../../../platform/engine/Plugins/Activities/Skate/CXX_PORT.md).
+Complete baseline/latest-main Session comparisons and native Unreal editor integration pass their recorded
+checks. This establishes finite-corpus equivalence to the recovered implementation, not original-console parity.
 
 ## Build and run
 
-The required animation banks, graphs, gesture patterns, settings and skeleton data are committed in
-[`assets/skate/runtime.zip`](../assets/skate/runtime.zip), with file hashes in `runtime.json`. The normal build
-compiles the pinned Rust worker and verifies/unpacks that bundle into the game's generated Content directory.
-No extracted game, upstream tools checkout or separate data installation is needed.
+The native animation samples, metadata, graphs, gesture patterns, camera, settings and skeleton data are
+committed in [`unreal/Content/Data/SkateNative`](../unreal/Content/Data/SkateNative). The bundle has 3,334 payloads,
+including 3,324 clips and 131,642 animation frames. Its manifest records each path, byte size and SHA-256;
+[`assets/skate/runtime.json`](../assets/skate/runtime.json) pins that manifest and the required native formats.
+The normal build verifies these files in place. It requires no extracted game, upstream tools checkout,
+Rust toolchain or separate data installation.
 
 ```sh
-# Requires rustup; the build selects Rust 1.97.1.
 uv run atelier build yorimichi unreal.compile
 uv run atelier play yorimichi
-# Deterministic solver/animation checks, including flat-ground spins and slides:
-python3 games/yorimichi/tools/check_skate_runtime.py
+# Native bundle integrity only:
+python3 games/yorimichi/tools/verify_skate_native.py
 # Against the running game:
 uv run atelier qa yorimichi skate
 ```
 
-`skate.runtime` is a dependency of `unreal.compile` and is also available as a named build step. The generated
-executable belongs to the current host platform and is staged with the bundled data in
-`unreal/Content/Data/SkateRuntime`. The first mount decodes the banks; subsequent mounts reuse the session.
-A failed runtime reports an error and returns to walking. There is no fallback skating engine.
+`skate.runtime` is a light verification dependency of `unreal.compile` and is available as a named build step.
+Its report goes to `build/yorimichi/skate-native/verification.json`; it produces no runtime executable or
+converted assets. The Unreal module builds the C++ backend against the committed native data. No worker
+build or fallback backend is part of the normal build. Bundle verification does not establish runtime equivalence.
 
 The Mac renderer enables Unreal's GPU skin cache for Cairo's animated hair. This avoids the UE 5.8
 morph-buffer startup assertion observed with inline skinning while keeping the hair animation enabled.
 
-The offline importer remains as an optional provenance/reconversion tool. It is not a build requirement.
-Its converted data was produced with upstream tools commit `60efdef86600d8d8d4feb4b7c608fa0efd0643d7`.
+Original-format assets and pinned Rust source are restored from historical Git into ignored build output
+only for independent differential proofs. They are absent from the shipping checkout. The one-time native
+conversion/assembly tools live under the Skate plugin's `Tools/` directory and
+write candidates under `build/`; they are not normal build dependencies. Runtime settings and graph loading
+consume the project-native formats directly.
 
 ## Feel and controls
 
 Yorimichi sets `PopHeightScale=1.15`, `AirSpinScale=1.6`, `PushPowerScale=1.45`,
-`PushSpeedScale=1.15`, `VertAssist=1`, normal difficulty and medium trucks in `DefaultGame.ini`. `VertAssist` keeps
-straight airs over the Mega Park's quarters, which end short of vertical, inside the ramp; 0 is the original.
+`PushSpeedScale=1.15`, `VertAssist=1`, normal difficulty and medium trucks in `DefaultGame.ini`.
+`VertAssist` keeps straight airs over quarters that end short of vertical inside the ramp; 0 retains the
+original near-vertical band. The transfer and assist port follows main's `1536531` behavior and passes its
+separate full Session/quarter-pipe and departure-helper comparisons.
 These scale the recovered height, spin-response and push curves without replacing the solver or the animation
-timing of each push. The loaded flat-ground ollie turns about 250° in the native checks (330–340° with the earlier
+timing of each push. The loaded flat-ground ollie turns about 250° in the earlier reference checks (330–340° with the earlier
 2.15), so a 360 needs a setup turn. Release the stick to line up the landing. From rest, the tuned push reaches
 9.11 m/s after two seconds versus 6.99 m/s with stock values.
 
-The skating worker starts about two seconds into play, with the collision around the player, so the first mount
-does not wait for the animation banks. While riding, the collision around the rider is gathered again once they
-leave its inner area; the file is written and built off the game thread, and the worker switches to it between
-steps. The view eases into the native skating camera over about 0.6 s after mounting, out of it when the right
-stick looks around, and back two seconds after the stick is released.
+The Unreal integration supplies nearby collision and registered rails to the native runtime and presents
+the solved camera and rider pose. Its complete frame/session behavior passes the recorded comparisons against
+the pinned recovered implementation. The host view eases into the skating camera over about 0.6 s after mounting,
+out while the right stick looks around, and back two seconds after the stick is released. These presentation transitions remain in the Unreal adapter.
 
 Triangle / Y (or keyboard B) mounts/steps off; D-pad Down interacts on foot. Running onto the board preserves position, heading of travel and speed. W pushes, S brakes,
 A/D steer or spin. Hold/release Space for an ollie, or hold the left mouse button and flick for tricks. C holds a
 powerslide (A/D chooses its side); controllers use the left stick down-left/down-right. Q/E or triggers compress for pumping on the ground and grab in the air.
-Hold Shift (or push the left stick forward) through the takeoff to transfer over the coping; a grab never does.
+Hold Shift (or push the left stick forward) through takeoff to transfer over the coping; a grab does not
+request a transfer.
 See the [plugin controls](../../../platform/engine/Plugins/Activities/Skate/README.md) for the full input contract.
 
 `scenarios/skate_runtime.py` checks push/flip/landing, steering, manuals, rails, vert, bail/recovery, retargeted
@@ -75,6 +83,15 @@ rider's motion. The coasting pose uses the current parent transform even inside 
 which prevents the previous rider/board flicker.
 
 ## Integration boundaries
+
+The actual native Unreal build passes all 419 actions. Native CLI command, flat-ground and exported-park
+checks pass. The live reports in `build/yorimichi/skateqa/` record 19/19 runtime checks and 7/7 park checks,
+including a 5.10846 m bowl apex and return at park x=41.68899 m. All six real-time performance activities pass
+at 59.7568–59.9965 fps, with maximum p95 17.202 ms and p99 17.724 ms, no frames over 33 ms or 50 ms,
+and no repeated native simulation frames. After a far teleport into the island's Mega Park, collision refresh and a
+six-second push also pass: 49.5369 m travelled, retained PhysicsGround and no new bail.
+
+These are editor checks, not cooked/package validation or a claim about every possible ride.
 
 Nearby pawn-blocking static meshes and registered rails supply native collision. The park importer retains CPU mesh data for collision export. Dynamic objects, individual
 collision surface materials and buffer retention on other imported world meshes still need adapters. Editor builds

@@ -1,0 +1,38 @@
+use crate::player::{lifecycle::SkateboardControllerFields,offboard::board_possession::{*,lifecycle::*}};
+use std::io::{Read,Write};
+struct Input{words:Vec<u32>,at:usize}
+impl Input{
+fn word(&mut self)->u32{let w=self.words[self.at];self.at+=1;w}
+fn float(&mut self)->f32{f32::from_bits(self.word())}
+fn vector(&mut self)->Vector{std::array::from_fn(|_|self.float())}
+fn matrix(&mut self)->Frame{std::array::from_fn(|_|self.vector())}
+fn fields(&mut self)->SkateboardControllerFields{SkateboardControllerFields{word_444:self.word(),state_448:self.word(),system_on_452:self.word()!=0}}
+fn state(&mut self)->State{State{retrieval:Retrieval{initial_0:self.matrix(),target_64:self.matrix(),current_128:self.matrix(),elapsed_192:self.float(),duration_196:self.float(),progress_200:self.float(),weight_204:self.float()},hands:std::array::from_fn(|_|HandDrive{child:self.matrix(),parent:self.matrix(),dynamics:std::array::from_fn(|_|std::array::from_fn(|_|self.word()))}),selected_hand_424:self.word()}}
+fn graph(&mut self)->crate::point_graph::PointGraph<8>{crate::point_graph::PointGraph{x:std::array::from_fn(|_|self.float()),y:std::array::from_fn(|_|self.float())}}
+fn settings(&mut self)->Settings{Settings{hide_distance:self.float(),hide_offset:self.float(),return_distance:self.float(),mounted_return_distance:self.float(),mounting_time:self.float(),retrieval_time:self.graph(),retrieval_weight:self.graph(),throw_pitch:self.float(),throw_velocity:self.graph(),throw_target_pitch:self.float(),throw_pitch_scalar:self.float(),throw_roll_scalar:self.float(),throw_yaw_scalar:self.float()}}
+fn observation(&mut self)->Observation{Observation{processed:Processed{board_frame_64:self.matrix(),player_frame_192:self.matrix(),position_592:self.vector(),velocity_912:self.vector(),direction_400:self.vector(),hide_direction_464:self.vector(),flags_2476:self.word(),flags_2480:self.word(),flags_2488:self.word()},board_collision_flags_872:self.word(),board_state_840:self.word(),hand_contacts:std::array::from_fn(|_|self.word()!=0),physical_hand_positions:std::array::from_fn(|_|self.vector()),animation_board_frame_12624:self.matrix(),animation_hand_frames:std::array::from_fn(|_|self.matrix()),attachment_frame_0:self.matrix()}}
+fn manager(&mut self)->manager::State{manager::State{hands:std::array::from_fn(|_|manager::Hand{vectors_0_to_64:std::array::from_fn(|_|self.vector()),word_80:self.word(),flag_84:self.word()!=0,scalars_96_100:std::array::from_fn(|_|self.float()),flags_104_to_107:std::array::from_fn(|_|self.word()!=0)}),vectors_224_to_272:std::array::from_fn(|_|self.vector()),scalars_288_to_296:std::array::from_fn(|_|self.float()),word_300:self.word(),flags_304_to_307:std::array::from_fn(|_|self.word()!=0),words_308_to_316:std::array::from_fn(|_|self.word())}}
+}
+fn floats(out:&mut Vec<u32>,v:impl IntoIterator<Item=f32>){out.extend(v.into_iter().map(f32::to_bits));}
+fn matrix(out:&mut Vec<u32>,m:Frame){for v in m{floats(out,v);}}
+fn fields(out:&mut Vec<u32>,f:SkateboardControllerFields){out.extend([f.word_444,f.state_448,f.system_on_452 as u32]);}
+fn state(out:&mut Vec<u32>,s:&State){let r=s.retrieval;for m in [r.initial_0,r.target_64,r.current_128]{matrix(out,m);}floats(out,[r.elapsed_192,r.duration_196,r.progress_200,r.weight_204]);for h in s.hands{matrix(out,h.child);matrix(out,h.parent);for d in h.dynamics{out.extend(d);}}out.push(s.selected_hand_424);}
+fn fill(out:&mut Vec<u32>,f:Fill){floats(out,[f.angle_36,f.angle_40]);out.extend([f.held_311,f.free_312,f.returning_313,f.hiding_321,f.flag_322,f.flag_323,f.flag_324].map(|v|v as u32));}
+#[derive(Default)]struct Recorder{events:Vec<u32>}
+impl Recorder{fn call(&mut self,op:u32,data:impl IntoIterator<Item=u32>){let data=data.into_iter().collect::<Vec<_>>();self.events.extend([op,data.len() as u32]);self.events.extend(data);}fn vector(&mut self,op:u32,v:Vector){self.call(op,v.map(f32::to_bits));}}
+impl Effects for Recorder{
+fn enable_animation_soft(&mut self){self.call(0,[])}fn enable_animation_angular_only(&mut self){self.call(1,[])}fn disable_animation(&mut self){self.call(2,[])}fn disable_linear_drive(&mut self){self.call(3,[])}fn standard_board(&mut self){self.call(4,[])}fn released_board(&mut self){self.call(5,[])}fn collision_volumes(&mut self,v:bool){self.call(6,[v as u32])}fn clear_alignment(&mut self){self.call(7,[])}
+fn alignment(&mut self,a:Alignment){let mut v=Vec::new();floats(&mut v,a.first_1008);floats(&mut v,a.second_1024);v.extend([a.factor_1040.to_bits(),a.flag_1044 as u32]);self.call(8,v)}
+fn velocity(&mut self,v:Vector){self.vector(9,v)}fn position(&mut self,v:Vector){self.vector(10,v)}fn hook_frame(&mut self,m:Frame){self.call(11,m.into_iter().flatten().map(f32::to_bits))}fn target_position_velocity(&mut self,v:Vector){self.vector(12,v)}fn torque(&mut self,v:Vector){self.vector(13,v)}
+}
+fn manager(out:&mut Vec<u32>,m:&manager::State){for h in m.hands{for v in h.vectors_0_to_64{floats(out,v);}out.extend([h.word_80,h.flag_84 as u32]);floats(out,h.scalars_96_100);out.extend(h.flags_104_to_107.map(|v|v as u32));}for v in m.vectors_224_to_272{floats(out,v);}floats(out,m.scalars_288_to_296);out.push(m.word_300);out.extend(m.flags_304_to_307.map(|v|v as u32));out.extend(m.words_308_to_316);}
+fn main(){
+let mut bytes=Vec::new();std::io::stdin().read_to_end(&mut bytes).unwrap();let mut i=Input{words:bytes.chunks_exact(4).map(|v|u32::from_le_bytes(v.try_into().unwrap())).collect(),at:0};let mut out=Vec::new();let count=i.word();
+for index in 0..count{let settings=i.settings();let mut f=i.fields();let mut s=if i.word()!=0{i.state()}else{State::default()};let mut o=i.observation();let mut e=Recorder::default();let commands=i.word();out.extend([index,commands,0]);let mark=out.len()-1;let start=out.len();fields(&mut out,f);state(&mut out,&s);
+for _ in 0..commands{let op=i.word();out.extend([op,0]);let command_mark=out.len()-1;let command_start=out.len();e.events.clear();match op{
+0=>f=i.fields(),1=>o=i.observation(),2=>s.update(&mut f,&o,&settings,&mut e),3=>s.hold(&mut f,&o,&mut e),4=>s.let_go(&mut f,&o,&settings,&mut e),5=>s.stop(&mut f,&o,&settings,&mut e),6=>s.hide(&o,&mut e),7=>s.retrieve(&f,&o,&settings,&mut e),8=>s.update_state(&mut f,&o,&settings,&mut e),9=>s.update_drive_frames(&o),10=>s.disable_hand(),11=>fill(&mut out,crate::player::offboard::board_possession::fill(&f,&s,&o.processed,i.matrix())),
+12=>{let request=i.vector();let omega=i.vector();let inertia=std::array::from_fn(|_|i.vector());floats(&mut out,motion::throw_velocity(&o.processed,&settings));for t in motion::throw_torques(&o.processed,&settings){floats(&mut out,t);}floats(&mut out,angular::acceleration_delta(request,omega,inertia));},13=>s=i.state(),14=>{f.word_444=0;s.stop(&mut f,&o,&settings,&mut e);s.retrieval=Retrieval::default();},
+15=>{let mut m=i.manager();let previous=i.word();let current=i.word();let mut enabled=i.word()!=0;let mut a=i.vector();let mut b=i.vector();let mut words=std::array::from_fn(|_|i.word());m.enter(previous,current,manager::SkeletonReset{enabled_464:&mut enabled,values_468:&mut a,values_484:&mut b,words_500:&mut words});manager(&mut out,&m);out.push(enabled as u32);floats(&mut out,a);floats(&mut out,b);out.extend(words);},16=>{let mut m=i.manager();m.reset();manager(&mut out,&m);},_=>panic!("Possession operation")}
+out.push(e.events.len() as u32);out.extend(&e.events);fields(&mut out,f);state(&mut out,&s);out[command_mark]=(out.len()-command_start) as u32;
+}out[mark]=(out.len()-start) as u32;}
+assert_eq!(i.at,i.words.len());let mut stdout=std::io::BufWriter::new(std::io::stdout().lock());for w in out{stdout.write_all(&w.to_le_bytes()).unwrap();}}

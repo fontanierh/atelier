@@ -1,0 +1,2 @@
+# Preserve native data bytes: the Skate manifest verifies SHA-256 hashes.
+games/yorimichi/unreal/Content/Data/SkateNative/** -text -whitespace
