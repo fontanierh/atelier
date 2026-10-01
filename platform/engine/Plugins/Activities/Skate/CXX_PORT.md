@@ -432,6 +432,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   fixed ground versus processed timesteps, retained intentional-pump bytes and actual geometry.
   The corpus proves all 20 selected-mode clamps and 118 stock settings words. Ground sample
   production/force scheduling and malformed stock-setting diagnostics remain separate checks.
+- Steering/truck wobble: 144 configurations and 13,101 callbacks preserve 313,888 exact bytes
+  for optional steering history pointers, hard/manual turns, axle contact transitions, wobble
+  activation/deactivation and all eight retained words. Nonboolean active bytes and opaque bits
+  survive unchanged. Valid stock curves/scalars and five modes match; complete ground scheduling,
+  tuning and malformed stock-setting diagnostics remain separate checks.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
