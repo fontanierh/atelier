@@ -470,6 +470,15 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   activation/deactivation and all eight retained words. Nonboolean active bytes and opaque bits
   survive unchanged. Valid stock curves/scalars and five modes match; complete ground scheduling,
   tuning and malformed stock-setting diagnostics remain separate checks.
+- Powerslide core/settings: 46 cases and 2,851 commands preserve 108,236 exact bytes for
+  angular correction, friction forces, lifecycle resets and all five stock surfaces/materials.
+  Coverage includes four carried lanes, signed-zero and nonfinite angle boundaries and 1,401
+  distinct finite forces. The complete live Slide schedule is a separate comparison.
+- Powerslide settings failures: 269 fixtures preserve 46,244 exact bytes from the whole
+  original constructor, including all 39 reads, 35 first-failed fields, fixed 20-word curves,
+  Unicode whitespace, numeric aliases, inheritance/cycles and untouched output on failure.
+  The native reader consumes converted settings; malformed raw JSON and invalid numeric
+  hex rejected during conversion are outside this reader comparison.
 - Ground state/correction scheduling: 701 streams preserve 2,606,229 exact words across all
   55 state fields, entry/capture/reset, wrapping counters, anti-flip nudges, coping wheel catches,
   hung-up recovery/wipeout, spawn pinning and shared inertia drag groups/tails. Every required
