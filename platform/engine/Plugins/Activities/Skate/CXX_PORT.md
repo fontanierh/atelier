@@ -174,6 +174,17 @@ Gameplay scalar/flag requests, external IK target events, selected grind targets
 triangles remain explicit upstream inputs. The full skeleton lifecycle dispatcher and
 complete gameplay/render scheduling are separate checks.
 
+The complete skeleton-input lifecycle adds 372 histories and 1,200 ProcessData calls,
+preserving 29,009,143 exact words (SHA256
+`f11e9a3670e94d4d5a30b2ed26f9a4646fe8f54fdad7899621cc4a713cfd1792`).
+Actual authored attributes, stock pose adjustment, FootIK, live toolkit construction,
+ground/teleport/general updates, wake/drive restoration and retained grind-air state run
+through the original full dispatcher. The comparison observes 888 shared solves,
+16,399 contact rows, 42,624 drive rows and 61 partial failures. Forty-eight terrain
+replacements and teleport resets retain the original histories. Attribute/action values,
+processed gameplay requests and engine triangles are explicit upstream inputs; complete
+session and Ground lifecycle dispatch remain separate checks.
+
 ## Native trajectory collision query
 
 `AirTrajectoryQuery.*` preserves the complete original trajectory segment walk,
