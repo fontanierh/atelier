@@ -445,6 +445,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   Coverage includes 6,081 pair contacts, 1,441 reports, original group/material tables, static-body
   retention and the 16-report capacity. Unsupported original cylinder/hat queries retain explicit
   errors. The original full host producer modules are unchanged; full solve scheduling is separate.
+- Skeleton root/board frames: 1,735 streams preserve 4,304,114 exact words through heading,
+  prediction consumption, ground/teleport targets, COM publication, retained resets and lift limits.
+  All 211 stored words are observed after each command. The local heading sine preserves the
+  frozen producer's final negated FMA. Fixtures use explicit finite nondegenerate input frames;
+  complete animation/physical scheduling remains separate.
 - Physical skeleton bodies: 3,164 cases and 9,340,512 exact words cover definition/mass construction,
   hats, all four inertia modes, pose mapping, animation/physical COM history and 128 persistent 26-body
   programs with actual integration. The corpus includes 88 original volume errors and 64 mapping-bounds
