@@ -27,6 +27,15 @@ def replace_once(text,old,new):
 
 def prepare(output):
  original,observed,snapshot,report=biped.prepare(output);crate=observed/'atelier-host'
+ # Declaration-only adapters stay local to this proof. Distinct aliases avoid
+ # duplicate exports when Publication later extends the same staged source.
+ descriptor_rel='crates/skate-core/src/player/offboard/contact_toolkit.rs'
+ descriptor_append='\npub use probes::Descriptor as MigrationLandingDescriptor;\n'
+ descriptor=observed/descriptor_rel;descriptor.write_bytes(descriptor.read_bytes()+descriptor_append.encode())
+ descriptor_original=(original/descriptor_rel).read_bytes();assert descriptor.read_bytes()[:len(descriptor_original)]==descriptor_original
+ report['biped_appended_observers'][descriptor_rel]['generated_sha256']=digest(descriptor)
+ selector_append='\npub(crate)use offboard::air_selector as migration_landing_air_selector;\n'
+ report['landing_visibility_adapters']={descriptor_rel:dict(original_prefix_sha256=digest(original/descriptor_rel),append_sha256=hashlib.sha256(descriptor_append.encode()).hexdigest(),generated_sha256=digest(descriptor)),'crates/skate-host/src/physics.rs':dict(original_prefix_sha256=digest(original/'crates/skate-host/src/physics.rs'),append_sha256=hashlib.sha256(selector_append.encode()).hexdigest())}
  cpp=(snapshot/'biped_runtime_probe.cpp').read_text()
  update='\n'.join(biped.block('Native/landing_deck_probe.cpp',p)for p in('void RequestOut(','void Output(')).replace('Writer','BipedOutput').replace('void Output(','void UpdateOut(')
  extension=(PLUGIN/'Tests/Native/landing_on_deck_runtime_probe.cpp').read_text().replace('// GENERATED_UPDATE_OBSERVER',update)
@@ -69,12 +78,14 @@ pub(crate)fn migration_landing_load(assets:&std::path::Path,invalid:&std::path::
  let data=skate_data::collections::Collections::load(invalid)?;let result=offboard::landing_deck::Owner::load(&data).and_then(|m|landing_on_deck::Runtime::load(&data).map(|s|(m,s)));match result{Ok((m,s))=>{manager=m;owner=s;o.status(Ok(()))},Err(e)=>o.status(Err(e))}
  let at=o.0.len();o.word(0);offboard::landing_deck::migration_biped_observe(o,&manager);o.0[at]=(o.0.len()-at-1)as u32;let at=o.0.len();o.word(0);landing_on_deck::migration_landing_observe(o,&owner);o.0[at]=(o.0.len()-at-1)as u32;Ok(())}
 '''
- physics.write_text(data)
+ physics.write_text(data+selector_append)
+ report['landing_visibility_adapters']['crates/skate-host/src/physics.rs']['generated_sha256']=digest(physics)
  appends={'crates/skate-host/src/physics/landing_on_deck.rs':(PLUGIN/'Tests/Reference/landing_on_deck_runtime_observer.rs').read_text(),'crates/skate-core/src/physics/skeleton_output/wobble.rs':'\nimpl Wobble{pub fn migration_landing_selected(&self)->bool{self.selected_landing_curves}}\n'}
  for rel,extra in appends.items():
   p=crate/'src'/rel.removeprefix('crates/skate-host/src/')if rel.startswith('crates/skate-host/src/')else observed/rel;p.write_bytes(p.read_bytes()+extra.encode());assert p.read_bytes()[:(original/rel).stat().st_size]==(original/rel).read_bytes();report.setdefault('landing_appended_observers',{})[rel]=dict(original_prefix_sha256=digest(original/rel),append_sha256=hashlib.sha256(extra.encode()).hexdigest(),generated_sha256=digest(p))
  rs=crate/'src/migration_probe.rs';r=rs.read_text();up='\n'.join(biped.block('Reference/landing_deck_probe.rs',p)for p in('fn request_out(','fn output(')).replace('Writer','Output').replace('fn output(','fn landing_update_out(').replace('request_out(o,q)','landing_request_out(o,q)').replace('fn request_out(','fn landing_request_out(').replace('.scalar(','.float(').replace('native::UpdateOutput','skate_core::player::offboard::landing_deck::UpdateOutput').replace('q:QueryRequest','q:skate_core::air::trajectory::QueryRequest').replace('vo(o,v)','biped_landing::vo(o,v)').replace('to(o,q.trajectory)','biped_landing::to(o,q.trajectory)')
- r=r.replace('physics::migration_biped_load(','physics::migration_landing_load(');r=r.replace('fn main(){',up+'\nfn main(){',1);rs.write_text(r)
+ r=r.replace('physics::migration_biped_load(','physics::migration_landing_load(');r=r.replace('fn main(){',up+'\nfn main(){',1)
+ r=r.replace('toolkit::Descriptor','toolkit::MigrationLandingDescriptor').replace('crate::physics::offboard::air_selector','crate::physics::migration_landing_air_selector');rs.write_text(r)
  cargo=crate/'Cargo.toml';cargo.write_text(cargo.read_text().replace('name="biped-runtime-reference"','name="landing-on-deck-runtime-reference"'))
  for rel,row in report['staged_host_original_prefixes'].items():row['generated_sha256']=digest(crate/'src'/rel)
  report['biped_appended_observers']['crates/skate-host/src/physics.rs']['generated_sha256']=digest(physics)
