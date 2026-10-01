@@ -16,12 +16,6 @@ float WipeoutLength(Vec4 v)
     return sq==0?0:sq*inv;
 }
 float WipeoutSelectedMax(float a,float b){return a-b>=0?a:b;}
-bool WipeoutForce(const WipeoutFrame& frame,float body,float arms)
-{
-    const auto& f=frame.regions_force;
-    const auto a=WipeoutSelectedMax(f[0],f[1]),b=WipeoutSelectedMax(f[5],f[4]),c=WipeoutSelectedMax(f[7],f[6]);
-    return WipeoutSelectedMax(WipeoutSelectedMax(a,b),c)>body||WipeoutSelectedMax(f[2],f[3])>arms;
-}
 void WipeoutVehicle(WipeoutRequests& state,const WipeoutSettings& s,const WipeoutFrame& f)
 {if (f.vehicle_force>(f.flags_2476&8?s.ground.skitch_contact:s.ground.vehicle_contact)) state.Request(7,0);}
 void WipeoutClosing(WipeoutRequests& state,const WipeoutFrame& f,float xz,float y)
@@ -30,7 +24,7 @@ void WipeoutClosing(WipeoutRequests& state,const WipeoutFrame& f,float xz,float 
     const auto& v=f.closing_velocity;const auto& m=f.world_to_animation;Vec4 local{};
     for (std::size_t i=0;i<4;++i) local[i]=std::fma(m[2][i],v[2],std::fma(m[1][i],v[1],m[0][i]*v[0]));
     if (WipeoutLength({local[0],0,local[2],local[3]})>xz||std::abs(local[1])>y)
-    {state.Request(2,0);if (WipeoutForce(f,1,20)) state.Request(0,0);}
+    {state.Request(2,0);if (CheckWipeoutRegionalForce(f,1,20)) state.Request(0,0);}
 }
 void WipeoutLeaning(WipeoutRequests& state,const WipeoutSettings& s,const WipeoutFrame& f)
 {if (f.animation_up[1]<s.lean_contact_y&&f.compliant&&f.highest_normal[1]>WipeoutBits(0x3f34fdf4)) state.Request(19,0);}
@@ -54,11 +48,17 @@ void WipeoutBadLanding(WipeoutRequests& state,const WipeoutSettings& s,const Wip
     }
 }
 }
+bool CheckWipeoutRegionalForce(const WipeoutFrame& frame,float body,float arms)
+{
+    const auto& f=frame.regions_force;
+    const auto a=WipeoutSelectedMax(f[0],f[1]),b=WipeoutSelectedMax(f[5],f[4]),c=WipeoutSelectedMax(f[7],f[6]);
+    return WipeoutSelectedMax(WipeoutSelectedMax(a,b),c)>body||WipeoutSelectedMax(f[2],f[3])>arms;
+}
 void CheckWipeoutAirCollision(WipeoutRequests& state,const WipeoutSettings& s,const WipeoutMode& mode,const WipeoutFrame& f)
 {
     if (mode.check_squash&&f.maximum_pose_error>s.air.max_squash) state.Request(18,0);
     else if (Dot3(f.pose_error,f.pose_error)>s.air.max_displacement*s.air.max_displacement) state.Request(1,0);
-    else if (WipeoutForce(f,s.air.max_contact,s.air.max_arm_contact)) state.Request(0,0);
+    else if (CheckWipeoutRegionalForce(f,s.air.max_contact,s.air.max_arm_contact)) state.Request(0,0);
 }
 void CheckWipeoutAir(WipeoutRequests& state,const WipeoutSettings& s,const WipeoutMode& mode,const WipeoutFrame& f,bool use_com)
 {
@@ -77,7 +77,7 @@ void CheckWipeoutAir(WipeoutRequests& state,const WipeoutSettings& s,const Wipeo
     WipeoutClosing(state,f,xz,y);const auto displacement=a.max_displacement*scalar;
     if (mode.check_squash&&f.maximum_pose_error>a.max_squash*scalar) state.Request(18,0);
     else if (Dot3(f.pose_error,f.pose_error)>displacement*displacement) state.Request(1,0);
-    else if (WipeoutForce(f,a.max_contact*scalar,a.max_arm_contact)) state.Request(0,0);
+    else if (CheckWipeoutRegionalForce(f,a.max_contact*scalar,a.max_arm_contact)) state.Request(0,0);
     if (f.flip_active&&f.flip_requested_speed==0&&f.system_up_y<0) state.Request(4,0);
     WipeoutBadLanding(state,s,mode,f,use_com);WipeoutLeaning(state,s,f);
     if ((f.flags_2476&(1u<<26))!=0&&f.compliant) state.Request(21,0);
@@ -95,7 +95,7 @@ void CheckWipeoutGround(WipeoutRequests& state,const WipeoutSettings& s,const Wi
     const auto squash=f.flags_2476&(1u<<30)?g.max_squash_coffin:g.max_squash,displacement=g.max_displacement*scale;
     if ((mode.check_squash||f.time_on_ground>WipeoutBits(0x3d4ccccd))&&f.maximum_pose_error>vehicle*squash) state.Request(18,0);
     else if (Dot3(f.pose_error,f.pose_error)>displacement*displacement) state.Request(1,0);
-    else if (WipeoutForce(f,g.max_contact*scale,g.max_arm_contact*arms)) state.Request(0,0);
+    else if (CheckWipeoutRegionalForce(f,g.max_contact*scale,g.max_arm_contact*arms)) state.Request(0,0);
     WipeoutVehicle(state,s,f);
     if ((f.flags_2484&(1u<<21))==0)
     {
@@ -125,7 +125,7 @@ void CheckWipeoutGround(WipeoutRequests& state,const WipeoutSettings& s,const Wi
 void CheckWipeoutGroundAnimation(WipeoutRequests& state,const WipeoutSettings& s,const WipeoutMode& mode,const WipeoutFrame& f,float scale)
 {
     CheckWipeoutGround(state,s,mode,f);
-    if (WipeoutForce(f,s.air.max_contact,s.air.max_arm_contact)) state.Request(0,0);
+    if (CheckWipeoutRegionalForce(f,s.air.max_contact,s.air.max_arm_contact)) state.Request(0,0);
     if (f.opposing_contact>s.ground.opposing_contact*scale) state.Request(20,0);
 }
 void CheckWipeoutPlant(WipeoutRequests& state,const WipeoutSettings& s,const WipeoutFrame& f)
@@ -133,7 +133,7 @@ void CheckWipeoutPlant(WipeoutRequests& state,const WipeoutSettings& s,const Wip
     state.mode=3;
     if (f.maximum_pose_error>s.ground.max_squash) state.Request(18,0);
     else if (WipeoutLength(f.pose_error)>s.air.max_displacement) state.Request(1,0);
-    else if (WipeoutForce(f,s.air.max_contact,s.air.max_arm_contact)) state.Request(0,0);
+    else if (CheckWipeoutRegionalForce(f,s.air.max_contact,s.air.max_arm_contact)) state.Request(0,0);
     WipeoutClosing(state,f,s.air.xz_trick,s.air.y_trick);
 }
 bool WipeoutRuntime::Load(const SettingsDatabase& data,std::string& error)

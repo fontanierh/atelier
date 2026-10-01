@@ -323,6 +323,13 @@ All 253 settings fixtures also match, including original Boolean prefix-byte
 reads, valid padded/one-byte layouts, rejected prefixes and ordered compound
 failures. The aggregate comparison contains 963,396 exact words.
 
+The same regional-force helper is shared with the physical state callers.
+Its independent comparison preserves all 10,544 results exactly, including
+ordered NaN operands, signed zero, equality thresholds and all eight regions
+(SHA-256 `e0ad4810e8ae88f40a9de8dacd8804ef1158948ab4c7fe82ba6da129f306cae6`).
+The complete wipeout histories and all 253 loader fixtures also pass again
+after exposing that helper.
+
 Completed observation frames are explicit inputs to this leaf check. The
 actual physical/skeleton observation producer, ragdoll state owners and global
 frame scheduling require separate composition checks; this result does not

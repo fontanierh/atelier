@@ -3,6 +3,7 @@
 #include "WipeoutObservations.h"
 namespace atelier::skate
 {
+bool CheckWipeoutRegionalForce(const WipeoutFrame&,float body,float arms);
 void CheckWipeoutAirCollision(WipeoutRequests&,const WipeoutSettings&,const WipeoutMode&,const WipeoutFrame&);
 void CheckWipeoutAir(WipeoutRequests&,const WipeoutSettings&,const WipeoutMode&,const WipeoutFrame&,bool use_com);
 void CheckWipeoutGround(WipeoutRequests&,const WipeoutSettings&,const WipeoutMode&,const WipeoutFrame&);
