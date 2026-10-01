@@ -537,6 +537,13 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Animation metadata: both banks, 3,324 clips, 14,879 clip attributes, 1,183 phase blends, two blend spaces,
   98 selectors and 38 selection spaces. Every record word/order and 4,643 original lookup results match;
   33 duplicate/tie fixtures, two merge fixtures and nine malformed-format cases pass.
+- Airborne animation: five original behavior configurations and 1,122 full-host callbacks preserve
+  760,753 exact bytes for board/left/right/fallback leg extension, absent/scalar/vector cache seeds,
+  ascending/descending/prelanding updates and persistent body-spin modes. The test observes 39 arm
+  extension values, 146/147 height values, 20 states on each actual stock spin channel and all twelve
+  missing-input errors. Stock metadata/settings feed the native candidate; synthetic clips observe
+  parameter publication. Completed airborne records are explicit fixture inputs, so this verifies
+  behavior composition, not the complete physical producer or live scheduler registration.
 - Animation sample conversion: all 3,324 clips, 131,642 frames and 4,739,112 bone samples reconstruct exactly,
   together with the full rig and reference poses. 833,087 of 1,196,640 component tracks are bit-identical
   constants. Decoded sample files shrink from 190,365,107 bytes to 65,630,991 bytes without quantization.
