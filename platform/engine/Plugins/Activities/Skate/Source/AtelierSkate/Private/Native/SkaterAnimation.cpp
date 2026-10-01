@@ -12,7 +12,7 @@ namespace
 float FixedPhysicalStep() {const std::uint32_t word=0x3c888889;float value;std::memcpy(&value,&word,4);return value;}
 }
 SkaterAnimation::SkaterAnimation(std::shared_ptr<const AnimationSource> value,const AnimationStockGraphs& graphs):
-    animation(value->metadata),motion(animation),evaluator(value->evaluator),source(std::move(value)),
+    animation(value->metadata),motion(animation),complete_motion(motion),evaluator(value->evaluator),source(std::move(value)),
     action_controller(graphs.action.runtime.program.topology.states.size()),
     motion_controller(graphs.motion.runtime.program.topology.states.size()),state(true) {}
 bool SkaterAnimation::FromSource(const SettingsDatabase& data,const AnimationStockGraphs& graphs,
@@ -22,7 +22,7 @@ bool SkaterAnimation::FromSource(const SettingsDatabase& data,const AnimationSto
     if (!source||!source->evaluator) {error="Missing native animation source";return false;}
     auto owner=std::unique_ptr<SkaterAnimation>(new SkaterAnimation(std::move(source),graphs));
     owner->motion.playback_context={owner->state.Switch(),owner->state.Mirrored(),std::nullopt,EncodeAnimationName(pro_skater),std::nullopt};
-    if (!owner->motion.FromGraph(graphs.motion.source,graphs.motion.binding,graphs.motion.runtime,data,error)) {error="Stock MotionGraph initialization: "+error;return false;}
+    if (!owner->complete_motion.FromGraph(graphs.motion.source,graphs.motion.binding,graphs.motion.runtime,data,error)) {error="Stock MotionGraph initialization: "+error;return false;}
     std::vector<std::string> names;std::vector<std::int32_t> mirror;
     for (const auto& bone:owner->evaluator->frames.rig.bones) {names.push_back(bone.name);mirror.push_back(bone.mirror);}
     if (!owner->animation.tree.SetHierarchy(names,mirror,error)) return false;
@@ -68,7 +68,7 @@ bool SkaterAnimation::Advance(const AnimationStockGraphs& graphs,float dt,const 
     action_controller.Update(graphs.action.runtime.program,dt,action);
     if (!action.errors.empty()||action.diagnostics_overflowed) {error=action.Diagnostics("\n");return false;}
     const auto action_output=action.Output();animation.BeginGraphUpdate();motion.AcceptActionGraph(MotionGraphInput{action_output.tick,action_output});motion.animation_phase=state.phase;
-    motion_controller.Update(graphs.motion.runtime.program,dt,motion);state.phase=motion.animation_phase;
+    motion_controller.Update(graphs.motion.runtime.program,dt,complete_motion);state.phase=motion.animation_phase;
     if (!motion.errors.empty()||motion.diagnostics_overflowed) {error=motion.Diagnostics("\n");return false;}
     if (!animation.tree.skater_animation_flags) {error="MotionGraph lost the SkaterAnim flag owner";return false;}
     state.flags=*animation.tree.skater_animation_flags;state.publication.relative_stance=std::int32_t(animation.relative_stance);

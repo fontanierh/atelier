@@ -5,6 +5,7 @@
 #include "AnimationPublication.h"
 #include "AnimationPhysical.h"
 #include "MotionGraphHost.h"
+#include "MotionGraphContinuationHost.h"
 
 namespace atelier::skate
 {
@@ -26,6 +27,7 @@ public:
     ActionIntentGraphHost action;
     MotionAnimation animation;
     MotionGraphHost motion;
+    MotionGraphContinuationHost complete_motion;
     std::shared_ptr<AnimationPoseEvaluator> evaluator;
     std::shared_ptr<const AnimationSource> source;
     std::vector<Sqt> pose;

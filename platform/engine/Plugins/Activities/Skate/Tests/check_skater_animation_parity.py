@@ -23,6 +23,7 @@ from check_animation_playback_parity import Stream,bits
 from check_animation_trees_parity import name as attribute_name
 from session_parity import REFERENCE_REVISION,digest
 
+CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
 QUERIES=('A','X','Y','Clock','Const','PriorTrick','PriorBoard','Turn','RawTurn','HardTurn','enable','exit','push','other','TweakX','TweakY','Marker','')
 TICKS=128
 FIXTURES=12
@@ -154,9 +155,14 @@ def build_reference(output,target):
 
 
 def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+    live=CODE;code=output/'native-source'
     if code.exists():shutil.rmtree(code)
     code.mkdir();files=('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','CompiledGraph','GraphController','GraphConditions','GraphGestureOperations','GraphIntentOperations','ActionGraphFrame','GraphMotionSliding','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','MotionAnimationOperations','MotionFrame','GraphMotionName','GraphMotionConditions','GraphMotionPhysicalConditions','GraphMotionSpecialConditions','RidingAnimation','RidingAnimationSettings','GraphMotionFeedbackOperations','GraphMotionScoreOperations','GraphMotionPushOperations','GraphMotionGestureOperations','MotionGraphHost','AnimationPose','AnimationPoseAuthored','AnimationPoseJson','AnimationPublication','SkaterAnimation')
+    files=tuple(dict.fromkeys((*files,'StockSettingsReader','AnimationRidingAuxiliary','AnimationKickturn',
+        'AnimationAirborne','AnimationAirborneSettings','WipeoutOrientation','GraphMotionOffboardTiming',
+        'GraphMotionTrickLifecycle','GraphMotionGrindOperations','GraphMotionOffboardWipeoutOperations',
+        'GraphMotionToggleBoard','MotionGraphContinuationOperations','MotionGraphContinuationSettings',
+        'MotionGraphContinuationHost')))
     for path in list(live.glob('*.h'))+[live/(f+'.cpp') for f in files]:shutil.copyfile(path,code/path.name)
     probe=code/'skater_animation_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/skater_animation_probe.cpp',probe);snapshot={p.name:digest(p) for p in sorted(code.iterdir())};(output/'native-source-provenance.json').write_text(json.dumps(snapshot,indent=2)+'\n')
     binary=output/'skater-animation-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(f+'.cpp')) for f in files],str(probe),'-o',str(binary)],check=True);return binary

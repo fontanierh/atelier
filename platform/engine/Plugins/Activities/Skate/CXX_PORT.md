@@ -1065,3 +1065,39 @@ committed dependencies and only these new ground sources. Authored geometry,
 completed processed records, current toolkit and pose requests remain explicit
 upstream inputs. Complete state selection, shared-solve scheduling and gameplay
 sessions require the separate frame coordinator comparison.
+
+### Native complete motion graph and animation actor
+
+`MotionGraphContinuationHost` completes the existing motion host's registered
+trick, grind, offboard, wipeout, landing, kickturn and auxiliary riding leaves.
+It borrows the same motion owner, graph controller, animation tree, channel
+allocation and shared records. `SkaterAnimation` now routes its sole motion
+controller through this host; settings and failed factories retain the original
+ordered reads and graph tag, byte offset and raw operation name diagnostics.
+
+The complete unchanged original motion host matches C++ for 38,600,350 output
+bytes (SHA256
+`743116c333287a3037c3911eba366147d27827867337b669146ea73643861d0a`).
+The comparison covers all 8,305 stock registrations, 5,453 direct commands, 385
+controller commands and 59 ordered loader fixtures. Of the stock nodes, 8,234
+are supported and 71 retain the original unsupported condition registration.
+The original panic-only padded/raw spelling mismatches for eight operation
+families are excluded from returned-error constructor fixtures; nonpanic
+unsupported spellings remain compared. Actual missing physical producers retain
+their original errors.
+
+The whole original animation actor, complete motion host, stock clips and
+matrices match for 12 streams, 5,780 commands and 58,304,148 output bytes (SHA256
+`33e13f976f6e1d25be9f8c08adf681c544b947646feb11d451ee29a1a6230049`).
+All preceding 5,500 commands remain verbatim. The 280 additional commands
+construct fresh real actors, reach all new callbacks, remove individual
+physical publications, preserve failed-tick state and test recovery on the same
+owner and through reconstruction. The three original actor regression corpora
+also pass unchanged: scheduler 15,232,081 bytes, live feedback 31,140,715 bytes
+and push/gesture/shove interactions 48,319,438 bytes.
+
+Each comparison compiles a proposed clean checkout containing committed
+dependencies and exactly the 21 new or updated production sources. Completed
+physical publications are explicit caller inputs; their upstream producers, the
+full shared physical frame and complete gameplay sessions remain separate work.
+This commit does not switch the playable game's Rust backend.

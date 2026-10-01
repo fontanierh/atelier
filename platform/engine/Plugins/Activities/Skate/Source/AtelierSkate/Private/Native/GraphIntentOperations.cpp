@@ -50,13 +50,22 @@ bool CompileActionIntentOperations(const Graph& source,const GraphBinding& bindi
     for (const auto& operation : binding.operations)
     {
         assert(operation.element < source.elements.size());
-        const GraphAttributes a(source.elements[operation.element].attributes);
-        const auto name = a.Text("name"); if (!name) { error = "operation has no name attribute"; return false; }
+        const auto& element = source.elements[operation.element];
+        const GraphAttributes a(element.attributes);
+        const auto failed_factory = [&]
+        {
+            const auto kind = operation.kind == GraphOperationKind::Behavior ? "behaviour" :
+                operation.kind == GraphOperationKind::Condition ? "condition" : "hook";
+            error = "Graph "+element.tag+" at byte "+std::to_string(element.source_offset)+": "+
+                kind+" `"+operation.name+"`: "+error;
+            return false;
+        };
+        const auto name = a.Text("name"); if (!name) { error = "operation has no name attribute"; return failed_factory(); }
         ActionIntentOperation out; out.source_kind = operation.kind; out.name = std::string(*name); out.config = ParseActionIntentParameter(a);
         using K = ActionIntentOperation::Kind;
         if (operation.kind == GraphOperationKind::Condition)
         {
-            if (!ParseGraphCondition(a,false,out.condition,error)) return false;
+            if (!ParseGraphCondition(a,false,out.condition,error)) return failed_factory();
             BindGraphConditionTarget(source,binding,operation,out.condition);
             if (out.condition.kind != GraphCondition::Kind::Unsupported) out.kind = K::Condition;
         }
@@ -70,7 +79,7 @@ bool CompileActionIntentOperations(const Graph& source,const GraphBinding& bindi
             else if (*name == "BodyFlippingSignal") out.kind = K::BodyFlippingSignal;
             else if (*name == "PrintText2D") { out.kind = K::PrintText; out.presentation_text = a.Text("text").value_or(""); }
             else if (*name == "CreateTrickIntentFromGesture")
-            {out.kind=K::CreateTrickFromGesture;if (!ParseGestureGroup(a.Text("group").value_or("Square"),out.gesture_group,error)) return false;out.gesture_override=Text(a,"override");}
+            {out.kind=K::CreateTrickFromGesture;if (!ParseGestureGroup(a.Text("group").value_or("Square"),out.gesture_group,error)) return failed_factory();out.gesture_override=Text(a,"override");}
         }
         for (auto element : operation.parameters) out.parameters.push_back(ParseActionIntentParameter(GraphAttributes(source.elements[element].attributes)));
         result.push_back(std::move(out));
