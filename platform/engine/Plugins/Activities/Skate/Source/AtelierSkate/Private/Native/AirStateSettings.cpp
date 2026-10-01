@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "AirStateSettings.h"
+#include "StockSettingsReader.h"
 #include <cstring>
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -12,22 +13,18 @@ float Float(std::uint32_t word) {float value;std::memcpy(&value,&word,4);return 
 std::int32_t Signed(std::uint32_t word) {std::int32_t value;std::memcpy(&value,&word,4);return value;}
 Vec4 Vector(std::array<std::uint32_t,4> words) {Vec4 value;for (std::size_t i=0;i<4;++i) value[i]=Float(words[i]);return value;}
 bool Scalar(const SettingsDatabase& data,std::string_view category,std::string_view key,std::string_view name,float& value,std::string& error)
-{
-    const auto field=data.Field(category,key,name);const auto identity=std::string(category)+"/"+std::string(key)+"/"+std::string(name);
-    if (!field) {error="Missing stock field "+identity;return false;}
-    const auto f=field->Float();if (!f) {error="Expected finite stock float "+identity;return false;}value=*f;return true;
-}
+{return StockSettingsReader(data).Float(category,key,name,value,error);}
 }
 bool AirStateSettings::Load(const SettingsDatabase& data,std::string& error)
 {
-    AirStateSettings value;const auto field=data.Field("physics_airstates","default","BodySpinInputFilter");const std::uint32_t* words=nullptr;
-    if (!field||!field->Words(16,words)) {error="Missing physics_airstates/default/BodySpinInputFilter";return false;}
+    AirStateSettings value;std::vector<std::uint32_t> words;
+    if (!StockSettingsReader(data).Words("physics_airstates","default","BodySpinInputFilter",16,words,error)) return false;
     for (std::size_t i=0;i<8;++i) {value.state.body_spin_over_time_320.x[i]=Float(words[i]);value.state.body_spin_over_time_320.y[i]=Float(words[i+8]);}
+    constexpr std::array<std::string_view,5> names{"easy","normal","hardcore","motorized","test"};
+    for (std::size_t i=0;i<names.size();++i) if (!Scalar(data,"physics_mode",names[i],"GrindLockDist",value.grind_lock_distance[i],error)) return false;
     if (!Scalar(data,"physics_airstates","default","SpeedToAlignToGround_PhysAir",value.state.landing_normal_blend_388,error)||
         !Scalar(data,"physics_airstates","default","MaxSpinSpeed",value.state.body_spin_scale_428,error)||
         !Scalar(data,"physics_airstates","default","DontAlignAnglePhysicsAir",value.state.landing_normal_angle_limit_444,error)) return false;
-    constexpr std::array<std::string_view,5> names{"easy","normal","hardcore","motorized","test"};
-    for (std::size_t i=0;i<names.size();++i) if (!Scalar(data,"physics_mode",names[i],"GrindLockDist",value.grind_lock_distance[i],error)) return false;
     if (!Scalar(data,"physics_steering","default","SteeringTiltBlending",value.steering_blend,error)) return false;
     *this=std::move(value);error.clear();return true;
 }

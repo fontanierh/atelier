@@ -187,7 +187,7 @@ def provenance(output):
 def build_native(output):
  live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
  if snapshot.exists():shutil.rmtree(snapshot)
- snapshot.mkdir();units=('NativeMath','NameId','Settings','AirMath','AirState','AirStateSettings')
+ snapshot.mkdir();units=('NativeMath','NameId','Settings','StockSettingsReader','AirMath','AirState','AirStateSettings')
  for p in list(live.glob('*.h'))+[live/(name+'.cpp') for name in units]:shutil.copyfile(p,snapshot/p.name)
  shutil.copyfile(PLUGIN/'Tests/Native/air_state_probe.cpp',snapshot/'air_state_probe.cpp');report={p.name:digest(p) for p in sorted(snapshot.iterdir())};(output/'native-source-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
  binary=output/'air-state-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(unit+'.cpp')) for unit in units],str(snapshot/'air_state_probe.cpp'),'-o',str(binary)],check=True);return binary

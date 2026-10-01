@@ -269,6 +269,13 @@ parity, and the additional native guard is not claimed as an original error.
 
 ## Native trajectory selection and grind input
 
+`Tests/check_air_settings_parity.py` separately verifies the complete original
+air-settings loader. All 115 fixtures match, including 112 failures, 45 ordered
+compound failures, retained destinations, repeated loads and successful recovery
+(SHA-256 `5d3ab6b36bed0374db54a179f39ce065a804dab4c7da56c6465bdffeff64a000`).
+The 16-word graph preserves the original raw-word reader semantics. The existing
+1,012-record air-state numerical regression remains unchanged at 340,920 bytes.
+
 `AirTrajectoryLaunch.*`, `AirTrajectoryGrind.*`, `AirTrajectoryScoring.*` and
 `AirTrajectorySelector.*` preserve launch candidates, collision ranking, grind
 target acquisition, repeat selection and retained pending batches. The focused
