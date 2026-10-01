@@ -94,22 +94,21 @@ airship drone and wind, the ambience) and the 1080p MP4. Both docstrings give th
 
 ## Seam
 
-Where the park meets the air station's footbridge, the gate's rock used to end in a drop to the pit
-the left-out hills had covered, and the island's forest floor showed through as a hole. The park
-keeps that piece of them (`placement.SEAM`): the earth hillside between the rock and the old road
-and the concrete wall that held it above the road (three render parts of one source model), and
-the 333 collision triangles of their section that lie on them (`seam_mask`, within 25 cm of the
-render surface). The park's own frame and transform leave the seam out, so the park stays where it
-was.
+Where the park meets the air station's footbridge, the gate's rock ends in a drop that the
+source's surrounding hills cover. The island keeps that piece of those hills (`placement.SEAM`):
+the earth hillside between the rock and the source's road and the concrete wall that holds it
+above the road (three render parts of one source model), and the 333 collision triangles of their
+section that lie on them (`seam_mask`, within 25 cm of the render surface). The park's frame and
+transform leave the seam out, so the seam does not move the park.
 
 - **Skirt.** Wherever the hillside stops in the air, a skirt of its own earth or concrete hangs
-  45 m under the edge and faces outward, so no edge shows the void from any side
+  45 m under the edge and faces outward, so the edges show no void from outside
   (`placement.seam_skirt`, 33 edges). Edges shared with the park or the rest of the seam, and
   walls' tops, get none. The skirt is in the seam's render and collision meshes.
 - **Terrain.** The terrain stamp counts the seam as part of the footprint: under it the ground
   stays below its lowest surface within one terrain cell, so the hillside
   meets the island ground along its edges. The eased skirt round the park still starts from the
-  park's own rim, so the ground past the seam, the air station's pad and the footpath are unchanged.
+  park's own rim, so the seam does not move the ground past it, the air station's pad or the footpath.
 - **Plants.** `plants.seam()` plants the hillside by the ledge rules (forest on the earth, shrubs at
   the wall's foot) and lays rocks where the earth meets the concrete. Where the hillside meets the
   station's clearing, `forest.py` grows a denser undergrowth of ochre bushes, red shrub maples,
