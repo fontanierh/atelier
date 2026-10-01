@@ -163,6 +163,17 @@ separate integration check; standalone tests alone do not establish engine compa
 
 ## Native physical skeleton
 
+The combined adjusted-skeleton comparison passes 235 histories and 1,584 physical ticks,
+preserving 40,966,297 exact words (SHA256
+`070b76c7a6ccf6f9173e61717ae25753f44da1e27bc695e8a0c55fad06e1a696`).
+It evaluates the actual authored hierarchy, board offset, landing/COM adjustments, world
+foot queries, every FootIK stage, live target drives, shared body solve and post-physics
+setters. Terrain replacements, retained resets, external target events, grind-air pose
+adjustment, two-bone reach boundaries and malformed owner/ancestor cases are included.
+Gameplay scalar/flag requests, external IK target events, selected grind targets and engine
+triangles remain explicit upstream inputs. The full skeleton lifecycle dispatcher and
+complete gameplay/render scheduling are separate checks.
+
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
 plus the source bank identity. Size, rotation and translation are derived without decimal conversion.
 Lookup preserves ASCII case-insensitivity; native loading validates bounds and retains the current package
