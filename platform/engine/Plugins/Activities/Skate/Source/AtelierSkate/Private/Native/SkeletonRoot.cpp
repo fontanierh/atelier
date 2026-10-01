@@ -79,10 +79,37 @@ void SkeletonRootFrames::Update(Mat4 physical_board,Vec4 board_velocity,float ti
     }
     auto remove_board_translation=SkeletonIdentity;
     for(std::size_t i=0;i<4;++i)remove_board_translation[3][i]=-animation_board[3][i];
-    const auto local=ComposeSkeletonAffine(heading_alignment,remove_board_translation);
+    auto local=ComposeSkeletonAffine(heading_alignment,remove_board_translation);
+    // The original root update inlines removal of the authored board offset.
+    // Its translation uses negative parent operands in the fused chain. Keep
+    // that operand order here too: negating the child in a separate affine
+    // call changes the sign of propagated NaNs after a degenerate air frame.
+    for(std::size_t lane=0;lane<4;++lane)
+    {
+        const float x=std::fma(-heading_alignment[0][lane],animation_board[3][0],heading_alignment[3][lane]);
+        const float y=std::fma(-heading_alignment[1][lane],animation_board[3][1],x);
+        local[3][lane]=std::fma(-heading_alignment[2][lane],animation_board[3][2],y);
+    }
     animation_to_board=ComposeSkeletonAffine(reckoning_frame,local);
     auto world_translation=SkeletonIdentity;world_translation[3]=predicted_board_position;
-    animation_to_world=OrthonormalizeSkeletonFrame(ComposeSkeletonAffine(world_translation,animation_to_board));
+    auto world=ComposeSkeletonAffine(world_translation,animation_to_board);
+    // The original inlined identity placement replaces each unit-axis FMA
+    // with a child-first add while retaining the zero-axis FMAs. This order
+    // also matters when both the prediction and local translation are NaNs.
+    const auto& t=animation_to_board[3];
+    world[3][0]=std::fma(0.0f,t[2],std::fma(0.0f,t[1],t[0]+predicted_board_position[0]));
+    world[3][1]=std::fma(0.0f,t[2],t[1]+std::fma(t[0],0.0f,predicted_board_position[1]));
+    world[3][2]=t[2]+std::fma(0.0f,t[1],std::fma(t[0],0.0f,predicted_board_position[2]));
+    world[3][3]=std::fma(0.0f,t[2],std::fma(0.0f,t[1],std::fma(t[0],0.0f,predicted_board_position[3])));
+    animation_to_world=OrthonormalizeSkeletonFrame(world);
     world_to_animation=InverseSkeletonRigid(animation_to_world);
+    // The source inlines the inverse translation as a basis-first vector
+    // chain, Z then Y then X. Preserve both its order and NaN operands.
+    for(std::size_t lane=0;lane<4;++lane)
+    {
+        const float z=world_to_animation[2][lane]*(0.0f-animation_to_world[3][2]);
+        const float y=std::fma(world_to_animation[1][lane],0.0f-animation_to_world[3][1],z);
+        world_to_animation[3][lane]=std::fma(world_to_animation[0][lane],0.0f-animation_to_world[3][0],y);
+    }
 }
 }

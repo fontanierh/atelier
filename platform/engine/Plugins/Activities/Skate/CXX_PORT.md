@@ -953,3 +953,38 @@ Ground jobs, placement, controller requests and completed animation motion are
 explicit upstream inputs here. World contact production, feet, possession,
 skeleton updates and complete off-board frame scheduling require their separate
 connected comparisons; this test does not establish whole-session parity.
+
+## Handplant, plant skeleton and airborne skeleton owners
+
+`Handplant` now runs the original coping investigation, entry, trajectories,
+rotation, time-warp curves, retained hand IK and complete update lifecycle.
+`PlantSkeleton` and `SkeletonAirRuntime` borrow the actual physical board,
+animated skeleton, FootIK, skeleton input, drives and root records. They retain
+source publication order, selective resets, outgoing queries and partial
+mutations on errors; no substitute pose, hit or force result is supplied.
+
+The numeric comparison passes 48 streams and 8,668 commands, preserving
+8,923,620 exact bytes. The connected lifecycle comparison passes 29 streams
+and 6,724 commands, preserving 162,479,680 exact bytes (SHA256
+`4822720137f3b3e516ca7d256080178c18e076a76f469d0ec783e090759cfe95`).
+Its 25 preceding streams remain identical. Four additional worlds with actual
+surface and mesh metadata produce 16 genuine coping launches, 16 entries and
+384 following updates. Success and failure counts are distinct: 48 successful
+limb anchors, 48 successful COM anchors and eight actual short-pose FootIK
+failures with the original earlier writes and retained downstream records.
+
+A separate plant/air comparison passes seven streams and 6,081 commands,
+preserving 147,410,396 exact bytes (SHA256
+`d9061f31ded9ebff114cd7e0abb38e25de9c61113655e2f37850f62ce2dd499f`).
+It covers all 24 limb anchors and COM, fast/slow board blending, actual
+AnimatedAir/KnownAir, 11 ordered loader fixtures and 36 partial IK failures.
+The original lifecycle itself produces a degenerate airborne frame. Three
+scoped root-update operand-order corrections reproduce its exact NaN signs;
+the unchanged 1,735-stream finite root regression still preserves 4,304,114
+words. Comparisons never canonicalize NaNs or apply numeric tolerances.
+
+Authored geometry, explicit processed inputs and the caller's pose requests
+remain upstream boundaries. Global state selection, full shared-solve scheduling
+and complete gameplay sessions still require their connected verification.
+Independent reference cases retain source order and constructors and each use
+an identified-process 2 GiB guard within the root's shared render slot.
