@@ -1176,3 +1176,15 @@ manifest pins every relative path, byte size and SHA-256; its SHA-256 is
 the normal runtime. Bundle integrity and layout checks pass for all payloads.
 Committing this prepared package does not switch the playable backend or claim
 complete gameplay/session equivalence; those comparisons remain in progress.
+
+### Native diagnostic string formatting
+
+The native formatter preserves the pinned Rust 1.97.1 string Debug output,
+including Unicode 17 printable/combining tables and escaping. The independent
+actual standard-library comparison passes all 1,112,064 valid Unicode scalars
+and 5,329 multiscalar commands: 21,012,097 exact output bytes (SHA-256
+`18ef853b565ae1b971d85b5c401f9c3659d9e7e989a454c7eefeea18852b70ed`).
+The source tables retain their MIT notice and source identities. Invalid UTF-8
+has no Rust string equivalent; 426 separately scoped native checks verify its
+rejection and output retention. Session error formatting uses this helper;
+complete Session construction and gameplay still require their own comparison.
