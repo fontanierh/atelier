@@ -421,6 +421,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
+- Physical skeleton settings bindings: 221 cases preserve 607,825 exact words from the original
+  stock body, collision, feedback, joint and drive loaders. Tests cover all authored hats, closest
+  mapped ancestors through 24/48-bone hierarchies, cached mass/history and eight diagnostic asset
+  variants. C++ reads only native settings/physical-skeleton banks. Live rig evaluation and solve
+  scheduling remain separate integration steps.
 - Physical skeleton bodies: 3,164 cases and 9,340,512 exact words cover definition/mass construction,
   hats, all four inertia modes, pose mapping, animation/physical COM history and 128 persistent 26-body
   programs with actual integration. The corpus includes 88 original volume errors and 64 mapping-bounds
