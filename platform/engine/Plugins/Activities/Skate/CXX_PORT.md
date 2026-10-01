@@ -359,6 +359,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   retained failure state. Six malformed settings fixtures preserve the original error text. The
   complete unchanged host packet owner is the oracle; its inactive external providers remain inactive.
   Whole actor scheduling and concrete physical publication remain separate integration checks.
+- Skeleton board wobble: 128 histories and 10,136 commands preserve 285,577 exact words for
+  all four stock/configured curves, takeoff/landing selection, expiry, retriggering, teleport resets
+  and packed board pose updates. Teleport reset retains cached curve selection exactly. The complete
+  unchanged core implementation is compared; current board poses and trigger calls are supplied
+  upstream inputs, and the complete player output schedule remains separate.
 - Action host, conditions and production slide logic: 8,512 subsystem commands, 3,072 live controller
   ticks, 3,072 bound-condition frames and authored action parameters preserve 2,979,481 output bytes.
   All 12 host fixtures have distinct traces; oracle coverage requires actual state transitions,
