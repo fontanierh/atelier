@@ -35,12 +35,17 @@ forest, the park build and the review tool all read it. It is pure NumPy.
   within 20 m; around it the natural relief is offset to the park's edge height and eases back
   over a skirt that widens with the height it makes up (35 to 220 m). Trees are cleared from the
   footprint (`hidamari/layout.py`).
-- The forest round it is the detailed kind the skater gets close to (`megapark/forest.py`): the
-  north forest's low-poly crowns become the island's leaf-card maples, ginkgos, broadleaves, pines
-  and cedars within 70 m of the footprint, fewer and fewer out to 140 m, and new trees fill in
-  thickest at the park's edge, thinning to the forest's own density by 70 m so no ring shows from
-  afar. `city.json` lists the area as `near_trees`, so `AJapanWorld` gives those trees shadows,
-  collision and the camera fade instead of treating them as distant backdrop.
+- The forest round it is the detailed kind the skater gets close to (`megapark/forest.py`), and
+  closed like the Sunburst paintovers of the park (`assets/megapark/concepts/improve-*`): the north
+  forest's low-poly crowns become the island's leaf-card maples, ginkgos, pines and cedars within
+  220 m of the footprint, which takes in the hills the park is seen from, fewer and fewer out to
+  320 m. New detailed trees fill that band to a touching canopy in clumps of one family (dark
+  conifers above red maples and yellow ginkgos), with a few glades, and bushes and grass grow
+  between the trunks at the park's edge. Beyond it the island's opaque crowns close the gaps out to
+  850 m, over the north forest's thinned slopes and the far western hills, up to the forest line.
+  The ground under the canopy is dark forest floor, fading into the island's own ground by 650 m
+  (`hidamari/mountains.py`). `city.json` lists the area as `near_trees`, so `AJapanWorld` gives the
+  detailed trees shadows, collision and the camera fade instead of treating them as distant backdrop.
 - `world.megapark` writes `megapark/park.json`, staged into `Content/Data`: the actor transform,
   the kept meshes at their native origins, the grind paths and the upper deck start.
   `ASuperUltraMegaPark::Spawn` (called by `AJapanWorld`) builds the park from it, using the meshes
@@ -50,6 +55,13 @@ forest, the park build and the review tool all read it. It is pure NumPy.
 the same way as the standalone review below, then captures it in the game's own look: from the air,
 from its deck, from the hills around it, and at eye height from the lake, the woodland air station,
 the mini-mega ramp, the temple, the foothills and the plaza (whose volcano view it must not touch).
+
+`python games/yorimichi/scenarios/megapark_tour.py plan` prints the camera path of the park's
+presentation film and its clearance from the park, the ground and the tree crowns;
+`film <label>` shoots it in a guarded game (`--preview` for a quick 960x540 pass) and `cut <label>`
+makes `build/yorimichi/megapark/tour/<label>.mp4`: over the west hills, through the canopy, the
+roll-in and the drop, the canyon, the snake bowl, the bowls, the 寄り道 letters and an aerial
+pull-back toward the volcano.
 
 ## Restyle
 
@@ -61,19 +73,28 @@ island's look instead of the original desert campus. Concepts painted with Sunbu
   build leaves those render parts out, and `world/regions/megapark/plants.py` turns each original
   plant (card groups joined by kind) into one of the island's own detailed trees or bushes at its
   foot: pines, cedars and broadleaves on the rock rims, painted maples and ginkgos in the groves
-  and canyons, the tree house's tall canopy trees for any 12 m or taller, bushes for the shrubs,
-  sized to the original. None are the far forest's painted-card `_lo` trees. `ASuperUltraMegaPark::Spawn` plants them
-  as instanced meshes with the island's see-through fade and no collision, so the skate world
+  and canyons, big conifers and broadleaves for any 12 m or taller, ochre bushes and small red
+  maples for the shrubs, sized to the original. The park's own rock, earth and grass are planted
+  too, as in the paintovers: shrubs and red shrub-sized maples on the ledges and at the foot of the
+  walls, small trees on the rims, forest on the earth hillsides and the grass. The rock is ridden, so those plants keep 6 m (trees) or 1.4 m (shrubs) from
+  any built surface, 5 m from the roll-in below the deck start and 2 m from every grind path; the
+  original cacti and shrubs on the roll-in itself are left out. None
+  are the far forest's painted-card `_lo` trees. `ASuperUltraMegaPark::Spawn` plants them as
+  instanced meshes with the island's see-through fade and no collision, so the skate world
   snapshot never sees them.
 - **Textures.** `tools/megapark_textures.py paint` repaints the five big natural surfaces (rock,
   smooth rock, cut stone, earth, grass) as Sunburst edits of the originals in the concept's style,
-  so they keep their layout on the park's UVs, and paints the posters, a wave cloth and a maple
-  and waves crest for the signs (`assets/megapark/restyle/`, prompts in each provenance file).
-  `finish` (the `world.megapark_restyle` step) makes the surfaces seamless at the island palette's
-  mean colour, recolours the teal and sky-blue paint, banners and decals to indigo, ochre and moss
-  exactly (layout and alpha untouched), fits the paintings to the old billboards, shark logos and
-  lettering, and writes `build/yorimichi/megapark/textures/`. Concrete, wood and metal stay as
-  they were.
+  so they keep their layout on the park's UVs, and paints the two billboard skate graphics (a
+  samurai over the canyon, an oni on the snake bowl's boards), a wave cloth and a maple and waves
+  crest for the signs (`assets/megapark/restyle/`, prompts in each provenance file).
+  `finish` (the `world.megapark_restyle` step) makes the surfaces seamless at a dark grey-violet
+  rock and olive grass, regrades the rock decals and the macro overlay to match, recolours the
+  teal and sky-blue paint, banners and decals to indigo, ochre and moss exactly (layout and alpha
+  untouched), fits the paintings to the old billboards, shark logos and lettering, and writes
+  `build/yorimichi/megapark/textures/`. Concrete, wood and metal stay as they were.
+- **Moss.** The rock and cut stone materials grow moss where they face up, in patches broken by
+  two world-space noises, as on the paintovers' ledges; the walls stay bare
+  (`import_megapark.py`, `MOSSY`).
 - **Light.** The park material is lit by the island's sun, sky and Lumen like the terrain around
   it, matte with a little of the original specular. The baked irradiance stays only as ambient
   occlusion: each material divides it by its lightmap page's sunlit level (the 95th percentile,

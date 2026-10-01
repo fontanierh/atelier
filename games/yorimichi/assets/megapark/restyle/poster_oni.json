@@ -1,0 +1,33 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Image 1 shows the colours of a stylised game set on a Japanese volcanic island in autumn. Paint a bold, edgy skateboard graphic in the spirit of 1980s skate deck art crossed with Japanese woodblock prints, to be printed on a big billboard in a rugged skate park: thick black ink outlines, flat screen-printed colour in a limited palette of black, bone white, vermilion, indigo and ochre, halftone dots, slightly misregistered and distressed print texture. Flat and straight-on, filling the whole frame edge to edge: no frame, no perspective, no lettering or text of any kind. The image: a grinning red oni demon with wild white hair, two horns and a tiger-skin loincloth bombing down the slope of an erupting volcano on a skateboard, crouched low with one clawed hand out, lava and black smoke behind it, torn maple leaves whipping past.",
+  "references": {
+    "build/yorimichi/megapark/restyle/style.png": "c28c71c95f91f0eacb156aaf85a7ad3150b783701d99e3111d20d964926e3fa2"
+  },
+  "purpose": "Mega Park restyle texture",
+  "status": "done",
+  "started_at": "2026-10-01T00:58:59.993636+00:00",
+  "usage": {
+    "input_tokens": 779,
+    "input_tokens_details": {
+      "image_tokens": 576,
+      "text_tokens": 203
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2151
+  },
+  "png_sha256": "246c387b4cae9833f5721afcd6d69e8631b9f56aa80202452d54df005093c3c7",
+  "output": {
+    "file": "poster_oni.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-01T00:59:37.600385+00:00"
+}

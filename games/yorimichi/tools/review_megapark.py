@@ -20,11 +20,12 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker',action='store_true',help=argparse.SUPPRESS)
 parser.add_argument('--port',type=int,default=8839)
 parser.add_argument('--island',action='store_true',help='review the park placed in the island')
+parser.add_argument('--shots',default='',help='comma-separated shot names to take (default: all); the ride always runs')
 args=parser.parse_args()
 live.URL=f'http://127.0.0.1:{args.port}'
 ctx=Context('yorimichi'); root=yori.REPO; out=yori.OUT/('megapark/island-review' if args.island else 'megapark/play-review'); out.mkdir(parents=True,exist_ok=True)
 if not args.worker:
- sys.exit(guarded.run([sys.executable,str(Path(__file__).resolve()),'--worker','--port',str(args.port)]+(['--island'] if args.island else []),out/'guard',timeout=600 if args.island else 240,purpose='Super Ultra Mega Park review',kind='game'))
+ sys.exit(guarded.run([sys.executable,str(Path(__file__).resolve()),'--worker','--port',str(args.port)]+(['--island'] if args.island else [])+(['--shots',args.shots] if args.shots else []),out/'guard',timeout=600 if args.island else 240,purpose='Super Ultra Mega Park review',kind='game'))
 def to_ue(native):
  """Native (x, y up, z) metres -> Unreal cm where the park is being reviewed."""
  if args.island:return placement.to_unreal(native).tolist()
@@ -42,6 +43,7 @@ if args.island:
  SHOTS=[('overview',island(-560,1120,280),island(-130,1320,105),65.),
         ('overview_east',island(260,1480,300),island(-150,1300,100),65.),
         ('overview_south',island(-120,800,300),island(-150,1300,100),65.),
+        ('top',island(-140,1299,720),island(-140,1300,100),62.),
         ('deck_volcano',deck,summit,70.),
         ('deck_northwest',deck,island(-900,2150,20),70.),
         ('deck_ridge',deck,island(-700,1230,60),70.),
@@ -55,6 +57,7 @@ if args.island:
         ('temple_park',eye('temple'),park,45.),
         ('foothills_park',eye('foothills'),park,45.),
         ('plaza_volcano',eye('plaza'),summit,70.)]
+if args.shots:SHOTS=[s for s in SHOTS if s[0] in args.shots.split(',')]
 (out/'passed.json').unlink(missing_ok=True)
 log=(out/'game.log').open('w')
 cmd=[str(ctx.unreal_app),str(ctx.uproject),'/Game/Japan/Maps/Slice' if args.island else '/Game/MegaPark/Maps/SuperUltraMegaPark','-game','-windowed','-resx=1600','-resy=1000','-nosplash','-stdout',f'-liveport={args.port}','-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost','-preferencesfile='+str(out/'settings.txt')]+([] if args.island else ['-set=painterly=0;toon=0;outline=0;wind=0;exposure=0;saturation=1'])+['-ExecCmds=t.MaxFPS 60,r.RHISetGPUCaptureOptions 0,DisableAllScreenMessages']

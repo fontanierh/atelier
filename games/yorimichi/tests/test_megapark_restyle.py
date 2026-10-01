@@ -13,10 +13,10 @@ from megapark import forest, placement, plants, sign  # noqa: E402
 
 class PlantTests(unittest.TestCase):
     def test_every_plant_becomes_one_island_tree(self):
-        trees = plants.trees()
-        self.assertEqual(sum(map(len, trees.values())), len(plants.plants()))
+        trees = plants.replacements()
+        self.assertTrue(0 < len(plants.plants()) - sum(map(len, trees.values())) < 12)   # those on the roll-in go
         self.assertGreater(len(plants.plants()), 300)
-        self.assertEqual(trees, plants.trees())
+        self.assertEqual(trees, plants.replacements())
         self.assertLessEqual(set(trees), set(plants.MESHES))
         smallest = min(r[0] for _, r in plants.CHOICES.values()) * .92
         largest = max(r[1] for _, r in plants.CHOICES.values()) * 1.08
@@ -36,10 +36,22 @@ class PlantTests(unittest.TestCase):
 
     def test_park_trees_are_the_detailed_kind(self):
         trees = plants.trees()
-        self.assertFalse([name for name in trees if name.endswith('_lo')])
-        tall = sum(p['kind'] in ('longtree', 'poplar') and p['height'] >= plants.TALL for p in plants.plants())
-        canopy = sum(len(v) for k, v in trees.items() if k.startswith('Tree_Canopy'))
-        self.assertTrue(.7 * tall < canopy <= tall, (canopy, tall))
+        self.assertFalse([name for name in trees if name.endswith('_lo') or name.startswith('Tree_Canopy')])
+
+    def test_ledge_plants_grow_on_rock_and_soil_clear_of_the_built_park_and_the_lines(self):
+        ledges = plants.ledges()
+        def shrub(name, scale):     # a small maple or pine is a shrub (plants.SHRUB_SCALE)
+            return not name.startswith('Tree') or scale <= plants.SHRUB_SCALE.get(name, (0, 0))[1] + 1e-3
+        kinds = [shrub(name, row[4]) for name, rows in ledges.items() for row in rows]
+        self.assertGreater(kinds.count(False), 200); self.assertGreater(kinds.count(True), 1000)
+        _, built = plants._surfaces()
+        for name, rows in ledges.items():
+            for row in rows[::7]:
+                small = shrub(name, row[4])
+                q = np.array(row[:3]); q[1] += .15 if small else plants.SINK
+                clear = plants.BUILT_CLEAR[1 if small else 0]
+                self.assertGreater(np.linalg.norm(built - q, axis=1).min(), clear - .01, (name, q))
+                self.assertFalse(plants._ridden(q, 0.), (name, q))
 
 
 class ForestTests(unittest.TestCase):
@@ -65,11 +77,20 @@ class ForestTests(unittest.TestCase):
         far = lambda x, y: np.full(np.shape(x), 1e3)
         forest.grow(instances, flat, far)
         left = np.array(instances['HD_NorthTreeRust'])[:, :2]
+        original = np.array([tuple(q) in {tuple(r[:2]) for r in rows} for q in left.tolist()])
         d = forest.distance(left[:, 0], left[:, 1])
-        self.assertTrue((d >= forest.NEAR).all())
-        self.assertEqual(int((d >= forest.FAR).sum()), int((self.d[off] >= forest.FAR).sum()))
-        added = {k: np.array(v) for k, v in instances.items() if k != 'HD_NorthTreeRust'}
+        self.assertTrue((d[original] >= forest.NEAR).all())
+        self.assertEqual(int((d[original] >= forest.FAR).sum()), int((self.d[off] >= forest.FAR).sum()))
+        # Beyond the detailed band, opaque crowns close the canopy in the gaps, out to OUTER.
+        crowns = np.concatenate([left[~original]] + [np.array(v)[:, :2] for k, v in instances.items()
+                                                     if k.startswith('HD_NorthTree') and k != 'HD_NorthTreeRust'])
+        self.assertGreater(len(crowns), 0)
+        dc = forest.distance(crowns[:, 0], crowns[:, 1])
+        self.assertTrue(((dc > forest.NEAR + 30) & (dc < forest.OUTER)).all())
+        added = {k: np.array(v) for k, v in instances.items() if k.startswith('Tree')}
         self.assertLessEqual(set(added), set(forest.HEIGHT))
+        under = {k for k in instances if not k.startswith(('Tree', 'HD_NorthTree'))}
+        self.assertLessEqual(under, {n for n, _ in forest.BUSHES} | {'Grass_A', 'Grass_B'})
         new = np.concatenate(list(added.values()))
         self.assertTrue((forest.distance(new[:, 0], new[:, 1]) > forest.CLEAR).all())
         self.assertGreater(len(new), int((self.d[off] < forest.NEAR).sum()))

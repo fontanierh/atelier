@@ -33,6 +33,9 @@ WORK = yori.OUT / 'megapark' / 'restyle'
 OUT = yori.OUT / 'megapark' / 'textures'
 CONCEPT = SOURCE / 'concepts' / 'restyle-west.jpg'
 STYLE_CROP = (700, 330, 1536, 800)      # the concept's rocks, moss, grass and trees
+# The rocks follow the later paintover of the park seen while riding (concepts/improve-riding): its rock close up.
+ROCK_CONCEPT = SOURCE / 'concepts' / 'improve-riding.jpg'
+ROCK_CROP = (0, 330, 820, 1024)
 SIZE = '1024x1024'
 
 SURFACE = ('Image 1 is a tileable texture from a skate park in a stylised game. Image 2 shows the art direction of the '
@@ -43,6 +46,14 @@ SURFACE = ('Image 1 is a tileable texture from a skate park in a stylised game. 
            'gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese '
            'animated film, soft strokes that still read as the real material, medium detail that holds up when '
            'repeated. The surface: ')
+# The billboard's picture is edgier: a skate graphic rather than a painting.
+GRAPHIC = ('Image 1 shows the colours of a stylised game set on a Japanese volcanic island in autumn. Paint a bold, '
+           'edgy skateboard graphic in the spirit of 1980s skate deck art crossed with Japanese woodblock prints, to '
+           'be printed on a big billboard in a rugged skate park: thick black ink outlines, flat screen-printed colour '
+           'in a limited palette of black, bone white, vermilion, indigo and ochre, halftone dots, slightly '
+           'misregistered and distressed print texture. Flat and straight-on, filling the whole frame edge to edge: '
+           'no frame, no perspective, no lettering or text of any kind. The image: ')
+GRAPHICS = ('poster_oni', 'poster_samurai')
 PICTURE = ('Image 1 shows the art direction of a stylised game set on a Japanese volcanic island in autumn: soft '
            'painterly shapes, flat matte colour, warm light. Paint a flat straight-on image in that style, filling the '
            'whole frame edge to edge, to be printed on a sign in a skate park: no frame, no perspective, no shadows, '
@@ -50,27 +61,31 @@ PICTURE = ('Image 1 shows the art direction of a stylised game set on a Japanese
 
 # slug: (original texture, description, the island palette's mean sRGB colour it is brought to)
 SURFACES = {
-    'rock': ('0x2c70170a001d0133', 'rugged layered volcanic andesite rock like Mount Myogi, horizontal strata and '
-             'blocky fractures, cool lavender-grey with darker slate in the cracks, soft green moss and a few '
-             'yellow-green lichen patches on the ledges', (118, 114, 126)),
-    'rock_smooth': ('0x2c70170a001d0135', 'smooth weathered volcanic rock, rounded water-worn faces with fine '
-                    'cracks, cool grey with a faint lavender tint and thin streaks of green moss', (128, 125, 132)),
+    'rock': ('0x2c70170a001d0133', 'rugged layered volcanic rock like Mount Myogi, crisp horizontal strata and '
+             'blocky joints, pale lavender-grey granite speckled with small faceted strokes of lilac, blue-grey and '
+             'warm grey, a few small yellow-green lichen spots, clean and bright rather than dark or mottled',
+             (117, 114, 120)),
+    'rock_smooth': ('0x2c70170a001d0135', 'smooth weathered volcanic rock, rounded faces with a few fine cracks, pale '
+                    'lavender-grey granite speckled with small faceted strokes of lilac, blue-grey and warm grey, a '
+                    'few small yellow-green lichen spots, clean and bright rather than dark or mottled',
+                    (122, 118, 124)),
     'stone_cut': ('0x2c70170a001d014f', 'split grey andesite stone with fine cracks and chisel marks, pale '
-                  'blue-grey with slight warm specks and a little moss in the deepest cracks', (142, 140, 140)),
+                  'blue-grey with slight warm specks and a little moss in the deepest cracks', (114, 112, 110)),
     'earth': ('0x2c70170a001d00aa', 'dark forest earth and fine grey volcanic gravel, scattered small pebbles, a '
               'few fallen maple and ginkgo leaves in rust, orange and gold, small moss patches', (92, 86, 80)),
     'grass': ('0x2c70170a00040094', 'short soft green grass seen from above with a few fallen autumn leaves in '
-              'rust, orange and gold, slightly uneven, like the island hillsides', (82, 102, 62)),
+              'rust, orange and gold, slightly uneven, like the island hillsides', (94, 92, 54)),
 }
 # slug: (size, description)
 PICTURES = {
-    'poster_volcano': ('1536x1024', 'a travel poster of the island: a snow-capped volcano above hills of autumn '
-                       'forest in rust, orange and gold, a winding road and a small skate park carved into grey '
-                       'rocks in the foreground, clear blue sky with one soft cloud'),
-    'poster_festival': ('1536x1024', 'an autumn night festival by a small harbour: rows of glowing red and cream paper '
-                        'lanterns, a few fireworks over the dark blue bay, wooden stalls under the lanterns'),
     'poster_noodles': ('1536x1024', 'a noodle stall poster: a steaming bowl of ramen with a soft egg, green onion '
                        'and a maple leaf on the rim, indigo noren curtain behind, warm cream background'),
+    'poster_oni': ('1536x1024', 'a grinning red oni demon with wild white hair, two horns and a tiger-skin '
+                   'loincloth bombing down the slope of an erupting volcano on a skateboard, crouched low with one '
+                   'clawed hand out, lava and black smoke behind it, torn maple leaves whipping past'),
+    'poster_samurai': ('1536x1024', 'a skeleton samurai in battered lacquered armour launching a huge frontside air '
+                       'out of a concrete bowl, grabbing the board, a giant curling wave and the snow-capped volcano '
+                       'behind him, maple leaves torn into the wind'),
     'waves': ('1024x1024', 'hand-dyed deep indigo cotton cloth covered edge to edge with a regular pattern of white '
               'overlapping wave arcs (seigaiha), the pattern repeating seamlessly on all four sides'),
     'emblem': ('1024x1024', 'one round emblem in the style of a Japanese family crest, the circle touching the '
@@ -93,18 +108,22 @@ RECOLOUR = {
     # beige and pink stone: neutral warm grey
     **{t: ('grade', {'mean': (150, 147, 142), 'keep': .25}) for t in (
         '0x2c70170a001d015a', '0x2c70170a0004000a')},
-    # dry grass and dirt decals on the rock: moss green and dark earth, alpha untouched
-    '0x2c70170a001d00b0': ('grade', {'mean': (88, 100, 64), 'keep': .2}),
+    # the dirt-cliff decal over the earth hillsides and some rock: grey rock cliffs, like the paintovers; the dry grass
+    # and dirt decals at the foot of the rock: moss green and dark earth; alpha untouched
+    '0x2c70170a001d00b0': ('grade', {'mean': (128, 124, 130), 'keep': .2}),
     '0x2c70170a002f0b10': ('grade', {'mean': (86, 102, 62), 'keep': .2}),
     '0x2c70170a001d0128': ('grade', {'mean': (86, 102, 62), 'keep': .2}),
     '0x2c70170a001d0137': ('grade', {'mean': (84, 80, 78), 'keep': .2}),
     # the white light towers: dark weathered iron
     '0x2c70170a001d016a': ('grade', {'mean': (70, 64, 60), 'keep': .1}),
+    # the mountain grunge overlay multiplied over all the earth and rock: its olive blotches made them a dark mottled
+    # green; now a faint, neutral variation
+    '0x2c70170a001d01e1': ('grade', {'mean': (236, 234, 240), 'keep': 0., 'contrast': .45}),
 }
 # original texture -> how a painting replaces it
 SIGNS = {
-    '0x2c70170a001d0183': ('poster_volcano', 'fit'),        # the beer billboard
-    '0x2c70170a001d0178': ('poster_festival', 'fit'),       # the bar ad
+    '0x2c70170a001d0183': ('poster_samurai', 'fit'),        # the beer billboard
+    '0x2c70170a001d0178': ('poster_oni', 'fit'),            # the bar ad
     '0x2c70170a001d0179': ('poster_noodles', 'fit'),        # the student-union ad
     '0x2c70170a001d01bc': ('waves', 'fit'),                 # the championship banner
     '0x2c70170a001d016c': ('emblem', 'banner'),             # the blue shark signs
@@ -136,13 +155,23 @@ def style_reference():
     return path
 
 
+def rock_reference():
+    """The paintover's rock close up, which the rocks are styled on."""
+    from PIL import Image
+    path = WORK / 'style-rock.png'
+    if not path.exists():
+        WORK.mkdir(parents=True, exist_ok=True)
+        Image.open(ROCK_CONCEPT).convert('RGB').crop(ROCK_CROP).save(path)
+    return path
+
+
 def job(slug):
     """(prompt, size, reference images) of one painting."""
     if slug in SURFACES:
         tid, text, _ = SURFACES[slug]
-        return SURFACE + text + '.', SIZE, [original(tid), style_reference()]
+        return SURFACE + text + '.', SIZE, [original(tid), rock_reference() if slug.startswith('rock') else style_reference()]
     size, text = PICTURES[slug]
-    return PICTURE + text + '.', size, [style_reference()]
+    return (GRAPHIC if slug in GRAPHICS else PICTURE) + text + '.', size, [style_reference()]
 
 
 def paint(only, dry):
@@ -252,6 +281,7 @@ def recolour(a, how, params):
         want = lin(np.asarray(params['mean'], float) / 255)
         weight = a[..., 3] if a[..., 3].min() < .99 else np.ones_like(l)
         mean_l = (l * weight).sum() / max(weight.sum(), 1e-6)
+        l = mean_l + (l - mean_l) * params.get('contrast', 1.)
         graded = srgb(l[..., None] / max(mean_l, 1e-4) * want)
         rgb = graded * (1 - params['keep']) + rgb * params['keep']
     return np.concatenate([rgb, a[..., 3:]], -1)

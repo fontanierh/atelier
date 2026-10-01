@@ -141,6 +141,12 @@ def mesh(base_sampler):
     colors=green*(1-forest[...,None])+rock*forest[...,None]
     apron=smooth((y-500)/190)
     colors=np.array((.24,.30,.12))*(1-apron[...,None])+colors*apron[...,None]
+    # Round the Mega Park the ground under the closed canopy is forest floor, leaf litter and moss (megapark/forest.py).
+    from megapark import forest as megapark_forest
+    under=megapark_forest.floor(x,y)*(1-smooth((z-205)/30))
+    litter=noise(x,y,40,41)
+    floor=np.stack([.066+.018*litter,.062+.014*litter,np.full_like(x,.026)],axis=-1)
+    colors=colors*(1-under[...,None])+floor*under[...,None]
     radius=np.hypot(x-550,y-1930)
     # Snow collects in broken, tapering gullies instead of long uniform ribbons.
     # Preserve a continuous crown, then expose irregular rock islands downslope.

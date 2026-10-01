@@ -15,6 +15,9 @@ OUT = yori.OUT / 'megapark'
 SOURCE = yori.ASSETS / 'megapark'
 RESTYLE = OUT / 'textures'
 ROOT = '/Game/MegaPark'
+# The rock and stone textures (tools/megapark_textures.py SURFACES rock, rock_smooth, stone_cut): their materials grow
+# moss where they face up.
+MOSSY = {'0x2c70170a001d0133', '0x2c70170a001d0135', '0x2c70170a001d014f'}
 LEVEL = ROOT + '/Maps/SuperUltraMegaPark'
 E = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
@@ -115,7 +118,23 @@ def material(alpha, defaults):
                        {'L': (samples['Lightmap'], 'RGB'), 'Norm': (scalar('LightmapNorm', 3.), ''),
                         'Strength': (scalar('LightmapOcclusion', .45), ''), 'HasLightmap': (scalar('HasLightmap', 0.), '')},
                        unreal.CustomMaterialOutputType.CMOT_FLOAT1)
-    colour = custom('return B*Albedo;', {'B': (base, ''), 'Albedo': (scalar('Albedo', 1.), '')})
+    # Moss and lichen on the rock where it faces up (the paintover concepts/improve-riding): in patches, and within them
+    # in the texture's dark cracks, with a little on the faces between. World-space normal and position, so it follows
+    # the placed park, not the UVs. Moss is 0 everywhere but the rock.
+    moss = custom('float3 C=B*Albedo; float l=dot(B,float3(.2126,.7152,.0722));'
+                  'float up=saturate((N.z-.6)/.3);'
+                  'float a=sin(W.x*.0131+sin(W.y*.0107)*2.3)*sin(W.y*.0119+sin(W.x*.0083)*1.9);'
+                  'float b=sin(W.x*.047+W.z*.031+sin(W.y*.043)*1.7)*sin(W.y*.051-W.z*.027);'
+                  'float c=sin(W.x*.11+sin(W.y*.093)*1.4)*sin(W.y*.12+W.z*.07+sin(W.x*.081)*1.2);'
+                  'float patch=saturate((up*(.55+.45*a+.25*b)-.5)*3.);'
+                  'float crack=saturate((.17-l)*10.);'
+                  'float m=patch*saturate(crack*1.3+.2*(.5+.5*c))*Moss;'
+                  'float3 G=lerp(float3(.035,.05,.014),float3(.075,.095,.026),saturate(.5+.5*c));'
+                  'return lerp(C,G*(.75+.5*saturate(l*3.)),m);',
+                  {'B': (base, ''), 'Albedo': (scalar('Albedo', 1.), ''), 'Moss': (scalar('Moss', 0.), ''),
+                   'N': (node(unreal.MaterialExpressionVertexNormalWS), ''),
+                   'W': (node(unreal.MaterialExpressionWorldPosition), '')})
+    colour = moss
     # Matte like the terrain; the original specular map keeps a little sheen on polished concrete and metal.
     specular = custom('return S*SpecularScale;', {'S': (samples['Specular'], 'R'), 'SpecularScale': (scalar('SpecularScale', .35), '')},
                       unreal.CustomMaterialOutputType.CMOT_FLOAT1)
@@ -178,7 +197,8 @@ def materials(report):
                    'MacroOpacity': number('macroOverlayOpacity', 0.) if 'macrooverlay' in channels else 0.,
                    'UseDecal': float('decal' in channels), 'HasLightmap': float('lightmap' in channels),
                    'HasTransparent': float('transparent' in channels),
-                   'LightmapNorm': restyle['lightmaps'].get(channels.get('lightmap'), 3.)}
+                   'LightmapNorm': restyle['lightmaps'].get(channels.get('lightmap'), 3.),
+                   'Moss': float(channels.get('diffuse') in MOSSY)}
         for k, v in scalars.items(): MEL.set_material_instance_scalar_parameter_value(mi, k, v)
         MEL.update_material_instance(mi); E.save_loaded_asset(mi); result[key] = mi
     return result

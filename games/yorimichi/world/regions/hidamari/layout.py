@@ -436,11 +436,11 @@ def generate():
                     blocked=True;break
             if not blocked:kept.append(item)
         inst[name]=kept
-    from hidamari.forest_backdrop import append as append_forest_backdrop
+    from hidamari.forest_backdrop import append as append_forest_backdrop,ground as backdrop_ground
     forest_backdrop=append_forest_backdrop(inst,buildings,height,backdrop_grid,terrain_axes,north_height,ROAD_X,ROAD_Y)
-    # Round the Mega Park the forest is the detailed autumn kind, as the skater gets close to it there.
+    # Round the Mega Park the forest is the detailed autumn kind, as the skater gets close to it there, closed beyond.
     from megapark import forest as megapark_forest
-    megapark_forest.grow(inst,north_height,mountains.trail_distance)
+    megapark_forest.grow(inst,lambda x,y:backdrop_ground(np.asarray(x,float),np.asarray(y,float),height,backdrop_grid,terrain_axes,north_height),mountains.trail_distance)
     from zeppelin.layout import clear as clear_air_station
     clear_air_station(inst,city=True)
     # The Mega Park's own ground, rock and ramps replace the forest on its footprint.
