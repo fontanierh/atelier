@@ -174,6 +174,26 @@ Gameplay scalar/flag requests, external IK target events, selected grind targets
 triangles remain explicit upstream inputs. The full skeleton lifecycle dispatcher and
 complete gameplay/render scheduling are separate checks.
 
+## Native trajectory collision query
+
+`AirTrajectoryQuery.*` preserves the complete original trajectory segment walk,
+contact time/frame calculation, position/velocity/apex evaluation and nearby-face normal
+averaging. Its world adapter uses the real authored triangle broadphase, rounded line
+query and full separating-axis triangle/AABB test, retaining authored tie order and
+the first 64 nearby triangles. `AirTrajectoryRuntime::Query` exposes the same result
+to the selector and plant callers; no completed hit is synthesized.
+
+The focused comparison passes 797 cases and 31,294 exact words (SHA256
+`c627d761767f649fe83aeb0ac8747e6bf950a6ff2045b508ea6392056846f793`).
+It observes 406 line and 60 nearby callbacks, 145 trajectory contacts, 147 misses,
+127 direct line hits and 22 failures. Caller outputs remain intact on producer errors.
+The original complete core source and host world adapter remain byte-identical.
+Selection, scoring, grind admission and full gameplay scheduling remain separate checks.
+Original nonadvancing query walks can hang; those inputs are excluded from valid-domain
+parity, and the additional native guard is not claimed as an original error.
+
+## Native physical skeleton data
+
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
 plus the source bank identity. Size, rotation and translation are derived without decimal conversion.
 Lookup preserves ASCII case-insensitivity; native loading validates bounds and retains the current package
