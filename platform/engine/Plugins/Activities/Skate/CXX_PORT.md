@@ -185,6 +185,26 @@ replacements and teleport resets retain the original histories. Attribute/action
 processed gameplay requests and engine triangles are explicit upstream inputs; complete
 session and Ground lifecycle dispatch remain separate checks.
 
+## Native airborne reckoning and spin
+
+`AirReckoning.*`, `BodySpin.*` and `BodyFlip.*` preserve the complete original
+host settings/update/plant/scale/field adapter and core reckoning, derivative
+ring, spin acceleration, flip gates and angle limiter. They borrow the actual
+canonical RidingOutputs filters, frame matrices and 44-word body-spin history.
+Spin scaling keeps the stock curves and acceleration cache, including the
+current 1.6 preference.
+
+`Tests/check_air_reckoning_parity.py` passes 43 histories and 5,324 operations
+against whole unchanged original source from `46513a6`: **11,991,500 exact
+bytes**, SHA-256 `4347eba49b7c9e48fede91bf0b48f16f1d375dc2f712064ada0dc77d89e79b21`.
+It covers all five modes, additive/direct priority, all eight optional flip
+attribute combinations, retained fourth filter lanes, 84 stock-cache scale
+changes, 108 selective resets, 48 invalid-mode failures, eight original caught
+history-index panics, ten settings errors and one successful inherited mode
+field. The filters retain the chosen Vec4 even though orientation stores XYZ.
+Processed animation and trajectory fields remain explicit upstream inputs;
+the complete air-state and player-frame schedule is not claimed by this check.
+
 ## Native trajectory collision query
 
 `AirTrajectoryQuery.*` preserves the complete original trajectory segment walk,
