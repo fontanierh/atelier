@@ -396,6 +396,30 @@ An additional 12,068,608-byte complete-stock session agrees exactly with the
 focused scoring bank in both implementations. Every scoring record and parent
 is retained unchanged when unrelated classes are omitted for repeated setup.
 
+## Native filtered state and landing quality
+
+`FilteredState.*` preserves the eight filtered categories, all selected-state
+branches, wrapping delay counters and cached grind metadata. Nongrind output
+clears the published grind fields while preserving the cached grind owner.
+`GrindFilteredOutput.h` holds the same declaration used by the grind runtime;
+its extraction is checked byte-for-byte, including reconstruction of the
+previous filtered-state header.
+
+`LandingQuality.*` reads the two original four-point curves and preserves
+landing classification, twist/side-speed response, all fourth lanes and the
+valid-data latch. Nonlanding core updates retain every output field. The host
+adapter's separate reset/publication order remains an integration check.
+
+The unchanged original core and stock-loader comparison passes 29 retained
+histories, 4,104 commands and 26 loader fixtures with 1,067,780 exact output
+bytes. Coverage includes all eight categories, all four landing kinds, 21
+distinct cached grind names, six curve variants, signed counter rollover,
+classification thresholds, degenerate vectors, exceptional float words and
+ordered loader errors. The original 28 histories and all 4,056 commands remain
+an exact input prefix; the final history adds genuinely distinct grind names.
+Completed physical inputs are explicit at this boundary. Actual selected-state
+Fill, physical/animation publication and the full frame are separate checks.
+
 ## Native physical skeleton data
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
