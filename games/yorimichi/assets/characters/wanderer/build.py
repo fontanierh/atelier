@@ -145,7 +145,7 @@ def main():
                 bpy.ops.export_scene.fbx(filepath=str(folder/(name+'.fbx')),object_types={'ARMATURE'},bake_anim=True,**common)
         if arm.animation_data: arm.animation_data.action=active
     # Store reference images inside the native file as images, so the model remains reviewable.
-    for name in ('design-sheet','motion-sheet','skate-sheet'):
+    for name in ('design-sheet','motion-sheet'):
         im=bpy.data.images.load(str(HERE/'references'/(name+'.png')))
         im.pack()
     sc.frame_start,sc.frame_end=1,241

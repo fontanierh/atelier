@@ -5,6 +5,6 @@ role = "npc"
 rig = "wanderer-34"                   # an older compact rig, not the humanoid contract
 build = "build.py"
 build_args = ["--animations", "--export", "--no-render"]
-references = ["references/design-sheet.png", "references/motion-sheet.png", "references/skate-sheet.png"]
+references = ["references/design-sheet.png", "references/motion-sheet.png"]
 unreal_path = "/Game/Wanderer/V2"
 licence = "own"

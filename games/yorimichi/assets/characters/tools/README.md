@@ -1,9 +1,9 @@
 # Character authoring tools
 
-The tools that made Yorimichi's characters: pose authoring on the rig, clip builders, the sword and skate sets, the
+The tools that made Yorimichi's characters: pose authoring on the rig, clip builders, the sword set, the
 Mixamo retarget, the fox hunter's pose language and checks, the Tripo rig and finger steps, the outfit body swap, and
 reference concepts. They are the prototype's tools moved as they were (Blender scripts unless noted); the docs that
-explain them are in [../../../docs](../../../docs) (ANIMATION_PRINCIPLES, SKATE, SWORD_COMBAT, MIXAMO_WORKFLOW,
+explain them are in [../../../docs](../../../docs) (ANIMATION_PRINCIPLES, SWORD_COMBAT, MIXAMO_WORKFLOW,
 FOX_HUNTER_ANIMATION, TRIPO_P2_ASSET_WORKFLOW, BODY_SWAP_GUIDE, H3_ANIMATION_REFERENCE_WORKFLOW).
 
 ## The revision history lives in the archive

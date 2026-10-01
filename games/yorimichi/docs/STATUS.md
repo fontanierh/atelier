@@ -29,8 +29,8 @@ Ways to get around besides walking: a playable [sailboat](sailboat/README.md) an
 [zeppelin](../world/regions/zeppelin/README.md) between the woodland, Hidamari and the Mega Park. Ambient life: leaves, gulls and
 villagers.
 
-**Player: Cairo**, revision `game-r17`. Assets are in
-`output/imagegen/yorimichi-yellow-boy-2026-09-12/`.
+**Player: Cairo**, revision `game-r18`, in [assets/characters/cairo](../assets/characters/cairo); earlier revisions
+are in the prototype archive under `output/imagegen/yorimichi-yellow-boy-2026-09-12/`.
 
 - Outfit: the Tripo skate outfit, a yellow tee and cargo trousers ([body swap guide](docs/WARM_ORIGINAL_BODY_SWAP_GUIDE.md)).
 - Movement: walk, run (Sprint at 0.8×), sprint with stamina rings, double jump, ground and air dash, chained
@@ -42,9 +42,10 @@ villagers.
 - Combat feedback: slash trails, sparks, flashes, hit-stop, slow motion on parries, camera shake, dust, the fox
   burning away into embers, combat sounds and a countryside ambience
   ([docs/COMBAT_FEEDBACK.md](docs/COMBAT_FEEDBACK.md)). `games/yorimichi/tools/film_fight.sh` films a scripted fight.
-- Skateboarding (game-r17): skate.-style controls with Flick-It on the right stick or the mouse, fourteen flip and
+- Skateboarding: skate.-style controls with Flick-It on the right stick or the mouse, fourteen flip and
   shove tricks with nollie and fakie versions, spins, grabs, manuals, grinds and slides, powerslides, vert, bails and
-  board sounds; B (or Triangle / Y) to get on ([docs/SKATE.md](docs/SKATE.md)).
+  board sounds; B (or Triangle / Y) to get on ([docs/SKATE.md](docs/SKATE.md)). The skating runtime solves the
+  rider and its pose is retargeted onto Cairo every frame; Cairo has no skate clips of its own.
 - Imported but not used in play: Climb, Glide and the Turn clips.
 - The class and launch name `cape_boy` / `ACairoCharacter` is historical and loads Cairo.
 

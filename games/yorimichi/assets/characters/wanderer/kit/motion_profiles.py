@@ -1,4 +1,4 @@
-"""Shared accessory tuning for foot locomotion and skate animation baking."""
+"""Shared accessory tuning for foot locomotion baking."""
 
 CAPE_BOY={
     'hood':dict(kind='flap',stiffness=150,damping=10,gain=.022,limit=(-.04,.40)),

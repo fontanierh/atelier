@@ -190,8 +190,7 @@ def main(args):
             object_types={'ARMATURE','MESH'},bake_anim=False,**common)
         arm.data.pose_position = 'POSE'
     clips = {}
-    # Skating poses come from the recovered runtime, never the legacy authored clips.
-    roles = [r for r in record['roles'] if not r['role'].startswith('Skate')]
+    roles = record['roles']
     by_action = {}
     for role in roles:
         by_action.setdefault(role['clip'],role['role'])
