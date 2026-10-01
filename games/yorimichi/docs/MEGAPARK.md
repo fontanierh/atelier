@@ -85,6 +85,13 @@ pull-back toward the volcano.
   the road deck. The line runs Woodland, Hidamari, Mega Park. At any station, before boarding, the
   passenger can pick another stop with the flight speed buttons.
 
+`scenarios/megapark_access_film.py` films the way in, inside a running game: Cairo boards at
+Hidamari, the ship flies to the Mega Park stop at 2x, he runs down the station stairs and over the
+footbridge, then skates the park road (Kickflip, 360 Flip, Powerslide), drops off the upper deck
+into a BS Grab about 11 m over the pool's north-west quarter, and takes that quarter again with a
+Kickflip. `scenarios/megapark_access_film_mix.py` builds its soundtrack (game sounds, a synthesized
+airship drone and wind, the ambience) and the 1080p MP4. Both docstrings give the commands.
+
 ## Restyle
 
 In the island the park keeps every ridden surface, rail and collision triangle, and wears the
