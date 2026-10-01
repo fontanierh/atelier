@@ -18,7 +18,7 @@ rigs, animation, the world, the code) came from prompts, scripts and review loop
 - **a whole island** built by scripts: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake,
   a skate pier, a zeppelin line, and **204,000 plants** placed by a generator;
 - **a fox-masked hunter** that notices you, stalks, claws, gets parried and falls;
-- **skateboarding** with skate.-style flick controls: 14 tricks, manuals, grinds, slides, vert;
+- **native C++ skateboarding** with skate.-style flick controls, manuals, grinds, powerslides, pumping and vert;
 - **635 sounds** cut and levelled automatically, footsteps by surface, hit-stop and sparks;
 - **play on your phone**, or stream to a handheld or a friend's laptop.
 
@@ -27,7 +27,7 @@ builds the whole game in 11 minutes (35 steps, [verified](docs/MIGRATION.md)).
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/media/skate.gif" alt="Kicker indy grab and a push across the skate pier"><br><sub><b>Skateboarding.</b> Flick the right stick (or the mouse) like in skate.: ollies, kickflips, grabs, 360 flips, grinds. The skating runtime solves the rider and its pose is retargeted onto Cairo every frame.</sub></td>
+    <td width="50%"><img src="docs/media/skate.gif" alt="Kicker indy grab and a push across the skate pier"><br><sub><b>Skateboarding.</b> Flick the right stick (or the mouse) like in skate.: ollies, kickflips, grabs, 360 flips, grinds. The native C++ runtime solves the board and rider, and retargets its animation onto Cairo every frame.</sub></td>
     <td width="50%"><img src="docs/media/fight.gif" alt="A parry with a spark flash, a counter, then a charged strike on the fox hunter"><br><sub><b>Sword fighting.</b> Parry windows, counters, charged strikes, hit-stop, camera shake, knock-downs. A scripted duel checks every fight mechanic after each change.</sub></td>
   </tr>
   <tr>
@@ -35,6 +35,53 @@ builds the whole game in 11 minutes (35 steps, [verified](docs/MIGRATION.md)).
     <td width="50%"><img src="docs/media/phone-map.jpg" alt="The painted world map on the phone page, with numbered places to travel to"><br><sub><b>Play on your phone.</b> The real game runs on your Mac and streams to Safari: touch controls, a painted world map, travel, settings.</sub></td>
   </tr>
 </table>
+
+## Native skating
+
+The [Skate plugin](platform/engine/Plugins/Activities/Skate/README.md) runs one C++ `GameplaySession` inside Unreal.
+It simulates the deck, trucks, wheels and physical rider together: contacts and constraints, steering and pushes,
+Flick-It gestures, manuals and powerslides, rail selection and grinds, pumping, airs, landings and bails. Animation
+graphs, procedural pose adjustments, trick scoring and the skating camera run in the same session.
+
+It is a C++ port of the recovered Skate 3 implementation from
+[2010-rust-rewrite-mashup/skate](https://github.com/chasmlol/2010-rust-rewrite-mashup/tree/7842b9e70e9aac22ed176b655dd63302618ee023/skate),
+which originated in [SK8-ENGINE's skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine).
+The game supplies nearby static collision, registered rails,
+controls, meshes, sounds and HUD. Cairo keeps his own skeleton and proportions: the retargeter fits the solved
+animation to him, follows the solved board parts and keeps his skinned surface above the ground during bails.
+Running onto the board preserves position and speed; vert assistance sends straight airs back into transition,
+with a separate input for transferring over the coping.
+
+All required [skating data](games/yorimichi/assets/skate/README.md) is tracked in
+[`Content/Data/SkateNative`](games/yorimichi/unreal/Content/Data/SkateNative): 3,334 native payloads, including
+3,324 animation clips, 131,642 frames and 285 gesture patterns, plus settings, skeletons, graphs and camera data.
+The build checks the bundle's manifest and hashes before compiling the C++ module. Normal builds need no Rust
+toolchain, extracted game, conversion step or separate worker executable.
+
+In Yorimichi, **Triangle / Y** (keyboard **B**) mounts or steps off, and **D-pad Down** interacts on foot.
+Flick the right stick or hold the left mouse button and flick for tricks; **C** holds a powerslide.
+For pumping, hold a trigger (**Q/E**) to compress high on the descent, then release through the bottom curve to
+extend. Triggers grab in the air; **Shift** or left-stick forward requests a transfer. Full controls, tuning and
+the park guide are in [Skateboarding](games/yorimichi/docs/SKATE.md).
+
+After [building Yorimichi](#build-yorimichi), verify the data, play fullscreen and run the live checks:
+
+```sh
+uv run atelier build yorimichi skate.runtime       # verify the committed native bundle
+uv run atelier play yorimichi --profile desktop-1440
+# From another terminal, with the game running:
+uv run atelier qa yorimichi skate_runtime          # controls, animation, mounting, bails and both stances
+uv run atelier qa yorimichi skatepark              # roll-ins, handrail and bowl re-entry
+uv run atelier qa yorimichi skate_performance      # real-time frame pacing through six activities
+```
+
+[Exact float-bit comparisons](platform/engine/Plugins/Activities/Skate/CXX_PORT.md) check the native data and runtime
+against the independent recovered implementation, including the current vert and transfer behavior. The editor
+build passed all 19 live gameplay checks, seven park checks and six performance activities at about 60 fps.
+These results cover the recorded scenarios. Collision currently uses static snapshots and one default surface
+material; original-console equivalence and cooked builds are outside the validated scope. The
+[native port notes](platform/engine/Plugins/Activities/Skate/NATIVE_PORT.md) describe those boundaries and how
+another game connects its character, movement, animation and camera to the module.
 
 ## From an idea to a playable character
 
@@ -263,7 +310,8 @@ uv run atelier build yorimichi          # world, characters, sounds, effects, co
 uv run atelier play yorimichi           # 1080p window; --profile desktop for the 1440p desktop look
 ```
 
-Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/`, both safe to delete.
+Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/`. When clearing Content, preserve
+the tracked `Content/Data/SkateNative` bundle; it is source data for the skating module.
 `atelier build yorimichi --list` shows every step; name one to run just it (and what it needs).
 
 ## What's inside
@@ -272,6 +320,7 @@ Generated files go to `build/yorimichi/` and the game's ignored `unreal/Content/
 |---|---|---|
 | The `atelier` command | [platform/studio](platform/studio/atelier) | new, doctor, fetch, build, play, stream, live, qa, lint; AI helpers for Tripo, Sunburst, H3 and Seedance; review sheets; machine safety (one heavy job at a time, optionally a small one beside it, a memory guard) |
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance), effects, skateboarding, streaming, the live bridge |
+| Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board/rider physics, Flick-It, animation, tricks, camera; tracked native data and differential checks |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
 | Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate/Kimodo experiments, headless generation, original/counterpart comparisons, custom prompts, GLB/GIF export; shared platform runners |
@@ -313,9 +362,13 @@ Paid AI calls (Sunburst, Tripo, H3, Seedance) never run as part of a build. They
 
 ## Licences of what is in this repository
 
-The code and the assets made for these games (layouts, generated meshes, the characters' source files, AI-generated
-concepts and textures) are the author's. Third-party material is not redistributed here:
+The project-authored code and assets (layouts, generated meshes, the characters' source files, AI-generated
+concepts and textures) are the author's. Third-party sources and data are identified below:
 
+- **Skating**: the native C++ module ports the recovered implementation, with its
+  [source licence](platform/engine/Plugins/Activities/Skate/ThirdParty/skate-core-LICENSE) retained. The tracked
+  native bundle contains converted EA Skate 3 animation and gameplay records; its
+  [provenance and contents](games/yorimichi/assets/skate/README.md) are documented separately.
 - **Sounds** come from the Sonniss GDC Game Audio Bundles. Their licence allows shipping them inside a game but not
   redistributing them as files, so `atelier fetch` downloads the masters from the public archive and the build slices
   them. The licence also forbids using them with AI tools.
