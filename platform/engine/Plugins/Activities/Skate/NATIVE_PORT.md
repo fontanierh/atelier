@@ -35,8 +35,9 @@ filesystem readers require loose NonUFS staging (`DirectoriesToAlwaysStageAsNonU
 Additional Non-Asset Directories to Copy); packaging the data solely inside a Pak is insufficient.
 
 The accepted `46513a6` full-Session proof observes actual controls, solver, state, pose, score, camera, markers
-and error prefixes. Latest-main `1536531` transfer/VertAssist behavior and the native Unreal adapter have their
-own pending acceptance checks. See [CXX_PORT.md](CXX_PORT.md) for the current proof evidence and boundaries.
+and error prefixes. Latest-main `1536531` transfer/VertAssist behavior also passes its complete Session and
+departure-helper comparisons. The native Unreal editor adapter passes compilation and live gameplay,
+park and frame-pacing checks. See [CXX_PORT.md](CXX_PORT.md) for the proof evidence and boundaries.
 Original-source/ZIP extraction, Rust compilation and one-time conversion are test-only migration tools; the
 normal build and offline native CLI builder do not depend on them.
 
@@ -52,8 +53,8 @@ Near-vertical departures canonicalize the contact normal to the wall plane befor
 trajectory selector. This removes the small floor-normal contribution that otherwise redirects a straight-up
 air across the coping onto the deck. Banks, descending motion and explicit forward-transfer input retain their
 original normals. `VertAssist` widens this band to lips short of vertical (down to about 50° at 1) and removes
-the speed such a lip throws towards the deck. The independent latest-main departure-kernel and full Session/quarter-pipe checks are pending acceptance;
-the original Rust unit tests remain historical reference evidence.
+the speed such a lip throws towards the deck. The independent latest-main comparison passes 23 full Session
+histories, 4,824 commands and 233 departure-helper cases; the original Rust unit tests remain historical reference evidence.
 
 The transfer intent (the selector's directional input) comes from the host's transfer button, bit 0x0800 of the
 step packet, instead of the right trigger (action 71), which still grabs. The bit is masked before the pad sample.
@@ -83,8 +84,9 @@ step packet, instead of the right trigger (action 71), which still grabs. The bi
 - Unreal keeps walking, mounting, world streaming, audio assets and the HUD. Native score/trick/state drive the
   existing HUD, and mode transitions trigger the host sounds; original audio and UI are not reproduced.
 - The native owner may preload banks and nearby collision before mounting and retain them across rides.
-  Preload timing, engine presentation, packaged loose-data loading and performance require native integration
-  validation; measurements of the removed worker are not native performance evidence.
+  Editor presentation and frame pacing pass the checks below. OS polling and asynchronous completion timing
+  remain outside numerical differential parity; packaged loose-data loading is unvalidated. Measurements
+  of the removed worker are not native performance evidence.
 
 `tools/check_skate_runtime.py` tests both stances through 480 native ticks each: support, push, ollie, landing,
 changing finite poses, teleport reset, deliberate bail/recovery and a sub-tick acknowledgement in the offline native QA transport. Additional
@@ -94,6 +96,19 @@ airs, an ollie through coping, a downhill roll-in, stair handrail grinds, and a 
 The in-game runtime scenario validates push/flip/landing, steering direction, manual entry/exit, rails, vert,
 bail/recovery, preserved bone lengths and head direction, keyboard-driven foot motion, stow/remount and goofy
 push/ollie, flat-ground rotation, powerslide input and running mounts.
+
+### Editor integration validation
+
+The actual native Unreal compilation passes all 419 actions. The native CLI command, flat-ground and
+exported-park checks pass. Live runtime checks pass 19/19 and park checks 7/7, including a bowl apex of
+5.10846 m and re-entry at park x=41.68899 m. All six real-time performance activities pass at
+59.7568–59.9965 fps; maximum p95 is 17.202 ms and p99 is 17.724 ms, with no frames over 33 ms or 50 ms
+and no repeated native simulation frames. A far teleport into the island's Mega Park refreshes collision and a
+six-second push travels 49.5369 m while retaining PhysicsGround without a new bail.
+
+These finite editor checks complement the recovered-source differential proofs. They do not establish
+original-console parity, every terrain/obstacle adapter or cooked/package loading. Static-only collision,
+default-material mapping and CPU-buffer limitations above remain unchanged.
 
 The pinned historical core's test suite reported 604 passes and one failure on Mac ARM64:
 `physics::board_world::broadphase_tests::predictive_contacts_and_retention_match_full_scan_for_every_primitive`.

@@ -15,10 +15,13 @@ a verification report under `build/yorimichi/skate-native/`. It does not compile
 Fresh checkouts need no asset extraction, conversion, Rust toolchain or external data cache for this step.
 
 The one-time [`assemble_native_package.py`](../../../../platform/engine/Plugins/Activities/Skate/Tools/assemble_native_package.py)
-and original-format data remain development migration/oracle inputs. Normal builds do not read them.
+uses original-format data restored from pinned historical Git into ignored build output for migration/oracle work.
+Original-format shipping files and the Rust worker are removed; normal builds do not read historical inputs.
 Project-authored optional clip overrides use their own configuration format.
 
 Component comparisons against the pinned original are recorded in the
 [C++ migration notes](../../../../platform/engine/Plugins/Activities/Skate/CXX_PORT.md).
-Complete gameplay/session equivalence and the Unreal hookup are still under validation; successful bundle
-verification checks data integrity, not gameplay equivalence.
+Complete baseline/latest-main Session comparisons and native Unreal editor compilation, live gameplay,
+park and frame-pacing checks pass. The descriptor is editor-validated within those finite recovered-source
+corpora; it does not claim original-console parity or cooked/package validation. Bundle verification checks
+data integrity independently of gameplay equivalence.

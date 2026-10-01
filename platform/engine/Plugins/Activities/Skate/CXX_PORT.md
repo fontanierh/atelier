@@ -1,10 +1,11 @@
 # C++ skating migration
 
-The required end state is one in-process C++ skating implementation using project-native data. All current
-physics, animation, gameplay and camera behavior must be preserved. The Rust worker and original data
-formats are migration references until the replacement has passed differential checks; they are removed
-from the final runtime and normal build. A partial controller, a Rust library behind C++, or recorded-pose
-playback does not satisfy this migration.
+The skating implementation is one in-process C++ runtime using project-native data. The recorded
+comparisons preserve recovered physics, animation, gameplay and camera behavior within their finite
+corpora. Native Unreal editor compilation, live scenarios and frame pacing also pass. The Rust worker
+and original-format shipping data are removed; independent references are restored from pinned Git
+history into ignored build output. This establishes equivalence to the recovered implementation within
+the recorded domains, not original-console parity or cooked/package validation.
 
 ## Verification contract
 
@@ -20,11 +21,12 @@ playback does not satisfy this migration.
   Validate the integrated game and frame pacing after replacing the worker.
 - Expected outputs come from the independent reference implementation, never from the new C++ code.
 
-The reference integration is `46513a6`, including the current 1.6 spin scale, collision-shape export and
+The baseline reference integration is `46513a6`, including the current 1.6 spin scale, collision-shape export and
 asynchronous collision refresh/preload changes. Data tracking is inherited from `02233f1`. Reference
 scenarios include the current 1.6 spin setting as well as the previous 2.15 regression cases.
-The migration branch also includes `68e384a`'s walking/skating camera easing. That change is entirely
-in the Unreal adapter; the worker source remains identical to the pinned reference.
+The native branch also includes `68e384a`'s walking/skating camera easing in the Unreal adapter and
+the separately pinned `1536531` transfer/VertAssist changes. Both baseline and latest-main Session
+comparisons retain their own unchanged historical reference source identities.
 
 ## Migration checklist
 
@@ -40,10 +42,11 @@ in the Unreal adapter; the worker source remains identical to the pinned referen
 - [x] Finish focused LandingOnDeck acceptance, including original constructor rejection and loaders.
 - [x] Finish physical wipeout acceptance, including release/recovery and loader failures.
 - [x] Compare the latest-main vert changes.
-- [ ] In-process Unreal ownership, background world refresh, mounting, retargeting and shutdown.
+- [x] In-process Unreal ownership, background world refresh, mounting, retargeting and shutdown.
 - [x] Commit the verified project-native data package.
 - [x] Remove Rust worker/build dependencies and original-format assets from the shipping checkout.
-- [ ] Complete latest-main comparisons, in-game scenarios, visual checks and frame-pacing checks; submit the PR.
+- [x] Complete latest-main comparisons, in-game scenarios, visual checks and frame-pacing checks.
+- [x] Submit the final PR: [#11](https://github.com/fontanierh/atelier/pull/11).
 
 ## Complete native session
 
@@ -92,8 +95,8 @@ matched replay after that coverage-only decoder repair, verifying unchanged sour
 snapshots, corpus, resources, probe templates and every raw output byte. No input,
 numerical source, completed producer or required witness was changed.
 
-OS polling, asynchronous world-builder timing, Unreal presentation
-and in-game performance remain separate integration checks.
+OS polling and asynchronous world-builder timing remain outside the numerical comparison.
+Unreal presentation and in-game performance pass their separate editor checks below.
 
 `Tests/build_native_session_cli.py` builds an offline QA transport directly from all
 native C++ sources and `Tests/Native/gameplay_session_cli.cpp`. It requires neither
@@ -108,8 +111,29 @@ midpoints, integer visitors, signed zero, all finite binary64 exponents and
 malformed values: 1,707,979 exact bytes, SHA256
 `3d2f04744d960cb3b30d2f37692b687c363ccfd44456173a87c348f0f3f872e8`.
 This helper handles numeric command conversion only; native assets use their
-binary readers. Unreal formatting and the typed adapter remain separate engine
-integration checks.
+binary readers. The typed Unreal adapter has its separate editor validation below;
+this numeric helper proof does not establish engine behavior by itself.
+
+## Native editor integration validation
+
+The actual native Unreal compilation passes all 419 actions. The existing offline native CLI command,
+flat-ground and exported-park checks also pass over the same `GameplaySession` used by Unreal.
+The live reports under `build/<game>/skateqa/` pass all 19 runtime checks and seven park checks, including
+mount/stow, both stances, tricks, manual/rail/vert behavior, bail/recovery, retargeted pose, camera and
+planted-foot stability. The live bowl reaches 5.10846 m and returns at park x=41.68899 m.
+
+All six real-time performance activities pass at 59.7568–59.9965 fps. Maximum p95 is 17.202 ms and
+p99 is 17.724 ms; no frames exceed 33 ms or 50 ms, and no native simulation frames repeat. These use normal
+wall-clock rendering, not fixed-step capture. A far teleport into the island's Mega Park refreshes the
+collision region; six seconds of actual push travels 49.5369 m, retaining PhysicsGround without a new bail.
+Its evidence is in `build/<game>/skate-cpp/native-unreal-qa/megapark.json` and `native-megapark.png`.
+
+These editor results complement the exact baseline/latest-main comparisons above. Every focused proof
+below retains its supplied-input boundaries and hashes. Static-only collision, default-material mapping,
+world-mesh CPU-buffer retention and visual proportion limits remain documented in [NATIVE_PORT.md](NATIVE_PORT.md).
+No cooked/package loading or original-console parity is claimed. Normal builds and runtime load only
+project-native data; Rust and original-format references remain historical test inputs.
+The post-removal gesture, name, graph-gesture and controller historical-oracle regressions also pass.
 
 ## Native camera data and runtime
 
@@ -129,7 +153,7 @@ package rejection are included.
 
 Completed physical and animation subject records, authored region membership, query gravity
 and moving obstacle records are explicit upstream inputs in this comparison. Complete Session
-scheduling passes its separate comparison above; Unreal camera presentation remains pending.
+scheduling passes its separate comparison above; Unreal camera presentation passes the editor scenarios above.
 Original inputs that hang
 or panic are excluded from valid-domain parity; additional native guards for those inputs are
 not claimed as matching original error behavior.
@@ -232,8 +256,8 @@ at the original point between mapped controller input and action-graph evaluatio
 
 Arithmetic source files disable implicit Clang FP contraction and use explicit fused operations where
 the reference does. The module disables unity compilation so internal helpers and FP settings remain
-isolated in the same translation units used by the standalone checks. Unreal compilation remains a
-separate integration check; standalone tests alone do not establish engine compatibility.
+isolated in the same translation units used by the standalone checks. The actual native Unreal editor
+compilation now passes; standalone tests alone do not establish engine compatibility.
 
 ## Native physical skeleton
 
@@ -301,7 +325,7 @@ This verifies the concrete ground owners. Handplant dispatch, trajectory
 Launch/Update continuation and later SkeletonAir capture are explicitly
 observed continuation boundaries in this focused proof. Processed gameplay flags, edge observations
 and authored world triangles are supplied inputs. GroundPhase and the complete frame exercise the
-connected dispatch; live Unreal validation remains pending.
+connected dispatch; separate live Unreal validation is recorded above.
 
 ## Native airborne reckoning and spin
 
@@ -556,7 +580,7 @@ including consumed request flags, signal hashing and retained matrix tails.
 The focused comparisons below retain their own supplied-input domains. A statement that a producer or
 schedule is outside a focused corpus is a proof boundary, not an implementation TODO. The accepted
 complete-frame and Session corpora exercise the same concrete owners together within their recorded
-world and input domains. Latest-main changes and Unreal validation remain pending.
+world and input domains. Latest-main comparisons and native Unreal editor validation pass as recorded above.
 
 `DeckAngularCorrections.*` applies axis/limited angular displacement and the original ground-body torque
 to the shared deck accumulator. It preserves both fixed-step divisions, the rounded inverse-inertia
@@ -906,7 +930,7 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   matrix's zero translation W lane is preserved. Real trajectory selection, air reckoning,
   skeleton/collision/wipeout producers and the active-host schedule are outside this state corpus,
   which records explicit completed service observations. The accepted complete frame invokes the
-  concrete air owners; focused physical wipeout acceptance remains pending.
+  concrete air owners; the accepted focused physical wipeout comparison is recorded below.
 - Physics animation input: 472 histories and 2,137 commands preserve 2,850,713 exact bytes
   through all 151 scalar names, actual rig bone events, trajectory-derived push speed, jump
   caches, five physics modes, selective reset and output publication. Thirteen malformed
@@ -919,8 +943,8 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   cooldown, contact and balance histories, and selective initialization/teleport/selection resets.
   Repeated requests, signed zero, NaNs and the strict upright threshold are covered. Two invalid
   reason indices require the original panic and explicit native abort. Complete collision/pose
-  wipeout checks are covered by their focused request comparison; physical Wipeout300 acceptance
-  remains pending. The complete-frame corpus does not exercise that physical state.
+  wipeout checks are covered by their focused request comparison; the accepted physical Wipeout300
+  comparison is recorded below. The complete-frame corpus does not exercise that physical state.
 - Ground entry/output helpers: 5,048 cases preserve 144,084 exact words for direct angular projection,
   speed seeding, landing tag 19, ordered future-deck force prediction and all output fields/conditional
   writes. Manual entry/removal observes every body read/projection/write, shared body-slot aliases,
@@ -1027,8 +1051,8 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   responses exactly. It reaches PhysicsAir, GrindFiftyFifty, GrindFiveO, GrindTipslide and Nonspecific in
   addition to flat-ground states. Inputs cover both stances and all three difficulty settings. A pumping
   input scenario is present. This historical repeatability corpus does not prove pumping energy
-  behavior; the native complete-frame/Session comparisons observe actual retained solver state. Live
-  pumping-energy and Unreal presentation checks remain pending.
+  behavior; the native complete-frame/Session comparisons observe actual retained solver state. The
+  separate native park and live pumping/presentation checks pass as summarized above.
 
 Generated reports and probe binaries live under `build/<game>/skate-cpp/`. Reproduce subsystem checks
 with `Tests/check_{gesture,name,settings,graph}_parity.py --assets ASSETS --output BUILD_DIRECTORY`, through
@@ -1041,17 +1065,18 @@ come from the frozen Git revision. The temporary probe adds only its own target 
 `Tests/check_animation_samples_parity.py` takes the same arguments and compares every original decoded sample
 against C++ reconstruction, including rig lookup and malformed-data checks. Generated native assets remain in
 the build directory during conversion; the final native package is tracked under `Content/Data/SkateNative`.
-The playable runtime switch and live validation remain pending.
+The playable runtime uses the in-process C++ backend and passes the editor validation above.
 
 `Tests/build_reference.py` extracts the pinned source directly from Git, builds it with its locked Cargo
 dependencies, and records the compiler, source hashes and executable hash. `Tests/session_parity.py` requires
 that provenance when recording. `repeat-reference` checks reference determinism; `compare` refuses to
-accept the reference executable as a C++ candidate. The current external worker protocol exposes each
+accept the reference executable as a C++ candidate. The historical external worker protocol exposes each
 packet's final pose. The accepted complete-frame and Session probes also observe retained solver
 state, graph execution and physical/animation publication without supplying their outputs.
 
 These focused comparisons are complemented by the accepted complete native frame and Session
-comparisons. The playable Unreal switch, latest-main changes and live validation remain pending. The final runtime will contain only the C++ backend.
+comparisons. The playable Unreal adapter now uses only the C++ backend; latest-main and live editor
+validation pass as recorded above.
 
 ## Native walking controller and settings
 
@@ -1301,8 +1326,8 @@ manifest pins every relative path, byte size and SHA-256; its SHA-256 is
 `Tools/assemble_native_package.py` is a one-time migration tool, independent of
 the normal runtime. Bundle integrity and layout checks pass for all payloads.
 The package is committed and its native gameplay frame and host Session
-comparisons pass as documented here. Switching the playable Unreal adapter and
-validating it in game remain separate acceptance steps.
+comparisons pass as documented here. The playable Unreal adapter loads this same package and passes
+the separate native editor validation above.
 
 ### Native diagnostic string formatting
 
@@ -1337,9 +1362,8 @@ states, stance changes, controller histories, tuning, travel and retained errors
 The fixture world is a flat floor with an empty grind provider. Rail admission,
 physical wipeout and climbing have focused connected checks. The grind result
 is recorded below; LandingOnDeck and physical wipeout acceptance are recorded at the end of this document.
-Host Session timing passes its comparison above. Live Unreal collision export
-and rendering remain separate acceptance steps. The playable adapter still uses
-the existing backend at this checkpoint.
+Host Session timing passes its comparison above. The playable adapter uses the native Session;
+live static collision export and rendering pass their separate editor checks above.
 
 ### Connected physical grind owners
 
@@ -1357,7 +1381,7 @@ Completed upstream input/animation packets, selected lifecycle states and
 focused manager snapshots are explicit fixture boundaries. Provider admission
 uses real authored geometry and the actual Pre/Post callbacks. No completed
 query, contact, force or solver result is supplied. Whole-game rail behavior
-and Unreal presentation remain separate integration checks.
+and Unreal presentation pass the separate live integration checks above.
 
 
 ### Connected LandingOnDeck owners
@@ -1376,7 +1400,7 @@ snapshot. Fresh original, observed and native source trees match the complete sa
 fresh loaders run both actual compiled implementations. Canonical processed/attribute packets,
 authored evaluated poses, engine triangles/metadata and the registry remain explicit upstream fixture
 boundaries. This focused result does not establish every global transition, rendered pose or live
-Unreal landing outcome. Latest-main changes and Unreal acceptance remain pending.
+Unreal landing outcome. The separate latest-main Session and native editor results are recorded above.
 
 ### Connected physical wipeout owners
 

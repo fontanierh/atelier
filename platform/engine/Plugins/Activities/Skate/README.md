@@ -3,7 +3,8 @@
 The skating engine is one in-process C++ `GameplaySession`. It owns the board/rider solver, animation graphs,
 Flick-It, riding states, tricks, scoring and camera. Unreal supplies terrain, player controls, the host mesh,
 board meshes, audio and HUD. Project-native data is loaded directly; the normal build has no Rust worker.
-The native Unreal adapter and latest-main transfer/assist port remain under validation before adoption.
+The native Unreal editor integration and latest-main transfer/assist port are validated. The recorded checks
+establish equivalence to the recovered implementation within their corpora, not original-console parity.
 
 ## Controls
 
@@ -58,6 +59,11 @@ Missing/corrupt native data reports an error and leaves the player walking. Runt
 The offline C++ CLI is a QA transport over the same Session and is not a game backend or fallback.
 
 See [NATIVE_PORT.md](NATIVE_PORT.md) for provenance and remaining adapter boundaries.
+
+The actual native Unreal build passes, along with all 19 live runtime checks, seven park checks and six
+real-time performance activities. Frame rates span 59.7568–59.9965 fps with no frames over 33 ms or repeated
+native poses. The island's Mega Park also passes collision refresh and a six-second push after a far teleport.
+These are editor results; cooked/package loading and other world-mesh CPU-buffer retention remain unvalidated.
 
 Grounded triggers compress the rider for the recovered pumping controller; releasing extends. In the air they
 grab. The retargeter uses skinned contact samples during bails to keep a differently proportioned visual rider
