@@ -933,3 +933,23 @@ packet's final pose; probes for intermediate ticks, solver state and graph execu
 
 These are migration foundations. The production game still uses the existing backend until the complete
 C++ session passes the remaining verification contract. The final runtime will contain only the C++ backend.
+
+## Native walking controller and settings
+
+`OffboardController`, `OffboardMovementIntent`, `OffboardMovementVelocity`,
+`OffboardSurface`, `OffboardCadence` and `OffboardGroundMotion` preserve the
+original retained walking controller, placement, support correction, sliding,
+turning and gait phase updates. `OffboardSettings` reads the same ordered stock
+fields and the independently converted walking/running/sprinting clip metrics.
+
+The differential check passes 64 histories and 6,592 commands, plus all 133
+settings fixtures: 1,786,556 exact output words. The stock history SHA256 is
+`dc4cdcb1fd2f796dd887326160826cc81f7133ccca4f647b0f864c24fec0686e`.
+It observes 6,296 distinct complete states and checks missing, malformed,
+nonfinite, unordered, duplicate and combined loader inputs with their original
+ordered failures. The original controller and settings bodies are unchanged.
+
+Ground jobs, placement, controller requests and completed animation motion are
+explicit upstream inputs here. World contact production, feet, possession,
+skeleton updates and complete off-board frame scheduling require their separate
+connected comparisons; this test does not establish whole-session parity.
