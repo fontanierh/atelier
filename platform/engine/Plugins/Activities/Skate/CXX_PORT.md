@@ -307,6 +307,10 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   signed angles, dynamic lean, conditional lateral tilt and reset recovery. Persistent streams observe
   6,140 lean angles, 6,054 tilt records and 6,306 system matrices, including degenerate axes. Actual
   producers of these frames and the full riding state schedule remain separate integration steps.
+- Riding collision response: 4,251 cases and 63,482 exact words preserve early absence versus late
+  false publication, clamped forces, authored force points, corrected target velocity and signed
+  angular corrections. Coverage includes 1,370 late false responses which still publish targets and
+  1,364 applied forces. Live collision producers and the riding state schedule remain separate.
 - Joint and drive construction: 7,244 cases and 933,564 exact words, including 2,952 complete joint
   workspaces, 3,519 typed/packed drive records, 260 drive parameter sets and 513 six-joint authored
   record sets with stock/custom settings. All swing/twist branches,
