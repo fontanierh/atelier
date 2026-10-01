@@ -422,6 +422,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   degenerate edges, four carried lanes, scalar divisions/refinements, pinning, wheel catches,
   2,304 force applications to persistent actual body snapshots and separate force/auto-jump gates.
   Retained velocity and untouched body fields are checked. Ground state scheduling remains separate.
+- Ground propulsion/manual/speed control: 7,779 cases preserve 654,072 exact words for push,
+  braking, low-speed drag, 8,192 persistent speed updates, 2,304 force-queue submissions and
+  6,144 manual commands. Actual signed-angle measurements, contact/PID histories, correction
+  forces, five-field resets, partial error writes and capacity drops match. Angle normalization
+  preserves the rounded FMA's signed zero. Live ground inputs and scheduling remain separate.
 - Physical skeleton conversion: all 24 authored physical bones and their 28-word records, typed transforms,
   record identities and case-insensitive lookup match the original Rust loader exactly. Wrong-bank/missing
   lookups and malformed native data are rejected.
