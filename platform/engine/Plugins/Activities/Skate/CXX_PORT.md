@@ -1146,3 +1146,20 @@ The comparison uses committed dependencies and only the two new controller
 sources. Completed physical and camera inputs are caller records in this proof;
 their production, complete frame scheduling and malformed original asset
 construction remain outside its scope.
+
+### Native authored collision and device histories
+
+`GameplayWorld` constructs the original authored collision adjacency, edge/corner
+flags, materials, query clusters and spline provider from plain native mesh
+triangles and ordered rail points. `ControllerInputRuntime` retains the complete
+four-device collection, double cache, 30-frame Pad ring, action publication and
+simulation sampling clocks. Their independent original-host comparison passes
+451 histories, 9,788 operations and all 32,820,557 output words (SHA256
+`d2571dfb03c5e66f558e5b7f7f499e4ce1b4b484c0be906703ae05e45a251cd1`).
+Coverage includes 103 rejected world builds, retained owners after errors, actual
+floor-seam contacts, nonmanifold/precision boundaries, spline query ordering,
+controller failures/repeated packets and counter wrap. The closest-triangle
+calculation preserves coefficient negation before multiplication, including NaN
+payload signs that compiler FNMUL folding would otherwise change. This proof
+compiles 14 native units using committed dependencies; original full Session
+construction, frame scheduling and live SDK polling remain separate checks.

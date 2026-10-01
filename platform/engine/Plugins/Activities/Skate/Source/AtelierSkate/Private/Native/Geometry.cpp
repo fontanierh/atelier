@@ -18,7 +18,11 @@ ClosestTrianglePoint ClosestPointOnTriangle(Vec3 point, const std::array<Vec3,3>
     const float bb=Dot3(edge_b,edge_b),cc=Dot3(edge_c,edge_c),bc=Dot3(edge_b,edge_c);
     const float bp=Dot3(edge_b,toward_origin),cp=Dot3(edge_c,toward_origin);
     const float determinant=std::fma(cc,bb,-(bc*bc));
-    const float un=std::fma(cp,bc,-(bp*cc)),vn=std::fma(bp,bc,-(cp*bb));
+    // Negate the coefficients before multiplying, as the original vector code
+    // does. A folded FNMUL negates the product and changes a NaN payload's sign.
+    // Volatile intermediates preserve this order without changing finite math.
+    const volatile float negative_cc=-cc,negative_bb=-bb;
+    const float un=std::fma(cp,bc,bp*negative_cc),vn=std::fma(bp,bc,cp*negative_bb);
     const float opposite=std::fma(-bc,2.0f,bb)+cc;
     unsigned feature;
     if (determinant < Word(0x00200000))
