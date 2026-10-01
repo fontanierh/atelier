@@ -41,6 +41,37 @@ in the Unreal adapter; the worker source remains identical to the pinned referen
 - [ ] Remove the Rust worker/build dependency and original runtime data formats; commit all native data.
 - [ ] Run whole-session comparisons, in-game scenarios, visual checks and frame-pacing checks; submit the PR.
 
+## Complete native session
+
+`GameplaySession.*` and `SessionMarkerRuntime.*` own the host elapsed accumulator,
+raw controller collection, fixed-tick scheduling, preferences, mounting, suspension,
+collision replacement, and marker placement/return over the complete gameplay runtime.
+Public poses preserve the original host's affine publication: XYZ lanes remain exact,
+basis-column W lanes become positive zero, and translation-column W becomes one.
+Internal animation weights and physical matrices remain untouched.
+
+The complete Session comparison against `46513a6` passes nine histories and 1,339
+commands, preserving 187,272,448 exact bytes (SHA256
+`957c3511e80250aeeceee20fa46a8fe170d02d68fd2c452828d94c068dc99a2c`).
+It observes the full retained gameplay state, input, host cadence, markers, published
+pose, camera and scoring after every command. Coverage includes both stances,
+preferences/tuning, 17 activations, four suspensions, ten world replacements,
+12 original partial failures, 134 marker observations and 32 marker-return firings.
+No completed controller, contact, trajectory, pose, camera or score record is injected.
+The original eight histories are retained; the ninth adds a fresh marker-set edge
+while the actual solver reports valid wheel support, followed by movement and return.
+
+The stock active Session selects CameraHigh, whose graph has no slow-motion rate
+requester. Its simulation period therefore remains at the original value throughout
+these histories. Dynamic request scheduling requires a separate authored camera
+resource check. OS polling, asynchronous world-builder timing, Unreal presentation
+and in-game performance remain separate integration checks.
+
+`Tests/build_native_session_cli.py` builds an offline QA transport directly from all
+native C++ sources and `Tests/Native/gameplay_session_cli.cpp`. It requires neither
+Rust nor historical Git objects. This test executable is not a second game backend;
+Unreal will own the same `GameplaySession` in process.
+
 ## Native camera data and runtime
 
 `ATCAM001` stores the authored camera shot sample arrays as original f32 words, including
