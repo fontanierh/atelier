@@ -1163,3 +1163,16 @@ calculation preserves coefficient negation before multiplication, including NaN
 payload signs that compiler FNMUL folding would otherwise change. This proof
 compiles 14 native units using committed dependencies; original full Session
 construction, frame scheduling and live SDK polling remain separate checks.
+
+### Prepared native data bundle
+
+The game's `Content/Data/SkateNative` contains the complete decoded
+project-native package: 3,334 payloads, including 3,324 clips and 131,642 frames,
+285 gesture patterns, two metadata banks, the rig, settings, physics skeletons,
+three graphs and camera data. Its payloads total 70,695,340 bytes. The package
+manifest pins every relative path, byte size and SHA-256; its SHA-256 is
+`add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d`.
+`Tools/assemble_native_package.py` is a one-time migration tool, independent of
+the normal runtime. Bundle integrity and layout checks pass for all payloads.
+Committing this prepared package does not switch the playable backend or claim
+complete gameplay/session equivalence; those comparisons remain in progress.
