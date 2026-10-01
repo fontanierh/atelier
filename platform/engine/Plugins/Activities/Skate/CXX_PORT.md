@@ -243,6 +243,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   produce both hits and misses (5,026 hits total); all 16 manifold slots are compared, including unused
   zeros. Packing and the private triangle/box specialization are exercised through the original public
   typed contact query. Complete world traversal and retention are checked separately below.
+- Primitive pair contacts: 18,547 cases and 1,910,245 exact words cover every ordered dispatch among
+  spheres, capsules, triangles and boxes, native self-collision settings, padding/fatness order,
+  box SAT estimates, triangle fixups and complete manifolds. Coincident spheres preserve the source's
+  exact nonfinite result. Shared packing/triangle-box helpers are extracted unchanged; the earlier
+  world primitive and connected board/world corpora retain their exact output hashes after extraction.
 - Complete world contact production: 2,809 worlds, 4,755 queries and 2,371,281 exact words.
   The full original public query supplies every expected seed, including candidate/culling order,
   all primitive types, material combination, duplicates, deferred reduction and capacity drops.

@@ -114,7 +114,7 @@ def build_probes(output):
     snapshot=output/'native-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir();native=PLUGIN/'Source/AtelierSkate/Private/Native'
-    sources=('NativeMath.h','NativeMath.cpp','GeometryTypes.h','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp','WorldGeometry.h','WorldGeometry.cpp','GeometryFeatures.h','GeometryFeatures.cpp','GeometryPrism.h','GeometryPrism.cpp','GeometryTriangleFixup.h','GeometryTriangleFixup.cpp','WorldPrimitiveContact.h','WorldPrimitiveContact.cpp','ContactRetention.h','ContactRetention.cpp','WorldContactProducer.h','WorldContactProducer.cpp')
+    sources=('NativeMath.h','NativeMath.cpp','GeometryTypes.h','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp','WorldGeometry.h','WorldGeometry.cpp','GeometryFeatures.h','GeometryFeatures.cpp','GeometryPrism.h','GeometryPrism.cpp','GeometryTriangleFixup.h','GeometryTriangleFixup.cpp','WorldPrimitiveContact.h','WorldPrimitiveContact.cpp','PrimitiveGeometry.h','ContactRetention.h','ContactRetention.cpp','WorldContactProducer.h','WorldContactProducer.cpp')
     for name in sources:shutil.copy2(native/name,snapshot/name)
     shutil.copy2(PLUGIN/'Tests/Native/world_contact_producer_probe.cpp',snapshot/'world_contact_producer_probe.cpp');cpp=output/'world-contact-producer-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),
