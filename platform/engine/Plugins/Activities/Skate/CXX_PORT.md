@@ -185,6 +185,14 @@ replacements and teleport resets retain the original histories. Attribute/action
 processed gameplay requests and engine triangles are explicit upstream inputs; complete
 session and Ground lifecycle dispatch remain separate checks.
 
+`PlayerStateRegistry.*` preserves the complete original host support table,
+including the three unsupported states and Sleeping's restricted transition.
+`Tests/check_player_state_registry_parity.py` compares all 26 capabilities and
+676 transition pairs: 2,132 exact words, SHA-256
+`e65b2246c4be46289509c0d13e75d25457bb0a21978696983fab103c714858e5`.
+The actual lifecycle effects and global state publication remain separate
+concrete-owner checks.
+
 ## Native ground owner composition
 
 `GroundStateRuntime.*`, `GroundRuntime.*`, `GroundInput.*`, `GroundSettings.*`,
