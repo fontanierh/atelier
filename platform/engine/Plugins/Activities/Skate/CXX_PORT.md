@@ -328,6 +328,24 @@ actual physical/skeleton observation producer, ragdoll state owners and global
 frame scheduling require separate composition checks; this result does not
 establish their parity. Native adapters are included for those callers.
 
+## Native score accounting
+
+`ScoringCore.*`, `ScoringCarrier.*`, `ScoringTimer.*` and `ScoringSession.*`
+preserve the complete core ledger, carrier lifecycle, combo/line timers and
+sequence settlement. The independent original-module comparison observes all
+720 retained words after every command, including private histories. It covers
+27 histories and 23,750 commands, preserving 68,667,980 exact output bytes
+(SHA-256 `dfe5b4bbf57f624fbaf9014b0c224949a4f0263343ef4dfd5fdcb70a7db8f5fc`).
+Coverage includes saturated repetition counts, collector cancellation,
+suppressed credit, unsigned clock rollover, early completion, conversion,
+near-one timer holds, expiry edges, multiplier threshold crossings and the
+saturating-then-wrapping delay cast, including exceptional float inputs.
+
+Authored scoring definitions/tuning, trick recognition and the physical-frame
+collector remain separate host owners. This establishes accounting parity;
+complete gameplay scoring and global scheduling still need their composition
+checks.
+
 ## Native physical skeleton data
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
