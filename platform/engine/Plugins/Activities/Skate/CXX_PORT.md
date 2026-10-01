@@ -510,6 +510,11 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   Coverage includes 6,081 pair contacts, 1,441 reports, original group/material tables, static-body
   retention and the 16-report capacity. Unsupported original cylinder/hat queries retain explicit
   errors. The original full host producer modules are unchanged; full solve scheduling is separate.
+- Remote physical proxies: 2,002 cases preserve 6,904,585 exact words for COM-bound shapes,
+  482 registrations, repeated normalization, ragdoll mass selection, strict distance gates,
+  retained body caches and 196,421 ordered remote contact rows. Fingerprint/wire identities
+  and stock world volumes are explicit caller transports. Schema hash construction, network
+  capture/encoding/socket/interpolation and the full shared solve schedule remain separate.
 - Skeleton root/board frames: 1,735 streams preserve 4,304,114 exact words through heading,
   prediction consumption, ground/teleport targets, COM publication, retained resets and lift limits.
   All 211 stored words are observed after each command. The local heading sine preserves the
