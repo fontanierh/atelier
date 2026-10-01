@@ -15,7 +15,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 
 static float Ease(float X) { X=FMath::Clamp(X,0.f,1.f);return X*X*(3.f-2.f*X); }
-// Ride speeds the passenger can step through in flight. 1x is the authored 28 second cruise.
+// Ride speeds the passenger can step through in flight. 1x is the authored cruise (Woodland to Hidamari in 28 s).
 static const TArray<float> FlightSpeeds={.5f,.75f,1.f,1.5f,2.f,3.f};
 static FString SpeedLabel(float Speed)
 {
@@ -39,15 +39,23 @@ UStaticMeshComponent* AZeppelinService::Mesh(const TCHAR* Name,const TCHAR* Asse
 }
 void AZeppelinService::Initialize(const TSharedPtr<FJsonObject>& Data)
 {
- const TArray<TSharedPtr<FJsonValue>>* Rows=nullptr;
- if(!Data.IsValid()||!Data->TryGetArrayField(TEXT("stations"),Rows)||Rows->Num()!=2)return;
+ const TArray<TSharedPtr<FJsonValue>>* Rows=nullptr;const TArray<TSharedPtr<FJsonValue>>* LegRows=nullptr;
+ if(!Data.IsValid()||!Data->TryGetArrayField(TEXT("stations"),Rows)||Rows->Num()<2||!Data->TryGetArrayField(TEXT("legs"),LegRows))return;
  for(const auto& V:*Rows)
  {
   auto J=V->AsObject();FZeppelinStation S;S.Name=J->GetStringField(TEXT("name"));
   auto P=[&](const TCHAR* Key){const auto& A=J->GetArrayField(Key);return Local(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber());};
   S.Origin=P(TEXT("origin"));S.Ship=P(TEXT("ship"));S.Entry=P(TEXT("entry"));S.Safe=P(TEXT("safe"));Stations.Add(S);
  }
- Height=Data->GetNumberField(TEXT("flight_height"))*100;CruiseSeconds=Data->GetNumberField(TEXT("cruise_seconds"));
+ const int32 N=Stations.Num();Legs.Init(FVector2f::ZeroVector,N*N);
+ for(const auto& V:*LegRows)
+ {
+  auto J=V->AsObject();const auto& Stops=J->GetArrayField(TEXT("stops"));
+  if(Stops.Num()!=2)continue;const int32 A=(int32)Stops[0]->AsNumber(),B=(int32)Stops[1]->AsNumber();if(A<0||B<0||A>=N||B>=N||A==B)continue;
+  Legs[A*N+B]=Legs[B*N+A]=FVector2f(float(J->GetNumberField(TEXT("height"))*100),float(J->GetNumberField(TEXT("seconds"))));
+ }
+ for(int32 A=0;A<N;++A)for(int32 B=0;B<N;++B)
+  if(A!=B&&Legs[A*N+B].Y<=0){UE_LOG(LogTemp,Error,TEXT("ZEPPELIN has no leg from %s to %s"),*Stations[A].Name,*Stations[B].Name);Stations.Reset();return;}
  Motors=Mesh(TEXT("Motors"),TEXT("ZP_Motors"),ShipRoot);Motors->SetCastShadow(false);Motors->SetAffectDistanceFieldLighting(false);
  Hull=Mesh(TEXT("Hull"),TEXT("ZP_Airship"),ShipRoot);
  // Fabric uses soft continuous shading; fittings retain the world material.
@@ -62,12 +70,15 @@ void AZeppelinService::Initialize(const TSharedPtr<FJsonObject>& Data)
  {
   const auto& Position=PropellerPositions[Side]->AsArray();
   auto* P=Mesh(Side?TEXT("StarboardPropeller"):TEXT("PortPropeller"),TEXT("ZP_Propeller"),ShipRoot);P->SetRelativeLocation(Local(Position[0]->AsNumber(),Position[1]->AsNumber(),Position[2]->AsNumber()));P->SetCastShadow(false);P->SetAffectDistanceFieldLighting(false);Propellers.Add(P);
-  auto* G=Mesh(Side?TEXT("CityDockGate"):TEXT("ForestDockGate"),TEXT("ZP_Gate"),RootComponent);G->SetRelativeLocation(Stations[Side].Origin+Local(5.15,1.04,1.65));DockGates.Add(G);
-  auto* W=Mesh(Side?TEXT("CityGangway"):TEXT("ForestGangway"),TEXT("ZP_Gangway"),RootComponent);W->SetRelativeLocation(Stations[Side].Origin+Local(6,1.04,1.65));Gangways.Add(W);
+ }
+ for(int32 I=0;I<N;++I)
+ {
+  auto* G=Mesh(*FString::Printf(TEXT("DockGate%d"),I),TEXT("ZP_Gate"),RootComponent);G->SetRelativeLocation(Stations[I].Origin+Local(5.15,1.04,1.65));DockGates.Add(G);
+  auto* W=Mesh(*FString::Printf(TEXT("Gangway%d"),I),TEXT("ZP_Gangway"),RootComponent);W->SetRelativeLocation(Stations[I].Origin+Local(6,1.04,1.65));Gangways.Add(W);
  }
  Ready=Hull->GetStaticMesh()&&Motors->GetStaticMesh()&&Gate->GetStaticMesh()&&Gangways[0]->GetStaticMesh()&&Propellers[0]->GetStaticMesh();
  int32 InitialDock=0;FParse::Value(FCommandLine::Get(),TEXT("zeppelindock="),InitialDock);
- DockAt(FMath::Clamp(InitialDock,0,1));UE_LOG(LogTemp,Display,TEXT("ZEPPELIN ready=%d, two terminals"),Ready);
+ DockAt(FMath::Clamp(InitialDock,0,N-1));UE_LOG(LogTemp,Display,TEXT("ZEPPELIN ready=%d, %d stations"),Ready,N);
 }
 bool AZeppelinService::IsPassenger(const AWandererCharacter* C) const { return Passenger && Passenger==C; }
 FVector AZeppelinService::ShipPosition() const { return ShipRoot->GetComponentLocation(); }
@@ -93,8 +104,30 @@ FString AZeppelinService::Hint(const AWandererCharacter* C) const
  }
  int32 I=Nearby(C,420);if(I==INDEX_NONE)return FString();
  if(Phase!=0)return Phase==1?TEXT("Zeppelin arriving — wait on the platform"):TEXT("Zeppelin is travelling — please wait");
- return I==Dock?FString::Printf(TEXT("Use to board · %s"),*Stations[1-I].Name):TEXT("Use to call the zeppelin");
+ return I==Dock?FString::Printf(TEXT("Use to board · %s"),*Stations[Destination].Name):TEXT("Use to call the zeppelin");
 }
+bool AZeppelinService::CanChooseStop(const AWandererCharacter* C) const
+{
+ return Stations.Num()>2&&Phase==0&&!IsPassenger(C)&&Nearby(C,420)==Dock;
+}
+bool AZeppelinService::ChooseDestination(const AWandererCharacter* C,int32 Direction)
+{
+ if(Direction==0||!CanChooseStop(C))return false;
+ const int32 N=Stations.Num();int32 Next=Destination;
+ do Next=(Next+(Direction<0?N-1:1))%N; while(Next==Dock);
+ Destination=Next;UE_LOG(LogTemp,Display,TEXT("ZEPPELIN destination=%d"),Destination);return true;
+}
+int32 AZeppelinService::NextStop(int32 At) const
+{
+ // Carry on along the line the way the ship came, turning back at either end.
+ int32 Step=Came!=INDEX_NONE&&Came>At?-1:1;
+ if(!Stations.IsValidIndex(At+Step))Step=-Step;
+ return Stations.IsValidIndex(At+Step)?At+Step:At;
+}
+float AZeppelinService::Heading() const { return float((Stations[Destination].Ship-Stations[Dock].Ship).Rotation().Yaw); }
+// Long climbs and descents (the Mega Park legs cruise high over the volcano's flank) take longer than the 5 and 4 seconds of the first leg.
+float AZeppelinService::ClimbSeconds() const { return FMath::Max(5.f,float(FMath::Abs(Leg().X-Stations[Dock].Ship.Z))/2400.f); }
+float AZeppelinService::LandSeconds() const { return FMath::Max(4.f,float(FMath::Abs(Leg().X-Stations[Destination].Ship.Z))/3000.f); }
 void AZeppelinService::AdjustFlightSpeed(int32 Direction)
 {
  if(Direction==0)return;
@@ -115,7 +148,7 @@ void AZeppelinService::SetPhase(int32 P)
 }
 void AZeppelinService::DockAt(int32 I)
 {
- Dock=I;Destination=1-I;ShipRoot->SetWorldLocationAndRotation(Stations[I].Ship,FRotator::ZeroRotator);GateOpen=0;SetPhase(0);
+ Dock=I;Destination=NextStop(I);ShipRoot->SetWorldLocationAndRotation(Stations[I].Ship,FRotator::ZeroRotator);GateOpen=0;SetPhase(0);
 }
 bool AZeppelinService::TryInteract(AWandererCharacter* C)
 {
@@ -123,14 +156,14 @@ bool AZeppelinService::TryInteract(AWandererCharacter* C)
  if(IsPassenger(C))
  {
   // Skipping still performs docking and disembarkation; never drops the rider in mid-air.
-  if(Phase>=3&&Phase<=5){ShipRoot->SetWorldLocationAndRotation(Stations[Destination].Ship,FRotator::ZeroRotator);SetPhase(5);PhaseTime=4.f;}
+  if(Phase>=3&&Phase<=5){ShipRoot->SetWorldLocationAndRotation(Stations[Destination].Ship,FRotator::ZeroRotator);SetPhase(5);PhaseTime=LandSeconds();}
   return true;
  }
  int32 I=Nearby(C,260);if(I==INDEX_NONE)return false;
  if(Phase!=0)return true;
  if(I!=Dock)
  {
-  Dock=I;Destination=1-I;ShipRoot->SetWorldLocationAndRotation(Stations[I].Ship+FVector(0,0,3500),FRotator::ZeroRotator);SetPhase(1);return true;
+  Came=Dock;Dock=I;Destination=NextStop(I);ShipRoot->SetWorldLocationAndRotation(Stations[I].Ship+FVector(0,0,3500),FRotator::ZeroRotator);SetPhase(1);return true;
  }
  if(!C->GetCharacterMovement()->IsMovingOnGround())return true;
  BeginBoarding(C);return true;
@@ -146,7 +179,7 @@ void AZeppelinService::BeginBoarding(AWandererCharacter* C)
  const FVector Deck=C->GetActorLocation()-FVector(0,0,C->GetCapsuleComponent()->GetScaledCapsuleHalfHeight())-Stations[Dock].Ship;
  const bool AlreadyAboard=FMath::Abs(Deck.X)<300&&FMath::Abs(Deck.Y)<160&&FMath::Abs(Deck.Z)<20;
  WalkPoints=AlreadyAboard?TArray<FVector>{Stations[Dock].Ship}:TArray<FVector>{Stations[Dock].Origin+Local(6,.55,1.65),Stations[Dock].Ship+Local(0,-1.1,0),Stations[Dock].Ship};WalkIndex=0;
- Destination=1-Dock;SetPhase(2);
+ SetPhase(2);
 }
 void AZeppelinService::RestorePassenger()
 {
@@ -211,25 +244,24 @@ void AZeppelinService::Tick(float Dt)
  }
  else if(Phase==3)
  {
-  const float T=Ease(FMath::Max(0.f,PhaseTime-.8f)/5.f);
-  FVector P=Stations[Dock].Ship;P.Z=FMath::Lerp(P.Z,Height,T);
-  const float Yaw=Destination==1?0.f:180.f;
-  ShipRoot->SetWorldLocationAndRotation(P,FRotator(0,Yaw*T,0));PlacePassenger(false,Dt);
-  if(PhaseTime>=5.8f)SetPhase(4);
+  const float Climb=ClimbSeconds(),T=Ease(FMath::Max(0.f,PhaseTime-.8f)/Climb);
+  FVector P=Stations[Dock].Ship;P.Z=FMath::Lerp<double>(P.Z,Leg().X,T);
+  ShipRoot->SetWorldLocationAndRotation(P,FRotator(0,Heading()*T,0));PlacePassenger(false,Dt);
+  if(PhaseTime>=Climb+.8f)SetPhase(4);
  }
  else if(Phase==4)
  {
-  const float T=Ease(PhaseTime/CruiseSeconds);FVector P=FMath::Lerp(Stations[Dock].Ship,Stations[Destination].Ship,T);P.Z=Height+200*FMath::Sin(PI*T);
-  ShipRoot->SetWorldLocationAndRotation(P,FRotator(0,Destination==1?0.f:180.f,1.3f*FMath::Sin(PI*T)));PlacePassenger(false,Dt);
-  if(PhaseTime>=CruiseSeconds)SetPhase(5);
+  const float Cruise=Leg().Y,T=Ease(PhaseTime/Cruise);FVector P=FMath::Lerp(Stations[Dock].Ship,Stations[Destination].Ship,T);P.Z=Leg().X+200*FMath::Sin(PI*T);
+  ShipRoot->SetWorldLocationAndRotation(P,FRotator(0,Heading(),1.3f*FMath::Sin(PI*T)));PlacePassenger(false,Dt);
+  if(PhaseTime>=Cruise)SetPhase(5);
  }
  else if(Phase==5)
  {
-  const float T=Ease(PhaseTime/4.f);FVector P=Stations[Destination].Ship;P.Z=FMath::Lerp(Height,P.Z,T);
-  ShipRoot->SetWorldLocationAndRotation(P,FRotator(0,(Destination==1?0.f:180.f)*(1-T),0));PlacePassenger(false,Dt);
-  if(PhaseTime>=4.7f)
+  const float Land=LandSeconds(),T=Ease(PhaseTime/Land);FVector P=Stations[Destination].Ship;P.Z=FMath::Lerp<double>(Leg().X,P.Z,T);
+  ShipRoot->SetWorldLocationAndRotation(P,FRotator(0,Heading()*(1-T),0));PlacePassenger(false,Dt);
+  if(PhaseTime>=Land+.7f)
   {
-   Dock=Destination;WalkPoints={Stations[Dock].Ship+Local(0,-1.1,0),Stations[Dock].Origin+Local(6,.55,1.65),Stations[Dock].Entry};WalkIndex=0;SetPhase(6);
+   Came=Dock;Dock=Destination;WalkPoints={Stations[Dock].Ship+Local(0,-1.1,0),Stations[Dock].Origin+Local(6,.55,1.65),Stations[Dock].Entry};WalkIndex=0;SetPhase(6);
   }
  }
  else if(Phase==6)
@@ -237,11 +269,12 @@ void AZeppelinService::Tick(float Dt)
   PlacePassenger(true,Dt);if(WalkIndex>=WalkPoints.Num()){RestorePassenger();DockAt(Dock);}
  }
  Hull->SetCollisionEnabled(Phase==0?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
- const bool Open=Phase==2||Phase==6||(Phase==5&&PhaseTime>=4.f);
+ const bool Landed=Phase==5&&PhaseTime>=LandSeconds();
+ const bool Open=Phase==2||Phase==6||Landed;
  GateOpen=FMath::FInterpConstantTo(GateOpen,Open?1.f:0.f,Dt,2.5f);Gate->SetRelativeRotation(FRotator(0,-90*GateOpen,0));
- for(int32 I=0;I<2;++I)
+ for(int32 I=0;I<DockGates.Num();++I)
  {
-  const bool At=(I==Dock&&(Phase==0||Phase==2||Phase==6))||(I==Destination&&Phase==5&&PhaseTime>=4.f);
+  const bool At=(I==Dock&&(Phase==0||Phase==2||Phase==6))||(I==Destination&&Landed);
   auto* G=DockGates[I].Get();const float Yaw=FMath::FInterpConstantTo(G->GetRelativeRotation().Yaw,(At&&Open)?-90.f:0.f,Dt,180.f);G->SetRelativeRotation(FRotator(0,Yaw,0));
   const float Fold=FMath::FInterpConstantTo(Gangways[I]->GetRelativeRotation().Roll,At?0.f:-90.f,Dt,150.f);
   Gangways[I]->SetRelativeRotation(FRotator(0,0,Fold));Gangways[I]->SetVisibility(Fold>-89.f);

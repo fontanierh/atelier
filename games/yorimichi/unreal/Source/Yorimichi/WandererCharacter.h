@@ -92,7 +92,8 @@ public:
     TSharedPtr<struct FFightFilm> FightFilm;
     void Review_Move(FVector2D Intent) { MoveIntent = Intent; }
     /** Live bridge: hold a movement intent (camera-relative, like the stick) at a gait: 0 walk, 1 run, 2 sprint. Input replaces it. */
-    /** Live bridge: press a button through the real input handler: "jump", "jump_release", "roll", "crouch". */
+    /** Live bridge: press a button through the real input handler: "jump", "jump_release", "roll", "crouch", "interact",
+        and the zeppelin's "stop_previous" and "stop_next". */
     bool Live_Press(FName Button);
     /** Live bridge: leave the camera where it is (no automatic follow) for Seconds. */
     void Live_HoldCamera(float Seconds) { LookGrace = Seconds; }
@@ -187,6 +188,8 @@ public:
     bool IsCinematic() const { return bCinematic; }
     class AZeppelinService* GetZeppelin() const;
     bool IsZeppelinPassenger() const;
+    /** The flight buttons: aboard, ride speed; at the docked ship, its next stop. -1 or +1. */
+    void ZeppelinStep(int32 Direction);
 private:
     bool bSailboatReview=false; float SailboatReviewTime=0.f; int32 SailboatReviewStep=-1; FString SailboatTelemetry;
     float SailboatReviewElapsed=0.f, SailboatReviewYaw=0.f;

@@ -1,8 +1,8 @@
-# Zeppelin link — woodland ↔ Hidamari
+# Zeppelin line — woodland ↔ Hidamari ↔ Mega Park
 
 Status: implemented, visually checked in Unreal, and tested through the streamed touch controls in both directions.
 
-Extend the trail west of the hidden woodland lake to a small air station. A shared zeppelin service connects this clearing to Hidamari's station district in both directions.
+Extend the trail west of the hidden woodland lake to a small air station. A shared zeppelin service connects this clearing to Hidamari's station district in both directions. A third stop, after Hidamari, stands by the Mega Park's top road (see [The Mega Park stop](#the-mega-park-stop)).
 
 ## V2 requirements
 
@@ -34,6 +34,24 @@ Coordinates are Blender metres: X east, Y north, Z up. Both modules are now inst
 
 Checks used `hidamari/layout.py`, `out/hidamari/city.json`, terrain samples and three fresh native screenshots. Generated concepts propose additions to those views; they are not screenshots of built content. The implemented footprints use local grading, ground-sampled foundations and explicit foliage clearance.
 
+## The Mega Park stop
+
+The line runs **Woodland → Hidamari → Mega Park** (the order of `STATIONS`). The ship carries on the way it came and
+turns back at either end; whoever stands at the docked ship can choose another stop before boarding.
+
+- **Mega Park: (-200, 1484)**, 130 m, on the crest just west of the park's top road. The station, the docked ship and
+  its turn on take-off all stay clear of the park. `megapark_pad` levels it into the north terrain's 10 m grid, flat
+  under the station and the ship and along an earth footpath east to x -170, the last grid column clear of the park.
+  From there a level timber footbridge (part of `ZP_MegaPark`) crosses the 6-9 m dip the terrain makes beside the park
+  and lands on the road deck at 130 m. Trees are cleared over the station and within 7.5 m of the path.
+- **Legs.** Every pair of stops is a leg with its own cruise height, clearing the ground and trees under a 40 m corridor
+  with room for the trailing camera: Woodland-Hidamari 155 m (28 s, as before), Woodland-Mega Park 185 m over the
+  western foothills and the park itself (23.7 s), Hidamari-Mega Park 225 m past the volcano's flank, where the ground
+  reaches 163 m (35.7 s). All keep the first leg's 53 m/s. The ship turns to the leg's true heading on take-off. Climbs
+  and descents longer than the first leg's take proportionally longer (at least 5 s up and 4 s down).
+- **Choosing the stop.** At the docked ship the hint names the next stop, and `[` / `]` (shoulder buttons on a gamepad,
+  **‹ Stop** / **Stop ›** on the phone) step through the others. Aboard, the same buttons set the ride speed.
+
 ## Visual and interaction brief
 
 Retain the cream-and-sage envelope, gold sunrise mark, clean rounded/faceted silhouette and cedar deck. Initial envelope target: about 26 m long and 8 m across. The old 7 m closed-cabin specification is superseded; reconcile open-deck proportions and character clearance against the revised sheet.
@@ -44,11 +62,11 @@ The woodland station retains its tiled timber ticket hut and leaf-strewn trail. 
 
 ## Implementation
 
-- `japan/zeppelin/layout.py` owns both stations, ship/entry/safe datums, the southern-shore woodland trail and terrain/foliage clearance. The lake, cabin, rock islet and existing city roads remain intact.
-- `japan/zeppelin/build.py` exports the envelope/deck, motor pods, propeller, gate, gangway, two stations and trail. Approximately 43k triangles in eight meshes. Fittings and stations reuse the village material; the fabric has one additional material slot with continuous sun-driven shading and distance haze. The actual sun direction updates this material when lighting settings change.
+- `japan/zeppelin/layout.py` owns the three stations and their legs, ship/entry/safe datums, the southern-shore woodland trail and terrain/foliage clearance. The lake, cabin, rock islet and existing city roads remain intact.
+- `japan/zeppelin/build.py` exports the envelope/deck, motor pods, propeller, gate, gangway, three stations and trail. Approximately 43k triangles in eight meshes. Fittings and stations reuse the village material; the fabric has one additional material slot with continuous sun-driven shading and distance haze. The actual sun direction updates this material when lighting settings change.
 - `AZeppelinService` owns a single shared ship and a state machine: docked → boarding → takeoff → cruise → landing → disembarkation. The passenger walks across the gangway, stows equipment, rides with the ship and receives normal movement again on the platform. Independent propellers spool up and down. Gates close and gangways retract before departure.
-- The opposite terminal can call an empty ship. Use during flight skips to safe docking; map travel or Back to spawn cancels passenger control cleanly. Camera look remains available during travel. Idle dock gates stay closed until boarding begins, while the docked deck has real floor collision. A player who jumps onto the deck can also board from there.
-- Both terminals are in the desktop and iPhone destination list. On the platform, the phone Use button becomes **Fly**, **Call ship**, or **Skip flight**. The flight is a passenger ride, with a 28-second cruise plus departure/arrival.
+- Any other terminal can call an empty ship. Use during flight skips to safe docking; map travel or Back to spawn cancels passenger control cleanly. Camera look remains available during travel. Idle dock gates stay closed until boarding begins, while the docked deck has real floor collision. A player who jumps onto the deck can also board from there.
+- All three terminals are in the desktop and iPhone destination list. On the platform, the phone Use button becomes **Fly**, **Call ship**, or **Skip flight**. The flight is a passenger ride, with a cruise of 24 to 36 seconds plus departure/arrival.
 
 ## Flight view and ride speed
 
@@ -64,7 +82,8 @@ and the choice persists between flights. Boarding and disembarking keep their au
   arrival. The Faster button shows the current setting, and the status line and hint carry it too.
 - Desktop: `[` and `]`. Gamepad: the left and right shoulder buttons.
 - The page sends `{yorimichi:1,action:'flightSpeed',delta:-1|1}`; the game answers with `flightSpeed` in
-  its telemetry. Only the current passenger can change it.
+  its telemetry. Only the current passenger can change it; before boarding the same action chooses the stop
+  (`zeppelinChoose` in the telemetry says when it can).
 
 ![Cruise at 3x](flight-controls/flight-3x.png)
 

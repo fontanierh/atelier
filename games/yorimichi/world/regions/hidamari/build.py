@@ -377,6 +377,9 @@ def main():
     builders.update(kit.builders(lettering))
     builders['HD_NorthMountains']=lambda:mountains.mesh(north_base_height)
     builders['HD_NorthTrail']=lambda:mountains.trail_mesh(north_height)
+    from megapark import trail as park_trail
+    builders['HD_NorthApproach']=park_trail.approach_mesh
+    builders['HD_NorthParkTrail']=lambda:park_trail.trail_mesh(north_height)
     for kind in ('Gold','Rust','Pine'):builders['HD_NorthTree'+kind]=lambda kind=kind:mountains.forest_tree(kind)
     for kind in ('Gold','Rust','Pine','Green'):
         builders['HD_NorthTreeBackdrop'+kind]=lambda kind=kind:mountains.forest_tree(kind,backdrop=True)
