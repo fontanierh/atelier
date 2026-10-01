@@ -55,6 +55,14 @@ bool ReadScalar(const SettingsDatabase& data,std::string_view category,std::stri
     const auto* field=ReadField(data,category,key,name,error);if (!field) return false;if (field->type!="EA::Reflection::Float") {error="Expected float at "+Path(category,key,name);return false;}
     std::array<std::uint32_t,1> words{};if (!Words(*field,words,error)) return false;const auto value=Float(words[0]);if (!std::isfinite(value)) {error="Non-finite stock float "+Path(category,key,name);return false;}output=value;return true;
 }
+bool ReadInteger(const SettingsDatabase& data,std::string_view category,std::string_view key,std::string_view name,std::uint32_t& output,std::string& error)
+{
+    const auto* field=ReadField(data,category,key,name,error);if(!field)return false;
+    if(field->type!="EA::Reflection::Int32"&&field->type!="EA::Reflection::UInt32")
+    {error="Expected integer at "+Path(category,key,name);return false;}
+    std::array<std::uint32_t,1> words{};if(!Words(*field,words,error))return false;
+    output=words[0];return true;
+}
 bool ReadBoolean(const SettingsDatabase& data,std::string_view category,std::string_view key,std::string_view name,bool& output,std::string& error)
 {
     const auto* field=ReadField(data,category,key,name,error);if (!field) return false;if (field->type!="EA::Reflection::Bool") {error="Expected boolean at "+Path(category,key,name);return false;}
@@ -70,6 +78,10 @@ bool ReadCurve(const SettingsDatabase& data,std::string_view category,std::strin
     for (std::size_t i=0;i<8;++i) {output.x[i]=Float(values[offset+i]);output.y[i]=Float(values[offset+8+i]);}return true;
 }
 }
+const SettingValue* StockSettingsReader::Field(std::string_view c,std::string_view k,std::string_view n,std::string& error) const
+{const auto* value=ReadField(data_,c,k,n,error);if(value)error.clear();return value;}
+bool StockSettingsReader::Integer(std::string_view c,std::string_view k,std::string_view n,std::uint32_t& output,std::string& error) const
+{const auto ok=ReadInteger(data_,c,k,n,output,error);if(ok)error.clear();return ok;}
 bool StockSettingsReader::Float(std::string_view c,std::string_view k,std::string_view n,float& output,std::string& error) const
 {const auto ok=ReadScalar(data_,c,k,n,output,error);if (ok) error.clear();return ok;}
 bool StockSettingsReader::Boolean(std::string_view c,std::string_view k,std::string_view n,bool& output,std::string& error) const

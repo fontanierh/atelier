@@ -353,6 +353,28 @@ collector remain separate host owners. This establishes accounting parity;
 complete gameplay scoring and global scheduling still need their composition
 checks.
 
+## Native scoring definitions and tuning
+
+`ScoringCatalog.*` stores all 332 identifier/class/type rows and conversion
+links, plus the 62 collector field offsets. `ScoringData.*` reads every
+available authored definition and the complete collector, repetition,
+announcement and session tuning from the native settings bank. It preserves
+original lookup order, name identities, integer bits and staged replacement.
+
+The independent complete original loader comparison passes all 660 fixtures,
+including 94 successful variants, 125 compound failures and all 85 read
+positions. It preserves 110,768,792 exact output bytes (SHA-256
+`558e131e4bf0ee09d666c5b3a84f50ef74510166c423e03f9db72c777ba9b815`).
+Every catalog/link/schema row, loaded field, session rule, name/id lookup and
+curve evaluation is observed. Fixtures cover inheritance and numeric aliases,
+enum disagreement, invalid labels/types/widths, nonfinite values, retained
+destinations and recovery. Repeated initialization retains all 316 scoring
+stock records unchanged; removing unrelated classes preserves every byte
+against 129 previously recorded complete-bank cases.
+
+The physical-frame collector and complete gameplay scheduling remain separate
+composition checks. This establishes the consumed data and loader behavior.
+
 ## Native physical skeleton data
 
 `PhysicsSkeleton.*` reads `ATPHYS01`: all 28 words of every physical bone, its name and record identity,
