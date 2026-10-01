@@ -81,6 +81,17 @@ native C++ sources and `Tests/Native/gameplay_session_cli.cpp`. It requires neit
 Rust nor historical Git objects. This test executable is not a second game backend;
 Unreal will own the same `GameplaySession` in process.
 
+`HostScalar.*` preserves the former Unreal command conversion (`%.17g` double
+formatting followed by the pinned default serde_json f32 reader). A direct cast
+differs at legitimate rounding boundaries, so removing JSON must retain that
+arithmetic. The focused comparison passes 35,171 tokens/doubles, including
+midpoints, integer visitors, signed zero, all finite binary64 exponents and
+malformed values: 1,707,979 exact bytes, SHA256
+`3d2f04744d960cb3b30d2f37692b687c363ccfd44456173a87c348f0f3f872e8`.
+This helper handles numeric command conversion only; native assets use their
+binary readers. Unreal formatting and the typed adapter remain separate engine
+integration checks.
+
 ## Native camera data and runtime
 
 `ATCAM001` stores the authored camera shot sample arrays as original f32 words, including
