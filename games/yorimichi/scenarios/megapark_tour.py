@@ -15,11 +15,7 @@ The camera path is the tree house tour's (scenarios/treehouse_tour.py): the trai
 Catmull-Rom between keys, every shot settled still for a moment after each jump and the settling frames cut out.
 `plan` prints each shot's nearest park surface, ground and tree crown, so no path runs through rock or leaves.
 """
-import sys as _sys; from pathlib import Path as _Path
-# Not this folder on the path: its scripts (zeppelin.py runs a game when imported) shadow the region packages of the
-# same name, which the tree house layout imports.
-_sys.path[:] = [p for p in _sys.path if _Path(p or '.').resolve() != _Path(__file__).resolve().parent]
-_sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 import argparse, json, math, os, shutil, subprocess, sys
 from functools import lru_cache
 from pathlib import Path

@@ -76,17 +76,21 @@ class ForestTests(unittest.TestCase):
         flat = lambda x, y: np.full(np.shape(x), 50.)
         far = lambda x, y: np.full(np.shape(x), 1e3)
         forest.grow(instances, flat, far)
-        left = np.array(instances['HD_NorthTreeRust'])[:, :2]
-        original = np.array([tuple(q) in {tuple(r[:2]) for r in rows} for q in left.tolist()])
-        d = forest.distance(left[:, 0], left[:, 1])
+        # Crowns past the band stay where they were, in the clump of where they stand; opaque crowns close the canopy
+        # in the gaps beyond the detailed band, out to OUTER.
+        kinds = {k: np.array(v) for k, v in instances.items() if k.startswith('HD_NorthTree')}
+        crowns = np.concatenate(list(kinds.values()))[:, :2]
+        kind = np.concatenate([np.full(len(v), forest.CROWNS.index(k.removeprefix('HD_NorthTree').removeprefix('Backdrop')))
+                               for k, v in kinds.items()])
+        planted = {tuple(r[:2]) for r in rows}
+        original = np.array([tuple(q) in planted for q in crowns.tolist()])
+        d = forest.distance(crowns[:, 0], crowns[:, 1])
         self.assertTrue((d[original] >= forest.NEAR).all())
         self.assertEqual(int((d[original] >= forest.FAR).sum()), int((self.d[off] >= forest.FAR).sum()))
-        # Beyond the detailed band, opaque crowns close the canopy in the gaps, out to OUTER.
-        crowns = np.concatenate([left[~original]] + [np.array(v)[:, :2] for k, v in instances.items()
-                                                     if k.startswith('HD_NorthTree') and k != 'HD_NorthTreeRust'])
-        self.assertGreater(len(crowns), 0)
-        dc = forest.distance(crowns[:, 0], crowns[:, 1])
-        self.assertTrue(((dc > forest.NEAR + 30) & (dc < forest.OUTER)).all())
+        self.assertGreater(int((~original).sum()), 0)
+        self.assertTrue(((d[~original] > forest.NEAR + 30) & (d[~original] < forest.OUTER)).all())
+        band = d > forest.NEAR + 90
+        self.assertGreater(float((kind[band] == forest._clump(*crowns[band].T, forest.CROWN_CLUMPS)).mean()), .75)
         added = {k: np.array(v) for k, v in instances.items() if k.startswith('Tree')}
         self.assertLessEqual(set(added), set(forest.HEIGHT))
         under = {k for k in instances if not k.startswith(('Tree', 'HD_NorthTree'))}
@@ -98,6 +102,21 @@ class ForestTests(unittest.TestCase):
         forest.grow(again, flat, far)
         self.assertEqual(again, instances)
 
+
+    def test_the_crowns_replace_the_far_forest_west_of_the_park(self):
+        grid = [[float(x), float(y), 150., 0., 2.] for x in range(-1800, -400, 40) for y in range(400, 2400, 40)]
+        world = {'instances': {'Tree_Maple_lo': [list(r) for r in grid], 'Tree_Maple_A': [list(r) for r in grid]}}
+        forest.clear_far_forest(world)
+        self.assertEqual(world['instances']['Tree_Maple_A'], grid)
+        left = {tuple(q[:2]) for q in world['instances']['Tree_Maple_lo']}
+        gone = np.array([r[:2] for r in grid if tuple(r[:2]) not in left])
+        self.assertGreater(len(gone), 100)
+        self.assertTrue((gone[:, 0] < forest.mountains.BOUNDS[0]).all() and (gone[:, 1] > 650).all())
+        self.assertTrue((forest.distance(gone[:, 0], gone[:, 1]) < forest.OUTER).all())
+        kept = np.array([r[:2] for r in grid if tuple(r[:2]) in left])
+        inner = ((kept[:, 0] < forest.mountains.BOUNDS[0]) & (kept[:, 1] > 650)
+                 & (forest.distance(kept[:, 0], kept[:, 1]) < forest.OUTER - 250))
+        self.assertFalse(inner.any())
 
 
 class LetterTests(unittest.TestCase):

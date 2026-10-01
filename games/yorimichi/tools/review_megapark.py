@@ -47,6 +47,7 @@ if args.island:
         ('deck_volcano',deck,summit,70.),
         ('deck_northwest',deck,island(-900,2150,20),70.),
         ('deck_ridge',deck,island(-700,1230,60),70.),
+        ('stairs_ridge',island(top[0],top[1],top[2]+7),island(-760,1215,150),75.),
         ('from_west',('ground',-520,1330,25),park,60.),
         ('from_volcano_flank',('ground',140,1560,30),park,60.),
         ('from_south',('ground',-140,860,20),park,60.),
