@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: stylized-concept, restyle of an existing game location. Image 1 is an in-game screenshot of the boy Cairo skating inside the Mega Park in the game Yorimichi. Image 2 is another place in the same game and shows the art direction to match: soft painterly low-poly shapes, flat matte shading, pale lavender-grey rocks, autumn maples and ginkgos in rust, orange and gold, dark green pines, soft green grass, a clean blue sky. Repaint image 1 as the AFTER concept from exactly the same camera, with the same skater in the same pose. Every skating surface stays exactly as it is: the concrete bank, the bowl with its coping, the wooden deck and the painted ledge edges keep their shapes and places. The concrete keeps its pale weathered look with a softer, cleaner, slightly painterly texture; the bright blue paint becomes a faded indigo; the plywood becomes a warm honey-coloured wood. The scenery changes: the red sandstone cliffs become rugged lavender-grey volcanic rock with moss, ferns and small autumn maples in its ledges; the cacti, thin dead trees and desert scrub become the island's autumn trees; the beer billboard becomes a wooden notice board with a paper poster under a small roof; the metal scaffold light towers become tall wooden lantern poles; the shark banners become indigo cloth banners with a simple white wave crest. Keep it a raw, rugged skate spot. No UI, no labels, no extra text.",
+  "references": {
+    "megapark/concepts/before-riding.png": "cf28f4726e8cf36fa89323dad1f230d88dbbdaff6d19479756da72109cd58f33",
+    "megapark/concepts/style-lake.png": "3b47553bc58d297621c282af93e2a890eedd2df45a5eea24033cc2116c84a1ae"
+  },
+  "purpose": "Mega Park restyle reference",
+  "status": "done",
+  "started_at": "2026-09-30T23:29:12.015159+00:00",
+  "usage": {
+    "input_tokens": 2494,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 334
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3866
+  },
+  "png_sha256": "c5bef33887c30fcd4ce0b8b47d6b98902201541c30c8c098abd6028f1f9f6c42",
+  "output": {
+    "file": "restyle-inside.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-09-30T23:29:44.302809+00:00"
+}

@@ -40,7 +40,8 @@ On a controller, **hold either L2 or R2 to compress, then release to extend**. O
 Approach a wall compressed and release as you ride through its lower/middle transition. On the way back down,
 compress high on the wall and extend through the lower curve. Compress again for the next wall. Stay off the
 right-stick ollie input when practising pumping; it performs a separate pop. Triggers become grabs in the air,
-so release them before the air unless you want a grab.
+so release them before the air unless you want a grab. They never send you over the coping: a transfer is Shift or
+the left stick pushed forward.
 
 Pumping comes from the recovered centre-of-mass/ground-curvature controller. Timing matters: holding a trigger
 continuously is not a speed boost. `check_skatepark_runtime.py` compares an identical 8.5 m/s bowl approach after

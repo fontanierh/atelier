@@ -11,12 +11,9 @@ with its neighbours behind, and each room an inside view from the doorway corner
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 import json, math, os, subprocess, sys
-import importlib.util as _util
 import numpy as np
 from village.layout import sample
-# This file is itself named treehouse: load the region's layout by path, not as the treehouse package.
-_spec = _util.spec_from_file_location('treehouse_layout', yori.REGIONS/'treehouse'/'layout.py')
-L = _util.module_from_spec(_spec); _spec.loader.exec_module(L)
+from treehouse import layout as L      # the region package: yori puts the regions before this folder
 
 EYE = 1.55
 CAPTURES = yori.OUT/'treehouse'/'captures'

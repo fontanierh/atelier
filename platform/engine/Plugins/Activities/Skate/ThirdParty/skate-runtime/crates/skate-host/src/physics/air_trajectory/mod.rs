@@ -2,7 +2,7 @@
 mod grind;
 mod settings;
 mod vert_departure;
-use vert_departure::vert_departure_normal;
+use vert_departure::vert_departure;
 use crate::grind_world::StaticProvider;
 pub(crate) use grind::GrindContext;
 use std::sync::Arc;
@@ -23,6 +23,8 @@ pub struct AirTrajectoryRuntime {
     grind_settings: grind::Settings,
     grind_world: Option<Arc<StaticProvider>>,
     nearby_grinds: Vec<usize>,
+    /// Atelier: how far below vertical a quarter's lip still launches a vert air (0 is stock, see `vert_departure`).
+    pub vert_assist: f32,
 }
 impl AirTrajectoryRuntime {
     ///Full82E099A0 query shared by trajectory and Footplant callers.
@@ -41,11 +43,12 @@ impl AirTrajectoryRuntime {
             grind_settings: grind::Settings::load(collections)?,
             grind_world: None,
             nearby_grinds: Vec::new(),
+            vert_assist: 0.,
         })
     }
     pub fn launch(
         &mut self,
-        info: LaunchInfo,
+        mut info: LaunchInfo,
         input: SelectorInput,
         world: &BoardWorld,
     ) -> Result<bool, String> {
@@ -55,7 +58,8 @@ impl AirTrajectoryRuntime {
         // Interpret an upward departure from this near-vertical band as a vert air.
         // Pushing towards a transfer retains the original trajectory calculation.
         let mut input = input;
-        input.ground_normal = vert_departure_normal(input.ground_normal, info.start_velocity, input.directional_input);
+        (input.ground_normal, info.start_velocity) =
+            vert_departure(input.ground_normal, info.start_velocity, input.directional_input, self.vert_assist);
         let launched = self.selector.launch(info, input, &self.settings)?;
         if launched {
             self.submit(world)?;

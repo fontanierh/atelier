@@ -21,6 +21,13 @@ args = ["-game", "-windowed", "-resx=1920", "-resy=1080", "-ExecCmds=r.RHISetGPU
 script = "tools/desktop_preview.py"
 args = ["--shared-settings", "--windowed"]
 
+[play.megapark]
+# Faithful source park, in its own native level. The island remains the default.
+args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-windowed", "-resx=1920", "-resy=1080", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
+
+[play.megapark-fullscreen]
+args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
+
 [play.desktop-1440]
 script = "tools/desktop_preview.py"
 args = ["--shared-settings"]

@@ -347,6 +347,7 @@ public:
         O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
         O->SetNumberField(TEXT("push_speed"),GetDefault<USkateSettings>()->PushSpeedScale);
         O->SetNumberField(TEXT("push_power"),GetDefault<USkateSettings>()->PushPowerScale);
+        O->SetNumberField(TEXT("vert_assist"),GetDefault<USkateSettings>()->VertAssist);
         Send(O); PendingActivation=false; AwaitingPose=true; PendingLaunch.Reset();
     }
     bool Poll()
@@ -487,6 +488,7 @@ void USkateComponent::ConfigureRetail()
     O->SetNumberField(TEXT("spin"),GetDefault<USkateSettings>()->AirSpinScale);
     O->SetNumberField(TEXT("push_speed"),GetDefault<USkateSettings>()->PushSpeedScale);
     O->SetNumberField(TEXT("push_power"),GetDefault<USkateSettings>()->PushPowerScale);
+    O->SetNumberField(TEXT("vert_assist"),GetDefault<USkateSettings>()->VertAssist);
     RetailRuntime->Send(O);
 }
 
@@ -517,7 +519,8 @@ void USkateComponent::StepRetailRuntime(float Dt)
     if (!RetailRuntime->AwaitingPose)
     {
     auto O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("op"),TEXT("step")); O->SetNumberField(TEXT("dt"),RetailRuntime->FrameTime);
-    int32 Buttons=(In.bPush?0x1000:0)|(In.bBrake?0x2000:0);
+    // 0x0800 is the host's transfer button: the native pad ignores it, and the right trigger no longer means it.
+    int32 Buttons=(In.bPush?0x1000:0)|(In.bBrake?0x2000:0)|(In.bTransfer?0x0800:0);
     int32 LeftTrigger=In.bGrabLeft?255:0,RightTrigger=In.bGrabRight?255:0;
     if (!bScripted && RiderApi && !RiderApi->IsSkateInputBlocked() && !RiderApi->IsSkateMouseFree())
         if (APlayerController* PC=Cast<APlayerController>(Rider->GetController()))

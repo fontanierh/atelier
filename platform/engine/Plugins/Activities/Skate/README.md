@@ -17,6 +17,7 @@ board meshes, audio and HUD. There is one simulation and animation path.
 | Flick-It | Right stick gesture | Hold left mouse button and flick |
 | Manual / nose manual | Right stick partly down / up | Hold the mouse gesture part-way |
 | Pump (ground) / grab (air) | Left / right trigger | Q / E |
+| Transfer (leave a ramp over its coping) | Left stick forward | Hold Shift |
 | Look | Host camera controls | Mouse when not flicking |
 
 Regular kickflips flick down then up-left; heelflips finish up-right. Goofy mirrors the gestures. The original
@@ -41,7 +42,12 @@ frame; the bridge converts positions, rotations and collision winding to Unreal 
 `Difficulty` accepts `easy`, `normal` or `hardcore`; `TruckTightness` ranges from 0 to 1. `PopHeightScale` scales
 stock launch-height presets and `AirSpinScale` scales spin targets and manual spin acceleration/velocity curves.
 `PushPowerScale` and `PushSpeedScale` adjust native push propulsion and speed limits. All default to 1 in the
-plugin; the host game selects its own tuning. The recovered constraints and animation timing remain active.
+plugin; the host game selects its own tuning. `VertAssist` (0 to 1, default 0, stock) lets quarter pipes that end
+short of vertical send a straight air back down into the ramp, down to lips of about 50° at 1.
+
+A grab never asks for a transfer. The original reads the right trigger as transfer intent at takeoff, so a grab or a
+pump released at the lip sent the rider over the coping; the plugin sends a separate transfer button instead (host
+bit 0x0800, which the native pad ignores). The recovered constraints and animation timing remain active.
 
 Mounting starts at the player's feet, aligns with running velocity and transfers that velocity to the whole
 physical assembly. Each activation identifies its poses so an old response cannot move a newly mounted rider.

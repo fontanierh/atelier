@@ -1,0 +1,21 @@
+{
+  "source_game": "Skate 3",
+  "archive": "worldDIST_University.big",
+  "archive_sha256": "37d6a4517bd0a5e25f493f18409edfbd3b3d74229f12f1ab6c15598aa3240091",
+  "archive_bytes": 798165184,
+  "upstream_repository": "https://github.com/SK8-ENGINE/skate-3-rust-engine",
+  "upstream_commit": "60efdef86600d8d8d4feb4b7c608fa0efd0643d7",
+  "converted_manifest_sha256": "4743ee14f20baae5b30cc00b70c8ab55b5ed5c5f8f912194318477eb38b6afa0",
+  "collision_decoder": "GetVertex82AC79D0: unsigned 16-bit deltas, signed saturating base addition, f32 conversion then f32 multiplication",
+  "source_verification": {
+    "status": "passed",
+    "source_array_elements": 3718591,
+    "authored_park_models_covered": 32,
+    "textures": 405,
+    "collision_triangles": 147660,
+    "collision_sha256": "e68171758385982b48a2b6ce996fb3780487413a983dcb42a9dfb7f8198bb244",
+    "oracle_source_sha256": "58c48de5fd0fc8d7bef7c2c97275fe5d008762f02f4bebcde95cb9e4b0170100"
+  },
+  "coordinate_transform_unreal": "(x,y,z) metres -> (100*x,100*z,100*y) centimetres",
+  "selection": "Full source resources intersecting native X=200..500, Z=-800..-500. Includes all 32 University model resources with authored _MP material names, and whole adjacent resources. No triangle clipping or simplification."
+}

@@ -337,6 +337,9 @@ clear_torii_vegetation(world)
 from treehouse.layout import integrate as integrate_treehouse
 integrate_treehouse(world, H)
 houses_layout.clear_and_dress(world, sample_h)
+# The Mega Park's crowns replace the far forest's painted cards on the hills west of it (after the tree house's draws).
+from megapark.forest import clear_far_forest
+clear_far_forest(world)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))
 H.astype("<f4").tofile(os.path.join(OUT, "heightmap.bin"))  # runtime cosmetic-particle ground sampling
 with open(os.path.join(OUT, "world.json"), "w") as fh:

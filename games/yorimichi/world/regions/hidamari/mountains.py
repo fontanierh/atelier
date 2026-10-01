@@ -6,6 +6,7 @@ gradually out of the park; the large summit is a scenic landmark beyond it.
 import math
 from functools import lru_cache
 import numpy as np
+from megapark import placement as megapark
 
 BOUNDS = (-700., 500., 2400., 3000.)
 STEP = 10.
@@ -75,7 +76,8 @@ def drainage_field(x,y):
         cut=np.maximum(cut,np.exp(-(distance/(width+16))**2)*smooth(width/12))
     return snow,cut
 
-def raw_height(x,y,base):
+def natural_height(x,y):
+    """The foothills and volcano before the edge blend, without the Mega Park."""
     x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
     north=np.maximum(y-500,0)
     apron=47+north*.020
@@ -100,8 +102,14 @@ def raw_height(x,y,base):
     relief*=trail_quiet
     foothills+=noise(x,y,130,4)*15*smooth(north/240)*trail_quiet
     target=apron+foothills+np.maximum(cone+relief,0)
+    return 47+(target-47)*smooth(north/180)
+
+def raw_height(x,y,base):
+    x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
+    north=np.maximum(y-500,0)
+    # The Mega Park sits in the western foothills; the relief around it is eased to meet its edges.
+    target=megapark.terrain(x,y,natural_height(x,y),natural_height)
     edge=smooth((x-BOUNDS[0])/200)*smooth((BOUNDS[2]-x)/200)*smooth((BOUNDS[3]-y)/210)*smooth(north/180)
-    target=47+(target-47)*smooth(north/180)
     return np.asarray(base)*(1-edge)+target*edge
 
 @lru_cache(maxsize=4)
@@ -133,6 +141,12 @@ def mesh(base_sampler):
     colors=green*(1-forest[...,None])+rock*forest[...,None]
     apron=smooth((y-500)/190)
     colors=np.array((.24,.30,.12))*(1-apron[...,None])+colors*apron[...,None]
+    # Round the Mega Park the ground under the closed canopy is forest floor, leaf litter and moss (megapark/forest.py).
+    from megapark import forest as megapark_forest
+    under=megapark_forest.floor(x,y)*(1-smooth((z-205)/30))
+    litter=noise(x,y,40,41)
+    floor=np.stack([.066+.018*litter,.062+.014*litter,np.full_like(x,.026)],axis=-1)
+    colors=colors*(1-under[...,None])+floor*under[...,None]
     radius=np.hypot(x-550,y-1930)
     # Snow collects in broken, tapering gullies instead of long uniform ribbons.
     # Preserve a continuous crown, then expose irregular rock islands downslope.
