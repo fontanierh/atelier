@@ -491,6 +491,12 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   matrix's zero translation W lane is preserved. Real trajectory selection, air reckoning,
   skeleton/collision/wipeout producers and the full active-host schedule remain separate
   integration checks; this state comparison records explicit completed service observations.
+- Wipeout/runout requests: 254 histories and 15,472 commands preserve 1,171,351 exact words
+  across all 34 reason/value pairs, individual wrapping request counts, eligibility gates,
+  cooldown, contact and balance histories, and selective initialization/teleport/selection resets.
+  Repeated requests, signed zero, NaNs and the strict upright threshold are covered. Two invalid
+  reason indices require the original panic and explicit native abort. Complete collision/pose
+  wipeout checks and the shared gameplay schedule remain separate integration checks.
 - Ground entry/output helpers: 5,048 cases preserve 144,084 exact words for direct angular projection,
   speed seeding, landing tag 19, ordered future-deck force prediction and all output fields/conditional
   writes. Manual entry/removal observes every body read/projection/write, shared body-slot aliases,
