@@ -64,7 +64,16 @@ while the actual solver reports valid wheel support, followed by movement and re
 The stock active Session selects CameraHigh, whose graph has no slow-motion rate
 requester. Its simulation period therefore remains at the original value throughout
 these histories. Dynamic request scheduling requires a separate authored camera
-resource check. OS polling, asynchronous world-builder timing, Unreal presentation
+resource check. That check also passes: four raw launch/landing histories and
+1,276 commands preserve 182,128,508 exact bytes (SHA256
+`e5d2c19c4fd8b40a3d471ed2717dde3fbe17a9a675cb0651fbe6ec608dfc2930`).
+Only the original default camera graph resource and its native conversion change;
+the accepted full Session binaries, settings and all other resources are retained.
+Actual air transitions generate four Begin, 438 Update and four End callbacks,
+26 distinct simulation periods and four returns to the stock period. All 1,264
+ticks verify that the preceding tick's requests reach the clock in source order.
+This proves dynamic scheduling under an authored resource, not a stock feature.
+OS polling, asynchronous world-builder timing, Unreal presentation
 and in-game performance remain separate integration checks.
 
 `Tests/build_native_session_cli.py` builds an offline QA transport directly from all
