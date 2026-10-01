@@ -528,6 +528,14 @@ On arm64 macOS, optimized Clang C++17 versus Rust 1.97.1:
   retained body caches and 196,421 ordered remote contact rows. Fingerprint/wire identities
   and stock world volumes are explicit caller transports. Schema hash construction, network
   capture/encoding/socket/interpolation and the full shared solve schedule remain separate.
+- Board possession: 1,536 core histories preserve 4,421,091 exact words for held/throw/recall/hide
+  state, retained hand/retrieval records, quadrants, teleport reset and ordered effects. The actual
+  live owner comparison adds 653 cases and 32,470,471 exact words, including 2,432 packed hand/deck
+  drive rows, body/hook/material/shape mutations, fixed retrieval timing versus processed timestep,
+  publication and immediate transition callbacks. Seventy-six malformed settings/curve fixtures
+  preserve errors; three invalid contracts separately require original panic and explicit native
+  abort. Completed physical/animation observations remain typed caller inputs; complete shared
+  scheduling and gameplay transitions are separate integration checks.
 - Skeleton root/board frames: 1,735 streams preserve 4,304,114 exact words through heading,
   prediction consumption, ground/teleport targets, COM publication, retained resets and lift limits.
   All 211 stored words are observed after each command. The local heading sine preserves the
