@@ -185,6 +185,30 @@ replacements and teleport resets retain the original histories. Attribute/action
 processed gameplay requests and engine triangles are explicit upstream inputs; complete
 session and Ground lifecycle dispatch remain separate checks.
 
+## Native ground owner composition
+
+`GroundStateRuntime.*`, `GroundRuntime.*`, `GroundInput.*`, `GroundSettings.*`,
+`GroundPumpingRuntime.*` and `GroundHangGeometry.*` connect the original ground
+controllers to live board bodies, force queues, wheel materials, world queries,
+stock profiles, rider pose adjustment, FootIK and the shared physical solver.
+`OffboardGrabCache.*` retains every grab record, request and completion while
+matching the original selective ground invalidation and entry reset.
+
+`Tests/check_ground_runtime_parity.py` passes 126 histories, 1,504 operations and
+935 ticks against unchanged original source from `46513a6`: **104,809,292 exact
+bytes**, SHA-256 `fa06edb3cc96b26690a8b35c2fda6dbbef3603dc9cb8e11016127d03cfb268d9`.
+All 25 stock profiles, tuning, ground entry/update/exit, pumping, persistent
+collision/force histories and 48 partial-failure ticks match. All 134 additional
+stock/malformed loader fixtures match. Pumping and steering settings now use
+the shared original-semantics reader; their existing numeric comparisons still
+match all 265,785 and 313,888 bytes respectively.
+
+This verifies the concrete ground owners. Handplant dispatch, trajectory
+Launch/Update continuation and later SkeletonAir capture are explicitly
+observed pending phase boundaries. Processed gameplay flags, edge observations
+and authored world triangles are supplied inputs. The complete player frame,
+scene grab execution and live Unreal session remain separate checks.
+
 ## Native airborne reckoning and spin
 
 `AirReckoning.*`, `BodySpin.*` and `BodyFlip.*` preserve the complete original

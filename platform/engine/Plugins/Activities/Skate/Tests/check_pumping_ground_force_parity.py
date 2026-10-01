@@ -142,7 +142,7 @@ let f=|class,field|data.float(class,"default",field);
 def build_native(output):
     live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
     if snapshot.exists():shutil.rmtree(snapshot)
-    snapshot.mkdir();units=('NativeMath','NameId','Settings','GroundForce','Pumping')
+    snapshot.mkdir();units=('NativeMath','NameId','Settings','StockSettingsReader','GroundForce','Pumping')
     for unit in units:
         for ext in ('h','cpp'):shutil.copy2(live/f'{unit}.{ext}',snapshot/f'{unit}.{ext}')
     shutil.copy2(live/'DataReader.h',snapshot/'DataReader.h');shutil.copy2(PLUGIN/'Tests/Native/pumping_ground_force_probe.cpp',snapshot/'pumping_ground_force_probe.cpp')

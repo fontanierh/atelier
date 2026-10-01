@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "Pumping.h"
+#include "StockSettingsReader.h"
 #include <cstring>
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -12,21 +13,11 @@ float Word(std::uint32_t w) {float f;std::memcpy(&f,&w,4);return f;}
 float Unit(float v) {const float lower=-v>=0?0:v;return 1-lower>=0?lower:1;}
 bool Scalar(const SettingsDatabase& data,std::string_view category,std::string_view key,std::string_view name,float& output,std::string& error)
 {
-    const auto identity=std::string(category)+"/"+std::string(key)+"/"+std::string(name);
-    const auto field=data.Field(category,key,name);if (!field) {error="Missing stock field "+identity;return false;}
-    const auto value=field->Float();if (!value) {error="Expected finite stock float "+identity;return false;}
-    output=*value;return true;
+    return StockSettingsReader(data).Float(category,key,name,output,error);
 }
 bool Curve(const SettingsDatabase& data,std::string_view name,PointGraph<8>& output,std::string& error)
 {
-    const auto field=data.Field("physics_pumping","default",name);const auto identity="physics_pumping/default/"+std::string(name);
-    if (!field) {error="Missing stock field "+identity;return false;}
-    const std::uint32_t* words=nullptr;std::size_t prefix;
-    if (field->Words(16,words)) prefix=0;
-    else if (field->Words(20,words)) prefix=4;
-    else {error="Invalid native eight-point graph "+identity;return false;}
-    for (std::size_t i=0;i<8;++i) {output.x[i]=Word(words[prefix+i]);output.y[i]=Word(words[prefix+8+i]);}
-    return true;
+    return StockSettingsReader(data).Curve8("physics_pumping","default",name,output,error);
 }
 }
 bool PumpingConfiguration::Load(const SettingsDatabase& data,std::string& error)

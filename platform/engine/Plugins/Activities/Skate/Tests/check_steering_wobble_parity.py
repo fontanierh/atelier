@@ -158,7 +158,7 @@ def prepare_source(output):
 def build_native(output):
     live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
     if code.exists():shutil.rmtree(code)
-    code.mkdir();files=('NativeMath','NameId','Settings','Steering','SpeedWobble','SteeringWobbleSettings')
+    code.mkdir();files=('NativeMath','NameId','Settings','StockSettingsReader','Steering','SpeedWobble','SteeringWobbleSettings')
     for p in list(live.glob('*.h'))+[live/(name+'.cpp') for name in files]:shutil.copyfile(p,code/p.name)
     probe=code/'steering_wobble_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/steering_wobble_probe.cpp',probe)
     (output/'native-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')

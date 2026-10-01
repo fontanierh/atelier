@@ -1,20 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "Steering.h"
 #include "SpeedWobble.h"
-#include <cstring>
+#include "StockSettingsReader.h"
 namespace atelier::skate
 {
 namespace
 {
-float Float(std::uint32_t word) {float value;std::memcpy(&value,&word,4);return value;}
 bool Scalar(const SettingsDatabase& data,std::string_view category,std::string_view key,std::string_view name,float& output,std::string& error)
-{const auto* f=data.Field(category,key,name);const auto value=f?f->Float():std::nullopt;if (!value) {error="Expected finite stock float at "+std::string(category)+"/"+std::string(key)+"/"+std::string(name);return false;}output=*value;return true;}
+{return StockSettingsReader(data).Float(category,key,name,output,error);}
 bool Curve(const SettingsDatabase& data,std::string_view category,std::string_view name,PointGraph<8>& output,std::string& error)
-{
-    const auto* field=data.Field(category,"default",name);const std::uint32_t* words=nullptr;std::size_t offset=0;
-    if (field && field->Words(16,words)) offset=0;else if (field && field->Words(20,words)) offset=4;else {error="Invalid native eight-point graph "+std::string(category)+"/default/"+std::string(name);return false;}
-    for (std::size_t i=0;i<8;++i) {output.x[i]=Float(words[offset+i]);output.y[i]=Float(words[offset+8+i]);}return true;
-}
+{return StockSettingsReader(data).Curve8(category,"default",name,output,error);}
 }
 bool SteeringSettings::Load(const SettingsDatabase& data,std::string& error)
 {
