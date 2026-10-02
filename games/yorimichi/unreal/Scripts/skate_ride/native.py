@@ -579,6 +579,62 @@ def multiply(local, parent):
 
 
 def quaternion_angle(a, b):
-    """The rotation angle in radians between two unit quaternions (sign-insensitive)."""
-    dot = abs(sum(x * y for x, y in zip(a, b)))
-    return 2.0 * math.acos(min(1.0, dot))
+    """The rotation angle in radians between two unit quaternions (sign-insensitive), as 4 atan2(|a - b|, |a + b|)
+    with b's sign matched to a. The usual 2 acos(|a.b|) is ill-conditioned near zero: single-precision quaternions
+    that agree to 1e-7 read as about 5e-4 rad apart through it."""
+    if sum(x * y for x, y in zip(a, b)) < 0:
+        b = [-v for v in b]
+    return 4.0 * math.atan2(math.dist(a, b), math.sqrt(sum((x + y) ** 2 for x, y in zip(a, b))))
+
+
+def _f32(value):
+    return struct.unpack('<f', struct.pack('<f', value))[0]
+
+
+def _fast_asin(value):
+    """FMath::FastAsin(float), operation for operation in single precision."""
+    half_pi = _f32(1.5707963050)
+    x = abs(value)
+    root = _f32(math.sqrt(max(_f32(1.0 - x), 0.0)))
+    result = _f32(-0.0012624911)
+    for c in (0.0066700901, -0.0170881256, 0.0308918810, -0.0501743046, 0.0889789874, -0.2145988016, half_pi):
+        result = _f32(_f32(result * x) + _f32(c))
+    result = _f32(result * root)
+    return _f32(half_pi - result) if value >= 0.0 else _f32(result - half_pi)
+
+
+def euler_stored(q):
+    """The rotation an Unreal Engine 5 animation sequence actually holds for the key q (Unreal space, x y z w).
+
+    UE 5's sequence data model keeps bone keys as single-precision Euler angles: the controller converts each key with
+    FQuat4f::Euler (FQuat4f::Rotator), and evaluation rebuilds the quaternion with FQuat::MakeFromEuler. Within 0.081
+    degrees of pitch +-90 (|Z X - W Y| > 0.4999995) Rotator snaps the pitch to +-90 and the roll to 0, so a key there
+    comes back up to about 2e-3 rad away; elsewhere the round trip is within a few 1e-5 rad. This reproduces the round
+    trip in single precision, to explain those keys in the verification."""
+    x, y, z, w = (_f32(v) for v in q)
+    test = _f32(_f32(z * x) - _f32(w * y))
+    yaw_y = _f32(2.0 * _f32(_f32(w * z) + _f32(x * y)))
+    yaw_x = _f32(1.0 - _f32(2.0 * _f32(_f32(y * y) + _f32(z * z))))
+    to_deg = _f32(180.0 / math.pi)
+    threshold = _f32(0.4999995)
+
+    def axis(angle):
+        angle = math.fmod(angle, 360.0)
+        angle = angle + 360.0 if angle < 0.0 else angle
+        return _f32(angle - 360.0 if angle > 180.0 else angle)
+
+    if abs(test) > threshold:
+        sign = 1.0 if test > 0.0 else -1.0
+        pitch, roll = 90.0 * sign, 0.0
+        yaw = axis(sign * _f32(_f32(2.0 * _f32(math.atan2(x, w))) * to_deg))
+    else:
+        pitch = _f32(_fast_asin(_f32(2.0 * test)) * to_deg)
+        yaw = _f32(_f32(math.atan2(yaw_y, yaw_x)) * to_deg)
+        roll = _f32(_f32(math.atan2(_f32(-2.0 * _f32(_f32(w * x) + _f32(y * z))),
+                                    _f32(1.0 - _f32(2.0 * _f32(_f32(x * x) + _f32(y * y)))))) * to_deg)
+    half = math.pi / 360.0
+    sp, cp = math.sin(pitch * half), math.cos(pitch * half)
+    sy, cy = math.sin(yaw * half), math.cos(yaw * half)
+    sr, cr = math.sin(roll * half), math.cos(roll * half)
+    return (cr * sp * sy - sr * cp * cy, -cr * sp * cy - sr * cp * sy, cr * cp * sy - sr * sp * cy,
+            cr * cp * cy + sr * sp * sy)
