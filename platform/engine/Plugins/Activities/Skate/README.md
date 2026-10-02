@@ -84,11 +84,13 @@ attenuate over a 500 cm inner radius and 4500 cm falloff.
 | Pump (ground), grab (air) | Left / right trigger | Q / E |
 | Transfer over the coping | Left stick forward | Hold Shift |
 
-Kickflips flick down then up-left, heelflips down then up-right; goofy mirrors the gestures. A grab never requests a
-transfer: the transfer has its own input. LB, RB and both stick clicks pass through to the recovered pad; clicking
-both sticks with both triggers held is the deliberate bail. The adapter undoes the project's 0.25 per-axis stick dead
-zone, because Flick-It and the manual balance read real stick positions. A fast mouse flick points the stick in its
-direction and springs back after 0.1 s; slow movement moves it gradually.
+Kickflips flick down then up-left, heelflips down then up-right; goofy mirrors the gestures. Holding the left-trigger
+grab, B makes it a Christ air and A a one-foot; holding the right stick to one side changes the grab, and the right
+trigger with the stick held left is a tuck knee. A grab never requests a transfer: the transfer has its own input. LB,
+RB and both stick clicks pass through to the recovered pad; clicking both sticks with both triggers held is the
+deliberate bail. The adapter undoes the project's 0.25 per-axis stick dead zone, because Flick-It and the manual
+balance read real stick positions. A fast mouse flick points the stick in its direction and springs back after 0.1 s;
+slow movement moves it gradually.
 
 ## Board contract
 
