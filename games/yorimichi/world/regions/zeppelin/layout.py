@@ -16,13 +16,14 @@ MESHES=['ZP_Woodland','ZP_City','ZP_MegaPark']
 # All legs keep the first leg's speed, 1480 m in 28 s.
 LEG_HEIGHTS={(0,1):155.,(0,2):185.,(1,2):225.}
 CRUISE_SPEED=1480/28
-# The Mega Park stop stands on the crest west of the park's top road, levelled into the north terrain's 10 m grid
-# (hidamari/mountains.py): flat under the station and the docked ship, and along its footpath east to x -170, the last
-# grid column clear of the park. From there a level footbridge crosses the dip the terrain makes beside the park and
-# lands on the road deck, whose west edge on the footpath's line is at x -155.1 and 129.99 m.
+# The Mega Park stop stands on the crest west of the park's top road, on the gate's ground (megapark/gate.py): level
+# under the station and the docked ship, and along its footpath east to x -170. From there a level footbridge crosses
+# the dell beside the park to a sill against the road deck. The deck's west edge (DECK_EDGE) crosses the footpath's
+# line at x -155.1 and 129.99 m on a slant: 0.59 m further west and 5.6 cm higher for every metre north.
 PARK_PAD=(-222.,1472.,-184.,1496.)
 PARK_WALK=((-189.,1477.),(-170.,1477.))
-PARK_BRIDGE=((-170.5,1477.),(-154.,1477.))
+PARK_BRIDGE=((-170.5,1477.),(-156.2,1477.))
+DECK_EDGE=((-155.1,1477.,129.987),-.59,.056)
 PROPELLER_CENTERS=[[3.6,-6.0,6.1],[3.6,6.0,6.1]]
 PROPELLER_RADIUS=1.65
 SHIP=[6.,4.,1.65]; ENTRY=[6.,-.8,1.65]; SAFE=[6.,-8.7,.05]

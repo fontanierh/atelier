@@ -344,6 +344,7 @@ def generate():
             name=r.choices(['Grass_A','Grass_B','Bush_Ochre_A','Rock_B'],[.42,.40,.13,.05])[0]
             put(name,px,py,pz-.08,yaw=r.uniform(0,360),scale=r.uniform(.6,1.0))
     put('HD_NorthMountains',0,0,0)
+    put('HD_NorthGate',0,0,0)
     put('HD_NorthTrail',0,0,0)
     # The Mega Park trail: its own ground north of the square, a forest closing over it, undergrowth along it.
     park_trail.forest(inst,north_height)
@@ -456,6 +457,9 @@ def generate():
         if not placements:continue
         a=np.asarray(placements,float)
         inst[name]=a[~megapark.contains(a[:,0],a[:,1],margin=4.)|megapark_forest.seam_undergrowth(name,a[:,0],a[:,1])].tolist()
+    # By the air station the gate's ground has its own grass, verges, bushes and rocks (megapark/gate.py).
+    from megapark import gate
+    gate.dress(inst,north_base_height)
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
     return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 
@@ -494,6 +498,10 @@ def north_height(x,y):
     z=np.where(city,height(x,y),np.where(mountains.contains(x,y),z,base))
     approach=park_trail.in_approach(x,y)
     if approach.any():z[approach]=park_trail.approach_height(x[approach],y[approach])
+    # Where the Mega Park meets its air station the ground is the gate's own finer patch (megapark/gate.py).
+    from megapark import gate
+    on=gate.inside(x,y)
+    if on.any():z[on]=gate.height(x[on],y[on],north_base_height)
     return z
 
 def trail_distance(x,y):

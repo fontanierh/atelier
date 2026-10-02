@@ -71,8 +71,9 @@ LEDGE_SHRUBS = ([('Tree_Maple_B', 5), ('Tree_Pine_B', 2), ('Bush_Ochre_A', 1), (
 SHRUB_SCALE = {'Tree_Maple_B': (.3, .45), 'Tree_Pine_B': (.18, .28)}
 BUILT_CLEAR = (6., 1.4)         # metres from any built surface (concrete, wood, paint, metal) for a tree, a shrub
 # The seam's rocks (seam()): meshes, scale range, rocks per square metre tried, the least gap between two, and the band
-# of distance from the concrete they lie in (metres).
-SEAM_ROCKS = (('Rock_A', 'Rock_B', 'Rock_C'), (.55, 1.1), 1 / 18., 3.5, (1.2, 6.))
+# of distance from the concrete they lie in (metres). They are the park's stone (gate.ROCKS), not the island's mint
+# rocks.
+SEAM_ROCKS = (('HD_NorthRockA', 'HD_NorthRockB', 'HD_NorthRockB'), (.4, .8), 1 / 18., 3.5, (1.2, 6.))
 # The rock is ridden too, so the plants on it keep off the lines: the grind rails and copings (the source's rail
 # splines) and the roll-in from the deck spawn (native x, z; the points tools/review_megapark.py probes). Metres in
 # plan, and the height band a rail clears.

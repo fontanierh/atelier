@@ -5,7 +5,7 @@ from pathlib import Path
 import unreal
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from import_village import import_mesh,material
-from mountain_material import material as mountain_material
+from mountain_material import material as mountain_material,gate_material
 from harbor_material import material as harbor_material
 from arcade_material import material as arcade_material
 from plaza_material import water_material,paving_material
@@ -22,6 +22,7 @@ harbor_mat=harbor_material() if not only or only & {'HD_Harbor','HD_Boat'} else 
 water_mat=harbor_material(water=True) if not only or 'HD_Sea' in only else None
 report=json.loads((OUT/'import-report.json').read_text()) if only and (OUT/'import-report.json').exists() else {}
 mountain_mat=mountain_material() if not only or any(n.startswith('HD_North') for n in only) else None
+gate_mat=gate_material() if not only or 'HD_NorthGate' in only else None
 def distance_lods(mesh,name,levels):
     """Reduce render geometry only; retain authored UCX and LOD0 complex collision."""
     unreal.load_module('StaticMeshEditor')
@@ -66,7 +67,8 @@ def distance_lods(mesh,name,levels):
 for name,entry in manifest.items():
     if only and name not in only:continue
     mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name)
-    if name.startswith('HD_North'): selected=mountain_mat
+    if name=='HD_NorthGate': selected=gate_mat
+    elif name.startswith('HD_North'): selected=mountain_mat
     elif name=='HD_Sea': selected=water_mat
     elif name in ('HD_Harbor','HD_Boat'): selected=harbor_mat
     elif name=='HD_PlazaWater': selected=plaza_water

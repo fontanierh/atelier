@@ -60,12 +60,13 @@ UNDER = dict(bush=(55., 2.2, .5), grass=(30., 1.6, .55))   # (reach from the foo
 BUSHES = (('Bush_Green_A', .3), ('Bush_Green_B', .2), ('Bush_Ochre_A', .25), ('Bush_Ochre_B', .15), ('Bush_Flower_A', .1))
 # The seam (placement.SEAM) meets the forest floor in the air station's clearing, which the station's own clearance
 # leaves bare: there the ground gets a denser undergrowth like the concept (assets/megapark/concepts/seam-gate), ochre
-# bushes, red shrub maples, grass, fallen leaves and a few rocks, within REACH metres of the footprint in BOX.
+# bushes, red shrub maples, grass, fallen leaves and a few rocks in the park's grey-violet stone (gate.ROCKS), within
+# REACH metres of the footprint in BOX. North of y 1440, by the station, the gate's own dressing replaces it (gate.dress).
 SEAM_DRESS = dict(box=(-250., 1365., -130., 1500.), reach=18., spacing=1.5, density=.75, seed=1302)
 SEAM_PLANTS = (('Bush_Ochre_A', .17, (.8, 1.4)), ('Bush_Ochre_B', .12, (.8, 1.3)), ('Bush_Green_A', .08, (.8, 1.3)),
                ('Tree_Maple_B', .08, (.3, .5)), ('Grass_A', .19, (.8, 1.2)), ('Grass_B', .17, (.8, 1.2)),
-               ('Litter', .11, (.9, 1.4)), ('Rock_B', .05, (.5, 1.)), ('Rock_A', .03, (.4, .8)))
-SINK = {'Bush': .15, 'Tree': .3, 'Grass': .08, 'Litter': -.02, 'Rock': .35}   # metres under the ground, Rock per scale
+               ('Litter', .11, (.9, 1.4)), ('HD_NorthRockB', .05, (.5, 1.)), ('HD_NorthRockA', .03, (.4, .8)))
+SINK = {'Bush': .15, 'Tree': .3, 'Grass': .08, 'Litter': -.02, 'HD_NorthRock': .35}   # metres under the ground, rock per scale
 SEED = 1300
 
 
@@ -178,7 +179,7 @@ def seam_undergrowth(name, x, y):
     """Whether instances of `name` at (x, y) are undergrowth by the seam, which comes within a metre of the park
     (hidamari/layout.py keeps everything else 4 m off it)."""
     x, y = np.asarray(x, 'f8'), np.asarray(y, 'f8')
-    if not name.startswith(('Bush', 'Grass', 'Litter', 'Rock')):
+    if not name.startswith(('Bush', 'Grass', 'Litter', 'Rock', 'HD_NorthRock')):
         return np.zeros(x.shape, bool)
     x0, y0, x1, y1 = SEAM_DRESS['box']
     box = (x > x0) & (x < x1) & (y > y0) & (y < y1)
@@ -209,7 +210,7 @@ def _dress_seam(instances, height, trunks, done):
         w = weights if far else shrubs
         name, _, scale = SEAM_PLANTS[rng.choice(len(SEAM_PLANTS), p=w / w.sum())]
         size = rng.uniform(*scale)
-        sink = next(s for k, s in SINK.items() if name.startswith(k)) * (size if name.startswith('Rock') else 1)
+        sink = next(s for k, s in SINK.items() if name.startswith(k)) * (size if 'Rock' in name else 1)
         instances.setdefault(name, []).append([round(float(q[0]), 3), round(float(q[1]), 3), round(float(ground - sink), 3),
                                                round(float(rng.uniform(0, 360)), 1), round(float(size), 3)])
         done[name] = done.get(name, 0) + 1

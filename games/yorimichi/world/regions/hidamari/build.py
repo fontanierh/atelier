@@ -334,6 +334,29 @@ def inland_water():
         m.poly([(840,y,z),(856,y,z),(856,y+1,nz),(840,y+1,nz)],'water_city')
     return m
 
+class GateMesh:
+    """The gate's ground (megapark/gate.py mesh): one smooth sheet with shared vertices, its own normals, the island's
+    ground texture's UVs (metres / 6, as the terrain's) and Color = linear RGB and the texture's amount."""
+    def __init__(self,name,data):
+        self.name=name;self.vertices=data['vertices'];self.faces=data['faces'];self.colliders=[];self.data=data
+    def object(self,material):
+        d=self.data;me=bpy.data.meshes.new(self.name)
+        me.from_pydata(d['vertices'].tolist(),[],d['faces'].tolist());me.update();me.materials.append(material)
+        index=np.empty(len(me.loops),dtype=np.int32);me.loops.foreach_get('vertex_index',index)
+        uv=me.uv_layers.new(name='UVMap');uv.data.foreach_set('uv',(d['vertices'][index,:2]/6.).astype(np.float32).ravel())
+        col=me.color_attributes.new(name='Color',type='FLOAT_COLOR',domain='POINT')
+        col.data.foreach_set('color',np.asarray(d['colours'],np.float32).ravel())
+        me.polygons.foreach_set('use_smooth',np.ones(len(me.polygons),bool))
+        me.normals_split_custom_set_from_vertices(d['normals'].tolist())
+        ob=bpy.data.objects.new(self.name,me);bpy.context.collection.objects.link(ob)
+        return ob
+
+def gate_rock(name):
+    from megapark import gate
+    m=M(name);seed,size=gate.ROCKS[name]
+    for points,colour in gate.rock(seed,size):m.poly(points,colour)
+    return m
+
 def main():
     OUT.mkdir(parents=True,exist_ok=True);(OUT/'assets').mkdir(exist_ok=True)
     city=generate();text=json.dumps(city,indent=2)+'\n'
@@ -376,6 +399,9 @@ def main():
     # Reference-led kit modules replace legacy shop variants by mesh name.
     builders.update(kit.builders(lettering))
     builders['HD_NorthMountains']=lambda:mountains.mesh(north_base_height)
+    from megapark import gate
+    builders['HD_NorthGate']=lambda:GateMesh('HD_NorthGate',gate.mesh(north_base_height))
+    for name in gate.ROCKS:builders[name]=lambda name=name:gate_rock(name)
     builders['HD_NorthTrail']=lambda:mountains.trail_mesh(north_height)
     from megapark import trail as park_trail
     builders['HD_NorthApproach']=park_trail.approach_mesh

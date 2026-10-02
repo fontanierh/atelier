@@ -192,8 +192,11 @@ def mesh(base_sampler):
     signed+=breakup*exposure
     signed=np.maximum(signed,170+noise(x,y,65,33)*14-radius)
     signed=np.minimum(signed,z-235)
+    # The gate's finer patch replaces these cells by the Mega Park's air station (megapark/gate.py, HD_NorthGate).
+    from megapark import gate
     for j in range(len(ys)-1):
         for i in range(len(xs)-1):
+            if gate.cell_inside(x[j,i],y[j,i]):continue
             for offsets in [((0,0),(1,0),(1,1)),((0,0),(1,1),(0,1))]:
                 p=[(x[j+b,i+a],y[j+b,i+a],z[j+b,i+a]) for a,b in offsets]
                 color=np.mean([colors[j+b,i+a] for a,b in offsets],axis=0)

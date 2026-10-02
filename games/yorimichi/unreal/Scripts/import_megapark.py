@@ -203,6 +203,10 @@ def materials(report):
                    'HasTransparent': float('transparent' in channels),
                    'LightmapNorm': restyle['lightmaps'].get(channels.get('lightmap'), 3.),
                    'Moss': float(channels.get('diffuse') in MOSSY)}
+        if p.get('seam'):
+            # The seam is hillside the island's ground runs up to: matte like it (the original specular maps catch the
+            # sky's blue at the grazing angles the hillside is seen at from the footpath), its baked occlusion lighter.
+            scalars.update(SpecularScale=0., Gloss=0., LightmapOcclusion=.25)
         for k, v in scalars.items(): MEL.set_material_instance_scalar_parameter_value(mi, k, v)
         natural = p.get('alpha_mode', 0) == 0 and channels.get('diffuse') in NATURAL
         overrides = mi.get_editor_property('base_property_overrides')

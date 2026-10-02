@@ -33,7 +33,7 @@ class PlantTests(unittest.TestCase):
         seam = plants.seam()
         rows = np.array([p[:3] for items in seam.values() for p in items])
         self.assertGreater(len(rows), 200)
-        self.assertTrue({'Rock_A', 'Rock_B', 'Rock_C'} & set(seam))
+        self.assertTrue({'HD_NorthRockA', 'HD_NorthRockB'} & set(seam))
         island = placement.native_to_island(rows)
         self.assertTrue(placement.contains(island[:, 0], island[:, 1]).all())
         lo, hi = placement.seam_render().reshape(-1, 3).min(0) - 1, placement.seam_render().reshape(-1, 3).max(0) + 1

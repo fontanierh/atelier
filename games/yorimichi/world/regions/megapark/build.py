@@ -122,19 +122,22 @@ def export_seam(source, report):
     offset = 0
     for asset, i, _, f in placement.seam_parts():
         part = next(p for p in models[asset]['meshes'] if p['index'] == i)
-        key = material_key(part)
+        # The seam has its own materials (import_megapark.py materials()): matte like the island's ground beside it.
+        key = material_key(part) + '_Seam'
         if key not in slots:
             slots.append(key)
-        report['materials'].setdefault(key, part)
+        report['materials'].setdefault(key, {**part, 'seam': True})
         with np.load(SOURCE / models[asset]['npz'], allow_pickle=False) as arrays:
             v = arrays[f'vertices_{i}']
             n, uv, lightmap, decal = channels(arrays, i, v, f)
         vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
         normals.append(n); uvs.append(uv); lightmaps.append(lightmap); decals.append(decal)
         offset += len(v)
-        # The skirt: a, b, b', a' under each open edge, and a level normal facing out. Its texture and decal (both tile)
-        # run on past the edge, away from the face, at the part's own density. The lightmap is an atlas, so the skirt
-        # takes one sample of it from inside the face above: the edge's texels drawn down would streak.
+        # The skirt: a, b, b', a' under each open edge, its normal level and facing out. Its texture and decal (both
+        # tile) run on past the edge, away from the face, at the part's own density. The lightmap is an atlas, so the
+        # skirt takes its samples from the edge and inside the face above, constant down the skirt: the edge's texels
+        # drawn down would streak. Where two edges meet, the skirt's normal, run-on direction and lightmap are those
+        # of the corner, shared by both quads, so the skirt shades as one face, with no seam between its panels.
         t = v[f].astype('f8')
         world = np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1)
 
@@ -148,18 +151,31 @@ def export_seam(source, report):
             across = np.array([-along[1], along[0]])/max(np.linalg.norm(along), 1e-9)
             if np.dot(across, channel[o]-channel[a]) > 0:
                 across = -across
-            down = across*placement.SKIRT_DROP*scale
-            return np.stack([channel[a], channel[b], channel[b]+down, channel[a]+down]).astype(channel.dtype)
+            return across*placement.SKIRT_DROP*scale
 
         uv_scale, decal_scale = density(uv), density(decal)
         third = {(int(face[k]), int(face[(k+1) % 3])): int(face[(k+2) % 3]) for face in f for k in range(3)}
-        for a, b, out in skirt.get((asset, i), ()):
-            o = third.get((a, b), third.get((b, a)))
+        edges = [(a, b, np.asarray(out, 'f8'), third.get((a, b), third.get((b, a)))) for a, b, out in skirt.get((asset, i), ())]
+        corner, lit = {}, {}
+        def at(k):
+            return tuple(np.round(v[k].astype('f8'), 3))
+        for a, b, out, o in edges:
+            inner = lightmap[[a, b, o]].astype('f8').mean(0)
+            for k in (a, b):
+                c = corner.setdefault(at(k), [np.zeros(2), np.zeros(2), np.zeros(2), 0])
+                c[0] += out; c[1] += run_on(uv, uv_scale, a, b, o); c[2] += run_on(decal, decal_scale, a, b, o); c[3] += 1
+                # The lightmap is shared through the vertex, not its position: across a chart seam it is not continuous.
+                lit.setdefault(k, []).append(.5*lightmap[k] + .5*inner)
+        for a, b, out, o in edges:
+            ca, cb = corner[at(a)], corner[at(b)]
             vertices.append(np.stack([v[a], v[b], v[b]-drop, v[a]-drop]).astype(v.dtype))
             faces.append(np.array([[0, 1, 2], [0, 2, 3]])+offset); material_indices.extend([slots.index(key)]*2)
-            normals.append(np.tile([out[0], 0., out[1]], (4, 1)))
-            uvs.append(run_on(uv, uv_scale, a, b, o)); decals.append(run_on(decal, decal_scale, a, b, o))
-            lightmaps.append(np.tile(lightmap[[a, b, o]].mean(0), (4, 1)).astype(lightmap.dtype))
+            na, nb = (c[0]/max(np.linalg.norm(c[0]), 1e-9) for c in (ca, cb))
+            normals.append(np.array([[na[0], 0., na[1]], [nb[0], 0., nb[1]], [nb[0], 0., nb[1]], [na[0], 0., na[1]]]))
+            uvs.append(np.stack([uv[a], uv[b], uv[b]+cb[1]/cb[3], uv[a]+ca[1]/ca[3]]).astype(uv.dtype))
+            decals.append(np.stack([decal[a], decal[b], decal[b]+cb[2]/cb[3], decal[a]+ca[2]/ca[3]]).astype(decal.dtype))
+            la, lb = np.mean(lit[a], 0), np.mean(lit[b], 0)
+            lightmaps.append(np.stack([la, lb, lb, la]).astype(lightmap.dtype))
             offset += 4
     render = export_mesh('SM_MP_Seam', np.concatenate(vertices), np.concatenate(faces), slots, material_indices,
         {'UVMap': np.concatenate(uvs), 'RetailLightmap': np.concatenate(lightmaps), 'RetailDecal': np.concatenate(decals)},
