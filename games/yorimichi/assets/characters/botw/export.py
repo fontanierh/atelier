@@ -2,9 +2,10 @@
 
 Reads the local library (library.py) and writes build/yorimichi/botw/glb/<Name>.glb and build/yorimichi/botw/export.json:
 for each character its file, the character whose skeleton it uses, its clips (Unreal-safe names, frames, loop flag),
-its roles, its game scale, its height and walk and run speeds at that scale, its skate bone map and board size. Clips are baked in
-place (the game moves the character); each keeps the ground travel it had as `travel`, which gives the speeds, or the
-planted ankles do when a clip never moved.
+its roles, its game scale, its height and walk and run speeds at that scale, its skate bone map and board size. A
+character with an `outfit` (Link) is dressed first (outfit.py) and its clips are baked on the dressed body. Clips are
+baked in place (the game moves the character); each keeps the ground travel it had as `travel`, which gives the
+speeds, or the planted ankles do when a clip never moved.
 `--only Bokoblin,Moblin` limits the run; a variant brings its owner with it.
 """
 import argparse, json, re, sys, time
@@ -15,7 +16,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import bake, library   # noqa: E402
+import bake, library, outfit   # noqa: E402
 from atelier import paths   # noqa: E402
 
 OUT = paths.build_dir('yorimichi') / 'botw'
@@ -90,7 +91,11 @@ def export_one(character, owner):
     else:
         scale = float(character.get('scale', 1.))
         clips = selected([clip['name'] for clip in curves['animations']], character.get('clips', 'all'))
-        summary = bake.bake(item['glb'], item['curves'], target, clips=clips, rename=unreal_name, in_place=True)
+        rig = item['glb']
+        if character.get('outfit'):
+            rig = OUT / 'rig' / f"{character['name']}.glb"
+            outfit.dress(item['glb'], [library.garment(g) for g in character['outfit']], rig)
+        summary = bake.bake(rig, item['curves'], target, clips=clips, rename=unreal_name, in_place=True)
         names = [clip['name'] for clip in summary['clips']]
         if len(set(names)) != len(names):
             raise ValueError(f"{character['name']}: clip names collide once made Unreal-safe")

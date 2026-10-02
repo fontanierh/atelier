@@ -2,6 +2,7 @@
 
     atelier play yorimichi -- -botw -rider=Bokoblin -nofox -RenderOffscreen -ForceRes       (1920x1080)
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/botw_film.py
+    Link's tricks: -rider=Link, and "TAKE='...'; FLIP_TRICK='varial_kickflip'; POOL_TRICK='flair'"
     ... wait for build/yorimichi/botw/film/<take>/done.json, then:
     python games/yorimichi/scenarios/skate_mix_showreel.py build/yorimichi/botw/film/<take>
 
@@ -9,7 +10,8 @@ Shots: a line-up of characters along the road above the start, each playing its 
 showcase), with a Hinox at the end; a Bokoblin camp that notices the player walking up and comes for it; the Bokoblin
 player's 360 flip on the Mega Park road; and the drop off the upper deck into the pool's north-west quarter for a
 Christ air with a 360 spin. Optional globals: ONLY, the shots to run; REHEARSE, no frames saved (the rides still log to
-log.json); TUNE, overrides for CHRIST; FLIP_TRICK, the flick for the flat trick ('~360_flip' mirrors it for goofy).
+log.json); POOL_TRICK, 'christ' (CHRIST) or 'flair' (FLAIR) on the pool quarter; TUNE, overrides for that trick;
+FLIP_TRICK, the flick for the flat trick ('~360_flip' mirrors it for goofy).
 
 Runs in the game's Python (the live bridge) at a fixed 60 fps step, like megapark_access_film.py: the walking is
 driven input, the skating scripted skate. input (pursuit steering, Flick-It gestures, grabs and the dismount), and
@@ -45,7 +47,14 @@ AIR = 2                                                      # ESkateMode::Air i
 # stick brakes the spin to under `still` degrees a second.
 CHRIST = dict(side='grab_left', grab=.2, dismount=.5, brake_off=.7, grab_off=.4, spin=-1., wind=False, wind_x=-117.,
               wind_z=76.3, target=360., tol=15., still=25.)
-CHRIST.update(globals().get('TUNE') or {})
+# The flair, a backflip 180 (the skate README's body flip): the grab held from take-off and the left stick pulled
+# straight back twice, quickly, just after it (`pulls`, (start, end) s into the air: the gesture set's BackFlip, which
+# counts only with a grab held, fires on each pull from the centre), then the twist steered to `target` like the
+# Christ air's 360, done `brake_off` s before it is back at its take-off height; no B.
+FLAIR = dict(CHRIST, grab=0., dismount=None, target=180., pulls=[(.05, .084), (.117, .15)])
+POOL_TRICK = globals().get('POOL_TRICK', 'christ')
+POOL = dict(FLAIR if POOL_TRICK == 'flair' else CHRIST)
+POOL.update(globals().get('TUNE') or {})
 
 
 def ue(x, y, z):
@@ -151,7 +160,8 @@ class Ride:
 
 
 class ChristAir:
-    """The air controller for the pool quarter (CHRIST): wind the spin, grab, B, steer the twist to `target`, let go."""
+    """The air controller for the pool quarter (CHRIST, FLAIR): wind the spin, grab, B or the back flip, steer the
+    twist to `target`, let go."""
 
     def __init__(self, tune):
         self.c = tune; self.t0 = None; self.z0 = 0.; self.fw = None; self.turned = 0.; self.rate = 0.; self.landed = None
@@ -186,7 +196,11 @@ class ChristAir:
         tl = (vz + math.sqrt(vz * vz + 2 * 9.8 * up)) / 9.8      # seconds until it is back at the take-off height
         falling = vz < 0
         inputs[c['side']] = tair >= c['grab'] and not (falling and tl < c['grab_off'])
-        inputs['brake'] = tair >= c['dismount'] and not (falling and tl < c['brake_off'])
+        if c['dismount'] is not None:
+            inputs['brake'] = tair >= c['dismount'] and not (falling and tl < c['brake_off'])
+        if c.get('pulls') and tair < c['pulls'][-1][1]:              # the flair's quick pulls back
+            inputs['left'] = (0., -1. if any(a <= tair < b for a, b in c['pulls']) else 0.)
+            return
         way = math.copysign(1., c['spin']); lead = tl - c['brake_off']     # seconds until B is let go
         if lead > 0:
             ahead = (self.turned + self.rate * lead) * way                  # the twist it will have then
@@ -317,7 +331,7 @@ def skate_setup(name):
     live.skate_input(); L.skate_place(g, syaw + 180.)
     pc.set_control_rotation(unreal.Rotator(0, -12, syaw))
     ride = Ride(FLIP_WAY, FLIP_EVENTS, gain=25., look=8.) if name == 'flip' else \
-        Ride(PARK_WAY, trig=[STRAIGHT], gain=28., look=8., hook=ChristAir(dict(CHRIST)))
+        Ride(PARK_WAY, trig=[STRAIGHT], gain=28., look=8., hook=ChristAir(dict(POOL)))
     st['p'] = {'s': 'settle', 'name': name, 'start': (sx, sy, sz, syaw), 'ride': ride}
 
 
@@ -340,7 +354,7 @@ def skate(t):
     x, y, z, spd = ride.tick(tr)
     st['log'].append([name, round(tr, 3), round(x, 2), round(y, 2), round(z, 2), round(velocity()[2], 2), round(spd, 2),
                       skate_mode(), round(ride.hook.turned, 1) if ride.hook else None, ' | '.join(L.skate_state().split(' | ')[1:3]),
-                      ''.join(k[0] if k != 'grab_left' else 'L' for k, v in ride.inputs.items() if v is True) + ' %.2f' % ride.inputs['left'][0]])
+                      ''.join(k[0] if k != 'grab_left' else 'L' for k, v in ride.inputs.items() if v is True) + ' %.2f,%.2f' % tuple(ride.inputs['left'])])
     if name == 'flip':
         if not st['rec'] and tr >= .7: mark('flip')
         st['rec'] = tr >= .7; view_fixed(CAM_FLIP, .3)
@@ -402,7 +416,7 @@ def finish():
     open(os.path.join(OUT, 'loops.csv'), 'w').write('\n'.join(st['loops']) + '\n')
     json.dump(st['log'], open(os.path.join(OUT, 'log.json'), 'w'))
     json.dump({'film_frames': st['film'], 'sim_frames': st['sim'], 'fps_sim': 60, 'fps_film': 30, 'sounds': n, 'shots': st['marks'],
-               'rehearsal': bool(REHEARSE), 'christ': CHRIST, 'state': L.skate_state()}, open(os.path.join(OUT, 'done.json'), 'w'), indent=1)
+               'rehearsal': bool(REHEARSE), 'pool': dict(POOL, trick=POOL_TRICK), 'state': L.skate_state()}, open(os.path.join(OUT, 'done.json'), 'w'), indent=1)
 
 
 L.film_hud(True); L.fixed_step(60); L.audio_log('start')

@@ -11,6 +11,18 @@ Extract the library zip so that `~/.cache/atelier/botw/library/catalog/archive-i
 `START_HERE.md`, `catalog/`, `library/` and `viewer/`). `library.py` reads it from there; the build hashes only the
 files the roster uses.
 
+Link and his clothing come from the private `fontanierh/botw-extract` repository, whose extended catalog adds the
+player character and Link's armour to the library. Clone it to `~/.cache/atelier/botw/botw-extract` and restore its
+metadata and viewer packs (its own README has the details):
+
+```sh
+git clone https://github.com/fontanierh/botw-extract ~/.cache/atelier/botw/botw-extract
+cd ~/.cache/atelier/botw/botw-extract && python3 scripts/restore_assets.py --group metadata --group viewer
+```
+
+`library.py` looks an id up in the library first, then in `playground/private/catalog.json` (characters) and
+`clothing.json` (Link's clothing) there.
+
 ## Build
 
 ```sh
@@ -42,6 +54,7 @@ PBR look.
 | `scale` | its size in the game relative to the source; the top-level `scale = 0.8` is every character's default (the library draws them about 15% larger than Yorimichi: a Bokoblin becomes 1.31 m, Zelda 1.49 m beside Cairo's 1.48 m) |
 | `skate` | the character's bone for each humanoid contract role; makes it a rider |
 | `board` | a rider's skateboard size relative to the standard one (1.6 puts the Bokoblin's big feet over the trucks); only the visible board grows, about its wheels' contact, and the pose rises onto its deck |
+| `outfit` | Link's clothing, by `clothing.json` id: `outfit.py` merges each garment's meshes onto his body (cloth bones added at rest) and drops the body parts it covers (the library viewer's rules, but the belts stay on); Link wears the Champion's Tunic and Hylian Trousers |
 
 ## In the game
 
@@ -60,4 +73,7 @@ uv run atelier play yorimichi -- -rider=Bokoblin
 ```
 
 `scenarios/botw_film.py` films the demo: a line-up of the roster on the island road, the Bokoblin camp, and the
-Bokoblin rider's 360 flip and Christ air 360 in the Mega Park.
+rider's flat trick and pool trick in the Mega Park: the Bokoblin's 360 flip and Christ air 360, or Link's varial
+kickflip and flair (a backflip 180: the grab held from take-off and the left stick pulled back twice, quickly,
+`POOL_TRICK='flair'`). The trick names never mention a body flip (the flair shows as "BS Grab"): the skate runtime only
+scores it.
