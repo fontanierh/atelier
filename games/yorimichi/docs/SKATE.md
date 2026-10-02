@@ -6,10 +6,11 @@ or the mouse, manuals, grinds, powerslides, pumping, airs and bails. The riding 
 rider, then fits the solved pose onto Cairo and the board meshes. This page covers what the game adds: the controls
 as the player sees them, the tuning, the board, the skate pier, the sounds and the checks. The plugin's
 [runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md) covers the native data and its
-verification.
+verification. The native solver is unchanged; generated Unreal assets supply its data and collision, and an
+AnimGraph node presents its copied pose. Board and rider physics do not use Chaos.
 
 ```sh
-uv run atelier build yorimichi skate.runtime unreal.compile   # verify the tracked native data, compile
+uv run atelier build yorimichi unreal.skate                     # verify source, compile, import and bake skating assets
 uv run atelier play yorimichi
 uv run atelier qa yorimichi skate                              # with the game running
 ```
@@ -70,21 +71,26 @@ trick stick.
 
 ## Tuning
 
-`unreal/Config/DefaultGame.ini`, section `[/Script/AtelierSkate.SkateSettings]` (the plugin README lists every key):
+[`assets/skate/profile.json`](../assets/skate/profile.json) supplies the generated
+`/Game/SkateNative/DA_YorimichiProfile`. `unreal/Config/DefaultGame.ini` selects it through
+`[/Script/AtelierSkate.SkateSettings]`'s `DefaultProfile`; tuning and content references live in the profile.
+The plugin README lists the stock defaults and ranges.
 
-| Key | Value | Effect |
+| Source field | Value | Effect |
 | --- | --- | --- |
-| `PopHeightScale` | 1.15 | Higher ollies than stock |
-| `AirSpinScale` | 1.6 | Faster air spins |
-| `PushSpeedScale` | 1.15 | Higher push speed target |
-| `PushPowerScale` | 1.45 | Stronger pushes |
-| `VertAssist` | 1 | Straight airs on quarters short of vertical (down to about 50°) come back into the ramp |
-| `DeckMesh`, `TruckMesh`, `WheelMesh` | `/Game/SkatePark/Board/SM_Skate{Deck,Truck,Wheel}` | The pier's board |
-| `SoundFolder` | `/Game/Audio/Skate` | Board loops and one-shots |
-| `FallSounds` | `/Game/Audio/Combat/body_fall_01`, `_02` | Body falls for bails |
+| `difficulty`, `goofy`, `truck_tightness` | `normal`, `false`, 0.5 | Stock controller preset, regular stance and steering |
+| `pop_height_scale` | 1.15 | Higher ollies than stock |
+| `air_spin_scale` | 1.6 | Faster air spins |
+| `push_speed_scale` | 1.15 | Higher push speed target |
+| `push_power_scale` | 1.45 | Stronger pushes |
+| `vert_assist` | 1 | Straight airs on quarters short of vertical (down to about 50°) come back into the ramp |
+| `deck_mesh`, `truck_mesh`, `wheel_mesh` | `/Game/SkatePark/Board/SM_Skate{Deck,Truck,Wheel}` | The pier's board |
+| `sound_folder` | `/Game/Audio/Skate` | Board loops and one-shots |
+| `fall_sounds` | `/Game/Audio/Combat/body_fall_01`, `_02` | Body falls for bails |
+| `collision_scan_period_seconds` | 0.25 | Interval for detecting nearby geometry, rail and material changes |
 
-`Difficulty` and `TruckTightness` are not set, so the plugin defaults apply: `normal` and 0.5.
-`tools/check_skate_runtime.py` assumes `AirSpinScale` 1.6; change both together.
+Rebuild `unreal.skate` after changing the source profile. `tools/check_skate_runtime.py` reads the same tuning for
+offline checks. At runtime, `USkateComponent::SetProfile` validates and switches profiles while Cairo is off the board.
 
 ## Board contract
 
@@ -100,6 +106,16 @@ trick stick.
 The plugin places the deck top 9.05 cm above the ground and fits the trucks and wheels to the solved axle and wheel
 bones (see the [plugin's board contract](../../../platform/engine/Plugins/Activities/Skate/README.md#board-contract)).
 `unreal.skatepark` imports the three parts into `/Game/SkatePark/Board` without collision.
+
+The skating pose node is the native animation graph's root. It copies the retargeted local transforms on the game
+thread; animation workers consume that snapshot. Full weight keeps the former pose assignment and base animation
+clocks, while an inactive pose passes through to walking. The adapter still sizes grab grips from Cairo's fingers,
+fits his arms to the deck edge and lifts his skinned pose clear of the ground during bails.
+
+`unreal.skate` also bakes static collision under `/Game/SkateNative/CollisionMeshes`. Runtime collision gathering
+uses those assets rather than static render buffers. Nearby actor, transform, instance and rail changes trigger a
+new snapshot even while Cairo stays still. The collision catalog accepts explicit Physical Material mappings for
+native surface IDs, friction and restitution; Yorimichi's mappings are empty, preserving the stock contact material.
 
 ## Skate pier
 
@@ -132,6 +148,7 @@ With the game running (`atelier play yorimichi`):
 | `skate`, `skate_runtime` | 19 checks: push, flip and landing; steering; manual; rail; vert; deliberate bail and recovery; skin clearance during the bail (at least 0.45 cm); retargeted bone lengths, head direction and camera; keyboard pushing; stow and remount; goofy push and ollie; flat 360s both ways; keyboard powerslides both ways; running mount; Triangle mount and stow; coasting pose stability | `skateqa/runtime.json` |
 | `skatepark` | Roll-ins on the bowl, mini, return, seven-stair and four-stair banks; the stair handrail; an air up and back in the bowl (apex above 3.5 m, landing back on the wall) | `skateqa/park.json` |
 | `skate_performance` | Real-time frame pacing through six activities (push and flip, bowl air, mini air, quarter air, street to mini, bail): at least 58.5 fps, p95 under 20 ms, p99 under 33.34 ms, no frame over 50 ms, no native pose repeated three frames running | `skateqa/performance.json` |
+| `skate_unreal` | Actual pose-node diagnostics, stationary-rider collision add/move/remove refreshes, profile changes, remount generations and recovery from a Blueprint failure callback | `skateqa/unreal.json` |
 | `skate_showreel` | A filmed line of shots at the pier, at a fixed 60 fps step; run through the live bridge (see the script) | `skatefilm/<take>/` |
 | `skate_mix_showreel` | Mixes a showreel take's sounds and encodes 1080p and 720p MP4s | `skatefilm/<take>/` |
 
@@ -139,6 +156,12 @@ With the game running (`atelier play yorimichi`):
 the others load (`live.park.place`, `live.park.launch`, `live.scenario`). The live module also has `live.skate()`,
 `skate_input()`, `skate_release()`, `skate_state()`, `skate_place()`, `skate_park()`, `skate_script()` and the
 gesture paths in `FLICKS`.
+
+`unreal.YorimichiLive.skate_diagnostics()` combines Blueprint runtime diagnostics with the animation snapshot's
+generation, hash and graph wiring. `USkateComponent` also publishes mode, trick, landing, bail and runtime-failure
+events. The headless `unreal.skate` checks write `skate-unreal/validation.json`; see the
+[integration checks](../../../platform/engine/Plugins/Activities/Skate/UNREAL_INTEGRATION.md#validation-status)
+for the tested asset, animation, collision and gameplay scope.
 
 Offline, without Unreal, after building the native QA executable (see the plugin's
 [runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md#reference-build)):

@@ -17,9 +17,10 @@ uv run atelier play yorimichi       # 1080p window
 ```
 
 `uv run atelier build yorimichi --list` shows every step: world data and meshes (`world.*`), characters
-(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating data check (`skate.runtime`), the C++
-module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
-just it and what it needs. Most of a clean build is Unreal's first shader compile.
+(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating source check (`skate.runtime`), the C++
+module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). `unreal.skate` builds
+the skating data, profile and baked collision UAssets after the mesh and sound imports. Name a step to build just it
+and what it needs. Most of a clean build is Unreal's first shader compile.
 
 Play profiles (`--profile`, defined in [game.toml](game.toml)):
 
@@ -36,6 +37,7 @@ Scenarios run against the game from another terminal: `uv run atelier qa yorimic
 | Scenario | What |
 |---|---|
 | `skate_runtime`, `skatepark`, `skate_performance` | skating checks: controls, animation, mounting, bails and stances; the pier's banks, handrail and bowl; real-time frame pacing |
+| `skate_unreal` | skating profile changes, AnimGraph diagnostics, collision refreshes and Blueprint failure recovery |
 | `sailboat`, `zeppelin`, `lake` | regression checks and captures for the dinghy, the zeppelin stations and the woodland lake |
 | `treehouse`, `treehouse_walk`, `treehouse_tour` | the tree house's reference views, a filmed walk through it and a camera tour |
 | `skate_showreel`, `megapark_tour`, `megapark_access_film` | filmed takes, with `*_mix.py` scripts to cut them |
@@ -74,7 +76,10 @@ and a kick, parries included.
 
 **Skateboarding** ([docs/SKATE.md](docs/SKATE.md)) runs on the platform's native
 [Skate plugin](../../platform/engine/Plugins/Activities/Skate/README.md): Flick-It tricks, grabs, manuals, grinds,
-powerslides, pumping, vert and bails, with the solved rider retargeted onto Cairo every frame.
+powerslides, pumping, vert and bails, with the solved rider retargeted onto Cairo every frame through a reusable
+AnimGraph node. The unchanged native solver loads generated Unreal data and collision assets; source records and
+the game's tuning live in [assets/skate](assets/skate/README.md). The
+[integration guide](../../platform/engine/Plugins/Activities/Skate/UNREAL_INTEGRATION.md) covers authoring and validation.
 
 **Phone play**: `atelier stream yorimichi start` serves the [phone page](phone/README.md) (touch controls, the
 painted map, settings) and the platform's plain player.
@@ -91,8 +96,8 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | `world/` | the island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` one folder per region; `world/map/` the map tools and painted sheet |
 | `assets/characters/` | the player (`cairo`), the enemy (`fox-hunter`), the villagers (`wanderer`) and the shared character [tools](assets/characters/tools/README.md) |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
-| `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park, and the skating runtime pins (`skate`) |
-| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating data in `Content/Data/SkateNative` |
+| `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park; `skate/native` holds skating source records, with `runtime.json` pins and `profile.json` tuning beside it |
+| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); all `Content`, including `SkateNative` UAssets, is ignored build output |
 | `live/` | the live bridge's in-game Python and saved overlays |
 | `scenarios/` | checks and films driven through the live bridge |
 | `tests/` | Python and C++ tests for the skating data, the Mega Park and sprint stamina |

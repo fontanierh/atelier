@@ -3,34 +3,15 @@
 #include "Engine/DeveloperSettings.h"
 #include "SkateSettings.generated.h"
 
-/** What skateboarding needs from the game, set in its DefaultGame.ini under [/Script/AtelierSkate.SkateSettings]. */
+class USkateProfile;
+
+/** Select the game's cooked skating profile in DefaultGame.ini. All tuning and content live in that asset. */
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Atelier Skate"))
 class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
 {
     GENERATED_BODY()
 public:
     USkateSettings();
-    /** Original controller preset: easy, normal or hardcore. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
-    /** 0 loose / 1 tight; feeds the original steering scalar. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1")) float TruckTightness = .5f;
-    /** Multiplier on the recovered jump-height presets (1 is stock). */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PopHeightScale = 1.f;
-    /** Multiplier on the recovered air-spin target (1 is stock). */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float AirSpinScale = 1.f;
-    /** Multipliers on the native animation-timed push target and planted-foot propulsion. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PushSpeedScale = 1.f;
-    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float PushPowerScale = 1.f;
-    /** How far short of vertical a quarter pipe still sends a straight air back down into it: 0 is stock (vertical
-     *  walls only), 1 reaches lips of about 50 degrees. The transfer input always leaves the ramp. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1")) float VertAssist = 0.f;
-    /** The board parts (the board contract in the plugin README: deck top 9.05 cm above the ground, X nose). */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath WheelMesh;
-    /** Content folder of the board sounds: loops roll_01, grind_01, slide_01, skid_01, scrape_01 and one-shot banks
-     *  <cue>_01.. (pop, land, ...). */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") FString SoundFolder;
-    /** Body hitting the ground in a bail (the "fall" cue). */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") TArray<FSoftObjectPath> FallSounds;
+    /** Cooked runtime data, collision catalogs, tuning, board and sound references. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") TSoftObjectPtr<USkateProfile> DefaultProfile;
 };

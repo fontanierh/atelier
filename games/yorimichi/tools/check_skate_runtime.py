@@ -14,9 +14,9 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE_PACKAGE = ROOT / 'games/yorimichi/unreal/Content/Data/SkateNative'
+NATIVE_PACKAGE = ROOT / 'games/yorimichi/assets/skate/native'
 BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
-# AirSpinScale in unreal/Config/DefaultGame.ini.
+# AirSpinScale in assets/skate/profile.json.
 SPIN = 1.6
 
 

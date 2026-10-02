@@ -6,7 +6,9 @@ the recovered Skate 3 implementation from
 which originated in [SK8-ENGINE/skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine). It reads
 only the project's native data formats. The parity checks in `Tests/` compare it, bit for bit, with that Rust
 implementation as pinned in this repository's history at commit `46513a6` (and `1536531` for the transfer and vert
-assistance), built with Rust 1.97.1. The plugin [README](README.md) covers the Unreal side.
+assistance), built with Rust 1.97.1. The plugin [README](README.md) covers host setup and
+[UNREAL_INTEGRATION.md](UNREAL_INTEGRATION.md) covers the cooked asset workflow. The native solver and formats are
+unchanged by that integration; Chaos does not simulate the board or rider.
 
 ## Session
 
@@ -63,9 +65,12 @@ the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle 
 
 ## Data bundle
 
-The game tracks the bundle in `unreal/Content/Data/SkateNative/`. The adapter reads it from
-`FPaths::ProjectContentDir()/Data/SkateNative` and refuses to start when `package-manifest.json` is missing.
-`LoadGameplayResources` reads the files in this order and checks each one's magic tag:
+The game tracks source records in `games/<game>/assets/skate/native/`. An editor build packages the exact manifest
+and record bytes into a `USkateRuntimeAsset`, referenced by `USkateProfile`. Gameplay uses that asset exclusively;
+the filesystem overload of `LoadGameplayResources` is for authoring and offline QA, without runtime fallback.
+The game thread validates structure and copies bytes into an immutable `GameplayResourceSnapshot`. Its pure byte
+verifier checks the manifest and every record's SHA-256 on the native thread before any decoding; a failed load
+retains the caller's prior output. `LoadGameplayResources` reads records in this order and checks their magic tags:
 
 | File | Magic | Content |
 | --- | --- | --- |
@@ -103,6 +108,19 @@ The game's `skate.runtime` build step runs its `tools/verify_skate_native.py` ag
 
 It writes `build/<game>/skate-native/verification.json`. It checks integrity, not behaviour; the parity checks below
 cover behaviour.
+
+### Unreal assets
+
+The editor module builds and reloads the runtime asset to compare every source byte, then compares file-source and
+asset-source sessions in both stances using public pose, camera and scoring words. Additional checks exercise
+deferred checksum corruption rejection, output retention and snapshot independence from the authoring UObject.
+Collision tooling bakes per-mesh geometry and validates triangle words, explicit materials and scene tracking;
+the animation validator exercises full-weight pose parity, passthrough, blending, invalid inputs, clocks and capture
+generations. The game's asset-import step collects independent failures into an aggregate JSON report.
+
+Editor and Game targets compile, and the aggregate asset/animation/collision validation passes. The opt-in `-SkateCookedProbe=<report.json>` exercises cooked
+profile/data/catalog loading and both stances
+on baked collision without Python or raw source files. See [UNREAL_INTEGRATION.md](UNREAL_INTEGRATION.md) for tooling.
 
 ### Rebuilding the bundle
 
@@ -146,7 +164,7 @@ python3 $P/Tests/historical_oracle.py --game <game> --check-history --output $O/
 python3 $P/Tests/historical_oracle.py --game <game> --output $O/assets                   # restore the original assets
 uv run python -m atelier.safety.guarded --report $O/guard --kind compile --purpose "skate session parity" -- \
   python3 $P/Tests/check_gameplay_session_parity.py --assets $O/assets \
-    --native-package games/<game>/unreal/Content/Data/SkateNative --output $O/session --target-dir $O/cargo
+    --native-package games/<game>/assets/skate/native --output $O/session --target-dir $O/cargo
 ```
 
 `historical_oracle.py` reads only Git objects already in the clone and never fetches; output must stay under
@@ -188,12 +206,18 @@ to check that it is deterministic.
   `physics::board_world::broadphase_tests::predictive_contacts_and_retention_match_full_scan_for_every_primitive`
   fails at the pinned commit: its linear scan finds extra contacts on distant triangles that the indexed scan
   rejects. The C++ keeps the indexed behaviour.
-- Collision is a static snapshot: moving objects, skeletal meshes, procedural meshes and streamed-out terrain are
-  not seen.
-- Every surface gets one default collision material; grass or sand drag is not mapped.
+- Collision uses snapshots of static-mesh components and registered rails. Scene scans detect added, removed,
+  streamed, moved and instanced geometry and material/rail changes, including while the rider stays still. Moving
+  geometry contributes its updated shape position, without platform-velocity transfer or two-way rigid-body coupling;
+  skeletal and procedural meshes are not gathered.
+- Physical Material mappings explicitly supply packed native surface IDs and optional contact coefficients.
+  Empty mappings retain the stock contact material and surface zero; Unreal SurfaceType has no automatic native mapping.
 - Rails reach the session as polylines only; their kind, side and radius are not used.
-- A complex-as-simple mesh is seen in a cooked build only if its importer enables CPU access. Editor builds are the
-  checked path; cooked loading of the bundle is unverified.
+  Providers must remove registered lines when their actors unload and update bounds when changing points.
+- Complex-as-simple collision and convex fallback indices must be baked into a catalog. Runtime gathering does not
+  require static render CPU buffers; changed collision LOD/body setup rejects a stale bake. The rider's skeletal
+  bail-clearance samples still require CPU access. See the [integration checks](UNREAL_INTEGRATION.md#validation-status)
+  for the tested loading and gameplay scope.
 - The solver keeps the recovered rider's proportions, so contacts near low obstacles can need visual review on a
   differently proportioned character. Grab grips scale with the host's hand, but the finger curl angles are fixed:
   on a hand with short fingers for its knuckle spacing, the fingertips end at the rail rather than under the deck.

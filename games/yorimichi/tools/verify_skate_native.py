@@ -12,7 +12,7 @@ import re
 import struct
 
 GAME = Path(__file__).resolve().parents[1]
-BUNDLE = GAME / 'unreal/Content/Data/SkateNative'
+BUNDLE = GAME / 'assets/skate/native'
 DESCRIPTOR = GAME / 'assets/skate/runtime.json'
 MANIFEST = 'package-manifest.json'
 FORMATS = ('ATATTR01', 'ATGEST01', 'ATGRPH01', 'ATPHYS01',

@@ -26,6 +26,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateInput(FVector2D Left, FVector2D Right, bool Push = false, bool Brake = false, bool Powerslide = false, bool GrabLeft = false, bool GrabRight = false);
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateRelease();
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateState();
+    /** Structured native data/worker/collision/AnimGraph diagnostics for a single observation. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateDiagnostics();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkatePlace(FVector GroundPoint, float Yaw);
     UFUNCTION(BlueprintCallable, Category = "Live") static FTransform SkateParkSpawn();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateLaunch(FVector Velocity);

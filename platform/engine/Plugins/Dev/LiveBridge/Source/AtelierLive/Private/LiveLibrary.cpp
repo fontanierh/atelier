@@ -130,7 +130,11 @@ namespace
                 }
             }
             const FName Slot(*FString::FromInt(MaterialIndex));
-            Mesh->GetStaticMaterials().Add(FStaticMaterial(MID ? static_cast<UMaterialInterface*>(MID) : Painted(), Slot, Slot));
+            FStaticMaterial SlotMaterial(MID ? static_cast<UMaterialInterface*>(MID) : Painted(), Slot);
+#if WITH_EDITORONLY_DATA
+            SlotMaterial.ImportedMaterialSlotName = Slot;
+#endif
+            Mesh->GetStaticMaterials().Add(MoveTemp(SlotMaterial));
         }
         UStaticMesh::FBuildMeshDescriptionsParams Params;
         Params.bFastBuild = true; Params.bBuildSimpleCollision = true; Params.bAllowCpuAccess = true; Params.bCommitMeshDescription = false;

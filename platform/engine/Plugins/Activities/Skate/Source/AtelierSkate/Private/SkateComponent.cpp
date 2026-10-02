@@ -2,6 +2,9 @@
 #include "SkateRails.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
+#include "SkateProfile.h"
+#include "SkateRuntimeAsset.h"
+#include "SkateCollisionAsset.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -31,18 +34,52 @@ USkateComponent::USkateComponent()
 
 UCharacterMovementComponent* USkateComponent::Movement() const { return Rider ? Rider->GetCharacterMovement() : nullptr; }
 
+bool USkateComponent::LoadProfileContent(USkateProfile* Candidate,FString& Failure)
+{
+    TArray<FString> Errors;
+    if (!Candidate) { Failure=TEXT("Skating profile is missing from this build."); return false; }
+    if (!Candidate->ValidateProfile(Errors)) { Failure=FString::Join(Errors,TEXT("; ")); return false; }
+    USkateRuntimeAsset* Data=Candidate->RuntimeData.LoadSynchronous();
+    if (!Data) { Failure=TEXT("Skating runtime data asset could not be loaded."); return false; }
+    TArray<TObjectPtr<USkateCollisionAsset>> Catalogs;
+    for (const auto& Reference : Candidate->CollisionDataCatalog)
+    {
+        USkateCollisionAsset* Catalog=Reference.LoadSynchronous();
+        if (!Catalog) { Failure=FString::Printf(TEXT("Skating collision catalog could not be loaded: %s"),*Reference.ToString()); return false; }
+        if (!Catalog->Validate(Errors)) { Failure=FString::Join(Errors,TEXT("; ")); return false; }
+        Catalogs.Add(Catalog);
+    }
+    for (const FSoftObjectPath* Part : {&Candidate->DeckMesh, &Candidate->TruckMesh, &Candidate->WheelMesh})
+    {
+        if (Part->IsNull() || !Cast<UStaticMesh>(Part->TryLoad()))
+        {
+            Failure=FString::Printf(TEXT("Skating board mesh could not be loaded: %s"),*Part->ToString());
+            return false;
+        }
+    }
+    Profile=Candidate; RuntimeData=Data; LoadedCollisionCatalogs=MoveTemp(Catalogs);
+    bGoofy=Profile->bGoofy; Failure.Reset(); return true;
+}
+
+void USkateComponent::PublishModeChange(ESkateMode Previous)
+{
+    if (Previous!=Mode) OnModeChanged.Broadcast(Previous,Mode);
+}
+
 void USkateComponent::Initialize(ACharacter* Character)
 {
     Rider = Character;
     RiderApi = Cast<ISkateRider>(Character);
     checkf(RiderApi, TEXT("USkateComponent: the rider must implement ISkateRider"));
+    FString Failure;
+    if (!LoadProfileContent(Profile ? Profile.Get() : GetDefault<USkateSettings>()->DefaultProfile.LoadSynchronous(),Failure))
+    { RuntimeFailure(Failure); return; }
     RailSystem = GetWorld()->GetSubsystem<USkateRailSubsystem>();
     AddTickPrerequisiteComponent(Rider->GetCharacterMovement());
     AddTickPrerequisiteActor(Rider);
     Rider->GetMesh()->AddTickPrerequisiteComponent(this);
     BoardRoot = NewObject<USceneComponent>(Rider, TEXT("SkateBoardRoot"));
     BoardRoot->SetupAttachment(Rider->GetRootComponent()); BoardRoot->RegisterComponent();
-    const USkateSettings* Settings = GetDefault<USkateSettings>();
     auto Load = [](const FSoftObjectPath& Path) { return Path.IsNull() ? nullptr : Cast<UStaticMesh>(Path.TryLoad()); };
     auto Part = [&](const TCHAR* Name, UStaticMesh* Mesh, USceneComponent* Parent)
     {
@@ -52,9 +89,9 @@ void USkateComponent::Initialize(ACharacter* Character)
         C->SetRenderCustomDepth(true); C->SetCustomDepthStencilValue(2);
         C->RegisterComponent(); return C;
     };
-    UStaticMesh* DeckMesh = Load(Settings->DeckMesh);
-    UStaticMesh* TruckMesh = Load(Settings->TruckMesh);
-    UStaticMesh* WheelMesh = Load(Settings->WheelMesh);
+    UStaticMesh* DeckMesh = Load(Profile->DeckMesh);
+    UStaticMesh* TruckMesh = Load(Profile->TruckMesh);
+    UStaticMesh* WheelMesh = Load(Profile->WheelMesh);
     Deck = Part(TEXT("SkateDeck"), DeckMesh, BoardRoot);
     for (int32 End = 0; End < 2; ++End)
     {
@@ -76,8 +113,7 @@ void USkateComponent::Initialize(ACharacter* Character)
 
 void USkateComponent::LoadSounds()
 {
-    const USkateSettings* Settings = GetDefault<USkateSettings>();
-    const FString Folder = Settings->SoundFolder;
+    const FString Folder = Profile->SoundFolder;
     auto Load = [&Folder](const FString& Name)
     {
         return Folder.IsEmpty() ? nullptr : LoadObject<USoundWave>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *Folder, *Name, *Name), nullptr, LOAD_NoWarn | LOAD_Quiet);
@@ -92,7 +128,7 @@ void USkateComponent::LoadSounds()
         for (int32 I = 1; I <= 8; ++I) if (USoundWave* W = Load(FString::Printf(TEXT("%s_%02d"), Cue, I))) Waves.Add(W);
         if (Waves.Num() > First) CueRange.Add(Cue, FIntPoint(First, Waves.Num() - First));
     }
-    for (const FSoftObjectPath& Path : Settings->FallSounds)
+    for (const FSoftObjectPath& Path : Profile->FallSounds)
         if (USoundWave* W = Cast<USoundWave>(Path.TryLoad()))
         { const int32 First = CueRange.Contains(TEXT("fall")) ? CueRange[TEXT("fall")].X : Waves.Num(); Waves.Add(W); CueRange.FindOrAdd(TEXT("fall"), FIntPoint(First, 0)).Y++; }
     int32 Index = 0;
@@ -202,13 +238,17 @@ bool USkateComponent::Toggle()
         Mode=ESkateMode::Ground;
         Rider->SetActorLocationAndRotation(Pos + Up()*BodyLift,Rot,false,nullptr,ETeleportType::TeleportPhysics);
         BoardRoot->SetVisibility(true, true);
-        if (!StartRetailRuntime()) { StowImmediately(); return false; }
-        return true;
+        if (!StartRetailRuntime()) return false;
+        const uint32 MountedGeneration=PoseGeneration;
+        PublishModeChange(ESkateMode::Off);
+        return IsValid(this) && IsValid(Rider) && PoseGeneration==MountedGeneration && Mode==ESkateMode::Ground && bRetailActive;
     }
     if (Mode != ESkateMode::Ground) return false;    // step off from the ground only
-    StowImmediately();
-    // Step off moving on: face the way the board was going, keep a jog's worth of the speed.
     const FVector Flat = FVector(Vel.X, Vel.Y, 0.f);
+    StowImmediately();
+    // A Blueprint mode listener can mount again or destroy the owner.
+    if (Mode!=ESkateMode::Off || !IsValid(Rider) || !IsValid(M)) return true;
+    // Step off moving on: face the way the board was going, keep a jog's worth of the speed.
     if (Flat.Size() > 30.f) Rider->SetActorRotation(Flat.Rotation());
     M->Velocity = Flat.GetClampedToMaxSize(420.f);
     return true;
@@ -218,6 +258,7 @@ void USkateComponent::StowImmediately()
 {
     SuspendRetailRuntime();
     if (Mode == ESkateMode::Off || !Rider) return;
+    const ESkateMode Previous=Mode;
     UCharacterMovementComponent* M = Movement();
     ShownCombo.Reset(); ComboFade=0;
     Mode = ESkateMode::Off;
@@ -242,6 +283,7 @@ void USkateComponent::StowImmediately()
             Wheels[I]->SetRelativeTransform(FTransform(FVector(0,I%2==0?-WheelY:WheelY,-(DeckHeight-DeckThickness-WheelRadius))));
     }
     ++Serial;
+    PublishModeChange(Previous);
 }
 
 bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
@@ -253,14 +295,16 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
         Movement()->SetMovementMode(MOVE_Walking);
         Movement()->Velocity = FVector::ZeroVector;
         Movement()->FindFloor(Movement()->UpdatedComponent->GetComponentLocation(), Movement()->CurrentFloor, false);
-        if (!Toggle()) return false;
+        if (!Toggle() || Mode!=ESkateMode::Ground || !IsValid(Rider) || !bRetailActive) return false;
     }
     ResetInput();
     Pos = GroundPoint; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector; bFakie = false;
-    Mode=ESkateMode::Ground;
+    const ESkateMode Previous=Mode; Mode=ESkateMode::Ground;
     Rider->SetActorLocationAndRotation(Pos + Up() * BodyLift, Rot, false, nullptr, ETeleportType::TeleportPhysics);
-    if (!StartRetailRuntime()) { StowImmediately(); return false; }
-    return true;
+    if (!StartRetailRuntime()) return false;
+    const uint32 PlacedGeneration=PoseGeneration;
+    PublishModeChange(Previous);
+    return IsValid(this) && IsValid(Rider) && PoseGeneration==PlacedGeneration && Mode==ESkateMode::Ground && bRetailActive;
 }
 
 FQuat USkateComponent::AlignUp(const FQuat& Q, const FVector& NewUp, float Alpha) const

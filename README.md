@@ -71,9 +71,9 @@ uv run atelier play yorimichi           # 1080p window; --profile desktop-1440 f
 ```
 
 `atelier build yorimichi --list` shows every step; name one to run just it (and what it needs). Generated files go
-to `build/yorimichi/` and the game's ignored `unreal/Content/`. When clearing `Content/`, keep the tracked
-`Content/Data/SkateNative` bundle: it is source data for the skating module. The [Yorimichi README](games/yorimichi/README.md)
-lists the play profiles, the QA scenarios and the game's docs.
+to `build/yorimichi/` and the game's ignored `unreal/Content/`. Skating source records live in
+`games/yorimichi/assets/skate/native/`; the build generates their Unreal assets. The
+[Yorimichi README](games/yorimichi/README.md) lists the play profiles, the QA scenarios and the game's docs.
 
 ## Start your own game
 
@@ -149,16 +149,20 @@ graphs, procedural pose adjustments, trick scoring and the skating camera run in
 It is a C++ port of the recovered Skate 3 implementation from
 [2010-rust-rewrite-mashup/skate](https://github.com/chasmlol/2010-rust-rewrite-mashup/tree/7842b9e70e9aac22ed176b655dd63302618ee023/skate),
 which originated in [SK8-ENGINE's skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine).
-The game supplies nearby static collision, registered rails, controls, meshes, sounds and HUD. Cairo keeps his own
+The game supplies baked static collision, registered rails, controls, meshes, sounds and HUD. Cairo keeps his own
 skeleton and proportions: the retargeter fits the solved animation to him, follows the solved board parts and keeps
 his skinned surface above the ground during bails. Running onto the board keeps position and speed; vert assistance
 sends straight airs back into the transition, with a separate input for transferring over the coping.
 
 All the [skating data](games/yorimichi/assets/skate/README.md) is tracked in
-[`Content/Data/SkateNative`](games/yorimichi/unreal/Content/Data/SkateNative): 3,334 native payloads, including
+[`assets/skate/native`](games/yorimichi/assets/skate/native): 3,334 native payloads, including
 3,324 animation clips, 131,642 frames and 285 gesture patterns, plus settings, skeletons, graphs and camera data.
-The build checks the bundle's manifest and hashes before compiling the C++ module; it needs no Rust toolchain,
-extracted game, conversion step or separate worker process.
+The build verifies the source, then `unreal.skate` creates lossless runtime-data, collision and profile assets under
+`/Game/SkateNative`. [`profile.json`](games/yorimichi/assets/skate/profile.json) reproduces Yorimichi's tuning and
+content references. Gameplay loads those assets exclusively; source files are used by the build and offline QA.
+The native solver remains unchanged and uses no Chaos board or rider physics. A reusable AnimGraph node presents
+the copied pose, and collision snapshots refresh when nearby geometry changes. Explicit Physical Material mappings
+can supply native surfaces and contact values; empty mappings preserve the stock material.
 
 In Yorimichi, **Triangle / Y** (keyboard **B**) gets on or off the board, and **D-pad Down** interacts on foot. Flick
 the right stick, or hold the left mouse button and flick, for tricks; **C** holds a powerslide. To pump, hold a
@@ -167,17 +171,19 @@ grab in the air; **Shift** or left stick forward requests a transfer. Full contr
 [Skateboarding](games/yorimichi/docs/SKATE.md).
 
 ```sh
-uv run atelier build yorimichi skate.runtime       # verify the tracked native bundle
+uv run atelier build yorimichi skate.runtime       # verify the tracked native source
+uv run atelier build yorimichi unreal.skate        # generate data, profile and baked collision assets
 uv run atelier play yorimichi --profile desktop-1440
 # From another terminal, with the game running:
 uv run atelier qa yorimichi skate_runtime          # controls, animation, mounting, bails and both stances
 uv run atelier qa yorimichi skatepark              # roll-ins, handrail and bowl re-entry
 uv run atelier qa yorimichi skate_performance      # real-time frame pacing through six activities
+uv run atelier qa yorimichi skate_unreal           # asset/profile, AnimGraph and collision-refresh checks
 ```
 
-The [runtime reference](platform/engine/Plugins/Activities/Skate/RUNTIME.md) describes the session's systems, the data
-formats, the differential checks against the recovered implementation, and the limits: collision uses static
-snapshots and one default surface material, and cooked builds are not covered.
+The [runtime reference](platform/engine/Plugins/Activities/Skate/RUNTIME.md) describes the session's systems, formats,
+differential checks and limits. The [Unreal integration](platform/engine/Plugins/Activities/Skate/UNREAL_INTEGRATION.md)
+describes the asset workflow, diagnostics and tested engine/cooked-game scope.
 
 ## Making a character
 

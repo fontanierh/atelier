@@ -28,8 +28,8 @@ uv run pytest                            # studio and game Python tests
   (it can add the Android file server's generated token): keep only the changes you meant.
 - Commit and push completed work at task boundaries, before starting the next task.
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
-- Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
-  `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
+- Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. Native skating
+  source records belong in `games/<game>/assets/skate/native/`; the skating UAssets in `Content/SkateNative` are generated.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
 
 ## Credentials and paid calls

@@ -1,8 +1,10 @@
 #include "YorimichiLive.h"
 #include "LiveLibrary.h"
 #include "WandererCharacter.h"
+#include "WandererAnimInstance.h"
 #include "WandererSword.h"
 #include "SkateComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
 #include "BotwCreature.h"
@@ -48,6 +50,42 @@ FString UYorimichiLive::SkateState()
     const FVector P = S->GetOwner()->GetActorLocation();
     return FString::Printf(TEXT("%s | combo=%s | last=%s landed=%d bails=%d grinds=%d score=%d | pos=(%.0f,%.0f,%.0f)"), *S->GetDebug(), *S->GetComboLine(),
         *S->GetLastTrick().ToString(), S->GetLandedCount(), S->GetBailCount(), S->GetGrindCount(), S->GetScore(), P.X, P.Y, P.Z);
+}
+FString UYorimichiLive::SkateDiagnostics()
+{
+    USkateComponent* S=PlayerSkate(); if (!S) return TEXT("{\"error\":\"no skate\"}");
+    const auto D=S->GetRuntimeDiagnostics();
+    auto O=MakeShared<FJsonObject>();
+    O->SetBoolField(TEXT("ready"),D.bReady); O->SetBoolField(TEXT("awaiting_pose"),D.bAwaitingPose);
+    O->SetBoolField(TEXT("building_collision"),D.bBuildingCollision);
+    O->SetNumberField(TEXT("native_tick"),double(D.NativeTick));
+    O->SetNumberField(TEXT("pose_generation"),double(D.PoseGeneration));
+    O->SetNumberField(TEXT("pose_bones"),D.PoseBones);
+    O->SetNumberField(TEXT("collision_triangles"),D.CollisionTriangles);
+    O->SetNumberField(TEXT("collision_rails"),D.CollisionRails);
+    O->SetNumberField(TEXT("collision_revision"),D.CollisionRevision);
+    O->SetNumberField(TEXT("collision_refreshes"),D.CollisionRefreshes);
+    O->SetNumberField(TEXT("missing_collision_meshes"),D.MissingCollisionMeshes);
+    O->SetNumberField(TEXT("material_override_triangles"),D.MaterialOverrideTriangles);
+    O->SetNumberField(TEXT("surface_triangles"),D.SurfaceTriangles);
+    O->SetNumberField(TEXT("collision_reach_metres"),D.CollisionReachMetres);
+    O->SetStringField(TEXT("state"),D.State); O->SetStringField(TEXT("data_identity"),D.DataIdentity);
+    O->SetStringField(TEXT("last_error"),D.LastError);
+    const auto* P=Cast<AWandererCharacter>(S->GetOwner());
+    if (P) if (const auto* Anim=Cast<UWandererAnimInstance>(P->GetMesh()->GetAnimInstance()))
+    {
+        const auto Pose=Anim->GetSkatePoseDebugState();
+        O->SetNumberField(TEXT("node_bones"),Pose.BoneCount);
+        O->SetNumberField(TEXT("node_rejected"),Pose.RejectedTransforms);
+        O->SetNumberField(TEXT("node_generation"),double(Pose.RuntimeGeneration));
+        O->SetNumberField(TEXT("node_capture"),double(Pose.CaptureGeneration));
+        O->SetBoolField(TEXT("node_valid"),Pose.bValid);
+        O->SetBoolField(TEXT("node_native_graph_root"),Pose.bNativeGraphRoot);
+        O->SetBoolField(TEXT("node_base_pose_linked"),Pose.bBasePoseLinked);
+        O->SetNumberField(TEXT("node_weight"),Pose.EffectiveWeight);
+        O->SetStringField(TEXT("node_pose_hash"),Pose.PoseHash);
+    }
+    FString Text; auto Writer=TJsonWriterFactory<>::Create(&Text); FJsonSerializer::Serialize(O,Writer); return Text;
 }
 bool UYorimichiLive::SkateGoofy(bool bGoofy) { USkateComponent* S = PlayerSkate(); if (!S) return false; S->SetGoofy(bGoofy); return true; }
 bool UYorimichiLive::SkateLaunch(FVector Velocity) { USkateComponent* S = PlayerSkate(); if (!S) return false; S->Launch(Velocity); return true; }

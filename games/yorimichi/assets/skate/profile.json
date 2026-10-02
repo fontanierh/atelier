@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "difficulty": "normal",
+  "goofy": false,
+  "truck_tightness": 0.5,
+  "pop_height_scale": 1.15,
+  "air_spin_scale": 1.6,
+  "push_speed_scale": 1.15,
+  "push_power_scale": 1.45,
+  "vert_assist": 1.0,
+  "deck_mesh": "/Game/SkatePark/Board/SM_SkateDeck.SM_SkateDeck",
+  "truck_mesh": "/Game/SkatePark/Board/SM_SkateTruck.SM_SkateTruck",
+  "wheel_mesh": "/Game/SkatePark/Board/SM_SkateWheel.SM_SkateWheel",
+  "sound_folder": "/Game/Audio/Skate",
+  "fall_sounds": [
+    "/Game/Audio/Combat/body_fall_01.body_fall_01",
+    "/Game/Audio/Combat/body_fall_02.body_fall_02"
+  ],
+  "collision_scan_period_seconds": 0.25,
+  "collision_asset_roots": [
+    "/Game"
+  ],
+  "validation_maps": [
+    "/Game/Japan/Maps/Slice",
+    "/Game/MegaPark/Maps/SuperUltraMegaPark"
+  ]
+}

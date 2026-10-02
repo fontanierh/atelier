@@ -175,18 +175,32 @@ class NativeDataTests(unittest.TestCase):
         descriptor = json.loads((GAME / 'assets/skate/runtime.json').read_text())
         self.assertEqual(descriptor['backend'], 'in-process-cpp')
         bundle = GAME / descriptor['data_directory']
-        self.assertEqual(bundle, GAME / 'unreal/Content/Data/SkateNative')
+        self.assertEqual(bundle, GAME / 'assets/skate/native')
         report = output / 'skate-native/verification.json'
         self.assertEqual(len(runtime.commands), 1)
         self.assertIsInstance(runtime.commands[0], build.Python)
         self.assertEqual(runtime.commands[0].script, GAME / 'tools/verify_skate_native.py')
         self.assertEqual(tuple(runtime.commands[0].args), ('--output', report))
         self.assertEqual(set(runtime.inputs), {GAME / 'tools/verify_skate_native.py',
-                         GAME / 'assets/skate/runtime.json', data / bundle.name})
+                         GAME / 'assets/skate/runtime.json', bundle})
         self.assertEqual(runtime.outputs, [report])
         self.assertEqual(runtime.needs, [])
         self.assertFalse(runtime.heavy)
         self.assertIn(runtime.name, compile_step.needs)
+        unreal_step = steps['unreal.skate']
+        self.assertTrue(unreal_step.heavy)
+        self.assertEqual(len(unreal_step.commands), 1)
+        self.assertTrue(unreal_step.commands[0].null_rhi)
+        self.assertIn(runtime.name, unreal_step.needs)
+        self.assertIn(compile_step.name, unreal_step.needs)
+        # Collision must be baked after all imports that create rideable geometry,
+        # including the standalone park and the desktop city's replacement tiles.
+        for name in ('unreal.skatepark', 'unreal.megapark', 'unreal.desktop',
+                     'unreal.treehouse', 'unreal.southwest', 'unreal.mega', 'unreal.houses', 'unreal.lake'):
+            self.assertIn(name, unreal_step.needs)
+        full_plan = build.order(declared, [unreal_step.name])
+        for name in unreal_step.needs:
+            self.assertLess(full_plan.index(steps[name]), full_plan.index(unreal_step))
         plan = build.order(declared, [compile_step.name])
         self.assertLess(plan.index(runtime), plan.index(compile_step))
 

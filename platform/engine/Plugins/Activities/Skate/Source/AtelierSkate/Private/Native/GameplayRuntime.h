@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "GameplayFrameRuntime.h"
+#include "GameplayResourceSource.h"
 namespace atelier::skate
 {
 // Immutable, project-native resources. Sessions share clip storage and graph
@@ -17,6 +18,9 @@ struct GameplayResources
     std::optional<ClimbingClipFile> climbing;
 };
 bool LoadGameplayResources(const std::filesystem::path&,
+    std::shared_ptr<const GameplayResources>& output,std::string& error);
+// Verify source integrity before decoding; output is retained on any failure.
+bool LoadGameplayResources(const GameplayResourceSource&,
     std::shared_ptr<const GameplayResources>& output,std::string& error);
 // Sole owning tree for the original GamePhysics + SkaterRuntime. BorrowFrame
 // constructs ephemeral views, so all phases consume these exact same records.

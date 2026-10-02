@@ -14,28 +14,82 @@ class UAudioComponent;
 class USoundWave;
 class USoundAttenuation;
 class FSkateRuntime;
+class USkateProfile;
+class USkateRuntimeAsset;
+class USkateCollisionAsset;
 
+UENUM(BlueprintType)
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
+
+/** Preserve the outcome and failure message in Blueprint and Python callers. */
+USTRUCT(BlueprintType)
+struct ATELIERSKATE_API FSkateProfileChangeReport
+{
+    GENERATED_BODY()
+    UPROPERTY(BlueprintReadOnly, Category="Skate") bool bAccepted=false;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") FString Failure;
+};
+
+/** A copied diagnostic view. Blueprint callers never touch the native worker. */
+USTRUCT(BlueprintType)
+struct ATELIERSKATE_API FSkateRuntimeDiagnostics
+{
+    GENERATED_BODY()
+    UPROPERTY(BlueprintReadOnly, Category="Skate") bool bReady=false;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") bool bAwaitingPose=false;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") bool bBuildingCollision=false;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int64 NativeTick=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int64 PoseGeneration=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 PoseBones=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 CollisionTriangles=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 CollisionRails=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 CollisionRevision=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 CollisionRefreshes=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 MissingCollisionMeshes=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 MaterialOverrideTriangles=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") int32 SurfaceTriangles=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") float CollisionReachMetres=0;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") FString State;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") FString DataIdentity;
+    UPROPERTY(BlueprintReadOnly, Category="Skate") FString LastError;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSkateModeChanged, ESkateMode, Previous, ESkateMode, Current);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSkateTrickChanged, FName, Trick, int32, Score);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSkateContactEvent, FVector, BoardVelocity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSkateFailureEvent, const FString&, Message);
 
 /** Skateboarding with skate.-style controls (README.md): the actor is the board, the ride runs in a custom movement mode
  *  of the game's movement component (its PhysCustom calls PhysSkate), tricks come from Flick-It on the right stick.
  *  The rider is an ACharacter that implements ISkateRider. */
-UCLASS()
+UCLASS(BlueprintType, meta=(BlueprintSpawnableComponent))
 class ATELIERSKATE_API USkateComponent : public UActorComponent
 {
     GENERATED_BODY()
 public:
     USkateComponent();
+    /** Set before Initialize, or use SetProfile while walking. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Skate") TObjectPtr<USkateProfile> Profile;
+    UPROPERTY(BlueprintAssignable, Category="Skate|Events") FSkateModeChanged OnModeChanged;
+    UPROPERTY(BlueprintAssignable, Category="Skate|Events") FSkateTrickChanged OnTrickChanged;
+    UPROPERTY(BlueprintAssignable, Category="Skate|Events") FSkateContactEvent OnLanded;
+    UPROPERTY(BlueprintAssignable, Category="Skate|Events") FSkateContactEvent OnBailed;
+    UPROPERTY(BlueprintAssignable, Category="Skate|Events") FSkateFailureEvent OnRuntimeFailure;
+    /** Change content atomically while off the board; existing sessions are discarded. */
+    UFUNCTION(BlueprintCallable, Category="Skate") bool SetProfile(USkateProfile* NewProfile, FString& Failure);
+    UFUNCTION(BlueprintCallable, Category="Skate") FSkateProfileChangeReport SetProfileReport(USkateProfile* NewProfile);
+    UFUNCTION(BlueprintPure, Category="Skate|Debug") FSkateRuntimeDiagnostics GetRuntimeDiagnostics() const;
     /** The custom movement mode the ride runs in: the game's PhysCustom calls PhysSkate for it. */
     static constexpr uint8 MovementMode = 2;
     /** Character must implement ISkateRider. */
     void Initialize(ACharacter* Character);
     bool IsAvailable() const { return bAvailable; }
     /** On the board, including a bail (the component drives the character until they are back on it). */
-    bool IsRiding() const { return Mode != ESkateMode::Off; }
+    UFUNCTION(BlueprintPure, Category="Skate") bool IsRiding() const { return Mode != ESkateMode::Off; }
+    UFUNCTION(BlueprintPure, Category="Skate")
     ESkateMode GetMode() const { return Mode; }
     /** Get on (from standing or running) or off. */
-    bool Toggle();
+    UFUNCTION(BlueprintCallable, Category="Skate") bool Toggle();
     void StowImmediately();
     void SetGoofy(bool bNewGoofy);
     bool IsGoofy() const { return bGoofy; }
@@ -46,6 +100,8 @@ public:
     void PhysSkate(float Dt);
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     const TArray<FTransform>& GetRetailPose() const { return RetailPose; }
+    uint32 GetPoseGeneration() const { return PoseGeneration; }
+    uint32 GetPoseSerial() const;
     FString GetRetailState() const;
     bool GetRetailCamera(FTransform& Out, float& FOV) const;
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
@@ -80,6 +136,12 @@ public:
     bool IsManual() const { return bManual; }
 
 private:
+    UPROPERTY(Transient) TObjectPtr<USkateRuntimeAsset> RuntimeData;
+    UPROPERTY(Transient) TArray<TObjectPtr<USkateCollisionAsset>> LoadedCollisionCatalogs;
+    FString LastRuntimeError;
+    uint32 PoseGeneration=0;
+    bool LoadProfileContent(USkateProfile* Candidate, FString& Failure);
+    void PublishModeChange(ESkateMode Previous);
     UPROPERTY() TObjectPtr<ACharacter> Rider;
     ISkateRider* RiderApi = nullptr;
     UPROPERTY() TObjectPtr<USceneComponent> BoardRoot;
@@ -87,7 +149,7 @@ private:
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Trucks;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Wheels;
     UPROPERTY() TObjectPtr<USkateRailSubsystem> RailSystem;
-    // Sounds (USkateSettings::SoundFolder): board-attached loops and one-shot variants.
+    // Sounds (USkateProfile::SoundFolder): board-attached loops and one-shot variants.
     UPROPERTY() TArray<TObjectPtr<UAudioComponent>> Loops;      // roll, grind, slide, skid, scrape
     UPROPERTY() TArray<TObjectPtr<USoundWave>> Waves;
     UPROPERTY() TObjectPtr<USoundAttenuation> Attenuation;

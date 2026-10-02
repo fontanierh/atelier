@@ -10,6 +10,11 @@ struct GameplayWorldSnapshot
 {
     std::vector<std::array<Vec3,3>> triangles;
     std::vector<std::vector<std::array<float,3>>> rails;
+    // Empty arrays retain the original stock material and packed surface zero.
+    // A null material entry also uses the caller's stock fallback. The packed
+    // surface is source data: low7 material bits, bits7..11 physics category.
+    std::vector<std::optional<ContactMaterial>> triangle_materials;
+    std::vector<std::uint16_t> triangle_surfaces;
 };
 struct PreparedGameplayWorld
 {

@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimNodeBase.h"
+#include "AnimNodes/AnimNode_SkatePose.h"
 #include "WandererAnimInstance.generated.h"
 
 /** Transition poses retain outgoing joint velocity and fade it with a quintic blend. */
@@ -34,6 +35,9 @@ class YORIMICHI_API UWandererAnimInstance : public UAnimInstance
     GENERATED_BODY()
 public:
     UWandererAnimInstance();
+    /** Captured skating pose values; waits for any in-flight animation evaluation before reading the proxy. */
+    UFUNCTION(BlueprintPure, Category = "Skate|Debug")
+    FSkatePoseDebugState GetSkatePoseDebugState() const;
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
     virtual void DestroyAnimInstanceProxy(FAnimInstanceProxy* Proxy) override;

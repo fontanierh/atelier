@@ -6,8 +6,14 @@
 #include "Engine/Engine.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
+#include "SkateProfile.h"
+#include "SkateRuntimeAsset.h"
+#include "SkateCollisionAsset.h"
+#include "SkateCollisionWorld.h"
+#include "Native/GameplayResourceSource.h"
 #include "SkateRails.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -32,6 +38,7 @@
 #include "TwoBoneIK.h"
 #include "HAL/IConsoleManager.h"
 #include "UObject/UObjectIterator.h"
+#include "UObject/StrongObjectPtr.h"
 #include "Async/Async.h"
 
 namespace
@@ -92,7 +99,6 @@ namespace
         };
         return {Scalar(P.X),Scalar(P.Y),Scalar(P.Z)};
     }
-    FString RuntimeFolder() { return FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()/TEXT("Data/SkateNative")); }
     FString TrickLabel(FString Name)
     {
         Name.RemoveFromStart(TEXT("ID_TRICK_"));
@@ -105,174 +111,12 @@ namespace
         }
         return FString::Join(Words,TEXT(" ")).Replace(TEXT("50 50"),TEXT("50-50"));
     }
-    // A park fits inside the snapshot's inner cube. Keep that cube at the park origin, so
-    // skating between its corners does not rebuild identical collision on the game thread.
-    FVector SnapshotCentre(UWorld* World, const FVector& Position)
-    {
-        for (TActorIterator<AActor> It(World); It; ++It)
-            if (It->ActorHasTag(TEXT("SkatePark")) && (Position-It->GetActorLocation()).GetAbsMax()<=6000.f)
-                return It->GetActorLocation();
-        return Position;
-    }
-
-    /** One collision snapshot. Add takes UE-space triangles facing out of their solid ((B-A)x(C-A) points outward) and
-     *  keeps them as native points, three per triangle. Plain data, so a worker thread can write it. */
-    struct FSnapshot
-    {
-        FBox Region=FBox(ForceInit);
-        int32 Budget=500000;
-        TArray<FVector3f> Points;
-        TArray<TArray<FVector3f>> Rails;
-        FVector3f Spawn=FVector3f::ZeroVector;
-        float Heading=0;
-        int32 Num() const { return Points.Num()/3; }
-        bool Full() const { return Num()>Budget; }
-        void Add(const FVector& A, FVector B, FVector C)
-        {
-            if (Full()) return;
-            FBox Bounds(ForceInit); Bounds+=A; Bounds+=B; Bounds+=C;
-            if (!Bounds.Intersect(Region) || FVector::CrossProduct(B-A,C-A).SizeSquared()<.0001) return;
-            Swap(B,C); // The coordinate reflection reverses winding.
-            // The solver takes each normal from its own f32 points and refuses a flat one: drop slivers at that precision.
-            const FVector3f P[3]={FVector3f(ToNative(A)),FVector3f(ToNative(B)),FVector3f(ToNative(C))};
-            const FVector3d E1(P[1]-P[0]),E2(P[2]-P[0]);
-            const double Twice=FVector3d::CrossProduct(E1,E2).Size();
-            if (Twice<1e-9 || Twice<1e-6*E1.Size()*E2.Size()) return;
-            Points.Append(P,3);
-        }
-        // A face of a convex solid, turned away from the solid's centre.
-        void AddFacing(const FVector& Centre, const FVector& A, const FVector& B, const FVector& C)
-        {
-            if (FVector::DotProduct(FVector::CrossProduct(B-A,C-A),(A+B+C)/3.-Centre)<0) Add(A,C,B); else Add(A,B,C);
-        }
-        // The surface of a mesh whose collision is its own triangles, from its collision LOD.
-        void AddSurface(UStaticMesh* Mesh, const FTransform& T)
-        {
-            if (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return;
-            const auto& LODs=Mesh->GetRenderData()->LODResources;
-            const FStaticMeshLODResources& LOD=LODs[FMath::Clamp(Mesh->LODForCollision,0,LODs.Num()-1)];
-            const FPositionVertexBuffer& Positions=LOD.VertexBuffers.PositionVertexBuffer;
-            if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) return;
-            const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();
-            for (int32 I=0; I+2<Indices.Num() && !Full(); I+=3)
-            {
-                FVector P[3];
-                for (int32 K=0;K<3;++K) P[K]=T.TransformPosition(FVector(Positions.VertexPosition(Indices[I+K])));
-                const FVector Authored=T.TransformVectorNoScale(FVector(LOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(Indices[I])));
-                if (FVector::DotProduct(FVector::CrossProduct(P[1]-P[0],P[2]-P[0]),Authored)<0) Swap(P[1],P[2]);
-                Add(P[0],P[1],P[2]);
-            }
-        }
-        void AddBox(const FTransform& T, const FVector& Half)
-        {
-            auto Corner=[&](int32 I){ return T.TransformPosition(FVector(I&1?Half.X:-Half.X,I&2?Half.Y:-Half.Y,I&4?Half.Z:-Half.Z)); };
-            static const int32 Faces[6][4]={{0,2,6,4},{1,5,7,3},{0,4,5,1},{2,3,7,6},{0,1,3,2},{4,6,7,5}};
-            for (const auto& Q : Faces)
-            {
-                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[1]),Corner(Q[2]));
-                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[2]),Corner(Q[3]));
-            }
-        }
-        // A capsule along local Z whose hemisphere centres sit Half above and below the origin; Half 0 is a sphere.
-        void AddCapsule(const FTransform& T, double Radius, double Half)
-        {
-            constexpr int32 Segments=10, Steps=4;
-            TArray<TArray<FVector>> Rings;
-            for (int32 Top=0;Top<2;++Top) for (int32 I=0;I<=Steps;++I)
-            {
-                const double Lat=(Top ? double(I) : double(I-Steps))/Steps*UE_DOUBLE_HALF_PI, Ring=Radius*FMath::Cos(Lat);
-                const double Z=Radius*FMath::Sin(Lat)+(Top ? Half : -Half);
-                TArray<FVector>& Row=Rings.AddDefaulted_GetRef();
-                for (int32 S=0;S<Segments;++S) Row.Add(T.TransformPosition(FVector(Ring*FMath::Cos(UE_DOUBLE_TWO_PI*S/Segments),Ring*FMath::Sin(UE_DOUBLE_TWO_PI*S/Segments),Z)));
-            }
-            for (int32 R=0;R+1<Rings.Num();++R) for (int32 S=0;S<Segments;++S)
-            {
-                const int32 N=(S+1)%Segments;
-                AddFacing(T.GetLocation(),Rings[R][S],Rings[R][N],Rings[R+1][N]);
-                AddFacing(T.GetLocation(),Rings[R][S],Rings[R+1][N],Rings[R+1][S]);
-            }
-        }
-        void AddHull(const FKConvexElem& Hull, const FTransform& T)
-        {
-            if (Hull.VertexData.IsEmpty()) return;
-            const TArray<int32> Indices=Hull.IndexData.Num() ? Hull.IndexData : Hull.GetChaosConvexIndices();
-            TArray<FVector> P; FVector Centre=FVector::ZeroVector;
-            for (const FVector& V : Hull.VertexData) Centre+=P.Add_GetRef(T.TransformPosition(V));
-            Centre/=P.Num();
-            for (int32 I=0;I+2<Indices.Num();I+=3)
-                if (P.IsValidIndex(Indices[I]) && P.IsValidIndex(Indices[I+1]) && P.IsValidIndex(Indices[I+2]))
-                    AddFacing(Centre,P[Indices[I]],P[Indices[I+1]],P[Indices[I+2]]);
-        }
-    };
-
-    /** Snapshot the static collision a walker meets near Centre: the triangles of meshes whose collision is their own
-     *  surface, and the boxes, spheres, capsules and hulls of the others (a tree's trunk, not its leaves). A dense
-     *  area shrinks the snapshot until it fits the budget; Reach is how far the rider may go from Centre before the
-     *  next one. The native solver owns its narrow phase, BVH and contact solver. */
-    bool GatherWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FSnapshot& Snapshot, double& Reach)
-    {
-        double Radius=0;
-        for (const double Try : {10000.,6000.,3500.,2000.})
-        {
-            Radius=Try; Snapshot.Region=FBox(Centre-FVector(Radius),Centre+FVector(Radius)); Snapshot.Points.Reset();
-            for (TObjectIterator<UStaticMeshComponent> It; It && !Snapshot.Full(); ++It)
-            {
-                UStaticMeshComponent* C = *It;
-                if (C->GetWorld()!=World || C->GetOwner()==Rider || !C->IsRegistered() || !C->IsCollisionEnabled() ||
-                    C->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block || !C->Bounds.GetBox().Intersect(Snapshot.Region)) continue;
-                UStaticMesh* Mesh=C->GetStaticMesh();
-                UBodySetup* Body=Mesh ? Mesh->GetBodySetup() : nullptr;
-                if (!Body) continue;
-                TArray<FTransform> Instances;
-                if (auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
-                {
-                    for (int32 Index : ISM->GetInstancesOverlappingBox(Snapshot.Region,true))
-                    { FTransform T; if (ISM->GetInstanceTransform(Index,T,true)) Instances.Add(T); }
-                }
-                else Instances.Add(C->GetComponentTransform());
-                const bool bSurface=Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple;
-                const FKAggregateGeom& Geom=Body->AggGeom;
-                for (const FTransform& T : Instances)
-                {
-                    if (bSurface) { Snapshot.AddSurface(Mesh,T); continue; }
-                    for (const FKBoxElem& E : Geom.BoxElems) Snapshot.AddBox(E.GetTransform()*T,FVector(E.X,E.Y,E.Z)*.5);
-                    for (const FKSphereElem& E : Geom.SphereElems) Snapshot.AddCapsule(E.GetTransform()*T,E.Radius,0);
-                    for (const FKSphylElem& E : Geom.SphylElems) Snapshot.AddCapsule(E.GetTransform()*T,E.Radius,E.Length*.5);
-                    for (const FKConvexElem& E : Geom.ConvexElems) Snapshot.AddHull(E,E.GetTransform()*T);
-                }
-            }
-            if (!Snapshot.Full()) break;
-        }
-        if (Snapshot.Num()==0 || Snapshot.Full()) return false;
-        Reach=Radius*.6;
-        if (Rails) for (const FSkateRail& Rail : Rails->Rails) if (Rail.Bounds.Intersect(Snapshot.Region) && Rail.Points.Num()>=2)
-        {
-            TArray<FVector3f>& Line=Snapshot.Rails.AddDefaulted_GetRef();
-            for (const FVector& P : Rail.Points) Line.Add(FVector3f(ToNative(P)));
-        }
-        Snapshot.Spawn=FVector3f(ToNative(Spawn)); Snapshot.Heading=-FMath::DegreesToRadians(Yaw);
-        UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails within %.0f m"),Snapshot.Num(),Snapshot.Rails.Num(),Radius/100.);
-        return true;
-    }
-
-    // Preserve the former collision snapshot's seven decimal places before f32
-    // publication. Removing the disk transport must not change its geometry.
+    // Preserve the accepted spawn/heading's seven decimal places before f32 publication.
     float SnapshotScalar(float V)
     {return float(double(FMath::RoundToInt64(double(V)*10000000.))/10000000.);}
     atelier::skate::Vec3 SnapshotPoint(FVector3f P)
     {return {SnapshotScalar(P.X),SnapshotScalar(P.Y),SnapshotScalar(P.Z)};}
-    atelier::skate::GameplayWorldSnapshot NativeSnapshot(const FSnapshot& S)
-    {
-        atelier::skate::GameplayWorldSnapshot Out;Out.triangles.reserve(S.Num());
-        for(int32 I=0;I<S.Points.Num();I+=3)
-            Out.triangles.push_back({SnapshotPoint(S.Points[I]),SnapshotPoint(S.Points[I+1]),SnapshotPoint(S.Points[I+2])});
-        for(const auto& Rail:S.Rails)
-        {
-            auto& Line=Out.rails.emplace_back();Line.reserve(Rail.Num());
-            for(const auto& P:Rail) {const auto V=SnapshotPoint(P);Line.push_back({V.x,V.y,V.z});}
-        }
-        return Out;
-    }
+
 }
 
 namespace skate_native=atelier::skate;
@@ -300,9 +144,9 @@ public:
         std::optional<skate_native::camera::CameraFrame> Camera;
         skate_native::ContactMaterial Floor;
     };
-    FNativeSkateWorker(FString Folder,skate_native::GameplayWorldSnapshot World,
+    FNativeSkateWorker(std::shared_ptr<const skate_native::GameplayResourceSource> Source,skate_native::GameplayWorldSnapshot World,
         skate_native::Vec3 Spawn,float Heading)
-        :Folder_(MoveTemp(Folder)),InitialWorld_(std::move(World)),Spawn_(Spawn),Heading_(Heading)
+        :Source_(std::move(Source)),InitialWorld_(std::move(World)),Spawn_(Spawn),Heading_(Heading)
     {Wake_=FPlatformProcess::GetSynchEventFromPool(false);}
     ~FNativeSkateWorker()
     {
@@ -321,13 +165,15 @@ public:
         if(!FloatEnvironment.IsReady())
         {Fail("Native skating floating-point environment setup failed");Finished_.store(true);return 1;}
         std::string Error;std::shared_ptr<const skate_native::GameplayResources> Resources;
-        if(!skate_native::LoadGameplayResources(std::filesystem::u8path(TCHAR_TO_UTF8(*Folder_)),Resources,Error)
+        if(!skate_native::LoadGameplayResources(*Source_,Resources,Error)
             ||!skate_native::GameplaySession::Create(Resources,InitialWorld_,Spawn_,Heading_,Session_,Error)
             ||!Session_->Activate(Spawn_,Heading_,Error)||!Publish(true,Error))
         {Fail(Error);Finished_.store(true);return 1;}
         // Initial collision points can be large; their immutable copy is no
         // longer needed after the BVH and spline provider have been built.
         InitialWorld_={};
+        // Decoded resources own their samples; discard the extra immutable transport copy.
+        Source_.reset();
         while(!Stopping_.load())
         {
             FCommand Command;
@@ -411,7 +257,7 @@ private:
         Outputs_.Enqueue(MoveTemp(Out));return true;
     }
     void Fail(const std::string& Error) {FOutput Out;Out.Error=Error.empty()?"Native skating failed":Error;Outputs_.Enqueue(MoveTemp(Out));}
-    FString Folder_;skate_native::GameplayWorldSnapshot InitialWorld_;skate_native::Vec3 Spawn_;float Heading_;
+    std::shared_ptr<const skate_native::GameplayResourceSource> Source_;skate_native::GameplayWorldSnapshot InitialWorld_;skate_native::Vec3 Spawn_;float Heading_;
     FEvent* Wake_=nullptr;FRunnableThread* Thread_=nullptr;std::atomic<bool> Stopping_{false},Finished_{false};
     TQueue<FCommand,EQueueMode::Mpsc> Commands_;TQueue<FOutput,EQueueMode::Spsc> Outputs_;
     std::unique_ptr<skate_native::GameplaySession> Session_;uint32 Generation_=0;
@@ -435,6 +281,12 @@ public:
     FString State=TEXT("Loading skater"),Error,Trick;
     FVector CollisionCentre=FVector::ZeroVector,Spawn=FVector::ZeroVector,Velocity=FVector::ZeroVector;
     double CollisionReach=6000.;
+    FBox CollisionRegion=FBox(ForceInit);
+    TArray<USkateCollisionAsset*> Catalogs;
+    FSkateCollisionDiagnostics CollisionDiagnostics;
+    FSkateCollisionSceneTracker SceneTracker;
+    bool CollisionDirty=false;
+    int32 CollisionRefreshes=0,CollisionRevision=0,CollisionRails=0;
     TFuture<TSharedPtr<FWorldResult,ESPMode::ThreadSafe>> PendingWorld;
     skate_native::ContactMaterial Floor;
     TOptional<FVector> PendingLaunch;
@@ -443,10 +295,11 @@ public:
     FTransform Root=FTransform::Identity,Camera=FTransform::Identity;float CameraFOV=0;
     TArray<FName> Names;TArray<FTransform> Reference,Bones;
     ~FSkateRuntime() {if(PendingWorld.IsValid())PendingWorld.Wait();Worker.Reset();}
+    TStrongObjectPtr<USkateProfile> Profile;
     FNativeSkateWorker::FPreferences Preferences(bool Goofy) const
     {
-        const USkateSettings* S=GetDefault<USkateSettings>();FNativeSkateWorker::FPreferences P;
-        P.Difficulty=TCHAR_TO_UTF8(*S->Difficulty);P.Goofy=Goofy;P.Trucks=S->TruckTightness;
+        const USkateProfile* S=Profile.Get();check(S);FNativeSkateWorker::FPreferences P;
+        P.Difficulty=TCHAR_TO_UTF8(*S->GetDifficultyPreset());P.Goofy=Goofy;P.Trucks=S->TruckTightness;
         P.Pop=S->PopHeightScale;P.Spin=S->AirSpinScale;P.PushSpeed=S->PushSpeedScale;P.PushPower=S->PushPowerScale;P.VertAssist=S->VertAssist;return P;
     }
     void FinishPendingWorld(bool Background)
@@ -457,10 +310,10 @@ public:
         Command.World=std::move(Result->World);Command.Error=std::move(Result->Error);Command.Background=Background;
         Worker->Enqueue(MoveTemp(Command));
     }
-    void SendWorld(const FSnapshot& Snapshot)
+    void SendWorld(const FSkateCollisionSnapshot& Snapshot)
     {
         FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::World;
-        Command.Snapshot=NativeSnapshot(Snapshot);Worker->Enqueue(MoveTemp(Command));
+        Command.Snapshot=SkateNativeCollisionSnapshot(Snapshot);Worker->Enqueue(MoveTemp(Command));
     }
     void Activate(bool Goofy)
     {
@@ -511,15 +364,81 @@ public:
     }
 };
 
+uint32 USkateComponent::GetPoseSerial() const
+{
+    return RetailRuntime ? uint32(RetailRuntime->Tick) : 0;
+}
+
+bool USkateComponent::SetProfile(USkateProfile* NewProfile,FString& Failure)
+{
+    if (IsRiding()) { Failure=TEXT("Step off the board before changing the skating profile."); return false; }
+    if (!LoadProfileContent(NewProfile,Failure)) return false;
+    RetailRuntime.Reset(); bRetailPreloaded=false; ++PoseGeneration; RetailPose.Reset(); LastRuntimeError.Reset();
+    if (Deck)
+    {
+        auto Load=[](const FSoftObjectPath& Path) { return Cast<UStaticMesh>(Path.TryLoad()); };
+        UStaticMesh* DeckMesh=Load(Profile->DeckMesh);
+        UStaticMesh* TruckMesh=Load(Profile->TruckMesh);
+        UStaticMesh* WheelMesh=Load(Profile->WheelMesh);
+        Deck->SetStaticMesh(DeckMesh);
+        for (const auto& Truck : Trucks) Truck->SetStaticMesh(TruckMesh);
+        for (const auto& Wheel : Wheels) Wheel->SetStaticMesh(WheelMesh);
+        bAvailable=DeckMesh && TruckMesh && WheelMesh;
+        for (const auto& Loop : Loops) if (Loop) Loop->DestroyComponent();
+        Loops.Reset(); Waves.Reset(); CueRange.Reset(); LastVariant=-1;
+        for (float& Volume : LoopVolume) Volume=0;
+        LoadSounds();
+    }
+    return true;
+}
+
+FSkateProfileChangeReport USkateComponent::SetProfileReport(USkateProfile* NewProfile)
+{
+    FSkateProfileChangeReport Out;
+    Out.bAccepted=SetProfile(NewProfile,Out.Failure);
+    return Out;
+}
+
+FSkateRuntimeDiagnostics USkateComponent::GetRuntimeDiagnostics() const
+{
+    FSkateRuntimeDiagnostics Out;
+    Out.PoseGeneration=PoseGeneration; Out.PoseBones=RetailPose.Num(); Out.LastError=LastRuntimeError;
+    if (RuntimeData) Out.DataIdentity=RuntimeData->SourceIdentity;
+    if (RetailRuntime)
+    {
+        Out.bReady=RetailRuntime->Ready; Out.bAwaitingPose=RetailRuntime->AwaitingPose;
+        Out.bBuildingCollision=RetailRuntime->PendingWorld.IsValid(); Out.NativeTick=RetailRuntime->Tick;
+        Out.State=RetailRuntime->State; Out.CollisionReachMetres=RetailRuntime->CollisionReach*.01;
+        Out.CollisionTriangles=RetailRuntime->CollisionDiagnostics.TriangleCount;
+        Out.CollisionRails=RetailRuntime->CollisionRails; Out.CollisionRefreshes=RetailRuntime->CollisionRefreshes;
+        Out.CollisionRevision=RetailRuntime->CollisionRevision;
+        Out.MissingCollisionMeshes=RetailRuntime->CollisionDiagnostics.MissingCatalogCount;
+        Out.MaterialOverrideTriangles=RetailRuntime->CollisionDiagnostics.MaterialOverrideCount;
+        Out.SurfaceTriangles=RetailRuntime->CollisionDiagnostics.NonzeroSurfaceCount;
+        if (!RetailRuntime->Error.IsEmpty()) Out.LastError=RetailRuntime->Error;
+    }
+    return Out;
+}
+
 bool USkateComponent::LaunchNativeSession(const FVector& Where,float Yaw,FString& Failure)
 {
-    if(!FPaths::FileExists(RuntimeFolder()/TEXT("package-manifest.json")))
-    {Failure=TEXT("Native skating data is missing from this build.");return false;}
-    FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Where);
-    if(!GatherWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Snapshot,Reach))
-    {Failure=TEXT("Skating could not load nearby collision.");return false;}
-    RetailRuntime=MakeShared<FSkateRuntime>();RetailRuntime->CollisionCentre=Centre;RetailRuntime->CollisionReach=Reach;
-    RetailRuntime->Worker=MakeUnique<FNativeSkateWorker>(RuntimeFolder(),NativeSnapshot(Snapshot),
+    if(!Profile || !RuntimeData)
+    {Failure=TEXT("Native skating assets are missing from this build.");return false;}
+    std::shared_ptr<const skate_native::GameplayResourceSource> Source;
+    if(!RuntimeData->CreateSnapshot(Source,Failure))return false;
+    FSkateCollisionSnapshot Snapshot;double Reach=0;const FVector Centre=SkateCollisionSnapshotCentre(GetWorld(),Where);
+    TArray<USkateCollisionAsset*> Catalogs;
+    for (auto& Catalog : LoadedCollisionCatalogs) Catalogs.Add(Catalog.Get());
+    FSkateCollisionDiagnostics Diagnostics;
+    if(!SkateGatherCollisionWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Catalogs,Snapshot,Reach,Diagnostics))
+    {Failure=TEXT("Skating could not load nearby collision: ")+FString::Join(Diagnostics.Errors,TEXT("; "));return false;}
+    RetailRuntime=MakeShared<FSkateRuntime>();RetailRuntime->Profile.Reset(Profile.Get());RetailRuntime->CollisionCentre=Centre;RetailRuntime->CollisionReach=Reach;
+    RetailRuntime->SceneTracker.ScanPeriodSeconds=Profile->CollisionScanPeriodSeconds;
+    RetailRuntime->Catalogs=MoveTemp(Catalogs);RetailRuntime->CollisionRegion=Snapshot.Region;
+    RetailRuntime->CollisionDiagnostics=MoveTemp(Diagnostics);
+    RetailRuntime->CollisionRails=Snapshot.Rails.Num();
+    RetailRuntime->SceneTracker.AcceptSnapshot(GetWorld(),Rider,Snapshot.Region,RailSystem,RetailRuntime->Catalogs,GetWorld()->GetTimeSeconds());
+    RetailRuntime->Worker=MakeUnique<FNativeSkateWorker>(std::move(Source),SkateNativeCollisionSnapshot(Snapshot),
         SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading));
     if(!RetailRuntime->Worker->Start()){RetailRuntime.Reset();Failure=TEXT("Native skating thread could not start.");return false;}
     return true;
@@ -542,18 +461,29 @@ void USkateComponent::PollIdleRetail()
 }
 bool USkateComponent::StartRetailRuntime()
 {
-    FString Failure;
-    if (!RetailRuntime && !LaunchNativeSession(Pos,Rot.Rotator().Yaw,Failure)) { RuntimeFailure(Failure); return false; }
-    RetailRuntime->FinishPendingWorld(false);
-    if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
+    auto Fail=[this](const FString& Message)
     {
-        FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Pos);
-        if(!GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,Snapshot,Reach))
-        {RuntimeFailure(TEXT("Skating could not refresh nearby collision."));return false;}
+        const FString StableMessage=Message;
+        RetailRuntime.Reset(); StowImmediately(); RuntimeFailure(StableMessage); return false;
+    };
+    FString Failure;
+    if (!RetailRuntime && !LaunchNativeSession(Pos,Rot.Rotator().Yaw,Failure)) return Fail(Failure);
+    RetailRuntime->FinishPendingWorld(false);
+    if (RetailRuntime->SceneTracker.Poll(GetWorld(),Rider,RetailRuntime->CollisionRegion,RailSystem,RetailRuntime->Catalogs,GetWorld()->GetTimeSeconds())) RetailRuntime->CollisionDirty=true;
+    if (RetailRuntime->CollisionDirty || (Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
+    {
+        FSkateCollisionSnapshot Snapshot;double Reach=0;const FVector Centre=SkateCollisionSnapshotCentre(GetWorld(),Pos);
+        FSkateCollisionDiagnostics Diagnostics;
+        if(!SkateGatherCollisionWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,RetailRuntime->Catalogs,Snapshot,Reach,Diagnostics,RetailRuntime->SceneTracker.Generation()))
+        return Fail(FString::Join(Diagnostics.Errors,TEXT("; ")));
         RetailRuntime->SendWorld(Snapshot);RetailRuntime->CollisionCentre=Centre;RetailRuntime->CollisionReach=Reach;
+        RetailRuntime->CollisionRegion=Snapshot.Region;RetailRuntime->CollisionDiagnostics=MoveTemp(Diagnostics);
+        RetailRuntime->CollisionRails=Snapshot.Rails.Num();
+        RetailRuntime->SceneTracker.AcceptSnapshot(GetWorld(),Rider,Snapshot.Region,RailSystem,RetailRuntime->Catalogs,GetWorld()->GetTimeSeconds());
+        RetailRuntime->CollisionDirty=false;++RetailRuntime->CollisionRefreshes;++RetailRuntime->CollisionRevision;
     }
     RetailRuntime->Spawn=Pos; RetailRuntime->SpawnYaw=Rot.Rotator().Yaw;
-    ++RetailRuntime->Generation; RetailRuntime->HasPose=false; RetailRuntime->FrameTime=0;
+    ++RetailRuntime->Generation; ++PoseGeneration; RetailRuntime->HasPose=false; RetailRuntime->FrameTime=0;
     RetailRuntime->PendingLaunch=Vel;
     RetailRuntime->Activate(bGoofy); bRetailActive=true; RetailPose.Reset();
     return true;
@@ -561,7 +491,7 @@ bool USkateComponent::StartRetailRuntime()
 void USkateComponent::SuspendRetailRuntime()
 {
     if (RetailRuntime) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
-    bRetailActive=false; RetailPose.Reset();
+    bRetailActive=false; ++PoseGeneration; RetailPose.Reset();
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
@@ -597,8 +527,8 @@ void USkateComponent::StepRetailRuntime(float Dt)
     const bool Changed=RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
     {
-        RuntimeFailure(RetailRuntime->Error);
-        StowImmediately(); RetailRuntime.Reset(); return;
+        const FString Failure=RetailRuntime->Error;
+        RetailRuntime.Reset(); StowImmediately(); RuntimeFailure(Failure); return;
     }
     if (!RetailRuntime->Ready) return;
     if (RetailRuntime->PendingActivation) { RetailRuntime->Activate(bGoofy); return; }
@@ -631,10 +561,12 @@ void USkateComponent::StepRetailRuntime(float Dt)
     Command.Input.left=Stick(Left);Command.Input.right=Stick(In.Right);RetailRuntime->Worker->Enqueue(MoveTemp(Command));
     RetailRuntime->AwaitingPose=true; RetailRuntime->FrameTime=0;
     }
+    if (RetailRuntime->SceneTracker.Poll(GetWorld(),Rider,RetailRuntime->CollisionRegion,RailSystem,RetailRuntime->Catalogs,GetWorld()->GetTimeSeconds())) RetailRuntime->CollisionDirty=true;
     if (!Changed) return;
     const FString& S=RetailRuntime->State;
     const ESkateMode NewMode=S.Contains(TEXT("Wipeout"))?ESkateMode::Bail:S.Contains(TEXT("Grind"))?ESkateMode::Grind:
         S.Contains(TEXT("Air"))?ESkateMode::Air:ESkateMode::Ground;
+    const ESkateMode PreviousMode=Mode;
     if (NewMode!=Mode)
     {
         if (NewMode==ESkateMode::Bail) { ++Bails; PlayCue(TEXT("clatter"),1,1); }
@@ -657,6 +589,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     bSlide=S==TEXT("GrindBoardslide") || S==TEXT("GrindTipslide") || S==TEXT("GrindDarkslide");
     if (ShownCombo!=RetailRuntime->Trick || Score!=FMath::RoundToInt(RetailRuntime->Score) ||
         Mode==ESkateMode::Air || Mode==ESkateMode::Grind || bManual) ComboFade=1.5f;
+    const bool TrickChanged=ShownCombo!=RetailRuntime->Trick || Score!=FMath::RoundToInt(RetailRuntime->Score);
     ShownCombo=RetailRuntime->Trick; Score=FMath::RoundToInt(RetailRuntime->Score); LastTrickName=FName(*ShownCombo);
     Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::TeleportPhysics);
     Movement()->Velocity=Vel;
@@ -691,12 +624,13 @@ void USkateComponent::StepRetailRuntime(float Dt)
     {
         if (RetailRuntime->PendingWorld.IsReady()) RetailRuntime->FinishPendingWorld(true);
     }
-    else if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
+    else if (RetailRuntime->CollisionDirty || (Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
     {
-        auto Snapshot=MakeShared<FSnapshot>(); double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
-        if (GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,*Snapshot,Reach))
+        auto Snapshot=MakeShared<FSkateCollisionSnapshot>(); double Reach=0; const FVector Centre=SkateCollisionSnapshotCentre(GetWorld(),Pos);
+        FSkateCollisionDiagnostics Diagnostics;
+        if (SkateGatherCollisionWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,RetailRuntime->Catalogs,*Snapshot,Reach,Diagnostics,RetailRuntime->SceneTracker.Generation()))
         {
-            auto Native=NativeSnapshot(*Snapshot);const auto Material=RetailRuntime->Floor;
+            auto Native=SkateNativeCollisionSnapshot(*Snapshot);const auto Material=RetailRuntime->Floor;
             RetailRuntime->PendingWorld=AsyncThread([Native=std::move(Native),Material]() mutable -> TSharedPtr<FSkateRuntime::FWorldResult,ESPMode::ThreadSafe>
             {
                 FScopedNativeFloatEnvironment FloatEnvironment;
@@ -706,10 +640,39 @@ void USkateComponent::StepRetailRuntime(float Dt)
                 skate_native::BuildGameplayWorld(Native,Material,Result->World,Result->Error);return Result;
             },32*1024*1024);
             RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
+            RetailRuntime->CollisionRegion=Snapshot->Region;RetailRuntime->CollisionDiagnostics=MoveTemp(Diagnostics);
+            RetailRuntime->CollisionRails=Snapshot->Rails.Num();
+            RetailRuntime->SceneTracker.AcceptSnapshot(GetWorld(),Rider,Snapshot->Region,RailSystem,RetailRuntime->Catalogs,GetWorld()->GetTimeSeconds());
+            RetailRuntime->CollisionDirty=false;++RetailRuntime->CollisionRefreshes;++RetailRuntime->CollisionRevision;
         }
-        // Nothing to snapshot (open water): keep the old one and try again 20 m on, not on every frame.
-        else { RetailRuntime->CollisionCentre=Pos; RetailRuntime->CollisionReach=2000.; }
+        // Preserve the movement/open-water fallback, but never retain ghost
+        // collision when a changed scene has removed its final colliders.
+        else
+        {
+            LastRuntimeError=FString::Join(Diagnostics.Errors,TEXT("; "));
+            RetailRuntime->CollisionDiagnostics=MoveTemp(Diagnostics);
+            const bool OnlyEmpty=RetailRuntime->CollisionDiagnostics.Errors.Num()==1 &&
+                RetailRuntime->CollisionDiagnostics.Errors[0]==TEXT("Collision snapshot contains no triangles");
+            if (!OnlyEmpty || RetailRuntime->CollisionDirty)
+            {
+                const FString Failure=LastRuntimeError;
+                RetailRuntime.Reset(); StowImmediately(); RuntimeFailure(Failure); return;
+            }
+            RetailRuntime->CollisionCentre=Pos; RetailRuntime->CollisionReach=2000.;
+            RetailRuntime->CollisionDirty=false;
+            UE_LOG(LogTemp,Warning,TEXT("SKATE collision refresh rejected: %s"),*LastRuntimeError);
+        }
     }
+    // Publish after applying the frame: Blueprint listeners may stow or destroy the rider.
+    const FVector EventVelocity=Vel; const FName EventTrick=LastTrickName; const int32 EventScore=Score;
+    const uint32 EventGeneration=PoseGeneration;
+    PublishModeChange(PreviousMode);
+    if (!IsValid(this) || !IsValid(Rider) || PoseGeneration!=EventGeneration || Mode!=NewMode) return;
+    if (NewMode!=PreviousMode && NewMode==ESkateMode::Bail) OnBailed.Broadcast(EventVelocity);
+    if (!IsValid(this) || !IsValid(Rider) || PoseGeneration!=EventGeneration || Mode!=NewMode) return;
+    if (NewMode==ESkateMode::Ground && PreviousMode==ESkateMode::Air) OnLanded.Broadcast(EventVelocity);
+    if (!IsValid(this) || !IsValid(Rider) || PoseGeneration!=EventGeneration || Mode!=NewMode) return;
+    if (TrickChanged) OnTrickChanged.Broadcast(EventTrick,EventScore);
 }
 
 void USkateComponent::RetargetRetailPose()
@@ -1024,6 +987,8 @@ void USkateComponent::RetargetRetailPose()
 
 void USkateComponent::RuntimeFailure(const FString& Message)
 {
-    UE_LOG(LogTemp,Error,TEXT("SKATE: %s"),*Message);
-    if (GEngine) GEngine->AddOnScreenDebugMessage(INDEX_NONE,10.f,FColor::Orange,Message);
+    const FString StableMessage=Message; LastRuntimeError=StableMessage;
+    UE_LOG(LogTemp,Error,TEXT("SKATE: %s"),*StableMessage);
+    if (GEngine) GEngine->AddOnScreenDebugMessage(INDEX_NONE,10.f,FColor::Orange,StableMessage);
+    OnRuntimeFailure.Broadcast(StableMessage);
 }

@@ -131,6 +131,14 @@ bool BuildRails(const GameplayWorldSnapshot& source,
 bool BuildGameplayWorld(const GameplayWorldSnapshot& source,ContactMaterial material,
     std::optional<PreparedGameplayWorld>& output,std::string& error)
 {
+    if(!source.triangle_materials.empty()&&source.triangle_materials.size()!=source.triangles.size())
+    {error="SKATE triangle material count must equal triangle count";return false;}
+    if(!source.triangle_surfaces.empty()&&source.triangle_surfaces.size()!=source.triangles.size())
+    {error="SKATE triangle surface count must equal triangle count";return false;}
+    for(std::size_t i=0;i<source.triangle_materials.size();++i)
+        if(const auto& value=source.triangle_materials[i];value&&
+            (!std::isfinite(value->static_friction)||!std::isfinite(value->dynamic_friction)||!std::isfinite(value->restitution)))
+        {error="Non-finite SKATE triangle material at triangle "+std::to_string(i);return false;}
     // Welding defines adjacency only; contact vertices retain source precision.
     std::map<std::array<std::int64_t,3>,std::size_t> welded;
     std::vector<Vec3> positions,normals;
@@ -192,7 +200,10 @@ bool BuildGameplayWorld(const GameplayWorldSnapshot& source,ContactMaterial mate
     QueryMetadata metadata;metadata.packed_surfaces.resize(source.triangles.size(),0);
     for(std::size_t i=0;i<source.triangles.size();++i)
     {
-        auto triangle=WorldTriangle::FromVertices(source.triangles[i],material,0,flags[i],cosines[i],0);
+        const auto surface=source.triangle_surfaces.empty()?std::uint16_t(0):source.triangle_surfaces[i];
+        const auto contact=source.triangle_materials.empty()?material:source.triangle_materials[i].value_or(material);
+        metadata.packed_surfaces[i]=surface;
+        auto triangle=WorldTriangle::FromVertices(source.triangles[i],contact,surface,flags[i],cosines[i],0);
         if(!triangle){error="Invalid SKATE collision volume at triangle "+std::to_string(i)+": "+DebugPoints(source.triangles[i]);return false;}
         triangles.push_back(std::move(*triangle));
     }

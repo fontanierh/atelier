@@ -49,7 +49,8 @@ def performance_pump(dt):
         ('push_and_flip',-28,38,0,5.5),
         ('bowl_pump_air',29,-10,850,5.5),
         ('mini_air',-23,-22,900,7),
-        ('quarter_air',33,25,850,4.5),
+        # Use the entrance speed verified by skate_runtime's vert check.
+        ('quarter_air',33,25,950,4.5),
         ('street_to_mini',-23,38,700,11),
         ('bail',-20,38,500,4.5)]:
         heading=-90 if name=='street_to_mini' else 0

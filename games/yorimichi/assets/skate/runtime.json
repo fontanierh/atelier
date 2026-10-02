@@ -1,7 +1,7 @@
 {
   "version": 3,
   "backend": "in-process-cpp",
-  "data_directory": "unreal/Content/Data/SkateNative",
+  "data_directory": "assets/skate/native",
   "manifest": "package-manifest.json",
   "manifest_sha256": "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d",
   "source": "Project-native conversion of Skate 3 animation, graph, input, camera and physics records",
@@ -30,7 +30,12 @@
     "normal_build_requires_conversion": false
   },
   "validation": {
-    "status": "editor-validated",
-    "scope": "Native data conversion and complete baseline/latest-main Session comparisons passed, followed by native Unreal editor compilation, live gameplay/park scenarios and real-time frame-pacing checks. This is finite-corpus equivalence to the recovered implementation, not original-console parity or packaged/cooked validation."
+    "status": "unreal-validated",
+    "scope": "Mac Development Editor/Game builds, lossless asset roundtrip and integrity checks, exact file-versus-asset public session words in both stances, cooked non-editor asset-only sessions with loose data excluded, rendered gameplay/park/Unreal integration checks and real-time frame pacing passed. This establishes finite-corpus equivalence to the recovered implementation; the cooked probe covers assets and sessions, while rendered checks use the editor game."
+  },
+  "unreal_assets": {
+    "profile": "/Game/SkateNative/DA_YorimichiProfile",
+    "runtime_data": "/Game/SkateNative/DA_RuntimeData",
+    "collision_catalog": "/Game/SkateNative/DA_Collision"
   }
 }

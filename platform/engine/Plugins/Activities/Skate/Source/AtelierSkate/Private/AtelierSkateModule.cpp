@@ -1,3 +1,10 @@
 #include "Modules/ModuleManager.h"
+#include "SkateCookedProbe.h"
 
-IMPLEMENT_MODULE(FDefaultModuleImpl, AtelierSkate)
+class FAtelierSkateModule final : public IModuleInterface
+{
+public:
+    void StartupModule() override { RegisterSkateCookedProbe(); }
+    void ShutdownModule() override { UnregisterSkateCookedProbe(); }
+};
+IMPLEMENT_MODULE(FAtelierSkateModule, AtelierSkate)

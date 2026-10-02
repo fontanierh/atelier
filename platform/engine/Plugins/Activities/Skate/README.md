@@ -6,31 +6,38 @@ contacts and constraints, steering and pushes, Flick-It gestures, manuals and po
 landings and bails, with the recovered animation graphs, trick scoring and skating camera. The game supplies nearby
 static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
 `Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two and retargets the solved rider onto the game's
-character. [RUNTIME.md](RUNTIME.md) lists the session's systems, the data bundle and how both are verified.
+character. Board and rider physics stay in this native solver; they do not use Chaos.
+[RUNTIME.md](RUNTIME.md) lists the systems, formats and checks;
+[UNREAL_INTEGRATION.md](UNREAL_INTEGRATION.md) covers the asset, animation and collision tooling.
 
 ## Adding it to a game
 
 1. Enable `Skate` in the `.uproject`, with `platform/engine/Plugins` in its `AdditionalPluginDirectories`. The plugin
    depends on AtelierCore and AtelierFX.
-2. Track the native data bundle in the game's `unreal/Content/Data/SkateNative` and stage it as loose files. The
-   loader reads it with standard file reads, so a pak alone is not enough:
+2. Track native source records outside Content, in `games/<game>/assets/skate/native`. Use the editor module's
+   `SkateRuntimeAssetLibrary` to build a lossless `USkateRuntimeAsset` and `SkateCollisionBuilderLibrary` to bake
+   the world's static meshes into a `USkateCollisionAsset` catalog. Create a `USkateProfile` with those references,
+   tuning and board/audio references. Generated UAssets belong in ignored Content; gameplay loads them exclusively.
+   Include the assets and their dependencies in the cook, for example with an Asset Manager rule and:
 
    ```ini
    [/Script/UnrealEd.ProjectPackagingSettings]
-   +DirectoriesToAlwaysStageAsNonUFS=(Path="Data")
+   +DirectoriesToAlwaysCook=(Path="/Game/SkateNative")
    ```
 
 3. Make the player an `ACharacter` that implements `ISkateRider`, give it a `USkateComponent` and call
    `Initialize(Character)`. Bind a button to `Toggle()`.
 4. In the character movement component's `PhysCustom`, call `PhysSkate(Dt)` for custom mode
    `USkateComponent::MovementMode` (2), and leave the actor's rotation alone while `IsRiding()` (true during a bail).
-5. In the animation instance, use `GetRetailPose()` while riding: local transforms for every bone of the host
-   skeleton.
+5. Put `FAnimNode_SkatePose` above the base local-space pose in the AnimGraph, at Weight 1. Its `PreUpdate` copies
+   `GetRetailPose()` on the game thread; animation workers consume the snapshot. Native graph hosts must include
+   the node in `GetCustomNodes()` so Unreal registers its `PreUpdate`. The editor wrapper works in Animation Blueprints.
 6. Optionally drive the camera from `GetRetailCamera(Transform, FOV)`. The FOV is vertical; convert it to Unreal's
    horizontal FOV with the viewport aspect.
 7. Register grindable lines with `USkateRailSubsystem::Add`: rails, ledge and box edges, coping and curbs, as their top
    contact line in centimetres.
-8. Set the board meshes, sounds and tuning in `DefaultGame.ini` (below).
+8. Select the profile through `USkateSettings::DefaultProfile`, or set the component's `Profile` before `Initialize`.
+   Use `SetProfile` to validate and switch content while off the board.
 
 | `ISkateRider` | Meaning |
 | --- | --- |
@@ -46,13 +53,24 @@ travel above 30 cm/s, and keeps their velocity. Stepping off works only on the g
 in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `StowImmediately()`, `SetGoofy()`,
 `PlaceAt()` and `Launch()` serve the game and QA; `SetScriptedInput()` replaces the player's controls.
 
-## Settings
+## Profile and settings
 
-`USkateSettings`, section `[/Script/AtelierSkate.SkateSettings]` of the game's `DefaultGame.ini`:
+`USkateSettings` selects one asset in the game's `DefaultGame.ini`:
+
+```ini
+[/Script/AtelierSkate.SkateSettings]
+DefaultProfile=/Game/SkateNative/DA_Profile.DA_Profile
+```
+
+All content and tuning live in `USkateProfile`:
 
 | Key | Default | Meaning |
 | --- | --- | --- |
+| `RuntimeData` | none | Required cooked `USkateRuntimeAsset`; exact native bytes and checksums |
+| `CollisionDataCatalog` | empty | Cooked `USkateCollisionAsset` catalogs for the world's static collision |
+| `CollisionScanPeriodSeconds` | 0.25 | Scene-change scan interval, 0.05 to 5 seconds |
 | `Difficulty` | `normal` | Recovered controller preset: `easy`, `normal` or `hardcore` |
+| `bGoofy` | false | Initial stance |
 | `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the recovered steering scalar |
 | `PopHeightScale` | 1 | 0.5 to 2; scales the recovered jump-height presets |
 | `AirSpinScale` | 1 | 0.5 to 3; scales the air-spin target and the spin response curves |
@@ -63,8 +81,8 @@ in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `S
 | `SoundFolder` | none | Content folder of the board sounds |
 | `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue) |
 
-The scales apply to the stock values each time the session is configured, so they never compound. A scale outside
-its range is an error and the board does not start.
+The scales apply to the stock values each time the session is configured, so they never compound. Structural
+validation collects independent profile errors; missing content or an out-of-range scale prevents the board from starting.
 
 `SoundFolder` holds the loops `roll_01`, `grind_01`, `slide_01`, `skid_01` (powerslide) and `scrape_01` (foot brake),
 and one-shot variants `<cue>_01` to `<cue>_08` for `pop`, `land`, `catch`, `push`, `flick` and `clatter`. The loops
@@ -115,16 +133,22 @@ The game thread sends it typed commands (activate, configure, step, world, launc
 bones, velocity, state, trick, score, manual balance and camera. Each activation carries a generation number so that
 output from a previous ride never moves a new one.
 
-- **Loading.** Two seconds after play begins the component preloads the data and nearby collision, so the first mount
-  is immediate. The session stays loaded between rides: getting off suspends its input, `EndPlay` releases it.
+- **Loading.** Two seconds after play begins the component starts preloading the profile's runtime data and nearby
+  collision. The game thread copies resource bytes into immutable native ownership; the native thread verifies
+  every checksum before decoding, without reading UObjects. Missing or corrupt assets have no file fallback.
+  The session stays loaded between rides: getting off suspends its input, `EndPlay` releases it.
 - **Collision.** The adapter snapshots registered, collision-enabled static meshes that block `Pawn` within a 100 m
   cube around the rider, shrinking it to 60, 35 or 20 m when it exceeds 500,000 triangles. Complex-as-simple meshes
-  give their collision triangles; other meshes give their boxes, spheres, capsules and convex hulls. Instanced meshes
-  count; the rider's own components do not. Registered rails within the cube go with it. When the rider leaves the
-  inner 60%, the game thread gathers the next snapshot, a background task builds it and the session installs it
-  between steps. Within 60 m of an actor tagged `SkatePark` the snapshot stays centred on that actor, so riding
-  around a park never rebuilds it. Over open water, where there is nothing to snapshot, the old one stays and the
-  rebuild is retried 20 m further on.
+  use baked local triangles; other meshes give their cooked boxes, spheres, capsules and convex hulls. Gathering
+  does not read static render buffers. Instanced meshes count; the rider's own components do not. Registered rails
+  within the cube go with it. Leaving the inner 60%, or detecting changed geometry, transforms, instances,
+  materials or rails at the profile's scan interval, requests a new snapshot. The game thread gathers it, a
+  background task builds it and the session installs it between steps. Within 60 m of an actor tagged `SkatePark`
+  the snapshot stays centred on that actor; scene changes still refresh it. Over open water, where there is nothing
+  to snapshot, the old one stays and the rebuild is retried 20 m further on. Stale or missing baked geometry is an error.
+- **Materials.** Catalog mappings explicitly connect Physical Materials to packed native surface IDs and optional
+  friction/restitution overrides. Unmapped surfaces keep the stock contact material and surface zero; Unreal's
+  `SurfaceType` is not assumed to be a native ID.
 - **Input.** Each frame the component samples the controls into an Xbox-style packet and steps the session with the
   frame time; the session runs whole 60 Hz ticks.
 - **Retargeting.** The solved skeleton is mapped onto the host's `root`, `pelvis`, `spine`, `spine_mid`, `chest`,
@@ -136,17 +160,24 @@ output from a previous ride never moves a new one.
   fingers the rig has, and is tunable live through `skate.Grip`. During a bail, skinned LOD0 vertices are sampled
   in 12 cm cells and traced down, and the whole pose is lifted to keep at least 0.5 cm above the ground, so a
   differently proportioned character stays out of the floor. This needs CPU-accessible skin data on the rider's mesh.
+- **Animation.** `FAnimNode_SkatePose` captures local transforms and generation identifiers in `PreUpdate`. At
+  full weight it resets to reference pose and assigns by mesh bone index, matching the former direct proxy path
+  while keeping base graph clocks. Inactive, invalid or zero-weight poses pass through; partial weight blends
+  toward the same target. Node diagnostics expose the copied pose's hash and generation.
 - **Modes.** The session's state name sets the component mode: `Wipeout` states are a bail, `Grind` states a grind,
   `Air` states the air, anything else the ground. The HUD getters (`GetComboLine`, `GetComboAlpha`, `GetScore`,
   `GetStatus`, `GetSpeed`, `GetCameraYaw`) read from it.
-- **Errors.** Missing or corrupt data, or a session error, logs `SKATE: <message>`, shows it on screen and stows the
-  board; the player keeps walking.
+- **Events and diagnostics.** Blueprint mode, trick, landing and bail events follow publication of the solved frame.
+  `GetRuntimeDiagnostics()` returns readiness, pending work, native tick, pose generation, data identity, collision
+  counts/revision and errors. A listener can stow the board; subsequent events from that obsolete ride are skipped.
+- **Errors.** Missing or corrupt data, or a session error, logs `SKATE: <message>`, shows it on screen, tears down
+  the failed ride and publishes `OnRuntimeFailure`; the player keeps walking.
 
 ## Data and limits
 
-The session reads the game's tracked `unreal/Content/Data/SkateNative` bundle: settings, graphs, gesture sets,
-physical skeletons, the animation rig, clips, metadata banks and camera shots, listed with their sizes and SHA-256 in
-`package-manifest.json`. The game's `skate.runtime` build step checks every file against that manifest before Unreal
-compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
-[verification](RUNTIME.md#verification), and lists the [limits](RUNTIME.md#limits): collision is a static snapshot
-with one surface material, and editor builds are the checked path.
+The source bundle contains settings, graphs, gesture sets, physical skeletons, the animation rig, clips, metadata
+banks and camera shots, listed with their sizes and SHA-256 in `package-manifest.json`. Source verification precedes
+asset creation; the filesystem loader remains an offline QA entry point. Gameplay reads only the profile's assets.
+[RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and [checks](RUNTIME.md#verification), and lists the
+[limits](RUNTIME.md#limits). The Unreal asset, animation, collision and cooked-game checks are described in
+[UNREAL_INTEGRATION.md](UNREAL_INTEGRATION.md#validation-status).
