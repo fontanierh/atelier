@@ -356,6 +356,12 @@ void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>();
 void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
 bool AWandererCharacter::IsPhoneTouchActive() const { return PhoneInput && PhoneInput->IsTouchActive(); }
 bool AWandererCharacter::IsSkateInputBlocked() const { return bMenuOpen || (Map && Map->IsOpen()); }
+FName AWandererCharacter::GetSkateBone(FName Contract) const
+{
+    const FName* Bone = Definition ? Definition->SkateBones.Find(Contract) : nullptr;
+    return Bone ? *Bone : Contract;
+}
+float AWandererCharacter::GetSkateBoardScale() const { return Definition ? Definition->SkateBoardScale : 1.f; }
 void AWandererCharacter::PrepareToSkate()
 {
     if (Sword && Sword->IsArmed()) Sword->SetArmed(false);

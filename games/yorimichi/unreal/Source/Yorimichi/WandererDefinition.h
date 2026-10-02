@@ -62,6 +62,11 @@ public:
     // Speed of the fastest locomotion sample (a sprint clip); the graph only speeds playback up beyond it. 0 = the run clip is the top.
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float SprintSpeed = 0.f;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float CrouchSpeed = 50.f;
+    // A rig outside the humanoid contract names its own bone for each contract role the skateboard retargets
+    // (ISkateRider::GetSkateBone; NAME_None for a role it lacks). Empty: the contract names themselves.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName, FName> SkateBones;
+    // The visible skateboard's size relative to the standard one (ISkateRider::GetSkateBoardScale).
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) float SkateBoardScale = 1.f;
     // Sword combat set (game-r13): the bokken static mesh, its rest attachment relative to the hand bone,
     // the blade segment in mesh-local cm and per-clip gameplay windows. Empty when the set is not installed.
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMesh> SwordMesh;

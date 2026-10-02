@@ -31,6 +31,7 @@ def source(event):
     name = event['sound'].split('.')[-1]
     if '/Audio/Skate/' in event['sound']: return ROOT / 'audio/skate' / name.rsplit('_', 1)[0] / f'{name}.wav'
     if '/Audio/Combat/' in event['sound']: return ROOT / 'audio/combat' / name.rsplit('_', 1)[0] / f'{name}.wav'
+    if '/Audio/Footsteps/' in event['sound']: return ROOT / 'audio/footsteps' / event['sound'].split('/')[-2] / f'{name}.wav'
     raise FileNotFoundError(event['sound'])
 
 
@@ -49,6 +50,7 @@ def main():
     cams = list(csv.DictReader(open(take / 'camera.csv')))
     cache = {}
     for e in json.loads((take / 'audio.json').read_text()):
+        if e['frame'] < 0: continue                          # played before the film started
         path = source(e)
         s = cache.setdefault(path, read(path))
         p = float(e.get('pitch', 1.))

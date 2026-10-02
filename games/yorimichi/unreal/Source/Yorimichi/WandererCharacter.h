@@ -63,6 +63,8 @@ public:
     virtual bool IsSkateInputBlocked() const override;
     virtual bool IsSkateMouseFree() const override { return bMouseReleased; }
     virtual float GetSkateMouseSensitivity() const override { return MouseSensitivity; }
+    virtual FName GetSkateBone(FName Contract) const override;
+    virtual float GetSkateBoardScale() const override;
     FVector2D GetMoveIntent() const { return MoveIntent; }
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }

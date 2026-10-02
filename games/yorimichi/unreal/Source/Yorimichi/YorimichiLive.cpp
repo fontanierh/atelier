@@ -5,6 +5,8 @@
 #include "SkateComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
+#include "BotwCreature.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 #include "Misc/FileHelper.h"
 #include "Dom/JsonObject.h"
@@ -82,3 +84,88 @@ FTransform UYorimichiLive::SkateParkSpawn()
     return It ? FTransform(FRotator(0, It->ParkSpawnYaw, 0), It->ParkSpawn) : FTransform::Identity;
 }
 
+static bool BotwModeFromText(const FString& Text, EBotwMode& Mode)
+{
+    static const TMap<FString, EBotwMode> Modes = { { TEXT("idle"), EBotwMode::Idle }, { TEXT("showcase"), EBotwMode::Showcase },
+        { TEXT("wander"), EBotwMode::Wander }, { TEXT("camp"), EBotwMode::Camp }, { TEXT("scripted"), EBotwMode::Scripted } };
+    const EBotwMode* Found = Modes.Find(Text.ToLower());
+    if (Found) Mode = *Found;
+    return Found != nullptr;
+}
+
+static ABotwCreature* FindBotw(const FString& Name)
+{
+    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
+    if (World) for (TActorIterator<ABotwCreature> It(World); It; ++It) if (It->GetName() == Name) return *It;
+    return nullptr;
+}
+
+FString UYorimichiLive::BotwRoster()
+{
+    TArray<TSharedPtr<FJsonValue>> Out;
+    for (const auto& Entry : FBotwSpec::All())
+    {
+        const FBotwSpec& S = Entry.Value;
+        TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
+        O->SetStringField(TEXT("name"), S.Name); O->SetStringField(TEXT("label"), S.Label);
+        O->SetNumberField(TEXT("height_cm"), S.HeightCm); O->SetNumberField(TEXT("clips"), S.Clips.Num());
+        TSharedPtr<FJsonObject> Roles = MakeShared<FJsonObject>();
+        for (const auto& R : S.Roles) Roles->SetStringField(R.Key.ToString(), R.Value.ToString());
+        O->SetObjectField(TEXT("roles"), Roles);
+        Out.Add(MakeShared<FJsonValueObject>(O));
+    }
+    FString Text; TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Text);
+    FJsonSerializer::Serialize(Out, Writer); return Text;
+}
+
+FString UYorimichiLive::BotwSpawn(const FString& Name, FVector Ground, float Yaw, const FString& Mode)
+{
+    EBotwMode Parsed = EBotwMode::Idle;
+    if (!BotwModeFromText(Mode, Parsed) || !ULiveLibrary::Player()) return FString();
+    ABotwCreature* Creature = ABotwCreature::SpawnAt(ULiveLibrary::Player()->GetWorld(), Name, Ground, Yaw, Parsed);
+    return Creature ? Creature->GetName() : FString();
+}
+
+float UYorimichiLive::BotwPlay(const FString& Actor, const FString& Clip, bool bLoop, float Rate)
+{
+    ABotwCreature* Creature = FindBotw(Actor); return Creature ? Creature->Play(Clip, bLoop, Rate) : 0.f;
+}
+
+bool UYorimichiLive::BotwMoveTo(const FString& Actor, FVector Ground, bool bRun)
+{
+    ABotwCreature* Creature = FindBotw(Actor); if (!Creature) return false;
+    Creature->MoveTo(Ground, bRun); return true;
+}
+
+bool UYorimichiLive::BotwMode(const FString& Actor, const FString& Mode)
+{
+    ABotwCreature* Creature = FindBotw(Actor); EBotwMode Parsed;
+    if (!Creature || !BotwModeFromText(Mode, Parsed)) return false;
+    Creature->SetMode(Parsed); return true;
+}
+
+FString UYorimichiLive::BotwList()
+{
+    TArray<TSharedPtr<FJsonValue>> Out;
+    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
+    if (World) for (TActorIterator<ABotwCreature> It(World); It; ++It)
+    {
+        TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
+        O->SetStringField(TEXT("actor"), It->GetName()); O->SetStringField(TEXT("name"), It->Spec().Name);
+        O->SetStringField(TEXT("clip"), It->CurrentClip());
+        const FVector L = It->GetActorLocation();
+        O->SetArrayField(TEXT("location"), { MakeShared<FJsonValueNumber>(L.X), MakeShared<FJsonValueNumber>(L.Y), MakeShared<FJsonValueNumber>(L.Z) });
+        O->SetNumberField(TEXT("yaw"), It->GetActorRotation().Yaw);
+        Out.Add(MakeShared<FJsonValueObject>(O));
+    }
+    FString Text; TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Text);
+    FJsonSerializer::Serialize(Out, Writer); return Text;
+}
+
+int32 UYorimichiLive::BotwClear()
+{
+    int32 Removed = 0;
+    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
+    if (World) for (TActorIterator<ABotwCreature> It(World); It; ++It) { It->Destroy(); ++Removed; }
+    return Removed;
+}
