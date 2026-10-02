@@ -1,4 +1,5 @@
 #include "SuperUltraMegaPark.h"
+#include "BotwRider.h"
 #include "CairoCharacter.h"
 #include "JapanHUD.h"
 #include "SkateRails.h"
@@ -163,6 +164,12 @@ void ASuperUltraMegaPark::RegisterRails()
         if (Registry->Add(MoveTemp(Rail)) != INDEX_NONE) ++Count;
     }
     UE_LOG(LogTemp, Display, TEXT("MEGAPARK registered %d original grind paths"), Count);
+}
+
+UClass* AMegaParkGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
+{
+    if (UClass* Rider = ABotwRider::PawnOverride()) return Rider;
+    return Super::GetDefaultPawnClassForController_Implementation(Controller);
 }
 
 AMegaParkGameMode::AMegaParkGameMode()

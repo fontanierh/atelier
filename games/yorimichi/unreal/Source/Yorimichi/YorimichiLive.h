@@ -41,4 +41,16 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static void AudioFrame(int32 Frame);
     /** Leave the camera where it is (no automatic skate follow) for Seconds, e.g. to film from the side. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool HoldCamera(float Seconds);
+    /** BOTW characters (BotwCreature.h): the roster as JSON; spawn one standing on a ground point (Mode idle, showcase,
+     *  wander, camp or scripted) and get its actor name; play a clip or "role:<role>" (returns seconds); walk or run it to
+     *  a ground point; change its mode; the spawned ones as JSON; remove them all. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString BotwRoster();
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString BotwSpawn(const FString& Name, FVector Ground, float Yaw, const FString& Mode = TEXT("idle"));
+    UFUNCTION(BlueprintCallable, Category = "Live") static float BotwPlay(const FString& Actor, const FString& Clip, bool bLoop = true, float Rate = 1.f);
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool BotwMoveTo(const FString& Actor, FVector Ground, bool bRun = false);
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool BotwMode(const FString& Actor, const FString& Mode);
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString BotwList();
+    UFUNCTION(BlueprintCallable, Category = "Live") static int32 BotwClear();
+    /** The Esc menu's character switch (ABotwRider::SwitchPlayer): "Cairo" or a rider; returns the character playing. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString SwitchCharacter(const FString& Name);
 };

@@ -114,6 +114,9 @@ private:
     void LaunchRetail(const FVector& V);
     void ConfigureRetail();
     void RetargetRetailPose();
+    /** The visible board's growth about the ground contact Pos (ISkateRider::GetSkateBoardScale). */
+    float BoardScale() const;
+    FTransform BoardGrowth() const;
     void RuntimeFailure(const FString& Message);
     void ResetInput();
     FVector2D MouseStick=FVector2D::ZeroVector;

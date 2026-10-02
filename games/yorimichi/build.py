@@ -9,7 +9,7 @@ The Unreal imports run in the order the prototype established: `setup_project.py
 the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
 after it. The player is installed in the prototype's three layers (full, sword, armed) from one source blend.
 """
-import json, shutil, os
+import importlib.util, json, shutil, os
 from pathlib import Path
 
 from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, Call
@@ -61,6 +61,30 @@ def stage_data(ctx, log):
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(staged_source(ctx.out, rel), dst)
         log.write(f'staged {rel}\n')
+
+
+def botw_library():
+    """assets/characters/botw/library.py: whether the local BOTW library is here, and the files the roster reads."""
+    spec = importlib.util.spec_from_file_location('botw_library', CHARS / 'botw' / 'library.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def botw_steps(out):
+    """The BOTW characters (assets/characters/botw/README.md), only where the library has been fetched."""
+    library = botw_library()
+    if not library.available():
+        return []
+    botw = CHARS / 'botw'
+    return [
+        Step('characters.botw', [Python(botw / 'export.py')], inputs=[botw, *library.sources()],
+             outputs=[out / 'botw' / 'export.json'], about='BOTW characters: curve clips baked into rigged GLBs'),
+        Step('unreal.botw', [UnrealScript(SCRIPTS / 'import_botw.py', 'BOTW IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_botw.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
+             needs=['characters.botw'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'botw' / 'roster.json'],
+             heavy=True, about='/Game/Botw: meshes, materials and clips, and the roster the game reads'),
+    ]
 
 
 def steps(ctx):
@@ -259,4 +283,4 @@ def steps(ctx):
              inputs=[REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in STAGED], about='runtime files into unreal/Content/Data'),
-    ]
+    ] + botw_steps(out)

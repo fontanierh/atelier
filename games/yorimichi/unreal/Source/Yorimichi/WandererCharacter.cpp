@@ -145,8 +145,10 @@ void AWandererCharacter::BeginPlay()
     Map = NewObject<UJapanMap>(this);
     Map->Initialize(this);
     bMapReview = FParse::Param(FCommandLine::Get(),TEXT("mapqa"));
-    // Countryside ambience under everything (birdsong, breeze, a distant sea); combat sounds sit on top of it.
-    if (USoundWave* Ambience = LoadObject<USoundWave>(nullptr, TEXT("/Game/Audio/Combat/ambience_countryside_01.ambience_countryside_01"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+    // Countryside ambience under everything (birdsong, breeze, a distant sea); combat sounds sit on top of it. It
+    // outlives the character, so a switched-in one keeps it and is ready almost at once.
+    if (bSwitchedIn) ReadyTime = 1.3f;
+    else if (USoundWave* Ambience = LoadObject<USoundWave>(nullptr, TEXT("/Game/Audio/Combat/ambience_countryside_01.ambience_countryside_01"), nullptr, LOAD_NoWarn | LOAD_Quiet))
         UGameplayStatics::SpawnSound2D(this, Ambience, .5f);
     bSwordReview = FParse::Param(FCommandLine::Get(),TEXT("swordqa"));
     if (FParse::Param(FCommandLine::Get(),TEXT("fightfilm")))
@@ -201,12 +203,27 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
     Landscape = World;
     if (!World || !World->bLoaded) return;
     Sailboat->Initialize(this,World);
-    SetActorLocation(World->PlayerStart.GetLocation()+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),false,nullptr,ETeleportType::TeleportPhysics);
-    SetActorRotation(World->PlayerStart.Rotator());
+    if (!bSwitchedIn)
+    {
+        SetActorLocation(World->PlayerStart.GetLocation()+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),false,nullptr,ETeleportType::TeleportPhysics);
+        SetActorRotation(World->PlayerStart.Rotator());
+        if (Controller) Controller->SetControlRotation(FRotator(-8,World->PlayerStart.Rotator().Yaw,0));
+    }
     ReviewForward = GetActorForwardVector();
-    if (Controller) Controller->SetControlRotation(FRotator(-8,World->PlayerStart.Rotator().Yaw,0));
     if (Preferences) Preferences->Apply();
-    if (FParse::Param(FCommandLine::Get(),TEXT("sworddummy"))) SpawnSwordDummy();
+    if (!bSwitchedIn && FParse::Param(FCommandLine::Get(),TEXT("sworddummy"))) SpawnSwordDummy();
+}
+
+void AWandererCharacter::Leave()
+{
+    if (Preferences) Preferences->CloseMenu();
+    if (Map) Map->Close();
+    SkateRide->StowImmediately();
+    Sailboat->StowImmediately();
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+        if (ULocalPlayer* LP = PC->GetLocalPlayer())
+            if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+                Subsystem->RemoveMappingContext(Mapping);
 }
 
 void AWandererCharacter::ReturnToSpawn()
@@ -356,6 +373,12 @@ void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>();
 void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
 bool AWandererCharacter::IsPhoneTouchActive() const { return PhoneInput && PhoneInput->IsTouchActive(); }
 bool AWandererCharacter::IsSkateInputBlocked() const { return bMenuOpen || (Map && Map->IsOpen()); }
+FName AWandererCharacter::GetSkateBone(FName Contract) const
+{
+    const FName* Bone = Definition ? Definition->SkateBones.Find(Contract) : nullptr;
+    return Bone ? *Bone : Contract;
+}
+float AWandererCharacter::GetSkateBoardScale() const { return Definition ? Definition->SkateBoardScale : 1.f; }
 void AWandererCharacter::PrepareToSkate()
 {
     if (Sword && Sword->IsArmed()) Sword->SetArmed(false);

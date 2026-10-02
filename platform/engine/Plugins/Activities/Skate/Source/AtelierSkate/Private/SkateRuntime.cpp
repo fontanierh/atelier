@@ -660,7 +660,9 @@ void USkateComponent::StepRetailRuntime(float Dt)
     ShownCombo=RetailRuntime->Trick; Score=FMath::RoundToInt(RetailRuntime->Score); LastTrickName=FName(*ShownCombo);
     Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::TeleportPhysics);
     Movement()->Velocity=Vel;
-    BoardRoot->SetWorldTransform(DeckWorld); Deck->SetRelativeTransform(FTransform::Identity);
+    // A bigger board grows about the ground contact, so its wheels stay on the ground (ISkateRider::GetSkateBoardScale).
+    const FTransform Grow=BoardGrowth();
+    BoardRoot->SetWorldTransform(DeckWorld*Grow); Deck->SetRelativeTransform(FTransform::Identity);
     const TCHAR* TruckNames[]={TEXT("TRUCK_FRONT"),TEXT("TRUCK_BACK")};
     const TCHAR* WheelNames[]={TEXT("RIGHT_WHEELFRONT"),TEXT("LEFT_WHEELFRONT"),TEXT("RIGHT_WHEELBACK"),TEXT("LEFT_WHEELBACK")};
     // Fit the host board's mesh pivots to the source rig; preserve the native truck lean and wheel spin.
@@ -673,14 +675,14 @@ void USkateComponent::StepRetailRuntime(float Dt)
         const float Height=FMath::Max(.1f,float(DeckBind.GetLocation().Z-1.2-Axle.Z));
         const FTransform Fit(FQuat(FVector::UpVector,I==0?0.f:PI)*DeckBind.GetRotation(),
             Axle+DeckBind.GetRotation().GetUpVector()*Height,FVector(1,FVector::Distance(A,B)/18.6,Height/5.15));
-        Trucks[I]->SetWorldTransform(Fit.GetRelativeTransform(TruckBind)*RetailRuntime->Bone(TruckNames[I]));
+        Trucks[I]->SetWorldTransform(Fit.GetRelativeTransform(TruckBind)*RetailRuntime->Bone(TruckNames[I])*Grow);
     }
     for (int32 I=0;I<Wheels.Num() && I<4;++I)
     {
         const FTransform WheelBind=RetailRuntime->Bind(WheelNames[I]);
         // physicswheels/default/WheelRadius is 0.031 m; the host mesh radius is 2.65 cm.
         const FTransform Fit(DeckBind.GetRotation(),WheelBind.GetLocation(),FVector(3.1/2.65));
-        Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I]));
+        Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I])*Grow);
     }
     RetargetRetailPose();
     // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
@@ -729,10 +731,14 @@ void USkateComponent::RetargetRetailPose()
         {TEXT("thigh_R"),TEXT("RIGHTUPLEG"),TEXT("RIGHTLEG")},{TEXT("shin_R"),TEXT("RIGHTLEG"),TEXT("RIGHTFOOT")},
         {TEXT("foot_R"),TEXT("RIGHTFOOT"),TEXT("RIGHTTOEBASE")},{TEXT("toe_R"),TEXT("RIGHTTOEBASE"),nullptr}
     };
+    // The rider names its own bone for each contract role (ISkateRider::GetSkateBone).
+    auto Index=[&](const FString& Contract){ const FName Bone=RiderApi?RiderApi->GetSkateBone(FName(*Contract)):FName(*Contract); return Bone.IsNone()?INDEX_NONE:Ref.FindBoneIndex(Bone); };
+    TArray<const Mapping*> Matches; Matches.Init(nullptr,Ref.GetNum());
+    for (const Mapping& M : Map) if (const int32 Bone=Index(M.Target); Bone>=0) Matches[Bone]=&M;
     TArray<FTransform> Bind,Output; Bind.SetNum(Ref.GetNum()); Output.SetNum(Ref.GetNum()); RetailPose.SetNum(Ref.GetNum());
     for (int32 I=0;I<Ref.GetNum();++I) { int32 P=Ref.GetParentIndex(I); Bind[I]=P>=0?Ref.GetRefBonePose()[I]*Bind[P]:Ref.GetRefBonePose()[I]; }
     auto Source=[&](const TCHAR* N){return RetailRuntime->Names.IndexOfByKey(FName(N));};
-    const int32 Hip=Ref.FindBoneIndex(TEXT("pelvis")),Foot=Ref.FindBoneIndex(TEXT("foot_L")),SHip=Source(TEXT("HIPS")),SFoot=Source(TEXT("LEFTFOOT"));
+    const int32 Hip=Index(TEXT("pelvis")),Foot=Index(TEXT("foot_L")),SHip=Source(TEXT("HIPS")),SFoot=Source(TEXT("LEFTFOOT"));
     if (Hip<0 || Foot<0 || SHip<0 || SFoot<0) { RetailPose.Reset(); return; }
     const float Ratio=(Bind[Hip].GetLocation().Z-Bind[Foot].GetLocation().Z)*Mesh->GetComponentScale().Z /
         FMath::Max(1.,RetailRuntime->Reference[SHip].GetLocation().Z-RetailRuntime->Reference[SFoot].GetLocation().Z);
@@ -742,12 +748,13 @@ void USkateComponent::RetargetRetailPose()
     // back and forth over the board. Compose from the current parent and the authored mesh-local transform.
     const FTransform MeshWorld=Mesh->GetRelativeTransform()*Rider->GetActorTransform();
     const FTransform RootToMesh=RetailRuntime->Root.GetRelativeTransform(MeshWorld);
-    // Preserve sole height: the source ankle is much farther above its sole than this character's ankle.
+    // Preserve sole height: the source ankle is much farther above its sole than this character's ankle. A bigger
+    // board's deck is higher by its extra deck height (9.05 cm at the source's size).
     const float SoleOffset=(Bind[Foot].GetLocation().Z-Bind[0].GetLocation().Z)*Mesh->GetComponentScale().Z -
-        (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio;
+        (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio+(BoardScale()-1.f)*9.05f;
     auto InMesh=[&](FTransform T){ T.ScaleTranslation(Ratio); T.AddToTranslation(FVector(0,0,SoleOffset)); return T*RootToMesh; };
     auto Frame=[](FVector Left,FVector Right,FVector Head,FVector HipP) { FVector Up=(Head-HipP).GetSafeNormal(); return FRotationMatrix::MakeFromXZ(FVector::CrossProduct(Right-Left,Up).GetSafeNormal(),Up).ToQuat(); };
-    const int32 TL=Ref.FindBoneIndex(TEXT("thigh_L")),TR=Ref.FindBoneIndex(TEXT("thigh_R")),TH=Ref.FindBoneIndex(TEXT("head"));
+    const int32 TL=Index(TEXT("thigh_L")),TR=Index(TEXT("thigh_R")),TH=Index(TEXT("head"));
     if (TL<0 || TR<0 || TH<0 || Source(TEXT("LEFTUPLEG"))<0 || Source(TEXT("RIGHTUPLEG"))<0 || Source(TEXT("HEAD"))<0)
     { RetailPose.Reset(); return; }
     // Imported meshes can carry a 180-degree facing correction. Joint names alone cannot recover it.
@@ -758,8 +765,7 @@ void USkateComponent::RetargetRetailPose()
     TArray<FVector> Targets; Targets.SetNum(Ref.GetNum());
     for (int32 I=0;I<Ref.GetNum();++I)
     {
-        const int32 Parent=Ref.GetParentIndex(I); const Mapping* Match=nullptr;
-        for (const Mapping& M : Map) if (Ref.GetBoneName(I)==FName(M.Target)) { Match=&M; break; }
+        const int32 Parent=Ref.GetParentIndex(I); const Mapping* Match=Matches[I];
         if (Match && Source(Match->Source)>=0)
         {
             const int32 S=Source(Match->Source); const FTransform SB=InMesh(RetailRuntime->Reference[S]),SP=InMesh(RetailRuntime->Bones[S]);
@@ -768,12 +774,20 @@ void USkateComponent::RetargetRetailPose()
             if (!Match->Child && Parent>=0 && FCString::Strcmp(Match->Target,TEXT("head"))!=0) FitRotation=Fits[Parent];
             if (Match->Child && Source(Match->Child)>=0)
             {
-                int32 Child=INDEX_NONE;
-                for (const Mapping& M : Map) if (FCString::Strcmp(M.Source,Match->Child)==0) { Child=Ref.FindBoneIndex(M.Target); break; }
-                if (Child>=0)
+                // A rider without the next contract bone (a spine one segment shorter) aims at the one after it.
+                const TCHAR* ChildSource=Match->Child; int32 Child=INDEX_NONE;
+                while (ChildSource && Child<0)
+                {
+                    const Mapping* Next=nullptr;
+                    for (const Mapping& M : Map) if (FCString::Strcmp(M.Source,ChildSource)==0) { Next=&M; break; }
+                    if (!Next) break;
+                    Child=Index(Next->Target);
+                    if (Child<0) ChildSource=Next->Child;
+                }
+                if (Child>=0 && Source(ChildSource)>=0)
                 {
                     FVector A=Base.RotateVector(Bind[Child].GetLocation()-Bind[I].GetLocation());
-                    FVector B=InMesh(RetailRuntime->Reference[Source(Match->Child)]).GetLocation()-SB.GetLocation();
+                    FVector B=InMesh(RetailRuntime->Reference[Source(ChildSource)]).GetLocation()-SB.GetLocation();
                     // The source ankle/toe height difference is anatomical, not a toe-down foot rotation.
                     if (FCString::Strncmp(Match->Target,TEXT("foot_"),5)==0)
                     {
@@ -797,9 +811,9 @@ void USkateComponent::RetargetRetailPose()
     // Preserve the source foot contacts while solving with this character's actual thigh/shin lengths.
     for (const TCHAR* Side : {TEXT("L"),TEXT("R")})
     {
-        const int32 A=Ref.FindBoneIndex(FName(*FString::Printf(TEXT("thigh_%s"),Side)));
-        const int32 B=Ref.FindBoneIndex(FName(*FString::Printf(TEXT("shin_%s"),Side)));
-        const int32 C=Ref.FindBoneIndex(FName(*FString::Printf(TEXT("foot_%s"),Side)));
+        const int32 A=Index(FString::Printf(TEXT("thigh_%s"),Side));
+        const int32 B=Index(FString::Printf(TEXT("shin_%s"),Side));
+        const int32 C=Index(FString::Printf(TEXT("foot_%s"),Side));
         if (A<0 || B<0 || C<0) continue;
         const FQuat FootTurn=Output[C].GetRotation();
         const FVector Pole=Targets[B]+(Targets[B]-(Targets[A]+Targets[C])*.5)*2;
@@ -828,10 +842,11 @@ void USkateComponent::RetargetRetailPose()
         constexpr double Concave=.9,Thickness=1.2,SourceKnuckle=9.;
         // Top of the deck's rail: the concave lifts the sides, and the kicks rise to the ends.
         auto RailTop=[&](double X){ const double T=FMath::Clamp((FMath::Abs(X)-KickStart)/(HalfLength-KickStart),0.,1.); return Concave+T*T*(Box.Max.Z-Concave); };
-        const FTransform DeckToMesh=RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT")).GetRelativeTransform(MeshWorld);
+        // The visible deck: a bigger board's outline scales with it, the grip offsets stay at the hand's size.
+        const FTransform DeckToMesh=(RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
         for (const TCHAR* Side : {TEXT("L"),TEXT("R")})
         {
-            auto Target=[&](const TCHAR* Name){ return Ref.FindBoneIndex(FName(*FString::Printf(TEXT("%s_%s"),Name,Side))); };
+            auto Target=[&](const TCHAR* Name){ return Index(FString::Printf(TEXT("%s_%s"),Name,Side)); };
             const FString SourceSide=Side[0]=='L'?TEXT("LEFT"):TEXT("RIGHT");
             const int32 Upper=Target(TEXT("upperarm")),Fore=Target(TEXT("forearm")),Hand=Target(TEXT("hand")),ThumbEnd=Target(TEXT("thumb_end"));
             const int32 SHand=Source(*(SourceSide+TEXT("HAND"))),SFore=Source(*(SourceSide+TEXT("FOREARM")));
@@ -884,7 +899,7 @@ void USkateComponent::RetargetRetailPose()
             if (Down.IsNearlyZero() || Palm.IsNearlyZero() || LAlong.IsNearlyZero() || LPalm.IsNearlyZero()) continue;
             const FQuat HandInDeck=FRotationMatrix::MakeFromXY(Down,Palm).ToQuat()*FRotationMatrix::MakeFromXY(LAlong,LPalm).ToQuat().Inverse();
             const FQuat HandRotation=DeckToMesh.GetRotation()*HandInDeck;
-            const double Width=FingerWidth*Mesh->GetComponentScale().Z;
+            const double Width=FingerWidth*Mesh->GetComponentScale().Z/BoardScale();
             const FVector KnuckleTarget=DeckToMesh.TransformPosition(Edge+Out*Grip[1]*Width+FVector(0,0,RailTop(Edge.X)+Grip[0]*Width));
             const FVector Wrist=KnuckleTarget-HandRotation.RotateVector(KnuckleLocal);
             const FQuat Retargeted=Output[Hand].GetRotation();

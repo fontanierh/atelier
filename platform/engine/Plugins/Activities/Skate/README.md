@@ -38,6 +38,8 @@ character. [RUNTIME.md](RUNTIME.md) lists the session's systems, the data bundle
 | `IsSkateInputBlocked()` | A menu has the controls: the board gets no input and the mouse stick recentres |
 | `IsSkateMouseFree()` | The mouse is released to the desktop: the board gets no input |
 | `GetSkateMouseSensitivity()` | The player's mouse sensitivity (default 0.4); scales the mouse flick |
+| `GetSkateBone(Contract)` | The rider's bone for a humanoid contract name, `NAME_None` when it has none (default: the name itself); the retargeter finds every bone through it |
+| `GetSkateBoardScale()` | The visible board's size (default 1): it grows about the wheels' contact and the pose rises onto its deck; the physics keep the standard board |
 
 `Toggle()` mounts only on the ground and not crouched. The board starts at the player's feet, aligned with their
 travel above 30 cm/s, and keeps their velocity. Stepping off works only on the ground (not in the air, on a rail or

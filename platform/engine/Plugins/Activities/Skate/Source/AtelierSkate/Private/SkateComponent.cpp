@@ -166,7 +166,8 @@ void USkateComponent::SetMeshForRiding(bool bRiding)
         if (const USkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset())
         {
             const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
-            const int32 Root = Ref.FindBoneIndex(TEXT("root"));
+            const FName RootBone = RiderApi->GetSkateBone(TEXT("root"));
+            const int32 Root = RootBone.IsNone() ? INDEX_NONE : Ref.FindBoneIndex(RootBone);
             if (Root != INDEX_NONE) RootRef = Ref.GetRefBonePose()[Root].GetLocation();
         }
         const FQuat Turn = FQuat(FVector::UpVector, FMath::DegreesToRadians(bGoofy ? -90.f : 90.f)) * SavedMeshRotation;
@@ -374,6 +375,8 @@ void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTick
     PollIdleRetail();
 }
 FTransform USkateComponent::GetDeckWorld() const { return Deck ? Deck->GetComponentTransform() : FTransform::Identity; }
+float USkateComponent::BoardScale() const { return RiderApi ? FMath::Max(.25f, RiderApi->GetSkateBoardScale()) : 1.f; }
+FTransform USkateComponent::BoardGrowth() const { return FTransform(FQuat::Identity, Pos * (1. - BoardScale()), FVector(BoardScale())); }
 float USkateComponent::GetComboAlpha() const { return FMath::Clamp(ComboFade*1.6f,0.f,1.f); }
 FString USkateComponent::GetDebug() const
 {

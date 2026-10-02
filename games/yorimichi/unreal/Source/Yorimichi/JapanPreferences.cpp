@@ -1,4 +1,6 @@
 #include "JapanPreferences.h"
+#include "BotwCreature.h"
+#include "BotwRider.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -21,6 +23,8 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SScrollBox.h"
+#include "Widgets/Layout/SWrapBox.h"
+#include "TimerManager.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Input/SSlider.h"
 #include "Widgets/Input/SButton.h"
@@ -84,6 +88,8 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         for (FWeightedBlendable& Blend : It->Settings.WeightedBlendables.Array)
             if (UMaterialInterface* Source = Cast<UMaterialInterface>(Blend.Object))
             {
+                // After a character switch the volume holds the previous character's instances: start from their source.
+                if (const auto* Previous = Cast<UMaterialInstanceDynamic>(Source); Previous && Previous->GetOuter()->IsA<UJapanPreferences>()) Source = Previous->Parent;
                 auto* Material = UMaterialInstanceDynamic::Create(Source,this);
                 Blend.Object = Material; Materials.Add(Material);
             }
@@ -264,6 +270,29 @@ void UJapanPreferences::ToggleMenu()
         .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
             ? TEXT("Performance uses lighter shadows and distant detail to keep movement smooth.")
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
+    // The character switch (ABotwRider::SwitchPlayer): Cairo and every BOTW character with a rider definition. The
+    // switch waits for the next tick, out of the menu's click.
+    if (const TArray<FString> Riders = ABotwRider::Available(); Riders.Num())
+    {
+        const FString Playing = ABotwRider::NameOf(Owner);
+        TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
+        TArray<FString> Names = {TEXT("Cairo")}; Names.Append(Riders);
+        for (const FString& Name : Names)
+        {
+            const FBotwSpec* Spec = FBotwSpec::Find(Name);
+            Characters->AddSlot()[SNew(SButton).IsEnabled(Name != Playing)
+                .Text(FText::FromString(Spec && !Spec->Label.IsEmpty() ? Spec->Label : Name))
+                .OnClicked_Lambda([this,Name]
+                {
+                    CloseMenu();
+                    if (AWandererCharacter* Pawn = Owner)
+                        Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,Name] { ABotwRider::SwitchPlayer(Pawn,Name); }));
+                    return FReply::Handled();
+                })];
+        }
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
+    }
     for (const FString Key : {FString(TEXT("performance")),FString(TEXT("show_fps")),FString(TEXT("goofy"))})
     {
         TSharedRef<SButton> Button = SNew(SButton)

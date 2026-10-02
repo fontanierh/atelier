@@ -14,6 +14,7 @@
 #include "CollisionQueryParams.h"
 #include "UObject/ConstructorHelpers.h"
 #include "FoxHunter.h"
+#include "BotwCreature.h"
 #include "EngineUtils.h"
 #include "YorimichiCombatFX.h"
 
@@ -156,6 +157,7 @@ void UWandererSwordComponent::FaceInput(float StepToDistance, float YawOffsetDeg
     };
     for (TActorIterator<AFoxHunter> It(Character->GetWorld()); It; ++It) if (It->IsAlive()) Consider(*It);
     for (TActorIterator<ASwordDummy> It(Character->GetWorld()); It; ++It) Consider(*It);
+    for (TActorIterator<ABotwCreature> It(Character->GetWorld()); It; ++It) if (!It->IsDown()) Consider(*It);
     FacingTarget = Dir.Rotation().Yaw + (LockDistance > 0.f ? YawOffsetDeg : 0.f); FacingBlend = .15f;
     // A locked fox beyond the clip's contact distance gets a step-in during the wind-up: a swept offset, because the strike
     // clips carry root motion that overrides any velocity (and LaunchCharacter would put the character in the air for a
@@ -340,10 +342,11 @@ void UWandererSwordComponent::SweepBlade(float Dt)
                 HitThisStrike.Add(A);
                 if (StrikeLog.Num()) StrikeLog.Last().Targets.Add(A);
                 const int32 Strength = bFullCharge ? 3 : bCharged ? 2 : 1;
-                ASwordDummy* Dummy = Cast<ASwordDummy>(A); AFoxHunter* Fox = Cast<AFoxHunter>(A);
+                ASwordDummy* Dummy = Cast<ASwordDummy>(A); AFoxHunter* Fox = Cast<AFoxHunter>(A); ABotwCreature* Botw = Cast<ABotwCreature>(A);
                 if (Dummy) Dummy->TakeSwordHit(Strength);
                 else if (Fox && Fox->IsAlive()) Fox->TakeSwordHit(Strength, Character);
-                if (Dummy || Fox)
+                else if (Botw) Botw->TakeSwordHit(Strength, Character);
+                if (Dummy || Fox || Botw)
                 {
                     // Hit-stop, sparks, flash and sound live in the combat effects (a short freeze of both fighters, longer when charged).
                     if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
