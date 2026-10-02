@@ -23,6 +23,8 @@ CHARS = ASSETS / 'characters'
 AUDIO = ASSETS / 'audio'
 SCRIPTS = GAME / 'unreal' / 'Scripts'
 TOOLS = GAME / 'tools'
+SKATE_RIDE = SCRIPTS / 'skate_ride'
+RIDE_IMPORT_BATCHES, RIDE_VERIFY_BATCHES = 4, 2   # editor runs of the clip import and its verification
 TREEHOUSE = REGIONS / 'treehouse'
 SOURCE = GAME / 'unreal' / 'Source'
 NAMES = paths.STUDIO / 'atelier' / 'character'
@@ -279,6 +281,22 @@ def steps(ctx):
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
              after=['unreal.world'], needs=['world.city_tiles', 'world.city_trees'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
+        # The Ride skating clips: the native rig and every native clip as Unreal assets (/Game/SkateRide), the manifest
+        # the Ride runtime reads, and the measurement of the compressed poses against the native data. Both scripts
+        # run in batches that resume where a failed run stopped (unreal/Scripts/skate_ride/README.md).
+        Step('unreal.skate_clips', [
+                *[UnrealScript(SKATE_RIDE / 'import_clips.py', 'SKATE RIDE CLIPS BATCH COMPLETE', null_rhi=True,
+                               env=(('SKATE_RIDE_BATCH', f'{i}/{RIDE_IMPORT_BATCHES}'),)) for i in range(1, RIDE_IMPORT_BATCHES + 1)],
+                *[UnrealScript(SKATE_RIDE / 'verify_clips.py', 'SKATE RIDE CLIPS VERIFY COMPLETE', null_rhi=True,
+                               env=(('SKATE_RIDE_VERIFY_BATCH', f'{i}/{RIDE_VERIFY_BATCHES}'),)) for i in range(1, RIDE_VERIFY_BATCHES + 1)]],
+             inputs=[SKATE_RIDE / n for n in ('import_clips.py', 'verify_clips.py', 'native.py', 'rider_mesh.py')] +
+                    [paths.content_data(ctx.game) / 'SkateNative' / n for n in ('animation', 'metadata')],
+             after=['unreal.compile'], heavy=True,
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'SkateRide' / 'clips.json', out / 'skate-ride' / 'clips-verify.json'],
+             about='native skating rig and clips as Unreal assets (/Game/SkateRide), their manifest and verification'),
+        Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
+             inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'native.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
+             outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark'],
