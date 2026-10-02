@@ -126,13 +126,19 @@ class MegaParkStopTests(unittest.TestCase):
         (x0, y), (x1, _) = zeppelin.PARK_WALK
         x = np.arange(x0, x1 + .01, .5)
         np.testing.assert_allclose(north_height(x, np.full_like(x, y)), oz, atol=.01)
-        # The bridge's end rests on the deck across its whole width, its planks (at +0.03) within a step of it: the
-        # deck rises 14 cm across the bridge.
+        # The bridge ends short of the deck, whose edge runs at a slant across it (DECK_EDGE); a stone sill fills the
+        # gap. The edge is where the collision says, and within a step of the planks (at +0.03) across the bridge's
+        # width: the deck rises 14 cm across it.
         (_, _), (end, _) = zeppelin.PARK_BRIDGE
+        (ex, ey, ez), slope, rise = zeppelin.DECK_EDGE
         t = placement.place(placement.collision_triangles())
         for dy in (-1.1, 0., 1.1):
-            deck = surface(t, np.array([end - .15, y + dy]), oz)
+            edge = ex + slope * (y + dy - ey)
+            self.assertTrue(.2 < edge - end < 2., dy)       # the sill is never a hole or a long slab
+            self.assertFalse(len(surface(t, np.array([edge - .15, y + dy]), oz)), dy)
+            deck = surface(t, np.array([edge + .15, y + dy]), oz)
             self.assertTrue(len(deck), dy)
+            np.testing.assert_allclose(deck, ez + rise * dy, atol=.05)
             np.testing.assert_allclose(deck, oz + .03, atol=.13)
 
     @unittest.skipUnless('ZP_MegaPark' in city_instances(), 'needs world.hidamari')

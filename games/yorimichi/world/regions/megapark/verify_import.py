@@ -13,7 +13,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
-from megapark import plants, sign
+from megapark import cars, placement, plants, sign
 
 SOURCE = yori.ASSETS/'megapark'
 OUT = yori.OUT/'megapark'
@@ -21,13 +21,21 @@ TOLERANCE = .0005  # original metres; 0.05 cm in Unreal
 
 
 def expected_triangles(entry, source):
+    if entry['name'] == 'SM_MP_Seam':
+        # The seam's parts without their zero-area faces, and the skirt under their open edges (build.py export_seam).
+        return np.concatenate([v[f] for _, _, v, f in placement.seam_parts()] + [placement.skirt_triangles()])
+    if entry['name'] == 'UC_MP_Seam':
+        section = next(c for c in source['collision'] if c['id'] == placement.SEAM_SECTION)
+        with np.load(SOURCE/section['npz'], allow_pickle=False) as arrays:
+            triangles = arrays['triangles'].astype('f8')
+        return np.concatenate([triangles[placement.seam_mask()], placement.skirt_triangles()])
     if entry.get('source_asset_id'):
         model = next(m for m in source['models'] if m['asset_id'] == entry['source_asset_id'])
         parts = []
         with np.load(SOURCE/model['npz'], allow_pickle=False) as arrays:
             for p in model['meshes']:
-                if plants.is_foliage(p):
-                    continue   # replaced by island trees (build.py)
+                if plants.is_foliage(p) or cars.is_car(model, p):
+                    continue   # replaced by island trees and kei cars (build.py)
                 if sign.is_letters(model, p):
                     parts.append(letters())   # SHARKS -> 寄り道 (build.py)
                     continue
@@ -42,6 +50,8 @@ def expected_triangles(entry, source):
         triangles = arrays['triangles']
     if model['id'] == sign.SECTION:
         triangles = np.concatenate([triangles[~sign.letters_mask(triangles)], letters().astype(triangles.dtype)])
+    if model['id'] == cars.SECTION:
+        triangles = triangles[~cars.collision_mask(triangles)]
     return triangles
 
 
@@ -85,7 +95,7 @@ def main():
     source = json.loads((SOURCE/'map.json').read_text())
     build = json.loads((OUT/'build.json').read_text())
     checked = []
-    for entry in build['render']+build['collision']:
+    for entry in build['render']+build['collision']+build['seam']:
         checked.append(compare(entry, expected_triangles(entry, source)))
         print('Verified', checked[-1], flush=True)
     result = {'status': 'passed', 'triangles': sum(m['triangles'] for m in checked),

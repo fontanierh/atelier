@@ -7,7 +7,7 @@ from mathutils import Matrix
 ROOT=yori.REGIONS
 from village import build as v
 from village.layout import upper_surface
-from zeppelin.layout import STATIONS,MESHES,PARK_WALK,PARK_BRIDGE,PROPELLER_CENTERS,PROPELLER_RADIUS
+from zeppelin.layout import STATIONS,MESHES,PARK_WALK,PARK_BRIDGE,DECK_EDGE,PROPELLER_CENTERS,PROPELLER_RADIUS
 M=v.Mesh;OUT=yori.OUT/'zeppelin';R=random.Random(980)
 CREAM=(.68,.61,.46);SAGE=(.19,.245,.14);GOLD=(.50,.32,.09);WOOD=(.18,.075,.026);PLANK=(.32,.17,.067);DARK=(.055,.027,.012);STONE=(.25,.25,.22)
 
@@ -269,20 +269,32 @@ def station(index,h):
  return m
 
 def park_walk(m,z):
- # Earth footpath from the apron along the levelled strip, then a level footbridge onto the Mega Park's road deck.
+ # The footpath to the footbridge is painted on the gate's ground (megapark/gate.py). The footbridge crosses the dell
+ # beside the park from a timber sleeper on the level path to a concrete sill against the road deck's edge, which runs
+ # across the bridge on a slant (DECK_EDGE); the sill's top is the deck's, so the bridge never lies on the road.
  from hidamari.layout import north_height
- (x0,y),(x1,_)=PARK_WALK
- for x in np.arange(x0-.3,x1,.5):
-  xx=min(x+.5,x1+.2);m.poly([(a,b,float(north_height(a,b))+.04) for a,b in [(x,y-1.25),(xx,y-1.25),(xx,y+1.25),(x,y+1.25)]],(.25,.16,.079))
+ (_,y),_=PARK_WALK
  (b0,_),(b1,_)=PARK_BRIDGE;top=z+.03
- for x in np.arange(b0,b1,.24):m.box((float(x)+.11,y,top-.03),(.22,2.2,.06),tuple(c*R.uniform(.95,1.05) for c in PLANK),.008)
+ for x in np.arange(b0,b1+.1,.24):m.box((float(x)+.11,y,top-.03),(.22,2.2,.06),tuple(c*R.uniform(.95,1.05) for c in PLANK),.008)
+ m.box((b0+.15,y,z-.1),(.3,2.5,.2),WOOD,.02)
+ (ex,ey,ez),slope,rise=DECK_EDGE
+ edge=lambda yy:(ex+slope*(yy-ey),ez+rise*(yy-ey))
+ rim=[(b1,y-1.25),(edge(y-1.25)[0]+.05,y-1.25),(edge(y+1.25)[0]+.05,y+1.25),(b1,y+1.25)]
+ lift=[edge(y-1.25)[1],edge(y-1.25)[1]-.01,edge(y+1.25)[1]-.01,edge(y+1.25)[1]]
+ foot=z-.7
+ m.poly([(a,b,h) for (a,b),h in zip(rim,lift)],STONE)
+ for k in (0,2,3):
+  (a0,c0),(a1,c1)=rim[k],rim[(k+1)%4];h0,h1=lift[k],lift[(k+1)%4]
+  m.poly([(a0,c0,foot),(a1,c1,foot),(a1,c1,h1),(a0,c0,h0)],STONE)
  for side in [-1,1]:
-  m.beam((b0,y+side*.85,top-.16),(b1,y+side*.85,top-.16),.14,.2,WOOD)
-  for x in [b0+1.3,b0+5.8,b0+10.3,b1-1.9]:
-   bottom=float(north_height(x,y+side*.98))-z-.35
+  m.beam((b0,y+side*.85,top-.16),(b1+.05,y+side*.85,top-.16),.14,.2,WOOD)
+  for x in [b0+2.6,b0+7.1,b0+11.6]:
+   ground=float(north_height(x,y+side*.98))
+   if ground>z-.45:continue
+   bottom=ground-z-.35
    m.box((x,y+side*.98,z+(bottom-.06)/2),(.2,.2,-.06-bottom),WOOD)
    m.box((x,y+side*.98,z+bottom+.25),(.5,.5,.5),STONE,.04)
-  rail(m,(b0+.2,y+side*1.08),(b1-1.6,y+side*1.08),top)
+  rail(m,(b0+.2,y+side*1.08),(b1-.3,y+side*1.08),top)
 
 def gangway():
  m=M('ZP_Gangway')

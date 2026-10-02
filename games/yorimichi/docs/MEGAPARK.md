@@ -92,6 +92,75 @@ into a BS Grab about 11 m over the pool's north-west quarter, and takes that qua
 Kickflip. `scenarios/megapark_access_film_mix.py` builds its soundtrack (game sounds, a synthesized
 airship drone and wind, the ambience) and the 1080p MP4. Both docstrings give the commands.
 
+## Seam
+
+Where the park meets the air station's footbridge, the gate's rock ends in a drop that the
+source's surrounding hills cover. The island keeps that piece of those hills (`placement.SEAM`):
+the earth hillside between the rock and the source's road and the concrete wall that holds it
+above the road (three render parts of one source model), and the 333 collision triangles of their
+section that lie on them (`seam_mask`, within 25 cm of the render surface). The park's frame and
+transform leave the seam out, so the seam does not move the park.
+
+- **Skirt.** Wherever the hillside stops in the air, a skirt of its own earth or concrete hangs
+  45 m under the edge and faces outward, so the edges show no void from outside
+  (`placement.seam_skirt`, 33 edges). Edges shared with the park or the rest of the seam, and
+  walls' tops, get none. The skirt is in the seam's render and collision meshes. It shades as one
+  face with the face above it: shared corner normals, its texture and decal running on down, and
+  that face's lightmap. The seam's materials are matte copies of the hillside's (`_Seam` slots), so
+  its earth and concrete take none of the sky's blue sheen at grazing angles.
+- **Terrain.** North of y 1440 the island's ground is the gate patch (below). Further south the
+  terrain stamp counts the seam as part of the footprint: under it the ground stays below its
+  lowest surface within one terrain cell, so the hillside meets the island ground along its edges.
+  The eased skirt round the park still starts from the park's own rim, so the seam does not move
+  the ground past it.
+- **Plants.** `plants.seam()` plants the hillside by the ledge rules (forest on the earth, shrubs at
+  the wall's foot) and lays rocks of the park's grey-violet stone (`HD_NorthRock*`) where the earth
+  meets the concrete. South of the gate patch, where the hillside meets the forest floor,
+  `forest.py` grows a denser undergrowth of ochre bushes, red shrub maples, grass, leaves and a few
+  rocks, as in the Sunburst concept `assets/megapark/concepts/seam-gate`; only that undergrowth
+  comes closer to the park than the 4 m `hidamari/layout.py` clears.
+- **The rest of the rim.** Elsewhere the park's own banks and hillsides end at its rim, and the
+  ground outside meets them lower than their tops. The park's rock, stone, earth and grass
+  materials are drawn from both sides (`import_megapark.py`, `NATURAL`), so from the forest those
+  banks read as hill rather than as a window into the park.
+
+The park build writes the seam as `SM_MP_Seam` and `UC_MP_Seam` with the island's meshes in
+`park.json`; `import_megapark.py` imports them, but the standalone level stays the parity reference
+without them.
+
+## Gate
+
+Between the air station and the park (`GATE`, x -260 to -60 and y 1440 to 1600), the island's ground
+is a 1 m patch of its own (`world/regions/megapark/gate.py`) instead of the north foothills' 10 m
+facets, which round the park sink under its lowest surface and left a pit under the footbridge, a
+trench along the hillside and park edges standing over the air. It follows the Sunburst concept
+`assets/megapark/concepts/gate-ground`: the island's meadow and forest floor running up to the park.
+
+- **Shape.** `gate.grid` classes every node by the park's and the seam's triangles above it and
+  solves the ground between what it must meet. It rises to every open park edge from below and
+  sits 8 cm under it, at the edge's own height where it is reached; within 2.5 m of an edge it
+  follows the cover's underside 15 cm down, so no edge stands over a gap from any angle. It buries
+  the seam's skirt where that hangs less than 10 m, 22 cm under its edge so the rock shows as a low
+  ledge rather than a line on the grass, and any wall seen from behind; deeper skirts
+  (the gate's west cliff) and the park's own walls keep their faces, the ground meeting them
+  between foot and top. The station's pad and footpath stay level, a grassy dell (`DELL`) dips
+  under the footbridge, and 20 m from the park the foothills' relief returns, eased into their own
+  surface on the patch's border.
+- **Look.** `gate.paint` gives each node a colour and how much of the island's ground texture it
+  shows: meadow round the station, along the footpath and in a verge along the park's edges, the
+  foothills' forest floor further out, the earth footpath soft-edged to the footbridge, bare darker
+  earth at the foot of walls and rock faces. `HD_NorthGate` draws it with `M_NorthGate`
+  (`unreal/Scripts/mountain_material.py`): the vertex colour times `T_ground` over its mean, by
+  the vertex alpha, under the island's haze. `T_ground` does not tile, so the material samples it
+  without tile edges (four taps half a tile apart, each weighted away from its own edges) at 6 m
+  and again turned at 16 m. `gate.dress` replaces the undergrowth on the patch with grass (thick
+  on the meadow and along every edge), fallen leaves, bushes where the meadow meets the forest, and
+  along the park's edges clumps of bushes, grass and boulders of the park's stone a metre or two
+  out, sized to keep off the road (low and few between the footbridge and the hillside, nothing at
+  the footbridge's ends). Boulders also stand at the foot of real walls, a third sunk.
+- **Footbridge.** It crosses the dell from a timber sleeper on the path to a stone sill against the
+  road deck's slanted west edge (`zeppelin.layout.DECK_EDGE`), so the planks meet the deck flush.
+
 ## Restyle
 
 In the island the park keeps every ridden surface, rail and collision triangle, and wears the
@@ -134,9 +203,20 @@ island's look instead of the original desert campus. Concepts painted with Sunbu
   them from a Black instance of the island's Noto Sans JP and swaps their collision: the original
   letters' 2,172 triangles leave their section and the 寄り道 letters' 2,008 take their place.
   No rail ran on the letters.
+- **Cars.** The car park's four photo-textured traffic cars (two sedans, an SUV and a sports car)
+  leave the park build (`world/regions/megapark/cars.py`), and so do their 762 collision
+  triangles; the bays' ground stays. Four kei cars, from the Sunburst sheet
+  `assets/megapark/concepts/kei-sheet` and the car park painting `kei-carpark`, take their bays:
+  a sage pickup with a crate and a board in its bed, an ochre and cream wagon, a vermilion retro
+  car with a cream roof, and an indigo microvan with two boards on its roof rack. They are built
+  in Blender with flat vertex colours, like the village props (`assets/vehicles/kei/build.py`,
+  the `world.kei` and `unreal.kei` steps). `cars.py` stands each on a plane fitted to its bay's
+  ground. `park.json` lists them as props, and `ASuperUltraMegaPark::Spawn` places them with
+  their box collision, so Cairo walks round them and the board stops against them.
 
-`verify_import.py` checks every built triangle against the source with the plants left out and
-the letters swapped; every other render and collision triangle must still match exactly.
+`verify_import.py` checks every built triangle against the source with the plants and cars left
+out, the letters swapped and the seam added (its parts, its collision triangles and the skirt);
+every other render and collision triangle must still match exactly.
 
 ## What is bundled
 

@@ -77,10 +77,11 @@ The line runs **Woodland → Hidamari → Mega Park** (the order of `STATIONS`).
 turns back at either end; whoever stands at the docked ship can choose another stop before boarding.
 
 - **Mega Park: (-200, 1484)**, 130 m, on the crest just west of the park's top road. The station, the docked ship and
-  its turn on take-off all stay clear of the park. `megapark_pad` levels it into the north terrain's 10 m grid, flat
-  under the station and the ship and along an earth footpath east to x -170, the last grid column clear of the park.
-  From there a level timber footbridge (part of `ZP_MegaPark`) crosses the 6-9 m dip the terrain makes beside the park
-  and lands on the road deck at 130 m. Trees are cleared over the station and within 7.5 m of the path.
+  its turn on take-off all stay clear of the park. `megapark_pad` levels the north terrain under the station and the
+  ship and along an earth footpath east to x -170, and the Mega Park gate's ground (`megapark/gate.py`,
+  [MEGAPARK.md](../../../docs/MEGAPARK.md#gate)), which replaces the terrain there, keeps it level. From there a level
+  timber footbridge (part of `ZP_MegaPark`) crosses a grassy dell beside the park to a stone sill against the road
+  deck's slanted west edge (`DECK_EDGE`), at 130 m. Trees are cleared over the station and within 7.5 m of the path.
 - **Legs.** Every pair of stops is a leg with its own cruise height, clearing the ground and trees under a 40 m
   corridor with room for the trailing camera. All legs fly at 53 m/s (1480 m in 28 s), and the ship turns to the
   leg's true heading on take-off. Climbs take at least 5 s and descents at least 4 s, longer for a bigger height change.
