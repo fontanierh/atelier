@@ -130,6 +130,33 @@ def test_clips_add_onto_reference_pose(bundle, rig):
     assert 0.05 < height('LEFTFOOT') - height('SKATEBOARD_ROOT') < 0.2
 
 
+def test_quaternion_angle_is_stable():
+    """The verification metric: exact for tiny and large angles, sign-insensitive (2 acos(|a.b|) reads float32
+    rounding as about 5e-4 rad)."""
+    import array
+    for angle in (1e-7, 3e-5, 1e-4, 0.5, 3.0):
+        a = (0.0, 0.0, 0.0, 1.0)
+        b = (0.0, math.sin(angle / 2), 0.0, math.cos(angle / 2))
+        assert N.quaternion_angle(a, b) == pytest.approx(angle, rel=1e-6)
+        assert N.quaternion_angle(a, tuple(-v for v in b)) == pytest.approx(angle, rel=1e-6)
+    q = N.normalised((0.3, -0.5, 0.2, 0.75))
+    single = tuple(array.array('f', q))      # the same rotation rounded to single precision
+    assert N.quaternion_angle(q, single) < 1e-6
+
+
+def test_euler_storage_model(bundle, rig):
+    """native.euler_stored reproduces UE's single-precision Euler key storage: the 0.000837 rad Unreal returned for
+    PRO_DYRDEK_MONGO_HSPD_LSTR_CYC2 frame 51 LEFTHAND (pitch near -90), and a few 1e-6 rad elsewhere."""
+    reference = rig.named_pose(0, 'RIG_TPOSE')
+    names = [b.name for b in rig.bones]
+    clip = bundle.clip(0, 'PRO_DYRDEK_MONGO_HSPD_LSTR_CYC2')
+    q = N.sample_to_unreal(N.local_pose(clip, 51, names.index('LEFTHAND'), reference))[1]
+    assert N.quaternion_angle(q, N.euler_stored(q)) == pytest.approx(8.368283e-4, rel=2e-3)
+    q = N.sample_to_unreal(N.local_pose(clip, 10, names.index('SPINE'), reference))[1]
+    assert N.quaternion_angle(q, N.euler_stored(q)) < 1e-5
+    assert N.quaternion_angle((0, 0, 0, 1), N.euler_stored((0, 0, 0, 1))) == 0.0
+
+
 def test_malformed_clip_rejected(bundle):
     data = bundle.clip_paths()[0].read_bytes()
     for bad in (b'', data[:11], data[:-1], data + b'\0', b'ATCLIP02' + data[8:]):

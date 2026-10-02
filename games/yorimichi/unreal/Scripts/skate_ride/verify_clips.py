@@ -38,7 +38,10 @@ STATE = OUT / 'verify-state.json'
 POSES = OUT / 'still-poses'
 STILLS = ('OLLIE_HIGH_G', 'PRO_MCARROLL_KICKFLIP_HI_CYC', 'PRO_DYRDEK_PUSH_HSPD_HSTR_CYC2', 'G_5050_FS_HI_0_CYC')
 CONTROL = 'R_HIGHANTIC_FS360SHUVIT_L_0_CYC'
+CONTROL_SETTINGS = ('/Engine/Animation/DefaultAnimBoneCompressionSettings.DefaultAnimBoneCompressionSettings',
+                    '/ACLPlugin/ACLAnimBoneCompressionSettings.ACLAnimBoneCompressionSettings')
 LIMITS = dict(translation_cm=0.01, rotation_rad=1e-4, scale=1e-4)
+STORED_MATCH = 2e-5     # rad: a sample this close to native.euler_stored(key) is the engine's Euler key storage
 E = U.EditorAssetLibrary
 P = U.AnimPoseExtensions
 
@@ -82,17 +85,28 @@ def curve_value(keys, t):
 
 
 def measure(clip, rig, reference, poses):
+    """The largest errors of the sampled poses against the native local poses. A rotation over the limit that the
+    engine's Euler key storage explains (it matches native.euler_stored within STORED_MATCH) is counted apart, in
+    `euler_storage`, and left out of the rotation maximum."""
     worst = dict(translation_cm=0.0, rotation_rad=0.0, scale=0.0)
     where = {}
+    stored = []
     per_bone = {b.name: [0.0, 0.0] for b in rig.bones}
     for f, pose in enumerate(poses):
         for b, bone in enumerate(rig.bones):
             t, q, s = N.sample_to_unreal(N.local_pose(clip, f, b, reference))
             got = P.get_bone_pose(pose, bone.name, U.AnimPoseSpaces.LOCAL)
             gt, gq, gs = got.translation, got.rotation, got.scale3d
+            gq = (gq.x, gq.y, gq.z, gq.w)
             errors = dict(translation_cm=math.dist((gt.x, gt.y, gt.z), t),
-                          rotation_rad=N.quaternion_angle((gq.x, gq.y, gq.z, gq.w), q),
+                          rotation_rad=N.quaternion_angle(gq, q),
                           scale=max(abs(gs.x - s[0]), abs(gs.y - s[1]), abs(gs.z - s[2])))
+            if errors['rotation_rad'] > LIMITS['rotation_rad']:
+                to_stored = N.quaternion_angle(gq, N.euler_stored(q))
+                if to_stored <= STORED_MATCH:
+                    stored.append(dict(frame=f, bone=bone.name, rotation_rad=errors['rotation_rad'],
+                                       to_stored_rad=to_stored))
+                    errors['rotation_rad'] = to_stored
             for k, v in errors.items():
                 if v > worst[k]:
                     worst[k] = v
@@ -100,7 +114,7 @@ def measure(clip, rig, reference, poses):
             pb = per_bone[bone.name]
             pb[0] = max(pb[0], errors['translation_cm'])
             pb[1] = max(pb[1], errors['rotation_rad'])
-    return worst, where, per_bone
+    return worst, where, per_bone, stored
 
 
 def control(rig, reference, bundle, manifest):
@@ -109,19 +123,26 @@ def control(rig, reference, bundle, manifest):
     record = manifest['clips'].get(CONTROL)
     if not record:
         return None
-    path = '/Game/SkateRideVerify/ControlDefaultCompression'
-    if E.does_directory_exist('/Game/SkateRideVerify'):
-        E.delete_directory('/Game/SkateRideVerify')
-    copy = E.duplicate_asset(record['asset'], path)
-    default = E.load_asset('/Engine/Animation/DefaultAnimBoneCompressionSettings')
+    folder = '/Game/SkateRideVerify'
+    if E.does_directory_exist(folder):
+        E.delete_directory(folder)
+    original = E.load_asset(record['asset'])
+    copy = U.AssetToolsHelpers.get_asset_tools().duplicate_asset('ControlDefaultCompression', folder, original)
+    assert copy is not None, 'control duplicate'
+    default = None
+    for path in CONTROL_SETTINGS:     # loaded directly: the commandlet's asset registry does not list engine content
+        default = U.load_object(None, path)
+        if default is not None:
+            break
+    assert default is not None, 'no default bone compression settings'
     copy.set_editor_property('bone_compression_settings', default)
     finish_compilation()
     clip = bundle.clip(record['bank'], CONTROL)
     compressed = sample_poses(copy, clip.fps, clip.frame_count)
-    worst, where, _ = measure(clip, rig, reference, compressed)
+    worst, where, _, _ = measure(clip, rig, reference, compressed)
     raw = sample_poses(copy, clip.fps, clip.frame_count, U.AnimDataEvalType.RAW)
-    raw_worst, _, _ = measure(clip, rig, reference, raw)
-    E.delete_directory('/Game/SkateRideVerify')
+    raw_worst, _, _, _ = measure(clip, rig, reference, raw)
+    E.delete_directory(folder)
     return dict(clip=CONTROL, compression=default.get_path_name(), compressed=worst, compressed_where=where, raw=raw_worst)
 
 
@@ -187,7 +208,8 @@ def main():
     started = time.time()
     manifest_text = MANIFEST.read_text()
     manifest = json.loads(manifest_text)
-    key = hashlib.sha256(manifest_text.encode()).hexdigest()
+    # the state is valid for this manifest measured by this code
+    key = hashlib.sha256(manifest_text.encode() + Path(__file__).read_bytes() + (HERE / 'native.py').read_bytes()).hexdigest()
     bundle = N.Bundle(BUNDLE)
     rig = bundle.rig()
     reference = rig.named_pose(0, 'RIG_TPOSE')
@@ -213,10 +235,11 @@ def main():
             record = manifest['clips'][name]
             clip = bundle.clip(record['bank'], name)
             poses = sample_poses(sequence, clip.fps, clip.frame_count)
-            worst, where, per_bone = measure(clip, rig, reference, poses)
+            worst, where, per_bone, stored = measure(clip, rig, reference, poses)
             curve_error, missing = check_curves(sequence, clip, record, poses)
             state['clips'][name] = dict(frames=clip.frame_count, fps=clip.fps, **worst, where=where,
                                         curve_error=curve_error, curves_missing=sorted(set(missing)),
+                                        euler_storage=stored,
                                         bones={b: [round(v[0], 7), round(v[1], 8)] for b, v in per_bone.items()
                                                if v[0] > 1e-3 or v[1] > 1e-5})
             if name in STILLS:
@@ -230,12 +253,21 @@ def main():
         overall = {k: max(c[k] for c in clips.values()) for k in LIMITS}
         worst_clip = {k: max(clips, key=lambda n: clips[n][k]) for k in LIMITS}
         over = {k: sorted(n for n, c in clips.items() if c[k] > LIMITS[k]) for k in LIMITS}
+        stored_all = [dict(clip=n, **c) for n, record in sorted(clips.items()) for c in record.get('euler_storage', [])]
         report = dict(
             about='Runtime-sampled (compressed) Unreal poses against the native decode in Unreal space, every clip, '
                   'frame and bone (unreal/Scripts/skate_ride/verify_clips.py)',
             clips=len(clips), frames=sum(c['frames'] for c in clips.values()), bones=len(rig.bones),
             limits=LIMITS, max=overall, worst_clip=worst_clip,
             passed=all(overall[k] <= LIMITS[k] for k in LIMITS), over_limit={k: v for k, v in over.items() if v},
+            euler_storage=dict(
+                about='Keys within 0.081 degrees of local pitch +-90: UE 5 keeps bone keys as single-precision Euler '
+                      'angles and snaps such a pitch to +-90, so the sequence holds a slightly different rotation. '
+                      'Each sample here matches that stored rotation (native.euler_stored) within to_stored_rad and '
+                      'is counted in max.rotation_rad by that distance; rotation_rad is its distance to the native key.',
+                samples=len(stored_all), max_rotation_rad=max((c['rotation_rad'] for c in stored_all), default=0.0),
+                max_to_stored_rad=max((c['to_stored_rad'] for c in stored_all), default=0.0),
+                bones=sorted({c['bone'] for c in stored_all}), cases=stored_all),
             curve_max_error=max(c['curve_error'] for c in clips.values()),
             curves_missing=sorted({m for c in clips.values() for m in c['curves_missing']}),
             control=state.get('control'), partial=manifest.get('partial'),

@@ -93,10 +93,21 @@ its import error), the compression settings and, per clip: `asset`, `bank`, `fps
 
 `build/yorimichi/skate-ride/clips-verify.json` compares, for every clip, frame and bone, the pose Unreal samples from
 the compressed asset (`AnimPoseExtensions`, compressed evaluation with retargeting on so the compressed path is taken)
-with `native.local_pose` in Unreal space. It reports the largest translation (cm), rotation (rad) and scale errors
-overall and per clip, the curve errors at every frame, and a control: the same clip under the engine's default
-compression, which must show an error, proving the measurement reads compressed data. The limits are 0.01 cm and
-1e-4 rad.
+with `native.local_pose` in Unreal space. It reports the largest translation (cm), rotation (rad, as
+4 atan2(|a - b|, |a + b|), which stays exact at small angles in single precision) and scale errors overall and per
+clip, the curve errors at every frame, and a control: the same clip under the engine's default compression, which
+must show an error, proving the measurement reads compressed data. The limits are 0.01 cm and 1e-4 rad.
+
+### Euler key storage
+
+UE 5's animation sequence data model keeps bone keys as single-precision Euler angles: the controller converts each
+key with `FQuat4f::Euler` and evaluation rebuilds the quaternion. When a bone's local pitch is within 0.081 degrees of
++-90 degrees, `Rotator` snaps it to exactly +-90 and the roll to 0, so the sequence holds a rotation up to about 2e-3
+rad from the key; compression adds nothing on top. `native.euler_stored` reproduces that round trip, and over the whole
+library it predicts 38 such bone frames in 35 clips, all on leaf bones (the hands and three reparented targets), so no
+joint position moves; at the hand's 10 cm the mesh moves less than 0.02 cm. The verification counts each of them in
+`euler_storage` when the sampled rotation matches `euler_stored` within 2e-5 rad, and measures it by that distance.
+Avoiding them would need other bone frames than the native ones.
 
 `build/yorimichi/skate-ride/clip-stills/` has six frames each of an ollie, a kickflip, a push and a 50-50 grind: the
 rider drawn from Unreal's sampled poses, with the native joints as blue rings.
