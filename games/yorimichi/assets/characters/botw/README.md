@@ -65,8 +65,11 @@ PBR look.
 - **Riders**: a character with a `skate` map gets a `DA_<Name>Rider` definition (its idle and a locomotion blend
   space). `-rider=<Name>` makes it the player (`ABotwRider`): it walks, runs and gets on the board, where the skate
   runtime's solved pose is retargeted through `ISkateRider::GetSkateBone` like on Cairo.
+- **Character switch**: the Esc menu's Character row switches the player between Cairo and every rider while playing
+  (`ABotwRider::SwitchPlayer`): the new character stands where the old one stood, facing the same way, with the camera
+  unchanged; the board and the sailboat are put away first. It is refused on the zeppelin.
 - **Live verbs**: `botw_roster`, `botw_spawn(name, ground, yaw, mode)`, `botw_play`, `botw_move_to`, `botw_mode`,
-  `botw_list` and `botw_clear` (`YorimichiLive.h`).
+  `botw_list`, `botw_clear` and `switch_character(name)` (`YorimichiLive.h`).
 
 ```sh
 uv run atelier play yorimichi -- -rider=Bokoblin

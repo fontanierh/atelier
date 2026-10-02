@@ -16,6 +16,10 @@ needs = ["sonniss/footsteps", "sonniss/combat"]
 # The default: deferred Lumen at 1080p in a window.
 args = ["-game", "-windowed", "-resx=1920", "-resy=1080", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
 
+[play.fullscreen]
+# The default at 1440p, fullscreen.
+args = ["-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
+
 [play.desktop]
 # The measured desktop profile: forward renderer, 1440 pixels high, city tiles and tree LODs.
 script = "tools/desktop_preview.py"

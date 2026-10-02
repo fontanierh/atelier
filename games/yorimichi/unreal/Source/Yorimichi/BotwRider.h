@@ -19,4 +19,15 @@ public:
     static FString Requested();
     /** The pawn class a game mode uses: this class when a rider is requested, else null (the mode's own default). */
     static UClass* PawnOverride();
+    /** The BOTW characters that can play: those with an imported rider definition, in roster order. */
+    static TArray<FString> Available();
+    /** The playing character's name: the rider's, or "Cairo". */
+    static FString NameOf(const AWandererCharacter* Character);
+    /** The Esc menu's character switch: From's player becomes Name (a rider, or "Cairo"), standing where From stood and
+     *  looking the same way; From is destroyed. Refused (null) on the zeppelin and before From is ready. */
+    static AWandererCharacter* SwitchPlayer(AWandererCharacter* From, const FString& Name);
+private:
+    FString RiderName;
+    /** Sizes the capsule and stands the mesh in it from the rider's roster entry. */
+    void Fit();
 };

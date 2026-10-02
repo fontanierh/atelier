@@ -38,6 +38,13 @@ public:
     virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
     virtual void Landed(const FHitResult& Hit) override;
     void EnterWorld(AJapanWorld* World);
+    AJapanWorld* GetLandscape() const { return Landscape; }
+    /** The character switch (ABotwRider::SwitchPlayer) sets this on the new character before it finishes spawning: it
+     *  starts where the old one stood (EnterWorld leaves it in place), with no second ambience and no settling wait. */
+    bool bSwitchedIn = false;
+    /** The character switch, before the player moves to another character: closes the menus, stows the board and the
+     *  sailboat, and gives up the input mapping. */
+    void Leave();
     UWandererDefinition* GetDefinition() const { return Definition; }
     FName GetAnimationAction() const { return AnimationAction; }
     /** The clip that shows the current action. With the sword out, jumps, falls, landings, dashes, the double jump and the

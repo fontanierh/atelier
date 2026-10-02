@@ -51,4 +51,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool BotwMode(const FString& Actor, const FString& Mode);
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BotwList();
     UFUNCTION(BlueprintCallable, Category = "Live") static int32 BotwClear();
+    /** The Esc menu's character switch (ABotwRider::SwitchPlayer): "Cairo" or a rider; returns the character playing. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString SwitchCharacter(const FString& Name);
 };

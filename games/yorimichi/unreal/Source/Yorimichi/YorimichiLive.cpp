@@ -6,6 +6,7 @@
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
 #include "BotwCreature.h"
+#include "BotwRider.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 #include "Misc/FileHelper.h"
@@ -168,4 +169,11 @@ int32 UYorimichiLive::BotwClear()
     UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
     if (World) for (TActorIterator<ABotwCreature> It(World); It; ++It) { It->Destroy(); ++Removed; }
     return Removed;
+}
+
+FString UYorimichiLive::SwitchCharacter(const FString& Name)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    if (P) if (AWandererCharacter* To = ABotwRider::SwitchPlayer(P, Name)) P = To;
+    return P ? ABotwRider::NameOf(P) : FString();
 }

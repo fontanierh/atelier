@@ -244,7 +244,7 @@ void AFoxHunter::Tick(float Dt)
     Super::Tick(Dt);
     if (!IsReady()) return;
     Clock += Dt;
-    if (!Target) Target = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+    if (!IsValid(Target)) Target = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));   // also after a character switch
     if (Review) AdvanceFoxReview(*Review, Dt);
     if (Target && !Target->IsReady()) return;
     AdvanceAction(Dt);
