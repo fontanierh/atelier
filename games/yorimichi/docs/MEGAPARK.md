@@ -104,7 +104,8 @@ transform leave the seam out, so the seam does not move the park.
 - **Skirt.** Wherever the hillside stops in the air, a skirt of its own earth or concrete hangs
   45 m under the edge and faces outward, so the edges show no void from outside
   (`placement.seam_skirt`, 33 edges). Edges shared with the park or the rest of the seam, and
-  walls' tops, get none. The skirt is in the seam's render and collision meshes.
+  walls' tops, get none. The skirt is in the seam's render and collision meshes; its texture and
+  decal run on down from the face above it, and it takes one lightmap sample from that face.
 - **Terrain.** The terrain stamp counts the seam as part of the footprint: under it the ground
   stays below its lowest surface within one terrain cell, so the hillside
   meets the island ground along its edges. The eased skirt round the park still starts from the
@@ -114,7 +115,6 @@ transform leave the seam out, so the seam does not move the park.
   station's clearing, `forest.py` grows a denser undergrowth of ochre bushes, red shrub maples,
   grass, leaves and a few rocks, as in the Sunburst concept `assets/megapark/concepts/seam-gate`;
   only that undergrowth comes closer to the park than the 4 m `hidamari/layout.py` clears.
-
 - **The rest of the rim.** Elsewhere the park's own banks and hillsides end at its rim, and the
   ground outside meets them lower than their tops. The park's rock, stone, earth and grass
   materials are drawn from both sides (`import_megapark.py`, `NATURAL`), so from the forest those

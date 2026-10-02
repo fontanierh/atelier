@@ -132,25 +132,34 @@ def export_seam(source, report):
         vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
         normals.append(n); uvs.append(uv); lightmaps.append(lightmap); decals.append(decal)
         offset += len(v)
-        # The skirt: a, b, b', a' under each open edge, its texture running on past the edge (away from the face) at the
-        # part's own density, the lightmap's edge texels drawn down with it, and a level normal facing out.
-        t = v[f].astype('f8'); q = uv[f].astype('f8')
+        # The skirt: a, b, b', a' under each open edge, and a level normal facing out. Its texture and decal (both tile)
+        # run on past the edge, away from the face, at the part's own density. The lightmap is an atlas, so the skirt
+        # takes one sample of it from inside the face above: the edge's texels drawn down would streak.
+        t = v[f].astype('f8')
         world = np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1)
-        texels = np.abs(np.cross(q[:,1]-q[:,0], q[:,2]-q[:,0]))
-        density = float(np.median(np.sqrt(texels[world > 1e-6]/world[world > 1e-6])))
+
+        def density(channel):
+            q = channel[f].astype('f8')
+            texels = np.abs((q[:,1,0]-q[:,0,0])*(q[:,2,1]-q[:,0,1])-(q[:,1,1]-q[:,0,1])*(q[:,2,0]-q[:,0,0]))
+            return float(np.median(np.sqrt(texels[world > 1e-6]/world[world > 1e-6])))
+
+        def run_on(channel, scale, a, b, o):
+            along = (channel[b]-channel[a]).astype('f8')
+            across = np.array([-along[1], along[0]])/max(np.linalg.norm(along), 1e-9)
+            if np.dot(across, channel[o]-channel[a]) > 0:
+                across = -across
+            down = across*placement.SKIRT_DROP*scale
+            return np.stack([channel[a], channel[b], channel[b]+down, channel[a]+down]).astype(channel.dtype)
+
+        uv_scale, decal_scale = density(uv), density(decal)
         third = {(int(face[k]), int(face[(k+1) % 3])): int(face[(k+2) % 3]) for face in f for k in range(3)}
         for a, b, out in skirt.get((asset, i), ()):
             o = third.get((a, b), third.get((b, a)))
-            along = (uv[b]-uv[a]).astype('f8')
-            across = np.array([-along[1], along[0]])/max(np.linalg.norm(along), 1e-9)
-            if np.dot(across, uv[o]-uv[a]) > 0:
-                across = -across
-            down = across*placement.SKIRT_DROP*density
             vertices.append(np.stack([v[a], v[b], v[b]-drop, v[a]-drop]).astype(v.dtype))
             faces.append(np.array([[0, 1, 2], [0, 2, 3]])+offset); material_indices.extend([slots.index(key)]*2)
             normals.append(np.tile([out[0], 0., out[1]], (4, 1)))
-            uvs.append(np.stack([uv[a], uv[b], uv[b]+down, uv[a]+down]).astype(uv.dtype))
-            lightmaps.append(lightmap[[a, b, b, a]]); decals.append(decal[[a, b, b, a]])
+            uvs.append(run_on(uv, uv_scale, a, b, o)); decals.append(run_on(decal, decal_scale, a, b, o))
+            lightmaps.append(np.tile(lightmap[[a, b, o]].mean(0), (4, 1)).astype(lightmap.dtype))
             offset += 4
     render = export_mesh('SM_MP_Seam', np.concatenate(vertices), np.concatenate(faces), slots, material_indices,
         {'UVMap': np.concatenate(uvs), 'RetailLightmap': np.concatenate(lightmaps), 'RetailDecal': np.concatenate(decals)},
