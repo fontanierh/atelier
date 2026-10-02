@@ -44,6 +44,37 @@ def material():
     return mat
 
 
+def surface_materials():
+    """The same texture maps and palette modulation as the Unreal importer."""
+    manifest = json.loads((OUT / 'textures/textures.json').read_text())
+    manifest['painted'] = {**manifest['steel'], 'metallic': 0.}
+    result = {}
+    for name, entry in manifest.items():
+        mat = bpy.data.materials.new('Pier_' + name); mat.use_nodes = True
+        mat['repeat_m'] = entry['repeat_m']
+        nodes = mat.node_tree.nodes; links = mat.node_tree.links; bsdf = nodes.get('Principled BSDF')
+        bsdf.inputs['Metallic'].default_value = entry['metallic']
+        tex = nodes.new('ShaderNodeTexImage'); tex.image = bpy.data.images.load(str(OUT / 'textures' / entry['maps']['albedo']))
+        if name == 'mural': links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
+        else:
+            vc = nodes.new('ShaderNodeVertexColor'); vc.layer_name = 'Color'
+            mix = nodes.new('ShaderNodeMixRGB'); mix.blend_type = 'MULTIPLY'; mix.inputs[0].default_value = 1
+            links.new(vc.outputs['Color'], mix.inputs[1]); links.new(tex.outputs['Color'], mix.inputs[2])
+            gain = nodes.new('ShaderNodeVectorMath'); gain.operation = 'SCALE'; gain.inputs['Scale'].default_value = 2.
+            links.new(mix.outputs[0], gain.inputs[0]); links.new(gain.outputs[0], bsdf.inputs['Base Color'])
+        bsdf.inputs['Roughness'].default_value = .8
+        if 'roughness' in entry['maps']:
+            rough = nodes.new('ShaderNodeTexImage'); rough.image = bpy.data.images.load(str(OUT / 'textures' / entry['maps']['roughness']))
+            rough.image.colorspace_settings.name = 'Non-Color'
+            links.new(rough.outputs['Color'], bsdf.inputs['Roughness'])
+            normal = nodes.new('ShaderNodeTexImage'); normal.image = bpy.data.images.load(str(OUT / 'textures' / entry['maps']['normal']))
+            normal.image.colorspace_settings.name = 'Non-Color'
+            bump = nodes.new('ShaderNodeNormalMap'); links.new(normal.outputs['Color'], bump.inputs['Color'])
+            links.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
+        result[name] = mat
+    return result
+
+
 def bounds(m):
     V = np.array(m.verts); return V.min(axis=0), V.max(axis=0)
 
@@ -122,6 +153,9 @@ def check_profiles():
         assert abs(p[-1][0]-b['top'])<1e-6
     p,_=L.funbox_profile();step,a0,a1=segment_angles(p)
     out['flow_table']=dict(max_step_deg=step,toe_angle_deg=a0,exit_angle_deg=a1)
+    for f in L.HIPS:
+        p,_=L.funbox_profile(f);step,a0,a1=segment_angles(p)
+        out[f['id']]=dict(max_step_deg=step,toe_angle_deg=a0,exit_angle_deg=a1)
     for name,profile in out.items():
         assert profile['max_step_deg']<=5.01,(name,profile)
         assert abs(profile['toe_angle_deg'])<3.,(name,profile)
@@ -146,6 +180,44 @@ def check_rails(rails, meshes):
     assert worst < 10.0, ('rail off its edge (mm)', {k: v for k, v in out.items() if v >= 10})
     return {'max_distance_mm': out, 'worst_mm': worst}
 
+
+
+def check_bar_clearance(rails, meshes):
+    """Rails must stand clear of the other riding surfaces, including crossing banks."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    verts=[]; polys=[]
+    for mesh in meshes:
+        base=len(verts); verts.extend(mesh.verts)
+        polys.extend(tuple(i+base for i in f) for f,tag in zip(mesh.faces,mesh.tags) if tag!='rail')
+    tree=BVHTree.FromPolygons(verts,polys,all_triangles=False)
+    ids={b['id'] for b in L.BARS}|{L.CURVE_BAR['id']}
+    ids.update(t['id']+'_handrail_'+str(i) for t in L.TERRACES for i in range(2))
+    result={}
+    for rail in rails:
+        if rail['id'] not in ids: continue
+        clear=[]
+        for a,b in zip(rail['points'],rail['points'][1:]):
+            for u in np.linspace(0,1,max(2,math.ceil(np.linalg.norm(np.array(b)-a)/.25)+1)):
+                p=np.array(a)*(1-u)+np.array(b)*u
+                hit,_,_,_=tree.ray_cast(Vector((p[0],p[1],p[2]+10)),Vector((0,0,-1)),30)
+                assert hit is not None,('rail approach has no surface',rail['id'],p)
+                clear.append(p[2]-hit.z)
+        result[rail['id']]=round(float(min(clear)),3)
+    assert min(result.values())>=.20,('rail buried in another riding surface',result)
+    runouts={}
+    for terrace in L.TERRACES:
+        high=0.
+        for y,profile in L.terrace_rails(terrace):
+            end=profile[-1][0]
+            for x in np.linspace(end+.3,end+8.,40):
+                for offset in (-.6,0,.6):
+                    hit,_,_,_=tree.ray_cast(Vector((x,y+offset,15)),Vector((0,0,-1)),30)
+                    assert hit is not None,('stair landing has no floor',terrace['id'],x,y)
+                    high=max(high,hit.z)
+        runouts[terrace['id']]=round(high,4)
+    assert max(runouts.values())<.02,('stair landing obstructed within 8 m',runouts)
+    return {'minimum_under_rail_m':result,'stair_runout_8m_max_height_m':runouts}
 
 def check_path(pl, rows, h):
     from village.layout import upper_surface
@@ -271,8 +343,9 @@ def park_json(pl, rails):
                   'wheel': '/Game/SkatePark/Board/SM_SkateWheel', 'truck_offsets_cm': [[18, 0, -1.2], [-18, 0, -1.2]],
                   'back_truck_yaw_deg': 180, 'wheel_offsets_from_truck_cm': [[0, 9.3, -5.15], [0, -9.3, -5.15]], 'wheel_radius_cm': 2.65},
         'rails': rails,
+        'trees': L.TREES,
         'spawns': {
-            'park': {'pos': [6.0, 36.0, 0.0], 'yaw_deg': -90.0, 'note': 'park-local; entry plaza, looking down the street lines'},
+            'park': {'pos': [6.0, 60.0, 0.0], 'yaw_deg': 180.0, 'note': 'park-local; entry plaza, looking along the street promenade'},
             'bowl': {'pos': [29.0, -10.0, 0.0], 'yaw_deg': 0.0, 'note': 'park-local bowl floor'},
             'mini': {'pos': [-23.0, -28.0, 0.0], 'yaw_deg': 0.0, 'note': 'park-local mini-ramp floor'},
             'path_top': {'pos': [round(float(pl['P'][k, 0]), 3), round(float(pl['P'][k, 1]), 3), round(float(pl['z'][k]), 3)],
@@ -291,6 +364,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True); (OUT / 'assets').mkdir(exist_ok=True); (OUT / 'board').mkdir(exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     mat = material()
+    surfaces = surface_materials()
     world, h = L.load_world()
     report = {}
 
@@ -321,14 +395,16 @@ def main():
     park = {}
     for m in park_meshes:
         cols = geom.shade(m, ao.get(m.name))
-        park[m.name] = geom.to_object(m, mat, cols)
+        park[m.name] = geom.to_object(m, surfaces, cols)
         geom.export_fbx(park[m.name], OUT / 'assets' / f'{m.name}.fbx')
     report['meshes'] = {m.name: {'triangles': m.triangles, 'vertices': len(m.verts), 'min': list(np.round(bounds(m)[0], 3)), 'max': list(np.round(bounds(m)[1], 3))}
                         for m in (*park_meshes, deck, truck, wheel)}
+    report['material_slots'] = {name: [slot.name for slot in obj.data.materials] for name, obj in park.items()}
 
     # contract + checks
     rails = L.rails()
     report['rails'] = check_rails(rails, [feats])
+    report['bar_clearance'] = check_bar_clearance(rails, [pier,feats])
     # Same triangulated riding geometry for repeatable native trajectory/pumping checks.
     triangles=[]
     for m in (pier,feats):

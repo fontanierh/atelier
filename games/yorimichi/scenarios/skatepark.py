@@ -21,11 +21,11 @@ def main():
         report[name]=dict(ok=bool(ok),**values)
         print(('PASS ' if ok else 'FAIL ')+name+': '+str(values),flush=True)
     # A low entry speed; gravity supplies the speed. All exits lead into open park lanes.
-    for name,x,y,heading in [('bowl',15,-10,180),('mini',-37.5,-14,90),('return',47.5,19,-90),('seven',-31,34,0),('four',-37,7,-90)]:
+    for name,x,y,heading in [('bowl',15,-10,180),('mini',-37.5,-14,90),('return',71.5,19,-90),('mellow',69.5,-35,90),('seven',-49,34,0),('four',-62,7,-90),('market',-62,-27,-90)]:
         rows=qa.run_scenario(f'{x},{y},{heading},200,[],duration=4',4)
         speed=max(float(r['speed']) for r in rows)
         record(name+'_rollin',speed>400 and not qa.count(rows,'bails') and rows[-1]['mode']=='1',max_speed_cm_s=speed,states=sorted(qa.modes(rows)))
-    rows=qa.run_scenario("-40,25.5,0,520,[(.8,('flick','ollie',(0,0),.2))],duration=3.3",3.3)
+    rows=qa.run_scenario("-64,25.5,0,520,[(1.8,('flick','ollie',(0,0),.2))],duration=3.3",3.3)
     record('stair_handrail','3' in qa.modes(rows) and not qa.count(rows,'bails'),tricks=qa.combos(rows))
     qa.py("live.park.place(29,-10,0); live.skate_input(); p=unreal.GameplayStatics.get_player_character(live.L.game_world(),0); deck=next(c for c in p.get_components_by_class(unreal.StaticMeshComponent) if c.get_name()=='SkateDeck')")
     time.sleep(1.2)

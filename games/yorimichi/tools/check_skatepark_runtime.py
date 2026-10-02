@@ -102,14 +102,14 @@ def main():
             mini=exercise('mini_back_and_forth',-23,-22,9,9,crouch)
             report['mini']=air_return(mini,-10,2.65)
             assert any('Air' in r['state'] and r['pos'][0]<-35 for r in mini), 'No return air on opposite wall'
-            quarter=exercise('east_return',33,25,8.5,4)
-            report['quarter']=air_return(quarter,46,2.15)
+            quarter=exercise('east_return',57,25,8.5,4)
+            report['quarter']=air_return(quarter,70,2.15)
             rollin=exercise('bowl_rollin',15,-10,2,4,crouch,z=3.2,heading=180)
             report['rollin_max_speed_mps']=max(math.hypot(*r['velocity'][:2]) for r in rollin)
             assert report['rollin_max_speed_mps']>5
             popped=exercise('bowl_ollie',29,-10,9,5,pop=True)
             report['bowl_ollie']=air_return(popped,42,3.2)
-            rail=exercise('seven_stair_handrail',-40,25.5,5.2,4,z=1.26,gesture=(.8,.2))
+            rail=exercise('seven_stair_handrail',-64,25.5,5.2,5,z=1.26,gesture=(1.8,.2))
             assert any('Grind' in r['state'] for r in rail),'Handrail was not acquired'
             report['stair_handrail']=sorted({r['state'] for r in rail if 'Grind' in r['state']})
             report['passed']=True
