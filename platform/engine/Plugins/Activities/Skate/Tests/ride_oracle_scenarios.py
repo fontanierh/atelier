@@ -527,6 +527,9 @@ def define():
         case(f'bail/rail-land-across/{speed}', 'bail', ollie(AT), 240, world='rail',
              spawn=(-(speed - 0.3) * (AT + 78) / 60, 0, 14), heading=math.pi / 2, velocity=ride(speed, math.pi / 2),
              note='Ollie timed so the board comes down across the rail')
+    for angle in (0, 30, 60, 90):
+        case(f'bail/fall-sideways/{angle}', 'bail', [], 240, spawn=(0, 1.5, 0), heading=math.radians(angle),
+             velocity=(0, 0, 5), note=f'Start 1.5 m up, the board turned {angle} degrees from its 5 m/s travel')
     for height, world in ((1, 'drop'), (3, 'drop3'), (6, 'drop6')):
         for speed in (3, 6):
             case(f'drop/{height}m/{speed}', 'drop', [], 300, world=world, spawn=(0, height, 6 - speed * 1.2),
@@ -548,6 +551,8 @@ def define():
             ('one-foot-x', [(P + 8, P + 46, dict(rt=255)), (P + 14, P + 42,
                                                                           dict(buttons=X))]),
             ('double', [(P + 8, P + 46, dict(lt=255, rt=255))]),
+            ('double-stick-up', [(P + 8, P + 46, dict(lt=255, rt=255)), (tweak, P + 46, dict(ry=FULL))]),
+            ('double-stick-down', [(P + 8, P + 46, dict(lt=255, rt=255)), (tweak, P + 46, dict(ry=-FULL))]),
             ('superman', [(P + 8, P + 46, dict(lt=255, rt=255)),
                           (P + 11, P + 46, dict(buttons=B))]),
             ('coffin', [(P + 8, P + 46, dict(lt=255, rt=255)),
@@ -654,8 +659,16 @@ def define():
     for side, sign in (('left', -1), ('right', 1)):
         case(f'halfpipe/spin-{side}', 'vert', [(VERT_LIP - 6, VERT_LIP + 30, dict(lx=sign * FULL))], 900,
              world='halfpipe', velocity=(0, 0, 10), note='Left stick sideways through the first vert air')
+        for hold in (4, 10, 18, 40):
+            case(f'halfpipe/spin-{side}/hold{hold}', 'vert', [(VERT_LIP - 6, VERT_LIP + hold, dict(lx=sign * FULL))],
+                 900, world='halfpipe', velocity=(0, 0, 10), hold=hold,
+                 note=f'Left stick {side} from 6 ticks before the lip to {hold} ticks after it: 180 / 360 / 540')
     case('halfpipe/transfer', 'vert', [(VERT_LIP - 4, VERT_LIP + 40, dict(buttons=TRANSFER, ly=FULL))], 900,
          world='halfpipe', velocity=(0, 0, 10), note='Transfer button and left stick forward in the vert air')
+    case('halfpipe/transfer-button', 'vert', [(VERT_LIP - 4, VERT_LIP + 40, dict(buttons=TRANSFER))], 900,
+         world='halfpipe', velocity=(0, 0, 10), note='Transfer button alone in the vert air')
+    case('halfpipe/transfer-stick', 'vert', [(VERT_LIP - 4, VERT_LIP + 40, dict(ly=FULL))], 900,
+         world='halfpipe', velocity=(0, 0, 10), note='Left stick forward alone in the vert air')
     case('halfpipe/kickflip', 'vert', gesture(VERT_LIP - 18, kick), 900, world='halfpipe', velocity=(0, 0, 10),
          note='Kickflip at the vert lip')
     case('quarter/air', 'transition', [], 400, world='quarter', velocity=(0, 0, 7),

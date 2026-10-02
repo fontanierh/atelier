@@ -648,6 +648,26 @@ def summary(mechanics):
                                        states=[st[0] for st in entry['states']],
                                        pop_height=_dig(entry, ('numbers', 'pop_height')))
                             for name, entry in m.items() if entry['group'] == 'ground'}
+    landings = {}
+    for name, entry in m.items():
+        clips = []
+        for row in entry['clips']:
+            if row[0].startswith('L_') and row[4] > 0.3 and row[0] not in clips:
+                clips.append(row[0])
+        if not clips:
+            continue
+        air = entry.get('numbers') or {}
+        air = air.get('first_air') or air.get('air') or air
+        deck, body = _dig(air, ('deck_rotation_deg', 'world_yaw')), _dig(air, ('root_rotation_deg', 'yaw'))
+        landings[name] = dict(clips=clips, landing_vertical_speed=air.get('landing_vertical_speed'),
+                              board_to_body_yaw_deg=r(deck - body, 1) if deck is not None and body is not None
+                              else None, bailed=bool(entry['bail']) or any('ipeout' in st[0]
+                                                                          for st in entry['states']))
+    out['landings'] = dict(
+        note='landing clips by scenario (weight over 0.3): L_HCOM / L_LCOM high or low centre of mass, LIMP / HIMP '
+             'low or high impact, L_NICE clean (after spins), L_SKETCH sketchy; board_to_body_yaw_deg is the deck '
+             'world yaw minus the body yaw over the first air',
+        scenarios=landings)
     out['air_gravity'] = {name: get(name, 'gravity') for name in m
                           if m[name]['group'] in ('ollie', 'drop') and get(name, 'gravity') is not None}
     return out

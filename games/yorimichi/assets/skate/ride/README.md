@@ -2,7 +2,7 @@
 
 [`reference.json`](reference.json) records how the native skating session behaves (the C++ runtime in the Skate
 plugin's `Source/AtelierSkate/Private/Native`, entry `GameplaySession`). A replacement ride system is checked against it.
-The file holds 305 scripted scenarios, each played through a complete session on simple collision worlds with the game's
+The file holds 321 scripted scenarios, each played through a complete session on simple collision worlds with the game's
 skate tuning, plus per-frame dumps of 13 key clips and a summary of the measured numbers.
 
 Native space is metres with x left, y up and z forward. A tick is 1/60 s and heading 0 rides toward +z. The rider is
@@ -15,7 +15,7 @@ regular unless a scenario uses the goofy tuning.
 | `conventions` | Units and axes, pad layout and stick conditioning, the `game` and `stock` tunings, column names, rotation conventions, wipeout reason codes, the Flick-It gesture tables |
 | `mechanics` | One entry per scenario (see below) |
 | `clips` | 13 clips sampled frame by frame and composed onto the rig pose (before the runtime's stance mirror): board pivot, board rotation, hips and feet, the clip's trajectory track |
-| `summary` | The headline numbers gathered across scenarios: standing pose, push, coast, brake and powerslide, steering, ollie, air tricks, grabs, grinds, bails, ground tricks, air gravity |
+| `summary` | The headline numbers gathered across scenarios: standing pose, push, coast, brake and powerslide, steering, ollie, air tricks, grabs, grinds, bails, ground tricks, landings, air gravity |
 
 Each `mechanics` entry contains:
 
@@ -69,7 +69,10 @@ tracked. Each trace has:
 | Ollie | 1.31 m deck rise, 0.867 s air, 5.4 m/s take-off, at any speed. Loading 4 ticks gives 0.64 m, 40 ticks 1.37 m. Stock tuning: 1.04 m |
 | Gravity in the air | About 15 m/s² mid-air (stock 17.7), not 9.81 |
 | Kickflip | Roll −357°, caught about 0.42 s after the pop. Heelflip +358°. 360 flip: roll −367° with the shove-it at −336° |
-| Body spin (left stick held into the ollie) | Starts only if the stick is still held at take-off. Releasing 2 ticks after take-off gives 150°, 8 ticks 170°, 18 ticks 225–230°, 33 ticks 290°. Every one rides away, even landing 45–70° off the line of travel |
+| Body spin, flat (left stick held into the ollie) | Starts only if the stick is still held at take-off. Releasing 2 ticks after take-off gives 150°, 8 ticks 170°, 18 ticks 225–230°, 33 ticks 290° |
+| Body spin, vert at 10 m/s (stick from 6 ticks before the lip) | Released 4–10 ticks after the lip: 160°. 18 ticks: 340–394°. 30 ticks: 500°. 40 ticks: 555–573° |
+| Landing | Every spin rides away, even 45–70° off the line of travel: the wheels keep only the speed along the board, and the rider rolls on forward or fakie. In the air the board turns toward the nearer of forward and fakie (90° became 127° over a 1.5 m fall). With the board 44–112° off the body the landing clip is `L_SKETCH_*`; clean spins use `L_NICE_*`; otherwise `L_HCOM_*` / `L_LCOM_*` with LIMP / HIMP by impact. No landing-angle bail (reason 5) was seen |
+| Transfer (pad bit 0x0800 in a vert air) | Carries the rider over the coping onto the deck (body pitched 85°) and locks the board into a lipslide on the coping |
 | Manual | Engages 13 ticks after the input; deck pitch −11° (−16° deep, +8° nose); slows 4.6 → 3.6 m/s over 3 s |
 | Grind entry | Grinds from 0.47 m right to 0.64 m left of the rail at take-off; approach angles up to 60° hold |
 | Grind speed loss | 0.97 m/s² on a rail, 1.40 m/s² on a ledge, 2.48 m/s² with stock tuning |
