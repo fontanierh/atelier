@@ -12,7 +12,8 @@ uv run atelier build yorimichi world.southwest unreal.southwest data.stage
 
 - `world.layout` calls `southwest.layout.integrate` from `gen_world.py`, after the village and the mini-mega. It
   grades the village terrace and the shore lane, places the houses and props, and places the island
-  (`ISLAND`: origin (-150, -480), yaw 15 degrees) with its trees, boulders, torii and temple.
+  (`ISLAND`: origin (-150, -530), yaw 15 degrees) with its trees, boulders, torii and temple. The island sits 50 m
+  farther offshore after Sunset Pier's enlargement, leaving about 65 m of water at its nearest headland.
 - `world.southwest` ([`build.py`](build.py), Blender) builds the props (`stand.py`, `fishing.py`, `temple.py`, on the
   village kit and the shared helpers in `mesh.py`), the island mesh, its boulders and the leaning pines.
 - `unreal.southwest` (`unreal/Scripts/import_southwest.py`) imports them and builds the sea plane's `M_Sea`.

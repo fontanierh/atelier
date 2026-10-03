@@ -21,7 +21,7 @@ PROPS=[  # asset, position (z from terrain unless given), yaw, scale
  ('SW_StoneWall',(-272.0,-132.5),0,1.0),('SW_StoneWall',(-266.0,-133.0),3,1.0),('SW_StoneWall',(-247.0,-134.5),12,1.0),   # terrace edge above the shore slope, clear of the lane (x -262..-254 here)
  ('SW_Boat',(-226.5,-158.5,0.15),80,0.9),   # second boat by the dock
 ]
-ISLAND=dict(origin=(-150.0,-480.0,0.0),yaw=15.0)
+ISLAND=dict(origin=(-150.0,-530.0,0.0),yaw=15.0)
 EDIT_BOUNDS=(-300,-200,-190,-90)
 
 def lane_points(world):
@@ -142,17 +142,21 @@ def integrate(world,h):
         lx_,ly_=float(px[i]),float(py[i]);z_=float(ISL.height(np.array([lx_]),np.array([ly_]))[0]);rx,ry,rz=to_world(lx_,ly_,z_);ramp.append([round(rx,2),round(ry,2),round(rz,2)])
     lx,ly=ISL.LANDING;wx,wy,wz=to_world(lx,ly,0.6)
     ex,ey,_=to_world(ISL.LANDING[0],ISL.LANDING[1]+23,0)
+    # Sail around Sunset Pier's west edge; its enlarged deck occupies the old crossing start.
+    from skatepark import layout as SK
+    west=SK.ORIGIN[0]-SK.HALF_X-20.0
+    south=SK.ORIGIN[1]-SK.HALF_Y-20.0
     world['southwest']=dict(terrace=[*TERRACE,TERRACE_Z],lane=lane.tolist(),buildings=buildings,props=[list(p[1][:2]) for p in PROPS],
         island=dict(origin=list(ISLAND['origin']),yaw=ISLAND['yaw'],landing=[round(wx,2),round(wy,2),round(wz,2)],summit=[round(v,2) for v in to_world(sx,sy,sz)],trees=count),
         beach=[-221.0,-172.0],boat_launch=[-214.0,-176.0],
-        crossing=[[-104.,-258.,0.],[-242.,-284.,0.],[-179.,-327.,0.],[round(ex-45,2),round(ey+25,2),0.],[round(ex,2),round(ey,2),0.]],ramp=ramp,removed=removed,adjusted=adjusted,edit_bounds=list(EDIT_BOUNDS))
+        crossing=[[west,-190.,0.],[west,south,0.],[round(ex-45,2),round(ey+25,2),0.],[round(ex,2),round(ey,2),0.]],ramp=ramp,removed=removed,adjusted=adjusted,edit_bounds=list(EDIT_BOUNDS))
     # review shots: [x, y, z, pitch, yaw] in Blender metres like the world's own shots
     world.setdefault('shots',[]).extend([
         [-262.5,-100.5,12.6,-90.0,-10.0],      # the village from the road junction, looking down the lane
         [-236.0,-160.0,4.2,-32.0,-4.0],        # along the shore toward the stand and the island
         [-221.0,-183.0,3.0,90.0,4.0],          # from the water's edge back at the coconut stand
         [-205.0,-176.0,2.6,-80.0,-2.0],        # the island from the beach
-        [-150.0,-560.0,120.0,90.0,-24.0],      # the island from the south, high
-        [-160.0,-455.0,84.5,-65.0,-4.0],       # the temple terrace below the crown (ground 82.7)
+        [ox,oy-80.0,120.0,90.0,-24.0],         # the island from the south, high
+        [ox-10.0,oy+25.0,84.5,-65.0,-4.0],    # the temple terrace below the crown (ground 82.7)
     ])
     print('southwest: %d island trees, removed %s, adjusted %d'%(count,removed,adjusted))
