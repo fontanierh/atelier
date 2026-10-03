@@ -555,7 +555,7 @@ def next_shot():
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
              air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], combos=[], lasts=[], retail=[], first=None,
              bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, mounted=None, dismounted=None, jumped=None, foot_gait=None, max_spd=0., min_spd=1e9,
-             max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0)
+             max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0, ground_wait=0)
     if s.get('road'):
         s['way'], s['start'] = road_way(*s['road'][:1], want=s['road'][1], **({'x0': s['road'][2]} if len(s['road']) > 2 else {}))
     if s.get('rail'):
@@ -572,18 +572,22 @@ def next_shot():
 
 
 def place(s):
+    """Put the rider at the shot's start; False while the ground there does not answer yet (up to 10 s)."""
     x, y, probe, yaw = s['start']
     L.fixed_step(s['hz'])
+    g = L.ground_at(ue(x, y, probe))
+    if abs(g.z - probe * 100.) < .01 and s['ground_wait'] < 600:     # no hit: the trace returns its probe
+        s['ground_wait'] += 1; return False
     if s.get('foot'):
         stand_up()
-        g = L.ground_at(ue(x, y, probe)); L.teleport_player(g, yaw)
+        L.teleport_player(g, yaw)
         pc.set_control_rotation(unreal.Rotator(0, -8, yaw))
-        return
+        return True
     L.skate_goofy(False)
-    g = L.ground_at(ue(x, y, probe))
     live.skate_input(); L.skate_place(g, yaw + FLIP)
     pc.set_control_rotation(unreal.Rotator(0, -10, yaw))
     s['placed'] += 1
+    return True
 
 
 def inputs(s, c, dt):
@@ -668,7 +672,9 @@ def ride(s, c, dt):
 def step_shot(s, dt):
     c = observe(s)
     if s['ph'] == 'place':                       # the camera starts on the next frame, from the placed rider
-        place(s); s['ph'] = 'settle'; s['pt'] = 0.; s['rec'] = False; CAM['shot'] = None
+        s['rec'] = False
+        if not place(s): return
+        s['ph'] = 'settle'; s['pt'] = 0.; CAM['shot'] = None
         return
     if s['ph'] == 'settle':
         s['pt'] += dt; s['rec'] = False
