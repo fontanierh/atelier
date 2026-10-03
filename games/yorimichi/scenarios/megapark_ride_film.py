@@ -745,7 +745,7 @@ def getup_steps(rows, up_t, before=1.2, after=1.5):
     """The largest move in one tick of the pelvis and of the board's deck around a get-up (a pop shows here):
     {'hips': [cm, m/s, t], 'deck': [cm, m/s, t] while the board shows at both ticks, 'deck_any': the same at any
     shown, 'fades': [[t0, t1, shown at t0, shown at t1], ...] for each run of ticks where the board's dissolve
-    changed, from the bail to the end of the log}."""
+    went one way (out or in), from the bail to the end of the log}."""
     w = [r for r in rows if up_t - before <= r[0] <= up_t + after]
     out = {}
     for key, i, seen in (('hips', 1, False), ('deck', 6, True), ('deck_any', 6, False)):
@@ -759,9 +759,9 @@ def getup_steps(rows, up_t, before=1.2, after=1.5):
     fades, run = [], None
     for a, b in zip(rows, rows[1:]):
         sa, sb = (a[12], b[12]) if len(b) > 12 else (None, None)
-        if sa is None or sb is None or abs(sb - sa) < 1e-3:
+        if sa is None or sb is None or abs(sb - sa) < 1e-3 or (run and (sb > sa) != (run[3] > run[2])):
             if run: fades.append(run); run = None
-            continue
+            if sa is None or sb is None or abs(sb - sa) < 1e-3: continue
         run = [run[0], b[0], run[2], sb] if run else [a[0], b[0], sa, sb]
     if run: fades.append(run)
     out['fades'] = [[round(f[0], 3), round(f[1], 3), round(f[2], 2), round(f[3], 2)] for f in fades]
