@@ -7,8 +7,8 @@ a 360, a grind, a manual, a bail and its recovery, a vert air that comes back in
 and switching character), Mega Park's roll-in from the upper deck (over the crest without leaving it, through the
 concave at the bottom without a bail) and a grind into the parapet's corner (it flies off the end, never stalling), and
 the physical rider (skate.RidePhysical, on by default): how closely it holds the animation riding and landing, bails on
-flat and on a quarter that go limp at once, lie down within a second and travel as far as the reference's, and its
-frame cost in Mega Park. Over every frame recorded,
+flat (at 6 and 11 m/s) and on a quarter that go limp at once, lie down within a second and travel as far as the
+reference's for their speed, and its frame cost in Mega Park. Over every frame recorded,
 the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck where the clip stands on
 it, carry no NaN and never pop between clips, in both stances, and the standing rider matches the reference's stand.
 The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
@@ -393,18 +393,21 @@ def pose_checks(record, seen):
 # The reference (RIDE.md, Physical rider): the oracle's published body against its animation pose.
 BAIL_REFERENCE = {.125: (0, 8), .25: (8, 26), .5: (14, 37), 1.: (64, 127)}
 # The reference's falls (oracle traces): the pelvis's travel 1 s after the bail and where it comes to rest, over the
-# entry speed times 1 s. A deliberate bail on flat at 4.6 m/s: 0.97 and 1.04 (across the ground). One in the air at
-# 4.8 m/s across, rising at 8.7 m/s: 1.04 and 1.36 of the speed across, 0.50 and 0.65 of the whole speed. The bands
-# are a third either side: on flat the flat bail's; on a quarter (no twin in the reference) from the widest of the two,
-# the whole distance over the whole speed.
-BAIL_TRAVEL = {'flat': ((.65, 1.3), (.7, 1.4)), 'quarter': ((.33, 1.4), (.43, 1.8))}
+# entry speed times 1 s. A deliberate bail on flat at 4.6 m/s: 0.97 and 1.04 (across the ground); launched faster
+# (5.6 to 12.2 m/s) 0.96 to 1.00 and 1.16 to 1.40, 0.97 and 1.26 at 10.6 m/s: the travel grows with the speed, and the
+# body is at rest 1.5 to 2.4 s after the bail at any speed. One in the air at 4.8 m/s across, rising at 8.7 m/s: 1.04
+# and 1.36 of the speed across, 0.50 and 0.65 of the whole speed. The bands are a third either side: on flat the
+# 4.6 m/s bail's, fast on flat the 10.6 m/s one's; on a quarter (no twin in the reference) from the widest of the
+# flat and air ones, the whole distance over the whole speed.
+BAIL_TRAVEL = {'flat': ((.65, 1.3), (.7, 1.4)), 'fast': ((.65, 1.3), (.85, 1.7)), 'quarter': ((.33, 1.4), (.43, 1.8))}
 BAIL_LIE = 40.   # cm: within 1 s of a fall the pelvis is down this close to the ground under it (lie=)
 MEGA_ROAD = (-127.9, 1471.1, 134.)   # Mega Park's road (island metres), running east into its bend
 MEGADROP = (-44.5, 1305.1, 112., 135.)   # the top of Mega Park's roll-in (island metres) and the Unreal yaw down it
 MEGADROP_FLOOR = 7600.   # cm: the board (z=) is on the floor at the bottom of the roll-in below this height
 # Mega Park's parapet: a point on its south line 5 m from the corner (island metres) and the Unreal direction to it.
 PARAPET = ((-71.13, 1376.69, 118.91), (.4655, .885))
-PHYSICAL = ('physical_riding', 'physical_landing', 'physical_bail', 'physical_bail_quarter', 'physical_cost')
+PHYSICAL = ('physical_riding', 'physical_landing', 'physical_bail', 'physical_bail_fast', 'physical_bail_quarter',
+            'physical_cost')
 
 
 def physical(on):
@@ -425,8 +428,8 @@ def hips(row):
 
 
 def physical_checks(record, wanted):
-    """The active ragdoll (skate.RidePhysical 1): tracking while riding and landing, falls on flat and off a quarter,
-    and its cost. The cvar is put back as it was."""
+    """The active ragdoll (skate.RidePhysical 1): tracking while riding and landing, falls on flat (at 6 and 11 m/s)
+    and off a quarter, and its cost. The cvar is put back as it was."""
     before = qa.py("print(unreal.SystemLibrary.get_console_variable_int_value('skate.RidePhysical'))").strip().splitlines()[-1]
     physical(True)
     time.sleep(.8)
@@ -437,6 +440,8 @@ def physical_checks(record, wanted):
             physical_landing(record)
         if wanted('physical_bail'):
             physical_bail(record)
+        if wanted('physical_bail_fast'):
+            physical_bail_fast(record)
         if wanted('physical_bail_quarter'):
             physical_bail_quarter(record)
         if wanted('physical_cost'):
@@ -471,13 +476,13 @@ def physical_landing(record):
            f'(reference: 1-4 cm over riding, knocks 6 cm)')
 
 
-def physical_bail(record):
-    """1 s of riding at 6 m/s on the pier's flat, then the bail input held for 0.5 s."""
+def physical_bail(record, name='physical_bail', start=FLAT[0] + 18, speed=600, kind='flat'):
+    """1 s of riding on the pier's flat (at 6 m/s), then the bail input held for 0.5 s."""
     keys = lambda on: (f"live.L.input_key('Gamepad_LeftThumbstick','{'press' if on else 'release'}',{int(on)}); "
                        f"live.L.input_key('Gamepad_RightThumbstick','{'press' if on else 'release'}',{int(on)}); "
                        f"live.L.input_key('Gamepad_LeftTriggerAxis','axis',{int(on)}); "
                        f"live.L.input_key('Gamepad_RightTriggerAxis','axis',{int(on)})")
-    qa.py(f"live.park.place({FLAT[0] + 18},{FLAT[1]},0); live.park.launch(600); live.skate_release()")
+    qa.py(f"live.park.place({start},{FLAT[1]},0); live.park.launch({speed}); live.skate_release()")
     qa.py("live.REC=[]; live.behave('rec', lambda dt: live.REC.append(live.skate_state()))\n"
           "live.skate_input(); live.L.skate_release()\n"
           "live.BAIL_AT=[0.0]\n"
@@ -487,7 +492,13 @@ def physical_bail(record):
           f"    if live.BAIL_AT[0]>=1.5: {keys(False)}; live.stop('bail_keys')\n"
           "live.behave('bail_keys', _bail)")
     time.sleep(10)
-    judge_bail(record, 'physical_bail', recorded(), 'flat')
+    judge_bail(record, name, recorded(), kind)
+
+
+def physical_bail_fast(record):
+    """The same at 11 m/s from the start of the flat run: the slide goes on for the entry speed times a second or so,
+    as the reference's does at any speed, not for its square."""
+    physical_bail(record, 'physical_bail_fast', FLAT[0], 1100, 'fast')
 
 
 def physical_bail_quarter(record):
@@ -499,7 +510,7 @@ def physical_bail_quarter(record):
 def judge_bail(record, name, rows, kind):
     """The first fall in rows: limp from its first frame to the get-up (the Bail profile, simulating; never handed to
     the animated slide), continuous, the pelvis down near the ground within 1 s, travel in the reference's band for
-    the entry speed, and the rider up where the body lay. On flat also the body against the bail clip."""
+    the entry speed, and the rider up where the body lay. On flat at 6 m/s also the body against the bail clip."""
     start = next((i for i, r in enumerate(rows) if r['mode'] == '4'), None)
     if not start:
         record(name, rows, False, 'no bail' if start is None else 'bailing from the first frame')
@@ -507,7 +518,7 @@ def judge_bail(record, name, rows, kind):
     end = next((i for i in range(start, len(rows)) if rows[i]['mode'] != '4'), len(rows))
     bail = rows[start:end]
     vel = [float(x) for x in rows[start - 1]['vel'].split(',')]
-    flat = kind == 'flat'
+    flat = kind != 'quarter'
     entry = (math.hypot(vel[0], vel[1]) if flat else math.hypot(*vel)) / 100   # m/s
     clock = [0.]
     for r in bail[1:]:
@@ -528,13 +539,14 @@ def judge_bail(record, name, rows, kind):
     where = math.dist(hips(bail[lying - 1])[:2], up[:2]) if up and lying else float('inf')
     kind_seen = next((r['bail_kind'] for r in bail if r.get('bail_kind', 'none') != 'none'), '?')
     ok = limp and kind_seen == 'fall' and far and lie < BAIL_LIE and max(steps, default=99) < 25 and where < 100
+    ok = ok and (kind != 'fast' or entry > 9.5)   # the fast fall comes at speed
     limpness = 'limp to the get-up' if limp else 'NOT limp throughout (handed to the animation)'
     note = (f'entry {entry:.1f} m/s, {limpness}, kind {kind_seen}; travel '
             + ', '.join(f'{t:g} s {d:.2f} m ({d / max(entry, .01):.2f}x)' for t, d in travel.items())
             + f', rest {rest:.2f} m ({rest / max(entry, .01):.2f}x) after {clock[lying - 1] if lying else 0:.1f} s '
             f'(band {low1}-{high1}x at 1 s, {low_rest}-{high_rest}x at rest); pelvis down to {lie:.0f} cm within 1 s; '
             f'largest hips step {max(steps, default=0):.1f} cm/frame; up {where:.0f} cm from where the hips lay')
-    if flat:
+    if kind == 'flat':
         err = {t: float(bail[at(t)].get('pelvis_err', 'nan')) for t in BAIL_REFERENCE if at(t) is not None}
         ok = ok and err.get(.125, 99) < 16 and 20 < err.get(1., 0) < 200
         note += '; divergence ' + ', '.join(f'{t:g} s {v:.0f} cm (ref {BAIL_REFERENCE[t][0]}-{BAIL_REFERENCE[t][1]})'

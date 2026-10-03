@@ -109,8 +109,12 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = Bail) float RunOutImpact = 300.f;
     UPROPERTY(Config, EditAnywhere, Category = Bail) float RunOutSpin = 200.f;
     /** The bodies' friction in a fall (the lower of it and the ground's). A fall at speed slides and tumbles on for
-     *  metres: the reference's body travels about its entry speed times a second. */
-    UPROPERTY(Config, EditAnywhere, Category = Bail, meta = (ClampMin = 0)) float BailFriction = .25f;
+     *  metres: the reference's body travels its entry speed times 1.0 to 1.4 s, at any speed. */
+    UPROPERTY(Config, EditAnywhere, Category = Bail, meta = (ClampMin = 0)) float BailFriction = .1f;
+    /** A drag on the fallen bodies while the pelvis is down near the ground (linear damping on top of the physics
+     *  asset's, 1/s). It takes speed in proportion to the speed, so a slide's length grows with its entry speed, as the
+     *  reference's does; friction alone makes it grow with the square. */
+    UPROPERTY(Config, EditAnywhere, Category = Bail, meta = (ClampMin = 0)) float BailDrag = .55f;
 
     /** Query-only surfaces within this distance of the body are made physical so the bodies can touch them (cm). */
     UPROPERTY(Config, EditAnywhere, Category = World) float WorldRadius = 1200.f;
@@ -266,7 +270,7 @@ private:
     float HipsAboveGround = -1;
     UPROPERTY() TObjectPtr<UPhysicalMaterial> BailMaterial;
     UPROPERTY() TObjectPtr<UPhysicalMaterial> SavedMaterial;
-    bool bBailMaterial = false;
+    bool bBailMaterial = false, bBailDrag = false;
     float BoardScale = 1;
 
     // Get-up. GetUpWait counts the frames the bodies have waited for the animation to show the snapshot (-1: not
@@ -300,6 +304,9 @@ private:
     void ApplyWeight();
     /** The bodies' physical material: BailFriction in a fall, the physics asset's own otherwise. */
     void ApplyBailMaterial(bool bBailing);
+    /** The bodies' linear damping: the physics asset's plus BailDrag while the fallen body slides, the asset's
+     *  otherwise. */
+    void ApplyBailDrag(bool bSliding);
     /** The rider's own physics asset switches to the riding or the bail constraint profile; bWiden lets riding poses
      *  past a limit widen it. */
     void ApplyJointLimits(bool bRidingProfile, bool bWiden);

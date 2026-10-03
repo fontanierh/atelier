@@ -142,7 +142,7 @@ is not a port of the native code.
 | Knocks that do not bail (wall at 5 m/s) | the hips move up to 6 cm |
 | The last 0.5 s before an impact bail | the hips move 10–14 cm |
 | Bail | continuous, with no jump: 8 cm at 0.125 s, 8–26 cm at 0.25 s, 14–37 cm at 0.5 s, 64–127 cm at 1 s |
-| Bail travel (the pelvis) | about the entry speed times 1 s: on flat at 4.6 m/s 0.97× at 1 s and 1.04× at rest (1.5 s); thrown off in the air at 4.8 m/s across (rising 8.7 m/s) 1.04× and 1.36× the speed across. A bail into a wall stops at it, about 1 m on |
+| Bail travel (the pelvis) | the entry speed times 1.0–1.4 s, at any speed: on flat at 4.6 m/s 0.97× at 1 s and 1.04× at rest (1.5 s); at 5.6–12.2 m/s 0.96–1.00× and 1.16–1.40×, at rest 1.7–2.4 s after the bail (10.6 m/s: 0.97× and 1.26×); thrown off in the air at 4.8 m/s across (rising 8.7 m/s) 1.04× and 1.36× the speed across. A bail into a wall stops at it, about 1 m on |
 
 The rider is therefore stiff while riding: what you see is the animation, a body that carries its momentum through
 knocks and landings, and feet that stay on the board. The body becomes visible as physics when something hits it, and
@@ -210,8 +210,11 @@ it goes fully limp only in a bail.
   The anchors hold the bodies in the frame of the kinematic root body, and in a bail the ride stops the root on the
   bail's frame, then carries it to the ground under the body a frame late (on a quarter, from the board on the wall to
   whatever lies below the hips). Held to that frame even for a moment, the body is braked to a stop on flat or flung
-  off a wall. The bodies fall with `BailFriction` (0.25, the lower of it and the ground's, as a physical material
-  override; the default material's is 0.7), so a fall at speed slides and tumbles on about as far as the reference's.
+  off a wall. The bodies fall with `BailFriction` (0.1, the lower of it and the ground's, as a physical material
+  override; the default material's is 0.7). While the pelvis is down within 50 cm of the ground, they also drag with
+  `BailDrag` (0.55 per second of linear damping, on top of the physics asset's). The drag takes speed in proportion to
+  the speed, so a slide's length grows with its entry speed, as the reference's does. Friction alone makes it grow with
+  the square. A body still in the air falls and flies freely.
   The board becomes a 3.5 kg Chaos box thrown with the board's velocity and spin, and the board's meshes follow it.
   - The bail's distance from the animation is measured with the pose carried as far as the ground under the pelvis has
     gone since the bail began, as the reference's root follows its body. The ride's root gets there some frames late
@@ -235,8 +238,9 @@ it goes fully limp only in a bail.
   them. `p.PhysicsControl.*` and the component's `bShowDebugVisualization` also apply. The Ride state line
   (`USkateComponent::GetRetailState`, `atelier live state`) ends with the phase, whether the bodies simulate, the
   physics weight, the distance of the pelvis, feet and worst body from the animation (cm), the pelvis body's world
-  position and, in a bail, its height above the ground under it (`lie`), the get-up blend, the last bail's kind, the
-  body count, and which physics asset is in use. A game's QA checks read it.
+  position and, in a bail, its height above the ground under it (`lie`) and whether the slide's drag is on (`drag`),
+  the get-up blend, the last bail's kind, the body count, and which physics asset is in use. A game's QA checks read
+  it.
   - A rider placed further than 1 m in one frame (a scripted placement) has its bodies carried along by the skeletal
     mesh's own teleport (`UpdateKinematicBonesToAnim` with `TeleportPhysics`), at the rider's velocity. Physics
     Control's reset to cached targets would give each body the jump divided by the frame time. The component's
@@ -268,15 +272,22 @@ Physics Control's copy of the animation, p95.
 | Ride QA, a second rider on another skeleton | 2.5 cm | 3.8 cm | |
 
 - Landing (ride QA): the worst body 14–16 cm off, the pelvis back under 3 cm within 7–9 frames.
-- Bail on flat at 6 m/s: 7, 24–25, 64–74 and 62–77 cm from the clip at 0.125, 0.25, 0.5 and 1 s, against 0–8, 8–26,
-  14–37 and 64–127 cm. The bail starts with the body moving at the board's speed (10 cm a frame at 6 m/s) and no jump.
-  The pelvis travels 4.7–4.8 m in the first second and comes to rest 6.7–6.8 m on after 2.6 s (0.78–0.80× and
-  1.13–1.15× the entry speed times 1 s, against the reference's 0.97× and 1.04×), lying 5–8 cm over the ground within
-  the second. `BailFriction` 0.3 gives 0.76× and 0.99×, 0.2 gives 0.81× and 1.36×: sliding friction cannot keep the
-  reference's speed for a second and then stop it short.
+- Bail on flat at 6 m/s: 7, 23, 45–54 and 62 cm from the clip at 0.125, 0.25, 0.5 and 1 s, against 0–8, 8–26, 14–37
+  and 64–127 cm. The bail starts with the body moving at the board's speed (10 cm a frame at 6 m/s) and no jump. The
+  pelvis travels 4.1–4.8 m in the first second and comes to rest 5.8–7.0 m on after 2.7–2.9 s (0.68–0.80× and
+  0.97–1.17× the entry speed times 1 s, against the reference's 0.97–0.98× and 1.04–1.16× at 4.6–5.6 m/s), lying
+  5–8 cm over the ground within the second.
+- Bail on flat at 10.9 m/s: 8.5–8.9 m in the first second, at rest 14.1–14.9 m on after 3.6–3.7 s (0.78–0.82× and
+  1.30–1.37×, against the reference's 0.97× and 1.26–1.30× at 10.6–11.5 m/s), lying 5–8 cm over the ground within the
+  second. With friction alone (`BailFriction` 0.25, no drag) the 6 m/s bail was as far (0.78× and 1.12×), but this one
+  went 9.4 m and 20.8 m (0.86× and 1.91×, after 4.2 s): the length grew with the square of the speed. The sweep, at rest
+  at 6 and 10.9 m/s: friction 0.25 with no drag 1.12× and 1.91×; 0.1 with drag 0.5 1.14× and 1.38×, 0.55 1.10× and
+  1.30×, 0.6 1.05× and 1.24×; 0.15 with 0.5 0.98× and 1.23×; 0.06 with 0.55 1.27× and 1.44× (the slide creeps on for
+  3.3–4.2 s). Neither friction nor drag reproduces the reference's first second: its body keeps the entry speed for
+  about 0.7 s and then stops within about a second, at any speed.
 - Bail landing an Indy on a quarter pipe at 8.9 m/s (the grab held into the landing): limp from the first frame, the
-  body slides down the wall and lies 5–11 cm over the ground within the second; 3.8–3.9 m at 1 s and 5.0–5.6 m at rest
-  (0.42–0.44× and 0.56–0.62× the whole speed; the reference thrown off in the air, 0.50× and 0.65×). Before, the anchors
+  body slides down the wall and lies 8–11 cm over the ground within the second; 4.2–4.4 m at 1 s and 6.2–6.7 m at rest
+  (0.47–0.49× and 0.70–0.75× the whole speed; the reference thrown off in the air, 0.50× and 0.65×). Before, the anchors
   held the body for the bail's first 0.15 s in the frame of a root that jumped from the wall to the floor; it was flung
   at 45 m/s, the bail was handed to the animated slide, and the rider stood with the arms out until the get-up.
 - Get-up: across the hand-over the hips move under 0.5 cm a frame, and the rider rises within 6 cm of where the hips

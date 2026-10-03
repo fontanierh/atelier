@@ -102,6 +102,8 @@ namespace
     // How far below the pelvis a bail looks for the ground it lies on (cm): a body sliding down a wall can be metres
     // above the floor.
     constexpr float HipsGroundRange = 1000.f;
+    // A fallen pelvis this close to the ground under it is down, and the body slides (cm).
+    constexpr float SlideHeight = 50.f;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -229,7 +231,7 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     }
     Control->SetControlsInSetEnabled(AllSet, false);
     bSimulating = false; bEndWhenOut = false; Weight = WeightTarget = 0; AppliedWeight = -1;
-    bBail = bBailOffered = false; bBailMaterial = false; HipsAboveGround = -1; GetUpTime = -1; GetUpWait = -1; LandingLeft = 0;
+    bBail = bBailOffered = false; bBailMaterial = bBailDrag = false; HipsAboveGround = -1; GetUpTime = -1; GetUpWait = -1; LandingLeft = 0;
     LastMeshLocation = Mesh->GetComponentLocation();
     LastRiderVelocity = Rider->GetVelocity(); PlacedFrames = 0;
     BeganFrame = GFrameCounter;
@@ -258,6 +260,7 @@ void URidePhysicalRider::End()
     if (Mesh)
     {
         ApplyBailMaterial(false);
+        ApplyBailDrag(false);
         Mesh->SetAllBodiesSimulatePhysics(false);
         Mesh->SetAllBodiesPhysicsBlendWeight(0.f);
         Mesh->bBlendPhysics = false;
@@ -566,6 +569,20 @@ void URidePhysicalRider::ApplyBailMaterial(bool bBailing)
     Mesh->SetPhysMaterialOverride(BailMaterial);
 }
 
+void URidePhysicalRider::ApplyBailDrag(bool bSliding)
+{
+    if (!Mesh || bSliding == bBailDrag) return;
+    bBailDrag = bSliding;
+    const float Drag = bSliding ? GetDefault<URidePhysicalSettings>()->BailDrag : 0.f;
+    for (FBodyInstance* Body : Mesh->Bodies)
+    {
+        const UBodySetup* Setup = Body ? Body->GetBodySetup() : nullptr;
+        if (!Setup) continue;
+        Body->LinearDamping = Setup->DefaultInstance.LinearDamping + Drag;
+        Body->UpdateDampingProperties();
+    }
+}
+
 // Riding: the rider's constraint profile, with limits that widen to the animation. Bailing: the bail profile and the
 // limits as authored. The built asset has one set of limits for both. Physics Control reads the response from the
 // live constraints each update, so it is set after the profile (which would copy the template's over it).
@@ -811,8 +828,8 @@ FString URidePhysicalRider::Describe() const
 {
     if (!Control) return TEXT("phys=off");
     const FVector Hips = GetPelvisLocation();
-    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f lie=%.1f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s"),
-        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, bBail ? HipsAboveGround : -1.f, GetGetUpAlpha(),
+    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f lie=%.1f drag=%d getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s"),
+        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, bBail ? HipsAboveGround : -1.f, int(bBailDrag), GetGetUpAlpha(),
         !bBailOffered ? TEXT("none") : LastBailKind == ERideBailKind::RunOut ? TEXT("runout") : TEXT("fall"),
         Mesh ? Mesh->Bodies.Num() : 0, bBuiltAsset ? TEXT("contract") : TEXT("rider"), bBoardFrame ? TEXT("board") : TEXT("world"));
 }
@@ -953,6 +970,8 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
         HipsAboveGround = Rider->GetWorld()->LineTraceSingleByChannel(Below, Hips + FVector(0, 0, 10.f), Hips - FVector(0, 0, HipsGroundRange), ECC_Pawn, Params)
             ? float(Hips.Z - Below.ImpactPoint.Z) : -1.f;
     }
+    // Down near the ground the body slides, and drags (BailDrag): a body still in the air falls and flies freely.
+    ApplyBailDrag(HipsAboveGround >= 0.f && HipsAboveGround < SlideHeight);
     return BailTime > 1.6f && (Quiet > .4f || BailTime > SettleTime + 2.f) ? ERideBodyState::Settled : ERideBodyState::Tumbling;
 }
 
@@ -964,6 +983,7 @@ void URidePhysicalRider::Abort()
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
     ApplyBailMaterial(false);
+    ApplyBailDrag(false);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
 }
@@ -1014,6 +1034,7 @@ void URidePhysicalRider::HandOverGetUp()
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
     ApplyBailMaterial(false);
+    ApplyBailDrag(false);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(ERidePhysicalPhase::GetUp);
