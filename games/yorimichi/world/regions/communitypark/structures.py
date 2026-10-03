@@ -106,7 +106,7 @@ def raised_groups(source):
     parts = []
     for part in source.parts:
         triangles = L.place(part['vertices'][part['faces']])
-        if part['mesh'] not in (17, 18) and triangles[..., 2].min() > DECK+.4:
+        if triangles[..., 2].min() > DECK+.4:
             parts.append((part['node'], triangles, triangles.min((0, 1)), triangles.max((0, 1)), part['mesh']))
     parent = list(range(len(parts)))
     def root(k):
@@ -114,7 +114,7 @@ def raised_groups(source):
         return k
     for i, a in enumerate(parts):
         for j, b in enumerate(parts[:i]):
-            if (a[4] == 21) == (b[4] == 21) and np.maximum(a[2]-b[3], b[2]-a[3]).max() < .55:
+            if (a[4] in (17, 18, 21)) == (b[4] in (17, 18, 21)) and np.maximum(a[2]-b[3], b[2]-a[3]).max() < .55:
                 parent[root(i)] = root(j)
     groups = {}
     for i, part in enumerate(parts): groups.setdefault(root(i), []).append(part)
@@ -140,15 +140,14 @@ def build(base_sampler):
     # The lower contact is the original surface below, or the actual carved ground.
     for group in raised_groups(source):
         triangles = np.concatenate([part[1] for part in group])
-        rail_only = all(part[4] == 21 for part in group)
+        slender = all(part[4] in (17, 18, 21) for part in group)
         p = triangles.reshape(-1, 3); lo, hi = p.min(0), p.max(0)
         xs = np.linspace(lo[0]+.22, hi[0]-.22, max(2, math.ceil((hi[0]-lo[0])/4)+1))
         ys = np.linspace(lo[1]+.22, hi[1]-.22, max(2, math.ceil((hi[1]-lo[1])/4)+1))
         xy = [[x, y] for x in xs for y in (ys[0], ys[-1])]
         xy += [[x, y] for y in ys[1:-1] for x in (xs[0], xs[-1])]
-        if rail_only:
-            # The recovered rail is a thin horizontal T-section. Its two
-            # crossbars sit half a metre in from the long ends.
+        if slender:
+            # Thin rails and ledges use two legs inset from the long ends.
             axis = int(np.argmax(hi[:2]-lo[:2])); centre = (lo[:2]+hi[:2])/2
             xy = [centre.copy(), centre.copy()]
             xy[0][axis] = lo[axis]+.5; xy[1][axis] = hi[axis]-.5
@@ -171,7 +170,7 @@ def build(base_sampler):
                 anchor_top = min(top, float(anchor_cap.min()) if len(anchor_cap) else top)-.12
                 lower = heights(all_triangles, anchor_x, y); lower = lower[lower < anchor_top-.03]
                 base = max(ground(anchor_x, y), float(lower.max()) if len(lower) else -math.inf)
-            foot = post(anchor_x, y, anchor_top, base=base-.025, width=.12 if rail_only else .26)
+            foot = post(anchor_x, y, anchor_top, base=base-.025, width=.12 if slender else .26)
             if anchor_x != x:
                 steel.beam([anchor_x, y, anchor_top], [x, y, top-.10], .22)
                 steel.beam([x, y, top-.10], [x, y, top+.005], .18)

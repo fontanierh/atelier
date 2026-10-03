@@ -137,6 +137,9 @@ def structure_audit():
         below = S.heights(original, x, y)
         ground = float(L.ground(x, y, north_surface))
         assert abs(z-ground) < .03 or np.any(abs(below-z) < .03), ('floating footing', contact)
+    raised_nodes = {part[0] for group in S.raised_groups(scene()) for part in group}
+    supported_nodes = {node for contact in metadata['support_contacts'] for node in contact['nodes']}
+    assert supported_nodes == raised_nodes, ('raised pieces without support', sorted(raised_nodes-supported_nodes))
     # A doorway can be blocked between otherwise clear route waypoints.
     clearance_samples = 0
     for a, b in zip(route, route[1:]):
@@ -151,6 +154,7 @@ def structure_audit():
         hits = S.heights(added, 1250, y)
         assert not np.any((hits > 48.52) & (hits < 50.45)), ('blocked riding lane', y)
     return {'support_contacts': len(metadata['support_contacts']), 'ascent_waypoints': len(route),
+            'supported_raised_source_instances': len(supported_nodes),
             'ascent_length_m': float(np.linalg.norm(np.diff(route, axis=0), axis=1).sum()),
             'height_gain_m': S.TOP-S.DECK, 'step_rise_m': metadata['step_rise_m'],
             'continuous_body_clearance_samples': clearance_samples,
