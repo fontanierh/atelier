@@ -21,7 +21,8 @@ Optional globals, set with `atelier live py` before the script:
     REHEARSE  True: no screenshots; done.json still reports every shot
     TUNE      {'shot': {'field': value}}: overrides of the shot table
     EXTRAS    True or False, or {'caveman': bool, 'dismount': bool}: force the optional shots on or off; by default
-              each runs when the skate state's moves= word lists it (caveman, airdismount)
+              each runs when the skate state's moves= word lists it (caveman, airdismount). The game prints that word
+              once the rider has been on the board, so without it the run starts with a moment on the board, unrecorded
     FLIP      degrees added to every board placement, should the board face against the launch
     PHYSICAL  skate.RidePhysical for the take: True (the default) films the active ragdoll rider, False the animated one;
               done.json logs the cvar as the game reads it
@@ -820,14 +821,39 @@ def finish():
     live.skate_input(); live.skate_release(); live.drive(0)
     MV.restore_player_camera(); L.film_hud(False); L.fixed_step(0)
     n = L.audio_log('stop', os.path.join(OUT, 'audio.json'))
-    json.dump({'take': TAKE, 'backend': st['backend'], 'physical': PHYSICAL, 'ride_physical': physical_cvar(), 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
+    json.dump({'take': TAKE, 'backend': st['backend'], 'physical': PHYSICAL, 'ride_physical': physical_cvar(), 'extras': EXTRAS, 'moves': st.get('moves'), 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
                'unrecorded': UNRECORDED, 'sounds': n, 'rehearse': REHEARSE, 'film_frames': st['film'], 'errors': st['errors'],
                'shots': st['done'], 'state': L.skate_state()}, open(os.path.join(OUT, 'done.json'), 'w'), indent=1)
     say('finished', OUT, st['film'], 'frames')
 
 
+def probe_moves():
+    """Whether an optional shot waits on the moves= word, which the game prints only once the rider has been on the
+    board: then the run starts with a moment on the board, unrecorded."""
+    if EXTRAS is not None and not isinstance(EXTRAS, dict): return False
+    wanted = [x['optional'] for x in SHOTS if x.get('optional') and (not ONLY or x['name'] in ONLY)
+              and not (isinstance(EXTRAS, dict) and x['optional'] in EXTRAS)]
+    return bool(wanted) and not re.search(r'\bmoves=', L.skate_state())
+
+
+def probe(p):
+    L.audio_frame(UNRECORDED); p['f'] += 1
+    if p['f'] == 1:
+        loc = L.player().get_actor_location()
+        live.skate_input(); L.skate_place(L.ground_at(unreal.Vector(loc.x, loc.y, loc.z + 200.)), L.player().get_actor_rotation().yaw)
+    elif 'off' not in p:
+        if p['f'] >= 40 or (p['f'] > 5 and re.search(r'\bmoves=', L.skate_state())):
+            m = re.search(r'\bmoves=(\S*)', L.skate_state()); st['moves'] = m.group(1) if m else None
+            say('moves probe', st['moves'])
+            stand_up(); p['off'] = p['f']
+    elif ' mode=0 ' in ' ' + L.skate_state() + ' ' or p['f'] > p['off'] + 180:
+        st['probe'] = None
+
+
 def run(dt):
     try:
+        if st.get('probe'):
+            probe(st['probe']); return
         if st['finishing']:
             L.audio_frame(UNRECORDED); st['finishing'] += 1
             if st['finishing'] > 6: finish()
@@ -854,5 +880,6 @@ def run(dt):
 unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend Ride'); st['backend'] = 'asked'   # at each mount
 unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical %d' % PHYSICAL)
 L.film_hud(True); L.fixed_step(60); L.audio_log('start')
+st['probe'] = {'f': 0} if probe_moves() else None
 live.behave('ride_film', run)
 say('started', OUT, [s['name'] for s in SHOTS if not ONLY or s['name'] in ONLY])
