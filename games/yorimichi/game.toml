@@ -32,6 +32,13 @@ args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-windowed", "-resx=1
 [play.megapark-fullscreen]
 args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
 
+[play.ride]
+# The default, skating on Ride, the Unreal-native skating backend (platform/engine/Plugins/Activities/Skate/RIDE.md).
+args = ["-game", "-windowed", "-resx=1920", "-resy=1080", "-ExecCmds=r.RHISetGPUCaptureOptions 0,skate.Backend Ride"]
+
+[play.megapark-ride]
+args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-windowed", "-resx=1920", "-resy=1080", "-ExecCmds=r.RHISetGPUCaptureOptions 0,skate.Backend Ride"]
+
 [play.desktop-1440]
 script = "tools/desktop_preview.py"
 args = ["--shared-settings"]
