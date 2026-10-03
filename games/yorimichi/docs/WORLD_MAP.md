@@ -29,7 +29,9 @@ uv run atelier build yorimichi world.map data.stage
   the same values in centimetres with y negated (`AJapanWorld::ToUE`); zone yaws are negated on load.
 - The sheet uses the compact projection in [`map_projection.py`](../world/map/map_projection.py): piecewise-linear
   knots on each axis (`X_KNOTS`, `Y_KNOTS`) over `BOUNDS = [-400, -650, 1685, 740]`. Gameplay scale is untouched; the
-  distant north takes only a fifth of the sheet. `map.json` carries the knots, and the game and `phone/map.js` place
+  distant north takes only a fifth of the sheet. The southern strip reaches world y -730, keeping the temple island
+  visible after its 50 m offshore move; projection controls north of world y -461.31835938 are unchanged.
+  `map.json` carries the knots, and the game and `phone/map.js` place
   the player and the pins through the same ones.
 - The sheet is 3:2, the aspect the image model paints at (the painted sheet is 1536 x 1024).
 
@@ -39,7 +41,8 @@ Height-coloured terrain and sea from one height raster over the whole sheet (the
 Hidamari and the northern foothills; everything else fades to paper), forest cover from the placed trees, land
 contours, the water the game tests against (canal, park pond, plaza basin, the woodland lake), roads, streets, lanes
 and trails, the mini-mega's two riding sections with their gap, rollout and ladder, the Mega Park's riding footprint,
-buildings, landmarks and props, and the spawn.
+buildings, landmarks and props, and the spawn. Sunset Pier's 170 x 132 m deck, riding features and trees are drawn
+from `skatepark/park.json` by [`pier_plan.py`](../world/map/pier_plan.py).
 
 ## Zones
 
@@ -67,6 +70,7 @@ from data:
 | `world_map_calibration.json` | The pixel control points of the axis calibration |
 | `world_map_provenance.json` | Model, prompt and inputs, with each earlier version's record nested under `parent` |
 | `island_repaint.provenance.json` | The ledger of the south-west island repaint call |
+| `sunset_pier_repaint.provenance.json` | The shared paid-call ledger for the enlarged pier and moved island |
 
 `build_map.py` uses the painted sheet only while its bounds and knots match the current ones exactly; otherwise it
 falls back to the generated sheet. Never stretch old artwork over a changed world: every pin would move off its
@@ -86,25 +90,29 @@ next to the sheet) in `painted/`.
 
 Fix a wrong landmark or a redesigned area by repainting only that area, never the whole sheet. The mini-mega
 landmark and the south-west island were corrected this way. [`repaint_island.py`](../world/map/repaint_island.py)
-is the tool for the island:
+now handles the enlarged pier and the moved island together:
 
 ```sh
-uv run python games/yorimichi/world/map/repaint_island.py prepare    # crop of the sheet and a plan of the island
+uv run atelier build yorimichi world.layout
+uv run python games/yorimichi/world/map/build_map.py                # current generated plan and travel zones
+uv run python games/yorimichi/world/map/repaint_island.py prepare    # old sheet crop and exact pier/island plan
 uv run python games/yorimichi/world/map/repaint_island.py paint      # one GPT Image 2.5 Sunburst call
 uv run python games/yorimichi/world/map/repaint_island.py register   # fit, blend, check -> world_map_candidate.png
-uv run python games/yorimichi/world/map/promote_map.py build/yorimichi/map/island_repaint/world_map_candidate.png
+uv run python games/yorimichi/world/map/promote_map.py build/yorimichi/map/sunset_pier_repaint/world_map_candidate.png
 ```
 
-- `prepare` keeps the committed sheet as the parent and writes a 3:2 crop of it with a plain plan of the island in
-  the same frame: coastline, rock, cove, every tree crown by species, the stair with its torii, the temple.
+- `prepare` keeps the committed sheet as the parent and writes a 3:2 crop with a plan in the same frame: the
+  current pier footprint and features, island coastline, rock, cove, tree crowns, stair, torii and temple.
 - `paint` sends both crops and the aerial island concept to `gpt-image-2.5-sunburst` (quality high). Its provenance
-  file is written before and after the call; while it exists the call is never sent again.
-- `register` fits the painting to the projection (scale and offset onto the data island), matches the sea colour,
-  blends it in through a feathered mask around the old and new islands, and checks that every pixel outside the mask
+  file goes through `atelier.ai.ledger` before and after the call; while it exists the call is never sent again.
+- `register` fits the island and pier independently to their data footprints, matches the sea colour,
+  blends through a feathered mask around the affected land and water, and checks that every pixel outside the mask
   equals the parent. It writes `registration-check.json` and `registration-check.jpg` (data coastline and stair over
   the result).
 
-Bounds, projection and zones stay as they are. Work files go to `build/yorimichi/map/island_repaint/`.
+Sheet bounds stay fixed. The southern projection control and the island's landing/temple zones follow the new
+location. Work files go to `build/yorimichi/map/sunset_pier_repaint/`. Completed paid revisions and older evidence
+belong in the archive; an existing ledger is never removed to retry an uncertain submission.
 
 ### Rules
 

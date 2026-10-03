@@ -43,9 +43,9 @@ def main():
     record('steer_right', rows, dy>40 and rows[-1]['mode']=='1', f'rightward displacement {dy:.0f} cm')
     rows = qa.run_scenario("-10,38,0,480,[(.3,{'right':(0,-.5)}),(1.5,{})],duration=2", 2)
     record('manual', rows, qa.ever(rows,'manual','1') and rows[-1]['manual']=='0' and not qa.count(rows,'bails'), qa.combos(rows))
-    rows = qa.run_scenario("-23,20,0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
+    rows = qa.run_scenario("-36,43,0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
     record('rail', rows, '3' in qa.modes(rows) and 'Ollie' in qa.combos(rows), 'states '+','.join(sorted(qa.modes(rows)))+'; '+qa.combos(rows))
-    rows = qa.run_scenario("33,25,0,950,[],duration=5", 5)
+    rows = qa.run_scenario("57,25,0,950,[],duration=5", 5)
     record('vert', rows, '2' in qa.modes(rows) and not qa.count(rows,'bails'), 'states '+','.join(sorted(qa.modes(rows))))
     # The original engine can recover a sideways drop. Exercise its deliberate bail chord instead.
     qa.py("live.park.place(-10,38,0); live.park.launch(500); live.skate_release(); live.REC=[]; live.behave('rec',lambda dt: live.REC.append(live.skate_state()))")

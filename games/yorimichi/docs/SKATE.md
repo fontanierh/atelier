@@ -103,11 +103,13 @@ bones (see the [plugin's board contract](../../../platform/engine/Plugins/Activi
 
 ## Skate pier
 
-Sunset Pier is a 112 × 88 m concrete skate park over the sea, below the road: street terraces with stairs, handrails
-and hubbas, manual pads, flat bars, a central wave, a horseshoe mini-ramp, a return quarter and a deep bowl. The
+Sunset Pier is a 170 × 132 m textured waterfront skate plaza below the road: long rail and manual promenades,
+street terraces with stairs and hubbas, a banked market plaza, curved ledges and rails, a central wave, a sunset hip
+line, a horseshoe mini-ramp, deep bowl and two return quarters. Concrete, glazed tile, stone, steel and cedar use
+Sunburst material detail with distinct roughness and normal maps. The
 [park guide](../world/regions/skatepark/README.md) gives its layout and build. `ASkatePark` loads its meshes and
 spawn from `Content/Data/skatepark/park.json`, registers its rails, ledges, coping and curbs with the plugin, and is
-tagged `SkatePark`, so the collision snapshot stays centred on the pier while Cairo rides it. Drifting leaves are
+tagged `SkatePark` for the skating collision snapshot. Drifting leaves are
 hidden and not simulated on the pier, and a post-process volume over it turns off Lumen global illumination, whose
 cache leaves patches on the large thin decks.
 
@@ -130,8 +132,10 @@ With the game running (`atelier play yorimichi`):
 | Scenario | What it checks | Report in `build/yorimichi/` |
 | --- | --- | --- |
 | `skate`, `skate_runtime` | 19 checks: push, flip and landing; steering; manual; rail; vert; deliberate bail and recovery; skin clearance during the bail (at least 0.45 cm); retargeted bone lengths, head direction and camera; keyboard pushing; stow and remount; goofy push and ollie; flat 360s both ways; keyboard powerslides both ways; running mount; Triangle mount and stow; coasting pose stability | `skateqa/runtime.json` |
-| `skatepark` | Roll-ins on the bowl, mini, return, seven-stair and four-stair banks; the stair handrail; an air up and back in the bowl (apex above 3.5 m, landing back on the wall) | `skateqa/park.json` |
+| `skatepark` | Roll-ins on the bowl, mini, east and mellow returns, market, seven-stair and four-stair banks; the stair handrail; an air up and back in the bowl (apex above 3.5 m, landing back on the wall) | `skateqa/park.json` |
 | `skate_performance` | Real-time frame pacing through six activities (push and flip, bowl air, mini air, quarter air, street to mini, bail): at least 58.5 fps, p95 under 20 ms, p99 under 33.34 ms, no frame over 50 ms, no native pose repeated three frames running | `skateqa/performance.json` |
+| `pier_part`, `pier_part_check` | Self-stopping control-driven rehearsals and films; complete telemetry and bail checks | `skatefilm/<take>/` |
+| `pier_part_mix` | Assembles approved takes, original procedural soundtrack and board audio | `skatefilm/<part>/` |
 | `skate_showreel` | A filmed line of shots at the pier, at a fixed 60 fps step; run through the live bridge (see the script) | `skatefilm/<take>/` |
 | `skate_mix_showreel` | Mixes a showreel take's sounds and encodes 1080p and 720p MP4s | `skatefilm/<take>/` |
 

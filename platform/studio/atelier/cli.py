@@ -4,7 +4,7 @@
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
-    atelier play <game> [--profile P]  launch the game under the render lock and memory guard
+    atelier play <game> [--profile P] [-- unreal args]   launch the game under the render lock and memory guard
     atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
@@ -126,7 +126,7 @@ def lint(staged=False):
     return 1 if problems else 0
 
 
-def main(argv=None):
+def make_parser():
     parser = argparse.ArgumentParser(prog='atelier', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('new'); p.add_argument('game'); p.add_argument('--title')
@@ -136,14 +136,32 @@ def main(argv=None):
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
     p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
-    p.add_argument('--set', default='', help='settings overrides, key=value;key=value'); p.add_argument('extra', nargs='*')
+    p.add_argument('--set', default='', help='settings overrides, key=value;key=value')
+    p.add_argument('extra', nargs='*', help='Unreal arguments, after --')
     p = sub.add_parser('stream'); p.add_argument('game'); p.add_argument('action', choices=['start', 'stop', 'status', 'build-web'])
     p.add_argument('--local', action='store_true', help='this machine only: no Tailscale Serve')
     p.add_argument('--install', action='store_true', help='build-web: reinstall platform/web packages (npm ci)')
     p = sub.add_parser('lint'); p.add_argument('--staged', action='store_true', help='check the staged files only')
     p = sub.add_parser('live'); p.add_argument('rest', nargs=argparse.REMAINDER)
     p = sub.add_parser('qa'); p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
-    args = parser.parse_args(argv)
+    return parser
+
+
+def parse_args(argv=None):
+    """For `play`, everything after the first `--` goes to Unreal as is, wherever the options sit. argparse alone
+    rejects it when an option follows the game (`play <game> --profile P -- -RenderOffscreen`): `extra` has already
+    been matched, empty, right after the game."""
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ['play'] and '--' in argv:
+        cut = argv.index('--')
+        args = make_parser().parse_args(argv[:cut])
+        args.extra += argv[cut + 1:]
+        return args
+    return make_parser().parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
     if args.command == 'new':
         from . import new
         return new.main(args.game, args.title)
