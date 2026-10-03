@@ -83,8 +83,9 @@ public:
     USailboatComponent* GetSailboat() const { return Sailboat; }
     UJapanPreferences* GetPreferences() const { return Preferences; }
     UJapanMap* GetMap() const { return Map; }
-    /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there. */
-    bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"));
+    /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there
+     *  (the highest surface from Above cm over the position down). */
+    bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
     void SetMenuOpen(bool bOpen);
     void SetStaminaRings(int Rings) { Stamina.SetCapacity(Rings); }
     const FSprintStamina& GetStamina() const { return Stamina; }

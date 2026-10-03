@@ -886,15 +886,20 @@ bool UBotwMoveSet::TryClimbTop()
     const FVector Probe = Here + Forward * (HoldDistance() + Radius + 20.f) + FVector(0, 0, Half + 90.f);
     FHitResult Ledge;
     if (!Trace(Probe, Probe - FVector(0, 0, Half * 2.f + 140.f), Ledge) || !Movement->IsWalkable(Ledge)) return false;
-    const FVector Stand(Probe.X, Probe.Y, Ledge.ImpactPoint.Z + Half + 2.f);
+    // On a sloping ledge the capsule's round foot rests above the point straight below its centre.
+    const FVector Stand(Probe.X, Probe.Y, Ledge.ImpactPoint.Z + Half - Radius + Radius / FMath::Max(.5f, float(Ledge.ImpactNormal.Z)) + 2.f);
     if (Stand.Z < Here.Z - Half * .5f || Blocked(Stand)) return false;
-    const FVector4f End = Top->Path.Last();
+    const FVector4f End = Top->PathAt(Top->End);
     const float Ahead = float((Stand - Here) | Forward), Rise = float(Stand.Z - Here.Z);
+    // A ledge far above the clip's own climb is not reached yet: keep climbing.
+    if (End.Z > 1.f && Rise > 3.f * End.Z) return false;
     const FVector Fit(End.X > 1.f ? FMath::Clamp(Ahead / End.X, .2f, 3.f) : 1.f, 1.f, End.Z > 1.f ? FMath::Clamp(Rise / End.Z, .2f, 3.f) : 1.f);
     Character->SetActorRotation(FRotator(0, Forward.Rotation().Yaw, 0));
     Play(TEXT("ClimbTop"), .1f);
-    // The body's lean into the wall eases out over the climb.
+    // The body's lean into the wall eases out over the climb; what the fitted path misses of the stand (its fit is
+    // clamped) is made up along the way, so the capsule ends standing on the ledge, not inside it.
     BeginDrive(false, Fit, FVector::ZeroVector);
+    DriveMesh = (Stand - Here) - WorldPath(End);
     MeshDriveLocal = FVector(ClimbShift, 0, 0); ClimbShift = ClimbShiftTarget = 0.f;
     return true;
 }
@@ -907,11 +912,21 @@ void UBotwMoveSet::PhysClimb(float Dt)
     if (Name == TEXT("ClimbOff") || Name == TEXT("ClimbTired")) { Movement->Velocity = FVector::ZeroVector; return; }
     // Keep to the wall: find it again straight ahead, and around a bend.
     FHitResult Wall;
-    if (FindWall(-WallNormal, Wall, 0.f, 0.f, HoldDistance() + 45.f) && Climbable(Wall))
+    const bool bWall = FindWall(-WallNormal, Wall, 0.f, 0.f, HoldDistance() + 45.f) && Climbable(Wall);
+    const bool bFlat = !bWall && Wall.bBlockingHit && Movement->IsWalkable(Wall);
+    if (bFlat)
+    {
+        // The wall has flattened out: stand on it once the feet are on it. Until then climb over its edge, or on up the
+        // slope (letting go with no floor under the feet dropped the climber back down it).
+        FFindFloorResult Floor;
+        Movement->FindFloor(Character->GetActorLocation(), Floor, false);
+        if (Floor.IsWalkableFloor()) { LeaveClimb(false); return; }
+        if (TryClimbTop()) return;
+    }
+    if (bWall || bFlat)
     {
         WallNormal = (WallNormal * .5f + Wall.ImpactNormal * .5f).GetSafeNormal(); WallPoint = Wall.ImpactPoint;
     }
-    else if (Wall.bBlockingHit && Movement->IsWalkable(Wall)) { LeaveClimb(false); return; }   // the wall has flattened out
     else
     {
         if (!TryClimbTop()) LeaveClimb(true);
@@ -1159,7 +1174,8 @@ void UBotwMoveSet::AdvanceSwim(float Dt)
             // Out of stamina in deep water: back to the last dry ground, a little hurt.
             if (UWandererSwordComponent* Sword = Character->GetSword()) Sword->Health = FMath::Max(1.f, Sword->Health - GetParam(TEXT("DrownDamage"), 10.f));
             const FVector Shore = bHasSafeShore ? SafeShore : Character->GetActorLocation();
-            Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"));
+            // The shore is a spot he stood on: land on it, not on a canopy above it.
+            Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"), 100.f);
         }
         return;
     }
@@ -1210,7 +1226,7 @@ bool UBotwMoveSet::Press(FName Button)
         if (bDown) return true;
         if (Mode == EBotwMoveMode::Ground) { if (CanDodge()) StartHop(); }
         else if (Mode == EBotwMoveMode::Glide) CloseGlider(false);
-        else if (Mode == EBotwMoveMode::Climb && !bDriving) LeaveClimb(true);
+        else if (Mode == EBotwMoveMode::Climb && !(bDriving && !bDriveSweep)) LeaveClimb(true);   // not while pulling up onto a ledge
         return true;
     }
     if (Button == TEXT("attack"))
@@ -1313,28 +1329,30 @@ void UBotwMoveSet::StartAttack()
         return;
     }
     if (Busy()) return;
-    if (!bArmed)
-    {
-        // Unarmed, the press draws the sword and cuts as soon as the draw allows.
-        if (Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword"), .1f); bAttackAfterDraw = true; AttackBuffer = 0.f; return; }
-        SetArmed(true);
-    }
-    // Crouched behind an unaware enemy: the sneakstrike.
+    // Crouched behind an unaware enemy: the sneakstrike, drawing the sword in the same motion.
     if (Character->bIsCrouched && Has(TEXT("Sneakstrike")))
         if (AActor* Victim = FindTarget(Reach() + 120.f, 60.f); Victim && IsUnawareTarget(Victim))
         {
+            SetArmed(true);
             Character->UnCrouch();
             Target = Victim; Face(Reach() + 120.f); Target = nullptr;
             AttackBuffer = 0.f;
             Play(TEXT("Sneakstrike"), .06f);
             return;
         }
-    // Sprinting: the dash attack, driven along its clip.
+    // Sprinting: the dash attack, driven along its clip (drawing the sword in the same motion).
     if (Character->Stamina.Sprinting && Has(TEXT("DashCut")))
     {
+        SetArmed(true);
         AttackBuffer = 0.f; Face(700.f);
         Play(TEXT("DashCut"), .04f); BeginDrive(true);
         return;
+    }
+    if (!bArmed)
+    {
+        // Unarmed, the press draws the sword and cuts as soon as the draw allows.
+        if (Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword"), .1f); bAttackAfterDraw = true; AttackBuffer = 0.f; return; }
+        SetArmed(true);
     }
     StartCut(0);
 }

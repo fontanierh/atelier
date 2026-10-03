@@ -301,10 +301,12 @@ def climb():
     if s is not None:
         low = z(); stamina = state()['stamina']
         shot('climb')
-        seen = yield from watch(12., lambda s: s['mode'] == 'ground' and live.drive(0))
+        seen = yield from watch(20., lambda s: s['mode'] == 'ground' and live.drive(0))   # a smaller body climbs slower
         gain = max(s['z'] for s in seen) - low
-        check('climb up and over the top', gain > 150. and seen[-1]['mode'] == 'ground', gain=round(gain),
-              actions=actions(seen)[-6:], mode=seen[-1]['mode'])
+        # Standing on the top, not back at the foot after a fall (both end on the ground).
+        top = seen[-1]['z'] - low
+        check('climb up and over the top', gain > 150. and top > 150. and seen[-1]['mode'] == 'ground', gain=round(gain),
+              top=round(top), actions=actions(seen)[-6:], mode=seen[-1]['mode'])
         check('climbing uses stamina', min(s['stamina'] for s in seen) < stamina)
     live.drive(0)
     yield from wait(.5)

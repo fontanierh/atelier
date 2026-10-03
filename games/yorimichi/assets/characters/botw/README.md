@@ -126,3 +126,10 @@ with Link's blends and actions. It also writes Cairo's move record, `Content/Dat
 uv run atelier build yorimichi unreal.cairo_botw
 uv run atelier play yorimichi -- -rider=CairoBotw
 ```
+
+### Review film
+
+`scenarios/botw_moves_film.py` films every move of the set, shot by shot and close up, with the move set's state
+recorded for each frame: Link with `-rider=Link`, Cairo with `-rider=CairoBotw`, each in its own game.
+`scenarios/botw_moves_film_cut.py` captions the takes and joins them into one MP4, keeping or leaving out sections per
+take so that retakes splice in. Their docstrings give the commands.
