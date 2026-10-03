@@ -83,6 +83,8 @@ namespace
     // A trajectory held in the world (a step onto a lying board, a get-up) pulls the capsule after it at this rate
     // (1/s), up to AnchorSpeed (cm/s).
     constexpr float AnchorGain = 5.f, AnchorSpeed = 350.f;
+    // A kicked or run-out board's launch is its motion over this long (s) at least.
+    constexpr float KickWindow = .05f;
     // A lying board can be stepped onto when the character is this close to it (cm), slower than RunMount, and the board
     // lies wheels down (its up this close to vertical) and still.
     constexpr float StepOnReach = 130.f, StepOnUp = .85f, StepOnBlend = .35f;
@@ -453,6 +455,8 @@ bool USkateComponent::BeginStepOnClip()
     StartClip(Clip, ERideFoot::Mount, bMirror, Yaw, 0.f);
     T.ClipTime = From; T.BoardContact = From;
     T.bAnchored = true; T.Anchor = Origin; T.bMatchDeck = true;
+    // The capsule sets off from where it stands, at rest, and is on the trajectory by the clip's end.
+    T.AnchorFrom = OffBoardGround(); T.AnchorBlendFrom = From;
     const FVector EndDeck = ClipBone(Clip, DeckBone, L);
     T.TrajEnd = -ClipToWorld(FVector(EndDeck.X, EndDeck.Y, 0.), bMirror, Yaw);
     T.TrajEndTime = L;
@@ -1063,19 +1067,26 @@ void USkateComponent::StepRideClip(float Dt)
     // A kick-out's or run-out's board: its motion over the frames shown, for its flight once the clip lets it go.
     if ((T.bKickOut || T.Foot == ERideFoot::RunOut) && BoardRoot && Dt > 0.f)
     {
+        // Measured over KickWindow at least: a very short frame would turn the pose's small uneven steps into a
+        // fast throw.
         const FTransform Shown = BoardRoot->GetComponentTransform();
-        if (T.bDeckKnown)
+        T.KickTime += Dt;
+        if (!T.bDeckKnown)
         {
-            const FVector Velocity = (Shown.GetLocation() - T.LastDeck.GetLocation()) / Dt;
+            T.KickVelocity = M->Velocity; T.FlightSpin = FVector::ZeroVector;
+            T.LastDeck = Shown; T.bDeckKnown = true; T.KickTime = 0.f;
+        }
+        else if (T.KickTime >= KickWindow)
+        {
+            const FVector Velocity = (Shown.GetLocation() - T.LastDeck.GetLocation()) / T.KickTime;
             const FQuat Turn = (Shown.GetRotation() * T.LastDeck.GetRotation().Inverse()).GetNormalized();
             FVector Axis; float Angle;
             Turn.ToAxisAndAngle(Axis, Angle);
             if (Angle > PI) Angle -= 2.f * PI;
             T.KickVelocity = FMath::Lerp(T.KickVelocity, Velocity, .5f);
-            T.FlightSpin = FMath::Lerp(T.FlightSpin, Axis * (Angle / Dt), .5f);
+            T.FlightSpin = FMath::Lerp(T.FlightSpin, Axis * (Angle / T.KickTime), .5f);
+            T.LastDeck = Shown; T.KickTime = 0.f;
         }
-        else { T.KickVelocity = M->Velocity; T.FlightSpin = FVector::ZeroVector; }
-        T.LastDeck = Shown; T.bDeckKnown = true;
     }
     if (T.ClipTime >= T.ClipLength)
     {
@@ -1134,7 +1145,21 @@ void USkateComponent::StepRideClip(float Dt)
         Drive = Way * FMath::Lerp(T.SpeedStart, T.SpeedEnd, A);
     }
     else Drive = Travel * FMath::Lerp(T.ScaleStart, T.ScaleEnd, A);
-    if (T.bAnchored)
+    if (T.bAnchored && T.AnchorBlendFrom >= 0.f && Dt > 0.f)
+    {
+        // Stepping on: where the capsule should be at the next frame's clip time, eased from where it stood onto the
+        // trajectory held in the world, and the speed that takes it there (from rest, without lagging behind).
+        const float Next = FMath::Min(T.ClipLength, T.ClipTime + Dt * T.ClipRate);
+        FVector Move = FRideAnimator::RootMotion(T.Clip, T.ClipTime, Next).GetTranslation();
+        Move.Z = 0.;
+        const FVector Anchor = T.Anchor + ClipToWorld(Move, T.bMirror, T.TrajYaw);
+        const FVector Target = Anchor - (T.TrajEndTime > 0.f ? T.TrajEnd * FMath::SmoothStep(0.f, T.TrajEndTime, Next) : FVector::ZeroVector);
+        const FVector Want = FMath::Lerp(T.AnchorFrom, Target, FMath::SmoothStep(T.AnchorBlendFrom, T.ClipLength, Next));
+        Drive = (Want - OffBoardGround()) / Dt;
+        Drive.Z = 0.;
+        Drive = Drive.GetClampedToMaxSize2D(2.f * AnchorSpeed);
+    }
+    else if (T.bAnchored)
     {
         // After the trajectory held in the world (onto the deck by the clip's end, for a mount).
         const FVector Target = T.Anchor - (T.TrajEndTime > 0.f ? T.TrajEnd * FMath::SmoothStep(0.f, T.TrajEndTime, T.ClipTime) : FVector::ZeroVector);
@@ -1269,6 +1294,7 @@ bool USkateComponent::StartClip(UAnimSequence* Clip, ERideFoot Foot, bool bMirro
     T.AirNext = nullptr;
     T.SpeedStart = T.SpeedEnd = -1.f; T.TrajEnd = T.DeckDrift = FVector::ZeroVector; T.TrajEndTime = 0.f; T.WaitTime = 0.f; T.bMatchDeck = false;
     T.bFollowYaw = false; T.ClipYawLast = ClipYaw(Clip, 0.f); T.bAnchored = false; T.bKickOut = false; T.bDeckKnown = false;
+    T.AnchorBlendFrom = -1.f; T.KickTime = 0.f;
     // In the air CharacterMovement keeps the fall; on the ground the clip's travel moves the capsule.
     T.bDrive = Foot != ERideFoot::Air && Foot != ERideFoot::AirMount;
     T.bReleasePending = false;

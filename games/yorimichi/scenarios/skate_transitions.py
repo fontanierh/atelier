@@ -11,7 +11,8 @@ left lying that dissolves, jumps with the board in hand (JBR_* then BR_LAND_*), 
 (a caveman, with and without the board in hand), a step off the board in the air from a grab (BR_DISMOUNT_*_INTO_BR_AIR,
 then a landing), a kick-out in the air without a grab (BR_KICKOUT_*, the board flying on by itself), a slow bail run
 out on foot (RUNOUT_*, the board rolling on), a fallen rider getting up on foot where the body lies (W_RECOVERY_*), a
-step onto a board lying on its wheels, and Link and a Bokoblin as the rider.
+step onto a board lying on its wheels, and Link and a Bokoblin as the rider. The capsule checks: a crouched Cairo
+stands up for the board, and a BotW rider's fitted capsule keeps its size through three board toggles and a jump.
 
 Every frame is checked for continuity: the character moves no farther than its speed allows, the hips do not jump,
 the velocity changes no faster than a push or a brake could (at a landing, the horizontal velocity), the camera eases
@@ -91,7 +92,15 @@ def record(code, seconds):
         (FILM['dir'] / f'{FILM["n"]:02d}').mkdir(parents=True, exist_ok=True)
         FILM['since'].append(f'{FILM["n"]:02d}')
     qa.py(f'live.FILM_DIR={folder!r}\n' + RECORD + code)
-    time.sleep(seconds * (FILM_SLOW if folder else 1.0))
+    slow = FILM_SLOW if folder else 1.0
+    time.sleep(seconds * slow)
+    # Until the game has played `seconds` of its own time: a loaded machine (or filming) runs it slower than the wall.
+    deadline = time.monotonic() + seconds * slow * 4 + 10
+    while time.monotonic() < deadline:
+        played = float(qa.py('print(sum(r[0] for r in live.TR))').strip().splitlines()[-1])
+        if played >= seconds:
+            break
+        time.sleep(min(2.0, max(0.1, (seconds - played) * slow)))
     rows = json.loads(qa.py("import json; live.stop('tr'); print(json.dumps(live.TR))").strip().splitlines()[-1])
     if folder:
         qa.py('unreal.MegaParkValidation.restore_player_camera()')
@@ -220,6 +229,18 @@ def press_key(key):
     qa.py(f"live.L.input_key('{key}','press',1); live.L.input_key('{key}','release',0)")
 
 
+CAPSULE = '''
+p=unreal.GameplayStatics.get_player_pawn(live.L.game_world(), 0); c=p.get_component_by_class(unreal.CapsuleComponent)
+print('%.2f %.2f %d' % (c.get_unscaled_capsule_half_height(), c.get_unscaled_capsule_radius(), p.get_movement_component().is_crouching()))
+'''
+
+
+def capsule():
+    """The player's capsule: half height, radius (cm) and whether it is crouched."""
+    half, radius, crouched = qa.py(CAPSULE).strip().splitlines()[-1].split()
+    return float(half), float(radius), crouched == '1'
+
+
 def on_foot(heading=0, board=False):
     """Stand on the flat, off the board (with the board in hand or not), the camera looking along the run."""
     if state()['mode'] != '0':
@@ -301,6 +322,53 @@ def main():
         print(('PASS' if passed else 'FAIL') + ' ' + name + ': ' + note, flush=True)
 
     qa.settle(minimum=50, seconds=2, limit=60)
+
+    def toggles(name):
+        """The board on and off three times from a stand, then a jump: the capsule keeps its size (a fitted one, a BotW
+        rider's, too: standing up for an action must not give back the class default)."""
+        on_foot()
+        before = capsule()
+        sizes, rode = [], 0
+        for _ in range(3):
+            press_key(TOP)
+            time.sleep(2.2)
+            rode += state()['mode'] != '0'
+            press_key(TOP)
+            time.sleep(2.6)
+            sizes.append(capsule())
+        qa.py("live.press('jump')")
+        time.sleep(.3)
+        qa.py("live.press('jump_release')")
+        time.sleep(1.4)
+        sizes.append(capsule())
+        same = all(abs(h - before[0]) < .05 and abs(r - before[1]) < .05 for h, r, _ in sizes)
+        report(name, [], same and rode == 3,
+               f'half height/radius {before[0]:.1f}/{before[1]:.1f} before; after each toggle and the jump '
+               + ', '.join(f'{h:.1f}/{r:.1f}' for h, r, _ in sizes) + f'; on the board {rode} of 3 times')
+
+    def crouch_stand(name):
+        """Crouched, the board button stands the character up first (and gets on): it uncrouches as before."""
+        on_foot()
+        before = capsule()
+        qa.py("live.press('crouch')")
+        time.sleep(.8)
+        crouched = capsule()
+        press_key(TOP)
+        time.sleep(.3)
+        stood = capsule()
+        time.sleep(1.9)
+        rode = state()['mode'] != '0'
+        press_key(TOP)
+        time.sleep(2.6)
+        after = capsule()
+        ok = (crouched[2] and crouched[0] < before[0] - 5 and not stood[2] and rode
+              and abs(after[0] - before[0]) < .05 and not after[2])
+        report(name, [], ok, f'half height {before[0]:.1f} standing, {crouched[0]:.1f} crouched (crouched {crouched[2]}), '
+               f'{stood[0]:.1f} after the board button (crouched {stood[2]}), {"on the board" if rode else "never got on"}, '
+               f'{after[0]:.1f} off it again')
+
+    if wanted('capsule'):
+        crouch_stand('capsule_cairo_crouch')
 
     def mount(name, gait, carrying=False):
         on_foot(board=carrying)
@@ -618,19 +686,22 @@ live.behave('bail', _bail)
     for rider in ('Link', 'Bokoblin'):
         # The other riders' bodies (Link taller and slighter, a Bokoblin short and heavy) through the same transitions.
         key = rider.lower()
-        if not wanted(key):
+        if not wanted(key) and not wanted('capsule'):
             continue
         switched = qa.py(f"print(live.L.switch_character('{rider}'))").strip()
         time.sleep(2.5)
         if switched != rider:
             report(f'{key}_switch', [], False, f'switch to {rider} refused ({switched or "nothing"})')
             continue
-        mount(f'{key}_mount_run', 'run')
-        dismount(f'{key}_dismount_high', 900, 'BR_DISMOUNT_FAST_HI_INTO_RUN_FWD')
-        runout(f'{key}_runout', 250)
+        # First, while nothing has stood this body up yet.
+        toggles(f'capsule_{key}')
+        if wanted(key):
+            mount(f'{key}_mount_run', 'run')
+            dismount(f'{key}_dismount_high', 900, 'BR_DISMOUNT_FAST_HI_INTO_RUN_FWD')
+            runout(f'{key}_runout', 250)
+            results[f'{key}_mount_run']['note'] += f' ({switched})'
         qa.py("live.L.switch_character('Cairo')")
         time.sleep(2.5)
-        results[f'{key}_mount_run']['note'] += f' ({switched})'
 
     if frames and not FILM['dir']:
         ms = sorted(dt * 1000 for dt in frames)

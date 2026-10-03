@@ -96,6 +96,10 @@ struct FRideTransition
      *  clip's board stays on the lying one, and the capsule follows it. */
     bool bAnchored = false;
     FVector Anchor = FVector::ZeroVector;
+    /** Stepping on: the capsule goes from where it stood (AnchorFrom, its floor point) onto the held trajectory by the
+     *  clip's end, eased from the clip time AnchorBlendFrom (below 0: the trajectory pulls the capsule instead). */
+    FVector AnchorFrom = FVector::ZeroVector;
+    float AnchorBlendFrom = -1.f;
     /** The body standing on the deck (1) or on the ground (0): RetargetRetailPose's OffBoardLift. */
     float Lift = 0.f;
     uint16 DriveId = 0;
@@ -160,6 +164,9 @@ struct FRideTransition
     bool bKickOut = false, bDeckKnown = false;
     FTransform LastDeck = FTransform::Identity;
     FVector KickVelocity = FVector::ZeroVector;
+    /** The time since LastDeck: the motion is measured over KickWindow at least, not over one (maybe very short)
+     *  frame. */
+    float KickTime = 0.f;
 
     // skate.RideTrace (TraceTransition): the frames still to log, what the last frame showed (a switch is a change of
     // it), and that frame's line, logged when a switch starts a trace.

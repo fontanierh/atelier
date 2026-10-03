@@ -392,7 +392,9 @@ bool AWandererCharacter::CanAct() const { return bReady && !bMenuOpen && !SkateR
 bool AWandererCharacter::StandForAction()
 {
     UnCrouch();
-    GetCharacterMovement()->UnCrouch(); // Checks overhead clearance before a standing clip.
+    // Only a crouched character stands up: CharacterMovement's UnCrouch gives back the class default capsule whenever
+    // the capsule differs from it, crouched or not, which would undo a fitted one (a BotW rider's).
+    if (bIsCrouched) GetCharacterMovement()->UnCrouch(); // Checks overhead clearance before a standing clip.
     return !bIsCrouched;
 }
 bool AWandererCharacter::MovementLocked() const
