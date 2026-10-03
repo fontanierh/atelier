@@ -35,6 +35,8 @@
 #include "Async/Async.h"
 #include "Ride/RideSession.h"
 #include "Ride/RidePhysicalRider.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
 
 namespace
 {
@@ -43,6 +45,13 @@ namespace
     // thumb flexion (degrees).
     TAutoConsoleVariable<FString> CVarSkateGrip(TEXT("skate.Grip"),TEXT("-.705 .94 25 75 10 40 40 15 10"),
         TEXT("Grab grip: lift out (finger widths) mcp pip dip thumbswing thumb1 thumb2 thumb3 (degrees)"));
+    // The retargeted limbs against this rider's own body and the ground (RetargetRetailPose): how far each forearm and
+    // hand stays out of its pelvis, spine, chest and thighs, and how far above the ground under it each foot's sole
+    // stays (cm; below 0 off).
+    TAutoConsoleVariable<float> CVarSkateArmClear(TEXT("skate.ArmClear"),1.f,
+        TEXT("cm the hands and forearms keep clear of the rider's own pelvis, spine, chest and thighs; below 0 off"));
+    TAutoConsoleVariable<float> CVarSkateFootGround(TEXT("skate.FootGround"),.5f,
+        TEXT("cm each riding foot's sole stays above the ground under it; below 0 off"));
 
     // Match the standalone runtime's startup floating environment, and restore
     // the caller's complete environment before returning to Unreal.
@@ -429,6 +438,15 @@ public:
     struct Vertex { TArray<Influence,TInlineAllocator<4>> Influences; };
     TWeakObjectPtr<USkeletalMesh> ContactMesh;
     TArray<Vertex> ContactVertices;
+    // Skin samples (a bone and a point in its bind space) of each forearm's hand end with its hand, and of each foot,
+    // and the bodies of this rider's pelvis, spine, chest and thighs (from its physics asset), for RetargetRetailPose.
+    struct FSkinPoint { int32 Bone; FVector Local; };
+    struct FBodyShape { uint8 Kind=0; FTransform Local; FVector Half=FVector::ZeroVector; double Radius=0; TArray<FPlane> Planes; };
+    struct FBody { int32 Bone=INDEX_NONE; FVector Centre=FVector::ZeroVector; double Reach=0; TArray<FBodyShape> Shapes; };
+    TWeakObjectPtr<USkeletalMesh> LimbMesh,BodiesMesh;
+    TWeakObjectPtr<UPhysicsAsset> BodiesFor;
+    TArray<FSkinPoint> LimbSkin[4];   // forearm_L, forearm_R, foot_L, foot_R
+    TArray<FBody> Bodies;
     struct FWorldResult
     {std::optional<skate_native::PreparedGameplayWorld> World;std::string Error;};
     TUniquePtr<FNativeSkateWorker> Worker;
@@ -783,6 +801,200 @@ bool USkateComponent::PublishOffBoardPose(float Lift, bool bPlaceBoard)
     return true;
 }
 
+// The skin of the limbs RetargetRetailPose keeps out of the body and the ground: the vertices skinned (most) to each
+// hand or the hand's half of its forearm, and to each foot or toe, 48 farthest-point picks per limb (its extremes first:
+// finger and toe tips, heels, then filling between).
+static void SampleLimbSkin(FSkateRuntime& Runtime,USkeletalMesh* Asset,const FReferenceSkeleton& Ref,const TArray<FTransform>& Bind,
+    const int32 Roots[4],const int32 Hands[2])
+{
+    Runtime.LimbMesh=Asset;
+    for (TArray<FSkateRuntime::FSkinPoint>& Samples : Runtime.LimbSkin) Samples.Reset();
+    const FSkeletalMeshRenderData* Data=Asset->GetResourceForRendering();
+    if (!Data || Data->LODRenderData.IsEmpty()) return;
+    const FSkeletalMeshLODRenderData& LOD=Data->LODRenderData[0];
+    const auto& Positions=LOD.StaticVertexBuffers.PositionVertexBuffer;
+    const FSkinWeightVertexBuffer* Weights=LOD.GetSkinWeightVertexBuffer();
+    if (!Positions.GetVertexData() || !Weights || !Weights->GetDataVertexBuffer()->GetWeightData()) return;
+    TArray<TPair<int32,FVector>> All[4];
+    for (const FSkelMeshRenderSection& Section : LOD.RenderSections)
+    {
+        const TConstArrayView<FBoneIndexType> Bones=Section.HasUnifiedBoneMap()?LOD.GetUnifiedBoneMap():MakeArrayView(Section.BoneMap);
+        for (uint32 V=Section.BaseVertexIndex;V<Section.BaseVertexIndex+Section.NumVertices;++V)
+        {
+            int32 Bone=INDEX_NONE; uint32 Most=0;
+            for (uint32 K=0;K<Weights->GetMaxBoneInfluences();++K)
+            {
+                const uint32 Weight=Weights->GetBoneWeight(V,K),Local=Weights->GetBoneIndex(V,K);
+                if (Weight>Most && Bones.IsValidIndex(Local) && Bind.IsValidIndex(Bones[Local])) { Most=Weight; Bone=Bones[Local]; }
+            }
+            if (Bone<0) continue;
+            const FVector Position(Positions.VertexPosition(V));
+            for (int32 L=0;L<4;++L)
+            {
+                if (Roots[L]<0) continue;
+                bool bHand=false; int32 Up=Bone;
+                while (Up>Roots[L]) { bHand|=L<2 && Up==Hands[L]; Up=Ref.GetParentIndex(Up); }
+                if (Up!=Roots[L]) continue;
+                // The forearm's elbow half stays out: an elbow by the waist is not a hand in the thigh.
+                if (L<2 && !bHand && Hands[L]>=0)
+                {
+                    const FVector Axis=Bind[Hands[L]].GetLocation()-Bind[Roots[L]].GetLocation();
+                    if (((Position-Bind[Roots[L]].GetLocation())|Axis)<.4*Axis.SizeSquared()) break;
+                }
+                All[L].Add({Bone,Position});
+                break;
+            }
+        }
+    }
+    for (int32 L=0;L<4;++L)
+    {
+        const TArray<TPair<int32,FVector>>& Points=All[L];
+        if (Points.IsEmpty()) continue;
+        TArray<double> Near; Near.Init(TNumericLimits<double>::Max(),Points.Num());
+        const FVector Root=Bind[Roots[L]].GetLocation();
+        int32 Next=0;
+        for (int32 I=1;I<Points.Num();++I) if (FVector::DistSquared(Points[I].Value,Root)>FVector::DistSquared(Points[Next].Value,Root)) Next=I;
+        while (Runtime.LimbSkin[L].Num()<FMath::Min(48,Points.Num()))
+        {
+            const TPair<int32,FVector> Pick=Points[Next];
+            Runtime.LimbSkin[L].Add({Pick.Key,Bind[Pick.Key].InverseTransformPosition(Pick.Value)});
+            double Far=-1;
+            for (int32 I=0;I<Points.Num();++I)
+            {
+                Near[I]=FMath::Min(Near[I],FVector::DistSquared(Points[I].Value,Pick.Value));
+                if (Near[I]>Far) { Far=Near[I]; Next=I; }
+            }
+        }
+    }
+}
+
+// The rider's own pelvis, spine, chest and thigh bodies, in their bones' spaces (fitted to its skin when the physical
+// rider fits them), with a bounding sphere each.
+static void GatherBodies(FSkateRuntime& Runtime,USkeletalMesh* Asset,UPhysicsAsset* Physics,const FReferenceSkeleton& Ref,TFunctionRef<int32(const FString&)> Index)
+{
+    Runtime.BodiesFor=Physics; Runtime.BodiesMesh=Asset; Runtime.Bodies.Reset();
+    for (const TCHAR* Contract : {TEXT("pelvis"),TEXT("spine"),TEXT("spine_mid"),TEXT("chest"),TEXT("thigh_L"),TEXT("thigh_R")})
+    {
+        const int32 Bone=Index(Contract);
+        const int32 Body=Bone>=0?Physics->FindBodyIndex(Ref.GetBoneName(Bone)):INDEX_NONE;
+        if (!Physics->SkeletalBodySetups.IsValidIndex(Body) || !Physics->SkeletalBodySetups[Body]) continue;
+        const FKAggregateGeom& Geom=Physics->SkeletalBodySetups[Body]->AggGeom;
+        FSkateRuntime::FBody B; B.Bone=Bone;
+        TArray<FSphere> Bounds;
+        for (const FKConvexElem& E : Geom.ConvexElems)
+        {
+            FSkateRuntime::FBodyShape S; S.Kind=0; S.Local=E.GetTransform(); E.GetPlanes(S.Planes);
+            if (S.Planes.IsEmpty()) continue;
+            Bounds.Add(FSphere(S.Local.TransformPosition(E.ElemBox.GetCenter()),E.ElemBox.GetExtent().Size()));
+            B.Shapes.Add(MoveTemp(S));
+        }
+        for (const FKSphylElem& E : Geom.SphylElems)
+        {
+            FSkateRuntime::FBodyShape S; S.Kind=1; S.Local=E.GetTransform(); S.Half=FVector(0,0,E.Length*.5); S.Radius=E.Radius;
+            Bounds.Add(FSphere(E.Center,E.Length*.5+E.Radius)); B.Shapes.Add(MoveTemp(S));
+        }
+        for (const FKSphereElem& E : Geom.SphereElems)
+        {
+            FSkateRuntime::FBodyShape S; S.Kind=2; S.Local=FTransform(E.Center); S.Radius=E.Radius;
+            Bounds.Add(FSphere(E.Center,E.Radius)); B.Shapes.Add(MoveTemp(S));
+        }
+        for (const FKBoxElem& E : Geom.BoxElems)
+        {
+            FSkateRuntime::FBodyShape S; S.Kind=3; S.Local=E.GetTransform(); S.Half=FVector(E.X,E.Y,E.Z)*.5;
+            Bounds.Add(FSphere(E.Center,S.Half.Size())); B.Shapes.Add(MoveTemp(S));
+        }
+        if (B.Shapes.IsEmpty()) continue;
+        for (const FSphere& S : Bounds) B.Centre+=S.Center/Bounds.Num();
+        for (const FSphere& S : Bounds) B.Reach=FMath::Max(B.Reach,FVector::Dist(B.Centre,S.Center)+S.W);
+        Runtime.Bodies.Add(MoveTemp(B));
+    }
+}
+
+// Signed distance (bone units, below 0 inside) from a point in a body's bone space to its shapes, and the way out.
+static double BodyDistance(const FSkateRuntime::FBody& Body,const FVector& Q,FVector& Out)
+{
+    double D=TNumericLimits<double>::Max();
+    for (const FSkateRuntime::FBodyShape& S : Body.Shapes)
+    {
+        const FVector P=S.Local.InverseTransformPosition(Q);
+        double Shape=-TNumericLimits<double>::Max(); FVector N=FVector::UpVector;
+        switch (S.Kind)
+        {
+        case 0:
+            for (const FPlane& Plane : S.Planes) if (const double Dot=Plane.PlaneDot(P); Dot>Shape) { Shape=Dot; N=FVector(Plane.X,Plane.Y,Plane.Z); }
+            break;
+        case 1:
+        {
+            const FVector Axis(0,0,FMath::Clamp(P.Z,-S.Half.Z,S.Half.Z));
+            N=(P-Axis).GetSafeNormal(); Shape=(P-Axis).Size()-S.Radius;
+            break;
+        }
+        case 2: N=P.GetSafeNormal(); Shape=P.Size()-S.Radius; break;
+        default:
+        {
+            const FVector Excess=P.GetAbs()-S.Half,Outside=Excess.ComponentMax(FVector::ZeroVector);
+            if (Outside.IsNearlyZero())
+            {
+                const int32 Axis=Excess.X>Excess.Y?(Excess.X>Excess.Z?0:2):(Excess.Y>Excess.Z?1:2);
+                N=FVector::ZeroVector; N[Axis]=P[Axis]<0?-1.:1.; Shape=Excess[Axis];
+            }
+            else { N=(Outside*P.GetSignVector()).GetSafeNormal(); Shape=Outside.Size(); }
+        }
+        }
+        if (Shape<D) { D=Shape; Out=S.Local.TransformVectorNoScale(N); }
+    }
+    return D;
+}
+
+// Each arm swings about its shoulder (the whole arm, its bend kept) just far enough that its hand's and forearm's skin
+// is Margin (component units) out of the rider's own body, at most 25 degrees: the deepest sample's way out, a few
+// passes.
+static void ClearArms(const FSkateRuntime& Runtime,const FReferenceSkeleton& Ref,TArray<FTransform>& Output,const int32 Uppers[2],double Margin)
+{
+    constexpr double MaxSpread=UE_DOUBLE_PI*25./180.;
+    for (int32 H=0;H<2;++H)
+    {
+        const int32 Upper=Uppers[H];
+        const TArray<FSkateRuntime::FSkinPoint>& Skin=Runtime.LimbSkin[H];
+        if (Upper<0 || Skin.IsEmpty()) continue;
+        double Spread=0;
+        for (int32 Pass=0;Pass<4;++Pass)
+        {
+            double Worst=0; FVector At=FVector::ZeroVector,Way=FVector::ZeroVector;
+            for (const FSkateRuntime::FBody& Body : Runtime.Bodies)
+            {
+                const FTransform& Frame=Output[Body.Bone];
+                const double Scale=Frame.GetMaximumAxisScale(),Reach=Body.Reach*Scale+Margin;
+                const FVector Centre=Frame.TransformPosition(Body.Centre);
+                for (const FSkateRuntime::FSkinPoint& Point : Skin)
+                {
+                    const FVector P=Output[Point.Bone].TransformPosition(Point.Local);
+                    if (FVector::DistSquared(P,Centre)>Reach*Reach) continue;
+                    FVector Out;
+                    const double D=BodyDistance(Body,Frame.InverseTransformPosition(P),Out)*Scale-Margin;
+                    if (D<Worst) { Worst=D; At=P; Way=Frame.TransformVectorNoScale(Out); }
+                }
+            }
+            if (Worst>=0) break;
+            const FVector Shoulder=Output[Upper].GetLocation(),Arm=At-Shoulder;
+            const FVector Move=FVector::VectorPlaneProject(Way,Arm.GetSafeNormal());
+            if (Move.Size()<.2 || Arm.Size()<1.) break;
+            const double Angle=FMath::Min(FMath::Asin(FMath::Min(-Worst/(Move.Size()*Arm.Size()),1.)),MaxSpread-Spread);
+            if (Angle<=1e-4) break;
+            Spread+=Angle;
+            const FQuat Swing(FVector::CrossProduct(Arm,Move).GetSafeNormal(),Angle);
+            for (int32 I=Upper;I<Ref.GetNum();++I)
+            {
+                int32 Up=I;
+                while (Up>Upper) Up=Ref.GetParentIndex(Up);
+                if (Up!=Upper) continue;
+                Output[I].SetRotation(Swing*Output[I].GetRotation());
+                Output[I].SetLocation(Shoulder+Swing.RotateVector(Output[I].GetLocation()-Shoulder));
+            }
+        }
+    }
+}
+
 void USkateComponent::RetargetRetailPose()
 {
     USkeletalMeshComponent* Mesh=Rider->GetMesh();
@@ -914,6 +1126,56 @@ void USkateComponent::RetargetRetailPose()
         // The toe remains its authored distance from the ankle; it must not stretch through the deck.
         for (int32 I=C+1;I<Ref.GetNum();++I)
             if (Ref.GetParentIndex(I)==C) Output[I]=Ref.GetRefBonePose()[I]*Output[C];
+    }
+    // The limbs against this rider's own body and the ground, outside bails (which keep the skin up themselves).
+    if (Mode!=ESkateMode::Bail)
+    {
+        const int32 Roots[4]={Index(TEXT("forearm_L")),Index(TEXT("forearm_R")),Index(TEXT("foot_L")),Index(TEXT("foot_R"))};
+        const int32 Hands[2]={Index(TEXT("hand_L")),Index(TEXT("hand_R"))},Uppers[2]={Index(TEXT("upperarm_L")),Index(TEXT("upperarm_R"))};
+        USkeletalMesh* Asset=Mesh->GetSkeletalMeshAsset();
+        if (RetailRuntime->LimbMesh.Get()!=Asset) SampleLimbSkin(*RetailRuntime,Asset,Ref,Bind,Roots,Hands);
+        // A source foot steps on the source's ground plane (pushing, braking), which on this rider's proportions can be
+        // under the real ground: each foot whose sole goes under the ground below it lifts out, the leg solved to it.
+        if (const float Above=CVarSkateFootGround.GetValueOnGameThread(); Above>=0.f && !bOffBoardPose)
+        {
+            FCollisionQueryParams Query(SCENE_QUERY_STAT(SkateFootGround),false,Rider);
+            for (int32 S=0;S<2;++S)
+            {
+                const TArray<FSkateRuntime::FSkinPoint>& Sole=RetailRuntime->LimbSkin[2+S];
+                const int32 A=Index(S?TEXT("thigh_R"):TEXT("thigh_L")),B=Index(S?TEXT("shin_R"):TEXT("shin_L")),C=Roots[2+S];
+                if (Sole.IsEmpty() || A<0 || B<0 || C<0) continue;
+                const FVector Ankle=MeshWorld.TransformPosition(Output[C].GetLocation());
+                FHitResult Hit;
+                if (!GetWorld()->LineTraceSingleByChannel(Hit,Ankle+FVector(0,0,20),Ankle-FVector(0,0,80),ECC_Pawn,Query) || Hit.bStartPenetrating || Hit.ImpactNormal.Z<.5)
+                    continue;
+                double Under=0;
+                for (const FSkateRuntime::FSkinPoint& Point : Sole)
+                    Under=FMath::Max(Under,double((FVector(Hit.ImpactPoint)-MeshWorld.TransformPosition(Output[Point.Bone].TransformPosition(Point.Local)))|FVector(Hit.ImpactNormal))+Above);
+                // Deeper than a sole goes is not a foot in the ground (a ledge or rail over the ankle).
+                if (Under<=0 || Under>15.) continue;
+                const FQuat FootTurn=Output[C].GetRotation();
+                const FVector Knee=Output[B].GetLocation(),Pole=Knee+(Knee-(Output[A].GetLocation()+Output[C].GetLocation())*.5)*2;
+                const FVector Target=Output[C].GetLocation()+MeshWorld.InverseTransformVector(FVector(Hit.ImpactNormal)*Under);
+                AnimationCore::SolveTwoBoneIK(Output[A],Output[B],Output[C],Pole,Target,false,1.f,1.f);
+                Output[C].SetRotation(FootTurn);
+                for (int32 I=C+1;I<Ref.GetNum();++I)
+                {
+                    int32 Up=I;
+                    while (Up>C) Up=Ref.GetParentIndex(Up);
+                    if (Up==C) Output[I]=Ref.GetRefBonePose()[I]*Output[Ref.GetParentIndex(I)];
+                }
+            }
+        }
+        // The source's arms hang beside an adult's hips; beside wider hips and thighs the hands sink into them. Each arm
+        // swings out until its hand and forearm clear the rider's own body by skate.ArmClear (ClearArms). A grab solves
+        // after this, so it still reaches its board.
+        if (const float Clear=CVarSkateArmClear.GetValueOnGameThread(); Clear>=0.f)
+        {
+            UPhysicsAsset* Physics=Mesh->GetPhysicsAsset();
+            if (Physics && (RetailRuntime->BodiesFor.Get()!=Physics || RetailRuntime->BodiesMesh.Get()!=Asset)) GatherBodies(*RetailRuntime,Asset,Physics,Ref,Index);
+            if (Physics && !RetailRuntime->Bodies.IsEmpty())
+                ClearArms(*RetailRuntime,Ref,Output,Uppers,Clear/FMath::Max(Mesh->GetComponentScale().GetMax(),1e-4));
+        }
     }
     // A grab closes the source hand on its own deck, but this arm only follows the source arm's directions at this
     // character's scale, so the hand stops short of the board with straight fingers. Where the source hand reaches

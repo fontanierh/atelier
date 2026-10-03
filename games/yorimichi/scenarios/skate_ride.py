@@ -2,8 +2,10 @@
 """In-game checks for the Ride skating backend (Skate plugin, Private/Ride, RIDE.md) on the skate pier park.
 
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_ride [--only name,name]
-Mounts with skate.Backend Ride, then checks a ride's first frame (it moves like every later one), pushing, steering,
-braking, the ollie's height, every Flick-It trick, a grab, a 360, a grind, a manual, a bail and its recovery, lip airs
+Mounts with skate.Backend Ride, then checks a ride's first frame (it moves like every later one), a start inside the
+floor (it starts on it), pushing (from rest, nose-first), steering, braking, the ollie's height, every Flick-It trick,
+a grab, a 360, a grind, a manual, a bail and its recovery, the hands clear of the body and the pushing foot out of
+the ground (Cairo regular and goofy, Link), lip airs
 back into the transition (straight, 180 and 360 on the pier's quarter; straight and across on Mega Park's pool wall)
 and a coasting back-and-forth in the bowl (`--only vert`), every wheel on the ground through carves, a pump, a
 powerslide and a manual (`--only wheels`), frame pacing (including mounting and switching character), Mega Park's
@@ -39,7 +41,8 @@ FLIPS = {
 FLAT = (-28, 38)       # the pier's long flat run, heading east between flatbar_red (y 43) and long_ledge (y 25-28)
 # The steering turns start a metre apart: the left turn starts a metre further from flatbar_red.
 STEER = {1: FLAT, -1: (FLAT[0], FLAT[1] - 1)}
-RAIL = (-36, 43)       # an ollie at .98 s onto flatbar_red, along it (it starts 8 m ahead)
+RAIL = (-36, 43)       # an ollie at .98 s onto flatbar_red, along it (it starts 8 m ahead, x -28 to -10)
+RAIL_FAST = (-38, 43)  # the same take-off at 700 cm/s
 QUARTER = (57, 25)     # east_return's quarter (lip at x 70, 2 m radius, 0.15 m vert), launched east at 950 cm/s
 QUARTER_OUT = (-1, 0)  # its face's level normal, Unreal x, y: back into the ramp, west
 OPEN = (0, 52)         # an open run east between the bars (y 43) and the north gardens (y 61), for hard carves
@@ -74,6 +77,69 @@ def mount_ride():
             return state
         time.sleep(.5)
     raise RuntimeError('Ride did not mount: ' + state.strip())
+
+
+# User 19:46: at rest on the board Cairo's hands sank into his thighs (the idle clip on his wider hips and thighs). The
+# retarget swings each arm out until its hand and forearm clear the rider's own body (skate.ArmClear), and lifts a foot
+# whose sole goes under the ground (skate.FootGround). hand_gap= is each hand's skin against the pelvis, spine, chest and
+# thigh bodies (cm, below 0 inside), skin_groups= the skin under the ground (skate.RideSkinCheck).
+HAND_GAP = -1.   # cm: no hand deeper inside the rider's own body than this, at rest, rolling or carving
+HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False))
+REST_AIM = """
+import unreal, math
+st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
+P = unreal.Vector(*[float(v) for v in st.get('hips', st.get('hip')).split(',')])
+yaw = math.radians(live.L.player().get_actor_rotation().yaw)
+f = unreal.Vector(math.cos(yaw), math.sin(yaw), 0)
+unreal.MegaParkValidation.review_camera(P + f * 130 + unreal.Vector(0, 0, -10), P, 40)
+"""
+
+
+def hand_rows(record):
+    """Each hand against the rider's own body (hand_gap=) and the feet's skin under the ground (skin_groups= feet) at
+    rest for a second, then through a push, rolling and carving both ways, for Cairo regular and goofy and Link; a
+    close-up at rest (build/yorimichi/skateqa/ride-hands-<rider>.png)."""
+    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck 1')")
+    who_now = 'Cairo'
+    try:
+        for tag, who, goofy in HAND_RIDERS:
+            if who != who_now:
+                qa.py(f"print(live.L.switch_character({who!r}))")
+                who_now = who
+                time.sleep(3)
+                mount_ride()
+            qa.py(f'live.L.skate_goofy({goofy})')
+            rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[(1,{{'push':True}}),(2.2,{{'left':(.6,0)}}),"
+                                   f"(3.2,{{'left':(-.6,0)}}),(4.2,{{}})],duration=4.4", 4.4)
+            clock, rest, moving = 0., [], []
+            for r in rows:
+                if 'hand_gap' in r:
+                    gap = min(float(v) for v in r['hand_gap'].split(','))
+                    (rest if clock < 1 else moving).append((gap, r.get('hand_near', '-')))
+                clock += float(r.get('dt', 16.7)) / 1000
+            feet = max((float(part.partition(':')[2]) for r in rows for part in r.get('skin_groups', '').split(',')
+                        if part.startswith('feet:')), default=float('nan'))
+            qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[],duration=1.5", 1.5)
+            shot = qa.yori.OUT / 'skateqa' / f'ride-hands-{tag}.png'
+            qa.py(REST_AIM)
+            time.sleep(.6)
+            qa.py(f"live.L.screenshot({str(shot)!r})")
+            time.sleep(1.2)
+            qa.py("unreal.MegaParkValidation.restore_player_camera()")
+            worst = min(rest + moving, default=(float('nan'), '-'))
+            text = lambda seen: f'{min(seen)[0]:.1f}' if seen else '-'
+            record(f'hands_clear_{tag}', rows, bool(rest) and bool(moving) and worst[0] >= HAND_GAP,
+                   f'hand gap (cm, below 0 inside the body) at rest {text(rest)}, pushing, rolling and carving '
+                   f'{text(moving)} (worst against {worst[1]}); close-up {shot}')
+            record(f'push_foot_{tag}', rows, feet <= SKIN_DEPTH,
+                   f'feet skin {feet:.1f} cm under the ground at worst through a push and two carves')
+    finally:
+        qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck 0')")
+        qa.py('live.L.skate_goofy(False)')
+        if who_now != 'Cairo':
+            qa.py("print(live.L.switch_character('Cairo'))")
+            time.sleep(3)
+            mount_ride()
 
 
 def frame_sampler():
@@ -134,12 +200,35 @@ def main():
         record('ride_start', rows[1:], len(steps) > 6 and typical > 4 and steps[0] >= .5 * typical,
                f'first frame {steps[0] if steps else 0:.1f} cm, then {typical:.1f} cm a frame '
                f'(frames {raw[0][0]} -> {raw[1][0] if len(raw) > 1 else "-"})')
+    if wanted('ride_start_low'):
+        # A start 12 cm inside the pier's deck (where the caveman hand-off started one) starts on the deck, not in the
+        # air under it.
+        ground = f"live.L.ground_at(live.park.ue({FLAT[0]},{FLAT[1]},3.0))"
+        qa.py(f"live.skate_input(); live.skate_place({ground}, 0)")
+        time.sleep(.4)
+        deck = float(qa.parse(qa.py('print(live.skate_state())'))['z'])
+        rows = record_while(f"import unreal\nlive.skate_place({ground} - unreal.Vector(0, 0, 12), 0)", 1.2)
+        zs = [float(r['z']) for r in rows[3:]]
+        ok = len(zs) > 20 and min(zs) > deck - 3 and abs(zs[-1] - deck) < 3 and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        record('ride_start_low', rows, ok, f"placed at z {deck - 12:.0f}, 12 cm under the deck (z {deck:.0f}): rode at z "
+               f"{min(zs) if zs else 0:.0f} to {max(zs) if zs else 0:.0f}, last mode {rows[-1]['mode'] if rows else '-'}")
     if wanted('push'):
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[(0,{{'push':True}}),(3.5,{{}})],duration=4", 4)
         first = next((float(r['speed']) for r in rows if float(r['speed']) > 150), 0)
         top = max(map(speed, rows))
         record('push_cruise', rows, top > 750 and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
                f'top speed {top:.0f} cm/s after 3.5 s of pushing')
+    if wanted('push_from_rest'):
+        # A push from rest goes nose-first, even with the board creeping tail-first as it does down a slope after a
+        # stop: it stands still through the wind-up and leaves nose-first (the e2e's push from a stop on the road crept
+        # back 9-10 cm/s through the wind-up and left fakie). Placed facing +x, creeping back at 20 cm/s.
+        rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,-20,[(0,{{'push':True}}),(1.2,{{}})],duration=1.6", 1.6)
+        x0 = position(rows[0])[0]
+        back = min(position(r)[0] - x0 for r in rows)
+        ahead = position(rows[-1])[0] - x0
+        ok = back > -3 and ahead > 50 and rows[-1].get('fakie') == '0' and speed(rows[-1]) > 150 and not qa.count(rows, 'bails')
+        record('push_from_rest', rows, ok, f"crept back at most {-back:.1f} cm, then {ahead:.0f} cm forward at {speed(rows[-1]):.0f} cm/s, "
+               f"fakie={rows[-1].get('fakie')}")
     if wanted('steer'):
         for direction in (1, -1):
             x, y = STEER[direction]
@@ -217,10 +306,7 @@ live.behave('grab', grab)
         qa.py("live.stop('spin'); live.skate_input()")
         record('quarter_360', rows, '360' in qa.combos(rows) or '540' in qa.combos(rows), qa.combos(rows) or '(none)')
     if wanted('grind'):
-        # flatbar_red is 18 m long: about 3.5 s of grinding at 5.2 m/s, then off its end.
-        rows = qa.run_scenario(f"{RAIL[0]},{RAIL[1]},0,520,[(.98,('flick','ollie'))],duration=6.5", 6.5)
-        record('grind', rows, '3' in qa.modes(rows) and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
-               'states ' + ','.join(sorted(qa.modes(rows))) + '; ' + qa.combos(rows))
+        grind_rows(record)
     if wanted('manual'):
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,-.5)}}),(1.8,{{}})],duration=2.3", 2.3)
         record('manual', rows, qa.ever(rows, 'manual', '1') and rows[-1]['manual'] == '0' and 'Manual' in qa.combos(rows)
@@ -253,6 +339,8 @@ live.behave('grab', grab)
                f'states {",".join(sorted(qa.modes(rows)))}; down about {down:.1f} s; worst frame {frames.get("worst_ms", 0):.1f} ms')
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,500,[(.1,{{'push':True}}),(.3,{{}})],duration=1", 1)
         record('ride_after_bail', rows, rows[-1]['mode'] == '1' and speed(rows[-1]) > 300, f'speed {speed(rows[-1]):.0f}')
+    if wanted('hands_clear') or wanted('push_foot'):
+        hand_rows(record)
     if wanted('pacing'):
         # Ride through the park with tricks, then mount and switch character, sampling every frame.
         frame_sampler()
@@ -358,7 +446,8 @@ def vert_checks(record):
     forward and a 360 fakie (the stick let go short of each, the rest turned by touch-down); on Mega Park's pool wall
     (the film's) a straight air, and the same climbing it 20 degrees across either way; each comes down within a metre
     of the lip, below it, without a bail, and rides away. Then a back-and-forth in the pier's bowl, coasting: three
-    airs keep their speed at the bottom (native: 10 -> 11.9 -> 12.3 m/s), shown beside the same without AutoPump."""
+    airs keep or gain speed at the bottom, short of native's cap (native: 10 -> 11.9 -> 12.3 m/s), shown beside the
+    same without AutoPump."""
     quarter = f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
     judge_lip(record, 'vert_quarter_straight', record_while(quarter, 5), QUARTER_OUT, True)
     # Full stick turns 752 degrees/s off a lip (SpinRate 470 x AirSpinScale 1.6) after SpinResponse's lag, which the
@@ -391,14 +480,18 @@ def vert_checks(record):
         bottoms[label] = [max((speed(r) for r in rows[s:a] if r['mode'] == '1'), default=0) for s, a in
                           zip([0] + [b for _, b in airs], [a for a, _ in airs])]
         bailed = any(r['mode'] == '4' for r in rows)
+        # Each landing: the speed into it and out of it, on a face whose up is this steep (deck up z).
+        landings = '; landings ' + ', '.join(f"{speed(rows[b - 1]):.0f}->{speed(rows[b]):.0f} at up z {rows[b].get('deckup', '?')}"
+                                             for _, b in airs if b < len(rows))
         if label:
             print(f"INFO vert_back_and_forth with {label}: bottom speeds {' -> '.join(f'{v:.0f}' for v in bottoms[label])} cm/s, "
-                  f"{len(airs)} airs, {'bailed' if bailed else 'no bail'}", flush=True)
+                  f"{len(airs)} airs, {'bailed' if bailed else 'no bail'}{landings}", flush=True)
     qa.py(tune.format('""'))
     got = bottoms['']
-    record('vert_back_and_forth', rows, len(airs) >= 3 and not bailed and all(v >= .92 * got[0] for v in got[1:4]) and max(got) <= 1300,
+    # Native's band: no air loses speed at the bottom (2% slack) and none passes its cap (12.3 m/s, plus 0.7).
+    record('vert_back_and_forth', rows, len(airs) >= 3 and not bailed and all(v >= .98 * got[0] for v in got[1:4]) and max(got) <= 1300,
            f"bottom speeds {' -> '.join(f'{v:.0f}' for v in got)} cm/s before each air (native 1000 -> 1190 -> 1230), "
-           f"{len(airs)} airs, {'bailed' if bailed else 'no bail'}")
+           f"{len(airs)} airs, {'bailed' if bailed else 'no bail'}{landings}")
 
 
 # Each frame, every wheel's clearance along the ground's normal under it: the wheel's centre (its bone) to the ground,
@@ -411,11 +504,22 @@ _ch = unreal.GameplayStatics.get_player_character(live.L.game_world(), 0)
 _parts = {c.get_name(): c for c in _ch.get_components_by_class(unreal.StaticMeshComponent)}
 _w = [_parts[n] for n in ('SkateWheel00', 'SkateWheel01', 'SkateWheel10', 'SkateWheel11')]
 _objects = [unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY1, unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY2]
+_skip = [_ch] + list(_ch.get_attached_actors() or [])
+live.WHITS = {}
 def _hit(a, b):
+    # The first hit that starts clear of what it hits: a trace that starts inside something (the rider's feet, a
+    # volume) reports its own start, which is not the ground. What it skipped and what it took is counted in WHITS.
     a, b = unreal.Vector(*a), unreal.Vector(*b)
-    h = unreal.SystemLibrary.line_trace_single_for_objects(live.L.game_world(), a, b, _objects, True, [_ch], unreal.DrawDebugTrace.NONE, True)
-    t = h.to_tuple() if h is not None else None
-    return ((t[5].x, t[5].y, t[5].z), (t[7].x, t[7].y, t[7].z)) if t and t[0] else None
+    hits = unreal.SystemLibrary.line_trace_multi_for_objects(live.L.game_world(), a, b, _objects, True, _skip, unreal.DrawDebugTrace.NONE, True) or []
+    for h in hits:
+        t = h.to_tuple()
+        name = (t[9].get_name() if t[9] else '?') + '/' + (t[10].get_name() if t[10] else '?')
+        if t[1] or t[3] <= 0:
+            live.WHITS['skipped ' + name] = live.WHITS.get('skipped ' + name, 0) + 1
+            continue
+        live.WHITS[name] = live.WHITS.get(name, 0) + 1
+        return ((t[5].x, t[5].y, t[5].z), (t[7].x, t[7].y, t[7].z))
+    return None
 def _wheels(dt):
     c = []
     for w in _w:
@@ -423,8 +527,10 @@ def _wheels(dt):
     out = []
     for i, p in enumerate(c):
         q = c[i ^ 1]; ax = [q[k] - p[k] for k in range(3)]; s = math.sqrt(sum(v * v for v in ax)) or 1.
-        down = _hit((p[0], p[1], p[2] + 12), (p[0], p[1], p[2] - 80))   # from below the deck and the feet
-        hit = down and _hit(tuple(p[k] + down[1][k] * 12 for k in range(3)), tuple(p[k] - down[1][k] * 80 for k in range(3)))
+        # From 5 cm above the wheel's centre (under the deck, above the wheel's top) down the vertical for the ground's
+        # normal, then down the normal itself, so a wheel up to 8 cm into the ground still reads.
+        down = _hit((p[0], p[1], p[2] + 5), (p[0], p[1], p[2] - 80))
+        hit = down and _hit(tuple(p[k] + down[1][k] * 5 for k in range(3)), tuple(p[k] - down[1][k] * 80 for k in range(3)))
         if not hit: out.append(None); continue
         n = down[1]; na = sum(n[k] * ax[k] for k in range(3)) / s
         out.append(round(sum((p[k] - hit[0][k]) * n[k] for k in range(3)) - WHEEL_R * math.sqrt(max(0., 1 - na * na)), 2))
@@ -493,6 +599,7 @@ def wheels_contact(record):
                 if high > lift[0]: lift = (high, f'{label} {clip}')
                 bad_lift += high > 1.5
         notes.append(f'{label} {run_sink:.1f}/{run_lift:.1f}')
+    hits = qa.py("import json; print(json.dumps(sorted(live.WHITS.items(), key=lambda kv: -kv[1])[:6]))").strip().splitlines()[-1]
     shot = qa.yori.OUT / 'skateqa' / 'ride-carve-closeup.png'
     shot.parent.mkdir(parents=True, exist_ok=True)
     qa.py(CLOSEUP.replace('PATH', repr(str(shot))) + f"live.scenario({OPEN[0]},{OPEN[1]},0,900,[(.3,{{'left':(1,0)}}),(1.2,{{}})],duration=1.5)")
@@ -501,7 +608,7 @@ def wheels_contact(record):
     record('wheels_contact', [], judged > 300 and not bad_sink and not bad_lift,
            f'{judged} frames on the ground: deepest wheel {sink[0]:.2f} cm ({sink[1]}), {bad_sink} frames below -1 cm; '
            f'highest rolling wheel {lift[0]:.2f} cm ({lift[1]}), {bad_lift} frames above 1.5 cm; per run deepest/highest: '
-           + ', '.join(notes) + f'; close-up {shot}')
+           + ', '.join(notes) + f'; traces hit {hits}; close-up {shot}')
 
 
 # Clips whose feet stand on the deck (RIDE.md, Rider): rolling, the load, powerslides, manuals, grinds, landings and
@@ -1122,6 +1229,44 @@ def parapet_corner(record):
             f"(mode {rows[end]['mode']}); slowest {slowest:.0f} cm/s up to 0.6 s after; "
             f"{'bailed' if bailed else 'no bail'}; largest step at the lock {jump:.1f} cm beyond the speed; {qa.combos(rows)}")
            if end is not None else f"states {','.join(sorted(qa.modes(rows)))}; never {'locked' if lock is None else 'left the line'}")
+
+
+def grind_rows(record):
+    """flatbar_red is 18 m long and a grind loses 0.97 m/s² on a rail (the reference, assets/skate/ride/README.md):
+    at 7 m/s the board grinds it to its end, flies off and rolls away; at 5.2 m/s it stalls about 14 m along, steps
+    off the line with a small hop and stands on the deck beside it (at the deck's height, at least 20 cm off the line,
+    on the ground from its landing on), neither bailing."""
+    for name, spot, entry, seconds in (('grind', RAIL_FAST, 700, 6.5), ('grind_stall', RAIL, 520, 8.5)):
+        rows = qa.run_scenario(f"{spot[0]},{spot[1]},0,{entry},[(.98,('flick','ollie'))],duration={seconds}", seconds)
+        lock = next((i for i, r in enumerate(rows) if r['mode'] == '3'), None)
+        end = next((i for i in range(lock, len(rows)) if rows[i]['mode'] != '3'), None) if lock is not None else None
+        bailed = qa.count(rows, 'bails') or any(r['mode'] == '4' for r in rows)
+        if end is None:
+            record(name, rows, False, f"states {','.join(sorted(qa.modes(rows)))}; never {'locked' if lock is None else 'left the line'}; "
+                   + qa.combos(rows))
+            continue
+        held = sum(float(r.get('dt', 16.7)) for r in rows[lock:end]) / 1000
+        loss = (speed(rows[lock]) - speed(rows[end - 1])) / max(held, .1)
+        along = (position(rows[end - 1])[0] - position(rows[lock])[0]) / 100
+        stalled = speed(rows[end - 1]) < 60
+        ok = rows[-1]['mode'] == '1' and not bailed and 70 < loss < 125 and stalled == (name == 'grind_stall')
+        off = ''
+        if name == 'grind_stall':
+            # Off the line onto the deck: the board's height back to the deck's before the grind, beside the line (the
+            # last position's distance from the line through the grind's ends), and on the ground from the landing on.
+            deck, last_z = float(rows[min(5, lock)]['z']), float(rows[-1]['z'])
+            landed = next((i for i in range(end, len(rows)) if rows[i]['mode'] == '1'), len(rows))
+            flicker = sum(1 for r in rows[landed:] if r['mode'] != '1')
+            a, b, c = position(rows[lock]), position(rows[end - 1]), position(rows[-1])
+            run = math.hypot(b[0] - a[0], b[1] - a[1]) or 1.
+            aside = abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) / run
+            ok = ok and abs(last_z - deck) < 3 and aside >= 20 and flicker == 0
+            off = (f"; stood at z {last_z:.0f} (the deck {deck:.0f}), {aside:.0f} cm beside the line, {flicker} frames off the "
+                   f"ground after landing")
+        record(name, rows, ok,
+               f"locked at {speed(rows[lock]):.0f} cm/s, grinded {held:.2f} s and {along:.1f} m, left at {speed(rows[end - 1]):.0f} cm/s "
+               f"({'a stall' if stalled else 'off the end'}), losing {loss:.0f} cm/s² (reference 97); last mode {rows[-1]['mode']}, "
+               f"{'bailed' if bailed else 'no bail'}{off}; {qa.combos(rows)}")
 
 
 def release_controls():

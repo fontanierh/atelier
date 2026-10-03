@@ -28,8 +28,12 @@ namespace
     const float SteerCurve[][2] = {{0, 0}, {.059f, 0}, {.25f, .034f}, {.375f, .078f}, {.509f, .172f}, {.69f, .335f}, {.858f, .564f}, {1, .835f}};
     // Rolling friction on smooth ground (cm/s -> cm/s^2): none up to 8 m/s.
     const float FrictionCurve[][2] = {{0, 0}, {812, 0}, {1042, 3}, {1205, 16.3f}, {1286, 60}, {1433, 90}, {1840, 105}, {2698, 120}};
-    // The native PumpVsVel: a pump's share by speed (cm/s).
-    const float PumpCurve[][2] = {{0, 1}, {700, 1}, {1220, .157f}, {1420, 0}};
+    // The native PumpVsVel: a pump's share by speed (cm/s), from 7 m/s up (below it native's share rises past 1; the
+    // coasting pump keeps the deliberate pump's 1 there).
+    const float PumpCurve[][2] = {{0, 1}, {701, 1}, {881, .964f}, {1068, .571f}, {1220, .157f}, {1420, .007f}};
+    // The native LandingSpeedScalarVsGroundNormalY: coming down a face between 46 and 65 degrees, the speed along it
+    // grows by up to 15% (by the landing normal's up component).
+    const float LandingCurve[][2] = {{.42f, 1}, {.45f, 1.075f}, {.49f, 1.13f}, {.53f, 1.15f}, {.58f, 1.15f}, {.62f, 1.13f}, {.66f, 1.075f}, {.69f, 1}};
     // Powerslide deceleration by speed (cm/s -> cm/s^2), as measured on the native runtime.
     const float SlideCurve[][2] = {{0, 150}, {360, 230}, {560, 410}, {850, 560}, {1130, 630}, {2000, 700}};
 
@@ -106,9 +110,24 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     Accumulator = Tick60 - KINDA_SMALL_NUMBER; bCamValid = false;
     PushCount = 0; StillTime = -1; bStill = bWasStill = false; LastGrab = ERideGrab::None; SinceGrab = -1;
     LandAge = -1; LandImpact = 0; bLandedFromGrab = false; Sketchy = 0; Clock = 0;
-    // Settle onto whatever is under the board.
+    bSteppingOff = bThroughLine = bPushFromRest = false;
+    // Settle onto whatever is under the board. A start inside the floor (a hand-off a little low) finds the floor's top
+    // from up to StartRecover above and starts on it, rather than in the air under it.
     FVector Ground, Up, Forward; bool bBlocked = false;
-    if (FindGround(P, Q, 60.f, Ground, Up, Forward, bBlocked)) { P = Ground; Q = Frame(Up, Forward); SetMode(ERideState::Ground); }
+    bool bGround = FindGround(P, Q, 60.f, Ground, Up, Forward, bBlocked);
+    if (!bGround && bBlocked)
+    {
+        const FVector Lift = Q.GetUpVector();
+        const float R = Tune.WheelRadius;
+        FHitResult Top;
+        if (Sweep(P + Lift * (Tune.StartRecover + R), P + Lift * R, R, Top) && !Top.bStartPenetrating && FVector::DotProduct(Top.Normal, Lift) >= Tune.WallSlope)
+        {
+            bBlocked = false;
+            bGround = FindGround(Top.Location - Lift * R, Q, 60.f, Ground, Up, Forward, bBlocked);
+            if (bGround) UE_LOG(LogTemp, Display, TEXT("SKATE ride start inside the floor: %.0f cm up onto it"), float(FVector::DotProduct(Ground - P, Lift)));
+        }
+    }
+    if (bGround) { P = Ground; Q = Frame(Up, Forward); SetMode(ERideState::Ground); }
     else { SetMode(ERideState::Air); AirTime = 0; TakeoffUp = Q.GetUpVector(); bPopped = true; bLipAir = false; ResetPrediction(P); }
     if (Mode == ERideState::Ground) V = FVector::VectorPlaneProject(V, Q.GetUpVector());
     Motion = PreviousMotion = CurrentMotion(); MotionTime = 0;
@@ -176,6 +195,7 @@ void FRideSession::SetMode(ERideState NewMode)
 {
     if (Mode == NewMode) return;
     Mode = NewMode; ModeTime = 0;
+    if (NewMode != ERideState::Air) bSteppingOff = bThroughLine = false;
 }
 
 void FRideSession::Tick(const FSkateInput& In)
@@ -197,6 +217,13 @@ void FRideSession::Tick(const FSkateInput& In)
     }
     // The curvature's trail starts afresh on every return to the ground.
     if (Mode != ERideState::Ground && Mode != ERideState::Powerslide && Mode != ERideState::Manual) TrailNum = 0;
+    // The faces just climbed, for the lip test (TickAir reads them on its first ticks).
+    if (Mode == ERideState::Ground || Mode == ERideState::Powerslide || Mode == ERideState::Manual)
+    {
+        ClimbUp[ClimbAt] = V.Z > 0 ? Q.GetUpVector() : FVector::UpVector;
+        ClimbAt = (ClimbAt + 1) % ClimbTicks; ClimbNum = FMath::Min(ClimbNum + 1, ClimbTicks);
+    }
+    else if (Mode != ERideState::Air || AirTime > Tick60 * 2.f) ClimbNum = 0;
     // A line ends after a calm second on the ground.
     const bool bQuiet = Mode == ERideState::Ground && PendingPop == Flick::None;
     Calm = bQuiet ? Calm + Tick60 : 0.f;
@@ -428,6 +455,13 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
         else
         {
             PushTime += Tick60;
+            // From rest the push goes nose-first, and the board stands on the planted foot through the wind-up: it
+            // neither creeps back down a slope nor leaves tail-first.
+            if (bPushFromRest && PushTime < PushLead + PushContact)
+            {
+                if (Travel < 0) { Travel = 1.f; Speed = -Speed; }
+                if (PushTime < PushLead) Speed = FMath::Max(Speed, 0.f);
+            }
             if (!In.bPush && PushTime < PushLead) bPushStrong = false;
             const bool bContact = PushTime >= PushLead && PushTime < PushLead + PushContact;
             if (bContact && !bPushed) { bPushed = true; Cues.Add(ERideCue::Push); }
@@ -580,6 +614,7 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
 void FRideSession::StartPush(bool bFirstPush, float Speed)
 {
     PushTime = 0; bPushStrong = true; bPushed = false;
+    bPushFromRest = bFirstPush && Speed < Tune.PushFromRest;
     PushCount = bFirstPush ? 0 : PushCount + 1;
     PushStrong = FMath::Clamp((Speed - 450.f) / 700.f, 0.f, 1.f);
     if (!Animator.PushTiming(bFirstPush, PushStrong, PushLead, PushContact, PushRecover))
@@ -706,7 +741,10 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
     // transfer carries the rider over instead.
     if (AirTime <= Tick60 * 1.5f)
     {
-        const FVector Up = TakeoffUp;
+        // The steepest face climbed in the last ClimbTicks (0.13 s), or the take-off's own.
+        FVector Up = TakeoffUp;
+        for (int32 I = 0; I < ClimbNum; ++I)
+            if (ClimbUp[I].Z < Up.Z) Up = ClimbUp[I];
         const FVector Out = FVector(Up.X, Up.Y, 0).GetSafeNormal();
         const float Reach = .25f + (FMath::Cos(FMath::DegreesToRadians(Tune.VertSteepness)) - .25f) * FMath::Clamp(Prefs.VertAssist, 0.f, 1.f);
         if (Up.Z < Reach && V.Z > 0 && !Out.IsNearlyZero())
@@ -802,7 +840,15 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
     V.Z -= Gravity() * Tick60;
     const FVector Move = V * Tick60;
     FHitResult Hit;
-    if (Sweep(From, From + Move, 10.f, Hit))
+    bool bHit = Sweep(From, From + Move, 10.f, Hit);
+    if (bThroughLine)
+    {
+        // Stepping off a stalled grind: the line just left is no contact until the sphere is clear of it.
+        auto FromLine = [this](const FVector& X) { return float(FVector::VectorPlaneProject(X - OffPoint, OffAlong).Size()); };
+        if (bHit && FromLine(Hit.Location) <= OffClear) bHit = false;
+        if (FromLine(From + Move) > OffClear || AirTime > .5f) bThroughLine = false;
+    }
+    if (bHit)
     {
         if (Hit.bStartPenetrating) { P += Hit.Normal * (Hit.PenetrationDepth + .1f); V = FVector::VectorPlaneProject(V, Hit.Normal); return; }
         const FVector Contact = Hit.Location - Hit.Normal * 12.f;
@@ -839,16 +885,23 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
     float YawLimit = 90.f;
     if (Speed > Tune.SidewaysSafeSpeed) YawLimit = FMath::GetMappedRangeValueClamped(FVector2f(Tune.SidewaysSafeSpeed, 2000.f), FVector2f(90.f, Tune.BailYawFast), Speed);
     const TCHAR* Why = Tilt > Tune.BailTilt ? TEXT("landed tilted") : Impact > Tune.BailImpact ? TEXT("landed too hard") :
-        Yaw >= YawLimit ? TEXT("landed sideways") : bMidFlip ? TEXT("landed on the board mid-flip") :
+        Yaw >= YawLimit && !bSteppingOff ? TEXT("landed sideways") : bMidFlip ? TEXT("landed on the board mid-flip") :
         (Grab != ERideGrab::None && GrabWeight > .6f && AirTime > .25f) ? TEXT("landed holding the grab") : nullptr;
     P = Point;
     if (Why) { StartBail(Why); return true; }
     // Land: the normal part of the speed is absorbed; a sideways landing keeps cos(angle) of the speed along the board.
+    // Coming down a face between 46 and 65 degrees the speed along it grows by up to 15%, as much as the travel runs
+    // downhill (native's RestoreVelocity, KnownAirTrajectory.cpp), so a lip air landing low on the transition keeps
+    // its speed.
+    const FVector Downhill = FVector::VectorPlaneProject(FVector(0, 0, -1), Normal).GetSafeNormal();
+    const float Downward = Downhill.IsNearlyZero() || Speed < 1.f ? 0.f : FMath::Clamp(float(FVector::DotProduct(Downhill, Along)) / Speed, 0.f, 1.f);
+    const float Restore = 1.f + (Curve(LandingCurve, float(Normal.Z)) - 1.f) * Downward;
     Travel = bFakieLanding ? -1.f : 1.f;
     Q = Frame(Normal, Heading.IsNearlyZero() ? FVector::VectorPlaneProject(Q.GetForwardVector(), Normal).GetSafeNormal() : Heading);
-    const float Kept = Speed * FMath::Cos(FMath::DegreesToRadians(Yaw));
+    const float Kept = Speed * Restore * FMath::Cos(FMath::DegreesToRadians(Yaw));
     V = Q.GetForwardVector() * Travel * Kept;
-    Sketchy = Yaw > Tune.SketchyYaw ? 1.f : Yaw > Tune.CleanYaw ? .5f : 0.f;
+    // A stall's step-off comes down across its hop by design: neither sideways nor sketchy.
+    Sketchy = bSteppingOff ? 0.f : Yaw > Tune.SketchyYaw ? 1.f : Yaw > Tune.CleanYaw ? .5f : 0.f;
     LandAge = 0; LandImpact = Impact;
     bLandedFromGrab = Grab != ERideGrab::None || (LastGrab != ERideGrab::None && SinceGrab >= 0 && SinceGrab < .3f);
     LastGrab = ERideGrab::None; SinceGrab = -1;
@@ -978,7 +1031,7 @@ void FRideSession::TickGrind(const FSkateInput& In, Flick F)
         return;
     }
     if (bOff) { LeaveGrind(60.f); return; }
-    if (FMath::Abs(RailSpeed) < Tune.GrindStall && ModeTime > .5f) { LeaveGrind(30.f); return; }
+    if (FMath::Abs(RailSpeed) < Tune.GrindStall && ModeTime > .5f) { LeaveGrind(Tune.GrindStallHop, true); return; }
 }
 
 bool FRideSession::TurnCorner()
@@ -1040,15 +1093,40 @@ bool FRideSession::SharpCorner(float From, float To, float& OutS) const
     return false;
 }
 
-void FRideSession::LeaveGrind(float Up)
+void FRideSession::LeaveGrind(float Up, bool bStall)
 {
     EndHold();
     // Off the side the rider leans to, so the board does not catch the line again.
-    const FVector Tangent = V.GetSafeNormal();
-    const FVector Side = FVector::CrossProduct(FVector::UpVector, Tangent).GetSafeNormal() * (bGrindFront ? -1.f : 1.f) * (bGoofy ? -1.f : 1.f);
-    V += FVector::UpVector * Up + Side * 40.f;
-    // Slides turn the board back along the travel.
-    if (GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide || GrindKind == ERideGrind::Crooked)
+    FVector Tangent = V.GetSafeNormal(), LinePoint = P;
+    if (Where.Rails && Where.Rails->Rails.IsValidIndex(Rail))
+    {
+        FVector Along;
+        LinePoint = Where.Rails->Sample(Rail, FMath::Clamp(RailS, 0.f, Where.Rails->Rails[Rail].Length()), Along);
+        if (Tangent.IsNearlyZero()) Tangent = Along;
+    }
+    FVector Side = FVector::CrossProduct(FVector::UpVector, Tangent).GetSafeNormal() * (bGrindFront ? -1.f : 1.f) * (bGoofy ? -1.f : 1.f);
+    float Aside = 40.f;
+    if (bStall && Where.Rails && Where.Rails->Rails.IsValidIndex(Rail))
+    {
+        // A stall steps off the line, to a ledge's open side, a coping's deck, or else the lean side unless something
+        // stands there: a small hop, wide enough that the air sweep's sphere (10 cm) is clear of the line before it
+        // comes back down to its height. The sweep starts inside the line, so it passes through it until then.
+        const FSkateRail& Line_ = Where.Rails->Rails[Rail];
+        const FVector Open = FVector(Line_.Side.X, Line_.Side.Y, 0).GetSafeNormal();
+        if (!Open.IsNearlyZero()) Side = Line_.Kind == ESkateRailKind::Coping ? -Open : Open;
+        else
+        {
+            const FVector Sphere = P + Q.GetUpVector() * 12.f;
+            auto Blocked = [&](const FVector& Way) { FHitResult Hit; return Sweep(Sphere + Way * 20.f, Sphere + Way * 60.f, 10.f, Hit); };
+            if (Blocked(Side) && !Blocked(-Side)) Side = -Side;
+        }
+        OffClear = 10.f + Line_.Radius + 4.f;
+        Aside = OffClear * Tune.AirGravity / (2.f * FMath::Max(Up, 50.f));
+        bSteppingOff = bThroughLine = true; OffPoint = LinePoint; OffAlong = Tangent;
+    }
+    V += FVector::UpVector * Up + Side * Aside;
+    // Slides turn the board back along the travel (a stall's hop keeps it as it is).
+    if (!bStall && (GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide || GrindKind == ERideGrind::Crooked))
         Q = Frame(FVector::UpVector, FVector::VectorPlaneProject(V, FVector::UpVector).GetSafeNormal() * (FVector::DotProduct(Q.GetForwardVector(), V) < 0 ? -1.f : 1.f));
     LastRail = Rail; RailCooldown = Tune.GrindRelock;
     Rail = INDEX_NONE;

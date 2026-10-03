@@ -10,7 +10,9 @@ between its last two steps at the frame's own time, from the ride's first frame 
 
 - **Ground.** A tick moves in steps of at most `GroundStep` (15 cm). Each step probes the ground under both axles with
   a wheel-sized sphere, from `StepUp` (6 cm) above to `StickGap` plus a share of the step below, and the deck takes
-  the line between the two contacts. Ground that falls away further is a take-off.
+  the line between the two contacts. Ground that falls away further is a take-off. A ride that starts inside the floor
+  (a hand-off a little low) finds the floor's top from up to `StartRecover` (40 cm) above and starts on it, rather
+  than in the air under it.
 - **Crests.** The curvature along the travel is the turn of the ground's normal over at least `CrestWindow` (50 cm) of
   travel, so a transition built of flat facets reads as the curve it approximates. A convex crest launches the board
   when following it would take more than `LaunchFactor` (1.5) g once the rider's legs have absorbed a drop of
@@ -27,27 +29,38 @@ between its last two steps at the frame's own time, from the ride's first frame 
 - **Grinds.** A line locks on when the board comes down within `GrindCapture` (30 cm) of it in plan and at most
   `GrindAbove` (40 cm) over it, crossing it at no more than `GrindCross` (65 degrees; the native runtime locks up to
   about 61), and keeps the speed along it. The board then closes onto the line at its approach speed, at least
-  `GrindLockSpeed` (4 m/s), rather than jumping there: the native board touches the line before it locks, and its
-  step at a lock is at most its speed's plus 0.7 cm. At a line's end the grind carries on, at its speed, into a line
-  whose end meets it within `GrindJoin` (10 cm) and turns less than `GrindCorner` (45 degrees). At a sharper corner,
-  within a line or between two, the board flies off the way it was going.
+  `GrindLockSpeed` (4 m/s), rather than jumping there: the native board touches the line before it locks, and its step
+  at a lock is at most its speed's plus 0.7 cm. At a line's end the grind carries on, at its speed, into a line whose
+  end meets it within `GrindJoin` (10 cm) and turns less than `GrindCorner` (45 degrees). At a sharper corner, within
+  a line or between two, the board flies off the way it was going. A grind slower than `GrindStall` (15 cm/s) after
+  half a second steps off the line: a hop of `GrindStallHop` (1.1 m/s up, 4 cm) to a ledge's open side, a coping's
+  deck, or else the side the rider leans to unless something stands there, just wide enough that the board comes down
+  beside the line rather than on it. The air sweep starts inside the line, so it passes through it until the board is
+  clear.
 - **Lip airs.** As in the native runtime (`AirTrajectoryLaunch.cpp`, `AirTrajectoryScoring.cpp`), a take-off from a
   face steeper than `VertSteepness` (50 degrees at `VertAssist` 1, 75 at 0), climbing at least `VertClimb` (0.66 of
-  its speed up, against the speed into the face), comes back into the face it left. The velocity over the coping is
-  lost; the climb is turned to `VertLean` (3 degrees) from vertical, into the ramp, at its own speed, and the speed
-  along the coping is kept. The reference's board leaves vert at 0.29 to 0.37 m/s into the ramp for 5.3 to 5.9 m/s
-  up (native gets there with a 1.15 degree lean and its landing aim). The flight then takes the velocity or one of
-  six around it (native's cone: 10 degrees across the heading, 40 along it, at 2 to 4 m/s), whichever lands back on
-  the steepest part of the same face, not within 0.25 s nor within 0.15 s of the apex, with the least change. It
-  falls under `VertGravity` (10 m/s², the reference's board on vert airs; flat airs keep `AirGravity`). With the
-  stick released, the board turns to the nearer of forward and fakie on the landing's line by touch-down (native's
-  rate: the angle left over the time left, times 1.2), so a straight air and a 360 land fakie and a 180 forward.
-  A flick early in a lip air pops straight up. Holding transfer carries the rider over the coping instead.
+  its speed up, against the speed into the face), comes back into the face it left. The face is the steepest climbed
+  in the last 8 steps (0.13 s), so a board that leaves from the coping's rounded edge still counts as leaving the
+  wall. The velocity over the coping is lost; the climb is turned to `VertLean` (3 degrees) from vertical, into the
+  ramp, at its own speed, and the speed along the coping is kept. The reference's board leaves vert at 0.29 to 0.37
+  m/s into the ramp for 5.3 to 5.9 m/s up (native gets there with a 1.15 degree lean and its landing aim). The flight
+  then takes the velocity or one of six around it (native's cone: 10 degrees across the heading, 40 along it, at 2 to
+  4 m/s), whichever lands back on the steepest part of the same face, not within 0.25 s nor within 0.15 s of the apex,
+  with the least change. It falls under `VertGravity` (10 m/s², the reference's board on vert airs; flat airs keep
+  `AirGravity`). With the stick released, the board turns to the nearer of forward and fakie on the landing's line by
+  touch-down (native's rate: the angle left over the time left, times 1.2), so a straight air and a 360 land fakie and
+  a 180 forward. A flick early in a lip air pops straight up. Holding transfer carries the rider over the coping
+  instead. Any landing keeps the speed along the face it lands on; coming down a face between 46 and 65 degrees that
+  speed grows by up to 15%, as much as the travel runs downhill (native's `LandingSpeedScalarVsGroundNormalY`), so an
+  air that comes back in low on the transition keeps its speed.
+- **Pushing.** A push from slower than `PushFromRest` (0.3 m/s) goes nose-first, and the board stands on the planted
+  foot through the wind-up, so it neither creeps back down a slope nor leaves tail-first.
 - **Pumping.** Extending through a concave transition gains speed, v × exp(curvature × extension), up to
   `PumpExtension` (26 cm) of travel between crouched and extended; the rider crouches on flats, crests and straight
   faces. Holding push pumps on any face steeper than 37 degrees. Coasting there pumps by itself, `AutoPump` (0.7) as
-  much and less with speed (native's unintentional pump and its `PumpVsVel`: all of it to 7 m/s, 16% at 12.2, none
-  from 14.2), so a rider going back and forth in a bowl keeps up speed, toward native's 12.3 m/s.
+  much and less with speed (native's unintentional pump and its `PumpVsVel`: all of it to 7 m/s, 96% at 8.8, 57% at
+  10.7, 16% at 12.2, none from 14.2), so a rider going back and forth in a bowl keeps up speed, toward native's 12.3
+  m/s.
 - **Powerslides.** Above `SlideMinSpeed` (1.2 m/s) the deck turns `SlideAngle` across the travel and scrubs speed.
   The powerslide key holds one, turned to the stick's side. On a pad the left stick's rear diagonal does, as the native
   runtime's slide intents read it (`InputIntentions.cpp`): pushing the stick out past 0.9 into the 52 degrees either
@@ -145,6 +158,13 @@ into the graph's inputs, runs the graph and places the pose on the board.
 - **For the physical rider.** The pose is the motor target (below), so it has to be continuous. `FRideBodyPose`
   carries what the controller needs besides it: the motion and its time, the landing's impact and age, the grind and
   manual state and the bail's start.
+- **The rider's own body.** The clips' arms hang beside an adult's hips, and on a rider with wider hips and thighs
+  the hands sink into them. After the retarget each arm swings about its shoulder, its bend kept, just far enough that
+  its hand and the hand's half of its forearm clear the rider's own pelvis, spine, chest and thigh bodies (its physics
+  asset's, fitted to the skin) by `skate.ArmClear` (1 cm), at most 25 degrees. A grab solves after it, so it still
+  reaches the board. A clip's pushing or braking foot steps on the source's ground plane, which on another rider's
+  proportions can be under the real ground: a foot whose sole goes under the ground below it (by up to 15 cm) lifts to
+  `skate.FootGround` (0.5 cm) above it, the leg solved to it. Neither runs in a bail. Below 0 turns either off.
 - **Pose health.** The Ride state line (`USkateComponent::GetRetailState`, `atelier live state`) has `clip=` (the
   clip with the most weight), `ct=` (its time, s), `lock=`, `lift=` (cm), `step=` (the fastest body bone in the
   root's space, cm/s), `stepbone=` (that bone), `dt=` (the frame time it is measured over, ms),

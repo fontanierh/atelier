@@ -134,6 +134,7 @@ private:
     int32 TrailNum = 0;
     float Crouch = 0, PushTime = -1, BrakeTime = 0, LastSpeed = 0;
     bool bPushStrong = true, bPushed = false;
+    bool bPushFromRest = false;     // this push started slower than PushFromRest: nose-first, the board held through the wind-up
     // The push cycle in progress (from the clips when they are in the build): the lead-in before the foot touches,
     // the contact and the recovery; PushCount counts the pushes before this one in a run of pushes.
     int32 PushCount = 0;
@@ -152,6 +153,11 @@ private:
     // LipOut is the face's level normal (away from the coping, into the ramp).
     bool bLipAir = false;
     FVector LipOut = FVector::ZeroVector;
+    // The faces climbed in the last ticks on the ground (each tick's up vector; straight up while not climbing): a
+    // board that leaves from the coping's rounded edge still takes off from the wall below it.
+    static constexpr int32 ClimbTicks = 8;
+    FVector ClimbUp[ClimbTicks];
+    int32 ClimbNum = 0, ClimbAt = 0;
     // Landing prediction: a ballistic path traced a few segments per tick.
     FVector PredictFrom = FVector::ZeroVector, PredictVelocity = FVector::ZeroVector;
     float PredictTime = 0, LandTime = -1, PredictStart = 0;
@@ -172,6 +178,11 @@ private:
     // What is left of the board's offset from the line when it locked on, closing at LockSpeed (cm/s).
     FVector LockOffset = FVector::ZeroVector;
     float LockSpeed = 0;
+    // A stalled grind stepping off its line (bSteppingOff until it lands): until the board is OffClear from the line (a
+    // point on it and its direction), the air sweep passes through it (bThroughLine), since it starts inside it.
+    bool bSteppingOff = false, bThroughLine = false;
+    FVector OffPoint = FVector::ZeroVector, OffAlong = FVector::ForwardVector;
+    float OffClear = 0;
     // Manual.
     float Balance = 0;
     bool bNoseManual = false;
@@ -226,7 +237,7 @@ private:
     bool TryLand(const FVector& Point, const FVector& Normal);
     void StartBail(const TCHAR* Why);
     bool TryGrind(const FSkateInput& In);
-    void LeaveGrind(float Up);
+    void LeaveGrind(float Up, bool bStall = false);
     /** Past the line's end: carry on into a line that continues it round a corner under GrindCorner. */
     bool TurnCorner();
     /** The first vertex between arc lengths From and To where the line turns more than GrindCorner. */
