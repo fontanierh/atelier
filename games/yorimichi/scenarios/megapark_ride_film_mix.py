@@ -1,10 +1,11 @@
 """Cut and mix a Mega Park Ride film take (megapark_ride_film.py).
 
     python games/yorimichi/scenarios/megapark_ride_film_mix.py build/yorimichi/megapark/ride-film/<take> \\
-        [--out ride-film] [--audio DIR] [--only shot,shot] [--trim shot:first-last ...]
+        [--out ride-film] [--audio DIR] [--only shot,shot] [--trim shot:first-last ...] [--replays shot,shot]
 
-The kept shots' parts follow each other in the order they were filmed; after the slow-motion shot, its biggest air
-plays again at a third of the speed (each 90 Hz frame of the window becomes a 30 fps frame). Sounds stamped with a
+The kept shots' parts follow each other in the order they were filmed; after a slow-motion shot, its replay window (the
+biggest air, or the bail) plays again at a third of the speed (each 90 Hz frame of the window becomes a 30 fps frame);
+--replays names the shots whose replays play (all by default). Sounds stamped with a
 shot's own clock move onto the film's 60 Hz clock (the replay repeats its window's sounds three times slower and a
 little quieter), and the loops and camera rows follow; skate_mix_showreel.mix then mixes and encodes. The cut's frames
 are links in <take>/cut/, and cut.json lists where each shot starts in the film. --trim leaves a shot's frames out
@@ -20,10 +21,10 @@ NEUTRAL_LOOPS = '0 1 0 1 0 1 0 1 0 1'
 REPLAY_VOLUME = .8
 
 
-def cut(shots, events, base, trims=None):
+def cut(shots, events, base, trims=None, replays=None):
     """Join the kept shots' parts. shots: each part's shot.json in filming order; events: audio.json; base: the audio
     stamp of a shot k's first frame is base * (k + 1); trims: {shot name: [(first, last or None), ...]} source frames
-    left out. Returns (frames, cams, loops, events, marks): frame files relative to the take, camera rows per film
+    left out; replays: the shot names whose replays play (None: all). Returns (frames, cams, loops, events, marks): frame files relative to the take, camera rows per film
     frame, a loop row per 60 Hz frame, the sounds on the film's 60 Hz clock and where each shot (and replay) starts."""
     frames, cams, loops, out, marks = [], [], [], [], []
     for s in shots:
@@ -43,7 +44,7 @@ def cut(shots, events, base, trims=None):
         for e in events:
             v = e['frame'] - lo; i = int(v // 2)
             if 0 <= v < 2 * n and i in pos: out.append(dict(e, frame=v0 + 2 * pos[i] + v - 2 * i))
-        rp = s.get('replay')
+        rp = s.get('replay') if replays is None or s['name'] in replays else None
         win = [b for b in s.get('slowbuf', []) if rp and rp['from_t'] <= b[0] <= rp['to_t'] and b[2]]
         if not win: continue
         f0 = len(frames); v0 = 2 * f0; stretch = rp.get('stretch', 3)
@@ -62,6 +63,7 @@ def main():
     ap.add_argument('--audio', help="the audio folder of another build (default: this checkout's build/yorimichi/audio)")
     ap.add_argument('--only', default='', help='comma-separated shot names to cut (a rough cut of a rehearsal)')
     ap.add_argument('--trim', action='append', default=[], help='shot:first-last (or shot:first-) frames to leave out')
+    ap.add_argument('--replays', help='comma-separated shot names whose slow-motion replays play (default: all)')
     a = ap.parse_args()
     take = Path(a.take)
     done = json.loads((take / 'done.json').read_text())
@@ -74,14 +76,15 @@ def main():
     for t in a.trim:
         name, _, rng = t.partition(':'); first, _, last = rng.partition('-')
         trims.setdefault(name, []).append((int(first), int(last) if last else None))
-    frames, cams, loops, events, marks = cut(shots, events, done['audio_base'], trims)
+    replays = None if a.replays is None else [r for r in a.replays.split(',') if r]
+    frames, cams, loops, events, marks = cut(shots, events, done['audio_base'], trims, replays)
     missing = [f for f in frames if not (take / f).exists()]
     if missing: sys.exit(f'{len(missing)} frames missing, first {missing[0]}')
     links = take / 'cut'
     shutil.rmtree(links, ignore_errors=True); links.mkdir()
     for i, f in enumerate(frames):
         os.symlink(os.path.join('..', f), links / f'frame_{i:05d}.jpg')
-    (take / 'cut.json').write_text(json.dumps({'frames': len(frames), 'shots': marks, 'trims': a.trim}, indent=1))
+    (take / 'cut.json').write_text(json.dumps({'frames': len(frames), 'shots': marks, 'trims': a.trim, 'replays': replays}, indent=1))
     print(json.dumps(reel.mix(take, links / 'frame_%05d.jpg', len(frames), cams, loops, events, a.out, a.audio)))
 
 

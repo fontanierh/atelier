@@ -71,6 +71,8 @@ class CutTest(unittest.TestCase):
         self.assertEqual([e['frame'] for e in replayed], [2 * n, 2 * n + 6])
         self.assertTrue(all(e['volume'] == REPLAY_VOLUME for e in replayed))
         self.assertEqual([e['frame'] for e in out[:3]], [2, 6, 8])
+        frames, cams, loops, out, marks = cut([s], events, BASE, replays=['other'])     # its replay not chosen
+        self.assertEqual((len(frames), [m['shot'] for m in marks], len(out)), (n, ['slow'], 3))
 
 
 if __name__ == '__main__':

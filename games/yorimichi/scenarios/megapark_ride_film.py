@@ -4,9 +4,14 @@
 on the park road, flat-ground flips (kickflip, heelflip, pop shove-it, 360 flip, varial kickflip, hardflip) and a
 sketchy catch, a powerslide down the ramp, manuals on the plaza, a long 50-50, a boardslide and a 5-0 down the plaza
 parapet, the drop-in off the upper deck into a big Indy over the pool's west wall, quarter-pipe airs (Melon 180, a
-Christ air with a slow-motion replay, a 360), a grab held into a ragdoll bail and the get-up where the rider fell, and a
-clean final line (kickflip, crooked grind, 360 flip). Two optional shots open with a run and a caveman onto the board
-and end with a grab dismount to the feet; they run only when the game has those transitions.
+Christ air with a slow-motion replay, a 360), three ragdoll bails (an Indy held into the landing on the pool's west
+wall, a kickflip on the road at speed come down on one foot, a 50-50 down the parapet and an Indy held down the plaza's
+step into a slam), each with the get-up where the body came to rest and a slow-motion replay the mixer can play (from
+the road bail he gets up on foot, recalls the board to his hand with the board button and runs with it), and a clean
+final line (kickflip, crooked grind, 360 flip). Two optional shots open with a run and a caveman onto the board and end
+with a grab dismount to the feet; they run only when the game has those transitions. The trick cameras keep the rider
+about 40% of the frame's height (CLOSE metres across at his pelvis), aimed at the physical body with a lead on its
+motion.
 
     atelier play --set 'performance=1;render_scale=100;desktop=1;show_fps=0' yorimichi -- -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/megapark_ride_film.py
@@ -25,16 +30,20 @@ Optional globals, set with `atelier live py` before the script:
     FLIP      degrees added to every board placement, should the board face against the launch
     PHYSICAL  skate.RidePhysical for the take: True (the default) films the active ragdoll rider, False the animated one;
               done.json logs the cvar as the game reads it
-    TIGHT     the framed cameras' width factor (.82)
+    CLOSE     metres across the frame at the rider for every camera without its own width (4.3: about 40% of the height)
+    TIGHT     the width factor of the cameras that set their own width (.82)
+    RECALL    False: the road bail gets up back onto the board instead of on foot with the board recalled to the hand
 
-Runs in the game's Python (the live bridge) at a fixed 60 Hz step, 90 Hz for the slow-motion shot. Every board shot is
+Runs in the game's Python (the live bridge) at a fixed 60 Hz step, 90 Hz for the slow-motion shots. Every board shot is
 placed, settles for a second unrecorded, is launched and then ridden by scripted skate. input: pursuit steering along
 a line with push and brake holds, timed events and position triggers (Flick-It gestures, grabs, spins, grind sticks).
 Each shot records into its own folder (parts/NN_name): a JPG every second 60 Hz frame (30 fps), the camera, and the
 board's loops per frame; the sounds the game starts are stamped with the shot's own frame clock (AUDIO_BASE * (k + 1)
-plus the frame; unrecorded frames stamp -1000000). The slow shot saves every 90 Hz frame, so the mixer can replay its
-biggest air at a third of the speed. An optional shot that does not do what it should (no caveman, no dismount) is
-marked keep=false and left out of the cut. megapark_ride_film_mix.py cuts the parts into the film and mixes the sound.
+plus the frame; unrecorded frames stamp -1000000). A slow shot saves every 90 Hz frame, so the mixer can replay its
+biggest air, or its bail, at a third of the speed. An optional shot that does not do what it should (no caveman, no
+dismount) is marked keep=false and left out of the cut. done.json logs each bail's entry speed, how far the body went,
+how low it lay (the state's lie=) and how long it was down. megapark_ride_film_mix.py cuts the parts into the film and
+mixes the sound.
 """
 import json, math, os, re, shutil, traceback
 import unreal
@@ -47,7 +56,10 @@ REHEARSE = bool(globals().get('REHEARSE', False))
 TUNE = globals().get('TUNE') or {}
 EXTRAS = globals().get('EXTRAS')
 FLIP = float(globals().get('FLIP', 0.))
-TIGHT = float(globals().get('TIGHT', .82))       # every framed camera's width x this: Cairo is short, .82 keeps him ~40% of the height
+TIGHT = float(globals().get('TIGHT', .82))       # the width factor of a camera with its own `frame`
+CLOSE = float(globals().get('CLOSE', 4.3))       # m across at the rider: Cairo is 1.2 m on the board, .85 m tucked
+MIN_FOV = 8.
+RECALL = bool(globals().get('RECALL', True))     # the road bail ends on foot with the board recalled to the hand
 PHYSICAL = bool(globals().get('PHYSICAL', True))
 OUT = globals().get('OUTDIR') or os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'),
                                               'yorimichi/megapark/ride-film', TAKE)
@@ -169,6 +181,12 @@ def observe(s):
     c.vx, c.vy, c.vz = v.x / 100., -v.y / 100., v.z / 100.
     c.spd = math.hypot(c.vx, c.vy)
     c.yaw = math.degrees(math.atan2(v.y, v.x)) if c.spd > .5 else p.get_actor_rotation().yaw
+    c.hx, c.hy, c.hz, c.hsrc = c.x, c.y, c.za, 'actor'    # the physical pelvis (the ragdoll's body in a bail), else the actor
+    for key in ('hips', 'hip'):
+        try:
+            hx, hy, hz = (float(n) for n in d[key].split(','))
+            c.hx, c.hy, c.hz, c.hsrc = hx / 100., -hy / 100., hz / 100., key; break
+        except (KeyError, ValueError): pass
     c.hdi = math.atan2(c.vy, c.vx) if c.spd > .5 else -math.radians(p.get_actor_rotation().yaw)
     return c
 
@@ -290,17 +308,18 @@ def spin_model(s, c, inp, dt):
 CAM = {'i': -1, 'spec': None, 'p': None, 'aim': None, 'h': None, 't0': 0.}
 
 
-def chase(back=3., side=0., up=.9, frame=7.5, turn=2.5, follow=6., follow_z=4., aim_up=0., agl=.5):
+def chase(back=3., side=0., up=.9, frame=None, turn=2.5, follow=6., follow_z=4., aim_up=0., agl=.5):
     """A follow camera on the travel's heading (frozen in the air and in a bail): `back` behind (negative: ahead,
     looking back), `side` to the right of the travel, `up` above the rider; the field of view keeps `frame` metres
-    across at the rider (7.5 m keeps him about 40% of the frame's height)."""
+    (x TIGHT) across at the rider, by default CLOSE."""
     return dict(kind='chase', back=back, side=side, up=up, frame=frame, turn=turn, follow=follow, follow_z=follow_z,
                 aim_up=aim_up, agl=agl)
 
 
-def fixed(at, frame=8., fov=None, aim_k=6., aim_up=0., to=None, over=6.):
+def fixed(at, frame=None, fov=None, aim_k=6., aim_up=0., to=None, over=6.):
     """A camera standing at `at` ((x, y, z), or (x, y, probe z, height above the ground)) that turns to follow the
-    rider; `frame` metres across at the rider, or a set `fov`. With `to`, it travels there over `over` seconds."""
+    rider; `frame` metres (x TIGHT) across at the rider (by default CLOSE), or a set `fov`. With `to`, it travels there
+    over `over` seconds."""
     return dict(kind='fixed', at=at, frame=frame, fov=fov, aim_k=aim_k, aim_up=aim_up, to=to, over=over)
 
 
@@ -316,15 +335,24 @@ def camera(s, c, dt):
         if (cond(s, c) if callable(cond) else c.t >= cond): i = j
     spec = cams[i][1]; fresh = CAM.get('shot') != s['k'] or CAM['i'] != i
     if fresh:
+        new_shot = CAM.get('shot') != s['k']
         CAM.update(shot=s['k'], i=i, spec=spec, t0=c.t, h=c.hdi, p=None, aim=None)
+        if new_shot: CAM.update(body=None, bv=[0., 0., 0.])
         if spec['kind'] == 'fixed':
             CAM['from'] = resolve(spec['at']); CAM['dest'] = resolve(spec['to']) if spec.get('to') else None
-    rider = (c.x, c.y, c.za + spec.get('aim_up', 0.))
+    # The body's velocity, smoothed, leads the aim by the aim's own lag, so a long lens keeps a fast rider centred.
+    body = (c.hx, c.hy, c.hz)
+    if CAM.get('body') is not None:
+        raw = [(body[n] - CAM['body'][n]) / dt for n in range(3)]
+        if math.dist(body, CAM['body']) > 3. or c.hsrc != CAM.get('hsrc'): raw = [0., 0., 0.]   # a placement or another body
+        CAM['bv'] = [CAM['bv'][n] + (raw[n] - CAM['bv'][n]) * (1. - math.exp(-8. * dt)) for n in range(3)]
+    CAM['body'], CAM['hsrc'] = body, c.hsrc
+    rider = (c.hx, c.hy, c.hz + spec.get('aim_up', 0.))
     if spec['kind'] == 'chase':
         if c.mode not in (2, 4) and c.spd > 1.:
             CAM['h'] += math.atan2(math.sin(c.hdi - CAM['h']), math.cos(c.hdi - CAM['h'])) * (1. - math.exp(-spec['turn'] * dt))
         h = CAM['h']; ch, sh = math.cos(h), math.sin(h)
-        want = [c.x - spec['back'] * ch + spec['side'] * sh, c.y - spec['back'] * sh - spec['side'] * ch, c.za + spec['up']]
+        want = [c.hx - spec['back'] * ch + spec['side'] * sh, c.hy - spec['back'] * sh - spec['side'] * ch, c.hz + spec['up']]
         if CAM['p'] is None: CAM['p'] = list(want)
         k, kz = 1. - math.exp(-spec['follow'] * dt), 1. - math.exp(-spec['follow_z'] * dt)
         p = CAM['p']; p[0] += (want[0] - p[0]) * k; p[1] += (want[1] - p[1]) * k; p[2] += (want[2] - p[2]) * kz
@@ -338,11 +366,15 @@ def camera(s, c, dt):
             eye = tuple(a[n] + (b[n] - a[n]) * u for n in range(3))
         else: eye = a
         aim_k = spec['aim_k']
+    lead = [CAM['bv'][n] / aim_k for n in range(3)]; ll = math.sqrt(sum(x * x for x in lead))
+    if ll > 2.: lead = [x * 2. / ll for x in lead]
+    target = [rider[n] + lead[n] for n in range(3)]
     if CAM['aim'] is None: CAM['aim'] = list(rider)
     k = 1. - math.exp(-aim_k * dt)
-    CAM['aim'] = [CAM['aim'][n] + (rider[n] - CAM['aim'][n]) * k for n in range(3)]
+    CAM['aim'] = [CAM['aim'][n] + (target[n] - CAM['aim'][n]) * k for n in range(3)]
     dist = max(.5, math.dist(eye, CAM['aim']))
-    fov = spec.get('fov') or max(18., min(100., 2. * math.degrees(math.atan(spec['frame'] * TIGHT / 2. / dist))))
+    width = spec['frame'] * TIGHT if spec.get('frame') else CLOSE
+    fov = spec.get('fov') or max(MIN_FOV, min(100., 2. * math.degrees(math.atan(width / 2. / dist))))
     MV.review_camera(ue(*eye), ue(*CAM['aim']), fov)
 
 
@@ -389,6 +421,26 @@ def mode_is(m):
     return lambda s, c: c.mode == m
 
 
+def up_after(secs):
+    """End `secs` after the rider is up again from a bail."""
+    return lambda s, c: s['up_t'] is not None and c.t > s['up_t'] + secs
+
+
+BAIL_REPLAY = {'on': 'bail', 'pre': .5, 'post': 1.8}     # the replay's window: from just before the bail into the slide
+
+
+def free_on_foot(s, c):
+    """On foot with no clip playing (the get-up done): the hands can take the board."""
+    return s['up_t'] is not None and c.mode == 0 and c.d.get('foot', 'off') == 'off' and c.d.get('clip', '-') == '-'
+
+
+# Up on foot where the body lies (the skate button during the bail), the board recalled to the hand, and a run with it.
+RECALL_TRIG = [{'when': lambda s, c: s['bail_t'] is not None and c.mode == 4 and c.t > s['bail_t'] + .5, 'act': 'toggle'},
+               {'when': lambda s, c: free_on_foot(s, c) and c.t > s['up_t'] + .4, 'act': 'recall'},
+               {'when': lambda s, c: s.get('recalled') is not None and c.t > s['recalled'] + 1.1, 'act': 'run'},
+               {'when': lambda s, c: s.get('recalled') is not None and c.t > s['recalled'] + 3.0, 'act': 'stop'}]
+
+
 # The park road's middle, from the footbridge round its bend to the top of the ramp into the plaza (it is 32 m wide
 # between the parapet inside the bend and the outer railing, and falls about 4 degrees east).
 ROAD_MID = [(-133., 1471.1), (-127.9, 1471.1), (-120.3, 1471.0), (-110.6, 1469.6), (-100.6, 1466.9), (-91.0, 1462.8),
@@ -408,7 +460,7 @@ def road_way(d, want=None, x0=-127.9):
 
 
 WIDE_ROAD = fixed((-101., 1479., 140., 5.5), fov=50., aim_k=3.)
-PLAZA_RAIL_CAM = fixed((-65.4, 1368.6, 125., 1.0), frame=9.)
+PLAZA_RAIL_CAM = fixed((-65.4, 1368.6, 125., 1.0))
 POOL_PROBE = 82.
 
 SHOTS = [
@@ -417,48 +469,48 @@ SHOTS = [
          acts=[(0., 'run'), (1.9, 'jump'), (2.05, 'jump_release')], secs=6.5,
          trig=[{'when': lambda s, c: s.get('jumped') is not None and c.mode == 0 and c.t > s['jumped'] + .08 and (c.vz > .3 or c.t > s['jumped'] + .35), 'act': 'toggle'},
                {'when': lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.t > s['mounted'] + .5, 'do': [hold(secs=1.2, push=True)]}],
-         cams=[(0., chase(back=2.2, side=2.0, up=.7, frame=6.5))],
+         cams=[(0., chase(back=2.2, side=2.0, up=.7))],
          keep=lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.backend == 'Ride' and s['max_spd_after_mount'] > 2.5 and s['d_bails'] == 0),
     # The opener: a wide view down the park road as he pushes off.
     dict(name='open_wide', unless='open_caveman', road=(0., 8.5), speed=3.,
          secs=6.5, cams=[(0., WIDE_ROAD)], expect=[]),
     # Hard carves: the heading swings 30 degrees either side every 2.2 s; a low camera behind.
     dict(name='road_carves', road=(-3., 8.5), speed=8., carve=30., period=2.2, gain=10., secs=6.2,
-         cams=[(0., chase(back=3.3, side=.5, up=.5, frame=7.0, turn=3.))]),
+         cams=[(0., chase(back=3.3, side=.5, up=.5, turn=3.))]),
     # Kickflip, heelflip, pop shove-it, filmed from the toe side.
     dict(name='road_flips', road=(2., -8.), speed=7., secs=6.2,
          events=[(.8, flick('kickflip')), (2.6, flick('heelflip')), (4.4, flick('shove', .16))],
-         cams=[(0., chase(back=2.3, side=2.4, up=.8, frame=7.5))], expect=['Kickflip', 'Heelflip', 'Shove']),
+         cams=[(0., chase(back=2.3, side=2.4, up=.8))], expect=['Kickflip', 'Heelflip', 'Shove']),
     # 360 flip, varial kickflip, hardflip, with the camera ahead looking back.
     dict(name='road_tech', road=(-4., -8.), speed=7., secs=6.6,
          events=[(.8, flick('360_flip')), (2.7, flick('varial_kickflip')), (4.6, flick('hardflip'))],
-         cams=[(0., chase(back=-3.6, side=1.3, up=.9, frame=7.5))], expect=['360 Flip', 'Varial Kickflip', 'Hardflip']),
+         cams=[(0., chase(back=-3.6, side=1.3, up=.9))], expect=['360 Flip', 'Varial Kickflip', 'Hardflip']),
     # A heelflip caught 20-30 degrees off the travel: a touch of left stick right after the pop.
     dict(name='road_sketchy', road=(0., -8.), speed=7., secs=3.6,
          events=[(.8, flick('heelflip')), (.8, spin(to=14., dir=1., mag=.35))], land_dz=0.,
-         cams=[(0., chase(back=2.4, side=-2.5, up=.8, frame=7.0))], expect=['Heelflip']),
+         cams=[(0., chase(back=2.4, side=-2.5, up=.8))], expect=['Heelflip']),
     # Down the ramp from the road into the plaza and a powerslide.
     dict(name='ramp_powerslide', start=(-62., 1441., 130., 90.), speed=6.5,
          way=[(-62., 1446., None), (-62., 1420., None), (-61.5, 1395., None), (-61., 1370., None)], secs=8.,
          trig=[{'when': lambda s, c: c.y < 1397.5, 'do': [hold(secs=1.1, slide=True, left=(-1., 0.))]}],
          end=lambda s, c: s['fired'][0] is not None and c.t > s['fired'][0] + 1.9,
-         cams=[(0., fixed((-55.5, 1387., 125., 1.1), frame=8.5))]),
+         cams=[(0., chase(back=3.0, side=1.4, up=.9)), (lambda s, c: c.y < 1406., fixed((-55.5, 1387., 125., 1.1)))]),
     # Manual and nose manual across the plaza, low from the side.
     dict(name='plaza_manuals', start=(-28., 1386., 125., 180.), speed=6.2, way=straight_way(-28., 1386., 180., 45., 6.), secs=5.4,
          events=[(.7, hold(secs=1.7, right=(0., -.5))), (3.0, hold(secs=1.7, right=(0., .5)))],
-         cams=[(0., chase(back=1.6, side=-2.6, up=.45, frame=6.5))], expect=['Manual', 'Nose Manual']),
+         cams=[(0., chase(back=1.6, side=-2.6, up=.45))], expect=['Manual', 'Nose Manual']),
     # The long 50-50: along the parapet's inside, an ollie onto its edge 22 m from the end and down it to the end.
     dict(name='rail_5050', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.34, secs=11.,
-         cams=[(0., chase(back=3.0, side=-1.8, up=1.0, frame=7.5)), (lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 12., PLAZA_RAIL_CAM)],
+         cams=[(0., chase(back=3.0, side=-1.8, up=1.0)), (lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 12., PLAZA_RAIL_CAM)],
          expect=['50-50']),
     # A boardslide: the board turned across the line in the air (onto the parapet 22 m from its end, before the lamp post).
     dict(name='rail_board', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.4, rail_load=.33, secs=10.,
          rail_do=[spin(to=88., dir=1.)], land_dz=-.5,           # the deck square to the line when it meets the ledge's top
-         cams=[(0., chase(back=2.2, side=-2.3, up=.7, frame=7.0))], expect=['Boardslide']),
+         cams=[(0., chase(back=2.2, side=-2.3, up=.7))], expect=['Boardslide']),
     # A 5-0, from the side (onto the parapet before its lamp post too).
     dict(name='rail_5_0', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.33, secs=10.,
          rail_do=[stick(0., -.55)],
-         cams=[(0., chase(back=3.0, side=-1.6, up=1.0, frame=7.5)), (mode_is(3), fixed((-71.2, 1389.5, 125., 1.0), frame=8.))],
+         cams=[(0., chase(back=3.0, side=-1.6, up=1.0)), (mode_is(3), fixed((-71.2, 1389.5, 125., 1.0)))],
          expect=['5-0']),
     # The drop-in off the upper deck: down the roll-in, along the pool and up the west wall into a big Indy.
     dict(name='megadrop', start=(-47.7, 1301.9, 112., 135.), speed=3., gain=26., land_dz=0.,
@@ -470,42 +522,61 @@ SHOTS = [
          # Behind him on the deck, then from the pool floor below the roll-in as he drops (a chase would sink into the face
          # and the deck hides the face from its side), then from across the pool as soon as he is down (he passes the
          # floor camera at 21 m/s).
-         cams=[(0., chase(back=4.2, side=.8, up=1.8, frame=8.)), (lambda s, c: c.zb < 108., fixed((-67., 1282.5, 80., 1.4), frame=9.)),
-               (lambda s, c: c.x < -65. and c.zb < 77., fixed((-104.5, 1261.5, POOL_PROBE, 1.3), frame=10.))],
+         cams=[(0., chase(back=4.2, side=.8, up=1.8, frame=6.5)), (lambda s, c: c.zb < 108., fixed((-67., 1282.5, 80., 1.4), aim_k=8.)),
+               (lambda s, c: c.x < -65. and c.zb < 77., fixed((-104.5, 1261.5, POOL_PROBE, 1.3), aim_k=8.))],
          expect=['Indy']),
     # Quarter-pipe airs on the pool's north wall.
     dict(name='quarter_melon_180', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.5, way=straight_way(-108., 1258.5, -90., 40.),
          trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
                {'when': lambda s, c: air_t(s, c) > .1, 'do': [grab('melon', .4), spin(to=180., dir=1.)]}],
-         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-116.5, 1269., POOL_PROBE, 1.0), frame=8.5))],
+         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-116.5, 1269., POOL_PROBE, 1.0), aim_k=8.))],
          expect=['Melon', '180']),
     dict(name='quarter_christ', slow=True, replay={'pre': .3, 'post': .45}, start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.5,
          way=straight_way(-108., 1258.5, -90., 40.),
          trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
                {'when': lambda s, c: air_t(s, c) > .1, 'do': [grab('christ', .38)]}],
-         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-101.5, 1275.5, POOL_PROBE, .9), frame=7.))],
+         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-101.5, 1275.5, POOL_PROBE, .9), aim_k=8.))],
          expect=['Christ']),
     dict(name='quarter_360', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.8, way=straight_way(-108., 1258.5, -90., 40.),
          trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
                {'when': lambda s, c: air_t(s, c) > .06, 'do': [spin(to=360., dir=-1.)]}],
-         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-97., 1266., POOL_PROBE, 1.1), frame=8.5))],
+         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-97., 1266., POOL_PROBE, 1.1), aim_k=8.))],
          expect=['360']),
-    # A Christ air held into the landing: thrown into the ragdoll, then up again where he fell.
-    dict(name='bail', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.5, way=straight_way(-108., 1258.5, -90., 40.),
-         trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
-               {'when': lambda s, c: air_t(s, c) > .1, 'do': [grab('christ', None)]}],
-         end=lambda s, c: s['up_t'] is not None and c.t > s['up_t'] + 1.6, secs=15.,
-         cams=[(0., fixed((-99.5, 1271.5, POOL_PROBE, 1.2), frame=9.)),
-               (lambda s, c: s['bail_t'] is not None and c.t > s['bail_t'] + 1.2, fixed((-103., 1268., POOL_PROBE, 1.0), frame=6.5, aim_k=3.))],
+    # The ragdoll section: three bails, each down where the body comes to rest and up again from there. Each is shot at
+    # 90 Hz so the mixer can replay it at a third of the speed (--replays picks the one to show).
+    # Across the pool floor at the megadrop's speed and up its west wall into an Indy held into the landing: a slam on the
+    # wall's face and a slide back down into the pool (the north wall is a hump: an air off it lands out of sight).
+    dict(name='bail_pool', start=(-100., 1271.2, POOL_PROBE, 180.), speed=13.3, way=straight_way(-100., 1271.2, 180., 40.),
+         slow=True, replay=BAIL_REPLAY, rec_from=.3,
+         trig=[{'when': lambda s, c: c.x < -116.5, 'steer': False},
+               {'when': lambda s, c: c.x < -114. and air_t(s, c) > .12 and c.vz > 0., 'do': [grab('indy', None)]}],
+         end=up_after(1.2), secs=15.,
+         cams=[(0., fixed((-104.5, 1261.5, POOL_PROBE, 1.3), aim_k=8.))],
          expect=['bail']),
+    # Fast down the road, a kickflip, and down on one foot (a one-foot grab held into the landing): a slam at speed.
+    # With RECALL he gets up on foot, recalls the board (it has rolled on down the road) to his hand and runs with it.
+    dict(name='bail_road', road=(1., 10.), speed=9.5, slow=True, replay=BAIL_REPLAY, rec_from=.5, secs=18. if RECALL else 14.,
+         events=[(1.3, flick('kickflip'))],
+         trig=[{'when': lambda s, c: air_t(s, c) > .38, 'do': [grab('one_foot', None)]}] + (RECALL_TRIG if RECALL else []),
+         end=(lambda s, c: s.get('recalled') is not None and c.t > s['recalled'] + 3.6) if RECALL else up_after(1.2),
+         cams=[(0., chase(back=2.0, side=2.6, up=.7))], expect=['bail']),
+    # A 50-50 down the parapet, popped out at its end, and an Indy grabbed going down the plaza's step held into the
+    # landing (the pop off the low end is only a hop: the grab waits for the step's longer air).
+    dict(name='bail_grind', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.34, secs=15.,
+         slow=True, replay=BAIL_REPLAY, rec_from=1.5,
+         trig=[{'when': lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 3., 'do': [flick('ollie', .12)]},
+               {'when': lambda s, c: s['land_after_grind'] is not None and c.mode == 2 and air_t(s, c) > .06, 'do': [grab('indy', None)]}],
+         end=up_after(1.2),
+         cams=[(0., chase(back=3.0, side=-1.8, up=1.0)), (lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 9., fixed((-58., 1374., 125., 1.1)))],   # east of the end, off his way out
+         expect=['50-50', 'bail']),
     # The final line: a kickflip down the ramp, a crooked grind down the parapet, a 360 flip on the way out, and away.
     dict(name='finale', rail=True, lock_s=16., start=(-72.5, 1437., 130., 95.), speed=7.4, want=-9.5, rail_load=.32, rail_after=2.2,
          rail_do=[stick(.52, .42)], secs=14., events=[(.7, flick('kickflip'))],
          rail_out=[(-66.3, 1369.3, None), (-61., 1367.2, None), (-52., 1366.2, 6.5), (-34., 1366., 6.5), (-20., 1366., 6.5)],
          trig=[{'when': lambda s, c: c.mode == 1 and s['d_grinds'] > 0 and c.x > -59.5, 'do': [flick('360_flip')]}],
          end=lambda s, c: s['d_grinds'] > 0 and c.x > -37.,
-         cams=[(0., chase(back=3.0, side=-1.6, up=1.0, frame=7.5)),
-               (lambda s, c: s['d_grinds'] > 0 and rail_lateral(c.x, c.y)[0] < 8., fixed((-45., 1377., 125., 2.2), frame=9.)),
+         cams=[(0., chase(back=3.0, side=-1.6, up=1.0)),
+               (lambda s, c: s['d_grinds'] > 0 and rail_lateral(c.x, c.y)[0] < 8., fixed((-45., 1377., 125., 2.2))),
                (lambda s, c: s['d_grinds'] > 0 and c.x > -50., fixed((-26., 1396., 125., 9.), fov=58., aim_k=2., to=(-20., 1404., 125., 16.), over=5.))],
          expect=['Kickflip', 'Crooked', '360 Flip']),
     # A grab off an ollie, let go of the board in the air and down onto the feet with it in hand (optional).
@@ -516,7 +587,7 @@ SHOTS = [
                {'when': lambda s, c: s.get('dismounted') is not None and c.mode == 0, 'act': 'run'},
                {'when': lambda s, c: s.get('dismounted') is not None and c.t > s['dismounted'] + 2.2, 'act': 'stop'}],
          end=lambda s, c: s.get('dismounted') is not None and c.t > s['dismounted'] + 3.2, secs=7.,
-         cams=[(0., fixed((-58., 1383.5, 125., 1.0), frame=8.))],
+         cams=[(0., fixed((-58., 1383.5, 125., 1.0)))],
          keep=lambda s, c: s.get('dismounted') is not None and c.mode == 0 and s['d_bails'] == 0),
 ]
 for _shot in SHOTS:
@@ -558,10 +629,14 @@ def act(s, c, what):
         s['jumped'] = c.t; live.press('jump')
     elif what == 'jump_release':
         live.press('jump_release')
-    elif what == 'toggle':
+    elif what == 'toggle':                         # in a bail: get up on foot where the body lies
         if c.mode == 0: s['mounted'] = c.t
         else: s['dismounted'] = c.t; live.skate_release()
         L.skate_toggle()
+    elif what == 'recall':                         # the board button (D-pad Right) on foot: the lying board dissolves
+        s['recalled'] = c.t                        # and a fresh one comes to the hand
+        comp = L.player().get_component_by_class(unreal.SkateComponent)
+        if comp: comp.recall_board()
 
 
 def next_shot():
@@ -667,9 +742,17 @@ def track(s, c):
     if c.mode == 3: s['grind_seen'] = True
     if s['grind_seen'] and s['stall_t'] is None and c.mode in (1, 3) and c.spd < .8: s['stall_t'] = c.t
     if s['grind_seen'] and s['land_after_grind'] is None and c.mode == 1 and s['prev_mode'] == 2: s['land_after_grind'] = c.t
-    if c.mode == 4 and s['bail_t'] is None: s['bail_t'] = c.t
+    if c.mode == 4 and s['bail_t'] is None:
+        s['bail_t'] = c.t; s['bail_at'] = (c.hx, c.hy); s['bail'] = {'speed': round(s.get('ride_spd', c.spd), 2), 'travel': 0., 'lie_min': None}
     if c.mode == 4 and c.d.get('bail_kind', 'none') != 'none': s['bail_kind'] = c.d['bail_kind']
-    if s['bail_t'] is not None and s['up_t'] is None and c.mode in (0, 1): s['up_t'] = c.t
+    if s['bail_t'] is not None and s['up_t'] is None:     # how far the body went, and how low it lay (lie=, cm)
+        b = s['bail']; b['travel'] = round(max(b['travel'], math.hypot(c.hx - s['bail_at'][0], c.hy - s['bail_at'][1])), 2)
+        try: lie = float(c.d['lie'])                   # -1 out of the bail (the get-up has the body)
+        except (KeyError, ValueError): lie = -1.
+        if lie >= 0.: b['lie_min'] = min(lie, b['lie_min'] if b['lie_min'] is not None else 1e9)
+        if c.t <= s['bail_t'] + 1.: b['travel_1s'], b['lie_1s'] = b['travel'], b['lie_min']
+        if c.mode in (0, 1): s['up_t'] = c.t; b['down_secs'] = round(c.t - s['bail_t'], 2)
+    if c.mode != 4: s['ride_spd'] = c.spd
     for key, val in (('combos', c.combo), ('lasts', c.last), ('retail', c.retail)):
         if val and (not s[key] or s[key][-1] != val): s[key].append(val)
     if c.mode == 1:
@@ -788,7 +871,10 @@ def end_shot():
         except Exception: keep = False
     st['kept'][s['name']] = keep
     replay = None
-    if s.get('replay') and s['airs']:
+    if s.get('replay') and s['replay'].get('on') == 'bail':
+        if s['bail_t'] is not None:
+            replay = {'from_t': round(s['bail_t'] - s['replay']['pre'], 3), 'to_t': round(s['bail_t'] + s['replay']['post'], 3), 'stretch': 3}
+    elif s.get('replay') and s['airs']:
         a = max(s['airs'], key=lambda a: (a['h'], a['t1'] - a['t0']))
         replay = {'from_t': round(a['t0'] - s['replay']['pre'], 3), 'to_t': round(a['t1'] + s['replay']['post'], 3), 'stretch': 3}
     names = ' / '.join(s['combos'] + s['lasts'])
@@ -800,7 +886,7 @@ def end_shot():
             'grinds': s['d_grinds'], 'speed_max': round(s['max_spd'], 2), 'speed_min': round(s['min_spd'], 2) if s['min_spd'] < 1e8 else None,
             'airs': [{'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'spin': a['spin'], 'turned': a.get('turned'), 'to': a['to']} for a in s['airs']],
             'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
-            'bail_kind': s['bail_kind'], 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
+            'bail_kind': s['bail_kind'], 'bail': s.get('bail'), 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
     part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'])
     json.dump(part, open(os.path.join(OUT, 'parts', s['dir'], 'shot.json'), 'w'))
     st['done'].append(info)
