@@ -24,17 +24,19 @@ def assess(take):
         grind_runs=sum(s.get('mode')=='3' and (i==0 or states[i-1].get('mode')!='3') for i,s in enumerate(states))
         air = sum(s.get('mode') == '2' for s in states) / 60
         manual = sum(s.get('manual') == '1' for s in states) / 60
+        dismounted=sum(s.get('retail')=='BipedGround' for s in states)
         needed=requirements.get(name,{})
         meets=(not needed.get('grind') or grind>.05) and grind_runs>=needed.get('grind_runs',0) and (not needed.get('manual') or manual>.05) and (not needed.get('air') or air>.05)
-        shots[name] = dict(ok=not bails and not bails_counter and distance > 8 and meets and states[-1].get('mode')=='1',
+        shots[name] = dict(ok=not bails and not bails_counter and not dismounted and distance > 8 and meets and states[-1].get('mode')=='1',
                            seconds=round(len(ride)/60, 2), distance_m=round(distance, 2),
                            requirements=needed, manual_seconds=round(manual,2),
                            grind_seconds=round(grind, 2), grind_runs=grind_runs, air_seconds=round(air, 2),
                            bail_frames=bails, bails=max(0, bails_counter), combos=combos,
+                           dismounted_frames=dismounted,
                            start=[ride[0][k] for k in ('x', 'y', 'z')],
                            end=[ride[-1][k] for k in ('x', 'y', 'z')])
     frames = list(take.glob('frame_*.png')) if done['filmed'] else []
-    complete = not done['filmed'] or len(frames) == done['film_frames']
+    complete = not done['filmed'] or {p.name for p in frames}=={'frame_%05d.png'%i for i in range(done['film_frames'])}
     report = dict(ok=complete and bool(shots) and all(s['ok'] for s in shots.values()),
                   complete_frames=complete, expected_frames=done['film_frames'], actual_frames=len(frames), shots=shots)
     (take / 'review.json').write_text(json.dumps(report, indent=2) + '\n')

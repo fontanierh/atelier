@@ -168,6 +168,8 @@ def run(dt):
         return
     t = (frame - SETTLE) / 60
     x, y, z = where()
+    raw = L.skate_state()
+    mode=raw.split('mode=')[1].split()[0]
     for trigger in st['triggers']:
         if 'distance' in trigger:
             a=math.radians(shot['heading']); sx,sy=shot['start']
@@ -180,17 +182,28 @@ def run(dt):
     inputs = {}
     for when, value in st['timeline']:
         if when <= t: inputs = dict(value)
+    if shot.get('speed_cap') and inputs.get('push'):
+        speed=float(raw.split('speed=')[1].split()[0])/100
+        inputs['push']=speed<shot['speed_cap']
+    if 'line_y' in shot and mode=='1':
+        v=pawn.get_velocity()
+        if v.x>100:
+            direction=math.atan2(-v.y,v.x)
+            desired=math.atan2(shot['line_y']-y,5.)
+            error=(desired-direction+math.pi)%math.tau-math.pi
+            inputs['left']=(max(-.35,min(.35,-error/.3)),0)
+    if mode=='1' and any(a<=x<=b for a,b in shot.get('manual_ranges',[])) and not inputs.get('right'):
+        inputs['right']=(0,-.5)
     if shot.get('pump'):
         h=(deck.get_world_location().z-live.park.ue(0,0).z)/100
         v=pawn.get_velocity()
-        mode=L.skate_state().split('mode=')[1].split()[0]
         inputs['grab_right']=mode=='1' and h<1.25 and v.x>0
         if mode=='2' and v.z>0: inputs['grab_left']=True
     if 'brake_x' in shot and x>=shot['brake_x']: inputs={'brake':True}
     live.skate_input(**inputs)
     raw = L.skate_state()
     st['states'].append(dict(shot=shot['name'], frame=st['sim'], t=round(t, 4),
-                             x=round(x, 4), y=round(y, 4), z=round(z, 4), state=raw))
+                             x=round(x, 4), y=round(y, 4), z=round(z, 4), inputs=inputs, state=raw))
     L.audio_frame(st['sim'])
     st['loops'].append(L.skate_loops().strip())
     if st['sim'] % 2 == 0:

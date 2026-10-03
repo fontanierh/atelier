@@ -5,7 +5,7 @@
 One-shots come from audio.json (sim frames at 60 fps), attenuated by distance to the camera (the game's sphere: full
 inside 5 m, -48 dB at 50 m) and panned by bearing; the board's five loops follow loops.csv (volume and pitch every sim
 frame, played through a phase accumulator so pitch glides are smooth); the countryside ambience sits under everything.
-The 30 fps JPG frames and the mix become H.264/AAC MP4s (1080p and 720p).
+The 30 fps viewport frames and the mix become H.264/AAC MP4s (1080p and 720p).
 """
 import argparse, csv, json, math, subprocess, sys, wave
 from pathlib import Path
@@ -90,7 +90,9 @@ def main():
     with wave.open(str(out_wav), 'wb') as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(RATE); w.writeframes((np.clip(mix, -1, 1) * 32767).astype('<i2').tobytes())
     mp4 = take / f'{a.out}.mp4'
-    vf = f'scale=1920:1080,fade=t=in:st=0:d=0.4,fade=t=out:st={seconds - 1.:.3f}:d=1'
+    # Desktop capture follows the monitor aspect; fixed cameras letterbox to 16:9.
+    # Centre-crop that frame before scaling so the skater keeps correct proportions.
+    vf = f"crop='min(iw,ih*16/9)':'min(ih,iw*9/16)',scale=1920:1080,fade=t=in:st=0:d=0.4,fade=t=out:st={seconds - 1.:.3f}:d=1"
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(FILM), '-i', str(take / ('frame_%05d.' + done.get('frame_extension', 'jpg'))), '-i', str(out_wav), '-vf', vf,
                     '-c:v', 'libx264', '-threads', '4', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', str(mp4)], check=True)
     small = take / f'{a.out}-720p.mp4'
