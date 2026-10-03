@@ -4,8 +4,10 @@
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_ride [--only name,name]
 Mounts with skate.Backend Ride, then checks pushing, steering, braking, the ollie's height, every Flick-It trick, a grab,
 a 360, a grind, a manual, a bail and its recovery, a vert air that comes back in, frame pacing (including mounting
-and switching character), and the physical rider (skate.RidePhysical): how closely it holds the animation riding and
-landing, a bail that leaves the animation continuously, and its frame cost in Mega Park. Over every frame recorded,
+and switching character), Mega Park's roll-in from the upper deck (over the crest without leaving it, through the
+concave at the bottom without a bail) and a grind into the parapet's corner (it flies off the end, never stalling), and
+the physical rider (skate.RidePhysical, on by default): how closely it holds the animation riding and landing, a bail
+that leaves the animation continuously, and its frame cost in Mega Park. Over every frame recorded,
 the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck where the clip stands on
 it, carry no NaN and never pop between clips, in both stances, and the standing rider matches the reference's stand.
 The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
@@ -28,6 +30,8 @@ FLIPS = {
     '360_hardflip': '360 Hardflip', '360_inward_heelflip': '360 Inward Heelflip',
 }
 FLAT = (-28, 38)       # the pier's long flat run, heading east
+# The steering turns start a metre apart: a left turn from FLAT meets the planter beside the bench at (-26, 41).
+STEER = {1: FLAT, -1: (FLAT[0], FLAT[1] - 1)}
 RAIL = (-23, 20)       # an ollie at .98 s onto the rail
 QUARTER = (33, 25)     # a quarter pipe, launched at 950 cm/s
 
@@ -112,7 +116,8 @@ def main():
                f'top speed {top:.0f} cm/s after 3.5 s of pushing')
     if wanted('steer'):
         for direction in (1, -1):
-            rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,500,[(.2,{{'left':({direction * .8},0)}}),(1.4,{{}})],duration=1.6", 1.6)
+            x, y = STEER[direction]
+            rows = qa.run_scenario(f"{x},{y},0,500,[(.2,{{'left':({direction * .8},0)}}),(1.4,{{}})],duration=1.6", 1.6)
             dy = position(rows[-1])[1] - position(rows[0])[1]
             turned = (float(rows[-1]['yaw']) - float(rows[0]['yaw']) + 180) % 360 - 180
             record(f'steer_{"right" if direction > 0 else "left"}', rows, dy * direction > 40 and turned * direction > 30 and rows[-1]['mode'] == '1',
@@ -244,6 +249,10 @@ live.behave('spin', spin)
         pose_checks(record, seen)
     if wanted('cost'):
         cost_ab(record)
+    if wanted('megadrop'):
+        megadrop(record)
+    if wanted('parapet'):
+        parapet_corner(record)
     if any(wanted(name) for name in PHYSICAL):
         physical_checks(record, wanted)
     qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
@@ -383,6 +392,10 @@ def pose_checks(record, seen):
 # The reference (RIDE.md, Physical rider): the oracle's published body against its animation pose.
 BAIL_REFERENCE = {.125: (0, 8), .25: (8, 26), .5: (14, 37), 1.: (64, 127)}
 MEGA_ROAD = (-127.9, 1471.1, 134.)   # Mega Park's road (island metres), running east into its bend
+MEGADROP = (-44.5, 1305.1, 112., 135.)   # the top of Mega Park's roll-in (island metres) and the Unreal yaw down it
+MEGADROP_FLOOR = 7600.   # cm: the board (z=) is on the floor at the bottom of the roll-in below this height
+# Mega Park's parapet: a point on its south line 5 m from the corner (island metres) and the Unreal direction to it.
+PARAPET = ((-71.13, 1376.69, 118.91), (.4655, .885))
 PHYSICAL = ('physical_riding', 'physical_landing', 'physical_bail', 'physical_cost')
 
 
@@ -513,6 +526,7 @@ def cost_ab(record):
                     sim_mean_ms=round(sum(m for m, _ in sim) / len(sim), 3) if sim else 0.,
                     sim_worst_ms=round(max(w for _, w in sim), 3) if sim else 0.)
     load = [round(os.getloadavg()[0], 1)]
+    before = qa.py("print(unreal.SystemLibrary.get_console_variable_int_value('skate.RidePhysical'))").strip().splitlines()[-1]
     ground = qa.py(f"g=live.L.ground_at(unreal.Vector({MEGA_ROAD[0] * 100},{-MEGA_ROAD[1] * 100},{MEGA_ROAD[2] * 100}))\n"
                    "print(g.x, g.y, g.z)").split()
     place = f"live.skate_place(unreal.Vector({ground[0]},{ground[1]},{ground[2]}), 0); live.L.skate_launch(unreal.Vector(700,0,0))"
@@ -535,12 +549,64 @@ def cost_ab(record):
             report[f'mega_physical_{int(on)}'] = summary(rows, frame_report())
             load.append(round(os.getloadavg()[0], 1))
     finally:
-        physical(False)
+        physical(before == '1')
     print('cost ' + json.dumps(report), flush=True)
     ok = all(r['frames'] > 100 and r['worst_ms'] < 50 for r in report.values()) and len(report) == 4
     record('cost_ab', [], ok, '; '.join(f"{k}: p50 {r['p50_ms']} p99 {r['p99_ms']} worst {r['worst_ms']} ms, "
                                         f"anim {r['anim_p50_ms']}/{r['anim_p99_ms']} ms, sim {r['sim_mean_ms']}/{r['sim_worst_ms']} ms"
                                         for k, r in report.items()) + f'; load average {load}')
+
+
+def mega_place(place):
+    """Run `place` (a placement in Mega Park), letting the park stream in around it first."""
+    qa.py(place)
+    time.sleep(2.5)
+    qa.py(place)
+    time.sleep(.6)
+
+
+def megadrop(record):
+    """Roll in from the upper deck at 3 m/s: over the crest without leaving the ground, down the face and through the
+    concave transition at the bottom (over 20 m/s) without a bail."""
+    x, y, z, yaw = MEGADROP
+    ground = qa.py(f"g=live.L.ground_at(unreal.Vector({x * 100},{-y * 100},{z * 100}))\nprint(g.x, g.y, g.z)").split()
+    mega_place(f"live.skate_place(unreal.Vector({ground[0]},{ground[1]},{ground[2]}), {yaw})")
+    rows = record_while(f"live.L.skate_launch(unreal.Vector({300 * math.cos(math.radians(yaw)):.1f},"
+                        f"{300 * math.sin(math.radians(yaw)):.1f},0))", 7)
+    floor = next((i for i, r in enumerate(rows) if float(r['z']) < MEGADROP_FLOOR), None)
+    judged = rows[:floor + 30] if floor is not None else rows
+    air = [i for i, r in enumerate(rows[:floor] if floor is not None else rows) if i > 6 and r['mode'] == '2']
+    bailed = any(r['mode'] == '4' for r in judged)
+    record('megadrop', rows, floor is not None and not air and not bailed,
+           f"floor reached {'at %.0f cm/s after %.1f s' % (speed(rows[floor]), floor / 60) if floor is not None else 'never'}; "
+           f"{len(air)} air frames before it{' from frame %d' % air[0] if air else ''}; "
+           f"{'bailed' if bailed else 'no bail'} through half a second on the floor; top speed {max(map(speed, judged)):.0f} cm/s")
+
+
+def parapet_corner(record):
+    """Drop onto the parapet's south line 5 m before its corner, moving at 6 m/s toward it: the board locks on without
+    jumping onto the line, grinds to the corner, and flies off the end (the corner is too sharp to follow) without
+    stalling or bailing."""
+    (x, y, z), (dx, dy) = PARAPET
+    yaw = math.degrees(math.atan2(dy, dx))
+    # 80 cm over the line, so the board starts in the air and comes down onto it.
+    place = f"live.skate_place(unreal.Vector({x * 100},{-y * 100},{z * 100 + 80}), {yaw:.2f})"
+    mega_place(place)
+    qa.py(place)
+    rows = record_while(f"live.L.skate_launch(unreal.Vector({600 * dx:.1f},{600 * dy:.1f},0))", 3)
+    lock = next((i for i, r in enumerate(rows) if r['mode'] == '3'), None)
+    end = next((i for i in range(lock, len(rows)) if rows[i]['mode'] != '3'), None) if lock is not None else None
+    after = rows[lock:end + 36] if end is not None else []
+    slowest = min(map(speed, after), default=0)
+    bailed = any(r['mode'] == '4' for r in after)
+    # The board's step at the lock beyond its own speed: the native board touches the line before it locks.
+    jump = max((math.dist(position(a), position(b)) - speed(b) * float(b.get('dt', 16.7)) / 1000
+                for a, b in zip(rows[max(0, lock - 1):lock + 8], rows[max(0, lock - 1) + 1:lock + 9])), default=99) if lock is not None else 99
+    record('parapet_corner', rows, lock is not None and end is not None and not bailed and slowest >= 100 and jump < 15,
+           (f"locked at {speed(rows[lock]):.0f} cm/s, grinded {(end - lock) / 60:.2f} s, left at {speed(rows[end]):.0f} cm/s "
+            f"(mode {rows[end]['mode']}); slowest {slowest:.0f} cm/s up to 0.6 s after; "
+            f"{'bailed' if bailed else 'no bail'}; largest step at the lock {jump:.1f} cm beyond the speed; {qa.combos(rows)}")
+           if end is not None else f"states {','.join(sorted(qa.modes(rows)))}; never {'locked' if lock is None else 'left the line'}")
 
 
 def release_controls():

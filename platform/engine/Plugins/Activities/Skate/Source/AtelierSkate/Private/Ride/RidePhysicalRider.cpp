@@ -17,9 +17,9 @@
 
 namespace
 {
-    TAutoConsoleVariable<int32> CVarRidePhysical(TEXT("skate.RidePhysical"), 0,
-        TEXT("Ride: 1 makes the rider an active ragdoll while riding (Physics Control drives its bodies toward the animation); ")
-        TEXT("0 animates it, with a ragdoll for bails only."));
+    TAutoConsoleVariable<int32> CVarRidePhysical(TEXT("skate.RidePhysical"), 1,
+        TEXT("Ride: 1 (the default) makes the rider an active ragdoll while riding (Physics Control drives its bodies toward the ")
+        TEXT("animation); 0 animates it, with a ragdoll for bails only."));
 
     TArray<TWeakObjectPtr<URidePhysicalRider>> GRiders;
     FAutoConsoleCommand ReloadCommand(TEXT("skate.RidePhysicalReload"),

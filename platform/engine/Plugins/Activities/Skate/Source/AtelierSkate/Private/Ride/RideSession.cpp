@@ -95,7 +95,7 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     Names = Animator.GetNames(); Reference = Animator.GetReference();
     P = GroundPoint; V = InVelocity; Q = Rotation.GetNormalized();
     Travel = FVector::DotProduct(V, Q.GetForwardVector()) < -15.f ? -1.f : 1.f;
-    TurnRate = SlideYaw = Curvature = Crouch = 0; PushTime = -1; BrakeTime = 0; PendingPop = Flick::None;
+    TurnRate = SlideYaw = Curvature = Crouch = 0; PushTime = -1; BrakeTime = 0; PendingPop = Flick::None; TrailNum = 0;
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; Rail = INDEX_NONE; Balance = 0;
     Line.Reset(); Holding.Reset(); HeldPoints = 0; Calm = 0; Trick.Reset(); Flicks.Reset(); Cues.Reset();
     Accumulator = 0; bCamValid = false;
@@ -190,6 +190,8 @@ void FRideSession::Tick(const FSkateInput& In)
     case ERideState::Grind: TickGrind(In, F); break;
     case ERideState::Bail: case ERideState::GetUp: TickBail(); break;
     }
+    // The curvature's trail starts afresh on every return to the ground.
+    if (Mode != ERideState::Ground && Mode != ERideState::Powerslide && Mode != ERideState::Manual) TrailNum = 0;
     // A line ends after a calm second on the ground.
     const bool bQuiet = Mode == ERideState::Ground && PendingPop == Flick::None;
     Calm = bQuiet ? Calm + Tick60 : 0.f;
@@ -248,25 +250,39 @@ bool FRideSession::Sweep(const FVector& From, const FVector& To, float Radius, F
     return Where.World->SweepSingleByChannel(Hit, From, To, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(Radius), Params);
 }
 
-bool FRideSession::Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked) const
+bool FRideSession::Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked, FVector* Block, const FVector& Toward) const
 {
     const float R = Tune.WheelRadius;
     FHitResult Hit;
     if (!Sweep(Base + Up * (Above + R), Base - Up * (Below - R), R, Hit)) return false;
-    if (Hit.bStartPenetrating) { bBlocked = true; return false; }
+    // Started inside ground: look again from higher. A face there that rises against the travel (a tight concave
+    // transition, a bank's foot) is ground to follow; a raised face level with the deck stays a step too high.
+    if (Hit.bStartPenetrating && FVector::DotProduct(Hit.Normal, Up) >= Tune.WallSlope && !Toward.IsNearlyZero())
+    {
+        FHitResult Higher;
+        const float Over = Above + Tune.StepUp + 2.f * R;
+        if (Sweep(Base + Up * (Over + R), Base - Up * (Below - R), R, Higher) && !Higher.bStartPenetrating &&
+            FVector::DotProduct(Higher.Normal, Toward.GetSafeNormal()) < -.08f)
+            Hit = Higher;
+    }
     Normal = Hit.Normal;
-    // A face too steep for the deck is a wall or a curb, not ground.
-    if (FVector::DotProduct(Normal, Up) < Tune.WallSlope) { bBlocked = true; return false; }
+    // A face too steep for the deck (or one the wheel starts inside) is a wall or a curb, not ground.
+    if (Hit.bStartPenetrating || FVector::DotProduct(Normal, Up) < Tune.WallSlope)
+    {
+        bBlocked = true;
+        if (Block && (Block->IsZero() || FVector::DotProduct(Toward, Normal) < FVector::DotProduct(Toward, *Block))) *Block = Normal;
+        return false;
+    }
     Point = Hit.Location - Up * R;
     return true;
 }
 
-bool FRideSession::FindGround(const FVector& At, const FQuat& InFrame, float Below, FVector& OutP, FVector& OutUp, FVector& OutForward, bool& bBlocked) const
+bool FRideSession::FindGround(const FVector& At, const FQuat& InFrame, float Below, FVector& OutP, FVector& OutUp, FVector& OutForward, bool& bBlocked, FVector* Block, const FVector& Toward) const
 {
     const FVector Up = InFrame.GetUpVector(), Forward = InFrame.GetForwardVector();
     FVector FrontP, FrontN, BackP, BackN;
-    const bool bFront = Probe(At + Forward * Tune.AxleX, Up, Tune.StepUp, Below, FrontP, FrontN, bBlocked);
-    const bool bBack = Probe(At - Forward * Tune.AxleX, Up, Tune.StepUp, Below, BackP, BackN, bBlocked);
+    const bool bFront = Probe(At + Forward * Tune.AxleX, Up, Tune.StepUp, Below, FrontP, FrontN, bBlocked, Block, Toward);
+    const bool bBack = Probe(At - Forward * Tune.AxleX, Up, Tune.StepUp, Below, BackP, BackN, bBlocked, Block, Toward);
     if (bFront && bBack)
     {
         OutUp = (FrontN + BackN).GetSafeNormal();
@@ -286,7 +302,7 @@ bool FRideSession::FindGround(const FVector& At, const FQuat& InFrame, float Bel
     }
     // A narrow crest between the axles.
     FVector CP, CN;
-    if (Probe(At, Up, Tune.StepUp, Below, CP, CN, bBlocked))
+    if (Probe(At, Up, Tune.StepUp, Below, CP, CN, bBlocked, Block, Toward))
     {
         OutUp = CN; OutForward = FVector::VectorPlaneProject(Forward, CN).GetSafeNormal(); OutP = CP;
         return true;
@@ -438,61 +454,107 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     V = Forward * Travel * Speed;
     WheelSpin = FMath::Fmod(WheelSpin + FVector::DotProduct(V, Forward) * Tick60 / (2 * PI * Tune.WheelRadius) * 360.f, 360.f);
 
+    // Move in steps of at most GroundStep, so the probes and the crest test follow the surface at any speed (a fast
+    // board probing a whole tick ahead would start inside a tight transition).
+    const int32 Steps = FMath::Clamp(FMath::CeilToInt(Speed * Tick60 / FMath::Max(1.f, Tune.GroundStep)), 1, 8);
+    for (int32 I = 0; I < Steps; ++I)
+        if (!MoveOnGround(Tick60 / Steps, Speed)) return;
+    // Upside down on a wall at a crawl: fall off.
+    if (Q.GetUpVector().Z < -.2f && Speed < 150.f) { StartBail(TEXT("stall on the wall")); return; }
+    if (Mode == ERideState::Ground && Holding.IsEmpty() == false && Holding.Contains(TEXT("Manual"))) EndHold();
+}
+
+void FRideSession::Deflect(const FVector& Normal, float& Speed)
+{
+    const float Into = -FVector::DotProduct(V, Normal);
+    if (Into <= 0) return;
+    const FVector Up = Q.GetUpVector();
+    V += Normal * Into * (1.f + Tune.WallRestitution);
+    const FVector Along = FVector::VectorPlaneProject(V, Up);
+    // Turn the board along the face, keeping the nose or tail that was leading.
+    if (Along.Size() > 20.f) Q = Frame(Up, Along.GetSafeNormal() * Travel);
+    Speed = V.Size(); TurnRate = 0;
+}
+
+void FRideSession::AddTrail(float At, const FVector& Up)
+{
+    if (TrailNum > 0 && At - TrailAt[TrailNum - 1] < 10.f) return;
+    if (TrailNum == TrailMax)
+    {
+        for (int32 I = 1; I < TrailMax; ++I) { TrailAt[I - 1] = TrailAt[I]; TrailUp[I - 1] = TrailUp[I]; }
+        --TrailNum;
+    }
+    TrailAt[TrailNum] = At; TrailUp[TrailNum] = Up; ++TrailNum;
+    // Keep the odometer small.
+    if (TrailAt[0] > 1e5f)
+    {
+        const float Base = TrailAt[0];
+        for (int32 I = 0; I < TrailNum; ++I) TrailAt[I] -= Base;
+        Odometer -= Base;
+    }
+}
+
+bool FRideSession::MoveOnGround(float Dt, float& Speed)
+{
+    const FVector Up = Q.GetUpVector();
+    const FVector Dir = Q.GetForwardVector() * Travel;
+    if (TrailNum == 0) AddTrail(Odometer, Up);
+
     // Move, stopping at walls.
-    FVector Move = V * Tick60;
+    FVector Move = V * Dt;
     const float Lift = Tune.WheelRadius + 8.f;
     FHitResult Wall;
     if (!Move.IsNearlyZero() && Sweep(P + Up * Lift, P + Up * Lift + Move, 7.f, Wall) && !Wall.bStartPenetrating &&
         FVector::DotProduct(Wall.ImpactNormal, Up) < Tune.WallSlope)
     {
         const FVector N = FVector::VectorPlaneProject(Wall.ImpactNormal, Up).GetSafeNormal();
-        const float Into = -FVector::DotProduct(V, N);
-        if (Into > Tune.WallBailSpeed) { StartBail(TEXT("wall")); return; }
+        if (-FVector::DotProduct(V, N) > Tune.WallBailSpeed) { StartBail(TEXT("wall")); return false; }
         Move *= Wall.Time;
-        if (Into > 0)
-        {
-            V += N * Into * (1.f + Tune.WallRestitution);
-            const FVector Along = FVector::VectorPlaneProject(V, Up);
-            if (Along.Size() > 20.f)
-            {
-                // Turn the board along the wall, keeping the nose or tail that was leading.
-                const FVector Lead = Along.GetSafeNormal() * Travel;
-                Q = Frame(Up, Lead);
-            }
-            Speed = V.Size(); TurnRate = 0;
-        }
+        Deflect(N, Speed);
     }
     const FVector Next = P + Move;
 
     // Follow the surface; leave it when it falls away faster than the board can follow.
-    FVector Ground, NewUp, NewForward; bool bBlocked = false;
-    const float Below = Tune.StickGap + Tune.StickPerSpeed * Speed * Tick60;
-    if (!FindGround(Next, Q, Below, Ground, NewUp, NewForward, bBlocked))
+    FVector Ground, NewUp, NewForward, Block = FVector::ZeroVector; bool bBlocked = false;
+    const float Below = Tune.StickGap + Tune.StickPerSpeed * Speed * Dt;
+    if (!FindGround(Next, Q, Below, Ground, NewUp, NewForward, bBlocked, &Block, V))
     {
-        if (bBlocked && Speed * Tick60 > 1.f && Speed > Tune.WallBailSpeed) { StartBail(TEXT("curb")); return; }
-        P = Next;
-        if (bBlocked) { V = FVector::ZeroVector; return; }
-        TakeOff(0.f);
-        return;
+        if (!bBlocked) { P = Next; TakeOff(0.f); return false; }
+        // A face too steep to roll onto (a curb, a step) under a wheel. As in the native runtime, the board's closing
+        // velocity along the face's normal throws the rider when it is fast across the deck (CurbBail) or along its
+        // normal (CurbImpact); otherwise the board stops against the face, turned along it.
+        const FVector Closing = Block * FMath::Max(0.f, float(-FVector::DotProduct(V, Block)));
+        const float AlongUp = FVector::DotProduct(Closing, Up);
+        if ((Closing - Up * AlongUp).Size() > Tune.CurbBail || FMath::Abs(AlongUp) > Tune.CurbImpact) { StartBail(TEXT("curb")); return false; }
+        const FVector Face = FVector::VectorPlaneProject(Block, Up).GetSafeNormal();
+        if (Face.IsNearlyZero()) { V = FVector::ZeroVector; Speed = 0; }
+        else Deflect(Face, Speed);
+        return false;
     }
-    // Curvature along the travel: the normal's turn per cm. A crest sharper than gravity can hold launches.
-    const float Turned = FMath::DegreesToRadians(AngleBetween(Up, NewUp));
-    const float Dist = FMath::Max(1.f, float(FVector::Dist(P, Ground)));
-    const float Sign = FVector::DotProduct(NewUp - Up, Dir) > 0 ? -1.f : 1.f;   // convex crests tilt the normal forward
-    Curvature = Sign * Turned / Dist;
+    // Curvature along the travel, over at least CrestWindow of it (the wheelbase and more, so a transition built of
+    // flat facets reads as the curve it approximates): the normal's turn per cm. A convex crest launches the board when
+    // following it would take more than LaunchFactor g, beyond the CrestReach the rider's legs absorb.
+    const float At = Odometer + float(FVector::Dist(P, Ground));
+    int32 Base = 0;
+    for (int32 I = TrailNum - 1; I >= 0; --I)
+        if (At - TrailAt[I] >= Tune.CrestWindow) { Base = I; break; }
+    const float Window = FMath::Max(At - TrailAt[Base], Tune.CrestWindow);
+    const float Turned = FMath::DegreesToRadians(AngleBetween(TrailUp[Base], NewUp));
+    const float Sign = FVector::DotProduct(NewUp - TrailUp[Base], Dir) > 0 ? -1.f : 1.f;   // convex crests tilt the normal forward
+    Curvature = Sign * Turned / Window;
     const float Hold = FMath::Max(0.f, float(-FVector::DotProduct(FVector(0, 0, -G), Up)));
-    if (Sign < 0 && Turned > FMath::DegreesToRadians(2.f) && Speed * Speed * Turned / Dist > Tune.LaunchFactor * FMath::Max(Hold, 1.f))
+    const float Absorbed = 2.f * Tune.CrestReach / (Window * Window);
+    if (Sign < 0 && Turned > FMath::DegreesToRadians(2.f) && Speed * Speed * (Turned / Window - Absorbed) > Tune.LaunchFactor * FMath::Max(Hold, 1.f))
     {
-        P = Next; TakeOff(0.f); return;
+        P = Next; TakeOff(0.f); return false;
     }
-    P = Ground;
+    P = Ground; Odometer = At;
+    AddTrail(At, NewUp);
     // Keep the board's heading (nose or tail leading) in the new plane.
-    const FVector Heading = FVector::VectorPlaneProject(Forward, NewUp).GetSafeNormal();
+    const FVector Heading = FVector::VectorPlaneProject(Q.GetForwardVector(), NewUp).GetSafeNormal();
     Q = Frame(NewUp, Heading.IsNearlyZero() ? NewForward : Heading);
     V = Q.GetForwardVector() * Travel * Speed;
-    // Upside down on a wall at a crawl: fall off.
-    if (NewUp.Z < -.2f && Speed < 150.f) { StartBail(TEXT("stall on the wall")); return; }
-    if (Mode == ERideState::Ground && Holding.IsEmpty() == false && Holding.Contains(TEXT("Manual"))) EndHold();
+    return true;
 }
 
 void FRideSession::StartPush(bool bFirstPush, float Speed)
@@ -719,6 +781,10 @@ bool FRideSession::TryGrind(const FSkateInput& In)
     // The board must not be moving away from the line faster than it can be caught.
     const FVector Across = FVector::CrossProduct(FVector::UpVector, Tangent).GetSafeNormal();
     if (FMath::Abs(FVector::DotProduct(V, Across)) > 800.f) return false;
+    // Nor crossing it more steeply than GrindCross (the native runtime locks up to about 60 degrees).
+    const FVector Flat(V.X, V.Y, 0);
+    if (Flat.Size() > 100.f && FMath::Abs(FVector::DotProduct(Flat, FVector(Tangent.X, Tangent.Y, 0).GetSafeNormal())) < FMath::Cos(FMath::DegreesToRadians(Tune.GrindCross)) * Flat.Size())
+        return false;
     Rail = R; RailS = S;
     RailSpeed = FVector::DotProduct(V, Tangent);
     if (FMath::Abs(RailSpeed) < 40.f) { Rail = INDEX_NONE; return false; }
@@ -747,6 +813,11 @@ bool FRideSession::TryGrind(const FSkateInput& In)
     bGrindFront = FVector::DotProduct(Point - P, Toes) > 0;
     RailUp = FVector::CrossProduct(Tangent, FVector::CrossProduct(FVector::UpVector, Tangent)).GetSafeNormal();
     if (RailUp.Z < 0) RailUp = -RailUp;
+    // The board closes onto the line over the next ticks, as fast as it was coming and no slower than GrindLockSpeed,
+    // rather than jumping there (the native board touches the line before it locks).
+    const bool bSlide = GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide;
+    LockOffset = P - (Point - RailUp * (bSlide ? Tune.DeckHeight - 1.5f : Tune.WheelRadius + Line_.Radius));
+    LockSpeed = FMath::Max(Tune.GrindLockSpeed, float(-FVector::DotProduct(V, LockOffset.GetSafeNormal())));
     // Score the air that led onto the rail.
     if (Trick_ != Flick::None) AddTrick(FlickName(Trick_, bTrickFakie), FlipInfo(Trick_).Points);
     Trick_ = Flick::None; TrickTime = -1;
@@ -760,7 +831,6 @@ bool FRideSession::TryGrind(const FSkateInput& In)
 void FRideSession::TickGrind(const FSkateInput& In, Flick F)
 {
     if (!Where.Rails || !Where.Rails->Rails.IsValidIndex(Rail)) { TakeOff(0.f); return; }
-    const FSkateRail& Line_ = Where.Rails->Rails[Rail];
     FVector Tangent;
     Where.Rails->Sample(Rail, RailS, Tangent);
     const bool bSlide = GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide;
@@ -768,13 +838,26 @@ void FRideSession::TickGrind(const FSkateInput& In, Flick F)
     RailSpeed += -G * Tangent.Z * Tick60;
     const float Friction = bSlide ? Tune.SlideFriction : Tune.GrindFriction;
     RailSpeed = RailSpeed > 0 ? FMath::Max(0.f, RailSpeed - Friction * Tick60) : FMath::Min(0.f, RailSpeed + Friction * Tick60);
+    // Along the line. At its end the grind carries on into a line that continues it round a shallow corner; an end or
+    // a sharp corner sends the board off the way it was going.
+    const FVector Was = Tangent;
+    const float From = RailS;
     RailS += RailSpeed * Tick60;
+    bool bOff = false;
+    float Corner = 0;
+    if (RailS < 0 || RailS > Where.Rails->Rails[Rail].Length()) bOff = !TurnCorner();
+    else if (SharpCorner(From, RailS, Corner)) { RailS = Corner; bOff = true; }
+    const FSkateRail& Line_ = Where.Rails->Rails[Rail];
     FVector Point = Where.Rails->Sample(Rail, FMath::Clamp(RailS, 0.f, Line_.Length()), Tangent);
+    if (bOff) Tangent = Was;
     RailUp = FVector::CrossProduct(Tangent, FVector::CrossProduct(FVector::UpVector, Tangent)).GetSafeNormal();
     if (RailUp.Z < 0) RailUp = -RailUp;
-    // The board sits on the line: trucks on it for grinds, the deck's underside for slides.
+    // The board sits on the line: trucks on it for grinds, the deck's underside for slides; what is left of the lock's
+    // offset closes at LockSpeed.
     const float Drop = bSlide ? Tune.DeckHeight - 1.5f : Tune.WheelRadius + Line_.Radius;
-    P = Point - RailUp * Drop;
+    const float Gap = LockOffset.Size();
+    LockOffset = Gap > LockSpeed * Tick60 ? LockOffset * (1.f - LockSpeed * Tick60 / Gap) : FVector::ZeroVector;
+    P = Point - RailUp * Drop + LockOffset;
     FVector Nose = Tangent * GrindNose;
     if (bSlide) Nose = FVector::CrossProduct(RailUp, Tangent) * GrindNose;
     if (GrindKind == ERideGrind::Crooked) Nose = (Tangent * GrindNose + FVector::CrossProduct(RailUp, Tangent) * .5f).GetSafeNormal();
@@ -783,7 +866,7 @@ void FRideSession::TickGrind(const FSkateInput& In, Flick F)
     Travel = FVector::DotProduct(V, Q.GetForwardVector()) < 0 ? -1.f : 1.f;
     WheelSpin = FMath::Fmod(WheelSpin + (bSlide ? 0.f : RailSpeed * Tick60 * 2.f), 360.f);
     Hold(GrindName(), bSlide ? 250.f : 200.f, Tick60);
-    // Leave: a pop (any flick, flipping out), the end of the line, or a stall.
+    // Leave: a pop (any flick, flipping out), the end of the line or a sharp corner, or a stall.
     if (F != Flick::None)
     {
         Cues.Add(ERideCue::Flick);
@@ -791,8 +874,67 @@ void FRideSession::TickGrind(const FSkateInput& In, Flick F)
         if (F != Flick::Ollie && F != Flick::Nollie) StartTrick(F);
         return;
     }
-    if (RailS < 0 || RailS > Line_.Length()) { LeaveGrind(60.f); return; }
+    if (bOff) { LeaveGrind(60.f); return; }
     if (FMath::Abs(RailSpeed) < Tune.GrindStall && ModeTime > .5f) { LeaveGrind(30.f); return; }
+}
+
+bool FRideSession::TurnCorner()
+{
+    const TArray<FSkateRail>& Lines = Where.Rails->Rails;
+    const FSkateRail& From = Lines[Rail];
+    const int32 N = From.Points.Num();
+    if (N < 2) return false;
+    const bool bForward = RailS > From.Length();
+    const FVector Joint = bForward ? From.Points.Last() : From.Points[0];
+    const FVector Out = bForward ? (From.Points[N - 1] - From.Points[N - 2]).GetSafeNormal() : (From.Points[0] - From.Points[1]).GetSafeNormal();
+    const float Over = bForward ? RailS - From.Length() : -RailS;
+    // The line whose end meets this one's and leads on with the smallest turn, under GrindCorner.
+    int32 Best = INDEX_NONE;
+    bool bBestForward = true;
+    float BestTurn = Tune.GrindCorner;
+    for (int32 R = 0; R < Lines.Num(); ++R)
+    {
+        const FSkateRail& To = Lines[R];
+        const int32 M = To.Points.Num();
+        if (M < 2 || !To.Bounds.ExpandBy(Tune.GrindJoin).IsInsideOrOn(Joint)) continue;
+        for (int32 End = 0; End < 2; ++End)
+        {
+            const bool bStart = End == 0;
+            if (R == Rail && bStart != bForward) continue;   // the end being left
+            if (FVector::Dist(bStart ? To.Points[0] : To.Points.Last(), Joint) > Tune.GrindJoin) continue;
+            const FVector Away = bStart ? (To.Points[1] - To.Points[0]).GetSafeNormal() : (To.Points[M - 2] - To.Points[M - 1]).GetSafeNormal();
+            if (FMath::Abs(Away.Z) > .5f) continue;
+            const float Turned = AngleBetween(Out, Away);
+            if (Turned < BestTurn) { BestTurn = Turned; Best = R; bBestForward = bStart; }
+        }
+    }
+    if (Best == INDEX_NONE) return false;
+    // The new line may run the other way: the speed along it and the board's nose follow.
+    if (bBestForward != bForward) { RailSpeed = -RailSpeed; GrindNose = -GrindNose; }
+    Rail = Best;
+    const FSkateRail& To = Lines[Best];
+    RailS = bBestForward ? FMath::Min(Over, To.Length()) : FMath::Max(0.f, To.Length() - Over);
+    // The gap between the two ends closes like a lock.
+    LockOffset += Joint - (bBestForward ? To.Points[0] : To.Points.Last());
+    LockSpeed = FMath::Max(LockSpeed, Tune.GrindLockSpeed);
+    return true;
+}
+
+bool FRideSession::SharpCorner(float From, float To, float& OutS) const
+{
+    const FSkateRail& Line_ = Where.Rails->Rails[Rail];
+    const int32 N = Line_.Points.Num();
+    const bool bForward = To > From;
+    for (int32 K = bForward ? 1 : N - 2; K >= 1 && K <= N - 2; K += bForward ? 1 : -1)
+    {
+        const float S = Line_.Lengths[K];
+        if (bForward ? S <= From : S >= From) continue;
+        if (bForward ? S > To : S < To) break;
+        const FVector In = Line_.Points[K] - Line_.Points[K - 1], Out = Line_.Points[K + 1] - Line_.Points[K];
+        if (In.SizeSquared() < .25f || Out.SizeSquared() < .25f) continue;
+        if (AngleBetween(In, Out) > Tune.GrindCorner) { OutS = S; return true; }
+    }
+    return false;
 }
 
 void FRideSession::LeaveGrind(float Up)

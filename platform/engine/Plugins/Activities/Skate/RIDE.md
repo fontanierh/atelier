@@ -3,6 +3,34 @@
 Ride is the Unreal-native skating backend (`skate.Backend Ride`, `USkateSettings::Backend`). Its sources are in
 `Source/AtelierSkate/Private/Ride/`.
 
+## Board
+
+The board is rigid and steps at 60 Hz (`RideSession.cpp`; the numbers are in `RideTuning.h`).
+
+- **Ground.** A tick moves in steps of at most `GroundStep` (15 cm). Each step probes the ground under both axles with
+  a wheel-sized sphere, from `StepUp` (6 cm) above to `StickGap` plus a share of the step below, and the deck takes
+  the line between the two contacts. Ground that falls away further is a take-off.
+- **Crests.** The curvature along the travel is the turn of the ground's normal over at least `CrestWindow` (50 cm) of
+  travel, so a transition built of flat facets reads as the curve it approximates. A convex crest launches the board
+  when following it would take more than `LaunchFactor` (1.5) g once the rider's legs have absorbed a drop of
+  `CrestReach` (6 cm) over that window. A crest rounder than about 2 m radius never launches; a sharp 25 degree lip
+  does from about 5.8 m/s.
+- **Curbs and walls.** The board stops at a face too steep to roll onto (its normal more than 60 degrees from the
+  deck's). As in the native runtime (`Wipeout_GroundXZAcceleration`, `Wipeout_GroundYAcceleration`), the closing
+  velocity along the face's normal throws the rider beyond `CurbBail` (7.1 m/s) across the deck or `CurbImpact`
+  (60 m/s) along its normal. A concave transition turns with the board, so its closing velocity stays small at any
+  speed and it never throws the rider. A wheel that starts inside the ground looks again from higher: a face rising
+  against the travel (a tight transition, a bank's foot) is followed, a raised step level with the deck is not. A
+  wall at deck height throws the rider beyond `WallBailSpeed` (8 m/s) into it; slower, the board glances off it,
+  turned along it.
+- **Grinds.** A line locks on when the board comes down within `GrindCapture` (30 cm) of it in plan and at most
+  `GrindAbove` (40 cm) over it, crossing it at no more than `GrindCross` (65 degrees; the native runtime locks up to
+  about 61), and keeps the speed along it. The board then closes onto the line at its approach speed, at least
+  `GrindLockSpeed` (4 m/s), rather than jumping there: the native board touches the line before it locks, and its
+  step at a lock is at most its speed's plus 0.7 cm. At a line's end the grind carries on, at its speed, into a line
+  whose end meets it within `GrindJoin` (10 cm) and turns less than `GrindCorner` (45 degrees). At a sharper corner,
+  within a line or between two, the board flies off the way it was going.
+
 ## Rider
 
 The rider's pose is the native clips played by an Unreal animation graph. The session's state machine
@@ -78,23 +106,25 @@ into the graph's inputs, runs the graph and places the pose on the board.
   root's space, cm/s), `stepbone=` (that bone), `dt=` (the frame time it is measured over, ms),
   `feet=` (the toes' heights over the deck, cm), `feetoff=` (feet outside the deck's 42 × 14 cm outline, or more than
   16 cm above or 4 cm below it), `nan=` and `anim=` (the animator's time this frame, ms). The game's QA reads it.
-- **Cost.** In a large skatepark level on an M-series Mac: the animator (graph update, evaluation and placement)
-  0.061 ms p50 and 0.113 ms p99 per frame (0.08 to 0.10 ms p50 and 0.11 to 0.19 ms p99 with other heavy jobs
-  running), the session's step 0.03 to 0.04 ms mean and under 0.18 ms worst per 60 Hz tick. The physical rider leaves
-  the frame at 60 fps: p99 17.15 ms without it, 17.18 ms with it.
-- **Checks.** The game's `skate_ride` scenario rides pushes, steering, flip tricks, grabs, spins, a grind and manuals
-  and reads the state line every frame: no NaN (0 of 6254 frames), no planted foot off the deck (0 of 3363 frames
-  regular, 0 of 285 goofy), no pop between clips (`step=`; the fastest body bone 1446 cm/s, a sketchy landing's
-  switch), and the standing rider against the native reference's stand (`reference.json`, `stand/idle`, bones in the
-  deck's frame): 1.33 and 1.35 cm mean, the worst bone a hand at 2.7 to 2.8 cm. Retargeted onto a character with
-  other proportions, the rider keeps the toes 4.5 to 4.7 cm over the deck.
+- **Cost.** Riding two large skatepark levels on an M-series Mac with no other heavy job running (load average about
+  4), with `skate.RidePhysical` 0 then 1. The frame stays at 60 fps: p50 16.66 to 16.67 ms both ways, p99 17.07 to
+  17.29 ms then 17.08 to 17.30 ms. The animator (graph update, evaluation and placement) takes 0.058 to 0.060 ms then
+  0.059 to 0.063 ms p50 per frame, and 0.104 to 0.107 ms then 0.112 to 0.133 ms p99. The session's step takes 0.024
+  to 0.034 ms then 0.026 to 0.037 ms mean per 60 Hz tick, and at most 0.068 ms then 0.072 ms. With other heavy jobs
+  running, the animator measured 0.08 to 0.10 ms p50 and 0.11 to 0.19 ms p99.
+- **Checks.** The game's `skate_ride` scenario rides pushes, steering, flip tricks, grabs, spins, a grind and manuals, a
+  roll-in over a crest and down a long face, and a grind into a sharp corner, and reads the state line every frame: no
+  NaN (0 of 6741 frames), no planted foot off the deck (0 of 3709 frames regular, 0 of 372 goofy), no pop between clips
+  (`step=`; the fastest body bone 1447 cm/s, a sketchy landing's switch), and the standing rider against the native
+  reference's stand (`reference.json`, `stand/idle`, bones in the deck's frame): 1.35 cm mean, the worst bone a hand at
+  2.8 cm. Retargeted onto a character with other proportions, the rider keeps the toes 4.5 to 4.7 cm over the deck.
 
 ## Physical rider
 
-While riding, the rider is an active ragdoll: the bodies of its physics asset simulate in the world's Chaos scene,
-Physics Control drives them toward the animated pose, and the board holds the feet. The bail lets the same bodies go
-limp, and the get-up blends from a snapshot of the fallen body into the get-up clip. `skate.RidePhysical 0` turns the
-rider back into pure animation, with a ragdoll only for bails.
+While riding, the rider is an active ragdoll (`skate.RidePhysical 1`, the default): the bodies of its physics asset
+simulate in the world's Chaos scene, Physics Control drives them toward the animated pose, and the board holds the feet.
+The bail lets the same bodies go limp, and the get-up blends from a snapshot of the fallen body into the get-up clip.
+`skate.RidePhysical 0` turns the rider back into pure animation, with a ragdoll only for bails.
 
 ### What the reference rider does
 
@@ -229,14 +259,13 @@ Physics Control's copy of the animation, p95.
   starts with the body moving at the board's speed (10 cm a frame at 6 m/s) and no jump.
 - Get-up: across the hand-over the hips move under 0.5 cm a frame, and the rider rises within 6 cm of where the hips
   lay. The hand-over took five frames in every get-up measured.
-- Cost, riding a park road with `skate.RidePhysical` 0 then 1: game-thread frame p50 16.69 then 16.63 ms, p99 21.04
-  then 19.83 ms. In a second game on a busier machine, p50 17.5 then 16.7 ms, p99 23.0 then 17.2 ms. The difference
-  is within the noise.
+- Cost, riding a park road with `skate.RidePhysical` 0 then 1 with no other heavy job running: game-thread frame p50
+  16.66 then 16.69 ms, p99 17.17 then 17.11 ms. On busier machines, p50 16.69 then 16.63 ms and 17.5 then 16.7 ms,
+  p99 21.04 then 19.83 ms and 23.0 then 17.2 ms. The difference is within the noise.
 - No run went unstable. Every frame simulated, and nothing was reset. Wherever the hips move far in one frame, the
   board moved as far, over a long frame.
 - The first frame after a scripted placement and launch leaves the pelvis 6–13 cm behind (37 cm when placed 3 m up).
-  The grind lock moves the board up to 47 cm onto the rail in one frame; the body follows within about four frames,
-  18 cm behind at worst.
+  At a grind lock the board moves at most 2.3 cm a frame more than its speed carries it (the native board, 0.7 cm).
 - The copy of the animation the bodies follow is a frame older than the pose the mesh shows. While riding, the
   rider shows its pose about a frame late, in the board's frame.
 

@@ -57,9 +57,9 @@ sounds and HUD getters, and the adapter retargets either one's rider onto the ga
 - **Ride**: the Unreal-native rewrite, described in [RIDE.md](RIDE.md). A rigid board steps at 60 Hz on the game
   thread against Unreal collision sweeps, and the rider is animated from the native clips by a C++ anim graph. The game
   imports the clips as Unreal assets under `/Game/SkateRide` (`SK_SkateRider`, `MDT_SkateRider` and the clips in
-  `Clips/B0` and `Clips/B1`) with its own build step; without them the board rides alone. `skate.RidePhysical 1` makes
-  the rider an active ragdoll that Physics Control drives toward the animated pose, and `skate.RideTune` overrides the
-  tuning table live (`Name=Value` words, names as in `RideTuning.h`).
+  `Clips/B0` and `Clips/B1`) with its own build step; without them the board rides alone. The rider is an active
+  ragdoll that Physics Control drives toward the animated pose (`skate.RidePhysical 0` animates it alone), and
+  `skate.RideTune` overrides the tuning table live (`Name=Value` words, names as in `RideTuning.h`).
 
 ## Settings
 

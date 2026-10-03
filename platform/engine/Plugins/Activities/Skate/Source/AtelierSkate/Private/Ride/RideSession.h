@@ -123,6 +123,11 @@ private:
     float TurnRate = 0;             // degrees/s about the deck normal
     float SlideYaw = 0;
     float Curvature = 0;            // 1/cm along the travel, positive in a concave transition
+    // The ground's normal over the last stretch of travel (cm travelled, oldest first), for the curvature.
+    static constexpr int32 TrailMax = 8;
+    float Odometer = 0, TrailAt[TrailMax] = {};
+    FVector TrailUp[TrailMax];
+    int32 TrailNum = 0;
     float Crouch = 0, PushTime = -1, BrakeTime = 0, LastSpeed = 0;
     bool bPushStrong = true, bPushed = false;
     // The push cycle in progress (from the clips when they are in the build): the lead-in before the foot touches,
@@ -156,6 +161,9 @@ private:
     float GrindNose = 1;            // the board's nose along +S (+1) or -S (-1); slides: the deck's turn sign
     bool bGrindFront = true;        // the rail on the rider's toe side
     FVector RailUp = FVector::UpVector;
+    // What is left of the board's offset from the line when it locked on, closing at LockSpeed (cm/s).
+    FVector LockOffset = FVector::ZeroVector;
+    float LockSpeed = 0;
     // Manual.
     float Balance = 0;
     bool bNoseManual = false;
@@ -204,6 +212,10 @@ private:
     void StartBail(const TCHAR* Why);
     bool TryGrind(const FSkateInput& In);
     void LeaveGrind(float Up);
+    /** Past the line's end: carry on into a line that continues it round a corner under GrindCorner. */
+    bool TurnCorner();
+    /** The first vertex between arc lengths From and To where the line turns more than GrindCorner. */
+    bool SharpCorner(float From, float To, float& OutS) const;
     void AdvancePrediction(int32 Segments);
     void ResetPrediction(const FVector& From);
     void StartPush(bool bFirstPush, float Speed);
@@ -211,9 +223,17 @@ private:
     void TrackMotion();
     /** From the take-off to the board caught under the feet: the flip clip's, else the tuned time. */
     float CatchTime(atelier::ride::Flick Flick) const;
-    bool Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked) const;
+    /** A wheel's ground under Base. A face too steep to roll onto sets bBlocked, and Block (if given) keeps the
+     *  blocking normal that Toward (the board's velocity) closes on fastest. */
+    bool Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked, FVector* Block = nullptr, const FVector& Toward = FVector::ZeroVector) const;
     bool Sweep(const FVector& From, const FVector& To, float Radius, FHitResult& Hit) const;
-    bool FindGround(const FVector& At, const FQuat& Frame, float Below, FVector& OutP, FVector& OutUp, FVector& OutForward, bool& bBlocked) const;
+    bool FindGround(const FVector& At, const FQuat& Frame, float Below, FVector& OutP, FVector& OutUp, FVector& OutForward, bool& bBlocked, FVector* Block = nullptr, const FVector& Toward = FVector::ZeroVector) const;
+    /** One step of rolling (Dt of the tick): walls, the ground, crests. False when the board left the ground, was
+     *  thrown or stopped against something, which ends the tick's move. */
+    bool MoveOnGround(float Dt, float& Speed);
+    /** Bounce off a face (its normal in the deck's plane), turned along it. */
+    void Deflect(const FVector& Normal, float& Speed);
+    void AddTrail(float At, const FVector& Up);
     FTransform DeckPose() const;
     void AddTrick(const FString& Name, float Points);
     void Hold(const FString& Name, float PointsPerSecond, float Dt);

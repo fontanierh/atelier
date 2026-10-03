@@ -16,11 +16,16 @@ struct FRideTuning
     // Ground. Riding is nearly lossless up to about 8 m/s; above it rolling friction rises (RIDE.md).
     float RollingResistance = 5.f;    // cm/s^2 at any speed
     float GravityLimit = 700.f;       // largest slope acceleration, cm/s^2
-    float StickGap = 4.5f;            // the board follows ground that falls away up to this far per tick (cm) ...
-    float StickPerSpeed = .18f;       // ... plus this fraction of the tick's travel
-    float StepUp = 6.f;               // ground rising more than this under a wheel in one tick is a wall (cm)
+    float StickGap = 4.5f;            // the board follows ground that falls away up to this far per step (cm) ...
+    float StickPerSpeed = .18f;       // ... plus this fraction of the step's travel
+    float StepUp = 6.f;               // ground rising more than this under a wheel in one step is a wall (cm)
     float WallSlope = .5f;            // a contact whose normal is within acos(this) of the deck is ground
-    float LaunchFactor = 1.5f;        // a convex crest launches when v^2 * curvature exceeds this many g
+    float LaunchFactor = 1.5f;        // a convex crest launches when v^2 * curvature exceeds this many g ...
+    float CrestWindow = 50.f;         // ... the curvature measured over at least this much travel (cm) ...
+    float CrestReach = 6.f;           // ... beyond the surface falling this far below the board's line over it (cm)
+    float GroundStep = 15.f;          // the longest move between ground probes (cm; a tick moves in up to 8 steps)
+    float CurbBail = 710.f;           // cm/s closing on a face too steep to roll onto, across the deck ...
+    float CurbImpact = 6000.f;        // ... or along the deck's normal, that throws the rider
     float FallLineSteer = .6f;        // how much sideways gravity on a slope turns the board downhill
 
     // Pushing: one push per cycle, the force in the planted-foot window.
@@ -97,6 +102,10 @@ struct FRideTuning
     float GrindExitPop = 250.f;       // cm/s up when popping out
     float GrindRelock = .35f;         // s before the line just left can catch the board again
     float GrindMinAhead = 25.f;       // cm of line needed ahead of the travel to lock on
+    float GrindCross = 65.f;          // the most the travel may cross the line to lock on (degrees)
+    float GrindCorner = 45.f;         // a line turning less than this carries the grind on (degrees) ...
+    float GrindJoin = 10.f;           // ... into a line that starts this close to where it ends (cm)
+    float GrindLockSpeed = 400.f;     // the board closes onto the line at least this fast after locking (cm/s)
 
     // Manuals.
     float ManualInstability = .9f;    // 1/s, the balance's own drift
