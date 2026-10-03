@@ -9,7 +9,8 @@ The game runs under the memory guard as for botw_moves.py (720p at half scale, s
 Link at the lake also needs r.Streaming.PoolSize 120 and r.ViewDistanceScale 0.8 to stay under the guard's limit.
 
 Sections, each a run of labelled shots: on foot (idle, walk, run, sprint, sprinting out of stamina, crouch, the jumps
-and landings, the hard landing); lock-on and the dodges (strafing, side hops, backflips); the sword (draw, combo,
+and landings, the hard landing); the equipment close up (the sword and shield carried on the back from the side and
+from behind, crouched, and the paraglider in both hands from the front and the side); lock-on and the dodges (strafing, side hops, backflips); the sword (draw, combo,
 charged spin, dash attack, jump attack, sneakstrike, plunge); the shield (guard, parry, the perfect dodge's flurry
 rush, sheathe) against a Bokoblin that attacks; getting hit (from the front, behind and the side, fall damage, the
 knockdown at no health); the paraglider (open, glide, steer, brake, close, reopen falling, land; stamina running out);
@@ -310,6 +311,38 @@ def on_foot():
     L.launch(unreal.Vector(0, 0, 1250)); yield from wait(.2)
     yield from until(grounded, 4.)
     yield from wait(2.2)
+
+
+def gear():
+    yield from place(*RUN)
+    camera(1.7, 90., .25, .2)
+    label('Sword and shield carried on the back, from the side')
+    yield from wait(2.)
+    camera(1.7, 180., .35, .25)
+    label('From behind')
+    yield from wait(2.)
+    camera(1.7, 115., .1, .0)
+    label('Crouched: the shield stays on the back')
+    tap('crouch'); yield from wait(2.5)
+    tap('crouch'); yield from wait(.8)
+    cut()
+    yield from place(*RUN)
+    L.launch(unreal.Vector(0, 0, 2000))   # stick released, it glides down slowly onto the open run
+    yield from until(lambda s: s['vz'] > 500., 1.)
+    yield from until(lambda s: s['vz'] < 80., 4.)
+    tap('jump')
+    yield from until(lambda s: s['mode'] == 'glide', .6)
+    camera(2.2, 25., .45, .55, track='facing', turn=.3)
+    label('The paraglider in both hands, from the front')
+    yield from wait(2.5)
+    camera(2.2, 95., .45, .55, track='facing', turn=.3)
+    label('From the side')
+    yield from wait(2.5)
+    cut()
+    yield from until(lambda s: s['mode'] != 'glide', 15.)
+    if state()['mode'] == 'glide':
+        tap('jump')
+    yield from until(grounded, 8.)
 
 
 def dodges():
@@ -690,7 +723,7 @@ def climb():
     yield from wait(1.8)
 
 
-SECTIONS = [('On foot', on_foot), ('Lock-on and dodges', dodges), ('Sword', sword), ('Shield', shield),
+SECTIONS = [('On foot', on_foot), ('Equipment', gear), ('Lock-on and dodges', dodges), ('Sword', sword), ('Shield', shield),
             ('Getting hit', hits), ('Paraglider', glide), ('Swimming', swim), ('Climbing', climb)]
 SECTIONS = [s for s in SECTIONS if s[0] in (globals().get('ONLY') or [s[0] for s in SECTIONS])]
 

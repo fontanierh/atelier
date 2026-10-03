@@ -12,7 +12,9 @@ Writes Content/Data/cairo/botw.json, the move record ACairoCharacter gives UBotw
 `record`, from the roster) with every length measured on Link's body (action paths, gait speeds, the swim hang) scaled
 by Cairo's size against Link's (`body` / Link's scale), and BodyScale, the factor for BOTW's metres (`body`, Cairo's hip
 height over Link's in BOTW units). Link's equipment is reused at Cairo's scale: each piece's hold moves from Link's
-hand to Cairo's in the palm's frame, and its carry on the back from Link's chest to Cairo's in the body's frame. Also writes
+hand to Cairo's in the palm's frame, and its carry on the back from Link's chest to Cairo's in the body's frame. The
+paraglider is placed from both glides instead (Glide's clip, posed): its canopy keeps its angle to the body and its
+bar's middle goes between Cairo's hands, since his palms turn differently from Link's around the bar. Also writes
 build/yorimichi/cairo/botw/unreal_import.json. Cairo's own assets must be byte-identical afterwards.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
@@ -103,12 +105,11 @@ def frame(y, z):
 
 
 class Rig:
-    """A skeleton's reference pose: each bone's component-space position (cm) and rotation."""
+    """A skeleton's pose (its reference pose unless given): each bone's component-space position (cm) and rotation."""
 
-    def __init__(self, skeleton, names):
-        pose = P.get_reference_pose(skeleton)
+    def __init__(self, skeleton, names, pose=None):
         self.names = names   # role -> bone
-        self.pose = pose
+        self.pose = pose or P.get_reference_pose(skeleton)
 
     def transform(self, bone):
         return P.get_bone_pose(self.pose, bone, U.AnimPoseSpaces.WORLD)
@@ -146,9 +147,32 @@ def record_of(t):
             'rotation': [round(v, 6) for v in (q.x, q.y, q.z, q.w)], 'scale': round(t.scale3d.x, 4)}
 
 
-def equipment(link, cairo):
+def glider(link, cairo, item, scale):
+    """The paraglider's hold, from Link and Cairo posed at the glide. Link holds it at Weapon_R (`item['hand']`), its bar
+    across both hands: Cairo's grips are Link's weapon bones moved from each palm to his, the bar's middle goes between
+    them and the canopy keeps its angle to the body. Returns the hold and each grip's miss (cm) once placed."""
+    Bs, Bt = link.body(), cairo.body()
+    grips = []
+    for side in 'RL':
+        role = f'hand_{side}'
+        Fs, ls = link.hand(side)
+        Ft, lt = cairo.hand(side)
+        weapon = link.at(f'Weapon_{side}')
+        grips.append((weapon, add(cairo.at(role), apply(Ft, mul(apply_t(Fs, sub(weapon, link.at(role))), lt / ls)))))
+    middle_s = mul(add(grips[0][0], grips[1][0]), .5)
+    middle_t = mul(add(grips[0][1], grips[1][1]), .5)
+    to_cairo = lambda v: mul(apply(Bt, apply_t(Bs, v)), BODY)   # a length in Link's body frame, in Cairo's
+    R = compose(Bt, compose_t(Bs, link.rotation(item['hand'])))
+    p = add(middle_t, to_cairo(sub(link.at(item['hand']), middle_s)))
+    held = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('hand_R'))
+    miss = [round(math.sqrt(dot(d, d)), 1) for d in (sub(add(middle_t, to_cairo(sub(s, middle_s))), t) for s, t in grips)]
+    return held, miss
+
+
+def equipment(link, cairo, glide):
     """Cairo's equipment record: Link's pieces, held in Cairo's hands and carried on Cairo's chest as on Link's. Link holds
-    a piece at a weapon bone under his wrist (Weapon_R, Weapon_L) and carries it at a bone under his chest (Pod_A)."""
+    a piece at a weapon bone under his wrist (Weapon_R, Weapon_L) and carries it at a bone under his chest (Pod_A). The
+    paraglider (the piece with a clip) is held as in `glide`, the two rigs posed at the glide."""
     C = compose(cairo.body(), [apply_t(link.body(), axis) for axis in ([1., 0, 0], [0., 1, 0], [0., 0, 1])])   # A_t A_s^T
     scale = ROSTER['scale'] * SIZE
     record, checks = {}, {}
@@ -167,6 +191,9 @@ def equipment(link, cairo):
             held = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform(role))
             entry['hand'], entry['held'] = role, record_of(held)
             checks[slot] = {'hand_cm': [round(ls, 2), round(lt, 2)]}
+            if 'clip' in item:
+                held, miss = glider(*glide, item, scale)
+                entry['held'], checks[slot]['grip_miss_cm'] = record_of(held), miss
         if item.get('back') and item.get('carry'):
             carry = item['carry']
             local = U.Transform(U.Vector(*carry['location']), U.Quat(*carry['rotation']).rotator(), U.Vector(1, 1, 1))
@@ -231,9 +258,12 @@ for name, entry in ROSTER['moves']['actions'].items():
 params = dict(ROSTER['moves']['params'])
 params['SwimHang'] = round(params['SwimHang'] * SIZE, 2)
 params['BodyScale'] = BODY
-link = Rig(link_mesh.skeleton, {**LINK['skate'], 'pelvis': 'Waist'})   # botw.py's bone map
-cairo = Rig(skeleton, {})
-gear, gear_checks = equipment(link, cairo)
+names = {**LINK['skate'], 'pelvis': 'Waist'}   # botw.py's bone map
+link, cairo = Rig(link_mesh.skeleton, names), Rig(skeleton, {})
+glide, options = ROSTER['moves']['actions']['Glide']['clip'], U.AnimPoseEvaluationOptions()
+link_glide = E.load_asset(ROSTER['clips'][glide]['path']); assert link_glide, ('Link has no glide clip', glide)
+gear, gear_checks = equipment(link, cairo, (Rig(link_mesh.skeleton, names, P.get_anim_pose_at_time(link_glide, 0., options)),
+                                            Rig(skeleton, {}, P.get_anim_pose_at_time(clips[glide], 0., options))))
 body_check = cairo.at('pelvis')[2] / link.at('pelvis')[2]
 record = {'actions': scaled, 'params': params, 'equipment': gear}
 DATA.mkdir(parents=True, exist_ok=True)
@@ -247,5 +277,6 @@ report = {'source': CONFIG['source'], 'source_sha256': CONFIG['source_sha256'], 
                                                                for n, s in clips.items()}, 'changed_cairo_files': changed}
 (OUT / 'unreal_import.json').write_text(json.dumps(report, indent=1) + '\n')
 assert not changed, ('Cairo assets changed', changed)
+assert max(gear_checks['glider']['grip_miss_cm']) < 6., ('the glider bar misses his hands', gear_checks['glider'])
 assert abs(body_check - BODY) < .02, ('the reference poses disagree with the export', body_check, BODY)
 U.log(f'CAIRO BOTW IMPORT COMPLETE: {len(clips)} clips, {len(actions)} actions, body {BODY}, size {SIZE:.3f}')

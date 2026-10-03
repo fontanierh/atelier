@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[3]
 FILMS = ROOT / 'build/yorimichi/botw/moves_film'
 FONTS = Path('/Users/Shared/Epic Games/UE_5.8/Engine/Content/Slate/Fonts')
 CARD = 75                                    # title card frames (2.5 s)
-ORDER = ['On foot', 'Lock-on and dodges', 'Sword', 'Shield', 'Getting hit', 'Paraglider', 'Swimming', 'Climbing']
+ORDER = ['On foot', 'Equipment', 'Lock-on and dodges', 'Sword', 'Shield', 'Getting hit', 'Paraglider', 'Swimming', 'Climbing']
 
 
 def font(size, bold=True):
