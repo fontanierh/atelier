@@ -43,9 +43,9 @@ plus the frame; unrecorded frames stamp -1000000). A slow shot saves every 90 Hz
 biggest air, or its bail, at a third of the speed. An optional shot that does not do what it should (no caveman, no
 dismount) is marked keep=false and left out of the cut. done.json logs each bail's entry speed, how far the body went,
 how low it lay (the state's lie=), how long it was down and, around the get-up, the largest move in one tick of the
-pelvis and of the board's deck (a pop); the part's shot.json keeps the bail's body log, every tick from the bail to
-BODY_AFTER s after the get-up. megapark_ride_film_mix.py cuts the parts into the film and
-mixes the sound.
+pelvis and of the board's deck while it shows (a pop), and each fade of the board (shown=); the part's shot.json keeps
+the bail's body log, every tick from the bail to BODY_AFTER s after the get-up. megapark_ride_film_mix.py cuts the
+parts into the film and mixes the sound.
 """
 import json, math, os, re, shutil, traceback
 import unreal
@@ -725,25 +725,46 @@ BODY_AFTER = 3.     # s after the get-up that a bail's body log goes on (it take
 
 
 def body_row(c):
-    """A tick of a bail's body log: [t, pelvis x, y, z (m), its source, lie (cm), deck x, y, z (m), board, mode, retail]."""
+    """A tick of a bail's body log: [t, pelvis x, y, z (m), its source, lie (cm), deck x, y, z (m), board, mode, retail,
+    shown (the board's dissolve, 1 solid), vis (the board's component visible)]."""
     try: deck = [round(float(n) / 100. * sg, 3) for n, sg in zip(c.d['deck'].split(','), (1., -1., 1.))]
     except (KeyError, ValueError): deck = [None] * 3
+    try: shown = float(c.d['shown'])
+    except (KeyError, ValueError): shown = None
     return [round(c.t, 4), round(c.hx, 3), round(c.hy, 3), round(c.hz, 3), c.hsrc, c.d.get('lie')] + deck + \
-           [c.d.get('board'), c.mode, c.retail]
+           [c.d.get('board'), c.mode, c.retail, shown, c.d.get('vis')]
+
+
+def board_seen(r):
+    """The board shows in this body-log row (unknown counts as shown)."""
+    shown, vis = (r[12], r[13]) if len(r) > 13 else (None, None)
+    return (shown is None or shown > 0.) and vis != '0'
 
 
 def getup_steps(rows, up_t, before=1.2, after=1.5):
     """The largest move in one tick of the pelvis and of the board's deck around a get-up (a pop shows here):
-    {'hips': [cm, m/s, t], 'deck': [cm, m/s, t]}."""
+    {'hips': [cm, m/s, t], 'deck': [cm, m/s, t] while the board shows at both ticks, 'deck_any': the same at any
+    shown, 'fades': [[t0, t1, shown at t0, shown at t1], ...] for each run of ticks where the board's dissolve
+    changed, from the bail to the end of the log}."""
     w = [r for r in rows if up_t - before <= r[0] <= up_t + after]
     out = {}
-    for key, i in (('hips', 1), ('deck', 6)):
+    for key, i, seen in (('hips', 1, False), ('deck', 6, True), ('deck_any', 6, False)):
         best = None
         for a, b in zip(w, w[1:]):
             if None in a[i:i + 3] + b[i:i + 3] or b[0] <= a[0] or (key == 'hips' and a[4] != b[4]): continue
+            if seen and not (board_seen(a) and board_seen(b)): continue
             d = math.dist(a[i:i + 3], b[i:i + 3])
             if best is None or d > best[0]: best = (d, d / (b[0] - a[0]), b[0])
         out[key] = [round(best[0] * 100., 1), round(best[1], 2), best[2]] if best else None
+    fades, run = [], None
+    for a, b in zip(rows, rows[1:]):
+        sa, sb = (a[12], b[12]) if len(b) > 12 else (None, None)
+        if sa is None or sb is None or abs(sb - sa) < 1e-3:
+            if run: fades.append(run); run = None
+            continue
+        run = [run[0], b[0], run[2], sb] if run else [a[0], b[0], sa, sb]
+    if run: fades.append(run)
+    out['fades'] = [[round(f[0], 3), round(f[1], 3), round(f[2], 2), round(f[3], 2)] for f in fades]
     return out
 
 
