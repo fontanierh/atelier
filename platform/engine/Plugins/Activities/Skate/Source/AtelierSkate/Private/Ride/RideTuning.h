@@ -120,6 +120,8 @@ struct FRideTuning
     float BoardReach = 150.f;         // cm within which a lying board can be picked up or stepped on
     float MomentumDecay = 250.f;      // cm/s^2: speed above a run carried off the board fades this fast with the stick held ...
     float MomentumBrake = 900.f;      // ... and this fast without it
+    float ClipBlend = .2f;            // s, the pose's blend into and out of a mount or dismount clip
+    float CarryBlend = .25f;          // s, the pose's blend into and out of the board-carry locomotion
 
     // Camera.
     float CameraDistance = 290.f;

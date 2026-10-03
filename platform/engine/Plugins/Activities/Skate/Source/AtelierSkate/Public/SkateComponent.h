@@ -20,7 +20,7 @@ class UPhysicsAsset;
 class URidePhysicalRider;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
-struct FRideTransition;
+struct FRideTransition; enum class ERideFoot : uint8;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -38,11 +38,18 @@ public:
     /** Character must implement ISkateRider. */
     void Initialize(ACharacter* Character);
     bool IsAvailable() const { return bAvailable; }
-    /** On the board, including a bail (the component drives the character until they are back on it). */
-    bool IsRiding() const { return Mode != ESkateMode::Off; }
+    /** On the board, including a bail (the component drives the character until they are back on it), or getting on
+     *  or off it with the Ride backend (a mount or dismount clip drives the character). */
+    bool IsRiding() const { return Mode != ESkateMode::Off || bRideClip; }
     ESkateMode GetMode() const { return Mode; }
     /** Get on (from standing or running) or off. */
     bool Toggle();
+    /** The board button on foot with the Ride backend (RIDE.md, "Transitions"): a board dissolves into the hand, a
+     *  held one is put away, a lying one dissolves and a fresh one comes to the hand. Not while the hands are busy
+     *  (ISkateRider::CanCarrySkateBoard). */
+    void RecallBoard();
+    /** On foot with the board in hand (the board-carry locomotion). */
+    bool IsBoardInHand() const;
     void StowImmediately();
     void SetGoofy(bool bNewGoofy);
     bool IsGoofy() const { return bGoofy; }
@@ -175,13 +182,55 @@ private:
     // carries over both ways; the board dissolves in and out rather than popping.
     TSharedPtr<FRideTransition> Transition;
     bool bRideBody=false;                                      // the current or last ride used the Ride backend
+    bool bRideClip=false;                                      // a mount or dismount clip drives the character (IsRiding)
+    // The off-board pose (carry, mount, dismount clips through FRideSession::StepOffBoard) published by
+    // PublishOffBoardPose through RetargetRetailPose: the visible deck follows the clip's board, on the ground or in
+    // the hand (OffBoardDeck, scaled), and the body rises onto a bigger deck by OffBoardLift.
+    bool bOffBoardPose=false;
+    float OffBoardLift=0.f;
+    FTransform OffBoardDeck=FTransform::Identity;
+    // The visible deck eases from where it was (in the hand of the character's own pose) onto the clip's board.
+    FTransform OffBoardDeckFrom=FTransform::Identity;
+    float OffBoardDeckBlend=1.f;
+    bool PublishOffBoardPose(float Lift);
+    /** Place the visible board's parts from the published source board, its deck at DeckWorldScaled. */
+    void PlaceBoardParts(const FTransform& DeckWorldScaled);
     uint32 PoseBlendSerial=0;
     float PoseBlendTime=0.f;
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> BoardFade;  // USkateSettings::BoardDissolveMaterial, shared by the parts
     FRideTransition& Transit();
     void RequestPoseBlend(float Seconds) { ++PoseBlendSerial; PoseBlendTime=Seconds; }
-    bool RideMount();
+    bool RideMount(bool bInstant);
     bool RideDismount();
+    void LeaveBoard();
+    bool GetOnBoard(const FVector& Ground, const FQuat& Rotation, const FVector& Velocity, float Blend);
+    bool StandUpOffBoard(float Yaw);
+    bool PrepareRideClips();
+    bool BeginMountClip();
+    bool BeginDismountClip();
+    void StepRideClip(float Dt);
+    void FinishRideClip();
+    void EndRideClip();
+    void BeginCarry(float Phase);
+    void StepCarry(float Dt);
+    void PutBoardAway();
+    FVector OffBoardGround() const;
+    float FeetPhase(bool bMirror) const;
+    void TrackFeet(float Dt);
+    void HoldBoardAtHand();
+    void ReleaseBoardFromHand();
+    void UseWorldBoard();
+    void SetDrive(const FVector& Velocity);
+    void StopDrive();
+    bool BeginAirMountClip();
+    bool BeginAirDismountClip();
+    bool BeginCarryJump(float Speed);
+    bool BeginLandClip();
+    bool StartClip(UAnimSequence* Clip, ERideFoot Foot, bool bMirror, float Yaw, float BlendIn);
+    void AnchorClipAt(FName Bone, const FVector& World);
+    bool MatchPelvis();
+    float ClipPhase(const UAnimSequence* Clip, float Time, bool bMirror) const;
+    float AirTimeLeft(float* Height = nullptr) const;
     void TickTransition(float Dt);
     void ResetTransition();
     void ShowBoard(float Target, bool bInstant);

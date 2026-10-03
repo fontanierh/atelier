@@ -22,6 +22,14 @@ in a menu, as a zeppelin passenger or with the sailboat out. It sheathes the swo
 position, the direction of travel and the speed. Getting off works while the board is on the ground (not in the air,
 on a rail or in a bail) and keeps a jog's worth of speed.
 
+With the Ride backend (`skate.Backend Ride`) getting on and off is one continuous move. Running, walking or standing,
+the rider drops the board and steps on at speed. Stepping off, the rider runs out with the board in hand, and the
+board dissolves after 6 s or as soon as the hands are needed. **D-pad Right** (keyboard **G**) brings a board to the
+hand on foot, or puts the held one away. Jumping with the board in hand plays a jump and a landing with it. The skate
+button in the air throws the board under the feet (a caveman: run, jump, then press it); in a ride's air it steps off
+the board from the grab held and comes down on foot holding it. Pressing the skate button during a bail gets up on
+foot where the body lies, and the board stays lying (see the Skate plugin's `RIDE.md`, "Transitions").
+
 Riding into the sea puts Cairo back on the board at the last dry spot.
 
 ## Controls

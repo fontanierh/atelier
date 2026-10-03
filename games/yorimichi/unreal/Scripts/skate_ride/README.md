@@ -90,7 +90,7 @@ attributes.
 
 `clips.json` holds the rig (bone names, parents, mirror partners, board bones, the reference pose in Unreal space and
 its import error), the compression settings and, per clip: `asset`, `bank`, `fps`, `frames`, `duration`, `looping`,
-`phase_controlled`, `base_speed`, `motion`, `channel_weights`, `events`, `curves` and `mirror`.
+`phase_controlled`, `base_speed`, `motion`, `channel_weights`, `snap_guarded_keys`, `events`, `curves` and `mirror`.
 
 ## Verification
 
@@ -111,6 +111,16 @@ library it predicts 38 such bone frames in 35 clips, all on leaf bones (the hand
 joint position moves; at the hand's 10 cm the mesh moves less than 0.02 cm. The verification counts each of them in
 `euler_storage` when the sampled rotation matches `euler_stored` within 2e-5 rad, and measures it by that distance.
 Avoiding them would need other bone frames than the native ones.
+
+### Reference snap
+
+Unreal samples a sequence's data model (as compression does) by running its FK control rig, which writes each bone's
+local transform through `URigHierarchy::SetTransform`. That skips a transform `FRigComputedTransform::Equals` the
+bone's current one, within 1e-4 per component, and the current one is the reference pose. A key that close to the
+reference but not on it comes back as the reference: 19 clips had toe frames up to 2.83e-4 rad off this way (the
+toes rest near their reference rotation), with every larger error in the library predicted to 2e-6 rad by that rule.
+The import gives such a key (`native.snap_guard`) a 0.0003 cm X offset, which the equality test sees, so the rotation
+is kept; 2079 bone frames in 44 clips (`snap_guarded_keys` per clip in the manifest).
 
 `build/yorimichi/skate-ride/clip-stills/` has six frames each of an ollie, a kickflip, a push and a 50-50 grind: the
 rider drawn from Unreal's sampled poses, with the native joints as blue rings.

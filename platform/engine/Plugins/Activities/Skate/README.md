@@ -40,11 +40,26 @@ character. [RUNTIME.md](RUNTIME.md) lists the session's systems, the data bundle
 | `GetSkateMouseSensitivity()` | The player's mouse sensitivity (default 0.4); scales the mouse flick |
 | `GetSkateBone(Contract)` | The rider's bone for a humanoid contract name, `NAME_None` when it has none (default: the name itself); the retargeter finds every bone through it |
 | `GetSkateBoardScale()` | The visible board's size (default 1): it grows about the wheels' contact and the pose rises onto its deck; the physics keep the standard board |
+| `CanCarrySkateBoard()` | Ride only: the hands are free to carry the board on foot (default true); false puts a carried board away and refuses the board button |
 
 `Toggle()` mounts only on the ground and not crouched. The board starts at the player's feet, aligned with their
 travel above 30 cm/s, and keeps their velocity. Stepping off works only on the ground (not in the air, on a rail or
 in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `StowImmediately()`, `SetGoofy()`,
 `PlaceAt()` and `Launch()` serve the game and QA; `SetScriptedInput()` replaces the player's controls.
+
+## Backends
+
+`USkateSettings::Backend` picks the simulation that rides the board, and the console variable `skate.Backend`
+(`Native` or `Ride`) overrides it from the next mount on. Both serve the same `ISkateRider`, controls, board meshes,
+sounds and HUD getters, and the adapter retargets either one's rider onto the game's character the same way.
+
+- **Native** (the default): the recovered `GameplaySession` that the rest of this page describes.
+- **Ride**: the Unreal-native rewrite, described in [RIDE.md](RIDE.md). A rigid board steps at 60 Hz on the game
+  thread against Unreal collision sweeps, and the rider is animated from the native clips by a C++ anim graph. The game
+  imports the clips as Unreal assets under `/Game/SkateRide` (`SK_SkateRider`, `MDT_SkateRider` and the clips in
+  `Clips/B0` and `Clips/B1`) with its own build step; without them the board rides alone. `skate.RidePhysical 1` makes
+  the rider an active ragdoll that Physics Control drives toward the animated pose, and `skate.RideTune` overrides the
+  tuning table live (`Name=Value` words, names as in `RideTuning.h`).
 
 ## Settings
 
@@ -52,6 +67,7 @@ in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `S
 
 | Key | Default | Meaning |
 | --- | --- | --- |
+| `Backend` | `Native` | The simulation: `Native` or `Ride` (see Backends); `skate.Backend` overrides it on the next mount |
 | `Difficulty` | `normal` | Recovered controller preset: `easy`, `normal` or `hardcore` |
 | `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the recovered steering scalar |
 | `PopHeightScale` | 1 | 0.5 to 2; scales the recovered jump-height presets |
@@ -60,6 +76,7 @@ in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `S
 | `PushPowerScale` | 1 | 0.5 to 3; scales the planted-foot push propulsion |
 | `VertAssist` | 0 | 0 to 1; how far short of vertical a quarter pipe still sends a straight air back into it (1 reaches lips of about 50°) |
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
+| `BoardDissolveMaterial` | none | Ride only: a masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
 | `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue) |
 
@@ -76,6 +93,7 @@ attenuate over a 500 cm inner radius and 4500 cm falloff.
 | Action | Controller | Keyboard and mouse |
 | --- | --- | --- |
 | Get on / off | The game's button | The game's key |
+| Board to the hand / put it away (Ride, on foot) | The game's button (`RecallBoard()`) | The game's key |
 | Push | A (X pushes mongo) | W or Up |
 | Brake | B | S or Down |
 | Steer, spin | Left stick | A / D or Left / Right |

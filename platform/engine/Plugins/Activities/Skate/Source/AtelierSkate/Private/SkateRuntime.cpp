@@ -703,29 +703,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::None);
     Movement()->Velocity=Vel;
     // A bigger board grows about the ground contact, so its wheels stay on the ground (ISkateRider::GetSkateBoardScale).
-    const FTransform Grow=BoardGrowth();
-    BoardRoot->SetWorldTransform(DeckWorld*Grow); Deck->SetRelativeTransform(FTransform::Identity);
-    const TCHAR* TruckNames[]={TEXT("TRUCK_FRONT"),TEXT("TRUCK_BACK")};
-    const TCHAR* WheelNames[]={TEXT("RIGHT_WHEELFRONT"),TEXT("LEFT_WHEELFRONT"),TEXT("RIGHT_WHEELBACK"),TEXT("LEFT_WHEELBACK")};
-    // Fit the host board's mesh pivots to the source rig; preserve the native truck lean and wheel spin.
-    const FTransform DeckBind=RetailRuntime->Bind(TEXT("SKATEBOARD_ROOT"));
-    for (int32 I=0;I<Trucks.Num() && I<2;++I)
-    {
-        const FTransform TruckBind=RetailRuntime->Bind(TruckNames[I]);
-        const FVector A=RetailRuntime->Bind(WheelNames[I*2]).GetLocation(),B=RetailRuntime->Bind(WheelNames[I*2+1]).GetLocation();
-        const FVector Axle=(A+B)*.5;
-        const float Height=FMath::Max(.1f,float(DeckBind.GetLocation().Z-1.2-Axle.Z));
-        const FTransform Fit(FQuat(FVector::UpVector,I==0?0.f:PI)*DeckBind.GetRotation(),
-            Axle+DeckBind.GetRotation().GetUpVector()*Height,FVector(1,FVector::Distance(A,B)/18.6,Height/5.15));
-        Trucks[I]->SetWorldTransform(Fit.GetRelativeTransform(TruckBind)*RetailRuntime->Bone(TruckNames[I])*Grow);
-    }
-    for (int32 I=0;I<Wheels.Num() && I<4;++I)
-    {
-        const FTransform WheelBind=RetailRuntime->Bind(WheelNames[I]);
-        // physicswheels/default/WheelRadius is 0.031 m; the host mesh radius is 2.65 cm.
-        const FTransform Fit(DeckBind.GetRotation(),WheelBind.GetLocation(),FVector(3.1/2.65));
-        Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I])*Grow);
-    }
+    PlaceBoardParts(DeckWorld*BoardGrowth());
     RetargetRetailPose();
     if (!RetailRuntime->Worker) { AfterRideFrame(Dt); return; }
     // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
@@ -753,6 +731,54 @@ void USkateComponent::StepRetailRuntime(float Dt)
         // Nothing to snapshot (open water): keep the old one and try again 20 m on, not on every frame.
         else { RetailRuntime->CollisionCentre=Pos; RetailRuntime->CollisionReach=2000.; }
     }
+}
+
+void USkateComponent::PlaceBoardParts(const FTransform& DeckWorldScaled)
+{
+    // The parts keep their place relative to the source deck, wherever the visible deck is (under the rider, or in a
+    // hand off the board). The deck's scale is uniform, so this is the riding placement composed in another order.
+    const FTransform SourceDeck=RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"));
+    BoardRoot->SetWorldTransform(DeckWorldScaled); Deck->SetRelativeTransform(FTransform::Identity);
+    const TCHAR* TruckNames[]={TEXT("TRUCK_FRONT"),TEXT("TRUCK_BACK")};
+    const TCHAR* WheelNames[]={TEXT("RIGHT_WHEELFRONT"),TEXT("LEFT_WHEELFRONT"),TEXT("RIGHT_WHEELBACK"),TEXT("LEFT_WHEELBACK")};
+    // Fit the host board's mesh pivots to the source rig; preserve the native truck lean and wheel spin.
+    const FTransform DeckBind=RetailRuntime->Bind(TEXT("SKATEBOARD_ROOT"));
+    for (int32 I=0;I<Trucks.Num() && I<2;++I)
+    {
+        const FTransform TruckBind=RetailRuntime->Bind(TruckNames[I]);
+        const FVector A=RetailRuntime->Bind(WheelNames[I*2]).GetLocation(),B=RetailRuntime->Bind(WheelNames[I*2+1]).GetLocation();
+        const FVector Axle=(A+B)*.5;
+        const float Height=FMath::Max(.1f,float(DeckBind.GetLocation().Z-1.2-Axle.Z));
+        const FTransform Fit(FQuat(FVector::UpVector,I==0?0.f:PI)*DeckBind.GetRotation(),
+            Axle+DeckBind.GetRotation().GetUpVector()*Height,FVector(1,FVector::Distance(A,B)/18.6,Height/5.15));
+        Trucks[I]->SetWorldTransform(Fit.GetRelativeTransform(TruckBind)*RetailRuntime->Bone(TruckNames[I]).GetRelativeTransform(SourceDeck)*DeckWorldScaled);
+    }
+    for (int32 I=0;I<Wheels.Num() && I<4;++I)
+    {
+        const FTransform WheelBind=RetailRuntime->Bind(WheelNames[I]);
+        // physicswheels/default/WheelRadius is 0.031 m; the host mesh radius is 2.65 cm.
+        const FTransform Fit(DeckBind.GetRotation(),WheelBind.GetLocation(),FVector(3.1/2.65));
+        Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I]).GetRelativeTransform(SourceDeck)*DeckWorldScaled);
+    }
+}
+
+bool USkateComponent::PublishOffBoardPose(float Lift)
+{
+    // Off the board (RideTransition.cpp) the Ride session's clip pose is retargeted like a ride's, without starting
+    // the ride: its root is the clips' trajectory on the floor, and the board goes where the clip has it.
+    if (!Ride || !Rider) return false;
+    if (RetailRuntime && RetailRuntime->Worker) RetailRuntime.Reset();
+    if (!RetailRuntime) { RetailRuntime=MakeShared<FSkateRuntime>(); RetailRuntime->Ready=true; RetailRuntime->State=TEXT("PhysicsGround"); }
+    FSkateRuntime& O=*RetailRuntime; const FRideSession& R=*Ride;
+    O.Root=R.Root; O.Bones=R.Bones; O.HasPose=true;
+    if (O.Names!=R.Names) { O.Names=R.Names; O.Reference=R.Reference; }
+    if (O.Bones.Num()!=O.Names.Num()) { RetailPose.Reset(); return false; }
+    bOffBoardPose=true; OffBoardLift=FMath::Clamp(Lift,0.f,1.f);
+    RetargetRetailPose();
+    bOffBoardPose=false;
+    if (RetailPose.IsEmpty()) return false;
+    PlaceBoardParts(OffBoardDeck);
+    return true;
 }
 
 void USkateComponent::RetargetRetailPose()
@@ -793,9 +819,30 @@ void USkateComponent::RetargetRetailPose()
     const FTransform RootToMesh=RetailRuntime->Root.GetRelativeTransform(MeshWorld);
     // Preserve sole height: the source ankle is much farther above its sole than this character's ankle. A bigger
     // board's deck is higher by its extra deck height (9.05 cm at the source's size).
+    // Off the board the clips' root is on the ground: standing on the deck (OffBoardLift 1) the body rises onto the
+    // visible deck, which is not scaled with the body.
+    const float DeckLift=bOffBoardPose?OffBoardLift*((BoardScale()-1.f)*9.05f+(1.f-Ratio)*8.9f):(BoardScale()-1.f)*9.05f;
     const float SoleOffset=(Bind[Foot].GetLocation().Z-Bind[0].GetLocation().Z)*Mesh->GetComponentScale().Z -
-        (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio+(BoardScale()-1.f)*9.05f;
+        (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio+DeckLift;
     auto InMesh=[&](FTransform T){ T.ScaleTranslation(Ratio); T.AddToTranslation(FVector(0,0,SoleOffset)); return T*RootToMesh; };
+    // The visible deck off the board: on the ground it is where the clip has it, grown about its contact like a
+    // ridden board; held, it goes with the body's hands (scaled with the body). Between the two by its height.
+    if (bOffBoardPose)
+    {
+        const int32 SD=Source(TEXT("SKATEBOARD_ROOT"));
+        const float S=BoardScale();
+        if (SD>=0)
+        {
+            const FTransform Clip=RetailRuntime->Bones[SD]*RetailRuntime->Root;
+            const FVector Contact=Clip.GetLocation()-Clip.GetRotation().GetUpVector()*9.05;
+            const FTransform Ground=Clip*FTransform(FQuat::Identity,Contact*(1.-S),FVector(S));
+            FTransform Held=InMesh(RetailRuntime->Bones[SD])*MeshWorld; Held.SetScale3D(FVector(S));
+            OffBoardDeck.Blend(Ground,Held,FMath::SmoothStep(15.f,45.f,float(RetailRuntime->Bones[SD].GetLocation().Z)));
+        }
+        else OffBoardDeck=FTransform(RetailRuntime->Root.GetRotation(),RetailRuntime->Root.GetLocation(),FVector(S));
+        // A board just taken off a hand of the character's own pose eases from there (RideTransition.cpp).
+        if (OffBoardDeckBlend<1.f) { const FTransform To=OffBoardDeck; OffBoardDeck.Blend(OffBoardDeckFrom,To,FMath::SmoothStep(0.f,1.f,OffBoardDeckBlend)); }
+    }
     auto Frame=[](FVector Left,FVector Right,FVector Head,FVector HipP) { FVector Up=(Head-HipP).GetSafeNormal(); return FRotationMatrix::MakeFromXZ(FVector::CrossProduct(Right-Left,Up).GetSafeNormal(),Up).ToQuat(); };
     const int32 TL=Index(TEXT("thigh_L")),TR=Index(TEXT("thigh_R")),TH=Index(TEXT("head"));
     if (TL<0 || TR<0 || TH<0 || Source(TEXT("LEFTUPLEG"))<0 || Source(TEXT("RIGHTUPLEG"))<0 || Source(TEXT("HEAD"))<0)
@@ -886,7 +933,7 @@ void USkateComponent::RetargetRetailPose()
         // Top of the deck's rail: the concave lifts the sides, and the kicks rise to the ends.
         auto RailTop=[&](double X){ const double T=FMath::Clamp((FMath::Abs(X)-KickStart)/(HalfLength-KickStart),0.,1.); return Concave+T*T*(Box.Max.Z-Concave); };
         // The visible deck: a bigger board's outline scales with it, the grip offsets stay at the hand's size.
-        const FTransform DeckToMesh=(RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
+        const FTransform DeckToMesh=(bOffBoardPose?OffBoardDeck:RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
         for (const TCHAR* Side : {TEXT("L"),TEXT("R")})
         {
             auto Target=[&](const TCHAR* Name){ return Index(FString::Printf(TEXT("%s_%s"),Name,Side)); };

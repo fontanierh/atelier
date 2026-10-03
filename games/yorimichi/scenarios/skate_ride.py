@@ -7,7 +7,8 @@ a 360, a grind, a manual, a bail and its recovery, a vert air that comes back in
 and switching character), and the physical rider (skate.RidePhysical): how closely it holds the animation riding and
 landing, a bail that leaves the animation continuously, and its frame cost in Mega Park. Over every frame recorded,
 the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck where the clip stands on
-it, carry no NaN and never pop between clips. Writes build/yorimichi/skateqa/ride.json.
+it, carry no NaN and never pop between clips, in both stances, and the standing rider matches the reference's stand.
+Writes build/yorimichi/skateqa/ride.json.
 """
 import argparse
 import json
@@ -254,22 +255,32 @@ PLANTED = ('R_IDLE', 'R_ANTIC', 'R_SLIDE', 'M_', 'G_', 'L_', 'IA_IDLE')
 POP_SPEED = 1500.   # cm/s: a body bone moving this fast in one frame and not in the frames around it has popped
 
 
-def pose_checks(record, seen):
-    """The rider's pose over every frame the other checks recorded (or a short ride of its own)."""
-    if not seen:
-        for name, events, speed_in, seconds in (
-                ('push', "[(0,{'push':True}),(2,{})]", 0, 2.5), ('kickflip', "[(.4,('flick','kickflip'))]", 450, 2.3),
-                ('manual', "[(.3,{'right':(0,-.5)}),(1.8,{})]", 480, 2.3)):
-            seen[name] = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,{speed_in},{events},duration={seconds}", seconds)
-        seen['grind'] = qa.run_scenario(f"{RAIL[0]},{RAIL[1]},0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
-    runs = [rows for rows in seen.values() if rows and 'clip' in rows[0]]
-    if not runs:
-        record('pose', [], False, 'no clip= on the state line: the rider rig is not in this build')
-        return
-    rows = [r for run in runs for r in run]
-    bad = sum(int(r.get('nan', 0)) > 0 for r in rows)
-    record('pose_nan', rows, not bad, f'{bad} of {len(rows)} frames with a NaN bone')
+POSE_RIDES = (('push', "[(0,{'push':True}),(2,{})]", 0, 2.5), ('kickflip', "[(.4,('flick','kickflip'))]", 450, 2.3),
+              ('manual', "[(.3,{'right':(0,-.5)}),(1.8,{})]", 480, 2.3))
+REFERENCE = qa.GAME / 'assets/skate/ride/reference.json'
+STAND_BONES = ('HIPS', 'SPINE3', 'HEAD', 'LEFTHAND', 'RIGHTHAND', 'LEFTFOOT', 'RIGHTFOOT', 'LEFTTOEBASE', 'RIGHTTOEBASE')
+DECK_FRAME = """
+import json
+_ch = unreal.GameplayStatics.get_player_character(live.L.game_world(), 0)
+_m = next(c for c in _ch.get_components_by_class(unreal.SkeletalMeshComponent) if c.get_name().startswith('RidePose'))
+_cs = unreal.RelativeTransformSpace.RTS_COMPONENT
+_deck = _m.get_socket_transform('SKATEBOARD_ROOT', _cs)
+_out = {}
+for _n in NAMES:
+    _l = _deck.inverse_transform_location(_m.get_socket_transform(_n, _cs).translation)
+    _out[_n] = (_l.x, _l.y, _l.z)
+print(json.dumps(_out))
+"""
 
+
+def pose_rides(seen):
+    for name, events, speed_in, seconds in POSE_RIDES:
+        seen[name] = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,{speed_in},{events},duration={seconds}", seconds)
+    seen['grind'] = qa.run_scenario(f"{RAIL[0]},{RAIL[1]},0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
+
+
+def pose_health(runs):
+    """Feet off the deck on planted clips, and pops between frames, over recorded runs."""
     # Feet: frames that have been on a planted clip for at least a sixth of a second (the cross-fade in is done).
     planted, off, worst = 0, 0, {}
     for run in runs:
@@ -282,11 +293,9 @@ def pose_checks(record, seen):
             if int(r.get('feetoff', 0)):
                 off += 1
                 worst.setdefault(r['clip'], r.get('feet'))
-    share = off / planted if planted else 1
-    record('pose_feet', rows, planted > 60 and share < .03,
-           f'{off} of {planted} planted frames with a foot off the deck'
-           + (' (' + ', '.join(f'{c} toes at {f} cm' for c, f in list(worst.items())[:4]) + ')' if worst else ''))
-
+    feet = (planted > 60 and off / planted < .03,
+            f'{off} of {planted} planted frames with a foot off the deck'
+            + (' (' + ', '.join(f'{c} toes at {f} cm' for c, f in list(worst.items())[:4]) + ')' if worst else ''))
     # Continuity: no body bone jumps in one frame (a pop between clips) outside a bail; the first frames of a run
     # (the rider placed) are skipped.
     pops, fastest = [], 0.
@@ -299,12 +308,62 @@ def pose_checks(record, seen):
             around = sorted(steps[i - 3:i] + steps[i + 1:i + 4])[3]
             if steps[i] > POP_SPEED and steps[i] > 3 * around:
                 pops.append(f"{run[i - 1].get('clip')}->{run[i].get('clip')} {steps[i]:.0f} cm/s")
-    record('pose_continuity', rows, not pops, f'{len(pops)} pops' + (': ' + '; '.join(pops[:4]) if pops else '')
-           + f'; fastest body bone {fastest:.0f} cm/s')
+    continuity = (not pops, f'{len(pops)} pops' + (': ' + '; '.join(pops[:4]) if pops else '')
+                  + f'; fastest body bone {fastest:.0f} cm/s')
+    return feet, continuity
+
+
+def stand_errors(goofy):
+    """The standing rider's bones in the deck's frame against the reference's stand (a regular rider's; a goofy rider
+    mirrors it, left and right swapped), in cm."""
+    reference = json.loads(REFERENCE.read_text())['mechanics']['stand/idle']['numbers']['bones_in_deck_frame']
+    qa.py(f'live.L.skate_goofy({goofy})')
+    rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[],duration=2.5", 2.5)
+    got = json.loads(qa.py(f'NAMES={list(STAND_BONES)!r}' + DECK_FRAME).strip().splitlines()[-1])
+    swap = lambda n: n.replace('LEFT', '#').replace('RIGHT', 'LEFT').replace('#', 'RIGHT') if goofy else n
+    errors = {}
+    for name in STAND_BONES:
+        left, up, forward = reference[name]     # native: x left, y up, z forward, metres
+        errors[swap(name)] = math.dist((forward * 100, (left if goofy else -left) * 100, up * 100), got[swap(name)])
+    return rows[-1].get('clip', ''), errors
+
+
+def pose_checks(record, seen):
+    """The rider's pose over every frame the other checks recorded (or a short ride of its own), the stand in both
+    stances against the reference, and the same rides goofy (the clips unmirrored)."""
+    if not seen:
+        pose_rides(seen)
+    runs = [rows for rows in seen.values() if rows and 'clip' in rows[0]]
+    if not runs:
+        record('pose', [], False, 'no clip= on the state line: the rider rig is not in this build')
+        return
+    rows = [r for run in runs for r in run]
+    bad = sum(int(r.get('nan', 0)) > 0 for r in rows)
+    record('pose_nan', rows, not bad, f'{bad} of {len(rows)} frames with a NaN bone')
+    feet, continuity = pose_health(runs)
+    record('pose_feet', rows, *feet)
+    record('pose_continuity', rows, *continuity)
     anim = [float(r['anim']) for r in rows if 'anim' in r]
     if anim:
         anim.sort()
         print(f'animator {anim[len(anim) // 2]:.3f} ms p50, {anim[min(len(anim) - 1, round(.99 * (len(anim) - 1)))]:.3f} ms p99 per frame', flush=True)
+
+    notes, ok = [], True
+    try:
+        for goofy in (False, True):
+            clip, errors = stand_errors(goofy)
+            mean, worst = sum(errors.values()) / len(errors), max(errors, key=errors.get)
+            ok = ok and clip.startswith('R_IDLE_HCOM_000') and mean < 1.5 and errors[worst] < 3
+            notes.append(f'{"goofy" if goofy else "regular"} {clip}: mean {mean:.2f} cm, worst {worst} {errors[worst]:.2f} cm')
+        goofy_seen = {}
+        pose_rides(goofy_seen)
+    finally:
+        qa.py('live.L.skate_goofy(False)')
+    record('pose_stand', [], ok, '; '.join(notes))
+    goofy_runs = [rows for rows in goofy_seen.values() if rows and 'clip' in rows[0]]
+    feet, continuity = pose_health(goofy_runs)
+    record('pose_goofy', [r for run in goofy_runs for r in run], feet[0] and continuity[0],
+           f'{feet[1]}; {continuity[1]}')
 
 
 # The reference (RIDE.md, Physical rider): the oracle's published body against its animation pose.

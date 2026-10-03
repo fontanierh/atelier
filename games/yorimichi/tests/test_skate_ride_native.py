@@ -157,6 +157,25 @@ def test_euler_storage_model(bundle, rig):
     assert N.quaternion_angle((0, 0, 0, 1), N.euler_stored((0, 0, 0, 1))) == 0.0
 
 
+def test_snap_guard(bundle, rig):
+    """native.snap_guard moves a key that the control rig's 1e-4 equality test would read as the reference pose, so
+    the sequence keeps it, and leaves the reference itself and keys clear of the test alone: OFB_FOOTPLANT_BSR_0_CYC
+    holds LEFTTOEBASE 2.24e-4 rad from its reference, which Unreal returned as the reference."""
+    reference = rig.named_pose(0, 'RIG_TPOSE')
+    b = [x.name for x in rig.bones].index('LEFTTOEBASE')
+    rest = N.sample_to_unreal(N.runtime_sample(N.split_sample(reference.samples[b])))
+    assert N.snap_guard(rest, rest) == (rest, False)
+    key = N.sample_to_unreal(N.local_pose(bundle.clip(0, 'OFB_FOOTPLANT_BSR_0_CYC'), 0, b, reference))
+    assert N.quaternion_angle(key[1], rest[1]) == pytest.approx(2.245e-4, rel=1e-3)
+    assert N.rig_equal(key, rest)
+    moved, guarded = N.snap_guard(key, rest)
+    assert guarded and not N.rig_equal(moved, rest)
+    assert moved[1] == key[1] and moved[2] == key[2]
+    assert math.dist(moved[0], key[0]) == pytest.approx(N.SNAP_GUARD_CM)
+    far = N.sample_to_unreal(N.local_pose(bundle.clip(0, 'PRO_DYRDEK_MONGO_HSPD_LSTR_CYC2'), 10, b, reference))
+    assert N.snap_guard(far, rest) == (far, False)
+
+
 def test_malformed_clip_rejected(bundle):
     data = bundle.clip_paths()[0].read_bytes()
     for bad in (b'', data[:11], data[:-1], data + b'\0', b'ATCLIP02' + data[8:]):
