@@ -18,6 +18,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Drive(FVector2D Intent, int32 Gait = 1);
     /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
+    /** Change a setting as the Esc menu and the phone do (UJapanPreferences::SetValue, saved); false for an unknown key. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool SetPreference(const FString& Key, float Value);
     /** Draw or sheathe the sword, as the draw button does. False when the character has no sword. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool ToggleSword();
     /** Skateboarding (docs/SKATE.md): get on or off; hold skate. controls (sticks: x right, y away from the player) until

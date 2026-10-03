@@ -1,6 +1,7 @@
 #include "YorimichiLive.h"
 #include "LiveLibrary.h"
 #include "WandererCharacter.h"
+#include "JapanPreferences.h"
 #include "WandererSword.h"
 #include "SkateComponent.h"
 #include "SkatePark.h"
@@ -25,6 +26,12 @@ bool UYorimichiLive::Drive(FVector2D Intent, int32 Gait)
 bool UYorimichiLive::Press(const FString& Button)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); return P && P->Live_Press(FName(*Button));
+}
+
+bool UYorimichiLive::SetPreference(const FString& Key, float Value)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
 }
 
 bool UYorimichiLive::ToggleSword()

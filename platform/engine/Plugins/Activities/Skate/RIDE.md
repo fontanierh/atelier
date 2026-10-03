@@ -1,6 +1,7 @@
 # Ride
 
-Ride is the Unreal-native skating backend (`skate.Backend Ride`, `USkateSettings::Backend`). Its sources are in
+Ride is the Unreal-native skating backend (`skate.Backend Ride`, `USkateSettings::Backend`). A game picks its default
+backend in its config; the backend is chosen at each mount and a ride keeps it. Its sources are in
 `Source/AtelierSkate/Private/Ride/`.
 
 ## Board

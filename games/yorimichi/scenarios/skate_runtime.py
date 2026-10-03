@@ -19,6 +19,8 @@ def main():
     args = parser.parse_args()
     qa.bridge.URL = f'http://127.0.0.1:{args.port}'
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
+    # The native runtime's checks: the game rides on Ride by default.
+    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
     qa.py('live.L.skate_goofy(False); live.skate_park(); live.skate_input()')
     for _ in range(60):
         state = qa.py('print(live.skate_state())')

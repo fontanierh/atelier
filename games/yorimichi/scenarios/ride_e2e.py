@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""A dry run of a Ride playtest on the island, with the player's own pad inputs (atelier play yorimichi --profile ride).
+"""A dry run of a Ride playtest on the island, with the player's own pad inputs (atelier play yorimichi; the game
+rides on Ride by default).
 
 Run against the running game:  atelier qa yorimichi ride_e2e        (after quitting:  ... ride_e2e --post)
 The game starts on foot at the island's start. Every input goes through the pad keys a player presses (InputKey on the
@@ -962,7 +963,7 @@ def run():
     first_ride = next((r for r in ROWS if riding(r)), None)
     check('first_mount_on_ride', first_ride is not None and f(first_ride, 'backend') == 'Ride',
           f"the first riding frame's backend: {f(first_ride, 'backend', '-') if first_ride else 'never rode'} (no console "
-          f"command in the run; the ride profile's -ExecCmds sets skate.Backend Ride, the settings' default is Native)",
+          f"command in the run; the game's settings default to Ride)",
           shots=[shot('first_mount')])
     if first:
         pilot('ride', *road, name='road', v=380)
