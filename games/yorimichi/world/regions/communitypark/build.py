@@ -10,11 +10,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import yori
 import hashlib
 import json
+import shutil
 import bpy
 import numpy as np
 from communitypark import layout as L
 from communitypark.source import scene, SPEC
 from communitypark.rails import paths
+from communitypark.structures import build as build_structures
 from hidamari.layout import north_surface
 from hidamari.mountains import colours
 
@@ -125,12 +127,29 @@ def build():
     for a, b in [(1, 0), (count-2, count-1)]:
         faces.extend([(a, b, b+count), (a, b+count, a+count)])
     obj = mesh('SM_CP_Access', points, faces, materials[0]); report[obj.name] = export(obj); entries.append({'name': obj.name, 'blocks': True})
+    # Authored additions carry the raised source pieces and provide a real ascent.
+    # The cedar map is an existing Sunburst-authored project texture.
+    shutil.copyfile(yori.ASSETS/'skatepark/textures/wood.jpg', OUT/'textures/service-wood.jpg')
+    structure_meshes, structure = build_structures(north_surface)
+    for item in structure_meshes:
+        material = bpy.data.materials.new(item.material); material.use_nodes = True
+        bsdf = material.node_tree.nodes.get('Principled BSDF')
+        bsdf.inputs['Roughness'].default_value = .82 if item.material == 'CP_ServiceTimber' else .65
+        if item.material == 'CP_ServiceTimber':
+            image = material.node_tree.nodes.new('ShaderNodeTexImage'); image.image = bpy.data.images.load(str(OUT/'textures/service-wood.jpg'))
+            material.node_tree.links.new(image.outputs['Color'], bsdf.inputs['Base Color'])
+        else:
+            bsdf.inputs['Base Color'].default_value = (.035, .05, .058, 1.)
+            bsdf.inputs['Metallic'].default_value = .6
+        obj = mesh(item.name, L.local(item.vertices), item.triangle_faces(), material, item.uv, item.uv)
+        report[obj.name] = export(obj); entries.append({'name': obj.name, 'blocks': True})
     # Import seed prevents the legacy FBX factory opening its warning UI.
     obj = mesh('SM_CP_Seed', [(0, 0, 0), (.1, 0, 0), (0, .1, 0)], [(0, 1, 2)], materials[0]); export(obj)
     park = {'version': 1, 'key': 'communitypark', 'name': 'Hidamari Community Park', 'asset_root': '/Game/CommunityPark',
             'origin': L.ORIGIN.tolist(), 'yaw_deg': L.YAW,
             'deck': {'x': [-46.985962, 46.985962], 'y': [-51.32135, 51.32135], 'top_z': 10.028},
             'meshes': entries, 'rails': paths(), 'clearance': L.clearance(), 'trees': L.screen_trees(north_surface),
+            'structures': structure,
             'spawns': {'park': {'pos': L.local(L.SPAWN).tolist(), 'yaw_deg': L.HEADING-L.YAW},
                        'path_top': {'pos': list(L.ACCESS[0]), 'yaw_deg': 90.}},
             'source': json.loads(SPEC.read_text())}

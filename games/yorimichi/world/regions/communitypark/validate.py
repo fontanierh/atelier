@@ -16,6 +16,7 @@ import yori
 import numpy as np
 from communitypark.source import scene
 from communitypark import layout as L
+from communitypark import structures as S
 from hidamari.layout import north_surface
 
 
@@ -106,12 +107,46 @@ def import_audit():
         assert actual.shape == expected.shape, (name, actual.shape, expected.shape)
         error = triangle_error(expected, actual)
         errors[name] = error
-    return {'source_meshes': len(errors), 'maximum_triangle_error_cm': max(errors.values()), 'meshes': errors}
+    additions = {}
+    for mesh in S.build(north_surface)[0]:
+        expected = L.local(mesh.triangles())*[100., -100., 100.]
+        actual = np.fromfile(yori.OUT/'communitypark/import-audit'/f'{mesh.name}.triangles.f64', dtype='<f8').reshape(-1, 3, 3)
+        additions[mesh.name] = triangle_error(expected, actual)
+    return {'source_meshes': len(errors), 'maximum_triangle_error_cm': max(errors.values()), 'meshes': errors,
+            'structures': additions}
+
+
+def structure_audit():
+    meshes, metadata = S.build(north_surface)
+    added = np.concatenate([m.triangles() for m in meshes])
+    original = L.place(scene().triangles()); all_triangles = np.concatenate((added, original))
+    route = S.stair_route()
+    for x, y, z in route:
+        hits = S.heights(added, x, y)
+        assert np.any(abs(hits-z) < .025), ('missing tread or landing', x, y, z)
+        for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
+            hits = S.heights(all_triangles, x+dx, y+dy)
+            assert not np.any((hits > z+.2) & (hits < z+1.95)), ('body clearance', x, y, z, dx, dy)
+    for contact in metadata['support_contacts']:
+        x, y, z = contact['top']
+        assert abs(S.heights(original, x, y)-z).min() < .001, ('unsupported upper contact', contact)
+        x, y, z = contact['bottom']
+        below = S.heights(original, x, y)
+        ground = float(L.ground(x, y, north_surface))
+        assert abs(z-ground) < .03 or np.any(abs(below-z) < .03), ('floating footing', contact)
+    # Keep the deck lane used by the live riding check open below head height.
+    for y in np.linspace(572, 603, 63):
+        hits = S.heights(added, 1250, y)
+        assert not np.any((hits > 48.52) & (hits < 50.45)), ('blocked riding lane', y)
+    return {'support_contacts': len(metadata['support_contacts']), 'ascent_waypoints': len(route),
+            'ascent_length_m': float(np.linalg.norm(np.diff(route, axis=0), axis=1).sum()),
+            'height_gain_m': S.TOP-S.DECK, 'step_rise_m': metadata['step_rise_m'],
+            'footings_and_body_clearance': True}
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('--imported', action='store_true')
-    args = parser.parse_args(); evidence = source_audit()
+    args = parser.parse_args(); evidence = source_audit(); evidence['structures'] = structure_audit()
     if args.imported:
         evidence['imported'] = import_audit()
     (yori.OUT/'communitypark/validation.json').write_text(json.dumps(evidence, indent=2)+'\n')

@@ -59,6 +59,25 @@ def materials():
     ground = E.load_asset('/Game/Japan/Materials/M_NorthGate')
     assert ground, 'Import the island ground material before the community park'
     result['CP_Ground'] = ground
+    for key, colour, roughness, metallic in [('CP_StructureSteel', (.035, .05, .058), .65, .6),
+                                           ('CP_ServiceTimber', None, .82, 0.)]:
+        name = 'M_'+key; dest = ROOT+'/Materials'
+        m = E.load_asset(dest+'/'+name) if E.does_asset_exist(dest+'/'+name) else AT.create_asset(name, dest, unreal.Material, unreal.MaterialFactoryNew())
+        MEL.delete_all_material_expressions(m)
+        if colour:
+            node = MEL.create_material_expression(m, unreal.MaterialExpressionConstant3Vector)
+            node.set_editor_property('constant', unreal.LinearColor(*colour, 1.))
+            assert MEL.connect_material_property(node, '', unreal.MaterialProperty.MP_BASE_COLOR)
+        else:
+            node = MEL.create_material_expression(m, unreal.MaterialExpressionTextureSample)
+            node.set_editor_property('texture', texture({'slot': key, 'file': 'service-wood.jpg'}))
+            node.set_editor_property('sampler_type', unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
+            assert MEL.connect_material_property(node, 'RGB', unreal.MaterialProperty.MP_BASE_COLOR)
+        for value, prop in [(roughness, unreal.MaterialProperty.MP_ROUGHNESS), (metallic, unreal.MaterialProperty.MP_METALLIC)]:
+            node = MEL.create_material_expression(m, unreal.MaterialExpressionConstant); node.set_editor_property('r', value)
+            assert MEL.connect_material_property(node, '', prop)
+        MEL.layout_material_expressions(m); MEL.recompile_material(m); E.save_loaded_asset(m)
+        result[key] = m
     return result
 
 
@@ -82,6 +101,8 @@ for entry in park['meshes']:
     assert key == expected['material'] and key in surfaces, (name, key, expected['material'])
     slots[0].set_editor_property('material_interface', surfaces[key]); mesh.set_editor_property('static_materials', slots)
     assert subsystem.get_num_uv_channels(mesh, 0) >= 2, (name, 'UV0 and UV1 required')
+    if name == 'SM_CP_Ground':
+        assert subsystem.has_vertex_colors(mesh), 'Ground colour data was lost during FBX import'
     mesh.set_editor_property('allow_cpu_access', True)
     body = mesh.get_editor_property('body_setup'); assert body, name
     body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)

@@ -166,7 +166,7 @@ def steps(ctx):
         Step('world.mega', [Blender(REGIONS / 'mega' / 'build.py')], inputs=[REGIONS / 'mega', REGIONS / 'village' / 'build.py'],
              needs=['world.layout'], outputs=[out / 'mega' / 'manifest.json'], about='the mini-mega ramp and its trail'),
         Step('world.communitypark', [Blender(REGIONS / 'communitypark' / 'build.py', threads=4)],
-             inputs=[REGIONS / 'communitypark', ASSETS / 'communitypark', REGIONS / 'hidamari' / 'layout.py',
+             inputs=[REGIONS / 'communitypark', ASSETS / 'communitypark', ASSETS / 'skatepark/textures/wood.jpg', REGIONS / 'hidamari' / 'layout.py',
                      REGIONS / 'hidamari' / 'mountains.py'],
              needs=['world.layout', 'world.communitypark_source'], outputs=[out / 'communitypark' / 'build-report.json', out / 'communitypark' / 'park.json'],
              heavy=True, about='community park scene, original materials, ground, access and grind contacts'),

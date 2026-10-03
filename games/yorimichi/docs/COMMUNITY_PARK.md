@@ -42,6 +42,17 @@ The park also owns a dense belt of mature ginkgo, maple, pine and cedar trees.
 Their trunks stay outside the source footprint and leave an eleven-metre opening
 around the approach; full island tree meshes replace distant backdrop shapes.
 
+Dark steel trestles carry the elevated ramp groups down to original lower
+surfaces or the carved terrain. Footplates, girders and diagonal braces give
+the source's suspended pieces visible support. A timber service stair rises
+from the north deck through eighteen switchback flights and broad landings;
+14.7 cm risers, 45 cm treads and a 2.4 m width suit normal character movement.
+The railed top bridge joins the highest original ramp at its ridge. Its open
+west edge permits a drop-in. The design follows a high-quality
+`gpt-image-2.5-sunburst` concept; the model, prompt and paid-call provenance stay
+with the concept in the ignored build folder. Timber reuses the project's
+authored cedar texture. Source ramp placements remain unchanged.
+
 `unreal.communitypark` imports `/Game/CommunityPark`, checks scale, bounds and
 UV count, binds the reconstructed materials, and enables complex collision
 from the rendered triangles. `ASkatePark` loads the generated manifest through
@@ -51,7 +62,7 @@ QA spawn. Rails, ledges and continuous coping paths derive from source edges.
 ## Validation and captures
 
 ```sh
-uv run pytest games/yorimichi/tests/test_communitypark.py
+uv run pytest games/yorimichi/tests/test_communitypark*.py
 uv run python games/yorimichi/world/regions/communitypark/validate.py --imported
 uv run python games/yorimichi/tools/review_communitypark.py
 ```
@@ -60,7 +71,11 @@ The source audit samples upward triangles at intervals of at most two metres,
 checks that ground stays below them, checks the access grade and its deck join,
 and compares the patch boundary. The import audit compares all 30 built source
 meshes against the pinned GLB, tolerating only 0.01 cm float conversion.
+The structure audit checks grounded contacts, footing and body clearance at
+every ascent waypoint, the deck riding lane, and both new meshes after import.
 The guarded game review owns a separate loopback bridge and quits its own game;
-it checks actor/mesh inventory, original surface traces, riding, both park
-destinations and captures the overview, approach, deck and bowls. Evidence and
+it checks actor/mesh/tree inventory, original surface traces, riding, the
+Sunset Pier QA spawn and the entire ascent using character movement without
+intermediate teleports. It captures the overview, approach, bowls, trestles,
+stair tower, bridge and top arrival. Evidence and
 captures go under `build/yorimichi/communitypark/`, never beside source files.
