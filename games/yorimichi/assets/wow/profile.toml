@@ -1,0 +1,29 @@
+# Inputs are private. This file describes selection, not redistributed game content.
+schema_version = 1
+client_build = 5875
+client_version = "1.12.1"
+locale = "enUS"
+benilla_revision = "b396bbf69a0486b6d29829ec191145f63c363eea"
+
+[character]
+class_id = 8
+class_name = "mage"
+spell_family = 3
+level = 60
+race_id = 1
+sex = 0
+# First appearance only; selection is configurable, and all extracted spell ranks are retained.
+models = ["Character/Human/Male/HumanMale.m2", "Character/Human/Female/HumanFemale.m2"]
+
+[world]
+map = "Azeroth"
+# Upstream Booty Bay traversal fixture: a selection anchor, not a player spawn.
+center_yards = [-14314.3, 466.2]
+tile_radius = 1
+roots = ["World/wmo/Azeroth/Buildings/Stranglethorn_BootyBay/BootyBay.wmo"]
+
+[selection]
+# Client appearances/animations only. Gameplay templates, spawns, stats and loot are separate.
+creature_patterns = ["creature/tiger/", "creature/panther/", "creature/raptor/", "creature/crocolisk/", "creature/parrot/", "creature/goblin/"]
+item_patterns = ["item/objectcomponents/weapon/", "item/objectcomponents/head/", "item/objectcomponents/shoulder/", "item/texturecomponents/", "character/human/"]
+max_assets = 20000

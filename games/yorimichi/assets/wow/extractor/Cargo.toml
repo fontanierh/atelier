@@ -1,0 +1,18 @@
+[package]
+name = "yorimichi-wow-extract"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+image = { version = "0.25", default-features = false, features = ["png"] }
+benilla-formats = { git = "https://github.com/samwhosung/benilla", rev = "b396bbf69a0486b6d29829ec191145f63c363eea", default-features = false }
+benilla-m2 = { git = "https://github.com/samwhosung/benilla", rev = "b396bbf69a0486b6d29829ec191145f63c363eea" }
+benilla-wmo = { git = "https://github.com/samwhosung/benilla", rev = "b396bbf69a0486b6d29829ec191145f63c363eea" }
+benilla-wdt = { git = "https://github.com/samwhosung/benilla", rev = "b396bbf69a0486b6d29829ec191145f63c363eea" }
+benilla-blp = { git = "https://github.com/samwhosung/benilla", rev = "b396bbf69a0486b6d29829ec191145f63c363eea" }
