@@ -3,8 +3,11 @@
 """Mega Park Ride film: the Ride skating backend (skate.Backend Ride) through the Mega Park. A push-off and hard carves
 on the park road, flat-ground flips (kickflip, heelflip, pop shove-it, 360 flip, varial kickflip, hardflip) and a
 sketchy catch, a powerslide down the ramp, manuals on the plaza, a long 50-50, a boardslide and a 5-0 down the plaza
-parapet, the drop-in off the upper deck into a big Indy over the pool's west wall, quarter-pipe airs (Melon 180, a
-Christ air with a slow-motion replay, a 360), three ragdoll bails (an Indy held into the landing on the pool's west
+parapet, the drop-in off the upper deck into a big Indy over the pool's west wall, quarter-pipe airs that come back
+down into the pool's north wall (Melon 180, a Christ air with a slow-motion replay, a 360), a transition line in the
+capsule bowl (a roll-in over the coping, then airs back and forth between its outer wall and the spine: a Melon 180
+coming down forward, an Indy coming down fakie, a 360, a Christ air, with a slow-motion replay of the one that turned
+the most) and a 50-50 on its coping from the deck back into the bowl, three ragdoll bails (an Indy held into the landing on the pool's west
 wall, a kickflip on the road at speed come down on one foot, a 50-50 down the parapet and an Indy held down the plaza's
 step into a slam), each with the get-up where the body came to rest and a slow-motion replay the mixer can play (from
 the road bail he gets up on foot, recalls the board to his hand with the board button and runs with it), and a clean
@@ -40,7 +43,12 @@ a line with push and brake holds, timed events and position triggers (Flick-It g
 Each shot records into its own folder (parts/NN_name): a JPG every second 60 Hz frame (30 fps), the camera, and the
 board's loops per frame; the sounds the game starts are stamped with the shot's own frame clock (AUDIO_BASE * (k + 1)
 plus the frame; unrecorded frames stamp -1000000). A slow shot saves every 90 Hz frame, so the mixer can replay its
-biggest air, or its bail, at a third of the speed. An optional shot that does not do what it should (no caveman, no
+biggest air (a line's most turned), or its bail, at a third of the speed. A transition air's camera widens to hold
+the lip, the top of the air and the wall below the lip with the rider; a lip air's spin is measured from the board's
+SkateDeck mesh about the take-off's up. A shot with `retry` that is not kept (a line without three airs back into the
+transition, a quarter-pipe air that does not come back in) runs again from its start. done.json logs each air: its
+take-off and landing face, point, slope and stance, the speed there and on the flat before and after, the trick, a
+bail, and whether it came back into the transition. An optional shot that does not do what it should (no caveman, no
 dismount) is marked keep=false and left out of the cut. done.json logs each bail's entry speed, how far the body went,
 how low it lay (the state's lie=), how long it was down and, around the get-up, the largest move in one tick of the
 pelvis and of the board's deck while it shows (a pop), and each fade of the board (shown=); the part's shot.json keeps
@@ -75,7 +83,8 @@ cm = unreal.GameplayStatics.get_player_camera_manager(L.game_world(), 0)
 UNRECORDED = -1000000
 AUDIO_BASE = 1000000
 NEUTRAL_LOOPS = '0 1 0 1 0 1 0 1 0 1'
-G_AIR = 14.                     # Ride's air gravity (m/s^2)
+G_AIR = 14.                     # Ride's air gravity (m/s^2); each air measures its own (a lip air may fall slower)
+VERT_DZ = float(globals().get('VERT_DZ', 1.2))   # m below its lip that a lip air comes back down onto the wall
 
 
 # ------------------------------------------------------------------------------------------------ geometry
@@ -95,6 +104,43 @@ def yaw_to(x, y, tx, ty):
 def ground_z(x, y, probe):
     """The first surface under (x, y) below probe + 20 m (island metres)."""
     return L.ground_at(ue(x, y, probe)).z / 100.
+
+
+def dot(a, b):
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def flat(v, n):
+    """v projected onto the plane normal to the unit n, normalised (None when v is along n)."""
+    k = dot(v, n); w = (v[0] - k * n[0], v[1] - k * n[1], v[2] - k * n[2]); m = math.sqrt(dot(w, w))
+    return (w[0] / m, w[1] / m, w[2] / m) if m > 1e-6 else None
+
+
+def slope_of(up):
+    return round(math.degrees(math.acos(max(-1., min(1., up[2])))), 1) if up else None
+
+
+class Pipe:
+    """A straight channel between two transitions facing each other: u along it, k across it from the first coping
+    (k grows towards the far wall); `faces` names the side of the middle an air leaves from."""
+
+    def __init__(self, origin, heading, width, faces=('near wall', 'far wall')):
+        self.o = origin; h = math.radians(heading)
+        self.u = (math.cos(h), math.sin(h)); self.n = (math.sin(h), -math.cos(h)); self.w = width; self.faces = faces
+
+    def at(self, u, k):
+        return (self.o[0] + self.u[0] * u + self.n[0] * k, self.o[1] + self.u[1] * u + self.n[1] * k)
+
+    def uk(self, x, y):
+        dx, dy = x - self.o[0], y - self.o[1]
+        return dx * self.u[0] + dy * self.u[1], dx * self.n[0] + dy * self.n[1]
+
+    def face(self, x, y, z=None):
+        return self.faces[0] if self.uk(x, y)[1] < self.w / 2. else self.faces[1]
 
 
 def pursue(way, k, x, y, look):
@@ -122,10 +168,11 @@ RAIL0 = [(-68.80, 1372.26, 118.91), (-71.13, 1376.69, 118.91), (-73.20, 1381.23,
          (-78.73, 1410.47, 119.93), (-78.47, 1415.46, 120.49), (-78.18, 1420.46, 121.25)]
 
 
-def rail_at(s):
-    """Point and unit tangent (north-going) on the parapet line at s metres from its south end."""
-    s = max(0., min(s, 5. * (len(RAIL0) - 1) - 1e-6)); i = int(s // 5); u = s / 5. - i
-    a, b = RAIL0[i], RAIL0[i + 1]; dx, dy = b[0] - a[0], b[1] - a[1]; n = math.hypot(dx, dy)
+def rail_at(s, line=RAIL0):
+    """Point and unit tangent (north-going) on the parapet line (or another line of points 5 m apart) at s metres
+    from its start."""
+    s = max(0., min(s, 5. * (len(line) - 1) - 1e-6)); i = int(s // 5); u = s / 5. - i
+    a, b = line[i], line[i + 1]; dx, dy = b[0] - a[0], b[1] - a[1]; n = math.hypot(dx, dy)
     return (a[0] + dx * u, a[1] + dy * u, a[2] + (b[2] - a[2]) * u), (dx / n, dy / n)
 
 
@@ -135,11 +182,11 @@ def rail_offset(s, d):
     return p[0] + t[1] * d, p[1] - t[0] * d
 
 
-def rail_lateral(x, y):
-    """(s, signed distance inward, tangent) of the nearest point of the parapet line."""
+def rail_lateral(x, y, line=RAIL0):
+    """(s, signed distance inward (right of the line's way), tangent) of the nearest point of the parapet line."""
     best = None
-    for i in range(len(RAIL0) - 1):
-        a, b = RAIL0[i], RAIL0[i + 1]; dx, dy = b[0] - a[0], b[1] - a[1]; ll = dx * dx + dy * dy
+    for i in range(len(line) - 1):
+        a, b = line[i], line[i + 1]; dx, dy = b[0] - a[0], b[1] - a[1]; ll = dx * dx + dy * dy
         u = max(0., min(1., ((x - a[0]) * dx + (y - a[1]) * dy) / ll))
         px, py = a[0] + dx * u, a[1] + dy * u; d = math.hypot(x - px, y - py)
         if best is None or d < best[0]:
@@ -190,7 +237,29 @@ def observe(s):
             c.hx, c.hy, c.hz, c.hsrc = hx / 100., -hy / 100., hz / 100., key; break
         except (KeyError, ValueError): pass
     c.hdi = math.atan2(c.vy, c.vx) if c.spd > .5 else -math.radians(p.get_actor_rotation().yaw)
+    c.v3 = math.sqrt(c.spd * c.spd + c.vz * c.vz)
+    c.axes = deck_axes()
+    c.slope = slope_of(c.axes[1]) if c.axes else None
     return c
+
+
+def deck_axes():
+    """The board's forward and up (island axes) from its SkateDeck mesh, or None. A vert air turns the board about a
+    level axis, where the state line's yaw (a rotator's) says nothing: the spin is measured from these."""
+    d = st.get('deck')
+    if d is False: return None
+    for again in (False, True):
+        if d is None or again:
+            d = next((m for m in L.player().get_components_by_class(unreal.StaticMeshComponent) if m.get_name() == 'SkateDeck'), None)
+            st['deck'] = d if d is not None else False
+            if d is None: return None
+        try:
+            f, u = d.get_forward_vector(), d.get_up_vector()
+            return (f.x, -f.y, f.z), (u.x, -u.y, u.z)
+        except Exception:
+            d = None
+    st['deck'] = False
+    return None
 
 
 def air_t(s, c):
@@ -198,12 +267,17 @@ def air_t(s, c):
     return c.t - a['t0'] if a and c.mode == 2 else -1.
 
 
+def air_g(a):
+    return a.get('g') or G_AIR
+
+
 def time_to_land(s, c):
-    """Seconds until the board falls back to its take-off height (or `land_dz` below it)."""
+    """Seconds until the board falls back to its take-off height (`land_dz` below it; a lip air VERT_DZ below it)."""
     a = s['air']
     if not a: return 0.
-    h = c.zb - a['z0'] + s.get('land_dz', 0.)
-    return (c.vz + math.sqrt(max(0., c.vz * c.vz + 2. * G_AIR * h))) / G_AIR
+    g = air_g(a)
+    h = c.zb - a['z0'] + s.get('land_dz', VERT_DZ if a['lip'] else 0.)
+    return (c.vz + math.sqrt(max(0., c.vz * c.vz + 2. * g * h))) / g
 
 
 # ------------------------------------------------------------------------------------------------ input effects
@@ -217,8 +291,8 @@ def hold(secs=None, until=None, **inputs):
 
 
 def spin(to=None, until=None, dir=1., mag=1.):
-    """In the air: turn with the left stick until the spin (simulated from Ride's rates) will reach `to` degrees by
-    the landing, or until it has turned `until` degrees."""
+    """In the air: turn with the left stick until the spin (the board's measured turn: about the take-off's up in a
+    lip air, else the state line's yaw) will reach `to` degrees by the landing, or until it has turned `until`."""
     return dict(kind='spin', to=to, until=until, dir=dir, mag=mag)
 
 
@@ -274,7 +348,8 @@ def apply_effect(s, c, e, inp):
         if e['until'] is not None: go = abs(a['spin']) < e['until']
         else:
             tl = time_to_land(s, c)
-            done, r = (a['turned'], a['trate']) if a.get('yaw') is not None else (a['spin'], a['rate'])
+            if a['lip'] and a.get('dprev') is not None: done, r = a['dturn'], a['drate']     # the deck's own turn
+            else: done, r = (a['turned'], a['trate']) if a.get('yaw') is not None else (a['spin'], a['rate'])
             r = abs(r)
             go = abs(done) + min(r, 115.) * tl + max(0., r - 115.) / 7. < e['to']
         if go: inp['left'] = (e['dir'] * e['mag'], inp['left'][1])
@@ -306,6 +381,45 @@ def spin_model(s, c, inp, dt):
     a['spin'] += a['rate'] * dt
 
 
+def plan_air(s, c, a):
+    """A transition line's trick for this lip air: the first of the shot's `plan` not done yet whose stance (None:
+    either) is the one he climbed in and whose least air time the climb gives (2 vz / g, g the vert guess `vert_g`);
+    else a straight Indy, which turns the stance round for the next wall. A straight air comes back down fakie, a 180
+    forward, a 360 fakie again."""
+    left = s.setdefault('plan_left', list(s['plan']))
+    T = 2. * max(0., c.vz) / s.get('vert_g', 10.)
+    trick = next((p for p in left if p.get('stance') in (None, a['off']['stance']) and T >= p.get('T', 0.)), None)
+    if trick is None: trick = {'name': 'indy (between)', 'grab': 'indy'}
+    else: left.remove(trick)
+    a['plan'] = {'name': trick['name'], 'T': round(T, 2), 'stance': a['off']['stance']}
+    fx = [grab(trick['grab'], trick.get('release', .3))] if trick.get('grab') else []
+    if trick.get('spin'): fx.append(spin(to=trick['spin'], dir=trick.get('dir', 1.)))
+    return fx
+
+
+def back_in(a):
+    """An air that came back into the transition: rolling away from a landing on a slope below its lip, no bail."""
+    on = a.get('on') or {}
+    return a['to'] == 1 and not a.get('bail') and (on.get('slope') or 0.) > 12. and (on.get('at') or [0, 0, 1e9])[2] < a['z0'] - .1
+
+
+def line_done(s, c):
+    """A transition line ends 1.4 s after the landing of its last planned air, or 2.5 s after a bail."""
+    if s['bail_t'] is not None: return c.t > s['bail_t'] + 2.5
+    planned = [a for a in s['airs'] if a.get('plan') and not a['plan']['name'].endswith('(between)')]
+    return len(planned) == len(s['plan']) and c.t > planned[-1]['t1'] + 1.4
+
+
+def came_back(s, c):
+    """A quarter-pipe air is kept when it came back into the transition and rode away."""
+    return not s['d_bails'] and any(back_in(a) for a in s['airs'])
+
+
+def line_kept(s, c):
+    """A transition line is kept with at least three airs back into the transition and no bail."""
+    return not s['d_bails'] and sum(1 for a in s['airs'] if back_in(a)) >= 3
+
+
 # ------------------------------------------------------------------------------------------------ cameras
 CAM = {'i': -1, 'spec': None, 'p': None, 'aim': None, 'h': None, 't0': 0.}
 
@@ -318,11 +432,49 @@ def chase(back=3., side=0., up=.9, frame=None, turn=2.5, follow=6., follow_z=4.,
                 aim_up=aim_up, agl=agl)
 
 
-def fixed(at, frame=None, fov=None, aim_k=6., aim_up=0., to=None, over=6.):
+def fixed(at, frame=None, fov=None, aim_k=6., aim_up=0., to=None, over=6., keep=False, slide=None, rise=0.):
     """A camera standing at `at` ((x, y, z), or (x, y, probe z, height above the ground)) that turns to follow the
     rider; `frame` metres (x TIGHT) across at the rider (by default CLOSE), or a set `fov`. With `to`, it travels there
-    over `over` seconds."""
-    return dict(kind='fixed', at=at, frame=frame, fov=fov, aim_k=aim_k, aim_up=aim_up, to=to, over=over)
+    over `over` seconds. keep=True widens the frame through a transition air so it holds the lip, the top of the air
+    and the wall below the lip where it comes back in, with the rider, from the climb to after the landing. slide=
+    ((x, y) unit axis, share): the eye moves along the axis by that share of the rider's move along it; rise: by that
+    share of the rider's height above the eye's ground."""
+    return dict(kind='fixed', at=at, frame=frame, fov=fov, aim_k=aim_k, aim_up=aim_up, to=to, over=over, keep=keep,
+                slide=slide, rise=rise)
+
+
+ASPECT = 16. / 9.
+
+
+def keep_points(s, c):
+    """The points a keep camera holds besides the rider: a lip air's lip, its top (with the body above the board)
+    and the wall VERT_DZ + 1 m below the lip, from the climb towards it until .8 s after its landing."""
+    a = s['air'] if c.mode == 2 else None
+    if a is None and s['airs'] and s['airs'][-1].get('lip') and c.t < s['airs'][-1]['t1'] + .8: a = s['airs'][-1]
+    if a is not None and a.get('lip'):
+        g = air_g(a); top = a['z0'] + max(0., a.get('vz_ref', a['vz0'])) ** 2 / (2. * g)
+        return [(a['x0'], a['y0'], a['z0']), (a['x0'], a['y0'], max(top, a['zmax']) + 1.3),
+                (a['x0'], a['y0'], a['z0'] - VERT_DZ - 1.)]
+    if c.mode == 1 and c.vz > 2.5 and (c.slope or 0.) > 25.:      # climbing a wall fast: the air to come
+        return [(c.hx, c.hy, c.zb + c.vz * c.vz / (2. * 10.) + 1.3), (c.hx, c.hy, c.zb - 1.)]
+    return []
+
+
+def keep_frame(eye, pts, base_fov):
+    """The aim point and horizontal field of view that hold `pts` (the first is the rider) from `eye`, at least
+    base_fov wide."""
+    dirs = []
+    for p in pts:
+        d = (p[0] - eye[0], p[1] - eye[1], p[2] - eye[2])
+        dirs.append((math.atan2(d[1], d[0]), math.atan2(d[2], math.hypot(d[0], d[1])), math.sqrt(dot(d, d))))
+    y0 = dirs[0][0]
+    yaws = [y0 + math.atan2(math.sin(d[0] - y0), math.cos(d[0] - y0)) for d in dirs]; pits = [d[1] for d in dirs]
+    yc, pc_ = (max(yaws) + min(yaws)) / 2., (max(pits) + min(pits)) / 2.
+    span = max(max(yaws) - min(yaws), (max(pits) - min(pits)) * ASPECT)
+    fov = max(base_fov, math.degrees(span) * 1.3 + 8.)
+    r = dirs[0][2]
+    aim = (eye[0] + r * math.cos(pc_) * math.cos(yc), eye[1] + r * math.cos(pc_) * math.sin(yc), eye[2] + r * math.sin(pc_))
+    return aim, min(fov, 90.)
 
 
 def resolve(at):
@@ -342,6 +494,10 @@ def camera(s, c, dt):
         if new_shot: CAM.update(body=None, bv=[0., 0., 0.])
         if spec['kind'] == 'fixed':
             CAM['from'] = resolve(spec['at']); CAM['dest'] = resolve(spec['to']) if spec.get('to') else None
+            CAM['ground'] = CAM['from'][2] - (spec['at'][3] if len(spec['at']) == 4 else 0.)
+            CAM['fov'] = None
+            if spec.get('slide') or spec.get('rise'):
+                CAM['slid'] = [0., 0.]
     # The body's velocity, smoothed, leads the aim by the aim's own lag, so a long lens keeps a fast rider centred.
     body = (c.hx, c.hy, c.hz)
     if CAM.get('body') is not None:
@@ -367,16 +523,32 @@ def camera(s, c, dt):
             u = min(1., (c.t - CAM['t0']) / spec['over']); u = u * u * (3 - 2 * u); b = CAM['dest']
             eye = tuple(a[n] + (b[n] - a[n]) * u for n in range(3))
         else: eye = a
+        if spec.get('slide') or spec.get('rise'):      # the eye follows a share of the rider's move, smoothed
+            want = [0., 0.]
+            if spec.get('slide'):
+                (ax, ay), share = spec['slide']; m = ((c.hx - a[0]) * ax + (c.hy - a[1]) * ay) * share; want[0] = m
+            want[1] = max(0., c.hz - CAM['ground'] - 1.) * spec.get('rise', 0.)
+            ks = 1. - math.exp(-2.5 * dt); sl = CAM['slid']
+            sl[0] += (want[0] - sl[0]) * ks; sl[1] += (want[1] - sl[1]) * ks
+            if spec.get('slide'): eye = (eye[0] + ax * sl[0], eye[1] + ay * sl[0], eye[2] + sl[1])
+            else: eye = (eye[0], eye[1], eye[2] + sl[1])
         aim_k = spec['aim_k']
     lead = [CAM['bv'][n] / aim_k for n in range(3)]; ll = math.sqrt(sum(x * x for x in lead))
     if ll > 2.: lead = [x * 2. / ll for x in lead]
     target = [rider[n] + lead[n] for n in range(3)]
+    width = spec['frame'] * TIGHT if spec.get('frame') else CLOSE
+    if spec.get('keep'):
+        # The rider (led) with the air's lip, top and re-entry: aim at the middle of them and widen to hold them all.
+        base = max(MIN_FOV, 2. * math.degrees(math.atan(width / 2. / max(.5, math.dist(eye, target)))))
+        aim, want_fov = keep_frame(eye, [tuple(target)] + keep_points(s, c), base)
+        target = list(aim)
+        f = CAM['fov'] if CAM.get('fov') else want_fov
+        CAM['fov'] = f + (want_fov - f) * (1. - math.exp(-(6. if want_fov > f else 1.8) * dt))
     if CAM['aim'] is None: CAM['aim'] = list(rider)
     k = 1. - math.exp(-aim_k * dt)
     CAM['aim'] = [CAM['aim'][n] + (target[n] - CAM['aim'][n]) * k for n in range(3)]
     dist = max(.5, math.dist(eye, CAM['aim']))
-    width = spec['frame'] * TIGHT if spec.get('frame') else CLOSE
-    fov = spec.get('fov') or max(MIN_FOV, min(100., 2. * math.degrees(math.atan(width / 2. / dist))))
+    fov = spec.get('fov') or (CAM['fov'] if spec.get('keep') else max(MIN_FOV, min(100., 2. * math.degrees(math.atan(width / 2. / dist)))))
     MV.review_camera(ue(*eye), ue(*CAM['aim']), fov)
 
 
@@ -410,7 +582,7 @@ def rail_way(start, lock_s, a_ds=14., a_d=1.9, b_ds=5., b_d=-.6, want=None, out=
 def rail_ready(s, c):
     """Pop for the parapet when the board will be just inside the line at the pop's peak."""
     if c.mode != 1 or c.t < s.get('rail_after', 0.): return False
-    rs, d, t = rail_lateral(c.x, c.y)
+    rs, d, t = rail_lateral(c.x, c.y, s.get('rail_line', RAIL0))
     if rs > s['lock_s'] + 14.: return False
     if d < .45: return True
     v_in = -(c.vx * t[1] - c.vy * t[0])
@@ -464,6 +636,24 @@ def road_way(d, want=None, x0=-127.9):
 WIDE_ROAD = fixed((-101., 1479., 140., 5.5), fov=50., aim_k=3.)
 PLAZA_RAIL_CAM = fixed((-65.4, 1368.6, 125., 1.0))
 POOL_PROBE = 82.
+
+
+def pool_face(x, y, z=None):
+    return 'pool north wall' if y > 1279.5 else 'pool floor'
+
+
+# The capsule bowl's north-west channel: the outer wall under the north-west coping (5.6 m, vertical at the top) and the
+# spine 13.5 m across it (4.7 m, about 80 degrees at its top), straight from u = 10 to 22 m along the coping. Both
+# copings are grind lines.
+CAPSULE = Pipe((-202.61, 1359.95), 30., 13.5, faces=('outer wall', 'spine'))
+CAPSULE_Z, CAPSULE_SPINE_Z, CAPSULE_FLOOR = 54.88, 54.04, 49.3
+LINE_U = 16.
+COPING_U = 17.
+BOWL_PLAN = [{'name': 'melon 180', 'grab': 'melon', 'spin': 180., 'dir': 1., 'stance': 'forward', 'T': .7},
+             {'name': 'indy', 'grab': 'indy'},
+             {'name': '360', 'spin': 360., 'dir': -1., 'T': .75},
+             {'name': 'christ', 'grab': 'christ', 'T': .6}]
+COPING = [CAPSULE.at(u, 0.) + (CAPSULE_Z,) for u in (40., 35., 30., 25., 20., 15., 10., 5., 0.)]   # going back along u: the deck on its right
 
 SHOTS = [
     # A run along the road, a jump and a caveman onto the board in the air (optional: the transitions).
@@ -527,23 +717,62 @@ SHOTS = [
          cams=[(0., chase(back=4.2, side=.8, up=1.8, frame=6.5)), (lambda s, c: c.zb < 108., fixed((-67., 1282.5, 80., 1.4), aim_k=8.)),
                (lambda s, c: c.x < -65. and c.zb < 77., fixed((-104.5, 1261.5, POOL_PROBE, 1.3), aim_k=8.))],
          expect=['Indy']),
-    # Quarter-pipe airs on the pool's north wall.
-    dict(name='quarter_melon_180', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.5, way=straight_way(-108., 1258.5, -90., 40.),
+    # Quarter-pipe airs on the pool's north wall, straight at it where its lip faces due south (x -105: further west
+    # the lip turns, and a climb there carves along it): each comes back down onto the wall and rides out across the
+    # pool, the camera holding the lip, the top of the air and the wall below the lip.
+    dict(name='quarter_melon_180', start=(-105., 1258.5, POOL_PROBE, -90.), speed=11.5, way=straight_way(-105., 1258.5, -90., 40.),
+         faces=pool_face,
          trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
-               {'when': lambda s, c: air_t(s, c) > .1, 'do': [grab('melon', .4), spin(to=180., dir=1.)]}],
-         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-116.5, 1269., POOL_PROBE, 1.0), aim_k=8.))],
+               {'when': lambda s, c: air_t(s, c) > .05, 'do': [grab('melon', .3), spin(to=180., dir=1.)]}],
+         end=landed_after(1, 1.5, .5), secs=9., keep=came_back, retry=1, cams=[(0., fixed((-113.5, 1269., POOL_PROBE, 1.0), aim_k=8., keep=True))],
          expect=['Melon', '180']),
-    dict(name='quarter_christ', slow=True, replay={'pre': .3, 'post': .45}, start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.5,
-         way=straight_way(-108., 1258.5, -90., 40.),
+    dict(name='quarter_christ', slow=True, replay={'pre': .3, 'post': .6}, start=(-105., 1258.5, POOL_PROBE, -90.), speed=11.5,
+         way=straight_way(-105., 1258.5, -90., 40.), faces=pool_face,
          trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
-               {'when': lambda s, c: air_t(s, c) > .1, 'do': [grab('christ', .38)]}],
-         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-101.5, 1275.5, POOL_PROBE, .9), aim_k=8.))],
+               {'when': lambda s, c: air_t(s, c) > .05, 'do': [grab('christ', .3)]}],
+         end=landed_after(1, 1.5, .5), secs=9., keep=came_back, retry=1, cams=[(0., fixed((-98.5, 1275.5, POOL_PROBE, .9), aim_k=8., keep=True))],
          expect=['Christ']),
-    dict(name='quarter_360', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.8, way=straight_way(-108., 1258.5, -90., 40.),
+    dict(name='quarter_360', start=(-105., 1258.5, POOL_PROBE, -90.), speed=11.8, way=straight_way(-105., 1258.5, -90., 40.),
+         faces=pool_face,
          trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
-               {'when': lambda s, c: air_t(s, c) > .06, 'do': [spin(to=360., dir=-1.)]}],
-         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-97., 1266., POOL_PROBE, 1.1), aim_k=8.))],
+               {'when': lambda s, c: air_t(s, c) > .04, 'do': [spin(to=360., dir=-1.)]}],
+         end=landed_after(1, 1.5, .5), secs=9., keep=came_back, retry=1, cams=[(0., fixed((-94., 1266., POOL_PROBE, 1.1), aim_k=8., keep=True))],
          expect=['360']),
+    # The transition line in the capsule bowl's north-west channel: a roll-in off the deck over the outer wall's coping,
+    # then back and forth between the outer wall and the spine, each air chosen at its lip by the stance and the air
+    # time (a Melon 180 coming down forward, an Indy coming down fakie, a 360, a Christ air), squared up across the
+    # floor between the walls. The camera stands down the channel at the floor and slides across with him; the replay
+    # is the air that turned the most.
+    dict(name='bowl_line', slow=True, replay={'pre': .3, 'post': .7, 'pick': 'spin'}, retry=1,
+         start=CAPSULE.at(LINE_U, -1.2) + (57., 60.), speed=1.5, pipe={'pipe': CAPSULE, 'u': LINE_U}, faces=CAPSULE.face,
+         plan=BOWL_PLAN, end=line_done, keep=line_kept, secs=34.,
+         cams=[(0., chase(back=3.4, side=-.9, up=1.6, frame=4.5)),
+               (lambda s, c: c.zb < CAPSULE_Z - .4,
+                fixed(CAPSULE.at(LINE_U - 9., CAPSULE.w / 2.) + (CAPSULE_FLOOR + 3., 2.), frame=5.5, aim_k=8., keep=True,
+                      slide=(CAPSULE.n, .45), rise=.3))],
+         expect=['Melon', '180', '360']),
+    # The same line from the channel's floor, should the roll-in off the coping not ride away twice.
+    dict(name='bowl_line_floor', unless='bowl_line', slow=True, replay={'pre': .3, 'post': .7, 'pick': 'spin'}, retry=1,
+         start=CAPSULE.at(LINE_U, CAPSULE.w / 2.) + (CAPSULE_FLOOR + 2., 60.), speed=11., pipe={'pipe': CAPSULE, 'u': LINE_U},
+         faces=CAPSULE.face, plan=BOWL_PLAN, end=line_done, keep=line_kept, secs=32.,
+         cams=[(0., fixed(CAPSULE.at(LINE_U - 9., CAPSULE.w / 2.) + (CAPSULE_FLOOR + 3., 2.), frame=5.5, aim_k=8., keep=True,
+                          slide=(CAPSULE.n, .45), rise=.3))],
+         expect=['Melon', '180', '360']),
+    # A 50-50 on the same coping from the deck, and back into the bowl off it: rolling along the deck at 18 degrees to
+    # the coping, an ollie that comes down on it a little past its line (the bowl on his toe side, so the grind is
+    # backside and leaving it drops him into the bowl), an ollie out after .9 s. Dropped unless it grinds and rides
+    # away.
+    dict(name='bowl_coping', rail=True, rail_line=COPING, lock_s=40. - COPING_U, apex_d=.35, rail_load=.12,
+         start=CAPSULE.at(COPING_U - 11., -3.6) + (57., yaw_to(*CAPSULE.at(COPING_U - 11., -3.6), *CAPSULE.at(COPING_U + 2.5, .8))),
+         speed=6.5, way=[CAPSULE.at(COPING_U - 11., -3.6) + (None,), CAPSULE.at(COPING_U + 2.5, .8) + (None,)],
+         faces=CAPSULE.face, retry=1,
+         trig=[{'when': lambda s, c: c.mode == 3, 'steer': False},
+               {'when': lambda s, c: s.get('grind_t') is not None and c.t > s['grind_t'] + .9, 'do': [flick('ollie', .1)]}],
+         end=lambda s, c: (s['land_after_grind'] is not None and c.t > s['land_after_grind'] + 1.6)
+                          or (s['bail_t'] is not None and c.t > s['bail_t'] + 2.) or (s['stall_t'] is not None and c.t > s['stall_t'] + .8),
+         keep=lambda s, c: s['d_grinds'] > 0 and not s['d_bails'], secs=10.,
+         cams=[(0., fixed(CAPSULE.at(COPING_U + 1., CAPSULE.w) + (CAPSULE_SPINE_Z + 1.6,), frame=5., aim_k=8., keep=True))],
+         expect=['50-50']),
     # The ragdoll section: three bails, each down where the body comes to rest and up again from there. Each is shot at
     # 90 Hz so the mixer can replay it at a third of the speed (--replays picks the one to show).
     # Across the pool floor at the megadrop's speed and up its west wall into an Indy held into the landing: a slam on the
@@ -652,6 +881,9 @@ def next_shot():
         if spec.get('unless') and st['kept'].get(spec['unless']): continue
         break
     s = dict(spec)
+    again = st.pop('again', None)
+    if again and again[0] == s['name']: s['try'] = again[1]
+    st['deck'] = None
     k = st['k']; st['k'] += 1
     s.update(k=k, dir='%02d_%s' % (k, s['name']), ph='place', pt=0., t=0., f=0, hz=90 if s.get('slow') else 60,
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
@@ -661,7 +893,7 @@ def next_shot():
     if s.get('road'):
         s['way'], s['start'] = road_way(*s['road'][:1], want=s['road'][1], **({'x0': s['road'][2]} if len(s['road']) > 2 else {}))
     if s.get('rail'):
-        s['way'] = rail_way(s['start'], s['lock_s'], want=s.get('want'), out=s.get('rail_out'))
+        if not s.get('way'): s['way'] = rail_way(s['start'], s['lock_s'], want=s.get('want'), out=s.get('rail_out'))
         # Off the end and rolling on, or (Ride stops a slow grind dead at the parapet's corner) half a second after it stalls.
         s.setdefault('end', lambda s, c: (s['land_after_grind'] is not None and c.t > s['land_after_grind'] + 1.4)
                      or (s['stall_t'] is not None and c.t > s['stall_t'] + .5))
@@ -698,7 +930,20 @@ def inputs(s, c, dt):
     """This frame's skate. input: steering and speed holds on the ground, then the active effects."""
     inp = {'left': (0., 0.), 'right': (0., 0.), 'push': False, 'brake': False, 'slide': False, 'grab_left': False, 'grab_right': False}
     busy = any(e['kind'] in ('flick', 'hold') for e in s['effects'])
-    if c.mode == 1 and s['steer_on']:
+    pipe = s.get('pipe')
+    if c.mode == 1 and s['steer_on'] and pipe:
+        # Back and forth across a channel: steer only on its flat floor, square across it towards the wall ahead and
+        # back towards the line's u (the walls turn the board up their fall line themselves). No pumping: Ride pumps
+        # only while push is held off the flat, and gives it back when push is let go on the curve (push in the air
+        # is a one-foot grab), so the line keeps the speed of its drop-in.
+        p, u_keep = pipe['pipe'], pipe['u']
+        if c.slope is not None and c.slope < 8. and c.spd > 2.:
+            u, _ = p.uk(c.hx, c.hy); side = 1. if c.vx * p.n[0] + c.vy * p.n[1] > 0. else -1.
+            dx = side * p.n[0] + max(-.35, min(.35, (u_keep - u) * pipe.get('gain_u', .12))) * p.u[0]
+            dy = side * p.n[1] + max(-.35, min(.35, (u_keep - u) * pipe.get('gain_u', .12))) * p.u[1]
+            target = yaw_to(c.x, c.y, c.x + dx, c.y + dy)
+            inp['left'] = (max(-1., min(1., wrap(target - c.yaw) / s.get('gain', 25.))), 0.)
+    elif c.mode == 1 and s['steer_on']:
         heading = c.yaw
         if s.get('way'):
             wx, wy, want, s['wk'] = pursue(s['way'], s['wk'], c.x, c.y, s.get('way_look', 8.)); target = yaw_to(c.x, c.y, wx, wy)
@@ -773,22 +1018,54 @@ def track(s, c):
     if s['first'] is None:
         s['first'] = (c.landed, c.bails, c.grinds)
     s['d_landed'], s['d_bails'], s['d_grinds'] = c.landed - s['first'][0], c.bails - s['first'][1], c.grinds - s['first'][2]
+    face = s.get('faces')
     if c.mode == 2 and s['prev_mode'] != 2:
+        g = s.get('ground') or {}
         s['air'] = {'t0': c.t, 'z0': c.zb, 'zmax': c.zb, 'x0': c.x, 'y0': c.y, 'lip': abs(c.vz) > 1.5 * max(c.spd, .1),
-                    'rate': 0., 'spin': 0., 'yaw': board_yaw(c), 'turned': 0., 'trate': 0., 'tt': c.t}
+                    'rate': 0., 'spin': 0., 'yaw': board_yaw(c), 'turned': 0., 'trate': 0., 'tt': c.t, 'vz0': c.vz, 'g': None,
+                    'off': {'face': face(c.x, c.y, c.zb) if face else None, 'at': [round(c.x, 2), round(c.y, 2), round(c.zb, 2)],
+                            'slope': g.get('slope'), 'stance': g.get('stance'), 'speed': g.get('speed'),
+                            'floor_speed': g.get('floor_speed'), 'up': [round(v, 3) for v in c.axes[1]] if c.axes else None},
+                    'dturn': 0., 'drate': 0., 'dprev': None, 'up0': c.axes[1] if c.axes else None}
+        if c.axes: s['air']['dprev'] = flat(c.axes[0], c.axes[1])
     elif c.mode == 2 and s['air']:                  # the board's own turn, measured from the state line's yaw
         a = s['air']; y = board_yaw(c)
         if y is not None and a['yaw'] is not None and c.t > a['tt']:
             dy = (y - a['yaw'] + 180.) % 360. - 180.
             a['turned'] += dy; a['trate'] += (dy / (c.t - a['tt']) - a['trate']) * .5
+        # and from the deck: its turn about the take-off's up (a vert air turns the board in the wall's plane)
+        if a['dprev'] is not None and c.axes and c.t > a['tt']:
+            f = flat(c.axes[0], a['up0'])
+            if f:
+                d = math.degrees(math.atan2(dot(cross(a['dprev'], f), a['up0']), dot(a['dprev'], f)))
+                a['dturn'] += d; a['drate'] += (d / (c.t - a['tt']) - a['drate']) * .5; a['dprev'] = f
         a['yaw'], a['tt'] = y, c.t
+        if 'vz_ref' not in a: a['vz_ref'], a['t_ref'] = c.vz, c.t          # the first tick after the lip-off
+        elif c.t - a['t_ref'] >= .1: a['g'] = max(6., min(18., (a['vz_ref'] - c.vz) / (c.t - a['t_ref'])))
     if c.mode == 2 and s['air']:
         s['air']['zmax'] = max(s['air']['zmax'], c.zb)
     if c.mode != 2 and s['prev_mode'] == 2 and s['air']:
         a = s['air']; a.update(t1=c.t, to=c.mode, h=round(a['zmax'] - a['z0'], 2), spin=round(a['spin'], 1), turned=round(a['turned'], 1))
+        a['dturn'] = round(a['dturn'], 1)
+        a['on'] = {'face': face(c.x, c.y, c.zb) if face else None, 'at': [round(c.x, 2), round(c.y, 2), round(c.zb, 2)],
+                   'slope': c.slope, 'stance': None, 'speed': round(c.v3, 2), 'floor_speed': None}
+        a['bail'] = c.mode == 4
         s['airs'].append(a); s['air'] = None
-        s['log'].append([round(c.t, 3), 'air', round(a['t1'] - a['t0'], 2), a['h'], a['spin'], c.mode, a['turned']])
-    if c.mode == 3: s['grind_seen'] = True
+        s['log'].append([round(c.t, 3), 'air', round(a['t1'] - a['t0'], 2), a['h'], a['spin'], c.mode, a['turned'], a['dturn']])
+    # After a landing: the stance it rode away in, the trick's name, the speed back on the flat, a bail soon after.
+    la = s['airs'][-1] if s['airs'] else None
+    if la and c.mode != 2:
+        if c.mode == 1 and la['on']['stance'] is None and c.t >= la['t1'] + .1:
+            la['on']['stance'] = 'fakie' if c.fakie else 'forward'; la['trick'] = c.last
+        if c.mode == 4 and c.t <= la['t1'] + 1.5: la['bail'] = True
+        if c.mode == 1 and la['on']['floor_speed'] is None and c.slope is not None and c.slope < 8. and c.t > la['t1'] + .1:
+            la['on']['floor_speed'] = round(c.spd, 2)
+    if c.mode == 1:                                  # the ground the next air leaves from
+        g = s.setdefault('ground', {})
+        g.update(slope=c.slope, stance='fakie' if c.fakie else 'forward', speed=round(c.v3, 2))
+        if c.slope is not None and c.slope < 8.: g['floor_speed'] = round(c.spd, 2)
+    if c.mode == 3:
+        s['grind_seen'] = True; s.setdefault('grind_t', c.t)
     if s['grind_seen'] and s['stall_t'] is None and c.mode in (1, 3) and c.spd < .8: s['stall_t'] = c.t
     if s['grind_seen'] and s['land_after_grind'] is None and c.mode == 1 and s['prev_mode'] == 2: s['land_after_grind'] = c.t
     if c.mode == 4 and s['bail_t'] is None:
@@ -822,6 +1099,13 @@ def ride(s, c, dt):
             for spec in tr.get('do', []): activate(s, c, spec)
             if tr.get('steer') is False: s['steer_on'] = False
             if tr.get('act'): act(s, c, tr['act'])
+    a = s['air']
+    if s.get('plan') and a is not None and c.mode == 2 and 'plan' not in a:     # a line's next trick, chosen at the lip
+        a['plan'] = None
+        if a['lip']:
+            fx = plan_air(s, c, a)
+            for spec in fx: activate(s, c, spec)
+            s['log'].append([round(c.t, 3), 'plan', a.get('plan')])
     if c.mode == 0 or s['dismounted'] is not None:     # on foot, or on the way down from an air dismount
         if s['foot_gait']:
             pc.set_control_rotation(unreal.Rotator(0, -8, s['start'][3] if c.spd < .5 else c.yaw))
@@ -927,7 +1211,10 @@ def end_shot():
         if s['bail_t'] is not None:
             replay = {'from_t': round(s['bail_t'] - s['replay']['pre'], 3), 'to_t': round(s['bail_t'] + s['replay']['post'], 3), 'stretch': 3}
     elif s.get('replay') and s['airs']:
-        a = max(s['airs'], key=lambda a: (a['h'], a['t1'] - a['t0']))
+        if s['replay'].get('pick') == 'spin':     # the landed air that turned the most (the deck's turn), then the highest
+            ok = [a for a in s['airs'] if not a.get('bail')] or s['airs']
+            a = max(ok, key=lambda a: (round(abs(a['dturn'] if a['lip'] and a.get('up0') else a['turned']) / 90.), a['h']))
+        else: a = max(s['airs'], key=lambda a: (a['h'], a['t1'] - a['t0']))
         replay = {'from_t': round(a['t0'] - s['replay']['pre'], 3), 'to_t': round(a['t1'] + s['replay']['post'], 3), 'stretch': 3}
     names = ' / '.join(s['combos'] + s['lasts'])
     missing = [e for e in s.get('expect', []) if e != 'bail' and e.lower() not in names.lower()] + \
@@ -936,7 +1223,7 @@ def end_shot():
             'seconds': round(s['frames'] / 30., 2), 'slow': bool(s.get('slow')), 'replay': replay,
             'combos': s['combos'], 'tricks': s['lasts'], 'missing': missing, 'landed': s['d_landed'], 'bails': s['d_bails'],
             'grinds': s['d_grinds'], 'speed_max': round(s['max_spd'], 2), 'speed_min': round(s['min_spd'], 2) if s['min_spd'] < 1e8 else None,
-            'airs': [{'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'spin': a['spin'], 'turned': a.get('turned'), 'to': a['to']} for a in s['airs']],
+            'airs': [air_info(a) for a in s['airs']], 'try': s.get('try', 1),
             'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
             'bail_kind': s['bail_kind'], 'bail': s.get('bail'), 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
     part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'], body=s['body'])
@@ -946,6 +1233,20 @@ def end_shot():
     say('done', s['name'], info['outcome'], 'keep' if keep else 'DROP', s['combos'], 'missing', missing)
     s['effects'] = []
     live.skate_input()
+    if not keep and s.get('retry') and s.get('try', 1) <= s['retry']:      # once more, from the start
+        st['again'] = (s['name'], s.get('try', 1) + 1); st['i'] -= 1
+
+
+def air_info(a):
+    """An air for done.json: when, how long and high, the spin (simulated, the state's yaw, the deck's turn), where
+    it left and came down (face, point, slope of the board there, stance, speed along the travel and the speed on the
+    flat before and after), what it landed in (1 rolling, 3 a grind, 4 a bail), a bail within 1.5 s of the landing, and
+    whether it came back into the transition (landed rolling on a slope below its lip)."""
+    on = a.get('on') or {}
+    return {'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'lip': a['lip'], 'trick': a.get('trick'),
+            'plan': a.get('plan'), 'spin': a['spin'], 'turned': a.get('turned'), 'deck_turn': a.get('dturn') if a.get('up0') else None,
+            'g': round(a['g'], 2) if a.get('g') else None, 'to': a['to'], 'bail': bool(a.get('bail')), 'back_in': back_in(a),
+            'takeoff': a.get('off'), 'landing': on}
 
 
 def physical_cvar():
