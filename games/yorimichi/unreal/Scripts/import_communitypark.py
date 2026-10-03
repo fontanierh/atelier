@@ -85,6 +85,8 @@ build = json.loads((OUT / 'build-report.json').read_text())
 park = json.loads((OUT / 'park.json').read_text())
 assert sha(OUT / 'park.json') == build['park_sha256'], 'Rebuild changed community park manifest'
 assert sha(OUT / 'source' / 'megapark-textured.glb') == build['source_sha256'], 'Changed community park source'
+for name in park['trees']:
+    assert E.does_asset_exist('/Game/Japan/Assets/'+name), 'Missing woodland mesh: '+name
 surfaces = materials(); report = {'meshes': {}, 'source_instances': build['source_instances']}
 subsystem = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
 for entry in park['meshes']:

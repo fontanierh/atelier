@@ -274,7 +274,7 @@ def steps(ctx):
         Step('unreal.communitypark', [UnrealScript(SCRIPTS / 'import_communitypark.py', 'COMMUNITY PARK IMPORT COMPLETE', null_rhi=True),
                                      Python(REGIONS / 'communitypark' / 'validate.py', ('--imported',))],
              inputs=[SCRIPTS / 'import_communitypark.py', SCRIPTS / 'import_megapark.py'],
-             needs=['unreal.world', 'world.communitypark'], heavy=True,
+             needs=['unreal.treehouse', 'world.communitypark'], heavy=True,
              outputs=[GAME / 'unreal' / 'Content' / 'CommunityPark' / 'SM_CP_Ground.uasset'],
              about='community park riding meshes, UV1 materials and precise static collision (/Game/CommunityPark)'),
         Step('unreal.sounds', [
