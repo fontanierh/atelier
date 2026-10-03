@@ -216,10 +216,12 @@ def materials(report):
     return result
 
 
-def import_mesh(path, name):
-    dest = ROOT+'/Meshes'; asset = dest+'/'+name
-    if not E.does_asset_exist(asset) and path.name != 'SM_MP_ImportSeed.fbx':
-        import_mesh(OUT/'fbx/SM_MP_ImportSeed.fbx', name)
+def import_mesh(path, name, dest=None, seed=None, vertex_colors=False):
+    """Faithful FBX import; another park may supply its own destination and seed."""
+    dest = dest or ROOT+'/Meshes'; seed = seed or OUT/'fbx/SM_MP_ImportSeed.fbx'
+    asset = dest+'/'+name
+    if not E.does_asset_exist(asset) and path.resolve() != seed.resolve():
+        import_mesh(seed, name, dest, seed, vertex_colors)
     task = unreal.AssetImportTask()
     task.filename = str(path); task.destination_path = dest; task.destination_name = name
     task.automated = True; task.replace_existing = True; task.replace_existing_settings = True; task.save = True
@@ -230,6 +232,8 @@ def import_mesh(path, name):
     options = dict(combine_meshes=True, generate_lightmap_u_vs=False, auto_generate_collision=False,
                    convert_scene=True, convert_scene_unit=True, import_uniform_scale=1., build_nanite=False,
                    remove_degenerates=False, normal_import_method=unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
+    if vertex_colors:
+        options['vertex_color_import_option'] = unreal.VertexColorImportOption.REPLACE
     for k, v in options.items(): ui.static_mesh_import_data.set_editor_property(k, v)
     existing = E.load_asset(asset) if E.does_asset_exist(asset) else None
     if existing:

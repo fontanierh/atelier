@@ -94,8 +94,10 @@ bool UYorimichiLive::SkatePlace(FVector GroundPoint, float Yaw) { USkateComponen
 FTransform UYorimichiLive::SkateParkSpawn()
 {
     UWorld* W = ULiveLibrary::GameWorld(); if (!W) return FTransform::Identity;
-    TActorIterator<ASkatePark> It(W);
-    return It ? FTransform(FRotator(0, It->ParkSpawnYaw, 0), It->ParkSpawn) : FTransform::Identity;
+    for (TActorIterator<ASkatePark> It(W); It; ++It)
+        if (It->ActorHasTag(TEXT("skatepier")))
+            return FTransform(FRotator(0, It->ParkSpawnYaw, 0), It->ParkSpawn);
+    return FTransform::Identity;
 }
 
 static bool BotwModeFromText(const FString& Text, EBotwMode& Mode)

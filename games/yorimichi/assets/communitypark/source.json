@@ -1,0 +1,16 @@
+{
+  "repository": "fontanierh/skate-extractions",
+  "revision": "32e72d2838e73441cf3c9d30e02340aef1fbf036",
+  "file": "assets/megapark/megapark-textured.glb",
+  "blob": "4a187260f9e2dd49ee7d5f83cd7e4a5336f56560",
+  "sha256": "4108a98b5a8a5e03fb76cd91518f68fa2faab6fbf8185fb417f672d856f29391",
+  "bytes": 2951272,
+  "mesh_instances": 586,
+  "unique_meshes": 30,
+  "triangles": 39595,
+  "materials": 5,
+  "ownership": "Recovered game assets remain with their original owners. Fetch from the private handoff; do not redistribute the GLB or its textures in this public repository.",
+  "appearance": "Recovered layout and texture pixels; reconstructed surface assignments and PBR factors, not original game shaders.",
+  "source_axes": "Metres, Y up; the root recentres the original scene at its lowest point.",
+  "colour_uv_channel": 1
+}

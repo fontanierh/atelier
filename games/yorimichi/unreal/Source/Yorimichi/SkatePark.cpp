@@ -87,6 +87,12 @@ bool ASkatePark::Initialize(const FString& Path)
 {
     const TSharedPtr<FJsonObject> Root = ReadJson(Path);
     if (!Root) { UE_LOG(LogTemp, Warning, TEXT("Skate park: %s not found"), *Path); return false; }
+    FString AssetRoot(TEXT("/Game/SkatePark"));
+    Root->TryGetStringField(TEXT("asset_root"), AssetRoot);
+    if (!AssetRoot.StartsWith(TEXT("/Game/"))) return false;
+    FString ParkKey(TEXT("skatepier"));
+    Root->TryGetStringField(TEXT("key"), ParkKey);
+    Tags.AddUnique(FName(*ParkKey));
     const FVector O = ArrayVector(Root->GetArrayField(TEXT("origin")));
     Origin = FVector(O.X * 100., -O.Y * 100., O.Z * 100.);
     Yaw = Root->HasField(TEXT("yaw_deg")) ? Root->GetNumberField(TEXT("yaw_deg")) : 0.f;
@@ -114,7 +120,7 @@ bool ASkatePark::Initialize(const FString& Path)
         FString Name; bool bBlocks = true;
         if (Entry->Type == EJson::String) Name = Entry->AsString();
         else { Name = Entry->AsObject()->GetStringField(TEXT("name")); Entry->AsObject()->TryGetBoolField(TEXT("blocks"), bBlocks); }
-        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/SkatePark/%s.%s"), *Name, *Name));
+        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
         if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Skate park: mesh %s is not imported"), *Name); continue; }
         auto* C = NewObject<UStaticMeshComponent>(this, *Name);
         // Static children only attach to a static root: the root is placed first, then fixed.
