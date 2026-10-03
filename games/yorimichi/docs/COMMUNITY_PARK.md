@@ -10,7 +10,8 @@ The source's 586 placements are preserved at metre scale, batched into 30 meshes
 The complete scene turns 180° about its recentered root and moves to
 `(1280, 560, 38.472)` in island metres. Its main deck is at `48.5 m`, the tall
 vert reaches `85.586 m`, and its footprint is about `94 × 103 m`. The approach
-rises over 196.7 m, with a maximum grade of 9.58%.
+rises over 196.7 m, with a maximum grade of 9.47%. Its station-side join sits
+at the stone pavement height, just above the terrain datum.
 
 ## Source and build
 
@@ -37,6 +38,9 @@ upward riding surfaces, including narrow floor spacers and bowl bottoms.
 Downward foundations can remain buried. Its outer nodes share the surrounding
 terrain height. Vegetation is cleared around skating and the approach; nearby
 backdrop crowns become detailed island trees.
+The park also owns a dense belt of mature ginkgo, maple, pine and cedar trees.
+Their trunks stay outside the source footprint and leave an eleven-metre opening
+around the approach; full island tree meshes replace distant backdrop shapes.
 
 `unreal.communitypark` imports `/Game/CommunityPark`, checks scale, bounds and
 UV count, binds the reconstructed materials, and enables complex collision

@@ -97,6 +97,22 @@ class PlacementTests(unittest.TestCase):
             np.testing.assert_allclose(z[0, :], L.carve_access(x[0], y[0], base(x[0], y[0])))
             np.testing.assert_allclose(z[-1, :], base(x[-1], y[-1]))
 
+    def test_mature_forest_screen_keeps_riding_and_entrance_clear(self):
+        source = SimpleNamespace(triangles=lambda: np.array([[[-47, -51, 10], [47, -51, 10], [47, 51, 10]],
+                                                             [[-47, -51, 10], [47, 51, 10], [-47, 51, 10]]]))
+        def base(x, y): return np.full(np.broadcast(x, y).shape, 48.)
+        with patch('communitypark.layout.scene', return_value=source):
+            trees = L.screen_trees(base)
+            self.assertEqual(trees, L.screen_trees(base))
+        self.assertGreater(sum(map(len, trees.values())), 200)
+        self.assertTrue(all(not name.endswith('_lo') and not name.startswith('HD_North') for name in trees))
+        for rows in trees.values():
+            a = np.asarray(rows); positions = L.place(a[:, :3])
+            self.assertTrue(np.all((abs(positions[:, 0]-1280) >= 56) | (abs(positions[:, 1]-560) >= 60)))
+            distance, _ = L.access_nearest(positions[:, 0], positions[:, 1])
+            self.assertGreaterEqual(float(distance.min()), 11.)
+            self.assertGreaterEqual(float(a[:, 4].min()), 1.3)
+
 
 if __name__ == '__main__':
     unittest.main()

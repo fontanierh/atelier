@@ -18,7 +18,8 @@ CLEAR = (1210., 485., 1350., 635.)
 ENTRY = np.array([1316., 516., 48.5])
 SPAWN = np.array([1316., 522., 48.5])
 HEADING = 180.
-ACCESS = [(1240., 343., 36.), (1240., 400., 41.5), (1280., 470., 47.), tuple(ENTRY)]
+# The station street's stone paving is about 5 cm above its terrain datum.
+ACCESS = [(1240., 343., 36.06), (1240., 400., 41.5), (1280., 470., 47.), tuple(ENTRY)]
 WIDTH = 4.
 
 
@@ -173,6 +174,30 @@ def clear(instances):
         instances[name] = retained.tolist()
     for name, rows in moved.items():
         instances.setdefault(name, []).extend(rows)
+
+
+def screen_trees(base_sampler):
+    """A dense, mature woodland belt, owned by the park rather than its cleared city scatter."""
+    vertices = place(scene().triangles()).reshape(-1, 3)
+    lo, hi = vertices[:, :2].min(0), vertices[:, :2].max(0)
+    rng = np.random.default_rng(202604)
+    x, y = np.meshgrid(np.arange(lo[0]-35, hi[0]+35, 7.),
+                       np.arange(lo[1]-35, hi[1]+35, 7.))
+    xy = np.column_stack((x.ravel(), y.ravel()))+rng.uniform(-1.1, 1.1, (x.size, 2))
+    edge = np.maximum(np.maximum(lo-xy, xy-hi), 0).max(1)
+    distance, _ = access_nearest(xy[:, 0], xy[:, 1])
+    keep = (edge >= 9) & (edge <= 34) & (distance >= 11)
+    xy, edge = xy[keep], edge[keep]
+    z = np.asarray(base_sampler(xy[:, 0], xy[:, 1])).copy()
+    patch = inside(xy[:, 0], xy[:, 1])
+    z[patch] = ground(xy[patch, 0], xy[patch, 1], base_sampler)
+    names = rng.choice(['Tree_Ginkgo', 'Tree_Maple_A', 'Tree_Pine_A', 'Tree_Cedar_A'], len(xy), p=[.28, .25, .27, .20])
+    trees = {}
+    for point, height, name, offset in zip(xy, z, names, edge):
+        scale = rng.uniform(1.3, 1.5) if offset < 16 else rng.uniform(1.6, 2.)
+        position = local([point[0], point[1], height-.06])
+        trees.setdefault(str(name), []).append([*position.tolist(), float(rng.uniform(0, 360)), float(scale)])
+    return trees
 
 
 def clearance():

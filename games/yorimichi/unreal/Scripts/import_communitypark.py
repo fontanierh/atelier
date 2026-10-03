@@ -74,7 +74,7 @@ for entry in park['meshes']:
     existing = E.load_asset(ROOT+'/'+name) if E.does_asset_exist(ROOT+'/'+name) else None
     if existing:
         existing.set_editor_property('static_materials', [])
-    mesh = helper['import_mesh'](file, name, ROOT, OUT/'assets/SM_CP_Seed.fbx')
+    mesh = helper['import_mesh'](file, name, ROOT, OUT/'assets/SM_CP_Seed.fbx', vertex_colors=name=='SM_CP_Ground')
     assert mesh.get_num_triangles(0) == expected['triangles'], (name, 'changed triangle count')
     slots = list(mesh.get_editor_property('static_materials'))
     assert len(slots) == 1, (name, 'one authored surface required')
