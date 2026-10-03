@@ -8,8 +8,7 @@ Christ air with a slow-motion replay, a 360), a grab held into a ragdoll bail an
 clean final line (kickflip, crooked grind, 360 flip). Two optional shots open with a run and a caveman onto the board
 and end with a grab dismount to the feet; they run only when the game has those transitions.
 
-    atelier play yorimichi --set 'performance=1;render_scale=100;painterly=0.35;paint_radius=2;toon=0;outline=0;
-        exposure=0.9;saturation=1;wind=3.5;sun_height=48;sun_yaw=15;desktop=1;show_fps=0' -- -RenderOffscreen -ForceRes
+    atelier play --set 'performance=1;render_scale=100;desktop=1;show_fps=0' yorimichi -- -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/megapark_ride_film.py
     ... wait for build/yorimichi/megapark/ride-film/<take>/done.json, then:
     python games/yorimichi/scenarios/megapark_ride_film_mix.py build/yorimichi/megapark/ride-film/<take>
@@ -244,7 +243,8 @@ def apply_effect(s, c, e, inp):
         if not e['air']: return u < 3.
         if c.mode == 3: e.setdefault('lock', c.t)
         if (e.get('lock') is not None and c.t > e['lock'] + .2) or u > 2.5: return False
-        inp['right'] = e['right']; return True
+        if c.mode != 1: inp['right'] = e['right']          # not on the ground: there it would be a manual
+        return True
     # The air effects wait for an air and end with it.
     if c.mode == 2 and s['air']: e['air'] = True
     elif e['air']: return False
@@ -451,12 +451,12 @@ SHOTS = [
     dict(name='rail_5050', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.34, secs=11.,
          cams=[(0., chase(back=3.0, side=-1.8, up=1.0, frame=7.5)), (lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 12., PLAZA_RAIL_CAM)],
          expect=['50-50']),
-    # A boardslide: the board turned across the line in the air (onto the parapet before its lamp post, 15 m from the end).
+    # A boardslide: the board turned across the line in the air (onto the parapet 22 m from its end, before the lamp post).
     dict(name='rail_board', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.4, rail_load=.33, secs=10.,
-         rail_do=[spin(until=50., dir=1.)],
+         rail_do=[spin(to=88., dir=1.)], land_dz=-.5,           # the deck square to the line when it meets the ledge's top
          cams=[(0., chase(back=2.2, side=-2.3, up=.7, frame=7.0))], expect=['Boardslide']),
-    # A 5-0, from the side.
-    dict(name='rail_5_0', rail=True, lock_s=17., start=(-77.4, 1412., 126., 90.), speed=7.4, rail_load=.32, secs=9.,
+    # A 5-0, from the side (onto the parapet before its lamp post too).
+    dict(name='rail_5_0', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.33, secs=10.,
          rail_do=[stick(0., -.55)],
          cams=[(0., chase(back=3.0, side=-1.6, up=1.0, frame=7.5)), (mode_is(3), fixed((-71.2, 1389.5, 125., 1.0), frame=8.))],
          expect=['5-0']),
