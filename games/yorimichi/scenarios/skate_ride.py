@@ -84,6 +84,7 @@ def mount_ride():
 # whose sole goes under the ground (skate.FootGround). hand_gap= is each hand's skin against the pelvis, spine, chest and
 # thigh bodies (cm, below 0 inside), skin_groups= the skin under the ground (skate.RideSkinCheck).
 HAND_GAP = -1.   # cm: no hand deeper inside the rider's own body than this, at rest, rolling or carving
+ARM_STEP, ARM_JITTER = 3., 2.   # degrees per 60 Hz frame: the arm swing's largest step, and its step's largest change
 HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False))
 # The rest close-up shows the right hand from the rider's right side (out from the hips through the hand), frozen at
 # the idle loop's worst phase for that hand: a watcher reads hand_gap= every frame for 1.6 s (more than the loop), then
@@ -179,6 +180,26 @@ def hand_rows(record):
                    f'{text(moving)} (worst: {worst[1]}); close-up from the right side, {phase}: {shot}')
             record(f'push_foot_{tag}', rows, feet <= SKIN_DEPTH,
                    f'feet skin {feet:.1f} cm under the ground at worst through a push and two carves')
+            # Each arm's swing out of the body (arm_swing=, degrees), per 60 Hz frame: no step over ARM_STEP and no
+            # change of step over ARM_JITTER, so the arm never snaps or shakes.
+            clock, last, steps, step_worst, jitter_worst = 0., None, [None, None], (0., '-'), (0., '-')
+            for r in rows:
+                dt = float(r.get('dt', 16.7))
+                if 'arm_swing' in r:
+                    swing = [float(v) for v in r['arm_swing'].split(',')]
+                    if last is not None and dt > 0:
+                        for side in (0, 1):
+                            step = (swing[side] - last[side]) * 16.67 / dt
+                            where = f"{'LR'[side]} arm, {clock:.2f} s, {r.get('clip', '-')}"
+                            step_worst = max(step_worst, (abs(step), where))
+                            if steps[side] is not None:
+                                jitter_worst = max(jitter_worst, (abs(step - steps[side]), where))
+                            steps[side] = step
+                    last = swing
+                clock += dt / 1000
+            record(f'arms_smooth_{tag}', rows, last is not None and step_worst[0] <= ARM_STEP and jitter_worst[0] <= ARM_JITTER,
+                   f'arm swing step {step_worst[0]:.2f} deg/frame at worst ({step_worst[1]}), its change {jitter_worst[0]:.2f} '
+                   f'({jitter_worst[1]}), at rest, pushing, rolling and carving')
     finally:
         qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck 0')")
         qa.py('live.L.skate_goofy(False)')
@@ -385,7 +406,7 @@ live.behave('grab', grab)
                f'states {",".join(sorted(qa.modes(rows)))}; down about {down:.1f} s; worst frame {frames.get("worst_ms", 0):.1f} ms')
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,500,[(.1,{{'push':True}}),(.3,{{}})],duration=1", 1)
         record('ride_after_bail', rows, rows[-1]['mode'] == '1' and speed(rows[-1]) > 300, f'speed {speed(rows[-1]):.0f}')
-    if wanted('hands_clear') or wanted('push_foot'):
+    if wanted('hands_clear') or wanted('push_foot') or wanted('arms_smooth'):
         hand_rows(record)
     if wanted('pacing'):
         # Ride through the park with tricks, then mount and switch character, sampling every frame.

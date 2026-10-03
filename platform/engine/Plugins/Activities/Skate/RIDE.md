@@ -184,14 +184,17 @@ into the graph's inputs, runs the graph and places the pose on the board.
   carries what the controller needs besides it: the motion and its time, the landing's impact and age, the grind and
   manual state and the bail's start.
 - **The rider's own body.** The clips' arms hang beside an adult's hips, and on a rider with wider hips and thighs the
-  hands sink into them. After the retarget each arm swings about its shoulder, its bend kept, just far enough that its
-  hand and the hand's half of its forearm clear the rider's own pelvis, spine, chest and thigh bodies (its physics
-  asset's, fitted to the skin) by `skate.ArmClear` (1 cm), at most 25 degrees: each step tries the deepest point's
-  nearest face and straight out from that body's middle, and keeps whichever leaves the arm least deep (a hand deep in
-  a thigh can be nearer its inner face). A grab solves after it, so it still reaches the board. A clip's pushing or
-  braking foot steps on the source's ground plane, which on another rider's proportions can be under the real ground:
-  a foot whose sole goes under the ground below it (by up to 15 cm) lifts to `skate.FootGround` (0.5 cm) above it, the
-  leg solved to it. Neither runs in a bail. Below 0 turns either off.
+  hands sink into them. After the retarget each arm swings out about its shoulder, its bend kept, just far enough that
+  its hand and the hand's half of its forearm clear the rider's own pelvis, spine, chest and thigh bodies (its physics
+  asset's, fitted to the skin) by `skate.ArmClear` (2 cm), at most 30 degrees. The swing is one abduction per arm,
+  about the axis that carries a hanging arm out from the body's midline (across the torso, pelvis to chest), so it
+  turns with the pose and nothing is chosen per frame; the angle needed is the smallest that clears every sample (a
+  2.5 degree scan, then the crossing inside its step), and the arm follows it through a critically damped spring
+  (half-life 0.05 s out, 0.15 s back, at most 170 degrees/s), so a fast move may graze the body for a moment but the
+  arm never snaps. The state line's `arm_swing=` and `arm_need=` give both (degrees, left and right). A grab solves
+  after it, so it still reaches the board. A clip's pushing or braking foot steps on the source's ground plane, which
+  on another rider's proportions can be under the real ground: a foot whose sole goes under the ground below it (by up
+  to 15 cm) lifts to `skate.FootGround` (0.5 cm) above it, the leg solved to it. Neither runs in a bail. Below 0 turns either off.
 - **Pose health.** The Ride state line (`USkateComponent::GetRetailState`, `atelier live state`) has `clip=` (the
   clip with the most weight), `ct=` (its time, s), `lock=`, `lift=` (cm), `step=` (the fastest body bone in the
   root's space, cm/s), `stepbone=` (that bone), `dt=` (the frame time it is measured over, ms),
