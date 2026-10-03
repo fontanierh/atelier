@@ -153,12 +153,17 @@ it goes fully limp only in a bail.
   Physical Rider); `skate.RidePhysicalReload` rebuilds them live. Point `ControlAsset` there at an authored asset to
   replace them in the editor.
 - **Strengths.** A strength works like a frequency: an acceleration drive with velocity feed-forward lags by a/(2πf)².
-  - Pelvis anchor, 8 Hz: lags 0.6 cm in a 16 m/s² carve and adds about 5 cm at a 7 m/s landing, which matches the
-    reference.
-  - Feet, 12 Hz: stay within 0.3 cm of the deck. On the board the feet do not collide with the world, since the deck
-    carries them.
+  The defaults were tuned live against the measurements below (`set RidePhysicalSettings Riding (Pelvis=16)` and
+  `skate.RidePhysicalReload` in the console).
+  - Pelvis anchor, 16 Hz, anchor damping ratio 0.5. In a quarter pipe the anchors trail the turning board by a lag
+    that halves with each doubling of the frequency or halving of the damping: 27 cm p95 at 8 Hz and ratio 1, 7 cm
+    now.
+  - Feet, 12 Hz. On the board the feet do not collide with the world, since the deck carries them.
   - Joints, 10 Hz.
-  - Every body also has a weak 2 Hz world anchor. This stops sag from building up down the chain.
+  - Every body also has an 8 Hz anchor. This stops sag from building up down the chain.
+  - Gravity 0: Physics Control's gravity compensation (the body modifiers' gravity multiplier). With gravity the
+    drives hold the pelvis 1.9 cm under the animation at every speed; without it, 0.2 cm. The `Bail` profile falls
+    with gravity 1, from the bail's first frame.
 - **World.** Query-only surfaces within `WorldRadius` (12 m) of the body are made physical while it simulates, so
   knocks, hand contacts and the bail are real Chaos contacts. They follow the body every 6 m and go back to query-only
   beyond twice the radius. Instanced meshes with more than 64 instances are left alone. Chaos substepping comes from
@@ -172,9 +177,13 @@ it goes fully limp only in a bail.
   - A body that gains speed or height it was never given, or falls through a floor, is unstable. The ride then drops
     the ragdoll, and the session slides the rider to a stop instead.
 - **Get-up.** This is the standard technique. When the body has settled (still for 0.4 s, after at least 1.6 s), it
-  takes a pose snapshot, sets the bodies kinematic and unseen, and blends the pose from the snapshot into the clip
-  over `GetUpBlend` (`BlendFromSnapshot`). The rider gets up where the body lies and never returns to where the bail
-  started.
+  takes a pose snapshot and blends the pose from the snapshot into the clip over `GetUpBlend` (`BlendFromSnapshot`).
+  The rider gets up where the body lies and never returns to where the bail started.
+  - The bodies stay simulating and seen until the animation shows the snapshot, then go kinematic and unseen. The
+    mesh shows a pose the ride sets a frame later, and Physics Control's copy of it (the kinematic bodies' targets)
+    a frame after that. Switching at once showed the clip's pose for one frame (the hips 61 cm off) and moved the
+    bodies there the next. The switch waits until Physics Control's pelvis and head are within 10 cm of the snapshot,
+    at most five frames.
   - **Onto the board.** The ride blends the pose seam (`USkateComponent::GetRetailPose`) and moves the board's meshes
     from the loose board back under the feet. The active ragdoll returns at the end.
   - **On foot** (`WantsGetUpOnFoot`). The transition code plays the recovery off the board (`BeginGetUpOnFoot`). It
@@ -185,14 +194,51 @@ it goes fully limp only in a bail.
   physics weight, the distance of the pelvis, feet and worst body from the animation (cm), the pelvis body's world
   position, the get-up blend, the last bail's kind, the body count, and which physics asset is in use. A game's QA
   checks read it.
-  - A rider placed further than 1 m in one frame (a scripted placement) has its bodies moved onto the animation by the
-    skeletal mesh's own teleport (`UpdateKinematicBonesToAnim` with `TeleportPhysics`), at the rider's velocity.
-    Physics Control's reset to cached targets would give each body the jump divided by the frame time. The
-    component's `TeleportDistanceThreshold` is the same 1 m.
+  - A rider placed further than 1 m in one frame (a scripted placement) has its bodies carried along by the skeletal
+    mesh's own teleport (`UpdateKinematicBonesToAnim` with `TeleportPhysics`), at the rider's velocity. Physics
+    Control's reset to cached targets would give each body the jump divided by the frame time. The component's
+    `TeleportDistanceThreshold` is the same 1 m. A change of speed above 2 m/s in one frame during the next three
+    frames (a scripted launch) is given to the bodies too. The mount starts the bodies the same way.
+  - A riding body more than 3 m from the animation (carried off by something it could not resolve) is reset onto
+    Physics Control's copy of the animation. Frames in which Physics Control has no copy (before its first update)
+    are not measured.
   - `skate.RidePhysicalDump` logs every body: its scale, its body, bone and target positions, its bounds, and the
     physical components it overlaps.
   - Each profile's `bBodyTouchesWorld` turns the bodies' world collision on or off for that phase (the feet have
     their own `bFeetTouchWorld`).
+
+### Measured
+
+A rider with the built asset (17 bodies) and the profiles above, on scripted runs. Distances are from each body to
+Physics Control's copy of the animation, p95.
+
+| Run | Pelvis | Feet | Reference |
+|---|---|---|---|
+| Rolling at 0, 2, 4, 6, 8, 10 m/s | 0.3–0.6 cm | 0.4–0.7 cm | upper body 0.5 cm |
+| Hard carve at 8 m/s | 3.3 cm | 3.2 cm | |
+| Pushing and carving | 2.0 cm | 3.5 cm | |
+| 50-50 grind | 4.8 cm | 4.7 cm | |
+| Quarter pipe | 7.7 cm | 5.7 cm | |
+| 3 m drop | 4.8 cm | 2.9 cm | hips 1–4 cm |
+| Kickflip | 6.0 cm | 4.1 cm | |
+| Ride QA, regular and goofy | 2.1–2.2 cm | 3.4–3.5 cm | |
+| Ride QA, a second rider on another skeleton | 2.5 cm | 3.8 cm | |
+
+- Landing (ride QA): the worst body 14–16 cm off, the pelvis back under 3 cm within 7–9 frames.
+- Bail: 1–3, 14, 38–45 and 60–73 cm at 0.125, 0.25, 0.5 and 1 s, against 0–8, 8–26, 14–37 and 64–127 cm. The bail
+  starts with the body moving at the board's speed (10 cm a frame at 6 m/s) and no jump.
+- Get-up: across the hand-over the hips move under 0.5 cm a frame, and the rider rises within 6 cm of where the hips
+  lay. The hand-over took five frames in every get-up measured.
+- Cost, riding a park road with `skate.RidePhysical` 0 then 1: game-thread frame p50 16.69 then 16.63 ms, p99 21.04
+  then 19.83 ms. In a second game on a busier machine, p50 17.5 then 16.7 ms, p99 23.0 then 17.2 ms. The difference
+  is within the noise.
+- No run went unstable. Every frame simulated, and nothing was reset. Wherever the hips move far in one frame, the
+  board moved as far, over a long frame.
+- The first frame after a scripted placement and launch leaves the pelvis 6–13 cm behind (37 cm when placed 3 m up).
+  The grind lock moves the board up to 47 cm onto the rail in one frame; the body follows within about four frames,
+  18 cm behind at worst.
+- The copy of the animation the bodies follow is a frame older than the pose the mesh shows. While riding, the
+  rider shows its pose about a frame late, in the board's frame.
 
 ### Why the component and not RigidBodyWithControl
 
