@@ -15,6 +15,7 @@ AT = unreal.AssetToolsHelpers.get_asset_tools()
 MEL = unreal.MaterialEditingLibrary
 helper = runpy.run_path(str(Path(__file__).with_name('import_megapark.py')))
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
+unreal.load_module('StaticMeshEditor')
 
 
 def sha(file):
@@ -70,7 +71,7 @@ subsystem = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
 for entry in park['meshes']:
     name = entry['name']; expected = build['meshes'][name]; file = OUT / 'assets' / (name+'.fbx')
     assert sha(file) == expected['sha256'], 'Incomplete export: '+name
-    existing = E.load_asset(ROOT+'/'+name)
+    existing = E.load_asset(ROOT+'/'+name) if E.does_asset_exist(ROOT+'/'+name) else None
     if existing:
         existing.set_editor_property('static_materials', [])
     mesh = helper['import_mesh'](file, name, ROOT, OUT/'assets/SM_CP_Seed.fbx')
