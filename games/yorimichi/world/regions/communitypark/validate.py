@@ -123,7 +123,8 @@ def structure_audit():
     route = S.stair_route()
     for x, y, z in route:
         hits = S.heights(all_triangles, x, y)
-        assert np.any(abs(hits-z) < .025), ('missing tread or landing', x, y, z)
+        bounded = hits[(hits >= z-.4) & (hits <= z+.4)]
+        assert len(bounded) and abs(bounded.max()-z) < .025, ('first bounded floor hit', x, y, z, bounded)
         for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
             hits = S.heights(all_triangles, x+dx, y+dy)
             assert not np.any((hits > z+.2) & (hits < z+1.95)), ('body clearance', x, y, z, dx, dy)

@@ -48,7 +48,9 @@ class StructureTests(unittest.TestCase):
         self.assertGreater(route[-1, 2]-route[0, 2], 36.)
         for x, y, z in route:
             hits = S.heights(self.walking_triangles, x, y)
-            self.assertTrue(np.any(abs(hits-z) < .025), (x, y, z, 'missing tread'))
+            bounded = hits[(hits >= z-.4) & (hits <= z+.4)]
+            self.assertTrue(len(bounded), (x, y, z, 'missing tread'))
+            self.assertLess(abs(float(bounded.max())-z), .025, (x, y, z, 'first floor hit'))
             # Sample a 70 cm wide body, including the two bridge turns.
             for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
                 hits = S.heights(self.walking_triangles, x+dx, y+dy)

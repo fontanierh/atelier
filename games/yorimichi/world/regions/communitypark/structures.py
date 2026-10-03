@@ -69,7 +69,7 @@ def heights(triangles, x, y):
 def stair_route():
     """Centreline waypoints through every flight and landing, ending at the original top ridge."""
     route = [[1300.25, 603.9, DECK], [1302.65, 603.9, DECK],
-             [1302.65, 600.3, DECK], [1303.8, 600.3, DECK]]
+             [1302.65, 600.3, DECK], [1303.75, 600.3, DECK]]
     rise = (TOP-DECK)/FLIGHTS
     for flight in range(FLIGHTS):
         east = flight % 2 == 0; x = 1303.8 if east else 1310.1; y = 600.3 if east else 603.9
@@ -80,7 +80,9 @@ def stair_route():
         route.extend([[end, y, height], [end+direction*1.15, y, height]])
         if flight+1 < FLIGHTS:
             next_y = 603.9 if east else 600.3
-            route.extend([[end+direction*1.15, next_y, height], [end, next_y, height]])
+            # The first tread overlaps the landing by 2.5 mm. Stay 5 cm
+            # outside its edge until the next waypoint climbs onto its centre.
+            route.extend([[end+direction*1.15, next_y, height], [end+direction*.05, next_y, height]])
     route.extend([[1302.65, 600.3, TOP], [1293.55, 600.3, TOP], [1293.55, 592.22, TOP]])
     return np.asarray(route)
 
