@@ -28,6 +28,12 @@ namespace
         {
             for (const TWeakObjectPtr<URidePhysicalRider>& R : GRiders) if (R.IsValid()) R->ReloadProfiles();
         }));
+    FAutoConsoleCommand DumpCommand(TEXT("skate.RidePhysicalDump"),
+        TEXT("Ride: log every body of the physical rider (scale, body, bone and target positions, bounds, what it touches)."),
+        FConsoleCommandDelegate::CreateLambda([]
+        {
+            for (const TWeakObjectPtr<URidePhysicalRider>& R : GRiders) if (R.IsValid()) R->Dump();
+        }));
 
     // Control and body modifier sets. The limbs' own sets (WorldSpace_FootLeft, ParentSpace_Spine, FootLeft, ...)
     // come from Physics Control; these group them.
@@ -183,13 +189,30 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     Asset = Authored ? Authored : BuildControlAsset(Mesh->GetPhysicsAsset());
     Control = NewObject<UPhysicsControlComponent>(Rider, TEXT("RidePhysicsControl"), RF_Transient);
     Control->PhysicsControlAsset = Asset.Get();
+    // A jump of the mesh this far in a frame is a placement: no target velocities from it (see Update).
+    Control->TeleportDistanceThreshold = PlacedDistance;
     Control->RegisterComponent();
     Control->AddTickPrerequisiteComponent(Mesh);
-    if (!Control->CreateControlsAndBodyModifiersFromPhysicsControlAsset(Mesh, nullptr, NAME_None))
+    // The anchors (Physics Control's "world-space" controls) hold each body toward the animation in the board's
+    // frame: relative to the kinematic body on the skeleton's root, which the actor carries with the board. Anchors
+    // in the world trail a target that moves with the board by about a frame (12 cm at 10 m/s). Without a root
+    // body, they are in the world.
+    const FName RootBone = Skeletal->GetRefSkeleton().GetBoneName(0);
+    bBoardFrame = RootBone != PelvisBone && Mesh->GetBodyInstance(RootBone) != nullptr;
+    if (!Control->CreateControlsAndBodyModifiersFromPhysicsControlAsset(Mesh, bBoardFrame ? Mesh.Get() : nullptr, bBoardFrame ? RootBone : NAME_None))
     {
         UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: no controls for %s"), *Skeletal->GetName());
         End();
         return false;
+    }
+    // The pelvis's anchor already holds it to the root body: its joint control to the root goes.
+    if (bBoardFrame && !PelvisBone.IsNone())
+    {
+        const FString Joint = RootBone.ToString() + TEXT("_") + PelvisBone.ToString();
+        TArray<FName> Drop;
+        for (const FName Name : Control->GetControlNamesInSet(TEXT("ParentSpace_Pelvis")))
+            if (Name.ToString() == Joint || Name.ToString().StartsWith(Joint + TEXT("_"))) Drop.Add(Name);
+        if (Drop.Num()) Control->DestroyControls(Drop, true, false);
     }
     Control->SetControlsInSetEnabled(AllSet, false);
     bSimulating = false; bEndWhenOut = false; Weight = WeightTarget = 0; AppliedWeight = -1;
@@ -203,6 +226,7 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     GRiders.AddUnique(this);
     UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider on %s: %s physics asset, %d bodies, %d controls"), *Skeletal->GetName(),
         bBuiltAsset ? TEXT("contract") : TEXT("rider's"), Mesh->Bodies.Num(), Control->GetAllControlNames().Num());
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider anchors in the %s's frame"), bBoardFrame ? TEXT("board") : TEXT("world"));
     return true;
 }
 
@@ -307,7 +331,9 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         const float Length = float(End.Size());
         if (To != INDEX_NONE && Length > Radius * 1.2f)
         {
-            FKSphylElem Capsule(Radius, FMath::Max(1.f, Length - Radius));
+            // Lengths are in the bone's units too: on a skeleton whose root carries its unit scale, one unit is
+            // a metre or more.
+            FKSphylElem Capsule(Radius, FMath::Max(Radius * .2f, Length - Radius));
             Capsule.Center = End * .5f;
             Capsule.Rotation = FRotationMatrix::MakeFromZ(Axis).Rotator();
             Body->AggGeom.SphylElems.Add(Capsule);
@@ -341,6 +367,23 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         Physics->ConstraintSetup.Add(Joint);
     }
     if (Bodies < MinBodies) { UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: only %d contract bones"), Bodies); return nullptr; }
+    // A kinematic body on the skeleton's root that follows the animation and touches nothing. The skeletal mesh's
+    // physics blend expects a body there when the root bone is scaled (an FBX armature carries its unit scale on
+    // it): it takes that body as the frame of the simulated bodies below the root. Without one, the pelvis lands at
+    // the root, 1/scale of the way from it, and the rider sinks into the ground. It is also the board's frame for the
+    // anchors (Begin).
+    if (!Used.Contains(0))
+    {
+        USkeletalBodySetup* RootBody = NewObject<USkeletalBodySetup>(Physics, NAME_None, RF_Transient);
+        RootBody->BoneName = Ref.GetBoneName(0);
+        RootBody->PhysicsType = PhysType_Kinematic;
+        RootBody->CollisionReponse = EBodyCollisionResponse::BodyCollision_Disabled;
+        RootBody->CollisionTraceFlag = CTF_UseSimpleAsComplex;
+        RootBody->AggGeom.SphereElems.Add(FKSphereElem(2.f / FMath::Max(.01f, float(Bind[0].GetMaximumAxisScale()))));
+        RootBody->CreatePhysicsMeshes();
+        Physics->SkeletalBodySetups.Add(RootBody);
+    }
+    Bodies = Physics->SkeletalBodySetups.Num();
     Physics->UpdateBodySetupIndexMap();
     Physics->UpdateBoundsBodiesArray();
     // The bodies only meet the world: built capsules overlap their neighbours in any pose, and overlapping bodies in
@@ -410,7 +453,8 @@ UPhysicsControlAsset* URidePhysicalRider::BuildControlAsset(const UPhysicsAsset*
 }
 
 // Each phase's profile, in order: every world-space control at the Body strength, then the anchors over it; every
-// joint at the Joints strength, then the spine, arms and legs scaled; gravity on every body and the feet's collision.
+// joint at the Joints strength, then the spine, arms and legs scaled; gravity and world collision on every body,
+// then the feet's collision.
 void URidePhysicalRider::FillProfiles(UPhysicsControlAsset* Target) const
 {
     const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
@@ -427,9 +471,11 @@ void URidePhysicalRider::FillProfiles(UPhysicsControlAsset* Target) const
         U.ControlUpdates.Emplace(JointsSpine, Strengths(0.f, F.Joints * F.Spine, F.JointDamping));
         U.ControlUpdates.Emplace(JointsArms, Strengths(0.f, F.Joints * F.Arms, F.JointDamping));
         U.ControlUpdates.Emplace(JointsLegs, Strengths(0.f, F.Joints * F.Legs, F.JointDamping));
-        FPhysicsControlModifierSparseData Gravity = Modifier();
-        Gravity.bEnableGravityMultiplier = true; Gravity.GravityMultiplier = F.Gravity;
-        U.ModifierUpdates.Emplace(AllSet, Gravity);
+        FPhysicsControlModifierSparseData Body = Modifier();
+        Body.bEnableGravityMultiplier = true; Body.GravityMultiplier = F.Gravity;
+        Body.bEnableCollisionType = true;
+        Body.CollisionType = F.bBodyTouchesWorld ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::QueryOnly;
+        U.ModifierUpdates.Emplace(AllSet, Body);
         FPhysicsControlModifierSparseData Feet = Modifier();
         Feet.bEnableCollisionType = true; Feet.CollisionType = F.bFeetTouchWorld ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::QueryOnly;
         U.ModifierUpdates.Emplace(FeetBodies, Feet);
@@ -467,7 +513,9 @@ void URidePhysicalRider::SetSimulating(bool bSimulate, const FVector* Velocity)
     if (Velocity)
     {
         // Switched now so the bodies leave with this velocity; the body modifiers keep them simulating.
-        Mesh->SetAllBodiesSimulatePhysics(true);
+        // From the pelvis down: a kinematic root body stays with the animation.
+        if (PelvisBone.IsNone()) Mesh->SetAllBodiesSimulatePhysics(true);
+        else Mesh->SetAllBodiesBelowSimulatePhysics(PelvisBone, true, true);
         Mesh->SetAllPhysicsLinearVelocity(*Velocity);
         Mesh->WakeAllRigidBodies();
     }
@@ -560,7 +608,7 @@ void URidePhysicalRider::Update(float Dt, ERidePhysicalPhase NewPhase)
     else if (bPlaced && !bBail)
     {
         // Placed: the bodies go with the animation rather than being pulled there by the controls.
-        Control->ResetBodyModifiersInSetToCachedBoneTransforms(AllSet, EResetToCachedTargetBehavior::ResetDuringUpdateControls);
+        ResetToAnimation();
         PelvisError = WorstError = FootError = 0.f;
     }
     else
@@ -573,9 +621,19 @@ void URidePhysicalRider::Update(float Dt, ERidePhysicalPhase NewPhase)
         if (!bBail && PelvisError > 300.f)
         {
             UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: body %.0f cm from the animation, reset"), PelvisError);
-            Control->ResetBodyModifiersInSetToCachedBoneTransforms(AllSet, EResetToCachedTargetBehavior::ResetDuringUpdateControls);
+            ResetToAnimation();
         }
     }
+}
+
+void URidePhysicalRider::ResetToAnimation()
+{
+    // The skeletal mesh's own teleport: every simulated body goes to the bone it simulates, as a moved component
+    // with ETeleportType::TeleportPhysics does. Physics Control's reset to its cached targets would instead give each
+    // body the velocity of the jump (the placement's distance over one frame). The bodies leave at the rider's speed.
+    Mesh->UpdateKinematicBonesToAnim(Mesh->GetComponentSpaceTransforms(), ETeleportType::TeleportPhysics, false, EAllowKinematicDeferral::DisallowDeferral);
+    Mesh->SetAllPhysicsLinearVelocity(Rider->GetVelocity());
+    Mesh->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
 }
 
 void URidePhysicalRider::AdvanceGetUp(float Dt)
@@ -658,14 +716,46 @@ FVector URidePhysicalRider::TraceGround(const FVector& At) const
     return At - FVector(0, 0, 15.f);
 }
 
+void URidePhysicalRider::Dump() const
+{
+    if (!Mesh || !Control || !Rider) { UE_LOG(LogTemp, Display, TEXT("SKATE ride physical dump: no rider")); return; }
+    const FReferenceSkeleton& Ref = Mesh->GetSkeletalMeshAsset()->GetRefSkeleton();
+    const TArray<FTransform>& Local = Mesh->GetBoneSpaceTransforms();
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride physical dump: mesh at %s scale %s; root %s, reference scale %s, pose scale %s"),
+        *Mesh->GetComponentLocation().ToString(), *Mesh->GetComponentScale().ToString(), *Ref.GetBoneName(0).ToString(),
+        *Ref.GetRefBonePose()[0].GetScale3D().ToString(), Local.Num() ? *Local[0].GetScale3D().ToString() : TEXT("-"));
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(RideDump), false);
+    Params.AddIgnoredComponent(Mesh.Get());
+    for (const FBodyInstance* Body : Mesh->Bodies)
+    {
+        if (!Body || !Body->BodySetup.IsValid()) continue;
+        const FName B = Body->BodySetup->BoneName;
+        const FBox Box = Body->GetBodyBounds();
+        FString Touching;
+        if (Body->IsInstanceSimulatingPhysics() && Box.IsValid)
+        {
+            TArray<FOverlapResult> Hits;
+            Rider->GetWorld()->OverlapMultiByObjectType(Hits, Box.GetCenter(), FQuat::Identity,
+                FCollisionObjectQueryParams(FCollisionObjectQueryParams::AllObjects), FCollisionShape::MakeBox(Box.GetExtent()), Params);
+            for (const FOverlapResult& H : Hits)
+                if (const UPrimitiveComponent* C = H.GetComponent(); C && CollisionEnabledHasPhysics(C->GetCollisionEnabled()))
+                    Touching += FString::Printf(TEXT(" %s.%s(type %d)"), *GetNameSafe(C->GetOwner()), *C->GetName(), int32(C->GetCollisionObjectType()));
+        }
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical dump: %s sim=%d scale=%s body=%s bone=%s target=%s bounds=%s..%s near:%s"),
+            *B.ToString(), Body->IsInstanceSimulatingPhysics() ? 1 : 0, *Body->Scale3D.ToString(),
+            *Body->GetUnrealWorldTransform().GetLocation().ToString(), *Mesh->GetBoneLocation(B).ToString(),
+            *Control->GetCachedBonePosition(Mesh, B).ToString(), *Box.Min.ToString(), *Box.Max.ToString(), *Touching);
+    }
+}
+
 FString URidePhysicalRider::Describe() const
 {
     if (!Control) return TEXT("phys=off");
     const FVector Hips = GetPelvisLocation();
-    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f getup=%.2f bail_kind=%s bodies=%d pa=%s"),
+    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s"),
         *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, GetGetUpAlpha(),
         !bBailOffered ? TEXT("none") : LastBailKind == ERideBailKind::RunOut ? TEXT("runout") : TEXT("fall"),
-        Mesh ? Mesh->Bodies.Num() : 0, bBuiltAsset ? TEXT("contract") : TEXT("rider"));
+        Mesh ? Mesh->Bodies.Num() : 0, bBuiltAsset ? TEXT("contract") : TEXT("rider"), bBoardFrame ? TEXT("board") : TEXT("world"));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -727,7 +817,18 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
         const FVector Thrown = Velocity * .9f + FVector(0, 0, 60.f);
         SetSimulating(true, &Thrown);
     }
-    else Mesh->WakeAllRigidBodies();
+    else
+    {
+        Mesh->WakeAllRigidBodies();
+        // A body moving much faster than the board was flung by something the riding could not resolve: the bail
+        // starts from the board's momentum instead.
+        const FBodyInstance* Pelvis = Mesh->GetBodyInstance(PelvisBone);
+        if (Pelvis && Pelvis->GetUnrealWorldVelocity().Size() > Velocity.Size() + 1000.f)
+        {
+            Mesh->SetAllPhysicsLinearVelocity(Velocity * .9f + FVector(0, 0, 60.f));
+            Mesh->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+        }
+    }
     bEndWhenOut = false; GetUpTime = -1.f;
     Weight = WeightTarget = 1.f; ApplyWeight();
     bBail = true; bReleased = false; BailTime = 0.f; Quiet = 0.f;

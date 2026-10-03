@@ -72,6 +72,7 @@ public:
     virtual float GetSkateMouseSensitivity() const override { return MouseSensitivity; }
     virtual FName GetSkateBone(FName Contract) const override;
     virtual float GetSkateBoardScale() const override;
+    virtual bool CanCarrySkateBoard() const override;
     FVector2D GetMoveIntent() const { return MoveIntent; }
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
@@ -238,6 +239,7 @@ private:
     void Dash(const FInputActionValue& Value);
     void ReleaseJump(const FInputActionValue& Value);
     void ToggleSkateboard(const FInputActionValue& Value);
+    void SkateboardHand(const FInputActionValue& Value);
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);
     void ToggleCrouch(const FInputActionValue& Value);

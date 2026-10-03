@@ -14,7 +14,9 @@
   timing, root and loop motion, channel weights, events and mirror information).
 
 Compression is ACL Safe (full-precision rotations, translations and scales held to a 0.00001 cm error), so the
-compressed pose is the keyed pose; verify_clips.py measures it. SKATE_RIDE_LIMIT=<n> or SKATE_RIDE_CLIPS=<a,b,...>
+compressed pose is the keyed pose; verify_clips.py measures it. A key the sequence's control rig would read as the
+reference pose (within its 1e-4 equality test, but not on it) carries a 0.0003 cm X offset so that it is kept
+(native.snap_guard). SKATE_RIDE_LIMIT=<n> or SKATE_RIDE_CLIPS=<a,b,...>
 import a subset (the manifest then says `partial`); SKATE_RIDE_BATCH=<i>/<n> runs one share of the clips per editor
 start (the build step runs several, as a heavy step must fit between other jobs' turns on the render lock).
 """
@@ -268,10 +270,13 @@ def make_clip(clip, meta, rig, reference, skeleton, mesh, bone_settings, curve_s
     controller.open_bracket('Skate Ride import', False)
     controller.set_frame_rate(U.FrameRate(int(round(fps)), 1), False)
     controller.set_number_of_frames(U.FrameNumber(frames - 1), False)
+    guarded = 0
     for b, bone in enumerate(rig.bones):
+        rest = N.sample_to_unreal(N.runtime_sample(N.split_sample(reference.samples[b])))
         positions, rotations, scales = [], [], []
         for f in range(frames):
-            t, q, s = N.sample_to_unreal(N.local_pose(clip, f, b, reference))
+            (t, q, s), moved = N.snap_guard(N.sample_to_unreal(N.local_pose(clip, f, b, reference)), rest)
+            guarded += moved
             positions.append(U.Vector(*t))
             rotations.append(U.Quat(*q))
             scales.append(U.Vector(*s))
@@ -298,7 +303,7 @@ def make_clip(clip, meta, rig, reference, skeleton, mesh, bone_settings, curve_s
     controller.close_bracket(False)
     length = sequence.get_play_length()
     assert abs(length - duration) < 1e-4, (clip.name, length, duration)
-    return sequence, events
+    return sequence, events, guarded
 
 
 def curve_identifier_maker():
@@ -452,7 +457,9 @@ def setup(rig, pose, key):
         keys='every frame and bone: the native local pose, the clip sample (rotation normalised) added onto RIG_TPOSE '
              '(AddAnimationPose motion_is_a: scale ref.s*s, rotation ref.q*q, translation ref.q(t)+ref.t), rotation '
              'normalised; no posture pose (POSTURE_*) and no BOARD_BACKWARDS layer, which the native runtime adds '
-             'only when asked',
+             'only when asked; a key within the control rig\'s 1e-4 equality of the reference pose but not on it is '
+             f'moved {N.SNAP_GUARD_CM} cm along X so the sequence keeps it (native.snap_guard; per clip '
+             'snap_guarded_keys)',
         rig=dict(bones=[b.name for b in rig.bones], parents=[b.parent for b in rig.bones],
                  parent_names=[rig.bones[b.parent].name if b.parent >= 0 else None for b in rig.bones],
                  mirror=[b.mirror for b in rig.bones], board_bones=list(BOARD), root='TRAJECTORY',
@@ -493,14 +500,15 @@ def main():
         meta = metadata.get(clip.name)
         if E.does_asset_exist(f'{CLIPS}/B{clip.bank}/{clip.name}'):
             E.delete_asset(f'{CLIPS}/B{clip.bank}/{clip.name}')
-        sequence, events = make_clip(clip, meta, rig, pose, skeleton, mesh, bone_settings, curve_settings, curve_id)
+        sequence, events, guarded = make_clip(clip, meta, rig, pose, skeleton, mesh, bone_settings, curve_settings,
+                                              curve_id)
         names = {a.name for a in meta.attributes} if meta else set()
         state['clips'][clip.name] = dict(
             asset=sequence.get_path_name().split('.')[0], bank=clip.bank, record=clip.record, fps=clip.fps,
             frames=clip.frame_count, duration=clip.duration, looping=bool(meta and meta.looping),
             phase_controlled=bool(meta and meta.phase_controlled), flags=f'0x{meta.flags_word:08x}' if meta else None,
             base_speed=N.as_float(meta.base_speed_bits) if meta else None, motion=motion_record(clip, rig, pose),
-            channel_weights=channel_record(clip, rig), events=events, curves=sorted(names),
+            channel_weights=channel_record(clip, rig), snap_guarded_keys=guarded, events=events, curves=sorted(names),
             mirror=dict(table=head['mirror_table'], mirrored_attribute='MIRRORED' in names,
                         switch_attribute='SWITCH' in names))
         E.save_loaded_asset(sequence, False)

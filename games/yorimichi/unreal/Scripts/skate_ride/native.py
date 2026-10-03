@@ -638,3 +638,33 @@ def euler_stored(q):
     sr, cr = math.sin(roll * half), math.cos(roll * half)
     return (cr * sp * sy - sr * cp * cy, -cr * sp * cy - sr * cp * sy, cr * cp * sy - sr * sp * cy,
             cr * cp * cy + sr * sp * sy)
+
+
+RIG_EQUAL = 1e-4        # FRigComputedTransform::Equals' default tolerance
+SNAP_GUARD_CM = 3e-4    # the translation offset that keeps a key apart from the reference pose (see snap_guard)
+
+
+def rig_equal(a, b, tolerance=RIG_EQUAL):
+    """FRigComputedTransform::Equals for two (translation, rotation xyzw, scale) keys: translation and scale within the
+    tolerance per component, rotation FQuat::Equals (every component within it, with either sign)."""
+    (ta, qa, sa), (tb, qb, sb) = a, b
+    close = lambda u, v: all(abs(x - y) <= tolerance for x, y in zip(u, v))  # noqa: E731
+    return close(ta, tb) and close(sa, sb) and (close(qa, qb) or close(qa, [-v for v in qb]))
+
+
+def snap_guard(key, reference):
+    """The key to give an Unreal Engine 5 sequence so that it holds that key: (key, guarded).
+
+    Evaluating a sequence's data model (compression samples it this way) runs its FK control rig, which writes each
+    bone's local transform through URigHierarchy::SetTransform; that skips a transform FRigComputedTransform::Equals
+    the bone's current one, and the current one is the reference pose. A key within 1e-4 per component of the reference
+    but not on it therefore comes back as the reference: up to about 2.9e-4 rad away for a toe resting near its
+    reference rotation. Such a key gets SNAP_GUARD_CM added to its X translation, which the equality test sees (it is
+    checked with a margin for the Unreal reference pose's own rounding); the rotation is then kept exactly. A key on
+    the reference (within 2e-6) is left alone: the reference is what it stands for."""
+    if not rig_equal(key, reference, 1.5 * RIG_EQUAL):
+        return key, False
+    (t, q, s), (rt, rq, rs) = key, reference
+    if quaternion_angle(q, rq) <= 2e-6 and math.dist(t, rt) <= 2e-6 and max(abs(x - y) for x, y in zip(s, rs)) <= 2e-6:
+        return key, False
+    return ((t[0] + SNAP_GUARD_CM, t[1], t[2]), q, s), True

@@ -53,6 +53,8 @@ struct FRidePhysicalProfile
     UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float Hands = 2.f;
     UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float AnchorDamping = 1.f;
     UPROPERTY(EditAnywhere, Category = Body) float Gravity = 1.f;
+    /** Whether the bodies other than the feet collide with the world (knocks, walls, the ground in a bail). */
+    UPROPERTY(EditAnywhere, Category = Body) bool bBodyTouchesWorld = true;
     /** Whether the feet collide with the world. On the board the deck carries them, so they pass over its edges. */
     UPROPERTY(EditAnywhere, Category = Body) bool bFeetTouchWorld = false;
 };
@@ -202,6 +204,8 @@ public:
 
     /** Rebuild the profiles from the settings and apply the current one (skate.RidePhysicalReload). */
     void ReloadProfiles();
+    // Logs every body (skate.RidePhysicalDump).
+    void Dump() const;
 
     /** Telemetry: the bodies' distance from the animated pose (cm). */
     float GetPelvisError() const { return PelvisError; }
@@ -228,6 +232,8 @@ private:
     TWeakObjectPtr<UPrimitiveComponent> TakenBoard;
     const ISkateRider* Api = nullptr;
     bool bBuiltAsset = false, bOwnControlAsset = false;
+    /** Whether the anchors are in the board's frame (the kinematic root body) rather than the world. */
+    bool bBoardFrame = false;
     FName SavedProfile;
     uint8 SavedUpdateMode = 0;
     FName PelvisBone, HeadBone, FootBones[2], ThighBones[2];
@@ -276,5 +282,7 @@ private:
     void MakeWorldPhysical(const FVector& Centre);
     void RestoreWorld();
     void Measure();
+    /** Puts every body back on the animation, at rest (a placement, or a body carried off). */
+    void ResetToAnimation();
     FVector TraceGround(const FVector& At) const;
 };

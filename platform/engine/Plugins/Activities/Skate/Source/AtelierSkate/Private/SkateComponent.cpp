@@ -152,7 +152,7 @@ void USkateComponent::SetGoofy(bool bNewGoofy)
     if (bGoofy == bNewGoofy) return;
     bGoofy = bNewGoofy;
     if (bRetailActive) ConfigureRetail();
-    if (IsRiding() && Mode != ESkateMode::Bail) { SetMeshForRiding(true); ++Serial; }
+    if (Mode != ESkateMode::Off && Mode != ESkateMode::Bail) { SetMeshForRiding(true); ++Serial; }
 }
 
 void USkateComponent::SetMeshForRiding(bool bRiding)
@@ -186,7 +186,7 @@ bool USkateComponent::Toggle()
     // The Ride backend gets on and off as one continuous character (RideTransition.cpp); a ride keeps the backend it
     // started with until it ends.
     if (Mode == ESkateMode::Off ? USkateSettings::ActiveBackend() == ESkateBackend::Ride : bRideBody)
-        return Mode == ESkateMode::Off ? RideMount() : RideDismount();
+        return Mode == ESkateMode::Off ? RideMount(false) : RideDismount();
     UCharacterMovementComponent* M = Movement();
     UCapsuleComponent* Capsule = Rider->GetCapsuleComponent();
     if (Mode == ESkateMode::Off)
@@ -266,7 +266,8 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
         Movement()->SetMovementMode(MOVE_Walking);
         Movement()->Velocity = FVector::ZeroVector;
         Movement()->FindFloor(Movement()->UpdatedComponent->GetComponentLocation(), Movement()->CurrentFloor, false);
-        if (!Toggle()) return false;
+        // A placement is a cut: the Ride backend gets on at once, without the mount clip.
+        if (!(USkateSettings::ActiveBackend() == ESkateBackend::Ride ? RideMount(true) : Toggle())) return false;
     }
     ResetInput();
     Pos = GroundPoint; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector; bFakie = false;
@@ -384,7 +385,7 @@ void USkateComponent::Launch(const FVector& Velocity) { LaunchRetail(Velocity); 
 void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickFunction* Tick)
 {
     Super::TickComponent(Dt,Type,Tick);
-    if (IsRiding()) UpdateAudio(Dt);
+    if (Mode != ESkateMode::Off) UpdateAudio(Dt);
     // Preload the native skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
     if (bAvailable && Rider && !RetailRuntime && !bRetailPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadRetailRuntime();
     PollIdleRetail();

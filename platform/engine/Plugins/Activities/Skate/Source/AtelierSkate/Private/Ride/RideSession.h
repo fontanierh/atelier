@@ -183,7 +183,7 @@ private:
     // Cost.
     double CostSum = 0, CostMax = 0, CostClock = 0; int32 CostCount = 0;
     // Pose health (DescribePose).
-    TArray<FVector> LastBones;       // in the root's frame
+    TArray<FVector> LastBones;       // root space
     TArray<bool> BodyBone;
     int32 DeckBone = INDEX_NONE, ToeBone[2] = {INDEX_NONE, INDEX_NONE};
     float PoseStep = 0, FootHeight[2] = {0, 0}, AnimCost = 0;

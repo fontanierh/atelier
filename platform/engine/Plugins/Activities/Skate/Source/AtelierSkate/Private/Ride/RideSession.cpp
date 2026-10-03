@@ -1067,13 +1067,13 @@ void FRideSession::MeasurePose(float Dt)
     }
     PoseNaN = 0;
     for (const FTransform& Bone : Bones) if (Bone.ContainsNaN()) ++PoseNaN;
-    // The fastest body bone in the root's frame, so the ride's own travel and turning do not count.
+    // The fastest body bone. The bones are in the root's space, so the ride's own travel and turning do not count.
     PoseStep = 0;
     const bool bStep = LastBones.Num() == Bones.Num() && Dt > 1e-4f;
     LastBones.SetNum(Bones.Num(), EAllowShrinking::No);
     for (int32 I = 0; I < Bones.Num(); ++I)
     {
-        const FVector Local = Root.InverseTransformPosition(Bones[I].GetLocation());
+        const FVector Local = Bones[I].GetLocation();
         if (bStep && BodyBone[I]) PoseStep = FMath::Max(PoseStep, float(FVector::Dist(Local, LastBones[I])) / Dt);
         LastBones[I] = Local;
     }
