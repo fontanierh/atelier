@@ -8,9 +8,10 @@ off, D-pad Right brings the board to the hand or puts it away): mounts from stan
 BR_DISMOUNT_* clips, into the carry), the carry put away after its hold time, the board button with no board and
 with a board lying, a bail left on foot (the rider gets up where the body lies), a bail back onto the board, a board
 left lying that dissolves, jumps with the board in hand (JBR_* then BR_LAND_*), the board thrown under the feet mid-jump
-(a caveman, with and without the board in hand), a step off the board in the air from a grab (BR_DISMOUNT_*_INTO_BR_AIR,
-then a landing), a kick-out in the air without a grab (BR_KICKOUT_*, the board flying on by itself), a slow bail run
-out on foot (RUNOUT_*, the board rolling on), a fallen rider getting up on foot where the body lies (W_RECOVERY_*), a
+(a caveman, with and without the board in hand and from a sprint, the ride starting on the deck), a step off the board
+in the air from a grab (BR_DISMOUNT_*_INTO_BR_AIR, then a landing), a kick-out in the air without a grab (BR_KICKOUT_*,
+the board flying on by itself; also just after a take-off, still rising), a slow bail run out on foot (RUNOUT_*, the
+board rolling on), a fallen rider getting up on foot where the body lies (W_RECOVERY_*), a
 step onto a board lying on its wheels, and Link and a Bokoblin as the rider. The capsule checks: a crouched Cairo
 stands up for the board, and a BotW rider's fitted capsule keeps its size through three board toggles and a jump.
 
@@ -388,8 +389,9 @@ def main():
             report(name, rows, False, f'never got on (clip {clip})')
             return
         entry, before, after = flat_speed(rows[max(0, start - 1)]), flat_speed(rows[at - 1]), flat_speed(rows[at])
-        # The clip's gait goes by the speed (the carry cycles' own speeds: walk ~170, run ~540, sprint ~910 cm/s).
-        want = ('BR_STAND_0_INTO_MOUNT' if entry < 80 else 'BR_WALK_FWD_' if entry < 350 else 'BR_RUN_FWD_' if entry < 720
+        # The clip's gait goes by the speed (the carry cycles' own speeds: walk ~170, run ~540, sprint ~910 cm/s; the
+        # sprint's from just under the character's own sprint, 637).
+        want = ('BR_STAND_0_INTO_MOUNT' if entry < 80 else 'BR_WALK_FWD_' if entry < 350 else 'BR_RUN_FWD_' if entry < 620
                 else 'BR_SPRINT_FWD_')
         worst = continuity(rows)
         shown, note = board_shown(rows)
@@ -545,9 +547,10 @@ live.behave('bail', _bail)
                f'at the ride start{", a fresh board" if fresh else ""}; '
                f'{describe(worst)}; board {note}')
 
-    if wanted('mount'):
-        for gait in ('', 'walk', 'run', 'sprint'):
-            mount('mount_' + (gait or 'stand'), gait)
+    for gait in ('stand', 'walk', 'run', 'sprint'):
+        if wanted('mount_' + gait):
+            mount('mount_' + gait, '' if gait == 'stand' else gait)
+    if wanted('mount_carry_run'):
         mount('mount_carry_run', 'run', carrying=True)
     if wanted('dismount'):
         dismount('dismount_stand', 90, 'BR_DISMOUNT_HI_INTO_STAND_0', run=False)
@@ -636,10 +639,12 @@ live.behave('bail', _bail)
                f'{line(seen)}; {before:.0f} cm/s, {after:.0f} at the landing, {flat_speed(rows[-1]):.0f} after {seconds} s; '
                f'{describe(worst)}; board {note}{", in hand throughout" if held else ""}')
 
-    def caveman(name, carrying):
-        # Running, a jump, then the skate button in the air: the board goes under the feet and the ride goes on.
+    def caveman(name, carrying, gait='run'):
+        # Running, a jump, then the skate button in the air: the board goes under the feet and the ride goes on, on the
+        # pier's deck (never below it: a ride started inside the planks fell through them).
         on_foot(board=carrying)
-        qa.py("live.drive(1,0,'run')")
+        floor = float(qa.py(f'print(live.L.ground_at(live.park.ue({FLAT[0]},{FLAT[1]},3.0)).z)').strip().splitlines()[-1])
+        qa.py(f"live.drive(1,0,'{gait}')")
         time.sleep(1.5)
         before = flat_speed(state())
         rows = record("live.press('jump')\n" + tap(TOP, .22), 2.6)
@@ -653,9 +658,37 @@ live.behave('bail', _bail)
         on = at is not None and rows[-1]['board'] == 'ride' and rows[-1]['mode'] in ('1', '2')
         after = flat_speed(rows[at]) if at is not None else 0.0
         jumped = not carrying or any(f == 'air' and c.startswith('JBR_RUN_FWD_') for f, c in seen)
-        report(name, rows, 'AIR_INTO_MOUNT_BSGRAB' in mount and on and jumped and after >= .8 * before - 20 and smooth(worst) and shown,
-               f'{line(seen)}; {before:.0f} cm/s running, {after:.0f} onto the board, mode {rows[-1]["mode"]} at the end; '
-               f'{describe(worst)}; board {note}')
+        # The board on the deck from the ride's start on (BoardRoot at or above the floor; through it, it fell metres).
+        low = min((vec(r['deck'])[2] - floor for r in rows[at:]), default=0.0) if at is not None else 0.0
+        report(name, rows, 'AIR_INTO_MOUNT_BSGRAB' in mount and on and jumped and after >= .8 * before - 20 and low > -2 and
+               smooth(worst) and shown,
+               f'{line(seen)}; {before:.0f} cm/s {"sprinting" if gait == "sprint" else "running"}, {after:.0f} onto the board, mode {rows[-1]["mode"]} at the end, the board '
+               f'{low:+.1f} cm from the floor at its lowest; {describe(worst)}; board {note}')
+
+    def kickout_rising(name):
+        # Rising just after a take-off, the skate button without a grab: the kick-out clip plays while the rider rises
+        # on with the board's velocity, then falls and lands on foot (a floor found at once dropped the rise, the
+        # capsule fell 50 cm in a frame and the clip ended).
+        riding(0)
+        code = (f"live.park.place({FLAT[0]},{FLAT[1]},0); live.park.look(-12,0); live.L.skate_launch(unreal.Vector(500,0,450))\n" +
+                tap(TOP, .13))
+        rows = record(code, 3.0)
+        qa.py('live.skate_release()')
+        seen = clips(rows)
+        start = next((i for i, r in enumerate(rows) if r.get('foot') == 'air'), None)
+        if start is None:
+            report(name, rows, False, f'never got off ({line(seen)}; modes {"".join(sorted(qa.modes(rows)))})')
+            return
+        off = rows[start].get('clip', '-')
+        rise = vec(rows[start]['vel'])[2]
+        played = sum(r['dt'] for r in rows[start:] if r.get('foot') == 'air' and r.get('clip') == off)
+        worst = continuity(rows[start - 1:])
+        shown, note = board_shown(rows)
+        flew = any(r.get('loose') == 'flying' for r in rows[start:])
+        ok = off.startswith('BR_KICKOUT_') and rise > 100 and played > .25 and flew and rows[-1]['mode'] == '0'
+        report(name, rows, ok and smooth(worst) and shown,
+               f'{line(seen)}; {off} rising at {rise:.0f} cm/s, played {played:.2f} s, the board {"flew" if flew else "never flew"}, '
+               f'mode {rows[-1]["mode"]} at the end; {describe(worst)}; board {note}')
 
     def air_dismount(name, grab, want, height=4.5):
         # In the air with a grab held, the skate button: off the board from the grab, the board into the hand, a landing.
@@ -693,9 +726,12 @@ live.behave('bail', _bail)
     if wanted('caveman'):
         caveman('caveman_run', False)
         caveman('caveman_carry', True)
+        caveman('caveman_sprint', False, 'sprint')
     if wanted('air_dismount'):
         air_dismount('air_dismount_grab', True, 'BR_DISMOUNT_FS_INTO_BR_AIR')
         air_dismount('air_kickout', False, 'BR_KICKOUT_HI_INTO_NB_AIR')
+    if wanted('kickout_rising'):
+        kickout_rising('kickout_rising')
     for rider in ('Link', 'Bokoblin'):
         # The other riders' bodies (Link taller and slighter, a Bokoblin short and heavy) through the same transitions.
         key = rider.lower()

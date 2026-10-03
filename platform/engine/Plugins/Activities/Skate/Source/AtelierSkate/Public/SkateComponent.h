@@ -212,7 +212,7 @@ private:
     bool RideDismount();
     void LeaveBoard();
     bool GetOnBoard(const FVector& Ground, const FQuat& Rotation, const FVector& Velocity, float Blend);
-    bool StandUpOffBoard(float Yaw);
+    bool StandUpOffBoard(float Yaw, bool bMayStand = true);
     bool PrepareRideClips();
     bool BeginMountClip();
     bool BeginDismountClip();

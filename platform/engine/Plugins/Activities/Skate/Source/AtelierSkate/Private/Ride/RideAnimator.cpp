@@ -27,8 +27,19 @@ namespace
 
     // The push: the first push of a run plays its lead-in from here (the native runtime starts it here too).
     constexpr float PushIntoStart = .231f;
-    // Sampling a pre-landing pose this long before the touch-down.
-    constexpr float LandingLead = .217f;
+    // Native's air legs (AnimationAirborne.cpp, AnimationAirLegState and AnimationNearLanding; the B_AIR_CYC blend
+    // trees): the air pose blends by the distance from the hips to the board, each clip carrying its own (DISTTOCOG).
+    // The distance stays at its floor until the rider prepares to land, (1 - the body's height) / 2 s before the
+    // touch-down onto level ground (later onto a steeper face, never onto a wall), then grows at 2 a second, so the
+    // legs are still reaching for the board when it lands.
+    constexpr float LegFloor = .5f, LegReach = 2.f, BodyHeight = .6f;
+    // The default tree's clips: the tucked air idle, then the low idle reaching toward the extended one as the fall
+    // goes on (their DISTTOCOG).
+    constexpr float IdleLeg = .5174f, LowLeg = .9373f, ExtendLeg = 1.0728f;
+    // How far the low pose reaches toward the extended one by the time since the top of the flight
+    // (lo_air_arm_extend), and the preparation's scale by the touch-down normal's up (landing_distance).
+    const float ArmTimes[] = {0, .137f, .219f, .3f}, ArmExtend[] = {.164f, .305f, .375f, .445f};
+    const float NormalUps[] = {0, .067f, .129f, .199f, .272f, .373f, .507f, 1}, NormalLeads[] = {0, .169f, .358f, .554f, .706f, .902f, 1, 1};
     // A landing pose plays over this long.
     constexpr float LandHold = 1.f;
     // A flip's board is caught once it stays within this of its final attitude (the board is symmetric end to end).
@@ -67,24 +78,53 @@ namespace
 
     float Len(const UAnimSequence* Sequence) { return Sequence ? Sequence->GetPlayLength() : 0.f; }
 
-    struct FTrickNames { Flick Trick; const TCHAR* Ground; const TCHAR* Air; const TCHAR* Follow; };
+    /** A piecewise-linear curve, held at its ends. */
+    template <int32 N> float Curve(const float (&X)[N], const float (&Y)[N], float At)
+    {
+        if (At <= X[0]) return Y[0];
+        for (int32 I = 1; I < N; ++I)
+            if (At < X[I]) return FMath::Lerp(Y[I - 1], Y[I], (At - X[I - 1]) / (X[I] - X[I - 1]));
+        return Y[N - 1];
+    }
+
+    /** The hips-to-board distance native's air legs reach at the drawn frame (DISTTOCOG, native metres). */
+    float AirLeg(const FRideBodyPose& B)
+    {
+        if (B.TimeToLand < 0 || B.FallTime <= 0) return LegFloor;
+        const float Lead = (1.f - BodyHeight) / 2.f * Curve(NormalUps, NormalLeads, FMath::Clamp(B.LandUp, 0.f, 1.f));
+        return LegFloor + LegReach * FMath::Max(0.f, Lead - (B.TimeToLand + B.Lag));
+    }
+
+    // Native's fakie channel (AnimationRidingAuxiliary.cpp, AnimationFakieHeadState; B_FAKIE_CHANNEL): riding fakie,
+    // the head (and the chest) turn toward the travel. It blends in and out over .3 s; its clips blend by torso: 1 in a
+    // manual, 0 in a powerslide, .5 otherwise, moving .01 a 60 Hz tick (set at once when fakie starts).
+    constexpr float FakieBlend = .3f, TorsoRate = .6f;
+    // The channel clips' per-bone weights, by torso (0, .5, 1).
+    const FRideChannelBone FakieHeadBones[] = {{TEXT("NECK"), 1}, {TEXT("NECK1"), 1}, {TEXT("HEAD"), 1}};
+    const FRideChannelBone FakieBones[] = {{TEXT("SPINE2"), .5f}, {TEXT("SPINE3"), .7f}, {TEXT("NECK"), 1}, {TEXT("NECK1"), 1}, {TEXT("HEAD"), 1}};
+    const FRideChannelBone FakieManualBones[] = {{TEXT("SPINE"), .5f}, {TEXT("SPINE1"), 1}, {TEXT("SPINE2"), 1}, {TEXT("SPINE3"), 1},
+        {TEXT("NECK"), 1}, {TEXT("NECK1"), 1}, {TEXT("HEAD"), 1}};
+
+    // With a trick's own air cycles (B_AIR_CYC's trick trees), Follow is the high one and Low the low one, each with its
+    // hips-to-board distance (DISTTOCOG).
+    struct FTrickNames { Flick Trick; const TCHAR* Ground; const TCHAR* Air; const TCHAR* Follow; const TCHAR* Low = nullptr; float High = 0, Reach = 0; };
     const FTrickNames TrickNames[] = {
         {Flick::Ollie, TEXT("OLLIE_HIGH_G"), TEXT("OLLIE_HIGH_A"), nullptr},
         {Flick::Nollie, TEXT("NOLLIE_HIGH_G"), TEXT("NOLLIE_HIGH_A"), nullptr},
         {Flick::Kickflip, TEXT("KICKFLIP_IN_HIGH_G"), TEXT("KICKFLIP_IN_HIGH_A"), TEXT("T_KICKFLIP_HI_4FLIPS_0_OUT1")},
         {Flick::Heelflip, TEXT("HEELFLIP_IN_HIGH_G"), TEXT("HEELFLIP_IN_HIGH_A"), TEXT("T_HEELFLIP_HI_4FLIPS_0_OUT1")},
-        {Flick::ShoveIt, TEXT("POPSHUVIT_HIGH_G"), TEXT("POPSHUVIT_HIGH_A"), TEXT("T_POPSHUVIT_H_CYC")},
-        {Flick::FsShoveIt, TEXT("FSPOPSHUVIT_D_HIGH_G"), TEXT("FSPOPSHUVIT_D_HIGH_A"), TEXT("T_FSPOPSHUVIT_H_CYC")},
-        {Flick::Shove360, TEXT("360POPSHUVIT_HIGH_G"), TEXT("360POPSHUVIT_HIGH_A"), TEXT("T_360POPSHUVIT_H_CYC")},
-        {Flick::FsShove360, TEXT("FS360POPSHUVIT_HIGH_G"), TEXT("FS360POPSHUVIT_HIGH_A"), TEXT("T_FS360POPSHUVIT_H_CYC")},
-        {Flick::VarialKickflip, TEXT("VARIALKICKFLIP_HIGH_G"), TEXT("VARIALKICKFLIP_HIGH_A"), TEXT("T_VARIALKICKFLIP_H_CYC")},
-        {Flick::VarialHeelflip, TEXT("VARIALHEELFLIP_D_HIGH_G"), TEXT("VARIALHEELFLIP_D_HIGH_A"), TEXT("T_VARIALHEELFLIP_H_CYC")},
-        {Flick::Hardflip, TEXT("HARDFLIP_HIGH_G"), TEXT("HARDFLIP_HIGH_A"), TEXT("T_HARDFLIP_H_CYC")},
+        {Flick::ShoveIt, TEXT("POPSHUVIT_HIGH_G"), TEXT("POPSHUVIT_HIGH_A"), TEXT("T_POPSHUVIT_H_CYC"), TEXT("T_POPSHUVIT_L_CYC"), .5757f, .8147f},
+        {Flick::FsShoveIt, TEXT("FSPOPSHUVIT_D_HIGH_G"), TEXT("FSPOPSHUVIT_D_HIGH_A"), TEXT("T_FSPOPSHUVIT_H_CYC"), TEXT("T_FSPOPSHUVIT_L_CYC"), .5646f, .8279f},
+        {Flick::Shove360, TEXT("360POPSHUVIT_HIGH_G"), TEXT("360POPSHUVIT_HIGH_A"), TEXT("T_360POPSHUVIT_H_CYC"), TEXT("T_360POPSHUVIT_L_CYC"), .5821f, .8073f},
+        {Flick::FsShove360, TEXT("FS360POPSHUVIT_HIGH_G"), TEXT("FS360POPSHUVIT_HIGH_A"), TEXT("T_FS360POPSHUVIT_H_CYC"), TEXT("T_FS360POPSHUVIT_L_CYC"), .6357f, .9053f},
+        {Flick::VarialKickflip, TEXT("VARIALKICKFLIP_HIGH_G"), TEXT("VARIALKICKFLIP_HIGH_A"), TEXT("T_VARIALKICKFLIP_H_CYC"), TEXT("T_VARIALKICKFLIP_L_CYC"), .6649f, .8638f},
+        {Flick::VarialHeelflip, TEXT("VARIALHEELFLIP_D_HIGH_G"), TEXT("VARIALHEELFLIP_D_HIGH_A"), TEXT("T_VARIALHEELFLIP_H_CYC"), TEXT("T_VARIALHEELFLIP_L_CYC"), .5478f, .7704f},
+        {Flick::Hardflip, TEXT("HARDFLIP_HIGH_G"), TEXT("HARDFLIP_HIGH_A"), TEXT("T_HARDFLIP_H_CYC"), TEXT("T_HARDFLIP_L_CYC"), .6086f, .8042f},
         {Flick::InwardHeelflip, TEXT("INWARDHEELFLIP_HIGH_G"), TEXT("INWARDHEELFLIP_HIGH_A"), nullptr},
-        {Flick::TreFlip, TEXT("360FLIP_D_HIGH_G"), TEXT("360FLIP_D_HIGH_A"), TEXT("T_360FLIP_H_CYC")},
-        {Flick::LaserFlip, TEXT("LASERFLIP_HIGH_G"), TEXT("LASERFLIP_HIGH_A"), TEXT("T_LASERFLIP_H_CYC")},
-        {Flick::Hardflip360, TEXT("360HARDFLIP_HIGH_G"), TEXT("360HARDFLIP_HIGH_A"), TEXT("T_360HARDFLIP_H_CYC")},
-        {Flick::InwardHeelflip360, TEXT("360INWARDHEELFLIP_HIGH_G"), TEXT("360INWARDHEELFLIP_HIGH_A"), TEXT("T_360INWARDHEELFLIP_H_CYC")},
+        {Flick::TreFlip, TEXT("360FLIP_D_HIGH_G"), TEXT("360FLIP_D_HIGH_A"), TEXT("T_360FLIP_H_CYC"), TEXT("T_360FLIP_L_CYC"), .5174f, .9373f},
+        {Flick::LaserFlip, TEXT("LASERFLIP_HIGH_G"), TEXT("LASERFLIP_HIGH_A"), TEXT("T_LASERFLIP_H_CYC"), TEXT("T_LASERFLIP_L_CYC"), .605f, .8009f},
+        {Flick::Hardflip360, TEXT("360HARDFLIP_HIGH_G"), TEXT("360HARDFLIP_HIGH_A"), TEXT("T_360HARDFLIP_H_CYC"), TEXT("T_360HARDFLIP_L_CYC"), .5689f, .8534f},
+        {Flick::InwardHeelflip360, TEXT("360INWARDHEELFLIP_HIGH_G"), TEXT("360INWARDHEELFLIP_HIGH_A"), TEXT("T_360INWARDHEELFLIP_H_CYC"), TEXT("T_360INWARDHEELFLIP_L_CYC"), .5834f, .8648f},
     };
     // By ERideGrab (None first): lead-in, hold, let-go.
     const TCHAR* GrabNames[][3] = {
@@ -219,10 +259,12 @@ void FRideAnimator::Resolve()
     C.AirIdle = Load(TEXT("IA_IDLE_N_N_0_CYC")); C.AirLow = Load(TEXT("IA_IDLE_LO_N_0_CYC")); C.AirExtend = Load(TEXT("IA_EXTEND_LO_N_0_CYC"));
     C.LandLow = Load(TEXT("L_HCOM_LIMP_3")); C.LandHigh = Load(TEXT("L_HCOM_HIMP_3")); C.LandGrab = Load(TEXT("L_LCOM_3"));
     C.LandSketchy = Load(TEXT("L_SKETCH_FS_HCOM_LIMP"));
+    C.Fakie[0] = Load(TEXT("FAKIE_HEAD_CHANNEL_CYC")); C.Fakie[1] = Load(TEXT("FAKIE_CHANNEL_CYC")); C.Fakie[2] = Load(TEXT("FAKIE_MANUAL_CHANNEL_CYC"));
     for (const FTrickNames& T : TrickNames)
     {
         FTrickClips& Clips = C.Tricks[uint8(T.Trick)];
         Clips.Ground = Load(T.Ground); Clips.Air = Load(T.Air); Clips.Follow = Load(T.Follow);
+        Clips.Low = T.Low ? Load(T.Low) : nullptr; Clips.High = T.High; Clips.Reach = T.Reach;
     }
     for (int32 G = 1; G < 6; ++G)
     {
@@ -398,6 +440,7 @@ void FRideAnimator::Attach(AActor* Owner)
     I->Hold(Clips);
     Mesh = M; Instance = I;
     bFirst = true; Lock = 0; Lift = 0; TruckRoll[0] = TruckRoll[1] = 0; LastKey = nullptr; Last = FRideAnimLayers();
+    FakieWeight = 0; Torso = .5f; FakieTime = 0; bWasFakie = false;
 }
 
 void FRideAnimator::Detach()
@@ -406,10 +449,40 @@ void FRideAnimator::Detach()
     Mesh.Reset(); Instance.Reset();
 }
 
+void FRideAnimator::UpdateFakie(const FRideBodyPose* Body, float Dt)
+{
+    const bool bFakie = Body && Body->bFakie && !bOverride && C.Fakie[1];
+    const bool bManual = Body && (Body->Motion == ERideMotion::Manual || Body->Motion == ERideMotion::NoseManual);
+    const float Target = bManual ? 1.f : Body && Body->Motion == ERideMotion::Powerslide ? 0.f : .5f;
+    if (bFakie && !bWasFakie)
+    {
+        Torso = Target;
+        if (FakieWeight <= 0) FakieTime = 0;
+    }
+    else if (bFakie) Torso = FMath::FInterpConstantTo(Torso, Target, Dt, TorsoRate);
+    bWasFakie = bFakie;
+    FakieWeight = bFirst && !bFakie ? 0.f : FMath::FInterpConstantTo(FakieWeight, bFakie ? 1.f : 0.f, Dt, 1.f / FakieBlend);
+    FakieTime = FakieWeight > 0 ? FakieTime + Dt : 0.f;
+}
+
 void FRideAnimator::Run(const FRideAnimLayers& Layers, float Inertialize, float Dt, bool bCutBoard)
 {
     FRideAnimFrame Frame;
     Frame.Layers = Layers; Frame.Inertialize = Inertialize; Frame.bCutBoard = bCutBoard;
+    if (FakieWeight > 0)
+    {
+        // The channel clips by torso, phase-blended: head only (0), head and chest (.5), the manual's (1).
+        FRideAnimChannel& Channel = Frame.Channel;
+        const TConstArrayView<FRideChannelBone> Bones[] = {FakieHeadBones, FakieBones, FakieManualBones};
+        const float T = FMath::Clamp(Torso, 0.f, 1.f);
+        const float Weights[] = {FMath::Max(0.f, 1.f - 2.f * T), 1.f - FMath::Abs(2.f * T - 1.f), FMath::Max(0.f, 2.f * T - 1.f)};
+        for (int32 I = 0; I < FRideAnimChannel::Max; ++I)
+        {
+            Channel.Clip[I] = C.Fakie[I]; Channel.Bones[I] = Bones[I]; Channel.Weight[I] = C.Fakie[I] ? Weights[I] : 0.f;
+        }
+        Channel.Time = SampleTime(C.Fakie[1], FakieTime, true);
+        Channel.Alpha = FakieWeight;
+    }
     Instance->SetFrame(Frame);
     USkeletalMeshComponent* M = Mesh.Get();
     M->TickAnimation(FMath::Max(Dt, 0.f), false);
@@ -582,7 +655,7 @@ const UAnimSequence* FRideAnimator::Choose(const FRideBodyPose& B, FRideAnimLaye
             UAnimSequence* Out = C.Grabs[uint8(B.LastGrab)].Out;
             if (Exit(Out, At(B.SinceGrab))) return Out;
         }
-        const bool bLow = B.TimeToLand >= 0 && B.TimeToLand <= LandingLead;
+        const float Leg = AirLeg(B);
         if (T && TT < Len(T->Air))
         {
             // Straight on from the pop clip (a cut, as the clips are cut to follow on); a flick later in the air
@@ -591,23 +664,33 @@ const UAnimSequence* FRideAnimator::Choose(const FRideBodyPose& B, FRideAnimLaye
             L.Add(T->Air, TT, 1.f);
             return T->Air;
         }
-        if (T && T->Follow && !bLow && TT - Len(T->Air) < Len(T->Follow))
+        if (T && T->Follow && T->Low)
+        {
+            // The trick's own air cycles, looping to the touch-down: the high one (the catch) blends into the low one
+            // (the legs reaching) as the hips-to-board distance goes from the one's to the other's.
+            const float Cycle = TT - Len(T->Air);
+            const float W = FMath::Clamp((Leg - T->High) / FMath::Max(.01f, T->Reach - T->High), 0.f, 1.f);
+            Blend = 0.f;
+            L.Add(T->Follow, SampleTime(T->Follow, Cycle, true), 1.f - W);
+            L.Add(T->Low, SampleTime(T->Low, Cycle, true), W);
+            return T->Follow;
+        }
+        if (T && T->Follow && TT - Len(T->Air) < Len(T->Follow))
         {
             Blend = 0.f;
             L.Add(T->Follow, TT - Len(T->Air), 1.f);
             return T->Follow;
         }
-        if (bLow && C.AirLow)
-        {
-            // Reaching for the landing.
-            Blend = .1f;
-            const float AT = At(B.AirTime);
-            L.Add(C.AirLow, SampleTime(C.AirLow, AT, true), .5f);
-            L.Add(C.AirExtend, SampleTime(C.AirExtend, AT, true), .5f);
-            return C.AirLow;
-        }
+        // The default tree: the tucked idle blends into the low one by the hips-to-board distance, the low one
+        // reaching toward the extended one as the fall goes on.
         Blend = .18f;
-        L.Add(C.AirIdle, SampleTime(C.AirIdle, At(B.AirTime), true), 1.f);
+        const float AT = At(B.AirTime);
+        const float Extend = C.AirExtend ? Curve(ArmTimes, ArmExtend, At(B.FallTime)) : 0.f;
+        const float Low = C.AirLow ? FMath::Clamp((Leg - IdleLeg) / (LowLeg + Extend * (ExtendLeg - LowLeg) - IdleLeg), 0.f, 1.f) : 0.f;
+        L.Add(C.AirIdle, SampleTime(C.AirIdle, AT, true), 1.f - Low);
+        L.Add(C.AirLow, SampleTime(C.AirLow, AT, true), Low * (1.f - Extend));
+        L.Add(C.AirExtend, SampleTime(C.AirExtend, AT, true), Low * Extend);
+        if (L.Num == 0) L.Add(C.AirIdle, SampleTime(C.AirIdle, AT, true), 1.f);
         return C.AirIdle;
     }
     case ERideMotion::Land:
@@ -763,6 +846,7 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
         const FQuat To = Track(Key, BoardRoot, KeyTime).GetRotation();
         bCutBoard = FMath::RadiansToDegrees(From.AngularDistance(To)) > TurnedBoard;
     }
+    UpdateFakie(&Body, Dt);
     Run(Layers, Inertialize, Dt, bCutBoard);
     LastKey = Key; LastKeyTime = KeyTime; LastMotion = Body.Motion; LastMotionTime = Body.MotionTime;
 
@@ -815,6 +899,7 @@ void FRideAnimator::EvaluateFree(float Dt, TArray<FTransform>& Bones)
     float Inertialize = bCutNext ? 0.f : PendingBlend;
     if (Inertialize <= 0 && !bCutNext && !bFirst && Key != LastKey && bOverride) Inertialize = OverrideBlend;
     PendingBlend = 0; bCutNext = false;
+    UpdateFakie(nullptr, Dt);
     Run(Layers, Inertialize, Dt);
     LastKey = Key; LastKeyTime = TimeOf(Layers, Key);
     Lock = FMath::Clamp(Layers.Lock, 0.f, 1.f); Lift = 0;

@@ -43,10 +43,34 @@ struct FRideAnimLayers
     }
 };
 
+/** A bone's share in a channel clip (the clip's channel weight for that bone; bones not listed have none). */
+struct FRideChannelBone
+{
+    const TCHAR* Bone;
+    float Weight;
+};
+
+/**
+ * A channel over the layers, as native's animation channels (AnimationChannels.cpp, ChannelBlendPoseSample): up to
+ * three clips phase-blended by Weight, each with its per-bone weights, replace the layers' pose bone by bone in local
+ * space by Alpha times the blended per-bone weight. It plays before the stance mirror, so it mirrors with the body.
+ */
+struct FRideAnimChannel
+{
+    static constexpr int32 Max = 3;
+    UAnimSequence* Clip[Max] = {};
+    TConstArrayView<FRideChannelBone> Bones[Max];
+    float Weight[Max] = {};
+    float Time = 0;
+    float Alpha = 0;
+};
+
 /** What the rider's graph plays on its next update: the layers (with the stance mirror) and a cross-fade request. */
 struct FRideAnimFrame
 {
     FRideAnimLayers Layers;
+    /** Over the layers: native's fakie channel (the head and chest toward the travel). */
+    FRideAnimChannel Channel;
     /** Above zero: inertialize from the pose before this frame over this many seconds. */
     float Inertialize = 0;
     /** With Inertialize: the board (SKATEBOARD_ROOT and the bones under it) takes the new clip at once while the body
@@ -56,9 +80,9 @@ struct FRideAnimFrame
 
 /**
  * The Ride rider's animation graph, built in C++ like the game's own anim instances: four explicit-time sequence
- * evaluators blended by weight (FAnimNode_MultiWayBlend), the stance mirror (FAnimNode_Mirror with the rig's mirror
- * table: a regular rider plays the clips mirrored) and inertialization for the cross-fades between clips. It runs
- * on a hidden mesh of the native rig that FRideAnimator ticks after each session step; the session's state machine
+ * evaluators blended by weight (FAnimNode_MultiWayBlend), a channel over them (FRideAnimChannel), the stance mirror
+ * (FAnimNode_Mirror with the rig's mirror table: a regular rider plays the clips mirrored) and inertialization for the
+ * cross-fades between clips. It runs on a hidden mesh of the native rig that FRideAnimator ticks after each session step; the session's state machine
  * chooses the clips and their times, and the curves the clips carry (PUSH_CONTACT and the rest) are read back from
  * the instance after evaluation.
  */

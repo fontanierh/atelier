@@ -85,6 +85,9 @@ public:
     float GetMainTime() const;
     /** Root-space lift of the whole pose that keeps a tilted board's wheels and tips above the ground (cm). */
     float GetLift() const { return Lift; }
+    /** The fakie channel's weight and the torso value it blends its clips by. */
+    float GetFakieWeight() const { return FakieWeight; }
+    float GetTorso() const { return Torso; }
     USkeletalMeshComponent* GetMesh() const { return Mesh.Get(); }
 
 private:
@@ -109,7 +112,12 @@ private:
     float WheelRadius = 3.1f;
 
     // The clips by role.
-    struct FTrickClips { UAnimSequence* Ground = nullptr; UAnimSequence* Air = nullptr; UAnimSequence* Follow = nullptr; float Catch = -1; };
+    struct FTrickClips
+    {
+        UAnimSequence* Ground = nullptr; UAnimSequence* Air = nullptr; UAnimSequence* Follow = nullptr; float Catch = -1;
+        // The trick's own low air cycle (Follow being the high one), and the two cycles' hips-to-board distances.
+        UAnimSequence* Low = nullptr; float High = 0, Reach = 0;
+    };
     struct FGrabClips { UAnimSequence* Into = nullptr; UAnimSequence* Cycle = nullptr; UAnimSequence* Out = nullptr; };
     struct FClips
     {
@@ -126,6 +134,7 @@ private:
         FTrickClips Tricks[17];
         FGrabClips Grabs[6];
         UAnimSequence* Grinds[6][2] = {};                   // kind, frontside/backside
+        UAnimSequence* Fakie[3] = {};                       // the fakie channel by torso: head, head and chest, manual
     } C;
 
     // Per-frame state.
@@ -140,6 +149,9 @@ private:
     bool bFirst = true;
     float Lock = 0, Lift = 0;
     float TruckRoll[2] = {0, 0};            // each truck's roll against the deck (degrees, about the deck's length)
+    // The fakie channel: its weight, the torso value its clips blend by, its clock, and whether the rider rode fakie.
+    float FakieWeight = 0, Torso = .5f, FakieTime = 0;
+    bool bWasFakie = false;
     FRideAnimLayers Last;
     TArray<FTransform> Empty;
 
@@ -153,6 +165,8 @@ private:
     /** The session's choice: the layers and the clip whose change starts a cross-fade (over Blend; 0 cuts, as the
      *  chained clips of one move do). */
     const UAnimSequence* Choose(const FRideBodyPose& Body, FRideAnimLayers& Layers, float& Blend) const;
+    /** The fakie channel's weight, torso and clock (no body: off the board, the channel fades out). */
+    void UpdateFakie(const FRideBodyPose* Body, float Dt);
     /** Run the graph on these layers (cross-fading first when Inertialize > 0). */
     void Run(const FRideAnimLayers& Layers, float Inertialize, float Dt, bool bCutBoard = false);
     /** Roll each truck against the deck so that its axle lies level with the ground (the root's XY plane) while the

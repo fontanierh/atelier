@@ -56,8 +56,12 @@ namespace
     // The deck's pivot above the ground contact (SkateRuntime.cpp).
     constexpr float DeckPivot = 9.05f;
     // The mount clip's gait by the character's speed (cm/s): between the carry cycles' own speeds (stand 0, walk
-    // ~170, run ~540, sprint ~910).
-    constexpr float WalkMount = 80.f, RunMount = 350.f, SprintMount = 720.f;
+    // ~170, run ~540, sprint ~910), the sprint's from just under the character's own sprint (637), which it reaches.
+    constexpr float WalkMount = 80.f, RunMount = 350.f, SprintMount = 620.f;
+    // The ride starts on the floor under its deck: a sweep down the deck's normal from this far above finds it (cm).
+    constexpr float HandOffReach = 30.f;
+    // An air kick-out stands on a floor only when coming down onto it within this time (s).
+    constexpr float KickFloorTime = .1f;
     // Stepping off: the fast clip above FastDismount; the run-out above RunDismount or with the stick held; otherwise
     // the step off to a stand.
     constexpr float FastDismount = 600.f, RunDismount = 150.f;
@@ -476,12 +480,33 @@ bool USkateComponent::BeginStepOnClip()
     return true;
 }
 
-bool USkateComponent::GetOnBoard(const FVector& Ground, const FQuat& Rotation, const FVector& Velocity, float Blend)
+bool USkateComponent::GetOnBoard(const FVector& Where, const FQuat& Rotation, const FVector& Velocity, float Blend)
 {
     UCharacterMovementComponent* M = Movement();
     UCapsuleComponent* Capsule = Rider->GetCapsuleComponent();
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
     FRideTransition& T = Transit();
+    // On the floor under the deck, never inside it: a clip's board can come down a little into the floor (a caveman
+    // onto a pier's planks), and a ride started below the surface finds no ground under it and falls through. A
+    // wheel-sized sweep down the deck's normal to the start finds a floor above it; something close overhead (a bench,
+    // a ledge) is skipped by looking again from a step above.
+    FVector Ground = Where;
+    {
+        const FRideTuning& Tune = FRideTuning::Get();
+        const FVector Up = Rotation.GetUpVector();
+        const float R = Tune.WheelRadius;
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(RideHandOff), false, Rider);
+        for (const float Above : {HandOffReach, Tune.StepUp})
+        {
+            FHitResult Hit;
+            if (!GetWorld()->SweepSingleByChannel(Hit, Where + Up * (Above + R), Where + Up * R, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(R), Params)) break;
+            if (Hit.bStartPenetrating) continue;
+            if (FVector::DotProduct(Hit.ImpactNormal, Up) >= Tune.WallSlope) Ground = Hit.Location - Up * R;
+            break;
+        }
+        if (FVector::DistSquared(Ground, Where) > 1.f)
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride hand-off: the deck was %.1f cm inside the floor; the ride starts on it"), FVector::Dist(Ground, Where));
+    }
     StopMomentum(); StopDrive();
     // The on-foot body to return to, without the offset and turn a recent switch may still be easing away.
     SavedRadius = Capsule->GetUnscaledCapsuleRadius(); SavedHalf = Capsule->GetUnscaledCapsuleHalfHeight();
@@ -566,11 +591,12 @@ void USkateComponent::LeaveBoard()
     ++Serial;
 }
 
-bool USkateComponent::StandUpOffBoard(float Yaw)
+bool USkateComponent::StandUpOffBoard(float Yaw, bool bMayStand)
 {
     // Standing: the capsule grows about its centre, turns upright to Yaw and settles onto the floor under it when there
-    // is one close by; otherwise the character falls from where it is. The body keeps its world place while the capsule
-    // moves under it, then eases back onto it.
+    // is one close by (and bMayStand); otherwise the character falls from where it is, lifted out of a floor the grown
+    // capsule would reach into. The body keeps its world place while the capsule moves under it, then eases back onto
+    // it.
     FRideTransition& T = Transit();
     UCharacterMovementComponent* M = Movement();
     UCapsuleComponent* Capsule = Rider->GetCapsuleComponent();
@@ -592,7 +618,11 @@ bool USkateComponent::StandUpOffBoard(float Yaw)
             if (!GetWorld()->SweepSingleByChannel(Hit, Centre + FVector(0, 0, Up), Centre - FVector(0, 0, SettleDown), FQuat::Identity,
                 Capsule->GetCollisionObjectType(), Shape, Params, Response)) break;
             if (Hit.bStartPenetrating) continue;              // a ceiling close above: try again from the centre
-            if (M->IsWalkable(Hit)) { Stand = Hit.Location + FVector(0, 0, FloorGap); bFloor = true; }
+            if (M->IsWalkable(Hit))
+            {
+                if (bMayStand) { Stand = Hit.Location + FVector(0, 0, FloorGap); bFloor = true; }
+                else if (Hit.Location.Z + FloorGap > Stand.Z) Stand.Z = Hit.Location.Z + FloorGap;
+            }
             break;
         }
     }
@@ -1498,7 +1528,11 @@ bool USkateComponent::BeginAirDismountClip()
     SuspendRetailRuntime();
     RequestPoseBlend(Tune.ClipBlend);
     LeaveBoard();
-    const bool bFloor = StandUpOffBoard(Yaw);
+    // Rising, or with more than a moment of the fall ahead, the rider falls on with the board's velocity: a floor found
+    // then would drop the rise and end the clip at once.
+    M->Velocity = Carried;
+    const bool bComingDown = Carried.Z <= 0.f && AirTimeLeft() <= KickFloorTime;
+    const bool bFloor = StandUpOffBoard(Yaw, bComingDown);
     M->Velocity = bFloor ? Flat : Carried;
     StartClip(Clip, ERideFoot::Air, bGoofy == bBackward, Yaw, 0.f);
     T.BoardContact = BoardCrossing(Clip, true, .2f);

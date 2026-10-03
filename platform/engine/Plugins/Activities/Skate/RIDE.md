@@ -86,6 +86,17 @@ into the graph's inputs, runs the graph and places the pose on the board.
 - **Stance.** The clips are authored goofy. A regular rider plays them mirrored (`bMirror = !bGoofy`), and a stance
   change inertializes over 0.2 s. `MDT_SkateRider` mirrors across Unreal's Y axis and lists every bone the native rig
   mirrors, the centre bones onto themselves: Unreal leaves a bone without a row unmirrored.
+- **Fakie.** Riding fakie the head and chest turn toward the travel, as native's fakie channel does
+  (`FAKIE_HEAD_CHANNEL_CYC`, `FAKIE_CHANNEL_CYC`, `FAKIE_MANUAL_CHANNEL_CYC` layered over the main clips on the neck,
+  head and upper spine). The channel blends in and out over 0.3 s; its three clips blend by a torso value: 1 in a
+  manual, 0 in a powerslide (the head only), 0.5 otherwise, moving at 0.6 a second (set at once when fakie starts).
+  Native's angles from the travel (head, chest; offline through its channel blend): forward 3°, 46°; fakie without the
+  channel 177°, 134°; fakie 72°, 126°; a fakie manual 22°, 100°.
+- **Air legs.** As native's air legs do (its `B_AIR_CYC` trees), the air pose blends by a hips-to-board distance, each
+  clip carrying its own: it stays at its floor (0.5, native metres) until the rider prepares to land, (1 − 0.6) / 2 s
+  before the touch-down onto level ground (less onto a steeper face, never onto a wall), then grows at 2 a second, so
+  the legs are still reaching for the board when it lands. The low pose reaches toward the extended one as the fall
+  goes on (0.16 to 0.45 over the first 0.3 s after the top of the flight).
 - **Placement.** The riding clips' `TRAJECTORY` is the deck's pivot at rest, 8.9 cm above the ground, which is the
   session's root. The animator puts the clips' root space on the session's deck (`Lock` 0), or moves the pose so that
   the clip's board lies exactly on the deck (`Lock` 1, for clips whose board is elsewhere, as in the transitions). On
@@ -111,7 +122,7 @@ into the graph's inputs, runs the graph and places the pose on the board.
 | Loading a flick | `R_ANTIC_OLLIE_N_0_INTO` or `R_ANTIC_NOLLIE_N_0_INTO`, held at its end |
 | Pop | the trick's ground clip (`<TRICK>_HIGH_G`), scaled to the pop delay |
 | Flip in the air | the trick's air clip (`<TRICK>_HIGH_A`) straight on from the pop, then its follow-through (`T_<TRICK>_*`) |
-| Air | `IA_IDLE_N_N_0_CYC`; within 0.217 s of the landing, `IA_IDLE_LO_N_0_CYC` with `IA_EXTEND_LO_N_0_CYC` |
+| Air | `IA_IDLE_N_N_0_CYC` blended toward `IA_IDLE_LO_N_0_CYC` and `IA_EXTEND_LO_N_0_CYC` by the legs' reach (below); after a flip trick with its own air cycles, `T_<TRICK>_H_CYC` toward `T_<TRICK>_L_CYC` the same way |
 | Grab | once the board is caught: `GR_*_INTO`, the hold (`GR_GRAB_N_FS_0_CYC`, `GR_MELON_N_BS_0_CYC`, `GR_DSMNT_CHRIST_BS_0_CYC`, `1FT_AIR_GRAB_N_BSL_0_CYC`, `GR_TKNEE_N_FS_0_CYC`), `GR_*_OUT` when let go |
 | Landing | `L_HCOM_LIMP_3` blended toward `L_HCOM_HIMP_3` by the impact (250 to 750 cm/s), `L_LCOM_3` after a grab, `L_SKETCH_FS_HCOM_LIMP` by how sketchy, over 1 s |
 | Grind | `G_5050_*`, `G_50_*`, `G_NGRIND_*`, `G_CROOKS_*`, `G_BSLIDE_*`, `G_LIPSLIDE_*`, frontside or backside, cycling |
@@ -138,7 +149,10 @@ into the graph's inputs, runs the graph and places the pose on the board.
   clip with the most weight), `ct=` (its time, s), `lock=`, `lift=` (cm), `step=` (the fastest body bone in the
   root's space, cm/s), `stepbone=` (that bone), `dt=` (the frame time it is measured over, ms),
   `feet=` (the toes' heights over the deck, cm), `feetoff=` (feet outside the deck's 42 × 14 cm outline, or more than
-  16 cm above or 4 cm below it), `nan=` and `anim=` (the animator's time this frame, ms). The game's QA reads it.
+  16 cm above or 4 cm below it), `nan=` and `anim=` (the animator's time this frame, ms), `hipboard=` (the hips over
+  the board, cm), `headyaw=` and `chestyaw=` (their facing from the travel, degrees), `fakiech=` and `torso=` (the fakie
+  channel's weight and torso value) and `feetalong=` (each toe along the travel from the deck's pivot, cm). The game's
+  QA reads it.
 - **Cost.** Riding two large skatepark levels on an M-series Mac with no other heavy job running (load average about
   4), with `skate.RidePhysical` 0 then 1. The frame stays at 60 fps: p50 16.66 to 16.67 ms both ways, p99 17.07 to
   17.29 ms then 17.08 to 17.30 ms. The animator (graph update, evaluation and placement) takes 0.058 to 0.060 ms then
@@ -448,13 +462,16 @@ turning wait for it.
 | `recover` | `W_RECOVERY_ON{BACK*,FRONT,LEFT,RIGHT*}_N_0_N` (a get-up on foot where the body lies) | `world` (lying) |
 
 - **Mount.** The game's skate button, on the ground. The gait is chosen by speed (under 80 cm/s standing, then walk
-  under 350 and run under 720, sprint above). The variant is the quarter of the stride the character is at: the
-  carry's phase, or the phase read from the feet (`L - R` along the facing goes as `-sin 2πφ`, φ 0 with the left foot
-  down; a mirrored clip is half a cycle on). A faster run plays the clip up to 1.3 times faster. The clip's travel is
-  scaled to start and end at the character's speed. The board is the one in hand; without one, a board dissolves into
-  the hand over the clip's first frames, and a board lying elsewhere goes. At the clip's end the ride starts on the
-  clip's deck, at the clip's speed: the ride's own clips take over with a cut on the pose mesh, hidden by the
-  character's blend (`ClipBlend`).
+  under 350 and run under 620, sprint above: just under the character's own sprint, 637 cm/s, which it reaches). The
+  variant is the quarter of the stride the character is at: the carry's phase, or the phase read from the feet (`L - R`
+  along the facing goes as `-sin 2πφ`, φ 0 with the left foot down; a mirrored clip is half a cycle on). A faster run
+  plays the clip up to 1.3 times faster. The clip's travel is scaled to start and end at the character's speed. The
+  board is the one in hand; without one, a board dissolves into the hand over the clip's first frames, and a board lying
+  elsewhere goes. At the clip's end the ride starts on the clip's deck, at the clip's speed: the ride's own clips take
+  over with a cut on the pose mesh, hidden by the character's blend (`ClipBlend`). Every hand-off to the ride starts it
+  on the floor under the deck, never inside it: a wheel-sized sweep down the deck's normal from 30 cm above (or, under
+  something close overhead, from a step above) lifts a deck the clip brought into the floor onto it (a ride started
+  inside a pier's planks found no ground and fell through them).
 - **Dismount.** The skate button, on the ground. The clip is chosen like this:
   - `FAST` above 600 cm/s;
   - `RUN_FWD` above 150 cm/s or with the stick held;
@@ -482,7 +499,9 @@ turning wait for it.
   at least, so a very short frame does not throw it), at least 250 cm/s away from the rider, and flies on by itself: a
   small sphere moved by a `UProjectileMovementComponent` (it bounces off what it hits and slides to a stop on the
   ground), the deck over it turning with the spin. It settles flat over 0.2 s, wheels down or, when it came down closer
-  to that, upside down. The rider lands on foot without it.
+  to that, upside down. The rider lands on foot without it. Rising, or with more than 0.1 s of the fall ahead, the
+  rider falls on with the board's velocity rather than standing on a floor below (that dropped the rise and ended the
+  clip at once).
 - **Jump.** A jump while carrying plays the jump with the board from the stride's quarter (from a stand under
   150 cm/s), timed to the fall (0.6 to 1.4 times). A step off a ledge keeps the character's own pose, the board on
   the hand bone nearest to it.

@@ -32,6 +32,8 @@ struct FRideBodyPose
     // Air.
     float AirTime = 0;
     float TimeToLand = -1;              // to the predicted touch-down, -1 when unknown
+    float LandUp = 1;                   // the predicted touch-down's ground normal, its up component
+    float FallTime = 0;                 // since the top of the flight (0 while rising)
     ERideGrab Grab = ERideGrab::None;
     float GrabTime = 0, GrabWeight = 0;
     ERideGrab LastGrab = ERideGrab::None;

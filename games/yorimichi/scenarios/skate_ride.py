@@ -286,6 +286,10 @@ live.behave('grab', grab)
         megadrop(record)
     if wanted('parapet'):
         parapet_corner(record)
+    if any(wanted(f'preland_{key}') for key in PRELAND):
+        preland_checks(record)
+    if any(wanted(name) for name in FAKIE_ROWS):
+        fakie_checks(record, wanted)
     if any(wanted(name) for name in PHYSICAL):
         physical_checks(record, wanted)
     qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
@@ -650,6 +654,141 @@ MEGADROP_FLOOR = 7600.   # cm: the board (z=) is on the floor at the bottom of t
 PARAPET = ((-71.13, 1376.69, 118.91), (.4655, .885))
 PHYSICAL = ('physical_riding', 'physical_landing', 'physical_bail', 'physical_bail_fast', 'physical_bail_quarter',
             'physical_cost')
+
+
+# Pre-landing (RIDE.md, Air): the hips over the board (native rig, HIPS over SKATEBOARD_ROOT, cm) before the
+# touch-down against the reference's (feet_to_board, every 4 ticks): within PRELAND_CM at each sample from PRELAND_FROM
+# ticks before it to 2 ticks before it (the touch-down's own tick shows the landing clip).
+PRELAND = {'ollie': 'ollie/6', 'kickflip': 'flip/kickflip', '360_shove': 'flip/360-pop-shuvit'}
+PRELAND_FROM, PRELAND_CM = 14, 6.
+
+
+def at_time(rows, t, key):
+    """`key` at time t (s, the rows' own clock from their dt) by linear interpolation, or None outside the rows."""
+    times, clock = [], 0.
+    for r in rows:
+        times.append(clock); clock += float(r.get('dt', 16.7)) / 1000
+    for i in range(1, len(rows)):
+        if times[i - 1] <= t <= times[i]:
+            a, b = float(rows[i - 1][key]), float(rows[i][key])
+            f = (t - times[i - 1]) / max(1e-6, times[i] - times[i - 1])
+            return a + (b - a) * f
+    return None
+
+
+def preland_checks(record):
+    reference = json.loads(REFERENCE.read_text())['mechanics']
+    for key, name in PRELAND.items():
+        numbers = reference[name]['numbers']
+        land = numbers['landing_tick']
+        want = [(tick - land, hips * 100) for tick, _, _, hips, _ in numbers['feet_to_board'] if -PRELAND_FROM <= tick - land <= -2]
+        rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,450,[(.4,('flick','{key}'))],duration=2.3", 2.3)
+        if 'hipboard' not in rows[0]:
+            record(f'preland_{key}', rows, False, 'no hipboard on the state line (old binary)')
+            continue
+        a = next((i for i in range(1, len(rows)) if rows[i]['mode'] == '2' and rows[i - 1]['mode'] == '1'), None)
+        b = next((i for i in range(a, len(rows)) if rows[i]['mode'] != '2'), None) if a is not None else None
+        if b is None:
+            record(f'preland_{key}', rows, False, 'no air and landing')
+            continue
+        landed = sum(float(r.get('dt', 16.7)) / 1000 for r in rows[:b])
+        got = [(tick, cm, at_time(rows, landed + tick / 60, 'hipboard')) for tick, cm in want]
+        errors = [abs(g - cm) for _, cm, g in got if g is not None]
+        ok = len(errors) == len(want) and max(errors) <= PRELAND_CM and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        record(f'preland_{key}', rows, ok, 'hips over board (ticks before touch-down: Ride/native cm) '
+               + ', '.join(f'{-tick}: {g:.0f}/{cm:.0f}' if g is not None else f'{-tick}: -/{cm:.0f}' for tick, cm, g in got)
+               + f'; air {sum(float(r.get("dt", 16.7)) for r in rows[a:b]) / 1000:.2f} s')
+
+
+# The fakie channel (RIDE.md, Fakie): rolling fakie the head and chest turn toward the travel. Native's angles from the
+# travel (degrees, head and chest; the rig's facing from its reference pose, as RideSession measures them), from the
+# native clips through native's channel blend (offline, the riding idle, the manual and a forward push as the base):
+# riding forward head 3, chest 46; fakie with no channel 177, 134; fakie 72, 126; a fakie manual (torso 1) 22, 100 on
+# M_IDLE (13, 77 on the nose manual); a forward push's chest 25.
+FAKIE_ROLL = (72., 126.)
+FAKIE_MANUAL = {'M_IDLE_N_0_CYC': (22., 100.), 'M_NOSEIDLE_N_0_CYC': (13., 77.)}
+FAKIE_DEG = 6.
+# The fakie rows (--only takes any of these or a prefix of them, 'fakie' for all).
+FAKIE_ROWS = ('fakie_roll', 'fakie_push', 'fakie_manual', 'fakie_powerslide', 'fakie_blend')
+
+
+def settled(rows, key, after=.6):
+    """`key` over the rows from `after` seconds on (their median)."""
+    clock, values = 0., []
+    for r in rows:
+        if clock >= after and key in r:
+            values.append(float(r[key]))
+        clock += float(r.get('dt', 16.7)) / 1000
+    values.sort()
+    return values[len(values) // 2] if values else None
+
+
+def fakie_run(goofy, speed, events, duration, x=FLAT[0]):
+    """Rolling fakie east along the flat run: the board placed facing west, launched east."""
+    qa.py(f'live.L.skate_goofy({goofy})')
+    return qa.run_scenario(f"{x},{FLAT[1]},180,{speed},{events},duration={duration},velocity_heading=0", duration)
+
+
+def fakie_checks(record, wanted):
+    for goofy in (False, True):
+        stance = 'goofy' if goofy else 'regular'
+        if wanted('fakie_roll'):
+            rows = fakie_run(goofy, 500, '[]', 2.5)
+            head, chest, weight = settled(rows, 'headyaw'), settled(rows, 'chestyaw'), settled(rows, 'fakiech')
+            fakie = all(r.get('fakie') == '1' for r in rows[5:])
+            ok = fakie and weight is not None and weight > .99 and abs(head - FAKIE_ROLL[0]) <= FAKIE_DEG and abs(chest - FAKIE_ROLL[1]) <= FAKIE_DEG
+            record(f'fakie_roll_{stance}', rows, ok, f'fakie={fakie} channel {weight}; head {head} chest {chest} degrees from the travel '
+                   f'(native {FAKIE_ROLL[0]:.0f}, {FAKIE_ROLL[1]:.0f})')
+        if wanted('fakie_push'):
+            # Native re-poses to switch before a fakie push (PushFromFakie): the pushing foot then moves against the
+            # travel and the chest faces it. The foot on the ground is the one under the deck (feet= its height).
+            rows = fakie_run(goofy, 300, "[(.5,{'push':True}),(2,{})]", 2.5)
+            foot, along = [], []
+            for r in rows:
+                if r.get('push') != '1' or 'feetalong' not in r:
+                    continue
+                heights = [float(v) for v in r['feet'].split(',')]
+                low = min(range(2), key=lambda i: heights[i])
+                if heights[low] < -3:
+                    foot.append(low); along.append(float(r['feetalong'].split(',')[low]))
+            steps = [b - a for a, b in zip(along, along[1:])]
+            back = sum(1 for s in steps if s < 0) / max(1, len(steps))
+            chest = settled([r for r in rows if r.get('push') == '1'], 'chestyaw', 0.)
+            ok = len(steps) > 5 and back > .7 and chest is not None and chest < 90
+            record(f'fakie_push_{stance}', rows, ok, f'ground foot moving against the travel on {back:.0%} of {len(steps)} frames; '
+                   f'chest {chest} degrees from the travel (native: switch push, about 25)')
+        if wanted('fakie_manual'):
+            rows = fakie_run(goofy, 480, "[(.3,{'right':(0,-.5)}),(2,{})]", 2.3)
+            held = [r for r in rows if r.get('manual') == '1']
+            torso = max((float(r['torso']) for r in held), default=0)
+            head, chest = (settled(held, 'headyaw', 1.), settled(held, 'chestyaw', 1.)) if held else (None, None)
+            # Whichever manual clip plays (the tail's or the nose's), native's angles on it.
+            match = [clip for clip, (h, c) in FAKIE_MANUAL.items()
+                     if head is not None and abs(head - h) <= FAKIE_DEG and abs(chest - c) <= FAKIE_DEG]
+            ok = bool(held) and torso > .95 and bool(match)
+            record(f'fakie_manual_{stance}', rows, ok, f'{len(held)} manual frames; torso up to {torso:.2f}; head {head} chest {chest} '
+                   f'(native {FAKIE_MANUAL}; matches {match or "none"})')
+        if wanted('fakie_powerslide'):
+            rows = fakie_run(goofy, 700, "[(.3,{'slide':True,'left':(.6,0)}),(1.5,{})]", 2)
+            slid = [r for r in rows if r.get('slide') == '1']
+            torso = min((float(r['torso']) for r in slid), default=1)
+            ok = bool(slid) and all(r.get('fakie') == '1' for r in slid) and torso < .05 and min(float(r['fakiech']) for r in slid) > .99
+            record(f'fakie_powerslide_{stance}', rows, ok, f'{len(slid)} sliding frames, torso down to {torso:.2f} (native: the head-only clip)')
+    qa.py('live.L.skate_goofy(False)')
+    if wanted('fakie_blend'):
+        # Back and forth in the bowl, coasting: each wall turns the ride fakie and back; the channel blends in and out
+        # over .3 s and the head turns without a jump.
+        rows = qa.run_scenario(f"{BOWL[0]},{BOWL[1]},0,600,[],duration=7", 7)
+        flips = sum(1 for a, b in zip(rows, rows[1:]) if a.get('fakie') != b.get('fakie'))
+        rate = max((abs(float(b['fakiech']) - float(a['fakiech'])) / max(1e-3, float(b.get('dt', 16.7)) / 1000)
+                    for a, b in zip(rows, rows[1:])), default=0)
+        # The head's angle from the board's nose (headyaw is from the travel, which turns round with fakie).
+        nose = lambda r: float(r['headyaw']) if r.get('fakie') != '1' else 180 - float(r['headyaw'])
+        jump = max((abs(nose(b) - nose(a)) for a, b in zip(rows, rows[1:])), default=0)
+        full = max(float(r['fakiech']) for r in rows)
+        ok = flips >= 2 and rate <= 1 / .3 * 1.1 and full > .99 and jump < 20 and not qa.count(rows, 'bails')
+        record('fakie_blend', rows, ok, f'{flips} fakie changes; channel up to {full:.2f}, fastest {rate:.1f}/s (native 3.3/s); '
+               f'largest head step {jump:.1f} degrees a frame')
 
 
 def physical(on):

@@ -23,10 +23,85 @@ namespace
     const FName BodyRoot(TEXT("HIPS"));
 }
 
+/**
+ * Native's channel blend (AnimationPlayback.cpp, ChannelBlendPoseSample): each bone of the source pose moves toward the
+ * channel's pose, in local space, by the channel's Alpha times the bone's weight in the channel clips (phase-blended
+ * as the clips are, clamped to 1). Curves and attributes stay the source's.
+ */
+struct FRideChannelNode final : public FAnimNode_Base
+{
+    FPoseLink Source, Channel;
+    FRideAnimChannel Settings;
+
+    virtual void Initialize_AnyThread(const FAnimationInitializeContext& Context) override
+    {
+        FAnimNode_Base::Initialize_AnyThread(Context);
+        Source.Initialize(Context); Channel.Initialize(Context);
+    }
+    virtual void CacheBones_AnyThread(const FAnimationCacheBonesContext& Context) override
+    {
+        Source.CacheBones(Context); Channel.CacheBones(Context);
+        Serial = 0;
+    }
+    virtual void Update_AnyThread(const FAnimationUpdateContext& Context) override
+    {
+        Source.Update(Context);
+        if (FAnimWeight::IsRelevant(Settings.Alpha)) Channel.Update(Context.FractionalWeight(Settings.Alpha));
+    }
+    virtual void Evaluate_AnyThread(FPoseContext& Output) override
+    {
+        Source.Evaluate(Output);
+        if (!FAnimWeight::IsRelevant(Settings.Alpha)) return;
+        FPoseContext Other(Output);
+        Channel.Evaluate(Other);
+        CacheWeights(Output.Pose.GetBoneContainer());
+        for (const FCompactPoseBoneIndex Bone : Output.Pose.ForEachBoneIndex())
+        {
+            float W = 0;
+            for (int32 C = 0; C < FRideAnimChannel::Max; ++C) W += Settings.Weight[C] * Weights[C][Bone.GetInt()];
+            W = FMath::Clamp(W * Settings.Alpha, 0.f, 1.f);
+            if (FAnimWeight::IsRelevant(W)) Output.Pose[Bone].BlendWith(Other.Pose[Bone], W);
+        }
+    }
+
+private:
+    // Each clip's per-bone weights by compact pose index, for the bone container and the bone lists they were made
+    // for.
+    TArray<float> Weights[FRideAnimChannel::Max];
+    const FRideChannelBone* Lists[FRideAnimChannel::Max] = {};
+    uint16 Serial = 0;
+
+    void CacheWeights(const FBoneContainer& Container)
+    {
+        bool bSame = Serial != 0 && Serial == Container.GetSerialNumber();
+        for (int32 C = 0; C < FRideAnimChannel::Max; ++C) bSame = bSame && Lists[C] == Settings.Bones[C].GetData();
+        if (bSame) return;
+        const FReferenceSkeleton& Skeleton = Container.GetReferenceSkeleton();
+        const int32 Num = Container.GetCompactPoseNumBones();
+        for (int32 C = 0; C < FRideAnimChannel::Max; ++C)
+        {
+            Weights[C].Init(0.f, Num);
+            for (const FRideChannelBone& Entry : Settings.Bones[C])
+            {
+                const int32 Mesh = Skeleton.FindBoneIndex(FName(Entry.Bone));
+                const FCompactPoseBoneIndex Bone = Mesh == INDEX_NONE ? FCompactPoseBoneIndex(INDEX_NONE)
+                    : Container.MakeCompactPoseIndex(FMeshPoseBoneIndex(Mesh));
+                if (Bone.IsValid()) Weights[C][Bone.GetInt()] = Entry.Weight;
+            }
+            Lists[C] = Settings.Bones[C].GetData();
+        }
+        Serial = Container.GetSerialNumber();
+    }
+};
+
 struct FRideAnimProxy final : public FAnimInstanceProxy
 {
     FAnimNode_SequenceEvaluator_Standalone Clips[FRideAnimLayers::Max];
     FAnimNode_MultiWayBlend Blend;
+    // The channel: its clips phase-blended, then laid over the layers.
+    FAnimNode_SequenceEvaluator_Standalone ChannelClips[FRideAnimChannel::Max];
+    FAnimNode_MultiWayBlend ChannelBlend;
+    FRideChannelNode Channel;
     FAnimNode_Mirror_Standalone Mirror;
     FAnimNode_RideInertialization Inertia;
     FRideAnimFrame Frame;
@@ -43,7 +118,17 @@ struct FRideAnimProxy final : public FAnimInstanceProxy
             Blend.Poses[I].SetLinkNode(&Clips[I]);
         }
         Blend.bNormalizeAlpha = true;
-        Mirror.SetSourceLinkNode(&Blend);
+        for (int32 I = 0; I < FRideAnimChannel::Max; ++I)
+        {
+            ChannelClips[I].SetTeleportToExplicitTime(true);
+            ChannelClips[I].SetShouldLoop(false);
+            ChannelBlend.AddPose();
+            ChannelBlend.Poses[I].SetLinkNode(&ChannelClips[I]);
+        }
+        ChannelBlend.bNormalizeAlpha = true;
+        Channel.Source.SetLinkNode(&Blend);
+        Channel.Channel.SetLinkNode(&ChannelBlend);
+        Mirror.SetSourceLinkNode(&Channel);
         Mirror.SetBlendTimeOnMirrorStateChange(MirrorBlend);
         Inertia.Source.SetLinkNode(&Mirror);
         Inertia.MaxSpeed = CrossFadeSpeed; Inertia.SpeedRoot = BodyRoot;
@@ -53,7 +138,9 @@ struct FRideAnimProxy final : public FAnimInstanceProxy
     {
         Nodes.Reset();
         for (FAnimNode_SequenceEvaluator_Standalone& Clip : Clips) Nodes.Add(&Clip);
-        Nodes.Append({&Blend, &Mirror, &Inertia});
+        Nodes.Add(&Blend);
+        for (FAnimNode_SequenceEvaluator_Standalone& Clip : ChannelClips) Nodes.Add(&Clip);
+        Nodes.Append({&ChannelBlend, &Channel, &Mirror, &Inertia});
     }
     virtual void PreUpdate(UAnimInstance* Instance, float Dt) override
     {
@@ -73,6 +160,18 @@ struct FRideAnimProxy final : public FAnimInstanceProxy
             Clips[I].SetExplicitTime(bUsed ? L.Layer[I].Time : 0.f);
             Blend.DesiredAlphas[I] = bUsed ? L.Layer[I].Weight : 0.f;
         }
+        const FRideAnimChannel& C = Frame.Channel;
+        float Shares = 0;
+        for (int32 I = 0; I < FRideAnimChannel::Max; ++I)
+        {
+            const bool bUsed = C.Clip[I] && C.Weight[I] > 0;
+            ChannelClips[I].SetSequence(bUsed ? C.Clip[I] : nullptr);
+            ChannelClips[I].SetExplicitTime(bUsed ? C.Time : 0.f);
+            ChannelBlend.DesiredAlphas[I] = bUsed ? C.Weight[I] : 0.f;
+            Shares += ChannelBlend.DesiredAlphas[I];
+        }
+        Channel.Settings = C;
+        if (Shares <= 0) Channel.Settings.Alpha = 0;
         // Without a table the clips play as authored (goofy).
         Mirror.SetMirrorDataTable(Table);
         Mirror.SetMirror(Table && L.bMirror);

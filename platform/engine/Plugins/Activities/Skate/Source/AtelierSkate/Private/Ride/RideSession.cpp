@@ -1238,6 +1238,7 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     Body.TrickTime = TrickTime; Body.bTrickFakie = bTrickFakie;
     Body.AirTime = AirTime;
     Body.TimeToLand = Mode == ERideState::Air && LandTime >= 0 ? FMath::Max(0.f, LandTime - (AirTime - PredictStart)) : -1.f;
+    Body.LandUp = float(LandNormal.Z); Body.FallTime = Mode == ERideState::Air ? FMath::Max(0.f, float(-V.Z) / FMath::Max(1.f, Gravity())) : 0.f;
     Body.Grab = Grab; Body.GrabTime = GrabTime; Body.GrabWeight = GrabWeight; Body.LastGrab = LastGrab; Body.SinceGrab = SinceGrab;
     Body.Speed = V.Size();
     const float Turning = FMath::Clamp(TurnRate / FMath::Max(1.f, Tune.MaxYawRate + Tune.YawRatePerSpeed * float(V.Size())), -1.f, 1.f);
@@ -1309,6 +1310,17 @@ void FRideSession::MeasurePose(float Dt)
         ToeBone[0] = Names.IndexOfByKey(FName(TEXT("LEFTTOEBASE")));
         ToeBone[1] = Names.IndexOfByKey(FName(TEXT("RIGHTTOEBASE")));
         LastBones.Reset();
+        HipsBone = Names.IndexOfByKey(FName(TEXT("HIPS")));
+        HeadBone = Names.IndexOfByKey(FName(TEXT("HEAD")));
+        ChestBone = Names.IndexOfByKey(FName(TEXT("SPINE3")));
+        const int32 Arm[2] = {Names.IndexOfByKey(FName(TEXT("LEFTARM"))), Names.IndexOfByKey(FName(TEXT("RIGHTARM")))};
+        if (Reference.IsValidIndex(Arm[0]) && Reference.IsValidIndex(Arm[1]) && Reference.IsValidIndex(HeadBone) && Reference.IsValidIndex(ChestBone))
+        {
+            // Facing away from the back: up crossed with the line from the right shoulder to the left one.
+            const FVector Facing = FVector::CrossProduct(FVector::UpVector, Reference[Arm[0]].GetLocation() - Reference[Arm[1]].GetLocation()).GetSafeNormal();
+            HeadAxis = Reference[HeadBone].GetRotation().UnrotateVector(Facing);
+            ChestAxis = Reference[ChestBone].GetRotation().UnrotateVector(Facing);
+        }
     }
     PoseNaN = 0;
     for (const FTransform& Bone : Bones) if (Bone.ContainsNaN()) ++PoseNaN;
@@ -1329,18 +1341,27 @@ void FRideSession::MeasurePose(float Dt)
         {
             if (!Bones.IsValidIndex(ToeBone[F])) continue;
             const FVector Local = Bones[DeckBone].InverseTransformPosition(Bones[ToeBone[F]].GetLocation());
-            FootHeight[F] = float(Local.Z);
+            FootHeight[F] = float(Local.Z); FootAlong[F] = float(Local.X) * Travel;
             // Off the deck: beyond its outline or clear of its grip.
             if (FMath::Abs(Local.X) > 42.f || FMath::Abs(Local.Y) > 14.f || Local.Z > 16.f || Local.Z < -4.f) ++FeetOff;
         }
+    HipBoard = Bones.IsValidIndex(HipsBone) && Bones.IsValidIndex(DeckBone) ? float(Bones[HipsBone].GetLocation().Z - Bones[DeckBone].GetLocation().Z) : 0.f;
+    auto FromTravel = [this](int32 Bone, const FVector& Axis)
+    {
+        if (!Bones.IsValidIndex(Bone)) return 0.f;
+        const FVector Facing = Bones[Bone].GetRotation().RotateVector(Axis);
+        return FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(float(Facing.Y)), float(Facing.X) * Travel));
+    };
+    HeadYaw = FromTravel(HeadBone, HeadAxis); ChestYaw = FromTravel(ChestBone, ChestAxis);
 }
 
 FString FRideSession::DescribePose() const
 {
-    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f"),
+    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f"),
         *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseStep,
         Names.IsValidIndex(PoseStepBone) ? *Names[PoseStepBone].ToString() : TEXT("none"), PoseDt * 1000.f,
-        FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost);
+        FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost, HipBoard, HeadYaw, ChestYaw, Animator.GetFakieWeight(), Animator.GetTorso(),
+        FootAlong[0], FootAlong[1]);
 }
 
 void FRideSession::StepOffBoard(float Dt, const FTransform& TrajectoryWorld)
