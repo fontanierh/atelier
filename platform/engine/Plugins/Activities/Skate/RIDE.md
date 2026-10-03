@@ -5,7 +5,8 @@ Ride is the Unreal-native skating backend (`skate.Backend Ride`, `USkateSettings
 
 ## Board
 
-The board is rigid and steps at 60 Hz (`RideSession.cpp`; the numbers are in `RideTuning.h`).
+The board is rigid and steps at 60 Hz (`RideSession.cpp`; the numbers are in `RideTuning.h`). Each frame shows it
+between its last two steps at the frame's own time, from the ride's first frame (the step clock starts a step full).
 
 - **Ground.** A tick moves in steps of at most `GroundStep` (15 cm). Each step probes the ground under both axles with
   a wheel-sized sphere, from `StepUp` (6 cm) above to `StickGap` plus a share of the step below, and the deck takes
@@ -30,6 +31,29 @@ The board is rigid and steps at 60 Hz (`RideSession.cpp`; the numbers are in `Ri
   step at a lock is at most its speed's plus 0.7 cm. At a line's end the grind carries on, at its speed, into a line
   whose end meets it within `GrindJoin` (10 cm) and turns less than `GrindCorner` (45 degrees). At a sharper corner,
   within a line or between two, the board flies off the way it was going.
+- **Lip airs.** As in the native runtime (`AirTrajectoryLaunch.cpp`, `AirTrajectoryScoring.cpp`), a take-off from a
+  face steeper than `VertSteepness` (50 degrees at `VertAssist` 1, 75 at 0), climbing at least `VertClimb` (0.66 of
+  its speed up, against the speed into the face), comes back into the face it left. The velocity over the coping is
+  lost; the climb is turned to `VertLean` (3 degrees) from vertical, into the ramp, at its own speed, and the speed
+  along the coping is kept. The reference's board leaves vert at 0.29 to 0.37 m/s into the ramp for 5.3 to 5.9 m/s
+  up (native gets there with a 1.15 degree lean and its landing aim). The flight then takes the velocity or one of
+  six around it (native's cone: 10 degrees across the heading, 40 along it, at 2 to 4 m/s), whichever lands back on
+  the steepest part of the same face, not within 0.25 s nor within 0.15 s of the apex, with the least change. It
+  falls under `VertGravity` (10 m/s², the reference's board on vert airs; flat airs keep `AirGravity`). With the
+  stick released, the board turns to the nearer of forward and fakie on the landing's line by touch-down (native's
+  rate: the angle left over the time left, times 1.2), so a straight air and a 360 land fakie and a 180 forward.
+  A flick early in a lip air pops straight up. Holding transfer carries the rider over the coping instead.
+- **Pumping.** Extending through a concave transition gains speed, v × exp(curvature × extension), up to
+  `PumpExtension` (26 cm) of travel between crouched and extended; the rider crouches on flats, crests and straight
+  faces. Holding push pumps on any face steeper than 37 degrees. Coasting there pumps by itself, `AutoPump` (0.7) as
+  much and less with speed (native's unintentional pump and its `PumpVsVel`: all of it to 7 m/s, 16% at 12.2, none
+  from 14.2), so a rider going back and forth in a bowl keeps up speed, toward native's 12.3 m/s.
+- **Powerslides.** Above `SlideMinSpeed` (1.2 m/s) the deck turns `SlideAngle` across the travel and scrubs speed.
+  The powerslide key holds one, turned to the stick's side. On a pad the left stick's rear diagonal does, as the native
+  runtime's slide intents read it (`InputIntentions.cpp`): pushing the stick out past 0.9 into the 52 degrees either
+  side of straight back starts a slide on that side, and it lasts while the stick stays out past 0.9, anywhere from
+  the other side's sideways line to 115 degrees round its own. Straight back, or a stick already held there, does not
+  start one.
 
 ## Rider
 
@@ -65,11 +89,17 @@ into the graph's inputs, runs the graph and places the pose on the board.
 - **Placement.** The riding clips' `TRAJECTORY` is the deck's pivot at rest, 8.9 cm above the ground, which is the
   session's root. The animator puts the clips' root space on the session's deck (`Lock` 0), or moves the pose so that
   the clip's board lies exactly on the deck (`Lock` 1, for clips whose board is elsewhere, as in the transitions). On
-  the ground, a board that the clip tilts (a pop's tail, a manual, a 5-0) keeps its lowest wheel or tip on the ground:
-  the pose rises by what would sink (`lift`), and the rise decays at 150 cm/s once the board is in the air.
-- **Board.** The clip's `SKATEBOARD_ROOT` is the board: flips, shove-its and the pop's tilt come from the clips, and
-  the session's deck adds only a powerslide's yaw. The trucks and wheels are placed from the deck with the truck's
-  lean and the wheels' spin. Without the rig in the build, the board rides alone with a procedural flip.
+  the ground the whole pose then moves along the ground's normal (`lift`, cm), so the feet stay on the deck: rolling
+  (the ground, a manual, a powerslide, a push, a brake, the load and a landing) until the lowest wheel touches the
+  ground, whatever height the clip gives the deck, unless a nose or tail would then sink; on a board the clip tilts
+  off its wheels (a pop's tail, a 5-0) only by what would sink. The move eases back to none at 150 cm/s in the air.
+- **Board.** The clip's `SKATEBOARD_ROOT` is the board: flips, shove-its, the pop's tilt and the carve's lean come
+  from the clips, and the session's deck adds only a powerslide's yaw. The trucks and wheels are placed from the deck
+  with the wheels' spin. On its wheels the deck rolls over the trucks as on a real board: each truck rolls against the
+  deck, about the deck's length, so that its axle lies level with the ground (up to 30 degrees; a deck rolled further
+  lifts the inside wheel), and both wheels of an axle touch the ground through a carve; off the ground the trucks
+  come back straight under the deck at 240 degrees/s. Without the rig in the build, the board rides alone with a
+  procedural flip.
 
 | Session motion | Clips |
 |---|---|

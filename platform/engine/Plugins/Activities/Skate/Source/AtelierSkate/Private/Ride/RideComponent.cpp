@@ -53,14 +53,19 @@ bool USkateComponent::StartRide()
     // The rider's bodies: kinematic on the animation until the mount blends them in (skate.RidePhysical) or a bail
     // lets them go. Without them a bail slides.
     if (!PhysicalRider) PhysicalRider = NewObject<URidePhysicalRider>(this, NAME_None, RF_Transient);
+    // The start's own cost, logged: it lands on one frame (the mount's last).
+    const double Started = FPlatformTime::Seconds();
     const bool bBody = PhysicalRider->Begin(Rider, RiderApi);
+    const double Bodied = FPlatformTime::Seconds();
     PhysicalRider->ClearBailOffer();
     Ride->SetRagdoll(bBody);
     Ride->Activate(RideWorld(Rider, RailSystem), Pos, Rot, Vel, bGoofy, RidePreferences());
     if (bBody && URidePhysicalRider::IsWanted()) PhysicalRider->BlendIn(GetDefault<URidePhysicalSettings>()->MountBlend);
-    UE_LOG(LogTemp, Display, TEXT("SKATE ride started at (%.0f, %.0f, %.0f) speed %.0f, %s, %s"), Pos.X, Pos.Y, Pos.Z, Vel.Size(),
+    const double Done = FPlatformTime::Seconds();
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride started at (%.0f, %.0f, %.0f) speed %.0f, %s, %s, in %.2f ms (body %.2f ms)"), Pos.X, Pos.Y, Pos.Z, Vel.Size(),
         Ride->HasRig() ? TEXT("rider clips") : TEXT("board only"),
-        !bBody ? TEXT("no ragdoll") : URidePhysicalRider::IsWanted() ? TEXT("physical rider") : TEXT("ragdoll for bails"));
+        !bBody ? TEXT("no ragdoll") : URidePhysicalRider::IsWanted() ? TEXT("physical rider") : TEXT("ragdoll for bails"),
+        (Done - Started) * 1000., (Bodied - Started) * 1000.);
     return true;
 }
 

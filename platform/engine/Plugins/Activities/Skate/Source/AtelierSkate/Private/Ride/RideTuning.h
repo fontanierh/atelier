@@ -52,10 +52,10 @@ struct FRideTuning
     float PivotRate = 90.f;           // degrees/s at rest (kick turns)
     float PivotSpeed = 120.f;         // below this speed steering blends into pivoting (cm/s)
     float SteerResponse = 7.f;        // 1/s
-    float LeanAngle = 17.f;           // deck roll at full turn (degrees)
 
     // Pumping: extending in a concave transition gains speed, v *= exp(curvature * extension).
     float PumpExtension = 26.f;       // cm of centre-of-mass travel between compressed and extended
+    float AutoPump = .7f;             // coasting through a steep transition pumps by itself, this much (native: 0.7)
     float CrouchRate = 5.f;           // 1/s
 
     // Pop: the deck's rise grows with how long the stick was held down before the flick (the load), from
@@ -76,8 +76,10 @@ struct FRideTuning
     float SpinResponse = 7.f;         // 1/s
     float SpinCarry = .55f;           // fraction of the ground turn rate carried into the air
     float LevelLead = .15f;           // s before the predicted landing by which the deck matches the ground
-    float VertSteepness = 50.f;       // lips steeper than this (degrees from level) send a straight air back in
-    float VertReturn = 20.f;          // cm/s back into the ramp when vert assist applies
+    float VertSteepness = 50.f;       // lips steeper than this (degrees from level, at VertAssist 1) send a straight air back in
+    float VertClimb = .66f;           // and only a take-off this steep: up over (up and into the face), as native
+    float VertLean = 3.f;             // degrees from vertical, into the ramp, that a lip air's climb is turned to
+    float VertGravity = 1000.f;       // cm/s^2 in a lip air (the reference's board: 9.3 to 10.8 m/s^2 on vert airs)
     float TransferPush = 160.f;       // cm/s over the coping when transferring
     float FlipTime = .34f;            // s for a flip's board rotation (360 flips and hardflips take a little longer)
 

@@ -2,15 +2,19 @@
 """In-game checks for the Ride skating backend (Skate plugin, Private/Ride, RIDE.md) on the skate pier park.
 
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_ride [--only name,name]
-Mounts with skate.Backend Ride, then checks pushing, steering, braking, the ollie's height, every Flick-It trick, a grab,
-a 360, a grind, a manual, a bail and its recovery, a vert air that comes back in, frame pacing (including mounting
-and switching character), Mega Park's roll-in from the upper deck (over the crest without leaving it, through the
-concave at the bottom without a bail) and a grind into the parapet's corner (it flies off the end, never stalling), and
-the physical rider (skate.RidePhysical, on by default): how closely it holds the animation riding and landing, bails on
-flat (at 6 and 11 m/s) and on a quarter that go limp at once, lie down within a second and travel as far as the
-reference's for their speed, and its frame cost in Mega Park. Over every frame recorded,
-the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck where the clip stands on
-it, carry no NaN and never pop between clips, in both stances, and the standing rider matches the reference's stand.
+Mounts with skate.Backend Ride, then checks a ride's first frame (it moves like every later one), pushing, steering,
+braking, the ollie's height, every Flick-It trick, a grab, a 360, a grind, a manual, a bail and its recovery, lip airs
+back into the transition (straight, 180 and 360 on the pier's quarter; straight and across on Mega Park's pool wall)
+and a coasting back-and-forth in the bowl (`--only vert`), every wheel on the ground through carves, a pump, a
+powerslide and a manual (`--only wheels`), frame pacing (including mounting and switching character), Mega Park's
+roll-in from the upper deck (over the crest without leaving it, through the concave at the bottom without a bail) and a
+grind into
+the parapet's corner (it flies off the end, never stalling), and the physical rider (skate.RidePhysical, on by
+default): how closely it holds the animation riding and landing, bails on flat (at 6 and 11 m/s) and on a quarter
+that go limp at once, lie down within a second and travel as far as the reference's for their speed, and its frame
+cost in Mega Park. Over every frame recorded, the rider's pose (the clips through Unreal's animation graph) must
+keep both feet on the deck where the clip stands on it, carry no NaN and never pop between clips, in both stances,
+and the standing rider matches the reference's stand.
 The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
 Writes build/yorimichi/skateqa/ride.json, and ride-pose.json: every frame of the pose checks and each pop with the
 frames around it.
@@ -30,11 +34,15 @@ FLIPS = {
     'inward_heelflip': 'Inward Heelflip', '360_flip': '360 Flip', 'laser_flip': 'Laser Flip',
     '360_hardflip': '360 Hardflip', '360_inward_heelflip': '360 Inward Heelflip',
 }
-FLAT = (-28, 38)       # the pier's long flat run, heading east
-# The steering turns start a metre apart: a left turn from FLAT meets the planter beside the bench at (-26, 41).
+# Park-local metres on the Sunset Pier (world/regions/skatepark/layout.py).
+FLAT = (-28, 38)       # the pier's long flat run, heading east between flatbar_red (y 43) and long_ledge (y 25-28)
+# The steering turns start a metre apart: the left turn starts a metre further from flatbar_red.
 STEER = {1: FLAT, -1: (FLAT[0], FLAT[1] - 1)}
-RAIL = (-23, 20)       # an ollie at .98 s onto the rail
-QUARTER = (33, 25)     # a quarter pipe, launched at 950 cm/s
+RAIL = (-36, 43)       # an ollie at .98 s onto flatbar_red, along it (it starts 8 m ahead)
+QUARTER = (57, 25)     # east_return's quarter (lip at x 70, 2 m radius, 0.15 m vert), launched east at 950 cm/s
+QUARTER_OUT = (-1, 0)  # its face's level normal, Unreal x, y: back into the ramp, west
+OPEN = (0, 52)         # an open run east between the bars (y 43) and the north gardens (y 61), for hard carves
+BOWL = (29, -10)       # the bowl's floor; its walls (3 m radius, 0.2 m vert) east and west of it
 
 
 def position(row):
@@ -109,6 +117,22 @@ def main():
     record('mount', [], True, mounted.strip().split(' | ')[0])
     qa.settle(minimum=50, seconds=2, limit=60)
 
+    if wanted('ride_start'):
+        # Placed and launched at 5 m/s, the ride's first frame shows a frame's travel like every later frame (with the
+        # session's step clock starting empty, it showed the start again for a frame).
+        qa.py("import unreal\nlive.skate_input()\n"
+              f"live.park.place({FLAT[0]},{FLAT[1]},0); live.park.launch(500)\n"
+              "live.REC=[(unreal.SystemLibrary.get_frame_count(), live.skate_state())]\n"
+              "live.behave('rec', lambda dt: live.REC.append((unreal.SystemLibrary.get_frame_count(), live.skate_state())))")
+        time.sleep(.6)
+        raw = json.loads(qa.py("live.stop('rec'); print(json.dumps(live.REC))").strip().splitlines()[-1])
+        rows = [qa.parse(state) for _, state in raw]
+        steps = [math.dist(position(a)[:2], position(b)[:2]) for a, b in zip(rows, rows[1:])]
+        later = sorted(steps[1:13])
+        typical = later[len(later) // 2] if later else 0.
+        record('ride_start', rows[1:], len(steps) > 6 and typical > 4 and steps[0] >= .5 * typical,
+               f'first frame {steps[0] if steps else 0:.1f} cm, then {typical:.1f} cm a frame '
+               f'(frames {raw[0][0]} -> {raw[1][0] if len(raw) > 1 else "-"})')
     if wanted('push'):
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[(0,{{'push':True}}),(3.5,{{}})],duration=4", 4)
         first = next((float(r['speed']) for r in rows if float(r['speed']) > 150), 0)
@@ -130,6 +154,19 @@ def main():
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,700,[(.3,{{'slide':True,'left':(.6,0)}}),(1.3,{{}})],duration=2", 2)
         record('powerslide', rows, qa.ever(rows, 'slide', '1') and speed(rows[-1]) < 600 and not qa.count(rows, 'bails'),
                f'{speed(rows[0]):.0f} -> {speed(rows[-1]):.0f} cm/s')
+        # A pad's powerslide (native's slide intents): the left stick pushed out to a rear diagonal, no key, on either
+        # side in either stance; the stick pulled straight back does not slide.
+        for goofy in (False, True):
+            qa.py(f'live.L.skate_goofy({goofy})')
+            for side in (1, -1):
+                rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,700,[(.3,{{'left':({side * .6},-.8)}}),(1.3,{{}})],duration=2", 2)
+                record(f'powerslide_pad_{"goofy" if goofy else "regular"}_{"right" if side > 0 else "left"}', rows,
+                       qa.ever(rows, 'slide', '1') and speed(rows[-1]) < 600 and not qa.count(rows, 'bails'),
+                       f'{speed(rows[0]):.0f} -> {speed(rows[-1]):.0f} cm/s')
+        qa.py('live.L.skate_goofy(False)')
+        rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,700,[(.3,{{'left':(0,-1)}}),(1.3,{{}})],duration=2", 2)
+        record('powerslide_pad_straight_back', rows, not qa.ever(rows, 'slide', '1') and not qa.count(rows, 'bails'),
+               f'no slide; {speed(rows[0]):.0f} -> {speed(rows[-1]):.0f} cm/s')
     if wanted('ollie'):
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,400,[(.4,('flick','ollie'))],duration=2.2", 2.2)
         base = position(rows[0])[2]
@@ -172,21 +209,15 @@ live.behave('grab', grab)
                     angle += (float(row['yaw']) - float(prev['yaw']) + 180) % 360 - 180
             record(f'flat_spin_{direction}', rows, abs(angle) > 200 and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
                    f'air rotation {angle:.0f} degrees; {qa.combos(rows)}')
-        # A 360 needs a bigger air: off the quarter, spinning until about 320 degrees (the release carries the rest).
-        rows = record_while(f'''
-live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)
-live.SPIN=[0.0, None]
-def spin(dt):
-    s=live.skate_state(); yaw=float(s.split('yaw=')[1].split()[0])
-    if 'mode=2 ' in s and live.SPIN[1] is not None: live.SPIN[0]+=(yaw-live.SPIN[1]+180)%360-180
-    live.SPIN[1]=yaw
-    live.skate_input(left=(1,0) if 'mode=2 ' in s and abs(live.SPIN[0])<320 else (0,0))
-live.behave('spin', spin)
-''', 5)
+        # A 360 needs a bigger air: off the quarter, the stick held for a 360 (see vert_checks); the release turns the
+        # rest. (A yaw read while the deck stands on the wall is not the spin, so the hold is timed.)
+        rows = record_while(f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
+                            + SPIN_HOLD.replace('HOLD', '.48'), 5)
         qa.py("live.stop('spin'); live.skate_input()")
         record('quarter_360', rows, '360' in qa.combos(rows) or '540' in qa.combos(rows), qa.combos(rows) or '(none)')
     if wanted('grind'):
-        rows = qa.run_scenario(f"{RAIL[0]},{RAIL[1]},0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
+        # flatbar_red is 18 m long: about 3.5 s of grinding at 5.2 m/s, then off its end.
+        rows = qa.run_scenario(f"{RAIL[0]},{RAIL[1]},0,520,[(.98,('flick','ollie'))],duration=6.5", 6.5)
         record('grind', rows, '3' in qa.modes(rows) and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
                'states ' + ','.join(sorted(qa.modes(rows))) + '; ' + qa.combos(rows))
     if wanted('manual'):
@@ -196,12 +227,12 @@ live.behave('spin', spin)
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,.5)}}),(1.8,{{}})],duration=2.3", 2.3)
         record('nose_manual', rows, 'Nose Manual' in qa.combos(rows) and not qa.count(rows, 'bails'), qa.combos(rows))
     if wanted('vert'):
-        rows = qa.run_scenario(f"{QUARTER[0]},{QUARTER[1]},0,950,[],duration=5", 5)
-        record('vert_air_back_in', rows, '2' in qa.modes(rows) and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
-               'states ' + ','.join(sorted(qa.modes(rows))))
-        rows = qa.run_scenario("29,-10,0,850,[],duration=5", 5)
+        vert_checks(record)
+        rows = qa.run_scenario(f"{BOWL[0]},{BOWL[1]},0,850,[],duration=5", 5)
         record('bowl_carve', rows, rows[-1]['mode'] == '1' and not qa.count(rows, 'bails') and max(map(speed, rows)) > 300,
                'states ' + ','.join(sorted(qa.modes(rows))) + f'; speed {speed(rows[-1]):.0f}')
+    if wanted('wheels'):
+        wheels_contact(record)
     if wanted('bail'):
         qa.py(f"live.park.place({FLAT[0] + 18},{FLAT[1]},0); live.park.launch(600); live.skate_release()")
         frame_sampler()
@@ -262,6 +293,210 @@ live.behave('spin', spin)
     out.write_text(json.dumps(results, indent=2) + '\n')
     print(f'{sum(r["ok"] for r in results.values())}/{len(results)} passed -> {out}')
     return 0 if all(r['ok'] for r in results.values()) else 1
+
+
+# The pool's north wall in Mega Park (island metres, the film's quarter airs), launched north from the pool floor at
+# 11.5 m/s; its face's level normal points south (Unreal +y).
+POOL = (-108., 1258.5, 82.)
+POOL_OUT = (0, 1)
+# Held from the take-off: the left stick, full right, for HOLD seconds of the air.
+SPIN_HOLD = """
+live.AIRT=[0.0]
+def _spin(dt):
+    s=live.skate_state(); air='mode=2 ' in s
+    live.AIRT[0]=live.AIRT[0]+dt if air else 0.0
+    live.skate_input(left=(1,0) if air and live.AIRT[0]<HOLD else (0,0))
+live.behave('spin', _spin)
+"""
+
+
+def lip_air(rows, out):
+    """The first air in `rows` and how it came down, or None. `out` is the take-off face's level normal (Unreal x, y),
+    back into the ramp: 'into' is how far from the lip the board came down along it (cm), 'drop' how far below it."""
+    a = next((i for i in range(1, len(rows)) if rows[i]['mode'] == '2' and rows[i - 1]['mode'] == '1'), None)
+    b = next((i for i in range(a, len(rows)) if rows[i]['mode'] != '2'), None) if a is not None else None
+    if b is None or b < a + 3:
+        return None
+    dt = lambda r: float(r.get('dt', 16.7)) / 1000
+    lip, down = position(rows[a - 1]), position(rows[b])
+    p0, p1 = position(rows[a]), position(rows[a + 2])
+    span = dt(rows[a + 1]) + dt(rows[a + 2])
+    v = [(p1[k] - p0[k]) / span for k in range(3)]
+    after = rows[min(len(rows) - 1, b + 6)]
+    return {'into': (down[0] - lip[0]) * out[0] + (down[1] - lip[1]) * out[1], 'drop': lip[2] - down[2],
+            'apex': max(position(r)[2] for r in rows[a:b]) - lip[2], 'air': sum(dt(r) for r in rows[a:b]),
+            'up': v[2], 'out': v[0] * out[0] + v[1] * out[1], 'along': abs(v[1] * out[0] - v[0] * out[1]),
+            'mode': rows[b]['mode'], 'fakie': after.get('fakie') == '1', 'deckup': rows[a - 1].get('deckup', '?')}
+
+
+def judge_lip(record, name, rows, out, fakie, want=''):
+    """A lip air back into the face it left: down on the face within a metre of the lip (and at least 20 cm below it),
+    fakie or forward as asked, no bail, riding away; `want` must be in the combo."""
+    air = lip_air(rows, out)
+    if air is None:
+        record(name, rows, False, f"no air off the lip; states {','.join(sorted(qa.modes(rows)))}")
+        return None
+    bailed = any(r['mode'] == '4' for r in rows)
+    away = rows[-1]['mode'] == '1' and speed(rows[-1]) > 150
+    combos = qa.combos(rows)
+    ok = (air['mode'] == '1' and not bailed and air['fakie'] == fakie and -30 < air['into'] < 100 and air['drop'] > 20
+          and away and want in combos)
+    record(name, rows, ok, f"{'fakie' if air['fakie'] else 'forward'} landing (wanted {'fakie' if fakie else 'forward'}) "
+           f"{air['into']:.0f} cm out from the lip, {air['drop']:.0f} cm below it; lip-off (deck up z {air['deckup']}) {air['up']:.0f} up, {air['out']:.0f} "
+           f"into the ramp, {air['along']:.0f} along it (cm/s); apex {air['apex']:.0f} cm over the lip, {air['air']:.2f} s up; "
+           f"{'bailed' if bailed else 'no bail'}; then {speed(rows[-1]):.0f} cm/s, mode {rows[-1]['mode']}; {combos or '(no tricks)'}")
+    return air
+
+
+def vert_checks(record):
+    """Lip airs (RIDE.md, Board, "Lip airs"): on the pier's quarter a straight air lands fakie back on the face, a 180
+    forward and a 360 fakie (the stick let go short of each, the rest turned by touch-down); on Mega Park's pool wall
+    (the film's) a straight air, and the same climbing it 20 degrees across either way; each comes down within a metre
+    of the lip, below it, without a bail, and rides away. Then a back-and-forth in the pier's bowl, coasting: three
+    airs keep their speed at the bottom (native: 10 -> 11.9 -> 12.3 m/s), shown beside the same without AutoPump."""
+    quarter = f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
+    judge_lip(record, 'vert_quarter_straight', record_while(quarter, 5), QUARTER_OUT, True)
+    # Full stick turns 752 degrees/s off a lip (SpinRate 470 x AirSpinScale 1.6) after SpinResponse's lag, which the
+    # turn after the release makes up, so a hold of h turns about 752 h in all: .24 s for a 180, .48 s for a 360.
+    for name, hold, fakie, want in (('vert_quarter_180', .24, False, '180'), ('vert_quarter_360', .48, True, '360')):
+        rows = record_while(quarter + SPIN_HOLD.replace('HOLD', str(hold)), 5)
+        qa.py("live.stop('spin'); live.skate_input()")
+        judge_lip(record, name, rows, QUARTER_OUT, fakie, want)
+    x, y, z = POOL
+    ground = qa.py(f"g=live.L.ground_at(unreal.Vector({x * 100},{-y * 100},{z * 100}))\nprint(g.x, g.y, g.z)").split()
+    for name, across in (('vert_pool_straight', 0), ('vert_pool_across_east', 20), ('vert_pool_across_west', -20)):
+        yaw = -90 + across     # Unreal yaw: -90 is north
+        mega_place(f"live.skate_place(unreal.Vector({ground[0]},{ground[1]},{ground[2]}), {yaw})")
+        rows = record_while(f"live.L.skate_launch(unreal.Vector({1150 * math.cos(math.radians(yaw)):.1f},"
+                            f"{1150 * math.sin(math.radians(yaw)):.1f},0))", 5)
+        judge_lip(record, name, rows, POOL_OUT, True)
+    tune = "unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideTune {}')"
+    bottoms = {}
+    for label, words in (('no AutoPump', 'AutoPump=0'), ('', '""')):   # "" empties the CVar (no value only prints it)
+        qa.py(tune.format(words))
+        rows = qa.run_scenario(f"{BOWL[0]},{BOWL[1]},0,1000,[],duration=12", 12)
+        airs, start, i = [], 0, 1
+        while i < len(rows):
+            if rows[i]['mode'] == '2' and rows[i - 1]['mode'] != '2':
+                j = next((k for k in range(i, len(rows)) if rows[k]['mode'] != '2'), len(rows))
+                if j - i > 15:
+                    airs.append((i, j))
+                i = j
+            i += 1
+        bottoms[label] = [max((speed(r) for r in rows[s:a] if r['mode'] == '1'), default=0) for s, a in
+                          zip([0] + [b for _, b in airs], [a for a, _ in airs])]
+        bailed = any(r['mode'] == '4' for r in rows)
+        if label:
+            print(f"INFO vert_back_and_forth with {label}: bottom speeds {' -> '.join(f'{v:.0f}' for v in bottoms[label])} cm/s, "
+                  f"{len(airs)} airs, {'bailed' if bailed else 'no bail'}", flush=True)
+    qa.py(tune.format('""'))
+    got = bottoms['']
+    record('vert_back_and_forth', rows, len(airs) >= 3 and not bailed and all(v >= .92 * got[0] for v in got[1:4]) and max(got) <= 1300,
+           f"bottom speeds {' -> '.join(f'{v:.0f}' for v in got)} cm/s before each air (native 1000 -> 1190 -> 1230), "
+           f"{len(airs)} airs, {'bailed' if bailed else 'no bail'}")
+
+
+# Each frame, every wheel's clearance along the ground's normal under it: the wheel's centre (its bone) to the ground,
+# less the wheel's reach toward it (the radius, by the axle's tilt to the normal), in cm.
+WHEELS = """
+import math
+_ch = unreal.GameplayStatics.get_player_character(live.L.game_world(), 0)
+# The board as shown: the skate component's wheel meshes (SkateWheel<end><side>, placed at the wheel bones' centres:
+# front right, front left, back right, back left), not the hidden pose mesh, which stays in the clips' root space.
+_parts = {c.get_name(): c for c in _ch.get_components_by_class(unreal.StaticMeshComponent)}
+_w = [_parts[n] for n in ('SkateWheel00', 'SkateWheel01', 'SkateWheel10', 'SkateWheel11')]
+_objects = [unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY1, unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY2]
+def _hit(a, b):
+    a, b = unreal.Vector(*a), unreal.Vector(*b)
+    h = unreal.SystemLibrary.line_trace_single_for_objects(live.L.game_world(), a, b, _objects, True, [_ch], unreal.DrawDebugTrace.NONE, True)
+    t = h.to_tuple() if h is not None else None
+    return ((t[5].x, t[5].y, t[5].z), (t[7].x, t[7].y, t[7].z)) if t and t[0] else None
+def _wheels(dt):
+    c = []
+    for w in _w:
+        l = w.get_world_location(); c.append((l.x, l.y, l.z))
+    out = []
+    for i, p in enumerate(c):
+        q = c[i ^ 1]; ax = [q[k] - p[k] for k in range(3)]; s = math.sqrt(sum(v * v for v in ax)) or 1.
+        down = _hit((p[0], p[1], p[2] + 12), (p[0], p[1], p[2] - 80))   # from below the deck and the feet
+        hit = down and _hit(tuple(p[k] + down[1][k] * 12 for k in range(3)), tuple(p[k] - down[1][k] * 80 for k in range(3)))
+        if not hit: out.append(None); continue
+        n = down[1]; na = sum(n[k] * ax[k] for k in range(3)) / s
+        out.append(round(sum((p[k] - hit[0][k]) * n[k] for k in range(3)) - WHEEL_R * math.sqrt(max(0., 1 - na * na)), 2))
+    live.WREC.append((live.skate_state(), out))
+live._wheels = _wheels
+"""
+# A low close-up from the inside of a carve (the board's right in a right turn), at wheel height.
+CLOSEUP = """
+import math
+live.SHOT=[0]
+def _closeup(dt):
+    live.SHOT[0]+=1; n=live.SHOT[0]
+    if n < 48: return
+    if n > 70: unreal.MegaParkValidation.restore_player_camera(); live.stop('closeup'); return
+    s=live.skate_state(); yaw=math.radians(float(s.split('yaw=')[1].split()[0]))
+    pawn=unreal.GameplayStatics.get_player_pawn(live.L.game_world(), 0)
+    at=next(c for c in pawn.get_components_by_class(unreal.StaticMeshComponent) if c.get_name() == 'SkateDeck').get_world_location()
+    ahead=unreal.Vector(math.cos(yaw), math.sin(yaw), 0.0); right=unreal.Vector(-math.sin(yaw), math.cos(yaw), 0.0)
+    unreal.MegaParkValidation.review_camera(at+right*150.0+ahead*30.0+unreal.Vector(0,0,-2), at+unreal.Vector(0,0,-4), 38.0)
+    if n == 62: live.L.screenshot(PATH)
+live.behave('closeup', _closeup)
+"""
+WHEEL_RUNS = [(f'carve {v / 100:.0f} m/s {"right" if d > 0 else "left"}', f"{OPEN[0]},{OPEN[1]},0,{v},[(.3,{{'left':({d},0)}}),(1.2,{{}})],duration=1.5", 1.5)
+              for v in (300, 600, 900) for d in (1, -1)]
+
+
+def wheel_run(args, seconds):
+    qa.py(f"live.scenario({args})\nlive.WREC=[]\nlive.behave('wheels', live._wheels)")
+    time.sleep(seconds + .6)
+    frames = json.loads(qa.py("live.stop('rec'); live.stop('wheels'); import json; print(json.dumps(live.WREC))").strip().splitlines()[-1])
+    return [(qa.parse(state), clear) for state, clear in frames]
+
+
+def wheels_contact(record):
+    """Wheels on the ground (RIDE.md, Rider, "Placement" and "Board"): carves at 3, 6 and 9 m/s both ways in both
+    stances, a pump in the bowl, a powerslide and a manual. On the ground (mode 1) no wheel is more than 1 cm into the
+    ground; rolling (an R_, M_ or L_ clip) none is more than 1.5 cm above it (in a manual, the axle it rolls on).
+    Writes a low close-up of a hard carve to build/yorimichi/skateqa/ride-carve-closeup.png."""
+    qa.py(WHEELS.replace('WHEEL_R', '3.1'))
+    runs = []
+    try:
+        for goofy in (False, True):
+            qa.py(f'live.L.skate_goofy({goofy})')
+            runs += [(('goofy ' if goofy else 'regular ') + label, wheel_run(args, secs)) for label, args, secs in WHEEL_RUNS]
+    finally:
+        qa.py('live.L.skate_goofy(False)')
+    runs.append(('bowl pump', wheel_run(f"{BOWL[0]},{BOWL[1]},0,850,[(0,{{'push':True}}),(4,{{}})],duration=4.5", 4.5)))
+    runs.append(('powerslide', wheel_run(f"{FLAT[0]},{FLAT[1]},0,700,[(.3,{{'slide':True,'left':(.6,0)}}),(1.3,{{}})],duration=2", 2)))
+    runs.append(('manual', wheel_run(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,-.5)}}),(1.8,{{}})],duration=2.3", 2.3)))
+    sink, lift, bad_sink, bad_lift, judged, notes = (99., ''), (-99., ''), 0, 0, 0, []
+    for label, frames in runs:
+        run_sink, run_lift = 99., -99.
+        for row, clear in frames[4:]:
+            if row.get('mode') != '1' or None in clear:
+                continue
+            judged += 1
+            clip = row.get('clip', '')
+            low = min(clear)
+            run_sink = min(run_sink, low)
+            if low < sink[0]: sink = (low, f'{label} {clip}')
+            bad_sink += low < -1.
+            if clip[:2] in ('R_', 'M_', 'L_'):
+                axle = clear if row.get('manual') != '1' else min((clear[:2], clear[2:]), key=sum)
+                high = max(axle)
+                run_lift = max(run_lift, high)
+                if high > lift[0]: lift = (high, f'{label} {clip}')
+                bad_lift += high > 1.5
+        notes.append(f'{label} {run_sink:.1f}/{run_lift:.1f}')
+    shot = qa.yori.OUT / 'skateqa' / 'ride-carve-closeup.png'
+    shot.parent.mkdir(parents=True, exist_ok=True)
+    qa.py(CLOSEUP.replace('PATH', repr(str(shot))) + f"live.scenario({OPEN[0]},{OPEN[1]},0,900,[(.3,{{'left':(1,0)}}),(1.2,{{}})],duration=1.5)")
+    time.sleep(2.1)
+    qa.py("live.stop('rec'); live.stop('closeup'); unreal.MegaParkValidation.restore_player_camera()")
+    record('wheels_contact', [], judged > 300 and not bad_sink and not bad_lift,
+           f'{judged} frames on the ground: deepest wheel {sink[0]:.2f} cm ({sink[1]}), {bad_sink} frames below -1 cm; '
+           f'highest rolling wheel {lift[0]:.2f} cm ({lift[1]}), {bad_lift} frames above 1.5 cm; per run deepest/highest: '
+           + ', '.join(notes) + f'; close-up {shot}')
 
 
 # Clips whose feet stand on the deck (RIDE.md, Rider): rolling, the load, powerslides, manuals, grinds, landings and

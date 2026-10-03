@@ -106,7 +106,6 @@ private:
     int32 WheelIndex[4] = {3, 4, 5, 6};
     FTransform TruckFromDeck[2], WheelFromTruck[4];
     FVector TruckAxis[2], WheelAxis[4];     // the deck's length and width in each bone's own frame
-    FVector WheelInDeck[4];                  // wheel centres in the deck's frame
     float WheelRadius = 3.1f;
 
     // The clips by role.
@@ -140,6 +139,7 @@ private:
     float LastMotionTime = 0;
     bool bFirst = true;
     float Lock = 0, Lift = 0;
+    float TruckRoll[2] = {0, 0};            // each truck's roll against the deck (degrees, about the deck's length)
     FRideAnimLayers Last;
     TArray<FTransform> Empty;
 
@@ -155,5 +155,10 @@ private:
     const UAnimSequence* Choose(const FRideBodyPose& Body, FRideAnimLayers& Layers, float& Blend) const;
     /** Run the graph on these layers (cross-fading first when Inertialize > 0). */
     void Run(const FRideAnimLayers& Layers, float Inertialize, float Dt, bool bCutBoard = false);
+    /** Roll each truck against the deck so that its axle lies level with the ground (the root's XY plane) while the
+     *  board is on its wheels; off them the trucks come back straight under the deck. */
+    void LevelTrucks(const FRideBoardPose& Board, const FTransform& Deck, float Dt);
     void PlaceBoard(const FRideBoardPose& Board, TArray<FTransform>& Bones) const;
+    /** The lowest point of a placed wheel's rim, in the root's space. */
+    float WheelBottom(const TArray<FTransform>& Bones, int32 Wheel) const;
 };

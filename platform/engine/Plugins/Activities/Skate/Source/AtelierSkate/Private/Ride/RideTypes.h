@@ -69,6 +69,6 @@ struct FRideBoardPose
 {
     FTransform Deck = FTransform::Identity;   // SKATEBOARD_ROOT in root space
     float WheelSpin = 0;                      // degrees
-    float TruckLean = 0;                      // degrees, positive leans the deck toward +Y
+    bool bOnWheels = false;                   // rolling (the ground, a manual, a powerslide): the hangers stay level
     float DeckHeight = 8.9f;                  // the deck's pivot above the ground at rest (cm)
 };

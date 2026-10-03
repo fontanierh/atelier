@@ -37,6 +37,10 @@ namespace
     constexpr float CatchWindow = .4f;
     // The pose's lift decays this fast once the board leaves the ground (cm/s).
     constexpr float LiftDecay = 150.f;
+    // A truck rolls at most this far against the deck (degrees, the bushings' give); a deck rolled further lifts the
+    // inside wheel. Off the ground the trucks come back straight under the deck this fast (degrees/s).
+    constexpr float MaxTruckRoll = 30.f;
+    constexpr float TruckReturn = 240.f;
     // Between two clips whose boards differ by more than this (degrees), the board was turned end for end.
     constexpr float TurnedBoard = 90.f;
     // The same clips whose blend moves more than this in one 60 Hz tick cross-fade as a change of clip does
@@ -123,6 +127,17 @@ namespace
         default: return true;
         }
     }
+
+    // Rolling on the wheels, as opposed to a pop (its tail strikes, the nose rises), a grind or a get-up.
+    bool OnWheels(ERideMotion Motion)
+    {
+        switch (Motion)
+        {
+        case ERideMotion::Roll: case ERideMotion::Push: case ERideMotion::Brake: case ERideMotion::Powerslide:
+        case ERideMotion::Manual: case ERideMotion::NoseManual: case ERideMotion::Load: case ERideMotion::Land: return true;
+        default: return false;
+        }
+    }
 }
 
 FRideAnimator::FRideAnimator() { SetBoardOnly(); }
@@ -157,9 +172,7 @@ bool FRideAnimator::SetBoardIndices(const TArray<FName>& InNames, const TArray<F
     for (int32 I = 0; I < 4; ++I)
     {
         WheelFromTruck[I] = InReference[WheelIndex[I]].GetRelativeTransform(InReference[TruckIndex[I / 2]]);
-        const FTransform InDeck = InReference[WheelIndex[I]].GetRelativeTransform(Deck);
-        WheelInDeck[I] = InDeck.GetLocation();
-        WheelAxis[I] = InDeck.GetRotation().UnrotateVector(FVector::RightVector);
+        WheelAxis[I] = InReference[WheelIndex[I]].GetRelativeTransform(Deck).GetRotation().UnrotateVector(FVector::RightVector);
     }
     return true;
 }
@@ -384,7 +397,7 @@ void FRideAnimator::Attach(AActor* Owner)
     for (const TPair<FName, TStrongObjectPtr<UAnimSequence>>& Pair : Library) if (Pair.Value) Clips.Add(Pair.Value.Get());
     I->Hold(Clips);
     Mesh = M; Instance = I;
-    bFirst = true; Lock = 0; Lift = 0; LastKey = nullptr; Last = FRideAnimLayers();
+    bFirst = true; Lock = 0; Lift = 0; TruckRoll[0] = TruckRoll[1] = 0; LastKey = nullptr; Last = FRideAnimLayers();
 }
 
 void FRideAnimator::Detach()
@@ -659,14 +672,43 @@ const UAnimSequence* FRideAnimator::Choose(const FRideBodyPose& B, FRideAnimLaye
 // ---------------------------------------------------------------------------------------------------------------
 // Evaluation.
 
+void FRideAnimator::LevelTrucks(const FRideBoardPose& Board, const FTransform& Deck, float Dt)
+{
+    for (int32 I = 0; I < 2; ++I)
+    {
+        float Target = 0;
+        if (Board.bOnWheels)
+        {
+            // The deck rolls over the trucks (the lean clips roll it into a carve) while the hangers stay level: the
+            // roll about the deck's length that brings the axle, one wheel to the other, level with the ground.
+            // Rolled by A about Axis, the axle rises by Across.Z cos A + Turned.Z sin A from one end to the other.
+            const FTransform Truck = TruckFromDeck[I] * Deck;
+            const FVector Axis = Truck.TransformVectorNoScale(TruckAxis[I]).GetSafeNormal();
+            const FVector Axle = Truck.TransformVectorNoScale(WheelFromTruck[2 * I].GetLocation() - WheelFromTruck[2 * I + 1].GetLocation());
+            const FVector Across = Axle - Axis * FVector::DotProduct(Axle, Axis);
+            const FVector Turned = FVector::CrossProduct(Axis, Across);
+            // The smaller of the two rolls that level it; a deck on its side has none.
+            if (FMath::Abs(Turned.Z) > .2f * Across.Size())
+                Target = FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan(-Across.Z / Turned.Z)), -MaxTruckRoll, MaxTruckRoll);
+        }
+        TruckRoll[I] = bFirst || Board.bOnWheels ? Target : FMath::FInterpConstantTo(TruckRoll[I], Target, Dt, TruckReturn);
+    }
+}
+
+float FRideAnimator::WheelBottom(const TArray<FTransform>& Bones, int32 Wheel) const
+{
+    const FTransform& W = Bones[WheelIndex[Wheel]];
+    const float Tilt = W.TransformVectorNoScale(WheelAxis[Wheel]).GetSafeNormal().Z;
+    return float(W.GetLocation().Z) - WheelRadius * FMath::Sqrt(FMath::Max(0.f, 1.f - Tilt * Tilt));
+}
+
 void FRideAnimator::PlaceBoard(const FRideBoardPose& Board, TArray<FTransform>& Bones) const
 {
     const FTransform& Deck = Bones[DeckIndex];
     for (int32 I = 0; I < 2; ++I)
     {
-        // Trucks roll about the deck's length (the kingpin's give) as the rider turns.
-        const FTransform Lean(FQuat(TruckAxis[I], FMath::DegreesToRadians(Board.TruckLean)));
-        Bones[TruckIndex[I]] = Lean * TruckFromDeck[I] * Deck;
+        const FTransform Roll(FQuat(TruckAxis[I], FMath::DegreesToRadians(TruckRoll[I])));
+        Bones[TruckIndex[I]] = Roll * TruckFromDeck[I] * Deck;
     }
     for (int32 I = 0; I < 4; ++I)
     {
@@ -681,7 +723,9 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
     {
         Bones = BoardReference;
         Bones[DeckIndex] = Board.Deck;
+        LevelTrucks(Board, Board.Deck, Dt);
         PlaceBoard(Board, Bones);
+        bFirst = false;
         return;
     }
     // What plays: the caller's override, the pose the bail started from (held; the physical rider takes over), or
@@ -736,20 +780,26 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
     Place.Blend(Board.Deck, Pose[DeckIndex].Inverse() * Board.Deck, Lock);
     Bones.SetNum(Pose.Num(), EAllowShrinking::No);
     for (int32 I = 0; I < Pose.Num(); ++I) Bones[I] = Pose[I] * Place;
-    // On the ground, a board the clip tilts (a pop's tail, a manual, a 5-0) keeps its lowest wheel or tip on the
-    // ground: the whole pose rises by what would sink.
+    LevelTrucks(Board, Bones[DeckIndex], Dt);
+    PlaceBoard(Board, Bones);
+    // On the ground the whole pose moves along the ground's normal (the feet stay on the deck): rolling, so that the
+    // lowest wheel touches the ground (whatever height the clip gives the deck), unless a tip would then sink; on a
+    // board the clip tilts off its wheels (a pop's tail, a 5-0) only by what would sink. The move eases back to none
+    // at 150 cm/s once the board is in the air.
     const bool bSlide = Body.Motion == ERideMotion::Grind && (Body.Grind == ERideGrind::Boardslide || Body.Grind == ERideGrind::Lipslide);
     if (OnGround(Body.Motion) && !bSlide)
     {
         const FTransform& Deck = Bones[DeckIndex];
-        float Lowest = TNumericLimits<float>::Max();
-        for (const FVector& Tip : DeckTips) Lowest = FMath::Min(Lowest, float(Deck.TransformPosition(Tip).Z));
-        for (const FVector& Wheel : WheelInDeck) Lowest = FMath::Min(Lowest, float(Deck.TransformPosition(Wheel).Z) - WheelRadius);
-        Lift = FMath::Max(0.f, -Board.DeckHeight - Lowest);
+        const float Ground = -Board.DeckHeight;
+        float Tip = TNumericLimits<float>::Max(), Wheel = TNumericLimits<float>::Max();
+        for (const FVector& End : DeckTips) Tip = FMath::Min(Tip, float(Deck.TransformPosition(End).Z));
+        for (int32 I = 0; I < 4; ++I) Wheel = FMath::Min(Wheel, WheelBottom(Bones, I));
+        const float Touch = FMath::Max(Ground - Wheel, Ground - Tip);
+        const bool bRolling = Board.bOnWheels && !bOverride && OnWheels(Body.Motion);
+        Lift = bRolling ? Touch : FMath::Max(Touch, FMath::FInterpConstantTo(Lift, 0.f, Dt, LiftDecay));
     }
-    else if (!bHold) Lift = FMath::Max(0.f, Lift - LiftDecay * Dt);
-    if (Lift > 0) for (FTransform& Bone : Bones) Bone.AddToTranslation(FVector(0, 0, Lift));
-    PlaceBoard(Board, Bones);
+    else if (!bHold) Lift = FMath::FInterpConstantTo(Lift, 0.f, Dt, LiftDecay);
+    if (Lift != 0) for (FTransform& Bone : Bones) Bone.AddToTranslation(FVector(0, 0, Lift));
     bFirst = false;
 }
 

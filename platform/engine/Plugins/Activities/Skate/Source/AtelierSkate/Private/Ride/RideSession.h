@@ -122,7 +122,11 @@ private:
     float Travel = 1;               // +1 rolling nose first, -1 fakie
     float TurnRate = 0;             // degrees/s about the deck normal
     float SlideYaw = 0;
-    float Curvature = 0;            // 1/cm along the travel, positive in a concave transition
+    // The left stick's powerslide: whether the stick was in the start sector last step, and the slide it started
+    // (+1 right, -1 left, 0 none).
+    bool bStickSector = false;
+    int8 StickSlide = 0;
+    float Curvature = 0;           // 1/cm along the travel, positive in a concave transition
     // The ground's normal over the last stretch of travel (cm travelled, oldest first), for the curvature.
     static constexpr int32 TrailMax = 8;
     float Odometer = 0, TrailAt[TrailMax] = {};
@@ -144,6 +148,10 @@ private:
     float AirTime = 0, SpinRate = 0, SpinTotal = 0;
     FVector TakeoffUp = FVector::UpVector;
     bool bPopped = false;
+    // A lip air: off a face steeper than the vert reach, flying straight back into it (TickAir, ChooseLanding).
+    // LipOut is the face's level normal (away from the coping, into the ramp).
+    bool bLipAir = false;
+    FVector LipOut = FVector::ZeroVector;
     // Landing prediction: a ballistic path traced a few segments per tick.
     FVector PredictFrom = FVector::ZeroVector, PredictVelocity = FVector::ZeroVector;
     float PredictTime = 0, LandTime = -1, PredictStart = 0;
@@ -217,6 +225,11 @@ private:
     /** The first vertex between arc lengths From and To where the line turns more than GrindCorner. */
     bool SharpCorner(float From, float To, float& OutS) const;
     void AdvancePrediction(int32 Segments);
+    /** The air's gravity (cm/s^2): VertGravity in a lip air, else AirGravity. */
+    float Gravity() const;
+    /** A lip air's flight: the take-off velocity or one of six around it (native's cone), whichever comes back
+     *  down into the face it left, steepest and furthest from the apex, with the least change. */
+    void ChooseLanding(const FVector& From);
     void ResetPrediction(const FVector& From);
     void StartPush(bool bFirstPush, float Speed);
     ERideMotion CurrentMotion() const;
