@@ -1,7 +1,35 @@
 #include "CairoCharacter.h"
+#include "AtelierData.h"
+#include "BotwMoveSet.h"
+#include "BotwRider.h"
+#include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Misc/FileHelper.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
+namespace
+{
+    const TCHAR* BotwDefinition = TEXT("/Game/CairoBotw/DA_CairoBotw.DA_CairoBotw");
+
+    /** Cairo's move record, read once; null when it has not been built. */
+    TSharedPtr<FJsonObject> BotwRecord()
+    {
+        static TSharedPtr<FJsonObject> Record;
+        static bool bLoaded = false;
+        if (!bLoaded)
+        {
+            bLoaded = true;
+            FString Text;
+            if (FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("cairo/botw.json"))))
+                FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Record);
+        }
+        return Record;
+    }
+}
 
 ACairoCharacter::ACairoCharacter()
 {
@@ -12,6 +40,24 @@ ACairoCharacter::ACairoCharacter()
     GetMesh()->SetRelativeLocation(FVector(0,0,-74.65f));
     // The imported Tripo skeleton faces +X (measured toe-to-ankle vector).
     GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
+}
+
+bool ACairoCharacter::HasBotw()
+{
+    return BotwRecord().IsValid() && LoadObject<UWandererDefinition>(nullptr, BotwDefinition, nullptr, LOAD_NoWarn | LOAD_Quiet) != nullptr;
+}
+
+void ACairoCharacter::BeginPlay()
+{
+    // The command line asks for the move set at the start; a switched-in Cairo was told by the switch.
+    if (!bSwitchedIn) bBotw = ABotwRider::Requested() == BotwName();
+    if (bBotw) DefinitionAssetPath = BotwDefinition;
+    Super::BeginPlay();
+    if (bBotw)
+    {
+        UBotwMoveSet* Set = NewObject<UBotwMoveSet>(this, TEXT("BotwMoves"));
+        if (Set->Initialize(this, BotwRecord())) Moves = Set;
+    }
 }
 
 void ACairoCharacter::Tick(float Dt)

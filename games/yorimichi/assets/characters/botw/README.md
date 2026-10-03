@@ -105,3 +105,24 @@ rider's flat trick and pool trick in the Mega Park: the Bokoblin's 360 flip and 
 kickflip and flair (a backflip 180: the grab held from take-off and the left stick pulled back twice, quickly,
 `POOL_TRICK='flair'`). The trick names never mention a body flip (the flair shows as "BS Grab"): the skate runtime only
 scores it.
+
+### Cairo with Link's moves
+
+Cairo plays the same move set as "Cairo (BotW)" in the character switch, or with `-rider=CairoBotw`.
+`characters.cairo_botw` runs [`../cairo/botw.py`](../cairo/botw.py) in Blender, which retargets every Link clip onto
+Cairo's skeleton (`build/yorimichi/cairo/botw/`). Both rest poses are T-poses. Each limb and finger swings to point
+where Link's points, the hands keep their palm frames and the feet their sole frames, and the spine and head keep
+Cairo's own posture. The hips move as Link's do, at the ratio of the two hip heights (`body`, 0.63). The legs are then
+solved so that planted feet stay planted, at that same scale, from Cairo's own stance. `unreal.cairo_botw`
+(`Scripts/import_cairo_botw.py`) imports the clips into `/Game/CairoBotw` and copies `DA_Cairo` into `DA_CairoBotw`
+with Link's blends and actions. It also writes Cairo's move record, `Content/Data/cairo/botw.json`. In that record:
+
+- Link's action paths, gait speeds and swim hang are scaled to Cairo's size.
+- `BodyScale` converts BOTW's metres for him.
+- Link's sword, sheath, shield and paraglider are scaled with Cairo. Each piece is moved from Link's weapon bones to
+  Cairo's hands in the palm's frame (`held`), and from Link's back bone to Cairo's chest (`carry`).
+
+```sh
+uv run atelier build yorimichi unreal.cairo_botw
+uv run atelier play yorimichi -- -rider=CairoBotw
+```

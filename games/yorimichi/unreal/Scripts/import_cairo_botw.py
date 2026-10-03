@@ -1,0 +1,251 @@
+"""Import Cairo's Breath of the Wild clips (assets/characters/cairo/botw.py) into /Game/CairoBotw, for Cairo with
+Link's move set (-rider=CairoBotw, or "Cairo (BotW)" in the character switch).
+
+    UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_cairo_botw.py -unattended -nosplash -NullRHI -stdout
+
+Each build/yorimichi/cairo/botw/fbx/A_<Clip>.fbx is imported onto SK_Cairo's skeleton at 30 fps as A_<Clip>, with the
+shared character compression and no root motion. DA_CairoBotw is DA_Cairo (mesh, framing, skate bones) with Link's
+moves in place of Cairo's own: the BOTW locomotion, crouching and armed blends and every action, on Cairo's clips.
+Cairo's own sword set, dashes and roll are cleared; the move set brings BOTW's.
+
+Writes Content/Data/cairo/botw.json, the move record ACairoCharacter gives UBotwMoveSet. It is Link's record (moves.py
+`record`, from the roster) with every length measured on Link's body (action paths, gait speeds, the swim hang) scaled
+by Cairo's size against Link's (`body` / Link's scale), and BodyScale, the factor for BOTW's metres (`body`, Cairo's hip
+height over Link's in BOTW units). Link's equipment is reused at Cairo's scale: each piece's hold moves from Link's
+hand to Cairo's in the palm's frame, and its carry on the back from Link's chest to Cairo's in the body's frame. Also writes
+build/yorimichi/cairo/botw/unreal_import.json. Cairo's own assets must be byte-identical afterwards.
+"""
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
+import hashlib, json, math, sys
+from pathlib import Path
+import unreal as U
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import animation_compression
+
+OUT = yori.OUT / 'cairo' / 'botw'
+CONFIG = json.loads((OUT / 'export.json').read_text())
+LINK = next(c for c in json.loads((yori.OUT / 'botw' / 'export.json').read_text())['characters'] if c['name'] == 'Link')
+CONTENT = Path(__file__).resolve().parents[1] / 'Content'
+ROSTER = next(c for c in json.loads((CONTENT / 'Data' / 'botw' / 'roster.json').read_text())['characters'] if c['name'] == 'Link')
+DATA = CONTENT / 'Data' / 'cairo'
+DEST = '/Game/CairoBotw'
+E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools(); P = U.AnimPoseExtensions
+BODY = CONFIG['body']                      # Cairo's hips over Link's, in BOTW units
+SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his mesh is scaled down)
+
+
+def digests(folder):
+    return {str(p.relative_to(folder)): hashlib.sha256(p.read_bytes()).hexdigest() for p in folder.rglob('*.uasset')}
+
+
+def fbx(name, skeleton):
+    task = U.AssetImportTask()
+    for prop, value in dict(filename=str(OUT / 'fbx' / f'A_{name}.fbx'), destination_path=DEST, destination_name=f'A_{name}',
+                            automated=True, replace_existing=True, save=True).items():
+        task.set_editor_property(prop, value)
+    options = U.FbxImportUI()
+    for prop, value in dict(automated_import_should_detect_type=False, import_materials=False, import_textures=False, import_as_skeletal=True,
+                            import_mesh=False, import_animations=True, skeleton=skeleton, mesh_type_to_import=U.FBXImportType.FBXIT_ANIMATION).items():
+        options.set_editor_property(prop, value)
+    data = options.get_editor_property('anim_sequence_import_data')
+    for prop, value in dict(animation_length=U.FBXAnimationLengthImportType.FBXALIT_EXPORTED_TIME, use_default_sample_rate=False,
+                            custom_sample_rate=CONFIG['fps'], import_bone_tracks=True, delete_existing_morph_target_curves=True,
+                            do_not_import_curve_with_zero=False, convert_scene=True).items():
+        data.set_editor_property(prop, value)
+    task.set_editor_property('options', options)
+    AT.import_asset_tasks([task])
+    clip = next((a for a in (E.load_asset(p) for p in task.get_editor_property('imported_object_paths')) if isinstance(a, U.AnimSequence)), None)
+    assert clip and clip.get_editor_property('skeleton') == skeleton, ('import failed', name)
+    clip.set_editor_property('enable_root_motion', False)
+    animation_compression.apply_to(clip)
+    E.save_loaded_asset(clip)
+    return clip
+
+
+def speed_blend(name, skeleton, sequences, speeds, rates):
+    """A 1D blend of `sequences` by ground speed (cm/s), each sample played at its rate (as import_botw.py's)."""
+    factory = U.BlendSpaceFactory1D()
+    factory.set_editor_property('target_skeleton', skeleton)
+    blend = AT.create_asset(name, DEST, U.BlendSpace1D, factory)
+    params = list(blend.get_editor_property('blend_parameters'))
+    for key, value in dict(display_name='Speed (cm/s)', min=0., max=speeds[-1]).items():
+        params[0].set_editor_property(key, value)
+    blend.set_editor_property('blend_parameters', params)
+    blend.set_editor_property('scale_animation', True)
+    smoothing = list(blend.get_editor_property('interpolation_param'))
+    smoothing[0].set_editor_property('interpolation_time', .12)
+    blend.set_editor_property('interpolation_param', smoothing)
+    assert U.WandererContentLibrary.configure_blend_space_with_rates(blend, sequences, speeds, rates), name
+    E.save_loaded_asset(blend, False)
+    return blend
+
+
+# --- Equipment: Link's holds carried onto Cairo's hands and back ---------------------------------------------------
+# Rotations are lists of their three columns (x, y, z axes), in each mesh's component space at the reference pose.
+
+def sub(a, b): return [x - y for x, y in zip(a, b)]
+def add(a, b): return [x + y for x, y in zip(a, b)]
+def mul(a, s): return [x * s for x in a]
+def dot(a, b): return sum(x * y for x, y in zip(a, b))
+def cross(a, b): return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+def unit(a): return mul(a, 1. / math.sqrt(dot(a, a)))
+def apply(R, v): return [sum(R[k][i] * v[k] for k in range(3)) for i in range(3)]   # R v
+def apply_t(R, v): return [dot(column, v) for column in R]                         # R^T v
+def compose(A, B): return [apply(A, column) for column in B]                       # A B
+def compose_t(A, B): return [apply_t(A, column) for column in B]                   # A^T B
+
+
+def frame(y, z):
+    """The rotation whose Y axis is y and whose Z axis is z made perpendicular to it (botw.py's)."""
+    y = unit(y)
+    z = unit(sub(z, mul(y, dot(z, y))))
+    return [cross(y, z), y, z]
+
+
+class Rig:
+    """A skeleton's reference pose: each bone's component-space position (cm) and rotation."""
+
+    def __init__(self, skeleton, names):
+        pose = P.get_reference_pose(skeleton)
+        self.names = names   # role -> bone
+        self.pose = pose
+
+    def transform(self, bone):
+        return P.get_bone_pose(self.pose, bone, U.AnimPoseSpaces.WORLD)
+
+    def at(self, role):
+        t = self.transform(self.names.get(role, role)).translation
+        return [t.x, t.y, t.z]
+
+    def rotation(self, bone):
+        q = self.transform(bone).rotation
+        return [[v.x, v.y, v.z] for v in (q.rotate_vector(U.Vector(1, 0, 0)), q.rotate_vector(U.Vector(0, 1, 0)), q.rotate_vector(U.Vector(0, 0, 1)))]
+
+    def body(self):
+        """The body's frame: forward, left (shoulder to shoulder, level) and the world's up (botw.py's)."""
+        left = sub(self.at('upperarm_L'), self.at('upperarm_R'))
+        left = unit([left[0], left[1], 0.])
+        up = [0., 0., 1.]
+        return [unit(cross(left, up)), left, up]
+
+    def hand(self, side):
+        """The palm's frame (y from the wrist to the knuckles, z from the index to the little finger) and its length."""
+        knuckles = mul(add(self.at(f'finger_0_{side}'), self.at(f'finger_3_{side}')), .5)
+        reach = sub(knuckles, self.at(f'hand_{side}'))
+        return frame(reach, sub(self.at(f'finger_3_{side}'), self.at(f'finger_0_{side}'))), math.sqrt(dot(reach, reach))
+
+
+def transform(R, p, scale):
+    rotation = U.MathLibrary.make_rot_from_xz(U.Vector(*R[0]), U.Vector(*R[2]))
+    return U.Transform(U.Vector(*p), rotation, U.Vector(scale, scale, scale))
+
+
+def record_of(t):
+    q = t.rotation
+    return {'location': [round(v, 3) for v in (t.translation.x, t.translation.y, t.translation.z)],
+            'rotation': [round(v, 6) for v in (q.x, q.y, q.z, q.w)], 'scale': round(t.scale3d.x, 4)}
+
+
+def equipment(link, cairo):
+    """Cairo's equipment record: Link's pieces, held in Cairo's hands and carried on Cairo's chest as on Link's. Link holds
+    a piece at a weapon bone under his wrist (Weapon_R, Weapon_L) and carries it at a bone under his chest (Pod_A)."""
+    C = compose(cairo.body(), [apply_t(link.body(), axis) for axis in ([1., 0, 0], [0., 1, 0], [0., 0, 1])])   # A_t A_s^T
+    scale = ROSTER['scale'] * SIZE
+    record, checks = {}, {}
+    for slot, item in ROSTER['moves']['equipment'].items():
+        entry = {key: item[key] for key in ('mesh', 'clip', 'looks') if key in item}
+        entry['hand'] = entry['back'] = ''
+        if item.get('hand'):
+            side = item['hand'][-1]
+            role = f'hand_{side}'
+            Fs, ls = link.hand(side)
+            Ft, lt = cairo.hand(side)
+            piece = link.transform(item['hand'])          # the piece sits at the weapon bone
+            offset = sub([piece.translation.x, piece.translation.y, piece.translation.z], link.at(role))
+            R = compose(Ft, compose_t(Fs, link.rotation(item['hand'])))
+            p = add(cairo.at(role), apply(Ft, mul(apply_t(Fs, offset), lt / ls)))
+            held = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform(role))
+            entry['hand'], entry['held'] = role, record_of(held)
+            checks[slot] = {'hand_cm': [round(ls, 2), round(lt, 2)]}
+        if item.get('back') and item.get('carry'):
+            carry = item['carry']
+            local = U.Transform(U.Vector(*carry['location']), U.Quat(*carry['rotation']).rotator(), U.Vector(1, 1, 1))
+            piece = U.MathLibrary.compose_transforms(local, link.transform(item['back']))
+            Rp = [[v.x, v.y, v.z] for v in (piece.rotation.rotate_vector(U.Vector(1, 0, 0)), piece.rotation.rotate_vector(U.Vector(0, 1, 0)),
+                                            piece.rotation.rotate_vector(U.Vector(0, 0, 1)))]
+            offset = sub([piece.translation.x, piece.translation.y, piece.translation.z], link.at('chest'))
+            p = add(cairo.at('chest'), mul(apply(C, offset), BODY))
+            on_back = U.MathLibrary.make_relative_transform(transform(compose(C, Rp), p, scale), cairo.transform('chest'))
+            entry['back'], entry['carry'] = 'chest', record_of(on_back)
+        record[slot] = entry
+    return record, checks
+
+
+# --- Import ----------------------------------------------------------------------------------------------------------
+
+cairo_folder = CONTENT / 'Cairo'
+before = digests(cairo_folder)
+mesh = E.load_asset('/Game/Cairo/SK_Cairo'); assert mesh, 'import Cairo first (unreal.cairo)'
+skeleton = mesh.skeleton
+link_mesh = E.load_asset(ROSTER['mesh']); assert link_mesh, 'import the BOTW characters first (unreal.botw)'
+if E.does_directory_exist(DEST):
+    E.delete_directory(DEST)
+E.make_directory(DEST)
+
+clips = {}
+for name, clip in CONFIG['clips'].items():
+    sequence = fbx(name, skeleton)
+    length = sequence.get_editor_property('sequence_length')
+    assert abs(length - clip['frames'] / CONFIG['fps']) < .002, (name, length, clip['frames'])
+    clips[name] = sequence
+U.log(f'CAIRO BOTW: {len(clips)} clips imported')
+
+moves = LINK['moves']
+clip = lambda name: clips[name]
+blend = lambda kind, title: speed_blend(f'BS_CairoBotw{title}', skeleton, [clip(s['clip']) for s in moves['blends'][kind]],
+                                        [round(s['speed'] * SIZE, 1) for s in moves['blends'][kind]], [s['rate'] for s in moves['blends'][kind]])
+locomotion, crouching, armed = blend('locomotion', 'Locomotion'), blend('crouching', 'Crouching'), blend('armed', 'ArmedLocomotion')
+gaits = [round(s['speed'] * SIZE, 1) for s in moves['blends']['locomotion']]
+actions = {'Idle': clip(LINK['roles']['idle'])}
+actions.update({action: clip(entry['clip']) for action, entry in ROSTER['moves']['actions'].items()})
+
+definition = E.duplicate_asset('/Game/Cairo/DA_Cairo', f'{DEST}/DA_CairoBotw')
+assert definition, 'DA_Cairo could not be copied'
+for key, value in dict(locomotion=locomotion, crouching=crouching, armed_locomotion=armed, armed_crouching=None, actions=actions,
+                       use_authored_movement=True, walk_speed=gaits[1], jog_speed=gaits[1], run_speed=gaits[2], sprint_speed=gaits[3],
+                       crouch_speed=round(moves['blends']['crouching'][-1]['speed'] * SIZE, 1),
+                       ground_dash_profile=[], air_dash_profile=[], roll_profile=[], roll_dive_takeoff=0., roll_dive_touchdown=0.,
+                       sword_mesh=None, sword_clips=[]).items():
+    definition.set_editor_property(key, value)
+E.save_loaded_asset(definition, False)
+
+# The move record: Link's, its body-measured lengths scaled to Cairo.
+scaled = {}
+for name, entry in ROSTER['moves']['actions'].items():
+    entry = dict(entry)
+    if 'path' in entry:
+        entry['path'] = [[round(x * SIZE, 2), round(y * SIZE, 2), round(z * SIZE, 2), yaw] for x, y, z, yaw in entry['path']]
+    if 'speed' in entry:
+        entry['speed'] = round(entry['speed'] * SIZE, 1)
+    scaled[name] = entry
+params = dict(ROSTER['moves']['params'])
+params['SwimHang'] = round(params['SwimHang'] * SIZE, 2)
+params['BodyScale'] = BODY
+link = Rig(link_mesh.skeleton, {**LINK['skate'], 'pelvis': 'Waist'})   # botw.py's bone map
+cairo = Rig(skeleton, {})
+gear, gear_checks = equipment(link, cairo)
+body_check = cairo.at('pelvis')[2] / link.at('pelvis')[2]
+record = {'actions': scaled, 'params': params, 'equipment': gear}
+DATA.mkdir(parents=True, exist_ok=True)
+(DATA / 'botw.json').write_text(json.dumps(record, indent=1) + '\n')
+
+after = digests(cairo_folder)
+changed = sorted(k for k in set(before) | set(after) if before.get(k) != after.get(k))
+report = {'source': CONFIG['source'], 'source_sha256': CONFIG['source_sha256'], 'body': BODY, 'size': SIZE,
+          'body_from_reference_poses': round(body_check, 4), 'gaits_cm': gaits, 'equipment': gear, 'hands': gear_checks,
+          'definition': definition.get_path_name(), 'clips': {n: {'path': s.get_path_name(), 'length': round(s.get_editor_property('sequence_length'), 4)}
+                                                               for n, s in clips.items()}, 'changed_cairo_files': changed}
+(OUT / 'unreal_import.json').write_text(json.dumps(report, indent=1) + '\n')
+assert not changed, ('Cairo assets changed', changed)
+assert abs(body_check - BODY) < .02, ('the reference poses disagree with the export', body_check, BODY)
+U.log(f'CAIRO BOTW IMPORT COMPLETE: {len(clips)} clips, {len(actions)} actions, body {BODY}, size {SIZE:.3f}')

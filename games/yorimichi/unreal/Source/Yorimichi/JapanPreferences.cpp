@@ -1,5 +1,4 @@
 #include "JapanPreferences.h"
-#include "BotwCreature.h"
 #include "BotwRider.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
@@ -270,8 +269,8 @@ void UJapanPreferences::ToggleMenu()
         .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
             ? TEXT("Performance uses lighter shadows and distant detail to keep movement smooth.")
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
-    // The character switch (ABotwRider::SwitchPlayer): Cairo and every BOTW character with a rider definition. The
-    // switch waits for the next tick, out of the menu's click.
+    // The character switch (ABotwRider::SwitchPlayer): Cairo, Cairo with the BotW move set and every BOTW character with a
+    // rider definition. The switch waits for the next tick, out of the menu's click.
     if (const TArray<FString> Riders = ABotwRider::Available(); Riders.Num())
     {
         const FString Playing = ABotwRider::NameOf(Owner);
@@ -279,9 +278,8 @@ void UJapanPreferences::ToggleMenu()
         TArray<FString> Names = {TEXT("Cairo")}; Names.Append(Riders);
         for (const FString& Name : Names)
         {
-            const FBotwSpec* Spec = FBotwSpec::Find(Name);
             Characters->AddSlot()[SNew(SButton).IsEnabled(Name != Playing)
-                .Text(FText::FromString(Spec && !Spec->Label.IsEmpty() ? Spec->Label : Name))
+                .Text(FText::FromString(ABotwRider::Label(Name)))
                 .OnClicked_Lambda([this,Name]
                 {
                     CloseMenu();

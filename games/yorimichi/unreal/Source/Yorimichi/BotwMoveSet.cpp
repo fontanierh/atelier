@@ -52,6 +52,19 @@ namespace
         return Prefixed(N, { TEXT("Cut"), TEXT("Rush"), TEXT("Plunge"), TEXT("JumpCut"), TEXT("DashCut"), TEXT("Sneakstrike"), TEXT("Flurry") }) ||
             N == FName(TEXT("ChargeSpin"));
     }
+    /** A record's {location, rotation (x, y, z, w), scale} into Out; Out is left alone when Key is absent. */
+    void ReadTransform(const TSharedPtr<FJsonObject>& O, const TCHAR* Key, FTransform& Out)
+    {
+        const TSharedPtr<FJsonObject>* T = nullptr;
+        if (!O->TryGetObjectField(Key, T)) return;
+        const TArray<TSharedPtr<FJsonValue>>* L = nullptr; const TArray<TSharedPtr<FJsonValue>>* R = nullptr;
+        if ((*T)->TryGetArrayField(TEXT("location"), L) && L->Num() == 3)
+            Out.SetLocation(FVector((*L)[0]->AsNumber(), (*L)[1]->AsNumber(), (*L)[2]->AsNumber()));
+        if ((*T)->TryGetArrayField(TEXT("rotation"), R) && R->Num() == 4)
+            Out.SetRotation(FQuat((*R)[0]->AsNumber(), (*R)[1]->AsNumber(), (*R)[2]->AsNumber(), (*R)[3]->AsNumber()).GetNormalized());
+        double Scale = 1.;
+        if ((*T)->TryGetNumberField(TEXT("scale"), Scale)) Out.SetScale3D(FVector(Scale));
+    }
     /** The rest of a blocked move, along the surface it hit (the movement component keeps its own slide protected). */
     void Slide(UCharacterMovementComponent* Movement, const FVector& Delta, const FQuat& Rotation, FHitResult& Hit)
     {
@@ -146,7 +159,8 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
     if (Record->TryGetObjectField(TEXT("params"), ParamObject))
         for (const auto& Pair : (*ParamObject)->Values) { double V = 0.; if (Pair.Value->TryGetNumber(V)) Params.Add(FString(*Pair.Key), float(V)); }
 
-    // Equipment: each piece rests at its back bone and is held at its hand bone (the glider only appears while gliding).
+    // Equipment: each piece rests at its back bone and is held at its hand bone (the glider only appears while gliding),
+    // as placed by `carry` and `held` (identity when absent: the piece's own origin and axes are the bone's).
     USkeletalMeshComponent* Body = Owner->GetMesh();
     const TSharedPtr<FJsonObject>* Equipment = nullptr;
     if (Body && Record->TryGetObjectField(TEXT("equipment"), Equipment))
@@ -169,21 +183,16 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                 Glider->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
                 Glider->RegisterComponent();
                 Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, FName(*Hand));
+                FTransform Held; ReadTransform(O, TEXT("held"), Held);
+                Glider->SetRelativeTransform(Held);
                 Glider->SetVisibility(false, true);
                 continue;
             }
             UStaticMesh* Asset = LoadObject<UStaticMesh>(nullptr, *MeshPath, nullptr, LOAD_NoWarn | LOAD_Quiet);
             if (!Asset || Back.IsEmpty()) continue;
             FSlot S; S.Hand = Hand.IsEmpty() ? NAME_None : FName(*Hand); S.Back = FName(*Back);
-            const TSharedPtr<FJsonObject>* Carry = nullptr;
-            if (O->TryGetObjectField(TEXT("carry"), Carry))
-            {
-                const TArray<TSharedPtr<FJsonValue>>* L = nullptr; const TArray<TSharedPtr<FJsonValue>>* R = nullptr;
-                if ((*Carry)->TryGetArrayField(TEXT("location"), L) && L->Num() == 3)
-                    S.Carry.SetLocation(FVector((*L)[0]->AsNumber(), (*L)[1]->AsNumber(), (*L)[2]->AsNumber()));
-                if ((*Carry)->TryGetArrayField(TEXT("rotation"), R) && R->Num() == 4)
-                    S.Carry.SetRotation(FQuat((*R)[0]->AsNumber(), (*R)[1]->AsNumber(), (*R)[2]->AsNumber(), (*R)[3]->AsNumber()).GetNormalized());
-            }
+            ReadTransform(O, TEXT("held"), S.Held);
+            ReadTransform(O, TEXT("carry"), S.Carry);
             UStaticMeshComponent* Prop = NewObject<UStaticMeshComponent>(Owner, *(FString(TEXT("Botw")) + *Pair.Key));
             Prop->SetStaticMesh(Asset);
             Prop->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -1550,7 +1559,7 @@ void UBotwMoveSet::Attach(FName Slot)
     const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Slot);
     if (!S || !Prop || !*Prop || !Character->GetMesh()) return;
     (*Prop)->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, S->bInHand ? S->Hand : S->Back);
-    (*Prop)->SetRelativeTransform(S->bInHand ? FTransform::Identity : S->Carry);
+    (*Prop)->SetRelativeTransform(S->bInHand ? S->Held : S->Carry);
 }
 
 void UBotwMoveSet::SetArmed(bool bNow)
@@ -1609,7 +1618,12 @@ void UBotwMoveSet::AdvanceMeshOffset(float Dt)
 
 // --------------------------------------------------------------------------------------------------------- Queries
 
-float UBotwMoveSet::Scale() const { return Character && Character->GetMesh() ? float(Character->GetMesh()->GetRelativeScale3D().X) : 1.f; }
+float UBotwMoveSet::Scale() const
+{
+    // A retargeted body (Cairo's) states its own: its mesh is at full scale, the body smaller than BOTW's.
+    if (const float* Body = Params.Find(TEXT("BodyScale"))) return *Body;
+    return Character && Character->GetMesh() ? float(Character->GetMesh()->GetRelativeScale3D().X) : 1.f;
+}
 float UBotwMoveSet::Gravity() const { return Character ? -Character->GetCharacterMovement()->GetGravityZ() : 980.f; }
 float UBotwMoveSet::HalfHeight() const { return Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); }
 float UBotwMoveSet::Feet() const { return float(Character->GetActorLocation().Z) - HalfHeight(); }
@@ -1723,6 +1737,7 @@ FString UBotwMoveSet::Describe() const
     const UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
     const FVector Here = Character->GetActorLocation();
     O->SetStringField(TEXT("mode"), ModeName());
+    O->SetNumberField(TEXT("scale"), Scale());
     O->SetStringField(TEXT("action"), Character->GetAnimationAction().ToString());
     O->SetNumberField(TEXT("source_time"), SourceTime());
     O->SetBoolField(TEXT("armed"), bArmed);
