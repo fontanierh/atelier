@@ -235,7 +235,7 @@ void AWandererCharacter::ReturnToSpawn()
     UE_LOG(LogTemp,Display,TEXT("PHONE STREAM returned to spawn"));
 }
 
-bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason)
+bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason, float Above)
 {
     if (!bReady || !Landscape || !Landscape->bLoaded) return false;
     if(GetZeppelin())GetZeppelin()->Cancel(this);
@@ -255,7 +255,7 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     // Land on whatever is actually built there (paving, sand, the island stair, a quay), not on the recorded height.
     FHitResult Hit;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(MapTeleport),false,this);
-    if (GetWorld()->LineTraceSingleByChannel(Hit,Target+FVector(0,0,2500),Target-FVector(0,0,2500),ECC_Visibility,Params)) Target.Z = Hit.ImpactPoint.Z;
+    if (GetWorld()->LineTraceSingleByChannel(Hit,Target+FVector(0,0,Above),Target-FVector(0,0,2500),ECC_Visibility,Params)) Target.Z = Hit.ImpactPoint.Z;
     else { float Ground = 0.f; if (Landscape->SampleGroundHeight(Target,Ground)) Target.Z = Ground; }
     SetActorLocationAndRotation(Target+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
     Movement->bForceNextFloorCheck = true;

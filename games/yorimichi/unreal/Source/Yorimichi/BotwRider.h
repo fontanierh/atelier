@@ -20,16 +20,22 @@ public:
     // Crouching keeps the mesh where Fit stood it (ACharacter puts it back to the class default's height).
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
-    /** The rider the command line asks for, when its definition was imported; empty otherwise. */
+    /** The rider the command line asks for, when its definition was imported; empty otherwise. "CairoBotw" is Cairo with
+     *  the BotW move set (ACairoCharacter::BotwName). */
     static FString Requested();
-    /** The pawn class a game mode uses: this class when a rider is requested, else null (the mode's own default). */
+    /** The pawn class a game mode uses when a rider is requested (this class, or Cairo's for CairoBotw), else null (the
+     *  mode's own default). */
     static UClass* PawnOverride();
-    /** The BOTW characters that can play: those with an imported rider definition, in roster order. */
+    /** The BOTW characters the character switch offers: those with a move set (Link) and an imported rider definition,
+     *  in roster order. Checks the definitions exist without loading them. */
     static TArray<FString> Available();
-    /** The playing character's name: the rider's, or "Cairo". */
+    /** The playing character's name: the rider's, "Cairo" or "CairoBotw". */
     static FString NameOf(const AWandererCharacter* Character);
-    /** The Esc menu's character switch: From's player becomes Name (a rider, or "Cairo"), standing where From stood and
-     *  looking the same way; From is destroyed. Refused (null) on the zeppelin and before From is ready. */
+    /** A playable name as the character switch shows it. */
+    static FString Label(const FString& Name);
+    /** The Esc menu's character switch: From's player becomes Name ("Cairo", "CairoBotw" or a rider), standing where From
+     *  stood and looking the same way; From is destroyed. Refused (null) on the zeppelin and before From is ready. The
+     *  menu offers Cairo with the move set its "Cairo's moves" setting picks. */
     static AWandererCharacter* SwitchPlayer(AWandererCharacter* From, const FString& Name);
 private:
     FString RiderName;

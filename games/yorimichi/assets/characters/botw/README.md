@@ -60,12 +60,13 @@ PBR look.
 
 - **Creatures**: `ABotwCreature` (`Source/Yorimichi/BotwCreature.h`) plays the baked clips, stays on the ground and
   has a capsule the sword hits. Its modes: idle, showcase (every clip in turn), wander, camp (notices the player within
-  14 m, chases, attacks; sword hits stagger and knock it down) and scripted. The island spawns a camp of three
-  Bokoblins 25 m up the road; `-nobotw` turns it off, and scripted sessions (QA, films) get it only with `-botw`.
+  14 m, chases, attacks; sword hits stagger and knock it down) and scripted. The island spawns a Bokoblin camping
+  25 m up the road; `-nobotw` turns it off, and scripted sessions (QA, films) get it only with `-botw`.
 - **Riders**: a character with a `skate` map gets a `DA_<Name>Rider` definition (its idle and a locomotion blend
   space). `-rider=<Name>` makes it the player (`ABotwRider`): it walks, runs and gets on the board, where the skate
   runtime's solved pose is retargeted through `ISkateRider::GetSkateBone` like on Cairo.
-- **Character switch**: the Esc menu's Character row switches the player between Cairo and every rider while playing
+- **Character switch**: the Esc menu's Character row switches the player between Cairo (with the move set his setting
+  picks) and the riders with a move set (Link; the others start only with `-rider=<Name>`) while playing
   (`ABotwRider::SwitchPlayer`): the new character stands where the old one stood, facing the same way, with the camera
   unchanged; the board and the sailboat are put away first. It is refused on the zeppelin.
 - **Live verbs**: `botw_roster`, `botw_spawn(name, ground, yaw, mode)`, `botw_play`, `botw_move_to`, `botw_mode`,
@@ -105,3 +106,36 @@ rider's flat trick and pool trick in the Mega Park: the Bokoblin's 360 flip and 
 kickflip and flair (a backflip 180: the grab held from take-off and the left stick pulled back twice, quickly,
 `POOL_TRICK='flair'`). The trick names never mention a body flip (the flair shows as "BS Grab"): the skate runtime only
 scores it.
+
+### Cairo with Link's moves
+
+Cairo plays the same move set when the "Cairo's moves" setting says Breath of the Wild, or with `-rider=CairoBotw`; by
+default he plays his own. The setting is saved. Changed in the Esc menu while playing Cairo, it takes over at once;
+otherwise (on the phone, or while playing Link) it waits until Cairo next comes into play. QA, reviews and benchmarks
+ignore the saved setting.
+`characters.cairo_botw` runs [`../cairo/botw.py`](../cairo/botw.py) in Blender, which retargets every Link clip onto
+Cairo's skeleton (`build/yorimichi/cairo/botw/`). Both rest poses are T-poses. Each limb and finger swings to point
+where Link's points, the hands keep their palm frames and the feet their sole frames, and the spine and head keep
+Cairo's own posture. The hips move as Link's do, at the ratio of the two hip heights (`body`, 0.63). The legs are then
+solved so that planted feet stay planted, at that same scale, from Cairo's own stance. `unreal.cairo_botw`
+(`Scripts/import_cairo_botw.py`) imports the clips into `/Game/CairoBotw` and copies `DA_Cairo` into `DA_CairoBotw`
+with Link's blends and actions. It also writes Cairo's move record, `Content/Data/cairo/botw.json`. In that record:
+
+- Link's action paths, gait speeds and swim hang are scaled to Cairo's size.
+- `BodyScale` converts BOTW's metres for him.
+- Link's sword, sheath, shield and paraglider are scaled with Cairo. Each piece is moved from Link's weapon bones to
+  Cairo's hands in the palm's frame (`held`), and from Link's back bone to Cairo's chest (`carry`). The shield's
+  carry is fitted to Cairo's own mesh instead (`CARRY` in the import): his deeper torso and bigger head ran through it
+  where Link's chest put it.
+
+```sh
+uv run atelier build yorimichi unreal.cairo_botw
+uv run atelier play yorimichi -- -rider=CairoBotw
+```
+
+### Review film
+
+`scenarios/botw_moves_film.py` films every move of the set, shot by shot and close up, with the move set's state
+recorded for each frame: Link with `-rider=Link`, Cairo with `-rider=CairoBotw`, each in its own game.
+`scenarios/botw_moves_film_cut.py` captions the takes and joins them into one MP4, keeping or leaving out sections per
+take so that retakes splice in. Their docstrings give the commands.

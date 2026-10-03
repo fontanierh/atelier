@@ -32,7 +32,8 @@ struct FBotwMove
 enum class EBotwMoveMode : uint8 { Ground, Air, Glide, Climb, Swim };
 
 /**
- * A character's Breath of the Wild move set (the roster's `moves` record, assets/characters/botw/moves.toml): jumping
+ * A character's Breath of the Wild move set (the roster's `moves` record, assets/characters/botw/moves.toml, or Cairo's
+ * retargeted copy, Content/Data/cairo/botw.json): jumping
  * and landing, the side hop and backflip, the paraglider, climbing any steep surface, swimming, and sword and shield
  * combat (the four-cut combo, the charged spin, the dash, jump and plunge attacks, the sneakstrike, the shield guard and
  * parry, lock-on strafing, the flurry rush after a perfect dodge, hit reactions). It drives the character's action clip,
@@ -99,7 +100,7 @@ private:
     struct FSlot
     {
         FName Hand, Back;
-        FTransform Carry;
+        FTransform Held, Carry;   // relative to the hand and back bones
         bool bInHand = false;
     };
     UPROPERTY() TObjectPtr<AWandererCharacter> Character;
@@ -234,6 +235,7 @@ private:
     void SweepBlade();
     void BladePoints(TArray<FVector>& Out) const;
     FVector ShieldPoint() const;
+    /** BOTW's metres to the character's centimetres: the record's BodyScale, else the mesh's scale. */
     float Scale() const;
     float Gravity() const;
     float Feet() const;

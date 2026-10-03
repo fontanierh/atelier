@@ -1,4 +1,5 @@
-"""BOTW move set checks: the player's UBotwMoveSet (Link) driven through the live bridge as a player would drive it.
+"""BOTW move set checks: the player's UBotwMoveSet (Link, or Cairo with it) driven through the live bridge as a player
+would drive it.
 
     atelier play yorimichi -- -nobotw -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=250 -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/botw_moves.py
@@ -14,7 +15,8 @@ dash and the swim back to the shore; the climb up a steep bank onto its top, and
 plunge and the hard landing.
 Each check reads UBotwMoveSet's state (YorimichiLive::MoveState) every frame at a fixed 60 fps step; done.json lists
 every check with what it measured, log.json the per-frame state, and the key moments are saved as stills. Optional
-globals: ONLY, the checks to run; SHOTS, False for no stills.
+globals: ONLY, the checks to run; SHOTS, False for no stills; RIDER, the character switched to when the player has no
+move set (Link, or CairoBotw: Cairo with the move set, -rider=CairoBotw).
 """
 import json, math, os
 import unreal
@@ -22,6 +24,7 @@ import unreal
 L = live.L
 TAKE = globals().get('TAKE', 'take1')
 SHOTS = globals().get('SHOTS', True)
+RIDER = globals().get('RIDER') or 'Link'
 OUT = os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'), 'yorimichi/botw/moves', TAKE)
 os.makedirs(OUT, exist_ok=True)
 for f in os.listdir(OUT):
@@ -142,7 +145,7 @@ def on_foot():
     seen = yield from watch(2.)
     live.drive(0)
     top = max(s['speed'] for s in seen)
-    check('sprint', top > 550. and seen[-1]['stamina'] < stamina, top=round(top), stamina=round(seen[-1]['stamina'], 3))
+    check('sprint', top > 550. * st['size'] and seen[-1]['stamina'] < stamina, top=round(top), stamina=round(seen[-1]['stamina'], 3))
     yield from wait(1.)
 
 
@@ -272,7 +275,7 @@ def swim():
     seen = yield from watch(2.)
     cruise = seen[-1]['speed']
     # The capsule's feet ride the surface; the swimming body hangs below them.
-    check('swim forward at the surface', cruise > 100. and all(s['mode'] == 'swim' and abs(s['feet'] - s['water']) < 30. for s in seen[30:]),
+    check('swim forward at the surface', cruise > 100. * st['size'] and all(s['mode'] == 'swim' and abs(s['feet'] - s['water']) < 30. for s in seen[30:]),
           speed=round(cruise), feet_from_surface=round(seen[-1]['feet'] - seen[-1]['water'], 1), actions=actions(seen))
     shot('swim')
     live.press('dash')
@@ -298,10 +301,12 @@ def climb():
     if s is not None:
         low = z(); stamina = state()['stamina']
         shot('climb')
-        seen = yield from watch(12., lambda s: s['mode'] == 'ground' and live.drive(0))
+        seen = yield from watch(20., lambda s: s['mode'] == 'ground' and live.drive(0))   # a smaller body climbs slower
         gain = max(s['z'] for s in seen) - low
-        check('climb up and over the top', gain > 150. and seen[-1]['mode'] == 'ground', gain=round(gain),
-              actions=actions(seen)[-6:], mode=seen[-1]['mode'])
+        # Standing on the top, not back at the foot after a fall (both end on the ground).
+        top = seen[-1]['z'] - low
+        check('climb up and over the top', gain > 150. and top > 150. and seen[-1]['mode'] == 'ground', gain=round(gain),
+              top=round(top), actions=actions(seen)[-6:], mode=seen[-1]['mode'])
         check('climbing uses stamina', min(s['stamina'] for s in seen) < stamina)
     live.drive(0)
     yield from wait(.5)
@@ -350,8 +355,9 @@ CHECKS = [c for c in CHECKS if c[0] in (globals().get('ONLY') or [c[0] for c in 
 
 def steps():
     if state() == {}:
-        L.switch_character('Link')
+        L.switch_character(RIDER)
         yield from wait(2.)
+    st['size'] = state().get('scale', .8) / .8     # the speeds checked are Link's (scale .8); a smaller body is slower
     for name, fn in CHECKS:
         st['check'] = name
         yield from fn()

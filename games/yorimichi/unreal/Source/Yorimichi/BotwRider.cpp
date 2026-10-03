@@ -10,14 +10,24 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Misc/CommandLine.h"
+#include "Misc/PackageName.h"
 #include "Misc/Parse.h"
 
 static FString DefinitionPath(const FString& Name) { return FString::Printf(TEXT("/Game/Botw/%s/DA_%sRider.DA_%sRider"), *Name, *Name, *Name); }
+/** The rider's definition was imported. Checked on disk, never loaded: a definition holds its character's mesh, clips
+ *  and textures, about 1 GiB over the whole roster. */
+static bool HasDefinition(const FString& Name) { return FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(DefinitionPath(Name))); }
 
 FString ABotwRider::Requested()
 {
     FString Name;
     if (!FParse::Value(FCommandLine::Get(), TEXT("rider="), Name) || Name.IsEmpty()) return FString();
+    if (Name == ACairoCharacter::BotwName())
+    {
+        if (ACairoCharacter::HasBotw()) return Name;
+        UE_LOG(LogTemp, Warning, TEXT("BOTW rider %s: not imported (build unreal.cairo_botw)"), *Name);
+        return FString();
+    }
     if (!FBotwSpec::Find(Name) || !LoadObject<UWandererDefinition>(nullptr, *DefinitionPath(Name), nullptr, LOAD_NoWarn | LOAD_Quiet))
     {
         UE_LOG(LogTemp, Warning, TEXT("BOTW rider %s: no %s (build unreal.botw)"), *Name, *DefinitionPath(Name));
@@ -26,7 +36,12 @@ FString ABotwRider::Requested()
     return Name;
 }
 
-UClass* ABotwRider::PawnOverride() { return Requested().IsEmpty() ? nullptr : ABotwRider::StaticClass(); }
+UClass* ABotwRider::PawnOverride()
+{
+    const FString Name = Requested();
+    if (Name.IsEmpty()) return nullptr;
+    return Name == ACairoCharacter::BotwName() ? ACairoCharacter::StaticClass() : ABotwRider::StaticClass();
+}
 
 ABotwRider::ABotwRider(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -82,23 +97,31 @@ void ABotwRider::BeginPlay()
 
 TArray<FString> ABotwRider::Available()
 {
+    // Only the riders with a move set (Link) are playable for now; -rider=<Name> still starts any of them.
     TArray<FString> Names;
     for (const auto& Pair : FBotwSpec::All())
-        if (LoadObject<UWandererDefinition>(nullptr, *DefinitionPath(Pair.Key), nullptr, LOAD_NoWarn | LOAD_Quiet)) Names.Add(Pair.Key);
+        if (Pair.Value.Moves.IsValid() && HasDefinition(Pair.Key)) Names.Add(Pair.Key);
     return Names;
 }
 
 FString ABotwRider::NameOf(const AWandererCharacter* Character)
 {
-    const ABotwRider* Rider = Cast<ABotwRider>(Character);
-    return Rider ? Rider->RiderName : FString(TEXT("Cairo"));
+    if (const ABotwRider* Rider = Cast<ABotwRider>(Character)) return Rider->RiderName;
+    const ACairoCharacter* Cairo = Cast<ACairoCharacter>(Character);
+    return Cairo && Cairo->IsBotw() ? ACairoCharacter::BotwName() : FString(TEXT("Cairo"));
+}
+
+FString ABotwRider::Label(const FString& Name)
+{
+    const FBotwSpec* Spec = FBotwSpec::Find(Name);
+    return Spec && !Spec->Label.IsEmpty() ? Spec->Label : Name;
 }
 
 AWandererCharacter* ABotwRider::SwitchPlayer(AWandererCharacter* From, const FString& Name)
 {
     APlayerController* PC = From ? Cast<APlayerController>(From->GetController()) : nullptr;
     UWorld* World = From ? From->GetWorld() : nullptr;
-    const bool bCairo = Name == TEXT("Cairo");
+    const bool bCairo = Name == TEXT("Cairo") || (Name == ACairoCharacter::BotwName() && ACairoCharacter::HasBotw());
     if (!PC || !World || !From->IsReady() || From->IsZeppelinPassenger() || Name == NameOf(From) || (!bCairo && !Available().Contains(Name)))
     {
         UE_LOG(LogTemp, Warning, TEXT("Character switch to %s refused"), *Name);
@@ -114,6 +137,7 @@ AWandererCharacter* ABotwRider::SwitchPlayer(AWandererCharacter* From, const FSt
     AWandererCharacter* To = World->SpawnActorDeferred<AWandererCharacter>(Class, FTransform(Facing, Feet), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
     if (!To) { From->SetActorEnableCollision(true); return nullptr; }
     if (ABotwRider* Rider = Cast<ABotwRider>(To)) { Rider->RiderName = Name; Rider->DefinitionAssetPath = DefinitionPath(Name); Rider->Fit(); }
+    if (ACairoCharacter* Cairo = Cast<ACairoCharacter>(To)) Cairo->SetBotw(Name == ACairoCharacter::BotwName());
     To->bSwitchedIn = true;
     To->EnterWorld(From->GetLandscape());   // before BeginPlay, as at the start: the sailboat takes the camera preferences
     To->FinishSpawning(FTransform(Facing, Feet + FVector(0, 0, To->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2.f)));

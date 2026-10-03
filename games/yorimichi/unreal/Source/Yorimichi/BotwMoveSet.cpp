@@ -52,6 +52,19 @@ namespace
         return Prefixed(N, { TEXT("Cut"), TEXT("Rush"), TEXT("Plunge"), TEXT("JumpCut"), TEXT("DashCut"), TEXT("Sneakstrike"), TEXT("Flurry") }) ||
             N == FName(TEXT("ChargeSpin"));
     }
+    /** A record's {location, rotation (x, y, z, w), scale} into Out; Out is left alone when Key is absent. */
+    void ReadTransform(const TSharedPtr<FJsonObject>& O, const TCHAR* Key, FTransform& Out)
+    {
+        const TSharedPtr<FJsonObject>* T = nullptr;
+        if (!O->TryGetObjectField(Key, T)) return;
+        const TArray<TSharedPtr<FJsonValue>>* L = nullptr; const TArray<TSharedPtr<FJsonValue>>* R = nullptr;
+        if ((*T)->TryGetArrayField(TEXT("location"), L) && L->Num() == 3)
+            Out.SetLocation(FVector((*L)[0]->AsNumber(), (*L)[1]->AsNumber(), (*L)[2]->AsNumber()));
+        if ((*T)->TryGetArrayField(TEXT("rotation"), R) && R->Num() == 4)
+            Out.SetRotation(FQuat((*R)[0]->AsNumber(), (*R)[1]->AsNumber(), (*R)[2]->AsNumber(), (*R)[3]->AsNumber()).GetNormalized());
+        double Scale = 1.;
+        if ((*T)->TryGetNumberField(TEXT("scale"), Scale)) Out.SetScale3D(FVector(Scale));
+    }
     /** The rest of a blocked move, along the surface it hit (the movement component keeps its own slide protected). */
     void Slide(UCharacterMovementComponent* Movement, const FVector& Delta, const FQuat& Rotation, FHitResult& Hit)
     {
@@ -146,7 +159,8 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
     if (Record->TryGetObjectField(TEXT("params"), ParamObject))
         for (const auto& Pair : (*ParamObject)->Values) { double V = 0.; if (Pair.Value->TryGetNumber(V)) Params.Add(FString(*Pair.Key), float(V)); }
 
-    // Equipment: each piece rests at its back bone and is held at its hand bone (the glider only appears while gliding).
+    // Equipment: each piece rests at its back bone and is held at its hand bone (the glider only appears while gliding),
+    // as placed by `carry` and `held` (identity when absent: the piece's own origin and axes are the bone's).
     USkeletalMeshComponent* Body = Owner->GetMesh();
     const TSharedPtr<FJsonObject>* Equipment = nullptr;
     if (Body && Record->TryGetObjectField(TEXT("equipment"), Equipment))
@@ -169,21 +183,16 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                 Glider->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
                 Glider->RegisterComponent();
                 Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, FName(*Hand));
+                FTransform Held; ReadTransform(O, TEXT("held"), Held);
+                Glider->SetRelativeTransform(Held);
                 Glider->SetVisibility(false, true);
                 continue;
             }
             UStaticMesh* Asset = LoadObject<UStaticMesh>(nullptr, *MeshPath, nullptr, LOAD_NoWarn | LOAD_Quiet);
             if (!Asset || Back.IsEmpty()) continue;
             FSlot S; S.Hand = Hand.IsEmpty() ? NAME_None : FName(*Hand); S.Back = FName(*Back);
-            const TSharedPtr<FJsonObject>* Carry = nullptr;
-            if (O->TryGetObjectField(TEXT("carry"), Carry))
-            {
-                const TArray<TSharedPtr<FJsonValue>>* L = nullptr; const TArray<TSharedPtr<FJsonValue>>* R = nullptr;
-                if ((*Carry)->TryGetArrayField(TEXT("location"), L) && L->Num() == 3)
-                    S.Carry.SetLocation(FVector((*L)[0]->AsNumber(), (*L)[1]->AsNumber(), (*L)[2]->AsNumber()));
-                if ((*Carry)->TryGetArrayField(TEXT("rotation"), R) && R->Num() == 4)
-                    S.Carry.SetRotation(FQuat((*R)[0]->AsNumber(), (*R)[1]->AsNumber(), (*R)[2]->AsNumber(), (*R)[3]->AsNumber()).GetNormalized());
-            }
+            ReadTransform(O, TEXT("held"), S.Held);
+            ReadTransform(O, TEXT("carry"), S.Carry);
             UStaticMeshComponent* Prop = NewObject<UStaticMeshComponent>(Owner, *(FString(TEXT("Botw")) + *Pair.Key));
             Prop->SetStaticMesh(Asset);
             Prop->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -877,15 +886,20 @@ bool UBotwMoveSet::TryClimbTop()
     const FVector Probe = Here + Forward * (HoldDistance() + Radius + 20.f) + FVector(0, 0, Half + 90.f);
     FHitResult Ledge;
     if (!Trace(Probe, Probe - FVector(0, 0, Half * 2.f + 140.f), Ledge) || !Movement->IsWalkable(Ledge)) return false;
-    const FVector Stand(Probe.X, Probe.Y, Ledge.ImpactPoint.Z + Half + 2.f);
+    // On a sloping ledge the capsule's round foot rests above the point straight below its centre.
+    const FVector Stand(Probe.X, Probe.Y, Ledge.ImpactPoint.Z + Half - Radius + Radius / FMath::Max(.5f, float(Ledge.ImpactNormal.Z)) + 2.f);
     if (Stand.Z < Here.Z - Half * .5f || Blocked(Stand)) return false;
-    const FVector4f End = Top->Path.Last();
+    const FVector4f End = Top->PathAt(Top->End);
     const float Ahead = float((Stand - Here) | Forward), Rise = float(Stand.Z - Here.Z);
+    // A ledge far above the clip's own climb is not reached yet: keep climbing.
+    if (End.Z > 1.f && Rise > 3.f * End.Z) return false;
     const FVector Fit(End.X > 1.f ? FMath::Clamp(Ahead / End.X, .2f, 3.f) : 1.f, 1.f, End.Z > 1.f ? FMath::Clamp(Rise / End.Z, .2f, 3.f) : 1.f);
     Character->SetActorRotation(FRotator(0, Forward.Rotation().Yaw, 0));
     Play(TEXT("ClimbTop"), .1f);
-    // The body's lean into the wall eases out over the climb.
+    // The body's lean into the wall eases out over the climb; what the fitted path misses of the stand (its fit is
+    // clamped) is made up along the way, so the capsule ends standing on the ledge, not inside it.
     BeginDrive(false, Fit, FVector::ZeroVector);
+    DriveMesh = (Stand - Here) - WorldPath(End);
     MeshDriveLocal = FVector(ClimbShift, 0, 0); ClimbShift = ClimbShiftTarget = 0.f;
     return true;
 }
@@ -898,11 +912,21 @@ void UBotwMoveSet::PhysClimb(float Dt)
     if (Name == TEXT("ClimbOff") || Name == TEXT("ClimbTired")) { Movement->Velocity = FVector::ZeroVector; return; }
     // Keep to the wall: find it again straight ahead, and around a bend.
     FHitResult Wall;
-    if (FindWall(-WallNormal, Wall, 0.f, 0.f, HoldDistance() + 45.f) && Climbable(Wall))
+    const bool bWall = FindWall(-WallNormal, Wall, 0.f, 0.f, HoldDistance() + 45.f) && Climbable(Wall);
+    const bool bFlat = !bWall && Wall.bBlockingHit && Movement->IsWalkable(Wall);
+    if (bFlat)
+    {
+        // The wall has flattened out: stand on it once the feet are on it. Until then climb over its edge, or on up the
+        // slope (letting go with no floor under the feet dropped the climber back down it).
+        FFindFloorResult Floor;
+        Movement->FindFloor(Character->GetActorLocation(), Floor, false);
+        if (Floor.IsWalkableFloor()) { LeaveClimb(false); return; }
+        if (TryClimbTop()) return;
+    }
+    if (bWall || bFlat)
     {
         WallNormal = (WallNormal * .5f + Wall.ImpactNormal * .5f).GetSafeNormal(); WallPoint = Wall.ImpactPoint;
     }
-    else if (Wall.bBlockingHit && Movement->IsWalkable(Wall)) { LeaveClimb(false); return; }   // the wall has flattened out
     else
     {
         if (!TryClimbTop()) LeaveClimb(true);
@@ -1150,7 +1174,8 @@ void UBotwMoveSet::AdvanceSwim(float Dt)
             // Out of stamina in deep water: back to the last dry ground, a little hurt.
             if (UWandererSwordComponent* Sword = Character->GetSword()) Sword->Health = FMath::Max(1.f, Sword->Health - GetParam(TEXT("DrownDamage"), 10.f));
             const FVector Shore = bHasSafeShore ? SafeShore : Character->GetActorLocation();
-            Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"));
+            // The shore is a spot he stood on: land on it, not on a canopy above it.
+            Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"), 100.f);
         }
         return;
     }
@@ -1201,7 +1226,7 @@ bool UBotwMoveSet::Press(FName Button)
         if (bDown) return true;
         if (Mode == EBotwMoveMode::Ground) { if (CanDodge()) StartHop(); }
         else if (Mode == EBotwMoveMode::Glide) CloseGlider(false);
-        else if (Mode == EBotwMoveMode::Climb && !bDriving) LeaveClimb(true);
+        else if (Mode == EBotwMoveMode::Climb && !(bDriving && !bDriveSweep)) LeaveClimb(true);   // not while pulling up onto a ledge
         return true;
     }
     if (Button == TEXT("attack"))
@@ -1304,28 +1329,30 @@ void UBotwMoveSet::StartAttack()
         return;
     }
     if (Busy()) return;
-    if (!bArmed)
-    {
-        // Unarmed, the press draws the sword and cuts as soon as the draw allows.
-        if (Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword"), .1f); bAttackAfterDraw = true; AttackBuffer = 0.f; return; }
-        SetArmed(true);
-    }
-    // Crouched behind an unaware enemy: the sneakstrike.
+    // Crouched behind an unaware enemy: the sneakstrike, drawing the sword in the same motion.
     if (Character->bIsCrouched && Has(TEXT("Sneakstrike")))
         if (AActor* Victim = FindTarget(Reach() + 120.f, 60.f); Victim && IsUnawareTarget(Victim))
         {
+            SetArmed(true);
             Character->UnCrouch();
             Target = Victim; Face(Reach() + 120.f); Target = nullptr;
             AttackBuffer = 0.f;
             Play(TEXT("Sneakstrike"), .06f);
             return;
         }
-    // Sprinting: the dash attack, driven along its clip.
+    // Sprinting: the dash attack, driven along its clip (drawing the sword in the same motion).
     if (Character->Stamina.Sprinting && Has(TEXT("DashCut")))
     {
+        SetArmed(true);
         AttackBuffer = 0.f; Face(700.f);
         Play(TEXT("DashCut"), .04f); BeginDrive(true);
         return;
+    }
+    if (!bArmed)
+    {
+        // Unarmed, the press draws the sword and cuts as soon as the draw allows.
+        if (Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword"), .1f); bAttackAfterDraw = true; AttackBuffer = 0.f; return; }
+        SetArmed(true);
     }
     StartCut(0);
 }
@@ -1550,7 +1577,7 @@ void UBotwMoveSet::Attach(FName Slot)
     const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Slot);
     if (!S || !Prop || !*Prop || !Character->GetMesh()) return;
     (*Prop)->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, S->bInHand ? S->Hand : S->Back);
-    (*Prop)->SetRelativeTransform(S->bInHand ? FTransform::Identity : S->Carry);
+    (*Prop)->SetRelativeTransform(S->bInHand ? S->Held : S->Carry);
 }
 
 void UBotwMoveSet::SetArmed(bool bNow)
@@ -1609,7 +1636,12 @@ void UBotwMoveSet::AdvanceMeshOffset(float Dt)
 
 // --------------------------------------------------------------------------------------------------------- Queries
 
-float UBotwMoveSet::Scale() const { return Character && Character->GetMesh() ? float(Character->GetMesh()->GetRelativeScale3D().X) : 1.f; }
+float UBotwMoveSet::Scale() const
+{
+    // A retargeted body (Cairo's) states its own: its mesh is at full scale, the body smaller than BOTW's.
+    if (const float* Body = Params.Find(TEXT("BodyScale"))) return *Body;
+    return Character && Character->GetMesh() ? float(Character->GetMesh()->GetRelativeScale3D().X) : 1.f;
+}
 float UBotwMoveSet::Gravity() const { return Character ? -Character->GetCharacterMovement()->GetGravityZ() : 980.f; }
 float UBotwMoveSet::HalfHeight() const { return Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); }
 float UBotwMoveSet::Feet() const { return float(Character->GetActorLocation().Z) - HalfHeight(); }
@@ -1723,6 +1755,7 @@ FString UBotwMoveSet::Describe() const
     const UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
     const FVector Here = Character->GetActorLocation();
     O->SetStringField(TEXT("mode"), ModeName());
+    O->SetNumberField(TEXT("scale"), Scale());
     O->SetStringField(TEXT("action"), Character->GetAnimationAction().ToString());
     O->SetNumberField(TEXT("source_time"), SourceTime());
     O->SetBoolField(TEXT("armed"), bArmed);
