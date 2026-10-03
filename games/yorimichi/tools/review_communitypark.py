@@ -115,7 +115,7 @@ def main():
         time.sleep(12)
         shots = [('overview', (1430, 370, 150), (1280, 560, 49), 60.),
                  ('station_approach', (1240, 374, 42), (1290, 548, 55), 70.),
-                 ('entrance', (1300, 507, 51), (1285, 555, 51), 70.),
+                 ('entrance', (1316, 507, 51), (1302, 555, 51), 70.),
                  ('bowls', (1248, 572, 59), (1283, 565, 47), 75.),
                  ('deck', (1252, 597, 50.2), (1280, 570, 51), 75.)]
         for name, at, target, fov in shots:
@@ -123,7 +123,7 @@ def main():
             time.sleep(4); capture(name); print('CAPTURE', out/(name+'.png'), flush=True)
         rides = {'deck': ride('ride_deck', [1250, 572, surface_at(1250, 572)], 90),
                  'approach': ride('ride_approach', L.access()[40].tolist(), 90),
-                 'bowl': ride('ride_bowl', L.SPAWN.tolist(), 90, seconds=3, speed=200)}
+                 'bowl': ride('ride_bowl', [1300, 522, surface_at(1300, 522)], 90, seconds=3, speed=200)}
         text = (out/'game.log').read_text(errors='ignore')
         assert re.search(r'SKATE PARK loaded: 32 meshes, '+str(len(manifest['rails']))+r' rails', text), 'Community grind paths not registered'
         result = {'park_actors': 2, 'source_meshes': 30, 'community_meshes': 32, 'grind_paths': len(manifest['rails']),

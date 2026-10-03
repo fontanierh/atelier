@@ -40,7 +40,7 @@ bg = sc.world.node_tree.nodes.get('Background'); bg.inputs['Color'].default_valu
 sun = bpy.data.lights.new('ReviewSun', 'SUN'); sun.energy = 4; sun.angle = math.radians(3); sun.color = (1., .93, .82)
 obj = bpy.data.objects.new('ReviewSun', sun); sc.collection.objects.link(obj); obj.rotation_euler = (math.radians(30), math.radians(-25), math.radians(-40))
 for name, location, target, lens in [('overview', (1420, 380, 145), (1280, 560, 48), 35),
-                                    ('entrance', (1301, 496, 51), (1290, 555, 50), 25),
+                                    ('entrance', (1316, 496, 51), (1302, 555, 50), 25),
                                     ('bowls', (1242, 572, 65), (1280, 563, 46), 28)]:
     camera = bpy.data.cameras.new(name); camera.lens = lens; camera.clip_end = 3000
     obj = bpy.data.objects.new(name, camera); sc.collection.objects.link(obj); obj.location = location

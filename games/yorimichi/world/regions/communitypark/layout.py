@@ -15,9 +15,9 @@ YAW = 180.
 PATCH = (1200., 500., 1360., 650.)
 STEP = 1.
 CLEAR = (1210., 485., 1350., 635.)
-ENTRY = np.array([1300., 516., 48.5])
-SPAWN = np.array([1300., 522., 48.5])
-HEADING = 90.
+ENTRY = np.array([1316., 516., 48.5])
+SPAWN = np.array([1316., 522., 48.5])
+HEADING = 180.
 ACCESS = [(1240., 343., 36.), (1240., 400., 41.5), (1280., 470., 47.), tuple(ENTRY)]
 WIDTH = 4.
 

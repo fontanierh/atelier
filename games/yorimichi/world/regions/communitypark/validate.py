@@ -55,13 +55,18 @@ def source_audit():
     assert grade < .10, grade
     assert abs(surface_at(*L.ENTRY[:2])-L.ENTRY[2]) < .001
     assert abs(surface_at(*L.SPAWN[:2])-L.SPAWN[2]) < .001
+    tangent = path[-1, :2]-path[-2, :2]
+    normal = np.array([-tangent[1], tangent[0]])/np.linalg.norm(tangent)
+    for side in np.linspace(-L.WIDTH/2, L.WIDTH/2, 5):
+        point = L.ENTRY[:2]+normal*side
+        assert abs(surface_at(*point)-L.ENTRY[2]) < .001, ('entrance crosses a bowl', point.tolist())
     x, y, z = L.grid(north_surface)
     perimeter = np.zeros(z.shape, bool); perimeter[[0, -1], :] = True; perimeter[:, [0, -1]] = True
     np.testing.assert_allclose(z[perimeter], L.carve_access(x, y, north_surface(x, y))[perimeter], atol=1e-8)
     return {'instances': len(s.instances), 'triangles': len(t), 'zero_area_faces': int((~valid).sum()),
             'upward_surface_samples': len(points), 'minimum_ground_clearance_m': float(gap.min()),
             'access_length_m': float(distance.sum()), 'maximum_access_grade': grade,
-            'spawn_height_m': surface_at(*L.SPAWN[:2]), 'patch_boundary_matches': True}
+            'spawn_height_m': surface_at(*L.SPAWN[:2]), 'entry_width_samples': 5, 'patch_boundary_matches': True}
 
 
 def triangle_error(expected, actual, tolerance=.01):

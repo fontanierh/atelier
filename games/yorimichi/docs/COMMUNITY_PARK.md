@@ -10,7 +10,7 @@ The source's 586 placements are preserved at metre scale, batched into 30 meshes
 The complete scene turns 180° about its recentered root and moves to
 `(1280, 560, 38.472)` in island metres. Its main deck is at `48.5 m`, the tall
 vert reaches `85.586 m`, and its footprint is about `94 × 103 m`. The approach
-rises over 188.4 m, with a maximum grade of 9.57%.
+rises over 196.7 m, with a maximum grade of 9.58%.
 
 ## Source and build
 
