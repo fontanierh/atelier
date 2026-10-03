@@ -175,7 +175,7 @@ def build(base_sampler):
         thin = len(cap) and cap.max()-cap.min() < .25
         # A narrow contact fits curved undersides and the 30 cm source walls.
         # Thin lips need a short bracket joining their rib from below.
-        steel.beam(point+[0, 0, -.09 if thin else .015], point+[0, 0, .08], .04)
+        steel.beam(point+[0, 0, -.09 if thin else .015], point+[0, 0, .005 if thin else .08], .04)
 
     def rib(a, b, triangles, pipe_floor=None):
         # Thick slabs contain the rib; thin ramp lips need it beneath the
@@ -274,9 +274,12 @@ def build(base_sampler):
                 anchors.append(outside_anchor(np.array([1298.5, 538.5]), anchors[0]))
             feet = []
             for anchor, index in zip(anchors, (first, second)):
-                top = points[index, 2]+.10
+                # This sloped group's northern girders pass beneath another
+                # ramp skin; their top must stay below that original surface.
+                inset = 0. if 477 in nodes else .10
+                top = points[index, 2]+inset
                 feet.append(reserve_frame(anchor, top))
-                target = points[index]+[0, 0, .10]
+                target = points[index]+[0, 0, inset]
                 if nodes == [267, 268]:
                     west = np.array([anchor[0], 586.5, top])
                     inside = np.array([target[0], 586.5, top])
@@ -290,11 +293,12 @@ def build(base_sampler):
                     steel.beam(turn, target, .45, .18)
                 else:
                     if pipe_floor is not None and 576 not in nodes:
-                        low = points[index]-[0, 0, .10]
-                        d = anchor-target[:2]; d /= np.linalg.norm(d)
-                        turn = target.copy(); turn[:2] += d
+                        low = points[index]-[0, 0, .18]
+                        d = anchor-target[:2]; length = np.linalg.norm(d); d /= length
+                        turn = target.copy(); turn[:2] += d*min(2., max(.5, length-.2))
                         steel.beam([*anchor, top], turn, .45, .18)
                         steel.beam(turn, low, .45, .18)
+                        steel.beam(low, points[index]+[0, 0, .015], .04)
                     else:
                         steel.beam([*anchor, top], target, .45, .18)
         for point in points:

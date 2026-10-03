@@ -178,18 +178,19 @@ def riding_clearance(mesh, metadata, original, source_parts, report_file=None):
                     if len(steps): floor = max(floor, float(steps.max()))
                     if any(bottom < floor+1.55 and top > floor+.15 for bottom, top in solids):
                         continue  # The recovered solid already occupies this body position.
-                    above = existing[existing > floor+.15]
+                    above = existing[existing > floor+.02]
                     ceiling = float(above.min()) if len(above) else np.inf
                     if ceiling-floor < 1.55: continue  # Cairo's capsule is 1.51 m tall.
                     limit = min(floor+3., ceiling-.02)
                     probes += 1
-                    if high > floor+.15 and low < limit:
+                    if high > floor+.02 and low < limit:
                         violations.append({'member': index, 'xy': [float(x), float(y)], 'floor_m': float(floor),
                                            'steel_interval_m': [low, high], 'protected_top_m': float(limit)})
     if report_file is not None:
         report_file.write_text(json.dumps(violations, indent=2)+'\n')
     assert not violations, ('support intrudes into usable skating space', violations[:12], 'total', len(violations))
     return {'solid_member_probes': probes, 'protected_skating_clearance_m': 3., 'intrusions': 0,
+            'riding_surface_tolerance_m': .02,
             'exterior_frame_footings': len(metadata['frame_footings'])}
 
 

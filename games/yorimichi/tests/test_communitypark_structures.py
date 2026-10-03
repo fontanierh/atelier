@@ -108,6 +108,13 @@ class StructureTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, 'intrudes into usable skating space'):
             riding_clearance(pole, metadata, L.place(self.source.triangles()), self.source.parts)
 
+    def test_solid_clearance_catches_small_bumps_below_body_height(self):
+        bump = S.Mesh('steel-bump', 'steel')
+        bump.beam([1305, 603.9, 48.5], [1305, 603.9, 48.62], .08)
+        metadata = {'ride_support_members': [0], 'frame_footings': []}
+        with self.assertRaisesRegex(AssertionError, 'intrudes into usable skating space'):
+            riding_clearance(bump, metadata, L.place(self.source.triangles()), self.source.parts)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -87,7 +87,8 @@ lane, and both new meshes after import. Main piers must sit outside every
 original piece's footprint with a 65 cm margin. A separate solid-member audit
 samples each frame beam's width and depth against the original scene, checking
 a 70 cm rider width and up to three metres of previously usable skating
-airspace. This detects tall columns even when both endpoints lie outside the
+airspace, starting two centimetres above each riding surface so small wheel-height
+bumps are caught too. This detects tall columns even when both endpoints lie outside the
 rider's height band. These source checks supplement the game review.
 The guarded game review owns a separate loopback bridge and quits its own game;
 it checks actor/mesh/tree inventory, original surface traces, riding, the
