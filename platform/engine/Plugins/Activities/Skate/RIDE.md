@@ -24,7 +24,10 @@ into the graph's inputs, runs the graph and places the pose on the board.
   through Anim Blueprint node data, which a graph built in C++ does not have: an editor-build game asserts in
   `GetNodeIndex`. Our node takes requests the standard way, through `IInertializationRequester` graph messages (the
   mirror node's stance change, blend nodes) with blend profiles as per-bone time factors, so any C++ graph can use it;
-  the transitions' `FAnimNode_SkateRider` does.
+  the transitions' `FAnimNode_SkateRider` does. With `MaxSpeed` set, a request between poses far apart lasts longer
+  than asked: at least 1.875 times the largest component-space gap over `MaxSpeed` (the quintic's fastest point), at
+  most `MaxDuration` (0.25 s); `SpeedRoot` limits the bones counted. The rider's mesh caps the body (`HIPS` and below)
+  at 1000 cm/s, a little under the trick clips' own fastest limbs (1100 to 1300 cm/s).
 - **Stance.** The clips are authored goofy. A regular rider plays them mirrored (`bMirror = !bGoofy`), and a stance
   change inertializes over 0.2 s. `MDT_SkateRider` mirrors across Unreal's Y axis and lists every bone the native rig
   mirrors, the centre bones onto themselves: Unreal leaves a bone without a row unmirrored.
@@ -59,26 +62,32 @@ into the graph's inputs, runs the graph and places the pose on the board.
   recovery last as long as the push clips, blended by speed. The session's trick timing (the flick window, the catch,
   the scoring) uses these, so the clip's board and the physics agree.
 - **Cross-fades.** Most switches blend over 0.05 to 0.18 s; the landing back to rolling takes 0.25 s and a get-up
-  0.4 s. The pop's ground clip and the trick's air clip follow on with a cut, as they were cut to. A clip that ends
-  with the board turned end for end (a hardflip or an inward heelflip caught backwards) hands the board to the next
-  clip at once (a blend profile with the board at time factor 0) while the body blends: the board looks the same
-  either way round, and a blend would spin it back in the air.
+  0.4 s. The pop's ground clip and the trick's air clip follow on with a cut, as they were cut to. A quick flick pops
+  from the anticipation's first frames, 50 to 65 cm (head, hands) from every pop clip's first pose: the pop's 0.05 s
+  would sweep the head across that at up to 1900 cm/s, so the speed cap stretches it to about 0.1 s (a full
+  anticipation, 7 to 12 cm away, keeps 0.05 s). A blend whose clip shares move by more than 0.2 in a 60 Hz tick (the
+  lean when a wall hit stops the turn; steering moves it at most 0.11 a tick) inertializes like a clip change. A clip
+  that ends with the board turned end for end (a hardflip or an inward heelflip caught backwards) hands the board to
+  the next clip at once (a blend profile with the board at time factor 0) while the body blends: the board looks the
+  same either way round, and a blend would spin it back in the air.
 - **For the physical rider.** The pose is the motor target (below), so it has to be continuous. `FRideBodyPose`
   carries what the controller needs besides it: the motion and its time, the landing's impact and age, the grind and
   manual state and the bail's start.
 - **Pose health.** The Ride state line (`USkateComponent::GetRetailState`, `atelier live state`) has `clip=` (the
-  clip with the most weight), `lock=`, `lift=` (cm), `step=` (the fastest body bone in the root's space, cm/s),
+  clip with the most weight), `ct=` (its time, s), `lock=`, `lift=` (cm), `step=` (the fastest body bone in the
+  root's space, cm/s), `stepbone=` (that bone), `dt=` (the frame time it is measured over, ms),
   `feet=` (the toes' heights over the deck, cm), `feetoff=` (feet outside the deck's 42 × 14 cm outline, or more than
   16 cm above or 4 cm below it), `nan=` and `anim=` (the animator's time this frame, ms). The game's QA reads it.
 - **Cost.** In a large skatepark level on an M-series Mac: the animator (graph update, evaluation and placement)
-  0.061 ms p50 and 0.113 ms p99 per frame (0.105 and 0.22 to 0.28 ms with other heavy jobs running), the session's
-  step 0.027 ms mean and 0.043 ms worst per 60 Hz tick.
+  0.061 ms p50 and 0.113 ms p99 per frame (0.08 to 0.10 ms p50 and 0.11 to 0.19 ms p99 with other heavy jobs
+  running), the session's step 0.03 to 0.04 ms mean and under 0.18 ms worst per 60 Hz tick. The physical rider leaves
+  the frame at 60 fps: p99 17.15 ms without it, 17.18 ms with it.
 - **Checks.** The game's `skate_ride` scenario rides pushes, steering, flip tricks, grabs, spins, a grind and manuals
-  and reads the state line every frame: no NaN (0 of 6739 frames), no planted foot off the deck (0 of 3705 frames
-  regular, 0 of 371 goofy), no pop between clips (`step=`), and the standing rider against the native reference's
-  stand (`reference.json`, `stand/idle`, bones in the deck's frame): 1.35 cm mean in both stances, the worst bone a
-  hand at 2.8 cm. Retargeted onto a character with other proportions, the rider keeps the toes 4.5 to 4.7 cm over
-  the deck.
+  and reads the state line every frame: no NaN (0 of 6254 frames), no planted foot off the deck (0 of 3363 frames
+  regular, 0 of 285 goofy), no pop between clips (`step=`; the fastest body bone 1446 cm/s, a sketchy landing's
+  switch), and the standing rider against the native reference's stand (`reference.json`, `stand/idle`, bones in the
+  deck's frame): 1.33 and 1.35 cm mean, the worst bone a hand at 2.7 to 2.8 cm. Retargeted onto a character with
+  other proportions, the rider keeps the toes 4.5 to 4.7 cm over the deck.
 
 ## Physical rider
 

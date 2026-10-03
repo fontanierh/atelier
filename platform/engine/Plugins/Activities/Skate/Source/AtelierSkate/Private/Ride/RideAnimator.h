@@ -81,6 +81,8 @@ public:
     float GetLock() const { return Lock; }
     /** The clip with the most weight, by its native name. */
     FName GetMainClip() const;
+    /** The main clip's time (s). */
+    float GetMainTime() const;
     /** Root-space lift of the whole pose that keeps a tilted board's wheels and tips above the ground (cm). */
     float GetLift() const { return Lift; }
     USkeletalMeshComponent* GetMesh() const { return Mesh.Get(); }

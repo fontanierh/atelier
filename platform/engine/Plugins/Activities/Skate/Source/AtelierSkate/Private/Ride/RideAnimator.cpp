@@ -39,6 +39,27 @@ namespace
     constexpr float LiftDecay = 150.f;
     // Between two clips whose boards differ by more than this (degrees), the board was turned end for end.
     constexpr float TurnedBoard = 90.f;
+    // The same clips whose blend moves more than this in one 60 Hz tick cross-fade as a change of clip does
+    // (BlendChange): steering moves the lean blend at most about 0.11 a tick.
+    constexpr float BlendJump = .2f;
+
+    // How far a blend moved between two frames: half the summed change of each clip's share of the weight, 0 for the
+    // same blend and 1 for other clips altogether.
+    float BlendChange(const FRideAnimLayers& A, const FRideAnimLayers& B)
+    {
+        auto Share = [](const FRideAnimLayers& L, const UAnimSequence* Clip)
+        {
+            float Total = 0, Mine = 0;
+            for (int32 I = 0; I < L.Num; ++I) { Total += L.Layer[I].Weight; if (L.Layer[I].Clip == Clip) Mine += L.Layer[I].Weight; }
+            return Total > 0 ? Mine / Total : 0.f;
+        };
+        TArray<const UAnimSequence*, TInlineAllocator<2 * FRideAnimLayers::Max>> Clips;
+        for (int32 I = 0; I < A.Num; ++I) Clips.AddUnique(A.Layer[I].Clip);
+        for (int32 I = 0; I < B.Num; ++I) Clips.AddUnique(B.Layer[I].Clip);
+        float Change = 0;
+        for (const UAnimSequence* Clip : Clips) Change += FMath::Abs(Share(A, Clip) - Share(B, Clip));
+        return .5f * Change;
+    }
 
     float Len(const UAnimSequence* Sequence) { return Sequence ? Sequence->GetPlayLength() : 0.f; }
 
@@ -399,6 +420,13 @@ FName FRideAnimator::GetMainClip() const
     return Main ? Main->GetFName() : NAME_None;
 }
 
+float FRideAnimator::GetMainTime() const
+{
+    int32 Best = -1;
+    for (int32 I = 0; I < Last.Num; ++I) if (Best < 0 || Last.Layer[I].Weight > Last.Layer[Best].Weight) Best = I;
+    return Best >= 0 ? Last.Layer[Best].Time : 0.f;
+}
+
 void FRideAnimator::SetOverride(const FRideAnimLayers& Layers, float BlendIn)
 {
     if (!bOverride || Layers.Main() != Override.Main()) PendingBlend = FMath::Max(PendingBlend, BlendIn);
@@ -675,6 +703,9 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
         // A new clip, or the same move starting over (a second landing straight after the first).
         const bool bRestart = !bOverride && Body.Motion == LastMotion && Body.MotionTime + 1e-3f < LastMotionTime;
         if (Key != LastKey || bRestart) Inertialize = Blend;
+        // The same clips with a blend that jumps (the lean dropped at once when a wall stops the turn, a stance whose
+        // travel reverses): the pose would pop between two frames, so it cross-fades as a new clip does.
+        else if (BlendChange(Last, Layers) > BlendJump * FMath::Max(1.f, Dt * 60.f)) Inertialize = Blend;
     }
     PendingBlend = 0;
     const float KeyTime = TimeOf(Layers, Key);

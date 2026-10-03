@@ -8,11 +8,14 @@ and switching character), and the physical rider (skate.RidePhysical): how close
 landing, a bail that leaves the animation continuously, and its frame cost in Mega Park. Over every frame recorded,
 the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck where the clip stands on
 it, carry no NaN and never pop between clips, in both stances, and the standing rider matches the reference's stand.
-Writes build/yorimichi/skateqa/ride.json.
+The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
+Writes build/yorimichi/skateqa/ride.json, and ride-pose.json: every frame of the pose checks and each pop with the
+frames around it.
 """
 import argparse
 import json
 import math
+import os
 import time
 import skate as qa
 
@@ -239,6 +242,8 @@ live.behave('spin', spin)
         record('pacing_switch', [], switching['worst_ms'] < 250, f'{switched}: ' + json.dumps(switching))
     if wanted('pose'):
         pose_checks(record, seen)
+    if wanted('cost'):
+        cost_ab(record)
     if any(wanted(name) for name in PHYSICAL):
         physical_checks(record, wanted)
     qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
@@ -279,8 +284,10 @@ def pose_rides(seen):
     seen['grind'] = qa.run_scenario(f"{RAIL[0]},{RAIL[1]},0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
 
 
-def pose_health(runs):
-    """Feet off the deck on planted clips, and pops between frames, over recorded runs."""
+def pose_health(named):
+    """Feet off the deck on planted clips, and pops between frames, over recorded runs ({name: rows}). Also returns
+    each pop with the frames around it (the run, the frame, its step and the rows from 6 before to 3 after)."""
+    runs = list(named.values())
     # Feet: frames that have been on a planted clip for at least a sixth of a second (the cross-fade in is done).
     planted, off, worst = 0, 0, {}
     for run in runs:
@@ -298,8 +305,8 @@ def pose_health(runs):
             + (' (' + ', '.join(f'{c} toes at {f} cm' for c, f in list(worst.items())[:4]) + ')' if worst else ''))
     # Continuity: no body bone jumps in one frame (a pop between clips) outside a bail; the first frames of a run
     # (the rider placed) are skipped.
-    pops, fastest = [], 0.
-    for run in runs:
+    pops, fastest, context = [], 0., []
+    for name, run in named.items():
         steps = [float(r.get('step', 0)) for r in run]
         for i in range(10, len(run) - 3):
             if run[i].get('mode') == '4' or run[i - 1].get('mode') == '4':
@@ -307,10 +314,12 @@ def pose_health(runs):
             fastest = max(fastest, steps[i])
             around = sorted(steps[i - 3:i] + steps[i + 1:i + 4])[3]
             if steps[i] > POP_SPEED and steps[i] > 3 * around:
-                pops.append(f"{run[i - 1].get('clip')}->{run[i].get('clip')} {steps[i]:.0f} cm/s")
+                bone = f" {run[i]['stepbone']}" if 'stepbone' in run[i] else ''
+                pops.append(f"{run[i - 1].get('clip')}->{run[i].get('clip')} {steps[i]:.0f} cm/s{bone}")
+                context.append({'run': name, 'frame': i, 'step': steps[i], 'around': around, 'rows': run[i - 6:i + 4]})
     continuity = (not pops, f'{len(pops)} pops' + (': ' + '; '.join(pops[:4]) if pops else '')
                   + f'; fastest body bone {fastest:.0f} cm/s')
-    return feet, continuity
+    return feet, continuity, context
 
 
 def stand_errors(goofy):
@@ -333,14 +342,14 @@ def pose_checks(record, seen):
     stances against the reference, and the same rides goofy (the clips unmirrored)."""
     if not seen:
         pose_rides(seen)
-    runs = [rows for rows in seen.values() if rows and 'clip' in rows[0]]
+    runs = {name: rows for name, rows in seen.items() if rows and 'clip' in rows[0]}
     if not runs:
         record('pose', [], False, 'no clip= on the state line: the rider rig is not in this build')
         return
-    rows = [r for run in runs for r in run]
+    rows = [r for run in runs.values() for r in run]
     bad = sum(int(r.get('nan', 0)) > 0 for r in rows)
     record('pose_nan', rows, not bad, f'{bad} of {len(rows)} frames with a NaN bone')
-    feet, continuity = pose_health(runs)
+    feet, continuity, pops = pose_health(runs)
     record('pose_feet', rows, *feet)
     record('pose_continuity', rows, *continuity)
     anim = [float(r['anim']) for r in rows if 'anim' in r]
@@ -360,10 +369,15 @@ def pose_checks(record, seen):
     finally:
         qa.py('live.L.skate_goofy(False)')
     record('pose_stand', [], ok, '; '.join(notes))
-    goofy_runs = [rows for rows in goofy_seen.values() if rows and 'clip' in rows[0]]
-    feet, continuity = pose_health(goofy_runs)
-    record('pose_goofy', [r for run in goofy_runs for r in run], feet[0] and continuity[0],
+    goofy_runs = {name: rows for name, rows in goofy_seen.items() if rows and 'clip' in rows[0]}
+    feet, continuity, goofy_pops = pose_health(goofy_runs)
+    record('pose_goofy', [r for run in goofy_runs.values() for r in run], feet[0] and continuity[0],
            f'{feet[1]}; {continuity[1]}')
+    # Every recorded frame of both stances, and each pop with the frames around it, for a look afterwards.
+    out = qa.yori.OUT / 'skateqa' / 'ride-pose.json'
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps({'regular': runs, 'goofy': goofy_runs, 'pops': pops,
+                               'goofy_pops': goofy_pops}) + '\n')
 
 
 # The reference (RIDE.md, Physical rider): the oracle's published body against its animation pose.
@@ -482,6 +496,51 @@ def physical_cost(record):
            and on['p99_ms'] - off['p99_ms'] < 1.5 and not on['over_50ms'],
            f"Mega Park p50 {off['p50_ms']:.2f} -> {on['p50_ms']:.2f} ms, p99 {off['p99_ms']:.2f} -> {on['p99_ms']:.2f} ms, "
            f"fps {off['fps']:.1f} -> {on['fps']:.1f}")
+
+
+def cost_ab(record):
+    """Ride's frame cost with the physical rider off and on: the pier's run with two flip tricks, and 6 s of pushing
+    and carving on Mega Park's road. Per run: the frame intervals, the animator's time per frame (anim=) and the
+    session's step per 60 Hz tick (cost=, mean and worst over each second), with the machine's load average."""
+    def summary(rows, frames):
+        anim = sorted(floats(rows, 'anim'))
+        pick = lambda p: anim[min(len(anim) - 1, round((len(anim) - 1) * p))] if anim else 0.
+        windows = {r['cost'] for r in rows if '/' in r.get('cost', '')}
+        sim = [tuple(map(float, w.split('/'))) for w in windows]
+        return dict(frames=frames.get('frames', 0), fps=round(frames.get('fps', 0), 1), p50_ms=round(frames.get('p50_ms', 0), 2),
+                    p99_ms=round(frames.get('p99_ms', 0), 2), worst_ms=round(frames.get('worst_ms', 0), 1),
+                    over_33ms=frames.get('over_33ms', 0), anim_p50_ms=round(pick(.5), 3), anim_p99_ms=round(pick(.99), 3),
+                    sim_mean_ms=round(sum(m for m, _ in sim) / len(sim), 3) if sim else 0.,
+                    sim_worst_ms=round(max(w for _, w in sim), 3) if sim else 0.)
+    load = [round(os.getloadavg()[0], 1)]
+    ground = qa.py(f"g=live.L.ground_at(unreal.Vector({MEGA_ROAD[0] * 100},{-MEGA_ROAD[1] * 100},{MEGA_ROAD[2] * 100}))\n"
+                   "print(g.x, g.y, g.z)").split()
+    place = f"live.skate_place(unreal.Vector({ground[0]},{ground[1]},{ground[2]}), 0); live.L.skate_launch(unreal.Vector(700,0,0))"
+    report = {}
+    try:
+        for on in (False, True):
+            physical(on)
+            time.sleep(.5)
+            frame_sampler()
+            rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[(0,{{'push':True}}),(2,{{}}),(2.3,('flick','kickflip')),"
+                                   f"(3.6,('flick','360_flip'))],duration=5", 5)
+            report[f'pier_physical_{int(on)}'] = summary(rows, frame_report())
+            qa.py(place)
+            time.sleep(3 if not on else 1.5)   # the first time, Mega Park streams in unmeasured
+            qa.py(place)
+            time.sleep(1)
+            frame_sampler()
+            rows = record_while("live.skate_script([(2,{'push':True,'left':(.4,0)}),(2,{'push':True,'left':(-.4,0)}),"
+                                "(2,{'push':True}),(.2,{})])", 6.4)
+            report[f'mega_physical_{int(on)}'] = summary(rows, frame_report())
+            load.append(round(os.getloadavg()[0], 1))
+    finally:
+        physical(False)
+    print('cost ' + json.dumps(report), flush=True)
+    ok = all(r['frames'] > 100 and r['worst_ms'] < 50 for r in report.values()) and len(report) == 4
+    record('cost_ab', [], ok, '; '.join(f"{k}: p50 {r['p50_ms']} p99 {r['p99_ms']} worst {r['worst_ms']} ms, "
+                                        f"anim {r['anim_p50_ms']}/{r['anim_p99_ms']} ms, sim {r['sim_mean_ms']}/{r['sim_worst_ms']} ms"
+                                        for k, r in report.items()) + f'; load average {load}')
 
 
 def release_controls():
