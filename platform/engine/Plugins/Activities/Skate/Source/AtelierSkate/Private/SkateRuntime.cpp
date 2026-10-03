@@ -20,6 +20,8 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformProcess.h"
+#include "HAL/PlatformTime.h"
+#include "Misc/App.h"
 #include "HAL/Runnable.h"
 #include "HAL/Event.h"
 #include "HAL/RunnableThread.h"
@@ -52,6 +54,16 @@ namespace
         TEXT("cm the hands and forearms keep clear of the rider's own pelvis, spine, chest and thighs; below 0 off"));
     TAutoConsoleVariable<float> CVarSkateFootGround(TEXT("skate.FootGround"),.5f,
         TEXT("cm each riding foot's sole stays above the ground under it; below 0 off"));
+    // The native thread steps in lockstep with the game: each frame waits for the last frame's step, so no frame's
+    // step or controls are skipped and the same controls replay the same ride. Its collision rebuilds install on the
+    // frame after they start.
+    TAutoConsoleVariable<int32> CVarSkateLockstep(TEXT("skate.Lockstep"),-1,
+        TEXT("Native skating waits for each step of its thread, so a replay repeats: 1 always, 0 never, -1 under a fixed step or frame rate"));
+    bool Lockstep()
+    {
+        const int32 V=CVarSkateLockstep.GetValueOnGameThread();
+        return V>0||(V<0&&(FApp::UseFixedTimeStep()||(GEngine&&GEngine->bUseFixedFrameRate)));
+    }
 
     // Match the standalone runtime's startup floating environment, and restore
     // the caller's complete environment before returning to Unreal.
@@ -325,6 +337,7 @@ public:
     void Stop() override {Stopping_.store(true);Wake_->Trigger();}
     void Enqueue(FCommand Command) {Commands_.Enqueue(MoveTemp(Command));Wake_->Trigger();}
     bool Poll(FOutput& Output) {return Outputs_.Dequeue(Output);}
+    bool HasOutput() const {return !Outputs_.IsEmpty();}
     bool Finished() const {return Finished_.load();}
     uint32 Run() override
     {
@@ -466,6 +479,9 @@ public:
     TOptional<FVector> PendingLaunch;
     float SpawnYaw=0,Score=0,ManualBalance=0;
     uint64 Tick=0;
+    // The controls of the last step sent, and the collision snapshots sent (their count and the last one's
+    // triangles): GetRetailState shows them, so a replay can check it feeds and sees what the recording did.
+    skate_native::XboxState Sent{};int32 Worlds=0,WorldTriangles=0;
     FTransform Root=FTransform::Identity,Camera=FTransform::Identity;float CameraFOV=0;
     TArray<FName> Names;TArray<FTransform> Reference,Bones;
     ~FSkateRuntime() {if(PendingWorld.IsValid())PendingWorld.Wait();Worker.Reset();}
@@ -527,6 +543,17 @@ public:
         }
         if(Error.IsEmpty()&&Worker->Finished())Error=TEXT("The native skating thread stopped");return Changed;
     }
+    /** Lockstep: wait (at most 2 s) for the pose of the step sent last; whether it changed the shown pose. */
+    bool AwaitPose()
+    {
+        bool Changed=false;const double Until=FPlatformTime::Seconds()+2.;
+        while(AwaitingPose&&Error.IsEmpty()&&!Worker->Finished()&&FPlatformTime::Seconds()<Until)
+        {
+            if(Worker->HasOutput())Changed|=Poll();
+            else FPlatformProcess::SleepNoStats(0.f);
+        }
+        return Changed;
+    }
     FTransform Bone(FName Name) const
     {
         int32 I=Names.IndexOfByKey(Name); return Bones.IsValidIndex(I) ? Bones[I]*Root : Root;
@@ -545,6 +572,7 @@ bool USkateComponent::LaunchNativeSession(const FVector& Where,float Yaw,FString
     if(!GatherWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Snapshot,Reach))
     {Failure=TEXT("Skating could not load nearby collision.");return false;}
     RetailRuntime=MakeShared<FSkateRuntime>();RetailRuntime->CollisionCentre=Centre;RetailRuntime->CollisionReach=Reach;
+    RetailRuntime->Worlds=1;RetailRuntime->WorldTriangles=Snapshot.Num();
     RetailRuntime->Worker=MakeUnique<FNativeSkateWorker>(RuntimeFolder(),NativeSnapshot(Snapshot),
         SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading));
     if(!RetailRuntime->Worker->Start()){RetailRuntime.Reset();Failure=TEXT("Native skating thread could not start.");return false;}
@@ -590,6 +618,7 @@ bool USkateComponent::StartRetailRuntime()
         if(!GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,Snapshot,Reach))
         {RuntimeFailure(TEXT("Skating could not refresh nearby collision."));return false;}
         RetailRuntime->SendWorld(Snapshot);RetailRuntime->CollisionCentre=Centre;RetailRuntime->CollisionReach=Reach;
+        ++RetailRuntime->Worlds;RetailRuntime->WorldTriangles=Snapshot.Num();
     }
     RetailRuntime->Spawn=Pos; RetailRuntime->SpawnYaw=Rot.Rotator().Yaw;
     ++RetailRuntime->Generation; RetailRuntime->HasPose=false; RetailRuntime->FrameTime=0;
@@ -643,7 +672,9 @@ FString USkateComponent::GetRetailState() const
             Ride->CostMean,Ride->CostWorst,*Ride->DescribePose(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"),
             FMath::RadiansToDegrees(RetailRuntime->ArmSwing[0]),FMath::RadiansToDegrees(RetailRuntime->ArmSwing[1]),
             FMath::RadiansToDegrees(RetailRuntime->ArmNeed[0]),FMath::RadiansToDegrees(RetailRuntime->ArmNeed[1]));
-    return FString::Printf(TEXT("%s tick=%llu backend=Native"),*RetailRuntime->State,RetailRuntime->Tick);
+    const skate_native::XboxState& I=RetailRuntime->Sent;
+    return FString::Printf(TEXT("%s tick=%llu backend=Native lock=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d"),*RetailRuntime->State,RetailRuntime->Tick,
+        Lockstep()?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],RetailRuntime->Worlds,RetailRuntime->WorldTriangles);
 }
 
 void USkateComponent::StepRetailRuntime(float Dt)
@@ -661,7 +692,8 @@ void USkateComponent::StepRetailRuntime(float Dt)
     }
     else
     {
-    const bool Changed=RetailRuntime->Poll();
+    bool Changed=Lockstep() && RetailRuntime->AwaitingPose && RetailRuntime->AwaitPose();
+    Changed|=RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
     {
         RuntimeFailure(RetailRuntime->Error);
@@ -695,7 +727,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     auto Stick=[](FVector2D V){return std::array<std::int16_t,2>{int16(FMath::RoundToInt(FMath::Clamp(V.X,-1.,1.)*32767)),int16(FMath::RoundToInt(FMath::Clamp(V.Y,-1.,1.)*32767))};};
     // The start query requires a rear diagonal, including a nonzero angle.
     const FVector2D Left=In.bPowerslide&&Mode==ESkateMode::Ground?FVector2D(In.Left.X<0?-.6:.6,-.8):In.Left;
-    Command.Input.left=Stick(Left);Command.Input.right=Stick(In.Right);RetailRuntime->Worker->Enqueue(MoveTemp(Command));
+    Command.Input.left=Stick(Left);Command.Input.right=Stick(In.Right);RetailRuntime->Sent=Command.Input;RetailRuntime->Worker->Enqueue(MoveTemp(Command));
     RetailRuntime->AwaitingPose=true; RetailRuntime->FrameTime=0;
     }
     if (!Changed) return;
@@ -737,7 +769,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     // gathers here, builds on a background thread, and installs the completed world between simulation ticks.
     if (RetailRuntime->PendingWorld.IsValid())
     {
-        if (RetailRuntime->PendingWorld.IsReady()) RetailRuntime->FinishPendingWorld(true);
+        if (RetailRuntime->PendingWorld.IsReady() || Lockstep()) RetailRuntime->FinishPendingWorld(true);
     }
     else if ((Pos-RetailRuntime->CollisionCentre).GetAbsMax()>RetailRuntime->CollisionReach)
     {
@@ -754,6 +786,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
                 skate_native::BuildGameplayWorld(Native,Material,Result->World,Result->Error);return Result;
             },32*1024*1024);
             RetailRuntime->CollisionCentre=Centre; RetailRuntime->CollisionReach=Reach;
+            ++RetailRuntime->Worlds; RetailRuntime->WorldTriangles=Snapshot->Num();
         }
         // Nothing to snapshot (open water): keep the old one and try again 20 m on, not on every frame.
         else { RetailRuntime->CollisionCentre=Pos; RetailRuntime->CollisionReach=2000.; }

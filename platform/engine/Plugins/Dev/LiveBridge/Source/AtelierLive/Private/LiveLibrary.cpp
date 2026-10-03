@@ -240,6 +240,13 @@ void ULiveLibrary::FixedStep(float Fps)
     else FApp::SetUseFixedTimeStep(false);
 }
 
+void ULiveLibrary::FixedFrameRate(float Fps)
+{
+    if (!GEngine) return;
+    GEngine->bUseFixedFrameRate = Fps > 0.f;
+    if (Fps > 0.f) GEngine->FixedFrameRate = Fps;
+}
+
 bool ULiveLibrary::InputKey(const FString& Key, const FString& Event, float Value)
 {
     APlayerController* PC = UGameplayStatics::GetPlayerController(GameWorld(), 0); if (!PC) return false;

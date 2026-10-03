@@ -76,6 +76,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool InputKey(const FString& Key, const FString& Event, float Value = 1.f);
     /** Filming: a fixed simulation step (Fps > 0; 0 returns to real time). */
     UFUNCTION(BlueprintCallable, Category = "Live") static void FixedStep(float Fps);
+    /** Playing at real speed with a fixed frame time (Fps > 0; 0 returns to real time): the engine waits out each frame
+     *  to 1/Fps and counts every frame as 1/Fps, however long it took, so a recorded session replays exactly. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static void FixedFrameRate(float Fps);
     /** A line of text for the player at the top of the screen (the game's HUD draws CurrentMessage). */
     UFUNCTION(BlueprintCallable, Category = "Live") static void Say(const FString& Text, float Seconds = 4.f);
     /** A screenshot of the game view (with the HUD) written to Path on the next frame. */
