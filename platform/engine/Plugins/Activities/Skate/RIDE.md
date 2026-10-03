@@ -230,8 +230,14 @@ it goes fully limp only in a bail.
     a frame after that. Switching at once showed the clip's pose for one frame (the hips 61 cm off) and moved the
     bodies there the next. The switch waits until Physics Control's pelvis and head are within 10 cm of the snapshot,
     at most five frames.
-  - **Onto the board.** The ride blends the pose seam (`USkateComponent::GetRetailPose`) and moves the board's meshes
-    from the loose board back under the feet. The active ragdoll returns at the end.
+  - **Onto the board.** The ride blends the pose seam (`USkateComponent::GetRetailPose`). The active ragdoll returns
+    at the end. The board never travels by itself (`GetUpFromBody`, `AfterRideFrame`):
+    - A board lying on its wheels within `GetUpBoardReach` (60 cm, about a step) of where he gets up is stepped
+      onto: its meshes ease from the loose board under the feet over the get-up, at most about 3 cm a tick.
+    - Any other board dissolves out where it lies (`ShowBoard`, the transitions' dissolve, over
+      `BoardDissolveTime`), and a board then dissolves in under his feet while he rises. The board used to fly or
+      glide to his feet over the get-up blend, up to 20 m/s. The bail checks in `skate_ride` measure this: while the
+      board shows, it moves under 8 cm in a tick from the last fallen frame to half a second after he is up.
   - **On foot** (`WantsGetUpOnFoot`). The transition code plays the recovery off the board (`BeginGetUpOnFoot`). It
     may take the loose board (`TakeLooseBoard`), which then stays a physical body it owns.
 - **Debugging.** The bodies, controls and contacts are ordinary world physics, so the Chaos Visual Debugger records

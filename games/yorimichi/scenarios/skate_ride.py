@@ -401,6 +401,7 @@ BAIL_REFERENCE = {.125: (0, 8), .25: (8, 26), .5: (14, 37), 1.: (64, 127)}
 # flat and air ones, the whole distance over the whole speed.
 BAIL_TRAVEL = {'flat': ((.65, 1.3), (.7, 1.4)), 'fast': ((.65, 1.3), (.85, 1.7)), 'quarter': ((.33, 1.4), (.43, 1.8))}
 BAIL_LIE = 40.   # cm: within 1 s of a fall the pelvis is down this close to the ground under it (lie=)
+GETUP_BOARD_STEP = 8.   # cm: the board's largest move in one ride tick while it shows in a get-up (v2's glide: ~10)
 MEGA_ROAD = (-127.9, 1471.1, 134.)   # Mega Park's road (island metres), running east into its bend
 MEGADROP = (-44.5, 1305.1, 112., 135.)   # the top of Mega Park's roll-in (island metres) and the Unreal yaw down it
 MEGADROP_FLOOR = 7600.   # cm: the board (z=) is on the floor at the bottom of the roll-in below this height
@@ -507,6 +508,18 @@ def physical_bail_quarter(record):
     judge_bail(record, 'physical_bail_quarter', rows, 'quarter')
 
 
+def getup_board(rows):
+    """The board through a get-up (rows from the last fallen frame to half a second after he is up) never travels by
+    itself while it shows: its largest move in one ride tick between two frames it shows in, how far it lay from where
+    it ends, whether it went out of sight (dissolved out and in), and whether it shows at the end."""
+    deck = lambda r: tuple(float(x) for x in r['deck'].split(','))
+    rows = [r for r in rows if 'deck' in r]
+    steps = [math.dist(deck(a), deck(b)) / max(1, int(b.get('tick', 0)) - int(a.get('tick', 0)))
+             for a, b in zip(rows, rows[1:]) if a.get('vis') == '1' and b.get('vis') == '1']
+    lay = math.dist(deck(rows[0]), deck(rows[-1])) if rows else float('nan')
+    return max(steps, default=0.), lay, any(r.get('vis') == '0' for r in rows), bool(rows) and rows[-1].get('vis') == '1'
+
+
 def judge_bail(record, name, rows, kind):
     """The first fall in rows: limp from its first frame to the get-up (the Bail profile, simulating; never handed to
     the animated slide), continuous, the pelvis down near the ground within 1 s, travel in the reference's band for
@@ -546,6 +559,10 @@ def judge_bail(record, name, rows, kind):
             + f', rest {rest:.2f} m ({rest / max(entry, .01):.2f}x) after {clock[lying - 1] if lying else 0:.1f} s '
             f'(band {low1}-{high1}x at 1 s, {low_rest}-{high_rest}x at rest); pelvis down to {lie:.0f} cm within 1 s; '
             f'largest hips step {max(steps, default=0):.1f} cm/frame; up {where:.0f} cm from where the hips lay')
+    step, lay, hidden, back = getup_board(rows[start + lying - 1:end + 30]) if lying < len(bail) else (99., 0., False, False)
+    ok = ok and step < GETUP_BOARD_STEP and back
+    note += (f'; get-up board lay {lay:.0f} cm from its end, {"dissolved out and in" if hidden else "stepped onto"}, '
+             f'largest move while shown {step:.1f} cm/tick{"" if back else ", NOT shown after"}')
     if kind == 'flat':
         err = {t: float(bail[at(t)].get('pelvis_err', 'nan')) for t in BAIL_REFERENCE if at(t) is not None}
         ok = ok and err.get(.125, 99) < 16 and 20 < err.get(1., 0) < 200

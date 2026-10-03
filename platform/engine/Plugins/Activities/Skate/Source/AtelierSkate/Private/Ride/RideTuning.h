@@ -117,6 +117,8 @@ struct FRideTuning
     // Bails.
     float BailSettle = 2.2f;          // s down before getting up
     float GetUpTime = 1.f;            // s blending from the fallen pose to the stance
+    float GetUpBoardReach = 60.f;     // cm: a get-up steps onto a board lying this close, wheels down; farther, it dissolves
+                                      // out where it lies and back in under the feet
     float BailSlideDecel = 700.f;     // cm/s^2, the rider sliding to a stop without a ragdoll
 
     // Getting on and off (RideTransition.cpp).

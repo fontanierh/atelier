@@ -7,6 +7,7 @@
 #include "SkateRails.h"
 #include "RideSession.h"
 #include "RidePhysicalRider.h"
+#include "RideTransition.h"
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
@@ -110,9 +111,11 @@ void USkateComponent::AfterRideFrame(float Dt)
             const ERideBodyState State = Body.UpdateBail(Dt, FRideTuning::Get().BailSettle);
             if (State == ERideBodyState::Unstable)
             {
-                // The session slides the rider to a stop instead.
+                // The session slides the rider to a stop instead; the board left lying goes with the bodies, and a board
+                // dissolves in under the feet once he is up.
                 Ride->SetRagdoll(false);
                 Body.Abort();
+                if (Transit().Board == ERideBoard::Ride) ShowBoard(0.f, true);
             }
             else
             {
@@ -141,11 +144,16 @@ void USkateComponent::AfterRideFrame(float Dt)
     // Getting up onto the board: the pose rises out of the fallen body's snapshot.
     if (Body.IsGettingUp() && Body.GetGetUpExit() == ERideGetUpExit::Board) Body.BlendFromSnapshot(RetailPose, Body.GetGetUpAlpha());
 
-    // The board's meshes follow the loose board while it is ours, and go back under the feet in a get-up onto it.
+    // The board's meshes follow the loose board while it is ours. A board never travels by itself: getting up onto it,
+    // the rider steps onto one lying within a step, which eases under the feet; one farther away dissolves out where it
+    // lies (GetUpFromBody) and, once gone, dissolves back in under the feet while he rises.
+    FRideTransition& T = Transit();
     if (Body.GetLooseBoard())
     {
         const bool bOntoBoard = Body.IsGettingUp() && Body.GetGetUpExit() == ERideGetUpExit::Board;
-        if (Body.IsBailing() || (Body.IsGettingUp() && !bOntoBoard)) BoardRoot->SetWorldTransform(Body.GetLooseBoardDeck());
+        const bool bLeaving = !Body.IsBailing() && T.Board == ERideBoard::Ride && T.ShownTarget <= 0.f;
+        if (bLeaving && T.Shown <= 0.f) Body.DropLooseBoard();
+        else if (Body.IsBailing() || bLeaving || (Body.IsGettingUp() && !bOntoBoard)) BoardRoot->SetWorldTransform(Body.GetLooseBoardDeck());
         else if (bOntoBoard)
         {
             const FTransform Loose = Body.GetLooseBoardDeck(), Ridden = BoardRoot->GetComponentTransform();
@@ -156,6 +164,8 @@ void USkateComponent::AfterRideFrame(float Dt)
         }
         else Body.DropLooseBoard();
     }
+    // The ridden board, once the one left lying is gone, dissolves in under the feet (a ridden board is never meant gone).
+    if (!Body.GetLooseBoard() && !Body.IsBailing() && !Ride->IsBailing() && T.Board == ERideBoard::Ride && T.ShownTarget <= 0.f) ShowBoard(1.f, false);
 }
 
 void USkateComponent::GetUpFromBody()
@@ -173,4 +183,16 @@ void USkateComponent::GetUpFromBody()
     }
     Body.StartGetUp(ERideGetUpExit::Board);
     if (Ride->IsBailing()) Ride->GetUp(Ground, Yaw);
+    // Onto the board: within a step of where he gets up, and lying wheels down, he steps onto it (AfterRideFrame eases
+    // it under the feet); otherwise it dissolves out where it lies, and a board dissolves in under his feet.
+    if (Body.GetLooseBoard() && Transit().Board == ERideBoard::Ride)
+    {
+        const FTransform Lying = Body.GetLooseBoardDeck();
+        const float Away = FVector::Dist(Lying.GetLocation(), Ground);
+        const bool bStepOn = Away <= FRideTuning::Get().GetUpBoardReach && Lying.GetRotation().GetUpVector().Z > .5f;
+        if (!bStepOn) ShowBoard(0.f, false);
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride get-up board: lying %.0f cm away, %s, %s"), Away,
+            Lying.GetRotation().GetUpVector().Z > .5f ? TEXT("wheels down") : TEXT("not wheels down"),
+            bStepOn ? TEXT("stepped onto") : TEXT("dissolved out there and in under the feet"));
+    }
 }
