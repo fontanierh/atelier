@@ -19,7 +19,7 @@ class UBlendProfile;
  * Requests arrive the standard way, through the UE::Anim::IInertializationRequester graph message (blend nodes,
  * FAnimNode_Mirror's stance blend, Context.GetMessage<IInertializationRequester>()), or by RequestInertialization.
  * A request's blend profile (time factor) scales each bone's duration; a bone at 0 takes the new pose at once.
- * Curves and attributes pass through.
+ * Curves and attributes pass through. With MaxSpeed set, poses far apart blend for longer than asked.
  */
 USTRUCT()
 struct ATELIERSKATE_API FAnimNode_RideInertialization : public FAnimNode_Base
@@ -32,6 +32,13 @@ struct ATELIERSKATE_API FAnimNode_RideInertialization : public FAnimNode_Base
      *  wins). BlendProfile, if given, scales the duration per bone (time factors); it must outlive the evaluation. */
     void RequestInertialization(float Duration, const UBlendProfile* BlendProfile = nullptr);
     bool IsActive() const { return bActive; }
+
+    /** The fastest a bone may cross its offset (cm/s; 0: every request keeps its duration). A request lasts at least
+     *  1.875 times the largest component-space gap between the two poses over MaxSpeed (the quintic's fastest point),
+     *  and is stretched to at most MaxDuration. Only SpeedRoot and the bones under it count (all bones if None). */
+    float MaxSpeed = 0.f;
+    float MaxDuration = .25f;
+    FName SpeedRoot;
 
     virtual void Initialize_AnyThread(const FAnimationInitializeContext& Context) override;
     virtual void CacheBones_AnyThread(const FAnimationCacheBonesContext& Context) override;
@@ -58,6 +65,8 @@ private:
 
     void Reset();
     void Start(const FCompactPose& Pose, float Duration, const UBlendProfile* Profile);
+    /** The farthest a counted bone is, in component space, between the last output and Pose (cm). */
+    float LargestGap(const FCompactPose& Pose) const;
 
     float Pending = -1.f;            // the request for the next evaluation, -1 for none
     const UBlendProfile* PendingProfile = nullptr;

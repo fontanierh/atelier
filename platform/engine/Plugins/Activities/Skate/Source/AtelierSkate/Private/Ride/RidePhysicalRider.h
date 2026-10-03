@@ -46,13 +46,16 @@ struct FRidePhysicalProfile
     UPROPERTY(EditAnywhere, Category = Joints, meta = (ClampMin = 0)) float Arms = 1.f;
     UPROPERTY(EditAnywhere, Category = Joints, meta = (ClampMin = 0)) float Legs = 1.f;
     /** World-space: every body toward where the animation puts it, which keeps sag from adding up down the chain. */
-    UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float Body = 2.f;
+    UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float Body = 8.f;
     /** World-space anchors: the pelvis, the feet (the animation stands them on the deck) and the hands. */
-    UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float Pelvis = 8.f;
+    UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float Pelvis = 16.f;
     UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float Feet = 12.f;
     UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float Hands = 2.f;
-    UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float AnchorDamping = 1.f;
-    UPROPERTY(EditAnywhere, Category = Body) float Gravity = 1.f;
+    /** Below 1 the anchors follow a turning board more closely (a damped drive trails its target). */
+    UPROPERTY(EditAnywhere, Category = Anchors, meta = (ClampMin = 0)) float AnchorDamping = .5f;
+    /** Physics Control's gravity multiplier on the bodies. 0 is its gravity compensation: the drives hold the pose
+     *  rather than a pose sagging under the body's weight (1.9 cm at the pelvis at 1). A bail falls at 1. */
+    UPROPERTY(EditAnywhere, Category = Body) float Gravity = 0.f;
     /** Whether the bodies other than the feet collide with the world (knocks, walls, the ground in a bail). */
     UPROPERTY(EditAnywhere, Category = Body) bool bBodyTouchesWorld = true;
     /** Whether the feet collide with the world. On the board the deck carries them, so they pass over its edges. */
@@ -179,12 +182,14 @@ public:
     bool IsFaceUp() const;
     FVector GetPelvisLocation() const;
 
-    /** Get up where the body lies: snapshot the fallen pose, hold the bodies kinematic and unseen, and blend the pose
-     *  from the snapshot (BlendFromSnapshot) over GetUpBlend. For Board the active ragdoll returns at the end. */
+    /** Get up where the body lies: snapshot the fallen pose and blend the pose from it (BlendFromSnapshot) over
+     *  GetUpBlend. The bodies stay seen until the animation shows the snapshot (a frame or two: the mesh and Physics
+     *  Control see the pose late), then follow it kinematically, unseen. For Board the active ragdoll returns at the
+     *  end. */
     void StartGetUp(ERideGetUpExit Exit);
     bool IsGettingUp() const { return GetUpTime >= 0; }
     ERideGetUpExit GetGetUpExit() const { return GetUpExit; }
-    /** 0 at the snapshot to 1 at the end of the get-up blend (1 when none is running). */
+    /** 0 at the snapshot (until the bodies are handed over) to 1 at the end of the get-up blend (1 when none runs). */
     float GetGetUpAlpha() const;
     /** Blend a mesh-indexed local pose from the last snapshot by Alpha (0 the snapshot, 1 the pose), the root staying
      *  the pose's. False when there is no snapshot for this mesh or Alpha >= 1. */
@@ -252,8 +257,10 @@ private:
     FVector BailStart = FVector::ZeroVector, BailFloor = FVector::ZeroVector, BodyGround = FVector::ZeroVector;
     float BoardScale = 1;
 
-    // Get-up.
+    // Get-up. GetUpWait counts the frames the bodies have waited for the animation to show the snapshot (-1: not
+    // waiting).
     float GetUpTime = -1;
+    int32 GetUpWait = -1;
     ERideGetUpExit GetUpExit = ERideGetUpExit::Board;
     TArray<FTransform> SnapshotWorld;
     TWeakObjectPtr<USkeletalMesh> SnapshotMesh;
@@ -263,8 +270,13 @@ private:
     // Surfaces made physical around the body.
     TArray<TWeakObjectPtr<UPrimitiveComponent>> MadePhysical;
     FVector PhysicalCentre = FVector(1e30);
-    // Where the mesh was last frame: a rider placed further than it can ride in a frame takes its body along.
+    // Where the mesh was last frame: a rider placed further than it can ride in a frame takes its body along, and
+    // a launch in the frames after a placement too.
     FVector LastMeshLocation = FVector(1e30);
+    FVector LastRiderVelocity = FVector::ZeroVector;
+    int32 PlacedFrames = 0;
+    // The frame Begin ran: Physics Control has no copy of the pose before its first update.
+    uint64 BeganFrame = 0;
 
     float PelvisError = 0, WorstError = 0, FootError = 0;
 
@@ -279,9 +291,14 @@ private:
      *  past a limit widen it. */
     void ApplyJointLimits(bool bRidingProfile, bool bWiden);
     void AdvanceGetUp(float Dt);
+    /** Whether Physics Control's copy of the animation shows the snapshot (pelvis and head within SnapshotShown). */
+    bool AnimationShowsSnapshot() const;
+    /** The get-up's switch: weight 0, the bodies kinematic on the animation, the GetUp profile, the clock running. */
+    void HandOverGetUp();
     void MakeWorldPhysical(const FVector& Centre);
     void RestoreWorld();
-    void Measure();
+    /** The bodies' distance from Physics Control's copy of the animation. False when it has none (no errors). */
+    bool Measure();
     /** Puts every body back on the animation, at rest (a placement, or a body carried off). */
     void ResetToAnimation();
     FVector TraceGround(const FVector& At) const;

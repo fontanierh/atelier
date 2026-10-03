@@ -1068,13 +1068,14 @@ void FRideSession::MeasurePose(float Dt)
     PoseNaN = 0;
     for (const FTransform& Bone : Bones) if (Bone.ContainsNaN()) ++PoseNaN;
     // The fastest body bone. The bones are in the root's space, so the ride's own travel and turning do not count.
-    PoseStep = 0;
+    PoseStep = 0; PoseStepBone = INDEX_NONE; PoseDt = Dt;
     const bool bStep = LastBones.Num() == Bones.Num() && Dt > 1e-4f;
     LastBones.SetNum(Bones.Num(), EAllowShrinking::No);
     for (int32 I = 0; I < Bones.Num(); ++I)
     {
         const FVector Local = Bones[I].GetLocation();
-        if (bStep && BodyBone[I]) PoseStep = FMath::Max(PoseStep, float(FVector::Dist(Local, LastBones[I])) / Dt);
+        const float Step = bStep && BodyBone[I] ? float(FVector::Dist(Local, LastBones[I])) / Dt : 0.f;
+        if (Step > PoseStep) { PoseStep = Step; PoseStepBone = I; }
         LastBones[I] = Local;
     }
     FeetOff = 0;
@@ -1091,8 +1092,10 @@ void FRideSession::MeasurePose(float Dt)
 
 FString FRideSession::DescribePose() const
 {
-    return FString::Printf(TEXT("clip=%s lock=%.2f lift=%.1f step=%.0f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f"),
-        *Animator.GetMainClip().ToString(), Animator.GetLock(), Animator.GetLift(), PoseStep, FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost);
+    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f"),
+        *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseStep,
+        Names.IsValidIndex(PoseStepBone) ? *Names[PoseStepBone].ToString() : TEXT("none"), PoseDt * 1000.f,
+        FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost);
 }
 
 void FRideSession::StepOffBoard(float Dt, const FTransform& TrajectoryWorld)

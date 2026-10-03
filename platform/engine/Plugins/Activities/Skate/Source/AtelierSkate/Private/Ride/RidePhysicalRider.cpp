@@ -90,6 +90,14 @@ namespace
     constexpr int32 MinBodies = 6;
     // A mesh that moves further than this in one frame was placed, not ridden (60 m/s at 60 fps).
     constexpr float PlacedDistance = 100.f;
+    // For this many frames after a placement, a change of the rider's speed above LaunchStep in one frame (12 g at
+    // 60 fps: a scripted launch, not riding) is given to the body as well.
+    constexpr int32 PlacedLaunchFrames = 3;
+    constexpr float LaunchStep = 200.f;
+    // The get-up hands the bodies to the animation once Physics Control's copy of it shows the snapshot this closely
+    // (cm), or after this many frames.
+    constexpr float SnapshotShown = 10.f;
+    constexpr int32 MaxGetUpWait = 4;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -97,13 +105,14 @@ namespace
 
 URidePhysicalSettings::URidePhysicalSettings()
 {
-    // Riding keeps the defaults. In the air the hands hold grabs; a landing lets the hips give and the legs absorb;
-    // a grind holds the feet harder on the deck; a bail lets go of everything but a muscle tone; on foot the feet
-    // follow the steps more loosely.
+    // Riding keeps the defaults. In the air the hands hold grabs; a landing lets the legs absorb; a grind holds the
+    // feet harder on the deck; a bail lets go of everything but a muscle tone, and falls; on foot the feet follow the
+    // steps more loosely.
     Air.Hands = 8.f;
-    Landing.Pelvis = 5.f; Landing.Legs = .8f; Landing.Feet = 14.f;
+    Landing.Legs = .8f; Landing.Feet = 14.f;
     Grind.Feet = 14.f;
-    Bail.Joints = 3.f; Bail.Body = 0.f; Bail.Pelvis = 0.f; Bail.Feet = 0.f; Bail.Hands = 0.f; Bail.bFeetTouchWorld = true;
+    Bail.Joints = 3.f; Bail.Body = 0.f; Bail.Pelvis = 0.f; Bail.Feet = 0.f; Bail.Hands = 0.f; Bail.Gravity = 1.f;
+    Bail.bFeetTouchWorld = true;
     OnFoot.Feet = 6.f;
 }
 
@@ -217,8 +226,10 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     Control->SetControlsInSetEnabled(AllSet, false);
     bSimulating = false; bEndWhenOut = false; Weight = WeightTarget = 0; AppliedWeight = -1;
     AnchorFade = 1; AppliedAnchorFade = -1;
-    bBail = bReleased = bBailOffered = false; GetUpTime = -1; LandingLeft = 0;
+    bBail = bReleased = bBailOffered = false; GetUpTime = -1; GetUpWait = -1; LandingLeft = 0;
     LastMeshLocation = Mesh->GetComponentLocation();
+    LastRiderVelocity = Rider->GetVelocity(); PlacedFrames = 0;
+    BeganFrame = GFrameCounter;
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(ERidePhysicalPhase::OnFoot);
     ApplyJointLimits(true, true);
@@ -252,13 +263,15 @@ void URidePhysicalRider::End()
     }
     // A running get-up keeps its clock (the self-tick) and its snapshot for BlendFromSnapshot.
     Mesh = nullptr; Rider = nullptr; Asset = nullptr; SavedPhysicsAsset = nullptr;
-    bSimulating = false; bEndWhenOut = false; bBail = false;
+    bSimulating = false; bEndWhenOut = false; bBail = false; GetUpWait = -1;
     Weight = WeightTarget = 0; Phase = ERidePhysicalPhase::Off;
 }
 
 void URidePhysicalRider::Release(float Seconds)
 {
     if (!Control) return;
+    // A get-up still waiting to hand the bodies over keeps them until it has (Update), then ends.
+    if (GetUpWait >= 0) { bEndWhenOut = true; return; }
     if (!bSimulating || Weight <= 0.f || Seconds <= 0.f || bBail) { End(); return; }
     bEndWhenOut = true;
     if (WeightTarget > 0.f) BlendOut(Seconds);
@@ -519,8 +532,10 @@ void URidePhysicalRider::SetSimulating(bool bSimulate, const FVector* Velocity)
         Mesh->SetAllPhysicsLinearVelocity(*Velocity);
         Mesh->WakeAllRigidBodies();
     }
-    // Otherwise they start where the animation is, moving as it moves.
-    else Control->ResetBodyModifiersInSetToCachedBoneTransforms(AllSet, EResetToCachedTargetBehavior::ResetDuringUpdateControls);
+    // Otherwise they start where the animation is (they were following it, unseen), at the rider's speed. Physics
+    // Control's own reset would give each body its cached velocity, which a placement in the same frame makes the
+    // jump's.
+    else ResetToAnimation();
 }
 
 void URidePhysicalRider::ApplyWeight()
@@ -558,7 +573,7 @@ void URidePhysicalRider::BlendIn(float Seconds)
 {
     if (!Control || bBail) return;
     bEndWhenOut = false;
-    GetUpTime = -1;
+    GetUpTime = -1; GetUpWait = -1;
     SetSimulating(true);
     WeightTarget = 1.f;
     WeightRate = 1.f / FMath::Max(Seconds, .01f);
@@ -588,6 +603,13 @@ void URidePhysicalRider::Update(float Dt, ERidePhysicalPhase NewPhase)
     // The bail and the get-up choose their own profiles.
     if (!bBail && GetUpTime < 0.f) ApplyPhase(NewPhase);
 
+    // A get-up hands the bodies over once the animation shows the snapshot.
+    if (GetUpWait >= 0 && (AnimationShowsSnapshot() || ++GetUpWait > MaxGetUpWait))
+    {
+        HandOverGetUp();
+        if (bEndWhenOut) { End(); return; }
+    }
+
     if (Weight != WeightTarget)
     {
         Weight = FMath::FInterpConstantTo(Weight, WeightTarget, Dt, WeightRate);
@@ -603,34 +625,44 @@ void URidePhysicalRider::Update(float Dt, ERidePhysicalPhase NewPhase)
 
     const FVector MeshAt = Mesh->GetComponentLocation();
     const bool bPlaced = FVector::DistSquared(MeshAt, LastMeshLocation) > FMath::Square(PlacedDistance);
-    LastMeshLocation = MeshAt;
-    if (!bSimulating) PelvisError = WorstError = FootError = 0.f;
+    const FVector RiderVelocity = Rider->GetVelocity();
+    const FVector Launch = RiderVelocity - LastRiderVelocity;
+    LastMeshLocation = MeshAt; LastRiderVelocity = RiderVelocity;
+    if (!bSimulating || GetUpWait >= 0) PelvisError = WorstError = FootError = 0.f;
     else if (bPlaced && !bBail)
     {
         // Placed: the bodies go with the animation rather than being pulled there by the controls.
         ResetToAnimation();
+        PlacedFrames = PlacedLaunchFrames;
         PelvisError = WorstError = FootError = 0.f;
     }
     else
     {
+        // Set moving just after a placement: the body leaves with the rider.
+        if (PlacedFrames > 0 && !bBail)
+        {
+            --PlacedFrames;
+            if (Launch.SizeSquared() > FMath::Square(LaunchStep)) Mesh->SetAllPhysicsLinearVelocity(Launch, true);
+        }
         const FVector Centre = GetPelvisLocation();
         if (FVector::Dist(Centre, PhysicalCentre) > PhysicalFollow) MakeWorldPhysical(Centre);
-        Measure();
         // A body far from where the animation wants it while riding has been carried off by something it could not
-        // resolve (or the rider was moved without a teleport): put it back on the animation.
-        if (!bBail && PelvisError > 300.f)
+        // resolve (or the rider was moved without a teleport): back onto Physics Control's copy of the animation.
+        if (Measure() && !bBail && PelvisError > 300.f)
         {
             UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: body %.0f cm from the animation, reset"), PelvisError);
-            ResetToAnimation();
+            Control->ResetBodyModifiersInSetToCachedBoneTransforms(AllSet, EResetToCachedTargetBehavior::ResetDuringUpdateControls);
         }
     }
 }
 
 void URidePhysicalRider::ResetToAnimation()
 {
-    // The skeletal mesh's own teleport: every simulated body goes to the bone it simulates, as a moved component
-    // with ETeleportType::TeleportPhysics does. Physics Control's reset to its cached targets would instead give each
-    // body the velocity of the jump (the placement's distance over one frame). The bodies leave at the rider's speed.
+    // The skeletal mesh's own teleport: every body goes to its bone in the mesh's last pose, carried to where the
+    // component is now, as a moved component with ETeleportType::TeleportPhysics does (with the bodies seen, that pose
+    // is theirs: they move with the component). Physics Control's reset to its cached targets would instead give
+    // each body the velocity of the jump (the placement's distance over one frame). The bodies leave at the rider's
+    // speed.
     Mesh->UpdateKinematicBonesToAnim(Mesh->GetComponentSpaceTransforms(), ETeleportType::TeleportPhysics, false, EAllowKinematicDeferral::DisallowDeferral);
     Mesh->SetAllPhysicsLinearVelocity(Rider->GetVelocity());
     Mesh->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
@@ -638,7 +670,8 @@ void URidePhysicalRider::ResetToAnimation()
 
 void URidePhysicalRider::AdvanceGetUp(float Dt)
 {
-    if (GetUpTime < 0.f) return;
+    // The blend starts when the bodies are handed over.
+    if (GetUpTime < 0.f || GetUpWait >= 0) return;
     const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
     GetUpTime += Dt;
     if (GetUpTime < S->GetUpBlend) return;
@@ -664,9 +697,13 @@ ETickableTickType URidePhysicalRider::GetTickableTickType() const
 TStatId URidePhysicalRider::GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(URidePhysicalRider, STATGROUP_Tickables); }
 UWorld* URidePhysicalRider::GetTickableGameObjectWorld() const { return TickWorld.Get(); }
 
-void URidePhysicalRider::Measure()
+bool URidePhysicalRider::Measure()
 {
     PelvisError = WorstError = FootError = 0.f;
+    // Physics Control has no copy of the pose until its first update after Begin, and none for a frame in which the
+    // mesh had no transforms; its lookups then answer the world's origin.
+    if (GFrameCounter < BeganFrame + 2) return false;
+    if (!PelvisBone.IsNone() && Control->GetCachedBonePosition(Mesh, PelvisBone).IsZero()) return false;
     int32 Feet = 0;
     for (const FBodyInstance* Body : Mesh->Bodies)
     {
@@ -678,6 +715,7 @@ void URidePhysicalRider::Measure()
         if (B == FootBones[0] || B == FootBones[1]) { FootError += Error; ++Feet; }
     }
     if (Feet) FootError /= Feet;
+    return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -829,7 +867,7 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
             Mesh->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
         }
     }
-    bEndWhenOut = false; GetUpTime = -1.f;
+    bEndWhenOut = false; GetUpTime = -1.f; GetUpWait = -1;
     Weight = WeightTarget = 1.f; ApplyWeight();
     bBail = true; bReleased = false; BailTime = 0.f; Quiet = 0.f;
     // The joints relax to the bail's tone at once (and their limits stop widening); the anchors let go over
@@ -902,7 +940,7 @@ void URidePhysicalRider::Abort()
 {
     if (!Control) return;
     DropLooseBoard();
-    bBail = false; GetUpTime = -1.f;
+    bBail = false; GetUpTime = -1.f; GetUpWait = -1;
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
     AnchorFade = 1.f; ApplyAnchorFade();
@@ -923,18 +961,42 @@ void URidePhysicalRider::StartGetUp(ERideGetUpExit Exit)
     for (int32 I = 0; I < Pose.Num(); ++I) SnapshotWorld[I] = Pose[I] * Component;
     SnapshotMesh = Mesh->GetSkeletalMeshAsset();
     SnapshotComponent = Mesh;
-    // From here the pose is the blend; the bodies follow it kinematically, unseen.
+    // From here the pose is the blend, held at the snapshot until the bodies are handed over. The mesh shows the pose
+    // the ride hands it a frame late, and Physics Control's copy of it (the kinematic bodies' targets) a frame later
+    // still: weight 0 now would show the clip's pose for a frame, and the bodies would jump to it the next. So the
+    // bodies stay seen, lying where they are, until Physics Control's copy shows the snapshot (Update).
     bBail = false;
+    GetUpExit = Exit;
+    GetUpTime = 0.f;
+    GetUpWait = bSimulating && Weight > 0.f ? 0 : -1;
+    if (GetUpWait < 0) HandOverGetUp();
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride get up after %.1f s, %s, %s"), BailTime, IsFaceUp() ? TEXT("face up") : TEXT("face down"),
+        Exit == ERideGetUpExit::Board ? TEXT("onto the board") : TEXT("on foot"));
+}
+
+bool URidePhysicalRider::AnimationShowsSnapshot() const
+{
+    if (!Control || !Mesh || SnapshotComponent.Get() != Mesh) return false;
+    for (const FName B : {PelvisBone, HeadBone})
+    {
+        const int32 I = B.IsNone() ? INDEX_NONE : Mesh->GetBoneIndex(B);
+        if (!SnapshotWorld.IsValidIndex(I)) continue;
+        const FVector Shown = Control->GetCachedBonePosition(Mesh, B);
+        if (Shown.IsZero() || FVector::DistSquared(Shown, SnapshotWorld[I].GetLocation()) > FMath::Square(SnapshotShown)) return false;
+    }
+    return true;
+}
+
+void URidePhysicalRider::HandOverGetUp()
+{
+    if (GetUpWait >= 0) UE_LOG(LogTemp, Display, TEXT("SKATE ride get-up: bodies handed to the animation after %d frames"), GetUpWait);
+    GetUpWait = -1;
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
     AnchorFade = 1.f; ApplyAnchorFade();
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(ERidePhysicalPhase::GetUp);
-    GetUpExit = Exit;
-    GetUpTime = 0.f;
-    UE_LOG(LogTemp, Display, TEXT("SKATE ride get up after %.1f s, %s, %s"), BailTime, IsFaceUp() ? TEXT("face up") : TEXT("face down"),
-        Exit == ERideGetUpExit::Board ? TEXT("onto the board") : TEXT("on foot"));
 }
 
 float URidePhysicalRider::GetGetUpAlpha() const

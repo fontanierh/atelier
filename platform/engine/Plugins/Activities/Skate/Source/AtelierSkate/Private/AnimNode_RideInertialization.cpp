@@ -95,12 +95,46 @@ void FAnimNode_RideInertialization::Update_AnyThread(const FAnimationUpdateConte
     DeltaTime += Context.GetDeltaTime();
 }
 
+float FAnimNode_RideInertialization::LargestGap(const FCompactPose& Pose) const
+{
+    const FBoneContainer& Bones = Pose.GetBoneContainer();
+    FCompactPoseBoneIndex Root(INDEX_NONE);
+    if (!SpeedRoot.IsNone())
+    {
+        const int32 MeshIndex = Bones.GetPoseBoneIndexForBoneName(SpeedRoot);
+        if (MeshIndex != INDEX_NONE) Root = Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(MeshIndex));
+    }
+    // Both poses composed to component space, parents first (a compact pose lists every parent before its children).
+    const int32 Num = Pose.GetNumBones();
+    TArray<FTransform, TInlineAllocator<64>> From, To;
+    TArray<bool, TInlineAllocator<64>> Counted;
+    From.SetNumUninitialized(Num); To.SetNumUninitialized(Num); Counted.SetNumZeroed(Num);
+    float Gap = 0;
+    for (const FCompactPoseBoneIndex Bone : Pose.ForEachBoneIndex())
+    {
+        const int32 I = Bone.GetInt();
+        const FCompactPoseBoneIndex Parent = Bones.GetParentBoneIndex(Bone);
+        const bool bParent = Parent.IsValid();
+        From[I] = bParent ? Previous1[I] * From[Parent.GetInt()] : Previous1[I];
+        To[I] = bParent ? Pose[Bone] * To[Parent.GetInt()] : Pose[Bone];
+        Counted[I] = !Root.IsValid() || Bone == Root || (bParent && Counted[Parent.GetInt()]);
+        if (Counted[I]) Gap = FMath::Max(Gap, float(FVector::Dist(From[I].GetTranslation(), To[I].GetTranslation())));
+    }
+    return Gap;
+}
+
 void FAnimNode_RideInertialization::Start(const FCompactPose& Pose, float Duration, const UBlendProfile* Profile)
 {
     const int32 Num = Pose.GetNumBones();
     Offsets.SetNum(Num);
     const bool bVelocity = Previous2.Num() == Num && PreviousDelta > MinDelta;
     const FBoneContainer& BoneContainer = Pose.GetBoneContainer();
+    // Poses far apart: long enough that no bone crosses the gap faster than MaxSpeed.
+    if (MaxSpeed > 0)
+    {
+        const float Needed = 1.875f * LargestGap(Pose) / MaxSpeed;
+        if (Needed > Duration) Duration = FMath::Max(Duration, FMath::Min(Needed, MaxDuration));
+    }
     const USkeleton* Skeleton = BoneContainer.GetSkeletonAsset();
     const bool bProfile = Profile && Profile->GetSkeleton() && Skeleton;
     if (bProfile)

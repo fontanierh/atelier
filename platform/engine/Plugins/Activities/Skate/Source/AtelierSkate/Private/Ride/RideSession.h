@@ -187,6 +187,8 @@ private:
     TArray<bool> BodyBone;
     int32 DeckBone = INDEX_NONE, ToeBone[2] = {INDEX_NONE, INDEX_NONE};
     float PoseStep = 0, FootHeight[2] = {0, 0}, AnimCost = 0;
+    int32 PoseStepBone = INDEX_NONE;   // the bone of PoseStep
+    float PoseDt = 0;                  // the frame PoseStep was measured over (s)
     int32 PoseNaN = 0, FeetOff = 0;
     void MeasurePose(float Dt);
 
