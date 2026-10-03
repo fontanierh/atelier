@@ -71,8 +71,9 @@ per-take provenance and captures belong in the caller's ignored build directory.
 
 ## Tests
 
-The retarget tests run without loading model weights. Streamed and full PEFT parity tests require the isolated
-environment installed above:
+The retarget tests run without loading model weights but need scipy; the streamed and full PEFT parity tests need
+Kimodo itself. Both come with the isolated environment installed above, and the repository's `uv run pytest` skips
+them without it:
 
 ```sh
 build/motion-experiment/venv/bin/python -m unittest discover -s platform/studio/tests -p 'test_kimodo.py'
