@@ -382,7 +382,8 @@ def mirror_table(rig, skeleton):
             axis_type = type(template.get_editor_property('mirror_axis'))
             axis = getattr(axis_type, 'Y', None) or getattr(axis_type, 'AXIS_Y', None) or axis_type(2)
             template.set_editor_property('mirror_axis', axis)
-            axis_text = str(template.get_editor_property('mirror_axis'))
+            axis = template.get_editor_property('mirror_axis')
+            axis_text = getattr(axis, 'name', str(axis))     # 'Y'
         except Exception as error:
             log(f'mirror table: cannot set the axis to Y: {error}')
         if E.does_asset_exist(f'{DEST}/MDT_SkateRider'):
