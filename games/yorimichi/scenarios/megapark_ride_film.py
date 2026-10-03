@@ -1,3 +1,5 @@
+# megapark_ride_film.py: runs inside the game (atelier live py - < this file). This line keeps the bridge from taking
+# the code for a file name: Unreal's Python reads any text whose first .py is followed by a space as a script path.
 """Mega Park Ride film: the Ride skating backend (skate.Backend Ride) through the Mega Park. A push-off and hard carves
 on the park road, flat-ground flips (kickflip, heelflip, pop shove-it, 360 flip, varial kickflip, hardflip) and a
 sketchy catch, a powerslide down the ramp, manuals on the plaza, a long 50-50, a boardslide and a 5-0 down the plaza
@@ -23,6 +25,7 @@ Optional globals, set with `atelier live py` before the script:
     FLIP      degrees added to every board placement, should the board face against the launch
     PHYSICAL  skate.RidePhysical for the take: True (the default) films the active ragdoll rider, False the animated one;
               done.json logs the cvar as the game reads it
+    TIGHT     the framed cameras' width factor (.82)
 
 Runs in the game's Python (the live bridge) at a fixed 60 Hz step, 90 Hz for the slow-motion shot. Every board shot is
 placed, settles for a second unrecorded, is launched and then ridden by scripted skate. input: pursuit steering along
@@ -44,6 +47,7 @@ REHEARSE = bool(globals().get('REHEARSE', False))
 TUNE = globals().get('TUNE') or {}
 EXTRAS = globals().get('EXTRAS')
 FLIP = float(globals().get('FLIP', 0.))
+TIGHT = float(globals().get('TIGHT', .82))       # every framed camera's width x this: Cairo is short, .82 keeps him ~40% of the height
 PHYSICAL = bool(globals().get('PHYSICAL', True))
 OUT = globals().get('OUTDIR') or os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'),
                                               'yorimichi/megapark/ride-film', TAKE)
@@ -205,7 +209,7 @@ def grab(which, release=.35):
 
 
 def stick(x, y):
-    """In the air: hold the right stick (a grind's kind at lock-on) until the board is down."""
+    """From the air: hold the right stick (a grind's kind at lock-on) until a moment after the lock-on."""
     return dict(kind='stick', right=(x, y))
 
 
@@ -234,6 +238,12 @@ def apply_effect(s, c, e, inp):
         if e['secs'] is not None and u >= e['secs']: return False
         if e['until'] is not None and e['until'](s, c): return False
         inp.update(e['inputs']); return True
+    if k == 'stick':                                 # from the air until just after the lock-on (a pop can land on the
+        if c.mode == 2: e['air'] = True              # ledge's top first and lock a moment later)
+        if not e['air']: return u < 3.
+        if c.mode == 3: e.setdefault('lock', c.t)
+        if (e.get('lock') is not None and c.t > e['lock'] + .2) or u > 2.5: return False
+        inp['right'] = e['right']; return True
     # The air effects wait for an air and end with it.
     if c.mode == 2 and s['air']: e['air'] = True
     elif e['air']: return False
@@ -242,16 +252,25 @@ def apply_effect(s, c, e, inp):
     if k == 'spin':
         if e['until'] is not None: go = abs(a['spin']) < e['until']
         else:
-            tl = time_to_land(s, c); r = abs(a['rate'])
-            go = abs(a['spin']) + min(r, 115.) * tl + max(0., r - 115.) / 7. < e['to']
+            tl = time_to_land(s, c)
+            done, r = (a['turned'], a['trate']) if a.get('yaw') is not None else (a['spin'], a['rate'])
+            r = abs(r)
+            go = abs(done) + min(r, 115.) * tl + max(0., r - 115.) / 7. < e['to']
         if go: inp['left'] = (e['dir'] * e['mag'], inp['left'][1])
         return True
     if k == 'grab':
         if e['release'] is None or time_to_land(s, c) > e['release']: inp.update(GRABS[e['which']])
         return True
-    if k == 'stick':
-        inp['right'] = e['right']; return True
     return False
+
+
+SPIN_SCALE = 1.6           # the game's AirSpinScale (Config/DefaultGame.ini): Ride multiplies its full spin rates by it
+
+
+def board_yaw(c):
+    """The board's yaw from the state line (None when it has none)."""
+    try: return float(c.d['yaw'])
+    except (KeyError, TypeError, ValueError): return None
 
 
 def spin_model(s, c, inp, dt):
@@ -260,7 +279,7 @@ def spin_model(s, c, inp, dt):
     a = s['air']
     if not a: return
     x = inp['left'][0]
-    full = 470. if a['lip'] else 260.
+    full = (470. if a['lip'] else 260.) * SPIN_SCALE
     target = x * full if abs(x) > .25 else max(-115., min(115., a['rate']))
     a['rate'] += (target - a['rate']) * (1. - math.exp(-7. * dt))
     a['spin'] += a['rate'] * dt
@@ -322,7 +341,7 @@ def camera(s, c, dt):
     k = 1. - math.exp(-aim_k * dt)
     CAM['aim'] = [CAM['aim'][n] + (rider[n] - CAM['aim'][n]) * k for n in range(3)]
     dist = max(.5, math.dist(eye, CAM['aim']))
-    fov = spec.get('fov') or max(22., min(100., 2. * math.degrees(math.atan(spec['frame'] / 2. / dist))))
+    fov = spec.get('fov') or max(18., min(100., 2. * math.degrees(math.atan(spec['frame'] * TIGHT / 2. / dist))))
     MV.review_camera(ue(*eye), ue(*CAM['aim']), fov)
 
 
@@ -415,11 +434,11 @@ SHOTS = [
          cams=[(0., chase(back=-3.6, side=1.3, up=.9, frame=7.5))], expect=['360 Flip', 'Varial Kickflip', 'Hardflip']),
     # A heelflip caught 20-30 degrees off the travel: a touch of left stick right after the pop.
     dict(name='road_sketchy', road=(0., -8.), speed=7., secs=3.6,
-         events=[(.8, flick('heelflip')), (.8, spin(until=4., dir=1., mag=.32))], land_dz=0.,
+         events=[(.8, flick('heelflip')), (.8, spin(to=14., dir=1., mag=.35))], land_dz=0.,
          cams=[(0., chase(back=2.4, side=-2.5, up=.8, frame=7.0))], expect=['Heelflip']),
     # Down the ramp from the road into the plaza and a powerslide.
     dict(name='ramp_powerslide', start=(-62., 1441., 130., 90.), speed=6.5,
-         way=[(-62., 1446., None), (-62., 1420., None), (-61.5, 1395., None), (-61., 1370., None)], secs=5.,
+         way=[(-62., 1446., None), (-62., 1420., None), (-61.5, 1395., None), (-61., 1370., None)], secs=8.,
          trig=[{'when': lambda s, c: c.y < 1397.5, 'do': [hold(secs=1.1, slide=True, left=(-1., 0.))]}],
          end=lambda s, c: s['fired'][0] is not None and c.t > s['fired'][0] + 1.9,
          cams=[(0., fixed((-55.5, 1387., 125., 1.1), frame=8.5))]),
@@ -431,8 +450,8 @@ SHOTS = [
     dict(name='rail_5050', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.34, secs=11.,
          cams=[(0., chase(back=3.0, side=-1.8, up=1.0, frame=7.5)), (lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 12., PLAZA_RAIL_CAM)],
          expect=['50-50']),
-    # A boardslide: the board turned across the line in the air.
-    dict(name='rail_board', rail=True, lock_s=15., start=(-77.2, 1408., 125., 90.), speed=7.2, rail_load=.32, secs=9.,
+    # A boardslide: the board turned across the line in the air (onto the parapet before its lamp post, 15 m from the end).
+    dict(name='rail_board', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.4, rail_load=.33, secs=10.,
          rail_do=[spin(until=50., dir=1.)],
          cams=[(0., chase(back=2.2, side=-2.3, up=.7, frame=7.0))], expect=['Boardslide']),
     # A 5-0, from the side.
@@ -475,7 +494,7 @@ SHOTS = [
                (lambda s, c: s['bail_t'] is not None and c.t > s['bail_t'] + 1.2, fixed((-103., 1268., POOL_PROBE, 1.0), frame=6.5, aim_k=3.))],
          expect=['bail']),
     # The final line: a kickflip down the ramp, a crooked grind down the parapet, a 360 flip on the way out, and away.
-    dict(name='finale', rail=True, lock_s=16., start=(-72.5, 1437., 130., 95.), speed=7.4, rail_load=.32, rail_after=2.2,
+    dict(name='finale', rail=True, lock_s=16., start=(-72.5, 1437., 130., 95.), speed=7.4, want=-9.5, rail_load=.32, rail_after=2.2,
          rail_do=[stick(.52, .42)], secs=14., events=[(.7, flick('kickflip'))],
          rail_out=[(-66.3, 1369.3, None), (-61., 1367.2, None), (-52., 1366.2, 6.5), (-34., 1366., 6.5), (-20., 1366., 6.5)],
          trig=[{'when': lambda s, c: c.mode == 1 and s['d_grinds'] > 0 and c.x > -59.5, 'do': [flick('360_flip')]}],
@@ -555,13 +574,15 @@ def next_shot():
     s.update(k=k, dir='%02d_%s' % (k, s['name']), ph='place', pt=0., t=0., f=0, hz=90 if s.get('slow') else 60,
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
              air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], combos=[], lasts=[], retail=[], first=None,
-             bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, mounted=None, dismounted=None, jumped=None, foot_gait=None, max_spd=0., min_spd=1e9,
+             bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, stall_t=None, mounted=None, dismounted=None, jumped=None, foot_gait=None, max_spd=0., min_spd=1e9,
              max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0, ground_wait=0)
     if s.get('road'):
         s['way'], s['start'] = road_way(*s['road'][:1], want=s['road'][1], **({'x0': s['road'][2]} if len(s['road']) > 2 else {}))
     if s.get('rail'):
         s['way'] = rail_way(s['start'], s['lock_s'], want=s.get('want'), out=s.get('rail_out'))
-        s.setdefault('end', lambda s, c: s['land_after_grind'] is not None and c.t > s['land_after_grind'] + 1.4)
+        # Off the end and rolling on, or (Ride stops a slow grind dead at the parapet's corner) half a second after it stalls.
+        s.setdefault('end', lambda s, c: (s['land_after_grind'] is not None and c.t > s['land_after_grind'] + 1.4)
+                     or (s['stall_t'] is not None and c.t > s['stall_t'] + .5))
         s['trig'] = [{'when': rail_ready, 'do': [flick('ollie', s.get('rail_load', .32))] + list(s.get('rail_do', []))}] + list(s.get('trig', []))
     s['trig'] = [dict(t) for t in s.get('trig', [])]; s['fired'] = [None] * len(s['trig'])
     s['pending'] = sorted(s.get('events', []), key=lambda e: e[0])
@@ -625,14 +646,21 @@ def track(s, c):
     s['d_landed'], s['d_bails'], s['d_grinds'] = c.landed - s['first'][0], c.bails - s['first'][1], c.grinds - s['first'][2]
     if c.mode == 2 and s['prev_mode'] != 2:
         s['air'] = {'t0': c.t, 'z0': c.zb, 'zmax': c.zb, 'x0': c.x, 'y0': c.y, 'lip': abs(c.vz) > 1.5 * max(c.spd, .1),
-                    'rate': 0., 'spin': 0.}
+                    'rate': 0., 'spin': 0., 'yaw': board_yaw(c), 'turned': 0., 'trate': 0., 'tt': c.t}
+    elif c.mode == 2 and s['air']:                  # the board's own turn, measured from the state line's yaw
+        a = s['air']; y = board_yaw(c)
+        if y is not None and a['yaw'] is not None and c.t > a['tt']:
+            dy = (y - a['yaw'] + 180.) % 360. - 180.
+            a['turned'] += dy; a['trate'] += (dy / (c.t - a['tt']) - a['trate']) * .5
+        a['yaw'], a['tt'] = y, c.t
     if c.mode == 2 and s['air']:
         s['air']['zmax'] = max(s['air']['zmax'], c.zb)
     if c.mode != 2 and s['prev_mode'] == 2 and s['air']:
-        a = s['air']; a.update(t1=c.t, to=c.mode, h=round(a['zmax'] - a['z0'], 2), spin=round(a['spin'], 1))
+        a = s['air']; a.update(t1=c.t, to=c.mode, h=round(a['zmax'] - a['z0'], 2), spin=round(a['spin'], 1), turned=round(a['turned'], 1))
         s['airs'].append(a); s['air'] = None
-        s['log'].append([round(c.t, 3), 'air', round(a['t1'] - a['t0'], 2), a['h'], a['spin'], c.mode])
+        s['log'].append([round(c.t, 3), 'air', round(a['t1'] - a['t0'], 2), a['h'], a['spin'], c.mode, a['turned']])
     if c.mode == 3: s['grind_seen'] = True
+    if s['grind_seen'] and s['stall_t'] is None and c.mode in (1, 3) and c.spd < .8: s['stall_t'] = c.t
     if s['grind_seen'] and s['land_after_grind'] is None and c.mode == 1 and s['prev_mode'] == 2: s['land_after_grind'] = c.t
     if c.mode == 4 and s['bail_t'] is None: s['bail_t'] = c.t
     if c.mode == 4 and c.d.get('bail_kind', 'none') != 'none': s['bail_kind'] = c.d['bail_kind']
@@ -765,7 +793,7 @@ def end_shot():
             'seconds': round(s['frames'] / 30., 2), 'slow': bool(s.get('slow')), 'replay': replay,
             'combos': s['combos'], 'tricks': s['lasts'], 'missing': missing, 'landed': s['d_landed'], 'bails': s['d_bails'],
             'grinds': s['d_grinds'], 'speed_max': round(s['max_spd'], 2), 'speed_min': round(s['min_spd'], 2) if s['min_spd'] < 1e8 else None,
-            'airs': [{'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'spin': a['spin'], 'to': a['to']} for a in s['airs']],
+            'airs': [{'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'spin': a['spin'], 'turned': a.get('turned'), 'to': a['to']} for a in s['airs']],
             'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
             'bail_kind': s['bail_kind'], 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
     part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'])
