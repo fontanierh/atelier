@@ -19,7 +19,7 @@ Optional globals, set with `atelier live py` before the script:
     REHEARSE  True: no screenshots; done.json still reports every shot
     TUNE      {'shot': {'field': value}}: overrides of the shot table
     EXTRAS    True or False, or {'caveman': bool, 'dismount': bool}: force the optional shots on or off; by default
-              each runs when the game's Python API names its feature
+              each runs when the skate state's moves= word lists it (caveman, airdismount)
     FLIP      degrees added to every board placement, should the board face against the launch
     PHYSICAL  False: leave skate.RidePhysical alone (by default the film turns the physical rider on)
 
@@ -391,11 +391,13 @@ PLAZA_RAIL_CAM = fixed((-65.4, 1368.6, 125., 1.0), frame=9.)
 POOL_PROBE = 82.
 
 SHOTS = [
-    # A run along the road and a caveman onto the board (optional: the transitions).
+    # A run along the road, a jump and a caveman onto the board in the air (optional: the transitions).
     dict(name='open_caveman', optional='caveman', foot=True, road=(0., 8., -134.), settle=1.5,
-         acts=[(0., 'run'), (2.1, 'toggle')], secs=6.5,
-         events=[(2.6, hold(secs=1.2, push=True))], cams=[(0., chase(back=2.2, side=2.0, up=.7, frame=6.5))],
-         keep=lambda s, c: s.get('mounted') is not None and c.mode == 1 and s['max_spd_after_mount'] > 2.5 and s['d_bails'] == 0),
+         acts=[(0., 'run'), (1.9, 'jump'), (2.05, 'jump_release')], secs=6.5,
+         trig=[{'when': lambda s, c: s.get('jumped') is not None and c.mode == 0 and c.t > s['jumped'] + .08 and (c.vz > .3 or c.t > s['jumped'] + .35), 'act': 'toggle'},
+               {'when': lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.t > s['mounted'] + .5, 'do': [hold(secs=1.2, push=True)]}],
+         cams=[(0., chase(back=2.2, side=2.0, up=.7, frame=6.5))],
+         keep=lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.backend == 'Ride' and s['max_spd_after_mount'] > 2.5 and s['d_bails'] == 0),
     # The opener: a wide view down the park road as he pushes off.
     dict(name='open_wide', unless='open_caveman', road=(0., 8.5), speed=3.,
          secs=6.5, cams=[(0., WIDE_ROAD)], expect=[]),
@@ -495,18 +497,15 @@ SHOTS = [
 for _shot in SHOTS:
     _shot.update(TUNE.get(_shot['name'], {}))
 
-FEATURES = {'caveman': ('caveman',), 'dismount': ('dismount', 'bail_out', 'bailout')}
+FEATURES = {'caveman': 'caveman', 'dismount': 'airdismount'}
 
 
 def ready(feature):
-    """Whether the game can do an optional shot's transition: EXTRAS, else the API names it."""
+    """Whether the game can do an optional shot's transition: EXTRAS, else the skate state's moves= word names it."""
     if isinstance(EXTRAS, dict) and feature in EXTRAS: return bool(EXTRAS[feature])
     if isinstance(EXTRAS, bool): return EXTRAS
-    names = ' '.join(dir(L)).lower()
-    for cls in ('SkateComponent', 'YorimichiLive'):
-        try: names += ' ' + ' '.join(dir(getattr(unreal, cls))).lower()
-        except AttributeError: pass
-    return any(k in names for k in FEATURES.get(feature, ()))
+    m = re.search(r'\bmoves=(\S*)', L.skate_state())
+    return bool(m) and FEATURES[feature] in m.group(1).split(',')
 
 
 # ------------------------------------------------------------------------------------------------ the run
@@ -531,7 +530,9 @@ def act(s, c, what):
     elif what == 'stop':
         s['foot_gait'] = None; live.drive(0)
     elif what == 'jump':
-        live.press('jump')
+        s['jumped'] = c.t; live.press('jump')
+    elif what == 'jump_release':
+        live.press('jump_release')
     elif what == 'toggle':
         if c.mode == 0: s['mounted'] = c.t
         else: s['dismounted'] = c.t; live.skate_release()
@@ -553,7 +554,7 @@ def next_shot():
     s.update(k=k, dir='%02d_%s' % (k, s['name']), ph='place', pt=0., t=0., f=0, hz=90 if s.get('slow') else 60,
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
              air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], combos=[], lasts=[], retail=[], first=None,
-             bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, mounted=None, dismounted=None, foot_gait=None, max_spd=0., min_spd=1e9,
+             bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, mounted=None, dismounted=None, jumped=None, foot_gait=None, max_spd=0., min_spd=1e9,
              max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0)
     if s.get('road'):
         s['way'], s['start'] = road_way(*s['road'][:1], want=s['road'][1], **({'x0': s['road'][2]} if len(s['road']) > 2 else {}))
@@ -578,9 +579,6 @@ def place(s):
         g = L.ground_at(ue(x, y, probe)); L.teleport_player(g, yaw)
         pc.set_control_rotation(unreal.Rotator(0, -8, yaw))
         return
-    if not st['backend']:
-        unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend Ride'); st['backend'] = 'asked'
-        if PHYSICAL: unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical 1')
     L.skate_goofy(False)
     g = L.ground_at(ue(x, y, probe))
     live.skate_input(); L.skate_place(g, yaw + FLIP)
@@ -654,7 +652,7 @@ def ride(s, c, dt):
             for spec in tr.get('do', []): activate(s, c, spec)
             if tr.get('steer') is False: s['steer_on'] = False
             if tr.get('act'): act(s, c, tr['act'])
-    if c.mode == 0:
+    if c.mode == 0 or s['dismounted'] is not None:     # on foot, or on the way down from an air dismount
         if s['foot_gait']:
             pc.set_control_rotation(unreal.Rotator(0, -8, s['start'][3] if c.spd < .5 else c.yaw))
             live.drive(1., 0., s['foot_gait'])
@@ -813,6 +811,8 @@ def run(dt):
         except Exception: live.stop('ride_film')
 
 
+unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend Ride'); st['backend'] = 'asked'   # at each mount
+if PHYSICAL: unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical 1')
 L.film_hud(True); L.fixed_step(60); L.audio_log('start')
 live.behave('ride_film', run)
 say('started', OUT, [s['name'] for s in SHOTS if not ONLY or s['name'] in ONLY])
