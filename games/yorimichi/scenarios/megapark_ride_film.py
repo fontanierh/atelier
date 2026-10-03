@@ -21,7 +21,8 @@ Optional globals, set with `atelier live py` before the script:
     EXTRAS    True or False, or {'caveman': bool, 'dismount': bool}: force the optional shots on or off; by default
               each runs when the skate state's moves= word lists it (caveman, airdismount)
     FLIP      degrees added to every board placement, should the board face against the launch
-    PHYSICAL  False: leave skate.RidePhysical alone (by default the film turns the physical rider on)
+    PHYSICAL  skate.RidePhysical for the take: True (the default) films the active ragdoll rider, False the animated one;
+              done.json logs the cvar as the game reads it
 
 Runs in the game's Python (the live bridge) at a fixed 60 Hz step, 90 Hz for the slow-motion shot. Every board shot is
 placed, settles for a second unrecorded, is launched and then ridden by scripted skate. input: pursuit steering along
@@ -766,7 +767,7 @@ def end_shot():
             'grinds': s['d_grinds'], 'speed_max': round(s['max_spd'], 2), 'speed_min': round(s['min_spd'], 2) if s['min_spd'] < 1e8 else None,
             'airs': [{'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'spin': a['spin'], 'to': a['to']} for a in s['airs']],
             'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
-            'bail_kind': s['bail_kind'], 'error': s['error'], 'end_state': c.text if c else None}
+            'bail_kind': s['bail_kind'], 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
     part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'])
     json.dump(part, open(os.path.join(OUT, 'parts', s['dir'], 'shot.json'), 'w'))
     st['done'].append(info)
@@ -774,6 +775,11 @@ def end_shot():
     say('done', s['name'], info['outcome'], 'keep' if keep else 'DROP', s['combos'], 'missing', missing)
     s['effects'] = []
     live.skate_input()
+
+
+def physical_cvar():
+    try: return unreal.SystemLibrary.get_console_variable_int_value('skate.RidePhysical')
+    except Exception as e: return repr(e)
 
 
 def start_finish():
@@ -786,7 +792,7 @@ def finish():
     live.skate_input(); live.skate_release(); live.drive(0)
     MV.restore_player_camera(); L.film_hud(False); L.fixed_step(0)
     n = L.audio_log('stop', os.path.join(OUT, 'audio.json'))
-    json.dump({'take': TAKE, 'backend': st['backend'], 'physical': PHYSICAL, 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
+    json.dump({'take': TAKE, 'backend': st['backend'], 'physical': PHYSICAL, 'ride_physical': physical_cvar(), 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
                'unrecorded': UNRECORDED, 'sounds': n, 'rehearse': REHEARSE, 'film_frames': st['film'], 'errors': st['errors'],
                'shots': st['done'], 'state': L.skate_state()}, open(os.path.join(OUT, 'done.json'), 'w'), indent=1)
     say('finished', OUT, st['film'], 'frames')
@@ -818,7 +824,7 @@ def run(dt):
 
 
 unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend Ride'); st['backend'] = 'asked'   # at each mount
-if PHYSICAL: unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical 1')
+unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical %d' % PHYSICAL)
 L.film_hud(True); L.fixed_step(60); L.audio_log('start')
 live.behave('ride_film', run)
 say('started', OUT, [s['name'] for s in SHOTS if not ONLY or s['name'] in ONLY])
