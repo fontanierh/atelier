@@ -5,6 +5,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimNodeSpaceConversions.h"
 #include "SkateComponent.h"
+#include "AnimNode_SkateRider.h"
 #include "GroundContactNode.h"
 #include "ZeppelinService.h"
 #include "CairoCharacter.h"
@@ -115,7 +116,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     float AuthoredTopSpeed = 300.f, AuthoredCrouchSpeed = 50.f;
     uint32 AppliedSerial = MAX_uint32;
     FName AppliedClip;
-    TArray<FTransform> RetailSkatePose;
+    // The skate pose over everything above, with the switches between them inertialized.
+    FAnimNode_SkateRider Skate;
     bool bArmedCrouch = false;
 
     explicit FWandererAnimProxy(UAnimInstance* Owner) : FAnimInstanceProxy(Owner)
@@ -135,15 +137,16 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         Stance.ComponentPose.SetLinkNode(&Feet);
         Stance.Alpha = 0.f;
         ToLocal.ComponentPose.SetLinkNode(&Stance);
+        Skate.OnFoot.SetLinkNode(&ToLocal);
         Moving.SetGroupName(TEXT("Stride")); Crouching.SetGroupName(TEXT("Stride"));
         Moving.SetGroupMethod(EAnimSyncMethod::SyncGroup); Crouching.SetGroupMethod(EAnimSyncMethod::SyncGroup);
         // Same samples and lengths as Moving, so the sword arm swings on the body's stride phase.
         ArmedMoving.SetGroupName(TEXT("Stride")); ArmedMoving.SetGroupMethod(EAnimSyncMethod::SyncGroup);
         ArmedCrouching.SetGroupName(TEXT("Stride")); ArmedCrouching.SetGroupMethod(EAnimSyncMethod::SyncGroup);
     }
-    virtual FAnimNode_Base* GetCustomRootNode() override { return &ToLocal; }
+    virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -255,21 +258,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         }
         Action.SetPlayRate(bRiding ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
         CarryLayer.BlendWeights[0] = (!bSailing && !bRiding && Pawn->GetSword() && !Pawn->IsZeppelinPassenger()) ? Pawn->GetSword()->CarryWeight() : 0.f;
-        RetailSkatePose = bRiding ? Ride->GetRetailPose() : TArray<FTransform>();
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
-    }
-    virtual bool Evaluate(FPoseContext& Output) override
-    {
-        if (RetailSkatePose.IsEmpty()) return false;
-        Output.ResetToRefPose();
-        const FBoneContainer& Required=Output.Pose.GetBoneContainer();
-        for (FCompactPoseBoneIndex Bone : Output.Pose.ForEachBoneIndex())
-        {
-            const int32 Index=Required.MakeMeshPoseIndex(Bone).GetInt();
-            if (RetailSkatePose.IsValidIndex(Index)) Output.Pose[Bone]=RetailSkatePose[Index];
-        }
-        return true;
     }
     virtual void Update(float Dt) override
     {

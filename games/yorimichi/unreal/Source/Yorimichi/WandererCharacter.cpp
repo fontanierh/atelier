@@ -308,6 +308,9 @@ void AWandererCharacter::BuildInput()
     Key(Inputs[TEXT("Menu")],EKeys::Gamepad_Special_Right);
     Key(Inputs[TEXT("Sailboat")],EKeys::Gamepad_DPad_Up);
     Key(Inputs[TEXT("Skateboard")],EKeys::Gamepad_FaceButton_Top);
+    // The board button on foot: a board to the hand, or put away (the Ride backend's carry).
+    Key(Axis(TEXT("SkateboardHand"),EInputActionValueType::Boolean),EKeys::G);
+    Key(Inputs[TEXT("SkateboardHand")],EKeys::Gamepad_DPad_Right);
     Key(Inputs[TEXT("FlightSlower")],EKeys::Gamepad_LeftShoulder);
     Key(Inputs[TEXT("FlightFaster")],EKeys::Gamepad_RightShoulder);
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -335,6 +338,7 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
             {TEXT("FlightSlower"),&AWandererCharacter::FlightSlower},{TEXT("FlightFaster"),&AWandererCharacter::FlightFaster},
             {TEXT("Attack"),&AWandererCharacter::AttackPressed},{TEXT("Parry"),&AWandererCharacter::ParryPressed},{TEXT("Weapon"),&AWandererCharacter::ToggleWeapon}})
             E->BindAction(Inputs[Binding.Key],ETriggerEvent::Started,this,Binding.Value);
+        E->BindAction(Inputs[TEXT("SkateboardHand")],ETriggerEvent::Started,this,&AWandererCharacter::SkateboardHand);
         E->BindAction(Inputs[TEXT("Jump")],ETriggerEvent::Completed,this,&AWandererCharacter::ReleaseJump);
         E->BindAction(Inputs[TEXT("Attack")],ETriggerEvent::Completed,this,&AWandererCharacter::AttackReleased);
         E->BindAction(Inputs[TEXT("Attack")],ETriggerEvent::Canceled,this,&AWandererCharacter::AttackReleased);
@@ -388,7 +392,9 @@ bool AWandererCharacter::CanAct() const { return bReady && !bMenuOpen && !SkateR
 bool AWandererCharacter::StandForAction()
 {
     UnCrouch();
-    GetCharacterMovement()->UnCrouch(); // Checks overhead clearance before a standing clip.
+    // Only a crouched character stands up: CharacterMovement's UnCrouch gives back the class default capsule whenever
+    // the capsule differs from it, crouched or not, which would undo a fitted one (a BotW rider's).
+    if (bIsCrouched) GetCharacterMovement()->UnCrouch(); // Checks overhead clearance before a standing clip.
     return !bIsCrouched;
 }
 bool AWandererCharacter::MovementLocked() const
@@ -450,7 +456,19 @@ void AWandererCharacter::ToggleSkateboard(const FInputActionValue&)
         if (SkateRide->IsRiding()) { SkateRide->Toggle(); return; }
         if (Sword && !Sword->CancelForInterrupt(true)) return;
         if (CanAct() && StandForAction() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+        // Mid-jump the board goes under the feet (Ride backend: a caveman).
+        else if (bReady && !bMenuOpen && GetCharacterMovement()->IsFalling() && !MovementLocked() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; StopJumping(); }
     }
+}
+void AWandererCharacter::SkateboardHand(const FInputActionValue&)
+{
+    if (bReady && !bMenuOpen && SkateRide->IsAvailable() && !SkateRide->IsRiding()) SkateRide->RecallBoard();
+}
+bool AWandererCharacter::CanCarrySkateBoard() const
+{
+    // The hands are needed: the sword out, the sail, the zeppelin's rail, swimming, an interaction or a wave.
+    return !(Sword && Sword->IsArmed()) && !Sailboat->IsEquipped() && !IsZeppelinPassenger() && !GetCharacterMovement()->IsSwimming() &&
+        AnimationAction != TEXT("Interact") && AnimationAction != TEXT("Wave");
 }
 void AWandererCharacter::ToggleCrouch(const FInputActionValue&)
 {
@@ -990,7 +1008,7 @@ void AWandererCharacter::RecordFrame()
 void AWandererCharacter::Landed(const FHitResult& Hit)
 {
     Super::Landed(Hit);
-    if (SkateRide->IsRiding()) { FallSpeed = 0.f; return; }   // a bail: the skate component plays the fall
+    if (SkateRide->GetMode() != ESkateMode::Off) { FallSpeed = 0.f; return; }   // a bail: the skate component plays the fall
     bPendingTakeoff = bGroundJumped = bAirJumpUsed = bAirDashUsed = false;
     GetCharacterMovement()->RemoveRootMotionSource(TEXT("ForwardDash"));
     SinceGrounded = 0.f;

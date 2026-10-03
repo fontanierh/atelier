@@ -14,6 +14,14 @@ class UAudioComponent;
 class USoundWave;
 class USoundAttenuation;
 class FSkateRuntime;
+class FRideSession;
+class UBoxComponent;
+class UPhysicsAsset;
+class URidePhysicalRider;
+class UMaterialInstanceDynamic;
+class UMaterialInterface;
+class UAnimInstance;
+struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -31,11 +39,19 @@ public:
     /** Character must implement ISkateRider. */
     void Initialize(ACharacter* Character);
     bool IsAvailable() const { return bAvailable; }
-    /** On the board, including a bail (the component drives the character until they are back on it). */
-    bool IsRiding() const { return Mode != ESkateMode::Off; }
+    /** On the board, including a bail (the component drives the character until they are back on it), or getting on
+     *  or off it with the Ride backend (a mount or dismount clip drives the character). */
+    bool IsRiding() const { return Mode != ESkateMode::Off || bRideClip; }
     ESkateMode GetMode() const { return Mode; }
     /** Get on (from standing or running) or off. */
     bool Toggle();
+    /** The board button on foot with the Ride backend (RIDE.md, "Transitions"): a board dissolves into the hand, a
+     *  held one is put away, a lying one dissolves and a fresh one comes to the hand. Not while the hands are busy
+     *  (ISkateRider::CanCarrySkateBoard). Callable from scripts (Python: recall_board()). */
+    UFUNCTION(BlueprintCallable, Category="Skate")
+    void RecallBoard();
+    /** On foot with the board in hand (the board-carry locomotion). */
+    bool IsBoardInHand() const;
     void StowImmediately();
     void SetGoofy(bool bNewGoofy);
     bool IsGoofy() const { return bGoofy; }
@@ -46,6 +62,15 @@ public:
     void PhysSkate(float Dt);
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     const TArray<FTransform>& GetRetailPose() const { return RetailPose; }
+    /** The switches between the skate pose and the character's own that should be blended (FAnimNode_SkateRider):
+     *  the count changes at each one, and the blend takes GetPoseBlendTime seconds (0: cut). */
+    uint32 GetPoseBlendSerial() const { return PoseBlendSerial; }
+    float GetPoseBlendTime() const { return PoseBlendTime; }
+    /** A bail the player asked to leave on foot (the skate button during the bail): the settled body gets up with
+     *  BeginGetUpOnFoot rather than back onto the board. */
+    bool WantsGetUpOnFoot() const;
+    /** The physical rider's get-up on foot, where the body lies (Ground, facing Yaw) with the board left lying. */
+    void BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp);
     FString GetRetailState() const;
     bool GetRetailCamera(FTransform& Out, float& FOV) const;
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
@@ -139,4 +164,121 @@ private:
     void ReadInput(float Dt);
     void SetMeshForRiding(bool bRiding);
     FQuat AlignUp(const FQuat& Q,const FVector& NewUp,float Alpha) const;
+
+    // The Ride backend (USkateSettings::Backend; Private/Ride, RIDE.md). It publishes through RetailRuntime's outputs,
+    // so everything after the step (modes, cues, board placement, retargeting) is shared with the native backend.
+    TSharedPtr<FRideSession> Ride;
+    // The rider's bodies: an active ragdoll while riding (skate.RidePhysical), the bail's ragdoll and loose board, and
+    // the get-up from where the body lies.
+    UPROPERTY() TObjectPtr<URidePhysicalRider> PhysicalRider;
+    bool StartRide();
+    bool StepRide(float Dt);
+    void AfterRideFrame(float Dt);
+    void StopRide();
+    void PreloadRide();
+    void GetUpFromBody();
+
+    // Getting on and off with the Ride backend (Private/Ride/RideTransition.cpp, RIDE.md "Transitions"): one
+    // continuous character. The actor never jumps, the capsule changes about its centre, the mesh keeps its world
+    // place across each switch and eases back to its on-foot offset, the pose switch is inertialized and the speed
+    // carries over both ways; the board dissolves in and out rather than popping.
+    TSharedPtr<FRideTransition> Transition;
+    bool bRideBody=false;                                      // the current or last ride used the Ride backend
+    bool bRideClip=false;                                      // a mount or dismount clip drives the character (IsRiding)
+    // The off-board pose (carry, mount, dismount clips through FRideSession::StepOffBoard) published by
+    // PublishOffBoardPose through RetargetRetailPose: the visible deck follows the clip's board, on the ground or in
+    // the hand (OffBoardDeck, scaled), and the body rises onto a bigger deck by OffBoardLift.
+    bool bOffBoardPose=false;
+    float OffBoardLift=0.f;
+    FTransform OffBoardDeck=FTransform::Identity;
+    // The visible deck eases from where it was (in the hand of the character's own pose) onto the clip's board.
+    FTransform OffBoardDeckFrom=FTransform::Identity;
+    float OffBoardDeckBlend=1.f;
+    /** bPlaceBoard: the visible board goes where the clip has it (false: it stays where it is, lying or kicked away). */
+    bool PublishOffBoardPose(float Lift, bool bPlaceBoard = true);
+    /** Place the visible board's parts from the published source board, its deck at DeckWorldScaled. */
+    void PlaceBoardParts(const FTransform& DeckWorldScaled);
+    uint32 PoseBlendSerial=0;
+    float PoseBlendTime=0.f;
+    float PendingPoseBlend=0.f;        // a blend for the pose the ride publishes next (RequestPoseBlendWithNextPose)
+    UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> BoardFade;  // USkateSettings::BoardDissolveMaterial, shared by the parts
+    bool bBoardFadeTried = false;                                 // looked up once (LoadBoardFade): a missing one is not looked for every frame
+    FRideTransition& Transit();
+    void RequestPoseBlend(float Seconds) { ++PoseBlendSerial; PoseBlendTime=Seconds; PendingPoseBlend=0.f; }
+    /** The blend for a pose not published yet (the ride's first, after the pose shown is held a frame): asked where
+     *  RetargetRetailPose writes it, so the character's graph reads the request and the pose together. */
+    void RequestPoseBlendWithNextPose(float Seconds) { PendingPoseBlend=Seconds; }
+    bool RideMount(bool bInstant);
+    bool RideDismount();
+    void LeaveBoard();
+    bool GetOnBoard(const FVector& Ground, const FQuat& Rotation, const FVector& Velocity, float Blend);
+    bool StandUpOffBoard(float Yaw);
+    bool PrepareRideClips();
+    bool BeginMountClip();
+    bool BeginDismountClip();
+    void StepRideClip(float Dt);
+    void FinishRideClip();
+    void EndRideClip(bool bKeepDrive = false);
+    void BeginCarry(float Phase);
+    void StepCarry(float Dt);
+    void PutBoardAway();
+    FVector OffBoardGround() const;
+    float FeetPhase(bool bMirror) const;
+    void TrackFeet(float Dt);
+    void HoldBoardAtHand();
+    void ReleaseBoardFromHand();
+    void UseWorldBoard();
+    void SetDrive(const FVector& Velocity);
+    void StopDrive();
+    /** Off the board at Velocity (flat): the drive holds it for one more move, then ReleaseDrive. */
+    void HoldDriveForInput(const FVector& Velocity);
+    /** The held speed split by the stick now given: the character's own (as far as it may run), the rest momentum. */
+    void ReleaseDrive();
+    bool BeginAirMountClip();
+    bool BeginAirDismountClip();
+    bool BeginCarryJump(float Speed);
+    bool BeginLandClip();
+    bool StartClip(UAnimSequence* Clip, ERideFoot Foot, bool bMirror, float Yaw, float BlendIn);
+    void AnchorClipAt(FName Bone, const FVector& World);
+    bool MatchPelvis();
+    float ClipPhase(const UAnimSequence* Clip, float Time, bool bMirror) const;
+    float AirTimeLeft(float* Height = nullptr) const;
+    void TickTransition(float Dt);
+    /** skate.RideTrace: a line a frame about each switch (the actor, the mesh, the pelvis published and shown). */
+    void TraceTransition();
+    void ResetTransition();
+    /** While the skate pose shows, the character's anim instance takes no root motion (its own mode comes back with
+     *  its own pose): with root motion from everything CharacterMovement updates the graph before the ride steps and
+     *  publishes, and the character would show each skate pose a frame late, behind its board. */
+    void SyncRootMotion();
+    void ReleaseRootMotion();          // gives the held instance its own mode back
+    TWeakObjectPtr<UAnimInstance> RootMotionAnim;   // the instance whose mode is held
+    bool bRootMotionHeld=false;
+    uint8 SavedRootMotionMode=0;      // ERootMotionMode::Type
+    void ShowBoard(float Target, bool bInstant);
+    void ApplyBoardShown();
+    void LoadBoardFade();
+    void SetMeshOffset(const FVector& Offset, const FQuat& Turn);
+    /** The mesh's offset and turn that keep it at MeshWorld under the actor as it is now. */
+    void KeepMeshWorld(const FTransform& MeshWorld);
+    /** Turn the actor upright to Yaw, the mesh keeping its world place and easing back onto the capsule. */
+    void TurnActor(float Yaw);
+    // Bails left on foot, a board kicked away, a lying board stepped onto.
+    /** URidePhysicalRider::OnBailStart: a run-out is taken on foot (RUNOUT_*, after the ride's frame). */
+    bool TakeRunOut(ERideBailKind Kind);
+    bool BeginRunOut();
+    bool BeginRecover();
+    bool BeginStepOnClip();
+    /** The board leaves the clip (kicked away, or rolling on after a run-out): it flies or rolls on by itself as a
+     *  projectile, or settles where it is when it barely moves. */
+    void LaunchBoard();
+    void StepLooseBoard(float Dt);
+    void SettleBoard();
+    /** A clip that ends without the board in hand: the character's own pose and movement take over. */
+    void EndOnFoot(float Blend);
+    void StartMomentum(const FVector& Excess);
+    void StopMomentum();
+    void DropLyingBoard();
+    /** For GetDebug (QA): the board, the body's hips and the character's speed. */
+    FString DescribeTransition() const;
 };

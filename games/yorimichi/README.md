@@ -38,7 +38,7 @@ Scenarios run against the game from another terminal: `uv run atelier qa yorimic
 | `skate_runtime`, `skatepark`, `skate_performance` | skating checks: controls, animation, mounting, bails and stances; the pier's banks, handrail and bowl; real-time frame pacing |
 | `sailboat`, `zeppelin`, `lake` | regression checks and captures for the dinghy, the zeppelin stations and the woodland lake |
 | `treehouse`, `treehouse_walk`, `treehouse_tour` | the tree house's reference views, a filmed walk through it and a camera tour |
-| `skate_showreel`, `megapark_tour`, `megapark_access_film` | filmed takes, with `*_mix.py` scripts to cut them |
+| `skate_showreel`, `megapark_tour`, `megapark_access_film`, `megapark_ride_film` | filmed takes, with `*_mix.py` scripts to cut them |
 
 ## What is in the game
 

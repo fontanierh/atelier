@@ -30,4 +30,7 @@ public:
     /** The visible board's size relative to the source rider's: a short character with big feet rides a bigger one.
      *  It grows about its ground contact and the pose rises onto its deck; the ride's physics keep the source board. */
     virtual float GetSkateBoardScale() const { return 1.f; }
+    /** On foot with the Ride backend: whether the hands are free to hold the board. False (a weapon drawn, climbing,
+     *  gliding, swimming, sailing, an interaction) puts a held board away (RIDE.md, "Transitions"). */
+    virtual bool CanCarrySkateBoard() const { return true; }
 };

@@ -33,6 +33,8 @@
 #include "HAL/IConsoleManager.h"
 #include "UObject/UObjectIterator.h"
 #include "Async/Async.h"
+#include "Ride/RideSession.h"
+#include "Ride/RidePhysicalRider.h"
 
 namespace
 {
@@ -528,6 +530,7 @@ void USkateComponent::PreloadRetailRuntime()
 {
     // Decoding the animation banks takes seconds; do it while the player walks, so the first mount is immediate.
     bRetailPreloaded=true;
+    if (USkateSettings::ActiveBackend()==ESkateBackend::Ride) { PreloadRide(); return; }
     FString Failure;
     if (!LaunchNativeSession(Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,Failure))
     { UE_LOG(LogTemp,Display,TEXT("SKATE preload skipped: %s"),*Failure); }
@@ -535,13 +538,25 @@ void USkateComponent::PreloadRetailRuntime()
 }
 void USkateComponent::PollIdleRetail()
 {
-    if (!RetailRuntime || bRetailActive) return;
+    if (!RetailRuntime || bRetailActive || !RetailRuntime->Worker) return;
     RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
     { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded session failed: %s"),*RetailRuntime->Error); RetailRuntime.Reset(); }
 }
 bool USkateComponent::StartRetailRuntime()
 {
+    // The backend is chosen at each mount (skate.Backend, USkateSettings::Backend): a session of the other kind is
+    // dropped. The Ride backend publishes through an FSkateRuntime without a native worker.
+    const bool bRide=USkateSettings::ActiveBackend()==ESkateBackend::Ride;
+    if (RetailRuntime && RetailRuntime->Worker.IsValid()==bRide) RetailRuntime.Reset();
+    if (bRide)
+    {
+        if (!RetailRuntime) { RetailRuntime=MakeShared<FSkateRuntime>(); RetailRuntime->Ready=true; RetailRuntime->State=TEXT("PhysicsGround"); }
+        if (!StartRide()) { RuntimeFailure(TEXT("Ride skating could not start.")); return false; }
+        RetailRuntime->HasPose=false; bRetailActive=true; RetailPose.Reset();
+        return true;
+    }
+    StopRide();
     FString Failure;
     if (!RetailRuntime && !LaunchNativeSession(Pos,Rot.Rotator().Yaw,Failure)) { RuntimeFailure(Failure); return false; }
     RetailRuntime->FinishPendingWorld(false);
@@ -560,22 +575,33 @@ bool USkateComponent::StartRetailRuntime()
 }
 void USkateComponent::SuspendRetailRuntime()
 {
-    if (RetailRuntime) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
+    StopRide();
+    if (RetailRuntime && RetailRuntime->Worker) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
     bRetailActive=false; RetailPose.Reset();
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+    if (PhysicalRider) PhysicalRider->End();
+    ReleaseRootMotion();
     RetailRuntime.Reset(); Super::EndPlay(Reason);
 }
 void USkateComponent::LaunchRetail(const FVector& V)
 {
     if (!bRetailActive || !RetailRuntime) return;
+    if (!RetailRuntime->Worker) { if (Ride) Ride->Launch(V); return; }
     if (!RetailRuntime->Ready || RetailRuntime->PendingActivation) { RetailRuntime->PendingLaunch=V; return; }
     FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Launch;C.Velocity=NativeVector(V);RetailRuntime->Worker->Enqueue(MoveTemp(C));
 }
 void USkateComponent::ConfigureRetail()
 {
-    if(!RetailRuntime)return;FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Configure;
+    if(!RetailRuntime)return;
+    if(!RetailRuntime->Worker)
+    {
+        const USkateSettings* S=GetDefault<USkateSettings>();
+        if(Ride)Ride->Configure(bGoofy,{S->PopHeightScale,S->AirSpinScale,S->PushSpeedScale,S->PushPowerScale,S->VertAssist});
+        return;
+    }
+    FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Configure;
     C.Preferences=RetailRuntime->Preferences(bGoofy);RetailRuntime->Worker->Enqueue(MoveTemp(C));
 }
 
@@ -586,7 +612,12 @@ bool USkateComponent::GetRetailCamera(FTransform& Out, float& FOV) const
 }
 FString USkateComponent::GetRetailState() const
 {
-    return bRetailActive && RetailRuntime ? FString::Printf(TEXT("%s tick=%llu"),*RetailRuntime->State,RetailRuntime->Tick) : FString();
+    if (!bRetailActive || !RetailRuntime) return FString();
+    // The Ride backend adds its simulation cost per 60 Hz tick (mean and worst over the last second, ms).
+    if (!RetailRuntime->Worker && Ride)
+        return FString::Printf(TEXT("%s tick=%llu backend=Ride cost=%.3f/%.3f %s %s"),*RetailRuntime->State,RetailRuntime->Tick,Ride->CostMean,Ride->CostWorst,
+            *Ride->DescribePose(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"));
+    return FString::Printf(TEXT("%s tick=%llu backend=Native"),*RetailRuntime->State,RetailRuntime->Tick);
 }
 
 void USkateComponent::StepRetailRuntime(float Dt)
@@ -594,6 +625,16 @@ void USkateComponent::StepRetailRuntime(float Dt)
     ReadInput(Dt);
     ComboFade=FMath::Max(0.f,ComboFade-Dt);
     if (!bRetailActive || !RetailRuntime) return;
+    if (!RetailRuntime->Worker)
+    {
+        if (!Ride || !StepRide(Dt)) return;
+        FSkateRuntime& O=*RetailRuntime;const FRideSession& R=*Ride;
+        O.Root=R.Root;O.Bones=R.Bones;O.Velocity=R.Velocity;O.State=R.State;O.Trick=R.Trick;O.Score=R.Score;
+        O.ManualBalance=R.ManualBalance;O.Camera=R.Camera;O.CameraFOV=R.CameraFOV;O.Tick=R.Ticks;O.HasPose=true;
+        if (O.Names.Num()!=R.Names.Num()) { O.Names=R.Names; O.Reference=R.Reference; }
+    }
+    else
+    {
     const bool Changed=RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
     {
@@ -632,6 +673,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     RetailRuntime->AwaitingPose=true; RetailRuntime->FrameTime=0;
     }
     if (!Changed) return;
+    }
     const FString& S=RetailRuntime->State;
     const ESkateMode NewMode=S.Contains(TEXT("Wipeout"))?ESkateMode::Bail:S.Contains(TEXT("Grind"))?ESkateMode::Grind:
         S.Contains(TEXT("Air"))?ESkateMode::Air:ESkateMode::Ground;
@@ -650,41 +692,21 @@ void USkateComponent::StepRetailRuntime(float Dt)
     if (FMath::Abs(Along)>15.f) bFakie=Along<0;
     RailSpeed=Vel.Size();
     bManual=Mode==ESkateMode::Ground && FMath::Abs(RetailRuntime->ManualBalance)>.0001f;
-    bNoseManual=bManual && RetailRuntime->Trick.Contains(TEXT("Nose"));
+    bNoseManual=bManual && (RetailRuntime->Worker ? RetailRuntime->Trick.Contains(TEXT("Nose")) : Ride && Ride->IsNoseManual());
     bPushing=In.bPush; bBraking=In.bBrake; bPowerslide=S==TEXT("SlideGround");
     const FVector Travel=FVector(Vel.X,Vel.Y,0).GetSafeNormal();
     SlideAngle=bPowerslide ? FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(float(FMath::Abs(FVector::DotProduct(Travel,Rot.GetForwardVector()))),0.f,1.f))) : 0.f;
-    bSlide=S==TEXT("GrindBoardslide") || S==TEXT("GrindTipslide") || S==TEXT("GrindDarkslide");
+    bSlide=S==TEXT("GrindBoardslide") || S==TEXT("GrindTipslide") || S==TEXT("GrindDarkslide") || S==TEXT("GrindLipslide");
     if (ShownCombo!=RetailRuntime->Trick || Score!=FMath::RoundToInt(RetailRuntime->Score) ||
         Mode==ESkateMode::Air || Mode==ESkateMode::Grind || bManual) ComboFade=1.5f;
     ShownCombo=RetailRuntime->Trick; Score=FMath::RoundToInt(RetailRuntime->Score); LastTrickName=FName(*ShownCombo);
-    Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::TeleportPhysics);
+    // No physics teleport: the Ride rider's simulated bodies (RidePhysicalRider) keep their own motion.
+    Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::None);
     Movement()->Velocity=Vel;
     // A bigger board grows about the ground contact, so its wheels stay on the ground (ISkateRider::GetSkateBoardScale).
-    const FTransform Grow=BoardGrowth();
-    BoardRoot->SetWorldTransform(DeckWorld*Grow); Deck->SetRelativeTransform(FTransform::Identity);
-    const TCHAR* TruckNames[]={TEXT("TRUCK_FRONT"),TEXT("TRUCK_BACK")};
-    const TCHAR* WheelNames[]={TEXT("RIGHT_WHEELFRONT"),TEXT("LEFT_WHEELFRONT"),TEXT("RIGHT_WHEELBACK"),TEXT("LEFT_WHEELBACK")};
-    // Fit the host board's mesh pivots to the source rig; preserve the native truck lean and wheel spin.
-    const FTransform DeckBind=RetailRuntime->Bind(TEXT("SKATEBOARD_ROOT"));
-    for (int32 I=0;I<Trucks.Num() && I<2;++I)
-    {
-        const FTransform TruckBind=RetailRuntime->Bind(TruckNames[I]);
-        const FVector A=RetailRuntime->Bind(WheelNames[I*2]).GetLocation(),B=RetailRuntime->Bind(WheelNames[I*2+1]).GetLocation();
-        const FVector Axle=(A+B)*.5;
-        const float Height=FMath::Max(.1f,float(DeckBind.GetLocation().Z-1.2-Axle.Z));
-        const FTransform Fit(FQuat(FVector::UpVector,I==0?0.f:PI)*DeckBind.GetRotation(),
-            Axle+DeckBind.GetRotation().GetUpVector()*Height,FVector(1,FVector::Distance(A,B)/18.6,Height/5.15));
-        Trucks[I]->SetWorldTransform(Fit.GetRelativeTransform(TruckBind)*RetailRuntime->Bone(TruckNames[I])*Grow);
-    }
-    for (int32 I=0;I<Wheels.Num() && I<4;++I)
-    {
-        const FTransform WheelBind=RetailRuntime->Bind(WheelNames[I]);
-        // physicswheels/default/WheelRadius is 0.031 m; the host mesh radius is 2.65 cm.
-        const FTransform Fit(DeckBind.GetRotation(),WheelBind.GetLocation(),FVector(3.1/2.65));
-        Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I])*Grow);
-    }
+    PlaceBoardParts(DeckWorld*BoardGrowth());
     RetargetRetailPose();
+    if (!RetailRuntime->Worker) { AfterRideFrame(Dt); return; }
     // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
     // gathers here, builds on a background thread, and installs the completed world between simulation ticks.
     if (RetailRuntime->PendingWorld.IsValid())
@@ -710,6 +732,55 @@ void USkateComponent::StepRetailRuntime(float Dt)
         // Nothing to snapshot (open water): keep the old one and try again 20 m on, not on every frame.
         else { RetailRuntime->CollisionCentre=Pos; RetailRuntime->CollisionReach=2000.; }
     }
+}
+
+void USkateComponent::PlaceBoardParts(const FTransform& DeckWorldScaled)
+{
+    // The parts keep their place relative to the source deck, wherever the visible deck is (under the rider, or in a
+    // hand off the board). The deck's scale is uniform, so this is the riding placement composed in another order.
+    const FTransform SourceDeck=RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"));
+    BoardRoot->SetWorldTransform(DeckWorldScaled); Deck->SetRelativeTransform(FTransform::Identity);
+    const TCHAR* TruckNames[]={TEXT("TRUCK_FRONT"),TEXT("TRUCK_BACK")};
+    const TCHAR* WheelNames[]={TEXT("RIGHT_WHEELFRONT"),TEXT("LEFT_WHEELFRONT"),TEXT("RIGHT_WHEELBACK"),TEXT("LEFT_WHEELBACK")};
+    // Fit the host board's mesh pivots to the source rig; preserve the native truck lean and wheel spin.
+    const FTransform DeckBind=RetailRuntime->Bind(TEXT("SKATEBOARD_ROOT"));
+    for (int32 I=0;I<Trucks.Num() && I<2;++I)
+    {
+        const FTransform TruckBind=RetailRuntime->Bind(TruckNames[I]);
+        const FVector A=RetailRuntime->Bind(WheelNames[I*2]).GetLocation(),B=RetailRuntime->Bind(WheelNames[I*2+1]).GetLocation();
+        const FVector Axle=(A+B)*.5;
+        const float Height=FMath::Max(.1f,float(DeckBind.GetLocation().Z-1.2-Axle.Z));
+        const FTransform Fit(FQuat(FVector::UpVector,I==0?0.f:PI)*DeckBind.GetRotation(),
+            Axle+DeckBind.GetRotation().GetUpVector()*Height,FVector(1,FVector::Distance(A,B)/18.6,Height/5.15));
+        Trucks[I]->SetWorldTransform(Fit.GetRelativeTransform(TruckBind)*RetailRuntime->Bone(TruckNames[I]).GetRelativeTransform(SourceDeck)*DeckWorldScaled);
+    }
+    for (int32 I=0;I<Wheels.Num() && I<4;++I)
+    {
+        const FTransform WheelBind=RetailRuntime->Bind(WheelNames[I]);
+        // physicswheels/default/WheelRadius is 0.031 m; the host mesh radius is 2.65 cm.
+        const FTransform Fit(DeckBind.GetRotation(),WheelBind.GetLocation(),FVector(3.1/2.65));
+        Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I]).GetRelativeTransform(SourceDeck)*DeckWorldScaled);
+    }
+}
+
+bool USkateComponent::PublishOffBoardPose(float Lift, bool bPlaceBoard)
+{
+    // Off the board (RideTransition.cpp) the Ride session's clip pose is retargeted like a ride's, without starting
+    // the ride: its root is the clips' trajectory on the floor, and the board goes where the clip has it (unless it
+    // lies elsewhere or flies on its own).
+    if (!Ride || !Rider) return false;
+    if (RetailRuntime && RetailRuntime->Worker) RetailRuntime.Reset();
+    if (!RetailRuntime) { RetailRuntime=MakeShared<FSkateRuntime>(); RetailRuntime->Ready=true; RetailRuntime->State=TEXT("PhysicsGround"); }
+    FSkateRuntime& O=*RetailRuntime; const FRideSession& R=*Ride;
+    O.Root=R.Root; O.Bones=R.Bones; O.HasPose=true;
+    if (O.Names!=R.Names) { O.Names=R.Names; O.Reference=R.Reference; }
+    if (O.Bones.Num()!=O.Names.Num()) { RetailPose.Reset(); return false; }
+    bOffBoardPose=true; OffBoardLift=FMath::Clamp(Lift,0.f,1.f);
+    RetargetRetailPose();
+    bOffBoardPose=false;
+    if (RetailPose.IsEmpty()) return false;
+    if (bPlaceBoard) PlaceBoardParts(OffBoardDeck);
+    return true;
 }
 
 void USkateComponent::RetargetRetailPose()
@@ -750,9 +821,30 @@ void USkateComponent::RetargetRetailPose()
     const FTransform RootToMesh=RetailRuntime->Root.GetRelativeTransform(MeshWorld);
     // Preserve sole height: the source ankle is much farther above its sole than this character's ankle. A bigger
     // board's deck is higher by its extra deck height (9.05 cm at the source's size).
+    // Off the board the clips' root is on the ground: standing on the deck (OffBoardLift 1) the body rises onto the
+    // visible deck, which is not scaled with the body.
+    const float DeckLift=bOffBoardPose?OffBoardLift*((BoardScale()-1.f)*9.05f+(1.f-Ratio)*8.9f):(BoardScale()-1.f)*9.05f;
     const float SoleOffset=(Bind[Foot].GetLocation().Z-Bind[0].GetLocation().Z)*Mesh->GetComponentScale().Z -
-        (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio+(BoardScale()-1.f)*9.05f;
+        (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio+DeckLift;
     auto InMesh=[&](FTransform T){ T.ScaleTranslation(Ratio); T.AddToTranslation(FVector(0,0,SoleOffset)); return T*RootToMesh; };
+    // The visible deck off the board: on the ground it is where the clip has it, grown about its contact like a
+    // ridden board; held, it goes with the body's hands (scaled with the body). Between the two by its height.
+    if (bOffBoardPose)
+    {
+        const int32 SD=Source(TEXT("SKATEBOARD_ROOT"));
+        const float S=BoardScale();
+        if (SD>=0)
+        {
+            const FTransform Clip=RetailRuntime->Bones[SD]*RetailRuntime->Root;
+            const FVector Contact=Clip.GetLocation()-Clip.GetRotation().GetUpVector()*9.05;
+            const FTransform Ground=Clip*FTransform(FQuat::Identity,Contact*(1.-S),FVector(S));
+            FTransform Held=InMesh(RetailRuntime->Bones[SD])*MeshWorld; Held.SetScale3D(FVector(S));
+            OffBoardDeck.Blend(Ground,Held,FMath::SmoothStep(15.f,45.f,float(RetailRuntime->Bones[SD].GetLocation().Z)));
+        }
+        else OffBoardDeck=FTransform(RetailRuntime->Root.GetRotation(),RetailRuntime->Root.GetLocation(),FVector(S));
+        // A board just taken off a hand of the character's own pose eases from there (RideTransition.cpp).
+        if (OffBoardDeckBlend<1.f) { const FTransform To=OffBoardDeck; OffBoardDeck.Blend(OffBoardDeckFrom,To,FMath::SmoothStep(0.f,1.f,OffBoardDeckBlend)); }
+    }
     auto Frame=[](FVector Left,FVector Right,FVector Head,FVector HipP) { FVector Up=(Head-HipP).GetSafeNormal(); return FRotationMatrix::MakeFromXZ(FVector::CrossProduct(Right-Left,Up).GetSafeNormal(),Up).ToQuat(); };
     const int32 TL=Index(TEXT("thigh_L")),TR=Index(TEXT("thigh_R")),TH=Index(TEXT("head"));
     if (TL<0 || TR<0 || TH<0 || Source(TEXT("LEFTUPLEG"))<0 || Source(TEXT("RIGHTUPLEG"))<0 || Source(TEXT("HEAD"))<0)
@@ -843,7 +935,7 @@ void USkateComponent::RetargetRetailPose()
         // Top of the deck's rail: the concave lifts the sides, and the kicks rise to the ends.
         auto RailTop=[&](double X){ const double T=FMath::Clamp((FMath::Abs(X)-KickStart)/(HalfLength-KickStart),0.,1.); return Concave+T*T*(Box.Max.Z-Concave); };
         // The visible deck: a bigger board's outline scales with it, the grip offsets stay at the hand's size.
-        const FTransform DeckToMesh=(RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
+        const FTransform DeckToMesh=(bOffBoardPose?OffBoardDeck:RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
         for (const TCHAR* Side : {TEXT("L"),TEXT("R")})
         {
             auto Target=[&](const TCHAR* Name){ return Index(FString::Printf(TEXT("%s_%s"),Name,Side)); };
@@ -1020,6 +1112,8 @@ void USkateComponent::RetargetRetailPose()
         RetailPose[I]=Parent>=0?Output[I].GetRelativeTransform(Output[Parent]):Output[I];
         RetailPose[I].NormalizeRotation();
     }
+    // A blend asked for this pose (the ride's first after a mount) goes with it (RequestPoseBlendWithNextPose).
+    if (PendingPoseBlend>0.f) RequestPoseBlend(PendingPoseBlend);
 }
 
 void USkateComponent::RuntimeFailure(const FString& Message)
