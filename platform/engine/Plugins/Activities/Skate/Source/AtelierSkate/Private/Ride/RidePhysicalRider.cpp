@@ -11,6 +11,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "HAL/IConsoleManager.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsConstraintTemplate.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
@@ -98,6 +99,9 @@ namespace
     // (cm), or after this many frames.
     constexpr float SnapshotShown = 10.f;
     constexpr int32 MaxGetUpWait = 4;
+    // How far below the pelvis a bail looks for the ground it lies on (cm): a body sliding down a wall can be metres
+    // above the floor.
+    constexpr float HipsGroundRange = 1000.f;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -206,7 +210,7 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     // frame: relative to the kinematic body on the skeleton's root, which the actor carries with the board. Anchors
     // in the world trail a target that moves with the board by about a frame (12 cm at 10 m/s). Without a root
     // body, they are in the world.
-    const FName RootBone = Skeletal->GetRefSkeleton().GetBoneName(0);
+    RootBone = Skeletal->GetRefSkeleton().GetBoneName(0);
     bBoardFrame = RootBone != PelvisBone && Mesh->GetBodyInstance(RootBone) != nullptr;
     if (!Control->CreateControlsAndBodyModifiersFromPhysicsControlAsset(Mesh, bBoardFrame ? Mesh.Get() : nullptr, bBoardFrame ? RootBone : NAME_None))
     {
@@ -225,8 +229,7 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     }
     Control->SetControlsInSetEnabled(AllSet, false);
     bSimulating = false; bEndWhenOut = false; Weight = WeightTarget = 0; AppliedWeight = -1;
-    AnchorFade = 1; AppliedAnchorFade = -1;
-    bBail = bReleased = bBailOffered = false; GetUpTime = -1; GetUpWait = -1; LandingLeft = 0;
+    bBail = bBailOffered = false; bBailMaterial = false; HipsAboveGround = -1; GetUpTime = -1; GetUpWait = -1; LandingLeft = 0;
     LastMeshLocation = Mesh->GetComponentLocation();
     LastRiderVelocity = Rider->GetVelocity(); PlacedFrames = 0;
     BeganFrame = GFrameCounter;
@@ -254,6 +257,7 @@ void URidePhysicalRider::End()
     RestoreWorld();
     if (Mesh)
     {
+        ApplyBailMaterial(false);
         Mesh->SetAllBodiesSimulatePhysics(false);
         Mesh->SetAllBodiesPhysicsBlendWeight(0.f);
         Mesh->bBlendPhysics = false;
@@ -502,7 +506,6 @@ void URidePhysicalRider::ReloadProfiles()
     const ERidePhysicalPhase Current = Phase;
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(Current);
-    AppliedAnchorFade = -1; ApplyAnchorFade();
     UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: profiles reloaded (%s)"), *PhaseName(Current).ToString());
 }
 
@@ -545,14 +548,22 @@ void URidePhysicalRider::ApplyWeight()
     Control->SetBodyModifiersInSetPhysicsBlendWeight(AllSet, Weight);
 }
 
-void URidePhysicalRider::ApplyAnchorFade()
+void URidePhysicalRider::ApplyBailMaterial(bool bBailing)
 {
-    if (!Control || AnchorFade == AppliedAnchorFade) return;
-    AppliedAnchorFade = AnchorFade;
-    FPhysicsControlMultiplier M;
-    M.LinearStrengthMultiplier = FVector(AnchorFade);
-    M.AngularStrengthMultiplier = AnchorFade;
-    Control->SetControlMultipliersInSet(WorldSet, M, false);
+    if (!Mesh || bBailing == bBailMaterial) return;
+    bBailMaterial = bBailing;
+    if (!bBailing) { Mesh->SetPhysMaterialOverride(SavedMaterial); SavedMaterial = nullptr; return; }
+    const float Friction = GetDefault<URidePhysicalSettings>()->BailFriction;
+    // Chaos copies a material's values when it first meets it: a changed setting takes a new one.
+    if (!BailMaterial || BailMaterial->Friction != Friction)
+    {
+        BailMaterial = NewObject<UPhysicalMaterial>(this, NAME_None, RF_Transient);
+        BailMaterial->Friction = Friction;
+        BailMaterial->bOverrideFrictionCombineMode = true;
+        BailMaterial->FrictionCombineMode = EFrictionCombineMode::Min;
+    }
+    SavedMaterial = Mesh->BodyInstance.GetPhysMaterialOverride();
+    Mesh->SetPhysMaterialOverride(BailMaterial);
 }
 
 // Riding: the rider's constraint profile, with limits that widen to the animation. Bailing: the bail profile and the
@@ -704,12 +715,22 @@ bool URidePhysicalRider::Measure()
     // mesh had no transforms; its lookups then answer the world's origin.
     if (GFrameCounter < BeganFrame + 2) return false;
     if (!PelvisBone.IsNone() && Control->GetCachedBonePosition(Mesh, PelvisBone).IsZero()) return false;
+    // In a bail the pose is measured where a root that follows the body would put it: carried as far as the ground
+    // under the pelvis has gone since the bail began. The ride's root gets there some frames late (it follows the
+    // body's ground through the session's interpolated step) and Physics Control's copy of the pose a frame later
+    // still: measured where they are, a fall at 6 m/s reads 25 cm off the clip from its third frame.
+    FVector Shift = FVector::ZeroVector;
+    if (bBail)
+    {
+        const FVector CachedRoot = RootBone.IsNone() ? FVector::ZeroVector : Control->GetCachedBonePosition(Mesh, RootBone);
+        Shift = CachedRoot.IsZero() || BailRoot.IsZero() ? BodyGround - LastBodyGround : BailRoot + (BodyGround - BailFloor) - CachedRoot;
+    }
     int32 Feet = 0;
     for (const FBodyInstance* Body : Mesh->Bodies)
     {
         if (!Body || !Body->IsInstanceSimulatingPhysics() || !Body->BodySetup.IsValid()) continue;
         const FName B = Body->BodySetup->BoneName;
-        const float Error = float(FVector::Dist(Body->GetUnrealWorldTransform().GetLocation(), Control->GetCachedBonePosition(Mesh, B)));
+        const float Error = float(FVector::Dist(Body->GetUnrealWorldTransform().GetLocation(), Control->GetCachedBonePosition(Mesh, B) + Shift));
         WorstError = FMath::Max(WorstError, Error);
         if (B == PelvisBone) PelvisError = Error;
         if (B == FootBones[0] || B == FootBones[1]) { FootError += Error; ++Feet; }
@@ -790,8 +811,8 @@ FString URidePhysicalRider::Describe() const
 {
     if (!Control) return TEXT("phys=off");
     const FVector Hips = GetPelvisLocation();
-    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s"),
-        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, GetGetUpAlpha(),
+    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f lie=%.1f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s"),
+        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, bBail ? HipsAboveGround : -1.f, GetGetUpAlpha(),
         !bBailOffered ? TEXT("none") : LastBailKind == ERideBailKind::RunOut ? TEXT("runout") : TEXT("fall"),
         Mesh ? Mesh->Bodies.Num() : 0, bBuiltAsset ? TEXT("contract") : TEXT("rider"), bBoardFrame ? TEXT("board") : TEXT("world"));
 }
@@ -869,12 +890,16 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     }
     bEndWhenOut = false; GetUpTime = -1.f; GetUpWait = -1;
     Weight = WeightTarget = 1.f; ApplyWeight();
-    bBail = true; bReleased = false; BailTime = 0.f; Quiet = 0.f;
-    // The joints relax to the bail's tone at once (and their limits stop widening); the anchors let go over
-    // BailRelease (UpdateBail).
-    ApplyJointLimits(true, false);
-    Control->InvokeControlProfile(PhaseName(ERidePhysicalPhase::Bail), ParentSet);
-    AnchorFade = 1.f; ApplyAnchorFade();
+    bBail = true; BailTime = 0.f; Quiet = 0.f;
+    // Limp at once: the Bail profile lets go of every anchor and turns gravity on, and the joints keep only its tone
+    // toward the clip (their limits as authored). The anchors hold the bodies in the frame of the kinematic root body,
+    // and in a bail the ride stops the root on the bail's frame, then carries it to the ground under the body a frame
+    // late (on a quarter, from the board on the wall to whatever lies below the hips): held to that frame even for a
+    // moment, the body is braked to a stop or flung.
+    Phase = ERidePhysicalPhase::Off;
+    ApplyPhase(ERidePhysicalPhase::Bail);
+    ApplyJointLimits(false, false);
+    ApplyBailMaterial(true);
 
     BailStart = GetPelvisLocation();
     BailLimit = FMath::Max(2500.f, float(Velocity.Size()) * 1.5f + 800.f);
@@ -888,7 +913,9 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
         BailFloor = World->LineTraceSingleByChannel(Hit, BailStart + FVector(0, 0, 50.f), BailStart - FVector(0, 0, 300.f), ECC_Pawn, Params)
             ? FVector(Hit.ImpactPoint) : BailStart - FVector(0, 0, 100.f);
     }
-    BodyGround = BailFloor;
+    BodyGround = LastBodyGround = BailFloor;
+    BailRoot = RootBone.IsNone() ? FVector::ZeroVector : Control->GetCachedBonePosition(Mesh, RootBone);
+    HipsAboveGround = float(BailStart.Z - BailFloor.Z);
     MakeWorldPhysical(BailStart);
     UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll (%s physics asset, %d bodies, %s) at %.0f cm/s"),
         bBuiltAsset ? TEXT("contract") : TEXT("rider's"), Mesh->Bodies.Num(), bWasSimulating ? TEXT("active") : TEXT("from animation"), Velocity.Size());
@@ -898,22 +925,7 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
 ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
 {
     if (!bBail || !Mesh || !Control) return ERideBodyState::Unstable;
-    const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
     BailTime += Dt;
-    if (!bReleased)
-    {
-        const float A = S->BailRelease > 0.f ? FMath::Clamp(BailTime / S->BailRelease, 0.f, 1.f) : 1.f;
-        AnchorFade = 1.f - FMath::SmoothStep(0.f, 1.f, A);
-        ApplyAnchorFade();
-        if (A >= 1.f)
-        {
-            bReleased = true;
-            Phase = ERidePhysicalPhase::Off;
-            ApplyPhase(ERidePhysicalPhase::Bail);
-            AnchorFade = 1.f; ApplyAnchorFade();
-            ApplyJointLimits(false, false);
-        }
-    }
     const FVector Hips = GetPelvisLocation();
     const FBodyInstance* Pelvis = Mesh->GetBodyInstance(PelvisBone);
     const float Speed = Pelvis ? float(Pelvis->GetUnrealWorldVelocity().Size()) : 0.f;
@@ -932,7 +944,15 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
             Speed, Hips.Z - BailStart.Z, bThrough ? TEXT(", under the floor") : TEXT(""));
         return ERideBodyState::Unstable;
     }
+    LastBodyGround = BodyGround;
     BodyGround = TraceGround(Hips);
+    {
+        FHitResult Below;
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(RideHipsGround), false, Rider);
+        if (LooseBoard) Params.AddIgnoredComponent(LooseBoard.Get());
+        HipsAboveGround = Rider->GetWorld()->LineTraceSingleByChannel(Below, Hips + FVector(0, 0, 10.f), Hips - FVector(0, 0, HipsGroundRange), ECC_Pawn, Params)
+            ? float(Hips.Z - Below.ImpactPoint.Z) : -1.f;
+    }
     return BailTime > 1.6f && (Quiet > .4f || BailTime > SettleTime + 2.f) ? ERideBodyState::Settled : ERideBodyState::Tumbling;
 }
 
@@ -943,7 +963,7 @@ void URidePhysicalRider::Abort()
     bBail = false; GetUpTime = -1.f; GetUpWait = -1;
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
-    AnchorFade = 1.f; ApplyAnchorFade();
+    ApplyBailMaterial(false);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
 }
@@ -993,7 +1013,7 @@ void URidePhysicalRider::HandOverGetUp()
     GetUpWait = -1;
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
-    AnchorFade = 1.f; ApplyAnchorFade();
+    ApplyBailMaterial(false);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(ERidePhysicalPhase::GetUp);

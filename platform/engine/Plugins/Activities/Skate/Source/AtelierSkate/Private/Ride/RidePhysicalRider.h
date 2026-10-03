@@ -11,6 +11,7 @@
 class ACharacter;
 class ISkateRider;
 class UBoxComponent;
+class UPhysicalMaterial;
 class UPhysicsAsset;
 class UPhysicsControlAsset;
 class UPhysicsControlComponent;
@@ -97,8 +98,6 @@ public:
     /** How long the body takes to become physical when the ride starts, and to let go when it stops (s). */
     UPROPERTY(Config, EditAnywhere, Category = Timing, meta = (ClampMin = 0)) float MountBlend = .25f;
     UPROPERTY(Config, EditAnywhere, Category = Timing, meta = (ClampMin = 0)) float DismountBlend = .2f;
-    /** How long the anchors take to let go when a bail starts (s). */
-    UPROPERTY(Config, EditAnywhere, Category = Timing, meta = (ClampMin = 0)) float BailRelease = .15f;
     /** How long the get-up blends from the fallen body's snapshot into the clip (s). */
     UPROPERTY(Config, EditAnywhere, Category = Timing, meta = (ClampMin = .05)) float GetUpBlend = .45f;
 
@@ -109,6 +108,9 @@ public:
     /** ...and slower than this vertically (cm/s), spinning slower than this (degrees/s). */
     UPROPERTY(Config, EditAnywhere, Category = Bail) float RunOutImpact = 300.f;
     UPROPERTY(Config, EditAnywhere, Category = Bail) float RunOutSpin = 200.f;
+    /** The bodies' friction in a fall (the lower of it and the ground's). A fall at speed slides and tumbles on for
+     *  metres: the reference's body travels about its entry speed times a second. */
+    UPROPERTY(Config, EditAnywhere, Category = Bail, meta = (ClampMin = 0)) float BailFriction = .25f;
 
     /** Query-only surfaces within this distance of the body are made physical so the bodies can touch them (cm). */
     UPROPERTY(Config, EditAnywhere, Category = World) float WorldRadius = 1200.f;
@@ -168,8 +170,9 @@ public:
     bool IsBailOffered() const { return bBailOffered; }
     void ClearBailOffer() { bBailOffered = false; }
     ERideBailKind GetLastBailKind() const { return LastBailKind; }
-    /** Go limp with the momentum the bodies have (or Velocity when they were not simulating): the anchors let go
-     *  over BailRelease, then the Bail profile holds. The board becomes a tumbling box at BoardTransform. */
+    /** Go limp at once with the momentum the bodies have (or Velocity when they were not simulating): the Bail
+     *  profile lets go of every anchor, leaves the joints a tone toward the clip and turns gravity on, and the bodies
+     *  slide with BailFriction. The board becomes a tumbling box at BoardTransform. */
     bool StartBail(const FVector& Velocity, const FVector& BoardSpin, const FTransform& BoardTransform, float BoardScale);
     ERideBodyState UpdateBail(float Dt, float SettleTime);
     /** A body that met something it could not resolve: back to animation at once, the loose board removed. */
@@ -212,7 +215,8 @@ public:
     // Logs every body (skate.RidePhysicalDump).
     void Dump() const;
 
-    /** Telemetry: the bodies' distance from the animated pose (cm). */
+    /** Telemetry: the bodies' distance from the animated pose (cm). In a bail the pose is carried as far as the
+     *  ground under the pelvis has gone since the bail began, as a root that follows the body would carry it. */
     float GetPelvisError() const { return PelvisError; }
     float GetWorstError() const { return WorstError; }
     float GetFootError() const { return FootError; }
@@ -239,6 +243,7 @@ private:
     bool bBuiltAsset = false, bOwnControlAsset = false;
     /** Whether the anchors are in the board's frame (the kinematic root body) rather than the world. */
     bool bBoardFrame = false;
+    FName RootBone;
     FName SavedProfile;
     uint8 SavedUpdateMode = 0;
     FName PelvisBone, HeadBone, FootBones[2], ThighBones[2];
@@ -248,13 +253,20 @@ private:
     uint64 DrivenFrame = 0;
     bool bSimulating = false, bEndWhenOut = false;
     float Weight = 0, WeightTarget = 0, WeightRate = 0, AppliedWeight = -1;
-    float AnchorFade = 1, AppliedAnchorFade = -1;
 
     // Bail.
-    bool bBail = false, bReleased = false, bBailOffered = false;
+    bool bBail = false, bBailOffered = false;
     ERideBailKind LastBailKind = ERideBailKind::Fall;
     float BailTime = 0, Quiet = 0, BailLimit = 2500, BailRise = 400;
     FVector BailStart = FVector::ZeroVector, BailFloor = FVector::ZeroVector, BodyGround = FVector::ZeroVector;
+    // The body's ground the frame before, Physics Control's root bone when the bail began (the bail's pose is
+    // measured with it carried as far as the body's ground has gone), and the pelvis's height above the ground under
+    // it (-1: none within HipsGroundRange).
+    FVector LastBodyGround = FVector::ZeroVector, BailRoot = FVector::ZeroVector;
+    float HipsAboveGround = -1;
+    UPROPERTY() TObjectPtr<UPhysicalMaterial> BailMaterial;
+    UPROPERTY() TObjectPtr<UPhysicalMaterial> SavedMaterial;
+    bool bBailMaterial = false;
     float BoardScale = 1;
 
     // Get-up. GetUpWait counts the frames the bodies have waited for the animation to show the snapshot (-1: not
@@ -286,7 +298,8 @@ private:
     void ApplyPhase(ERidePhysicalPhase NewPhase);
     void SetSimulating(bool bSimulate, const FVector* Velocity = nullptr);
     void ApplyWeight();
-    void ApplyAnchorFade();
+    /** The bodies' physical material: BailFriction in a fall, the physics asset's own otherwise. */
+    void ApplyBailMaterial(bool bBailing);
     /** The rider's own physics asset switches to the riding or the bail constraint profile; bWiden lets riding poses
      *  past a limit widen it. */
     void ApplyJointLimits(bool bRidingProfile, bool bWiden);
