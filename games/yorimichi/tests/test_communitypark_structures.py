@@ -18,10 +18,12 @@ def source_fixture():
     for node, centre, size in [(1, (1262, 550, 61), (4, 8, 1)),
                                (2, (1266, 550, 61), (4, 8, 1)),
                                (3, (1280, 550, 58), (6, 6, 1)),
-                               (4, (1280, 550, 48.25), (10, 10, .5))]:
+                               (4, (1280, 550, 48.25), (10, 10, .5)),
+                               (5, (1308, 544, 54.5), (.545, 3, .09)),
+                               (6, (1308, 544, 56.5), (.545, 3, .09))]:
         item = S.Mesh('fixture', 'none'); item.box(centre, size)
         triangles = L.local(item.triangles())
-        parts.append({'node': node, 'mesh': 0, 'vertices': triangles.reshape(-1, 3),
+        parts.append({'node': node, 'mesh': 21 if node in (5, 6) else 0, 'vertices': triangles.reshape(-1, 3),
                       'faces': np.arange(triangles.size//3).reshape(-1, 3)})
     return SimpleNamespace(parts=parts, triangles=lambda: np.concatenate(
         [part['vertices'][part['faces']] for part in parts]))
@@ -52,13 +54,16 @@ class StructureTests(unittest.TestCase):
 
     def test_raised_groups_have_contacts_on_original_surface_or_ground(self):
         groups = S.raised_groups(self.source)
-        self.assertEqual(len(groups), 2)
+        self.assertEqual(len(groups), 4)
         contacts = self.metadata['support_contacts']
-        self.assertEqual(set(n for c in contacts for n in c['nodes']), {1, 2, 3})
+        self.assertEqual(set(n for c in contacts for n in c['nodes']), {1, 2, 3, 5, 6})
+        for node in (5, 6):
+            self.assertEqual(sum(c['nodes'] == [node] for c in contacts), 2)
         source = L.place(self.source.triangles())
         for contact in contacts:
             x, y, z = contact['top']
             self.assertLess(float(abs(S.heights(source, x, y)-z).min()), 1e-8)
+            self.assertTrue(np.any(abs(S.heights(self.triangles, x, y)-z) < .02), contact)
             x, y, z = contact['bottom']
             below = S.heights(source, x, y)
             self.assertTrue(abs(z-48.) < .03 or np.any(abs(below-z) < .03))

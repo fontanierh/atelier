@@ -130,6 +130,7 @@ def structure_audit():
     for contact in metadata['support_contacts']:
         x, y, z = contact['top']
         assert abs(S.heights(original, x, y)-z).min() < .001, ('unsupported upper contact', contact)
+        assert np.any(abs(S.heights(added, x, y)-z) < .02), ('steel does not reach underside', contact)
         x, y, z = contact['bottom']
         below = S.heights(original, x, y)
         ground = float(L.ground(x, y, north_surface))
