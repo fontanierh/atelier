@@ -629,13 +629,12 @@ turning wait for it.
   - with no board, one dissolves into the hand;
   - holding one, it is put away;
   - with one lying in the world, that one dissolves and a fresh one comes to the hand.
-- **Run-out.** A slow, upright bail (the physical rider's `OnBailStart`, kind `RunOut`: see "Physical rider") is
-  taken on foot: no ragdoll, the rider runs out of it. The clip is chosen by the way the board was going under the
-  rider (on along its nose `FWD`, back along its tail `BWD`, across toward the toes `FF` or the heels `BF`), `HI` or
-  `LO` by the crouch, and small, medium or big by the bail's energy (the largest of its speed over `RunOutSpeed`, its
-  fall over `RunOutImpact` and its spin over `RunOutSpin`), one of the variants picked by
-  those numbers. The clip's board starts on
-  the deck the rider bailed from and rolls with the clip; the body starts where it was, at the bail's speed, and
+- **Run-out.** A slow, upright bail (the physical rider's `OnBailStart`, kind `RunOut`: see "Physical rider") is taken
+  on foot: no ragdoll, the rider runs out of it. The clip is chosen by the way the board was going under the rider (on
+  along its nose `FWD`, back along its tail `BWD`, across toward the toes `FF` or the heels `BF`), `HI` or `LO` by the
+  crouch, and small, medium or big by the bail's energy (the largest of its speed over `RunOutSpeed`, its fall over
+  `RunOutImpact` and its spin over `RunOutSpin`), one of the variants picked by those numbers. The clip's board starts
+  on the deck the rider bailed from and rolls with the clip; the body starts where it was, at the bail's speed, and
   follows the clip's turns. At the clip's end the board rolls on by itself like a kicked one.
 - **Bail.** Otherwise the body falls (the physical rider). The skate button during the bail means "get up on foot":
   the rider gets up where the body lies with the `W_RECOVERY_*` clip whose first frame lies most like the fallen body
