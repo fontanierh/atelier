@@ -16,8 +16,8 @@ step onto a board lying on its wheels, and Link and a Bokoblin as the rider.
 Every frame is checked for continuity: the character moves no farther than its speed allows, the hips do not jump,
 the velocity changes no faster than a push or a brake could (at a landing, the horizontal velocity), the camera eases
 rather than cuts (no frame moves it much farther than the character or turns it more than a few degrees), and the board
-shows whenever it is somewhere. Writes
-build/yorimichi/skateqa/transitions.json. With --film the checks are filmed in close-up instead, at a fixed 60 Hz step
+shows whenever it is somewhere; the checks count the world's time, the pacing check the frames'. Writes
+build/yorimichi/skateqa/transitions.json, and each check's frames to transitions-rows/<check>.json. With --film the checks are filmed in close-up instead, at a fixed 60 Hz step
 (build/yorimichi/skateqa/transitions-film/<nn>/f<frame>.jpg, the folders of each check in transitions-film.json); the
 camera and pacing checks are left out then.
 """
@@ -35,7 +35,7 @@ SLACK_HIP = 12.0        # cm a frame the hips may move beyond that travel (the p
 SLACK_HIP_BAIL = 40.0   # ... while the body tumbles
 ACCEL = 4000.0          # cm/s^2: the most a push, a brake or a landing changes the speed
 SLACK_SPEED = 60.0      # cm/s a frame on top
-BAIL_AWAY = 30.0        # cm at least from the bail start to where the rider gets up ...
+BAIL_AWAY = 150.0       # cm at least from the bail start to where the rider gets up ...
 BAIL_NEAR = 50.0        # ... and at most from where the body lay
 SLACK_CAM = 30.0        # cm a frame the camera may move beyond the character's travel (a cut moves it a metre or more)
 SLACK_CAM_DEG = 8.0     # degrees a frame the camera may turn
@@ -51,6 +51,9 @@ def length(v):
     return math.sqrt(sum(x * x for x in v))
 
 
+# The behaviours' dt is Slate's frame time; the world steps its own (a fixed 1/60 s while filming): the checks count
+# the world's time (WDT), and the pacing the frame's.
+WDT = 'unreal.GameplayStatics.get_world_delta_seconds(live.L.game_world())'
 RECORD = '''
 import json, math
 live.TR=[]
@@ -66,11 +69,12 @@ def _film(dt):
     side=unreal.Vector(-math.sin(f[1]), math.cos(f[1]), 0.0); ahead=unreal.Vector(math.cos(f[1]), math.sin(f[1]), 0.0)
     unreal.MegaParkValidation.review_camera(f[0]+side*300.0+ahead*80.0+unreal.Vector(0,0,40), f[0]+unreal.Vector(0,0,-5), 40.0)
     live.L.screenshot(live.FILM_DIR+'/f%05d.jpg' % f[2]); f[2]+=1
-def _row(dt):
+def _row(frame):
+    dt=''' + WDT + '''
     if live.FILM_DIR: _film(dt); cam=None
     else:
         l=live.CM.get_camera_location(); r=live.CM.get_camera_rotation(); cam=(l.x,l.y,l.z,r.pitch,r.yaw)
-    live.TR.append((dt, live.L.skate_state(), cam))
+    live.TR.append((dt, live.L.skate_state(), cam, frame))
 live.behave('tr', _row)
 '''
 FILM = {'dir': None, 'n': 0, 'since': []}    # --film: where the close-ups go, and the folders since the last report
@@ -92,24 +96,57 @@ def record(code, seconds):
     if folder:
         qa.py('unreal.MegaParkValidation.restore_player_camera()')
     out = []
-    for dt, state, cam in rows:
+    for dt, state, cam, frame in rows:
         row = qa.parse(state)
-        row['dt'] = dt
+        row['dt'] = dt          # the world's step
+        row['frame'] = frame    # the frame's time (Slate)
         row['cam'] = cam
         out.append(row)
     return [r for r in out if 'hip' in r and 'pos' in r]
+
+
+STEP_ON_NEAR = 90.0     # cm from the lying board the character walks up to before stepping on
+WALK_TO = '''
+import math
+live.WALK=[{x},{y},{stop},0]
+def _walk(dt):
+    # Walk to (x, y), steering the stick against the camera's heading, and stop `stop` cm short.
+    w=live.WALK
+    at=unreal.GameplayStatics.get_player_pawn(live.L.game_world(), 0).get_actor_location()
+    dx, dy = w[0]-at.x, w[1]-at.y
+    n=math.hypot(dx, dy)
+    if n < w[2]:
+        live.drive(0); w[3]=1; live.stop('walk'); return
+    yaw=math.radians(unreal.GameplayStatics.get_player_camera_manager(live.L.game_world(), 0).get_camera_rotation().yaw)
+    fx, fy = math.cos(yaw), math.sin(yaw)
+    live.drive((dx*fx+dy*fy)/n, (dy*fx-dx*fy)/n, 'walk')
+live.behave('walk', _walk)
+'''
 
 
 def tap(key, delay):
     """Code that presses `key` after `delay` seconds and lets go two frames later, as a player's tap."""
     return f'''
 live.TAP=[0.0,0]
-def _tap(dt):
-    live.TAP[0]+=dt
+def _tap(frame):
+    live.TAP[0]+={WDT}
     if live.TAP[1]==0 and live.TAP[0]>={delay}: live.L.input_key('{key}','press',1); live.TAP[1]=1
     elif 1<=live.TAP[1]<3: live.TAP[1]+=1
     elif live.TAP[1]==3: live.L.input_key('{key}','release',0); live.TAP[1]=4; live.stop('tap')
 live.behave('tap', _tap)
+'''
+
+
+def later(delay, code):
+    """Code that runs `code` (one line) once, `delay` seconds of the world's time from now: one recording, no gap."""
+    return f'''
+live.LATER=[0.0]
+def _later(frame):
+    live.LATER[0]+={WDT}
+    if live.LATER[0]>={delay}:
+        live.stop('later')
+        {code}
+live.behave('later', _later)
 '''
 
 
@@ -246,14 +283,18 @@ def main():
     qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Ride')")
     qa.py('live.L.skate_goofy(False)')
     results, frames = {}, []
+    # Every check's frames, for a closer look at a failure.
+    rows_dir = qa.yori.OUT / 'skateqa' / ('transitions-film-rows' if args.film else 'transitions-rows')
+    rows_dir.mkdir(parents=True, exist_ok=True)
     if args.film:
         FILM['dir'] = qa.yori.OUT / 'skateqa' / 'transitions-film'
         FILM['dir'].mkdir(parents=True, exist_ok=True)
         qa.py('live.L.film_hud(True); live.L.fixed_step(60)')
 
     def report(name, rows, passed, note):
-        frames.extend(r['dt'] for r in rows)
+        frames.extend(r['frame'] for r in rows)
         results[name] = {'ok': bool(passed), 'note': note, 'frames': len(rows)}
+        (rows_dir / f'{name}.json').write_text(json.dumps(rows))
         if FILM['dir']:
             results[name]['film'] = FILM['since'][:]
             FILM['since'].clear()
@@ -318,8 +359,8 @@ def main():
 live.skate_input(); live.L.skate_release()
 {press}
 live.BAIL=[0.0]
-def _bail(dt):
-    live.BAIL[0]+=dt
+def _bail(frame):
+    live.BAIL[0]+={WDT}
     if live.BAIL[0]>.5:
 {chr(10).join('        ' + line for line in release.splitlines())}
         live.stop('bail')
@@ -358,8 +399,8 @@ live.behave('bail', _bail)
 live.skate_input(); live.L.skate_release()
 {press}
 live.BAIL=[0.0]
-def _bail(dt):
-    live.BAIL[0]+=dt
+def _bail(frame):
+    live.BAIL[0]+={WDT}
     if live.BAIL[0]>.3:
 {chr(10).join('        ' + line for line in release.splitlines())}
         live.stop('bail')
@@ -398,8 +439,14 @@ live.behave('bail', _bail)
             report(name, [], False, f'the board lies upside down (up {s.get("deckup")}): a fresh board would be used')
             return
         deck = vec(s['deck'])
-        qa.py(f"d=unreal.Vector({deck[0]},{deck[1]},{deck[2]}); live.drive(0); live.teleport(live.L.ground_at(d+unreal.Vector(-90,0,100)), 0)")
-        time.sleep(.8)
+        # Walk up to it (a teleport is a cut, and a cut puts a lying board away).
+        qa.py(WALK_TO.format(x=deck[0], y=deck[1], stop=STEP_ON_NEAR))
+        for _ in range(40):
+            time.sleep(.25)
+            if qa.py('print(live.WALK[3])').strip().endswith('1'):
+                break
+        qa.py("live.stop('walk'); live.drive(0)")
+        time.sleep(.6)
         s = state()
         near = math.dist(vec(s['pos'])[:2], deck[:2])
         rows = record(tap(TOP, .25), 2.4)
@@ -429,8 +476,7 @@ live.behave('bail', _bail)
         # Held past its hold time, the board dissolves in the hand and the character's own pose blends back.
         qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideTune BoardHoldTime=1.5')")
         riding(350)
-        rows = record(tap(TOP, .2) + "live.drive(1,0,'run')\n", 1.6)
-        rows += record('live.drive(0)', 2.0)
+        rows = record(tap(TOP, .2) + "live.drive(1,0,'run')\n" + later(1.6, 'live.drive(0)'), 3.6)
         qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideTune \"\"')")
         worst = continuity(rows)
         shown, note = board_shown(rows)
@@ -458,8 +504,7 @@ live.behave('bail', _bail)
         # Out of reach for a short lying time, the board left by the bail dissolves.
         if results.get('bail_on_foot', {}).get('ok'):
             qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideTune BoardLyingTime=1.5')")
-            rows = record("live.drive(1,0,'run')", 1.0)
-            rows += record('live.drive(0)', 2.5)
+            rows = record("live.drive(1,0,'run')\n" + later(1.0, 'live.drive(0)'), 3.5)
             qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideTune \"\"')")
             faded = fading(rows)
             shown, note = board_shown(rows)
@@ -600,7 +645,7 @@ live.behave('bail', _bail)
 
 
 def release_controls():
-    qa.py("live.stop('tr'); live.stop('tap'); live.stop('bail'); live.drive(0); live.skate_release(); live.press('jump_release')\n"
+    qa.py("live.stop('tr'); live.stop('tap'); live.stop('bail'); live.stop('later'); live.stop('walk'); live.drive(0); live.skate_release(); live.press('jump_release')\n"
           "for k in ['Gamepad_LeftThumbstick','Gamepad_RightThumbstick','Gamepad_FaceButton_Top','Gamepad_DPad_Right']: live.L.input_key(k,'release',0)\n"
           "for k in ['Gamepad_LeftTriggerAxis','Gamepad_RightTriggerAxis']: live.L.input_key(k,'axis',0)\n"
           "unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideTune \"\"')\n"

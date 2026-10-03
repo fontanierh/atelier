@@ -239,8 +239,9 @@ bool USkateComponent::PrepareRideClips()
     if (!Animator.HasRig()) return false;
     if (!T.bClipsTried)
     {
-        // Load every transition clip now (while walking), not at the first mount.
+        // Load every transition clip now (while walking), not at the first mount, and the board's dissolve.
         T.bClipsTried = true; T.bClips = true;
+        LoadBoardFade();
         for (int32 I = 0; I < 4; ++I)
         {
             T.Cycle[I] = Animator.Clip(CycleNames[I]);
@@ -539,14 +540,12 @@ bool USkateComponent::RideDismount()
     RequestPoseBlend(Tune.DismountBlend);
     LeaveBoard();
     const bool bFloor = StandUpOffBoard(Rider->GetActorRotation().Yaw);
-    // The character takes the speed it can run at; the rest carries on as momentum that fades.
+    // The speed carries on; the stick then shares it out between the character's own and momentum (ReleaseDrive).
     const FVector Flat(Carried.X, Carried.Y, 0.f);
-    const FVector Own = Flat.GetClampedToMaxSize(M->GetMaxSpeed());
-    M->Velocity = bFloor ? Own : FVector(Own.X, Own.Y, Carried.Z);
-    StartMomentum(Flat - Own);
+    M->Velocity = bFloor ? Flat : FVector(Flat.X, Flat.Y, Carried.Z);
+    HoldDriveForInput(Flat);
     if (T.Board == ERideBoard::Ride) { T.Board = ERideBoard::World; T.BoardTime = 0.f; ShowBoard(0.f, false); }
-    UE_LOG(LogTemp, Display, TEXT("SKATE ride dismount at %.0f cm/s (%.0f carried as momentum), %s"),
-        Flat.Size(), (Flat - Own).Size(), bFloor ? TEXT("walking") : TEXT("falling"));
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride dismount at %.0f cm/s, %s"), Flat.Size(), bFloor ? TEXT("walking") : TEXT("falling"));
     return true;
 }
 
@@ -1021,6 +1020,13 @@ void USkateComponent::StepRideClip(float Dt)
         // The trajectory on the capsule's floor, displaced by an offset easing away, moving onto the deck by TrajEnd,
         // or held in the world.
         const FVector Floor = OffBoardGround();
+        // On the board in the air (a caveman after its touchdown) the deck stays over the capsule, where the ride
+        // starts: the trajectory moves back as the clip's board moves on.
+        if (T.Foot == ERideFoot::AirMount && T.TrajEndTime > 0.f && T.ClipTime > T.TrajEndTime)
+        {
+            const FVector OnDeck = ClipBone(T.Clip, DeckBone, T.ClipTime);
+            T.TrajEnd = -ClipToWorld(FVector(OnDeck.X, OnDeck.Y, 0.), T.bMirror, T.TrajYaw);
+        }
         FVector Offset = T.TrajOffset * (1.f - FMath::SmoothStep(0.f, T.OffsetTime, T.ClipTime));
         if (T.TrajEndTime > 0.f) Offset += (T.TrajEnd - T.DeckDrift) * FMath::SmoothStep(0.f, T.TrajEndTime, T.ClipTime);
         if (T.bAnchored) { Offset.X = T.Anchor.X - Floor.X; Offset.Y = T.Anchor.Y - Floor.Y; }
@@ -1028,7 +1034,7 @@ void USkateComponent::StepRideClip(float Dt)
         Ride->StepOffBoard(StepDt, FTransform(FRotator(0, T.TrajYaw, 0), Floor + Offset));
         // Where the pose put the board against where the clip's tracks have it, for the frames to come.
         const int32 DeckIndex = Ride->Names.IndexOfByKey(DeckBone);
-        if (T.TrajEndTime > 0.f && T.ClipTime < T.TrajEndTime && Ride->Bones.IsValidIndex(DeckIndex))
+        if (T.TrajEndTime > 0.f && (T.ClipTime < T.TrajEndTime || T.Foot == ERideFoot::AirMount) && Ride->Bones.IsValidIndex(DeckIndex))
         {
             const FVector Posed = (Ride->Bones[DeckIndex] * Ride->Root).GetLocation();
             const FVector Tracked = Ride->Root.GetLocation() + ClipToWorld(ClipBone(T.Clip, DeckBone, T.ClipTime), T.bMirror, T.TrajYaw);
@@ -1153,8 +1159,9 @@ void USkateComponent::FinishRideClip()
     // A driven clip leaves at its drive's speed; in the air at the fall's.
     const FVector Velocity = T.bDrive ? T.DriveVelocity : M->Velocity;
     const ERideFoot Was = T.Foot;
-    EndRideClip();
-    if (Was == ERideFoot::Mount || Was == ERideFoot::AirMount)
+    const bool bMount = Was == ERideFoot::Mount || Was == ERideFoot::AirMount;
+    EndRideClip(!bMount);
+    if (bMount)
     {
         // On the board where the clip put it down, moving as the rider was.
         const int32 D = Ride->Names.IndexOfByKey(DeckBone);
@@ -1168,20 +1175,20 @@ void USkateComponent::FinishRideClip()
             UE_LOG(LogTemp, Warning, TEXT("SKATE ride mount: the ride did not start"));
         return;
     }
-    // Off: running on (or standing); the speed above the character's own fades as momentum. With the board in hand
-    // the carry goes on; without it (lying, kicked away, rolling on from a run-out) the character's own pose does.
+    // Off: running on (or standing) at the clip's speed, which the stick then shares out between the character's own
+    // and momentum that fades (ReleaseDrive). With the board in hand the carry goes on; without it (lying, kicked
+    // away, rolling on from a run-out) the character's own pose does.
     const FVector Flat(Velocity.X, Velocity.Y, 0.f);
-    const FVector Own = Flat.GetClampedToMaxSize(M->GetMaxSpeed());
-    M->Velocity = FVector(Own.X, Own.Y, M->Velocity.Z);
-    StartMomentum(Flat - Own);
+    M->Velocity = FVector(Flat.X, Flat.Y, M->Velocity.Z);
+    HoldDriveForInput(Flat);
     if (Was == ERideFoot::RunOut) LaunchBoard();
     if (T.Board == ERideBoard::Hand) BeginCarry(Was == ERideFoot::Air ? T.Phase : T.EndPhase);
     else EndOnFoot(Tune.CarryBlend);
 }
 
-void USkateComponent::EndRideClip()
+void USkateComponent::EndRideClip(bool bKeepDrive)
 {
-    StopDrive();
+    if (!bKeepDrive) StopDrive();
     bRideClip = false;
     if (!Transition) return;
     FRideTransition& T = *Transition;
@@ -1218,7 +1225,34 @@ void USkateComponent::StopDrive()
     if (!Transition) return;
     FRideTransition& T = *Transition;
     if (T.DriveId) if (UCharacterMovementComponent* M = Movement()) M->RemoveRootMotionSourceByID(T.DriveId);
-    T.DriveId = 0;
+    T.DriveId = 0; T.bReleasePending = false;
+}
+
+void USkateComponent::HoldDriveForInput(const FVector& Velocity)
+{
+    // CharacterMovement moves before the character's tick gives it the stick, so its first move off the board would
+    // have none and brake the speed away: the drive carries the speed over that move, and the stick the character's
+    // tick then gives the move after it shares the speed out (ReleaseDrive, the next frame).
+    StopMomentum();
+    SetDrive(Velocity);
+    Transit().bReleasePending = true;
+}
+
+void USkateComponent::ReleaseDrive()
+{
+    FRideTransition& T = Transit();
+    const FVector Flat(T.DriveVelocity.X, T.DriveVelocity.Y, 0.f);
+    StopDrive();
+    UCharacterMovementComponent* M = Movement();
+    if (!M || !Rider || Mode != ESkateMode::Off || bRideClip) return;
+    // The character runs on as fast as the stick lets it (the analog speed CharacterMovement's CalcVelocity allows);
+    // the rest fades as momentum, so with the stick let go the whole speed runs out.
+    const float Stick = FMath::Min(1.f, float(Rider->GetPendingMovementInputVector().Size()));
+    const FVector Own = Flat.GetClampedToMaxSize(FMath::Max(M->GetMaxSpeed() * Stick, M->GetMinAnalogSpeed()));
+    M->Velocity = FVector(Own.X, Own.Y, M->Velocity.Z);
+    StartMomentum(Flat - Own);
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride on foot at %.0f cm/s: %.0f cm/s the character's own (stick %.2f), %.0f cm/s momentum"),
+        Flat.Size(), Own.Size(), Stick, (Flat - Own).Size());
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1237,7 +1271,10 @@ bool USkateComponent::StartClip(UAnimSequence* Clip, ERideFoot Foot, bool bMirro
     T.bFollowYaw = false; T.ClipYawLast = ClipYaw(Clip, 0.f); T.bAnchored = false; T.bKickOut = false; T.bDeckKnown = false;
     // In the air CharacterMovement keeps the fall; on the ground the clip's travel moves the capsule.
     T.bDrive = Foot != ERideFoot::Air && Foot != ERideFoot::AirMount;
-    if (!T.bDrive) StopDrive();
+    T.bReleasePending = false;
+    // In the air a drive holds the flat velocity (gravity keeps the height): the landing's move, before this
+    // component sees it, does not brake a character that has no stick yet.
+    if (!T.bDrive) if (const UCharacterMovementComponent* M = Movement()) SetDrive(FVector(M->Velocity.X, M->Velocity.Y, 0.f));
     bRideClip = true;
     return true;
 }
@@ -1586,6 +1623,8 @@ void USkateComponent::TickTransition(float Dt)
 {
     if (!Rider) return;
     FRideTransition& T = Transit();
+    // Off the board last frame: the stick is in for the next move.
+    if (T.bReleasePending) ReleaseDrive();
     // The transition clips load on foot once the Ride backend is chosen (PreloadRetailRuntime preloads the session 2 s
     // after play; a backend chosen later loads it here), not at the first mount.
     if (bRetailPreloaded && Mode == ESkateMode::Off && !T.bClipsTried && USkateSettings::ActiveBackend() == ESkateBackend::Ride)
@@ -1715,13 +1754,24 @@ void USkateComponent::TraceTransition()
     const FVector ShownHip = bShown ? Mesh->GetBoneLocation(Pelvis) : FVector::ZeroVector;
     const float ShownFacing = bShown ? FacingYaw(Mesh->GetBoneLocation(Left), Mesh->GetBoneLocation(Right)) : 0.f;
     const FVector Loc = Actor.GetLocation();
-    const FString Line = FString::Printf(TEXT("SKATE trace f%llu t%.3f serial %u/%.2f mode %d foot %d %s@%.3f pose %d actor (%.1f %.1f %.1f) yaw %.1f ")
+    FString Line = FString::Printf(TEXT("SKATE trace f%llu t%.3f serial %u/%.2f mode %d foot %d %s@%.3f pose %d actor (%.1f %.1f %.1f) yaw %.1f ")
         TEXT("mesh yaw %.1f (cached %.1f) turn %.1f saved %.1f offset (%.1f %.1f %.1f) pub hip (%.1f %.1f %.1f) face %.1f shown hip (%.1f %.1f %.1f) face %.1f"),
         GFrameCounter, GetWorld()->GetTimeSeconds(), PoseBlendSerial, PoseBlendTime, int32(Mode), int32(T.Foot),
         T.Clip ? *T.Clip->GetName() : TEXT("-"), T.ClipTime, RetailPose.Num(), Loc.X, Loc.Y, Loc.Z, Actor.Rotator().Yaw,
         MeshWorld.Rotator().Yaw, Mesh->GetComponentTransform().Rotator().Yaw, T.MeshTurn.Rotator().Yaw, SavedMeshRotation.Rotator().Yaw,
         T.MeshOffset.X, T.MeshOffset.Y, T.MeshOffset.Z, PubHip.X, PubHip.Y, PubHip.Z, bPub ? FacingYaw(PubL, PubR) : 0.f,
         ShownHip.X, ShownHip.Y, ShownHip.Z, ShownFacing);
+    // The speed: the character's velocity and acceleration, its own before the momentum is added, the drive, the
+    // stick given to the next move and the speed it may run at.
+    if (const UCharacterMovementComponent* M = Movement())
+    {
+        const FVector V = M->Velocity, A = M->GetCurrentAcceleration(), Pre = M->CurrentRootMotion.LastPreAdditiveVelocity;
+        const FVector Stick = Rider->GetPendingMovementInputVector();
+        Line += FString::Printf(TEXT(" vel (%.0f %.0f %.0f) acc (%.0f %.0f) pre (%.0f %.0f)%s mom %.0f drive %s(%.0f %.0f)%s in (%.2f %.2f) max %.0f mm %d"),
+            V.X, V.Y, V.Z, A.X, A.Y, Pre.X, Pre.Y, M->CurrentRootMotion.bIsAdditiveVelocityApplied ? TEXT("+") : TEXT(""), T.Momentum,
+            T.DriveId ? TEXT("") : TEXT("off "), T.DriveVelocity.X, T.DriveVelocity.Y, T.bReleasePending ? TEXT(" releasing") : TEXT(""),
+            Stick.X, Stick.Y, M->GetMaxSpeed(), int32(M->MovementMode.GetValue()));
+    }
     if (bSwitch)
     {
         if (T.TraceLeft <= 0 && !T.TraceLast.IsEmpty()) UE_LOG(LogTemp, Display, TEXT("%s (before)"), *T.TraceLast);
@@ -1838,16 +1888,22 @@ void USkateComponent::ShowBoard(float Target, bool bInstant)
     ApplyBoardShown();
 }
 
+void USkateComponent::LoadBoardFade()
+{
+    // Once (with the clips, before the first fade): a synchronous load in a fading frame would stall it.
+    if (BoardFade || bBoardFadeTried) return;
+    bBoardFadeTried = true;
+    const FSoftObjectPath& Path = GetDefault<USkateSettings>()->BoardDissolveMaterial;
+    if (UMaterialInterface* Base = Path.IsNull() ? nullptr : Cast<UMaterialInterface>(Path.TryLoad()))
+        BoardFade = UMaterialInstanceDynamic::Create(Base, this);
+    else UE_LOG(LogTemp, Warning, TEXT("SKATE ride: no board dissolve material (%s): the board shows whole until it is gone"), *Path.ToString());
+}
+
 void USkateComponent::ApplyBoardShown()
 {
     FRideTransition& T = Transit();
     const bool bPartial = T.Shown > 0.f && T.Shown < 1.f;
-    if (bPartial && !BoardFade)
-    {
-        const FSoftObjectPath& Path = GetDefault<USkateSettings>()->BoardDissolveMaterial;
-        if (UMaterialInterface* Base = Path.IsNull() ? nullptr : Cast<UMaterialInterface>(Path.TryLoad()))
-            BoardFade = UMaterialInstanceDynamic::Create(Base, this);
-    }
+    if (bPartial) LoadBoardFade();
     // Without the material the board shows whole until it is gone.
     const bool bFade = bPartial && BoardFade;
     if (bFade != T.bFadeMaterial)

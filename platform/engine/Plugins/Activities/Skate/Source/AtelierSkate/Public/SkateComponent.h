@@ -200,6 +200,7 @@ private:
     uint32 PoseBlendSerial=0;
     float PoseBlendTime=0.f;
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> BoardFade;  // USkateSettings::BoardDissolveMaterial, shared by the parts
+    bool bBoardFadeTried = false;                                 // looked up once (LoadBoardFade): a missing one is not looked for every frame
     FRideTransition& Transit();
     void RequestPoseBlend(float Seconds) { ++PoseBlendSerial; PoseBlendTime=Seconds; }
     bool RideMount(bool bInstant);
@@ -212,7 +213,7 @@ private:
     bool BeginDismountClip();
     void StepRideClip(float Dt);
     void FinishRideClip();
-    void EndRideClip();
+    void EndRideClip(bool bKeepDrive = false);
     void BeginCarry(float Phase);
     void StepCarry(float Dt);
     void PutBoardAway();
@@ -224,6 +225,10 @@ private:
     void UseWorldBoard();
     void SetDrive(const FVector& Velocity);
     void StopDrive();
+    /** Off the board at Velocity (flat): the drive holds it for one more move, then ReleaseDrive. */
+    void HoldDriveForInput(const FVector& Velocity);
+    /** The held speed split by the stick now given: the character's own (as far as it may run), the rest momentum. */
+    void ReleaseDrive();
     bool BeginAirMountClip();
     bool BeginAirDismountClip();
     bool BeginCarryJump(float Speed);
@@ -239,6 +244,7 @@ private:
     void ResetTransition();
     void ShowBoard(float Target, bool bInstant);
     void ApplyBoardShown();
+    void LoadBoardFade();
     void SetMeshOffset(const FVector& Offset, const FQuat& Turn);
     /** The mesh's offset and turn that keep it at MeshWorld under the actor as it is now. */
     void KeepMeshWorld(const FTransform& MeshWorld);

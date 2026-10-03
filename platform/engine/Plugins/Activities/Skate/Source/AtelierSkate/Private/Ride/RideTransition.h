@@ -100,10 +100,14 @@ struct FRideTransition
     float Lift = 0.f;
     uint16 DriveId = 0;
     FVector DriveVelocity = FVector::ZeroVector;
+    /** Off the board the drive carries the speed over one more move, for the stick the character's tick gives that
+     *  move's successor (CharacterMovement moves before its owner ticks); ReleaseDrive splits it then. */
+    bool bReleasePending = false;
     /** After the dismount: the carry starts at this phase of the run cycle (the clip's CADENCEENDPERCENT). */
     float EndPhase = 0.f;
-    /** On the ground a clip's root motion moves the capsule (bDrive); in the air CharacterMovement keeps the fall and
-     *  the clip's trajectory follows the capsule (its own arc is left out). */
+    /** On the ground a clip's root motion moves the capsule (bDrive); in the air CharacterMovement keeps the fall (a
+     *  drive holds its flat velocity, gravity its height) and the clip's trajectory follows the capsule (its own arc is
+     *  left out). */
     bool bDrive = true;
     /** In the air: the clip to chain when this one ends airborne (else its last frame is held until the landing), the
      *  landing clips' stride phase (0, 25 or 75), and where and when the character left the ground. */
