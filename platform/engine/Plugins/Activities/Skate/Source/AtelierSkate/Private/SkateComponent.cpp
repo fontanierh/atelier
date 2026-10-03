@@ -390,7 +390,7 @@ void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTick
     if (bAvailable && Rider && !RetailRuntime && !bRetailPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadRetailRuntime();
     PollIdleRetail();
     // After the ride's step (in CharacterMovement's tick) and before the mesh animates.
-    if (bAvailable && Rider) TickTransition(Dt);
+    if (bAvailable && Rider) { TickTransition(Dt); SyncRootMotion(); }
 }
 FTransform USkateComponent::GetDeckWorld() const { return Deck ? Deck->GetComponentTransform() : FTransform::Identity; }
 float USkateComponent::BoardScale() const { return RiderApi ? FMath::Max(.25f, RiderApi->GetSkateBoardScale()) : 1.f; }

@@ -582,6 +582,7 @@ void USkateComponent::SuspendRetailRuntime()
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
     if (PhysicalRider) PhysicalRider->End();
+    ReleaseRootMotion();
     RetailRuntime.Reset(); Super::EndPlay(Reason);
 }
 void USkateComponent::LaunchRetail(const FVector& V)
@@ -1111,6 +1112,8 @@ void USkateComponent::RetargetRetailPose()
         RetailPose[I]=Parent>=0?Output[I].GetRelativeTransform(Output[Parent]):Output[I];
         RetailPose[I].NormalizeRotation();
     }
+    // A blend asked for this pose (the ride's first after a mount) goes with it (RequestPoseBlendWithNextPose).
+    if (PendingPoseBlend>0.f) RequestPoseBlend(PendingPoseBlend);
 }
 
 void USkateComponent::RuntimeFailure(const FString& Message)

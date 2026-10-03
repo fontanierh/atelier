@@ -20,6 +20,7 @@ class UPhysicsAsset;
 class URidePhysicalRider;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
+class UAnimInstance;
 struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
@@ -199,10 +200,14 @@ private:
     void PlaceBoardParts(const FTransform& DeckWorldScaled);
     uint32 PoseBlendSerial=0;
     float PoseBlendTime=0.f;
+    float PendingPoseBlend=0.f;        // a blend for the pose the ride publishes next (RequestPoseBlendWithNextPose)
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> BoardFade;  // USkateSettings::BoardDissolveMaterial, shared by the parts
     bool bBoardFadeTried = false;                                 // looked up once (LoadBoardFade): a missing one is not looked for every frame
     FRideTransition& Transit();
-    void RequestPoseBlend(float Seconds) { ++PoseBlendSerial; PoseBlendTime=Seconds; }
+    void RequestPoseBlend(float Seconds) { ++PoseBlendSerial; PoseBlendTime=Seconds; PendingPoseBlend=0.f; }
+    /** The blend for a pose not published yet (the ride's first, after the pose shown is held a frame): asked where
+     *  RetargetRetailPose writes it, so the character's graph reads the request and the pose together. */
+    void RequestPoseBlendWithNextPose(float Seconds) { PendingPoseBlend=Seconds; }
     bool RideMount(bool bInstant);
     bool RideDismount();
     void LeaveBoard();
@@ -242,6 +247,14 @@ private:
     /** skate.RideTrace: a line a frame about each switch (the actor, the mesh, the pelvis published and shown). */
     void TraceTransition();
     void ResetTransition();
+    /** While the skate pose shows, the character's anim instance takes no root motion (its own mode comes back with
+     *  its own pose): with root motion from everything CharacterMovement updates the graph before the ride steps and
+     *  publishes, and the character would show each skate pose a frame late, behind its board. */
+    void SyncRootMotion();
+    void ReleaseRootMotion();          // gives the held instance its own mode back
+    TWeakObjectPtr<UAnimInstance> RootMotionAnim;   // the instance whose mode is held
+    bool bRootMotionHeld=false;
+    uint8 SavedRootMotionMode=0;      // ERootMotionMode::Type
     void ShowBoard(float Target, bool bInstant);
     void ApplyBoardShown();
     void LoadBoardFade();

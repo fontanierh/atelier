@@ -61,12 +61,13 @@ live.TR=[]
 live.CM=unreal.GameplayStatics.get_player_camera_manager(live.L.game_world(), 0)
 live.FILM_AT=None
 def _film(dt):
-    # A close-up from the character's right, following it smoothly, its hips in the middle of the frame.
+    # A close-up from the character's right, following it smoothly, its hips in the middle of the frame: the follow
+    # aims a fifth of a second ahead (its own lag), so a running or rolling character stays centred.
     pawn=unreal.GameplayStatics.get_player_pawn(live.L.game_world(), 0)
     at=pawn.get_actor_location()
     if live.FILM_AT is None: live.FILM_AT=[at, math.radians(pawn.get_actor_rotation().yaw), 0]
     f=live.FILM_AT
-    f[0]=f[0]+(at-f[0])*min(1.0, dt*5.0)
+    f[0]=f[0]+(at+pawn.get_velocity()*0.2-f[0])*min(1.0, dt*5.0)
     side=unreal.Vector(-math.sin(f[1]), math.cos(f[1]), 0.0); ahead=unreal.Vector(math.cos(f[1]), math.sin(f[1]), 0.0)
     unreal.MegaParkValidation.review_camera(f[0]+side*300.0+ahead*80.0+unreal.Vector(0,0,40), f[0]+unreal.Vector(0,0,-5), 40.0)
     live.L.screenshot(live.FILM_DIR+'/f%05d.jpg' % f[2]); f[2]+=1
@@ -182,7 +183,11 @@ def continuity(rows, tumbling=lambda row: False):
     for i, (a, b) in enumerate(zip(rows, rows[1:]), 1):
         dt = b['dt']
         va, vb = vec(a['vel']), vec(b['vel'])
-        travel = max(length(va), length(vb)) * dt
+        speed = max(length(va), length(vb))
+        travel = speed * dt
+        # The hips are the mesh's pose, which can show a world step a frame late: a long step may move them a row
+        # later.
+        hip_travel = speed * max(a['dt'], dt)
         bail = tumbling(a) or tumbling(b)
         if not bail:
             note('move_cm', math.dist(vec(a['pos']), vec(b['pos'])) - travel, i, b)
@@ -191,7 +196,7 @@ def continuity(rows, tumbling=lambda row: False):
             if airborne(a) != airborne(b):
                 va, vb = (va[0], va[1], 0.0), (vb[0], vb[1], 0.0)
             note('speed_cm_s', math.dist(va, vb) - ACCEL * dt, i, b)
-        hip = math.dist(vec(a['hip']), vec(b['hip'])) - travel
+        hip = math.dist(vec(a['hip']), vec(b['hip'])) - hip_travel
         note('hip_cm', hip - (SLACK_HIP_BAIL - SLACK_HIP if bail else 0), i, b)
         if a.get('cam') and b.get('cam'):
             # The ride's own camera follows a tumbling body as it likes: only the switches are this check's.

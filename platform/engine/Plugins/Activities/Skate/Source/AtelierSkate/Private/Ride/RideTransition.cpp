@@ -22,6 +22,7 @@
 #include "RideAnimInstance.h"
 #include "RidePhysicalRider.h"
 #include "RideTuning.h"
+#include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Components/AudioComponent.h"
 #include "Components/BoxComponent.h"
@@ -514,7 +515,9 @@ bool USkateComponent::GetOnBoard(const FVector& Ground, const FQuat& Rotation, c
     BodyLift = Rider->GetActorLocation().Z - Ride->Root.GetLocation().Z;
     Rider->SetActorLocationAndRotation(Ride->Root.GetLocation() + FVector(0, 0, BodyLift), Ride->Root.GetRotation(), false, nullptr, ETeleportType::None);
     KeepMeshWorld(MeshWorld);
-    RequestPoseBlend(Blend);
+    // The blend is for the ride's first pose, not the held one: asked when that pose is written, so the character's
+    // graph starts it on the frame the pose changes (a request a frame early blends nothing, and the change pops).
+    RequestPoseBlendWithNextPose(Blend);
     ShowBoard(1.f, false);
     return true;
 }
@@ -1813,7 +1816,7 @@ void USkateComponent::TraceTransition()
 
 void USkateComponent::ResetTransition()
 {
-    bRideClip = false;
+    bRideClip = false; PendingPoseBlend = 0.f;
     if (!Transition) return;
     FRideTransition& T = *Transition;
     StopMomentum(); StopDrive();
@@ -1826,6 +1829,32 @@ void USkateComponent::ResetTransition()
     T.Board = ERideBoard::Away; T.bGetUpOnFoot = false;
     T.Shown = T.ShownTarget = 0.f; ApplyBoardShown();
     T.MeshSettleTime = -1.f; SetMeshOffset(FVector::ZeroVector, FQuat::Identity);
+}
+
+void USkateComponent::SyncRootMotion()
+{
+    // A character whose anim instance takes root motion from everything has its graph updated by CharacterMovement
+    // before it moves (UCharacterMovementComponent::PerformMovement), so before the ride steps and this component
+    // publishes: the skate pose would show a frame late. While it shows there is no root motion to take, and the
+    // graph updates in the mesh's own tick, after this component.
+    USkeletalMeshComponent* Mesh = Rider ? Rider->GetMesh() : nullptr;
+    UAnimInstance* Anim = Mesh ? Mesh->GetAnimInstance() : nullptr;
+    const bool bHold = Anim && !RetailPose.IsEmpty();
+    if (bRootMotionHeld && (!bHold || RootMotionAnim.Get() != Anim)) ReleaseRootMotion();
+    if (bHold && !bRootMotionHeld)
+    {
+        RootMotionAnim = Anim;
+        SavedRootMotionMode = uint8(Anim->RootMotionMode.GetValue());
+        Anim->RootMotionMode = ERootMotionMode::IgnoreRootMotion;
+        bRootMotionHeld = true;
+    }
+}
+
+void USkateComponent::ReleaseRootMotion()
+{
+    if (UAnimInstance* Anim = RootMotionAnim.Get(); Anim && bRootMotionHeld) Anim->RootMotionMode = ERootMotionMode::Type(SavedRootMotionMode);
+    RootMotionAnim.Reset();
+    bRootMotionHeld = false;
 }
 
 // ---------------------------------------------------------------------------------------------------------------

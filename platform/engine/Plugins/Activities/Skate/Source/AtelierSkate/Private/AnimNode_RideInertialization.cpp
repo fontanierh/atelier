@@ -28,10 +28,11 @@ namespace
         return Trace && Trace->GetInt() > 0;
     }
 
-    // A reset that drops a blend in progress or the stored poses, and why.
-    void TraceReset(bool bLoses, const TCHAR* Instance, const TCHAR* Why)
+    // A reset that drops a blend in progress or the stored poses, and why (the instance's name only while tracing).
+    void TraceReset(bool bLoses, const FAnimInstanceProxy* Proxy, const TCHAR* Why)
     {
-        if (bLoses && Tracing()) UE_LOG(LogTemp, Display, TEXT("SKATE trace inertialization f%llu %s: reset, %s"), GFrameCounter, Instance, Why);
+        if (bLoses && Tracing()) UE_LOG(LogTemp, Display, TEXT("SKATE trace inertialization f%llu %s: reset, %s"), GFrameCounter,
+            Proxy ? *Proxy->GetAnimInstanceName() : TEXT("-"), Why);
     }
 
     // Where a bone of a local-space pose is in component space.
@@ -87,7 +88,7 @@ void FAnimNode_RideInertialization::Initialize_AnyThread(const FAnimationInitial
 {
     FAnimNode_Base::Initialize_AnyThread(Context);
     Source.Initialize(Context);
-    TraceReset(bActive || Previous1.Num() > 0, *Context.AnimInstanceProxy->GetAnimInstanceName(), TEXT("initialized"));
+    TraceReset(bActive || Previous1.Num() > 0, Context.AnimInstanceProxy, TEXT("initialized"));
     Reset();
     CachedBones.Reset();
 }
@@ -106,14 +107,14 @@ void FAnimNode_RideInertialization::CacheBones_AnyThread(const FAnimationCacheBo
     CachedBones = Bones;
     const float Request = Pending;
     const UBlendProfile* Profile = PendingProfile;
-    TraceReset(bActive || Previous1.Num() > 0, *Context.AnimInstanceProxy->GetAnimInstanceName(), TEXT("the bones changed"));
+    TraceReset(bActive || Previous1.Num() > 0, Context.AnimInstanceProxy, TEXT("the bones changed"));
     Reset();
     Pending = Request; PendingProfile = Profile;
 }
 
 void FAnimNode_RideInertialization::ResetDynamics(ETeleportType Type)
 {
-    TraceReset(bActive || Previous1.Num() > 0, TEXT("-"), Type == ETeleportType::ResetPhysics ? TEXT("the mesh was teleported (reset physics)") : TEXT("the mesh was teleported"));
+    TraceReset(bActive || Previous1.Num() > 0, nullptr, Type == ETeleportType::ResetPhysics ? TEXT("the mesh was teleported (reset physics)") : TEXT("the mesh was teleported"));
     Reset();
 }
 
@@ -122,7 +123,7 @@ void FAnimNode_RideInertialization::Update_AnyThread(const FAnimationUpdateConte
     // Coming back after updates without this node: the stored poses are stale.
     if (UpdateCounter.HasEverBeenUpdated() && !UpdateCounter.WasSynchronizedCounter(Context.AnimInstanceProxy->GetUpdateCounter()))
     {
-        TraceReset(bActive || Previous1.Num() > 0, *Context.AnimInstanceProxy->GetAnimInstanceName(), TEXT("not updated the frame before"));
+        TraceReset(bActive || Previous1.Num() > 0, Context.AnimInstanceProxy, TEXT("not updated the frame before"));
         Reset();
     }
     UpdateCounter.SynchronizeWith(Context.AnimInstanceProxy->GetUpdateCounter());
@@ -242,7 +243,7 @@ void FAnimNode_RideInertialization::Evaluate_AnyThread(FPoseContext& Output)
     DeltaTime = 0;
     if (Previous1.Num() != Num)
     {
-        TraceReset(bActive || Previous1.Num() > 0, *Output.AnimInstanceProxy->GetAnimInstanceName(), TEXT("the pose has other bones"));
+        TraceReset(bActive || Previous1.Num() > 0, Output.AnimInstanceProxy, TEXT("the pose has other bones"));
         Previous1.Reset(); Previous2.Reset(); bActive = false;
     }
     if (Pending >= 0 && Previous1.Num() == Num)
