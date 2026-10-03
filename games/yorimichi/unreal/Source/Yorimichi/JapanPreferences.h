@@ -29,6 +29,9 @@ public:
     static bool IsSessionOnly(const FString& Key);
     // Log the effective profile after applying, read back from the console variables themselves.
     void ReportProfile() const;
+    // A setting as saved (the settings file, then -set= overrides), for a character choosing its definition before
+    // its own preferences exist.
+    static float Saved(const FString& Key, float Default);
 private:
     UPROPERTY() TObjectPtr<AWandererCharacter> Owner;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
@@ -39,4 +42,7 @@ private:
     int32 AppliedPerformanceMode = -1;
     float Get(const TCHAR* Key) const;
     void Save();
+    static bool IsToggle(const FString& Key);
+    static FString FilePath();
+    static TMap<FString,FString> ReadSaved();
 };

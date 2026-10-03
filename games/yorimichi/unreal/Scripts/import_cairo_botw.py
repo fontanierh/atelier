@@ -1,5 +1,5 @@
 """Import Cairo's Breath of the Wild clips (assets/characters/cairo/botw.py) into /Game/CairoBotw, for Cairo with
-Link's move set (-rider=CairoBotw, or "Cairo (BotW)" in the character switch).
+Link's move set (-rider=CairoBotw, or "Cairo's moves" in the settings).
 
     UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_cairo_botw.py -unattended -nosplash -NullRHI -stdout
 
@@ -14,7 +14,8 @@ by Cairo's size against Link's (`body` / Link's scale), and BodyScale, the facto
 height over Link's in BOTW units). Link's equipment is reused at Cairo's scale: each piece's hold moves from Link's
 hand to Cairo's in the palm's frame, and its carry on the back from Link's chest to Cairo's in the body's frame. The
 paraglider is placed from both glides instead (Glide's clip, posed): its canopy keeps its angle to the body and its
-bar's middle goes between Cairo's hands, since his palms turn differently from Link's around the bar. Also writes
+bar's middle goes between Cairo's hands, since his palms turn differently from Link's around the bar. A piece in
+CARRY sits where it was fitted to Cairo's own mesh instead of where Link's chest puts it. Also writes
 build/yorimichi/cairo/botw/unreal_import.json. Cairo's own assets must be byte-identical afterwards.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
@@ -34,6 +35,14 @@ DEST = '/Game/CairoBotw'
 E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools(); P = U.AnimPoseExtensions
 BODY = CONFIG['body']                      # Cairo's hips over Link's, in BOTW units
 SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his mesh is scaled down)
+# Carried pieces fitted to Cairo's mesh. Moved from Link's chest, the shield sank 4 cm into his deeper torso standing,
+# and its top half stood behind his bigger head, which ran through it. `offset` (cm, his component space) goes from his
+# chest bone to the piece's pivot along Rig.body's axes (level backward, left, up); the piece keeps its turn on Link's
+# back, its face squared to his back and then turned by `pitch` degrees about his left axis (see `fitted`). The shield
+# stands 2.7 cm off his back. In Link's idle, walk, run, dash, crouch, lock-on, glide, climb and swim retargeted onto
+# him, his torso and clothes come at most 1 cm through its plate. It sits low enough that his head stays clear of it,
+# except in the crouch: there his chest leans 70 degrees forward and his head dips 6 cm into its top edge.
+CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}}
 
 
 def digests(folder):
@@ -136,6 +145,29 @@ class Rig:
         return frame(reach, sub(self.at(f'finger_3_{side}'), self.at(f'finger_0_{side}'))), math.sqrt(dot(reach, reach))
 
 
+def turn(axis, degrees):
+    """The rotation by `degrees` about the unit vector `axis` (Rodrigues), as the images of the three axes."""
+    a = math.radians(degrees)
+    c, s = math.cos(a), math.sin(a)
+    return [add(add(mul(e, c), mul(cross(axis, e), s)), mul(axis, dot(axis, e) * (1. - c))) for e in ([1., 0, 0], [0., 1, 0], [0., 0, 1])]
+
+
+def align(a, b):
+    """The smallest rotation taking the unit vector a onto the unit vector b."""
+    v = cross(a, b)
+    s = math.sqrt(dot(v, v))
+    return turn(unit(v), math.degrees(math.atan2(s, dot(a, b)))) if s > 1e-9 else turn([1., 0, 0], 0.)
+
+
+def fitted(R, rig, fit):
+    """A carried piece's rotation and pivot from its fit (CARRY): its Z axis (a shield's face) squared to his back, on
+    the side it points to now, then turned by `pitch` about his left axis."""
+    B = rig.body()
+    face = B[0] if dot(R[2], B[0]) > 0 else mul(B[0], -1.)
+    R = compose(turn(B[1], fit['pitch']), compose(align(unit(R[2]), face), R))
+    return R, add(rig.at('chest'), apply(B, fit['offset']))
+
+
 def transform(R, p, scale):
     rotation = U.MathLibrary.make_rot_from_xz(U.Vector(*R[0]), U.Vector(*R[2]))
     return U.Transform(U.Vector(*p), rotation, U.Vector(scale, scale, scale))
@@ -201,9 +233,15 @@ def equipment(link, cairo, glide):
             Rp = [[v.x, v.y, v.z] for v in (piece.rotation.rotate_vector(U.Vector(1, 0, 0)), piece.rotation.rotate_vector(U.Vector(0, 1, 0)),
                                             piece.rotation.rotate_vector(U.Vector(0, 0, 1)))]
             offset = sub([piece.translation.x, piece.translation.y, piece.translation.z], link.at('chest'))
-            p = add(cairo.at('chest'), mul(apply(C, offset), BODY))
-            on_back = U.MathLibrary.make_relative_transform(transform(compose(C, Rp), p, scale), cairo.transform('chest'))
+            R, p = compose(C, Rp), add(cairo.at('chest'), mul(apply(C, offset), BODY))
+            if slot in CARRY:
+                R, p = fitted(R, cairo, CARRY[slot])
+            on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))
             entry['back'], entry['carry'] = 'chest', record_of(on_back)
+            # Where it sits in his reference pose (component cm): the fit's frame, for checking it offline.
+            checks.setdefault(slot, {})['carry'] = {'pivot': [round(v, 2) for v in p], 'axes': [[round(v, 5) for v in a] for a in R],
+                                                    'chest': [round(v, 2) for v in cairo.at('chest')],
+                                                    'body': [[round(v, 5) for v in a] for a in cairo.body()]}
         record[slot] = entry
     return record, checks
 

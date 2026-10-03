@@ -4,8 +4,9 @@
 
 /** Same controls and animation graph, with class defaults for the shorter body.
  * CharacterMovement restores class-default collision and mesh offsets on uncrouch.
- * With -rider=CairoBotw, or "Cairo (BotW)" in the character switch, he plays Breath of the Wild's move set (UBotwMoveSet)
- * on Link's clips retargeted to him (assets/characters/cairo/botw.py, Scripts/import_cairo_botw.py).
+ * He plays his own moves unless the settings' "Cairo's moves" says Breath of the Wild, or the command line asks with
+ * -rider=CairoBotw: then he plays BotW's move set (UBotwMoveSet) on Link's clips retargeted to him
+ * (assets/characters/cairo/botw.py, Scripts/import_cairo_botw.py).
  */
 UCLASS()
 class YORIMICHI_API ACairoCharacter : public AWandererCharacter

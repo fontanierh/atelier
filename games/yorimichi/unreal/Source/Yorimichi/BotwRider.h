@@ -26,15 +26,16 @@ public:
     /** The pawn class a game mode uses when a rider is requested (this class, or Cairo's for CairoBotw), else null (the
      *  mode's own default). */
     static UClass* PawnOverride();
-    /** The other characters that can play: Cairo with the BotW move set and the BOTW characters with an imported rider
-     *  definition, in roster order. Checks the definitions exist without loading them. */
+    /** The BOTW characters the character switch offers: those with a move set (Link) and an imported rider definition,
+     *  in roster order. Checks the definitions exist without loading them. */
     static TArray<FString> Available();
     /** The playing character's name: the rider's, "Cairo" or "CairoBotw". */
     static FString NameOf(const AWandererCharacter* Character);
     /** A playable name as the character switch shows it. */
     static FString Label(const FString& Name);
     /** The Esc menu's character switch: From's player becomes Name ("Cairo", "CairoBotw" or a rider), standing where From
-     *  stood and looking the same way; From is destroyed. Refused (null) on the zeppelin and before From is ready. */
+     *  stood and looking the same way; From is destroyed. Refused (null) on the zeppelin and before From is ready. The
+     *  menu offers Cairo with the move set its "Cairo's moves" setting picks. */
     static AWandererCharacter* SwitchPlayer(AWandererCharacter* From, const FString& Name);
 private:
     FString RiderName;

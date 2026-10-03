@@ -97,10 +97,10 @@ void ABotwRider::BeginPlay()
 
 TArray<FString> ABotwRider::Available()
 {
+    // Only the riders with a move set (Link) are playable for now; -rider=<Name> still starts any of them.
     TArray<FString> Names;
-    if (ACairoCharacter::HasBotw()) Names.Add(ACairoCharacter::BotwName());
     for (const auto& Pair : FBotwSpec::All())
-        if (HasDefinition(Pair.Key)) Names.Add(Pair.Key);
+        if (Pair.Value.Moves.IsValid() && HasDefinition(Pair.Key)) Names.Add(Pair.Key);
     return Names;
 }
 
@@ -113,7 +113,6 @@ FString ABotwRider::NameOf(const AWandererCharacter* Character)
 
 FString ABotwRider::Label(const FString& Name)
 {
-    if (Name == ACairoCharacter::BotwName()) return TEXT("Cairo (BotW)");
     const FBotwSpec* Spec = FBotwSpec::Find(Name);
     return Spec && !Spec->Label.IsEmpty() ? Spec->Label : Name;
 }
@@ -122,8 +121,8 @@ AWandererCharacter* ABotwRider::SwitchPlayer(AWandererCharacter* From, const FSt
 {
     APlayerController* PC = From ? Cast<APlayerController>(From->GetController()) : nullptr;
     UWorld* World = From ? From->GetWorld() : nullptr;
-    const bool bCairo = Name == TEXT("Cairo") || Name == ACairoCharacter::BotwName();
-    if (!PC || !World || !From->IsReady() || From->IsZeppelinPassenger() || Name == NameOf(From) || (Name != TEXT("Cairo") && !Available().Contains(Name)))
+    const bool bCairo = Name == TEXT("Cairo") || (Name == ACairoCharacter::BotwName() && ACairoCharacter::HasBotw());
+    if (!PC || !World || !From->IsReady() || From->IsZeppelinPassenger() || Name == NameOf(From) || (!bCairo && !Available().Contains(Name)))
     {
         UE_LOG(LogTemp, Warning, TEXT("Character switch to %s refused"), *Name);
         return nullptr;

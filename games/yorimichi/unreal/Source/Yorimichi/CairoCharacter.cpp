@@ -1,7 +1,10 @@
 #include "CairoCharacter.h"
 #include "AtelierData.h"
 #include "BotwMoveSet.h"
+#include "AtelierStream.h"
 #include "BotwRider.h"
+#include "JapanGameMode.h"
+#include "JapanPreferences.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -51,8 +54,14 @@ bool ACairoCharacter::HasBotw()
 
 void ACairoCharacter::BeginPlay()
 {
-    // The command line asks for the move set at the start; a switched-in Cairo was told by the switch.
-    if (!bSwitchedIn) bBotw = ABotwRider::Requested() == BotwName();
+    // At the start the command line picks the move set, else the saved setting (where a person plays: QA, reviews and
+    // benchmarks expect his own moves); a switched-in Cairo was told by the switch.
+    if (!bSwitchedIn)
+    {
+        const FString Requested = ABotwRider::Requested();
+        const bool bPlayed = !AJapanGameMode::IsScriptedSession() || FAtelierStream::IsRequested();
+        bBotw = Requested == BotwName() || (Requested.IsEmpty() && bPlayed && HasBotw() && UJapanPreferences::Saved(TEXT("cairo_botw"), 0.f) > .5f);
+    }
     if (bBotw) DefinitionAssetPath = BotwDefinition;
     Super::BeginPlay();
     if (bBotw)

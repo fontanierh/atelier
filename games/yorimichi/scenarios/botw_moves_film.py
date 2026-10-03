@@ -21,8 +21,7 @@ Runs at a fixed 60 fps step and saves every second step as a JPG (30 fps, real t
 frame its section, label and the move set's state (action, mode, stamina, health), which botw_moves_film_cut.py draws
 over the picture. A section that fails is logged in done.json and the film goes on with the next. Optional globals:
 TAKE; WHO, the name on the captions ('Link' or 'Cairo'); ONLY, the sections to film; REHEARSE, no frames.
-Film each character in its own game (-rider=Link or -rider=CairoBotw): the in-game character switch loads every
-rider's definition to list them, which puts the game over the memory guard's limit.
+Film each character in its own game (-rider=Link or -rider=CairoBotw).
 """
 import json, math, os, traceback
 import unreal

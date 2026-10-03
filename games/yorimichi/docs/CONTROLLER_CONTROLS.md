@@ -33,7 +33,7 @@ controls: see [SKATE.md](SKATE.md).
 Getting on the board while running carries the running speed onto it. Riding, the right stick (or the mouse with the
 left button held) is Flick-It, not the camera. On the sailboat the left stick steers and raises or lowers the sail.
 
-A rider with a Breath of the Wild move set (Link, or Cairo (BotW); see [the BotW characters](../assets/characters/botw/README.md))
+A rider with a Breath of the Wild move set (Link, or Cairo with "Cairo's moves" set to Breath of the Wild; see [the BotW characters](../assets/characters/botw/README.md))
 keeps these buttons with that game's meanings: Jump in the air opens the paraglider (no double jump), Roll is the
 dodge (no roll or air dash), Parry held guards and locks on and Jump while guarding parries, and Dash is the swim
 dash.

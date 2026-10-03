@@ -23,7 +23,8 @@ sword fields of `DA_Cairo`) and `import_cairo_armed.py` (`BS_SwordLocomotion`, `
 Cairo has no skate clips: on the board, the skate runtime's solved pose is retargeted onto him at run time. See
 [skating](../../../docs/SKATE.md) and the [runtime assets](../../skate/README.md).
 
-`characters.cairo_botw` and `unreal.cairo_botw` give Cairo Link's Breath of the Wild move set as "Cairo (BotW)":
+`characters.cairo_botw` and `unreal.cairo_botw` give Cairo Link's Breath of the Wild move set, which the Esc menu's
+"Cairo's moves" setting turns on:
 `botw.py` retargets Link's clips onto him, using `export_unreal.prepare` for his rig. See
 [Cairo with Link's moves](../botw/README.md#cairo-with-links-moves).
 
