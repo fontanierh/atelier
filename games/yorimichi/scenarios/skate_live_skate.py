@@ -64,7 +64,12 @@ def scenario(lx, ly, heading, speed, events, duration=4.0, pitch=-12, cam=None, 
         steps.append((max(0.0, nxt - when), what))
     if not steps: steps = [(duration, {})]
     live.REC = []
-    live.behave('rec', lambda dt: live.REC.append(live.L.skate_state()))
+    elapsed = {'seconds': 0.0}
+    def record(dt):
+        live.REC.append(live.L.skate_state())
+        elapsed['seconds'] += dt
+        if elapsed['seconds'] >= duration: live.stop('rec')
+    live.behave('rec', record)
     live.skate_script(steps)
 
 

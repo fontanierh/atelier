@@ -1,0 +1,30 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "A production-quality seamless tileable game material albedo texture, completely flat orthographic view of the surface, edge to edge with identical scale everywhere. Painterly realism for a beautiful stylised Japanese coastal adventure game: tactile, finely observed materials with soft hand-painted microdetail. Uniform diffuse lighting, no cast shadows, no specular highlights, no perspective, no objects, no text, no border. Seamless in both directions. The surface is small glazed Japanese ceramic mosaic tiles in muted sea-glass sage and pale jade, regular square grid with narrow cream grout, each tile subtly varied and hand glazed, restrained crazing and gentle salt weathering, no broken tiles",
+  "purpose": "Sunset Pier material",
+  "status": "done",
+  "started_at": "2026-10-02T22:59:30.841191+00:00",
+  "usage": {
+    "input_tokens": 138,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 138
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1894
+  },
+  "png_sha256": "c8ab0b58833447c0a765e49dd9e77b9914d7e47fe10b4b40711fb1efd8a1e568",
+  "output": {
+    "file": "ceramic.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-02T23:00:03.732012+00:00"
+}

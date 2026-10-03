@@ -7,6 +7,8 @@ import bpy
 import numpy as np
 from mathutils import Vector
 
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 import layout as L
 
 
@@ -150,13 +152,23 @@ def render(sc, cam, path, res=None):
     print('REVIEW', path, flush=True)
 
 
-def render_all(outdir, park, board_objs, data, world, h, pl):
+def render_all(outdir, park, board_objs, data, world, h, pl, only=None):
     outdir = Path(outdir); outdir.mkdir(parents=True, exist_ok=True)
     sc = setup_scene()
     vmat = _mat('review_vc', (1, 1, 1), vertex=True)
-    for ob in park.values():
-        ob.data.materials.clear(); ob.data.materials.append(vmat)
     for ob in board_objs.values(): ob.hide_render = True
+    # The runtime reuses detailed island trees; use the same source FBXs here.
+    for name, rows in data.get('trees', {}).items():
+        import yori
+        file=yori.OUT/'assets'/f'{name}.fbx'
+        before=set(bpy.data.objects)
+        bpy.ops.import_scene.fbx(filepath=str(file))
+        templates=[o for o in bpy.data.objects if o not in before and o.type=='MESH']
+        for template in templates:
+            template.hide_render=True
+            for i,(x,y,z,yaw,scale) in enumerate(rows):
+                ob=bpy.data.objects.new(f'{name}_{i}',template.data);sc.collection.objects.link(ob)
+                ob.location=(x,y,z);ob.rotation_euler=(0,0,math.radians(yaw));ob.scale=(scale,)*3
     context_terrain(world, h, vmat)
     ox, oy, oz = L.ORIGIN
     rails = rails_overlay(data); rails.hide_render = True
@@ -166,17 +178,20 @@ def render_all(outdir, park, board_objs, data, world, h, pl):
     def at(dist):
         k = int(np.searchsorted(s, dist)); return Vector((P[k, 0], P[k, 1], Z[k]))
     shots = {
-        'overview': ((-92, 98, 78), (0, 0, 0), 35),
-        'overview_sea': ((82, -104, 66), (0, 0, 0), 35),
-        'street': ((-6, 5, 7), (-30, 24, 1), 28),
+        'overview': ((-155, 150, 120), (0, 0, 0), 35),
+        'overview_sea': ((135, -165, 100), (0, 0, 0), 35),
+        'street': ((-26, 9, 6), (-54, 24, 1), 28),
+        'rail_lanes': ((-37, 36, 3), (24, 43, .7), 28),
+        'sunset_line': ((-30, -61, 4), (38, -52, .8), 28),
         'bowl': ((6, -35, 15), (29, -10, 1), 30),
         'mini': ((-4, -41, 7), (-24, -28, .4), 30),
         'arrival': (tuple(at(s[-1] - 10) + Vector((0, 0, 1.7))), (6, 8, .7), 30),
     }
     for name, (loc, tgt, lens) in shots.items():
+        if only and name not in only: continue
         render(sc, camera('cam_' + name, loc, tgt, lens), outdir / f'{name}.png', (1600, 1000))
     rails.hide_render = False
-    render(sc, camera('cam_plan', (0, 0, 120), (0, 0, 0), ortho=120), outdir / 'plan_rails.png', (2000, 1400))
+    if not only or 'plan_rails' in only: render(sc, camera('cam_plan', (0, 0, 180), (0, 0, 0), ortho=190), outdir / 'plan_rails.png', (2000, 1600))
     rails.hide_render = True
 
 
@@ -218,3 +233,20 @@ def board_review(outdir, objs):
         sc.camera = ob; sc.render.resolution_x, sc.render.resolution_y = (1400, 500) if ortho else (1200, 800)
         sc.render.filepath = str(Path(outdir) / f'{name}.png'); bpy.ops.render.render(write_still=True, scene=sc.name)
         print('REVIEW', name, flush=True)
+
+
+if __name__ == '__main__':
+    import argparse
+    import json
+    import yori
+    parser=argparse.ArgumentParser(description='Review the saved park without rebuilding it')
+    parser.add_argument('--view',action='append')
+    args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+    out=yori.OUT/'skatepark'
+    bpy.ops.wm.open_mainfile(filepath=str(out/'SkatePark.blend'))
+    data=json.loads((L.JAPAN/'skatepark/park.json').read_text())
+    world,h=L.load_world()
+    objs={ob.name:ob for ob in bpy.data.objects}
+    park={m['name']:objs[m['name']] for m in data['meshes']}
+    board_objs={n:objs[n] for n in ('SM_SkateDeck','SM_SkateTruck','SM_SkateWheel')}
+    render_all(out/'review',park,board_objs,data,world,h,L.path_layout(world,h),args.view)

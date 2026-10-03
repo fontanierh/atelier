@@ -1,5 +1,7 @@
 #include "SkatePark.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
+#include "SeeThrough.h"
 #include "Components/BoxComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "Dom/JsonObject.h"
@@ -122,6 +124,32 @@ bool ASkatePark::Initialize(const FString& Path)
         C->SetCanEverAffectNavigation(false);
         C->RegisterComponent(); ++Meshes;
     }
+    // Reuse the island's detailed trees in the perimeter stone gardens. Their
+    // canopies frame the skating; the separate foliage has no riding collision.
+    const TSharedPtr<FJsonObject>* Trees = nullptr;
+    if (Root->TryGetObjectField(TEXT("trees"), Trees))
+        for (const auto& Pair : (*Trees)->Values)
+        {
+            const FString Key(Pair.Key);
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr,
+                *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
+            if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Skate park: missing tree %s"), *Key); continue; }
+            auto* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this, *Key);
+            H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(RootComponent);
+            H->SetCollisionEnabled(ECollisionEnabled::NoCollision); H->SetCanEverAffectNavigation(false);
+            const int32 Fade = JapanSeeThrough::FadeMode(Key, Mesh);
+            if (Fade != JapanSeeThrough::FadeSolid) H->SetCustomPrimitiveDataFloat(0, float(Fade));
+            H->SetWorldPositionOffsetDisableDistance(18000);
+            H->RegisterComponent();
+            for (const auto& Value : Pair.Value->AsArray())
+            {
+                const auto& A = Value->AsArray();
+                if (A.Num() != 5) continue;
+                H->AddInstance(FTransform(FRotator(0, -A[3]->AsNumber(), 0),
+                    FVector(A[0]->AsNumber()*100., -A[1]->AsNumber()*100., A[2]->AsNumber()*100.),
+                    FVector(A[4]->AsNumber())));
+            }
+        }
     USkateRailSubsystem* Registry = GetWorld()->GetSubsystem<USkateRailSubsystem>();
     const TArray<TSharedPtr<FJsonValue>>* Rails = nullptr;
     if (Registry && Root->TryGetArrayField(TEXT("rails"), Rails))

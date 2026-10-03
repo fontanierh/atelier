@@ -6,13 +6,13 @@ import numpy as np
 
 # Linear albedo. The game's exposure turns pale colours white: stay near 0.05-0.35.
 PAL = {
-    'concrete': (0.265, 0.240, 0.188), 'concrete_light': (0.325, 0.295, 0.235), 'concrete_dark': (0.215, 0.205, 0.182),
+    'concrete': (0.320, 0.305, 0.275), 'concrete_light': (0.430, 0.415, 0.380), 'concrete_dark': (0.165, 0.180, 0.195),
     'underside': (0.125, 0.118, 0.103), 'skirt': (0.205, 0.195, 0.172), 'joint': (0.150, 0.142, 0.124),
     'teal': (0.105, 0.235, 0.225), 'salmon': (0.440, 0.175, 0.120), 'mustard': (0.400, 0.285, 0.075),
     'dusty_blue': (0.120, 0.175, 0.270),
-    'sage': (.12,.185,.15), 'terracotta': (.34,.16,.105), 'tile': (.39,.18,.10),
-    'timber': (.125,.055,.023), 'soil': (.055,.045,.03), 'grass': (.13,.20,.065), 'grass_light': (.30,.31,.12),
-    'steel': (0.070, 0.071, 0.068), 'coping': (0.115, 0.116, 0.112),
+    'sage': (.14,.25,.22), 'terracotta': (.34,.16,.105), 'tile': (.39,.18,.10),
+    'timber': (.24,.13,.065), 'soil': (.055,.045,.03), 'grass': (.13,.20,.065), 'grass_light': (.30,.31,.12),
+    'steel': (0.45, 0.47, 0.49), 'coping': (0.38, 0.40, 0.42),
     'red': (0.420, 0.045, 0.032), 'yellow': (0.500, 0.350, 0.040), 'railing': (0.045, 0.031, 0.022),
     'pole': (0.055, 0.070, 0.062), 'lamp': (0.92, 0.58, 0.22), 'lamp_cap': (0.045, 0.050, 0.048),
     'pile': (0.170, 0.162, 0.145), 'pile_wet': (0.070, 0.074, 0.060), 'algae': (0.055, 0.085, 0.045),
@@ -31,23 +31,26 @@ def newell(pts):
 class MeshData:
     def __init__(self, name):
         self.name = name
-        self.verts = []; self.faces = []; self.colors = []; self.smooth = []; self.tags = []
+        self.verts = []; self.faces = []; self.colors = []; self.smooth = []; self.tags = []; self.uv = {}
 
     # --- primitives -------------------------------------------------------------------
     def vert(self, p):
         self.verts.append(tuple(float(c) for c in p)); return len(self.verts) - 1
 
-    def face(self, idx, color, tag='concrete', smooth=False, want=None):
+    def face(self, idx, color, tag='concrete', smooth=False, want=None, uv=None):
         """Face from vertex indices. `want` (a direction) flips the winding to face it."""
         idx = [a for k, a in enumerate(idx) if a != idx[k - 1]] if len(idx) > 1 else list(idx)
         if len(set(idx)) < 3 or len(set(idx)) != len(idx): return
         pts = [self.verts[i] for i in idx]
         n = newell(pts)
         if np.linalg.norm(n) < 1e-12: return
-        if want is not None and float(n @ np.asarray(want, float)) < 0: idx.reverse()
+        if want is not None and float(n @ np.asarray(want, float)) < 0:
+            idx.reverse()
+            if uv is not None: uv=uv[::-1]
         if isinstance(color, str): color = PAL[color]
         cols = [tuple(c) for c in color] if isinstance(color[0], (tuple, list, np.ndarray)) else [tuple(color)] * len(idx)
         if want is not None and float(n @ np.asarray(want, float)) < 0 and len(cols) == len(idx): cols = cols[::-1]
+        if uv is not None: self.uv[len(self.faces)]=uv
         self.faces.append(tuple(idx)); self.colors.append(cols); self.smooth.append(smooth); self.tags.append(tag)
 
     def poly(self, pts, color, tag='concrete', want=None):
@@ -62,6 +65,10 @@ class MeshData:
         """rows[i][j] -> xyz; quads between neighbours share vertices. color_fn(i, j) -> colour
         for the quad (i, j) overrides `color`."""
         ids = [[self.vert(p) for p in row] for row in rows]
+        unwrap=tag=='transition'
+        if unwrap:
+            r=np.array(rows); profile=np.r_[0,np.cumsum(np.linalg.norm(np.diff(r[:,0],axis=0),axis=1))]
+            width=np.r_[0,np.cumsum(np.linalg.norm(np.diff(r[0],axis=0),axis=1))]
         flip = None
         for i in range(len(rows) - 1):
             for j in range(len(rows[i]) - 1):
@@ -72,7 +79,8 @@ class MeshData:
                     if np.linalg.norm(n) > 1e-12: flip = float(n @ np.asarray(want, float)) < 0
                 if flip: q = q[::-1]
                 c = color_fn(i, j) if color_fn else color
-                self.face(q, c, tag, smooth)
+                uv=[(width[j],profile[i]),(width[j],profile[i+1]),(width[j+1],profile[i+1]),(width[j+1],profile[i])] if unwrap else None
+                self.face(q, c, tag, smooth, uv=uv[::-1] if flip and uv else uv)
         return ids
 
     def box(self, lo, hi, color, tag='concrete', bottom=False, faces='all'):
@@ -165,6 +173,7 @@ class MeshData:
 
     def merge(self, other):
         base = len(self.verts)
+        self.uv.update({len(self.faces)+i:uv for i,uv in other.uv.items()})
         self.verts += other.verts
         self.faces += [tuple(i + base for i in f) for f in other.faces]
         self.colors += other.colors; self.smooth += other.smooth; self.tags += other.tags
@@ -297,20 +306,48 @@ def shade(m, ao=None, ao_strength=0.62, seed_offset=0):
 
 
 # ------------------------------------------------------------------------------- export
+def surface_key(tag, cols):
+    if tag == 'mural': return 'mural'
+    if tag == 'wood': return 'wood'
+    if tag in ('steel', 'coping'): return 'steel'
+    if tag in ('rail', 'railing', 'pole'): return 'painted'
+    c = np.asarray(cols[0])
+    if any(np.linalg.norm(c - PAL[k]) < .015 for k in ('steel','coping')): return 'steel'
+    if tag == 'transition' and any(np.linalg.norm(c - PAL[k]) < .015 for k in ('sage', 'tile')):
+        return 'ceramic'
+    if tag == 'joint' or np.linalg.norm(c - PAL['concrete_dark']) < .015: return 'basalt'
+    return 'concrete'
+
+
 def to_object(m, material, colors=None):
     import bpy
     data = bpy.data.meshes.new(m.name)
     data.from_pydata(m.verts, [], m.faces)
     data.update()
-    data.materials.append(material)
+    materials = material if isinstance(material, dict) else {'palette': material}
+    if isinstance(material, dict):
+        used = {surface_key(tag, cols) for tag, cols in zip(m.tags, m.colors)}
+        materials = {key: mat for key, mat in material.items() if key in used}
+    keys = list(materials)
+    for mat in materials.values(): data.materials.append(mat)
     smooth = [bool(s) for s in m.smooth]
     data.polygons.foreach_set('use_smooth', smooth)
     uv = data.uv_layers.new(name='UVMap')
-    for face in data.polygons:
+    for face, tag, cols in zip(data.polygons, m.tags, m.colors):
+        key = surface_key(tag, cols) if isinstance(material, dict) else 'palette'
+        face.material_index = keys.index(key)
         drop = max(range(3), key=lambda i: abs(face.normal[i])); axes = [i for i in range(3) if i != drop]
-        for li in face.loop_indices:
+        repeat = materials[key].get('repeat_m', 1.)
+        points = [data.vertices[data.loops[li].vertex_index].co for li in face.loop_indices]
+        if key=='wood' and max(p[axes[0]] for p in points)-min(p[axes[0]] for p in points)>max(p[axes[1]] for p in points)-min(p[axes[1]] for p in points): axes.reverse()
+        low = [min(p[a] for p in points) for a in axes]; high = [max(p[a] for p in points) for a in axes]
+        authored=m.uv.get(face.index)
+        for corner,li in enumerate(face.loop_indices):
             co = data.vertices[data.loops[li].vertex_index].co
-            uv.data[li].uv = (co[axes[0]], co[axes[1]])
+            if authored is not None:
+                uv.data[li].uv=tuple(v/repeat for v in authored[corner]);continue
+            uv.data[li].uv = tuple((co[a] - low[j]) / max(high[j] - low[j], .001) if tag == 'mural'
+                                  else co[a] / repeat for j, a in enumerate(axes))
     col = data.color_attributes.new(name='Color', type='FLOAT_COLOR', domain='CORNER')
     colors = colors or m.colors
     k = 0
