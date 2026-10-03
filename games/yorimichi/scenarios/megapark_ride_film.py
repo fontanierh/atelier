@@ -42,7 +42,9 @@ board's loops per frame; the sounds the game starts are stamped with the shot's 
 plus the frame; unrecorded frames stamp -1000000). A slow shot saves every 90 Hz frame, so the mixer can replay its
 biggest air, or its bail, at a third of the speed. An optional shot that does not do what it should (no caveman, no
 dismount) is marked keep=false and left out of the cut. done.json logs each bail's entry speed, how far the body went,
-how low it lay (the state's lie=) and how long it was down. megapark_ride_film_mix.py cuts the parts into the film and
+how low it lay (the state's lie=), how long it was down and, around the get-up, the largest move in one tick of the
+pelvis and of the board's deck (a pop); the part's shot.json keeps the bail's body log, every tick from the bail to
+BODY_AFTER s after the get-up. megapark_ride_film_mix.py cuts the parts into the film and
 mixes the sound.
 """
 import json, math, os, re, shutil, traceback
@@ -653,7 +655,7 @@ def next_shot():
     k = st['k']; st['k'] += 1
     s.update(k=k, dir='%02d_%s' % (k, s['name']), ph='place', pt=0., t=0., f=0, hz=90 if s.get('slow') else 60,
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
-             air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], combos=[], lasts=[], retail=[], first=None,
+             air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], body=[], combos=[], lasts=[], retail=[], first=None,
              bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, stall_t=None, mounted=None, dismounted=None, jumped=None, foot_gait=None, max_spd=0., min_spd=1e9,
              max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0, ground_wait=0)
     if s.get('road'):
@@ -717,6 +719,32 @@ def inputs(s, c, dt):
         inp['push'] = inp['brake'] = False
     spin_model(s, c, inp, dt)
     return inp
+
+
+BODY_AFTER = 3.     # s after the get-up that a bail's body log goes on (it takes in the board recall)
+
+
+def body_row(c):
+    """A tick of a bail's body log: [t, pelvis x, y, z (m), its source, lie (cm), deck x, y, z (m), board, mode, retail]."""
+    try: deck = [round(float(n) / 100. * sg, 3) for n, sg in zip(c.d['deck'].split(','), (1., -1., 1.))]
+    except (KeyError, ValueError): deck = [None] * 3
+    return [round(c.t, 4), round(c.hx, 3), round(c.hy, 3), round(c.hz, 3), c.hsrc, c.d.get('lie')] + deck + \
+           [c.d.get('board'), c.mode, c.retail]
+
+
+def getup_steps(rows, up_t, before=1.2, after=1.5):
+    """The largest move in one tick of the pelvis and of the board's deck around a get-up (a pop shows here):
+    {'hips': [cm, m/s, t], 'deck': [cm, m/s, t]}."""
+    w = [r for r in rows if up_t - before <= r[0] <= up_t + after]
+    out = {}
+    for key, i in (('hips', 1), ('deck', 6)):
+        best = None
+        for a, b in zip(w, w[1:]):
+            if None in a[i:i + 3] + b[i:i + 3] or b[0] <= a[0] or (key == 'hips' and a[4] != b[4]): continue
+            d = math.dist(a[i:i + 3], b[i:i + 3])
+            if best is None or d > best[0]: best = (d, d / (b[0] - a[0]), b[0])
+        out[key] = [round(best[0] * 100., 1), round(best[1], 2), best[2]] if best else None
+    return out
 
 
 def track(s, c):
@@ -822,6 +850,8 @@ def step_shot(s, dt):
     camera(s, c, dt)
     if s['f'] % 6 == 0:
         s['log'].append([round(c.t, 3), round(c.x, 2), round(c.y, 2), round(c.zb, 2), round(c.spd, 2), c.mode, c.retail, c.combo])
+    if s['bail_t'] is not None and (s['up_t'] is None or c.t <= s['up_t'] + BODY_AFTER):
+        s['body'].append(body_row(c))
     s['f'] += 1
     s['t'] += 1. / s['hz']
     s['last_c'] = c
@@ -870,6 +900,7 @@ def end_shot():
         try: keep = bool(s['keep'](s, c))
         except Exception: keep = False
     st['kept'][s['name']] = keep
+    if s.get('bail') and s['up_t'] is not None: s['bail']['getup'] = getup_steps(s['body'], s['up_t'])
     replay = None
     if s.get('replay') and s['replay'].get('on') == 'bail':
         if s['bail_t'] is not None:
@@ -887,7 +918,7 @@ def end_shot():
             'airs': [{'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'spin': a['spin'], 'turned': a.get('turned'), 'to': a['to']} for a in s['airs']],
             'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
             'bail_kind': s['bail_kind'], 'bail': s.get('bail'), 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
-    part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'])
+    part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'], body=s['body'])
     json.dump(part, open(os.path.join(OUT, 'parts', s['dir'], 'shot.json'), 'w'))
     st['done'].append(info)
     json.dump(st['done'], open(os.path.join(OUT, 'shots.json'), 'w'), indent=1)
