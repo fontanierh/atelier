@@ -8,4 +8,6 @@ struct FSkateInput
     bool bPush = false, bBrake = false, bPowerslide = false, bGrabLeft = false, bGrabRight = false;
     /** Leave a ramp over its coping (a transfer) rather than come back down into it. A grab never asks for one. */
     bool bTransfer = false;
+    /** Throw yourself off the board (both stick clicks with both triggers, as in the native backend's chord). */
+    bool bBail = false;
 };

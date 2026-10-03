@@ -14,6 +14,9 @@ class UAudioComponent;
 class USoundWave;
 class USoundAttenuation;
 class FSkateRuntime;
+class FRideSession;
+class UBoxComponent;
+class UPhysicsAsset;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -139,4 +142,31 @@ private:
     void ReadInput(float Dt);
     void SetMeshForRiding(bool bRiding);
     FQuat AlignUp(const FQuat& Q,const FVector& NewUp,float Alpha) const;
+
+    // The Ride backend (USkateSettings::Backend; Private/Ride, RIDE.md). It publishes through RetailRuntime's outputs,
+    // so everything after the step (modes, cues, board placement, retargeting) is shared with the native backend.
+    TSharedPtr<FRideSession> Ride;
+    UPROPERTY() TObjectPtr<UBoxComponent> LooseBoard;          // the board tumbling on its own during a bail
+    UPROPERTY() TObjectPtr<UPhysicsAsset> RagdollAsset;        // built from the rider's skeleton when it has none
+    bool bOwnPhysicsAsset=false;                               // the ragdoll uses the rider's own physics asset
+    FName SavedMeshProfile;
+    bool bRagdoll=false;
+    float RagdollTime=0.f,RagdollQuiet=0.f,GetUpBlend=-1.f;    // GetUpBlend >= 0: the body blends from physics to the pose
+    FVector RagdollStart=FVector::ZeroVector,RagdollFloor=FVector::ZeroVector;
+    float RagdollLimit=2500.f;                                 // a body faster than this has gone unstable (cm/s)
+    // Worlds built for the board's sweeps are often query-only; the surfaces near a fallen body are made physical
+    // while it lies there, then put back.
+    TArray<TWeakObjectPtr<UPrimitiveComponent>> MadePhysical;
+    FVector PhysicalCentre=FVector::ZeroVector;
+    void MakeWorldPhysical(const FVector& Centre);
+    void RestoreWorld();
+    bool StartRide();
+    bool StepRide(float Dt);
+    void AfterRideFrame(float Dt);
+    void StopRide();
+    void PreloadRide();
+    bool StartRagdoll();
+    void UpdateRagdoll(float Dt);
+    void EndRagdoll();
+    UPhysicsAsset* BuildRagdollAsset();
 };
