@@ -117,17 +117,99 @@ def import_audit():
             'structures': additions}
 
 
+def member_probes(member):
+    """Sample a member's width and depth, rather than only its centreline."""
+    a, b = np.array(member['a']), np.array(member['b']); d = b-a
+    count = max(1, math.ceil(np.linalg.norm(d[:2])/.25)); d /= np.linalg.norm(d)
+    seed = np.array([0., 0., 1.]) if abs(d[2]) < .9 else np.array([1., 0., 0.])
+    u = np.cross(seed, d); u *= member['width']/2/np.linalg.norm(u)
+    v = np.cross(d, u); v *= member['depth']/2/np.linalg.norm(v)
+    offsets = np.unique(np.round([s*u[:2]+t*v[:2] for s in (-.98, 0, .98) for t in (-.98, 0, .98)], 8), axis=0)
+    return (np.linspace(a, b, count+1)[:, None, :2]+offsets).reshape(-1, 2)
+
+
+def riding_clearance(mesh, metadata, original, source_parts, report_file=None):
+    """Check closed steel members against the park's previously usable airspace.
+
+    A vertical pole's top and bottom can both lie outside the body band, so
+    testing only surface hits misses it. Each closed member's solid interval
+    must stay clear, including the rider's width and up to three metres of
+    existing clearance for skating. Normal legs inside recovered grind-feature
+    footprints are recorded separately; the main frames get no such exception.
+    """
+    normal = np.cross(original[:, 1]-original[:, 0], original[:, 2]-original[:, 0])
+    upward = normal[:, 2] > np.linalg.norm(normal, axis=1)*1e-4
+    offsets = np.cumsum([0]+[len(p['faces']) for p in source_parts])
+    assert offsets[-1] == len(original)
+    parts = [original[a:b] for a, b in zip(offsets, offsets[1:])]
+    riding = [part[upward[a:b]] for part, a, b in zip(parts, offsets, offsets[1:])]
+    lo = np.asarray([part.min((0, 1))[:2] for part in parts])
+    hi = np.asarray([part.max((0, 1))[:2] for part in parts])
+    cache = {}
+    def query(x, y):
+        key = (round(float(x), 6), round(float(y), 6))
+        if key not in cache:
+            mask = (lo[:, 0] <= x+1e-7) & (hi[:, 0] >= x-1e-7) & (lo[:, 1] <= y+1e-7) & (hi[:, 1] >= y-1e-7)
+            solids = []; hits = []; floors = []
+            for owner in np.flatnonzero(mask):
+                values = np.unique(np.round(S.heights(parts[owner], x, y), 6))
+                hits.extend(values)
+                floors.extend(S.heights(riding[owner], x, y))
+                if len(values) % 2 == 0:
+                    solids.extend(zip(values[::2], values[1::2]))
+            cache[key] = (np.asarray(hits), np.asarray(floors), solids)
+        return cache[key]
+    vertices = np.asarray(mesh.vertices); faces = mesh.triangle_faces()
+    probes = 0; violations = []
+    for index in metadata['ride_support_members']:
+        member = mesh.members[index]; first = member['first_face']*2
+        triangles = vertices[np.asarray(faces[first:first+12])]
+        for x, y in member_probes(member):
+            hits = S.heights(triangles, x, y)
+            if not len(hits): continue
+            low, high = float(hits.min()), float(hits.max())
+            existing, local_floors, solids = query(x, y)
+            for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35), (.25, .25), (-.25, .25), (.25, -.25), (-.25, -.25)]:
+                unused, floors, unused_solids = query(x+dx, y+dy)
+                for floor in np.unique(np.round(floors, 6)):
+                    # Use the original step the body actually crosses, rather
+                    # than treating an existing 32 cm step as new body intrusion.
+                    steps = local_floors[(local_floors >= floor-.02) & (local_floors <= floor+.45)]
+                    if len(steps): floor = max(floor, float(steps.max()))
+                    if any(bottom < floor+1.55 and top > floor+.15 for bottom, top in solids):
+                        continue  # The recovered solid already occupies this body position.
+                    above = existing[existing > floor+.15]
+                    ceiling = float(above.min()) if len(above) else np.inf
+                    if ceiling-floor < 1.55: continue  # Cairo's capsule is 1.51 m tall.
+                    limit = min(floor+3., ceiling-.02)
+                    probes += 1
+                    if high > floor+.15 and low < limit:
+                        violations.append({'member': index, 'xy': [float(x), float(y)], 'floor_m': float(floor),
+                                           'steel_interval_m': [low, high], 'protected_top_m': float(limit)})
+    if report_file is not None:
+        report_file.write_text(json.dumps(violations, indent=2)+'\n')
+    assert not violations, ('support intrudes into usable skating space', violations[:12], 'total', len(violations))
+    return {'solid_member_probes': probes, 'protected_skating_clearance_m': 3., 'intrusions': 0,
+            'exterior_frame_footings': len(metadata['frame_footings'])}
+
+
 def structure_audit():
     meshes, metadata = S.build(north_surface)
     added = np.concatenate([m.triangles() for m in meshes])
     original = L.place(scene().triangles()); all_triangles = np.concatenate((added, original))
+    triangle_lo, triangle_hi = all_triangles.min(1), all_triangles.max(1)
+    def route_heights(x, y, low, high):
+        mask = ((triangle_lo[:, 0] <= x+1e-7) & (triangle_hi[:, 0] >= x-1e-7) &
+                (triangle_lo[:, 1] <= y+1e-7) & (triangle_hi[:, 1] >= y-1e-7) &
+                (triangle_lo[:, 2] <= high) & (triangle_hi[:, 2] >= low))
+        return S.heights(all_triangles[mask], x, y)
     route = S.stair_route()
     for x, y, z in route:
-        hits = S.heights(all_triangles, x, y)
+        hits = route_heights(x, y, z-.4, z+.4)
         bounded = hits[(hits >= z-.4) & (hits <= z+.4)]
         assert len(bounded) and abs(bounded.max()-z) < .025, ('first bounded floor hit', x, y, z, bounded)
         for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
-            hits = S.heights(all_triangles, x+dx, y+dy)
+            hits = route_heights(x+dx, y+dy, z+.2, z+1.95)
             assert not np.any((hits > z+.2) & (hits < z+1.95)), ('body clearance', x, y, z, dx, dy)
     for contact in metadata['support_contacts']:
         x, y, z = contact['top']
@@ -140,13 +222,18 @@ def structure_audit():
     raised_nodes = {part[0] for group in S.raised_groups(scene()) for part in group}
     supported_nodes = {node for contact in metadata['support_contacts'] for node in contact['nodes']}
     assert supported_nodes == raised_nodes, ('raised pieces without support', sorted(raised_nodes-supported_nodes))
+    for footing in metadata['frame_footings']:
+        x, y = footing['bottom'][:2]
+        for part in scene().parts:
+            t = L.place(part['vertices'][part['faces']]); lo, hi = t.min((0, 1)), t.max((0, 1))
+            assert not (lo[0]-.65 <= x <= hi[0]+.65 and lo[1]-.65 <= y <= hi[1]+.65), ('interior main footing', footing, part['node'])
     # A doorway can be blocked between otherwise clear route waypoints.
     clearance_samples = 0
     for a, b in zip(route, route[1:]):
         count = max(1, math.ceil(np.linalg.norm((b-a)[:2])/.25))
         for x, y, z in np.linspace(a, b, count+1):
             for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
-                hits = S.heights(all_triangles, x+dx, y+dy)
+                hits = route_heights(x+dx, y+dy, z+.4, z+1.95)
                 assert not np.any((hits > z+.4) & (hits < z+1.95)), ('blocked route segment', x, y, z, dx, dy)
                 clearance_samples += 1
     # Keep the deck lane used by the live riding check open below head height.
@@ -154,10 +241,13 @@ def structure_audit():
         hits = S.heights(added, 1250, y)
         assert not np.any((hits > 48.52) & (hits < 50.45)), ('blocked riding lane', y)
     return {'support_contacts': len(metadata['support_contacts']), 'ascent_waypoints': len(route),
+            'closed_edge_footings': len(metadata['closed_edge_footings']),
             'supported_raised_source_instances': len(supported_nodes),
             'ascent_length_m': float(np.linalg.norm(np.diff(route, axis=0), axis=1).sum()),
             'height_gain_m': S.TOP-S.DECK, 'step_rise_m': metadata['step_rise_m'],
             'continuous_body_clearance_samples': clearance_samples,
+            'riding_clearance': riding_clearance(meshes[0], metadata, original, scene().parts,
+                                               yori.OUT/'communitypark/support-intrusions.json'),
             'footings_and_body_clearance': True}
 
 

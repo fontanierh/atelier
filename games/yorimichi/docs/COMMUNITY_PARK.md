@@ -49,9 +49,12 @@ Trunks and plants stay outside the source footprint. Mature trunks leave
 The revised seclusion direction uses a high-quality Sunburst paintover of
 actual overview and station-approach captures; its provenance stays in build.
 
-Dark steel trestles carry the elevated ramp groups down to original lower
-surfaces or the carved terrain. Footplates, girders and diagonal braces give
-the source's suspended pieces visible support. A timber service stair rises
+Dark steel frames carry the elevated ramp groups from shared piers outside
+the recovered skating footprint. Underside ribs follow the original slabs;
+full pipes bear on their bottoms, keeping their riding tubes open. Two short
+feet use an already closed low pad edge, and the original grind features keep
+their normal inset legs. The top bridge shares an exterior pier instead of
+putting columns in the bowls. A timber service stair rises
 from the north deck through eighteen switchback flights and broad landings;
 14.7 cm risers, 45 cm treads and a 2.4 m width suit normal character movement.
 The railed top bridge joins the highest original ramp at its ridge. Its open
@@ -80,7 +83,12 @@ and compares the patch boundary. The import audit compares all 30 built source
 meshes against the pinned GLB, tolerating only 0.01 cm float conversion.
 The structure audit checks grounded contacts, footing and body clearance at
 every ascent waypoint and at 25 cm intervals between them, the deck riding
-lane, and both new meshes after import.
+lane, and both new meshes after import. Main piers must sit outside every
+original piece's footprint with a 65 cm margin. A separate solid-member audit
+samples each frame beam's width and depth against the original scene, checking
+a 70 cm rider width and up to three metres of previously usable skating
+airspace. This detects tall columns even when both endpoints lie outside the
+rider's height band. These source checks supplement the game review.
 The guarded game review owns a separate loopback bridge and quits its own game;
 it checks actor/mesh/tree inventory, original surface traces, riding, the
 Sunset Pier QA spawn and the entire ascent using character movement without

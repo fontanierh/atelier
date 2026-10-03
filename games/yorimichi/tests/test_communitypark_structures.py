@@ -9,6 +9,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'world'))
 import yori  # noqa: E402,F401
 from communitypark import layout as L, structures as S  # noqa: E402
+from communitypark.validate import riding_clearance  # noqa: E402
 
 
 def source_fixture():
@@ -82,6 +83,30 @@ class StructureTests(unittest.TestCase):
             below = S.heights(source, x, y)
             self.assertTrue(abs(z-48.) < .03 or np.any(abs(below-z) < .03))
             self.assertGreater(contact['top'][2]-z, .45 if contact['nodes'] == [8] else .85)
+
+    def test_main_frame_footings_stay_outside_original_skating_footprints(self):
+        for footing in self.metadata['frame_footings']:
+            x, y = footing['bottom'][:2]
+            for part in self.source.parts:
+                t = L.place(part['vertices'][part['faces']]); lo, hi = t.min((0, 1)), t.max((0, 1))
+                self.assertFalse(lo[0]-.65 <= x <= hi[0]+.65 and lo[1]-.65 <= y <= hi[1]+.65,
+                                 (footing, part['node']))
+
+    def test_solid_clearance_catches_a_pole_with_both_ends_outside_body_band(self):
+        pole = S.Mesh('bad-pole', 'steel')
+        pole.beam([1305, 603.9, 48], [1305, 603.9, 60], .4)
+        metadata = {'ride_support_members': [0], 'frame_footings': []}
+        with self.assertRaisesRegex(AssertionError, 'intrudes into usable skating space'):
+            riding_clearance(pole, metadata, L.place(self.source.triangles()), self.source.parts)
+
+    def test_solid_clearance_checks_the_outer_edge_of_a_member(self):
+        pole = S.Mesh('wide-pole', 'steel')
+        # Its spine and spine-centred body probes miss the platform, but the
+        # actual steel edge occupies the platform's previously usable space.
+        pole.beam([1305, 591.6, 48], [1305, 591.6, 60], 1.)
+        metadata = {'ride_support_members': [0], 'frame_footings': []}
+        with self.assertRaisesRegex(AssertionError, 'intrudes into usable skating space'):
+            riding_clearance(pole, metadata, L.place(self.source.triangles()), self.source.parts)
 
 
 if __name__ == '__main__':
