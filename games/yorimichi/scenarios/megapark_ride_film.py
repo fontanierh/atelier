@@ -21,6 +21,7 @@ Optional globals, set with `atelier live py` before the script:
     EXTRAS    True or False, or {'caveman': bool, 'dismount': bool}: force the optional shots on or off; by default
               each runs when the game's Python API names its feature
     FLIP      degrees added to every board placement, should the board face against the launch
+    PHYSICAL  False: leave skate.RidePhysical alone (by default the film turns the physical rider on)
 
 Runs in the game's Python (the live bridge) at a fixed 60 Hz step, 90 Hz for the slow-motion shot. Every board shot is
 placed, settles for a second unrecorded, is launched and then ridden by scripted skate. input: pursuit steering along
@@ -42,6 +43,7 @@ REHEARSE = bool(globals().get('REHEARSE', False))
 TUNE = globals().get('TUNE') or {}
 EXTRAS = globals().get('EXTRAS')
 FLIP = float(globals().get('FLIP', 0.))
+PHYSICAL = bool(globals().get('PHYSICAL', True))
 OUT = globals().get('OUTDIR') or os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'),
                                               'yorimichi/megapark/ride-film', TAKE)
 os.makedirs(OUT, exist_ok=True)
@@ -552,7 +554,7 @@ def next_shot():
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
              air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], combos=[], lasts=[], retail=[], first=None,
              bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, mounted=None, dismounted=None, foot_gait=None, max_spd=0., min_spd=1e9,
-             max_spd_after_mount=0., d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0)
+             max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0)
     if s.get('road'):
         s['way'], s['start'] = road_way(*s['road'][:1], want=s['road'][1], **({'x0': s['road'][2]} if len(s['road']) > 2 else {}))
     if s.get('rail'):
@@ -578,6 +580,7 @@ def place(s):
         return
     if not st['backend']:
         unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend Ride'); st['backend'] = 'asked'
+        if PHYSICAL: unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical 1')
     L.skate_goofy(False)
     g = L.ground_at(ue(x, y, probe))
     live.skate_input(); L.skate_place(g, yaw + FLIP)
@@ -629,6 +632,7 @@ def track(s, c):
     if c.mode == 3: s['grind_seen'] = True
     if s['grind_seen'] and s['land_after_grind'] is None and c.mode == 1 and s['prev_mode'] == 2: s['land_after_grind'] = c.t
     if c.mode == 4 and s['bail_t'] is None: s['bail_t'] = c.t
+    if c.mode == 4 and c.d.get('bail_kind', 'none') != 'none': s['bail_kind'] = c.d['bail_kind']
     if s['bail_t'] is not None and s['up_t'] is None and c.mode in (0, 1): s['up_t'] = c.t
     for key, val in (('combos', c.combo), ('lasts', c.last), ('retail', c.retail)):
         if val and (not s[key] or s[key][-1] != val): s[key].append(val)
@@ -758,7 +762,7 @@ def end_shot():
             'grinds': s['d_grinds'], 'speed_max': round(s['max_spd'], 2), 'speed_min': round(s['min_spd'], 2) if s['min_spd'] < 1e8 else None,
             'airs': [{'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'spin': a['spin'], 'to': a['to']} for a in s['airs']],
             'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
-            'error': s['error'], 'end_state': c.text if c else None}
+            'bail_kind': s['bail_kind'], 'error': s['error'], 'end_state': c.text if c else None}
     part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'])
     json.dump(part, open(os.path.join(OUT, 'parts', s['dir'], 'shot.json'), 'w'))
     st['done'].append(info)
@@ -778,7 +782,7 @@ def finish():
     live.skate_input(); live.skate_release(); live.drive(0)
     MV.restore_player_camera(); L.film_hud(False); L.fixed_step(0)
     n = L.audio_log('stop', os.path.join(OUT, 'audio.json'))
-    json.dump({'take': TAKE, 'backend': st['backend'], 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
+    json.dump({'take': TAKE, 'backend': st['backend'], 'physical': PHYSICAL, 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
                'unrecorded': UNRECORDED, 'sounds': n, 'rehearse': REHEARSE, 'film_frames': st['film'], 'errors': st['errors'],
                'shots': st['done'], 'state': L.skate_state()}, open(os.path.join(OUT, 'done.json'), 'w'), indent=1)
     say('finished', OUT, st['film'], 'frames')
