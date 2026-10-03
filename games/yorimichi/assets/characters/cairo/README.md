@@ -23,6 +23,11 @@ sword fields of `DA_Cairo`) and `import_cairo_armed.py` (`BS_SwordLocomotion`, `
 Cairo has no skate clips: on the board, the skate runtime's solved pose is retargeted onto him at run time. See
 [skating](../../../docs/SKATE.md) and the [runtime assets](../../skate/README.md).
 
+`characters.cairo_botw` and `unreal.cairo_botw` give Cairo Link's Breath of the Wild move set, which the Esc menu's
+"Cairo's moves" setting turns on:
+`botw.py` retargets Link's clips onto him, using `export_unreal.prepare` for his rig. See
+[Cairo with Link's moves](../botw/README.md#cairo-with-links-moves).
+
 ## Files
 
 | File | Contents |
@@ -32,7 +37,8 @@ Cairo has no skate clips: on the board, the skate runtime's solved pose is retar
 | `source-manifest.json` | every clip role with its reference, timing and contacts; the source hashes the export checks |
 | `combat-build.json` | the combat clips' build record, including each strike's aim (`contact_yaw_degrees`, `contact_distance`) |
 | `locomotion-build.json` | the armed locomotion's measurements (blade angles and clearances) |
-| `export_unreal.py` | the Blender export to FBX |
+| `export_unreal.py` | the Blender export to FBX (`prepare` sets up the rig for it and for `botw.py`) |
+| `botw.py` | Link's Breath of the Wild clips retargeted onto Cairo, to FBX |
 | `outfit_correctives.py` | cloth pose corrections (`set_clip`), used by the export |
 | `outfits/*.toml` | outfit specs for the [body swap](../../../docs/BODY_SWAP_GUIDE.md): `skate` (the outfit in the game), `hoodie`, `gi-hakama`, `jersey-shorts`, `long-coat` |
 

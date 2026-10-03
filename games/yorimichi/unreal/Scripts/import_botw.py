@@ -9,7 +9,11 @@ lavender in the island's light.
 
 A character with a skate bone map also becomes a rider (BotwRider.h, -rider=<Name>): DA_<Name>Rider, a
 UWandererDefinition with a locomotion blend of its idle, walk and run clips and the bone map, on a mesh with CPU access
-(the board's bail clearance reads its vertices).
+(the board's bail clearance reads its vertices). A character with a move set (Link) gets its blends from the move
+record instead (locomotion up to the sprint, crouching and the armed arm, each sample at its play rate), every action's
+clip and its authored speeds; its equipment imports beside it (<Name>/<Slot>: SM_<Name><Slot>, or the glider's
+SK_<Name>Glider with its clip), and its roster record carries the move set (actions, params, equipment by asset path)
+for UBotwMoveSet.
 
 Writes Content/Data/botw/roster.json, which the game's ABotwCreature reads (mesh and clip paths, roles, speeds, height),
 and build/yorimichi/botw/unreal_import.json. The whole /Game/Botw folder is rebuilt, so a character removed from the
@@ -32,17 +36,18 @@ E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools(); M = U.Mate
 REGISTRY = U.AssetRegistryHelpers.get_asset_registry()
 
 
-def pipelines(skeleton=None):
+def pipelines(skeleton=None, static=False):
     generic = U.InterchangeGenericAssetsPipeline()
     mesh = generic.get_editor_property('mesh_pipeline')
-    mesh.set_editor_property('import_static_meshes', False)
-    mesh.set_editor_property('import_skeletal_meshes', True)
+    mesh.set_editor_property('import_static_meshes', static)
+    mesh.set_editor_property('import_skeletal_meshes', not static)
+    mesh.set_editor_property('combine_static_meshes_behavior', U.InterchangeCombineStaticMeshesBehavior.ALL)
     mesh.set_editor_property('create_physics_asset', False)
     mesh.set_editor_property('import_morph_targets', False)
     textures = generic.get_editor_property('material_pipeline').get_editor_property('texture_pipeline')
     textures.set_editor_property('allow_non_power_of_two', True)   # Sidon's body maps
     animation = generic.get_editor_property('animation_pipeline')
-    animation.set_editor_property('import_animations', skeleton is None)
+    animation.set_editor_property('import_animations', skeleton is None and not static)
     animation.set_editor_property('use30_hz_to_bake_bone_animation', True)
     if skeleton is not None:
         generic.get_editor_property('common_skeletal_meshes_and_animations_properties').set_editor_property('skeleton', skeleton)
@@ -142,38 +147,105 @@ def rename(path, name):
     return target
 
 
+def import_glb(path, folder, options):
+    task = U.AssetImportTask()
+    for key, value in dict(filename=path, destination_path=folder, automated=True, replace_existing=True,
+                           save=True).items():
+        task.set_editor_property(key, value)
+    task.set_editor_property('options', options)
+    AT.import_asset_tasks([task])
+    return assets_in(folder)
+
+
+def speed_blend(name, folder, skeleton, sequences, speeds, rates=None):
+    """A 1D blend of `sequences` by ground speed (cm/s), each sample played at its rate."""
+    factory = U.BlendSpaceFactory1D()
+    factory.set_editor_property('target_skeleton', skeleton)
+    blend = AT.create_asset(name, folder, U.BlendSpace1D, factory)
+    params = list(blend.get_editor_property('blend_parameters'))
+    for key, value in dict(display_name='Speed (cm/s)', min=0., max=speeds[-1]).items():
+        params[0].set_editor_property(key, value)
+    blend.set_editor_property('blend_parameters', params)
+    blend.set_editor_property('scale_animation', True)
+    smoothing = list(blend.get_editor_property('interpolation_param'))
+    smoothing[0].set_editor_property('interpolation_time', .12)
+    blend.set_editor_property('interpolation_param', smoothing)
+    assert U.WandererContentLibrary.configure_blend_space_with_rates(
+        blend, sequences, speeds, rates or [1.] * len(sequences)), name
+    E.save_loaded_asset(blend, False)
+    return blend
+
+
+def import_equipment(name, folder, equipment, masters):
+    """Each equipment slot's GLB into <folder>/<Slot>: a prop as SM_<Name><Slot>, a skinned piece (the glider) as
+    SK_<Name><Slot> with its clip. Returns the roster's equipment record, asset paths in place of files."""
+    record = {}
+    for slot, item in equipment.items():
+        title = f'{name}{slot.capitalize()}'
+        place = f'{folder}/{slot.capitalize()}'
+        E.make_directory(place)
+        skinned = 'clip' in item
+        found = import_glb(item['glb'], place, pipelines(static=not skinned))
+        entry = {key: item[key] for key in ('hand', 'back', 'carry') if key in item}
+        if skinned:
+            assert len(found.get('SkeletalMesh', [])) == 1 and len(found.get('Skeleton', [])) == 1, (title, found)
+            skeleton = E.load_asset(rename(found['Skeleton'][0], f'SKEL_{title}'))
+            mesh = E.load_asset(rename(found['SkeletalMesh'][0], f'SK_{title}'))
+            # The piece is baked with its one clip (Interchange names a lone glTF animation <file stem>_Anim).
+            clips = found.get('AnimSequence', [])
+            assert len(clips) == 1, (title, 'expected the one clip', item['clip'], clips)
+            clip = clips[0]
+            sequence = E.load_asset(rename(clip, f"A_{title}_{item['clip']}"))
+            sequence.set_editor_property('enable_root_motion', False)
+            E.save_loaded_asset(sequence)
+            E.save_loaded_asset(skeleton, False)
+            E.save_loaded_asset(mesh, False)
+            entry['mesh'], entry['clip'] = mesh.get_path_name(), sequence.get_path_name()
+        else:
+            assert len(found.get('StaticMesh', [])) == 1, (title, found)
+            mesh = E.load_asset(rename(found['StaticMesh'][0], f'SM_{title}'))
+            E.save_loaded_asset(mesh, False)
+            entry['mesh'] = mesh.get_path_name()
+        entry['looks'] = [restyle(E.load_asset(path), masters) for path in found.get('MaterialInstanceConstant', [])]
+        record[slot] = entry
+    return record
+
+
 def make_rider(name, folder, character, mesh, skeleton, clips):
     """DA_<Name>Rider: the player definition for a character with a skate bone map. Returns its path."""
     U.SkeletalMeshEditorSubsystem.set_allow_cpu_access(mesh, True)
-    roles, speeds = character['roles'], character['speeds']
+    roles, speeds, moves = character['roles'], character['speeds'], character.get('moves')
     sequence = lambda role: E.load_asset(clips[roles[role]]['path'])
     walk, run = speeds['walk'] * 100., speeds['run'] * 100.
-    # A variant shares its owner's blend space.
+    actions = {'Idle': sequence('idle')}
+    extra = {}
     blend_path = f"{DEST}/{character['skeleton']}/BS_{character['skeleton']}Locomotion"
-    if E.does_asset_exist(blend_path):
-        blend = E.load_asset(blend_path)
+    if moves:
+        samples = lambda kind: moves['blends'][kind]
+        clip = lambda entry: E.load_asset(clips[entry['clip']]['path'])
+        blend = lambda kind, title: speed_blend(f'BS_{name}{title}', folder, skeleton, [clip(s) for s in samples(kind)],
+                                                [s['speed'] for s in samples(kind)], [s['rate'] for s in samples(kind)])
+        locomotion, crouching = blend('locomotion', 'Locomotion'), blend('crouching', 'Crouching')
+        actions.update({action: clip(entry) for action, entry in moves['actions'].items()})
+        gaits = [s['speed'] for s in samples('locomotion')]
+        extra = dict(armed_locomotion=blend('armed', 'ArmedLocomotion'), use_authored_movement=True,
+                     walk_speed=gaits[1], jog_speed=gaits[1], run_speed=gaits[2], sprint_speed=gaits[3],
+                     crouch_speed=samples('crouching')[-1]['speed'])
+    elif E.does_asset_exist(blend_path):   # a variant shares its owner's blend space
+        locomotion = crouching = E.load_asset(blend_path)
     else:
-        factory = U.BlendSpaceFactory1D()
-        factory.set_editor_property('target_skeleton', skeleton)
-        blend = AT.create_asset(f"BS_{name}Locomotion", folder, U.BlendSpace1D, factory)
-        params = list(blend.get_editor_property('blend_parameters'))
-        for key, value in dict(display_name='Speed (cm/s)', min=0., max=run).items():
-            params[0].set_editor_property(key, value)
-        blend.set_editor_property('blend_parameters', params)
-        blend.set_editor_property('scale_animation', True)
-        smoothing = list(blend.get_editor_property('interpolation_param'))
-        smoothing[0].set_editor_property('interpolation_time', .12)
-        blend.set_editor_property('interpolation_param', smoothing)
-        assert U.WandererContentLibrary.configure_blend_space(
-            blend, [sequence('idle'), sequence('walk'), sequence('run')], [0., walk, run])
-        E.save_loaded_asset(blend, False)
+        locomotion = crouching = speed_blend(f'BS_{name}Locomotion', folder, skeleton,
+                                             [sequence('idle'), sequence('walk'), sequence('run')], [0., walk, run])
     factory = U.DataAssetFactory()
     factory.set_editor_property('data_asset_class', U.WandererDefinition)
     definition = AT.create_asset(f'DA_{name}Rider', folder, U.WandererDefinition, factory)
     bones = {U.Name(role): U.Name(bone) for role, bone in character['skate'].items()}
-    for key, value in dict(mesh=mesh, locomotion=blend, crouching=blend, actions={'Idle': sequence('idle')},
-                           skate_bones=bones, skate_board_scale=character.get('board', 1.), camera_height=max(35., character['height'] * 100. - 140.),
-                           walk_speed=walk, jog_speed=walk, run_speed=run, crouch_speed=walk * .5).items():
+    properties = dict(mesh=mesh, locomotion=locomotion, crouching=crouching, actions=actions, skate_bones=bones,
+                      skate_board_scale=character.get('board', 1.),
+                      camera_height=max(35., character['height'] * 100. - 140.),
+                      walk_speed=walk, jog_speed=walk, run_speed=run, crouch_speed=walk * .5)
+    properties.update(extra)
+    for key, value in properties.items():
         definition.set_editor_property(key, value)
     E.save_loaded_asset(definition, False)
     return definition.get_path_name()
@@ -184,14 +256,9 @@ def import_character(character, owners, masters):
     folder = f'{DEST}/{name}'
     E.make_directory(folder)
     owner = owners.get(character['skeleton']) if character['skeleton'] != name else None
-    task = U.AssetImportTask()
-    for key, value in dict(filename=character['glb'], destination_path=folder, automated=True, replace_existing=True,
-                           save=True).items():
-        task.set_editor_property(key, value)
-    task.set_editor_property('options', pipelines(owner['skeleton_asset'] if owner else None))
+    assert not (owner and character.get('moves')), (name, 'a variant cannot carry its own move set')
     started = time.time()
-    AT.import_asset_tasks([task])
-    found = assets_in(folder)
+    found = import_glb(character['glb'], folder, pipelines(owner['skeleton_asset'] if owner else None))
     meshes = found.get('SkeletalMesh', [])
     assert len(meshes) == 1, (name, 'expected one skeletal mesh', found)
     # The skeleton first: the mesh is saved after it, so its package names the skeleton's final path.
@@ -239,6 +306,11 @@ def import_character(character, owners, masters):
         'materials': [str(slot.material_slot_name) for slot in mesh.materials], 'looks': looks,
         'seconds': round(time.time() - started, 1),
     }
+    if character.get('moves'):
+        moves = character['moves']
+        record['moves'] = {'actions': moves['actions'], 'params': moves['params'],
+                           'equipment': import_equipment(name, folder, moves['equipment'], masters)}
+        record['seconds'] = round(time.time() - started, 1)
     return {'record': record, 'skeleton_asset': skeleton}
 
 

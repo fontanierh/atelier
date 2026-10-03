@@ -1,6 +1,6 @@
 #include "JapanPreferences.h"
-#include "BotwCreature.h"
 #include "BotwRider.h"
+#include "CairoCharacter.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -56,28 +56,12 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         {TEXT("sun_height"),TEXT("Sun elevation"),48.f,5.f,80.f},
         {TEXT("sun_yaw"),TEXT("Sun direction"),15.f,-180.f,180.f}};
-    SettingsFile=FPaths::ProjectSavedDir()/TEXT("settings.txt");
-    // Desktop previews keep menu edits in their own file; ordinary play/stream
-    // keeps the existing shared path. The launcher seeds a separate copy.
-    FString PreviewFile;
-    if (FParse::Value(FCommandLine::Get(),TEXT("preferencesfile="),PreviewFile) && !PreviewFile.IsEmpty())
-        SettingsFile=FPaths::ConvertRelativePathToFull(PreviewFile);
+    // Cairo plays Breath of the Wild's move set instead of his own (ACairoCharacter), when it is built.
+    if (ACairoCharacter::HasBotw())
+        Values.Insert({TEXT("cairo_botw"),TEXT("Cairo's moves"),0.f,0.f,1.f},Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1);
+    SettingsFile=FilePath();
     UE_LOG(LogTemp,Display,TEXT("PREFERENCES file=%s"),*SettingsFile);
-    TArray<FString> Lines;
-    FFileHelper::LoadFileToStringArray(Lines,*SettingsFile);
-    for (const FString& Line : Lines)
-    {
-        FString K,V;
-        // A stale desktop key in the shared file must not switch a phone session into the profile.
-        if (Line.Split(TEXT("="),&K,&V) && !IsSessionOnly(K.TrimStartAndEnd()))
-            SavedValues.Add(K.TrimStartAndEnd(),V.TrimStartAndEnd());
-    }
-    FString Overrides;
-    if (FParse::Value(FCommandLine::Get(),TEXT("set="),Overrides))
-    {
-        TArray<FString> Pairs; Overrides.ParseIntoArray(Pairs,TEXT(";"));
-        for (const auto& Pair : Pairs) { FString K,V; if (Pair.Split(TEXT("="),&K,&V)) SavedValues.Add(K,V); }
-    }
+    SavedValues=ReadSaved();
     for (FJapanPreference& V : Values)
         if (const FString* Text = SavedValues.Find(V.Key))
         {
@@ -95,6 +79,46 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
             }
     Apply();
 }
+FString UJapanPreferences::FilePath()
+{
+    // Desktop previews keep menu edits in their own file; ordinary play/stream
+    // keeps the existing shared path. The launcher seeds a separate copy.
+    FString PreviewFile;
+    if (FParse::Value(FCommandLine::Get(),TEXT("preferencesfile="),PreviewFile) && !PreviewFile.IsEmpty())
+        return FPaths::ConvertRelativePathToFull(PreviewFile);
+    return FPaths::ProjectSavedDir()/TEXT("settings.txt");
+}
+TMap<FString,FString> UJapanPreferences::ReadSaved()
+{
+    TMap<FString,FString> Result;
+    TArray<FString> Lines;
+    FFileHelper::LoadFileToStringArray(Lines,*FilePath());
+    for (const FString& Line : Lines)
+    {
+        FString K,V;
+        // A stale desktop key in the shared file must not switch a phone session into the profile.
+        if (Line.Split(TEXT("="),&K,&V) && !IsSessionOnly(K.TrimStartAndEnd()))
+            Result.Add(K.TrimStartAndEnd(),V.TrimStartAndEnd());
+    }
+    FString Overrides;
+    if (FParse::Value(FCommandLine::Get(),TEXT("set="),Overrides))
+    {
+        TArray<FString> Pairs; Overrides.ParseIntoArray(Pairs,TEXT(";"));
+        for (const auto& Pair : Pairs) { FString K,V; if (Pair.Split(TEXT("="),&K,&V)) Result.Add(K,V); }
+    }
+    return Result;
+}
+float UJapanPreferences::Saved(const FString& Key, float Default)
+{
+    const TMap<FString,FString> Read = ReadSaved();
+    float Number = Default;
+    if (const FString* Text = Read.Find(Key); Text && LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) return Number;
+    return Default;
+}
+bool UJapanPreferences::IsToggle(const FString& Key)
+{
+    return Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("goofy") || Key == TEXT("cairo_botw");
+}
 float UJapanPreferences::Get(const TCHAR* Key) const
 {
     for (const auto& V : Values) if (V.Key == Key) return V.Value;
@@ -106,7 +130,7 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
     for (auto& V : Values) if (V.Key == Key)
     {
         V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
-        if (Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("goofy")) V.Value = V.Value > .5f ? 1.f : 0.f;
+        if (IsToggle(Key)) V.Value = V.Value > .5f ? 1.f : 0.f;
         if (Key == TEXT("stamina_rings")) V.Value=FMath::RoundToFloat(V.Value);
         Apply(); Save(); return true;
     }
@@ -270,30 +294,34 @@ void UJapanPreferences::ToggleMenu()
         .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
             ? TEXT("Performance uses lighter shadows and distant detail to keep movement smooth.")
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
-    // The character switch (ABotwRider::SwitchPlayer): Cairo and every BOTW character with a rider definition. The
-    // switch waits for the next tick, out of the menu's click.
+    // The character switch (ABotwRider::SwitchPlayer): Cairo, with the move set the toggle below picks, and every BOTW
+    // character with a rider definition. The switch waits for the next tick, out of the menu's click.
+    const auto Switch = [this](const FString& Name)
+    {
+        CloseMenu();
+        if (AWandererCharacter* Pawn = Owner)
+            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,Name] { ABotwRider::SwitchPlayer(Pawn,Name); }));
+    };
+    const FString Playing = ABotwRider::NameOf(Owner);
+    const bool bPlayingCairo = Playing == TEXT("Cairo") || Playing == ACairoCharacter::BotwName();
+    const auto CairoName = [this] { return Get(TEXT("cairo_botw")) > .5f && ACairoCharacter::HasBotw() ? ACairoCharacter::BotwName() : FString(TEXT("Cairo")); };
     if (const TArray<FString> Riders = ABotwRider::Available(); Riders.Num())
     {
-        const FString Playing = ABotwRider::NameOf(Owner);
         TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
         TArray<FString> Names = {TEXT("Cairo")}; Names.Append(Riders);
         for (const FString& Name : Names)
         {
-            const FBotwSpec* Spec = FBotwSpec::Find(Name);
-            Characters->AddSlot()[SNew(SButton).IsEnabled(Name != Playing)
-                .Text(FText::FromString(Spec && !Spec->Label.IsEmpty() ? Spec->Label : Name))
-                .OnClicked_Lambda([this,Name]
-                {
-                    CloseMenu();
-                    if (AWandererCharacter* Pawn = Owner)
-                        Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,Name] { ABotwRider::SwitchPlayer(Pawn,Name); }));
-                    return FReply::Handled();
-                })];
+            const bool bCairo = Name == TEXT("Cairo");
+            Characters->AddSlot()[SNew(SButton).IsEnabled(bCairo ? !bPlayingCairo : Name != Playing)
+                .Text(FText::FromString(ABotwRider::Label(Name)))
+                .OnClicked_Lambda([Switch,CairoName,Name,bCairo] { Switch(bCairo ? CairoName() : Name); return FReply::Handled(); })];
         }
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
     }
-    for (const FString Key : {FString(TEXT("performance")),FString(TEXT("show_fps")),FString(TEXT("goofy"))})
+    TArray<FString> Toggles = {TEXT("performance"),TEXT("show_fps"),TEXT("goofy")};
+    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("cairo_botw"); })) Toggles.Add(TEXT("cairo_botw"));
+    for (const FString& Key : Toggles)
     {
         TSharedRef<SButton> Button = SNew(SButton)
             .Text_Lambda([this,Key]
@@ -302,13 +330,19 @@ void UJapanPreferences::ToggleMenu()
                 if (Key == TEXT("goofy")) return FText::FromString(Enabled
                     ? TEXT("Skate stance: Goofy · right foot forward")
                     : TEXT("Skate stance: Regular · left foot forward"));
+                if (Key == TEXT("cairo_botw")) return FText::FromString(Enabled
+                    ? TEXT("Cairo's moves: Breath of the Wild")
+                    : TEXT("Cairo's moves: his own"));
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
             })
-            .OnClicked_Lambda([this,Key]
+            .OnClicked_Lambda([this,Key,Switch,CairoName,bPlayingCairo]
             {
-                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f); return FReply::Handled();
+                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);
+                // Playing Cairo, the new move set takes over at once; otherwise it waits for Cairo's turn in the switch.
+                if (Key == TEXT("cairo_botw") && bPlayingCairo) Switch(CairoName());
+                return FReply::Handled();
             });
         if (!FirstControl) FirstControl = Button;
         Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Button];
@@ -318,7 +352,7 @@ void UJapanPreferences::ToggleMenu()
         // Session-only keys are launch flags (japan/run.sh desktop), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
-        if (Values[I].Key == TEXT("performance") || Values[I].Key == TEXT("show_fps") || Values[I].Key == TEXT("goofy")) continue;
+        if (IsToggle(Values[I].Key)) continue;
         TSharedRef<SSlider> Slider = SNew(SSlider)
             .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
             .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });

@@ -5,7 +5,8 @@ for each character its file, the character whose skeleton it uses, its clips (Un
 its roles, its game scale, its height and walk and run speeds at that scale, its skate bone map and board size. A
 character with an `outfit` (Link) is dressed first (outfit.py) and its clips are baked on the dressed body. Clips are
 baked in place (the game moves the character); each keeps the ground travel it had as `travel`, which gives the
-speeds, or the planted ankles do when a clip never moved.
+speeds, or the planted ankles do when a clip never moved. A character with `moves` (Link) also bakes its move set's
+clips and equipment and gets its `moves` record (moves.py).
 `--only Bokoblin,Moblin` limits the run; a variant brings its owner with it.
 """
 import argparse, json, re, sys, time
@@ -16,7 +17,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import bake, library, outfit   # noqa: E402
+import bake, library, moves, outfit   # noqa: E402
 from atelier import paths   # noqa: E402
 
 OUT = paths.build_dir('yorimichi') / 'botw'
@@ -91,11 +92,16 @@ def export_one(character, owner):
     else:
         scale = float(character.get('scale', 1.))
         clips = selected([clip['name'] for clip in curves['animations']], character.get('clips', 'all'))
+        move_set = moves.load(HERE / character['moves']) if character.get('moves') else None
+        strip, drive = moves.modes(move_set) if move_set else (set(), set())
+        if move_set:
+            clips += [clip for clip in moves.clips(move_set) if clip not in clips]
         rig = item['glb']
         if character.get('outfit'):
             rig = OUT / 'rig' / f"{character['name']}.glb"
             outfit.dress(item['glb'], [library.garment(g) for g in character['outfit']], rig)
-        summary = bake.bake(rig, item['curves'], target, clips=clips, rename=unreal_name, in_place=True)
+        summary = bake.bake(rig, item['curves'], target, clips=clips, rename=unreal_name, in_place=True, strip=strip,
+                            drive=drive)
         names = [clip['name'] for clip in summary['clips']]
         if len(set(names)) != len(names):
             raise ValueError(f"{character['name']}: clip names collide once made Unreal-safe")
@@ -113,6 +119,9 @@ def export_one(character, owner):
             raise ValueError(f"{character['name']}: skate bones not in the skeleton: {missing}")
         record = {'clips': summary['clips'], 'roles': roles, 'speeds': speeds, 'skate': skate,
                   'board': float(character.get('board', 1.))}
+        if move_set:
+            record['moves'] = moves.record(move_set, curves, summary, scale, OUT / 'glb', unreal_name,
+                                           lambda clip: ground_speed(curves['skeleton'], clip, summary['fps']))
     idle_role = (owner or character).get('roles', {}).get('idle')
     idle = next((clip for clip in curves['animations'] if clip['name'] == idle_role), None)
     return {

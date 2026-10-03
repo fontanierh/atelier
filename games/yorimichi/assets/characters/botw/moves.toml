@@ -1,0 +1,181 @@
+# Link's move set (README.md "Link's moves", BotwMoveSet.h): every game action, the clip it plays and the BOTW action
+# timeline its timing comes from, the locomotion blends, the BOTW parameters the game reads and the equipment he carries.
+# export.py bakes the clips into Link's GLB and writes all of it into his export record; import_botw.py turns it into
+# DA_LinkRider's actions and blend spaces and the `moves` record of roster.json.
+#
+# action   clip   the Link clip it plays
+#          as     the action timeline (mechanics.json `animation_timelines`, GameROMPlayer/Actor/AS/<as>.bas) whose element
+#                 for this clip gives its rate, start and end frames and its windows: active (hits land), input (the next
+#                 press is read), cancel (anything may follow), idle (it is over), bind and unbind (equipment changes hands)
+#          root   "strip": the clip's root translation comes off entirely, since the game moves the capsule itself (jumps,
+#                 falls); "drive": the same, and the game moves the capsule along the clip's root path (climbing, ledges,
+#                 lunging attacks). Otherwise only the ground travel comes off, as for every roster clip (the swimming
+#                 clips keep the depth they hang at).
+#          loop   whether it repeats (default: the clip's own flag)
+#          gait   a looping walk or run whose ground speed the game moves at (the lock-on strafes)
+character = "Link"
+
+[action]
+# On foot. Dodge is the side hop (stick left or right) or the backflip (anything else).
+Jump = { clip = "Nml_Wait_Jump", as = "Player_Jump", root = "strip" }
+RunJumpL = { clip = "Nml_Move_Run_Jump_FootL", as = "Player_Jump", root = "strip" }
+RunJumpR = { clip = "Nml_Move_Run_Jump_FootR", as = "Player_Jump", root = "strip" }
+Fall = { clip = "Fall", as = "Player_Fall", root = "strip" }
+Land = { clip = "Nml_Wait_Land", as = "Player_Land" }
+RunLandL = { clip = "Nml_Move_Run_Land_ToRun_FootL", as = "Player_Land" }
+RunLandR = { clip = "Nml_Move_Run_Land_ToRun_FootR", as = "Player_Land" }
+HardLand = { clip = "Nml_Damage_Land", as = "Player_LandDamage" }
+HardLandUp = { clip = "Nml_Damage_Land_Stand", as = "Player_LandDamageStand" }
+HopL = { clip = "Nml_Lockon_Step_L_St", as = "Player_Step" }
+HopR = { clip = "Nml_Lockon_Step_R_St", as = "Player_Step" }
+HopLandL = { clip = "Nml_Lockon_Step_L_Ed", as = "Player_StepLand" }
+HopLandR = { clip = "Nml_Lockon_Step_R_Ed", as = "Player_StepLand" }
+BackFlip = { clip = "Nml_Lockon_Jump_B_St", as = "Player_BackJump", root = "strip" }
+BackFlipLand = { clip = "Nml_Lockon_Jump_B_Ed", as = "Player_BackJumpLand", root = "strip" }
+
+# Lock-on: the strafing walk and run while the guard button is held.
+LockWait = { clip = "Nml_Lockon_Wait", loop = true }
+LockWalkF = { clip = "Nml_Lockon_Walk_F", loop = true, gait = true }
+LockWalkB = { clip = "Nml_Lockon_Walk_B", loop = true, gait = true }
+LockWalkL = { clip = "Nml_Lockon_Walk_L", loop = true, gait = true }
+LockWalkR = { clip = "Nml_Lockon_Walk_R", loop = true, gait = true }
+LockRunF = { clip = "Nml_Lockon_Run_F", loop = true, gait = true }
+LockRunB = { clip = "Nml_Lockon_Run_B", loop = true, gait = true }
+LockRunL = { clip = "Nml_Lockon_Run_L", loop = true, gait = true }
+LockRunR = { clip = "Nml_Lockon_Run_R", loop = true, gait = true }
+
+# The paraglider: jump in the air to open it, again (or land) to close it.
+GlideOn = { clip = "Equip_Float_On", as = "Player_ParaEquipOn" }
+GlideOnFall = { clip = "Equip_Float_On_Fall", as = "Player_ParaEquipOn" }
+Glide = { clip = "Float_Float", as = "Player_ParashawlGlide", loop = true }
+GlideF = { clip = "Float_Float_F", as = "Player_ParashawlGlide", loop = true }
+GlideB = { clip = "Float_Float_B", as = "Player_ParashawlGlide", loop = true }
+GlideL = { clip = "Float_Float_L", as = "Player_ParashawlGlide", loop = true }
+GlideR = { clip = "Float_Float_R", as = "Player_ParashawlGlide", loop = true }
+GlideOff = { clip = "Equip_Float_Off", as = "Player_ParaEquipOff" }
+
+# Climbing: grab a steep wall by walking or gliding into it.
+ClimbGrab = { clip = "Climb_AirToWall", as = "Player_ClimbSlip", root = "drive" }
+ClimbWait = { clip = "Climb_Wall_Wait_FootL", as = "Player_ClimbWait", loop = true }
+ClimbU = { clip = "Climb_Wall_Move_U", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbD = { clip = "Climb_Wall_Move_D", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbL = { clip = "Climb_Wall_Move_L", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbR = { clip = "Climb_Wall_Move_R", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbUL = { clip = "Climb_Wall_Move_UL", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbUR = { clip = "Climb_Wall_Move_UR", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbDL = { clip = "Climb_Wall_Move_DL", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbDR = { clip = "Climb_Wall_Move_DR", as = "Player_ClimbMove", root = "drive", loop = true }
+ClimbJumpU = { clip = "Climb_Wall_Jump_U_FootL", as = "Player_ClimbJump", root = "drive" }
+ClimbJumpL = { clip = "Climb_Wall_Jump_L_FootL", as = "Player_ClimbJump", root = "drive" }
+ClimbJumpR = { clip = "Climb_Wall_Jump_R_FootR", as = "Player_ClimbJump", root = "drive" }
+ClimbJumpUL = { clip = "Climb_Wall_Jump_UL_FootL", as = "Player_ClimbJump", root = "drive" }
+ClimbJumpUR = { clip = "Climb_Wall_Jump_UR_FootR", as = "Player_ClimbJump", root = "drive" }
+ClimbTop = { clip = "Climb_Wall_Ed_Edge_L", as = "Player_ClimbEd", root = "drive" }
+ClimbOff = { clip = "Climb_Jump_Off_FootL", as = "Player_ClimbJumpOff", root = "drive" }
+ClimbTired = { clip = "Climb_Wall_Off_Tired_FootL" }
+
+# Swimming: deep water swims instead of sending him back to the shore; out of stamina he sinks.
+SwimWait = { clip = "Swim_Wait", as = "Player_SwimMove", loop = true }
+Swim = { clip = "Swim_Move_Slow_F", as = "Player_SwimMove", loop = true }
+SwimDash = { clip = "Swim_Move_Dash", as = "Player_SwimDash" }
+SwimOut = { clip = "Swim_Ed_Edge_0cm", as = "Player_SwimHangClimb", root = "drive" }
+SwimOutHigh = { clip = "Swim_Ed_Edge_50cm", as = "Player_SwimHangClimb", root = "drive" }
+SwimDie = { clip = "Swim_Die", as = "Player_SwimDead" }
+
+# Sword and shield.
+DrawSword = { clip = "Equip_Sword_On_Natural", as = "Player_WeaponEquipOn" }
+SheatheSword = { clip = "Equip_Sword_Off_Natural", as = "Player_WeaponEquipOff" }
+CutS1 = { clip = "Sword_Attack_S1", as = "Player_CutS1" }
+CutS2 = { clip = "Sword_Attack_S2", as = "Player_CutS2" }
+CutS3 = { clip = "Sword_Attack_S3", as = "Player_CutS3" }
+CutSF = { clip = "Sword_Attack_SF", as = "Player_CutSF" }
+ChargeStart = { clip = "Sword_Charge", as = "Player_CutChargeWait" }
+ChargeWait = { clip = "Sword_Charge_Wait", as = "Player_CutChargeWait", loop = true }
+ChargeSpin = { clip = "Sword_Attack_Charge", as = "Player_CutCharge", root = "drive" }
+DashCut = { clip = "Sword_Attack_Dash", as = "Player_CutDash", root = "drive" }
+JumpCut = { clip = "Sword_Attack_Jump_F_St", as = "Player_CutJumpSt" }
+JumpCutAir = { clip = "Sword_Attack_Jump_Loop", as = "Player_CutJumpEd", loop = true }
+JumpCutLand = { clip = "Sword_Attack_Jump_F_Ed", as = "Player_CutJumpLand" }
+Plunge = { clip = "Sword_Attack_Fall_St", as = "Player_CutFall" }
+PlungeAir = { clip = "Sword_Attack_Fall", as = "Player_CutFall", loop = true }
+PlungeLand = { clip = "Sword_Attack_Fall_Ed", as = "Player_CutFallLand" }
+Sneakstrike = { clip = "Sword_Attack_Ninja", as = "Player_CutNinja", root = "strip" }
+Flurry = { clip = "Sword_Attack_Just", as = "Player_CutAfterJust" }
+Rush1 = { clip = "Sword_Attack_Just_Rush1", as = "Player_CutJustRush" }
+Rush2 = { clip = "Sword_Attack_Just_Rush2", as = "Player_CutJustRush" }
+Rush3 = { clip = "Sword_Attack_Just_Rush3", as = "Player_CutJustRush" }
+Rush4 = { clip = "Sword_Attack_Just_Rush4", as = "Player_CutJustRush" }
+Rush5 = { clip = "Sword_Attack_Just_Rush5", as = "Player_CutJustRush" }
+RushFinish = { clip = "Sword_Attack_SF", as = "Player_CutJustFinish" }
+Parry = { clip = "Shield_Guard_Just", as = "Player_GuardJust" }
+GuardHit = { clip = "Shield_Guard_Hit", as = "Player_GuardFailHit" }
+GuardBreak = { clip = "Shield_Guard_Break", as = "Player_GuardBreak" }
+
+# Hit reactions: a light hit from the front, back, left or right; a heavy one knocks him down and he gets up.
+HitF = { clip = "Nml_Damage_S_F", as = "Player_DamageS" }
+HitB = { clip = "Nml_Damage_S_B", as = "Player_DamageS" }
+HitL = { clip = "Nml_Damage_S_L", as = "Player_DamageS" }
+HitR = { clip = "Nml_Damage_S_R", as = "Player_DamageS" }
+KnockF = { clip = "Nml_Damage_L_F", as = "Player_DamageL" }
+KnockB = { clip = "Nml_Damage_L_B", as = "Player_DamageL" }
+KnockUpF = { clip = "Nml_Damage_L_F_Standup", as = "Player_DamageLStand" }
+KnockUpB = { clip = "Nml_Damage_L_B_Standup", as = "Player_DamageLStand" }
+
+# Upper-body poses laid over the legs (the definition's carry layer): sword and shield out, and the raised shield.
+SwordCarry = { clip = "A_Pose_Sword_Wait", loop = true }
+GuardCarry = { clip = "Shield_Guard_Wait", loop = true }
+
+# Locomotion blends. A sample's speed is its clip's ground speed at the rate its timeline plays it, the speed BOTW moves
+# at while playing it (Nml_Move_Run at 1.5 is a 5.6 m/s run); idle samples stand still. The armed blend is the upper
+# body with the sword out, at the locomotion's own sample speeds.
+[blend]
+locomotion = [{ clip = "Nml_Wait" }, { clip = "Nml_Move_Walk", as = "Player_Move" }, { clip = "Nml_Move_Run", as = "Player_Move" },
+              { clip = "Nml_Move_Dash", as = "Player_Move" }]
+crouching = [{ clip = "Squat_Wait_FootL" }, { clip = "Squat_Move_Walk", as = "Player_SquatMove" },
+             { clip = "Squat_Move_Run", as = "Player_SquatMove" }]
+armed = [{ clip = "A_Pose_Sword_Wait" }, { clip = "Sword_Move_Run_Upper", rate = 0.9 }, { clip = "Sword_Move_Run_Upper", rate = 1.5 },
+         { clip = "Sword_Move_Run_Upper", rate = 1.75 }]
+
+# The BOTW parameters the game reads: every field of these player action classes (mechanics.json `player_actions`, the
+# first node of each class) as "Class.Field", and these globals (`player_parameters`). BotwMoveSet.cpp says how each is
+# read; stamina ("Energy") is per second, 1000 to a ring.
+[params]
+actions = ["PlayerJump", "PlayerSideStep", "PlayerBackJump", "PlayerParashawlGlide", "PlayerSwimMove", "PlayerSwimDash",
+           "PlayerActionClimb", "PlayerMove", "PlayerSquatMove", "PlayerLandDamage", "PlayerCutJump", "PlayerCutFall",
+           "PlayerCutAfterJust", "PlayerGuardJust", "PlayerFall"]
+globals = ["EnergyAutoRecover", "EnergyAutoRecoverInAir", "EnergyAutoRecoverInvalidTime1", "EnergyAutoRecoverInvalidTime2",
+           "EnergyTiredValue", "EnergyCharge", "ClimbEnableAngle", "GuardableAngle", "NoSquatWaterHeight", "MoveIgnoreWaterHeight"]
+# How far (metres) the swimming clips hang his root below the water's surface: Swim_Ed_Edge_0cm's root rises this much
+# onto a ledge level with the water. The record gives it as "SwimHang" in game centimetres.
+swim_hang = 1.4
+
+# Equipment (library entries), baked into build/yorimichi/botw/glb/Link<Slot>.glb and imported as SM_Link<Slot> (the
+# glider, which animates, as SK_LinkGlider with its clip). `hand` is the bone it is held at, `back` the bone it is carried
+# at with `offset` (metres) and `rotation` (degrees, BOTW Euler XYZ) in that bone's frame. The sword's offset is its own
+# PlayerHoldTransOffset and PlayerHoldRotOffset; its sheath sits at the same place. The Traveler's Shield has no
+# parameters in the extract: its offset lays it flat on his back over the sheath, its top under his ponytail, fitted to his
+# mesh so his torso and tunic stay inside the plate through his idle, crouch, run and dash clips.
+[equipment.sword]
+id = "Weapon_Sword_001"
+hand = "Weapon_R"
+back = "Pod_A"
+offset = [0.16, -0.001, -0.1]
+rotation = [180, 120, 0]
+
+[equipment.sheath]
+id = "Weapon_Sheath_001"
+back = "Pod_A"
+offset = [0.16, -0.001, -0.1]
+rotation = [180, 120, 0]
+
+[equipment.shield]
+id = "Weapon_Shield_035"
+hand = "Weapon_L"
+back = "Pod_A"
+offset = [-0.212, -0.009, 0.214]
+rotation = [8, 90, 0]
+
+[equipment.glider]
+id = "Item_Parastole2"
+hand = "Weapon_R"
+clip = "Float"

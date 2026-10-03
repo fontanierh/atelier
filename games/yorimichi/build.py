@@ -84,6 +84,14 @@ def botw_steps(out):
              inputs=[SCRIPTS / 'import_botw.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
              needs=['characters.botw'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'botw' / 'roster.json'],
              heavy=True, about='/Game/Botw: meshes, materials and clips, and the roster the game reads'),
+        Step('characters.cairo_botw', [Blender(CHARS / 'cairo' / 'botw.py', threads=4)], inputs=[CHARS / 'cairo', NAMES],
+             needs=['characters.botw'], outputs=[out / 'cairo' / 'botw' / 'export.json'],
+             about="Link's move set clips retargeted onto Cairo, to FBX"),
+        Step('unreal.cairo_botw', [UnrealScript(SCRIPTS / 'import_cairo_botw.py', 'CAIRO BOTW IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_cairo_botw.py', SCRIPTS / 'animation_compression.py'],
+             needs=['characters.cairo_botw', 'unreal.cairo', 'unreal.botw'],
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'cairo' / 'botw.json'], heavy=True,
+             about='/Game/CairoBotw: Cairo with the BOTW move set (-rider=CairoBotw): his clips, definition and move record'),
     ]
 
 

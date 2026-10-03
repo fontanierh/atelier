@@ -257,10 +257,37 @@ def ground_travel(skeleton, worlds):
     return travel
 
 
-def bake(rig_glb, curve_json, out_glb, clips=None, fps=FPS, rename=None, in_place=False):
+def heading(matrices):
+    """Yaw (radians, about +y) of each matrix's forward (+z) axis."""
+    forward = matrices[..., :3, 2]
+    return np.arctan2(forward[..., 0], forward[..., 2])
+
+
+def root_path(skeleton, worlds):
+    """The skeleton root's position (metres) and heading change since the first frame (radians), per frame."""
+    root = next(i for i, bone in enumerate(skeleton) if bone["parent"] < 0)
+    yaw = np.unwrap(heading(worlds[root]))
+    return worlds[root, :, :3, 3].copy(), yaw - yaw[0]
+
+
+def yaw_matrices(yaw):
+    m = np.zeros(yaw.shape + (4, 4))
+    m[..., 0, 0] = m[..., 2, 2] = np.cos(yaw)
+    m[..., 0, 2] = np.sin(yaw)
+    m[..., 2, 0] = -np.sin(yaw)
+    m[..., 1, 1] = m[..., 3, 3] = 1.0
+    return m
+
+
+def bake(rig_glb, curve_json, out_glb, clips=None, fps=FPS, rename=None, in_place=False, strip=(), drive=()):
     """Write `out_glb`: the rig with one glTF animation per selected clip (all clips when `clips` is None, none when
     it is empty), named `rename(clip)` when given. `in_place` removes the root's ground travel (the summary keeps it
     as each clip's `travel`, in metres), for a game that moves the character itself.
+
+    Clips named in `strip` lose all their root translation instead: the root stays at the origin and the game moves
+    the character (a jump's height is the game's). Clips named in `drive` lose their root translation and heading
+    change both, and the summary keeps them as the clip's `path`: per frame the root's position (metres, the clip's
+    space) and heading change (radians), for the game to move the character along.
 
     Returns a summary dict (bones, clips with frame counts and loop flags) for the import manifest."""
     gltf, binary = read_glb(rig_glb)
@@ -290,7 +317,16 @@ def bake(rig_glb, curve_json, out_glb, clips=None, fps=FPS, rename=None, in_plac
         frames = np.arange(frame_count + 1, dtype=np.float64)
         worlds = sample_clip(skeleton, clip, frames)
         travel = ground_travel(skeleton, worlds)
-        if in_place:
+        driven = None
+        if clip["name"] in drive:
+            position, yaw = root_path(skeleton, worlds)
+            undo = yaw_matrices(-yaw)
+            undo[:, :3, 3] = -(undo[:, :3, :3] @ position[:, :, None])[:, :, 0]
+            worlds = undo[None] @ worlds
+            driven = np.concatenate([position, yaw[:, None]], axis=1)
+        elif clip["name"] in strip:
+            worlds[:, :, :3, 3] -= root_path(skeleton, worlds)[0][None]
+        elif in_place:
             worlds[:, :, :3, 3] -= travel[None]
         tracks = local_tracks(skeleton, worlds)
         times = writer.floats(frames / fps, "SCALAR", bounds=True)
@@ -307,6 +343,8 @@ def bake(rig_glb, curve_json, out_glb, clips=None, fps=FPS, rename=None, in_plac
         animations.append({"name": name, "samplers": samplers, "channels": channels})
         summary.append({"name": name, "source": clip["name"], "frames": frame_count, "loop": bool(clip.get("loop")),
                         "partial": bool(clip.get("partial")), "travel": [round(float(v), 4) for v in travel[-1]]})
+        if driven is not None:
+            summary[-1]["path"] = [[round(float(v), 4) for v in row] for row in driven]
     if wanted is not None:
         absent = wanted - {item["source"] for item in summary}
         if absent:
@@ -315,6 +353,21 @@ def bake(rig_glb, curve_json, out_glb, clips=None, fps=FPS, rename=None, in_plac
         gltf["animations"] = animations
     write_glb(out_glb, gltf, writer.binary)
     return {"bones": [bone["name"] for bone in skeleton], "clips": summary, "fps": fps}
+
+
+def static(glb, out_glb):
+    """Write `out_glb`: a one-bone rigged prop (a weapon, a shield) as a plain mesh, its skin and joints dropped, so it
+    imports as a static mesh in the rig's bind space."""
+    gltf, binary = read_glb(glb)
+    for node in gltf["nodes"]:
+        node.pop("skin", None)
+    gltf.pop("skins", None)
+    gltf.pop("animations", None)
+    for mesh in gltf["meshes"]:
+        for primitive in mesh["primitives"]:
+            for attribute in ("JOINTS_0", "WEIGHTS_0"):
+                primitive["attributes"].pop(attribute, None)
+    write_glb(out_glb, gltf, binary)
 
 
 def check(rig_glb, curve_json, baked_glb, clip_name, frame):
