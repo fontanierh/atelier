@@ -1,6 +1,7 @@
 #include "WandererSword.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
+#include "BotwMoveSet.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -265,6 +266,7 @@ void UWandererSwordComponent::ForceGuard()
 int32 UWandererSwordComponent::IncomingStrike(AActor* Source, float Damage, const FVector& From)
 {
     if (!Character) return 0;
+    if (UBotwMoveSet* Moves = Character->GetMoves()) return Moves->IncomingStrike(Source, Damage, From);   // its own guard, dodges and reactions
     if (IsParryActive())
     {
         ++ParryCount; bCounter = true;

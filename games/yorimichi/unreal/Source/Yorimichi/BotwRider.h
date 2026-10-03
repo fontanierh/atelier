@@ -6,7 +6,9 @@
 /**
  * A BOTW character as the player (-rider=<Name>, e.g. -rider=Bokoblin): the same controls, animation graph and
  * skateboarding as Cairo, on the character's own mesh. import_botw.py makes its definition, DA_<Name>Rider, with a
- * locomotion blend of its idle, walk and run clips and the bone map the board's retargeter reads (GetSkateBone).
+ * locomotion blend of its idle, walk and run clips and the bone map the board's retargeter reads (GetSkateBone). A rider
+ * whose roster entry has a move set (Link) plays it (UBotwMoveSet): BOTW's jumps, paraglider, climbing, swimming and
+ * sword and shield.
  */
 UCLASS()
 class YORIMICHI_API ABotwRider : public AWandererCharacter
@@ -15,6 +17,9 @@ class YORIMICHI_API ABotwRider : public AWandererCharacter
 public:
     ABotwRider(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     virtual void BeginPlay() override;
+    // Crouching keeps the mesh where Fit stood it (ACharacter puts it back to the class default's height).
+    virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+    virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     /** The rider the command line asks for, when its definition was imported; empty otherwise. */
     static FString Requested();
     /** The pawn class a game mode uses: this class when a rider is requested, else null (the mode's own default). */
@@ -28,6 +33,7 @@ public:
     static AWandererCharacter* SwitchPlayer(AWandererCharacter* From, const FString& Name);
 private:
     FString RiderName;
+    float FitMeshZ = 0.f;
     /** Sizes the capsule and stands the mesh in it from the rider's roster entry. */
     void Fit();
 };

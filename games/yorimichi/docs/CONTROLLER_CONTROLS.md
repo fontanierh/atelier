@@ -33,6 +33,11 @@ controls: see [SKATE.md](SKATE.md).
 Getting on the board while running carries the running speed onto it. Riding, the right stick (or the mouse with the
 left button held) is Flick-It, not the camera. On the sailboat the left stick steers and raises or lowers the sail.
 
+A rider with a Breath of the Wild move set (Link; see [the BotW characters](../assets/characters/botw/README.md))
+keeps these buttons with that game's meanings: Jump in the air opens the paraglider (no double jump), Roll is the
+dodge (no roll or air dash), Parry held guards and locks on and Jump while guarding parries, and Dash is the swim
+dash.
+
 The map takes the controller while it is open: left stick or D-pad to choose a pin, the bottom face button to travel
 there, the right face button to close, LB / RB (L1 / R1, L / R) to zoom and the right stick to pan when zoomed in. The
 map and settings buttons pass through to the game, which closes the map; every other gamepad button is swallowed.
@@ -51,9 +56,9 @@ names PS4, PS5 and Xbox pads through Apple's GameController backend, and its Pla
 click.
 
 The hints follow the situation: sailboat steering and sail, zeppelin boarding and flight speed with the interaction
-button, the sword's attack, parry and draw while it is installed, and the skate controls while riding. With a
-controller the mouse-release tip is hidden; stamina rings and the FPS counter stay. The two hint rows measure their
-text and shrink to fit the viewport.
+button, the sword's attack, parry and draw while it is installed, a move set's paraglider, dodge, guard and swim dash,
+and the skate controls while riding. With a controller the mouse-release tip is hidden; stamina rings and the FPS
+counter stay. The two hint rows measure their text and shrink to fit the viewport.
 
 ## Debugging
 

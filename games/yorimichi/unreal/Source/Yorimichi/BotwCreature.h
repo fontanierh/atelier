@@ -6,6 +6,7 @@
 class UCapsuleComponent;
 class USkeletalMeshComponent;
 class UAnimSequence;
+class FJsonObject;
 
 /** One character of Content/Data/botw/roster.json (import_botw.py): its mesh, clips by name, and the clip each role plays. */
 struct FBotwSpec
@@ -16,6 +17,8 @@ struct FBotwSpec
     TMap<FName, FSoftObjectPath> Clips;
     TMap<FName, bool> Loops;
     TMap<FName, FName> Roles;   // idle, walk, run, notice, angry, battle, attack, hit, down, getup, dance, sleep, talk
+    /** A playable character's move set (moves.py `record`, read by UBotwMoveSet); null for the others. */
+    TSharedPtr<FJsonObject> Moves;
     /** The roster, loaded once; empty when the BOTW characters have not been built (assets/characters/botw/README.md). */
     static const TMap<FString, FBotwSpec>& All();
     static const FBotwSpec* Find(const FString& Name);
@@ -33,8 +36,10 @@ enum class EBotwMode : uint8
 
 /**
  * A BOTW character in the world: a skeletal mesh playing its baked clips, kept on the ground by a trace, with a capsule
- * the sword sweeps hit (WandererSword.cpp). Spawned by AJapanGameMode (a Bokoblin camp up the road) and by the live
- * verbs (YorimichiLive BotwSpawn and friends), which the demo films use.
+ * the sword sweeps hit (WandererSword.cpp, BotwMoveSet.cpp). In camp mode it strikes a player with a move set, who can
+ * guard, parry or dodge it; a crouched player is noticed only close by and in front, and can sneakstrike it. Spawned by
+ * AJapanGameMode (a Bokoblin camp up the road) and by the live verbs (YorimichiLive BotwSpawn and friends), which the
+ * demo films use.
  */
 UCLASS()
 class YORIMICHI_API ABotwCreature : public AActor
@@ -54,6 +59,8 @@ public:
     void SetMode(EBotwMode NewMode);
     void TakeSwordHit(int32 Strength, AActor* From);
     bool IsDown() const { return Phase == EPhase::Down; }
+    /** It has noticed the player (a sneakstrike needs it unaware). */
+    bool IsAlerted() const { return Phase == EPhase::Notice || Phase == EPhase::Chase || Phase == EPhase::Attack || Phase == EPhase::Hit; }
     const FBotwSpec& Spec() const { return Data; }
     FString CurrentClip() const { return Current.ToString(); }
     USkeletalMeshComponent* GetMesh() const { return Mesh; }
@@ -78,7 +85,9 @@ private:
     FName Current;
     FVector Home = FVector::ZeroVector, Target = FVector::ZeroVector;
     bool bRunning = false;
-    float PhaseLeft = 0.f, Clock = 0.f, AttackCooldown = 0.f;
+    float PhaseLeft = 0.f, PhaseTotal = 0.f, Clock = 0.f, AttackCooldown = 0.f;
+    bool bStruck = false;   // this attack has struck (or missed) the player
+    void Strike(APawn* Player);
     int32 Showcased = 0, Health = 3;
     TArray<FName> ShowcaseOrder;
 };

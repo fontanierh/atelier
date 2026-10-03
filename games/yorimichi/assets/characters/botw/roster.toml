@@ -12,6 +12,7 @@
 #          for a role it lacks): makes it a rider (-rider=<name>) that the skateboard retargets onto
 # board    a rider's skateboard size relative to the standard one (ISkateRider::GetSkateBoardScale; default 1)
 # outfit   Link's clothing (clothing.json ids in the extended catalog), worn over his body (outfit.py)
+# moves    the character's move set (moves.toml): its clips are baked with the character and its rider plays them
 
 # The library's characters are drawn about 15% larger than Yorimichi's (its Zelda stands 1.86 m, Cairo 1.48 m): every
 # character takes this scale unless it sets its own, so they keep their sizes relative to each other.
@@ -168,4 +169,5 @@ name = "Link"
 clips = ["Nml_Wait", "Nml_Move_Walk", "Nml_Move_Run", "Nml_Move_Dash", "Nml_Talk_Hello", "Nml_Lookaround"]
 roles = { idle = "Nml_Wait", walk = "Nml_Move_Walk", run = "Nml_Move_Run", notice = "Nml_Talk_Hello", dance = "Nml_Lookaround" }
 outfit = ["Armor_116_Upper", "Armor_001_Lower"]
+moves = "moves.toml"
 skate = { root = "Root", pelvis = "Skl_Root", spine = "Spine_1", spine_mid = "", chest = "Spine_2", neck = "Neck", head = "Head", clavicle_L = "Clavicle_L", upperarm_L = "Arm_1_L", forearm_L = "Arm_2_L", hand_L = "Wrist_L", clavicle_R = "Clavicle_R", upperarm_R = "Arm_1_R", forearm_R = "Arm_2_R", hand_R = "Wrist_R", thigh_L = "Leg_1_L", shin_L = "Leg_2_L", foot_L = "Ankle_L", toe_L = "Toe_L", thigh_R = "Leg_1_R", shin_R = "Leg_2_R", foot_R = "Ankle_R", toe_R = "Toe_R", thumb_L = "Finger_A_1_L", thumb_tip_L = "Finger_A_2_L", thumb_end_L = "Finger_A_3_L", finger_0_L = "Finger_B_1_L", finger_tip_0_L = "Finger_B_2_L", finger_end_0_L = "Finger_B_3_L", finger_1_L = "Finger_C_1_L", finger_tip_1_L = "Finger_C_2_L", finger_end_1_L = "Finger_C_3_L", finger_2_L = "Finger_D_1_L", finger_tip_2_L = "Finger_D_2_L", finger_end_2_L = "Finger_D_3_L", finger_3_L = "Finger_E_1_L", finger_tip_3_L = "Finger_E_2_L", finger_end_3_L = "Finger_E_3_L", thumb_R = "Finger_A_1_R", thumb_tip_R = "Finger_A_2_R", thumb_end_R = "Finger_A_3_R", finger_0_R = "Finger_B_1_R", finger_tip_0_R = "Finger_B_2_R", finger_end_0_R = "Finger_B_3_R", finger_1_R = "Finger_C_1_R", finger_tip_1_R = "Finger_C_2_R", finger_end_1_R = "Finger_C_3_R", finger_2_R = "Finger_D_1_R", finger_tip_2_R = "Finger_D_2_R", finger_end_2_R = "Finger_D_3_R", finger_3_R = "Finger_E_1_R", finger_tip_3_R = "Finger_E_2_R", finger_end_3_R = "Finger_E_3_R" }
