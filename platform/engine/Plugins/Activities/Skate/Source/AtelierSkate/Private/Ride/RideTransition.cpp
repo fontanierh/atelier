@@ -39,6 +39,8 @@
 #include "GameFramework/RootMotionSource.h"
 #include "HAL/IConsoleManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/OverlapResult.h"
+#include "PhysicsEngine/BodyInstance.h"
 
 namespace
 {
@@ -98,9 +100,18 @@ namespace
     constexpr float FlightRadius = 5.f, FlightBounce = .3f, FlightFriction = .5f, FlightStop = 60.f, FlightLimit = 4.f;
     // On the ground it slows by this much each second (cm/s).
     constexpr float FlightRoll = 250.f;
-    constexpr float BoardSettle = .2f, UpsideDownDeck = 1.5f;
+    // Upside down the board rests on its kicks' tips (DeckKickTop over the pivot).
+    constexpr float BoardSettle = .2f, UpsideDownDeck = 4.3f;
     // The kick: at least this fast away from the rider (cm/s).
     constexpr float KickSpeed = 250.f;
+    // The loose deck's box (cm at board scale 1) holds Native's whole board, as the riding box does (RideSession.cpp,
+    // DeckBox): 45.6 from the pivot to the nose and the tail, 12 to each side, from the wheels' plane (DeckPivot under
+    // the pivot) to the kicks' top (DeckKickTop over it). It is checked this much smaller all round, so the ground the
+    // board rests on, wheels or kicks down, is not inside it; out of what it starts in it moves at most DeckFitPush.
+    constexpr float DeckHalfLength = 45.6f, DeckHalfWidth = 12.f, DeckKickTop = 4.3f, DeckFitInset = 1.5f, DeckFitPush = 45.f;
+    // A flying deck stopped by the ground turns toward lying along it at DeckLieRate (1/s: about .3 of the way each
+    // 60 Hz frame); one stopped by anything loses its spin at ContactSpinDamp (1/s: about half each frame).
+    constexpr float DeckLieRate = 21.f, ContactSpinDamp = 42.f;
     // A get-up on foot waits at most this long (s) for the physical rider to hand its bodies to the animation.
     constexpr float RecoverWait = .3f;
     // The run-outs (RUNOUT_<way>_<HI|LO>_<size><n>_TO_RUN_FWD) by the way the board was going and the bail's energy:
@@ -210,6 +221,111 @@ namespace
         const float Y = PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftY) + Down(EKeys::W) - Down(EKeys::S);
         if (FVector2D(X, Y).Size() < .3f) return FVector::ZeroVector;
         return FRotator(0, PC->GetControlRotation().Yaw, 0).RotateVector(FVector(Y, X, 0.f)).GetSafeNormal();
+    }
+
+    /** What the kicked board's flight sphere collides with (as a WorldDynamic object): everything but pawns, bodies,
+     *  the camera and visibility. */
+    FCollisionResponseParams FlightResponses()
+    {
+        FCollisionResponseParams Responses(ECR_Block);
+        for (const ECollisionChannel Channel : {ECC_Pawn, ECC_PhysicsBody, ECC_Camera, ECC_Visibility})
+            Responses.CollisionResponse.SetResponse(Channel, ECR_Ignore);
+        return Responses;
+    }
+
+    /** A loose deck's box (Deck: its pivot, scaled as shown): its centre and rotation, half extents in Extent. */
+    FTransform DeckFitBox(const FTransform& Deck, FVector& Extent)
+    {
+        const float Scale = float(Deck.GetScale3D().X);
+        const FQuat Rotation = Deck.GetRotation().GetNormalized();
+        Extent = ((FVector(DeckHalfLength, DeckHalfWidth, (DeckPivot + DeckKickTop) * .5f) - FVector(DeckFitInset)) * Scale).ComponentMax(FVector(.5f));
+        return FTransform(Rotation, Deck.GetLocation() + Rotation.GetUpVector() * (DeckKickTop - DeckPivot) * .5f * Scale);
+    }
+    /** The deck whose box is Box. */
+    FTransform DeckOfBox(const FTransform& Box, float Scale)
+    {
+        const FQuat Rotation = Box.GetRotation();
+        return FTransform(Rotation, Box.GetLocation() - Rotation.GetUpVector() * (DeckKickTop - DeckPivot) * .5f * Scale, FVector(Scale));
+    }
+
+    /** The way a loose deck's box leaves what it is inside: each body it overlaps (each instance of an instanced mesh)
+     *  gives the whole box's own way out of it, summed, for up to four rounds, within the plane of Plane when given (a
+     *  board lying on the ground slides along it). True with the push (zero when it was free) once the box is free
+     *  within DeckFitPush; false when it is not. */
+    bool LeaveInside(const UWorld& World, const FTransform& Box, const FVector& Extent, float Scale, const FCollisionQueryParams& Params, const FVector& Plane,
+        FVector& Push)
+    {
+        const FCollisionShape Shape = FCollisionShape::MakeBox(Extent);
+        const FCollisionResponseParams Responses = FlightResponses();
+        Push = FVector::ZeroVector;
+        for (int32 Try = 0; Try < 4; ++Try)
+        {
+            const FVector At = Box.GetLocation() + Push;
+            TArray<FOverlapResult> Overlaps;
+            World.OverlapMultiByChannel(Overlaps, At, Box.GetRotation(), ECC_WorldDynamic, Shape, Params, Responses);
+            FVector Out = FVector::ZeroVector;
+            bool bInside = false;
+            for (const FOverlapResult& Overlap : Overlaps)
+            {
+                const UPrimitiveComponent* Other = Overlap.GetComponent();
+                if (!Other || !Overlap.bBlockingHit) continue;
+                FMTDResult Way;
+                const FBodyInstance* Body = Other->GetBodyInstance(NAME_None, true, Overlap.ItemIndex);
+                if (!Body || !Body->OverlapTest(At, Box.GetRotation(), Shape, &Way) || Way.Distance <= 0.f) continue;
+                bInside = true;
+                Out += Way.Direction * Way.Distance;
+            }
+            if (!bInside) return true;
+            if (!Plane.IsNearlyZero()) Out = FVector::VectorPlaneProject(Out, Plane);
+            if (Out.IsNearlyZero()) return false;
+            Push += Out + Out.GetSafeNormal() * .2f;
+            if (Push.Size() > DeckFitPush * Scale) return false;
+        }
+        return false;
+    }
+
+    /** FitDeck: how a loose deck moves from From (where it was last shown) to To (where its flight, its settling or its
+     *  owner puts it). Its whole box is swept, turned in steps (FRideSession::SweepBox), through what the flight sphere
+     *  collides with. Clear: To is free. Corrected: To is changed to where the box met a face (Normal its normal), or,
+     *  when the move starts inside something, to To pushed out of it (whole box, within Plane when given) if its centre
+     *  gets there without crossing anything, else to the last free pose on the way. Unresolved: no free pose; To is
+     *  From. It never hands back a pose it found inside something, other than From itself. */
+    enum class EDeckFit : uint8 { Clear, Corrected, Unresolved };
+    EDeckFit FitDeck(const UWorld& World, const FTransform& From, FTransform& To, const FCollisionQueryParams& Params, FVector& Normal,
+        const FVector& Plane = FVector::ZeroVector)
+    {
+        Normal = FVector::ZeroVector;
+        const float Scale = float(To.GetScale3D().X);
+        FVector Extent;
+        const FTransform A = DeckFitBox(From, Extent), B = DeckFitBox(To, Extent);
+        FHitResult Hit; FTransform Reached;
+        if (!FRideSession::SweepBox(World, A, B, Extent, ECC_WorldDynamic, Params, FlightResponses(), Hit, &Reached)) return EDeckFit::Clear;
+        Normal = Hit.Normal;
+        if (!Hit.bStartPenetrating)
+        {
+            // Touching the face, a hair off it.
+            Reached.AddToTranslation(Hit.Normal * .1f);
+            To = DeckOfBox(Reached, Scale);
+            return EDeckFit::Corrected;
+        }
+        // Inside something: out of it where the move ends, when the way there crosses nothing.
+        FVector Push; FHitResult Between;
+        if (LeaveInside(World, B, Extent, Scale, Params, Plane, Push) &&
+            !World.LineTraceSingleByChannel(Between, A.GetLocation(), B.GetLocation() + Push, ECC_WorldDynamic, Params, FlightResponses()))
+        {
+            To.AddToTranslation(Push);
+            if (Normal.IsNearlyZero()) Normal = Push.GetSafeNormal();
+            return EDeckFit::Corrected;
+        }
+        // Else as far as it went free.
+        if (Hit.Time > 0.f)
+        {
+            To = DeckOfBox(FTransform(FQuat::Slerp(A.GetRotation(), B.GetRotation(), Hit.Time).GetNormalized(),
+                FMath::Lerp(A.GetLocation(), B.GetLocation(), double(Hit.Time))), Scale);
+            return EDeckFit::Corrected;
+        }
+        To = From;
+        return EDeckFit::Unresolved;
     }
 
     /** A clip's local translation in the world: the clips are authored goofy, a mirrored clip runs along -Y. */
@@ -893,11 +1009,7 @@ void USkateComponent::LaunchBoard()
     Body->InitSphereRadius(FlightRadius * Scale);
     Body->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     Body->SetCollisionObjectType(ECC_WorldDynamic);
-    Body->SetCollisionResponseToAllChannels(ECR_Block);
-    Body->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-    Body->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Ignore);
-    Body->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-    Body->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+    Body->SetCollisionResponseToChannels(FlightResponses().CollisionResponse);
     Body->SetGenerateOverlapEvents(false);
     Body->SetCanEverAffectNavigation(false);
     Body->SetHiddenInGame(true);
@@ -947,7 +1059,33 @@ void USkateComponent::StepLooseBoard(float Dt)
             if (Flight->Velocity.Size() < FlightStop) { SettleBoard(); return; }
         }
         if (!T.FlightSpin.IsNearlyZero()) T.FlightRotation = (FQuat(T.FlightSpin.GetSafeNormal(), float(T.FlightSpin.Size()) * Dt) * T.FlightRotation).GetNormalized();
-        BoardRoot->SetWorldTransform(FTransform(T.FlightRotation, At + T.FlightRotation.GetUpVector() * (DeckPivot - FlightRadius) * Scale, FVector(Scale)));
+        FTransform Shown(T.FlightRotation, At + T.FlightRotation.GetUpVector() * (DeckPivot - FlightRadius) * Scale, FVector(Scale));
+        // The deck reaches far past the sphere that flies it: its whole box goes from where it was shown to where the
+        // sphere takes it, turned in steps, and stops at what it meets (FitDeck). Stopped, the sphere comes back under
+        // it (swept), the motion into the face turns back as a bounce off a wall and ends on the floor, where the deck
+        // lies down along it (its tilt is what met it; the next frame's sweep checks the turn), and the spin dies down.
+        FVector Normal;
+        if (FitDeck(*GetWorld(), BoardRoot->GetComponentTransform(), Shown, Params, Normal) != EDeckFit::Clear)
+        {
+            T.FlightRotation = Shown.GetRotation();
+            const FVector Under = Shown.GetLocation() - Shown.GetRotation().GetUpVector() * (DeckPivot - FlightRadius) * Scale;
+            Flight->MoveUpdatedComponent(Under - Body->GetComponentLocation(), Body->GetComponentQuat(), true);
+            T.FlightSpin *= FMath::Exp(-ContactSpinDamp * Dt);
+            if (Normal.IsNearlyZero()) Flight->Velocity = FVector::ZeroVector;
+            else
+            {
+                const bool bFloor = Normal.Z >= .7f;
+                const float Into = float(FVector::DotProduct(Flight->Velocity, Normal));
+                if (Into < 0.f) Flight->Velocity -= Normal * Into * (bFloor ? 1.f : 1.f + FlightBounce);
+                if (bFloor)
+                {
+                    const FVector DeckUp = T.FlightRotation.GetUpVector();
+                    const FQuat Lie = FQuat::FindBetweenNormals(DeckUp, DeckUp.Z >= 0. ? Normal : -Normal);
+                    T.FlightRotation = (FQuat::Slerp(FQuat::Identity, Lie, 1.f - FMath::Exp(-DeckLieRate * Dt)) * T.FlightRotation).GetNormalized();
+                }
+            }
+        }
+        BoardRoot->SetWorldTransform(Shown);
         return;
     }
     if (T.SettleTime >= 0.f)
@@ -962,6 +1100,8 @@ void USkateComponent::StepLooseBoard(float Dt)
     }
     if (const UPrimitiveComponent* Loose = T.LooseBoard.Get())
     {
+        // The board the physical rider handed over is physics' own, kept out of what physics does not see.
+        if (PhysicalRider) PhysicalRider->GuardBoards();
         const FTransform Body = Loose->GetComponentTransform();
         BoardRoot->SetWorldTransform(FTransform(Body.GetRotation(), Body.GetLocation() + Body.GetRotation().GetUpVector() * LooseBoardDrop * Scale, FVector(Scale)));
     }
@@ -981,7 +1121,9 @@ void USkateComponent::SettleBoard()
     const float Scale = BoardScale();
     FHitResult Hit;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(RideBoardSettle), false, Rider);
-    const FVector Start = From.GetLocation() + FVector(0, 0, 30.f * Scale);
+    // From no higher than the room over the board: one under a ledge or a bench settles under it, not on top.
+    FVector Start = From.GetLocation() + FVector(0, 0, 30.f * Scale);
+    if (GetWorld()->LineTraceSingleByChannel(Hit, From.GetLocation(), Start, ECC_WorldStatic, Params)) Start = Hit.Location - FVector(0, 0, 1.f);
     if (!GetWorld()->LineTraceSingleByChannel(Hit, Start, Start - FVector(0, 0, 300.f), ECC_WorldStatic, Params)) return;
     const FVector Normal = Hit.ImpactNormal;
     const bool bUpsideDown = From.GetRotation().GetUpVector().Z < 0.f;
@@ -990,6 +1132,12 @@ void USkateComponent::SettleBoard()
     const FQuat Rotation = FRotationMatrix::MakeFromXZ(Nose.GetSafeNormal(), bUpsideDown ? -Normal : Normal).ToQuat();
     T.SettleFrom = From;
     T.SettleTo = FTransform(Rotation, FVector(Hit.ImpactPoint) + Normal * (bUpsideDown ? UpsideDownDeck : DeckPivot) * Scale, FVector(Scale));
+    // Lying flat it may reach into a wall it flew clear of: slid out along the ground when it comes free near. The way
+    // there is swept like the flight (FitDeck): the board settles as far as it is free to, or stays as it is.
+    FVector Extent, Push;
+    if (LeaveInside(*GetWorld(), DeckFitBox(T.SettleTo, Extent), Extent, Scale, Params, Normal, Push)) T.SettleTo.AddToTranslation(Push);
+    FVector Met;
+    FitDeck(*GetWorld(), From, T.SettleTo, Params, Met, Normal);
     T.SettleTime = 0.f;
 }
 

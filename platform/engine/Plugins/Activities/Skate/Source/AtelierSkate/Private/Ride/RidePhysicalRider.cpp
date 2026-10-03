@@ -1,6 +1,7 @@
 // The physical rider: see RidePhysicalRider.h and RIDE.md, "Physical rider".
 #include "RidePhysicalRider.h"
 #include "SkateRider.h"
+#include "RideSession.h"
 #include "PhysicsControlComponent.h"
 #include "PhysicsControlAsset.h"
 #include "Components/BoxComponent.h"
@@ -140,6 +141,9 @@ namespace
     // The loose board's box: the deck, trucks and wheels, centred this far below the deck bone (cm at board scale 1).
     const FVector LooseBoardExtent(40.f, 10.5f, 5.f);
     constexpr float LooseBoardDrop = 4.f;
+    // GuardBoards: the box swept is this much smaller all round (cm); a move longer than BoardGuardReach (cm) in a
+    // frame is a placement, not a flight; a face it would have passed sends it back with this restitution.
+    constexpr float BoardGuardInset = 1.5f, BoardGuardReach = 500.f, BoardGuardBounce = .3f;
     // The surfaces made physical follow the body once it has moved this far, and let go beyond twice the radius.
     constexpr float PhysicalFollow = 600.f;
     // Instanced meshes with more instances than this stay query-only (switching them all would hitch).
@@ -1200,6 +1204,7 @@ void URidePhysicalRider::BlendOut(float Seconds)
 
 void URidePhysicalRider::Update(float Dt, ERidePhysicalPhase NewPhase)
 {
+    GuardBoards();
     if (!Control || !Mesh) return;
     DrivenFrame = GFrameCounter;
     const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
@@ -1648,7 +1653,10 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     LooseBoard->SetMassOverrideInKg(NAME_None, 3.5f, true);
     LooseBoard->SetLinearDamping(.15f);
     LooseBoard->SetAngularDamping(.4f);
+    // Thrown at riding speed it moves more than its own thickness in a step: swept, not stepped, through physics.
+    LooseBoard->SetUseCCD(true);
     LooseBoard->SetSimulatePhysics(true);
+    LooseLast = LooseBoard->GetComponentTransform();
     LooseBoard->SetPhysicsLinearVelocity(Velocity * .85f + FVector(0, 0, 90.f));
     // A tumble of its own, drawn from the bail's velocity so a replay throws it the same way.
     FRandomStream Tumble{int32(GetTypeHash(FIntVector(Velocity)))};
@@ -1942,7 +1950,66 @@ UBoxComponent* URidePhysicalRider::TakeLooseBoard()
     UBoxComponent* Board = LooseBoard;
     LooseBoard = nullptr;
     TakenBoard = Board;
+    TakenLast = LooseLast;
     return Board;
+}
+
+void URidePhysicalRider::GuardBoards()
+{
+    GuardBoard(LooseBoard, LooseLast);
+    GuardBoard(TakenBoard.Get(), TakenLast);
+}
+
+void URidePhysicalRider::GuardBoard(UPrimitiveComponent* Board, FTransform& Last)
+{
+    // The board's own world and owner: a handed-over board outlives the body (End clears Rider).
+    UWorld* World = Board ? Board->GetWorld() : nullptr;
+    if (!World) return;
+    const FTransform Now(Board->GetComponentQuat(), Board->GetComponentLocation());
+    // Not simulating (held, lying still), barely moved or turned, or placed (a first frame, a teleport): nothing to sweep.
+    const double Moved = FVector::DistSquared(Last.GetLocation(), Now.GetLocation());
+    const bool bTurned = Last.GetRotation().AngularDistance(Now.GetRotation()) > 1e-3;
+    if (!Board->IsSimulatingPhysics() || (Moved < .01 && !bTurned) || Moved > FMath::Square(BoardGuardReach)) { Last = Now; return; }
+    // A little inside the box, so the ground physics already holds it on is not a hit.
+    const UBoxComponent* Box = Cast<UBoxComponent>(Board);
+    const FVector Extent = ((Box ? Box->GetScaledBoxExtent() : FVector(Board->Bounds.SphereRadius)) - FVector(BoardGuardInset)).ComponentMax(FVector(.5f));
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(RideBoardGuard), false, Board->GetOwner());
+    Params.AddIgnoredComponent(Board);
+    const FTransform From(Last.GetRotation(), Last.GetLocation());
+    for (int32 Try = 0; Try < 3; ++Try)
+    {
+        FHitResult Hit; FTransform Reached;
+        if (!FRideSession::SweepBox(*World, From, Now, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, Hit, &Reached)) break;
+        // What moves is physics' own to push.
+        UPrimitiveComponent* Other = Hit.GetComponent();
+        if (Other && Other->IsSimulatingPhysics()) { Params.AddIgnoredComponent(Other); continue; }
+        FTransform Back;
+        if (!Hit.bStartPenetrating) Back = FTransform(Reached.GetRotation(), Reached.GetLocation() + Hit.Normal * .2f);
+        else if (Hit.Time > 0.f)
+            Back = FTransform(FQuat::Slerp(From.GetRotation(), Now.GetRotation(), Hit.Time).GetNormalized(), FMath::Lerp(From.GetLocation(), Now.GetLocation(), double(Hit.Time)));
+        else
+        {
+            // It was already inside something where it was last (it started there): physics taking it out to a free
+            // pose, by a way its centre can go, is left alone; otherwise it stays.
+            FHitResult There, Between;
+            if (!FRideSession::SweepBox(*World, Now, Now, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, There) &&
+                !World->LineTraceSingleByChannel(Between, From.GetLocation(), Now.GetLocation(), ECC_Pawn, Params))
+                break;
+            Back = From;
+        }
+        // Physics passed or turned into this face (it does not see it, or stepped over it): back to the last pose found
+        // free, the velocity into the face turned back as a bounce; a turn into it stops.
+        Board->SetWorldLocationAndRotation(Back.GetLocation(), Back.GetRotation(), false, nullptr, ETeleportType::TeleportPhysics);
+        const FVector Normal = Hit.Normal;
+        const FVector Velocity = Board->GetPhysicsLinearVelocity();
+        const float Into = float(FVector::DotProduct(Velocity, Normal));
+        if (Normal.IsNearlyZero()) Board->SetPhysicsLinearVelocity(FVector::ZeroVector);
+        else if (Into < 0.f) Board->SetPhysicsLinearVelocity(Velocity - Normal * Into * (1.f + BoardGuardBounce));
+        if (Hit.bStartPenetrating) Board->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+        Last = Back;
+        return;
+    }
+    Last = Now;
 }
 
 void URidePhysicalRider::DropLooseBoard()

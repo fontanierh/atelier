@@ -5,6 +5,8 @@
 #include "RideTuning.h"
 #include "RideTypes.h"
 #include "RideAnimator.h"
+#include "Engine/EngineTypes.h"
+#include "CollisionQueryParams.h"
 
 class UWorld;
 class AActor;
@@ -19,6 +21,8 @@ struct FRideWorld
     const USkateRailSubsystem* Rails = nullptr;
     /** The rider: the pose mesh that plays the clips goes on it. */
     AActor* Owner = nullptr;
+    /** The board's scale (USkateComponent::BoardScale): the deck shown and its collision box grow with it. */
+    float BoardScale = 1.f;
 };
 
 /** One-shot sounds the session asks for; the component plays them. */
@@ -97,12 +101,21 @@ public:
     FVector GetBailVelocity() const { return BailLinear; }
     FVector GetBailSpin() const { return BailAngular; }
     bool HasRig() const { return Animator.HasRig(); }
-    /** Mean and worst simulation cost per tick over the last second (ms). */
-    float CostMean = 0, CostWorst = 0;
+    /** Mean and worst simulation cost per tick over the last second (ms), and the world queries a tick made. */
+    float CostMean = 0, CostWorst = 0, QueriesMean = 0;
+    int32 QueriesWorst = 0;
     /** The published pose's health for QA: the main clip, the board's hold and lift, the fastest body bone (cm/s,
      *  root space), each foot's height above the deck's pivot and how many feet are off the deck, NaN bones, and the
      *  animator's cost (ms). */
     FString DescribePose() const;
+
+    /** A box swept from one pose to another, its rotation in steps that move no corner more than CornerStep (a nose
+     *  turning into a wall is caught where the centre barely moves). Hit.Time is the fraction of the whole move;
+     *  Reached (if given) the box's pose at the hit: touching the face, or the pose found inside something when the
+     *  hit starts there (bStartPenetrating; the pose at Hit.Time before it is the last one found free). Counted in
+     *  QueriesMean during a tick. Shared with the loose board (RideTransition.cpp, RidePhysicalRider.cpp). */
+    static bool SweepBox(const UWorld& World, const FTransform& From, const FTransform& To, const FVector& Extent, ECollisionChannel Channel,
+        const FCollisionQueryParams& Params, const FCollisionResponseParams& Response, FHitResult& Hit, FTransform* Reached = nullptr);
 
 private:
     struct FFrame { FVector P = FVector::ZeroVector; FQuat Q = FQuat::Identity; FTransform Deck = FTransform::Identity; };
@@ -196,8 +209,24 @@ private:
     // A stalled grind stepping off its line (bSteppingOff until it lands): until the board is OffClear from the line (a
     // point on it and its direction), the air sweep passes through it (bThroughLine), since it starts inside it.
     bool bSteppingOff = false, bThroughLine = false;
+    // Off a line's end or side (not a stall): the air that follows is the sphere's alone, as before the deck box (a box
+    // that starts on the line and its corner would read them as walls and spoil the landing it was aiming at).
+    bool bBoxOffLine = false;
     FVector OffPoint = FVector::ZeroVector, OffAlong = FVector::ForwardVector;
     float OffClear = 0;
+    // Walls (ResetWalls clears them on every activation and placement). The board's box is the visible deck: ShownClip
+    // is the clip's own motion of the deck (its pop, flip and tilt) on the session's DeckPose, from the last published
+    // pose. SafeDeck is the deck where the last tick left it, at SafeP and SafeQ (bSafeDeck: since the last placement):
+    // every move starts there. TickSlide: the powerslide's turn when the tick started. StuckTime: how long the box has
+    // been inside a wall it cannot leave. The air's safety deadline counts from where it started (AirStartP, also the
+    // lip a lip air's own wall is near) and how fast it climbed in its pop window (AirLaunchVz); AirGlance: how long it
+    // has slid along faces it cannot land on.
+    FTransform ShownClip = FTransform::Identity, SafeDeck = FTransform::Identity;
+    FVector SafeP = FVector::ZeroVector;
+    FQuat SafeQ = FQuat::Identity;
+    bool bSafeDeck = false;
+    float TickSlide = 0, StuckTime = 0, AirLaunchVz = 0, AirGlance = 0;
+    FVector AirStartP = FVector::ZeroVector;
     // Manual.
     float Balance = 0;
     bool bNoseManual = false;
@@ -224,6 +253,7 @@ private:
     bool bCamValid = false;
     // Cost.
     double CostSum = 0, CostMax = 0, CostClock = 0; int32 CostCount = 0;
+    int64 QuerySum = 0; int32 QueryMax = 0;
     // Pose health (DescribePose).
     TArray<FVector> LastBones;       // root space
     TArray<bool> BodyBone;
@@ -275,6 +305,41 @@ private:
      *  blocking normal that Toward (the board's velocity) closes on fastest. */
     bool Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked, FVector* Block = nullptr, const FVector& Toward = FVector::ZeroVector) const;
     bool Sweep(const FVector& From, const FVector& To, float Radius, FHitResult& Hit) const;
+    bool Trace(const FVector& From, const FVector& To, FHitResult& Hit) const;
+    /** Whether the board can land on a hit face: one within WallSlope of level, a lip air's own wall, or a steeper face
+     *  that curves up into a transition below the hit (not a wall, a rail's side or a box's face). The landing
+     *  prediction and the flight's contacts use it. */
+    bool IsLandable(const FHitResult& Hit) const;
+    void ResetWalls();
+    /** The visible deck in the world (its pivot, unscaled) for the session at (At, Frame): the
+     *  clip's motion (ShownClip) on DeckPose on the root, lifted as the shown board grows about its wheels' contact. */
+    FTransform DeckWorld(const FVector& At, const FQuat& Frame) const;
+    /** The board's collision box for a deck (DeckWorld): centre and rotation, half extents in Extent, at the board's
+     *  scale, from Clearance (cm) above the wheels' plane (lower faces are the wheels' and the probes') to the kicks. */
+    FTransform DeckBox(const FTransform& Deck, float Clearance, FVector& Extent) const;
+    /** The board's box from From to To. A face within WallSlope of Up (one it rolls on) stops it only when
+     *  bStopOnSupport (Support); otherwise the box goes on along it, so a ramp or the floor under a tilted deck never
+     *  hides a wall behind it. Wall: a steeper face stops it (Hit.Time the fraction of the move). Inside: it starts in
+     *  a wall. */
+    enum class EBoardHit : uint8 { Clear, Support, Wall, Inside };
+    EBoardHit SweepBoard(const FTransform& From, const FTransform& To, const FVector& Extent, const FVector& Up, bool bStopOnSupport, FHitResult& Hit) const;
+    /** The walls a box at Box overlaps (faces within WallSlope of Up are left to the ground): the summed way out of
+     *  them (Push) and the deepest one's normal. False when it overlaps none. */
+    bool WallOverlap(const FTransform& Box, const FVector& Extent, const FVector& Up, FVector& Push, FVector& Normal) const;
+    /** MoveBoardPose, the one way the riding board moves: from SafeDeck (or the session's pose after a placement) to
+     *  (ToP, ToQ), translation and rotation with the whole box. Clear: the pose is free. Corrected: ToP and ToQ are
+     *  changed to where the box stops short of a wall (Wall the contact), or pushed out of one it would start in
+     *  (bounded, whole-box, reached without crossing anything). Unresolved: no free pose; ToP and ToQ are the
+     *  session's own (the board stays). */
+    enum class EBoardMove : uint8 { Clear, Corrected, Unresolved };
+    EBoardMove MoveBoardPose(FVector& ToP, FQuat& ToQ, float Clearance, FHitResult& Wall) const;
+    /** Out of the walls the box at (ToP, ToQ) overlaps: up to three whole-box pushes (on the frame's plane when bOnPlane),
+     *  the result free of walls and its centre reached from From's without crossing anything. */
+    bool LeaveWall(const FTransform& From, FVector& ToP, const FQuat& ToQ, float Clearance, bool bOnPlane, FHitResult& Wall) const;
+    /** A contact in the air the board does not land on: thrown when it comes in faster than WallBailSpeed, lies on a
+     *  floor on its side or has slid along such faces for too long; otherwise it slides along without bouncing.
+     *  True when the flight ended. */
+    bool HitWallInAir(const FVector& Normal);
     bool FindGround(const FVector& At, const FQuat& Frame, float Below, FVector& OutP, FVector& OutUp, FVector& OutForward, bool& bBlocked, FVector* Block = nullptr, const FVector& Toward = FVector::ZeroVector) const;
     /** One step of rolling (Dt of the tick): walls, the ground, crests. False when the board left the ground, was
      *  thrown or stopped against something, which ends the tick's move. */

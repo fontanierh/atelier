@@ -449,6 +449,8 @@ live.behave('grab', grab)
         fakie_checks(record, wanted)
     if any(wanted(name) for name in PHYSICAL):
         physical_checks(record, wanted)
+    if any(wanted(name) for name in COLLIDE_ROWS):
+        collide_checks(record, wanted)
     qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
     out = qa.yori.OUT / 'skateqa' / 'ride.json'
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -1744,6 +1746,554 @@ def grind_rows(record):
                f"locked at {speed(rows[lock]):.0f} cm/s, grinded {held:.2f} s and {along:.1f} m, left at {speed(rows[end - 1]):.0f} cm/s "
                f"({'a stall' if stalled else 'off the end'}), losing {loss:.0f} cm/s² (reference 97); last mode {rows[-1]['mode']}, "
                f"{'bailed' if bailed else 'no bail'}{off}; {qa.combos(rows)}")
+
+
+# U12, U23, U24 (the user's playtest): the board never passes through world geometry, riding into a wall or a ledge
+# at any speed, powersliding or spinning beside a wall, or thrown in a bail; a 360 hardflip toward a stair rail lands
+# or bails within its air's bound (U23: one turned sideways on the rail drifted slowly through the map); a lip air
+# landing back in a transition stays on it (U24: it bounced back up).
+WALL_SINK = .5     # cm: no deck point further past a wall (a face steeper than 45 degrees: walls, ledges', rails' sides)
+FLOOR_SINK = 5.    # cm: nor past a floor (a deck lying upside down rests on its kicks, a little into it)
+LAND_GAP, LAND_HOLD = 1., .5   # cm, s: after a landing in a transition, no wheel further off the face for this long
+COST_MEAN = .15    # ms: the session's step per 60 Hz tick on Mega Park's road, mean
+COST_WORST = 1.    # ms: nor any tick's (any second's worst) in any of the rows, walls, airs and landings included
+GUARD_SHARE = .8   # the guard must have watched this share of each row's window (by the frames' own times)
+SPEEDS = (300, 600, 900, 1200)
+BESIDE = 35.       # cm: the board's centre from the wall it powerslides and spins beside (its corners reach 46 cm)
+# Ollies into the pier's wall at 6 m/s from these distances (cm): the nose meets the wall late in the air, just before
+# the floor, or as the wheels come down at its foot.
+AIR_WALL = (330, 420)
+# Where to look for each face from: (x, y, z) in cm with z about 3 m over the ground, and the Unreal yaw to look along.
+# Sunset Pier's walls: east_return's deck from behind it, then the flow table's sides (park-local metres, heading).
+PIER_WALLS = (((79., 26.), 180.), ((-13., -12.), 90.), ((-13., 20.), -90.))
+# Mega Park's plaza parapet (megapark_ride_film.RAIL0, 10 and 20 m from its south end) from 8 m out on the plaza,
+# then from the road.
+MEGA_LEDGES = (((-6581.6, -138431., 13000.), 157.4), ((-6873., -139277., 13000.), 164.9), ((-8058.4, -137815., 13000.), -22.6))
+# JapanWorld: House_A's and House_B's fronts from the road, through their lots' gates (world.json houses.lots).
+JAPAN_WALLS = (((-20238., 9558., 1160.), 73.6), ((-14865., 7801., 1290.), -106.3))
+# U23: on the seven terrace (park-local metres), riding east toward its south stair rail (y 25.5, 55 cm over the deck
+# from x -52), popped 6 m on, 2 m before the rail starts; the user rode at 638 to 780 cm/s.
+STAIR_RAIL = (-60., 27.6, -10.)
+U23_SPEEDS = (640, 780)
+RAIL_NEAR = 60.    # cm: the board's centre this near the rail's line (beside or over it) is the rail encounter
+# U24: the pier's quarter at 9.5 m/s (park headings) and Mega Park's pool wall at 11.5 m/s (degrees across its face).
+U24_QUARTER = (('straight', 0.), ('left', 12.), ('right', -12.))
+U24_POOL = (('straight', 0.), ('east', 20.), ('west', -20.))
+COLLIDE_ROWS = (tuple(f'collide_wall_pier_{v // 100}' for v in SPEEDS) + tuple(f'collide_ledge_mega_{v // 100}' for v in SPEEDS)
+                + tuple(f'collide_{kind}_wall_{side}' for kind in ('powerslide', 'air_spin') for side in ('right', 'left'))
+                + tuple(f'collide_air_wall_{d}' for d in AIR_WALL)
+                + ('collide_bail_japanworld',) + tuple(f'u23_hardflip_rail_{v}' for v in U23_SPEEDS)
+                + tuple(f'u24_land_quarter_{name}' for name, _ in U24_QUARTER) + tuple(f'u24_land_pool_{name}' for name, _ in U24_POOL)
+                + ('collide_cost',))
+
+# Each frame, the shown deck (the SkateDeck mesh: its top centre and the eight corners of its bounds) against what the
+# rider collides with (the Pawn profile). A corner past a face met on the way from the deck's top centre is the deck
+# through that face; a point past a face it crossed since the last frame went through it. Either is confirmed from
+# the point back out along the face's normal (something there: it is inside or beyond it; nothing: it swung round an
+# edge). Walls (faces steeper than 45 degrees) and floors are kept apart. Independently of the points, the deck's
+# bounds (1.5 cm inside them) are swept as a box from the last frame's pose to this one's, turned in four steps: a
+# face steeper than 45 degrees (or a ceiling) met on the way, other than in a grind, is the deck going into it by what
+# was left of the move. A frame that raises an error records it, and the row fails.
+BOARD_GUARD = """
+import math
+_world = live.L.game_world()
+_ch = unreal.GameplayStatics.get_player_character(_world, 0)
+_deck = next(c for c in _ch.get_components_by_class(unreal.StaticMeshComponent) if c.get_name() == 'SkateDeck')
+_lo, _hi = _deck.get_local_bounds()
+_box = [unreal.Vector(x, y, z) for x in (_lo.x, _hi.x) for y in (_lo.y, _hi.y) for z in (_lo.z, _hi.z)]
+_skip = [_ch] + list(_ch.get_attached_actors() or [])
+live.GUARD_BOX = [_lo.x, _lo.y, _lo.z, _hi.x, _hi.y, _hi.z]
+live.GUARD_ERR = []
+_half = [(_hi.x - _lo.x) * .5, (_hi.y - _lo.y) * .5, (_hi.z - _lo.z) * .5]
+_mid = unreal.Vector((_lo.x + _hi.x) * .5, (_lo.y + _hi.y) * .5, (_lo.z + _hi.z) * .5)
+_tlerp = getattr(unreal.MathLibrary, 't_lerp', None)
+live.GUARD_TURNS = 4 if _tlerp else 1
+def _trace(a, b):
+    h = unreal.SystemLibrary.line_trace_single_by_profile(_world, a, b, 'Pawn', False, _skip, unreal.DrawDebugTrace.NONE, True)
+    return h.to_tuple() if h else None
+def _dot(a, b):
+    return a.x * b.x + a.y * b.y + a.z * b.z
+def _past(p, t):
+    d = _dot(t[5] - p, t[7])
+    if d <= .05:
+        return 0.
+    return d if _trace(p, p + t[7] * (d + 2.)) else 0.
+def _named(t):
+    return (t[10].get_name() if t[10] else '?') + '/' + (t[9].get_name() if t[9] else '?')
+def _swept(xa, xb):
+    s = xb.scale3d
+    he = unreal.Vector(max(.5, _half[0] * s.x - 1.5), max(.5, _half[1] * s.y - 1.5), max(.5, _half[2] * s.z - 1.5))
+    worst, what, last = 0., '', xa
+    for k in range(1, live.GUARD_TURNS + 1):
+        x = _tlerp(xa, xb, k / float(live.GUARD_TURNS)) if _tlerp else xb
+        a = unreal.MathLibrary.transform_location(last, _mid)
+        b = unreal.MathLibrary.transform_location(x, _mid)
+        last = x
+        h = unreal.SystemLibrary.box_trace_single_by_profile(_world, a, b, he, x.rotation.rotator(), 'Pawn', False, _skip,
+                                                            unreal.DrawDebugTrace.NONE, True)
+        if not h:
+            continue
+        t = h.to_tuple()
+        if t[1] or t[7].z >= .7:
+            continue
+        past = (1. - t[2]) * math.sqrt(_dot(b - a, b - a))
+        if past > worst:
+            worst, what = past, 'swept ' + _named(t)
+    return worst, what
+def _guard(dt):
+    try:
+        xf = _deck.get_world_transform()
+        o = _deck.get_world_location()
+        pts = [o] + [unreal.MathLibrary.transform_location(xf, c) for c in _box]
+        worst = {'wall': [0., ''], 'floor': [0., '']}
+        def note(what, t, depth):
+            kind = 'floor' if t[7].z >= .7 else 'wall'
+            if depth > worst[kind][0]:
+                worst[kind] = [depth, what + ' ' + _named(t)]
+        inside = 0
+        for i, p in enumerate(pts[1:]):
+            t = _trace(o, p)
+            if t is None:
+                continue
+            if t[1]:
+                inside = 1
+                break
+            note('corner%d' % i, t, _past(p, t))
+        prev = live.GUARD_PREV[0]
+        if prev is not None:
+            for i, (a, p) in enumerate(zip(prev, pts)):
+                if _dot(p - a, p - a) < .0025:
+                    continue
+                t = _trace(a, p)
+                if t is None or t[1] or _dot(a - t[5], t[7]) <= 0:
+                    continue
+                note(('top' if i == 0 else 'corner%d' % (i - 1)) + ' crossed', t, _past(p, t))
+        state = live.skate_state()
+        swept = [0., '']
+        if live.GUARD_PREV_XF[0] is not None and ' mode=3 ' not in ' ' + state.split(' | ')[0] + ' ':
+            swept = list(_swept(live.GUARD_PREV_XF[0], xf))
+        live.GUARD_PREV[0] = pts
+        live.GUARD_PREV_XF[0] = xf
+        live.GUARD.append([state, round(worst['wall'][0], 2), worst['wall'][1], round(worst['floor'][0], 2),
+                           worst['floor'][1], inside, round(swept[0], 2), swept[1]])
+    except Exception as e:
+        live.GUARD_ERR.append(repr(e))
+live._guard = _guard
+def _ground(x, y, z):
+    h = _trace(unreal.Vector(x, y, z), unreal.Vector(x, y, z - 1500.))
+    return None if h is None or h[1] else [h[5].x, h[5].y, h[5].z]
+def _face(x, y, z, yaw, reach, heights):
+    # From the ground under (x, y, z), a level trace along yaw at each height over it: the face each meets.
+    g = _ground(x, y, z)
+    if g is None:
+        return None
+    d = unreal.Vector(math.cos(math.radians(yaw)), math.sin(math.radians(yaw)), 0.)
+    hits = []
+    for up in heights:
+        a = unreal.Vector(g[0], g[1], g[2] + up)
+        t = _trace(a, a + d * reach)
+        hits.append(None if t is None or t[1] else [t[3], [t[5].x, t[5].y, t[5].z], [t[7].x, t[7].y, t[7].z], _named(t)])
+    # The ground along the way, at each quarter of the reach (None where there is none).
+    path = [_ground(g[0] + d.x * reach * k / 4, g[1] + d.y * reach * k / 4, g[2] + 300.) for k in (1, 2, 3)]
+    return {'ground': g, 'dir': [d.x, d.y], 'hits': hits, 'path': path}
+live._ground = _ground
+live._face = _face
+"""
+
+
+def ground(x, y, z):
+    """The ground under (x, y, z) cm (Pawn-blocking, within 15 m), or None."""
+    return json.loads(qa.py(f"import json; print(json.dumps(live._ground({x}, {y}, {z})))").strip().splitlines()[-1])
+
+
+def find_face(spots, reach, heights, tall, stream=False):
+    """The first face met looking from `spots` ((x, y, z) cm, Unreal yaw) within `reach` cm, level and square to the
+    look (within 25 degrees), with flat ground before it (within 40 cm), at every height of `heights` (cm over the
+    ground) up to `tall` and within 20 cm of the lowest's distance. Returns the face (point, normal, what, distance,
+    ground, the look's direction and yaw, the heights it was met at), or None and why each spot failed."""
+    why = []
+    for (x, y, z), yaw in spots:
+        g = ground(x, y, z)
+        if g is None:
+            why.append(f'no ground at {x:.0f},{y:.0f}')
+            continue
+        place = f"live.skate_place(unreal.Vector({g[0]:.1f},{g[1]:.1f},{g[2]:.1f}), {yaw})"
+        (mega_place if stream else qa.py)(place)
+        out = json.loads(qa.py(f"import json; print(json.dumps(live._face({x}, {y}, {z}, {yaw}, {reach}, {list(heights)})))")
+                         .strip().splitlines()[-1])
+        if out is None:
+            why.append(f'no ground at {x:.0f},{y:.0f}')
+            continue
+        low = out['hits'][0]
+        d = out['dir']
+        if low is None:
+            why.append(f'nothing within {reach / 100:g} m of {x:.0f},{y:.0f} at yaw {yaw}')
+            continue
+        dist, point, normal, what = low
+        level = abs(normal[2]) < .3 and -(normal[0] * d[0] + normal[1] * d[1]) > .9
+        flat = all(p is not None and abs(p[2] - out['ground'][2]) < 40 for p, k in zip(out['path'], (1, 2, 3)) if reach * k / 4 < dist)
+        met = [h for h, hit in zip(heights, out['hits']) if hit is not None and abs(hit[0] - dist) < 20]
+        if not level or not flat or any(h not in met for h in heights if h <= tall):
+            why.append(f'{what} at {dist / 100:.1f} m from {x:.0f},{y:.0f}: normal {normal[0]:.2f},{normal[1]:.2f},{normal[2]:.2f}, '
+                       f'{"flat" if flat else "not flat"} before it, met at {met} cm')
+            continue
+        return {'point': point, 'normal': normal, 'what': what, 'dist': dist, 'ground': out['ground'], 'dir': d, 'yaw': yaw,
+                'met': met, 'stream': stream}, why
+    return None, why
+
+
+def face_text(face):
+    return f"{face['what']} ({face['dist'] / 100:.1f} m from the look, met at {face['met']} cm over the ground)"
+
+
+def before_face(face, back, side=0.):
+    """The ground `back` cm before the face along its look, `side` cm along the face (to the look's left)."""
+    (px, py, _), (dx, dy), gz = face['point'], face['dir'], face['ground'][2]
+    return ground(px - dx * back - dy * side, py - dy * back + dx * side, gz + 300)
+
+
+def guarded(code, seconds, wheels=False):
+    """Run `code` in the game with the board guard (with `wheels`, the wheels' clearance too) read every frame for
+    `seconds`. Returns [(row, wall depth, what, floor depth, what, top inside, wheel clearances)]."""
+    watch = "live.behave('guard', lambda dt: (live._guard(dt), live._wheels(dt)))" if wheels else "live.behave('guard', live._guard)"
+    qa.py(f"live.GUARD=[]; live.GUARD_PREV=[None]; live.GUARD_PREV_XF=[None]; live.GUARD_ERR=[]; live.WREC=[]\n{watch}\n{code}")
+    time.sleep(seconds)
+    guard, clear, errors = json.loads(qa.py("live.stop('guard'); live.stop('rec'); import json\n"
+                                            "print(json.dumps([live.GUARD, [c for _, c in live.WREC], live.GUARD_ERR[:3] + [len(live.GUARD_ERR)]]))")
+                                      .strip().splitlines()[-1])
+    GUARD_RUN.update(errors=errors[:-1], error_count=errors[-1], seconds=seconds)
+    if errors[-1]:
+        print(f'INFO board guard errors ({errors[-1]}): {errors[:-1]}', flush=True)
+    frames = [(qa.parse(g[0]), g[1], g[2], g[3], g[4], g[5], clear[i] if i < len(clear) else None, g[6], g[7]) for i, g in enumerate(guard)]
+    COSTS.extend((f[0].get('cost', ''), f[0].get('queries', '')) for f in frames)
+    return frames
+
+
+# The last guarded window (its errors and length) for guard_verdict, and the cost and queries every guarded frame saw.
+GUARD_RUN = {'errors': [], 'error_count': 0, 'seconds': 0.}
+COSTS = []
+
+
+def guard_verdict(frames, skip=3):
+    """Whether no deck point went past a wall by more than WALL_SINK or a floor by more than FLOOR_SINK, the swept deck
+    went no further than WALL_SINK into a wall, and the deck's top was never inside anything, over frames after the
+    first `skip` (the placement); and what was deepest. The guard must have run without an error over at least
+    GUARD_SHARE of the window (by the frames' own times)."""
+    judged = frames[skip:]
+    if not judged:
+        return False, 'no frames'
+    wall = max(judged, key=lambda f: f[1])
+    floor = max(judged, key=lambda f: f[3])
+    swept = max(judged, key=lambda f: f[7])
+    walls, floors, sweeps, inside = (sum(f[1] > WALL_SINK for f in judged), sum(f[3] > FLOOR_SINK for f in judged),
+                                     sum(f[7] > WALL_SINK for f in judged), sum(f[5] for f in judged))
+    watched = sum(float(f[0].get('dt', 16.7)) / 1000 for f in frames)
+    complete = watched >= GUARD_SHARE * GUARD_RUN['seconds']
+    return not walls and not floors and not sweeps and not inside and complete and not GUARD_RUN['error_count'], (
+        f"deepest past a wall {wall[1]:.2f} cm ({wall[2] or '-'}, mode {wall[0].get('mode')}), {walls} frames past "
+        f"{WALL_SINK:g} cm; swept into a wall {swept[7]:.2f} cm ({swept[8] or '-'}, mode {swept[0].get('mode')}), {sweeps} frames; "
+        f"past a floor {floor[3]:.2f} cm ({floor[4] or '-'}), {floors} frames past {FLOOR_SINK:g} cm; "
+        f"{inside} frames with the deck's top inside something; {len(judged)} frames, {watched:.2f} of {GUARD_RUN['seconds']:.2f} s watched"
+        + (f"; {GUARD_RUN['error_count']} guard errors: {GUARD_RUN['errors']}" if GUARD_RUN['error_count'] else ''))
+
+
+def wait_riding(limit=12.):
+    """Wait until the rider is riding again (after a bail and its get-up), at most `limit` s."""
+    end, steady = time.monotonic() + limit, 0
+    while time.monotonic() < end and steady < 3:
+        steady = steady + 1 if qa.parse(qa.py('print(live.skate_state())').strip())['mode'] == '1' else 0
+        time.sleep(.25)
+    release_controls()
+    qa.py('live.skate_input()')
+
+
+BAIL_KEYS = ("for k in ['Gamepad_LeftThumbstick','Gamepad_RightThumbstick']: live.L.input_key(k,'{0}',{1})\n"
+             "for k in ['Gamepad_LeftTriggerAxis','Gamepad_RightTriggerAxis']: live.L.input_key(k,'axis',{1})\n")
+
+
+def head_on(record, wanted, name, face, where):
+    """Head-on into `face` at each of SPEEDS from a run-up of 3 m plus a quarter second's travel."""
+    for v in SPEEDS:
+        row = f'{name}_{v // 100}'
+        if not wanted(row):
+            continue
+        if face is None:
+            record(row, [], False, f'no {where} found to ride into')
+            continue
+        start = before_face(face, 300 + v / 4)
+        if start is None:
+            record(row, [], False, f'no ground before {face_text(face)}')
+            continue
+        place = f"live.skate_place(unreal.Vector({start[0]:.1f},{start[1]:.1f},{start[2]:.1f}), {face['yaw']})"
+        if face['stream']:
+            mega_place(place)
+        frames = guarded(place + f"; live.L.skate_launch(unreal.Vector({v * face['dir'][0]:.1f},{v * face['dir'][1]:.1f},0))",
+                         (300 + v / 4) / v + (4.5 if v >= 900 else 1.5))
+        ok, text = guard_verdict(frames)
+        rows = [f[0] for f in frames]
+        bails = any(r['mode'] == '4' for r in rows)
+        record(row, rows, ok, f"{v / 100:g} m/s head-on into {where} {face_text(face)}: {'bailed' if bails else 'no bail'}, "
+               f"last mode {rows[-1]['mode'] if rows else '-'}; {text}")
+        wait_riding()
+
+
+def beside_wall(record, wanted, face):
+    """Along the pier's wall, BESIDE cm from it: a powerslide either way, and a 360 spun either way off an ollie."""
+    runs = [(f'collide_powerslide_wall_{side}', 700, [(.3, {}), (1., {'slide': True, 'left': (s, 0)}), (.7, {})], 2.3)
+            for side, s in (('right', .6), ('left', -.6))]
+    runs += [(f'collide_air_spin_wall_{side}', 500, [(.4, {}), (.22, {'right': (0, -1), 'left': (s, 0)}),
+                                                     (.04, {'right': (0, 1), 'left': (s, 0)}), (.94, {'left': (s, 0)}), (1., {})], 2.8)
+             for side, s in (('right', 1), ('left', -1))]
+    for row, v, steps, seconds in runs:
+        if not wanted(row):
+            continue
+        if face is None:
+            record(row, [], False, 'no Sunset Pier wall found')
+            continue
+        # Along the wall, its left to the look's: from 4 m back along it, BESIDE cm out from the face.
+        (dx, dy), (nx, ny, _) = face['dir'], face['normal']
+        along = (-dy, dx)
+        n = math.hypot(nx, ny) or 1.
+        start = ground(face['point'][0] + nx / n * BESIDE - along[0] * 400, face['point'][1] + ny / n * BESIDE - along[1] * 400,
+                       face['ground'][2] + 300)
+        if start is None:
+            record(row, [], False, f'no ground beside {face_text(face)}')
+            continue
+        yaw = math.degrees(math.atan2(along[1], along[0]))
+        frames = guarded(f"live.skate_place(unreal.Vector({start[0]:.1f},{start[1]:.1f},{start[2]:.1f}), {yaw:.2f}); "
+                         f"live.L.skate_launch(unreal.Vector({v * along[0]:.1f},{v * along[1]:.1f},0)); live.skate_script({steps!r})", seconds)
+        ok, text = guard_verdict(frames)
+        rows = [f[0] for f in frames]
+        turned = sum((float(b['yaw']) - float(a['yaw']) + 180) % 360 - 180 for a, b in zip(rows, rows[1:]) if b['mode'] == '2')
+        what = (f"slid {'yes' if qa.ever(rows, 'slide', '1') else 'NO'}" if 'powerslide' in row
+                else f"air rotation {turned:.0f} degrees; {qa.combos(rows) or '(no tricks)'}")
+        record(row, rows, ok and ('powerslide' not in row or qa.ever(rows, 'slide', '1')),
+               f"{v / 100:g} m/s along {face_text(face)}, {BESIDE:g} cm out: {what}; "
+               f"{'bailed' if any(r['mode'] == '4' for r in rows) else 'no bail'}; {text}")
+        wait_riding()
+
+
+def air_wall(record, wanted, face):
+    """Ollies square into the pier's wall at 6 m/s from AIR_WALL cm: the nose meets the wall in the air, just before
+    the floor (and the wheels come down at its foot), and no deck point goes into the wall or the floor."""
+    for d in AIR_WALL:
+        row = f'collide_air_wall_{d}'
+        if not wanted(row):
+            continue
+        if face is None:
+            record(row, [], False, 'no Sunset Pier wall found')
+            continue
+        start = before_face(face, d)
+        if start is None:
+            record(row, [], False, f'no ground {d} cm before {face_text(face)}')
+            continue
+        place = f"live.skate_place(unreal.Vector({start[0]:.1f},{start[1]:.1f},{start[2]:.1f}), {face['yaw']})"
+        steps = [(.05, {}), (.22, {'right': (0, -1)}), (.04, {'right': (0, 1)}), (1.2, {})]
+        frames = guarded(place + f"; live.L.skate_launch(unreal.Vector({600 * face['dir'][0]:.1f},{600 * face['dir'][1]:.1f},0)); "
+                         f"live.skate_script({steps!r})", 2.5)
+        ok, text = guard_verdict(frames)
+        rows = [f[0] for f in frames]
+        (px, py, _), (nx, ny, _) = face['point'], face['normal']
+        n = math.hypot(nx, ny) or 1.
+        gap = lambda r: ((position(r)[0] - px) * nx + (position(r)[1] - py) * ny) / n
+        span = first_air(rows)
+        air_near = min((gap(r) for r in rows[span[0]:span[1]]), default=float('inf')) if span else float('inf')
+        record(row, rows, ok and span is not None and air_near < 70,
+               f"6 m/s ollie from {d} cm before {face_text(face)}: {'an air' if span else 'NO air'}, the board's centre "
+               f"{air_near:.0f} cm from the wall in it (needs under 70: its nose reaches 46), then mode "
+               f"{rows[span[1]]['mode'] if span else '-'}; {'bailed' if any(r['mode'] == '4' for r in rows) else 'no bail'}; {text}")
+        wait_riding()
+
+
+def bail_at_wall(record, face):
+    """At 15 m/s toward a JapanWorld wall, the bail held from 0.15 s for half a second: the thrown board (and the
+    board the rider gets up to) stays outside the wall."""
+    if face is None:
+        record('collide_bail_japanworld', [], False, 'no JapanWorld wall found')
+        return
+    start = before_face(face, 850)
+    if start is None:
+        record('collide_bail_japanworld', [], False, f'no ground before {face_text(face)}')
+        return
+    place = f"live.skate_place(unreal.Vector({start[0]:.1f},{start[1]:.1f},{start[2]:.1f}), {face['yaw']})"
+    mega_place(place)
+    frames = guarded(place + f"; live.L.skate_launch(unreal.Vector({1500 * face['dir'][0]:.1f},{1500 * face['dir'][1]:.1f},0))\n"
+                     "live.skate_input(); live.L.skate_release()\nlive.BAIL_AT=[0.0]\ndef _bail(dt):\n    live.BAIL_AT[0]+=dt\n"
+                     "    if live.BAIL_AT[0]>=.15 and live.BAIL_AT[0]-dt<.15:\n" + '\n'.join('        ' + l for l in BAIL_KEYS.format('press', 1).splitlines())
+                     + "\n    if live.BAIL_AT[0]>=.65:\n" + '\n'.join('        ' + l for l in BAIL_KEYS.format('release', 0).splitlines())
+                     + "\n        live.stop('bail_keys')\nlive.behave('bail_keys', _bail)", 7)
+    qa.py("live.stop('bail_keys')\n" + BAIL_KEYS.format('release', 0))
+    ok, text = guard_verdict(frames)
+    rows = [f[0] for f in frames]
+    bails = any(r['mode'] == '4' for r in rows)
+    record('collide_bail_japanworld', rows, ok and bails, f"15 m/s at {face_text(face)}, bailed {'yes' if bails else 'NO'}; {text}")
+    wait_riding()
+
+
+def first_air(rows):
+    """The first air in rows: (its first frame, the first frame after it), or None."""
+    a = next((i for i in range(1, len(rows)) if rows[i]['mode'] == '2' and rows[i - 1]['mode'] != '2'), None)
+    b = next((i for i in range(a, len(rows)) if rows[i]['mode'] != '2'), None) if a is not None else None
+    return None if b is None else (a, b)
+
+
+ENDS = {'1': 'landed', '3': 'on the rail', '4': 'bailed', '5': 'getting up', 'still in the air': 'still in the air'}
+
+
+def u23_rows(record, wanted):
+    """U23: a 360 hardflip toward the seven terrace's stair rail, popped 2 m before it starts, at the user's speeds:
+    the trick is the 360 hardflip, the board comes within RAIL_NEAR cm of the rail's line past its start (the
+    encounter the user had), the air ends (landed, on the rail or bailed: reported) within its ballistic bound (its
+    take-off's vertical speed, falling to half a metre under the terrace's foot at 1000 cm/s², the softer air gravity),
+    no later air outlasts its own, the board never goes into the rail or the stairs, and never under the pier's deck
+    (a drift turned into a late fall through the map fails)."""
+    lx, ly, heading = STAIR_RAIL
+    deck = ground(*json.loads(qa.py(f"import json; v=live.park.ue(-40,25,3.0); print(json.dumps([v.x, v.y, v.z]))").strip().splitlines()[-1]))
+    rail = json.loads(qa.py("import json; a=live.park.ue(-52,25.5,3.0); b=live.park.ue(-30,25.5,3.0); "
+                            "print(json.dumps([a.x, a.y, b.x, b.y]))").strip().splitlines()[-1])
+    ax, ay = rail[0], rail[1]
+    ux, uy = rail[2] - ax, rail[3] - ay
+    un = math.hypot(ux, uy) or 1.
+    ux, uy = ux / un, uy / un
+
+    def from_rail(p):
+        along = (p[0] - ax) * ux + (p[1] - ay) * uy
+        return abs((p[0] - ax) * uy - (p[1] - ay) * ux) if along > -20 else float('inf')
+    for v in U23_SPEEDS:
+        row = f'u23_hardflip_rail_{v}'
+        if not wanted(row):
+            continue
+        flick = 600. / v - .2
+        frames = guarded(f"live.scenario({lx},{ly},{heading},{v},[({flick:.2f},('flick','360_hardflip'))],duration=4.5)", 5.1)
+        ok, text = guard_verdict(frames)
+        rows = [f[0] for f in frames]
+        dt = lambda r: float(r.get('dt', 16.7)) / 1000
+        airs, i = [], 0
+        while i < len(rows):
+            if rows[i]['mode'] == '2' and (i == 0 or rows[i - 1]['mode'] != '2'):
+                j = next((k for k in range(i, len(rows)) if rows[k]['mode'] != '2'), len(rows))
+                p0, p1 = position(rows[i]), position(rows[min(i + 2, len(rows) - 1)])
+                vz = max(0., (p1[2] - p0[2]) / max(.001, sum(dt(r) for r in rows[i + 1:i + 3])))
+                drop = p0[2] - (deck[2] if deck else p0[2]) + 50.
+                bound = (vz + math.sqrt(vz * vz + 2 * 1000. * max(drop, 0.))) / 1000.
+                airs.append((sum(dt(r) for r in rows[i:j]), bound, rows[j]['mode'] if j < len(rows) else 'still in the air'))
+                i = j
+            i += 1
+        low = min((position(r)[2] for r in rows), default=0.) - (deck[2] if deck else 0.)
+        within = bool(airs) and all(t <= b + .05 and m != 'still in the air' for t, b, m in airs)
+        tricks = qa.combos(rows) or ''
+        hardflip = ('360' in tricks and 'hardflip' in tricks.lower()) or any('360HARDFLIP' in r.get('clip', '') for r in rows)
+        near = min((from_rail(position(r)) for r in rows), default=float('inf'))
+        record(row, rows, ok and within and low > -20 and hardflip and near <= RAIL_NEAR,
+               f"{v} cm/s, flicked at {flick:.2f} s: {'the 360 hardflip' if hardflip else 'NO 360 hardflip'}, nearest the rail's line "
+               f"{near:.0f} cm (needs {RAIL_NEAR:g}); airs " + ', '.join(f'{t:.2f} s (bound {b:.2f} s) {ENDS.get(m, "ending in mode " + m)}'
+                                                                         for t, b, m in airs)
+               + f"; lowest {low:.0f} cm against the pier's deck; {tricks or '(no tricks)'}; last mode "
+               f"{rows[-1]['mode'] if rows else '-'}; {text}")
+        wait_riding()
+
+
+def u24_rows(record, wanted):
+    """U24: lip airs back into the pier's quarter (straight and 12 degrees across either way) and Mega Park's pool
+    wall (straight and 20 degrees across): from the touch-down, LAND_HOLD s on the face without leaving it, no wheel
+    more than LAND_GAP cm off it, and no deck point into it."""
+    runs = [(f'u24_land_quarter_{name}', QUARTER_OUT,
+             f"live.park.place({QUARTER[0]},{QUARTER[1]},{h}); live.park.look(-12,{h}); live.park.launch(950,{h})", None) for name, h in U24_QUARTER]
+    x, y, z = POOL
+    for name, across in U24_POOL:
+        yaw = -90 + across
+        runs.append((f'u24_land_pool_{name}', POOL_OUT,
+                     f"live.L.skate_launch(unreal.Vector({1150 * math.cos(math.radians(yaw)):.1f},{1150 * math.sin(math.radians(yaw)):.1f},0))", yaw))
+    pool = None
+    for row, out, code, yaw in runs:
+        if not wanted(row):
+            continue
+        if yaw is not None:
+            pool = pool or qa.py(f"g=live.L.ground_at(unreal.Vector({x * 100},{-y * 100},{z * 100}))\nprint(g.x, g.y, g.z)").split()
+            mega_place(f"live.skate_place(unreal.Vector({pool[0]},{pool[1]},{pool[2]}), {yaw})")
+        frames = guarded(code, 5, wheels=True)
+        ok, text = guard_verdict(frames)
+        rows = [f[0] for f in frames]
+        air = lip_air(rows, out)
+        span = first_air(rows)
+        if air is None or span is None:
+            record(row, rows, False, f"no air off the lip; states {','.join(sorted(qa.modes(rows)))}; {text}")
+            wait_riding()
+            continue
+        b, held, gaps, off, blind = span[1], 0., [], 0, 0
+        for f in frames[b:]:
+            if held >= LAND_HOLD:
+                break
+            held += float(f[0].get('dt', 16.7)) / 1000
+            off += f[0]['mode'] != '1'
+            seen = [c for c in (f[6] or []) if c is not None]
+            if len(seen) < 2:
+                blind += 1
+            else:
+                gaps.append(max(seen))
+        face = air['drop'] > 20 and -30 < air['into'] < 100
+        worst = max(gaps, default=float('nan'))
+        record(row, rows, ok and face and air['mode'] == '1' and held >= LAND_HOLD - .001 and not off and gaps and worst <= LAND_GAP
+               and blind < len(gaps),
+               f"down {air['into']:.0f} cm out from the lip, {air['drop']:.0f} cm below it (deck up z {rows[b].get('deckup', '?')}), mode "
+               f"{air['mode']}; over {held:.2f} s from the touch-down: {off} frames off the ground, widest wheel gap {worst:.2f} cm "
+               f"({sum(g > LAND_GAP for g in gaps)} frames over {LAND_GAP:g} cm, {blind} unmeasured); {text}")
+        wait_riding()
+
+
+def collide_cost(record):
+    """The session's step per 60 Hz tick (cost=, mean and worst over each second) over 6 s of pushing and carving on
+    Mega Park's road: under COST_MEAN ms mean; and no second's worst tick over COST_WORST ms there or in any guarded
+    row run before it (walls, airs, landings, bails). With the world queries a tick made (queries=, mean/worst)."""
+    g = qa.py(f"g=live.L.ground_at(unreal.Vector({MEGA_ROAD[0] * 100},{-MEGA_ROAD[1] * 100},{MEGA_ROAD[2] * 100}))\n"
+              "print(g.x, g.y, g.z)").split()
+    mega_place(f"live.skate_place(unreal.Vector({g[0]},{g[1]},{g[2]}), 0); live.L.skate_launch(unreal.Vector(700,0,0))")
+    rows = record_while("live.skate_script([(2,{'push':True,'left':(.4,0)}),(2,{'push':True,'left':(-.4,0)}),(2,{'push':True}),(.2,{})])", 6.4)
+    sim = [tuple(map(float, w.split('/'))) for w in {r['cost'] for r in rows if '/' in r.get('cost', '')}]
+    mean = sum(m for m, _ in sim) / len(sim) if sim else float('inf')
+    seen = [tuple(map(float, c.split('/'))) for c in {c for c, _ in COSTS} if '/' in c]
+    worst = max([w for _, w in sim] + [w for _, w in seen], default=0.)
+    asked = lambda qs: [tuple(map(float, q.split('/'))) for q in qs if '/' in q]
+    road_q = asked({r.get('queries', '') for r in rows})
+    rows_q = asked({q for _, q in COSTS})
+    record('collide_cost', rows, bool(sim) and mean < COST_MEAN and worst < COST_WORST,
+           f"session step {mean:.3f} ms mean per tick over {len(sim)} seconds (the worst second {max((m for m, _ in sim), default=0):.3f}), "
+           f"worst tick {max((w for _, w in sim), default=0):.3f} ms on the road, {max((w for _, w in seen), default=0):.3f} ms over "
+           f"{len(seen)} seconds of the guarded rows; budget {COST_MEAN:g} ms mean, {COST_WORST:g} ms worst; queries per tick "
+           f"{sum(m for m, _ in road_q) / max(1, len(road_q)):.1f} mean (worst {max((w for _, w in road_q), default=0):.0f}) on the road, "
+           f"worst {max((w for _, w in rows_q), default=0):.0f} in the guarded rows; load average {os.getloadavg()[0]:.1f}")
+
+
+def collide_checks(record, wanted):
+    """U12, U23 and U24 (see COLLIDE_ROWS)."""
+    qa.py(WHEELS.replace('WHEEL_R', '3.1'))
+    qa.py(BOARD_GUARD)
+    box = qa.py("print(live.GUARD_BOX)").strip().splitlines()[-1]
+    print(f'INFO board guard: SkateDeck local bounds {box}', flush=True)
+    pier = lambda lx, ly: json.loads(qa.py(f"import json; v=live.park.ue({lx},{ly},3.0); print(json.dumps([v.x, v.y, v.z]))")
+                                     .strip().splitlines()[-1])
+    section = lambda *prefixes: any(wanted(n) for n in COLLIDE_ROWS if n.startswith(prefixes))
+    if section('collide_wall', 'collide_powerslide', 'collide_air_spin', 'collide_air_wall'):
+        wall, why = find_face([(pier(lx, ly), -heading) for (lx, ly), heading in PIER_WALLS], 1200, (20, 40, 60), 60)
+        print(f"INFO Sunset Pier wall: {face_text(wall) if wall else 'none'}; passed over: {why}", flush=True)
+        head_on(record, wanted, 'collide_wall_pier', wall, 'a Sunset Pier wall')
+        beside_wall(record, wanted, wall)
+        air_wall(record, wanted, wall)
+    if section('collide_ledge'):
+        ledge, why = find_face(MEGA_LEDGES, 1000, (20, 40), 20, stream=True)
+        print(f"INFO Mega Park ledge: {face_text(ledge) if ledge else 'none'}; passed over: {why}", flush=True)
+        head_on(record, wanted, 'collide_ledge_mega', ledge, "Mega Park's parapet")
+    if section('collide_bail'):
+        house, why = find_face(JAPAN_WALLS, 1400, (20, 60, 150), 150, stream=True)
+        print(f"INFO JapanWorld wall: {face_text(house) if house else 'none'}; passed over: {why}", flush=True)
+        bail_at_wall(record, house)
+    if section('u23_hardflip_rail'):
+        u23_rows(record, wanted)
+    if section('u24_land'):
+        u24_rows(record, wanted)
+    if section('collide_cost'):
+        collide_cost(record)
+    qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
 
 
 def release_controls():

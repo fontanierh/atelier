@@ -15,9 +15,11 @@
 
 namespace
 {
-    FRideWorld RideWorld(ACharacter* Rider, USkateRailSubsystem* Rails)
+    FRideWorld RideWorld(ACharacter* Rider, USkateRailSubsystem* Rails, float BoardScale)
     {
-        FRideWorld W; W.World = Rider ? Rider->GetWorld() : nullptr; W.Ignore = Rider; W.Rails = Rails; W.Owner = Rider; return W;
+        FRideWorld W; W.World = Rider ? Rider->GetWorld() : nullptr; W.Ignore = Rider; W.Rails = Rails; W.Owner = Rider;
+        W.BoardScale = BoardScale;
+        return W;
     }
     FRidePreferences RidePreferences()
     {
@@ -59,7 +61,7 @@ bool USkateComponent::StartRide()
     const double Bodied = FPlatformTime::Seconds();
     PhysicalRider->ClearBailOffer();
     Ride->SetRagdoll(bBody);
-    Ride->Activate(RideWorld(Rider, RailSystem), Pos, Rot, Vel, bGoofy, RidePreferences());
+    Ride->Activate(RideWorld(Rider, RailSystem, BoardScale()), Pos, Rot, Vel, bGoofy, RidePreferences());
     if (bBody && URidePhysicalRider::IsWanted()) PhysicalRider->BlendIn(GetDefault<URidePhysicalSettings>()->MountBlend);
     const double Done = FPlatformTime::Seconds();
     UE_LOG(LogTemp, Display, TEXT("SKATE ride started at (%.0f, %.0f, %.0f) speed %.0f, %s, %s, in %.2f ms (body %.2f ms)"), Pos.X, Pos.Y, Pos.Z, Vel.Size(),
@@ -85,7 +87,7 @@ bool USkateComponent::StepRide(float Dt)
             In.bBail = PC->IsInputKeyDown(EKeys::Gamepad_LeftThumbstick) && PC->IsInputKeyDown(EKeys::Gamepad_RightThumbstick) &&
                 PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis) > .5f && PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis) > .5f;
     }
-    Ride->Step(Dt, In, RideWorld(Rider, RailSystem));
+    Ride->Step(Dt, In, RideWorld(Rider, RailSystem, BoardScale()));
     for (const ERideCue Cue : Ride->Cues)
         switch (Cue)
         {

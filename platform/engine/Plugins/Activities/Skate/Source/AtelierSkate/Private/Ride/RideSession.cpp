@@ -5,6 +5,9 @@
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
 #include "HAL/PlatformTime.h"
+#include "Engine/OverlapResult.h"
+#include "Components/PrimitiveComponent.h"
+#include "PhysicsEngine/BodyInstance.h"
 
 using atelier::ride::Flick;
 
@@ -17,6 +20,33 @@ namespace
     // A turn round by itself flips the stance this long before the switch clip's end, or this long when a push was
     // asked during it (native's Turning.Switch WillExpire .02 and .075).
     constexpr float SwitchEndLead = .02f, SwitchQueueLead = .075f;
+    // The board's box (DeckBox) holds Native's whole board (BoardPhysicsSettings, DeckGeometry): half the length from
+    // tail to nose (the 59 cm middle and the 15.75 cm ends turned up 12.5 and 13 degrees, with the deck's 0.75 cm half
+    // thickness), half the deck's 24 cm width (the wheels sit 9.5 cm out), and the kicks' top over the deck's pivot (cm
+    // at board scale 1); it reaches down to the wheels' plane. Rolling and flying, the box starts StepUp + BoxClearance
+    // above that plane: lower faces are the wheels' probes'.
+    constexpr float DeckHalfLength = 45.6f, DeckHalfWidth = 12.f, DeckKick = 4.3f, BoxClearance = .5f;
+    // The world queries the session made (QueriesMean, QueriesWorst).
+    int32 BoardQueries = 0;
+    // SweepBox turns the box in steps that move no corner more than CornerStep (cm), at most RotationSteps a sweep;
+    // SweepBoard goes on along faces the board rolls on at most SupportSlides times a sweep.
+    constexpr float CornerStep = 4.f;
+    constexpr int32 RotationSteps = 8, SupportSlides = 3;
+    // A move starts from the deck the last tick left (SafeDeck) when that is within SafeReach (cm) of where it goes;
+    // farther, something placed the board. A board pushed out of a wall moves at most MaxPush (cm); inside one it
+    // cannot leave for StuckLimit (s), the rider falls.
+    constexpr float SafeReach = 100.f, MaxPush = 45.f, StuckLimit = .3f;
+    // In the air with no landing in sight, the board turns back toward upright at this rate (degrees/s).
+    constexpr float RightRate = 180.f;
+    // The air's safety deadline (a guard, not native behaviour: native bounds only how far a prediction looks): an air
+    // that has had the time to fall AirDrop (cm) below where it started, at the climb of its pop window under the
+    // weaker gravity, ends in a bail; so does one that slides GlanceLimit (s) along faces it cannot land on.
+    constexpr float AirDrop = 3000.f, GlanceLimit = .5f;
+    // IsLandable: a steep face is a transition when the surface this far below the hit (cm, down the face) is turned
+    // up from it by MinBend to MaxBend degrees. A lip air's own wall is a face turned toward LipOut no more than LipBack
+    // (cm) behind the lip's plane or LipBand in front of it.
+    constexpr float BendProbes[] = {30.f, 80.f, 150.f, 250.f, 400.f};
+    constexpr float MinBend = 2.f, MaxBend = 50.f, LipBack = 40.f, LipBand = 150.f;
 
     template <int32 N>
     float Curve(const float (&Points)[N][2], float X)
@@ -116,7 +146,8 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     LandAge = -1; LandImpact = 0; bLandedFromGrab = false; Sketchy = 0; Clock = 0;
     // The wobble's random numbers start over with every ride, so the same controls replay the same ride.
     Noise = 0x9E3779B9u;
-    bSteppingOff = bThroughLine = bPushFromRest = false;
+    bSteppingOff = bThroughLine = bPushFromRest = bBoxOffLine = false;
+    ResetWalls();
     // Settle onto whatever is under the board. A start inside the floor (a hand-off a little low) finds the floor's top
     // from up to StartRecover above and starts on it, rather than in the air under it.
     FVector Ground, Up, Forward; bool bBlocked = false;
@@ -179,7 +210,9 @@ void FRideSession::Step(float Dt, const FSkateInput& Input, const FRideWorld& Wo
     while (Accumulator >= Tick60)
     {
         Previous = Current;
+        const int32 Asked = BoardQueries;
         Tick(Input);
+        QuerySum += BoardQueries - Asked; QueryMax = FMath::Max(QueryMax, BoardQueries - Asked);
         Current.P = P; Current.Q = Q; Current.Deck = DeckPose();
         Accumulator -= Tick60; ++Count;
     }
@@ -191,7 +224,8 @@ void FRideSession::Step(float Dt, const FSkateInput& Input, const FRideWorld& Wo
         if (CostClock >= 1.)
         {
             CostMean = float(CostSum / FMath::Max(1, CostCount)); CostWorst = float(CostMax);
-            CostSum = CostMax = CostClock = 0; CostCount = 0;
+            QueriesMean = float(QuerySum) / float(FMath::Max(1, CostCount)); QueriesWorst = QueryMax;
+            CostSum = CostMax = CostClock = 0; CostCount = 0; QuerySum = 0; QueryMax = 0;
         }
     }
     Publish(Accumulator / Tick60, Dt, Input);
@@ -201,7 +235,9 @@ void FRideSession::SetMode(ERideState NewMode)
 {
     if (Mode == NewMode) return;
     Mode = NewMode; ModeTime = 0;
-    if (NewMode != ERideState::Air) bSteppingOff = bThroughLine = false;
+    if (NewMode != ERideState::Air) bSteppingOff = bThroughLine = bBoxOffLine = false;
+    // Every air starts its deadline afresh (TickAir), from where it left.
+    else { AirLaunchVz = FMath::Max(0.f, float(V.Z)); AirStartP = P; AirGlance = 0; }
 }
 
 void FRideSession::Tick(const FSkateInput& In)
@@ -210,6 +246,7 @@ void FRideSession::Tick(const FSkateInput& In)
     // same gesture does the same trick with the other foot.
     const Flick F = Flicks.Update(GoofyNow() ? -float(In.Right.X) : float(In.Right.X), float(In.Right.Y), Tick60);
     ModeTime += Tick60; Clock += Tick60;
+    TickSlide = SlideYaw;
     if (TrickTime >= 0) TrickTime += Tick60;
     if (LandAge >= 0) LandAge += Tick60;
     RailCooldown = FMath::Max(0.f, RailCooldown - Tick60);
@@ -237,6 +274,8 @@ void FRideSession::Tick(const FSkateInput& In)
     Calm = bQuiet ? Calm + Tick60 : 0.f;
     if (Calm > 1.f && (Line.Num() > 0 || !Holding.IsEmpty())) BankLine();
     TrackMotion();
+    // Where this tick left the board: the next move's start.
+    SafeP = P; SafeQ = Q; SafeDeck = DeckWorld(P, Q); bSafeDeck = true;
     ++Ticks;
 }
 
@@ -288,7 +327,221 @@ bool FRideSession::Sweep(const FVector& From, const FVector& To, float Radius, F
 {
     if (!Where.World) return false;
     FCollisionQueryParams Params(TEXT("RideSweep"), false, Where.Ignore);
+    ++BoardQueries;
     return Where.World->SweepSingleByChannel(Hit, From, To, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(Radius), Params);
+}
+
+bool FRideSession::Trace(const FVector& From, const FVector& To, FHitResult& Hit) const
+{
+    if (!Where.World) return false;
+    FCollisionQueryParams Params(TEXT("RideTrace"), false, Where.Ignore);
+    ++BoardQueries;
+    return Where.World->LineTraceSingleByChannel(Hit, From, To, ECC_Pawn, Params);
+}
+
+bool FRideSession::IsLandable(const FHitResult& Hit) const
+{
+    const FVector N = Hit.ImpactNormal;
+    if (Hit.bStartPenetrating || N.IsNearlyZero() || N.Z < -.1f) return false;
+    if (N.Z >= Tune.WallSlope) return true;
+    // A lip air comes back down onto the wall it left: a face turned the lip's way, near the lip's plane (not another
+    // wall facing the same way elsewhere).
+    if (bLipAir && FVector::DotProduct(N, LipOut) > .3f)
+    {
+        const float Out = FVector::DotProduct(FVector(Hit.ImpactPoint) - AirStartP, LipOut);
+        if (Out > -LipBack && Out < LipBand) return true;
+    }
+    // A steeper face is a transition when the surface below the hit turns up from it, as a ramp's curve does; a wall,
+    // a box's face or a rail's side goes on straight, ends or has nothing under it.
+    const FVector Down = FVector::VectorPlaneProject(FVector(0, 0, -1), N).GetSafeNormal();
+    if (Down.IsNearlyZero()) return false;
+    for (const float Below : BendProbes)
+    {
+        const FVector At = FVector(Hit.ImpactPoint) + Down * Below;
+        FHitResult Under;
+        if (!Trace(At + N * 40.f, At - N * 20.f, Under) || Under.bStartPenetrating) return false;
+        // The same face (a vert section above the curve): look further down.
+        const FVector M = Under.ImpactNormal;
+        const float Bend = AngleBetween(M, N);
+        if (Bend < MinBend) continue;
+        return Bend <= MaxBend && M.Z > N.Z;
+    }
+    return false;
+}
+
+void FRideSession::ResetWalls()
+{
+    ShownClip = FTransform::Identity; bSafeDeck = false;
+    TickSlide = SlideYaw; StuckTime = 0; AirLaunchVz = 0; AirGlance = 0; AirStartP = P;
+}
+
+FTransform FRideSession::DeckWorld(const FVector& At, const FQuat& Frame) const
+{
+    const FTransform Deck = ShownClip * DeckPose() * FTransform(Frame, At + Frame.GetUpVector() * Tune.DeckHeight);
+    // The shown board grows about its wheels' contact (USkateComponent::BoardGrowth): its pivot rises with it.
+    const float Scale = FMath::Max(.25f, Where.BoardScale);
+    const FQuat Rotation = Deck.GetRotation().GetNormalized();
+    return FTransform(Rotation, Deck.GetLocation() + Rotation.GetUpVector() * Tune.DeckHeight * (Scale - 1.f));
+}
+
+FTransform FRideSession::DeckBox(const FTransform& Deck, float Clearance, FVector& Extent) const
+{
+    const float Scale = FMath::Max(.25f, Where.BoardScale);
+    const float Bottom = -Tune.DeckHeight * Scale + Clearance, Top = DeckKick * Scale;
+    Extent = FVector(DeckHalfLength * Scale, DeckHalfWidth * Scale, FMath::Max(.5f, (Top - Bottom) * .5f));
+    return FTransform(Deck.GetRotation(), Deck.GetLocation() + Deck.GetRotation().GetUpVector() * ((Bottom + Top) * .5f));
+}
+
+bool FRideSession::SweepBox(const UWorld& World, const FTransform& From, const FTransform& To, const FVector& Extent, ECollisionChannel Channel,
+    const FCollisionQueryParams& Params, const FCollisionResponseParams& Response, FHitResult& Hit, FTransform* Reached)
+{
+    const FCollisionShape Box = FCollisionShape::MakeBox(Extent);
+    const FQuat R0 = From.GetRotation().GetNormalized(), R1 = To.GetRotation().GetNormalized();
+    const float Turn = float(R0.AngularDistance(R1)) * float(Extent.Size());
+    const int32 Steps = FMath::Clamp(FMath::CeilToInt(Turn / CornerStep), 1, RotationSteps);
+    FVector A = From.GetLocation();
+    for (int32 I = 1; I <= Steps; ++I)
+    {
+        const float T = float(I) / float(Steps);
+        const FQuat R = Steps == 1 ? R1 : FQuat::Slerp(R0, R1, T).GetNormalized();
+        const FVector B = FMath::Lerp(From.GetLocation(), To.GetLocation(), double(T));
+        // A box standing still sweeps a hair, so one that starts (or turns) inside something still reports it.
+        const FVector End = FVector::DistSquared(A, B) > 1e-4 ? B : A + FVector(0, 0, .01f);
+        ++BoardQueries;
+        if (World.SweepSingleByChannel(Hit, A, End, R, Channel, Box, Params, Response))
+        {
+            Hit.Time = (float(I - 1) + (Hit.bStartPenetrating ? 0.f : Hit.Time)) / float(Steps);
+            if (Reached) *Reached = FTransform(R, Hit.bStartPenetrating ? A : FVector(Hit.Location));
+            return true;
+        }
+        A = B;
+    }
+    return false;
+}
+
+FRideSession::EBoardHit FRideSession::SweepBoard(const FTransform& From, const FTransform& To, const FVector& Extent, const FVector& Up, bool bStopOnSupport, FHitResult& Hit) const
+{
+    if (!Where.World) return EBoardHit::Clear;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(RideBoard), false, Where.Ignore);
+    // A face the board rolls on, by the steeper of the contact's normal and the face's.
+    auto Rolls = [&](const FHitResult& H)
+    {
+        return FMath::Min(FVector::DotProduct(H.Normal, Up), FVector::DotProduct(H.ImpactNormal, Up)) >= Tune.WallSlope;
+    };
+    FTransform A = From, B = To;
+    float Done = 0.f;   // the fraction of the whole move behind A
+    for (int32 Pass = 0; Pass <= SupportSlides; ++Pass)
+    {
+        FHitResult H; FTransform At;
+        if (!SweepBox(*Where.World, A, B, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, H, &At)) return EBoardHit::Clear;
+        H.Time = Done + (1.f - Done) * H.Time;
+        if (H.bStartPenetrating)
+        {
+            // In a wall: the caller's to leave. On (or tilted into) a face it rolls on: on from just off that face, so a
+            // wall behind it still counts.
+            if (H.Normal.IsNearlyZero() || !Rolls(H)) { Hit = H; return EBoardHit::Inside; }
+            const FVector Off = H.Normal * (H.PenetrationDepth + .1f);
+            A = FTransform(At.GetRotation(), At.GetLocation() + Off); B.AddToTranslation(Off);
+            Done = H.Time;
+            continue;
+        }
+        Hit = H;
+        if (!Rolls(H)) return EBoardHit::Wall;
+        if (bStopOnSupport) return EBoardHit::Support;
+        // A face it rolls on (a ramp rising ahead): on along it for the rest of the move.
+        const FVector Rest = FVector::VectorPlaneProject(B.GetLocation() - FVector(H.Location), H.Normal);
+        A = FTransform(At.GetRotation(), FVector(H.Location) + H.Normal * .1f);
+        B = FTransform(B.GetRotation(), A.GetLocation() + Rest);
+        Done = H.Time;
+    }
+    return EBoardHit::Clear;
+}
+
+bool FRideSession::WallOverlap(const FTransform& Box, const FVector& Extent, const FVector& Up, FVector& Push, FVector& Normal) const
+{
+    Push = Normal = FVector::ZeroVector;
+    if (!Where.World) return false;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(RideBoardOverlap), false, Where.Ignore);
+    const FCollisionShape Shape = FCollisionShape::MakeBox(Extent);
+    TArray<FOverlapResult> Overlaps;
+    Where.World->OverlapMultiByChannel(Overlaps, Box.GetLocation(), Box.GetRotation(), ECC_Pawn, Shape, Params);
+    ++BoardQueries;
+    bool bAny = false;
+    float Deepest = -1.f;
+    for (const FOverlapResult& Overlap : Overlaps)
+    {
+        UPrimitiveComponent* Other = Overlap.GetComponent();
+        if (!Other || !Overlap.bBlockingHit) continue;
+        // Each component's (or instance's) own way out; faces the board rolls on are the ground's.
+        FMTDResult Out;
+        const FBodyInstance* Body = Other->GetBodyInstance(NAME_None, true, Overlap.ItemIndex);
+        ++BoardQueries;
+        if (!Body || !Body->OverlapTest(Box.GetLocation(), Box.GetRotation(), Shape, &Out)) continue;
+        if (FVector::DotProduct(Out.Direction, Up) >= Tune.WallSlope) continue;
+        bAny = true;
+        Push += Out.Direction * Out.Distance;
+        if (Out.Distance > Deepest) { Deepest = Out.Distance; Normal = Out.Direction; }
+    }
+    return bAny;
+}
+
+bool FRideSession::LeaveWall(const FTransform& From, FVector& ToP, const FQuat& ToQ, float Clearance, bool bOnPlane, FHitResult& Wall) const
+{
+    const FVector Up = ToQ.GetUpVector();
+    FVector At = ToP, Extent;
+    for (int32 Try = 0; Try < 3; ++Try)
+    {
+        const FTransform Box = DeckBox(DeckWorld(At, ToQ), Clearance, Extent);
+        FVector Push, Normal;
+        if (!WallOverlap(Box, Extent, Up, Push, Normal))
+        {
+            // Free of walls. Not pushed at all: the move went through a wall rather than ending in one. Pushed: the box's
+            // centre must get here from where the move started without crossing anything (the way out of a thin wall
+            // can lead to its far side).
+            FHitResult Between;
+            if (Try == 0 || Trace(From.GetLocation(), Box.GetLocation(), Between)) return false;
+            ToP = At;
+            return true;
+        }
+        if (bOnPlane) Push = FVector::VectorPlaneProject(Push, Up);
+        if (Push.IsNearlyZero()) return false;
+        At += Push + Push.GetSafeNormal() * .2f;
+        if (FVector::Dist(At, ToP) > MaxPush) return false;
+        Wall = FHitResult(); Wall.bBlockingHit = true; Wall.Normal = Wall.ImpactNormal = Normal;
+    }
+    return false;
+}
+
+FRideSession::EBoardMove FRideSession::MoveBoardPose(FVector& ToP, FQuat& ToQ, float Clearance, FHitResult& Wall) const
+{
+    // From where the last tick left the board, unless a placement has moved it since.
+    const bool bFromSafe = bSafeDeck && FVector::DistSquared(SafeP, ToP) < FMath::Square(SafeReach);
+    const FVector BaseP = bFromSafe ? SafeP : P;
+    const FQuat BaseQ = bFromSafe ? SafeQ : Q;
+    FVector Extent;
+    const FTransform From = DeckBox(bFromSafe ? SafeDeck : DeckWorld(P, Q), Clearance, Extent);
+    const FTransform To = DeckBox(DeckWorld(ToP, ToQ), Clearance, Extent);
+    const EBoardHit Got = SweepBoard(From, To, Extent, ToQ.GetUpVector(), false, Wall);
+    if (Got == EBoardHit::Clear) return EBoardMove::Clear;
+    const float Length = float(FVector::Dist(From.GetLocation(), To.GetLocation()));
+    auto StopAt = [&](float T)
+    {
+        ToP = FMath::Lerp(BaseP, ToP, double(T)); ToQ = FQuat::Slerp(BaseQ, ToQ, T).GetNormalized();
+    };
+    if (Got == EBoardHit::Wall)
+    {
+        // Up to the face, a hair short of it.
+        StopAt(FMath::Max(0.f, Wall.Time - .1f / FMath::Max(Length, .1f)));
+        return EBoardMove::Corrected;
+    }
+    // Inside: the box would turn or be set into a wall. Out of it where the move ends, if a free pose is near; else as
+    // far as the box went clear; else nowhere.
+    const FHitResult Inside = Wall;
+    if (LeaveWall(From, ToP, ToQ, Clearance, Mode != ERideState::Air, Wall)) return EBoardMove::Corrected;
+    Wall = Inside;
+    if (Inside.Time > 0.f) { StopAt(Inside.Time); return EBoardMove::Corrected; }
+    ToP = BaseP; ToQ = BaseQ;
+    return EBoardMove::Unresolved;
 }
 
 bool FRideSession::Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked, FVector* Block, const FVector& Toward) const
@@ -592,19 +845,35 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
     const FVector Dir = Q.GetForwardVector() * Travel;
     if (TrailNum == 0) AddTrail(Odometer, Up);
 
-    // Move, stopping at walls.
-    FVector Move = V * Dt;
-    const float Lift = Tune.WheelRadius + 8.f;
+    // Move, stopping at walls: the board's whole box (the deck shown, from a step's height up to its kicks) from where
+    // the last tick left it, its turn included (MoveBoardPose).
+    const float Clearance = Tune.StepUp + BoxClearance;
+    FVector Next = P + V * Dt;
+    FQuat NextQ = Q;
     FHitResult Wall;
-    if (!Move.IsNearlyZero() && Sweep(P + Up * Lift, P + Up * Lift + Move, 7.f, Wall) && !Wall.bStartPenetrating &&
-        FVector::DotProduct(Wall.ImpactNormal, Up) < Tune.WallSlope)
+    const EBoardMove Moved = MoveBoardPose(Next, NextQ, Clearance, Wall);
+    if (Moved == EBoardMove::Unresolved)
     {
-        const FVector N = FVector::VectorPlaneProject(Wall.ImpactNormal, Up).GetSafeNormal();
-        if (-FVector::DotProduct(V, N) > Tune.WallBailSpeed) { StartBail(TEXT("wall")); return false; }
-        Move *= Wall.Time;
-        Deflect(N, Speed);
+        // Inside a wall it cannot leave: the board stays where it is (its velocity into the wall goes), and stuck that
+        // way for StuckLimit the rider falls.
+        StuckTime += Dt;
+        if (StuckTime > StuckLimit) { StartBail(TEXT("stuck in a wall")); return false; }
+        const FVector N = FVector::VectorPlaneProject(Wall.Normal, Up).GetSafeNormal();
+        if (!N.IsNearlyZero()) Deflect(N, Speed);
+        return false;
     }
-    const FVector Next = P + Move;
+    StuckTime = 0;
+    if (Moved == EBoardMove::Corrected)
+    {
+        FVector N = FVector::VectorPlaneProject(Wall.ImpactNormal, Up).GetSafeNormal();
+        if (FVector::DotProduct(Wall.ImpactNormal, Up) >= Tune.WallSlope || N.IsNearlyZero()) N = FVector::VectorPlaneProject(Wall.Normal, Up).GetSafeNormal();
+        if (!N.IsNearlyZero())
+        {
+            if (-FVector::DotProduct(V, N) > Tune.WallBailSpeed) { StartBail(TEXT("wall")); return false; }
+            Deflect(N, Speed);
+        }
+        Q = NextQ;
+    }
 
     // Follow the surface; leave it when it falls away faster than the board can follow.
     FVector Ground, NewUp, NewForward, Block = FVector::ZeroVector; bool bBlocked = false;
@@ -640,11 +909,14 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
     {
         P = Next; TakeOff(0.f); return false;
     }
-    P = Ground; Odometer = At;
-    AddTrail(At, NewUp);
-    // Keep the board's heading (nose or tail leading) in the new plane.
+    // Keep the board's heading (nose or tail leading) in the new plane. The fit turns the whole box too: checked from
+    // where the last tick left it, kept as far as it is free.
     const FVector Heading = FVector::VectorPlaneProject(Q.GetForwardVector(), NewUp).GetSafeNormal();
-    Q = Frame(NewUp, Heading.IsNearlyZero() ? NewForward : Heading);
+    FVector Fit = Ground;
+    FQuat FitQ = Frame(NewUp, Heading.IsNearlyZero() ? NewForward : Heading);
+    if (MoveBoardPose(Fit, FitQ, Clearance, Wall) == EBoardMove::Unresolved) { Fit = Next; FitQ = Q; }
+    P = Fit; Q = FitQ; Odometer = At;
+    AddTrail(At, NewUp);
     V = Q.GetForwardVector() * Travel * Speed;
     return true;
 }
@@ -856,6 +1128,12 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
         const float Left = LandTime - (AirTime - PredictStart) - Tune.LevelLead;
         Q = TiltToward(Q, LandNormal, Left <= Tick60 ? 1.f : Tick60 / Left);
     }
+    else if (!bLipAir && AirTime > .25f)
+    {
+        // No landing in sight: the board turns back toward upright rather than holding a tilt it could not land in.
+        const float Off = AngleBetween(Q.GetUpVector(), FVector::UpVector);
+        if (Off > .5f) Q = TiltToward(Q, FVector::UpVector, RightRate * Tick60 / Off);
+    }
     // Grabs: the triggers, with B (Christ air), A (one foot) or the left stick down (tuck knee).
     ERideGrab Want = ERideGrab::None;
     if (In.bGrabLeft || In.bGrabRight)
@@ -882,31 +1160,146 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
     if (TryGrind(In)) return;
 
     // Fly.
-    const FVector From = P + Q.GetUpVector() * 12.f;
+    // The air's safety deadline (AirDrop): from where it started and the climb of its pop window (a late pop is part of
+    // the take-off), not whatever later contacts gave it.
+    if (AirTime <= Tune.LateFlickWindow + Tick60) AirLaunchVz = FMath::Max(AirLaunchVz, float(V.Z));
+    const float Fall = FMath::Max(1.f, FMath::Min(Tune.AirGravity, Tune.VertGravity));
+    if (ModeTime > (AirLaunchVz + FMath::Sqrt(AirLaunchVz * AirLaunchVz + 2.f * Fall * AirDrop)) / Fall) { StartBail(TEXT("air past its deadline")); return; }
     V.Z -= Gravity() * Tick60;
-    const FVector Move = V * Tick60;
-    FHitResult Hit;
-    bool bHit = Sweep(From, From + Move, 10.f, Hit);
-    if (bThroughLine)
+    // The flight sphere (the deck's middle: the landing's contact) and the board's whole box (the deck shown, its nose
+    // and tail past the sphere, turned as this tick turned it) along the tick's move: the earlier contact is resolved,
+    // and what is left of the move goes on from there, a few times at most.
+    const float Clearance = Tune.StepUp + BoxClearance;
+    float Left = 1.f;
+    bool bGlanced = false;
+    for (int32 Pass = 0; Pass < 3 && Left > 1e-3f && Mode == ERideState::Air; ++Pass)
     {
-        // Stepping off a stalled grind: the line just left is no contact until the sphere is clear of it.
-        auto FromLine = [this](const FVector& X) { return float(FVector::VectorPlaneProject(X - OffPoint, OffAlong).Size()); };
-        if (bHit && FromLine(Hit.Location) <= OffClear) bHit = false;
-        if (FromLine(From + Move) > OffClear || AirTime > .5f) bThroughLine = false;
+        const FVector Move = V * (Tick60 * Left);
+        const FVector From = P + Q.GetUpVector() * 12.f;
+        FHitResult Hit;
+        bool bHit = Sweep(From, From + Move, 10.f, Hit);
+        if (bThroughLine)
+        {
+            // Stepping off a stalled grind: the line just left is no contact until the sphere is clear of it, near where
+            // it left the line and for a moment only (the box, which starts on the line, waits as long).
+            auto FromLine = [this](const FVector& X) { return float(FVector::VectorPlaneProject(X - OffPoint, OffAlong).Size()); };
+            if (bHit && FromLine(Hit.Location) <= OffClear && FMath::Abs(FVector::DotProduct(Hit.Location - OffPoint, OffAlong)) < 60.f) bHit = false;
+            if (FromLine(From + Move) > OffClear || AirTime > .4f) bThroughLine = false;
+        }
+        FHitResult Side;
+        EBoardHit Box = EBoardHit::Clear;
+        FVector Extent;
+        const FVector Start = P;
+        const FQuat StartQ = Pass == 0 ? Current.Q : Q;
+        FTransform BoxFrom;
+        if (!bThroughLine && !bBoxOffLine)
+        {
+            const bool bFromSafe = Pass == 0 && bSafeDeck && FVector::DistSquared(SafeP, P) < FMath::Square(SafeReach);
+            BoxFrom = DeckBox(bFromSafe ? SafeDeck : DeckWorld(P, Q), Clearance, Extent);
+            Box = SweepBoard(BoxFrom, DeckBox(DeckWorld(P + Move, Q), Clearance, Extent), Extent, Q.GetUpVector(), true, Side);
+        }
+        if (Box == EBoardHit::Inside)
+        {
+            // The box turned or moved into a wall: out of it where the move ends (whole box, reached without crossing
+            // anything), else as far as it went clear, else back where the tick started; stuck that way StuckLimit,
+            // the rider falls. The velocity into the wall goes.
+            FVector Out = P + Move;
+            const FHitResult Inside = Side;
+            if (LeaveWall(BoxFrom, Out, Q, Clearance, false, Side)) { P = Out; StuckTime = 0; }
+            else if (Inside.Time > 0.f) { P = FMath::Lerp(Start, Start + Move, double(Inside.Time)); Q = FQuat::Slerp(StartQ, Q, Inside.Time).GetNormalized(); Side = Inside; }
+            else
+            {
+                Side = Inside;
+                P = Current.P; Q = Current.Q;
+                StuckTime += Tick60;
+                if (StuckTime > StuckLimit) { StartBail(TEXT("stuck in a wall")); return; }
+            }
+            V -= Side.Normal * FMath::Min(0.f, float(FVector::DotProduct(V, Side.Normal)));
+            bGlanced = true;
+            break;
+        }
+        if (bHit && Hit.bStartPenetrating)
+        {
+            // The sphere starts inside something: out along the way out when its centre gets there from the tick's
+            // start without crossing anything, else back there. Out onto a face the board can stand on, it lands
+            // there; otherwise only the velocity into the face goes.
+            const FVector Out = P + Hit.Normal * (FMath::Min(Hit.PenetrationDepth, MaxPush) + .1f);
+            FHitResult Between;
+            if (Hit.Normal.IsNearlyZero() || Trace(Current.P + Current.Q.GetUpVector() * 12.f, Out + Q.GetUpVector() * 12.f, Between))
+            {
+                P = Current.P; Q = Current.Q;
+                StuckTime += Tick60;
+                if (StuckTime > StuckLimit) StartBail(TEXT("stuck in a wall"));
+                return;
+            }
+            P = Out;
+            if (Hit.Normal.Z >= Tune.WallSlope && TryLand(P, Hit.Normal)) return;
+            V -= Hit.Normal * FMath::Min(0.f, float(FVector::DotProduct(V, Hit.Normal)));
+            return;
+        }
+        StuckTime = 0;
+        // A face the board can land on that the box meets first is the sphere's to land on (a nose touching down on a
+        // transition goes on into the landing, TryLand's frame from the sphere's contact).
+        if (Box == EBoardHit::Support && IsLandable(Side)) Box = EBoardHit::Clear;
+        if (Box != EBoardHit::Clear && (!bHit || Side.Time < Hit.Time))
+        {
+            // The box first (a nose or tail ahead of the sphere): a face it can land on is a landing there, nose or tail
+            // first (TryLand judges the tilt); anything else is a wall hit. The board stops there as the box did, its
+            // turn as far as the box had turned.
+            const float Stop = FMath::Max(0.f, Side.Time - .1f / FMath::Max(float(Move.Size()), .1f));
+            const bool bStalled = Box == EBoardHit::Wall && Side.Time * float(Move.Size()) < .5f;
+            if (!bStalled) { P += Move * Stop; Q = FQuat::Slerp(StartQ, Q, Stop).GetNormalized(); }
+            if (Box == EBoardHit::Support && IsLandable(Side) && TryLand(P, Side.ImpactNormal)) return;
+            if (Mode != ERideState::Air || HitWallInAir(Side.Normal)) return;
+            bGlanced = true;
+            if (bStalled)
+            {
+                // Held on the face from the move's start (the deck's turn, its own or the clip's, keeps it there): the
+                // turn waits, and the board goes on along the face (the velocity into it is gone) where the box goes
+                // clear; else it stays, GlanceLimit at most.
+                Q = StartQ;
+                const FVector To = P + V * (Tick60 * Left);
+                FHitResult Along;
+                if (SweepBoard(BoxFrom, DeckBox(DeckWorld(To, Q), Clearance, Extent), Extent, Q.GetUpVector(), true, Along) == EBoardHit::Clear) P = To;
+                Left = 0.f;
+                break;
+            }
+            Left *= 1.f - Side.Time;
+            continue;
+        }
+        if (bHit)
+        {
+            const FVector Contact = Hit.Location - Hit.Normal * 12.f;
+            // Only a face the board can land on is a landing; a wall, a rail's side or a box's face is a wall hit.
+            if (IsLandable(Hit) && TryLand(Contact, Hit.Normal)) return;
+            if (Mode != ERideState::Air) return;
+            P = Hit.Location - Q.GetUpVector() * 12.f;
+            if (HitWallInAir(Hit.Normal)) return;
+            Left *= 1.f - Hit.Time; bGlanced = true;
+            continue;
+        }
+        P += Move; Left = 0.f;
     }
-    if (bHit)
-    {
-        if (Hit.bStartPenetrating) { P += Hit.Normal * (Hit.PenetrationDepth + .1f); V = FVector::VectorPlaneProject(V, Hit.Normal); return; }
-        const FVector Contact = Hit.Location - Hit.Normal * 12.f;
-        if (TryLand(Contact, Hit.Normal)) return;
-        if (Mode != ERideState::Air) return;
-        // A glancing hit (a wall beside the flight): slide along it.
-        P = Hit.Location - Q.GetUpVector() * 12.f;
-        V = FVector::VectorPlaneProject(V, Hit.Normal) + Hit.Normal * FMath::Max(0.f, float(-FVector::DotProduct(V, Hit.Normal))) * Tune.WallRestitution;
-        return;
-    }
-    P += Move;
+    if (Mode != ERideState::Air) return;
+    // Sliding along faces it cannot land on for GlanceLimit (consecutive ticks) ends the air.
+    AirGlance = bGlanced ? AirGlance + Tick60 : 0.f;
+    if (AirGlance > GlanceLimit) { StartBail(TEXT("stuck against a wall")); return; }
     if (P.Z < -1e6) StartBail(TEXT("fell out of the world"));
+}
+
+bool FRideSession::HitWallInAir(const FVector& Normal)
+{
+    const float Into = -FVector::DotProduct(V, Normal);
+    const float Tilt = AngleBetween(Q.GetUpVector(), Normal);
+    // Coming down onto a floor on its side or upside down is a fall, whatever the speed; so is a hard wall hit.
+    if (Normal.Z >= .7f && Tilt > 75.f && Into > 0) { StartBail(TEXT("landed on its side")); return true; }
+    if (Into > Tune.WallBailSpeed) { StartBail(TEXT("hit a wall")); return true; }
+    // Otherwise the board slides along the face: the velocity into it goes, and none comes back (a bounce off a face
+    // it cannot land on would carry it up and on in the air). The landing is looked for afresh.
+    if (Into > 0) V += Normal * Into;
+    // Only a real change of course looks for the landing afresh: sliding down a face keeps the landing it had.
+    if (Into > 50.f) ResetPrediction(P + Q.GetUpVector() * 12.f);
+    return false;
 }
 
 bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
@@ -1044,6 +1437,7 @@ void FRideSession::TickGrind(const FSkateInput& In, Flick F)
     // a sharp corner sends the board off the way it was going.
     const FVector Was = Tangent;
     const float From = RailS;
+    const int32 FromRail = Rail;
     RailS += RailSpeed * Tick60;
     bool bOff = false;
     float Corner = 0;
@@ -1065,6 +1459,20 @@ void FRideSession::TickGrind(const FSkateInput& In, Flick F)
     if (GrindKind == ERideGrind::Crooked) Nose = (Tangent * GrindNose + FVector::CrossProduct(RailUp, Tangent) * .5f).GetSafeNormal();
     Q = Frame(RailUp, Nose);
     V = Tangent * RailSpeed;
+    // Walls along the line: the board's whole box above the line (from 2 cm over its contact), moved from where the
+    // last tick left it, the lock's closing offset and the line's turns included (MoveBoardPose). A grind into a wall
+    // throws the rider when fast, else stops short of it and stalls.
+    FVector Reached = P;
+    FQuat ReachedQ = Q;
+    FHitResult Wall;
+    const EBoardMove Moved = MoveBoardPose(Reached, ReachedQ, Drop + 2.f, Wall);
+    if (Moved != EBoardMove::Clear)
+    {
+        if (-FVector::DotProduct(V, Wall.Normal) > Tune.WallBailSpeed) { StartBail(TEXT("grind into a wall")); return; }
+        P = Reached; Q = ReachedQ;
+        if (Rail == FromRail) RailS = From;
+        RailSpeed = 0; V = FVector::ZeroVector; bOff = false;
+    }
     Travel = FVector::DotProduct(V, Q.GetForwardVector()) < 0 ? -1.f : 1.f;
     WheelSpin = FMath::Fmod(WheelSpin + (bSlide ? 0.f : RailSpeed * Tick60 * 2.f), 360.f);
     Hold(GrindName(), bSlide ? 250.f : 200.f, Tick60);
@@ -1170,6 +1578,11 @@ void FRideSession::LeaveGrind(float Up, bool bStall)
         Aside = OffClear * Tune.AirGravity / (2.f * FMath::Max(Up, 50.f));
         bSteppingOff = bThroughLine = true; OffPoint = LinePoint; OffAlong = Tangent;
     }
+    else if (Where.Rails && Where.Rails->Rails.IsValidIndex(Rail))
+    {
+        OffClear = 10.f + Where.Rails->Rails[Rail].Radius + 4.f;
+        bBoxOffLine = true; OffPoint = LinePoint; OffAlong = Tangent;
+    }
     V += FVector::UpVector * Up + Side * Aside;
     // Slides turn the board back along the travel (a stall's hop keeps it as it is).
     if (!bStall && (GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide || GrindKind == ERideGrind::Crooked))
@@ -1217,7 +1630,17 @@ void FRideSession::TickBail()
         V = Speed > 1.f ? V * FMath::Max(0.f, Speed - Tune.BailSlideDecel * Tick60) / Speed : FVector::ZeroVector;
         V.Z -= G * Tick60;
         FVector Ground, Up, Forward; bool bBlocked = false;
-        const FVector Next = P + V * Tick60;
+        // Walls stop the slide: the board's box lying level along the slide.
+        FVector Move = V * Tick60;
+        FHitResult Wall;
+        FVector Extent;
+        const FTransform Lying = DeckBox(FTransform(Frame(FVector::UpVector, Q.GetForwardVector()), P + FVector::UpVector * Tune.DeckHeight), Tune.StepUp + BoxClearance, Extent);
+        if (SweepBoard(Lying, FTransform(Lying.GetRotation(), Lying.GetLocation() + Move), Extent, FVector::UpVector, false, Wall) == EBoardHit::Wall)
+        {
+            Move *= FMath::Max(0.f, Wall.Time - .1f / FMath::Max(float(Move.Size()), .1f));
+            V -= Wall.Normal * FMath::Min(0.f, float(FVector::DotProduct(V, Wall.Normal)));
+        }
+        const FVector Next = P + Move;
         if (FindGround(Next, Frame(FVector::UpVector, Q.GetForwardVector()), 20.f, Ground, Up, Forward, bBlocked))
         { P = Ground; V = FVector::VectorPlaneProject(V, Up); }
         else if (!bBlocked) P = Next;
@@ -1238,6 +1661,7 @@ void FRideSession::GetUp(const FVector& GroundPoint, float Yaw)
     if (FindGround(P + FVector(0, 0, 30), Facing, 80.f, Ground, Up, Forward, bBlocked)) { P = Ground; Q = Frame(Up, Forward); }
     V = FVector::ZeroVector; Travel = 1; Sketchy = 0; Crouch = .25f; LandAge = -1;
     bSwitch = false; SwitchTime = -1; FakieTime = 0;    // up in the rider's own stance
+    ResetWalls();
     Previous.P = Current.P = P; Previous.Q = Current.Q = Q; Previous.Deck = Current.Deck = DeckPose();
     SetMode(ERideState::GetUp);
 }
@@ -1390,6 +1814,10 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     Animator.Evaluate(Body, Board, Dt, Bones);
     AnimCost = float((FPlatformTime::Seconds() - AnimStart) * 1000.);
     MeasurePose(Dt);
+    // The clip's own motion of the deck on the session's (the animator places the deck bone on Board.Deck): with the
+    // session's pose it is the board shown, and the box the next ticks collide.
+    ShownClip = Bones.IsValidIndex(DeckBone) ? Bones[DeckBone] * Board.Deck.Inverse() : FTransform::Identity;
+    ShownClip.SetScale3D(FVector::OneVector);
 
     switch (Mode)
     {
@@ -1484,11 +1912,11 @@ void FRideSession::MeasurePose(float Dt)
 
 FString FRideSession::DescribePose() const
 {
-    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f turns=%u swt=%.3f mirror=%d camyaw=%.1f wheel=%.1f"),
+    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f turns=%u swt=%.3f mirror=%d camyaw=%.1f wheel=%.1f queries=%.1f/%d"),
         *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseStep,
         Names.IsValidIndex(PoseStepBone) ? *Names[PoseStepBone].ToString() : TEXT("none"), PoseDt * 1000.f,
         FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost, HipBoard, HeadYaw, ChestYaw, Animator.GetFakieWeight(), Animator.GetTorso(),
-        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Camera.Rotator().Yaw, WheelSpin);
+        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Camera.Rotator().Yaw, WheelSpin, QueriesMean, QueriesWorst);
 }
 
 void FRideSession::StepOffBoard(float Dt, const FTransform& TrajectoryWorld)

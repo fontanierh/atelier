@@ -241,6 +241,11 @@ public:
     UBoxComponent* TakeLooseBoard();
     /** Destroy the loose board if it is still ours (the ride's board is back under the rider). */
     void DropLooseBoard();
+    /** Keep the loose board and the one handed over out of what the rider collides with (Pawn-blocking geometry,
+     *  including the query-only surfaces physics does not see): each frame either is swept, moved and turned in steps
+     *  (FRideSession::SweepBox), from where it was to where physics took it, and goes back to the last pose found free
+     *  when it would have passed or turned into a face. Update calls it; so does the handed-over board's follower. */
+    void GuardBoards();
 
     /** The physics asset built from the bone contract: a body per part (fitted to the skin, or a capsule), wide joint
      *  limits that every riding pose fits, no collision between the rider's own bodies. Fitted: how many bodies were
@@ -300,6 +305,9 @@ private:
     UPROPERTY() TObjectPtr<UPhysicsAsset> SavedPhysicsAsset;
     UPROPERTY() TObjectPtr<UBoxComponent> LooseBoard;
     TWeakObjectPtr<UPrimitiveComponent> TakenBoard;
+    // Where each board was when last guarded (GuardBoards).
+    FTransform LooseLast = FTransform::Identity, TakenLast = FTransform::Identity;
+    void GuardBoard(UPrimitiveComponent* Board, FTransform& Last);
     const ISkateRider* Api = nullptr;
     bool bBuiltAsset = false, bOwnControlAsset = false;
     /** Whether the anchors are in the board's frame (the kinematic root body) rather than the world. */
