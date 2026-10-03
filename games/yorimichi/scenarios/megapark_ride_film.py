@@ -3,18 +3,18 @@
 """Mega Park Ride film: the Ride skating backend (skate.Backend Ride) through the Mega Park. A push-off and hard carves
 on the park road, flat-ground flips (kickflip, heelflip, pop shove-it, 360 flip, varial kickflip, hardflip) and a
 sketchy catch, a powerslide down the ramp, manuals on the plaza, a long 50-50, a boardslide and a 5-0 down the plaza
-parapet, the drop-in off the upper deck into a big Indy over the pool's west wall, quarter-pipe airs that come back
-down into the pool's north wall (Melon 180, a Christ air with a slow-motion replay, a 360), a transition line in the
-capsule bowl (a roll-in over the coping, then airs back and forth between its outer wall and the spine: a Melon 180
-coming down forward, an Indy coming down fakie, a 360, a Christ air, with a slow-motion replay of the one that turned
-the most) and a 50-50 on its coping from the deck back into the bowl, three ragdoll bails (an Indy held into the landing on the pool's west
-wall, a kickflip on the road at speed come down on one foot, a 50-50 down the parapet and an Indy held down the plaza's
-step into a slam), each with the get-up where the body came to rest and a slow-motion replay the mixer can play (from
-the road bail he gets up on foot, recalls the board to his hand with the board button and runs with it), and a clean
-final line (kickflip, crooked grind, 360 flip). Two optional shots open with a run and a caveman onto the board and end
-with a grab dismount to the feet; they run only when the game has those transitions. The trick cameras keep the rider
-about 40% of the frame's height (CLOSE metres across at his pelvis), aimed at the physical body with a lead on its
-motion.
+parapet, the drop-in off the upper deck into a big Indy over the pool's west wall, quarter-pipe airs that come back down
+into the pool's north wall (Melon 180, a Christ air with a slow-motion replay, a 360), a transition line in the capsule
+bowl (a roll-in over the coping, then airs back and forth between its outer wall and the spine, from the floor should
+the roll-in run out of speed: a Melon 180 coming down forward, an Indy coming down fakie, a 360, a Christ air, with a
+slow-motion replay of the one that turned the most) and a 50-50 on its coping from the deck back into the bowl, three
+ragdoll bails (an Indy held into the landing on the pool's west wall, a kickflip on the road at speed come down on one
+foot, a 50-50 down the parapet and an Indy held down the plaza's step into a slam), each with the get-up where the body
+came to rest and a slow-motion replay the mixer can play (from the road bail he gets up on foot, recalls the board to
+his hand with the board button and runs with it), and a clean final line (kickflip, crooked grind, 360 flip). Two
+optional shots open with a run and a caveman onto the board and end with a grab dismount to the feet; they run only when
+the game has those transitions. The trick cameras keep the rider about 40% of the frame's height (CLOSE metres across at
+his pelvis), aimed at the physical body with a lead on its motion.
 
     atelier play --set 'performance=1;render_scale=100;desktop=1;show_fps=0' yorimichi -- -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/megapark_ride_film.py
@@ -38,22 +38,22 @@ Optional globals, set with `atelier live py` before the script:
     RECALL    False: the road bail gets up back onto the board instead of on foot with the board recalled to the hand
 
 Runs in the game's Python (the live bridge) at a fixed 60 Hz step, 90 Hz for the slow-motion shots. Every board shot is
-placed, settles for a second unrecorded, is launched and then ridden by scripted skate. input: pursuit steering along
-a line with push and brake holds, timed events and position triggers (Flick-It gestures, grabs, spins, grind sticks).
-Each shot records into its own folder (parts/NN_name): a JPG every second 60 Hz frame (30 fps), the camera, and the
-board's loops per frame; the sounds the game starts are stamped with the shot's own frame clock (AUDIO_BASE * (k + 1)
-plus the frame; unrecorded frames stamp -1000000). A slow shot saves every 90 Hz frame, so the mixer can replay its
-biggest air (a line's most turned), or its bail, at a third of the speed. A transition air's camera widens to hold
-the lip, the top of the air and the wall below the lip with the rider; a lip air's spin is measured from the board's
-SkateDeck mesh about the take-off's up. A shot with `retry` that is not kept (a line without three airs back into the
-transition, a quarter-pipe air that does not come back in) runs again from its start. done.json logs each air: its
-take-off and landing face, point, slope and stance, the speed there and on the flat before and after, the trick, a
-bail, and whether it came back into the transition. An optional shot that does not do what it should (no caveman, no
-dismount) is marked keep=false and left out of the cut. done.json logs each bail's entry speed, how far the body went,
-how low it lay (the state's lie=), how long it was down and, around the get-up, the largest move in one tick of the
-pelvis and of the board's deck while it shows (a pop), and each fade of the board (shown=); the part's shot.json keeps
-the bail's body log, every tick from the bail to BODY_AFTER s after the get-up. megapark_ride_film_mix.py cuts the
-parts into the film and mixes the sound.
+placed, settles for a second unrecorded, is launched and then ridden by scripted skate. input: pursuit steering along a
+line with push and brake holds, timed events and position triggers (Flick-It gestures, grabs, spins, grind sticks). Each
+shot records into its own folder (parts/NN_name): a JPG every second 60 Hz frame (30 fps), the camera, and the board's
+loops per frame; the sounds the game starts are stamped with the shot's own frame clock (AUDIO_BASE * (k + 1) plus the
+frame; unrecorded frames stamp -1000000). A slow shot saves every 90 Hz frame, so the mixer can replay its biggest air
+(a line's most turned), or its bail, at a third of the speed. A transition air's camera widens to hold the lip, the top
+of the air and the wall below the lip with the rider; a lip air's spin is measured from the board's SkateDeck mesh about
+the take-off's up. A shot with `retry` that is not kept (a roll-in or a quarter-pipe air that does not come back into
+the transition, a floor line without three airs back in) runs again from its start; the floor line runs only when the
+roll-in ran out of speed before its fourth air. done.json logs each air: its take-off and landing face, point, slope and
+stance, the speed there and on the flat before and after, the trick, a bail, and whether it came back into the
+transition. An optional shot that does not do what it should (no caveman, no dismount) is marked keep=false and left out
+of the cut. done.json logs each bail's entry speed, how far the body went, how low it lay (the state's lie=), how long
+it was down and, around the get-up, the largest move in one tick of the pelvis and of the board's deck while it shows (a
+pop), and each fade of the board (shown=); the part's shot.json keeps the bail's body log, every tick from the bail to
+BODY_AFTER s after the get-up. megapark_ride_film_mix.py cuts the parts into the film and mixes the sound.
 """
 import json, math, os, re, shutil, traceback
 import unreal
@@ -404,8 +404,14 @@ def back_in(a):
 
 
 def line_done(s, c):
-    """A transition line ends 1.4 s after the landing of its last planned air, or 2.5 s after a bail."""
+    """A transition line ends 1.4 s after the landing of its last planned air, 2.5 s after a bail, or 1.2 s after a
+    climb that turns back down its wall short of the lip (the line has run out of speed)."""
     if s['bail_t'] is not None: return c.t > s['bail_t'] + 2.5
+    if c.mode == 1 and (c.slope or 0.) > 25.:
+        if c.vz > .5: s['climb'] = True
+        elif c.vz < -.5 and s.get('climb'): s['climb'] = False; s.setdefault('stall_wall_t', c.t)
+    elif c.mode != 1: s['climb'] = False
+    if s.get('stall_wall_t') is not None and c.t > s['stall_wall_t'] + 1.2: return True
     planned = [a for a in s['airs'] if a.get('plan') and not a['plan']['name'].endswith('(between)')]
     return len(planned) == len(s['plan']) and c.t > planned[-1]['t1'] + 1.4
 
@@ -448,13 +454,13 @@ ASPECT = 16. / 9.
 
 def keep_points(s, c):
     """The points a keep camera holds besides the rider: a lip air's lip, its top (with the body above the board)
-    and the wall VERT_DZ + 1 m below the lip, from the climb towards it until .8 s after its landing."""
+    and the wall VERT_DZ + .7 m below the lip, from the climb towards it until .8 s after its landing."""
     a = s['air'] if c.mode == 2 else None
     if a is None and s['airs'] and s['airs'][-1].get('lip') and c.t < s['airs'][-1]['t1'] + .8: a = s['airs'][-1]
     if a is not None and a.get('lip'):
         g = air_g(a); top = a['z0'] + max(0., a.get('vz_ref', a['vz0'])) ** 2 / (2. * g)
         return [(a['x0'], a['y0'], a['z0']), (a['x0'], a['y0'], max(top, a['zmax']) + 1.3),
-                (a['x0'], a['y0'], a['z0'] - VERT_DZ - 1.)]
+                (a['x0'], a['y0'], a['z0'] - VERT_DZ - .7)]
     if c.mode == 1 and c.vz > 2.5 and (c.slope or 0.) > 25.:      # climbing a wall fast: the air to come
         return [(c.hx, c.hy, c.zb + c.vz * c.vz / (2. * 10.) + 1.3), (c.hx, c.hy, c.zb - 1.)]
     return []
@@ -471,7 +477,7 @@ def keep_frame(eye, pts, base_fov):
     yaws = [y0 + math.atan2(math.sin(d[0] - y0), math.cos(d[0] - y0)) for d in dirs]; pits = [d[1] for d in dirs]
     yc, pc_ = (max(yaws) + min(yaws)) / 2., (max(pits) + min(pits)) / 2.
     span = max(max(yaws) - min(yaws), (max(pits) - min(pits)) * ASPECT)
-    fov = max(base_fov, math.degrees(span) * 1.3 + 8.)
+    fov = max(base_fov, math.degrees(span) * 1.18 + 5.)
     r = dirs[0][2]
     aim = (eye[0] + r * math.cos(pc_) * math.cos(yc), eye[1] + r * math.cos(pc_) * math.sin(yc), eye[2] + r * math.sin(pc_))
     return aim, min(fov, 90.)
@@ -742,18 +748,22 @@ SHOTS = [
     # then back and forth between the outer wall and the spine, each air chosen at its lip by the stance and the air
     # time (a Melon 180 coming down forward, an Indy coming down fakie, a 360, a Christ air), squared up across the
     # floor between the walls. The camera stands down the channel at the floor and slides across with him; the replay
-    # is the air that turned the most.
+    # is the air that turned the most. The roll-in brings only the coping's height: the spine is .84 m lower, so its
+    # first air comes easily, but the outer wall gives back what the airs and the rolling cost, so unless pumping pays
+    # for that the line runs out of speed there; it then ends after that climb turns back (kept as the drop-in when an
+    # air came back in) and the floor line below carries the airs.
     dict(name='bowl_line', slow=True, replay={'pre': .3, 'post': .7, 'pick': 'spin'}, retry=1,
          start=CAPSULE.at(LINE_U, -1.2) + (57., 60.), speed=1.5, pipe={'pipe': CAPSULE, 'u': LINE_U}, faces=CAPSULE.face,
-         plan=BOWL_PLAN, end=line_done, keep=line_kept, secs=34.,
+         plan=BOWL_PLAN, end=line_done, keep=came_back, full=line_kept, secs=34.,
          cams=[(0., chase(back=3.4, side=-.9, up=1.6, frame=4.5)),
                (lambda s, c: c.zb < CAPSULE_Z - .4,
                 fixed(CAPSULE.at(LINE_U - 9., CAPSULE.w / 2.) + (CAPSULE_FLOOR + 3., 2.), frame=5.5, aim_k=8., keep=True,
                       slide=(CAPSULE.n, .45), rise=.3))],
          expect=['Melon', '180', '360']),
-    # The same line from the channel's floor, should the roll-in off the coping not ride away twice.
-    dict(name='bowl_line_floor', unless='bowl_line', slow=True, replay={'pre': .3, 'post': .7, 'pick': 'spin'}, retry=1,
-         start=CAPSULE.at(LINE_U, CAPSULE.w / 2.) + (CAPSULE_FLOOR + 2., 60.), speed=11., pipe={'pipe': CAPSULE, 'u': LINE_U},
+    # The same line launched across the channel's floor at 11.5 m/s, faster than the roll-in arrives, unless the
+    # roll-in made the whole line.
+    dict(name='bowl_line_floor', unless='bowl_line:full', slow=True, replay={'pre': .3, 'post': .7, 'pick': 'spin'}, retry=1,
+         start=CAPSULE.at(LINE_U, CAPSULE.w / 2.) + (CAPSULE_FLOOR + 2., 60.), speed=11.5, pipe={'pipe': CAPSULE, 'u': LINE_U},
          faces=CAPSULE.face, plan=BOWL_PLAN, end=line_done, keep=line_kept, secs=32.,
          cams=[(0., fixed(CAPSULE.at(LINE_U - 9., CAPSULE.w / 2.) + (CAPSULE_FLOOR + 3., 2.), frame=5.5, aim_k=8., keep=True,
                           slide=(CAPSULE.n, .45), rise=.3))],
@@ -1205,6 +1215,9 @@ def end_shot():
         try: keep = bool(s['keep'](s, c))
         except Exception: keep = False
     st['kept'][s['name']] = keep
+    if s.get('full') and c is not None:          # a kept shot that also did all it could (a whole transition line)
+        try: st['kept'][s['name'] + ':full'] = keep and bool(s['full'](s, c))
+        except Exception: st['kept'][s['name'] + ':full'] = False
     if s.get('bail') and s['up_t'] is not None: s['bail']['getup'] = getup_steps(s['body'], s['up_t'])
     replay = None
     if s.get('replay') and s['replay'].get('on') == 'bail':
@@ -1223,7 +1236,8 @@ def end_shot():
             'seconds': round(s['frames'] / 30., 2), 'slow': bool(s.get('slow')), 'replay': replay,
             'combos': s['combos'], 'tricks': s['lasts'], 'missing': missing, 'landed': s['d_landed'], 'bails': s['d_bails'],
             'grinds': s['d_grinds'], 'speed_max': round(s['max_spd'], 2), 'speed_min': round(s['min_spd'], 2) if s['min_spd'] < 1e8 else None,
-            'airs': [air_info(a) for a in s['airs']], 'try': s.get('try', 1),
+            'airs': [air_info(a) for a in s['airs']], 'try': s.get('try', 1), 'full': st['kept'].get(s['name'] + ':full'),
+            'stall_wall_t': s.get('stall_wall_t'),
             'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
             'bail_kind': s['bail_kind'], 'bail': s.get('bail'), 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
     part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'], body=s['body'])
