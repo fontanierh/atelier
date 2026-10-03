@@ -90,9 +90,9 @@ bool ASkatePark::Initialize(const FString& Path)
     FString AssetRoot(TEXT("/Game/SkatePark"));
     Root->TryGetStringField(TEXT("asset_root"), AssetRoot);
     if (!AssetRoot.StartsWith(TEXT("/Game/"))) return false;
-    FString Key(TEXT("skatepier"));
-    Root->TryGetStringField(TEXT("key"), Key);
-    Tags.AddUnique(FName(*Key));
+    FString ParkKey(TEXT("skatepier"));
+    Root->TryGetStringField(TEXT("key"), ParkKey);
+    Tags.AddUnique(FName(*ParkKey));
     const FVector O = ArrayVector(Root->GetArrayField(TEXT("origin")));
     Origin = FVector(O.X * 100., -O.Y * 100., O.Z * 100.);
     Yaw = Root->HasField(TEXT("yaw_deg")) ? Root->GetNumberField(TEXT("yaw_deg")) : 0.f;
