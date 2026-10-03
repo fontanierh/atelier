@@ -230,6 +230,14 @@ if SW:
     line(SW['lane'], (120, 96, 60), 3.2); line(SW['lane'], (206, 178, 128), 2.2)
     stair = [island_world(p[0], p[1]) for p in ISL.path_points()]
     line(stair, (90, 70, 50), 3.0); line(stair, (222, 210, 190), 1.6)
+# Draw the enlarged pier itself, rather than only adding its travel pin.
+PARK = str(yori.REGIONS / 'skatepark' / 'park.json')
+if os.path.exists(PARK):
+    from pier_plan import draw_pier,deck_polygon
+    pier=json.load(open(PARK))
+    draw_pier(d,wp,PX,pier)
+    outline=deck_polygon(pier)
+    LINES.append([[round(float(x),2),round(float(y),2)] for x,y in outline+[outline[0]]])
 # ---------- buildings, landmarks, props
 NAVY, NAVY_OUT = (52, 58, 92), (20, 22, 36)
 for b in V['buildings']: rect(b['position'][0], b['position'][1], b['width'], b['depth'], b['yaw'], NAVY, NAVY_OUT)
@@ -351,7 +359,8 @@ sheet.convert('RGB').save(os.path.join(A.out, 'map.jpg'), quality=88, progressiv
 print('map sheet:', 'registered painted sheet' if sheet is not img else 'accurate generated layout')
 meta = dict(frame='blender_metres_north_up', bounds=[X0, Y0, X1, Y1], px_per_m=PX, width=MW, height=MH,
             sea_level=W.get('sea_level', 0), zones=zones, sources=['world.json', 'heightmap.npy', 'farhills.npy'] + (['hidamari/city.json'] if C else []))
-if NORTH:meta.update(projection_x=X_KNOTS,projection_y=Y_KNOTS,world_bounds=[-700,-650,2400,3030])
+if NORTH:meta.update(projection_x=X_KNOTS,projection_y=Y_KNOTS,
+                     world_bounds=[X_KNOTS[0][0],Y_KNOTS[0][0],X_KNOTS[-1][0],Y_KNOTS[-1][0]])
 json.dump(meta, open(os.path.join(A.out, 'map.json'), 'w'), indent=1)
 json.dump(LINES, open(os.path.join(A.out, 'map_lines.json'), 'w'))
 print('map', MW, 'x', MH, 'px,', len(zones), 'zones ->', A.out)

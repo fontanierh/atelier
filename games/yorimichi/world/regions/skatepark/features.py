@@ -117,11 +117,14 @@ def mini_return(m):
     angles=np.linspace(math.pi,2*math.pi,121)
     rows=[[( -23+r*math.cos(a),-23+r*math.sin(a),z) for a in angles] for r,z in prof]
     ids=[[m.vert(p) for p in row] for row in rows]
+    distance=np.r_[0,np.cumsum(np.linalg.norm(np.diff(np.array(prof),axis=0),axis=1))]
+    widths=np.linspace(0,40.8,len(angles))  # whole tile repeats at the two quarter joins
     for i in range(len(ids)-1):
         for k in range(len(angles)-1):
             p=rows[i][k];want=(-23-p[0],-23-p[1],1) if i<64 else (0,0,1)
             color='tile' if i==45 else 'coping' if 46<=i<64 else 'terracotta' if i==64 else 'sage'
-            m.face([ids[i][k],ids[i][k+1],ids[i+1][k+1],ids[i+1][k]],color,'transition',True,want)
+            m.face([ids[i][k],ids[i][k+1],ids[i+1][k+1],ids[i+1][k]],color,'transition',True,want,
+                   uv=[(widths[k],distance[i]),(widths[k+1],distance[i]),(widths[k+1],distance[i+1]),(widths[k],distance[i+1])])
     # A west 50cm deck flare joins the wider access deck without leaving a crack.
     m.poly([(-39,-23,h),(-38.5,-23,h),(-38.5,-22,h),(-39,-22,h)],'concrete_light',want=(0,0,1))
 
@@ -182,8 +185,8 @@ def street_link(m):
     m.grid(rows,'concrete_light','transition',True,(0,0,1))
 
 
-def flow_table(m):
-    f=L.FUNBOX; prof,_=L.funbox_profile()
+def flow_table(m,f=None):
+    f=f or L.FUNBOX; prof,_=L.funbox_profile(f)
     ys=sorted(set(wl(YS,f['y0'],f['y1'])+list(np.linspace(f['y0'],f['y1'],53))))
     def cross(y):
         t=min(1.,(y-f['y0'])/3.,(f['y1']-y)/3.)
@@ -201,11 +204,15 @@ def bowl(m):
     # S-curve wraps every outside face, giving multiple roll-ins and return lines.
     rings += [L.bowl_ring(rf+r+b['deck']+b['skirt']*u,h*(1-3*u*u+2*u*u*u)) for u in np.linspace(0,1,57)[1:]]
     ids=[[m.vert(p) for p in row] for row in rings];n=len(ids[0])
+    profile=np.r_[0,np.cumsum(np.linalg.norm(np.diff(np.array(rings)[:,0],axis=0),axis=1))]
+    lip=np.array(rings[45]); width=np.r_[0,np.cumsum(np.linalg.norm(np.diff(np.vstack([lip,lip[0]]),axis=0),axis=1))]
+    width*=round(width[-1]/1.2)*1.2/width[-1]  # close the tiled perimeter on a whole repeat
     for j in range(len(ids)-1):
         for k in range(n):
             kn=(k+1)%n
             color='tile' if j==45 else 'coping' if 46<=j<64 else 'terracotta' if j==64 else 'concrete_light' if j==65 else 'sage'
-            m.face([ids[j][k],ids[j][kn],ids[j+1][kn],ids[j+1][k]],color,'transition',True,(b['x']-rings[j][k][0],b['y']-rings[j][k][1],1) if j<64 else (0,0,1))
+            m.face([ids[j][k],ids[j][kn],ids[j+1][kn],ids[j+1][k]],color,'transition',True,(b['x']-rings[j][k][0],b['y']-rings[j][k][1],1) if j<64 else (0,0,1),
+                   uv=[(width[k],profile[j]),(width[k+1],profile[j]),(width[k+1],profile[j+1]),(width[k],profile[j+1])])
 
 
 def park_features():
@@ -213,69 +220,81 @@ def park_features():
     for q in L.QUARTERS:quarter(m,q)
     for b in L.BANKS:bank(m,b)
     terraces(m);street_link(m);flow_table(m);bowl(m);mini_return(m)
+    for hip in L.HIPS:flow_table(m,hip)
     for p in L.PADS:ledge_box(m,p['x0'],p['x1'],p['y0'],p['y1'],p['height'],side_color='sage',steel_x=True)
     for bar in L.BARS:
         x0,x1,y,h=[bar[k] for k in ('x0','x1','y','top')];r=L.BAR_R
         if bar['square']:m.box((x0,y-r,h-2*r),(x1,y+r,h),bar['color'],'rail')
         else:m.tube([(x0,y,h-r),(x1,y,h-r)],r,bar['color'],'rail',sides=10)
-        for x in (x0+.3,(x0+x1)/2,x1-.3):m.box((x-r,y-r,0),(x+r,y+r,h-r),bar['color'],'rail')
+        for x in np.linspace(x0+.6,x1-.6,max(3,math.ceil((x1-x0)/5))):m.box((x-r,y-r,0),(x+r,y+r,h-r),bar['color'],'rail')
+    f=L.CURVE_BAR
+    m.tube(L.arc_points(f,z=f['height']-L.BAR_R),L.BAR_R,'red','rail',sides=10)
+    for x,y,z in L.arc_points(f,z=f['height']-L.BAR_R)[::20]:
+        m.box((x-.025,y-.025,0),(x+.025,y+.025,z-L.BAR_R),'red','rail')
+    f=L.CURVE_LEDGE;r=f['radius'];w=f['width'];h=f['height']
+    rings=[L.arc_points(f,radius=rr) for rr in (r-w/2,r-w/2+.05,r+w/2-.05,r+w/2)]
+    m.grid(rings,'concrete_light','concrete',False,(0,0,1),lambda i,j:'steel' if i in (0,2) else 'concrete_light')
+    for side,ring in [(-1,rings[0]),(1,rings[-1])]:
+        for p,q in zip(ring,ring[1:]):
+            m.poly([(p[0],p[1],0),(q[0],q[1],0),q,p],'concrete_dark',want=(side*(p[0]-f['x']),side*(p[1]-f['y']),0))
+    for k in (0,-1):
+        p,q=rings[0][k],rings[-1][k]
+        m.poly([(p[0],p[1],0),(q[0],q[1],0),q,p],'concrete_dark')
     return m
 
 
 def gardens():
-    """Furniture occupies the edge promenade, leaving all skate approaches open."""
-    m=MeshData('SM_SkateParkFurniture'); plants=MeshData('SM_SkateParkPlanting')
-    rng=np.random.default_rng(184)
-    # Timber benches / grass boxes alternating along the sunset promenade and entry.
-    for x,y in [(-46,-39),(2,-39),(36,-39),(-26,41),(-12,41),(22,41),(38,41),(54,-17),(54,1)]:
-        start,plant_start=len(m.verts),len(plants.verts)
-        m.box((x-2,y-.5,0),(x+2,y+.5,.35),'concrete_dark')
-        for j in range(5):m.box((x-2.1,y-.5+j*.21,.35),(x+2.1,y-.32+j*.21,.46),'timber','wood')
-        for j in range(3):m.box((x-2.1,y+.48,.65+j*.15),(x+2.1,y+.6,.76+j*.15),'timber','wood')
-        if (x,y) in ((2,-39),(22,41)):continue  # adjacent rounded garden already supplies planting
-        px=x+3.8;py=y
-        m.box((px-.9,py-.7,0),(px+.9,py+.7,.58),'concrete_light')
-        m.box((px-.79,py-.59,.58),(px+.79,py+.59,.59),'soil','soil')
-        for _ in range(24):
-            a=rng.uniform(0,2*math.pi);xx=px+rng.uniform(-.65,.65);yy=py+rng.uniform(-.48,.48);hh=rng.uniform(.3,.85)
-            dx,dy=math.cos(a),math.sin(a);w=.06
-            plants.poly([(xx-dy*w,yy+dx*w,.6),(xx+dy*w,yy-dx*w,.6),(xx+dx*.28,yy+dy*.28,.6+hh)],'grass_light' if rng.random()<.3 else 'grass','leaves')
-            # Double sided leaf for both Unreal and review.
-            plants.faces.append(plants.faces[-1][::-1]);plants.colors.append(plants.colors[-1]);plants.smooth.append(False);plants.tags.append('leaves')
-        if x==54:
-            # Align east-edge seats with the promenade, beyond the bowl's outer bank.
-            for mesh,first in [(m,start),(plants,plant_start)]:
-                mesh.verts[first:]=[(x-(py-y),y+(px-x),z) for px,py,z in mesh.verts[first:]]
-    # Long timber pergola looking out over the water.
-    for x in (13.,20.5,28.):
-        for y in (-41.,-35.):m.box((x-.12,y-.12,0),(x+.12,y+.12,3.2),'timber','wood')
-    for y in (-41.,-35.):m.box((12.5,y-.12,3.05),(28.5,y+.12,3.35),'timber','wood')
-    for x in np.arange(12.5,28.6,.5):m.box((x-.065,-41.4,3.35),(x+.065,-34.6,3.50),'timber','wood')
-    # Rounded garden seats provide a stronger silhouette than scattered square pots.
-    for cx,cy,span in [(-46,39,8),(31,40,9),(51,-28,7),(-49,-29,6),(8,-39,6)]:
-        ring=[]
-        for end,angle in [(span/2-1, -90),(-span/2+1,90)]:
+    """A planted waterfront promenade outside the approaches and landings."""
+    m = MeshData('SM_SkateParkFurniture'); plants = MeshData('SM_SkateParkPlanting')
+    rng = np.random.default_rng(184)
+    gardens = [(-72, 62, 10), (-49, 62, 8), (-25, 62, 8), (30, 62, 8), (62, 62, 12),
+               (-68, -62, 12), (-43, -62, 8), (2, -62, 10), (40, -62, 12),
+               (79, -17, 6), (79, 5, 6), (-80, -38, 6)]
+    for cx, cy, span in gardens:
+        ring = []
+        for end, angle in [(span / 2 - 1, -90), (-span / 2 + 1, 90)]:
             for k in range(25):
-                a=math.radians(angle+k*180/24);ring.append((cx+end+math.cos(a),cy+math.sin(a)))
-        outer=[(x,y,.55) for x,y in ring];inner=[(cx+(x-cx)*.89,cy+(y-cy)*.70,.55) for x,y in ring]
-        for k,p in enumerate(outer):
-            j=(k+1)%len(outer);q=outer[j]
-            m.poly([p,q,inner[j],inner[k]],'concrete_light',want=(0,0,1))
-            m.poly([(p[0],p[1],0),(q[0],q[1],0),q,p],'terracotta',want=(p[0]-cx,p[1]-cy,0))
-        m.fan_polygon([(x,y,.51) for x,y,z in inner],(cx,cy,.51),'soil','soil',(0,0,1))
-        for _ in range(80):
-            xx=cx+rng.uniform(-span/2+.9,span/2-.9); yy=cy+rng.uniform(-.55,.55)
-            hh=rng.uniform(.35,1.2);a=rng.uniform(0,math.tau);dx,dy=math.cos(a),math.sin(a);w=.04
-            for off in (0,math.pi/2):
-                ux,uy=math.cos(a+off),math.sin(a+off)
-                plants.poly([(xx-uy*w,yy+ux*w,.51),(xx+uy*w,yy-ux*w,.51),(xx+dx*.22,yy+dy*.22,.51+hh)],'grass_light' if hh>.9 else 'grass','leaves')
-                plants.faces.append(plants.faces[-1][::-1]);plants.colors.append(plants.colors[-1]);plants.smooth.append(False);plants.tags.append('leaves')
-    return m,plants
+                t = math.radians(angle + k * 180 / 24)
+                ring.append((cx + end + math.cos(t), cy + math.sin(t)))
+        outer = [(x, y, .52) for x, y in ring]
+        inner = [(cx + (x - cx) * .88, cy + (y - cy) * .72, .52) for x, y in ring]
+        for k, p in enumerate(outer):
+            j = (k + 1) % len(outer); q = outer[j]
+            m.poly([p, q, inner[j], inner[k]], 'concrete_light', want=(0, 0, 1))
+            m.poly([(p[0], p[1], 0), (q[0], q[1], 0), q, p], 'concrete_dark', want=(p[0]-cx, p[1]-cy, 0))
+        m.fan_polygon([(x, y, .48) for x, y, z in inner], (cx, cy, .48), 'soil', 'soil', (0, 0, 1))
+        # Slatted seats face the skating, with planting behind the seat.
+        seat_y = cy - 1.45 if cy > 0 else cy + 1.45
+        for j in range(5):
+            m.box((cx-span/2+1.5, seat_y-.45+j*.18, .43), (cx+span/2-1.5, seat_y-.30+j*.18, .51), 'timber', 'wood')
+        for x in (cx-span/2+2, cx+span/2-2):
+            m.box((x-.08, seat_y-.42, 0), (x+.08, seat_y+.42, .43), 'steel', 'steel')
+        for _ in range(90):
+            xx = cx + rng.uniform(-span/2+.9, span/2-.9); yy = cy + rng.uniform(-.55, .55)
+            hh = rng.uniform(.3, 1.15); t = rng.uniform(0, math.tau)
+            for off in (0, math.pi/2):
+                ux, uy = math.cos(t+off), math.sin(t+off)
+                plants.poly([(xx-uy*.045, yy+ux*.045, .48), (xx+uy*.045, yy-ux*.045, .48),
+                             (xx+math.cos(t)*.2, yy+math.sin(t)*.2, .48+hh)],
+                            'grass_light' if hh > .8 else 'grass', 'leaves')
+                plants.faces.append(plants.faces[-1][::-1]); plants.colors.append(plants.colors[-1])
+                plants.smooth.append(False); plants.tags.append('leaves')
+    # Cedar pavilion sits on the southern waterfront, clear of the sunset line.
+    for x in (20., 28., 36.):
+        for y in (-64., -58.): m.box((x-.14, y-.14, 0), (x+.14, y+.14, 3.6), 'timber', 'wood')
+    for y in (-64., -58.): m.box((19.5, y-.14, 3.45), (36.5, y+.14, 3.75), 'timber', 'wood')
+    for x in np.arange(19.5, 36.6, .38):
+        m.box((x-.08, -64.4, 3.75), (x+.08, -57.6, 3.88), 'timber', 'wood')
+    # A large original wave print gives the north street its identity.
+    m.box((35., 64., 0), (44.4, 64.3, 6.55), 'concrete_dark')
+    m.poly([(35.2, 63.99, .22), (44.2, 63.99, .22), (44.2, 63.99, 6.22), (35.2, 63.99, 6.22)],
+           'concrete_light', 'mural', want=(0, -1, 0))
+    return m, plants
 
 def decals():
     """Faded floor paint: the Yorimichi sun and three wave strokes (25 mm above the deck, no collision)."""
     m = MeshData('SM_SkateParkDecals'); z = L.DECAL_Z
-    path=[(-46,31),(-25,38),(8,35),(35,30),(40,17),(23,10),(5,4),(-4,-10),(-3,-28),(-23,-40),(-43,-27),(-47,0)]
+    path=[(-76,45),(-40,60),(4,60),(70,53),(77,12),(60,-20),(53,-55),(10,-59),(-37,-58),(-76,-42),(-79,-4)]
     points=[]
     for i,p1 in enumerate(path):
         p0=np.array(path[(i-1)%len(path)]);p1=np.array(p1);p2=np.array(path[(i+1)%len(path)]);p3=np.array(path[(i+2)%len(path)])
@@ -358,7 +377,7 @@ def pilings(h_world):
     from village.layout import sample
     m = MeshData('SM_SkatePierPilings')
     ox, oy, oz = L.ORIGIN
-    xs = np.linspace(-52, 52, 14); ys = np.linspace(-40, 40, 11)
+    xs = np.linspace(-L.HALF_X+4, L.HALF_X-4, 19); ys = np.linspace(-L.HALF_Y+4, L.HALF_Y-4, 15)
     cap_top, cap_bot = -L.SLAB, -1.0
     for y in ys:
         m.box((-L.HALF_X + .3, y - .3, cap_bot), (L.HALF_X - .3, y + .3, cap_top), 'underside', 'pile', bottom=True)

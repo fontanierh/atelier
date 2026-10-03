@@ -1,0 +1,30 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "A production-quality seamless tileable game material albedo texture, completely flat orthographic view of the surface, edge to edge with identical scale everywhere. Painterly realism for a beautiful stylised Japanese coastal adventure game: tactile, finely observed materials with soft hand-painted microdetail. Uniform diffuse lighting, no cast shadows, no specular highlights, no perspective, no objects, no text, no border. Seamless in both directions. The surface is polished stainless steel worn by skateboard trucks, fine lengthwise brushing and scratches, very subtle warm patina at the edges, clean silver steel without rust holes",
+  "purpose": "Sunset Pier material",
+  "status": "done",
+  "started_at": "2026-10-02T23:00:03.732350+00:00",
+  "usage": {
+    "input_tokens": 124,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 124
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1880
+  },
+  "png_sha256": "1101b60383f112e91f23be56e35e2be147a318bcf26c04c94b7a39c4b4312f1f",
+  "output": {
+    "file": "steel.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-02T23:00:51.090433+00:00"
+}

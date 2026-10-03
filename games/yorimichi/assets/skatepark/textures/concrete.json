@@ -1,0 +1,30 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "A production-quality seamless tileable game material albedo texture, completely flat orthographic view of the surface, edge to edge with identical scale everywhere. Painterly realism for a beautiful stylised Japanese coastal adventure game: tactile, finely observed materials with soft hand-painted microdetail. Uniform diffuse lighting, no cast shadows, no specular highlights, no perspective, no objects, no text, no border. Seamless in both directions. The surface is warm pale grey skate plaza concrete, finely burnished with tiny exposed aggregate, subtle trowel arcs and understated scuffs from skateboard wheels, excellent nuanced material detail without large cracks or dirt blotches",
+  "purpose": "Sunset Pier material",
+  "status": "done",
+  "started_at": "2026-10-02T22:58:42.404143+00:00",
+  "usage": {
+    "input_tokens": 133,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 133
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1889
+  },
+  "png_sha256": "353f91b0b7ae9b167a70dc5dc29bca62c3410dd1dfb32ca863f4852bfb70aff1",
+  "output": {
+    "file": "concrete.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-02T22:59:30.840363+00:00"
+}

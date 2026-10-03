@@ -1,0 +1,30 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Paint a spectacular panoramic skateboard plaza mural: a curling Japanese indigo ocean wave with a vermilion koi jumping through it, a golden setting sun and windblown maple leaves. Original woodblock-inspired contemporary skate art, powerful sweeping composition, bone cream, indigo, vermilion and ochre, intricate ink strokes and subtly distressed silkscreen texture. Flat artwork edge to edge, no frame, no perspective, no lighting, no lettering, no logos. This will be printed on the wall behind a street skating line in a warm Japanese seaside game.",
+  "purpose": "Sunset Pier wave wall",
+  "status": "done",
+  "started_at": "2026-10-02T23:01:28.935817+00:00",
+  "usage": {
+    "input_tokens": 118,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 118
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1490
+  },
+  "png_sha256": "0ef73fa11c87db0d8c1d312999c1a47dceb387a69c597dc45159945e9ffc49f4",
+  "output": {
+    "file": "mural.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-02T23:01:59.662896+00:00"
+}

@@ -1,0 +1,42 @@
+{
+  "stage": "world-map-sunset-pier-repaint",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/world/map/repaint_island.py",
+  "prompt": "Use case: precise-object-edit. This is a local correction to Yorimichi's hand-painted watercolour world map. Image1 is the edit target: the existing southwest map crop. Image2 is an exact north-up plan in the same frame and scale, derived from the game: the enlarged Sunset Pier and the temple island moved50m farther offshore. Image3 supplies the island's appearance only; follow Image2 for all positions and outlines. Keep Image1's framing, map style, autumn colours, textured paper and blue sea. Change only the pier, the island and their immediate sea/shore edges. Preserve all other mainland roads, forest and buildings. Add the large rectangular170x132m concrete skate pier exactly where Image2 draws it, attached to the mainland at its north side. Paint its teal bowl, mini-ramp, curved banks, street ledges, stairs, long rails and small trees as tiny recognisable map features, following Image2. The pier is a skate plaza. Replace the island at its old location with open blue water, then paint exactly one island at Image2's new location and outline. Match its rocky headlands and four separate sea stacks, pale northwest landing cove, zigzag stair with tiny vermilion torii, indigo-roof temple and autumn woods. Follow Image2's southern map projection and size exactly. Leave a clearly visible channel of blue water between the pier and the island's northern headland, as in Image2. Top-down map view, same scale, no text, pins, labels, frame or legend. No extra islands or buildings. Do not retain the old island as a ghost or duplicate.",
+  "prompt_sha256": "b1f4c84c814fe23235a1adeb4faf3c67209a713e9cfa43affaa7df5446a32802",
+  "reference_files": {
+    "build/yorimichi/map/sunset_pier_repaint/current-crop.png": "166df64c5660e84dd075dcc71b343304488f471fecc7b3fc7b13b451f4962264",
+    "build/yorimichi/map/sunset_pier_repaint/layout-crop.png": "0a27a52bbd10bb3a4858a8f4217adf6430cdc33e39b34df796aae3fdc93a5fb8",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg": "d662419759c122a5ae5ff80b378be1030b2c5c8f3eb41bd88866abd2dd339b2a"
+  },
+  "crop_box": [
+    0,
+    611,
+    620,
+    1024
+  ],
+  "started_at": "2026-10-03T08:34:35.113126+00:00",
+  "status": "done",
+  "usage": {
+    "input_tokens": 3611,
+    "input_tokens_details": {
+      "image_tokens": 3240,
+      "text_tokens": 371
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4983
+  },
+  "output": {
+    "build/yorimichi/map/sunset_pier_repaint/generated.png": "5ad3e65a31f9624ddd9ee64d22f02dfde82513e29a3db62d386f5b58d662aace"
+  },
+  "elapsed_seconds": 34.0,
+  "hashes": "Input file hashes; output is the returned PNG. The registered crop is the committed sheet.",
+  "finished_at": "2026-10-03T08:35:09.100058+00:00"
+}
