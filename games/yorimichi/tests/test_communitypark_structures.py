@@ -46,6 +46,14 @@ class StructureTests(unittest.TestCase):
         self.assertGreaterEqual(self.metadata['tread_run_m'], .28)
         self.assertGreaterEqual(self.metadata['stair_width_m'], 2.)
         self.assertGreater(route[-1, 2]-route[0, 2], 36.)
+        # The service doorway crosses the west tower wall between waypoints.
+        for x in np.linspace(route[0, 0], route[1, 0], 25):
+            hits = S.heights(self.walking_triangles, x, route[0, 1])
+            self.assertFalse(np.any((hits > S.DECK+.4) & (hits < S.DECK+1.95)), ('blocked doorway', x, hits.tolist()))
+        # The top bridge must pass through an opening in the landing railing.
+        for x in np.linspace(1300.9, 1302.1, 25):
+            hits = S.heights(self.walking_triangles, x, 600.3)
+            self.assertFalse(np.any((hits > S.TOP+.4) & (hits < S.TOP+1.95)), ('blocked bridge exit', x, hits.tolist()))
         for x, y, z in route:
             hits = S.heights(self.walking_triangles, x, y)
             bounded = hits[(hits >= z-.4) & (hits <= z+.4)]

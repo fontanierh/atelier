@@ -9,6 +9,7 @@ import argparse
 from collections import defaultdict
 from itertools import permutations, product
 import json
+import math
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -136,6 +137,15 @@ def structure_audit():
         below = S.heights(original, x, y)
         ground = float(L.ground(x, y, north_surface))
         assert abs(z-ground) < .03 or np.any(abs(below-z) < .03), ('floating footing', contact)
+    # A doorway can be blocked between otherwise clear route waypoints.
+    clearance_samples = 0
+    for a, b in zip(route, route[1:]):
+        count = max(1, math.ceil(np.linalg.norm((b-a)[:2])/.25))
+        for x, y, z in np.linspace(a, b, count+1):
+            for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
+                hits = S.heights(all_triangles, x+dx, y+dy)
+                assert not np.any((hits > z+.4) & (hits < z+1.95)), ('blocked route segment', x, y, z, dx, dy)
+                clearance_samples += 1
     # Keep the deck lane used by the live riding check open below head height.
     for y in np.linspace(572, 603, 63):
         hits = S.heights(added, 1250, y)
@@ -143,6 +153,7 @@ def structure_audit():
     return {'support_contacts': len(metadata['support_contacts']), 'ascent_waypoints': len(route),
             'ascent_length_m': float(np.linalg.norm(np.diff(route, axis=0), axis=1).sum()),
             'height_gain_m': S.TOP-S.DECK, 'step_rise_m': metadata['step_rise_m'],
+            'continuous_body_clearance_samples': clearance_samples,
             'footings_and_body_clearance': True}
 
 

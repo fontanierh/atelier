@@ -193,7 +193,7 @@ def build(base_sampler):
         steel.beam(a+[0, 0, height], b+[0, 0, height], .07)
         steel.beam(a+[0, 0, height*.5], b+[0, 0, height*.5], .045)
 
-    def landing(east, z, entrance=False):
+    def landing(east, z, entrance=False, bridge_exit=False):
         x0, x1 = (1310.1, 1312.4) if east else (1301.5, 1303.8)
         timber.box([(x0+x1)/2, 602.1, z-.12], [x1-x0, 6., .24])
         for y in (599.1, 605.1):
@@ -201,7 +201,12 @@ def build(base_sampler):
             rail([x0, y, z], [x1, y, z])
         outside = x1 if east else x0
         steel.beam([outside, 599.1, z-.27], [outside, 605.1, z-.27], .2)
-        rail([outside, 599.1, z], [outside, 602.7 if entrance else 605.1, z])
+        if bridge_exit:
+            # The 2.2 m bridge continues west through the top landing's wall.
+            rail([outside, 599.1, z], [outside, 599.2, z])
+            rail([outside, 601.4, z], [outside, 605.1, z])
+        else:
+            rail([outside, 599.1, z], [outside, 602.7 if entrance else 605.1, z])
 
     # Four continuous posts carry the service tower; braces repeat at every landing.
     tower = [(1301.65, 599.25), (1301.65, 604.95), (1312.25, 599.25), (1312.25, 604.95)]
@@ -218,8 +223,10 @@ def build(base_sampler):
             b = [x+direction*RUN, a[1], z+rise-.20]
             steel.beam(a, b, .20, .30)
             rail([x, y+side*WIDTH/2, z], [b[0], y+side*WIDTH/2, z+rise])
-        landing(east, z+rise)
+        landing(east, z+rise, bridge_exit=flight == FLIGHTS-1)
         for a, b in ((tower[0], tower[1]), (tower[2], tower[3])):
+            if flight == 0 and a == tower[0]:
+                continue  # The lowest west bay is the service doorway.
             steel.beam([*a, z-.25], [*b, z+rise-.25], .14)
 
     # The top bridge runs behind the original ramp, then meets its 85.586 m ridge.

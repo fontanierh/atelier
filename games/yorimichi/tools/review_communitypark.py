@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--port', type=int, default=8843)
     parser.add_argument('--timeout', type=int, default=600, help='Guarded review duration in seconds (60–600)')
+    parser.add_argument('--gait', type=int, choices=(0, 1), default=0, help='Normal on-foot gait: walk (0) or run (1)')
     args = parser.parse_args(); out = yori.OUT/'communitypark/game-review'; out.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((yori.OUT/'communitypark/park.json').read_text())
     mesh_count = len(manifest['meshes'])
@@ -33,7 +34,7 @@ def main():
     if not 60 <= args.timeout <= 600:
         parser.error('--timeout must be between 60 and 600 seconds')
     if not args.worker:
-        return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--port', str(args.port), '--timeout', str(args.timeout)],
+        return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--port', str(args.port), '--timeout', str(args.timeout), '--gait', str(args.gait)],
                            out/'guard', timeout=args.timeout, kind='game', purpose='Hidamari community park validation and captures')
     with socket.socket() as probe:
         if probe.connect_ex(('127.0.0.1', args.port)) == 0:
@@ -113,7 +114,7 @@ def main():
                     rows.append({'waypoint': index, 'feet_m': row}); break
                 yaw = -math.degrees(math.atan2(dy, dx))
                 run(f'walk_pc.set_control_rotation(unreal.Rotator(roll=0,pitch=-8,yaw={yaw}))\n'
-                    'unreal.YorimichiLive.drive(unreal.Vector2D(0,1),0)')
+                    f'unreal.YorimichiLive.drive(unreal.Vector2D(0,1),{args.gait})')
                 time.sleep(.07)
             else:
                 run('unreal.YorimichiLive.drive(unreal.Vector2D(),0)')
@@ -129,7 +130,8 @@ def main():
         (out/'ascent.json').write_text(json.dumps(rows, indent=2)+'\n')
         return {'waypoints_walked': len(rows), 'seconds': time.monotonic()-started,
                 'height_gain_m': rows[-1]['feet_m'][2]-route[0][2], 'final_feet_m': rows[-1]['feet_m'],
-                'bounded_collision_traces': len(route), 'teleports_during_ascent': 0}
+                'bounded_collision_traces': len(route), 'teleports_during_ascent': 0,
+                'gait': 'walk' if args.gait == 0 else 'run'}
     try:
         monitor = guards.enter_context(attach(process.pid, out/'memory-health.json', duration=args.timeout-20))
         deadline = time.monotonic()+180

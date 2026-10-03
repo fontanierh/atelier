@@ -79,7 +79,8 @@ checks that ground stays below them, checks the access grade and its deck join,
 and compares the patch boundary. The import audit compares all 30 built source
 meshes against the pinned GLB, tolerating only 0.01 cm float conversion.
 The structure audit checks grounded contacts, footing and body clearance at
-every ascent waypoint, the deck riding lane, and both new meshes after import.
+every ascent waypoint and at 25 cm intervals between them, the deck riding
+lane, and both new meshes after import.
 The guarded game review owns a separate loopback bridge and quits its own game;
 it checks actor/mesh/tree inventory, original surface traces, riding, the
 Sunset Pier QA spawn and the entire ascent using character movement without
