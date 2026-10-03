@@ -216,10 +216,12 @@ def materials(report):
     return result
 
 
-def import_mesh(path, name):
-    dest = ROOT+'/Meshes'; asset = dest+'/'+name
-    if not E.does_asset_exist(asset) and path.name != 'SM_MP_ImportSeed.fbx':
-        import_mesh(OUT/'fbx/SM_MP_ImportSeed.fbx', name)
+def import_mesh(path, name, dest=None, seed=None):
+    """Faithful FBX import; another park may supply its own destination and seed."""
+    dest = dest or ROOT+'/Meshes'; seed = seed or OUT/'fbx/SM_MP_ImportSeed.fbx'
+    asset = dest+'/'+name
+    if not E.does_asset_exist(asset) and path.resolve() != seed.resolve():
+        import_mesh(seed, name, dest, seed)
     task = unreal.AssetImportTask()
     task.filename = str(path); task.destination_path = dest; task.destination_name = name
     task.automated = True; task.replace_existing = True; task.replace_existing_settings = True; task.save = True

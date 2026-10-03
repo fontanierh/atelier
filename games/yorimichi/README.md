@@ -53,7 +53,8 @@ Scenarios run against the game from another terminal: `uv run atelier qa yorimic
 - the [south-west](world/regions/southwest/README.md): fishing village, beach and island temple;
 - the hidden [tree house](world/regions/treehouse/README.md) in the west hillside canopy
   ([docs/TREEHOUSE_PLAN.md](docs/TREEHOUSE_PLAN.md));
-- the [Super Ultra Mega Park](docs/MEGAPARK.md) in the western foothills, reached by a forest trail or the zeppelin.
+- the [Super Ultra Mega Park](docs/MEGAPARK.md) in the western foothills, reached by a forest trail or the zeppelin;
+- the [community skate park](docs/COMMUNITY_PARK.md), with bowls, full pipes and tall vert above Hidamari station.
 
 You get around on foot, in the [sailboat](assets/vehicles/sailboat/README.md), on the
 [zeppelin](world/regions/zeppelin/README.md) between its three stations, or on the skateboard. Leaves, gulls and

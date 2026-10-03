@@ -65,7 +65,7 @@ Paid AI calls (Sunburst, Tripo, H3, Seedance) never run as part of a build. They
 
 ```sh
 uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
-uv run atelier fetch yorimichi          # downloads the Sonniss sound masters (not redistributed here)
+uv run atelier fetch yorimichi          # Sonniss sound masters and private community park (authenticated gh)
 uv run atelier build yorimichi          # world, characters, sounds, effects, compile, Unreal import
 uv run atelier play yorimichi           # 1080p window; --profile desktop-1440 for the desktop profile
 ```
