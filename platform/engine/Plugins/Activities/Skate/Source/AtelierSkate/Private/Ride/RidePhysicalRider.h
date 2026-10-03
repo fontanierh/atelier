@@ -61,6 +61,9 @@ struct FRidePhysicalProfile
     UPROPERTY(EditAnywhere, Category = Body) bool bBodyTouchesWorld = true;
     /** Whether the feet collide with the world. On the board the deck carries them, so they pass over its edges. */
     UPROPERTY(EditAnywhere, Category = Body) bool bFeetTouchWorld = false;
+    /** Continuous collision on every body: a body that would pass through a surface in one physics step (a hand
+     *  thrown at the ground in a fall) is stopped at it. */
+    UPROPERTY(EditAnywhere, Category = Body) bool bContinuousCollision = false;
 };
 
 /** Project Settings > Plugins > Skate Physical Rider. The profiles are compiled into a control asset when a rider
@@ -77,6 +80,11 @@ public:
      *  Anchor_Feet and Anchor_Hands, and a profile per phase (Riding, Air, Landing, Grind, Manual, Bail, GetUp,
      *  OnFoot). Empty: the profiles below, on limbs found through the bone contract. */
     UPROPERTY(Config, EditAnywhere, Category = Rider) TSoftObjectPtr<UPhysicsControlAsset> ControlAsset;
+    /** A physics asset built from the bone contract fits each body to the skin it carries: the convex hull of the
+     *  mesh's vertices whose strongest weight is on its bone (or on a bone under it without a body), at the mass of
+     *  the contract's capsule. Off: the contract's capsules, sized for a slim 1.7 m rider. The next mount uses a
+     *  change. */
+    UPROPERTY(Config, EditAnywhere, Category = Rider) bool bFitBodiesToSkin = true;
 
     UPROPERTY(Config, EditAnywhere, Category = Profiles) FRidePhysicalProfile Riding;
     UPROPERTY(Config, EditAnywhere, Category = Profiles) FRidePhysicalProfile Air;
@@ -139,6 +147,9 @@ public:
     TWeakObjectPtr<USkeletalMeshComponent> Posed;
     /** Updates skipped for want of a pose, since the rider began. */
     int32 Skipped = 0;
+    /** The frame of the last update (GFrameCounter): a profile invoked after it reaches the physics a frame late
+     *  unless the controls are applied again. */
+    uint64 UpdatedFrame = 0;
 private:
     float SkippedTime = 0;
 };
@@ -231,9 +242,15 @@ public:
     /** Destroy the loose board if it is still ours (the ride's board is back under the rider). */
     void DropLooseBoard();
 
-    /** The physics asset built from the bone contract: a capsule per part, wide joint limits that every riding pose
-     *  fits, no collision between the rider's own bodies. */
-    static UPhysicsAsset* BuildPhysicsAsset(USkeletalMesh* Mesh, const ISkateRider* Api, UObject* Outer);
+    /** The physics asset built from the bone contract: a body per part (fitted to the skin, or a capsule), wide joint
+     *  limits that every riding pose fits, no collision between the rider's own bodies. Fitted: how many bodies were
+     *  fitted to the skin. */
+    static UPhysicsAsset* BuildPhysicsAsset(USkeletalMesh* Mesh, const ISkateRider* Api, UObject* Outer, bool bFitToSkin,
+        int32* Fitted = nullptr);
+
+    /** Where Component shows this frame: its parent's transform now with its own relative one. Inside
+     *  CharacterMovement's move (the ride's step) a child's own transform is the frame before's until the move ends. */
+    static FTransform ShownTransform(const USceneComponent* Component);
 
     /** Rebuild the profiles from the settings and apply the current one (skate.RidePhysicalReload). */
     void ReloadProfiles();
@@ -245,6 +262,19 @@ public:
     float GetPelvisError() const { return PelvisError; }
     float GetWorstError() const { return WorstError; }
     float GetFootError() const { return FootError; }
+    /** How far the skin goes under the ground (cm along the ground's normal; below 0 it stays above): the deepest of
+     *  a sample of the mesh's vertices, skinned on the CPU as the mesh shows them, each traced against the ground's
+     *  complex collision. Bone is the body that carries the deepest; Groups, when given, gets the deepest of each of
+     *  SkinGroupCount groups of bodies (SkinGroupName). False without CPU vertex data. */
+    bool MeasureSkinDepth(float& Depth, FName& Bone, float* Groups = nullptr) const;
+    static constexpr int32 SkinGroupCount = 7;
+    /** torso (pelvis, spine, chest), head, upperarms, forearms, hands, legs (thighs, shins), feet. */
+    static const TCHAR* SkinGroupName(int32 Group);
+    /** How far each hand's skin (fingers included) stays from the torso's and thighs' bodies, as the mesh shows them
+     *  (cm; below 0: that deep inside one): Gap[0] the left hand, Gap[1] the right, Near the body it comes closest
+     *  to. Measured against the bodies' shapes, so on bodies fitted to the skin it says where the hand meets the
+     *  skin. False without CPU vertex data. */
+    bool MeasureHandGap(float Gap[2], FName Near[2]) const;
     FString Describe() const;
 
     // FTickableGameObject
@@ -261,6 +291,8 @@ private:
     UPROPERTY() TObjectPtr<UPhysicsControlAsset> Asset;
     UPROPERTY() TObjectPtr<UPhysicsAsset> Built;
     UPROPERTY() TObjectPtr<USkeletalMesh> BuiltFor;
+    bool bBuiltFit = false;
+    int32 BuiltFitted = 0;
     UPROPERTY() TObjectPtr<UPhysicsAsset> SavedPhysicsAsset;
     UPROPERTY() TObjectPtr<UBoxComponent> LooseBoard;
     TWeakObjectPtr<UPrimitiveComponent> TakenBoard;
@@ -283,6 +315,10 @@ private:
     bool bBail = false, bBailOffered = false;
     ERideBailKind LastBailKind = ERideBailKind::Fall;
     float BailTime = 0, Quiet = 0, BailLimit = 2500, BailRise = 400;
+    // The bail's first frames (skate.RideBailTrace): the frame it began and the pelvis's velocity then.
+    uint64 BailFrame = 0;
+    FVector BailPelvisVelocity = FVector::ZeroVector;
+    int32 BailTraced = 0;
     FVector BailStart = FVector::ZeroVector, BailFloor = FVector::ZeroVector, BodyGround = FVector::ZeroVector;
     // The body's ground the frame before, Physics Control's root bone when the bail began (the bail's pose is
     // measured with it carried as far as the body's ground has gone), and the pelvis's height above the ground under
@@ -317,6 +353,14 @@ private:
     uint64 BeganFrame = 0;
 
     float PelvisError = 0, WorstError = 0, FootError = 0;
+    // The vertices the skin depth samples (LOD0) and the body bone that carries each, for this mesh with these bodies.
+    mutable TArray<int32> SkinSamples;
+    mutable TArray<FName> SkinSampleBones;
+    mutable TArray<uint8> SkinSampleGroups;
+    mutable TWeakObjectPtr<const UPhysicsAsset> SkinSamplesFor;
+    // The vertices each hand's body carries (LOD0), for MeasureHandGap.
+    mutable TArray<int32> HandSamples[2];
+    mutable TWeakObjectPtr<const UPhysicsAsset> HandSamplesFor;
 
     FName Bone(const TCHAR* Contract) const;
     UPhysicsControlAsset* BuildControlAsset(const UPhysicsAsset* Physics);

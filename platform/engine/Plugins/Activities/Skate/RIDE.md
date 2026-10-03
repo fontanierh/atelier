@@ -186,9 +186,15 @@ it goes fully limp only in a bail.
   profile.
 - **Bodies.** The rider uses the mesh's own Physics Asset when it has six or more bodies. Its constraint profile
   `RideConstraintProfile` (default: the asset's own) applies while riding, and `BailConstraintProfile` (`Ragdoll`, when
-  the asset has one) in a bail. Otherwise the rider uses an asset built from the bone contract: 16 capsules, one set
+  the asset has one) in a bail. Otherwise the rider uses an asset built from the bone contract: 16 bodies, one set
   of joint limits wide enough for every riding pose, and no collision between the rider's own bodies. While riding, a
   limit that the animation passes widens to it (`WidenLimits`); in a bail the limits hold.
+  - Each built body is fitted to the skin it carries (`bFitBodiesToSkin`, on by default): the convex hull of the
+    mesh's vertices whose strongest weight is on its bone, or on a bone under it without a body (the fingers go to
+    the hand, the hair to the head), at the mass of the contract's capsule. A stylised rider is far from the slim
+    1.7 m figure the capsules are sized for: with them his face sank 17–30 cm into the floor in a bail and his hands
+    and feet 13 cm. A body with too little skin keeps its capsule. Off, the contract's capsules.
+  - The built asset is kept for the session, one per mesh and fit, so a switch back to a rider does not fit it again.
   - A root bone with a scale (an FBX armature carries its unit scale there) needs a body on the root. The skeletal
     mesh's physics blend takes that body as the frame of the simulated bodies under it. Without one, the blend divides
     by the root's scale twice, and the pelvis lands at the root. The built asset adds a kinematic root body that
@@ -240,6 +246,11 @@ it goes fully limp only in a bail.
   the bail through `OnBailStart`: the body stays active and plays a run-out on foot. Otherwise `StartBail` lets the
   same bodies go with the momentum they have. They go limp at once: on the bail's first frame the `Bail` profile lets
   go of every anchor, turns gravity on and leaves the joints a 3 Hz tone toward the clip, inside their authored limits.
+  `StartBail` applies the profile then and there (`UpdateControls`). Physics Control otherwise applies a profile in
+  its next update, which comes after that frame's physics when the session throws the rider off: the riding anchors
+  then braked the bodies toward the stopped root, from 5.9 m/s to 1.6 m/s in a frame, and a 6 m/s bail slid 2 m
+  instead of 7.5 m. `skate.RideBailApplyNow 0` brings the late profile back, and `skate.RideBailTrace N` logs the
+  bail's first N frames (pelvis, mean body and root velocities, and when the controls updated).
   The anchors hold the bodies in the frame of the kinematic root body, and in a bail the ride stops the root on the
   bail's frame, then carries it to the ground under the body a frame late (on a quarter, from the board on the wall to
   whatever lies below the hips). Held to that frame even for a moment, the body is braked to a stop on flat or flung
@@ -260,6 +271,13 @@ it goes fully limp only in a bail.
 - **Get-up.** This is the standard technique. When the body has settled (still for 0.4 s, after at least 1.6 s), it
   takes a pose snapshot and blends the pose from the snapshot into the clip over `GetUpBlend` (`BlendFromSnapshot`).
   The rider gets up where the body lies and never returns to where the bail started.
+  - Blended joint by joint, the rotations swing a limb through the floor on its way from lying to standing: a foot
+    went 15–23 cm under it half way up. The blend lifts the root by the deepest shortfall, so no bone goes lower than
+    the lower of its two ends, where it lay and where the clip puts it.
+  - The blend measures the snapshot from the mesh's transform for this frame (`ShownTransform`: its relative
+    transform on its parent's). Inside CharacterMovement's move the actor's children keep last frame's transform
+    until the move ends: getting up after a bail on a quarter pipe, the hips stepped 42 cm in one frame. The loose
+    board starts from the board's transform the same way.
   - The bodies stay simulating and seen until the animation shows the snapshot, then go kinematic and unseen. The
     mesh shows a pose the ride sets a frame later, and Physics Control's copy of it (the kinematic bodies' targets)
     a frame after that. Switching at once showed the clip's pose for one frame (the hips 61 cm off) and moved the
@@ -294,6 +312,11 @@ it goes fully limp only in a bail.
     physical components it overlaps.
   - Each profile's `bBodyTouchesWorld` turns the bodies' world collision on or off for that phase (the feet have
     their own `bFeetTouchWorld`).
+  - `skate.RideSkinCheck 1` adds the skin's depth under the ground to the state line (`MeasureSkinDepth`): a sample
+    of the mesh's vertices, skinned on the CPU as the mesh shows them and traced against the ground's complex
+    collision, the deepest overall and by group of bodies (torso, head, upper arms, forearms, hands, legs, feet). It
+    also adds how far each hand's skin stays from the torso's and thighs' bodies (`hand_gap`, below 0 inside one;
+    `MeasureHandGap`).
 
 ### Measured
 
@@ -312,12 +335,12 @@ Physics Control's copy of the animation, p95.
 | Ride QA, regular and goofy | 2.1–2.2 cm | 3.4–3.5 cm | |
 | Ride QA, a second rider on another skeleton | 2.5 cm | 3.8 cm | |
 
-- Landing (ride QA): the worst body 14–16 cm off, the pelvis back under 3 cm within 7–9 frames.
-- Bail on flat at 6 m/s: 7, 23–24, 58–63 and 62–72 cm from the clip at 0.125, 0.25, 0.5 and 1 s, against 0–8, 8–26,
+- Landing (ride QA): the worst body 12–16 cm off, the pelvis back under 3 cm within 7–9 frames.
+- Bail on flat at 6 m/s: 7, 22, 41–54 and 55–73 cm from the clip at 0.125, 0.25, 0.5 and 1 s, against 0–8, 8–26,
   14–37 and 64–127 cm. The bail starts with the body moving at the board's speed (10 cm a frame at 6 m/s) and no jump.
   The pelvis travels 5.3–5.4 m in the first second and comes to rest 7.4–7.5 m on after 2.6 s (0.90× and 1.24–1.26×
-  the entry speed times 1 s, against the reference's 0.97–0.98× and 1.04–1.16× at 4.6–5.6 m/s), lying 7 cm (Link
-  14 cm) over the ground within the second.
+  the entry speed times 1 s, against the reference's 0.97–0.98× and 1.04–1.16× at 4.6–5.6 m/s), lying 7 cm (the second
+  rider 14 cm) over the ground within the second.
 - Bail on flat at 10.9 m/s: 10.0–10.1 m in the first second, at rest 14.5 m on after 3.0 s (0.92–0.93× and
   1.33–1.34×, against the reference's 0.97× and 1.26–1.30× at 10.6–11.5 m/s), lying 7 cm over the ground within the
   second.
@@ -331,17 +354,31 @@ Physics Control's copy of the animation, p95.
   0.08 with 1.0: 0.88×/1.28× and 0.91×/1.42×; over 0.7–1.1 s, 0.06 with 1.5 (taken): 0.90×/1.24–1.26× and
   0.92–0.93×/1.33–1.34×. The first second cannot reach the reference's: the body's landing keeps about 80% of its speed
   at any friction or drag.
-- Bail landing an Indy on a quarter pipe at 8.9 m/s (the grab held into the landing): limp from the first frame, the
-  body slides down the wall and lies 9–10 cm over the ground within the second; 5.8–6.1 m at 1 s and 8.1–8.4 m at rest
-  (0.64–0.68× and 0.92–0.94× the whole speed; with the drag on from the moment the body was down, 0.47–0.49× and
-  0.70–0.75×; the reference thrown off in the air, 0.50× and 0.65×). Before, the anchors held the body for the bail's
-  first 0.15 s in the frame of a root that jumped from the wall to the floor; it was flung at 45 m/s, the bail was
-  handed to the animated slide, and the rider stood with the arms out until the get-up.
+- Bail landing an Indy on a quarter pipe at 9.2 m/s (the grab held into the landing, which comes down on the wall):
+  limp from the first frame, the body slides down the wall; 0.45–0.52× the whole speed at 1 s and 0.62–0.73× at rest
+  (the reference thrown off in the air, 0.50× and 0.65×). The hips move at most 6.5 cm in a frame beyond what the
+  pelvis's own speed covers. Before, the anchors held the body for the bail's first 0.15 s in the frame of a root that
+  jumped from the wall to the floor; it was flung at 45 m/s, the bail was handed to the animated slide, and the rider
+  stood with the arms out until the get-up.
+- The bail's profile applied at the bail, against Physics Control's next update: the pelvis kept 5.9 m/s on the next
+  frame instead of 1.6 m/s, and the 6 and 10.9 m/s bails travelled 0.91× and 0.93× the entry speed in the first
+  second instead of 0.27× and 0.21×. A 0.9 m drop at 8 m/s with a grab held into the landing slides 9.9 m (3.9 m
+  before; the reference 8–11 m). At 40 frames a second the pelvis keeps its speed through the bail's first frames.
+- Skin under the ground (`skate.RideSkinCheck`), the worst of the bails above for regular, goofy and a second rider on
+  another skeleton, the contract's capsules then the fitted hulls. Sliding: hands 11.6–13.1 then 0.3–0.7 cm, head
+  16.6–30 then 0.3–1.0 cm, feet 8.2–13.2 then 0.4–2.3 cm, torso 5.5–14.3 then 0.1–0.8 cm, legs 6.2–7.1 then
+  0.4–2.3 cm. Lying, every group up to 20 cm then at most 0.7 cm (the second rider's legs 2.3 cm). Getting up, the feet
+  18.9–23.2 cm then 0.7–2.6 cm with the blend's lift. A park's road and pool bails at 9–12 m/s: the head 17–27 cm then
+  at most 1.1 cm. Riding, the pushing foot goes 5.4–6.3 cm under the ground in the push clips, with either set of
+  bodies; nothing else does.
+- Standing still on the board, one hand's skin sits 7–8 cm inside the thigh's hull and the other 3–4 cm
+  (`hand_gap`), the same with the physical rider on or off: the idle clip's pose on that rider, not the bodies.
 - Get-up: across the hand-over the hips move under 0.5 cm a frame, and the rider rises within 6 cm of where the hips
   lay. The hand-over took five frames in every get-up measured.
 - Cost, riding a park road with `skate.RidePhysical` 0 then 1 with no other heavy job running: game-thread frame p50
   16.66 then 16.69 ms, p99 17.17 then 17.11 ms. On busier machines, p50 16.69 then 16.63 ms and 17.5 then 16.7 ms,
-  p99 21.04 then 19.83 ms and 23.0 then 17.2 ms. The difference is within the noise.
+  p99 21.04 then 19.83 ms and 23.0 then 17.2 ms. With the fitted hulls, p50 16.63 then 16.67 ms, p99 18.11 then
+  17.92 ms. The difference is within the noise.
 - No run went unstable. Every frame simulated, and nothing was reset. Wherever the hips move far in one frame, the
   board moved as far, over a long frame.
 - The first frame after a scripted placement and launch leaves the pelvis 6–13 cm behind (37 cm when placed 3 m up).

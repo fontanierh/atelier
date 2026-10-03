@@ -6,6 +6,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/Engine.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
@@ -15,6 +16,8 @@
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsConstraintTemplate.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
+#include "Rendering/SkeletalMeshLODRenderData.h"
+#include "Rendering/SkeletalMeshRenderData.h"
 
 namespace
 {
@@ -22,7 +25,45 @@ namespace
         TEXT("Ride: 1 (the default) makes the rider an active ragdoll while riding (Physics Control drives its bodies toward the ")
         TEXT("animation); 0 animates it, with a ragdoll for bails only."));
 
+    TAutoConsoleVariable<int32> CVarRideSkinCheck(TEXT("skate.RideSkinCheck"), 0,
+        TEXT("Ride: 1 adds skin=, skin_bone= and skin_groups= to the physical rider's state: how far its skin goes under the ")
+        TEXT("ground (cm, the deepest of a sample of the mesh's vertices skinned on the CPU; below 0 it stays above), the body ")
+        TEXT("that carries that vertex and the deepest of each group of bodies; and hand_gap=: how far each hand's skin stays ")
+        TEXT("from the torso's and thighs' bodies (cm, below 0 inside one). For QA: a few milliseconds a frame."));
+
+    TAutoConsoleVariable<int32> CVarRideBailApplyNow(TEXT("skate.RideBailApplyNow"), 1,
+        TEXT("Ride: 1 (the default) applies the Bail profile to the bodies as the bail begins, so that frame's physics already ")
+        TEXT("lets go of the anchors; 0 leaves it to Physics Control's next update."));
+
+    TAutoConsoleVariable<int32> CVarRideBailTrace(TEXT("skate.RideBailTrace"), 0,
+        TEXT("Ride: N > 0 logs each bail's first N frames: the pelvis's and the bodies' velocities, the root body and the actor."));
+
     TArray<TWeakObjectPtr<URidePhysicalRider>> GRiders;
+
+    // The physics assets built from the bone contract, by mesh (one map per fit), kept for the session: a character
+    // switch or a new ride takes its mesh's again rather than building it (and cooking the hulls) on that frame.
+    struct FBuiltAsset { TWeakObjectPtr<UPhysicsAsset> Asset; int32 Fitted = 0; };
+    TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset> GBuiltAssets[2];
+
+    UPhysicsAsset* KeptPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, bool bFitToSkin, int32& Fitted)
+    {
+        TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset>& Kept = GBuiltAssets[bFitToSkin ? 1 : 0];
+        for (auto It = Kept.CreateIterator(); It; ++It)
+            if (!It->Key.IsValid() || !It->Value.Asset.IsValid())
+            {
+                if (UPhysicsAsset* Old = It->Value.Asset.Get()) Old->RemoveFromRoot();
+                It.RemoveCurrent();
+            }
+        if (const FBuiltAsset* Found = Kept.Find(Skeletal)) { Fitted = Found->Fitted; return Found->Asset.Get(); }
+        const double Start = FPlatformTime::Seconds();
+        UPhysicsAsset* Built = URidePhysicalRider::BuildPhysicsAsset(Skeletal, RiderApi, GetTransientPackage(), bFitToSkin, &Fitted);
+        if (!Built) return nullptr;
+        Built->AddToRoot();
+        Kept.Add(Skeletal, FBuiltAsset{Built, Fitted});
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: physics asset for %s built in %.1f ms, kept for the session"),
+            *Skeletal->GetName(), (FPlatformTime::Seconds() - Start) * 1000.);
+        return Built;
+    }
     FAutoConsoleCommand ReloadCommand(TEXT("skate.RidePhysicalReload"),
         TEXT("Ride: rebuild the physical rider's profiles from Project Settings > Skate Physical Rider and apply them."),
         FConsoleCommandDelegate::CreateLambda([]
@@ -104,6 +145,110 @@ namespace
     constexpr float HipsGroundRange = 1000.f;
     // A fallen pelvis this close to the ground under it is down, and the body slides (cm).
     constexpr float SlideHeight = 50.f;
+    // A body fitted to the skin is the convex hull of its vertices furthest out in this many directions, from at
+    // least this many vertices; a hull under this share of the capsule's volume (a bone that carries little skin of
+    // its own) leaves the capsule.
+    constexpr int32 HullDirections = 64;
+    constexpr int32 MinSkinVertices = 24;
+    constexpr double MinHullShare = .05;
+    // The skin depth samples each body's vertices furthest out in this many directions and about this many more
+    // spread over the mesh, each traced this far above and below it (cm).
+    constexpr int32 SkinDirections = 26;
+    constexpr int32 SkinSpread = 256;
+    constexpr float SkinProbe = 30.f;
+
+    // The reference skeleton's bind pose in component space.
+    TArray<FTransform> BindPose(const FReferenceSkeleton& Ref)
+    {
+        TArray<FTransform> Bind; Bind.SetNum(Ref.GetNum());
+        for (int32 I = 0; I < Ref.GetNum(); ++I)
+        {
+            const int32 Parent = Ref.GetParentIndex(I);
+            Bind[I] = Parent >= 0 ? Ref.GetRefBonePose()[I] * Bind[Parent] : Ref.GetRefBonePose()[I];
+        }
+        return Bind;
+    }
+
+    // LOD0's vertices in the bind pose (component space) and the bone of each one's strongest weight (INDEX_NONE
+    // outside every section). False when the mesh keeps no CPU copy of them.
+    bool ReadSkin(const USkeletalMesh* Skeletal, TArray<FVector>& Positions, TArray<int32>& Dominant)
+    {
+        const FSkeletalMeshRenderData* Render = Skeletal ? Skeletal->GetResourceForRendering() : nullptr;
+        if (!Render || Render->LODRenderData.Num() == 0) return false;
+        const FSkeletalMeshLODRenderData& LOD = Render->LODRenderData[0];
+        const FPositionVertexBuffer& Points = LOD.StaticVertexBuffers.PositionVertexBuffer;
+        const FSkinWeightVertexBuffer& Weights = LOD.SkinWeightVertexBuffer;
+        const uint32 Count = Points.GetNumVertices();
+        if (Count == 0 || !Points.GetVertexData() || Weights.GetNumVertices() != Count || !Weights.GetDataVertexBuffer()->GetWeightData())
+            return false;
+        Positions.SetNumZeroed(Count);
+        Dominant.Init(INDEX_NONE, Count);
+        const uint32 Influences = Weights.GetMaxBoneInfluences();
+        for (const FSkelMeshRenderSection& Section : LOD.RenderSections)
+            for (uint32 V = Section.BaseVertexIndex; V < FMath::Min(Count, Section.BaseVertexIndex + Section.NumVertices); ++V)
+            {
+                Positions[V] = FVector(Points.VertexPosition(V));
+                uint32 Best = 0; uint16 Most = 0;
+                for (uint32 I = 0; I < Influences; ++I)
+                    if (const uint16 W = Weights.GetBoneWeight(V, I); W > Most) { Most = W; Best = Weights.GetBoneIndex(V, I); }
+                if (Most > 0 && Section.BoneMap.IsValidIndex(int32(Best))) Dominant[V] = Section.BoneMap[Best];
+            }
+        return true;
+    }
+
+    // Each vertex's body: the nearest bone at or above its strongest bone that has one (INDEX_NONE: none).
+    TArray<int32> SkinOwners(const FReferenceSkeleton& Ref, const TArray<int32>& Dominant, TFunctionRef<bool(int32)> HasBody)
+    {
+        TArray<int32> Owner; Owner.Init(INDEX_NONE, Ref.GetNum());
+        // Parents come before their children.
+        for (int32 I = 0; I < Ref.GetNum(); ++I)
+        {
+            const int32 Parent = Ref.GetParentIndex(I);
+            Owner[I] = HasBody(I) ? I : Parent >= 0 ? Owner[Parent] : INDEX_NONE;
+        }
+        TArray<int32> Of; Of.Init(INDEX_NONE, Dominant.Num());
+        for (int32 V = 0; V < Dominant.Num(); ++V)
+            if (Owner.IsValidIndex(Dominant[V])) Of[V] = Owner[Dominant[V]];
+        return Of;
+    }
+
+    // The skin depth's groups, by the contract bone of the body that carries a vertex (others: the torso).
+    const TCHAR* const SkinGroupNames[] = { TEXT("torso"), TEXT("head"), TEXT("upperarms"), TEXT("forearms"), TEXT("hands"),
+        TEXT("legs"), TEXT("feet") };
+    static_assert(UE_ARRAY_COUNT(SkinGroupNames) == URidePhysicalRider::SkinGroupCount);
+    struct FSkinGroupBone { const TCHAR* Contract; uint8 Group; };
+    const FSkinGroupBone SkinGroupBones[] = {
+        {TEXT("pelvis"), 0}, {TEXT("spine"), 0}, {TEXT("chest"), 0}, {TEXT("head"), 1}, {TEXT("upperarm_L"), 2}, {TEXT("upperarm_R"), 2},
+        {TEXT("forearm_L"), 3}, {TEXT("forearm_R"), 3}, {TEXT("hand_L"), 4}, {TEXT("hand_R"), 4}, {TEXT("thigh_L"), 5}, {TEXT("thigh_R"), 5},
+        {TEXT("shin_L"), 5}, {TEXT("shin_R"), 5}, {TEXT("foot_L"), 6}, {TEXT("foot_R"), 6} };
+
+    // Directions spread evenly over the sphere (a Fibonacci lattice).
+    TArray<FVector> SphereDirections(int32 Count)
+    {
+        TArray<FVector> Out;
+        const double Golden = UE_PI * (3. - FMath::Sqrt(5.));
+        for (int32 I = 0; I < Count; ++I)
+        {
+            const double Z = 1. - (2. * I + 1.) / Count, R = FMath::Sqrt(FMath::Max(0., 1. - Z * Z)), A = Golden * I;
+            Out.Add(FVector(R * FMath::Cos(A), R * FMath::Sin(A), Z));
+        }
+        return Out;
+    }
+
+    // The points furthest out along each direction, each once (indices into Points).
+    TArray<int32> Extremes(const TArray<FVector>& Points, const TArray<FVector>& Directions)
+    {
+        TArray<int32> Out;
+        if (Points.IsEmpty()) return Out;
+        for (const FVector& D : Directions)
+        {
+            int32 Best = 0; double Most = -UE_DOUBLE_BIG_NUMBER;
+            for (int32 I = 0; I < Points.Num(); ++I)
+                if (const double S = Points[I] | D; S > Most) { Most = S; Best = I; }
+            Out.AddUnique(Best);
+        }
+        return Out;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -118,7 +263,7 @@ URidePhysicalSettings::URidePhysicalSettings()
     Landing.Legs = .8f; Landing.Feet = 14.f;
     Grind.Feet = 14.f;
     Bail.Joints = 3.f; Bail.Body = 0.f; Bail.Pelvis = 0.f; Bail.Feet = 0.f; Bail.Hands = 0.f; Bail.Gravity = 1.f;
-    Bail.bFeetTouchWorld = true;
+    Bail.bFeetTouchWorld = true; Bail.bContinuousCollision = true;
     OnFoot.Feet = 6.f;
 }
 
@@ -168,15 +313,17 @@ void URidePhysicsControl::TickComponent(float DeltaTime, ELevelTick TickType, FA
     // A skipped frame's time goes into the next update, whose pose has moved over both frames.
     Super::TickComponent(DeltaTime + SkippedTime, TickType, ThisTickFunction);
     SkippedTime = 0;
+    if (TickType == LEVELTICK_All) UpdatedFrame = GFrameCounter;
 }
 
 bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
 {
     USkeletalMeshComponent* NewMesh = InRider ? InRider->GetMesh() : nullptr;
     if (!NewMesh || !NewMesh->GetSkeletalMeshAsset()) return false;
-    if (Control && Rider == InRider && Mesh == NewMesh && (bBuiltAsset ? Mesh->GetPhysicsAsset() == Built : true))
+    const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
+    if (Control && Rider == InRider && Mesh == NewMesh && (bBuiltAsset ? Mesh->GetPhysicsAsset() == Built && bBuiltFit == S->bFitBodiesToSkin : true))
     {
-        // A dismount still fading out: the new ride keeps the body.
+        // A dismount still fading out (or a placement): the new ride keeps the body, unless the fit was switched.
         bEndWhenOut = false;
         return true;
     }
@@ -191,7 +338,11 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     bBuiltAsset = !(Own && Own->SkeletalBodySetups.Num() >= MinBodies);
     if (bBuiltAsset)
     {
-        if (!Built || BuiltFor != Skeletal) { Built = BuildPhysicsAsset(Skeletal, Api, this); BuiltFor = Skeletal; }
+        if (!Built || BuiltFor != Skeletal || bBuiltFit != S->bFitBodiesToSkin)
+        {
+            Built = KeptPhysicsAsset(Skeletal, Api, S->bFitBodiesToSkin, BuiltFitted);
+            BuiltFor = Skeletal; bBuiltFit = S->bFitBodiesToSkin;
+        }
         if (!Built) { Mesh = nullptr; Rider = nullptr; return false; }
         Mesh->SetPhysicsAsset(Built, true);
     }
@@ -219,7 +370,6 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     ThighBones[0] = Bone(TEXT("thigh_L")); ThighBones[1] = Bone(TEXT("thigh_R"));
 
     // The controls: an authored asset from the settings, or one built from the profiles.
-    const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
     UPhysicsControlAsset* Authored = S->ControlAsset.IsNull() ? nullptr : S->ControlAsset.LoadSynchronous();
     bOwnControlAsset = Authored == nullptr;
     Asset = Authored ? Authored : BuildControlAsset(Mesh->GetPhysicsAsset());
@@ -307,10 +457,16 @@ void URidePhysicalRider::Release(float Seconds)
     if (WeightTarget > 0.f) BlendOut(Seconds);
 }
 
-// The physics asset built from the bone contract: one capsule per part from its bone toward the next contract bone (a
-// sphere at the ends), radius in cm for a 1.7 m rider, and joint limits wide enough for every riding pose.
-UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, UObject* Outer)
+// The physics asset built from the bone contract: a body per part, and joint limits wide enough for every riding pose.
+// Fitted to the skin, a body is the convex hull of the vertices it carries (those whose strongest weight is on its
+// bone or on a bone under it without a body of its own: fingers on the hand, neck and clavicles on the chest, hair on
+// the head), as the physics asset editor's single convex hull fit makes it, at the mass of the contract's capsule so
+// the drives and the bail's tuning see the same bodies. The contract's capsule goes from the part's bone toward the
+// next contract bone (a sphere at the ends), radius in cm for a slim 1.7 m rider.
+UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, UObject* Outer, bool bFitToSkin,
+    int32* OutFitted)
 {
+    if (OutFitted) *OutFitted = 0;
     if (!Skeletal) return nullptr;
     const FReferenceSkeleton& Ref = Skeletal->GetRefSkeleton();
     auto Find = [&](const TCHAR* Contract)
@@ -319,12 +475,7 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         const FName B = RiderApi ? RiderApi->GetSkateBone(FName(Contract)) : FName(Contract);
         return B.IsNone() ? int32(INDEX_NONE) : Ref.FindBoneIndex(B);
     };
-    TArray<FTransform> Bind; Bind.SetNum(Ref.GetNum());
-    for (int32 I = 0; I < Ref.GetNum(); ++I)
-    {
-        const int32 Parent = Ref.GetParentIndex(I);
-        Bind[I] = Parent >= 0 ? Ref.GetRefBonePose()[I] * Bind[Parent] : Ref.GetRefBonePose()[I];
-    }
+    const TArray<FTransform> Bind = BindPose(Ref);
     struct FPart { const TCHAR* Bone; const TCHAR* To; const TCHAR* Parent; float Radius; float Swing; float Twist; };
     static const FPart Parts[] = {
         {TEXT("pelvis"), TEXT("spine"), nullptr, 12.f, 0, 0},
@@ -348,15 +499,43 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
     const int32 Head = Find(TEXT("head")), Root = Find(TEXT("root"));
     const float Height = Head != INDEX_NONE ? float(Bind[Head].GetLocation().Z - (Root != INDEX_NONE ? Bind[Root].GetLocation().Z : 0.)) : 155.f;
     const float Size = FMath::Clamp(Height / 155.f, .2f, 5.f);
-    UPhysicsAsset* Physics = NewObject<UPhysicsAsset>(Outer, NAME_None, RF_Transient);
-    int32 Bodies = 0;
+    // The bones that get a body: a contract that names one bone twice gets one.
     TArray<int32, TInlineAllocator<16>> Used;
+    for (const FPart& Part : Parts) if (const int32 B = Find(Part.Bone); B != INDEX_NONE) Used.AddUnique(B);
+    // The skin each body carries, in its bone's space.
+    TMap<int32, TArray<FVector>> Skin;
+    if (bFitToSkin)
+    {
+        TArray<FVector> Positions; TArray<int32> Dominant;
+        if (ReadSkin(Skeletal, Positions, Dominant))
+        {
+            const TArray<int32> Owner = SkinOwners(Ref, Dominant, [&](int32 I) { return Used.Contains(I); });
+            for (int32 V = 0; V < Owner.Num(); ++V)
+                if (Owner[V] != INDEX_NONE) Skin.FindOrAdd(Owner[V]).Add(Bind[Owner[V]].InverseTransformPosition(Positions[V]));
+        }
+        else UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: %s keeps no CPU copy of its vertices, so its bodies are the contract's capsules"),
+            *Skeletal->GetName());
+    }
+    const TArray<FVector> Directions = SphereDirections(HullDirections);
+    const float MassPower = GEngine && GEngine->DefaultPhysMaterial ? GEngine->DefaultPhysMaterial->RaiseMassToPower : .75f;
+    UPhysicsAsset* Physics = NewObject<UPhysicsAsset>(Outer, NAME_None, RF_Transient);
+    auto NewBody = [&](int32 B)
+    {
+        USkeletalBodySetup* Body = NewObject<USkeletalBodySetup>(Physics, NAME_None, RF_Transient);
+        Body->BoneName = Ref.GetBoneName(B);
+        Body->PhysicsType = PhysType_Default;
+        Body->CollisionTraceFlag = CTF_UseSimpleAsComplex;
+        Body->DefaultInstance.LinearDamping = .05f;
+        Body->DefaultInstance.AngularDamping = .8f;
+        return Body;
+    };
+    int32 Bodies = 0, Fitted = 0;
+    TArray<int32, TInlineAllocator<16>> Made;
     for (const FPart& Part : Parts)
     {
         const int32 B = Find(Part.Bone);
-        // A contract that names one bone twice gets one body.
-        if (B == INDEX_NONE || Used.Contains(B)) continue;
-        Used.Add(B);
+        if (B == INDEX_NONE || Made.Contains(B)) continue;
+        Made.Add(B);
         const int32 To = Find(Part.To), Parent = Find(Part.Parent), BoneParent = Ref.GetParentIndex(B);
         // The body's long axis in the bone's space.
         FVector End = FVector::ZeroVector, Axis = FVector::UpVector;
@@ -365,29 +544,53 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         if (Axis.IsNearlyZero()) Axis = FVector::UpVector;
         // Shapes are in the bone's space, which carries the bone's scale.
         const float Radius = Part.Radius * Size / FMath::Max(.01f, float(Bind[B].GetMaximumAxisScale()));
-        USkeletalBodySetup* Body = NewObject<USkeletalBodySetup>(Physics, NAME_None, RF_Transient);
-        Body->BoneName = Ref.GetBoneName(B);
-        Body->PhysicsType = PhysType_Default;
-        Body->CollisionTraceFlag = CTF_UseSimpleAsComplex;
-        Body->DefaultInstance.LinearDamping = .05f;
-        Body->DefaultInstance.AngularDamping = .8f;
         const float Length = float(End.Size());
-        if (To != INDEX_NONE && Length > Radius * 1.2f)
+        const bool bCapsule = To != INDEX_NONE && Length > Radius * 1.2f;
+        // Lengths are in the bone's units too: on a skeleton whose root carries its unit scale, one unit is a metre
+        // or more.
+        const float CapsuleLength = FMath::Max(Radius * .2f, Length - Radius);
+        const double CapsuleVolume = UE_PI * Radius * Radius * (bCapsule ? CapsuleLength + Radius * 4. / 3. : Radius * 4. / 3.);
+        USkeletalBodySetup* Body = nullptr;
+        if (const TArray<FVector>* Points = Skin.Find(B); Points && Points->Num() >= MinSkinVertices)
         {
-            // Lengths are in the bone's units too: on a skeleton whose root carries its unit scale, one unit is
-            // a metre or more.
-            FKSphylElem Capsule(Radius, FMath::Max(Radius * .2f, Length - Radius));
-            Capsule.Center = End * .5f;
-            Capsule.Rotation = FRotationMatrix::MakeFromZ(Axis).Rotator();
-            Body->AggGeom.SphylElems.Add(Capsule);
+            USkeletalBodySetup* Hull = NewBody(B);
+            FKConvexElem Convex;
+            for (const int32 I : Extremes(*Points, Directions)) Convex.VertexData.Add((*Points)[I]);
+            Convex.UpdateElemBox();
+            Hull->AggGeom.ConvexElems.Add(Convex);
+            Hull->CreatePhysicsMeshes();
+            // The hull is the body's only shape (the element's own volume is not exported).
+            const double Volume = Hull->AggGeom.ConvexElems.Num() ? Hull->AggGeom.GetScaledVolume(FVector::OneVector) : 0.;
+            if (Volume > CapsuleVolume * MinHullShare)
+            {
+                Body = Hull;
+                // Mass grows with the volume to the material's power: this scale gives the hull the capsule's mass.
+                Body->DefaultInstance.MassScale = float(FMath::Pow(CapsuleVolume / Volume, double(MassPower)));
+                ++Fitted;
+            }
+            const FVector Extent = Convex.ElemBox.GetSize() * Bind[B].GetMaximumAxisScale();
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider body %s: %s (%d of %d vertices; %.0f x %.0f x %.0f cm, %.1fx the capsule's volume)"),
+                *Ref.GetBoneName(B).ToString(), Body ? TEXT("fitted to the skin") : TEXT("capsule, too little skin"), Convex.VertexData.Num(),
+                Points->Num(), Extent.X, Extent.Y, Extent.Z, Volume / FMath::Max(CapsuleVolume, 1e-9));
         }
-        else
+        if (!Body)
         {
-            FKSphereElem Sphere(Radius);
-            Sphere.Center = Axis * Radius * .7f;
-            Body->AggGeom.SphereElems.Add(Sphere);
+            Body = NewBody(B);
+            if (bCapsule)
+            {
+                FKSphylElem Capsule(Radius, CapsuleLength);
+                Capsule.Center = End * .5f;
+                Capsule.Rotation = FRotationMatrix::MakeFromZ(Axis).Rotator();
+                Body->AggGeom.SphylElems.Add(Capsule);
+            }
+            else
+            {
+                FKSphereElem Sphere(Radius);
+                Sphere.Center = Axis * Radius * .7f;
+                Body->AggGeom.SphereElems.Add(Sphere);
+            }
+            Body->CreatePhysicsMeshes();
         }
-        Body->CreatePhysicsMeshes();
         Physics->SkeletalBodySetups.Add(Body);
         ++Bodies;
         if (Parent == INDEX_NONE) continue;
@@ -410,6 +613,8 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         Physics->ConstraintSetup.Add(Joint);
     }
     if (Bodies < MinBodies) { UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: only %d contract bones"), Bodies); return nullptr; }
+    if (bFitToSkin) UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: %d of %d bodies fitted to %s's skin"), Fitted, Bodies, *Skeletal->GetName());
+    if (OutFitted) *OutFitted = Fitted;
     // A kinematic body on the skeleton's root that follows the animation and touches nothing. The skeletal mesh's
     // physics blend expects a body there when the root bone is scaled (an FBX armature carries its unit scale on
     // it): it takes that body as the frame of the simulated bodies below the root. Without one, the pelvis lands at
@@ -518,6 +723,7 @@ void URidePhysicalRider::FillProfiles(UPhysicsControlAsset* Target) const
         Body.bEnableGravityMultiplier = true; Body.GravityMultiplier = F.Gravity;
         Body.bEnableCollisionType = true;
         Body.CollisionType = F.bBodyTouchesWorld ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::QueryOnly;
+        Body.bEnablebEnableCCD = true; Body.bEnableCCD = F.bContinuousCollision;
         U.ModifierUpdates.Emplace(AllSet, Body);
         FPhysicsControlModifierSparseData Feet = Modifier();
         Feet.bEnableCollisionType = true; Feet.CollisionType = F.bFeetTouchWorld ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::QueryOnly;
@@ -839,22 +1045,196 @@ void URidePhysicalRider::Dump() const
                 if (const UPrimitiveComponent* C = H.GetComponent(); C && CollisionEnabledHasPhysics(C->GetCollisionEnabled()))
                     Touching += FString::Printf(TEXT(" %s.%s(type %d)"), *GetNameSafe(C->GetOwner()), *C->GetName(), int32(C->GetCollisionObjectType()));
         }
-        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical dump: %s sim=%d scale=%s body=%s bone=%s target=%s bounds=%s..%s near:%s"),
+        const UBodySetup* Setup = Body->GetBodySetup();
+        const FKAggregateGeom Geom = Setup ? Setup->AggGeom : FKAggregateGeom();
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical dump: %s sim=%d scale=%s body=%s bone=%s target=%s bounds=%s..%s mass=%.1f kg collision=%d type=%d static=%d dynamic=%d ccd=%d shapes=%d sphere %d capsule %d convex near:%s"),
             *B.ToString(), Body->IsInstanceSimulatingPhysics() ? 1 : 0, *Body->Scale3D.ToString(),
             *Body->GetUnrealWorldTransform().GetLocation().ToString(), *Mesh->GetBoneLocation(B).ToString(),
-            *Control->GetCachedBonePosition(Mesh, B).ToString(), *Box.Min.ToString(), *Box.Max.ToString(), *Touching);
+            *Control->GetCachedBonePosition(Mesh, B).ToString(), *Box.Min.ToString(), *Box.Max.ToString(), Body->GetBodyMass(),
+            int32(Body->GetCollisionEnabled()), int32(Body->GetObjectType()), int32(Body->GetResponseToChannel(ECC_WorldStatic)),
+            int32(Body->GetResponseToChannel(ECC_WorldDynamic)), Body->bUseCCD ? 1 : 0, Geom.SphereElems.Num(), Geom.SphylElems.Num(),
+            Geom.ConvexElems.Num(), *Touching);
     }
+}
+
+const TCHAR* URidePhysicalRider::SkinGroupName(int32 Group)
+{
+    return Group >= 0 && Group < SkinGroupCount ? SkinGroupNames[Group] : TEXT("-");
+}
+
+bool URidePhysicalRider::MeasureSkinDepth(float& Depth, FName& Bone, float* Groups) const
+{
+    Depth = -SkinProbe; Bone = NAME_None;
+    if (Groups) for (int32 G = 0; G < SkinGroupCount; ++G) Groups[G] = -SkinProbe;
+    USkeletalMeshComponent* Skinned = Mesh.Get();
+    const USkeletalMesh* Skeletal = Skinned ? Skinned->GetSkeletalMeshAsset() : nullptr;
+    const UPhysicsAsset* Physics = Skinned ? Skinned->GetPhysicsAsset() : nullptr;
+    if (!Skeletal || !Physics || !Rider) return false;
+    // The samples: each body's vertices furthest out (in its bone's space, so in any pose: where a body meets the
+    // ground), and a spread of the rest, for the skin that a bent joint pushes out between two bodies.
+    if (SkinSamplesFor != Physics)
+    {
+        SkinSamplesFor = Physics; SkinSamples.Reset(); SkinSampleBones.Reset(); SkinSampleGroups.Reset();
+        TArray<FVector> Positions; TArray<int32> Dominant;
+        if (ReadSkin(Skeletal, Positions, Dominant))
+        {
+            const FReferenceSkeleton& Ref = Skeletal->GetRefSkeleton();
+            const TArray<FTransform> Bind = BindPose(Ref);
+            TSet<int32> Bodies;
+            for (const USkeletalBodySetup* Setup : Physics->SkeletalBodySetups)
+                if (Setup && Setup->PhysicsType != PhysType_Kinematic) Bodies.Add(Ref.FindBoneIndex(Setup->BoneName));
+            const TArray<int32> Owner = SkinOwners(Ref, Dominant, [&](int32 I) { return Bodies.Contains(I); });
+            TMap<int32, TArray<int32>> Carried;
+            for (int32 V = 0; V < Owner.Num(); ++V) if (Owner[V] != INDEX_NONE) Carried.FindOrAdd(Owner[V]).Add(V);
+            const TArray<FVector> Directions = SphereDirections(SkinDirections);
+            TSet<int32> Taken;
+            for (const TPair<int32, TArray<int32>>& Part : Carried)
+            {
+                TArray<FVector> Local;
+                for (const int32 V : Part.Value) Local.Add(Bind[Part.Key].InverseTransformPosition(Positions[V]));
+                for (const int32 I : Extremes(Local, Directions))
+                    if (!Taken.Contains(Part.Value[I])) { Taken.Add(Part.Value[I]); SkinSamples.Add(Part.Value[I]); SkinSampleBones.Add(Ref.GetBoneName(Part.Key)); }
+            }
+            const int32 Stride = FMath::Max(1, Owner.Num() / SkinSpread);
+            for (int32 V = 0; V < Owner.Num(); V += Stride)
+                if (Owner[V] != INDEX_NONE && !Taken.Contains(V)) { Taken.Add(V); SkinSamples.Add(V); SkinSampleBones.Add(Ref.GetBoneName(Owner[V])); }
+            TMap<FName, uint8> GroupOf;
+            for (const FSkinGroupBone& G : SkinGroupBones) if (const FName B = this->Bone(G.Contract); !B.IsNone()) GroupOf.Add(B, G.Group);
+            for (const FName B : SkinSampleBones) SkinSampleGroups.Add(GroupOf.FindRef(B));
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: the skin depth samples %d of %s's %d vertices"), SkinSamples.Num(),
+                *Skeletal->GetName(), Owner.Num());
+        }
+    }
+    const FSkeletalMeshRenderData* Render = Skeletal->GetResourceForRendering();
+    const FSkinWeightVertexBuffer* Weights = Skinned->GetSkinWeightBuffer(0);
+    if (SkinSamples.IsEmpty() || !Render || Render->LODRenderData.Num() == 0 || !Weights) return false;
+    const FSkeletalMeshLODRenderData& LOD = Render->LODRenderData[0];
+    TArray<FMatrix44f> RefToLocals;
+    Skinned->CacheRefToLocalMatrices(RefToLocals);
+    const FTransform ToWorld = Skinned->GetComponentTransform();
+    UWorld* World = Rider->GetWorld();
+    // The ground as it shows: its complex collision (the render mesh's triangles), which the bodies' simple shapes
+    // may stand off from.
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(RideSkin), true, Rider);
+    if (LooseBoard) Params.AddIgnoredComponent(LooseBoard.Get());
+    for (int32 I = 0; I < SkinSamples.Num(); ++I)
+    {
+        const FVector P = ToWorld.TransformPosition(FVector(USkeletalMeshComponent::GetSkinnedVertexPosition(Skinned, SkinSamples[I], LOD, *Weights, RefToLocals)));
+        FHitResult Hit;
+        if (!World->LineTraceSingleByChannel(Hit, P + FVector(0, 0, SkinProbe), P - FVector(0, 0, SkinProbe), ECC_Pawn, Params) || Hit.bStartPenetrating)
+            continue;
+        const float Below = float((FVector(Hit.ImpactPoint) - P) | Hit.ImpactNormal);
+        if (Below > Depth) { Depth = Below; Bone = SkinSampleBones[I]; }
+        if (Groups && SkinSampleGroups.IsValidIndex(I)) Groups[SkinSampleGroups[I]] = FMath::Max(Groups[SkinSampleGroups[I]], Below);
+    }
+    return true;
+}
+
+bool URidePhysicalRider::MeasureHandGap(float Gap[2], FName Near[2]) const
+{
+    Gap[0] = Gap[1] = SkinProbe; Near[0] = Near[1] = NAME_None;
+    USkeletalMeshComponent* Skinned = Mesh.Get();
+    const USkeletalMesh* Skeletal = Skinned ? Skinned->GetSkeletalMeshAsset() : nullptr;
+    const UPhysicsAsset* Physics = Skinned ? Skinned->GetPhysicsAsset() : nullptr;
+    if (!Skeletal || !Physics) return false;
+    const FReferenceSkeleton& Ref = Skeletal->GetRefSkeleton();
+    const FName Hands[2] = { Bone(TEXT("hand_L")), Bone(TEXT("hand_R")) };
+    if (HandSamplesFor != Physics)
+    {
+        HandSamplesFor = Physics; HandSamples[0].Reset(); HandSamples[1].Reset();
+        TArray<FVector> Positions; TArray<int32> Dominant;
+        if (ReadSkin(Skeletal, Positions, Dominant))
+        {
+            TSet<int32> Bodies;
+            for (const USkeletalBodySetup* Setup : Physics->SkeletalBodySetups)
+                if (Setup && Setup->PhysicsType != PhysType_Kinematic) Bodies.Add(Ref.FindBoneIndex(Setup->BoneName));
+            const TArray<int32> Owner = SkinOwners(Ref, Dominant, [&](int32 I) { return Bodies.Contains(I); });
+            for (int32 H = 0; H < 2; ++H)
+            {
+                const int32 HandIndex = Hands[H].IsNone() ? INDEX_NONE : Ref.FindBoneIndex(Hands[H]);
+                for (int32 V = 0; V < Owner.Num(); ++V) if (HandIndex != INDEX_NONE && Owner[V] == HandIndex) HandSamples[H].Add(V);
+            }
+        }
+    }
+    const FSkeletalMeshRenderData* Render = Skeletal->GetResourceForRendering();
+    const FSkinWeightVertexBuffer* Weights = Skinned->GetSkinWeightBuffer(0);
+    if ((HandSamples[0].IsEmpty() && HandSamples[1].IsEmpty()) || !Render || Render->LODRenderData.Num() == 0 || !Weights) return false;
+    const FSkeletalMeshLODRenderData& LOD = Render->LODRenderData[0];
+    TArray<FMatrix44f> RefToLocals;
+    Skinned->CacheRefToLocalMatrices(RefToLocals);
+    const FTransform ToWorld = Skinned->GetComponentTransform();
+    // The bodies a resting hand may reach: their shapes in their bones' spaces (which carry the bones' scale).
+    struct FNearBody { FName Name; FTransform Bone; float Scale; const FKAggregateGeom* Geom; TArray<TArray<FPlane>> Planes; };
+    TArray<FNearBody> Reach;
+    for (const TCHAR* Contract : { TEXT("pelvis"), TEXT("spine"), TEXT("chest"), TEXT("thigh_L"), TEXT("thigh_R") })
+    {
+        const FName B = Bone(Contract);
+        const int32 Body = B.IsNone() ? INDEX_NONE : Physics->FindBodyIndex(B);
+        const int32 Index = B.IsNone() ? INDEX_NONE : Skinned->GetBoneIndex(B);
+        if (Body == INDEX_NONE || Index == INDEX_NONE || !Physics->SkeletalBodySetups[Body]) continue;
+        FNearBody& N = Reach.AddDefaulted_GetRef();
+        N.Name = B; N.Bone = Skinned->GetBoneTransform(Index); N.Scale = float(FMath::Max(N.Bone.GetMaximumAxisScale(), 1e-4));
+        N.Geom = &Physics->SkeletalBodySetups[Body]->AggGeom;
+        for (const FKConvexElem& Convex : N.Geom->ConvexElems) Convex.GetPlanes(N.Planes.AddDefaulted_GetRef());
+    }
+    // Signed distance (bone units) from a point in the bone's space to a body's shapes: below 0 inside.
+    const auto Distance = [](const FNearBody& N, const FVector& Q)
+    {
+        double D = TNumericLimits<double>::Max();
+        for (int32 E = 0; E < N.Geom->ConvexElems.Num(); ++E)
+        {
+            const FVector P = N.Geom->ConvexElems[E].GetTransform().InverseTransformPosition(Q);
+            double Out = -TNumericLimits<double>::Max();
+            for (const FPlane& Plane : N.Planes[E]) Out = FMath::Max(Out, double(Plane.PlaneDot(P)));
+            if (N.Planes[E].Num()) D = FMath::Min(D, Out);
+        }
+        for (const FKSphylElem& Capsule : N.Geom->SphylElems)
+        {
+            const FVector P = Capsule.GetTransform().InverseTransformPosition(Q);
+            const double Half = Capsule.Length * .5;
+            D = FMath::Min(D, (P - FVector(0, 0, FMath::Clamp(P.Z, -Half, Half))).Size() - Capsule.Radius);
+        }
+        for (const FKSphereElem& Sphere : N.Geom->SphereElems) D = FMath::Min(D, (Q - Sphere.Center).Size() - Sphere.Radius);
+        return D;
+    };
+    for (int32 H = 0; H < 2; ++H)
+        for (const int32 V : HandSamples[H])
+        {
+            const FVector P = ToWorld.TransformPosition(FVector(USkeletalMeshComponent::GetSkinnedVertexPosition(Skinned, V, LOD, *Weights, RefToLocals)));
+            for (const FNearBody& N : Reach)
+            {
+                const float D = float(Distance(N, N.Bone.InverseTransformPosition(P)) * N.Scale);
+                if (D < Gap[H]) { Gap[H] = D; Near[H] = N.Name; }
+            }
+        }
+    return true;
 }
 
 FString URidePhysicalRider::Describe() const
 {
     if (!Control) return TEXT("phys=off");
     const FVector Hips = GetPelvisLocation();
-    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f lie=%.1f drag=%.2f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s skipped=%d"),
-        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, bBail ? HipsAboveGround : -1.f, BailDragApplied, GetGetUpAlpha(),
+    FString Skin;
+    if (CVarRideSkinCheck.GetValueOnGameThread() != 0)
+    {
+        float Depth, Groups[SkinGroupCount]; FName Bone;
+        if (MeasureSkinDepth(Depth, Bone, Groups))
+        {
+            Skin = FString::Printf(TEXT(" skin=%.1f skin_bone=%s skin_groups="), Depth, Bone.IsNone() ? TEXT("-") : *Bone.ToString());
+            for (int32 G = 0; G < SkinGroupCount; ++G) Skin += FString::Printf(TEXT("%s%s:%.1f"), G ? TEXT(",") : TEXT(""), SkinGroupNames[G], Groups[G]);
+        }
+        float Gap[2]; FName Near[2];
+        if (MeasureHandGap(Gap, Near))
+            Skin += FString::Printf(TEXT(" hand_gap=%.1f,%.1f hand_near=%s,%s"), Gap[0], Gap[1], *Near[0].ToString(), *Near[1].ToString());
+    }
+    const FBodyInstance* Pelvis = Mesh ? Mesh->GetBodyInstance(PelvisBone) : nullptr;
+    const FVector HipsVelocity = Pelvis ? Pelvis->GetUnrealWorldVelocity() : FVector::ZeroVector;
+    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f hips_vel=%.0f,%.0f,%.0f lie=%.1f drag=%.2f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s skipped=%d"),
+        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z,
+        HipsVelocity.X, HipsVelocity.Y, HipsVelocity.Z, bBail ? HipsAboveGround : -1.f, BailDragApplied, GetGetUpAlpha(),
         !bBailOffered ? TEXT("none") : LastBailKind == ERideBailKind::RunOut ? TEXT("runout") : TEXT("fall"),
-        Mesh ? Mesh->Bodies.Num() : 0, bBuiltAsset ? TEXT("contract") : TEXT("rider"), bBoardFrame ? TEXT("board") : TEXT("world"),
-        Cast<URidePhysicsControl>(Control) ? Cast<URidePhysicsControl>(Control)->Skipped : 0);
+        Mesh ? Mesh->Bodies.Num() : 0, !bBuiltAsset ? TEXT("rider") : BuiltFitted > 0 ? TEXT("skin") : TEXT("contract"), bBoardFrame ? TEXT("board") : TEXT("world"),
+        Cast<URidePhysicsControl>(Control) ? Cast<URidePhysicsControl>(Control)->Skipped : 0) + Skin;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -940,6 +1320,13 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     ApplyPhase(ERidePhysicalPhase::Bail);
     ApplyJointLimits(false, false);
     ApplyBailMaterial(true);
+    // The profile reaches the bodies at Physics Control's next update. One that already ran this frame left the
+    // riding anchors on for this frame's physics, toward a root the ride holds still as it bails: applied now, the
+    // bodies are let go in this frame's step.
+    const URidePhysicsControl* Guarded = Cast<URidePhysicsControl>(Control);
+    const bool bUpdatedBefore = Guarded && Guarded->UpdatedFrame == GFrameCounter;
+    const bool bApplyNow = CVarRideBailApplyNow.GetValueOnGameThread() != 0;
+    if (bApplyNow) Control->UpdateControls(0.f);
 
     BailStart = GetPelvisLocation();
     BailLimit = FMath::Max(2500.f, float(Velocity.Size()) * 1.5f + 800.f);
@@ -957,8 +1344,13 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     BailRoot = RootBone.IsNone() ? FVector::ZeroVector : Control->GetCachedBonePosition(Mesh, RootBone);
     HipsAboveGround = float(BailStart.Z - BailFloor.Z);
     MakeWorldPhysical(BailStart);
-    UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll (%s physics asset, %d bodies, %s) at %.0f cm/s"),
-        bBuiltAsset ? TEXT("contract") : TEXT("rider's"), Mesh->Bodies.Num(), bWasSimulating ? TEXT("active") : TEXT("from animation"), Velocity.Size());
+    const FBodyInstance* PelvisBody = Mesh->GetBodyInstance(PelvisBone);
+    BailFrame = GFrameCounter; BailTraced = 0;
+    BailPelvisVelocity = PelvisBody ? PelvisBody->GetUnrealWorldVelocity() : FVector::ZeroVector;
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll (%s physics asset, %d bodies, %s) at %.0f cm/s, the pelvis at %.0f cm/s (frame %llu; controls updated %s this frame, %s)"),
+        bBuiltAsset ? TEXT("contract") : TEXT("rider's"), Mesh->Bodies.Num(), bWasSimulating ? TEXT("active") : TEXT("from animation"), Velocity.Size(),
+        BailPelvisVelocity.Size(), GFrameCounter, bUpdatedBefore ? TEXT("before the bail") : TEXT("not yet"),
+        bApplyNow ? TEXT("the bail's applied now") : TEXT("the bail's left to the next update"));
     return true;
 }
 
@@ -970,6 +1362,25 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
     const FBodyInstance* Pelvis = Mesh->GetBodyInstance(PelvisBone);
     const float Speed = Pelvis ? float(Pelvis->GetUnrealWorldVelocity().Size()) : 0.f;
     Quiet = Speed < 40.f ? Quiet + Dt : 0.f;
+    if (BailTraced < CVarRideBailTrace.GetValueOnGameThread())
+    {
+        // Before this frame's physics: the first line is the bail's own frame, the next shows what its step did.
+        ++BailTraced;
+        FVector Momentum = FVector::ZeroVector; double Mass = 0;
+        for (const FBodyInstance* B : Mesh->Bodies)
+            if (B && B->IsInstanceSimulatingPhysics()) { const float M = B->GetBodyMass(); Momentum += B->GetUnrealWorldVelocity() * M; Mass += M; }
+        const FVector Bodies = Mass > 0 ? Momentum / Mass : FVector::ZeroVector;
+        const FVector PV = Pelvis ? Pelvis->GetUnrealWorldVelocity() : FVector::ZeroVector;
+        const FBodyInstance* RootBody = RootBone.IsNone() ? nullptr : Mesh->GetBodyInstance(RootBone);
+        const FVector RootAt = RootBody ? RootBody->GetUnrealWorldTransform().GetLocation() : FVector::ZeroVector;
+        const FVector Actor = Rider->GetActorLocation();
+        const URidePhysicsControl* Guarded = Cast<URidePhysicsControl>(Control);
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride bail trace +%llu: pelvis (%.0f, %.0f, %.0f) cm/s (%.0f at the bail), bodies (%.0f, %.0f, %.0f); ")
+            TEXT("hips (%.1f, %.1f, %.1f), root body (%.1f, %.1f, %.1f), actor (%.1f, %.1f, %.1f); controls updated at +%lld"),
+            GFrameCounter - BailFrame, PV.X, PV.Y, PV.Z, BailPelvisVelocity.Size(), Bodies.X, Bodies.Y, Bodies.Z,
+            Hips.X, Hips.Y, Hips.Z, RootAt.X, RootAt.Y, RootAt.Z, Actor.X, Actor.Y, Actor.Z,
+            Guarded ? int64(Guarded->UpdatedFrame) - int64(BailFrame) : int64(-999));
+    }
     // A body that gains speed or height it was never given has met something it cannot resolve.
     bool bThrough = false;
     if (Hips.Z < BailFloor.Z - 120.f)
@@ -1071,6 +1482,16 @@ float URidePhysicalRider::GetGetUpAlpha() const
     return GetUpTime >= 0.f ? FMath::Clamp(GetUpTime / FMath::Max(.05f, GetDefault<URidePhysicalSettings>()->GetUpBlend), 0.f, 1.f) : 1.f;
 }
 
+FTransform URidePhysicalRider::ShownTransform(const USceneComponent* Component)
+{
+    // Inside CharacterMovement's move the actor's children keep the transform they had until the move ends
+    // (FScopedMovementUpdate): measured from the parent, the transform they take this frame.
+    const USceneComponent* Parent = Component ? Component->GetAttachParent() : nullptr;
+    if (!Parent || Component->IsUsingAbsoluteLocation() || Component->IsUsingAbsoluteRotation() || Component->IsUsingAbsoluteScale())
+        return Component ? Component->GetComponentTransform() : FTransform::Identity;
+    return Component->GetRelativeTransform() * Parent->GetSocketTransform(Component->GetAttachSocketName());
+}
+
 // The snapshot as a local pose of the current component: bones under the root keep their place in the world at
 // alpha 0, the root itself is the pose's, so the body moves straight from where it lay to the clip.
 bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float Alpha) const
@@ -1079,8 +1500,21 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
     if (Alpha >= 1.f || !Target || !SnapshotMesh.IsValid() || Target->GetSkeletalMeshAsset() != SnapshotMesh.Get()) return false;
     const FReferenceSkeleton& Ref = SnapshotMesh->GetRefSkeleton();
     if (LocalPose.Num() != Ref.GetNum() || SnapshotWorld.Num() != Ref.GetNum()) return false;
-    const FTransform Component = Target->GetComponentTransform();
+    const FTransform Component = ShownTransform(Target);
     const float A = FMath::SmoothStep(0.f, 1.f, FMath::Clamp(Alpha, 0.f, 1.f));
+    // Each bone's height at the blend's two ends: where it lay, and in the pose it rises to.
+    const auto Heights = [&](TArray<double>& Out)
+    {
+        TArray<FTransform> Space; Space.SetNum(LocalPose.Num()); Out.SetNum(LocalPose.Num());
+        for (int32 I = 0; I < LocalPose.Num(); ++I)
+        {
+            const int32 Parent = Ref.GetParentIndex(I);
+            Space[I] = Parent >= 0 ? LocalPose[I] * Space[Parent] : LocalPose[I];
+            Out[I] = Component.TransformPosition(Space[I].GetLocation()).Z;
+        }
+    };
+    TArray<double> Risen, Shown;
+    Heights(Risen);
     // The pose's root in the world, which the root's children are measured from.
     for (int32 I = 1; I < Ref.GetNum(); ++I)
     {
@@ -1092,6 +1526,13 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
         Out.SetTranslation(FMath::Lerp(Snap.GetTranslation(), Out.GetTranslation(), A));
         Out.SetRotation(FQuat::Slerp(Snap.GetRotation(), Out.GetRotation(), A).GetNormalized());
     }
+    // Joint by joint, the rotations swing a limb through the floor on its way from lying to standing (a foot 15 cm
+    // under it half way up). No bone goes lower than the lower of its two ends: the root rises by the deepest
+    // shortfall.
+    Heights(Shown);
+    double Lift = 0.;
+    for (int32 I = 1; I < Shown.Num(); ++I) Lift = FMath::Max(Lift, FMath::Min(SnapshotWorld[I].GetLocation().Z, Risen[I]) - Shown[I]);
+    if (Lift > 0.) LocalPose[0].AddToTranslation(Component.InverseTransformVector(FVector(0, 0, Lift)));
     return true;
 }
 

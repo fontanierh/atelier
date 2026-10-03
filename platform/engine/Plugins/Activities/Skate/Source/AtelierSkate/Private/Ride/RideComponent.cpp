@@ -109,7 +109,7 @@ void USkateComponent::AfterRideFrame(float Dt)
     {
         // A run-out taken by the transition keeps the body active on foot.
         if (!Body.IsBailOffered() && !Body.OfferBail(Ride->GetBailVelocity(), Ride->GetBailSpin()) &&
-            !Body.StartBail(Ride->GetBailVelocity(), Ride->GetBailSpin(), BoardRoot->GetComponentTransform(), BoardScale()))
+            !Body.StartBail(Ride->GetBailVelocity(), Ride->GetBailSpin(), URidePhysicalRider::ShownTransform(BoardRoot), BoardScale()))
             Ride->SetRagdoll(false);
         if (Body.IsBailing())
         {

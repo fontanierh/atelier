@@ -11,10 +11,11 @@ roll-in from the upper deck (over the crest without leaving it, through the conc
 grind into
 the parapet's corner (it flies off the end, never stalling), and the physical rider (skate.RidePhysical, on by
 default): how closely it holds the animation riding and landing, bails on flat (at 6 and 11 m/s) and on a quarter
-that go limp at once, lie down within a second and travel as far as the reference's for their speed, and its frame
-cost in Mega Park. Over every frame recorded, the rider's pose (the clips through Unreal's animation graph) must
-keep both feet on the deck where the clip stands on it, carry no NaN and never pop between clips, in both stances,
-and the standing rider matches the reference's stand.
+that go limp at once, lie down within a second and travel as far as the reference's for their speed, its skin never
+under the ground in any group of bodies (riding, falling, lying or getting up), and its frame cost in Mega Park. Over
+every frame recorded, the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck
+where the clip stands on it, carry no NaN and never pop between clips, in both stances, and the standing rider matches
+the reference's stand.
 The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
 Writes build/yorimichi/skateqa/ride.json, and ride-pose.json: every frame of the pose checks and each pop with the
 frames around it.
@@ -636,7 +637,12 @@ BAIL_REFERENCE = {.125: (0, 8), .25: (8, 26), .5: (14, 37), 1.: (64, 127)}
 # flat and air ones, the whole distance over the whole speed.
 BAIL_TRAVEL = {'flat': ((.65, 1.3), (.7, 1.4)), 'fast': ((.65, 1.3), (.85, 1.7)), 'quarter': ((.33, 1.4), (.43, 1.8))}
 BAIL_LIE = 40.   # cm: within 1 s of a fall the pelvis is down this close to the ground under it (lie=)
+BAIL_POP = 10.   # cm: the hips never move further in a frame than the pelvis body's own speed carries them, plus this
 GETUP_BOARD_STEP = 8.   # cm: the board's largest move in one ride tick while it shows in a get-up (v2's glide: ~10)
+# cm: the skin's deepest sampled vertex under the ground (skin=, skate.RideSkinCheck), riding and through a fall to
+# the get-up. Above it the mesh shows cut by the floor.
+SKIN_DEPTH = 2.   # cm: no skin deeper under the ground than this, in any group of bodies
+SKIN_GROUPS = ('hands', 'forearms', 'upperarms', 'feet', 'head', 'torso', 'legs')
 MEGA_ROAD = (-127.9, 1471.1, 134.)   # Mega Park's road (island metres), running east into its bend
 MEGADROP = (-44.5, 1305.1, 112., 135.)   # the top of Mega Park's roll-in (island metres) and the Unreal yaw down it
 MEGADROP_FLOOR = 7600.   # cm: the board (z=) is on the floor at the bottom of the roll-in below this height
@@ -663,11 +669,40 @@ def hips(row):
     return tuple(float(x) for x in row['hips'].split(','))
 
 
+def skin_check(on):
+    qa.py(f"unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck {int(on)}')")
+
+
+def skin(rows):
+    """The deepest the skin goes under the ground over rows (cm, skin=), the body carrying it, and how many frames
+    were measured and went deeper than SKIN_DEPTH."""
+    seen = [(float(r['skin']), r.get('skin_bone', '-')) for r in rows if 'skin' in r]
+    worst = max(seen, default=(float('nan'), '-'))
+    return worst[0], worst[1], len(seen), sum(d > SKIN_DEPTH for d, _ in seen)
+
+
+def skin_groups(rows):
+    """The deepest each group of bodies (SKIN_GROUPS) goes under the ground over rows (cm, skin_groups=)."""
+    worst = {}
+    for r in rows:
+        for part in r.get('skin_groups', '').split(','):
+            group, _, depth = part.partition(':')
+            if depth:
+                worst[group] = max(worst.get(group, -99.), float(depth))
+    return worst
+
+
+def skin_text(worst):
+    return ' '.join(f'{g} {worst[g]:.1f}' for g in SKIN_GROUPS if g in worst) or 'not measured'
+
+
 def physical_checks(record, wanted):
     """The active ragdoll (skate.RidePhysical 1): tracking while riding and landing, falls on flat (at 6 and 11 m/s)
-    and off a quarter, and its cost. The cvar is put back as it was."""
+    and off a quarter, and its cost; the skin never under the ground (skate.RideSkinCheck, off for the cost). The
+    cvars are put back as they were."""
     before = qa.py("print(unreal.SystemLibrary.get_console_variable_int_value('skate.RidePhysical'))").strip().splitlines()[-1]
     physical(True)
+    skin_check(True)
     time.sleep(.8)
     try:
         if wanted('physical_riding'):
@@ -681,8 +716,10 @@ def physical_checks(record, wanted):
         if wanted('physical_bail_quarter'):
             physical_bail_quarter(record)
         if wanted('physical_cost'):
+            skin_check(False)
             physical_cost(record)
     finally:
+        skin_check(False)
         physical(before == '1')
 
 
@@ -695,9 +732,13 @@ def physical_riding(record):
                            f"(3,{{}})],duration=3.2", 3.2)
     held = [r for r in rows if driven(r)]
     pelvis, feet = p95(floats(held, 'pelvis_err')), p95(floats(held, 'foot_err'))
-    record('physical_riding', rows, len(held) > .8 * len(rows) and pelvis < 3 and feet < 8,
+    depth, bone, measured, deep = skin(rows)
+    ok = len(held) > .8 * len(rows) and pelvis < 3 and feet < 8 and measured and depth <= SKIN_DEPTH
+    record('physical_riding', rows, ok,
            f'{len(held)}/{len(rows)} frames driven; pelvis {pelvis:.1f} cm, feet {feet:.1f} cm p95 '
-           f'(reference: upper body 0.5 cm, feet 6-8 cm); pa={rows[-1].get("pa", "?")}, {rows[-1].get("bodies", "?")} bodies')
+           f'(reference: upper body 0.5 cm, feet 6-8 cm); skin {depth:.1f} cm under the ground at worst ({bone}, '
+           f'{measured} frames measured; by group {skin_text(skin_groups(rows))}); pa={rows[-1].get("pa", "?")}, '
+           f'{rows[-1].get("bodies", "?")} bodies')
 
 
 def physical_landing(record):
@@ -783,17 +824,34 @@ def judge_bail(record, name, rows, kind):
     first = bail[:(at(1.) or len(bail)) + 1]
     lie = min((float(r['lie']) for r in first if float(r.get('lie', -1)) >= 0), default=float('inf'))
     steps = [math.dist(hips(a), hips(b)) for a, b in zip(bail, bail[1:]) if 'hips' in a and 'hips' in b]
+    # A pop is the hips' move in a frame beyond what the pelvis body's speed covers in it (a fast slide's 18 cm a
+    # frame, or more in a long frame, is no pop).
+    pops = [math.dist(hips(a), hips(b)) - math.hypot(*(float(v) for v in b.get('hips_vel', '0,0,0').split(',')))
+            * (float(b.get('dt', 0)) / 1000 or 1 / 60) for a, b in zip(bail, bail[1:]) if 'hips' in a and 'hips' in b]
     up = position(rows[end]) if end < len(rows) else None
     where = math.dist(hips(bail[lying - 1])[:2], up[:2]) if up and lying else float('inf')
     kind_seen = next((r['bail_kind'] for r in bail if r.get('bail_kind', 'none') != 'none'), '?')
-    ok = limp and kind_seen == 'fall' and far and lie < BAIL_LIE and max(steps, default=99) < 25 and where < 100
+    ok = limp and kind_seen == 'fall' and far and lie < BAIL_LIE and max(pops, default=99) < BAIL_POP and where < 100
     ok = ok and (kind != 'fast' or entry > 9.5)   # the fast fall comes at speed
     limpness = 'limp to the get-up' if limp else 'NOT limp throughout (handed to the animation)'
     note = (f'entry {entry:.1f} m/s, {limpness}, kind {kind_seen}; travel '
             + ', '.join(f'{t:g} s {d:.2f} m ({d / max(entry, .01):.2f}x)' for t, d in travel.items())
             + f', rest {rest:.2f} m ({rest / max(entry, .01):.2f}x) after {clock[lying - 1] if lying else 0:.1f} s '
             f'(band {low1}-{high1}x at 1 s, {low_rest}-{high_rest}x at rest); pelvis down to {lie:.0f} cm within 1 s; '
-            f'largest hips step {max(steps, default=0):.1f} cm/frame; up {where:.0f} cm from where the hips lay')
+            f'largest hips step {max(steps, default=0):.1f} cm/frame ({max(pops, default=0):.1f} beyond its speed); '
+            f'up {where:.0f} cm from where the hips lay')
+    # The skin never under the ground, in any group of bodies, from the bail to the get-up and through it: the fall
+    # and the slide, at rest (the last half second before the get-up), and the get-up until half a second after it.
+    depth, bone, measured, deep = skin(bail[:lying])
+    settle = next((i for i, c in enumerate(clock) if lying and c >= clock[lying - 1] - .5), lying)
+    rising = start + lying
+    risen = next((i for i in range(rising, len(rows)) if rows[i].get('phys') != 'GetUp'), len(rows))
+    stages = {'slide': skin_groups(bail[:settle]), 'rest': skin_groups(bail[settle:lying]),
+              'get-up': skin_groups(rows[rising:risen + 30])}
+    deepest = max((d for worst in stages.values() for d in worst.values()), default=float('nan'))
+    ok = ok and measured > 0 and deepest <= SKIN_DEPTH
+    note += (f'; skin {depth:.1f} cm under the ground at worst in the bail ({bone}; {deep} of {measured} frames over '
+             f'{SKIN_DEPTH:g} cm); by group (cm) ' + '; '.join(f'{k}: {skin_text(v)}' for k, v in stages.items()))
     step, lay, hidden, back = getup_board(rows[start + lying - 1:end + 30]) if lying < len(bail) else (99., 0., False, False)
     ok = ok and step < GETUP_BOARD_STEP and back
     note += (f'; get-up board lay {lay:.0f} cm from its end, {"dissolved out and in" if hidden else "stepped onto"}, '
