@@ -38,6 +38,17 @@ class CutTest(unittest.TestCase):
         frames, cams, loops, out, marks = cut([shot(0, 'a', 3, loops=['1 1 0 1 0 1 0 1 0 1'] * 4), shot(1, 'b', 1, loops=[])], [], BASE)
         self.assertEqual(loops, ['1 1 0 1 0 1 0 1 0 1'] * 6 + [NEUTRAL_LOOPS] * 2)
 
+    def test_trimmed_frames_leave_with_their_sounds(self):
+        loops = [f'{i} 1 0 1 0 1 0 1 0 1' for i in range(12)]
+        events = [sound(BASE + 1), sound(BASE + 4), sound(BASE + 7.5), sound(BASE + 8.5), sound(BASE + 11), sound(2 * BASE + 1)]
+        frames, cams, loops_out, out, marks = cut([shot(0, 'a', 6, loops=loops), shot(1, 'b', 2)], events, BASE,
+                                                  {'a': [(2, 3), (5, None)]})
+        self.assertEqual(frames[:3], ['parts/00_a/f00000.jpg', 'parts/00_a/f00001.jpg', 'parts/00_a/f00004.jpg'])
+        self.assertEqual([c[0] for c in cams], [0, 1, 2, 3, 4])
+        self.assertEqual(loops_out[:6], [loops[i] for i in (0, 1, 2, 3, 8, 9)])
+        self.assertEqual([e['frame'] for e in out], [1, 4 + .5, 6 + 1])    # 60 Hz 4, 7.5 and 11 fell in the cuts
+        self.assertEqual(marks[0]['seconds'], round(3 / 30., 2))
+
     def test_replay_stretches_the_air_three_times(self):
         # A 90 Hz shot: every sim frame saved, 2/3 of a 60 Hz frame apart; film frames at lv 0, 2, 4 ...
         buf, n, rep = [], 0, 0

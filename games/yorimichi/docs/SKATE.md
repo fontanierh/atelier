@@ -143,7 +143,7 @@ With the game running (`atelier play yorimichi`):
 | `skate_showreel` | A filmed line of shots at the pier, at a fixed 60 fps step; run through the live bridge (see the script) | `skatefilm/<take>/` |
 | `skate_mix_showreel` | Mixes a showreel take's sounds and encodes 1080p and 720p MP4s | `skatefilm/<take>/` |
 | `megapark_ride_film` | A filmed Mega Park line on the Ride backend (18 shots: carves, flips, manuals, grinds, powerslide, the drop-in, quarter airs, a bail, a final line; optional caveman and grab-dismount shots), per-shot parts with a slow-motion replay; run through the live bridge (see the script) | `megapark/ride-film/<take>/` |
-| `megapark_ride_film_mix` | Cuts the kept parts and the replay into one film and mixes it through `skate_mix_showreel` (`--audio` reads another build's sounds) | `megapark/ride-film/<take>/` |
+| `megapark_ride_film_mix` | Cuts the kept parts and the replay into one film and mixes it through `skate_mix_showreel` (`--audio` reads another build's sounds; `--trim shot:first-last` leaves out frames where a camera lost the rider) | `megapark/ride-film/<take>/` |
 
 `skate` runs `skate_runtime` and always gives the controls back. `skate_live_skate.py` is the in-game helper module
 the others load (`live.park.place`, `live.park.launch`, `live.scenario`). The live module also has `live.skate()`,

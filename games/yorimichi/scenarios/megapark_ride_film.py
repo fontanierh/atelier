@@ -461,13 +461,17 @@ SHOTS = [
          cams=[(0., chase(back=3.0, side=-1.6, up=1.0, frame=7.5)), (mode_is(3), fixed((-71.2, 1389.5, 125., 1.0), frame=8.))],
          expect=['5-0']),
     # The drop-in off the upper deck: down the roll-in, along the pool and up the west wall into a big Indy.
-    dict(name='megadrop', start=(-44.5, 1305.1, 112., 135.), speed=3., gain=26., land_dz=0.,
-         way=[(-44.5, 1305.1, None), (-54.4, 1295.2, None), (-63.6, 1286.4, -15.), (-75., 1279.5, -15.), (-90., 1274., -15.),
+    dict(name='megadrop', start=(-47.7, 1301.9, 112., 135.), speed=3., gain=26., land_dz=0.,
+         way=[(-47.7, 1301.9, None), (-54.4, 1295.2, None), (-63.6, 1286.4, -15.), (-75., 1279.5, -15.), (-90., 1274., -15.),
               (-105., 1271.5, None), (-121., 1271.2, None), (-132., 1271.2, None)],
          trig=[{'when': lambda s, c: c.x < -116.5, 'steer': False},
                {'when': lambda s, c: c.x < -114. and air_t(s, c) > .12 and c.vz > 0., 'do': [grab('indy', .45)]}],
          end=landed_after(1, 1.8, 2.5), secs=16.,
-         cams=[(0., chase(back=4.2, side=.8, up=1.8, frame=8.)), (lambda s, c: c.x < -88., fixed((-104.5, 1261.5, POOL_PROBE, 1.3), frame=13.))],
+         # Behind him on the deck, then from the pool floor below the roll-in as he drops (a chase would sink into the face
+         # and the deck hides the face from its side), then from across the pool as soon as he is down (he passes the
+         # floor camera at 21 m/s).
+         cams=[(0., chase(back=4.2, side=.8, up=1.8, frame=8.)), (lambda s, c: c.zb < 108., fixed((-67., 1282.5, 80., 1.4), frame=9.)),
+               (lambda s, c: c.x < -65. and c.zb < 77., fixed((-104.5, 1261.5, POOL_PROBE, 1.3), frame=10.))],
          expect=['Indy']),
     # Quarter-pipe airs on the pool's north wall.
     dict(name='quarter_melon_180', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.5, way=straight_way(-108., 1258.5, -90., 40.),
@@ -484,7 +488,7 @@ SHOTS = [
     dict(name='quarter_360', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.8, way=straight_way(-108., 1258.5, -90., 40.),
          trig=[{'when': lambda s, c: c.y > 1277., 'steer': False},
                {'when': lambda s, c: air_t(s, c) > .06, 'do': [spin(to=360., dir=-1.)]}],
-         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-104., 1288.5, 84., 1.6), frame=8.))],
+         end=landed_after(1, 1.2, 1.), secs=8., cams=[(0., fixed((-97., 1266., POOL_PROBE, 1.1), frame=8.5))],
          expect=['360']),
     # A Christ air held into the landing: thrown into the ragdoll, then up again where he fell.
     dict(name='bail', start=(-108., 1258.5, POOL_PROBE, -90.), speed=11.5, way=straight_way(-108., 1258.5, -90., 40.),
