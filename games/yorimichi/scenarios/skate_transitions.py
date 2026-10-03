@@ -500,6 +500,14 @@ live.behave('bail', _bail)
                 break
             time.sleep(.25)
             s = state()
+        # A board with a body of its own may still be rolling: until it moves less than 2 cm in a quarter second.
+        for _ in range(40):
+            if s.get('board') != 'world' or 'deck' not in s:
+                break
+            time.sleep(.25)
+            was, s = vec(s['deck']), state()
+            if 'deck' in s and math.dist(vec(s['deck'])[:2], was[:2]) < 2:
+                break
         if s.get('board') != 'world':
             report(name, [], False, f'no board lying (board {s.get("board")})')
             return

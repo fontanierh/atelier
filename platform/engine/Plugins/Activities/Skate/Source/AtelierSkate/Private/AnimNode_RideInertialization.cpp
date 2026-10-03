@@ -28,6 +28,21 @@ namespace
         return Trace && Trace->GetInt() > 0;
     }
 
+    // A reset that drops a blend in progress or the stored poses, and why.
+    void TraceReset(bool bLoses, const TCHAR* Instance, const TCHAR* Why)
+    {
+        if (bLoses && Tracing()) UE_LOG(LogTemp, Display, TEXT("SKATE trace inertialization f%llu %s: reset, %s"), GFrameCounter, Instance, Why);
+    }
+
+    // Where a bone of a local-space pose is in component space.
+    FVector ComponentLocation(const FCompactPose& Pose, FCompactPoseBoneIndex Bone)
+    {
+        const FBoneContainer& Bones = Pose.GetBoneContainer();
+        FTransform T = Pose[Bone];
+        for (FCompactPoseBoneIndex P = Bones.GetParentBoneIndex(Bone); P.IsValid(); P = Bones.GetParentBoneIndex(P)) T = T * Pose[P];
+        return T.GetTranslation();
+    }
+
     constexpr float MinDelta = 1e-4f;
     constexpr float MinOffset = 1e-4f;     // cm, or radians
 }
@@ -72,6 +87,7 @@ void FAnimNode_RideInertialization::Initialize_AnyThread(const FAnimationInitial
 {
     FAnimNode_Base::Initialize_AnyThread(Context);
     Source.Initialize(Context);
+    TraceReset(bActive || Previous1.Num() > 0, *Context.AnimInstanceProxy->GetAnimInstanceName(), TEXT("initialized"));
     Reset();
     CachedBones.Reset();
 }
@@ -90,19 +106,25 @@ void FAnimNode_RideInertialization::CacheBones_AnyThread(const FAnimationCacheBo
     CachedBones = Bones;
     const float Request = Pending;
     const UBlendProfile* Profile = PendingProfile;
+    TraceReset(bActive || Previous1.Num() > 0, *Context.AnimInstanceProxy->GetAnimInstanceName(), TEXT("the bones changed"));
     Reset();
     Pending = Request; PendingProfile = Profile;
 }
 
-void FAnimNode_RideInertialization::ResetDynamics(ETeleportType)
+void FAnimNode_RideInertialization::ResetDynamics(ETeleportType Type)
 {
+    TraceReset(bActive || Previous1.Num() > 0, TEXT("-"), Type == ETeleportType::ResetPhysics ? TEXT("the mesh was teleported (reset physics)") : TEXT("the mesh was teleported"));
     Reset();
 }
 
 void FAnimNode_RideInertialization::Update_AnyThread(const FAnimationUpdateContext& Context)
 {
     // Coming back after updates without this node: the stored poses are stale.
-    if (UpdateCounter.HasEverBeenUpdated() && !UpdateCounter.WasSynchronizedCounter(Context.AnimInstanceProxy->GetUpdateCounter())) Reset();
+    if (UpdateCounter.HasEverBeenUpdated() && !UpdateCounter.WasSynchronizedCounter(Context.AnimInstanceProxy->GetUpdateCounter()))
+    {
+        TraceReset(bActive || Previous1.Num() > 0, *Context.AnimInstanceProxy->GetAnimInstanceName(), TEXT("not updated the frame before"));
+        Reset();
+    }
     UpdateCounter.SynchronizeWith(Context.AnimInstanceProxy->GetUpdateCounter());
     {
         UE::Anim::TScopedGraphMessage<FRideInertializationRequester> Message(Context, Context, this);
@@ -218,7 +240,11 @@ void FAnimNode_RideInertialization::Evaluate_AnyThread(FPoseContext& Output)
     const int32 Num = Pose.GetNumBones();
     const float Dt = DeltaTime;
     DeltaTime = 0;
-    if (Previous1.Num() != Num) { Previous1.Reset(); Previous2.Reset(); bActive = false; }
+    if (Previous1.Num() != Num)
+    {
+        TraceReset(bActive || Previous1.Num() > 0, *Output.AnimInstanceProxy->GetAnimInstanceName(), TEXT("the pose has other bones"));
+        Previous1.Reset(); Previous2.Reset(); bActive = false;
+    }
     if (Pending >= 0 && Previous1.Num() == Num)
     {
         Start(Pose, Pending, PendingProfile);
@@ -231,6 +257,25 @@ void FAnimNode_RideInertialization::Evaluate_AnyThread(FPoseContext& Output)
             *Output.AnimInstanceProxy->GetAnimInstanceName(), Pending);
     Pending = -1; PendingProfile = nullptr;
     if (bActive && Elapsed >= Longest) bActive = false;
+    // The hips (else the bone that started farthest from the source): its offset now, and where the source and the
+    // output put it in component space, so a jump of the shown body can be told from the node's own curve.
+    FCompactPoseBoneIndex Traced(INDEX_NONE);
+    FVector TracedSource = FVector::ZeroVector;
+    FTransform RootSource;
+    if (bActive && Tracing())
+    {
+        RootSource = Pose[FCompactPoseBoneIndex(0)];
+        const FBoneContainer& Bones = Pose.GetBoneContainer();
+        const FReferenceSkeleton& Reference = Bones.GetReferenceSkeleton();
+        float Largest = -1.f;
+        for (const FCompactPoseBoneIndex Bone : Pose.ForEachBoneIndex())
+        {
+            const FString Name = Reference.GetBoneName(Bones.MakeMeshPoseIndex(Bone).GetInt()).ToString();
+            if (Name.Equals(TEXT("pelvis"), ESearchCase::IgnoreCase) || Name.Equals(TEXT("hips"), ESearchCase::IgnoreCase)) { Traced = Bone; break; }
+            if (Offsets[Bone.GetInt()].Translation.X0 > Largest) { Largest = Offsets[Bone.GetInt()].Translation.X0; Traced = Bone; }
+        }
+        TracedSource = ComponentLocation(Pose, Traced);
+    }
     if (bActive)
     {
         for (const FCompactPoseBoneIndex Bone : Pose.ForEachBoneIndex())
@@ -242,6 +287,19 @@ void FAnimNode_RideInertialization::Evaluate_AnyThread(FPoseContext& Output)
             const float R = O.Rotation.At(Elapsed);
             if (R != 0) T.SetRotation((FQuat(FVector(O.Axis), R) * T.GetRotation()).GetNormalized());
         }
+    }
+    if (Traced.IsValid())
+    {
+        const FBoneOffset& O = Offsets[Traced.GetInt()];
+        const FVector Shown = ComponentLocation(Pose, Traced);
+        // The root too: a source root that turns or moves carries the bones' local offsets with it.
+        const FTransform& Root = Pose[FCompactPoseBoneIndex(0)];
+        const FVector RootAt = RootSource.GetTranslation();
+        UE_LOG(LogTemp, Display, TEXT("SKATE trace inertialization f%llu %s: t %.3f of %.3f (dt %.3f), bone %d offset %.1f of %.1f cm (v0 %.0f, ends %.3f), turn %.1f of %.1f deg; source (%.1f %.1f %.1f) shown (%.1f %.1f %.1f); root source (%.1f %.1f %.1f) rot (%.1f %.1f %.1f) shown rot (%.1f %.1f %.1f)"),
+            GFrameCounter, *Output.AnimInstanceProxy->GetAnimInstanceName(), Elapsed, Longest, Dt, Traced.GetInt(), O.Translation.At(Elapsed),
+            O.Translation.X0, O.Translation.V0, O.Translation.T1, FMath::RadiansToDegrees(O.Rotation.At(Elapsed)), FMath::RadiansToDegrees(O.Rotation.X0),
+            TracedSource.X, TracedSource.Y, TracedSource.Z, Shown.X, Shown.Y, Shown.Z, RootAt.X, RootAt.Y, RootAt.Z,
+            RootSource.Rotator().Pitch, RootSource.Rotator().Yaw, RootSource.Rotator().Roll, Root.Rotator().Pitch, Root.Rotator().Yaw, Root.Rotator().Roll);
     }
     // Keep the output for the next request.
     Swap(Previous1, Previous2);

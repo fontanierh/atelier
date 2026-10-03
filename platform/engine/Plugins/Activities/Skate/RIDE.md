@@ -479,4 +479,6 @@ A game's transitions QA scenario checks them. `skate.RideTrace N` logs a line a 
 shown, and the speed: the velocity, the acceleration, the character's own velocity before the momentum, the momentum,
 the drive, the stick given to the next move and the speed the character may run at. `FAnimNode_SkateRider` adds a line
 for each switch and blend request, and `FAnimNode_RideInertialization` one for each recache and each request it cannot
-start (no previous pose): a cut.
+start (no previous pose): a cut. The inertialization also logs each reset that drops a blend or its stored poses, with
+the reason (a teleport, new bones, a skipped update), and each blending frame: the pelvis's offset, where the source
+and the blend put the pelvis in component space, and the root's source and blended transforms.
