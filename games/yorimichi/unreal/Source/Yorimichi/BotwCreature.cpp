@@ -8,6 +8,9 @@
 #include "Engine/CollisionProfile.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Pawn.h"
+#include "WandererCharacter.h"
+#include "WandererSword.h"
+#include "BotwMoveSet.h"
 #include "Misc/FileHelper.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
@@ -40,6 +43,8 @@ const TMap<FString, FBotwSpec>& FBotwSpec::All()
             S.Loops.Add(FName(*Clip.Key), Entry->GetBoolField(TEXT("loop")));
         }
         for (const auto& Role : C->GetObjectField(TEXT("roles"))->Values) S.Roles.Add(FName(*Role.Key), FName(*Role.Value->AsString()));
+        const TSharedPtr<FJsonObject>* Moves = nullptr;
+        if (C->TryGetObjectField(TEXT("moves"), Moves)) S.Moves = *Moves;
         Roster.Add(S.Name, MoveTemp(S));
     }
     UE_LOG(LogTemp, Display, TEXT("BOTW roster: %d characters"), Roster.Num());
@@ -148,6 +153,17 @@ void ABotwCreature::TakeSwordHit(int32 Strength, AActor* From)
     if (Mode == EBotwMode::Idle || Mode == EBotwMode::Wander) Mode = EBotwMode::Camp;
 }
 
+void ABotwCreature::Strike(APawn* Player)
+{
+    // Only a player with a move set (its guard, parry and dodges) is struck; the others keep the old sparring.
+    AWandererCharacter* Wanderer = Cast<AWandererCharacter>(Player);
+    if (!Wanderer || !Wanderer->GetMoves() || !Wanderer->GetSword()) return;
+    const FVector To = (Player->GetActorLocation() - GetActorLocation()) * FVector(1, 1, 0);
+    if (To.Size() > Data.RadiusCm + 170.f || (GetActorForwardVector() | To.GetSafeNormal()) < .4f) return;
+    if (FMath::Abs(Player->GetActorLocation().Z - GetActorLocation().Z) > Data.HeightCm) return;
+    Wanderer->GetSword()->IncomingStrike(this, 12.f, GetActorLocation() + FVector(0, 0, Data.HeightCm * .3f));
+}
+
 void ABotwCreature::Steer(const FVector& Goal, float Speed, float Dt)
 {
     FVector To = Goal - GetActorLocation(); To.Z = 0.f;
@@ -182,7 +198,7 @@ void ABotwCreature::Think(float Dt)
 {
     const float Walk = Data.WalkSpeed > 1.f ? Data.WalkSpeed : 150.f, Run = Data.RunSpeed > 1.f ? Data.RunSpeed : Walk * 2.f;
     PhaseLeft -= Dt;
-    const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+    APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
     const float PlayerDistance = Player ? FVector::Dist2D(Player->GetActorLocation(), GetActorLocation()) : 1e9f;
     switch (Phase)
     {
@@ -215,6 +231,8 @@ void ABotwCreature::Think(float Dt)
         if (PhaseLeft <= 0.f) { Phase = EPhase::Chase; PlayRole("run", true); }
         return;
     case EPhase::Attack:
+        // The blow lands a little before the middle of the clip.
+        if (!bStruck && PhaseLeft <= PhaseTotal * .55f) { bStruck = true; Strike(Player); if (Phase != EPhase::Attack) return; }
         if (PhaseLeft <= 0.f) { AttackCooldown = 1.2f; Phase = EPhase::Chase; PlayRole("battle", true); }
         return;
     case EPhase::Chase:
@@ -222,7 +240,7 @@ void ABotwCreature::Think(float Dt)
         if (PlayerDistance < Data.RadiusCm + 150.f)
         {
             SetActorRotation(FRotator(0, (Player->GetActorLocation() - GetActorLocation()).Rotation().Yaw, 0));
-            if (AttackCooldown <= 0.f) { Phase = EPhase::Attack; PhaseLeft = FMath::Max(Play(Role("attack").ToString(), false), .5f); }
+            if (AttackCooldown <= 0.f) { Phase = EPhase::Attack; PhaseLeft = PhaseTotal = FMath::Max(Play(Role("attack").ToString(), false), .5f); bStruck = false; }
             else PlayRole(Clip(Role("battle")) ? FName("battle") : FName("idle"), true);
             return;
         }
@@ -231,7 +249,10 @@ void ABotwCreature::Think(float Dt)
         return;
     case EPhase::Rest:
         if (Mode == EBotwMode::Scripted) return;
-        if (Mode == EBotwMode::Camp && PlayerDistance < 1400.f)
+        // A crouching player is noticed only close by, and from behind only within arm's reach.
+        const bool bSneaking = Player && Player->IsA<ACharacter>() && Cast<ACharacter>(Player)->bIsCrouched;
+        const bool bInFront = Player && (GetActorForwardVector() | (Player->GetActorLocation() - GetActorLocation()).GetSafeNormal2D()) > .3f;
+        if (Mode == EBotwMode::Camp && Player && (bSneaking ? PlayerDistance < 200.f || (bInFront && PlayerDistance < 450.f) : PlayerDistance < 1400.f))
         {
             SetActorRotation(FRotator(0, (Player->GetActorLocation() - GetActorLocation()).Rotation().Yaw, 0));
             Phase = EPhase::Notice; PhaseLeft = FMath::Max(Play(Role("notice").ToString(), false), .3f);

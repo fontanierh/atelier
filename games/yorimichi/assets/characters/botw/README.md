@@ -69,7 +69,32 @@ PBR look.
   (`ABotwRider::SwitchPlayer`): the new character stands where the old one stood, facing the same way, with the camera
   unchanged; the board and the sailboat are put away first. It is refused on the zeppelin.
 - **Live verbs**: `botw_roster`, `botw_spawn(name, ground, yaw, mode)`, `botw_play`, `botw_move_to`, `botw_mode`,
-  `botw_list`, `botw_clear` and `switch_character(name)` (`YorimichiLive.h`).
+  `botw_list`, `botw_clear` and `switch_character(name)` (`YorimichiLive.h`); for a move set, `move_state()` (its
+  mode, action, stamina, glider, target and counts as JSON), `launch(velocity)` and `press(button)` with `dodge`,
+  `dash`, `attack`, `attack_release`, `guard`, `guard_release` and `weapon`.
+
+## Link's moves
+
+Link plays BOTW's move set. `moves.toml` names each game action, the Link clip it plays and the BOTW action timeline
+its timing comes from (rate, start and end, the frames a blow lands, the next press is read, it may be cancelled, the
+sword changes hands), the locomotion blends, the BOTW parameters the game reads and his equipment: the Traveler's
+Sword and its sheath on his back, the Traveler's Shield, and the paraglider. `export.py` bakes the clips and the equipment
+with him; `import_botw.py` makes them `DA_LinkRider`'s actions and blend spaces (each sample at its BOTW play rate) and
+the `moves` record of `roster.json`. In the game `UBotwMoveSet` (`Source/Yorimichi/BotwMoveSet.h`) gives any rider
+whose record has a move set these moves in place of Cairo's jump, dodge and sword, with the usual buttons
+([CONTROLLER_CONTROLS.md](../../../docs/CONTROLLER_CONTROLS.md)):
+
+| | |
+| --- | --- |
+| On foot | Jump, standing or running (no double jump, air dash or roll). Roll is the dodge: with Parry held, a side hop (stick left or right) or a backflip. A fall from more than 4.5 m lands hard, from more than 9 m it hurts. |
+| Paraglider | Jump in the air opens it; the stick steers and pulling back brakes; Jump or Roll closes it. It spends stamina and closes when the stamina runs out. |
+| Climbing | Run or jump into anything steeper than 50° (not the skate parks' ramps and rails). The stick climbs, Jump leaps a hold further for a chunk of stamina, Roll lets go, and at the top he pulls himself over. He drops off when the stamina runs out. |
+| Swimming | Water above his waist: he swims at the surface; Jump or Dash is the swim dash. Out of stamina he sinks and comes back on the last dry ground, a little hurt. Swimming into a low bank climbs out. |
+| Sword | Draw / sheathe; Attack (which draws first if needed): the four-cut combo, the dash attack while sprinting, the jump attack in the air, the plunge from 3 m up, the sneakstrike on an unaware enemy while crouched; held, the charged spin. |
+| Shield | Parry held: the shield guard and lock-on, strafing around the nearest enemy. Jump while guarding: the parry, which staggers the attacker. A dodge just as a blow comes slows the world for a flurry rush: Attack, repeatedly. |
+
+Stamina is the sprint rings' wheel (`FSprintStamina`), refilled only on foot. Hits knock him back, heavy ones down.
+`scenarios/botw_moves.py` checks it all in the game through the live bridge.
 
 ```sh
 uv run atelier play yorimichi -- -rider=Bokoblin

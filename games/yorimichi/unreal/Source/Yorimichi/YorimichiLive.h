@@ -18,6 +18,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Drive(FVector2D Intent, int32 Gait = 1);
     /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
+    /** A BOTW move set's state (UBotwMoveSet::Describe: mode, action, stamina, glider, wall, target, counts) as JSON;
+     *  "{}" when the player has none. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString MoveState();
+    /** Throw the player (cm/s, replacing the velocity): a glide or a plunge from height without a cliff. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool Launch(FVector Velocity);
     /** Draw or sheathe the sword, as the draw button does. False when the character has no sword. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool ToggleSword();
     /** Skateboarding (docs/SKATE.md): get on or off; hold skate. controls (sticks: x right, y away from the player) until

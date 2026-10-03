@@ -1,9 +1,11 @@
 #include "BotwRider.h"
 #include "BotwCreature.h"
+#include "BotwMoveSet.h"
 #include "CairoCharacter.h"
 #include "JapanWorld.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -41,7 +43,26 @@ void ABotwRider::Fit()
         GetCapsuleComponent()->SetCapsuleSize(FMath::Clamp(Spec->RadiusCm, 20.f, 60.f), HalfHeight);
         GetMesh()->SetRelativeLocationAndRotation(FVector(0, 0, -HalfHeight), FRotator(0, Spec->MeshYaw, 0));
         GetMesh()->SetRelativeScale3D(FVector(Spec->Scale));
+        CacheInitialMeshOffset(GetMesh()->GetRelativeLocation(), GetMesh()->GetRelativeRotation());
+        FitMeshZ = -HalfHeight;
+        GetCharacterMovement()->SetCrouchedHalfHeight(FMath::Max(HalfHeight * .7f, 35.f));
     }
+}
+
+void ABotwRider::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+    Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+    if (FitMeshZ == 0.f) return;
+    GetMesh()->SetRelativeLocation(FVector(0, 0, FitMeshZ + HalfHeightAdjust));
+    BaseTranslationOffset.Z = FitMeshZ + HalfHeightAdjust;
+}
+
+void ABotwRider::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+    Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+    if (FitMeshZ == 0.f) return;
+    GetMesh()->SetRelativeLocation(FVector(0, 0, FitMeshZ));
+    BaseTranslationOffset.Z = FitMeshZ;
 }
 
 void ABotwRider::BeginPlay()
@@ -52,6 +73,11 @@ void ABotwRider::BeginPlay()
     if (const FBotwSpec* Spec = FBotwSpec::Find(RiderName))
         UE_LOG(LogTemp, Display, TEXT("BOTW rider: %s (%s), %.0f cm"), *Spec->Name, *Spec->Label, Spec->HeightCm);
     Super::BeginPlay();
+    if (const FBotwSpec* Spec = FBotwSpec::Find(RiderName); Spec && Spec->Moves.IsValid())
+    {
+        UBotwMoveSet* Set = NewObject<UBotwMoveSet>(this, TEXT("BotwMoves"));
+        if (Set->Initialize(this, Spec->Moves)) Moves = Set;
+    }
 }
 
 TArray<FString> ABotwRider::Available()

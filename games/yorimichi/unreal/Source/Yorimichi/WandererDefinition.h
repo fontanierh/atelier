@@ -88,6 +88,9 @@ class YORIMICHI_API UWandererContentLibrary : public UBlueprintFunctionLibrary
 public:
     UFUNCTION(BlueprintCallable, Category="Wanderer|Authoring")
     static bool ConfigureBlendSpace(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds);
+    /** The same, each sample playing at its own rate (a BOTW move set's locomotion plays one clip at several rates). */
+    UFUNCTION(BlueprintCallable, Category="Wanderer|Authoring")
+    static bool ConfigureBlendSpaceWithRates(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds, const TArray<float>& Rates);
     UFUNCTION(BlueprintCallable, Category="Wanderer|Authoring")
     static bool ConfigureMeshLODs(USkeletalMesh* Asset);
 };

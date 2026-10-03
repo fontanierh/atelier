@@ -23,6 +23,7 @@ class UJapanFootstepComponent;
 class UWandererSwordComponent;
 class ASwordDummy;
 class USeeThroughComponent;
+class UBotwMoveSet;
 
 /** A skinned adventurer driven by CharacterMovement and the native animation graph. */
 UCLASS()
@@ -76,6 +77,8 @@ public:
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
     UWandererSwordComponent* GetSword() const { return Sword; }
+    /** A Breath of the Wild move set (UBotwMoveSet), for a character whose roster entry has one; null otherwise. */
+    UBotwMoveSet* GetMoves() const { return Moves; }
     ASwordDummy* GetSwordDummy() const { return SwordDummy; }
     USailboatComponent* GetSailboat() const { return Sailboat; }
     UJapanPreferences* GetPreferences() const { return Preferences; }
@@ -102,7 +105,8 @@ public:
     void Review_Move(FVector2D Intent) { MoveIntent = Intent; }
     /** Live bridge: hold a movement intent (camera-relative, like the stick) at a gait: 0 walk, 1 run, 2 sprint. Input replaces it. */
     /** Live bridge: press a button through the real input handler: "jump", "jump_release", "roll", "crouch", "interact",
-        and the zeppelin's "stop_previous" and "stop_next". */
+        the zeppelin's "stop_previous" and "stop_next", and the combat buttons "dodge", "dash", "attack", "attack_release",
+        "guard", "guard_release" and "weapon". */
     bool Live_Press(FName Button);
     /** Live bridge: leave the camera where it is (no automatic follow) for Seconds. */
     void Live_HoldCamera(float Seconds) { LookGrace = Seconds; }
@@ -113,11 +117,13 @@ protected:
     FString DefinitionAssetPath = TEXT("/Game/Wanderer/DA_Wanderer.DA_Wanderer");
     // Gameplay tuning; the definition keeps the clip's authored stride speed.
     float SprintSpeedMultiplier = 1.f;
+    UPROPERTY() TObjectPtr<UBotwMoveSet> Moves;
 
 private:
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
+    friend class UBotwMoveSet;
     float LookGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;
@@ -247,6 +253,7 @@ private:
     void AttackPressed(const FInputActionValue& Value);
     void AttackReleased(const FInputActionValue& Value);
     void ParryPressed(const FInputActionValue& Value);
+    void ParryReleased(const FInputActionValue& Value);
     void ToggleWeapon(const FInputActionValue& Value);
     /** Slow the zeppelin ride down or speed it up while aboard; ignored on foot. */
     void FlightSlower(const FInputActionValue& Value);
@@ -259,6 +266,8 @@ private:
     void ToggleMouse(const FInputActionValue& Value);
     void Screenshot(const FInputActionValue& Value);
     bool CanAct() const;
+    /** A button for the move set, when there is one and nothing else (a menu, the board, the boat) has the input. */
+    bool PressMove(FName Button);
     bool StandForAction();
     bool MovementLocked() const;
     bool IsRollRecovering() const;
