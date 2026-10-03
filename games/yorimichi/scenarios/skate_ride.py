@@ -862,43 +862,167 @@ FAKIE_ROLL = (72., 126.)
 FAKIE_MANUAL = {'M_IDLE_N_0_CYC': (22., 100.), 'M_NOSEIDLE_N_0_CYC': (13., 77.)}
 FAKIE_DEG = 6.
 # The fakie rows (--only takes any of these or a prefix of them, 'fakie' for all).
-FAKIE_ROWS = ('fakie_roll', 'fakie_push', 'fakie_manual', 'fakie_powerslide', 'fakie_blend')
+FAKIE_ROWS = ('fakie_roll', 'fakie_switch', 'fakie_push', 'fakie_switch_trick', 'fakie_switch_push', 'fakie_switch_manual',
+              'fakie_manual', 'fakie_powerslide', 'fakie_creep', 'fakie_blend')
+# Riding switch the rider faces the travel as riding forward does (the other stance's pose): head 3, chest 46.
+FORWARD = (3., 46.)
+# Turning round (RIDE.md, Switch): rolling fakie the switch clip starts after FakieSwitchTime (.6 s) and the stance
+# flips at its end (.733 s - .02 at 1x); a push from fakie plays it at 1.25x and flips .25 s before its end (.337 s).
+SWITCH_AFTER = (.55, .85)
+SWITCH_FLIP = (.6, .8)
+SWITCH_PUSH_FLIP = (.28, .42)
+# Through a turn round the board does not turn and its wheels roll on: the deck no more than its travel (cm a frame
+# off it), the hips no more than the pose's own motion on top, the wheels by the travel along the board (RideTuning's
+# WheelRadius, cm), the deck's yaw no more than a frame's turning (degrees).
+BOARD_STEP, HIPS_STEP, WHEEL_RADIUS, YAW_STEP = 3., 5., 3.1, 5.
 
 
-def settled(rows, key, after=.6):
-    """`key` over the rows from `after` seconds on (their median)."""
-    clock, values = 0., []
+def clock(rows):
+    """Each row's time (s) on the rows' own clock (their dt)."""
+    times, t = [], 0.
     for r in rows:
-        if clock >= after and key in r:
-            values.append(float(r[key]))
-        clock += float(r.get('dt', 16.7)) / 1000
-    values.sort()
+        times.append(t); t += float(r.get('dt', 16.7)) / 1000
+    return times
+
+
+def settled(rows, key, after=.6, until=None):
+    """`key` over the rows from `after` seconds on (to `until`): their median."""
+    values = sorted(float(r[key]) for t, r in zip(clock(rows), rows) if t >= after and (until is None or t < until) and key in r)
     return values[len(values) // 2] if values else None
 
 
-def fakie_run(goofy, speed, events, duration, x=FLAT[0]):
+def wrapped(a, b):
+    """The angle from a to b (degrees, 0-180)."""
+    return abs((b - a + 180.) % 360. - 180.)
+
+
+def fakie_run(goofy, speed, events, duration, x=FLAT[0], cam=None):
     """Rolling fakie east along the flat run: the board placed facing west, launched east."""
     qa.py(f'live.L.skate_goofy({goofy})')
-    return qa.run_scenario(f"{x},{FLAT[1]},180,{speed},{events},duration={duration},velocity_heading=0", duration)
+    look = '' if cam is None else f',cam={cam}'
+    return qa.run_scenario(f"{x},{FLAT[1]},180,{speed},{events},duration={duration},velocity_heading=0{look}", duration)
+
+
+def switch_times(rows):
+    """When the switch clip starts and when the stance flips (s on the rows' clock), None for either that does not."""
+    times = clock(rows)
+    start = next((t for t, r in zip(times, rows) if r.get('clip', '').startswith('R_SWITCH')), None)
+    flip = next((t for t, a, b in zip(times[1:], rows, rows[1:]) if a.get('turns') != b.get('turns')), None)
+    return start, flip
+
+
+def drift(rows, key):
+    """The largest frame-to-frame step of the position `key` away from what the velocity explains (cm): a frame that
+    moves back or jumps ahead shows here though its length is the travel's."""
+    worst = 0.
+    for a, b in zip(rows, rows[1:]):
+        if key in a and key in b and 'vel' in b:
+            pa, pb, v = ([float(x) for x in r.split(',')] for r in (a[key], b[key], b['vel']))
+            dt = float(b.get('dt', 16.7)) / 1000
+            worst = max(worst, math.dist([q - p for p, q in zip(pa, pb)], [x * dt for x in v]))
+    return worst
+
+
+def rolled(rows):
+    """The share of rolling frames whose wheels (wheel=, degrees) turned by the board's travel along its nose (yaw=, the
+    deck's heading): the session turns them each 60 Hz tick, and a frame holds one tick or two, or now and then none
+    (left out, up to a tenth of the frames). Turning backward, or not at all, they miss it by far more than the slack.
+    The travel is the speed along the board (on a slope too), frames sliding across it left out."""
+    hits = frames = idle = 0
+    for a, b in zip(rows, rows[1:]):
+        if 'wheel' not in a or 'wheel' not in b or b.get('mode') != '1' or speed(b) < 100:
+            continue
+        v = [float(x) for x in b['vel'].split(',')]
+        yaw = math.radians(float(b['yaw']))
+        along = v[0] * math.cos(yaw) + v[1] * math.sin(yaw)
+        if abs(along) < .9 * math.hypot(v[0], v[1]):
+            continue
+        tick = math.copysign(math.hypot(*v), along) / 60 / (2 * math.pi * WHEEL_RADIUS) * 360
+        step = float(b['wheel']) - float(a['wheel'])
+        if wrapped(0., step) < 1:
+            idle += 1
+            continue
+        frames += 1
+        hits += min(wrapped(k * tick, step) for k in (1, 2)) < 20
+    return hits / frames if frames and idle <= .1 * (frames + idle) else 0.
+
+
+def switch_health(rows, start, flip):
+    """Through the turn round: the board's largest yaw step a frame (it does not turn), the deck's and the hips' step
+    off the travel (neither moves back or on), the wheels rolling the board's way, the camera's step and its angle
+    from the travel before and after the turn (the turn does not move it), body-bone pops, feet off the deck on
+    planted clips away from the switch clip, and bails. (ok, note)
+
+    These runs start the camera where the place leaves it, facing the board's nose, and launch the board straight back:
+    a camera that follows the travel's heading never turns from the opposite one, so it is measured against itself."""
+    times = clock(rows)
+    board = max((wrapped(float(a['yaw']), float(b['yaw'])) for a, b in zip(rows, rows[1:])), default=0.)
+    moved, hips, wheels = drift(rows[5:], 'deck'), drift(rows[5:], 'hip'), rolled(rows[5:])
+    later = [r for t, r in zip(times, rows) if t >= .4 and 'camyaw' in r]
+    cam = max((wrapped(float(a['camyaw']), float(b['camyaw'])) for a, b in zip(later, later[1:])), default=0.)
+    heading = lambda r: math.degrees(math.atan2(float(r['vel'].split(',')[1]), float(r['vel'].split(',')[0])))
+    off_travel = [(t, wrapped(float(r['camyaw']), heading(r))) for t, r in zip(times, rows)
+                  if t >= .15 and 'camyaw' in r and 'vel' in r and speed(r) > 50]
+    before = [o for t, o in off_travel if start is None or t < start]
+    after = [o for t, o in off_travel if flip is not None and t > flip + .3]
+    median = lambda xs: sorted(xs)[len(xs) // 2] if xs else None
+    swing = abs(median(after) - median(before)) if before and after else 0.
+    _, (unpopped, pops), _ = pose_health({'switch': rows})
+    near = lambda t: start is not None and start - .05 <= t <= (flip or start + 1) + .3
+    planted = [r for t, r in zip(times, rows) if t > .2 and not near(t) and r.get('clip', '').startswith(PLANTED)]
+    off = sum(1 for r in planted if int(r.get('feetoff', 0)))
+    ok = (board < YAW_STEP and moved < BOARD_STEP and hips <= HIPS_STEP and wheels is not None and wheels > .95 and cam < 3
+          and swing < 5 and unpopped and off <= .03 * len(planted) and not qa.count(rows, 'bails'))
+    rolling = f'{wheels:.0%}' if wheels is not None else '-'
+    return ok, (f'board yaw step up to {board:.1f} deg/frame and {moved:.1f} cm off its travel, hips {hips:.1f} cm, wheels '
+                f'rolling its way on {rolling} of the frames, camera step {cam:.1f}, camera '
+                f'{median(before) if before else "-"} deg off the travel before the turn and {median(after) if after else "-"} '
+                f'after; {pops}; {off} of {len(planted)} planted frames with a foot off')
 
 
 def fakie_checks(record, wanted):
     for goofy in (False, True):
         stance = 'goofy' if goofy else 'regular'
         if wanted('fakie_roll'):
-            rows = fakie_run(goofy, 500, '[]', 2.5)
-            head, chest, weight = settled(rows, 'headyaw'), settled(rows, 'chestyaw'), settled(rows, 'fakiech')
+            # Measured before the rider turns round by himself (the switch clip starts after .6 s; fakie_switch).
+            rows = fakie_run(goofy, 500, '[]', 1.)
+            head, chest, weight = (settled(rows, key, .4, .6) for key in ('headyaw', 'chestyaw', 'fakiech'))
             fakie = all(r.get('fakie') == '1' for r in rows[5:])
             ok = fakie and weight is not None and weight > .99 and abs(head - FAKIE_ROLL[0]) <= FAKIE_DEG and abs(chest - FAKIE_ROLL[1]) <= FAKIE_DEG
             record(f'fakie_roll_{stance}', rows, ok, f'fakie={fakie} channel {weight}; head {head} chest {chest} degrees from the travel '
-                   f'(native {FAKIE_ROLL[0]:.0f}, {FAKIE_ROLL[1]:.0f})')
+                   f'(native {FAKIE_ROLL[0]:.0f}, {FAKIE_ROLL[1]:.0f}; .4-.6 s)')
+        if wanted('fakie_switch'):
+            # Rolling fakie on the flat the rider turns round by himself (native: the switch clip at 1x after .6 s,
+            # flipping at its end), then rides switch: facing the travel as riding forward, the other stance's clips
+            # (mirror flips), the fakie channel out, rolling forward in his frame (fakie= is the rider's); the board
+            # neither turns nor steps, its wheels roll on, and the camera does not move with the turn.
+            rows = fakie_run(goofy, 500, '[]', 2.5, cam=0)
+            start, flip = switch_times(rows)
+            after = (flip or 9.) + .5
+            head, chest, weight = settled(rows, 'headyaw', after), settled(rows, 'chestyaw', after), settled(rows, 'fakiech', after)
+            mirror = (settled(rows, 'mirror', .2, start or 9.), settled(rows, 'mirror', after))
+            # The session counts its turns over the whole game: this run's are the difference.
+            turns = (rows[0].get('turns'), rows[-1].get('turns'))
+            healthy, health = switch_health(rows, start, flip)
+            ok = (start is not None and SWITCH_AFTER[0] <= start <= SWITCH_AFTER[1] and flip is not None
+                  and SWITCH_FLIP[0] <= flip - start <= SWITCH_FLIP[1] and int(turns[1] or 0) - int(turns[0] or 0) == 1
+                  and rows[-1].get('switch') == '1' and rows[-1].get('fakie') == '0' and weight is not None and weight < .01
+                  and head is not None and abs(head - FORWARD[0]) <= FAKIE_DEG and abs(chest - FORWARD[1]) <= FAKIE_DEG
+                  and mirror == (float(not goofy), float(goofy)) and healthy)
+            record(f'fakie_switch_{stance}', rows, ok, f'switch clip at {start} s, flip at {flip} s, turns {turns[0]}->{turns[1]}; '
+                   f"then switch={rows[-1].get('switch')} fakie={rows[-1].get('fakie')} channel {weight}, head {head} chest {chest} "
+                   f'(forward {FORWARD[0]:.0f}, {FORWARD[1]:.0f}), mirror {mirror[0]}->{mirror[1]}; {health}')
         if wanted('fakie_push'):
-            # Native re-poses to switch before a fakie push (PushFromFakie): the pushing foot then moves against the
-            # travel and the chest faces it. The foot on the ground is the one under the deck (feet= its height).
-            rows = fakie_run(goofy, 300, "[(.5,{'push':True}),(2,{})]", 2.5)
+            # Native turns round before a fakie push (PushFromFakie): the switch clip at 1.25x, the stance flipping .25 s
+            # before its end, then the push from switch: the pushing foot moves against the travel and the chest faces
+            # it. The foot on the ground is the one under the deck (feet= its height).
+            rows = fakie_run(goofy, 300, "[(.3,{'push':True}),(2,{})]", 2.5, cam=0)
+            start, flip = switch_times(rows)
+            times = clock(rows)
+            pushing = [r for t, r in zip(times, rows) if flip is not None and t >= flip and r.get('push') == '1' and 'PUSH' in r.get('clip', '')]
             foot, along = [], []
-            for r in rows:
-                if r.get('push') != '1' or 'feetalong' not in r:
+            for r in pushing:
+                if 'feetalong' not in r:
                     continue
                 heights = [float(v) for v in r['feet'].split(',')]
                 low = min(range(2), key=lambda i: heights[i])
@@ -906,10 +1030,67 @@ def fakie_checks(record, wanted):
                     foot.append(low); along.append(float(r['feetalong'].split(',')[low]))
             steps = [b - a for a, b in zip(along, along[1:])]
             back = sum(1 for s in steps if s < 0) / max(1, len(steps))
-            chest = settled([r for r in rows if r.get('push') == '1'], 'chestyaw', 0.)
-            ok = len(steps) > 5 and back > .7 and chest is not None and chest < 90
-            record(f'fakie_push_{stance}', rows, ok, f'ground foot moving against the travel on {back:.0%} of {len(steps)} frames; '
-                   f'chest {chest} degrees from the travel (native: switch push, about 25)')
+            chest = settled(pushing, 'chestyaw', 0.)
+            before = at_time(rows, .3, 'speed')
+            gained = max((speed(r) for r in pushing), default=0.) - (before or 0.)
+            healthy, health = switch_health(rows, start, flip)
+            ok = (start is not None and .27 <= start <= .38 and flip is not None and SWITCH_PUSH_FLIP[0] <= flip - start <= SWITCH_PUSH_FLIP[1]
+                  and len(steps) > 5 and back > .7 and chest is not None and chest < 90 and rows[-1].get('switch') == '1'
+                  and gained > 30 and healthy)
+            record(f'fakie_push_{stance}', rows, ok, f'switch clip at {start} s (push .3 s), flip at {flip} s; ground foot moving '
+                   f'against the travel on {back:.0%} of {len(steps)} frames; chest {chest} degrees from the travel (native: '
+                   f'switch push, about 25); {gained:.0f} cm/s gained; switch={rows[-1].get("switch")}; {health}')
+        if wanted('fakie_switch_trick'):
+            # From switch, the tricks are the stance in effect's: the flick follows it (a regular rider riding switch
+            # flicks a kickflip as a goofy rider does), the trick is named Switch, the clips are the other stance's
+            # (mirror) through the air and the landing, and he rides away still switch.
+            qa.py("live.FLICKS['kickflip_mirror'] = [(-x, y) for x, y in live.FLICKS['kickflip']]")
+            gesture = 'kickflip' if goofy else 'kickflip_mirror'
+            rows = fakie_run(goofy, 500, f"[(1.7,('flick','{gesture}'))]", 3.3, cam=0)
+            start, flip = switch_times(rows)
+            combos = qa.combos(rows)
+            air = [r for r in rows if r.get('mode') == '2']
+            mirrored = {r.get('mirror') for r in air} | {r.get('mirror') for r in rows[-20:]}
+            landed = bool(air) and rows[-1].get('mode') == '1' and not qa.count(rows, 'bails')
+            ok = flip is not None and 'Switch Kickflip' in combos and landed and mirrored == {str(int(goofy))} and rows[-1].get('switch') == '1'
+            record(f'fakie_switch_trick_{stance}', rows, ok, f'flip at {flip} s; {combos or "(none)"}; {len(air)} air frames, landed={landed}; '
+                   f'mirror in the air and after {sorted(mirrored)} (want {int(goofy)}); switch={rows[-1].get("switch")}')
+        if wanted('fakie_switch_push'):
+            # Riding switch a push is the stance in effect's, forward in his frame: the push clip mirrored like the
+            # roll, the pushing foot moving against the travel, the speed gained, and no turn back.
+            rows = fakie_run(goofy, 300, "[(1.9,{'push':True}),(2.9,{})]", 3.3, cam=0)
+            start, flip = switch_times(rows)
+            times = clock(rows)
+            pushing = [r for t, r in zip(times, rows) if t >= 1.9 and r.get('push') == '1' and 'PUSH' in r.get('clip', '')]
+            along = []
+            for r in pushing:
+                heights = [float(v) for v in r['feet'].split(',')] if 'feet' in r else []
+                if 'feetalong' in r and heights and min(heights) < -3:
+                    along.append(float(r['feetalong'].split(',')[min(range(2), key=lambda i: heights[i])]))
+            steps = [b - a for a, b in zip(along, along[1:])]
+            back = sum(1 for d in steps if d < 0) / max(1, len(steps))
+            turns = int(rows[-1].get('turns', 0)) - int(rows[0].get('turns', 0)) if rows else 0
+            gained = max((speed(r) for r in pushing), default=0.) - (at_time(rows, 1.9, 'speed') or 0.)
+            mirrored = {r.get('mirror') for r in pushing}
+            healthy, health = switch_health(rows, start, flip)
+            ok = (flip is not None and flip < 1.9 and turns == 1 and len(steps) > 5 and back > .7 and gained > 30
+                  and mirrored == {str(int(goofy))} and rows[-1].get('switch') == '1' and healthy)
+            record(f'fakie_switch_push_{stance}', rows, ok, f'flip at {flip} s, push at 1.9 s: {len(pushing)} pushing frames, mirror '
+                   f'{sorted(mirrored)} (want {int(goofy)}), ground foot moving against the travel on {back:.0%} of {len(steps)} '
+                   f'frames, {gained:.0f} cm/s gained, {turns} turn(s); switch={rows[-1].get("switch")}; {health}')
+        if wanted('fakie_switch_manual'):
+            # Riding switch the manual is the stance in effect's, forward in his frame (no fakie channel), and the
+            # board stays as it is through it.
+            rows = fakie_run(goofy, 480, "[(1.9,{'right':(0,-.5)}),(3.2,{})]", 3.5, cam=0)
+            start, flip = switch_times(rows)
+            held = [r for t, r in zip(clock(rows), rows) if t >= 1.9 and r.get('manual') == '1']
+            channel = max((float(r['fakiech']) for r in held), default=1.)
+            mirrored = {r.get('mirror') for r in held}
+            healthy, health = switch_health(rows, start, flip)
+            ok = (flip is not None and flip < 1.9 and len(held) >= 30 and channel < .01 and mirrored == {str(int(goofy))}
+                  and all(r.get('switch') == '1' for r in held) and healthy)
+            record(f'fakie_switch_manual_{stance}', rows, ok, f'flip at {flip} s, manual at 1.9 s: {len(held)} manual frames riding '
+                   f'switch, fakie channel up to {channel:.2f}, mirror {sorted(mirrored)} (want {int(goofy)}); {health}')
         if wanted('fakie_manual'):
             rows = fakie_run(goofy, 480, "[(.3,{'right':(0,-.5)}),(2,{})]", 2.3)
             held = [r for r in rows if r.get('manual') == '1']
@@ -928,20 +1109,43 @@ def fakie_checks(record, wanted):
             ok = bool(slid) and all(r.get('fakie') == '1' for r in slid) and torso < .05 and min(float(r['fakiech']) for r in slid) > .99
             record(f'fakie_powerslide_{stance}', rows, ok, f'{len(slid)} sliding frames, torso down to {torso:.2f} (native: the head-only clip)')
     qa.py('live.L.skate_goofy(False)')
+    if wanted('fakie_creep'):
+        # Creeping fakie the rider does not turn round: a push under PushFromRest (30 cm/s) goes nose-first, and rolling
+        # fakie under SwitchMinSpeed (100 cm/s) he stays as he is.
+        for name, speed_in, events in (('fakie_creep_push', 20, "[(.3,{'push':True}),(1.5,{})]"), ('fakie_creep_idle', 60, '[]')):
+            rows = fakie_run(False, speed_in, events, 2.2)
+            counts = [int(r.get('turns', 0)) for r in rows]
+            turned = max(counts) - min(counts) if counts else 0
+            clips = sum(1 for r in rows if r.get('clip', '').startswith('R_SWITCH'))
+            ok = bool(rows) and turned == 0 and clips == 0 and not qa.count(rows, 'bails')
+            record(name, rows, ok, f'turned round {turned} times, {clips} frames on a switch clip; then {speed(rows[-1]):.0f} cm/s, '
+                   f"fakie={rows[-1].get('fakie')}" if rows else 'no rows')
     if wanted('fakie_blend'):
-        # Back and forth in the bowl, coasting: each wall turns the ride fakie and back; the channel blends in and out
-        # over .3 s and the head turns without a jump.
+        # Back and forth in the bowl, coasting: a wall turns the board's travel round and the rider rolls fakie, then
+        # turns round on the bowl's floor (or the next wall turns it back): the channel blends in and back out over .3 s
+        # and the head turns without a jump. fakie= is the rider's (in and out of it: two changes at least); the
+        # board's own is that riding switch the other way.
         rows = qa.run_scenario(f"{BOWL[0]},{BOWL[1]},0,600,[],duration=7", 7)
-        flips = sum(1 for a, b in zip(rows, rows[1:]) if a.get('fakie') != b.get('fakie'))
+        board = lambda r: '1' if (r.get('fakie') == '1') != (r.get('switch') == '1') else '0'
+        flips = sum(1 for a, b in zip(rows, rows[1:]) if board(a) != board(b))
         rate = max((abs(float(b['fakiech']) - float(a['fakiech'])) / max(1e-3, float(b.get('dt', 16.7)) / 1000)
                     for a, b in zip(rows, rows[1:])), default=0)
-        # The head's angle from the board's nose (headyaw is from the travel, which turns round with fakie).
-        nose = lambda r: float(r['headyaw']) if r.get('fakie') != '1' else 180 - float(r['headyaw'])
-        jump = max((abs(nose(b) - nose(a)) for a, b in zip(rows, rows[1:])), default=0)
+        # The head's angle from the board's nose (headyaw is from the travel, which turns round with the board's).
+        nose = lambda r: float(r['headyaw']) if board(r) != '1' else 180 - float(r['headyaw'])
+        # Near a stop (a wall's top) the travel and the board's fakie flag can turn round a frame apart: rows moving only.
+        jump = max((abs(nose(b) - nose(a)) for a, b in zip(rows, rows[1:]) if min(speed(a), speed(b)) > 50), default=0)
+        changes = ' '.join(f"{board(b)}@{t:.1f}" for t, a, b in zip(clock(rows)[1:], rows, rows[1:]) if board(a) != board(b))
         full = max(float(r['fakiech']) for r in rows)
-        ok = flips >= 2 and rate <= 1 / .3 * 1.1 and full > .99 and jump < 20 and not qa.count(rows, 'bails')
-        record('fakie_blend', rows, ok, f'{flips} fakie changes; channel up to {full:.2f}, fastest {rate:.1f}/s (native 3.3/s); '
-               f'largest head step {jump:.1f} degrees a frame')
+        turns = int(rows[-1].get('turns', 0)) - int(rows[0].get('turns', 0)) if rows else 0
+        rider = sum(1 for a, b in zip(rows, rows[1:]) if a.get('fakie') != b.get('fakie'))
+        peak = max(range(len(rows)), key=lambda i: float(rows[i]['fakiech'])) if rows else 0
+        out = min((float(r['fakiech']) for r in rows[peak:]), default=1.)
+        bails = qa.count(rows, 'bails')
+        ok = rider >= 2 and out < .01 and rate <= 1 / .3 * 1.1 and full > .99 and jump < 20 and not bails
+        record('fakie_blend', rows, ok, f'{rider} rider fakie changes ({flips} of the board, {turns} turns round, {bails} bails); channel up to '
+               f'{full:.2f} and back to {out:.2f}, fastest {rate:.1f}/s '
+               f'(native 3.3/s); largest head step {jump:.1f} degrees a frame from the nose; board fakie {changes or "never changed"}, '
+               f'{speed(rows[-1]):.0f} cm/s at the end' if rows else 'no rows')
 
 
 def physical(on):

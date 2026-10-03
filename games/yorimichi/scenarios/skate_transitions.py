@@ -12,7 +12,9 @@ left lying that dissolves, jumps with the board in hand (JBR_* then BR_LAND_*), 
 in the air from a grab (BR_DISMOUNT_*_INTO_BR_AIR, then a landing), a kick-out in the air without a grab (BR_KICKOUT_*,
 the board flying on by itself; also just after a take-off, still rising), a slow bail run out on foot (RUNOUT_*, the
 board rolling on), a fallen rider getting up on foot where the body lies (W_RECOVERY_*), a
-step onto a board lying on its wheels, and Link and a Bokoblin as the rider. The capsule checks: a crouched Cairo
+step onto a board lying on its wheels, the rider turning round on the board rolling fakie (by himself, before a push,
+and after a fakie landing off a quarter, then pushing: the switch clip, the board not turning), and Link and a
+Bokoblin as the rider. The capsule checks: a crouched Cairo
 stands up for the board, and a BotW rider's fitted capsule keeps its size through three board toggles and a jump.
 
 Every frame is checked for continuity: the character moves no farther than its speed allows, the hips do not jump,
@@ -70,7 +72,9 @@ def _film(dt):
     f=live.FILM_AT
     f[0]=f[0]+(at+pawn.get_velocity()*0.2-f[0])*min(1.0, dt*5.0)
     side=unreal.Vector(-math.sin(f[1]), math.cos(f[1]), 0.0); ahead=unreal.Vector(math.cos(f[1]), math.sin(f[1]), 0.0)
-    unreal.MegaParkValidation.review_camera(f[0]+side*300.0+ahead*80.0+unreal.Vector(0,0,40), f[0]+unreal.Vector(0,0,-5), 40.0)
+    # live.FILM_DIST/FILM_DROP: a check that needs the board and the feet in the frame films from farther and lower.
+    d=getattr(live,'FILM_DIST',300.0); drop=getattr(live,'FILM_DROP',5.0)
+    unreal.MegaParkValidation.review_camera(f[0]+side*d+ahead*80.0+unreal.Vector(0,0,40), f[0]+unreal.Vector(0,0,-drop), 40.0)
     live.L.screenshot(live.FILM_DIR+'/f%05d.jpg' % f[2]); f[2]+=1
 def _row(frame):
     dt=''' + WDT + '''
@@ -690,6 +694,89 @@ live.behave('bail', _bail)
                f'{line(seen)}; {off} rising at {rise:.0f} cm/s, played {played:.2f} s, the board {"flew" if flew else "never flew"}, '
                f'mode {rows[-1]["mode"]} at the end; {describe(worst)}; board {note}')
 
+    def off_travel(rows, key):
+        # The largest step of the position `key` off what the velocity explains (cm a frame): continuity measures
+        # lengths, and a frame moving back by its travel passes there.
+        return max((math.dist([q - p for p, q in zip(vec(a[key]), vec(b[key]))], [x * b['dt'] for x in vec(b['vel'])])
+                    for a, b in zip(rows, rows[1:]) if key in a and key in b), default=0.)
+
+    def wheels_roll(rows):
+        # The share of rolling frames whose wheels (wheel=, degrees) turned by the board's travel along its nose (yaw=,
+        # the deck's heading; RideTuning's WheelRadius 3.1 cm): the session turns them each 60 Hz tick, and a frame
+        # holds one tick or two, or now and then none (left out, up to a tenth of the frames). The travel is the speed
+        # along the board (on a slope too), frames sliding across it left out.
+        hits = frames = idle = 0
+        for a, b in zip(rows, rows[1:]):
+            if 'wheel' not in a or 'wheel' not in b or b.get('mode') != '1' or flat_speed(b) < 100:
+                continue
+            v, yaw = vec(b['vel']), math.radians(float(b['yaw']))
+            along = v[0] * math.cos(yaw) + v[1] * math.sin(yaw)
+            if abs(along) < .9 * math.hypot(v[0], v[1]):
+                continue
+            tick = math.copysign(math.hypot(*v), along) / 60 / (2 * math.pi * 3.1) * 360
+            step = float(b['wheel']) - float(a['wheel'])
+            turned = lambda want: abs((step - want + 180) % 360 - 180)
+            if turned(0.) < 1:
+                idle += 1
+                continue
+            frames += 1
+            hits += min(turned(k * tick) for k in (1, 2)) < 20
+        return hits / frames if frames and idle <= .1 * (frames + idle) else 0.
+
+    def board_still(rows):
+        # Through a turn round the board does not turn and its wheels roll on, the hips carried with it: the deck's
+        # largest yaw step (degrees a frame), its and the hips' step off the travel (cm), the wheels' share.
+        yaw = max((abs((float(b['yaw']) - float(a['yaw']) + 180) % 360 - 180) for a, b in zip(rows, rows[1:])), default=0.)
+        deck, hips, wheels = off_travel(rows, 'deck'), off_travel(rows, 'hip'), wheels_roll(rows)
+        ok = yaw < 5 and deck < 3 and hips <= 5 and wheels > .95
+        return ok, (f'board yaw step up to {yaw:.1f} deg and {deck:.1f} cm off its travel, hips {hips:.1f} cm off it, '
+                    f'wheels rolling its way on {wheels:.0%} of the frames')
+
+    def switch_round(name, speed, events, seconds):
+        # Rolling fakie the rider turns round on the board (by himself after .6 s, or before a push from fakie): one
+        # continuous body, the board not turning, its wheels rolling on.
+        riding(0)
+        # Filmed, from farther and lower than the other close-ups: the board and the feet turning on it are the shot.
+        rows = record(f"live.FILM_DIST=560.0; live.FILM_DROP=15.0\n"
+                      f"live.scenario({FLAT[0]},{FLAT[1]},180,{speed},{events},duration={seconds},velocity_heading=0,cam=0)", seconds)
+        qa.py("live.stop('rec'); live.skate_release(); live.FILM_DIST=300.0; live.FILM_DROP=5.0")
+        flip = next((i for i, (a, b) in enumerate(zip(rows, rows[1:]), 1) if a.get('turns') != b.get('turns')), None)
+        seen = clips(rows)
+        worst = continuity(rows[10:])
+        still, note = board_still(rows[5:])
+        ok = flip is not None and any(c.startswith('R_SWITCH') for _, c in seen) and still and rows[-1].get('switch') == '1'
+        report(name, rows, ok and smooth(worst), f'{line(seen)}; turned round at frame {flip}, switch={rows[-1].get("switch") if rows else "-"}, '
+               f'{note}; {describe(worst)}')
+
+    def switch_landing(name):
+        # The user's sequence: a straight air on the pier's quarter (east_return, lip at x 70) lands fakie back down
+        # its face; rolling fakie on the flat the rider turns round by himself, then pushes riding switch (.3 s after
+        # the turn, for .8 s). The board does not turn through the turn or the push; no bail.
+        riding(0)
+        rows = record("live.FILM_DIST=420.0; live.FILM_DROP=10.0\n"
+                      "live.SWP=[0.0,0.0]\n"
+                      "def _swpush(dt):\n"
+                      "    w=live.SWP; on=' switch=1 ' in live.skate_state()\n"
+                      "    w[0]=w[0]+dt if on else 0.0\n"
+                      "    if w[0]>=.3 and w[1]<.8: w[1]+=dt; live.skate_input(push=True)\n"
+                      "    elif w[1]>=.8: live.skate_input(); live.stop('swpush')\n"
+                      "live.park.place(57,25,0); live.park.look(-12,0); live.park.launch(950)\n"
+                      "live.behave('swpush', _swpush)\n", 6.5)
+        qa.py("live.stop('swpush'); live.stop('rec'); live.skate_release(); live.FILM_DIST=300.0; live.FILM_DROP=5.0")
+        air = [i for i, r in enumerate(rows) if r.get('mode') == '2']
+        landed = air[-1] + 1 if air else None
+        after = rows[landed + 3:] if landed is not None else []
+        fakie = bool(after) and after[0].get('fakie') == '1' and after[0].get('switch') == '0'
+        flip = next((i for i, (a, b) in enumerate(zip(rows, rows[1:]), 1) if a.get('turns') != b.get('turns')), None)
+        pushed = [r for r in rows[flip or len(rows):] if r.get('switch') == '1' and 'PUSH' in r.get('clip', '')]
+        # From half a second after the touch-down (the landing's give is the landing rows'), on the ground.
+        still, note = board_still([r for r in after[27:] if r.get('mode') == '1'])
+        seen = clips(rows)
+        bails = int(rows[-1].get('bails', 0)) - int(rows[0].get('bails', 0)) if rows else 0
+        ok = fakie and flip is not None and bool(pushed) and still and rows[-1].get('switch') == '1' and not bails
+        report(name, rows, ok, f'{line(seen)}; landed fakie={fakie} at frame {landed}, turned round at frame {flip}, '
+               f'{len(pushed)} frames pushing riding switch, {bails} bails; after the landing: {note}')
+
     def air_dismount(name, grab, want, height=4.5):
         # In the air with a grab held, the skate button: off the board from the grab, the board into the hand, a landing.
         # Without a grab the feet kick the board away (BR_KICKOUT_*): it flies on by itself and the rider lands without it.
@@ -732,6 +819,12 @@ live.behave('bail', _bail)
         air_dismount('air_kickout', False, 'BR_KICKOUT_HI_INTO_NB_AIR')
     if wanted('kickout_rising'):
         kickout_rising('kickout_rising')
+    if wanted('switch_auto'):
+        switch_round('switch_auto', 500, '[]', 2.5)
+    if wanted('switch_push'):
+        switch_round('switch_push', 300, "[(.3,{'push':True}),(1.6,{})]", 2.2)
+    if wanted('switch_landing'):
+        switch_landing('switch_landing')
     for rider in ('Link', 'Bokoblin'):
         # The other riders' bodies (Link taller and slighter, a Bokoblin short and heavy) through the same transitions.
         key = rider.lower()

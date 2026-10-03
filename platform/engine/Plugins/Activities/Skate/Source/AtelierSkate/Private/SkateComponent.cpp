@@ -2,6 +2,7 @@
 #include "SkateRails.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
+#include "Ride/RideSession.h"
 #include "Ride/RideTransition.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
@@ -355,6 +356,9 @@ FString USkateComponent::GetStatus() const
     if (bPushing) return TEXT("Pushing");
     if (bBraking) return TEXT("Braking");
     if (GetSpeed()<15.f) return TEXT("On board");
+    // Ride knows the rider's stance: fakie is backward in it, switch forward in the other one.
+    if (Ride && Ride->IsSwitch()) return Ride->IsFakie() ? TEXT("Rolling switch fakie") : TEXT("Rolling switch");
+    if (Ride) return Ride->IsFakie() ? TEXT("Rolling fakie") : TEXT("Rolling");
     return bFakie ? TEXT("Rolling fakie") : TEXT("Rolling");
 }
 
@@ -399,7 +403,7 @@ float USkateComponent::GetComboAlpha() const { return FMath::Clamp(ComboFade*1.6
 FString USkateComponent::GetDebug() const
 {
     const UCharacterMovementComponent* M=Movement();
-    return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f skin_clearance=%.2f skin_lift=%.2f"),
-        M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),bFakie,bManual,bPowerslide,bPushing,
+    return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d switch=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f skin_clearance=%.2f skin_lift=%.2f"),
+        M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),Ride ? Ride->IsFakie() : bFakie,Ride && Ride->IsSwitch(),bManual,bPowerslide,bPushing,
         In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,RetailFloorClearance,BailVisualLift)+DescribeTransition()+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
 }

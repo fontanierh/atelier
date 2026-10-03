@@ -107,6 +107,7 @@ struct FRideAnimProxy final : public FAnimInstanceProxy
     FRideAnimFrame Frame;
     UMirrorDataTable* Table = nullptr;
     const UBlendProfile* BoardCut = nullptr;
+    FName BoardBone;
 
     explicit FRideAnimProxy(UAnimInstance* Owner) : FAnimInstanceProxy(Owner)
     {
@@ -148,7 +149,7 @@ struct FRideAnimProxy final : public FAnimInstanceProxy
         const USkateRideAnimInstance* Ride = CastChecked<USkateRideAnimInstance>(Instance);
         Frame = Ride->GetFrame();
         Table = Ride->GetMirrorTable();
-        BoardCut = Ride->GetBoardCut();
+        BoardCut = Ride->GetBoardCut(); BoardBone = Ride->GetBoardBone();
     }
     virtual void Update(float Dt) override
     {
@@ -174,7 +175,11 @@ struct FRideAnimProxy final : public FAnimInstanceProxy
         if (Shares <= 0) Channel.Settings.Alpha = 0;
         // Without a table the clips play as authored (goofy).
         Mirror.SetMirrorDataTable(Table);
+        // Turning round on the board changes the stance and the rider's frame on the board: the turn's own
+        // cross-fade covers both, the board left as it lies.
+        Mirror.SetBlendTimeOnMirrorStateChange(Frame.bTurn ? 0.f : MirrorBlend);
         Mirror.SetMirror(Table && L.bMirror);
+        if (Frame.bTurn) Inertia.TurnPrevious(Frame.Turn, BoardBone);
         if (Frame.Inertialize > 0) Inertia.RequestInertialization(Frame.Inertialize, Frame.bCutBoard ? BoardCut : nullptr);
     }
 };
@@ -189,7 +194,7 @@ USkateRideAnimInstance::USkateRideAnimInstance()
 
 void USkateRideAnimInstance::SetBoardBone(FName Bone)
 {
-    BoardCut = nullptr;
+    BoardCut = nullptr; BoardBone = NAME_None;
     const USkeletalMeshComponent* Component = GetSkelMeshComponent();
     USkeleton* Skeleton = Component && Component->GetSkeletalMeshAsset() ? Component->GetSkeletalMeshAsset()->GetSkeleton() : nullptr;
     if (!Skeleton || Skeleton->GetReferenceSkeleton().FindBoneIndex(Bone) == INDEX_NONE) return;
@@ -197,6 +202,7 @@ void USkateRideAnimInstance::SetBoardBone(FName Bone)
     BoardCut->SetSkeleton(Skeleton);
     BoardCut->Mode = EBlendProfileMode::TimeFactor;
     BoardCut->SetBoneBlendScale(Bone, 0.f, true, true);
+    BoardBone = Bone;
 }
 
 void USkateRideAnimInstance::Hold(const TArray<UAnimSequence*>& Sequences)

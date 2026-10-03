@@ -140,6 +140,12 @@ struct FRideTuning
     float CarryBlend = .25f;          // s, the pose's blend into and out of the board-carry locomotion
     float RecoverBlend = .7f;         // s, a get-up on foot rising out of the fallen body's pose
 
+    // Turning round on the board (native's B_SWITCH, RideSession): from fakie into switch, or back.
+    float SwitchMinSpeed = 100.f;     // cm/s rolling fakie before the rider turns round by himself (a push: PushFromRest)
+    float FakieSwitchTime = .6f;      // s rolling fakie on flat ground before the rider turns round by himself
+    float SwitchPushRate = 1.25f;     // the clip's rate when a push from fakie turns round first ...
+    float SwitchPushLead = .25f;      // ... the push starting this long before the clip's end
+
     // Camera.
     float CameraDistance = 290.f;
     float CameraHeight = 120.f;

@@ -26,6 +26,7 @@ namespace
         RIDE_FIELD(CameraLookAhead), RIDE_FIELD(CameraFOV), RIDE_FIELD(CameraSpeedFOV), RIDE_FIELD(CameraFOVSpeed), RIDE_FIELD(CameraTurnRate), RIDE_FIELD(CameraFollow),
         RIDE_FIELD(CameraFollowZ), RIDE_FIELD(MountBlend), RIDE_FIELD(DismountBlend), RIDE_FIELD(MeshSettle), RIDE_FIELD(BoardDissolveTime),
         RIDE_FIELD(BoardHoldTime), RIDE_FIELD(BoardLyingTime), RIDE_FIELD(BoardReach), RIDE_FIELD(MomentumDecay), RIDE_FIELD(MomentumBrake), RIDE_FIELD(ClipBlend), RIDE_FIELD(CarryBlend), RIDE_FIELD(RecoverBlend),
+        RIDE_FIELD(SwitchMinSpeed), RIDE_FIELD(FakieSwitchTime), RIDE_FIELD(SwitchPushRate), RIDE_FIELD(SwitchPushLead),
     };
 #undef RIDE_FIELD
 }

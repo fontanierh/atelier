@@ -791,11 +791,14 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
     FRideTransition& T = Transit();
     if (Kind != ERideBailKind::RunOut || !Ride || !BoardRoot || T.Board != ERideBoard::Ride || !PrepareRideClips()) return false;
     const FVector Bail = Ride->GetBailVelocity();
-    const FQuat DeckRotation = BoardRoot->GetComponentQuat();
+    // Riding switch the rider stands on the board the other way round, in the other stance: the way is his.
+    const bool bSwitched = Ride->IsSwitch();
+    FQuat DeckRotation = BoardRoot->GetComponentQuat();
+    if (bSwitched) DeckRotation = FQuat(DeckRotation.GetUpVector(), PI) * DeckRotation;
     float Along = FVector::DotProduct(Bail, DeckRotation.GetForwardVector());
     float Across = FVector::DotProduct(Bail, DeckRotation.GetRightVector());
-    if (!bGoofy) Across = -Across;                          // the clips are authored goofy
-    if (FMath::Abs(Along) + FMath::Abs(Across) < 20.f) { Along = bFakie ? -1.f : 1.f; Across = 0.f; }
+    if (bGoofy == bSwitched) Across = -Across;              // the clips are authored goofy
+    if (FMath::Abs(Along) + FMath::Abs(Across) < 20.f) { Along = bFakie != bSwitched ? -1.f : 1.f; Across = 0.f; }
     const float Angle = FMath::RadiansToDegrees(FMath::Atan2(Across, Along));
     const int32 Way = FMath::Abs(Angle) < 45.f ? 0 : FMath::Abs(Angle) > 135.f ? 1 : Across < 0.f ? 2 : 3;
     const URidePhysicalSettings* Settings = GetDefault<URidePhysicalSettings>();
@@ -833,9 +836,11 @@ bool USkateComponent::BeginRunOut()
     UAnimSequence* Clip = T.PendingClip;
     T.bRunOutPending = false; T.PendingClip = nullptr;
     if (!Ride || !M || !Clip || !BoardRoot) return false;
-    const bool bMirror = !bGoofy;
+    // In the stance in effect, on the board the way the rider stands on it (riding switch, the other way round).
+    const bool bSwitched = Ride->IsSwitch();
+    const bool bMirror = bGoofy == bSwitched;
     const FTransform Bailed = BoardRoot->GetComponentTransform();
-    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw);
+    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw) + (bSwitched ? 180.f : 0.f);
     const float Yaw = DeckYaw - ClipYawToWorld(ClipDeckYaw(Clip, 0.f), bMirror, 0.f);
     const FVector Carried = Ride->GetBailVelocity();
     const FVector Flat(Carried.X, Carried.Y, 0.f);

@@ -76,6 +76,11 @@ struct FRideAnimFrame
     /** With Inertialize: the board (SKATEBOARD_ROOT and the bones under it) takes the new clip at once while the body
      *  blends, for a board that ends turned end for end and looks the same either way round. */
     bool bCutBoard = false;
+    /** With Inertialize: the clips' placement turned under the pose (the rider turned round on the board); Turn takes
+     *  the poses so far into the new placement, so the cross-fade starts from where the body was (the board's bones
+     *  stay as they were: the board did not turn). */
+    bool bTurn = false;
+    FTransform Turn;
 };
 
 /**
@@ -94,9 +99,11 @@ public:
     USkateRideAnimInstance();
     void SetMirrorTable(UMirrorDataTable* Table) { MirrorTable = Table; }
     UMirrorDataTable* GetMirrorTable() const { return MirrorTable; }
-    /** Builds the blend profile that cuts this bone and its children (time factor 0) in an inertialization. */
+    /** Builds the blend profile that cuts this bone and its children (time factor 0) in an inertialization; a turn
+     *  round on the board (FRideAnimFrame::bTurn) leaves them out. */
     void SetBoardBone(FName Bone);
     const UBlendProfile* GetBoardCut() const { return BoardCut; }
+    FName GetBoardBone() const { return BoardBone; }
     /** Keep these sequences loaded for as long as the graph may play them. */
     void Hold(const TArray<UAnimSequence*>& Sequences);
     /** The next update plays this frame. */
@@ -110,6 +117,7 @@ protected:
 private:
     UPROPERTY(Transient) TObjectPtr<UMirrorDataTable> MirrorTable;
     UPROPERTY(Transient) TObjectPtr<UBlendProfile> BoardCut;
+    FName BoardBone;
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> Held;
     FRideAnimFrame Frame;
 };

@@ -86,7 +86,10 @@ public:
     bool IsBailing() const { return Mode == ERideState::Bail; }
     float GetUpAlpha() const { return Mode == ERideState::GetUp ? FMath::Clamp(ModeTime / FMath::Max(.05f, Tune.GetUpTime), 0.f, 1.f) : 1.f; }
     bool IsNoseManual() const { return Mode == ERideState::Manual && bNoseManual; }
-    bool IsFakie() const { return Travel < 0; }
+    /** Rolling backward in the rider's frame: toward the board's tail, or toward its nose riding switch. */
+    bool IsFakie() const { return RiderTravel() < 0; }
+    /** Riding switch: the rider turned round on the board, the other foot forward (the board did not turn). */
+    bool IsSwitch() const { return bSwitch; }
     float GetSlideAngle() const { return Mode == ERideState::Powerslide ? FMath::Abs(SlideYaw) : 0.f; }
     bool IsSliding() const { return Mode == ERideState::Grind && (GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide); }
     float BailTime() const { return Mode == ERideState::Bail ? ModeTime : 0.f; }
@@ -111,6 +114,18 @@ private:
     atelier::ride::FlickReader Flicks;
     FRideWorld Where;
     bool bGoofy = false, bRagdoll = true;
+    // Riding switch: the rider turned round on the board, the other foot forward. The board did not turn: Q and
+    // Travel stay the board's, and switch is the rider's alone: the stance in effect (GoofyNow), his travel
+    // (RiderTravel) and his frame on the board (RiderQ), which the animator places the clips in.
+    bool bSwitch = false;
+    uint32 Turns = 0;
+    // A turn round in progress (SwitchTime >= 0): the stance flips at FlipAt, then a push starts if one was asked.
+    float SwitchTime = -1, FlipAt = 0, SwitchRate = 1;
+    bool bSwitchPush = false;
+    float FakieTime = 0;            // rolling fakie on flat ground this long
+    bool GoofyNow() const { return bGoofy != bSwitch; }
+    float RiderTravel() const { return bSwitch ? -Travel : Travel; }
+    FQuat RiderQ() const { return bSwitch ? Q * FQuat(FVector::UpVector, PI) : Q; }   // half a turn about the deck normal
     float Accumulator = 0;
 
     // The ride frame: P is the ground point under the deck's centre; Q has X along the board's nose and Z along the
@@ -165,7 +180,7 @@ private:
     // The flip in progress (the board's own rotation in the air).
     atelier::ride::Flick Trick_ = atelier::ride::Flick::None;
     float TrickTime = -1;
-    bool bTrickFakie = false;
+    bool bTrickFakie = false, bTrickSwitch = false;
     ERideGrab Grab = ERideGrab::None, LastGrab = ERideGrab::None;
     float GrabTime = 0, GrabWeight = 0, SinceGrab = -1;
     // Grind.
@@ -250,6 +265,8 @@ private:
     void ChooseLanding(const FVector& From);
     void ResetPrediction(const FVector& From);
     void StartPush(bool bFirstPush, float Speed);
+    /** Turn round on the board (the switch clip), before a push from fakie (bPush) or by itself. */
+    void StartSwitch(bool bPush);
     ERideMotion CurrentMotion() const;
     void TrackMotion();
     /** From the take-off to the board caught under the feet: the flip clip's, else the tuned time. */
@@ -276,7 +293,7 @@ private:
     float Random();
     /** Take-off speed for a pop whose stick rested Load seconds on the rim first. */
     float PopSpeed(float Load = 1.f) const;
-    FString FlickName(atelier::ride::Flick Flick, bool bFakie) const;
+    FString FlickName(atelier::ride::Flick Flick, bool bFakie, bool bSwitched = false) const;
     FString GrindName() const;
     FString SpinName(float Degrees) const;
 };

@@ -14,6 +14,9 @@ namespace
     constexpr float G = 980.f;
     // The landing's give plays for this long after a touch-down (RideAnimator).
     constexpr float LandHold = 1.f;
+    // A turn round by itself flips the stance this long before the switch clip's end, or this long when a push was
+    // asked during it (native's Turning.Switch WillExpire .02 and .075).
+    constexpr float SwitchEndLead = .02f, SwitchQueueLead = .075f;
 
     template <int32 N>
     float Curve(const float (&Points)[N][2], float X)
@@ -103,6 +106,7 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     Travel = FVector::DotProduct(V, Q.GetForwardVector()) < -15.f ? -1.f : 1.f;
     TurnRate = SlideYaw = Curvature = Crouch = 0; PushTime = -1; BrakeTime = 0; PendingPop = Flick::None; TrailNum = 0;
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; Rail = INDEX_NONE; Balance = 0;
+    bSwitch = false; SwitchTime = -1; FakieTime = 0;
     Line.Reset(); Holding.Reset(); HeldPoints = 0; Calm = 0; Trick.Reset(); Flicks.Reset(); Cues.Reset();
     // The clock starts a step full, so the first frame shows the start moved on by that frame's time, as every later
     // frame does. Empty, the first Step ran one tick and showed it at alpha 0 (the start again, a frame's hold), and
@@ -200,9 +204,9 @@ void FRideSession::SetMode(ERideState NewMode)
 
 void FRideSession::Tick(const FSkateInput& In)
 {
-    // The reader works in regular stance: a goofy rider's stick is mirrored, so the same gesture does the same trick
-    // with the other foot.
-    const Flick F = Flicks.Update(bGoofy ? -float(In.Right.X) : float(In.Right.X), float(In.Right.Y), Tick60);
+    // The reader works in regular stance: a goofy rider's stick (or a regular one's riding switch) is mirrored, so the
+    // same gesture does the same trick with the other foot.
+    const Flick F = Flicks.Update(GoofyNow() ? -float(In.Right.X) : float(In.Right.X), float(In.Right.Y), Tick60);
     ModeTime += Tick60; Clock += Tick60;
     if (TrickTime >= 0) TrickTime += Tick60;
     if (LandAge >= 0) LandAge += Tick60;
@@ -217,6 +221,8 @@ void FRideSession::Tick(const FSkateInput& In)
     }
     // The curvature's trail starts afresh on every return to the ground.
     if (Mode != ERideState::Ground && Mode != ERideState::Powerslide && Mode != ERideState::Manual) TrailNum = 0;
+    // Off the plain ground (a manual, a powerslide, the air, a bail) a turn round stops where it is.
+    if (Mode != ERideState::Ground) { SwitchTime = -1; FakieTime = 0; }
     // The faces just climbed, for the lip test (TickAir reads them on its first ticks).
     if (Mode == ERideState::Ground || Mode == ERideState::Powerslide || Mode == ERideState::Manual)
     {
@@ -238,6 +244,7 @@ ERideMotion FRideSession::CurrentMotion() const
     {
     case ERideState::Ground:
         if (PendingPop != Flick::None) return ERideMotion::Pop;
+        if (SwitchTime >= 0) return ERideMotion::Switch;
         if (PushTime >= 0) return ERideMotion::Push;
         if (BrakeTime > 0 || StillTime >= 0) return ERideMotion::Brake;
         if (Flicks.Loaded()) return ERideMotion::Load;
@@ -448,7 +455,36 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
 
     // Pushing, in time with the push cycle; a tap gives one weak push.
     const bool bCanPush = Mode == ERideState::Ground && bFlat && PendingPop == Flick::None && !In.bBrake;
-    if (bCanPush && In.bPush && PushTime < 0) StartPush(true, Speed);
+    // Fakie, the rider turns round on the board first (native's PushFromFakie and Turning.Switch): a push turns the
+    // switch clip at SwitchPushRate and starts SwitchPushLead before its end; rolling fakie on flat ground for
+    // FakieSwitchTime, or at once riding switch (turning back to the rider's own stance), it plays at its own rate and
+    // the roll follows from its end (not over a landing's give). A crawl is not fakie: slower than PushFromRest a push
+    // goes nose first (StartPush), and the rider only turns round by himself from SwitchMinSpeed.
+    if (SwitchTime >= 0)
+    {
+        if (!bCanPush || RiderTravel() > 0 || Flicks.Loaded() || Flicks.ManualBand() != 0) SwitchTime = -1;
+        else
+        {
+            SwitchTime += Tick60;
+            // A push asked during a turn by itself starts as the turn ends.
+            if (In.bPush && !bSwitchPush) { bSwitchPush = true; FlipAt = FMath::Max(SwitchTime, FMath::Min(FlipAt, Animator.SwitchLength() - SwitchQueueLead)); }
+        }
+    }
+    FakieTime = Mode == ERideState::Ground && bFlat && RiderTravel() < 0 && Speed >= Tune.SwitchMinSpeed ? FakieTime + Tick60 : 0.f;
+    const bool bLanding = LandAge >= 0 && LandAge < LandHold;
+    const bool bTurnByItself = !bLanding && Speed >= Tune.SwitchMinSpeed && (bSwitch || FakieTime > Tune.FakieSwitchTime);
+    if (SwitchTime < 0 && PushTime < 0 && bCanPush && RiderTravel() < 0 && Animator.SwitchLength() > 0 && !Flicks.Loaded() &&
+        Flicks.ManualBand() == 0 && ((In.bPush && Speed >= Tune.PushFromRest) || bTurnByItself))
+        StartSwitch(In.bPush);
+    if (SwitchTime >= 0 && SwitchTime >= FlipAt - KINDA_SMALL_NUMBER)
+    {
+        // The turn's end: the rider stands the other way round on the board, the other foot forward. Only the stance
+        // in effect and the rider's frame change; the board, its travel and its velocity go on as they were.
+        bSwitch = !bSwitch; ++Turns;
+        SwitchTime = -1; FakieTime = 0;
+        if (bSwitchPush) StartPush(true, Speed);
+    }
+    else if (SwitchTime < 0 && bCanPush && In.bPush && PushTime < 0) StartPush(true, Speed);
     if (PushTime >= 0)
     {
         if (!bCanPush) PushTime = -1;
@@ -459,7 +495,7 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
             // neither creeps back down a slope nor leaves tail-first.
             if (bPushFromRest && PushTime < PushLead + PushContact)
             {
-                if (Travel < 0) { Travel = 1.f; Speed = -Speed; }
+                if (RiderTravel() < 0) { Travel = -Travel; Speed = -Speed; }
                 if (PushTime < PushLead) Speed = FMath::Max(Speed, 0.f);
             }
             if (!In.bPush && PushTime < PushLead) bPushStrong = false;
@@ -611,6 +647,14 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
     return true;
 }
 
+void FRideSession::StartSwitch(bool bPush)
+{
+    const float Length = Animator.SwitchLength();
+    SwitchTime = 0; bSwitchPush = bPush; FakieTime = 0;
+    SwitchRate = bPush ? FMath::Max(.1f, Tune.SwitchPushRate) : 1.f;
+    FlipAt = bPush ? FMath::Max(0.f, Length / SwitchRate - Tune.SwitchPushLead) : FMath::Max(0.f, Length - SwitchEndLead);
+}
+
 void FRideSession::StartPush(bool bFirstPush, float Speed)
 {
     PushTime = 0; bPushStrong = true; bPushed = false;
@@ -634,7 +678,7 @@ float FRideSession::PopSpeed(float Load) const
 
 void FRideSession::StartTrick(Flick F)
 {
-    Trick_ = F; TrickTime = 0; bTrickFakie = Travel < 0;
+    Trick_ = F; TrickTime = 0; bTrickFakie = RiderTravel() < 0; bTrickSwitch = bSwitch;
 }
 
 void FRideSession::TakeOff(float Pop)
@@ -907,7 +951,7 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
     LastGrab = ERideGrab::None; SinceGrab = -1;
     // Score the air: the flip, the spin and any grab still held.
     EndHold();
-    if (Trick_ != Flick::None) AddTrick(FlickName(Trick_, bTrickFakie), FlipInfo(Trick_).Points);
+    if (Trick_ != Flick::None) AddTrick(FlickName(Trick_, bTrickFakie, bTrickSwitch), FlipInfo(Trick_).Points);
     const float Spun = FMath::Abs(SpinTotal);
     if (Spun >= 150.f) AddTrick(SpinName(SpinTotal), 150.f * FMath::RoundToFloat(Spun / 180.f));
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; SpinTotal = 0; SpinRate = 0;
@@ -965,7 +1009,7 @@ bool FRideSession::TryGrind(const FSkateInput& In)
     }
     else GrindKind = ERideGrind::Crooked, GrindNose = Angle > 90.f ? -1.f : 1.f;
     // Frontside when the line is on the rider's toe side.
-    const FVector Toes = Q.GetRightVector() * (bGoofy ? -1.f : 1.f);
+    const FVector Toes = RiderQ().GetRightVector() * (GoofyNow() ? -1.f : 1.f);
     bGrindFront = FVector::DotProduct(Point - P, Toes) > 0;
     RailUp = FVector::CrossProduct(Tangent, FVector::CrossProduct(FVector::UpVector, Tangent)).GetSafeNormal();
     if (RailUp.Z < 0) RailUp = -RailUp;
@@ -975,7 +1019,7 @@ bool FRideSession::TryGrind(const FSkateInput& In)
     LockOffset = P - (Point - RailUp * (bSlide ? Tune.DeckHeight - 1.5f : Tune.WheelRadius + Line_.Radius));
     LockSpeed = FMath::Max(Tune.GrindLockSpeed, float(-FVector::DotProduct(V, LockOffset.GetSafeNormal())));
     // Score the air that led onto the rail.
-    if (Trick_ != Flick::None) AddTrick(FlickName(Trick_, bTrickFakie), FlipInfo(Trick_).Points);
+    if (Trick_ != Flick::None) AddTrick(FlickName(Trick_, bTrickFakie, bTrickSwitch), FlipInfo(Trick_).Points);
     Trick_ = Flick::None; TrickTime = -1;
     EndHold(); Grab = ERideGrab::None; GrabWeight = 0; SpinRate = 0; SpinTotal = 0;
     Cues.Add(ERideCue::Catch);
@@ -1104,7 +1148,7 @@ void FRideSession::LeaveGrind(float Up, bool bStall)
         LinePoint = Where.Rails->Sample(Rail, FMath::Clamp(RailS, 0.f, Where.Rails->Rails[Rail].Length()), Along);
         if (Tangent.IsNearlyZero()) Tangent = Along;
     }
-    FVector Side = FVector::CrossProduct(FVector::UpVector, Tangent).GetSafeNormal() * (bGrindFront ? -1.f : 1.f) * (bGoofy ? -1.f : 1.f);
+    FVector Side = FVector::CrossProduct(FVector::UpVector, Tangent).GetSafeNormal() * (bGrindFront ? -1.f : 1.f) * (GoofyNow() ? -1.f : 1.f);
     float Aside = 40.f;
     if (bStall && Where.Rails && Where.Rails->Rails.IsValidIndex(Rail))
     {
@@ -1146,7 +1190,7 @@ void FRideSession::StartBail(const TCHAR* Why)
 {
     UE_LOG(LogTemp, Display, TEXT("SKATE ride bail: %s at %.0f cm/s"), Why, V.Size());
     BailLinear = V;
-    BailAngular = Q.GetUpVector() * FMath::DegreesToRadians(SpinRate) + Q.GetForwardVector() * FMath::DegreesToRadians(FlipInfo(Trick_).Roll) * (TrickTime >= 0 ? 1.f : 0.f);
+    BailAngular = Q.GetUpVector() * FMath::DegreesToRadians(SpinRate) + RiderQ().GetForwardVector() * FMath::DegreesToRadians(FlipInfo(Trick_).Roll) * (TrickTime >= 0 ? 1.f : 0.f);
     LoseLine();
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; PendingPop = Flick::None; Rail = INDEX_NONE;
     SpinRate = 0; TurnRate = 0; SlideYaw = 0; PushTime = -1; StillTime = -1; Balance = 0;
@@ -1175,13 +1219,13 @@ void FRideSession::TickBail()
         if (FindGround(Next, Frame(FVector::UpVector, Q.GetForwardVector()), 20.f, Ground, Up, Forward, bBlocked))
         { P = Ground; V = FVector::VectorPlaneProject(V, Up); }
         else if (!bBlocked) P = Next;
-        if (ModeTime >= Tune.BailSettle) GetUp(P, Q.Rotator().Yaw);
+        if (ModeTime >= Tune.BailSettle) GetUp(P, RiderQ().Rotator().Yaw);
         return;
     }
     // With a ragdoll the component calls GetUp when the body has settled; the root follows the body meanwhile, and
     // a body that never settles (stuck on geometry) still gets up.
     if (bFollowBody) { P = BodyPoint; V = FVector::ZeroVector; }
-    if (ModeTime >= Tune.BailSettle + 5.f) GetUp(P, Q.Rotator().Yaw);
+    if (ModeTime >= Tune.BailSettle + 5.f) GetUp(P, RiderQ().Rotator().Yaw);
 }
 
 void FRideSession::GetUp(const FVector& GroundPoint, float Yaw)
@@ -1191,6 +1235,7 @@ void FRideSession::GetUp(const FVector& GroundPoint, float Yaw)
     P = GroundPoint; Q = Facing;
     if (FindGround(P + FVector(0, 0, 30), Facing, 80.f, Ground, Up, Forward, bBlocked)) { P = Ground; Q = Frame(Up, Forward); }
     V = FVector::ZeroVector; Travel = 1; Sketchy = 0; Crouch = .25f; LandAge = -1;
+    bSwitch = false; SwitchTime = -1; FakieTime = 0;    // up in the rider's own stance
     Previous.P = Current.P = P; Previous.Q = Current.Q = Q; Previous.Deck = Current.Deck = DeckPose();
     SetMode(ERideState::GetUp);
 }
@@ -1229,10 +1274,11 @@ void FRideSession::LoseLine()
     Holding.Reset(); HeldPoints = 0; Line.Reset();
 }
 
-FString FRideSession::FlickName(Flick F, bool bFakie) const
+FString FRideSession::FlickName(Flick F, bool bFakie, bool bSwitched) const
 {
     const FString Base = UTF8_TO_TCHAR(atelier::ride::FlickName(F));
-    return bFakie && F != Flick::Nollie ? TEXT("Fakie ") + Base : Base;
+    if (bFakie && F != Flick::Nollie) return TEXT("Fakie ") + Base;
+    return bSwitched ? TEXT("Switch ") + Base : Base;
 }
 
 FString FRideSession::SpinName(float Degrees) const
@@ -1240,8 +1286,8 @@ FString FRideSession::SpinName(float Degrees) const
     // A spin up to 30 degrees short still counts (a 330 is a 360).
     const int32 Half = FMath::Max(1, FMath::RoundToInt((FMath::Abs(Degrees) - 30.f) / 180.f + .0001f));
     // A regular rider faces +Y (the board's right): turning that way (negative yaw) leads with the chest, frontside.
-    const float Stance = bGoofy ? -1.f : 1.f;
-    const bool bFrontside = Degrees * Stance * Travel < 0;
+    const float Stance = GoofyNow() ? -1.f : 1.f;
+    const bool bFrontside = Degrees * Stance * RiderTravel() < 0;
     return FString::Printf(TEXT("%s %d"), bFrontside ? TEXT("FS") : TEXT("BS"), Half * 180);
 }
 
@@ -1285,7 +1331,7 @@ FTransform FRideSession::DeckPose() const
         const FFlipInfo Flip = FlipInfo(Trick_);
         const float T = FMath::Clamp(TrickTime / FMath::Max(.05f, Flip.Time), 0.f, 1.f);
         const float Ease = 1.f - FMath::Square(1.f - T);
-        const float Mirror = bGoofy ? -1.f : 1.f;
+        const float Mirror = GoofyNow() ? -1.f : 1.f;
         const FQuat Roll = Turn(FVector::ForwardVector, Flip.Roll * Ease * Mirror);
         const FQuat Yaw = Turn(FVector::UpVector, Flip.Yaw * Ease * Mirror);
         // The ollie's pitch: nose up through the pop, level by the catch.
@@ -1321,18 +1367,19 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     Body.Speed = V.Size();
     const float Turning = FMath::Clamp(TurnRate / FMath::Max(1.f, Tune.MaxYawRate + Tune.YawRatePerSpeed * float(V.Size())), -1.f, 1.f);
     // Toward the rider's toes: a regular rider's toes are on the board's right (+Y).
-    Body.Lean = Turning * Travel * (bGoofy ? -1.f : 1.f);
+    Body.Lean = Turning * RiderTravel() * (GoofyNow() ? -1.f : 1.f);
     Body.Crouch = Crouch;
     Body.PushTime = PushTime; Body.PushCount = PushCount; Body.PushStrong = PushStrong;
     Body.PushLead = PushLead; Body.PushContact = PushContact; Body.PushRecover = PushRecover;
     Body.StillTime = StillTime; Body.bWasStill = bWasStill;
     Body.LoadTime = Flicks.LoadTime(); Body.bNoseLoad = Flicks.NoseLoaded();
     Body.Balance = Balance; Body.SlideAngle = SlideYaw;
-    Body.bSlideFront = SlideYaw * Travel * (bGoofy ? -1.f : 1.f) < 0;   // the toes lead
+    Body.bSlideFront = SlideYaw * RiderTravel() * (GoofyNow() ? -1.f : 1.f) < 0;   // the toes lead
     Body.LandAge = LandAge; Body.LandImpact = LandImpact; Body.bLandedFromGrab = bLandedFromGrab; Body.Sketchy = Sketchy;
     Body.Grind = GrindKind; Body.bGrindFront = bGrindFront;
     Body.BailTime = Mode == ERideState::Bail ? ModeTime : -1.f;
-    Body.bGoofy = bGoofy; Body.bFakie = Travel < 0;
+    Body.bGoofy = GoofyNow(); Body.bFakie = RiderTravel() < 0;
+    Body.SwitchTime = SwitchTime; Body.SwitchRate = SwitchRate; Body.bSwitch = bSwitch; Body.Turns = Turns;
     FRideBoardPose Board;
     Board.Deck = Deck; Board.WheelSpin = WheelSpin; Board.DeckHeight = Tune.DeckHeight;
     Board.bOnWheels = Mode == ERideState::Ground || Mode == ERideState::Manual || Mode == ERideState::Powerslide;
@@ -1365,7 +1412,7 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     TArray<FString> Shown;
     for (int32 I = FMath::Max(0, Line.Num() - 3); I < Line.Num(); ++I) Shown.Add(Line[I].Name);
     if (!Holding.IsEmpty()) Shown.Add(Holding);
-    else if (Mode == ERideState::Air && Trick_ != Flick::None) Shown.Add(FlickName(Trick_, bTrickFakie));
+    else if (Mode == ERideState::Air && Trick_ != Flick::None) Shown.Add(FlickName(Trick_, bTrickFakie, bTrickSwitch));
     Trick = FString::Join(Shown, TEXT(" + "));
     float LineSum = HeldPoints; for (const FLineTrick& T : Line) LineSum += T.Points;
     Score = Banked + LineSum * FMath::Max(1, Line.Num() + (Holding.IsEmpty() ? 0 : 1));
@@ -1435,11 +1482,11 @@ void FRideSession::MeasurePose(float Dt)
 
 FString FRideSession::DescribePose() const
 {
-    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f"),
+    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f turns=%u swt=%.3f mirror=%d camyaw=%.1f wheel=%.1f"),
         *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseStep,
         Names.IsValidIndex(PoseStepBone) ? *Names[PoseStepBone].ToString() : TEXT("none"), PoseDt * 1000.f,
         FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost, HipBoard, HeadYaw, ChestYaw, Animator.GetFakieWeight(), Animator.GetTorso(),
-        FootAlong[0], FootAlong[1]);
+        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Camera.Rotator().Yaw, WheelSpin);
 }
 
 void FRideSession::StepOffBoard(float Dt, const FTransform& TrajectoryWorld)

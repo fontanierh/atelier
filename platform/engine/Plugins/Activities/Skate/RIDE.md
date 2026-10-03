@@ -96,20 +96,45 @@ into the graph's inputs, runs the graph and places the pose on the board.
   and a blend in progress across a recache of the same bones: swapping a physics asset in or out (the physical rider
   does, at its start and end) re-requires the mesh's bones, and dropping the poses there would turn the next request
   into a cut.
-- **Stance.** The clips are authored goofy. A regular rider plays them mirrored (`bMirror = !bGoofy`), and a stance
-  change inertializes over 0.2 s. `MDT_SkateRider` mirrors across Unreal's Y axis and lists every bone the native rig
-  mirrors, the centre bones onto themselves: Unreal leaves a bone without a row unmirrored.
+- **Stance.** The clips are authored goofy. The rider plays them in the stance in effect, his own or, riding switch,
+  the other one: mirrored when that is regular (`bMirror = !GoofyNow()`). A stance change inertializes over 0.2 s, and
+  at once when the rider turns round on the board (the turn's own cross-fade covers it). `MDT_SkateRider` mirrors
+  across Unreal's Y axis and lists every bone the native rig mirrors, the centre bones onto themselves: Unreal leaves a
+  bone without a row unmirrored.
 - **Fakie.** Riding fakie the head and chest turn toward the travel, as native's fakie channel does
   (`FAKIE_HEAD_CHANNEL_CYC`, `FAKIE_CHANNEL_CYC`, `FAKIE_MANUAL_CHANNEL_CYC` layered over the main clips on the neck,
   head and upper spine). The channel blends in and out over 0.3 s; its three clips blend by a torso value: 1 in a
   manual, 0 in a powerslide (the head only), 0.5 otherwise, moving at 0.6 a second (set at once when fakie starts).
   Native's angles from the travel (head, chest; offline through its channel blend): forward 3°, 46°; fakie without the
   channel 177°, 134°; fakie 72°, 126°; a fakie manual 22°, 100°.
+- **Switch.** As native's `Turning.Switch` does, a rider rolling fakie turns round on the board: before a push from
+  fakie (at `PushFromRest`, 30 cm/s, or faster), and by himself after `FakieSwitchTime` (0.6 s) rolling fakie on flat
+  ground at `SwitchMinSpeed` (100 cm/s) or faster; never in the air, over a landing, loaded for a pop, braking or in a
+  manual's band, and never on a crawl. The clip is `R_SWITCH_RIDE_*` (centre or leaning frontside or backside,
+  standing or crouched; 0.733 s), at `SwitchPushRate` (1.25) before a push, which starts `SwitchPushLead` (0.25 s)
+  before the clip's end, and at its own rate otherwise. Its last frame is the other stance's idle turned 180° (2 cm
+  apart over the body on average, 3.7 cm at most), so at its end `bSwitch` flips and nothing else does: the board is
+  never turned. Its frame (`Q`), its travel, its velocity, the sweeps, the wheels and the camera stay the board's
+  through the turn. Switch is the rider's alone: `GoofyNow()` (his stance, the other one riding switch) drives the
+  mirror, the flicks (mirrored with the stance), the trick names (`Switch Kickflip`) and the grind's toe side, and his
+  frame on the board is `Q` turned half a turn about the deck's normal (`RiderQ()`, with `RiderTravel()` the travel in
+  it). Fakie is reckoned in his frame (`IsFakie()`: rolling toward the tail, or riding switch toward the nose), and so
+  are the switch's start, the nose-first push from rest, the lean, the slide's side and the spin's FS or BS. One place
+  uses his frame: the animator places the clips on the deck turned half a turn riding switch, then turns the clips'
+  board back about its normal, so the deck, the trucks and the wheels are the session's board as it is. On the turn's
+  frame (`Turns` counts the turns) the animator takes the inertialization's stored poses into the new placement, the
+  board's bones left out, so the body cross-fades from where it was through the clip's turn and the board blends from
+  its last clip as it lies: no cut and no swing. Riding switch, rolling fakie turns back at once. The camera follows
+  the travel and does not see the turn. A dismount, run-out or air dismount riding switch steps off in the stance in
+  effect.
 - **Air legs.** As native's air legs do (its `B_AIR_CYC` trees), the air pose blends by a hips-to-board distance, each
   clip carrying its own: it stays at its floor (0.5, native metres) until the rider prepares to land, (1 − 0.6) / 2 s
   before the touch-down onto level ground (less onto a steeper face, never onto a wall), then grows at 2 a second, so
   the legs are still reaching for the board when it lands. The low pose reaches toward the extended one as the fall
-  goes on (0.16 to 0.45 over the first 0.3 s after the top of the flight).
+  goes on (0.16 to 0.45 over the first 0.3 s after the top of the flight). The low pair (`IA_IDLE_LO` and
+  `IA_EXTEND_LO`, the arms reaching out) sits at the low clip's own distance (0.94, the idle's 0.52): weighted
+  between the two clips' distances it brought the hips 6 to 11 cm short of native's over the board before an ollie's
+  touch-down (43, 62 and 81 cm 10, 6 and 2 ticks before it), at the low clip's 3, 5 and 6 cm.
 - **Placement.** The riding clips' `TRAJECTORY` is the deck's pivot at rest, 8.9 cm above the ground, which is the
   session's root. The animator puts the clips' root space on the session's deck (`Lock` 0), or moves the pose so that
   the clip's board lies exactly on the deck (`Lock` 1, for clips whose board is elsewhere, as in the transitions). On
@@ -173,8 +198,11 @@ into the graph's inputs, runs the graph and places the pose on the board.
   `feet=` (the toes' heights over the deck, cm), `feetoff=` (feet outside the deck's 42 × 14 cm outline, or more than
   16 cm above or 4 cm below it), `nan=` and `anim=` (the animator's time this frame, ms), `hipboard=` (the hips over
   the board, cm), `headyaw=` and `chestyaw=` (their facing from the travel, degrees), `fakiech=` and `torso=` (the fakie
-  channel's weight and torso value) and `feetalong=` (each toe along the travel from the deck's pivot, cm). The game's
-  QA reads it.
+  channel's weight and torso value), `feetalong=` (each toe along the travel from the deck's pivot, cm), `turns=`
+  (the times the rider turned round on the board), `swt=` (the switch clip's time, s, -1 out of it), `mirror=` (the
+  clips played mirrored), `camyaw=` (the camera's heading, degrees) and `wheel=` (the wheels' turn, degrees); the
+  component's line adds `switch=`, and its `fakie=` is the rider's (the board rolls tail first when `fakie=` and
+  `switch=` differ). The game's QA reads it.
 - **Cost.** Riding two large skatepark levels on an M-series Mac with no other heavy job running (load average about
   4), with `skate.RidePhysical` 0 then 1. The frame stays at 60 fps: p50 16.66 to 16.67 ms both ways, p99 17.07 to
   17.29 ms then 17.08 to 17.30 ms. The animator (graph update, evaluation and placement) takes 0.058 to 0.060 ms then
@@ -499,8 +527,9 @@ turning wait for it.
   - `RUN_FWD` above 150 cm/s or with the stick held;
   - `STAND_0` otherwise.
 
-  It is `LO` when crouched. Rolling fakie, the rider steps off facing the other way, in the other stance's clip. The
-  clip starts with its board exactly on the deck the rider leaves; that offset eases away over the first 0.35 s.
+  It is `LO` when crouched. Rolling fakie, the rider steps off facing the other way, in the other stance's clip;
+  riding switch, both are taken in the stance in effect. The clip starts with its board exactly on the deck the rider
+  leaves; that offset eases away over the first 0.35 s.
   The carry follows on at the clip's last stride (its `CADENCEENDPERCENT` curve when it has one, else the phase read
   from the clip's feet). CharacterMovement moves before the character's own tick gives it the stick, so its first move
   off a clip would have none and brake the speed away: the drive carries the clip's speed over that move, and the stick

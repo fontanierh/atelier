@@ -9,7 +9,7 @@ enum class ERideGrind : uint8 { FiftyFifty, FiveO, Nosegrind, Crooked, Boardslid
 enum class ERideGrab : uint8 { None, Indy, Melon, ChristAir, OneFoot, TuckKnee };
 
 /** What the rider's body is doing, for the clip choice (RideAnimator). */
-enum class ERideMotion : uint8 { Roll, Push, Brake, Powerslide, Manual, NoseManual, Load, Pop, Air, Land, Grind, Bail, GetUp };
+enum class ERideMotion : uint8 { Roll, Push, Brake, Powerslide, Manual, NoseManual, Load, Pop, Air, Land, Grind, Bail, GetUp, Switch };
 
 /**
  * The rider's pose request for one frame, filled by the session from its state machine. Every time is in seconds
@@ -63,7 +63,14 @@ struct FRideBodyPose
     bool bGrindFront = true;            // the line on the rider's toe side
     // Bail.
     float BailTime = -1;                // since the bail started, -1 when not bailing
+    // The stance in effect (the rider's own, or the other one riding switch) and rolling backward in it.
     bool bGoofy = false, bFakie = false;
+    // Turning round on the board (ERideMotion::Switch): how long and at what rate the clip plays. Riding switch the
+    // rider stands turned half a turn on the board (the animator places the clips so; the board did not turn); Turns
+    // counts the turns, so the animator re-expresses its history in the new placement on the frame one happens.
+    float SwitchTime = -1, SwitchRate = 1;
+    bool bSwitch = false;
+    uint32 Turns = 0;
 };
 
 /** The board relative to the rider's root (the deck's pivot at rest), for one frame. */

@@ -54,6 +54,9 @@ public:
     /** One push cycle: the lead before the foot touches (the first push of a run only), the contact and the
      *  recovery, for a push at Strong (0 slow .. 1 fast). False without the clips. */
     bool PushTiming(bool bFirst, float Strong, float& Lead, float& Contact, float& Recover) const;
+    /** The switch clip's length (turning round on the board), 0 without the animated body (the board alone does not
+     *  turn round). */
+    float SwitchLength() const;
 
     // For transitions (mount, dismount, carry): clips the caller plays instead of the session's choice.
     /** A clip of the native library by name (loaded on first use, then kept). */
@@ -87,6 +90,8 @@ public:
     float GetLift() const { return Lift; }
     /** The fakie channel's weight and the torso value it blends its clips by. */
     float GetFakieWeight() const { return FakieWeight; }
+    /** The stance mirror the clips played with (a regular rider's, or a goofy one's riding switch). */
+    bool GetMirror() const { return Last.bMirror; }
     float GetTorso() const { return Torso; }
     USkeletalMeshComponent* GetMesh() const { return Mesh.Get(); }
 
@@ -109,6 +114,7 @@ private:
     int32 WheelIndex[4] = {3, 4, 5, 6};
     FTransform TruckFromDeck[2], WheelFromTruck[4];
     FVector TruckAxis[2], WheelAxis[4];     // the deck's length and width in each bone's own frame
+    FVector DeckUp = FVector::UpVector;     // the deck's normal in its own frame
     float WheelRadius = 3.1f;
 
     // The clips by role.
@@ -135,6 +141,7 @@ private:
         FGrabClips Grabs[6];
         UAnimSequence* Grinds[6][2] = {};                   // kind, frontside/backside
         UAnimSequence* Fakie[3] = {};                       // the fakie channel by torso: head, head and chest, manual
+        UAnimSequence* Switch[3][2] = {};                   // turning round: centre, heels, toes; standing, crouched
     } C;
 
     // Per-frame state.
@@ -152,6 +159,10 @@ private:
     // The fakie channel: its weight, the torso value its clips blend by, its clock, and whether the rider rode fakie.
     float FakieWeight = 0, Torso = .5f, FakieTime = 0;
     bool bWasFakie = false;
+    // The session's turns round (riding switch and back) seen so far, where the last frame put the clips' root and
+    // the clips' deck it placed.
+    uint32 LastTurns = 0;
+    FTransform LastPlace, LastPoseDeck;
     FRideAnimLayers Last;
     TArray<FTransform> Empty;
 
@@ -168,7 +179,12 @@ private:
     /** The fakie channel's weight, torso and clock (no body: off the board, the channel fades out). */
     void UpdateFakie(const FRideBodyPose* Body, float Dt);
     /** Run the graph on these layers (cross-fading first when Inertialize > 0). */
-    void Run(const FRideAnimLayers& Layers, float Inertialize, float Dt, bool bCutBoard = false);
+    void Run(const FRideAnimLayers& Layers, float Inertialize, float Dt, bool bCutBoard = false, const FTransform* Turn = nullptr);
+    /** Where the clips' deck goes: the session's deck, turned half a turn about its normal riding switch (the
+     *  rider's frame on the board). */
+    static FTransform RiderDeck(const FRideBodyPose& Body, const FRideBoardPose& Board);
+    /** The clips' root space placed on Deck at the current Lock, ClipDeck being the clips' deck in it. */
+    FTransform Placement(const FTransform& Deck, const FTransform& ClipDeck) const;
     /** Roll each truck against the deck so that its axle lies level with the ground (the root's XY plane) while the
      *  board is on its wheels; off them the trucks come back straight under the deck. */
     void LevelTrucks(const FRideBoardPose& Board, const FTransform& Deck, float Dt);

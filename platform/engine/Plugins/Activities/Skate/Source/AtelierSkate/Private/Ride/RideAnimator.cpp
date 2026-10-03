@@ -34,8 +34,10 @@ namespace
     // legs are still reaching for the board when it lands.
     constexpr float LegFloor = .5f, LegReach = 2.f, BodyHeight = .6f;
     // The default tree's clips: the tucked air idle, then the low idle reaching toward the extended one as the fall
-    // goes on (their DISTTOCOG).
-    constexpr float IdleLeg = .5174f, LowLeg = .9373f, ExtendLeg = 1.0728f;
+    // goes on (their DISTTOCOG). The extended clip is the low one's arms reaching out: the pair sits at the low one's
+    // distance. Native's hips over the board before an ollie's touch-down (reference.json: 43, 62 and 81 cm 10, 6 and 2
+    // ticks before it) then come 3, 5 and 6 cm short; at the pair's weighted distance they came 6 to 11 cm short.
+    constexpr float IdleLeg = .5174f, LowLeg = .9373f;
     // How far the low pose reaches toward the extended one by the time since the top of the flight
     // (lo_air_arm_extend), and the preparation's scale by the touch-down normal's up (landing_distance).
     const float ArmTimes[] = {0, .137f, .219f, .3f}, ArmExtend[] = {.164f, .305f, .375f, .445f};
@@ -174,7 +176,8 @@ namespace
         switch (Motion)
         {
         case ERideMotion::Roll: case ERideMotion::Push: case ERideMotion::Brake: case ERideMotion::Powerslide:
-        case ERideMotion::Manual: case ERideMotion::NoseManual: case ERideMotion::Load: case ERideMotion::Land: return true;
+        case ERideMotion::Manual: case ERideMotion::NoseManual: case ERideMotion::Load: case ERideMotion::Land:
+        case ERideMotion::Switch: return true;
         default: return false;
         }
     }
@@ -204,6 +207,7 @@ bool FRideAnimator::SetBoardIndices(const TArray<FName>& InNames, const TArray<F
     for (int32 I = 0; I < 2; ++I) TruckIndex[I] = Index[1 + I];
     for (int32 I = 0; I < 4; ++I) WheelIndex[I] = Index[3 + I];
     const FTransform& Deck = InReference[DeckIndex];
+    DeckUp = Deck.GetRotation().UnrotateVector(FVector::UpVector);
     for (int32 I = 0; I < 2; ++I)
     {
         TruckFromDeck[I] = InReference[TruckIndex[I]].GetRelativeTransform(Deck);
@@ -260,6 +264,11 @@ void FRideAnimator::Resolve()
     C.LandLow = Load(TEXT("L_HCOM_LIMP_3")); C.LandHigh = Load(TEXT("L_HCOM_HIMP_3")); C.LandGrab = Load(TEXT("L_LCOM_3"));
     C.LandSketchy = Load(TEXT("L_SKETCH_FS_HCOM_LIMP"));
     C.Fakie[0] = Load(TEXT("FAKIE_HEAD_CHANNEL_CYC")); C.Fakie[1] = Load(TEXT("FAKIE_CHANNEL_CYC")); C.Fakie[2] = Load(TEXT("FAKIE_MANUAL_CHANNEL_CYC"));
+    // Native's B_SWITCH blend: each clip ends on the roll it leans like (HCOM_000, N100, P100; LCOM crouched), ridden
+    // the other way round.
+    C.Switch[0][0] = Load(TEXT("R_SWITCH_RIDE_N_0_N")); C.Switch[0][1] = Load(TEXT("R_SWITCH_RIDE_N_2_N"));
+    C.Switch[1][0] = Load(TEXT("R_SWITCH_RIDE_LEAN_0_FS")); C.Switch[1][1] = Load(TEXT("R_SWITCH_RIDE_LEAN_2_FS"));
+    C.Switch[2][0] = Load(TEXT("R_SWITCH_RIDE_LEAN_0_BS")); C.Switch[2][1] = Load(TEXT("R_SWITCH_RIDE_LEAN_2_BS"));
     for (const FTrickNames& T : TrickNames)
     {
         FTrickClips& Clips = C.Tricks[uint8(T.Trick)];
@@ -381,6 +390,11 @@ bool FRideAnimator::PushTiming(bool bFirstPush, float Strong, float& Lead, float
     return true;
 }
 
+float FRideAnimator::SwitchLength() const
+{
+    return HasRig() && C.Switch[0][0] ? Len(C.Switch[0][0]) : 0.f;
+}
+
 FTransform FRideAnimator::Track(const UAnimSequence* Sequence, FName Bone, float Time)
 {
     const USkeleton* Skeleton = Sequence ? Sequence->GetSkeleton() : nullptr;
@@ -440,7 +454,7 @@ void FRideAnimator::Attach(AActor* Owner)
     I->Hold(Clips);
     Mesh = M; Instance = I;
     bFirst = true; Lock = 0; Lift = 0; TruckRoll[0] = TruckRoll[1] = 0; LastKey = nullptr; Last = FRideAnimLayers();
-    FakieWeight = 0; Torso = .5f; FakieTime = 0; bWasFakie = false;
+    FakieWeight = 0; Torso = .5f; FakieTime = 0; bWasFakie = false; LastPlace = LastPoseDeck = FTransform::Identity;
 }
 
 void FRideAnimator::Detach()
@@ -451,7 +465,7 @@ void FRideAnimator::Detach()
 
 void FRideAnimator::UpdateFakie(const FRideBodyPose* Body, float Dt)
 {
-    const bool bFakie = Body && Body->bFakie && !bOverride && C.Fakie[1];
+    const bool bFakie = Body && Body->bFakie && Body->Motion != ERideMotion::Switch && !bOverride && C.Fakie[1];
     const bool bManual = Body && (Body->Motion == ERideMotion::Manual || Body->Motion == ERideMotion::NoseManual);
     const float Target = bManual ? 1.f : Body && Body->Motion == ERideMotion::Powerslide ? 0.f : .5f;
     if (bFakie && !bWasFakie)
@@ -465,10 +479,11 @@ void FRideAnimator::UpdateFakie(const FRideBodyPose* Body, float Dt)
     FakieTime = FakieWeight > 0 ? FakieTime + Dt : 0.f;
 }
 
-void FRideAnimator::Run(const FRideAnimLayers& Layers, float Inertialize, float Dt, bool bCutBoard)
+void FRideAnimator::Run(const FRideAnimLayers& Layers, float Inertialize, float Dt, bool bCutBoard, const FTransform* Turn)
 {
     FRideAnimFrame Frame;
     Frame.Layers = Layers; Frame.Inertialize = Inertialize; Frame.bCutBoard = bCutBoard;
+    if (Turn) { Frame.bTurn = true; Frame.Turn = *Turn; }
     if (FakieWeight > 0)
     {
         // The channel clips by torso, phase-blended: head only (0), head and chest (.5), the manual's (1).
@@ -564,7 +579,7 @@ const UAnimSequence* FRideAnimator::Choose(const FRideBodyPose& B, FRideAnimLaye
         // stretched over the session's phase; later pushes blend the slow and the fast push by speed.
         const float T = At(FMath::Max(B.PushTime, 0.f));
         const bool bFirstPush = B.PushCount == 0;
-        Blend = B.MotionTime < .1f ? .15f : 0.f;
+        Blend = B.MotionTime < .1f ? (B.PreviousMotion == ERideMotion::Switch ? .3f : .15f) : 0.f;
         if (bFirstPush && C.PushInto && T < B.PushLead)
         {
             const float Rate = (Len(C.PushInto) - PushIntoStart) / FMath::Max(.05f, B.PushLead);
@@ -686,7 +701,7 @@ const UAnimSequence* FRideAnimator::Choose(const FRideBodyPose& B, FRideAnimLaye
         Blend = .18f;
         const float AT = At(B.AirTime);
         const float Extend = C.AirExtend ? Curve(ArmTimes, ArmExtend, At(B.FallTime)) : 0.f;
-        const float Low = C.AirLow ? FMath::Clamp((Leg - IdleLeg) / (LowLeg + Extend * (ExtendLeg - LowLeg) - IdleLeg), 0.f, 1.f) : 0.f;
+        const float Low = C.AirLow ? FMath::Clamp((Leg - IdleLeg) / (LowLeg - IdleLeg), 0.f, 1.f) : 0.f;
         L.Add(C.AirIdle, SampleTime(C.AirIdle, AT, true), 1.f - Low);
         L.Add(C.AirLow, SampleTime(C.AirLow, AT, true), Low * (1.f - Extend));
         L.Add(C.AirExtend, SampleTime(C.AirExtend, AT, true), Low * Extend);
@@ -726,6 +741,25 @@ const UAnimSequence* FRideAnimator::Choose(const FRideBodyPose& B, FRideAnimLaye
     case ERideMotion::GetUp:
         Blend = .4f;
         return Roll();
+    case ERideMotion::Switch:
+    {
+        // Turning round on the board (native's B_SWITCH, at the session's rate: 1.25 before a push): the centre clip,
+        // the lean's side (heels or toes) and the crouched ones, like the roll they end on.
+        if (!C.Switch[0][0]) return Roll();
+        const float Lean = FMath::Clamp(B.Lean, -1.f, 1.f);
+        const float Low = FMath::Clamp((B.Crouch - .25f) / .75f, 0.f, 1.f);
+        const float T = FMath::Min(At(FMath::Max(B.SwitchTime, 0.f)) * B.SwitchRate, Len(C.Switch[0][0]));
+        const int32 Side = Lean < 0 ? 1 : 2;
+        for (int32 H = 0; H < 2; ++H)
+        {
+            const float Height = H ? Low : 1.f - Low;
+            L.Add(C.Switch[0][H] ? C.Switch[0][H] : C.Switch[0][0], T, (1.f - FMath::Abs(Lean)) * Height);
+            if (C.Switch[Side][H]) L.Add(C.Switch[Side][H], T, FMath::Abs(Lean) * Height);
+        }
+        if (L.Num == 0) L.Add(C.Switch[0][0], T, 1.f);
+        Blend = B.SwitchRate > 1.f ? .15f : .1f;
+        return C.Switch[0][0];
+    }
     default:
         break;
     }
@@ -800,6 +834,18 @@ void FRideAnimator::PlaceBoard(const FRideBoardPose& Board, TArray<FTransform>& 
     }
 }
 
+FTransform FRideAnimator::RiderDeck(const FRideBodyPose& Body, const FRideBoardPose& Board)
+{
+    return Body.bSwitch ? FTransform(FQuat(FVector::UpVector, PI)) * Board.Deck : Board.Deck;
+}
+
+FTransform FRideAnimator::Placement(const FTransform& Deck, const FTransform& ClipDeck) const
+{
+    FTransform Place;
+    Place.Blend(Deck, ClipDeck.Inverse() * Deck, Lock);
+    return Place;
+}
+
 void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Board, float Dt, TArray<FTransform>& Bones)
 {
     if (!HasRig())
@@ -835,6 +881,19 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
         else if (BlendChange(Last, Layers) > BlendJump * FMath::Max(1.f, Dt * 60.f)) Inertialize = Blend;
     }
     PendingBlend = 0;
+    // The rider turned round on the board (into switch, or back): the clips now stand in his frame turned half a turn
+    // on the board (see the placement below) and play the other stance. The pose so far is taken into the new
+    // placement, so the body cross-fades from where it was: the switch clip shows the turn. The board's bones are
+    // left out (the inertialization's board bone): the board did not turn, and blends from its last clip as it lies.
+    const bool bTurn = !bFirst && Body.Turns != LastTurns;
+    LastTurns = Body.Turns;
+    FTransform Turn;
+    if (bTurn)
+    {
+        // The last frame's deck under the new placement (an inertialization starts from the last frame's pose).
+        Turn = LastPlace * Placement(RiderDeck(Body, Board), LastPoseDeck).Inverse();
+        if (Inertialize <= 0 && !bCut) Inertialize = .15f;
+    }
     const float KeyTime = TimeOf(Layers, Key);
     bool bCutBoard = false;
     if (Inertialize > 0 && Key && LastKey && Key != LastKey)
@@ -847,7 +906,7 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
         bCutBoard = FMath::RadiansToDegrees(From.AngularDistance(To)) > TurnedBoard;
     }
     UpdateFakie(&Body, Dt);
-    Run(Layers, Inertialize, Dt, bCutBoard);
+    Run(Layers, Inertialize, Dt, bCutBoard, bTurn && Inertialize > 0 ? &Turn : nullptr);
     LastKey = Key; LastKeyTime = KeyTime; LastMotion = Body.Motion; LastMotionTime = Body.MotionTime;
 
     const TArray<FTransform>& Pose = Mesh->GetComponentSpaceTransforms();
@@ -860,10 +919,14 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
     // board lies exactly on the deck (Lock 1).
     const float Target = bHold ? Lock : FMath::Clamp(Layers.Lock, 0.f, 1.f);
     Lock = bFirst || bCut ? Target : FMath::FInterpConstantTo(Lock, Target, Dt, Target < Lock ? 30.f : 10.f);
-    FTransform Place;
-    Place.Blend(Board.Deck, Pose[DeckIndex].Inverse() * Board.Deck, Lock);
+    // Riding switch the clips stand in the rider's frame (RiderDeck); their board turns back about the deck's normal,
+    // so the deck, the trucks and the wheels are the session's board as it is (its plane and the clip's tilts and
+    // flips as they are).
+    const FTransform Place = Placement(RiderDeck(Body, Board), Pose[DeckIndex]);
+    LastPlace = Place; LastPoseDeck = Pose[DeckIndex];
     Bones.SetNum(Pose.Num(), EAllowShrinking::No);
     for (int32 I = 0; I < Pose.Num(); ++I) Bones[I] = Pose[I] * Place;
+    if (Body.bSwitch) Bones[DeckIndex] = FTransform(FQuat(DeckUp, PI)) * Bones[DeckIndex];
     LevelTrucks(Board, Bones[DeckIndex], Dt);
     PlaceBoard(Board, Bones);
     // On the ground the whole pose moves along the ground's normal (the feet stay on the deck): rolling, so that the
