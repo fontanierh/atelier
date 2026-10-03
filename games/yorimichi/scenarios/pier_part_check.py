@@ -23,16 +23,29 @@ def assess(take):
         grind = sum(s.get('mode') == '3' for s in states) / 60
         grind_runs=sum(s.get('mode')=='3' and (i==0 or states[i-1].get('mode')!='3') for i,s in enumerate(states))
         air = sum(s.get('mode') == '2' for s in states) / 60
+        grab = sum(s.get('mode') == '2' and bool(row.get('inputs',{}).get('grab_left') or
+                    row.get('inputs',{}).get('grab_right')) for row,s in zip(ride,states)) / 60
         manual = sum(s.get('manual') == '1' for s in states) / 60
         dismounted=sum(s.get('retail')=='BipedGround' for s in states)
+        captured=[s for row,s in zip(ride,states) if row['frame']%2==0]
+        pose_repeats=sum(a.get('tick') is not None and a['tick']==b.get('tick') for a,b in zip(captured,captured[1:]))
         needed=requirements.get(name,{})
-        meets=(not needed.get('grind') or grind>.05) and grind_runs>=needed.get('grind_runs',0) and (not needed.get('manual') or manual>.05) and (not needed.get('air') or air>.05)
-        shots[name] = dict(ok=not bails and not bails_counter and not dismounted and distance > 8 and meets and states[-1].get('mode')=='1',
+        meets=all([
+            not needed.get('grind') or grind>.05,
+            grind_runs>=needed.get('grind_runs',0),
+            not needed.get('manual') or manual>.05,
+            not needed.get('air') or air>.05,
+            not needed.get('grab') or (grab>.05 and any('Grab' in combo for combo in combos)),
+            all(trick in ' / '.join(combos) for trick in needed.get('tricks',[])),
+        ])
+        clean=not bails and not bails_counter and not dismounted and not pose_repeats
+        shots[name] = dict(ok=clean and distance > 8 and meets and states[-1].get('mode')=='1',
                            seconds=round(len(ride)/60, 2), distance_m=round(distance, 2),
                            requirements=needed, manual_seconds=round(manual,2),
-                           grind_seconds=round(grind, 2), grind_runs=grind_runs, air_seconds=round(air, 2),
+                           grind_seconds=round(grind, 2), grind_runs=grind_runs, air_seconds=round(air, 2), grab_input_seconds=round(grab,2),
                            bail_frames=bails, bails=max(0, bails_counter), combos=combos,
                            dismounted_frames=dismounted,
+                           captured_pose_repeats=pose_repeats,
                            start=[ride[0][k] for k in ('x', 'y', 'z')],
                            end=[ride[-1][k] for k in ('x', 'y', 'z')])
     frames = list(take.glob('frame_*.png')) if done['filmed'] else []

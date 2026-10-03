@@ -50,6 +50,22 @@ The entrance remains in the original world position despite the larger deck. `AS
 meshes, clearance and registered grind paths from `park.json`. Floor paint and planting have no collision. The
 pier look volume uses direct shadows, skylight and baked vertex AO, avoiding Lumen's unstable patches on thin decks.
 
+## Film a bounded batch
+
+Start the desktop game, then capture one of the rehearsed route groups:
+
+```sh
+uv run atelier play yorimichi --profile desktop-1440
+uv run python games/yorimichi/tools/pier_film.py --take street-01 --batch street
+```
+
+Use a fresh take name every time. `--batch transition` covers bowl, return and mini airs; `--rehearse` records
+telemetry without images. The tool checks checkout ownership before touching the live bridge, validates the take,
+and quits the game to release the render slot. `--keep-game` instead returns the controls. Evidence includes every
+input and state; bails, silent walking transitions, repeated captured poses and missing frames reject a take.
+The capture deadline defaults to 300 seconds, including final image saving. The mixer preserves
+16:9 proportions, combines recorded board audio with an original procedural beat, and exports 1080p and 720p MP4s.
+
 ## Sources
 
 - `layout.py`: dimensions, profiles, routes, contact lines and the coastal path.
@@ -58,4 +74,5 @@ pier look volume uses direct shadows, skylight and baked vertex AO, avoiding Lum
 - `build.py`: geometry build, checks and gameplay contract.
 - `review.py`: textured overview, street, rail-lane, sunset, bowl and mini renders.
 - `tools/pier_textures.py`: paid source authoring and offline material finishing.
+- `tools/pier_film.py`: bounded capture, validation and game handoff.
 - `unreal/Scripts/import_skatepark.py`: material graph, import and collision checks.

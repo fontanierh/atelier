@@ -41,7 +41,8 @@ def gain(distance):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('take'); ap.add_argument('--out', default='showreel'); ap.add_argument('--music', type=Path, help='Original or licensed soundtrack WAV'); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument('take'); ap.add_argument('--out', default='showreel'); ap.add_argument('--music', type=Path, help='Original or licensed soundtrack WAV')
+    ap.add_argument('--title', help='Opening title over the first five seconds'); a = ap.parse_args()
     take = Path(a.take)
     done = json.loads((take / 'done.json').read_text())
     frames = done['film_frames']; seconds = frames / FILM
@@ -92,7 +93,13 @@ def main():
     mp4 = take / f'{a.out}.mp4'
     # Desktop capture follows the monitor aspect; fixed cameras letterbox to 16:9.
     # Centre-crop that frame before scaling so the skater keeps correct proportions.
-    vf = f"crop='min(iw,ih*16/9)':'min(ih,iw*9/16)',scale=1920:1080,fade=t=in:st=0:d=0.4,fade=t=out:st={seconds - 1.:.3f}:d=1"
+    vf = "crop='min(iw,ih*16/9)':'min(ih,iw*9/16)',scale=1920:1080"
+    if a.title:
+        title = take / f'{a.out}-title.txt'
+        title.write_text(a.title, encoding='utf-8')
+        filename = str(title.resolve()).replace('\\', '\\\\').replace(':', '\\:').replace("'", "'\\''")
+        vf += f",drawtext=textfile='{filename}':font='Arial\\:style=Bold':fontsize=72:fontcolor=white:x=96:y=96:shadowcolor=black@0.35:shadowx=2:shadowy=2:enable='between(t,0.6,5)':alpha='if(lt(t,1.2),(t-0.6)/0.6,if(gt(t,4.4),(5-t)/0.6,1))'"
+    vf += f",fade=t=in:st=0:d=0.4,fade=t=out:st={seconds - 1.:.3f}:d=1"
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(FILM), '-i', str(take / ('frame_%05d.' + done.get('frame_extension', 'jpg'))), '-i', str(out_wav), '-vf', vf,
                     '-c:v', 'libx264', '-threads', '4', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', str(mp4)], check=True)
     small = take / f'{a.out}-720p.mp4'

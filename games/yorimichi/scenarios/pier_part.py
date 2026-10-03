@@ -28,7 +28,7 @@ SHOTS = globals().get('SHOTS_OVERRIDE') or [
     dict(name='arrival', start=(-60,48), heading=0, seconds=6,
          events=[(0,{'push':True})],
          camera=('sweep',(118,-143,75),(108,-128,62),(0,0,.8),55)),
-    dict(name='promenade', start=(-60, 48), heading=0, seconds=12,
+    dict(name='promenade', start=(-60, 48), heading=0, seconds=12,needs={'tricks':['Kickflip','360 Flip']},
          events=[(0, {'push': True}), (3.2, {}),
                  (3.6, ('flick', 'kickflip')), (6.7, ('flick', '360_flip'))],
          camera=('chase', -9, 0)),
@@ -58,15 +58,17 @@ SHOTS = globals().get('SHOTS_OVERRIDE') or [
     dict(name='bowl', start=(14.7,-10), heading=0, seconds=10, needs={'air':True},
          events=[(0,{'push':True}),(.6,{})], pump=True,
          camera=('fixed',(35,-19,1.3),82,.45)),
-    dict(name='east_air', start=(53,27), heading=0, seconds=10, needs={'air':True},
+    dict(name='east_air', start=(53,27), heading=0, seconds=10, needs={'air':True,'grab':True},grab_air=True,
          events=[(0,{'push':True}),(4.5,{}),(5.,{'grab_left':True}),(6.1,{})],
          camera=('fixed',(59,19,1.2),82,.6)),
-    dict(name='mini', start=(-23, -18), heading=180, seconds=10,
+    dict(name='mini', start=(-23, -18), heading=180, seconds=10,needs={'air':True,'grab':True},grab_air=True,
          events=[(0, {'push': True}), (3.5, {}), (4.2, {'grab_left': True}), (5.2, {})],
          camera=('fixed', (-22, -27, 1.1), 80, .6)),
 ]
 if ONLY:
     SHOTS = [s for s in SHOTS if s['name'] in ONLY]
+for shot in SHOTS:
+    shot['seconds']=globals().get('DURATIONS',{}).get(shot['name'],shot['seconds'])
 assert SHOTS, 'No shots selected'
 pc = unreal.GameplayStatics.get_player_controller(L.game_world(), 0)
 cm = unreal.GameplayStatics.get_player_camera_manager(L.game_world(), 0)
@@ -134,7 +136,7 @@ def begin(i):
 
 def finish():
     live.stop('pier_part')
-    live.skate_input()
+    live.skate_release()
     L.fixed_step(0)
     L.film_hud(False)
     MV.restore_player_camera()
@@ -199,6 +201,7 @@ def run(dt):
         v=pawn.get_velocity()
         inputs['grab_right']=mode=='1' and h<1.25 and v.x>0
         if mode=='2' and v.z>0: inputs['grab_left']=True
+    if shot.get('grab_air') and mode=='2': inputs['grab_left']=True
     if 'brake_x' in shot and x>=shot['brake_x']: inputs={'brake':True}
     live.skate_input(**inputs)
     raw = L.skate_state()

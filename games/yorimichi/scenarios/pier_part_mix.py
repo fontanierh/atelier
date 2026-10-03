@@ -95,7 +95,8 @@ def assemble(takes, out):
         fps_sim=60, fps_film=30, filmed=True, frame_extension='png', shots=marks), indent=2)+'\n')
     beat(out/'salt-air.wav', film/30)
     subprocess.run([sys.executable, str(Path(__file__).with_name('skate_mix_showreel.py')),
-                    str(out), '--out', 'sunset-pier', '--music', str(out/'salt-air.wav')], check=True)
+                    str(out), '--out', 'sunset-pier', '--music', str(out/'salt-air.wav'),
+                    '--title', 'SUNSET PIER'], check=True)
     print('SUNSET PIER PART', out/'sunset-pier.mp4')
 
 
