@@ -19,6 +19,9 @@ class ArrayTensor:
         return self.value
 
 
+@unittest.skipUnless(
+    importlib.util.find_spec("scipy"), "requires scipy from the isolated Kimodo environment"
+)
 class RetargetTests(unittest.TestCase):
     def setUp(self):
         from types import SimpleNamespace

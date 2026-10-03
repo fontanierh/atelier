@@ -1,0 +1,30 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "A production-quality seamless tileable game material albedo texture, completely flat orthographic view of the surface, edge to edge with identical scale everywhere. Painterly realism for a beautiful stylised Japanese coastal adventure game: tactile, finely observed materials with soft hand-painted microdetail. Uniform diffuse lighting, no cast shadows, no specular highlights, no perspective, no objects, no text, no border. Seamless in both directions. The surface is beautiful weathered Japanese cedar timber, long straight grain, fine pores and small knots, warm honey brown with softly bleached salt-air fibres, grain runs vertically",
+  "purpose": "Sunset Pier material",
+  "status": "done",
+  "started_at": "2026-10-02T23:00:51.091110+00:00",
+  "usage": {
+    "input_tokens": 125,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 125
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1881
+  },
+  "png_sha256": "849367e7bb56286440191b9e5550bd1c1ecde578223f1f22159f5d3514fb72ae",
+  "output": {
+    "file": "wood.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-02T23:01:28.935174+00:00"
+}

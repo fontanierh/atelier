@@ -1,11 +1,12 @@
 """Mix and encode a filmed skate showreel (skate_showreel.py).
 
     python games/yorimichi/scenarios/skate_mix_showreel.py build/yorimichi/skatefilm/<take> [--out showreel] [--audio DIR]
+        [--music WAV] [--title TEXT]
 
 One-shots come from audio.json (sim frames at 60 fps), attenuated by distance to the camera (the game's sphere: full
 inside 5 m, -48 dB at 50 m) and panned by bearing; the board's five loops follow loops.csv (volume and pitch every sim
 frame, played through a phase accumulator so pitch glides are smooth); the countryside ambience sits under everything.
-The 30 fps JPG frames and the mix become H.264/AAC MP4s (1080p and 720p). The sounds are read from this checkout's
+The 30 fps viewport frames and the mix become H.264/AAC MP4s (1080p and 720p). The sounds are read from this checkout's
 build/yorimichi/audio, or --audio (another build's audio folder); a one-shot missing there falls back to the file it
 was imported from. mix() is the same for any take whose frames, cameras, loops and sounds are already on one clock
 (megapark_ride_film_mix.py cuts a Ride film into that form).
@@ -57,10 +58,11 @@ def load(take):
     return done['film_frames'], cams, rows, events
 
 
-def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None):
+def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None, music=None, title=None):
     """Mix the sounds under `frames` film frames (the ffmpeg input `pattern`, 30 fps) and encode the MP4s. cams: per
     film frame [frame, x, y, z, yaw, ...] (Unreal cm, degrees); rows: the loops' 'volume pitch' x5 per 60 Hz frame;
-    events: the one-shots, their 'frame' on the 60 Hz clock (negative: before the film)."""
+    events: the one-shots, their 'frame' on the 60 Hz clock (negative: before the film). music: a soundtrack WAV under
+    the mix; title: text over the first five seconds."""
     audio = Path(audio or ROOT / 'audio')
     seconds = frames / FILM
     length = int(seconds * RATE)
@@ -96,6 +98,9 @@ def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None):
         mix_[:, 0] += s * vol * .9; mix_[:, 1] += s * vol * .9
     amb = read(audio / AMBIENCE)
     mix_ += (np.tile(amb, int(math.ceil(length / len(amb))))[:length] * .45)[:, None]
+    if music:
+        track = read(music)
+        mix_ += (np.tile(track, int(math.ceil(length / len(track))))[:length] * .30)[:, None]
     mix_ = np.tanh(mix_ * 1.1) / math.tanh(1.1)
     mix_ *= 10 ** (-1 / 20) / max(1e-6, float(np.abs(mix_).max()))
     fi, fo = int(.4 * RATE), int(1. * RATE)
@@ -104,11 +109,19 @@ def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None):
     with wave.open(str(out_wav), 'wb') as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(RATE); w.writeframes((np.clip(mix_, -1, 1) * 32767).astype('<i2').tobytes())
     mp4 = take / f'{out}.mp4'
-    vf = f'fade=t=in:st=0:d=0.4,fade=t=out:st={seconds - 1.:.3f}:d=1'
+    # Desktop capture follows the monitor aspect; fixed cameras letterbox to 16:9.
+    # Centre-crop that frame before scaling so the skater keeps correct proportions.
+    vf = "crop='min(iw,ih*16/9)':'min(ih,iw*9/16)',scale=1920:1080"
+    if title:
+        text = take / f'{out}-title.txt'
+        text.write_text(title, encoding='utf-8')
+        filename = str(text.resolve()).replace('\\', '\\\\').replace(':', '\\:').replace("'", "'\\''")
+        vf += f",drawtext=textfile='{filename}':font='Arial\\:style=Bold':fontsize=72:fontcolor=white:x=96:y=96:shadowcolor=black@0.35:shadowx=2:shadowy=2:enable='between(t,0.6,5)':alpha='if(lt(t,1.2),(t-0.6)/0.6,if(gt(t,4.4),(5-t)/0.6,1))'"
+    vf += f",fade=t=in:st=0:d=0.4,fade=t=out:st={seconds - 1.:.3f}:d=1"
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(FILM), '-i', str(pattern), '-i', str(out_wav), '-vf', vf,
-                    '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', str(mp4)], check=True)
+                    '-c:v', 'libx264', '-threads', '4', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', str(mp4)], check=True)
     small = take / f'{out}-720p.mp4'
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(mp4), '-vf', 'scale=1280:720', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22',
+    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(mp4), '-vf', 'scale=1280:720', '-c:v', 'libx264', '-threads', '4', '-preset', 'slow', '-crf', '22',
                     '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', str(small)], check=True)
     return {'frames': frames, 'seconds': round(seconds, 2), 'video': str(mp4), 'video_720p': str(small), 'mb': round(small.stat().st_size / 1e6, 1)}
 
@@ -116,10 +129,13 @@ def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('take'); ap.add_argument('--out', default='showreel')
     ap.add_argument('--audio', help='the audio folder of another build (default: this checkout\'s build/yorimichi/audio)')
+    ap.add_argument('--music', type=Path, help='Original or licensed soundtrack WAV')
+    ap.add_argument('--title', help='Opening title over the first five seconds')
     a = ap.parse_args()
     take = Path(a.take)
     frames, cams, rows, events = load(take)
-    print(json.dumps(mix(take, take / 'frame_%05d.jpg', frames, cams, rows, events, a.out, a.audio)))
+    ext = json.loads((take / 'done.json').read_text()).get('frame_extension', 'jpg')
+    print(json.dumps(mix(take, take / f'frame_%05d.{ext}', frames, cams, rows, events, a.out, a.audio, a.music, a.title)))
 
 
 if __name__ == '__main__':

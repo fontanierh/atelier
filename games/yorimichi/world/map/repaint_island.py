@@ -1,27 +1,17 @@
-"""Repaint the south-west island on the painted world map, and only there.
+"""Repaint Sunset Pier and its offshore temple island from the exact game layout.
 
-    uv run python games/yorimichi/world/map/repaint_island.py prepare    # crop inputs from the committed sheet and island.py
-    uv run python games/yorimichi/world/map/repaint_island.py paint      # one Sunburst call, never sent twice
-    uv run python games/yorimichi/world/map/repaint_island.py register   # fit, blend, check -> world_map_candidate.png
-    uv run python games/yorimichi/world/map/promote_map.py build/yorimichi/map/island_repaint/world_map_candidate.png
+    atelier build yorimichi world.layout
+    python games/yorimichi/world/map/build_map.py
+    python games/yorimichi/world/map/repaint_island.py prepare
+    python games/yorimichi/world/map/repaint_island.py paint
+    python games/yorimichi/world/map/repaint_island.py register
+    python games/yorimichi/world/map/promote_map.py build/yorimichi/map/sunset_pier_repaint/world_map_candidate.png
 
-The same local correction as the mini-mega landmark (docs/WORLD_MAP.md): the rest of the sheet, its bounds, its
-projection and the travel zones stay as they are. Work files go to build/yorimichi/map/island_repaint/.
-
-- prepare keeps a copy of the committed sheet and its provenance (parent.png, parent_provenance.json), finds the old
-  painted island and the new one (island.py's heightfield through the map projection), picks a 3:2 crop box around
-  both and writes current-crop.png (that box of the sheet) and layout-crop.png (a plain plan of the island as built:
-  its coastline, rock, cove, every placed tree crown by species, the stair with its torii and the temple), both at
-  1536 x 1024.
-- paint sends them with the aerial island concept to gpt-image-2.5-sunburst (quality high, /v1/images/edits). The
-  call's provenance file, painted/island_repaint.provenance.json, is its ledger (the repository has no shared ledger
-  module): written with status `submitted` before the call and completed or marked failed after it. With that file
-  present the call is never sent again; delete it only to pay for a new painting.
-- register fits the painting to the projection (scale and offset that best lay its island on the data island),
-  matches the sea colour, blends it in through a feathered mask around the old and new islands only, and checks
-  that every pixel outside the mask is identical to the parent. It writes world_map_candidate.png, the
-  paint_provenance.json that promote_map.py copies to painted/world_map_provenance.json (the parent's record nested
-  under `parent`), registration-check.json and registration-check.jpg (the data coastline and stair over the result).
+The current revision paints only the southwest patch. Its plan follows the map projection,
+including the extended southern coverage, the pier contract, and the island placement.
+One Sunburst high call is recorded by atelier.ai.ledger before and after submission;
+existing provenance prevents a second call. The island and pier are registered separately.
+Pixels outside the local edit mask must equal the parent. Work/evidence stay in build/.
 """
 import sys as _sys; from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parents[1])); import yori  # noqa: E402
@@ -34,12 +24,14 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from map_projection import BOUNDS, X_KNOTS, Y_KNOTS, project, unproject
 from southwest import island as ISL
+from pier_plan import deck_polygon,draw_pier
 
 SHEET = yori.MAP / 'painted' / 'world_map.png'
 PROVENANCE = yori.MAP / 'painted' / 'world_map_provenance.json'
-LEDGER = yori.MAP / 'painted' / 'island_repaint.provenance.json'
+LEDGER = yori.MAP / 'painted' / 'sunset_pier_repaint.provenance.json'
 CONCEPT = yori.ASSETS / 'southwest' / 'concepts' / 'aerial.jpg'
-WORK = yori.OUT / 'map' / 'island_repaint'
+WORK = yori.OUT / 'map' / 'sunset_pier_repaint'
+PARK = json.load(open(yori.REGIONS / 'skatepark' / 'park.json'))
 OW, OH = 1536, 1024                  # the painting, and the sheet (both 3:2)
 MARGIN = 40                          # sheet pixels of sea kept around both islands in the crop
 OLD_SEED = (210, 880)                # a sheet pixel inside the old painted island
@@ -95,6 +87,13 @@ def data_land(box, factor=1):
     w, h = (box[2] - box[0]) * factor, (box[3] - box[1]) * factor
     sx, sy = np.meshgrid(box[0] + (np.arange(w) + .5) / factor, box[1] + (np.arange(h) + .5) / factor)
     return heights(sx, sy)[0] > 0.0
+
+
+def pier_land(box):
+    im=Image.new('L',(box[2]-box[0],box[3]-box[1]))
+    ImageDraw.Draw(im).polygon([(float(sx)-box[0],float(sy)-box[1])
+                               for sx,sy in (to_sheet(x,y) for x,y in deck_polygon(PARK))],fill=255)
+    return np.asarray(im)>0
 
 
 # ---- masks without scipy: PIL filters and flood fill
@@ -163,12 +162,19 @@ def layout(box):
     u = (np.arange(OW // half) + .5) * half; v = (np.arange(OH // half) + .5) * half
     sx, sy = np.meshgrid(box[0] + u / k, box[1] + v / k)
     z, lx, ly = heights(sx, sy)
-    sl = ISL.slope_deg(lx, ly)
     gy, gx = np.gradient(np.where(z > 0, z, 0.0))
+    wx,wy=to_world(sx,sy)
+    dx,dy=np.gradient(wx,axis=1),np.gradient(wy,axis=0)
+    sx_=np.divide(gx,dx,out=np.zeros_like(gx),where=np.abs(dx)>1e-9)
+    sy_=np.divide(gy,dy,out=np.zeros_like(gy),where=np.abs(dy)>1e-9)
+    sl=np.degrees(np.arctan(np.hypot(sx_,sy_)))
     shade = np.clip(.78 + .09 * (-gx - gy), .55, 1.1)[..., None]
     cove = (np.hypot(lx - ISL.LANDING[0], ly - ISL.LANDING[1]) < ISL.COVE_R + 4) & (z < 4.0)
     rock = ((sl > ISL.ROCK_SLOPE) | (z < ISL.SHORE_ROCK_Z)) & ~cove
-    col = np.empty(z.shape + (3,)); col[:] = (58, 108, 150)                                  # sea
+    # The full generated plan supplies the mainland coast and nearby structures in the same frame.
+    rough=Image.open(yori.OUT/'map/rough.png').convert('RGB').resize((OW,OH),Image.LANCZOS)
+    base=rough.crop(box).resize((OW//half,OH//half),Image.LANCZOS)
+    col=np.asarray(base,float).copy()
     col[z > 0] = (138, 164, 92); col[rock & (z > 0)] = (122, 116, 108); col[cove & (z > 0)] = (228, 210, 164)
     col = np.where((z > 0)[..., None], col * shade, col)
     im = Image.fromarray(np.clip(col, 0, 255).astype(np.uint8)).resize((OW, OH), Image.LANCZOS)
@@ -198,6 +204,10 @@ def layout(box):
     for ex, ey in ((-13, -10), (13, -10), (13, 10), (-13, 10)):
         corners.append(at(tx + ex * math.cos(a) - ey * math.sin(a), ty + ex * math.sin(a) + ey * math.cos(a)))
     d.polygon(corners, fill=(52, 58, 96), outline=(206, 64, 40), width=3)
+    def sheet_at(x,y):
+        sx_,sy_=to_sheet(x,y)
+        return (float(sx_)-box[0])*k,(float(sy_)-box[1])*k
+    draw_pier(d,sheet_at,m,PARK)
     return im
 
 
@@ -211,45 +221,44 @@ def prepare(args):
     old = np.zeros(parent.shape[:2], bool)
     part = parent[region[1]:region[3], region[0]:region[2]]
     land = erode(dilate(painted_land(part), 2), 2)
-    old[region[1]:region[3], region[0]:region[2]] = component(land, (OLD_SEED[0] - region[0], OLD_SEED[1] - region[1]))
-    new = np.zeros_like(old); new[region[1]:region[3], region[0]:region[2]] = data_land(region)
+    main=component(land,(OLD_SEED[0]-region[0],OLD_SEED[1]-region[1]))
+    # Include the previous sea stacks, which are disconnected from the main island.
+    old[region[1]:region[3], region[0]:region[2]] = land & dilate(main,32)
+    new = np.zeros_like(old); new[region[1]:region[3], region[0]:region[2]] = data_land(region)|pier_land(region)
     box = crop_box(old, new)
     Image.fromarray(parent).crop(box).resize((OW, OH), Image.LANCZOS).save(WORK / 'current-crop.png')
     layout(box).save(WORK / 'layout-crop.png')
     info = dict(crop_box=box, old_island_bbox=bbox(old), new_island_bbox=bbox(new), region=region,
                 parent_file_sha256=sha((WORK / 'parent.png').read_bytes()), parent_pixels_sha256=sha(parent.tobytes()))
+    Image.fromarray(old.astype(np.uint8)*255).save(WORK/'old-land-mask.png')
     json.dump(info, open(WORK / 'prepare.json', 'w'), indent=2)
     print('prepare:', json.dumps(info))
 
 
 # ---- paint
 PROMPT = (
-    'Image 1 is a crop of the hand-painted watercolour world map of Yorimichi, a stylised Japanese autumn '
-    'exploration game: a top-down map, north up, showing a small round wooded island in a blue sea. Image 2 is the '
-    'exact plan of the redesigned island as it is now built in the game, at the same scale and in the same place in '
-    'the frame: a flat diagram with blue sea, green grass, grey rock cliffs, a pale sand cove, one coloured disc for '
-    'every tree crown (dark green pines and cedars, red and orange maples, gold ginkgo), the pale stone stairway with '
-    'red torii marks, and the temple (dark indigo roof) on its round stone terrace. Image 3 is a concept painting of '
-    'the same island from the air, for its character.\n\n'
-    'Paint the same map crop as Image 1 with the new island: keep Image 1\'s framing, scale, paper texture, colours '
-    'and watercolour style exactly, and keep the sea and anything else outside the island as it is in Image 1. '
-    'Replace the old round island with the island of Image 2, following its plan exactly: the same outline and size, '
-    'the rocky headlands, the small pale sand cove on the north-west side, the small rocky sea stacks, the zigzag '
-    'stone stairway from the cove up to the temple terrace, and the temple, all exactly where Image 2 has them. Paint '
-    'it in Image 1\'s map style with Image 3\'s character: dark grey-brown rock cliffs with a thin line of white surf '
-    'along the whole shore, fallen boulders at their feet, the forest in the masses and colours of Image 2 (dark '
-    'green pine and cedar, drifts of red-orange maple and gold ginkgo, a few grassy glades) drawn as small painted '
-    'trees seen from above like the trees of Image 1, a small temple with a dark indigo roof, and tiny vermilion '
-    'torii along the stair.\n\n'
-    'Top-down map view like Image 1, not the oblique view of Image 3. No text, labels, pins, markers, frames, compass '
-    'or legend, no other islands, boats or buildings besides the temple and the torii, and no diagram look: a '
-    'painted map.'
+    'Use case: precise-object-edit. This is a local correction to Yorimichi\'s hand-painted watercolour world map. '
+    'Image1 is the edit target: the existing southwest map crop. Image2 is an exact north-up plan in the same '
+    'frame and scale, derived from the game: the enlarged Sunset Pier and the temple island moved50m farther '
+    'offshore. Image3 supplies the island\'s appearance only; follow Image2 for all positions and outlines. '
+    'Keep Image1\'s framing, map style, autumn colours, textured paper and blue sea. Change only the pier, the '
+    'island and their immediate sea/shore edges. Preserve all other mainland roads, forest and buildings. '
+    'Add the large rectangular170x132m concrete skate pier exactly where Image2 draws it, attached to the '
+    'mainland at its north side. Paint its teal bowl, mini-ramp, curved banks, street ledges, stairs, long rails '
+    'and small trees as tiny recognisable map features, following Image2. The pier is a skate plaza. '
+    'Replace the island at its old location with open blue water, then paint exactly one island at Image2\'s '
+    'new location and outline. Match its rocky headlands and four separate sea stacks, pale northwest landing '
+    'cove, zigzag stair with tiny vermilion torii, indigo-roof temple and autumn woods. Follow Image2\'s southern '
+    'map projection and size exactly. Leave a clearly visible channel of blue water between the pier and the '
+    'island\'s northern headland, as in Image2. Top-down map view, same scale, no text, pins, labels, frame or legend. '
+    'No extra islands or buildings. Do not retain the old island as a ghost or duplicate.'
 )
 
 
 def paint(args):
     sys.path.insert(0, str(yori.GAME / 'tools'))
-    from treehouse_art import MODEL, QUALITY, rel, redact, sunburst
+    from treehouse_art import MODEL, QUALITY, rel, sunburst
+    from atelier.ai.ledger import run_once
     inputs = [WORK / 'current-crop.png', WORK / 'layout-crop.png', CONCEPT]
     missing = [rel(p) for p in inputs if not p.exists()]
     if missing: sys.exit(f'paint: missing {missing}; run prepare first')
@@ -259,26 +268,21 @@ def paint(args):
         sys.exit(f'paint: {rel(LEDGER)} exists (status {json.load(open(LEDGER)).get("status")}): the call is never sent twice')
     from atelier.env import require
     require('OPENAI_API_KEY')                       # loads the ignored .env; never prints the value
-    record = dict(stage='world-map-island-repaint', status='submitted', requested_model=MODEL, quality=QUALITY,
+    record = dict(stage='world-map-sunset-pier-repaint', requested_model=MODEL, quality=QUALITY,
                   size=f'{OW}x{OH}', endpoint='/v1/images/edits', execution='games/yorimichi/world/map/repaint_island.py',
                   prompt=PROMPT, prompt_sha256=sha(PROMPT.encode()),
                   reference_files={rel(p): sha(p.read_bytes()) for p in inputs},
                   crop_box=json.load(open(WORK / 'prepare.json'))['crop_box'], started_at=now())
-    LEDGER.write_text(json.dumps(record, indent=2) + '\n')          # recorded before the paid call
-    t = time.time()
-    try:
+    def operation():
+        t=time.time()
         png, usage = sunburst(PROMPT, f'{OW}x{OH}', inputs)
         (WORK / 'generated.png').write_bytes(png)
-        record.update(status='done', usage=usage, output={'build/yorimichi/map/island_repaint/generated.png': sha(png)},
-                      error=None)
-    except Exception as e:  # noqa: BLE001 - recorded, never retried
-        record.update(status='failed', error=redact(e)[:600])
-    record.update(finished_at=now(), elapsed_seconds=round(time.time() - t, 1),
-                  hashes='of the files as the API saw and returned them; the generated crop is kept outside the '
-                         'repository, its blend is the committed sheet')
-    LEDGER.write_text(json.dumps(record, indent=2) + '\n')
-    print('paint:', record['status'], record.get('error') or '', f'({record["elapsed_seconds"]} s)')
-    if record['status'] != 'done': sys.exit(1)
+        return dict(usage=usage,output={rel(WORK/'generated.png'):sha(png)},elapsed_seconds=round(time.time()-t,1),
+                    hashes='Input file hashes; output is the returned PNG. The registered crop is the committed sheet.')
+    try:result=run_once(LEDGER,record,operation)
+    except Exception as error:
+        sys.exit(f'paint: submission uncertain ({type(error).__name__}); inspect the ledger, do not resubmit')
+    print('paint:',result['status'],f'({result["elapsed_seconds"]} s)')
 
 
 # ---- register
@@ -288,11 +292,41 @@ def warp(im, box, p, resample=Image.BICUBIC):
     sx, sy, tx, ty = p; w, h = box[2] - box[0], box[3] - box[1]; k = OW / w
     small = im.resize((max(1, round(OW / k * sx)), max(1, round(OH / k * sy))), Image.LANCZOS)   # at the sheet's scale
     ax, ay = small.width / (OW / k * sx), small.height / (OH / k * sy)                              # rounding of that size
-    return small.transform((w, h), Image.AFFINE, (ax, 0, -tx * ax, 0, ay, -ty * ay), resample=resample)
+    # The fit can leave the painting's canvas. Extend it with its own open sea, never black pixels.
+    fill=tuple(int(v) for v in np.median(np.asarray(im)[OH//2:,OW*2//3:].reshape(-1,3),axis=0)) if im.mode=='RGB' else 0
+    return small.transform((w, h), Image.AFFINE, (ax, 0, -tx * ax, 0, ay, -ty * ay), resample=resample,fillcolor=fill)
 
 
 def iou(a, b):
     return float(np.minimum(a, b).sum() / max(np.maximum(a, b).sum(), 1e-6))
+
+
+def fit_patch(gen,box,target,centre,clip=None):
+    """Register each landmark independently so a fit of the island cannot move the pier."""
+    k=OW/(box[2]-box[0])
+    gl=erode(dilate(painted_land(np.asarray(gen)),3),3)
+    if clip is not None:
+        allowed=Image.fromarray(clip.astype(np.uint8)*255).resize((OW,OH),Image.NEAREST)
+        gl &= np.asarray(allowed)>127
+    seed=(int((centre[0]-box[0])*k),int((centre[1]-box[1])*k))
+    main=component(gl,seed)
+    if main.sum()<1000:sys.exit('register: no painted landmark at its data centre')
+    mask=Image.fromarray(main.astype(np.uint8)*255)
+    target_soft=np.asarray(Image.fromarray(target.astype(np.uint8)*255).filter(ImageFilter.GaussianBlur(.7)),float)/255
+    def score(p):return iou(np.asarray(warp(mask,box,p,Image.BILINEAR),float)/255,target_soft)
+    gy,gx=np.nonzero(main);dy,dx=np.nonzero(target)
+    s0=math.sqrt(target.sum()/(main.sum()/k/k))
+    p=[s0,s0,dx.mean()-gx.mean()/k*s0,dy.mean()-gy.mean()/k*s0]
+    best=score(p);steps=[.02,.02,2.,2.]
+    while max(steps[2:])>.124:
+        moved=False
+        for i in range(4):
+            for sign in (1,-1):
+                q=list(p);q[i]+=sign*steps[i];value=score(q)
+                if value>best+1e-5:p,best,moved=q,value,True
+        if not moved:steps=[v/2 for v in steps]
+    info=dict(scale=[round(p[0],4),round(p[1],4)],offset_px=[round(p[2],2),round(p[3],2)],iou=round(best,4))
+    return np.asarray(warp(gen,box,p),float),np.asarray(warp(mask,box,p,Image.BILINEAR))>127,info
 
 
 def register(args):
@@ -300,39 +334,27 @@ def register(args):
     parent_im = Image.open(WORK / 'parent.png').convert('RGB'); parent = np.asarray(parent_im)
     gen = Image.open(WORK / 'generated.png').convert('RGB')
     if gen.size != (OW, OH): gen = gen.resize((OW, OH), Image.LANCZOS)
-    w, h = box[2] - box[0], box[3] - box[1]; k = OW / w
+    w, h = box[2] - box[0], box[3] - box[1]
     crop = parent[box[1]:box[3], box[0]:box[2]]
     # the data island (main body, for the fit) and all its land (the stacks too, for the mask)
     new_all = data_land(box)
     centre = local_to_sheet(*ISL.CENTRE); seed = (int(centre[0]) - box[0], int(centre[1]) - box[1])
     new_main = component(new_all, seed)
-    target = np.asarray(Image.fromarray(new_main.astype(np.uint8) * 255).filter(ImageFilter.GaussianBlur(.7)), float) / 255
-    # the painted island in the generated crop: its main body around the same place
-    gl = erode(dilate(painted_land(np.asarray(gen)), 3), 3)
-    gseed = (int((centre[0] - box[0]) * k), int((centre[1] - box[1]) * k))
-    gen_main = component(gl, gseed)
-    if gen_main.sum() < 1000: sys.exit('register: no island found in the painting at the data island centre')
-    gmask = Image.fromarray(gen_main.astype(np.uint8) * 255)
-    def score(p): return iou(np.asarray(warp(gmask, box, p, Image.BILINEAR), float) / 255, target)
-    # start from the areas and centroids, then a pattern search on scale and offset
-    def moments(m):
-        ys, xs = np.nonzero(m); return xs.mean(), ys.mean(), m.sum()
-    gx, gy, ga = moments(gen_main); dx, dy, da = moments(new_main)
-    s0 = math.sqrt(da / (ga / k / k)); p = [s0, s0, dx - gx / k * s0, dy - gy / k * s0]
-    best = score(p); steps = [.02, .02, 2.0, 2.0]
-    while max(steps[2:]) > .124:
-        moved = False
-        for i in range(4):
-            for sgn in (1, -1):
-                q = list(p); q[i] += sgn * steps[i]; sc = score(q)
-                if sc > best + 1e-5: p, best, moved = q, sc, True
-        if not moved: steps = [s / 2 for s in steps]
-    fitted = np.asarray(warp(gen, box, p), float)
-    fitted_land = np.asarray(warp(gmask, box, p, Image.BILINEAR)) > 127
+    island_image,fitted_land,island_fit=fit_patch(gen,box,new_main,centre,clip=dilate(new_all,18))
+    new_pier=pier_land(box)
+    pier_fit_image,pier_fit_land,pier_fit=fit_patch(gen,box,new_pier,to_sheet(*PARK['origin'][:2]),clip=dilate(new_pier,12))
+    if island_fit['iou']<.85 or pier_fit['iou']<.90:
+        sys.exit(f'register: poor landmark alignment: island={island_fit}, pier={pier_fit}')
+    # Compose each fitted landmark only around its own footprint. Otherwise fitting the island would leave a
+    # second, displaced pier in the water, while fitting the pier would displace the island.
+    fitted=np.asarray(gen.crop((OW*2//3,OH//2,OW,OH)).resize((w,h),Image.LANCZOS),float)
+    ia=np.asarray(Image.fromarray(dilate(new_all|fitted_land,10).astype(np.uint8)*255).filter(ImageFilter.GaussianBlur(3)),float)/255
+    fitted=fitted*(1-ia[...,None])+island_image*ia[...,None]
+    pa=np.asarray(Image.fromarray(dilate(new_pier|pier_fit_land,8).astype(np.uint8)*255).filter(ImageFilter.GaussianBlur(3)),float)/255
+    fitted=fitted*(1-pa[...,None])+pier_fit_image*pa[...,None]
+    new_all|=new_pier
     # the edit mask: the old painted island, the new island (stacks too) and the painted one where it lies on it
-    old = np.zeros((h, w), bool)
-    o = component(erode(dilate(painted_land(crop), 2), 2), (OLD_SEED[0] - box[0], OLD_SEED[1] - box[1]))
-    old |= o
+    old=np.asarray(Image.open(WORK/'old-land-mask.png').crop(box))>127
     old |= dilate(old, 26) & shallow(crop)                    # and its pale shallows
     fu8 = fitted.astype(np.uint8)
     gen_land = erode(dilate(painted_land(fu8), 2), 2) & dilate(new_all, 10)
@@ -369,25 +391,24 @@ def register(args):
     sheet = Image.new('RGB', (a.width * 2 + 12, a.height), 'white'); sheet.paste(a, (0, 0)); sheet.paste(b, (a.width + 12, 0))
     sheet.save(WORK / 'registration-check.jpg', quality=88)
     ledger = json.load(open(LEDGER))
-    check = dict(crop_box=box, fit=dict(scale=[round(p[0], 4), round(p[1], 4)], offset_px=[round(p[2], 2), round(p[3], 2)],
-                                        iou_main_island=round(best, 4)),
+    check = dict(crop_box=box, fit=dict(island=island_fit,pier=pier_fit),
                  sea_shift_rgb=[round(float(v), 1) for v in shift], changed_bbox=cb, changed_pixels=int(changed.sum()),
                  unchanged_percent=round(unchanged, 4), outside_edit_identical=True,
                  parent_pixels_sha256=sha(parent.tobytes()), candidate_pixels_sha256=sha(out.tobytes()))
     json.dump(check, open(WORK / 'registration-check.json', 'w'), indent=2)
     parent_prov = json.load(open(WORK / 'parent_provenance.json'))
-    prov = dict(model='mixed; south-west island by gpt-image-2.5-sunburst', quality='high', parent=parent_prov,
-                local_edit=dict(scope='The south-west island only (redesigned island.py); the rest of the sheet, its '
-                                      'bounds, projection and zones are the parent\'s.',
+    prov = dict(model='mixed; Sunset Pier and offshore island by gpt-image-2.5-sunburst', quality='high', parent=parent_prov,
+                local_edit=dict(scope='Enlarged170x132m Sunset Pier and island moved50m offshore. Southern map '
+                                      'projection extends to world y=-730; other projection controls and bounds stay fixed.',
                                 model=ledger['requested_model'], quality=ledger['quality'], size=ledger['size'],
-                                call='games/yorimichi/world/map/painted/island_repaint.provenance.json',
+                                call='games/yorimichi/world/map/painted/sunset_pier_repaint.provenance.json',
                                 execution='games/yorimichi/world/map/repaint_island.py', crop_box=box, changed_bbox=cb,
                                 unchanged_percent=check['unchanged_percent'], outside_edit_identical=True,
                                 fit=check['fit'], sea_shift_rgb=check['sea_shift_rgb'],
                                 generated_sha256=next(iter(ledger['output'].values())),
                                 parent_sha256=info['parent_file_sha256'], parent_pixels_sha256=check['parent_pixels_sha256'],
                                 art_pixels_sha256=check['candidate_pixels_sha256']),
-                prompt='games/yorimichi/world/map/painted/island_repaint.provenance.json')
+                prompt='games/yorimichi/world/map/painted/sunset_pier_repaint.provenance.json')
     json.dump(prov, open(WORK / 'paint_provenance.json', 'w'), indent=2)
     print('register:', json.dumps(check))
 
