@@ -23,6 +23,7 @@ sys.path.insert(0,str(GAME/'scenarios'))
 from pier_part_check import assess  # noqa: E402
 
 BATCHES={'street':['arrival','promenade','granite'],
+         'detail':['rail_line','manuals'],
          'transition':['bowl','east_air','mini']}
 DURATIONS={'promenade':10,'granite':6,'bowl':8,'east_air':8}
 
@@ -46,7 +47,7 @@ def execute(code):
     return response.get('output','')
 
 
-def capture(args):
+def capture(args, shots=None):
     owner=game_owner()
     if not owner: raise RuntimeError('Start this checkout with atelier play; its game must own the render slot')
     expected=(owner.get('pid'),owner.get('started'))
@@ -66,7 +67,8 @@ def capture(args):
         # ExecuteFile interprets a leading settings line followed by a script docstring
         # as a filename; set globals separately, then send the unmodified script.
         execute('TAKE='+repr(args.take)+';FILM='+repr(not args.rehearse)+
-                ';ONLY='+repr(BATCHES[args.batch])+';SHOTS_OVERRIDE=None;DURATIONS='+repr(DURATIONS))
+                ';ONLY='+repr(None if shots else BATCHES[args.batch])+
+                ';SHOTS_OVERRIDE='+repr(shots)+';DURATIONS='+repr(DURATIONS))
         print(execute((GAME/'scenarios/pier_part.py').read_text()),flush=True)
         while not (out/'done.json').exists():
             if not owns_game(expected): raise RuntimeError('The game released before this take completed')

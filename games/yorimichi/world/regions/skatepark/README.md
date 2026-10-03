@@ -59,8 +59,10 @@ uv run atelier play yorimichi --profile desktop-1440
 uv run python games/yorimichi/tools/pier_film.py --take street-01 --batch street
 ```
 
-Use a fresh take name every time. `--batch transition` covers bowl, return and mini airs; `--rehearse` records
-telemetry without images. The tool checks checkout ownership before touching the live bridge, validates the take,
+Use a fresh take name every time. `--batch detail` covers the long flatbar and low manual pad;
+`--batch transition` covers bowl, return and mini airs. The detail routes use one push and early ollies to give
+the rider a controlled approach. `--rehearse` records telemetry without images.
+The tool checks checkout ownership before touching the live bridge, validates the take,
 and quits the game to release the render slot. `--keep-game` instead returns the controls. Evidence includes every
 input and state; bails, silent walking transitions, repeated captured poses and missing frames reject a take.
 The capture deadline defaults to 300 seconds, including final image saving. The mixer preserves
