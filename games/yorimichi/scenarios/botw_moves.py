@@ -1,8 +1,11 @@
 """BOTW move set checks: the player's UBotwMoveSet (Link) driven through the live bridge as a player would drive it.
 
-    atelier play yorimichi -- -botw -rider=Link -nofox -RenderOffscreen -ForceRes       (1920x1080)
+    atelier play yorimichi -- -nobotw -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=250 -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/botw_moves.py
     ... wait for build/yorimichi/botw/moves/<take>/done.json
+
+Under the 10 GiB memory guard the game also renders at 720p and half scale (r.SetRes 1280x720w, r.ScreenPercentage 50)
+with r.Streaming.DropMips 2, set through the live bridge before the scenario; it then peaks at about 9.3 GiB.
 
 By the forest lake's cabin: a standing and a running jump, the sprint, the side hop and backflip, the sword's draw, the
 four-cut combo, the charged spin, the guard and its parry, a strike on a Bokoblin and the sheathe; the paraglider,
@@ -355,6 +358,8 @@ def steps():
 
 
 def run(dt):
+    # The world steps a fixed 1/60 s a frame however fast frames come: count its time, not the frame's (Slate's).
+    dt = unreal.GameplayStatics.get_world_delta_seconds(L.game_world())
     if st.get('gen') is None:
         st['gen'] = steps(); next(st['gen'])
         return
