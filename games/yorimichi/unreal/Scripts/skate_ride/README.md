@@ -79,9 +79,12 @@ identity, so the keyed trajectory is the clip's own.
 
 ## Mirroring
 
-`MDT_SkateRider` pairs the left and right bones (mirror axis Y in Unreal, the native x axis). The native mirror modes
-differ: mode 1 also turns the root and its children 180 degrees about up. The manifest's `mirror` per clip says
-whether the clip carries `MIRRORED` or `SWITCH` attributes.
+`MDT_SkateRider` pairs the left and right bones and maps the centre bones (the root, spine, head and
+`SKATEBOARD_ROOT`) onto themselves, mirror axis Y in Unreal (the native x axis). Unreal leaves a bone without a row
+unmirrored, so without those rows a mirrored pose keeps the authored hips and spine under swapped limbs. The trucks
+and wheels have no row, as in the native rig. The native mirror modes differ: mode 1 also turns the root and its
+children 180 degrees about up. The manifest's `mirror` per clip says whether the clip carries `MIRRORED` or `SWITCH`
+attributes.
 
 ## Manifest
 

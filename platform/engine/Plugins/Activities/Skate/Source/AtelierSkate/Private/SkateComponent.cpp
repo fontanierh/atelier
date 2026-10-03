@@ -2,6 +2,7 @@
 #include "SkateRails.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
+#include "Ride/RideTransition.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -157,6 +158,9 @@ void USkateComponent::SetGoofy(bool bNewGoofy)
 void USkateComponent::SetMeshForRiding(bool bRiding)
 {
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
+    // The Ride backend keeps the on-foot mesh placement (its pose is anchored on the board) plus the transition's
+    // offset that keeps the body where it was (RideTransition.cpp).
+    if (bRideBody) { Mesh->SetRelativeLocationAndRotation(SavedMeshLocation + Transit().MeshOffset, SavedMeshRotation); return; }
     if (bRiding)
     {
         // The rider stands across the board: regular faces the toe side (+Y), goofy -Y. The clips put the nose on the
@@ -179,11 +183,18 @@ void USkateComponent::SetMeshForRiding(bool bRiding)
 bool USkateComponent::Toggle()
 {
     if (!Rider || !bAvailable) return false;
+    // The Ride backend gets on and off as one continuous character (RideTransition.cpp); a ride keeps the backend it
+    // started with until it ends.
+    if (Mode == ESkateMode::Off ? USkateSettings::ActiveBackend() == ESkateBackend::Ride : bRideBody)
+        return Mode == ESkateMode::Off ? RideMount() : RideDismount();
     UCharacterMovementComponent* M = Movement();
     UCapsuleComponent* Capsule = Rider->GetCapsuleComponent();
     if (Mode == ESkateMode::Off)
     {
         if (!M->IsMovingOnGround() || Rider->bIsCrouched) return false;
+        // The native ride switches at once, with the board carried by the actor.
+        ResetTransition(); bRideBody = false; RequestPoseBlend(0.f);
+        if (BoardRoot->IsUsingAbsoluteLocation()) { BoardRoot->SetAbsolute(false, false, false); BoardRoot->SetRelativeTransform(FTransform::Identity); }
         RiderApi->PrepareToSkate();
         SavedRadius = Capsule->GetUnscaledCapsuleRadius(); SavedHalf = Capsule->GetUnscaledCapsuleHalfHeight();
         SavedMeshLocation = Rider->GetMesh()->GetRelativeLocation(); SavedMeshRotation = Rider->GetMesh()->GetRelativeRotation().Quaternion();
@@ -217,6 +228,8 @@ bool USkateComponent::Toggle()
 void USkateComponent::StowImmediately()
 {
     SuspendRetailRuntime();
+    // A cut: no board left lying, no carried speed, the body back on its capsule.
+    ResetTransition(); RequestPoseBlend(0.f);
     if (Mode == ESkateMode::Off || !Rider) return;
     UCharacterMovementComponent* M = Movement();
     ShownCombo.Reset(); ComboFade=0;
@@ -260,6 +273,8 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
     Mode=ESkateMode::Ground;
     Rider->SetActorLocationAndRotation(Pos + Up() * BodyLift, Rot, false, nullptr, ETeleportType::TeleportPhysics);
     if (!StartRetailRuntime()) { StowImmediately(); return false; }
+    // A placement is a cut: the board is there at once.
+    if (bRideBody) { Transit().Board = ERideBoard::Ride; ShowBoard(1.f, true); RequestPoseBlend(0.f); }
     return true;
 }
 
@@ -373,6 +388,8 @@ void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTick
     // Preload the native skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
     if (bAvailable && Rider && !RetailRuntime && !bRetailPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadRetailRuntime();
     PollIdleRetail();
+    // After the ride's step (in CharacterMovement's tick) and before the mesh animates.
+    if (bAvailable && Rider) TickTransition(Dt);
 }
 FTransform USkateComponent::GetDeckWorld() const { return Deck ? Deck->GetComponentTransform() : FTransform::Identity; }
 float USkateComponent::BoardScale() const { return RiderApi ? FMath::Max(.25f, RiderApi->GetSkateBoardScale()) : 1.f; }
@@ -383,5 +400,5 @@ FString USkateComponent::GetDebug() const
     const UCharacterMovementComponent* M=Movement();
     return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f skin_clearance=%.2f skin_lift=%.2f"),
         M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),bFakie,bManual,bPowerslide,bPushing,
-        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,RetailFloorClearance,BailVisualLift)+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
+        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,RetailFloorClearance,BailVisualLift)+DescribeTransition()+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
 }

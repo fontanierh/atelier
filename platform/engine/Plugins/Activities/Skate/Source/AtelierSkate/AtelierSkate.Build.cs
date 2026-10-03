@@ -14,6 +14,6 @@ public class AtelierSkate : ModuleRules
         // shadow diagnostics visible without rejecting the recovered code.
         CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Warning;
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "DeveloperSettings" });
-        PrivateDependencyModuleNames.AddRange(new string[] { "Json", "AtelierCore", "AtelierFX", "RenderCore", "RHI", "AnimationCore", "PhysicsCore" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "Json", "AtelierCore", "AtelierFX", "RenderCore", "RHI", "AnimationCore", "AnimGraphRuntime", "PhysicsCore", "PhysicsControl" });
     }
 }

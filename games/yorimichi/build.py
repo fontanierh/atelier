@@ -251,6 +251,10 @@ def steps(ctx):
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['unreal.world', 'world.skatepark'],
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
+        Step('unreal.skate_board', [UnrealScript(SCRIPTS / 'board_dissolve_material.py', 'BOARD DISSOLVE MATERIAL COMPLETE')],
+             inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
+             outputs=[GAME / 'unreal' / 'Content' / 'SkatePark' / 'Board' / 'M_BoardDissolve.uasset'],
+             heavy=True, about="the board's dissolve material for the Ride transitions (/Game/SkatePark/Board)"),
         Step('unreal.sounds', [
                 UnrealScript(SCRIPTS / 'import_footsteps.py', 'FOOTSTEP IMPORT COMPLETE'),
                 UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE'),

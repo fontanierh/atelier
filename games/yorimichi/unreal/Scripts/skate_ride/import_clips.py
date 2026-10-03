@@ -358,8 +358,10 @@ def channel_record(clip, rig):
 
 
 def mirror_rows(rig):
+    """Every bone the native rig mirrors, the centre bones onto themselves: Unreal leaves a bone without a row
+    unmirrored (UMirrorDataTable::FillMirrorBoneIndexes), as the engine's own table factory does for unmatched names."""
     return [dict(Name=b.name, MirroredName=rig.bones[b.mirror].name, MirrorEntryType='Bone', bEnabled=True)
-            for b in rig.bones if b.mirror >= 0 and rig.bones[b.mirror].name != b.name]
+            for b in rig.bones if b.mirror >= 0]
 
 
 def mirror_table(rig, skeleton):

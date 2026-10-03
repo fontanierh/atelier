@@ -17,6 +17,8 @@ struct FRideWorld
     UWorld* World = nullptr;
     const AActor* Ignore = nullptr;
     const USkateRailSubsystem* Rails = nullptr;
+    /** The rider: the pose mesh that plays the clips goes on it. */
+    AActor* Owner = nullptr;
 };
 
 /** One-shot sounds the session asks for; the component plays them. */
@@ -42,7 +44,8 @@ public:
     FRideSession();
     /** Load the rig and clips (blocking on first use). */
     void Preload() { Animator.Preload(); }
-    /** Get on at a ground point, facing the board's rotation, moving at Velocity. */
+    /** Get on at a ground point, facing the board's rotation, moving at Velocity. A transition clip the caller is
+     *  playing through the animator (GetAnimator().SetOverride) keeps playing until the caller clears it. */
     void Activate(const FRideWorld& World, const FVector& GroundPoint, const FQuat& Rotation, const FVector& Velocity, bool bGoofy, const FRidePreferences& Preferences);
     void Configure(bool bGoofy, const FRidePreferences& Preferences);
     void Launch(const FVector& Velocity);
@@ -55,8 +58,19 @@ public:
     void SetRagdoll(bool bAvailable) { bRagdoll = bAvailable; }
     /** During a ragdoll bail: the ground point under the body, which the root and the camera follow. */
     void FollowBody(const FVector& GroundPoint) { BodyPoint = GroundPoint; bFollowBody = true; }
+    /** Off the board (a dismount, a carry, a run-out): no board physics; the animator's override layers alone, their
+     *  TRAJECTORY at TrajectoryWorld (the clips' root space), published like Step (Root, Names, Reference, Bones; the
+     *  board bones are the clip's). */
+    void StepOffBoard(float Dt, const FTransform& TrajectoryWorld);
+    /** The rider's animation: clips, overrides, curves, the evaluated pose. It lives as long as the session. */
+    FRideAnimator& GetAnimator() { return Animator; }
+    const FRideAnimator& GetAnimator() const { return Animator; }
+    /** What the body is doing this frame (the motion and its phase, the trick, the landing's impact, the grind or
+     *  manual, the bail): the clip choice's input, also read by the physical rider. */
+    const FRideBodyPose& GetBody() const { return BodyPose; }
 
-    // Published each Step.
+    // Published each Step. The root is the deck's pivot at rest (DeckHeight above the ground under the board), as the
+    // native runtime publishes it.
     FTransform Root = FTransform::Identity;
     TArray<FName> Names;
     TArray<FTransform> Reference, Bones;
@@ -82,6 +96,10 @@ public:
     bool HasRig() const { return Animator.HasRig(); }
     /** Mean and worst simulation cost per tick over the last second (ms). */
     float CostMean = 0, CostWorst = 0;
+    /** The published pose's health for QA: the main clip, the board's hold and lift, the fastest body bone (cm/s,
+     *  root space), each foot's height above the deck's pivot and how many feet are off the deck, NaN bones, and the
+     *  animator's cost (ms). */
+    FString DescribePose() const;
 
 private:
     struct FFrame { FVector P = FVector::ZeroVector; FQuat Q = FQuat::Identity; FTransform Deck = FTransform::Identity; };
@@ -107,24 +125,30 @@ private:
     float Curvature = 0;            // 1/cm along the travel, positive in a concave transition
     float Crouch = 0, PushTime = -1, BrakeTime = 0, LastSpeed = 0;
     bool bPushStrong = true, bPushed = false;
+    // The push cycle in progress (from the clips when they are in the build): the lead-in before the foot touches,
+    // the contact and the recovery; PushCount counts the pushes before this one in a run of pushes.
+    int32 PushCount = 0;
+    float PushLead = 0, PushContact = 0, PushRecover = 0, PushStrong = 0;
+    // Braked to a stop this long ago (-1 while moving).
+    float StillTime = -1;
     float WheelSpin = 0;
     // A pop waiting for the end of its ground clip.
     atelier::ride::Flick PendingPop = atelier::ride::Flick::None;
-    float PopTimer = 0, PendingLoad = 1;
+    float PopTimer = 0, PendingLoad = 1, PopWait = .2f;
     // Air.
     float AirTime = 0, SpinRate = 0, SpinTotal = 0;
     FVector TakeoffUp = FVector::UpVector;
     bool bPopped = false;
     // Landing prediction: a ballistic path traced a few segments per tick.
     FVector PredictFrom = FVector::ZeroVector, PredictVelocity = FVector::ZeroVector;
-    float PredictTime = 0, LandTime = -1;
+    float PredictTime = 0, LandTime = -1, PredictStart = 0;
     FVector LandNormal = FVector::UpVector;
     // The flip in progress (the board's own rotation in the air).
     atelier::ride::Flick Trick_ = atelier::ride::Flick::None;
     float TrickTime = -1;
     bool bTrickFakie = false;
-    ERideGrab Grab = ERideGrab::None;
-    float GrabTime = 0, GrabWeight = 0;
+    ERideGrab Grab = ERideGrab::None, LastGrab = ERideGrab::None;
+    float GrabTime = 0, GrabWeight = 0, SinceGrab = -1;
     // Grind.
     int32 Rail = INDEX_NONE, LastRail = INDEX_NONE;
     float RailS = 0, RailSpeed = 0, RailCooldown = 0;
@@ -139,8 +163,14 @@ private:
     // Bail.
     FVector BailLinear = FVector::ZeroVector, BailAngular = FVector::ZeroVector, BodyPoint = FVector::ZeroVector;
     bool bFollowBody = false;
-    // Landing quality for the pose.
-    float Sketchy = 0;
+    // The last landing, for the pose.
+    float Sketchy = 0, LandAge = -1, LandImpact = 0;
+    bool bLandedFromGrab = false;
+    // What the body is doing, tracked per tick: the motion, how long it has run and the one before it.
+    ERideMotion Motion = ERideMotion::Roll, PreviousMotion = ERideMotion::Roll;
+    float MotionTime = 0, Clock = 0;
+    bool bWasStill = false, bStill = false;
+    FRideBodyPose BodyPose;
     // Scoring: the line in progress and the banked total.
     TArray<FLineTrick> Line;
     float Banked = 0, Calm = 0, HeldPoints = 0;
@@ -152,6 +182,13 @@ private:
     bool bCamValid = false;
     // Cost.
     double CostSum = 0, CostMax = 0, CostClock = 0; int32 CostCount = 0;
+    // Pose health (DescribePose).
+    TArray<FVector> LastBones;       // in the root's frame
+    TArray<bool> BodyBone;
+    int32 DeckBone = INDEX_NONE, ToeBone[2] = {INDEX_NONE, INDEX_NONE};
+    float PoseStep = 0, FootHeight[2] = {0, 0}, AnimCost = 0;
+    int32 PoseNaN = 0, FeetOff = 0;
+    void MeasurePose(float Dt);
 
     void Tick(const FSkateInput& In);
     void TickGround(const FSkateInput& In, atelier::ride::Flick Flick);
@@ -166,6 +203,12 @@ private:
     bool TryGrind(const FSkateInput& In);
     void LeaveGrind(float Up);
     void AdvancePrediction(int32 Segments);
+    void ResetPrediction(const FVector& From);
+    void StartPush(bool bFirstPush, float Speed);
+    ERideMotion CurrentMotion() const;
+    void TrackMotion();
+    /** From the take-off to the board caught under the feet: the flip clip's, else the tuned time. */
+    float CatchTime(atelier::ride::Flick Flick) const;
     bool Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked) const;
     bool Sweep(const FVector& From, const FVector& To, float Radius, FHitResult& Hit) const;
     bool FindGround(const FVector& At, const FQuat& Frame, float Below, FVector& OutP, FVector& OutUp, FVector& OutForward, bool& bBlocked) const;

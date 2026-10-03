@@ -42,6 +42,9 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath WheelMesh;
+    /** A masked material for the board's parts with a scalar parameter Dissolve (0 whole, 1 gone): the Ride backend
+     *  dissolves the board in and out with it (RIDE.md, "Transitions"). Without one the board shows and hides. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath BoardDissolveMaterial;
     /** Content folder of the board sounds: loops roll_01, grind_01, slide_01, skid_01, scrape_01 and one-shot banks
      *  <cue>_01.. (pop, land, ...). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString SoundFolder;
