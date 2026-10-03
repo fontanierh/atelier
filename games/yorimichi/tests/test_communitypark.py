@@ -102,16 +102,30 @@ class PlacementTests(unittest.TestCase):
                                                              [[-47, -51, 10], [47, 51, 10], [-47, 51, 10]]]))
         def base(x, y): return np.full(np.broadcast(x, y).shape, 48.)
         with patch('communitypark.layout.scene', return_value=source):
-            trees = L.screen_trees(base)
-            self.assertEqual(trees, L.screen_trees(base))
-        self.assertGreater(sum(map(len, trees.values())), 200)
-        self.assertTrue(all(not name.endswith('_lo') and not name.startswith('HD_North') for name in trees))
-        for rows in trees.values():
+            plants = L.screen_vegetation(base)
+            self.assertEqual(plants, L.screen_vegetation(base))
+        canopy = {name: rows for name, rows in plants.items() if name.startswith('Tree_Canopy') or name == 'Tree_Cedar_A'}
+        self.assertGreater(sum(map(len, canopy.values())), 1200)
+        self.assertTrue(all(not name.endswith('_lo') and not name.startswith('HD_North') for name in plants))
+        self.assertTrue(any(name.startswith('Bush') for name in plants))
+        self.assertIn('Grass_A', plants); self.assertIn('Litter', plants)
+        for name, rows in plants.items():
             a = np.asarray(rows); positions = L.place(a[:, :3])
-            self.assertTrue(np.all((abs(positions[:, 0]-1280) >= 56) | (abs(positions[:, 1]-560) >= 60)))
+            margin = 4.5 if name.startswith('Tree') else 2.7 if name.startswith('Bush') else 1.5
+            self.assertTrue(np.all((abs(positions[:, 0]-1280) >= 47+margin) | (abs(positions[:, 1]-560) >= 51+margin)))
             distance, _ = L.access_nearest(positions[:, 0], positions[:, 1])
-            self.assertGreaterEqual(float(distance.min()), 11.)
-            self.assertGreaterEqual(float(a[:, 4].min()), 1.3)
+            gap = 9.5 if name in canopy else 6.8 if name.startswith('Tree') else 4.8 if name.startswith('Bush') else 3.2
+            self.assertGreaterEqual(float(distance.min()), gap)
+        # Sample the woodland belt independently of the scatter grid: isolated
+        # rows of trees would leave wide gaps between these ground-level views.
+        x, y = np.meshgrid(np.arange(1178., 1383., 5.), np.arange(454., 667., 5.))
+        xy = np.column_stack((x.ravel(), y.ravel()))
+        edge = np.maximum(abs(xy-[1280, 560])-[47, 51], 0).max(1)
+        distance, _ = L.access_nearest(xy[:, 0], xy[:, 1])
+        probes = xy[(edge > 12) & (edge < 50) & (distance > 15)]
+        crowns = np.concatenate([L.place(np.asarray(rows)[:, :3])[:, :2] for rows in canopy.values()])
+        nearest = np.linalg.norm(probes[:, None]-crowns[None], axis=2).min(1)
+        self.assertLess(float(nearest.max()), 5.)
 
 
 if __name__ == '__main__':

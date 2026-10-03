@@ -27,7 +27,9 @@ def main():
     args = parser.parse_args(); out = yori.OUT/'communitypark/game-review'; out.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((yori.OUT/'communitypark/park.json').read_text())
     mesh_count = len(manifest['meshes'])
-    tree_count = sum(len(rows) for rows in manifest['trees'].values())
+    foliage_counts = {name: len(rows) for name, rows in manifest['trees'].items()}
+    tree_count = sum(count for name, count in foliage_counts.items() if name.startswith('Tree'))
+    understory_count = sum(count for name, count in foliage_counts.items() if not name.startswith('Tree'))
     if not 60 <= args.timeout <= 600:
         parser.error('--timeout must be between 60 and 600 seconds')
     if not args.worker:
@@ -146,7 +148,8 @@ def main():
             f'assert len(components)=={mesh_count} and all(c.static_mesh for c in components)\n'
             'assert all(c.static_mesh.get_path_name().startswith("/Game/CommunityPark/") for c in components)\n'
             'foliage=community.get_components_by_class(unreal.HierarchicalInstancedStaticMeshComponent)\n'
-            f'assert sum(c.get_instance_count() for c in foliage)=={tree_count}\n'
+            'actual_foliage={c.static_mesh.get_name():c.get_instance_count() for c in foliage if c.static_mesh}\n'
+            f'assert actual_foliage=={foliage_counts!r}, actual_foliage\n'
             'assert all(c.static_mesh and not c.static_mesh.get_name().endswith("_lo") for c in foliage)\n'
             'assert len(unreal.GameplayStatics.get_all_actors_of_class(world,unreal.SuperUltraMegaPark))==1')
         owns_bridge = True
@@ -158,8 +161,9 @@ def main():
                  ('entrance', (1316, 507, 51), (1302, 555, 51), 70.),
                  ('bowls', (1248, 572, 59), (1283, 565, 47), 75.),
                  ('deck', (1252, 597, 50.2), (1280, 570, 51), 75.),
-                 ('structures', (1340, 568, 71), (1294, 590, 65), 70.),
-                 ('stair_tower', (1321, 618, 69), (1305, 602, 67), 65.),
+                 ('forest_edge', (1320, 575, 50.5), (1342, 575, 59), 72.),
+                 ('structures', (1324, 568, 71), (1294, 590, 65), 70.),
+                 ('stair_tower', (1319, 610, 69), (1305, 602, 67), 65.),
                  ('top_bridge', (1315, 620, 94), (1296, 595, 84), 65.)]
         for name, at, target, fov in shots:
             run(f'assert unreal.MegaParkValidation.review_camera({vector(at)},{vector(target)},{fov})')
@@ -187,7 +191,8 @@ def main():
         text = (out/'game.log').read_text(errors='ignore')
         assert re.search(r'SKATE PARK loaded: '+str(mesh_count)+' meshes, '+str(len(manifest['rails']))+r' rails', text), 'Community grind paths not registered'
         result = {'park_actors': 2, 'source_meshes': 30, 'community_meshes': mesh_count, 'grind_paths': len(manifest['rails']),
-                  'screen_trees': tree_count, 'ascent': ascent,
+                  'screen_trees': tree_count, 'understory_plants': understory_count,
+                  'foliage_instances': sum(foliage_counts.values()), 'ascent': ascent,
                   'surface_traces': traces, 'access_traces': 7, 'captures': len(shots)+len(rides)+3, 'rides': rides,
                   'sunset_pier_spawn_preserved': True}
         (out/'passed.json').write_text(json.dumps(result, indent=2)+'\n'); print(json.dumps(result, indent=2), flush=True)

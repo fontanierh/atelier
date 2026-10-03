@@ -148,7 +148,7 @@ def build():
     park = {'version': 1, 'key': 'communitypark', 'name': 'Hidamari Community Park', 'asset_root': '/Game/CommunityPark',
             'origin': L.ORIGIN.tolist(), 'yaw_deg': L.YAW,
             'deck': {'x': [-46.985962, 46.985962], 'y': [-51.32135, 51.32135], 'top_z': 10.028},
-            'meshes': entries, 'rails': paths(), 'clearance': L.clearance(), 'trees': L.screen_trees(north_surface),
+            'meshes': entries, 'rails': paths(), 'clearance': L.clearance(), 'trees': L.screen_vegetation(north_surface),
             'structures': structure,
             'spawns': {'park': {'pos': L.local(L.SPAWN).tolist(), 'yaw_deg': L.HEADING-L.YAW},
                        'path_top': {'pos': list(L.ACCESS[0]), 'yaw_deg': 90.}},

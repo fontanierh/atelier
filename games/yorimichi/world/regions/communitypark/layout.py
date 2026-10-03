@@ -176,28 +176,76 @@ def clear(instances):
         instances.setdefault(name, []).extend(rows)
 
 
-def screen_trees(base_sampler):
-    """A dense, mature woodland belt, owned by the park rather than its cleared city scatter."""
+def screen_vegetation(base_sampler):
+    """A secluded clearing: overlapping mature crowns, young trees and a closed woodland floor.
+
+    The tree-house canopy meshes have articulated branches and 1,100–1,250
+    individual leaf cards, rather than the island's small roadside crowns.
+    Three lower layers fill the bare trunks without entering the riding area
+    or the four-metre approach. The park owns this scatter independently of
+    the city clearance, using the existing foliage asset/material families.
+    """
     vertices = place(scene().triangles()).reshape(-1, 3)
     lo, hi = vertices[:, :2].min(0), vertices[:, :2].max(0)
     rng = np.random.default_rng(202604)
-    x, y = np.meshgrid(np.arange(lo[0]-35, hi[0]+35, 7.),
-                       np.arange(lo[1]-35, hi[1]+35, 7.))
-    xy = np.column_stack((x.ravel(), y.ravel()))+rng.uniform(-1.1, 1.1, (x.size, 2))
-    edge = np.maximum(np.maximum(lo-xy, xy-hi), 0).max(1)
-    distance, _ = access_nearest(xy[:, 0], xy[:, 1])
-    keep = (edge >= 9) & (edge <= 34) & (distance >= 11)
-    xy, edge = xy[keep], edge[keep]
-    z = np.asarray(base_sampler(xy[:, 0], xy[:, 1])).copy()
-    patch = inside(xy[:, 0], xy[:, 1])
-    z[patch] = ground(xy[patch, 0], xy[patch, 1], base_sampler)
-    names = rng.choice(['Tree_Ginkgo', 'Tree_Maple_A', 'Tree_Pine_A', 'Tree_Cedar_A'], len(xy), p=[.28, .25, .27, .20])
-    trees = {}
-    for point, height, name, offset in zip(xy, z, names, edge):
-        scale = rng.uniform(1.3, 1.5) if offset < 16 else rng.uniform(1.6, 2.)
-        position = local([point[0], point[1], height-.06])
-        trees.setdefault(str(name), []).append([*position.tolist(), float(rng.uniform(0, 360)), float(scale)])
-    return trees
+    plants = {}
+
+    def points(spacing, inner, outer, path_gap, density=1.):
+        x, y = np.meshgrid(np.arange(lo[0]-outer, hi[0]+outer, spacing),
+                           np.arange(lo[1]-outer, hi[1]+outer, spacing))
+        # Staggered, jittered rows avoid a visible plantation grid.
+        x[::2] += spacing/2
+        xy = np.column_stack((x.ravel(), y.ravel()))+rng.uniform(-.22, .22, (x.size, 2))*spacing
+        edge = np.maximum(np.maximum(lo-xy, xy-hi), 0).max(1)
+        distance, _ = access_nearest(xy[:, 0], xy[:, 1])
+        keep = (edge >= inner) & (edge <= outer) & (distance >= path_gap)
+        keep &= rng.random(len(xy)) < density
+        return xy[keep], edge[keep]
+
+    def add(xy, names, scales, sink):
+        z = np.asarray(base_sampler(xy[:, 0], xy[:, 1])).copy()
+        patch = inside(xy[:, 0], xy[:, 1])
+        z[patch] = ground(xy[patch, 0], xy[patch, 1], base_sampler)
+        positions = local(np.column_stack((xy, z-sink)))
+        for p, name, scale in zip(positions, names, scales):
+            plants.setdefault(str(name), []).append([*p.tolist(), float(rng.uniform(0, 360)), float(scale)])
+
+    # A sixty-metre belt closes the canopy, with coherent red/gold/green groves.
+    xy, edge = points(4.5, 6.5, 60., 9.5)
+    clump = np.sin(xy[:, 0]*.035+np.sin(xy[:, 1]*.04)*1.8)+.6*np.cos(xy[:, 1]*.027)
+    families = [(('Tree_Cedar_A', 'Tree_Canopy_Maple'), (.8, .2)),
+                (('Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber'), (.5, .35, .15)),
+                (('Tree_Canopy_Ginkgo', 'Tree_Canopy_Amber'), (.6, .4))]
+    kinds = np.digitize(clump, [-.35, .65])
+    mixed = rng.random(len(xy)) < .12
+    kinds[mixed] = rng.integers(0, len(families), mixed.sum())
+    names = np.empty(len(xy), object)
+    for k, (members, weights) in enumerate(families):
+        pick = kinds == k; names[pick] = rng.choice(members, pick.sum(), p=weights)
+    scales = rng.uniform(1.05, 1.3, len(xy))
+    scales[edge > 20] = rng.uniform(1.3, 1.7, int((edge > 20).sum()))
+    add(xy, names, scales, .12)
+
+    # Young trees close the middle storey beneath the high mature crowns.
+    young, _ = points(5.2, 4.5, 54., 6.8, .9)
+    distance = np.linalg.norm(young[:, None]-xy[None], axis=2).min(1)
+    young = young[distance > 1.4]
+    names = rng.choice(['Tree_Maple_A', 'Tree_Maple_B', 'Tree_Ginkgo', 'Tree_Cedar_B'],
+                       len(young), p=[.35, .25, .2, .2])
+    add(young, names, rng.uniform(.9, 1.4, len(young)), .12)
+
+    # Dense overlapping shrubs screen the sightlines between otherwise bare trunks.
+    shrubs, _ = points(2.4, 2.7, 57., 4.8, .85)
+    names = rng.choice(['Bush_Green_A', 'Bush_Green_B', 'Bush_Ochre_A', 'Bush_Ochre_B'],
+                       len(shrubs), p=[.4, .3, .2, .1])
+    add(shrubs, names, rng.uniform(1.25, 1.8, len(shrubs)), .15)
+    floor, _ = points(2., 1.5, 56., 3.2, .75)
+    names = rng.choice(['Grass_A', 'Grass_B', 'Litter'], len(floor), p=[.45, .4, .15])
+    scales = rng.uniform(.85, 1.3, len(floor))
+    for name in ('Grass_A', 'Grass_B', 'Litter'):
+        pick = names == name
+        add(floor[pick], names[pick], scales[pick], -.025 if name == 'Litter' else .08)
+    return plants
 
 
 def clearance():

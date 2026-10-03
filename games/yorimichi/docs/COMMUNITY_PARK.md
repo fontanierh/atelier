@@ -38,9 +38,16 @@ upward riding surfaces, including narrow floor spacers and bowl bottoms.
 Downward foundations can remain buried. Its outer nodes share the surrounding
 terrain height. Vegetation is cleared around skating and the approach; nearby
 backdrop crowns become detailed island trees.
-The park also owns a dense belt of mature ginkgo, maple, pine and cedar trees.
-Their trunks stay outside the source footprint and leave an eleven-metre opening
-around the approach; full island tree meshes replace distant backdrop shapes.
+The park owns a sixty-metre woodland belt with mature, overlapping maple,
+ginkgo and cedar crowns on staggered 4.5 m spacing. The tree-house canopy
+meshes provide articulated branches and 1,100–1,250 leaf cards per crown.
+Coherent red, gold and dark-green groves replace isolated roadside trees;
+young trees, overlapping shrubs, grasses and litter close the lower layers.
+Trunks and plants stay outside the source footprint. Mature trunks leave
+9.5 m clearance from the approach centreline, young trees 6.8 m, shrubs
+4.8 m and ground plants 3.2 m, preserving the four-metre riding ribbon.
+The revised seclusion direction uses a high-quality Sunburst paintover of
+actual overview and station-approach captures; its provenance stays in build.
 
 Dark steel trestles carry the elevated ramp groups down to original lower
 surfaces or the carved terrain. Footplates, girders and diagonal braces give
