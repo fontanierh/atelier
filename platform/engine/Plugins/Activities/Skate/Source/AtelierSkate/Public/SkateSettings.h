@@ -3,6 +3,16 @@
 #include "Engine/DeveloperSettings.h"
 #include "SkateSettings.generated.h"
 
+/** Which simulation rides the board. */
+UENUM()
+enum class ESkateBackend : uint8
+{
+    /** The recovered native session (RUNTIME.md): a physical rider and board on its own thread. */
+    Native,
+    /** Ride (RIDE.md): a rigid board on Unreal collision queries, the rider animated from the imported clips. */
+    Ride
+};
+
 /** What skateboarding needs from the game, set in its DefaultGame.ini under [/Script/AtelierSkate.SkateSettings]. */
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Atelier Skate"))
 class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
@@ -10,6 +20,10 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
+    /** The simulation that rides the board; the console variable skate.Backend overrides it on the next mount. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Native;
+    /** The backend the next mount uses: skate.Backend when it names one, else Backend. */
+    static ESkateBackend ActiveBackend();
     /** Original controller preset: easy, normal or hardcore. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
     /** 0 loose / 1 tight; feeds the original steering scalar. */

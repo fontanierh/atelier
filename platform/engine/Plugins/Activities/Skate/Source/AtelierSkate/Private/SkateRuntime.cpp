@@ -33,6 +33,7 @@
 #include "HAL/IConsoleManager.h"
 #include "UObject/UObjectIterator.h"
 #include "Async/Async.h"
+#include "Ride/RideSession.h"
 
 namespace
 {
@@ -528,6 +529,7 @@ void USkateComponent::PreloadRetailRuntime()
 {
     // Decoding the animation banks takes seconds; do it while the player walks, so the first mount is immediate.
     bRetailPreloaded=true;
+    if (USkateSettings::ActiveBackend()==ESkateBackend::Ride) { PreloadRide(); return; }
     FString Failure;
     if (!LaunchNativeSession(Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,Failure))
     { UE_LOG(LogTemp,Display,TEXT("SKATE preload skipped: %s"),*Failure); }
@@ -535,13 +537,25 @@ void USkateComponent::PreloadRetailRuntime()
 }
 void USkateComponent::PollIdleRetail()
 {
-    if (!RetailRuntime || bRetailActive) return;
+    if (!RetailRuntime || bRetailActive || !RetailRuntime->Worker) return;
     RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
     { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded session failed: %s"),*RetailRuntime->Error); RetailRuntime.Reset(); }
 }
 bool USkateComponent::StartRetailRuntime()
 {
+    // The backend is chosen at each mount (skate.Backend, USkateSettings::Backend): a session of the other kind is
+    // dropped. The Ride backend publishes through an FSkateRuntime without a native worker.
+    const bool bRide=USkateSettings::ActiveBackend()==ESkateBackend::Ride;
+    if (RetailRuntime && RetailRuntime->Worker.IsValid()==bRide) RetailRuntime.Reset();
+    if (bRide)
+    {
+        if (!RetailRuntime) { RetailRuntime=MakeShared<FSkateRuntime>(); RetailRuntime->Ready=true; RetailRuntime->State=TEXT("PhysicsGround"); }
+        if (!StartRide()) { RuntimeFailure(TEXT("Ride skating could not start.")); return false; }
+        RetailRuntime->HasPose=false; bRetailActive=true; RetailPose.Reset();
+        return true;
+    }
+    StopRide();
     FString Failure;
     if (!RetailRuntime && !LaunchNativeSession(Pos,Rot.Rotator().Yaw,Failure)) { RuntimeFailure(Failure); return false; }
     RetailRuntime->FinishPendingWorld(false);
@@ -560,7 +574,8 @@ bool USkateComponent::StartRetailRuntime()
 }
 void USkateComponent::SuspendRetailRuntime()
 {
-    if (RetailRuntime) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
+    StopRide();
+    if (RetailRuntime && RetailRuntime->Worker) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
     bRetailActive=false; RetailPose.Reset();
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
@@ -570,12 +585,20 @@ void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 void USkateComponent::LaunchRetail(const FVector& V)
 {
     if (!bRetailActive || !RetailRuntime) return;
+    if (!RetailRuntime->Worker) { if (Ride) Ride->Launch(V); return; }
     if (!RetailRuntime->Ready || RetailRuntime->PendingActivation) { RetailRuntime->PendingLaunch=V; return; }
     FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Launch;C.Velocity=NativeVector(V);RetailRuntime->Worker->Enqueue(MoveTemp(C));
 }
 void USkateComponent::ConfigureRetail()
 {
-    if(!RetailRuntime)return;FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Configure;
+    if(!RetailRuntime)return;
+    if(!RetailRuntime->Worker)
+    {
+        const USkateSettings* S=GetDefault<USkateSettings>();
+        if(Ride)Ride->Configure(bGoofy,{S->PopHeightScale,S->AirSpinScale,S->PushSpeedScale,S->PushPowerScale,S->VertAssist});
+        return;
+    }
+    FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Configure;
     C.Preferences=RetailRuntime->Preferences(bGoofy);RetailRuntime->Worker->Enqueue(MoveTemp(C));
 }
 
@@ -586,7 +609,11 @@ bool USkateComponent::GetRetailCamera(FTransform& Out, float& FOV) const
 }
 FString USkateComponent::GetRetailState() const
 {
-    return bRetailActive && RetailRuntime ? FString::Printf(TEXT("%s tick=%llu"),*RetailRuntime->State,RetailRuntime->Tick) : FString();
+    if (!bRetailActive || !RetailRuntime) return FString();
+    // The Ride backend adds its simulation cost per 60 Hz tick (mean and worst over the last second, ms).
+    if (!RetailRuntime->Worker && Ride)
+        return FString::Printf(TEXT("%s tick=%llu backend=Ride cost=%.3f/%.3f"),*RetailRuntime->State,RetailRuntime->Tick,Ride->CostMean,Ride->CostWorst);
+    return FString::Printf(TEXT("%s tick=%llu backend=Native"),*RetailRuntime->State,RetailRuntime->Tick);
 }
 
 void USkateComponent::StepRetailRuntime(float Dt)
@@ -594,6 +621,16 @@ void USkateComponent::StepRetailRuntime(float Dt)
     ReadInput(Dt);
     ComboFade=FMath::Max(0.f,ComboFade-Dt);
     if (!bRetailActive || !RetailRuntime) return;
+    if (!RetailRuntime->Worker)
+    {
+        if (!Ride || !StepRide(Dt)) return;
+        FSkateRuntime& O=*RetailRuntime;const FRideSession& R=*Ride;
+        O.Root=R.Root;O.Bones=R.Bones;O.Velocity=R.Velocity;O.State=R.State;O.Trick=R.Trick;O.Score=R.Score;
+        O.ManualBalance=R.ManualBalance;O.Camera=R.Camera;O.CameraFOV=R.CameraFOV;O.Tick=R.Ticks;O.HasPose=true;
+        if (O.Names.Num()!=R.Names.Num()) { O.Names=R.Names; O.Reference=R.Reference; }
+    }
+    else
+    {
     const bool Changed=RetailRuntime->Poll();
     if (!RetailRuntime->Error.IsEmpty())
     {
@@ -632,6 +669,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
     RetailRuntime->AwaitingPose=true; RetailRuntime->FrameTime=0;
     }
     if (!Changed) return;
+    }
     const FString& S=RetailRuntime->State;
     const ESkateMode NewMode=S.Contains(TEXT("Wipeout"))?ESkateMode::Bail:S.Contains(TEXT("Grind"))?ESkateMode::Grind:
         S.Contains(TEXT("Air"))?ESkateMode::Air:ESkateMode::Ground;
@@ -650,11 +688,11 @@ void USkateComponent::StepRetailRuntime(float Dt)
     if (FMath::Abs(Along)>15.f) bFakie=Along<0;
     RailSpeed=Vel.Size();
     bManual=Mode==ESkateMode::Ground && FMath::Abs(RetailRuntime->ManualBalance)>.0001f;
-    bNoseManual=bManual && RetailRuntime->Trick.Contains(TEXT("Nose"));
+    bNoseManual=bManual && (RetailRuntime->Worker ? RetailRuntime->Trick.Contains(TEXT("Nose")) : Ride && Ride->IsNoseManual());
     bPushing=In.bPush; bBraking=In.bBrake; bPowerslide=S==TEXT("SlideGround");
     const FVector Travel=FVector(Vel.X,Vel.Y,0).GetSafeNormal();
     SlideAngle=bPowerslide ? FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(float(FMath::Abs(FVector::DotProduct(Travel,Rot.GetForwardVector()))),0.f,1.f))) : 0.f;
-    bSlide=S==TEXT("GrindBoardslide") || S==TEXT("GrindTipslide") || S==TEXT("GrindDarkslide");
+    bSlide=S==TEXT("GrindBoardslide") || S==TEXT("GrindTipslide") || S==TEXT("GrindDarkslide") || S==TEXT("GrindLipslide");
     if (ShownCombo!=RetailRuntime->Trick || Score!=FMath::RoundToInt(RetailRuntime->Score) ||
         Mode==ESkateMode::Air || Mode==ESkateMode::Grind || bManual) ComboFade=1.5f;
     ShownCombo=RetailRuntime->Trick; Score=FMath::RoundToInt(RetailRuntime->Score); LastTrickName=FName(*ShownCombo);
@@ -685,6 +723,7 @@ void USkateComponent::StepRetailRuntime(float Dt)
         Wheels[I]->SetWorldTransform(Fit.GetRelativeTransform(WheelBind)*RetailRuntime->Bone(WheelNames[I])*Grow);
     }
     RetargetRetailPose();
+    if (!RetailRuntime->Worker) { AfterRideFrame(Dt); return; }
     // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
     // gathers here, builds on a background thread, and installs the completed world between simulation ticks.
     if (RetailRuntime->PendingWorld.IsValid())
