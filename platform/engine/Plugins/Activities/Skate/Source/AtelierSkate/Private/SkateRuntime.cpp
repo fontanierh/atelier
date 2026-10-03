@@ -34,6 +34,7 @@
 #include "UObject/UObjectIterator.h"
 #include "Async/Async.h"
 #include "Ride/RideSession.h"
+#include "Ride/RidePhysicalRider.h"
 
 namespace
 {
@@ -580,6 +581,7 @@ void USkateComponent::SuspendRetailRuntime()
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+    if (PhysicalRider) PhysicalRider->End();
     RetailRuntime.Reset(); Super::EndPlay(Reason);
 }
 void USkateComponent::LaunchRetail(const FVector& V)
@@ -612,7 +614,8 @@ FString USkateComponent::GetRetailState() const
     if (!bRetailActive || !RetailRuntime) return FString();
     // The Ride backend adds its simulation cost per 60 Hz tick (mean and worst over the last second, ms).
     if (!RetailRuntime->Worker && Ride)
-        return FString::Printf(TEXT("%s tick=%llu backend=Ride cost=%.3f/%.3f"),*RetailRuntime->State,RetailRuntime->Tick,Ride->CostMean,Ride->CostWorst);
+        return FString::Printf(TEXT("%s tick=%llu backend=Ride cost=%.3f/%.3f %s %s"),*RetailRuntime->State,RetailRuntime->Tick,Ride->CostMean,Ride->CostWorst,
+            *Ride->DescribePose(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"));
     return FString::Printf(TEXT("%s tick=%llu backend=Native"),*RetailRuntime->State,RetailRuntime->Tick);
 }
 
@@ -696,7 +699,8 @@ void USkateComponent::StepRetailRuntime(float Dt)
     if (ShownCombo!=RetailRuntime->Trick || Score!=FMath::RoundToInt(RetailRuntime->Score) ||
         Mode==ESkateMode::Air || Mode==ESkateMode::Grind || bManual) ComboFade=1.5f;
     ShownCombo=RetailRuntime->Trick; Score=FMath::RoundToInt(RetailRuntime->Score); LastTrickName=FName(*ShownCombo);
-    Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::TeleportPhysics);
+    // No physics teleport: the Ride rider's simulated bodies (RidePhysicalRider) keep their own motion.
+    Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::None);
     Movement()->Velocity=Vel;
     // A bigger board grows about the ground contact, so its wheels stay on the ground (ISkateRider::GetSkateBoardScale).
     const FTransform Grow=BoardGrowth();

@@ -110,6 +110,17 @@ struct FRideTuning
     float GetUpTime = 1.f;            // s blending from the fallen pose to the stance
     float BailSlideDecel = 700.f;     // cm/s^2, the rider sliding to a stop without a ragdoll
 
+    // Getting on and off (RideTransition.cpp).
+    float MountBlend = .35f;          // s, the pose's blend from on foot to the board
+    float DismountBlend = .3f;        // s, the pose's blend from the board to on foot
+    float MeshSettle = .25f;          // s, the body easing back onto the capsule after the capsule moved under it
+    float BoardDissolveTime = .25f;   // s for the board to dissolve in or out
+    float BoardHoldTime = 6.f;        // s a board stays in the hand after riding, unless the hands are needed
+    float BoardLyingTime = 10.f;      // s a board lying in the world stays once out of reach
+    float BoardReach = 150.f;         // cm within which a lying board can be picked up or stepped on
+    float MomentumDecay = 250.f;      // cm/s^2: speed above a run carried off the board fades this fast with the stick held ...
+    float MomentumBrake = 900.f;      // ... and this fast without it
+
     // Camera.
     float CameraDistance = 290.f;
     float CameraHeight = 120.f;

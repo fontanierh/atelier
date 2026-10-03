@@ -17,6 +17,10 @@ class FSkateRuntime;
 class FRideSession;
 class UBoxComponent;
 class UPhysicsAsset;
+class URidePhysicalRider;
+class UMaterialInstanceDynamic;
+class UMaterialInterface;
+struct FRideTransition;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -49,6 +53,15 @@ public:
     void PhysSkate(float Dt);
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     const TArray<FTransform>& GetRetailPose() const { return RetailPose; }
+    /** The switches between the skate pose and the character's own that should be blended (FAnimNode_SkateRider):
+     *  the count changes at each one, and the blend takes GetPoseBlendTime seconds (0: cut). */
+    uint32 GetPoseBlendSerial() const { return PoseBlendSerial; }
+    float GetPoseBlendTime() const { return PoseBlendTime; }
+    /** A bail the player asked to leave on foot (the skate button during the bail): the settled body gets up with
+     *  BeginGetUpOnFoot rather than back onto the board. */
+    bool WantsGetUpOnFoot() const;
+    /** The physical rider's get-up on foot, where the body lies (Ground, facing Yaw) with the board left lying. */
+    void BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp);
     FString GetRetailState() const;
     bool GetRetailCamera(FTransform& Out, float& FOV) const;
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
@@ -146,27 +159,37 @@ private:
     // The Ride backend (USkateSettings::Backend; Private/Ride, RIDE.md). It publishes through RetailRuntime's outputs,
     // so everything after the step (modes, cues, board placement, retargeting) is shared with the native backend.
     TSharedPtr<FRideSession> Ride;
-    UPROPERTY() TObjectPtr<UBoxComponent> LooseBoard;          // the board tumbling on its own during a bail
-    UPROPERTY() TObjectPtr<UPhysicsAsset> RagdollAsset;        // built from the rider's skeleton when it has none
-    bool bOwnPhysicsAsset=false;                               // the ragdoll uses the rider's own physics asset
-    FName SavedMeshProfile;
-    bool bRagdoll=false;
-    float RagdollTime=0.f,RagdollQuiet=0.f,GetUpBlend=-1.f;    // GetUpBlend >= 0: the body blends from physics to the pose
-    FVector RagdollStart=FVector::ZeroVector,RagdollFloor=FVector::ZeroVector;
-    float RagdollLimit=2500.f;                                 // a body faster than this has gone unstable (cm/s)
-    // Worlds built for the board's sweeps are often query-only; the surfaces near a fallen body are made physical
-    // while it lies there, then put back.
-    TArray<TWeakObjectPtr<UPrimitiveComponent>> MadePhysical;
-    FVector PhysicalCentre=FVector::ZeroVector;
-    void MakeWorldPhysical(const FVector& Centre);
-    void RestoreWorld();
+    // The rider's bodies: an active ragdoll while riding (skate.RidePhysical), the bail's ragdoll and loose board, and
+    // the get-up from where the body lies.
+    UPROPERTY() TObjectPtr<URidePhysicalRider> PhysicalRider;
     bool StartRide();
     bool StepRide(float Dt);
     void AfterRideFrame(float Dt);
     void StopRide();
     void PreloadRide();
-    bool StartRagdoll();
-    void UpdateRagdoll(float Dt);
-    void EndRagdoll();
-    UPhysicsAsset* BuildRagdollAsset();
+    void GetUpFromBody();
+
+    // Getting on and off with the Ride backend (Private/Ride/RideTransition.cpp, RIDE.md "Transitions"): one
+    // continuous character. The actor never jumps, the capsule changes about its centre, the mesh keeps its world
+    // place across each switch and eases back to its on-foot offset, the pose switch is inertialized and the speed
+    // carries over both ways; the board dissolves in and out rather than popping.
+    TSharedPtr<FRideTransition> Transition;
+    bool bRideBody=false;                                      // the current or last ride used the Ride backend
+    uint32 PoseBlendSerial=0;
+    float PoseBlendTime=0.f;
+    UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> BoardFade;  // USkateSettings::BoardDissolveMaterial, shared by the parts
+    FRideTransition& Transit();
+    void RequestPoseBlend(float Seconds) { ++PoseBlendSerial; PoseBlendTime=Seconds; }
+    bool RideMount();
+    bool RideDismount();
+    void TickTransition(float Dt);
+    void ResetTransition();
+    void ShowBoard(float Target, bool bInstant);
+    void ApplyBoardShown();
+    void SetMeshOffset(const FVector& Offset);
+    void StartMomentum(const FVector& Excess);
+    void StopMomentum();
+    void DropLyingBoard();
+    /** For GetDebug (QA): the board, the body's hips and the character's speed. */
+    FString DescribeTransition() const;
 };

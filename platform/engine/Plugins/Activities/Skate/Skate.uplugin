@@ -10,6 +10,7 @@
   "Modules": [{ "Name": "AtelierSkate", "Type": "Runtime", "LoadingPhase": "Default" }],
   "Plugins": [
     { "Name": "AtelierCore", "Enabled": true },
-    { "Name": "AtelierFX", "Enabled": true }
+    { "Name": "AtelierFX", "Enabled": true },
+    { "Name": "PhysicsControl", "Enabled": true }
   ]
 }

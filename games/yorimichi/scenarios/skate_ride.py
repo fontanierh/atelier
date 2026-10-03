@@ -3,11 +3,15 @@
 
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_ride [--only name,name]
 Mounts with skate.Backend Ride, then checks pushing, steering, braking, the ollie's height, every Flick-It trick, a grab,
-a 360, a grind, a manual, a bail and its recovery, a vert air that comes back in, and frame pacing (including mounting
-and switching character). Writes build/yorimichi/skateqa/ride.json.
+a 360, a grind, a manual, a bail and its recovery, a vert air that comes back in, frame pacing (including mounting
+and switching character), and the physical rider (skate.RidePhysical): how closely it holds the animation riding and
+landing, a bail that leaves the animation continuously, and its frame cost in Mega Park. Over every frame recorded,
+the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck where the clip stands on
+it, carry no NaN and never pop between clips. Writes build/yorimichi/skateqa/ride.json.
 """
 import argparse
 import json
+import math
 import time
 import skate as qa
 
@@ -84,8 +88,12 @@ def main():
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
     results = {}
 
+    seen = {}
+
     def record(name, rows, passed, note):
         results[name] = {'ok': bool(passed), 'note': note, 'frames': len(rows)}
+        if rows:
+            seen[name] = rows
         print(('PASS' if passed else 'FAIL') + ' ' + name + ': ' + note, flush=True)
 
     mounted = mount_ride()
@@ -228,12 +236,193 @@ live.behave('spin', spin)
         record('pacing_riding', [], riding['fps'] >= 58 and riding['p99_ms'] < 33.4 and not riding['over_50ms'], json.dumps(riding) + f' sim cost {cost} ms')
         record('pacing_mount', [], mounting['worst_ms'] < 100, json.dumps(mounting))
         record('pacing_switch', [], switching['worst_ms'] < 250, f'{switched}: ' + json.dumps(switching))
+    if wanted('pose'):
+        pose_checks(record, seen)
+    if any(wanted(name) for name in PHYSICAL):
+        physical_checks(record, wanted)
     qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
     out = qa.yori.OUT / 'skateqa' / 'ride.json'
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(results, indent=2) + '\n')
     print(f'{sum(r["ok"] for r in results.values())}/{len(results)} passed -> {out}')
     return 0 if all(r['ok'] for r in results.values()) else 1
+
+
+# Clips whose feet stand on the deck (RIDE.md, Rider): rolling, the load, powerslides, manuals, grinds, landings and
+# the air idle. Pushes, brakes, standing, grabs, flips and bails move a foot off it.
+PLANTED = ('R_IDLE', 'R_ANTIC', 'R_SLIDE', 'M_', 'G_', 'L_', 'IA_IDLE')
+POP_SPEED = 1500.   # cm/s: a body bone moving this fast in one frame and not in the frames around it has popped
+
+
+def pose_checks(record, seen):
+    """The rider's pose over every frame the other checks recorded (or a short ride of its own)."""
+    if not seen:
+        for name, events, speed_in, seconds in (
+                ('push', "[(0,{'push':True}),(2,{})]", 0, 2.5), ('kickflip', "[(.4,('flick','kickflip'))]", 450, 2.3),
+                ('manual', "[(.3,{'right':(0,-.5)}),(1.8,{})]", 480, 2.3)):
+            seen[name] = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,{speed_in},{events},duration={seconds}", seconds)
+        seen['grind'] = qa.run_scenario(f"{RAIL[0]},{RAIL[1]},0,520,[(.98,('flick','ollie'))],duration=3.5", 3.5)
+    runs = [rows for rows in seen.values() if rows and 'clip' in rows[0]]
+    if not runs:
+        record('pose', [], False, 'no clip= on the state line: the rider rig is not in this build')
+        return
+    rows = [r for run in runs for r in run]
+    bad = sum(int(r.get('nan', 0)) > 0 for r in rows)
+    record('pose_nan', rows, not bad, f'{bad} of {len(rows)} frames with a NaN bone')
+
+    # Feet: frames that have been on a planted clip for at least a sixth of a second (the cross-fade in is done).
+    planted, off, worst = 0, 0, {}
+    for run in runs:
+        held = 0
+        for prev, r in zip([None] + run, run):
+            held = held + 1 if prev and prev.get('clip') == r.get('clip') else 0
+            if r.get('mode') == '4' or held < 10 or not r.get('clip', '').startswith(PLANTED):
+                continue
+            planted += 1
+            if int(r.get('feetoff', 0)):
+                off += 1
+                worst.setdefault(r['clip'], r.get('feet'))
+    share = off / planted if planted else 1
+    record('pose_feet', rows, planted > 60 and share < .03,
+           f'{off} of {planted} planted frames with a foot off the deck'
+           + (' (' + ', '.join(f'{c} toes at {f} cm' for c, f in list(worst.items())[:4]) + ')' if worst else ''))
+
+    # Continuity: no body bone jumps in one frame (a pop between clips) outside a bail; the first frames of a run
+    # (the rider placed) are skipped.
+    pops, fastest = [], 0.
+    for run in runs:
+        steps = [float(r.get('step', 0)) for r in run]
+        for i in range(10, len(run) - 3):
+            if run[i].get('mode') == '4' or run[i - 1].get('mode') == '4':
+                continue
+            fastest = max(fastest, steps[i])
+            around = sorted(steps[i - 3:i] + steps[i + 1:i + 4])[3]
+            if steps[i] > POP_SPEED and steps[i] > 3 * around:
+                pops.append(f"{run[i - 1].get('clip')}->{run[i].get('clip')} {steps[i]:.0f} cm/s")
+    record('pose_continuity', rows, not pops, f'{len(pops)} pops' + (': ' + '; '.join(pops[:4]) if pops else '')
+           + f'; fastest body bone {fastest:.0f} cm/s')
+    anim = [float(r['anim']) for r in rows if 'anim' in r]
+    if anim:
+        anim.sort()
+        print(f'animator {anim[len(anim) // 2]:.3f} ms p50, {anim[min(len(anim) - 1, round(.99 * (len(anim) - 1)))]:.3f} ms p99 per frame', flush=True)
+
+
+# The reference (RIDE.md, Physical rider): the oracle's published body against its animation pose.
+BAIL_REFERENCE = {.125: (0, 8), .25: (8, 26), .5: (14, 37), 1.: (64, 127)}
+MEGA_ROAD = (-127.9, 1471.1, 134.)   # Mega Park's road (island metres), running east into its bend
+PHYSICAL = ('physical_riding', 'physical_landing', 'physical_bail', 'physical_cost')
+
+
+def physical(on):
+    qa.py(f"unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RidePhysical {int(on)}')")
+
+
+def floats(rows, key, keep=lambda r: True):
+    return [float(r[key]) for r in rows if key in r and keep(r)]
+
+
+def p95(values):
+    values = sorted(values)
+    return values[min(len(values) - 1, round((len(values) - 1) * .95))] if values else float('inf')
+
+
+def hips(row):
+    return tuple(float(x) for x in row['hips'].split(','))
+
+
+def physical_checks(record, wanted):
+    """The active ragdoll (skate.RidePhysical 1): tracking while riding and landing, a continuous bail, and its cost.
+    The cvar is put back as it was."""
+    before = qa.py("print(unreal.SystemLibrary.get_console_variable_int_value('skate.RidePhysical'))").strip().splitlines()[-1]
+    physical(True)
+    time.sleep(.8)
+    try:
+        if wanted('physical_riding'):
+            physical_riding(record)
+        if wanted('physical_landing'):
+            physical_landing(record)
+        if wanted('physical_bail'):
+            physical_bail(record)
+        if wanted('physical_cost'):
+            physical_cost(record)
+    finally:
+        physical(before == '1')
+
+
+def driven(row):
+    return row.get('sim') == '1' and float(row.get('w', 0)) >= .99
+
+
+def physical_riding(record):
+    rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,300,[(0,{{'push':True,'left':(.5,0)}}),(1.5,{{'push':True,'left':(-.6,0)}}),"
+                           f"(3,{{}})],duration=3.2", 3.2)
+    held = [r for r in rows if driven(r)]
+    pelvis, feet = p95(floats(held, 'pelvis_err')), p95(floats(held, 'foot_err'))
+    record('physical_riding', rows, len(held) > .8 * len(rows) and pelvis < 3 and feet < 8,
+           f'{len(held)}/{len(rows)} frames driven; pelvis {pelvis:.1f} cm, feet {feet:.1f} cm p95 '
+           f'(reference: upper body 0.5 cm, feet 6-8 cm); pa={rows[-1].get("pa", "?")}, {rows[-1].get("bodies", "?")} bodies')
+
+
+def physical_landing(record):
+    rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,500,[(.4,('flick','ollie'))],duration=2.4", 2.4)
+    land = next((i for i in range(1, len(rows)) if rows[i - 1]['mode'] == '2' and rows[i]['mode'] == '1'), None)
+    after = rows[land:land + 45] if land else []
+    worst = max(floats(after, 'worst_err'), default=float('inf'))
+    back = next((i for i, r in enumerate(after) if float(r.get('pelvis_err', 99)) < 3 and i > 3), None)
+    record('physical_landing', rows, land is not None and worst < 20 and back is not None and back <= 30
+           and all(driven(r) for r in after),
+           f'landing worst {worst:.1f} cm, pelvis back under 3 cm after {back if back is not None else "-"} frames '
+           f'(reference: 1-4 cm over riding, knocks 6 cm)')
+
+
+def physical_bail(record):
+    qa.py(f"live.park.place({FLAT[0] + 18},{FLAT[1]},0); live.park.launch(600); live.skate_release()")
+    qa.py("live.REC=[]; live.behave('rec', lambda dt: live.REC.append(live.skate_state()))\n"
+          "live.skate_input(); live.L.skate_release()\n"
+          "live.L.input_key('Gamepad_LeftThumbstick','press',1); live.L.input_key('Gamepad_RightThumbstick','press',1)\n"
+          "live.L.input_key('Gamepad_LeftTriggerAxis','axis',1); live.L.input_key('Gamepad_RightTriggerAxis','axis',1)")
+    time.sleep(.5)
+    qa.py("live.L.input_key('Gamepad_LeftThumbstick','release',0); live.L.input_key('Gamepad_RightThumbstick','release',0)\n"
+          "live.L.input_key('Gamepad_LeftTriggerAxis','axis',0); live.L.input_key('Gamepad_RightTriggerAxis','axis',0)")
+    time.sleep(8)
+    rows = recorded()
+    start = next((i for i, r in enumerate(rows) if r['mode'] == '4'), None)
+    bail = [r for r in rows[start:] if r['mode'] == '4'] if start is not None else []
+    steps = [math.dist(hips(a), hips(b)) for a, b in zip(bail, bail[1:]) if 'hips' in a and 'hips' in b]
+    at = {t: float(bail[round(t * 60)].get('pelvis_err', 'nan')) for t in BAIL_REFERENCE if round(t * 60) < len(bail)}
+    lying = [r for r in bail if r.get('sim') == '1' and 'hips' in r]
+    lay = hips(lying[-1]) if lying else None
+    up = next((position(r) for r in rows[start:] if r['mode'] == '1'), None) if start is not None else None
+    where = math.dist(lay[:2], up[:2]) if lay and up else float('inf')
+    kind = next((r['bail_kind'] for r in bail if r.get('bail_kind', 'none') != 'none'), '?')
+    record('physical_bail', rows, bool(bail) and max(steps, default=99) < 25 and at.get(.125, 99) < 16
+           and 20 < at.get(1., 0) < 200 and where < 100 and any(r.get('sim') == '1' for r in bail),
+           f'largest hips step {max(steps, default=0):.1f} cm/frame; divergence '
+           + ', '.join(f'{t:g} s {v:.0f} cm (ref {BAIL_REFERENCE[t][0]}-{BAIL_REFERENCE[t][1]})' for t, v in at.items())
+           + f'; up {where:.0f} cm from where the hips lay; kind {kind}')
+
+
+def physical_cost(record):
+    """The same 4 s of riding on Mega Park's road with the physical rider off, then on."""
+    ground = qa.py(f"g=live.L.ground_at(unreal.Vector({MEGA_ROAD[0] * 100},{-MEGA_ROAD[1] * 100},{MEGA_ROAD[2] * 100}))\n"
+                   "print(g.x, g.y, g.z)").split()
+    place = f"live.skate_place(unreal.Vector({ground[0]},{ground[1]},{ground[2]}), 0); live.L.skate_launch(unreal.Vector(700,0,0))"
+    qa.py(place)
+    time.sleep(3)   # the park streams in once, unmeasured
+    report = {}
+    for on in (False, True):
+        physical(on)
+        qa.py(place)
+        time.sleep(1.5)
+        frame_sampler()
+        qa.py("live.skate_script([(2,{'push':True,'left':(.4,0)}),(2,{'push':True,'left':(-.4,0)}),(.2,{})])")
+        time.sleep(4.2)
+        report[on] = frame_report()
+    off, on = report[False], report[True]
+    record('physical_cost', [], on['frames'] and off['frames'] and on['p50_ms'] - off['p50_ms'] < .5
+           and on['p99_ms'] - off['p99_ms'] < 1.5 and not on['over_50ms'],
+           f"Mega Park p50 {off['p50_ms']:.2f} -> {on['p50_ms']:.2f} ms, p99 {off['p99_ms']:.2f} -> {on['p99_ms']:.2f} ms, "
+           f"fps {off['fps']:.1f} -> {on['fps']:.1f}")
 
 
 def release_controls():
