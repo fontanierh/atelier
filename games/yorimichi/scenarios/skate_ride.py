@@ -85,13 +85,42 @@ def mount_ride():
 # thigh bodies (cm, below 0 inside), skin_groups= the skin under the ground (skate.RideSkinCheck).
 HAND_GAP = -1.   # cm: no hand deeper inside the rider's own body than this, at rest, rolling or carving
 HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False))
+# The rest close-up shows the right hand from the rider's right side (out from the hips through the hand), frozen at
+# the idle loop's worst phase for that hand: a watcher reads hand_gap= every frame for 1.6 s (more than the loop), then
+# stops time (global time dilation) when the right hand is back within 0.3 cm of the deepest it went.
 REST_AIM = """
-import unreal, math
+import unreal
 st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
 P = unreal.Vector(*[float(v) for v in st.get('hips', st.get('hip')).split(',')])
-yaw = math.radians(live.L.player().get_actor_rotation().yaw)
-f = unreal.Vector(math.cos(yaw), math.sin(yaw), 0)
-unreal.MegaParkValidation.review_camera(P + f * 130 + unreal.Vector(0, 0, -10), P, 40)
+H = P
+try:
+    _m = live.L.player().get_editor_property('mesh')
+    _b = next((n for n in ('hand_R', 'Wrist_R', 'hand_r') if _m.get_bone_index(n) != -1), None)
+    H = _m.get_socket_location(_b) if _b else P
+except Exception as e:
+    print('no right hand:', e)
+_out = unreal.Vector(H.x - P.x, H.y - P.y, 0)
+_out = _out * (1 / _out.length()) if _out.length() > 1 else live.L.player().get_actor_right_vector()
+unreal.MegaParkValidation.review_camera(H + _out * 85 + unreal.Vector(0, 0, 8), H, 40)
+"""
+WORST_PHASE = """
+import unreal
+live.HW = {'t': 0., 'min': 99., 'done': False, 'at': None}
+def _hw(dt):
+    s = live.HW
+    if s['done']:
+        return
+    st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
+    if 'hand_gap' not in st:
+        return
+    r = float(st['hand_gap'].split(',')[1])
+    s['t'] += dt
+    if s['t'] < 1.6:
+        s['min'] = min(s['min'], r)
+    elif r <= s['min'] + .3 or s['t'] > 4.5:
+        unreal.GameplayStatics.set_global_time_dilation(live.L.game_world(), .0001)
+        s['done'], s['at'] = True, r
+live.behave('handworst', _hw)
 """
 
 
@@ -114,23 +143,40 @@ def hand_rows(record):
             clock, rest, moving = 0., [], []
             for r in rows:
                 if 'hand_gap' in r:
-                    gap = min(float(v) for v in r['hand_gap'].split(','))
-                    (rest if clock < 1 else moving).append((gap, r.get('hand_near', '-')))
+                    # The deeper hand this frame, which body, when and in which clip.
+                    gaps, near = [float(v) for v in r['hand_gap'].split(',')], r.get('hand_near', '-').split(',')
+                    side = min(range(len(gaps)), key=gaps.__getitem__)
+                    (rest if clock < 1 else moving).append(
+                        (gaps[side], f"{'LR'[side]} hand, {near[min(side, len(near) - 1)]}, {clock:.2f} s, {r.get('clip', '-')}"))
                 clock += float(r.get('dt', 16.7)) / 1000
             feet = max((float(part.partition(':')[2]) for r in rows for part in r.get('skin_groups', '').split(',')
                         if part.startswith('feet:')), default=float('nan'))
             qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[],duration=1.5", 1.5)
             shot = qa.yori.OUT / 'skateqa' / f'ride-hands-{tag}.png'
             qa.py(REST_AIM)
-            time.sleep(.6)
-            qa.py(f"live.L.screenshot({str(shot)!r})")
-            time.sleep(1.2)
-            qa.py("unreal.MegaParkValidation.restore_player_camera()")
+            qa.py(WORST_PHASE)
+            frozen = None
+            for _ in range(40):
+                time.sleep(.2)
+                got = qa.py("import json; print(json.dumps(live.HW))").strip().splitlines()[-1]
+                if json.loads(got)['done']:
+                    frozen = json.loads(got)
+                    break
+            try:
+                qa.py(REST_AIM)
+                time.sleep(.6)
+                qa.py(f"live.L.screenshot({str(shot)!r})")
+                time.sleep(1.2)
+            finally:
+                qa.py("live.stop('handworst'); unreal.GameplayStatics.set_global_time_dilation(live.L.game_world(), 1.)")
+                qa.py("unreal.MegaParkValidation.restore_player_camera()")
+            phase = (f"right hand at {frozen['at']:.1f} cm (deepest {frozen['min']:.1f} in the loop)" if frozen and frozen['at'] is not None
+                     else 'right hand phase not caught')
             worst = min(rest + moving, default=(float('nan'), '-'))
             text = lambda seen: f'{min(seen)[0]:.1f}' if seen else '-'
             record(f'hands_clear_{tag}', rows, bool(rest) and bool(moving) and worst[0] >= HAND_GAP,
                    f'hand gap (cm, below 0 inside the body) at rest {text(rest)}, pushing, rolling and carving '
-                   f'{text(moving)} (worst against {worst[1]}); close-up {shot}')
+                   f'{text(moving)} (worst: {worst[1]}); close-up from the right side, {phase}: {shot}')
             record(f'push_foot_{tag}', rows, feet <= SKIN_DEPTH,
                    f'feet skin {feet:.1f} cm under the ground at worst through a push and two carves')
     finally:

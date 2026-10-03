@@ -445,6 +445,8 @@ public:
     struct FBody { int32 Bone=INDEX_NONE; FVector Centre=FVector::ZeroVector; double Reach=0; TArray<FBodyShape> Shapes; };
     TWeakObjectPtr<USkeletalMesh> LimbMesh,BodiesMesh;
     TWeakObjectPtr<UPhysicsAsset> BodiesFor;
+    bool bBodiesComplete=false;
+    int32 BodiesTries=0;
     TArray<FSkinPoint> LimbSkin[4];   // forearm_L, forearm_R, foot_L, foot_R
     TArray<FBody> Bodies;
     struct FWorldResult
@@ -869,10 +871,13 @@ static void SampleLimbSkin(FSkateRuntime& Runtime,USkeletalMesh* Asset,const FRe
 }
 
 // The rider's own pelvis, spine, chest and thigh bodies, in their bones' spaces (fitted to its skin when the physical
-// rider fits them), with a bounding sphere each.
+// rider fits them), with a bounding sphere each. A hull whose planes are not cooked yet (a body asset fitted this frame)
+// counts as its box and leaves the set incomplete: it is gathered again on the next frames (up to 120 times).
 static void GatherBodies(FSkateRuntime& Runtime,USkeletalMesh* Asset,UPhysicsAsset* Physics,const FReferenceSkeleton& Ref,TFunctionRef<int32(const FString&)> Index)
 {
-    Runtime.BodiesFor=Physics; Runtime.BodiesMesh=Asset; Runtime.Bodies.Reset();
+    if (Runtime.BodiesFor.Get()!=Physics || Runtime.BodiesMesh.Get()!=Asset) Runtime.BodiesTries=0;
+    ++Runtime.BodiesTries;
+    Runtime.BodiesFor=Physics; Runtime.BodiesMesh=Asset; Runtime.Bodies.Reset(); Runtime.bBodiesComplete=true;
     for (const TCHAR* Contract : {TEXT("pelvis"),TEXT("spine"),TEXT("spine_mid"),TEXT("chest"),TEXT("thigh_L"),TEXT("thigh_R")})
     {
         const int32 Bone=Index(Contract);
@@ -884,8 +889,14 @@ static void GatherBodies(FSkateRuntime& Runtime,USkeletalMesh* Asset,UPhysicsAss
         for (const FKConvexElem& E : Geom.ConvexElems)
         {
             FSkateRuntime::FBodyShape S; S.Kind=0; S.Local=E.GetTransform(); E.GetPlanes(S.Planes);
-            if (S.Planes.IsEmpty()) continue;
             Bounds.Add(FSphere(S.Local.TransformPosition(E.ElemBox.GetCenter()),E.ElemBox.GetExtent().Size()));
+            if (S.Planes.IsEmpty())
+            {
+                // Not cooked yet: its box until it is.
+                Runtime.bBodiesComplete=false;
+                if (!E.ElemBox.IsValid) continue;
+                S.Kind=3; S.Local=FTransform(E.ElemBox.GetCenter())*E.GetTransform(); S.Half=E.ElemBox.GetExtent();
+            }
             B.Shapes.Add(MoveTemp(S));
         }
         for (const FKSphylElem& E : Geom.SphylElems)
@@ -907,6 +918,13 @@ static void GatherBodies(FSkateRuntime& Runtime,USkeletalMesh* Asset,UPhysicsAss
         for (const FSphere& S : Bounds) B.Centre+=S.Center/Bounds.Num();
         for (const FSphere& S : Bounds) B.Reach=FMath::Max(B.Reach,FVector::Dist(B.Centre,S.Center)+S.W);
         Runtime.Bodies.Add(MoveTemp(B));
+    }
+    if (Runtime.bBodiesComplete || Runtime.BodiesTries==120)
+    {
+        FString Names;
+        for (const FSkateRuntime::FBody& B : Runtime.Bodies) Names+=FString::Printf(TEXT(" %s:%d"),*Ref.GetBoneName(B.Bone).ToString(),B.Shapes.Num());
+        UE_LOG(LogTemp,Display,TEXT("SKATE arms keep clear of %d bodies of %s (%s), %s after %d gathers:%s"),Runtime.Bodies.Num(),*Physics->GetName(),
+            *Asset->GetName(),Runtime.bBodiesComplete?TEXT("complete"):TEXT("hulls without planes"),Runtime.BodiesTries,*Names);
     }
 }
 
@@ -947,8 +965,10 @@ static double BodyDistance(const FSkateRuntime::FBody& Body,const FVector& Q,FVe
 }
 
 // Each arm swings about its shoulder (the whole arm, its bend kept) just far enough that its hand's and forearm's skin
-// is Margin (component units) out of the rider's own body, at most 25 degrees: the deepest sample's way out, a few
-// passes.
+// is Margin (component units) out of the rider's own body, at most 25 degrees, in a few passes. Each pass takes the
+// deepest sample and tries two ways out across the arm: its body's nearest face, and straight out from that body's
+// middle (a hand deep in a thigh can be nearer its inner face, or a face whose way out runs along the arm). It keeps the
+// one that leaves the arm least deep.
 static void ClearArms(const FSkateRuntime& Runtime,const FReferenceSkeleton& Ref,TArray<FTransform>& Output,const int32 Uppers[2],double Margin)
 {
     constexpr double MaxSpread=UE_DOUBLE_PI*25./180.;
@@ -957,10 +977,11 @@ static void ClearArms(const FSkateRuntime& Runtime,const FReferenceSkeleton& Ref
         const int32 Upper=Uppers[H];
         const TArray<FSkateRuntime::FSkinPoint>& Skin=Runtime.LimbSkin[H];
         if (Upper<0 || Skin.IsEmpty()) continue;
-        double Spread=0;
-        for (int32 Pass=0;Pass<4;++Pass)
+        const FVector Shoulder=Output[Upper].GetLocation();
+        // The deepest sample with the arm turned by Turn about the shoulder (below 0 inside, Margin counted).
+        const auto Deepest=[&](const FQuat& Turn,FVector& At,FVector& Way,FVector& Middle)
         {
-            double Worst=0; FVector At=FVector::ZeroVector,Way=FVector::ZeroVector;
+            double Worst=0;
             for (const FSkateRuntime::FBody& Body : Runtime.Bodies)
             {
                 const FTransform& Frame=Output[Body.Bone];
@@ -968,28 +989,43 @@ static void ClearArms(const FSkateRuntime& Runtime,const FReferenceSkeleton& Ref
                 const FVector Centre=Frame.TransformPosition(Body.Centre);
                 for (const FSkateRuntime::FSkinPoint& Point : Skin)
                 {
-                    const FVector P=Output[Point.Bone].TransformPosition(Point.Local);
+                    const FVector P=Shoulder+Turn.RotateVector(Output[Point.Bone].TransformPosition(Point.Local)-Shoulder);
                     if (FVector::DistSquared(P,Centre)>Reach*Reach) continue;
                     FVector Out;
                     const double D=BodyDistance(Body,Frame.InverseTransformPosition(P),Out)*Scale-Margin;
-                    if (D<Worst) { Worst=D; At=P; Way=Frame.TransformVectorNoScale(Out); }
+                    if (D<Worst) { Worst=D; At=P; Way=Frame.TransformVectorNoScale(Out); Middle=Centre; }
                 }
             }
+            return Worst;
+        };
+        double Spread=0;
+        for (int32 Pass=0;Pass<4;++Pass)
+        {
+            FVector At,Way,Middle;
+            const double Worst=Deepest(FQuat::Identity,At,Way,Middle);
             if (Worst>=0) break;
-            const FVector Shoulder=Output[Upper].GetLocation(),Arm=At-Shoulder;
-            const FVector Move=FVector::VectorPlaneProject(Way,Arm.GetSafeNormal());
-            if (Move.Size()<.2 || Arm.Size()<1.) break;
-            const double Angle=FMath::Min(FMath::Asin(FMath::Min(-Worst/(Move.Size()*Arm.Size()),1.)),MaxSpread-Spread);
-            if (Angle<=1e-4) break;
-            Spread+=Angle;
-            const FQuat Swing(FVector::CrossProduct(Arm,Move).GetSafeNormal(),Angle);
+            const FVector Arm=At-Shoulder;
+            if (Arm.Size()<1.) break;
+            const FVector Along=Arm.GetSafeNormal();
+            FQuat Best=FQuat::Identity; double BestWorst=Worst,BestAngle=0;
+            for (const FVector& Try : {FVector::VectorPlaneProject(Way,Along),FVector::VectorPlaneProject(At-Middle,Along).GetSafeNormal()})
+            {
+                if (Try.Size()<.2) continue;
+                const double Angle=FMath::Min(FMath::Asin(FMath::Min(-Worst/(Try.Size()*Arm.Size()),1.)),MaxSpread-Spread);
+                if (Angle<=1e-4) continue;
+                const FQuat Swing(FVector::CrossProduct(Arm,Try).GetSafeNormal(),Angle);
+                FVector A,W,M;
+                if (const double After=Deepest(Swing,A,W,M); After>BestWorst) { Best=Swing; BestWorst=After; BestAngle=Angle; }
+            }
+            if (BestAngle<=0) break;
+            Spread+=BestAngle;
             for (int32 I=Upper;I<Ref.GetNum();++I)
             {
                 int32 Up=I;
                 while (Up>Upper) Up=Ref.GetParentIndex(Up);
                 if (Up!=Upper) continue;
-                Output[I].SetRotation(Swing*Output[I].GetRotation());
-                Output[I].SetLocation(Shoulder+Swing.RotateVector(Output[I].GetLocation()-Shoulder));
+                Output[I].SetRotation(Best*Output[I].GetRotation());
+                Output[I].SetLocation(Shoulder+Best.RotateVector(Output[I].GetLocation()-Shoulder));
             }
         }
     }
@@ -1172,7 +1208,7 @@ void USkateComponent::RetargetRetailPose()
         if (const float Clear=CVarSkateArmClear.GetValueOnGameThread(); Clear>=0.f)
         {
             UPhysicsAsset* Physics=Mesh->GetPhysicsAsset();
-            if (Physics && (RetailRuntime->BodiesFor.Get()!=Physics || RetailRuntime->BodiesMesh.Get()!=Asset)) GatherBodies(*RetailRuntime,Asset,Physics,Ref,Index);
+            if (Physics && (RetailRuntime->BodiesFor.Get()!=Physics || RetailRuntime->BodiesMesh.Get()!=Asset || (!RetailRuntime->bBodiesComplete && RetailRuntime->BodiesTries<120))) GatherBodies(*RetailRuntime,Asset,Physics,Ref,Index);
             if (Physics && !RetailRuntime->Bodies.IsEmpty())
                 ClearArms(*RetailRuntime,Ref,Output,Uppers,Clear/FMath::Max(Mesh->GetComponentScale().GetMax(),1e-4));
         }
