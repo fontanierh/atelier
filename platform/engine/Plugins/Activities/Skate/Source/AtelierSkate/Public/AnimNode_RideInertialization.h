@@ -79,4 +79,7 @@ private:
     float Elapsed = 0.f, Longest = 0.f;
     TArray<FBoneOffset> Offsets;
     FGraphTraversalCounter UpdateCounter;
+    // The mesh bones of the compact pose the stored poses were taken with: a recache that keeps them (a physics asset
+    // swapped in or out re-requires the bones) keeps the stored poses and a blend in progress.
+    TArray<FBoneIndexType> CachedBones;
 };

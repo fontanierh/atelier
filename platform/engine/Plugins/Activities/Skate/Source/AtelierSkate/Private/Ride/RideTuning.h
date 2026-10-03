@@ -131,6 +131,7 @@ struct FRideTuning
     float MomentumBrake = 900.f;      // ... and this fast without it
     float ClipBlend = .2f;            // s, the pose's blend into and out of a mount or dismount clip
     float CarryBlend = .25f;          // s, the pose's blend into and out of the board-carry locomotion
+    float RecoverBlend = .7f;         // s, a get-up on foot rising out of the fallen body's pose
 
     // Camera.
     float CameraDistance = 290.f;

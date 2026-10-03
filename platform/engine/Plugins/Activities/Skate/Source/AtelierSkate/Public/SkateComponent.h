@@ -20,7 +20,7 @@ class UPhysicsAsset;
 class URidePhysicalRider;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
-struct FRideTransition; enum class ERideFoot : uint8;
+struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -46,7 +46,8 @@ public:
     bool Toggle();
     /** The board button on foot with the Ride backend (RIDE.md, "Transitions"): a board dissolves into the hand, a
      *  held one is put away, a lying one dissolves and a fresh one comes to the hand. Not while the hands are busy
-     *  (ISkateRider::CanCarrySkateBoard). */
+     *  (ISkateRider::CanCarrySkateBoard). Callable from scripts (Python: recall_board()). */
+    UFUNCTION(BlueprintCallable, Category="Skate")
     void RecallBoard();
     /** On foot with the board in hand (the board-carry locomotion). */
     bool IsBoardInHand() const;
@@ -192,7 +193,8 @@ private:
     // The visible deck eases from where it was (in the hand of the character's own pose) onto the clip's board.
     FTransform OffBoardDeckFrom=FTransform::Identity;
     float OffBoardDeckBlend=1.f;
-    bool PublishOffBoardPose(float Lift);
+    /** bPlaceBoard: the visible board goes where the clip has it (false: it stays where it is, lying or kicked away). */
+    bool PublishOffBoardPose(float Lift, bool bPlaceBoard = true);
     /** Place the visible board's parts from the published source board, its deck at DeckWorldScaled. */
     void PlaceBoardParts(const FTransform& DeckWorldScaled);
     uint32 PoseBlendSerial=0;
@@ -232,10 +234,29 @@ private:
     float ClipPhase(const UAnimSequence* Clip, float Time, bool bMirror) const;
     float AirTimeLeft(float* Height = nullptr) const;
     void TickTransition(float Dt);
+    /** skate.RideTrace: a line a frame about each switch (the actor, the mesh, the pelvis published and shown). */
+    void TraceTransition();
     void ResetTransition();
     void ShowBoard(float Target, bool bInstant);
     void ApplyBoardShown();
-    void SetMeshOffset(const FVector& Offset);
+    void SetMeshOffset(const FVector& Offset, const FQuat& Turn);
+    /** The mesh's offset and turn that keep it at MeshWorld under the actor as it is now. */
+    void KeepMeshWorld(const FTransform& MeshWorld);
+    /** Turn the actor upright to Yaw, the mesh keeping its world place and easing back onto the capsule. */
+    void TurnActor(float Yaw);
+    // Bails left on foot, a board kicked away, a lying board stepped onto.
+    /** URidePhysicalRider::OnBailStart: a run-out is taken on foot (RUNOUT_*, after the ride's frame). */
+    bool TakeRunOut(ERideBailKind Kind);
+    bool BeginRunOut();
+    bool BeginRecover();
+    bool BeginStepOnClip();
+    /** The board leaves the clip (kicked away, or rolling on after a run-out): it flies or rolls on by itself as a
+     *  projectile, or settles where it is when it barely moves. */
+    void LaunchBoard();
+    void StepLooseBoard(float Dt);
+    void SettleBoard();
+    /** A clip that ends without the board in hand: the character's own pose and movement take over. */
+    void EndOnFoot(float Blend);
     void StartMomentum(const FVector& Excess);
     void StopMomentum();
     void DropLyingBoard();

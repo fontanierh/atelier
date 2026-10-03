@@ -4,6 +4,7 @@
 #include "Animation/AnimNode_Inertialization.h"
 #include "Animation/BlendProfile.h"
 #include "Animation/Skeleton.h"
+#include "HAL/IConsoleManager.h"
 
 namespace
 {
@@ -19,6 +20,13 @@ namespace
     private:
         FAnimNode_RideInertialization& Node;
     };
+
+    // skate.RideTrace (RideTransition.cpp): the node's own line about each recache and each request it cannot start.
+    bool Tracing()
+    {
+        static const IConsoleVariable* Trace = IConsoleManager::Get().FindConsoleVariable(TEXT("skate.RideTrace"));
+        return Trace && Trace->GetInt() > 0;
+    }
 
     constexpr float MinDelta = 1e-4f;
     constexpr float MinOffset = 1e-4f;     // cm, or radians
@@ -65,13 +73,21 @@ void FAnimNode_RideInertialization::Initialize_AnyThread(const FAnimationInitial
     FAnimNode_Base::Initialize_AnyThread(Context);
     Source.Initialize(Context);
     Reset();
+    CachedBones.Reset();
 }
 
 void FAnimNode_RideInertialization::CacheBones_AnyThread(const FAnimationCacheBonesContext& Context)
 {
     FAnimNode_Base::CacheBones_AnyThread(Context);
     Source.CacheBones(Context);
-    // The compact pose may have changed (a level of detail): the stored poses no longer line up.
+    // The compact pose may have changed (a level of detail): the stored poses no longer line up. The same bones again
+    // (a physics asset swapped, a mesh refreshed) keep them, so a switch in the same frame still blends.
+    const TArray<FBoneIndexType>& Bones = Context.AnimInstanceProxy->GetRequiredBones().GetBoneIndicesArray();
+    if (Tracing()) UE_LOG(LogTemp, Display, TEXT("SKATE trace inertialization f%llu %s: bones recached, %s"), GFrameCounter,
+        *Context.AnimInstanceProxy->GetAnimInstanceName(),
+        Bones == CachedBones ? TEXT("the same: the blend carries on") : TEXT("changed: the stored poses are dropped"));
+    if (Bones == CachedBones) return;
+    CachedBones = Bones;
     const float Request = Pending;
     const UBlendProfile* Profile = PendingProfile;
     Reset();
@@ -210,6 +226,9 @@ void FAnimNode_RideInertialization::Evaluate_AnyThread(FPoseContext& Output)
         Elapsed = Dt;
     }
     else if (bActive) Elapsed += Dt;
+    if (Pending >= 0 && Previous1.Num() != Num && Tracing())
+        UE_LOG(LogTemp, Display, TEXT("SKATE trace inertialization f%llu %s: a %.2f s request cut (no previous pose)"), GFrameCounter,
+            *Output.AnimInstanceProxy->GetAnimInstanceName(), Pending);
     Pending = -1; PendingProfile = nullptr;
     if (bActive && Elapsed >= Longest) bActive = false;
     if (bActive)

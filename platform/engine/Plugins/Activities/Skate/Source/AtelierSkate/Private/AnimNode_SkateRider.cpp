@@ -5,6 +5,7 @@
 #include "Animation/AnimNodeMessages.h"
 #include "Animation/AnimNode_Inertialization.h"
 #include "GameFramework/Actor.h"
+#include "HAL/IConsoleManager.h"
 
 FAnimNode_Base* FAnimNode_SkateRider::GetRoot()
 {
@@ -39,6 +40,8 @@ void FAnimNode_SkateRider::PreUpdate(const UAnimInstance* InAnimInstance)
     if (Component && !Component->GetRetailPose().IsEmpty()) Pose = Component->GetRetailPose();
     else Pose.Reset();
     if (Component) { BlendSerial = Component->GetPoseBlendSerial(); BlendTime = Component->GetPoseBlendTime(); }
+    static const IConsoleVariable* Trace = IConsoleManager::Get().FindConsoleVariable(TEXT("skate.RideTrace"));
+    bTrace = Trace && Trace->GetInt() > 0;
 }
 
 void FAnimNode_SkateRider::Update_AnyThread(const FAnimationUpdateContext& Context)
@@ -47,11 +50,17 @@ void FAnimNode_SkateRider::Update_AnyThread(const FAnimationUpdateContext& Conte
     // The component counts the switches it wants concealed (the first update only learns the count), and a switch
     // between the poses a frame after the count changed is blended too. Native rides never ask for a blend.
     const bool bSwitch = bSkate != bShowedSkate;
-    if (((bSerialKnown && BlendSerial != AppliedSerial) || bSwitch) && BlendTime > 0.f)
+    const bool bAsked = bSerialKnown && BlendSerial != AppliedSerial;
+    UE::Anim::IInertializationRequester* Requester = nullptr;
+    if ((bAsked || bSwitch) && BlendTime > 0.f)
     {
-        if (UE::Anim::IInertializationRequester* Requester = Context.GetMessage<UE::Anim::IInertializationRequester>())
-            Requester->RequestInertialization(BlendTime);
+        Requester = Context.GetMessage<UE::Anim::IInertializationRequester>();
+        if (Requester) Requester->RequestInertialization(BlendTime);
     }
+    if (bTrace && (bAsked || bSwitch))
+        UE_LOG(LogTemp, Display, TEXT("SKATE trace node f%llu: %s, serial %u -> %u, %s %.2f s"), GFrameCounter,
+            bSwitch ? (bSkate ? TEXT("to the skate pose") : TEXT("to the own pose")) : TEXT("same pose"), AppliedSerial, BlendSerial,
+            Requester ? TEXT("inertialized") : BlendTime > 0.f ? TEXT("no requester, cut") : TEXT("cut"), BlendTime);
     AppliedSerial = BlendSerial; bSerialKnown = true;
     if (!bSkate)
     {

@@ -55,7 +55,10 @@ into the graph's inputs, runs the graph and places the pose on the board.
   the transitions' `FAnimNode_SkateRider` does. With `MaxSpeed` set, a request between poses far apart lasts longer
   than asked: at least 1.875 times the largest component-space gap over `MaxSpeed` (the quintic's fastest point), at
   most `MaxDuration` (0.25 s); `SpeedRoot` limits the bones counted. The rider's mesh caps the body (`HIPS` and below)
-  at 1000 cm/s, a little under the trick clips' own fastest limbs (1100 to 1300 cm/s).
+  at 1000 cm/s, a little under the trick clips' own fastest limbs (1100 to 1300 cm/s). The node keeps its stored poses
+  and a blend in progress across a recache of the same bones: swapping a physics asset in or out (the physical rider
+  does, at its start and end) re-requires the mesh's bones, and dropping the poses there would turn the next request
+  into a cut.
 - **Stance.** The clips are authored goofy. A regular rider plays them mirrored (`bMirror = !bGoofy`), and a stance
   change inertializes over 0.2 s. `MDT_SkateRider` mirrors across Unreal's Y axis and lists every bone the native rig
   mirrors, the centre bones onto themselves: Unreal leaves a bone without a row unmirrored.
@@ -288,7 +291,9 @@ lower levels of detail, and the ride has neither.
 Getting on and off the board with the Ride backend (`RideTransition.*`, `USkateComponent`) keeps one continuous
 character. The actor is never moved to a new place:
 - the capsule changes size about its centre and settles onto the floor under it;
-- the mesh keeps its world place across each switch, then eases back onto the capsule over `MeshSettle`;
+- the mesh keeps its world place and rotation across each switch (the actor turning to a clip's way included), then
+  eases back onto the capsule over `MeshSettle`: the inertialization works in the mesh's frame, so a mesh that moved or
+  turned with the actor would show as a jump of the whole body;
 - the pose switches by inertialization (`FAnimNode_SkateRider` in the character's graph, on a `RequestPoseBlend`);
 - the speed carries over both ways.
 
@@ -301,21 +306,29 @@ Off the board, the native clips play through the session's animator (`FRideSessi
 - held, it is scaled with the body, between the two by its height above the trajectory.
 
 On the ground, a clip moves the capsule along its root motion through an override root motion source (`SkateDrive`,
-its Z left to CharacterMovement). The source's speed is scaled from the character's speed at the start to the board's
-(or the run's) at the end. In the air no clip moves the capsule: CharacterMovement keeps the fall, the clip's own arc is
-left out, and its trajectory follows the capsule's floor. A clip that follows another starts from the trajectory the
-last one left and eases onto the capsule's floor. `IsRiding()` is true while a clip plays: the game's own actions and
-turning wait for it.
+its Z left to CharacterMovement). The source follows the clip's travel averaged over 0.2 s (the native trajectories
+step unevenly frame to frame). Its speed goes from the character's at the start to the board's (or the run's) at the
+end along a smooth step, or the clip's own travel is scaled to start at the character's speed. A mount also moves the
+capsule on to where the clip leaves the board, so the ride starts with the capsule over the deck. The retargeted deck
+sits a little off the clip's own (the bodies differ): that drift is taken off where the trajectory ends, so the deck
+the rider stands on ends over the capsule, and a step onto a lying board puts the retargeted deck, not the clip's, on
+the lying one. A clip held in the world (a step onto a lying board, a get-up) pulls the capsule after its trajectory
+instead. In the air no clip moves the capsule: CharacterMovement keeps the fall, the clip's own arc is left out, and
+its trajectory follows the capsule's floor. A clip that follows another starts from the trajectory the last one left
+and eases onto the capsule's floor. `IsRiding()` is true while a clip plays: the game's own actions and turning wait
+for it.
 
 | State (`foot=`) | What plays | Board (`board=`) |
 |---|---|---|
 | `off` | the character's own animation | `away` (dissolved), or `world` (lying) |
 | `carry` | the board-carry locomotion: `BR_STAND_0_CYC`, `BR_WALK_FWD_CYC`, `BR_RUN_FWD_CYC` and `BR_SPRINT_FWD_CYC`, blended by speed between their own speeds (about 170, 540 and 910 cm/s) | `hand` |
-| `mount` | `BR_STAND_0_INTO_MOUNT`, or `BR_{WALK,RUN,SPRINT}_FWD_{0,25,50,75}_INTO_MOUNT` | `hand`, then `ride` |
+| `mount` | `BR_STAND_0_INTO_MOUNT`, or `BR_{WALK,RUN,SPRINT}_FWD_{0,25,50,75}_INTO_MOUNT`; onto a lying board, `BR_STAND_0_INTO_MOUNT` from its touchdown | `hand`, then `ride` |
 | `dismount` | `BR_DISMOUNT_{HI,LO}_INTO_STAND_0`, `BR_DISMOUNT_{HI,LO}_INTO_RUN_FWD` or `BR_DISMOUNT_FAST_{HI,LO}_INTO_RUN_FWD`, then the carry | `hand` |
-| `air` | a jump with the board, `JBR_STAND_0_TO_SML_FWD_0` or `JBR_RUN_FWD_{0,25,50,75}_TO_SML_FWD_{25,75}`; or a step off the board in the air, `BR_DISMOUNT_{FS,BS,STALE,DBL,MUTE}_INTO_BR_AIR`, then `JBR_AIRDISMOUNT_TO_BIG_DN_0` | `hand` |
+| `air` | a jump with the board, `JBR_STAND_0_TO_SML_FWD_0` or `JBR_RUN_FWD_{0,25,50,75}_TO_SML_FWD_{25,75}`; a step off the board in the air from a grab, `BR_DISMOUNT_{FS,BS,STALE,DBL,MUTE}_INTO_BR_AIR`, then `JBR_AIRDISMOUNT_TO_BIG_DN_0`; or a kick-out, `BR_KICKOUT_{HI,LO}_INTO_NB_AIR`, then `JNB_KICKOUT_TO_SML_FWD_75` | `hand`; kicked, `world` |
 | `land` | `BR_LAND_{SML,BIG}_{DN,FWD,UP}_0_INTO_STAND` or `BR_LAND_{SML,BIG}_{DN,FWD,UP}_{25,75}_INTO_RUN_FWD` (`BIG_DN` has only `0`), then the carry | `hand` |
 | `airmount` | `BR_LF_AIR_INTO_MOUNT_BSGRAB` or `BR_RF_AIR_INTO_MOUNT_BSGRAB` (a caveman) | `hand`, then `ride` |
+| `runout` | `RUNOUT_{FWD,BWD,FF,BF}_{HI,LO}_{S,M,B}<n>_TO_RUN_FWD` (a bail run out on foot) | `world` (rolling on) |
+| `recover` | `W_RECOVERY_ON{BACK*,FRONT,LEFT,RIGHT*}_N_0_N` (a get-up on foot where the body lies) | `world` (lying) |
 
 - **Mount.** The game's skate button, on the ground. The gait is chosen by speed (under 80 cm/s standing, then walk
   under 350 and run under 720, sprint above). The variant is the quarter of the stride the character is at: the
@@ -334,12 +347,19 @@ turning wait for it.
   clip starts with its board exactly on the deck the rider leaves; that offset eases away over the first 0.35 s.
   The carry follows on at the clip's last stride (its `CADENCEENDPERCENT` curve when it has one, else the phase read
   from the clip's feet). Speed above the character's own goes on as momentum that fades (`MomentumDecay`,
-  `MomentumBrake`). After 40% of a clip that ends standing, the stick runs off into the carry; any landing or step-off
-  also gives way to the stick turned more than 60 degrees from its way.
-- **Air dismount.** The skate button in a ride's air. The clip is the grab held: Indy `FS`, Melon `BS`, Christ air
-  `STALE`, tuck knee `DBL`, otherwise `MUTE`. It starts with its board on the deck the rider leaves, the feet come off
-  it and the board goes to the hand; the offset from the capsule's floor eases away before the landing. With more than
-  0.25 s of fall left the fall clip follows, timed to the ground below.
+  `MomentumBrake`): an additive root motion source, the character's own velocity recorded as CharacterMovement's
+  velocity before it, so the walk's own speed does not dip as the source starts. After 40% of a clip that ends
+  standing, the stick runs off into the carry; any landing or step-off also gives way to the stick turned more than 60
+  degrees from its way.
+- **Air dismount.** The skate button in a ride's air with a grab held. The clip is the grab: Indy `FS`, Melon `BS`,
+  Christ air `STALE`, tuck knee `DBL`, a one-foot `MUTE`. It starts with its board on the deck the rider leaves, the
+  feet come off it and the board goes to the hand; the offset from the capsule's floor eases away before the landing.
+  With more than 0.25 s of fall left the fall clip follows, timed to the ground below.
+- **Kick-out.** The skate button in a ride's air without a grab: the feet push the board away (`BR_KICKOUT_HI`, or
+  `LO` crouched). The board leaves the clip with the clip's own velocity and spin, at least 250 cm/s away from the
+  rider, and flies on by itself: a small sphere moved by a `UProjectileMovementComponent` (it bounces off what it hits
+  and slides to a stop on the ground), the deck over it turning with the spin. It settles flat over 0.2 s, wheels down
+  or, when it came down closer to that, upside down. The rider lands on foot without it.
 - **Jump.** A jump while carrying plays the jump with the board from the stride's quarter (from a stand under
   150 cm/s), timed to the fall (0.6 to 1.4 times). A step off a ledge keeps the character's own pose, the board on
   the hand bone nearest to it.
@@ -357,23 +377,46 @@ turning wait for it.
   one phase, which advances by the distance covered over the blended stride, so the feet keep to the ground. There is
   no back socket: a board is either in the hand, under the rider, lying, or gone. A board leaving a hand of the
   character's own pose for a clip's eases there over `ClipBlend`.
-- **Board button** (`USkateComponent::RecallBoard`, the game's button, on foot):
+- **Board button** (`USkateComponent::RecallBoard`, the game's button, on foot; a `UFUNCTION`, so scripts can press it,
+  `recall_board()` in Python):
   - with no board, one dissolves into the hand;
   - holding one, it is put away;
   - with one lying in the world, that one dissolves and a fresh one comes to the hand.
-- **Bail.** The skate button during a bail means "get up on foot": the rider gets up where the body lies, then steps
-  off at once with the character's own pose blending in. The board stays lying where it came to rest (`world`), a
-  body of its own. A lying board dissolves after `BoardLyingTime` out of reach (`BoardReach`). A mount while a board
-  lies in the world removes it and uses a fresh board in the hand.
+- **Run-out.** A slow, upright bail (the physical rider's `OnBailStart`, kind `RunOut`: see "Physical rider") is
+  taken on foot: no ragdoll, the rider runs out of it. The clip is chosen by the way the board was going under the
+  rider (on along its nose `FWD`, back along its tail `BWD`, across toward the toes `FF` or the heels `BF`), `HI` or
+  `LO` by the crouch, and small, medium or big by the bail's energy (the largest of its speed over `RunOutSpeed`, its
+  fall over `RunOutImpact` and its spin over `RunOutSpin`), one of the variants at random. The clip's board starts on
+  the deck the rider bailed from and rolls with the clip; the body starts where it was, at the bail's speed, and
+  follows the clip's turns. At the clip's end the board rolls on by itself like a kicked one.
+- **Bail.** Otherwise the body falls (the physical rider). The skate button during the bail means "get up on foot":
+  the rider gets up where the body lies with the `W_RECOVERY_*` clip whose first frame lies most like the fallen body
+  (the head, hands, feet and the way the front faces, about the hips). The clip's pelvis is put on the body's and its
+  first frame held until the physical rider hands its bodies to the animation (a frame or two, at most 0.3 s); the
+  pose then rises out of the fallen body's (`BlendFromSnapshot`) over `RecoverBlend`. The board stays lying where it
+  came to rest (`world`), a body of its own. A lying board dissolves after `BoardLyingTime` out of reach
+  (`BoardReach`).
+- **Step on.** The skate button next to a board lying on its wheels (within 130 cm, slower than a run): the stand
+  mount plays from the moment its foot touches the deck, its board on the lying one (nose to nose or turned end to end,
+  whichever puts the clip's body nearer the character's), and the capsule follows the clip onto it. A mount while a
+  board lies elsewhere, upside down or still moving removes it and uses a fresh board in the hand, and logs why the
+  lying one was not stepped on (`SKATE ride no step on`).
 - **Placement.** `PlaceAt()` gets on at once, without a clip (a scripted cut).
 
-The tunables are in `skate.RideTune`: `MountBlend`, `DismountBlend`, `ClipBlend`, `CarryBlend`, `MeshSettle`,
-`BoardDissolveTime`, `BoardHoldTime`, `BoardLyingTime`, `BoardReach`, `MomentumDecay` and `MomentumBrake`.
+The tunables are in `skate.RideTune`: `MountBlend`, `DismountBlend`, `ClipBlend`, `CarryBlend`, `RecoverBlend`,
+`MeshSettle`, `BoardDissolveTime`, `BoardHoldTime`, `BoardLyingTime`, `BoardReach`, `MomentumDecay` and
+`MomentumBrake`.
 
 The transition fields on the state line (`atelier live state`) are:
 - `board=`, `shown=` and `vis=`;
-- `hip=`, `deck=`, `vel=`, `offset=` (the mesh's offset from its on-foot place) and `momentum=`;
+- `hip=`, `deck=`, `vel=`, `offset=` (the mesh's offset from its on-foot place), `turn=` (its turn from its on-foot
+  rotation, degrees) and `momentum=`;
 - `foot=`, `clip=`, `t=`, `lift=` (the body standing on the deck, 0 to 1), `phase=`, `hold=`, `hand=` and `air=`
-  (seconds in the air).
+  (seconds in the air);
+- `loose=` (a board on its own: `flying`, `settling`, `body` for the physical rider's box, or `-`) and `deckup=` (its
+  deck's up, 1 wheels down, -1 upside down).
 
-A game's transitions QA scenario checks them.
+A game's transitions QA scenario checks them. `skate.RideTrace N` logs a line a frame from the frame before each switch
+(a pose blend, the mode, the clip) to N frames after it: the actor, the mesh, and the pelvis and facing published and
+shown. `FAnimNode_SkateRider` adds a line for each switch and blend request, and `FAnimNode_RideInertialization` one
+for each recache and each request it cannot start (no previous pose): a cut.

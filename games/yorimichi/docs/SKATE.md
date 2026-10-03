@@ -26,9 +26,11 @@ With the Ride backend (`skate.Backend Ride`) getting on and off is one continuou
 the rider drops the board and steps on at speed. Stepping off, the rider runs out with the board in hand, and the
 board dissolves after 6 s or as soon as the hands are needed. **D-pad Right** (keyboard **G**) brings a board to the
 hand on foot, or puts the held one away. Jumping with the board in hand plays a jump and a landing with it. The skate
-button in the air throws the board under the feet (a caveman: run, jump, then press it); in a ride's air it steps off
-the board from the grab held and comes down on foot holding it. Pressing the skate button during a bail gets up on
-foot where the body lies, and the board stays lying (see the Skate plugin's `RIDE.md`, "Transitions").
+button in the air throws the board under the feet (a caveman: run, jump, then press it). In a ride's air it steps off
+the board from the grab held and comes down on foot holding it; with no grab held the feet kick the board away and it
+flies on by itself. A slow, upright bail runs out on foot, the board rolling on. Pressing the skate button during a
+fall gets up on foot where the body lies, and the board stays lying; the skate button next to a board lying on its
+wheels steps onto it (see the Skate plugin's `RIDE.md`, "Transitions").
 
 Riding into the sea puts Cairo back on the board at the last dry spot.
 
@@ -138,6 +140,7 @@ With the game running (`atelier play yorimichi`):
 | Scenario | What it checks | Report in `build/yorimichi/` |
 | --- | --- | --- |
 | `skate`, `skate_runtime` | 19 checks: push, flip and landing; steering; manual; rail; vert; deliberate bail and recovery; skin clearance during the bail (at least 0.45 cm); retargeted bone lengths, head direction and camera; keyboard pushing; stow and remount; goofy push and ollie; flat 360s both ways; keyboard powerslides both ways; running mount; Triangle mount and stow; coasting pose stability | `skateqa/runtime.json` |
+| `skate_transitions` | With `skate.Backend Ride`, getting on and off: mounts from a stand, a walk, a run, a sprint and the carry; dismounts to a stand, a run and a fast run; the carry put away; the board button; a fall got up from on foot and back onto the board; a lying board dissolving; jumps with the board in hand; cavemans; an air dismount from a grab and a kick-out; a slow bail run out; a step onto a lying board; Link and a Bokoblin. Every frame: the character, its hips, its velocity and the camera move no more than the speed explains; frame p99 under 17 ms | `skateqa/transitions.json` |
 | `skatepark` | Roll-ins on the bowl, mini, return, seven-stair and four-stair banks; the stair handrail; an air up and back in the bowl (apex above 3.5 m, landing back on the wall) | `skateqa/park.json` |
 | `skate_performance` | Real-time frame pacing through six activities (push and flip, bowl air, mini air, quarter air, street to mini, bail): at least 58.5 fps, p95 under 20 ms, p99 under 33.34 ms, no frame over 50 ms, no native pose repeated three frames running | `skateqa/performance.json` |
 | `skate_showreel` | A filmed line of shots at the pier, at a fixed 60 fps step; run through the live bridge (see the script) | `skatefilm/<take>/` |

@@ -159,8 +159,8 @@ void USkateComponent::SetMeshForRiding(bool bRiding)
 {
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
     // The Ride backend keeps the on-foot mesh placement (its pose is anchored on the board) plus the transition's
-    // offset that keeps the body where it was (RideTransition.cpp).
-    if (bRideBody) { Mesh->SetRelativeLocationAndRotation(SavedMeshLocation + Transit().MeshOffset, SavedMeshRotation); return; }
+    // offset and turn that keep the body where it was (RideTransition.cpp).
+    if (bRideBody) { Mesh->SetRelativeLocationAndRotation(SavedMeshLocation + Transit().MeshOffset, Transit().MeshTurn * SavedMeshRotation); return; }
     if (bRiding)
     {
         // The rider stands across the board: regular faces the toe side (+Y), goofy -Y. The clips put the nose on the

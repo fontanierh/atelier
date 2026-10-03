@@ -45,4 +45,5 @@ private:
     uint32 BlendSerial = 0, AppliedSerial = 0;
     float BlendTime = 0.f;
     bool bSkate = false, bShowedSkate = false, bSerialKnown = false;
+    bool bTrace = false;                 // skate.RideTrace: log each switch and blend request
 };

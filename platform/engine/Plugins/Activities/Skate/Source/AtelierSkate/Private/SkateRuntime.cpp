@@ -762,10 +762,11 @@ void USkateComponent::PlaceBoardParts(const FTransform& DeckWorldScaled)
     }
 }
 
-bool USkateComponent::PublishOffBoardPose(float Lift)
+bool USkateComponent::PublishOffBoardPose(float Lift, bool bPlaceBoard)
 {
     // Off the board (RideTransition.cpp) the Ride session's clip pose is retargeted like a ride's, without starting
-    // the ride: its root is the clips' trajectory on the floor, and the board goes where the clip has it.
+    // the ride: its root is the clips' trajectory on the floor, and the board goes where the clip has it (unless it
+    // lies elsewhere or flies on its own).
     if (!Ride || !Rider) return false;
     if (RetailRuntime && RetailRuntime->Worker) RetailRuntime.Reset();
     if (!RetailRuntime) { RetailRuntime=MakeShared<FSkateRuntime>(); RetailRuntime->Ready=true; RetailRuntime->State=TEXT("PhysicsGround"); }
@@ -777,7 +778,7 @@ bool USkateComponent::PublishOffBoardPose(float Lift)
     RetargetRetailPose();
     bOffBoardPose=false;
     if (RetailPose.IsEmpty()) return false;
-    PlaceBoardParts(OffBoardDeck);
+    if (bPlaceBoard) PlaceBoardParts(OffBoardDeck);
     return true;
 }
 
