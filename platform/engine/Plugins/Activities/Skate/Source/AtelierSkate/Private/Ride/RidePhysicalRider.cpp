@@ -149,6 +149,27 @@ FName URidePhysicalRider::Bone(const TCHAR* Contract) const
     return !B.IsNone() && Skeletal && Skeletal->GetRefSkeleton().FindBoneIndex(B) != INDEX_NONE ? B : NAME_None;
 }
 
+void URidePhysicsControl::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+    USkeletalMeshComponent* M = Posed.Get();
+    if (TickType == LEVELTICK_All && M && M->GetSkeletalMeshAsset())
+    {
+        // What Physics Control's cache reads next (after the same wait for the mesh's evaluation).
+        M->HandleExistingParallelEvaluationTask(true, true);
+        if (M->GetEditableComponentSpaceTransforms().IsEmpty())
+        {
+            SkippedTime += DeltaTime;
+            if (++Skipped <= 20)
+                UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: no pose for Physics Control at frame %llu, its update skipped (%d)"),
+                    GFrameCounter, Skipped);
+            return;
+        }
+    }
+    // A skipped frame's time goes into the next update, whose pose has moved over both frames.
+    Super::TickComponent(DeltaTime + SkippedTime, TickType, ThisTickFunction);
+    SkippedTime = 0;
+}
+
 bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
 {
     USkeletalMeshComponent* NewMesh = InRider ? InRider->GetMesh() : nullptr;
@@ -202,7 +223,9 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     UPhysicsControlAsset* Authored = S->ControlAsset.IsNull() ? nullptr : S->ControlAsset.LoadSynchronous();
     bOwnControlAsset = Authored == nullptr;
     Asset = Authored ? Authored : BuildControlAsset(Mesh->GetPhysicsAsset());
-    Control = NewObject<UPhysicsControlComponent>(Rider, TEXT("RidePhysicsControl"), RF_Transient);
+    URidePhysicsControl* Guarded = NewObject<URidePhysicsControl>(Rider, TEXT("RidePhysicsControl"), RF_Transient);
+    Guarded->Posed = Mesh;
+    Control = Guarded;
     Control->PhysicsControlAsset = Asset.Get();
     // A jump of the mesh this far in a frame is a placement: no target velocities from it (see Update).
     Control->TeleportDistanceThreshold = PlacedDistance;
@@ -231,7 +254,7 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     }
     Control->SetControlsInSetEnabled(AllSet, false);
     bSimulating = false; bEndWhenOut = false; Weight = WeightTarget = 0; AppliedWeight = -1;
-    bBail = bBailOffered = false; bBailMaterial = bBailDrag = false; HipsAboveGround = -1; GetUpTime = -1; GetUpWait = -1; LandingLeft = 0;
+    bBail = bBailOffered = false; bBailMaterial = false; BailDragApplied = 0; HipsAboveGround = -1; GetUpTime = -1; GetUpWait = -1; LandingLeft = 0;
     LastMeshLocation = Mesh->GetComponentLocation();
     LastRiderVelocity = Rider->GetVelocity(); PlacedFrames = 0;
     BeganFrame = GFrameCounter;
@@ -260,7 +283,7 @@ void URidePhysicalRider::End()
     if (Mesh)
     {
         ApplyBailMaterial(false);
-        ApplyBailDrag(false);
+        ApplyBailDrag(0.f);
         Mesh->SetAllBodiesSimulatePhysics(false);
         Mesh->SetAllBodiesPhysicsBlendWeight(0.f);
         Mesh->bBlendPhysics = false;
@@ -569,11 +592,10 @@ void URidePhysicalRider::ApplyBailMaterial(bool bBailing)
     Mesh->SetPhysMaterialOverride(BailMaterial);
 }
 
-void URidePhysicalRider::ApplyBailDrag(bool bSliding)
+void URidePhysicalRider::ApplyBailDrag(float Drag)
 {
-    if (!Mesh || bSliding == bBailDrag) return;
-    bBailDrag = bSliding;
-    const float Drag = bSliding ? GetDefault<URidePhysicalSettings>()->BailDrag : 0.f;
+    if (!Mesh || Drag == BailDragApplied || (Drag > 0.f && BailDragApplied > 0.f && FMath::Abs(Drag - BailDragApplied) < .01f)) return;
+    BailDragApplied = Drag;
     for (FBodyInstance* Body : Mesh->Bodies)
     {
         const UBodySetup* Setup = Body ? Body->GetBodySetup() : nullptr;
@@ -828,10 +850,11 @@ FString URidePhysicalRider::Describe() const
 {
     if (!Control) return TEXT("phys=off");
     const FVector Hips = GetPelvisLocation();
-    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f lie=%.1f drag=%d getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s"),
-        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, bBail ? HipsAboveGround : -1.f, int(bBailDrag), GetGetUpAlpha(),
+    return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f lie=%.1f drag=%.2f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s skipped=%d"),
+        *PhaseName(Phase).ToString(), bSimulating, Weight, PelvisError, FootError, WorstError, Hips.X, Hips.Y, Hips.Z, bBail ? HipsAboveGround : -1.f, BailDragApplied, GetGetUpAlpha(),
         !bBailOffered ? TEXT("none") : LastBailKind == ERideBailKind::RunOut ? TEXT("runout") : TEXT("fall"),
-        Mesh ? Mesh->Bodies.Num() : 0, bBuiltAsset ? TEXT("contract") : TEXT("rider"), bBoardFrame ? TEXT("board") : TEXT("world"));
+        Mesh ? Mesh->Bodies.Num() : 0, bBuiltAsset ? TEXT("contract") : TEXT("rider"), bBoardFrame ? TEXT("board") : TEXT("world"),
+        Cast<URidePhysicsControl>(Control) ? Cast<URidePhysicsControl>(Control)->Skipped : 0);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -970,8 +993,11 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
         HipsAboveGround = Rider->GetWorld()->LineTraceSingleByChannel(Below, Hips + FVector(0, 0, 10.f), Hips - FVector(0, 0, HipsGroundRange), ECC_Pawn, Params)
             ? float(Hips.Z - Below.ImpactPoint.Z) : -1.f;
     }
-    // Down near the ground the body slides, and drags (BailDrag): a body still in the air falls and flies freely.
-    ApplyBailDrag(HipsAboveGround >= 0.f && HipsAboveGround < SlideHeight);
+    // Down near the ground the body slides, and drags (BailDrag, coming in over BailDragFrom..BailDragFull): a body
+    // still in the air falls and flies freely.
+    const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
+    const bool bSliding = HipsAboveGround >= 0.f && HipsAboveGround < SlideHeight;
+    ApplyBailDrag(bSliding ? S->BailDrag * FMath::SmoothStep(S->BailDragFrom, S->BailDragFull, BailTime) : 0.f);
     return BailTime > 1.6f && (Quiet > .4f || BailTime > SettleTime + 2.f) ? ERideBodyState::Settled : ERideBodyState::Tumbling;
 }
 
@@ -983,7 +1009,7 @@ void URidePhysicalRider::Abort()
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
     ApplyBailMaterial(false);
-    ApplyBailDrag(false);
+    ApplyBailDrag(0.f);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
 }
@@ -1034,7 +1060,7 @@ void URidePhysicalRider::HandOverGetUp()
     Weight = WeightTarget = 0.f; ApplyWeight();
     SetSimulating(false);
     ApplyBailMaterial(false);
-    ApplyBailDrag(false);
+    ApplyBailDrag(0.f);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(ERidePhysicalPhase::GetUp);

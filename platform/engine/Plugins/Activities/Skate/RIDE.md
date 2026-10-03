@@ -165,8 +165,8 @@ it goes fully limp only in a bail.
     touches nothing. A rider's own asset on such a skeleton needs the same body.
   - The built shapes are sized in the bone's units, lengths as well as radii. On a root scaled 148 times, one unit
     is 1.48 m.
-- **Controller.** A `UPhysicsControlComponent` sits on the rider. It creates its controls and body modifiers from a
-  `UPhysicsControlAsset`, using limbs found through the bone contract:
+- **Controller.** A `URidePhysicsControl` (a `UPhysicsControlComponent`) sits on the rider. It creates its controls
+  and body modifiers from a `UPhysicsControlAsset`, using limbs found through the bone contract:
   - parent-space controls on every joint, aimed at the animated pose, in the sets `Joints_Spine`, `Joints_Arms` and
     `Joints_Legs`;
   - world-space controls ("anchors") on every body, with the sets `Anchor_Pelvis`, `Anchor_Feet` and `Anchor_Hands`
@@ -180,6 +180,9 @@ it goes fully limp only in a bail.
   Targets come from the mesh's animated component-space pose (`bUseSkeletalAnimation`). The mesh stays attached to
   the capsule
   (`ComponentTransformIsKinematic`), and the ride moves the actor without teleporting physics (`ETeleportType::None`).
+  Under a heavy load the mesh can reach Physics Control's update with no component-space pose for a frame. Physics
+  Control then aims every control at the identity, and the anchors pull the whole body onto the board: the hips
+  dropped 48 cm in one frame. `URidePhysicsControl` skips such an update, and the drives keep last frame's targets.
 - **Phases.** Each phase is a named profile in the control asset: `Riding`, `Air`, `Landing` (held for `LandingTime`
   after a touchdown), `Grind`, `Manual`, `Bail`, `GetUp`, `OnFoot`. `InvokeControlProfile` switches between them as
   the session's mode changes. The mount and dismount fade the body modifiers' physics weight over `MountBlend` and
@@ -210,11 +213,13 @@ it goes fully limp only in a bail.
   The anchors hold the bodies in the frame of the kinematic root body, and in a bail the ride stops the root on the
   bail's frame, then carries it to the ground under the body a frame late (on a quarter, from the board on the wall to
   whatever lies below the hips). Held to that frame even for a moment, the body is braked to a stop on flat or flung
-  off a wall. The bodies fall with `BailFriction` (0.1, the lower of it and the ground's, as a physical material
+  off a wall. The bodies fall with `BailFriction` (0.06, the lower of it and the ground's, as a physical material
   override; the default material's is 0.7). While the pelvis is down within 50 cm of the ground, they also drag with
-  `BailDrag` (0.55 per second of linear damping, on top of the physics asset's). The drag takes speed in proportion to
-  the speed, so a slide's length grows with its entry speed, as the reference's does. Friction alone makes it grow with
-  the square. A body still in the air falls and flies freely.
+  `BailDrag` (1.5 per second of linear damping, on top of the physics asset's), coming in smoothly from `BailDragFrom`
+  (0.7 s after the bail) to `BailDragFull` (1.1 s). The drag takes speed in proportion to the speed, so a slide's length
+  grows with its entry speed, as the reference's does. Friction alone makes it grow with the square. Held off for most
+  of a second, the drag lets the body keep its speed as the reference's does, then stops it within about another
+  second. A body still in the air falls and flies freely.
   The board becomes a 3.5 kg Chaos box thrown with the board's velocity and spin, and the board's meshes follow it.
   - The bail's distance from the animation is measured with the pose carried as far as the ground under the pelvis has
     gone since the bail began, as the reference's root follows its body. The ride's root gets there some frames late
@@ -244,9 +249,9 @@ it goes fully limp only in a bail.
   them. `p.PhysicsControl.*` and the component's `bShowDebugVisualization` also apply. The Ride state line
   (`USkateComponent::GetRetailState`, `atelier live state`) ends with the phase, whether the bodies simulate, the
   physics weight, the distance of the pelvis, feet and worst body from the animation (cm), the pelvis body's world
-  position and, in a bail, its height above the ground under it (`lie`) and whether the slide's drag is on (`drag`),
-  the get-up blend, the last bail's kind, the body count, and which physics asset is in use. A game's QA checks read
-  it.
+  position and, in a bail, its height above the ground under it (`lie`) and the slide's drag in effect (`drag`, per
+  second), the get-up blend, the last bail's kind, the body count, which physics asset is in use, and how many of
+  Physics Control's updates were skipped for want of a pose (`skipped`, each also logged). A game's QA checks read it.
   - A rider placed further than 1 m in one frame (a scripted placement) has its bodies carried along by the skeletal
     mesh's own teleport (`UpdateKinematicBonesToAnim` with `TeleportPhysics`), at the rider's velocity. Physics
     Control's reset to cached targets would give each body the jump divided by the frame time. The component's
@@ -278,24 +283,30 @@ Physics Control's copy of the animation, p95.
 | Ride QA, a second rider on another skeleton | 2.5 cm | 3.8 cm | |
 
 - Landing (ride QA): the worst body 14–16 cm off, the pelvis back under 3 cm within 7–9 frames.
-- Bail on flat at 6 m/s: 7, 23, 45–54 and 62 cm from the clip at 0.125, 0.25, 0.5 and 1 s, against 0–8, 8–26, 14–37
-  and 64–127 cm. The bail starts with the body moving at the board's speed (10 cm a frame at 6 m/s) and no jump. The
-  pelvis travels 4.1–4.8 m in the first second and comes to rest 5.8–7.0 m on after 2.7–2.9 s (0.68–0.80× and
-  0.97–1.17× the entry speed times 1 s, against the reference's 0.97–0.98× and 1.04–1.16× at 4.6–5.6 m/s), lying
-  5–8 cm over the ground within the second.
-- Bail on flat at 10.9 m/s: 8.5–8.9 m in the first second, at rest 14.1–14.9 m on after 3.6–3.7 s (0.78–0.82× and
-  1.30–1.37×, against the reference's 0.97× and 1.26–1.30× at 10.6–11.5 m/s), lying 5–8 cm over the ground within the
-  second. With friction alone (`BailFriction` 0.25, no drag) the 6 m/s bail was as far (0.78× and 1.12×), but this one
-  went 9.4 m and 20.8 m (0.86× and 1.91×, after 4.2 s): the length grew with the square of the speed. The sweep, at rest
-  at 6 and 10.9 m/s: friction 0.25 with no drag 1.12× and 1.91×; 0.1 with drag 0.5 1.14× and 1.38×, 0.55 1.10× and
-  1.30×, 0.6 1.05× and 1.24×; 0.15 with 0.5 0.98× and 1.23×; 0.06 with 0.55 1.27× and 1.44× (the slide creeps on for
-  3.3–4.2 s). Neither friction nor drag reproduces the reference's first second: its body keeps the entry speed for
-  about 0.7 s and then stops within about a second, at any speed.
+- Bail on flat at 6 m/s: 7, 23–24, 58–63 and 62–72 cm from the clip at 0.125, 0.25, 0.5 and 1 s, against 0–8, 8–26,
+  14–37 and 64–127 cm. The bail starts with the body moving at the board's speed (10 cm a frame at 6 m/s) and no jump.
+  The pelvis travels 5.3–5.4 m in the first second and comes to rest 7.4–7.5 m on after 2.6 s (0.90× and 1.24–1.26×
+  the entry speed times 1 s, against the reference's 0.97–0.98× and 1.04–1.16× at 4.6–5.6 m/s), lying 7 cm (Link
+  14 cm) over the ground within the second.
+- Bail on flat at 10.9 m/s: 10.0–10.1 m in the first second, at rest 14.5 m on after 3.0 s (0.92–0.93× and
+  1.33–1.34×, against the reference's 0.97× and 1.26–1.30× at 10.6–11.5 m/s), lying 7 cm over the ground within the
+  second.
+- How the slide was tuned, as the entry speed times 1 s travelled at 1 s and at rest, at 6 and 10.9 m/s. Friction alone
+  (`BailFriction` 0.25, no drag): 0.78×/1.12× and 0.86×/1.91× (after 4.2 s): the length grows with the square of the
+  speed. A drag from the moment the body is down (friction 0.1, drag 0.55): 0.75×/1.09× and 0.78–0.81×/1.30–1.33×
+  (2.8 s and 3.6 s); other constant drags only traded the rest against the first second (0.1 with 0.5 1.14× and 1.38×
+  at rest, 0.6 1.05× and 1.24×; 0.15 with 0.5 0.98× and 1.23×; 0.06 with 0.55 1.27× and 1.44×, creeping on for
+  3.3–4.2 s). The reference's body keeps the entry speed for about 0.7 s, then stops within about a second, at any
+  speed; a drag that waits as long comes closer. Ramped in over 0.6–1.0 s, friction 0.1 with drag 1.0: 0.87×/1.21×;
+  0.08 with 1.0: 0.88×/1.28× and 0.91×/1.42×; over 0.7–1.1 s, 0.06 with 1.5 (taken): 0.90×/1.24–1.26× and
+  0.92–0.93×/1.33–1.34×. The first second cannot reach the reference's: the body's landing keeps about 80% of its speed
+  at any friction or drag.
 - Bail landing an Indy on a quarter pipe at 8.9 m/s (the grab held into the landing): limp from the first frame, the
-  body slides down the wall and lies 8–11 cm over the ground within the second; 4.2–4.4 m at 1 s and 6.2–6.7 m at rest
-  (0.47–0.49× and 0.70–0.75× the whole speed; the reference thrown off in the air, 0.50× and 0.65×). Before, the anchors
-  held the body for the bail's first 0.15 s in the frame of a root that jumped from the wall to the floor; it was flung
-  at 45 m/s, the bail was handed to the animated slide, and the rider stood with the arms out until the get-up.
+  body slides down the wall and lies 9–10 cm over the ground within the second; 5.8–6.1 m at 1 s and 8.1–8.4 m at rest
+  (0.64–0.68× and 0.92–0.94× the whole speed; with the drag on from the moment the body was down, 0.47–0.49× and
+  0.70–0.75×; the reference thrown off in the air, 0.50× and 0.65×). Before, the anchors held the body for the bail's
+  first 0.15 s in the frame of a root that jumped from the wall to the floor; it was flung at 45 m/s, the bail was
+  handed to the animated slide, and the rider stood with the arms out until the get-up.
 - Get-up: across the hand-over the hips move under 0.5 cm a frame, and the rider rises within 6 cm of where the hips
   lay. The hand-over took five frames in every get-up measured.
 - Cost, riding a park road with `skate.RidePhysical` 0 then 1 with no other heavy job running: game-thread frame p50
