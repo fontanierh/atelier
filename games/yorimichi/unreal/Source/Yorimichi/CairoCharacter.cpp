@@ -7,6 +7,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
@@ -44,7 +45,8 @@ ACairoCharacter::ACairoCharacter()
 
 bool ACairoCharacter::HasBotw()
 {
-    return BotwRecord().IsValid() && LoadObject<UWandererDefinition>(nullptr, BotwDefinition, nullptr, LOAD_NoWarn | LOAD_Quiet) != nullptr;
+    // Checked on disk, not loaded: the character switch asks every time the menu opens.
+    return BotwRecord().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(BotwDefinition)));
 }
 
 void ACairoCharacter::BeginPlay()

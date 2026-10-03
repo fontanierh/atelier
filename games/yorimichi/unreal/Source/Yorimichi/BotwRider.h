@@ -27,7 +27,7 @@ public:
      *  mode's own default). */
     static UClass* PawnOverride();
     /** The other characters that can play: Cairo with the BotW move set and the BOTW characters with an imported rider
-     *  definition, in roster order. */
+     *  definition, in roster order. Checks the definitions exist without loading them. */
     static TArray<FString> Available();
     /** The playing character's name: the rider's, "Cairo" or "CairoBotw". */
     static FString NameOf(const AWandererCharacter* Character);

@@ -10,9 +10,13 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Misc/CommandLine.h"
+#include "Misc/PackageName.h"
 #include "Misc/Parse.h"
 
 static FString DefinitionPath(const FString& Name) { return FString::Printf(TEXT("/Game/Botw/%s/DA_%sRider.DA_%sRider"), *Name, *Name, *Name); }
+/** The rider's definition was imported. Checked on disk, never loaded: a definition holds its character's mesh, clips
+ *  and textures, about 1 GiB over the whole roster. */
+static bool HasDefinition(const FString& Name) { return FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(DefinitionPath(Name))); }
 
 FString ABotwRider::Requested()
 {
@@ -96,7 +100,7 @@ TArray<FString> ABotwRider::Available()
     TArray<FString> Names;
     if (ACairoCharacter::HasBotw()) Names.Add(ACairoCharacter::BotwName());
     for (const auto& Pair : FBotwSpec::All())
-        if (LoadObject<UWandererDefinition>(nullptr, *DefinitionPath(Pair.Key), nullptr, LOAD_NoWarn | LOAD_Quiet)) Names.Add(Pair.Key);
+        if (HasDefinition(Pair.Key)) Names.Add(Pair.Key);
     return Names;
 }
 
