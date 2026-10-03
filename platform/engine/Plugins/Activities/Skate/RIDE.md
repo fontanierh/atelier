@@ -254,14 +254,58 @@ it goes fully limp only in a bail.
   profile.
 - **Bodies.** The rider uses the mesh's own Physics Asset when it has six or more bodies. Its constraint profile
   `RideConstraintProfile` (default: the asset's own) applies while riding, and `BailConstraintProfile` (`Ragdoll`, when
-  the asset has one) in a bail. Otherwise the rider uses an asset built from the bone contract: 16 bodies, one set
-  of joint limits wide enough for every riding pose, and no collision between the rider's own bodies. While riding, a
-  limit that the animation passes widens to it (`WidenLimits`); in a bail the limits hold.
+  the asset has one) in a bail. Otherwise the rider uses an asset built from the bone contract: 16 bodies, each joint
+  held to a human range, and bodies that meet each other in a bail. While riding, a limit that the animation passes
+  widens to it (`WidenLimits`); in a bail the limits hold. Physics Control puts widened limits back only for a
+  control it still drives, and a bail lets every control go limp first, so the bail puts each joint back to the
+  asset's limits itself: one wrist kept the riding pose's 70 degrees of twist against its 45.
   - Each built body is fitted to the skin it carries (`bFitBodiesToSkin`, on by default): the convex hull of the
     mesh's vertices whose strongest weight is on its bone, or on a bone under it without a body (the fingers go to
     the hand, the hair to the head), at the mass of the contract's capsule. A stylised rider is far from the slim
     1.7 m figure the capsules are sized for: with them his face sank 17–30 cm into the floor in a bail and his hands
     and feet 13 cm. A body with too little skin keeps its capsule. Off, the contract's capsules.
+  - The hull is the skin's furthest vertex in each of 256 directions, about 47 vertices a body. With 64 it cut up to
+    3 cm off a limb's side, and a lying leg went 2.3 cm into the floor.
+  - A vertex more than 80 cm from its body's bone (scaled with the rider's size) is left out. A part bound in its bone's
+    own space but imported as if bound at the mesh's origin sits at the feet: it stretched the head's hull to 1.9 m.
+  - Each joint's frame comes from the bind pose: twist about the body's long axis, and flexion about a hinge across
+    the body's forward, back (the knee) or down (the ankle). Forward is from the heels to the toes, up from the pelvis
+    to the head. Chaos's limits are centred on the frames' meeting, so a range wider one way turns the parent's frame
+    to its middle. Its default (linear) joint solver holds two limited swings each about its own axis, a pyramid, not
+    the cone they would draw (`InitPyramidSwingConstraint`), and the joint check measures them the same way. Ranges in degrees (flexion/extension, abduction/adduction, twist each way):
+
+    | Joint | Flexion / extension | Abduction / adduction | Twist |
+    |---|---|---|---|
+    | Lower back | 40 / 20 | 20 / 20 | 15 |
+    | Upper back | 40 / 15 | 20 / 20 | 25 |
+    | Neck | 50 / 55 | 40 / 40 | 60 |
+    | Shoulder | a 110 cone round the arm out and a little forward | | 60 |
+    | Elbow | 145 / 5 | 8 / 8 | 40 |
+    | Wrist | a 70 cone | | 45 |
+    | Hip | 120 / 25 | 45 / 30 | 40 |
+    | Knee | 140 / 5 | 8 / 8 | 15 |
+    | Ankle | 50 down / 20 up | 15 / 15 | 25 |
+
+    Before this, every joint had one cone and one twist centred on the bind pose: knees and elbows bent 120 degrees
+    either way, hips and shoulders 100. In a bail, with the drives at 3 Hz and no anchors, nothing else held the
+    shape, and the body folded into impossible poses. The build logs each joint's ranges and how far the bind pose
+    sits inside them.
+  - In a bail the bodies meet each other: the arms meet the torso and the pelvis, and the legs meet each other. A
+    joint's two bodies never meet; the joint's range keeps them apart, so the neck holds the head off the chest.
+    Riding, the bodies pass through each other, because the animation rests a hand on a thigh. The mesh's response to
+    its own object type switches this (block in a bail, ignore otherwise), and the asset's pair table says which pairs
+    may meet. `skate.RideSelfCollision 0` lets them pass through each other in a bail too.
+    - Two bodies whose hulls overlap in the bind pose never meet; the build logs them.
+    - Two bodies that overlap in the pose the bail starts from are kept apart until they come 1 cm apart, then meet
+      again, and the log names them both times. A hand resting inside a thigh would otherwise be thrown out on the
+      first step, and kept apart for good it could pass through the thigh for the rest of the tumble. Riding again
+      lets every pair meet, so each bail keeps apart only what overlaps in its own first pose.
+    - Overlap is a separating-axis test of the two hulls along 128 directions, with a 0.5 cm margin.
+  - Measured (`physical_joints`, `skate.RideJointCheck`; bails on the flat at 6, 12 and 18 m/s, on the quarter and out
+    of a grind): Cairo's worst joint stays within 1.5-8.4 degrees of its range (an ankle in the bail's first frames,
+    before the limits pull it back), and two bodies meet at most 2.9 cm deep. Before the human ranges, a hip and a
+    knee went 22-36 degrees past them. A bail's frame costs the same (Mega Park p99 16.7 ms). Link's left wrist reads
+    69 degrees of twist against its 45 in two flat bails, though it looks natural: still to explain.
   - The built asset is kept for the session, one per mesh and fit, so a switch back to a rider does not fit it again.
   - A root bone with a scale (an FBX armature carries its unit scale there) needs a body on the root. The skeletal
     mesh's physics blend takes that body as the frame of the simulated bodies under it. Without one, the blend divides
@@ -340,8 +384,9 @@ it goes fully limp only in a bail.
   takes a pose snapshot and blends the pose from the snapshot into the clip over `GetUpBlend` (`BlendFromSnapshot`).
   The rider gets up where the body lies and never returns to where the bail started.
   - Blended joint by joint, the rotations swing a limb through the floor on its way from lying to standing: a foot
-    went 15–23 cm under it half way up. The blend lifts the root by the deepest shortfall, so no bone goes lower than
-    the lower of its two ends, where it lay and where the clip puts it.
+    went 15–23 cm under it half way up. The blend lifts the root by the deepest shortfall, so no bone and no body's
+    shape goes lower than the lower of its two ends, where it lay and where the clip puts it. The shapes carry the
+    skin past the bones: with the bones alone a toe went 2.4–5.5 cm under while its ankle stayed above.
   - The blend measures the snapshot from the mesh's transform for this frame (`ShownTransform`: its relative
     transform on its parent's). Inside CharacterMovement's move the actor's children keep last frame's transform
     until the move ends: getting up after a bail on a quarter pipe, the hips stepped 42 cm in one frame. The loose

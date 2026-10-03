@@ -14,7 +14,9 @@ grind into
 the parapet's corner (it flies off the end, never stalling), and the physical rider (skate.RidePhysical, on by
 default): how closely it holds the animation riding and landing, bails on flat (at 6 and 11 m/s) and on a quarter
 that go limp at once, lie down within a second and travel as far as the reference's for their speed, its skin never
-under the ground in any group of bodies (riding, falling, lying or getting up), and its frame cost in Mega Park. Over
+under the ground in any group of bodies (riding, falling, lying or getting up), every joint within its human range and
+no two bodies deep in each other through bails on flat (6, 12 and 18 m/s), on the quarter and out of a grind (with a
+frozen close-up of the worst pose), and its frame cost in Mega Park. Over
 every frame recorded, the rider's pose (the clips through Unreal's animation graph) must keep both feet on the deck
 where the clip stands on it, carry no NaN and never pop between clips, in both stances, and the standing rider matches
 the reference's stand.
@@ -827,7 +829,7 @@ MEGADROP_FLOOR = 7600.   # cm: the board (z=) is on the floor at the bottom of t
 # Mega Park's parapet: a point on its south line 5 m from the corner (island metres) and the Unreal direction to it.
 PARAPET = ((-71.13, 1376.69, 118.91), (.4655, .885))
 PHYSICAL = ('physical_riding', 'physical_landing', 'physical_bail', 'physical_bail_fast', 'physical_bail_quarter',
-            'physical_cost')
+            'physical_joints', 'physical_cost')
 
 
 # Pre-landing (RIDE.md, Air): the hips over the board (native rig, HIPS over SKATEBOARD_ROOT, cm) before the
@@ -1215,8 +1217,9 @@ def skin_text(worst):
 
 def physical_checks(record, wanted):
     """The active ragdoll (skate.RidePhysical 1): tracking while riding and landing, falls on flat (at 6 and 11 m/s)
-    and off a quarter, and its cost; the skin never under the ground (skate.RideSkinCheck, off for the cost). The
-    cvars are put back as they were."""
+    and off a quarter, every joint in its human range and no two bodies deep in each other through bails, and its
+    cost; the skin never under the ground (skate.RideSkinCheck, off for the cost). The cvars are put back as they
+    were."""
     before = qa.py("print(unreal.SystemLibrary.get_console_variable_int_value('skate.RidePhysical'))").strip().splitlines()[-1]
     physical(True)
     skin_check(True)
@@ -1232,6 +1235,8 @@ def physical_checks(record, wanted):
             physical_bail_fast(record)
         if wanted('physical_bail_quarter'):
             physical_bail_quarter(record)
+        if wanted('physical_joints'):
+            physical_joints(record)
         if wanted('physical_cost'):
             skin_check(False)
             physical_cost(record)
@@ -1270,21 +1275,32 @@ def physical_landing(record):
            f'(reference: 1-4 cm over riding, knocks 6 cm)')
 
 
-def physical_bail(record, name='physical_bail', start=FLAT[0] + 18, speed=600, kind='flat'):
-    """1 s of riding on the pier's flat (at 6 m/s), then the bail input held for 0.5 s."""
+def bail_keys(at, release=False):
+    """In-game code: the deliberate bail (both sticks clicked, both triggers held) from `at` s for 0.5 s. With
+    `release`, a script still running is let go first (scripted input never reads the pad)."""
     keys = lambda on: (f"live.L.input_key('Gamepad_LeftThumbstick','{'press' if on else 'release'}',{int(on)}); "
                        f"live.L.input_key('Gamepad_RightThumbstick','{'press' if on else 'release'}',{int(on)}); "
                        f"live.L.input_key('Gamepad_LeftTriggerAxis','axis',{int(on)}); "
                        f"live.L.input_key('Gamepad_RightTriggerAxis','axis',{int(on)})")
+    return ("\nlive.BAIL_AT=[0.0]\n"
+            "def _bail(dt):\n"
+            "    live.BAIL_AT[0]+=dt\n"
+            f"    if live.BAIL_AT[0]>={at} and live.BAIL_AT[0]-dt<{at}: {'live.L.skate_release(); ' if release else ''}{keys(True)}\n"
+            f"    if live.BAIL_AT[0]>={at + .5}: {keys(False)}; live.stop('bail_keys')\n"
+            "live.behave('bail_keys', _bail)\n")
+
+
+def flat_bail(start, speed, at=1., extra=''):
+    """Starts a run on the pier's flat from x `start` at `speed` (cm/s) with the bail input at `at` s, recording every
+    frame (live.REC); `extra` is more in-game code to run with it."""
     qa.py(f"live.park.place({start},{FLAT[1]},0); live.park.launch({speed}); live.skate_release()")
     qa.py("live.REC=[]; live.behave('rec', lambda dt: live.REC.append(live.skate_state()))\n"
-          "live.skate_input(); live.L.skate_release()\n"
-          "live.BAIL_AT=[0.0]\n"
-          "def _bail(dt):\n"
-          "    live.BAIL_AT[0]+=dt\n"
-          f"    if live.BAIL_AT[0]>=1.0 and live.BAIL_AT[0]-dt<1.0: {keys(True)}\n"
-          f"    if live.BAIL_AT[0]>=1.5: {keys(False)}; live.stop('bail_keys')\n"
-          "live.behave('bail_keys', _bail)")
+          "live.skate_input(); live.L.skate_release()\n" + bail_keys(at) + extra)
+
+
+def physical_bail(record, name='physical_bail', start=FLAT[0] + 18, speed=600, kind='flat'):
+    """1 s of riding on the pier's flat (at 6 m/s), then the bail input held for 0.5 s."""
+    flat_bail(start, speed)
     time.sleep(10)
     judge_bail(record, name, recorded(), kind)
 
@@ -1299,6 +1315,196 @@ def physical_bail_quarter(record):
     """The film's bail on the pier's quarter: an Indy held from the take-off into the landing."""
     rows = qa.run_scenario(f"{QUARTER[0]},{QUARTER[1]},0,950,[(0,{{'grab_right':True}})],duration=9", 9)
     judge_bail(record, 'physical_bail_quarter', rows, 'quarter')
+
+
+# User 22:29: in a bail the body twisted into impossible positions. Each joint of the built asset holds a human range
+# (RIDE.md, Physical rider, Joints), and the bodies meet each other in a bail. skate.RideJointCheck adds joint_past=
+# (degrees: how far the joint furthest past its range is past it, below 0 inside every range; from the bodies'
+# rotations against the asset's limits), joint= and joint_angles= (its twist, swing1 and swing2), and pair_depth= (cm:
+# the two bodies that may meet deepest in each other, below 0 apart) with pair=, and pairs_kept= and pairs_released=
+# (pairs that overlapped as the bail began, kept apart until they come apart, and how many have met again).
+JOINT_SLACK = 10.   # degrees: a hard hit pushes Chaos's limits a little; no joint further past its range than this
+PAIR_DEPTH = 3.     # cm: no two bodies that meet deeper in each other than this
+# The bails: on the flat at 6, 12 and 18 m/s (start x, the bail input's time), the quarter's Indy held into the landing,
+# and a bail in the middle of a grind along flatbar_red at 7 m/s (locked about 1.4 s in, 2.5 s along it).
+JOINT_FLAT = {600: (FLAT[0] + 18, 1.), 1200: (FLAT[0], 1.), 1800: (FLAT[0] - 8, .8)}
+JOINT_RUNS = ('flat 6 m/s', 'flat 12 m/s', 'flat 18 m/s', 'quarter', 'grind')
+# A flat bail counts only within this fraction of its speed; the quarter's must start in the air, the grind's on the rail.
+JOINT_ENTRY = .15
+GRIND_BAIL = 2.
+# The close-up reruns the worst bail and stops time (global time dilation) when a joint is back within a little of the
+# worst it went, or just after that moment of the fall, and frames the joint and the hips from beside them.
+JOINT_FREEZE = """
+import unreal
+live.JW = {'t': -1., 'done': False, 'at': None, 'joint': None, 'angles': None, 'when': None}
+def _jw(dt):
+    s = live.JW
+    if s['done']:
+        return
+    st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
+    if st.get('mode') != '4' or st.get('phys') != 'Bail' or 'joint_past' not in st:
+        if s['t'] >= 0 and st.get('mode') != '4':
+            s['done'] = 'over'
+        return
+    s['t'] = s['t'] + dt if s['t'] >= 0 else 0.
+    past = float(st['joint_past'])
+    if past >= TARGET or s['t'] >= LATEST:
+        unreal.GameplayStatics.set_global_time_dilation(live.L.game_world(), .0001)
+        s.update(done=True, at=past, joint=st.get('joint'), angles=st.get('joint_angles'), when=s['t'])
+live.behave('jointworst', _jw)
+"""
+JOINT_AIM = """
+import unreal
+st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
+P = unreal.Vector(*[float(v) for v in st['hips'].split(',')])
+J = P
+try:
+    _m = live.L.player().get_editor_property('mesh')
+    if live.JW.get('joint') and _m.get_bone_index(live.JW['joint']) != -1:
+        J = _m.get_socket_location(live.JW['joint'])
+except Exception as e:
+    print('no joint bone:', e)
+_out = unreal.Vector(J.x - P.x, J.y - P.y, 0)
+_out = _out * (1 / _out.length()) if _out.length() > 5 else live.L.player().get_actor_right_vector()
+_mid = (J + P) * .5
+unreal.MegaParkValidation.review_camera(_mid + _out * 120 + unreal.Vector(0, 0, 70), _mid, 45)
+"""
+
+
+def joint_check(on):
+    qa.py(f"unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideJointCheck {int(on)}')")
+
+
+def joint_start(name, extra=''):
+    """Starts the bail run `name` of JOINT_RUNS, recording every frame (live.REC); returns its length in seconds."""
+    if name.startswith('flat'):
+        speed = int(name.split()[1]) * 100
+        start, at = JOINT_FLAT[speed]
+        flat_bail(start, speed, at, extra)
+        return 10.
+    if name == 'quarter':
+        qa.py(f"live.scenario({QUARTER[0]},{QUARTER[1]},0,950,[(0,{{'grab_right':True}})],duration=9)\n" + extra)
+        return 9.6
+    qa.py(f"live.scenario({RAIL_FAST[0]},{RAIL_FAST[1]},0,700,[(.98,('flick','ollie'))],duration=10)\n"
+          + bail_keys(GRIND_BAIL, release=True) + extra)
+    return 10.6
+
+
+def joint_worst(rows):
+    """The first bail's limp frames (the Bail profile, simulating): its entry speed, the frames measured, the worst
+    joint (how far past its range, which, its angles, the time into the bail), how many frames had a joint past
+    JOINT_SLACK and which joints, and the deepest pair; None without a bail."""
+    start = next((i for i, r in enumerate(rows) if r['mode'] == '4'), None)
+    if start is None:
+        return None
+    vel = [float(x) for x in rows[max(0, start - 1)].get('vel', '0,0,0').split(',')]
+    before = {r['mode'] for r in rows[:start]}
+    came = rows[max(0, start - 1)]['mode']
+    limp, clock = [], 0.
+    for r in rows[start:]:
+        if r['mode'] != '4' or r.get('phys') == 'GetUp':
+            break
+        if r.get('phys') == 'Bail' and r.get('sim') == '1' and 'joint_past' in r:
+            limp.append((clock, r))
+        clock += float(r.get('dt', 16.7)) / 1000
+    if not limp:
+        return {'entry': math.hypot(*vel) / 100, 'frames': 0, 'before': before, 'came': came}
+    at, worst = max(limp, key=lambda c: float(c[1]['joint_past']))
+    over = [r.get('joint', '-') for _, r in limp if float(r['joint_past']) > JOINT_SLACK]
+    paired = [r for _, r in limp if 'pair_depth' in r]
+    deep = max(paired, key=lambda r: float(r['pair_depth']), default={})
+    return {'entry': math.hypot(*vel) / 100, 'frames': len(limp), 'past': float(worst['joint_past']),
+            'joint': worst.get('joint', '-'), 'angles': worst.get('joint_angles', '-'), 'at': at,
+            'over': len(over), 'over_joints': sorted(set(over)), 'depth': float(deep.get('pair_depth', 'nan')),
+            'pair': deep.get('pair', '-'), 'before': before, 'came': came,
+            'kept': max((int(r.get('pairs_kept', 0)) for _, r in limp), default=0),
+            'released': max((int(r.get('pairs_released', 0)) for _, r in limp), default=0),
+            'still_kept': int(limp[-1][1].get('pairs_kept', 0))}
+
+
+def joint_entered(name, w):
+    """Whether the bail began as run `name` meant: a flat bail within JOINT_ENTRY of its speed, the quarter's in the
+    air, the grind's on the rail."""
+    if not w:
+        return False
+    if name.startswith('flat'):
+        wanted = int(name.split()[1])
+        return abs(w['entry'] - wanted) <= JOINT_ENTRY * wanted
+    if name == 'quarter':
+        return w['came'] == '2'
+    return '3' in w['before']
+
+
+def joint_close_up(name, worst):
+    """Reruns bail `name` and freezes it at its worst joint (JOINT_FREEZE), framed from beside the joint and the hips;
+    returns the screenshot's path and what the frozen frame showed."""
+    shot = qa.yori.OUT / 'skateqa' / f"ride-joints-{name.replace(' ', '-').replace('/', '')}.png"
+    target = worst['past'] - max(1.5, .15 * abs(worst['past']))
+    seconds = joint_start(name, JOINT_FREEZE.replace('TARGET', f'{target:.2f}').replace('LATEST', f"{worst['at'] + .4:.3f}"))
+    frozen = None
+    try:
+        for _ in range(int(seconds / .2) + 10):
+            time.sleep(.2)
+            got = json.loads(qa.py("import json; print(json.dumps(live.JW))").strip().splitlines()[-1])
+            if got['done']:
+                frozen = got
+                break
+        if frozen and frozen['done'] is True:
+            qa.py(JOINT_AIM)
+            time.sleep(.6)
+            qa.py(JOINT_AIM)
+            time.sleep(.3)
+            qa.py(f"live.L.screenshot({str(shot)!r})")
+            time.sleep(1.2)
+    finally:
+        qa.py("live.stop('jointworst'); unreal.GameplayStatics.set_global_time_dilation(live.L.game_world(), 1.)")
+        qa.py("unreal.MegaParkValidation.restore_player_camera()")
+    time.sleep(seconds)
+    recorded()
+    if not frozen or frozen['done'] is not True:
+        return None, 'the rerun never reached a limp bail'
+    return shot, (f"frozen {frozen['when']:.2f} s into the bail with {frozen['joint']} {frozen['at']:+.1f} deg past its range "
+                  f"(twist, swing1, swing2 {frozen['angles']})")
+
+
+def joint_text(name, w):
+    if not w:
+        return f'{name}: no bail'
+    if not w['frames']:
+        return f"{name}: entry {w['entry']:.1f} m/s, no limp frame measured"
+    over = f" ({', '.join(w['over_joints'])})" if w['over'] else ''
+    entered = '' if joint_entered(name, w) else ' (NOT the bail meant: ' + (
+        'wrong speed' if name.startswith('flat') else 'not from the air' if name == 'quarter' else 'never on the rail') + ')'
+    kept = (f"; {w['kept']} pairs kept apart at the start, {w['released']} met again, {w['still_kept']} still apart at the end"
+            if w['kept'] else '')
+    return (f"{name}: entry {w['entry']:.1f} m/s{entered}, {w['frames']} limp frames, worst joint {w['past']:+.1f} deg past its "
+            f"range ({w['joint']}, twist/swing1/swing2 {w['angles']} deg, {w['at']:.2f} s in), {w['over']} frames over "
+            f"{JOINT_SLACK:g} deg{over}; deepest pair {w['depth']:.1f} cm ({w['pair']}){kept}")
+
+
+def physical_joints(record):
+    """No joint past its human range and no two bodies deep in each other through bails on the flat at 6, 12 and 18
+    m/s, on the quarter and out of a grind (skate.RideJointCheck, over each first bail's limp frames), with a
+    close-up of the worst pose."""
+    joint_check(True)
+    runs, shot, frozen = {}, None, ''
+    try:
+        for name in JOINT_RUNS:
+            seconds = joint_start(name)
+            time.sleep(seconds)
+            rows = recorded()
+            runs[name] = (rows, joint_worst(rows))
+        measured = {n: w for n, (_, w) in runs.items() if w and w['frames']}
+        worst = max(measured, key=lambda n: measured[n]['past'], default=None)
+        if worst:
+            shot, frozen = joint_close_up(worst, measured[worst])
+    finally:
+        joint_check(False)
+    ok = len(measured) == len(JOINT_RUNS) and all(w['past'] <= JOINT_SLACK and w['depth'] <= PAIR_DEPTH and w['frames'] >= 20
+                                                    and joint_entered(n, w) for n, w in measured.items())
+    record('physical_joints', runs[worst][0] if worst else [], ok,
+           '; '.join(joint_text(n, w) for n, (_, w) in runs.items())
+           + (f'; close-up of the worst ({worst}), {frozen}: {shot}' if worst else ''))
 
 
 def getup_board(rows):

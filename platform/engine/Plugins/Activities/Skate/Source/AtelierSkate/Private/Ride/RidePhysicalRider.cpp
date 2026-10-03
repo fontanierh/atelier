@@ -12,6 +12,11 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "HAL/IConsoleManager.h"
+#include "Chaos/ChaosEngineInterface.h"
+#include "Physics/Experimental/PhysInterface_Chaos.h"
+#include "PBDRigidsSolver.h"
+#include "Chaos/Collision/CollisionConstraintFlags.h"
+#include "PhysicsProxy/SingleParticlePhysicsProxy.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsConstraintTemplate.h"
@@ -30,6 +35,16 @@ namespace
         TEXT("ground (cm, the deepest of a sample of the mesh's vertices skinned on the CPU; below 0 it stays above), the body ")
         TEXT("that carries that vertex and the deepest of each group of bodies; and hand_gap=: how far each hand's skin stays ")
         TEXT("from the torso's and thighs' bodies (cm, below 0 inside one). For QA: a few milliseconds a frame."));
+
+    TAutoConsoleVariable<int32> CVarRideJointCheck(TEXT("skate.RideJointCheck"), 0,
+        TEXT("Ride: 1 adds joint_past=, joint= and joint_angles= to the physical rider's state: how far the joint furthest past ")
+        TEXT("its range goes (degrees, below 0 inside every range), which joint, and its twist and two swings (degrees, from ")
+        TEXT("the bodies' rotations, as Chaos measures them against the limits); and pair_depth= and pair=: how deep the two ")
+        TEXT("bodies that may meet go into each other (cm, below 0 apart). For QA: about a millisecond a frame."));
+
+    TAutoConsoleVariable<int32> CVarRideSelfCollision(TEXT("skate.RideSelfCollision"), 1,
+        TEXT("Ride: 1 (the default) lets the physical rider's bodies meet each other in a bail (the arms the torso, a leg the ")
+        TEXT("other); 0 lets them pass through each other, as they do riding. Read as a bail starts."));
 
     TAutoConsoleVariable<int32> CVarRideBailApplyNow(TEXT("skate.RideBailApplyNow"), 1,
         TEXT("Ride: 1 (the default) applies the Bail profile to the bodies as the bail begins, so that frame's physics already ")
@@ -147,8 +162,12 @@ namespace
     constexpr float SlideHeight = 50.f;
     // A body fitted to the skin is the convex hull of its vertices furthest out in this many directions, from at
     // least this many vertices; a hull under this share of the capsule's volume (a bone that carries little skin of
-    // its own) leaves the capsule.
-    constexpr int32 HullDirections = 64;
+    // its own) leaves the capsule. With 64 directions the hull cut up to 3 cm off a limb's side (none of them
+    // reached the calf's widest ring); 256 leave under 1 cm, about 47 vertices a hull.
+    constexpr int32 HullDirections = 256;
+    // A vertex further than this from its body's bone (cm, for a 1.7 m rider) is not that body's skin: a part bound
+    // in its bone's own space, imported at the mesh's origin, would stretch the hull to the feet.
+    constexpr float SkinReach = 80.f;
     constexpr int32 MinSkinVertices = 24;
     constexpr double MinHullShare = .05;
     // The skin depth samples each body's vertices furthest out in this many directions and about this many more
@@ -156,6 +175,13 @@ namespace
     constexpr int32 SkinDirections = 26;
     constexpr int32 SkinSpread = 256;
     constexpr float SkinProbe = 30.f;
+    // Two bodies are tested for overlap along this many directions (the separating-axis test, sampled), and count as
+    // overlapping when they come within this distance (cm, for a 1.7 m rider).
+    constexpr int32 PairDirections = 128;
+    constexpr float PairMargin = .5f;
+    // A pair kept apart as a bail began meets again once this far apart (cm): more than PairMargin, so a pair that
+    // only grazes isn't released and caught again frame after frame.
+    constexpr float ReleaseMargin = 1.f;
 
     // The reference skeleton's bind pose in component space.
     TArray<FTransform> BindPose(const FReferenceSkeleton& Ref)
@@ -248,6 +274,70 @@ namespace
             Out.AddUnique(Best);
         }
         return Out;
+    }
+
+    // A shape's extent along each direction (its lowest and highest point), its points placed by Place.
+    void Extents(const TArray<FVector>& Points, const FTransform& Place, const TArray<FVector>& Directions, TArray<FVector2D>& Out)
+    {
+        Out.Init(FVector2D(UE_DOUBLE_BIG_NUMBER, -UE_DOUBLE_BIG_NUMBER), Directions.Num());
+        for (const FVector& Point : Points)
+        {
+            const FVector W = Place.TransformPosition(Point);
+            for (int32 D = 0; D < Directions.Num(); ++D)
+            {
+                const double X = W | Directions[D];
+                Out[D].X = FMath::Min(Out[D].X, X); Out[D].Y = FMath::Max(Out[D].Y, X);
+            }
+        }
+    }
+
+    // How deep two convex shapes go into each other (below 0: how far apart): the smallest overlap of their extents
+    // over the directions. Sampled axes make it a slight overestimate of the depth.
+    double Overlap(const TArray<FVector2D>& A, const TArray<FVector2D>& B)
+    {
+        if (A.IsEmpty() || A.Num() != B.Num()) return -UE_DOUBLE_BIG_NUMBER;
+        double Depth = UE_DOUBLE_BIG_NUMBER;
+        for (int32 D = 0; D < A.Num(); ++D) Depth = FMath::Min(Depth, FMath::Min(A[D].Y - B[D].X, B[D].Y - A[D].X));
+        return Depth;
+    }
+
+    // A joint's rotation (the child's frame in the parent's) as Chaos measures it against the limits, in degrees:
+    // the twist about X, then the swing about Z (Swing1) and about Y (Swing2).
+    FVector JointAngles(const FQuat& Relative)
+    {
+        FQuat Swing, Twist;
+        Relative.ToSwingTwist(FVector::ForwardVector, Swing, Twist);
+        if (Swing.W < 0) Swing = FQuat(-Swing.X, -Swing.Y, -Swing.Z, -Swing.W);
+        return FVector(FMath::RadiansToDegrees(Relative.GetTwistAngle(FVector::ForwardVector)),
+            FMath::RadiansToDegrees(4. * FMath::Atan2(Swing.Z, 1. + Swing.W)), FMath::RadiansToDegrees(4. * FMath::Atan2(Swing.Y, 1. + Swing.W)));
+    }
+
+    // How far a joint goes past its limits (degrees; below 0 inside them): the furthest of its twist and two swings
+    // past their own limits. Chaos's linear joint solver (the default) holds two limited swings as a pyramid, each
+    // about its own axis (FPBDJointCachedSolver::InitPyramidSwingConstraint), not as the ellipse they would draw, so a
+    // joint at both swing limits at once is inside them.
+    double PastLimits(const FVector& Angles, double Twist, double Swing1, double Swing2)
+    {
+        return FMath::Max3(FMath::Abs(Angles.X) - Twist, FMath::Abs(Angles.Y) - Swing1, FMath::Abs(Angles.Z) - Swing2);
+    }
+
+    // A body's shapes as points in its bone's space: a hull's vertices, a capsule's or sphere's surface in 26
+    // directions (their lowest point within a fifth of the radius).
+    void ShapePoints(const FKAggregateGeom& Geom, TArray<FVector>& Out)
+    {
+        for (const FKConvexElem& C : Geom.ConvexElems)
+        {
+            const FTransform T = C.GetTransform();
+            for (const FVector& V : C.VertexData) Out.Add(T.TransformPosition(V));
+        }
+        static const TArray<FVector> Around = SphereDirections(26);
+        for (const FKSphereElem& S : Geom.SphereElems)
+            for (const FVector& D : Around) Out.Add(S.Center + D * S.Radius);
+        for (const FKSphylElem& S : Geom.SphylElems)
+        {
+            const FVector Axis = S.Rotation.Quaternion().GetAxisZ() * (S.Length * .5f);
+            for (const FVector& D : Around) { Out.Add(S.Center + Axis + D * S.Radius); Out.Add(S.Center - Axis + D * S.Radius); }
+        }
     }
 }
 
@@ -349,6 +439,8 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     else if (Mesh->GetPhysicsAsset() != Own) Mesh->SetPhysicsAsset(Own, true);
     SavedProfile = Mesh->GetCollisionProfileName();
     Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
+    // A new physics state: no pair kept apart yet (SetSelfCollision).
+    IgnoredPairs.Reset();
     Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
     Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
     if (Mesh->Bodies.Num() == 0) Mesh->RecreatePhysicsState();
@@ -476,34 +568,65 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         return B.IsNone() ? int32(INDEX_NONE) : Ref.FindBoneIndex(B);
     };
     const TArray<FTransform> Bind = BindPose(Ref);
-    struct FPart { const TCHAR* Bone; const TCHAR* To; const TCHAR* Parent; float Radius; float Swing; float Twist; };
+    // Each joint's range is a human's, in degrees. Flexion and extension turn the body about its flexion axis (as it
+    // flexes, its far end moves toward Toward: forward for the trunk, neck, hip and elbow, back for the knee, down for
+    // the ankle's plantar flexion); abduction and adduction turn it about the axis across that, away from and toward
+    // the body's middle (bending sideways for the trunk and neck); twist turns it about itself. A shoulder swings
+    // Flexion in any direction around a centre out to the side and a little forward (with the clavicle on the chest's
+    // body), a wrist around its rest (the contract has no direction for the palm).
+    enum class EToward : uint8 { None, Forward, Back, Down, ShoulderCone, Cone };
+    struct FPart
+    {
+        const TCHAR* Bone; const TCHAR* To; const TCHAR* Parent; float Radius;
+        EToward Toward; float Flexion, Extension, Abduction, Adduction, Twist;
+    };
     static const FPart Parts[] = {
-        {TEXT("pelvis"), TEXT("spine"), nullptr, 12.f, 0, 0},
-        {TEXT("spine"), TEXT("chest"), TEXT("pelvis"), 11.f, 35.f, 30.f},
-        {TEXT("chest"), TEXT("neck"), TEXT("spine"), 13.f, 35.f, 30.f},
-        {TEXT("head"), nullptr, TEXT("chest"), 10.f, 50.f, 45.f},
-        {TEXT("upperarm_L"), TEXT("forearm_L"), TEXT("chest"), 5.f, 100.f, 60.f},
-        {TEXT("forearm_L"), TEXT("hand_L"), TEXT("upperarm_L"), 4.f, 120.f, 30.f},
-        {TEXT("hand_L"), nullptr, TEXT("forearm_L"), 4.f, 60.f, 30.f},
-        {TEXT("upperarm_R"), TEXT("forearm_R"), TEXT("chest"), 5.f, 100.f, 60.f},
-        {TEXT("forearm_R"), TEXT("hand_R"), TEXT("upperarm_R"), 4.f, 120.f, 30.f},
-        {TEXT("hand_R"), nullptr, TEXT("forearm_R"), 4.f, 60.f, 30.f},
-        {TEXT("thigh_L"), TEXT("shin_L"), TEXT("pelvis"), 7.5f, 100.f, 35.f},
-        {TEXT("shin_L"), TEXT("foot_L"), TEXT("thigh_L"), 5.5f, 120.f, 10.f},
-        {TEXT("foot_L"), TEXT("toe_L"), TEXT("shin_L"), 4.5f, 45.f, 15.f},
-        {TEXT("thigh_R"), TEXT("shin_R"), TEXT("pelvis"), 7.5f, 100.f, 35.f},
-        {TEXT("shin_R"), TEXT("foot_R"), TEXT("thigh_R"), 5.5f, 120.f, 10.f},
-        {TEXT("foot_R"), TEXT("toe_R"), TEXT("shin_R"), 4.5f, 45.f, 15.f},
+        {TEXT("pelvis"), TEXT("spine"), nullptr, 12.f, EToward::None, 0, 0, 0, 0, 0},
+        {TEXT("spine"), TEXT("chest"), TEXT("pelvis"), 11.f, EToward::Forward, 40.f, 20.f, 20.f, 20.f, 15.f},
+        {TEXT("chest"), TEXT("neck"), TEXT("spine"), 13.f, EToward::Forward, 40.f, 15.f, 20.f, 20.f, 25.f},
+        {TEXT("head"), nullptr, TEXT("chest"), 10.f, EToward::Forward, 50.f, 55.f, 40.f, 40.f, 60.f},
+        {TEXT("upperarm_L"), TEXT("forearm_L"), TEXT("chest"), 5.f, EToward::ShoulderCone, 110.f, 0, 0, 0, 60.f},
+        {TEXT("forearm_L"), TEXT("hand_L"), TEXT("upperarm_L"), 4.f, EToward::Forward, 145.f, 5.f, 8.f, 8.f, 40.f},
+        {TEXT("hand_L"), nullptr, TEXT("forearm_L"), 4.f, EToward::Cone, 70.f, 0, 0, 0, 45.f},
+        {TEXT("upperarm_R"), TEXT("forearm_R"), TEXT("chest"), 5.f, EToward::ShoulderCone, 110.f, 0, 0, 0, 60.f},
+        {TEXT("forearm_R"), TEXT("hand_R"), TEXT("upperarm_R"), 4.f, EToward::Forward, 145.f, 5.f, 8.f, 8.f, 40.f},
+        {TEXT("hand_R"), nullptr, TEXT("forearm_R"), 4.f, EToward::Cone, 70.f, 0, 0, 0, 45.f},
+        {TEXT("thigh_L"), TEXT("shin_L"), TEXT("pelvis"), 7.5f, EToward::Forward, 120.f, 25.f, 45.f, 30.f, 40.f},
+        {TEXT("shin_L"), TEXT("foot_L"), TEXT("thigh_L"), 5.5f, EToward::Back, 140.f, 5.f, 8.f, 8.f, 15.f},
+        {TEXT("foot_L"), TEXT("toe_L"), TEXT("shin_L"), 4.5f, EToward::Down, 50.f, 20.f, 15.f, 15.f, 25.f},
+        {TEXT("thigh_R"), TEXT("shin_R"), TEXT("pelvis"), 7.5f, EToward::Forward, 120.f, 25.f, 45.f, 30.f, 40.f},
+        {TEXT("shin_R"), TEXT("foot_R"), TEXT("thigh_R"), 5.5f, EToward::Back, 140.f, 5.f, 8.f, 8.f, 15.f},
+        {TEXT("foot_R"), TEXT("toe_R"), TEXT("shin_R"), 4.5f, EToward::Down, 50.f, 20.f, 15.f, 15.f, 25.f},
     };
     // Radii are for a 1.7 m rider; scale them by this skeleton's head height in component space.
     const int32 Head = Find(TEXT("head")), Root = Find(TEXT("root"));
     const float Height = Head != INDEX_NONE ? float(Bind[Head].GetLocation().Z - (Root != INDEX_NONE ? Bind[Root].GetLocation().Z : 0.)) : 155.f;
     const float Size = FMath::Clamp(Height / 155.f, .2f, 5.f);
+    // The body's own directions in the bind pose (component space): up from the pelvis to the head, forward along the
+    // feet to the toes, right from the left thigh to the right.
+    FVector Up = FVector::UpVector, Right = FVector::RightVector, Forward = FVector::ForwardVector;
+    {
+        const int32 Pelvis = Find(TEXT("pelvis")), ThighL = Find(TEXT("thigh_L")), ThighR = Find(TEXT("thigh_R"));
+        if (Pelvis != INDEX_NONE && Head != INDEX_NONE)
+            Up = (Bind[Head].GetLocation() - Bind[Pelvis].GetLocation()).GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
+        if (ThighL != INDEX_NONE && ThighR != INDEX_NONE)
+            Right = FVector::VectorPlaneProject(Bind[ThighR].GetLocation() - Bind[ThighL].GetLocation(), Up).GetSafeNormal(UE_SMALL_NUMBER, FVector::RightVector);
+        FVector Toes = FVector::ZeroVector;
+        const TCHAR* Feet[2][2] = {{TEXT("foot_L"), TEXT("toe_L")}, {TEXT("foot_R"), TEXT("toe_R")}};
+        for (const auto& Foot : Feet)
+            if (const int32 Ankle = Find(Foot[0]), Toe = Find(Foot[1]); Ankle != INDEX_NONE && Toe != INDEX_NONE)
+                Toes += Bind[Toe].GetLocation() - Bind[Ankle].GetLocation();
+        Forward = FVector::VectorPlaneProject(Toes, Up);
+        if (Forward.SizeSquared() < 1e-6) Forward = FVector::CrossProduct(Right, Up);
+        Forward.Normalize();
+        Right = FVector::VectorPlaneProject(Right, Forward).GetSafeNormal(UE_SMALL_NUMBER, FVector::CrossProduct(Up, Forward));
+    }
     // The bones that get a body: a contract that names one bone twice gets one.
     TArray<int32, TInlineAllocator<16>> Used;
     for (const FPart& Part : Parts) if (const int32 B = Find(Part.Bone); B != INDEX_NONE) Used.AddUnique(B);
-    // The skin each body carries, in its bone's space.
+    // The skin each body carries, in its bone's space, and the vertices left out as too far from it.
     TMap<int32, TArray<FVector>> Skin;
+    TMap<int32, int32> Strays;
     if (bFitToSkin)
     {
         TArray<FVector> Positions; TArray<int32> Dominant;
@@ -511,7 +634,11 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         {
             const TArray<int32> Owner = SkinOwners(Ref, Dominant, [&](int32 I) { return Used.Contains(I); });
             for (int32 V = 0; V < Owner.Num(); ++V)
-                if (Owner[V] != INDEX_NONE) Skin.FindOrAdd(Owner[V]).Add(Bind[Owner[V]].InverseTransformPosition(Positions[V]));
+            {
+                if (Owner[V] == INDEX_NONE) continue;
+                if (FVector::Dist(Positions[V], Bind[Owner[V]].GetLocation()) > SkinReach * Size) { ++Strays.FindOrAdd(Owner[V]); continue; }
+                Skin.FindOrAdd(Owner[V]).Add(Bind[Owner[V]].InverseTransformPosition(Positions[V]));
+            }
         }
         else UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: %s keeps no CPU copy of its vertices, so its bodies are the contract's capsules"),
             *Skeletal->GetName());
@@ -531,6 +658,8 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
     };
     int32 Bodies = 0, Fitted = 0;
     TArray<int32, TInlineAllocator<16>> Made;
+    // The bodies each joint holds together (indices into the asset's bodies, the lower first).
+    TSet<FIntPoint> Joined;
     for (const FPart& Part : Parts)
     {
         const int32 B = Find(Part.Bone);
@@ -569,9 +698,11 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
                 ++Fitted;
             }
             const FVector Extent = Convex.ElemBox.GetSize() * Bind[B].GetMaximumAxisScale();
-            UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider body %s: %s (%d of %d vertices; %.0f x %.0f x %.0f cm, %.1fx the capsule's volume)"),
+            const int32 Stray = Strays.FindRef(B);
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider body %s: %s (%d of %d vertices; %.0f x %.0f x %.0f cm, %.1fx the capsule's volume)%s"),
                 *Ref.GetBoneName(B).ToString(), Body ? TEXT("fitted to the skin") : TEXT("capsule, too little skin"), Convex.VertexData.Num(),
-                Points->Num(), Extent.X, Extent.Y, Extent.Z, Volume / FMath::Max(CapsuleVolume, 1e-9));
+                Points->Num(), Extent.X, Extent.Y, Extent.Z, Volume / FMath::Max(CapsuleVolume, 1e-9),
+                Stray ? *FString::Printf(TEXT("; %d vertices further than %.0f cm from the bone left out"), Stray, SkinReach * Size) : TEXT(""));
         }
         if (!Body)
         {
@@ -594,25 +725,82 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         Physics->SkeletalBodySetups.Add(Body);
         ++Bodies;
         if (Parent == INDEX_NONE) continue;
-        // The joint at the bone's origin, its twist axis along the body.
+        if (const int32 ParentBody = Made.IndexOfByKey(Parent); ParentBody != INDEX_NONE)
+            Joined.Add(FIntPoint(FMath::Min(ParentBody, Made.Num() - 1), FMath::Max(ParentBody, Made.Num() - 1)));
+        // The joint at the bone's origin, in the body's own directions at the bind pose: the twist about the body's
+        // long axis (X), Swing2 about its flexion axis (Y), Swing1 about the axis across both (Z). The parent's frame
+        // is turned to the middle of each one-sided range (the physics asset editor's angular rotation offset), so
+        // the limits hold a human's range around the bind pose: a knee and an elbow bend one way.
+        const FVector Long = Bind[B].TransformVectorNoScale(Axis).GetSafeNormal(UE_SMALL_NUMBER, Up);
+        const FVector Out = FString(Part.Bone).EndsWith(TEXT("_L")) ? -Right : Right;
+        FVector Hinge = Long ^ (Part.Toward == EToward::Back ? -Forward : Part.Toward == EToward::Down ? -Up : Forward);
+        if (Hinge.Size() < .2) Hinge = Long ^ (FMath::Abs(Long | Up) < .9 ? Up : Forward);
+        const FQuat Frame = FRotationMatrix::MakeFromXY(Long, Hinge.GetSafeNormal()).ToQuat();
+        const FVector Across = Frame.GetAxisZ();
+        FQuat Centre = FQuat::Identity;
+        float Swing1 = Part.Flexion, Swing2 = Part.Flexion;
+        if (Part.Toward == EToward::ShoulderCone) Centre = FQuat::FindBetweenNormals(Long, (Out + Forward * .5).GetSafeNormal());
+        else if (Part.Toward != EToward::Cone)
+        {
+            // Swinging about Y by a positive angle flexes the joint; about Z, it swings the body toward Y, which is out
+            // from the middle when Y points out.
+            const float Side = (Frame.GetAxisY() | Out) >= 0. ? 1.f : -1.f;
+            Centre = FQuat(Frame.GetAxisY(), FMath::DegreesToRadians((Part.Flexion - Part.Extension) * .5f))
+                * FQuat(Across, FMath::DegreesToRadians((Part.Abduction - Part.Adduction) * .5f * Side));
+            Swing2 = (Part.Flexion + Part.Extension) * .5f;
+            Swing1 = (Part.Abduction + Part.Adduction) * .5f;
+        }
         UPhysicsConstraintTemplate* Joint = NewObject<UPhysicsConstraintTemplate>(Physics, NAME_None, RF_Transient);
         FConstraintInstance& C = Joint->DefaultInstance;
         C.JointName = Body->BoneName;
         C.ConstraintBone1 = Body->BoneName;
         C.ConstraintBone2 = Ref.GetBoneName(Parent);
-        const FTransform Frame1(FRotationMatrix::MakeFromX(Axis).ToQuat());
-        C.SetRefFrame(EConstraintFrame::Frame1, Frame1);
-        C.SetRefFrame(EConstraintFrame::Frame2, Frame1 * Bind[B].GetRelativeTransform(Bind[Parent]));
+        C.SetRefFrame(EConstraintFrame::Frame1, FTransform(Bind[B].GetRotation().Inverse() * Frame));
+        C.SetRefFrame(EConstraintFrame::Frame2, FTransform(Bind[Parent].GetRotation().Inverse() * Centre * Frame,
+            Bind[B].GetRelativeTransform(Bind[Parent]).GetLocation()));
         C.SetLinearXMotion(ELinearConstraintMotion::LCM_Locked);
         C.SetLinearYMotion(ELinearConstraintMotion::LCM_Locked);
         C.SetLinearZMotion(ELinearConstraintMotion::LCM_Locked);
-        C.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, Part.Swing);
-        C.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, Part.Swing);
+        C.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, Swing1);
+        C.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, Swing2);
         C.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Limited, Part.Twist);
         C.SetDisableCollision(true);
         Physics->ConstraintSetup.Add(Joint);
+        // Where the bind pose sits in the range: inside it, or the first bail would snap the joint into it.
+        const FVector Bound = JointAngles((Centre * Frame).Inverse() * Frame);
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s: swing limits %.0f (across) and %.0f (flexion), twist %.0f; the bind pose %.0f past them"),
+            *Body->BoneName.ToString(), Swing1, Swing2, Part.Twist, PastLimits(Bound, Part.Twist, Swing1, Swing2));
     }
     if (Bodies < MinBodies) { UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: only %d contract bones"), Bodies); return nullptr; }
+    // Which bodies meet each other (in a bail: SetSelfCollision): every pair but a joint's two bodies and two that
+    // overlap in the bind pose, which would be thrown apart on the first step. So an arm meets the torso and the
+    // pelvis, and a leg the other leg.
+    {
+        const TArray<FVector> Around = SphereDirections(PairDirections);
+        TArray<TArray<FVector2D>> Extent; Extent.SetNum(Bodies);
+        for (int32 I = 0; I < Bodies; ++I)
+        {
+            TArray<FVector> Points;
+            ShapePoints(Physics->SkeletalBodySetups[I]->AggGeom, Points);
+            Extents(Points, Bind[Made[I]], Around, Extent[I]);
+        }
+        int32 Meet = 0;
+        FString Overlapping;
+        for (int32 I = 0; I < Bodies; ++I)
+            for (int32 J = I + 1; J < Bodies; ++J)
+            {
+                if (Joined.Contains(FIntPoint(I, J))) { Physics->DisableCollision(I, J); continue; }
+                const double Depth = Overlap(Extent[I], Extent[J]);
+                if (Depth > -PairMargin * Size)
+                {
+                    Physics->DisableCollision(I, J);
+                    Overlapping += FString::Printf(TEXT(" %s-%s (%.1f cm)"), *Ref.GetBoneName(Made[I]).ToString(), *Ref.GetBoneName(Made[J]).ToString(), Depth);
+                }
+                else ++Meet;
+            }
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: %d pairs of bodies meet in a bail; %d joints' pairs and these, overlapping in the bind pose, never do:%s"),
+            Meet, Joined.Num(), Overlapping.IsEmpty() ? TEXT(" none") : *Overlapping);
+    }
     if (bFitToSkin) UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: %d of %d bodies fitted to %s's skin"), Fitted, Bodies, *Skeletal->GetName());
     if (OutFitted) *OutFitted = Fitted;
     // A kinematic body on the skeleton's root that follows the animation and touches nothing. The skeletal mesh's
@@ -634,10 +822,8 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
     Bodies = Physics->SkeletalBodySetups.Num();
     Physics->UpdateBodySetupIndexMap();
     Physics->UpdateBoundsBodiesArray();
-    // The bodies only meet the world: built capsules overlap their neighbours in any pose, and overlapping bodies in
-    // one ragdoll push each other apart violently.
-    for (int32 I = 0; I < Bodies; ++I)
-        for (int32 J = I + 1; J < Bodies; ++J) Physics->DisableCollision(I, J);
+    // The root body touches nothing.
+    for (int32 I = 0; I + 1 < Bodies; ++I) if (Bodies > Made.Num()) Physics->DisableCollision(I, Bodies - 1);
     return Physics;
 }
 
@@ -811,9 +997,10 @@ void URidePhysicalRider::ApplyBailDrag(float Drag)
     }
 }
 
-// Riding: the rider's constraint profile, with limits that widen to the animation. Bailing: the bail profile and the
-// limits as authored. The built asset has one set of limits for both. Physics Control reads the response from the
-// live constraints each update, so it is set after the profile (which would copy the template's over it).
+// Riding: the rider's constraint profile, with limits that widen to the animation, and the bodies pass through each
+// other. Bailing: the bail profile, the limits as authored, and the bodies meet. The built asset has one set of limits
+// for both. Physics Control reads the response from the live constraints each update, so it is set after the profile
+// (which would copy the template's over it).
 void URidePhysicalRider::ApplyJointLimits(bool bRidingProfile, bool bWiden)
 {
     if (!Mesh) return;
@@ -823,6 +1010,173 @@ void URidePhysicalRider::ApplyJointLimits(bool bRidingProfile, bool bWiden)
         ? EAngularDriveLimitViolationResponse::WidenLimits : EAngularDriveLimitViolationResponse::None;
     for (FConstraintInstance* C : Mesh->Constraints)
         if (C) C->ProfileInstance.AngularDrive.LimitViolationResponse = Response;
+    // Riding widened the live limits to fit the animation's pose. Physics Control puts them back only for a control it
+    // still drives, and a bail lets every control go limp first, so the bail would keep the riding pose's widened
+    // limits (a wrist twisted 70 degrees held against its 45). Each joint goes back to the asset's limits here.
+    const UPhysicsAsset* Physics = Mesh->GetPhysicsAsset();
+    if (!bWiden && Physics)
+        for (FConstraintInstance* C : Mesh->Constraints)
+        {
+            if (!C) continue;
+            for (const UPhysicsConstraintTemplate* Template : Physics->ConstraintSetup)
+                if (Template && Template->DefaultInstance.JointName == C->JointName)
+                {
+                    C->RestoreAngularLimitsToDefault(Template->DefaultInstance);
+                    break;
+                }
+        }
+    SetSelfCollision(!bRidingProfile);
+}
+
+// The bodies meet each other through the mesh's response to its own object type. Riding, the animation puts a hand on
+// a thigh and the bodies follow it, so they pass through each other. In a bail they meet, by the physics asset's
+// pairs (BuildPhysicsAsset), less any pair that overlaps in the pose the bail starts from: a hand resting inside a
+// thigh would be thrown out of it on the first step. Those pairs stay apart until they come apart (ReleaseKeptPairs).
+void URidePhysicalRider::SetSelfCollision(bool bOn)
+{
+    if (!Mesh) return;
+    bOn = bOn && CVarRideSelfCollision.GetValueOnGameThread() != 0;
+    // Each bail keeps apart only what overlaps in its own first pose.
+    ReleaseKeptPairs(true);
+    PairsReleased = 0;
+    const UPhysicsAsset* Physics = Mesh->GetPhysicsAsset();
+    if (bOn && Physics)
+    {
+        TArray<TArray<FVector2D>> Extent;
+        BodyExtents(Extent);
+        TMap<FPhysicsActorHandle, TArray<FPhysicsActorHandle>> Apart;
+        FString Names;
+        for (int32 I = 0; I < Extent.Num(); ++I)
+            for (int32 J = I + 1; J < Extent.Num(); ++J)
+            {
+                if (Extent[I].IsEmpty() || Extent[J].IsEmpty() || !Physics->IsCollisionEnabled(I, J) || IgnoredPairs.Contains(FIntPoint(I, J))) continue;
+                const double Depth = Overlap(Extent[I], Extent[J]);
+                if (Depth <= -PairMargin) continue;
+                FPhysicsActorHandle A = Mesh->Bodies[I]->GetPhysicsActor(), B = Mesh->Bodies[J]->GetPhysicsActor();
+                if (!A || !B) continue;
+                Apart.FindOrAdd(A).Add(B);
+                IgnoredPairs.Add(FIntPoint(I, J));
+                Names += FString::Printf(TEXT(" %s-%s (%.1f cm)"), *Mesh->Bodies[I]->BodySetup->BoneName.ToString(), *Mesh->Bodies[J]->BodySetup->BoneName.ToString(), Depth);
+            }
+        if (Apart.Num()) FPhysicsCommand::ExecuteWrite(Mesh.Get(), [&]() { FChaosEngineInterface::AddDisabledCollisionsFor_AssumesLocked(Apart); });
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll: the bodies meet; overlapping as the bail starts, kept apart for this ride:%s"),
+            Names.IsEmpty() ? TEXT(" none") : *Names);
+    }
+    const ECollisionChannel Own = Mesh->GetCollisionObjectType();
+    if (Mesh->GetCollisionResponseToChannel(Own) != (bOn ? ECR_Block : ECR_Ignore)) Mesh->SetCollisionResponseToChannel(Own, bOn ? ECR_Block : ECR_Ignore);
+}
+
+// A pair kept apart as the bail began meets again once it has come ReleaseMargin apart (or every pair, with bAll),
+// so a hand that started inside a thigh can't pass through it for the rest of the tumble. The pair leaves Chaos's
+// ignore list on the physics thread; a pair is never released on the bail's first frames, while its ignore entry may
+// still be waiting to be added.
+void URidePhysicalRider::ReleaseKeptPairs(bool bAll)
+{
+    if (!Mesh || IgnoredPairs.IsEmpty()) return;
+    if (!bAll && GFrameCounter < BailFrame + 3) return;
+    TArray<TArray<FVector2D>> Extent;
+    if (!bAll) BodyExtents(Extent);
+    TArray<FIntPoint> Released;
+    FString Names;
+    for (const FIntPoint& P : IgnoredPairs)
+    {
+        double Depth = 0;
+        if (!bAll)
+        {
+            if (!Extent.IsValidIndex(P.X) || !Extent.IsValidIndex(P.Y) || Extent[P.X].IsEmpty() || Extent[P.Y].IsEmpty()) continue;
+            Depth = Overlap(Extent[P.X], Extent[P.Y]);
+            if (Depth > -ReleaseMargin) continue;
+        }
+        Released.Add(P);
+        if (!bAll && Mesh->Bodies.IsValidIndex(P.X) && Mesh->Bodies.IsValidIndex(P.Y))
+            Names += FString::Printf(TEXT(" %s-%s (%.1f cm apart)"), *Mesh->Bodies[P.X]->BodySetup->BoneName.ToString(),
+                *Mesh->Bodies[P.Y]->BodySetup->BoneName.ToString(), -Depth);
+    }
+    for (const FIntPoint& P : Released)
+    {
+        IgnoredPairs.Remove(P);
+        if (!Mesh->Bodies.IsValidIndex(P.X) || !Mesh->Bodies.IsValidIndex(P.Y) || !Mesh->Bodies[P.X] || !Mesh->Bodies[P.Y]) continue;
+        FPhysicsActorHandle A = Mesh->Bodies[P.X]->GetPhysicsActor(), B = Mesh->Bodies[P.Y]->GetPhysicsActor();
+        Chaos::FPBDRigidsSolver* Solver = A ? A->GetSolver<Chaos::FPBDRigidsSolver>() : nullptr;
+        if (!Solver || !B) continue;
+        const Chaos::FUniqueIdx IdA = A->GetGameThreadAPI().UniqueIdx(), IdB = B->GetGameThreadAPI().UniqueIdx();
+        Solver->EnqueueCommandImmediate([Solver, IdA, IdB]()
+        {
+            Chaos::FSingleParticlePhysicsProxy* ProxyA = Solver->GetParticleProxy_PT(IdA);
+            Chaos::FSingleParticlePhysicsProxy* ProxyB = Solver->GetParticleProxy_PT(IdB);
+            if (ProxyA && ProxyB)
+                Solver->GetEvolution()->GetBroadPhase().GetIgnoreCollisionManager().RemoveIgnoreCollisions(ProxyA->GetHandle_LowLevel(), ProxyB->GetHandle_LowLevel());
+        });
+    }
+    if (bAll) return;
+    PairsReleased += Released.Num();
+    if (Released.Num())
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll: kept apart as the bail began, meet again %.2f s in:%s"), BailTime, *Names);
+}
+
+// Each body's extent along PairDirections where it is now (empty for a body that touches nothing).
+void URidePhysicalRider::BodyExtents(TArray<TArray<FVector2D>>& Extent) const
+{
+    Extent.Reset();
+    const UPhysicsAsset* Physics = Mesh ? Mesh->GetPhysicsAsset() : nullptr;
+    if (!Physics) return;
+    if (BodyPointsFor != Physics)
+    {
+        BodyPointsFor = Physics;
+        BodyPoints.Reset(); BodyPoints.SetNum(Physics->SkeletalBodySetups.Num());
+        for (int32 I = 0; I < BodyPoints.Num(); ++I)
+            if (const USkeletalBodySetup* Setup = Physics->SkeletalBodySetups[I]; Setup && Setup->CollisionReponse != EBodyCollisionResponse::BodyCollision_Disabled
+                && Setup->PhysicsType != PhysType_Kinematic)
+                ShapePoints(Setup->AggGeom, BodyPoints[I]);
+    }
+    static const TArray<FVector> Around = SphereDirections(PairDirections);
+    Extent.SetNum(FMath::Min(BodyPoints.Num(), Mesh->Bodies.Num()));
+    for (int32 I = 0; I < Extent.Num(); ++I)
+    {
+        const FBodyInstance* Body = Mesh->Bodies[I];
+        if (!Body || BodyPoints[I].IsEmpty()) continue;
+        const int32 Index = Mesh->GetBoneIndex(Physics->SkeletalBodySetups[I]->BoneName);
+        if (Index == INDEX_NONE) continue;
+        // The body where the physics has it, at its bone's scale (the shapes are in the bone's units).
+        FTransform Place = Body->GetUnrealWorldTransform();
+        Place.SetScale3D(Mesh->GetBoneTransform(Index).GetScale3D());
+        Extents(BodyPoints[I], Place, Around, Extent[I]);
+    }
+}
+
+// The joint furthest past its range and the two bodies that may meet deepest in each other, as the bodies are now.
+bool URidePhysicalRider::MeasureJoints(float& Past, FName& Joint, FVector& Angles, float& Depth, FName Pair[2]) const
+{
+    const UPhysicsAsset* Physics = Mesh ? Mesh->GetPhysicsAsset() : nullptr;
+    if (!Physics) return false;
+    Past = -UE_BIG_NUMBER; Joint = NAME_None; Angles = FVector::ZeroVector;
+    for (const UPhysicsConstraintTemplate* Template : Physics->ConstraintSetup)
+    {
+        if (!Template) continue;
+        const FConstraintInstance& C = Template->DefaultInstance;
+        const FBodyInstance* Child = Mesh->GetBodyInstance(C.ConstraintBone1);
+        const FBodyInstance* Parent = Mesh->GetBodyInstance(C.ConstraintBone2);
+        if (!Child || !Parent) continue;
+        const FQuat Relative = (Parent->GetUnrealWorldTransform().GetRotation() * C.GetRefFrame(EConstraintFrame::Frame2).GetRotation()).Inverse()
+            * (Child->GetUnrealWorldTransform().GetRotation() * C.GetRefFrame(EConstraintFrame::Frame1).GetRotation());
+        const FVector A = JointAngles(Relative);
+        const float P = float(PastLimits(A, C.GetAngularTwistLimit(), C.GetAngularSwing1Limit(), C.GetAngularSwing2Limit()));
+        if (P > Past) { Past = P; Joint = C.ConstraintBone1; Angles = A; }
+    }
+    Depth = -UE_BIG_NUMBER; Pair[0] = Pair[1] = NAME_None;
+    TArray<TArray<FVector2D>> Extent;
+    BodyExtents(Extent);
+    for (int32 I = 0; I < Extent.Num(); ++I)
+        for (int32 J = I + 1; J < Extent.Num(); ++J)
+        {
+            if (Extent[I].IsEmpty() || Extent[J].IsEmpty() || !Physics->IsCollisionEnabled(I, J) || IgnoredPairs.Contains(FIntPoint(I, J))) continue;
+            if (const float D = float(Overlap(Extent[I], Extent[J])); D > Depth)
+            {
+                Depth = D;
+                Pair[0] = Physics->SkeletalBodySetups[I]->BoneName; Pair[1] = Physics->SkeletalBodySetups[J]->BoneName;
+            }
+        }
+    return Joint != NAME_None;
 }
 
 void URidePhysicalRider::BlendIn(float Seconds)
@@ -1227,6 +1581,16 @@ FString URidePhysicalRider::Describe() const
         if (MeasureHandGap(Gap, Near))
             Skin += FString::Printf(TEXT(" hand_gap=%.1f,%.1f hand_near=%s,%s"), Gap[0], Gap[1], *Near[0].ToString(), *Near[1].ToString());
     }
+    if (CVarRideJointCheck.GetValueOnGameThread() != 0)
+    {
+        float Past, Depth; FName Joint, Pair[2]; FVector Angles;
+        if (MeasureJoints(Past, Joint, Angles, Depth, Pair))
+        {
+            Skin += FString::Printf(TEXT(" joint_past=%.1f joint=%s joint_angles=%.0f,%.0f,%.0f"), Past, *Joint.ToString(), Angles.X, Angles.Y, Angles.Z);
+            if (!Pair[0].IsNone()) Skin += FString::Printf(TEXT(" pair_depth=%.1f pair=%s-%s"), Depth, *Pair[0].ToString(), *Pair[1].ToString());
+            Skin += FString::Printf(TEXT(" pairs_kept=%d pairs_released=%d"), IgnoredPairs.Num(), PairsReleased);
+        }
+    }
     const FBodyInstance* Pelvis = Mesh ? Mesh->GetBodyInstance(PelvisBone) : nullptr;
     const FVector HipsVelocity = Pelvis ? Pelvis->GetUnrealWorldVelocity() : FVector::ZeroVector;
     return FString::Printf(TEXT("phys=%s sim=%d w=%.2f pelvis_err=%.1f foot_err=%.1f worst_err=%.1f hips=%.1f,%.1f,%.1f hips_vel=%.0f,%.0f,%.0f lie=%.1f drag=%.2f getup=%.2f bail_kind=%s bodies=%d pa=%s frame=%s skipped=%d"),
@@ -1395,6 +1759,7 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
             Speed, Hips.Z - BailStart.Z, bThrough ? TEXT(", under the floor") : TEXT(""));
         return ERideBodyState::Unstable;
     }
+    if (!IgnoredPairs.IsEmpty()) ReleaseKeptPairs(false);
     LastBodyGround = BodyGround;
     BodyGround = TraceGround(Hips);
     {
@@ -1438,6 +1803,20 @@ void URidePhysicalRider::StartGetUp(ERideGetUpExit Exit)
     for (int32 I = 0; I < Pose.Num(); ++I) SnapshotWorld[I] = Pose[I] * Component;
     SnapshotMesh = Mesh->GetSkeletalMeshAsset();
     SnapshotComponent = Mesh;
+    // The bodies' shapes, and how low each one lay.
+    GetUpShapes.Reset();
+    if (const UPhysicsAsset* Physics = Mesh->GetPhysicsAsset())
+        for (const USkeletalBodySetup* Body : Physics->SkeletalBodySetups)
+        {
+            const int32 Bone = Body ? Mesh->GetBoneIndex(Body->BoneName) : INDEX_NONE;
+            if (!SnapshotWorld.IsValidIndex(Bone) || Bone == 0 || Body->CollisionReponse == EBodyCollisionResponse::BodyCollision_Disabled) continue;
+            FGetUpShape Shape; Shape.Bone = Bone;
+            ShapePoints(Body->AggGeom, Shape.Points);
+            if (Shape.Points.IsEmpty()) continue;
+            Shape.SnapshotLow = UE_DOUBLE_BIG_NUMBER;
+            for (const FVector& P : Shape.Points) Shape.SnapshotLow = FMath::Min(Shape.SnapshotLow, SnapshotWorld[Bone].TransformPosition(P).Z);
+            GetUpShapes.Add(MoveTemp(Shape));
+        }
     // From here the pose is the blend, held at the snapshot until the bodies are handed over. The mesh shows the pose
     // the ride hands it a frame late, and Physics Control's copy of it (the kinematic bodies' targets) a frame later
     // still: weight 0 now would show the clip's pose for a frame, and the bodies would jump to it the next. So the
@@ -1502,8 +1881,9 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
     if (LocalPose.Num() != Ref.GetNum() || SnapshotWorld.Num() != Ref.GetNum()) return false;
     const FTransform Component = ShownTransform(Target);
     const float A = FMath::SmoothStep(0.f, 1.f, FMath::Clamp(Alpha, 0.f, 1.f));
-    // Each bone's height at the blend's two ends: where it lay, and in the pose it rises to.
-    const auto Heights = [&](TArray<double>& Out)
+    // Each bone's height, and each body shape's lowest point, at the blend's two ends: where it lay, and in the pose
+    // it rises to.
+    const auto Heights = [&](TArray<double>& Out, TArray<double>& Low)
     {
         TArray<FTransform> Space; Space.SetNum(LocalPose.Num()); Out.SetNum(LocalPose.Num());
         for (int32 I = 0; I < LocalPose.Num(); ++I)
@@ -1512,9 +1892,16 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
             Space[I] = Parent >= 0 ? LocalPose[I] * Space[Parent] : LocalPose[I];
             Out[I] = Component.TransformPosition(Space[I].GetLocation()).Z;
         }
+        Low.SetNum(GetUpShapes.Num());
+        for (int32 S = 0; S < GetUpShapes.Num(); ++S)
+        {
+            const FTransform World = Space.IsValidIndex(GetUpShapes[S].Bone) ? Space[GetUpShapes[S].Bone] * Component : Component;
+            Low[S] = UE_DOUBLE_BIG_NUMBER;
+            for (const FVector& P : GetUpShapes[S].Points) Low[S] = FMath::Min(Low[S], World.TransformPosition(P).Z);
+        }
     };
-    TArray<double> Risen, Shown;
-    Heights(Risen);
+    TArray<double> Risen, Shown, RisenLow, ShownLow;
+    Heights(Risen, RisenLow);
     // The pose's root in the world, which the root's children are measured from.
     for (int32 I = 1; I < Ref.GetNum(); ++I)
     {
@@ -1527,11 +1914,13 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
         Out.SetRotation(FQuat::Slerp(Snap.GetRotation(), Out.GetRotation(), A).GetNormalized());
     }
     // Joint by joint, the rotations swing a limb through the floor on its way from lying to standing (a foot 15 cm
-    // under it half way up). No bone goes lower than the lower of its two ends: the root rises by the deepest
-    // shortfall.
-    Heights(Shown);
+    // under it half way up). No bone, and no body's shape, goes lower than the lower of its two ends: the root rises
+    // by the deepest shortfall. The shapes carry the skin past the bones (a toe 4 cm under the floor while its ankle
+    // stayed above).
+    Heights(Shown, ShownLow);
     double Lift = 0.;
     for (int32 I = 1; I < Shown.Num(); ++I) Lift = FMath::Max(Lift, FMath::Min(SnapshotWorld[I].GetLocation().Z, Risen[I]) - Shown[I]);
+    for (int32 S = 0; S < GetUpShapes.Num(); ++S) Lift = FMath::Max(Lift, FMath::Min(GetUpShapes[S].SnapshotLow, RisenLow[S]) - ShownLow[S]);
     if (Lift > 0.) LocalPose[0].AddToTranslation(Component.InverseTransformVector(FVector(0, 0, Lift)));
     return true;
 }

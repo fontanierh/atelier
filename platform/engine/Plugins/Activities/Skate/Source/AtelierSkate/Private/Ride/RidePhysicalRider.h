@@ -275,6 +275,10 @@ public:
      *  to. Measured against the bodies' shapes, so on bodies fitted to the skin it says where the hand meets the
      *  skin. False without CPU vertex data. */
     bool MeasureHandGap(float Gap[2], FName Near[2]) const;
+    /** The joint furthest past its range (Past in degrees, below 0 inside every range; Angles its twist, Swing1 and
+     *  Swing2, as Chaos measures them against the physics asset's limits), from the bodies' rotations, and the two
+     *  bodies that may meet (in a bail) deepest in each other (Depth in cm, below 0 apart). False without bodies. */
+    bool MeasureJoints(float& Past, FName& Joint, FVector& Angles, float& Depth, FName Pair[2]) const;
     FString Describe() const;
 
     // FTickableGameObject
@@ -339,6 +343,11 @@ private:
     TArray<FTransform> SnapshotWorld;
     TWeakObjectPtr<USkeletalMesh> SnapshotMesh;
     TWeakObjectPtr<USkeletalMeshComponent> SnapshotComponent;
+    // Each body's shape as points in its bone's space (a hull's vertices, a capsule's or sphere's surface), and its
+    // lowest point where the body lay: the get-up keeps every shape above the lower of its two ends, not just the
+    // bones (BlendFromSnapshot).
+    struct FGetUpShape { int32 Bone = INDEX_NONE; TArray<FVector> Points; double SnapshotLow = 0.; };
+    TArray<FGetUpShape> GetUpShapes;
     TWeakObjectPtr<UWorld> TickWorld;
 
     // Surfaces made physical around the body.
@@ -361,6 +370,13 @@ private:
     // The vertices each hand's body carries (LOD0), for MeasureHandGap.
     mutable TArray<int32> HandSamples[2];
     mutable TWeakObjectPtr<const UPhysicsAsset> HandSamplesFor;
+    // Each body's shape as points in its bone's space (empty for a body that touches nothing), for the bodies' overlaps.
+    mutable TArray<TArray<FVector>> BodyPoints;
+    mutable TWeakObjectPtr<const UPhysicsAsset> BodyPointsFor;
+    // Pairs of bodies (indices, the lower first) that overlapped as this bail began, kept apart until they come apart
+    // (ReleaseKeptPairs), and how many pairs this bail has let meet again.
+    TSet<FIntPoint> IgnoredPairs;
+    int32 PairsReleased = 0;
 
     FName Bone(const TCHAR* Contract) const;
     UPhysicsControlAsset* BuildControlAsset(const UPhysicsAsset* Physics);
@@ -375,6 +391,11 @@ private:
     /** The rider's own physics asset switches to the riding or the bail constraint profile; bWiden lets riding poses
      *  past a limit widen it. */
     void ApplyJointLimits(bool bRidingProfile, bool bWiden);
+    /** Whether the bodies meet each other (in a bail), less the pairs that overlap where they are as it is switched on. */
+    void SetSelfCollision(bool bOn);
+    void ReleaseKeptPairs(bool bAll);
+    /** Each body's extent along the overlap test's directions, where the physics has it. */
+    void BodyExtents(TArray<TArray<FVector2D>>& Extent) const;
     void AdvanceGetUp(float Dt);
     /** Whether Physics Control's copy of the animation shows the snapshot (pelvis and head within SnapshotShown). */
     bool AnimationShowsSnapshot() const;
