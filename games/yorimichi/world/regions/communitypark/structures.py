@@ -68,7 +68,8 @@ def heights(triangles, x, y):
 
 def stair_route():
     """Centreline waypoints through every flight and landing, ending at the original top ridge."""
-    route = [[1302.65, 600.3, DECK], [1303.8, 600.3, DECK]]
+    route = [[1300.25, 603.9, DECK], [1302.65, 603.9, DECK],
+             [1302.65, 600.3, DECK], [1303.8, 600.3, DECK]]
     rise = (TOP-DECK)/FLIGHTS
     for flight in range(FLIGHTS):
         east = flight % 2 == 0; x = 1303.8 if east else 1310.1; y = 600.3 if east else 603.9
@@ -190,7 +191,7 @@ def build(base_sampler):
         steel.beam(a+[0, 0, height], b+[0, 0, height], .07)
         steel.beam(a+[0, 0, height*.5], b+[0, 0, height*.5], .045)
 
-    def landing(east, z):
+    def landing(east, z, entrance=False):
         x0, x1 = (1310.1, 1312.4) if east else (1301.5, 1303.8)
         timber.box([(x0+x1)/2, 602.1, z-.12], [x1-x0, 6., .24])
         for y in (599.1, 605.1):
@@ -198,12 +199,12 @@ def build(base_sampler):
             rail([x0, y, z], [x1, y, z])
         outside = x1 if east else x0
         steel.beam([outside, 599.1, z-.27], [outside, 605.1, z-.27], .2)
-        rail([outside, 599.1, z], [outside, 605.1, z])
+        rail([outside, 599.1, z], [outside, 602.7 if entrance else 605.1, z])
 
     # Four continuous posts carry the service tower; braces repeat at every landing.
     tower = [(1301.65, 599.25), (1301.65, 604.95), (1312.25, 599.25), (1312.25, 604.95)]
     for x, y in tower: post(x, y, TOP-.15, width=.32)
-    rise = (TOP-DECK)/FLIGHTS; landing(False, DECK)
+    rise = (TOP-DECK)/FLIGHTS; landing(False, DECK, entrance=True)
     for flight in range(FLIGHTS):
         east = flight % 2 == 0; x = 1303.8 if east else 1310.1; y = 600.3 if east else 603.9
         direction = 1 if east else -1; z = DECK+flight*rise

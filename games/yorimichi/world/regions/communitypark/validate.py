@@ -122,7 +122,7 @@ def structure_audit():
     original = L.place(scene().triangles()); all_triangles = np.concatenate((added, original))
     route = S.stair_route()
     for x, y, z in route:
-        hits = S.heights(added, x, y)
+        hits = S.heights(all_triangles, x, y)
         assert np.any(abs(hits-z) < .025), ('missing tread or landing', x, y, z)
         for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
             hits = S.heights(all_triangles, x+dx, y+dy)

@@ -20,7 +20,8 @@ def source_fixture():
                                (3, (1280, 550, 58), (6, 6, 1)),
                                (4, (1280, 550, 48.25), (10, 10, .5)),
                                (5, (1308, 544, 54.5), (.545, 3, .09)),
-                               (6, (1308, 544, 56.5), (.545, 3, .09))]:
+                               (6, (1308, 544, 56.5), (.545, 3, .09)),
+                               (7, (1307, 602, 48.25), (20, 20, .5))]:
         item = S.Mesh('fixture', 'none'); item.box(centre, size)
         triangles = L.local(item.triangles())
         parts.append({'node': node, 'mesh': 21 if node in (5, 6) else 0, 'vertices': triangles.reshape(-1, 3),
@@ -37,6 +38,7 @@ class StructureTests(unittest.TestCase):
         with patch('communitypark.structures.scene', return_value=cls.source), patch('communitypark.layout.ground', side_effect=ground):
             cls.meshes, cls.metadata = S.build(ground)
         cls.triangles = np.concatenate([mesh.triangles() for mesh in cls.meshes])
+        cls.walking_triangles = np.concatenate((cls.triangles, L.place(cls.source.triangles())))
 
     def test_every_tread_and_landing_has_footing_and_body_clearance(self):
         route = S.stair_route()
@@ -45,11 +47,11 @@ class StructureTests(unittest.TestCase):
         self.assertGreaterEqual(self.metadata['stair_width_m'], 2.)
         self.assertGreater(route[-1, 2]-route[0, 2], 36.)
         for x, y, z in route:
-            hits = S.heights(self.triangles, x, y)
+            hits = S.heights(self.walking_triangles, x, y)
             self.assertTrue(np.any(abs(hits-z) < .025), (x, y, z, 'missing tread'))
             # Sample a 70 cm wide body, including the two bridge turns.
             for dx, dy in [(0, 0), (.35, 0), (-.35, 0), (0, .35), (0, -.35)]:
-                hits = S.heights(self.triangles, x+dx, y+dy)
+                hits = S.heights(self.walking_triangles, x+dx, y+dy)
                 self.assertFalse(np.any((hits > z+.2) & (hits < z+1.95)), (x, y, z, dx, dy, hits.tolist()))
 
     def test_raised_groups_have_contacts_on_original_surface_or_ground(self):
