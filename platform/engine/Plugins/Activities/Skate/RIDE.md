@@ -8,6 +8,10 @@ backend in its config; the backend is chosen at each mount and a ride keeps it. 
 
 The board is rigid and steps at 60 Hz (`RideSession.cpp`; the numbers are in `RideTuning.h`). Each frame shows it
 between its last two steps at the frame's own time, from the ride's first frame (the step clock starts a step full).
+Nothing in a ride is left to chance: the manual's wobble draws from a sequence that starts over with every ride, and a
+run-out's clip and a thrown board's tumble come from the bail itself, so the same controls from the same start replay
+the same ride. Three replays of a recorded 26 s session stay within 4 cm of each other over the board's whole path
+(they parted by up to 10 m before); a bail's ragdoll is the one source of drift left (0.5 cm).
 
 - **Ground.** A tick moves in steps of at most `GroundStep` (15 cm). Each step probes the ground under both axles with
   a wheel-sized sphere, from `StepUp` (6 cm) above to `StickGap` plus a share of the step below, and the deck takes
@@ -629,7 +633,8 @@ turning wait for it.
   taken on foot: no ragdoll, the rider runs out of it. The clip is chosen by the way the board was going under the
   rider (on along its nose `FWD`, back along its tail `BWD`, across toward the toes `FF` or the heels `BF`), `HI` or
   `LO` by the crouch, and small, medium or big by the bail's energy (the largest of its speed over `RunOutSpeed`, its
-  fall over `RunOutImpact` and its spin over `RunOutSpin`), one of the variants at random. The clip's board starts on
+  fall over `RunOutImpact` and its spin over `RunOutSpin`), one of the variants picked by
+  those numbers. The clip's board starts on
   the deck the rider bailed from and rolls with the clip; the body starts where it was, at the bail's speed, and
   follows the clip's turns. At the clip's end the board rolls on by itself like a kicked one.
 - **Bail.** Otherwise the body falls (the physical rider). The skate button during the bail means "get up on foot":

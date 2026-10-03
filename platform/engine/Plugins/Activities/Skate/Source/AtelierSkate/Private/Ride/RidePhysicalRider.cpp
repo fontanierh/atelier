@@ -1650,8 +1650,10 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     LooseBoard->SetAngularDamping(.4f);
     LooseBoard->SetSimulatePhysics(true);
     LooseBoard->SetPhysicsLinearVelocity(Velocity * .85f + FVector(0, 0, 90.f));
+    // A tumble of its own, drawn from the bail's velocity so a replay throws it the same way.
+    FRandomStream Tumble{int32(GetTypeHash(FIntVector(Velocity)))};
     LooseBoard->SetPhysicsAngularVelocityInRadians(BoardSpin +
-        Deck.GetForwardVector() * FMath::FRandRange(-7.f, 7.f) + Deck.GetRightVector() * FMath::FRandRange(-4.f, 4.f));
+        Deck.GetForwardVector() * Tumble.FRandRange(-7.f, 7.f) + Deck.GetRightVector() * Tumble.FRandRange(-4.f, 4.f));
 
     // The body: an active ragdoll keeps the momentum its bodies have; an animated one leaves with the board's.
     const bool bWasSimulating = bSimulating;

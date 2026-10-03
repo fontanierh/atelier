@@ -114,6 +114,8 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     Accumulator = Tick60 - KINDA_SMALL_NUMBER; bCamValid = false;
     PushCount = 0; StillTime = -1; bStill = bWasStill = false; LastGrab = ERideGrab::None; SinceGrab = -1;
     LandAge = -1; LandImpact = 0; bLandedFromGrab = false; Sketchy = 0; Clock = 0;
+    // The wobble's random numbers start over with every ride, so the same controls replay the same ride.
+    Noise = 0x9E3779B9u;
     bSteppingOff = bThroughLine = bPushFromRest = false;
     // Settle onto whatever is under the board. A start inside the floor (a hand-off a little low) finds the floor's top
     // from up to StartRecover above and starts on it, rather than in the air under it.

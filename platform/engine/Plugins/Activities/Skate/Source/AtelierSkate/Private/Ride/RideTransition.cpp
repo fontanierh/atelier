@@ -816,7 +816,8 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
                 if (UAnimSequence* Clip = Ride->GetAnimator().Clip(*FString::Printf(TEXT("RUNOUT_%s_%s_%s_TO_RUN_FWD"), RunOutWays[Way].Way, Height, Variant)); Clip && Length(Clip) > .2f)
                     Options.Add(Clip);
         if (Options.IsEmpty()) continue;
-        T.PendingClip = Options[FMath::RandHelper(Options.Num())];
+        // Picked from the bail itself rather than at random, so a replay picks the same one.
+        T.PendingClip = Options[GetTypeHash(FIntVector(FMath::RoundToInt(Angle), FMath::RoundToInt(float(Bail.Size())), FMath::RoundToInt(Energy * 100.f))) % uint32(Options.Num())];
         T.bRunOutPending = true;
         UE_LOG(LogTemp, Display, TEXT("SKATE ride run-out: %s (the board going %.0f deg from its nose at %.0f cm/s, energy %.2f)"),
             *T.PendingClip->GetName(), Angle, Bail.Size(), Energy);
