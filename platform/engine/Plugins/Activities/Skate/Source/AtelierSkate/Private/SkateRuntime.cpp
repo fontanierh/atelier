@@ -669,10 +669,11 @@ FString USkateComponent::GetRetailState() const
     if (!bRetailActive || !RetailRuntime) return FString();
     // The Ride backend adds its simulation cost per 60 Hz tick (mean and worst over the last second, ms).
     if (!RetailRuntime->Worker && Ride)
-        return FString::Printf(TEXT("%s tick=%llu backend=Ride cost=%.3f/%.3f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f"),*RetailRuntime->State,RetailRuntime->Tick,
+        return FString::Printf(TEXT("%s tick=%llu backend=Ride cost=%.3f/%.3f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f spin=%.1f select=%d,%.3f"),*RetailRuntime->State,RetailRuntime->Tick,
             Ride->CostMean,Ride->CostWorst,*Ride->DescribePose(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"),
             FMath::RadiansToDegrees(RetailRuntime->ArmSwing[0]),FMath::RadiansToDegrees(RetailRuntime->ArmSwing[1]),
-            FMath::RadiansToDegrees(RetailRuntime->ArmNeed[0]),FMath::RadiansToDegrees(RetailRuntime->ArmNeed[1]));
+            FMath::RadiansToDegrees(RetailRuntime->ArmNeed[0]),FMath::RadiansToDegrees(RetailRuntime->ArmNeed[1]),Ride->GetAirSpin(),
+            Ride->SelectQueries,Ride->SelectCost);
     const skate_native::XboxState& I=RetailRuntime->Sent;
     return FString::Printf(TEXT("%s tick=%llu backend=Native lock=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d"),*RetailRuntime->State,RetailRuntime->Tick,
         Lockstep()?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],RetailRuntime->Worlds,RetailRuntime->WorldTriangles);
@@ -684,6 +685,8 @@ FSkateHostPad USkateComponent::ReadHostPad() const
     Out.LeftX=In.Left.X;Out.LeftY=In.Left.Y;Out.RightX=In.Right.X;Out.RightY=In.Right.Y;
     Out.bPush=In.bPush;Out.bBrake=In.bBrake;Out.bTransfer=In.bTransfer;Out.bPowerslide=In.bPowerslide;
     Out.bGrabLeft=In.bGrabLeft;Out.bGrabRight=In.bGrabRight;Out.bGround=Mode==ESkateMode::Ground;
+    // A scripted pull (0..1) keeps its depth; the controller's own axes replace it below.
+    Out.LeftTrigger=In.LeftPull();Out.RightTrigger=In.RightPull();
     // The player's controller adds the buttons and triggers FSkateInput has no room for, unless scripted input, a
     // blocked rider or a free mouse drives the ride.
     if (!bScripted && RiderApi && !RiderApi->IsSkateInputBlocked() && !RiderApi->IsSkateMouseFree())

@@ -47,12 +47,13 @@ namespace atelier::skate_pad
     using HostPad = FSkateHostPad;
 
     /** The packet: push A, brake B, transfer on the host bit; X on its own bit (and no longer A unless A, W or Up is
-     *  held too); shoulders and stick clicks; triggers from the grabs, or the analog axes (Q and E full); the sticks
-     *  quantised to 32767. */
+     *  held too); shoulders and stick clicks; triggers from the grabs (full) or the pulls, or the controller's analog
+     *  axes (Q and E full); the sticks quantised to 32767. */
     inline skate::XboxState Pack(const HostPad& In)
     {
         std::int32_t Buttons = (In.bPush ? ButtonA : 0) | (In.bBrake ? ButtonB : 0) | (In.bTransfer ? ButtonTransfer : 0);
-        std::int32_t LeftTrigger = In.bGrabLeft ? 255 : 0, RightTrigger = In.bGrabRight ? 255 : 0;
+        std::int32_t LeftTrigger = In.bGrabLeft ? 255 : std::clamp(RoundToInt(255 * In.LeftTrigger), 0, 255),
+            RightTrigger = In.bGrabRight ? 255 : std::clamp(RoundToInt(255 * In.RightTrigger), 0, 255);
         if (In.bController)
         {
             if (In.bFaceLeft)

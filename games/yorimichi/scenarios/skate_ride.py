@@ -9,7 +9,11 @@ kickflip and a nose manual into a nollie, every nollie in native's table, goofy 
 a grind, a manual, a bail and its recovery, the hands clear of the body and the pushing foot out of the ground (Cairo
 regular and goofy, Link), lip airs
 back into the transition (straight, 180 and 360 on the pier's quarter; straight and across on Mega Park's pool wall)
-and a coasting back-and-forth in the bowl (`--only vert`), every wheel on the ground through carves, a pump, a
+and a coasting back-and-forth in the bowl (`--only vert`), a player's lip airs (an angled approach with the stick held
+sideways, `--only lip_air_player`), spins against native's controller for the same stick (flat 180s and 360s; a stick
+held through a pool air, pushed as the board leaves or held from the wall, `--only spin`), pumping in the bowl
+(coasting, a trigger pump timed with the transitions and a mistimed one, `--only pump`), a grab held through the
+landing (ridden away, as native's), every wheel on the ground through carves, a pump, a
 powerslide and a manual (`--only wheels`), frame pacing (including mounting and switching character), Mega Park's
 roll-in from the upper deck (over the crest without leaving it, through the concave at the bottom without a bail) and a
 grind into
@@ -23,6 +27,7 @@ every frame recorded, the rider's pose (the clips through Unreal's animation gra
 where the clip stands on it, carry no NaN and never pop between clips, in both stances, and the standing rider matches
 the reference's stand.
 The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
+`--only native` runs the pumps, a flat 360 and the held grab on the Native backend beside Ride's (only when asked).
 Writes build/yorimichi/skateqa/ride.json, and ride-pose.json: every frame of the pose checks and each pop with the
 frames around it.
 """
@@ -332,6 +337,7 @@ def main():
     wanted = lambda name: not only or any(name.startswith(o) for o in only)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
     results = {}
+    parity = {}   # Ride's pump passes, for the Native rows
 
     seen = {}
 
@@ -508,36 +514,34 @@ def main():
         landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
         record(key, rows, trick_named(rows, name) and landed, f'{qa.combos(rows) or "(none)"}; landed={landed}')
     if wanted('grab'):
-        # Hold the right trigger for the first half second of the air (a grab held into the landing bails).
-        rows = record_while(f'''
-live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)
-live.AIR=[0.0]
-def grab(dt):
-    s=live.skate_state(); air='mode=2 ' in s
-    live.AIR[0]=live.AIR[0]+dt if air else 0.0
-    live.skate_input(grab_right=air and .08<live.AIR[0]<.6)
-live.behave('grab', grab)
-''', 5)
-        qa.py("live.stop('grab'); live.skate_input()")
+        # The right trigger for the first half second of the air; then held through the landing and after it, which
+        # rides away as native's does (its reference holds an Indy 17 ticks past the touch-down).
+        rows = grab_air({'grab_right': True}, .52)
         combos = qa.combos(rows)
         record('grab_indy', rows, 'Indy' in combos and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'), combos or '(none)')
+        rows = grab_air({'grab_right': True}, 2.5)
+        combos = qa.combos(rows)
+        record('grab_held_landing', rows, 'Indy' in combos and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
+               f"{combos or '(none)'}; {'bailed' if qa.count(rows, 'bails') else 'rode away'}")
     if wanted('spin'):
-        for direction in (-1, 1):
-            events = [(.4, {'right': (0, -1), 'left': (direction, 0)}), (.62, {'right': (0, 1), 'left': (direction, 0)}),
-                      (.66, {'left': (direction, 0)}), (1.6, {})]
-            rows = qa.run_scenario(f'{FLAT[0]},{FLAT[1]},0,500,{events!r},duration=2.6', 2.6)
-            angle = 0
-            for prev, row in zip(rows, rows[1:]):
-                if row['mode'] == '2':
-                    angle += (float(row['yaw']) - float(prev['yaw']) + 180) % 360 - 180
-            record(f'flat_spin_{direction}', rows, abs(angle) > 200 and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
-                   f'air rotation {angle:.0f} degrees; {qa.combos(rows)}')
-        # A 360 needs a bigger air: off the quarter, the stick held for a 360 (see vert_checks); the release turns the
-        # rest. (A yaw read while the deck stands on the wall is not the spin, so the hold is timed.)
+        # Flat spins off an ollie at 5 m/s, the left stick pushed full as the board leaves (native's snap, weighed
+        # fully) and let go after .27 s (native: 360-380 degrees in a flat ollie's 44-50 air ticks) or .09 s (about
+        # 190): Ride's spin is native's for the same stick, and the landing is clean.
+        flat = f"live.park.place({FLAT[0]},{FLAT[1]},0); live.park.look(-12,0); live.park.launch(500)\n"
+        for label, hold, want in (('', .27, '360'), ('180_', .09, '180')):
+            for direction in (-1, 1):
+                rows, stick = spin_run(flat, f'{direction} if air and a < {hold} else 0', 2.6, ollie=True)
+                judge_spin(record, f'flat_spin_{label}{direction}', rows, stick, want)
+        # Off the quarter, the stick held for a 360 (see vert_checks); the release turns the rest.
         rows = record_while(f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
-                            + SPIN_HOLD.replace('HOLD', '.48'), 5)
+                            + SPIN_HOLD.replace('HOLD', '.2'), 5)
         qa.py("live.stop('spin'); live.skate_input()")
         record('quarter_360', rows, '360' in qa.combos(rows) or '540' in qa.combos(rows), qa.combos(rows) or '(none)')
+        spin_held(record)
+    if wanted('pump'):
+        pump_rows(record, parity)
+    if wanted('lip_air_player'):
+        lip_air_player(record)
     if wanted('grind'):
         grind_rows(record)
     if wanted('manual'):
@@ -618,6 +622,8 @@ live.behave('grab', grab)
         physical_checks(record, wanted)
     if any(wanted(name) for name in COLLIDE_ROWS):
         collide_checks(record, wanted)
+    if any(o.startswith('native') for o in only):
+        native_checks(record, parity)
     qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
     out = qa.yori.OUT / 'skateqa' / 'ride.json'
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -640,6 +646,277 @@ def _spin(dt):
 live.behave('spin', _spin)
 """
 
+# Native's body spin (BodySpin.cpp: PhysicalBodySpin's normal mode at spin scale 1.6, which Ride's TickSpin ports) is the
+# spin rows' oracle. Its tables against the air's time (s): the rate per unit of stick (rad/s) and the most it changes
+# in a tick; and the snap's weight against the age of the stick's push (s, negative before the take-off).
+SPIN_PROP = ((0, .052, .127, .244, .368, .564, .906, 2.), (3.15, 6.364, 7.779, 7.939, 7.714, 6.975, 5.689, 3.664))
+SPIN_DELTA = ((0, .116, .256, .394, .533, .678, .878, 1.), (.993, .761, .507, .35, .225, .171, .157, .154))
+SPIN_SNAP = ((-.497, -.375, -.254, 0, .135, .228, .337, .5), (0, .05, 1, 1, 1, .629, .386, .286))
+SPIN_SLACK = .12   # Ride's air spin is native's for the same stick, tick for tick, within 12% (or 15 degrees)
+
+
+def table(curve, x):
+    xs, ys = curve
+    if x <= xs[0]:
+        return ys[0]
+    for i in range(1, len(xs)):
+        if x <= xs[i]:
+            return ys[i - 1] + (ys[i] - ys[i - 1]) * (x - xs[i - 1]) / (xs[i] - xs[i - 1])
+    return ys[-1]
+
+
+def native_spin(stick, takeoff, last, carry=0., scale=1.6):
+    """The degrees native's controller turns the board from the take-off (`takeoff`, the last tick on the ground) to
+    tick `last`, for the left stick's x at each 60 Hz tick (`stick(tick)`) and a turn of `carry` degrees/s at the
+    take-off; positive with the stick, as Ride's air spin (spin=). A stick held before the take-off is smoothed into
+    the air, and its push (the snap) counts fully up to a quarter second old: a push as the board leaves spins it
+    2.5 times faster than a stick held from before."""
+    dt, held, smooth, history, peak, clock, angle = 1 / 60, 0., 0., [], 0., 0., 0.
+    rate = -math.radians(carry)   # native's sense: turning against the stick
+    for tick in range(takeoff - 40, last + 1):
+        x = stick(tick)
+        x = x if abs(x) > .06 else 0.
+        change = 1.5 * (x - held)
+        held = x
+        snap = max(-1., min(1., change if change * x > .1 else 0.))
+        history = (history + [snap])[-30:]
+        if tick <= takeoff:
+            smooth = .8 * smooth + .2 * x
+            continue
+        if clock == 0:
+            peak = 0.
+            for i in range(1, len(history)):
+                c = table(SPIN_SNAP, -i * dt) * history[-i]
+                if abs(c) > abs(peak):
+                    peak = c
+        accel = table(SPIN_DELTA, clock) * scale
+        c = table(SPIN_SNAP, clock) * snap
+        if abs(c) > abs(peak):
+            peak = c
+        clock += dt
+        if abs(held) < 1.5e-5:
+            smooth *= .96
+            held = smooth
+        else:
+            smooth = .8 * smooth + .2 * held
+        prop = table(SPIN_PROP, clock) * scale * held
+        if prop * peak < 0:
+            peak = 0.
+        target = -(abs(peak) * .6 + .4) * prop
+        limit = min(.2 * scale, accel)
+        lo, hi = (-limit, accel) if rate > 0 else (-accel, limit)
+        rate += max(lo, min(hi, target - rate))
+        angle -= math.degrees(rate) * dt
+    return angle
+
+
+# In the game, each frame: the left stick's x from LEFT, an expression of t (the seconds since the start), a (the
+# seconds in the air), air and up (the deck's up z); the right stick through an ollie when OLLIE, held down from .4 s
+# to POP and flicked up for two ticks; and a log of (the ride's tick, x): the x it set goes to the ticks after that one.
+SPIN_RUN = """
+import re
+live.SPIN=[0.0, 0.0, []]
+def _spin(dt):
+    s=live.skate_state(); f=lambda k, d: float((re.search(' '+k+'=([-0-9.]+)', s) or [0, d])[1])
+    air=f('mode', 1)==2; up=f('deckup', 1)
+    live.SPIN[0]+=dt; live.SPIN[1]=live.SPIN[1]+dt if air else 0.0
+    t, a = live.SPIN[0], live.SPIN[1]
+    x=float(LEFT)
+    live.SPIN[2].append((int(f('tick', 0)), x))
+    live.skate_input(left=(x,0), right=(0,-1) if OLLIE and .4<=t<POP else (0,1) if OLLIE and POP<=t<POP+.033 else (0,0))
+live.behave('spin', _spin)
+"""
+
+
+def spin_run(place, left, seconds, ollie=False, load=.16):
+    """`place`, then SPIN_RUN for `seconds` (an ollie loaded for `load` s): the rows, and the stick's x at each tick as
+    the game set it."""
+    rows = record_while(place + SPIN_RUN.replace('LEFT', left).replace('OLLIE', str(ollie)).replace('POP', f'{.4 + load:.3f}'),
+                        seconds)
+    log = json.loads(qa.py("live.stop('spin'); live.skate_input(); print(json.dumps(live.SPIN[2]))").strip().splitlines()[-1])
+
+    def stick(tick):
+        x = 0.
+        for seen, value in log:
+            if seen >= tick:
+                break
+            x = value
+        return x
+    return rows, stick
+
+
+def judge_spin(record, name, rows, stick, want='', land=True):
+    """The first air in `rows`: Ride's spin (spin= at its last tick) against native's for the same stick; with `land`, a
+    clean landing whose combo has `want`."""
+    a = next((i for i in range(1, len(rows)) if rows[i]['mode'] == '2' and rows[i - 1]['mode'] != '2'), None)
+    b = next((i for i in range(a, len(rows)) if rows[i]['mode'] != '2'), None) if a is not None else None
+    if b is None:
+        record(name, rows, False, f"no whole air; states {','.join(sorted(qa.modes(rows)))}")
+        return None
+    takeoff, last = int(rows[a]['tick']), int(rows[b - 1]['tick'])
+    yaw = sum((float(r['yaw']) - float(p['yaw']) + 180) % 360 - 180 for p, r in zip(rows[a - 1:b - 1], rows[a:b]))
+    # Ride's spin readout; the board's yaw on the Native backend, which has none.
+    ride, native = float(rows[b - 1].get('spin', yaw)), native_spin(stick, takeoff, last)
+    held = sum(1 for t in range(takeoff + 1, last + 1) if abs(stick(t)) > .06)
+    bailed = any(r['mode'] == '4' for r in rows)
+    combos = qa.combos(rows)
+    # The readout turns with the stick as native's does; the yaw's sense is the backend's own, so only its size counts.
+    same = ride * native > 0 or 'spin' not in rows[b - 1]
+    ok = same and abs(abs(ride) - abs(native)) <= max(15., SPIN_SLACK * abs(native)) and (
+        not land or (not bailed and rows[-1]['mode'] == '1' and want in combos))
+    record(name, rows, ok, f"air spin {ride:.0f} degrees, native {native:.0f} for the same stick (held {held} of "
+           f"{last - takeoff} air ticks, {sum(1 for t in range(takeoff - 30, takeoff + 1) if abs(stick(t)) > .06)} before the "
+           f"take-off); yaw turned {yaw:.0f}; {'bailed' if bailed else 'no bail'}; {combos or '(no tricks)'}")
+    return ride, native
+
+
+def spin_held(record):
+    """A spin held through an air off Mega Park's pool wall (11.5 m/s up it, the film's): the left stick full right
+    from the take-off (a snap, weighed fully) and from the climb up the wall (held before the take-off, weighed less),
+    to the touch-down. Ride's air spin is native's for the same stick (in 1.6 s of air about 870 degrees snapped, 490
+    held from 20 ticks before; Ride's own controller turned 1100)."""
+    x, y, z = POOL
+    ground = qa.py(f"g=live.L.ground_at(unreal.Vector({x * 100},{-y * 100},{z * 100}))\nprint(g.x, g.y, g.z)").split()
+    for name, left in (('spin_held_megapark_snapped', '1 if air else 0'), ('spin_held_megapark_preheld', '1 if air or up < .9 else 0')):
+        mega_place(f"live.skate_place(unreal.Vector({ground[0]},{ground[1]},{ground[2]}), -90)")
+        rows, stick = spin_run("live.L.skate_launch(unreal.Vector(0,-1150,0))\n", left, 5)
+        judge_spin(record, name, rows, stick, land=False)
+
+
+# Pumping (RIDE.md, "Pumping"): in the pier's bowl, launched east across its floor (20 m between the walls) at 6 m/s,
+# the triggers pulled to PULL while WHEN holds, an expression of ground and up (the deck's up z). Native's reference
+# pumps pull the left trigger to 200 of 255.
+PUMP_RUN = """
+import re
+def _pump(dt):
+    s=live.skate_state(); f=lambda k, d: float((re.search(' '+k+'=([-0-9.]+)', s) or [0, d])[1])
+    ground=f('mode', 1)==1; up=f('deckup', 1)
+    live.skate_input(grab_left=PULL if (WHEN) else 0)
+live.behave('pump', _pump)
+"""
+PUMP_PULL = 200 / 255
+PUMP_RECIPES = (('pump_coast', 'False'),                       # no trigger: the transitions crouch him (MinCrouchVsGroundAngle)
+                ('pump_timed', 'ground and up > .985'),        # crouched across the floor, standing up through each transition
+                ('pump_mistimed', 'ground and up <= .985'))    # crouched through the transitions, standing up on the floor
+
+
+def floor_passes(rows):
+    """The top speed of each pass across the bowl's floor (between visits to its walls, deck up z under .9); the pass
+    the recording ends in is left out."""
+    out, cur = [], 0.
+    for r in rows:
+        if r['mode'] == '2' or float(r.get('deckup', 1)) < .9:
+            if cur:
+                out.append(cur)
+            cur = 0.
+        elif r['mode'] == '1':
+            cur = max(cur, speed(r))
+    return out
+
+
+def pump_rows(record, parity):
+    """Three passes across the bowl's floor from 6 m/s, by native's pump (its model in the bowl: coasting 600 -> 840
+    -> 1040 cm/s, timed 600 -> 1000 -> 1210, mistimed 600 -> 640 -> 670): coasting gains (the transitions crouch the
+    rider and he rises out of them), a trigger pump timed to stand up through the transitions gains more (native's own
+    runs, `--only native`: 1.27 times its coasting, 591 -> 872 -> 1107 against 591 -> 1150 -> 1249; the row asks
+    1.2), one held through them and let go on the floor less; none passes native's cap (13 m/s) or bails."""
+    gains = {}
+    for name, when in PUMP_RECIPES:
+        rows = record_while(f"live.park.place({BOWL[0]},{BOWL[1]},0); live.park.look(-12,0); live.park.launch(600)\n"
+                            + PUMP_RUN.replace('PULL', f'{PUMP_PULL:.4f}').replace('WHEN', when), 13)
+        qa.py("live.stop('pump'); live.skate_input()")
+        passes = floor_passes(rows)
+        parity[name] = passes
+        bailed = any(r['mode'] == '4' for r in rows)
+        gains[name] = passes[2] - passes[0] if len(passes) >= 3 else 0.
+        coast = gains.get('pump_coast', 0.)
+        ok = len(passes) >= 3 and not bailed and max(passes) <= 1300 and {
+            'pump_coast': gains[name] > .2 * passes[0],
+            'pump_timed': gains[name] > 1.2 * coast,
+            'pump_mistimed': gains[name] < .6 * coast}[name]
+        record(name, rows, ok, f"floor passes {' -> '.join(f'{v:.0f}' for v in passes)} cm/s, gain {gains[name]:.0f} over two "
+               f"(coasting {coast:.0f}); {'bailed' if bailed else 'no bail'}")
+
+
+# A player's lip air (RIDE.md, "Lip airs"): an angled approach to the pier's quarter at 9.5 m/s with the left stick held
+# half sideways until the board leaves (released in the air), from park-local starts (x, y, heading in degrees
+# counter-clockwise from east). Each comes down on the face it left, below the lip and within 1.5 m of it, in under
+# 3.5 s, without a bail.
+PLAYER_QUARTER = ((58, 22.5, 15), (60, 20.5, 30), (62, 19, 45))
+PLAYER_STEER = """
+live.LIPP=[False]
+def _lipp(dt):
+    live.LIPP[0]=live.LIPP[0] or 'mode=2 ' in live.skate_state()
+    live.skate_input(left=(0,0) if live.LIPP[0] else (STEER,0))
+live.behave('lipp', _lipp)
+"""
+
+
+def lip_air_player(record):
+    side = lambda steer: 'right' if steer > 0 else 'left'
+    for x, y, heading in PLAYER_QUARTER:
+        for steer in (.5, -.5):
+            rows = record_while(f"live.park.place({x},{y},{heading}); live.park.look(-12,{heading}); live.park.launch(950,{heading})\n"
+                                + PLAYER_STEER.replace('STEER', str(steer)), 5)
+            qa.py("live.stop('lipp'); live.skate_input()")
+            judge_lip(record, f'lip_air_player_quarter_{heading}_{side(steer)}', rows, QUARTER_OUT, None, reach=150)
+
+
+def grab_air(keys, until):
+    """The pier quarter's air (east_return at 9.5 m/s) with the inputs `keys` held from .08 s into it for `until` s."""
+    rows = record_while(f'''
+live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)
+live.AIR=[0.0, 0.0]
+def grab(dt):
+    air='mode=2 ' in live.skate_state()
+    live.AIR[0]=live.AIR[0]+dt if air else 0.0
+    live.AIR[1]=live.AIR[1]+dt if live.AIR[1] or (air and live.AIR[0]>.08) else 0.0
+    live.skate_input(**({keys!r} if 0<live.AIR[1]<{until} else {{}}))
+live.behave('grab', grab)
+''', 5)
+    qa.py("live.stop('grab'); live.skate_input()")
+    return rows
+
+
+def mount_native():
+    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
+    qa.py('live.L.skate_goofy(False); live.skate_park(); live.skate_input()')
+    for _ in range(60):
+        state = qa.py('print(live.skate_state())')
+        if 'backend=Native' in state and 'retail=PhysicsGround' in state:
+            return state
+        time.sleep(.5)
+    raise RuntimeError('Native did not mount: ' + state.strip())
+
+
+def native_checks(record, parity):
+    """The same on the Native backend (only when asked: `--only native`), beside Ride's: the bowl's pumps (the third
+    floor pass within 12% of Ride's: Ride's are run first when this run has none, and a pump without Ride's three passes
+    fails, not evaluated), a flat 360 (its yaw within SPIN_SLACK of the oracle's) and an Indy held through the quarter's
+    landing (ridden away). Ride is mounted again after."""
+    if any(name not in parity for name, _ in PUMP_RECIPES):
+        pump_rows(record, parity)
+    mount_native()
+    try:
+        for name, when in PUMP_RECIPES:
+            rows = record_while(f"live.park.place({BOWL[0]},{BOWL[1]},0); live.park.look(-12,0); live.park.launch(600)\n"
+                                + PUMP_RUN.replace('PULL', f'{PUMP_PULL:.4f}').replace('WHEN', when), 13)
+            qa.py("live.stop('pump'); live.skate_input()")
+            passes, ride = floor_passes(rows), parity.get(name, [])
+            ok = len(passes) >= 3 and len(ride) >= 3 and abs(ride[2] - passes[2]) <= .12 * passes[2]
+            record('native_' + name, rows, ok, f"Native floor passes {' -> '.join(f'{v:.0f}' for v in passes)} cm/s; "
+                   f"Ride {' -> '.join(f'{v:.0f}' for v in ride) or '(none)'}"
+                   + ('' if len(ride) >= 3 and len(passes) >= 3 else '; not evaluated: three passes on each backend needed'))
+        flat = f"live.park.place({FLAT[0]},{FLAT[1]},0); live.park.look(-12,0); live.park.launch(500)\n"
+        # Native pops only off a longer load than Ride's (skate_runtime's flat 360s: .3 s down, then the flick).
+        rows, stick = spin_run(flat, '1 if air and a < .27 else 0', 2.6, ollie=True, load=.3)
+        judge_spin(record, 'native_flat_spin', rows, stick, '360')
+        rows = grab_air({'grab_right': True}, 2.5)
+        record('native_grab_held_landing', rows, rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
+               f"{qa.combos(rows) or '(none)'}; {'bailed' if qa.count(rows, 'bails') else 'rode away'}")
+    finally:
+        mount_ride()
+
 
 def lip_air(rows, out):
     """The first air in `rows` and how it came down, or None. `out` is the take-off face's level normal (Unreal x, y),
@@ -660,9 +937,10 @@ def lip_air(rows, out):
             'mode': rows[b]['mode'], 'fakie': after.get('fakie') == '1', 'deckup': rows[a - 1].get('deckup', '?')}
 
 
-def judge_lip(record, name, rows, out, fakie, want=''):
-    """A lip air back into the face it left: down on the face within a metre of the lip (and at least 20 cm below it),
-    fakie or forward as asked, no bail, riding away; `want` must be in the combo."""
+def judge_lip(record, name, rows, out, fakie, want='', reach=100.):
+    """A lip air back into the face it left: down on the face within `reach` cm of the lip (and at least 20 cm below
+    it), fakie or forward as asked (either for None), in under 3.5 s, no bail, riding away; `want` must be in the
+    combo."""
     air = lip_air(rows, out)
     if air is None:
         record(name, rows, False, f"no air off the lip; states {','.join(sorted(qa.modes(rows)))}")
@@ -670,9 +948,10 @@ def judge_lip(record, name, rows, out, fakie, want=''):
     bailed = any(r['mode'] == '4' for r in rows)
     away = rows[-1]['mode'] == '1' and speed(rows[-1]) > 150
     combos = qa.combos(rows)
-    ok = (air['mode'] == '1' and not bailed and air['fakie'] == fakie and -30 < air['into'] < 100 and air['drop'] > 20
-          and away and want in combos)
-    record(name, rows, ok, f"{'fakie' if air['fakie'] else 'forward'} landing (wanted {'fakie' if fakie else 'forward'}) "
+    ok = (air['mode'] == '1' and not bailed and fakie in (None, air['fakie']) and -30 < air['into'] < reach and air['drop'] > 20
+          and air['air'] < 3.5 and away and want in combos)
+    wanted = 'either' if fakie is None else 'fakie' if fakie else 'forward'
+    record(name, rows, ok, f"{'fakie' if air['fakie'] else 'forward'} landing (wanted {wanted}) "
            f"{air['into']:.0f} cm out from the lip, {air['drop']:.0f} cm below it; lip-off (deck up z {air['deckup']}) {air['up']:.0f} up, {air['out']:.0f} "
            f"into the ramp, {air['along']:.0f} along it (cm/s); apex {air['apex']:.0f} cm over the lip, {air['air']:.2f} s up; "
            f"{'bailed' if bailed else 'no bail'}; then {speed(rows[-1]):.0f} cm/s, mode {rows[-1]['mode']}; {combos or '(no tricks)'}")
@@ -685,12 +964,13 @@ def vert_checks(record):
     (the film's) a straight air, and the same climbing it 20 degrees across either way; each comes down within a metre
     of the lip, below it, without a bail, and rides away. Then a back-and-forth in the pier's bowl, coasting: three
     airs keep or gain speed at the bottom, short of native's cap (native: 10 -> 11.9 -> 12.3 m/s), shown beside the
-    same without AutoPump."""
+    same without the coasting pump (CoastPump 0)."""
     quarter = f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
     judge_lip(record, 'vert_quarter_straight', record_while(quarter, 5), QUARTER_OUT, True)
-    # Full stick turns 752 degrees/s off a lip (SpinRate 470 x AirSpinScale 1.6) after SpinResponse's lag, which the
-    # turn after the release makes up, so a hold of h turns about 752 h in all: .24 s for a 180, .48 s for a 360.
-    for name, hold, fakie, want in (('vert_quarter_180', .24, False, '180'), ('vert_quarter_360', .48, True, '360')):
+    # Native's spin pushed full as the board leaves a lip (the snap) turns 180 degrees in 4-6 ticks and 360 in 10-14,
+    # and the released stick turns the rest to the nearer of forward and fakie by the touch-down: .08 s for a 180, .2 s
+    # for a 360.
+    for name, hold, fakie, want in (('vert_quarter_180', .08, False, '180'), ('vert_quarter_360', .2, True, '360')):
         rows = record_while(quarter + SPIN_HOLD.replace('HOLD', str(hold)), 5)
         qa.py("live.stop('spin'); live.skate_input()")
         judge_lip(record, name, rows, QUARTER_OUT, fakie, want)
@@ -704,7 +984,7 @@ def vert_checks(record):
         judge_lip(record, name, rows, POOL_OUT, True)
     tune = "unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideTune {}')"
     bottoms = {}
-    for label, words in (('no AutoPump', 'AutoPump=0'), ('', '""')):   # "" empties the CVar (no value only prints it)
+    for label, words in (('no coasting pump', 'CoastPump=0'), ('', '""')):   # "" empties the CVar (no value only prints it)
         qa.py(tune.format(words))
         rows = qa.run_scenario(f"{BOWL[0]},{BOWL[1]},0,1000,[],duration=12", 12)
         airs, start, i = [], 0, 1
@@ -1503,9 +1783,22 @@ def physical_bail_fast(record):
     physical_bail(record, 'physical_bail_fast', FLAT[0], 1100, 'fast')
 
 
+# A Christ air (left trigger and B) from the take-off to the touch-down, which wipes out as native's does (a hand grab
+# held into the landing rides away); the controls let go once the air ends.
+CHRIST_AIR = ("live.CHRIST=[False]\n"
+              "def _christ(dt):\n"
+              "    s=live.skate_state(); air='mode=2 ' in s\n"
+              "    if live.CHRIST[0] and not air: live.stop('christ'); live.skate_input(); return\n"
+              "    live.CHRIST[0]=live.CHRIST[0] or air\n"
+              "    live.skate_input(grab_left=live.CHRIST[0], brake=live.CHRIST[0])\n"
+              "live.behave('christ', _christ)\n")
+QUARTER_AIR = f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
+
+
 def physical_bail_quarter(record):
-    """The film's bail on the pier's quarter: an Indy held from the take-off into the landing."""
-    rows = qa.run_scenario(f"{QUARTER[0]},{QUARTER[1]},0,950,[(0,{{'grab_right':True}})],duration=9", 9)
+    """A bail on the pier's quarter: a Christ air held from the take-off into the landing (CHRIST_AIR)."""
+    rows = record_while(QUARTER_AIR + CHRIST_AIR, 9)
+    qa.py("live.stop('christ'); live.skate_input()")
     judge_bail(record, 'physical_bail_quarter', rows, 'quarter')
 
 
@@ -1517,8 +1810,9 @@ def physical_bail_quarter(record):
 # (pairs that overlapped as the bail began, kept apart until they come apart, and how many have met again).
 JOINT_SLACK = 10.   # degrees: a hard hit pushes Chaos's limits a little; no joint further past its range than this
 PAIR_DEPTH = 3.     # cm: no two bodies that meet deeper in each other than this
-# The bails: on the flat at 6, 12 and 18 m/s (start x, the bail input's time), the quarter's Indy held into the landing,
-# and a bail in the middle of a grind along flatbar_red at 7 m/s (locked about 1.4 s in, 2.5 s along it).
+# The bails: on the flat at 6, 12 and 18 m/s (start x, the bail input's time), a Christ air held into the quarter's
+# landing (CHRIST_AIR), and a bail in the middle of a grind along flatbar_red at 7 m/s (locked about 1.4 s in, 2.5 s
+# along it).
 JOINT_FLAT = {600: (FLAT[0] + 18, 1.), 1200: (FLAT[0], 1.), 1800: (FLAT[0] - 8, .8)}
 JOINT_RUNS = ('flat 6 m/s', 'flat 12 m/s', 'flat 18 m/s', 'quarter', 'grind')
 # A flat bail counts only within this fraction of its speed; the quarter's must start in the air, the grind's on the rail.
@@ -1575,7 +1869,8 @@ def joint_start(name, extra=''):
         flat_bail(start, speed, at, extra)
         return 10.
     if name == 'quarter':
-        qa.py(f"live.scenario({QUARTER[0]},{QUARTER[1]},0,950,[(0,{{'grab_right':True}})],duration=9)\n" + extra)
+        qa.py(QUARTER_AIR + "live.REC=[]; live.behave('rec', lambda dt: live.REC.append(live.skate_state()))\n"
+              + CHRIST_AIR + extra)
         return 9.6
     qa.py(f"live.scenario({RAIL_FAST[0]},{RAIL_FAST[1]},0,700,[(.98,('flick','ollie'))],duration=10)\n"
           + bail_keys(GRIND_BAIL, release=True) + extra)
@@ -2487,7 +2782,7 @@ def collide_checks(record, wanted):
 
 
 def release_controls():
-    qa.py("live.stop('skate_script'); live.stop('rec'); live.stop('grab'); live.stop('spin'); live.stop('frames'); live.stop('pad_flick')\n"
+    qa.py("live.stop('skate_script'); live.stop('rec'); live.stop('grab'); live.stop('spin'); live.stop('christ'); live.stop('frames'); live.stop('pad_flick')\n"
           "live.skate_release()\n"
           "for k in ['Gamepad_LeftThumbstick','Gamepad_RightThumbstick','Gamepad_FaceButton_Bottom']: live.L.input_key(k,'release',0)\n"
           "for k in ['Gamepad_LeftTriggerAxis','Gamepad_RightTriggerAxis','Gamepad_RightX','Gamepad_RightY']: live.L.input_key(k,'axis',0)")

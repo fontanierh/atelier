@@ -72,9 +72,13 @@ line.
 
 ### Pumping
 
-Hold a trigger (Q / E) to compress and release it to extend. On a ramp, compress high on the descent and release
-through the bottom of the curve; compress again for the next wall. Timing matters: holding a trigger is not a boost.
-Release the triggers before leaving the lip unless you want a grab, and keep off the right stick, which pops.
+Pull a trigger to crouch and let it go to stand up: L2 / R2 any part of the way (the deeper of the two counts), or
+Q / E fully. Standing up while the board rides through a curve gains speed: crouch across the flat or high on the
+descent and let go through the curve at the bottom; crouch again for the next wall. Timing matters: holding a trigger
+is not a boost, and holding it through the curve gains less than coasting, which pumps a little by itself (the
+transitions crouch Cairo). Any pull grabs in the air, so release the triggers before leaving the lip unless you want
+a grab, and keep off the right stick, which pops. A grab held into the landing rides away; a Christ air or a one-foot
+air held into it is a bail.
 
 ### Camera
 

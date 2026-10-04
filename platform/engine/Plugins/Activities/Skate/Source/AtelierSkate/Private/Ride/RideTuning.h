@@ -33,17 +33,21 @@ struct FRideTuning
     float PushCycle = 1.f;            // s per push while push is held
     float PushContact = .42f;         // s from the push's start to the foot touching down
     float PushContactLength = .16f;   // s of foot contact
-    float PushTarget = 450.f;         // speed a push aims for from rest (before PushSpeedScale)
+    float PushTarget = 433.f;         // speed a push aims for from rest (before PushSpeedScale)
     float PushTargetSlope = .82f;     // extra target per cm/s of current speed
     float PushTapTarget = 205.f;      // a tapped push (released before contact) adds about this much at rest
-    float PushAccel = 3000.f;         // cm/s^2 during contact (before PushPowerScale)
+    // Native's push: a velocity change each tick of the foot's contact (cm/s, before PushPowerScale), PushDvStart from
+    // rest easing to PushDvEnd at PushFastFrom (cm/s) and faster.
+    float PushDvStart = 60.f;
+    float PushDvEnd = 50.f;
+    float PushFastFrom = 850.f;
     float PushTopSpeed = 850.f;       // pushing stops adding speed here (before PushSpeedScale)
     float PushFromRest = 30.f;        // slower than this a push goes nose-first, the board still through the wind-up (cm/s)
 
     // Braking and powerslides.
     float BrakeDelay = .3f;           // s for the foot to reach the ground
     float BrakeDecel = 314.f;         // cm/s^2
-    float SlideAngle = 85.f;          // the deck's angle to the travel at full slide (degrees)
+    float SlideAngle = 120.f;         // the deck's angle to the travel at full slide (degrees; native's slides turn 120)
     float SlideTurnRate = 220.f;      // how fast the deck turns into and out of a slide (degrees/s)
     float SlideDecel = 1.f;           // scale on the measured powerslide deceleration curve
     float SlideMinSpeed = 120.f;
@@ -55,16 +59,19 @@ struct FRideTuning
     float PivotSpeed = 120.f;         // below this speed steering blends into pivoting (cm/s)
     float SteerResponse = 7.f;        // 1/s
 
-    // Pumping: extending in a concave transition gains speed, v *= exp(curvature * extension).
-    float PumpExtension = 26.f;       // cm of centre-of-mass travel between compressed and extended
-    float AutoPump = .7f;             // coasting through a steep transition pumps by itself, this much (native: 0.7)
+    // Pumping (native's own UpdateGroundPumping, RIDE.md "Pumping"): the triggers crouch the rider, the ground's angle at
+    // least MinCrouchVsGroundAngle; standing up through a concave transition gains speed, by native's settings.
+    float PumpDepth = 37.5f;          // cm the centre of mass drops from standing to the full crouch
+    float CoastPump = 1.f;            // scale on native's UnintentionalPumpScalar (.7): the pump with no trigger held
     float CrouchRate = 5.f;           // 1/s
 
     // Pop: the deck's rise grows with how long the stick was held down before the flick (the load), from
-    // PopHeightQuick after a 4-tick load toward PopHeight, and with PopHeightScale^1.6 (the game's 1.15 gives the
-    // reference's 0.64 m, 0.98 m after 10 ticks and 1.37 m after 40).
-    float PopHeight = 109.6f;         // cm, a long load at PopHeightScale 1
-    float PopHeightQuick = 51.2f;     // cm, a 4-tick load
+    // PopHeightQuick after a 4-tick load toward PopHeight, and with PopHeightScale^1.6. Fitted to the reference's flat
+    // ollies (109.6 and 51.2 cm: at the game's 1.15, 0.64 m, 0.98 m after 10 ticks and 1.37 m after 40), then raised
+    // 10%: at the fit, Ride's airs in native's film shots rose 10 to 20% less than native's (road_tech, road_flips,
+    // road_sketchy).
+    float PopHeight = 120.6f;         // cm, a long load at PopHeightScale 1
+    float PopHeightQuick = 56.3f;     // cm, a 4-tick load
     float PopLoadTime = .16f;         // s, the time constant of the load
     float NollieScale = .95f;
     float PopFromGrindScale = .8f;
@@ -73,14 +80,15 @@ struct FRideTuning
 
     // Air.
     float AirGravity = 1400.f;        // cm/s^2: the reference flies under stronger gravity than 9.81 (about 14-15)
-    float SpinRate = 470.f;           // degrees/s at full stick off a lip (before AirSpinScale)
-    float FlatSpinRate = 260.f;       // degrees/s at full stick off flat ground
-    float SpinResponse = 7.f;         // 1/s
-    float SpinCarry = .55f;           // fraction of the ground turn rate carried into the air
+    float SpinCarry = .55f;           // fraction of the ground turn rate carried into the air, up to SpinCarryMax
+    float SpinCarryMax = 115.f;       // degrees/s
     float LevelLead = .15f;           // s before the predicted landing by which the deck matches the ground
     float VertSteepness = 50.f;       // lips steeper than this (degrees from level, at VertAssist 1) send a straight air back in
     float VertClimb = .66f;           // and only a take-off this steep: up over (up and into the face), as native
     float VertLean = 3.f;             // degrees from vertical, into the ramp, that a lip air's climb is turned to
+                                      // (with VertNative 0)
+    float VertNative = 0.f;           // 0: a lip air leaves by VertClimb and VertLean; 1: by native's departure and launch
+                                      // adjustment (its 1.15 degree lean, its climb test)
     float VertGravity = 1000.f;       // cm/s^2 in a lip air (the reference's board: 9.3 to 10.8 m/s^2 on vert airs)
     float TransferPush = 160.f;       // cm/s over the coping when transferring
     float FlipTime = .34f;            // s for a flip's board rotation (360 flips and hardflips take a little longer)

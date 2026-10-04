@@ -163,8 +163,9 @@ struct HostReader
         P.bPush = Down(KeyW) || Down(FaceBottom) || Down(FaceLeft);
         P.bBrake = Down(KeyS) || Down(FaceRight);
         P.bPowerslide = Down(KeyC);
-        P.bGrabLeft = Down(KeyQ) || R.Ax[4] > .35f;
-        P.bGrabRight = Down(KeyE) || R.Ax[5] > .35f;
+        // Any press grabs: the axis in the pad's 255 steps above zero (USkateComponent::ReadInput).
+        P.bGrabLeft = Down(KeyQ) || std::round(255.f * R.Ax[4]) > 0;
+        P.bGrabRight = Down(KeyE) || std::round(255.f * R.Ax[5]) > 0;
         P.bTransfer = Down(LeftShift) || (P.LeftY > .7f && std::fabs(P.LeftX) < P.LeftY);
         P.bGround = R.bGroundBefore;
         // The player's own controller drove the recording.

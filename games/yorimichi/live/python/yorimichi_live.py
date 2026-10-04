@@ -140,9 +140,10 @@ def skate():
 
 
 def skate_input(left=(0, 0), right=(0, 0), push=False, brake=False, slide=False, grab_left=False, grab_right=False):
-    """Hold skate. controls until skate_release(): sticks are (x right, y away from the player) in -1..1."""
+    """Hold skate. controls until skate_release(): sticks are (x right, y away from the player) in -1..1; the triggers
+    (grab_left, grab_right) are True or a pull in 0..1, a crouch on the ground and a grab in the air."""
     return L.skate_input(unreal.Vector2D(float(left[0]), float(left[1])), unreal.Vector2D(float(right[0]), float(right[1])),
-                         bool(push), bool(brake), bool(slide), bool(grab_left), bool(grab_right))
+                         bool(push), bool(brake), bool(slide), float(grab_left), float(grab_right))
 
 
 def skate_release():

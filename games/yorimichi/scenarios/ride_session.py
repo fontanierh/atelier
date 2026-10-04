@@ -293,7 +293,7 @@ def tick(dt):
         return
     if ph == 'place':
         unreal.SystemLibrary.execute_console_command(None, 'skate.Backend ' + BACKEND)
-        L.skate_input(unreal.Vector2D(0., 0.), unreal.Vector2D(0., 0.), False, False, False, False, False)
+        L.skate_input(unreal.Vector2D(0., 0.), unreal.Vector2D(0., 0.), False, False, False, 0., 0.)
         if not live.skate_place(at_ground(), AT[3]): raise RuntimeError('could not get on the board')
         if MODE == 'record': live.say('Hands off the pad: recording starts at GO', 30.)
         phase('settle'); return

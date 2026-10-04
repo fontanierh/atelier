@@ -7,11 +7,13 @@
 #include "RideAnimator.h"
 #include "Engine/EngineTypes.h"
 #include "CollisionQueryParams.h"
+#include "Templates/PimplPtr.h"
 
 class UWorld;
 class AActor;
 class USkateRailSubsystem;
 struct FHitResult;
+struct FRideNativeState;
 
 /** What the session queries: collision that blocks pawns, the rider (ignored), and the grind lines. */
 struct FRideWorld
@@ -102,9 +104,15 @@ public:
     FVector GetBailVelocity() const { return BailLinear; }
     FVector GetBailSpin() const { return BailAngular; }
     bool HasRig() const { return Animator.HasRig(); }
-    /** Mean and worst simulation cost per tick over the last second (ms), and the world queries a tick made. */
+    /** The air's spin so far, degrees about the board's up axis (with the left stick positive), for QA; 0 once landed. */
+    float GetAirSpin() const { return SpinTotal; }
+    /** Mean simulation cost per tick and the worst single tick over the last second (ms), and the world queries
+     *  a tick made (their mean and the most). */
     float CostMean = 0, CostWorst = 0, QueriesMean = 0;
     int32 QueriesWorst = 0;
+    /** The last air's start (ChooseLanding): its world queries (a lip air's candidate sweeps) and cost (ms). */
+    int32 SelectQueries = 0;
+    float SelectCost = 0;
     /** The published pose's health for QA: the main clip, the board's hold and lift, the fastest body bone (cm/s,
      *  root space), each foot's height above the deck's pivot and how many feet are off the deck, NaN bones, and the
      *  animator's cost (ms). */
@@ -164,6 +172,9 @@ private:
     FVector TrailUp[TrailMax];
     int32 TrailNum = 0;
     float Crouch = 0, PushTime = -1, BrakeTime = 0, LastSpeed = 0;
+    // Native's state (RideNative.cpp): its pumping.
+    TPimplPtr<FRideNativeState, EPimplPtrMode::DeepCopy> Native;
+    static TPimplPtr<FRideNativeState, EPimplPtrMode::DeepCopy> MakeNative();
     bool bPushStrong = true, bPushed = false;
     bool bPushFromRest = false;     // this push started slower than PushFromRest: nose-first, the board held through the wind-up
     // The push cycle in progress (from the clips when they are in the build): the lead-in before the foot touches,
@@ -187,8 +198,20 @@ private:
     uint32 Difficulty = 1;
     // Air.
     float AirTime = 0, SpinRate = 0, SpinTotal = 0;
+    // The body spin (native's PhysicalBodySpin, RIDE.md "Spins"), in native's terms: the left stick as the spin reads
+    // it, its smoothed value, its filtered change and the last SpinTicks of it (the snap), the time in the air and the
+    // snap's peak.
+    static constexpr int32 SpinTicks = 30;
+    float SpinIn = 0, SpinSmooth = 0, SpinFilt = 0, SpinClock = 0, SpinPeak = 0;
+    float SpinHistory[SpinTicks] = {};
+    int32 SpinAt = 0;
     FVector TakeoffUp = FVector::UpVector;
+    // Why the board last left the ground (a pop, a crest, no ground below, ...), for skate.RideSelectLog.
+    const TCHAR* LeaveWhy = TEXT("-");
     bool bPopped = false;
+    // The air's flight is to start (ChooseLanding) this tick, after its launch corrections: set on entering the air,
+    // by the lip's assist or a transfer, and by a late pop.
+    bool bSelect = false;
     // A lip air: off a face steeper than the vert reach, flying straight back into it (TickAir, ChooseLanding).
     // LipOut is the face's level normal (away from the coping, into the ramp).
     bool bLipAir = false;
@@ -295,6 +318,10 @@ private:
     void SetMode(ERideState NewMode);
     void StartTrick(atelier::ride::Flick Flick);
     void TakeOff(float PopSpeed);
+    /** The left stick as the body spin reads it, every tick (native's UpdateInput, and on the ground its smoothing). */
+    void ReadSpinStick(const FSkateInput& In);
+    /** The air's body spin this tick: SpinRate (degrees/s) from the stick, the snap and the time in the air. */
+    void TickSpin(const FSkateInput& In);
     bool TryLand(const FVector& Point, const FVector& Normal);
     void StartBail(const TCHAR* Why);
     bool TryGrind(const FSkateInput& In);
@@ -306,9 +333,18 @@ private:
     void AdvancePrediction(int32 Segments);
     /** The air's gravity (cm/s^2): VertGravity in a lip air, else AirGravity. */
     float Gravity() const;
-    /** A lip air's flight: the take-off velocity or one of six around it (native's cone), whichever comes back
-     *  down into the face it left, steepest and furthest from the apex, with the least change. */
-    void ChooseLanding(const FVector& From);
+    /** An air's start: a lip air's flight (bLipAir), the take-off velocity or one of six around it (native's cone),
+     *  whichever comes back down into the face it left, steepest and furthest from the apex, with the least change;
+     *  then the landing prediction starts again from the board. */
+    void ChooseLanding();
+    /** Native's departure off a vert and its launch adjustment on V, off the face Up (RideNative.cpp); bAligned when
+     *  the climb was set upright (a lip air). False, V untouched, without native's settings. */
+    bool NativeLipLaunch(const FVector& Up, bool& bAligned);
+    /** Native's ground pumping this tick (RideNative.cpp): Speed gains its velocity change. */
+    void Pump(float& Speed, bool bIntentional);
+    /** Forget native's pumping (off the ground), or all of native's state (a new ride). */
+    void ResetPump();
+    void ResetNative();
     void ResetPrediction(const FVector& From);
     void StartPush(bool bFirstPush, float Speed);
     /** Turn round on the board (the switch clip), before a push from fakie (bPush) or by itself. */

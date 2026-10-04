@@ -25,7 +25,7 @@ public:
     /** Skateboarding (docs/SKATE.md): get on or off; hold skate. controls (sticks: x right, y away from the player) until
      *  SkateRelease; the ride's state as text; put the rider on the board at a ground point; the skate pier's spawn. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateToggle();
-    UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateInput(FVector2D Left, FVector2D Right, bool Push = false, bool Brake = false, bool Powerslide = false, bool GrabLeft = false, bool GrabRight = false);
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateInput(FVector2D Left, FVector2D Right, bool Push = false, bool Brake = false, bool Powerslide = false, float GrabLeft = 0, float GrabRight = 0);
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateRelease();
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateState();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkatePlace(FVector GroundPoint, float Yaw);

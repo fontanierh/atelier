@@ -336,8 +336,11 @@ void USkateComponent::ReadInput(float Dt)
     I.bPush = Down(EKeys::W) || Down(EKeys::Up) || Down(EKeys::Gamepad_FaceButton_Bottom) || Down(EKeys::Gamepad_FaceButton_Left);
     I.bBrake = Down(EKeys::S) || Down(EKeys::Down) || Down(EKeys::Gamepad_FaceButton_Right);
     I.bPowerslide = Down(EKeys::C);
-    I.bGrabLeft = Down(EKeys::Q) || PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis) > .35f;
-    I.bGrabRight = Down(EKeys::E) || PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis) > .35f;
+    // The triggers in the pad's 255 steps, as the native backend reads them (SkateRuntime): any press grabs.
+    auto Trigger = [&](const FKey& Key, const FKey& Axis) { return Down(Key) ? 1.f : FMath::Clamp(FMath::RoundToFloat(255.f * PC->GetInputAnalogKeyState(Axis)), 0.f, 255.f) / 255.f; };
+    I.TriggerLeft = Trigger(EKeys::Q, EKeys::Gamepad_LeftTriggerAxis);
+    I.TriggerRight = Trigger(EKeys::E, EKeys::Gamepad_RightTriggerAxis);
+    I.bGrabLeft = I.TriggerLeft > 0; I.bGrabRight = I.TriggerRight > 0;
     // Shift, or the left stick pushed forward (it steers sideways and powerslides back, never forward).
     I.bTransfer = Down(EKeys::LeftShift) || Down(EKeys::RightShift) || (I.Left.Y > .7f && FMath::Abs(I.Left.X) < I.Left.Y);
     In = I;

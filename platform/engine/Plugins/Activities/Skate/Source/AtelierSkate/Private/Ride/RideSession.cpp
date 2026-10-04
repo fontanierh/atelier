@@ -5,6 +5,7 @@
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
 #include "HAL/PlatformTime.h"
+#include "HAL/IConsoleManager.h"
 #include "Engine/OverlapResult.h"
 #include "Components/PrimitiveComponent.h"
 #include "PhysicsEngine/BodyInstance.h"
@@ -96,9 +97,27 @@ namespace
     const float SteerCurve[][2] = {{0, 0}, {.059f, 0}, {.25f, .034f}, {.375f, .078f}, {.509f, .172f}, {.69f, .335f}, {.858f, .564f}, {1, .835f}};
     // Rolling friction on smooth ground (cm/s -> cm/s^2): none up to 8 m/s.
     const float FrictionCurve[][2] = {{0, 0}, {812, 0}, {1042, 3}, {1205, 16.3f}, {1286, 60}, {1433, 90}, {1840, 105}, {2698, 120}};
-    // The native PumpVsVel: a pump's share by speed (cm/s), from 7 m/s up (below it native's share rises past 1; the
-    // coasting pump keeps the deliberate pump's 1 there).
-    const float PumpCurve[][2] = {{0, 1}, {701, 1}, {881, .964f}, {1068, .571f}, {1220, .157f}, {1420, .007f}};
+    // Native's MinCrouchVsGroundAngle (physics_pumping): the least crouch by the ground's angle (a share of 90 degrees).
+    const float MinCrouchCurve[][2] = {{0, 0}, {.09f, 0}, {.161f, .03f}, {.34f, .365f}, {.461f, .537f}, {.607f, .666f}, {.792f, .75f}, {1, .794f}};
+    // Native's body spin (physics_bodyspin, normal mode) by the time in the air (s): the rate at full stick (rad/s,
+    // before SetSpinScale), the most the rate changes in a tick (rad/s) and the same for the landing's alignment; and
+    // the snap's weight by the age of the stick's change (s, negative before the take-off).
+    const float SpinPropCurve[][2] = {{0, 3.15f}, {.052f, 6.364f}, {.127f, 7.779f}, {.244f, 7.939f}, {.368f, 7.714f}, {.564f, 6.975f}, {.906f, 5.689f}, {2, 3.664f}};
+    const float SpinMaxDeltaCurve[][2] = {{0, .993f}, {.116f, .761f}, {.256f, .507f}, {.394f, .35f}, {.533f, .225f}, {.678f, .171f}, {.878f, .157f}, {1, .154f}};
+    const float SpinAutoCurve[][2] = {{0, 1}, {.107f, .739f}, {.2f, .643f}, {.301f, .557f}, {.388f, .507f}, {.498f, .489f}, {.71f, .482f}, {1, .475f}};
+    const float SpinSnapCurve[][2] = {{-.497f, 0}, {-.375f, .05f}, {-.254f, 1}, {0, 1}, {.135f, 1}, {.228f, .629f}, {.337f, .386f}, {.5f, .286f}};
+    // The spin's stick: native's conditioned left x (Input.cpp, ConditionStick), the stick's length less a quarter over
+    // three quarters (at most 1) along its direction, so a stick within a quarter of the centre spins nothing and a
+    // half-pushed one a third.
+    float SpinStickX(const FVector2D& Left)
+    {
+        const float Length = Left.Size();
+        return Length < .001f ? 0.f : float(Left.X) * FMath::Clamp((Length - .25f) / .75f, 0.f, 1.f) / Length;
+    }
+
+    TAutoConsoleVariable<int32> CVarRideSelectLog(TEXT("skate.RideSelectLog"), 0,
+        TEXT("Log every air's start (ChooseLanding): why the board left the ground, where and how fast, and a lip air's\n")
+        TEXT("candidate flights, their landings and ranks, and the one it flies (0: off)."));
     // The native LandingSpeedScalarVsGroundNormalY: coming down a face between 46 and 65 degrees, the speed along it
     // grows by up to 15% (by the landing normal's up component).
     const float LandingCurve[][2] = {{.42f, 1}, {.45f, 1.075f}, {.49f, 1.13f}, {.53f, 1.15f}, {.58f, 1.15f}, {.62f, 1.13f}, {.66f, 1.075f}, {.69f, 1}};
@@ -173,7 +192,7 @@ namespace
     }
 }
 
-FRideSession::FRideSession() : Tune(FRideTuning::Get()) {}
+FRideSession::FRideSession() : Tune(FRideTuning::Get()), Native(MakeNative()) {}
 
 void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint, const FQuat& Rotation, const FVector& InVelocity, bool bInGoofy, const FRidePreferences& Preferences)
 {
@@ -204,6 +223,13 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     // the shown board trailed real time by a tick for the whole ride.
     Accumulator = Tick60 - KINDA_SMALL_NUMBER; bCamValid = false;
     PushCount = 0; StillTime = -1; bStill = bWasStill = false; LastGrab = ERideGrab::None; SinceGrab = -1;
+    // Nothing of the last ride carries into this one: its air, the spin stick's history, the lip, the climb, the line
+    // it left, native's pumping and the landing it predicted.
+    AirTime = SpinRate = SpinTotal = 0; SpinIn = SpinSmooth = SpinFilt = SpinClock = SpinPeak = 0;
+    FMemory::Memzero(SpinHistory); SpinAt = 0;
+    bPopped = bLipAir = bSelect = false; LipOut = FVector::ZeroVector; TakeoffUp = Q.GetUpVector();
+    ClimbNum = ClimbAt = 0; LastRail = INDEX_NONE; RailCooldown = 0;
+    ResetNative(); ResetPrediction(P);
     LandAge = -1; LandImpact = 0; bLandedFromGrab = false; Sketchy = 0; Clock = 0;
     bSteppingOff = bThroughLine = bPushFromRest = bBoxOffLine = false;
     ResetWalls();
@@ -224,7 +250,8 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
         }
     }
     if (bGround) { P = Ground; Q = Frame(Up, Forward); SetMode(ERideState::Ground); }
-    else { SetMode(ERideState::Air); AirTime = 0; TakeoffUp = Q.GetUpVector(); bPopped = true; bLipAir = false; ResetPrediction(P); }
+    else { SetMode(ERideState::Air); LeaveWhy = TEXT("placed in the air"); AirTime = 0; TakeoffUp = Q.GetUpVector(); bPopped = true; bLipAir = false; bSelect = true; ResetPrediction(P); }
+    ModeTime = 0;
     if (Mode == ERideState::Ground) V = FVector::VectorPlaneProject(V, Q.GetUpVector());
     Motion = PreviousMotion = CurrentMotion(); MotionTime = 0;
     Previous.P = Current.P = P; Previous.Q = Current.Q = Q; Previous.Deck = Current.Deck = DeckPose();
@@ -244,11 +271,13 @@ void FRideSession::Launch(const FVector& InVelocity)
     V = InVelocity;
     if (Mode == ERideState::Ground || Mode == ERideState::Manual || Mode == ERideState::Powerslide)
     {
+        // A launch that rises off the ground takes off. A level one keeps to it at its own speed: off a slope's normal
+        // it would only be the slope falling away below it (native's board stays on the ground and gravity follows).
         const FVector Up = Q.GetUpVector();
-        if (FVector::DotProduct(V, Up) > 50.f) TakeOff(0.f);
+        if (V.Z > 50.f && FVector::DotProduct(V, Up) > 50.f) { LeaveWhy = TEXT("launch"); TakeOff(0.f); }
         else
         {
-            V = FVector::VectorPlaneProject(V, Up);
+            V = FVector::VectorPlaneProject(V, Up).GetSafeNormal() * V.Size();
             const float Along = FVector::DotProduct(V, Q.GetForwardVector());
             if (FMath::Abs(Along) > 1.f) Travel = Along < 0 ? -1.f : 1.f;
         }
@@ -267,7 +296,9 @@ void FRideSession::Step(float Dt, const FSkateInput& Input, const atelier::skate
     {
         Previous = Current;
         const int32 Asked = BoardQueries;
+        const double TickStart = FPlatformTime::Seconds();
         Tick(Input, Pad);
+        CostMax = FMath::Max(CostMax, (FPlatformTime::Seconds() - TickStart) * 1000.);
         QuerySum += BoardQueries - Asked; QueryMax = FMath::Max(QueryMax, BoardQueries - Asked);
         Current.P = P; Current.Q = Q; Current.Deck = DeckPose();
         Accumulator -= Tick60; ++Count;
@@ -275,7 +306,7 @@ void FRideSession::Step(float Dt, const FSkateInput& Input, const atelier::skate
     if (Count > 0)
     {
         const double Cost = (FPlatformTime::Seconds() - Start) * 1000. / Count;
-        CostSum += Cost * Count; CostCount += Count; CostMax = FMath::Max(CostMax, Cost);
+        CostSum += Cost * Count; CostCount += Count;
         CostClock += Count * Tick60;
         if (CostClock >= 1.)
         {
@@ -294,6 +325,9 @@ void FRideSession::SetMode(ERideState NewMode)
     if (NewMode != ERideState::Air) bSteppingOff = bThroughLine = bBoxOffLine = false;
     // Every air starts its deadline afresh (TickAir), from where it left.
     else { AirLaunchVz = FMath::Max(0.f, float(V.Z)); AirStartP = P; AirGlance = 0; }
+    // Every air picks its flight (TickAir); native's pumping starts afresh as the ground starts or ends.
+    if (NewMode == ERideState::Air) bSelect = true;
+    ResetPump();
 }
 
 void FRideSession::Tick(const FSkateInput& In, const atelier::skate::XboxState& Pad)
@@ -314,6 +348,7 @@ void FRideSession::Tick(const FSkateInput& In, const atelier::skate::XboxState& 
     if (LandAge >= 0) LandAge += Tick60;
     RailCooldown = FMath::Max(0.f, RailCooldown - Tick60);
     if (In.bBail && Mode != ERideState::Bail && Mode != ERideState::GetUp) StartBail(TEXT("thrown off"));
+    ReadSpinStick(In);
     switch (Mode)
     {
     case ERideState::Ground: case ERideState::Powerslide: case ERideState::Manual: TickGround(In, F); break;
@@ -700,6 +735,7 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
             const Flick Pop = PendingPop; PendingPop = Flick::None; bPopFromManual = false;
             if (Mode == ERideState::Manual) { EndHold(); SetMode(ERideState::Ground); }
             StartTrick(Pop);
+            LeaveWhy = TEXT("pop");
             TakeOff(PopSpeed(PendingLoad) * (IsNollie(Pop) ? Tune.NollieScale : 1.f));
             return;
         }
@@ -835,9 +871,10 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
                 const float Aim = bPushStrong ? (Tune.PushTarget + Tune.PushTargetSlope * LastSpeed) * Prefs.PushSpeed
                                               : LastSpeed + FMath::Max(115.f, Tune.PushTapTarget - .1f * LastSpeed);
                 const float Goal = FMath::Min(Aim, Top);
-                // The same push per contact whatever its length (the fast push's contact is shorter).
-                const float Accel = Tune.PushAccel * Prefs.PushPower * Tune.PushContactLength / FMath::Max(.02f, PushContact);
-                if (Speed < Goal) Speed = FMath::Min(Goal, Speed + Accel * Tick60);
+                // Native's push: a velocity change each tick of the contact, PushDvStart from rest easing to PushDvEnd
+                // at PushFastFrom, never past the goal (the fast push's shorter contact gives less).
+                const float Dv = FMath::Lerp(Tune.PushDvStart, Tune.PushDvEnd, FMath::Clamp(Speed / FMath::Max(1.f, Tune.PushFastFrom), 0.f, 1.f)) * Prefs.PushPower;
+                if (Speed < Goal) Speed = FMath::Min(Goal, Speed + Dv);
             }
             else if (!bPushed) LastSpeed = Speed;
             if (PushTime >= PushLead + PushContact + PushRecover)
@@ -859,15 +896,16 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     else if (StillTime >= 0 && Speed < 20.f && PushTime < 0 && Mode == ERideState::Ground) StillTime += Tick60;
     else StillTime = -1;
 
-    // Pumping: extending through a concave transition gains speed (the rider crouches on flats and crests). Holding
-    // push pumps; coasting through a steep transition pumps by itself, AutoPump as much and less with speed (the
-    // native runtime's unintentional pump, its PumpVsVel), so a rider going back and forth keeps up speed.
-    const bool bAutoPump = !In.bPush && !In.bBrake && !bFlat && Mode == ERideState::Ground && Tune.AutoPump > 0;
-    const float CrouchTarget = PendingPop != Flick::None || Flicks.Loaded() ? 1.f : ((In.bPush || bAutoPump) && !bFlat) ? (Curvature > 1e-4f ? 0.f : 1.f) : .25f;
-    const float OldCrouch = Crouch;
+    // Pumping, native's own (Pump, RideNative.cpp; RIDE.md "Pumping"): the triggers crouch the rider (the deeper of the
+    // two, a held trigger button a full pull, as native reads the pad), and the ground's angle crouches him at least
+    // MinCrouchVsGroundAngle (a coasting rider sinks into a transition and rises out of it). Native's pumping reads his
+    // centre of mass over the deck rising as he stands up while the ground turns under him.
+    const float Trigger = FMath::Max(In.LeftPull(), In.RightPull());
+    const float Steepness = FMath::Acos(FMath::Clamp(float(Up.Z), -1.f, 1.f)) / HALF_PI;
+    const float Load = FMath::Max(Trigger, Curve(MinCrouchCurve, Steepness));
+    const float CrouchTarget = PendingPop != Flick::None || Flicks.Loaded() ? 1.f : .25f + .75f * Load;
     Crouch += (CrouchTarget - Crouch) * Damp(Tune.CrouchRate, Tick60);
-    const float PumpShare = In.bPush ? 1.f : bAutoPump ? Tune.AutoPump * Curve(PumpCurve, Speed) : 0.f;
-    if (Curvature > 0 && Crouch < OldCrouch) Speed *= FMath::Exp(Curvature * (OldCrouch - Crouch) * Tune.PumpExtension * PumpShare);
+    Pump(Speed, Trigger > 0);
 
     V = Forward * Travel * Speed;
     WheelSpin = FMath::Fmod(WheelSpin + FVector::DotProduct(V, Forward) * Tick60 / (2 * PI * Tune.WheelRadius) * 360.f, 360.f);
@@ -953,7 +991,7 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
     const float Below = Tune.StickGap + Tune.StickPerSpeed * Speed * Dt;
     if (!FindGround(Next, Q, Below, Ground, NewUp, NewForward, bBlocked, &Block, V))
     {
-        if (!bBlocked) { P = Next; TakeOff(0.f); return false; }
+        if (!bBlocked) { P = Next; LeaveWhy = TEXT("no ground below"); TakeOff(0.f); return false; }
         // A face too steep to roll onto (a curb, a step) under a wheel. As in the native runtime, the board's closing
         // velocity along the face's normal throws the rider when it is fast across the deck (CurbBail) or along its
         // normal (CurbImpact); otherwise the board stops against the face, turned along it.
@@ -980,7 +1018,7 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
     const float Absorbed = 2.f * Tune.CrestReach / (Window * Window);
     if (Sign < 0 && Turned > FMath::DegreesToRadians(2.f) && Speed * Speed * (Turned / Window - Absorbed) > Tune.LaunchFactor * FMath::Max(Hold, 1.f))
     {
-        P = Next; TakeOff(0.f); return false;
+        P = Next; LeaveWhy = TEXT("crest"); TakeOff(0.f); return false;
     }
     // Keep the board's heading (nose or tail leading) in the new plane. The fit turns the whole box too: checked from
     // where the last tick left it, kept as far as it is free.
@@ -1007,7 +1045,15 @@ void FRideSession::StartPush(bool bFirstPush, float Speed)
     PushTime = 0; bPushStrong = true; bPushed = false;
     bPushFromRest = bFirstPush && Speed < Tune.PushFromRest;
     PushCount = bFirstPush ? 0 : PushCount + 1;
+    // The push clips' blend, as native's push target picks it: by the speed between the slow push's (from rest) and the
+    // fast one's (8.5 m/s), weighed by their contact lengths (VelocityBlend).
     PushStrong = FMath::Clamp((Speed - 450.f) / 700.f, 0.f, 1.f);
+    float Lead, Recover, Slow, Fast;
+    if (Animator.PushTiming(false, 0.f, Lead, Slow, Recover) && Animator.PushTiming(false, 1.f, Lead, Fast, Recover))
+    {
+        const float At = FMath::Clamp(Speed / 100.f, 0.f, 8.5f), Low = Slow * At, High = Fast * (8.5f - At);
+        PushStrong = Low + High > 0 ? FMath::Clamp(Low / (Low + High), 0.f, 1.f) : 0.f;
+    }
     if (!Animator.PushTiming(bFirstPush, PushStrong, PushLead, PushContact, PushRecover))
     {
         PushLead = Tune.PushContact; PushContact = Tune.PushContactLength;
@@ -1036,11 +1082,11 @@ void FRideSession::TakeOff(float Pop)
     // Vert assist and transfers are applied on the first air tick (TickAir), where the transfer input is read.
     SetMode(ERideState::Air);
     AirTime = 0; TakeoffUp = Up; SpinTotal = 0; bLipAir = false;
-    SpinRate = TurnRate * Tune.SpinCarry;
+    // A carve carries a little turn into the air (the spin's controller takes it from there).
+    SpinRate = FMath::Clamp(TurnRate * Tune.SpinCarry, -Tune.SpinCarryMax, Tune.SpinCarryMax);
     TurnRate = 0; SlideYaw = 0; PushTime = -1; BrakeTime = 0; StillTime = -1; Manuals.End(); EndHold();
     LastGrab = ERideGrab::None; SinceGrab = -1;
     ResetPrediction(P + Up * 12.f);
-    AdvancePrediction(4);
 }
 
 void FRideSession::ResetPrediction(const FVector& From)
@@ -1058,23 +1104,24 @@ void FRideSession::AdvancePrediction(int32 Segments)
     const float Flown = AirTime - PredictStart;
     if ((LandTime >= 0 && Flown > LandTime + 2.f * Tick60) || (PredictEnd >= 0 && Flown > PredictEnd + 2.f * Tick60))
         ResetPrediction(P + Q.GetUpVector() * 12.f);
-    // Trace the ballistic path of the deck's centre a tenth of a second at a time, up to 3 s ahead, to the first face
-    // the board can land on (IsLandable). A face it cannot land on (a wall, the underside of a deck) ends the trace
-    // without a landing: the deck never levels to it (leveled to a wall it slid down, it met the floor below on edge).
-    if (LandTime >= 0 || PredictEnd >= 0 || PredictTime > 3.f) return;
+    // Trace the path of the deck's centre a tenth of a second at a time, up to 3 s ahead, to the first face the board
+    // can land on (IsLandable). The path is the flight's own (each tick's gravity reaches the velocity before it moves:
+    // half a tick's fall more a second than the parabola). A face it cannot land on (a wall, the underside of a deck)
+    // ends the trace without a landing, and so does a start inside something: the deck never levels to either.
+    if (LandTime >= 0 || PredictEnd >= 0) return;
     for (int32 I = 0; I < Segments; ++I)
     {
         const float Dt = .1f;
-        const FVector From = PredictFrom, To = From + PredictVelocity * Dt + FVector(0, 0, -.5f * Gravity() * Dt * Dt);
+        const FVector From = PredictFrom, To = From + PredictVelocity * Dt + FVector(0, 0, -.5f * Gravity() * (Dt * Dt + Dt * Tick60));
         FHitResult Hit;
-        if (Sweep(From, To, 10.f, Hit) && !Hit.bStartPenetrating)
+        if (Sweep(From, To, 10.f, Hit))
         {
-            PredictEnd = PredictTime + Dt * Hit.Time;
-            if (IsLandable(Hit)) { LandTime = PredictEnd; LandNormal = Hit.Normal; }
+            PredictEnd = Hit.bStartPenetrating ? PredictTime : PredictTime + Dt * Hit.Time;
+            if (!Hit.bStartPenetrating && IsLandable(Hit)) { LandTime = PredictEnd; LandNormal = Hit.Normal; }
             return;
         }
         PredictFrom = To; PredictVelocity.Z -= Gravity() * Dt; PredictTime += Dt;
-        if (PredictTime > 3.f) return;
+        if (PredictTime > 3.f) { PredictEnd = PredictTime; return; }
     }
 }
 
@@ -1083,16 +1130,24 @@ float FRideSession::Gravity() const
     return bLipAir ? Tune.VertGravity : Tune.AirGravity;
 }
 
-void FRideSession::ChooseLanding(const FVector& From)
+void FRideSession::ChooseLanding()
 {
-    // Native's cone (AirTrajectoryLaunch): the velocity and six around it, 10 degrees across its level heading and 40
-    // along it at a cone speed of 2 to 4 m/s, none faster than the velocity. Each flies under the lip's gravity for up
-    // to 3 s; a miss or a landing within .25 s does not count. The score is native's transition term: the landing
-    // face's normal along the lip's (the face it left scores most, steepest highest, the deck behind the coping
-    // nothing), scaled by the take-off face's steepness, less 500 for coming down within .15 s of the apex; then the
-    // smallest change (a tenth of a point per cm/s).
+    // A lip air's flight (bLipAir), by native's cone (AirTrajectoryLaunch): the velocity and six around it, 10 degrees
+    // across its level heading and 40 along it at a cone speed of 2 to 4 m/s, none faster than the velocity. Each flies
+    // under the lip's gravity for up to 3 s; a miss or a landing within .25 s does not count. The score is native's
+    // transition term: the landing face's normal along the lip's (the face it left scores most, steepest highest, the
+    // deck behind the coping nothing), scaled by the take-off face's steepness, less 500 for coming down within .15 s
+    // of the apex; then the smallest change (a tenth of a point per cm/s). Any other air keeps its take-off. The
+    // landing prediction starts again from the board.
+    const double Start = FPlatformTime::Seconds();
+    SelectQueries = 0;
+    const bool bLog = CVarRideSelectLog.GetValueOnGameThread() != 0;
+    if (bLog)
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride select: %s (%s) at (%.0f, %.0f, %.0f) v (%.0f, %.0f, %.0f), take-off up (%.2f, %.2f, %.2f)"),
+            bLipAir ? TEXT("lip air") : TEXT("air"), LeaveWhy, P.X, P.Y, P.Z, V.X, V.Y, V.Z, TakeoffUp.X, TakeoffUp.Y, TakeoffUp.Z);
+    const FVector From = P + Q.GetUpVector() * 12.f;
     const float Speed = V.Size();
-    if (Speed > 1.f)
+    if (bLipAir && Speed > 1.f)
     {
         FVector Right = FVector::CrossProduct(FVector::UpVector, V).GetSafeNormal();
         if (Right.IsNearlyZero()) Right = FVector::CrossProduct(FVector::UpVector, LipOut).GetSafeNormal();
@@ -1116,28 +1171,98 @@ void FRideSession::ChooseLanding(const FVector& From)
                 const float Dt = .1f;
                 const FVector To = At + Vel * Dt + FVector(0, 0, -.5f * Fall * Dt * Dt);
                 FHitResult Hit;
-                if (Sweep(At, To, 10.f, Hit) && !Hit.bStartPenetrating) { Land = T + Dt * Hit.Time; Normal = Hit.Normal; break; }
+                ++SelectQueries;
+                if (Sweep(At, To, 10.f, Hit) && !Hit.bStartPenetrating) { Land = T + Dt * Hit.Time; Normal = Hit.Normal; At = Hit.Location; break; }
                 At = To; Vel.Z -= Fall * Dt; T += Dt;
             }
-            if (Land < .25f) continue;
             const float Apex = C.Z > 0 ? float(C.Z) / Fall : 0.f;
             const float Rank = 500.f * float(FVector::DotProduct(Normal, LipOut)) * Steep - (FMath::Abs(Land - Apex) < .15f ? 500.f : 0.f)
                 - .1f * float((C - V).Size());
+            if (bLog)
+                UE_LOG(LogTemp, Display, TEXT("SKATE ride select:  #%d v (%.0f, %.0f, %.0f) t %.2f at (%.0f, %.0f, %.0f) face (%.2f, %.2f, %.2f) rank %.0f%s"),
+                    I, C.X, C.Y, C.Z, Land, At.X, At.Y, At.Z, Normal.X, Normal.Y, Normal.Z, Rank, Land < .25f ? TEXT(" (too soon or a miss)") : TEXT(""));
+            if (Land < .25f) continue;
             if (Rank > BestRank) { BestRank = Rank; Best = C; }
         }
         V = Best;
     }
+    if (bLog) UE_LOG(LogTemp, Display, TEXT("SKATE ride select: flies (%.0f, %.0f, %.0f)"), V.X, V.Y, V.Z);
     ResetPrediction(From);
+    SelectCost = float((FPlatformTime::Seconds() - Start) * 1000.);
+}
+
+void FRideSession::ReadSpinStick(const FSkateInput& In)
+{
+    // Native's UpdateInput: the stick, its change (x1.5) kept while it moves outward (the snap), the last SpinTicks of
+    // that change; on the ground the air's clock waits and the stick is smoothed (a held stick carries into the air).
+    const float X = SpinStickX(In.Left);
+    const float Change = 1.5f * (X - SpinIn);
+    SpinIn = X;
+    SpinFilt = FMath::Clamp(Change * X > .1f ? Change : 0.f, -1.f, 1.f);
+    SpinHistory[SpinAt] = SpinFilt; SpinAt = (SpinAt + 1) % SpinTicks;
+    if (Mode != ERideState::Air) { SpinClock = 0; SpinSmooth = .8f * SpinSmooth + .2f * X; }
+}
+
+void FRideSession::TickSpin(const FSkateInput& In)
+{
+    // Native's PhysicalBodySpin (normal mode), in its terms: rates in rad/s, turning against the stick (Ride's
+    // SpinRate turns with it, in degrees/s). The rate follows the stick x PropBodySpinVsTime x SetSpinScale
+    // (AirSpinScale), weighed by the snap (.4 for a stick held before the take-off, up to 1 for one pushed as the board
+    // leaves), its change each tick at most MaxDeltaVsTime x the scale (and .2 x the scale back against the turn).
+    const float Scale = Prefs.Spin;
+    if (SpinClock == 0)
+    {
+        // The take-off: the snap is the stick's sharpest push in the last half second, weighed by its age.
+        SpinPeak = 0;
+        for (int32 I = 1; I < SpinTicks; ++I)
+        {
+            const float C = Curve(SpinSnapCurve, -float(I) * Tick60) * SpinHistory[(SpinAt - I + SpinTicks) % SpinTicks];
+            if (FMath::Abs(C) > FMath::Abs(SpinPeak)) SpinPeak = C;
+        }
+    }
+    float Accel = Curve(SpinMaxDeltaCurve, SpinClock) * Scale;
+    const float AutoAccel = Curve(SpinAutoCurve, SpinClock);
+    const float Snap = Curve(SpinSnapCurve, SpinClock) * SpinFilt;
+    if (FMath::Abs(Snap) > FMath::Abs(SpinPeak)) SpinPeak = Snap;
+    SpinClock += Tick60;
+    // A released stick fades out (its smoothed value, 4% a tick), so the turn eases off.
+    if (FMath::Abs(SpinIn) < 1.5e-5f) { SpinSmooth *= .96f; SpinIn = SpinSmooth; }
+    else SpinSmooth = .8f * SpinSmooth + .2f * SpinIn;
+    const float Prop = Curve(SpinPropCurve, SpinClock) * Scale * SpinIn;
+    if (Prop * SpinPeak < 0) SpinPeak = 0;
+    float Target = -(FMath::Abs(SpinPeak) * .6f + .4f) * Prop;
+    const float Old = -FMath::DegreesToRadians(SpinRate);
+    // In a lip air with the stick released, the board turns to the nearer of forward and fakie on the landing's line
+    // by touch-down: the angle left over the time left (at least 2 ticks), times 1.2, at most 2 rad/s (native's known
+    // air alignment), when the spin turns that way already or barely turns.
+    const float ToLand = LandTime >= 0 ? LandTime - (AirTime - PredictStart) : -1.f;
+    if (bLipAir && SpinStickX(In.Left) == 0.f && ToLand > 0)
+    {
+        const FVector Axis = Q.GetUpVector();
+        const FVector Facing = FVector::VectorPlaneProject(Q.GetForwardVector(), Axis).GetSafeNormal();
+        const FVector Path = FVector::VectorPlaneProject(V + FVector(0, 0, -Gravity() * ToLand), Axis).GetSafeNormal();
+        if (!Facing.IsNearlyZero() && !Path.IsNearlyZero())
+        {
+            float Angle = FMath::RadiansToDegrees(FMath::Atan2(float(FVector::DotProduct(Axis, FVector::CrossProduct(Facing, Path))), float(FVector::DotProduct(Facing, Path))));
+            if (Angle > 90.f) Angle -= 180.f;
+            else if (Angle < -90.f) Angle += 180.f;
+            const float Auto = -FMath::Clamp(FMath::DegreesToRadians(Angle / FMath::Max(ToLand, 2.f * Tick60) * 1.2f), -2.f, 2.f);
+            if (FMath::Abs(Auto) > 1.5e-5f && (Old * Auto > 0 || FMath::Abs(Old) < .02f)) { Accel = AutoAccel; Target = Auto; }
+        }
+    }
+    const float Limit = FMath::Min(.2f * Scale, Accel);
+    const float Lo = Old > 0 ? -Limit : -Accel, Hi = Old > 0 ? Accel : Limit;
+    SpinRate = -FMath::RadiansToDegrees(Old + FMath::Clamp(Target - Old, Lo, Hi));
 }
 
 void FRideSession::TickAir(const FSkateInput& In, Flick F)
 {
     AirTime += Tick60;
     // The lip (native's vert test): off a face steeper than the vert reach (VertSteepness at VertAssist 1, 75 degrees
-    // at 0), climbing at least VertClimb steeply, the velocity that would carry the rider over the coping is lost and
-    // the climb is turned to VertLean from vertical, back into the ramp, at its own speed (the part along the coping
-    // is kept). The flight then picks its landing back in (ChooseLanding) and falls under VertGravity. Holding
-    // transfer carries the rider over instead.
+    // at 0), climbing steeply, the velocity that would carry the rider over the coping is lost and the climb is set
+    // upright, leaning back into the ramp, at its own speed (the part along the coping is kept): Ride's own (VertClimb,
+    // VertLean), or with VertNative 1 native's departure and launch adjustment (NativeLipLaunch). The flight then picks
+    // its landing back in (ChooseLanding) and falls under VertGravity. Holding transfer carries the rider over instead.
     if (AirTime <= Tick60 * 1.5f)
     {
         // The steepest face climbed in the last ClimbTicks (0.13 s), or the take-off's own.
@@ -1149,18 +1274,22 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
         if (Up.Z < Reach && V.Z > 0 && !Out.IsNearlyZero())
         {
             const float Into = FMath::Max(0.f, float(-FVector::DotProduct(V, Out)));   // toward the deck behind the coping
-            if (In.bTransfer) V -= Out * Tune.TransferPush;
-            else if (V.Z >= Tune.VertClimb * FMath::Sqrt(FMath::Square(float(V.Z)) + Into * Into))
+            if (In.bTransfer) { V -= Out * Tune.TransferPush; bSelect = true; }
+            else
             {
-                V += Out * Into;
-                const FVector Coping = FVector::CrossProduct(FVector::UpVector, Out);
-                const float Side = FVector::DotProduct(V, Coping);
-                const float Lean = FMath::DegreesToRadians(Tune.VertLean);
-                V = (FVector(0, 0, FMath::Cos(Lean)) + Out * FMath::Sin(Lean)) * (V - Coping * Side).Size() + Coping * Side;
-                bLipAir = true; LipOut = Out;
-                ChooseLanding(P + Up * 12.f);
+                bool bAligned = false;
+                if (Tune.VertNative <= 0 || !NativeLipLaunch(Up, bAligned))
+                    if (V.Z >= Tune.VertClimb * FMath::Sqrt(FMath::Square(float(V.Z)) + Into * Into))
+                    {
+                        V += Out * Into;
+                        const FVector Coping = FVector::CrossProduct(FVector::UpVector, Out);
+                        const float Side = FVector::DotProduct(V, Coping);
+                        const float Lean = FMath::DegreesToRadians(Tune.VertLean);
+                        V = (FVector(0, 0, FMath::Cos(Lean)) + Out * FMath::Sin(Lean)) * (V - Coping * Side).Size() + Coping * Side;
+                        bAligned = true;
+                    }
+                if (bAligned) { bLipAir = true; LipOut = Out; bSelect = true; }
             }
-            ResetPrediction(P + Up * 12.f);
         }
     }
     // A flick just after leaving a lip still pops (the rider timed it at the coping); later flicks flip the board
@@ -1173,32 +1302,17 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
             bPopped = true;
             // Off a lip the pop is straight up, as high as on the ground (along the face's normal it would throw the
             // rider off the wall), and the landing is chosen again.
-            if (bLipAir) { V.Z += PopSpeed() * .8f * FMath::Sqrt(Gravity() / Tune.AirGravity); ChooseLanding(P + Q.GetUpVector() * 12.f); }
-            else { V += TakeoffUp * PopSpeed() * .8f; ResetPrediction(P + Q.GetUpVector() * 12.f); }
+            if (bLipAir) V.Z += PopSpeed() * .8f * FMath::Sqrt(Gravity() / Tune.AirGravity);
+            else V += TakeoffUp * PopSpeed() * .8f;
+            bSelect = true;
         }
         StartTrick(F);
     }
-    // Spin: the left stick turns the rider about the body's axis (the take-off normal).
-    // Off flat ground the body turns slower than off a lip (the reference: about 290 degrees in an ollie).
-    const float FullSpin = TakeoffUp.Z > .9f ? Tune.FlatSpinRate : Tune.SpinRate;
-    float SpinTarget = FMath::Abs(In.Left.X) > .25f ? float(In.Left.X) * FullSpin * Prefs.Spin : (SpinRate > 0 ? FMath::Min(SpinRate, 115.f) : FMath::Max(SpinRate, -115.f));
-    // In a lip air with the stick released, the board turns to the nearer of forward and fakie on the landing's line
-    // by touch-down, at native's rate: the angle left over the time left (at least 2 ticks), times 1.2.
-    const float ToLand = LandTime >= 0 ? LandTime - (AirTime - PredictStart) : -1.f;
-    if (bLipAir && FMath::Abs(In.Left.X) <= .25f && ToLand > 0)
-    {
-        const FVector Axis = Q.GetUpVector();
-        const FVector Facing = FVector::VectorPlaneProject(Q.GetForwardVector(), Axis).GetSafeNormal();
-        const FVector Path = FVector::VectorPlaneProject(V + FVector(0, 0, -Gravity() * ToLand), Axis).GetSafeNormal();
-        if (!Facing.IsNearlyZero() && !Path.IsNearlyZero())
-        {
-            float Angle = FMath::RadiansToDegrees(FMath::Atan2(float(FVector::DotProduct(Axis, FVector::CrossProduct(Facing, Path))), float(FVector::DotProduct(Facing, Path))));
-            if (Angle > 90.f) Angle -= 180.f;
-            else if (Angle < -90.f) Angle += 180.f;
-            SpinTarget = FMath::Clamp(Angle / FMath::Max(ToLand, 2.f * Tick60) * 1.2f, -FullSpin, FullSpin);
-        }
-    }
-    SpinRate += (SpinTarget - SpinRate) * Damp(Tune.SpinResponse, Tick60);
+    // Every air starts its flight (ChooseLanding: a lip air's landing back in, any air's prediction) where it leaves,
+    // and again whenever that start changes (the lip, a transfer, a late pop), at most once a tick.
+    if (bSelect) { bSelect = false; ChooseLanding(); }
+    // Spin: the left stick turns the rider about the body's axis (TickSpin).
+    TickSpin(In);
     const float SpinStep = SpinRate * Tick60;
     SpinTotal += SpinStep;
     Q = (Turn(Q.GetUpVector(), SpinStep) * Q).GetNormalized();
@@ -1405,9 +1519,12 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
     const bool bMidFlip = TrickTime >= 0 && TrickTime < CatchTime(Trick_) - .03f && Trick_ != Flick::Ollie && Trick_ != Flick::Nollie;
     float YawLimit = 90.f;
     if (Speed > Tune.SidewaysSafeSpeed) YawLimit = FMath::GetMappedRangeValueClamped(FVector2f(Tune.SidewaysSafeSpeed, 2000.f), FVector2f(90.f, Tune.BailYawFast), Speed);
+    // A grab held into the landing rides away, as native's does (its reference holds an Indy 17 ticks past the
+    // touch-down); one with a foot off the board (Christ air, one foot) wipes out, as native's do.
+    const bool bFootOff = (Grab == ERideGrab::ChristAir || Grab == ERideGrab::OneFoot) && GrabWeight > .6f && AirTime > .25f;
     const TCHAR* Why = Tilt > Tune.BailTilt ? TEXT("landed tilted") : Impact > Tune.BailImpact ? TEXT("landed too hard") :
         Yaw >= YawLimit && !bSteppingOff ? TEXT("landed sideways") : bMidFlip ? TEXT("landed on the board mid-flip") :
-        (Grab != ERideGrab::None && GrabWeight > .6f && AirTime > .25f) ? TEXT("landed holding the grab") : nullptr;
+        bFootOff ? TEXT("landed with a foot off the board") : nullptr;
     P = Point;
     if (Why)
     {
@@ -1527,7 +1644,7 @@ bool FRideSession::TryGrind(const FSkateInput& In)
 
 void FRideSession::TickGrind(const FSkateInput& In, Flick F)
 {
-    if (!Where.Rails || !Where.Rails->Rails.IsValidIndex(Rail)) { TakeOff(0.f); return; }
+    if (!Where.Rails || !Where.Rails->Rails.IsValidIndex(Rail)) { LeaveWhy = TEXT("rail lost"); TakeOff(0.f); return; }
     FVector Tangent;
     Where.Rails->Sample(Rail, RailS, Tangent);
     const bool bSlide = GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide;
@@ -1693,7 +1810,7 @@ void FRideSession::LeaveGrind(float Up, bool bStall)
     Rail = INDEX_NONE;
     TurnRate = 0;
     const FVector UpVector = Q.GetUpVector();
-    SetMode(ERideState::Air);
+    SetMode(ERideState::Air); LeaveWhy = TEXT("off a rail");
     AirTime = .1f; TakeoffUp = UpVector; SpinTotal = 0; SpinRate = 0; bPopped = true; bLipAir = false;
     LastGrab = ERideGrab::None; SinceGrab = -1;
     ResetPrediction(P + UpVector * 12.f);

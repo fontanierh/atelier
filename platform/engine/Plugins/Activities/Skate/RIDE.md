@@ -47,25 +47,60 @@ the same ride. Three replays of a recorded 26 s session stay within 4 cm of each
   its speed up, against the speed into the face), comes back into the face it left. The face is the steepest climbed
   in the last 8 steps (0.13 s), so a board that leaves from the coping's rounded edge still counts as leaving the
   wall. The velocity over the coping is lost; the climb is turned to `VertLean` (3 degrees) from vertical, into the
-  ramp, at its own speed, and the speed along the coping is kept. The reference's board leaves vert at 0.29 to 0.37
-  m/s into the ramp for 5.3 to 5.9 m/s up (native gets there with a 1.15 degree lean and its landing aim). The flight
-  then takes the velocity or one of six around it (native's cone: 10 degrees across the heading, 40 along it, at 2 to
-  4 m/s), whichever lands back on the steepest part of the same face, not within 0.25 s nor within 0.15 s of the apex,
-  with the least change. It falls under `VertGravity` (10 m/s², the reference's board on vert airs; flat airs keep
+  ramp, at its own speed, and the speed along the coping is kept. `VertNative` 1 uses native's own departure and
+  launch adjustment instead (`AirTrajectoryVertDeparture`, `AdjustAirTrajectoryLaunchVelocity`, called directly in
+  `RideNative.cpp`), whose lean is `VertJumpAlignMaxAngle` times the input less a quarter (1.15 degrees with no
+  input), and which keeps 0.4 of the speed off a wall for a natural air that climbs too shallowly to be set upright.
+  The reference's board leaves vert at 0.29 to 0.37 m/s into the ramp for 5.3 to 5.9 m/s up. The flight then takes
+  the velocity or one of six around it (native's cone: 10 degrees across the heading, 40 along it, at 2 to 4 m/s),
+  whichever lands back on the steepest part of the same face, not within 0.25 s nor within 0.15 s of the apex, with
+  the least change. It falls under `VertGravity` (10 m/s², the reference's board on vert airs; flat airs keep
   `AirGravity`). With the stick released, the board turns to the nearer of forward and fakie on the landing's line by
   touch-down (native's rate: the angle left over the time left, times 1.2), so a straight air and a 360 land fakie and
   a 180 forward. A flick early in a lip air pops straight up. Holding transfer carries the rider over the coping
   instead. Any landing keeps the speed along the face it lands on; coming down a face between 46 and 65 degrees that
   speed grows by up to 15%, as much as the travel runs downhill (native's `LandingSpeedScalarVsGroundNormalY`), so an
   air that comes back in low on the transition keeps its speed.
+- **An air's start.** Every air starts its flight on its first tick, after the launch's corrections (the lip, a
+  transfer), again after a late pop, and as a grind ends: a lip air picks its landing (above), and the touch-down is
+  predicted along the flight, on landable faces only. The prediction follows the flight's own path (each tick's
+  gravity reaches the velocity before it moves); one that starts inside something has no landing, and one the flight
+  passes is predicted again. `skate.RideSelectLog 1` logs why each air left the ground (a pop, a crest, no ground
+  below, off a rail, a launch), where and how fast, and a lip air's candidates and choice. The state shows the last
+  start's world queries and cost (`select=queries,ms`), and `cost=` the worst single tick.
 - **Pushing.** A push from slower than `PushFromRest` (0.3 m/s) goes nose-first, and the board stands on the planted
-  foot through the wind-up, so it neither creeps back down a slope nor leaves tail-first.
-- **Pumping.** Extending through a concave transition gains speed, v × exp(curvature × extension), up to
-  `PumpExtension` (26 cm) of travel between crouched and extended; the rider crouches on flats, crests and straight
-  faces. Holding push pumps on any face steeper than 37 degrees. Coasting there pumps by itself, `AutoPump` (0.7) as
-  much and less with speed (native's unintentional pump and its `PumpVsVel`: all of it to 7 m/s, 96% at 8.8, 57% at
-  10.7, 16% at 12.2, none from 14.2), so a rider going back and forth in a bowl keeps up speed, toward native's 12.3
-  m/s.
+  foot through the wind-up, so it neither creeps back down a slope nor leaves tail-first. Each tick of the foot's
+  contact adds native's push: `PushDvStart` (0.6 m/s) from rest easing to `PushDvEnd` (0.5) at `PushFastFrom` (8.5
+  m/s), times the push power, up to the push's goal (`PushTarget`, 4.33 m/s from rest, plus `PushTargetSlope` of the
+  speed it started from, at most `PushTopSpeed`). The slow and fast push clips blend as native's push target blends
+  them (`VelocityBlend`): by the speed between rest and 8.5 m/s, weighed by their contact lengths, so the fast push's
+  short contact takes over early. Native's pushes in the owner's car park run reach 4.98 m/s and then 8.8.
+- **Pumping.** Native's own (`Pumping.cpp`'s `UpdateGroundPumping`, called each tick on its normal mode's settings): the
+  triggers crouch the rider, the deeper of the two (a pad's analog pull, in its 255 steps; Q and E, or a trigger button
+  without a depth, pull fully), and the ground's angle crouches him at least `MinCrouchVsGroundAngle` (none to 8
+  degrees, 37% at 31, 79% on vert), so a coasting rider sinks into a transition and rises out of it. The crouch follows
+  at `CrouchRate` and lowers his centre of mass by up to `PumpDepth` (37.5 cm); native reads that height over the deck
+  along the ground's normal, with the board's position and the normal's turn. Native's own sample
+  (`GroundPumpingRuntime.cpp`) takes that centre of mass from its animation record and adds the deck's angle off the
+  animated deck; Ride's session has neither, so the height is the crouch's and the angle 0. Rising through a concave
+  turn gains speed by native's factors, curves and cap (its absorption is 0, so a convex turn costs nothing), and with
+  no trigger held `CoastPump` (1) times native's `UnintentionalPumpScalar` (0.7) as much, after the cap as native
+  applies it. Native's pumping starts afresh whenever the ride's mode changes, and with every ride. A pump crouches
+  across the flat and lets go up the transition; a rider coasting back and forth in a bowl keeps up speed, toward
+  native's 12.3 m/s.
+- **Spins.** The left stick spins the rider in the air by native's controller (`BodySpin.cpp`, `PhysicalBodySpin`'s
+  normal mode): the rate follows the stick (native's conditioned stick, `ConditionStick`: its length less a quarter over
+  three quarters along its direction, so a half-pushed stick counts a third) × `PropBodySpinVsTime` × the spin
+  preference (`AirSpinScale`, 1.6), and changes in a tick by at most `MaxDeltaVsTime` × the preference (0.2 × it back
+  against the turn). The stick's push as the board leaves (the snap: its change, counted fully up to a quarter second
+  before the take-off) weighs the rate up to 1; a stick held from before weighs 0.4. A push held 0.27 s off a flat ollie
+  turns a 360 (native 360 to 380 degrees), and a stick held through a 1.6 s pool air turns about 870 degrees pushed as
+  the board leaves, 490 held from 20 ticks before. A released stick fades out, 4% a tick; in a lip air the board then
+  turns to the nearer of forward and fakie (above). The turn on the ground carries into the air, `SpinCarry` (0.55) of
+  it, at most `SpinCarryMax` (115 degrees/s).
+- **Grabs.** Either trigger grabs in the air at any pull, as native reads the pad. A grab held into the landing rides
+  away, as native's does (its reference holds an Indy 17 ticks past the touch-down); a Christ air or a one-foot air
+  held into it wipes out.
 - **Powerslides.** Above `SlideMinSpeed` (1.2 m/s) the deck turns `SlideAngle` across the travel and scrubs speed.
   The powerslide key holds one, turned to the stick's side. On a pad the left stick's rear diagonal does, as the native
   runtime's slide intents read it (`InputIntentions.cpp`): pushing the stick out past 0.9 into the 52 degrees either

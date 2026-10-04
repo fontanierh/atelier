@@ -197,7 +197,7 @@ def rail_lateral(x, y, line=RAIL0):
 
 def pop_height(load):
     """Ride's ollie height (m) after the stick rested `load` seconds on the rim (PopHeightScale 1.15)."""
-    return (137. - 73. * math.exp(-max(0., load - .067) / .16)) / 100.
+    return (150.8 - 80.4 * math.exp(-max(0., load - .067) / .16)) / 100.
 
 
 # ------------------------------------------------------------------------------------------------ the state
