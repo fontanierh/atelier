@@ -153,3 +153,11 @@ def test_cli_tools_only_reports_full_xcode_before_trying_metal(monkeypatch):
     checks = setup.mac_checks()
     assert len(checks) == 1 and checks[0][0] is False
     assert 'CLI tools alone' in checks[0][1]
+
+
+def test_headless_setup_checks_rosetta_before_modifying_engine(monkeypatch, capsys):
+    monkeypatch.setattr(setup, 'mac_checks', lambda: [(True, 'Xcode and Metal ready')])
+    monkeypatch.setattr(setup, '_command', lambda command: (False, 'Bad CPU type in executable'))
+    monkeypatch.setattr(setup, 'prepare_headless', lambda *args: pytest.fail('must not modify the engine'))
+    assert setup.main(headless=True) == 1
+    assert 'softwareupdate --install-rosetta' in capsys.readouterr().out

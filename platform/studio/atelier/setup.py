@@ -232,6 +232,10 @@ def prepare_headless(root, workers=3):
 
 def main(headless=False, workers=3):
     checks = mac_checks()
+    if headless and all(ok for ok, _ in checks):
+        rosetta, _ = _command(['/usr/bin/arch', '-x86_64', '/usr/bin/true'])
+        checks.append((rosetta, 'Rosetta for the managed build tool\'s Intel protobuf compiler '
+                       '(if missing: softwareupdate --install-rosetta --agree-to-license)'))
     for ok, message in checks:
         print(('  ok    ' if ok else '  MISSING ') + message)
     if not all(ok for ok, _ in checks):

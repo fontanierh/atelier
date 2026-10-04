@@ -78,6 +78,8 @@ configuration, and caps C++ and shader compiles at three workers (C++ at priorit
 tool and shared library under the render lock and memory guard. Originals and logs are retained in `~/.cache/atelier/toolchain/`;
 other engine versions are refused without modification. Repeating it is safe. Use `--workers N` to set another cap.
 This mode bypasses user and project `BuildConfiguration.xml`; pass desired build settings on the command line.
+It also needs Rosetta for the managed tool's Intel protobuf compiler; setup checks this before modifying the engine.
+Install it with `softwareupdate --install-rosetta --agree-to-license` if missing.
 
 ## Build Yorimichi
 
