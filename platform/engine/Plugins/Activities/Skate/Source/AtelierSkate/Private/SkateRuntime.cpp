@@ -35,7 +35,10 @@
 #include "TwoBoneIK.h"
 #include "HAL/IConsoleManager.h"
 #include "UObject/UObjectIterator.h"
+#include "UObject/StrongObjectPtr.h"
+#include "UObject/ObjectKey.h"
 #include "Async/Async.h"
+#include "Async/ParallelFor.h"
 #include "Ride/RideSession.h"
 #include "Ride/RidePhysicalRider.h"
 #include "PhysicsEngine/PhysicsAsset.h"
@@ -65,6 +68,9 @@ namespace
     // bails and the get-up; or Ride's own kinematic board model.
     TAutoConsoleVariable<FString> CVarSkateRideSolver(TEXT("skate.RideSolver"),TEXT("Native"),
         TEXT("The Ride backend's riding solver for the next mount: Native (Native's session under Ride's body) or Ride (Ride's own board model)"));
+    // QA: the hybrid's session fails on its next step, as a session error would (the bail, the relaunch, the get-up).
+    TAutoConsoleVariable<int32> CVarSkateFailNative(TEXT("skate.FailNative"),0,
+        TEXT("1: the Native session under the Ride body fails on its next step (QA of the failure path); clears itself"));
     bool Lockstep()
     {
         const int32 V=CVarSkateLockstep.GetValueOnGameThread();
@@ -146,6 +152,36 @@ namespace
         return Position;
     }
 
+    /** A static mesh's collision LOD as plain data: three mesh-space points per triangle and the authored normal (the
+     *  first corner's tangent Z) of each. Copied on the game thread, so a worker never reads render data that LOD
+     *  streaming may release. */
+    struct FMeshSurface { TArray<FVector3f> Points, Normals; };
+    using FMeshSurfaceRef=TSharedPtr<const FMeshSurface,ESPMode::ThreadSafe>;
+
+    /** The mesh's surface, copied once per mesh and kept (game thread). Null when its collision LOD has no CPU data. */
+    FMeshSurfaceRef MeshSurface(UStaticMesh* Mesh)
+    {
+        check(IsInGameThread());
+        static TMap<TObjectKey<UStaticMesh>,FMeshSurfaceRef> Cache;
+        const TObjectKey<UStaticMesh> Key(Mesh);
+        if (const FMeshSurfaceRef* Found=Cache.Find(Key)) return *Found;
+        if (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return nullptr;
+        const auto& LODs=Mesh->GetRenderData()->LODResources;
+        const FStaticMeshLODResources& LOD=LODs[FMath::Clamp(Mesh->LODForCollision,0,LODs.Num()-1)];
+        const FPositionVertexBuffer& Positions=LOD.VertexBuffers.PositionVertexBuffer;
+        if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) return nullptr;
+        const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();
+        auto Surface=MakeShared<FMeshSurface,ESPMode::ThreadSafe>();
+        Surface->Points.Reserve(Indices.Num()/3*3); Surface->Normals.Reserve(Indices.Num()/3);
+        for (int32 I=0; I+2<Indices.Num(); I+=3)
+        {
+            for (int32 K=0;K<3;++K) Surface->Points.Add(Positions.VertexPosition(Indices[I+K]));
+            const FVector4f N=LOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(Indices[I]);
+            Surface->Normals.Add(FVector3f(N.X,N.Y,N.Z));
+        }
+        return Cache.Add(Key,FMeshSurfaceRef(Surface));
+    }
+
     /** One collision snapshot. Add takes UE-space triangles facing out of their solid ((B-A)x(C-A) points outward) and
      *  keeps them as native points, three per triangle. Plain data, so a worker thread can write it. */
     struct FSnapshot
@@ -176,20 +212,14 @@ namespace
         {
             if (FVector::DotProduct(FVector::CrossProduct(B-A,C-A),(A+B+C)/3.-Centre)<0) Add(A,C,B); else Add(A,B,C);
         }
-        // The surface of a mesh whose collision is its own triangles, from its collision LOD.
-        void AddSurface(UStaticMesh* Mesh, const FTransform& T)
+        // The surface of a mesh whose collision is its own triangles (its collision LOD's, copied by MeshSurface).
+        void AddSurface(const FMeshSurface& Mesh, const FTransform& T)
         {
-            if (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return;
-            const auto& LODs=Mesh->GetRenderData()->LODResources;
-            const FStaticMeshLODResources& LOD=LODs[FMath::Clamp(Mesh->LODForCollision,0,LODs.Num()-1)];
-            const FPositionVertexBuffer& Positions=LOD.VertexBuffers.PositionVertexBuffer;
-            if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) return;
-            const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();
-            for (int32 I=0; I+2<Indices.Num() && !Full(); I+=3)
+            for (int32 I=0; I+2<Mesh.Points.Num() && !Full(); I+=3)
             {
                 FVector P[3];
-                for (int32 K=0;K<3;++K) P[K]=T.TransformPosition(FVector(Positions.VertexPosition(Indices[I+K])));
-                const FVector Authored=T.TransformVectorNoScale(FVector(LOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(Indices[I])));
+                for (int32 K=0;K<3;++K) P[K]=T.TransformPosition(FVector(Mesh.Points[I+K]));
+                const FVector Authored=T.TransformVectorNoScale(FVector(Mesh.Normals[I/3]));
                 if (FVector::DotProduct(FVector::CrossProduct(P[1]-P[0],P[2]-P[0]),Authored)<0) Swap(P[1],P[2]);
                 Add(P[0],P[1],P[2]);
             }
@@ -236,54 +266,109 @@ namespace
         }
     };
 
-    /** Snapshot the static collision a walker meets near Centre: the triangles of meshes whose collision is their own
-     *  surface, and the boxes, spheres, capsules and hulls of the others (a tree's trunk, not its leaves). A dense
-     *  area shrinks the snapshot until it fits the budget; Reach is how far the rider may go from Centre before the
-     *  next one. The native solver owns its narrow phase, BVH and contact solver. */
-    bool GatherWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FSnapshot& Snapshot, double& Reach)
+    /** What a gather reads on the game thread, for the triangles to be made anywhere: each colliding static mesh near
+     *  the centre (its surface copied, or its body setup's shapes) with its instances' transforms, and the rails. The
+     *  body setups are kept alive (Keep) until the triangles are made: a level cell may stream out meanwhile. */
+    struct FGatherJob
     {
-        double Radius=0;
-        for (const double Try : {10000.,6000.,3500.,2000.})
+        // A part's bounds and its instances' (an instanced mesh's, else one), for each smaller snapshot to skip what
+        // lies outside it as the single-pass gather did.
+        struct FPart { FMeshSurfaceRef Surface; const UBodySetup* Body=nullptr; FBox Bounds; TArray<FTransform> Instances; TArray<FBox> InstanceBounds; };
+        TArray<FPart> Parts;
+        TArray<TPair<FBox,TArray<FVector>>> Rails;
+        TArray<TStrongObjectPtr<UObject>> Keep;
+        FVector Centre=FVector::ZeroVector,Spawn=FVector::ZeroVector;float Yaw=0;
+        double CollectMs=0;
+    };
+    constexpr double GatherRadii[]={10000.,6000.,3500.,2000.};
+
+    /** The game thread's part of a gather: the colliding static meshes within the largest snapshot of Centre. */
+    void CollectWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FGatherJob& Job, bool bKeep)
+    {
+        const double Began=FPlatformTime::Seconds();
+        const FBox Region(Centre-FVector(GatherRadii[0]),Centre+FVector(GatherRadii[0]));
+        Job.Centre=Centre; Job.Spawn=Spawn; Job.Yaw=Yaw;
+        for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
         {
-            Radius=Try; Snapshot.Region=FBox(Centre-FVector(Radius),Centre+FVector(Radius)); Snapshot.Points.Reset();
-            for (TObjectIterator<UStaticMeshComponent> It; It && !Snapshot.Full(); ++It)
+            UStaticMeshComponent* C = *It;
+            if (C->GetWorld()!=World || C->GetOwner()==Rider || !C->IsRegistered() || !C->IsCollisionEnabled() ||
+                C->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block || !C->Bounds.GetBox().Intersect(Region)) continue;
+            UStaticMesh* Mesh=C->GetStaticMesh();
+            UBodySetup* Body=Mesh ? Mesh->GetBodySetup() : nullptr;
+            if (!Body) continue;
+            FGatherJob::FPart Part; Part.Bounds=C->Bounds.GetBox();
+            if (Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple) { Part.Surface=MeshSurface(Mesh); if (!Part.Surface) continue; }
+            else { Part.Body=Body; if (bKeep) Job.Keep.Emplace(Body); }
+            if (auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
             {
-                UStaticMeshComponent* C = *It;
-                if (C->GetWorld()!=World || C->GetOwner()==Rider || !C->IsRegistered() || !C->IsCollisionEnabled() ||
-                    C->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block || !C->Bounds.GetBox().Intersect(Snapshot.Region)) continue;
-                UStaticMesh* Mesh=C->GetStaticMesh();
-                UBodySetup* Body=Mesh ? Mesh->GetBodySetup() : nullptr;
-                if (!Body) continue;
-                TArray<FTransform> Instances;
-                if (auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
+                const FBox Local=Mesh->GetBounds().GetBox();
+                for (int32 Index : ISM->GetInstancesOverlappingBox(Region,true))
                 {
-                    for (int32 Index : ISM->GetInstancesOverlappingBox(Snapshot.Region,true))
-                    { FTransform T; if (ISM->GetInstanceTransform(Index,T,true)) Instances.Add(T); }
-                }
-                else Instances.Add(C->GetComponentTransform());
-                const bool bSurface=Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple;
-                const FKAggregateGeom& Geom=Body->AggGeom;
-                for (const FTransform& T : Instances)
-                {
-                    if (bSurface) { Snapshot.AddSurface(Mesh,T); continue; }
-                    for (const FKBoxElem& E : Geom.BoxElems) Snapshot.AddBox(E.GetTransform()*T,FVector(E.X,E.Y,E.Z)*.5);
-                    for (const FKSphereElem& E : Geom.SphereElems) Snapshot.AddCapsule(E.GetTransform()*T,E.Radius,0);
-                    for (const FKSphylElem& E : Geom.SphylElems) Snapshot.AddCapsule(E.GetTransform()*T,E.Radius,E.Length*.5);
-                    for (const FKConvexElem& E : Geom.ConvexElems) Snapshot.AddHull(E,E.GetTransform()*T);
+                    FTransform T;
+                    if (ISM->GetInstanceTransform(Index,T,true)) { Part.Instances.Add(T); Part.InstanceBounds.Add(Local.TransformBy(T)); }
                 }
             }
+            else Part.Instances.Add(C->GetComponentTransform());
+            Job.Parts.Add(MoveTemp(Part));
+        }
+        if (Rails) for (const FSkateRail& Rail : Rails->Rails) if (Rail.Bounds.Intersect(Region) && Rail.Points.Num()>=2)
+            Job.Rails.Emplace(Rail.Bounds,Rail.Points);
+        Job.CollectMs=(FPlatformTime::Seconds()-Began)*1000.;
+    }
+
+    /** Snapshot the static collision a walker meets near the job's centre: the triangles of meshes whose collision is
+     *  their own surface, and the boxes, spheres, capsules and hulls of the others (a tree's trunk, not its leaves). A
+     *  dense area shrinks the snapshot until it fits the budget; Reach is how far the rider may go from the centre
+     *  before the next one. Reads only the job (and the meshes it keeps), so it runs on any thread. The native solver
+     *  owns its narrow phase, BVH and contact solver. */
+    bool FillWorld(const FGatherJob& Job, FSnapshot& Snapshot, double& Reach)
+    {
+        double Radius=0; const double Began=FPlatformTime::Seconds();
+        for (const double Try : GatherRadii)
+        {
+            Radius=Try; Snapshot.Region=FBox(Job.Centre-FVector(Radius),Job.Centre+FVector(Radius)); Snapshot.Points.Reset();
+            // Each part's triangles on its own, in parallel, then joined in the parts' order: the snapshot one pass
+            // makes (over budget the same way: a snapshot over it is dropped for the next radius either way).
+            TArray<TArray<FVector3f>> PartPoints; PartPoints.SetNum(Job.Parts.Num());
+            ParallelFor(Job.Parts.Num(), [&Job,&Snapshot,&PartPoints](int32 P)
+            {
+                const FGatherJob::FPart& Part=Job.Parts[P];
+                if (!Part.Bounds.Intersect(Snapshot.Region)) return;
+                FSnapshot Local; Local.Region=Snapshot.Region; Local.Budget=MAX_int32/4;
+                for (int32 I=0; I<Part.Instances.Num(); ++I)
+                {
+                    const FTransform& T=Part.Instances[I];
+                    if (Part.InstanceBounds.IsValidIndex(I) && !Part.InstanceBounds[I].Intersect(Local.Region)) continue;
+                    if (Part.Surface) { Local.AddSurface(*Part.Surface,T); continue; }
+                    const FKAggregateGeom& Geom=Part.Body->AggGeom;
+                    for (const FKBoxElem& E : Geom.BoxElems) Local.AddBox(E.GetTransform()*T,FVector(E.X,E.Y,E.Z)*.5);
+                    for (const FKSphereElem& E : Geom.SphereElems) Local.AddCapsule(E.GetTransform()*T,E.Radius,0);
+                    for (const FKSphylElem& E : Geom.SphylElems) Local.AddCapsule(E.GetTransform()*T,E.Radius,E.Length*.5);
+                    for (const FKConvexElem& E : Geom.ConvexElems) Local.AddHull(E,E.GetTransform()*T);
+                }
+                PartPoints[P]=MoveTemp(Local.Points);
+            });
+            for (const TArray<FVector3f>& Points : PartPoints) { if (Snapshot.Full()) break; Snapshot.Points.Append(Points); }
             if (!Snapshot.Full()) break;
         }
         if (Snapshot.Num()==0 || Snapshot.Full()) return false;
         Reach=Radius*.6;
-        if (Rails) for (const FSkateRail& Rail : Rails->Rails) if (Rail.Bounds.Intersect(Snapshot.Region) && Rail.Points.Num()>=2)
+        for (const auto& Rail : Job.Rails) if (Rail.Key.Intersect(Snapshot.Region))
         {
             TArray<FVector3f>& Line=Snapshot.Rails.AddDefaulted_GetRef();
-            for (const FVector& P : Rail.Points) Line.Add(FVector3f(ToNative(P)));
+            for (const FVector& P : Rail.Value) Line.Add(FVector3f(ToNative(P)));
         }
-        Snapshot.Spawn=FVector3f(ToNative(Spawn)); Snapshot.Heading=-FMath::DegreesToRadians(Yaw);
-        UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails within %.0f m"),Snapshot.Num(),Snapshot.Rails.Num(),Radius/100.);
+        Snapshot.Spawn=FVector3f(ToNative(Job.Spawn)); Snapshot.Heading=-FMath::DegreesToRadians(Job.Yaw);
+        UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails within %.0f m, collected in %.1f ms, made in %.1f ms%s"),
+            Snapshot.Num(),Snapshot.Rails.Num(),Radius/100.,Job.CollectMs,(FPlatformTime::Seconds()-Began)*1000.,IsInGameThread() ? TEXT("") : TEXT(" off the game thread"));
         return true;
+    }
+
+    /** Both parts of a gather on the calling (game) thread. */
+    bool GatherWorld(UWorld* World, ACharacter* Rider, FVector Centre, FVector Spawn, float Yaw, USkateRailSubsystem* Rails, FSnapshot& Snapshot, double& Reach)
+    {
+        FGatherJob Job; CollectWorld(World,Rider,Centre,Spawn,Yaw,Rails,Job,false);
+        return FillWorld(Job,Snapshot,Reach);
     }
 
     // Preserve the former collision snapshot's seven decimal places before f32
@@ -388,13 +473,19 @@ public:
                 if(!Finite(Command.Spawn)||!Finite(Command.Velocity)||!std::isfinite(Command.Heading)
                     ||!std::isfinite(Command.Preferences.Trucks))
                 {Error="Invalid spawn or equipment";Okay=false;break;}
+                // A world queued while riding (installed between steps) is the one the mount's reach was checked against.
+                for(auto& Pending:PendingCollisions_)
+                    if(!InstallWorld(Pending,Error)){Okay=false;break;}
+                PendingCollisions_.clear();
+                if(!Okay)break;
                 Okay=Configure(Command.Preferences,Error)
                     &&Session_->Activate(Command.Spawn,Command.Heading,Error);
                 if(Okay){Session_->Launch(Command.Velocity);Generation_=Command.Generation;Okay=Publish(false,Error);}
                 break;
             case ECommand::World:
                 if(Command.Background)PendingCollisions_.push_back(std::move(Command));
-                else Okay=InstallWorld(Command,Error);
+                // A world installed at once (an idle session's, a mount's) is newer than any still deferred.
+                else {PendingCollisions_.clear();Okay=InstallWorld(Command,Error);}
                 break;
             case ECommand::Launch:
                 if(!Finite(Command.Velocity)){Error="Invalid launch velocity";Okay=false;}
@@ -480,8 +571,10 @@ public:
     // (radians, per second), and the world time of the last frame; invalid after a bail or a new rider.
     double ArmNeed[2]={0,0},ArmSwing[2]={0,0},ArmRate[2]={0,0},ArmTime=-1;
     bool bArmsValid=false;
+    // A world built off the game thread: Empty when its gather found nothing to snapshot (open water), with the centre
+    // and reach it covers, and its triangles.
     struct FWorldResult
-    {std::optional<skate_native::PreparedGameplayWorld> World;std::string Error;};
+    {std::optional<skate_native::PreparedGameplayWorld> World;std::string Error;bool Empty=false;FVector Centre,At;double Reach=0;int32 Triangles=0;};
     TUniquePtr<FNativeSkateWorker> Worker;
     bool Ready=false,PendingActivation=false,AwaitingPose=false,HasPose=false;
     uint32 Generation=0;float FrameTime=0;
@@ -491,7 +584,11 @@ public:
     // Native's stance (its animation packet's): riding switch, riding fakie, and how many times the stance turned.
     bool Switch=false,Fakie=false;uint32 Turns=0;
     double CollisionReach=6000.;
+    // Where a gather last found nothing to snapshot (open water): the next try waits 20 m from it. The coverage
+    // (CollisionCentre, CollisionReach) stays the installed world's.
+    FVector GatherRetryAt=FVector(UE_BIG_NUMBER);
     TFuture<TSharedPtr<FWorldResult,ESPMode::ThreadSafe>> PendingWorld;
+    TArray<TStrongObjectPtr<UObject>> PendingKeep;   // the meshes PendingWorld's gather reads, released on the game thread
     skate_native::ContactMaterial Floor;
     TOptional<FVector> PendingLaunch;
     float SpawnYaw=0,Score=0,ManualBalance=0;
@@ -511,7 +608,7 @@ public:
     FRidePoseMeasure PoseMeasure;float PoseTravel=1;
     FTransform Root=FTransform::Identity,Camera=FTransform::Identity;float CameraFOV=0;
     TArray<FName> Names;TArray<FTransform> Reference,Bones;
-    ~FSkateRuntime() {if(PendingWorld.IsValid())PendingWorld.Wait();Worker.Reset();}
+    ~FSkateRuntime() {if(PendingWorld.IsValid())PendingWorld.Wait();PendingKeep.Reset();Worker.Reset();}
     FNativeSkateWorker::FPreferences Preferences(bool Goofy) const
     {
         const USkateSettings* S=GetDefault<USkateSettings>();FNativeSkateWorker::FPreferences P;
@@ -521,7 +618,10 @@ public:
     void FinishPendingWorld(bool Background)
     {
         if(!PendingWorld.IsValid())return;
-        const auto Result=PendingWorld.Get();PendingWorld={};
+        const auto Result=PendingWorld.Get();PendingWorld={};PendingKeep.Reset();
+        // Nothing to snapshot (open water): keep the old world and try again 20 m on, not on every frame.
+        if(Result->Empty){GatherRetryAt=Result->At;return;}
+        CollisionCentre=Result->Centre;CollisionReach=Result->Reach;++Worlds;WorldTriangles=Result->Triangles;GatherRetryAt=FVector(UE_BIG_NUMBER);
         FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::World;
         Command.World=std::move(Result->World);Command.Error=std::move(Result->Error);Command.Background=Background;
         Worker->Enqueue(MoveTemp(Command));
@@ -655,6 +755,9 @@ void USkateComponent::PollIdleRetail()
         RideNative->Poll();
         if (!RideNative->Error.IsEmpty())
         { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded Native ride session failed: %s"),*RideNative->Error); RideNative.Reset(); }
+        // The world follows the rider on foot, built off the game thread, so a mount does not build it (H34: 190 ms
+        // where the ride started out of the last one's reach). Once loaded: the build takes the session's floor.
+        else if (Rider && RideNative->Ready) RefreshNativeCollision(*RideNative,Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,true);
     }
     if (!RetailRuntime || bRetailActive || !RetailRuntime->Worker) return;
     RetailRuntime->Poll();
@@ -696,7 +799,7 @@ bool USkateComponent::ActivateNative(FSkateRuntime& R)
         FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Pos);
         if(!GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,Snapshot,Reach))
         {RuntimeFailure(TEXT("Skating could not refresh nearby collision."));return false;}
-        R.SendWorld(Snapshot);R.CollisionCentre=Centre;R.CollisionReach=Reach;
+        R.SendWorld(Snapshot);R.CollisionCentre=Centre;R.CollisionReach=Reach;R.GatherRetryAt=FVector(UE_BIG_NUMBER);
         ++R.Worlds;R.WorldTriangles=Snapshot.Num();
     }
     R.Spawn=Pos; R.SpawnYaw=Rot.Rotator().Yaw;
@@ -747,17 +850,19 @@ FVector USkateComponent::BailVelocity() const { return bRideNative ? Vel : Ride 
 FVector USkateComponent::BailSpin() const { return bRideNative ? RideSpin : Ride ? Ride->GetBailSpin() : FVector::ZeroVector; }
 // Native's pose carries its stance: the deck the run-out reads is the shown one, so the rider never counts as switch.
 bool USkateComponent::RideSwitched() const { return !bRideNative && Ride && Ride->IsSwitch(); }
-bool USkateComponent::ShownFakie() const { return bRideNative && RetailRuntime ? RetailRuntime->Fakie : Ride ? Ride->IsFakie() : bFakie; }
-bool USkateComponent::ShownSwitch() const { return bRideNative && RetailRuntime ? RetailRuntime->Switch : Ride && Ride->IsSwitch(); }
+// Native's stance under either Native backend (the hybrid, or Native's own: not the idle Ride session a hybrid ride left).
+bool USkateComponent::ShownFakie() const { return RetailRuntime && (bRideNative || RetailRuntime->Worker) ? RetailRuntime->Fakie : Ride ? Ride->IsFakie() : bFakie; }
+bool USkateComponent::ShownSwitch() const { return RetailRuntime && (bRideNative || RetailRuntime->Worker) ? RetailRuntime->Switch : Ride && Ride->IsSwitch(); }
 ERideGrab USkateComponent::RideGrab() const
 {
     if (!bRideNative) return Ride ? Ride->GetBody().Grab : ERideGrab::None;
     if (Mode != ESkateMode::Air || !RetailRuntime) return ERideGrab::None;
     const FSkateHostPad Pad = ReadHostPad();
     if (!Pad.bGrabLeft && !Pad.bGrabRight) return ERideGrab::None;
-    // The grab named last in the trick line is the one held; a grab Ride has no step-off for takes the mute's. Native
-    // names the plain grabs by edge: the right trigger's toe-side grab is Ride's Indy, the left's heel-side its Melon.
-    ERideGrab Held = ERideGrab::OneFoot; int32 Latest = INDEX_NONE;
+    // The grab named last in the trick line is the one held. Native names the plain grabs by edge: the right trigger's
+    // toe-side grab is Ride's Indy, the left's heel-side its Melon; until the line names one (a grab held only a moment,
+    // H6), or for a grab Ride has no step-off for, the trigger held says which edge.
+    ERideGrab Held = Pad.bGrabRight ? ERideGrab::Indy : ERideGrab::Melon; int32 Latest = INDEX_NONE;
     for (const TPair<const TCHAR*, ERideGrab>& Name : {TPair<const TCHAR*, ERideGrab>(TEXT("Indy"), ERideGrab::Indy), {TEXT("Melon"), ERideGrab::Melon},
         {TEXT("FS Grab"), ERideGrab::Indy}, {TEXT("BS Grab"), ERideGrab::Melon},
         {TEXT("Christ"), ERideGrab::ChristAir}, {TEXT("Tuck"), ERideGrab::TuckKnee}})
@@ -881,14 +986,20 @@ void USkateComponent::StepRetailRuntime(float Dt)
         // a get-up holds the session's controls neutral until the rider is up.
         if (bNativeBail) { AfterNativeRideFrame(Dt); return; }
         if (!RideNative) { RuntimeFailure(TEXT("The Native ride session is gone.")); StowImmediately(); return; }
+        if (CVarSkateFailNative.GetValueOnGameThread()>0)
+        { CVarSkateFailNative->Set(0,ECVF_SetByConsole); RideNative->Error=TEXT("Failed on request (skate.FailNative)"); }
         bool bFailed=false;
         const bool Changed=StepNative(*RideNative,Dt,PhysicalRider && PhysicalRider->IsGettingUp(),bFailed);
         if (bFailed)
         {
             // A failed session never stows the board under a moving rider: the body falls with the momentum shown, as
-            // in a wipeout, and the get-up starts a fresh session where it lies. The failure is still logged as one.
+            // in a wipeout, and the get-up takes the ride back on a fresh session, loaded off the game thread while the
+            // body falls (H10: loaded at the get-up, it held the game thread 0.7-1 s). The failure is still logged.
             RuntimeFailure(RideNative->Error);
             RideNative.Reset();
+            FString Failure;
+            if (!LaunchNativeSession(RideNative,Pos,Rot.Rotator().Yaw,Failure)) { UE_LOG(LogTemp,Warning,TEXT("SKATE Native relaunch: %s"),*Failure); }
+            else { UE_LOG(LogTemp,Display,TEXT("SKATE Native session relaunched after a failure")); }
             if (PhysicalRider && PhysicalRider->IsActive() && !PhysicalRider->IsBailing() && !PhysicalRider->IsGettingUp()
                 && PhysicalRider->StartBail(Vel, RideSpin, URidePhysicalRider::ShownTransform(BoardRoot), BoardScale()))
             {
@@ -970,10 +1081,10 @@ void USkateComponent::StepRetailRuntime(float Dt)
     {
         RideSpin=RetailRuntime->Spin;
         AfterNativeRideFrame(Dt);
-        if (RideNative && !bNativeBail) RefreshNativeCollision(*RideNative);
+        if (RideNative && !bNativeBail) RefreshNativeCollision(*RideNative,Pos,Rot.Rotator().Yaw,false);
         return;
     }
-    RefreshNativeCollision(*RetailRuntime);
+    RefreshNativeCollision(*RetailRuntime,Pos,Rot.Rotator().Yaw,false);
 }
 
 void USkateComponent::NameNativeSpin(ESkateMode Was)
@@ -1044,33 +1155,35 @@ bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool
     return Changed;
 }
 
-void USkateComponent::RefreshNativeCollision(FSkateRuntime& R)
+void USkateComponent::RefreshNativeCollision(FSkateRuntime& R, const FVector& At, float Yaw, bool bIdle)
 {
     // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
-    // gathers here, builds on a background thread, and installs the completed world between simulation ticks.
+    // lists the meshes here, makes their triangles and builds on a background thread, and installs the completed world
+    // between simulation ticks; an idle session (the rider on foot) installs it as soon as it is built.
     if (R.PendingWorld.IsValid())
     {
-        if (R.PendingWorld.IsReady() || Lockstep()) R.FinishPendingWorld(true);
+        if (R.PendingWorld.IsReady() || Lockstep()) R.FinishPendingWorld(!bIdle);
     }
-    else if ((Pos-R.CollisionCentre).GetAbsMax()>R.CollisionReach)
+    else if ((At-R.CollisionCentre).GetAbsMax()>R.CollisionReach && (At-R.GatherRetryAt).GetAbsMax()>2000.)
     {
-        auto Snapshot=MakeShared<FSnapshot>(); double Reach=0; const FVector Centre=SnapshotCentre(GetWorld(),Pos);
-        if (GatherWorld(GetWorld(),Rider,Centre,Pos,Rot.Rotator().Yaw,RailSystem,*Snapshot,Reach))
+        // The game thread only lists the meshes (a few ms); their triangles are made with the build (H11: the whole
+        // gather took 13 ms of a frame).
+        auto Job=MakeShared<FGatherJob,ESPMode::ThreadSafe>();
+        CollectWorld(GetWorld(),Rider,SnapshotCentre(GetWorld(),At),At,Yaw,RailSystem,*Job,true);
+        R.PendingKeep=MoveTemp(Job->Keep);
+        const auto Material=R.Floor;
+        R.PendingWorld=AsyncThread([Job,Material,At]() mutable -> TSharedPtr<FSkateRuntime::FWorldResult,ESPMode::ThreadSafe>
         {
-            auto Native=NativeSnapshot(*Snapshot);const auto Material=R.Floor;
-            R.PendingWorld=AsyncThread([Native=std::move(Native),Material]() mutable -> TSharedPtr<FSkateRuntime::FWorldResult,ESPMode::ThreadSafe>
-            {
-                FScopedNativeFloatEnvironment FloatEnvironment;
-                auto Result=MakeShared<FSkateRuntime::FWorldResult,ESPMode::ThreadSafe>();
-                if(!FloatEnvironment.IsReady())
-                {Result->Error="Native world floating-point environment setup failed";return Result;}
-                skate_native::BuildGameplayWorld(Native,Material,Result->World,Result->Error);return Result;
-            },32*1024*1024);
-            R.CollisionCentre=Centre; R.CollisionReach=Reach;
-            ++R.Worlds; R.WorldTriangles=Snapshot->Num();
-        }
-        // Nothing to snapshot (open water): keep the old one and try again 20 m on, not on every frame.
-        else { R.CollisionCentre=Pos; R.CollisionReach=2000.; }
+            auto Result=MakeShared<FSkateRuntime::FWorldResult,ESPMode::ThreadSafe>();
+            Result->Centre=Job->Centre; Result->At=At;
+            FSnapshot Snapshot;
+            if (!FillWorld(*Job,Snapshot,Result->Reach)) { Result->Empty=true; return Result; }
+            Result->Triangles=Snapshot.Num();
+            FScopedNativeFloatEnvironment FloatEnvironment;
+            if(!FloatEnvironment.IsReady())
+            {Result->Error="Native world floating-point environment setup failed";return Result;}
+            skate_native::BuildGameplayWorld(NativeSnapshot(Snapshot),Material,Result->World,Result->Error);return Result;
+        },32*1024*1024);
     }
 }
 

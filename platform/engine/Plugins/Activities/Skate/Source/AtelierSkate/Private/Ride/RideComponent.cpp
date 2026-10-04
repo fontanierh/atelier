@@ -304,7 +304,8 @@ void USkateComponent::GetUpFromNativeBail()
     }
     Body.StartGetUp(ERideGetUpExit::Board);
     // The session takes the ride back where the body lies, stopped, facing the way the body does; the pose rises into
-    // its first one out of the fallen body's snapshot.
+    // its first one out of the fallen body's snapshot. A session that failed during the ride was relaunched as the body
+    // fell; should that one fail too, the board is stowed (the one clean exit that needs neither Native nor the clips).
     Pos = Ground; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector;
     if (!StartNativeRide()) { RuntimeFailure(TEXT("Native skating could not take the ride back after the bail.")); StowImmediately(); return; }
     const FTransform Root = RideRoot();

@@ -480,20 +480,7 @@ def main():
         record('flick_pad_push', rows, pushed and trick_named(rows, 'Ollie') and late is not None and late <= allowed and landed,
                f'pushing before: {pushed}; {len(loaded_push)} of {len(loaded)} loaded frames pushing; {qa.combos(rows) or "(none)"}; '
                f'took off {"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}{why}')
-    for name, hold, flick in (('manual_pad_kickflip', (0.0, -.5), (-0.908571, 0.417143)), ('manual_pad_nollie', (0.0, .5), (0.0, -1.0))):
-        if not (wanted(name) or wanted('pad')):
-            continue
-        # Flick out of a held manual, as native does: its wind-up points contain the manual's stick position, so the
-        # stick never goes back to the centre or out to the rim first. The nose manual balances after its Into (25 ticks).
-        trick = 'Kickflip' if 'kickflip' in name else 'Nollie'
-        timeline = [(0.0, (0.0, 0.0)), (.3, hold), (1.3, flick), (1.3 + .05, (0.0, 0.0))]
-        rows = pad_ride(FLAT[0], FLAT[1], 0, 480, timeline, 2.8)
-        held = [r for r in rows if int(r['pt']) == 1 and float(r['padt']) >= (.6 if 'kickflip' in name else 1.)]
-        kept = bool(held) and all(r.get('manual') == '1' for r in held)
-        late = latency(rows, 2); landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
-        record(name, rows, kept and trick_named(rows, trick) and late is not None and late <= allowed and landed,
-               f'manual held to the flick: {kept}; {qa.combos(rows) or "(none)"}; took off '
-               f'{"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}')
+    manual_pad_rows(record, [n for n, _, _ in MANUAL_PADS if wanted(n) or wanted('pad')], allowed)
     # Every nollie in native's table and both of its diagonal nollies, from the pad; then a goofy rider (his stick's x
     # mirrored) for one of each family.
     runs = [(n, p, False) for n, p in NOLLIES.items()] + [('Nollie', p, False) for p in NOLLIE_DIAGONALS]
@@ -857,6 +844,27 @@ live.behave('lipp', _lipp)
 """
 
 
+MANUAL_PADS = (('manual_pad_kickflip', (0.0, -.5), (-0.908571, 0.417143)), ('manual_pad_nollie', (0.0, .5), (0.0, -1.0)))
+
+
+def manual_pad_rows(record, names, allowed):
+    """The manual pad's flicks (`names` of MANUAL_PADS), each taking off within `allowed` s of the flick."""
+    for name, hold, flick in MANUAL_PADS:
+        if name not in names:
+            continue
+        # Flick out of a held manual, as native does: its wind-up points contain the manual's stick position, so the
+        # stick never goes back to the centre or out to the rim first. The nose manual balances after its Into (25 ticks).
+        trick = 'Kickflip' if 'kickflip' in name else 'Nollie'
+        timeline = [(0.0, (0.0, 0.0)), (.3, hold), (1.3, flick), (1.3 + .05, (0.0, 0.0))]
+        rows = pad_ride(FLAT[0], FLAT[1], 0, 480, timeline, 2.8)
+        held = [r for r in rows if int(r['pt']) == 1 and float(r['padt']) >= (.6 if 'kickflip' in name else 1.)]
+        kept = bool(held) and all(r.get('manual') == '1' for r in held)
+        late = latency(rows, 2); landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        record(name, rows, kept and trick_named(rows, trick) and late is not None and late <= allowed and landed,
+               f'manual held to the flick: {kept}; {qa.combos(rows) or "(none)"}; took off '
+               f'{"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}')
+
+
 def lip_air_player(record):
     side = lambda steer: 'right' if steer > 0 else 'left'
     for x, y, heading in PLAYER_QUARTER:
@@ -929,6 +937,16 @@ def native_checks(record, parity):
         wheels_contact(native_record)
         fakie_checks_native(native_record, lambda name: name in ('fakie_roll', 'fakie_switch', 'fakie_push'))
         preland_checks(native_record)
+        # The manual pad's flicks and the player's lip airs (where the hybrid's pose pops, H24), with their pops by run.
+        flicks = {}
+        def flick_record(name, rows, ok, note):
+            flicks[name] = rows
+            native_record(name, rows, ok, note)
+        manual_pad_rows(flick_record, [n for n, _, _ in MANUAL_PADS], .2 + 2 / 60.)
+        lip_air_player(flick_record)
+        _, continuity, context = pose_health(flicks)
+        native_record('pose_continuity_flicks', [r for run in flicks.values() for r in run], continuity[0],
+                      continuity[1] + ''.join(f"; {c['run']} frame {c['frame']} {c['step']:.0f}" for c in context[:8]))
         try:
             for goofy in (False, True):
                 qa.py(f'live.L.skate_goofy({goofy})')
@@ -1436,25 +1454,27 @@ def fakie_run(goofy, speed, events, duration, x=FLAT[0], cam=None):
 def fakie_landing(goofy, push, seconds):
     """Native's way into fakie: a straight air off the quarter lands fakie (QUARTER_AIR, vert_quarter_straight). A
     board launched backward from rest is not fakie in Native: it shows the forward pose and turns round after a second.
-    The rows from the landing (about 2.6 s after the launch) to `seconds` after it; push holds the push from .3 s
-    after it to 1.5 s."""
+    The rows from the landing (about 2.6 s after the launch) to `seconds` after it; push holds the push from .5 s
+    after it to 1.7 s, on the flat (from .3 s the rider turned round still on the quarter's face, hips 5.4-5.9 cm)."""
     qa.py(f'live.L.skate_goofy({goofy})')
     hold = ("live.FP=[0.0,None]\n"
             "def _fp(dt):\n"
             "    s=live.skate_state(); f=live.FP\n"
             "    if f[1] is None and ' mode=2 ' in s: f[1]=0.0\n"
             "    if f[1] is not None and ' mode=1 ' in s: f[0]+=dt\n"
-            "    live.skate_input(push=.3<=f[0]<1.5)\n"
+            "    live.skate_input(push=.5<=f[0]<1.7)\n"
             "live.behave('fp', _fp)\n") if push else ''
     # The same launch does not always fly the same air (Native's too: now and then the board yaws on the face and
-    # flies longer, H37): up to three tries for the straight one, 35 to 50 frames up and no bail.
-    for _ in range(3):
+    # flies longer, H37): up to four tries for the straight one, 35 to 50 frames up and no bail.
+    for k in range(4):
         rows = record_while(QUARTER_AIR + hold, 3.2 + seconds)
         qa.py("live.stop('fp'); live.skate_input()")
         lip = next((i for i in range(1, len(rows)) if rows[i].get('mode') == '2'), None)
         land = next((i for i in range(lip or len(rows), len(rows)) if rows[i].get('mode') != '2'), None)
         if land is not None and 35 <= land - lip <= 50 and rows[land].get('mode') == '1' and not qa.count(rows, 'bails'):
             return rows[land:]
+        print(f'fakie landing try {k + 1}: lip frame {lip}, landing frame {land}, mode there '
+              f'{rows[land].get("mode") if land is not None else "-"}, {qa.count(rows, "bails") if rows else 0} bails, {len(rows)} rows', flush=True)
     return []
 
 
@@ -1586,12 +1606,12 @@ def fakie_checks_native(record, wanted):
         if wanted('fakie_push'):
             rows = fakie_landing(goofy, True, 2.)
             flip = flipped(rows)
-            gained = max((speed(r) for r in rows), default=0.) - (at_time(rows, .3, 'speed') or 0.)
+            gained = max((speed(r) for r in rows), default=0.) - (at_time(rows, .5, 'speed') or 0.)
             # Turned round, the rider pushes facing the travel (Native's turn takes about .6 s to settle).
             chest = settled([r for t, r in zip(clock(rows), rows) if r.get('push') == '1' and t >= (flip or 9.) + .6], 'chestyaw', 0.)
             healthy, health = steady(rows[30:])
             ok = flip is not None and turned(rows) == 1 and rows[-1].get('switch') == '1' and gained > 30 and chest is not None and chest < 90 and healthy
-            record(f'fakie_push_{stance}', rows, ok, f'landed fakie, push .3 s after: flip at {flip} s; chest {chest} degrees from '
+            record(f'fakie_push_{stance}', rows, ok, f'landed fakie, push .5 s after: flip at {flip} s; chest {chest} degrees from '
                    f'the travel pushing from .6 s after it; {gained:.0f} cm/s gained; switch={rows[-1].get("switch")}; {health}')
         if wanted('fakie_switch_trick'):
             qa.py("live.FLICKS['kickflip_mirror'] = [(-x, y) for x, y in live.FLICKS['kickflip']]")
@@ -1634,8 +1654,11 @@ def fakie_checks_native(record, wanted):
     if wanted('fakie_blend'):
         rows = qa.run_scenario(f"{BOWL[0]},{BOWL[1]},0,600,[],duration=7", 7)
         rider = sum(1 for a, b in zip(rows, rows[1:]) if a.get('fakie') != b.get('fakie'))
+        # The head from the deck's nose: headyaw is measured from the travel, so the end that leads it (nosefirst=)
+        # says which; the fakie flag turns some frames after the travel reverses on the wall (a 173 degree "step").
         board = lambda r: '1' if (r.get('fakie') == '1') != (r.get('switch') == '1') else '0'
-        nose = lambda r: float(r.get('headyaw', 0)) if board(r) != '1' else 180 - float(r.get('headyaw', 0))
+        tail_first = lambda r: r.get('nosefirst') == '0' if 'nosefirst' in r else board(r) == '1'
+        nose = lambda r: float(r.get('headyaw', 0)) if not tail_first(r) else 180 - float(r.get('headyaw', 0))
         jump = max((abs(nose(b) - nose(a)) for a, b in zip(rows, rows[1:]) if min(speed(a), speed(b)) > 50), default=0)
         record('fakie_blend', rows, rider >= 2 and jump < 20 and not qa.count(rows, 'bails'),
                f'{rider} rider fakie changes, {turned(rows)} turns round; largest head step {jump:.1f} degrees a frame from the nose; '
@@ -2297,6 +2320,9 @@ def cost_ab(record):
     try:
         for on in (False, True):
             physical(on)
+            # A ride placed out of the session's world builds the new one before its first pose (a teleport: a rider
+            # who walks there finds it built), so the pier is placed once unmeasured, as Mega Park is below (H34).
+            qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[(0,{{}})],duration=1", 1)
             time.sleep(.5)
             frame_sampler()
             rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[(0,{{'push':True}}),(2,{{}}),(2.3,('flick','kickflip')),"
@@ -2420,6 +2446,10 @@ LAND_GAP, LAND_HOLD = 1., .5   # cm, s: after a landing in a transition, no whee
 WHEEL_NAMES = ('front right', 'front left', 'back right', 'back left')   # WHEELS' order
 COST_MEAN = .15    # ms: the session's step per 60 Hz tick on Mega Park's road, mean
 COST_WORST = 1.    # ms: nor any tick's (any second's worst) in any of the rows, walls, airs and landings included
+# Under the hybrid cost= is Native's whole session step (physics, animation, scoring) on its own thread, pipelined
+# with the game's frame: it must be done well inside the frame it overlaps (half of one at 60 Hz, at worst). The game
+# thread's share shows in the pacing rows.
+NATIVE_STEP_MEAN, NATIVE_STEP_WORST = 1., 8.
 GUARD_SHARE = .8   # the guard must have watched this share of each row's window (by the frames' own times)
 SPEEDS = (300, 600, 900, 1200)
 BESIDE = 35.       # cm: the board's centre from the wall it powerslides and spins beside (its corners reach 46 cm)
@@ -2935,10 +2965,13 @@ def collide_cost(record):
     asked = lambda qs: [tuple(map(float, q.split('/'))) for q in qs if '/' in q]
     road_q = asked({r.get('queries', '') for r in rows})
     rows_q = asked({q for _, q in COSTS})
-    record('collide_cost', rows, bool(sim) and mean < COST_MEAN and worst < COST_WORST,
+    native = bool(rows) and rows[-1].get('solver') == 'Native'
+    budget = (NATIVE_STEP_MEAN, NATIVE_STEP_WORST) if native else (COST_MEAN, COST_WORST)
+    record('collide_cost', rows, bool(sim) and mean < budget[0] and worst < budget[1],
            f"session step {mean:.3f} ms mean per tick over {len(sim)} seconds (the worst second {max((m for m, _ in sim), default=0):.3f}), "
            f"worst tick {max((w for _, w in sim), default=0):.3f} ms on the road, {max((w for _, w in seen), default=0):.3f} ms over "
-           f"{len(seen)} seconds of the guarded rows; budget {COST_MEAN:g} ms mean, {COST_WORST:g} ms worst; queries per tick "
+           f"{len(seen)} seconds of the guarded rows; budget {budget[0]:g} ms mean, {budget[1]:g} ms worst"
+           f"{' (Native step on its own thread)' if native else ''}; queries per tick "
            f"{sum(m for m, _ in road_q) / max(1, len(road_q)):.1f} mean (worst {max((w for _, w in road_q), default=0):.0f}) on the road, "
            f"worst {max((w for _, w in rows_q), default=0):.0f} in the guarded rows; load average {os.getloadavg()[0]:.1f}")
 

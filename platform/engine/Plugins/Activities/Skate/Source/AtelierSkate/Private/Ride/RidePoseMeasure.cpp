@@ -31,6 +31,7 @@ void FRidePoseMeasure::Measure(const TArray<FName>& Names, const TArray<FTransfo
             ChestAxis = Reference[ChestBone].GetRotation().UnrotateVector(Facing);
         }
     }
+    NoseFirst = Travel * (bReversed ? -1.f : 1.f) >= 0.f;
     PoseNaN = 0;
     for (const FTransform& Bone : Bones) if (Bone.ContainsNaN()) ++PoseNaN;
     // The fastest body bone. The bones are in the root's space, so the ride's own travel and turning do not count.
@@ -67,7 +68,7 @@ void FRidePoseMeasure::Measure(const TArray<FName>& Names, const TArray<FTransfo
 
 FString FRidePoseMeasure::Describe() const
 {
-    return FString::Printf(TEXT("step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d hipboard=%.1f headyaw=%.1f chestyaw=%.1f feetalong=%.1f,%.1f"),
+    return FString::Printf(TEXT("step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d hipboard=%.1f headyaw=%.1f chestyaw=%.1f feetalong=%.1f,%.1f nosefirst=%d"),
         PoseStep, *StepBoneName().ToString(), PoseDt * 1000.f, FootHeight[0], FootHeight[1], FeetOff, PoseNaN, HipBoard, HeadYaw, ChestYaw,
-        FootAlong[0], FootAlong[1]);
+        FootAlong[0], FootAlong[1], NoseFirst ? 1 : 0);
 }

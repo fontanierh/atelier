@@ -141,7 +141,8 @@ private:
     bool StepNative(FSkateRuntime& Runtime, float Dt, bool bNeutral, bool& bFailed);
     /** Under the hybrid: count the air's spin from the shown pose and name it at the landing (Native names none). */
     void NameNativeSpin(ESkateMode Was);
-    void RefreshNativeCollision(FSkateRuntime& Runtime);
+    /** Keep a Native session's world around At (the ride's position, or the rider's on foot when bIdle). */
+    void RefreshNativeCollision(FSkateRuntime& Runtime, const FVector& At, float Yaw, bool bIdle);
     void PreloadRetailRuntime();
     void PollIdleRetail();
     bool StartRetailRuntime();

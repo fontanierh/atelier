@@ -10,7 +10,7 @@ struct FRidePoseMeasure
     void Measure(const TArray<FName>& Names, const TArray<FTransform>& Reference, const TArray<FTransform>& Bones, float Dt,
         float Travel, bool bReversed);
     /** The fields as the Ride backend's state line names them: step, stepbone, dt, feet, feetoff, nan, hipboard,
-     *  headyaw, chestyaw and feetalong. */
+     *  headyaw, chestyaw, feetalong and nosefirst. */
     FString Describe() const;
     FName StepBoneName() const { return MeasuredNames.IsValidIndex(PoseStepBone) ? MeasuredNames[PoseStepBone] : FName(TEXT("none")); }
 
@@ -24,6 +24,9 @@ struct FRidePoseMeasure
     // one that points where the shoulders face in the rig's reference pose.
     float HipBoard = 0, HeadYaw = 0, ChestYaw = 0;
     float FootAlong[2] = {0, 0};       // each toe along the travel from the deck's pivot (cm; left, right)
+    // The deck's nose leads the travel the yaws are measured from (the end that leads, not the stance's fakie flag,
+    // which Native turns some frames after the travel reverses).
+    bool NoseFirst = true;
 
 private:
     TArray<FName> MeasuredNames;
