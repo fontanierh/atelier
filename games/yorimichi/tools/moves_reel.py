@@ -52,6 +52,13 @@ def film(args):
     expected = (owner.get('pid'), owner.get('started'))
     owns = lambda: (o := game_owner()) is not None and (o.get('pid'), o.get('started')) == expected
     deadline = time.monotonic() + args.timeout
+    started, said = time.monotonic(), [0.]
+
+    def status(text):
+        """A progress line at most every 30 s while waiting (stage, what is observed, what is awaited)."""
+        if time.monotonic() - said[0] >= 30.:
+            said[0] = time.monotonic()
+            print(f'[{time.monotonic() - started:5.0f} s] {text}', flush=True)
     # The bridge answers once the world is up; the move set once the player has spawned with it.
     while True:
         try:
@@ -60,10 +67,13 @@ def film(args):
             state = json.loads(execute('print(live.L.move_state())').strip() or '{}')
             if state.get('mode') == 'ground':
                 break
+            if state.get('mode') == 'swim':   # left in the lake (botw_moves.py's glide ends there): back to its shore
+                execute('live.L.teleport_player(unreal.Vector(-5400., -22300., 7500.), 0.)')
         except OSError:
             pass
         if not owns() or time.monotonic() > deadline:
             raise TimeoutError('The game did not come up with a move set')
+        status('waiting for the game: bridge up and the player standing with a move set (no progress yet)')
         time.sleep(2.)
     out = ROOT / 'build/yorimichi/botw/moves_film' / args.take
     if out.exists() and any(out.iterdir()):
@@ -79,6 +89,7 @@ def film(args):
                 raise RuntimeError('The game released before the take completed')
             if time.monotonic() > deadline:
                 raise TimeoutError('The take exceeded its time; evidence retained')
+            status(f'filming {args.take}: {len(list(out.glob("frame_*.jpg")))} frames saved, waiting for done.json')
             time.sleep(1.)
         done = json.loads((out / 'done.json').read_text())
         while len(list(out.glob('frame_*.jpg'))) < done['film_frames'] and time.monotonic() < deadline:
