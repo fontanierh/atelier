@@ -21,13 +21,23 @@ agent session. Notification commands are JSON argument arrays, executed without 
 `{message}` argument is replaced with the notification text. This sends only to the specified session;
 there is no new chat or agent creation.
 
-For a local Codex CLI that supports `codex queue` (verify with `codex queue --help`):
+For a local Codex session on the shared app-server daemon:
 
 ```sh
 uv run atelier board subscribe --agent park-review --background \
-  --notify '["codex", "queue", "--thread", "YOUR_EXISTING_SESSION_ID", "--message", "{message}"]'
+  --notify '["atelier", "board", "notify-codex", "--thread", "YOUR_EXISTING_SESSION_ID", "{message}"]'
 uv run atelier board status
 ```
+
+`notify-codex` sends `turn/steer` to a busy session with the required current turn ID. It wakes an idle,
+loaded session with `turn/start` in that same thread. It never creates another agent, resumes a stored
+transcript, cancels a turn, or changes model/permission settings. A turn ending during delivery gets one
+fresh status check before retry. Unavailable sessions and failed deliveries retain the mailbox cursor.
+Use a full path to `atelier` in the notify argv when it isn't on the subscriber's `PATH`, and use the
+installed daemon-compatible Codex executable (`notify-codex --codex PATH`) when multiple CLI versions exist.
+The adapter resolves the current Unix socket through `codex app-server daemon version` and uses its
+WebSocket transport. See [the app-server steering contract](https://learn.chatgpt.com/docs/app-server#steer-an-active-turn).
+Do not use `codex queue` for live board notifications: a queued message doesn't reach the running turn.
 
 For Claude Code, run a **one-shot wait as a background shell task** (`run_in_background`):
 
@@ -134,3 +144,46 @@ uv run atelier board status
 
 This requests a cooperative stop after the bounded current delivery/poll. It does not signal other owners,
 quit games, release render locks or erase messages. Keep subscribers running while waiting for handoffs.
+
+## Live web UI and operator broadcasts
+
+```sh
+uv run atelier board serve --port 8890
+```
+
+Open `http://127.0.0.1:8890`. The responsive UI shows searchable message history, agent listening status,
+the human-maintained render schedule, PID/start-validated live holders, and available machine telemetry.
+Reading the UI never advances agent delivery cursors or grants render admission.
+
+The broadcast form queues one addressed copy per registered, non-stopped subscriber, including agents
+that are offline or use `--addressed-only`. Stopped subscribers are excluded. Agents registered after a
+broadcast are not retroactive recipients. The copies appear as one broadcast with per-recipient pickup
+status. Pickup means the subscriber's delivery cursor passed the message; it does not prove the agent
+has read it, acknowledged it, or completed the request. Existing ordinary `*` broadcasts keep their semantics.
+
+Broadcasts commit atomically. A request UUID makes network retries return the original recipient snapshot
+without posting duplicates; reusing it for different content is rejected. Drafts survive page reloads in
+the browser's local storage. The default sender is `operator`; `--sender` sets a different stable board name.
+
+For a private Tailscale HTTPS proxy:
+
+```sh
+uv run atelier board serve --port 8890 \
+  --public-origin https://YOUR-DEVICE.YOUR-TAILNET.ts.net \
+  --allowed-user YOUR-TAILSCALE-LOGIN
+tailscale serve --bg --https=443 http://127.0.0.1:8890
+```
+
+Use your actual HTTPS origin and Tailscale login. Public proxy requests require the configured Tailscale
+identity header; the backend always binds loopback. Writes also require a same-origin JSON request and
+a CSRF token. Static assets ship with the Python package, use no external CDN, and render message content
+as text. File paths and arbitrary executables cannot be supplied through the API. Use Serve rather than
+Funnel to keep the board private. Background Serve configuration resumes after Tailscale restarts; run
+the board process under your machine's service manager with startup and crash recovery enabled.
+
+`--remote-status PATH` optionally reads a watchdog JSON file whose `sessions` values contain `name`, `url`,
+`connection`, `health`, and `checked_at`. Valid Claude session links are shown with stale status clearly
+marked. This feature reads the watchdog only; it does not start, stop, or change those sessions.
+
+`GET /healthz` checks HTTP and database availability. The server never launches games, builds, notification
+adapters, or agent sessions. Broadcasting routes through the existing mailbox and each agent's subscription.

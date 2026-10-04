@@ -9,6 +9,7 @@ dependencies = [
   "pillow>=11.0",
   "httpx>=0.27",
   "fonttools>=4.66",
+  "websockets>=15.0",
 ]
 
 [project.scripts]

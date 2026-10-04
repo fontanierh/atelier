@@ -13,6 +13,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -75,6 +76,42 @@ def post(sender, body, recipient='*', topic='info', reply_to=None, dedup=None):
         if result.rowcount:
             return result.lastrowid
         return db.execute('SELECT id FROM messages WHERE dedup=?', (dedup,)).fetchone()['id']
+
+
+def broadcast(sender, body, request_id, topic='request'):
+    """Atomically address every non-stopped subscriber, including addressed-only listeners.
+
+    A retry of the same request returns the original recipient snapshot. The dedup
+    prefix lets the web UI display the addressed copies as one broadcast without
+    changing existing delivery cursors or the ordinary '*' broadcast semantics.
+    """
+    agent_name(sender)
+    if not isinstance(body, str) or not body.strip() or len(body) > 8000 or topic not in TOPICS:
+        raise ValueError('use a known topic and a nonempty message of at most 8000 characters')
+    try:
+        key = str(uuid.UUID(request_id))
+    except (ValueError, AttributeError, TypeError):
+        raise ValueError('broadcast request_id must be a UUID') from None
+    prefix = f'web-broadcast:{key}:'
+    with database() as db:
+        db.execute('BEGIN IMMEDIATE')
+        existing = [dict(row) for row in db.execute(
+            'SELECT * FROM messages WHERE dedup LIKE ? ORDER BY id', (prefix+'%',))]
+        if existing:
+            if any(row['sender'] != sender or row['body'] != body or row['topic'] != topic for row in existing):
+                raise ValueError('this broadcast request_id already belongs to a different message')
+            return existing
+        agents = [row['agent'] for row in db.execute(
+            'SELECT agent FROM subscribers WHERE stop=0 AND agent!=? ORDER BY agent', (sender,))]
+        if not agents:
+            raise ValueError('No agents are currently registered for broadcasts.')
+        created = time.time()
+        for agent in agents:
+            agent_name(agent)
+            db.execute('''INSERT INTO messages (created, sender, recipient, topic, body, dedup)
+                VALUES (?, ?, ?, ?, ?, ?)''', (created, sender, agent, topic, body, prefix+agent))
+        return [dict(row) for row in db.execute(
+            'SELECT * FROM messages WHERE dedup LIKE ? ORDER BY id', (prefix+'%',))]
 
 
 def messages(after=0, agent=None, limit=100, addressed_only=False):
@@ -314,6 +351,17 @@ def configure(sub):
     watch_options(p)
     p = actions.add_parser('unsubscribe'); p.add_argument('--agent', required=True)
     actions.add_parser('status')
+    p = actions.add_parser('serve', help='live board UI and durable broadcasts on loopback')
+    p.add_argument('--port', type=int, default=8890)
+    p.add_argument('--public-origin', action='append', default=[], help='exact HTTPS origin of your private proxy')
+    p.add_argument('--allowed-user', help='require this Tailscale user identity through the proxy')
+    p.add_argument('--sender', default='operator', help='stable board sender name for UI broadcasts')
+    p.add_argument('--remote-status', type=Path, help='optional remote-session watchdog status JSON')
+    p = actions.add_parser('notify-codex', help='steer an existing active Codex session from a board subscription')
+    p.add_argument('--thread', required=True, help='existing Codex thread UUID')
+    p.add_argument('--codex', default='codex', help='Codex executable used to locate the running daemon')
+    p.add_argument('--socket', type=Path, help='explicit existing app-server Unix socket')
+    p.add_argument('message')
 
 
 def watch_options(parser):
@@ -358,6 +406,17 @@ def main(args):
                     item = dict(row)
                     item['responsive'] = bool(item['pid'] and time.time()-(item['heartbeat'] or 0) < 90)
                     print(json.dumps(item))
+        elif args.action == 'serve':
+            from . import board_web
+            return board_web.serve(args)
+        elif args.action == 'notify-codex':
+            from . import board_codex
+            try:
+                with board_codex.Client(args.codex, args.socket) as client:
+                    print(board_codex.notify(client, args.thread, args.message))
+            except (OSError, board_codex.TransportError) as error:
+                print(str(error), file=sys.stderr)
+                return 1
     except (ValueError, sqlite3.Error) as error:
         print(str(error), file=sys.stderr)
         return 1
