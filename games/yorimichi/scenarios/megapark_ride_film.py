@@ -71,6 +71,7 @@ CLOSE = float(globals().get('CLOSE', 4.3))       # m across at the rider: Cairo 
 MIN_FOV = 8.
 RECALL = bool(globals().get('RECALL', True))     # the road bail ends on foot with the board recalled to the hand
 PHYSICAL = bool(globals().get('PHYSICAL', True))
+BACKEND = globals().get('BACKEND', 'Ride')         # Native: the same shots on the original, to compare
 OUT = globals().get('OUTDIR') or os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'),
                                               'yorimichi/megapark/ride-film', TAKE)
 os.makedirs(OUT, exist_ok=True)
@@ -1302,10 +1303,10 @@ def step_shot(s, dt):
         if not s.get('foot'): live.skate_input()
         camera(s, c, dt)
         if s['pt'] >= s.get('settle', 1.0):
-            if not s.get('foot') and c.backend != 'Ride':
+            if not s.get('foot') and c.backend != BACKEND:
                 if s['placed'] < 3:
-                    say('not Ride yet:', c.text.split(' | ')[0]); s['ph'] = 'place'; return
-                s['error'] = 'Ride did not mount: ' + c.text.split(' | ')[0]; return 'done'
+                    say(f'not {BACKEND} yet:', c.text.split(' | ')[0]); s['ph'] = 'place'; return
+                s['error'] = f'{BACKEND} did not mount: ' + c.text.split(' | ')[0]; return 'done'
             st['backend'] = c.backend or st['backend']
             if s.get('foot'):
                 s['ph'] = 'ride'; s['t'] = 0.
@@ -1496,7 +1497,7 @@ def run(dt):
         except Exception: live.stop('ride_film')
 
 
-unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend Ride'); st['backend'] = 'asked'   # at each mount
+unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend ' + BACKEND); st['backend'] = 'asked'   # at each mount
 unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical %d' % PHYSICAL)
 L.film_hud(True); L.fixed_step(60); L.audio_log('start')
 st['probe'] = {'f': 0} if probe_moves() else None
