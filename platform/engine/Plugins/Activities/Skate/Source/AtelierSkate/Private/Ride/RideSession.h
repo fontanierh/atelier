@@ -198,9 +198,11 @@ private:
     static constexpr int32 ClimbTicks = 8;
     FVector ClimbUp[ClimbTicks];
     int32 ClimbNum = 0, ClimbAt = 0;
-    // Landing prediction: a ballistic path traced a few segments per tick.
+    // Landing prediction: a ballistic path traced a few segments per tick, to the first face the board can land on
+    // (LandTime) or the first it cannot (PredictEnd, the trace stops there); either one overtaken by the flight starts
+    // the trace again from where the board is.
     FVector PredictFrom = FVector::ZeroVector, PredictVelocity = FVector::ZeroVector;
-    float PredictTime = 0, LandTime = -1, PredictStart = 0;
+    float PredictTime = 0, LandTime = -1, PredictStart = 0, PredictEnd = -1;
     FVector LandNormal = FVector::UpVector;
     // The flip in progress (the board's own rotation in the air).
     atelier::ride::Flick Trick_ = atelier::ride::Flick::None;
@@ -237,6 +239,7 @@ private:
     FVector SafeP = FVector::ZeroVector;
     FQuat SafeQ = FQuat::Identity;
     bool bSafeDeck = false;
+    bool bShownOff = false;   // the shown deck was off the riding deck at the last Publish (logged once per stretch)
     float TickSlide = 0, StuckTime = 0, AirLaunchVz = 0, AirGlance = 0;
     FVector AirStartP = FVector::ZeroVector;
     // Manual.
@@ -345,6 +348,8 @@ private:
      *  session's own (the board stays). */
     enum class EBoardMove : uint8 { Clear, Corrected, Unresolved };
     EBoardMove MoveBoardPose(FVector& ToP, FQuat& ToQ, float Clearance, FHitResult& Wall) const;
+    /** Up beside a wall (a get-up): the board out of it along the ground, else turned along it and out. */
+    void LeaveWallsStanding();
     /** Out of the walls the box at (ToP, ToQ) overlaps: up to three whole-box pushes (on the frame's plane when bOnPlane),
      *  the result free of walls and its centre reached from From's without crossing anything. */
     bool LeaveWall(const FTransform& From, FVector& ToP, const FQuat& ToQ, float Clearance, bool bOnPlane, FHitResult& Wall) const;

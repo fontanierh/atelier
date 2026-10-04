@@ -40,6 +40,10 @@ namespace
     // farther, something placed the board. A board pushed out of a wall moves at most MaxPush (cm); inside one it
     // cannot leave for StuckLimit (s), the rider falls.
     constexpr float SafeReach = 100.f, MaxPush = 45.f, StuckLimit = .3f;
+    // The shown clip's own motion of the deck (ShownClip: its pop, flip and tilt) the box follows, within ShownReach (cm)
+    // of the session's deck pivot. Farther, the deck bone is not the riding deck (a mount still blending in from the
+    // board's last place, the board in a hand) and the box keeps the session's deck.
+    constexpr float ShownReach = 45.f;
     // In the air with no landing in sight, the board turns back toward upright at this rate (degrees/s).
     constexpr float RightRate = 180.f;
     // The air's safety deadline (a guard, not native behaviour: native bounds only how far a prediction looks): an air
@@ -1040,7 +1044,7 @@ void FRideSession::TakeOff(float Pop)
 
 void FRideSession::ResetPrediction(const FVector& From)
 {
-    PredictFrom = From; PredictVelocity = V; PredictTime = 0; PredictStart = AirTime; LandTime = -1; LandNormal = FVector::UpVector;
+    PredictFrom = From; PredictVelocity = V; PredictTime = 0; PredictStart = AirTime; LandTime = -1; PredictEnd = -1; LandNormal = FVector::UpVector;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1048,8 +1052,15 @@ void FRideSession::ResetPrediction(const FVector& From)
 
 void FRideSession::AdvancePrediction(int32 Segments)
 {
-    // Trace the ballistic path of the deck's centre a tenth of a second at a time, up to 3 s ahead.
-    if (LandTime >= 0 || PredictTime > 3.f) return;
+    // A prediction the flight has overtaken (the board flew past its landing, or past the face that ended the trace:
+    // it glanced off it or missed it) starts again from where the board is.
+    const float Flown = AirTime - PredictStart;
+    if ((LandTime >= 0 && Flown > LandTime + 2.f * Tick60) || (PredictEnd >= 0 && Flown > PredictEnd + 2.f * Tick60))
+        ResetPrediction(P + Q.GetUpVector() * 12.f);
+    // Trace the ballistic path of the deck's centre a tenth of a second at a time, up to 3 s ahead, to the first face
+    // the board can land on (IsLandable). A face it cannot land on (a wall, the underside of a deck) ends the trace
+    // without a landing: the deck never levels to it (leveled to a wall it slid down, it met the floor below on edge).
+    if (LandTime >= 0 || PredictEnd >= 0 || PredictTime > 3.f) return;
     for (int32 I = 0; I < Segments; ++I)
     {
         const float Dt = .1f;
@@ -1057,7 +1068,8 @@ void FRideSession::AdvancePrediction(int32 Segments)
         FHitResult Hit;
         if (Sweep(From, To, 10.f, Hit) && !Hit.bStartPenetrating)
         {
-            LandTime = PredictTime + Dt * Hit.Time; LandNormal = Hit.Normal;
+            PredictEnd = PredictTime + Dt * Hit.Time;
+            if (IsLandable(Hit)) { LandTime = PredictEnd; LandNormal = Hit.Normal; }
             return;
         }
         PredictFrom = To; PredictVelocity.Z -= Gravity() * Dt; PredictTime += Dt;
@@ -1395,7 +1407,13 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
         Yaw >= YawLimit && !bSteppingOff ? TEXT("landed sideways") : bMidFlip ? TEXT("landed on the board mid-flip") :
         (Grab != ERideGrab::None && GrabWeight > .6f && AirTime > .25f) ? TEXT("landed holding the grab") : nullptr;
     P = Point;
-    if (Why) { StartBail(Why); return true; }
+    if (Why)
+    {
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride landing refused (%s): face %.2f,%.2f,%.2f, deck up %.2f,%.2f,%.2f (tilt %.0f, yaw %.0f, impact %.0f); landing aimed at %.2f,%.2f,%.2f (%s)"),
+            Why, Normal.X, Normal.Y, Normal.Z, BoardUp.X, BoardUp.Y, BoardUp.Z, Tilt, Yaw, Impact, LandNormal.X, LandNormal.Y, LandNormal.Z, LandTime >= 0 ? TEXT("set") : TEXT("none"));
+        StartBail(Why);
+        return true;
+    }
     // Land: the normal part of the speed is absorbed; a sideways landing keeps cos(angle) of the speed along the board.
     // Coming down a face between 46 and 65 degrees the speed along it grows by up to 15%, as much as the travel runs
     // downhill (native's RestoreVelocity, KnownAirTrajectory.cpp), so a lip air landing low on the transition keeps
@@ -1730,8 +1748,34 @@ void FRideSession::GetUp(const FVector& GroundPoint, float Yaw)
     V = FVector::ZeroVector; Travel = 1; Sketchy = 0; Crouch = .25f; LandAge = -1;
     bSwitch = false; SwitchTime = -1; FakieTime = 0;    // up in the rider's own stance
     ResetWalls();
+    LeaveWallsStanding();
     Previous.P = Current.P = P; Previous.Q = Current.Q = Q; Previous.Deck = Current.Deck = DeckPose();
     SetMode(ERideState::GetUp);
+}
+
+void FRideSession::LeaveWallsStanding()
+{
+    // Up (or set down) beside a wall: the whole box, turned as the rider faces, out of it along the ground; else
+    // turned along the wall and out. Inside a wall, the ride would start stuck (an air that cannot move, a bail at a
+    // standstill, a run-out on foot).
+    const float Clearance = Tune.StepUp + BoxClearance;
+    const FVector Up = Q.GetUpVector();
+    FVector Extent, Push, Normal;
+    const FTransform Box = DeckBox(DeckWorld(P, Q), Clearance, Extent);
+    if (!WallOverlap(Box, Extent, Up, Push, Normal)) return;
+    FHitResult Wall;
+    FVector Out = P;
+    if (LeaveWall(Box, Out, Q, Clearance, true, Wall)) { UE_LOG(LogTemp, Display, TEXT("SKATE ride up beside a wall: the board %.0f cm out of it"), float(FVector::Dist(Out, P))); P = Out; return; }
+    const FVector Along = FVector::CrossProduct(Up, FVector::VectorPlaneProject(Normal, Up).GetSafeNormal()).GetSafeNormal();
+    if (Along.IsNearlyZero()) return;
+    const FQuat Turned = Frame(Up, FVector::DotProduct(Along, Q.GetForwardVector()) < 0 ? -Along : Along);
+    const FTransform TurnedBox = DeckBox(DeckWorld(P, Turned), Clearance, Extent);
+    Out = P;
+    if (!WallOverlap(TurnedBox, Extent, Up, Push, Normal) || LeaveWall(TurnedBox, Out, Turned, Clearance, true, Wall))
+    {
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride up beside a wall: the board turned along it, %.0f cm out"), float(FVector::Dist(Out, P)));
+        P = Out; Q = Turned;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1886,6 +1930,15 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     // session's pose it is the board shown, and the box the next ticks collide.
     ShownClip = Bones.IsValidIndex(DeckBone) ? Bones[DeckBone] * Board.Deck.Inverse() : FTransform::Identity;
     ShownClip.SetScale3D(FVector::OneVector);
+    const bool bRidingDeck = Mode != ERideState::Bail && Mode != ERideState::GetUp && ShownClip.GetLocation().SizeSquared() <= FMath::Square(ShownReach);
+    if (!bRidingDeck)
+    {
+        if (!bShownOff && Mode != ERideState::Bail && Mode != ERideState::GetUp)
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride box: the shown deck is %.0f cm off the session's (not the riding deck): the box keeps the session's deck"),
+                float(ShownClip.GetLocation().Size()));
+        ShownClip = FTransform::Identity;
+    }
+    bShownOff = !bRidingDeck;
 
     switch (Mode)
     {
