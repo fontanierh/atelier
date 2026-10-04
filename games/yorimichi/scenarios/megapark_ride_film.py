@@ -347,11 +347,15 @@ def apply_effect(s, c, e, inp):
     if k == 'spin':
         if e['until'] is not None: go = abs(a['spin']) < e['until']
         else:
-            tl = time_to_land(s, c)
-            if a['lip'] and a.get('dprev') is not None: done, r = a['dturn'], a['drate']     # the deck's own turn
-            else: done, r = (a['turned'], a['trate']) if a.get('yaw') is not None else (a['spin'], a['rate'])
-            r = abs(r)
-            go = abs(done) + min(r, 115.) * tl + max(0., r - 115.) / 7. < e['to']
+            # The turn so far, and what Ride's controller still turns by the landing should the stick go now. Once let
+            # go, a lip air comes down on the nearer of forward and fakie by itself (Ride's landing alignment, native's
+            # known air), so the stick goes back only for a turn more than SPIN_SLACK short.
+            if a['lip'] and a.get('dprev') is not None: done = a['dturn']     # the deck's own turn
+            else: done = a['turned'] if a.get('yaw') is not None else a['spin']
+            short = e['to'] - abs(done) - e['dir'] * spin_left(s['spin_ctl'], time_to_land(s, c))
+            go = short > (SPIN_SLACK if a['lip'] and e.get('let_go') else 0.)
+            if go: e['pushed'] = True; e['let_go'] = False
+            elif e.get('pushed'): e['let_go'] = True
         if go: inp['left'] = (e['dir'] * e['mag'], inp['left'][1])
         return True
     if k == 'grab':
@@ -360,7 +364,18 @@ def apply_effect(s, c, e, inp):
     return False
 
 
-SPIN_SCALE = 1.6           # the game's AirSpinScale (Config/DefaultGame.ini): Ride multiplies its full spin rates by it
+SPIN_SCALE = 1.6           # the game's AirSpinScale (Config/DefaultGame.ini): the spin preference
+TICK = 1. / 60.            # Ride's step
+# Ride's spin controller (RideSession.cpp: ReadSpinStick and TickSpin, native's PhysicalBodySpin in its normal mode), by
+# the time in the air (s): the rate at full stick (rad/s, before the preference) and the most it changes in a tick
+# (rad/s); and the snap's weight by the age of the stick's push (s, negative before the take-off), over the last
+# SPIN_TICKS ticks.
+SPIN_PROP = ((0., 3.15), (.052, 6.364), (.127, 7.779), (.244, 7.939), (.368, 7.714), (.564, 6.975), (.906, 5.689),
+             (2., 3.664))
+SPIN_DELTA = ((0., .993), (.116, .761), (.256, .507), (.394, .35), (.533, .225), (.678, .171), (.878, .157), (1., .154))
+SPIN_SNAP = ((-.497, 0.), (-.375, .05), (-.254, 1.), (0., 1.), (.135, 1.), (.228, .629), (.337, .386), (.5, .286))
+SPIN_TICKS = 30
+SPIN_SLACK = 45.           # degrees short of its spin a lip air's stick goes back for, once let go
 
 
 def board_yaw(c):
@@ -369,16 +384,105 @@ def board_yaw(c):
     except (KeyError, TypeError, ValueError): return None
 
 
+def curve(pts, x):
+    """Ride's Curve: piecewise linear through `pts`, flat beyond its ends."""
+    if x <= pts[0][0]: return pts[0][1]
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        if x <= x1: return y0 + (y1 - y0) * (x - x0) / max(1e-4, x1 - x0)
+    return pts[-1][1]
+
+
+def spin_stick(left):
+    """The stick's x as the spin reads it (native's ConditionStick): its length less a quarter over three quarters (at
+    most 1) along its direction, so a stick within a quarter of the centre spins nothing, a half-pushed one a third."""
+    n = math.hypot(left[0], left[1])
+    return 0. if n < .001 else left[0] * max(0., min(1., (n - .25) / .75)) / n
+
+
+def spin_ctl():
+    """The spin controller's state as a ride starts (Ride clears it on every mount)."""
+    return {'in': 0., 'smooth': 0., 'filt': 0., 'clock': 0., 'peak': 0., 'hist': [0.] * SPIN_TICKS, 'at': 0,
+            'rate': 0., 'acc': 0., 'tick': None}
+
+
+def spin_tick(k, x, air):
+    """One Ride tick of the controller `k` with the conditioned stick `x`; returns the rate (deg/s, the stick's way).
+    Every tick keeps the stick's push (its change x1.5 while it moves outward); on the ground the air's clock waits and
+    the stick is smoothed. In the air the rate follows the stick x SPIN_PROP x the preference, weighed by the snap (the
+    sharpest push from SPIN_TICKS before the take-off on, by its age: .4 to 1), and changes by at most SPIN_DELTA x the
+    preference a tick (.2 x it back against the turn); a released stick fades out, 4% a tick. Two parts need what
+    the film cannot see and are left out (Ride's own spin=, spin_sync, has them): the take-off carries a little of the
+    ground's turn, and a lip air turns to the nearer of forward and fakie by its landing once the stick is let go."""
+    ch = 1.5 * (x - k['in']); k['in'] = x
+    k['filt'] = max(-1., min(1., ch if ch * x > .1 else 0.))
+    k['hist'][k['at']] = k['filt']; k['at'] = (k['at'] + 1) % SPIN_TICKS
+    if not air:
+        k['clock'] = 0.; k['smooth'] = .8 * k['smooth'] + .2 * x; k['rate'] = 0.
+        return 0.
+    if k['clock'] == 0.:                     # the take-off: the snap so far
+        k['peak'] = 0.
+        for i in range(1, SPIN_TICKS):
+            w = curve(SPIN_SNAP, -i * TICK) * k['hist'][(k['at'] - i) % SPIN_TICKS]
+            if abs(w) > abs(k['peak']): k['peak'] = w
+    accel = curve(SPIN_DELTA, k['clock']) * SPIN_SCALE
+    snap = curve(SPIN_SNAP, k['clock']) * k['filt']
+    if abs(snap) > abs(k['peak']): k['peak'] = snap
+    k['clock'] += TICK
+    if abs(k['in']) < 1.5e-5: k['smooth'] *= .96; k['in'] = k['smooth']
+    else: k['smooth'] = .8 * k['smooth'] + .2 * k['in']
+    prop = curve(SPIN_PROP, k['clock']) * SPIN_SCALE * k['in']
+    if prop * k['peak'] < 0.: k['peak'] = 0.
+    target = (abs(k['peak']) * .6 + .4) * prop          # rad/s, the stick's way (native turns against it)
+    old = math.radians(k['rate'])
+    lim = min(.2 * SPIN_SCALE, accel)
+    lo, hi = (-accel, lim) if old < 0. else (-lim, accel)
+    k['rate'] = math.degrees(old + max(lo, min(hi, target - old)))
+    return k['rate']
+
+
+def spin_left(k, tl):
+    """The turn (degrees, the stick's way) Ride's controller `k` still makes in `tl` s should the stick go now."""
+    k = dict(k, hist=list(k['hist'])); left = 0.
+    for _ in range(int(round(max(0., tl) / TICK))):
+        left += spin_tick(k, 0., True) * TICK
+    return left
+
+
+def spin_sync(s, c):
+    """Before the frame's input, in the air, when the state has them (Ride's spin=, the turn since the take-off, and
+    tick=): the air's spin, and a tick on the controller's rate."""
+    k = s.setdefault('spin_ctl', spin_ctl()); a = s['air'] if c.mode == 2 else None
+    try: total, tick = float(c.d['spin']), int(c.d['tick'])
+    except (KeyError, TypeError, ValueError):
+        k['tick'] = None
+        return
+    # The last frame's stick, stepped once for every tick Ride took with it (Ride's own phase, not an accumulator's).
+    pending = k.pop('pending', None)
+    if k['tick'] is not None and pending is not None:
+        x, was_air = pending
+        for _ in range(max(0, tick - k['tick'])): spin_tick(k, x, was_air)
+    if a is not None:
+        if k['tick'] is not None and tick == k['tick'] + 1 and a.get('ride_spin') is not None:
+            k['rate'] = (total - a['ride_spin']) / TICK
+        a['rate'] = k['rate']
+        a['spin'] = a['ride_spin'] = total
+    k['tick'] = tick
+
+
 def spin_model(s, c, inp, dt):
-    """Ride's air spin (TickAir): the rate eases at 7/s toward the stick's full rate, or toward the current rate capped
-    at 115 deg/s when the stick is centred; the total is what Ride scores as the spin."""
-    a = s['air']
-    if not a: return
-    x = inp['left'][0]
-    full = (470. if a['lip'] else 260.) * SPIN_SCALE
-    target = x * full if abs(x) > .25 else max(-115., min(115., a['rate']))
-    a['rate'] += (target - a['rate']) * (1. - math.exp(-7. * dt))
-    a['spin'] += a['rate'] * dt
+    """Ride's spin controller stepped through the frame with its stick (spin_tick, a tick each 60th of a second), on
+    the ground too, where the stick's push before a take-off weighs the air's rate; in the air its rate turns the
+    air's `spin` (Ride's own once spin_sync reads it)."""
+    k = s.setdefault('spin_ctl', spin_ctl()); a = s['air'] if c.mode == 2 else None
+    x = spin_stick(inp['left'])
+    if k['tick'] is not None:
+        # On Ride, spin_sync steps this stick once the state says how many ticks took it.
+        k['pending'] = (x, a is not None)
+        return
+    k['acc'] += dt / TICK; n = int(k['acc'] + 1e-6); k['acc'] -= n
+    for _ in range(n):
+        r = spin_tick(k, x, a is not None)
+        if a is not None: a['rate'] = r; a['spin'] += r * TICK
 
 
 def plan_air(s, c, a):
@@ -939,6 +1043,7 @@ def place(s):
 def inputs(s, c, dt):
     """This frame's skate. input: steering and speed holds on the ground, then the active effects."""
     inp = {'left': (0., 0.), 'right': (0., 0.), 'push': False, 'brake': False, 'slide': False, 'grab_left': False, 'grab_right': False}
+    spin_sync(s, c)
     busy = any(e['kind'] in ('flick', 'hold') for e in s['effects'])
     pipe = s.get('pipe')
     if c.mode == 1 and s['steer_on'] and pipe:
@@ -1252,10 +1357,10 @@ def end_shot():
 
 
 def air_info(a):
-    """An air for done.json: when, how long and high, the spin (simulated, the state's yaw, the deck's turn), where
-    it left and came down (face, point, slope of the board there, stance, speed along the travel and the speed on the
-    flat before and after), what it landed in (1 rolling, 3 a grind, 4 a bail), a bail within 1.5 s of the landing, and
-    whether it came back into the transition (landed rolling on a slope below its lip)."""
+    """An air for done.json: when, how long and high, the spin (Ride's own, else simulated; the state's yaw; the deck's
+    turn), where it left and came down (face, point, slope of the board there, stance, speed along the travel and the
+    speed on the flat before and after), what it landed in (1 rolling, 3 a grind, 4 a bail), a bail within 1.5 s of the
+    landing, and whether it came back into the transition (landed rolling on a slope below its lip)."""
     on = a.get('on') or {}
     return {'t': round(a['t0'], 2), 'secs': round(a['t1'] - a['t0'], 2), 'h': a['h'], 'lip': a['lip'], 'trick': a.get('trick'),
             'plan': a.get('plan'), 'spin': a['spin'], 'turned': a.get('turned'), 'deck_turn': a.get('dturn') if a.get('up0') else None,
