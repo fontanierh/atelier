@@ -109,6 +109,8 @@ The reuse command checks source fingerprints, outputs, engine version and compil
 stamps. On APFS it uses independent copy-on-write clones. It excludes mutable `Intermediate`, logs and capture
 evidence. Code changes still rebuild the affected module or assets. Agents share the machine's render board and
 lock, with one game or compile at a time; [AGENTS.md](AGENTS.md) describes the board and resource logs.
+The [agent messaging board](docs/AGENT_BOARD.md) delivers addressed handoffs and lack-of-progress notices
+to background subscribers across worktrees (`atelier board`).
 
 ## Start your own game
 

@@ -1,7 +1,7 @@
 """Move set checks: the player's merged move set (UBotwMoveSet; Link, or Cairo with it) driven through the live bridge as
 a player would drive it.
 
-    atelier play yorimichi -- -nobotw -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=250 -RenderOffscreen -ForceRes
+    atelier play yorimichi -- -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=250 -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/botw_moves.py
     ... wait for build/yorimichi/botw/moves/<take>/done.json
 

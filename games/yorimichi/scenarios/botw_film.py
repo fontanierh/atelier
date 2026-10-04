@@ -1,6 +1,6 @@
 """BOTW demo film: the imported BOTW characters on the island, then a Bokoblin on the skateboard in the Mega Park.
 
-    atelier play yorimichi -- -botw -rider=Bokoblin -nofox -RenderOffscreen -ForceRes       (1920x1080)
+    atelier play yorimichi -- -rider=Bokoblin -nofox -RenderOffscreen -ForceRes       (1920x1080)
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/botw_film.py
     Link's tricks: -rider=Link, and "TAKE='...'; FLIP_TRICK='varial_kickflip'; POOL_TRICK='flair'"
     ... wait for build/yorimichi/botw/film/<take>/done.json, then:

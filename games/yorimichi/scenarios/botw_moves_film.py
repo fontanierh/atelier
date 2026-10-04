@@ -1,7 +1,7 @@
 """Move set review film: every move of the player's merged move set (UBotwMoveSet: Link's moves with Cairo's double jump;
 Link, or Cairo with it), shot by shot, close up.
 
-    atelier play yorimichi -- -nobotw -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=200 -RenderOffscreen -ForceRes
+    atelier play yorimichi -- -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=200 -RenderOffscreen -ForceRes
     atelier live py "TAKE='link1'; WHO='Link'" && atelier live py - < games/yorimichi/scenarios/botw_moves_film.py
     ... wait for build/yorimichi/botw/moves_film/<take>/done.json, then:
     python games/yorimichi/scenarios/botw_moves_film_cut.py build/yorimichi/botw/moves_film/review.mp4 <take>[:<sections>] ...
