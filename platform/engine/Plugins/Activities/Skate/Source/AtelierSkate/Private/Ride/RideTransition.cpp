@@ -92,6 +92,9 @@ namespace
     constexpr float AnchorGain = 5.f, AnchorSpeed = 350.f;
     // A kicked or run-out board's launch is its motion over this long (s) at least.
     constexpr float KickWindow = .05f;
+    // A board the clip rolls away or kicks off is swept from frame to frame (FitDeck); a clip board farther than this
+    // from its last frame (cm at board scale 1) was placed, not moved: it is swept only when its place is not free.
+    constexpr float ClipBoardJump = 60.f;
     // A lying board can be stepped onto when the character is this close to it (cm), slower than RunMount, and the board
     // lies wheels down (its up this close to vertical) and still.
     constexpr float StepOnReach = 130.f, StepOnUp = .85f, StepOnBlend = .35f;
@@ -326,6 +329,17 @@ namespace
         }
         To = From;
         return EDeckFit::Unresolved;
+    }
+
+    /** Whether a loose deck's box at Deck is free, its centre reached from Reach without crossing anything. */
+    bool DeckFreeFrom(const UWorld& World, const FTransform& Deck, const FVector& Reach, const FCollisionQueryParams& Params)
+    {
+        FVector Extent;
+        const FTransform Box = DeckFitBox(Deck, Extent);
+        FHitResult Between;
+        return !World.OverlapBlockingTestByChannel(Box.GetLocation(), Box.GetRotation(), ECC_WorldDynamic, FCollisionShape::MakeBox(Extent), Params,
+                FlightResponses()) &&
+            !World.LineTraceSingleByChannel(Between, Reach, Box.GetLocation(), ECC_WorldDynamic, Params, FlightResponses());
     }
 
     /** A clip's local translation in the world: the clips are authored goofy, a mirrored clip runs along -Y. */
@@ -842,6 +856,8 @@ bool USkateComponent::BeginRecover()
     // The recovery whose first frame lies most like the fallen body: its head-from-hips way turned onto the body's,
     // then the hands, feet and the way the front faces compared about the hips (scaled to the character).
     FRideTransition& T = Transit();
+    const bool bAway = T.bRecoverAway;
+    T.bRecoverAway = false;
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
     if (!Ride || !Mesh) return false;
     struct FPart { const TCHAR* Own; const TCHAR* Clip; };
@@ -886,10 +902,10 @@ bool USkateComponent::BeginRecover()
     StandUpOffBoard(BestYaw);
     StartClip(Best, ERideFoot::Recover, false, BestYaw, 0.f);
     // No travel: the clip's trajectory is held where its pelvis lies on the body's (MatchPelvis), and the capsule
-    // moves under it.
+    // moves under it; a body away through a wall gets up over the capsule, unmatched.
     T.SpeedStart = T.SpeedEnd = 0.f;
     T.bAnchored = true; T.Anchor = OffBoardGround();
-    T.bMatchPelvis = true; T.OffsetTime = FMath::Max(.3f, T.ClipLength * .8f);
+    T.bMatchPelvis = !bAway; T.OffsetTime = FMath::Max(.3f, T.ClipLength * .8f);
     T.bEndsStanding = true;
     T.bGetUpOnFoot = false;
     if (T.Board == ERideBoard::Ride) { T.Board = ERideBoard::World; T.BoardTime = 0.f; }
@@ -1006,6 +1022,24 @@ void USkateComponent::LaunchBoard()
     }
     if (!bKick && Velocity.Size() < FlightStop) { SettleBoard(); return; }
     const float Scale = BoardScale();
+    // A sphere starting inside something would be pushed out to whichever side is nearer (through a thin wall), and one
+    // behind a face from the deck over it flies on beyond it: the board settles where it is instead.
+    const FVector Start = Leaving.GetLocation() - Leaving.GetRotation().GetUpVector() * (DeckPivot - FlightRadius) * Scale + FVector(0, 0, 1.f);
+    {
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(RideBoardLaunch), false, Rider);
+        FVector Extent;
+        FHitResult Between;
+        const FVector Middle = DeckFitBox(Leaving, Extent).GetLocation();
+        if (GetWorld()->OverlapBlockingTestByChannel(Start, FQuat::Identity, ECC_WorldDynamic, FCollisionShape::MakeSphere(FMath::Max(.5f, (FlightRadius - 1.f) * Scale)),
+                Params, FlightResponses()) ||
+            GetWorld()->LineTraceSingleByChannel(Between, Middle, Start, ECC_WorldDynamic, Params, FlightResponses()))
+        {
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride board %s at %.0f cm/s: its flight would start inside something, it settles"),
+                bKick ? TEXT("kicked away") : TEXT("rolls on"), Velocity.Size());
+            SettleBoard();
+            return;
+        }
+    }
     USphereComponent* Body = NewObject<USphereComponent>(Rider, NAME_None, RF_Transient);
     Body->InitSphereRadius(FlightRadius * Scale);
     Body->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -1015,7 +1049,7 @@ void USkateComponent::LaunchBoard()
     Body->SetCanEverAffectNavigation(false);
     Body->SetHiddenInGame(true);
     // The sphere's bottom where the wheels touch (a little above, so it starts clear of the ground).
-    Body->SetWorldLocation(Leaving.GetLocation() - Leaving.GetRotation().GetUpVector() * (DeckPivot - FlightRadius) * Scale + FVector(0, 0, 1.f));
+    Body->SetWorldLocation(Start);
     Body->RegisterComponent();
     UProjectileMovementComponent* Flight = NewObject<UProjectileMovementComponent>(Rider, NAME_None, RF_Transient);
     Flight->bAutoRegisterUpdatedComponent = false;
@@ -1125,7 +1159,13 @@ void USkateComponent::SettleBoard()
     // From no higher than the room over the board: one under a ledge or a bench settles under it, not on top.
     FVector Start = From.GetLocation() + FVector(0, 0, 30.f * Scale);
     if (GetWorld()->LineTraceSingleByChannel(Hit, From.GetLocation(), Start, ECC_WorldStatic, Params)) Start = Hit.Location - FVector(0, 0, 1.f);
-    if (!GetWorld()->LineTraceSingleByChannel(Hit, Start, Start - FVector(0, 0, 300.f), ECC_WorldStatic, Params)) return;
+    if (!GetWorld()->LineTraceSingleByChannel(Hit, Start, Start - FVector(0, 0, 300.f), ECC_WorldStatic, Params))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SKATE ride board settles nowhere: no ground within 3 m under (%.0f, %.0f, %.0f)"), Start.X, Start.Y, Start.Z);
+        return;
+    }
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride board settles at (%.0f, %.0f, %.0f) on %s"), Hit.ImpactPoint.X, Hit.ImpactPoint.Y, Hit.ImpactPoint.Z,
+        Hit.GetComponent() ? *Hit.GetComponent()->GetName() : TEXT("?"));
     const FVector Normal = Hit.ImpactNormal;
     const bool bUpsideDown = From.GetRotation().GetUpVector().Z < 0.f;
     FVector Nose = FVector::VectorPlaneProject(From.GetRotation().GetForwardVector(), Normal);
@@ -1232,7 +1272,35 @@ void USkateComponent::StepRideClip(float Dt)
             const FVector Tracked = Ride->Root.GetLocation() + ClipToWorld(ClipBone(T.Clip, DeckBone, T.ClipTime), T.bMirror, T.TrajYaw);
             T.DeckDrift = FVector(Posed.X - Tracked.X, Posed.Y - Tracked.Y, 0.);
         }
-        PublishOffBoardPose(T.Lift, bClipBoard);
+        // A board the clip rolls away (a run-out) or kicks off goes only where it is free to: its box, swept from where
+        // it was shown to where the clip has it, stops at what it meets (FitDeck), so a run-out by a wall never carries
+        // it through and its flight starts on this side. From inside something it takes the clip's pose once that is
+        // free and reached from the capsule. A clip board that jumps from its own last frame (or from the shown one, on
+        // a clip's first frame) was placed: it stands as the clip has it when it is free there and reached from the
+        // capsule, else it is swept as a moved one is (it never lands inside something). One held back by a wall is
+        // swept on from where it is held.
+        const bool bFitBoard = bClipBoard && BoardRoot && Rider && (T.Foot == ERideFoot::RunOut || T.bKickOut) && T.Shown > 0.f;
+        const FTransform Was = bFitBoard ? BoardRoot->GetComponentTransform() : FTransform::Identity;
+        const bool bClipLast = bFitBoard && T.ClipDeckClip == T.Clip;
+        const FTransform ClipLast = T.ClipDeckLast;
+        T.ClipDeckClip = nullptr;
+        if (PublishOffBoardPose(T.Lift, bClipBoard) && bFitBoard)
+        {
+            const FTransform ClipDeck = BoardRoot->GetComponentTransform();
+            T.ClipDeckLast = ClipDeck; T.ClipDeckClip = T.Clip;
+            const FVector From = (bClipLast ? ClipLast : Was).GetLocation();
+            const bool bJump = FVector::DistSquared(From, ClipDeck.GetLocation()) >= FMath::Square(ClipBoardJump * float(ClipDeck.GetScale3D().X));
+            const FCollisionQueryParams Params(SCENE_QUERY_STAT(RideClipBoard), false, Rider);
+            const FVector Reach = Rider->GetActorLocation();
+            if (!bJump || !DeckFreeFrom(*GetWorld(), ClipDeck, Reach, Params))
+            {
+                FTransform To = ClipDeck;
+                FVector Normal;
+                const EDeckFit Fit = FitDeck(*GetWorld(), Was, To, Params, Normal);
+                if (Fit == EDeckFit::Corrected || (Fit == EDeckFit::Unresolved && (bJump || !DeckFreeFrom(*GetWorld(), ClipDeck, Reach, Params))))
+                    PlaceBoardParts(To);
+            }
+        }
     };
     Show(Dt);
     // From the character's own pose (or a fallen body): the clip's pelvis starts where the character's is.
@@ -1475,7 +1543,7 @@ bool USkateComponent::StartClip(UAnimSequence* Clip, ERideFoot Foot, bool bMirro
 {
     if (!Clip || Length(Clip) < .05f) return false;
     FRideTransition& T = Transit();
-    T.Clip = Clip; T.ClipTime = 0.f; T.ClipLength = Length(Clip); T.ClipRate = 1.f; T.bClipStarted = false;
+    T.Clip = Clip; T.ClipTime = 0.f; T.ClipLength = Length(Clip); T.ClipRate = 1.f; T.bClipStarted = false; T.ClipDeckClip = nullptr;
     T.Foot = Foot; T.bMirror = bMirror; T.TrajYaw = Yaw; T.ClipBlendIn = BlendIn;
     T.ScaleStart = T.ScaleEnd = 1.f; T.TrajOffset = FVector::ZeroVector; T.OffsetTime = .35f;
     T.BoardContact = -1.f; T.Lift = 0.f; T.bCarryShown = false; T.bMatchPelvis = false; T.bEndsStanding = false;

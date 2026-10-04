@@ -2240,6 +2240,7 @@ def grind_rows(record):
 WALL_SINK = .5     # cm: no deck point further past a wall (a face steeper than 45 degrees: walls, ledges', rails' sides)
 FLOOR_SINK = 5.    # cm: nor past a floor (a deck lying upside down rests on its kicks, a little into it)
 LAND_GAP, LAND_HOLD = 1., .5   # cm, s: after a landing in a transition, no wheel further off the face for this long
+WHEEL_NAMES = ('front right', 'front left', 'back right', 'back left')   # WHEELS' order
 COST_MEAN = .15    # ms: the session's step per 60 Hz tick on Mega Park's road, mean
 COST_WORST = 1.    # ms: nor any tick's (any second's worst) in any of the rows, walls, airs and landings included
 GUARD_SHARE = .8   # the guard must have watched this share of each row's window (by the frames' own times)
@@ -2251,9 +2252,10 @@ AIR_WALL = (330, 420)
 # Where to look for each face from: (x, y, z) in cm with z about 3 m over the ground, and the Unreal yaw to look along.
 # Sunset Pier's walls: east_return's deck from behind it, then the flow table's sides (park-local metres, heading).
 PIER_WALLS = (((79., 26.), 180.), ((-13., -12.), 90.), ((-13., 20.), -90.))
-# Mega Park's plaza parapet (megapark_ride_film.RAIL0, 10 and 20 m from its south end) from 8 m out on the plaza,
-# then from the road.
-MEGA_LEDGES = (((-6581.6, -138431., 13000.), 157.4), ((-6873., -139277., 13000.), 164.9), ((-8058.4, -137815., 13000.), -22.6))
+# Mega Park's plaza parapet (megapark_ride_film.RAIL0, 10, 20 and 30 m from its south end), square to it from 3.5 m out
+# on the plaza: the plaza rises 3 cm a metre toward it, so a look from farther meets the plaza before the parapet (its
+# face is 65 cm tall).
+MEGA_LEDGES = (((-6992.9, -138247.4, 13000.), 159.2), ((-7304.2, -139147.8, 13000.), 166.8), ((-7487., -140075.6, 13000.), 175.6))
 # JapanWorld: House_A's and House_B's fronts from the road, through their lots' gates (world.json houses.lots).
 JAPAN_WALLS = (((-20238., 9558., 1160.), 73.6), ((-14865., 7801., 1290.), -106.3))
 # U23: on the seven terrace (park-local metres), riding east toward its south stair rail (y 25.5, 55 cm over the deck
@@ -2278,7 +2280,8 @@ COLLIDE_ROWS = (tuple(f'collide_wall_pier_{v // 100}' for v in SPEEDS) + tuple(f
 # edge). Walls (faces steeper than 45 degrees) and floors are kept apart. Independently of the points, the deck's
 # bounds (1.5 cm inside them) are swept as a box from the last frame's pose to this one's, turned in four steps: a
 # face steeper than 45 degrees (or a ceiling) met on the way, other than in a grind, is the deck going into it by what
-# was left of the move. A frame that raises an error records it, and the row fails.
+# was left of the move. A deck hidden in a frame is not swept or crossed from it (a placement, the get-up's board).
+# A frame that raises an error records it, and the row fails.
 BOARD_GUARD = """
 import math
 _world = live.L.game_world()
@@ -2357,8 +2360,11 @@ def _guard(dt):
         swept = [0., '']
         if live.GUARD_PREV_XF[0] is not None and ' mode=3 ' not in ' ' + state.split(' | ')[0] + ' ':
             swept = list(_swept(live.GUARD_PREV_XF[0], xf))
-        live.GUARD_PREV[0] = pts
-        live.GUARD_PREV_XF[0] = xf
+        # A deck hidden this frame (dissolved out, to come back in elsewhere: the get-up's board) is placed, not moved:
+        # the next frame is not swept or crossed from it.
+        hidden = ' vis=0 ' in ' ' + state.split(' | ')[0] + ' '
+        live.GUARD_PREV[0] = None if hidden else pts
+        live.GUARD_PREV_XF[0] = None if hidden else xf
         live.GUARD.append([state, round(worst['wall'][0], 2), worst['wall'][1], round(worst['floor'][0], 2),
                            worst['floor'][1], inside, round(swept[0], 2), swept[1]])
     except Exception as e:
@@ -2705,23 +2711,34 @@ def u24_rows(record, wanted):
             record(row, rows, False, f"no air off the lip; states {','.join(sorted(qa.modes(rows)))}; {text}")
             wait_riding()
             continue
-        b, held, gaps, off, blind = span[1], 0., [], 0, 0
+        b, held, gaps, off, blind, when, at = span[1], 0., [], 0, 0, [], None
         for f in frames[b:]:
             if held >= LAND_HOLD:
                 break
-            held += float(f[0].get('dt', 16.7)) / 1000
+            dt = float(f[0].get('dt', 16.7)) / 1000
+            held += dt
+            at = 0. if at is None else at + dt   # this frame's time after the touch-down frame
             off += f[0]['mode'] != '1'
             seen = [c for c in (f[6] or []) if c is not None]
             if len(seen) < 2:
                 blind += 1
             else:
                 gaps.append(max(seen))
+                when.append((at, f[6]))
         face = air['drop'] > 20 and -30 < air['into'] < 100
         worst = max(gaps, default=float('nan'))
+        # Which wheel, when: a landing that settles late (the last wheel coming down) or one that lifts a wheel later on.
+        where = ''
+        if gaps:
+            t, wheels = when[gaps.index(worst)]
+            wide = max((c, i) for i, c in enumerate(wheels) if c is not None)[1]
+            late = max((s for (s, _), g in zip(when, gaps) if g > LAND_GAP), default=0.)
+            where = (f", the {WHEEL_NAMES[wide]} wheel {t * 1000:.0f} ms after the touch-down (wheels {wheels}), the last over "
+                     f"{LAND_GAP:g} cm {late * 1000:.0f} ms after it")
         record(row, rows, ok and face and air['mode'] == '1' and held >= LAND_HOLD - .001 and not off and gaps and worst <= LAND_GAP
                and blind < len(gaps),
                f"down {air['into']:.0f} cm out from the lip, {air['drop']:.0f} cm below it (deck up z {rows[b].get('deckup', '?')}), mode "
-               f"{air['mode']}; over {held:.2f} s from the touch-down: {off} frames off the ground, widest wheel gap {worst:.2f} cm "
+               f"{air['mode']}; over {held:.2f} s from the touch-down: {off} frames off the ground, widest wheel gap {worst:.2f} cm{where} "
                f"({sum(g > LAND_GAP for g in gaps)} frames over {LAND_GAP:g} cm, {blind} unmeasured); {text}")
         wait_riding()
 

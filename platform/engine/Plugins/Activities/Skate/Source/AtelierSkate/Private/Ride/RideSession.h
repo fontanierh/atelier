@@ -65,6 +65,9 @@ public:
     void SetRagdoll(bool bAvailable) { bRagdoll = bAvailable; }
     /** During a ragdoll bail: the ground point under the body, which the root and the camera follow. */
     void FollowBody(const FVector& GroundPoint) { BodyPoint = GroundPoint; bFollowBody = true; }
+    /** A ground point the rider can get up at: GroundPoint if the root reaches it (Reaches), else where the root is. A
+     *  body that went through a floor or a wall gets up on this side of it. */
+    FVector ReachableGround(const FVector& GroundPoint) const { return Reaches(GroundPoint) ? GroundPoint : P; }
     /** Off the board (a dismount, a carry, a run-out): no board physics; the animator's override layers alone, their
      *  TRAJECTORY at TrajectoryWorld (the clips' root space), published like Step (Root, Names, Reference, Bones; the
      *  board bones are the clip's). */
@@ -358,6 +361,9 @@ private:
     bool Probe(const FVector& Base, const FVector& Up, float Above, float Below, FVector& Point, FVector& Normal, bool& bBlocked, FVector* Block = nullptr, const FVector& Toward = FVector::ZeroVector) const;
     bool Sweep(const FVector& From, const FVector& To, float Radius, FHitResult& Hit) const;
     bool Trace(const FVector& From, const FVector& To, FHitResult& Hit) const;
+    /** Whether the root reaches a ground point from where it is, straight or up and over (a step, a ledge's edge),
+     *  never through a floor or a wall. */
+    bool Reaches(const FVector& To) const;
     /** Whether the board can land on a hit face: one within WallSlope of level, a lip air's own wall, or a steeper face
      *  that curves up into a transition below the hit (not a wall, a rail's side or a box's face). The landing
      *  prediction and the flight's contacts use it. */
@@ -387,6 +393,9 @@ private:
     EBoardMove MoveBoardPose(FVector& ToP, FQuat& ToQ, float Clearance, FHitResult& Wall) const;
     /** Up beside a wall (a get-up): the board out of it along the ground, else turned along it and out. */
     void LeaveWallsStanding();
+    /** Before a bail for being stuck in a wall: where (Site), the board's pose and speed, whether its box came from the
+     *  last free pose, and the face it is inside or against (Wall), in the log. */
+    void LogStuck(const TCHAR* Site, const FHitResult& Wall) const;
     /** Out of the walls the box at (ToP, ToQ) overlaps: up to three whole-box pushes (on the frame's plane when bOnPlane),
      *  the result free of walls and its centre reached from From's without crossing anything. */
     bool LeaveWall(const FTransform& From, FVector& ToP, const FQuat& ToQ, float Clearance, bool bOnPlane, FHitResult& Wall) const;

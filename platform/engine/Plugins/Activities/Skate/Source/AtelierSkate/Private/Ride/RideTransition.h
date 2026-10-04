@@ -65,6 +65,11 @@ struct FRideTransition
      *  scaled from ScaleStart to ScaleEnd so the speed carries on from what the character had. */
     UAnimSequence* Clip = nullptr;
     float ClipTime = 0.f, ClipRate = 1.f, ClipLength = 0.f;
+    /** A board the clip moves (a run-out, a kick-out): where the clip had it last frame (ClipDeckLast), in this clip
+     *  (ClipDeckClip, null when last frame showed none). A wall can hold the board back from the clip's; its sweep
+     *  goes on from where it is held as long as the clip's own board moves on smoothly. */
+    FTransform ClipDeckLast = FTransform::Identity;
+    const UAnimSequence* ClipDeckClip = nullptr;
     float ScaleStart = 1.f, ScaleEnd = 1.f;
     /** Or, when SpeedStart >= 0, the capsule moves along the clip's travel at a speed going from SpeedStart to SpeedEnd
      *  (cm/s): the speed the character came in with carries through the clip. */
@@ -145,8 +150,10 @@ struct FRideTransition
     /** The physical rider handed over a run-out (OnBailStart): it starts after the ride's frame (TickTransition). */
     bool bRunOutPending = false;
     UAnimSequence* PendingClip = nullptr;
-    /** A settled body gets up on foot: where it lies, the way it faces (head from hips) and how it lies. */
-    bool bRecoverPending = false, bRecoverFaceUp = false;
+    /** A settled body gets up on foot: where it lies, the way it faces (head from hips) and how it lies. Away: the body
+     *  went through a wall or a floor the ride's root never followed it through, and gets up on the root's side, the
+     *  recovery not matched to where it lies. */
+    bool bRecoverPending = false, bRecoverFaceUp = false, bRecoverAway = false;
     FVector RecoverGround = FVector::ZeroVector;
     float RecoverYaw = 0.f;
     /** A get-up's first frame held while the physical rider hands its bodies over to the animation (s). */

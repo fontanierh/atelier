@@ -12,6 +12,7 @@
 class ACharacter;
 class ISkateRider;
 class UBoxComponent;
+class UInstancedStaticMeshComponent;
 class UPhysicalMaterial;
 class UPhysicsAsset;
 class UPhysicsControlAsset;
@@ -332,6 +333,9 @@ private:
     FVector BailPelvisVelocity = FVector::ZeroVector;
     int32 BailTraced = 0;
     FVector BailStart = FVector::ZeroVector, BailFloor = FVector::ZeroVector, BodyGround = FVector::ZeroVector;
+    // The pelvis at the last bail update (a pelvis that crossed a face since, cut off from the bail's floor, went through
+    // something); kept while the pelvis only reaches a face.
+    FVector BailHips = FVector::ZeroVector;
     // The body's ground the frame before, Physics Control's root bone when the bail began (the bail's pose is
     // measured with it carried as far as the body's ground has gone), and the pelvis's height above the ground under
     // it (-1: none within HipsGroundRange).
@@ -358,8 +362,11 @@ private:
     TArray<FGetUpShape> GetUpShapes;
     TWeakObjectPtr<UWorld> TickWorld;
 
-    // Surfaces made physical around the body.
+    // Surfaces made physical around the body: whole components, and instances of instanced meshes one by one (a
+    // component's own switch never reaches its instances' bodies).
     TArray<TWeakObjectPtr<UPrimitiveComponent>> MadePhysical;
+    struct FMadeInstance { TWeakObjectPtr<UInstancedStaticMeshComponent> Mesh; int32 Index = INDEX_NONE; };
+    TArray<FMadeInstance> MadeInstances;
     FVector PhysicalCentre = FVector(1e30);
     // Where the mesh was last frame: a rider placed further than it can ride in a frame takes its body along, and
     // a launch in the frames after a placement too.

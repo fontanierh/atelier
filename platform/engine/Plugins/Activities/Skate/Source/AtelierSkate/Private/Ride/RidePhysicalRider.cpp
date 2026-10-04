@@ -10,6 +10,7 @@
 #include "Engine/Engine.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "HAL/IConsoleManager.h"
@@ -146,8 +147,6 @@ namespace
     constexpr float BoardGuardInset = 1.5f, BoardGuardReach = 500.f, BoardGuardBounce = .3f;
     // The surfaces made physical follow the body once it has moved this far, and let go beyond twice the radius.
     constexpr float PhysicalFollow = 600.f;
-    // Instanced meshes with more instances than this stay query-only (switching them all would hitch).
-    constexpr int32 PhysicalMaxInstances = 64;
     constexpr int32 MinBodies = 6;
     // A mesh that moves further than this in one frame was placed, not ridden (60 m/s at 60 fps).
     constexpr float PlacedDistance = 100.f;
@@ -164,6 +163,10 @@ namespace
     constexpr float HipsGroundRange = 1000.f;
     // A fallen pelvis this close to the ground under it is down, and the body slides (cm).
     constexpr float SlideHeight = 50.f;
+    // A pelvis crossing a face in a bail: one that ends this close to the face (cm) only touches it, and is checked again
+    // from where it was while that is this near (cm); a crossing counts when the pelvis is cut off from this high over
+    // the bail's floor (cm).
+    constexpr float ThroughTouch = 2.f, ThroughKeep = 30.f, ThroughFloorUp = 30.f;
     // A body fitted to the skin is the convex hull of its vertices furthest out in this many directions, from at
     // least this many vertices; a hull under this share of the capsule's volume (a bone that carries little skin of
     // its own) leaves the capsule. With 64 directions the hull cut up to 3 cm off a limb's side (none of them
@@ -1702,7 +1705,7 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     const bool bApplyNow = CVarRideBailApplyNow.GetValueOnGameThread() != 0;
     if (bApplyNow) Control->UpdateControls(0.f);
 
-    BailStart = GetPelvisLocation();
+    BailStart = BailHips = GetPelvisLocation();
     BailLimit = FMath::Max(2500.f, float(Velocity.Size()) * 1.5f + 800.f);
     // The highest a thrown body can rise (out of a quarter pipe at speed), with a margin.
     BailRise = FMath::Max(400.f, FMath::Square(FMath::Max(0.f, float(Velocity.Z))) / (2.f * 980.f) + 200.f);
@@ -1755,18 +1758,40 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
             Hips.X, Hips.Y, Hips.Z, RootAt.X, RootAt.Y, RootAt.Z, Actor.X, Actor.Y, Actor.Z,
             Guarded ? int64(Guarded->UpdatedFrame) - int64(BailFrame) : int64(-999));
     }
-    // A body that gains speed or height it was never given has met something it cannot resolve.
-    bool bThrough = false;
-    if (Hips.Z < BailFloor.Z - 120.f)
+    // A body that gains speed or height it was never given has met something it cannot resolve; one whose pelvis
+    // crossed a face since the last update, and is cut off from the floor it was thrown over, went through it (a floor
+    // it was pressed under, a wall it tunnelled), and the ride would follow it there. A face is hit from either side
+    // (Chaos turns a triangle's normal toward the ray), so the crossing alone does not tell going in from coming out: a
+    // pelvis the solver pushes back out of a wall crosses it too, onto the floor's side. A pelvis that only reaches a
+    // face is checked again from where it was, next update (while that is near: a pelvis rounding a corner moves on).
+    bool bThrough = false, bTouch = false;
+    FString Crossed;
     {
-        FHitResult Above;
+        FHitResult Hit, Cut;
         FCollisionQueryParams Params(SCENE_QUERY_STAT(RideThrough), false, Rider);
-        bThrough = Rider->GetWorld()->LineTraceSingleByChannel(Above, Hips, Hips + FVector(0, 0, 400.f), ECC_Pawn, Params) && Above.ImpactNormal.Z < -.5f;
+        if (LooseBoard) Params.AddIgnoredComponent(LooseBoard.Get());
+        UWorld* World = Rider->GetWorld();
+        if (!Hips.ContainsNaN() && World->LineTraceSingleByChannel(Hit, BailHips, Hips, ECC_Pawn, Params) && !Hit.bStartPenetrating)
+        {
+            if (Hit.Distance > FVector::Dist(BailHips, Hips) - ThroughTouch) bTouch = FVector::Dist(BailHips, Hips) < ThroughKeep;
+            else if (World->LineTraceSingleByChannel(Cut, BailFloor + FVector(0, 0, ThroughFloorUp), Hips, ECC_Pawn, Params))
+            {
+                bThrough = true;
+                const UPrimitiveComponent* Face = Hit.GetComponent();
+                Crossed = FString::Printf(TEXT(", through %s/%s at (%.0f, %.0f, %.0f)"), Face && Face->GetOwner() ? *Face->GetOwner()->GetName() : TEXT("?"),
+                    Face ? *Face->GetName() : TEXT("?"), Hit.ImpactPoint.X, Hit.ImpactPoint.Y, Hit.ImpactPoint.Z);
+            }
+        }
+        if (!bThrough && !bTouch && Hips.Z < BailFloor.Z - 120.f)
+        {
+            bThrough = World->LineTraceSingleByChannel(Hit, Hips, Hips + FVector(0, 0, 400.f), ECC_Pawn, Params) && Hit.ImpactNormal.Z < -.5f;
+            if (bThrough) Crossed = TEXT(", under the floor");
+        }
     }
+    if (!bTouch) BailHips = Hips;
     if (Speed > BailLimit || Hips.Z > BailStart.Z + BailRise || bThrough || Hips.ContainsNaN())
     {
-        UE_LOG(LogTemp, Warning, TEXT("SKATE ride ragdoll unstable (%.0f cm/s, %.0f cm from the start%s)"),
-            Speed, Hips.Z - BailStart.Z, bThrough ? TEXT(", under the floor") : TEXT(""));
+        UE_LOG(LogTemp, Warning, TEXT("SKATE ride ragdoll unstable (%.0f cm/s, %.0f cm from the start%s)"), Speed, Hips.Z - BailStart.Z, *Crossed);
         return ERideBodyState::Unstable;
     }
     if (!IgnoredPairs.IsEmpty()) ReleaseKeptPairs(false);
@@ -2024,6 +2049,36 @@ void URidePhysicalRider::DropLooseBoard()
 // The world around the body. Surfaces that only answer queries (the character walks on those) become physical near
 // the body so its bodies and the loose board can touch them, and go back when the body has left.
 
+// An instance's own body: none for an index out of range (GetBodyInstance falls back to the component's template).
+static FBodyInstance* InstanceBody(UInstancedStaticMeshComponent* Mesh, int32 Index)
+{
+    if (!Mesh || Index < 0 || Index >= Mesh->GetInstanceCount()) return nullptr;
+    FBodyInstance* Body = Mesh->GetBodyInstance(NAME_None, false, Index);
+    return Body && Body != &Mesh->BodyInstance && Body->InstanceBodyIndex == Index ? Body : nullptr;
+}
+
+// How far an instance's bounds are from At (0 within them).
+static double InstanceAway(const UInstancedStaticMeshComponent& Mesh, int32 Index, const FVector& At)
+{
+    FTransform Where;
+    if (!Mesh.GetStaticMesh() || !Mesh.GetInstanceTransform(Index, Where, true)) return 0.;
+    const FBoxSphereBounds Bounds = Mesh.GetStaticMesh()->GetBounds().TransformBy(Where);
+    return FMath::Max(0., FVector::Dist(Bounds.Origin, At) - Bounds.SphereRadius);
+}
+
+// An instance's collision (its body is made again, by itself, when physics comes or goes).
+// An instance body's switch rebuilds the body (FInstancedMeshComponentBodies::Recreate), which copies its responses and
+// profile but not its object type: the new body is put back to the old one's type, or a WorldDynamic instance would come
+// back WorldStatic.
+static void SetInstanceCollision(UInstancedStaticMeshComponent* Mesh, int32 Index, ECollisionEnabled::Type Type)
+{
+    FBodyInstance* Body = InstanceBody(Mesh, Index);
+    if (!Body) return;
+    const ECollisionChannel Type0 = Body->GetObjectType();
+    Body->SetCollisionEnabled(Type);
+    if (FBodyInstance* Made = InstanceBody(Mesh, Index); Made && Made->GetObjectType() != Type0) Made->SetObjectType(Type0);
+}
+
 void URidePhysicalRider::MakeWorldPhysical(const FVector& Centre)
 {
     if (!Rider) return;
@@ -2040,6 +2095,14 @@ void URidePhysicalRider::MakeWorldPhysical(const FVector& Centre)
         const double FromBoard = Board ? FMath::Max(0., FVector::Dist(Bounds.Origin, Board->GetComponentLocation()) - Bounds.SphereRadius) : 1e30;
         if (Away > Radius * 2. && FromBoard > Radius) { C->SetCollisionEnabled(ECollisionEnabled::QueryOnly); MadePhysical.RemoveAtSwap(I); }
     }
+    for (int32 I = MadeInstances.Num() - 1; I >= 0; --I)
+    {
+        UInstancedStaticMeshComponent* M = MadeInstances[I].Mesh.Get();
+        const int32 Index = MadeInstances[I].Index;
+        if (!M) { MadeInstances.RemoveAtSwap(I); continue; }
+        const double FromBoard = Board ? InstanceAway(*M, Index, Board->GetComponentLocation()) : 1e30;
+        if (InstanceAway(*M, Index, Centre) > Radius * 2. && FromBoard > Radius) { SetInstanceCollision(M, Index, ECollisionEnabled::QueryOnly); MadeInstances.RemoveAtSwap(I); }
+    }
     TArray<FOverlapResult> Hits;
     FCollisionObjectQueryParams Objects;
     Objects.AddObjectTypesToQuery(ECC_WorldStatic); Objects.AddObjectTypesToQuery(ECC_WorldDynamic);
@@ -2050,7 +2113,19 @@ void URidePhysicalRider::MakeWorldPhysical(const FVector& Centre)
         UPrimitiveComponent* C = Hit.GetComponent();
         if (!C || C == LooseBoard || C->GetCollisionEnabled() != ECollisionEnabled::QueryOnly) continue;
         if (C->GetCollisionResponseToChannel(ECC_PhysicsBody) != ECR_Block || C->GetCollisionResponseToChannel(ECC_Pawn) != ECR_Block) continue;
-        if (const UInstancedStaticMeshComponent* Instanced = Cast<UInstancedStaticMeshComponent>(C); Instanced && Instanced->GetInstanceCount() > PhysicalMaxInstances) continue;
+        // An instanced mesh (a village's houses and lots, a forest): each instance near, by itself; switching a whole
+        // one would hitch, and the component's own switch never reaches its instances' bodies anyway.
+        if (UInstancedStaticMeshComponent* Instanced = Cast<UInstancedStaticMeshComponent>(C))
+        {
+            const int32 Index = Hit.ItemIndex;
+            const FBodyInstance* Body = InstanceBody(Instanced, Index);
+            if (Body && Body->GetCollisionEnabled() == ECollisionEnabled::QueryOnly)
+            {
+                SetInstanceCollision(Instanced, Index, ECollisionEnabled::QueryAndPhysics);
+                MadeInstances.Add({Instanced, Index});
+            }
+            continue;
+        }
         C->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
         MadePhysical.Add(C);
     }
@@ -2068,6 +2143,14 @@ void URidePhysicalRider::RestoreWorld()
         if (Board && Board->IsSimulatingPhysics() && FVector::Dist(C->Bounds.Origin, Board->GetComponentLocation()) - C->Bounds.SphereRadius < Radius) continue;
         C->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
         MadePhysical.RemoveAtSwap(I);
+    }
+    for (int32 I = MadeInstances.Num() - 1; I >= 0; --I)
+    {
+        UInstancedStaticMeshComponent* M = MadeInstances[I].Mesh.Get();
+        if (!M) { MadeInstances.RemoveAtSwap(I); continue; }
+        if (Board && Board->IsSimulatingPhysics() && InstanceAway(*M, MadeInstances[I].Index, Board->GetComponentLocation()) < Radius) continue;
+        SetInstanceCollision(M, MadeInstances[I].Index, ECollisionEnabled::QueryOnly);
+        MadeInstances.RemoveAtSwap(I);
     }
     PhysicalCentre = FVector(1e30);
 }

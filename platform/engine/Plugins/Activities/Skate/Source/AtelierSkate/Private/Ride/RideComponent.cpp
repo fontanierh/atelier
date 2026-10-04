@@ -180,13 +180,19 @@ void USkateComponent::AfterRideFrame(float Dt)
 void USkateComponent::GetUpFromBody()
 {
     URidePhysicalRider& Body = *PhysicalRider;
-    // Where the body lies and how: read before the get-up holds the bodies on the animation.
-    const FVector Ground = Body.GetBodyGround();
+    // Where the body lies and how: read before the get-up holds the bodies on the animation. A body that went through a
+    // floor or a wall the ride's root never followed it through gets up where the root is, on this side.
+    const FVector BodyGround = Body.GetBodyGround();
+    const FVector Ground = Ride->IsBailing() ? Ride->ReachableGround(BodyGround) : BodyGround;
+    if (!Ground.Equals(BodyGround))
+        UE_LOG(LogTemp, Warning, TEXT("SKATE ride get-up away from the body: it lies over (%.0f, %.0f, %.0f), which the root does not reach; up at (%.0f, %.0f, %.0f)"),
+            BodyGround.X, BodyGround.Y, BodyGround.Z, Ground.X, Ground.Y, Ground.Z);
     const float Yaw = Body.GetBodyYaw();
     const bool bFaceUp = Body.IsFaceUp();
     if (WantsGetUpOnFoot())
     {
         Body.StartGetUp(ERideGetUpExit::OnFoot);
+        Transit().bRecoverAway = !Ground.Equals(BodyGround);
         BeginGetUpOnFoot(Ground, Yaw, bFaceUp);
         return;
     }

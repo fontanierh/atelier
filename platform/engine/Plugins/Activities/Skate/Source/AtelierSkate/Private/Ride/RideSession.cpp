@@ -41,6 +41,8 @@ namespace
     // farther, something placed the board. A board pushed out of a wall moves at most MaxPush (cm); inside one it
     // cannot leave for StuckLimit (s), the rider falls.
     constexpr float SafeReach = 100.f, MaxPush = 45.f, StuckLimit = .3f;
+    // A bail's root follows the body's ground along a line this high over both, or up to this high over the higher (cm).
+    constexpr float FollowLow = 30.f, FollowHigh = 100.f;
     // The shown clip's own motion of the deck (ShownClip: its pop, flip and tilt) the box follows, within ShownReach (cm)
     // of the session's deck pivot. Farther, the deck bone is not the riding deck (a mount still blending in from the
     // board's last place, the board in a hand) and the box keeps the session's deck.
@@ -968,7 +970,7 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
         // Inside a wall it cannot leave: the board stays where it is (its velocity into the wall goes), and stuck that
         // way for StuckLimit the rider falls.
         StuckTime += Dt;
-        if (StuckTime > StuckLimit) { StartBail(TEXT("stuck in a wall")); return false; }
+        if (StuckTime > StuckLimit) { LogStuck(TEXT("on the ground"), Wall); StartBail(TEXT("stuck in a wall")); return false; }
         const FVector N = FVector::VectorPlaneProject(Wall.Normal, Up).GetSafeNormal();
         if (!N.IsNearlyZero()) Deflect(N, Speed);
         return false;
@@ -1407,7 +1409,7 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
                 Side = Inside;
                 P = Current.P; Q = Current.Q;
                 StuckTime += Tick60;
-                if (StuckTime > StuckLimit) { StartBail(TEXT("stuck in a wall")); return; }
+                if (StuckTime > StuckLimit) { LogStuck(TEXT("the box in the air"), Side); StartBail(TEXT("stuck in a wall")); return; }
             }
             V -= Side.Normal * FMath::Min(0.f, float(FVector::DotProduct(V, Side.Normal)));
             bGlanced = true;
@@ -1424,7 +1426,7 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
             {
                 P = Current.P; Q = Current.Q;
                 StuckTime += Tick60;
-                if (StuckTime > StuckLimit) StartBail(TEXT("stuck in a wall"));
+                if (StuckTime > StuckLimit) { LogStuck(TEXT("the sphere in the air"), Hit); StartBail(TEXT("stuck in a wall")); }
                 return;
             }
             P = Out;
@@ -1867,9 +1869,25 @@ void FRideSession::TickBail()
         return;
     }
     // With a ragdoll the component calls GetUp when the body has settled; the root follows the body meanwhile, and
-    // a body that never settles (stuck on geometry) still gets up.
-    if (bFollowBody) { P = BodyPoint; V = FVector::ZeroVector; }
+    // a body that never settles (stuck on geometry) still gets up. It follows where the body is reached from where it
+    // is, straight or up and over (a step, a ledge's edge), never through what the body went through (a floor it was
+    // pressed under, a wall it tunnelled): the slide that takes over from an unstable body starts on this side.
+    if (bFollowBody)
+    {
+        if (Reaches(BodyPoint)) P = BodyPoint;
+        V = FVector::ZeroVector;
+    }
     if (ModeTime >= Tune.BailSettle + 5.f) GetUp(P, RiderQ().Rotator().Yaw);
+}
+
+bool FRideSession::Reaches(const FVector& To) const
+{
+    FHitResult Between;
+    auto Clear = [&](const FVector& A, const FVector& B) { return !Trace(A, B, Between); };
+    const FVector Low(0, 0, FollowLow);
+    const double Top = FMath::Max(P.Z, To.Z) + FollowHigh;
+    const FVector Over(P.X, P.Y, Top), Across(To.X, To.Y, Top);
+    return Clear(P + Low, To + Low) || (Clear(P + Low, Over) && Clear(Over, Across) && Clear(Across, To + Low));
 }
 
 void FRideSession::GetUp(const FVector& GroundPoint, float Yaw)
@@ -1884,6 +1902,21 @@ void FRideSession::GetUp(const FVector& GroundPoint, float Yaw)
     LeaveWallsStanding();
     Previous.P = Current.P = P; Previous.Q = Current.Q = Q; Previous.Deck = Current.Deck = DeckPose();
     SetMode(ERideState::GetUp);
+}
+
+void FRideSession::LogStuck(const TCHAR* Site, const FHitResult& Wall) const
+{
+    const UPrimitiveComponent* Other = Wall.GetComponent();
+    const AActor* Owner = Other ? Other->GetOwner() : nullptr;
+    const FVector Up = Q.GetUpVector(), Nose = Q.GetForwardVector();
+    const bool bFromSafe = bSafeDeck && FVector::DistSquared(SafeP, P) < FMath::Square(SafeReach);
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride stuck %s (mode %d for %.2f s, stuck %.2f s of it): at (%.0f, %.0f, %.0f), up (%.2f, %.2f, %.2f), nose (%.2f, %.2f, %.2f), ")
+        TEXT("%.0f cm/s (%.0f, %.0f, %.0f), the box from %s; %s %s/%s, normal (%.2f, %.2f, %.2f), impact (%.2f, %.2f, %.2f) at (%.0f, %.0f, %.0f), %.1f cm in"),
+        Site, int32(Mode), ModeTime, StuckTime, P.X, P.Y, P.Z, Up.X, Up.Y, Up.Z, Nose.X, Nose.Y, Nose.Z, V.Size(), V.X, V.Y, V.Z,
+        bFromSafe ? TEXT("the last free pose") : TEXT("the session's pose"), Wall.bStartPenetrating ? TEXT("inside") : TEXT("against"),
+        Owner ? *Owner->GetName() : TEXT("?"), Other ? *Other->GetName() : TEXT("?"), Wall.Normal.X, Wall.Normal.Y, Wall.Normal.Z,
+        Wall.ImpactNormal.X, Wall.ImpactNormal.Y, Wall.ImpactNormal.Z, Wall.ImpactPoint.X, Wall.ImpactPoint.Y, Wall.ImpactPoint.Z,
+        Wall.PenetrationDepth);
 }
 
 void FRideSession::LeaveWallsStanding()
