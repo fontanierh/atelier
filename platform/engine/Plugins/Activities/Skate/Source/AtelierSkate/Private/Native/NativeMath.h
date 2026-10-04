@@ -23,6 +23,10 @@ struct Sqt { Vec4 scale{}, rotation{}, translation{}; };
 
 // Ordinary operations must compile with FP contraction disabled. FMA appears
 // only where the frozen Rust implementation explicitly calls f32::mul_add.
+// The console's vector unit flushed denormal operands and results to zero, and the session's thread runs the same
+// way: kept, a squared length that settles into the denormal range (a filter decaying onto an exact axis on flat
+// ground) overflows InverseLengthSquared's refinement and Length3 returns NaN. False where it cannot be set.
+bool FlushDenormalsToZero();
 float Dot3(const Vec4& left, const Vec4& right);
 float Dot4(const Vec4& left, const Vec4& right);
 float Dot3(Vec3 left, Vec3 right);

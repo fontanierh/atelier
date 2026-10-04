@@ -197,8 +197,9 @@ def continuity(rows, tumbling=lambda row: False):
         if not bail:
             note('move_cm', math.dist(vec(a['pos']), vec(b['pos'])) - travel, i, b)
             # A landing stops the fall in a frame, and a jump starts one, on foot (falling) or on the board (the air
-            # mode): only the horizontal velocity carries on.
-            if airborne(a) != airborne(b):
+            # mode): only the horizontal velocity carries on. Native's wheels touch a frame before its state lands.
+            touching = i + 1 < len(rows) and airborne(b) != airborne(rows[i + 1])
+            if airborne(a) != airborne(b) or touching:
                 va, vb = (va[0], va[1], 0.0), (vb[0], vb[1], 0.0)
             note('speed_cm_s', math.dist(va, vb) - ACCEL * dt, i, b)
         hip = math.dist(vec(a['hip']), vec(b['hip'])) - hip_travel
@@ -720,7 +721,12 @@ live.behave('bail', _bail)
                 idle += 1
                 continue
             frames += 1
-            hits += min(turned(k * tick) for k in (1, 2)) < 20
+            if b.get('solver') == 'Native':
+                # Native's wheels (the hybrid shows them as they are) turn under half a turn a frame, more slowly than
+                # the travel at speed (70, 113, 138 degrees a frame at 261, 561, 958 cm/s): their way is what is judged.
+                hits += ((step + 180) % 360 - 180) * along > 0
+            else:
+                hits += min(turned(k * tick) for k in (1, 2)) < 20
         return hits / frames if frames and idle <= .1 * (frames + idle) else 0.
 
     def board_still(rows):
@@ -744,8 +750,43 @@ live.behave('bail', _bail)
         seen = clips(rows)
         worst = continuity(rows[10:])
         still, note = board_still(rows[5:])
-        ok = flip is not None and any(c.startswith('R_SWITCH') for _, c in seen) and still and rows[-1].get('switch') == '1'
+        # Under the hybrid (solver=Native) Native's motion graph plays its own turn: its stance flag turns, no Ride clip.
+        native = bool(rows) and rows[-1].get('solver') == 'Native'
+        ok = flip is not None and (native or any(c.startswith('R_SWITCH') for _, c in seen)) and still and rows[-1].get('switch') == '1'
         report(name, rows, ok and smooth(worst), f'{line(seen)}; turned round at frame {flip}, switch={rows[-1].get("switch") if rows else "-"}, '
+               f'{note}; {describe(worst)}')
+
+    def switch_push_native(name):
+        # Under the hybrid: Native has no fakie from a board launched backward at rest (it brakes and pushes the other
+        # way), so the push comes from a real fakie, the quarter's straight air landed (as switch_landing): pushing .5 s
+        # after the touch-down (on the flat, past the face's foot) turns the rider round at once, then pushes riding
+        # switch.
+        # The same launch does not always fly the same air (Native's too: now and then the board yaws on the face and
+        # flies longer, H37): up to three tries for the straight one, 35 to 50 frames up.
+        for _ in range(3):
+            rows = record("live.FILM_DIST=420.0; live.FILM_DROP=10.0\n"
+                          "live.FP=[0.0,None]\n"
+                          "def _fp(dt):\n"
+                          "    s=live.skate_state(); f=live.FP\n"
+                          "    if f[1] is None and ' mode=2 ' in s: f[1]=0.0\n"
+                          "    if f[1] is not None and ' mode=1 ' in s: f[0]+=dt\n"
+                          "    live.skate_input(push=.5<=f[0]<1.8)\n"
+                          "live.park.place(57,25,0); live.park.look(-12,0); live.park.launch(950)\n"
+                          "live.behave('fp', _fp)\n", 5.0)
+            qa.py("live.stop('fp'); live.stop('rec'); live.skate_release(); live.FILM_DIST=300.0; live.FILM_DROP=5.0")
+            lip = next((i for i in range(10, len(rows)) if rows[i].get('mode') == '2'), None)
+            land = next((i for i in range(lip or len(rows), len(rows)) if rows[i].get('mode') != '2'), None)
+            if land is not None and 35 <= land - lip <= 50 and rows[land].get('mode') == '1':
+                break
+        after = rows[land:] if land is not None and rows[land].get('mode') == '1' else []
+        fakie = len(after) > 3 and after[3].get('fakie') == '1'
+        flip = next((i for i, (a, b) in enumerate(zip(after, after[1:]), 1) if a.get('turns') != b.get('turns')), None)
+        pushed = [r for r in after[flip or len(after):] if r.get('switch') == '1' and r.get('push') == '1']
+        still, note = board_still(after[27:])
+        worst = continuity(after[3:])
+        ok = fakie and flip is not None and 27 <= flip <= 50 and bool(pushed) and still and after[-1].get('switch') == '1'
+        report(name, rows, ok and smooth(worst), f'landed fakie={fakie}, push .5 s after: turned round {flip} frames after the '
+               f'touch-down, {len(pushed)} frames pushing riding switch, switch={after[-1].get("switch") if after else "-"}; '
                f'{note}; {describe(worst)}')
 
     def switch_landing(name):
@@ -768,7 +809,8 @@ live.behave('bail', _bail)
         after = rows[landed + 3:] if landed is not None else []
         fakie = bool(after) and after[0].get('fakie') == '1' and after[0].get('switch') == '0'
         flip = next((i for i, (a, b) in enumerate(zip(rows, rows[1:]), 1) if a.get('turns') != b.get('turns')), None)
-        pushed = [r for r in rows[flip or len(rows):] if r.get('switch') == '1' and 'PUSH' in r.get('clip', '')]
+        native = bool(rows) and rows[-1].get('solver') == 'Native'
+        pushed = [r for r in rows[flip or len(rows):] if r.get('switch') == '1' and (r.get('push') == '1' if native else 'PUSH' in r.get('clip', ''))]
         # From half a second after the touch-down (the landing's give is the landing rows'), on the ground.
         still, note = board_still([r for r in after[27:] if r.get('mode') == '1'])
         seen = clips(rows)
@@ -822,7 +864,11 @@ live.behave('bail', _bail)
     if wanted('switch_auto'):
         switch_round('switch_auto', 500, '[]', 2.5)
     if wanted('switch_push'):
-        switch_round('switch_push', 300, "[(.3,{'push':True}),(1.6,{})]", 2.2)
+        riding(0)
+        if 'solver=Native' in qa.py('print(live.skate_state())'):
+            switch_push_native('switch_push')
+        else:
+            switch_round('switch_push', 300, "[(.3,{'push':True}),(1.6,{})]", 2.2)
     if wanted('switch_landing'):
         switch_landing('switch_landing')
     for rider in ('Link', 'Bokoblin'):

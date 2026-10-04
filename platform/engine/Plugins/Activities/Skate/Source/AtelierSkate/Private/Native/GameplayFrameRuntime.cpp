@@ -2,6 +2,7 @@
 #include "GameplayFrameRuntime.h"
 #include "SkeletonLineQueries.h"
 #include <algorithm>
+#include <cmath>
 #include <cassert>
 #include <cstring>
 #if defined(__clang__)
@@ -18,6 +19,14 @@ bool DefaultTrainer(const TrainerTuning& t)
     return t.pop==1 && t.grind_pop==1 && t.push_speed==1 && t.push_power==1
         && t.braking==1 && t.steering==1 && t.wobble==1 && t.offboard_jump==1
         && t.grip==1 && t.turn_power==1 && t.manual_drag==1 && !t.hold_fakie;
+}
+// The deck's accumulated torque is checked after each stage that adds to it, so a non-finite one names its source
+// instead of surfacing later as an anonymous "before shared solve" failure.
+bool DeckTorqueFinite(const PhysicalSimulationRuntime& f,const char* stage,std::string& error)
+{
+    const auto& t=f.board.Bodies()[6].rates.torque_acceleration;
+    if(std::isfinite(t.x)&&std::isfinite(t.y)&&std::isfinite(t.z))return true;
+    error=std::string("Non-finite deck torque_acceleration after ")+stage;return false;
 }
 void CheckOwners(const GameplayFrameOwners& o)
 {
@@ -145,20 +154,26 @@ bool AdvanceGameplayFrame(GameplayFrameOwners o,ActionMap& original_actions,bool
         if(!phases.ApplyVehicleEjection(vehicle_ejected,error))return false;
     }
     if(!f.FinishBoardQueries(error))return false;
+    if(!DeckTorqueFinite(f,"input and animation",error))return false;
     const OffboardGrabScene grab_scene(f.world,o.grab_registry);
     if(!shared.grab.ExecuteQueries(grab_scene,error))return false;
     const auto before=shared.state.Current();
     if(!CompletePlayerPostInput(shared,s.air,o.input.input.grind_materials,s.grinding,error))return false;
+    if(!DeckTorqueFinite(f,"post-input",error))return false;
     if(!vehicle_ejected && !SelectPlayerPhysicalState(shared,shared.input.Snapshot(f.ticks),phases,error))return false;
     const auto after=shared.state.Current();
     if(before!=after && !shared.exchange.EmitEvent(tick,PhysicsStateChanged{before,after},error))return false;
+    if(!DeckTorqueFinite(f,"state selection",error))return false;
     if(!AdvancePlayerPreState(shared,grab_scene,error))return false;
-    if(!phases.Update(shared.state.Current(),error))return false;
+    if(!DeckTorqueFinite(f,"pre-state",error))return false;
+    if(!phases.Update(shared.state.Current(),error)){if(!f.riding.reckoning.fault.empty())error+=" [reckoning "+f.riding.reckoning.fault+"]";return false;}
+    if(!DeckTorqueFinite(f,"phase update",error))return false;
     shared.input.player.state_timer_1344+=shared.input.processed.timestep_2604;
     UpdateBoardPossession(f.possession,f.possession_live,f.board,f.settings.board.collision,f.board_wiping_out,
         shared.ground_lifecycle.board_animated_290,f.controller_fields,BindPlayerBoardPossessionObservation(shared),shared.input.processed.timestep_2604);
     f.processed_flags_2468=shared.input.processed.flags_2468;
     skeleton_queries.Publish(shared.input.player);
+    if(!DeckTorqueFinite(f,"board possession",error))return false;
     if(!f.Solve(s.ground.ground.steering.targets,error))return false;
     ResetPhysicalPlayerOutputs(shared.input.physical);
     if(!FinishPlayerPostPhysics(o.post,error))return false;

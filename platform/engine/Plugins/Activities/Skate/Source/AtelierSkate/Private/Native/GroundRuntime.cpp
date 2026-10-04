@@ -5,6 +5,8 @@
 #include "GroundCorrections.h"
 #include "DeckAngularCorrections.h"
 #include "RidingAngles.h"
+#include <cmath>
+#include <string>
 #if defined(__clang__)
 #pragma clang fp contract(off)
 #endif
@@ -26,6 +28,13 @@ public:
     const GroundSettings& settings;
     GroundPhysicalFrame physical;
     std::optional<GroundLaunchInfo> launch;
+    // A service that leaves the deck's torque non-finite fails with its input, so the session's error names it.
+    bool DeckFinite(const char* service,Vec4 v,std::string& error) const
+    {
+        const auto& t=board.Bodies()[Deck].rates.torque_acceleration;
+        if(std::isfinite(t.x)&&std::isfinite(t.y)&&std::isfinite(t.z))return true;
+        error=std::string(service)+" left the deck torque non-finite from ("+std::to_string(v[0])+", "+std::to_string(v[1])+", "+std::to_string(v[2])+")";return false;
+    }
     bool AngleBetween(Vec4 a,Vec4 b,Vec4 axis,float& output,std::string&) override
     {output=RidingSignedAngle(XYZ(a),XYZ(b),XYZ(axis));return true;}
     bool GroundDot3(Vec4 a,Vec4 b,float& output,std::string&) override {output=Dot3(a,b);return true;}
@@ -33,7 +42,7 @@ public:
     {output=atelier::skate::GroundScaleToMagnitude(v,square,size);return true;}
     bool BuildHangForce(Vec4& output,std::string&) override
     {output=runtime.BuildHangForce(board,XYZW(physical.hang_geometry.edge_start),XYZW(physical.hang_geometry.edge_end));return true;}
-    bool ApplyHangForce(Vec4 force,std::string&) override {runtime.ApplyHangForce(board,force);return true;}
+    bool ApplyHangForce(Vec4 force,std::string& error) override {runtime.ApplyHangForce(board,force);return DeckFinite("ApplyHangForce",force,error);}
     bool DetectHungUpGeometry(bool& output,std::string& error) override
     {return DetectGroundHungGeometry(world,physical.hang_geometry,runtime.deck_center_to_truck,output,error);}
     bool RequestHungWipeout(std::string&) override {physical.wipeout.Request(12,0);return true;}
@@ -42,14 +51,14 @@ public:
         const auto f=board.PartTransforms()[Deck].basis.columns;
         output=GroundWheelCatchDisplacement({f[1][0],f[1][1],f[1][2],0},{f[2][0],f[2][1],f[2][2],0});return true;
     }
-    bool ApplyWheelCatchDisplacement(Vec4 v,std::string&) override {runtime.ApplyAngularDisplacement(board,v);return true;}
+    bool ApplyWheelCatchDisplacement(Vec4 v,std::string& error) override {runtime.ApplyAngularDisplacement(board,v);return DeckFinite("ApplyWheelCatchDisplacement",v,error);}
     bool PinToCapturedPosition(float x,float z,std::string&) override {runtime.PinToPosition(board,x,z,physical.time_step);return true;}
     bool CenterOfMassHeight(float& output,std::string&) override
     {output=GroundCentreOfMassHeight(physical.skeleton_record.com_to_deck_world);return true;}
     bool SetContactWheelMaterials(std::string&) override {physical.wheel_material=settings.wheel_material;return true;}
     bool ContactResponse(GroundContactFrame frame,Vec4 previous,GroundBoardContactResponse& output,std::string&) override
     {runtime.contact=CalculateWallRideResponse(runtime.wall_ride,physical.wall_ride,frame,previous);output=runtime.contact;return true;}
-    bool UpdateBodyAccumulator(std::string&) override {runtime.UpdateBodyAccumulator(board);return true;}
+    bool UpdateBodyAccumulator(std::string& error) override {runtime.UpdateBodyAccumulator(board);return DeckFinite("UpdateBodyAccumulator",{},error);}
     bool SetAnimatedVelocity(Vec4 v,std::string&) override {runtime.SetAnimatedVelocity(board,v);return true;}
     bool WriteProcessedVelocity(Vec4 v,std::string&) override {physical.processed_velocity=v;return true;}
     bool BuildAnimatedPose(GroundLaunchInfo& output,std::string&) override {output=GroundLaunchInfo{};return true;}
@@ -77,8 +86,8 @@ public:
     {auto p=physical.collision;p.ground_normal=normal;output=runtime.CalculateCollisionForce(p);return true;}
     bool CollisionForceDotVelocity(Vec4 f,Vec4 v,float& output,std::string&) override
     {output=GroundCollisionForceProjection(f,v);return true;}
-    bool ApplyVector(Vec4 v,std::string&) override {runtime.ApplyAngularTarget(board,v);return true;}
-    bool ApplyAngularDisplacement(Vec4 v,std::string&) override {runtime.ApplyAngularDisplacement(board,v);return true;}
+    bool ApplyVector(Vec4 v,std::string& error) override {runtime.ApplyAngularTarget(board,v);return DeckFinite("ApplyVector",v,error);}
+    bool ApplyAngularDisplacement(Vec4 v,std::string& error) override {runtime.ApplyAngularDisplacement(board,v);return DeckFinite("ApplyAngularDisplacement",v,error);}
 };
 }
 bool GroundRuntime::Load(const SettingsDatabase& data,std::string& error)

@@ -160,5 +160,8 @@ void GameplayRuntime::Launch(Vec3 velocity)
 {
     for(auto& body:physical->board.BodiesMut())body.rates.linear_velocity=velocity;
     for(auto& body:physical->skeleton.BodiesMut())body.rates.linear_velocity=velocity;
+    // A host launch is not an impact: without this the next step reads the whole change as one frame's acceleration,
+    // a bump (over 100 m/s^2) that holds the motion graph in RidingIdle.Bumped, which takes no trick, for ~0.8 s.
+    physical->riding.ground.previous_velocities.fill(velocity);
 }
 }

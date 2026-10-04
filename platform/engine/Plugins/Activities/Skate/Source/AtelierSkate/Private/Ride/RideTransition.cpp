@@ -667,8 +667,9 @@ bool USkateComponent::GetOnBoard(const FVector& Where, const FQuat& Rotation, co
     // turns to the board as the first ride frame would; the mesh keeps its world place and rotation over that turn
     // (riding, the pose is anchored on the board, so they only matter to the blend into it, which works in the mesh's
     // frame).
-    BodyLift = Rider->GetActorLocation().Z - Ride->Root.GetLocation().Z;
-    Rider->SetActorLocationAndRotation(Ride->Root.GetLocation() + FVector(0, 0, BodyLift), Ride->Root.GetRotation(), false, nullptr, ETeleportType::None);
+    const FTransform Root = RideRoot();
+    BodyLift = Rider->GetActorLocation().Z - Root.GetLocation().Z;
+    Rider->SetActorLocationAndRotation(Root.GetLocation() + FVector(0, 0, BodyLift), Root.GetRotation(), false, nullptr, ETeleportType::None);
     KeepMeshWorld(MeshWorld);
     // The blend is for the ride's first pose, not the held one: asked when that pose is written, so the character's
     // graph starts it on the frame the pose changes (a request a frame early blends nothing, and the change pops).
@@ -922,12 +923,12 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
     // the heels), high or crouched, and small to big by how hard the bail was. It starts after the ride's frame.
     FRideTransition& T = Transit();
     if (Kind != ERideBailKind::RunOut || !Ride || !BoardRoot || T.Board != ERideBoard::Ride || !PrepareRideClips()) return false;
-    const FVector Bail = Ride->GetBailVelocity();
+    const FVector Bail = BailVelocity();
     // Riding switch the rider stands on the board the other way round, in the other stance: the way is his. On a board
     // a trick left end for end, the shown deck's nose trails too.
-    const bool bSwitched = Ride->IsSwitch();
+    const bool bSwitched = RideSwitched();
     FQuat DeckRotation = BoardRoot->GetComponentQuat();
-    if (bSwitched != Ride->GetAnimator().IsBoardReversed()) DeckRotation = FQuat(DeckRotation.GetUpVector(), PI) * DeckRotation;
+    if (bSwitched != (!bRideNative && Ride->GetAnimator().IsBoardReversed())) DeckRotation = FQuat(DeckRotation.GetUpVector(), PI) * DeckRotation;
     float Along = FVector::DotProduct(Bail, DeckRotation.GetForwardVector());
     float Across = FVector::DotProduct(Bail, DeckRotation.GetRightVector());
     if (bGoofy == bSwitched) Across = -Across;              // the clips are authored goofy
@@ -936,7 +937,7 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
     const int32 Way = FMath::Abs(Angle) < 45.f ? 0 : FMath::Abs(Angle) > 135.f ? 1 : Across < 0.f ? 2 : 3;
     const URidePhysicalSettings* Settings = GetDefault<URidePhysicalSettings>();
     const float Energy = FMath::Max3(float(Bail.Size2D()) / FMath::Max(1.f, Settings->RunOutSpeed), FMath::Abs(float(Bail.Z)) / FMath::Max(1.f, Settings->RunOutImpact),
-        FMath::RadiansToDegrees(float(Ride->GetBailSpin().Size())) / FMath::Max(1.f, Settings->RunOutSpin));
+        FMath::RadiansToDegrees(float(BailSpin().Size())) / FMath::Max(1.f, Settings->RunOutSpin));
     const TCHAR* Height = Ride->GetBody().Crouch > .5f ? TEXT("LO") : TEXT("HI");
     // The size the energy asks for, or the nearest one this way has.
     const int32 Wanted = Energy < .4f ? 0 : Energy < .75f ? 1 : 2;
@@ -971,12 +972,12 @@ bool USkateComponent::BeginRunOut()
     T.bRunOutPending = false; T.PendingClip = nullptr;
     if (!Ride || !M || !Clip || !BoardRoot) return false;
     // In the stance in effect, on the board the way the rider stands on it (riding switch, the other way round).
-    const bool bSwitched = Ride->IsSwitch();
+    const bool bSwitched = RideSwitched();
     const bool bMirror = bGoofy == bSwitched;
     const FTransform Bailed = BoardRoot->GetComponentTransform();
-    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw) + (bSwitched != Ride->GetAnimator().IsBoardReversed() ? 180.f : 0.f);
+    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw) + (bSwitched != (!bRideNative && Ride->GetAnimator().IsBoardReversed()) ? 180.f : 0.f);
     const float Yaw = DeckYaw - ClipYawToWorld(ClipDeckYaw(Clip, 0.f), bMirror, 0.f);
-    const FVector Carried = Ride->GetBailVelocity();
+    const FVector Carried = BailVelocity();
     const FVector Flat(Carried.X, Carried.Y, 0.f);
     SuspendRetailRuntime();
     RequestPoseBlend(Tune.DismountBlend);
@@ -1726,7 +1727,7 @@ bool USkateComponent::BeginAirDismountClip()
     const FRideTuning& Tune = FRideTuning::Get();
     UCharacterMovementComponent* M = Movement();
     if (!Ride || !M) return false;
-    const ERideGrab Held = Ride->GetBody().Grab;
+    const ERideGrab Held = RideGrab();
     const bool bKick = Held == ERideGrab::None;
     const TCHAR* Grab = TEXT("MUTE");
     switch (Held)

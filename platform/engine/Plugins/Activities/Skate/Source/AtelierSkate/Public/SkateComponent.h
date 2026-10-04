@@ -21,7 +21,7 @@ class URidePhysicalRider;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UAnimInstance;
-struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8; struct FSkateHostPad;
+struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8; enum class ERideGrab : uint8; struct FSkateHostPad;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -72,6 +72,10 @@ public:
     /** The physical rider's get-up on foot, where the body lies (Ground, facing Yaw) with the board left lying. */
     void BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp);
     FString GetRetailState() const;
+    /** QA: a bone of the shown ride pose in the world under the Ride backend's Native solver (the hybrid; Native's
+     *  skeleton names, as SKATEBOARD_ROOT or HIPS). False without one: the Ride solver's pose is on its pose mesh. */
+    UFUNCTION(BlueprintCallable, Category="Skate")
+    bool GetRidePoseBone(FName Bone, FTransform& World) const;
     bool GetRetailCamera(FTransform& Out, float& FOV) const;
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
     /** Teleport the rider (and board) to a spot, stopped, on the board. */
@@ -130,7 +134,14 @@ private:
     TArray<FTransform> RetailPose;
     float BailVisualLift=0.f,RetailFloorClearance=0.f;
     bool bRetailPreloaded=false;
-    bool LaunchNativeSession(const FVector& Where, float Yaw, FString& Failure);
+    bool LaunchNativeSession(TSharedPtr<FSkateRuntime>& Into, const FVector& Where, float Yaw, FString& Failure);
+    /** Place a Native session at the ride's start (Pos, Rot, Vel), refreshing its collision first if needed. */
+    bool ActivateNative(FSkateRuntime& Runtime);
+    /** Step a Native session one frame (neutral controls if bNeutral): whether a new pose arrived. */
+    bool StepNative(FSkateRuntime& Runtime, float Dt, bool bNeutral, bool& bFailed);
+    /** Under the hybrid: count the air's spin from the shown pose and name it at the landing (Native names none). */
+    void NameNativeSpin(ESkateMode Was);
+    void RefreshNativeCollision(FSkateRuntime& Runtime);
     void PreloadRetailRuntime();
     void PollIdleRetail();
     bool StartRetailRuntime();
@@ -180,6 +191,31 @@ private:
     void StopRide();
     void PreloadRide();
     void GetUpFromBody();
+    // The Ride backend's riding solver (skate.RideSolver): Native's session rides (the board, its controls, tricks,
+    // airs, grinds, bail rules and pose) and Ride keeps the rest: the body (the physical rider follows the retargeted
+    // pose), the transitions, the bails (a Native wipeout hands the rider to the Chaos body) and the get-up where the
+    // body lies. RideNative is that session, kept apart from RetailRuntime (what the rider shows), so a transition clip
+    // published between rides never ends it. Ride's own board model (FRideSession) still animates the transitions.
+    static bool RideSolverIsNative();
+    TSharedPtr<FSkateRuntime> RideNative;
+    bool bRideNative = false;                  // the current ride's solver is Native
+    bool bNativeBail = false;                  // a Native wipeout handed to the body: the session waits, the body falls
+    FVector RideSpin = FVector::ZeroVector;    // the Native deck's angular velocity (rad/s, world)
+    bool StartNativeRide();
+    void SuspendNativeRide();
+    void AfterNativeRideFrame(float Dt);
+    void GetUpFromNativeBail();
+    /** The ride's root: Native's under the Ride body, otherwise the Ride session's. */
+    FTransform RideRoot() const;
+    // The bail's velocity and spin, and whether the rider rides switch: the solver's own (Native's under the hybrid).
+    FVector BailVelocity() const;
+    FVector BailSpin() const;
+    bool RideSwitched() const;
+    // The grab held in the air (an air dismount steps off from it): Native's, from the trick line and the triggers.
+    ERideGrab RideGrab() const;
+    // The stance the state reports: Native's own under the hybrid.
+    bool ShownFakie() const;
+    bool ShownSwitch() const;
 
     // Getting on and off with the Ride backend (Private/Ride/RideTransition.cpp, RIDE.md "Transitions"): one
     // continuous character. The actor never jumps, the capsule changes about its centre, the mesh keeps its world

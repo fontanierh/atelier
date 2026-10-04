@@ -2168,7 +2168,8 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     const double AnimStart = FPlatformTime::Seconds();
     Animator.Evaluate(Body, Board, Dt, Bones);
     AnimCost = float((FPlatformTime::Seconds() - AnimStart) * 1000.);
-    MeasurePose(Dt);
+    PoseMeasure.Measure(Names, Reference, Bones, Dt, Travel, Animator.IsBoardReversed());
+    const int32 DeckBone = PoseMeasure.DeckBone;
     // The clip's own motion of the deck on the session's (the animator places the deck bone on Board.Deck): with the
     // session's pose it is the board shown, and the box the next ticks collide.
     ShownClip = Bones.IsValidIndex(DeckBone) ? Bones[DeckBone] * Board.Deck.Inverse() : FTransform::Identity;
@@ -2218,73 +2219,13 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     UpdateCamera(At, Frame_, Dt);
 }
 
-void FRideSession::MeasurePose(float Dt)
-{
-    if (BodyBone.Num() != Names.Num())
-    {
-        BodyBone.SetNum(Names.Num());
-        for (int32 I = 0; I < Names.Num(); ++I)
-        {
-            const FString Name = Names[I].ToString();
-            BodyBone[I] = !Name.Contains(TEXT("SKATEBOARD")) && !Name.Contains(TEXT("TRUCK")) && !Name.Contains(TEXT("WHEEL")) && !Name.Contains(TEXT("REPARENTED"));
-        }
-        DeckBone = Names.IndexOfByKey(FName(TEXT("SKATEBOARD_ROOT")));
-        ToeBone[0] = Names.IndexOfByKey(FName(TEXT("LEFTTOEBASE")));
-        ToeBone[1] = Names.IndexOfByKey(FName(TEXT("RIGHTTOEBASE")));
-        LastBones.Reset();
-        HipsBone = Names.IndexOfByKey(FName(TEXT("HIPS")));
-        HeadBone = Names.IndexOfByKey(FName(TEXT("HEAD")));
-        ChestBone = Names.IndexOfByKey(FName(TEXT("SPINE3")));
-        const int32 Arm[2] = {Names.IndexOfByKey(FName(TEXT("LEFTARM"))), Names.IndexOfByKey(FName(TEXT("RIGHTARM")))};
-        if (Reference.IsValidIndex(Arm[0]) && Reference.IsValidIndex(Arm[1]) && Reference.IsValidIndex(HeadBone) && Reference.IsValidIndex(ChestBone))
-        {
-            // Facing away from the back: up crossed with the line from the right shoulder to the left one.
-            const FVector Facing = FVector::CrossProduct(FVector::UpVector, Reference[Arm[0]].GetLocation() - Reference[Arm[1]].GetLocation()).GetSafeNormal();
-            HeadAxis = Reference[HeadBone].GetRotation().UnrotateVector(Facing);
-            ChestAxis = Reference[ChestBone].GetRotation().UnrotateVector(Facing);
-        }
-    }
-    PoseNaN = 0;
-    for (const FTransform& Bone : Bones) if (Bone.ContainsNaN()) ++PoseNaN;
-    // The fastest body bone. The bones are in the root's space, so the ride's own travel and turning do not count.
-    PoseStep = 0; PoseStepBone = INDEX_NONE; PoseDt = Dt;
-    const bool bStep = LastBones.Num() == Bones.Num() && Dt > 1e-4f;
-    LastBones.SetNum(Bones.Num(), EAllowShrinking::No);
-    for (int32 I = 0; I < Bones.Num(); ++I)
-    {
-        const FVector Local = Bones[I].GetLocation();
-        const float Step = bStep && BodyBone[I] ? float(FVector::Dist(Local, LastBones[I])) / Dt : 0.f;
-        if (Step > PoseStep) { PoseStep = Step; PoseStepBone = I; }
-        LastBones[I] = Local;
-    }
-    FeetOff = 0;
-    if (Bones.IsValidIndex(DeckBone))
-        for (int32 F = 0; F < 2; ++F)
-        {
-            if (!Bones.IsValidIndex(ToeBone[F])) continue;
-            const FVector Local = Bones[DeckBone].InverseTransformPosition(Bones[ToeBone[F]].GetLocation());
-            // Along the travel: the deck's own length runs against it on a board left end for end.
-            FootHeight[F] = float(Local.Z); FootAlong[F] = float(Local.X) * Travel * (Animator.IsBoardReversed() ? -1.f : 1.f);
-            // Off the deck: beyond its outline or clear of its grip.
-            if (FMath::Abs(Local.X) > 42.f || FMath::Abs(Local.Y) > 14.f || Local.Z > 16.f || Local.Z < -4.f) ++FeetOff;
-        }
-    HipBoard = Bones.IsValidIndex(HipsBone) && Bones.IsValidIndex(DeckBone) ? float(Bones[HipsBone].GetLocation().Z - Bones[DeckBone].GetLocation().Z) : 0.f;
-    auto FromTravel = [this](int32 Bone, const FVector& Axis)
-    {
-        if (!Bones.IsValidIndex(Bone)) return 0.f;
-        const FVector Facing = Bones[Bone].GetRotation().RotateVector(Axis);
-        return FMath::RadiansToDegrees(FMath::Atan2(FMath::Abs(float(Facing.Y)), float(Facing.X) * Travel));
-    };
-    HeadYaw = FromTravel(HeadBone, HeadAxis); ChestYaw = FromTravel(ChestBone, ChestAxis);
-}
-
 FString FRideSession::DescribePose() const
 {
     return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f turns=%u swt=%.3f mirror=%d reversed=%d camyaw=%.1f wheel=%.1f queries=%.1f/%d"),
-        *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseStep,
-        Names.IsValidIndex(PoseStepBone) ? *Names[PoseStepBone].ToString() : TEXT("none"), PoseDt * 1000.f,
-        FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost, HipBoard, HeadYaw, ChestYaw, Animator.GetFakieWeight(), Animator.GetTorso(),
-        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Animator.IsBoardReversed(), Camera.Rotator().Yaw, WheelSpin, QueriesMean, QueriesWorst)
+        *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseMeasure.PoseStep,
+        *PoseMeasure.StepBoneName().ToString(), PoseMeasure.PoseDt * 1000.f, PoseMeasure.FootHeight[0], PoseMeasure.FootHeight[1],
+        PoseMeasure.FeetOff, PoseMeasure.PoseNaN, AnimCost, PoseMeasure.HipBoard, PoseMeasure.HeadYaw, PoseMeasure.ChestYaw,
+        Animator.GetFakieWeight(), Animator.GetTorso(), PoseMeasure.FootAlong[0], PoseMeasure.FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Animator.IsBoardReversed(), Camera.Rotator().Yaw, WheelSpin, QueriesMean, QueriesWorst)
         + DescribeFlick();
 }
 

@@ -5,6 +5,7 @@
 #include "SkatePad.h"
 #include "Ride/RideSession.h"
 #include "Ride/RideTransition.h"
+#include "Ride/RidePhysicalRider.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -272,6 +273,9 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
         if (!(USkateSettings::ActiveBackend() == ESkateBackend::Ride ? RideMount(true) : Toggle())) return false;
     }
     ResetInput();
+    // A placement is a cut for the body too: a bail or a get-up still under way ends at once, so the new ride starts
+    // with the body on the animation rather than lying where it fell.
+    if (PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp())) PhysicalRider->Abort();
     Pos = GroundPoint; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector; bFakie = false;
     Mode=ESkateMode::Ground;
     Rider->SetActorLocationAndRotation(Pos + Up() * BodyLift, Rot, false, nullptr, ETeleportType::TeleportPhysics);
@@ -409,6 +413,6 @@ FString USkateComponent::GetDebug() const
 {
     const UCharacterMovementComponent* M=Movement();
     return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d switch=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f skin_clearance=%.2f skin_lift=%.2f"),
-        M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),Ride ? Ride->IsFakie() : bFakie,Ride && Ride->IsSwitch(),bManual,bPowerslide,bPushing,
+        M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),ShownFakie(),ShownSwitch(),bManual,bPowerslide,bPushing,
         In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,RetailFloorClearance,BailVisualLift)+DescribeTransition()+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
 }

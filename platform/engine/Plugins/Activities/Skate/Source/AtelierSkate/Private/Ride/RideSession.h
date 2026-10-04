@@ -6,6 +6,7 @@
 #include "RideSpeedModel.h"
 #include "RideTypes.h"
 #include "RideAnimator.h"
+#include "RidePoseMeasure.h"
 #include "Engine/EngineTypes.h"
 #include "CollisionQueryParams.h"
 #include "Templates/PimplPtr.h"
@@ -94,6 +95,8 @@ public:
     TArray<ERideCue> Cues;
 
     ERideState GetMode() const { return Mode; }
+    /** The board's ground point: after Activate, the start as it settled onto the floor (or as placed, in the air). */
+    FVector GetPosition() const { return P; }
     bool IsBailing() const { return Mode == ERideState::Bail; }
     float GetUpAlpha() const { return Mode == ERideState::GetUp ? FMath::Clamp(ModeTime / FMath::Max(.05f, Tune.GetUpTime), 0.f, 1.f) : 1.f; }
     bool IsNoseManual() const { return Mode == ERideState::Manual && bNoseManual; }
@@ -299,21 +302,8 @@ private:
     double CostSum = 0, CostMax = 0, CostClock = 0; int32 CostCount = 0;
     int64 QuerySum = 0; int32 QueryMax = 0;
     // Pose health (DescribePose).
-    TArray<FVector> LastBones;       // root space
-    TArray<bool> BodyBone;
-    int32 DeckBone = INDEX_NONE, ToeBone[2] = {INDEX_NONE, INDEX_NONE};
-    float PoseStep = 0, FootHeight[2] = {0, 0}, AnimCost = 0;
-    int32 PoseStepBone = INDEX_NONE;   // the bone of PoseStep
-    float PoseDt = 0;                  // the frame PoseStep was measured over (s)
-    int32 PoseNaN = 0, FeetOff = 0;
-    // The hips above the board (HIPS over SKATEBOARD_ROOT along the root's up, cm), and the head's and the chest's
-    // (SPINE3) facing from the travel (degrees on the root's plane, 0 looking along it); each bone's facing axis is the
-    // one that points where the shoulders face in the rig's reference pose.
-    int32 HipsBone = INDEX_NONE, HeadBone = INDEX_NONE, ChestBone = INDEX_NONE;
-    FVector HeadAxis = FVector::ForwardVector, ChestAxis = FVector::ForwardVector;
-    float HipBoard = 0, HeadYaw = 0, ChestYaw = 0;
-    float FootAlong[2] = {0, 0};       // each toe along the travel from the deck's pivot (cm; left, right)
-    void MeasurePose(float Dt);
+    FRidePoseMeasure PoseMeasure;
+    float AnimCost = 0;
 
     void Tick(const FSkateInput& In, const atelier::skate::XboxState& Pad);
     void TickGround(const FSkateInput& In, atelier::ride::Flick Flick);

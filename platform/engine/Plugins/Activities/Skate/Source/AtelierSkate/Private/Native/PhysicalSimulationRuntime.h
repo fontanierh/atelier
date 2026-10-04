@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include <string>
 #include "PhysicalSimulationSettings.h"
 #include "BoardColliders.h"
 #include "BoardMotionOutput.h"
@@ -37,6 +38,8 @@ struct GroundOrientation
     Vec3 dynamic_up{0,1,0},up{0,1,0},target{0,1,0},up_velocity{},ground_normal{0,1,0};
     float ground_blend=0;
     GroundNormalFilter ground_filter,slow_filter,fast_filter;
+    // The inputs and state of the first update that left up non-finite, for the session's error.
+    std::string fault;
     explicit GroundOrientation(const GroundOrientationSettings&);
     void Reset();
     void Update(const GroundOrientationSettings&,GroundOrientationInput);
