@@ -12,6 +12,15 @@ namespace atelier::skate
 namespace
 {
 float Scalar(std::uint32_t word){float value;std::memcpy(&value,&word,4);return value;}
+// The board's start: its wheels on the anchor, facing the heading about native's up.
+AffineTransform SpawnTransform(const BoardPhysicsSettings& board,Vec3 anchor,float heading)
+{
+    AffineTransform spawn;
+    spawn.translation={anchor.x,anchor.y+board.collision.wheel_radius-board.authored[0].translation.y,anchor.z};
+    const float sine=std::sin(heading),cosine=std::cos(heading);
+    spawn.basis.columns={{{cosine,0,-sine},{0,1,0},{sine,0,cosine}}};
+    return spawn;
+}
 // The host publishes affine matrices from the retained native XYZ columns.
 // Internal animation matrices also carry weights in W; leave those untouched.
 Mat4 PublishedMatrix(Mat4 matrix)
@@ -28,17 +37,31 @@ bool GameplaySession::Create(std::shared_ptr<const GameplayResources> resources,
     auto board=BoardPhysicsSettings::Load(resources->settings,error);if(!board)return false;
     std::optional<PreparedGameplayWorld> world;
     if(!BuildGameplayWorld(snapshot,board->floor_material,world,error))return false;
-    AffineTransform spawn;
-    spawn.translation={anchor.x,anchor.y+board->collision.wheel_radius-board->authored[0].translation.y,anchor.z};
-    const float sine=std::sin(heading),cosine=std::cos(heading);
-    spawn.basis.columns={{{cosine,0,-sine},{0,1,0},{sine,0,cosine}}};
     auto result=std::make_unique<GameplaySession>();
     const bool floor_seams=world->imported_floor_seams;
     if(!GameplayRuntime::Create(std::move(resources),std::move(world->collision),
-        std::move(world->grind),spawn,"easy",result->gameplay,error))return false;
+        std::move(world->grind),SpawnTransform(*board,anchor,heading),"easy",result->gameplay,error))return false;
+    result->floor_seams_=floor_seams;
     if(floor_seams)result->gameplay->physical->EnableImportedFloorSeams();
     if(!result->markers.Load(result->gameplay->resources->settings,error))return false;
     output=std::move(result);error.clear();return true;
+}
+bool GameplaySession::CreateBlank(std::shared_ptr<const GameplayResources> resources,
+    std::unique_ptr<GameplaySession>& output,std::string& error)
+{
+    // On no world, a kilometre under the origin: the first tick (which Activate would otherwise run where the ride
+    // starts) meets nothing, so every session made this way starts the same, and it can be made on any thread ahead of
+    // the ride that takes it.
+    if(!Create(std::move(resources),GameplayWorldSnapshot{},{0,-1000,0},0,output,error))return false;
+    return output->Tick({},error);
+}
+bool GameplaySession::AdoptWorld(GameplaySession& from,std::string& error)
+{
+    auto& source=*from.gameplay;
+    if(!gameplay->InstallWorld(std::move(source.physical->world),source.grind_world,error))return false;
+    floor_seams_=from.floor_seams_;
+    if(floor_seams_)gameplay->physical->EnableImportedFloorSeams();
+    error.clear();return true;
 }
 bool GameplaySession::Configure(std::string_view difficulty,bool goofy,float trucks,std::string& error)
 {
@@ -66,6 +89,12 @@ bool GameplaySession::Activate(Vec3 spawn,float heading,std::string& error)
     auto frame=transform.ToMatrix();frame[3][3]=0;
     if(!gameplay->TravelTo(frame,error))return false;
     for(unsigned i=0;i<4;++i)if(!Tick({},error))return false;
+    // A respawn with no better place falls back to where this ride starts, as on a session made here (GameplayRuntime::
+    // Create), not to where the session was made or rode before.
+    const auto deck=gameplay->physical->DeckFrame();
+    auto respawn=RespawnRuntime::Load(gameplay->resources->settings,deck,gameplay->animation->CheckpointStance(),error);
+    if(!respawn)return false;
+    *gameplay->respawn=std::move(*respawn);gameplay->teleport->SetCheckpoint({deck,true});
     input=ControllerInputRuntime{};elapsed_=0;error.clear();return true;
 }
 void GameplaySession::SuspendInput()
@@ -98,6 +127,7 @@ bool GameplaySession::InstallCollision(PreparedGameplayWorld world,std::string& 
 {
     const bool floor_seams=world.imported_floor_seams;
     if(!gameplay->InstallWorld(std::move(world.collision),std::move(world.grind),error))return false;
+    floor_seams_=floor_seams;
     if(floor_seams)gameplay->physical->EnableImportedFloorSeams();
     return true;
 }

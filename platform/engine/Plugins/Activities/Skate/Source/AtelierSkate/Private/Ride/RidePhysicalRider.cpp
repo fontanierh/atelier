@@ -222,28 +222,29 @@ namespace
     // restored joint take max(0.01, skel x mult), the riding range, which here stays the asset's. Centre is the child's
     // anatomical frame (BuildPhysicsAsset's: X along the body, Y its flexion axis, both from the bind pose) in its
     // parent's at Native's centres, worked out on Native's RIG_TPOSE with the same rule; the limits are the largest twist,
-    // Swing1 and Swing2 Chaos measures over Native's envelope (the box that holds it, Chaos's limits being a pyramid). A
-    // contract joint that spans several of Native's sums them: the spine is HIPS-SPINE, the chest SPINE-SPINE1 to
-    // SPINE2-SPINE3, the head SPINE3-NECK and NECK-NECK1, an upper arm the clavicle's and the shoulder's. Each side keeps
-    // Native's own values: its left and right differ (the left ankle's cone is 9.4 degrees, the right's 13.5), so a
-    // side's centre is up to 20 degrees from the mirror of the other's. From Native's physics_skeleton_joints records.
+    // Swing1 and Swing2 Chaos measures over Native's envelope, the parent's frame to the child's (the box that holds it,
+    // Chaos's limits being a pyramid). A contract joint that spans several of Native's sums them: the spine is
+    // HIPS-SPINE, the chest SPINE-SPINE1 to SPINE2-SPINE3, the head SPINE3-NECK and NECK-NECK1, an upper arm the
+    // clavicle's and the shoulder's. Each side keeps Native's own values: its left and right differ (the left ankle's
+    // cone is 9.4 degrees, the right's 13.5), so a side's centre is up to 20 degrees from the mirror of the other's. From
+    // Native's physics_skeleton_joints records.
     struct FBailJoint { const TCHAR* Contract; FQuat Centre; float Twist, Swing1, Swing2; };
     const FBailJoint BailJoints[] = {
         {TEXT("spine"), FQuat(0.0495f, 0.1839f, 0.0005f, 0.9817f), 16.0f, 12.8f, 14.0f},
-        {TEXT("chest"), FQuat(0.1145f, 0.3301f, 0.0874f, 0.9329f), 35.1f, 34.3f, 29.9f},
+        {TEXT("chest"), FQuat(0.1145f, 0.3301f, 0.0874f, 0.9329f), 35.1f, 34.8f, 31.1f},
         {TEXT("head"), FQuat(0.0709f, 0.0917f, 0.0406f, 0.9924f), 11.3f, 9.8f, 12.2f},
-        {TEXT("upperarm_L"), FQuat(0.0308f, -0.0057f, -0.8321f, 0.5537f), 42.1f, 37.6f, 42.2f},
-        {TEXT("forearm_L"), FQuat(-0.1695f, 0.4058f, 0.1936f, 0.8770f), 33.2f, 16.8f, 16.3f},
-        {TEXT("hand_L"), FQuat(0.2187f, -0.1036f, -0.0550f, 0.9687f), 42.8f, 37.6f, 34.3f},
-        {TEXT("upperarm_R"), FQuat(-0.1620f, 0.0743f, 0.7673f, 0.6160f), 42.1f, 32.7f, 42.8f},
-        {TEXT("forearm_R"), FQuat(0.0572f, 0.4629f, -0.0734f, 0.8815f), 36.4f, 19.5f, 19.7f},
+        {TEXT("upperarm_L"), FQuat(0.0308f, -0.0057f, -0.8321f, 0.5537f), 42.1f, 37.6f, 42.1f},
+        {TEXT("forearm_L"), FQuat(-0.1695f, 0.4058f, 0.1936f, 0.8770f), 33.2f, 16.8f, 16.2f},
+        {TEXT("hand_L"), FQuat(0.2187f, -0.1036f, -0.0550f, 0.9687f), 42.8f, 37.6f, 34.2f},
+        {TEXT("upperarm_R"), FQuat(-0.1620f, 0.0743f, 0.7673f, 0.6160f), 42.1f, 30.3f, 42.8f},
+        {TEXT("forearm_R"), FQuat(0.0572f, 0.4629f, -0.0734f, 0.8815f), 36.4f, 19.8f, 19.5f},
         {TEXT("hand_R"), FQuat(-0.1789f, -0.1244f, 0.0590f, 0.9742f), 48.0f, 48.5f, 42.8f},
         {TEXT("thigh_L"), FQuat(0.4546f, -0.1547f, -0.8551f, 0.1956f), 41.3f, 38.2f, 45.9f},
         {TEXT("shin_L"), FQuat(0.7509f, -0.0141f, 0.6566f, 0.0694f), 32.9f, 38.2f, 41.4f},
-        {TEXT("foot_L"), FQuat(0.0357f, -0.6381f, 0.1092f, 0.7613f), 11.4f, 11.5f, 23.7f},
-        {TEXT("thigh_R"), FQuat(-0.4887f, -0.0742f, 0.8568f, 0.1471f), 35.1f, 33.8f, 39.3f},
-        {TEXT("shin_R"), FQuat(-0.7697f, -0.0039f, -0.6350f, 0.0655f), 44.7f, 38.4f, 46.3f},
-        {TEXT("foot_R"), FQuat(-0.0488f, -0.5546f, -0.0947f, 0.8253f), 30.6f, 20.5f, 34.3f},
+        {TEXT("foot_L"), FQuat(0.0357f, -0.6381f, 0.1092f, 0.7613f), 11.4f, 11.3f, 23.6f},
+        {TEXT("thigh_R"), FQuat(-0.4887f, -0.0742f, 0.8568f, 0.1471f), 35.1f, 33.9f, 39.3f},
+        {TEXT("shin_R"), FQuat(-0.7697f, -0.0039f, -0.6350f, 0.0655f), 44.7f, 37.4f, 46.1f},
+        {TEXT("foot_R"), FQuat(-0.0488f, -0.5546f, -0.0947f, 0.8253f), 30.6f, 21.4f, 34.1f},
     };
 
     // The reference skeleton's bind pose in component space.
@@ -2417,6 +2418,49 @@ void URidePhysicalRider::DropLooseBoard()
     LooseBoard->SetSimulatePhysics(false);
     LooseBoard->DestroyComponent();
     LooseBoard = nullptr;
+}
+
+void URidePhysicalRider::PlaceLooseBoard(const FTransform& Deck)
+{
+    if (!LooseBoard) return;
+    if (LooseBoard->IsSimulatingPhysics()) LooseBoard->SetSimulatePhysics(false);
+    const FQuat Rotation = Deck.GetRotation();
+    LooseBoard->SetWorldLocationAndRotation(Deck.GetLocation() - Rotation.GetUpVector() * LooseBoardDrop * BoardScale, Rotation,
+        false, nullptr, ETeleportType::TeleportPhysics);
+    LooseLast = LooseBoard->GetComponentTransform();
+}
+
+void URidePhysicalRider::ReleaseLooseBoard(const FVector& Velocity, const FVector& Spin)
+{
+    if (!LooseBoard || LooseBoard->IsSimulatingPhysics()) return;
+    // The box's centre is below the deck it was placed by: it moves with the deck's velocity and the turn about it.
+    const FVector Arm = LooseBoard->GetComponentLocation() - GetLooseBoardDeck().GetLocation();
+    // Native's board (a deck, trucks and wheels) fits where the box may not: lifted out of what it would start inside,
+    // which the guard (GuardBoard) would otherwise hold it in.
+    if (UWorld* World = LooseBoard->GetWorld())
+    {
+        const FVector Extent = (LooseBoard->GetScaledBoxExtent() - FVector(BoardGuardInset)).ComponentMax(FVector(.5f));
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(RideBoardRelease), false, LooseBoard->GetOwner());
+        Params.AddIgnoredComponent(LooseBoard.Get());
+        const FTransform At(LooseBoard->GetComponentQuat(), LooseBoard->GetComponentLocation());
+        for (int32 Step = 0, Tries = 0; Step <= 10 && Tries < 20; ++Tries)
+        {
+            const FTransform Try(At.GetRotation(), At.GetLocation() + FVector(0, 0, 3.f * Step));
+            FHitResult Hit;
+            if (!FRideSession::SweepBox(*World, Try, Try, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, Hit))
+            {
+                if (Step > 0) LooseBoard->SetWorldLocationAndRotation(Try.GetLocation(), Try.GetRotation(), false, nullptr, ETeleportType::TeleportPhysics);
+                break;
+            }
+            // What moves is physics' own to push.
+            UPrimitiveComponent* Other = Hit.GetComponent();
+            if (Other && Other->IsSimulatingPhysics()) Params.AddIgnoredComponent(Other); else ++Step;
+        }
+    }
+    LooseBoard->SetSimulatePhysics(true);
+    LooseBoard->SetPhysicsLinearVelocity(Velocity + FVector::CrossProduct(Spin, Arm));
+    LooseBoard->SetPhysicsAngularVelocityInRadians(Spin);
+    LooseLast = LooseBoard->GetComponentTransform();
 }
 
 // ---------------------------------------------------------------------------------------------------------------

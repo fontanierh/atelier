@@ -271,6 +271,11 @@ public:
     UBoxComponent* TakeLooseBoard();
     /** Destroy the loose board if it is still ours (the ride's board is back under the rider). */
     void DropLooseBoard();
+    /** Put the loose board's deck at Deck (scaled, as GetLooseBoardDeck) and hold it there, out of physics: another
+     *  simulation (the hybrid's Native session) moves the board. ReleaseLooseBoard gives it back to physics, moving
+     *  with Velocity (cm/s) and Spin (rad/s). */
+    void PlaceLooseBoard(const FTransform& Deck);
+    void ReleaseLooseBoard(const FVector& Velocity, const FVector& Spin);
     /** Keep the loose board and the one handed over out of what the rider collides with (Pawn-blocking geometry,
      *  including the query-only surfaces physics does not see): each frame either is swept, moved and turned in steps
      *  (FRideSession::SweepBox), from where it was to where physics took it, and goes back to the last pose found free

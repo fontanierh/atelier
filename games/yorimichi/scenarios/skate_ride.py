@@ -927,10 +927,11 @@ def native_checks(record, parity):
         rows = grab_air({'grab_right': True}, 2.5)
         record('native_grab_held_landing', rows, rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
                f"{qa.combos(rows) or '(none)'}; {'bailed' if qa.count(rows, 'bails') else 'rode away'}")
-        # The lip airs and the rails by Native's own board, judged as the hybrid's are: where Native itself misses a
-        # row, the row asks for Ride's board, not Native's.
+        # The lip airs, the held spins up Mega Park's pool wall and the rails by Native's own board, judged as the
+        # hybrid's are: where Native itself misses a row, the row asks for Ride's board, not Native's.
         native_record = lambda name, rows, ok, note: record('native_' + name, rows, ok, note)
         vert_checks(native_record)
+        spin_held(native_record)
         grind_rows(native_record)
         # What the hybrid shows of Native's pose and board, on Native itself: the wheels, the fakie rows, the hips
         # before a landing, and the feet and pops of the pose rides in both stances.

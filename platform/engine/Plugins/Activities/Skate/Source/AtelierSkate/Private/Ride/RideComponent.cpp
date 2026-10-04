@@ -214,8 +214,9 @@ void USkateComponent::GetUpFromBody()
 }
 
 // Native's session rides under Ride's body (skate.RideSolver). Riding, the body follows the retargeted Native pose; a
-// Native wipeout hands the rider to the Chaos body, which falls with the momentum it has while the board tumbles on its
-// own and the session waits; the settled body gets up where it lies and the session takes the ride back from there.
+// Native wipeout hands the rider to the Chaos body, which falls with the momentum it has while the board goes on with
+// the session's wipeout (or tumbles on its own); the settled body gets up where it lies and a fresh session takes the
+// ride back from there.
 void USkateComponent::AfterNativeRideFrame(float Dt)
 {
     // Without bodies (no physics asset) the session's own wipeout and recovery play.
@@ -231,7 +232,7 @@ void USkateComponent::AfterNativeRideFrame(float Dt)
         else if (Body.StartBail(Vel, RideSpin, URidePhysicalRider::ShownTransform(BoardRoot), BoardScale()))
         {
             bNativeBail = true;
-            SuspendNativeRide();
+            BeginNativeBoardInBail();
             UE_LOG(LogTemp, Display, TEXT("SKATE Native wipeout (%s) at %.0f cm/s handed to the body"), *GetRetailState().Left(32), Vel.Size());
         }
     }
@@ -294,6 +295,7 @@ void USkateComponent::GetUpFromNativeBail()
     const FVector Ground = Body.GetBodyGround();
     const float Yaw = Body.GetBodyYaw();
     const bool bFaceUp = Body.IsFaceUp();
+    EndNativeBoardInBail();
     bNativeBail = false;
     if (WantsGetUpOnFoot())
     {
@@ -310,9 +312,15 @@ void USkateComponent::GetUpFromNativeBail()
     if (!StartNativeRide()) { RuntimeFailure(TEXT("Native skating could not take the ride back after the bail.")); StowImmediately(); return; }
     const FTransform Root = RideRoot();
     Rider->SetActorLocationAndRotation(Root.GetLocation() + FVector(0, 0, BodyLift), Root.GetRotation(), false, nullptr, ETeleportType::None);
+    // The board went with the actor: it stays where it lies.
+    if (Body.GetLooseBoard()) BoardRoot->SetWorldTransform(Body.GetLooseBoardDeck());
+    // A ride placed without the transitions' board (a QA placement) takes it now, as a mount does: the board shown is
+    // the ride's.
+    FRideTransition& T = Transit();
+    if (Body.GetLooseBoard() && T.Board == ERideBoard::Away) { T.Board = ERideBoard::Ride; T.Shown = T.ShownTarget = 1.f; }
     // Onto the board: within a step of where the rider gets up, and lying wheels down, the rider steps onto it; otherwise it
     // dissolves out where it lies, and a board dissolves in under the feet.
-    if (Body.GetLooseBoard() && Transit().Board == ERideBoard::Ride)
+    if (Body.GetLooseBoard() && T.Board == ERideBoard::Ride)
     {
         const FTransform Lying = Body.GetLooseBoardDeck();
         const float Away = FVector::Dist(Lying.GetLocation(), Ground);

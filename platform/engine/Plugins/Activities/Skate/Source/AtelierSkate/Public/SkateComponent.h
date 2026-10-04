@@ -200,10 +200,20 @@ private:
     static bool RideSolverIsNative();
     TSharedPtr<FSkateRuntime> RideNative;
     bool bRideNative = false;                  // the current ride's solver is Native
-    bool bNativeBail = false;                  // a Native wipeout handed to the body: the session waits, the body falls
+    bool bNativeBail = false;                  // a Native wipeout handed to the body: the body falls
     FVector RideSpin = FVector::ZeroVector;    // the Native deck's angular velocity (rad/s, world)
+    // Through the body's bail the session goes on with its wipeout (controls neutral) and the loose board is placed on
+    // Native's board (skate.BailNativeBoard): it rolls on and catches on edges as on the Native backend.
+    bool bNativeBoardInBail = false;
+    FTransform NativeBoardLast = FTransform::Identity;   // the board placed last, and its motion (cm/s, rad/s)
+    FVector NativeBoardVelocity = FVector::ZeroVector, NativeBoardSpin = FVector::ZeroVector;
+    float NativeBoardSince = 0.f;                       // seconds since it was placed
     bool StartNativeRide();
     void SuspendNativeRide();
+    void RelaunchNativeRide();
+    void BeginNativeBoardInBail();
+    void FollowNativeBoardInBail(float Dt);
+    void EndNativeBoardInBail();
     void AfterNativeRideFrame(float Dt);
     void GetUpFromNativeBail();
     /** The ride's root: Native's under the Ride body, otherwise the Ride session's. */
@@ -236,8 +246,9 @@ private:
     float OffBoardDeckBlend=1.f;
     /** bPlaceBoard: the visible board goes where the clip has it (false: it stays where it is, lying or kicked away). */
     bool PublishOffBoardPose(float Lift, bool bPlaceBoard = true);
-    /** Place the visible board's parts from the published source board, its deck at DeckWorldScaled. */
-    void PlaceBoardParts(const FTransform& DeckWorldScaled);
+    /** Place the visible board's parts from a source board (the published one, RetailRuntime's, by default), its deck
+     *  at DeckWorldScaled. */
+    void PlaceBoardParts(const FTransform& DeckWorldScaled, const FSkateRuntime* Source = nullptr);
     uint32 PoseBlendSerial=0;
     float PoseBlendTime=0.f;
     float PendingPoseBlend=0.f;        // a blend for the pose the ride publishes next (RequestPoseBlendWithNextPose)

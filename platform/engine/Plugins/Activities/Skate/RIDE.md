@@ -4,6 +4,29 @@ Ride is the Unreal-native skating backend (`skate.Backend Ride`, `USkateSettings
 backend in its config; the backend is chosen at each mount and a ride keeps it. Its sources are in
 `Source/AtelierSkate/Private/Ride/`.
 
+## Native's session under Ride's body
+
+By default (`skate.RideSolver Native`) Ride rides on Native's session: Native's `GameplaySession`, on its own thread,
+runs the board, the controls, the tricks, airs, grinds, the bail rules and the pose, and Ride's body follows the
+retargeted pose as an active ragdoll, with Ride's transitions, Chaos bails, get-up and camera. `skate.RideSolver Ride`
+rides on Ride's own board model, described from **Board** on.
+
+- **Fresh sessions.** Every ride starts on a new session, made ahead on no world (two are kept, about 40 ms each on
+  their own threads), which takes over the collision of the one before. The same controls from the same place ride the
+  same way whatever was ridden before. The swap at a mount takes 0.7–1.8 ms.
+- **The world.** The collision snapshot is centred on the 10 m cell the rider is in, or on a park's origin within its
+  60 m: a place always gets the same triangles in the same order. It is rebuilt off the game thread when the ride nears
+  the snapshot's edge or, on foot, when the rider changes cell; in lockstep (QA, replays) a mount on another place's
+  world gathers its own at once.
+- **Bails.** A Native wipeout hands the rider to the Chaos body. The session goes on with its wipeout, controls neutral,
+  and the loose board is placed on Native's board each frame, trucks and wheels included (`skate.BailNativeBoard 1`):
+  it rolls on and catches on edges as on the Native backend (within 1 cm of it at 1 s in the oracle's bails). It goes
+  back to Chaos with Native's motion when the wipeout ends (Native's recovery teleports its rider), when it would jump
+  further than its speed takes it, when the session fails, or at the get-up, which takes the ride on a fresh session.
+  `skate.BailNativeBoard 0` throws the board on its own instead.
+- **Failures.** A failed session never stows the board under a moving rider: the body bails with the momentum shown
+  and a new session loads off the game thread while it falls.
+
 ## Board
 
 The board is rigid and steps at 60 Hz (`RideSession.cpp`; the numbers are in `RideTuning.h`). Each frame shows it

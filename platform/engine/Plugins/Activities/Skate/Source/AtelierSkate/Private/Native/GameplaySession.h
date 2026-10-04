@@ -33,6 +33,11 @@ public:
     bool Tune(float pop,float spin,float speed,float power,std::string& error)
     {return Tune(pop,spin,speed,power,0.0f,error);}
     bool Activate(Vec3,float heading,std::string& error);
+    // A session on no world, ticked once where nothing is: made ahead of a ride (on any thread), it takes a live
+    // session's collision (AdoptWorld) and Activate places it, so no ride inherits another's state.
+    static bool CreateBlank(std::shared_ptr<const GameplayResources>,std::unique_ptr<GameplaySession>& output,std::string& error);
+    // Take over another session's installed collision and grind world (that session is left without).
+    bool AdoptWorld(GameplaySession& from,std::string& error);
     void SuspendInput();
     void Collect(const std::array<DeviceSample,InputDeviceSlots>&,float dt);
     bool Advance(std::string& error);
@@ -48,6 +53,7 @@ public:
     float Elapsed() const{return elapsed_;}
 private:
     float elapsed_=0;
+    bool floor_seams_=false;   // the installed world's imported floor seams, which AdoptWorld carries over
     bool AdvancePublished(std::string& error);
 };
 }
