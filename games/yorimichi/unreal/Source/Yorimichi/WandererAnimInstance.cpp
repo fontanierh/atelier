@@ -18,6 +18,7 @@
 #include "AnimNodes/AnimNode_BlendSpacePlayer.h"
 #include "AnimNodes/AnimNode_TwoWayBlend.h"
 #include "AnimNodes/AnimNode_LayeredBoneBlend.h"
+#include "BoneControllers/AnimNode_TwoBoneIK.h"
 #include "WandererSword.h"
 #include "BotwMoveSet.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -118,6 +119,9 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_TwoWayBlend LeftHand;
     FAnimNode_LayeredBoneBlend CarryLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
+    // A two-handed hold on a sword shorter than the clip's own (Cairo's bokken clips on Link's sword): the off hand is put
+    // on the handle beside the sword hand, its elbow bending as the clip has it.
+    FAnimNode_TwoBoneIK GripIK;
     FGroundContactNode Feet;
     FSailboatStanceNode Stance;
     FAnimNode_ConvertComponentToLocalSpace ToLocal;
@@ -146,7 +150,12 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         CarryLayer.BlendWeights.SetNum(2); CarryLayer.BlendWeights[0] = CarryLayer.BlendWeights[1] = 0.f;
         CarryLayer.bMeshSpaceRotationBlend = false; CarryLayer.bBlendRootMotionBasedOnRootBone = false;
         ToComponent.LocalPose.SetLinkNode(&CarryLayer);
-        Feet.ComponentPose.SetLinkNode(&ToComponent);
+        GripIK.ComponentPose.SetLinkNode(&ToComponent);
+        GripIK.EffectorLocationSpace = BCS_BoneSpace; GripIK.JointTargetLocationSpace = BCS_BoneSpace;
+        GripIK.EffectorLocation = GripIK.JointTargetLocation = FVector::ZeroVector;
+        GripIK.bAllowStretching = false; GripIK.bTakeRotationFromEffectorSpace = false; GripIK.bMaintainEffectorRelRot = false;
+        GripIK.Alpha = 0.f;
+        Feet.ComponentPose.SetLinkNode(&GripIK);
         Feet.Alpha=0.f;
         Stance.ComponentPose.SetLinkNode(&Feet);
         Stance.Alpha = 0.f;
@@ -161,7 +170,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &ToComponent, &GripIK, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -179,6 +188,10 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 // The layers' branch bones by the skate contract's names (a character's own clavicles).
                 CarryLayer.LayerSetup[0].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_R"));
                 CarryLayer.LayerSetup[1].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_L"));
+                // The off hand's IK: the left wrist, aimed from the sword hand's bone, its elbow as the clip bends it.
+                GripIK.IKBone.BoneName = Pawn->GetSkateBone(TEXT("hand_L"));
+                GripIK.EffectorTarget = FBoneSocketTarget(Pawn->GetSkateBone(TEXT("hand_R")));
+                GripIK.JointTarget = FBoneSocketTarget(Pawn->GetSkateBone(TEXT("forearm_L")));
             }
         FAnimInstanceProxy::Initialize(Instance);
     }
@@ -290,6 +303,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         LeftArm.Alpha = OffHandGuard / FMath::Max(ShieldWeight + FreeWeight + OffHandGuard, KINDA_SMALL_NUMBER);
         CarryLayer.BlendWeights[0] = FMath::Min(1.f, CarryWeight + SwordGuardWeight);
         CarryLayer.BlendWeights[1] = FMath::Min(1.f, ShieldWeight + FreeWeight + OffHandGuard);
+        GripIK.Alpha = bCarrying && Moves ? Moves->TwoHandGripWeight() : 0.f;
+        if (Moves) GripIK.EffectorLocation = Moves->TwoHandGripOffset();
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
     }

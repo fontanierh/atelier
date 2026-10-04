@@ -247,6 +247,10 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
         const double Far = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? Box.Max[Axis] : Box.Min[Axis];
         FVector Tip = FVector::ZeroVector; Tip[Axis] = Far;
         BladeBase = Tip * .18; BladeTip = Tip;
+        // The off hand's place in a two-handed hold: one hand's width (BOTW's 13 cm) from the sword hand toward the
+        // pommel, along the blade's axis as the sword hand holds it.
+        if (const FSlot* S = Slots.Find(TEXT("sword")))
+            GripOffset = -S->Held.GetRotation().RotateVector(Tip.GetSafeNormal()) * 13.f * Scale();
     }
     // Whatever is too steep to climb can be walked up: the walkable slope meets the climbing angle.
     Owner->GetCharacterMovement()->SetWalkableFloorAngle(GetParam(TEXT("ClimbEnableAngle"), 50.f));
@@ -1952,6 +1956,9 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     const bool bFree = !HasShield() && bArmed && (Mode == EBotwMoveMode::Ground || Mode == EBotwMoveMode::Air) && !bDown &&
         !(bSwordGuard && bTwoHanded) && !In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit"), TEXT("DrawSword"), TEXT("SheatheSword") });
     FreeArm = FMath::FInterpConstantTo(FreeArm, bFree ? 1.f : 0.f, Dt, 8.f);
+    // Cairo's own two-handed clips were made for his longer bokken: on this sword the off hand is moved onto the handle.
+    const bool bTwoHand = bTwoHanded && bArmed && !bDown && (bSwordGuard || In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit") }));
+    TwoHandGrip = FMath::FInterpConstantTo(TwoHandGrip, bTwoHand ? 1.f : 0.f, Dt, 12.f);
 }
 
 void UBotwMoveSet::EaseMesh(const FVector& From, float Seconds)

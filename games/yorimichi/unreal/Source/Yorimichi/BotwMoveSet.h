@@ -108,6 +108,10 @@ public:
     float SwordGuardOffHandWeight() const { return GetParam(TEXT("TwoHandedGuard")) > .5f ? SwordGuardCarry : 0.f; }
     /** Without the shield, the off hand's arm swings free (locomotion) over sword work instead of the clips' shield pose. */
     float FreeArmWeight() const { return FreeArm; }
+    /** A two-handed hold (Cairo's bokken guard, parry and recoil) on the move set's sword: how much the off hand is put on
+     *  its handle, and where that is from the sword hand's bone (one hand's width along the handle toward the pommel). */
+    float TwoHandGripWeight() const { return TwoHandGrip; }
+    FVector TwoHandGripOffset() const { return GripOffset; }
     float GetMaxWalkSpeed(float Default) const;
     float GetParam(const TCHAR* Key, float Default = 0.f) const;
     const FBotwMove* Find(FName Name) const { return Moves.Find(Name); }
@@ -182,7 +186,8 @@ private:
     bool bHasSafeShore = false;
     // Combat
     bool bShield = false, bLegacy = false;
-    float FreeArm = 0.f;
+    float FreeArm = 0.f, TwoHandGrip = 0.f;
+    FVector GripOffset = FVector::ZeroVector;
     // The paraglider's grips: the bar's two (its own frame) and the hands' two (each in its hand bone's frame); gliding,
     // the bar is fitted to both hands every frame, so it banks with them and neither lets go.
     FTransform GliderHeld = FTransform::Identity;
