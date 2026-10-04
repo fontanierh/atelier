@@ -3,7 +3,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json, math, random
 from functools import lru_cache
 from pathlib import Path
-from hidamari import arrival as arrival_road, mountains, park_grounds, station_yard, temple_precinct
+from hidamari import arrival as arrival_road, house_gardens, mountains, park_grounds, station_yard, temple_precinct
 from megapark import trail as park_trail
 import numpy as np
 ROOT=yori.REGIONS
@@ -514,6 +514,8 @@ def generate():
                     blocked=True;break
             if not blocked:kept.append(item)
         inst[name]=kept
+    # The houses' front gardens, after the clearance: their maples stand inside the plots on purpose.
+    house_gardens.place(put,house_sites())
     from hidamari.forest_backdrop import append as append_forest_backdrop,ground as backdrop_ground
     forest_backdrop=append_forest_backdrop(inst,buildings,height,backdrop_grid,terrain_axes,north_height,ROAD_X,ROAD_Y)
     # Round the Mega Park the forest is the detailed autumn kind, as the skater gets close to it there, closed beyond.
