@@ -3,7 +3,8 @@
     python games/yorimichi/scenarios/botw_moves_film_cut.py [--audio] build/yorimichi/botw/moves_film/review.mp4 link1 \
         cairo1:-Shield cairo2:Shield
 
-A take may name the sections to keep (take:A,B) or to leave out (take:-A,B). Each character's sections play in the
+A take may name the sections to keep (take:A,B) or to leave out (take:-A,B); --skip TEXT leaves out every shot whose
+caption contains TEXT. Each character's sections play in the
 film's order whichever take they come from, characters in the order they first appear; each character opens with a
 title card. Every frame carries
 the character and section, the shot's caption, the move set's action and mode, and its stamina wheels and health bar,
@@ -158,7 +159,9 @@ def mix(placed, frames, path):
 def main():
     args = sys.argv[1:]
     audio = '--audio' in args
-    args = [a for a in args if a != '--audio']
+    # --skip TEXT (repeatable) leaves out every shot whose caption contains TEXT (a retake elsewhere, or a bad shot).
+    skips = [args[i + 1] for i, a in enumerate(args) if a == '--skip']
+    args = [a for i, a in enumerate(args) if a not in ('--audio', '--skip') and (i == 0 or args[i - 1] != '--skip')]
     out, takes = Path(args[0]), args[1:]
     if not takes:
         raise SystemExit(__doc__)
@@ -173,7 +176,7 @@ def main():
         unknown = [x for x in named if x not in ORDER]
         if unknown:
             raise SystemExit(f'{take}: no section {unknown}; sections are {ORDER}')
-        rows = [r for r in data['frames'] if (folder / ('frame_%05d.jpg' % r[0])).exists()]
+        rows = [r for r in data['frames'] if (folder / ('frame_%05d.jpg' % r[0])).exists() and not any(t in r[2] for t in skips)]
         for section in dict.fromkeys(r[1] for r in rows):
             if named and (section in named) == drop:
                 continue

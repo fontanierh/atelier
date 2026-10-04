@@ -407,7 +407,7 @@ def double_jump():
     camera(4.6, 80., .8, .7)
     label('Jump, double jump, then jump again: the paraglider')
     tap('jump'); yield from wait(.3)
-    tap('jump')
+    tap('jump'); yield from wait(.15)   # the launch takes effect on the next movement tick
     yield from until(lambda s: s['vz'] < 60., 1.5)
     tap('jump')
     yield from until(lambda s: s['mode'] == 'glide', .6)
@@ -426,6 +426,7 @@ def sword_guard():
     live.press('guard'); yield from wait(2.2)
     camera(3.4, 130., .5, .25)
     bok = spawn(450., 'scripted')
+    camera(3.4, 60., .4, .3)
     label('Sword raised while locked on and strafing')
     for right in (-1., 1.):
         live.drive(0., right, 'walk'); yield from wait(1.3)
@@ -435,7 +436,7 @@ def sword_guard():
     yield from place(*RUN)
     yield from armed(True)
     bok = spawn(320., 'camp')
-    camera(3.2, 105., .45, .3)
+    camera(3.6, 62., .4, .35)
     label("The sword guard blocks a Bokoblin's blow")
     live.press('guard')
     yield from next_blow(bok, -.1)
