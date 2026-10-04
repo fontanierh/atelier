@@ -112,6 +112,10 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     // sword is raised instead, both arms from its guard pose (one player per arm layer, each evaluated once).
     FAnimNode_SequencePlayer_Standalone GuardPose, SwordGuardRight, SwordGuardLeft;
     FAnimNode_TwoWayBlend RightArm, LeftArm;
+    // Without the shield the off hand is free: during sword work its arm swings with the locomotion (its own player, in
+    // step with the stride) instead of holding the shield pose the BOTW clips give it.
+    FAnimNode_BlendSpacePlayer_Standalone FreeArm;
+    FAnimNode_TwoWayBlend LeftHand;
     FAnimNode_LayeredBoneBlend CarryLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
     FGroundContactNode Feet;
@@ -133,7 +137,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         ArmedGround.A.SetLinkNode(&ArmedMoving); ArmedGround.B.SetLinkNode(&ArmedCrouching); ArmedGround.Alpha = 0.f;
         CarryPose.A.SetLinkNode(&Carry); CarryPose.B.SetLinkNode(&ArmedGround); CarryPose.Alpha = 0.f;
         RightArm.A.SetLinkNode(&CarryPose); RightArm.B.SetLinkNode(&SwordGuardRight); RightArm.Alpha = 0.f;
-        LeftArm.A.SetLinkNode(&GuardPose); LeftArm.B.SetLinkNode(&SwordGuardLeft); LeftArm.Alpha = 0.f;
+        LeftHand.A.SetLinkNode(&FreeArm); LeftHand.B.SetLinkNode(&GuardPose); LeftHand.Alpha = 1.f;
+        LeftArm.A.SetLinkNode(&LeftHand); LeftArm.B.SetLinkNode(&SwordGuardLeft); LeftArm.Alpha = 0.f;
         CarryLayer.BlendPoses.SetNum(2); CarryLayer.BlendPoses[0].SetLinkNode(&RightArm); CarryLayer.BlendPoses[1].SetLinkNode(&LeftArm);
         CarryLayer.LayerSetup.SetNum(2);
         CarryLayer.LayerSetup[0].BranchFilters.Add(FBranchFilter{TEXT("clavicle_R"), 0});
@@ -152,16 +157,17 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         // Same samples and lengths as Moving, so the sword arm swings on the body's stride phase.
         ArmedMoving.SetGroupName(TEXT("Stride")); ArmedMoving.SetGroupMethod(EAnimSyncMethod::SyncGroup);
         ArmedCrouching.SetGroupName(TEXT("Stride")); ArmedCrouching.SetGroupMethod(EAnimSyncMethod::SyncGroup);
+        FreeArm.SetGroupName(TEXT("Stride")); FreeArm.SetGroupMethod(EAnimSyncMethod::SyncGroup);
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
             if (UWandererDefinition* D = Pawn->GetDefinition())
             {
-                Moving.SetBlendSpace(D->Locomotion); Crouching.SetBlendSpace(D->Crouching);
+                Moving.SetBlendSpace(D->Locomotion); Crouching.SetBlendSpace(D->Crouching); FreeArm.SetBlendSpace(D->Locomotion);
                 Action.SetSequence(D->FindAction(TEXT("Idle")));
                 // The one-handed hold in front of the belly (game-r16); older content holds the guard's arm.
                 UAnimSequence* Hold = D->FindAction(TEXT("SwordCarry")); if (!Hold) Hold = D->FindAction(TEXT("SwordIdle"));
@@ -276,11 +282,14 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         const UBotwMoveSet* Moves = Pawn->GetMoves();
         const float SwordGuardWeight = bCarrying && Moves && Pawn->GetDefinition()->FindAction(TEXT("SwordGuardCarry")) ? Moves->SwordGuardWeight() : 0.f;
         const float ShieldWeight = bCarrying && Moves ? Moves->GuardWeight() : 0.f;
+        const float FreeWeight = bCarrying && Moves ? Moves->FreeArmWeight() : 0.f;
+        const float OffHandGuard = bCarrying && Moves && SwordGuardWeight > 0.f ? Moves->SwordGuardOffHandWeight() : 0.f;
         const float CarryWeight = !bCarrying ? 0.f : Moves ? Moves->SwordCarryWeight() : Pawn->GetSword() ? Pawn->GetSword()->CarryWeight() : 0.f;
         RightArm.Alpha = SwordGuardWeight / FMath::Max(CarryWeight + SwordGuardWeight, KINDA_SMALL_NUMBER);
-        LeftArm.Alpha = SwordGuardWeight / FMath::Max(ShieldWeight + SwordGuardWeight, KINDA_SMALL_NUMBER);
+        LeftHand.Alpha = ShieldWeight / FMath::Max(ShieldWeight + FreeWeight, KINDA_SMALL_NUMBER);
+        LeftArm.Alpha = OffHandGuard / FMath::Max(ShieldWeight + FreeWeight + OffHandGuard, KINDA_SMALL_NUMBER);
         CarryLayer.BlendWeights[0] = FMath::Min(1.f, CarryWeight + SwordGuardWeight);
-        CarryLayer.BlendWeights[1] = FMath::Min(1.f, ShieldWeight + SwordGuardWeight);
+        CarryLayer.BlendWeights[1] = FMath::Min(1.f, ShieldWeight + FreeWeight + OffHandGuard);
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
     }
@@ -297,6 +306,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         Moving.SetPosition(FVector(FMath::Min(Speed,AuthoredTopSpeed), 0, 0));
         Crouching.SetPosition(FVector(Speed, 0, 0));
         Moving.SetPlayRate(FMath::Max(1.f, Speed / AuthoredTopSpeed));
+        FreeArm.SetPosition(FVector(FMath::Min(Speed,AuthoredTopSpeed), 0, 0));
+        FreeArm.SetPlayRate(FMath::Max(1.f, Speed / AuthoredTopSpeed));
         ArmedMoving.SetPosition(FVector(FMath::Min(Speed,AuthoredTopSpeed), 0, 0));
         ArmedMoving.SetPlayRate(FMath::Max(1.f, Speed / AuthoredTopSpeed));
         ArmedCrouching.SetPosition(FVector(Speed, 0, 0));

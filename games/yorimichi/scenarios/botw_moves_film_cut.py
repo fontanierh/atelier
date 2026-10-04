@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[3]
 FILMS = ROOT / 'build/yorimichi/botw/moves_film'
 FONTS = Path('/Users/Shared/Epic Games/UE_5.8/Engine/Content/Slate/Fonts')
 CARD = 75                                    # title card frames (2.5 s)
-ORDER = ['On foot', 'Sprint', 'Double jump', 'Equipment', 'Lock-on and dodges', 'Sword', 'Sword guard', 'Shield', 'Getting hit',
+ORDER = ['On foot', 'Sprint', 'Double jump', 'Equipment', 'Lock-on and dodges', 'Sword', 'Fight', 'Sword guard', 'Shield', 'Getting hit',
          'Paraglider', 'Swimming', 'Climbing']
 AUDIO = ROOT / 'build/yorimichi/audio'
 RATE = 48000

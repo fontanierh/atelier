@@ -43,6 +43,9 @@ SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his me
 # him, his torso and clothes come at most 1 cm through its plate. It sits low enough that his head stays clear of it,
 # except in the crouch: there his chest leans 70 degrees forward and his head dips 6 cm into its top edge.
 CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}}
+# Carried pieces moved out from where Link's chest puts them (cm along Rig.body's axes: backward, left, up): Link's sword
+# and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
+PUSH = {'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]}   # fitted in game: 4 cm still sank in at the hip running, 12 floated
 
 
 def digests(folder):
@@ -236,6 +239,8 @@ def equipment(link, cairo, glide):
             R, p = compose(C, Rp), add(cairo.at('chest'), mul(apply(C, offset), BODY))
             if slot in CARRY:
                 R, p = fitted(R, cairo, CARRY[slot])
+            if slot in PUSH:
+                p = add(p, apply(cairo.body(), PUSH[slot]))
             on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))
             entry['back'], entry['carry'] = 'chest', record_of(on_back)
             # Where it sits in his reference pose (component cm): the fit's frame, for checking it offline.
@@ -315,6 +320,7 @@ scaled.update(own_timing)
 params = dict(ROSTER['moves']['params'])
 params['SwimHang'] = round(params['SwimHang'] * SIZE, 2)
 params['BodyScale'] = BODY
+params['TwoHandedGuard'] = 1   # his own bokken guard (OWN) holds the grip with both hands
 names = {**LINK['skate'], 'pelvis': 'Waist'}   # botw.py's bone map
 link, cairo = Rig(link_mesh.skeleton, names), Rig(skeleton, {})
 glide, options = ROSTER['moves']['actions']['Glide']['clip'], U.AnimPoseEvaluationOptions()

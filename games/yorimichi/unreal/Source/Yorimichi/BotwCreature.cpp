@@ -146,7 +146,13 @@ void ABotwCreature::TakeSwordHit(int32 Strength, AActor* From)
 {
     if (Phase == EPhase::Down || Phase == EPhase::GetUp) return;
     Health -= Strength;
-    if (From) { FRotator Face = (From->GetActorLocation() - GetActorLocation()).Rotation(); SetActorRotation(FRotator(0, Face.Yaw, 0)); }
+    if (From)
+    {
+        const FVector Away = (GetActorLocation() - From->GetActorLocation()) * FVector(1, 1, 0);
+        SetActorRotation(FRotator(0, (-Away).Rotation().Yaw, 0));
+        // Every blow shoves it back a step, harder the heavier the blow, so a hit reads even mid-attack.
+        Knockback = Away.GetSafeNormal() * (260.f + 120.f * FMath::Min(Strength, 3));
+    }
     if (Health <= 0 && Clip(Role("down"))) { Phase = EPhase::Down; PhaseLeft = 4.f; Play(Role("down").ToString(), true); return; }
     Phase = EPhase::Hit;
     PhaseLeft = FMath::Max(Play(Role("hit").ToString(), false), .4f);
@@ -198,6 +204,11 @@ void ABotwCreature::Think(float Dt)
 {
     const float Walk = Data.WalkSpeed > 1.f ? Data.WalkSpeed : 150.f, Run = Data.RunSpeed > 1.f ? Data.RunSpeed : Walk * 2.f;
     PhaseLeft -= Dt;
+    if (!Knockback.IsNearlyZero(1.f))
+    {
+        AddActorWorldOffset(Knockback * Dt, true);
+        Knockback = FMath::VInterpTo(Knockback, FVector::ZeroVector, Dt, 7.f);
+    }
     APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
     const float PlayerDistance = Player ? FVector::Dist2D(Player->GetActorLocation(), GetActorLocation()) : 1e9f;
     switch (Phase)

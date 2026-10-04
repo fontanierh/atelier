@@ -103,6 +103,11 @@ public:
     float SwordCarryWeight() const { return SwordCarry; }
     float GuardWeight() const { return GuardCarry; }
     float SwordGuardWeight() const { return SwordGuardCarry; }
+    /** The guard pose's off-hand arm: a two-handed guard (Cairo's bokken) holds the grip; a one-handed one (Link's
+     *  sword-only guard) leaves that arm free, not holding up a shield that is not there. */
+    float SwordGuardOffHandWeight() const { return GetParam(TEXT("TwoHandedGuard")) > .5f ? SwordGuardCarry : 0.f; }
+    /** Without the shield, the off hand's arm swings free (locomotion) over sword work instead of the clips' shield pose. */
+    float FreeArmWeight() const { return FreeArm; }
     float GetMaxWalkSpeed(float Default) const;
     float GetParam(const TCHAR* Key, float Default = 0.f) const;
     const FBotwMove* Find(FName Name) const { return Moves.Find(Name); }
@@ -177,6 +182,15 @@ private:
     bool bHasSafeShore = false;
     // Combat
     bool bShield = false, bLegacy = false;
+    float FreeArm = 0.f;
+    // The paraglider's grip: its place in the frame of both hands (taken from the neutral glide), so it banks with them.
+    FTransform GliderGrip = FTransform::Identity, GliderHeld = FTransform::Identity;
+    float GliderGripWeight = 0.f;
+    bool bGliderGrip = false;
+    // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
+    TWeakObjectPtr<AActor> LungeTarget;
+    float LungeTime = 0.f, LungeStand = 0.f;
+    float ArcEnd = -1.f;   // a homing cut's contact lasts to here (clip seconds): past its swing, until it has closed in
     float SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
     bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
     int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, DoubleJumpCount = 0, Strength = 1;
@@ -224,6 +238,11 @@ private:
     void AdvanceEquipment(float Dt);
     void AdvanceMeshOffset(float Dt);
     void AdvanceEffects(float Dt);
+    void AdvanceGliderGrip(float Dt);
+    /** A blow's arc in front: anything targetable within the blade's reach and the cut's arc counts, as in BOTW. */
+    void SweepArc();
+    /** The blade's length in the world (the sword mesh's grip to tip, at its scale). */
+    float BladeLength() const;
     /** How far the hips have drawn up into the tuck since take-off (capsule cm): the mesh rises that much. */
     float HipLift() const;
     void PhysGlide(float Dt);

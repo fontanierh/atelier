@@ -198,6 +198,7 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                 Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, FName(*Hand));
                 FTransform Held; ReadTransform(O, TEXT("held"), Held);
                 Glider->SetRelativeTransform(Held);
+                GliderHeld = Held;
                 Glider->SetVisibility(false, true);
                 continue;
             }
@@ -429,6 +430,7 @@ void UBotwMoveSet::Advance(float Dt)
     AdvanceDoubleJump(Dt);
     AdvanceCombat(Dt);
     AdvanceEquipment(Dt);
+    AdvanceGliderGrip(Dt);
     AdvanceMeshOffset(Dt);
     AdvanceEffects(Dt);
 }
@@ -450,6 +452,18 @@ bool UBotwMoveSet::OverrideVelocity(FVector& Velocity) const
     if (!Character || (Mode != EBotwMoveMode::Ground && Mode != EBotwMoveMode::Air)) return false;
     const FName Name = CurrentName();
     if (bDriving) { Velocity.X = DriveVelocity.X; Velocity.Y = DriveVelocity.Y; return true; }
+    if (LungeTime > 0.f && Mode == EBotwMoveMode::Ground)
+    {
+        // Toward where the blade reaches the target, stopping there (re-aimed every step as either moves).
+        FVector V = FVector::ZeroVector;
+        if (const AActor* Focus = LungeTarget.Get())
+        {
+            const FVector To = (Focus->GetActorLocation() - Character->GetActorLocation()) * FVector(1, 1, 0);
+            const float Gap = float(To.Size()) - LungeStand;
+            if (Gap > 2.f) V = To.GetSafeNormal() * FMath::Min(Gap / FMath::Max(LungeTime, .03f), 1100.f);
+        }
+        Velocity.X = V.X; Velocity.Y = V.Y; return true;
+    }
     if (Mode == EBotwMoveMode::Air && (IsHop(Name) || In(Name, { TEXT("JumpCut"), TEXT("JumpCutAir") }))) { Velocity.X = HopVelocity.X; Velocity.Y = HopVelocity.Y; return true; }
     if (Mode == EBotwMoveMode::Air && In(Name, { TEXT("Plunge"), TEXT("PlungeAir") })) { Velocity.X = Velocity.Y = 0.; return true; }
     // The flurry rush closes in on its target.
@@ -954,6 +968,39 @@ void UBotwMoveSet::AdvanceGlide(float Dt)
     PlayLoop(Has(Clip) ? Clip : FName(TEXT("Glide")), .3f);
 }
 
+/** The paraglider is held at one hand; turning, the glide clips move the hands apart and the other let go of the bar.
+ *  Gliding, it is placed in the frame of both hands instead (between them, across from left to right, up the body), at
+ *  the place it has in that frame in the neutral glide, so it banks with the hands and both stay on the bar. */
+void UBotwMoveSet::AdvanceGliderGrip(float Dt)
+{
+    USkeletalMeshComponent* Body = Character->GetMesh();
+    if (!Glider || !Body) return;
+    const FVector Left = Body->GetSocketLocation(Character->GetSkateBone(TEXT("hand_L")));
+    const FVector Right = Body->GetSocketLocation(Character->GetSkateBone(TEXT("hand_R")));
+    FVector Across = Right - Left;
+    if (Across.Size() < 5.f) return;
+    Across.Normalize();
+    const FTransform Hands(FRotationMatrix::MakeFromXZ(Across, Character->GetActorUpVector()).ToQuat(), (Left + Right) * .5f);
+    const FName Name = CurrentName();
+    const bool bSteady = Mode == EBotwMoveMode::Glide && bGliderShown && Prefixed(Name, { TEXT("Glide") }) && !In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall"), TEXT("GlideOff") });
+    if (bSteady && !bGliderGrip && In(Name, { TEXT("Glide"), TEXT("GlideF") }) && GlideTime > .5f && FMath::Abs(GlideTurn) < 8.f)
+    {
+        GliderGrip = Glider->GetComponentTransform().GetRelativeTransform(Hands);
+        bGliderGrip = true;
+    }
+    const float Was = GliderGripWeight;
+    GliderGripWeight = FMath::FInterpConstantTo(GliderGripWeight, bSteady && bGliderGrip ? 1.f : 0.f, Dt, 5.f);
+    if (GliderGripWeight <= 0.f)
+    {
+        if (Was > 0.f) Glider->SetRelativeTransform(GliderHeld);
+        return;
+    }
+    const FTransform Bone = Body->GetSocketTransform(Glider->GetAttachSocketName());
+    FTransform Placed;
+    Placed.Blend(GliderHeld, (GliderGrip * Hands).GetRelativeTransform(Bone), Smooth(GliderGripWeight));
+    Glider->SetRelativeTransform(Placed);
+}
+
 void UBotwMoveSet::ShowGlider(bool bShow)
 {
     if (!Glider || bGliderShown == bShow) return;
@@ -1421,6 +1468,23 @@ void UBotwMoveSet::StartCut(int32 Index)
     if (Character->bIsCrouched) Character->UnCrouch();
     Face(600.f);
     Combo = Index; AttackBuffer = 0.f; bAttackAfterDraw = false;
+    // BOTW homes a cut onto the enemy it is aimed at: a quick step in when it stands beyond the blade's reach. The cuts'
+    // clips open mid-swing, so the step is short and the blow keeps landing until it has closed in.
+    LungeTime = 0.f; LungeTarget = nullptr;
+    if (AActor* Focus = Target.IsValid() ? Target.Get() : FindTarget(Reach() + 250.f, 60.f))
+    {
+        float Radius = 0.f, Half = 0.f;
+        Focus->GetSimpleCollisionCylinder(Radius, Half);
+        const float Stand = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + Radius + BladeLength() * .7f;
+        const float Gap = float(FVector::Dist2D(Focus->GetActorLocation(), Character->GetActorLocation())) - Stand;
+        if (Gap > 5.f) { LungeTarget = Focus; LungeStand = Stand; LungeTime = FMath::Clamp(Gap / 1100.f, .06f, .16f); }
+    }
+    if (const FBotwMove* M = Current())
+    {
+        float End = -1.f;
+        for (const FVector2f& W : M->Active) End = FMath::Max(End, W.Y);
+        ArcEnd = LungeTime > 0.f ? FMath::Max(End, M->Start + (LungeTime + .08f) * M->Rate) : End;
+    }
     Play(Clip, .05f);
 }
 
@@ -1524,9 +1588,13 @@ void UBotwMoveSet::AdvanceCombat(float Dt)
 {
     const FBotwMove* Now = Current();
     const FName Name = Now ? Now->Name : NAME_None;
-    // The blade hits only inside the playing clip's active windows.
-    if (Now && bArmed && Now->Active.Num() && Now->InWindow(Now->Active, SourceTime())) SweepBlade();
-    else PreviousBlade.Reset();
+    LungeTime = FMath::Max(0.f, LungeTime - Dt);
+    if (!IsAttack(Name)) { LungeTime = 0.f; ArcEnd = -1.f; }
+    // The blade hits inside the playing clip's active windows: what it sweeps through, and what stands in its arc; a
+    // homing cut's arc lasts until it has closed in.
+    const bool bActive = Now && bArmed && Now->Active.Num() && Now->InWindow(Now->Active, SourceTime());
+    if (bActive) SweepBlade(); else PreviousBlade.Reset();
+    if (bActive || (Now && bArmed && IsAttack(Name) && SourceTime() <= ArcEnd)) SweepArc();
     if (Mode != EBotwMoveMode::Ground && Mode != EBotwMoveMode::Air) { AttackBuffer = 0.f; bCharging = false; return; }
     // The draw that an attack press started cuts from its input point.
     if (Name == TEXT("DrawSword") && bAttackAfterDraw && Now && SourceTime() >= Now->Input && bArmed) StartCut(0);
@@ -1592,6 +1660,36 @@ void UBotwMoveSet::SweepBlade()
         }
     }
     PreviousBlade = Now;
+}
+
+void UBotwMoveSet::SweepArc()
+{
+    const FVector Here = Character->GetActorLocation();
+    const FVector Forward = Character->GetActorForwardVector();
+    const float Range = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + BladeLength() + 20.f;
+    auto Consider = [&](AActor* A)
+    {
+        if (!A || A == Character || HitThisSwing.Contains(A) || !IsTargetable(A)) return;
+        float Radius = 0.f, Half = 0.f;
+        A->GetSimpleCollisionCylinder(Radius, Half);
+        const FVector To = (A->GetActorLocation() - Here) * FVector(1, 1, 0);
+        if (To.Size() - Radius > Range || (Forward | To.GetSafeNormal()) < FMath::Cos(FMath::DegreesToRadians(75.f))) return;
+        if (FMath::Abs(A->GetActorLocation().Z - Here.Z) > Half + HalfHeight()) return;
+        HitThisSwing.Add(A);
+        const FVector At = A->GetActorLocation() - To.GetSafeNormal() * Radius + FVector(0, 0, HalfHeight() * .3f);
+        Strike(A, Strength, At, Forward);
+    };
+    // The few things a blade can strike (IsTargetable), found directly rather than through a collision channel.
+    UWorld* World = Character->GetWorld();
+    for (TActorIterator<ABotwCreature> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<AFoxHunter> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<ASwordDummy> It(World); It; ++It) Consider(*It);
+}
+
+float UBotwMoveSet::BladeLength() const
+{
+    const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
+    return Sword && *Sword ? float((BladeTip * (*Sword)->GetComponentScale()).Size()) : 60.f;
 }
 
 void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction)
@@ -1823,6 +1921,14 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     SwordCarry = FMath::FInterpConstantTo(SwordCarry, bCarry ? 1.f : 0.f, Dt, 8.f);
     GuardCarry = FMath::FInterpConstantTo(GuardCarry, bGuardPose && HasShield() ? 1.f : 0.f, Dt, 10.f);
     SwordGuardCarry = FMath::FInterpConstantTo(SwordGuardCarry, bSwordGuard ? 1.f : 0.f, Dt, 10.f);
+    // Without the shield the off hand holds nothing: over sword work and the lock-on strafe its arm swings free rather
+    // than holding the shield pose the BOTW clips give it (not in Cairo's two-handed guard, parry and recoil, nor
+    // drawing and sheathing).
+    // Strafing in a one-handed guard the arm swings free too; a two-handed guard keeps both hands on the grip.
+    const bool bTwoHanded = GetParam(TEXT("TwoHandedGuard")) > .5f;
+    const bool bFree = !HasShield() && bArmed && (Mode == EBotwMoveMode::Ground || Mode == EBotwMoveMode::Air) && !bDown &&
+        !(bSwordGuard && bTwoHanded) && !In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit"), TEXT("DrawSword"), TEXT("SheatheSword") });
+    FreeArm = FMath::FInterpConstantTo(FreeArm, bFree ? 1.f : 0.f, Dt, 8.f);
 }
 
 void UBotwMoveSet::EaseMesh(const FVector& From, float Seconds)

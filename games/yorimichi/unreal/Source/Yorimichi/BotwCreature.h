@@ -86,6 +86,7 @@ private:
     bool bRunning = false;
     float PhaseLeft = 0.f, PhaseTotal = 0.f, Clock = 0.f, AttackCooldown = 0.f;
     bool bStruck = false;   // this attack has struck (or missed) the player
+    FVector Knockback = FVector::ZeroVector;   // a blow's shove (cm/s), slowing to a stop
     void Strike(APawn* Player);
     int32 Showcased = 0, Health = 3;
     TArray<FName> ShowcaseOrder;

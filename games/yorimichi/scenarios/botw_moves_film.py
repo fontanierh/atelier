@@ -363,6 +363,23 @@ def kit():
     return 'sword and shield' if state().get('shield') else 'sword'
 
 
+def fight():
+    """A Bokoblin that fights back: cuts whenever it is in reach, framed wide enough to see every blow land."""
+    yield from place(*RUN)
+    yield from armed(True)
+    bok = spawn(380., 'camp')
+    camera(5.2, 70., .5, .2, track='facing', turn=.04)
+    label('Fight: each cut homes in and lands, the Bokoblin staggers back')
+    t = 0.
+    while t < 9.:
+        c = creature(bok)
+        if c and math.hypot(c['location'][0] - here().x, c['location'][1] - here().y) < 240. and \
+                state()['action'] in ('None', 'CutS1', 'CutS2', 'CutS3', 'LockWait'):
+            tap('attack')
+        t += (yield)
+    cut(); L.botw_clear()
+
+
 def shield_setting(on):
     """The "Shield" setting, as the menu sets it (the move set takes it at once)."""
     L.set_preference('shield', 1. if on else 0.)
@@ -832,7 +849,7 @@ def climb():
 
 
 SECTIONS = [('On foot', on_foot), ('Sprint', sprint), ('Double jump', double_jump), ('Equipment', gear), ('Lock-on and dodges', dodges),
-            ('Sword', sword), ('Sword guard', sword_guard), ('Shield', shield), ('Getting hit', hits), ('Paraglider', glide),
+            ('Sword', sword), ('Fight', fight), ('Sword guard', sword_guard), ('Shield', shield), ('Getting hit', hits), ('Paraglider', glide),
             ('Swimming', swim), ('Climbing', climb)]
 SECTIONS = [s for s in SECTIONS if s[0] in (globals().get('ONLY') or [s[0] for s in SECTIONS])]
 
