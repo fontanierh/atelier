@@ -1,75 +1,53 @@
-// USkateComponent's side of the Ride backend: starting and stepping the session, its sounds, and the physical rider
-// (RidePhysicalRider.h) with the bail's loose board. SkateRuntime.cpp copies the session's outputs into RetailRuntime,
-// so the board placement, retargeting, modes and HUD after the step are the same code for both backends.
+// USkateComponent's side of the Ride backend (RIDE.md): Native's session rides under Ride's body. Riding, the body (the
+// physical rider, RidePhysicalRider.h) follows the retargeted Native pose; a Native wipeout hands the rider to the Chaos
+// body, which falls with the momentum it has while the board goes on with the session's wipeout; the settled body gets
+// up where it lies and a fresh session takes the ride back from there. Native's rider off the board on foot becomes the
+// character.
 #include "SkateComponent.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
-#include "SkateRails.h"
-#include "RideSession.h"
+#include "RideClipPlayer.h"
 #include "RidePhysicalRider.h"
 #include "RideTransition.h"
-#include "SkatePad.h"
+#include "RideTuning.h"
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
+#include "Engine/HitResult.h"
+#include "CollisionShape.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/PlayerController.h"
 
 namespace
 {
-    FRideWorld RideWorld(ACharacter* Rider, USkateRailSubsystem* Rails, float BoardScale)
-    {
-        FRideWorld W; W.World = Rider ? Rider->GetWorld() : nullptr; W.Ignore = Rider; W.Rails = Rails; W.Owner = Rider;
-        W.BoardScale = BoardScale;
-        return W;
-    }
-    FRidePreferences RidePreferences()
-    {
-        const USkateSettings* S = GetDefault<USkateSettings>();
-        FRidePreferences P;
-        P.Pop = S->PopHeightScale; P.Spin = S->AirSpinScale; P.PushSpeed = S->PushSpeedScale; P.PushPower = S->PushPowerScale; P.VertAssist = S->VertAssist;
-        return P;
-    }
-    ERidePhysicalPhase PhysicalPhase(ERideState Mode)
-    {
-        switch (Mode)
-        {
-        case ERideState::Air: return ERidePhysicalPhase::Air;
-        case ERideState::Grind: return ERidePhysicalPhase::Grind;
-        case ERideState::Manual: return ERidePhysicalPhase::Manual;
-        case ERideState::Bail: return ERidePhysicalPhase::Bail;
-        case ERideState::GetUp: return ERidePhysicalPhase::GetUp;
-        default: return ERidePhysicalPhase::Riding;
-        }
-    }
+    // Native's rider is off the board on foot for good once BipedGround lasts this long: a wipeout passes through it for
+    // 1-3 frames (every recorded ride), the rider who lands beside the board stays in it.
+    constexpr float NativeOnFootHold = .2f;
+    // A ride's start looks for the floor this far below the board (cm).
+    constexpr float StartBelow = 60.f;
 }
 
 void USkateComponent::PreloadRide()
 {
-    if (!Ride) Ride = MakeShared<FRideSession>();
-    Ride->Preload();
+    if (!Clips) Clips = MakeShared<FRideClipPlayer>();
+    Clips->Preload();
 }
 
 bool USkateComponent::StartRide()
 {
     if (!Rider) return false;
-    if (!Ride) Ride = MakeShared<FRideSession>();
+    if (!Clips) Clips = MakeShared<FRideClipPlayer>();
     // The rider's bodies: kinematic on the animation until the mount blends them in (skate.RidePhysical) or a bail
-    // lets them go. Without them a bail slides.
+    // lets them go.
     if (!PhysicalRider) PhysicalRider = NewObject<URidePhysicalRider>(this, NAME_None, RF_Transient);
     // The start's own cost, logged: it lands on one frame (the mount's last).
     const double Started = FPlatformTime::Seconds();
     const bool bBody = PhysicalRider->Begin(Rider, RiderApi);
-    const double Bodied = FPlatformTime::Seconds();
     PhysicalRider->ClearBailOffer();
-    Ride->SetRagdoll(bBody);
-    Ride->Activate(RideWorld(Rider, RailSystem, BoardScale()), Pos, Rot, Vel, bGoofy, RidePreferences());
+    SettleRideStart();
     if (bBody && URidePhysicalRider::IsWanted()) PhysicalRider->BlendIn(GetDefault<URidePhysicalSettings>()->MountBlend);
-    const double Done = FPlatformTime::Seconds();
-    UE_LOG(LogTemp, Display, TEXT("SKATE ride started at (%.0f, %.0f, %.0f) speed %.0f, %s, %s, in %.2f ms (body %.2f ms)"), Pos.X, Pos.Y, Pos.Z, Vel.Size(),
-        Ride->HasRig() ? TEXT("rider clips") : TEXT("board only"),
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride started at (%.0f, %.0f, %.0f) speed %.0f, %s, in %.2f ms"), Pos.X, Pos.Y, Pos.Z, Vel.Size(),
         !bBody ? TEXT("no ragdoll") : URidePhysicalRider::IsWanted() ? TEXT("physical rider") : TEXT("ragdoll for bails"),
-        (Done - Started) * 1000., (Bodied - Started) * 1000.);
+        (FPlatformTime::Seconds() - Started) * 1000.);
     return true;
 }
 
@@ -79,144 +57,35 @@ void USkateComponent::StopRide()
     if (PhysicalRider) PhysicalRider->Release(GetDefault<URidePhysicalSettings>()->DismountBlend);
 }
 
-bool USkateComponent::StepRide(float Dt)
+void USkateComponent::SettleRideStart()
 {
-    // The deliberate bail: both sticks clicked with both triggers held (scripted input sets bBail itself).
-    if (!bScripted && Rider)
+    // Native's session starts on the floor under the board, or on one the start is a little inside (a hand-off a little
+    // low), not inside the floor where its wheels find nothing. With no floor within reach it starts in the air.
+    UWorld* World = GetWorld();
+    if (!World) return;
+    const FRideTuning& Tune = FRideTuning::Get();
+    const FVector Up = Rot.GetUpVector();
+    const float R = Tune.WheelRadius;
+    const FCollisionQueryParams Params(SCENE_QUERY_STAT(SkateRideStart), false, Rider);
+    const FCollisionShape Wheel = FCollisionShape::MakeSphere(R);
+    auto Floor = [&](const FVector& From, const FVector& To, FVector& Ground)
     {
-        In.bBail = false;
-        if (APlayerController* PC = Cast<APlayerController>(Rider->GetController()))
-            In.bBail = PC->IsInputKeyDown(EKeys::Gamepad_LeftThumbstick) && PC->IsInputKeyDown(EKeys::Gamepad_RightThumbstick) &&
-                PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis) > .5f && PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis) > .5f;
+        FHitResult Hit;
+        if (!World->SweepSingleByChannel(Hit, From, To, FQuat::Identity, ECC_Pawn, Wheel, Params)) return 0;
+        if (Hit.bStartPenetrating || FVector::DotProduct(Hit.Normal, Up) < Tune.WallSlope) return -1;   // inside, or a wall
+        Ground = Hit.Location - Up * R;
+        return 1;
+    };
+    FVector Ground;
+    int32 Found = Floor(Pos + Up * (Tune.StepUp + R), Pos - Up * (StartBelow - R), Ground);
+    if (Found < 0 && Floor(Pos + Up * (Tune.StartRecover + R), Pos + Up * R, Ground) > 0)
+    {
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride start inside the floor: %.0f cm up onto it"), float(FVector::DotProduct(Ground - Pos, Up)));
+        Found = 1;
     }
-    // Ride's Flick-It samples the canonical pad, the packet the Native backend gets (SkatePad.h).
-    Ride->Step(Dt, In, atelier::skate_pad::Pack(ReadHostPad()), RideWorld(Rider, RailSystem, BoardScale()));
-    for (const ERideCue Cue : Ride->Cues)
-        switch (Cue)
-        {
-        case ERideCue::Push: PlayCue(TEXT("push"), .7f); break;
-        case ERideCue::Flick: PlayCue(TEXT("flick"), .6f); break;
-        case ERideCue::Catch: PlayCue(TEXT("catch"), .7f); break;
-        case ERideCue::Fall: PlayCue(TEXT("fall"), 1.f); break;
-        }
-    return true;
+    if (Found > 0) Pos = Ground;
 }
 
-void USkateComponent::AfterRideFrame(float Dt)
-{
-    if (!Ride || !PhysicalRider || !PhysicalRider->IsActive()) return;
-    URidePhysicalRider& Body = *PhysicalRider;
-    const URidePhysicalSettings* Settings = GetDefault<URidePhysicalSettings>();
-
-    // A bail: offered first to the transition (a run-out on foot), otherwise the body goes limp with its momentum and
-    // the board tumbles on its own. When the body has settled the rider gets up where it lies.
-    if (Ride->IsBailing())
-    {
-        // A run-out taken by the transition keeps the body active on foot.
-        if (!Body.IsBailOffered() && !Body.OfferBail(Ride->GetBailVelocity(), Ride->GetBailSpin()) &&
-            !Body.StartBail(Ride->GetBailVelocity(), Ride->GetBailSpin(), URidePhysicalRider::ShownTransform(BoardRoot), BoardScale()))
-            Ride->SetRagdoll(false);
-        if (Body.IsBailing())
-        {
-            const ERideBodyState State = Body.UpdateBail(Dt, FRideTuning::Get().BailSettle);
-            if (State == ERideBodyState::Unstable)
-            {
-                // The session slides the rider to a stop instead; the board left lying goes with the bodies, and a board
-                // dissolves in under the feet once he is up.
-                Ride->SetRagdoll(false);
-                Body.Abort();
-                if (Transit().Board == ERideBoard::Ride) ShowBoard(0.f, true);
-            }
-            else
-            {
-                Ride->FollowBody(Body.GetBodyGround());
-                if (State == ERideBodyState::Settled) GetUpFromBody();
-            }
-        }
-    }
-    else
-    {
-        // The session got up by itself (it waits BailSettle + 5 s for the body).
-        if (Body.IsBailing()) GetUpFromBody();
-        Body.ClearBailOffer();
-        Ride->SetRagdoll(true);
-    }
-
-    // The active ragdoll follows skate.RidePhysical live, outside bails and get-ups.
-    const bool bSteady = !Body.IsBailing() && !Body.IsGettingUp() && !Ride->IsBailing() && Ride->GetMode() != ERideState::GetUp;
-    if (bSteady && URidePhysicalRider::IsWanted() && !Body.IsSimulating()) Body.BlendIn(Settings->MountBlend);
-    else if (bSteady && !URidePhysicalRider::IsWanted() && Body.IsSimulating()) Body.BlendOut(Settings->DismountBlend);
-    ERidePhysicalPhase Phase = PhysicalPhase(Ride->GetMode());
-    if (Phase == ERidePhysicalPhase::Bail && !Body.IsBailing()) Phase = ERidePhysicalPhase::OnFoot;
-    Body.Update(Dt, Phase);
-    if (!PhysicalRider->IsActive()) return;
-
-    // Getting up onto the board: the pose rises out of the fallen body's snapshot.
-    if (Body.IsGettingUp() && Body.GetGetUpExit() == ERideGetUpExit::Board) Body.BlendFromSnapshot(RetailPose, Body.GetGetUpAlpha());
-
-    // The board's meshes follow the loose board while it is ours. A board never travels by itself: getting up onto it,
-    // the rider steps onto one lying within a step, which eases under the feet; one farther away dissolves out where it
-    // lies (GetUpFromBody) and, once gone, dissolves back in under the feet while he rises.
-    FRideTransition& T = Transit();
-    if (Body.GetLooseBoard())
-    {
-        const bool bOntoBoard = Body.IsGettingUp() && Body.GetGetUpExit() == ERideGetUpExit::Board;
-        const bool bLeaving = !Body.IsBailing() && T.Board == ERideBoard::Ride && T.ShownTarget <= 0.f;
-        if (bLeaving && T.Shown <= 0.f) Body.DropLooseBoard();
-        else if (Body.IsBailing() || bLeaving || (Body.IsGettingUp() && !bOntoBoard)) BoardRoot->SetWorldTransform(Body.GetLooseBoardDeck());
-        else if (bOntoBoard)
-        {
-            const FTransform Loose = Body.GetLooseBoardDeck(), Ridden = BoardRoot->GetComponentTransform();
-            const float A = FMath::SmoothStep(0.f, 1.f, Body.GetGetUpAlpha());
-            FTransform Blend;
-            Blend.Blend(Loose, Ridden, A);
-            BoardRoot->SetWorldTransform(Blend);
-        }
-        else Body.DropLooseBoard();
-    }
-    // The ridden board, once the one left lying is gone, dissolves in under the feet (a ridden board is never meant gone).
-    if (!Body.GetLooseBoard() && !Body.IsBailing() && !Ride->IsBailing() && T.Board == ERideBoard::Ride && T.ShownTarget <= 0.f) ShowBoard(1.f, false);
-}
-
-void USkateComponent::GetUpFromBody()
-{
-    URidePhysicalRider& Body = *PhysicalRider;
-    // Where the body lies and how: read before the get-up holds the bodies on the animation. A body that went through a
-    // floor or a wall the ride's root never followed it through gets up where the root is, on this side.
-    const FVector BodyGround = Body.GetBodyGround();
-    const FVector Ground = Ride->IsBailing() ? Ride->ReachableGround(BodyGround) : BodyGround;
-    if (!Ground.Equals(BodyGround))
-        UE_LOG(LogTemp, Warning, TEXT("SKATE ride get-up away from the body: it lies over (%.0f, %.0f, %.0f), which the root does not reach; up at (%.0f, %.0f, %.0f)"),
-            BodyGround.X, BodyGround.Y, BodyGround.Z, Ground.X, Ground.Y, Ground.Z);
-    const float Yaw = Body.GetBodyYaw();
-    const bool bFaceUp = Body.IsFaceUp();
-    if (WantsGetUpOnFoot())
-    {
-        Body.StartGetUp(ERideGetUpExit::OnFoot);
-        Transit().bRecoverAway = !Ground.Equals(BodyGround);
-        BeginGetUpOnFoot(Ground, Yaw, bFaceUp);
-        return;
-    }
-    Body.StartGetUp(ERideGetUpExit::Board);
-    if (Ride->IsBailing()) Ride->GetUp(Ground, Yaw);
-    // Onto the board: within a step of where he gets up, and lying wheels down, he steps onto it (AfterRideFrame eases
-    // it under the feet); otherwise it dissolves out where it lies, and a board dissolves in under the feet.
-    if (Body.GetLooseBoard() && Transit().Board == ERideBoard::Ride)
-    {
-        const FTransform Lying = Body.GetLooseBoardDeck();
-        const float Away = FVector::Dist(Lying.GetLocation(), Ground);
-        const bool bStepOn = Away <= FRideTuning::Get().GetUpBoardReach && Lying.GetRotation().GetUpVector().Z > .5f;
-        if (!bStepOn) ShowBoard(0.f, false);
-        UE_LOG(LogTemp, Display, TEXT("SKATE ride get-up board: lying %.0f cm away, %s, %s"), Away,
-            Lying.GetRotation().GetUpVector().Z > .5f ? TEXT("wheels down") : TEXT("not wheels down"),
-            bStepOn ? TEXT("stepped onto") : TEXT("dissolved out there and in under the feet"));
-    }
-}
-
-// Native's session rides under Ride's body (skate.RideSolver). Riding, the body follows the retargeted Native pose; a
-// Native wipeout hands the rider to the Chaos body, which falls with the momentum it has while the board goes on with
-// the session's wipeout (or tumbles on its own); the settled body gets up where it lies and a fresh session takes the
-// ride back from there.
 void USkateComponent::AfterNativeRideFrame(float Dt)
 {
     // Without bodies (no physics asset) the session's own wipeout and recovery play.
@@ -268,7 +137,7 @@ void USkateComponent::AfterNativeRideFrame(float Dt)
     // Getting up onto the board: the pose rises out of the fallen body's snapshot.
     if (Body.IsGettingUp() && Body.GetGetUpExit() == ERideGetUpExit::Board) Body.BlendFromSnapshot(RetailPose, Body.GetGetUpAlpha());
 
-    // The board's meshes follow the loose board while it is ours (as AfterRideFrame).
+    // The board's meshes follow the loose board while it is ours.
     FRideTransition& T = Transit();
     if (Body.GetLooseBoard())
     {
@@ -329,4 +198,45 @@ void USkateComponent::GetUpFromNativeBail()
         UE_LOG(LogTemp, Display, TEXT("SKATE Native get-up at (%.0f, %.0f, %.0f): the board lying %.0f cm away, %s"), Ground.X, Ground.Y, Ground.Z, Away,
             bStepOn ? TEXT("stepped onto") : TEXT("dissolved out there and in under the feet"));
     }
+}
+
+bool USkateComponent::IsNativeOnFoot() const
+{
+    return bRideNative && bRetailActive && NativeStateStarts(TEXT("Biped"));
+}
+
+bool USkateComponent::TakeNativeOnFoot(float Dt)
+{
+    // Native's rider who lands beside the board (a dark catch, a run-out) goes on in the session on Native's feet while
+    // the board rolls away; riding on, the next dismount started on that board metres from the rider and the body jumped
+    // there (U120). Once it lasts, the session ends: the character runs on from the rider's place at the rider's speed,
+    // and the board rolls on from Native's deck at its own, a board in the world as after a run-out (a mount steps onto
+    // it, or brings it under the feet).
+    const FVector Root = RideRoot().GetLocation();
+    const bool bOnFoot = NativeStateStarts(TEXT("BipedGround")) && !bNativeBail &&
+        !(PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp()));
+    if (!bOnFoot) { NativeOnFootTime = 0.f; NativeOnFootRoot = Root; NativeOnFootVelocity = FVector::ZeroVector; return false; }
+    if (Dt <= 0.f) return false;
+    // The rider's own motion, from the root's (the published velocity is the board's).
+    NativeOnFootVelocity = FMath::Lerp(NativeOnFootVelocity, (Root - NativeOnFootRoot) / Dt, NativeOnFootTime > 0.f ? .3f : 1.f);
+    NativeOnFootRoot = Root; NativeOnFootTime += Dt;
+    UCharacterMovementComponent* M = Movement();
+    if (NativeOnFootTime < NativeOnFootHold || !M || !BoardRoot) return false;
+    FRideTransition& T = Transit();
+    const FVector Carried = NativeOnFootVelocity, BoardVelocity = Vel, BoardSpin = RideSpin;
+    const float Since = NativeOnFootTime;
+    NativeOnFootTime = 0.f;
+    SuspendRetailRuntime();
+    RequestPoseBlend(FRideTuning::Get().DismountBlend);
+    LeaveBoard();
+    const bool bFloor = StandUpOffBoard(Rider->GetActorRotation().Yaw);
+    const FVector Flat(Carried.X, Carried.Y, 0.f);
+    M->Velocity = bFloor ? Flat : FVector(Flat.X, Flat.Y, Carried.Z);
+    HoldDriveForInput(Flat);
+    T.bGetUpOnFoot = false;
+    const float Away = FVector::Dist(BoardRoot->GetComponentLocation(), Rider->GetActorLocation());
+    if (T.Board == ERideBoard::Ride) { T.KickVelocity = BoardVelocity; T.FlightSpin = BoardSpin; T.bDeckKnown = true; T.bKickOut = false; LaunchBoard(); }
+    UE_LOG(LogTemp, Display, TEXT("SKATE Native rider off the board on foot after %.2f s: on foot at %.0f cm/s, the board %.0f cm away rolling on at %.0f cm/s, %s"),
+        Since, Flat.Size(), Away, BoardVelocity.Size(), bFloor ? TEXT("walking") : TEXT("falling"));
+    return true;
 }

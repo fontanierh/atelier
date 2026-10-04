@@ -298,8 +298,15 @@ def tick(dt):
         if MODE == 'record': live.say('Hands off the pad: recording starts at GO', 30.)
         phase('settle'); return
     if ph == 'settle':
-        riding = field(L.skate_state(), 'retail') == 'PhysicsGround' if BACKEND == 'Native' else mode() == 1
-        ready = hold(riding, SETTLE, 60.)
+        state = L.skate_state()
+        riding = field(state, 'retail') == 'PhysicsGround' if BACKEND == 'Native' else mode() == 1
+        hold(riding, SETTLE, 60.)
+        # The Native session, the Native backend's or the one under Ride's body, goes at its SETTLE + 3rd step (where
+        # the Native backend's SETTLE frames end), so it has stepped as often at GO on either backend: under Ride's body
+        # it rides two steps before the body has mounted, and two more steps at rest put the board centimetres off by
+        # the pier's end.
+        step = field(state, 'tick')
+        ready = riding and S['ok'] >= SETTLE // 2 and step is not None and int(step) >= SETTLE + 3
         if MODE == 'record' and not ready and S['ok'] and (SETTLE - S['ok']) % 60 == 0:
             live.say('Hands off the pad. GO in %d' % ((SETTLE - S['ok']) // 60), 1.5)
         if not ready: return

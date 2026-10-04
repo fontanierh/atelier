@@ -1,9 +1,7 @@
 #pragma once
 // The canonical pad: the packet the host gives either skate backend each tick, Native's Xbox state (Native/Input.h).
 // USkateComponent reads the player's controls (FSkateInput, plus the raw controller keys the legacy button adapter
-// forwards) and packs them here, the way the Native backend always has, so Native and Ride sample the same bytes. Plain
-// C++, no engine types: the offline replay test (Tests/Native/ride_input_replay_probe.cpp) packs recorded input with
-// this same code.
+// forwards) and packs them here, so both backends' sessions sample the same bytes. Plain C++, no engine types.
 #include "Native/Input.h"
 #include <algorithm>
 #include <array>

@@ -385,8 +385,8 @@ def apply_effect(s, c, e, inp):
 
 
 SPIN_SCALE = 1.6           # the game's AirSpinScale (Config/DefaultGame.ini): the spin preference
-TICK = 1. / 60.            # Ride's step
-# Ride's spin controller (RideSession.cpp: ReadSpinStick and TickSpin, native's PhysicalBodySpin in its normal mode), by
+TICK = 1. / 60.            # the session's step
+# The spin controller (native's PhysicalBodySpin in its normal mode, the hybrid's spin), by
 # the time in the air (s): the rate at full stick (rad/s, before the preference) and the most it changes in a tick
 # (rad/s); and the snap's weight by the age of the stick's push (s, negative before the take-off), over the last
 # SPIN_TICKS ticks.
@@ -405,7 +405,7 @@ def board_yaw(c):
 
 
 def curve(pts, x):
-    """Ride's Curve: piecewise linear through `pts`, flat beyond its ends."""
+    """A curve: piecewise linear through `pts`, flat beyond its ends."""
     if x <= pts[0][0]: return pts[0][1]
     for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
         if x <= x1: return y0 + (y1 - y0) * (x - x0) / max(1e-4, x1 - x0)

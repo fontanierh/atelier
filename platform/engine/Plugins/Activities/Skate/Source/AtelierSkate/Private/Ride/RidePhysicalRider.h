@@ -278,7 +278,7 @@ public:
     void ReleaseLooseBoard(const FVector& Velocity, const FVector& Spin);
     /** Keep the loose board and the one handed over out of what the rider collides with (Pawn-blocking geometry,
      *  including the query-only surfaces physics does not see): each frame either is swept, moved and turned in steps
-     *  (FRideSession::SweepBox), from where it was to where physics took it, and goes back to the last pose found free
+     *  (FRideClipPlayer::SweepBox), from where it was to where physics took it, and goes back to the last pose found free
      *  when it would have passed or turned into a face. Update calls it; so does the handed-over board's follower. */
     void GuardBoards();
 

@@ -3,7 +3,7 @@
 #include "SkateRider.h"
 #include "SkateSettings.h"
 #include "SkatePad.h"
-#include "Ride/RideSession.h"
+#include "Ride/RideClipPlayer.h"
 #include "Ride/RideTransition.h"
 #include "Ride/RidePhysicalRider.h"
 #include "GameFramework/Character.h"
@@ -365,10 +365,9 @@ FString USkateComponent::GetStatus() const
     if (bPushing) return TEXT("Pushing");
     if (bBraking) return TEXT("Braking");
     if (GetSpeed()<15.f) return TEXT("On board");
-    // Ride knows the rider's stance: fakie is backward in it, switch forward in the other one.
-    if (Ride && Ride->IsSwitch()) return Ride->IsFakie() ? TEXT("Rolling switch fakie") : TEXT("Rolling switch");
-    if (Ride) return Ride->IsFakie() ? TEXT("Rolling fakie") : TEXT("Rolling");
-    return bFakie ? TEXT("Rolling fakie") : TEXT("Rolling");
+    // The stance shown: fakie is backward in it, switch forward in the other one.
+    if (ShownSwitch()) return ShownFakie() ? TEXT("Rolling switch fakie") : TEXT("Rolling switch");
+    return ShownFakie() ? TEXT("Rolling fakie") : TEXT("Rolling");
 }
 
 bool USkateComponent::GetCameraYaw(float& Yaw) const

@@ -14,7 +14,7 @@ class UAudioComponent;
 class USoundWave;
 class USoundAttenuation;
 class FSkateRuntime;
-class FRideSession;
+class FRideClipPlayer;
 class UBoxComponent;
 class UPhysicsAsset;
 class URidePhysicalRider;
@@ -52,6 +52,16 @@ public:
     void RecallBoard();
     /** On foot with the board in hand (the board-carry locomotion). */
     bool IsBoardInHand() const;
+    /** On foot with the Ride backend: whether the character's own move (a sprint, a dash, a double jump...) may take
+     *  over from the board now. Not riding or getting on; a clip on foot once the stick may end it (a jump with the
+     *  board in hand at once). Without a board or a clip, always. */
+    bool CanYieldToCharacter() const;
+    /** Gives the character its own control back for such a move: a clip ends where it is, a board in hand is put away
+     *  as the board button puts it (dissolving in the hand), one the clip had flies or rolls on, a lying one stays.
+     *  bOwnVelocity: the move sets the velocity itself (else the speed carries on as the stick's). False when it may
+     *  not (CanYieldToCharacter). */
+    UFUNCTION(BlueprintCallable, Category="Skate")
+    bool YieldToCharacter(bool bOwnVelocity);
     void StowImmediately();
     void SetGoofy(bool bNewGoofy);
     bool IsGoofy() const { return bGoofy; }
@@ -72,8 +82,8 @@ public:
     /** The physical rider's get-up on foot, where the body lies (Ground, facing Yaw) with the board left lying. */
     void BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp);
     FString GetRetailState() const;
-    /** QA: a bone of the shown ride pose in the world under the Ride backend's Native solver (the hybrid; Native's
-     *  skeleton names, as SKATEBOARD_ROOT or HIPS). False without one: the Ride solver's pose is on its pose mesh. */
+    /** QA: a bone of the shown ride pose in the world under the Ride backend (Native's skeleton names, as
+     *  SKATEBOARD_ROOT or HIPS). False without one. */
     UFUNCTION(BlueprintCallable, Category="Skate")
     bool GetRidePoseBone(FName Bone, FTransform& World) const;
     bool GetRetailCamera(FTransform& Out, float& FOV) const;
@@ -141,6 +151,8 @@ private:
     bool StepNative(FSkateRuntime& Runtime, float Dt, bool bNeutral, bool& bFailed);
     /** Under the hybrid: count the air's spin from the shown pose and name it at the landing (Native names none). */
     void NameNativeSpin(ESkateMode Was);
+    /** Under the hybrid: show each successful pump Native's session counted in the trick line (Native names none). */
+    void NameNativePump();
     /** Keep a Native session's world around At (the ride's position, or the rider's on foot when bIdle). */
     void RefreshNativeCollision(FSkateRuntime& Runtime, const FVector& At, float Yaw, bool bIdle);
     void PreloadRetailRuntime();
@@ -180,30 +192,26 @@ private:
     void SetMeshForRiding(bool bRiding);
     FQuat AlignUp(const FQuat& Q,const FVector& NewUp,float Alpha) const;
 
-    // The Ride backend (USkateSettings::Backend; Private/Ride, RIDE.md). It publishes through RetailRuntime's outputs,
-    // so everything after the step (modes, cues, board placement, retargeting) is shared with the native backend.
-    TSharedPtr<FRideSession> Ride;
+    // The Ride backend (USkateSettings::Backend; Private/Ride, RIDE.md): Native's session rides (the board, its
+    // controls, tricks, airs, grinds, bail rules and pose) and Ride keeps the rest: the body (the physical rider follows
+    // the retargeted pose), the transitions, the bails (a Native wipeout hands the rider to the Chaos body) and the
+    // get-up where the body lies. RideNative is that session, kept apart from RetailRuntime (what the rider shows), so a
+    // transition clip published between rides never ends it. Clips plays the transitions' clips on the native rig.
+    TSharedPtr<FRideClipPlayer> Clips;
     // The rider's bodies: an active ragdoll while riding (skate.RidePhysical), the bail's ragdoll and loose board, and
     // the get-up from where the body lies.
     UPROPERTY() TObjectPtr<URidePhysicalRider> PhysicalRider;
     bool StartRide();
-    bool StepRide(float Dt);
-    void AfterRideFrame(float Dt);
+    /** Pos onto the floor under the board (or out of one it starts a little inside) for Native's session to start on. */
+    void SettleRideStart();
     void StopRide();
     void PreloadRide();
-    void GetUpFromBody();
-    // The Ride backend's riding solver (skate.RideSolver): Native's session rides (the board, its controls, tricks,
-    // airs, grinds, bail rules and pose) and Ride keeps the rest: the body (the physical rider follows the retargeted
-    // pose), the transitions, the bails (a Native wipeout hands the rider to the Chaos body) and the get-up where the
-    // body lies. RideNative is that session, kept apart from RetailRuntime (what the rider shows), so a transition clip
-    // published between rides never ends it. Ride's own board model (FRideSession) still animates the transitions.
-    static bool RideSolverIsNative();
     TSharedPtr<FSkateRuntime> RideNative;
-    bool bRideNative = false;                  // the current ride's solver is Native
+    bool bRideNative = false;                  // the current ride is Native's session under Ride's body
     bool bNativeBail = false;                  // a Native wipeout handed to the body: the body falls
     FVector RideSpin = FVector::ZeroVector;    // the Native deck's angular velocity (rad/s, world)
     // Through the body's bail the session goes on with its wipeout (controls neutral) and the loose board is placed on
-    // Native's board (skate.BailNativeBoard): it rolls on and catches on edges as on the Native backend.
+    // Native's board: it rolls on and catches on edges as on the Native backend.
     bool bNativeBoardInBail = false;
     FTransform NativeBoardLast = FTransform::Identity;   // the board placed last, and its motion (cm/s, rad/s)
     FVector NativeBoardVelocity = FVector::ZeroVector, NativeBoardSpin = FVector::ZeroVector;
@@ -216,17 +224,26 @@ private:
     void EndNativeBoardInBail();
     void AfterNativeRideFrame(float Dt);
     void GetUpFromNativeBail();
-    /** The ride's root: Native's under the Ride body, otherwise the Ride session's. */
+    // Native's rider off the board on foot (its Biped states) becomes the character once that outlasts the frames a
+    // wipeout passes through it: the session ends, the board rolls on by itself.
+    float NativeOnFootTime = 0.f;                        // seconds in BipedGround, and the rider's root and motion there
+    FVector NativeOnFootRoot = FVector::ZeroVector, NativeOnFootVelocity = FVector::ZeroVector;
+    bool IsNativeOnFoot() const;
+    bool TakeNativeOnFoot(float Dt);
+    // Native's session state under the hybrid starts with Prefix (FSkateRuntime lives in SkateRuntime.cpp).
+    bool NativeStateStarts(const TCHAR* Prefix) const;
+    /** The ride's root: Native's. */
     FTransform RideRoot() const;
-    // The bail's velocity and spin, and whether the rider rides switch: the solver's own (Native's under the hybrid).
+    // The bail's velocity and spin: Native's board's.
     FVector BailVelocity() const;
     FVector BailSpin() const;
-    bool RideSwitched() const;
     // The grab held in the air (an air dismount steps off from it): Native's, from the trick line and the triggers.
     ERideGrab RideGrab() const;
-    // The stance the state reports: Native's own under the hybrid.
+    // The stance the state reports: Native's own.
     bool ShownFakie() const;
     bool ShownSwitch() const;
+    // The rider crouched on the board (Native's hips low over the deck): the dismount, run-out and kick-out clips' LO.
+    bool ShownCrouch() const;
 
     // Getting on and off with the Ride backend (Private/Ride/RideTransition.cpp, RIDE.md "Transitions"): one
     // continuous character. The actor never jumps, the capsule changes about its centre, the mesh keeps its world
@@ -235,7 +252,7 @@ private:
     TSharedPtr<FRideTransition> Transition;
     bool bRideBody=false;                                      // the current or last ride used the Ride backend
     bool bRideClip=false;                                      // a mount or dismount clip drives the character (IsRiding)
-    // The off-board pose (carry, mount, dismount clips through FRideSession::StepOffBoard) published by
+    // The off-board pose (carry, mount, dismount clips through FRideClipPlayer::Step) published by
     // PublishOffBoardPose through RetargetRetailPose: the visible deck follows the clip's board, on the ground or in
     // the hand (OffBoardDeck, scaled), and the body rises onto a bigger deck by OffBoardLift.
     bool bOffBoardPose=false;
@@ -269,6 +286,8 @@ private:
     bool BeginDismountClip();
     void StepRideClip(float Dt);
     void FinishRideClip();
+    /** The share of the clip after which it gives way to the stick (and to the character's own moves). */
+    float ClipFreeFrom() const;
     void EndRideClip(bool bKeepDrive = false);
     void BeginCarry(float Phase);
     void StepCarry(float Dt);

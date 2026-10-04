@@ -79,28 +79,9 @@ void FAnimNode_RideInertialization::RequestInertialization(float Duration, const
     if (BlendProfile) PendingProfile = BlendProfile;
 }
 
-void FAnimNode_RideInertialization::TurnPrevious(const FTransform& Turn, FName Keep)
-{
-    PendingTurn = bTurnPending ? PendingTurn * Turn : Turn;
-    PendingKeep = Keep;
-    bTurnPending = true;
-}
-
-void FAnimNode_RideInertialization::TurnStored(TArray<FTransform>& Stored, const FCompactPose& Pose) const
-{
-    // A child of the root goes to Child * Root in component space; turned, Child' * Root = Child * Root * Turn.
-    const FBoneContainer& Bones = Pose.GetBoneContainer();
-    const FCompactPoseBoneIndex Root(0);
-    const FTransform Turn = Stored[0] * PendingTurn * Stored[0].Inverse();
-    const int32 KeepMesh = PendingKeep.IsNone() ? INDEX_NONE : Bones.GetPoseBoneIndexForBoneName(PendingKeep);
-    const FCompactPoseBoneIndex Keep = KeepMesh != INDEX_NONE ? Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(KeepMesh)) : FCompactPoseBoneIndex(INDEX_NONE);
-    for (const FCompactPoseBoneIndex Bone : Pose.ForEachBoneIndex())
-        if (Bones.GetParentBoneIndex(Bone) == Root && Bone != Keep) Stored[Bone.GetInt()] = Stored[Bone.GetInt()] * Turn;
-}
-
 void FAnimNode_RideInertialization::Reset()
 {
-    Pending = -1; PendingProfile = nullptr; DeltaTime = 0; PreviousDelta = 0; bTurnPending = false;
+    Pending = -1; PendingProfile = nullptr; DeltaTime = 0; PreviousDelta = 0;
     Previous1.Reset(); Previous2.Reset(); Offsets.Reset();
     bActive = false; Elapsed = Longest = 0;
 }
@@ -267,14 +248,6 @@ void FAnimNode_RideInertialization::Evaluate_AnyThread(FPoseContext& Output)
         TraceReset(bActive || Previous1.Num() > 0, Output.AnimInstanceProxy, TEXT("the pose has other bones"));
         Previous1.Reset(); Previous2.Reset(); bActive = false;
     }
-    if (bTurnPending && Previous1.Num() == Num)
-    {
-        TurnStored(Previous1, Pose);
-        if (Previous2.Num() == Num) TurnStored(Previous2, Pose);
-        // The offsets of a blend in progress are in the old space: it starts again from the turned pose.
-        if (Pending < 0 && bActive) { Pending = FMath::Max(.05f, Longest - Elapsed); PendingProfile = nullptr; }
-    }
-    bTurnPending = false;
     if (Pending >= 0 && Previous1.Num() == Num)
     {
         Start(Pose, Pending, PendingProfile);

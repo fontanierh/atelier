@@ -151,6 +151,7 @@ private:
     float ActionSourceStartTime = 0.f, ActionPlayRate = 1.f;
     FSprintStamina Stamina;
     bool bSprintHeld=false;
+    bool bSprintTakeOver=false;   // a sprint press still to take over from the skateboard on foot
     float MouseSensitivity = .4f, PreferredFOV = 70.f, ReadyTime = 0.f;
     float ShakeTrauma = 0.f, ShakeClock = 0.f, DamageFlash = 0.f;
     bool bActionLoops = false, bJog = false, bWalk = false;
@@ -260,7 +261,10 @@ private:
     void AdvanceMapReview(float Dt);
     void ToggleMouse(const FInputActionValue& Value);
     void Screenshot(const FInputActionValue& Value);
-    bool CanAct() const;
+    /** bOverBoard: a move that takes over from the skateboard on foot (TakeOverFromSkate) once the skate component lets it. */
+    bool CanAct(bool bOverBoard = false) const;
+    /** On foot with the skateboard, the character's own move takes over from it (USkateComponent::YieldToCharacter). */
+    bool TakeOverFromSkate(bool bOwnVelocity);
     bool StandForAction();
     bool MovementLocked() const;
     bool IsRollRecovering() const;

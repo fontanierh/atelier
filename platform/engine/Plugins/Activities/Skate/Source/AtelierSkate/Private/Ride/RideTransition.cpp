@@ -4,7 +4,7 @@
 // inertialization (FAnimNode_SkateRider), the speed carries over both ways, and the board is always a real object
 // that dissolves in and out rather than popping.
 //
-// Off the board the native clips play through the Ride session's animator (FRideSession::StepOffBoard) and are
+// Off the board the native clips play through the clip player's animator (FRideClipPlayer::Step) and are
 // retargeted like a ride (PublishOffBoardPose): the board-carry locomotion on the character's own movement, and the
 // mount and dismount clips, whose root motion moves the capsule through a root motion source. In the air no clip moves
 // the capsule: CharacterMovement keeps the fall, and the clip's trajectory follows the capsule (a jump with the board in
@@ -17,7 +17,7 @@
 #include "SkateComponent.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
-#include "RideSession.h"
+#include "RideClipPlayer.h"
 #include "RideAnimator.h"
 #include "RideAnimInstance.h"
 #include "RidePhysicalRider.h"
@@ -107,10 +107,10 @@ namespace
     constexpr float BoardSettle = .2f, UpsideDownDeck = 4.3f;
     // The kick: at least this fast away from the rider (cm/s).
     constexpr float KickSpeed = 250.f;
-    // The loose deck's box (cm at board scale 1) holds Native's whole board, as the riding box does (RideSession.cpp,
-    // DeckBox): 45.6 from the pivot to the nose and the tail, 12 to each side, from the wheels' plane (DeckPivot under
-    // the pivot) to the kicks' top (DeckKickTop over it). It is checked this much smaller all round, so the ground the
-    // board rests on, wheels or kicks down, is not inside it; out of what it starts in it moves at most DeckFitPush.
+    // The loose deck's box (cm at board scale 1) holds Native's whole board: 45.6 from the pivot to the nose and the
+    // tail, 12 to each side, from the wheels' plane (DeckPivot under the pivot) to the kicks' top (DeckKickTop over
+    // it). It is checked this much smaller all round, so the ground the board rests on, wheels or kicks down, is not
+    // inside it; out of what it starts in it moves at most DeckFitPush.
     constexpr float DeckHalfLength = 45.6f, DeckHalfWidth = 12.f, DeckKickTop = 4.3f, DeckFitInset = 1.5f, DeckFitPush = 45.f;
     // A flying deck stopped by the ground turns toward lying along it at DeckLieRate (1/s: about .3 of the way each
     // 60 Hz frame); one stopped by anything loses its spin at ContactSpinDamp (1/s: about half each frame).
@@ -288,7 +288,7 @@ namespace
     }
 
     /** FitDeck: how a loose deck moves from From (where it was last shown) to To (where its flight, its settling or its
-     *  owner puts it). Its whole box is swept, turned in steps (FRideSession::SweepBox), through what the flight sphere
+     *  owner puts it). Its whole box is swept, turned in steps (FRideClipPlayer::SweepBox), through what the flight sphere
      *  collides with. Clear: To is free. Corrected: To is changed to where the box met a face (Normal its normal), or,
      *  when the move starts inside something, to To pushed out of it (whole box, within Plane when given) if its centre
      *  gets there without crossing anything, else to the last free pose on the way. Unresolved: no free pose; To is
@@ -302,7 +302,7 @@ namespace
         FVector Extent;
         const FTransform A = DeckFitBox(From, Extent), B = DeckFitBox(To, Extent);
         FHitResult Hit; FTransform Reached;
-        if (!FRideSession::SweepBox(World, A, B, Extent, ECC_WorldDynamic, Params, FlightResponses(), Hit, &Reached)) return EDeckFit::Clear;
+        if (!FRideClipPlayer::SweepBox(World, A, B, Extent, ECC_WorldDynamic, Params, FlightResponses(), Hit, &Reached)) return EDeckFit::Clear;
         Normal = Hit.Normal;
         if (!Hit.bStartPenetrating)
         {
@@ -367,9 +367,9 @@ bool USkateComponent::PrepareRideClips()
 {
     if (!Rider || USkateSettings::ActiveBackend() != ESkateBackend::Ride) return false;
     FRideTransition& T = Transit();
-    if (!Ride) PreloadRide();
-    FRideAnimator& Animator = Ride->GetAnimator();
-    if (!Animator.HasClips()) Ride->Preload();
+    if (!Clips) PreloadRide();
+    FRideAnimator& Animator = Clips->GetAnimator();
+    if (!Animator.HasClips()) Clips->Preload();
     if (!Animator.HasClips()) return false;
     // The pose mesh lives on the rider from now on (a ride keeps it).
     Animator.Attach(Rider);
@@ -510,7 +510,7 @@ bool USkateComponent::BeginMountClip()
     if (Gait > 0) Phase = bCarrying ? T.Phase : T.bFeetKnown ? FeetPhase(bMirror) : 0.f;
     const int32 Variant = FMath::RoundToInt(Phase * 4.f) % 4;
     const FString Name = Gait == 0 ? FString(TEXT("BR_STAND_0_INTO_MOUNT")) : FString::Printf(TEXT("BR_%s_FWD_%d_INTO_MOUNT"), Gaits[Gait], Variant * 25);
-    UAnimSequence* Clip = Ride->GetAnimator().Clip(*Name);
+    UAnimSequence* Clip = Clips->GetAnimator().Clip(*Name);
     if (!Clip || Length(Clip) < .1f) return false;
     RiderApi->PrepareToSkate();
     StopMomentum();
@@ -567,7 +567,7 @@ bool USkateComponent::BeginStepOnClip()
             FVector::Dist2D(Lying.GetLocation(), Rider->GetActorLocation()), Lying.GetRotation().GetUpVector().Z, M->Velocity.Size2D());
         return false;
     }
-    UAnimSequence* Clip = Ride->GetAnimator().Clip(TEXT("BR_STAND_0_INTO_MOUNT"));
+    UAnimSequence* Clip = Clips->GetAnimator().Clip(TEXT("BR_STAND_0_INTO_MOUNT"));
     const FName Pelvis = RiderApi->GetSkateBone(TEXT("pelvis"));
     if (!Clip || Length(Clip) < .1f || Pelvis.IsNone() || Mesh->GetBoneIndex(Pelvis) == INDEX_NONE) return false;
     const float L = Length(Clip);
@@ -660,7 +660,7 @@ bool USkateComponent::GetOnBoard(const FVector& Where, const FQuat& Rotation, co
     // A slow, upright bail is offered to the transition first: it runs out on foot.
     if (PhysicalRider && !PhysicalRider->OnBailStart.IsBound()) PhysicalRider->OnBailStart.BindUObject(this, &USkateComponent::TakeRunOut);
     // The ride's own clips take over from a transition clip; the character's blend hides the switch.
-    if (Ride) Ride->GetAnimator().ClearOverride(0.f);
+    if (Clips) Clips->GetAnimator().ClearOverride();
     Capsule->SetCapsuleSize(RidingRadius, RidingHalf);      // about its centre: nothing moves
     M->SetMovementMode(MOVE_Custom, MovementMode);
     // The actor stays where it is: the body's height above the session's root is measured rather than assumed. It
@@ -685,9 +685,11 @@ bool USkateComponent::RideDismount()
 {
     FRideTransition& T = Transit();
     // During a bail the button asks to get up on foot: the physical rider reads WantsGetUpOnFoot when the body settles.
-    const bool bDown = Mode == ESkateMode::Bail || (Ride && (Ride->IsBailing() || Ride->GetMode() == ERideState::GetUp)) ||
-        (PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp()));
+    const bool bDown = Mode == ESkateMode::Bail || (PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp()));
     if (bDown) { T.bGetUpOnFoot = true; return true; }
+    // Native's rider already off the board on foot becomes the character in a moment (TakeNativeOnFoot): no dismount
+    // starts on the board it left.
+    if (IsNativeOnFoot()) return true;
     // In the air the rider lets go of the board from the grab and comes down on foot holding it.
     if (Mode == ESkateMode::Air) return T.Board == ERideBoard::Ride && PrepareRideClips() && BeginAirDismountClip();
     if (Mode != ESkateMode::Ground) return false;           // not from a grind
@@ -776,7 +778,7 @@ bool USkateComponent::BeginDismountClip()
     if (DeckForward.IsNearlyZero()) return false;
     // Off the way the board is going: riding fakie the rider faces the other end, which looks like the other stance.
     const bool bBackward = Speed > 15.f ? FVector::DotProduct(Flat, DeckForward) < 0.f : bFakie;
-    const bool bLow = Ride && Ride->GetBody().Crouch > .5f;
+    const bool bLow = ShownCrouch();
     const bool bStick = In.Left.Size() > .3f;
     const TCHAR* Height = bLow ? TEXT("LO") : TEXT("HI");
     FString Name; float EndPhase = 0.f;
@@ -784,7 +786,7 @@ bool USkateComponent::BeginDismountClip()
     if (Speed > FastDismount) { Name = FString::Printf(TEXT("BR_DISMOUNT_FAST_%s_INTO_RUN_FWD"), Height); EndPhase = .75f; }
     else if (bEndsRunning) { Name = FString::Printf(TEXT("BR_DISMOUNT_%s_INTO_RUN_FWD"), Height); EndPhase = .5f; }
     else Name = FString::Printf(TEXT("BR_DISMOUNT_%s_INTO_STAND_0"), Height);
-    UAnimSequence* Clip = Ride->GetAnimator().Clip(*Name);
+    UAnimSequence* Clip = Clips->GetAnimator().Clip(*Name);
     if (!Clip || Length(Clip) < .1f) return false;
     if (Clip->HasCurveData(CadenceCurve, false))
     {
@@ -842,14 +844,8 @@ void USkateComponent::BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bF
             ShowBoard(1.f, true);
         }
     // The body gets up where it lies with the recovery that fits how it lies (BeginRecover, after the ride's frame,
-    // blended out of the fallen pose's snapshot). Without the clips the session's get-up stands the rider up and the
-    // rider steps off once up (TickTransition).
-    if (PrepareRideClips())
-    {
-        T.bRecoverPending = true; T.RecoverGround = Ground; T.RecoverYaw = Yaw; T.bRecoverFaceUp = bFaceUp;
-        return;
-    }
-    if (Ride && Ride->IsBailing()) Ride->GetUp(Ground, Yaw);
+    // blended out of the fallen pose's snapshot).
+    if (PrepareRideClips()) { T.bRecoverPending = true; T.RecoverGround = Ground; T.RecoverYaw = Yaw; T.bRecoverFaceUp = bFaceUp; }
 }
 
 bool USkateComponent::BeginRecover()
@@ -860,7 +856,7 @@ bool USkateComponent::BeginRecover()
     const bool bAway = T.bRecoverAway;
     T.bRecoverAway = false;
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
-    if (!Ride || !Mesh) return false;
+    if (!Clips || !Mesh) return false;
     struct FPart { const TCHAR* Own; const TCHAR* Clip; };
     static const FPart Parts[] = {{TEXT("head"), TEXT("HEAD")}, {TEXT("hand_L"), TEXT("LEFTHAND")}, {TEXT("hand_R"), TEXT("RIGHTHAND")},
         {TEXT("foot_L"), TEXT("LEFTFOOT")}, {TEXT("foot_R"), TEXT("RIGHTFOOT")}, {TEXT("thigh_L"), TEXT("LEFTUPLEG")}, {TEXT("thigh_R"), TEXT("RIGHTUPLEG")}};
@@ -882,7 +878,7 @@ bool USkateComponent::BeginRecover()
     UAnimSequence* Best = nullptr; float BestYaw = 0.f, BestFit = MAX_flt;
     for (const TCHAR* Name : Recoveries)
     {
-        UAnimSequence* Clip = Ride->GetAnimator().Clip(Name);
+        UAnimSequence* Clip = Clips->GetAnimator().Clip(Name);
         if (!Clip || Length(Clip) < .3f) continue;
         const FVector ClipHips = ClipBone(Clip, TEXT("HIPS"), 0.f);
         FVector Part[NumParts];
@@ -922,23 +918,20 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
     // way the board was going under the rider (on along its nose, back along its tail, or across it toward the toes or
     // the heels), high or crouched, and small to big by how hard the bail was. It starts after the ride's frame.
     FRideTransition& T = Transit();
-    if (Kind != ERideBailKind::RunOut || !Ride || !BoardRoot || T.Board != ERideBoard::Ride || !PrepareRideClips()) return false;
+    if (Kind != ERideBailKind::RunOut || !Clips || !BoardRoot || T.Board != ERideBoard::Ride || !PrepareRideClips()) return false;
     const FVector Bail = BailVelocity();
-    // Riding switch the rider stands on the board the other way round, in the other stance: the way is his. On a board
-    // a trick left end for end, the shown deck's nose trails too.
-    const bool bSwitched = RideSwitched();
-    FQuat DeckRotation = BoardRoot->GetComponentQuat();
-    if (bSwitched != (!bRideNative && Ride->GetAnimator().IsBoardReversed())) DeckRotation = FQuat(DeckRotation.GetUpVector(), PI) * DeckRotation;
+    // The way is the shown deck's: Native's pose carries its stance, so the rider never counts as switch.
+    const FQuat DeckRotation = BoardRoot->GetComponentQuat();
     float Along = FVector::DotProduct(Bail, DeckRotation.GetForwardVector());
     float Across = FVector::DotProduct(Bail, DeckRotation.GetRightVector());
-    if (bGoofy == bSwitched) Across = -Across;              // the clips are authored goofy
-    if (FMath::Abs(Along) + FMath::Abs(Across) < 20.f) { Along = bFakie != bSwitched ? -1.f : 1.f; Across = 0.f; }
+    if (!bGoofy) Across = -Across;                          // the clips are authored goofy
+    if (FMath::Abs(Along) + FMath::Abs(Across) < 20.f) { Along = bFakie ? -1.f : 1.f; Across = 0.f; }
     const float Angle = FMath::RadiansToDegrees(FMath::Atan2(Across, Along));
     const int32 Way = FMath::Abs(Angle) < 45.f ? 0 : FMath::Abs(Angle) > 135.f ? 1 : Across < 0.f ? 2 : 3;
     const URidePhysicalSettings* Settings = GetDefault<URidePhysicalSettings>();
     const float Energy = FMath::Max3(float(Bail.Size2D()) / FMath::Max(1.f, Settings->RunOutSpeed), FMath::Abs(float(Bail.Z)) / FMath::Max(1.f, Settings->RunOutImpact),
         FMath::RadiansToDegrees(float(BailSpin().Size())) / FMath::Max(1.f, Settings->RunOutSpin));
-    const TCHAR* Height = Ride->GetBody().Crouch > .5f ? TEXT("LO") : TEXT("HI");
+    const TCHAR* Height = ShownCrouch() ? TEXT("LO") : TEXT("HI");
     // The size the energy asks for, or the nearest one this way has.
     const int32 Wanted = Energy < .4f ? 0 : Energy < .75f ? 1 : 2;
     for (const int32 Size : {Wanted, Wanted - 1, Wanted + 1, Wanted - 2, Wanted + 2})
@@ -947,7 +940,7 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
         TArray<UAnimSequence*> Options;
         for (const TCHAR* Variant : RunOutWays[Way].Sizes[Size])
             if (Variant)
-                if (UAnimSequence* Clip = Ride->GetAnimator().Clip(*FString::Printf(TEXT("RUNOUT_%s_%s_%s_TO_RUN_FWD"), RunOutWays[Way].Way, Height, Variant)); Clip && Length(Clip) > .2f)
+                if (UAnimSequence* Clip = Clips->GetAnimator().Clip(*FString::Printf(TEXT("RUNOUT_%s_%s_%s_TO_RUN_FWD"), RunOutWays[Way].Way, Height, Variant)); Clip && Length(Clip) > .2f)
                     Options.Add(Clip);
         if (Options.IsEmpty()) continue;
         // Picked from the bail itself rather than at random, so a replay picks the same one.
@@ -970,12 +963,11 @@ bool USkateComponent::BeginRunOut()
     UCharacterMovementComponent* M = Movement();
     UAnimSequence* Clip = T.PendingClip;
     T.bRunOutPending = false; T.PendingClip = nullptr;
-    if (!Ride || !M || !Clip || !BoardRoot) return false;
-    // In the stance in effect, on the board the way the rider stands on it (riding switch, the other way round).
-    const bool bSwitched = RideSwitched();
-    const bool bMirror = bGoofy == bSwitched;
+    if (!Clips || !M || !Clip || !BoardRoot) return false;
+    // In the stance in effect, on the board the way the shown deck has the rider stand on it.
+    const bool bMirror = !bGoofy;
     const FTransform Bailed = BoardRoot->GetComponentTransform();
-    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw) + (bSwitched != (!bRideNative && Ride->GetAnimator().IsBoardReversed()) ? 180.f : 0.f);
+    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw);
     const float Yaw = DeckYaw - ClipYawToWorld(ClipDeckYaw(Clip, 0.f), bMirror, 0.f);
     const FVector Carried = BailVelocity();
     const FVector Flat(Carried.X, Carried.Y, 0.f);
@@ -1188,7 +1180,7 @@ void USkateComponent::EndOnFoot(float Blend)
     // The character's own pose blends in from where the clip left the body; the board stays where it is.
     FRideTransition& T = Transit();
     T.Foot = ERideFoot::Off; T.bCarryShown = false;
-    if (Ride) Ride->GetAnimator().ClearOverride(0.f);
+    if (Clips) Clips->GetAnimator().ClearOverride();
     if (!RetailPose.IsEmpty()) { RetailPose.Reset(); RequestPoseBlend(Blend); }
 }
 
@@ -1200,7 +1192,7 @@ void USkateComponent::StepRideClip(float Dt)
     FRideTransition& T = *Transition;
     UCharacterMovementComponent* M = Movement();
     const FRideTuning& Tune = FRideTuning::Get();
-    if (!Ride || !T.Clip || !M) { EndRideClip(); return; }
+    if (!Clips || !T.Clip || !M) { EndRideClip(); return; }
     const bool bGround = M->IsMovingOnGround();
     // In the air: CharacterMovement keeps the fall. The landing ends a jump (a landing clip, the board in hand) and
     // a board thrown under the feet (on it once it is there, else on foot holding it).
@@ -1242,9 +1234,9 @@ void USkateComponent::StepRideClip(float Dt)
     else if (T.Foot == ERideFoot::Mount || T.Foot == ERideFoot::AirMount) T.Lift = FMath::SmoothStep(T.BoardContact, T.ClipLength, T.ClipTime);
     else T.Lift = 1.f - FMath::SmoothStep(0.f, FMath::Max(.05f, T.BoardContact), T.ClipTime);
     FRideAnimLayers Layers;
-    Layers.bMirror = T.bMirror; Layers.Lock = 1.f;          // Lock 1: at the handover the session puts the clip's board on its deck
+    Layers.bMirror = T.bMirror;
     Layers.Add(T.Clip, T.ClipTime, 1.f);
-    Ride->GetAnimator().SetOverride(Layers, T.ClipBlendIn);
+    Clips->GetAnimator().SetOverride(Layers, T.ClipBlendIn);
     Rider->SetActorRotation(FRotator(0, T.TrajYaw, 0));
     // The board goes where the clip has it while it is the clip's (in hand, or rolling away in a run-out).
     const bool bClipBoard = T.Board == ERideBoard::Hand || T.Foot == ERideFoot::RunOut;
@@ -1264,13 +1256,13 @@ void USkateComponent::StepRideClip(float Dt)
         if (T.TrajEndTime > 0.f) Offset += (T.TrajEnd - T.DeckDrift) * FMath::SmoothStep(0.f, T.TrajEndTime, T.ClipTime);
         if (T.bAnchored) { Offset.X = T.Anchor.X - Floor.X; Offset.Y = T.Anchor.Y - Floor.Y; }
         T.AppliedOffset = Offset;
-        Ride->StepOffBoard(StepDt, FTransform(FRotator(0, T.TrajYaw, 0), Floor + Offset));
+        Clips->Step(StepDt, FTransform(FRotator(0, T.TrajYaw, 0), Floor + Offset));
         // Where the pose put the board against where the clip's tracks have it, for the frames to come.
-        const int32 DeckIndex = Ride->Names.IndexOfByKey(DeckBone);
-        if (T.TrajEndTime > 0.f && (T.ClipTime < T.TrajEndTime || T.Foot == ERideFoot::AirMount) && Ride->Bones.IsValidIndex(DeckIndex))
+        const int32 DeckIndex = Clips->Names.IndexOfByKey(DeckBone);
+        if (T.TrajEndTime > 0.f && (T.ClipTime < T.TrajEndTime || T.Foot == ERideFoot::AirMount) && Clips->Bones.IsValidIndex(DeckIndex))
         {
-            const FVector Posed = (Ride->Bones[DeckIndex] * Ride->Root).GetLocation();
-            const FVector Tracked = Ride->Root.GetLocation() + ClipToWorld(ClipBone(T.Clip, DeckBone, T.ClipTime), T.bMirror, T.TrajYaw);
+            const FVector Posed = (Clips->Bones[DeckIndex] * Clips->Root).GetLocation();
+            const FVector Tracked = Clips->Root.GetLocation() + ClipToWorld(ClipBone(T.Clip, DeckBone, T.ClipTime), T.bMirror, T.TrajYaw);
             T.DeckDrift = FVector(Posed.X - Tracked.X, Posed.Y - Tracked.Y, 0.);
         }
         // A board the clip rolls away (a run-out) or kicks off goes only where it is free to: its box, swept from where
@@ -1310,10 +1302,10 @@ void USkateComponent::StepRideClip(float Dt)
     if (T.bMatchDeck)
     {
         T.bMatchDeck = false;
-        const int32 DeckIndex = Ride->Names.IndexOfByKey(DeckBone);
-        if (Ride->Bones.IsValidIndex(DeckIndex))
+        const int32 DeckIndex = Clips->Names.IndexOfByKey(DeckBone);
+        if (Clips->Bones.IsValidIndex(DeckIndex))
         {
-            const FVector Delta = OffBoardDeckFrom.GetLocation() - (Ride->Bones[DeckIndex] * Ride->Root).GetLocation();
+            const FVector Delta = OffBoardDeckFrom.GetLocation() - (Clips->Bones[DeckIndex] * Clips->Root).GetLocation();
             T.Anchor += FVector(Delta.X, Delta.Y, 0.);
             Show(0.f);
         }
@@ -1375,11 +1367,7 @@ void USkateComponent::StepRideClip(float Dt)
     }
     // A clip that ends standing gives way to the stick after a while, and any landing, step-off or run-out to a turn
     // away from it.
-    float FreeFrom = 2.f;
-    if (T.Foot == ERideFoot::Land || T.Foot == ERideFoot::Dismount) FreeFrom = .4f;
-    else if (T.Foot == ERideFoot::RunOut) FreeFrom = .6f;
-    else if (T.Foot == ERideFoot::Recover) FreeFrom = FMath::Max(.65f, (Tune.RecoverBlend + .2f) / FMath::Max(.1f, T.ClipLength));
-    if (T.ClipTime > FreeFrom * T.ClipLength)
+    if (T.ClipTime > ClipFreeFrom() * T.ClipLength)
     {
         const FVector Wish = MoveWish(Rider);
         if (!Wish.IsNearlyZero() && (T.bEndsStanding || FVector::DotProduct(Wish, FRotator(0, T.TrajYaw, 0).Vector()) < .5f))
@@ -1446,8 +1434,8 @@ void USkateComponent::FinishRideClip()
     if (bMount)
     {
         // On the board where the clip put it down, moving as the rider was.
-        const int32 D = Ride->Names.IndexOfByKey(DeckBone);
-        const FTransform DeckWorld = Ride->Bones.IsValidIndex(D) ? Ride->Bones[D] * Ride->Root : Ride->Root;
+        const int32 D = Clips->Names.IndexOfByKey(DeckBone);
+        const FTransform DeckWorld = Clips->Bones.IsValidIndex(D) ? Clips->Bones[D] * Clips->Root : Clips->Root;
         const FQuat Q = DeckWorld.GetRotation();
         UE_LOG(LogTemp, Display, TEXT("SKATE ride mount: onto the board at %.0f cm/s%s, nose %.0f deg from the travel, the deck %.1f cm from the capsule (drift %.1f cm)"), Velocity.Size(),
             M->IsMovingOnGround() ? TEXT("") : TEXT(" in the air"),
@@ -1466,6 +1454,15 @@ void USkateComponent::FinishRideClip()
     if (Was == ERideFoot::RunOut) LaunchBoard();
     if (T.Board == ERideBoard::Hand) BeginCarry(Was == ERideFoot::Air ? T.Phase : T.EndPhase);
     else EndOnFoot(Tune.CarryBlend);
+}
+
+float USkateComponent::ClipFreeFrom() const
+{
+    const FRideTransition& T = *Transition;
+    if (T.Foot == ERideFoot::Land || T.Foot == ERideFoot::Dismount) return .4f;
+    if (T.Foot == ERideFoot::RunOut) return .6f;
+    if (T.Foot == ERideFoot::Recover) return FMath::Max(.65f, (FRideTuning::Get().RecoverBlend + .2f) / FMath::Max(.1f, T.ClipLength));
+    return 2.f;
 }
 
 void USkateComponent::EndRideClip(bool bKeepDrive)
@@ -1626,7 +1623,7 @@ bool USkateComponent::BeginCarryJump(float Speed)
     const int32 Land = Quarter < 2 ? 25 : 75;
     const FString Name = bRun ? FString::Printf(TEXT("JBR_RUN_FWD_%d_TO_SML_FWD_%d"), Quarter * 25, Land) : FString(TEXT("JBR_STAND_0_TO_SML_FWD_0"));
     const FVector Applied = T.AppliedOffset;
-    if (!StartClip(Ride->GetAnimator().Clip(*Name), ERideFoot::Air, !bGoofy, Rider->GetActorRotation().Yaw, FRideTuning::Get().ClipBlend * .5f)) return false;
+    if (!StartClip(Clips->GetAnimator().Clip(*Name), ERideFoot::Air, !bGoofy, Rider->GetActorRotation().Yaw, FRideTuning::Get().ClipBlend * .5f)) return false;
     T.TrajOffset = Applied; T.OffsetTime = FMath::Min(.2f, T.ClipLength);
     T.LandPhase = bRun ? Land : 0;
     T.AirStartZ = OffBoardGround().Z; T.AirTime = 0.f; T.FallSpeed = M->Velocity.Z;
@@ -1643,7 +1640,7 @@ bool USkateComponent::BeginLandClip()
     FRideTransition& T = Transit();
     const FRideTuning& Tune = FRideTuning::Get();
     UCharacterMovementComponent* M = Movement();
-    if (!Ride || !M || T.Board != ERideBoard::Hand) return false;
+    if (!Clips || !M || T.Board != ERideBoard::Hand) return false;
     const FVector Flat(M->Velocity.X, M->Velocity.Y, 0.f);
     const float Speed = Flat.Size();
     const float Drop = OffBoardGround().Z - T.AirStartZ;
@@ -1655,7 +1652,7 @@ bool USkateComponent::BeginLandClip()
     const int32 Step = bBig && bDown ? 0 : T.LandPhase >= 50 ? 75 : 25;
     const FString Name = bRun ? FString::Printf(TEXT("BR_LAND_%s_%s_%d_INTO_RUN_FWD"), Size, Slope, Step)
         : FString::Printf(TEXT("BR_LAND_%s_%s_0_INTO_STAND"), Size, Slope);
-    UAnimSequence* Clip = Ride->GetAnimator().Clip(*Name);
+    UAnimSequence* Clip = Clips->GetAnimator().Clip(*Name);
     const FVector Applied = T.AppliedOffset;
     const float AirTime = T.AirTime, Fall = T.FallSpeed;
     if (!StartClip(Clip, ERideFoot::Land, T.bMirror, T.TrajYaw, Tune.ClipBlend)) return false;
@@ -1686,7 +1683,7 @@ bool USkateComponent::BeginAirMountClip()
     UCharacterMovementComponent* M = Movement();
     const bool bMirror = !bGoofy;
     const bool bLeft = (T.FootDiff > 0.f) != bMirror;
-    UAnimSequence* Clip = Ride->GetAnimator().Clip(bLeft ? TEXT("BR_LF_AIR_INTO_MOUNT_BSGRAB") : TEXT("BR_RF_AIR_INTO_MOUNT_BSGRAB"));
+    UAnimSequence* Clip = Clips->GetAnimator().Clip(bLeft ? TEXT("BR_LF_AIR_INTO_MOUNT_BSGRAB") : TEXT("BR_RF_AIR_INTO_MOUNT_BSGRAB"));
     if (!Clip || Length(Clip) < .1f) return false;
     // From a clip (a jump with the board, a step off it) the pose mesh blends; from the character's own pose the
     // character does, and the clip's pelvis starts at the character's.
@@ -1726,7 +1723,7 @@ bool USkateComponent::BeginAirDismountClip()
     FRideTransition& T = Transit();
     const FRideTuning& Tune = FRideTuning::Get();
     UCharacterMovementComponent* M = Movement();
-    if (!Ride || !M) return false;
+    if (!Clips || !M) return false;
     const ERideGrab Held = RideGrab();
     const bool bKick = Held == ERideGrab::None;
     const TCHAR* Grab = TEXT("MUTE");
@@ -1738,9 +1735,9 @@ bool USkateComponent::BeginAirDismountClip()
     case ERideGrab::TuckKnee: Grab = TEXT("DBL"); break;
     default: break;
     }
-    const FString Name = bKick ? FString::Printf(TEXT("BR_KICKOUT_%s_INTO_NB_AIR"), Ride->GetBody().Crouch > .5f ? TEXT("LO") : TEXT("HI"))
+    const FString Name = bKick ? FString::Printf(TEXT("BR_KICKOUT_%s_INTO_NB_AIR"), ShownCrouch() ? TEXT("LO") : TEXT("HI"))
         : FString::Printf(TEXT("BR_DISMOUNT_%s_INTO_BR_AIR"), Grab);
-    UAnimSequence* Clip = Ride->GetAnimator().Clip(*Name);
+    UAnimSequence* Clip = Clips->GetAnimator().Clip(*Name);
     const FVector DeckForward = FVector(Forward().X, Forward().Y, 0.f).GetSafeNormal();
     if (!Clip || Length(Clip) < .1f || DeckForward.IsNearlyZero()) return false;
     const FVector Carried = Vel;
@@ -1765,7 +1762,7 @@ bool USkateComponent::BeginAirDismountClip()
     AnchorClipAt(DeckBone, DeckNow);
     const float Left = AirTimeLeft();
     T.OffsetTime = FMath::Clamp(Left * .8f, .15f, T.ClipLength);
-    T.AirNext = Ride->GetAnimator().Clip(bKick ? TEXT("JNB_KICKOUT_TO_SML_FWD_75") : TEXT("JBR_AIRDISMOUNT_TO_BIG_DN_0"));
+    T.AirNext = Clips->GetAnimator().Clip(bKick ? TEXT("JNB_KICKOUT_TO_SML_FWD_75") : TEXT("JBR_AIRDISMOUNT_TO_BIG_DN_0"));
     T.AirStartZ = OffBoardGround().Z; T.AirTime = 0.f; T.FallSpeed = Carried.Z; T.LandPhase = 0;
     // The clip has the board (in the hand, or under the kicking feet) until it lets it go.
     T.Board = ERideBoard::Hand; T.bGetUpOnFoot = false; T.bKickOut = bKick;
@@ -1807,7 +1804,7 @@ void USkateComponent::StepCarry(float Dt)
     UCharacterMovementComponent* M = Movement();
     T.HoldTime += Dt;
     // Held for a while, or the hands are needed (a weapon, a climb, the sail...): it is put away.
-    if (!M || !Ride || T.HoldTime > Tune.BoardHoldTime || !RiderApi->CanCarrySkateBoard()) { PutBoardAway(); return; }
+    if (!M || !Clips || T.HoldTime > Tune.BoardHoldTime || !RiderApi->CanCarrySkateBoard()) { PutBoardAway(); return; }
     if (!M->IsMovingOnGround())
     {
         // A jump: the jump with the board in hand, from where the stride is.
@@ -1833,15 +1830,15 @@ void USkateComponent::StepCarry(float Dt)
     T.Phase = FMath::Frac(T.Phase + Dt * Speed / FMath::Max(10.f, Stride));
     T.StandTime += Dt;
     FRideAnimLayers Layers;
-    Layers.bMirror = !bGoofy; Layers.Lock = 0.f;
+    Layers.bMirror = !bGoofy;
     Layers.Add(T.Cycle[0], FMath::Fmod(T.StandTime, T.CycleLength[0]), Weight[0]);
     for (int32 I = 1; I < 4; ++I) Layers.Add(T.Cycle[I], T.Phase * T.CycleLength[I], Weight[I]);
     // Into the carry from another clip the pose mesh cross-fades; from the character's own pose the character blends.
-    Ride->GetAnimator().SetOverride(Layers, bOwnPose || T.bCarryShown ? 0.f : Tune.CarryBlend);
+    Clips->GetAnimator().SetOverride(Layers, bOwnPose || T.bCarryShown ? 0.f : Tune.CarryBlend);
     if (bOwnPose) RequestPoseBlend(Tune.CarryBlend);
     const FTransform Actor = Rider->GetActorTransform();
     T.AppliedOffset = Actor.GetRotation().RotateVector(T.MeshOffset);
-    Ride->StepOffBoard(Dt, FTransform(FRotator(0, Actor.Rotator().Yaw, 0), OffBoardGround() + T.AppliedOffset));
+    Clips->Step(Dt, FTransform(FRotator(0, Actor.Rotator().Yaw, 0), OffBoardGround() + T.AppliedOffset));
     T.bCarryShown = PublishOffBoardPose(0.f);
     if (!T.bCarryShown) PutBoardAway();
 }
@@ -1851,10 +1848,54 @@ void USkateComponent::PutBoardAway()
     // The character's own pose blends back in, the board dissolving in the hand that held it.
     FRideTransition& T = Transit();
     if (T.Foot == ERideFoot::Carry) T.Foot = ERideFoot::Off;
-    if (Ride) Ride->GetAnimator().ClearOverride(0.f);
+    if (Clips) Clips->GetAnimator().ClearOverride();
     if (!RetailPose.IsEmpty()) { HoldBoardAtHand(); RetailPose.Reset(); RequestPoseBlend(FRideTuning::Get().CarryBlend); }
     T.bCarryShown = false;
     if (T.Board == ERideBoard::Hand) ShowBoard(0.f, false);
+}
+
+bool USkateComponent::CanYieldToCharacter() const
+{
+    // Riding, or on the way onto the board, the board keeps the character. A jump with the board in hand gives way at
+    // once; any other clip where the stick may end it (a get-up once the body is up).
+    if (Mode != ESkateMode::Off) return false;
+    if (!bRideClip) return true;
+    if (!Transition || !Transition->Clip) return false;
+    const FRideTransition& T = *Transition;
+    if (T.Foot == ERideFoot::Mount || T.Foot == ERideFoot::AirMount) return false;
+    return T.Foot == ERideFoot::Air || T.ClipTime > ClipFreeFrom() * T.ClipLength;
+}
+
+bool USkateComponent::YieldToCharacter(bool bOwnVelocity)
+{
+    // The character's own move takes over from the board on foot (RIDE.md, "Transitions").
+    if (!CanYieldToCharacter()) return false;
+    if (!Transition) return true;
+    FRideTransition& T = *Transition;
+    if (bRideClip)
+    {
+        const ERideFoot Was = T.Foot;
+        UCharacterMovementComponent* M = Movement();
+        if (bOwnVelocity || !M) EndRideClip();
+        else
+        {
+            // At the clip's speed (in the air the fall's), which the stick then shares out as at the clip's end.
+            const FVector Velocity = T.bDrive ? T.DriveVelocity : M->Velocity;
+            EndRideClip(true);
+            const FVector Flat(Velocity.X, Velocity.Y, 0.f);
+            M->Velocity = FVector(Flat.X, Flat.Y, M->Velocity.Z);
+            HoldDriveForInput(Flat);
+        }
+        // A board the clip had goes on by itself (rolling on from a run-out, kicked away); a lying one stays.
+        if (Was == ERideFoot::RunOut || T.bKickOut) LaunchBoard();
+        if (T.Board != ERideBoard::Hand) { EndOnFoot(FRideTuning::Get().CarryBlend); return true; }
+    }
+    if (T.Foot == ERideFoot::Carry || (T.Board == ERideBoard::Hand && T.ShownTarget > 0.f))
+    {
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride on foot: the character's own move puts the board away"));
+        PutBoardAway();
+    }
+    return true;
 }
 
 void USkateComponent::HoldBoardAtHand()
@@ -1924,17 +1965,11 @@ void USkateComponent::TickTransition(float Dt)
 
     // Slow, upright bails are offered to the transition first (however the ride started).
     if (PhysicalRider && !PhysicalRider->OnBailStart.IsBound()) PhysicalRider->OnBailStart.BindUObject(this, &USkateComponent::TakeRunOut);
-    // A bail handed over during the ride's frame: a run-out on foot, or a fallen body getting up where it lies (without
-    // the clips, the session's get-up and a step off once up).
+    // A bail handed over during the ride's frame: a run-out on foot, or a fallen body getting up where it lies.
     if (T.bRunOutPending) BeginRunOut();
-    if (T.bRecoverPending)
-    {
-        T.bRecoverPending = false;
-        if (!BeginRecover() && Ride && Ride->IsBailing()) Ride->GetUp(T.RecoverGround, T.RecoverYaw);
-    }
+    if (T.bRecoverPending) { T.bRecoverPending = false; BeginRecover(); }
 
-    // A bail left on foot: the pose rises out of the fallen body, and the rider steps off once up. Without the
-    // physical rider (or after it gave up) the session gets up by itself and the rider steps off then.
+    // A bail left on foot: the pose rises out of the fallen body, and the rider steps off once up.
     if (T.bGetUpOnFoot)
     {
         if (Mode == ESkateMode::Off) T.bGetUpOnFoot = false;
@@ -1942,8 +1977,7 @@ void USkateComponent::TickTransition(float Dt)
         {
             if (PhysicalRider && PhysicalRider->IsGettingUp() && PhysicalRider->GetGetUpExit() == ERideGetUpExit::OnFoot && !RetailPose.IsEmpty())
                 PhysicalRider->BlendFromSnapshot(RetailPose, PhysicalRider->GetGetUpAlpha());
-            const bool bUp = Ride && Mode == ESkateMode::Ground && !Ride->IsBailing() && Ride->GetMode() != ERideState::GetUp &&
-                !(PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp()));
+            const bool bUp = Mode == ESkateMode::Ground && !(PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp()));
             if (bUp) RideDismount();
         }
     }
@@ -2079,7 +2113,7 @@ void USkateComponent::ResetTransition()
     FRideTransition& T = *Transition;
     StopMomentum(); StopDrive();
     DropLyingBoard();
-    if (Ride && T.Foot != ERideFoot::Off) Ride->GetAnimator().ClearOverride(0.f);
+    if (Clips && T.Foot != ERideFoot::Off) Clips->GetAnimator().ClearOverride();
     T.Foot = ERideFoot::Off; T.Clip = nullptr; T.bCarryShown = false; T.bRecall = false;
     T.bRunOutPending = T.bRecoverPending = T.bKickOut = false; T.PendingClip = nullptr;
     if (Mode == ESkateMode::Off && !RetailPose.IsEmpty()) RetailPose.Reset();

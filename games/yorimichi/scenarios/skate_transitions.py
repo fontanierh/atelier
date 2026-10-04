@@ -12,8 +12,8 @@ left lying that dissolves, jumps with the board in hand (JBR_* then BR_LAND_*), 
 in the air from a grab (BR_DISMOUNT_*_INTO_BR_AIR, then a landing), a kick-out in the air without a grab (BR_KICKOUT_*,
 the board flying on by itself; also just after a take-off, still rising), a slow bail run out on foot (RUNOUT_*, the
 board rolling on), a fallen rider getting up on foot where the body lies (W_RECOVERY_*), a
-step onto a board lying on its wheels, the rider turning round on the board rolling fakie (by himself, before a push,
-and after a fakie landing off a quarter, then pushing: the switch clip, the board not turning), and Link and a
+step onto a board lying on its wheels, the rider turning round on the board rolling fakie (by himself, and pushing
+after a fakie landing off a quarter, the board not turning), and Link and a
 Bokoblin as the rider. The capsule checks: a crouched Cairo
 stands up for the board, and a BotW rider's fitted capsule keeps its size through three board toggles and a jump.
 
@@ -702,10 +702,11 @@ live.behave('bail', _bail)
                     for a, b in zip(rows, rows[1:]) if key in a and key in b), default=0.)
 
     def wheels_roll(rows):
-        # The share of rolling frames whose wheels (wheel=, degrees) turned by the board's travel along its nose (yaw=,
-        # the deck's heading; RideTuning's WheelRadius 3.1 cm): the session turns them each 60 Hz tick, and a frame
-        # holds one tick or two, or now and then none (left out, up to a tenth of the frames). The travel is the speed
-        # along the board (on a slope too), frames sliding across it left out.
+        # The share of rolling frames whose wheels (wheel=, degrees) turned the board's way along its nose (yaw=, the
+        # deck's heading): Native's wheels turn under half a turn a frame, more slowly than the travel at speed (70,
+        # 113, 138 degrees a frame at 261, 561, 958 cm/s), so their way is what is judged. A frame now and then holds
+        # no step (left out, up to a tenth of the frames). The travel is the speed along the board (on a slope too),
+        # frames sliding across it left out.
         hits = frames = idle = 0
         for a, b in zip(rows, rows[1:]):
             if 'wheel' not in a or 'wheel' not in b or b.get('mode') != '1' or flat_speed(b) < 100:
@@ -714,19 +715,12 @@ live.behave('bail', _bail)
             along = v[0] * math.cos(yaw) + v[1] * math.sin(yaw)
             if abs(along) < .9 * math.hypot(v[0], v[1]):
                 continue
-            tick = math.copysign(math.hypot(*v), along) / 60 / (2 * math.pi * 3.1) * 360
-            step = float(b['wheel']) - float(a['wheel'])
-            turned = lambda want: abs((step - want + 180) % 360 - 180)
-            if turned(0.) < 1:
+            step = (float(b['wheel']) - float(a['wheel']) + 180) % 360 - 180
+            if abs(step) < 1:
                 idle += 1
                 continue
             frames += 1
-            if b.get('solver') == 'Native':
-                # Native's wheels (the hybrid shows them as they are) turn under half a turn a frame, more slowly than
-                # the travel at speed (70, 113, 138 degrees a frame at 261, 561, 958 cm/s): their way is what is judged.
-                hits += ((step + 180) % 360 - 180) * along > 0
-            else:
-                hits += min(turned(k * tick) for k in (1, 2)) < 20
+            hits += step * along > 0
         return hits / frames if frames and idle <= .1 * (frames + idle) else 0.
 
     def board_still(rows):
@@ -739,8 +733,8 @@ live.behave('bail', _bail)
                     f'wheels rolling its way on {wheels:.0%} of the frames')
 
     def switch_round(name, speed, events, seconds):
-        # Rolling fakie the rider turns round on the board (by himself after .6 s, or before a push from fakie): one
-        # continuous body, the board not turning, its wheels rolling on.
+        # Rolling fakie the rider turns round on the board by himself (Native's motion graph: its stance flag turns):
+        # one continuous body, the board not turning, its wheels rolling on.
         riding(0)
         # Filmed, from farther and lower than the other close-ups: the board and the feet turning on it are the shot.
         rows = record(f"live.FILM_DIST=560.0; live.FILM_DROP=15.0\n"
@@ -750,17 +744,14 @@ live.behave('bail', _bail)
         seen = clips(rows)
         worst = continuity(rows[10:])
         still, note = board_still(rows[5:])
-        # Under the hybrid (solver=Native) Native's motion graph plays its own turn: its stance flag turns, no Ride clip.
-        native = bool(rows) and rows[-1].get('solver') == 'Native'
-        ok = flip is not None and (native or any(c.startswith('R_SWITCH') for _, c in seen)) and still and rows[-1].get('switch') == '1'
+        ok = flip is not None and still and rows[-1].get('switch') == '1'
         report(name, rows, ok and smooth(worst), f'{line(seen)}; turned round at frame {flip}, switch={rows[-1].get("switch") if rows else "-"}, '
                f'{note}; {describe(worst)}')
 
-    def switch_push_native(name):
-        # Under the hybrid: Native has no fakie from a board launched backward at rest (it brakes and pushes the other
-        # way), so the push comes from a real fakie, the quarter's straight air landed (as switch_landing): pushing .5 s
-        # after the touch-down (on the flat, past the face's foot) turns the rider round at once, then pushes riding
-        # switch.
+    def switch_push(name):
+        # Native has no fakie from a board launched backward at rest (it brakes and pushes the other way), so the push
+        # comes from a real fakie, the quarter's straight air landed (as switch_landing): pushing .5 s after the
+        # touch-down (on the flat, past the face's foot) turns the rider round at once, then pushes riding switch.
         # The same launch does not always fly the same air (Native's too: now and then the board yaws on the face and
         # flies longer, H37): up to three tries for the straight one, 35 to 50 frames up.
         for _ in range(3):
@@ -809,8 +800,7 @@ live.behave('bail', _bail)
         after = rows[landed + 3:] if landed is not None else []
         fakie = bool(after) and after[0].get('fakie') == '1' and after[0].get('switch') == '0'
         flip = next((i for i, (a, b) in enumerate(zip(rows, rows[1:]), 1) if a.get('turns') != b.get('turns')), None)
-        native = bool(rows) and rows[-1].get('solver') == 'Native'
-        pushed = [r for r in rows[flip or len(rows):] if r.get('switch') == '1' and (r.get('push') == '1' if native else 'PUSH' in r.get('clip', ''))]
+        pushed = [r for r in rows[flip or len(rows):] if r.get('switch') == '1' and r.get('push') == '1']
         # From half a second after the touch-down (the landing's give is the landing rows'), on the ground.
         still, note = board_still([r for r in after[27:] if r.get('mode') == '1'])
         seen = clips(rows)
@@ -865,10 +855,7 @@ live.behave('bail', _bail)
         switch_round('switch_auto', 500, '[]', 2.5)
     if wanted('switch_push'):
         riding(0)
-        if 'solver=Native' in qa.py('print(live.skate_state())'):
-            switch_push_native('switch_push')
-        else:
-            switch_round('switch_push', 300, "[(.3,{'push':True}),(1.6,{})]", 2.2)
+        switch_push('switch_push')
     if wanted('switch_landing'):
         switch_landing('switch_landing')
     for rider in ('Link', 'Bokoblin'):

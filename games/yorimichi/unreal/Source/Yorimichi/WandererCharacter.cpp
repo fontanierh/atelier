@@ -372,7 +372,16 @@ void AWandererCharacter::StickLook(const FInputActionValue& V)
     // SceneViewport negates Gamepad_RightY. Restore up-is-look-up with legacy scales disabled.
     AddControllerYawInput(Delta.X); AddControllerPitchInput(-Delta.Y);
 }
-void AWandererCharacter::Sprint(const FInputActionValue& V) { bSprintHeld = V.Get<bool>(); }
+void AWandererCharacter::Sprint(const FInputActionValue& V)
+{
+    // A sprint pressed on foot with the skateboard takes over from it on the ground, as soon as the skate component lets
+    // it while the button is held (only the press: a board taken while sprinting stays in hand).
+    const bool bHeld = V.Get<bool>();
+    if (bHeld && !bSprintHeld) bSprintTakeOver = true;
+    bSprintHeld = bHeld;
+    if (bSprintTakeOver && (!bHeld || (bReady && !bMenuOpen && GetCharacterMovement()->IsMovingOnGround() && TakeOverFromSkate(false))))
+        bSprintTakeOver = false;
+}
 void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>(); }
 void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
 bool AWandererCharacter::IsPhoneTouchActive() const { return PhoneInput && PhoneInput->IsTouchActive(); }
@@ -388,7 +397,16 @@ void AWandererCharacter::PrepareToSkate()
     if (Sword && Sword->IsArmed()) Sword->SetArmed(false);
     SetAction(NAME_None);
 }
-bool AWandererCharacter::CanAct() const { return bReady && !bMenuOpen && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && GetCharacterMovement()->IsMovingOnGround() && !MovementLocked() && !bPendingTakeoff; }
+bool AWandererCharacter::CanAct(bool bOverBoard) const { return bReady && !bMenuOpen && (!SkateRide->IsRiding() || (bOverBoard && SkateRide->CanYieldToCharacter())) && !Sailboat->IsEquipped() && GetCharacterMovement()->IsMovingOnGround() && !MovementLocked() && !bPendingTakeoff; }
+bool AWandererCharacter::TakeOverFromSkate(bool bOwnVelocity)
+{
+    // The skate component ends a clip where it is and puts a board in hand away; the game's action left from before the
+    // clip (a landing the clip played instead) is dropped.
+    const bool bClip = SkateRide->IsRiding();
+    if (!SkateRide->YieldToCharacter(bOwnVelocity)) return false;
+    if (bClip) SetAction(NAME_None);
+    return true;
+}
 bool AWandererCharacter::StandForAction()
 {
     UnCrouch();
@@ -412,14 +430,17 @@ bool AWandererCharacter::IsRollRecovering() const
 }
 void AWandererCharacter::RequestJump(const FInputActionValue&)
 {
-    if (SkateRide->IsRiding()) return;   // Space loads and pops the board (read by the skate component)
+    // Space loads and pops the board (read by the skate component); on foot the jump with the board in hand is the
+    // skate component's too, and a double jump takes over from it.
+    const bool bSkating = SkateRide->IsRiding();
+    if (bSkating && !(GetCharacterMovement()->IsFalling() && SkateRide->CanYieldToCharacter())) return;
     if (Sailboat->IsEquipped()) return;
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;   // a draw, sheathe or deflection finishes first
     if (!bReady || bMenuOpen || MovementLocked() || bPendingTakeoff) return;
     UCharacterMovementComponent* M = GetCharacterMovement();
     if (M->IsFalling() && (bGroundJumped || SinceGrounded >= .10f))
     {
-        if (bAirJumpUsed || !Definition || !Definition->FindAction(TEXT("DoubleJump"))) return;
+        if (bAirJumpUsed || !Definition || !Definition->FindAction(TEXT("DoubleJump")) || !TakeOverFromSkate(true)) return;
         bAirJumpUsed = true;
         JumpBuffer = FallSpeed = 0.f;
         StopJumping();
@@ -438,6 +459,7 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
         SetAction(TEXT("DoubleJump"),false,.05f);
         return;
     }
+    if (bSkating) return;
     if (!bGroundJumped && !bAirJumpUsed) JumpBuffer = .16f;
 }
 void AWandererCharacter::ReleaseJump(const FInputActionValue&) { StopJumping(); }
@@ -501,10 +523,10 @@ bool AWandererCharacter::Live_Press(FName Button)
 
 void AWandererCharacter::Dodge(const FInputActionValue&)
 {
-    if (SkateRide->IsRiding()) return;
+    if (SkateRide->IsRiding() && !SkateRide->CanYieldToCharacter()) return;   // on foot the roll takes over from the board
     // With an armed roll (game-r16) the sword stays in hand; without one, rolling tucks it away and the next attack draws it.
     if(bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(!(Definition && Definition->FindAction(TEXT("SwordRoll"))))) return;
-    if(!CanAct())
+    if(!CanAct(true))
     {
         // A press near the end of the tuck can chain at the first supported
         // frame. Earlier presses expire rather than queuing an eventual roll.
@@ -512,7 +534,7 @@ void AWandererCharacter::Dodge(const FInputActionValue&)
             RollBuffer=.18f;
         return;
     }
-    if (RollCooldown>0.f || !StandForAction()) return;
+    if (RollCooldown>0.f || !StandForAction() || !TakeOverFromSkate(true)) return;
     RollBuffer=0.f;
     const bool bRoll=Definition && Definition->FindAction(TEXT("Roll")) && !Definition->RollProfile.IsEmpty();
     const bool bChaining=bRoll && IsRollRecovering();
@@ -579,7 +601,7 @@ void AWandererCharacter::Dodge(const FInputActionValue&)
 void AWandererCharacter::Review_Dodge() { Dodge(FInputActionValue(true)); }
 void AWandererCharacter::Dash(const FInputActionValue&)
 {
-    if (SkateRide->IsRiding()) return;
+    if (SkateRide->IsRiding() && !SkateRide->CanYieldToCharacter()) return;   // on foot the dash takes over from the board
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;
     if (!bReady || bMenuOpen || !Definition || MovementLocked() || bPendingTakeoff || Sailboat->IsEquipped() || DashCooldown>0.f) return;
     auto* M=GetCharacterMovement();
@@ -588,7 +610,7 @@ void AWandererCharacter::Dash(const FInputActionValue&)
         (AnimationAction==TEXT("DoubleJump") && ActionTime<.6f)) return;
     const auto& Profile=Air?Definition->AirDashProfile:Definition->GroundDashProfile;
     const FName Name=Air?TEXT("DashAir"):TEXT("DashGround");
-    if (Profile.IsEmpty() || !Definition->FindAction(Name) || !StandForAction()) return;
+    if (Profile.IsEmpty() || !Definition->FindAction(Name) || !StandForAction() || !TakeOverFromSkate(true)) return;
     if (Air) bAirDashUsed=true;
     DashCooldown=1.f;
     SetAction(Name,false,.025f);

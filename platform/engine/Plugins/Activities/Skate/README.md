@@ -6,7 +6,9 @@ contacts and constraints, steering and pushes, Flick-It gestures, manuals and po
 landings and bails, with the recovered animation graphs, trick scoring and skating camera. The game supplies nearby
 static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
 `Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two and retargets the solved rider onto the game's
-character. [RUNTIME.md](RUNTIME.md) lists the session's systems, the data bundle and how both are verified.
+character. Under the Ride backend the character's body is an active ragdoll that takes over in bails and plays the
+transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's systems, the data
+bundle and how both are verified.
 
 ## Adding it to a game
 
@@ -49,17 +51,18 @@ in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `S
 
 ## Backends
 
-`USkateSettings::Backend` picks the simulation that rides the board, and the console variable `skate.Backend`
-(`Native` or `Ride`) overrides it from the next mount on. Both serve the same `ISkateRider`, controls, board meshes,
-sounds and HUD getters, and the adapter retargets either one's rider onto the game's character the same way.
+`USkateSettings::Backend` picks the backend, and the console variable `skate.Backend` (`Native` or `Ride`) overrides it
+from the next mount on. Both ride the same `GameplaySession` and serve the same `ISkateRider`, controls, board meshes,
+sounds and HUD getters.
 
-- **Native** (the default): the recovered `GameplaySession` that the rest of this page describes.
-- **Ride**: the Unreal-native rewrite, described in [RIDE.md](RIDE.md). A rigid board steps at 60 Hz on the game
-  thread against Unreal collision sweeps, and the rider is animated from the native clips by a C++ anim graph. The game
-  imports the clips as Unreal assets under `/Game/SkateRide` (`SK_SkateRider`, `MDT_SkateRider` and the clips in
-  `Clips/B0` and `Clips/B1`) with its own build step; without them the board rides alone. The rider is an active
-  ragdoll that Physics Control drives toward the animated pose (`skate.RidePhysical 0` animates it alone), and
-  `skate.RideTune` overrides the tuning table live (`Name=Value` words, names as in `RideTuning.h`).
+- **Ride**: the backend games ship, described in [RIDE.md](RIDE.md). The session rides the board under the
+  character's own body: an active ragdoll that Physics Control drives toward the retargeted pose
+  (`skate.RidePhysical 0` shows the pose alone), Chaos bails and get-ups, and transitions on and off the board played
+  from the native clips. The game imports the clips as Unreal assets under `/Game/SkateRide` (`SK_SkateRider`,
+  `MDT_SkateRider` and the clips in `Clips/B0` and `Clips/B1`) with its own build step. `skate.RideTune` overrides the
+  transitions' tuning live (`Name=Value` words, names as in `RideTuning.h`).
+- **Native**: the session's pose on the character with no physical body, no transitions and no Chaos bails. It is
+  the reference that QA and replays compare the Ride backend against, not a backend for players.
 
 ## Settings
 
@@ -67,7 +70,7 @@ sounds and HUD getters, and the adapter retargets either one's rider onto the ga
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `Backend` | `Native` | The simulation: `Native` or `Ride` (see Backends); `skate.Backend` overrides it on the next mount |
+| `Backend` | `Ride` | `Ride` (the ride) or `Native` (the reference; see Backends); `skate.Backend` overrides it on the next mount |
 | `Difficulty` | `normal` | Recovered controller preset: `easy`, `normal` or `hardcore` |
 | `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the recovered steering scalar |
 | `PopHeightScale` | 1 | 0.5 to 2; scales the recovered jump-height presets |
@@ -163,7 +166,8 @@ output from a previous ride never moves a new one.
   `Air` states the air, anything else the ground. The HUD getters (`GetComboLine`, `GetComboAlpha`, `GetScore`,
   `GetStatus`, `GetSpeed`, `GetCameraYaw`) read from it.
 - **Errors.** Missing or corrupt data, or a session error, logs `SKATE: <message>`, shows it on screen and stows the
-  board; the player keeps walking.
+  board; the player keeps walking. Under the Ride backend a session error during a ride bails the body instead and
+  loads a fresh session (see [RIDE.md](RIDE.md#failures)).
 
 ## Data and limits
 

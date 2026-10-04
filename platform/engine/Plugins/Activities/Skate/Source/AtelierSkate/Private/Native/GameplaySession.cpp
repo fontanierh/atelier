@@ -104,7 +104,21 @@ void GameplaySession::Collect(const std::array<DeviceSample,InputDeviceSlots>& s
 bool GameplaySession::Advance(std::string& error)
 {input.PublishActions();return AdvancePublished(error);}
 bool GameplaySession::AdvancePublished(std::string& error)
-{markers.Advance(input,*gameplay);return gameplay->Advance(input.PublishedInput(),error);}
+{
+    markers.Advance(input,*gameplay);if(!gameplay->Advance(input.PublishedInput(),error))return false;
+    pumps.Observe(*gameplay,Period());return true;
+}
+void GameplayPumps::Observe(const GameplayRuntime& runtime,float dt)
+{
+    // Ground pumping is current only in these states (RevertGround leaves it as it was).
+    const auto state=runtime.player_state->Current();
+    const bool ground=state==PhysicalStateId::PhysicsGround||state==PhysicalStateId::RevertGround;
+    const auto& pumping=runtime.ground.pumping;
+    if(!ground||pumping.pumping_time<=0)
+    {quiet+=dt;if(!ground||quiet>=0.25f){gain=0;counted=false;}return;}
+    quiet=0;if(pumping.intentional_pumping)gain+=pumping.pump_acceleration;
+    if(!counted&&gain>=minimum_gain){++count;last_gain=gain;counted=true;}
+}
 bool GameplaySession::Tick(XboxState state,std::string& error)
 {
     gameplay->physical->transfer=(state.buttons&GameplayTransferButton)!=0;

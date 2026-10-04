@@ -213,7 +213,7 @@ def send():
             if on and not E.SENT.get(k): live.L.input_key(k, 'press', 1.0); E.SENT[k] = 1
             elif not on and E.SENT.get(k): live.L.input_key(k, 'release', 0.0); E.SENT[k] = 0
 
-# The steering curve (RideSession SteerCurve: stick -> share of the full yaw rate), inverted.
+# The steering curve (stick -> share of the full yaw rate), inverted.
 INV = [(0.0, 0.0), (.034, .25), (.078, .375), (.172, .509), (.335, .69), (.564, .858), (.835, 1.0)]
 def inv_steer(o):
     s = 1.0 if o >= 0 else -1.0; o = min(abs(o), .835)

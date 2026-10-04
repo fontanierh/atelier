@@ -2,7 +2,6 @@
 #include "BotwCreature.h"
 #include "BotwRider.h"
 #include "SkateComponent.h"
-#include "SkateSettings.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
 #include "JapanWorld.h"
@@ -41,8 +40,6 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
         {TEXT("volume"),TEXT("Volume"),1.f,0.f,1.f},
         {TEXT("goofy"),TEXT("Skate stance"),0.f,0.f,1.f},
-        // The skating engine: 1 Ride, 0 Native (USkateSettings::ActiveBackend; the game's config is the default).
-        {TEXT("skate_engine"),TEXT("Skate engine"),USkateSettings::ActiveBackend() == ESkateBackend::Ride ? 1.f : 0.f,0.f,1.f},
         {TEXT("stamina_rings"),TEXT("Stamina rings"),2.f,1.f,5.f},
         {TEXT("mouse"),TEXT("Look sensitivity"),.4f,.04f,.8f},
         {TEXT("cam_dist"),TEXT("Camera distance"),420.f,200.f,800.f},
@@ -87,13 +84,9 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
             float Number = 0;
             if (LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
         }
-    // A saved skating engine applies unless the launch or a script already named one (skate.Backend); the setting
-    // then shows the engine the next mount uses.
-    if (auto* Engine = IConsoleManager::Get().FindConsoleVariable(TEXT("skate.Backend")))
-        if (SavedValues.Contains(TEXT("skate_engine")) && Engine->GetString().TrimStartAndEnd().IsEmpty())
-            Engine->Set(Get(TEXT("skate_engine")) > .5f ? TEXT("Ride") : TEXT("Native"),ECVF_SetByCode);
-    for (FJapanPreference& V : Values)
-        if (V.Key == TEXT("skate_engine")) V.Value = USkateSettings::ActiveBackend() == ESkateBackend::Ride ? 1.f : 0.f;
+    // The skating engine is the game's config (Ride); Native is a console-only reference (skate.Backend), so an engine
+    // saved by an older menu no longer applies.
+    SavedValues.Remove(TEXT("skate_engine"));
     for (TActorIterator<APostProcessVolume> It(Owner->GetWorld()); It; ++It)
         for (FWeightedBlendable& Blend : It->Settings.WeightedBlendables.Array)
             if (UMaterialInterface* Source = Cast<UMaterialInterface>(Blend.Object))
@@ -116,15 +109,8 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
     for (auto& V : Values) if (V.Key == Key)
     {
         V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
-        if (Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("goofy") || Key == TEXT("skate_engine")) V.Value = V.Value > .5f ? 1.f : 0.f;
+        if (Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("goofy")) V.Value = V.Value > .5f ? 1.f : 0.f;
         if (Key == TEXT("stamina_rings")) V.Value=FMath::RoundToFloat(V.Value);
-        // The player's choice of skating engine wins over the launch's; a ride keeps the engine it started with.
-        if (Key == TEXT("skate_engine"))
-        {
-            if (auto* Engine = IConsoleManager::Get().FindConsoleVariable(TEXT("skate.Backend")))
-                Engine->Set(V.Value > .5f ? TEXT("Ride") : TEXT("Native"),ECVF_SetByConsole);
-            SavedValues.Add(Key,FString::SanitizeFloat(V.Value));
-        }
         Apply(); Save(); return true;
     }
     return false;
@@ -269,8 +255,6 @@ void UJapanPreferences::Save()
     for (const auto& V : Values)
     {
         if (IsSessionOnly(V.Key)) { SavedValues.Remove(V.Key); continue; }
-        // The skating engine is saved only once the player picks one (SetValue): until then the game's config decides.
-        if (V.Key == TEXT("skate_engine")) continue;
         SavedValues.Add(V.Key,FString::SanitizeFloat(V.Value));
     }
     TArray<FString> Keys; SavedValues.GetKeys(Keys); Keys.Sort();
@@ -312,7 +296,7 @@ void UJapanPreferences::ToggleMenu()
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
     }
-    for (const FString Key : {FString(TEXT("performance")),FString(TEXT("show_fps")),FString(TEXT("goofy")),FString(TEXT("skate_engine"))})
+    for (const FString Key : {FString(TEXT("performance")),FString(TEXT("show_fps")),FString(TEXT("goofy"))})
     {
         TSharedRef<SButton> Button = SNew(SButton)
             .Text_Lambda([this,Key]
@@ -321,12 +305,6 @@ void UJapanPreferences::ToggleMenu()
                 if (Key == TEXT("goofy")) return FText::FromString(Enabled
                     ? TEXT("Skate stance: Goofy · right foot forward")
                     : TEXT("Skate stance: Regular · left foot forward"));
-                if (Key == TEXT("skate_engine"))
-                {
-                    const USkateComponent* Skate = Owner ? Owner->GetSkate() : nullptr;
-                    return FText::FromString(FString(Enabled ? TEXT("Skate engine: Ride · Unreal-native") : TEXT("Skate engine: Native · Skate 3 runtime"))
-                        + (Skate && Skate->IsRiding() ? TEXT(" · from the next ride") : TEXT("")));
-                }
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
@@ -343,7 +321,7 @@ void UJapanPreferences::ToggleMenu()
         // Session-only keys are launch flags (japan/run.sh desktop), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
-        if (Values[I].Key == TEXT("performance") || Values[I].Key == TEXT("show_fps") || Values[I].Key == TEXT("goofy") || Values[I].Key == TEXT("skate_engine")) continue;
+        if (Values[I].Key == TEXT("performance") || Values[I].Key == TEXT("show_fps") || Values[I].Key == TEXT("goofy")) continue;
         TSharedRef<SSlider> Slider = SNew(SSlider)
             .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
             .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });

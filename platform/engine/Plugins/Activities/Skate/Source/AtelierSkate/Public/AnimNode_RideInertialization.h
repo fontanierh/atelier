@@ -32,11 +32,6 @@ struct ATELIERSKATE_API FAnimNode_RideInertialization : public FAnimNode_Base
      *  wins). BlendProfile, if given, scales the duration per bone (time factors); it must outlive the evaluation. A
      *  profile asked for in an update stays with the winning request (a shorter one without a profile keeps it). */
     void RequestInertialization(float Duration, const UBlendProfile* BlendProfile = nullptr);
-    /** The component space turned under the pose before the next evaluation (Turn: from the old space to the new):
-     *  the stored poses are taken into the new space, so a blend requested with it starts from where the body was. A
-     *  blend in progress without a new request carries on from there. Keep, a child of the root, stays as it was
-     *  with its children (something the turn did not move, such as a board under a rider turning round on it). */
-    void TurnPrevious(const FTransform& Turn, FName Keep = NAME_None);
     bool IsActive() const { return bActive; }
 
     /** The fastest a bone may cross its offset (cm/s; 0: every request keeps its duration). A request lasts at least
@@ -74,12 +69,7 @@ private:
     /** The farthest a counted bone is, in component space, between the last output and Pose (cm). */
     float LargestGap(const FCompactPose& Pose) const;
 
-    /** Take a stored pose into the turned component space: the root's children carry the turn. */
-    void TurnStored(TArray<FTransform>& Stored, const FCompactPose& Pose) const;
     float Pending = -1.f;            // the request for the next evaluation, -1 for none
-    bool bTurnPending = false;
-    FTransform PendingTurn;
-    FName PendingKeep;
     const UBlendProfile* PendingProfile = nullptr;
     TCustomBoneIndexArray<float, FSkeletonPoseBoneIndex> Durations;    // per skeleton bone, from a profile
     float DeltaTime = 0.f;           // accumulated by updates since the last evaluation

@@ -1,7 +1,7 @@
 // The physical rider: see RidePhysicalRider.h and RIDE.md, "Physical rider".
 #include "RidePhysicalRider.h"
 #include "SkateRider.h"
-#include "RideSession.h"
+#include "RideClipPlayer.h"
 #include "PhysicsControlComponent.h"
 #include "PhysicsControlAsset.h"
 #include "PhysicsControlRecord.h"
@@ -2379,7 +2379,7 @@ void URidePhysicalRider::GuardBoard(UPrimitiveComponent* Board, FTransform& Last
     for (int32 Try = 0; Try < 3; ++Try)
     {
         FHitResult Hit; FTransform Reached;
-        if (!FRideSession::SweepBox(*World, From, Now, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, Hit, &Reached)) break;
+        if (!FRideClipPlayer::SweepBox(*World, From, Now, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, Hit, &Reached)) break;
         // What moves is physics' own to push.
         UPrimitiveComponent* Other = Hit.GetComponent();
         if (Other && Other->IsSimulatingPhysics()) { Params.AddIgnoredComponent(Other); continue; }
@@ -2392,7 +2392,7 @@ void URidePhysicalRider::GuardBoard(UPrimitiveComponent* Board, FTransform& Last
             // It was already inside something where it was last (it started there): physics taking it out to a free
             // pose, by a way its centre can go, is left alone; otherwise it stays.
             FHitResult There, Between;
-            if (!FRideSession::SweepBox(*World, Now, Now, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, There) &&
+            if (!FRideClipPlayer::SweepBox(*World, Now, Now, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, There) &&
                 !World->LineTraceSingleByChannel(Between, From.GetLocation(), Now.GetLocation(), ECC_Pawn, Params))
                 break;
             Back = From;
@@ -2447,7 +2447,7 @@ void URidePhysicalRider::ReleaseLooseBoard(const FVector& Velocity, const FVecto
         {
             const FTransform Try(At.GetRotation(), At.GetLocation() + FVector(0, 0, 3.f * Step));
             FHitResult Hit;
-            if (!FRideSession::SweepBox(*World, Try, Try, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, Hit))
+            if (!FRideClipPlayer::SweepBox(*World, Try, Try, Extent, ECC_Pawn, Params, FCollisionResponseParams::DefaultResponseParam, Hit))
             {
                 if (Step > 0) LooseBoard->SetWorldLocationAndRotation(Try.GetLocation(), Try.GetRotation(), false, nullptr, ETeleportType::TeleportPhysics);
                 break;

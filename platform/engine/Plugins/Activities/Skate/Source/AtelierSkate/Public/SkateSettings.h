@@ -7,9 +7,9 @@
 UENUM()
 enum class ESkateBackend : uint8
 {
-    /** The recovered native session (RUNTIME.md): a physical rider and board on its own thread. */
+    /** The recovered native session alone (RUNTIME.md): its own physical rider and board. The reference for tests. */
     Native,
-    /** Ride (RIDE.md): a rigid board on Unreal collision queries, the rider animated from the imported clips. */
+    /** Ride (RIDE.md): Native's session rides the board under Ride's physical body, transitions and bails. */
     Ride
 };
 
@@ -21,7 +21,7 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
 public:
     USkateSettings();
     /** The simulation that rides the board; the console variable skate.Backend overrides it on the next mount. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Native;
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Ride;
     /** The backend the next mount uses: skate.Backend when it names one, else Backend. */
     static ESkateBackend ActiveBackend();
     /** Original controller preset: easy, normal or hardcore. */

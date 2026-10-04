@@ -9,26 +9,9 @@ namespace
 #define RIDE_FIELD(Name) { TEXT(#Name), STRUCT_OFFSET(FRideTuning, Name) }
     struct FTuningField { const TCHAR* Name; SIZE_T Offset; };
     const FTuningField Fields[] = {
-        RIDE_FIELD(DeckHeight), RIDE_FIELD(AxleX), RIDE_FIELD(WheelRadius), RIDE_FIELD(RollingResistance), RIDE_FIELD(GravityLimit), RIDE_FIELD(StickGap),
-        RIDE_FIELD(StickPerSpeed), RIDE_FIELD(StepUp), RIDE_FIELD(StartRecover), RIDE_FIELD(WallSlope), RIDE_FIELD(LaunchFactor), RIDE_FIELD(CrestWindow), RIDE_FIELD(CrestReach), RIDE_FIELD(GroundStep), RIDE_FIELD(CurbBail), RIDE_FIELD(CurbImpact),
-        RIDE_FIELD(FallLineSteer), RIDE_FIELD(PushCycle),
-        RIDE_FIELD(PushContact), RIDE_FIELD(PushContactLength), RIDE_FIELD(PushTarget), RIDE_FIELD(PushTargetSlope), RIDE_FIELD(PushTapTarget), RIDE_FIELD(PushDvStart),
-        RIDE_FIELD(PushDvEnd), RIDE_FIELD(PushFastFrom),
-        RIDE_FIELD(PushTopSpeed), RIDE_FIELD(PushFromRest), RIDE_FIELD(BrakeDelay), RIDE_FIELD(BrakeDecel), RIDE_FIELD(SlideAngle), RIDE_FIELD(SlideTurnRate), RIDE_FIELD(SlideDecel),
-        RIDE_FIELD(SlideMinSpeed), RIDE_FIELD(MaxYawRate), RIDE_FIELD(YawRatePerSpeed), RIDE_FIELD(PivotRate), RIDE_FIELD(PivotSpeed), RIDE_FIELD(SteerResponse),
-        RIDE_FIELD(PumpDepth), RIDE_FIELD(CoastPump), RIDE_FIELD(CrouchRate), RIDE_FIELD(PopHeight), RIDE_FIELD(PopHeightQuick), RIDE_FIELD(PopLoadTime), RIDE_FIELD(NollieScale), RIDE_FIELD(PopFromGrindScale), RIDE_FIELD(PopDelay),
-        RIDE_FIELD(LateFlickWindow), RIDE_FIELD(AirGravity), RIDE_FIELD(SpinCarry), RIDE_FIELD(SpinCarryMax), RIDE_FIELD(LevelLead), RIDE_FIELD(VertSteepness),
-        RIDE_FIELD(VertClimb), RIDE_FIELD(VertLean), RIDE_FIELD(VertNative), RIDE_FIELD(VertGravity), RIDE_FIELD(TransferPush), RIDE_FIELD(FlipTime), RIDE_FIELD(CleanYaw), RIDE_FIELD(SketchyYaw), RIDE_FIELD(BailTilt),
-        RIDE_FIELD(BailScale), RIDE_FIELD(BailImpact), RIDE_FIELD(BailGrindImpact), RIDE_FIELD(BailDangerFrames), RIDE_FIELD(BailDangerAcross), RIDE_FIELD(BailDangerAlong), RIDE_FIELD(WallBailSpeed), RIDE_FIELD(WallRestitution), RIDE_FIELD(GrindCapture),
-        RIDE_FIELD(GrindAbove), RIDE_FIELD(GrindBelow), RIDE_FIELD(GrindAlign), RIDE_FIELD(GrindFriction), RIDE_FIELD(SlideFriction), RIDE_FIELD(GrindStall), RIDE_FIELD(GrindStallHop),
-        RIDE_FIELD(GrindExitPop), RIDE_FIELD(GrindRelock), RIDE_FIELD(GrindMinAhead), RIDE_FIELD(GrindCross), RIDE_FIELD(GrindCorner), RIDE_FIELD(GrindJoin), RIDE_FIELD(GrindLockSpeed),
-        RIDE_FIELD(ManualDeckGain), RIDE_FIELD(ManualDeckDamping), RIDE_FIELD(ManualDeckWeight),
-        RIDE_FIELD(BailSettle), RIDE_FIELD(GetUpTime), RIDE_FIELD(GetUpBoardReach), RIDE_FIELD(BailSlideDecel), RIDE_FIELD(CameraDistance), RIDE_FIELD(CameraHeight), RIDE_FIELD(CameraLookHeight),
-        RIDE_FIELD(CameraLookAhead), RIDE_FIELD(CameraFOV), RIDE_FIELD(CameraSpeedFOV), RIDE_FIELD(CameraFOVSpeed), RIDE_FIELD(CameraTurnRate), RIDE_FIELD(CameraFollow),
-        RIDE_FIELD(CameraFollowZ), RIDE_FIELD(MountBlend), RIDE_FIELD(DismountBlend), RIDE_FIELD(MeshSettle), RIDE_FIELD(BoardDissolveTime),
-        RIDE_FIELD(BoardHoldTime), RIDE_FIELD(BoardLyingTime), RIDE_FIELD(BoardReach), RIDE_FIELD(MomentumDecay), RIDE_FIELD(MomentumBrake), RIDE_FIELD(ClipBlend), RIDE_FIELD(CarryBlend), RIDE_FIELD(RecoverBlend),
-        RIDE_FIELD(SwitchMinSpeed), RIDE_FIELD(FakieSwitchTime), RIDE_FIELD(SwitchPushRate), RIDE_FIELD(SwitchPushLead),
-        RIDE_FIELD(NativeSpeed), RIDE_FIELD(SpeedGain), RIDE_FIELD(SpeedGainDown), RIDE_FIELD(SpeedBound), RIDE_FIELD(SpeedPumpReset), RIDE_FIELD(LoadFriction), RIDE_FIELD(LoadFree),
+        RIDE_FIELD(WheelRadius), RIDE_FIELD(StepUp), RIDE_FIELD(StartRecover), RIDE_FIELD(WallSlope), RIDE_FIELD(BailSettle), RIDE_FIELD(GetUpBoardReach),
+        RIDE_FIELD(MountBlend), RIDE_FIELD(DismountBlend), RIDE_FIELD(MeshSettle), RIDE_FIELD(BoardDissolveTime), RIDE_FIELD(BoardHoldTime), RIDE_FIELD(BoardLyingTime),
+        RIDE_FIELD(BoardReach), RIDE_FIELD(MomentumDecay), RIDE_FIELD(MomentumBrake), RIDE_FIELD(ClipBlend), RIDE_FIELD(CarryBlend), RIDE_FIELD(RecoverBlend),
     };
 #undef RIDE_FIELD
 }
