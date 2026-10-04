@@ -8,6 +8,7 @@
 #include "YorimichiCombatFX.h"
 #include "BotwCreature.h"
 #include "BotwRider.h"
+#include "BotwMoveSet.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 #include "Misc/FileHelper.h"
@@ -32,6 +33,18 @@ bool UYorimichiLive::SetPreference(const FString& Key, float Value)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
+}
+
+FString UYorimichiLive::MoveState()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    return P && P->GetMoves() ? P->GetMoves()->Describe() : FString(TEXT("{}"));
+}
+
+bool UYorimichiLive::Launch(FVector Velocity)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); if (!P) return false;
+    P->LaunchCharacter(Velocity, true, true); return true;
 }
 
 bool UYorimichiLive::ToggleSword()

@@ -20,6 +20,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
     /** Change a setting as the Esc menu and the phone do (UJapanPreferences::SetValue, saved); false for an unknown key. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SetPreference(const FString& Key, float Value);
+    /** A BOTW move set's state (UBotwMoveSet::Describe: mode, action, stamina, glider, wall, target, counts) as JSON;
+     *  "{}" when the player has none. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString MoveState();
+    /** Throw the player (cm/s, replacing the velocity): a glide or a plunge from height without a cliff. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool Launch(FVector Velocity);
     /** Draw or sheathe the sword, as the draw button does. False when the character has no sword. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool ToggleSword();
     /** Skateboarding (docs/SKATE.md): get on or off; hold skate. controls (sticks: x right, y away from the player) until

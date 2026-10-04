@@ -20,7 +20,7 @@ from . import paths
 from .safety import guarded
 from .safety.render_lock import GiB, slot_count
 
-SKIP_PARTS = {'__pycache__', '.DS_Store'}
+SKIP_PARTS = {'__pycache__', '.DS_Store', 'Binaries', 'Intermediate', 'Saved', 'DerivedDataCache'}
 SKIP_SUFFIXES = {'.md'}   # documentation next to sources never changes what a step makes
 
 
@@ -55,11 +55,12 @@ class UnrealScript:
     marker: str
     null_rhi: bool = False
     env: tuple = ()          # (("NAME", "value"), ...)
+    args: tuple = ()         # additional editor arguments for this import
 
     def argv(self, ctx):
         command = [str(ctx.unreal_cmd), str(ctx.uproject), '-run=pythonscript', f'-script={self.script}',
                    '-unattended', '-nop4', '-nosplash', '-stdout', '-AllowStdOutLogVerbosity']   # unreal.log lines reach stdout
-        return command + (['-NullRHI'] if self.null_rhi else [])
+        return command + (['-NullRHI'] if self.null_rhi else []) + list(self.args)
 
 
 @dataclass
@@ -143,7 +144,11 @@ def _hash_path(digest, path):
 
 def fingerprint(step, done):
     digest = hashlib.sha256()
-    digest.update(repr([c for c in step.commands]).encode())
+    # Checkout locations and generated Unreal outputs do not change a step's source. Keeping the command paths
+    # relative to their roots also lets a verified build seed another checkout of the same source revision.
+    commands = repr([c for c in step.commands])
+    commands = commands.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+    digest.update(commands.encode())
     for item in step.inputs:
         _hash_path(digest, item)
     for need in step.needs:

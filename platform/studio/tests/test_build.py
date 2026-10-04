@@ -1,7 +1,8 @@
 import tempfile, unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from atelier.build import Step, fingerprint, order
+from atelier.build import Step, Python, UnrealScript, fingerprint, order
 
 
 def steps():
@@ -36,6 +37,43 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(fingerprint(step, {}), base)
             (Path(folder) / 'build.py').write_text('print(2)')
             self.assertNotEqual(fingerprint(step, {}), base)
+
+    def test_unreal_outputs_do_not_invalidate_source_but_code_does(self):
+        with tempfile.TemporaryDirectory() as folder:
+            plugin = Path(folder) / 'Plugin'
+            source = plugin / 'Source' / 'Example.cpp'
+            source.parent.mkdir(parents=True)
+            source.write_text('int value = 1;')
+            step = Step('compile', ['cc'], inputs=[plugin])
+            before = fingerprint(step, {})
+            for name in ('Binaries', 'Intermediate', 'Saved', 'DerivedDataCache'):
+                generated = plugin / name / 'generated.bin'
+                generated.parent.mkdir()
+                generated.write_bytes(b'output')
+                self.assertEqual(fingerprint(step, {}), before)
+            source.write_text('int value = 2;')
+            self.assertNotEqual(fingerprint(step, {}), before)
+
+    def test_commands_are_portable_between_checkouts_and_build_roots(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fingerprints = []
+            for name in ('first', 'second'):
+                repo = Path(folder) / name
+                repo.mkdir()
+                script = repo / 'generate.py'
+                script.write_text('print(1)')
+                output = Path(folder) / (name + '-outputs')
+                step = Step('art', [Python(script, args=(output / 'mesh.glb',))], inputs=[script])
+                with patch('atelier.build.paths.REPO', repo), patch('atelier.build.paths.build_root', return_value=output):
+                    fingerprints.append(fingerprint(step, {}))
+            self.assertEqual(*fingerprints)
+
+    def test_import_configuration_invalidates_its_cached_output(self):
+        script = Path('import.py')
+        normal = Step('import', [UnrealScript(script, 'done', null_rhi=True)])
+        seed = Step('import', [UnrealScript(script, 'done', null_rhi=True,
+                                          args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0',))])
+        self.assertNotEqual(fingerprint(normal, {}), fingerprint(seed, {}))
 
 
 if __name__ == '__main__':

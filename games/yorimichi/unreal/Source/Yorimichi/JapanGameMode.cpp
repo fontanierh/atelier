@@ -13,8 +13,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 
-/** Scripted sessions (reviews, benchmarks, films, demos, the phone stream) keep the road clear unless asked. */
-static bool ScriptedSession()
+bool AJapanGameMode::IsScriptedSession()
 {
     const TCHAR* Cmd = FCommandLine::Get();
     for (const TCHAR* Key : { TEXT("qa"), TEXT("benchmark"), TEXT("trailershot"), TEXT("buildingreview"), TEXT("AtelierStream") })
@@ -26,7 +25,7 @@ static bool ScriptedSession()
 void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
 {
     if (!W || !W->bLoaded || FParse::Param(FCommandLine::Get(), TEXT("nofox"))) return;
-    if (ScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("foxhunter")) && !FParse::Param(FCommandLine::Get(), TEXT("foxqa"))) return;
+    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("foxhunter")) && !FParse::Param(FCommandLine::Get(), TEXT("foxqa"))) return;
     const FRotator Facing = W->PlayerStart.Rotator();
     FVector Where = W->PlayerStart.GetLocation() + Facing.Vector() * 1200.f + FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * -350.f;
     FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(FoxSpawn), false, Player);
@@ -38,24 +37,18 @@ void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
     UE_LOG(LogTemp, Display, TEXT("Fox hunter %s at %s (ground %s)"), Fox ? TEXT("spawned") : TEXT("NOT spawned"), *Where.ToString(), Hit.bBlockingHit ? TEXT("traced") : TEXT("assumed"));
 }
 
-/** When the BOTW characters are built (assets/characters/botw), three Bokoblins keep a camp 25 m up the road, to the right. */
+/** When the BOTW characters are built (assets/characters/botw), a Bokoblin keeps a camp 25 m up the road, to the right. */
 void AJapanGameMode::SpawnBotwCamp(AJapanWorld* W, AWandererCharacter* Player)
 {
     if (!W || !W->bLoaded || FParse::Param(FCommandLine::Get(), TEXT("nobotw")) || !FBotwSpec::Find(TEXT("Bokoblin"))) return;
-    if (ScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("botw"))) return;
+    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("botw"))) return;
     const FRotator Facing = W->PlayerStart.Rotator();
-    const FVector Camp = W->PlayerStart.GetLocation() + Facing.Vector() * 2500.f + FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * 600.f;
-    const TCHAR* Members[] = { TEXT("Bokoblin"), TEXT("BokoblinBlue"), TEXT("BokoblinBlack") };
-    int32 Spawned = 0;
-    for (int32 I = 0; I < 3; ++I)
-    {
-        const float Angle = I * 120.f;
-        FVector Where = Camp + FRotator(0, Angle, 0).Vector() * 260.f;
-        FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(BotwSpawn), false, Player);
-        if (GetWorld()->LineTraceSingleByChannel(Hit, Where + FVector(0, 0, 600), Where - FVector(0, 0, 1200), ECC_Visibility, Params)) Where.Z = Hit.ImpactPoint.Z;
-        Spawned += ABotwCreature::SpawnAt(GetWorld(), Members[I], Where, Angle + 180.f, EBotwMode::Camp) != nullptr;
-    }
-    UE_LOG(LogTemp, Display, TEXT("BOTW camp: %d Bokoblins at %s"), Spawned, *Camp.ToString());
+    FVector Camp = W->PlayerStart.GetLocation() + Facing.Vector() * 2500.f + FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * 600.f;
+    FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(BotwSpawn), false, Player);
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Camp + FVector(0, 0, 600), Camp - FVector(0, 0, 1200), ECC_Visibility, Params)) Camp.Z = Hit.ImpactPoint.Z;
+    // It faces back down the road, towards the start.
+    const bool bSpawned = ABotwCreature::SpawnAt(GetWorld(), TEXT("Bokoblin"), Camp, Facing.Yaw + 180.f, EBotwMode::Camp) != nullptr;
+    UE_LOG(LogTemp, Display, TEXT("BOTW camp: %d Bokoblin at %s"), bSpawned ? 1 : 0, *Camp.ToString());
 }
 
 UClass* AJapanGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)

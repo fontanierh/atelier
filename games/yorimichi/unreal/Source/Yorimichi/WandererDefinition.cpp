@@ -39,6 +39,19 @@ bool UWandererContentLibrary::ConfigureMeshLODs(USkeletalMesh* Asset)
 #endif
 }
 
+bool UWandererContentLibrary::ConfigureBlendSpaceWithRates(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds, const TArray<float>& Rates)
+{
+#if WITH_EDITOR
+    if (Rates.Num() != Clips.Num() || !ConfigureBlendSpace(Asset, Clips, Speeds)) return false;
+    for (int32 I = 0; I < Rates.Num(); ++I) const_cast<FBlendSample&>(Asset->GetBlendSample(I)).RateScale = Rates[I];
+    Asset->PostEditChange();
+    Asset->MarkPackageDirty();
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool UWandererContentLibrary::ConfigureBlendSpace(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds)
 {
 #if WITH_EDITOR

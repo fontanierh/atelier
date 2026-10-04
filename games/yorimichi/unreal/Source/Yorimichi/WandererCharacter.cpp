@@ -8,6 +8,7 @@ TSharedPtr<struct FFightFilm> CreateFightFilm(AWandererCharacter* P);
 void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "JapanFootsteps.h"
 #include "WandererSword.h"
+#include "BotwMoveSet.h"
 #include "Algo/Find.h"
 #include "YorimichiPhone.h"
 #include "AtelierStream.h"
@@ -218,6 +219,7 @@ void AWandererCharacter::Leave()
 {
     if (Preferences) Preferences->CloseMenu();
     if (Map) Map->Close();
+    if (Moves) Moves->Reset();
     SkateRide->StowImmediately();
     Sailboat->StowImmediately();
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -233,7 +235,7 @@ void AWandererCharacter::ReturnToSpawn()
     UE_LOG(LogTemp,Display,TEXT("PHONE STREAM returned to spawn"));
 }
 
-bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason)
+bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason, float Above)
 {
     if (!bReady || !Landscape || !Landscape->bLoaded) return false;
     if(GetZeppelin())GetZeppelin()->Cancel(this);
@@ -253,10 +255,11 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     // Land on whatever is actually built there (paving, sand, the island stair, a quay), not on the recorded height.
     FHitResult Hit;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(MapTeleport),false,this);
-    if (GetWorld()->LineTraceSingleByChannel(Hit,Target+FVector(0,0,2500),Target-FVector(0,0,2500),ECC_Visibility,Params)) Target.Z = Hit.ImpactPoint.Z;
+    if (GetWorld()->LineTraceSingleByChannel(Hit,Target+FVector(0,0,Above),Target-FVector(0,0,2500),ECC_Visibility,Params)) Target.Z = Hit.ImpactPoint.Z;
     else { float Ground = 0.f; if (Landscape->SampleGroundHeight(Target,Ground)) Target.Z = Ground; }
     SetActorLocationAndRotation(Target+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
     Movement->bForceNextFloorCheck = true;
+    if (Moves) Moves->Reset();   // after the move, so a fall is measured from the new place
     bHasSafeCityLocation = bHasSafeCoastLocation = false;
     if (Controller) Controller->SetControlRotation(FRotator(-8,Yaw,0));
     UE_LOG(LogTemp,Display,TEXT("Travelled to %s: (%.0f, %.0f, %.0f) yaw %.0f%s"),Reason,Target.X,Target.Y,Target.Z,Yaw,Hit.bBlockingHit ? TEXT("") : TEXT(" (no ground hit)"));
@@ -342,6 +345,8 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
         E->BindAction(Inputs[TEXT("Jump")],ETriggerEvent::Completed,this,&AWandererCharacter::ReleaseJump);
         E->BindAction(Inputs[TEXT("Attack")],ETriggerEvent::Completed,this,&AWandererCharacter::AttackReleased);
         E->BindAction(Inputs[TEXT("Attack")],ETriggerEvent::Canceled,this,&AWandererCharacter::AttackReleased);
+        E->BindAction(Inputs[TEXT("Parry")],ETriggerEvent::Completed,this,&AWandererCharacter::ParryReleased);
+        E->BindAction(Inputs[TEXT("Parry")],ETriggerEvent::Canceled,this,&AWandererCharacter::ParryReleased);
         if (FParse::Param(FCommandLine::Get(),TEXT("controllertrace")))
             for (const auto& Pair : Inputs)
                 if (Pair.Value->ValueType==EInputActionValueType::Boolean)
@@ -395,6 +400,7 @@ float AWandererCharacter::GetSkateBoardScale() const { return Definition ? Defin
 void AWandererCharacter::PrepareToSkate()
 {
     if (Sword && Sword->IsArmed()) Sword->SetArmed(false);
+    if (Moves) Moves->Reset();
     SetAction(NAME_None);
 }
 bool AWandererCharacter::CanAct(bool bOverBoard) const { return bReady && !bMenuOpen && (!SkateRide->IsRiding() || (bOverBoard && SkateRide->CanYieldToCharacter())) && !Sailboat->IsEquipped() && GetCharacterMovement()->IsMovingOnGround() && !MovementLocked() && !bPendingTakeoff; }
@@ -417,7 +423,7 @@ bool AWandererCharacter::StandForAction()
 }
 bool AWandererCharacter::MovementLocked() const
 {
-    return IsZeppelinPassenger() || (Sword && Sword->LocksMovement()) || AnimationAction == TEXT("Dodge") ||
+    return IsZeppelinPassenger() || (Sword && Sword->LocksMovement()) || (Moves && Moves->LocksMovement()) || AnimationAction == TEXT("Dodge") ||
         (AnimationAction == TEXT("Roll") && !IsRollRecovering()) || AnimationAction == TEXT("HardLand") ||
         AnimationAction == TEXT("DashGround") || AnimationAction == TEXT("DashAir");
 }
@@ -435,6 +441,7 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
     const bool bSkating = SkateRide->IsRiding();
     if (bSkating && !(GetCharacterMovement()->IsFalling() && SkateRide->CanYieldToCharacter())) return;
     if (Sailboat->IsEquipped()) return;
+    if (Moves) { PressMove(TEXT("jump")); return; }
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;   // a draw, sheathe or deflection finishes first
     if (!bReady || bMenuOpen || MovementLocked() || bPendingTakeoff) return;
     UCharacterMovementComponent* M = GetCharacterMovement();
@@ -462,13 +469,17 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
     if (bSkating) return;
     if (!bGroundJumped && !bAirJumpUsed) JumpBuffer = .16f;
 }
-void AWandererCharacter::ReleaseJump(const FInputActionValue&) { StopJumping(); }
+void AWandererCharacter::ReleaseJump(const FInputActionValue&) { StopJumping(); if (Moves) Moves->Press(TEXT("jump_release")); }
+bool AWandererCharacter::PressMove(FName Button)
+{
+    return Moves && bReady && !bMenuOpen && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger() && Moves->Press(Button);
+}
 void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 {
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding()) return;
     if (Sailboat->IsEquipped()) { Sailboat->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
-    if (CanAct() && StandForAction() && Sailboat->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+    if (CanAct() && StandForAction() && Sailboat->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
 }
 void AWandererCharacter::ToggleSkateboard(const FInputActionValue&)
 {
@@ -494,6 +505,7 @@ bool AWandererCharacter::CanCarrySkateBoard() const
 }
 void AWandererCharacter::ToggleCrouch(const FInputActionValue&)
 {
+    if (PressMove(TEXT("crouch"))) return;   // gliding, climbing, swimming or busy: no crouch
     if (CanAct()) { if (bIsCrouched) UnCrouch(); else Crouch(); SetAction(NAME_None); }
 }
 FName AWandererCharacter::GetAnimationClip() const
@@ -517,6 +529,13 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("interact")) Interact(FInputActionValue(true));
     else if (Button == TEXT("stop_previous")) ZeppelinStep(-1);
     else if (Button == TEXT("stop_next")) ZeppelinStep(1);
+    else if (Button == TEXT("dodge")) Dodge(FInputActionValue(true));
+    else if (Button == TEXT("dash")) Dash(FInputActionValue(true));
+    else if (Button == TEXT("attack")) AttackPressed(FInputActionValue(true));
+    else if (Button == TEXT("attack_release")) AttackReleased(FInputActionValue(false));
+    else if (Button == TEXT("guard")) ParryPressed(FInputActionValue(true));
+    else if (Button == TEXT("guard_release")) ParryReleased(FInputActionValue(false));
+    else if (Button == TEXT("weapon")) ToggleWeapon(FInputActionValue(true));
     else return false;
     return true;
 }
@@ -524,6 +543,7 @@ bool AWandererCharacter::Live_Press(FName Button)
 void AWandererCharacter::Dodge(const FInputActionValue&)
 {
     if (SkateRide->IsRiding() && !SkateRide->CanYieldToCharacter()) return;   // on foot the roll takes over from the board
+    if (Moves) { if (SkateRide->IsRiding() && !TakeOverFromSkate(true)) return; PressMove(TEXT("dodge")); return; }   // the side hop or backflip
     // With an armed roll (game-r16) the sword stays in hand; without one, rolling tucks it away and the next attack draws it.
     if(bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(!(Definition && Definition->FindAction(TEXT("SwordRoll"))))) return;
     if(!CanAct(true))
@@ -602,6 +622,7 @@ void AWandererCharacter::Review_Dodge() { Dodge(FInputActionValue(true)); }
 void AWandererCharacter::Dash(const FInputActionValue&)
 {
     if (SkateRide->IsRiding() && !SkateRide->CanYieldToCharacter()) return;   // on foot the dash takes over from the board
+    if (Moves) { if (SkateRide->IsRiding() && !TakeOverFromSkate(true)) return; PressMove(TEXT("dash")); return; }   // no air dash; the swimming dash
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;
     if (!bReady || bMenuOpen || !Definition || MovementLocked() || bPendingTakeoff || Sailboat->IsEquipped() || DashCooldown>0.f) return;
     auto* M=GetCharacterMovement();
@@ -665,10 +686,23 @@ void AWandererCharacter::Dash(const FInputActionValue&)
     // Neither dash consumes nor restores the separate double-jump allowance.
 }
 void AWandererCharacter::Wave(const FInputActionValue&) { if (SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
-void AWandererCharacter::AttackPressed(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed(); }
-void AWandererCharacter::AttackReleased(const FInputActionValue&) { if (Sword) Sword->AttackReleased(); }
-void AWandererCharacter::ParryPressed(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ParryPressed(); }
-void AWandererCharacter::ToggleWeapon(const FInputActionValue&) { if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ToggleWeapon(); }
+void AWandererCharacter::AttackPressed(const FInputActionValue&)
+{
+    if (Moves) { PressMove(TEXT("attack")); return; }
+    if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed();
+}
+void AWandererCharacter::AttackReleased(const FInputActionValue&) { if (Moves) Moves->Press(TEXT("attack_release")); else if (Sword) Sword->AttackReleased(); }
+void AWandererCharacter::ParryPressed(const FInputActionValue&)
+{
+    if (Moves) { PressMove(TEXT("guard")); return; }   // the shield guard and the lock-on, held
+    if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ParryPressed();
+}
+void AWandererCharacter::ParryReleased(const FInputActionValue&) { if (Moves) Moves->Press(TEXT("guard_release")); }
+void AWandererCharacter::ToggleWeapon(const FInputActionValue&)
+{
+    if (Moves) { PressMove(TEXT("weapon")); return; }
+    if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->ToggleWeapon();
+}
 void AWandererCharacter::FlightSlower(const FInputActionValue&) { ZeppelinStep(-1); }
 void AWandererCharacter::FlightFaster(const FInputActionValue&) { ZeppelinStep(1); }
 // Aboard, the two flight buttons change the ride's speed; at a docked ship they choose its next stop.
@@ -703,6 +737,7 @@ void AWandererCharacter::SetMenuOpen(bool bOpen)
     if (bOpen)
     {
         if (Sword) { Sword->CancelForInterrupt(false); Sword->DropAttackHold(); }   // a held charge must not survive the menu, and must not fire
+        if (Moves) Moves->DropHolds();
         JumpBuffer = RollBuffer = 0.f;
         if (bPendingTakeoff) { bPendingTakeoff = false; SetAction(NAME_None); }
     }
@@ -1035,6 +1070,7 @@ void AWandererCharacter::Landed(const FHitResult& Hit)
     GetCharacterMovement()->RemoveRootMotionSource(TEXT("ForwardDash"));
     SinceGrounded = 0.f;
     if (Sailboat->IsEquipped()) { FallSpeed = 0.f; return; }
+    if (Moves) { Moves->Landed(Hit); FallSpeed = 0.f; return; }   // the move set plays the landing and the footsteps
     // The drop decides how hard the landing reads, before FallSpeed is cleared below.
     if (Footsteps) Footsteps->Land(Hit,FMath::GetMappedRangeValueClamped(FVector2f(200.f,1100.f),FVector2f(.55f,1.4f),FallSpeed));
     if (AnimationAction==TEXT("Roll") && ActionTime<ActionDuration) { FallSpeed=0.f; return; }
@@ -1049,7 +1085,7 @@ void AWandererCharacter::Tick(float Dt)
     {
         ReadyTime+=Dt;if(ReadyTime>1.5f){bReady=true;AdvanceBuildingReview(Dt);}return;
     }
-    if(Landscape->bForestLakeLoaded && !Sailboat->IsEquipped())
+    if(Landscape->bForestLakeLoaded && !Sailboat->IsEquipped() && !Moves)
     {
         const FVector Relative=GetActorLocation()-Landscape->ForestLakeCenter;
         const double X=Relative.X/Landscape->ForestLakeRadii.X;
@@ -1063,7 +1099,7 @@ void AWandererCharacter::Tick(float Dt)
             UE_LOG(LogTemp,Display,TEXT("Woodland lake water recovery"));
         }
     }
-    if(!Sailboat->IsEquipped() && GetActorLocation().X<=30000.)
+    if(!Sailboat->IsEquipped() && GetActorLocation().X<=30000. && (!Moves || SkateRide->IsRiding()))
     {
         const FVector Here=GetActorLocation();
         const float Feet=Here.Z-GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
@@ -1120,7 +1156,11 @@ void AWandererCharacter::Tick(float Dt)
     if (PhoneInput) PhoneInput->Tick(Dt);
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
     Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
-    if (!Sailboat->IsEquipped() && !SkateRide->IsRiding()) { if (Sword) Sword->Advance(Dt); AdvanceAction(Dt); } // Keep state time aligned while settings are open.
+    if (!Sailboat->IsEquipped() && !SkateRide->IsRiding())   // keep state time aligned while settings are open
+    {
+        if (Moves) Moves->Advance(Dt);
+        else { if (Sword) Sword->Advance(Dt); AdvanceAction(Dt); }
+    }
     UCharacterMovementComponent* M = GetCharacterMovement();
     LookGrace=FMath::Max(0.f,LookGrace-Dt);
     // Skating: the camera swings in behind the line of travel unless the player looked around in the last two seconds.
@@ -1140,11 +1180,13 @@ void AWandererCharacter::Tick(float Dt)
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-8.f,SkateYaw,0),Dt,2.4f));
     }
-    const bool CanSprint=!bWalk&&!bJog&&!bIsCrouched&&!MovementLocked()&&!SkateRide->IsRiding()&&!Sailboat->IsEquipped()&&!MoveIntent.IsNearlyZero()&&M->Velocity.Size2D()>40.f;
-    Stamina.Tick(Dt,bSprintHeld,CanSprint,bMenuOpen);
+    const bool CanSprint=!bWalk&&!bJog&&!bIsCrouched&&!MovementLocked()&&!SkateRide->IsRiding()&&!Sailboat->IsEquipped()&&!MoveIntent.IsNearlyZero()&&M->Velocity.Size2D()>40.f&&(!Moves||Moves->CanSprint());
+    // A move set spends stamina itself (climbing, gliding, swimming, a charge) and refills it only on foot.
+    Stamina.Tick(Dt,bSprintHeld,CanSprint,bMenuOpen||(Moves&&Moves->HoldsStamina()));
     M->MaxWalkSpeed = Definition->UseAuthoredMovement
         ? ((bWalk || bJog) ? Definition->WalkSpeed : Stamina.Sprinting ? GetSprintSpeed() : Definition->RunSpeed)
         : bWalk ? Definition->WalkSpeed : Definition->RunSpeed*(bJog?1.f:Stamina.Sprinting?2.5f:2.f);
+    if (Moves) M->MaxWalkSpeed = Moves->GetMaxWalkSpeed(M->MaxWalkSpeed);   // lock-on strafing
     if (!bMenuOpen && !MovementLocked() && !Sailboat->IsEquipped() && !SkateRide->IsRiding())
     {
         const FRotationMatrix Basis(FRotator(0,GetControlRotation().Yaw,0));

@@ -19,6 +19,7 @@
 #include "AnimNodes/AnimNode_TwoWayBlend.h"
 #include "AnimNodes/AnimNode_LayeredBoneBlend.h"
 #include "WandererSword.h"
+#include "BotwMoveSet.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void FWandererStateNode::Initialize_AnyThread(const FAnimationInitializeContext& C)
@@ -107,6 +108,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_SequencePlayer_Standalone Carry;
     FAnimNode_BlendSpacePlayer_Standalone ArmedMoving, ArmedCrouching;
     FAnimNode_TwoWayBlend ArmedGround, CarryPose;
+    // A move set's raised shield: the guard's left arm over locomotion and the lock-on strafe.
+    FAnimNode_SequencePlayer_Standalone GuardPose;
     FAnimNode_LayeredBoneBlend CarryLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
     FGroundContactNode Feet;
@@ -127,9 +130,11 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         CarryLayer.BasePose.SetLinkNode(&State);
         ArmedGround.A.SetLinkNode(&ArmedMoving); ArmedGround.B.SetLinkNode(&ArmedCrouching); ArmedGround.Alpha = 0.f;
         CarryPose.A.SetLinkNode(&Carry); CarryPose.B.SetLinkNode(&ArmedGround); CarryPose.Alpha = 0.f;
-        CarryLayer.BlendPoses.SetNum(1); CarryLayer.BlendPoses[0].SetLinkNode(&CarryPose);
-        CarryLayer.LayerSetup.SetNum(1); CarryLayer.LayerSetup[0].BranchFilters.Add(FBranchFilter{TEXT("clavicle_R"), 0});
-        CarryLayer.BlendWeights.SetNum(1); CarryLayer.BlendWeights[0] = 0.f;
+        CarryLayer.BlendPoses.SetNum(2); CarryLayer.BlendPoses[0].SetLinkNode(&CarryPose); CarryLayer.BlendPoses[1].SetLinkNode(&GuardPose);
+        CarryLayer.LayerSetup.SetNum(2);
+        CarryLayer.LayerSetup[0].BranchFilters.Add(FBranchFilter{TEXT("clavicle_R"), 0});
+        CarryLayer.LayerSetup[1].BranchFilters.Add(FBranchFilter{TEXT("clavicle_L"), 0});
+        CarryLayer.BlendWeights.SetNum(2); CarryLayer.BlendWeights[0] = CarryLayer.BlendWeights[1] = 0.f;
         CarryLayer.bMeshSpaceRotationBlend = false; CarryLayer.bBlendRootMotionBasedOnRootBone = false;
         ToComponent.LocalPose.SetLinkNode(&CarryLayer);
         Feet.ComponentPose.SetLinkNode(&ToComponent);
@@ -146,7 +151,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &CarryLayer, &ToComponent, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -158,6 +163,10 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 UAnimSequence* Hold = D->FindAction(TEXT("SwordCarry")); if (!Hold) Hold = D->FindAction(TEXT("SwordIdle"));
                 if (Hold) { Carry.SetSequence(Hold); Carry.SetLoopAnimation(true); Carry.SetPlayRate(1.f); }
                 ArmedMoving.SetBlendSpace(D->ArmedLocomotion); ArmedCrouching.SetBlendSpace(D->ArmedCrouching); bArmedCrouch = D->ArmedCrouching != nullptr;
+                if (UAnimSequence* Guard = D->FindAction(TEXT("GuardCarry"))) { GuardPose.SetSequence(Guard); GuardPose.SetLoopAnimation(true); GuardPose.SetPlayRate(1.f); }
+                // The layers' branch bones by the skate contract's names (a character's own clavicles).
+                CarryLayer.LayerSetup[0].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_R"));
+                CarryLayer.LayerSetup[1].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_L"));
             }
         FAnimInstanceProxy::Initialize(Instance);
     }
@@ -257,7 +266,10 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
             { const float Time = Action.GetAccumulatedTime(); Action.SetSequence(Clip); Action.SetAccumulatedTime(Time); }
         }
         Action.SetPlayRate(bRiding ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
-        CarryLayer.BlendWeights[0] = (!bSailing && !bRiding && Pawn->GetSword() && !Pawn->IsZeppelinPassenger()) ? Pawn->GetSword()->CarryWeight() : 0.f;
+        const bool bCarrying = !bSailing && !bRiding && !Pawn->IsZeppelinPassenger();
+        const UBotwMoveSet* Moves = Pawn->GetMoves();
+        CarryLayer.BlendWeights[0] = !bCarrying ? 0.f : Moves ? Moves->SwordCarryWeight() : Pawn->GetSword() ? Pawn->GetSword()->CarryWeight() : 0.f;
+        CarryLayer.BlendWeights[1] = bCarrying && Moves ? Moves->GuardWeight() : 0.f;
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
     }

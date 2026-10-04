@@ -6,6 +6,7 @@ import json
 import re
 import sys
 import tomllib
+from types import SimpleNamespace
 import bpy
 from mathutils import Matrix, Vector
 
@@ -65,11 +66,17 @@ def export_sword(arm, transform, scale, floor):
             'note':'Relative attachment = rest_component_transform * inverse(hand_R reference-pose component transform), computed in Unreal from the imported skeleton.'}
 
 
-def main(args):
-    source = SOURCE if not args.revision else Path(args.revision).resolve()
-    OUT.mkdir(parents=True,exist_ok=True)
-    (OUT/'fbx').mkdir(exist_ok=True)
-    (OUT/'textures').mkdir(exist_ok=True)
+# The FBX settings every Cairo export shares (the mesh, its clips and botw.py's clips).
+FBX = dict(use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',
+    axis_forward='-Y',axis_up='Z',add_leaf_bones=False,use_armature_deform_only=False,
+    bake_anim_use_nla_strips=False,bake_anim_use_all_actions=False,bake_anim_simplify_factor=0,
+    bake_anim_step=1,mesh_smooth_type='FACE',use_mesh_modifiers=False,path_mode='ABSOLUTE')
+
+
+def prepare(source):
+    """Open the revision in `source`, scaled to 1.48 m with its soles on the floor, its bones renamed to the contract's
+    names in every clip and its meshes and morphs named by slot. Returns the scene's parts: record (the source
+    manifest), native, scene, arm, meshes, transform, scale, floor, original_names and morphs."""
     record = json.loads((source/'source-manifest.json').read_text())
     # In this folder the source file is named in character.toml; an archive revision folder keeps the recorded name.
     toml = source/'character.toml'
@@ -136,6 +143,18 @@ def main(args):
                             for old,new in renames.items():
                                 fc.data_path=fc.data_path.replace('key_blocks["'+old+'"]','key_blocks["'+new+'"]')
     bpy.context.view_layer.update()
+    return SimpleNamespace(record=record,native=native,scene=scene,arm=arm,meshes=meshes,transform=transform,scale=scale,
+                           floor=floor,original_names=original_names,morphs=morphs)
+
+
+def main(args):
+    source = SOURCE if not args.revision else Path(args.revision).resolve()
+    OUT.mkdir(parents=True,exist_ok=True)
+    (OUT/'fbx').mkdir(exist_ok=True)
+    (OUT/'textures').mkdir(exist_ok=True)
+    cairo = prepare(source)
+    record, native, scene, arm, meshes = cairo.record, cairo.native, cairo.scene, cairo.arm, cairo.meshes
+    transform, scale, floor, original_names, morphs = cairo.transform, cairo.scale, cairo.floor, cairo.original_names, cairo.morphs
     feet = {side:list(arm.matrix_world @ arm.data.bones['foot_'+side].head_local)
             for side in ['L','R']}
     materials = {}
@@ -172,10 +191,7 @@ def main(args):
             obj.select_set(True)
         bpy.context.view_layer.objects.active = arm
 
-    common = dict(use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',
-        axis_forward='-Y',axis_up='Z',add_leaf_bones=False,use_armature_deform_only=False,
-        bake_anim_use_nla_strips=False,bake_anim_use_all_actions=False,bake_anim_simplify_factor=0,
-        bake_anim_step=1,mesh_smooth_type='FACE',use_mesh_modifiers=False,path_mode='ABSOLUTE')
+    common = FBX
     if not args.clips_only:
         arm.animation_data.action = None
         arm.data.pose_position = 'REST'

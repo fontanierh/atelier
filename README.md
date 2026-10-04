@@ -52,14 +52,34 @@ uv sync                                 # the atelier command and its Python pac
 |---|---|---|
 | macOS on Apple silicon | 15+ | the only platform tested |
 | Unreal Engine | 5.8 (`/Users/Shared/Epic Games/UE_5.8`, or set `UE_ROOT`) | the games |
+| Full Xcode | licence accepted, selected with `xcode-select`, macOS SDK and Metal toolchain installed | C++ and shaders; CLI tools alone are insufficient |
 | Blender | 5.2.1 LTS on `PATH` (or set `BLENDER`) | meshes, rigs, clips |
-| Python | 3.11+ with numpy and Pillow (`uv sync`) | the studio |
+| Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio and generated park signs |
 | ffmpeg | 7+ on `PATH` | sound slicing, films, review sheets |
 | Node | 24+ (optional) | streaming pages, H3 and Seedance scripts |
 | coturn, Tailscale | (optional) | streaming to other devices (`brew install coturn`) |
 
 Paid AI calls (Sunburst, Tripo, H3, Seedance) never run as part of a build. They need keys in a local `.env`
 ([.env.example](.env.example)), which git ignores.
+
+After installing Xcode, select it, accept its licence and install Metal:
+
+```sh
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -license accept
+sudo xcodebuild -runFirstLaunch
+xcodebuild -downloadComponent MetalToolchain
+uv run atelier setup                  # compiles and links a small Metal shader to check the installation
+```
+
+For a Mac accessed over SSH, run `uv run atelier setup --headless` before compiling. On the tested installed
+UE **5.8.2 CL 56702186**, this repairs the build tool's protected Documents lookup, uses explicit default build
+configuration, and caps C++ and shader compiles at three workers (C++ at priority 10). It rebuilds the managed .NET build
+tool and shared library under the render lock and memory guard. Originals and logs are retained in `~/.cache/atelier/toolchain/`;
+other engine versions are refused without modification. Repeating it is safe. Use `--workers N` to set another cap.
+This mode bypasses user and project `BuildConfiguration.xml`; pass desired build settings on the command line.
+It also needs Rosetta for the managed tool's Intel protobuf compiler; setup checks this before modifying the engine.
+Install it with `softwareupdate --install-rosetta --agree-to-license` if missing.
 
 ## Build Yorimichi
 
@@ -74,6 +94,21 @@ uv run atelier play yorimichi           # 1080p window; --profile desktop-1440 f
 to `build/yorimichi/` and the game's ignored `unreal/Content/`. When clearing `Content/`, keep the tracked
 `Content/Data/SkateNative` bundle: it is source data for the skating module. The [Yorimichi README](games/yorimichi/README.md)
 lists the play profiles, the QA scenarios and the game's docs.
+
+Keep a completed build and Unreal's shared derived-data cache for subsequent work. A new agent worktree at the
+same source revision can reuse independent copies of the generated assets and compiled modules:
+
+```sh
+uv run atelier reuse yorimichi --from ../completed-checkout --to ../fresh-worktree
+cd ../fresh-worktree && uv sync
+uv run atelier build yorimichi          # confirms the carried-over steps are up to date
+uv run atelier play yorimichi
+```
+
+The reuse command checks source fingerprints, outputs, engine version and compiled module build IDs before writing
+stamps. On APFS it uses independent copy-on-write clones. It excludes mutable `Intermediate`, logs and capture
+evidence. Code changes still rebuild the affected module or assets. Agents share the machine's render board and
+lock, with one game or compile at a time; [AGENTS.md](AGENTS.md) describes the board and resource logs.
 
 ## Start your own game
 
@@ -128,6 +163,8 @@ Where to go next, in the order most games grow:
 |---|---|
 | `atelier new <game>` | start a game from the sandbox |
 | `atelier doctor <game>` / `fetch <game>` | check the tools and sources; download what may not be redistributed |
+| `atelier setup [--headless]` | verify Xcode and Metal; prepare the tested installed UE 5.8.2 for SSH builds |
+| `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
 | `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--dry-run`, `--touch` |
 | `atelier play <game> [--profile P]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |

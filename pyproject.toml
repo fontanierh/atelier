@@ -8,6 +8,7 @@ dependencies = [
   "numpy>=2.0",
   "pillow>=11.0",
   "httpx>=0.27",
+  "fonttools>=4.66",
 ]
 
 [project.scripts]

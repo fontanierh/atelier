@@ -2,6 +2,8 @@
 
     atelier new <game> [--title T]     start a new game from the sandbox (module, classes, project and paths renamed)
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
+    atelier setup [--headless]         check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
+    atelier reuse <game> --from PATH   seed this fresh worktree from a verified build of the same revision
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
     atelier play <game> [--profile P] [-- unreal args]   launch the game under the render lock and memory guard
@@ -35,7 +37,10 @@ def doctor(game):
         version = (result.stdout.splitlines() or [''])[0]
     good &= _ok(bool(blender), f'Blender ({version or "not found; put blender on PATH or set BLENDER"})')
     good &= _ok(bool(shutil.which('ffmpeg')), 'ffmpeg on PATH')
-    for module in ('numpy', 'PIL'):
+    from .setup import mac_checks
+    for ok, message in mac_checks():
+        good &= _ok(ok, message)
+    for module in ('numpy', 'PIL', 'fontTools'):
         good &= _ok(importlib.util.find_spec(module) is not None, f'Python package {module} ({sys.executable})')
     good &= _ok(ctx.uproject is not None and ctx.uproject.exists(), f'Unreal project {ctx.uproject}')
     for fetch in data.get('fetch', {}).get('needs', []):
@@ -131,6 +136,10 @@ def make_parser():
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('new'); p.add_argument('game'); p.add_argument('--title')
     p = sub.add_parser('doctor'); p.add_argument('game')
+    p = sub.add_parser('setup'); p.add_argument('--headless', action='store_true')
+    p.add_argument('--workers', type=int, default=3, help='headless compiler parallelism (default: 3)')
+    p = sub.add_parser('reuse'); p.add_argument('game'); p.add_argument('--from', dest='source', required=True)
+    p.add_argument('--to', dest='target', help='fresh worktree path (default: this checkout)')
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
@@ -167,6 +176,12 @@ def main(argv=None):
         return new.main(args.game, args.title)
     if args.command == 'doctor':
         return doctor(args.game)
+    if args.command == 'setup':
+        from . import setup
+        return setup.main(args.headless, args.workers)
+    if args.command == 'reuse':
+        from . import reuse
+        return reuse.main(args.game, args.source, args.target)
     if args.command == 'fetch':
         return fetch(args.game)
     if args.command == 'build':

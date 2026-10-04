@@ -25,6 +25,11 @@ def extract():
     return cache_dir('botw') / 'botw-extract'
 
 
+def mechanics():
+    """The extract's recovered player mechanics: action timelines, action and player parameters (moves.py)."""
+    return extract() / 'gameplay' / 'recovered' / 'mechanics.json'
+
+
 def available():
     return (root() / 'catalog' / 'archive-info.json').is_file()
 
@@ -80,4 +85,8 @@ def sources():
     for character in roster()['character']:
         item = entry(character['id'])
         files += [item['glb'], item['curves']] + [garment(g)['glb'] for g in character.get('outfit', [])]
+        if character.get('moves'):
+            files.append(mechanics())
+            for slot in tomllib.loads((HERE / character['moves']).read_text()).get('equipment', {}).values():
+                files += [entry(slot['id'])['glb'], entry(slot['id'])['curves']]
     return sorted(set(files))

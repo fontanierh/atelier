@@ -1,7 +1,39 @@
 #include "CairoCharacter.h"
+#include "AtelierData.h"
+#include "BotwMoveSet.h"
+#include "AtelierStream.h"
+#include "BotwRider.h"
+#include "JapanGameMode.h"
+#include "JapanPreferences.h"
+#include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
+namespace
+{
+    const TCHAR* BotwDefinition = TEXT("/Game/CairoBotw/DA_CairoBotw.DA_CairoBotw");
+
+    /** Cairo's move record, read once; null when it has not been built. */
+    TSharedPtr<FJsonObject> BotwRecord()
+    {
+        static TSharedPtr<FJsonObject> Record;
+        static bool bLoaded = false;
+        if (!bLoaded)
+        {
+            bLoaded = true;
+            FString Text;
+            if (FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("cairo/botw.json"))))
+                FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Record);
+        }
+        return Record;
+    }
+}
 
 ACairoCharacter::ACairoCharacter()
 {
@@ -12,6 +44,31 @@ ACairoCharacter::ACairoCharacter()
     GetMesh()->SetRelativeLocation(FVector(0,0,-74.65f));
     // The imported Tripo skeleton faces +X (measured toe-to-ankle vector).
     GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
+}
+
+bool ACairoCharacter::HasBotw()
+{
+    // Checked on disk, not loaded: the character switch asks every time the menu opens.
+    return BotwRecord().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(BotwDefinition)));
+}
+
+void ACairoCharacter::BeginPlay()
+{
+    // At the start the command line picks the move set, else the saved setting (where a person plays: QA, reviews and
+    // benchmarks expect his own moves); a switched-in Cairo was told by the switch.
+    if (!bSwitchedIn)
+    {
+        const FString Requested = ABotwRider::Requested();
+        const bool bPlayed = !AJapanGameMode::IsScriptedSession() || FAtelierStream::IsRequested();
+        bBotw = Requested == BotwName() || (Requested.IsEmpty() && bPlayed && HasBotw() && UJapanPreferences::Saved(TEXT("cairo_botw"), 0.f) > .5f);
+    }
+    if (bBotw) DefinitionAssetPath = BotwDefinition;
+    Super::BeginPlay();
+    if (bBotw)
+    {
+        UBotwMoveSet* Set = NewObject<UBotwMoveSet>(this, TEXT("BotwMoves"));
+        if (Set->Initialize(this, BotwRecord())) Moves = Set;
+    }
 }
 
 void ACairoCharacter::Tick(float Dt)
