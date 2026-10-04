@@ -89,6 +89,7 @@ void ABotwCreature::Initialize(const FBotwSpec& Spec, EBotwMode StartMode)
     Mesh->SetSkeletalMeshAsset(Cast<USkeletalMesh>(Data.Mesh.TryLoad()));
     Mesh->SetRelativeLocationAndRotation(FVector(0, 0, -HalfHeight), FRotator(0, Data.MeshYaw, 0));
     Mesh->SetRelativeScale3D(FVector(Data.Scale));
+    MeshRest = Mesh->GetRelativeTransform();
     for (const auto& Clip : Data.Clips)
         if (UAnimSequence* Sequence = Cast<UAnimSequence>(Clip.Value.TryLoad())) Loaded.Add(Clip.Key, Sequence);
     ShowcaseOrder.Reset();
@@ -144,7 +145,13 @@ void ABotwCreature::MoveTo(const FVector& Ground, bool bRun)
 
 void ABotwCreature::TakeSwordHit(int32 Strength, AActor* From)
 {
-    if (Phase == EPhase::Down || Phase == EPhase::GetUp) return;
+    if (Phase == EPhase::Down || Phase == EPhase::GetUp)
+    {
+        // Struck where it lies or rising: it still takes the blow (the striker's sparks and sound) and slides back.
+        Health -= Strength;
+        if (From) Knockback = ((GetActorLocation() - From->GetActorLocation()) * FVector(1, 1, 0)).GetSafeNormal() * (160.f + 60.f * FMath::Min(Strength, 3));
+        return;
+    }
     Health -= Strength;
     if (From)
     {
@@ -157,6 +164,22 @@ void ABotwCreature::TakeSwordHit(int32 Strength, AActor* From)
     Phase = EPhase::Hit;
     PhaseLeft = FMath::Max(Play(Role("hit").ToString(), false), .4f);
     if (Mode == EBotwMode::Idle || Mode == EBotwMode::Wander) Mode = EBotwMode::Camp;
+}
+
+void ABotwCreature::AdvanceLying(float Dt)
+{
+    static const FName HeadBone(TEXT("Head"));
+    if (Mesh->GetBoneIndex(HeadBone) == INDEX_NONE) return;
+    const float Head = float(Mesh->GetSocketTransform(HeadBone, RTS_Component).GetLocation().Z);
+    const bool bDown = Phase == EPhase::Down || Phase == EPhase::GetUp;
+    if (!bDown && Phase != EPhase::Hit && Current == Role("idle")) StandHead = StandHead > 0.f ? FMath::FInterpTo(StandHead, Head, Dt, 2.f) : Head;
+    const float Want = bDown && StandHead > 0.f ? FMath::Clamp((Head - StandHead) / (.35f * StandHead), 0.f, 1.f) : 0.f;
+    const float Was = LieWeight;
+    LieWeight = FMath::FInterpTo(LieWeight, Want, Dt, 14.f);
+    if (LieWeight < .001f) { LieWeight = 0.f; if (Was > 0.f) Mesh->SetRelativeTransform(MeshRest); return; }
+    // On its back: up turned to backward (a pitch about the capsule's right axis), about the mesh's origin at its feet.
+    const FVector Feet = MeshRest.GetLocation();
+    Mesh->SetRelativeTransform(MeshRest * FTransform(-Feet) * FTransform(FRotator(90.f * LieWeight, 0.f, 0.f).Quaternion()) * FTransform(Feet));
 }
 
 void ABotwCreature::Strike(APawn* Player)
@@ -198,6 +221,7 @@ void ABotwCreature::Tick(float Dt)
     Clock += Dt; AttackCooldown = FMath::Max(0.f, AttackCooldown - Dt);
     Think(Dt);
     Ground();
+    AdvanceLying(Dt);
 }
 
 void ABotwCreature::Think(float Dt)

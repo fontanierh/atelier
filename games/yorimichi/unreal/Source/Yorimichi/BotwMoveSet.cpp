@@ -2178,7 +2178,7 @@ bool UBotwMoveSet::Climbable(const FHitResult& Hit) const
 bool UBotwMoveSet::IsTargetable(AActor* Actor) const
 {
     if (!Actor || Actor == Character) return false;
-    if (const ABotwCreature* Creature = Cast<ABotwCreature>(Actor)) return !Creature->IsDown();
+    if (Cast<ABotwCreature>(Actor)) return true;   // down or not: a downed one takes blows too
     if (const AFoxHunter* Fox = Cast<AFoxHunter>(Actor)) return Fox->IsAlive();
     return Actor->IsA<ASwordDummy>();
 }
