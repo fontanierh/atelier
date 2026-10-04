@@ -65,3 +65,25 @@ uv run pytest                            # studio and game Python tests
 - A checkout whose code predates the slots stays safe but refuses to start while a small job runs: merge main into
   every checkout before switching to two slots.
 - The live bridge (Unreal plugin, port 8830) stays loopback-only.
+- Every machine has its own `~/.cache/atelier/render-board.md`. Read its Holding, Waiting and latest Log entries
+  before a heavy job. Post the task, checkout, requested slot and estimated duration under Waiting; while actually
+  running, record the holder and expected finish under Holding. Take the lock per job, never while idle. Prefer
+  ready jobs under five minutes when several agents are waiting, and remove your entry when the job finishes.
+  The live lock record is authoritative when the board is stale; never start a competing job or signal its owner.
+- Check the current job's render log (`build/<game>/logs/<step>.guard/stdout.log`, or a play run's `stdout.log`) and
+  `memory-health.json` before retrying or diagnosing a stall. When installed, the machine's resource log is
+  `~/.cache/atelier/render-supervisor/latest.json` with history in `telemetry.jsonl`. Add the command, exit status
+  and evidence paths to the board's Log when releasing a slot. Quit test games promptly and use only your own
+  live bridge port; choose another loopback port with `-liveport=N` when needed.
+
+## Reusing builds
+
+- Start with `atelier build <game>` or the specific steps needed. Keep build stamps, generated Content, compiled
+  Binaries and Unreal's shared derived-data cache so unchanged steps remain up to date. Do not routinely use
+  `--force`, clear caches or regenerate the world for a code-only change.
+- Before building a fresh checkout, look for a completed build of the same source revision and engine version on
+  the machine. Reuse verified artifacts as independent copies (APFS clones are cheap); never share mutable Content,
+  Binaries or Intermediate folders between agents. Keep the same installed engine across checkouts.
+- Reuse only outputs whose source fingerprints and required files match. `--touch` records existing outputs as
+  built: use it only after verifying those outputs, never to hide a failed or incomplete build. A source change
+  must still invalidate its affected steps and compile when required.
