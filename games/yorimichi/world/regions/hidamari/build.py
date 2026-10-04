@@ -11,7 +11,7 @@ from hidamari import harbor as harbor_kit
 from hidamari import arcade as arcade_kit
 from hidamari import plaza as plaza_kit
 from hidamari import mountains, living_plaza, pond_garden, living_streets, working_harbor, civic_gardens
-from hidamari import city_poles, kit, lane_edges, layout, surfaces, temple_precinct
+from hidamari import arrival, city_poles, kit, lane_edges, layout, park_grounds, station_yard, surfaces, temple_precinct
 from hidamari.layout import backdrop_height,north_height,north_base_height
 v.OUT=OUT
 # Ground land use (surface()): lawn, packed-earth yards, sidewalk paving along the streets, flagstone pavers.
@@ -211,6 +211,7 @@ HOUSE_X=(min(x for _,x,_,_ in layout.house_sites())-5,max(x for _,x,_,_ in layou
 def land_use(x,y):
     """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 6 m of a street's paving
     (layout.road_width), packed earth in the yards behind."""
+    if x<398:return 'hd_walk' if arrival.road_distance(x,y)<9.5 else 'hd_grass'   # west of the streets: the hillside
     if grass_patch(x,y):return 'hd_grass'
     if HOUSE_X[0]<x<HOUSE_X[1] and any(abs(y-c)<1.7 for c in HOUSE_LANES) and layout._clear_of_hero(x,y):return 'hd_walk'
     if min(abs(y-c) for c in ROAD_Y)<14 or min(abs(x-c)-layout.road_width(x=c)[0] for c in ROAD_X)<6:return 'hd_walk'
@@ -425,6 +426,10 @@ def main():
     builders['HD_Bamboo']=temple_precinct.bamboo
     builders['HD_Graves']=temple_precinct.graves
     builders['HD_Precinct']=lambda:temple_precinct.precinct(M('HD_Precinct'),height)
+    builders['HD_StationYard']=lambda:station_yard.yard(M('HD_StationYard'),height)
+    builders['HD_Railcar']=station_yard.railcar
+    builders['HD_ParkGrounds']=lambda:park_grounds.grounds(M('HD_ParkGrounds'),height)
+    builders['HD_Arrival']=lambda:arrival.arrival(M('HD_Arrival'),height)
     # Reference-led kit modules replace legacy shop variants by mesh name.
     builders.update(kit.builders(lettering))
     builders['HD_NorthMountains']=lambda:mountains.mesh(north_base_height)

@@ -29,7 +29,8 @@ GROUPS = [
     ('stone_lantern', 777.0, 288.0, 25), ('stone_lantern', 790.0, 282.0, 25),
     # the station square (station 1185, 290, 51 x 23)
     ('bus_stop', 1162.0, 244.0, 0), ('phone_booth', 1216.0, 262.0, 0), ('vending_machine', 1206.0, 276.0, 0),
-    ('vending_machine', 1207.3, 276.0, 0), ('postbox', 1222.0, 250.0, 0), ('bicycle', 1148.0, 270.0, 90),
+    ('vending_machine', 1207.3, 276.0, 0), ('postbox', 1195.0, 241.0, 0), ('bicycle', 1148.0, 266.6, 90),
+    ('bicycle', 1148.0, 267.7, 90), ('bicycle', 1148.0, 268.8, 90), ('bicycle', 1148.0, 270.0, 90),
     ('bicycle', 1148.0, 271.1, 90), ('bicycle', 1148.0, 272.2, 90), ('scooter', 1148.0, 274.0, 90),
     ('kei_truck', 1228.0, 266.0, 0),
     # the market (600 and 730, -113, facing the harbour street): stalls before it, a truck between the halls

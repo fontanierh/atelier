@@ -3,7 +3,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json, math, random
 from functools import lru_cache
 from pathlib import Path
-from hidamari import mountains, temple_precinct
+from hidamari import arrival as arrival_road, mountains, park_grounds, station_yard, temple_precinct
 from megapark import trail as park_trail
 import numpy as np
 ROOT=yori.REGIONS
@@ -80,6 +80,8 @@ def shop_sites():
                 # shop/variant and at least 1.33 m between their 25 m aprons.
                 if 920<x<1120:x=941+(x-941)*158/162
                 sites.append((f'HD_Shop_{(row*7+col)%16:02d}',x,y,0 if side>0 else 180,cy,col,side))
+    # The station square's flanks (station_yard.SHOPS), facing the y=230 street.
+    sites+=[(name,x,y,0,230,1,1) for name,x,y in station_yard.SHOPS]
     return tuple(sites)
 
 def arcade_sites():
@@ -145,6 +147,8 @@ def terrain_pads():
                                  ('HD_Shrine',600,280,5.6,-9.5,4.5)]:
         pads.append(dict(asset=asset,x=x,y=y,yaw=0,z=float(street_height(x,y+front)),
                          half_width=w,front=front,back=back,fade_x=7.,fade_y=8.))
+    # The railway cutting behind the station, after the station's own pad so its floor wins where they meet.
+    pads.append(dict(station_yard.PAD,z=float(street_height(1185,278.5))+station_yard.BED))
     # Full-wall support is required behind the arcade too: the old central-
     # street datum left south backs floating 1.1 m and buried north backs 1 m.
     for asset,x,y,yaw in arcade_sites():
@@ -452,7 +456,7 @@ def generate():
         soil=max(float(height(x+sx*w/2,y+sy*d/2)) for sx in (-1,1) for sy in (-1,1))+.79
         put('HD_PlazaTreeOrange' if orange else 'HD_PlazaTreeGold',x,y,soil-.12,scale=.85)
 
-    for name in ['HD_Terrain','HD_Streets','HD_Wires','HD_LaneEdges','HD_Precinct','HD_Harbor','HD_Park','HD_Square','HD_Sea','HD_InlandWater','HD_CivicGardens']:
+    for name in ['HD_Terrain','HD_Streets','HD_Wires','HD_LaneEdges','HD_Precinct','HD_StationYard','HD_ParkGrounds','HD_Arrival','HD_Harbor','HD_Park','HD_Square','HD_Sea','HD_InlandWater','HD_CivicGardens']:
         put(name,0,0,0)
     end=max(world['road'],key=lambda p:p[0]);arrival=[end,[335,85,float(height(335,85))],[390,140,float(height(390,140))],[650,140,20]]
     roads=[[[float(x),float(y),float(height(x,y))] for x in np.arange(400,1251,2)] for y in ROAD_Y]
@@ -528,6 +532,9 @@ def generate():
     # By the air station the gate's ground has its own grass, verges, bushes and rocks (megapark/gate.py).
     from megapark import gate
     gate.dress(inst,north_base_height)
+    park_grounds.place(put,inst,height)
+    arrival_road.place(put,inst,height)
+    station_yard.place(put,inst,height,buildings)
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
     return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'road_widths':road_widths,'poles':poles,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 
