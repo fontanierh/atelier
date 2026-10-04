@@ -25,7 +25,7 @@ try{
  // Drive a real rendered range control, then verify the authoritative response and disk.
  await page.locator('#setting-cam_dist').evaluate(el=>{el.value='620';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
  await page.waitForFunction(()=>window.yorimichi.settings.find(s=>s.key==='cam_dist').value===620);
- for(const row of saved()){const value=['performance','goofy','show_fps','cairo_botw'].includes(row.key)?1-row.value:row.key==='stamina_rings'?(row.value===5?2:row.value+1):Math.min(row.max,row.value+(row.max-row.min)*.05);await set(row.key,value);}
+ for(const row of saved()){const value=['performance','goofy','show_fps','shield'].includes(row.key)?1-row.value:row.key==='moveset'?(row.value+1)%3:row.key==='stamina_rings'?(row.value===5?2:row.value+1):Math.min(row.max,row.value+(row.max-row.min)*.05);await set(row.key,value);}
  for(const row of saved())await set(row.key,row.value);
  await set('stamina_rings',4);
  await page.waitForFunction(()=>window.yorimichi.state.staminaRings===4);

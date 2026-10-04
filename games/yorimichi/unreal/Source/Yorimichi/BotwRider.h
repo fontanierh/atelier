@@ -35,7 +35,7 @@ public:
     static FString Label(const FString& Name);
     /** The Esc menu's character switch: From's player becomes Name ("Cairo", "CairoBotw" or a rider), standing where From
      *  stood and looking the same way; From is destroyed. Refused (null) on the zeppelin and before From is ready. The
-     *  menu offers Cairo with the move set its "Cairo's moves" setting picks. */
+     *  menu offers Cairo with the merged move set whenever it is built. */
     static AWandererCharacter* SwitchPlayer(AWandererCharacter* From, const FString& Name);
 private:
     FString RiderName;

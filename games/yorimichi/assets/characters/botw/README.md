@@ -74,27 +74,42 @@ PBR look.
   mode, action, stamina, glider, target and counts as JSON), `launch(velocity)` and `press(button)` with `dodge`,
   `dash`, `attack`, `attack_release`, `guard`, `guard_release` and `weapon`.
 
-## Link's moves
+## The merged move set
 
-Link plays BOTW's move set. `moves.toml` names each game action, the Link clip it plays and the BOTW action timeline
+The player plays one move set, Cairo's and Link's merged: Link's moves from BOTW with Cairo's double jump, and no dash.
+Link plays it, and so does Cairo whenever his copy is built (below).
+
+The "Move set" setting (Esc menu and phone, saved; `-moveset=merged|cairo|botw` decides for a scripted session) can
+bring the legacy sets back. **Merged** is the default. **Cairo (legacy)** gives Cairo his original moves: the dive roll,
+the ground and air dashes, his own sword. Link has none of Cairo's clips, so he keeps the merged set. **Breath of the
+Wild (legacy)** is the set as it was before the merge: no double jump (Jump in the air opens the paraglider), the
+shield always carried, and the guard button only locking on while the sword is sheathed. Merged and legacy BOTW switch
+at once. Changed in the Esc menu while playing Cairo, a choice that moves him to or from his legacy moves switches
+the character in place; changed on the phone, it waits until Cairo next comes into play. `moves.toml` names each game action, the Link clip it plays and the BOTW action timeline
 its timing comes from (rate, start and end, the frames a blow lands, the next press is read, it may be cancelled, the
 sword changes hands), the locomotion blends, the BOTW parameters the game reads and his equipment: the Traveler's
 Sword and its sheath on his back, the Traveler's Shield, and the paraglider. `export.py` bakes the clips and the equipment
 with him; `import_botw.py` makes them `DA_LinkRider`'s actions and blend spaces (each sample at its BOTW play rate) and
 the `moves` record of `roster.json`. In the game `UBotwMoveSet` (`Source/Yorimichi/BotwMoveSet.h`) gives any rider
-whose record has a move set these moves in place of Cairo's jump, dodge and sword, with the usual buttons
+whose record has a move set these moves in place of Cairo's original jump, dodge, dash and sword, with the usual buttons
 ([CONTROLLER_CONTROLS.md](../../../docs/CONTROLLER_CONTROLS.md)):
 
 | | |
 | --- | --- |
-| On foot | Jump, standing or running (no double jump, air dash or roll). Roll is the dodge: with Parry held, a side hop (stick left or right) or a backflip. A fall from more than 4.5 m lands hard, from more than 9 m it hurts. |
-| Paraglider | Jump in the air opens it; the stick steers and pulling back brakes; Jump or Roll closes it. It spends stamina and closes when the stamina runs out. |
+| On foot | Jump, standing or running; Link's sprint (no dash on foot or in the air, no roll). Roll is the dodge: a side hop (stick left or right) or the backflip (anything else). A fall from more than 4.5 m lands hard, from more than 9 m it hurts. |
+| Double jump | Cairo's: Jump again in the air, once until he stands, climbs or swims again. A fresh 6.5 m/s launch, all the ground speed turned toward the stick (even right round), and one forward somersault: Cairo plays his own `DoubleJump` clip; Link, who has none, tucks into BOTW's slope-tumble ball (`DoubleJumpTuck`, the `Rolldown` pose) and the game turns his mesh one full turn about the ball's middle on Cairo's timing, lifted so his hips stay level. |
+| Paraglider | Jump in the air after the double jump (or with it spent) opens it; the stick steers and pulling back brakes; Jump or Roll closes it. It spends stamina and closes when the stamina runs out. |
 | Climbing | Run or jump into anything steeper than 50° (not the skate parks' ramps and rails). The stick climbs, Jump leaps a hold further for a chunk of stamina, Roll lets go, and at the top he pulls himself over. He drops off when the stamina runs out. |
 | Swimming | Water above his waist: he swims at the surface; Jump or Dash is the swim dash. Out of stamina he sinks and comes back on the last dry ground, a little hurt. Swimming into a low bank climbs out. |
 | Sword | Draw / sheathe; Attack (which draws first if needed): the four-cut combo, the dash attack while sprinting, the jump attack in the air, the plunge from 3 m up, the sneakstrike on an unaware enemy while crouched; held, the charged spin. |
-| Shield | Parry held: the shield guard and lock-on, strafing around the nearest enemy. Jump while guarding: the parry, which staggers the attacker. A dodge just as a blow comes slows the world for a flurry rush: Attack, repeatedly. |
+| Guard and parry | Parry held: the guard and lock-on, strafing around the nearest enemy (drawing the sword first when it is sheathed). Jump while guarding: the parry, which staggers the attacker. A dodge just as a blow comes slows the world for a flurry rush: Attack, repeatedly. |
+| Shield | Optional: the "Shield" setting (Esc menu and phone, saved; off by default; `-shield` or `-noshield` for a scripted session). Carried, the shield guards and parries (`GuardCarry`, `Parry`, `GuardHit`). Off, it is hidden and the sword does both: Link on BOTW's sword-only clips and the same timelines (`SwordGuardCarry`, `SwordParry`, `SwordGuardHit`: `Sword_Guard_Wait`, `Sword_Guard_Just`, `Sword_Guard_Hit`), Cairo on his own two-handed bokken guard stance, parry and recoil at their authored windows (`SwordIdle`, `SwordParry`, `SwordParryHit`). |
 
 Stamina is the sprint rings' wheel (`FSprintStamina`), refilled only on foot. Hits knock him back, heavy ones down.
+Every move has its effects (`YorimichiCombatFX`): dust kicked up by jumps, a shock ring and wind motes under the double
+jump and a wind swirl through its somersault, dust and speed lines while sprinting, a whoomp of air as the paraglider
+opens and wind off its tips in flight, speed lines off the side hop and backflip, a cold flash and ring for a perfect
+dodge, a ribbon behind the blade through every cut, and steel sparks for a sword parry.
 `scenarios/botw_moves.py` checks it all in the game through the live bridge.
 
 ```sh
@@ -107,12 +122,11 @@ kickflip and flair (a backflip 180: the grab held from take-off and the left sti
 `POOL_TRICK='flair'`). The trick names never mention a body flip (the flair shows as "BS Grab"): the skate runtime only
 scores it.
 
-### Cairo with Link's moves
+### Cairo with the merged move set
 
-Cairo plays the same move set when the "Cairo's moves" setting says Breath of the Wild, or with `-rider=CairoBotw`; by
-default he plays his own. The setting is saved. Changed in the Esc menu while playing Cairo, it takes over at once;
-otherwise (on the phone, or while playing Link) it waits until Cairo next comes into play. QA, reviews and benchmarks
-ignore the saved setting.
+Where a person plays, Cairo has the merged move set whenever it is built, unless the "Move set" setting picks his
+legacy moves (the character switch follows it too). QA, reviews and benchmarks keep his legacy moves (his roll, dashes
+and sword) unless the command line asks with `-rider=CairoBotw`; without the local library he has only those.
 `characters.cairo_botw` runs [`../cairo/botw.py`](../cairo/botw.py) in Blender, which retargets every Link clip onto
 Cairo's skeleton (`build/yorimichi/cairo/botw/`). Both rest poses are T-poses. Each limb and finger swings to point
 where Link's points, the hands keep their palm frames and the feet their sole frames, and the spine and head keep
@@ -122,6 +136,8 @@ solved so that planted feet stay planted, at that same scale, from Cairo's own s
 with Link's blends and actions. It also writes Cairo's move record, `Content/Data/cairo/botw.json`. In that record:
 
 - Link's action paths, gait speeds and swim hang are scaled to Cairo's size.
+- His own `DoubleJump` clip joins `DA_CairoBotw`'s actions, so his double jump is his somersault, and his own bokken
+  guard stance, parry and recoil replace Link's sword-only guard clips (with their authored timing in the record).
 - `BodyScale` converts BOTW's metres for him.
 - Link's sword, sheath, shield and paraglider are scaled with Cairo. Each piece is moved from Link's weapon bones to
   Cairo's hands in the palm's frame (`held`), and from Link's back bone to Cairo's chest (`carry`). The shield's
@@ -136,6 +152,7 @@ uv run atelier play yorimichi -- -rider=CairoBotw
 ### Review film
 
 `scenarios/botw_moves_film.py` films every move of the set, shot by shot and close up, with the move set's state
-recorded for each frame: Link with `-rider=Link`, Cairo with `-rider=CairoBotw`, each in its own game.
+recorded for each frame and the game's sounds logged: Link with `-rider=Link`, Cairo with `-rider=CairoBotw`, each in its
+own game.
 `scenarios/botw_moves_film_cut.py` captions the takes and joins them into one MP4, keeping or leaving out sections per
 take so that retakes splice in. Their docstrings give the commands.

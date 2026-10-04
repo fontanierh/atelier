@@ -141,6 +141,10 @@ def record(spec, curves, summary, scale, out, rename, speed):
     for name, action in spec['action'].items():
         clip = baked[action['clip']]
         item = element(timelines, action['as'], action['clip']) if 'as' in action else None
+        if item is not None and 'events' in action:
+            # Its windows are another element's of the same timeline (BOTW keeps them on one element).
+            donor = element(timelines, action['as'], action['events'])
+            item = {**item, 'hold_events': donor['hold_events'], 'trigger_events': donor['trigger_events']}
         entry = {'clip': rename(action['clip']), 'length': round(clip['frames'] / fps, 4),
                  'loop': bool(action.get('loop', clip['loop'])), 'root': action.get('root', 'keep'),
                  **timing(item, clip['frames'], fps)}

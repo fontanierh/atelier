@@ -1,4 +1,5 @@
-"""BOTW move set review film: every move of the player's UBotwMoveSet (Link, or Cairo with it), shot by shot, close up.
+"""Move set review film: every move of the player's merged move set (UBotwMoveSet: Link's moves with Cairo's double jump;
+Link, or Cairo with it), shot by shot, close up.
 
     atelier play yorimichi -- -nobotw -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=200 -RenderOffscreen -ForceRes
     atelier live py "TAKE='link1'; WHO='Link'" && atelier live py - < games/yorimichi/scenarios/botw_moves_film.py
@@ -9,18 +10,22 @@ The game runs under the memory guard as for botw_moves.py (720p at half scale, s
 Link at the lake also needs r.Streaming.PoolSize 120 and r.ViewDistanceScale 0.8 to stay under the guard's limit.
 
 Sections, each a run of labelled shots: on foot (idle, walk, run, sprint, sprinting out of stamina, crouch, the jumps
-and landings, the hard landing); the equipment close up (the sword and shield carried on the back from the side and
+and landings, the hard landing); the sprint alone, with its dust and speed lines; the double jump (standing, running,
+turned right round by the stick, and into the paraglider); the equipment close up (the sword and shield carried on the back from the side and
 from behind, crouched, and the paraglider in both hands from the front and the side); lock-on and the dodges (strafing, side hops, backflips); the sword (draw, combo,
-charged spin, dash attack, jump attack, sneakstrike, plunge); the shield (guard, parry, the perfect dodge's flurry
-rush, sheathe) against a Bokoblin that attacks; getting hit (from the front, behind and the side, fall damage, the
+charged spin, dash attack, jump attack, sneakstrike, plunge); the sword guard without the shield (raised, a blow
+blocked, the sword parry) and the shield (guard, parry, the perfect dodge's flurry rush, sheathe) against a Bokoblin
+that attacks, the "Shield" setting switched off and on for them; getting hit (from the front, behind and the side, fall damage, the
 knockdown at no health); the paraglider (open, glide, steer, brake, close, reopen falling, land; stamina running out);
 swimming (swim, tread, dash, climb out; sinking out of stamina); climbing (grab, the eight directions, climb jumps
 until tired, a grab from the air, let go, kick off, over the top).
 
 Runs at a fixed 60 fps step and saves every second step as a JPG (30 fps, real time). frames.json gives each saved
 frame its section, label and the move set's state (action, mode, stamina, health), which botw_moves_film_cut.py draws
-over the picture. A section that fails is logged in done.json and the film goes on with the next. Optional globals:
-TAKE; WHO, the name on the captions ('Link' or 'Cairo'); ONLY, the sections to film; REHEARSE, no frames.
+over the picture. audio.json is the game's audio log, each sound at the saved frame it starts on (-1 between shots),
+which botw_moves_film_cut.py --audio mixes under the picture. A section that fails is logged in done.json and the film goes on with the next. Optional globals:
+TAKE; WHO, the name on the captions ('Link' or 'Cairo'); ONLY, the sections to film; REHEARSE, no frames. The film
+leaves the "Shield" setting as it found it.
 Film each character in its own game (-rider=Link or -rider=CairoBotw).
 """
 import json, math, os, traceback
@@ -262,7 +267,7 @@ def refill():
 def on_foot():
     yield from place(*RUN)
     camera(3.0, 140., .3, .1)
-    label('Idle: sword and shield carried on the back')
+    label(f'Idle: {kit()} carried on the back')
     yield from wait(2.5)
     camera(3.0, 70., .35, .15)
     label('Walk')
@@ -315,13 +320,13 @@ def on_foot():
 def gear():
     yield from place(*RUN)
     camera(1.7, 90., .25, .2)
-    label('Sword and shield carried on the back, from the side')
+    label(f'{kit().capitalize()} carried on the back, from the side')
     yield from wait(2.)
     camera(1.7, 180., .35, .25)
     label('From behind')
     yield from wait(2.)
     camera(1.7, 115., .1, .0)
-    label('Crouched: the shield stays on the back')
+    label('Crouched: ' + ('the shield stays on the back' if state().get('shield') else 'the sword stays on the back'))
     tap('crouch'); yield from wait(2.5)
     tap('crouch'); yield from wait(.8)
     cut()
@@ -329,8 +334,7 @@ def gear():
     L.launch(unreal.Vector(0, 0, 2000))   # stick released, it glides down slowly onto the open run
     yield from until(lambda s: s['vz'] > 500., 1.)
     yield from until(lambda s: s['vz'] < 80., 4.)
-    tap('jump')
-    yield from until(lambda s: s['mode'] == 'glide', .6)
+    yield from open_glider()
     camera(2.2, 25., .45, .55, track='facing', turn=.3)
     label('The paraglider in both hands, from the front')
     yield from wait(2.5)
@@ -342,6 +346,110 @@ def gear():
     if state()['mode'] == 'glide':
         tap('jump')
     yield from until(grounded, 8.)
+
+
+def open_glider():
+    """Jump in the air until the paraglider opens: in the merged set the first press may be the double jump, so the
+    next one comes at its top."""
+    tap('jump')
+    s, _ = yield from until(lambda s: s['mode'] == 'glide', .3)
+    if s is None:
+        yield from until(lambda s: s['vz'] < 80., 1.5)
+        tap('jump')
+        yield from until(lambda s: s['mode'] == 'glide', .6)
+
+
+def kit():
+    return 'sword and shield' if state().get('shield') else 'sword'
+
+
+def shield_setting(on):
+    """The "Shield" setting, as the menu sets it (the move set takes it at once)."""
+    L.set_preference('shield', 1. if on else 0.)
+    yield from wait(.1)
+
+
+def sprint():
+    yield from place(*RUN)
+    camera(5.2, 80., .45, .2, track='velocity', turn=.05)
+    label("Link's sprint: dust at the heels, speed lines streaming past")
+    live.drive(1., 0., 'sprint'); yield from wait(3.2)
+    label('Stop')
+    live.drive(0); yield from wait(1.2)
+    cut()
+    yield from refill()
+
+
+def double_jump():
+    yield from place(*RUN)
+    camera(3.6, 80., .6, .6)
+    label("Double jump: jump again in the air, Cairo's forward somersault")
+    tap('jump'); yield from wait(.35)
+    tap('jump'); yield from wait(2.)
+    cut()
+    yield from place(*RUN)
+    camera(4.4, 95., .6, .5, track='velocity', turn=.06)
+    label('Running double jump')
+    live.drive(1., 0., 'run'); yield from wait(1.)
+    tap('jump'); yield from wait(.3)
+    tap('jump'); yield from wait(1.5)
+    live.drive(0); yield from wait(.8)
+    cut()
+    yield from place(*RUN)
+    camera(4.6, 90., .7, .5)
+    label('Double jump with the stick back: all the speed turned right round')
+    live.drive(1., 0., 'run'); yield from wait(1.)
+    tap('jump'); yield from wait(.3)
+    live.drive(-1., 0., 'run'); tap('jump'); yield from wait(1.)
+    live.drive(0); yield from wait(1.2)
+    cut()
+    yield from place(*RUN)
+    camera(4.6, 80., .8, .7)
+    label('Jump, double jump, then jump again: the paraglider')
+    tap('jump'); yield from wait(.3)
+    tap('jump')
+    yield from until(lambda s: s['vz'] < 60., 1.5)
+    tap('jump')
+    yield from until(lambda s: s['mode'] == 'glide', .6)
+    live.drive(1., 0., 'run')
+    yield from until(lambda s: s['mode'] != 'glide', 6.)
+    live.drive(0)
+    yield from until(grounded, 4.)
+    yield from wait(1.)
+
+
+def sword_guard():
+    yield from shield_setting(False)
+    yield from place(*RUN)
+    camera(2.6, 30., .3, .3)
+    label('No shield (the default): the guard button draws the sword and raises it')
+    live.press('guard'); yield from wait(2.2)
+    camera(3.4, 130., .5, .25)
+    bok = spawn(450., 'scripted')
+    label('Sword raised while locked on and strafing')
+    for right in (-1., 1.):
+        live.drive(0., right, 'walk'); yield from wait(1.3)
+    live.drive(0); yield from wait(.4)
+    live.press('guard_release')
+    cut(); L.botw_clear()
+    yield from place(*RUN)
+    yield from armed(True)
+    bok = spawn(320., 'camp')
+    camera(3.2, 105., .45, .3)
+    label("The sword guard blocks a Bokoblin's blow")
+    live.press('guard')
+    yield from next_blow(bok, -.1)
+    yield from wait(1.4)
+    for attempt in range(3):
+        label('Sword parry: jump while guarding, just before the blow lands' + (' (again)' if attempt else ''))
+        before = state()['parries']
+        if (yield from next_blow(bok, .07)):
+            tap('jump')
+        yield from wait(1.6)
+        if state()['parries'] > before:
+            break
+    live.press('guard_release')
+    cut(); L.botw_clear()
 
 
 def dodges():
@@ -373,7 +481,7 @@ def dodges():
 def sword():
     yield from place(*RUN)
     camera(2.4, 40., .3, .25)
-    label('Draw the sword: sword held, shield on the arm')
+    label('Draw the sword: sword held' + (', shield on the arm' if state().get('shield') else ''))
     tap('weapon'); yield from wait(1.6)
     camera(3.2, 70., .35, .2)
     label('Run with the sword drawn')
@@ -439,6 +547,7 @@ def sword():
 
 
 def shield():
+    yield from shield_setting(True)
     yield from place(*RUN)
     yield from armed(True)
     bok = spawn(450., 'scripted')
@@ -492,6 +601,7 @@ def shield():
     camera(2.4, 40., .3, .25)
     label('Sheathe the sword')
     tap('weapon'); yield from wait(1.6)
+    yield from shield_setting(st['shield'])
 
 
 def hits():
@@ -534,12 +644,11 @@ def hits():
 def glide():
     yield from place(SHORE, LAKE)
     camera(4.2, 150., .8, .3)
-    label('Launched up: jump in the air opens the paraglider')
+    label('Launched up: jump in the air (the double jump), and again: the paraglider')
     L.launch(unreal.Vector(0, 0, 3200))   # high enough to glide out over the lake and back to the shore
     yield from until(lambda s: s['vz'] > 500., 1.)
     yield from until(lambda s: s['vz'] < 80., 4.)
-    tap('jump')
-    yield from until(lambda s: s['mode'] == 'glide', .6)
+    yield from open_glider()
     yield from wait(1.)
     camera(4.2, 160., .6, .3, track='facing', turn=.04)
 
@@ -586,8 +695,7 @@ def glide():
     label('Out of stamina: the paraglider opens, then closes (stamina drained by sprinting first)')
     yield from until(lambda s: s['vz'] > 500., 1.)     # the launch lands a step later
     yield from until(lambda s: s['vz'] < 80., 4.)
-    tap('jump')
-    yield from until(lambda s: s['mode'] == 'glide', .6)
+    yield from open_glider()
     live.drive(1., 0., 'run')
     s, t = state(), 0.
     while s['mode'] == 'glide' and t < 12.:
@@ -722,8 +830,9 @@ def climb():
     yield from wait(1.8)
 
 
-SECTIONS = [('On foot', on_foot), ('Equipment', gear), ('Lock-on and dodges', dodges), ('Sword', sword), ('Shield', shield),
-            ('Getting hit', hits), ('Paraglider', glide), ('Swimming', swim), ('Climbing', climb)]
+SECTIONS = [('On foot', on_foot), ('Sprint', sprint), ('Double jump', double_jump), ('Equipment', gear), ('Lock-on and dodges', dodges),
+            ('Sword', sword), ('Sword guard', sword_guard), ('Shield', shield), ('Getting hit', hits), ('Paraglider', glide),
+            ('Swimming', swim), ('Climbing', climb)]
 SECTIONS = [s for s in SECTIONS if s[0] in (globals().get('ONLY') or [s[0] for s in SECTIONS])]
 
 
@@ -732,6 +841,7 @@ def steps():
     st['size'] = s.get('scale', .8) / .8
     st['rings'] = max(1., round(s.get('stamina', 2.)))
     st['who'] = WHO or ('Link' if s.get('scale', .8) > .79 else 'Cairo')
+    st['shield'] = bool(s.get('shield'))
     for name, fn in SECTIONS:
         st['section'] = name
         try:
@@ -761,6 +871,8 @@ def run(dt):
     except StopIteration:
         return finish()
     update_camera()
+    # Sounds start on the frame about to be saved; between shots they belong to no frame.
+    L.audio_frame(st['film'] if st['rec'] else -1)
     if st['rec']:
         if st['sim'] % 2 == 0:
             if not REHEARSE:
@@ -779,6 +891,8 @@ def save():
 
 def finish():
     live.stop('botw_moves_film'); live.drive(0); L.fixed_step(0)
+    L.set_preference('shield', 1. if st.get('shield') else 0.)
+    L.audio_log('stop', os.path.join(OUT, 'audio.json'))
     MV.restore_player_camera(); L.film_hud(False)
     save()
     json.dump({'who': st['who'], 'film_frames': st['film'], 'fps_film': 30, 'marks': st['marks'], 'errors': st['errors']},
@@ -786,6 +900,6 @@ def finish():
     unreal.log(f'BOTW FILM COMPLETE {st["who"]} {st["film"]} frames, {len(st["errors"])} failed sections')
 
 
-L.film_hud(True); L.fixed_step(60)
+L.film_hud(True); L.fixed_step(60); L.audio_log('start')
 live.behave('botw_moves_film', run)
 print('BOTW FILM started', OUT, [s[0] for s in SECTIONS])

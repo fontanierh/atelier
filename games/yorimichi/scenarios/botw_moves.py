@@ -1,5 +1,5 @@
-"""BOTW move set checks: the player's UBotwMoveSet (Link, or Cairo with it) driven through the live bridge as a player
-would drive it.
+"""Move set checks: the player's merged move set (UBotwMoveSet; Link, or Cairo with it) driven through the live bridge as
+a player would drive it.
 
     atelier play yorimichi -- -nobotw -rider=Link -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=250 -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/botw_moves.py
@@ -8,8 +8,10 @@ would drive it.
 Under the 10 GiB memory guard the game also renders at 720p and half scale (r.SetRes 1280x720w, r.ScreenPercentage 50)
 with r.Streaming.DropMips 2, set through the live bridge before the scenario; it then peaks at about 9.3 GiB.
 
-By the forest lake's cabin: a standing and a running jump, the sprint, the side hop and backflip, the sword's draw, the
-four-cut combo, the charged spin, the guard and its parry, a strike on a Bokoblin and the sheathe; the paraglider,
+By the forest lake's cabin: a standing and a running jump, the sprint, the double jump (once per jump, the glider on the
+next press; none in the legacy BOTW set, whose first press opens it), the side hop and backflip, the sword's draw, the four-cut combo, the charged spin, the guard and its parry
+with the sword (no shield) and with the shield (the "Shield" setting switched on, then put back), a strike on a
+Bokoblin, the sheathe and the guard button drawing the sword; the paraglider,
 opened at the top of a throw over the lake, steered, braked, closed and opened again; the swim it lands in, the swim
 dash and the swim back to the shore; the climb up a steep bank onto its top, and up the cabin's wall to its eave; the
 plunge and the hard landing.
@@ -149,6 +151,47 @@ def on_foot():
     yield from wait(1.)
 
 
+def double_jump():
+    place(*RUN)
+    yield from until(settled, 6.)
+    start, before = z(), state()['double_jumps']
+    live.press('jump'); live.press('jump_release')
+    seen = yield from watch(.35)
+    live.press('jump'); live.press('jump_release')
+    seen += yield from watch(.35)
+    check('double jump: a second launch in the air, no glider', state()['double_jumps'] == before + 1 and
+          max(s['vz'] for s in seen[20:]) > 500. and not any(s['glider'] for s in seen),
+          vz=round(max(s['vz'] for s in seen[20:])), actions=actions(seen))
+    check('double jump plays the somersault', any(a in ('DoubleJump', 'DoubleJumpTuck') for a in actions(seen)), actions=actions(seen))
+    shot('double_jump')
+    live.press('jump'); live.press('jump_release')
+    s, _ = yield from until(lambda s: s['mode'] == 'glide', .8)
+    check('the next press opens the paraglider', s is not None)
+    if s:
+        live.press('jump'); live.press('jump_release')
+    seen = yield from watch(.1)
+    s, _ = yield from until(grounded, 5.)
+    rise = max(x['z'] for x in seen) - start
+    check('back on the ground the double jump is ready again', s is not None and not state()['air_jump_used'],
+          rise=round(rise, 1))
+    yield from wait(1.)
+    # The legacy BOTW set ("Move set" setting): no double jump, the first press in the air opens the paraglider.
+    L.set_preference('moveset', 2.)
+    yield from until(settled, 4.)
+    before = state()['double_jumps']
+    live.press('jump'); live.press('jump_release')
+    yield from wait(.45)
+    live.press('jump'); live.press('jump_release')
+    s, _ = yield from until(lambda s: s['mode'] == 'glide', .8)
+    check('legacy BOTW set: no double jump, the glider instead', s is not None and state()['double_jumps'] == before and state()['legacy'],
+          double_jumps=state()['double_jumps'] - before)
+    if s:
+        live.press('jump'); live.press('jump_release')
+    L.set_preference('moveset', st['moveset'])
+    yield from until(grounded, 5.)
+    yield from wait(1.)
+
+
 def hops():
     place(*RUN)
     yield from until(settled, 6.)
@@ -187,14 +230,28 @@ def sword():
     live.press('attack_release')
     seen = yield from watch(1.8)
     check('charged spin', 'ChargeStart' in charged and 'ChargeSpin' in actions(seen), held=charged, released=actions(seen))
+    L.set_preference('shield', 0.)
     live.press('guard')
     seen = yield from watch(.6)
-    check('shield guard', seen[-1]['guarding'] and seen[-1]['guard_carry'] > .5, guard_carry=round(seen[-1]['guard_carry'], 2))
+    check('sword guard (no shield)', seen[-1]['sword_guard'] and seen[-1]['sword_guard_carry'] > .5 and not seen[-1]['shield'],
+          sword_guard_carry=round(seen[-1]['sword_guard_carry'], 2))
+    shot('sword_guard')
+    live.press('jump'); live.press('jump_release')
+    seen = yield from watch(.8)
+    check('sword parry (jump while guarding, no shield)', 'SwordParry' in actions(seen), actions=actions(seen))
+    live.press('guard_release')
+    yield from wait(.5)
+    L.set_preference('shield', 1.)
+    live.press('guard')
+    seen = yield from watch(.6)
+    check('shield guard', seen[-1]['guarding'] and seen[-1]['shield'] and seen[-1]['guard_carry'] > .5,
+          guard_carry=round(seen[-1]['guard_carry'], 2))
     shot('guard')
     live.press('jump'); live.press('jump_release')
     seen = yield from watch(.8)
-    check('parry (jump while guarding)', 'Parry' in actions(seen), actions=actions(seen))
+    check('parry (jump while guarding, shield)', 'Parry' in actions(seen), actions=actions(seen))
     live.press('guard_release')
+    L.set_preference('shield', 1. if st['shield'] else 0.)
     yield from wait(.5)
     # A Bokoblin standing still a step ahead takes the combo.
     here = L.player_transform().translation
@@ -212,6 +269,12 @@ def sword():
     live.press('weapon')
     seen = yield from watch(1.2)
     check('sheathe', 'SheatheSword' in actions(seen) and not seen[-1]['armed'], actions=actions(seen))
+    live.press('guard')
+    seen = yield from watch(1.4)
+    check('the guard button draws the sword', 'DrawSword' in actions(seen) and seen[-1]['armed'] and seen[-1]['guarding'],
+          actions=actions(seen))
+    live.press('guard_release'); live.press('weapon')
+    yield from wait(1.2)
 
 
 def glide():
@@ -224,7 +287,11 @@ def glide():
     yield from until(lambda s: s['vz'] < 50., 3.)
     start = L.player_transform().translation
     live.press('jump'); live.press('jump_release')
-    s, t = yield from until(lambda s: s['mode'] == 'glide' and s['glider'], .6)
+    s, t = yield from until(lambda s: s['mode'] == 'glide' and s['glider'], .3)
+    if s is None:   # the merged set's first press in the air is the double jump: the next, at its top, opens it
+        yield from until(lambda s: s['vz'] < 50., 1.5)
+        live.press('jump'); live.press('jump_release')
+        s, t = yield from until(lambda s: s['mode'] == 'glide' and s['glider'], .6)
     check('open the paraglider at the top of a throw', s is not None, after=round(t, 2))
     shot('glide_open')
     live.drive(1., 0., 'run')
@@ -348,7 +415,7 @@ def plunge():
         live.press('weapon'); yield from wait(1.)
 
 
-CHECKS = [('on_foot', on_foot), ('hops', hops), ('sword', sword), ('glide', glide), ('swim', swim), ('climb', climb),
+CHECKS = [('on_foot', on_foot), ('double_jump', double_jump), ('hops', hops), ('sword', sword), ('glide', glide), ('swim', swim), ('climb', climb),
           ('plunge', plunge)]
 CHECKS = [c for c in CHECKS if c[0] in (globals().get('ONLY') or [c[0] for c in CHECKS])]
 
@@ -358,6 +425,8 @@ def steps():
         L.switch_character(RIDER)
         yield from wait(2.)
     st['size'] = state().get('scale', .8) / .8     # the speeds checked are Link's (scale .8); a smaller body is slower
+    st['shield'] = bool(state().get('shield'))
+    st['moveset'] = 2. if state().get('legacy') else 0.
     for name, fn in CHECKS:
         st['check'] = name
         yield from fn()

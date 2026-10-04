@@ -1,5 +1,6 @@
 #include "JapanPreferences.h"
 #include "BotwRider.h"
+#include "BotwMoveSet.h"
 #include "CairoCharacter.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
@@ -56,9 +57,14 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         {TEXT("sun_height"),TEXT("Sun elevation"),48.f,5.f,80.f},
         {TEXT("sun_yaw"),TEXT("Sun direction"),15.f,-180.f,180.f}};
-    // Cairo plays Breath of the Wild's move set instead of his own (ACairoCharacter), when it is built.
-    if (ACairoCharacter::HasBotw())
-        Values.Insert({TEXT("cairo_botw"),TEXT("Cairo's moves"),0.f,0.f,1.f},Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1);
+    // The move set (UBotwMoveSet::Chosen: merged by default, Cairo's legacy moves or the legacy BOTW set) and its shield
+    // (UBotwMoveSet::SetShield: off by default, the sword guards and parries).
+    if (ACairoCharacter::HasBotw() || ABotwRider::Available().Num())
+    {
+        const int32 After = Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1;
+        Values.Insert({TEXT("shield"),TEXT("Shield"),0.f,0.f,1.f},After);
+        Values.Insert({TEXT("moveset"),TEXT("Move set"),0.f,0.f,2.f},After);
+    }
     SettingsFile=FilePath();
     UE_LOG(LogTemp,Display,TEXT("PREFERENCES file=%s"),*SettingsFile);
     SavedValues=ReadSaved();
@@ -120,7 +126,7 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
 }
 bool UJapanPreferences::IsToggle(const FString& Key)
 {
-    return Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("goofy") || Key == TEXT("cairo_botw");
+    return Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("goofy") || Key == TEXT("shield");
 }
 float UJapanPreferences::Get(const TCHAR* Key) const
 {
@@ -134,7 +140,7 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
     {
         V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
         if (IsToggle(Key)) V.Value = V.Value > .5f ? 1.f : 0.f;
-        if (Key == TEXT("stamina_rings")) V.Value=FMath::RoundToFloat(V.Value);
+        if (Key == TEXT("stamina_rings") || Key == TEXT("moveset")) V.Value=FMath::RoundToFloat(V.Value);
         Apply(); Save(); return true;
     }
     return false;
@@ -144,6 +150,13 @@ void UJapanPreferences::Apply()
     if (!Owner) return;
     Owner->SetStaminaRings(FMath::RoundToInt(Get(TEXT("stamina_rings"))));
     if (Owner->GetSkate()) Owner->GetSkate()->SetGoofy(Get(TEXT("goofy")) > .5f);
+    // The move set takes the shield and the merged or legacy BOTW rules at once; Cairo's legacy moves need the
+    // character switch (ToggleMenu).
+    if (UBotwMoveSet* Moves = Owner->GetMoves(); Moves && Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); }))
+    {
+        Moves->SetLegacy(FMath::RoundToInt(Get(TEXT("moveset"))) == UBotwMoveSet::LegacyBotw);
+        Moves->SetShield(Get(TEXT("shield")) > .5f);
+    }
     const int32 PerformanceMode = Get(TEXT("performance")) > .5f ? 1 : 0;
     const bool Desktop = Get(TEXT("desktop")) > .5f;
     const auto Set = [](const TCHAR* Name, float Value)
@@ -297,7 +310,7 @@ void UJapanPreferences::ToggleMenu()
         .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
             ? TEXT("Performance uses lighter shadows and distant detail to keep movement smooth.")
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
-    // The character switch (ABotwRider::SwitchPlayer): Cairo, with the move set the toggle below picks, and every BOTW
+    // The character switch (ABotwRider::SwitchPlayer): Cairo, with the merged move set when it is built, and every BOTW
     // character with a rider definition. The switch waits for the next tick, out of the menu's click.
     const auto Switch = [this](const FString& Name)
     {
@@ -307,7 +320,8 @@ void UJapanPreferences::ToggleMenu()
     };
     const FString Playing = ABotwRider::NameOf(Owner);
     const bool bPlayingCairo = Playing == TEXT("Cairo") || Playing == ACairoCharacter::BotwName();
-    const auto CairoName = [this] { return Get(TEXT("cairo_botw")) > .5f && ACairoCharacter::HasBotw() ? ACairoCharacter::BotwName() : FString(TEXT("Cairo")); };
+    const auto CairoName = [this] { return ACairoCharacter::HasBotw() && FMath::RoundToInt(Get(TEXT("moveset"))) != UBotwMoveSet::LegacyCairo
+        ? ACairoCharacter::BotwName() : FString(TEXT("Cairo")); };
     if (const TArray<FString> Riders = ABotwRider::Available(); Riders.Num())
     {
         TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
@@ -323,7 +337,7 @@ void UJapanPreferences::ToggleMenu()
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
     }
     TArray<FString> Toggles = {TEXT("performance"),TEXT("show_fps"),TEXT("goofy")};
-    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("cairo_botw"); })) Toggles.Add(TEXT("cairo_botw"));
+    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); })) Toggles.Append({TEXT("moveset"),TEXT("shield")});
     for (const FString& Key : Toggles)
     {
         TSharedRef<SButton> Button = SNew(SButton)
@@ -333,18 +347,32 @@ void UJapanPreferences::ToggleMenu()
                 if (Key == TEXT("goofy")) return FText::FromString(Enabled
                     ? TEXT("Skate stance: Goofy · right foot forward")
                     : TEXT("Skate stance: Regular · left foot forward"));
-                if (Key == TEXT("cairo_botw")) return FText::FromString(Enabled
-                    ? TEXT("Cairo's moves: Breath of the Wild")
-                    : TEXT("Cairo's moves: his own"));
+                if (Key == TEXT("moveset"))
+                {
+                    const int32 Choice = FMath::RoundToInt(Get(*Key));
+                    return FText::FromString(Choice == UBotwMoveSet::LegacyCairo ? TEXT("Move set: Cairo (legacy) · roll and dashes")
+                        : Choice == UBotwMoveSet::LegacyBotw ? TEXT("Move set: Breath of the Wild (legacy) · no double jump")
+                        : TEXT("Move set: merged · double jump, glider, dodges"));
+                }
+                if (Key == TEXT("shield")) return FText::FromString(Enabled
+                    ? TEXT("Shield: carried · it guards and parries")
+                    : TEXT("Shield: off · the sword guards and parries"));
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
             })
             .OnClicked_Lambda([this,Key,Switch,CairoName,bPlayingCairo]
             {
-                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);
-                // Playing Cairo, the new move set takes over at once; otherwise it waits for Cairo's turn in the switch.
-                if (Key == TEXT("cairo_botw") && bPlayingCairo) Switch(CairoName());
+                if (Key == TEXT("moveset"))
+                {
+                    // Merged, Cairo (legacy), BOTW (legacy), round again. Cairo between his legacy moves and a move set
+                    // needs the character switch; anything else takes it at once (Apply).
+                    const FString Before = CairoName();
+                    SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%3));
+                    if (bPlayingCairo && CairoName() != Before) Switch(CairoName());
+                    return FReply::Handled();
+                }
+                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);   // Apply hands the shield to the move set at once
                 return FReply::Handled();
             });
         if (!FirstControl) FirstControl = Button;
@@ -355,7 +383,7 @@ void UJapanPreferences::ToggleMenu()
         // Session-only keys are launch flags (japan/run.sh desktop), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
-        if (IsToggle(Values[I].Key)) continue;
+        if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset")) continue;   // a button above
         TSharedRef<SSlider> Slider = SNew(SSlider)
             .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
             .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });

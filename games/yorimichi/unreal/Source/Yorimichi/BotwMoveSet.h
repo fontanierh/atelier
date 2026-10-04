@@ -8,6 +8,7 @@ class FJsonObject;
 class UStaticMeshComponent;
 class USkeletalMeshComponent;
 class UAnimSequence;
+class UAtelierTrail;
 struct FHitResult;
 
 /** One action of a move set (assets/characters/botw/moves.py `record`): where its clip starts and ends, the rate it plays
@@ -32,11 +33,15 @@ struct FBotwMove
 enum class EBotwMoveMode : uint8 { Ground, Air, Glide, Climb, Swim };
 
 /**
- * A character's Breath of the Wild move set (the roster's `moves` record, assets/characters/botw/moves.toml, or Cairo's
- * retargeted copy, Content/Data/cairo/botw.json): jumping
- * and landing, the side hop and backflip, the paraglider, climbing any steep surface, swimming, and sword and shield
- * combat (the four-cut combo, the charged spin, the dash, jump and plunge attacks, the sneakstrike, the shield guard and
- * parry, lock-on strafing, the flurry rush after a perfect dodge, hit reactions). It drives the character's action clip,
+ * The player's move set, Cairo's and Link's merged (the roster's `moves` record, assets/characters/botw/moves.toml, or
+ * Cairo's retargeted copy, Content/Data/cairo/botw.json): Breath of the Wild's jumping, landing and sprint, Cairo's
+ * double jump (his own somersault, or a tucked one turned by the game), the side hop and backflip, the paraglider,
+ * climbing any steep surface, swimming, and sword combat (the four-cut combo, the charged spin, the dash, jump and plunge
+ * attacks, the sneakstrike, the guard and parry, lock-on strafing, the flurry rush after a perfect dodge, hit reactions).
+ * The shield is optional (the "Shield" setting, off by default): with it the shield guards and parries, without it the
+ * sword does, on BOTW's sword-only clips and the same timelines. There is no dash. The "Move set" setting can also bring
+ * back the legacy BOTW set (SetLegacy: no double jump, the shield always carried) or Cairo's legacy moves (no
+ * UBotwMoveSet at all; ACairoCharacter). It drives the character's action clip,
  * timing every action by BOTW's own action timelines, and moves the capsule itself while gliding, climbing and swimming
  * (UJapanCharacterMovement's custom mode). It names actions and equipment slots only, never a character's bones or
  * clips, so any character with the actions and a carry bone map can use it. Stamina is BOTW's: 1000 to a ring.
@@ -66,6 +71,16 @@ public:
     /** A button through the character's input handler: "jump", "jump_release", "dodge", "attack", "attack_release",
      *  "guard", "guard_release", "weapon", "crouch", "dash". True when the move set took it. */
     bool Press(FName Button);
+    /** The "Move set" setting: 0 merged (the default), 1 Cairo's legacy moves, 2 the legacy BOTW set; -moveset=merged,
+     *  cairo or botw on the command line decides instead. */
+    enum EChoice : int32 { Merged = 0, LegacyCairo = 1, LegacyBotw = 2 };
+    static int32 Chosen();
+    /** The legacy BOTW set: no double jump, the shield always carried, the guard button only locking on when sheathed. */
+    void SetLegacy(bool bOn);
+    bool IsLegacy() const { return bLegacy; }
+    /** The "Shield" setting: carry the shield and guard and parry with it, or leave it off and use the sword. */
+    void SetShield(bool bOn);
+    bool HasShield() const { return bShield || bLegacy; }
     /** The menu opened: buttons held down are let go without acting. */
     void DropHolds() { bAttackHeld = bGuardHeld = false; }
     /** An enemy strike: 0 hit, 1 parried, 2 dodged, 3 absorbed (guarded or recovering) (UWandererSwordComponent's contract). */
@@ -80,12 +95,14 @@ public:
     bool HoldsStamina() const { return Mode != EBotwMoveMode::Ground || bCharging; }
     bool IsArmed() const { return bArmed; }
     bool IsGuarding() const { return bGuardHeld && bArmed; }
+    bool IsSwordGuarding() const { return IsGuarding() && !HasShield(); }
     bool IsLocked() const { return bLocked; }
     bool IsDown() const { return bDown; }
     bool InFlurry() const { return FlurryTime > 0.f; }
     /** Carry layers of the animation graph: the sword arm's pose over locomotion, and the raised shield. */
     float SwordCarryWeight() const { return SwordCarry; }
     float GuardWeight() const { return GuardCarry; }
+    float SwordGuardWeight() const { return SwordGuardCarry; }
     float GetMaxWalkSpeed(float Default) const;
     float GetParam(const TCHAR* Key, float Default = 0.f) const;
     const FBotwMove* Find(FName Name) const { return Moves.Find(Name); }
@@ -93,6 +110,7 @@ public:
     int32 HitsLanded() const { return HitCount; }
     int32 Parries() const { return ParryCount; }
     int32 Dodges() const { return DodgeCount; }
+    int32 DoubleJumps() const { return DoubleJumpCount; }
     /** Live and QA: the facts the scenarios check, as JSON. */
     FString Describe() const;
 
@@ -107,6 +125,7 @@ private:
     UPROPERTY() TMap<FName, TObjectPtr<UStaticMeshComponent>> Props;
     UPROPERTY() TObjectPtr<USkeletalMeshComponent> Glider;
     UPROPERTY() TObjectPtr<UAnimSequence> GliderClip;
+    UPROPERTY() TObjectPtr<UAtelierTrail> BladeTrail;
     TMap<FName, FBotwMove> Moves;
     TMap<FString, float> Params;
     TMap<FName, FSlot> Slots;
@@ -121,6 +140,13 @@ private:
     float SinceGrounded = 0.f, FallSpeed = 0.f, FallStartZ = 0.f, NoClimb = 0.f, PushTime = 0.f, LockYaw = 0.f;
     FVector HopVelocity = FVector::ZeroVector;
     int32 Combo = 0;
+    // The double jump: once per time in the air. A tucked one (no somersault clip) turns the mesh about its middle.
+    bool bAirJumpUsed = false;
+    float FlipTime = -1.f, FlipAngle = 0.f;
+    FVector FlipPivot = FVector::ZeroVector;   // in the capsule's frame
+    float FlipHips = 0.f, FlipLift = 0.f, FlipSettle = 0.f;   // the hips' height (mesh frame) at take-off; the mesh's lift
+    FQuat MeshBaseRotation = FQuat::Identity;
+    bool bMeshTurned = false;
     // Driven clips: where the clip started and how its path maps onto the world.
     FVector DriveOrigin = FVector::ZeroVector, DriveForward = FVector::ForwardVector, DriveRight = FVector::RightVector, DriveUp = FVector::UpVector;
     FVector DriveScale = FVector::OneVector;   // fitted to a ledge: forward, right, up
@@ -150,9 +176,13 @@ private:
     FVector SafeShore = FVector::ZeroVector;
     bool bHasSafeShore = false;
     // Combat
-    float SwordCarry = 0.f, GuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
+    bool bShield = false, bLegacy = false;
+    float SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
     bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
-    int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, Strength = 1;
+    int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, DoubleJumpCount = 0, Strength = 1;
+    // Effects: the sprint's dust and speed lines, the glider's wind.
+    float SprintFX = 0.f, GlideFX = 0.f;
+    bool bWasSprinting = false;
     TSet<TWeakObjectPtr<AActor>> HitThisSwing;
     TArray<FVector> PreviousBlade;
     FVector BladeBase = FVector::ZeroVector, BladeTip = FVector::ZeroVector;   // in the sword mesh's frame
@@ -193,6 +223,9 @@ private:
     void AdvanceFlurry();
     void AdvanceEquipment(float Dt);
     void AdvanceMeshOffset(float Dt);
+    void AdvanceEffects(float Dt);
+    /** How far the hips have drawn up into the tuck since take-off (capsule cm): the mesh rises that much. */
+    float HipLift() const;
     void PhysGlide(float Dt);
     void PhysClimb(float Dt);
     void PhysSwim(float Dt);
@@ -201,7 +234,10 @@ private:
     bool CanJump() const;
     bool CanDodge() const;
     bool CanGlide() const;
+    bool CanDoubleJump() const;
     void StartJump();
+    void StartDoubleJump();
+    void AdvanceDoubleJump(float Dt);
     void StartHop();
     void OpenGlider();
     void CloseGlider(bool bLanding);
@@ -234,7 +270,8 @@ private:
     bool IsUnawareTarget(AActor* Actor) const;
     void SweepBlade();
     void BladePoints(TArray<FVector>& Out) const;
-    FVector ShieldPoint() const;
+    /** Where a guard meets a blow: the shield, or without it the sword's blade. */
+    FVector GuardPoint() const;
     /** BOTW's metres to the character's centimetres: the record's BodyScale, else the mesh's scale. */
     float Scale() const;
     float Gravity() const;
