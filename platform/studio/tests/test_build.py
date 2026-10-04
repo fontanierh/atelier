@@ -2,7 +2,7 @@ import tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from atelier.build import Step, Python, fingerprint, order
+from atelier.build import Step, Python, UnrealScript, fingerprint, order
 
 
 def steps():
@@ -67,6 +67,13 @@ class BuildTests(unittest.TestCase):
                 with patch('atelier.build.paths.REPO', repo), patch('atelier.build.paths.build_root', return_value=output):
                     fingerprints.append(fingerprint(step, {}))
             self.assertEqual(*fingerprints)
+
+    def test_import_configuration_invalidates_its_cached_output(self):
+        script = Path('import.py')
+        normal = Step('import', [UnrealScript(script, 'done', null_rhi=True)])
+        seed = Step('import', [UnrealScript(script, 'done', null_rhi=True,
+                                          args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0',))])
+        self.assertNotEqual(fingerprint(normal, {}), fingerprint(seed, {}))
 
 
 if __name__ == '__main__':

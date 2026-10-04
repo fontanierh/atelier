@@ -55,11 +55,12 @@ class UnrealScript:
     marker: str
     null_rhi: bool = False
     env: tuple = ()          # (("NAME", "value"), ...)
+    args: tuple = ()         # additional editor arguments for this import
 
     def argv(self, ctx):
         command = [str(ctx.unreal_cmd), str(ctx.uproject), '-run=pythonscript', f'-script={self.script}',
                    '-unattended', '-nop4', '-nosplash', '-stdout', '-AllowStdOutLogVerbosity']   # unreal.log lines reach stdout
-        return command + (['-NullRHI'] if self.null_rhi else [])
+        return command + (['-NullRHI'] if self.null_rhi else []) + list(self.args)
 
 
 @dataclass

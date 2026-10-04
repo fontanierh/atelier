@@ -241,7 +241,11 @@ def steps(ctx):
              about='south-west props, the terrain and the sea'),
         Step('unreal.mega', [UnrealScript(SCRIPTS / 'import_mega.py', 'MEGA IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_mega.py'], needs=['unreal.world', 'world.mega'], heavy=True, about='the mini-mega ramp'),
-        Step('unreal.megapark', [UnrealScript(SCRIPTS / 'import_megapark.py', 'MEGAPARK IMPORT COMPLETE', null_rhi=True)],
+        # Do not build distance fields or cards while replacing the seed mesh's material sections: UE 5.8 can read
+        # that map concurrently. The final meshes already disable distance fields; normal runtime settings build
+        # their cards once the imported meshes and material slots are stable.
+        Step('unreal.megapark', [UnrealScript(SCRIPTS / 'import_megapark.py', 'MEGAPARK IMPORT COMPLETE', null_rhi=True,
+                                            args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
              inputs=[SCRIPTS / 'import_megapark.py'], needs=['unreal.compile', 'world.megapark', 'world.megapark_restyle'],
              outputs=[GAME / 'unreal' / 'Content' / 'MegaPark' / 'Maps' / 'SuperUltraMegaPark.umap'],
              heavy=True, about='editable standalone Super Ultra Mega Park level (/Game/MegaPark)'),
