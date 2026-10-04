@@ -95,7 +95,8 @@ def patch_build_script(text, cache, workers):
         INVOCATION + ' ' + shlex.quote('-XmlConfigCache=' + str(cache / 'remote-xmlconfig.bin')) + f' -MaxParallelActions={workers}',
         END,
     ])
-    return text.replace(INVOCATION, fragment, 1)
+    # The stock wrapper also echoes this exact command. Replace only the executable line, or it runs UBT twice.
+    return re.sub(r'(?m)^' + re.escape(INVOCATION) + '$', lambda match: fragment, text, count=1)
 
 
 def _sha(path):
@@ -172,6 +173,7 @@ def prepare_headless(root, workers=3):
             # explicit command-line defaults, so protected Documents is never probed for BuildConfiguration.xml.
             (cache / 'remote-xmlconfig.bin').write_bytes(struct.pack('<iii', 2, 0, 0))
             wrapper.write_text(new_wrapper)
+            wrapper.chmod(wrapper.stat().st_mode | 0o111)
             shader_config.write_text(new_shaders)
             state_file.write_text(json.dumps(dict(engine=str(root), version=version, workers=workers,
                 source_sha256=_sha(source), dll_sha256=_sha(dll)), indent=2) + '\n')

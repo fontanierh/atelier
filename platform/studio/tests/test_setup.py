@@ -20,11 +20,13 @@ def test_user_directory_patch_is_explicit_and_idempotent():
 
 def test_wrapper_quotes_cache_paths_and_replaces_only_its_own_block(tmp_path):
     cache = tmp_path / "cache with spaces and a ' quote"
-    original = '#!/bin/sh\n' + setup.INVOCATION + '\nExitCode=$?\n'
+    original = '#!/bin/sh\necho Running ' + setup.INVOCATION + '\n' + setup.INVOCATION + '\nExitCode=$?\n'
     patched = setup.patch_build_script(original, cache, 3)
     command = next(line for line in patched.splitlines() if line.startswith('dotnet '))
     assert shlex.split(command)[-2:] == ['-XmlConfigCache=' + str(cache / 'remote-xmlconfig.bin'), '-MaxParallelActions=3']
     assert setup.patch_build_script(patched, cache, 3) == patched
+    assert ('echo Running ' + setup.INVOCATION + '\n') in patched
+    assert len([line for line in patched.splitlines() if line.startswith('dotnet ')]) == 1
     assert '-MaxParallelActions=2' in setup.patch_build_script(patched, cache, 2)
     assert 'ExitCode=$?' in patched
     with pytest.raises(ValueError):
@@ -50,7 +52,7 @@ def engine(tmp_path, monkeypatch):
     files = {
         'Engine/Build/Build.version': json.dumps(dict(MajorVersion=5, MinorVersion=8, PatchVersion=2, Changelist=56702186)),
         'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs': setup.METHOD + '\t\t\treturn null;\n\t\t}\n',
-        'Engine/Build/BatchFiles/Mac/Build.sh': '#!/bin/sh\n' + setup.INVOCATION + '\nExitCode=$?\n',
+        'Engine/Build/BatchFiles/Mac/Build.sh': '#!/bin/sh\necho Running ' + setup.INVOCATION + '\n' + setup.INVOCATION + '\nExitCode=$?\n',
         'Engine/Config/BaseEngine.ini': '[DevOptions.Shaders]\nNumUnusedShaderCompilingThreads=3\nNumUnusedShaderCompilingThreadsDuringGame=4\nPercentageUnusedShaderCompilingThreads=50\n',
         'Engine/Binaries/DotNET/UnrealBuildTool/EpicGames.Build.dll': 'original binary',
     }
@@ -100,6 +102,7 @@ def test_repeat_setup_skips_rebuild_but_detects_replaced_binary(engine, monkeypa
     setup.prepare_headless(root)
     wrapper = root / 'Engine/Build/BatchFiles/Mac/Build.sh'
     first = wrapper.read_bytes()
+    assert wrapper.stat().st_mode & 0o111 == 0o111
     setup.prepare_headless(root)
     assert len(calls) == 1 and wrapper.read_bytes() == first
     (root / 'Engine/Binaries/DotNET/UnrealBuildTool/EpicGames.Build.dll').write_text('vendor update')
