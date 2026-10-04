@@ -170,12 +170,21 @@ def prepare_headless(root, workers=3):
                    and state.get('xml_source_sha256') == _sha(xml_source) and state.get('ubt_dll_sha256') == _sha(ubt_dll))
         previous_binaries = {binaries / name: (binaries / name).read_bytes() if (binaries / name).exists() else None
                              for name in binary_names}
-        for file in (source, xml_source, wrapper, shader_config, *(binaries / name for name in binary_names)):
+        files = (source, xml_source, wrapper, shader_config, *(binaries / name for name in binary_names))
+        modes = {file: file.stat().st_mode & 0o7777 for file in files if file.exists()}
+        for file in modes:
+            if not os.access(file, os.W_OK) and file.stat().st_uid != os.getuid():
+                raise PermissionError(f'Headless setup needs write access to the installed engine: {file}')
+        for file in files:
             backup = cache / 'originals' / file.relative_to(root)
             if file.exists() and not backup.exists():
                 backup.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(file, backup)
         try:
+            # Epic's installer marks some source files read-only. Temporarily allow owner writes, then restore modes.
+            for file, mode in modes.items():
+                if file.stat().st_uid == os.getuid():
+                    file.chmod(mode | 0o200)
             if not current or new_source != original_source or new_xml != original_xml:
                 source.write_text(new_source)
                 xml_source.write_text(new_xml)
@@ -214,6 +223,9 @@ def prepare_headless(root, workers=3):
                 else:
                     file.write_bytes(contents)
             raise
+        finally:
+            for file, mode in modes.items():
+                file.chmod(mode | 0o111 if file == wrapper else mode)
     print(f'Headless toolchain ready ({workers} workers, nice 10); originals and logs: {cache}')
     return 0
 

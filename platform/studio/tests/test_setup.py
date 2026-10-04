@@ -87,6 +87,25 @@ def test_failed_managed_build_restores_source_wrapper_and_binary(engine, monkeyp
         assert (root / relative).read_text() == contents
 
 
+def test_read_only_installer_files_are_repaired_and_keep_their_modes(engine, monkeypatch):
+    root, files = engine
+    for relative in files:
+        (root / relative).chmod(0o444)
+
+    def rebuild(command, folder, **kwargs):
+        output = Path(command[command.index('-o') + 1])
+        output.mkdir(parents=True, exist_ok=True)
+        for name in ('EpicGames.Build.dll', 'UnrealBuildTool.dll'):
+            (output / name).write_text('patched binary')
+        return 0
+
+    monkeypatch.setattr(setup.guarded, 'run', rebuild)
+    setup.prepare_headless(root)
+    for relative in files:
+        expected = 0o555 if relative.endswith('/Build.sh') else 0o444
+        assert (root / relative).stat().st_mode & 0o777 == expected
+
+
 def test_unknown_engine_is_refused_before_any_mutation(engine):
     root, files = engine
     file = root / 'Engine/Build/Build.version'
