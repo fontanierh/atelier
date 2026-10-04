@@ -3,6 +3,16 @@
 #include "Engine/DeveloperSettings.h"
 #include "SkateSettings.generated.h"
 
+/** Which simulation rides the board. */
+UENUM()
+enum class ESkateBackend : uint8
+{
+    /** The recovered native session alone (RUNTIME.md): its own physical rider and board. The reference for tests. */
+    Native,
+    /** Ride (RIDE.md): Native's session rides the board under Ride's physical body, transitions and bails. */
+    Ride
+};
+
 /** What skateboarding needs from the game, set in its DefaultGame.ini under [/Script/AtelierSkate.SkateSettings]. */
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Atelier Skate"))
 class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
@@ -10,6 +20,10 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
+    /** The simulation that rides the board; the console variable skate.Backend overrides it on the next mount. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Ride;
+    /** The backend the next mount uses: skate.Backend when it names one, else Backend. */
+    static ESkateBackend ActiveBackend();
     /** Original controller preset: easy, normal or hardcore. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
     /** 0 loose / 1 tight; feeds the original steering scalar. */
@@ -28,6 +42,9 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath WheelMesh;
+    /** A masked material for the board's parts with a scalar parameter Dissolve (0 whole, 1 gone): the Ride backend
+     *  dissolves the board in and out with it (RIDE.md, "Transitions"). Without one the board shows and hides. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath BoardDissolveMaterial;
     /** Content folder of the board sounds: loops roll_01, grind_01, slide_01, skid_01, scrape_01 and one-shot banks
      *  <cue>_01.. (pop, land, ...). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString SoundFolder;

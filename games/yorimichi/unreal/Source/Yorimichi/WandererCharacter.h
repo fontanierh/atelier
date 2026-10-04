@@ -73,6 +73,7 @@ public:
     virtual float GetSkateMouseSensitivity() const override { return MouseSensitivity; }
     virtual FName GetSkateBone(FName Contract) const override;
     virtual float GetSkateBoardScale() const override;
+    virtual bool CanCarrySkateBoard() const override;
     FVector2D GetMoveIntent() const { return MoveIntent; }
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
@@ -157,6 +158,7 @@ private:
     float ActionSourceStartTime = 0.f, ActionPlayRate = 1.f;
     FSprintStamina Stamina;
     bool bSprintHeld=false;
+    bool bSprintTakeOver=false;   // a sprint press still to take over from the skateboard on foot
     float MouseSensitivity = .4f, PreferredFOV = 70.f, ReadyTime = 0.f;
     float ShakeTrauma = 0.f, ShakeClock = 0.f, DamageFlash = 0.f;
     bool bActionLoops = false, bJog = false, bWalk = false;
@@ -245,6 +247,7 @@ private:
     void Dash(const FInputActionValue& Value);
     void ReleaseJump(const FInputActionValue& Value);
     void ToggleSkateboard(const FInputActionValue& Value);
+    void SkateboardHand(const FInputActionValue& Value);
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);
     void ToggleCrouch(const FInputActionValue& Value);
@@ -266,7 +269,10 @@ private:
     void AdvanceMapReview(float Dt);
     void ToggleMouse(const FInputActionValue& Value);
     void Screenshot(const FInputActionValue& Value);
-    bool CanAct() const;
+    /** bOverBoard: a move that takes over from the skateboard on foot (TakeOverFromSkate) once the skate component lets it. */
+    bool CanAct(bool bOverBoard = false) const;
+    /** On foot with the skateboard, the character's own move takes over from it (USkateComponent::YieldToCharacter). */
+    bool TakeOverFromSkate(bool bOwnVelocity);
     /** A button for the move set, when there is one and nothing else (a menu, the board, the boat) has the input. */
     bool PressMove(FName Button);
     bool StandForAction();

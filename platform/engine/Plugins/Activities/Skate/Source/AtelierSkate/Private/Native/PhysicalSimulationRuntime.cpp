@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "PhysicalSimulationRuntime.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -82,9 +84,10 @@ Vec4 GroundNormalFilter::Update(Vec4 control,Vec4 input)
 }
 GroundOrientation::GroundOrientation(const GroundOrientationSettings& s)
     :ground_filter(GroundNormalFilter::Initialized(s.ground_normal_smoothing,{0,1,0,0})),slow_filter(GroundNormalFilter::Initialized(s.up_vector_smoothing_slow,{0,1,0,0})),fast_filter(GroundNormalFilter::Initialized(s.up_vector_smoothing_fast,{0,1,0,0})){}
-void GroundOrientation::Reset(){dynamic_up=up=target=ground_normal={0,1,0};up_velocity={};ground_blend=0;}
+void GroundOrientation::Reset(){dynamic_up=up=target=ground_normal={0,1,0};up_velocity={};ground_blend=0;fault.clear();}
 void GroundOrientation::Update(const GroundOrientationSettings& s,GroundOrientationInput input)
 {
+    const auto entry_up=up,entry_velocity=up_velocity,entry_ground=ground_normal;const float entry_blend=ground_blend;
     const Vec3 up_axis{0,1,0};const auto normalized_com=SafeNormal(input.com_to_deck,{});const float amount=s.dynamic_up_vs_ground_y.Evaluate(input.ground_normal.y);
     const auto prediction=SafeNormal(PhysicalBlend(ground_normal,PhysicalAdd(up_axis,Subtract(input.dynamic_up,normalized_com)),amount),{});
     dynamic_up=input.dynamic_up;ground_normal=Xyz(ground_filter.Update(s.ground_normal_smoothing,Lanes(input.ground_normal)));
@@ -123,6 +126,17 @@ void GroundOrientation::Update(const GroundOrientationSettings& s,GroundOrientat
     if(0.0f>Dot3(up_velocity,desired_velocity))up_velocity=Scale(up_velocity,s.anti_wobble_damping);
     if(input.prevent_up_behind_board&&Dot3(up,input.effective_board_forward)<0.0f){const auto right=PhysicalCross(up,input.effective_board_forward);up=SafeNormal(PhysicalCross(input.effective_board_forward,right),up);up_velocity=Scale(up_velocity,0.5f);}
     slow_filter.PublishCurrent(Lanes(up));fast_filter.PublishCurrent(Lanes(up));
+    if(fault.empty()&&!(std::isfinite(up.x)&&std::isfinite(up.y)&&std::isfinite(up.z)))
+    {
+        // Hexadecimal floats: a residual too small for decimal formatting (a denormal) still shows.
+        const auto f=[](float x){char text[32];std::snprintf(text,sizeof text,"%a",double(x));return std::string(text);};
+        const auto v=[&f](Vec3 a){return "("+f(a.x)+","+f(a.y)+","+f(a.z)+")";};
+        fault="up non-finite: up "+v(entry_up)+" velocity "+v(entry_velocity)+" ground "+v(entry_ground)+" blend "+f(entry_blend)
+            +" | com_to_deck "+v(input.com_to_deck)+" wheel_normal "+v(input.ground_normal)+" dynamic_up "+v(input.dynamic_up)+" speed "+f(input.speed)
+            +" wheels "+std::to_string(input.wheel_contact_count)+" balance "+f(input.animation_balance)+" deck_angle "+f(input.deck_angle_curve_input)
+            +" board_up "+v(input.board_up)+" board_forward "+v(input.board_forward)+" effective_forward "+v(input.effective_board_forward)+" previous_right "+v(input.previous_reckoning_right)
+            +" | target "+v(target)+" ground_after "+v(ground_normal)+" velocity_after "+v(up_velocity);
+    }
 }
 float SpeedAndSlopeSettings::Calculate(float ground_normal_y,float forward_speed) const
 {

@@ -68,6 +68,9 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
             float Number = 0;
             if (LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
         }
+    // The skating engine is the game's config (Ride); Native is a console-only reference (skate.Backend), so an engine
+    // saved by an older menu no longer applies.
+    SavedValues.Remove(TEXT("skate_engine"));
     for (TActorIterator<APostProcessVolume> It(Owner->GetWorld()); It; ++It)
         for (FWeightedBlendable& Blend : It->Settings.WeightedBlendables.Array)
             if (UMaterialInterface* Source = Cast<UMaterialInterface>(Blend.Object))

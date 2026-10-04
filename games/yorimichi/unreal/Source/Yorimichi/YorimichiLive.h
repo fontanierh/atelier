@@ -18,6 +18,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Drive(FVector2D Intent, int32 Gait = 1);
     /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
+    /** Change a setting as the Esc menu and the phone do (UJapanPreferences::SetValue, saved); false for an unknown key. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool SetPreference(const FString& Key, float Value);
     /** A BOTW move set's state (UBotwMoveSet::Describe: mode, action, stamina, glider, wall, target, counts) as JSON;
      *  "{}" when the player has none. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString MoveState();
@@ -28,7 +30,7 @@ public:
     /** Skateboarding (docs/SKATE.md): get on or off; hold skate. controls (sticks: x right, y away from the player) until
      *  SkateRelease; the ride's state as text; put the rider on the board at a ground point; the skate pier's spawn. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateToggle();
-    UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateInput(FVector2D Left, FVector2D Right, bool Push = false, bool Brake = false, bool Powerslide = false, bool GrabLeft = false, bool GrabRight = false);
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateInput(FVector2D Left, FVector2D Right, bool Push = false, bool Brake = false, bool Powerslide = false, float GrabLeft = 0, float GrabRight = 0);
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateRelease();
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateState();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkatePlace(FVector GroundPoint, float Yaw);

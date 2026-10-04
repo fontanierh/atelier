@@ -7,6 +7,15 @@
 namespace atelier::skate
 {
 bool GestureEventPermitted(std::string_view name,std::uint32_t flags,std::uint32_t physical_state,const IntentMap& action);
+// One recognizer's match in the last Publish, in manager order (the right stick's sets, then the left's). An
+// observation for hosts (Ride's pop request); Publish never reads it back.
+struct GestureEventTrace
+{
+    std::uint8_t set=0;              // authored set: main, rotated90, rotated_minus90, air, fingerflip, left, step
+    std::string name;                // the pattern's name
+    GestureRecognition recognition{};
+    bool permitted=false;            // GestureEventPermitted: published into the action intents
+};
 class GestureInputPublication
 {
 public:
@@ -16,9 +25,11 @@ public:
         std::uint32_t physical_state,IntentMap& action,std::string& error);
     std::optional<std::string_view> HeldPattern() const
     { return held_pattern_ ? std::optional<std::string_view>(*held_pattern_) : std::nullopt; }
+    const std::vector<GestureEventTrace>& LastEvents() const { return trace_; }
 private:
     std::vector<std::pair<std::uint32_t,GestureRecognizer>> recognizers_;
     std::array<std::uint8_t,2> maximum_misses_{};
     std::optional<std::string> held_pattern_;
+    std::vector<GestureEventTrace> trace_;
 };
 }

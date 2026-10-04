@@ -6,7 +6,9 @@ contacts and constraints, steering and pushes, Flick-It gestures, manuals and po
 landings and bails, with the recovered animation graphs, trick scoring and skating camera. The game supplies nearby
 static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
 `Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two and retargets the solved rider onto the game's
-character. [RUNTIME.md](RUNTIME.md) lists the session's systems, the data bundle and how both are verified.
+character. Under the Ride backend the character's body is an active ragdoll that takes over in bails and plays the
+transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's systems, the data
+bundle and how both are verified.
 
 ## Adding it to a game
 
@@ -40,11 +42,27 @@ character. [RUNTIME.md](RUNTIME.md) lists the session's systems, the data bundle
 | `GetSkateMouseSensitivity()` | The player's mouse sensitivity (default 0.4); scales the mouse flick |
 | `GetSkateBone(Contract)` | The rider's bone for a humanoid contract name, `NAME_None` when it has none (default: the name itself); the retargeter finds every bone through it |
 | `GetSkateBoardScale()` | The visible board's size (default 1): it grows about the wheels' contact and the pose rises onto its deck; the physics keep the standard board |
+| `CanCarrySkateBoard()` | Ride only: the hands are free to carry the board on foot (default true); false puts a carried board away and refuses the board button |
 
 `Toggle()` mounts only on the ground and not crouched. The board starts at the player's feet, aligned with their
 travel above 30 cm/s, and keeps their velocity. Stepping off works only on the ground (not in the air, on a rail or
 in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `StowImmediately()`, `SetGoofy()`,
 `PlaceAt()` and `Launch()` serve the game and QA; `SetScriptedInput()` replaces the player's controls.
+
+## Backends
+
+`USkateSettings::Backend` picks the backend, and the console variable `skate.Backend` (`Native` or `Ride`) overrides it
+from the next mount on. Both ride the same `GameplaySession` and serve the same `ISkateRider`, controls, board meshes,
+sounds and HUD getters.
+
+- **Ride**: the backend games ship, described in [RIDE.md](RIDE.md). The session rides the board under the
+  character's own body: an active ragdoll that Physics Control drives toward the retargeted pose
+  (`skate.RidePhysical 0` shows the pose alone), Chaos bails and get-ups, and transitions on and off the board played
+  from the native clips. The game imports the clips as Unreal assets under `/Game/SkateRide` (`SK_SkateRider`,
+  `MDT_SkateRider` and the clips in `Clips/B0` and `Clips/B1`) with its own build step. `skate.RideTune` overrides the
+  transitions' tuning live (`Name=Value` words, names as in `RideTuning.h`).
+- **Native**: the session's pose on the character with no physical body, no transitions and no Chaos bails. It is
+  the reference that QA and replays compare the Ride backend against, not a backend for players.
 
 ## Settings
 
@@ -52,6 +70,7 @@ in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `S
 
 | Key | Default | Meaning |
 | --- | --- | --- |
+| `Backend` | `Ride` | `Ride` (the ride) or `Native` (the reference; see Backends); `skate.Backend` overrides it on the next mount |
 | `Difficulty` | `normal` | Recovered controller preset: `easy`, `normal` or `hardcore` |
 | `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the recovered steering scalar |
 | `PopHeightScale` | 1 | 0.5 to 2; scales the recovered jump-height presets |
@@ -60,6 +79,7 @@ in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `S
 | `PushPowerScale` | 1 | 0.5 to 3; scales the planted-foot push propulsion |
 | `VertAssist` | 0 | 0 to 1; how far short of vertical a quarter pipe still sends a straight air back into it (1 reaches lips of about 50°) |
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
+| `BoardDissolveMaterial` | none | Ride only: a masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
 | `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue) |
 
@@ -76,6 +96,7 @@ attenuate over a 500 cm inner radius and 4500 cm falloff.
 | Action | Controller | Keyboard and mouse |
 | --- | --- | --- |
 | Get on / off | The game's button | The game's key |
+| Board to the hand / put it away (Ride, on foot) | The game's button (`RecallBoard()`) | The game's key |
 | Push | A (X pushes mongo) | W or Up |
 | Brake | B | S or Down |
 | Steer, spin | Left stick | A / D or Left / Right |
@@ -127,6 +148,11 @@ output from a previous ride never moves a new one.
   rebuild is retried 20 m further on.
 - **Input.** Each frame the component samples the controls into an Xbox-style packet and steps the session with the
   frame time; the session runs whole 60 Hz ticks.
+- **Lockstep.** By default the game thread sends the next step only once the last one's pose is back, so a slow step
+  runs later and merges two frames' time. Under a fixed time step or frame rate (`skate.Lockstep` -1, the default), or
+  with `skate.Lockstep 1`, each frame waits up to 2 s for the last step and a collision rebuild installs on the frame
+  after it starts, so the same controls ride the same way: `scenarios/ride_session.py` replays a recorded session to
+  the bit. The state string then shows the controls sent (`pad=`) and the collision snapshots sent (`world=`).
 - **Retargeting.** The solved skeleton is mapped onto the host's `root`, `pelvis`, `spine`, `spine_mid`, `chest`,
   `neck`, `head`, clavicles, arms, hands, thighs, shins, feet and toes (`_L` / `_R`). The pose is scaled by the
   hip-to-foot height ratio, keeps the host's bind bone lengths and scale, and fits the feet to the solved targets with
@@ -140,7 +166,8 @@ output from a previous ride never moves a new one.
   `Air` states the air, anything else the ground. The HUD getters (`GetComboLine`, `GetComboAlpha`, `GetScore`,
   `GetStatus`, `GetSpeed`, `GetCameraYaw`) read from it.
 - **Errors.** Missing or corrupt data, or a session error, logs `SKATE: <message>`, shows it on screen and stows the
-  board; the player keeps walking.
+  board; the player keeps walking. Under the Ride backend a session error during a ride bails the body instead and
+  loads a fresh session (see [RIDE.md](RIDE.md#failures)).
 
 ## Data and limits
 

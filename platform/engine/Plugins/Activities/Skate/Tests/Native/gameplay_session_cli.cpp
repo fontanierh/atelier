@@ -443,6 +443,7 @@ bool Run(int argc,char** argv,std::string& error)
 struct RunContext {int argc;char** argv;bool success=false;std::string error;};
 void* RunThread(void* data)
 {
+    atelier::skate::FlushDenormalsToZero();
     auto& context=*static_cast<RunContext*>(data);
     context.success=Run(context.argc,context.argv,context.error);return nullptr;
 }

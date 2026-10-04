@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "NativeMath.h"
+#if defined(__x86_64__) || defined(_M_X64)
+#include <xmmintrin.h>
+#endif
 #include <cstring>
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -81,6 +84,21 @@ float RefinedReciprocal(float value, unsigned refinements)
         inverse = std::fma(inverse,error,inverse);
     }
     return inverse;
+}
+bool FlushDenormalsToZero()
+{
+#if defined(__aarch64__) && (defined(__clang__) || defined(__GNUC__))
+    std::uint64_t control;
+    __asm__ volatile("mrs %0, fpcr" : "=r"(control));
+    control |= std::uint64_t(1) << 24;
+    __asm__ volatile("msr fpcr, %0" : : "r"(control));
+    return true;
+#elif defined(__x86_64__) || defined(_M_X64)
+    _mm_setcsr(_mm_getcsr() | 0x8040);
+    return true;
+#else
+    return false;
+#endif
 }
 float InverseLengthSquared(float value, unsigned refinements)
 {

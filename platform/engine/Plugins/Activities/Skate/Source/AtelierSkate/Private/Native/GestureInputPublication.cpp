@@ -55,7 +55,7 @@ bool GestureInputPublication::Load(const SettingsDatabase& data,std::vector<Gest
         { error = "Invalid authored gesture set "+std::string(names[i]); return false; }
         recognizers.emplace_back(sticks[i],GestureRecognizer(std::move(bank[i].patterns)));
     }
-    recognizers_ = std::move(recognizers); maximum_misses_ = misses; held_pattern_.reset(); return true;
+    recognizers_ = std::move(recognizers); maximum_misses_ = misses; held_pattern_.reset(); trace_.clear(); return true;
 }
 bool GestureInputPublication::Publish(std::array<StickPoint,2> axes,std::uint32_t difficulty,std::uint32_t flags,
     std::uint32_t state,IntentMap& action,std::string& error)
@@ -66,7 +66,7 @@ bool GestureInputPublication::Publish(std::array<StickPoint,2> axes,std::uint32_
         sample[1] = -sample[1];
         for (auto& value : sample) if (std::abs(value) < 0.1f) value = 0;
     }
-    bool held = false; std::vector<std::pair<std::string,float>> events;
+    bool held = false; std::vector<std::pair<std::string,float>> events; trace_.clear();
     for (const auto stick : {1u,0u})
     {
         // Every Held query on this stick precedes every Sample query.
@@ -79,12 +79,14 @@ bool GestureInputPublication::Publish(std::array<StickPoint,2> axes,std::uint32_
                 const auto& name = entry.second.Patterns()[match->pattern].name;
                 if (name == "Kickflip" || name == "Heelflip" || name == "N_Kickflip" || name == "N_Heelflip") held_pattern_ = name;
                 events.emplace_back(name,match->strength);
+                trace_.push_back({static_cast<std::uint8_t>(&entry-recognizers_.data()),name,*match,false});
             }
     }
     if (held) action.Insert("HoldPattern",1);
-    for (const auto& event : events) if (GestureEventPermitted(event.first,flags,state,action))
+    for (std::size_t i = 0; i < events.size(); ++i) if (GestureEventPermitted(events[i].first,flags,state,action))
     {
-        action.Insert("Trick",1); action.Insert(event.first,1); action.Insert("GestureSpeed",event.second);
+        action.Insert("Trick",1); action.Insert(events[i].first,1); action.Insert("GestureSpeed",events[i].second);
+        trace_[i].permitted = true;
     }
     return true;
 }

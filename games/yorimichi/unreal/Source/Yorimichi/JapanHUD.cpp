@@ -205,8 +205,11 @@ void AJapanHUD::DrawHUD()
         Controls=bController
             ? FString::Printf(TEXT("%s push   %s brake   Left stick steer / spin / down-diagonal powerslide / forward transfer   Right stick tricks / manual   %s / %s pump / grab   %s step off      %s   %.0f km/h"),Pad.Jump,Pad.Roll,Pad.Parry,Pad.Attack,Pad.Skate,*Ride->GetStatus(),Kmh)
             : FString::Printf(TEXT("W push   S brake   A / D steer / spin   C powerslide   hold left mouse + flick: tricks, hold part-way: manual   Space ollie   Q / E pump / grab   Shift transfer   B step off      %s   %.0f km/h"),*Ride->GetStatus(),Kmh);
-        Secondary=bController?TEXT("Flick: down-up ollie   down-up-left kickflip   down-up-right heelflip   down-left / down-right shove-its   sweep around for 360s   start from up for nollies")
-            :TEXT("Flick the mouse like the stick: pull back then forward = ollie, forward-left = kickflip, forward-right = heelflip, pull back then sideways = shove-it   Mouse look");
+        // Goofy stance mirrors the gestures, so the kickflip and heelflip sides swap.
+        const TCHAR* Kick=Ride->IsGoofy()?TEXT("right"):TEXT("left");
+        const TCHAR* Heel=Ride->IsGoofy()?TEXT("left"):TEXT("right");
+        Secondary=bController?FString::Printf(TEXT("Flick: down-up ollie   down-up-%s kickflip   down-up-%s heelflip   down-left / down-right shove-its   sweep around for 360s   start from up for nollies"),Kick,Heel)
+            :FString::Printf(TEXT("Flick the mouse like the stick: pull back then forward = ollie, forward-%s = kickflip, forward-%s = heelflip, pull back then sideways = shove-it   Mouse look"),Kick,Heel);
         DrawSkateLine();
     }
     if(!bSailboat&&!Pawn->IsZeppelinPassenger())

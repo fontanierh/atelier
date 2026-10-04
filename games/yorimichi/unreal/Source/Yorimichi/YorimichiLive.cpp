@@ -1,6 +1,7 @@
 #include "YorimichiLive.h"
 #include "LiveLibrary.h"
 #include "WandererCharacter.h"
+#include "JapanPreferences.h"
 #include "WandererSword.h"
 #include "SkateComponent.h"
 #include "SkatePark.h"
@@ -28,6 +29,12 @@ bool UYorimichiLive::Press(const FString& Button)
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); return P && P->Live_Press(FName(*Button));
 }
 
+bool UYorimichiLive::SetPreference(const FString& Key, float Value)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
+}
+
 FString UYorimichiLive::MoveState()
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
@@ -48,10 +55,12 @@ bool UYorimichiLive::ToggleSword()
 
 static USkateComponent* PlayerSkate() { AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); return P ? P->GetSkate() : nullptr; }
 bool UYorimichiLive::SkateToggle() { USkateComponent* S = PlayerSkate(); return S && S->Toggle(); }
-bool UYorimichiLive::SkateInput(FVector2D Left, FVector2D Right, bool Push, bool Brake, bool Powerslide, bool GrabLeft, bool GrabRight)
+bool UYorimichiLive::SkateInput(FVector2D Left, FVector2D Right, bool Push, bool Brake, bool Powerslide, float GrabLeft, float GrabRight)
 {
     USkateComponent* S = PlayerSkate(); if (!S) return false;
-    FSkateInput In; In.Left = Left; In.Right = Right; In.bPush = Push; In.bBrake = Brake; In.bPowerslide = Powerslide; In.bGrabLeft = GrabLeft; In.bGrabRight = GrabRight;
+    FSkateInput In; In.Left = Left; In.Right = Right; In.bPush = Push; In.bBrake = Brake; In.bPowerslide = Powerslide;
+    In.TriggerLeft = FMath::Clamp(GrabLeft, 0.f, 1.f); In.TriggerRight = FMath::Clamp(GrabRight, 0.f, 1.f);
+    In.bGrabLeft = In.TriggerLeft > 0; In.bGrabRight = In.TriggerRight > 0;
     S->SetScriptedInput(&In); return true;
 }
 bool UYorimichiLive::SkateRelease() { USkateComponent* S = PlayerSkate(); if (!S) return false; S->SetScriptedInput(nullptr); return true; }

@@ -22,6 +22,22 @@ in a menu, as a zeppelin passenger or with the sailboat out. It sheathes the swo
 position, the direction of travel and the speed. Getting off works while the board is on the ground (not in the air,
 on a rail or in a bail) and keeps a jog's worth of speed.
 
+Yorimichi rides on the plugin's Ride backend (`Backend=Ride` in DefaultGame.ini): the native session rides the board
+under Cairo's own physical body, which takes over in bails and plays the moves on and off the board. The plugin's
+[RIDE.md](../../../platform/engine/Plugins/Activities/Skate/RIDE.md) says what runs in the native session and what in
+Unreal, how much is ported and the known bugs. The Native backend is only the reference the QA compares against:
+`skate.Backend Native` on the console switches to it from the next mount; the game does not offer it to players.
+
+Getting on and off is one continuous move. Running, walking or standing,
+the rider drops the board and steps on at speed. Stepping off, the rider runs out with the board in hand, and the
+board dissolves after 6 s or as soon as the hands are needed. **D-pad Right** (keyboard **G**) brings a board to the
+hand on foot, or puts the held one away. Jumping with the board in hand plays a jump and a landing with it. The skate
+button in the air throws the board under the feet (a caveman: run, jump, then press it). In a ride's air it steps off
+the board from the grab held and comes down on foot holding it; with no grab held the feet kick the board away and it
+flies on by itself. A slow, upright bail runs out on foot, the board rolling on. Pressing the skate button during a
+fall gets up on foot where the body lies, and the board stays lying; the skate button next to a board lying on its
+wheels steps onto it (see the Skate plugin's `RIDE.md`, "Transitions").
+
 Riding into the sea puts Cairo back on the board at the last dry spot.
 
 ## Controls
@@ -57,9 +73,13 @@ line.
 
 ### Pumping
 
-Hold a trigger (Q / E) to compress and release it to extend. On a ramp, compress high on the descent and release
-through the bottom of the curve; compress again for the next wall. Timing matters: holding a trigger is not a boost.
-Release the triggers before leaving the lip unless you want a grab, and keep off the right stick, which pops.
+Pull a trigger to crouch and let it go to stand up: L2 / R2 any part of the way (the deeper of the two counts), or
+Q / E fully. Standing up while the board rides through a curve gains speed: crouch across the flat or high on the
+descent and let go through the curve at the bottom; crouch again for the next wall. Timing matters: holding a trigger
+is not a boost, and holding it through the curve gains less than coasting, which pumps a little by itself (the
+transitions crouch Cairo). Any pull grabs in the air, so release the triggers before leaving the lip unless you want
+a grab, and keep off the right stick, which pops. A grab held into the landing rides away; a Christ air or a one-foot
+air held into it, or let go too late, is a bail.
 
 ### Camera
 
@@ -132,12 +152,18 @@ With the game running (`atelier play yorimichi`):
 | Scenario | What it checks | Report in `build/yorimichi/` |
 | --- | --- | --- |
 | `skate`, `skate_runtime` | 19 checks: push, flip and landing; steering; manual; rail; vert; deliberate bail and recovery; skin clearance during the bail (at least 0.45 cm); retargeted bone lengths, head direction and camera; keyboard pushing; stow and remount; goofy push and ollie; flat 360s both ways; keyboard powerslides both ways; running mount; Triangle mount and stow; coasting pose stability | `skateqa/runtime.json` |
+| `skate_transitions` | With `skate.Backend Ride`, getting on and off: mounts from a stand, a walk, a run, a sprint and the carry; dismounts to a stand, a run and a fast run; the carry put away; the board button; a fall got up from on foot and back onto the board; a lying board dissolving; jumps with the board in hand; cavemans; an air dismount from a grab and a kick-out; a slow bail run out; a step onto a lying board; Link; the capsule (a BotW rider's fitted one keeps its size through three board toggles and a jump, a crouched Cairo stands up for the board). Every frame: the character, its hips, its velocity and the camera move no more than the speed explains; frame p99 under 17 ms | `skateqa/transitions.json`, each check's frames in `skateqa/transitions-rows/` |
+| `ride_e2e` | On the default game (Ride is the default backend): a playtest dry run on the pad from the island's start to Sunset Pier, every input a pad key or stick: the first mounts (stand, run, sprint) and dismounts, the road (carve, brake, a push from a stop, an ollie, a kickflip), Flick-It tricks, a manual, a grab, a grind, pad and C powerslides, a quarter air, the hold-time dissolve and the recall, the sword, an interaction and the sailboat taking the board, a slam at speed, air and kick-out dismounts, a caveman, a bail off a grind, Link, and the Native backend and back. Every frame: frame time, camera and hip jumps, the board's places and pops, the sounds; flick directions follow the saved stance; `--post` after quitting adds the memory peak and the whole log | `skateqa/ride_e2e.json`, `.md`, frames and screenshots in `skateqa/ride_e2e/` |
+| `skate_ride` | The ride (`skate.Backend Ride`) on the pier park and Mega Park: the first frame, pushing, steering, braking, the ollie, every Flick-It trick (also flicked on the player's pad, `--only pad`), grabs, spins, grinds, manuals, lip airs and vert (`--only vert`), pumping (`--only pump`), wheel contact, frame pacing, and the physical rider (how closely it holds the pose, bails that go limp at once and travel as far as the reference's, skin above the ground, joints within their ranges, its frame cost); `--only native` runs some rows on the Native backend beside it | `skateqa/ride.json`, `skateqa/ride-pose.json` |
+| `ride_session.py` (through `atelier live py`, not `qa`) | Records a session from the player's pad, then replays it packet by packet on either backend at a fixed 60 Hz in lockstep; the replay reports the board's error against the recording (see the script) | `ride-record/<take>/`, a replay in `replay-<backend>/` |
 | `skatepark` | Roll-ins on the bowl, mini, east and mellow returns, market, seven-stair and four-stair banks; the stair handrail; an air up and back in the bowl (apex above 3.5 m, landing back on the wall) | `skateqa/park.json` |
 | `skate_performance` | Real-time frame pacing through six activities (push and flip, bowl air, mini air, quarter air, street to mini, bail): at least 58.5 fps, p95 under 20 ms, p99 under 33.34 ms, no frame over 50 ms, no native pose repeated three frames running | `skateqa/performance.json` |
 | `pier_part`, `pier_part_check` | Self-stopping control-driven rehearsals and films; complete telemetry and bail checks | `skatefilm/<take>/` |
 | `pier_part_mix` | Assembles approved takes, original procedural soundtrack and board audio | `skatefilm/<part>/` |
 | `skate_showreel` | A filmed line of shots at the pier, at a fixed 60 fps step; run through the live bridge (see the script) | `skatefilm/<take>/` |
 | `skate_mix_showreel` | Mixes a showreel take's sounds and encodes 1080p and 720p MP4s | `skatefilm/<take>/` |
+| `megapark_ride_film` | A filmed Mega Park line on the Ride backend (20 shots: carves, flips, manuals, grinds, powerslide, the drop-in, quarter airs, three ragdoll bails with the get-up and a board recall, a final line; optional caveman and grab-dismount shots), per-shot parts with slow-motion replays, the rider about 40% of the frame's height; run through the live bridge (see the script) | `megapark/ride-film/<take>/` |
+| `megapark_ride_film_mix` | Cuts the kept parts and their replays into one film and mixes it through `skate_mix_showreel` (`--audio` reads another build's sounds; `--trim shot:first-last` leaves out frames where a camera lost the rider; `--replays a,b` picks the slow-motion replays) | `megapark/ride-film/<take>/` |
 
 `skate` runs `skate_runtime` and always gives the controls back. `skate_live_skate.py` is the in-game helper module
 the others load (`live.park.place`, `live.park.launch`, `live.scenario`). The live module also has `live.skate()`,

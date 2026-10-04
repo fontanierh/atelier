@@ -34,6 +34,9 @@ struct ScoringRuntimeState
     float sequence_score{};
     std::string trick_name;
     std::array<bool,4> stance{};
+    // The host's display (not the original's state): the stance the announced trick started in, and an announce count.
+    std::array<bool,2> start_stance{};
+    std::uint32_t announces{};
     bool clean{},sketchy{},new_trick{},modified_trick{},close_tricks{};
 };
 class ScoringRuntime
