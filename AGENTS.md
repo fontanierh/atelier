@@ -78,6 +78,8 @@ uv run pytest                            # studio and game Python tests
 
 ## Reusing builds
 
+- Concurrent agents use separate Git worktrees for code changes. Share the machine's render board, lock and
+  installed engine, while each agent owns its source checkout, generated assets and live game session.
 - Start with `atelier build <game>` or the specific steps needed. Keep build stamps, generated Content, compiled
   Binaries and Unreal's shared derived-data cache so unchanged steps remain up to date. Do not routinely use
   `--force`, clear caches or regenerate the world for a code-only change.
