@@ -16,5 +16,4 @@ public:
     static bool IsScriptedSession();
 private:
     void SpawnFoxHunter(class AJapanWorld* World, class AWandererCharacter* Player);
-    void SpawnBotwCamp(class AJapanWorld* World, class AWandererCharacter* Player);
 };
