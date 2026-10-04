@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
 #include "PhysicsControlComponent.h"
+#include "PhysicsEngine/ConstraintInstance.h"
 #include "Tickable.h"
 #include "RidePhysicalRider.generated.h"
 
@@ -135,6 +136,29 @@ public:
     const FRidePhysicalProfile& Profile(ERidePhysicalPhase Phase) const;
 };
 
+/** A joint's angular envelope as a live constraint holds it: its frame on the child body (Frame1) and on the parent
+ *  (Frame2), its three angular motions and limits (degrees) and whether the limits are soft. The physical rider keeps
+ *  two per joint of the built asset, riding and bail, and copies one onto the live constraint; the asset itself is
+ *  shared by every rider on the mesh and never changes. */
+struct FRideJointEnvelope
+{
+    FTransform Frame1 = FTransform::Identity, Frame2 = FTransform::Identity;
+    TEnumAsByte<EAngularConstraintMotion> Swing1Motion = ACM_Limited, Swing2Motion = ACM_Limited, TwistMotion = ACM_Limited;
+    float Swing1 = 0.f, Swing2 = 0.f, Twist = 0.f;
+    bool bSoftSwing = true, bSoftTwist = true;
+    float SwingStiffness = 0.f, SwingDamping = 0.f, TwistStiffness = 0.f, TwistDamping = 0.f;
+    float AngularProjection = 0.f;   // Chaos's semi-physical angular projection (hard limits only), 0 to 1
+
+    /** The envelope a constraint holds. */
+    static FRideJointEnvelope Of(const FConstraintInstance& Constraint);
+    /** Puts it on a live constraint, frames and limits, with the given limits in place of its own (twist, Swing1,
+     *  Swing2; degrees). */
+    void ApplyTo(FConstraintInstance& Constraint, const FVector& Limits) const;
+    void ApplyTo(FConstraintInstance& Constraint) const { ApplyTo(Constraint, FVector(Twist, Swing1, Swing2)); }
+    /** Whether a constraint's frames are this envelope's (within a tenth of a degree). */
+    bool HasFrames(const FConstraintInstance& Constraint) const;
+};
+
 /** Physics Control that keeps last frame's drives through a frame without a pose. Under load the mesh can reach
  *  Physics Control's update with no component-space pose (its evaluation buffers out for the frame); Physics Control
  *  then aims every control at the identity, and the anchors pull the whole body onto the board in one step. */
@@ -151,6 +175,11 @@ public:
     /** The frame of the last update (GFrameCounter): a profile invoked after it reaches the physics a frame late
      *  unless the controls are applied again. */
     uint64 UpdatedFrame = 0;
+    /** Forgets that the controls widened Mesh's joint limits. Physics Control remembers a widened joint and, the next
+     *  time it clamps that joint's target (ClampLinear, ClampExact) or stops widening it (None), puts the asset's
+     *  limits back on the live constraint: over the bail's envelope, which it does not know about. Called after the
+     *  rider has set the live limits itself. */
+    void ForgetWidenedLimits(const USkeletalMeshComponent* Mesh);
 private:
     float SkippedTime = 0;
 };
@@ -250,9 +279,10 @@ public:
 
     /** The physics asset built from the bone contract: a body per part (fitted to the skin, or a capsule), wide joint
      *  limits that every riding pose fits, no collision between the rider's own bodies. Fitted: how many bodies were
-     *  fitted to the skin. */
+     *  fitted to the skin. BailEnvelopes, when given, gets each joint's bail envelope (Native's, by joint name): the
+     *  asset keeps the riding one. */
     static UPhysicsAsset* BuildPhysicsAsset(USkeletalMesh* Mesh, const ISkateRider* Api, UObject* Outer, bool bFitToSkin,
-        int32* Fitted = nullptr);
+        int32* Fitted = nullptr, TMap<FName, FRideJointEnvelope>* BailEnvelopes = nullptr);
 
     /** Where Component shows this frame: its parent's transform now with its own relative one. Inside
      *  CharacterMovement's move (the ride's step) a child's own transform is the frame before's until the move ends. */
@@ -282,9 +312,16 @@ public:
      *  skin. False without CPU vertex data. */
     bool MeasureHandGap(float Gap[2], FName Near[2]) const;
     /** The joint furthest past its range (Past in degrees, below 0 inside every range; Angles its twist, Swing1 and
-     *  Swing2, as Chaos measures them against the physics asset's limits), from the bodies' rotations, and the two
-     *  bodies that may meet (in a bail) deepest in each other (Depth in cm, below 0 apart). False without bodies. */
-    bool MeasureJoints(float& Past, FName& Joint, FVector& Angles, float& Depth, FName Pair[2]) const;
+     *  Swing2, as Chaos measures them against the live constraint's frames and limits, Limits those limits and bSoft
+     *  whether they are soft), from the bodies' rotations, and the two bodies that may meet (in a bail) deepest in
+     *  each other (Depth in cm, below 0 apart). False without bodies. */
+    bool MeasureJoints(float& Past, FName& Joint, FVector& Angles, float& Depth, FName Pair[2], FVector* Limits = nullptr,
+        bool* bSoft = nullptr) const;
+    /** Which envelope the live joints of the built asset hold: OnBail and OnRiding count the joints on the bail's and
+     *  the riding frames, Lost those whose limits are not what the rider set (in a bail the ramp's, hard; riding at
+     *  least the asset's, which Physics Control's widening only opens), Ramp how far the bail's limits still stand
+     *  open past its envelope (degrees). */
+    void CheckEnvelope(int32& OnBail, int32& OnRiding, int32& Lost, float& Ramp) const;
     FString Describe() const;
 
     // FTickableGameObject
@@ -303,6 +340,16 @@ private:
     UPROPERTY() TObjectPtr<USkeletalMesh> BuiltFor;
     bool bBuiltFit = false;
     int32 BuiltFitted = 0;
+    // Each joint's envelopes, by joint name: riding (the asset's, read as the rider begins) and bail (Native's, made
+    // with the built asset). In a bail, RampLimits holds each joint's limits now (twist, Swing1, Swing2): they start
+    // open to the pose the bail began in and close to the envelope at skate.RideBailTightenRate.
+    TMap<FName, FRideJointEnvelope> RidingEnvelopes, BailEnvelopes;
+    TMap<FName, FVector> RampLimits;
+    bool bBailEnvelope = false;
+    // The joints whose limits Physics Control had changed when the bail's first update ran, and the drives' fade
+    // (skate.RideBailDriveFade) last applied.
+    int32 EnvelopeLostAtStart = 0;
+    float DriveFadeApplied = 1.f;
     UPROPERTY() TObjectPtr<UPhysicsAsset> SavedPhysicsAsset;
     UPROPERTY() TObjectPtr<UBoxComponent> LooseBoard;
     TWeakObjectPtr<UPrimitiveComponent> TakenBoard;
@@ -388,10 +435,17 @@ private:
     // Each body's shape as points in its bone's space (empty for a body that touches nothing), for the bodies' overlaps.
     mutable TArray<TArray<FVector>> BodyPoints;
     mutable TWeakObjectPtr<const UPhysicsAsset> BodyPointsFor;
-    // Pairs of bodies (indices, the lower first) that overlapped as this bail began, kept apart until they come apart
-    // (ReleaseKeptPairs), and how many pairs this bail has let meet again.
+    // The pairs of bodies that may meet (indices, the lower first: every pair the physics asset lets collide) and
+    // those Chaos ignores now: all of them riding; in a bail, those that overlapped as it began, kept apart until they
+    // come apart (ReleaseKeptPairs). PairsReleased counts the pairs this bail has let meet again. A pair is added to
+    // Chaos's ignore list or taken off it only three frames after the last change the other way (PairsAddedFrame,
+    // PairsRemovedFrame), so the two never cross on the physics thread; bIgnorePending: riding wants every pair
+    // ignored and some still wait for that.
+    TArray<FIntPoint> RiderPairs;
     TSet<FIntPoint> IgnoredPairs;
     int32 PairsReleased = 0;
+    uint64 PairsAddedFrame = 0, PairsRemovedFrame = 0;
+    bool bIgnorePending = false;
 
     FName Bone(const TCHAR* Contract) const;
     UPhysicsControlAsset* BuildControlAsset(const UPhysicsAsset* Physics);
@@ -403,12 +457,25 @@ private:
     void ApplyBailMaterial(bool bBailing);
     /** The bodies' linear damping: the physics asset's plus Drag (1/s). */
     void ApplyBailDrag(float Drag);
-    /** The rider's own physics asset switches to the riding or the bail constraint profile; bWiden lets riding poses
-     *  past a limit widen it. */
+    /** The rider's own physics asset switches to the riding or the bail constraint profile; the built asset's joints
+     *  take their riding or bail envelope (ApplyEnvelopes). bWiden lets riding poses past a limit widen it. */
     void ApplyJointLimits(bool bRidingProfile, bool bWiden);
+    /** Every joint of the built asset takes its riding envelope, or its bail envelope with the limits open to the
+     *  pose it is in (RampLimits). */
+    void ApplyEnvelopes(bool bTighten);
+    /** The bail's limits close toward its envelope (skate.RideBailTightenRate). */
+    void UpdateRamp(float Dt);
+    /** The Bail profile's joint drives scaled by Multiplier (skate.RideBailDriveFade). */
+    void ApplyDriveFade(float Multiplier);
     /** Whether the bodies meet each other (in a bail), less the pairs that overlap where they are as it is switched on. */
     void SetSelfCollision(bool bOn);
-    void ReleaseKeptPairs(bool bAll);
+    /** Chaos ignores every pair of the rider's bodies (RiderPairs) not ignored yet; bWithAsset adds the pairs the
+     *  physics asset keeps apart to each body's list too. */
+    void IgnoreRiderPairs(bool bWithAsset);
+    /** Takes these pairs off Chaos's ignore list (on the physics thread). */
+    void RemoveIgnoredPairs(const TArray<FIntPoint>& Pairs);
+    /** In a bail: the pairs kept apart as it began that have come apart meet again. */
+    void ReleaseKeptPairs();
     /** Each body's extent along the overlap test's directions, where the physics has it. */
     void BodyExtents(TArray<TArray<FVector2D>>& Extent) const;
     void AdvanceGetUp(float Dt);

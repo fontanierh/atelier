@@ -4,6 +4,7 @@
 #include "RideSession.h"
 #include "PhysicsControlComponent.h"
 #include "PhysicsControlAsset.h"
+#include "PhysicsControlRecord.h"
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -14,6 +15,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "HAL/IConsoleManager.h"
+#include "Algo/Find.h"
 #include "Chaos/ChaosEngineInterface.h"
 #include "Physics/Experimental/PhysInterface_Chaos.h"
 #include "PBDRigidsSolver.h"
@@ -41,12 +43,31 @@ namespace
     TAutoConsoleVariable<int32> CVarRideJointCheck(TEXT("skate.RideJointCheck"), 0,
         TEXT("Ride: 1 adds joint_past=, joint= and joint_angles= to the physical rider's state: how far the joint furthest past ")
         TEXT("its range goes (degrees, below 0 inside every range), which joint, and its twist and two swings (degrees, from ")
-        TEXT("the bodies' rotations, as Chaos measures them against the limits); and pair_depth= and pair=: how deep the two ")
-        TEXT("bodies that may meet go into each other (cm, below 0 apart). For QA: about a millisecond a frame."));
+        TEXT("the bodies' rotations, as Chaos measures them against the live limits), with joint_limits= and joint_soft=, those ")
+        TEXT("limits and whether they are soft; joint_env= (bail, riding or mixed: the envelope the live joints hold), joint_lost= ")
+        TEXT("(joints whose limits are not the ones the rider set), joint_ramp= (how far the bail's limits still stand open past ")
+        TEXT("its envelope, degrees) and joint_tighten=; and pair_depth= and pair=: how deep the two bodies that may meet go into ")
+        TEXT("each other (cm, below 0 apart). For QA: about a millisecond a frame."));
 
     TAutoConsoleVariable<int32> CVarRideSelfCollision(TEXT("skate.RideSelfCollision"), 1,
         TEXT("Ride: 1 (the default) lets the physical rider's bodies meet each other in a bail (the arms the torso, a leg the ")
         TEXT("other); 0 lets them pass through each other, as they do riding. Read as a bail starts."));
+
+    TAutoConsoleVariable<int32> CVarRideBailTighten(TEXT("skate.RideBailTighten"), 1,
+        TEXT("Ride: 1 (the default) holds the built asset's joints in a bail within Native's bail envelope (each joint's own ")
+        TEXT("centre, hard limits a half to a third of the riding ones, the drives' targets clamped to them); 0 keeps the riding ")
+        TEXT("limits in a bail. Read as a bail starts."));
+
+    TAutoConsoleVariable<float> CVarRideBailTightenRate(TEXT("skate.RideBailTightenRate"), 120.f,
+        TEXT("Ride: how fast a bail's joint limits close from the pose the bail began in to Native's envelope (degrees a second; ")
+        TEXT("0 closes them at the bail's first update)."));
+
+    TAutoConsoleVariable<float> CVarRideBailProjection(TEXT("skate.RideBailProjection"), .8f,
+        TEXT("Ride: how much of a bail joint's error past its hard limits Chaos's angular projection takes back each step (0 to 1; ")
+        TEXT("the asset has 0). Without it a hard hit puts a knee or a hand 12 to 24 degrees past Native's bail envelope. Read as a bail starts."));
+    TAutoConsoleVariable<float> CVarRideBailDriveFade(TEXT("skate.RideBailDriveFade"), 0.f,
+        TEXT("Ride: N > 0 fades the Bail profile's joint drives (its tone toward the clip) to nothing over N seconds, as the ")
+        TEXT("square of the time left, as Native's wipeout fades its drives (1.5 s); 0 (the default) keeps the tone through the bail."));
 
     TAutoConsoleVariable<int32> CVarRideBailApplyNow(TEXT("skate.RideBailApplyNow"), 1,
         TEXT("Ride: 1 (the default) applies the Bail profile to the bodies as the bail begins, so that frame's physics already ")
@@ -59,10 +80,11 @@ namespace
 
     // The physics assets built from the bone contract, by mesh (one map per fit), kept for the session: a character
     // switch or a new ride takes its mesh's again rather than building it (and cooking the hulls) on that frame.
-    struct FBuiltAsset { TWeakObjectPtr<UPhysicsAsset> Asset; int32 Fitted = 0; };
+    struct FBuiltAsset { TWeakObjectPtr<UPhysicsAsset> Asset; int32 Fitted = 0; TMap<FName, FRideJointEnvelope> Bail; };
     TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset> GBuiltAssets[2];
 
-    UPhysicsAsset* KeptPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, bool bFitToSkin, int32& Fitted)
+    UPhysicsAsset* KeptPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, bool bFitToSkin, int32& Fitted,
+        TMap<FName, FRideJointEnvelope>& Bail)
     {
         TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset>& Kept = GBuiltAssets[bFitToSkin ? 1 : 0];
         for (auto It = Kept.CreateIterator(); It; ++It)
@@ -71,12 +93,12 @@ namespace
                 if (UPhysicsAsset* Old = It->Value.Asset.Get()) Old->RemoveFromRoot();
                 It.RemoveCurrent();
             }
-        if (const FBuiltAsset* Found = Kept.Find(Skeletal)) { Fitted = Found->Fitted; return Found->Asset.Get(); }
+        if (const FBuiltAsset* Found = Kept.Find(Skeletal)) { Fitted = Found->Fitted; Bail = Found->Bail; return Found->Asset.Get(); }
         const double Start = FPlatformTime::Seconds();
-        UPhysicsAsset* Built = URidePhysicalRider::BuildPhysicsAsset(Skeletal, RiderApi, GetTransientPackage(), bFitToSkin, &Fitted);
+        UPhysicsAsset* Built = URidePhysicalRider::BuildPhysicsAsset(Skeletal, RiderApi, GetTransientPackage(), bFitToSkin, &Fitted, &Bail);
         if (!Built) return nullptr;
         Built->AddToRoot();
-        Kept.Add(Skeletal, FBuiltAsset{Built, Fitted});
+        Kept.Add(Skeletal, FBuiltAsset{Built, Fitted, Bail});
         UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: physics asset for %s built in %.1f ms, kept for the session"),
             *Skeletal->GetName(), (FPlatformTime::Seconds() - Start) * 1000.);
         return Built;
@@ -189,6 +211,40 @@ namespace
     // A pair kept apart as a bail began meets again once this far apart (cm): more than PairMargin, so a pair that
     // only grazes isn't released and caught again frame after frame.
     constexpr float ReleaseMargin = 1.f;
+    // A bail's limits start this far past the pose it began in (degrees), so the first step holds the joint where it is.
+    constexpr float RampMargin = 2.f;
+    // Chaos's swing limit stays under a half turn (4 atan2(.., 1 + w) reaches 360 at the far pole).
+    constexpr float MaxLimit = 179.f;
+
+    // Native's bail envelope on the contract's joints. In a bail (wipeout ragdoll modes 7 to 9, WipeoutRagdoll.cpp:20)
+    // Native holds each of its joints within a circular cone of max(0.01, skel x bail mult x 0.5) about its parent
+    // frame's X and a twist of +-max(0.01, skel x bail mult x 0.6), centred where its two frames meet; mode 10 and a
+    // restored joint take max(0.01, skel x mult), the riding range, which here stays the asset's. Centre is the child's
+    // anatomical frame (BuildPhysicsAsset's: X along the body, Y its flexion axis, both from the bind pose) in its
+    // parent's at Native's centres, worked out on Native's RIG_TPOSE with the same rule; the limits are the largest twist,
+    // Swing1 and Swing2 Chaos measures over Native's envelope (the box that holds it, Chaos's limits being a pyramid). A
+    // contract joint that spans several of Native's sums them: the spine is HIPS-SPINE, the chest SPINE-SPINE1 to
+    // SPINE2-SPINE3, the head SPINE3-NECK and NECK-NECK1, an upper arm the clavicle's and the shoulder's. Each side keeps
+    // Native's own values: its left and right differ (the left ankle's cone is 9.4 degrees, the right's 13.5), so a
+    // side's centre is up to 20 degrees from the mirror of the other's. From Native's physics_skeleton_joints records.
+    struct FBailJoint { const TCHAR* Contract; FQuat Centre; float Twist, Swing1, Swing2; };
+    const FBailJoint BailJoints[] = {
+        {TEXT("spine"), FQuat(0.0495f, 0.1839f, 0.0005f, 0.9817f), 16.0f, 12.8f, 14.0f},
+        {TEXT("chest"), FQuat(0.1145f, 0.3301f, 0.0874f, 0.9329f), 35.1f, 34.3f, 29.9f},
+        {TEXT("head"), FQuat(0.0709f, 0.0917f, 0.0406f, 0.9924f), 11.3f, 9.8f, 12.2f},
+        {TEXT("upperarm_L"), FQuat(0.0308f, -0.0057f, -0.8321f, 0.5537f), 42.1f, 37.6f, 42.2f},
+        {TEXT("forearm_L"), FQuat(-0.1695f, 0.4058f, 0.1936f, 0.8770f), 33.2f, 16.8f, 16.3f},
+        {TEXT("hand_L"), FQuat(0.2187f, -0.1036f, -0.0550f, 0.9687f), 42.8f, 37.6f, 34.3f},
+        {TEXT("upperarm_R"), FQuat(-0.1620f, 0.0743f, 0.7673f, 0.6160f), 42.1f, 32.7f, 42.8f},
+        {TEXT("forearm_R"), FQuat(0.0572f, 0.4629f, -0.0734f, 0.8815f), 36.4f, 19.5f, 19.7f},
+        {TEXT("hand_R"), FQuat(-0.1789f, -0.1244f, 0.0590f, 0.9742f), 48.0f, 48.5f, 42.8f},
+        {TEXT("thigh_L"), FQuat(0.4546f, -0.1547f, -0.8551f, 0.1956f), 41.3f, 38.2f, 45.9f},
+        {TEXT("shin_L"), FQuat(0.7509f, -0.0141f, 0.6566f, 0.0694f), 32.9f, 38.2f, 41.4f},
+        {TEXT("foot_L"), FQuat(0.0357f, -0.6381f, 0.1092f, 0.7613f), 11.4f, 11.5f, 23.7f},
+        {TEXT("thigh_R"), FQuat(-0.4887f, -0.0742f, 0.8568f, 0.1471f), 35.1f, 33.8f, 39.3f},
+        {TEXT("shin_R"), FQuat(-0.7697f, -0.0039f, -0.6350f, 0.0655f), 44.7f, 38.4f, 46.3f},
+        {TEXT("foot_R"), FQuat(-0.0488f, -0.5546f, -0.0947f, 0.8253f), 30.6f, 20.5f, 34.3f},
+    };
 
     // The reference skeleton's bind pose in component space.
     TArray<FTransform> BindPose(const FReferenceSkeleton& Ref)
@@ -319,6 +375,26 @@ namespace
             FMath::RadiansToDegrees(4. * FMath::Atan2(Swing.Z, 1. + Swing.W)), FMath::RadiansToDegrees(4. * FMath::Atan2(Swing.Y, 1. + Swing.W)));
     }
 
+    // A joint's rotation as Chaos measures it against its limits: the child's frame (body 0, Frame1) to the parent's
+    // (body 1, Frame2), R01 = R0^-1 R1 (FPBDJointUtilities::DecomposeSwingTwistLocal). Physics Control's clamp and widen
+    // take the parent's frame to the child's instead: the same twist, but a swing split differently between Swing1 and
+    // Swing2 once the joint twists.
+    FQuat ChaosRelative(const FBodyInstance& Child, const FBodyInstance& Parent, const FQuat& Frame1, const FQuat& Frame2)
+    {
+        return (Child.GetUnrealWorldTransform().GetRotation() * Frame1).Inverse() * (Parent.GetUnrealWorldTransform().GetRotation() * Frame2);
+    }
+
+    // A live joint's limits (twist, Swing1, Swing2; degrees), a free axis unbounded and a locked one at 0.
+    FVector LiveLimits(const FConstraintInstance& C)
+    {
+        const auto Limit = [](EAngularConstraintMotion Motion, float Degrees)
+        {
+            return Motion == ACM_Free ? UE_BIG_NUMBER : Motion == ACM_Locked ? 0.f : Degrees;
+        };
+        return FVector(Limit(C.GetAngularTwistMotion(), C.GetAngularTwistLimit()), Limit(C.GetAngularSwing1Motion(), C.GetAngularSwing1Limit()),
+            Limit(C.GetAngularSwing2Motion(), C.GetAngularSwing2Limit()));
+    }
+
     // How far a joint goes past its limits (degrees; below 0 inside them): the furthest of its twist and two swings
     // past their own limits. Chaos's linear joint solver (the default) holds two limited swings as a pyramid, each
     // about its own axis (FPBDJointCachedSolver::InitPyramidSwingConstraint), not as the ellipse they would draw, so a
@@ -413,6 +489,68 @@ void URidePhysicsControl::TickComponent(float DeltaTime, ELevelTick TickType, FA
     if (TickType == LEVELTICK_All) UpdatedFrame = GFrameCounter;
 }
 
+void URidePhysicsControl::ForgetWidenedLimits(const USkeletalMeshComponent* SkeletalMesh)
+{
+    for (TPair<FName, FPhysicsControlRecord>& Record : ControlRecords)
+        if (Record.Value.ChildComponent.Get() == SkeletalMesh) Record.Value.bJointLimitsWidened = false;
+}
+
+FRideJointEnvelope FRideJointEnvelope::Of(const FConstraintInstance& C)
+{
+    FRideJointEnvelope E;
+    E.Frame1 = C.GetRefFrame(EConstraintFrame::Frame1);
+    E.Frame2 = C.GetRefFrame(EConstraintFrame::Frame2);
+    E.Swing1Motion = C.GetAngularSwing1Motion(); E.Swing2Motion = C.GetAngularSwing2Motion(); E.TwistMotion = C.GetAngularTwistMotion();
+    E.Swing1 = C.GetAngularSwing1Limit(); E.Swing2 = C.GetAngularSwing2Limit(); E.Twist = C.GetAngularTwistLimit();
+    const FConeConstraint& Cone = C.ProfileInstance.ConeLimit;
+    const FTwistConstraint& Twist = C.ProfileInstance.TwistLimit;
+    E.bSoftSwing = Cone.bSoftConstraint; E.SwingStiffness = Cone.Stiffness; E.SwingDamping = Cone.Damping;
+    E.bSoftTwist = Twist.bSoftConstraint; E.TwistStiffness = Twist.Stiffness; E.TwistDamping = Twist.Damping;
+    E.AngularProjection = C.ProfileInstance.ProjectionAngularAlpha;
+    return E;
+}
+
+void FRideJointEnvelope::ApplyTo(FConstraintInstance& C, const FVector& Limits) const
+{
+    // The envelope's rotations at the live frames' positions: InitArticulated scaled those by each body's adjusted
+    // scale (SkeletalMeshComponentPhysics.cpp, ScalePosition), which the asset's frames don't carry, so the asset's
+    // positions would pull the limbs in toward the pelvis.
+    const FTransform Place1(Frame1.GetRotation(), C.GetRefFrame(EConstraintFrame::Frame1).GetTranslation());
+    const FTransform Place2(Frame2.GetRotation(), C.GetRefFrame(EConstraintFrame::Frame2).GetTranslation());
+    C.SetRefFrame(EConstraintFrame::Frame1, Place1);
+    C.SetRefFrame(EConstraintFrame::Frame2, Place2);
+    // SetRefFrame hands Chaos the frame as given, but the constraint was made with its frames' positions scaled by the
+    // mesh's scale (FConstraintInstance::InitConstraint_AssumesLocked): a scaled rider's joints would move off their
+    // bones. Chaos gets the scaled frames, as it did then.
+    const float Scale = C.GetLastKnownScale();
+    if (!FMath::IsNearlyEqual(Scale, 1.f))
+    {
+        FTransform Scaled1 = Place1, Scaled2 = Place2;
+        Scaled1.ScaleTranslation(FVector(Scale)); Scaled2.ScaleTranslation(FVector(Scale));
+        FPhysicsInterface::ExecuteOnUnbrokenConstraintReadWrite(C.GetPhysicsConstraintRef(), [&](const FPhysicsConstraintHandle& Handle)
+        {
+            FPhysicsInterface::SetLocalPose(Handle, Scaled1, EConstraintFrame::Frame1);
+            FPhysicsInterface::SetLocalPose(Handle, Scaled2, EConstraintFrame::Frame2);
+        });
+    }
+    // The motions, limits and softness together, then one push to Chaos.
+    FConeConstraint& Cone = C.ProfileInstance.ConeLimit;
+    FTwistConstraint& Twisting = C.ProfileInstance.TwistLimit;
+    Twisting.TwistMotion = TwistMotion; Twisting.TwistLimitDegrees = float(Limits.X);
+    Cone.Swing1Motion = Swing1Motion; Cone.Swing1LimitDegrees = float(Limits.Y);
+    Cone.Swing2Motion = Swing2Motion; Cone.Swing2LimitDegrees = float(Limits.Z);
+    Cone.bSoftConstraint = bSoftSwing; Cone.Stiffness = SwingStiffness; Cone.Damping = SwingDamping;
+    Twisting.bSoftConstraint = bSoftTwist; Twisting.Stiffness = TwistStiffness; Twisting.Damping = TwistDamping;
+    C.UpdateAngularLimit();
+}
+
+bool FRideJointEnvelope::HasFrames(const FConstraintInstance& C) const
+{
+    constexpr double Tolerance = UE_PI / 1800.;
+    return C.GetRefFrame(EConstraintFrame::Frame1).GetRotation().AngularDistance(Frame1.GetRotation()) < Tolerance
+        && C.GetRefFrame(EConstraintFrame::Frame2).GetRotation().AngularDistance(Frame2.GetRotation()) < Tolerance;
+}
+
 bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
 {
     USkeletalMeshComponent* NewMesh = InRider ? InRider->GetMesh() : nullptr;
@@ -437,7 +575,7 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     {
         if (!Built || BuiltFor != Skeletal || bBuiltFit != S->bFitBodiesToSkin)
         {
-            Built = KeptPhysicsAsset(Skeletal, Api, S->bFitBodiesToSkin, BuiltFitted);
+            Built = KeptPhysicsAsset(Skeletal, Api, S->bFitBodiesToSkin, BuiltFitted, BailEnvelopes);
             BuiltFor = Skeletal; bBuiltFit = S->bFitBodiesToSkin;
         }
         if (!Built) { Mesh = nullptr; Rider = nullptr; return false; }
@@ -446,8 +584,8 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     else if (Mesh->GetPhysicsAsset() != Own) Mesh->SetPhysicsAsset(Own, true);
     SavedProfile = Mesh->GetCollisionProfileName();
     Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
-    // A new physics state: no pair kept apart yet (SetSelfCollision).
-    IgnoredPairs.Reset();
+    // A new physics state: no pair ignored yet (IgnoreRiderPairs).
+    IgnoredPairs.Reset(); RiderPairs.Reset(); bIgnorePending = false;
     Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
     Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
     if (Mesh->Bodies.Num() == 0) Mesh->RecreatePhysicsState();
@@ -463,6 +601,19 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     SavedUpdateMode = uint8(Mesh->PhysicsTransformUpdateMode.GetValue());
     Mesh->PhysicsTransformUpdateMode = EPhysicsTransformUpdateMode::ComponentTransformIsKinematic;
     Mesh->bBlendPhysics = false;
+    // The joints' riding envelopes, as the asset has them: a get-up or a remount puts them back after a bail's.
+    RidingEnvelopes.Reset(); RampLimits.Reset(); bBailEnvelope = false; EnvelopeLostAtStart = 0; DriveFadeApplied = 1.f;
+    if (const UPhysicsAsset* Physics = Mesh->GetPhysicsAsset())
+    {
+        for (const UPhysicsConstraintTemplate* Template : Physics->ConstraintSetup)
+            if (Template) RidingEnvelopes.Add(Template->DefaultInstance.JointName, FRideJointEnvelope::Of(Template->DefaultInstance));
+        // The pairs of bodies that may meet: Chaos ignores them while riding and lets them meet in a bail. The mesh's
+        // response to its own object type stays as the Ragdoll profile has it, for whatever else is of that type.
+        for (int32 I = 0; I < Mesh->Bodies.Num(); ++I)
+            for (int32 J = I + 1; J < Mesh->Bodies.Num(); ++J)
+                if (Physics->SkeletalBodySetups.IsValidIndex(J) && Physics->IsCollisionEnabled(I, J)) RiderPairs.Add(FIntPoint(I, J));
+    }
+    if (!bBuiltAsset) BailEnvelopes.Reset();
 
     PelvisBone = Bone(TEXT("pelvis")); HeadBone = Bone(TEXT("head"));
     FootBones[0] = Bone(TEXT("foot_L")); FootBones[1] = Bone(TEXT("foot_R"));
@@ -509,6 +660,10 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     BeganFrame = GFrameCounter;
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(ERidePhysicalPhase::OnFoot);
+    // The physics state may have been made this frame, with the asset's own pairs waiting in Chaos's pending list,
+    // which an add for the same body in the same frame replaces: the first list carries them too.
+    PairsAddedFrame = PairsRemovedFrame = 0;
+    IgnoreRiderPairs(true);
     ApplyJointLimits(true, true);
     ApplyWeight();
     GRiders.AddUnique(this);
@@ -531,6 +686,9 @@ void URidePhysicalRider::End()
     RestoreWorld();
     if (Mesh)
     {
+        // The rider's own asset keeps its bodies after the ride: they meet each other again as they did before it.
+        if (!bBuiltAsset && Mesh->GetPhysicsAsset() == SavedPhysicsAsset) RemoveIgnoredPairs(IgnoredPairs.Array());
+        IgnoredPairs.Reset(); RiderPairs.Reset(); bIgnorePending = false;
         ApplyBailMaterial(false);
         ApplyBailDrag(0.f);
         Mesh->SetAllBodiesSimulatePhysics(false);
@@ -563,9 +721,10 @@ void URidePhysicalRider::Release(float Seconds)
 // the drives and the bail's tuning see the same bodies. The contract's capsule goes from the part's bone toward the
 // next contract bone (a sphere at the ends), radius in cm for a slim 1.7 m rider.
 UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, UObject* Outer, bool bFitToSkin,
-    int32* OutFitted)
+    int32* OutFitted, TMap<FName, FRideJointEnvelope>* OutBail)
 {
     if (OutFitted) *OutFitted = 0;
+    if (OutBail) OutBail->Reset();
     if (!Skeletal) return nullptr;
     const FReferenceSkeleton& Ref = Skeletal->GetRefSkeleton();
     auto Find = [&](const TCHAR* Contract)
@@ -667,6 +826,9 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
     TArray<int32, TInlineAllocator<16>> Made;
     // The bodies each joint holds together (indices into the asset's bodies, the lower first).
     TSet<FIntPoint> Joined;
+    // Each part's anatomical frame in component space at the bind pose, by contract name (the bail's centres are
+    // relative to the parent part's).
+    TMap<FString, FQuat> PartFrames;
     for (const FPart& Part : Parts)
     {
         const int32 B = Find(Part.Bone);
@@ -731,6 +893,14 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         }
         Physics->SkeletalBodySetups.Add(Body);
         ++Bodies;
+        // The body's own directions at the bind pose (its anatomical frame): X its long axis, Y its flexion axis
+        // (about which it bends toward Toward), Z across both. Every part has one, the pelvis too: a joint's bail
+        // centre is its frame in its parent's.
+        const FVector Long = Bind[B].TransformVectorNoScale(Axis).GetSafeNormal(UE_SMALL_NUMBER, Up);
+        FVector Hinge = Long ^ (Part.Toward == EToward::Back ? -Forward : Part.Toward == EToward::Down ? -Up : Forward);
+        if (Hinge.Size() < .2) Hinge = Long ^ (FMath::Abs(Long | Up) < .9 ? Up : Forward);
+        const FQuat Frame = FRotationMatrix::MakeFromXY(Long, Hinge.GetSafeNormal()).ToQuat();
+        PartFrames.Add(Part.Bone, Frame);
         if (Parent == INDEX_NONE) continue;
         if (const int32 ParentBody = Made.IndexOfByKey(Parent); ParentBody != INDEX_NONE)
             Joined.Add(FIntPoint(FMath::Min(ParentBody, Made.Num() - 1), FMath::Max(ParentBody, Made.Num() - 1)));
@@ -738,11 +908,7 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         // long axis (X), Swing2 about its flexion axis (Y), Swing1 about the axis across both (Z). The parent's frame
         // is turned to the middle of each one-sided range (the physics asset editor's angular rotation offset), so
         // the limits hold a human's range around the bind pose: a knee and an elbow bend one way.
-        const FVector Long = Bind[B].TransformVectorNoScale(Axis).GetSafeNormal(UE_SMALL_NUMBER, Up);
         const FVector Out = FString(Part.Bone).EndsWith(TEXT("_L")) ? -Right : Right;
-        FVector Hinge = Long ^ (Part.Toward == EToward::Back ? -Forward : Part.Toward == EToward::Down ? -Up : Forward);
-        if (Hinge.Size() < .2) Hinge = Long ^ (FMath::Abs(Long | Up) < .9 ? Up : Forward);
-        const FQuat Frame = FRotationMatrix::MakeFromXY(Long, Hinge.GetSafeNormal()).ToQuat();
         const FVector Across = Frame.GetAxisZ();
         FQuat Centre = FQuat::Identity;
         float Swing1 = Part.Flexion, Swing2 = Part.Flexion;
@@ -777,6 +943,32 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         const FVector Bound = JointAngles((Centre * Frame).Inverse() * Frame);
         UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s: swing limits %.0f (across) and %.0f (flexion), twist %.0f; the bind pose %.0f past them"),
             *Body->BoneName.ToString(), Swing1, Swing2, Part.Twist, PastLimits(Bound, Part.Twist, Swing1, Swing2));
+        // The bail envelope: the same child frame, the parent's turned to Native's centre (the child's anatomical frame
+        // in the parent part's at the centre), and Native's limits, hard. A part whose parent part has no body of its
+        // own (two contract names on one bone) keeps the riding envelope in a bail.
+        if (!OutBail) continue;
+        const FBailJoint* Row = Algo::FindByPredicate(BailJoints, [&](const FBailJoint& R) { return FCString::Strcmp(R.Contract, Part.Bone) == 0; });
+        const FQuat* ParentFrame = PartFrames.Find(Part.Parent);
+        if (!Row || !ParentFrame)
+        {
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s: no bail envelope (%s), the riding one holds in a bail"),
+                *Body->BoneName.ToString(), !Row ? TEXT("not in Native's table") : TEXT("its parent part has no body"));
+            continue;
+        }
+        FRideJointEnvelope Bail = FRideJointEnvelope::Of(C);
+        const FQuat BailCentre = *ParentFrame * Row->Centre.GetNormalized();
+        Bail.Frame2 = FTransform(Bind[Parent].GetRotation().Inverse() * BailCentre, Bail.Frame2.GetLocation());
+        Bail.Twist = Row->Twist; Bail.Swing1 = Row->Swing1; Bail.Swing2 = Row->Swing2;
+        Bail.TwistMotion = Bail.Swing1Motion = Bail.Swing2Motion = ACM_Limited;
+        // Hard, as Native's are: a soft limit gives way to whatever pushes on it (a contact pinning the hand under the
+        // body) by as much as the push needs.
+        Bail.bSoftSwing = Bail.bSoftTwist = false;
+        OutBail->Add(C.JointName, Bail);
+        // Where the bind pose sits in it, as Chaos measures (the child's frame to the parent's).
+        const FVector BindInBail = JointAngles(Frame.Inverse() * BailCentre);
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s in a bail: twist %.1f, swing limits %.1f (across) and %.1f (flexion) about Native's centre, %.0f degrees from the riding one; the bind pose %.0f past them"),
+            *Body->BoneName.ToString(), Row->Twist, Row->Swing1, Row->Swing2, FMath::RadiansToDegrees((Centre * Frame).AngularDistance(BailCentre)),
+            PastLimits(BindInBail, Row->Twist, Row->Swing1, Row->Swing2));
     }
     if (Bodies < MinBodies) { UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: only %d contract bones"), Bodies); return nullptr; }
     // Which bodies meet each other (in a bail: SetSelfCollision): every pair but a joint's two bodies and two that
@@ -1005,23 +1197,29 @@ void URidePhysicalRider::ApplyBailDrag(float Drag)
 }
 
 // Riding: the rider's constraint profile, with limits that widen to the animation, and the bodies pass through each
-// other. Bailing: the bail profile, the limits as authored, and the bodies meet. The built asset has one set of limits
-// for both. Physics Control reads the response from the live constraints each update, so it is set after the profile
-// (which would copy the template's over it).
+// other. Bailing: the bail profile and the bodies meet. The built asset's joints take their riding envelope (the
+// asset's) or, in a bail, Native's (ApplyEnvelopes), with the drives' targets clamped into it; skate.RideBailTighten 0
+// keeps the riding envelope in a bail. Physics Control reads the response from the live constraints each update, so
+// it is set after the profile (which would copy the template's over it).
 void URidePhysicalRider::ApplyJointLimits(bool bRidingProfile, bool bWiden)
 {
     if (!Mesh) return;
     const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
     if (!bBuiltAsset) Mesh->SetConstraintProfileForAll(bRidingProfile ? S->RideConstraintProfile : S->BailConstraintProfile, true);
-    const EAngularDriveLimitViolationResponse Response = bWiden && S->bWidenLimitsWhileRiding
-        ? EAngularDriveLimitViolationResponse::WidenLimits : EAngularDriveLimitViolationResponse::None;
+    const bool bTighten = !bRidingProfile && bBuiltAsset && !BailEnvelopes.IsEmpty() && CVarRideBailTighten.GetValueOnGameThread() != 0;
+    // In the bail's envelope a drive aimed outside it is aimed at its edge (ClampExact, which holds the swing's
+    // direction): a target past a hard limit would only press the body against it.
+    const EAngularDriveLimitViolationResponse Response = bWiden && S->bWidenLimitsWhileRiding ? EAngularDriveLimitViolationResponse::WidenLimits
+        : bTighten ? EAngularDriveLimitViolationResponse::ClampExact : EAngularDriveLimitViolationResponse::None;
     for (FConstraintInstance* C : Mesh->Constraints)
         if (C) C->ProfileInstance.AngularDrive.LimitViolationResponse = Response;
-    // Riding widened the live limits to fit the animation's pose. Physics Control puts them back only for a control it
-    // still drives, and a bail lets every control go limp first, so the bail would keep the riding pose's widened
-    // limits (a wrist twisted 70 degrees held against its 45). Each joint goes back to the asset's limits here.
-    const UPhysicsAsset* Physics = Mesh->GetPhysicsAsset();
-    if (!bWiden && Physics)
+    // Until a bail's envelope goes on, the live joints hold the asset's riding one.
+    if (bBuiltAsset && (bTighten || bBailEnvelope)) ApplyEnvelopes(bTighten);
+    else if (const UPhysicsAsset* Physics = Mesh->GetPhysicsAsset(); Physics && !bWiden)
+    {
+        // Riding widened the live limits to fit the animation's pose. Physics Control puts them back only for a
+        // control it still drives, and a bail lets every control go limp first, so the bail would keep the riding
+        // pose's widened limits. Each joint goes back to the asset's limits here.
         for (FConstraintInstance* C : Mesh->Constraints)
         {
             if (!C) continue;
@@ -1032,76 +1230,198 @@ void URidePhysicalRider::ApplyJointLimits(bool bRidingProfile, bool bWiden)
                     break;
                 }
         }
+    }
     SetSelfCollision(!bRidingProfile);
 }
 
-// The bodies meet each other through the mesh's response to its own object type. Riding, the animation puts a hand on
-// a thigh and the bodies follow it, so they pass through each other. In a bail they meet, by the physics asset's
-// pairs (BuildPhysicsAsset), less any pair that overlaps in the pose the bail starts from: a hand resting inside a
-// thigh would be thrown out of it on the first step. Those pairs stay apart until they come apart (ReleaseKeptPairs).
+// Chaos takes back this share of a hard limit's angular error each step (its semi-physical projection).
+static void SetAngularProjection(FConstraintInstance& C, float Alpha)
+{
+    if (C.ProfileInstance.ProjectionAngularAlpha == Alpha && C.ProfileInstance.bEnableProjection) return;
+    float LinearAlpha, AngularAlpha, LinearTolerance, AngularTolerance;
+    C.GetProjectionParams(LinearAlpha, AngularAlpha, LinearTolerance, AngularTolerance);
+    C.SetProjectionParams(true, LinearAlpha, Alpha, LinearTolerance, AngularTolerance);
+}
+
+// The envelope goes onto the live constraints only: the asset is shared by every rider on the mesh (and by the next
+// ride), and Physics Control's widening measures against it. A bail's limits start open to the pose the body is in,
+// each axis to where the joint stands now (plus RampMargin) where that is past the envelope, and close at
+// skate.RideBailTightenRate (UpdateRamp): limits snapped shut on a deeply bent grab would throw the bodies apart in one
+// step, and no bone is moved to fit them.
+void URidePhysicalRider::ApplyEnvelopes(bool bTighten)
+{
+    RampLimits.Reset();
+    bBailEnvelope = bTighten;
+    for (FConstraintInstance* C : Mesh->Constraints)
+    {
+        if (!C) continue;
+        const FRideJointEnvelope* Bail = bTighten ? BailEnvelopes.Find(C->JointName) : nullptr;
+        if (!Bail)
+        {
+            if (const FRideJointEnvelope* Riding = RidingEnvelopes.Find(C->JointName))
+            {
+                Riding->ApplyTo(*C);
+                SetAngularProjection(*C, Riding->AngularProjection);
+            }
+            continue;
+        }
+        FVector Limits(Bail->Twist, Bail->Swing1, Bail->Swing2);
+        const FBodyInstance* Child = Mesh->GetBodyInstance(C->ConstraintBone1);
+        const FBodyInstance* Parent = Mesh->GetBodyInstance(C->ConstraintBone2);
+        if (Child && Parent)
+        {
+            const FVector Now = JointAngles(ChaosRelative(*Child, *Parent, Bail->Frame1.GetRotation(), Bail->Frame2.GetRotation())).GetAbs();
+            Limits = Limits.ComponentMax(Now + FVector(RampMargin)).ComponentMin(FVector(MaxLimit));
+        }
+        Bail->ApplyTo(*C, Limits);
+        SetAngularProjection(*C, FMath::Clamp(CVarRideBailProjection.GetValueOnGameThread(), 0.f, 1.f));
+        RampLimits.Add(C->JointName, Limits);
+    }
+    // Physics Control would put the asset's limits back over these on its next update (URidePhysicsControl).
+    if (URidePhysicsControl* Guarded = Cast<URidePhysicsControl>(Control)) Guarded->ForgetWidenedLimits(Mesh);
+}
+
+void URidePhysicalRider::UpdateRamp(float Dt)
+{
+    if (!bBailEnvelope || RampLimits.IsEmpty() || !Mesh) return;
+    const float Rate = CVarRideBailTightenRate.GetValueOnGameThread();
+    for (FConstraintInstance* C : Mesh->Constraints)
+    {
+        FVector* Limits = C ? RampLimits.Find(C->JointName) : nullptr;
+        const FRideJointEnvelope* Bail = C ? BailEnvelopes.Find(C->JointName) : nullptr;
+        if (!Limits || !Bail) continue;
+        const FVector Envelope(Bail->Twist, Bail->Swing1, Bail->Swing2);
+        if (*Limits == Envelope) continue;
+        *Limits = Rate <= 0.f ? Envelope : (*Limits - FVector(Rate * Dt)).ComponentMax(Envelope);
+        FConeConstraint& Cone = C->ProfileInstance.ConeLimit;
+        C->ProfileInstance.TwistLimit.TwistLimitDegrees = float(Limits->X);
+        Cone.Swing1LimitDegrees = float(Limits->Y); Cone.Swing2LimitDegrees = float(Limits->Z);
+        C->UpdateAngularLimit();
+    }
+}
+
+// Native fades its wipeout's drives over 1.5 s by the square of the time left (WipeoutResponse.cpp:44): here the Bail
+// profile's joint drives, through Physics Control's multipliers, which the profiles never set. An authored control
+// asset keeps its own.
+void URidePhysicalRider::ApplyDriveFade(float Multiplier)
+{
+    if (!Control || !bOwnControlAsset || Multiplier == DriveFadeApplied) return;
+    if (Multiplier > 0.f && Multiplier < 1.f && FMath::Abs(Multiplier - DriveFadeApplied) < .01f) return;
+    DriveFadeApplied = Multiplier;
+    FPhysicsControlSparseMultiplier Fade;
+    Fade.bEnableLinearStrengthMultiplier = Fade.bEnableLinearDampingRatioMultiplier = Fade.bEnableLinearExtraDampingMultiplier = false;
+    Fade.bEnableMaxForceMultiplier = Fade.bEnableAngularDampingRatioMultiplier = Fade.bEnableAngularExtraDampingMultiplier = false;
+    Fade.bEnableMaxTorqueMultiplier = false;
+    Fade.bEnableAngularStrengthMultiplier = true;
+    Fade.AngularStrengthMultiplier = Multiplier;
+    Control->SetControlSparseMultiplier(ParentSet, Fade, false, false, true);
+}
+
+// Which envelope the live joints hold, and whether their limits are the ones the rider set.
+void URidePhysicalRider::CheckEnvelope(int32& OnBail, int32& OnRiding, int32& Lost, float& Ramp) const
+{
+    OnBail = OnRiding = Lost = 0; Ramp = 0.f;
+    if (!Mesh || !bBuiltAsset) return;
+    for (const FConstraintInstance* C : Mesh->Constraints)
+    {
+        if (!C) continue;
+        const FRideJointEnvelope* Bail = BailEnvelopes.Find(C->JointName);
+        const FRideJointEnvelope* Riding = RidingEnvelopes.Find(C->JointName);
+        const FVector Live(C->GetAngularTwistLimit(), C->GetAngularSwing1Limit(), C->GetAngularSwing2Limit());
+        const bool bSoft = C->ProfileInstance.ConeLimit.bSoftConstraint || C->ProfileInstance.TwistLimit.bSoftConstraint;
+        if (Bail && Bail->HasFrames(*C))
+        {
+            ++OnBail;
+            const FVector* Set = RampLimits.Find(C->JointName);
+            if (!bBailEnvelope || !Set || !Live.Equals(*Set, .01) || bSoft) ++Lost;
+            if (Set) Ramp = FMath::Max(Ramp, float((*Set - FVector(Bail->Twist, Bail->Swing1, Bail->Swing2)).GetMax()));
+        }
+        else if (Riding && Riding->HasFrames(*C))
+        {
+            ++OnRiding;
+            if (Live.X < Riding->Twist - .01 || Live.Y < Riding->Swing1 - .01 || Live.Z < Riding->Swing2 - .01) ++Lost;
+        }
+        else ++Lost;
+    }
+}
+
+// The bodies meet each other through Chaos's ignore list, pair by pair: riding, Chaos ignores every pair of the
+// rider's bodies (the animation puts a hand on a thigh and the bodies follow it); in a bail, the pairs meet, less any
+// that overlaps in the pose the bail starts from: a hand resting inside a thigh would be thrown out of it on the first
+// step. Those pairs stay apart until they come apart (ReleaseKeptPairs). The mesh's response to its own object type
+// is left as the Ragdoll profile has it, so other bodies of that type (another rider's, props) still meet the rider.
 void URidePhysicalRider::SetSelfCollision(bool bOn)
 {
     if (!Mesh) return;
     bOn = bOn && CVarRideSelfCollision.GetValueOnGameThread() != 0;
-    // Each bail keeps apart only what overlaps in its own first pose.
-    ReleaseKeptPairs(true);
     PairsReleased = 0;
-    const UPhysicsAsset* Physics = Mesh->GetPhysicsAsset();
-    if (bOn && Physics)
+    if (!bOn)
     {
-        TArray<TArray<FVector2D>> Extent;
-        BodyExtents(Extent);
-        TMap<FPhysicsActorHandle, TArray<FPhysicsActorHandle>> Apart;
-        FString Names;
-        for (int32 I = 0; I < Extent.Num(); ++I)
-            for (int32 J = I + 1; J < Extent.Num(); ++J)
-            {
-                if (Extent[I].IsEmpty() || Extent[J].IsEmpty() || !Physics->IsCollisionEnabled(I, J) || IgnoredPairs.Contains(FIntPoint(I, J))) continue;
-                const double Depth = Overlap(Extent[I], Extent[J]);
-                if (Depth <= -PairMargin) continue;
-                FPhysicsActorHandle A = Mesh->Bodies[I]->GetPhysicsActor(), B = Mesh->Bodies[J]->GetPhysicsActor();
-                if (!A || !B) continue;
-                Apart.FindOrAdd(A).Add(B);
-                IgnoredPairs.Add(FIntPoint(I, J));
-                Names += FString::Printf(TEXT(" %s-%s (%.1f cm)"), *Mesh->Bodies[I]->BodySetup->BoneName.ToString(), *Mesh->Bodies[J]->BodySetup->BoneName.ToString(), Depth);
-            }
-        if (Apart.Num()) FPhysicsCommand::ExecuteWrite(Mesh.Get(), [&]() { FChaosEngineInterface::AddDisabledCollisionsFor_AssumesLocked(Apart); });
-        UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll: the bodies meet; overlapping as the bail starts, kept apart for this ride:%s"),
-            Names.IsEmpty() ? TEXT(" none") : *Names);
+        IgnoreRiderPairs(false);
+        return;
     }
-    const ECollisionChannel Own = Mesh->GetCollisionObjectType();
-    if (Mesh->GetCollisionResponseToChannel(Own) != (bOn ? ECR_Block : ECR_Ignore)) Mesh->SetCollisionResponseToChannel(Own, bOn ? ECR_Block : ECR_Ignore);
-}
-
-// A pair kept apart as the bail began meets again once it has come ReleaseMargin apart (or every pair, with bAll),
-// so a hand that started inside a thigh can't pass through it for the rest of the tumble. The pair leaves Chaos's
-// ignore list on the physics thread; a pair is never released on the bail's first frames, while its ignore entry may
-// still be waiting to be added.
-void URidePhysicalRider::ReleaseKeptPairs(bool bAll)
-{
-    if (!Mesh || IgnoredPairs.IsEmpty()) return;
-    if (!bAll && GFrameCounter < BailFrame + 3) return;
+    // A bail just after the pairs were ignored (a mount, a get-up) waits for them to reach the physics before letting
+    // any go: until then they count as kept apart and ReleaseKeptPairs lets each go once apart.
+    if (bIgnorePending || IgnoredPairs.Num() < RiderPairs.Num()) IgnoreRiderPairs(false);
+    if (GFrameCounter < PairsAddedFrame + 3) return;
     TArray<TArray<FVector2D>> Extent;
-    if (!bAll) BodyExtents(Extent);
-    TArray<FIntPoint> Released;
+    BodyExtents(Extent);
+    TArray<FIntPoint> Meet;
     FString Names;
     for (const FIntPoint& P : IgnoredPairs)
     {
-        double Depth = 0;
-        if (!bAll)
-        {
-            if (!Extent.IsValidIndex(P.X) || !Extent.IsValidIndex(P.Y) || Extent[P.X].IsEmpty() || Extent[P.Y].IsEmpty()) continue;
-            Depth = Overlap(Extent[P.X], Extent[P.Y]);
-            if (Depth > -ReleaseMargin) continue;
-        }
-        Released.Add(P);
-        if (!bAll && Mesh->Bodies.IsValidIndex(P.X) && Mesh->Bodies.IsValidIndex(P.Y))
-            Names += FString::Printf(TEXT(" %s-%s (%.1f cm apart)"), *Mesh->Bodies[P.X]->BodySetup->BoneName.ToString(),
-                *Mesh->Bodies[P.Y]->BodySetup->BoneName.ToString(), -Depth);
+        if (!Extent.IsValidIndex(P.X) || !Extent.IsValidIndex(P.Y) || Extent[P.X].IsEmpty() || Extent[P.Y].IsEmpty()) continue;
+        const double Depth = Overlap(Extent[P.X], Extent[P.Y]);
+        if (Depth <= -PairMargin) { Meet.Add(P); continue; }
+        Names += FString::Printf(TEXT(" %s-%s (%.1f cm)"), *Mesh->Bodies[P.X]->BodySetup->BoneName.ToString(), *Mesh->Bodies[P.Y]->BodySetup->BoneName.ToString(), Depth);
     }
-    for (const FIntPoint& P : Released)
+    for (const FIntPoint& P : Meet) IgnoredPairs.Remove(P);
+    RemoveIgnoredPairs(Meet);
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll: %d pairs of bodies meet; overlapping as the bail starts, kept apart until they come apart:%s"),
+        Meet.Num(), Names.IsEmpty() ? TEXT(" none") : *Names);
+}
+
+void URidePhysicalRider::IgnoreRiderPairs(bool bWithAsset)
+{
+    // A pair let go in the last frames may still be waiting to leave Chaos's list: adding it back now could cross that
+    // on the physics thread and leave it meeting. Update tries again.
+    if (GFrameCounter < PairsRemovedFrame + 3) { bIgnorePending = true; return; }
+    bIgnorePending = false;
+    const UPhysicsAsset* Physics = Mesh ? Mesh->GetPhysicsAsset() : nullptr;
+    if (!Physics) return;
+    TMap<FPhysicsActorHandle, TArray<FPhysicsActorHandle>> Ignore;
+    const auto Actor = [&](int32 I) { return Mesh->Bodies.IsValidIndex(I) && Mesh->Bodies[I] ? Mesh->Bodies[I]->GetPhysicsActor() : FPhysicsActorHandle(); };
+    for (const FIntPoint& P : RiderPairs)
     {
-        IgnoredPairs.Remove(P);
+        if (IgnoredPairs.Contains(P)) continue;
+        FPhysicsActorHandle A = Actor(P.X), B = Actor(P.Y);
+        if (!A || !B) continue;
+        Ignore.FindOrAdd(A).Add(B);
+        IgnoredPairs.Add(P);
+    }
+    if (Ignore.IsEmpty()) return;
+    // Chaos keeps one pending list per body and frame: a second add for a body in the frame its physics state was made
+    // replaces the asset's own (InitArticulated's), so each listed body carries those pairs as well.
+    if (bWithAsset)
+        for (auto& Entry : Ignore)
+            for (int32 I = 0; I < Mesh->Bodies.Num(); ++I)
+                if (Mesh->Bodies[I] && Mesh->Bodies[I]->GetPhysicsActor() == Entry.Key)
+                {
+                    for (int32 J = 0; J < Mesh->Bodies.Num(); ++J)
+                        if (J != I && Physics->SkeletalBodySetups.IsValidIndex(FMath::Max(I, J)) && !Physics->IsCollisionEnabled(I, J))
+                            if (FPhysicsActorHandle Other = Actor(J)) Entry.Value.AddUnique(Other);
+                    break;
+                }
+    FPhysicsCommand::ExecuteWrite(Mesh.Get(), [&]() { FChaosEngineInterface::AddDisabledCollisionsFor_AssumesLocked(Ignore); });
+    PairsAddedFrame = GFrameCounter;
+}
+
+// Takes pairs off Chaos's ignore list on the physics thread (the game thread's API only adds, or drops a body's whole
+// list).
+void URidePhysicalRider::RemoveIgnoredPairs(const TArray<FIntPoint>& Pairs)
+{
+    for (const FIntPoint& P : Pairs)
+    {
         if (!Mesh->Bodies.IsValidIndex(P.X) || !Mesh->Bodies.IsValidIndex(P.Y) || !Mesh->Bodies[P.X] || !Mesh->Bodies[P.Y]) continue;
         FPhysicsActorHandle A = Mesh->Bodies[P.X]->GetPhysicsActor(), B = Mesh->Bodies[P.Y]->GetPhysicsActor();
         Chaos::FPBDRigidsSolver* Solver = A ? A->GetSolver<Chaos::FPBDRigidsSolver>() : nullptr;
@@ -1114,8 +1434,31 @@ void URidePhysicalRider::ReleaseKeptPairs(bool bAll)
             if (ProxyA && ProxyB)
                 Solver->GetEvolution()->GetBroadPhase().GetIgnoreCollisionManager().RemoveIgnoreCollisions(ProxyA->GetHandle_LowLevel(), ProxyB->GetHandle_LowLevel());
         });
+        PairsRemovedFrame = GFrameCounter;
     }
-    if (bAll) return;
+}
+
+// A pair kept apart as the bail began meets again once it has come ReleaseMargin apart, so a hand that started inside
+// a thigh can't pass through it for the rest of the tumble. Never within three frames of the pairs being ignored,
+// while their entries may still be waiting to be added.
+void URidePhysicalRider::ReleaseKeptPairs()
+{
+    if (!Mesh || IgnoredPairs.IsEmpty() || GFrameCounter < PairsAddedFrame + 3) return;
+    TArray<TArray<FVector2D>> Extent;
+    BodyExtents(Extent);
+    TArray<FIntPoint> Released;
+    FString Names;
+    for (const FIntPoint& P : IgnoredPairs)
+    {
+        if (!Extent.IsValidIndex(P.X) || !Extent.IsValidIndex(P.Y) || Extent[P.X].IsEmpty() || Extent[P.Y].IsEmpty()) continue;
+        const double Depth = Overlap(Extent[P.X], Extent[P.Y]);
+        if (Depth > -ReleaseMargin) continue;
+        Released.Add(P);
+        Names += FString::Printf(TEXT(" %s-%s (%.1f cm apart)"), *Mesh->Bodies[P.X]->BodySetup->BoneName.ToString(),
+            *Mesh->Bodies[P.Y]->BodySetup->BoneName.ToString(), -Depth);
+    }
+    for (const FIntPoint& P : Released) IgnoredPairs.Remove(P);
+    RemoveIgnoredPairs(Released);
     PairsReleased += Released.Num();
     if (Released.Num())
         UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll: kept apart as the bail began, meet again %.2f s in:%s"), BailTime, *Names);
@@ -1151,24 +1494,29 @@ void URidePhysicalRider::BodyExtents(TArray<TArray<FVector2D>>& Extent) const
     }
 }
 
-// The joint furthest past its range and the two bodies that may meet deepest in each other, as the bodies are now.
-bool URidePhysicalRider::MeasureJoints(float& Past, FName& Joint, FVector& Angles, float& Depth, FName Pair[2]) const
+// The joint furthest past its range and the two bodies that may meet deepest in each other, as the bodies are now:
+// the live constraints' frames and limits (a bail's envelope, Physics Control's widening), measured as Chaos does.
+bool URidePhysicalRider::MeasureJoints(float& Past, FName& Joint, FVector& Angles, float& Depth, FName Pair[2], FVector* Limits, bool* bSoft) const
 {
     const UPhysicsAsset* Physics = Mesh ? Mesh->GetPhysicsAsset() : nullptr;
     if (!Physics) return false;
     Past = -UE_BIG_NUMBER; Joint = NAME_None; Angles = FVector::ZeroVector;
-    for (const UPhysicsConstraintTemplate* Template : Physics->ConstraintSetup)
+    if (Limits) *Limits = FVector::ZeroVector;
+    if (bSoft) *bSoft = false;
+    for (const FConstraintInstance* C : Mesh->Constraints)
     {
-        if (!Template) continue;
-        const FConstraintInstance& C = Template->DefaultInstance;
-        const FBodyInstance* Child = Mesh->GetBodyInstance(C.ConstraintBone1);
-        const FBodyInstance* Parent = Mesh->GetBodyInstance(C.ConstraintBone2);
+        if (!C) continue;
+        const FBodyInstance* Child = Mesh->GetBodyInstance(C->ConstraintBone1);
+        const FBodyInstance* Parent = Mesh->GetBodyInstance(C->ConstraintBone2);
         if (!Child || !Parent) continue;
-        const FQuat Relative = (Parent->GetUnrealWorldTransform().GetRotation() * C.GetRefFrame(EConstraintFrame::Frame2).GetRotation()).Inverse()
-            * (Child->GetUnrealWorldTransform().GetRotation() * C.GetRefFrame(EConstraintFrame::Frame1).GetRotation());
-        const FVector A = JointAngles(Relative);
-        const float P = float(PastLimits(A, C.GetAngularTwistLimit(), C.GetAngularSwing1Limit(), C.GetAngularSwing2Limit()));
-        if (P > Past) { Past = P; Joint = C.ConstraintBone1; Angles = A; }
+        const FVector A = JointAngles(ChaosRelative(*Child, *Parent, C->GetRefFrame(EConstraintFrame::Frame1).GetRotation(),
+            C->GetRefFrame(EConstraintFrame::Frame2).GetRotation()));
+        const FVector Live = LiveLimits(*C);
+        const float P = float(PastLimits(A, Live.X, Live.Y, Live.Z));
+        if (P <= Past) continue;
+        Past = P; Joint = C->ConstraintBone1; Angles = A;
+        if (Limits) *Limits = Live;
+        if (bSoft) *bSoft = C->ProfileInstance.ConeLimit.bSoftConstraint || C->ProfileInstance.TwistLimit.bSoftConstraint;
     }
     Depth = -UE_BIG_NUMBER; Pair[0] = Pair[1] = NAME_None;
     TArray<TArray<FVector2D>> Extent;
@@ -1210,6 +1558,7 @@ void URidePhysicalRider::Update(float Dt, ERidePhysicalPhase NewPhase)
     GuardBoards();
     if (!Control || !Mesh) return;
     DrivenFrame = GFrameCounter;
+    if (bIgnorePending && !bBail) IgnoreRiderPairs(false);
     const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
     // A touchdown holds the Landing profile for a moment.
     if (NewPhase == ERidePhysicalPhase::Riding || NewPhase == ERidePhysicalPhase::Manual)
@@ -1591,10 +1940,20 @@ FString URidePhysicalRider::Describe() const
     }
     if (CVarRideJointCheck.GetValueOnGameThread() != 0)
     {
-        float Past, Depth; FName Joint, Pair[2]; FVector Angles;
-        if (MeasureJoints(Past, Joint, Angles, Depth, Pair))
+        float Past, Depth; FName Joint, Pair[2]; FVector Angles, Limits; bool bSoft = false;
+        if (MeasureJoints(Past, Joint, Angles, Depth, Pair, &Limits, &bSoft))
         {
-            Skin += FString::Printf(TEXT(" joint_past=%.1f joint=%s joint_angles=%.0f,%.0f,%.0f"), Past, *Joint.ToString(), Angles.X, Angles.Y, Angles.Z);
+            const auto Shown = [](double L) { return L >= UE_BIG_NUMBER ? -1. : L; };
+            Skin += FString::Printf(TEXT(" joint_past=%.1f joint=%s joint_angles=%.0f,%.0f,%.0f joint_limits=%.1f,%.1f,%.1f joint_soft=%d"), Past,
+                *Joint.ToString(), Angles.X, Angles.Y, Angles.Z, Shown(Limits.X), Shown(Limits.Y), Shown(Limits.Z), bSoft ? 1 : 0);
+            if (bBuiltAsset)
+            {
+                int32 OnBail, OnRiding, Lost; float Ramp;
+                CheckEnvelope(OnBail, OnRiding, Lost, Ramp);
+                Skin += FString::Printf(TEXT(" joint_env=%s joint_on=%d,%d joint_lost=%d joint_ramp=%.1f joint_tighten=%d"),
+                    OnBail && !OnRiding ? TEXT("bail") : OnRiding && !OnBail ? TEXT("riding") : TEXT("mixed"), OnBail, OnRiding, Lost, Ramp,
+                    CVarRideBailTighten.GetValueOnGameThread() != 0 ? 1 : 0);
+            }
             if (!Pair[0].IsNone()) Skin += FString::Printf(TEXT(" pair_depth=%.1f pair=%s-%s"), Depth, *Pair[0].ToString(), *Pair[1].ToString());
             Skin += FString::Printf(TEXT(" pairs_kept=%d pairs_released=%d"), IgnoredPairs.Num(), PairsReleased);
         }
@@ -1689,7 +2048,7 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     Weight = WeightTarget = 1.f; ApplyWeight();
     bBail = true; BailTime = 0.f; Quiet = 0.f;
     // Limp at once: the Bail profile lets go of every anchor and turns gravity on, and the joints keep only its tone
-    // toward the clip (their limits as authored). The anchors hold the bodies in the frame of the kinematic root body,
+    // toward the clip, within the bail's envelope (ApplyJointLimits). The anchors hold the bodies in the frame of the kinematic root body,
     // and in a bail the ride stops the root on the bail's frame, then carries it to the ground under the body a frame
     // late (on a quarter, from the board on the wall to whatever lies below the hips): held to that frame even for a
     // moment, the body is braked to a stop or flung.
@@ -1704,6 +2063,14 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     const bool bUpdatedBefore = Guarded && Guarded->UpdatedFrame == GFrameCounter;
     const bool bApplyNow = CVarRideBailApplyNow.GetValueOnGameThread() != 0;
     if (bApplyNow) Control->UpdateControls(0.f);
+    // The limits as Physics Control left them: every joint should hold what ApplyEnvelopes set.
+    {
+        int32 OnBail, OnRiding; float Ramp;
+        CheckEnvelope(OnBail, OnRiding, EnvelopeLostAtStart, Ramp);
+        if (bBuiltAsset)
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll joints: %d in the bail's envelope, %d in the riding one, %d not as set; limits open up to %.1f degrees past the envelope for the pose the bail began in"),
+                OnBail, OnRiding, EnvelopeLostAtStart, Ramp);
+    }
 
     BailStart = BailHips = GetPelvisLocation();
     BailLimit = FMath::Max(2500.f, float(Velocity.Size()) * 1.5f + 800.f);
@@ -1794,7 +2161,12 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
         UE_LOG(LogTemp, Warning, TEXT("SKATE ride ragdoll unstable (%.0f cm/s, %.0f cm from the start%s)"), Speed, Hips.Z - BailStart.Z, *Crossed);
         return ERideBodyState::Unstable;
     }
-    if (!IgnoredPairs.IsEmpty()) ReleaseKeptPairs(false);
+    if (!IgnoredPairs.IsEmpty() && CVarRideSelfCollision.GetValueOnGameThread() != 0) ReleaseKeptPairs();
+    UpdateRamp(Dt);
+    {
+        const float Fade = CVarRideBailDriveFade.GetValueOnGameThread();
+        ApplyDriveFade(Fade > 0.f ? FMath::Square(FMath::Clamp(1.f - BailTime / Fade, 0.f, 1.f)) : 1.f);
+    }
     LastBodyGround = BodyGround;
     BodyGround = TraceGround(Hips);
     {
@@ -1821,6 +2193,7 @@ void URidePhysicalRider::Abort()
     SetSimulating(false);
     ApplyBailMaterial(false);
     ApplyBailDrag(0.f);
+    ApplyDriveFade(1.f);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
 }
@@ -1886,6 +2259,7 @@ void URidePhysicalRider::HandOverGetUp()
     SetSimulating(false);
     ApplyBailMaterial(false);
     ApplyBailDrag(0.f);
+    ApplyDriveFade(1.f);
     ApplyJointLimits(true, true);
     Phase = ERidePhysicalPhase::Off;
     ApplyPhase(ERidePhysicalPhase::GetUp);

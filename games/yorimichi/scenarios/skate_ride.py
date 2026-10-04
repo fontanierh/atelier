@@ -2005,11 +2005,18 @@ def physical_bail_quarter(record):
 # User 22:29: in a bail the body twisted into impossible positions. Each joint of the built asset holds a human range
 # (RIDE.md, Physical rider, Joints), and the bodies meet each other in a bail. skate.RideJointCheck adds joint_past=
 # (degrees: how far the joint furthest past its range is past it, below 0 inside every range; from the bodies'
-# rotations against the asset's limits), joint= and joint_angles= (its twist, swing1 and swing2), and pair_depth= (cm:
+# rotations against the live constraints' frames and limits, measured as Chaos does), joint=, joint_angles= (its
+# twist, swing1 and swing2), joint_limits= (its live limits, -1 for a free axis) and joint_soft=, and pair_depth= (cm:
 # the two bodies that may meet deepest in each other, below 0 apart) with pair=, and pairs_kept= and pairs_released=
 # (pairs that overlapped as the bail began, kept apart until they come apart, and how many have met again).
+# A bail tightens the built asset's joints to Native's bail envelope (skate.RideBailTighten): joint_env= says which
+# frames the joints hold (bail, riding or mixed), joint_lost= how many joints lost the limits the rider set (Physics
+# Control putting the asset's back, or a soft limit), joint_ramp= how far past the envelope the limits still stand
+# (degrees: they open to fit the pose a bail starts in and close from there), and joint_tighten= the setting.
 JOINT_SLACK = 10.   # degrees: a hard hit pushes Chaos's limits a little; no joint further past its range than this
 PAIR_DEPTH = 3.     # cm: no two bodies that meet deeper in each other than this
+JOINT_HELD = 3      # the first limp frames that must already hold the bail's envelope
+RAMP_SETTLED = .05  # degrees: the limits have closed onto the envelope
 # The bails: on the flat at 6, 12 and 18 m/s (start x, the bail input's time), a Christ air held into the quarter's
 # landing (CHRIST_AIR), and a bail in the middle of a grind along flatbar_red at 7 m/s (locked about 1.4 s in, 2.5 s
 # along it).
@@ -2079,8 +2086,10 @@ def joint_start(name, extra=''):
 
 def joint_worst(rows):
     """The first bail's limp frames (the Bail profile, simulating): its entry speed, the frames measured, the worst
-    joint (how far past its range, which, its angles, the time into the bail), how many frames had a joint past
-    JOINT_SLACK and which joints, and the deepest pair; None without a bail."""
+    joint (how far past its range, which, its angles and live limits, the time into the bail), how many frames had a
+    joint past JOINT_SLACK and which joints, the deepest pair, and the envelope (which one the first JOINT_HELD frames
+    held, the most joints that lost their limits, how far the limits opened and when they closed onto it); None without
+    a bail."""
     start = next((i for i, r in enumerate(rows) if r['mode'] == '4'), None)
     if start is None:
         return None
@@ -2106,7 +2115,30 @@ def joint_worst(rows):
             'pair': deep.get('pair', '-'), 'before': before, 'came': came,
             'kept': max((int(r.get('pairs_kept', 0)) for _, r in limp), default=0),
             'released': max((int(r.get('pairs_released', 0)) for _, r in limp), default=0),
-            'still_kept': int(limp[-1][1].get('pairs_kept', 0))}
+            'still_kept': int(limp[-1][1].get('pairs_kept', 0)), 'limits': worst.get('joint_limits', '-'),
+            'soft': worst.get('joint_soft', '-'), **joint_envelope(limp)}
+
+
+def joint_envelope(limp):
+    """The envelope through the limp frames `limp` ((time into the bail, row) pairs): {} for a rider on its own
+    physics asset, which reports none."""
+    if 'joint_env' not in limp[0][1]:
+        return {}
+    ramp = [(t, float(r.get('joint_ramp', 'nan'))) for t, r in limp]
+    return {'tighten': limp[0][1].get('joint_tighten', '-'), 'env': [r['joint_env'] for _, r in limp[:JOINT_HELD]],
+            'lost': max(int(r.get('joint_lost', 0)) for _, r in limp), 'ramp': ramp[0][1],
+            'settled': next((t for t, v in ramp if v <= RAMP_SETTLED), None)}
+
+
+def joint_held(w):
+    """Whether the bail's joints held what the rider set: with skate.RideBailTighten on, Native's envelope from the
+    first frames on, every joint's limits as set, and the limits closed onto it before the bail ended; off, the riding
+    frames with nothing lost."""
+    if 'env' not in w:
+        return True
+    wanted = 'bail' if w['tighten'] == '1' else 'riding'
+    return (all(e == wanted for e in w['env']) and w['lost'] == 0
+            and (wanted == 'riding' or w['settled'] is not None))
 
 
 def joint_entered(name, w):
@@ -2164,15 +2196,21 @@ def joint_text(name, w):
         'wrong speed' if name.startswith('flat') else 'not from the air' if name == 'quarter' else 'never on the rail') + ')'
     kept = (f"; {w['kept']} pairs kept apart at the start, {w['released']} met again, {w['still_kept']} still apart at the end"
             if w['kept'] else '')
+    envelope = ''
+    if 'env' in w:
+        settled = f"closed onto it {w['settled']:.2f} s in" if w['settled'] is not None else 'NEVER closed onto it'
+        envelope = (f"; envelope {'/'.join(w['env'])} on the first {len(w['env'])} frames (tighten {w['tighten']}), "
+                    f"{w['lost']} joints not as set, limits opened {w['ramp']:.1f} deg past it and {settled}")
     return (f"{name}: entry {w['entry']:.1f} m/s{entered}, {w['frames']} limp frames, worst joint {w['past']:+.1f} deg past its "
-            f"range ({w['joint']}, twist/swing1/swing2 {w['angles']} deg, {w['at']:.2f} s in), {w['over']} frames over "
-            f"{JOINT_SLACK:g} deg{over}; deepest pair {w['depth']:.1f} cm ({w['pair']}){kept}")
+            f"range ({w['joint']}, twist/swing1/swing2 {w['angles']} deg against {w['limits']} deg"
+            f"{', soft' if w['soft'] == '1' else ''}, {w['at']:.2f} s in), {w['over']} frames over "
+            f"{JOINT_SLACK:g} deg{over}; deepest pair {w['depth']:.1f} cm ({w['pair']}){kept}{envelope}")
 
 
 def physical_joints(record):
     """No joint past its human range and no two bodies deep in each other through bails on the flat at 6, 12 and 18
-    m/s, on the quarter and out of a grind (skate.RideJointCheck, over each first bail's limp frames), with a
-    close-up of the worst pose."""
+    m/s, on the quarter and out of a grind (skate.RideJointCheck, over each first bail's limp frames), the joints
+    holding the bail's envelope from its first frames (joint_held), with a close-up of the worst pose."""
     joint_check(True)
     runs, shot, frozen = {}, None, ''
     try:
@@ -2188,7 +2226,7 @@ def physical_joints(record):
     finally:
         joint_check(False)
     ok = len(measured) == len(JOINT_RUNS) and all(w['past'] <= JOINT_SLACK and w['depth'] <= PAIR_DEPTH and w['frames'] >= 20
-                                                    and joint_entered(n, w) for n, w in measured.items())
+                                                    and joint_entered(n, w) and joint_held(w) for n, w in measured.items())
     record('physical_joints', runs[worst][0] if worst else [], ok,
            '; '.join(joint_text(n, w) for n, (_, w) in runs.items())
            + (f'; close-up of the worst ({worst}), {frozen}: {shot}' if worst else ''))
