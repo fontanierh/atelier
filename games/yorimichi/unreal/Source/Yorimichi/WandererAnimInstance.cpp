@@ -122,6 +122,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     // A two-handed hold on a sword shorter than the clip's own (Cairo's bokken clips on Link's sword): the off hand is put
     // on the handle beside the sword hand, its elbow bending as the clip has it.
     FAnimNode_TwoBoneIK GripIK;
+    // Gliding, each wrist on its grip on the paraglider's bar (UBotwMoveSet::GlideHandLocation), elbows as the clip bends them.
+    FAnimNode_TwoBoneIK GlideIK[2];
     FGroundContactNode Feet;
     FSailboatStanceNode Stance;
     FAnimNode_ConvertComponentToLocalSpace ToLocal;
@@ -155,7 +157,16 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         GripIK.EffectorLocation = GripIK.JointTargetLocation = FVector::ZeroVector;
         GripIK.bAllowStretching = false; GripIK.bTakeRotationFromEffectorSpace = false; GripIK.bMaintainEffectorRelRot = false;
         GripIK.Alpha = 0.f;
-        Feet.ComponentPose.SetLinkNode(&GripIK);
+        GlideIK[0].ComponentPose.SetLinkNode(&GripIK);
+        GlideIK[1].ComponentPose.SetLinkNode(&GlideIK[0]);
+        for (FAnimNode_TwoBoneIK& IK : GlideIK)
+        {
+            IK.EffectorLocationSpace = BCS_ComponentSpace; IK.JointTargetLocationSpace = BCS_BoneSpace;
+            IK.EffectorLocation = IK.JointTargetLocation = FVector::ZeroVector;
+            IK.bAllowStretching = false; IK.bTakeRotationFromEffectorSpace = false; IK.bMaintainEffectorRelRot = false;
+            IK.Alpha = 0.f;
+        }
+        Feet.ComponentPose.SetLinkNode(&GlideIK[1]);
         Feet.Alpha=0.f;
         Stance.ComponentPose.SetLinkNode(&Feet);
         Stance.Alpha = 0.f;
@@ -170,7 +181,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &ToComponent, &GripIK, &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -192,6 +203,12 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 GripIK.IKBone.BoneName = Pawn->GetSkateBone(TEXT("hand_L"));
                 GripIK.EffectorTarget = FBoneSocketTarget(Pawn->GetSkateBone(TEXT("hand_R")));
                 GripIK.JointTarget = FBoneSocketTarget(Pawn->GetSkateBone(TEXT("forearm_L")));
+                for (int32 I = 0; I < 2; ++I)
+                {
+                    const TCHAR* Side = I ? TEXT("L") : TEXT("R");
+                    GlideIK[I].IKBone.BoneName = Pawn->GetSkateBone(FName(*FString::Printf(TEXT("hand_%s"), Side)));
+                    GlideIK[I].JointTarget = FBoneSocketTarget(Pawn->GetSkateBone(FName(*FString::Printf(TEXT("forearm_%s"), Side))));
+                }
             }
         FAnimInstanceProxy::Initialize(Instance);
     }
@@ -305,6 +322,11 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         CarryLayer.BlendWeights[1] = FMath::Min(1.f, ShieldWeight + FreeWeight + OffHandGuard);
         GripIK.Alpha = bCarrying && Moves ? Moves->TwoHandGripWeight() : 0.f;
         if (Moves) GripIK.EffectorLocation = Moves->TwoHandGripOffset();
+        for (int32 I = 0; I < 2; ++I)
+        {
+            GlideIK[I].Alpha = Moves && !bRiding && !bSailing ? Moves->GlideHandWeight() : 0.f;
+            if (Moves) GlideIK[I].EffectorLocation = Moves->GlideHandLocation(I);
+        }
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
     }

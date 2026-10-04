@@ -112,6 +112,9 @@ public:
      *  its handle, and where that is from the sword hand's bone (one hand's width along the handle toward the pommel). */
     float TwoHandGripWeight() const { return TwoHandGrip; }
     FVector TwoHandGripOffset() const { return GripOffset; }
+    /** Gliding: how much each wrist is put on its grip on the bar, and where (mesh component space; 0 right, 1 left). */
+    float GlideHandWeight() const { return GlideHands; }
+    FVector GlideHandLocation(int32 Side) const { return GlideHandTarget[Side & 1]; }
     float GetMaxWalkSpeed(float Default) const;
     float GetParam(const TCHAR* Key, float Default = 0.f) const;
     const FBotwMove* Find(FName Name) const { return Moves.Find(Name); }
@@ -193,8 +196,14 @@ private:
     FTransform GliderHeld = FTransform::Identity;
     FVector BarGrip[2] = { FVector::ZeroVector, FVector::ZeroVector }, HandGrip[2] = { FVector::ZeroVector, FVector::ZeroVector };
     FName GripBone[2];
-    float GliderGripWeight = 0.f;
+    FName GliderSocket;   // the hand bone it is held at
     bool bBarKnown = false;
+    // Once the bar has been fitted to the neutral glide, the glider keeps that place on the body (banking about its bar as
+    // he turns) and the hands are put on its grips (IK), so the turning clips' arms never carry it, or a hand, into his head.
+    FTransform GliderOnBody = FTransform::Identity;   // relative to the mesh component
+    FVector GlideHandTarget[2] = { FVector::ZeroVector, FVector::ZeroVector };   // the wrists' targets, component space
+    float GlideBank = 0.f, GlideHands = 0.f;
+    bool bGliderOnBody = false, bGliderBodyAttached = false;
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
     TWeakObjectPtr<AActor> LungeTarget;
     float LungeTime = 0.f, LungeStand = 0.f;
