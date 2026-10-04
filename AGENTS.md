@@ -53,6 +53,35 @@ uv run pytest                            # studio and game Python tests
   the same size) and **real-time speed** (no slow motion). Inspect the motion before accepting a take.
 - Generated video is a reference for animation authored locally in Blender, never the animation itself.
 
+## Agent messaging and subscriptions
+
+- At the start of every agent session, choose a unique stable owner name and **always subscribe with a
+  background mechanism that wakes your existing session**. Use `atelier board subscribe --agent OWNER
+  --background --notify '<JSON argv>'` when your client supports existing-session delivery. For Claude Code,
+  run `atelier board wait --agent OWNER --timeout 3600` as a `run_in_background` shell task, act on its exit
+  output, then immediately re-arm it (including timeout exit 3). A never-ending foreground subscriber does
+  not wake a completion-based client. Never use `claude -p --resume` or `claude --continue` as a notifier:
+  that starts a separate writer on the same transcript rather than notifying the live session.
+- Verify delivery and `atelier board status`; keep a subscription/wait armed while working or waiting and
+  restart/check it on session resume. Use `--addressed-only` if broadcast wakeups are too noisy, while still
+  reading the render ledger at admission/step boundaries. See [the guide](docs/AGENT_BOARD.md) for adapters,
+  timeout/re-arm behavior and shared-tool `--checkout` usage. Remote/ephemeral clients that cannot keep a
+  background task alive must report this limitation on the render board rather than claim a subscription;
+  an unattended log is not delivery. A NULL status PID means no wait/subscriber is currently armed.
+- Use `atelier board post/read` for addressed requests, acknowledgements, handoffs, blocked notices and evidence.
+  Preserve the Markdown render board's Holding/Waiting/Handoffs/Log entries as the scheduling ledger. Messages are
+  durable across worktrees and advisory: the live lock and memory guard still decide admission.
+- Proactively coordinate render turns with the current owner and other waiters. Acknowledge messages promptly;
+  state a concrete next safe boundary and revised ETA when late. Recheck messages and Waiting between heavy
+  steps, and yield an agreed turn before per-step reacquisition or a game session. Retain first-ready time on
+  refusals/requeues, distinguish blocked from ready, and never reserve a slot while idle. Prefer ready jobs under
+  five minutes; after two short bypasses offer the oldest compatible ready long job the next turn.
+- Subscribers send advisory lack-of-stdout-progress notices for their own validated live jobs. On an alert,
+  inspect stdout, memory-health.json and supervisor telemetry, publish diagnosis/ETA, and safely end only your
+  own blocked job if needed. Never signal another owner's process, remove shared mutexes, steal locks or bypass
+  safety. On release, post exit/duration/evidence and send a named handoff; credit reuse and prompt releases.
+- At session completion, `atelier board unsubscribe --agent OWNER`; keep messages and evidence history.
+
 ## Heavy jobs
 
 - Heavy jobs (Unreal, Blender renders) run under the render lock and memory guard (`atelier.safety`). `atelier play`
