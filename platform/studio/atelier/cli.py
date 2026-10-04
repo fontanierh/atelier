@@ -10,7 +10,7 @@
     atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
-    atelier board post|read|subscribe|unsubscribe|status   coordinate machine-local agents
+    atelier board post|read|subscribe|wait|unsubscribe|status   coordinate machine-local agents
     atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
 """
 import argparse, datetime, importlib.util, os, re, shutil, subprocess, sys

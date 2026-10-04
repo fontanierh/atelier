@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 from . import paths
 
@@ -76,11 +77,12 @@ def post(sender, body, recipient='*', topic='info', reply_to=None, dedup=None):
         return db.execute('SELECT id FROM messages WHERE dedup=?', (dedup,)).fetchone()['id']
 
 
-def messages(after=0, agent=None, limit=100):
+def messages(after=0, agent=None, limit=100, addressed_only=False):
     with database() as db:
         if agent:
-            rows = db.execute('''SELECT * FROM messages WHERE id>? AND sender!=?
-                AND recipient IN ('*', ?) ORDER BY id LIMIT ?''', (after, agent, agent, limit))
+            recipients = 'recipient=?' if addressed_only else "recipient IN ('*', ?)"
+            rows = db.execute(f'SELECT * FROM messages WHERE id>? AND sender!=? AND {recipients} '
+                              'ORDER BY id LIMIT ?', (after, agent, agent, limit))
         else:
             rows = db.execute('SELECT * FROM messages WHERE id>? ORDER BY id LIMIT ?', (after, limit))
         return [dict(row) for row in rows]
@@ -106,10 +108,13 @@ def notify_command(value):
     return command
 
 
-def deliver(batch, command=None):
+def deliver(batch, command=None, full=False):
     text = notification(batch)
     if command is None:
         print(text, flush=True)
+        if full:
+            for item in batch:
+                print(json.dumps(item), flush=True)
     else:
         # No shell interpolation. Transport failures leave the cursor unchanged for retry.
         result = subprocess.run([text if x == '{message}' else x for x in command],
@@ -118,12 +123,15 @@ def deliver(batch, command=None):
             raise RuntimeError(f'notification command exited {result.returncode}: {result.stderr[-1000:]}')
 
 
-def poll(agent, command=None):
+def poll(agent, command=None, addressed_only=False, full=False):
     with database() as db:
         row = db.execute('SELECT cursor FROM subscribers WHERE agent=?', (agent,)).fetchone()
-    batch = messages(row['cursor'], agent, limit=20)
+    batch = messages(row['cursor'], agent, limit=20, addressed_only=addressed_only)
     if batch:
-        deliver(batch, command)
+        if full:
+            deliver(batch, command, full=True)
+        else:
+            deliver(batch, command)
         with database() as db:
             db.execute('UPDATE subscribers SET cursor=?, error=NULL WHERE agent=?', (batch[-1]['id'], agent))
     return len(batch)
@@ -138,21 +146,31 @@ def render_board_changes():
         return
     text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->',
                   '', text, flags=re.S)
-    digest = hashlib.sha256(text.encode()).hexdigest()
+    sections = {match[1]: hashlib.sha256(match[2].encode()).hexdigest()
+                for match in re.finditer(r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)',
+                                         text, re.M | re.S)}
+    if not sections:
+        sections = {'board': hashlib.sha256(text.encode()).hexdigest()}
     # One shared transaction prevents every subscriber publishing the same change.
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
         row = db.execute("SELECT value FROM observations WHERE name='render-board'").fetchone()
-        if row and row['value'] == digest:
+        try:
+            previous = json.loads(row['value']) if row else None
+        except ValueError:  # Upgrade from the original single digest.
+            previous = {}
+        if previous == sections:
             return
         db.execute("INSERT INTO observations VALUES ('render-board', ?) "
-                   "ON CONFLICT(name) DO UPDATE SET value=excluded.value", (digest,))
+                   "ON CONFLICT(name) DO UPDATE SET value=excluded.value", (json.dumps(sections),))
         if row:
+            changed = ', '.join(sorted(k for k in sections.keys() | previous.keys()
+                                       if sections.get(k) != previous.get(k)))
             db.execute("INSERT INTO messages (created, sender, recipient, topic, body) VALUES (?, ?, ?, ?, ?)",
                        (time.time(), 'board-watch', '*', 'info',
-                        f'Render scheduling board changed: read {path}, especially Holding, Waiting, '
-                        'Handoffs and latest Log. Acknowledge requests and offer a concrete safe-boundary '
-                        'handoff. Recheck live locks before admission; this notice does not grant a slot.'))
+                        f'Render scheduling board changed ({changed}): read {path}. '
+                        'Acknowledge requests and offer a concrete safe-boundary handoff. '
+                        'Recheck live locks before admission; this notice does not grant a slot.'))
 
 
 def stalled_logs(agent, checkout, seconds, now=None):
@@ -194,7 +212,9 @@ def stalled_logs(agent, checkout, seconds, now=None):
             continue
 
 
-def subscribe(agent, command, interval=5, stall_after=900):
+@contextmanager
+def subscriber(agent, checkout):
+    """One transport or background wait per owner, sharing its durable cursor."""
     agent_name(agent)
     folder = root() / 'board-subscribers'
     folder.mkdir(exist_ok=True)
@@ -207,29 +227,43 @@ def subscribe(agent, command, interval=5, stall_after=900):
             db.execute('''INSERT INTO subscribers (agent, pid, heartbeat, checkout) VALUES (?, ?, ?, ?)
                 ON CONFLICT(agent) DO UPDATE SET pid=excluded.pid, heartbeat=excluded.heartbeat,
                 checkout=excluded.checkout, stop=0, error=NULL''',
-                (agent, os.getpid(), time.time(), str(paths.REPO)))
+                (agent, os.getpid(), time.time(), str(checkout)))
         try:
-            while True:
-                with database() as db:
-                    row = db.execute('SELECT stop FROM subscribers WHERE agent=?', (agent,)).fetchone()
-                    if row['stop']:
-                        break
-                    db.execute('UPDATE subscribers SET heartbeat=? WHERE agent=?', (time.time(), agent))
-                try:
-                    render_board_changes()
-                    stalled_logs(agent, paths.REPO, stall_after)
-                    poll(agent, command)
-                except (OSError, RuntimeError, subprocess.SubprocessError) as error:
-                    with database() as db:
-                        db.execute('UPDATE subscribers SET error=? WHERE agent=?', (str(error), agent))
-                    print(str(error), file=sys.stderr, flush=True)
-                    # Retry without dropping messages or hammering a failed transport.
-                    time.sleep(30)
-                    continue
-                time.sleep(interval)
+            yield
         finally:
             with database() as db:
                 db.execute('UPDATE subscribers SET pid=NULL WHERE agent=?', (agent,))
+
+
+def subscribe(agent, command, interval=5, stall_after=900, timeout=None, addressed_only=False, checkout=None):
+    """Continuous delivery, or exit after one printed batch when timeout is provided."""
+    checkout = Path(checkout or paths.REPO).resolve()
+    deadline = None if timeout is None else time.monotonic()+timeout
+    with subscriber(agent, checkout):
+        while True:
+            with database() as db:
+                row = db.execute('SELECT stop FROM subscribers WHERE agent=?', (agent,)).fetchone()
+                if row['stop']:
+                    return 0
+                db.execute('UPDATE subscribers SET heartbeat=? WHERE agent=?', (time.time(), agent))
+            delay = interval
+            try:
+                render_board_changes()
+                stalled_logs(agent, checkout, stall_after)
+                count = poll(agent, command, addressed_only, full=deadline is not None)
+                if count and deadline is not None:
+                    return 0
+            except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+                with database() as db:
+                    db.execute('UPDATE subscribers SET error=? WHERE agent=?', (str(error), agent))
+                print(str(error), file=sys.stderr, flush=True)
+                delay = 30  # Retry without dropping messages or hammering a failed transport.
+            if deadline is not None:
+                remaining = deadline-time.monotonic()
+                if remaining <= 0:
+                    return 3
+                delay = min(delay, remaining)
+            time.sleep(delay)
 
 
 def background(args):
@@ -239,7 +273,10 @@ def background(args):
     folder.mkdir(exist_ok=True)
     log = folder / f'{args.agent}.log'
     command = [sys.executable, '-m', 'atelier.cli', 'board', 'subscribe', '--agent', args.agent,
-               '--notify', args.notify, '--interval', str(args.interval), '--stall-after', str(args.stall_after)]
+               '--notify', args.notify, '--interval', str(args.interval), '--stall-after', str(args.stall_after),
+               '--checkout', str(Path(args.checkout).resolve())]
+    if args.addressed_only:
+        command.append('--addressed-only')
     env = dict(os.environ, PYTHONPATH=str(paths.STUDIO) + os.pathsep + os.environ.get('PYTHONPATH', ''))
     with log.open('a') as output:
         child = subprocess.Popen(command, cwd=paths.REPO, env=env, stdin=subprocess.DEVNULL,
@@ -270,10 +307,20 @@ def configure(sub):
     p = actions.add_parser('subscribe')
     p.add_argument('--agent', required=True); p.add_argument('--background', action='store_true')
     p.add_argument('--notify', help='JSON argv; a separate {message} argument receives the notification')
-    p.add_argument('--interval', type=float, default=5)
-    p.add_argument('--stall-after', type=float, default=900, help='seconds without stdout progress (default: 900)')
+    watch_options(p)
+    p = actions.add_parser('wait', help='print one new batch and exit; re-arm as a background task')
+    p.add_argument('--agent', required=True)
+    p.add_argument('--timeout', type=float, default=3600, help='exit 3 without delivery on timeout')
+    watch_options(p)
     p = actions.add_parser('unsubscribe'); p.add_argument('--agent', required=True)
     actions.add_parser('status')
+
+
+def watch_options(parser):
+    parser.add_argument('--interval', type=float, default=5)
+    parser.add_argument('--stall-after', type=float, default=900, help='seconds without stdout progress (default: 900)')
+    parser.add_argument('--addressed-only', action='store_true', help='ignore broadcast messages')
+    parser.add_argument('--checkout', default=str(paths.REPO), help='owner checkout to monitor (default: this checkout)')
 
 
 def main(args):
@@ -288,13 +335,19 @@ def main(args):
                 raise ValueError('--after must be nonnegative; --limit must be 1–1000')
             for row in messages(args.after, args.agent, args.limit):
                 print(json.dumps(row))
-        elif args.action == 'subscribe':
+        elif args.action in ('subscribe', 'wait'):
             if not 1 <= args.interval <= 60 or not math.isfinite(args.stall_after) or args.stall_after < 60:
                 raise ValueError('--interval must be 1–60 seconds; --stall-after must be at least 60')
+            if args.action == 'wait':
+                if not math.isfinite(args.timeout) or args.timeout < 0:
+                    raise ValueError('--timeout must be finite and nonnegative')
+                return subscribe(args.agent, None, args.interval, args.stall_after,
+                                 timeout=args.timeout, addressed_only=args.addressed_only, checkout=args.checkout)
             command = notify_command(args.notify) if args.notify else None
             if args.background:
                 return background(args)
-            subscribe(args.agent, command, args.interval, args.stall_after)
+            return subscribe(args.agent, command, args.interval, args.stall_after,
+                             addressed_only=args.addressed_only, checkout=args.checkout)
         elif args.action == 'unsubscribe':
             with database() as db:
                 db.execute('UPDATE subscribers SET stop=1 WHERE agent=?', (args.agent,))

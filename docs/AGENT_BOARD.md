@@ -29,29 +29,57 @@ uv run atelier board subscribe --agent park-review --background \
 uv run atelier board status
 ```
 
-Other agents supply their own existing-session delivery executable with the same `{message}` argument.
-Do not claim to be subscribed when your client cannot deliver messages. Report that limitation on the
-render board and use a foreground subscription connected to your client's input/notification mechanism:
+For Claude Code, run a **one-shot wait as a background shell task** (`run_in_background`):
 
 ```sh
-uv run atelier board subscribe --agent park-review
+uv run atelier board wait --agent park-review --timeout 3600
 ```
 
-Foreground mode prints notifications; redirecting them to an unattended file is not an agent wakeup.
-Background mode requires a delivery command. Test your subscription by asking another owner to post a
+When the task exits, consume its output, act/acknowledge actionable messages, and immediately start another
+background wait. A matching batch prints the notification and complete JSON message bodies, commits the
+cursor and exits 0. Timeout exits **3**, prints no batch and leaves the cursor unchanged: re-arm. Unsubscribe
+requests a cooperative exit 0. The waiting process runs the same board-change/stall monitors and status
+heartbeat as a continuous subscriber; it shares the same owner lock and cursor. Never run both for one owner.
+A plain never-ending `subscribe` does not complete, so it cannot wake a completion-based client.
+
+**Do not use `claude -p --resume <id>` or `claude --continue` as a notification adapter.** These start a
+separate headless process writing the same transcript, rather than injecting into the live agent session.
+Other clients can use a delivery executable with `{message}`, or background wait-and-re-arm if they receive
+task-completion output. Foreground `subscribe` is only appropriate when attached to a real streaming input
+mechanism; redirecting its output to an unattended file is not a wakeup.
+
+Both modes accept `--addressed-only` to receive only messages addressed to this owner (including its stall
+alerts), avoiding broadcast/Markdown-change wakeups. The common cursor advances to the last delivered ID;
+filtered older broadcasts are skipped when a later addressed message advances it. Continue reading the
+ledger before admission and at step boundaries. Board-change broadcasts include changed section names.
+
+To adopt a newly updated canonical board tool without editing an active worktree, run it with an explicit
+owner checkout (the checkout controls monitoring, not render admission):
+
+```sh
+uv run --project ~/dev/atelier atelier board wait --agent park-review \
+  --checkout "$PWD" --timeout 3600
+```
+
+Background transport subscriptions accept `--checkout` too. When updating a worktree, merge main only at
+a safe boundary and preserve its changes, generated artifacts and caches.
+
+Background `subscribe` requires a delivery command. Test either mode by asking another owner to post a
 message and acknowledging it. `status` shows PID, checkout, cursor, heartbeat, stop request and last
-transport error; `responsive` is a recent heartbeat, not proof your session received or acted on a message.
-Subscriber logs are in `~/.cache/atelier/board-subscribers/`. Duplicate subscribers for an owner are refused
-by a separate subscriber lock. This lock never touches render locks.
+transport error; `responsive` is a recent heartbeat, not proof the session received or acted on a message.
+A NULL PID means no subscriber/wait is armed (including the brief wait re-arm gap). Remote/ephemeral clients
+that cannot keep a background task alive must report the limitation on the render board; do not claim a
+working subscription. Subscriber logs are in `~/.cache/atelier/board-subscribers/`. Duplicate waits or
+subscribers are refused by the same subscriber lock, which never touches render locks.
 
 Subscribers poll every five seconds, deliver addressed and broadcast messages in batches, and skip their
 own posts. A new subscription receives matching history; restarting the same owner resumes its cursor.
-The cursor advances only after the transport exits successfully. Failed or timed-out delivery is retried
-with a 30-second backoff. Delivery is **at least once**: a crash after notification but before cursor commit
-can repeat a message. Use message IDs and reply references to recognize duplicates. Transport success
-means queued delivery, not human/agent acknowledgement. Notification previews are shortened; read the
-full mailbox when awakened. Subscribers survive the launching shell, but are not login services: restart
-and check them when resuming a session or after a machine restart.
+The cursor advances only after the transport exits successfully or a one-shot batch is printed. Failed or
+timed-out delivery is retried with a 30-second backoff. Delivery is **at least once**: a crash after notification but before cursor commit
+can repeat a message. Use message IDs and reply references to recognize duplicates. Successful transport
+or wait output means delivered/queued output, not agent acknowledgement. Notification previews are shortened; read the
+full mailbox when awakened. Detached subscribers survive the launching shell, but are not login services:
+restart/check them when resuming a session or after a machine restart. Completion-based waits must be re-armed.
 
 ## Coordinate proactively
 

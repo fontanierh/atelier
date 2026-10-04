@@ -92,6 +92,7 @@ def test_legacy_board_changes_bridge_once_without_telemetry_noise(cache):
         list(executor.map(lambda _: board.render_board_changes(), range(4)))
     assert len(board.messages()) == 1
     assert board.messages()[0]['recipient'] == '*'
+    assert '(Handoffs)' in board.messages()[0]['body']
 
 
 def test_stall_notices_require_own_fresh_live_guard_and_deduplicate(cache, monkeypatch):
@@ -119,6 +120,39 @@ def test_stall_notices_require_own_fresh_live_guard_and_deduplicate(cache, monke
     holder['repo'] = str(cache / 'another-checkout')
     board.stalled_logs('owner', checkout, 900, now=1100)
     assert len(board.messages()) == 1
+
+
+def test_wait_prints_full_batch_and_timeout_preserves_cursor(cache, capsys):
+    register('review')
+    broadcast = board.post('other', 'broadcast')
+    args = parse_args(['board', 'wait', '--agent', 'review', '--timeout', '0', '--addressed-only'])
+    assert board.main(args) == 3
+    with board.database() as db:
+        row = db.execute('SELECT cursor, pid FROM subscribers').fetchone()
+        assert (row['cursor'], row['pid']) == (0, None)
+    body = 'full body ' + 'z'*1200
+    addressed = board.post('other', body, 'review')
+    assert board.main(args) == 0
+    output = capsys.readouterr().out
+    assert body in output and f'#{addressed} ' in output and f'#{broadcast} ' not in output
+    assert board.main(args) == 3
+    with board.database() as db:
+        assert db.execute('SELECT cursor FROM subscribers').fetchone()['cursor'] == addressed
+
+
+def test_wait_monitors_owner_checkout_and_delivers_alert(cache, monkeypatch, capsys):
+    monitored = []
+    checkout = cache / 'owned-worktree'
+    monkeypatch.setattr(board, 'render_board_changes', lambda: monitored.append('board'))
+    def alert(agent, path, seconds):
+        monitored.append(path)
+        board.post('board-watch', 'inspect stalled compile', agent, 'alert')
+    monkeypatch.setattr(board, 'stalled_logs', alert)
+    args = parse_args(['board', 'wait', '--agent', 'review', '--timeout', '0',
+                       '--addressed-only', '--checkout', str(checkout)])
+    assert board.main(args) == 0
+    assert monitored == ['board', checkout.resolve()]
+    assert 'inspect stalled compile' in capsys.readouterr().out
 
 
 def until(predicate, timeout=8):
@@ -157,3 +191,28 @@ def test_background_subscriber_duplicate_stop_and_restart(cache):
         board.main(parse_args(['board', 'unsubscribe', '--agent', 'review']))
         until(stopped)
     assert not (cache / 'render.lock').exists()
+
+
+def test_wait_heartbeat_exclusion_and_background_task_completion(cache):
+    env = dict(os.environ, PYTHONPATH=str(board.paths.STUDIO))
+    process = subprocess.Popen([sys.executable, '-m', 'atelier.cli', 'board', 'wait', '--agent', 'review',
+                                '--timeout', '5', '--interval', '1'], env=env,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    def armed():
+        with board.database() as db:
+            row = db.execute('SELECT pid, heartbeat FROM subscribers WHERE agent="review"').fetchone()
+            return row and row['pid'] == process.pid and time.time()-row['heartbeat'] < 2
+    try:
+        until(armed)
+        # The continuous subscriber and wait use exactly the same exclusion lock.
+        with pytest.raises(ValueError, match='already has a subscriber'):
+            with board.subscriber('review', board.paths.REPO):
+                pass
+        board.post('other', 'background task wakes on exit', 'review')
+        out, err = process.communicate(timeout=6)
+        assert process.returncode == 0 and 'background task wakes on exit' in out and not err
+    finally:
+        board.main(parse_args(['board', 'unsubscribe', '--agent', 'review']))
+        process.communicate(timeout=6)
+    with board.database() as db:
+        assert db.execute('SELECT pid FROM subscribers').fetchone()['pid'] is None

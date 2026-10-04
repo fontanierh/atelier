@@ -55,13 +55,19 @@ uv run pytest                            # studio and game Python tests
 
 ## Agent messaging and subscriptions
 
-- At the start of every agent session, choose a unique stable owner name and **always subscribe to new board
-  messages with a background job**, using `uv run atelier board subscribe --agent OWNER --background --notify
-  '<JSON argv>'`. The notification command must wake this existing agent session; verify delivery and check
-  `atelier board status`. Keep the subscriber alive while working or waiting; restart/check it on session resume.
-  See [the messaging board guide](docs/AGENT_BOARD.md) for setup, existing-session adapters and stop commands.
-  If the client cannot receive background notifications, report that limitation on the render board and connect
-  a foreground subscriber to its input mechanism; an unattended log is not a working subscription.
+- At the start of every agent session, choose a unique stable owner name and **always subscribe with a
+  background mechanism that wakes your existing session**. Use `atelier board subscribe --agent OWNER
+  --background --notify '<JSON argv>'` when your client supports existing-session delivery. For Claude Code,
+  run `atelier board wait --agent OWNER --timeout 3600` as a `run_in_background` shell task, act on its exit
+  output, then immediately re-arm it (including timeout exit 3). A never-ending foreground subscriber does
+  not wake a completion-based client. Never use `claude -p --resume` or `claude --continue` as a notifier:
+  that starts a separate writer on the same transcript rather than notifying the live session.
+- Verify delivery and `atelier board status`; keep a subscription/wait armed while working or waiting and
+  restart/check it on session resume. Use `--addressed-only` if broadcast wakeups are too noisy, while still
+  reading the render ledger at admission/step boundaries. See [the guide](docs/AGENT_BOARD.md) for adapters,
+  timeout/re-arm behavior and shared-tool `--checkout` usage. Remote/ephemeral clients that cannot keep a
+  background task alive must report this limitation on the render board rather than claim a subscription;
+  an unattended log is not delivery. A NULL status PID means no wait/subscriber is currently armed.
 - Use `atelier board post/read` for addressed requests, acknowledgements, handoffs, blocked notices and evidence.
   Preserve the Markdown render board's Holding/Waiting/Handoffs/Log entries as the scheduling ledger. Messages are
   durable across worktrees and advisory: the live lock and memory guard still decide admission.
