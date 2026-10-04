@@ -3,6 +3,7 @@
 #include "SkateInput.h"
 #include "RideFlick.h"
 #include "RideTuning.h"
+#include "RideSpeedModel.h"
 #include "RideTypes.h"
 #include "RideAnimator.h"
 #include "Engine/EngineTypes.h"
@@ -169,6 +170,9 @@ private:
     bool bStickSector = false;
     int8 StickSlide = 0;
     float Curvature = 0;           // 1/cm along the travel, positive in a concave transition
+    float LoadCurvature = 0;       // its pitch alone (the normal's turn along the travel), for the speed's load
+    // Native's ground speed model (RideSpeedModel.h): the target speed the board's speed is pulled toward.
+    FRideSpeedModel SpeedModel;
     // The ground's normal over the last stretch of travel (cm travelled, oldest first), for the curvature.
     static constexpr int32 TrailMax = 8;
     float Odometer = 0, TrailAt[TrailMax] = {};

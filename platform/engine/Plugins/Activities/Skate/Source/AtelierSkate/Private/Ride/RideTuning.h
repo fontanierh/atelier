@@ -15,7 +15,23 @@ struct FRideTuning
 
     // Ground. Riding is nearly lossless up to about 8 m/s; above it rolling friction rises (RIDE.md).
     float RollingResistance = 5.f;    // cm/s^2 at any speed
-    float GravityLimit = 700.f;       // largest slope acceleration, cm/s^2
+    float GravityLimit = 700.f;       // the speed model's largest slope acceleration, cm/s^2 (native's MaxGravityAcceleration)
+    // Native's ground speed model (RideSpeedModel.h, RIDE.md "Speed"; its physics_speed_conservation): the board rolls
+    // under full gravity and its speed is pulled each tick by SpeedGain of its difference from the target
+    // (SpeedGainDown when it is faster), the difference and the target's lead held within SpeedBound (cm/s). With
+    // SpeedPumpReset 1 a pump starts the target afresh, as Native's pump force does (0: only pushes, brakes and walls).
+    // NativeSpeed 0 goes back to Ride's own rule (the slope's pull capped at GravityLimit, the friction on the board).
+    float NativeSpeed = 1.f;
+    float SpeedGain = .25f;
+    float SpeedGainDown = .25f;
+    float SpeedBound = 30.f;
+    float SpeedPumpReset = 1.f;
+    // A concave transition's load on the board (speed^2 x curvature) beyond LoadFree (cm/s^2) scrubs LoadFriction of
+    // it: Native's physical board loses about 80 cm/s entering a quarter's transition, faster than its speed model
+    // makes up, and little in a wide bowl's. Fitted to the reference's climbs, LoadFree was 1000; it is raised so a
+    // timed pump through the pump bowl's floor keeps its gain over a coasting one (RIDE.md "Speed").
+    float LoadFriction = .2f;
+    float LoadFree = 2500.f;
     float StickGap = 4.5f;            // the board follows ground that falls away up to this far per step (cm) ...
     float StickPerSpeed = .18f;       // ... plus this fraction of the step's travel
     float StepUp = 6.f;               // ground rising more than this under a wheel in one step is a wall (cm)

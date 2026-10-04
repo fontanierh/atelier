@@ -23,6 +23,24 @@ the same ride. Three replays of a recorded 26 s session stay within 4 cm of each
   when following it would take more than `LaunchFactor` (1.5) g once the rider's legs have absorbed a drop of
   `CrestReach` (6 cm) over that window. A crest rounder than about 2 m radius never launches; a sharp 25 degree lip
   does from about 5.8 m/s.
+- **Speed.** As in Native (`SpeedModel.cpp`; `RideSpeedModel.h`), the board rolls under full gravity and a speed model
+  pulls its speed a quarter of the way (`SpeedGain`) each tick toward a target speed. The target follows the slope only
+  up to `GravityLimit` (7 m/s², Native's `MaxGravityAcceleration`), less the rolling friction (none up to 8 m/s, then up
+  to 1.2 m/s², with `RollingResistance`'s 5 cm/s²) and, in a manual, Native's manual friction; uphill it loses the
+  slope's pull or the friction, whichever is more. It stays within `SpeedBound` (30 cm/s) of the speed. So the board
+  climbs and falls a steep face at 7 m/s², as before, but anything that moves it by force (a push's contact, a brake, a
+  slide, a pump, a wall) starts the target afresh from its speed the next tick: a pump down a transition keeps full
+  gravity and a quarter of the target's on top (`SpeedPumpReset`). The model is off while the board brakes (past
+  `BrakeDelay`), slides or a push's foot is down, and the friction then acts on the board. A ride's start, a launch and
+  a landing start the target from the board's speed, so nothing is settled twice. A concave transition's load (speed² ×
+  the curvature along the travel over `CrestWindow`; a cross-bank's turn is none) beyond `LoadFree` (25 m/s²) scrubs
+  `LoadFriction` (0.2) of it: Native's physical board loses about 80 cm/s entering a quarter's transition at 11 m/s,
+  faster than its speed model makes up, and little in a wide bowl's. Fitted on the reference's climbs with `LoadFree` at
+  10 m/s², the load brought the quarter shots' lip speeds to within 10 cm/s of Native's (from 80 to 95 over), but it
+  also scrubbed a timed pump through the pump bowl's 3 m floor at 10 m/s to under 1.2 times a coasting pump's gain; at
+  25 m/s² a timed pump keeps 1.3 times and the lips are 50 to 65 cm/s over. Native's no-input friction (after 3 s
+  without input) is left out: Native's runtime was measured never to apply it. `NativeSpeed` 0 goes back to Ride's own
+  rule, the slope's pull capped at `GravityLimit` and the friction on the board.
 - **Curbs and walls.** The board stops at a face too steep to roll onto (its normal more than 60 degrees from the
   deck's). As in the native runtime (`Wipeout_GroundXZAcceleration`, `Wipeout_GroundYAcceleration`), the closing
   velocity along the face's normal throws the rider beyond `CurbBail` (7.1 m/s) across the deck or `CurbImpact`

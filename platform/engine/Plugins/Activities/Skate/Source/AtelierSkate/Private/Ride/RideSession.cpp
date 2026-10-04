@@ -211,7 +211,8 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     Names = Animator.GetNames(); Reference = Animator.GetReference();
     P = GroundPoint; V = InVelocity; Q = Rotation.GetNormalized();
     Travel = FVector::DotProduct(V, Q.GetForwardVector()) < -15.f ? -1.f : 1.f;
-    TurnRate = SlideYaw = Curvature = Crouch = 0; PushTime = -1; BrakeTime = 0; PendingPop = Flick::None; TrailNum = 0;
+    TurnRate = SlideYaw = Curvature = LoadCurvature = Crouch = 0; PushTime = -1; BrakeTime = 0; PendingPop = Flick::None; TrailNum = 0;
+    SpeedModel.Reset();
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; Rail = INDEX_NONE; Manuals.Reset(); bHardLanding = false;
     bSwitch = false; SwitchTime = -1; FakieTime = 0;
     Line.Reset(); Holding.Reset(); HeldPoints = 0; Calm = 0; Trick.Reset(); Cues.Reset();
@@ -276,6 +277,8 @@ void FRideSession::Configure(bool bInGoofy, const FRidePreferences& Preferences)
 void FRideSession::Launch(const FVector& InVelocity)
 {
     V = InVelocity;
+    // A launch's speed is the board's own: the speed model starts from it, rather than settling it again.
+    SpeedModel.Reset();
     if (Mode == ERideState::Ground || Mode == ERideState::Manual || Mode == ERideState::Powerslide)
     {
         // A launch that rises off the ground takes off. A level one keeps to it at its own speed: off a slope's normal
@@ -363,8 +366,9 @@ void FRideSession::Tick(const FSkateInput& In, const atelier::skate::XboxState& 
     case ERideState::Grind: TickGrind(In, F); break;
     case ERideState::Bail: case ERideState::GetUp: TickBail(); break;
     }
-    // The curvature's trail starts afresh on every return to the ground (and a manual's end is forgotten off it).
-    if (Mode != ERideState::Ground && Mode != ERideState::Powerslide && Mode != ERideState::Manual) { TrailNum = 0; ManualOut = 0; }
+    // The curvature's trail and the speed model's target start afresh on every return to the ground (and a manual's end
+    // is forgotten off it).
+    if (Mode != ERideState::Ground && Mode != ERideState::Powerslide && Mode != ERideState::Manual) { TrailNum = 0; ManualOut = 0; SpeedModel.Reset(); }
     // Off the plain ground (a manual, a powerslide, the air, a bail) a turn round stops where it is.
     if (Mode != ERideState::Ground) { SwitchTime = -1; FakieTime = 0; }
     // The faces just climbed, for the lip test (TickAir reads them on its first ticks).
@@ -816,13 +820,20 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     Q = (Turn(Up, (TurnRate + FallTurn) * Tick60) * Q).GetNormalized();
     Forward = Q.GetForwardVector();
 
-    // Speed along the travel: slope, friction, push, brake.
-    Speed += FVector::DotProduct(Slope, Forward * Travel) * Tick60;
-    if (Speed < 0) { Travel = -Travel; Speed = -Speed; }
-    Decel += Tune.RollingResistance + Curve(FrictionCurve, Speed);
-    // In a manual Native's speed model adds its manual friction (FrictionVsSpeed_Manual, m/s^2 at m/s).
+    // Speed along the travel (RIDE.md, "Speed"): the board rolls under full gravity, a concave transition's load beyond
+    // LoadFree scrubs it, and pushes, brakes and pumps move it; Native's speed model (SpeedModel, after the pump) then
+    // pulls it toward its target, which follows the slope only up to GravityLimit and takes the friction: the rolling
+    // friction and, in a manual, Native's manual friction (FrictionVsSpeed_Manual, m/s^2 at m/s).
+    const float SpeedAtStart = Speed, TravelAtStart = Travel;
+    const float Downhill = -G * float((Forward * Travel).Z);
+    const float Friction = Tune.RollingResistance + Curve(FrictionCurve, Speed);
+    float ManualFriction = 0;
     if (Mode == ERideState::Manual)
-        if (const atelier::ride::FlickBank* Bank = Flicks.GetBank()) Decel += Bank->Manual.Friction.Evaluate(Speed / 100.f) * 100.f;
+        if (const atelier::ride::FlickBank* Bank = Flicks.GetBank()) ManualFriction = Bank->Manual.Friction.Evaluate(Speed / 100.f) * 100.f;
+    const bool bNativeSpeed = Tune.NativeSpeed > 0;
+    Speed += bNativeSpeed ? (Downhill - Tune.LoadFriction * FMath::Max(0.f, Speed * Speed * LoadCurvature - Tune.LoadFree)) * Tick60
+                          : FVector::DotProduct(Slope, Forward * Travel) * Tick60;
+    if (Speed < 0) { Travel = -Travel; Speed = -Speed; }
 
     // Pushing, in time with the push cycle; a tap gives one weak push.
     const bool bCanPush = Mode == ERideState::Ground && bFlat && PendingPop == Flick::None && !In.bBrake;
@@ -896,12 +907,19 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     // Braking: the foot reaches the ground, then scrubs.
     BrakeTime = In.bBrake && Mode == ERideState::Ground ? BrakeTime + Tick60 : 0.f;
     if (BrakeTime > Tune.BrakeDelay) Decel += Tune.BrakeDecel;
+    // Native's speed model is off while the board brakes (the foot on the ground, past BrakeDelay), slides or a push's
+    // foot is down (and through a push from rest's wind-up, while the board stands on the planted foot); the friction
+    // then acts on the board itself.
+    const bool bPushFoot = PushTime >= 0 && PushTime < PushLead + PushContact && (bPushFromRest || PushTime >= PushLead);
+    const bool bSpeedModel = bNativeSpeed && Mode != ERideState::Powerslide && BrakeTime <= Tune.BrakeDelay && !bPushFoot;
+    if (!bSpeedModel) Decel += Friction + ManualFriction;
     Speed = FMath::Max(0.f, Speed - Decel * Tick60);
     if (BrakeTime > Tune.BrakeDelay && Speed < 12.f) Speed = 0;
     // Standing after braking to a stop, until the board rolls again.
     if (BrakeTime > Tune.BrakeDelay && Speed <= 0) StillTime = StillTime < 0 ? 0.f : StillTime + Tick60;
     else if (StillTime >= 0 && Speed < 20.f && PushTime < 0 && Mode == ERideState::Ground) StillTime += Tick60;
     else StillTime = -1;
+    const float Unpumped = Speed;
 
     // Pumping, native's own (Pump, RideNative.cpp; RIDE.md "Pumping"): the triggers crouch the rider (the deeper of the
     // two, a held trigger button a full pull, as native reads the pad), and the ground's angle crouches him at least
@@ -914,6 +932,13 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     Crouch += (CrouchTarget - Crouch) * Damp(Tune.CrouchRate, Tick60);
     Pump(Speed, Trigger > 0);
 
+    // Native's speed model, from the speed the tick started with (RideSpeedModel.h); its pull goes along that travel.
+    // A push's contact, a brake, a slide or a pump starts its target afresh next tick, as a wall does (Deflect).
+    const bool bPumped = FMath::Abs(Speed - Unpumped) > 1e-4f;
+    const float Along = (Travel == TravelAtStart ? Speed : -Speed) + SpeedModel.Step(Tune, SpeedAtStart, Downhill, Friction, ManualFriction, bSpeedModel, Tick60);
+    if (Along != 0) Travel = Along < 0 ? -TravelAtStart : TravelAtStart;
+    Speed = FMath::Abs(Along);
+    if (!bSpeedModel || (bPumped && Tune.SpeedPumpReset > 0)) SpeedModel.Reset();
     V = Forward * Travel * Speed;
     WheelSpin = FMath::Fmod(WheelSpin + FVector::DotProduct(V, Forward) * Tick60 / (2 * PI * Tune.WheelRadius) * 360.f, 360.f);
 
@@ -937,6 +962,7 @@ void FRideSession::Deflect(const FVector& Normal, float& Speed)
     // Turn the board along the face, keeping the nose or tail that was leading.
     if (Along.Size() > 20.f) Q = Frame(Up, Along.GetSafeNormal() * Travel);
     Speed = V.Size(); TurnRate = 0;
+    SpeedModel.Reset();
 }
 
 void FRideSession::AddTrail(float At, const FVector& Up)
@@ -1006,7 +1032,7 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
         const float AlongUp = FVector::DotProduct(Closing, Up);
         if ((Closing - Up * AlongUp).Size() > Tune.CurbBail || FMath::Abs(AlongUp) > Tune.CurbImpact) { StartBail(TEXT("curb")); return false; }
         const FVector Face = FVector::VectorPlaneProject(Block, Up).GetSafeNormal();
-        if (Face.IsNearlyZero()) { V = FVector::ZeroVector; Speed = 0; }
+        if (Face.IsNearlyZero()) { V = FVector::ZeroVector; Speed = 0; SpeedModel.Reset(); }
         else Deflect(Face, Speed);
         return false;
     }
@@ -1021,6 +1047,8 @@ bool FRideSession::MoveOnGround(float Dt, float& Speed)
     const float Turned = FMath::DegreesToRadians(AngleBetween(TrailUp[Base], NewUp));
     const float Sign = FVector::DotProduct(NewUp - TrailUp[Base], Dir) > 0 ? -1.f : 1.f;   // convex crests tilt the normal forward
     Curvature = Sign * Turned / Window;
+    // Its pitch alone, for the load (RIDE.md, "Speed"): a cross-bank's turn of the normal is no load along the travel.
+    LoadCurvature = -float(FVector::DotProduct(NewUp - TrailUp[Base], Dir)) / Window;
     const float Hold = FMath::Max(0.f, float(-FVector::DotProduct(FVector(0, 0, -G), Up)));
     const float Absorbed = 2.f * Tune.CrestReach / (Window * Window);
     if (Sign < 0 && Turned > FMath::DegreesToRadians(2.f) && Speed * Speed * (Turned / Window - Absorbed) > Tune.LaunchFactor * FMath::Max(Hold, 1.f))
@@ -1595,7 +1623,7 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
     const float Spun = FMath::Abs(SpinTotal);
     if (Spun >= 150.f) AddTrick(SpinName(SpinTotal), 150.f * FMath::RoundToFloat(Spun / 180.f));
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; SpinTotal = 0; SpinRate = 0;
-    TurnRate = 0; Curvature = 0; Calm = 0;
+    TurnRate = 0; Curvature = LoadCurvature = 0; Calm = 0;
     Cues.Add(ERideCue::Catch);
     SetMode(ERideState::Ground);
     // A manual starts on the landing tick (the Manual intention counts in the air), unless Native's guard holds: down
