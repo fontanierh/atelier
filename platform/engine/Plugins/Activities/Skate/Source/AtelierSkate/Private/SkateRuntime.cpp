@@ -415,6 +415,7 @@ public:
         std::vector<skate_native::Mat4> Bones,Reference;std::vector<std::string> Names;
         std::optional<skate_native::camera::CameraFrame> Camera;
         skate_native::ContactMaterial Floor;skate_native::Vec3 Spin{};bool Switch=false,Fakie=false;
+        bool TrickSwitch=false,TrickFakie=false;   // the stance the trick native's scoring announced started in
         float StepMs=0;   // the session's step (and its collision installs) on the thread, ms
     };
     FNativeSkateWorker(FString Folder,skate_native::GameplayWorldSnapshot World,
@@ -480,6 +481,7 @@ public:
                 if(!Okay)break;
                 Okay=Configure(Command.Preferences,Error)
                     &&Session_->Activate(Command.Spawn,Command.Heading,Error);
+                if(Okay){HideTrick_=true;HiddenAnnounces_=Session_->gameplay->scoring.State().announces;}
                 if(Okay){Session_->Launch(Command.Velocity);Generation_=Command.Generation;Okay=Publish(false,Error);}
                 break;
             case ECommand::World:
@@ -528,7 +530,11 @@ private:
         Out.Velocity=Pose.velocity;Out.Tick=Pose.tick;Out.State=std::move(Pose.state);
         Out.Spin=G.physical->board.Bodies()[std::size_t(skate_native::BoardBodyId::Deck)].rates.angular_velocity;
         Out.Switch=G.animation->packet.riding_switch;Out.Fakie=G.animation->packet.riding_fakie;
-        Out.Trick=G.scoring.CurrentTrick();const auto& Score=G.scoring.session.holder.State().snapshot;
+        // A trick named before the last placement stays hidden until native announces another.
+        if(HideTrick_&&G.scoring.State().announces!=HiddenAnnounces_)HideTrick_=false;
+        if(!HideTrick_)Out.Trick=G.scoring.CurrentTrick();
+        Out.TrickSwitch=G.scoring.State().start_stance[0];Out.TrickFakie=G.scoring.State().start_stance[1];
+        const auto& Score=G.scoring.session.holder.State().snapshot;
         Out.Score=Score.completed_lines+Score.line;Out.Manual=G.animation_input.fields.balance;Out.Camera=Pose.camera;
         if(Ready)
         {
@@ -544,6 +550,7 @@ private:
     FEvent* Wake_=nullptr;FRunnableThread* Thread_=nullptr;std::atomic<bool> Stopping_{false},Finished_{false};
     TQueue<FCommand,EQueueMode::Mpsc> Commands_;TQueue<FOutput,EQueueMode::Spsc> Outputs_;
     std::unique_ptr<skate_native::GameplaySession> Session_;uint32 Generation_=0;
+    bool HideTrick_=false;std::uint32_t HiddenAnnounces_=0;   // the trick shown hides across a placement
     std::vector<FCommand> PendingCollisions_;
 };
 
@@ -659,7 +666,10 @@ public:
             Velocity=FromNative(FVector(Out.Velocity.x,Out.Velocity.y,Out.Velocity.z));State=UTF8_TO_TCHAR(Out.State.c_str());
             Spin=FVector(-Out.Spin.z,Out.Spin.x,-Out.Spin.y);
             if(HasPose&&Out.Switch!=Switch)++Turns;Switch=Out.Switch;Fakie=Out.Fakie;
-            Trick=TrickLabel(UTF8_TO_TCHAR(Out.Trick.c_str()));Score=Out.Score;Tick=Out.Tick;ManualBalance=Out.Manual;
+            // The stance as the game shows it: native's IDs name the trick, its scoring the stance it was done in.
+            Trick=TrickLabel(UTF8_TO_TCHAR(Out.Trick.c_str()));
+            if(!Trick.IsEmpty()&&(Out.TrickFakie||Out.TrickSwitch))Trick=(Out.TrickFakie?TEXT("Fakie "):TEXT("Switch "))+Trick;
+            Score=Out.Score;Tick=Out.Tick;ManualBalance=Out.Manual;
             if(Root.ContainsNaN()||Velocity.ContainsNaN()||Bones.ContainsByPredicate([](const FTransform& T){return T.ContainsNaN();}))
             {Error=TEXT("Nonfinite native output");continue;}
             if(Out.Ready)

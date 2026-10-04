@@ -71,6 +71,7 @@ bool ScoringRuntime::Carrier(std::size_t slot,std::optional<std::size_t> id,cons
         {
             const auto* d=data.ById(c.scorable.id);if(!d){error="Missing announced scorable";return false;}
             s.trick_name=d->label;s.stance={f.switch_stance,f.fakie,f.nollie,false};s.new_trick=true;
+            s.start_stance={c.switch_stance,c.fakie};++s.announces;
             if(s.collector==ScoringCollector::Air&&!s.air_repetition_set){s.air_repetition=penalty;s.air_repetition_set=true;}
         }
         const bool distance_metric=s.collector==ScoringCollector::Grind||(s.collector==ScoringCollector::Ground&&slot<3);
