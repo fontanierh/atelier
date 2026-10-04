@@ -41,11 +41,11 @@ RULES = [
 TEXTURED = {'HD_ClockHall', 'HD_Station', 'HD_Shrine', 'HD_Temple', 'HD_Square', 'HD_Park', 'HD_Streets',
             'HD_CivicGardens', 'HD_Terrain', 'HD_Arcade', 'HD_ArcadeGate', 'HD_ArcadeRoof', 'HD_PlazaShopSides',
             'HD_PlazaShopSidesCorner', 'HD_PlazaShopApproaches', 'HD_PlazaFountain', 'HD_Market', 'HD_Pavilion',
-            'HD_Lighthouse', 'HD_Playground'}
+            'HD_Lighthouse', 'HD_Playground', 'HD_LaneEdges', 'HD_Pagoda', 'HD_Graves', 'HD_Precinct'}
 
 
 def textured(name):
-    return name in TEXTURED or name.startswith(('HD_Shop_', 'HD_ArcadeShop_'))
+    return name in TEXTURED or name.startswith(('HD_Shop_', 'HD_ArcadeShop_', 'HD_House_'))
 
 
 SLUGS = ['flat'] + sorted({s for s, _ in RULES if s != 'flat'} | {'paint'})

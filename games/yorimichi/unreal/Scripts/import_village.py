@@ -90,13 +90,15 @@ def resident_material():
 PLACEHOLDER=yori.OUT/'village'/'assets'/'Village_Sign.fbx'   # small, and builds without warnings
 
 
-def import_mesh(path,dest,name):
+def import_mesh(path,dest,name,fresh_slots=False):
+    """fresh_slots: take the material slots from the FBX instead of conserving the asset's old ones (meshes whose
+    slots name their surfaces; legacy reimport otherwise keeps the placeholder's or a previous build's slot)."""
     if not EAL.does_asset_exist(dest+'/'+name) and Path(path).resolve()!=PLACEHOLDER.resolve():
         _import_mesh(PLACEHOLDER,dest,name)
-    return _import_mesh(path,dest,name)
+    return _import_mesh(path,dest,name,fresh_slots)
 
 
-def _import_mesh(path,dest,name):
+def _import_mesh(path,dest,name,fresh_slots=False):
     task=unreal.AssetImportTask()
     task.filename=str(path);task.destination_path=dest;task.destination_name=name
     task.automated=True;task.replace_existing=True;task.replace_existing_settings=True;task.save=True
@@ -119,6 +121,7 @@ def _import_mesh(path,dest,name):
                         'convert_scene_unit','import_uniform_scale','one_convex_hull_per_ucx',
                         'vertex_color_import_option','normal_import_method'):
                 prior.set_editor_property(key,d.get_editor_property(key))
+        if fresh_slots: existing.set_editor_property('static_materials',[])
     task.options=ui;AT.import_asset_tasks([task])
     mesh=EAL.load_asset(dest+'/'+name)
     assert mesh and task.imported_object_paths,'FBX import failed: '+name

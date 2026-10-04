@@ -1,6 +1,6 @@
 """Build modular Hidamari assets, surface collision and harbor geometry."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
-import json,math,sys,hashlib,os
+import itertools,json,math,sys,hashlib,os
 from pathlib import Path
 import bpy,numpy as np
 from mathutils import Matrix
@@ -11,7 +11,7 @@ from hidamari import harbor as harbor_kit
 from hidamari import arcade as arcade_kit
 from hidamari import plaza as plaza_kit
 from hidamari import mountains, living_plaza, pond_garden, living_streets, working_harbor, civic_gardens
-from hidamari import kit, surfaces
+from hidamari import city_poles, kit, lane_edges, layout, surfaces, temple_precinct
 from hidamari.layout import backdrop_height,north_height,north_base_height
 v.OUT=OUT
 # Ground land use (surface()): lawn, packed-earth yards, sidewalk paving along the streets, flagstone pavers.
@@ -204,11 +204,16 @@ def lighthouse():
 def grass_patch(x,y):
     return (y>235 or (min(abs(y-c) for c in ROAD_Y)>30 and min(abs(x-c) for c in ROAD_X)>20)) and not (660<x<805 and 135<y<215)
 
+# The narrow footpaths between the facing rows of back-lane houses (layout.house_sites).
+HOUSE_LANES=sorted({y+layout.HOUSE[1]/2+layout.HOUSE_ALLEY/2 for _,_,y,yaw in layout.house_sites() if yaw==180})
+HOUSE_X=(min(x for _,x,_,_ in layout.house_sites())-5,max(x for _,x,_,_ in layout.house_sites())+5)
+
 def land_use(x,y):
-    """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 14 m of a street's centre
-    line (the street kit paves 8 m), packed earth in the yards behind."""
+    """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 6 m of a street's paving
+    (layout.road_width), packed earth in the yards behind."""
     if grass_patch(x,y):return 'hd_grass'
-    if min(abs(y-c) for c in ROAD_Y)<14 or min(abs(x-c) for c in ROAD_X)<14:return 'hd_walk'
+    if HOUSE_X[0]<x<HOUSE_X[1] and any(abs(y-c)<1.7 for c in HOUSE_LANES) and layout._clear_of_hero(x,y):return 'hd_walk'
+    if min(abs(y-c) for c in ROAD_Y)<14 or min(abs(x-c)-layout.road_width(x=c)[0] for c in ROAD_X)<6:return 'hd_walk'
     return 'hd_yard'
 
 def surface(name,xs,ys,color):
@@ -247,8 +252,9 @@ def surface(name,xs,ys,color):
 
 def streets(city):
     m=M('HD_Streets')
-    for path in city['roads']:
-        for width,key,offset in [(8,'paving',.045),(3.8,'asphalt',.065)]:
+    # Each street at its own width (layout.road_width; the arrival road, last, is a broad one).
+    for path,(paving,asphalt) in itertools.zip_longest(city['roads'],city.get('road_widths',[]),fillvalue=(8,3.8)):
+        for width,key,offset in [(paving,'paving',.045),(asphalt,'asphalt',.065)]:
             quads=[];cross=np.linspace(-width,width,math.ceil(width*2)+1)
             for a,b in zip(path,path[1:]):
                 dx=b[0]-a[0];dy=b[1]-a[1];length=math.hypot(dx,dy)
@@ -406,6 +412,19 @@ def main():
     def sea_mesh():
         sea=M('HD_Sea');sea.poly([(300,-1600,.025),(1800,-1600,.025),(1800,600,.025),(300,600,.025)],'water_city');return sea
     builders['HD_Sea']=sea_mesh
+    def wire_mesh():
+        m=M('HD_Wires');v.PALETTE['hd_wire']=(.018,.018,.02)
+        print('HIDAMARI WIRES',city_poles.wires(m,city['poles'],'hd_wire'),flush=True);return m
+    builders['HD_Wires']=wire_mesh
+    def lane_edge_mesh():
+        m=M('HD_LaneEdges');v.PALETTE.update(lane_edges.PALETTE)
+        print('HIDAMARI LANE EDGES',lane_edges.build(m,height,city['buildings'],ROAD_X,ROAD_Y,layout.road_width,city_poles.KEEP_OUT),flush=True)
+        return m
+    builders['HD_LaneEdges']=lane_edge_mesh
+    builders['HD_Pagoda']=temple_precinct.pagoda
+    builders['HD_Bamboo']=temple_precinct.bamboo
+    builders['HD_Graves']=temple_precinct.graves
+    builders['HD_Precinct']=lambda:temple_precinct.precinct(M('HD_Precinct'),height)
     # Reference-led kit modules replace legacy shop variants by mesh name.
     builders.update(kit.builders(lettering))
     builders['HD_NorthMountains']=lambda:mountains.mesh(north_base_height)

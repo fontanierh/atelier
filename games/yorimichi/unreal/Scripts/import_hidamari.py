@@ -69,7 +69,7 @@ def distance_lods(mesh,name,levels):
 
 for name,entry in manifest.items():
     if only and name not in only:continue
-    mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name)
+    mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name,fresh_slots='slots' in entry)
     if name=='HD_NorthGate': selected=gate_mat
     elif name.startswith('HD_North'): selected=mountain_mat
     elif name=='HD_Sea': selected=water_mat
@@ -107,6 +107,9 @@ for name,entry in manifest.items():
     elif (name.startswith('HD_Shop_') and name[8:].isdigit()) or name in ('HD_Station','HD_Shrine'):
         # Full detail close up, progressively lighter street and distant skyline geometry.
         lod_report=distance_lods(mesh,name,[(1.,1.),(.5,.28),(.15,.12),(.04,.05)])
+    elif name.startswith('HD_House_'):
+        # The back-lane houses are mostly seen over the shop roofs: drop detail sooner.
+        lod_report=distance_lods(mesh,name,[(1.,1.),(.4,.3),(.12,.12)])
     body=mesh.get_editor_property('body_setup')
     body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if not entry['collision_boxes'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AND_COMPLEX)
     box=mesh.get_bounding_box()
