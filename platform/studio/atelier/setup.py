@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shlex
 import shutil
 import struct
@@ -101,6 +102,22 @@ def _sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def patch_shader_config(text, workers, cores):
+    """Use the same cap for commandlets and game launches, including CPUs using UE's percentage-based branch."""
+    section = re.search(r'(?ms)^\[DevOptions.Shaders\]\n(.*?)(?=^\[|\Z)', text)
+    if section is None:
+        raise ValueError('Unrecognised shader configuration; engine was not modified')
+    unused = max(0, cores - workers)
+    values = dict(NumUnusedShaderCompilingThreads=str(unused), NumUnusedShaderCompilingThreadsDuringGame=str(unused),
+                  PercentageUnusedShaderCompilingThreads=f'{100 * unused / cores:.8f}')
+    body = section.group(1)
+    for key, value in values.items():
+        body, count = re.subn(r'(?m)^' + key + r'=[^\n]*$', key + '=' + value, body)
+        if count != 1:
+            raise ValueError('Unrecognised shader configuration: ' + key)
+    return text[:section.start(1)] + body + text[section.end(1):]
+
+
 def prepare_headless(root, workers=3):
     """Repair only the tested installed engine; run the small .NET rebuild under the render lock and memory guard."""
     if not isinstance(workers, int) or workers < 1:
@@ -113,6 +130,7 @@ def prepare_headless(root, workers=3):
     cache = paths.cache_dir('toolchain', key)
     source = root / 'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs'
     wrapper = root / 'Engine/Build/BatchFiles/Mac/Build.sh'
+    shader_config = root / 'Engine/Config/BaseEngine.ini'
     binaries = root / 'Engine/Binaries/DotNET/UnrealBuildTool'
     dll = binaries / 'EpicGames.Build.dll'
     dotnet = root / 'Engine/Binaries/ThirdParty/DotNet/10.0/mac-arm64/dotnet'
@@ -120,12 +138,14 @@ def prepare_headless(root, workers=3):
         original_source, original_wrapper = source.read_text(), wrapper.read_text()
         new_source = patch_user_directory(original_source)
         new_wrapper = patch_build_script(original_wrapper, cache, workers)
+        original_shaders = shader_config.read_text()
+        new_shaders = patch_shader_config(original_shaders, workers, os.cpu_count() or 8)
         state_file = cache / 'headless.json'
         state = json.loads(state_file.read_text()) if state_file.exists() else {}
         current = state.get('source_sha256') == _sha(source) and state.get('dll_sha256') == _sha(dll)
         previous_binaries = {binaries / name: (binaries / name).read_bytes() if (binaries / name).exists() else None
                              for name in ('EpicGames.Build.dll', 'EpicGames.Build.pdb')}
-        for file in (source, wrapper, dll, binaries / 'EpicGames.Build.pdb'):
+        for file in (source, wrapper, shader_config, dll, binaries / 'EpicGames.Build.pdb'):
             backup = cache / 'originals' / file.relative_to(root)
             if file.exists() and not backup.exists():
                 backup.parent.mkdir(parents=True, exist_ok=True)
@@ -152,11 +172,13 @@ def prepare_headless(root, workers=3):
             # explicit command-line defaults, so protected Documents is never probed for BuildConfiguration.xml.
             (cache / 'remote-xmlconfig.bin').write_bytes(struct.pack('<iii', 2, 0, 0))
             wrapper.write_text(new_wrapper)
+            shader_config.write_text(new_shaders)
             state_file.write_text(json.dumps(dict(engine=str(root), version=version, workers=workers,
                 source_sha256=_sha(source), dll_sha256=_sha(dll)), indent=2) + '\n')
         except Exception:
             source.write_text(original_source)
             wrapper.write_text(original_wrapper)
+            shader_config.write_text(original_shaders)
             for file, contents in previous_binaries.items():
                 if contents is None:
                     file.unlink(missing_ok=True)

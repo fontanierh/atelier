@@ -31,6 +31,19 @@ def test_wrapper_quotes_cache_paths_and_replaces_only_its_own_block(tmp_path):
         setup.patch_build_script(original.replace('"$@"', 'custom arguments'), cache, 3)
 
 
+@pytest.mark.parametrize('cores', [8, 10, 16, 24])
+def test_shader_worker_cap_covers_both_engine_selection_branches(cores):
+    import math
+    original = '[DevOptions.Shaders]\nNumUnusedShaderCompilingThreads=3\nNumUnusedShaderCompilingThreadsDuringGame=4\nPercentageUnusedShaderCompilingThreads=50\n[Other]\nKeep=1\n'
+    patched = setup.patch_shader_config(original, 3, cores)
+    values = dict(line.split('=', 1) for line in patched.splitlines() if '=' in line)
+    assert cores - int(values['NumUnusedShaderCompilingThreads']) == 3
+    assert cores - int(values['NumUnusedShaderCompilingThreadsDuringGame']) == 3
+    assert cores - math.ceil(cores * float(values['PercentageUnusedShaderCompilingThreads']) / 100) <= 3
+    assert setup.patch_shader_config(patched, 3, cores) == patched
+    assert '[Other]\nKeep=1\n' in patched
+
+
 @pytest.fixture
 def engine(tmp_path, monkeypatch):
     root = tmp_path / 'installed engine'
@@ -38,6 +51,7 @@ def engine(tmp_path, monkeypatch):
         'Engine/Build/Build.version': json.dumps(dict(MajorVersion=5, MinorVersion=8, PatchVersion=2, Changelist=56702186)),
         'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs': setup.METHOD + '\t\t\treturn null;\n\t\t}\n',
         'Engine/Build/BatchFiles/Mac/Build.sh': '#!/bin/sh\n' + setup.INVOCATION + '\nExitCode=$?\n',
+        'Engine/Config/BaseEngine.ini': '[DevOptions.Shaders]\nNumUnusedShaderCompilingThreads=3\nNumUnusedShaderCompilingThreadsDuringGame=4\nPercentageUnusedShaderCompilingThreads=50\n',
         'Engine/Binaries/DotNET/UnrealBuildTool/EpicGames.Build.dll': 'original binary',
     }
     for relative, contents in files.items():

@@ -74,7 +74,7 @@ uv run atelier setup                  # compiles and links a small Metal shader 
 
 For a Mac accessed over SSH, run `uv run atelier setup --headless` before compiling. On the tested installed
 UE **5.8.2 CL 56702186**, this repairs the build tool's protected Documents lookup, uses explicit default build
-configuration, and caps compiles at three workers with priority 10. It rebuilds only the small shared .NET build
+configuration, and caps C++ and shader compiles at three workers (C++ at priority 10). It rebuilds only the small shared .NET build
 library under the render lock and memory guard. Originals and logs are retained in `~/.cache/atelier/toolchain/`;
 other engine versions are refused without modification. Repeating it is safe. Use `--workers N` to set another cap.
 This mode bypasses user and project `BuildConfiguration.xml`; pass desired build settings on the command line.
