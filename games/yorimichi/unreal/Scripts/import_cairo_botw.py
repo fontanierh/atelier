@@ -185,7 +185,9 @@ def record_of(t):
 def glider(link, cairo, item, scale):
     """The paraglider's hold, from Link and Cairo posed at the glide. Link holds it at Weapon_R (`item['hand']`), its bar
     across both hands: Cairo's grips are Link's weapon bones moved from each palm to his, the bar's middle goes between
-    them and the canopy keeps its angle to the body. Returns the hold and each grip's miss (cm) once placed."""
+    them and the canopy keeps its angle to the body. Returns the hold and each grip's miss (cm) once placed, the bar's two
+    grips in the glider's own frame (Link's weapon bones: the glider sits at Weapon_R, so its left grip is Weapon_L there)
+    and Cairo's two grips in his hand bones' frames: the game fits the bar to both hands with them as the hands move."""
     Bs, Bt = link.body(), cairo.body()
     grips = []
     for side in 'RL':
@@ -201,7 +203,10 @@ def glider(link, cairo, item, scale):
     p = add(middle_t, to_cairo(sub(link.at(item['hand']), middle_s)))
     held = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('hand_R'))
     miss = [round(math.sqrt(dot(d, d)), 1) for d in (sub(add(middle_t, to_cairo(sub(s, middle_s))), t) for s, t in grips)]
-    return held, miss
+    local = lambda T, v: [round(c, 3) for c in (lambda q: (q.x, q.y, q.z))(U.MathLibrary.inverse_transform_location(T, U.Vector(*v)))]
+    bar = [[0., 0., 0.], local(link.transform(item['hand']), link.at('Weapon_L'))]
+    hands = [[f'hand_{side}', local(cairo.transform(f'hand_{side}'), grip)] for side, (_, grip) in zip('RL', grips)]
+    return held, miss, bar, hands
 
 
 def equipment(link, cairo, glide):
@@ -227,7 +232,7 @@ def equipment(link, cairo, glide):
             entry['hand'], entry['held'] = role, record_of(held)
             checks[slot] = {'hand_cm': [round(ls, 2), round(lt, 2)]}
             if 'clip' in item:
-                held, miss = glider(*glide, item, scale)
+                held, miss, entry['bar'], entry['grips'] = glider(*glide, item, scale)
                 entry['held'], checks[slot]['grip_miss_cm'] = record_of(held), miss
         if item.get('back') and item.get('carry'):
             carry = item['carry']

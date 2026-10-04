@@ -199,6 +199,27 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                 FTransform Held; ReadTransform(O, TEXT("held"), Held);
                 Glider->SetRelativeTransform(Held);
                 GliderHeld = Held;
+                // The bar's grips and the hands' (Cairo's record); without them, the weapon bones the bar is held at
+                // (Link's own pose holds it there) and the bar's grips taken from his neutral glide.
+                const TArray<TSharedPtr<FJsonValue>>* Bar = nullptr; const TArray<TSharedPtr<FJsonValue>>* Grips = nullptr;
+                auto Vec = [](const TSharedPtr<FJsonValue>& V)
+                {
+                    const TArray<TSharedPtr<FJsonValue>>& A = V->AsArray();
+                    return A.Num() == 3 ? FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()) : FVector::ZeroVector;
+                };
+                if (O->TryGetArrayField(TEXT("bar"), Bar) && O->TryGetArrayField(TEXT("grips"), Grips) && Bar->Num() == 2 && Grips->Num() == 2)
+                    for (int32 I = 0; I < 2; ++I)
+                    {
+                        const TArray<TSharedPtr<FJsonValue>>& G = (*Grips)[I]->AsArray();
+                        BarGrip[I] = Vec((*Bar)[I]);
+                        GripBone[I] = G.Num() == 2 ? FName(*G[0]->AsString()) : NAME_None;
+                        HandGrip[I] = G.Num() == 2 ? Vec(G[1]) : FVector::ZeroVector;
+                        bBarKnown = true;
+                    }
+                else if (Body->GetBoneIndex(TEXT("Weapon_R")) != INDEX_NONE && Body->GetBoneIndex(TEXT("Weapon_L")) != INDEX_NONE)
+                {
+                    GripBone[0] = TEXT("Weapon_R"); GripBone[1] = TEXT("Weapon_L");
+                }
                 Glider->SetVisibility(false, true);
                 continue;
             }
@@ -968,36 +989,38 @@ void UBotwMoveSet::AdvanceGlide(float Dt)
     PlayLoop(Has(Clip) ? Clip : FName(TEXT("Glide")), .3f);
 }
 
-/** The paraglider is held at one hand; turning, the glide clips move the hands apart and the other let go of the bar.
- *  Gliding, it is placed in the frame of both hands instead (between them, across from left to right, up the body), at
- *  the place it has in that frame in the neutral glide, so it banks with the hands and both stay on the bar. */
+/** The paraglider is held at one hand; turning, the glide clips move the hands apart and the other let go of the bar,
+ *  and a body other than Link's holds it a little off. Gliding, the bar is fitted to both hands every frame: turned so
+ *  its two grips line up with the hands' and moved so their middles meet, so it banks with them and both hold on. */
 void UBotwMoveSet::AdvanceGliderGrip(float Dt)
 {
     USkeletalMeshComponent* Body = Character->GetMesh();
-    if (!Glider || !Body) return;
-    const FVector Left = Body->GetSocketLocation(Character->GetSkateBone(TEXT("hand_L")));
-    const FVector Right = Body->GetSocketLocation(Character->GetSkateBone(TEXT("hand_R")));
-    FVector Across = Right - Left;
-    if (Across.Size() < 5.f) return;
-    Across.Normalize();
-    const FTransform Hands(FRotationMatrix::MakeFromXZ(Across, Character->GetActorUpVector()).ToQuat(), (Left + Right) * .5f);
+    if (!Glider || !Body || GripBone[0].IsNone() || GripBone[1].IsNone()) return;
+    const FTransform Bone = Body->GetSocketTransform(Glider->GetAttachSocketName());
+    const FTransform Base = GliderHeld * Bone;   // where the one-handed hold puts it
     const FName Name = CurrentName();
-    const bool bSteady = Mode == EBotwMoveMode::Glide && bGliderShown && Prefixed(Name, { TEXT("Glide") }) && !In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall"), TEXT("GlideOff") });
-    if (bSteady && !bGliderGrip && In(Name, { TEXT("Glide"), TEXT("GlideF") }) && GlideTime > .5f && FMath::Abs(GlideTurn) < 8.f)
+    // Link's grips are taken from his own neutral glide, where his pose holds the bar.
+    if (!bBarKnown && Mode == EBotwMoveMode::Glide && bGliderShown && In(Name, { TEXT("Glide"), TEXT("GlideF") }) && GlideTime > .5f && FMath::Abs(GlideTurn) < 8.f)
     {
-        GliderGrip = Glider->GetComponentTransform().GetRelativeTransform(Hands);
-        bGliderGrip = true;
+        for (int32 I = 0; I < 2; ++I) BarGrip[I] = Base.InverseTransformPosition(Body->GetSocketLocation(GripBone[I]));
+        bBarKnown = true;
     }
+    const bool bFit = bBarKnown && Mode == EBotwMoveMode::Glide && bGliderShown;
     const float Was = GliderGripWeight;
-    GliderGripWeight = FMath::FInterpConstantTo(GliderGripWeight, bSteady && bGliderGrip ? 1.f : 0.f, Dt, 5.f);
+    GliderGripWeight = FMath::FInterpConstantTo(GliderGripWeight, bFit ? 1.f : 0.f, Dt, 6.f);
     if (GliderGripWeight <= 0.f)
     {
         if (Was > 0.f) Glider->SetRelativeTransform(GliderHeld);
         return;
     }
-    const FTransform Bone = Body->GetSocketTransform(Glider->GetAttachSocketName());
+    const FVector BarR = Base.TransformPosition(BarGrip[0]), BarL = Base.TransformPosition(BarGrip[1]);
+    const FVector HandR = Body->GetSocketTransform(GripBone[0]).TransformPosition(HandGrip[0]);
+    const FVector HandL = Body->GetSocketTransform(GripBone[1]).TransformPosition(HandGrip[1]);
+    const FQuat Turn = FQuat::FindBetweenNormals((BarL - BarR).GetSafeNormal(), (HandL - HandR).GetSafeNormal());
+    const FVector BarMiddle = (BarR + BarL) * .5f, HandMiddle = (HandR + HandL) * .5f;
+    const FTransform Fitted(Turn * Base.GetRotation(), HandMiddle + Turn.RotateVector(Base.GetLocation() - BarMiddle), Base.GetScale3D());
     FTransform Placed;
-    Placed.Blend(GliderHeld, (GliderGrip * Hands).GetRelativeTransform(Bone), Smooth(GliderGripWeight));
+    Placed.Blend(GliderHeld, Fitted.GetRelativeTransform(Bone), Smooth(GliderGripWeight));
     Glider->SetRelativeTransform(Placed);
 }
 

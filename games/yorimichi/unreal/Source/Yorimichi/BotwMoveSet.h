@@ -183,10 +183,13 @@ private:
     // Combat
     bool bShield = false, bLegacy = false;
     float FreeArm = 0.f;
-    // The paraglider's grip: its place in the frame of both hands (taken from the neutral glide), so it banks with them.
-    FTransform GliderGrip = FTransform::Identity, GliderHeld = FTransform::Identity;
+    // The paraglider's grips: the bar's two (its own frame) and the hands' two (each in its hand bone's frame); gliding,
+    // the bar is fitted to both hands every frame, so it banks with them and neither lets go.
+    FTransform GliderHeld = FTransform::Identity;
+    FVector BarGrip[2] = { FVector::ZeroVector, FVector::ZeroVector }, HandGrip[2] = { FVector::ZeroVector, FVector::ZeroVector };
+    FName GripBone[2];
     float GliderGripWeight = 0.f;
-    bool bGliderGrip = false;
+    bool bBarKnown = false;
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
     TWeakObjectPtr<AActor> LungeTarget;
     float LungeTime = 0.f, LungeStand = 0.f;
