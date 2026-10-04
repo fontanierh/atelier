@@ -123,8 +123,14 @@ def materials():
 surfaces = materials()
 for entry in park['meshes']:
     name = entry['name']
+    # The legacy factory needs a clean seed to avoid opening the Message Log in a commandlet. Create that seed
+    # before clearing its material slots: otherwise the first import retains the wheel's SkateParkPalette slot
+    # alongside the pier's authored surfaces. Reimports must replace the surface list too.
+    if not E.does_asset_exist('/Game/SkatePark/' + name):
+        helper['import_mesh'](OUT / 'board/SM_SkateWheel.fbx', '/Game/SkatePark', name)
     existing = E.load_asset('/Game/SkatePark/' + name)
-    if existing: existing.set_editor_property('static_materials', [])
+    assert existing, name
+    existing.set_editor_property('static_materials', [])
     mesh = helper['import_mesh'](OUT / 'assets' / f'{name}.fbx', '/Game/SkatePark', name)
     slots = list(mesh.get_editor_property('static_materials')); found = set()
     for slot in slots:
