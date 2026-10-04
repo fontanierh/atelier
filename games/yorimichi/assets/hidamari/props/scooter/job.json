@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "scooter",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "791092650a744d6a54a361c39d04e300753aa89771ea0d623db929c9dd1935f4",
+  "concept_sha256": "791092650a744d6a54a361c39d04e300753aa89771ea0d623db929c9dd1935f4",
+  "submitted_at": "2026-10-04T21:29:01.868658+00:00",
+  "task_id": "0038658b-2e25-4b36-bb93-08f64c42e859",
+  "status": "submitted",
+  "user_approval": "Henry (CEO), 2026-10-04: full greenlight for the Hidamari art pass, use all available Tripo credits",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-04T21:31:52.803375+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

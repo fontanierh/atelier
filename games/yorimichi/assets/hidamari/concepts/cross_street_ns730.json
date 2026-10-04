@@ -1,0 +1,35 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "This is an art-direction redesign for Yorimichi, a stylised Japanese autumn exploration game made in Unreal. Image 1 is a real, unretouched screenshot of the game as it is now. Repaint THE SAME VIEW from the same camera, keeping the layout, street grid, terrain, building positions, sea and sky composition, but redesigned to the standard of a polished commercial stylised game (think Ghibli-inspired, hand-crafted, cosy, dense and lived-in): textured materials with soft hand-painted detail instead of flat untextured colour, coherent warm autumn palette, gentle afternoon sunlight. It must stay a believable real-time game frame built from meshes, textures and foliage, not a loose illustration. No text, no UI, no watermark. A north-south cross street looking toward the clock hall and the volcano. Today the road fades into an identical blank grey ground plane, with building backs and empty lots. Redesign: a proper street with sidewalks, gutters, low walls, wooden fences, small front gardens, persimmon trees, sheds, back yards with laundry and potted plants, utility poles and wires, a small shrine or vending machine at the corner. The ground has textured materials (asphalt, gravel, dirt, grass with variation). Keep the clock hall and volcano composition.",
+  "references": {
+    "097_street_ns730_-60.png": "3e0d0e922c4d81547f7c10a34125525bd2b34ebffec34031b3d43340d591086d"
+  },
+  "purpose": "Hidamari art-direction redesign (planning)",
+  "status": "done",
+  "started_at": "2026-10-04T20:17:40.998107+00:00",
+  "usage": {
+    "input_tokens": 1199,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 279
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2571
+  },
+  "png_sha256": "b6f9585699519b546582de6a23ff751b6e9ec1c2007048739f4d239d12054c5e",
+  "seconds": 32.8,
+  "finished_at": "2026-10-04T20:18:13.798717+00:00",
+  "compact_copy": {
+    "file": "cross_street_ns730.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  }
+}

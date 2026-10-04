@@ -1,0 +1,35 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "This is an art-direction redesign for Yorimichi, a stylised Japanese autumn exploration game made in Unreal. Image 1 is a real, unretouched screenshot of the game as it is now. Repaint THE SAME VIEW from the same camera, keeping the layout, street grid, terrain, building positions, sea and sky composition, but redesigned to the standard of a polished commercial stylised game (think Ghibli-inspired, hand-crafted, cosy, dense and lived-in): textured materials with soft hand-painted detail instead of flat untextured colour, coherent warm autumn palette, gentle afternoon sunlight. It must stay a believable real-time game frame built from meshes, textures and foliage, not a loose illustration. No text, no UI, no watermark. Far view of the city from the sea, volcano on the right. Fix the off-colour frosted white-grey forest on the left hill: make it a dense, healthy autumn mixed forest of maples, cedars and ginkgo, with gentle aerial haze only in the distance. Replace the bare pale terrain slab and grey patches near the waterfront with a textured shoreline: sand, rocks, stone embankment, pine trees. City roofs with varied, saturated but harmonious colours and visible tile texture; strong sun-and-shadow modelling so the town has volume.",
+  "references": {
+    "004_far_sea_southeast.png": "30be6bccd1cea435d401f040b7ba189ec15bd50b70fc8ec46d0f206b1fd7fd9e"
+  },
+  "purpose": "Hidamari art-direction redesign (planning)",
+  "status": "done",
+  "started_at": "2026-10-04T20:17:09.549774+00:00",
+  "usage": {
+    "input_tokens": 1199,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 279
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2571
+  },
+  "png_sha256": "5eafc77d3102cfb7da96283042062d23ad563b29b2f0d7a67db90f364887b937",
+  "seconds": 31.4,
+  "finished_at": "2026-10-04T20:17:40.996868+00:00",
+  "compact_copy": {
+    "file": "far_sea_southeast.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "sake_barrels",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "a38ab0a607d342410f09f0635a9883a3ab0c165f6b3755c50727a7d4d096ee85",
+  "concept_sha256": "a38ab0a607d342410f09f0635a9883a3ab0c165f6b3755c50727a7d4d096ee85",
+  "submitted_at": "2026-10-04T21:33:19.208352+00:00",
+  "task_id": "b996cf9e-e163-46ea-baaa-85672ca09d40",
+  "status": "submitted",
+  "user_approval": "Henry (CEO), 2026-10-04: full greenlight for the Hidamari art pass, use all available Tripo credits",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-04T21:35:27.404117+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

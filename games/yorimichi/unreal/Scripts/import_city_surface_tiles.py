@@ -30,16 +30,21 @@ def main():
     for name, source in manifest['sources'].items():
         original = unreal.EditorAssetLibrary.load_asset('/Game/Japan/Assets/' + name)
         assert original and original.get_num_triangles(0) == source['source_triangles'], name
-        assert original.get_num_sections(0) == 1, (name, 'expected one production material section')
+        # The textured city meshes have one slot per surface (world/regions/hidamari/surfaces.py): match them by name.
+        slots = {str(s.get_editor_property('imported_material_slot_name')): s.get_editor_property('material_interface')
+                 for s in original.static_materials}
+        assert slots and all(slots.values()), (name, 'production materials')
         material = original.get_material(0)
-        assert material, name
         imported = []
         lower, upper = [float('inf')]*3, [-float('inf')]*3
         for tile in source['tiles']:
             path = folder / (tile['name'] + '.fbx')
             assert hashlib.sha256(path.read_bytes()).hexdigest() == tile['sha256']
             mesh = import_mesh(path, destination, tile['name'])
-            mesh.set_material(0, material)
+            for i, s in enumerate(mesh.static_materials):
+                key = str(s.get_editor_property('imported_material_slot_name'))
+                assert key in slots, (tile['name'], 'unknown slot', key)
+                mesh.set_material(i, slots[key])
             assert mesh.get_num_triangles(0) == tile['triangles'], (tile['name'], 'triangle count changed')
             box = mesh.get_bounding_box()
             for i, axis in enumerate(('x','y','z')):

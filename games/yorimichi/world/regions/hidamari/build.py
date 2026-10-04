@@ -11,9 +11,11 @@ from hidamari import harbor as harbor_kit
 from hidamari import arcade as arcade_kit
 from hidamari import plaza as plaza_kit
 from hidamari import mountains, living_plaza, pond_garden, living_streets, working_harbor, civic_gardens
-from hidamari import kit
+from hidamari import kit, surfaces
 from hidamari.layout import backdrop_height,north_height,north_base_height
 v.OUT=OUT
+# Ground land use (surface()): lawn, packed-earth yards, sidewalk paving along the streets, flagstone pavers.
+v.PALETTE.update({'hd_grass':(.125,.18,.048),'hd_yard':(.15,.115,.07),'hd_walk':(.185,.165,.135),'hd_flag':(.20,.172,.128),'hd_flag2':(.18,.155,.115)})
 v.PALETTE.update({'paving':(.22,.18,.125),'asphalt':(.075,.085,.09),'park':(.24,.30,.12),'cream':(.66,.57,.41),'blue':(.08,.19,.25),'brick':(.31,.12,.055),'water_city':(.075,.24,.29)})
 M=v.Mesh
 
@@ -202,6 +204,13 @@ def lighthouse():
 def grass_patch(x,y):
     return (y>235 or (min(abs(y-c) for c in ROAD_Y)>30 and min(abs(x-c) for c in ROAD_X)>20)) and not (660<x<805 and 135<y<215)
 
+def land_use(x,y):
+    """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 14 m of a street's centre
+    line (the street kit paves 8 m), packed earth in the yards behind."""
+    if grass_patch(x,y):return 'hd_grass'
+    if min(abs(y-c) for c in ROAD_Y)<14 or min(abs(x-c) for c in ROAD_X)<14:return 'hd_walk'
+    return 'hd_yard'
+
 def surface(name,xs,ys,color):
     m=M(name)
     gx,gy=np.meshgrid(xs,ys);gz=height(gx,gy)
@@ -211,6 +220,7 @@ def surface(name,xs,ys,color):
             if (y<-125 and x>380) or pond(x+dx/2,y+dy/2) or canal(x+dx/2,y+dy/2):continue
             pts=[(float(gx[jj,ii]),float(gy[jj,ii]),float(gz[jj,ii])) for ii,jj in [(i,j),(i+1,j),(i+1,j+1),(i,j+1)]]
             key='park' if grass_patch(x+dx/2,y+dy/2) else color
+            if name=='HD_Terrain':key=land_use(x+dx/2,y+dy/2)
             refine=name=='HD_Terrain' and ((980<x+dx/2<1080 and 224<y+dy/2<242) or (650<x+dx/2<835 and 254<y+dy/2<312))
             if refine and max(dx,dy)>.5:
                 sx=np.linspace(x,x+dx,max(2,math.ceil(dx/.5)+1));sy=np.linspace(y,y+dy,max(2,math.ceil(dy/.5)+1))
@@ -232,7 +242,7 @@ def surface(name,xs,ys,color):
                 gx,gy=np.meshgrid(px,py)
                 if np.max(abs(height(gx,gy)-street_height(gx,gy)))>.01:continue
                 points=[(xx,yy,float(height(xx,yy))+.013) for xx,yy in [(x,y),(x+5.92,y),(x+5.92,y+5.92),(x,y+5.92)]]
-                m.poly(points,(.235,.195,.14) if int(x+y)%3 else (.21,.175,.125))
+                m.poly(points,'hd_flag' if int(x+y)%3 else 'hd_flag2')
     return m
 
 def streets(city):
@@ -415,7 +425,7 @@ def main():
     for name,build in builders.items():
         if only and name not in only:continue
         mesh=build()
-        ob,entry=v.export(mesh,mat);manifest[mesh.name]=entry
+        ob,entry=(surfaces.export(mesh) if surfaces.textured(mesh.name) else v.export(mesh,mat));manifest[mesh.name]=entry
         bpy.data.objects.remove(ob,do_unlink=True)
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print('HIDAMARI BUILD COMPLETE',len(city['buildings']),'buildings;',len(manifest),'assets;',sum(v['triangles'] for v in manifest.values()),'unique triangles',flush=True)

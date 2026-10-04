@@ -426,6 +426,9 @@ def generate():
     from hidamari.public_spaces import STREET_GARDENS
     for name in ['HD_Lamp','HD_Bench','HD_Planter']:
         inst[name]=[p for p in inst.get(name,[]) if not any(abs(p[0]-x)<5.5 and abs(p[1]-y)<1.8 for x,y,_ in STREET_GARDENS)]
+    # The Tripo street props (street_props.py), before the trees make way for everything placed.
+    from hidamari import street_props
+    print('HIDAMARI STREET PROPS',street_props.place(put,inst,buildings,shop_sites()),flush=True)
     # Check the complete generated scatter, including street trees. Reserve
     # crown/awning clearance against each rotated shop, not only trunk centres.
     for name,placements in inst.items():
