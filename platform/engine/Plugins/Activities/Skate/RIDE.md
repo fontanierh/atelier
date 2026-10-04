@@ -68,6 +68,20 @@ the same ride. Three replays of a recorded 26 s session stay within 4 cm of each
   passes is predicted again. `skate.RideSelectLog 1` logs why each air left the ground (a pop, a crest, no ground
   below, off a rail, a launch), where and how fast, and a lip air's candidates and choice. The state shows the last
   start's world queries and cost (`select=queries,ms`), and `cost=` the worst single tick.
+- **A bad landing.** The touch-down bails on native's limits (`WipeoutBadLanding`, normal mode): the heading off the
+  travel by more than native's `max_landing_angle` at the speed along the face (92 degrees up to 9.3 m/s, so never
+  slower, 45 at 17 m/s, 15 from 27.8 m/s), or faster than `BailImpact` into the face, or than `BailGrindImpact` (8 m/s)
+  into a line; `BailScale` scales all three (native's easy mode is 1.5). `BailImpact` stays at 13.5 m/s, above native's
+  11.2, until Ride's airs come down where native's do: the second transition window's reference meets the bank at 3 m/s
+  into it, where Ride's path comes down on the flat beside it at 12.4. A refused landing logs its reason with each value
+  and its limit (`SKATE ride landing refused`). Before those, native's DangerZone (`CheckWipeoutAir`): while the grab
+  clip playing carries `DANGERZONE` (a Christ air's or a one-foot grab's into and cycle, the Christ air's out whole, the
+  one-foot out's first 0.29 s), any board contact in the air past its first `BailDangerFrames` (4) ticks (a landing, a
+  wall, or the deck's box or the sphere meeting a face), closing faster than `BailDangerAcross` (0.1 m/s) across the
+  deck's up or `BailDangerAlong` (0.6 m/s) along it wipes out (`SKATE ride ... refused (in the danger zone)`, naming the
+  contact): a Christ air let go too late still comes down on its out, and its deck's box usually meets the face a frame
+  before the wheels do. Flips' clips carry it too, but there native's lone contact of an upright rider is a run-out, not
+  a wipeout; Ride keeps its own mid-flip landing bail for those.
 - **Pushing.** A push from slower than `PushFromRest` (0.3 m/s) goes nose-first, and the board stands on the planted
   foot through the wind-up, so it neither creeps back down a slope nor leaves tail-first. Each tick of the foot's
   contact adds native's push: `PushDvStart` (0.6 m/s) from rest easing to `PushDvEnd` (0.5) at `PushFastFrom` (8.5
@@ -100,7 +114,7 @@ the same ride. Three replays of a recorded 26 s session stay within 4 cm of each
   it, at most `SpinCarryMax` (115 degrees/s).
 - **Grabs.** Either trigger grabs in the air at any pull, as native reads the pad. A grab held into the landing rides
   away, as native's does (its reference holds an Indy 17 ticks past the touch-down); a Christ air or a one-foot air
-  held into it wipes out.
+  held into it, or let go too late, comes down in its danger zone and wipes out (above).
 - **Powerslides.** Above `SlideMinSpeed` (1.2 m/s) the deck turns `SlideAngle` across the travel and scrubs speed.
   The powerslide key holds one, turned to the stick's side. On a pad the left stick's rear diagonal does, as the native
   runtime's slide intents read it (`InputIntentions.cpp`): pushing the stick out past 0.9 into the 52 degrees either

@@ -96,9 +96,22 @@ struct FRideTuning
     // Landing: deck tilt to the ground and deck angle to the travel (degrees).
     float CleanYaw = 12.f, SketchyYaw = 30.f;
     float BailTilt = 50.f;
-    float SidewaysSafeSpeed = 950.f;  // below this a sideways landing turns the board instead of bailing
-    float BailYawFast = 80.f;         // the allowed heading error at 20 m/s (the reference rides away up to 70)
-    float BailImpact = 1350.f;        // cm/s into the ground
+    // Native's bad landing (WipeoutBadLanding, normal mode): the heading's angle to the travel past max_landing_angle
+    // at the speed along the face (RideSession's LandingAngleCurve: 92 degrees up to 9.3 m/s, 45 at 17, 15 from
+    // 27.8 m/s), the speed into the face past BailImpact or into a line past BailGrindImpact; all three limits scaled by
+    // BailScale (bad_landing_scale: 1, easy 1.5). BailImpact stays above native's 11.2 m/s until Ride's airs come down
+    // where native's do: the reference's second transition window meets the bank at 3 m/s into it, Ride's path the
+    // flat beside it at 12.4.
+    float BailScale = 1.f;
+    float BailImpact = 1350.f;        // cm/s into the ground (native's max_landing_speed is 1120)
+    float BailGrindImpact = 800.f;    // cm/s into a line (max_grind_speed)
+    // Native's DangerZone (CheckWipeoutAir): while the grab clip playing carries DANGERZONE (a Christ air's or a
+    // one-foot grab's into and cycle, the Christ air's out whole, the one-foot out's first .29 s), a board contact in
+    // the air after its first BailDangerFrames ticks wipes out when it closes faster than BailDangerAcross across the
+    // deck's up or BailDangerAlong along it (xz_trick, y_trick).
+    float BailDangerFrames = 4.f;     // ticks (ignore_danger_frames)
+    float BailDangerAcross = 10.f;    // cm/s (xz_trick)
+    float BailDangerAlong = 60.f;     // cm/s (y_trick)
 
     // Walls.
     float WallBailSpeed = 800.f;      // cm/s into a wall

@@ -403,6 +403,28 @@ float FRideAnimator::CatchTime(Flick Trick, float Default) const
     return T && T->Catch >= 0 ? T->Catch : Default;
 }
 
+float FRideAnimator::GrabDanger(Flick Trick, float TrickTime, ERideGrab Grab, float GrabTime, ERideGrab LastGrab, float SinceGrab) const
+{
+    if (!bRig) return 0.f;
+    // The clip Choose plays for these times (ERideMotion::Air), and its curve there.
+    static const FName Danger(TEXT("DANGERZONE"));
+    auto Value = [](const UAnimSequence* Clip, float Time) { return Clip ? Clip->EvaluateCurveData(Danger, FAnimExtractContext(double(Time))) : 0.f; };
+    const FTrickClips* T = Trick != Flick::None && TrickTime >= 0 ? TrickFor(Trick) : nullptr;
+    const float Catch = T ? (T->Catch >= 0 ? T->Catch : Len(T->Air)) : 0.f;
+    if (Grab != ERideGrab::None && (!T || TrickTime >= Catch))
+    {
+        const FGrabClips& G = C.Grabs[uint8(Grab)];
+        if (G.Into && GrabTime < Len(G.Into)) return Value(G.Into, GrabTime);
+        if (G.Cycle) return Value(G.Cycle, SampleTime(G.Cycle, GrabTime - Len(G.Into), true));
+    }
+    if (SinceGrab >= 0 && LastGrab != ERideGrab::None)
+    {
+        const UAnimSequence* Out = C.Grabs[uint8(LastGrab)].Out;
+        if (Out && SinceGrab < Len(Out)) return Value(Out, SinceGrab);
+    }
+    return 0.f;
+}
+
 bool FRideAnimator::PushTiming(bool bFirstPush, float Strong, float& Lead, float& Contact, float& Recover) const
 {
     if (!bRig || !C.PushContact[0] || !C.PushRecover[0]) return false;

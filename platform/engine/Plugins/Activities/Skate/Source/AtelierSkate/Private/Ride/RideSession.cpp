@@ -123,6 +123,11 @@ namespace
     // The native LandingSpeedScalarVsGroundNormalY: coming down a face between 46 and 65 degrees, the speed along it
     // grows by up to 15% (by the landing normal's up component).
     const float LandingCurve[][2] = {{.42f, 1}, {.45f, 1.075f}, {.49f, 1.13f}, {.53f, 1.15f}, {.58f, 1.15f}, {.62f, 1.13f}, {.66f, 1.075f}, {.69f, 1}};
+    // Native's max_landing_angle (physics_wipeout, as LoadWipeoutSettings reads it from the stock settings.skate): the
+    // most the heading may be off the travel (radians) by the speed along the face (m/s), clamped at both ends.
+    // test_ride_landing_bail checks it against Native's loader.
+    const float LandingAngleCurve[][2] = {{9.25666714f, 1.60000002f}, {11.7412596f, 1.29727697f}, {14.1293201f, 1.03247797f},
+        {17.0540695f, .783838212f}, {20.4189796f, .572958589f}, {23.6256008f, .410879105f}, {26.2774792f, .302857101f}, {27.7700005f, .262857199f}};
     // Powerslide deceleration by speed (cm/s -> cm/s^2), as measured on the native runtime.
     const float SlideCurve[][2] = {{0, 150}, {360, 230}, {560, 410}, {850, 560}, {1130, 630}, {2000, 700}};
 
@@ -1411,6 +1416,7 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
                 StuckTime += Tick60;
                 if (StuckTime > StuckLimit) { LogStuck(TEXT("the box in the air"), Side); StartBail(TEXT("stuck in a wall")); return; }
             }
+            if (DangerContact(Side.Normal, TEXT("box contact"))) return;
             V -= Side.Normal * FMath::Min(0.f, float(FVector::DotProduct(V, Side.Normal)));
             bGlanced = true;
             break;
@@ -1431,6 +1437,7 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
             }
             P = Out;
             if (Hit.Normal.Z >= Tune.WallSlope && TryLand(P, Hit.Normal)) return;
+            if (DangerContact(Hit.Normal, TEXT("contact"))) return;
             V -= Hit.Normal * FMath::Min(0.f, float(FVector::DotProduct(V, Hit.Normal)));
             return;
         }
@@ -1484,8 +1491,29 @@ void FRideSession::TickAir(const FSkateInput& In, Flick F)
     if (P.Z < -1e6) StartBail(TEXT("fell out of the world"));
 }
 
+bool FRideSession::DangerContact(const FVector& Normal, const TCHAR* What)
+{
+    // Native's DangerZone (CheckWipeoutAir): the first ignore_danger_frames ticks of an air are spared.
+    if (AirTime <= Tune.BailDangerFrames * Tick60 + 1e-4f) return false;
+    const float Danger = Animator.GrabDanger(Trick_, TrickTime, Grab, GrabTime, LastGrab, SinceGrab);
+    if (Danger < .5f) return false;
+    // The contact's closing velocity (along the face's normal) in the rider's frame: along the deck's up, across it.
+    const float Into = -FVector::DotProduct(V, Normal);
+    if (Into <= 0) return false;
+    const FVector Up = Q.GetUpVector();
+    const float Along = FMath::Abs(Into * float(FVector::DotProduct(Normal, Up)));
+    const float Across = Into * float(FVector::CrossProduct(Normal, Up).Size());
+    if (Along <= Tune.BailDangerAlong && Across <= Tune.BailDangerAcross) return false;
+    UE_LOG(LogTemp, Display, TEXT("SKATE ride %s refused (in the danger zone): %s DANGERZONE %.2f (grab %d %.2f s held, last %d %.2f s ago), face %.2f,%.2f,%.2f, %.0f cm/s into it: %.0f along the deck's up of %.0f, %.0f across of %.0f; air %.2f s past %.0f ticks"),
+        What, *Animator.GetMainClip().ToString(), Danger, int32(Grab), GrabTime, int32(LastGrab), SinceGrab, Normal.X, Normal.Y, Normal.Z,
+        Into, Along, Tune.BailDangerAlong, Across, Tune.BailDangerAcross, AirTime, Tune.BailDangerFrames);
+    StartBail(TEXT("touched down in the danger zone"));
+    return true;
+}
+
 bool FRideSession::HitWallInAir(const FVector& Normal)
 {
+    if (DangerContact(Normal, TEXT("wall contact"))) return true;
     const float Into = -FVector::DotProduct(V, Normal);
     const float Tilt = AngleBetween(Q.GetUpVector(), Normal);
     // Coming down onto a floor on its side or upside down is a fall, whatever the speed; so is a hard wall hit.
@@ -1501,13 +1529,20 @@ bool FRideSession::HitWallInAir(const FVector& Normal)
 
 bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
 {
+    if (DangerContact(Normal, TEXT("landing"))) return true;
     const FVector BoardUp = Q.GetUpVector();
     const float Tilt = AngleBetween(BoardUp, Normal);
     // Touching something with the deck far from flat is a wall hit, not a landing; a steep hit with the deck aligned is.
     if (Tilt > 75.f)
     {
         const float Into = -FVector::DotProduct(V, Normal);
-        if (Into > Tune.WallBailSpeed) { StartBail(TEXT("hit a wall")); return true; }
+        if (Into > Tune.WallBailSpeed)
+        {
+            UE_LOG(LogTemp, Display, TEXT("SKATE ride landing refused (hit a wall): face %.2f,%.2f,%.2f, deck up %.2f,%.2f,%.2f (tilt %.0f of 75, %.0f cm/s into it of %.0f)"),
+                Normal.X, Normal.Y, Normal.Z, BoardUp.X, BoardUp.Y, BoardUp.Z, Tilt, Into, Tune.WallBailSpeed);
+            StartBail(TEXT("hit a wall"));
+            return true;
+        }
         return false;
     }
     const float Impact = FMath::Max(0.f, float(-FVector::DotProduct(V, Normal)));
@@ -1519,19 +1554,22 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
     const bool bFakieLanding = Yaw > 90.f;
     if (bFakieLanding) Yaw = 180.f - Yaw;
     const bool bMidFlip = TrickTime >= 0 && TrickTime < CatchTime(Trick_) - .03f && Trick_ != Flick::Ollie && Trick_ != Flick::Nollie;
-    float YawLimit = 90.f;
-    if (Speed > Tune.SidewaysSafeSpeed) YawLimit = FMath::GetMappedRangeValueClamped(FVector2f(Tune.SidewaysSafeSpeed, 2000.f), FVector2f(90.f, Tune.BailYawFast), Speed);
+    // Native's bad landing (WipeoutBadLanding): Yaw is its landing angle (TravelAngle: the deck's forward on the face,
+    // turned toward the travel, against the travel), which may be at most max_landing_angle at the speed along the
+    // face (92 degrees up to 9.3 m/s, so never below it); the speed into the face at most max_landing_speed
+    // (BailImpact). Both limits scale by BailScale (bad_landing_scale).
+    const float YawLimit = FMath::RadiansToDegrees(Curve(LandingAngleCurve, Speed / 100.f)) * Tune.BailScale;
+    const float ImpactLimit = Tune.BailImpact * Tune.BailScale;
     // A grab held into the landing rides away, as native's does (its reference holds an Indy 17 ticks past the
-    // touch-down); one with a foot off the board (Christ air, one foot) wipes out, as native's do.
-    const bool bFootOff = (Grab == ERideGrab::ChristAir || Grab == ERideGrab::OneFoot) && GrabWeight > .6f && AirTime > .25f;
-    const TCHAR* Why = Tilt > Tune.BailTilt ? TEXT("landed tilted") : Impact > Tune.BailImpact ? TEXT("landed too hard") :
-        Yaw >= YawLimit && !bSteppingOff ? TEXT("landed sideways") : bMidFlip ? TEXT("landed on the board mid-flip") :
-        bFootOff ? TEXT("landed with a foot off the board") : nullptr;
+    // touch-down); a Christ air or a one-foot grab is in its danger zone (DangerContact).
+    const TCHAR* Why = Tilt > Tune.BailTilt ? TEXT("landed tilted") : Impact > ImpactLimit ? TEXT("landed too hard") :
+        Yaw > YawLimit && !bSteppingOff ? TEXT("landed sideways") : bMidFlip ? TEXT("landed on the board mid-flip") : nullptr;
     P = Point;
     if (Why)
     {
-        UE_LOG(LogTemp, Display, TEXT("SKATE ride landing refused (%s): face %.2f,%.2f,%.2f, deck up %.2f,%.2f,%.2f (tilt %.0f, yaw %.0f, impact %.0f); landing aimed at %.2f,%.2f,%.2f (%s)"),
-            Why, Normal.X, Normal.Y, Normal.Z, BoardUp.X, BoardUp.Y, BoardUp.Z, Tilt, Yaw, Impact, LandNormal.X, LandNormal.Y, LandNormal.Z, LandTime >= 0 ? TEXT("set") : TEXT("none"));
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride landing refused (%s): face %.2f,%.2f,%.2f, deck up %.2f,%.2f,%.2f (tilt %.0f of %.0f, yaw %.0f of %.0f at %.0f cm/s, impact %.0f of %.0f, grab %d weight %.2f, air %.2f s); landing aimed at %.2f,%.2f,%.2f (%s)"),
+            Why, Normal.X, Normal.Y, Normal.Z, BoardUp.X, BoardUp.Y, BoardUp.Z, Tilt, Tune.BailTilt, Yaw, YawLimit, Speed, Impact, ImpactLimit,
+            int32(Grab), GrabWeight, AirTime, LandNormal.X, LandNormal.Y, LandNormal.Z, LandTime >= 0 ? TEXT("set") : TEXT("none"));
         StartBail(Why);
         return true;
     }
@@ -1629,6 +1667,17 @@ bool FRideSession::TryGrind(const FSkateInput& In)
     bGrindFront = FVector::DotProduct(Point - P, Toes) > 0;
     RailUp = FVector::CrossProduct(Tangent, FVector::CrossProduct(FVector::UpVector, Tangent)).GetSafeNormal();
     if (RailUp.Z < 0) RailUp = -RailUp;
+    // Native's bad landing onto a line (WipeoutBadLanding with a grind selected): faster than BailGrindImpact into it
+    // (max_grind_speed) throws the rider.
+    const float IntoLine = -float(FVector::DotProduct(V, RailUp));
+    if (IntoLine > Tune.BailGrindImpact * Tune.BailScale)
+    {
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride grind refused (landed on the line too hard): %.0f cm/s into the line of %.0f"),
+            IntoLine, Tune.BailGrindImpact * Tune.BailScale);
+        Rail = INDEX_NONE;
+        StartBail(TEXT("landed on the line too hard"));
+        return true;
+    }
     // The board closes onto the line over the next ticks, as fast as it was coming and no slower than GrindLockSpeed,
     // rather than jumping there (the native board touches the line before it locks).
     const bool bSlide = GrindKind == ERideGrind::Boardslide || GrindKind == ERideGrind::Lipslide;

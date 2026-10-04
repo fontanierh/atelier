@@ -403,6 +403,9 @@ private:
      *  floor on its side or has slid along such faces for too long; otherwise it slides along without bouncing.
      *  True when the flight ended. */
     bool HitWallInAir(const FVector& Normal);
+    /** A board contact in the air (a landing, a wall, the box or the sphere in a face) in the grab clip's danger zone:
+     *  the bail, true when it bails. */
+    bool DangerContact(const FVector& Normal, const TCHAR* What);
     bool FindGround(const FVector& At, const FQuat& Frame, float Below, FVector& OutP, FVector& OutUp, FVector& OutForward, bool& bBlocked, FVector* Block = nullptr, const FVector& Toward = FVector::ZeroVector) const;
     /** One step of rolling (Dt of the tick): walls, the ground, crests. False when the board left the ground, was
      *  thrown or stopped against something, which ends the tick's move. */

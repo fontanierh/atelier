@@ -51,6 +51,10 @@ public:
     float PopDelay(atelier::ride::Flick Trick, float Default) const;
     /** From the take-off to the board caught under the feet (the flip clips' board track), or Default. */
     float CatchTime(atelier::ride::Flick Trick, float Default) const;
+    /** The DANGERZONE value (native's DangerZone attribute) of the grab clip the air plays at these times: the grab's
+     *  into or cycle while it is held (once a flip is caught), its out after it is let go; 0 past the out, with no
+     *  grab, or without the clips. */
+    float GrabDanger(atelier::ride::Flick Trick, float TrickTime, ERideGrab Grab, float GrabTime, ERideGrab LastGrab, float SinceGrab) const;
     /** One push cycle: the lead before the foot touches (the first push of a run only), the contact and the
      *  recovery, for a push at Strong (0 slow .. 1 fast). False without the clips. */
     bool PushTiming(bool bFirst, float Strong, float& Lead, float& Contact, float& Recover) const;

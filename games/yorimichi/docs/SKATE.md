@@ -78,7 +78,7 @@ descent and let go through the curve at the bottom; crouch again for the next wa
 is not a boost, and holding it through the curve gains less than coasting, which pumps a little by itself (the
 transitions crouch Cairo). Any pull grabs in the air, so release the triggers before leaving the lip unless you want
 a grab, and keep off the right stick, which pops. A grab held into the landing rides away; a Christ air or a one-foot
-air held into it is a bail.
+air held into it, or let go too late, is a bail.
 
 ### Camera
 

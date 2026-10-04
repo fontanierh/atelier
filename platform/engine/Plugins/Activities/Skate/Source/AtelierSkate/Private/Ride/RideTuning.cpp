@@ -19,7 +19,7 @@ namespace
         RIDE_FIELD(PumpDepth), RIDE_FIELD(CoastPump), RIDE_FIELD(CrouchRate), RIDE_FIELD(PopHeight), RIDE_FIELD(PopHeightQuick), RIDE_FIELD(PopLoadTime), RIDE_FIELD(NollieScale), RIDE_FIELD(PopFromGrindScale), RIDE_FIELD(PopDelay),
         RIDE_FIELD(LateFlickWindow), RIDE_FIELD(AirGravity), RIDE_FIELD(SpinCarry), RIDE_FIELD(SpinCarryMax), RIDE_FIELD(LevelLead), RIDE_FIELD(VertSteepness),
         RIDE_FIELD(VertClimb), RIDE_FIELD(VertLean), RIDE_FIELD(VertNative), RIDE_FIELD(VertGravity), RIDE_FIELD(TransferPush), RIDE_FIELD(FlipTime), RIDE_FIELD(CleanYaw), RIDE_FIELD(SketchyYaw), RIDE_FIELD(BailTilt),
-        RIDE_FIELD(SidewaysSafeSpeed), RIDE_FIELD(BailYawFast), RIDE_FIELD(BailImpact), RIDE_FIELD(WallBailSpeed), RIDE_FIELD(WallRestitution), RIDE_FIELD(GrindCapture),
+        RIDE_FIELD(BailScale), RIDE_FIELD(BailImpact), RIDE_FIELD(BailGrindImpact), RIDE_FIELD(BailDangerFrames), RIDE_FIELD(BailDangerAcross), RIDE_FIELD(BailDangerAlong), RIDE_FIELD(WallBailSpeed), RIDE_FIELD(WallRestitution), RIDE_FIELD(GrindCapture),
         RIDE_FIELD(GrindAbove), RIDE_FIELD(GrindBelow), RIDE_FIELD(GrindAlign), RIDE_FIELD(GrindFriction), RIDE_FIELD(SlideFriction), RIDE_FIELD(GrindStall), RIDE_FIELD(GrindStallHop),
         RIDE_FIELD(GrindExitPop), RIDE_FIELD(GrindRelock), RIDE_FIELD(GrindMinAhead), RIDE_FIELD(GrindCross), RIDE_FIELD(GrindCorner), RIDE_FIELD(GrindJoin), RIDE_FIELD(GrindLockSpeed),
         RIDE_FIELD(ManualDeckGain), RIDE_FIELD(ManualDeckDamping), RIDE_FIELD(ManualDeckWeight),
