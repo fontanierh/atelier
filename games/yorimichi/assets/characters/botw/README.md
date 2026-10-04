@@ -60,8 +60,8 @@ PBR look.
 
 - **Creatures**: `ABotwCreature` (`Source/Yorimichi/BotwCreature.h`) plays the baked clips, stays on the ground and
   has a capsule the sword hits. Its modes: idle, showcase (every clip in turn), wander, camp (notices the player within
-  14 m, chases, attacks; sword hits stagger and knock it down) and scripted. The island spawns a Bokoblin camping
-  25 m up the road; `-nobotw` turns it off, and scripted sessions (QA, films) get it only with `-botw`.
+  14 m, chases, attacks; sword hits stagger and knock it down) and scripted. None is spawned at the start; the live
+  verbs below place them.
 - **Riders**: a character with a `skate` map gets a `DA_<Name>Rider` definition (its idle and a locomotion blend
   space). `-rider=<Name>` makes it the player (`ABotwRider`): it walks, runs and gets on the board, where the skate
   runtime's solved pose is retargeted through `ISkateRider::GetSkateBone` like on Cairo.

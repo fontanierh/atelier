@@ -6,7 +6,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "JapanHUD.h"
 #include "FoxHunter.h"
-#include "BotwCreature.h"
 #include "Components/CapsuleComponent.h"
 #include "CollisionQueryParams.h"
 #include "Engine/World.h"
@@ -37,20 +36,6 @@ void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
     UE_LOG(LogTemp, Display, TEXT("Fox hunter %s at %s (ground %s)"), Fox ? TEXT("spawned") : TEXT("NOT spawned"), *Where.ToString(), Hit.bBlockingHit ? TEXT("traced") : TEXT("assumed"));
 }
 
-/** When the BOTW characters are built (assets/characters/botw), a Bokoblin keeps a camp 25 m up the road, to the right. */
-void AJapanGameMode::SpawnBotwCamp(AJapanWorld* W, AWandererCharacter* Player)
-{
-    if (!W || !W->bLoaded || FParse::Param(FCommandLine::Get(), TEXT("nobotw")) || !FBotwSpec::Find(TEXT("Bokoblin"))) return;
-    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("botw"))) return;
-    const FRotator Facing = W->PlayerStart.Rotator();
-    FVector Camp = W->PlayerStart.GetLocation() + Facing.Vector() * 2500.f + FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * 600.f;
-    FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(BotwSpawn), false, Player);
-    if (GetWorld()->LineTraceSingleByChannel(Hit, Camp + FVector(0, 0, 600), Camp - FVector(0, 0, 1200), ECC_Visibility, Params)) Camp.Z = Hit.ImpactPoint.Z;
-    // It faces back down the road, towards the start.
-    const bool bSpawned = ABotwCreature::SpawnAt(GetWorld(), TEXT("Bokoblin"), Camp, Facing.Yaw + 180.f, EBotwMode::Camp) != nullptr;
-    UE_LOG(LogTemp, Display, TEXT("BOTW camp: %d Bokoblin at %s"), bSpawned ? 1 : 0, *Camp.ToString());
-}
-
 UClass* AJapanGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
 {
     if (UClass* Rider = ABotwRider::PawnOverride()) return Rider;
@@ -71,5 +56,4 @@ void AJapanGameMode::BeginPlay()
     AWandererCharacter* T = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
     if (T) T->EnterWorld(W);
     SpawnFoxHunter(W, T);
-    SpawnBotwCamp(W, T);
 }
