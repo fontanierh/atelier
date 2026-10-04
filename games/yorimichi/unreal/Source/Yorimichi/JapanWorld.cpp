@@ -266,7 +266,9 @@ void AJapanWorld::Load()
                     H->SetLightingChannels(true, true, false);
                 H->SetCanEverAffectNavigation(false);
                 const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
-                H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
+                // The city's overhead wires (HD_Wires, 10 m up) never stop a jump or the camera, and cast no shimmering lines.
+                const bool bWires=Key==TEXT("HD_Wires");
+                H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || bWires || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
                 // Camera see-through (docs/CAMERA.md): solid things stop the chase camera. Thin things (trees, bushes,
                 // poles, lanterns, the torii, the tree house's props and thin pieces) let it through and fade whole
                 // where they hide Cairo; the materials read how in custom primitive data 0. The far backdrop never
@@ -281,7 +283,7 @@ void AJapanWorld::Load()
                     UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,
                         Fade == JapanSeeThrough::FadePieces ? TEXT("fades piece by piece") : TEXT("fades at the lens only, no piece bake"),
                         Mesh->GetNumTexCoords(0));
-                H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
+                H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && !bWires && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
                 if (bGrass || bLitter || bBackdrop) H->bAffectDistanceFieldLighting = false;
                 if (bGrass) H->SetCullDistances(6000, 8000);
                 else if (bBush) H->SetCullDistances(30000, 36000);
