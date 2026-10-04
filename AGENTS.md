@@ -86,6 +86,9 @@ uv run pytest                            # studio and game Python tests
 - Before building a fresh checkout, look for a completed build of the same source revision and engine version on
   the machine. Reuse verified artifacts as independent copies (APFS clones are cheap); never share mutable Content,
   Binaries or Intermediate folders between agents. Keep the same installed engine across checkouts.
+  Use `uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>`; it verifies fingerprints,
+  required outputs and engine build IDs before carrying over successful stamps. Run the incremental build afterward
+  to confirm every unchanged step is up to date. It leaves absolute-path-dependent Intermediate files behind.
 - Reuse only outputs whose source fingerprints and required files match. `--touch` records existing outputs as
   built: use it only after verifying those outputs, never to hide a failed or incomplete build. A source change
   must still invalidate its affected steps and compile when required.
