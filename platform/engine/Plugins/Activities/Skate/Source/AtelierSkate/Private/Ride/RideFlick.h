@@ -11,6 +11,7 @@
 #include "Native/Input.h"
 #include "Native/Intents.h"
 #include "Native/Settings.h"
+#include "RideManual.h"
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -72,6 +73,7 @@ namespace atelier::ride
         std::vector<skate::GestureSet> Sets;
         float StepTime = 0;                // the board's fixed simulation step (BoardPhysicsSettings)
         float MagnitudeThreshold = 0;      // inputlistener/default/StickMagnitudeMinToCountHeld
+        ManualBank Manual;                 // the manual's controller settings and friction (RideManual.h)
         /** settings.skate and gestures.skate's bytes. */
         static std::shared_ptr<const FlickBank> Load(const std::vector<std::uint8_t>& Settings,
             const std::vector<std::uint8_t>& Gestures, std::string& Error);
@@ -80,11 +82,9 @@ namespace atelier::ride
     class FlickReader
     {
     public:
-        // Ride's own manual band and load (its manual entry and crouch, until the graph port replaces them) read the
-        // canonical right stick: the rim (a load) is entered this far out and left below RimLeave; the manual's band
-        // lies between BandInner and BandOuter with |y| over .2, held ManualHold s.
-        static constexpr float RimEnter = .7f, RimLeave = .55f;
-        static constexpr float BandInner = .22f, BandOuter = .8f, ManualHold = .1f;
+        // Ride's own load (the crouch before a pop, until the graph port replaces it) reads the canonical right stick:
+        // the rim is entered this far out and left below RimLeave; a stick back under Centre clears a pop's load.
+        static constexpr float RimEnter = .7f, RimLeave = .55f, Centre = .22f;
 
         FlickReader();
         ~FlickReader();
@@ -94,6 +94,7 @@ namespace atelier::ride
         /** Native's session load: fresh controls (PlayerControls::Load) on this bank. Error says why it failed. */
         bool SetBank(std::shared_ptr<const FlickBank> InBank, std::string& Error);
         bool HasBank() const { return Bank != nullptr; }
+        const FlickBank* GetBank() const { return Bank.get(); }
         /** A mount, as GameplaySession::Activate does it: a fresh controller-input runtime, the controls stepped on a
          *  neutral pad (five ticks the first time, four after), then a fresh runtime again. The controls and their
          *  recognizers keep their history from ride to ride, as Native's do. */
@@ -134,14 +135,9 @@ namespace atelier::ride
         float PopLoad() const { return Load; }
         /** The last pop's GestureSpeed: 1 for a gesture done within 1.75 ticks a pattern point, 0 from 4.4. */
         float PopGesture() const { return Last.Strength; }
-        /** -1 tail manual (stick part-way down), +1 nose manual (part-way up), 0 none; after a short hold. */
-        int ManualBand() const { return BandTime >= ManualHold ? BandSide : 0; }
-        /** Stick height within the manual band: 0 at its middle, +-1 at its edges (positive towards the centre). */
-        float BandOffset() const
-        {
-            const float Middle = .5f, Half = .3f;
-            return BandSide < 0 ? (StickY + Middle) / Half : BandSide > 0 ? (Middle - StickY) / Half : 0.f;
-        }
+        /** Native's Manual intention this tick (ProduceManual): the conditioned right stick's length, negative with it
+         *  down (the tail), absent with its y centred. */
+        std::optional<float> ManualIntent() const;
         float X() const { return StickX; }
         float Y() const { return StickY; }
 
@@ -157,10 +153,9 @@ namespace atelier::ride
         std::uint32_t Serial = 0;
         float CX = 0, CY = 0;
 
-        // The load and the manual band.
+        // The load.
         bool OnRim = false, Consumed = false;
         float RimTime = 0, WindTime = 0, Load = 0;
-        int BandSide = 0; float BandTime = 0;
         float StickX = 0, StickY = 0;
     };
 }

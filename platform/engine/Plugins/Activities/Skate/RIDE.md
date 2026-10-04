@@ -8,7 +8,7 @@ backend in its config; the backend is chosen at each mount and a ride keeps it. 
 
 The board is rigid and steps at 60 Hz (`RideSession.cpp`; the numbers are in `RideTuning.h`). Each frame shows it
 between its last two steps at the frame's own time, from the ride's first frame (the step clock starts a step full).
-Nothing in a ride is left to chance: the manual's wobble draws from a sequence that starts over with every ride, and a
+Nothing in a ride is left to chance: the manual's wobble is Native's procedural noise on the manual's own clock, and a
 run-out's clip and a thrown board's tumble come from the bail itself, so the same controls from the same start replay
 the same ride. Three replays of a recorded 26 s session stay within 4 cm of each other over the board's whole path
 (they parted by up to 10 m before); a bail's ragdoll is the one source of drift left (0.5 cm).
@@ -72,6 +72,37 @@ the same ride. Three replays of a recorded 26 s session stay within 4 cm of each
   side of straight back starts a slide on that side, and it lasts while the stick stays out past 0.9, anywhere from
   the other side's sideways line to 115 degrees round its own. Straight back, or a stick already held there, does not
   start one.
+- **Manuals.** Native's manual, ported (`RideManual.*`):
+  - Native's intentions (`ProduceManual`) give the side: `Manual`, the conditioned right stick's length, negative with
+    the stick down (the tail), and `ManualBrake` past 0.9.
+  - The action graph counts how long `Manual` has been held (`ManualEngageTime`), in the air too. On the ground its
+    Antic state starts when the stick passes 0.9.
+  - On plain ground (no pop, push or turn round), `Turning.Idle` starts a manual once `Manual` has been held over
+    0.2 s. On a landing that is the landing tick, unless the board came down faster than 8 m/s onto a face steeper
+    than 45 degrees.
+  - The brake button starts `Riding.Brake`, and Idle waits for it: its Into plays out whatever the button does (14
+    ticks, since its expiry also waits for the clip's 0.2 s blend, which Native's tree drops on the advance after the
+    blend has passed), Cyc lasts while the brake is held, and Out hands back to Idle 0.4 s in.
+  - A stick slammed past 0.9 first puts Idle into its anticipation instead, which has no way into a manual. That is
+    why the recorded session's 909–1004 holds give none (U80).
+  - The sign of `Manual` picks the tail or the nose, and the manual switches side with it. It ends when `Manual` goes
+    and brakes while `ManualBrake` is held.
+  - A nose manual started on the ground, from Idle or from the tail, first plays `NoseManual.Holding.Into`, which
+    carries no balance: its balance comes 25 ticks after the start. One landed from the air goes straight to its
+    cycle (`InAirStatic`'s transition), balanced at once.
+  - Native's controller (`CalculateManual`, `physics_manual/default` and the difficulty's `physics_mode`) is a PID on
+    (0.25 + 0.75 |balance|) × 24 degrees (30 braking), with a 1.5 Hz procedural wobble. It has no fail angle: in
+    Native's normal mode nothing ends a manual but the stick.
+  - Ride's board is kinematic. The controller's displacement turns a one-axis deck about the axle that stays down,
+    weighed down by a fitted weight (`ManualDeck*` in `RideTuning.h`). The rig's clips keep their own tilt, so this
+    deck shows only without one.
+  - A manual adds Native's `FrictionVsSpeed_Manual` (0.13 m/s² at rest to 0.5 at 8 m/s).
+  - Over the recorded session the manual starts on Native's ticks (211 on a landing, 408). It ends on the tick the
+    intention goes, one tick before Native's published balance clears: the Native backend's worker hands back the step
+    it took a frame earlier, so its state rows are a frame behind its pad rows.
+  - On the film's plaza_manuals pad (U98) the tail manual balances on Native's ticks. The nose manual after the brake
+    tap balances for 42 ticks from 253, against Native's 41 from 254 in pad ticks; before the brake and the Into it
+    balanced for 97 from 198.
 
 ## Tricks
 
@@ -99,8 +130,7 @@ Ride reads the pad with Native's own controls (`RideFlick.cpp`) rather than a re
   (`TakeOff.FromManual`, `SetManualOutTimer`), the ground clip starts two thirds through, at its `MANUALINTO` point.
   The pop's height is still Ride's: it grows with the load, how long Native's conditioned stick was out of its dead
   zone before the trick.
-- **Still Ride's own.** The manual's band (the stick held part-way down or up) and the crouch of a load are read from
-  the canonical right stick. Native's physical capabilities and state are 0, since Ride has no Native physics; only
+- **Still Ride's own.** The crouch of a load is read from the canonical right stick. Native's physical capabilities and state are 0, since Ride has no Native physics; only
   the wipe-out intentions read them. A load does not stop a push, because Native's action graph is not ported.
 - **Checks.** The game's input-replay test compiles the adapter with Native's sources
   (`Tests/Native/ride_input_replay_probe.cpp`) and replays a recorded 26 s session (1573 ticks):
@@ -152,11 +182,12 @@ into the graph's inputs, runs the graph and places the pose on the board.
   head and upper spine). The channel blends in and out over 0.3 s; its three clips blend by a torso value: 1 in a
   manual, 0 in a powerslide (the head only), 0.5 otherwise, moving at 0.6 a second (set at once when fakie starts).
   Native's angles from the travel (head, chest; offline through its channel blend): forward 3°, 46°; fakie without the
-  channel 177°, 134°; fakie 72°, 126°; a fakie manual 22°, 100°.
+  channel 177°, 134°; fakie 72°, 126°. In a fakie manual the head swings with the manual's clip, so it is judged by
+  its mean over one whole cycle: 25.7°, 99.7° on the tail's `M_IDLE` and 12.1°, 73.1° on the nose's.
 - **Switch.** As native's `Turning.Switch` does, a rider rolling fakie turns round on the board: before a push from
   fakie (at `PushFromRest`, 30 cm/s, or faster), and by himself after `FakieSwitchTime` (0.6 s) rolling fakie on flat
-  ground at `SwitchMinSpeed` (100 cm/s) or faster; never in the air, over a landing, loaded for a pop, braking or in a
-  manual's band, and never on a crawl. The clip is `R_SWITCH_RIDE_*` (centre or leaning frontside or backside,
+  ground at `SwitchMinSpeed` (100 cm/s) or faster; never in the air, over a landing, loaded for a pop, braking or with
+  Native's `Manual` intention held, and never on a crawl. The clip is `R_SWITCH_RIDE_*` (centre or leaning frontside or backside,
   standing or crouched; 0.733 s), at `SwitchPushRate` (1.25) before a push, which starts `SwitchPushLead` (0.25 s)
   before the clip's end, and at its own rate otherwise. Its last frame is the other stance's idle turned 180° (2 cm
   apart over the body on average, 3.7 cm at most), so at its end `bSwitch` flips and nothing else does: the board is

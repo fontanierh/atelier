@@ -475,11 +475,11 @@ def main():
         if not (wanted(name) or wanted('pad')):
             continue
         # Flick out of a held manual, as native does: its wind-up points contain the manual's stick position, so the
-        # stick never goes back to the centre or out to the rim first.
+        # stick never goes back to the centre or out to the rim first. The nose manual balances after its Into (25 ticks).
         trick = 'Kickflip' if 'kickflip' in name else 'Nollie'
         timeline = [(0.0, (0.0, 0.0)), (.3, hold), (1.3, flick), (1.3 + .05, (0.0, 0.0))]
         rows = pad_ride(FLAT[0], FLAT[1], 0, 480, timeline, 2.8)
-        held = [r for r in rows if int(r['pt']) == 1 and float(r['padt']) >= .6]
+        held = [r for r in rows if int(r['pt']) == 1 and float(r['padt']) >= (.6 if 'kickflip' in name else 1.)]
         kept = bool(held) and all(r.get('manual') == '1' for r in held)
         late = latency(rows, 2); landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
         record(name, rows, kept and trick_named(rows, trick) and late is not None and late <= allowed and landed,
@@ -541,11 +541,14 @@ live.behave('grab', grab)
     if wanted('grind'):
         grind_rows(record)
     if wanted('manual'):
-        rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,-.5)}}),(1.8,{{}})],duration=2.3", 2.3)
-        record('manual', rows, qa.ever(rows, 'manual', '1') and rows[-1]['manual'] == '0' and 'Manual' in qa.combos(rows)
-               and not qa.count(rows, 'bails'), qa.combos(rows))
-        rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,.5)}}),(1.8,{{}})],duration=2.3", 2.3)
-        record('nose_manual', rows, 'Nose Manual' in qa.combos(rows) and not qa.count(rows, 'bails'), qa.combos(rows))
+        # Native's manual (RIDE.md, Manuals): half way down (or up) the stick starts one 0.2 s on, and it lasts, without
+        # a fall, until the stick centres at 1.8 s. The nose manual's balance comes after its Into, 25 ticks later.
+        for name, combo, y in (('manual', 'Manual', -.5), ('nose_manual', 'Nose Manual', .5)):
+            rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,{y})}}),(1.8,{{}})],duration=2.3", 2.3)
+            spans = manual_spans(rows)
+            held = len(spans) == 1 and spans[0][1] is not None and spans[0][1] - spans[0][0] >= (1.1 if y < 0 else .8)
+            record(name, rows, held and combo in qa.combos(rows) and not qa.count(rows, 'bails'),
+                   'manual ' + ', '.join(f'{a:.2f}-{"end" if b is None else f"{b:.2f}"} s' for a, b in spans) + '; ' + qa.combos(rows))
     if wanted('vert'):
         vert_checks(record)
         rows = qa.run_scenario(f"{BOWL[0]},{BOWL[1]},0,850,[],duration=5", 5)
@@ -802,7 +805,8 @@ def wheel_run(args, seconds):
 def wheels_contact(record):
     """Wheels on the ground (RIDE.md, Rider, "Placement" and "Board"): carves at 3, 6 and 9 m/s both ways in both
     stances, a pump in the bowl, a powerslide and a manual. On the ground (mode 1) no wheel is more than 1 cm into the
-    ground; rolling (an R_, M_ or L_ clip) none is more than 1.5 cm above it (in a manual, the axle it rolls on).
+    ground; rolling (an R_, M_ or L_ clip) none is more than 1.5 cm above it (in a manual, the axle it rolls on, and
+    so for 0.2 s after one, while Idle's riding clip blends in and the raised end comes down).
     Writes a low close-up of a hard carve to build/yorimichi/skateqa/ride-carve-closeup.png."""
     qa.py(WHEELS.replace('WHEEL_R', '3.1'))
     runs = []
@@ -817,8 +821,9 @@ def wheels_contact(record):
     runs.append(('manual', wheel_run(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,-.5)}}),(1.8,{{}})],duration=2.3", 2.3)))
     sink, lift, bad_sink, bad_lift, judged, notes = (99., ''), (-99., ''), 0, 0, 0, []
     for label, frames in runs:
-        run_sink, run_lift = 99., -99.
+        run_sink, run_lift, since = 99., -99., 99
         for row, clear in frames[4:]:
+            since = 0 if row.get('manual') == '1' else since + 1
             if row.get('mode') != '1' or None in clear:
                 continue
             judged += 1
@@ -828,7 +833,7 @@ def wheels_contact(record):
             if low < sink[0]: sink = (low, f'{label} {clip}')
             bad_sink += low < -1.
             if clip[:2] in ('R_', 'M_', 'L_'):
-                axle = clear if row.get('manual') != '1' else min((clear[:2], clear[2:]), key=sum)
+                axle = clear if since > 12 else min((clear[:2], clear[2:]), key=sum)
                 high = max(axle)
                 run_lift = max(run_lift, high)
                 if high > lift[0]: lift = (high, f'{label} {clip}')
@@ -1045,11 +1050,13 @@ def preland_checks(record):
 # The fakie channel (RIDE.md, Fakie): rolling fakie the head and chest turn toward the travel. Native's angles from the
 # travel (degrees, head and chest; the rig's facing from its reference pose, as RideSession measures them), from the
 # native clips through native's channel blend (offline, the riding idle, the manual and a forward push as the base):
-# riding forward head 3, chest 46; fakie with no channel 177, 134; fakie 72, 126; a fakie manual (torso 1) 22, 100 on
-# M_IDLE (13, 77 on the nose manual); a forward push's chest 25.
+# riding forward head 3, chest 46; fakie with no channel 177, 134; fakie 72, 126; a forward push's chest 25. In a fakie
+# manual (torso 1) the head swings with the manual clip and the channel (M_IDLE 11 to 36 degrees, the nose manual's 3
+# to 24), so it is judged by its mean over one whole cycle of the manual clip: head 25.7, chest 99.7 on M_IDLE (3.3 s);
+# 12.1, 73.1 on M_NOSEIDLE (3.4 s); either within .3 degrees whatever the channel's phase against the clip.
 FAKIE_ROLL = (72., 126.)
-FAKIE_MANUAL = {'M_IDLE_N_0_CYC': (22., 100.), 'M_NOSEIDLE_N_0_CYC': (13., 77.)}
-FAKIE_DEG = 6.
+FAKIE_MANUAL = {'M_IDLE_N_0_CYC': (25.7, 99.7, 3.3), 'M_NOSEIDLE_N_0_CYC': (12.1, 73.1, 3.4)}
+FAKIE_DEG, FAKIE_CYCLE_DEG = 6., 3.
 # The fakie rows (--only takes any of these or a prefix of them, 'fakie' for all).
 FAKIE_ROWS = ('fakie_roll', 'fakie_switch', 'fakie_push', 'fakie_switch_trick', 'fakie_switch_push', 'fakie_switch_manual',
               'fakie_manual', 'fakie_powerslide', 'fakie_creep', 'fakie_blend')
@@ -1072,6 +1079,17 @@ def clock(rows):
     for r in rows:
         times.append(t); t += float(r.get('dt', 16.7)) / 1000
     return times
+
+
+def manual_spans(rows):
+    """Each run of manual frames: its start and end (s on the rows' clock; None if it runs to the last row)."""
+    spans, start = [], None
+    for t, r in zip(clock(rows), rows):
+        if r.get('manual') == '1' and start is None:
+            start = t
+        elif r.get('manual') != '1' and start is not None:
+            spans.append((start, t)); start = None
+    return spans + ([(start, None)] if start is not None else [])
 
 
 def settled(rows, key, after=.6, until=None):
@@ -1281,16 +1299,24 @@ def fakie_checks(record, wanted):
             record(f'fakie_switch_manual_{stance}', rows, ok, f'flip at {flip} s, manual at 1.9 s: {len(held)} manual frames riding '
                    f'switch, fakie channel up to {channel:.2f}, mirror {sorted(mirrored)} (want {int(goofy)}); {health}')
         if wanted('fakie_manual'):
-            rows = fakie_run(goofy, 480, "[(.3,{'right':(0,-.5)}),(2,{})]", 2.3)
+            # Held for a whole cycle of the manual clip once the channel's torso is the manual's (1 s in); the head and
+            # chest's means over that cycle against native's on the clip that plays (the tail's or the nose's).
+            rows = fakie_run(goofy, 480, "[(.3,{'right':(0,-.5)}),(5.2,{})]", 5.5)
             held = [r for r in rows if r.get('manual') == '1']
             torso = max((float(r['torso']) for r in held), default=0)
-            head, chest = (settled(held, 'headyaw', 1.), settled(held, 'chestyaw', 1.)) if held else (None, None)
-            # Whichever manual clip plays (the tail's or the nose's), native's angles on it.
-            match = [clip for clip, (h, c) in FAKIE_MANUAL.items()
-                     if head is not None and abs(head - h) <= FAKIE_DEG and abs(chest - c) <= FAKIE_DEG]
-            ok = bool(held) and torso > .95 and bool(match)
-            record(f'fakie_manual_{stance}', rows, ok, f'{len(held)} manual frames; torso up to {torso:.2f}; head {head} chest {chest} '
-                   f'(native {FAKIE_MANUAL}; matches {match or "none"})')
+            clip = held[-1].get('clip') if held else None
+            native = FAKIE_MANUAL.get(clip)
+            span = [r for t, r in zip(clock(held), held) if native and 1. <= t < 1. + native[2]]
+            whole = bool(native) and sum(float(r.get('dt', 16.7)) for r in span) / 1000 >= native[2] - 1 / 30.
+            weight = sum(float(r.get('dt', 16.7)) for r in span) or 1.
+            head, chest = (sum(float(r[k]) * float(r.get('dt', 16.7)) for r in span) / weight for k in ('headyaw', 'chestyaw'))
+            heads = [float(r['headyaw']) for r in span] or [0.]
+            ok = (whole and torso > .95 and abs(head - native[0]) <= FAKIE_CYCLE_DEG and abs(chest - native[1]) <= FAKIE_CYCLE_DEG
+                  and not qa.count(rows, 'bails'))
+            record(f'fakie_manual_{stance}', rows, ok, f'{len(held)} manual frames on {clip}; torso up to {torso:.2f}; over '
+                   f'{len(span)} frames (a whole cycle: {whole}) head {head:.1f} ({min(heads):.1f}..{max(heads):.1f}), chest '
+                   f'{chest:.1f}; native {native[0] if native else "-"}, {native[1] if native else "-"} '
+                   f'(within {FAKIE_CYCLE_DEG:.0f})')
         if wanted('fakie_powerslide'):
             rows = fakie_run(goofy, 700, "[(.3,{'slide':True,'left':(.6,0)}),(1.5,{})]", 2)
             slid = [r for r in rows if r.get('slide') == '1']

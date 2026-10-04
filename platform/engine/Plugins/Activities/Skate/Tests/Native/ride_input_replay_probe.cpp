@@ -8,10 +8,12 @@
 // rows.txt (the test writes it from a recording's frames.jsonl; floats are their binary32 bits in hex):
 //   prefix <neutral ticks between the mount's activation and row 0>
 //   then one line per row:
-//   k ax0..ax5 b dt ground_before has_pad pad_buttons pad_lt pad_rt pad_lx pad_ly pad_rx pad_ry
+//   k ax0..ax5 b dt ground_before has_pad pad_buttons pad_lt pad_rt pad_lx pad_ly pad_rx pad_ry [ground push speed]
 // ax are the six axes the engine reported (LX, LY, RX, RY, LT, RT, after its per-axis dead zone), b the recorder's
 // button-index mask, dt the frame's step, ground_before whether the ride was rolling before the frame, and pad the
-// packet the Native backend sent that frame when it was recorded.
+// packet the Native backend sent that frame when it was recorded. The optional last three are Native's own after the
+// frame: rolling (0/1), pushing (0/1) and the speed's bits (cm/s); with them Ride's manual (Private/Ride/RideManual.cpp)
+// runs on the goofy reader's intentions over Native's ground, as RideSession runs it.
 //
 // Each row is turned into FSkateInput the way USkateComponent::ReadInput does it (the recorded keys only: no mouse,
 // no arrow keys), then packed with the host's own packer (Private/SkatePad.h). The adapter gets that packet; Native's
@@ -20,6 +22,10 @@
 //   pad k buttons lt rt lx ly rx ry recorded(0/1) same(0/1)
 //   rec k set pattern name strength distance elapsed permitted        (the core's recognizer trace)
 //   trick k speed unmirrored mirrored goofy regular serial_goofy serial_regular
+//   manual k side                                                     (Ride's manual started, switched or ended)
+//   deck k angle target                                               (a manual tick's deck, degrees, nose up +)
+//   flag k on                                                         (the published balance turned non-zero / 0)
+//   brake k on                                                        (Riding.Brake started / played out)
 //   diff k field detail                                               (the first differences, if any)
 //   summary key=value ...
 //
@@ -32,9 +38,13 @@
 // in effect. The adapter reads each tick's packed pad beside Native's owners (compared as above); output:
 //   rec k set pattern name strength distance elapsed permitted        (the adapter's recognizer trace)
 //   flick k native_trick ride_trick speed set pattern serial          (a recognised trick)
-//   band k side                                                       (Ride's manual band changed: -1 tail, 1 nose)
+//   manual k side                                                     (Ride's manual: -1 tail, 1 nose, 0 ended)
+//   deck k angle target                                               (a manual tick's deck, degrees, nose up +)
+//   flag k on, brake k on                                             (as above)
+// The manual runs as RideSession runs it on plain ground (no pop, push or turn round), at a speed of 5 m/s.
 //   diff ... and summary ticks= tricks= words= ... as above
 #include "Ride/RideFlick.h"
+#include "Ride/RideManual.h"
 #include "SkatePad.h"
 #include "Native/BoardPhysicsSettings.h"
 #include "Native/ControllerInputRuntime.h"
@@ -78,6 +88,50 @@ struct Row
     float Dt = 0;
     bool bGroundBefore = false, bHasPad = false;
     XboxState Pad;
+    bool bNative = false, bGround = false, bPush = false;   // Native's own state after the frame, when given
+    float Speed = 0;
+};
+
+// RideSession's manual (TryManual and TickGround's manual block) on one tick: the action graph's intentions every
+// tick, then on plain ground Turning.Idle and Riding.Brake, a manual's side and its deck. Prints a line when the side,
+// the published balance or the brake state changes.
+struct ManualRun
+{
+    ride::ManualControl Control;
+    int Side = 0;
+    bool bIn = false, bFlag = false, bBraking = false;
+
+    void Tick(long K, const ride::FlickReader& Reader, bool bGroundBefore, bool bGround, bool bIdle, bool bPop, float Speed,
+        float Dt)
+    {
+        Control.ReadIntents(Reader.Intents(), bGroundBefore, Dt);
+        // In the air, or popping (TakeOff.FromManual), no manual.
+        if (!bGround || bPop) { if (bIn) End(K); Control.Riding(false, Dt); Report(K); return; }
+        // A landing this tick starts one straight into its cycle.
+        if (!bIn && bIdle && Control.Idle(false)) { bIn = true; Control.Start(!bGroundBefore); }
+        Control.Riding(!bIn, Dt);
+        if (bIn)
+        {
+            const int Now = int(Control.Side());
+            if (Now == 0) End(K);
+            else
+            {
+                if (Now != Side) { Side = Now; std::printf("manual %ld %d\n", K, Side); }
+                Control.Hold(Dt);
+                Control.StepDeck(Reader.GetBank()->Manual, 1, ride::ManualDeck{}, Speed, Dt);
+                std::printf("deck %ld %.4f %.4f\n", K, Control.DeckAngle() * 57.29578f, Control.Target() * 57.29578f);
+            }
+        }
+        Report(K);
+    }
+    void End(long K) { bIn = false; Side = 0; Control.End(); std::printf("manual %ld 0\n", K); }
+    void Report(long K)
+    {
+        // RideSession's ManualBalance is non-zero (SkateRuntime's manual flag) in a manual past the nose's Into.
+        const bool bNow = bIn && !Control.Into();
+        if (bNow != bFlag) { bFlag = bNow; std::printf("flag %ld %d\n", K, bFlag ? 1 : 0); }
+        if (Control.BrakePlaying() != bBraking) { bBraking = !bBraking; std::printf("brake %ld %d\n", K, bBraking ? 1 : 0); }
+    }
 };
 
 // USkateComponent::ReadInput on recorded keys: the left stick with D and A, the dead zone undone, the right stick
@@ -252,6 +306,9 @@ bool ReadRows(const char* Path, long& Prefix, std::vector<Row>& Rows)
         for (auto& A : Ax) if (!(S >> std::hex >> A)) return false;
         if (!(S >> std::dec >> R.B >> std::hex >> Dt >> std::dec >> Ground >> HasPad >> std::hex >> Buttons >> std::dec)) return false;
         for (auto& P : Pad) if (!(S >> P)) return false;
+        int NativeGround = 0, NativePush = 0; std::uint32_t Speed = 0;
+        if (S >> NativeGround >> NativePush >> std::hex >> Speed >> std::dec)
+        { R.bNative = true; R.bGround = NativeGround != 0; R.bPush = NativePush != 0; R.Speed = FromBits(Speed); }
         for (int I = 0; I < 6; ++I) R.Ax[I] = FromBits(Ax[I]);
         R.Dt = FromBits(Dt); R.bGroundBefore = Ground != 0; R.bHasPad = HasPad != 0;
         R.Pad.buttons = static_cast<std::uint16_t>(Buttons);
@@ -274,7 +331,8 @@ int RunScript(std::ifstream& In, const std::shared_ptr<const ride::FlickBank>& B
     ride::FlickReader Reader;
     if (!Reader.SetBank(Bank, Error)) { std::fprintf(stderr, "adapter: %s\n", Error.c_str()); return 2; }
     Counts C; long K = 0, Tricks = 0;
-    int Band = 0;
+    ManualRun Manual;
+    int WasGround = -1;   // the previous tick's rolling flag (-1: none since the mount)
     std::string Line;
     while (std::getline(In, Line))
     {
@@ -283,7 +341,7 @@ int RunScript(std::ifstream& In, const std::shared_ptr<const ride::FlickBank>& B
         if (!(S >> Kind)) continue;
         if (Kind == "mount")
         {
-            Reader.Activate();
+            Reader.Activate(); Manual = ManualRun(); WasGround = -1;
             if (!Core.Activate(Error)) { std::fprintf(stderr, "native activation: %s\n", Error.c_str()); return 2; }
             Compare(C, K, Reader, Core);
             continue;
@@ -305,7 +363,9 @@ int RunScript(std::ifstream& In, const std::shared_ptr<const ride::FlickBank>& B
         for (const auto& R : Reader.Recognitions())
             std::printf("rec %ld %u %u %s %08x %08x %08x %d\n", K, unsigned(R.Set), unsigned(R.Pattern), R.Name.c_str(),
                 Bits(R.Strength), Bits(R.Distance), Bits(R.Elapsed), R.bPermitted ? 1 : 0);
-        if (Reader.ManualBand() != Band) { Band = Reader.ManualBand(); std::printf("band %ld %d\n", K, Band); }
+        const bool bGround = (Flags & 64) != 0, bGroundBefore = WasGround < 0 ? bGround : WasGround != 0;
+        WasGround = bGround ? 1 : 0;
+        Manual.Tick(K, Reader, bGroundBefore, bGround, (Flags & 1) == 0, Trick != ride::Flick::None, 5.f, Reader.StepTime());
         if (Trick != ride::Flick::None)
         {
             const auto& E = Reader.Event();
@@ -365,6 +425,7 @@ int main(int argc, char** argv)
     }
 
     HostReader Host;
+    ManualRun Manual;
     long PadRows = 0, PadSame = 0, FirstPadDiff = -1, Tricks = 0;
     for (const Row& R : Rows)
     {
@@ -381,6 +442,9 @@ int main(int argc, char** argv)
         Compare(C, R.K, Goofy, Core);
         CompareStances(C, R.K, Goofy, Regular);
 
+        if (R.bNative)
+            Manual.Tick(R.K, Goofy, R.bGroundBefore, R.bGround, !R.bPush, TrickGoofy != ride::Flick::None, R.Speed / 100.f,
+                Goofy.StepTime());
         if (const auto* Gestures = Core.Controls.Gestures())
             for (const auto& E : Gestures->LastEvents())
                 std::printf("rec %ld %u %zu %s %08x %08x %08x %d\n", R.K, unsigned(E.set), E.recognition.pattern,

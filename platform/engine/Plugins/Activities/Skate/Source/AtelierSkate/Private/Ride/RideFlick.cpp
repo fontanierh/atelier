@@ -121,6 +121,7 @@ std::shared_ptr<const FlickBank> FlickBank::Load(const std::vector<std::uint8_t>
     Result->MagnitudeThreshold = Board->input_magnitude_threshold;
     // PlayerControls::Load checks the seven sets and the recognizers' culling fields.
     if (!PlayerControls::Load(Result->Settings, Result->Sets, Error)) return nullptr;
+    if (!ManualBank::Load(Result->Settings, Result->Manual, Error)) return nullptr;
     Error.clear();
     return Result;
 }
@@ -178,16 +179,14 @@ Flick FlickReader::Update(const XboxState& Pad, bool bGoofy, GestureGroup Group,
     if (!O) return Flick::None;
     const float Dt = Bank->StepTime;
 
-    // Ride's load and manual band, on the canonical right stick.
+    // Ride's load, on the canonical right stick.
     {
         const float X = float(Pad.right[0]) / 32767.f, Y = float(Pad.right[1]) / 32767.f, M = std::sqrt(X * X + Y * Y);
         const bool Rim = OnRim ? M > RimLeave : M > RimEnter;
         RimTime = Rim ? RimTime + Dt : 0.f;
-        if (M < BandInner) Consumed = false;
+        if (M < Centre) Consumed = false;
         OnRim = Rim;
-        const int Band = !Rim && M >= BandInner && M < BandOuter && std::fabs(Y) > .2f ? (Y < 0 ? -1 : 1) : 0;
-        BandTime = Band != 0 && Band == BandSide ? BandTime + Dt : 0;
-        BandSide = Band; StickX = X; StickY = Y;
+        StickX = X; StickY = Y;
     }
 
     Step(Pad, Difficulty);
@@ -226,6 +225,12 @@ const IntentMap& FlickReader::Intents() const
 {
     static const IntentMap Empty;
     return O ? O->Controls.action_intents : Empty;
+}
+
+std::optional<float> FlickReader::ManualIntent() const
+{
+    const float* Value = O ? O->Controls.action_intents.Get("Manual") : nullptr;
+    return Value ? std::optional<float>(*Value) : std::nullopt;
 }
 
 const std::vector<ControllerIntent>& FlickReader::PreGestureIntents() const

@@ -112,12 +112,10 @@ struct FRideTuning
     float GrindJoin = 10.f;           // ... into a line that starts this close to where it ends (cm)
     float GrindLockSpeed = 400.f;     // the board closes onto the line at least this fast after locking (cm/s)
 
-    // Manuals.
-    float ManualInstability = .9f;    // 1/s, the balance's own drift
-    float ManualControl = 2.2f;       // 1/s per unit of stick away from the band's centre
-    float ManualWobble = .25f;        // random push on the balance, 1/s
-    float ManualPitch = 20.f;         // degrees
-    float ManualFriction = 30.f;      // extra cm/s^2
+    // Manuals: Ride's one-axis deck under Native's controller (RideManual.h, ManualDeck), shown without the rig.
+    float ManualDeckGain = .8f;       // share of the controller's displacement that turns the deck about the axle
+    float ManualDeckDamping = 50.f;   // 1/s
+    float ManualDeckWeight = 120.f;   // rad/s^2 pulling the raised end down
 
     // Bails.
     float BailSettle = 2.2f;          // s down before getting up

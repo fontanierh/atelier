@@ -6,11 +6,13 @@ The Skate plugin's ride_input_replay_probe packs each recorded row of carpark-1 
 (Private/Ride/RideFlick.cpp) and Native's ControllerInputRuntime and PlayerControls, scheduled as GameplaySession
 schedules them, one packet per tick over the whole take. Every tick is compared bit for bit: the 26 controller words, the
 intentions before and after the gestures, every recognizer's match, GestureSpeed, the held pattern and the trick mapped
-under each pinned stance. The recording lives in the ignored build folder; without it those tests skip.
+under each pinned stance. Over the same take Ride's manual (Private/Ride/RideManual.cpp, Native's controller) runs on
+the adapter's intentions and Native's own ground, and starts and ends where Native's did. The recording lives in the
+ignored build folder; without it those tests skip.
 
 In its script mode the probe plays skate.input as the scenarios drive it (yorimichi_live's FLICKS at the live helper's,
 the QA scenarios' and the Mega Park film's timings, the film's rail, grind and manual inputs, skate_ride's pad nollies)
-through the same adapter beside Native's owners. Without a C++ compiler everything skips.
+through the same adapter beside Native's owners, and Ride's manual on them. Without a C++ compiler everything skips.
 """
 import ast
 import json
@@ -33,11 +35,13 @@ BUNDLE = GAME / 'unreal/Content/Data/SkateNative'
 PLUGIN = REPO / 'platform/engine/Plugins/Activities/Skate'
 PRIVATE = PLUGIN / 'Source/AtelierSkate/Private'
 PROBE = PLUGIN / 'Tests/Native/ride_input_replay_probe.cpp'
-# The probe, Ride's adapter and the Native sources they reach.
-SOURCES = [PROBE, PRIVATE / 'Ride/RideFlick.cpp'] + [PRIVATE / 'Native' / (name + '.cpp') for name in (
-    'AggregateMass', 'AnimationName', 'BoardPhysicsSettings', 'BodyMass', 'ConstraintFrames', 'ControllerInputRuntime',
-    'DeckGeometry', 'DriveBuild', 'DriveFrames', 'GestureInputPublication', 'Gestures', 'GraphGestureOperations', 'Input',
-    'InputIntentions', 'Intents', 'NameId', 'NativeMath', 'PlayerControls', 'RigidBody', 'Settings')]
+# The probe, Ride's adapter and manual, and the Native sources they reach.
+SOURCES = [PROBE, PRIVATE / 'Ride/RideFlick.cpp', PRIVATE / 'Ride/RideManual.cpp'] + [
+    PRIVATE / 'Native' / (name + '.cpp') for name in (
+        'AggregateMass', 'AnimationName', 'BoardPhysicsSettings', 'BodyMass', 'ConstraintFrames', 'ControllerInputRuntime',
+        'DeckGeometry', 'DriveBuild', 'DriveFrames', 'GestureInputPublication', 'Gestures', 'GraphGestureOperations',
+        'GroundControlSettings', 'Input', 'InputIntentions', 'Intents', 'Manual', 'NameId', 'NativeMath', 'PlayerControls',
+        'RigidBody', 'Settings')]
 # Unreal's own float settings: no contraction, no fast math (UnrealBuildTool's Mac and Clang toolchains).
 FLAGS = ['-std=c++20', '-O1', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions', '-fno-rtti', f'-I{PRIVATE}']
 
@@ -49,6 +53,8 @@ FIRST_STICK = {144: (-15583, 15099), 145: (-19934, 18681), 146: (-24428, 24170),
 # The main recognizer's matches over the take (pattern index, name) and the tricks the goofy rider's mapping gives.
 MAIN = {157: (23, 'N_InwardHeelflip'), 346: (1, 'Kickflip'), 446: (17, 'N_Heelflip'), 741: (30, 'Ollie'),
         992: (30, 'Ollie'), 1242: (1, 'Kickflip')}
+# Ride's manuals over the take: (row, side) where one started (-1 tail, 1 nose) or ended (0).
+MANUALS = [(211, -1), (246, 0), (408, 1), (445, 0)]
 
 
 def bits(value):
@@ -93,7 +99,8 @@ def probe(tmp_path_factory):
 
 def rows_file(folder, rows, prefix, name):
     """The probe's rows: k, the six axes' bits, the button mask, dt's bits, whether the ride was rolling before the
-    frame (mode 1, the powerslide's condition), and the packet Native sent when there is one."""
+    frame (mode 1, the powerslide's condition), the packet Native sent when there is one, then Native's own state after
+    the frame for Ride's manual: rolling, pushing and the speed's bits (cm/s)."""
     lines = [f'prefix {prefix}']
     for i, row in enumerate(rows):
         before = rows[i - 1] if i else row
@@ -101,7 +108,9 @@ def rows_file(folder, rows, prefix, name):
         packet = [pad.group(1), *pad.groups()[1:]] if pad else ['0'] * 7
         lines.append(' '.join([str(row['k']), *(f'{bits(a):08x}' for a in row['ax']), str(row['b']),
                                f'{bits(row["dt"]):08x}', '1' if field(before, 'mode') == '1' else '0',
-                               '1' if pad else '0', *packet]))
+                               '1' if pad else '0', *packet, '1' if field(row, 'mode') == '1' else '0',
+                               '1' if field(row, 'push') not in (None, '0') else '0',
+                               f'{bits(float(field(row, "speed") or 0)):08x}']))
     path = folder / name
     path.write_text('\n'.join(lines) + '\n')
     return path
@@ -111,10 +120,14 @@ def run(probe, rows, prefix, name):
     binary, folder = probe
     path = rows_file(folder, rows, prefix, name)
     out = call(binary, BUNDLE / 'settings.skate', BUNDLE / 'gestures.skate', path)
-    result = {'pad': {}, 'rec': [], 'trick': {}, 'diff': [], 'summary': {}}
+    result = {'pad': {}, 'rec': [], 'trick': {}, 'manual': [], 'flag': [], 'brake': [], 'deck': {}, 'diff': [], 'summary': {}}
     for line in out.splitlines():
         kind, *words = line.split(' ')
-        if kind == 'pad':
+        if kind in ('manual', 'flag', 'brake'):
+            result[kind].append((int(words[0]), int(words[1])))
+        elif kind == 'deck':
+            result['deck'][int(words[0])] = (float(words[1]), float(words[2]))
+        elif kind == 'pad':
             result['pad'][int(words[0])] = (int(words[1], 16), *map(int, words[2:]))
         elif kind == 'rec':
             k, group, pattern, name, strength, distance, elapsed, permitted = words
@@ -203,6 +216,24 @@ def test_frame_446_needs_the_history_from_372(probe, take, replay):
     assert part and [r['bits'] for r in part] == [r['bits'] for r in full]
 
 
+def test_manuals_over_the_take(take, replay):
+    # Ride's manual, on the adapter's intentions over Native's ground, starts on Native's rows: 211 on the landing tick
+    # (the Manual intention counted its 0.2 s in the air) and 408. Each ends on the row the intention goes, a row before
+    # Native's published balance clears: the Native backend's worker hands back the step it took a frame earlier
+    # (SkateRuntime polls before it sends the frame's pad), so its state rows are a frame behind its pad rows. From 909 to 1004 the stick passed 0.9 first, so Idle went into its
+    # anticipation and no manual starts (U80), as in Native.
+    assert replay['manual'] == MANUALS
+    assert [row['k'] for row in take if field(row, 'manual') == '1'] == list(range(211, 247)) + list(range(408, 446))
+    # Both carry their balance at once: the nose manual was landed from the air, straight into its cycle.
+    assert replay['flag'] == [(211, 1), (246, 0), (408, 1), (445, 0)]
+    # Native's controller tips the deck toward the side held (nose up on the tail), never past its brake angle, and
+    # nothing in it throws the rider off.
+    tail = [replay['deck'][k] for k in range(211, 246)]
+    nose = [replay['deck'][k] for k in range(408, 445)]
+    assert all(0 <= a < 30 and 0 < target <= 30 for a, target in tail) and tail[-1][0] > 5
+    assert all(-30 < a <= 0 and -30 <= target < 0 for a, target in nose) and nose[-1][0] < -10
+
+
 # ------------------------------------------------------------------------------------------------ scripted gestures
 SQUARE, NOSE, TAIL = 0, 1, 2      # GraphGestureOperations' GestureGroup: a ground or manual flick, a nose or tail grind's
 GROUND = 64                       # the probe's flag: the board rolling (push 1, brake 2, grab left 16, grab right 32)
@@ -254,13 +285,15 @@ def play(probe, script):
     path = folder / 'script.txt'
     path.write_text('\n'.join(script.lines) + '\n')
     out = call(binary, BUNDLE / 'settings.skate', BUNDLE / 'gestures.skate', path)
-    result = {'flicks': [], 'bands': [], 'diff': [], 'summary': {}}
+    result = {'flicks': [], 'manual': [], 'flag': [], 'brake': [], 'deck': {}, 'diff': [], 'summary': {}}
     for line in out.splitlines():
         kind, *words = line.split(' ')
         if kind == 'flick':
             result['flicks'].append((int(words[0]), words[1]))
-        elif kind == 'band':
-            result['bands'].append((int(words[0]), int(words[1])))
+        elif kind in ('manual', 'flag', 'brake'):
+            result[kind].append((int(words[0]), int(words[1])))
+        elif kind == 'deck':
+            result['deck'][int(words[0])] = (float(words[1]), float(words[2]))
         elif kind == 'diff':
             result['diff'].append(line)
         elif kind == 'summary':
@@ -353,9 +386,9 @@ def test_film_grind_ollie(probe):
 
 def test_film_holds_are_no_tricks(probe):
     # plaza_manuals' tail and nose manual holds, an air's spin and grabs, a powerslide on the left stick, and steering
-    # with pushes and brakes: no trick, and the manual holds read as Ride's manual band.
+    # with pushes and brakes: no trick, and the manual holds are Ride's tail and nose manuals.
     manuals = play(probe, Script().hold(42).hold(102, (0., -.5)).hold(36).hold(102, (0., .5)).hold(60))
-    assert not manuals['flicks'] and [side for _, side in manuals['bands'] if side] == [-1, 1]
+    assert not manuals['flicks'] and [side for _, side in manuals['manual'] if side] == [-1, 1]
     script = Script().hold(20, flags=0)
     for mag in (.35, 1.):
         script.hold(40, left=(mag, 0.), flags=32).hold(20, left=(-mag, 0.), flags=16 | 2).hold(20, flags=0)
@@ -364,6 +397,64 @@ def test_film_holds_are_no_tricks(probe):
         script.tick(left=(max(-1., min(1., 1.3 * math.sin(k / 23.))), 0.),
                     flags=GROUND | (1 if (k // 40) % 3 == 0 else 0) | (2 if k % 97 < 10 else 0))
     assert not play(probe, script)['flicks']
+
+
+def test_manual_graph(probe):
+    # Native's manual graph on scripted sticks, a stick held from tick 30. Half way down it starts a tail manual once
+    # the Manual intention has been held over 0.2 s (the 13th tick), and ends the tick the stick centres.
+    def manuals(script):
+        return play(probe, script)['manual']
+    assert manuals(Script().hold(30).hold(40, (0., -.5)).hold(20)) == [(42, -1), (70, 0)]
+    # Slammed past 0.9 first, Idle goes into its anticipation (the Antic state), which has no way into a manual.
+    assert manuals(Script().hold(30).hold(5, (0., -1.)).hold(60, (0., -.5)).hold(20)) == []
+    # The intention counts in the air: the manual starts on the landing tick. Pushing, Idle waits for the push's end.
+    assert manuals(Script().hold(30).hold(20, (0., -.5), flags=0).hold(30, (0., -.5)).hold(20)) == [(50, -1), (80, 0)]
+    assert manuals(Script().hold(30).hold(30, (0., -.5), flags=GROUND | 1).hold(30, (0., -.5)).hold(20)) == [(60, -1), (90, 0)]
+    # Across the centre the manual changes side without ending.
+    assert manuals(Script().hold(30).hold(30, (0., -.5)).hold(30, (0., .5)).hold(20)) == [(42, -1), (60, 1), (90, 0)]
+    # Out past 0.9 in a manual is its brake: the controller's target goes to BrakeTiltAngle.
+    brake = play(probe, Script().hold(30).hold(30, (0., -.5)).hold(30, (0., -1.)).hold(20))
+    assert brake['manual'] == [(42, -1), (90, 0)]
+    assert all(brake['deck'][k][1] < 24 for k in range(42, 60)) and all(brake['deck'][k][1] == 30 for k in range(61, 90))
+
+
+def test_nose_manual_into_and_the_brake(probe):
+    # A nose manual started on the ground plays NoseManual.Holding.Into first, which carries no balance: the published
+    # balance comes 25 ticks after the start, as Native's does (carpark-1's manual_trick-02 window: stick at 41, the
+    # combo label's Into at 54 and the balance at 79 on Native's rows, a frame behind its pad, so 53 and 78 here). Across from the tail it plays Into again; landed from the air it goes straight to Cycle.
+    def run(script):
+        out = play(probe, script)
+        return out['manual'], out['flag'], out['brake']
+    assert run(Script().hold(30).hold(60, (0., .5)).hold(20))[:2] == ([(42, 1), (90, 0)], [(67, 1), (90, 0)])
+    assert run(Script().hold(30).hold(30, (0., -.5)).hold(40, (0., .5)).hold(20))[:2] == (
+        [(42, -1), (60, 1), (100, 0)], [(42, 1), (60, 0), (85, 1), (100, 0)])
+    assert run(Script().hold(30).hold(20, (0., .5), flags=0).hold(30, (0., .5)).hold(20))[:2] == (
+        [(50, 1), (80, 0)], [(50, 1), (80, 0)])
+    # Let go during Into, it ends without a balance.
+    assert run(Script().hold(30).hold(30, (0., .5)).hold(20))[:2] == ([(42, 1), (60, 0)], [])
+    # The brake button starts Riding.Brake, which Idle waits for: Into plays out (14 ticks: its expiry waits for the
+    # 0.2 s blend, which the tree drops on the advance after it has passed), Cyc lasts while the brake is held, Out hands
+    # back to Turning 0.4 s in, and Idle's manual starts on the tick after.
+    manual, flag, brake = run(Script().hold(30).hold(4, flags=GROUND | 2).hold(70, (0., .5)).hold(20))
+    assert brake == [(30, 1), (69, 0)] and manual == [(70, 1), (104, 0)] and flag == [(95, 1), (104, 0)]
+    manual, flag, brake = run(Script().hold(30).hold(30, flags=GROUND | 2).hold(60, (0., -.5)).hold(20))
+    assert brake == [(30, 1), (84, 0)] and manual == [(85, -1), (120, 0)]
+
+
+def test_plaza_manuals_timing(probe):
+    # The film's plaza_manuals pad from its rolling start (ref-film-plaza_manuals): a tail manual held from 53 to 155,
+    # a push 158-184, a brake tap 188-191, then a nose manual held from 192 to 294. Native's rows publish balance on
+    # 66-156 and 255-295, a frame behind its pad (test_manuals_over_the_take), so on 65-155 and 254-294 in pad ticks.
+    # Ride's first is Native's to the tick. Its second waits for the brake to play out, enters the nose manual's Into at
+    # 228 and balances from 253, a tick before Native's (whose Into starts at 229: its combo label, 12 ticks late, reads
+    # Nose Manual from row 242). U98: before, Ride's second manual balanced from row 198
+    # for 97 frames, against Native's 255 for 41.
+    script = Script().hold(53).hold(103, (0., -.5)).hold(2).hold(27, flags=GROUND | 1).hold(3)
+    script.hold(4, flags=GROUND | 2).hold(103, (0., .5)).hold(20)
+    out = play(probe, script)
+    assert out['brake'] == [(188, 1), (227, 0)]
+    assert out['manual'] == [(65, -1), (156, 0), (228, 1), (295, 0)]
+    assert out['flag'] == [(65, 1), (156, 0), (253, 1), (295, 0)]
 
 
 def test_thumb_through_the_centre_and_a_load_alone(probe):

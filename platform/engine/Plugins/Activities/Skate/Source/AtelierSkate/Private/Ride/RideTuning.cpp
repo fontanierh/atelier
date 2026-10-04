@@ -21,7 +21,7 @@ namespace
         RIDE_FIELD(SidewaysSafeSpeed), RIDE_FIELD(BailYawFast), RIDE_FIELD(BailImpact), RIDE_FIELD(WallBailSpeed), RIDE_FIELD(WallRestitution), RIDE_FIELD(GrindCapture),
         RIDE_FIELD(GrindAbove), RIDE_FIELD(GrindBelow), RIDE_FIELD(GrindAlign), RIDE_FIELD(GrindFriction), RIDE_FIELD(SlideFriction), RIDE_FIELD(GrindStall), RIDE_FIELD(GrindStallHop),
         RIDE_FIELD(GrindExitPop), RIDE_FIELD(GrindRelock), RIDE_FIELD(GrindMinAhead), RIDE_FIELD(GrindCross), RIDE_FIELD(GrindCorner), RIDE_FIELD(GrindJoin), RIDE_FIELD(GrindLockSpeed),
-        RIDE_FIELD(ManualInstability), RIDE_FIELD(ManualControl), RIDE_FIELD(ManualWobble), RIDE_FIELD(ManualPitch), RIDE_FIELD(ManualFriction),
+        RIDE_FIELD(ManualDeckGain), RIDE_FIELD(ManualDeckDamping), RIDE_FIELD(ManualDeckWeight),
         RIDE_FIELD(BailSettle), RIDE_FIELD(GetUpTime), RIDE_FIELD(GetUpBoardReach), RIDE_FIELD(BailSlideDecel), RIDE_FIELD(CameraDistance), RIDE_FIELD(CameraHeight), RIDE_FIELD(CameraLookHeight),
         RIDE_FIELD(CameraLookAhead), RIDE_FIELD(CameraFOV), RIDE_FIELD(CameraSpeedFOV), RIDE_FIELD(CameraFOVSpeed), RIDE_FIELD(CameraTurnRate), RIDE_FIELD(CameraFollow),
         RIDE_FIELD(CameraFollowZ), RIDE_FIELD(MountBlend), RIDE_FIELD(DismountBlend), RIDE_FIELD(MeshSettle), RIDE_FIELD(BoardDissolveTime),

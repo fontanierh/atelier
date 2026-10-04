@@ -186,7 +186,7 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     P = GroundPoint; V = InVelocity; Q = Rotation.GetNormalized();
     Travel = FVector::DotProduct(V, Q.GetForwardVector()) < -15.f ? -1.f : 1.f;
     TurnRate = SlideYaw = Curvature = Crouch = 0; PushTime = -1; BrakeTime = 0; PendingPop = Flick::None; TrailNum = 0;
-    Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; Rail = INDEX_NONE; Balance = 0;
+    Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; Rail = INDEX_NONE; Manuals.Reset(); bHardLanding = false;
     bSwitch = false; SwitchTime = -1; FakieTime = 0;
     Line.Reset(); Holding.Reset(); HeldPoints = 0; Calm = 0; Trick.Reset(); Cues.Reset();
     // Flick-It: Native's controls, loaded on the first ride, then mounted as GameplaySession::Activate mounts them
@@ -205,8 +205,6 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     Accumulator = Tick60 - KINDA_SMALL_NUMBER; bCamValid = false;
     PushCount = 0; StillTime = -1; bStill = bWasStill = false; LastGrab = ERideGrab::None; SinceGrab = -1;
     LandAge = -1; LandImpact = 0; bLandedFromGrab = false; Sketchy = 0; Clock = 0;
-    // The wobble's random numbers start over with every ride, so the same controls replay the same ride.
-    Noise = 0x9E3779B9u;
     bSteppingOff = bThroughLine = bPushFromRest = bBoxOffLine = false;
     ResetWalls();
     // Settle onto whatever is under the board. A start inside the floor (a hand-off a little low) finds the floor's top
@@ -255,12 +253,6 @@ void FRideSession::Launch(const FVector& InVelocity)
             if (FMath::Abs(Along) > 1.f) Travel = Along < 0 ? -1.f : 1.f;
         }
     }
-}
-
-float FRideSession::Random()
-{
-    Noise ^= Noise << 13; Noise ^= Noise >> 17; Noise ^= Noise << 5;
-    return float(Noise & 0xFFFFFF) / float(0xFFFFFF) * 2.f - 1.f;
 }
 
 void FRideSession::Step(float Dt, const FSkateInput& Input, const atelier::skate::XboxState& Pad, const FRideWorld& World)
@@ -313,6 +305,9 @@ void FRideSession::Tick(const FSkateInput& In, const atelier::skate::XboxState& 
     const GestureGroup Group = Mode != ERideState::Grind ? GestureGroup::Square : GrindKind == ERideGrind::FiveO ? GestureGroup::Tail :
         GrindKind == ERideGrind::Nosegrind || GrindKind == ERideGrind::Crooked ? GestureGroup::Nose : GestureGroup::Square;
     const Flick F = Flicks.Update(Pad, GoofyNow(), Group, Difficulty);
+    // The manual's intentions run on the action graph, on the board in every mode (RideManual.h); off it they stop.
+    if (Mode == ERideState::Bail || Mode == ERideState::GetUp) Manuals.Reset();
+    else Manuals.ReadIntents(Flicks.Intents(), Mode == ERideState::Ground || Mode == ERideState::Powerslide || Mode == ERideState::Manual, Tick60);
     ModeTime += Tick60; Clock += Tick60;
     TickSlide = SlideYaw;
     if (TrickTime >= 0) TrickTime += Tick60;
@@ -710,22 +705,25 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
         }
     }
 
-    // Manuals: the right stick part-way down (tail) or up (nose).
-    const int32 Band = Flicks.ManualBand();
-    if (Mode == ERideState::Ground && Band != 0 && PendingPop == Flick::None && Speed > 60.f)
-    {
-        SetMode(ERideState::Manual); bNoseManual = Band > 0; Balance = .08f * (Random() >= 0 ? 1.f : -1.f);
-        PushTime = -1;
-    }
+    // Manuals, as Native's motion graph runs them (RideManual.h): one starts from plain ground once the Manual
+    // intention has been held 0.2 s, takes its side from the intention's sign (switching with it), and ends when the
+    // intention goes; a pop already under way finishes first. Native's controller tips the deck (no rig: the deck
+    // shown; with one the clips' own tilt) and never throws the rider off. Riding.Brake, which the brake button starts,
+    // keeps Idle, and with it a manual, waiting until it has played out.
+    TryManual();
+    Manuals.Riding(Mode == ERideState::Ground && PendingPop == Flick::None, Tick60);
     if (Mode == ERideState::Manual)
     {
-        if (Band == 0 && PendingPop == Flick::None) { EndHold(); SetMode(ERideState::Ground); }
+        const atelier::ride::ManualSide Side = Manuals.Side();
+        if (Side == atelier::ride::ManualSide::None && PendingPop == Flick::None) { EndHold(); SetMode(ERideState::Ground); Manuals.End(); }
         else
         {
-            const float Wobble = Random() * Tune.ManualWobble * FMath::Clamp(Speed / 785.f, .29f, 1.f);
-            Balance += (Tune.ManualInstability * Balance + Wobble - Tune.ManualControl * Flicks.BandOffset()) * Tick60;
+            // A pop under way has left the manual in Native's graph (TakeOff.FromManual): its side stays as it was.
+            if (Side != atelier::ride::ManualSide::None && PendingPop == Flick::None) bNoseManual = Side == atelier::ride::ManualSide::Nose;
             Hold(bNoseManual ? TEXT("Nose Manual") : TEXT("Manual"), 150.f, Tick60);
-            if (FMath::Abs(Balance) >= 1.f) { EndHold(); SetMode(ERideState::Ground); Balance = 0; }
+            if (PendingPop == Flick::None) Manuals.Hold(Tick60);
+            if (const atelier::ride::FlickBank* Bank = Flicks.GetBank())
+                Manuals.StepDeck(Bank->Manual, Difficulty, atelier::ride::ManualDeck{Tune.ManualDeckGain, Tune.ManualDeckDamping, Tune.ManualDeckWeight}, Speed / 100.f, Tick60);
         }
     }
     // The manual's out timer: set as it ends, counted down on the ground after.
@@ -779,7 +777,9 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     Speed += FVector::DotProduct(Slope, Forward * Travel) * Tick60;
     if (Speed < 0) { Travel = -Travel; Speed = -Speed; }
     Decel += Tune.RollingResistance + Curve(FrictionCurve, Speed);
-    if (Mode == ERideState::Manual) Decel += Tune.ManualFriction;
+    // In a manual Native's speed model adds its manual friction (FrictionVsSpeed_Manual, m/s^2 at m/s).
+    if (Mode == ERideState::Manual)
+        if (const atelier::ride::FlickBank* Bank = Flicks.GetBank()) Decel += Bank->Manual.Friction.Evaluate(Speed / 100.f) * 100.f;
 
     // Pushing, in time with the push cycle; a tap gives one weak push.
     const bool bCanPush = Mode == ERideState::Ground && bFlat && PendingPop == Flick::None && !In.bBrake;
@@ -790,7 +790,7 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     // goes nose first (StartPush), and the rider only turns round by himself from SwitchMinSpeed.
     if (SwitchTime >= 0)
     {
-        if (!bCanPush || RiderTravel() > 0 || Flicks.Loaded() || Flicks.ManualBand() != 0) SwitchTime = -1;
+        if (!bCanPush || RiderTravel() > 0 || Flicks.Loaded() || Flicks.ManualIntent()) SwitchTime = -1;
         else
         {
             SwitchTime += Tick60;
@@ -802,7 +802,7 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     const bool bLanding = LandAge >= 0 && LandAge < LandHold;
     const bool bTurnByItself = !bLanding && Speed >= Tune.SwitchMinSpeed && (bSwitch || FakieTime > Tune.FakieSwitchTime);
     if (SwitchTime < 0 && PushTime < 0 && bCanPush && RiderTravel() < 0 && Animator.SwitchLength() > 0 && !Flicks.Loaded() &&
-        Flicks.ManualBand() == 0 && ((In.bPush && Speed >= Tune.PushFromRest) || bTurnByItself))
+        !Flicks.ManualIntent() && ((In.bPush && Speed >= Tune.PushFromRest) || bTurnByItself))
         StartSwitch(In.bPush);
     if (SwitchTime >= 0 && SwitchTime >= FlipAt - KINDA_SMALL_NUMBER)
     {
@@ -1037,7 +1037,7 @@ void FRideSession::TakeOff(float Pop)
     SetMode(ERideState::Air);
     AirTime = 0; TakeoffUp = Up; SpinTotal = 0; bLipAir = false;
     SpinRate = TurnRate * Tune.SpinCarry;
-    TurnRate = 0; SlideYaw = 0; PushTime = -1; BrakeTime = 0; StillTime = -1; Balance = 0; EndHold();
+    TurnRate = 0; SlideYaw = 0; PushTime = -1; BrakeTime = 0; StillTime = -1; Manuals.End(); EndHold();
     LastGrab = ERideGrab::None; SinceGrab = -1;
     ResetPrediction(P + Up * 12.f);
     AdvancePrediction(4);
@@ -1395,6 +1395,7 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
         return false;
     }
     const float Impact = FMath::Max(0.f, float(-FVector::DotProduct(V, Normal)));
+    const float Fall = float(V.Z);
     const FVector Along = FVector::VectorPlaneProject(V, Normal);
     const float Speed = Along.Size();
     const FVector Heading = FVector::VectorPlaneProject(Q.GetForwardVector(), Normal).GetSafeNormal();
@@ -1440,7 +1441,21 @@ bool FRideSession::TryLand(const FVector& Point, const FVector& Normal)
     TurnRate = 0; Curvature = 0; Calm = 0;
     Cues.Add(ERideCue::Catch);
     SetMode(ERideState::Ground);
+    // A manual starts on the landing tick (the Manual intention counts in the air), unless Native's guard holds: down
+    // faster than 8 m/s onto a face steeper than 45 degrees (the board's fall, as it came in).
+    bHardLanding = Fall < -800.f && Normal.Z < UE_HALF_SQRT_2;
+    TryManual(true);
+    bHardLanding = false;
     return true;
+}
+
+void FRideSession::TryManual(bool bLanding)
+{
+    // Turning.Idle: plain ground with no pop, push or turn round under way.
+    if (Mode != ERideState::Ground || PendingPop != Flick::None || PushTime >= 0 || SwitchTime >= 0) return;
+    if (!Manuals.Idle(bHardLanding)) return;
+    SetMode(ERideState::Manual); bNoseManual = Manuals.Side() == atelier::ride::ManualSide::Nose; PushTime = -1;
+    Manuals.Start(bLanding);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1695,7 +1710,7 @@ void FRideSession::StartBail(const TCHAR* Why)
     BailAngular = Q.GetUpVector() * FMath::DegreesToRadians(SpinRate) + RiderQ().GetForwardVector() * FMath::DegreesToRadians(FlipInfo(Trick_).Roll) * (TrickTime >= 0 ? 1.f : 0.f);
     LoseLine();
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; PendingPop = Flick::None; Rail = INDEX_NONE;
-    SpinRate = 0; TurnRate = 0; SlideYaw = 0; PushTime = -1; StillTime = -1; Balance = 0;
+    SpinRate = 0; TurnRate = 0; SlideYaw = 0; PushTime = -1; StillTime = -1; Manuals.End();
     LastGrab = ERideGrab::None; SinceGrab = -1;
     Cues.Add(ERideCue::Fall);
     bFollowBody = false;
@@ -1855,12 +1870,12 @@ FTransform FRideSession::DeckPose() const
     if (Mode == ERideState::Powerslide || !FMath::IsNearlyZero(SlideYaw)) Deck = Turn(FVector::UpVector, SlideYaw);
     // With the rider's clips the board's pops, flips and manual tilts are the clips' own.
     if (Animator.HasRig()) return FTransform(Deck, Offset);
-    if (Mode == ERideState::Manual)
+    const float DeckAngle = Mode == ERideState::Manual ? Manuals.DeckAngle() : 0.f;
+    if (DeckAngle != 0.f)
     {
-        // Up on one truck: the deck pitches about the axle that stays down.
-        const float Pitch = Tune.ManualPitch * (.6f + .4f * FMath::Clamp(FMath::Abs(Balance), 0.f, 1.f));
-        const float Axle = bNoseManual ? Tune.AxleX : -Tune.AxleX;
-        const FQuat Tip = Turn(FVector::RightVector, bNoseManual ? Pitch : -Pitch);
+        // Up on one truck: the deck pitches about the axle that stays down (the controller's deck, nose up positive).
+        const float Axle = DeckAngle < 0.f ? Tune.AxleX : -Tune.AxleX;
+        const FQuat Tip = Turn(FVector::RightVector, -FMath::RadiansToDegrees(DeckAngle));
         const FVector Pivot(Axle, 0, Tune.WheelRadius - Tune.DeckHeight);
         Offset = Pivot + Tip.RotateVector(-Pivot);
         Deck = Tip * Deck;
@@ -1912,7 +1927,7 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     Body.PushLead = PushLead; Body.PushContact = PushContact; Body.PushRecover = PushRecover;
     Body.StillTime = StillTime; Body.bWasStill = bWasStill;
     Body.LoadTime = Flicks.LoadTime(); Body.bNoseLoad = Flicks.NoseLoaded();
-    Body.Balance = Balance; Body.SlideAngle = SlideYaw;
+    Body.Balance = Mode == ERideState::Manual ? Manuals.Balance() : 0.f; Body.SlideAngle = SlideYaw;
     Body.bSlideFront = SlideYaw * RiderTravel() * (GoofyNow() ? -1.f : 1.f) < 0;   // the toes lead
     Body.LandAge = LandAge; Body.LandImpact = LandImpact; Body.bLandedFromGrab = bLandedFromGrab; Body.Sketchy = Sketchy;
     Body.Grind = GrindKind; Body.bGrindFront = bGrindFront;
@@ -1968,7 +1983,10 @@ void FRideSession::Publish(float Alpha, float Dt, const FSkateInput& In)
     Trick = FString::Join(Shown, TEXT(" + "));
     float LineSum = HeldPoints; for (const FLineTrick& T : Line) LineSum += T.Points;
     Score = Banked + LineSum * FMath::Max(1, Line.Num() + (Holding.IsEmpty() ? 0 : 1));
-    ManualBalance = Mode == ERideState::Manual ? (FMath::Abs(Balance) < .001f ? (Balance < 0 ? -.001f : .001f) : FMath::Clamp(Balance, -1.f, 1.f)) : 0.f;
+    // Native's published balance (animation_input's): non-zero through a manual once its balance attribute is there
+    // (not in a nose manual's Into), which is how the HUD tells one.
+    const float Balance = Manuals.Balance();
+    ManualBalance = Mode == ERideState::Manual && !Manuals.Into() ? (FMath::Abs(Balance) < .001f ? (Balance < 0 ? -.001f : .001f) : Balance) : 0.f;
 
     UpdateCamera(At, Frame_, Dt);
 }

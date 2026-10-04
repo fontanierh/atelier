@@ -242,10 +242,9 @@ private:
     bool bShownOff = false;   // the shown deck was off the riding deck at the last Publish (logged once per stretch)
     float TickSlide = 0, StuckTime = 0, AirLaunchVz = 0, AirGlance = 0;
     FVector AirStartP = FVector::ZeroVector;
-    // Manual.
-    float Balance = 0;
-    bool bNoseManual = false;
-    uint32 Noise = 0x9E3779B9u;
+    // Manual: Native's controller (RideManual.h), its side, and whether this tick's landing was too hard for one.
+    atelier::ride::ManualControl Manuals;
+    bool bNoseManual = false, bHardLanding = false;
     // Bail.
     FVector BailLinear = FVector::ZeroVector, BailAngular = FVector::ZeroVector, BodyPoint = FVector::ZeroVector;
     bool bFollowBody = false;
@@ -288,6 +287,8 @@ private:
 
     void Tick(const FSkateInput& In, const atelier::skate::XboxState& Pad);
     void TickGround(const FSkateInput& In, atelier::ride::Flick Flick);
+    /** Native's Turning.Idle on plain ground: starts a manual when RideManual says so. */
+    void TryManual(bool bLanding = false);
     void TickAir(const FSkateInput& In, atelier::ride::Flick Flick);
     void TickGrind(const FSkateInput& In, atelier::ride::Flick Flick);
     void TickBail();
@@ -372,7 +373,6 @@ private:
     void LoseLine();
     void Publish(float Alpha, float Dt, const FSkateInput& In);
     void UpdateCamera(const FVector& At, const FQuat& Frame, float Dt);
-    float Random();
     /** Take-off speed for a pop whose stick rested Load seconds on the rim first. */
     float PopSpeed(float Load = 1.f) const;
     FString FlickName(atelier::ride::Flick Flick, bool bFakie, bool bSwitched = false) const;
