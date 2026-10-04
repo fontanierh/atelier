@@ -40,7 +40,7 @@ def main():
         for tile in source['tiles']:
             path = folder / (tile['name'] + '.fbx')
             assert hashlib.sha256(path.read_bytes()).hexdigest() == tile['sha256']
-            mesh = import_mesh(path, destination, tile['name'])
+            mesh = import_mesh(path, destination, tile['name'], fresh_slots=True)   # the slots of this partition, not a previous one's
             for i, s in enumerate(mesh.static_materials):
                 key = str(s.get_editor_property('imported_material_slot_name'))
                 assert key in slots, (tile['name'], 'unknown slot', key)
