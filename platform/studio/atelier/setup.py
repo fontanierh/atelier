@@ -33,6 +33,15 @@ OVERRIDE = '''\t\t\t// Route headless build settings to an explicit, unprotected
 INVOCATION = 'dotnet Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.dll "$@"'
 BEGIN = '# BEGIN ATELIER HEADLESS BUILD'
 END = '# END ATELIER HEADLESS BUILD'
+XML_CACHE_LOAD = '''\t\t\t\tif (!XmlConfigData.TryRead(CacheFile, configTypes, out s_values))
+\t\t\t\t{
+\t\t\t\t\tthrow new BuildException("Unable to load XML config cache ({0})", CacheFile);
+\t\t\t\t}
+'''
+XML_CACHE_INPUTS = '''
+\t\t\t\t// Use the explicit cache's inputs when validating incremental makefiles too.
+\t\t\t\ts_cachedInputFiles = s_values.InputFiles.Select(file => new InputFile(file, "Remote XML cache")).ToArray();
+'''
 
 
 def engine_root():
@@ -80,6 +89,14 @@ def patch_user_directory(text):
     return text.replace(METHOD, METHOD + OVERRIDE, 1)
 
 
+def patch_xml_cache_inputs(text):
+    if XML_CACHE_LOAD + XML_CACHE_INPUTS in text:
+        return text
+    if '"Remote XML cache"' in text or text.count(XML_CACHE_LOAD) != 1:
+        raise ValueError('Unrecognised XmlConfig.cs; refusing to guess a source patch')
+    return text.replace(XML_CACHE_LOAD, XML_CACHE_LOAD + XML_CACHE_INPUTS, 1)
+
+
 def patch_build_script(text, cache, workers):
     """Keep the stock wrapper, adding only an explicit config directory, default XML cache and worker cap."""
     if BEGIN in text:
@@ -120,7 +137,7 @@ def patch_shader_config(text, workers, cores):
 
 
 def prepare_headless(root, workers=3):
-    """Repair only the tested installed engine; run the small .NET rebuild under the render lock and memory guard."""
+    """Repair only the tested installed engine; rebuild managed tools under the render lock and memory guard."""
     if not isinstance(workers, int) or workers < 1:
         raise ValueError('workers must be a positive integer')
     root = root.resolve()
@@ -130,41 +147,49 @@ def prepare_headless(root, workers=3):
     key = hashlib.sha256(str(root).encode()).hexdigest()[:16]
     cache = paths.cache_dir('toolchain', key)
     source = root / 'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs'
+    xml_source = root / 'Engine/Source/Programs/UnrealBuildTool/Configuration/Xml/XmlConfig.cs'
+    project = root / 'Engine/Source/Programs/UnrealBuildTool/UnrealBuildTool.csproj'
     wrapper = root / 'Engine/Build/BatchFiles/Mac/Build.sh'
     shader_config = root / 'Engine/Config/BaseEngine.ini'
     binaries = root / 'Engine/Binaries/DotNET/UnrealBuildTool'
     dll = binaries / 'EpicGames.Build.dll'
+    ubt_dll = binaries / 'UnrealBuildTool.dll'
+    binary_names = ('EpicGames.Build.dll', 'EpicGames.Build.pdb', 'UnrealBuildTool.dll', 'UnrealBuildTool.pdb')
     dotnet = root / 'Engine/Binaries/ThirdParty/DotNet/10.0/mac-arm64/dotnet'
     with render_lock('prepare headless Unreal build tool', kind='compile'):
         original_source, original_wrapper = source.read_text(), wrapper.read_text()
         new_source = patch_user_directory(original_source)
+        original_xml = xml_source.read_text()
+        new_xml = patch_xml_cache_inputs(original_xml)
         new_wrapper = patch_build_script(original_wrapper, cache, workers)
         original_shaders = shader_config.read_text()
         new_shaders = patch_shader_config(original_shaders, workers, os.cpu_count() or 8)
         state_file = cache / 'headless.json'
         state = json.loads(state_file.read_text()) if state_file.exists() else {}
-        current = state.get('source_sha256') == _sha(source) and state.get('dll_sha256') == _sha(dll)
+        current = (state.get('source_sha256') == _sha(source) and state.get('dll_sha256') == _sha(dll)
+                   and state.get('xml_source_sha256') == _sha(xml_source) and state.get('ubt_dll_sha256') == _sha(ubt_dll))
         previous_binaries = {binaries / name: (binaries / name).read_bytes() if (binaries / name).exists() else None
-                             for name in ('EpicGames.Build.dll', 'EpicGames.Build.pdb')}
-        for file in (source, wrapper, shader_config, dll, binaries / 'EpicGames.Build.pdb'):
+                             for name in binary_names}
+        for file in (source, xml_source, wrapper, shader_config, *(binaries / name for name in binary_names)):
             backup = cache / 'originals' / file.relative_to(root)
             if file.exists() and not backup.exists():
                 backup.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(file, backup)
         try:
-            if not current or new_source != original_source:
+            if not current or new_source != original_source or new_xml != original_xml:
                 source.write_text(new_source)
+                xml_source.write_text(new_xml)
                 env = dict(os.environ, DOTNET_ROOT=str(dotnet.parent), DOTNET_CLI_TELEMETRY_OPTOUT='1',
                            DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1')
                 output = cache / 'compiled'
-                command = ['nice', '-n', '10', str(dotnet), 'build', str(source.with_name('EpicGames.Build.csproj')),
+                command = ['nice', '-n', '10', str(dotnet), 'build', str(project),
                            '-c', 'Development', '-o', str(output), '-maxcpucount:2', '-p:BuildInParallel=false']
                 code = guarded.run(command, cache / 'rebuild.guard', timeout=600, lock=False, env=env, kind='compile')
                 if code:
                     raise RuntimeError(f'Build-tool repair failed (exit {code}); see {cache / "rebuild.guard/stdout.log"}')
-                if not (output / 'EpicGames.Build.dll').is_file():
-                    raise RuntimeError('Build-tool repair produced no DLL')
-                for name in ('EpicGames.Build.dll', 'EpicGames.Build.pdb'):
+                if not all((output / name).is_file() for name in ('EpicGames.Build.dll', 'UnrealBuildTool.dll')):
+                    raise RuntimeError('Build-tool repair did not produce both managed DLLs')
+                for name in binary_names:
                     file = output / name
                     if file.exists():
                         shutil.copy2(file, binaries / name)
@@ -176,9 +201,11 @@ def prepare_headless(root, workers=3):
             wrapper.chmod(wrapper.stat().st_mode | 0o111)
             shader_config.write_text(new_shaders)
             state_file.write_text(json.dumps(dict(engine=str(root), version=version, workers=workers,
-                source_sha256=_sha(source), dll_sha256=_sha(dll)), indent=2) + '\n')
+                source_sha256=_sha(source), dll_sha256=_sha(dll), xml_source_sha256=_sha(xml_source),
+                ubt_dll_sha256=_sha(ubt_dll)), indent=2) + '\n')
         except Exception:
             source.write_text(original_source)
+            xml_source.write_text(original_xml)
             wrapper.write_text(original_wrapper)
             shader_config.write_text(original_shaders)
             for file, contents in previous_binaries.items():

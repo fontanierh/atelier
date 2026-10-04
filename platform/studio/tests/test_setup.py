@@ -18,6 +18,16 @@ def test_user_directory_patch_is_explicit_and_idempotent():
         setup.patch_user_directory('a different engine source layout')
 
 
+def test_explicit_xml_cache_also_supplies_incremental_makefile_inputs():
+    original = 'if (overrideCacheFile != null) {\n' + setup.XML_CACHE_LOAD + '} else { ScanDefaultInputs(); }\n'
+    patched = setup.patch_xml_cache_inputs(original)
+    assert setup.XML_CACHE_LOAD + setup.XML_CACHE_INPUTS in patched
+    assert patched.endswith('} else { ScanDefaultInputs(); }\n')
+    assert setup.patch_xml_cache_inputs(patched) == patched
+    with pytest.raises(ValueError):
+        setup.patch_xml_cache_inputs('a different engine source layout')
+
+
 def test_wrapper_quotes_cache_paths_and_replaces_only_its_own_block(tmp_path):
     cache = tmp_path / "cache with spaces and a ' quote"
     original = '#!/bin/sh\necho Running ' + setup.INVOCATION + '\n' + setup.INVOCATION + '\nExitCode=$?\n'
@@ -52,9 +62,11 @@ def engine(tmp_path, monkeypatch):
     files = {
         'Engine/Build/Build.version': json.dumps(dict(MajorVersion=5, MinorVersion=8, PatchVersion=2, Changelist=56702186)),
         'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs': setup.METHOD + '\t\t\treturn null;\n\t\t}\n',
+        'Engine/Source/Programs/UnrealBuildTool/Configuration/Xml/XmlConfig.cs': setup.XML_CACHE_LOAD,
         'Engine/Build/BatchFiles/Mac/Build.sh': '#!/bin/sh\necho Running ' + setup.INVOCATION + '\n' + setup.INVOCATION + '\nExitCode=$?\n',
         'Engine/Config/BaseEngine.ini': '[DevOptions.Shaders]\nNumUnusedShaderCompilingThreads=3\nNumUnusedShaderCompilingThreadsDuringGame=4\nPercentageUnusedShaderCompilingThreads=50\n',
         'Engine/Binaries/DotNET/UnrealBuildTool/EpicGames.Build.dll': 'original binary',
+        'Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.dll': 'original UBT binary',
     }
     for relative, contents in files.items():
         file = root / relative
@@ -96,6 +108,8 @@ def test_repeat_setup_skips_rebuild_but_detects_replaced_binary(engine, monkeypa
         output = Path(command[command.index('-o') + 1])
         output.mkdir(parents=True, exist_ok=True)
         (output / 'EpicGames.Build.dll').write_text('patched binary')
+        (output / 'UnrealBuildTool.dll').write_text('patched UBT binary')
+        assert command[command.index('build') + 1].endswith('/UnrealBuildTool/UnrealBuildTool.csproj')
         return 0
 
     monkeypatch.setattr(setup.guarded, 'run', rebuild)
@@ -108,6 +122,9 @@ def test_repeat_setup_skips_rebuild_but_detects_replaced_binary(engine, monkeypa
     (root / 'Engine/Binaries/DotNET/UnrealBuildTool/EpicGames.Build.dll').write_text('vendor update')
     setup.prepare_headless(root)
     assert len(calls) == 2
+    (root / 'Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.dll').write_text('vendor UBT update')
+    setup.prepare_headless(root)
+    assert len(calls) == 3
     assert (tmp_path / 'cache/remote-xmlconfig.bin').read_bytes() == b'\x02' + b'\0' * 11
 
 
