@@ -137,7 +137,7 @@ private:
         UAnimSequence* Load = nullptr, *NoseLoad = nullptr;
         UAnimSequence* AirIdle = nullptr, *AirLow = nullptr, *AirExtend = nullptr;
         UAnimSequence* LandLow = nullptr, *LandHigh = nullptr, *LandGrab = nullptr, *LandSketchy = nullptr;
-        FTrickClips Tricks[17];
+        FTrickClips Tricks[uint8(atelier::ride::Flick::Num)];
         FGrabClips Grabs[6];
         UAnimSequence* Grinds[6][2] = {};                   // kind, frontside/backside
         UAnimSequence* Fakie[3] = {};                       // the fakie channel by torso: head, head and chest, manual

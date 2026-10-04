@@ -53,8 +53,9 @@ public:
     void Activate(const FRideWorld& World, const FVector& GroundPoint, const FQuat& Rotation, const FVector& Velocity, bool bGoofy, const FRidePreferences& Preferences);
     void Configure(bool bGoofy, const FRidePreferences& Preferences);
     void Launch(const FVector& Velocity);
-    /** Add host time and run whole 60 Hz ticks; then publish the interpolated pose and the camera. */
-    void Step(float Dt, const FSkateInput& Input, const FRideWorld& World);
+    /** Add host time and run whole 60 Hz ticks; then publish the interpolated pose and the camera. Pad is the canonical
+     *  pad (SkatePad.h), the packet the Native backend would get for Input, which Flick-It samples. */
+    void Step(float Dt, const FSkateInput& Input, const atelier::skate::XboxState& Pad, const FRideWorld& World);
     /** The rider was thrown and has come to rest (the component's ragdoll, or the session's own slide): stand the
      *  board up at this ground point facing Yaw and blend the rider back over GetUpTime. */
     void GetUp(const FVector& GroundPoint, float Yaw);
@@ -108,6 +109,8 @@ public:
      *  root space), each foot's height above the deck's pivot and how many feet are off the deck, NaN bones, and the
      *  animator's cost (ms). */
     FString DescribePose() const;
+    /** The last recognised trick (RideFlick.h's pop request), appended to DescribePose as gesture=... */
+    FString DescribeFlick() const;
 
     /** A box swept from one pose to another, its rotation in steps that move no corner more than CornerStep (a nose
      *  turning into a wall is caught where the centre barely moves). Hit.Time is the fraction of the whole move;
@@ -170,9 +173,18 @@ private:
     // Braked to a stop this long ago (-1 while moving).
     float StillTime = -1;
     float WheelSpin = 0;
-    // A pop waiting for the end of its ground clip.
+    // A pop waiting for its jump: the recognised trick's request (serial, gesture, mapped trick, stance, strength) and
+    // the ground clip's time (PopTimer, from its manual entry for a flick out of a manual); the board leaves on the
+    // tick the air clip takes over.
     atelier::ride::Flick PendingPop = atelier::ride::Flick::None;
+    atelier::ride::FlickEvent PendingEvent;
     float PopTimer = 0, PendingLoad = 1, PopWait = .2f;
+    bool bPopFromManual = false;
+    // Native's ManualOutTimer (MotionGraphHost): a manual's end leaves this long (s) in which a flick still takes off
+    // as from the manual; it counts down on the ground.
+    float ManualOut = 0;
+    // Native's physics mode for the gesture speed (0 easy, 1 normal, 2 hardcore), from the Difficulty setting.
+    uint32 Difficulty = 1;
     // Air.
     float AirTime = 0, SpinRate = 0, SpinTotal = 0;
     FVector TakeoffUp = FVector::UpVector;
@@ -271,7 +283,7 @@ private:
     float FootAlong[2] = {0, 0};       // each toe along the travel from the deck's pivot (cm; left, right)
     void MeasurePose(float Dt);
 
-    void Tick(const FSkateInput& In);
+    void Tick(const FSkateInput& In, const atelier::skate::XboxState& Pad);
     void TickGround(const FSkateInput& In, atelier::ride::Flick Flick);
     void TickAir(const FSkateInput& In, atelier::ride::Flick Flick);
     void TickGrind(const FSkateInput& In, atelier::ride::Flick Flick);

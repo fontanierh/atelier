@@ -73,6 +73,47 @@ the same ride. Three replays of a recorded 26 s session stay within 4 cm of each
   the other side's sideways line to 115 degrees round its own. Straight back, or a stick already held there, does not
   start one.
 
+## Tricks
+
+Ride reads the pad with Native's own controls (`RideFlick.cpp`) rather than a recognizer of its own.
+
+- **The pad.** Every 60 Hz tick the host packs its controls into the canonical pad (`SkatePad.h`): the packet the
+  Native backend gets, so both backends sample the same bytes.
+- **Native's owners.** The adapter steps them in Native's order: `ControllerInputRuntime::Sample` (the Xbox
+  conversion, the pad history and the action packet), `PlayerControls::Update` (the controller words and the riding,
+  manual, wipe-out, anticipation and trick intentions) and `PublishGestures` (the gesture manager's seven recognizers).
+  `SelectGestureTrick` (`GraphGestureOperations`) then maps the published gesture to a trick. The data is Native's
+  own, `settings.skate` and `gestures.skate` from the game's `Content/Data/SkateNative`, read once with Native's
+  loaders. A mount activates the controls as `GameplaySession::Activate` does, on neutral ticks (five the first time,
+  four after). The recognizers keep their history from ride to ride, so a gesture begun before a manual still counts
+  in it. `skate.Difficulty` picks Native's mode (easy, normal or hardcore).
+- **Mapping.** The stance in effect picks the mapping, which Native mirrors for a regular rider: a goofy rider's
+  gesture and a regular rider's mirrored one give the same trick. On the ground and in a manual a gesture maps from
+  the board's middle; out of a 5-0 it maps from the tail, and out of a nosegrind or a crooked grind from the nose.
+  Native's nollie flips and shove-its (`N_Kickflip` to `N_360InwardHeelflip`) are tricks of their own, with the
+  nollie's pitch and their own `N_<TRICK>_HIGH_G` and `_A` clips.
+- **The pop.** A recognised trick is a pop request (`FlickEvent`): its serial, Native's trick, the gesture's set,
+  pattern and strength, the group and the mirror. The state line shows it as `gesture=`. Until Native's animation
+  events drive Ride, the pop is timed as Native's motion graph times it. The ground clip starts on the tick the trick
+  is recognised, and the board leaves on the tick after the clip's last. Out of a manual, or within 0.1 s of one
+  (`TakeOff.FromManual`, `SetManualOutTimer`), the ground clip starts two thirds through, at its `MANUALINTO` point.
+  The pop's height is still Ride's: it grows with the load, how long Native's conditioned stick was out of its dead
+  zone before the trick.
+- **Still Ride's own.** The manual's band (the stick held part-way down or up) and the crouch of a load are read from
+  the canonical right stick. Native's physical capabilities and state are 0, since Ride has no Native physics; only
+  the wipe-out intentions read them. A load does not stop a push, because Native's action graph is not ported.
+- **Checks.** The game's input-replay test compiles the adapter with Native's sources
+  (`Tests/Native/ride_input_replay_probe.cpp`) and replays a recorded 26 s session (1573 ticks):
+  - The host's packer gives the packet the Native backend sent on all 1461 rolling ticks.
+  - The adapter matches Native's owners, scheduled as `GameplaySession` schedules them, bit for bit on every tick:
+    the controller words, the intentions, every recognizer's match, `GestureSpeed` and the mapping in either stance.
+  - It finds six tricks: an `N_InwardHeelflip`, a `Kickflip`, an `N_Heelflip` whose gesture starts before its
+    manual, two `Ollie`s and a `Kickflip`. A stick let go gives none.
+
+  The same test plays every scripted gesture the game's scenarios and film use, at their own timings and in both
+  stances, together with the film's rail, grind, manual, grab and powerslide inputs. Each gesture gives its trick on
+  the tick it ends, and no other input gives one.
+
 ## Rider
 
 The rider's pose is the native clips played by an Unreal animation graph. The session's state machine

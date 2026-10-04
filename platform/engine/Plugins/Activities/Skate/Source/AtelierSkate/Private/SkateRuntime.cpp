@@ -1,6 +1,7 @@
 #include "SkateComponent.h"
 #include "Native/GameplaySession.h"
 #include "Native/HostScalar.h"
+#include "SkatePad.h"
 #include <limits>
 #include <cfenv>
 #include "Engine/Engine.h"
@@ -677,6 +678,29 @@ FString USkateComponent::GetRetailState() const
         Lockstep()?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],RetailRuntime->Worlds,RetailRuntime->WorldTriangles);
 }
 
+FSkateHostPad USkateComponent::ReadHostPad() const
+{
+    FSkateHostPad Out;
+    Out.LeftX=In.Left.X;Out.LeftY=In.Left.Y;Out.RightX=In.Right.X;Out.RightY=In.Right.Y;
+    Out.bPush=In.bPush;Out.bBrake=In.bBrake;Out.bTransfer=In.bTransfer;Out.bPowerslide=In.bPowerslide;
+    Out.bGrabLeft=In.bGrabLeft;Out.bGrabRight=In.bGrabRight;Out.bGround=Mode==ESkateMode::Ground;
+    // The player's controller adds the buttons and triggers FSkateInput has no room for, unless scripted input, a
+    // blocked rider or a free mouse drives the ride.
+    if (!bScripted && RiderApi && !RiderApi->IsSkateInputBlocked() && !RiderApi->IsSkateMouseFree())
+        if (const APlayerController* PC=Cast<APlayerController>(Rider->GetController()))
+        {
+            Out.bController=true;
+            Out.bFaceLeft=PC->IsInputKeyDown(EKeys::Gamepad_FaceButton_Left);Out.bFaceBottom=PC->IsInputKeyDown(EKeys::Gamepad_FaceButton_Bottom);
+            Out.bW=PC->IsInputKeyDown(EKeys::W);Out.bUp=PC->IsInputKeyDown(EKeys::Up);
+            Out.bLeftShoulder=PC->IsInputKeyDown(EKeys::Gamepad_LeftShoulder);Out.bRightShoulder=PC->IsInputKeyDown(EKeys::Gamepad_RightShoulder);
+            Out.bLeftThumb=PC->IsInputKeyDown(EKeys::Gamepad_LeftThumbstick);Out.bRightThumb=PC->IsInputKeyDown(EKeys::Gamepad_RightThumbstick);
+            Out.bQ=PC->IsInputKeyDown(EKeys::Q);Out.bE=PC->IsInputKeyDown(EKeys::E);
+            Out.LeftTrigger=PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis);
+            Out.RightTrigger=PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis);
+        }
+    return Out;
+}
+
 void USkateComponent::StepRetailRuntime(float Dt)
 {
     ReadInput(Dt);
@@ -705,29 +729,8 @@ void USkateComponent::StepRetailRuntime(float Dt)
     if (!RetailRuntime->AwaitingPose)
     {
     FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::Step;Command.Dt=RetailRuntime->FrameTime;
-    // Host transfer bit is stripped by GameplaySession before Xbox sampling.
-    int32 Buttons=(In.bPush?0x1000:0)|(In.bBrake?0x2000:0)|(In.bTransfer?0x0800:0);
-    int32 LeftTrigger=In.bGrabLeft?255:0,RightTrigger=In.bGrabRight?255:0;
-    if (!bScripted && RiderApi && !RiderApi->IsSkateInputBlocked() && !RiderApi->IsSkateMouseFree())
-        if (APlayerController* PC=Cast<APlayerController>(Rider->GetController()))
-        {
-            if (PC->IsInputKeyDown(EKeys::Gamepad_FaceButton_Left))
-            {
-                Buttons|=0x4000;
-                if (!PC->IsInputKeyDown(EKeys::Gamepad_FaceButton_Bottom) && !PC->IsInputKeyDown(EKeys::W) && !PC->IsInputKeyDown(EKeys::Up)) Buttons&=~0x1000;
-            }
-            if (PC->IsInputKeyDown(EKeys::Gamepad_LeftShoulder)) Buttons|=0x100;
-            if (PC->IsInputKeyDown(EKeys::Gamepad_RightShoulder)) Buttons|=0x200;
-            if (PC->IsInputKeyDown(EKeys::Gamepad_LeftThumbstick)) Buttons|=0x40;
-            if (PC->IsInputKeyDown(EKeys::Gamepad_RightThumbstick)) Buttons|=0x80;
-            LeftTrigger=PC->IsInputKeyDown(EKeys::Q)?255:FMath::Clamp(FMath::RoundToInt(255*PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis)),0,255);
-            RightTrigger=PC->IsInputKeyDown(EKeys::E)?255:FMath::Clamp(FMath::RoundToInt(255*PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis)),0,255);
-        }
-    Command.Input.buttons=uint16(Buttons);Command.Input.triggers={uint8(LeftTrigger),uint8(RightTrigger)};
-    auto Stick=[](FVector2D V){return std::array<std::int16_t,2>{int16(FMath::RoundToInt(FMath::Clamp(V.X,-1.,1.)*32767)),int16(FMath::RoundToInt(FMath::Clamp(V.Y,-1.,1.)*32767))};};
-    // The start query requires a rear diagonal, including a nonzero angle.
-    const FVector2D Left=In.bPowerslide&&Mode==ESkateMode::Ground?FVector2D(In.Left.X<0?-.6:.6,-.8):In.Left;
-    Command.Input.left=Stick(Left);Command.Input.right=Stick(In.Right);RetailRuntime->Sent=Command.Input;RetailRuntime->Worker->Enqueue(MoveTemp(Command));
+    // The canonical pad (SkatePad.h); GameplaySession takes the host transfer bit off before Xbox sampling.
+    Command.Input=atelier::skate_pad::Pack(ReadHostPad());RetailRuntime->Sent=Command.Input;RetailRuntime->Worker->Enqueue(MoveTemp(Command));
     RetailRuntime->AwaitingPose=true; RetailRuntime->FrameTime=0;
     }
     if (!Changed) return;

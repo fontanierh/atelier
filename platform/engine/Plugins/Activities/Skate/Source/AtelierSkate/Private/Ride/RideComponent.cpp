@@ -8,6 +8,7 @@
 #include "RideSession.h"
 #include "RidePhysicalRider.h"
 #include "RideTransition.h"
+#include "SkatePad.h"
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
@@ -87,7 +88,8 @@ bool USkateComponent::StepRide(float Dt)
             In.bBail = PC->IsInputKeyDown(EKeys::Gamepad_LeftThumbstick) && PC->IsInputKeyDown(EKeys::Gamepad_RightThumbstick) &&
                 PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis) > .5f && PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis) > .5f;
     }
-    Ride->Step(Dt, In, RideWorld(Rider, RailSystem, BoardScale()));
+    // Ride's Flick-It samples the canonical pad, the packet the Native backend gets (SkatePad.h).
+    Ride->Step(Dt, In, atelier::skate_pad::Pack(ReadHostPad()), RideWorld(Rider, RailSystem, BoardScale()));
     for (const ERideCue Cue : Ride->Cues)
         switch (Cue)
         {

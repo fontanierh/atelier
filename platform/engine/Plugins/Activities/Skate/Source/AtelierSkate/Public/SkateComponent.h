@@ -21,7 +21,7 @@ class URidePhysicalRider;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UAnimInstance;
-struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8;
+struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8; struct FSkateHostPad;
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -162,6 +162,9 @@ private:
     FVector Up() const { return Rot.GetUpVector(); }
     FVector Forward() const { return Rot.GetForwardVector(); }
     void ReadInput(float Dt);
+    /** The host's half of the canonical pad (Private/SkatePad.h) that both backends sample: In, whether the board is
+     *  rolling, and the buttons and analog triggers of the player's controller when it drives the ride. */
+    FSkateHostPad ReadHostPad() const;
     void SetMeshForRiding(bool bRiding);
     FQuat AlignUp(const FQuat& Q,const FVector& NewUp,float Alpha) const;
 

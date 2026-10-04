@@ -4,8 +4,10 @@
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_ride [--only name,name]
 Mounts with skate.Backend Ride, then checks a ride's first frame (it moves like every later one), a start inside the
 floor (it starts on it), pushing (from rest, nose-first), steering, braking, the ollie's height, every Flick-It trick,
-a grab, a 360, a grind, a manual, a bail and its recovery, the hands clear of the body and the pushing foot out of
-the ground (Cairo regular and goofy, Link), lip airs
+flicks on the player's pad (`--only pad`: native's quickest ollie, an ollie flicked mid-push, a manual flicked into a
+kickflip and a nose manual into a nollie, every nollie in native's table, goofy and rolling fakie too), a grab, a 360,
+a grind, a manual, a bail and its recovery, the hands clear of the body and the pushing foot out of the ground (Cairo
+regular and goofy, Link), lip airs
 back into the transition (straight, 180 and 360 on the pier's quarter; straight and across on Mega Park's pool wall)
 and a coasting back-and-forth in the bowl (`--only vert`), every wheel on the ground through carves, a pump, a
 powerslide and a manual (`--only wheels`), frame pacing (including mounting and switching character), Mega Park's
@@ -39,6 +41,96 @@ FLIPS = {
     'inward_heelflip': 'Inward Heelflip', '360_flip': '360 Flip', 'laser_flip': 'Laser Flip',
     '360_hardflip': '360 Hardflip', '360_inward_heelflip': '360 Inward Heelflip',
 }
+# Native's nollie table (gestures.skate, "main": Nollie and N_*) in Ride's stick frame (x right, y up, regular stance):
+# the name Ride shows -> the stick's points. Some wind up only part-way out (N_Kickflip at 0.69, tolerance 0.4).
+NOLLIES = {
+    'Nollie': [(0.01, 0.99), (0.01, -1.0)],
+    'Nollie Kickflip': [(0.02, 0.69), (-0.71, -0.67)],
+    'Nollie Heelflip': [(-0.01, 0.69), (0.74, -0.65)],
+    'Nollie Pop Shove-it': [(-0.27, 0.97), (-0.93, 0.37), (-0.84, -0.51)],
+    'Nollie FS Pop Shove-it': [(0.22, 1.0), (0.92, 0.51), (0.92, -0.44)],
+    'Nollie 360 Shove-it': [(0.86, 0.5), (-0.18, 0.99), (-0.94, 0.29)],
+    'Nollie FS 360 Shove-it': [(-0.95, 0.59), (0.2, 0.89), (1.0, 0.28)],
+    'Nollie Varial Kickflip': [(0.61, 0.79), (-0.29, 0.94), (-0.25, -0.82)],
+    'Nollie Varial Heelflip': [(-0.69, 0.71), (0.2, 0.97), (0.44, -0.73)],
+    'Nollie Hardflip': [(-0.68, 0.73), (0.22, 0.97), (-0.75, -0.58)],
+    'Nollie Inward Heelflip': [(0.62, 0.79), (-0.31, 0.93), (0.76, -0.65)],
+    'Nollie 360 Flip': [(0.97, 0.2), (0.55, 0.84), (-0.1, 0.98), (-0.85, -0.53)],
+    'Nollie Laser Flip': [(-0.95, 0.27), (-0.51, 0.86), (0.19, 0.73), (0.74, -0.65)],
+    'Nollie 360 Hardflip': [(-0.99, 0.14), (-0.63, 0.78), (0.2, 0.98), (-0.75, -0.57)],
+    'Nollie 360 Inward Heelflip': [(0.95, 0.26), (0.49, 0.86), (-0.23, 0.97), (0.84, -0.52)],
+}
+NOLLIE_DIAGONALS = [[(0.69, 0.73), (0.27, -0.94)], [(-0.67, 0.73), (-0.22, -0.94)]]
+GOOFY_NOLLIES = ('Nollie', 'Nollie Kickflip', 'Nollie Heelflip', 'Nollie FS Pop Shove-it', 'Nollie 360 Shove-it',
+                 'Nollie Varial Kickflip', 'Nollie Hardflip', 'Nollie 360 Flip', 'Nollie Laser Flip')
+
+# The player's pad, not the scripted input: the right stick (and the push button) go through the player controller as
+# a pad's do, so ReadInput's dead zone, its un-squeeze and its Y flip all apply (SceneViewport negates a pad's RightY,
+# so up is injected negative). Each frame the stick moves on to the timeline's next point once its time has come (one
+# point a frame, so a slow frame never skips one); the rows record each frame's state with its time (padt; the state
+# line has its own t=) and the point (pt).
+PAD_RUN = """
+def _pad_run(timeline, push_until, duration):
+    live.REC = []; st = {'t': 0.0, 'i': 0, 'push': None}
+    def axes(x, y):
+        live.L.input_key('Gamepad_RightX', 'axis', float(x)); live.L.input_key('Gamepad_RightY', 'axis', float(-y))
+    def tick(dt):
+        t = st['t']
+        if st['i'] + 1 < len(timeline) and timeline[st['i'] + 1][0] <= t: st['i'] += 1
+        axes(*timeline[st['i']][1])
+        down = push_until is not None and t < push_until
+        if down != st['push']:
+            live.L.input_key('Gamepad_FaceButton_Bottom', 'press' if down else 'release', 1 if down else 0); st['push'] = down
+        live.REC.append('padt=%.4f pt=%d ' % (t, st['i']) + live.skate_state())
+        st['t'] = t + dt
+        if t >= duration:
+            axes(0, 0); live.L.input_key('Gamepad_FaceButton_Bottom', 'release', 0); live.stop('pad_flick')
+    live.behave('pad_flick', tick)
+live.pad_run = _pad_run
+"""
+
+
+def pad_timeline(points, at=.4, load=.16, step=.034):
+    """A flick on the pad: the stick at rest, the first point held for `load`, each further point for `step`, then
+    let go (the live helpers' scripted flick, played on the pad)."""
+    timeline, t = [(0.0, (0.0, 0.0)), (at, points[0])], at + load
+    for p in points[1:]:
+        timeline.append((t, p)); t += step
+    timeline.append((t, (0.0, 0.0)))
+    return timeline
+
+
+def pad_ride(x, y, heading, speed, timeline, duration, push_until=None, goofy=False):
+    """Ride with the player's pad: place, launch, hand the controls to the player, then play the timeline."""
+    qa.py(PAD_RUN + f"live.L.skate_goofy({goofy})\n"
+          f"live.park.place({x},{y},{heading}); live.park.look(-12,{heading}); live.park.launch({speed},{heading})\n"
+          "live.skate_input(); live.skate_release()\n"
+          f"live.pad_run({timeline!r}, {push_until!r}, {duration})")
+    time.sleep(duration + .5)
+    rows = [qa.parse(r) for r in json.loads(qa.py("live.stop('pad_flick'); print(json.dumps(live.REC))").strip().splitlines()[-1])]
+    qa.py('live.L.skate_goofy(False)')
+    return rows
+
+
+def trick_named(rows, name):
+    """Whether the line shows `name` (or a stance's version of it: "Fakie Kickflip", "Switch Nollie Kickflip")."""
+    tricks = [t.strip() for c in qa.combos(rows).split(' / ') for t in c.split('+')]
+    return any(t == name or t.endswith(' ' + name) for t in tricks)
+
+
+def take_off(rows):
+    return next((float(r['padt']) for r in rows if r['mode'] == '2'), None)
+
+
+def reached(rows, point):
+    """When the stick reached the timeline's point `point` (the frame it was first sent)."""
+    return next((float(r['padt']) for r in rows if int(r.get('pt', -1)) >= point), None)
+
+
+def latency(rows, point):
+    """Seconds from the stick reaching `point` (the flick) to the board leaving the ground, or None."""
+    at, up = reached(rows, point), take_off(rows)
+    return None if at is None or up is None or up < at else up - at
 # Park-local metres on the Sunset Pier (world/regions/skatepark/layout.py).
 FLAT = (-28, 38)       # the pier's long flat run, heading east between flatbar_red (y 43) and long_ledge (y 25-28)
 # The steering turns start a metre apart: the left turn starts a metre further from flatbar_red.
@@ -343,6 +435,78 @@ def main():
         # The line reads "Kickflip" (or "Fakie Kickflip" and so on); "360 Flip" must not pass for "Laser Flip".
         tricks = [t.strip() for c in combos.split(' / ') for t in c.split('+')]
         record(f'flip_{key}', rows, landed and any(t == name or t.endswith(' ' + name) for t in tricks), f'{combos or "(none)"}; landed={landed}')
+    allowed = .2 + 2 / 60.
+    if any(wanted(n) for n in ('flick_pad', 'manual_pad_kickflip', 'manual_pad_nollie')) or wanted('pad'):
+        # The reference: a full ollie on the pad, wound up on the rim for 0.16 s and flicked. From the flick to the
+        # wheels leaving takes the pop clip's ground part (the session's PopWait); the flicks below leave as soon, give
+        # or take two frames.
+        rows = pad_ride(FLAT[0], FLAT[1], 0, 450, pad_timeline([(0.0, -1.0), (0.0, 1.0)]), 2.4)
+        late = latency(rows, 2); landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        allowed = (late if late is not None else .2) + 2 / 60.
+        record('flick_pad_reference', rows, trick_named(rows, 'Ollie') and late is not None and landed,
+               f'{qa.combos(rows) or "(none)"}; took off {"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}')
+    if wanted('flick_pad_fastest') or wanted('pad'):
+        # Native's fastest gesture: one tick at the wind-up (its second Ollie point: half-way down, tolerance 0.4), the
+        # next at the flick. It pops within the pop clip's ground part.
+        rows = pad_ride(FLAT[0], FLAT[1], 0, 450, [(0.0, (0.0, 0.0)), (.4, (0.0, -.5)), (.4 + 1 / 60., (0.0, 1.0)),
+                                                   (.4 + 3 / 60., (0.0, 0.0))], 2.4)
+        wound, flicked = reached(rows, 1), reached(rows, 2)
+        late = latency(rows, 2); landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        held = '-' if wound is None or flicked is None else f'{flicked - wound:.3f} s'
+        record('flick_pad_fastest', rows, trick_named(rows, 'Ollie') and late is not None and late <= allowed and landed,
+               f'{held} at the wind-up; {qa.combos(rows) or "(none)"}; took off '
+               f'{"-" if late is None else f"{late:.3f} s"} after the flick (allowed {allowed:.3f}); landed={landed}')
+    if wanted('flick_pad_push') or wanted('pad'):
+        # An ollie flicked mid-push: push held from rest, the thumb leaves the button for the stick 0.5 s in (in the
+        # push's kick), a quick wind-up and the flick. The board leaves within the pop clip's ground part of the flick.
+        flick = .62
+        timeline = [(0.0, (0.0, 0.0)), (.5, (0.0, -.5)), (.5 + 1 / 60., (0.0, -1.0)), (flick, (0.0, 1.0)), (flick + .05, (0.0, 0.0))]
+        rows = pad_ride(FLAT[0], FLAT[1], 0, 300, timeline, 2.6, push_until=.5)
+        late = latency(rows, 3); landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        pushed = qa.ever([r for r in rows if int(r['pt']) == 0], 'push', '1')
+        # For the record: the frames from the load to the flick still in the push's kick (until the action graph's
+        # arbitration is ported, the push runs on until the trick is recognised).
+        loaded = [r for r in rows if int(r['pt']) == 2]
+        loaded_push = [r for r in loaded[1:] if r.get('push') == '1']
+        record('flick_pad_push', rows, pushed and trick_named(rows, 'Ollie') and late is not None and late <= allowed and landed,
+               f'pushing before: {pushed}; {len(loaded_push)} of {len(loaded)} loaded frames pushing; {qa.combos(rows) or "(none)"}; '
+               f'took off {"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}')
+    for name, hold, flick in (('manual_pad_kickflip', (0.0, -.5), (-0.908571, 0.417143)), ('manual_pad_nollie', (0.0, .5), (0.0, -1.0))):
+        if not (wanted(name) or wanted('pad')):
+            continue
+        # Flick out of a held manual, as native does: its wind-up points contain the manual's stick position, so the
+        # stick never goes back to the centre or out to the rim first.
+        trick = 'Kickflip' if 'kickflip' in name else 'Nollie'
+        timeline = [(0.0, (0.0, 0.0)), (.3, hold), (1.3, flick), (1.3 + .05, (0.0, 0.0))]
+        rows = pad_ride(FLAT[0], FLAT[1], 0, 480, timeline, 2.8)
+        held = [r for r in rows if int(r['pt']) == 1 and float(r['padt']) >= .6]
+        kept = bool(held) and all(r.get('manual') == '1' for r in held)
+        late = latency(rows, 2); landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        record(name, rows, kept and trick_named(rows, trick) and late is not None and late <= allowed and landed,
+               f'manual held to the flick: {kept}; {qa.combos(rows) or "(none)"}; took off '
+               f'{"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}')
+    # Every nollie in native's table and both of its diagonal nollies, from the pad; then a goofy rider (his stick's x
+    # mirrored) for one of each family.
+    runs = [(n, p, False) for n, p in NOLLIES.items()] + [('Nollie', p, False) for p in NOLLIE_DIAGONALS]
+    runs += [(n, NOLLIES[n], True) for n in GOOFY_NOLLIES]
+    for i, (name, points, goofy) in enumerate(runs):
+        key = 'nollie_pad_' + ('goofy_' if goofy else '') + name.lower().replace(' ', '_').replace('-', '')
+        if i >= len(NOLLIES) and not goofy:
+            key += '_diagonal_' + ('right' if points[0][0] > 0 else 'left')
+        if not (wanted(key) or wanted('pad')):
+            continue
+        path = [(-x, y) for x, y in points] if goofy else points
+        rows = pad_ride(FLAT[0], FLAT[1], 0, 450, pad_timeline(path), 2.4, goofy=goofy)
+        landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        record(key, rows, trick_named(rows, name) and landed, f'{qa.combos(rows) or "(none)"}; landed={landed}')
+    for name in ('Nollie', 'Nollie Kickflip', 'Nollie Heelflip', 'Nollie Pop Shove-it'):
+        key = 'nollie_pad_fakie_' + name.lower().replace(' ', '_').replace('-', '')
+        if not (wanted(key) or wanted('pad')):
+            continue
+        # Rolling fakie the gesture stays in the rider's frame; only the name changes ("Switch ..." once he turns).
+        rows = pad_ride(FLAT[0], FLAT[1], 0, -450, pad_timeline(NOLLIES[name], at=.25), 2.4)
+        landed = rows[-1]['mode'] == '1' and not qa.count(rows, 'bails')
+        record(key, rows, trick_named(rows, name) and landed, f'{qa.combos(rows) or "(none)"}; landed={landed}')
     if wanted('grab'):
         # Hold the right trigger for the first half second of the air (a grab held into the landing bails).
         rows = record_while(f'''
@@ -2297,9 +2461,10 @@ def collide_checks(record, wanted):
 
 
 def release_controls():
-    qa.py("live.stop('skate_script'); live.stop('rec'); live.stop('grab'); live.stop('spin'); live.stop('frames'); live.skate_release()\n"
-          "for k in ['Gamepad_LeftThumbstick','Gamepad_RightThumbstick']: live.L.input_key(k,'release',0)\n"
-          "for k in ['Gamepad_LeftTriggerAxis','Gamepad_RightTriggerAxis']: live.L.input_key(k,'axis',0)")
+    qa.py("live.stop('skate_script'); live.stop('rec'); live.stop('grab'); live.stop('spin'); live.stop('frames'); live.stop('pad_flick')\n"
+          "live.skate_release()\n"
+          "for k in ['Gamepad_LeftThumbstick','Gamepad_RightThumbstick','Gamepad_FaceButton_Bottom']: live.L.input_key(k,'release',0)\n"
+          "for k in ['Gamepad_LeftTriggerAxis','Gamepad_RightTriggerAxis','Gamepad_RightX','Gamepad_RightY']: live.L.input_key(k,'axis',0)")
 
 
 if __name__ == '__main__':

@@ -8,8 +8,12 @@
 #include "Engine/OverlapResult.h"
 #include "Components/PrimitiveComponent.h"
 #include "PhysicsEngine/BodyInstance.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "SkateSettings.h"
 
 using atelier::ride::Flick;
+using atelier::ride::IsNollie;
 
 namespace
 {
@@ -47,6 +51,33 @@ namespace
     // (cm) behind the lip's plane or LipBand in front of it.
     constexpr float BendProbes[] = {30.f, 80.f, 150.f, 250.f, 400.f};
     constexpr float MinBend = 2.f, MaxBend = 50.f, LipBack = 40.f, LipBand = 150.f;
+
+    // Native's flick out of a manual (motion graph, TakeOff.FromManual): the pop clip jumps in at its MANUALINTO
+    // attribute, two thirds through every ground clip (animation metadata), and a manual's end leaves ManualOutTime
+    // (SetManualOutTimer) in which a flick still takes off that way.
+    constexpr float ManualInto = 2.f / 3.f, ManualOutTime = .1f;
+
+    // Native's settings and gesture sets, read once from the native bundle (the files Native loads) with Native's own
+    // loaders, and shared by every ride.
+    std::shared_ptr<const atelier::ride::FlickBank> RideFlickBank(std::string& Error)
+    {
+        static std::string LoadError;
+        static const std::shared_ptr<const atelier::ride::FlickBank> Bank = []
+        {
+            const FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Data/SkateNative"));
+            TArray<uint8> Settings, Gestures;
+            if (!FFileHelper::LoadFileToArray(Settings, *(Root / TEXT("settings.skate"))) ||
+                !FFileHelper::LoadFileToArray(Gestures, *(Root / TEXT("gestures.skate"))))
+            {
+                LoadError = TCHAR_TO_UTF8(*FString::Printf(TEXT("cannot read settings.skate and gestures.skate in %s"), *Root));
+                return std::shared_ptr<const atelier::ride::FlickBank>();
+            }
+            return atelier::ride::FlickBank::Load(std::vector<std::uint8_t>(Settings.GetData(), Settings.GetData() + Settings.Num()),
+                std::vector<std::uint8_t>(Gestures.GetData(), Gestures.GetData() + Gestures.Num()), LoadError);
+        }();
+        Error = LoadError;
+        return Bank;
+    }
 
     template <int32 N>
     float Curve(const float (&Points)[N][2], float X)
@@ -106,6 +137,21 @@ namespace
         case Flick::LaserFlip: return {360, -360, .42f, 500};
         case Flick::Hardflip360: return {-360, -360, .42f, 600};
         case Flick::InwardHeelflip360: return {360, 360, .45f, 600};
+        // The nollie family: the same board motion off the nose, worth a little more (as the nollie is the ollie's).
+        case Flick::NollieKickflip: return {-360, 0, .34f, 270};
+        case Flick::NollieHeelflip: return {360, 0, .34f, 270};
+        case Flick::NollieShoveIt: return {0, 180, .3f, 220};
+        case Flick::NollieFsShoveIt: return {0, -180, .3f, 220};
+        case Flick::NollieShove360: return {0, 360, .4f, 370};
+        case Flick::NollieFsShove360: return {0, -360, .4f, 370};
+        case Flick::NollieVarialKickflip: return {-360, 180, .42f, 370};
+        case Flick::NollieVarialHeelflip: return {360, -180, .36f, 370};
+        case Flick::NollieHardflip: return {-360, -180, .38f, 420};
+        case Flick::NollieInwardHeelflip: return {360, 180, .38f, 420};
+        case Flick::NollieTreFlip: return {-360, 360, .42f, 520};
+        case Flick::NollieLaserFlip: return {360, -360, .42f, 520};
+        case Flick::NollieHardflip360: return {-360, -360, .42f, 620};
+        case Flick::NollieInwardHeelflip360: return {360, 360, .45f, 620};
         default: return {0, 0, 0, 0};
         }
     }
@@ -137,7 +183,17 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     TurnRate = SlideYaw = Curvature = Crouch = 0; PushTime = -1; BrakeTime = 0; PendingPop = Flick::None; TrailNum = 0;
     Trick_ = Flick::None; TrickTime = -1; Grab = ERideGrab::None; GrabWeight = 0; Rail = INDEX_NONE; Balance = 0;
     bSwitch = false; SwitchTime = -1; FakieTime = 0;
-    Line.Reset(); Holding.Reset(); HeldPoints = 0; Calm = 0; Trick.Reset(); Flicks.Reset(); Cues.Reset();
+    Line.Reset(); Holding.Reset(); HeldPoints = 0; Calm = 0; Trick.Reset(); Cues.Reset();
+    // Flick-It: Native's controls, loaded on the first ride, then mounted as GameplaySession::Activate mounts them
+    // (their gesture history carries on from ride to ride, as Native's does).
+    if (!Flicks.HasBank())
+    {
+        std::string Error;
+        if (!Flicks.SetBank(RideFlickBank(Error), Error))
+            UE_LOG(LogTemp, Error, TEXT("SKATE ride: no native controls (%s); no trick will read"), UTF8_TO_TCHAR(Error.c_str()));
+    }
+    Flicks.Activate();
+    ManualOut = 0; bPopFromManual = false; PendingEvent = atelier::ride::FlickEvent();
     // The clock starts a step full, so the first frame shows the start moved on by that frame's time, as every later
     // frame does. Empty, the first Step ran one tick and showed it at alpha 0 (the start again, a frame's hold), and
     // the shown board trailed real time by a tick for the whole ride.
@@ -175,6 +231,9 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
 void FRideSession::Configure(bool bInGoofy, const FRidePreferences& Preferences)
 {
     bGoofy = bInGoofy; Prefs = Preferences;
+    // Native's physics mode, from the setting GameplaySession::Configure reads (an unknown name stays normal).
+    const FString& Level = GetDefault<USkateSettings>()->Difficulty;
+    Difficulty = Level.Equals(TEXT("easy"), ESearchCase::IgnoreCase) ? 0 : Level.Equals(TEXT("hardcore"), ESearchCase::IgnoreCase) ? 2 : 1;
 }
 
 void FRideSession::Launch(const FVector& InVelocity)
@@ -199,7 +258,7 @@ float FRideSession::Random()
     return float(Noise & 0xFFFFFF) / float(0xFFFFFF) * 2.f - 1.f;
 }
 
-void FRideSession::Step(float Dt, const FSkateInput& Input, const FRideWorld& World)
+void FRideSession::Step(float Dt, const FSkateInput& Input, const atelier::skate::XboxState& Pad, const FRideWorld& World)
 {
     Where = World;
     Tune = FRideTuning::Get();
@@ -211,7 +270,7 @@ void FRideSession::Step(float Dt, const FSkateInput& Input, const FRideWorld& Wo
     {
         Previous = Current;
         const int32 Asked = BoardQueries;
-        Tick(Input);
+        Tick(Input, Pad);
         QuerySum += BoardQueries - Asked; QueryMax = FMath::Max(QueryMax, BoardQueries - Asked);
         Current.P = P; Current.Q = Q; Current.Deck = DeckPose();
         Accumulator -= Tick60; ++Count;
@@ -240,11 +299,15 @@ void FRideSession::SetMode(ERideState NewMode)
     else { AirLaunchVz = FMath::Max(0.f, float(V.Z)); AirStartP = P; AirGlance = 0; }
 }
 
-void FRideSession::Tick(const FSkateInput& In)
+void FRideSession::Tick(const FSkateInput& In, const atelier::skate::XboxState& Pad)
 {
-    // The reader works in regular stance: a goofy rider's stick (or a regular one's riding switch) is mirrored, so the
-    // same gesture does the same trick with the other foot.
-    const Flick F = Flicks.Update(GoofyNow() ? -float(In.Right.X) : float(In.Right.X), float(In.Right.Y), Tick60);
+    // Flick-It reads the canonical pad with Native's own controls (RideFlick.h) every tick in every mode, so a
+    // gesture's history runs on through a manual or a pop. The stance in effect picks the trick's mapping (Native
+    // mirrors it for a regular rider); a flick out of a tail or nose grind maps from that end.
+    using atelier::skate::GestureGroup;
+    const GestureGroup Group = Mode != ERideState::Grind ? GestureGroup::Square : GrindKind == ERideGrind::FiveO ? GestureGroup::Tail :
+        GrindKind == ERideGrind::Nosegrind || GrindKind == ERideGrind::Crooked ? GestureGroup::Nose : GestureGroup::Square;
+    const Flick F = Flicks.Update(Pad, GoofyNow(), Group, Difficulty);
     ModeTime += Tick60; Clock += Tick60;
     TickSlide = SlideYaw;
     if (TrickTime >= 0) TrickTime += Tick60;
@@ -258,8 +321,8 @@ void FRideSession::Tick(const FSkateInput& In)
     case ERideState::Grind: TickGrind(In, F); break;
     case ERideState::Bail: case ERideState::GetUp: TickBail(); break;
     }
-    // The curvature's trail starts afresh on every return to the ground.
-    if (Mode != ERideState::Ground && Mode != ERideState::Powerslide && Mode != ERideState::Manual) TrailNum = 0;
+    // The curvature's trail starts afresh on every return to the ground (and a manual's end is forgotten off it).
+    if (Mode != ERideState::Ground && Mode != ERideState::Powerslide && Mode != ERideState::Manual) { TrailNum = 0; ManualOut = 0; }
     // Off the plain ground (a manual, a powerslide, the air, a bail) a turn round stops where it is.
     if (Mode != ERideState::Ground) { SwitchTime = -1; FakieTime = 0; }
     // The faces just climbed, for the lip test (TickAir reads them on its first ticks).
@@ -617,24 +680,27 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
     const bool bFlat = Up.Z > .8f;
     const float StickX = FMath::Abs(In.Left.X) > .06f ? float(In.Left.X) : 0.f;
 
-    // Pops: a flick starts the pop clip and the board leaves when its ground part ends.
+    // Pops, timed as Native's motion graph times them until its events drive Ride: the recognised trick starts its
+    // ground clip (TakeOff) on the tick it is recognised; when that clip is about to end the air clip takes over
+    // (LeftGround), and the board leaves on the tick after the ground clip's last. Out of a manual, or within
+    // ManualOutTime of one (TakeOff.FromManual), the ground clip jumps in at its MANUALINTO point, two thirds through.
+    const bool bWasManual = Mode == ERideState::Manual;
     if (F != Flick::None && PendingPop == Flick::None && Mode != ERideState::Powerslide)
     {
-        PendingPop = F; PendingLoad = Flicks.PopLoad(); PopTimer = 0; Cues.Add(ERideCue::Flick);
-        // The board leaves when the pop clip's ground part ends.
+        PendingPop = F; PendingEvent = Flicks.Event(); PendingLoad = Flicks.PopLoad(); Cues.Add(ERideCue::Flick);
         PopWait = Animator.PopDelay(F, Tune.PopDelay);
-        // A manual's flick leaves sooner: the board is already up on one truck.
-        if (Mode == ERideState::Manual) PopTimer = PopWait * .5f;
+        bPopFromManual = bWasManual || ManualOut > 0.f;
+        PopTimer = bPopFromManual ? PopWait * ManualInto : 0.f;
     }
     if (PendingPop != Flick::None)
     {
         PopTimer += Tick60;
-        if (PopTimer >= PopWait)
+        if (PopTimer > PopWait + Tick60 * .5f)
         {
-            const Flick Pop = PendingPop; PendingPop = Flick::None;
+            const Flick Pop = PendingPop; PendingPop = Flick::None; bPopFromManual = false;
             if (Mode == ERideState::Manual) { EndHold(); SetMode(ERideState::Ground); }
             StartTrick(Pop);
-            TakeOff(PopSpeed(PendingLoad) * (Pop == Flick::Nollie ? Tune.NollieScale : 1.f));
+            TakeOff(PopSpeed(PendingLoad) * (IsNollie(Pop) ? Tune.NollieScale : 1.f));
             return;
         }
     }
@@ -657,6 +723,8 @@ void FRideSession::TickGround(const FSkateInput& In, Flick F)
             if (FMath::Abs(Balance) >= 1.f) { EndHold(); SetMode(ERideState::Ground); Balance = 0; }
         }
     }
+    // The manual's out timer: set as it ends, counted down on the ground after.
+    ManualOut = Mode == ERideState::Manual ? 0.f : bWasManual ? ManualOutTime : FMath::Max(0.f, ManualOut - Tick60);
 
     // Powerslides: the deck turns across the travel and scrubs speed. The powerslide key holds one; on a pad the left
     // stick's rear diagonal does, as native's slide intents read it: pushing the stick out past 0.9 into the 52
@@ -1703,7 +1771,7 @@ void FRideSession::LoseLine()
 FString FRideSession::FlickName(Flick F, bool bFakie, bool bSwitched) const
 {
     const FString Base = UTF8_TO_TCHAR(atelier::ride::FlickName(F));
-    if (bFakie && F != Flick::Nollie) return TEXT("Fakie ") + Base;
+    if (bFakie && !IsNollie(F)) return TEXT("Fakie ") + Base;
     return bSwitched ? TEXT("Switch ") + Base : Base;
 }
 
@@ -1761,7 +1829,7 @@ FTransform FRideSession::DeckPose() const
         const FQuat Roll = Turn(FVector::ForwardVector, Flip.Roll * Ease * Mirror);
         const FQuat Yaw = Turn(FVector::UpVector, Flip.Yaw * Ease * Mirror);
         // The ollie's pitch: nose up through the pop, level by the catch.
-        const float Pitch = -40.f * FMath::Sin(PI * FMath::Clamp(TrickTime / .45f, 0.f, 1.f)) * (Trick_ == Flick::Nollie ? -1.f : 1.f) * (bTrickFakie ? -1.f : 1.f);
+        const float Pitch = -40.f * FMath::Sin(PI * FMath::Clamp(TrickTime / .45f, 0.f, 1.f)) * (IsNollie(Trick_) ? -1.f : 1.f) * (bTrickFakie ? -1.f : 1.f);
         Deck = Yaw * Roll * Turn(FVector::RightVector, Pitch) * Deck;
         Offset.Z += 18.f * FMath::Sin(PI * FMath::Clamp(TrickTime / .5f, 0.f, 1.f));
     }
@@ -1916,7 +1984,17 @@ FString FRideSession::DescribePose() const
         *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseStep,
         Names.IsValidIndex(PoseStepBone) ? *Names[PoseStepBone].ToString() : TEXT("none"), PoseDt * 1000.f,
         FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost, HipBoard, HeadYaw, ChestYaw, Animator.GetFakieWeight(), Animator.GetTorso(),
-        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Camera.Rotator().Yaw, WheelSpin, QueriesMean, QueriesWorst);
+        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Camera.Rotator().Yaw, WheelSpin, QueriesMean, QueriesWorst)
+        + DescribeFlick();
+}
+
+FString FRideSession::DescribeFlick() const
+{
+    // The last recognised trick: serial, Native's trick, the gesture's set and pattern, GestureSpeed, the group
+    // (0 square, 1 nose, 2 tail) and whether the mapping was mirrored (a regular stance).
+    const atelier::ride::FlickEvent& E = Flicks.Event();
+    return FString::Printf(TEXT(" gesture=%u,%s,%d,%d,%.3f,%d,%d"), E.Serial, E.NativeTrick.empty() ? TEXT("-") : UTF8_TO_TCHAR(E.NativeTrick.c_str()),
+        int32(E.Gesture.Set), int32(E.Gesture.Pattern), E.Strength, int32(E.Group), E.bMirrored ? 1 : 0);
 }
 
 void FRideSession::StepOffBoard(float Dt, const FTransform& TrajectoryWorld)

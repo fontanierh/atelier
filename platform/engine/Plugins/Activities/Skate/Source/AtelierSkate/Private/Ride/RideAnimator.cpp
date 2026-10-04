@@ -127,6 +127,21 @@ namespace
         {Flick::LaserFlip, TEXT("LASERFLIP_HIGH_G"), TEXT("LASERFLIP_HIGH_A"), TEXT("T_LASERFLIP_H_CYC"), TEXT("T_LASERFLIP_L_CYC"), .605f, .8009f},
         {Flick::Hardflip360, TEXT("360HARDFLIP_HIGH_G"), TEXT("360HARDFLIP_HIGH_A"), TEXT("T_360HARDFLIP_H_CYC"), TEXT("T_360HARDFLIP_L_CYC"), .5689f, .8534f},
         {Flick::InwardHeelflip360, TEXT("360INWARDHEELFLIP_HIGH_G"), TEXT("360INWARDHEELFLIP_HIGH_A"), TEXT("T_360INWARDHEELFLIP_H_CYC"), TEXT("T_360INWARDHEELFLIP_L_CYC"), .5834f, .8648f},
+        // Native's nollie table (N_*): the pop and the flip, then the default air tree.
+        {Flick::NollieKickflip, TEXT("N_KICKFLIP_IN_HIGH_G"), TEXT("N_KICKFLIP_IN_HIGH_A"), nullptr},
+        {Flick::NollieHeelflip, TEXT("N_HEELFLIP_IN_HIGH_G"), TEXT("N_HEELFLIP_IN_HIGH_A"), nullptr},
+        {Flick::NollieShoveIt, TEXT("N_POPSHUVIT_HIGH_G"), TEXT("N_POPSHUVIT_HIGH_A"), nullptr},
+        {Flick::NollieFsShoveIt, TEXT("N_FSPOPSHUVIT_HIGH_G"), TEXT("N_FSPOPSHUVIT_HIGH_A"), nullptr},
+        {Flick::NollieShove360, TEXT("N_360POPSHUVIT_HIGH_G"), TEXT("N_360POPSHUVIT_HIGH_A"), nullptr},
+        {Flick::NollieFsShove360, TEXT("N_FS360POPSHUVIT_HIGH_G"), TEXT("N_FS360POPSHUVIT_HIGH_A"), nullptr},
+        {Flick::NollieVarialKickflip, TEXT("N_VARIALKICKFLIP_HIGH_G"), TEXT("N_VARIALKICKFLIP_HIGH_A"), nullptr},
+        {Flick::NollieVarialHeelflip, TEXT("N_VARIALHEELFLIP_HIGH_G"), TEXT("N_VARIALHEELFLIP_HIGH_A"), nullptr},
+        {Flick::NollieHardflip, TEXT("N_HARDFLIP_HIGH_G"), TEXT("N_HARDFLIP_HIGH_A"), nullptr},
+        {Flick::NollieInwardHeelflip, TEXT("N_INWARDHEELFLIP_HIGH_G"), TEXT("N_INWARDHEELFLIP_HIGH_A"), nullptr},
+        {Flick::NollieTreFlip, TEXT("N_360FLIP_HIGH_G"), TEXT("N_360FLIP_HIGH_A"), nullptr},
+        {Flick::NollieLaserFlip, TEXT("N_LASERFLIP_HIGH_G"), TEXT("N_LASERFLIP_HIGH_A"), nullptr},
+        {Flick::NollieHardflip360, TEXT("N_360HARDFLIP_HIGH_G"), TEXT("N_360HARDFLIP_HIGH_A"), nullptr},
+        {Flick::NollieInwardHeelflip360, TEXT("N_360INWARDHEELFLIP_HIGH_G"), TEXT("N_360INWARDHEELFLIP_HIGH_A"), nullptr},
     };
     // By ERideGrab (None first): lead-in, hold, let-go.
     const TCHAR* GrabNames[][3] = {

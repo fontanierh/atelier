@@ -2,6 +2,7 @@
 #include "SkateRails.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
+#include "SkatePad.h"
 #include "Ride/RideSession.h"
 #include "Ride/RideTransition.h"
 #include "GameFramework/Character.h"
@@ -301,8 +302,9 @@ void USkateComponent::ReadInput(float Dt)
     I.Left.Y = PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftY);
     // SceneViewport negates Gamepad_RightY (up reads negative); Flick-It wants up positive. The project's 0.25 dead
     // zone on each axis (DefaultInput.ini) squeezes the stick (half-way reads as a third, diagonals bend); Flick-It and
-    // the manual's balance are laid out in real stick positions, so undo it and keep a small round dead zone instead.
-    auto Unsqueeze = [](float A) { return FMath::Abs(A) > 1e-4f ? FMath::Sign(A) * (.25f + .75f * FMath::Abs(A)) : 0.f; };
+    // the manual's balance are laid out in real stick positions, so undo it and keep a small round dead zone instead
+    // (SkatePad.h, which the offline input replay shares).
+    using atelier::skate_pad::Unsqueeze;
     I.Left.X=Unsqueeze(I.Left.X); I.Left.Y=Unsqueeze(I.Left.Y);
     FVector2D Pad(Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightX)), -Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightY)));
     // Mouse: hold the left button and move it like the right stick (skate. on PC).
