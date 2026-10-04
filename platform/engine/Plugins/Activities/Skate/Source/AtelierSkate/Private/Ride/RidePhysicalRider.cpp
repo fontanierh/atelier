@@ -375,13 +375,13 @@ namespace
             FMath::RadiansToDegrees(4. * FMath::Atan2(Swing.Z, 1. + Swing.W)), FMath::RadiansToDegrees(4. * FMath::Atan2(Swing.Y, 1. + Swing.W)));
     }
 
-    // A joint's rotation as Chaos measures it against its limits: the child's frame (body 0, Frame1) to the parent's
-    // (body 1, Frame2), R01 = R0^-1 R1 (FPBDJointUtilities::DecomposeSwingTwistLocal). Physics Control's clamp and widen
-    // take the parent's frame to the child's instead: the same twist, but a swing split differently between Swing1 and
-    // Swing2 once the joint twists.
+    // A joint's rotation as Chaos measures it against its limits, R01 = R0^-1 R1 (FPBDJointUtilities::
+    // DecomposeSwingTwistLocal): the solver takes the container's bodies in reverse (PBDJointContainerSolver's
+    // GetJointParticle), so body 0 is the parent (Frame2) and body 1 the child (Frame1). Physics Control's ClampExact
+    // takes the same order. Measured the other way a joint inside its limits reads past them once it twists.
     FQuat ChaosRelative(const FBodyInstance& Child, const FBodyInstance& Parent, const FQuat& Frame1, const FQuat& Frame2)
     {
-        return (Child.GetUnrealWorldTransform().GetRotation() * Frame1).Inverse() * (Parent.GetUnrealWorldTransform().GetRotation() * Frame2);
+        return (Parent.GetUnrealWorldTransform().GetRotation() * Frame2).Inverse() * (Child.GetUnrealWorldTransform().GetRotation() * Frame1);
     }
 
     // A live joint's limits (twist, Swing1, Swing2; degrees), a free axis unbounded and a locked one at 0.
@@ -964,8 +964,8 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         // body) by as much as the push needs.
         Bail.bSoftSwing = Bail.bSoftTwist = false;
         OutBail->Add(C.JointName, Bail);
-        // Where the bind pose sits in it, as Chaos measures (the child's frame to the parent's).
-        const FVector BindInBail = JointAngles(Frame.Inverse() * BailCentre);
+        // Where the bind pose sits in it, as Chaos measures (the parent's frame to the child's).
+        const FVector BindInBail = JointAngles(BailCentre.Inverse() * Frame);
         UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s in a bail: twist %.1f, swing limits %.1f (across) and %.1f (flexion) about Native's centre, %.0f degrees from the riding one; the bind pose %.0f past them"),
             *Body->BoneName.ToString(), Row->Twist, Row->Swing1, Row->Swing2, FMath::RadiansToDegrees((Centre * Frame).AngularDistance(BailCentre)),
             PastLimits(BindInBail, Row->Twist, Row->Swing1, Row->Swing2));
