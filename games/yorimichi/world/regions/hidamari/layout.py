@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from hidamari import mountains
 from megapark import trail as park_trail
+from communitypark import layout as community_park
 import numpy as np
 ROOT=yori.REGIONS
 OUT=yori.OUT/'hidamari'
@@ -128,7 +129,7 @@ def height(x,y):
     x,y=np.broadcast_arrays(np.asarray(x,dtype=float),np.asarray(y,dtype=float))
     from zeppelin.layout import city_pad
     base=city_pad(x,y,street_height(x,y))
-    if not x.size or np.max(x)<435 or np.min(x)>1240 or np.max(y)<-110 or np.min(y)>372:return base
+    if not x.size or np.max(x)<435 or np.min(x)>1240 or np.max(y)<-110 or np.min(y)>372:return community_park.carve_access(x,y,base)
     shape=x.shape;xx=x.ravel();yy=y.ravel();weights=np.zeros(xx.size);targets=np.zeros(xx.size)
     coverage=np.zeros(xx.size)
     core=np.zeros(xx.size,dtype=bool);core_z=np.zeros(xx.size)
@@ -157,7 +158,7 @@ def height(x,y):
     road_distance=np.minimum(vertical,np.min(abs(yy[:,None]-np.asarray(ROAD_Y)),axis=1))
     # Roads occupy +/-8 m. The closest pad starts at 8.4 m; retain a smooth join.
     strength*=mountains.smooth((road_distance-8)/.4)
-    return (base.ravel()+(target-base.ravel())*strength).reshape(shape)
+    return community_park.carve_access(x,y,(base.ravel()+(target-base.ravel())*strength).reshape(shape))
 
 def terrain_axes():
     """Keep the coarse distant grid; resolve plateau edges and shoulder curves."""
@@ -460,8 +461,9 @@ def generate():
     # By the air station the gate's ground has its own grass, verges, bushes and rocks (megapark/gate.py).
     from megapark import gate
     gate.dress(inst,north_base_height)
+    community_park.clear(inst)
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
-    return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
+    return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes(),*community_park.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 
 # Broad scenery transition around the new city. Both far terrain and its trees
 # use this same grid, so lowering a hill cannot leave its tree line floating.
@@ -489,7 +491,7 @@ def north_base_height(x,y):
     city_edge=mountains.smooth((x-280)/60)*mountains.smooth((1440-x)/60)
     return base+(height(x,500)-backdrop_height(x,500))*city_edge*mountains.smooth((800-y)/300)
 
-def north_height(x,y):
+def north_surface(x,y):
     x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
     base=backdrop_height(x,y)
     z=mountains.height(x,y,north_base_height)
@@ -503,6 +505,10 @@ def north_height(x,y):
     on=gate.inside(x,y)
     if on.any():z[on]=gate.height(x[on],y[on],north_base_height)
     return z
+
+def north_height(x,y):
+    """The island's collision surface, including the community park's fine patch."""
+    return community_park.surface(x,y,north_surface)
 
 def trail_distance(x,y):
     """Metres to the nearer of the north trail and the Mega Park trail."""

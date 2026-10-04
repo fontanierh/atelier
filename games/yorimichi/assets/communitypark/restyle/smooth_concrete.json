@@ -1,0 +1,31 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "A seamless tileable texture for a skate park in a stylised game set on a Japanese island in autumn: soft painterly shapes and flat matte colour, hand-painted like the background art of a Japanese animated film, soft strokes that still read as the real material, medium detail that holds up when repeated. Seen perfectly flat and straight-on, filling the square edge to edge: no perspective, no object outline, no border, no joints or lines along the edges, no shadows or lighting gradient, even brightness everywhere, no text. The surface: smooth hand-trowelled skate park concrete in warm light grey, faint overlapping arcs of trowel marks, gentle soft mottling of slightly warmer and cooler greys, a few tiny pores and very light wheel scuffs, clean and bright.",
+  "references": {},
+  "purpose": "Community park restyle texture",
+  "status": "done",
+  "started_at": "2026-10-04T21:58:36.735625+00:00",
+  "usage": {
+    "input_tokens": 164,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 164
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1920
+  },
+  "png_sha256": "d43e3db4cb8f86837aa25a0a23b75e8d43a84026810c405d4fa6ef1b9f979610",
+  "output": {
+    "file": "smooth_concrete.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-04T21:59:20.065674+00:00"
+}
