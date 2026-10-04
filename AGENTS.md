@@ -53,6 +53,29 @@ uv run pytest                            # studio and game Python tests
   the same size) and **real-time speed** (no slow motion). Inspect the motion before accepting a take.
 - Generated video is a reference for animation authored locally in Blender, never the animation itself.
 
+## Agent messaging and subscriptions
+
+- At the start of every agent session, choose a unique stable owner name and **always subscribe to new board
+  messages with a background job**, using `uv run atelier board subscribe --agent OWNER --background --notify
+  '<JSON argv>'`. The notification command must wake this existing agent session; verify delivery and check
+  `atelier board status`. Keep the subscriber alive while working or waiting; restart/check it on session resume.
+  See [the messaging board guide](docs/AGENT_BOARD.md) for setup, existing-session adapters and stop commands.
+  If the client cannot receive background notifications, report that limitation on the render board and connect
+  a foreground subscriber to its input mechanism; an unattended log is not a working subscription.
+- Use `atelier board post/read` for addressed requests, acknowledgements, handoffs, blocked notices and evidence.
+  Preserve the Markdown render board's Holding/Waiting/Handoffs/Log entries as the scheduling ledger. Messages are
+  durable across worktrees and advisory: the live lock and memory guard still decide admission.
+- Proactively coordinate render turns with the current owner and other waiters. Acknowledge messages promptly;
+  state a concrete next safe boundary and revised ETA when late. Recheck messages and Waiting between heavy
+  steps, and yield an agreed turn before per-step reacquisition or a game session. Retain first-ready time on
+  refusals/requeues, distinguish blocked from ready, and never reserve a slot while idle. Prefer ready jobs under
+  five minutes; after two short bypasses offer the oldest compatible ready long job the next turn.
+- Subscribers send advisory lack-of-stdout-progress notices for their own validated live jobs. On an alert,
+  inspect stdout, memory-health.json and supervisor telemetry, publish diagnosis/ETA, and safely end only your
+  own blocked job if needed. Never signal another owner's process, remove shared mutexes, steal locks or bypass
+  safety. On release, post exit/duration/evidence and send a named handoff; credit reuse and prompt releases.
+- At session completion, `atelier board unsubscribe --agent OWNER`; keep messages and evidence history.
+
 ## Heavy jobs
 
 - Heavy jobs (Unreal, Blender renders) run under the render lock and memory guard (`atelier.safety`). `atelier play`

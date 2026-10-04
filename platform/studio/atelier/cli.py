@@ -10,6 +10,7 @@
     atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
+    atelier board post|read|subscribe|unsubscribe|status   coordinate machine-local agents
     atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
 """
 import argparse, datetime, importlib.util, os, re, shutil, subprocess, sys
@@ -134,6 +135,8 @@ def lint(staged=False):
 def make_parser():
     parser = argparse.ArgumentParser(prog='atelier', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
+    from . import board
+    board.configure(sub)
     p = sub.add_parser('new'); p.add_argument('game'); p.add_argument('--title')
     p = sub.add_parser('doctor'); p.add_argument('game')
     p = sub.add_parser('setup'); p.add_argument('--headless', action='store_true')
@@ -171,6 +174,9 @@ def parse_args(argv=None):
 
 def main(argv=None):
     args = parse_args(argv)
+    if args.command == 'board':
+        from . import board
+        return board.main(args)
     if args.command == 'new':
         from . import new
         return new.main(args.game, args.title)
