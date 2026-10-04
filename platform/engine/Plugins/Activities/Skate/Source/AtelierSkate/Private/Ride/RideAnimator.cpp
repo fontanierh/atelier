@@ -223,6 +223,7 @@ bool FRideAnimator::SetBoardIndices(const TArray<FName>& InNames, const TArray<F
     for (int32 I = 0; I < 4; ++I) WheelIndex[I] = Index[3 + I];
     const FTransform& Deck = InReference[DeckIndex];
     DeckUp = Deck.GetRotation().UnrotateVector(FVector::UpVector);
+    DeckNose = Deck.GetRotation().UnrotateVector(FVector::ForwardVector);
     for (int32 I = 0; I < 2; ++I)
     {
         TruckFromDeck[I] = InReference[TruckIndex[I]].GetRelativeTransform(Deck);
@@ -382,6 +383,14 @@ const FRideAnimator::FTrickClips* FRideAnimator::TrickFor(Flick Trick) const
     return Ollie.Ground && Ollie.Air ? &Ollie : nullptr;
 }
 
+bool FRideAnimator::IsTrickClip(const UAnimSequence* Sequence) const
+{
+    if (!Sequence) return false;
+    for (const FTrickClips& T : C.Tricks)
+        if (Sequence == T.Ground || Sequence == T.Air || Sequence == T.Follow || Sequence == T.Low) return true;
+    return false;
+}
+
 float FRideAnimator::PopDelay(Flick Trick, float Default) const
 {
     const FTrickClips* T = bRig ? TrickFor(Trick) : nullptr;
@@ -468,7 +477,7 @@ void FRideAnimator::Attach(AActor* Owner)
     for (const TPair<FName, TStrongObjectPtr<UAnimSequence>>& Pair : Library) if (Pair.Value) Clips.Add(Pair.Value.Get());
     I->Hold(Clips);
     Mesh = M; Instance = I;
-    bFirst = true; Lock = 0; Lift = 0; TruckRoll[0] = TruckRoll[1] = 0; LastKey = nullptr; Last = FRideAnimLayers();
+    bFirst = true; bBoardReversed = false; Lock = 0; Lift = 0; TruckRoll[0] = TruckRoll[1] = 0; LastKey = nullptr; Last = FRideAnimLayers();
     FakieWeight = 0; Torso = .5f; FakieTime = 0; bWasFakie = false; LastPlace = LastPoseDeck = FTransform::Identity;
 }
 
@@ -920,6 +929,19 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
         const FQuat To = Track(Key, BoardRoot, KeyTime).GetRotation();
         bCutBoard = FMath::RadiansToDegrees(From.AngularDistance(To)) > TurnedBoard;
     }
+    // Such a trick leaves the board end for end: Native's board is a body that stays as the catch left it, nose
+    // trailing, until another half-turn trick turns it back, while the clips that follow (the follow-through, the air
+    // idle, the landings) stand on it the right way round. So from the handover on, the deck is shown turned half a
+    // turn about its normal (below), and the board carries on as it was caught. Read from the noses along the ground
+    // (a board on its side has no way round), on a trick's clip handing over, not through a bail's hold or the turn
+    // into switch (which turns the clips' frame instead).
+    if (Key && LastKey && Key != LastKey && !bTurn && !bHold && LastMotion != ERideMotion::Bail && IsTrickClip(LastKey))
+    {
+        const FVector From = Track(LastKey, BoardRoot, LastKeyTime).GetRotation().RotateVector(DeckNose);
+        const FVector To = Track(Key, BoardRoot, KeyTime).GetRotation().RotateVector(DeckNose);
+        const FVector2D FromFlat(From.X, From.Y), ToFlat(To.X, To.Y);
+        if (FromFlat.Size() > .5f && ToFlat.Size() > .5f && FVector2D::DotProduct(FromFlat, ToFlat) < 0) bBoardReversed = !bBoardReversed;
+    }
     UpdateFakie(&Body, Dt);
     Run(Layers, Inertialize, Dt, bCutBoard, bTurn && Inertialize > 0 ? &Turn : nullptr);
     LastKey = Key; LastKeyTime = KeyTime; LastMotion = Body.Motion; LastMotionTime = Body.MotionTime;
@@ -941,7 +963,8 @@ void FRideAnimator::Evaluate(const FRideBodyPose& Body, const FRideBoardPose& Bo
     LastPlace = Place; LastPoseDeck = Pose[DeckIndex];
     Bones.SetNum(Pose.Num(), EAllowShrinking::No);
     for (int32 I = 0; I < Pose.Num(); ++I) Bones[I] = Pose[I] * Place;
-    if (Body.bSwitch) Bones[DeckIndex] = FTransform(FQuat(DeckUp, PI)) * Bones[DeckIndex];
+    // A board left end for end by a trick turns the same way (and riding switch on it, the two cancel).
+    if (Body.bSwitch != bBoardReversed) Bones[DeckIndex] = FTransform(FQuat(DeckUp, PI)) * Bones[DeckIndex];
     LevelTrucks(Board, Bones[DeckIndex], Dt);
     PlaceBoard(Board, Bones);
     // On the ground the whole pose moves along the ground's normal (the feet stay on the deck): rolling, so that the
@@ -981,6 +1004,7 @@ void FRideAnimator::EvaluateFree(float Dt, TArray<FTransform>& Bones)
     Run(Layers, Inertialize, Dt);
     LastKey = Key; LastKeyTime = TimeOf(Layers, Key);
     Lock = FMath::Clamp(Layers.Lock, 0.f, 1.f); Lift = 0;
+    bBoardReversed = false;     // off the board, its clips show it as they hold it
     const TArray<FTransform>& Pose = Mesh->GetComponentSpaceTransforms();
     Bones = Pose.Num() == Names.Num() ? Pose : Reference;
     bFirst = false;

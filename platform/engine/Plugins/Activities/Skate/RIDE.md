@@ -225,7 +225,12 @@ into the graph's inputs, runs the graph and places the pose on the board.
   lean when a wall hit stops the turn; steering moves it at most 0.11 a tick) inertializes like a clip change. A clip
   that ends with the board turned end for end (a hardflip or an inward heelflip caught backwards) hands the board to
   the next clip at once (a blend profile with the board at time factor 0) while the body blends: the board looks the
-  same either way round, and a blend would spin it back in the air.
+  same either way round, and a blend would spin it back in the air. It stays end for end, as Native's board does (a
+  body left as it was caught): every clip after it stands on a board the right way round, so from that handover the
+  animator shows the deck turned half a turn about its normal (`IsBoardReversed()`, nose trailing) until another
+  half-turn trick (a shove-it, a varial, a hardflip or an inward heelflip, ending within 90 degrees of a half turn)
+  turns it back. A flip on a board end for end rolls the other way about the board's own length, as Native's does. A
+  new ride starts the right way round, and the run-out reads the rider's way from the shown deck through both turns.
 - **For the physical rider.** The pose is the motor target (below), so it has to be continuous. `FRideBodyPose`
   carries what the controller needs besides it: the motion and its time, the landing's impact and age, the grind and
   manual state and the bail's start.

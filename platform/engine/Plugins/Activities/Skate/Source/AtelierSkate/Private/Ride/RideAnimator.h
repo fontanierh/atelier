@@ -93,6 +93,11 @@ public:
     /** The stance mirror the clips played with (a regular rider's, or a goofy one's riding switch). */
     bool GetMirror() const { return Last.bMirror; }
     float GetTorso() const { return Torso; }
+    /** The board end for end under the rider: a trick that catches it backwards (a shove-it, a varial, a hardflip or
+     *  an inward heelflip) leaves it so, nose trailing, until another one turns it back. The shown deck is then the
+     *  clips' turned half a turn about its normal, as riding switch turns it. A new ride starts the right way round. */
+    bool IsBoardReversed() const { return bBoardReversed; }
+    void ResetBoardTurn() { bBoardReversed = false; }
     USkeletalMeshComponent* GetMesh() const { return Mesh.Get(); }
 
 private:
@@ -115,6 +120,7 @@ private:
     FTransform TruckFromDeck[2], WheelFromTruck[4];
     FVector TruckAxis[2], WheelAxis[4];     // the deck's length and width in each bone's own frame
     FVector DeckUp = FVector::UpVector;     // the deck's normal in its own frame
+    FVector DeckNose = FVector::ForwardVector;      // its length, toward the nose
     float WheelRadius = 3.1f;
 
     // The clips by role.
@@ -154,6 +160,7 @@ private:
     ERideMotion LastMotion = ERideMotion::Roll;
     float LastMotionTime = 0;
     bool bFirst = true;
+    bool bBoardReversed = false;
     float Lock = 0, Lift = 0;
     float TruckRoll[2] = {0, 0};            // each truck's roll against the deck (degrees, about the deck's length)
     // The fakie channel: its weight, the torso value its clips blend by, its clock, and whether the rider rode fakie.
@@ -172,6 +179,7 @@ private:
     void Resolve();
     float FindCatch(const FTrickClips& Trick) const;
     const FTrickClips* TrickFor(atelier::ride::Flick Trick) const;
+    bool IsTrickClip(const UAnimSequence* Sequence) const;
     static float SampleTime(const UAnimSequence* Sequence, float Time, bool bLoop);
     /** The session's choice: the layers and the clip whose change starts a cross-fade (over Blend; 0 cuts, as the
      *  chained clips of one move do). */

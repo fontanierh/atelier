@@ -181,6 +181,7 @@ void FRideSession::Activate(const FRideWorld& World, const FVector& GroundPoint,
     Configure(bInGoofy, Preferences);
     Animator.Preload();
     Animator.Attach(World.Owner);
+    Animator.ResetBoardTurn();
     Names = Animator.GetNames(); Reference = Animator.GetReference();
     P = GroundPoint; V = InVelocity; Q = Rotation.GetNormalized();
     Travel = FVector::DotProduct(V, Q.GetForwardVector()) < -15.f ? -1.f : 1.f;
@@ -2017,7 +2018,8 @@ void FRideSession::MeasurePose(float Dt)
         {
             if (!Bones.IsValidIndex(ToeBone[F])) continue;
             const FVector Local = Bones[DeckBone].InverseTransformPosition(Bones[ToeBone[F]].GetLocation());
-            FootHeight[F] = float(Local.Z); FootAlong[F] = float(Local.X) * Travel;
+            // Along the travel: the deck's own length runs against it on a board left end for end.
+            FootHeight[F] = float(Local.Z); FootAlong[F] = float(Local.X) * Travel * (Animator.IsBoardReversed() ? -1.f : 1.f);
             // Off the deck: beyond its outline or clear of its grip.
             if (FMath::Abs(Local.X) > 42.f || FMath::Abs(Local.Y) > 14.f || Local.Z > 16.f || Local.Z < -4.f) ++FeetOff;
         }
@@ -2033,11 +2035,11 @@ void FRideSession::MeasurePose(float Dt)
 
 FString FRideSession::DescribePose() const
 {
-    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f turns=%u swt=%.3f mirror=%d camyaw=%.1f wheel=%.1f queries=%.1f/%d"),
+    return FString::Printf(TEXT("clip=%s ct=%.3f lock=%.2f lift=%.1f step=%.0f stepbone=%s dt=%.1f feet=%.1f,%.1f feetoff=%d nan=%d anim=%.3f hipboard=%.1f headyaw=%.1f chestyaw=%.1f fakiech=%.2f torso=%.2f feetalong=%.1f,%.1f turns=%u swt=%.3f mirror=%d reversed=%d camyaw=%.1f wheel=%.1f queries=%.1f/%d"),
         *Animator.GetMainClip().ToString(), Animator.GetMainTime(), Animator.GetLock(), Animator.GetLift(), PoseStep,
         Names.IsValidIndex(PoseStepBone) ? *Names[PoseStepBone].ToString() : TEXT("none"), PoseDt * 1000.f,
         FootHeight[0], FootHeight[1], FeetOff, PoseNaN, AnimCost, HipBoard, HeadYaw, ChestYaw, Animator.GetFakieWeight(), Animator.GetTorso(),
-        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Camera.Rotator().Yaw, WheelSpin, QueriesMean, QueriesWorst)
+        FootAlong[0], FootAlong[1], Turns, SwitchTime, Animator.GetMirror(), Animator.IsBoardReversed(), Camera.Rotator().Yaw, WheelSpin, QueriesMean, QueriesWorst)
         + DescribeFlick();
 }
 

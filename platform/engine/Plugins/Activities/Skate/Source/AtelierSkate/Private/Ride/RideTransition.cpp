@@ -907,10 +907,11 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
     FRideTransition& T = Transit();
     if (Kind != ERideBailKind::RunOut || !Ride || !BoardRoot || T.Board != ERideBoard::Ride || !PrepareRideClips()) return false;
     const FVector Bail = Ride->GetBailVelocity();
-    // Riding switch the rider stands on the board the other way round, in the other stance: the way is his.
+    // Riding switch the rider stands on the board the other way round, in the other stance: the way is his. On a board
+    // a trick left end for end, the shown deck's nose trails too.
     const bool bSwitched = Ride->IsSwitch();
     FQuat DeckRotation = BoardRoot->GetComponentQuat();
-    if (bSwitched) DeckRotation = FQuat(DeckRotation.GetUpVector(), PI) * DeckRotation;
+    if (bSwitched != Ride->GetAnimator().IsBoardReversed()) DeckRotation = FQuat(DeckRotation.GetUpVector(), PI) * DeckRotation;
     float Along = FVector::DotProduct(Bail, DeckRotation.GetForwardVector());
     float Across = FVector::DotProduct(Bail, DeckRotation.GetRightVector());
     if (bGoofy == bSwitched) Across = -Across;              // the clips are authored goofy
@@ -957,7 +958,7 @@ bool USkateComponent::BeginRunOut()
     const bool bSwitched = Ride->IsSwitch();
     const bool bMirror = bGoofy == bSwitched;
     const FTransform Bailed = BoardRoot->GetComponentTransform();
-    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw) + (bSwitched ? 180.f : 0.f);
+    const float DeckYaw = float(Bailed.GetRotation().GetForwardVector().Rotation().Yaw) + (bSwitched != Ride->GetAnimator().IsBoardReversed() ? 180.f : 0.f);
     const float Yaw = DeckYaw - ClipYawToWorld(ClipDeckYaw(Clip, 0.f), bMirror, 0.f);
     const FVector Carried = Ride->GetBailVelocity();
     const FVector Flat(Carried.X, Carried.Y, 0.f);
