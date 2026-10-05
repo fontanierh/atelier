@@ -211,8 +211,8 @@ HOUSE_X=(min(x for _,x,_,_ in layout.house_sites())-5,max(x for _,x,_,_ in layou
 def land_use(x,y):
     """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 6 m of a street's paving
     (layout.road_width), packed earth in the yards behind."""
-    if x<398:   # west of the streets, the hillside: a paved verge either side of the road, wider under the gate
-        return 'hd_walk' if arrival.road_distance(x,y)<(4.2 if x<382 else 4.2+(x-382)*.3) else 'hd_grass'
+    if x<398:   # west of the streets, the hillside (the road is arrival.py's ribbon): paving only under the gate
+        return 'hd_walk' if x>384 and arrival.road_distance(x,y)<(x-384)*.65 else 'hd_grass'
     if HOUSE_X[0]<x<HOUSE_X[1] and any(abs(y-c)<1.7 for c in HOUSE_LANES) and layout._clear_of_hero(x,y):return 'hd_walk'
     if grass_patch(x,y):return 'hd_grass'
     if min(abs(y-c) for c in ROAD_Y)<14 or min(abs(x-c)-layout.road_width(x=c)[0] for c in ROAD_X)<6:return 'hd_walk'

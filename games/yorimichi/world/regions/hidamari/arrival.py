@@ -22,7 +22,8 @@ PALETTE = {'ar_paddy_earth': (.22, .15, .065), 'ar_stubble_row': (.40, .29, .10)
            'ar_bank_lawn': (.16, .20, .07), 'ar_hasa_timber': (.25, .17, .09), 'ar_straw_bundle': (.56, .44, .20),
            'ar_hokora_timber': (.30, .17, .08), 'ar_hokora_roof': (.08, .09, .10), 'ar_red_cloth': (.60, .07, .04),
            'ar_shrine_stone': (.32, .31, .28), 'ar_gate_timber': (.22, .12, .06), 'ar_gate_roof': (.07, .08, .09),
-           'ar_gate_stone': (.30, .29, .26), 'ar_gate_sign': (.70, .64, .50), 'ar_lantern_glow': (1., .55, .25)}
+           'ar_gate_stone': (.30, .29, .26), 'ar_gate_sign': (.70, .64, .50), 'ar_lantern_glow': (1., .55, .25),
+           'ar_road_asphalt': (.085, .085, .09), 'ar_road_gravel': (.17, .155, .13), 'ar_road_line': (.62, .60, .55)}
 
 
 def palette():
@@ -186,9 +187,34 @@ def _gate(m, height):
     for s in (-1, 1):m.box((GATE_X+s*.23, GATE_Y, z+4.85), (.04, 4.2, .62), 'ar_gate_sign')
 
 
+def _ribbon(m, height):
+    """The road itself, draped on the hillside from the island road's end to the gate: asphalt with white edge
+    lines and gravel shoulders (the terrain's grid is too coarse to draw a narrow diagonal road)."""
+    road = _road()
+    for _ in range(4):                                               # round the bends (Chaikin), the ends kept
+        road = [road[0]]+[(p[0]*w+q[0]*(1-w), p[1]*w+q[1]*(1-w)) for p, q in zip(road, road[1:]) for w in (.75, .25)]+[road[-1]]
+    pts = []
+    for a, b in zip(road, road[1:]):
+        L = math.hypot(b[0]-a[0], b[1]-a[1]); n = max(1, int(L))
+        pts += [(a[0]+(b[0]-a[0])*k/n, a[1]+(b[1]-a[1])*k/n) for k in range(n)]
+    pts = [p for p in pts+[road[-1]] if p[0] <= GATE_X]
+    def side(k):                                                     # the left normal, from the neighbouring samples
+        p, q = pts[max(0, k-1)], pts[min(len(pts)-1, k+1)]
+        dx, dy = q[0]-p[0], q[1]-p[1]; L = math.hypot(dx, dy); return (-dy/L, dx/L)
+    normals = [side(k) for k in range(len(pts))]
+    bands = [(-3.4, -2.6, 'ar_road_gravel', .10), (-2.6, 2.6, 'ar_road_asphalt', .12), (2.6, 3.4, 'ar_road_gravel', .10),
+             (-2.45, -2.33, 'ar_road_line', .13), (2.33, 2.45, 'ar_road_line', .13)]
+    for k in range(len(pts)-1):
+        (p, n), (q, o) = (pts[k], normals[k]), (pts[k+1], normals[k+1])
+        for lo, hi, key, lift in bands:
+            corner = lambda c, v, w: (c[0]+v[0]*w, c[1]+v[1]*w, float(height(c[0]+v[0]*w, c[1]+v[1]*w))+lift)
+            m.poly([corner(p, n, hi), corner(p, n, lo), corner(q, o, lo), corner(q, o, hi)], key)
+
+
 def arrival(m, height):
     """HD_Arrival, in world space."""
     palette(); r = random.Random(4402)
+    _ribbon(m, height)
     for cell in cells(): _paddy(m, cell, height, r)
     _shrine(m, height)
     _gate(m, height)
