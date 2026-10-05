@@ -13,10 +13,12 @@ Sections, each a run of labelled shots: on foot (idle, walk, run, sprint, sprint
 and landings, the hard landing); the sprint alone, with its dust and speed lines; the double jump (standing, running,
 turned right round by the stick, and into the paraglider); the equipment close up (the sword and shield carried on the back from the side and
 from behind, crouched, and the paraglider in both hands from the front and the side); lock-on and the dodges (strafing, side hops, backflips); the sword (draw, combo,
-charged spin, dash attack, jump attack, sneakstrike, plunge); the sword guard without the shield (raised, a blow
+charged spin, dash attack, jump attack, sneakstrike, plunge); a fight; a Bokoblin knocked down by cuts, on its back
+and still taking blows; the sword guard without the shield (raised, a blow
 blocked, the sword parry) and the shield (guard, parry, the perfect dodge's flurry rush, sheathe) against a Bokoblin
 that attacks, the "Shield" setting switched off and on for them; getting hit (from the front, behind and the side, fall damage, the
-knockdown at no health); the paraglider (open, glide, steer, brake, close, reopen falling, land; stamina running out);
+knockdown at no health); the paraglider (open, glide, steer, brake, close, reopen falling, land; stamina running out); the paraglider's grip close up (both hands on its handles, straight and steering both
+ways, close and wide);
 swimming (swim, tread, dash, climb out; sinking out of stamina); climbing (grab, the eight directions, climb jumps
 until tired, a grab from the air, let go, kick off, over the top).
 
@@ -380,6 +382,28 @@ def fight():
     cut(); L.botw_clear()
 
 
+def knocked_down():
+    """A Bokoblin cut down by a combo: it lies on its back and still takes every blow."""
+    yield from place(*RUN)
+    yield from armed(True)
+    bok = spawn(170., 'idle')
+    yield from wait(.4)
+    camera(5.5, 95., .9, 0., fov=55.)   # wide and side on: the first blows knock it a few metres back
+    label('Cuts until the Bokoblin is knocked down')
+    t, down = 0., None
+    while t < 10. and (down is None or t - down < 4.5):
+        c = creature(bok)
+        if c is None:
+            break
+        if down is None and 'Down' in (c.get('clip') or ''):
+            down = t
+            label('Knocked down: it lies on its back and still takes every blow')
+        if math.hypot(c['location'][0] - here().x, c['location'][1] - here().y) < 240. and \
+                state()['action'] in ('None', 'CutS1', 'CutS2', 'CutS3', 'LockWait'):
+            tap('attack')
+        t += (yield)
+    cut(); L.botw_clear()
+
 def shield_setting(on):
     """The "Shield" setting, as the menu sets it (the move set takes it at once)."""
     L.set_preference('shield', 1. if on else 0.)
@@ -725,6 +749,28 @@ def glide():
     yield from refill()
 
 
+def glider_grip():
+    """The hands on the paraglider's handles, close (from below them) and wide: gliding straight and steering both
+    ways."""
+    yield from place(*RUN)
+    L.launch(unreal.Vector(0, 0, 3000))
+    yield from until(lambda s: s['vz'] > 500., 1.)
+    yield from until(lambda s: s['vz'] < 80., 4.)
+    yield from open_glider()
+    live.drive(1., 0., 'run'); yield from wait(1.)
+    for dist, rel, h, view in ((1.9, 25., .5, 'close'), (3.2, 165., 1., 'wide')):
+        camera(dist, rel, h, .75, track='facing', turn=.08)
+        label(f'Paraglider grip, {view}: both hands on its handles, gliding straight')
+        live.drive(1., 0., 'run'); yield from wait(1.4)
+        label(f'Paraglider grip, {view}: steering right, it banks into the turn')
+        live.drive(.3, 1., 'run'); yield from wait(1.6)
+        label(f'Paraglider grip, {view}: steering left')
+        live.drive(.3, -1., 'run'); yield from wait(1.6)
+    live.drive(0)
+    cut()
+    yield from until(lambda s: s['mode'] in ('ground', 'swim'), 20.)
+    yield from refill()
+
 def swim():
     yield from place(SWIM, LAKE[:2], height=LAKE[2] - 1.)
     camera(3.0, 120., .8, .1, track='facing', turn=.05, water=True)
@@ -849,8 +895,8 @@ def climb():
 
 
 SECTIONS = [('On foot', on_foot), ('Sprint', sprint), ('Double jump', double_jump), ('Equipment', gear), ('Lock-on and dodges', dodges),
-            ('Sword', sword), ('Fight', fight), ('Sword guard', sword_guard), ('Shield', shield), ('Getting hit', hits), ('Paraglider', glide),
-            ('Swimming', swim), ('Climbing', climb)]
+            ('Sword', sword), ('Fight', fight), ('Knocked down', knocked_down), ('Sword guard', sword_guard), ('Shield', shield),
+            ('Getting hit', hits), ('Paraglider', glide), ('Paraglider grip', glider_grip), ('Swimming', swim), ('Climbing', climb)]
 SECTIONS = [s for s in SECTIONS if s[0] in (globals().get('ONLY') or [s[0] for s in SECTIONS])]
 
 
