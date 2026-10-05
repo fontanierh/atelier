@@ -393,7 +393,7 @@ in but no one has ridden it yet.
 | K9 | Physics follow-up: a stability sweep, the get-up's foot margin, a second rider's legs and accessories at its feet | Open | `URidePhysicalRider` |
 | G6 | No wipeout control (the left stick in a bail) and no active falls (flail, brace) | Not built on the Chaos bail | `StartBail`, the `Bail` profile |
 | G18 | No skitching, moving objects, board throw, jump-out or fakie dismount clips | Not built | `RideTransition.cpp` |
-| G20 | No sounds per surface or grind material, no ragdoll impacts, no tail scrape | One surface material; not built | `UpdateAudio` |
+| G20 | No sounds per grind material, no ragdoll impacts, no tail scrape (ground surfaces have their own roll, pop and land) | Not built | `UpdateAudio` |
 | G22 | The camera jumps 30 cm or more on some mounts; a kicked-out board stays in the world | Pending | The transitions, the game's camera |
 | G29 | The air dismount clips for a Christ air and a tuck knee look wrong (inferred) | Unchecked | `RideTransition.cpp` |
 | G30 | On the Native backend Y, D-pad, Start and Back never reach the session; the keyboard has no X | The reference's input wiring | `ReadHostPad` |

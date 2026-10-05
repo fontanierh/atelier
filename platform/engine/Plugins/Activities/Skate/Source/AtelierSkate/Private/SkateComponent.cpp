@@ -79,6 +79,10 @@ void USkateComponent::Initialize(ACharacter* Character)
     UE_LOG(LogTemp, Display, TEXT("SKATE available=%d board=%s"), bAvailable, DeckMesh ? *DeckMesh->GetName() : TEXT("none"));
 }
 
+// The surfaces with sounds of their own (roll_<name>_01, land_<name>_NN, pop_<name>_NN), in ESkateSurface order from Wood;
+// Concrete plays the plain roll, land and pop.
+const TArray<const TCHAR*> USkateComponent::SurfaceRolls = {TEXT("wood"), TEXT("metal"), TEXT("asphalt"), TEXT("stone"), TEXT("dirt"), TEXT("grass"), TEXT("sand")};
+
 void USkateComponent::LoadSounds()
 {
     const USkateSettings* Settings = GetDefault<USkateSettings>();
@@ -91,24 +95,41 @@ void USkateComponent::LoadSounds()
     FSoundAttenuationSettings& A = Attenuation->Attenuation;
     A.bAttenuate = true; A.bSpatialize = true; A.AttenuationShape = EAttenuationShape::Sphere;
     A.AttenuationShapeExtents = FVector(500.f, 0.f, 0.f); A.FalloffDistance = 4500.f; A.DistanceAlgorithm = EAttenuationDistanceModel::NaturalSound; A.dBAttenuationAtMax = -48.f;
-    for (const TCHAR* Cue : {TEXT("pop"), TEXT("land"), TEXT("catch"), TEXT("push"), TEXT("flick"), TEXT("clatter")})
+    TArray<FString> Cues = {TEXT("pop"), TEXT("land"), TEXT("catch"), TEXT("push"), TEXT("flick"), TEXT("clatter")};
+    for (const TCHAR* Surface : SurfaceRolls) { Cues.Add(FString::Printf(TEXT("land_%s"), Surface)); Cues.Add(FString::Printf(TEXT("pop_%s"), Surface)); }
+    for (const FString& Cue : Cues)
     {
         const int32 First = Waves.Num();
-        for (int32 I = 1; I <= 8; ++I) if (USoundWave* W = Load(FString::Printf(TEXT("%s_%02d"), Cue, I))) Waves.Add(W);
-        if (Waves.Num() > First) CueRange.Add(Cue, FIntPoint(First, Waves.Num() - First));
+        for (int32 I = 1; I <= 8; ++I) if (USoundWave* W = Load(FString::Printf(TEXT("%s_%02d"), *Cue, I))) Waves.Add(W);
+        if (Waves.Num() > First) CueRange.Add(FName(*Cue), FIntPoint(First, Waves.Num() - First));
     }
     for (const FSoftObjectPath& Path : Settings->FallSounds)
         if (USoundWave* W = Cast<USoundWave>(Path.TryLoad()))
         { const int32 First = CueRange.Contains(TEXT("fall")) ? CueRange[TEXT("fall")].X : Waves.Num(); Waves.Add(W); CueRange.FindOrAdd(TEXT("fall"), FIntPoint(First, 0)).Y++; }
     int32 Index = 0;
-    for (const TCHAR* Name : {TEXT("roll_01"), TEXT("grind_01"), TEXT("slide_01"), TEXT("skid_01"), TEXT("scrape_01")})
+    TArray<FString> LoopNames = {TEXT("roll_01"), TEXT("grind_01"), TEXT("slide_01"), TEXT("skid_01"), TEXT("scrape_01")};
+    for (const TCHAR* Surface : SurfaceRolls) LoopNames.Add(FString::Printf(TEXT("roll_%s_01"), Surface));
+    for (const FString& Name : LoopNames)
     {
         auto* C = NewObject<UAudioComponent>(Rider, *FString::Printf(TEXT("SkateLoop%d"), Index++));
         C->SetupAttachment(BoardRoot); C->bAutoActivate = false; C->bAllowSpatialization = true;
         C->AttenuationSettings = Attenuation; C->SetSound(Load(Name)); C->RegisterComponent();
         Loops.Add(C);
     }
+    LoopVolume.Init(0.f, Loops.Num());
     UE_LOG(LogTemp, Display, TEXT("SKATE sounds: %d one-shots, loops %d"), Waves.Num(), Loops.Num());
+}
+
+void USkateComponent::PlaySurfaceCue(FName Cue, float Volume, float Pitch)
+{
+    // The surface's own bank (land_wood) when there is one, else the cue's.
+    const int32 Roll = int32(Surface) - int32(ESkateSurface::Wood);
+    if (SurfaceRolls.IsValidIndex(Roll))
+    {
+        const FName Own(*FString::Printf(TEXT("%s_%s"), *Cue.ToString(), SurfaceRolls[Roll]));
+        if (CueRange.Contains(Own)) { PlayCue(Own, Volume, Pitch); return; }
+    }
+    PlayCue(Cue, Volume, Pitch);
 }
 
 void USkateComponent::PlayCue(FName Cue, float Volume, float Pitch)
@@ -125,27 +146,32 @@ void USkateComponent::PlayCue(FName Cue, float Volume, float Pitch)
 
 void USkateComponent::UpdateAudio(float Dt)
 {
-    if (Loops.Num() < 5) return;
+    if (Loops.Num() < 5 || LoopVolume.Num() != Loops.Num()) return;
     const float Speed = Vel.Size();
     const bool bRolling = Mode == ESkateMode::Ground && !bPowerslide;
+    const float Roll = bRolling ? FMath::Clamp(Speed / 450.f, 0.f, 1.f) * .85f : 0.f;
+    // The roll plays the surface's own loop when it has one, else the concrete roll; a change of surface crossfades.
+    const int32 Own = 5 + int32(Surface) - int32(ESkateSurface::Wood);
+    const int32 RollLoop = Surface >= ESkateSurface::Wood && Loops.IsValidIndex(Own) && Loops[Own] && Loops[Own]->Sound ? Own : 0;
     const float Want[5] = {
-        bRolling ? FMath::Clamp(Speed / 450.f, 0.f, 1.f) * .85f : 0.f,                                           // roll
+        RollLoop == 0 ? Roll : 0.f,                                                                              // roll
         Mode == ESkateMode::Grind && !bSlide ? .8f * FMath::Clamp(RailSpeed / 300.f, .45f, 1.f) : 0.f,              // grind
         Mode == ESkateMode::Grind && bSlide ? .85f * FMath::Clamp(RailSpeed / 300.f, .45f, 1.f) : 0.f,              // slide
         Mode == ESkateMode::Ground && bPowerslide ? .9f * FMath::Clamp(Speed / 400.f, 0.f, 1.f) * SlideAngle / 82.f : 0.f, // skid
         Mode == ESkateMode::Ground && bBraking ? .7f * FMath::Clamp(Speed / 300.f, .3f, 1.f) : 0.f };              // foot brake
     const float Pitch[5] = { .75f + .45f * FMath::Clamp(Speed / 1000.f, 0.f, 1.f), .85f + .3f * FMath::Clamp(RailSpeed / 800.f, 0.f, 1.f),
         .9f + .2f * FMath::Clamp(RailSpeed / 800.f, 0.f, 1.f), .9f + .3f * FMath::Clamp(Speed / 800.f, 0.f, 1.f), 1.f };
-    for (int32 I = 0; I < 5; ++I)
+    for (int32 I = 0; I < Loops.Num(); ++I)
     {
         UAudioComponent* C = Loops[I];
         if (!C || !C->Sound) continue;
+        const float Target = I < 5 ? Want[I] : I == RollLoop ? Roll : 0.f;
         // Quick attack (a grind starts at contact), a softer release.
-        LoopVolume[I] = FMath::FInterpTo(LoopVolume[I], Want[I], Dt, Want[I] > LoopVolume[I] ? 30.f : 10.f);
+        LoopVolume[I] = FMath::FInterpTo(LoopVolume[I], Target, Dt, Target > LoopVolume[I] ? 30.f : 10.f);
         if (LoopVolume[I] > .01f)
         {
             if (!C->IsPlaying()) C->Play(FMath::FRand() * 1.5f);
-            C->SetVolumeMultiplier(LoopVolume[I]); C->SetPitchMultiplier(Pitch[I]);
+            C->SetVolumeMultiplier(LoopVolume[I]); C->SetPitchMultiplier(I < 5 ? Pitch[I] : Pitch[0]);
         }
         else if (C->IsPlaying()) C->Stop();
     }

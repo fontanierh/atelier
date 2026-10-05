@@ -127,7 +127,7 @@ class MegaParkStopTests(unittest.TestCase):
         x = np.arange(x0, x1 + .01, .5)
         np.testing.assert_allclose(north_height(x, np.full_like(x, y)), oz, atol=.01)
         # The bridge ends short of the deck, whose edge runs at a slant across it (DECK_EDGE); a stone sill fills the
-        # gap. The edge is where the collision says, and within a step of the planks (at +0.03) across the bridge's
+        # gap. The edge is where the collision says, and within a step of the planks (at +0.005) across the bridge's
         # width: the deck rises 14 cm across it.
         (_, _), (end, _) = zeppelin.PARK_BRIDGE
         (ex, ey, ez), slope, rise = zeppelin.DECK_EDGE

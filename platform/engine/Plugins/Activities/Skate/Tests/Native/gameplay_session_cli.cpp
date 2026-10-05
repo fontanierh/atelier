@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Offline QA transport only. GameplaySession is the sole simulation owner.
+#include "GroundSurfaceRuntime.h"
 #include "GameplaySession.h"
 #include <algorithm>
 #include <charconv>
@@ -171,7 +172,7 @@ bool ReadWorld(const std::string& path,World& result,std::string& error)
     if(input.bad()){error="Cannot read collision snapshot: "+path;return false;}
     Json object;
     if(!Parse(text,object,error)
-        || !Fields(object,{"triangles","rails","spawn","heading"},{"triangles","rails","spawn","heading"},error)
+        || !Fields(object,{"triangles","rails","spawn","heading","surfaces"},{"triangles","rails","spawn","heading"},error)
         || !Vector(*Field(object,"spawn"),result.spawn,error)
         || !Float(*Field(object,"heading"),result.heading,error))return false;
     const auto& triangles=*Field(object,"triangles");
@@ -197,6 +198,17 @@ bool ReadWorld(const std::string& path,World& result,std::string& error)
             points.push_back({value.x,value.y,value.z});
         }
         result.collision.rails.push_back(std::move(points));
+    }
+    if(const auto* surfaces=Field(object,"surfaces"))
+    {
+        if(surfaces->kind!=Json::Array || surfaces->children.size()!=result.collision.triangles.size())
+        {error="Expected one packed surface per triangle";return false;}
+        for(const auto& surface:surfaces->children)
+        {
+            std::uint16_t value=0;
+            if(!Integer(surface,value,error))return false;
+            result.collision.surfaces.push_back(value);
+        }
     }
     bool valid=!result.collision.triangles.empty() && result.collision.triangles.size()<=500000
         && Finite(result.spawn) && std::isfinite(result.heading);
@@ -278,6 +290,8 @@ bool Publish(const GameplaySession& session,bool ready,std::uint32_t generation,
     out<<",\"reward\":";Number(out,score.last_reward);
     out<<",\"trick\":";Quoted(out,game.scoring.CurrentTrick());
     out<<",\"manual\":";Number(out,game.animation_input.fields.balance);
+    const auto ground=ReportGroundSurface(game.physical->riding);
+    out<<",\"surface\":["<<ground.physics<<','<<ground.sound<<','<<ground.wheels<<']';
     out<<",\"camera\":";
     if(pose.camera)
     {

@@ -1,4 +1,4 @@
 id = "skate"
 needs = ["combat"]                    # made from the combat masters plus synthesis
-build = "make.py"                     # -> build/yorimichi/audio/skate (5 loops, 6 cues)
+build = "make.py"                     # -> build/yorimichi/audio/skate (12 loops, 16 cues)
 licence = "Sonniss GDC bundles and own synthesis: may ship inside the game; no AI use"

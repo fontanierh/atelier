@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "PlayerInputPublication.h"
+#include "GroundSurfaceRuntime.h"
 #include "RidingAngles.h"
 #include "StockSettingsReader.h"
 #include <cstring>
@@ -70,7 +71,11 @@ bool PublishPlayerBoardOutputs(PhysicalPlayerInput& out,const PhysicalRidingOutp
 {
     if(!toolkit){error="Board output requires the current input toolkit";return false;}
     PublishPlayerBoardInput(out,riding.motion,riding.ground,{XYZ(toolkit->deck[2]),riding.reckoning.ground_normal,XYZ(riding.reckoning_frames.ground[1]),dynamic_normal.normal,processed.flags_2476});
-    out.ground.vector_80=Raw(riding.ground.wheel_normal);out.ground.flag_273=std::uint8_t((processed.flags_2468&0x100000)!=0);error.clear();return true;
+    out.ground.vector_80=Raw(riding.ground.wheel_normal);out.ground.flag_273=std::uint8_t((processed.flags_2468&0x100000)!=0);
+    // The surface the wheels vote for selects the next frame's ground profile (SelectSurface); untagged worlds vote 1.
+    std::array<bool,4> contacts;for(unsigned i=0;i<4;++i)contacts[i]=riding.ground.parts[i].in_contact;
+    if(!ChoosePlayerGroundSurface(riding.wheel_lines.physics_surfaces,contacts,false,out.surface_default_mode,error))return false;
+    error.clear();return true;
 }
 bool PublishPlayerGrindGraphOutputs(PhysicalPlayerInput& out,const SkeletonPhysicalRecord& record,Vec4 up,const std::optional<BoardToolkit>& toolkit,const PlayerTrajectoryGrindOwner& trajectory,std::string& error)
 {

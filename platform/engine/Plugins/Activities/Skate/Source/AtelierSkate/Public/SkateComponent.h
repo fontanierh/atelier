@@ -3,6 +3,7 @@
 #include "Components/ActorComponent.h"
 #include "SkateInput.h"
 #include "SkateFeel.h"
+#include "SkateSettings.h"
 #include "SkateComponent.generated.h"
 
 class ACharacter;
@@ -111,8 +112,11 @@ public:
     /** The yaw the chase camera should follow, when there is a clear direction of travel. */
     bool GetCameraYaw(float& Yaw) const;
     FString GetDebug() const;
-    /** "volume pitch" pairs for the roll, grind, slide, skid and scrape loops (films mix them offline). */
+    /** "volume pitch" pairs for the roll, grind, slide, skid and scrape loops, then the surfaces' own rolls (wood, metal,
+     *  asphalt, stone, dirt, grass, sand; see ESkateSurface) (films mix them offline). */
     FString GetLoopState() const;
+    /** What the wheels are rolling on (None in the air, or on collision the surface tables don't reach). */
+    ESkateSurface GetSurface() const { return Surface; }
 
     // QA
     FName GetLastTrick() const { return LastTrickName; }
@@ -132,14 +136,18 @@ private:
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Wheels;
     UPROPERTY() TObjectPtr<USkateRailSubsystem> RailSystem;
     // Sounds (USkateSettings::SoundFolder): board-attached loops and one-shot variants.
-    UPROPERTY() TArray<TObjectPtr<UAudioComponent>> Loops;      // roll, grind, slide, skid, scrape
+    UPROPERTY() TArray<TObjectPtr<UAudioComponent>> Loops;      // roll, grind, slide, skid, scrape, then roll_<surface>
     UPROPERTY() TArray<TObjectPtr<USoundWave>> Waves;
     UPROPERTY() TObjectPtr<USoundAttenuation> Attenuation;
     TMap<FName, FIntPoint> CueRange;                              // first wave index, count
-    float LoopVolume[5] = {0.f, 0.f, 0.f, 0.f, 0.f};
+    TArray<float> LoopVolume;
+    ESkateSurface Surface = ESkateSurface::None;
     int32 LastVariant = -1;
     void LoadSounds();
     void PlayCue(FName Cue, float Volume, float Pitch = 1.f);
+    /** Cue's bank for the surface under the board (land_wood), else Cue's. */
+    void PlaySurfaceCue(FName Cue, float Volume, float Pitch = 1.f);
+    static const TArray<const TCHAR*> SurfaceRolls;
     void UpdateAudio(float Dt);
     bool bAvailable=false, bGoofy=false, bScripted=false;
     FSkateFeel Feel;                 // FSkateFeel::Defaults() at Initialize unless SetFeel came first
