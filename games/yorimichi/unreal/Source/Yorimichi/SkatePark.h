@@ -6,7 +6,7 @@
 
 class FJsonObject;
 
-/** The skate pier: its meshes, rails and spawn points from Content/Data/skatepark/park.json (docs/SKATE.md). */
+/** A skate park's meshes, rails and spawns from its runtime manifest (docs/SKATE.md). */
 UCLASS()
 class YORIMICHI_API ASkatePark : public AActor
 {
