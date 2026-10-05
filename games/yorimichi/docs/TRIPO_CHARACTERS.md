@@ -23,59 +23,68 @@ uncertain POST. Blender stages run under the guard (`python -m atelier.safety.gu
 | Clean-up | `sword_trainer_cleanup.py` | one mesh, facing +X, soles on z = 0, `cleanup.glb` and review renders |
 | Tripo rig | `sword_trainer_pipeline.py rig --source cleanup.glb` | rig check, then Tripo's biped rig with Mixamo names under `Root` (25 credits) |
 | Fingers and own clips | `sword_trainer_rig.py` | 30 finger bones (`tripo_fingers.add_fingers`), the character's own clips |
-| **Eyes and light** | `sword_trainer_texture.py` | the texture de-lit, the face redrawn, geometry eyes (below) |
+| **Eyes and light** | `sword_trainer_texture.py` + `face.json` | the texture de-lit, eye and brow pieces solid, the face's skin clean, brows and mouth redrawn (below) |
 | Promote | `promote.py sword-trainer <revision>` | the blend and its records in `assets/characters/<id>/` |
 | Move set | `cairo/botw.py --character <id>` | the merged move set retargeted onto the body (106 Link clips and Cairo's own 4) |
 
 ## Eyes and light: the fix almost every Tripo character needs
 
-Tripo bakes things into its textures that the game must do itself or draws differently:
+Tripo bakes things into a character that the game must do itself or draws differently:
 
 - **Lighting.** The colour carries Tripo's own light: dark hair undersides, a gradient across the face, occlusion in
   every fold of the cloth. In the game the engine lights the character (with the characters' 30% emissive fill), so the
   baked light doubles up and the folds read as dirt.
-- **Eyes.** The eyes are soft painted ovals with muddy brown rims and highlights, nothing like Cairo's clean solid dark
-  ovals. The brows, the scar and the cheeks are scratchy pencil strokes and smudges.
-- **Normal map.** Tripo's normal map embosses its own drawing: repaint the eyes and their old outlines come back as
+- **Eyes.** Tripo models each eye as **a small mesh piece of its own**, set into a socket in the face, textured with
+  a soft painted oval, a muddy brown rim and a highlight: nothing like Cairo's clean solid dark ovals. It often does the
+  same for a brow. Painting the head's texture never reaches them, and new eyes drawn over them leave the old ones'
+  rims showing.
+- **Face drawing.** Brows, the mouth, a scar and the cheeks are scratchy pencil strokes and smudges on the skin, and
+  sometimes a strand of hair is painted onto a cheek beside the real one.
+- **Normal map.** Tripo's normal map embosses its own drawing: clean the colour and the old outlines come back as
   creases under any light. The game's character material uses no normal map; the review material should not either.
 
-`sword_trainer_texture.py` fixes all three on the promoted rig's blend, mesh, rig and clips untouched:
+`sword_trainer_texture.py` fixes all of it on the promoted rig's blend (mesh, rig and clips untouched), from a small
+**face spec** (`assets/characters/<id>/face.json`):
 
-1. **Every texel's place on the body is baked** (Cycles emission bakes of position and normal, at half the texture's
-   size to stay under the small slot's 4 GiB), because Tripo's UV atlas is cut into hundreds of islands: nothing can be
-   painted in texture space.
-2. **De-lighting.** Texels are grouped by colour (k-means in Lab, lightness at half weight, so a shadowed and a lit
-   patch of the same cloth fall together), and in each group the lightness is pulled toward the group's median,
-   keeping 35% (`--strength`) of its departure. Hue and chroma stay. The face's line work (mouth, nose, brows: texels on
-   the front of the head darker than the skin but lighter than the hair) is put back as it was, or the mouth fades away.
-3. **The face in a front view.** The texels of the front of the head are laid out at 0.6 mm a cell, each cell showing
-   its **frontmost** sample (the lightest sample instead shows skin under hair strands, and the strands then look like
-   marks), empty cells filled from their neighbours (the bake is sparser than the cells). The eyes are the pair of
-   roundish dark blobs enclosed by skin, mirrored about the middle.
-4. **Eyes as geometry.** Each eye becomes a thin disc fitted to the face (ray cast onto the surface, 2 mm off it),
-   skinned to the head bone, in its own solid material (`Eyes`, Cairo's dark brown): crisp at any distance, where a
-   texture over the cut-up atlas stays ragged. It is an upright oval (1.6 times as tall as wide) sized from the painted
-   eye's dark core. Under it the whole old drawing (core, outline, lashes: out to 1.42 times the drawing's oval) is
-   repainted with the skin round it diffused inward, so no flat patch shows as a halo.
-5. **Marks.** Small dark or mid-dark blobs inside the skin (under 9 mm: pencil strokes, the scratch between the brows,
-   a sketchy scar, temple hatching) are wiped to skin; brows, the mouth and the nose are kept, and anything larger (a
-   strand of hair over the forehead) is left alone.
+1. **Per-texel bakes** (Cycles emission, at half the texture's size to stay under the small slot's 4 GiB): every
+   texel's position and normal on the body, and its **mesh piece** (the welded pieces, encoded as a colour attribute).
+   Tripo's UV atlas is cut into hundreds of islands, so nothing can be painted in texture space; everything is decided
+   by where a texel sits on the body.
+2. **De-lighting.** Texels are grouped by colour (k-means in Lab, lightness at half weight), groups of one material
+   merged (a, b within 9, lightness within 25: a lit and a shaded patch of the same skin must be one group, or
+   flattening each to its own median leaves a step between them), and in each group the lightness is pulled toward its
+   median, keeping 35% (`--strength`) of its departure. Hue and chroma stay.
+3. **Eye and brow pieces recoloured.** The small pieces in front of the face at an eye (or on a brow in the spec) are
+   recoloured solid: the eyes Cairo's eye colour, the brows the brows' colour. Tripo's own crisp ovals become the eyes.
+   (Only when a character has no eye pieces does the tool draw eye discs fitted to the face instead.)
+4. **The face's skin, one smooth field.** On the head's piece, within 3.5 mm of the skin's surface (so a strand
+   standing in front is never touched), inside the face's outline: every texel that is not hair takes a widely
+   averaged skin colour, which wipes every pencil stroke, smudge and leftover of baked light at once. Hair (the dark
+   colour groups) is kept, except hair painted onto the skin itself well inside the face.
+5. **Brows and mouth redrawn** from the spec: each a centreline with a thickness at each point, in fractions of the
+   character's height in a front view (y to her left, z up), painted solid on the skin layer, with a band of skin round
+   them to take the old scratchy edges. Round each eye the old drawing and its lashes are wiped too.
 6. **Normal map** disconnected.
 
-Look at `before-*` and `after-*` (face and body, lit and as albedo), `face-found.png` (what the front view saw: skin
-green, dark red, mid-dark yellow) and `face-map.png` (the eyes red, the brows blue, the marks yellow) before promoting.
-`texture.json` records the eyes' size and place, the colour groups and the counts.
+### Writing the face spec
 
-### Pitfalls met on the way
+Render the face straight on (`front` shots, `before-front-lit.png`), lay a grid over it (0.005 of the height a line)
+and read off: each eye's centre and the half size of the whole painted drawing; each brow's centreline points and
+thickness (a brow under a strand can run on under it: only the skin layer is painted); the mouth's centreline and
+thickness. Kaede's is `assets/characters/sword-trainer/face.json`. Then run the tool and judge **the straight-on face
+close-up and a three-quarter view, lit**, before promoting: `after-front-lit.png`, `after-face-lit.png`,
+`after-body-lit.png`. A judgement made on a small body render misses everything that matters here.
 
-- Wiping every dark blob inside the skin took hair strands over the forehead with it: only small blobs are marks.
-- Flattening all the skin to one colour erased the mouth; the de-light alone keeps it.
-- Repainting the eye rings everywhere but over "hair" (the darkest texels) skipped Tripo's dark eye outline, which is as
-  dark as hair: the band right round the eye is repainted whatever its colour.
-- Sizing the disc from the whole drawing made round eyes; the width comes from the dark core.
-- The face mask must reach the sides of the face (normals more than 0.05 toward the front), or the outer corners of the
-  old eyes stay.
-- A full-resolution bake (4096) went over the small slot's 4 GiB; the colour work is done in row bands.
+### What did not work (Kaede, 2026-10-05)
+
+- Finding the brows, the mouth and the marks automatically: a strand crossing a brow merged with it, the mouth was
+  missed or flattened, a strand across the forehead was taken for a mark and painted skin. Hand-read positions in a
+  small spec were reliable where every heuristic failed somewhere.
+- Painting new eyes into the texture: the fragmented atlas and the half-size position bake leave ragged edges, and the
+  old eye pieces' rims stay in front. Geometry discs on top of the old pieces still showed their rims.
+- Smoothing the eye sockets out of the mesh: unnecessary once the eye pieces are recoloured, and it risks burying them.
+- Wiping "everything dark inside the skin" (hair over the forehead went with it), and flattening the skin to one
+  colour (the mouth went with it).
 
 ## Rig notes
 

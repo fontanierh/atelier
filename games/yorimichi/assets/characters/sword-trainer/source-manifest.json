@@ -1,6 +1,6 @@
 {
   "native": "SwordTrainer-Rig-r02.blend",
-  "native_sha256": "9023edef9e85f64823df69051c3b605abc0d5908d8d509b4d2fa898373a00515",
+  "native_sha256": "335ccec7818953b90e16f92c801937bc3c035084127179d07029297306d0fa34",
   "fps": 30,
   "height_cm": 168,
   "rig": "humanoid contract with fingers: 23 Tripo body bones (Mixamo names under Root) and 30 finger bones",
