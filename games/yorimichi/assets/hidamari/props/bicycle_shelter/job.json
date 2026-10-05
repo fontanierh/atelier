@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "bicycle_shelter",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "6125dd1ded37897c80b9f8b525452a59bd0a2f4701f6ee7cafea5ad84e976179",
+  "concept_sha256": "6125dd1ded37897c80b9f8b525452a59bd0a2f4701f6ee7cafea5ad84e976179",
+  "submitted_at": "2026-10-05T12:04:43.985584+00:00",
+  "task_id": "e8e21383-fd9e-49cc-88cc-c7652059194e",
+  "status": "submitted",
+  "user_approval": "Henry (CEO): use the Tripo credits; topped up again 2026-10-05; move-sets submitted first (#558)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T12:06:30.777212+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

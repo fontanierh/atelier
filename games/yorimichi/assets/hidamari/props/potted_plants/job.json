@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "potted_plants",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "f9ab63c527103f0da6493f2cdad2f145f481be5d19e114615b7d45c9ded87d23",
+  "concept_sha256": "f9ab63c527103f0da6493f2cdad2f145f481be5d19e114615b7d45c9ded87d23",
+  "submitted_at": "2026-10-04T21:34:50.053845+00:00",
+  "task_id": "c06a4bb0-d990-4c31-b377-a7617a9fcefe",
+  "status": "submitted",
+  "user_approval": "Henry (CEO), 2026-10-04: full greenlight for the Hidamari art pass, use all available Tripo credits",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-04T21:36:58.352283+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

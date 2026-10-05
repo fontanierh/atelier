@@ -25,6 +25,8 @@ public:
     const TArray<FJapanPreference>& GetValues() const { return Values; }
     bool SetValue(const FString& Key, float Value);
     void ToggleMenu();
+    // Every Light key back to its default.
+    void ResetLight();
     /** Opens the menu on its Skate feel page. */
     void OpenSkateMenu() { OpenMenu(true); }
     /** The skate_ values as the board's feel (FSkateFeel; docs/SKATE.md, "Feel"). */
@@ -43,6 +45,7 @@ private:
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     TArray<FJapanPreference> Values;
     TMap<FString,FString> SavedValues;
+    TMap<FString,float> DefaultValues;
     FString SettingsFile;
     TSharedPtr<SWidget> Menu;
     int32 AppliedPerformanceMode = -1;

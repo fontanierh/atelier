@@ -14,6 +14,7 @@ MEL=unreal.MaterialEditingLibrary
 # HD_Sea's rectangle in Blender metres (x0, y0, x1, y1: hidamari/build.py sea_mesh) and the width of its calm border (m)
 SEA_RECT=(300,-1600,1800,600)
 EDGE=200
+FAR_FADE=(300,900)   # metres: the lit harbour water gives way to the open sea look with distance
 
 
 def texture(name):
@@ -63,12 +64,14 @@ def material(water=False):
         # E: 0 on the rectangle's outline .. 1 once EDGE m inside. On the outline this is the open sea (M_Sea, sea_look.py):
         # its waves, its authored emissive colour, black base colour and its roughness and specular. Inward the
         # harbour's own lit water takes over, so the rectangle does not show on the sea around it.
+        # Seen from afar (FAR_FADE m) the whole rectangle becomes the open sea: from the hills and the air its lit
+        # water, which mirrors the sky differently, showed as a darker rectangle on the sea.
         x0,y0,x1,y1=SEA_RECT
+        depth=node(unreal.MaterialExpressionPixelDepth)
         edge=custom(f'''
 float x=P.x*.01, y=-P.y*.01;     // Blender metres: Unreal's y is negated
-return smoothstep(0,1,saturate(min(min(x-{x0}.,{x1}.-x),min(y-({y0}.),{y1}.-y))/{EDGE}.));
-''',[('P',pos,'')],FLOAT1)
-        depth=node(unreal.MaterialExpressionPixelDepth)
+return smoothstep(0,1,saturate(min(min(x-{x0}.,{x1}.-x),min(y-({y0}.),{y1}.-y))/{EDGE}.))*(1-smoothstep({FAR_FADE[0]*100}.,{FAR_FADE[1]*100}.,D));
+''',[('P',pos,''),('D',depth,'')],FLOAT1)
         # H: with distance the lit water gives way to the same haze as the open sea's.
         haze=custom(S.HAZE,[('D',depth,'')],FLOAT1)
         sea=custom(S.WAVES,[('P',pos,''),('T',time,'')])

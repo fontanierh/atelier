@@ -1,0 +1,35 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "This is an art-direction redesign for Yorimichi, a stylised Japanese autumn exploration game made in Unreal. Image 1 is a real, unretouched screenshot of the game as it is now. Repaint THE SAME VIEW from the same camera, keeping the layout, street grid, terrain, building positions, sea and sky composition, but redesigned to the standard of a polished commercial stylised game (think Ghibli-inspired, hand-crafted, cosy, dense and lived-in): textured materials with soft hand-painted detail instead of flat untextured colour, coherent warm autumn palette, gentle afternoon sunlight. It must stay a believable real-time game frame built from meshes, textures and foliage, not a loose illustration. No text, no UI, no watermark. The temple hillside district. Today it is a vast empty flat mint lawn with sparse lollipop trees and lamp posts in rows, and the temple is a dark boxy barn. Redesign: a terraced hillside temple precinct with mossy stone retaining walls, stone stairs and a stone-paved approach lined with stone lanterns, a proper Japanese temple hall with deep curved tiled roof, a pagoda, raked gravel courtyard, moss gardens, a small graveyard, dense maple and cedar groves, bamboo, fences and hedges. The ground is textured (moss, grass with variation, gravel, stone), never flat colour.",
+  "references": {
+    "112_district_temple_hillside.png": "c1eb80e0a2787a0482c933d6e01c3c2c1225f6f00d4fc76a0dcb8d8eae36f14a"
+  },
+  "purpose": "Hidamari art-direction redesign (planning)",
+  "status": "done",
+  "started_at": "2026-10-04T20:17:09.550088+00:00",
+  "usage": {
+    "input_tokens": 1215,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 295
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2587
+  },
+  "png_sha256": "54db258b0a4b47cf166fd4b7d92582a69913abca7dd36445bcb33d7940f6364a",
+  "seconds": 36.7,
+  "finished_at": "2026-10-04T20:17:46.244056+00:00",
+  "compact_copy": {
+    "file": "temple_hillside.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  }
+}

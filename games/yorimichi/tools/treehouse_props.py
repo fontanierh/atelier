@@ -124,15 +124,17 @@ def made_from(job):
     return job.get('concept_sha256') or job.get('input_sha256')
 
 
-def model(slug, faces, approval, dry):
-    folder = OUT/slug; work = TRIPO/slug
-    if not (folder/'concept.jpg').exists() or not (folder/'provenance.json').exists(): return slug, 'no concept'
-    wanted = json.loads((folder/'provenance.json').read_text()).get('concept_sha256')
-    if not wanted: return slug, 'the concept has no hash in provenance.json'
+def model(slug, faces, approval, dry, out=None, tripo=None, originals=None, stage='treehouse_prop', record='provenance.json'):
+    """out, tripo, originals: the committed props, Tripo work and full-size concept folders (default the tree
+    house's), record: the concept's provenance file; tools/hidamari_props.py models the city's props with the same steps."""
+    folder = (out or OUT)/slug; work = (tripo or TRIPO)/slug
+    if not (folder/'concept.jpg').exists() or not (folder/record).exists(): return slug, 'no concept'
+    wanted = json.loads((folder/record).read_text()).get('concept_sha256')
+    if not wanted: return slug, f'the concept has no hash in {record}'
     done = folder/'job.json'
     if done.exists() and (folder/f'{slug}.glb').exists() and made_from(json.loads(done.read_text())) == wanted:
         print(slug, 'already modelled from this concept', flush=True); return slug, None
-    original = ORIGINALS/'props'/slug/'concept.png'   # the full-size painting when this machine made it
+    original = (originals or ORIGINALS/'props')/slug/'concept.png'   # the full-size painting when this machine made it
     image = original if original.exists() and sha(original.read_bytes()) == wanted else folder/'concept.jpg'
     if dry:
         print(f'--- {slug}: would submit {rel(image)} to Tripo P2 image-to-model, {faces} faces', flush=True)
@@ -157,7 +159,7 @@ def model(slug, faces, approval, dry):
                 response = call(client, 'POST', '/generation/image-to-model', json=payload)
                 write_json(private/'submission-response.json', response, private=True)
                 if job_path.exists(): job_path.rename(work/f'job.{int(time.time())}.json')
-                write_json(job_path, {'stage': 'treehouse_prop', 'slug': slug, 'endpoint': '/generation/image-to-model',
+                write_json(job_path, {'stage': stage, 'slug': slug, 'endpoint': '/generation/image-to-model',
                                       'settings': settings, 'input': image.name, 'input_sha256': sha(image.read_bytes()),
                                       'concept_sha256': wanted, 'submitted_at': now(),
                                       'task_id': response['data']['task_id'], 'status': 'submitted',

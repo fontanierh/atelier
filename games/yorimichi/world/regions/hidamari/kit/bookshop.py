@@ -19,7 +19,7 @@ def palette(variant):
     v.PALETTE.update({
         'bk_plaster':(.56,.48,.34) if variant==0 else (.58,.48,.31),
         'bk_fascia':(.43,.27,.12),'bk_cream':(.68,.58,.40),'bk_timber':(.32,.18,.07),
-        'bk_roof':(.05,.08,.13),'bk_roof_light':(.09,.12,.19),
+        'bk_roof':(.055,.042,.034),'bk_roof_light':(.09,.07,.055),   # brown-black tile
         'bk_awning':(.05,.12,.26) if variant==0 else (.30,.09,.04),
         'bk_rib':(.24,.38,.52) if variant==0 else (.64,.36,.18),
         'bk_deck':(.24,.12,.045),'bk_stone':(.30,.28,.22),'bk_ginkgo':(.60,.38,.05),

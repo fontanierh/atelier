@@ -3,6 +3,8 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import hashlib,json
 from pathlib import Path
 import unreal
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))
+import atmosphere  # noqa: E402
 
 ROOT = yori.OUT
 OUT=ROOT/'village'
@@ -22,20 +24,11 @@ def material():
         return e
     def link(a,ao,b,bi):assert MEL.connect_material_expressions(a,ao,b,bi)
     vc=node(unreal.MaterialExpressionVertexColor,-650,0)
-    depth=node(unreal.MaterialExpressionPixelDepth,-650,250)
-    sub=node(unreal.MaterialExpressionSubtract,-450,250,const_b=7000.)
-    div=node(unreal.MaterialExpressionDivide,-280,250,const_b=220000.)
-    sat=node(unreal.MaterialExpressionSaturate,-120,250)
-    amp=node(unreal.MaterialExpressionMultiply,40,250,const_b=.5)
-    fog=node(unreal.MaterialExpressionConstant3Vector,-280,420,constant=unreal.LinearColor(.64,.68,.76,1))
-    mix=node(unreal.MaterialExpressionLinearInterpolate,200,0)
-    link(depth,'',sub,'A');link(sub,'',div,'A');link(div,'',sat,'');link(sat,'',amp,'A')
     linear=node(unreal.MaterialExpressionCustom,-430,0,
         code='return lerp(C/12.92,pow((C+0.055)/1.055,2.4),step(0.04045,C));',
         output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     arg=unreal.CustomInput();arg.set_editor_property('input_name','C');linear.set_editor_property('inputs',[arg])
-    link(vc,'',linear,'C');link(linear,'',mix,'A');link(fog,'',mix,'B');link(amp,'',mix,'Alpha')
-    assert MEL.connect_material_property(mix,'',unreal.MaterialProperty.MP_BASE_COLOR)
+    link(vc,'',linear,'C')
     rough=node(unreal.MaterialExpressionConstant,200,450,r=1.0)
     spec=node(unreal.MaterialExpressionConstant,200,550,r=0.0)
     MEL.connect_material_property(rough,'',unreal.MaterialProperty.MP_ROUGHNESS)
@@ -46,7 +39,10 @@ def material():
         output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     arg=unreal.CustomInput();arg.set_editor_property('input_name','C');fill.set_editor_property('inputs',[arg])
     link(linear,'',fill,'C')
-    MEL.connect_material_property(fill,'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    # aerial perspective shared with the sea and the land (atmosphere.py)
+    base,glow=atmosphere.apply(m,linear,fill,x=420,y=0)
+    assert MEL.connect_material_property(base,'',unreal.MaterialProperty.MP_BASE_COLOR)
+    assert MEL.connect_material_property(glow,'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     wind=node(unreal.MaterialExpressionCustom,400,850,
         code='float phase=T*1.7+P.x*.002+P.y*.003; return float3(sin(phase)*2.2,cos(phase*.81)*1.3,sin(phase*1.3)*.4)*W*W;',
         output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3)
@@ -94,13 +90,15 @@ def resident_material():
 PLACEHOLDER=yori.OUT/'village'/'assets'/'Village_Sign.fbx'   # small, and builds without warnings
 
 
-def import_mesh(path,dest,name):
+def import_mesh(path,dest,name,fresh_slots=False):
+    """fresh_slots: take the material slots from the FBX instead of conserving the asset's old ones (meshes whose
+    slots name their surfaces; legacy reimport otherwise keeps the placeholder's or a previous build's slot)."""
     if not EAL.does_asset_exist(dest+'/'+name) and Path(path).resolve()!=PLACEHOLDER.resolve():
         _import_mesh(PLACEHOLDER,dest,name)
-    return _import_mesh(path,dest,name)
+    return _import_mesh(path,dest,name,fresh_slots)
 
 
-def _import_mesh(path,dest,name):
+def _import_mesh(path,dest,name,fresh_slots=False):
     task=unreal.AssetImportTask()
     task.filename=str(path);task.destination_path=dest;task.destination_name=name
     task.automated=True;task.replace_existing=True;task.replace_existing_settings=True;task.save=True
@@ -123,6 +121,7 @@ def _import_mesh(path,dest,name):
                         'convert_scene_unit','import_uniform_scale','one_convex_hull_per_ucx',
                         'vertex_color_import_option','normal_import_method'):
                 prior.set_editor_property(key,d.get_editor_property(key))
+        if fresh_slots: existing.set_editor_property('static_materials',[])
     task.options=ui;AT.import_asset_tasks([task])
     mesh=EAL.load_asset(dest+'/'+name)
     assert mesh and task.imported_object_paths,'FBX import failed: '+name

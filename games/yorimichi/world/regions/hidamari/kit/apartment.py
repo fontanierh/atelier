@@ -22,7 +22,8 @@ def palette(variant):
         'ap_plaster':(.58,.49,.34) if variant==0 else (.55,.49,.38),
         'ap_timber':(.30,.16,.06),'ap_timber_dark':(.17,.085,.03),
         'ap_wood':(.40,.21,.07),'ap_wood_light':(.46,.26,.10),
-        'ap_roof':(.13,.165,.24) if variant==0 else (.11,.145,.21),'ap_roof_edge':(.075,.095,.155),
+        'ap_roof':(.085,.088,.094) if variant==0 else (.07,.09,.13),   # grey metal, or a deep blue one (not a town of blue)
+        'ap_roof_edge':(.05,.052,.058) if variant==0 else (.045,.056,.085),
         'ap_awning':(.09,.15,.36) if variant==0 else (.06,.17,.19),
         'ap_awning2':(.11,.17,.39) if variant==0 else (.08,.20,.22),
         'ap_sign':(.07,.13,.36) if variant==0 else (.18,.08,.05),

@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "phone_booth",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "bcfd74d742b0f32ddb6fc79a2eb596dd091b2cf9822787e9dab817f1c975a002",
+  "concept_sha256": "bcfd74d742b0f32ddb6fc79a2eb596dd091b2cf9822787e9dab817f1c975a002",
+  "submitted_at": "2026-10-04T21:31:04.901192+00:00",
+  "task_id": "a7bd47ba-fa9f-44ca-b20b-a5342757a00e",
+  "status": "submitted",
+  "user_approval": "Henry (CEO), 2026-10-04: full greenlight for the Hidamari art pass, use all available Tripo credits",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-04T21:32:51.745128+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

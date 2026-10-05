@@ -33,7 +33,7 @@ R=random.Random(76)
 class Mesh:
     def __init__(self,name):
         self.name=name;self.vertices=[];self.faces=[];self.colors=[];self.transform=Matrix.Identity(4)
-        self.colliders=[]
+        self.colliders=[];self.keys=[]   # keys: each face's palette key, None for a colour given as a tuple
     @contextmanager
     def at(self,position=(0,0,0),yaw=0):
         old=self.transform.copy()
@@ -47,7 +47,7 @@ class Mesh:
             if not any((p-q).length_squared<1e-16 for q in clean):clean.append(p)
         if len(clean)<3:return
         if sum((clean[k]-clean[0]).cross(clean[k+1]-clean[0]).length for k in range(1,len(clean)-1))<1e-10:return
-        points=clean
+        points=clean;self.keys.append(color if isinstance(color,str) else None)
         if isinstance(color,str):color=PALETTE[color]
         i=len(self.vertices)
         self.vertices.extend(tuple(self.transform@Vector(p)) for p in points)

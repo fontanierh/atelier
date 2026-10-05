@@ -1,5 +1,6 @@
-"""Opaque vertex-colour landscape, with restrained blue atmospheric depth."""
+"""Opaque vertex-colour landscape, with the shared aerial perspective (atmosphere.py)."""
 import unreal
+import atmosphere
 
 def material():
     e=unreal.EditorAssetLibrary;l=unreal.MaterialEditingLibrary
@@ -9,7 +10,7 @@ def material():
     vc=l.create_material_expression(m,unreal.MaterialExpressionVertexColor,-500,0)
     depth=l.create_material_expression(m,unreal.MaterialExpressionPixelDepth,-500,200)
     c=l.create_material_expression(m,unreal.MaterialExpressionCustom,-100,0)
-    c.set_editor_property('code','float3 base=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C)); float haze=saturate((D-80000)/220000)*.09; return lerp(base,float3(.16,.24,.34),haze);')
+    c.set_editor_property('code','float3 base=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C)); return base*(1-'+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
     for key in ('C','D'):
@@ -17,6 +18,7 @@ def material():
     c.set_editor_property('inputs',args)
     l.connect_material_expressions(vc,'',c,'C');l.connect_material_expressions(depth,'',c,'D')
     l.connect_material_property(c,'',unreal.MaterialProperty.MP_BASE_COLOR)
+    l.connect_material_property(atmosphere.glow(m),'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop,value in [(unreal.MaterialProperty.MP_ROUGHNESS,1.),(unreal.MaterialProperty.MP_SPECULAR,0.)]:
         n=l.create_material_expression(m,unreal.MaterialExpressionConstant,100,300);n.set_editor_property('r',value)
         l.connect_material_property(n,'',prop)
@@ -57,7 +59,7 @@ def gate_material():
                           'float3 M=float3(.163,.183,.036);float3 s=float3(0,0,0);float2 p,w;float3 a,b;'
                           +_seamless('UV')+_seamless('float2(UV.x*.8-UV.y*.6,UV.x*.6+UV.y*.8)*.37+.3')+
                           'float3 T=max(M+(s*.5-M)*1.8,0);float3 g=lerp(float3(1,1,1),T/M,saturate(A));'
-                          'float haze=saturate((D-80000)/220000)*.09; return lerp(base*g,float3(.16,.24,.34),haze);')
+                          'return base*g*(1-'+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
     for key in ('C','A','UV','Tex','D'):
@@ -67,6 +69,7 @@ def gate_material():
     l.connect_material_expressions(uv,'',c,'UV');l.connect_material_expressions(tex,'',c,'Tex')
     l.connect_material_expressions(depth,'',c,'D')
     l.connect_material_property(c,'',unreal.MaterialProperty.MP_BASE_COLOR)
+    l.connect_material_property(atmosphere.glow(m),'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop,value in [(unreal.MaterialProperty.MP_ROUGHNESS,1.),(unreal.MaterialProperty.MP_SPECULAR,0.)]:
         n=l.create_material_expression(m,unreal.MaterialExpressionConstant,100,300);n.set_editor_property('r',value)
         l.connect_material_property(n,'',prop)

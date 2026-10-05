@@ -1,6 +1,6 @@
 """Build modular Hidamari assets, surface collision and harbor geometry."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
-import json,math,sys,hashlib,os
+import itertools,json,math,sys,hashlib,os
 from pathlib import Path
 import bpy,numpy as np
 from mathutils import Matrix
@@ -11,10 +11,13 @@ from hidamari import harbor as harbor_kit
 from hidamari import arcade as arcade_kit
 from hidamari import plaza as plaza_kit
 from hidamari import mountains, living_plaza, pond_garden, living_streets, working_harbor, civic_gardens
-from hidamari import kit
+from hidamari import arrival, city_poles, garden_shrubs, kit, lane_edges, layout, park_grounds, station_yard, surfaces, temple_precinct
 from hidamari.layout import backdrop_height,north_height,north_base_height
 v.OUT=OUT
-v.PALETTE.update({'paving':(.22,.18,.125),'asphalt':(.075,.085,.09),'park':(.24,.30,.12),'cream':(.66,.57,.41),'blue':(.08,.19,.25),'brick':(.31,.12,.055),'water_city':(.075,.24,.29)})
+# Ground land use (surface()): lawn, packed-earth yards, sidewalk paving along the streets, flagstone pavers.
+v.PALETTE.update({'hd_grass':(.125,.18,.048),'hd_yard':(.15,.115,.07),'hd_walk':(.185,.165,.135),'hd_flag':(.20,.172,.128),'hd_flag2':(.18,.155,.115),
+             'hd_lane_asphalt':(.095,.09,.085),'hd_ditch_concrete':(.25,.24,.22),'hd_garden_gravel':(.22,.20,.165)})
+v.PALETTE.update({'paving':(.22,.18,.125),'asphalt':(.085,.08,.073),'park':(.24,.30,.12),'cream':(.66,.57,.41),'blue':(.08,.19,.25),'brick':(.31,.12,.055),'water_city':(.075,.24,.29)})
 M=v.Mesh
 
 def simple_roof(m,w,d,z,rise=2):
@@ -202,6 +205,23 @@ def lighthouse():
 def grass_patch(x,y):
     return (y>235 or (min(abs(y-c) for c in ROAD_Y)>30 and min(abs(x-c) for c in ROAD_X)>20)) and not (660<x<805 and 135<y<215)
 
+# The lanes between the facing rows of back-lane houses (layout.house_sites), 7 m from wall to wall.
+HOUSE_LANES=sorted({y+layout.HOUSE[1]/2+layout.HOUSE_ALLEY/2 for _,_,y,yaw in layout.house_sites() if yaw==180})
+HOUSE_X=(min(x for _,x,_,_ in layout.house_sites())-5,max(x for _,x,_,_ in layout.house_sites())+5)
+
+def land_use(x,y):
+    """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 2 m of a street's paving
+    (layout.road_width), packed earth in the yards behind."""
+    if x<398:   # west of the streets, the hillside (the road is arrival.py's ribbon): paving only under the gate
+        return 'hd_walk' if x>384 and arrival.road_distance(x,y)<(x-384)*.65 else 'hd_grass'
+    lane=min(abs(y-c) for c in HOUSE_LANES)
+    if HOUSE_X[0]<x<HOUSE_X[1] and lane<3.5 and layout._clear_of_hero(x,y):   # asphalt from wall to wall, a concrete ditch along each
+        return 'hd_lane_asphalt' if lane<3.1 else 'hd_ditch_concrete'
+    if HOUSE_X[0]<x<HOUSE_X[1] and lane<5.85 and layout._clear_of_hero(x,y):return 'hd_garden_gravel'   # the front plots (kit/house.py FRONT)
+    if grass_patch(x,y):return 'hd_grass'
+    if min(abs(y-c) for c in ROAD_Y)<10 or min(abs(x-c)-layout.road_width(x=c)[0] for c in ROAD_X)<2:return 'hd_walk'
+    return 'hd_yard'
+
 def surface(name,xs,ys,color):
     m=M(name)
     gx,gy=np.meshgrid(xs,ys);gz=height(gx,gy)
@@ -211,6 +231,7 @@ def surface(name,xs,ys,color):
             if (y<-125 and x>380) or pond(x+dx/2,y+dy/2) or canal(x+dx/2,y+dy/2):continue
             pts=[(float(gx[jj,ii]),float(gy[jj,ii]),float(gz[jj,ii])) for ii,jj in [(i,j),(i+1,j),(i+1,j+1),(i,j+1)]]
             key='park' if grass_patch(x+dx/2,y+dy/2) else color
+            if name=='HD_Terrain':key=land_use(x+dx/2,y+dy/2)
             refine=name=='HD_Terrain' and ((980<x+dx/2<1080 and 224<y+dy/2<242) or (650<x+dx/2<835 and 254<y+dy/2<312))
             if refine and max(dx,dy)>.5:
                 sx=np.linspace(x,x+dx,max(2,math.ceil(dx/.5)+1));sy=np.linspace(y,y+dy,max(2,math.ceil(dy/.5)+1))
@@ -232,17 +253,20 @@ def surface(name,xs,ys,color):
                 gx,gy=np.meshgrid(px,py)
                 if np.max(abs(height(gx,gy)-street_height(gx,gy)))>.01:continue
                 points=[(xx,yy,float(height(xx,yy))+.013) for xx,yy in [(x,y),(x+5.92,y),(x+5.92,y+5.92),(x,y+5.92)]]
-                m.poly(points,(.235,.195,.14) if int(x+y)%3 else (.21,.175,.125))
+                m.poly(points,'hd_flag' if int(x+y)%3 else 'hd_flag2')
     return m
 
 def streets(city):
     m=M('HD_Streets')
-    for path in city['roads']:
-        for width,key,offset in [(8,'paving',.045),(3.8,'asphalt',.065)]:
+    # Each street at its own width (layout.road_width; the arrival road, last, is a broad one). On the hillside west
+    # of the town the arrival road is arrival.py's ribbon: a broad strip there paved the slope beside it.
+    arrival=len(city['roads'])-1
+    for k,(path,(paving,asphalt)) in enumerate(itertools.zip_longest(city['roads'],city.get('road_widths',[]),fillvalue=(8,3.8))):
+        for width,key,offset in [(paving,'paving',.045),(asphalt,'asphalt',.065)]:
             quads=[];cross=np.linspace(-width,width,math.ceil(width*2)+1)
             for a,b in zip(path,path[1:]):
                 dx=b[0]-a[0];dy=b[1]-a[1];length=math.hypot(dx,dy)
-                if length<.01:continue
+                if length<.01 or (k==arrival and a[0]<400):continue
                 nx,ny=-dy/length,dx/length
                 for lo,hi in zip(cross[:-1],cross[1:]):
                     quads.append([(p[0]+s*nx,p[1]+s*ny) for p,s in [(a,lo),(b,lo),(b,hi),(a,hi)]])
@@ -396,6 +420,24 @@ def main():
     def sea_mesh():
         sea=M('HD_Sea');sea.poly([(300,-1600,.025),(1800,-1600,.025),(1800,600,.025),(300,600,.025)],'water_city');return sea
     builders['HD_Sea']=sea_mesh
+    def wire_mesh():
+        m=M('HD_Wires');v.PALETTE['hd_wire']=(.018,.018,.02)
+        print('HIDAMARI WIRES',city_poles.wires(m,city['poles'],'hd_wire'),flush=True);return m
+    builders['HD_Wires']=wire_mesh
+    def lane_edge_mesh():
+        m=M('HD_LaneEdges');v.PALETTE.update(lane_edges.PALETTE)
+        print('HIDAMARI LANE EDGES',lane_edges.build(m,height,city['buildings'],ROAD_X,ROAD_Y,layout.road_width,city_poles.KEEP_OUT),flush=True)
+        return m
+    builders['HD_LaneEdges']=lane_edge_mesh
+    builders.update(garden_shrubs.builders())
+    builders['HD_Pagoda']=temple_precinct.pagoda
+    builders['HD_Bamboo']=temple_precinct.bamboo
+    builders['HD_Graves']=temple_precinct.graves
+    builders['HD_Precinct']=lambda:temple_precinct.precinct(M('HD_Precinct'),height)
+    builders['HD_StationYard']=lambda:station_yard.yard(M('HD_StationYard'),height)
+    builders['HD_Railcar']=station_yard.railcar
+    builders['HD_ParkGrounds']=lambda:park_grounds.grounds(M('HD_ParkGrounds'),height)
+    builders['HD_Arrival']=lambda:arrival.arrival(M('HD_Arrival'),height)
     # Reference-led kit modules replace legacy shop variants by mesh name.
     builders.update(kit.builders(lettering))
     builders['HD_NorthMountains']=lambda:mountains.mesh(north_base_height)
@@ -415,7 +457,7 @@ def main():
     for name,build in builders.items():
         if only and name not in only:continue
         mesh=build()
-        ob,entry=v.export(mesh,mat);manifest[mesh.name]=entry
+        ob,entry=(surfaces.export(mesh) if surfaces.textured(mesh.name) else v.export(mesh,mat));manifest[mesh.name]=entry
         bpy.data.objects.remove(ob,do_unlink=True)
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print('HIDAMARI BUILD COMPLETE',len(city['buildings']),'buildings;',len(manifest),'assets;',sum(v['triangles'] for v in manifest.values()),'unique triangles',flush=True)

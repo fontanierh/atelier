@@ -3,7 +3,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json, math, random
 from functools import lru_cache
 from pathlib import Path
-from hidamari import mountains
+from hidamari import arrival as arrival_road, house_gardens, mountains, park_grounds, station_yard, temple_precinct
 from megapark import trail as park_trail
 from communitypark import layout as community_park
 import numpy as np
@@ -11,6 +11,13 @@ ROOT=yori.REGIONS
 OUT=yori.OUT/'hidamari'
 ROAD_Y=[-90,15,140,230,335,75]
 ROAD_X=[410,560,730,920,1120,1240]
+# (paving, asphalt) half-widths in metres. The east-west shop streets and the civic axis x = 730 (the arcade's floor and
+# the plaza steps meet its paving) keep the broad section; the other north-south streets are lanes, 11 m wall line to
+# wall line of paving with a 6 m carriageway, so the fences, hedges and poles along them close the view.
+WIDE,LANE=(8.,3.8),(5.5,3.)
+def road_width(x=None,y=None):
+    """The (paving, asphalt) half-widths of the street along x = x or y = y."""
+    return LANE if x is not None and x!=730 else WIDE
 H=None
 
 def _base_height(x,y):
@@ -74,6 +81,8 @@ def shop_sites():
                 # shop/variant and at least 1.33 m between their 25 m aprons.
                 if 920<x<1120:x=941+(x-941)*158/162
                 sites.append((f'HD_Shop_{(row*7+col)%16:02d}',x,y,0 if side>0 else 180,cy,col,side))
+    # The station square's flanks (station_yard.SHOPS), facing the y=230 street.
+    sites+=[(name,x,y,0,230,1,1) for name,x,y in station_yard.SHOPS]
     return tuple(sites)
 
 def arcade_sites():
@@ -84,6 +93,40 @@ def arcade_sites():
             asset=f'HD_ArcadeShop_{((3 if i==-1 else 0 if i==0 else i-1)+(0 if side>0 else 1))%6:02d}'
             yield asset,614.5+i*7,75+side*13.4,0 if side>0 else 180
 
+
+HOUSE=(10.,9.)       # the back-lane house plot (kit/house.py), width x depth
+HOUSE_ALLEY=7.       # metres between facing house plots across a block's inner lane
+
+def _clear_of_hero(x,y):
+    """Open ground for an ordinary lot: shop_sites' own exclusions (squares, park, temple hill, station, canal)."""
+    if 870<x<1130 and y>230:return False
+    if 650<x<810 and 120<y<215:return False
+    if 575<x<810 and y>245:return False
+    if 1115<x and y>230:return False
+    if 830<x<870 and y<20:return False
+    if 808<x<828 and 238<y<278:return False      # the east temple's approach (temple_precinct)
+    return 430<x<1230
+
+@lru_cache(maxsize=1)
+def house_sites():
+    """Back-lane family houses filling the block interiors behind the shop rows: two rows per block facing each
+    other across a narrow inner lane, a plot every 11.5 m with the odd gap left as a garden, clear of the
+    north-south lanes and the public spaces. Front faces -Y before yaw, so the south row turns 180."""
+    r=random.Random(1907);sites=[];w,d=HOUSE
+    ys=sorted(ROAD_Y)
+    for a,b in zip(ys,ys[1:]):
+        lo=a+31.;hi=b-31.          # behind the shop rows (cy +- 19, 21.2 deep) with a metre to spare
+        if hi-lo<2*d+HOUSE_ALLEY:continue
+        rows=[(lo+d/2,180),(lo+d+HOUSE_ALLEY+d/2,0)]
+        for y,yaw in rows:
+            x=440.+r.uniform(0,4)
+            while x<1230:
+                lane=min(ROAD_X,key=lambda c:abs(x-c))
+                if abs(x-lane)<road_width(x=lane)[0]+w/2+5.5:x+=2.;continue
+                if all(_clear_of_hero(x+sx*w/2,y+sy*d/2) for sx in (-1,1) for sy in (-1,1)) and r.random()>.16:
+                    sites.append((f'HD_House_{r.randrange(4):02d}',round(x,2),y,yaw))
+                x+=w+1.5+(r.uniform(4,9) if r.random()<.12 else 0)
+    return tuple(sites)
 
 @lru_cache(maxsize=1)
 def terrain_pads():
@@ -97,10 +140,16 @@ def terrain_pads():
     for asset,x,y,yaw,cy,_,_ in shop_sites():
         pads.append(dict(asset=asset,x=x,y=y,yaw=yaw,z=float(street_height(x,cy)),
                          half_width=12.5,front=-10.6,back=9.0,fade_x=4.,fade_y=5.))
+    for p in temple_precinct.PADS:pads.append(dict(p,z=float(street_height(p['x'],p['y']))))
+    for asset,x,y,yaw in house_sites():
+        pads.append(dict(asset=asset,x=x,y=y,yaw=yaw,z=float(street_height(x,y)),
+                         half_width=HOUSE[0]/2+.5,front=-HOUSE[1]/2-.5,back=HOUSE[1]/2+.5,fade_x=3.,fade_y=3.,group='houses'))
     for asset,x,y,w,front,back in [('HD_Station',1185,290,25.5,-11.5,10.5),
                                  ('HD_Shrine',600,280,5.6,-9.5,4.5)]:
         pads.append(dict(asset=asset,x=x,y=y,yaw=0,z=float(street_height(x,y+front)),
                          half_width=w,front=front,back=back,fade_x=7.,fade_y=8.))
+    # The railway cutting behind the station, after the station's own pad so its floor wins where they meet.
+    pads.append(dict(station_yard.PAD,z=float(street_height(1185,278.5))+station_yard.BED))
     # Full-wall support is required behind the arcade too: the old central-
     # street datum left south backs floating 1.1 m and buried north backs 1 m.
     for asset,x,y,yaw in arcade_sites():
@@ -165,17 +214,21 @@ def terrain_axes():
     xs=set(np.arange(300.,1421.,4.));ys=set(np.arange(-300.,501.,4.))
     for p in terrain_pads():
         sign=1 if p['yaw']==0 else -1
-        for side in [-1,1]:
+        # A house row shares its y lines; its plots' x edges stay on the 4 m grid (the flat core still holds).
+        for side in ([] if p.get('group')=='houses' else [-1,1]):
             for distance in np.linspace(0,p['fade_x'],5):xs.add(p['x']+side*(p['half_width']+distance))
         for edge in [p['front'],p['back']]:
             side=-1 if edge<0 else 1
             for distance in np.linspace(0,p['fade_y'],6):ys.add(p['y']+sign*(edge+side*distance))
     for cx in ROAD_X:
         for side in [-1,1]:
-            for d in [8.,8.2,8.4]:xs.add(cx+side*d)
+            for d in sorted({8.,8.2,8.4,road_width(x=cx)[0],road_width(x=cx)[0]+.2}):xs.add(cx+side*d)
     for cy in ROAD_Y:
         for side in [-1,1]:
             for d in [8.,8.2,8.4]:ys.add(cy+side*d)
+    for _,_,y,yaw in house_sites():
+        if yaw==180:
+            for d in (-5.85,-3.5,-3.1,3.1,3.5,5.85):ys.add(y+HOUSE[1]/2+HOUSE_ALLEY/2+d)   # the lane between the rows: walls, ditches, house fronts
     return np.unique(np.round(sorted(xs),6)),np.unique(np.round(sorted(ys),6))
 
 def pond(x,y):return ((x-1030)/46)**2+((y-284)/32)**2<1
@@ -194,6 +247,10 @@ def generate():
         put(name,x,y,z,yaw)
         buildings.append({'asset':name,'position':[x,y,z],'yaw':yaw,'width':25,'depth':21.2,'terrain_pad':True})
         if col%2==0:put('HD_Planter',x-9,y-side*10,yaw=0)
+    for name,x,y,yaw in house_sites():
+        z=float(street_height(x,y))
+        put(name,x,y,z,yaw)
+        buildings.append({'asset':name,'position':[x,y,z],'yaw':yaw,'width':HOUSE[0],'depth':HOUSE[1],'terrain_pad':True})
     # A close, varied shop perimeter encloses the clock square.
     for side,x,yaw in [(0,663,90),(1,796,-90)]:
         for i,y in enumerate(range(150,207,7)):
@@ -284,9 +341,12 @@ def generate():
             if min(abs(x-t) for t in ROAD_X)>12 and not (cy==75 and 610<x<710):
                 put('Tree_Ginkgo' if x%3 else 'Tree_Maple_A',x,cy-10,scale=1.2)
     for x,y in [(680,145),(780,145),(680,180),(780,180),(700,206),(760,206)]:put('Tree_Ginkgo',x,y,scale=1.4)
+    # The park's trees stand in groves with lawns between them, not scattered evenly.
+    groves=[(955,258,9),(1000,300,8),(958,322,10),(1075,262,8),(1100,318,9),(1040,250,6),(1010,340,7),(1085,342,7)]
     for i in range(95):
-        x=r.uniform(940,1120);y=r.uniform(245,350)
-        if pond(x,y) or abs(y-335)<10 or abs(x-1120)<12:continue
+        gx,gy,spread=groves[i%len(groves)]
+        x=gx+r.gauss(0,spread);y=gy+r.gauss(0,spread*.8)
+        if not (940<x<1120 and 245<y<350) or pond(x,y) or abs(y-335)<10 or abs(x-1120)<12:continue
         put('Tree_Ginkgo' if i%3 else 'Tree_Maple_A',x,y,scale=r.uniform(.95,1.3))
     for x,y in [(705,150),(755,150),(705,178),(755,178),(998,250),(1064,250),(995,319),(1080,320),(795,-95),(890,20),(605,275),(765,285)]:
         put('HD_Bench',x,y);put('HD_Planter',x+3,y)
@@ -316,6 +376,9 @@ def generate():
         if z<2 or z>210+30*math.sin(x*.008) or distance<7:continue
         density=.82+.16*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
         density*=float(mountains.smooth((y-380)/220)) if y<590 else 1
+        # Drifts and clearings: a slow second pattern thins whole glades instead of every tree.
+        clump=math.sin(x*.021+math.sin(y*.017)*2.1)*math.cos(y*.019-x*.006)
+        density*=.25+.85*float(mountains.smooth((clump+.55)/.5))
         if r.random()>density:continue
         patch=math.sin(x*.009+math.sin(y*.006)*1.8)+.7*math.cos(y*.014-x*.003)
         kind=('Pine' if patch<-.5 else 'Rust' if patch<.45 else 'Gold')
@@ -394,11 +457,12 @@ def generate():
         soil=max(float(height(x+sx*w/2,y+sy*d/2)) for sx in (-1,1) for sy in (-1,1))+.79
         put('HD_PlazaTreeOrange' if orange else 'HD_PlazaTreeGold',x,y,soil-.12,scale=.85)
 
-    for name in ['HD_Terrain','HD_Streets','HD_Harbor','HD_Park','HD_Square','HD_Sea','HD_InlandWater','HD_CivicGardens']:
+    for name in ['HD_Terrain','HD_Streets','HD_Wires','HD_LaneEdges','HD_Precinct','HD_StationYard','HD_ParkGrounds','HD_Arrival','HD_Harbor','HD_Park','HD_Square','HD_Sea','HD_InlandWater','HD_CivicGardens']:
         put(name,0,0,0)
     end=max(world['road'],key=lambda p:p[0]);arrival=[end,[335,85,float(height(335,85))],[390,140,float(height(390,140))],[650,140,20]]
     roads=[[[float(x),float(y),float(height(x,y))] for x in np.arange(400,1251,2)] for y in ROAD_Y]
     roads += [[[float(x),float(y),float(height(x,y))] for y in np.arange(-90,351,2) if not (x==730 and y>162)] for x in ROAD_X]
+    road_widths=[list(road_width(y=y)) for y in ROAD_Y]+[list(road_width(x=x)) for x in ROAD_X]
     # Resample approach straight segments for exact terrain-conforming strip construction.
     path=[]
     for a,b in zip(arrival,arrival[1:]):
@@ -427,6 +491,14 @@ def generate():
     from hidamari.public_spaces import STREET_GARDENS
     for name in ['HD_Lamp','HD_Bench','HD_Planter']:
         inst[name]=[p for p in inst.get(name,[]) if not any(abs(p[0]-x)<5.5 and abs(p[1]-y)<1.8 for x,y,_ in STREET_GARDENS)]
+    temple_precinct.place(put,inst,height,buildings)
+    # The Tripo street props (street_props.py), before the trees make way for everything placed.
+    from hidamari import street_props
+    print('HIDAMARI STREET PROPS',street_props.place(put,inst,buildings,shop_sites()),flush=True)
+    # Utility poles along every street, after everything else on the sidewalks; build.py strings their wires.
+    from hidamari import city_poles
+    poles=city_poles.place(put,inst,ROAD_X,ROAD_Y,road_width,height)
+    print('HIDAMARI POLES',sum(len(row) for _,row in poles),flush=True)
     # Check the complete generated scatter, including street trees. Reserve
     # crown/awning clearance against each rotated shop, not only trunk centres.
     for name,placements in inst.items():
@@ -443,6 +515,8 @@ def generate():
                     blocked=True;break
             if not blocked:kept.append(item)
         inst[name]=kept
+    # The houses' front gardens, after the clearance: their maples stand inside the plots on purpose.
+    house_gardens.place(put,house_sites())
     from hidamari.forest_backdrop import append as append_forest_backdrop,ground as backdrop_ground
     forest_backdrop=append_forest_backdrop(inst,buildings,height,backdrop_grid,terrain_axes,north_height,ROAD_X,ROAD_Y)
     # Round the Mega Park the forest is the detailed autumn kind, as the skater gets close to it there, closed beyond.
@@ -461,9 +535,12 @@ def generate():
     # By the air station the gate's ground has its own grass, verges, bushes and rocks (megapark/gate.py).
     from megapark import gate
     gate.dress(inst,north_base_height)
+    park_grounds.place(put,inst,height)
+    arrival_road.place(put,inst,height)
+    station_yard.place(put,inst,height,buildings)
     community_park.clear(inst)
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
-    return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes(),*community_park.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
+    return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes(),*community_park.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'road_widths':road_widths,'poles':poles,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 
 # Broad scenery transition around the new city. Both far terrain and its trees
 # use this same grid, so lowering a hill cannot leave its tree line floating.

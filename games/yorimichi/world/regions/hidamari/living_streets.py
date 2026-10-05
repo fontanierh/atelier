@@ -2,7 +2,7 @@
 import math
 import random
 from village import build as v
-from hidamari import living_plaza, arcade
+from hidamari import layout, living_plaza, arcade
 from hidamari.kit import station
 
 # Two targeted ordinary-street stretches, outside the finished pedestrian arcade/plaza.
@@ -70,7 +70,7 @@ def add(m,city,height,road_x,road_y):
     # Broad readable tile joints, flush kerbs and gutters; no extra trip geometry.
     for cy in road_y:
         for x in range(398,1248,2):
-            if excluded(x+1,cy) or min(abs(x+1-c) for c in road_x)<9:continue
+            if excluded(x+1,cy) or min(abs(x+1-c)-layout.road_width(x=c)[0] for c in road_x)<1:continue
             for side in [-1,1]:
                 living_plaza.patch(m,x+1,cy+side*5.85,2.04,4.05,height,'street_gutter',.074)
                 for band in range(3):
@@ -84,7 +84,7 @@ def add(m,city,height,road_x,road_y):
             if excluded(cx,cy):continue
             for side in [-1,1]:
                 for y in [-2.7,-1.8,-.9,0,.9,1.8,2.7]:
-                    living_plaza.patch(m,cx+side*10.2,cy+y,2.15,.40,height,'street_line',.086)
+                    living_plaza.patch(m,cx+side*(layout.road_width(x=cx)[0]+2.2),cy+y,2.15,.40,height,'street_line',.086)
     for i,(x,y,side) in enumerate(STREET_GARDENS):garden(m,x,y,side,height,400+i)
     # Two bicycle pockets use the existing detailed bicycle kit at actual pavement.
     for x,y in [(510,133.4),(983,236.6)]:

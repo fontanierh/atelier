@@ -186,8 +186,9 @@ for run in W['rail_runs']: line(run, (255, 255, 255, 220), 1.0)
 ROAD_W = W['road_width']
 line(W['road'], (58, 54, 52), ROAD_W + 2.4); line(W['road'], (150, 148, 150), ROAD_W); line(W['road'], (232, 228, 220), .6)
 if C:
-    for r in C['roads']: line(r, (214, 206, 190), 16)
-    for r in C['roads']: line(r, (120, 118, 122), 7.6)
+    widths = C.get('road_widths', [[8, 3.8]] * len(C['roads']))
+    for r, (paving, _) in zip(C['roads'], widths): line(r, (214, 206, 190), 2 * paving)
+    for r, (_, asphalt) in zip(C['roads'], widths): line(r, (120, 118, 122), 2 * asphalt)
     line(C['arrival'], (58, 54, 52), ROAD_W + 2.4); line(C['arrival'], (150, 148, 150), ROAD_W)
     for key, w, colr in (('north_trail', 4, (206, 178, 128)), ('park_trail', 3, (206, 178, 128)), ('plaza_route', 4, (214, 206, 190)), ('arcade_route', 5, (214, 206, 190)), ('harbor_route', 5, (200, 190, 170)), ('harbor_pier_route', 3, (150, 120, 84))):
         line(C.get(key, []), colr, w)

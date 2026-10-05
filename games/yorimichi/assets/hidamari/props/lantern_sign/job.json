@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "lantern_sign",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "624f920cb772dae5b6a34b2201d83327089ba7a6d4a0aaf9628ee6bcffc5253f",
+  "concept_sha256": "624f920cb772dae5b6a34b2201d83327089ba7a6d4a0aaf9628ee6bcffc5253f",
+  "submitted_at": "2026-10-05T12:04:43.975811+00:00",
+  "task_id": "ffc40419-bf78-4848-b556-661c2b759ec4",
+  "status": "submitted",
+  "user_approval": "Henry (CEO): use the Tripo credits; topped up again 2026-10-05; move-sets submitted first (#558)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T12:06:41.458710+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

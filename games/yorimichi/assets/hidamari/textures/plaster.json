@@ -1,0 +1,36 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "Image 1 is the art direction of Yorimichi, a stylised Japanese autumn town game: soft hand-painted materials, warm afternoon light, gentle detail. Paint one seamless tileable texture for that game, seen perfectly flat and straight-on, filling the whole square edge to edge: no object outline, no background, no perspective, no vignette, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted in the style of Image 1: soft painterly strokes that still read clearly as the real material, medium-scale detail that holds up when repeated many times across a town, matte, colours kept close to one mid tone. The surface: a warm lime plaster wall, soft trowel marks, fine sand grain and faint rain stains, no edges.",
+  "references": {
+    "games/yorimichi/assets/hidamari/concepts/street_ew140.jpg": "6d94943278f7baba090ccb9963354c7162dd70a6f4c43ca297c7a5a0b5f51f97"
+  },
+  "execution": "games/yorimichi/tools/hidamari_textures.py",
+  "purpose": "Hidamari city surface texture",
+  "status": "done",
+  "started_at": "2026-10-04T21:18:11.963253+00:00",
+  "usage": {
+    "input_tokens": 1253,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 173
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3009
+  },
+  "png_sha256": "1fac916ed714ee61ac0f3c745cec7d123339f03d8292a70a1667839f25dd7302",
+  "seconds": 49.1,
+  "compact_copy": {
+    "file": "plaster.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-04T21:19:01.072099+00:00"
+}

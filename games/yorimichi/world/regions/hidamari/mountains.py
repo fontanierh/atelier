@@ -248,32 +248,57 @@ def trail_points(surface):
 
 
 def forest_tree(kind,backdrop=False):
-    """Low, interlocking opaque crowns replace distant lollipop leaf cards."""
+    """The forest's opaque crowns, made to be seen from afar: a cauliflower of small noisy lobes over an ellipsoid core,
+    shaded smooth with normals mostly out from the whole crown, and coloured per vertex by height and noise, so a
+    hillside reads as soft clumps of leaves rather than faceted balls (the pines: tiers, likewise smooth)."""
     import bpy,random
+    from mathutils import Vector,noise
     from village.build import Mesh
     r=random.Random({'Gold':81,'Rust':123,'Pine':206,'Green':279}[kind])
-    m=Mesh('HD_NorthTree'+('Backdrop' if backdrop else '')+kind)
+    class Smooth(Mesh):
+        def object(self,material):
+            # Smooth shading with the crown's own normals (the trunk's point straight out from the axis).
+            ob=super().object(material);me=ob.data
+            out=[tuple(self.normals[i]) if i in self.normals else tuple(Vector((p[0],p[1],0)).normalized() or (0,0,1))
+                 for i,p in enumerate(self.vertices)]
+            me.polygons.foreach_set('use_smooth',[True]*len(me.polygons))
+            me.normals_split_custom_set_from_vertices(out)
+            return ob
+    m=Smooth('HD_NorthTree'+('Backdrop' if backdrop else '')+kind);m.normals={}
     bark=(.055,.027,.012)
     m.lathe((0,0,0),[(0,.26),(3.6,.17),(6,.06)],bark,n=7)
     m.collider((0,0,2.5),(.48,.48,5.))
+    def shade(pts,colour,normal,lift):
+        i=len(m.vertices);m.poly(pts,colour)
+        if len(m.vertices)!=i+len(pts):return
+        for j,p in enumerate(pts):
+            v=(.62+.30*min(1.,max(0.,(p.z-lift)/7.))+.18*noise.noise(p*.55))
+            m.colors[i+j]=(*(c*v for c in colour),0);m.normals[i+j]=normal(p)
     if kind=='Pine':
+        green=(.021,.049,.025)   # a shade warmer than the old blue-green
         for z,radius in [(2.8,2.8),(4.1,2.5),(5.8,1.9),(7.3,1.3)]:
-            m.lathe((r.uniform(-.35,.35),r.uniform(-.35,.35),z),[(0,radius*.48),(.28,radius),(2.5,.05)],(.018,.049,.029),n=7)
+            c=Vector((r.uniform(-.35,.35),r.uniform(-.35,.35),z));profile=[(0,radius*.48),(.28,radius),(2.5,.05)]
+            for k in range(9):
+                a0,a1=k*math.tau/9,(k+1)*math.tau/9
+                for (h0,r0),(h1,r1) in zip(profile,profile[1:]):
+                    pts=[c+Vector((rr*math.cos(a),rr*math.sin(a),h)) for h,rr,a in ((h0,r0,a0),(h0,r0,a1),(h1,r1,a1),(h1,r1,a0))]
+                    shade(pts,green,lambda p,c=c:Vector((p.x-c.x,p.y-c.y,.9)).normalized(),1.5)
         return m
-    palette={'Gold':(.49,.27,.035),'Rust':(.45,.12,.023),'Green':(.028,.085,.044)}[kind]
+    palette={'Gold':(.49,.27,.035),'Rust':(.45,.12,.023),'Green':(.042,.08,.026)}[kind]   # Green: a warm olive, not teal
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1)
-    ob=bpy.context.object
-    for vertex in ob.data.vertices:
-        vertex.co*=r.uniform(.78,1.15)
-    ob.data.update()
-    for k in range(7):
-        a=k*math.tau/6+r.uniform(-.5,.5);radius=r.uniform(1.3,3.0);cx=radius*math.cos(a) if k<6 else 0;cy=radius*math.sin(a) if k<6 else 0
-        cz=r.uniform(4.0,7.0) if k<6 else 8.0
-        sx=r.uniform(1.5,2.9);sy=r.uniform(1.5,2.9);sz=r.uniform(1.4,2.7)
-        tint=r.uniform(.80,1.15)
+    ob=bpy.context.object;base=[v.co.copy() for v in ob.data.vertices]
+    lobes=[]
+    for k in range(10):
+        u=r.uniform(0,math.tau);h=r.uniform(-.75,1.);rr=math.sqrt(max(0.,1-h*h));q=r.uniform(1.45,2.15)
+        lobes.append((Vector((3.4*rr*math.cos(u),3.4*rr*math.sin(u),6.4+2.4*h)),Vector((q,q,q*r.uniform(.8,1.))),r.uniform(.88,1.1)))
+    lobes.append((Vector((0,0,6.3)),Vector((3.2,3.2,2.8)),1.))   # the core closes the gaps between the lobes
+    centre=Vector((0,0,5.3))
+    for c,s,tint in lobes:
         for f in ob.data.polygons:
-            pts=[(cx+ob.data.vertices[i].co.x*sx,cy+ob.data.vertices[i].co.y*sy,cz+ob.data.vertices[i].co.z*sz) for i in f.vertices]
-            face=tint*(.52+.48*max(0,f.normal.z))
-            m.poly(pts,tuple(v*face for v in palette))
+            pts=[]
+            for i in f.vertices:
+                b=base[i];d=1+.16*noise.noise(b*2.3+c)+.08*noise.noise(b*5.1-c)
+                pts.append(c+Vector((b.x*s.x,b.y*s.y,b.z*s.z))*d)
+            shade(pts,tuple(v*tint for v in palette),lambda p,c=c:((p-centre).normalized()*.75+(p-c).normalized()*.25).normalized(),3.)
     bpy.data.objects.remove(ob,do_unlink=True)
     return m

@@ -9,6 +9,7 @@ from mountain_material import material as mountain_material,gate_material
 from harbor_material import material as harbor_material
 from arcade_material import material as arcade_material
 from plaza_material import water_material,paving_material
+import city_material
 ROOT = yori.OUT;OUT=ROOT/'hidamari'
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()
@@ -21,6 +22,8 @@ pond_water=water_material('M_PondWater') if not only or 'HD_InlandWater' in only
 harbor_mat=harbor_material() if not only or only & {'HD_Harbor','HD_Boat'} else None
 water_mat=harbor_material(water=True) if not only or 'HD_Sea' in only else None
 report=json.loads((OUT/'import-report.json').read_text()) if only and (OUT/'import-report.json').exists() else {}
+# The textured city (world/regions/hidamari/surfaces.py): a manifest entry with slots has one per surface.
+city_mis=city_material.materials() if any('slots' in e for n,e in manifest.items() if not only or n in only) else {}
 mountain_mat=mountain_material() if not only or any(n.startswith('HD_North') for n in only) else None
 gate_mat=gate_material() if not only or 'HD_NorthGate' in only else None
 def distance_lods(mesh,name,levels):
@@ -66,7 +69,7 @@ def distance_lods(mesh,name,levels):
 
 for name,entry in manifest.items():
     if only and name not in only:continue
-    mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name)
+    mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name,fresh_slots='slots' in entry)
     if name=='HD_NorthGate': selected=gate_mat
     elif name.startswith('HD_North'): selected=mountain_mat
     elif name=='HD_Sea': selected=water_mat
@@ -77,8 +80,23 @@ for name,entry in manifest.items():
     elif name=='HD_ArcadeFloor': selected=paving_mat
     elif name.startswith(('HD_Arcade','HD_Plaza','HD_Shop_')) or name in ('HD_ClockHall','HD_Square','HD_Station','HD_Shrine','HD_Park','HD_Streets','HD_CivicGardens'): selected=arcade_mat
     else: selected=mat
-    assert selected,(name,'missing material')
-    mesh.set_material(0,selected)
+    if 'slots' in entry:
+        # Its UVs are metres (up to 1.4 km on the terrain): half-precision UVs would band the textures.
+        unreal.load_module('StaticMeshEditor')
+        lod_settings_subsystem=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+        build=lod_settings_subsystem.get_lod_build_settings(mesh,0)
+        if not build.get_editor_property('use_full_precision_u_vs'):
+            build.set_editor_property('use_full_precision_u_vs',True);lod_settings_subsystem.set_lod_build_settings(mesh,0,build)
+        slots=[]
+        for i,slot in enumerate(mesh.static_materials):
+            key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0].removeprefix('HDS_')
+            assert key in city_mis,(name,'unknown surface',key)
+            mesh.set_material(i,city_mis[key]);slots.append(key)
+        assert sorted(slots)==sorted(entry['slots']),(name,slots,sorted(entry['slots']))
+        selected=city_mis[slots[0]]
+    else:
+        assert selected,(name,'missing material')
+        mesh.set_material(0,selected)
     lod_report=None
     if name=='HD_NorthTreeBackdropPine':
         # The simple pine reaches the reduction floor in its second LOD.
@@ -89,13 +107,32 @@ for name,entry in manifest.items():
     elif (name.startswith('HD_Shop_') and name[8:].isdigit()) or name in ('HD_Station','HD_Shrine'):
         # Full detail close up, progressively lighter street and distant skyline geometry.
         lod_report=distance_lods(mesh,name,[(1.,1.),(.5,.28),(.15,.12),(.04,.05)])
+    elif name.startswith('HD_House_'):
+        # The back-lane houses are mostly seen over the shop roofs: drop detail sooner.
+        lod_report=distance_lods(mesh,name,[(1.,1.),(.4,.3),(.12,.12)])
     body=mesh.get_editor_property('body_setup')
     body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if not entry['collision_boxes'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AND_COMPLEX)
     box=mesh.get_bounding_box()
     assert abs(box.max.z-entry['max'][2]*100)<.3,(name,'unit conversion',box.max.z)
     unreal.EditorAssetLibrary.save_loaded_asset(mesh)
     report[name]={'imported':True,'triangles':entry['triangles'],'max_z_cm':box.max.z,'material':selected.get_path_name()}
+    if 'slots' in entry:report[name]['surfaces']=entry['slots']
     if lod_report:report[name]['lods']=lod_report
+# The Tripo street props (world/regions/hidamari/props.py), placed by city.json like the rest of the city.
+if (OUT/'props'/'props.json').exists() and (not only or any(n.startswith('HD_P_') for n in only)):
+    par=city_mis.get('_parent') or city_material.materials()['_parent']
+    props=json.loads((OUT/'props'/'props.json').read_text())
+    for key,mi in city_material.prop_materials(par,report.setdefault('HD_P',{})).items():
+        if only and key not in only and 'HD_P_' not in only:continue
+        # Fresh slots: a conserved placeholder slot would keep slot 0 while the prop's faces draw from a second,
+        # unassigned slot (the engine's grey grid material).
+        mesh=import_mesh(OUT/'props'/f'{key}.fbx','/Game/Japan/Assets',key,fresh_slots=True)
+        assert len(mesh.static_materials)==1,(key,'material slots',len(mesh.static_materials))
+        mesh.set_material(0,mi)
+        # Solid props have a box; the others (plants, bicycles) are walked through.
+        mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_DEFAULT if props[key]['boxes'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
+        unreal.EditorAssetLibrary.save_loaded_asset(mesh)
+        report[key]={'imported':True,'triangles':props[key]['triangles'],'material':mi.get_path_name()}
 if not only or os.environ.get('HIDAMARI_TERRAIN')=='1':
     mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
     from import_southwest import sand_material

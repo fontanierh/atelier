@@ -1,0 +1,35 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "This is an art-direction redesign for Yorimichi, a stylised Japanese autumn exploration game made in Unreal. Image 1 is a real, unretouched screenshot of the game as it is now. Repaint THE SAME VIEW from the same camera, keeping the layout, street grid, terrain, building positions, sea and sky composition, but redesigned to the standard of a polished commercial stylised game (think Ghibli-inspired, hand-crafted, cosy, dense and lived-in): textured materials with soft hand-painted detail instead of flat untextured colour, coherent warm autumn palette, gentle afternoon sunlight. It must stay a believable real-time game frame built from meshes, textures and foliage, not a loose illustration. No text, no UI, no watermark. The city park seen from above. Today: a flat featureless mint lawn with sparse lone trees, a pond, and pavilions floating in emptiness. Redesign it as a rich Japanese strolling garden park: winding gravel paths, varied lawn texture, groups and groves of mature maples and ginkgo with fallen leaves beneath, shrubs, hedges, flower beds, stepping stones, the pond with natural rocky edges, reeds and lotus, a red arched bridge, benches, a playground with sand, a tea house. Fill the empty blocks around it with houses and gardens.",
+  "references": {
+    "113_district_sunlit_park.png": "dede13bef3c79cf1a5b9c37ff90de653ceedf19b2a24f66a007ba5dc755b9330"
+  },
+  "purpose": "Hidamari art-direction redesign (planning)",
+  "status": "done",
+  "started_at": "2026-10-04T20:17:42.249562+00:00",
+  "usage": {
+    "input_tokens": 1205,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 285
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2577
+  },
+  "png_sha256": "e95e3817e1540d732ee7d91ee23e26eb0858e689b9e688af04ee0edf6534a8b1",
+  "seconds": 36.4,
+  "finished_at": "2026-10-04T20:18:18.615138+00:00",
+  "compact_copy": {
+    "file": "sunlit_park.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  }
+}

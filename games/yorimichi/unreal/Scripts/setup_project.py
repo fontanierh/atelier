@@ -13,6 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from painterly_kernel import shader as painterly_shader
 from foliage_material import enable_distance_fade
+import atmosphere
 ROOT = str(yori.OUT)
 OUT = ROOT; TEX = os.path.join(ROOT, "textures")
 REPORT = None
@@ -278,16 +279,9 @@ def master(name, masked=False, unlit=False, white=None, fixed_tex=None, mpc=None
     MEL.connect_material_expressions(tex, "RGB", mul0, "A"); MEL.connect_material_expressions(tint, "", mul0, "B")
     mul = mul0
     if not unlit:
-        # aerial perspective: blend toward the haze colour with distance (80 m .. 2.5 km); the dome is unlit and untouched
-        U = unreal
-        pd = node(m, U.MaterialExpressionPixelDepth, -350, 550)
-        hz0 = node(m, U.MaterialExpressionSubtract, -200, 550, const_b=7000.0); link(pd, "", hz0, "A")
-        hz1 = node(m, U.MaterialExpressionDivide, -80, 550, const_b=220000.0); link(hz0, "", hz1, "A")
-        hz2 = node(m, U.MaterialExpressionSaturate, 40, 550); link(hz1, "", hz2, "")
-        hz3 = node(m, U.MaterialExpressionMultiply, 140, 550, const_b=0.5); link(hz2, "", hz3, "A")
-        hcol = node(m, U.MaterialExpressionConstant3Vector, -80, 700, constant=U.LinearColor(0.64, 0.68, 0.76, 1.0))
-        lerp = node(m, U.MaterialExpressionLinearInterpolate, 260, 300); link(mul0, "", lerp, "A"); link(hcol, "", lerp, "B"); link(hz3, "", lerp, "Alpha")
-        mul = lerp
+        # aerial perspective (atmosphere.py): the sea's haze, as emission; the dome is unlit and untouched
+        mul, haze = atmosphere.apply(m, mul0, x=260, y=300)
+        MEL.connect_material_property(haze, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     if masked:
         # interior leaves are darker (vertex colour G = 0 deep inside .. 1 on the shell): the canopy reads as a full mass
         U = unreal
@@ -432,8 +426,10 @@ def build_level(terrain_mesh, W, MI):
         t = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(0, 0, 0))
         t.set_actor_label("Terrain"); t.static_mesh_component.set_static_mesh(terrain_mesh); t.set_mobility(unreal.ComponentMobility.STATIC)
         sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 3000))
-        # unreal.Rotator(roll, pitch, yaw): the sun sits 44 deg up, shining from the south-west (over the sea) toward the hill
-        sun.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=-48.0, yaw=15.0), False)      # sun behind the traveler (west-south-west): the road is lit along its length, tree shadows fall forward
+        # unreal.Rotator(roll, pitch, yaw): the sun sits 48 deg up and shines toward yaw -30 (east-north-east), so it stands in
+        # the west-south-west, over the sea and behind the traveler: the road is lit along its length, tree shadows fall
+        # forward. The settings menu's Light section (JapanPreferences.cpp) sets the player's sun over this one.
+        sun.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=-48.0, yaw=-30.0), False)
         L = sun.light_component
         L.set_editor_property("forward_shading_priority", 1)
         L.set_mobility(unreal.ComponentMobility.MOVABLE); L.set_intensity(7.0)

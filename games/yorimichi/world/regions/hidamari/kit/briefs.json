@@ -106,5 +106,18 @@
   "depth": 7,
   "floors": 1,
   "brief": "A small neighbourhood Shinto shrine hall 7 m wide behind its existing vermilion torii: a raised timber floor on posts with a wooden stair, dark cypress-bark style hipped roof with forked chigi finials, vermilion posts and white plaster, a hanging bell rope and offering box, paired stone komainu guardian statues, a stone lantern, a small water basin and a pair of fluttering white banners."
+ },
+ "house": {
+  "title": "Back-lane family houses",
+  "assets": [
+   "HD_House_00",
+   "HD_House_01",
+   "HD_House_02",
+   "HD_House_03"
+  ],
+  "width": 10,
+  "depth": 9,
+  "floors": 2,
+  "brief": "Ordinary two-storey Japanese family houses that fill the quiet block interiors and back lanes of a small autumn harbour town, seen from the lane in front: a compact gabled or hipped house on a 10 x 9 m plot, dark grey kawara tile roof with a small pent roof over the ground-floor front, walls of weathered dark-brown cedar boards below and warm cream or pale ochre plaster above (variants swap tones: cream/brown, pale grey/charcoal, ochre/brown, white/blue-grey corrugated metal for one), aluminium-framed sliding windows with a few lit shoji behind, a small entrance porch with a sliding lattice door and a house-number plate (no readable text), an air-conditioner unit and a gas meter on the side wall, downpipes, a narrow balcony with a laundry pole and hanging futon or washing on two of the variants, potted plants, a bicycle by the door, and a low concrete-block or hedge front boundary with a gap for the gate. Cosy, lived-in, slightly worn, in the game's warm hand-painted style; no shops, no signage."
  }
 }

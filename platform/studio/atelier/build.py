@@ -103,7 +103,8 @@ class Context:
         self.unreal_root = Path(os.environ.get('UE_ROOT') or '/Users/Shared/Epic Games/UE_5.8')
         self.unreal_cmd = self.unreal_root / 'Engine/Binaries/Mac/UnrealEditor-Cmd'
         self.unreal_app = self.unreal_root / 'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
-        self.blender = os.environ.get('BLENDER') or shutil.which('blender') or '/Applications/Blender.app/Contents/MacOS/Blender'
+        # Resolved: Blender finds its bundled Python and data next to its real executable, not next to a PATH symlink.
+        self.blender = os.path.realpath(os.environ.get('BLENDER') or shutil.which('blender') or '/Applications/Blender.app/Contents/MacOS/Blender')
         try:
             self.uproject = paths.uproject(game)
         except FileNotFoundError:

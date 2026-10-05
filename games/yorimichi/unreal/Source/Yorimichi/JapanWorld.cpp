@@ -112,6 +112,63 @@ void AJapanWorld::Load()
             if(Instances->TryGetArrayField(Pair.Key,Prior)) Combined=*Prior;
             Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
         }
+        // Hidamari's late-afternoon grade over the whole city (location.json city_bounds) and the arrival hillside west
+        // of it (x 280), out over the harbour to the lighthouse (y -280) and up to 700 m, so the town seen from a glide
+        // above it keeps the same light: the global sky light and grade's cool shadows turn its cream plaster pale
+        // blue, so it also white-balances warmer. The district grades below (priority 2) take precedence inside.
+        UBoxComponent* CityBounds=NewObject<UBoxComponent>(this);
+        CityBounds->SetupAttachment(RootComponent);
+        CityBounds->SetRelativeLocation(ToUE(770,40,330));
+        CityBounds->SetBoxExtent(FVector(49000,32000,37000));
+        CityBounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        CityBounds->SetCollisionResponseToAllChannels(ECR_Ignore);
+        CityBounds->SetGenerateOverlapEvents(false);
+        CityBounds->SetCanEverAffectNavigation(false);
+        CityBounds->RegisterComponent();
+        UPostProcessComponent* CityGrade=NewObject<UPostProcessComponent>(this);
+        CityGrade->SetupAttachment(CityBounds);
+        CityGrade->bUnbound=false;CityGrade->BlendRadius=4000;CityGrade->Priority=1;
+        CityGrade->Settings.bOverride_SceneColorTint=true;
+        CityGrade->Settings.SceneColorTint=FLinearColor(1.09,.99,.83);
+        CityGrade->Settings.bOverride_ColorGainShadows=true;
+        CityGrade->Settings.ColorGainShadows=FVector4(1.07,1.0,.88,1);
+        CityGrade->Settings.bOverride_ColorGainHighlights=true;
+        CityGrade->Settings.ColorGainHighlights=FVector4(1.05,1.0,.92,1);
+        CityGrade->Settings.bOverride_ColorContrast=true;
+        CityGrade->Settings.ColorContrast=FVector4(1.04,1.04,1.04,1);
+        CityGrade->Settings.bOverride_WhiteTemp=true;
+        CityGrade->Settings.WhiteTemp=7200;
+        CityGrade->RegisterComponent();
+        float CityGradeDistance=0.f;
+        UE_LOG(LogTemp,Display,TEXT("City grade bounds: lanes=%d aerial=%d arrival=%d forest=%d"),CityGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&CityGradeDistance),
+            CityGrade->EncompassesPoint(ToUE(800,40,650),0.f,&CityGradeDistance),
+            CityGrade->EncompassesPoint(ToUE(330,80,30),0.f,&CityGradeDistance),CityGrade->EncompassesPoint(ToUE(100,0,30),0.f,&CityGradeDistance));
+        // Seen from a glide above the town, every roof and street faces the sky light, so nothing is dark: the darkest
+        // pixels sat at 99/255 against 30 in a street view. Contrast alone pivots on mid grey, where those darks already
+        // are, so the black point comes down (a negative offset) with a little more colour, from 90 m up (blending in
+        // from 60 m), the city grade's warmth kept. Its own box over the same ground, above the district grades.
+        UBoxComponent* GlideBounds=NewObject<UBoxComponent>(this);
+        GlideBounds->SetupAttachment(RootComponent);
+        GlideBounds->SetRelativeLocation(ToUE(770,40,395));
+        GlideBounds->SetBoxExtent(FVector(49000,32000,30500));
+        GlideBounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        GlideBounds->SetCollisionResponseToAllChannels(ECR_Ignore);
+        GlideBounds->SetGenerateOverlapEvents(false);
+        GlideBounds->SetCanEverAffectNavigation(false);
+        GlideBounds->RegisterComponent();
+        UPostProcessComponent* GlideGrade=NewObject<UPostProcessComponent>(this);
+        GlideGrade->SetupAttachment(GlideBounds);
+        GlideGrade->bUnbound=false;GlideGrade->BlendRadius=3000;GlideGrade->Priority=2;
+        GlideGrade->Settings.bOverride_ColorContrast=true;
+        GlideGrade->Settings.ColorContrast=FVector4(1.1,1.1,1.1,1);
+        GlideGrade->Settings.bOverride_ColorSaturation=true;
+        GlideGrade->Settings.ColorSaturation=FVector4(1.15,1.15,1.15,1);
+        GlideGrade->Settings.bOverride_ColorOffset=true;
+        GlideGrade->Settings.ColorOffset=FVector4(-.03,-.03,-.03,0);
+        GlideGrade->RegisterComponent();
+        float GlideGradeDistance=0.f;
+        UE_LOG(LogTemp,Display,TEXT("Glide grade bounds: aerial=%d street=%d"),GlideGrade->EncompassesPoint(ToUE(800,40,650),0.f,&GlideGradeDistance),
+            GlideGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&GlideGradeDistance));
         // A gentle local warm grade matches the sheltered arcade's art direction.
         // Blend at its approaches; leave every other district and user setting alone.
         UBoxComponent* ArcadeBounds=NewObject<UBoxComponent>(this);
@@ -280,7 +337,9 @@ void AJapanWorld::Load()
                     H->SetLightingChannels(true, true, false);
                 H->SetCanEverAffectNavigation(false);
                 const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
-                H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
+                // The city's overhead wires (HD_Wires, 10 m up) never stop a jump or the camera, and cast no shimmering lines.
+                const bool bWires=Key==TEXT("HD_Wires");
+                H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || bWires || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
                 // Camera see-through (docs/CAMERA.md): solid things stop the chase camera. Thin things (trees, bushes,
                 // poles, lanterns, the torii, the tree house's props and thin pieces) let it through and fade whole
                 // where they hide Cairo; the materials read how in custom primitive data 0. The far backdrop never
@@ -295,7 +354,7 @@ void AJapanWorld::Load()
                     UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,
                         Fade == JapanSeeThrough::FadePieces ? TEXT("fades piece by piece") : TEXT("fades at the lens only, no piece bake"),
                         Mesh->GetNumTexCoords(0));
-                H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
+                H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && !bWires && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
                 if (bGrass || bLitter || bBackdrop) H->bAffectDistanceFieldLighting = false;
                 if (bGrass) H->SetCullDistances(6000, 8000);
                 else if (bBush) H->SetCullDistances(30000, 36000);
