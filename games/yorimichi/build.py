@@ -47,7 +47,7 @@ def cairo_roles():
 # data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
 STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
           'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json',
-          'treehouse/runtime.json', 'megapark/park.json')
+          'treehouse/runtime.json', 'megapark/park.json', 'bike/manifest.json', 'cairo/bike/export.json')
 
 
 def communitypark(out):
@@ -224,6 +224,9 @@ def steps(ctx):
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy'),
+        Step('world.bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'build.py')],
+             inputs=[ASSETS / 'vehicles' / 'bike' / 'build.py', YORI],
+             outputs=[out / 'bike' / 'manifest.json'], about="Cairo's bike: frame, steering, wheels, crank, pedals, kickstand, rack board"),
         Step('world.kei', [Blender(ASSETS / 'vehicles' / 'kei' / 'build.py')],
              inputs=[ASSETS / 'vehicles' / 'kei', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'kei' / 'manifest.json'], about='the four kei cars in the Mega Park car park'),
@@ -245,6 +248,9 @@ def steps(ctx):
                 Blender(cairo, ('--clips', ','.join(armed), '--clips-only', '--report', 'export-armed.json'), threads=4)],
              inputs=[CHARS / 'cairo', NAMES], outputs=[out / 'cairo' / 'export.json'],
              about='the player: mesh, locomotion/action clips and the bokken to FBX (full + sword and armed records)'),
+        Step('characters.cairo_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py')], inputs=[CHARS / 'cairo', NAMES, ASSETS / 'vehicles' / 'bike'],
+             needs=['world.bike'], outputs=[out / 'cairo' / 'bike' / 'export.json'],
+             about="Cairo's bike clips (ride, mount, dismount, kickstand, hop, skid, foot down, bell, wave, crash) and the bike's channels"),
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips'),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
@@ -299,6 +305,9 @@ def steps(ctx):
         Step('unreal.kei', [UnrealScript(SCRIPTS / 'import_kei.py', 'KEI IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_kei.py'], needs=['unreal.world', 'world.kei'], heavy=True,
              about='the kei cars the Mega Park parks in its car park (/Game/Japan/Assets)'),
+        Step('unreal.bike', [UnrealScript(SCRIPTS / 'import_bike.py', 'BIKE IMPORT COMPLETE')],
+             inputs=[SCRIPTS / 'import_bike.py', SCRIPTS / 'bike_material.py'], needs=['unreal.world', 'world.bike'], heavy=True,
+             about="Cairo's bike parts and M_Bike (/Game/Japan/Assets)"),
         Step('unreal.lake', [UnrealScript(SCRIPTS / 'import_forest_lake.py', 'LAKE IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_forest_lake.py', SCRIPTS / 'forest_lake_material.py'], needs=['unreal.world', 'world.lake'],
              heavy=True, about='the woodland lake and cabin'),
@@ -332,6 +341,9 @@ def steps(ctx):
              inputs=[SCRIPTS / n for n in ('import_cairo.py', 'verify_cairo.py', 'import_cairo_sword.py',
                                           'import_cairo_armed.py', 'animation_compression.py')],
              after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo in three layers'),
+        Step('unreal.cairo_bike', [UnrealScript(SCRIPTS / 'import_cairo_bike.py', 'CAIRO BIKE IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_cairo_bike.py', SCRIPTS / 'animation_compression.py'], needs=['characters.cairo_bike', 'unreal.cairo'],
+             heavy=True, about="/Game/CairoBike: Cairo's bike clips on SK_Cairo"),
         # The camera see-through (docs/CAMERA.md) patches materials the world and Cairo imports make, so it reruns after
         # either; the tree house builds its own with it (unreal.treehouse).
         Step('unreal.see_through', [UnrealScript(SCRIPTS / 'see_through.py', 'SEE-THROUGH COMPLETE')],
@@ -362,7 +374,7 @@ def steps(ctx):
     ] + communitypark_steps(out) + [
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[REGIONS / 'skatepark' / 'park.json'],
-             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark',
+             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
     ] + botw_steps(out)

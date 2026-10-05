@@ -5,6 +5,7 @@
 #include "JapanPreferences.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
+#include "BikeComponent.h"
 #include "WandererSword.h"
 #include "FoxHunter.h"
 #include "LiveLibrary.h"
@@ -216,6 +217,17 @@ void AJapanHUD::DrawHUD()
             :FString::Printf(TEXT("Flick the mouse like the stick: pull back then forward = ollie, forward-%s = kickflip, forward-%s = heelflip, pull back then sideways = shove-it   Mouse look"),Kick,Heel);
         DrawSkateLine();
     }
+    const UBikeComponent* Bike=Pawn->GetBike();
+    if (Bike && Bike->IsEquipped())
+    {
+        const float Kmh=Bike->GetSpeed()*.036f;
+        Controls=bController
+            ? FString::Printf(TEXT("Left stick pedal / brake / steer   Hold %s pedal hard   %s hop   %s skid stop   %s bell   Hold %s get off (stopped)      %s   %.0f km/h"),Pad.Sprint,Pad.Jump,Pad.Crouch,Pad.Attack,Pad.Skate,*Bike->GetStatus(),Kmh)
+            : FString::Printf(TEXT("W pedal   S brake   A / D steer   Shift pedal hard   Space hop   C skid stop   Left click bell   Q wave   V get off (stopped)      %s   %.0f km/h"),*Bike->GetStatus(),Kmh);
+        Secondary=bController?FString::Printf(TEXT("Right stick look   %s map   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
+    }
+    else if (Bike && Bike->IsAvailable() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger())
+        Secondary += bController ? FString::Printf(TEXT("   Hold %s bike"),Pad.Skate) : TEXT("   V bike");
     if(!bSailboat&&!Pawn->IsZeppelinPassenger())
     {
         const auto& Stamina=Pawn->GetStamina();

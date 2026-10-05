@@ -16,6 +16,7 @@ class AJapanWorld;
 class UJapanPreferences;
 class USkateComponent;
 class USailboatComponent;
+class UBikeComponent;
 class FJsonObject;
 class FYorimichiPhone;
 class UJapanMap;
@@ -82,6 +83,9 @@ public:
     UBotwMoveSet* GetMoves() const { return Moves; }
     ASwordDummy* GetSwordDummy() const { return SwordDummy; }
     USailboatComponent* GetSailboat() const { return Sailboat; }
+    UBikeComponent* GetBike() const { return Bike; }
+    /** On the sailboat or the bike: the vehicle owns his movement, his animation and his buttons. */
+    bool OnVehicle() const;
     UJapanPreferences* GetPreferences() const { return Preferences; }
     UJapanMap* GetMap() const { return Map; }
     /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there
@@ -134,6 +138,7 @@ private:
     TSharedPtr<FYorimichiPhone> PhoneInput;
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
+    UPROPERTY() TObjectPtr<UBikeComponent> Bike;
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
     UPROPERTY() TObjectPtr<UWandererSwordComponent> Sword;
     UPROPERTY() TObjectPtr<ASwordDummy> SwordDummy;
@@ -250,6 +255,7 @@ private:
     void SkateboardHand(const FInputActionValue& Value);
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);
+    void ToggleBike(const FInputActionValue& Value);
     void ToggleCrouch(const FInputActionValue& Value);
     void Dodge(const FInputActionValue& Value);
     void Wave(const FInputActionValue& Value);
