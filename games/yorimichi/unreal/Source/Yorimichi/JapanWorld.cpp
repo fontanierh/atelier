@@ -137,9 +137,10 @@ void AJapanWorld::Load()
         UE_LOG(LogTemp,Display,TEXT("City grade bounds: lanes=%d aerial=%d arrival=%d forest=%d"),CityGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&CityGradeDistance),
             CityGrade->EncompassesPoint(ToUE(800,40,650),0.f,&CityGradeDistance),
             CityGrade->EncompassesPoint(ToUE(330,80,30),0.f,&CityGradeDistance),CityGrade->EncompassesPoint(ToUE(100,0,30),0.f,&CityGradeDistance));
-        // Seen from a glide above the town, the sunlit roofs and streets keep half the contrast of a street view, which
-        // has its deep shadows: more contrast and colour from 90 m up (blending in from 60 m), the city grade's warmth
-        // kept. Its own box over the same ground, above the district grades.
+        // Seen from a glide above the town, every roof and street faces the sky light, so nothing is dark: the darkest
+        // pixels sat at 99/255 against 30 in a street view. Contrast alone pivots on mid grey, where those darks already
+        // are, so the black point comes down (a negative offset) with a little more colour, from 90 m up (blending in
+        // from 60 m), the city grade's warmth kept. Its own box over the same ground, above the district grades.
         UBoxComponent* GlideBounds=NewObject<UBoxComponent>(this);
         GlideBounds->SetupAttachment(RootComponent);
         GlideBounds->SetRelativeLocation(ToUE(770,40,395));
@@ -153,9 +154,11 @@ void AJapanWorld::Load()
         GlideGrade->SetupAttachment(GlideBounds);
         GlideGrade->bUnbound=false;GlideGrade->BlendRadius=3000;GlideGrade->Priority=2;
         GlideGrade->Settings.bOverride_ColorContrast=true;
-        GlideGrade->Settings.ColorContrast=FVector4(1.16,1.16,1.16,1);
+        GlideGrade->Settings.ColorContrast=FVector4(1.1,1.1,1.1,1);
         GlideGrade->Settings.bOverride_ColorSaturation=true;
-        GlideGrade->Settings.ColorSaturation=FVector4(1.12,1.12,1.12,1);
+        GlideGrade->Settings.ColorSaturation=FVector4(1.15,1.15,1.15,1);
+        GlideGrade->Settings.bOverride_ColorOffset=true;
+        GlideGrade->Settings.ColorOffset=FVector4(-.03,-.03,-.03,0);
         GlideGrade->RegisterComponent();
         float GlideGradeDistance=0.f;
         UE_LOG(LogTemp,Display,TEXT("Glide grade bounds: aerial=%d street=%d"),GlideGrade->EncompassesPoint(ToUE(800,40,650),0.f,&GlideGradeDistance),
