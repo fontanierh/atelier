@@ -1058,7 +1058,13 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
     const FVector Forward = Mesh.InverseTransformVectorNoScale(Character->GetActorForwardVector());
     const FVector Pivot = GliderOnBody.TransformPosition((BarGrip[0] + BarGrip[1]) * .5f);
     const FQuat Bank(Forward, FMath::DegreesToRadians(GlideBank));
-    const FTransform Placed = GliderOnBody * FTransform(-Pivot) * FTransform(Bank) * FTransform(Pivot);
+    FTransform Placed = GliderOnBody * FTransform(-Pivot) * FTransform(Bank) * FTransform(Pivot);
+    // Lowered by as much as the bank lifts the higher grip, which the outer arm (straight overhead) could not reach.
+    const FVector Up = Mesh.InverseTransformVectorNoScale(FVector::UpVector);
+    float Rise = 0.f;
+    for (int32 I = 0; I < 2; ++I)
+        Rise = FMath::Max(Rise, (Placed.TransformPosition(BarGrip[I]) - GliderOnBody.TransformPosition(BarGrip[I])) | Up);
+    Placed.AddToTranslation(-Up * Rise);
     Glider->SetRelativeTransform(Placed);
     // Each hand onto its handle where it reaches it: its grip point moved to the nearest point of its grip, the wrist
     // moved with it.
