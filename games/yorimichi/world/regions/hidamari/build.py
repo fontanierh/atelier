@@ -210,7 +210,7 @@ HOUSE_LANES=sorted({y+layout.HOUSE[1]/2+layout.HOUSE_ALLEY/2 for _,_,y,yaw in la
 HOUSE_X=(min(x for _,x,_,_ in layout.house_sites())-5,max(x for _,x,_,_ in layout.house_sites())+5)
 
 def land_use(x,y):
-    """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 6 m of a street's paving
+    """The ground's surface at (x, y): lawn in the grass patches, sidewalk paving within 2 m of a street's paving
     (layout.road_width), packed earth in the yards behind."""
     if x<398:   # west of the streets, the hillside (the road is arrival.py's ribbon): paving only under the gate
         return 'hd_walk' if x>384 and arrival.road_distance(x,y)<(x-384)*.65 else 'hd_grass'
@@ -219,7 +219,7 @@ def land_use(x,y):
         return 'hd_lane_asphalt' if lane<3.1 else 'hd_ditch_concrete'
     if HOUSE_X[0]<x<HOUSE_X[1] and lane<5.85 and layout._clear_of_hero(x,y):return 'hd_garden_gravel'   # the front plots (kit/house.py FRONT)
     if grass_patch(x,y):return 'hd_grass'
-    if min(abs(y-c) for c in ROAD_Y)<14 or min(abs(x-c)-layout.road_width(x=c)[0] for c in ROAD_X)<6:return 'hd_walk'
+    if min(abs(y-c) for c in ROAD_Y)<10 or min(abs(x-c)-layout.road_width(x=c)[0] for c in ROAD_X)<2:return 'hd_walk'
     return 'hd_yard'
 
 def surface(name,xs,ys,color):

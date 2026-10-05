@@ -1,9 +1,9 @@
 """Kawara: Japanese clay-tile roofs at the scale the art direction paints them (assets/hidamari/houses/*/concept.jpg).
 
 A slope is a field of round tile rolls running from the eave up to the ridge, each roll a half-octagon on the dark
-channel tiles with its own shade, ending at the eave in a round end tile; hips and ridges are stacked noshi courses
-under a round cap with an onigawara block at each end; the eaves show rafter tails over a fascia and carry a copper
-half-round gutter. Every function works in the caller's frame (Mesh.at); slopes are described by an affine map
+channel tiles with its own shade, a lip at each course, ending at the eave in a round end tile; hips and ridges are
+stacked noshi courses under a round cap with an onigawara block at each end; the eaves show rafter tails over a fascia
+and carry a copper half-round gutter. Every function works in the caller's frame (Mesh.at); slopes are described by an affine map
 S(u, t) -> (x, y, z), u across the slope in metres and t from the eave (0) to the top (1).
 """
 import math
@@ -61,14 +61,13 @@ def slope(m, S, u0, u1, tmax=lambda u: 1., steps=6, keys=KEYS):
                 am = (a0+a1)/2
                 face(m, [p(t0, a0), p(t0, a1), p(t1, a1), p(t1, a0)], key,
                      _add(_add((0, 0, 0), n, math.sin(am)), across, math.cos(am)))
-        # the round end tile at the eave, a little proud of the rolls
-        e = S(u, 0); m.beam(_add(_add(e, up, -.03), n, ROLL*.7), _add(_add(e, up, .05), n, ROLL*.7), .17, .15, key)
-        # a course step every row of real tiles: a slight lip across the roll
-        for j in range(1, steps):         # the course step of each row of tiles: a riser facing the eave
-            c = S(u, ts[j])
-            face(m, [_add(_add(c, across, -.075), n, ROLL*.6), _add(_add(c, across, .075), n, ROLL*.6),
-                     _add(_add(c, across, .075), n, ROLL*1.75), _add(_add(c, across, -.075), n, ROLL*1.75)], key,
-                 (-up[0], -up[1], -up[2]))
+        # each tile's lower end, a little proud of the roll above it: a half-octagon lip facing the eave on every
+        # course, and at the eave the round end tile, a full octagon
+        def lip(t, r, full=False):
+            c = _add(S(u, t), n, .008); arc = [k*math.pi/4 for k in range(8 if full else 5)]
+            face(m, [_add(_add(c, across, r*math.cos(a)), n, r*.9*math.sin(a)) for a in arc], key, (-up[0], -up[1], -up[2]))
+        lip(0, ROLL*1.4, full=True)
+        for j in range(1, steps):lip(ts[j], ROLL*1.22)
     return n
 
 

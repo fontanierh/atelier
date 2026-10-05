@@ -24,7 +24,9 @@ uv run atelier build yorimichi world.city_tiles world.city_trees unreal.desktop 
   and `unreal.desktop` imports them into `/Game/Experiments`.
 
 For an art iteration on a few meshes, set `HIDAMARI_ASSETS` to comma-separated mesh names for both the Blender build
-and the importer, and `HIDAMARI_TERRAIN=1` on the importer to replace the base terrain too. A layout or height
+and the importer, and `HIDAMARI_TERRAIN=1` on the importer to replace the base terrain too. Run the importer on its own
+(`kit/lab.py`, or `import_hidamari.py` through `-run=pythonscript`), never through `atelier build`: `unreal.world`
+purges `/Game/Japan` first, so a filtered import there leaves only the named meshes. A layout or height
 change can need `HD_Terrain`, `HD_Streets` and the ground-anchored public spaces rebuilt; rerun the collision audit
 after it.
 
