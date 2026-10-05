@@ -137,6 +137,29 @@ void AJapanWorld::Load()
         UE_LOG(LogTemp,Display,TEXT("City grade bounds: lanes=%d aerial=%d arrival=%d forest=%d"),CityGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&CityGradeDistance),
             CityGrade->EncompassesPoint(ToUE(800,40,650),0.f,&CityGradeDistance),
             CityGrade->EncompassesPoint(ToUE(330,80,30),0.f,&CityGradeDistance),CityGrade->EncompassesPoint(ToUE(100,0,30),0.f,&CityGradeDistance));
+        // Seen from a glide above the town, the sunlit roofs and streets keep half the contrast of a street view, which
+        // has its deep shadows: more contrast and colour from 90 m up (blending in from 60 m), the city grade's warmth
+        // kept. Its own box over the same ground, above the district grades.
+        UBoxComponent* GlideBounds=NewObject<UBoxComponent>(this);
+        GlideBounds->SetupAttachment(RootComponent);
+        GlideBounds->SetRelativeLocation(ToUE(770,40,395));
+        GlideBounds->SetBoxExtent(FVector(49000,32000,30500));
+        GlideBounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        GlideBounds->SetCollisionResponseToAllChannels(ECR_Ignore);
+        GlideBounds->SetGenerateOverlapEvents(false);
+        GlideBounds->SetCanEverAffectNavigation(false);
+        GlideBounds->RegisterComponent();
+        UPostProcessComponent* GlideGrade=NewObject<UPostProcessComponent>(this);
+        GlideGrade->SetupAttachment(GlideBounds);
+        GlideGrade->bUnbound=false;GlideGrade->BlendRadius=3000;GlideGrade->Priority=2;
+        GlideGrade->Settings.bOverride_ColorContrast=true;
+        GlideGrade->Settings.ColorContrast=FVector4(1.16,1.16,1.16,1);
+        GlideGrade->Settings.bOverride_ColorSaturation=true;
+        GlideGrade->Settings.ColorSaturation=FVector4(1.12,1.12,1.12,1);
+        GlideGrade->RegisterComponent();
+        float GlideGradeDistance=0.f;
+        UE_LOG(LogTemp,Display,TEXT("Glide grade bounds: aerial=%d street=%d"),GlideGrade->EncompassesPoint(ToUE(800,40,650),0.f,&GlideGradeDistance),
+            GlideGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&GlideGradeDistance));
         // A gentle local warm grade matches the sheltered arcade's art direction.
         // Blend at its approaches; leave every other district and user setting alone.
         UBoxComponent* ArcadeBounds=NewObject<UBoxComponent>(this);
