@@ -307,3 +307,10 @@ in the repository; machine labels, directories and service configuration remain 
 on [Claude's native resume window](https://code.claude.com/docs/en/remote-control#resume-sessions-after-stopping-the-server),
 and neither software supervision nor board delivery can guarantee availability during power loss,
 pre-login FileVault unlock, or an external service outage.
+
+## Private game ports
+
+The game and sandbox bind HTTP listeners to `localhost` by default, including custom
+`-liveport=N` probes. The LiveBridge still checks that the configured bind address is
+loopback and refuses public listeners. Choose an unused private port per game session;
+a mailbox handoff never authorizes access to another owner's bridge.
