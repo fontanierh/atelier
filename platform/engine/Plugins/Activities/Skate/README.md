@@ -219,9 +219,9 @@ output from a previous ride never moves a new one.
   around a park never rebuilds it. Over open water, where there is nothing to snapshot, the old one stays and the
   rebuild is retried 20 m further on. Game meshes are not authored skate collision, so an edge within 12 mm of the
   wheels' bottoms (a gap between planks, a seam, trim) is ridden over: the wheel steps up onto it, and the trucks, the
-  deck and the rider's feet pass its face. A taller edge, such as a 3 cm curb, still stops the board. Only faces that
-  reach no higher than 12 mm count: a ramp or transition face rises past that, so a board landing pitched into a
-  transition, or riding up a wall, meets it as it is.
+  deck and the rider's feet pass its face. A taller edge, such as a 3 cm curb, still stops the board. A ramp is not an
+  edge: a wheel steps up only where it touches an edge or corner, and the trucks and deck pass only faces no higher
+  than 12 mm over the wheels in the world, so a transition met tilted, or a pitched landing in it, holds the board.
 - **Input.** Each frame the component samples the controls into an Xbox-style packet and steps the session with the
   frame time; the session runs whole 60 Hz ticks.
 - **Lockstep.** By default the game thread sends the next step only once the last one's pose is back, so a slow step

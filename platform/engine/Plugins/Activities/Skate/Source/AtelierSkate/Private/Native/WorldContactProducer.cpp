@@ -65,22 +65,27 @@ bool ImportedInternalFloorEdge(std::size_t source_index,const WorldTriangle& sou
 // instead, so the wheel steps up onto it, and the other volumes' contacts against its side, from the wheels' bottoms up,
 // are dropped. Heights are measured along the board's up (seams on a ramp), else along the world's (a board pitched by
 // the last bump, whose up leans over the next edge). Taller edges, contacts from above and edges a wheel is rolling
-// off keep their own normal. Only a small edge's own faces count, those reaching no higher than SmallEdgeStep over the
-// wheels' bottoms: a ramp's face rises past them, so a board landing pitched into a transition, or riding up a wall,
-// meets it as it is rather than stepping onto it or passing into it.
+// off keep their own normal. A ramp is not an edge, though near the wheels it can look like one: a transition's face
+// meets the front wheels tilted back against their travel, and a board landing pitched meets it with its trucks. So a
+// wheel steps up only where it touches an edge or corner, never a face's flat, and the other volumes pass only faces
+// that rise no higher than SmallEdgeStep over the wheels' bottoms in the world, as a plank's side or a lip does.
 constexpr float SmallEdgeStep=0.012f,RiderGapDepth=0.05f;
 enum class SmallEdge {None,StepUp,Drop};
 SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,const Triangle& face,Vec3 up,float floor,float lowest,ContactPair& pair,Vec3& normal)
 {
     const float height=Dot3(pair.b,up)-floor,along=Dot3(normal,up);
     if (height>SmallEdgeStep) return SmallEdge::None;
-    for (const auto& corner:face.vertices) if (Dot3(corner,up)-floor>SmallEdgeStep) return SmallEdge::None;
     // The trucks and deck (body ids 4 up; 0-3 are the wheels) stand above the wheels' bottoms, so nothing there or lower
     // is theirs to meet before a wheel's.
     const auto* wheel=std::get_if<Sphere>(&volume.primitive);
-    if (!wheel || volume.body_contact_id>=4) return height>=lowest && along>-0.9f && along<0.9f ? SmallEdge::Drop:SmallEdge::None;
+    if (!wheel || volume.body_contact_id>=4)
+    {
+        if (!(height>=lowest && along>-0.9f && along<0.9f)) return SmallEdge::None;
+        for (const auto& corner:face.vertices) if (corner.y-volume.world_floor>SmallEdgeStep) return SmallEdge::None;
+        return SmallEdge::Drop;
+    }
     if (height<-SmallEdgeStep) return SmallEdge::None;
-    if (along>=0.999f || along<=0.0f) return SmallEdge::None;
+    if (along>=0.999f || along<=0.0f || std::fabs(Dot3(normal,face.feature.normal))>0.9999f) return SmallEdge::None;
     const float step=wheel->radius-Dot3(Subtract(wheel->center,pair.b),up);
     if (step>SmallEdgeStep) return SmallEdge::None;
     const auto across=Subtract(normal,Scale(up,along));

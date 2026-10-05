@@ -1,6 +1,6 @@
 """Ollie in the real game and measure how far Cairo's feet stand off the deck, on the ground and in the air.
 
-    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871] [--rider CairoBotw|Cairo]
+    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871] [--rider CairoBotw|Cairo] [--settings FILE]
 
 Run after unreal.compile. Under the render guard it launches the island, stands Cairo on foot on the mini-mega's flat
 and measures his soles and capsule over the floor, then puts the rider on the board there, pushes and ollies a few
@@ -10,7 +10,8 @@ deck's own frame, the height of each
 foot's ankle and toe bones over the deck's top, so a foot that floats off the board in the air shows as a gap the
 ground does not have, and one sunk into it in a manual shows as a negative one. The rider is Cairo as a person plays
 him, with the merged move set (CairoBotw, the default since #28), or his legacy moves (Cairo), which scripted sessions
-get unless asked. Writes build/yorimichi/skate-jump-feet/review/<rider>/{checks.json, rows_*.json, *.png, game.log}.
+get unless asked. --settings plays with a saved settings file (a copy of a player's settings.txt: skate feel, stance),
+copied into the output folder so the game's own saves leave the original alone. Writes build/yorimichi/skate-jump-feet/review/<rider>/{checks.json, rows_*.json, *.png, game.log}.
 The worker owns and quits only the game process it launches.
 """
 from pathlib import Path
@@ -29,9 +30,11 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('--port', type=int, default=8871)
 parser.add_argument('--rider', default='CairoBotw', choices=('CairoBotw', 'Cairo'))
+parser.add_argument('--settings', type=Path, help="a player's settings.txt to play with")
+parser.add_argument('--label', default='', help='output subfolder suffix, to keep runs with different settings apart')
 args = parser.parse_args()
 live.URL = f'http://127.0.0.1:{args.port}'
-ctx = Context('yorimichi'); out = yori.OUT / 'skate-jump-feet' / 'review' / args.rider; out.mkdir(parents=True, exist_ok=True)
+ctx = Context('yorimichi'); out = yori.OUT / 'skate-jump-feet' / 'review' / (args.rider + (f'-{args.label}' if args.label else '')); out.mkdir(parents=True, exist_ok=True)
 
 if not args.worker:
     sys.exit(guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker'] + sys.argv[1:], out / 'guard', timeout=900,
@@ -70,6 +73,8 @@ cmd = [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed', '-resx=1280
        f'-liveport={args.port}', '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost',
        '-ExecCmds=t.MaxFPS 60,r.RHISetGPUCaptureOptions 0,DisableAllScreenMessages']
 if args.rider == 'CairoBotw': cmd.append('-rider=CairoBotw')   # without it a scripted session keeps his legacy moves
+if args.settings:
+    (out / 'settings.txt').write_text(args.settings.read_text()); cmd.append(f"-preferencesfile={out / 'settings.txt'}")
 p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
 guards = ExitStack(); monitor = None
 
