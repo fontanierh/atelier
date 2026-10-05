@@ -13,17 +13,19 @@ scripts = ["assets/audio/footsteps/fetch.py", "assets/audio/combat/fetch.py", "a
 needs = ["sonniss/footsteps", "sonniss/combat"]
 
 [play.play]
-# The default: deferred Lumen at 1080p in a window.
-args = ["-game", "-windowed", "-resx=1920", "-resy=1080", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
+# The default: measured desktop tuning at native 1440 in a window; saved renderer/tree choices are honored.
+script = "tools/desktop_preview.py"
+args = ["--shared-settings", "--windowed", "--memory-gib={memory_gib}"]
 
 [play.fullscreen]
-# The default at 1440p, fullscreen.
-args = ["-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440", "-ExecCmds=r.RHISetGPUCaptureOptions 0"]
+# The same preferences and desktop tuning, fullscreen at native 1440.
+script = "tools/desktop_preview.py"
+args = ["--shared-settings", "--memory-gib={memory_gib}"]
 
 [play.desktop]
 # The measured desktop profile: forward renderer, 1440 pixels high, city tiles and tree LODs.
 script = "tools/desktop_preview.py"
-args = ["--shared-settings", "--windowed"]
+args = ["--shared-settings", "--windowed", "--memory-gib={memory_gib}"]
 
 [play.megapark]
 # Faithful source park, in its own native level. The island remains the default.
@@ -34,7 +36,7 @@ args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-fullscreen", "-Forc
 
 [play.desktop-1440]
 script = "tools/desktop_preview.py"
-args = ["--shared-settings"]
+args = ["--shared-settings", "--memory-gib={memory_gib}"]
 
 [play.foxqa]
 # The fox hunter fight, scripted on a fixed 60 Hz clock (docs/FOX_HUNTER_COMBAT.md): fox_qa.json in the run folder.

@@ -87,7 +87,8 @@ Install it with `softwareupdate --install-rosetta --agree-to-license` if missing
 uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
 uv run atelier fetch yorimichi          # downloads the Sonniss sound masters (not redistributed here)
 uv run atelier build yorimichi          # world, characters, sounds, effects, compile, Unreal import
-uv run atelier play yorimichi           # 1080p window; --profile desktop-1440 for the desktop profile
+uv run atelier play yorimichi           # native 1440 window, forward and optimized trees by default
+uv run atelier play yorimichi --profile fullscreen
 ```
 
 `atelier build yorimichi --list` shows every step; name one to run just it (and what it needs). Generated files go

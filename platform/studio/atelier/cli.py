@@ -80,7 +80,9 @@ def play(game, profile, settings, extra, memory_gib=None):
     folder = ctx.out / 'logs' / f'play-{profile}-{stamp}'
     folder.mkdir(parents=True, exist_ok=True)
     if 'script' in spec:   # a game-specific launcher (for example the desktop profile)
-        command = [sys.executable, str(ctx.game_dir / spec['script']), *spec.get('args', []), *extra]
+        script_args = [a.replace('{run}', str(folder)).replace('{memory_gib}', f'{limit:g}')
+                       for a in spec.get('args', [])]
+        command = [sys.executable, str(ctx.game_dir / spec['script']), *script_args, *extra]
         if settings:
             command += ['--settings', settings]
         return subprocess.call(command, env=ctx.env())
