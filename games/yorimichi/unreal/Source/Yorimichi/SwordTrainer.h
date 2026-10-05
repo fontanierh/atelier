@@ -20,6 +20,7 @@ struct FTrainerStyle
     float Charge, DashCut, JumpCut, DoubleJump, Feint;   // shares of her openings (the rest are combos)
     float Damage;          // her blows' share of the full sparring damage
     float Strafe;          // circling: 0 walks, 1 runs
+    float GuardUp;         // share of the time her guard is raised while circling
 };
 
 /**
@@ -98,7 +99,8 @@ private:
     FString Intent = TEXT("home"), Forced, ForcedDefence;
     float Think = 0.f, IntentTime = 0.f, Cooldown = 0.f, StrafeSign = 1.f, StrafeSwitch = 0.f, PressGap = 0.f, HoldFor = 0.f;
     int32 CombosLeft = 0;
-    bool bGuardDown = false, bAttackDown = false, bAirStep = false;
+    bool bGuardDown = false, bAttackDown = false, bAirStep = false, bGuardUp = true;
+    float GuardSwitch = 0.f;
     FRandomStream Dice;
     // The player's blow she is watching, and how she will meet it (decided once, after her reaction time).
     FName SeenAction;

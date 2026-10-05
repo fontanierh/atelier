@@ -1,0 +1,21 @@
+{
+  "native": "SwordTrainer-Rig-r01.blend",
+  "native_sha256": "9ada5154d2d5510e1008b8ccf9ad0ecc72c920ccc0811c2d491e8903631d8c44",
+  "fps": 30,
+  "height_cm": 168,
+  "rig": "humanoid contract with fingers: 23 Tripo body bones (Mixamo names under Root) and 30 finger bones",
+  "roles": [
+    {
+      "role": "Bow",
+      "clip": "Bow",
+      "loop": false,
+      "notes": "a standing bow: down by 0.47 s, held to 1.33 s, up by 1.93 s"
+    },
+    {
+      "role": "Talk",
+      "clip": "Talk",
+      "loop": false,
+      "notes": "the right hand up, palm up, a nod, the hand opens, down"
+    }
+  ]
+}

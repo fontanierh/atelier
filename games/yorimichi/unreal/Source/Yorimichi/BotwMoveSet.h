@@ -142,6 +142,9 @@ public:
     bool IsBusy() const { return Busy(); }
     /** Real seconds until the playing blow's next active window opens: 0 inside one, -1 when no blow is coming. */
     float NextBlowIn() const;
+    /** In a combo cut that can be followed: real seconds until the next cut may come (its input point), 0 from then on;
+     *  -1 otherwise. The cuts strike from their first frame, so a watcher answers the next one, not the one swinging. */
+    float NextCutIn() const;
     /** Live and QA: the facts the scenarios check, as JSON. */
     FString Describe() const;
 

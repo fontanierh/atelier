@@ -10,6 +10,7 @@
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "AIController.h"
+#include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
@@ -53,14 +54,14 @@ namespace
     // answers about half of the player's blows; Master parries, times perfect dodges into the flurry rush and uses
     // every opening of the set.
     const FTrainerStyle Styles[3] = {
-        //  name       react parry dodge guard perfect aggr combo recov charge dash  jump  double feint damage strafe
-        { TEXT("Gentle"), .55f, 0.f,  .15f, .25f,  0.f,   .35f, 2,    1.1f,  .08f,  .06f, .06f, 0.f,   0.f,  .6f,  0.f },
-        { TEXT("Steady"), .30f, .22f, .22f, .26f,  .35f,  .65f, 3,    .6f,   .15f,  .14f, .12f, .08f,  .06f, .85f, .5f },
-        { TEXT("Master"), .15f, .42f, .26f, .18f,  .75f,  1.05f, 4,   .3f,   .2f,   .16f, .14f, .14f,  .12f, 1.f,  1.f },
+        //  name       react parry dodge guard perfect aggr combo recov charge dash  jump  double feint damage strafe guard up
+        { TEXT("Gentle"), .45f, 0.f,  .15f, .3f,   0.f,   .35f, 2,    1.1f,  .08f,  .06f, .06f, 0.f,   0.f,  .6f,  0.f,   .3f },
+        { TEXT("Steady"), .25f, .25f, .25f, .25f,  .35f,  .65f, 3,    .6f,   .15f,  .14f, .12f, .08f,  .06f, .85f, .5f,   .55f },
+        { TEXT("Master"), .12f, .45f, .3f,  .15f,  .75f,  1.05f, 4,   .3f,   .2f,   .16f, .14f, .14f,  .12f, 1.f,  1.f,   .7f },
     };
     // The training ground: the open apron in front of the tea house, in the hamlet's authored metres (before
     // `village_point`'s offset), and the way she faces when she waits there (toward the lane).
-    const FVector2D Ground(90.f, 4.f);
+    const FVector2D TrainingGround(90.f, 4.f);
     constexpr float GroundYaw = -60.f;
     constexpr float TalkReach = 340.f, LeaveReach = 3000.f;
 }
@@ -116,7 +117,7 @@ ASwordTrainer* ASwordTrainer::SpawnInVillage(AJapanWorld* World, const TSharedPt
     FVector Offset = FVector::ZeroVector;
     const TArray<TSharedPtr<FJsonValue>>* O = nullptr;
     if (Village->TryGetArrayField(TEXT("offset"), O) && O->Num() == 3) Offset = FVector((*O)[0]->AsNumber(), (*O)[1]->AsNumber(), (*O)[2]->AsNumber());
-    FVector Where = AJapanWorld::ToUE(Ground.X + Offset.X, Ground.Y + Offset.Y, 200.);
+    FVector Where = AJapanWorld::ToUE(TrainingGround.X + Offset.X, TrainingGround.Y + Offset.Y, 200.);
     FHitResult Hit;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(TrainerSpawn), false);
     if (!World->GetWorld()->LineTraceSingleByChannel(Hit, Where, Where - FVector(0, 0, 40000.), ECC_Visibility, Params))
@@ -136,8 +137,8 @@ ASwordTrainer* ASwordTrainer::Find(const UObject* WorldContext)
 {
     UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
     if (!World) return nullptr;
-    for (TActorIterator<ASwordTrainer> It(World); It; ++It) return *It;
-    return nullptr;
+    TActorIterator<ASwordTrainer> It(World);
+    return It ? *It : nullptr;
 }
 
 bool ASwordTrainer::TryInteract(AWandererCharacter* Player)
@@ -168,7 +169,8 @@ bool ASwordTrainer::CanTalk(const AWandererCharacter* Player) const
 
 bool ASwordTrainer::IsSparringWith(const AActor* Other) const
 {
-    return Other && Other == Opponent.Get() && Bout == EBout::Fighting;
+    // From the stance (so each side's lock-on finds the other) to the end of the bout.
+    return Other && Other == Opponent.Get() && (Bout == EBout::Ready || Bout == EBout::Fighting);
 }
 
 float ASwordTrainer::SparringDamage(int32 Power) const
@@ -292,7 +294,7 @@ void ASwordTrainer::CloseMenu()
 
 void ASwordTrainer::Restore(AWandererCharacter* Who)
 {
-    if (UWandererSwordComponent* S = Who ? Who->GetSword() : nullptr) S->Health = UWandererSwordComponent::MaxHealth;
+    if (UWandererSwordComponent* S = Who ? Who->GetSword() : nullptr) S->RestoreHealth();
 }
 
 bool ASwordTrainer::StartBout(AWandererCharacter* Player, int32 NewLevel, bool bShield, bool bPlayerShield)
@@ -439,7 +441,7 @@ void ASwordTrainer::AdvanceFight(float Dt)
 {
     AWandererCharacter* P = Opponent.Get();
     UBotwMoveSet* Theirs = P ? P->GetMoves() : nullptr;
-    if (!P || !Theirs || P->GetSkate()->IsRiding() || P->GetSailboat()->IsEquipped()) { EndBout(TEXT("Kaede: \"Another time, then.\"")); return; }
+    if (!P || !Theirs || P->GetSkate()->IsRiding() || P->OnVehicle()) { EndBout(TEXT("Kaede: \"Another time, then.\"")); return; }
     if (FVector::Dist2D(P->GetActorLocation(), Home) > LeaveReach) { EndBout(TEXT("Kaede: \"Running is a lesson too.\"")); return; }
     // Someone is down at no health: the bout is over.
     const float Mine = GetSword() ? GetSword()->GetHealth() : 1.f, Their = P->GetSword() ? P->GetSword()->GetHealth() : 1.f;
@@ -491,8 +493,17 @@ void ASwordTrainer::AdvanceFight(float Dt)
         Hold(TEXT("guard"), true); Drive(FVector2D(StrafeSign * .5f, -1.f), 1); SetIntent(TEXT("evade charge"));
         return;
     }
-    Hold(TEXT("guard"), true);
-    Drive(FVector2D(StrafeSign * .8f, Radial), S.Strafe > .5f && Distance > Want + 120.f ? 1 : 0);
+    // Her guard is up for a share of the time (the level's), down for the rest: then she steps in or out, facing.
+    GuardSwitch -= Dt;
+    if (GuardSwitch <= 0.f) { bGuardUp = Dice.FRand() < S.GuardUp; GuardSwitch = Dice.FRandRange(.8f, 2.2f); }
+    Hold(TEXT("guard"), bGuardUp);
+    if (bGuardUp) Drive(FVector2D(StrafeSign * .8f, Radial), S.Strafe > .5f && Distance > Want + 120.f ? 1 : 0);
+    else
+    {
+        Drive(FVector2D(0.f, Radial), 0);
+        if (!Moves->IsBusy() && Radial == 0.f)
+            SetActorRotation(FRotator(0, FMath::FixedTurn(float(GetActorRotation().Yaw), float((There - Here).Rotation().Yaw), 360.f * Dt), 0));
+    }
     if (Cooldown <= 0.f && !Moves->IsBusy() && Dice.FRand() < S.Aggression * Dt) Open(Distance);
 }
 
@@ -502,73 +513,70 @@ bool ASwordTrainer::Defend(float Dt, float Distance)
     UBotwMoveSet* Theirs = P ? P->GetMoves() : nullptr;
     if (!Theirs) return false;
     const FTrainerStyle& S = GetStyle();
-    const bool bBlow = Theirs->IsAttacking() && !Theirs->IsCharging();
+    // The blow she can still answer: the playing blow's next window (a charged spin, a dash or jump attack wind up
+    // first), or in a combo the next cut, which can come from the cut's input point (the cuts strike from their first
+    // frame, so the one swinging is already decided: only a raised guard meets it).
     const FName Action = Theirs->GetActionName();
-    const float T = Theirs->GetActionClipTime();
-    if (!bBlow)
+    const bool bBlow = Theirs->IsAttacking() && !Theirs->IsCharging();
+    const float Own = bBlow ? Theirs->NextBlowIn() : -1.f, Next = bBlow ? Theirs->NextCutIn() : -1.f;
+    const float In = Own > 0.f ? Own : Next;
+    const FName Key = In < 0.f ? NAME_None : FName(*(Action.ToString() + (Own > 0.f ? TEXT("") : TEXT(">"))));
+    if (Key != SeenAction) { SeenAction = Key; SeenFor = 0.f; bAnswered = false; Answer.Reset(); }
+    if (Key.IsNone())
     {
-        SeenAction = NAME_None;
-        if (Intent == TEXT("guard") || Intent == TEXT("parry") || Intent == TEXT("dodge")) { SetIntent(TEXT("circle")); Answer.Reset(); }
+        if (Intent == TEXT("parry") || Intent == TEXT("dodge")) SetIntent(TEXT("circle"));
         return false;
     }
-    // A new blow: another action, or the same cut started again (the combo's next press).
-    if (Action != SeenAction || T + .02f < SeenTime) { SeenAction = Action; SeenFor = 0.f; bAnswered = false; Answer.Reset(); }
-    SeenTime = T; SeenFor += Dt;
-    const float In = Theirs->NextBlowIn();
-    if (SeenFor < S.Reaction || In < 0.f || Distance > 330.f) return Answer == TEXT("guard") && In >= 0.f;
+    SeenFor += Dt;
+    if (SeenFor < S.Reaction || Distance > 330.f) return Answer.EndsWith(TEXT("!"));
     if (!bAnswered)
     {
         bAnswered = true;
         Counts.FindOrAdd(TEXT("blows_seen"))++;
         if (!ForcedDefence.IsEmpty()) { Answer = ForcedDefence; ForcedDefence.Reset(); }
-        else if (Moves->IsBusy() && !Intent.StartsWith(TEXT("attack"))) Answer = TEXT("take");
         else
         {
             const float R = Dice.FRand();
             Answer = R < S.Parry ? TEXT("parry") : R < S.Parry + S.Dodge ? (Dice.FRand() < S.PerfectDodge ? TEXT("perfect") : TEXT("dodge"))
                 : R < S.Parry + S.Dodge + S.Guard ? TEXT("guard") : TEXT("take");
         }
-        // Mid-attack she can only take it, or abandon the attack if it has not started swinging.
-        if (Answer != TEXT("take") && Moves->IsAttacking()) Answer = TEXT("take");
+        // In the middle of her own blow she can only take it.
+        if (Answer != TEXT("take") && (Moves->IsAttacking() || Moves->IsBusy())) Answer = TEXT("take");
         Counts.FindOrAdd(TEXT("answer_") + Answer)++;
     }
-    if (Answer == TEXT("take") || Answer.IsEmpty()) return false;
+    if (Answer == TEXT("take")) return false;
     CombosLeft = 0; Hold(TEXT("attack"), false);
+    if (Intent.StartsWith(TEXT("attack"))) SetIntent(TEXT("circle"));
     if (Answer == TEXT("guard"))
     {
-        SetIntent(TEXT("guard")); Hold(TEXT("guard"), true); Drive(FVector2D::ZeroVector, 0);
+        Hold(TEXT("guard"), true); Drive(FVector2D::ZeroVector, 0);
         return true;
     }
-    if (Answer == TEXT("parry"))
+    if (Answer.StartsWith(TEXT("parry")))
     {
         SetIntent(TEXT("parry")); Hold(TEXT("guard"), true); Drive(FVector2D::ZeroVector, 0);
-        // The parry's guard window opens a little into its clip: press so that it is open when the blow lands.
+        // The parry's window opens a moment into its clip: pressed so that it is open when the blow can land.
         const FBotwMove* Parry = Moves->Find(Moves->HasShield() ? FName(TEXT("Parry")) : FName(TEXT("SwordParry")));
-        const float Open = Parry && Parry->Guard.Num() ? (Parry->Guard[0].X - Parry->Start) / Parry->Rate : .05f;
-        if (In <= Open + .06f && !Answer.EndsWith(TEXT("!")))
-        {
-            Press(TEXT("jump")); Answer += TEXT("!");   // pressed once
-        }
+        const float Opens = Parry && Parry->Guard.Num() ? (Parry->Guard[0].X - Parry->Start) / Parry->Rate : .05f;
+        // Only once the guard is up (a press without it would be a jump).
+        if (Answer == TEXT("parry") && In <= Opens + .05f && Moves->IsGuarding() && !Moves->IsBusy()) { Press(TEXT("jump")); Answer = TEXT("parry!"); }
         return true;
     }
-    if (Answer == TEXT("parry!")) { Hold(TEXT("guard"), true); return true; }
-    // A hop: to the side (or the backflip), early enough to clear the blow, or just as it comes for a perfect dodge.
+    // A hop: to the side (or the backflip), early enough to clear the blow, or just as it can come for a perfect dodge.
+    SetIntent(TEXT("dodge"));
     if (Answer == TEXT("dodge") || Answer == TEXT("perfect"))
     {
-        SetIntent(TEXT("dodge"));
-        const float When = Answer == TEXT("perfect") ? .12f : .32f;
-        if (In <= When)
+        if (In <= (Answer == TEXT("perfect") ? .08f : .3f))
         {
-            Hold(TEXT("guard"), true);   // locked on, so the stick's side means her side
+            Hold(TEXT("guard"), true);   // locked on, so the stick's side is her side
             const float Side = Dice.FRand() < .5f ? -1.f : 1.f;
-            const bool bBack = Dice.FRand() < .3f;
-            Drive(bBack ? FVector2D(0.f, -1.f) : FVector2D(Side, 0.f), 1);
+            Drive(Dice.FRand() < .3f ? FVector2D(0.f, -1.f) : FVector2D(Side, 0.f), 1);
             Press(TEXT("dodge"));
             Answer += TEXT("!");
         }
         return true;
     }
-    return Answer.EndsWith(TEXT("!")) && Theirs->IsAttacking();
+    return Moves->IsHopping();
 }
 
 void ASwordTrainer::Open(float Distance)
@@ -579,10 +587,11 @@ void ASwordTrainer::Open(float Distance)
     if (Pick.IsEmpty())
     {
         // Shares of her openings, by what the distance allows; the rest is a combo.
-        TArray<TPair<FString, float>> Options = { { TEXT("charge"), S.Charge }, { TEXT("jump"), S.JumpCut }, { TEXT("double"), S.DoubleJump }, { TEXT("feint"), S.Feint } };
+        struct FOption { const TCHAR* Name; float Share; };
+        TArray<FOption> Options = { { TEXT("charge"), S.Charge }, { TEXT("jump"), S.JumpCut }, { TEXT("double"), S.DoubleJump }, { TEXT("feint"), S.Feint } };
         if (Distance > 380.f) Options.Add({ TEXT("dash"), S.DashCut * 2.f });
         float R = Dice.FRand();
-        for (const auto& O : Options) { if (R < O.Value) { Pick = O.Key; break; } R -= O.Value; }
+        for (const FOption& O : Options) { if (R < O.Share) { Pick = O.Name; break; } R -= O.Share; }
         if (Pick.IsEmpty()) Pick = TEXT("combo");
     }
     CombosLeft = Pick == TEXT("combo") ? Dice.RandRange(1, S.MaxCombo) : 0;

@@ -540,6 +540,8 @@ void UBotwMoveSet::AdvanceGround(float Dt)
     FName Name = Now ? Now->Name : NAME_None;
     if (bLocked)
     {
+        // Locked on with nothing to face (nothing was in front at the press): look again a few times a second.
+        if (!Target.IsValid() && FMath::FloorToInt(Clock * 4.f) != FMath::FloorToInt((Clock - Dt) * 4.f)) Target = FindTarget(1500.f, 70.f);
         AActor* Focus = Target.Get();
         if (Focus && (FVector::Dist2D(Focus->GetActorLocation(), Here) > 2500.f || !IsTargetable(Focus))) { Target = nullptr; Focus = nullptr; }
         const float FaceYaw = Focus ? (Focus->GetActorLocation() - Here).Rotation().Yaw : LockYaw;
@@ -1933,6 +1935,15 @@ void UBotwMoveSet::Deflected(AActor* By)
 
 bool UBotwMoveSet::IsAttacking() const { return IsAttack(CurrentName()) || bCharging; }
 bool UBotwMoveSet::IsHopping() const { return IsHop(CurrentName()); }
+
+float UBotwMoveSet::NextCutIn() const
+{
+    const FBotwMove* M = Current();
+    if (!M) return -1.f;
+    for (int32 I = 0; I < 3; ++I)
+        if (M->Name == CutNames[I]) return FMath::Max(0.f, (M->Input - SourceTime()) / FMath::Max(Character->GetActionPlayRate(), .05f));
+    return -1.f;
+}
 
 float UBotwMoveSet::NextBlowIn() const
 {
