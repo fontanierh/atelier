@@ -23,6 +23,11 @@
 #include "Misc/FileHelper.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformMisc.h"
+#include "HAL/PlatformFileManager.h"
+#include "HAL/PlatformFile.h"
+#if PLATFORM_WINDOWS
+#include "Windows/WindowsHWrapper.h"
+#endif
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -576,16 +581,38 @@ bool UJapanPreferences::IsSessionOnly(const FString& Key)
 
 bool UJapanPreferences::Save()
 {
+    TMap<FString,FString> NextValues = SavedValues;
     for (const auto& V : Values)
     {
-        if (IsSessionOnly(V.Key)) { SavedValues.Remove(V.Key); continue; }
-        SavedValues.Add(V.Key,FString::SanitizeFloat(V.Value));
+        if (IsSessionOnly(V.Key)) { NextValues.Remove(V.Key); continue; }
+        NextValues.Add(V.Key,FString::SanitizeFloat(V.Value));
     }
-    TArray<FString> Keys; SavedValues.GetKeys(Keys); Keys.Sort();
+    TArray<FString> Keys; NextValues.GetKeys(Keys); Keys.Sort();
     FString Content;
-    for (const auto& K : Keys) Content += K+TEXT("=")+SavedValues[K]+TEXT("\n");
-    const bool Saved = FFileHelper::SaveStringToFile(Content,*SettingsFile,FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
-    if (!Saved) UE_LOG(LogTemp,Error,TEXT("PREFERENCES could not save %s"),*SettingsFile);
+    for (const auto& K : Keys) Content += K+TEXT("=")+NextValues[K]+TEXT("\n");
+    // Flush a unique sibling first: an incomplete write must never truncate the previous settings.
+    const FString Temporary = FPaths::CreateTempFilename(*FPaths::GetPath(SettingsFile),TEXT("settings-"));
+    IPlatformFile& Files = FPlatformFileManager::Get().GetPlatformFile();
+    bool Saved = FFileHelper::SaveStringToFile(Content,*Temporary,FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+    if (Saved)
+    {
+#if PLATFORM_WINDOWS
+        // Windows's IPlatformFile::MoveFile does not replace existing files.
+        const FString From = Files.ConvertToAbsolutePathForExternalAppForWrite(*Temporary);
+        const FString To = Files.ConvertToAbsolutePathForExternalAppForWrite(*SettingsFile);
+        Saved = ::MoveFileExW(*From,*To,MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+        // Apple/Unix MoveFile uses rename(), which replaces a same-filesystem sibling atomically.
+        // IFileManager::Move deletes the destination first, so it is unsafe for this operation.
+        Saved = Files.MoveFile(*SettingsFile,*Temporary);
+#endif
+    }
+    if (Saved) SavedValues = MoveTemp(NextValues);
+    else
+    {
+        Files.DeleteFile(*Temporary);
+        UE_LOG(LogTemp,Error,TEXT("PREFERENCES could not save %s; previous file preserved"),*SettingsFile);
+    }
     return Saved;
 }
 void UJapanPreferences::ResetLight()
