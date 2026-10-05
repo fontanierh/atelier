@@ -106,6 +106,32 @@ void AJapanWorld::Load()
             if(Instances->TryGetArrayField(Pair.Key,Prior)) Combined=*Prior;
             Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
         }
+        // Hidamari's late-afternoon grade over the whole city (location.json city_bounds): the global grade's cool
+        // shadows turn its cream plaster pale blue. The district grades below (priority 2) take precedence inside.
+        UBoxComponent* CityBounds=NewObject<UBoxComponent>(this);
+        CityBounds->SetupAttachment(RootComponent);
+        CityBounds->SetRelativeLocation(ToUE(810,60,40));
+        CityBounds->SetBoxExtent(FVector(45000,30000,8000));
+        CityBounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        CityBounds->SetCollisionResponseToAllChannels(ECR_Ignore);
+        CityBounds->SetGenerateOverlapEvents(false);
+        CityBounds->SetCanEverAffectNavigation(false);
+        CityBounds->RegisterComponent();
+        UPostProcessComponent* CityGrade=NewObject<UPostProcessComponent>(this);
+        CityGrade->SetupAttachment(CityBounds);
+        CityGrade->bUnbound=false;CityGrade->BlendRadius=4000;CityGrade->Priority=1;
+        CityGrade->Settings.bOverride_SceneColorTint=true;
+        CityGrade->Settings.SceneColorTint=FLinearColor(1.05,.985,.88);
+        CityGrade->Settings.bOverride_ColorGainShadows=true;
+        CityGrade->Settings.ColorGainShadows=FVector4(1.02,.99,.93,1);
+        CityGrade->Settings.bOverride_ColorGainHighlights=true;
+        CityGrade->Settings.ColorGainHighlights=FVector4(1.04,1.0,.93,1);
+        CityGrade->Settings.bOverride_ColorContrast=true;
+        CityGrade->Settings.ColorContrast=FVector4(1.04,1.04,1.04,1);
+        CityGrade->RegisterComponent();
+        float CityGradeDistance=0.f;
+        UE_LOG(LogTemp,Display,TEXT("City grade bounds: lanes=%d forest=%d"),CityGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&CityGradeDistance),
+            CityGrade->EncompassesPoint(ToUE(100,0,30),0.f,&CityGradeDistance));
         // A gentle local warm grade matches the sheltered arcade's art direction.
         // Blend at its approaches; leave every other district and user setting alone.
         UBoxComponent* ArcadeBounds=NewObject<UBoxComponent>(this);
