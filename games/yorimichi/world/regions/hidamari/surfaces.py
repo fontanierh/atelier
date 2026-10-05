@@ -15,6 +15,9 @@ import bpy
 from village import build as v
 
 RULES = [
+    ('rice', r'^ar_rice'),                  # before 'flat' (stalk) and 'grass' (lawn)
+    ('drystone', r'drystone'),
+    ('blockwall', r'block_concrete'),
     ('flat', r'glow|lamp|downlight|glass|mirror|window|display|vend|sign$|_sign|text|steam|noren|banner|futon|cloth|'
              r'shoji|paper|bottle|map$|broth|bowl|bread|bun$|crust|fruit|tyre|bike|cat$|fox|mane|shide|rope|bloom|rose|'
              r'iris|reed|stalk|twig|leaf|ginkgo|hedge|fallen|water|foam|tactile|_line|stripe|chalk|glaze|drum|machine|'

@@ -74,12 +74,20 @@ SURFACES = {
     'concrete': ('weathered smooth concrete, faint formwork stains, tiny air pores and soft grime', 2.2),
     'paint': ('a softly weathered painted wooden surface, an even coat of pale paint with faint brush strokes and a '
               'few tiny chips', 1.5),
+    'drystone': ('a dry-laid Japanese terrace retaining wall (ishigaki) seen straight-on: rounded river stones of mixed '
+                 'sizes fitted closely together with small dark gaps and no mortar, warm grey, beige and ochre stones, '
+                 'a little moss in the gaps', 2.0),
+    'rice': ('a paddy of ripe standing rice seen from a little above: dense golden heads of grain bowing over in soft '
+             'rows running exactly left to right, warm yellow-gold with ochre and pale green-gold, darker gaps between '
+             'the rows', 1.6),
+    'blockwall': ('the rough split face of a concrete garden block, coarse sandy grain with small pits, soft mottling '
+                  'and faint rain streaks, warm beige-grey, no joints or block edges', 1.2),
 }
 
 # Share of each surface's colour variation kept in its detail map (the rest is brightness only): the map multiplies
 # whatever palette colour a face has, and a full-strength hue shift (grey mortar over a red mean turns cyan) shows
 # wherever the face's colour differs from the painting's.
-CHROMA = {'grass': .5, 'moss': .3, 'brick': .45, 'flagstone': .6, 'earth': .6}
+CHROMA = {'grass': .5, 'moss': .3, 'brick': .45, 'flagstone': .6, 'earth': .6, 'rice': .6, 'drystone': .55}
 
 
 def concepts():

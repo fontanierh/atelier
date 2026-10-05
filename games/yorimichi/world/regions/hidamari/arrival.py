@@ -3,10 +3,10 @@ shrine, a bus stop, and a town gate where the road meets the first street.
 
 West of the first north-south street (x 410) the old ground was the east-west streets' sidewalk paving carried on up
 the hill (build.land_use); it is grass now. On the hillside either side of the road the paddies step down the slope:
-each a level plate a little above the highest ground under it, held by a stone or earth wall down to the ground on
-its low sides, a grass bund along its rim; half still standing golden with ripe rice, others harvested stubble in
-rows, a few flooded or fallow, rice drying on hasa racks. Dry-stone walls hold the banks above the road and a white
-guard rail runs where the ground falls away. Builder: HD_Arrival (world space, following the ground).
+each a level plate a little above the highest ground under it, held on its low sides by a dry-stone wall of rounded
+stones (ishigaki) or, where low, a grass bank, a grass bund along its rim; half still standing golden with ripe rice
+in rows, others harvested stubble, a few flooded or fallow, rice drying on hasa racks. Builder: HD_Arrival (world
+space, following the ground).
 """
 import math, random
 from functools import lru_cache
@@ -19,14 +19,13 @@ SHRINE = (356.1, 118.9)                # beside the road's bend, facing it
 BUS_STOP = (373.3, 136.7, 45)
 GATE_X = 399.; GATE_Y = 140.; GATE_HALF = 8.8
 PALETTE = {'ar_paddy_earth': (.22, .15, .065), 'ar_stubble_row': (.40, .29, .10), 'ar_paddy_water': (.11, .16, .20),
-           'ar_paddy_fallow_lawn': (.17, .22, .08), 'ar_bund_lawn': (.15, .19, .07), 'ar_terrace_stone': (.21, .21, .17),
+           'ar_paddy_fallow_lawn': (.17, .22, .08), 'ar_bund_lawn': (.15, .19, .07), 'ar_terrace_drystone': (.25, .235, .20),
            'ar_bank_lawn': (.16, .20, .07), 'ar_hasa_timber': (.25, .17, .09), 'ar_straw_bundle': (.56, .44, .20),
            'ar_hokora_timber': (.30, .17, .08), 'ar_hokora_roof': (.08, .09, .10), 'ar_red_cloth': (.60, .07, .04),
            'ar_shrine_stone': (.32, .31, .28), 'ar_gate_timber': (.22, .12, .06), 'ar_gate_roof': (.07, .08, .09),
            'ar_gate_stone': (.30, .29, .26), 'ar_gate_sign': (.70, .64, .50), 'ar_lantern_glow': (1., .55, .25),
            'ar_road_asphalt': (.085, .085, .09), 'ar_road_gravel': (.17, .155, .13), 'ar_road_line': (.62, .60, .55),
-           'ar_ripe_rice_lawn': (.44, .32, .075), 'ar_rice_stalk_lawn': (.24, .20, .06), 'ar_wall_stone': (.25, .24, .21),
-           'ar_wall_stone_dark': (.19, .185, .165), 'ar_guard_white': (.62, .62, .60)}
+           'ar_rice_canopy': (.50, .34, .055), 'ar_rice_canopy_shade': (.36, .25, .05), 'ar_rice_side': (.27, .22, .065)}
 
 
 def palette():
@@ -99,8 +98,9 @@ def place(put, inst, height):
 
 
 def _bank(level, drop):
-    """(key, lean) of a paddy's bank dropping drop below its rim: a grass slope, or a steep stone wall where tall."""
-    return ('ar_terrace_stone', .15*drop) if drop > 2.6 else ('ar_bank_lawn', .55*drop)
+    """(key, lean) of a paddy's bank dropping drop below its rim: a grass slope where low, a steep dry-stone wall of
+    rounded stones (ishigaki) where it holds up a terrace."""
+    return ('ar_terrace_drystone', .12*drop) if drop > .7 else ('ar_bank_lawn', .55*drop)
 
 
 def _facing(m, pts, out, key):
@@ -160,78 +160,20 @@ def _paddy(m, cell, height, r):
 
 
 def _crop(m, a, b, c, d, z):
-    """Standing ripe rice inside a paddy's bund: a golden canopy about 0.8 m up, gently uneven, its stalks down
-    the sides."""
+    """Standing ripe rice inside a paddy's bund: rows along y about 0.8 m up, each a low ridge of bowed heads (lit
+    crest, shaded furrow), gently uneven, its stalks down the sides."""
     top = lambda x, y: z+.78+.05*math.sin(x*2.1+y*1.3)+.035*math.sin(x*.7-y*2.9)
-    xs = [a+(b-a)*k/max(1, round(b-a)) for k in range(max(1, round(b-a))+1)]
+    rows = max(1, round((b-a)/.3)); xs = [a+(b-a)*k/rows for k in range(rows+1)]
     ys = [c+(d-c)*k/max(1, round(d-c)) for k in range(max(1, round(d-c))+1)]
     for x0, x1 in zip(xs, xs[1:]):
+        xm = (x0+x1)/2
         for y0, y1 in zip(ys, ys[1:]):
-            m.poly([(x, y, top(x, y)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))], 'ar_ripe_rice_lawn')
+            for xa, xb, key in ((x0, xm, 'ar_rice_canopy'), (xm, x1, 'ar_rice_canopy_shade')):
+                ha = .07 if xa == xm else 0.; hb = .07 if xb == xm else 0.
+                m.poly([(xa, y0, top(xa, y0)+ha), (xb, y0, top(xb, y0)+hb), (xb, y1, top(xb, y1)+hb), (xa, y1, top(xa, y1)+ha)], key)
     for edge in ([(x, c) for x in xs], [(b, y) for y in ys], [(x, d) for x in xs[::-1]], [(a, y) for y in ys[::-1]]):
         for p, q in zip(edge, edge[1:]):
-            m.poly([(*p, z), (*q, z), (*q, top(*q)), (*p, top(*p))], 'ar_rice_stalk_lawn')
-
-
-def _roadside(m, height):
-    """Along the road's shoulders: a dry-stone retaining wall of rounded stones where the bank beside it rises, a
-    white guard rail where it falls away; clear of the shrine, the bus stop and the gate."""
-    r = random.Random(4403); pts, normals = _samples(); g = lambda x, y: float(height(x, y))
-    for s in (-1, 1):
-        for k in range(len(pts)-2):
-            (px, py), (nx, ny) = pts[k], normals[k]; nx, ny = nx*s, ny*s
-            ex, ey = px+nx*3.75, py+ny*3.75; yaw = math.degrees(math.atan2(ny, nx))   # local x outwards, y along
-            if (math.hypot(ex-SHRINE[0], ey-SHRINE[1]) < 6 or math.hypot(ex-BUS_STOP[0], ey-BUS_STOP[1]) < 5
-                    or ex > GATE_X-4): continue
-            rise = g(px+nx*6.5, py+ny*6.5)-g(ex, ey); base = g(ex, ey)-.15
-            if rise > .45:                                           # a column of stones each metre, overlapping
-                h = min(1.5, rise*.8+.35); z = 0.
-                with m.at((ex, ey, base), yaw):
-                    while z < h:
-                        sh = r.uniform(.28, .4); off = r.uniform(-.06, .06)
-                        m.box((.2+off, 0, z+sh/2), (.55, r.uniform(.85, 1.1), sh),
-                              r.choice(['ar_wall_stone', 'ar_wall_stone', 'ar_wall_stone_dark']), bevel=.09)
-                        z += sh*.9
-                    m.collider((.25, 0, h/2), (.6, 1.05, h))
-            elif rise < -1.0 and k % 2 == 0:                         # a post every 2 m, two rails to the next
-                (qx, qy), (mx, my) = pts[k+2], normals[k+2]; fx, fy = qx+mx*s*3.75, qy+my*s*3.75
-                z, zq = g(ex, ey), g(fx, fy)
-                m.box((ex, ey, z+.45), (.1, .1, 1.0), 'ar_guard_white')
-                for h in (.55, .85):m.beam((ex, ey, z+h), (fx, fy, zq+h), .05, .3, 'ar_guard_white')
-                with m.at(((ex+fx)/2, (ey+fy)/2, (z+zq)/2), math.degrees(math.atan2(fy-ey, fx-ex))):
-                    m.collider((0, 0, .5), (math.hypot(fx-ex, fy-ey), .3, 1.0))
-
-
-def _shrine(m, height):
-    x, y = SHRINE; z = max(float(height(x+dx, y+dy)) for dx in (-1, 1) for dy in (-1, 1))
-    with m.at((x, y, z), 45):                                        # local -Y towards the road, south-east
-        m.box((0, 0, -.3), (2.0, 1.7, 1.0), 'ar_shrine_stone'); m.collider((0, 0, .2), (2.0, 1.7, 2.))
-        m.box((0, 0, .45), (1.0, .8, .5), 'ar_shrine_stone')
-        m.box((0, 0, 1.05), (.8, .65, .7), 'ar_hokora_timber')
-        m.box((0, -.33, 1.0), (.5, .02, .5), 'ar_red_cloth')
-        for s in (-1, 1):
-            m.poly([(-.62, 0, 1.68), (.62, 0, 1.68), (.62, s*.55, 1.38), (-.62, s*.55, 1.38)][::s], 'ar_hokora_roof')
-        m.box((0, 0, 1.7), (1.3, .08, .06), 'ar_hokora_roof')
-
-
-def _gate(m, height):
-    """The town gate over the road at x 399: posts on stone bases, a tie beam, a small tiled roof and a blank board."""
-    z = float(height(GATE_X, GATE_Y))
-    for s in (-1, 1):
-        y = GATE_Y+s*GATE_HALF
-        m.box((GATE_X, y, z+.3), (.9, .9, .6), 'ar_gate_stone'); m.collider((GATE_X, y, z+2.8), (.5, .5, 5.6))
-        m.box((GATE_X, y, z+3.0), (.38, .38, 5.4), 'ar_gate_timber')
-        m.box((GATE_X, y+.6*s, z+.9), (.16, .9, .16), 'ar_gate_timber')
-        m.beam((GATE_X, y, z+4.0), (GATE_X, y-s*1.4, z+5.1), .16, .16, 'ar_gate_timber')
-        m.box((GATE_X+.5, y-s*1.6, z+4.35), (.32, .32, .5), 'ar_lantern_glow')
-        m.box((GATE_X-.5, y-s*1.6, z+4.35), (.32, .32, .5), 'ar_lantern_glow')
-    m.box((GATE_X, GATE_Y, z+5.25), (.42, 2*GATE_HALF+1.6, .45), 'ar_gate_timber')
-    m.box((GATE_X, GATE_Y, z+4.45), (.3, 2*GATE_HALF, .25), 'ar_gate_timber')
-    for s in (-1, 1):
-        m.poly([(GATE_X, GATE_Y-GATE_HALF-1.2, z+6.25), (GATE_X, GATE_Y+GATE_HALF+1.2, z+6.25),
-                (GATE_X+s*1.0, GATE_Y+GATE_HALF+1.2, z+5.6), (GATE_X+s*1.0, GATE_Y-GATE_HALF-1.2, z+5.6)][::s], 'ar_gate_roof')
-    m.box((GATE_X, GATE_Y, z+6.28), (.25, 2*GATE_HALF+2.4, .14), 'ar_gate_roof')
-    for s in (-1, 1):m.box((GATE_X+s*.23, GATE_Y, z+4.85), (.04, 4.2, .62), 'ar_gate_sign')
+            m.poly([(*p, z), (*q, z), (*q, top(*q)), (*p, top(*p))], 'ar_rice_side')
 
 
 @lru_cache(maxsize=1)
@@ -267,7 +209,7 @@ def _ribbon(m, height):
 def arrival(m, height):
     """HD_Arrival, in world space."""
     palette(); r = random.Random(4402)
-    _ribbon(m, height); _roadside(m, height)
+    _ribbon(m, height)
     for cell in cells(): _paddy(m, cell, height, r)
     _shrine(m, height)
     _gate(m, height)
