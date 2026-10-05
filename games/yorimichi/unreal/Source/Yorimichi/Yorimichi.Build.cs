@@ -10,6 +10,7 @@ public class Yorimichi : ModuleRules
         if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("PythonScriptPlugin");
         PrivateDependencyModuleNames.Add("AnimationCore");
         PrivateDependencyModuleNames.Add("RHI");
+        PrivateDependencyModuleNames.Add("AIModule");
         PrivateDependencyModuleNames.Add("ImageCore");
         PrivateDependencyModuleNames.Add("ApplicationCore");
     }

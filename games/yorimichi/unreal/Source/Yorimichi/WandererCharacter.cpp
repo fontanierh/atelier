@@ -15,6 +15,7 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "Misc/App.h"
 #include "WandererDefinition.h"
 #include "WandererAnimInstance.h"
+#include "SwordTrainer.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
@@ -143,6 +144,14 @@ void AWandererCharacter::BeginPlay()
         Sword->Initialize(this);
     }
     else UE_LOG(LogTemp,Error,TEXT("Character assets incomplete: %s. Run the matching character importer after building."),*DefinitionAssetPath);
+    if (IsNpc())
+    {
+        // The rest is the person's: the board, settings, map, ambience, reviews and the camera.
+        SkateRide->SetComponentTickEnabled(false);
+        CameraArm->SetComponentTickEnabled(false);
+        FollowCamera->Deactivate();
+        return;
+    }
     SkateRide->Initialize(this);
     Preferences = NewObject<UJapanPreferences>(this);
     Preferences->Initialize(this);
@@ -205,7 +214,7 @@ void AWandererCharacter::EndPlay(const EEndPlayReason::Type Reason)
 void AWandererCharacter::EnterWorld(AJapanWorld* World)
 {
     Landscape = World;
-    if (!World || !World->bLoaded) return;
+    if (!World || !World->bLoaded || IsNpc()) return;
     Sailboat->Initialize(this,World);
     Bike->Initialize(this);
     if (!bSwitchedIn)
@@ -741,7 +750,7 @@ void AWandererCharacter::ZeppelinStep(int32 Direction)
     if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
-void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
+void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {
     if (!bReady) return;

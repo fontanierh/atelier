@@ -518,7 +518,10 @@ void AJapanWorld::Load()
     }
     const TSharedPtr<FJsonObject>* Village=nullptr;
     if (Root->TryGetObjectField(TEXT("village"),Village))
+    {
+        VillageRecord=*Village;
         if (auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,*Village);
+    }
     const TSharedPtr<FJsonObject>* Lake=nullptr;
     if(Root->TryGetObjectField(TEXT("forest_lake"),Lake))
     {

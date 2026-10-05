@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+class FJsonObject;
 #include "JapanWorld.generated.h"
 
 class UHierarchicalInstancedStaticMeshComponent;
@@ -53,6 +54,8 @@ public:
     FTransform PlayerStart;
     TArray<FWorldShot> Shots;
     bool bLoaded = false;
+    /** Momiji Hamlet's record in world.json (offset, buildings, residents), for what lives there (ASwordTrainer). */
+    TSharedPtr<FJsonObject> VillageRecord;
     bool bHidamariLoaded = false;
     int32 TotalInstances = 0;
     bool bForestLakeLoaded = false;

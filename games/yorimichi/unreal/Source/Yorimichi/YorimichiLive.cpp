@@ -10,6 +10,7 @@
 #include "BotwCreature.h"
 #include "BotwRider.h"
 #include "BotwMoveSet.h"
+#include "SwordTrainer.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 #include "DynamicRHI.h"
@@ -39,6 +40,49 @@ bool UYorimichiLive::SetPreference(const FString& Key, float Value)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
+}
+
+FString UYorimichiLive::TrainerState()
+{
+    const ASwordTrainer* T = ASwordTrainer::Find(ULiveLibrary::Player());
+    return T ? T->Describe() : FString(TEXT("{}"));
+}
+
+bool UYorimichiLive::TrainerBout(int32 Level, bool bHerShield, bool bPlayerShield)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    ASwordTrainer* T = ASwordTrainer::Find(P);
+    return T && T->StartBout(P, Level, bHerShield, bPlayerShield);
+}
+
+bool UYorimichiLive::TrainerMenu()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    ASwordTrainer* T = ASwordTrainer::Find(P);
+    if (!T) return false;
+    if (T->IsMenuOpen()) T->CloseMenu(); else T->OpenMenu(P);
+    return true;
+}
+
+bool UYorimichiLive::TrainerEnd()
+{
+    ASwordTrainer* T = ASwordTrainer::Find(ULiveLibrary::Player());
+    if (!T) return false;
+    T->EndBout(TEXT("")); return true;
+}
+
+bool UYorimichiLive::TrainerForce(const FString& Attack, const FString& Defence)
+{
+    ASwordTrainer* T = ASwordTrainer::Find(ULiveLibrary::Player());
+    if (!T) return false;
+    T->ForceNext(Attack); T->ForceDefence(Defence); return true;
+}
+
+bool UYorimichiLive::TrainerPlace(FVector Ground, float Yaw)
+{
+    ASwordTrainer* T = ASwordTrainer::Find(ULiveLibrary::Player());
+    if (!T) return false;
+    T->PlaceAt(Ground, Yaw); return true;
 }
 
 FString UYorimichiLive::MoveState()

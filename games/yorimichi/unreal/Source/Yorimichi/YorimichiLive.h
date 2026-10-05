@@ -66,4 +66,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static int32 BotwClear();
     /** The Esc menu's character switch (ABotwRider::SwitchPlayer): "Cairo" or a rider; returns the character playing. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SwitchCharacter(const FString& Name);
+    /** The sword trainer (ASwordTrainer): her state as JSON; a bout with the player (level 0 gentle, 1 steady, 2 master);
+     *  her menu; ending a bout; forcing her next opening ("combo", "charge", "dash", "jump", "double", "feint") or her
+     *  answer to the next blow ("parry", "dodge", "perfect", "guard", "take"); her location for filming (Ground Yaw). */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString TrainerState();
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerBout(int32 Level = 1, bool bHerShield = false, bool bPlayerShield = false);
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerMenu();
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerEnd();
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerForce(const FString& Attack, const FString& Defence);
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerPlace(FVector Ground, float Yaw);
 };

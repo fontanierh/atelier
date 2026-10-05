@@ -98,14 +98,41 @@ def botw_steps(out):
              inputs=[SCRIPTS / 'import_botw.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
              needs=['characters.botw'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'botw' / 'roster.json'],
              heavy=True, about='/Game/Botw: meshes, materials and clips, and the roster the game reads'),
-        Step('characters.cairo_botw', [Blender(CHARS / 'cairo' / 'botw.py', threads=4)], inputs=[CHARS / 'cairo', NAMES],
-             needs=['characters.botw'], outputs=[out / 'cairo' / 'botw' / 'export.json'],
-             about="Link's move set clips retargeted onto Cairo, to FBX"),
+        Step('characters.cairo_botw', [Blender(CHARS / 'cairo' / 'botw.py', threads=4), Blender(CHARS / 'cairo' / 'botw.py', ('--dump-own',), threads=4)],
+             inputs=[CHARS / 'cairo', NAMES], needs=['characters.botw'],
+             outputs=[out / 'cairo' / 'botw' / 'export.json', out / 'cairo' / 'botw' / 'own.npz'],
+             about="Link's move set clips retargeted onto Cairo, to FBX, and Cairo's own clips in the set sampled for others"),
         Step('unreal.cairo_botw', [UnrealScript(SCRIPTS / 'import_cairo_botw.py', 'CAIRO BOTW IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / 'import_cairo_botw.py', SCRIPTS / 'animation_compression.py'],
              needs=['characters.cairo_botw', 'unreal.cairo', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'cairo' / 'botw.json'], heavy=True,
              about='/Game/CairoBotw: Cairo with the BOTW move set (-rider=CairoBotw): his clips, definition and move record'),
+        *sword_trainer_steps(out),
+    ]
+
+
+def sword_trainer_steps(out):
+    """Kaede, the sword trainer of Momiji Hamlet (docs/SWORD_TRAINER.md): her body and clips, and the merged move set
+    retargeted onto her, once her source is in assets/characters/sword-trainer (until then Cairo stands in for her)."""
+    trainer = CHARS / 'sword-trainer'
+    if not (trainer / 'character.toml').exists():
+        return []
+    return [
+        Step('characters.sword_trainer', [Blender(trainer / 'export_unreal.py', threads=4)], inputs=[trainer, NAMES],
+             outputs=[out / 'sword-trainer' / 'export.json'], about="Kaede's mesh, textures and own clips, to FBX"),
+        Step('unreal.sword_trainer', [UnrealScript(SCRIPTS / 'import_sword_trainer.py', 'SWORD TRAINER IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_sword_trainer.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
+             needs=['characters.sword_trainer'], outputs=[GAME / 'unreal' / 'Content' / 'SwordTrainer' / 'SK_SwordTrainer.uasset'],
+             heavy=True, about='/Game/SwordTrainer: her mesh, materials, own clips and base definition'),
+        Step('characters.sword_trainer_botw', [Blender(CHARS / 'cairo' / 'botw.py', ('--character', 'sword-trainer'), threads=4)],
+             inputs=[trainer, CHARS / 'cairo' / 'botw.py', NAMES], needs=['characters.botw', 'characters.cairo_botw'],
+             outputs=[out / 'sword-trainer' / 'botw' / 'export.json'], about="The merged move set retargeted onto Kaede, to FBX"),
+        Step('unreal.sword_trainer_botw', [UnrealScript(SCRIPTS / 'import_cairo_botw.py', 'SWORD TRAINER BOTW IMPORT COMPLETE', null_rhi=True,
+                                                        env=(('BOTW_CHARACTER', 'sword-trainer'),))],
+             inputs=[SCRIPTS / 'import_cairo_botw.py', SCRIPTS / 'animation_compression.py'],
+             needs=['characters.sword_trainer_botw', 'unreal.sword_trainer', 'unreal.botw'],
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'sword-trainer' / 'botw.json'], heavy=True,
+             about='/Game/SwordTrainer/Botw and DA_SwordTrainer: her merged move set, definition and move record'),
     ]
 
 
