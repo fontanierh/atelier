@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "Handplant.h"
+#include "GravityScale.h"
 #include "PlantMath.h"
 #include <algorithm>
 #if defined(__clang__)
@@ -9,7 +10,7 @@ namespace atelier::skate {
 namespace {
 using namespace plant_math;
 constexpr Vec4 Up{0, 1, 0, 0};
-Vec4 Gravity() { return {0, Float(0xc11ccccd), 0, 0}; }
+Vec4 Gravity() { return {0, (Float(0xc11ccccd)*GravityScale()), 0, 0}; }
 Vec4 ApexPosition(Vec4 coping, Vec4 side, float radius, float angle) {
   const float sin = Sin(angle), cos = Cos(angle);
   return Madd(side, radius * sin, Madd(Up, radius * cos, coping));

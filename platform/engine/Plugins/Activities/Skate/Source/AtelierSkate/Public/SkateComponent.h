@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "SkateInput.h"
+#include "SkateFeel.h"
 #include "SkateComponent.generated.h"
 
 class ACharacter;
@@ -65,6 +66,10 @@ public:
     void StowImmediately();
     void SetGoofy(bool bNewGoofy);
     bool IsGoofy() const { return bGoofy; }
+    /** The player's skating feel (SkateFeel.h): applied at once while riding, and to every later ride. False (with the
+     *  reason) when a value is out of its range; the feel then stays as it was. */
+    bool SetFeel(const FSkateFeel& NewFeel, FString& Error);
+    const FSkateFeel& GetFeel() const { return Feel; }
     /** QA / live bridge: replace the player's controls; nullptr gives them back. */
     void SetScriptedInput(const FSkateInput* Input) { bScripted = Input != nullptr; if (Input) Scripted = *Input; }
     const FSkateInput& GetInput() const { return In; }
@@ -137,6 +142,8 @@ private:
     void PlayCue(FName Cue, float Volume, float Pitch = 1.f);
     void UpdateAudio(float Dt);
     bool bAvailable=false, bGoofy=false, bScripted=false;
+    FSkateFeel Feel;                 // FSkateFeel::Defaults() at Initialize unless SetFeel came first
+    bool bFeelSet=false;
     ESkateMode Mode=ESkateMode::Off;
     FSkateInput In,Scripted;
     TSharedPtr<FSkateRuntime> RetailRuntime;

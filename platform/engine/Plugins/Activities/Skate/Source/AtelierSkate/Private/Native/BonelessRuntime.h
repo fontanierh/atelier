@@ -14,6 +14,9 @@ public:
   std::size_t toe = 15;
   Vec4 anchor{};
   bool right = false;
+  // The player's boneless height (FeelTuning::boneless): the launch's rise is scaled so the apex moves by this factor
+  // under any gravity scale. At 1 (and stock gravity) the launch is bit-exact.
+  float height_scale = 1.0f;
   bool Load(const SettingsDatabase &, std::string &error);
   void Enter(PhysicalSimulationRuntime &, GroundPhaseLifecycle &,
              const ProcessedPhysicsInput &);

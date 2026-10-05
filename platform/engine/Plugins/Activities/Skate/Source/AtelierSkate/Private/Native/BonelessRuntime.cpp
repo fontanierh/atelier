@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "BonelessRuntime.h"
+#include "GravityScale.h"
+#include <cmath>
 #include "PlantMath.h"
 #include "StockSettingsReader.h"
 #include <algorithm>
@@ -61,7 +63,9 @@ bool BonelessRuntime::Launch(BonelessFrame frame, std::string &error) {
   const auto prepared = vector(p.prepared_jump_704);
   const auto horizontal = Sub(prepared, Scale(up, Dot(prepared, up)));
   const auto speed = Length(horizontal);
-  const auto vertical = curves_[0].Evaluate(up[1]) * curves_[1].Evaluate(speed);
+  auto vertical = curves_[0].Evaluate(up[1]) * curves_[1].Evaluate(speed);
+  if (height_scale != 1.0f || GravityScale() != 1.0f)
+    vertical *= std::sqrt(height_scale * GravityScale());
   const auto scaled_speed = curves_[2].Evaluate(speed) * speed;
   const auto a = Madd(up, vertical - Dot(current, up), current);
   const auto b = Madd(Normalize(horizontal), scaled_speed, Scale(up, vertical));

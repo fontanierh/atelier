@@ -55,7 +55,17 @@ bool GestureInputPublication::Load(const SettingsDatabase& data,std::vector<Gest
         { error = "Invalid authored gesture set "+std::string(names[i]); return false; }
         recognizers.emplace_back(sticks[i],GestureRecognizer(std::move(bank[i].patterns)));
     }
-    recognizers_ = std::move(recognizers); maximum_misses_ = misses; held_pattern_.reset(); trace_.clear(); return true;
+    recognizers_ = std::move(recognizers); maximum_misses_ = authored_misses_ = misses; pace_ = 1.f;
+    held_pattern_.reset(); trace_.clear(); return true;
+}
+void GestureInputPublication::Tune(float radius,float window,float pace)
+{
+    for (auto& entry : recognizers_) entry.second.ScaleRadius(radius);
+    // A node's miss count wraps at 64, so the window stays below it.
+    for (std::size_t i = 0; i < 2; ++i)
+        maximum_misses_[i] = window == 1.f ? authored_misses_[i]
+            : static_cast<std::uint8_t>(std::clamp(std::lround(authored_misses_[i] * window), 1l, 60l));
+    pace_ = pace;
 }
 bool GestureInputPublication::Publish(std::array<StickPoint,2> axes,std::uint32_t difficulty,std::uint32_t flags,
     std::uint32_t state,IntentMap& action,std::string& error)
@@ -74,7 +84,7 @@ bool GestureInputPublication::Publish(std::array<StickPoint,2> axes,std::uint32_
             if (const auto pattern = entry.second.Held(axes[stick]))
                 if (held_pattern_ && AsciiEqual(*held_pattern_,entry.second.Patterns()[*pattern].name)) held = true;
         for (auto& entry : recognizers_) if (entry.first == stick)
-            if (const auto match = entry.second.Sample(axes[stick],{maximum_misses_[stick],difficulty}))
+            if (const auto match = entry.second.Sample(axes[stick],{maximum_misses_[stick],difficulty,pace_}))
             {
                 const auto& name = entry.second.Patterns()[match->pattern].name;
                 if (name == "Kickflip" || name == "Heelflip" || name == "N_Kickflip" || name == "N_Heelflip") held_pattern_ = name;

@@ -33,6 +33,18 @@ namespace atelier::skate_pad
         return std::fabs(A) > 1e-4f ? (A > 0.f ? 1.f : -1.f) * (.25f + .75f * std::fabs(A)) : 0.f;
     }
 
+    /** A stick (real positions) remapped so DeadZone..Reach of its travel spans the native pad's live range, 0.25..0.95
+     *  (Input.cpp's ConditionStick): less than DeadZone reads as centred, Reach and past it as full. Identity at
+     *  0.25 and 0.95. */
+    inline void Retravel(float& X, float& Y, float DeadZone, float Reach)
+    {
+        const float R = std::sqrt(X * X + Y * Y);
+        if (R < 1e-4f) return;
+        const float To = R <= DeadZone ? R * (.25f / DeadZone) : .25f + (std::fmin(R, Reach) - DeadZone) * (.7f / (Reach - DeadZone));
+        const float Scale = (R >= Reach ? 1.f / R : To / R);
+        X *= Scale; Y *= Scale;
+    }
+
     /** FMath::RoundToInt: the floor of the value plus a half, in the value's own width. */
     inline std::int32_t RoundToInt(float F) { return static_cast<std::int32_t>(std::floor(F + .5f)); }
     inline std::int64_t RoundToInt(double F) { return static_cast<std::int64_t>(std::floor(F + .5)); }

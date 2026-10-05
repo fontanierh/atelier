@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "Handplant.h"
+#include "GravityScale.h"
 #include "AnimatedSkeleton.h"
 #include "FootIk.h"
 #include "PlantMath.h"
@@ -178,7 +179,7 @@ bool Handplant::Enter(PhysicalSimulationRuntime &physical,
   physical.board.HookMut().drive.EnableAngularOnly(board_animated);
   entry = {Decode(p.vectors_544_560_592_608[2]),
            Decode(p.vectors_544_560_592_608[3]),
-           {0, plant_math::Float(0xc11ccccd), 0, 0},
+           {0, (plant_math::Float(0xc11ccccd)*GravityScale()), 0, 0},
            -1};
   warped = 0;
   elapsed = 0;

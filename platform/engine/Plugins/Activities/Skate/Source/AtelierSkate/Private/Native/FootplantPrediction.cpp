@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "FootplantPrediction.h"
+#include "GravityScale.h"
 #include "AirReckoning.h"
 #include "FootplantRuntime.h"
 #include "PlantMath.h"
@@ -141,7 +142,7 @@ void FootplantRuntime::UpdateLaunch(const KnownAirFootplantInput &input) {
   request = {
       Madd(launch_direction, settings.leg_length_on_landing, physical_com),
       input.trajectory.velocity,
-      {0, Float(0xc11ccccd), 0, 0},
+      {0, (Float(0xc11ccccd)*GravityScale()), 0, 0},
       -1};
 }
 bool FootplantRuntime::ConsumeAndSubmit(const KnownAirFootplantInput &input,

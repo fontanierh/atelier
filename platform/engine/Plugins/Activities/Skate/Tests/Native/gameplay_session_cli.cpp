@@ -92,6 +92,33 @@ bool FloatField(const Json& object,std::string_view key,float& result,std::strin
     const auto* value=Field(object,key);
     return !value || Float(*value,result,error);
 }
+// The player's feel (FeelTuning.h) by its field names; fields left out stay stock.
+bool Feel(const Json& value,FeelTuning& feel,std::string& error)
+{
+    if(value.kind!=Json::Object){error="Expected feel object";return false;}
+    const std::pair<std::string_view,float FeelTuning::*> fields[]{
+        {"flick_radius",&FeelTuning::flick_radius},{"flick_window",&FeelTuning::flick_window},{"flick_pace",&FeelTuning::flick_pace},
+        {"gravity",&FeelTuning::gravity},{"boneless",&FeelTuning::boneless},{"hippy",&FeelTuning::hippy},
+        {"rail_magnetism",&FeelTuning::rail_magnetism},{"grind_pop",&FeelTuning::grind_pop},{"grind_friction",&FeelTuning::grind_friction},
+        {"braking",&FeelTuning::braking},{"steering",&FeelTuning::steering},{"carve",&FeelTuning::carve},{"grip",&FeelTuning::grip},
+        {"powerslide",&FeelTuning::powerslide},{"rolling_friction",&FeelTuning::rolling_friction},{"hill_speed",&FeelTuning::hill_speed},
+        {"pump",&FeelTuning::pump},{"wobble",&FeelTuning::wobble},{"wobble_onset",&FeelTuning::wobble_onset},
+        {"manual_drift",&FeelTuning::manual_drift},{"landing",&FeelTuning::landing},{"impact",&FeelTuning::impact}};
+    for(std::size_t i=0;i<value.keys.size();++i)
+    {
+        const auto& key=value.keys[i];const auto& child=value.children[i];
+        if(key=="auto_push" || key=="assisted_air")
+        {
+            float choice=0;if(!Float(child,choice,error))return false;
+            if(!(choice==-1 || choice==0 || choice==1)){error="`"+key+"` is -1, 0 or 1";return false;}
+            (key=="auto_push"?feel.auto_push:feel.assisted_air)=std::int8_t(choice);continue;
+        }
+        bool known=false;
+        for(const auto& [name,field]:fields)if(key==name){if(!Float(child,feel.*field,error))return false;known=true;}
+        if(!known){error="unknown feel field `"+key+"`";return false;}
+    }
+    return true;
+}
 bool Boolean(const Json& value,bool& result,std::string& error)
 {
     if(value.kind!=Json::Bool){error="Expected boolean";return false;}
@@ -376,10 +403,10 @@ bool Run(int argc,char** argv,std::string& error)
             const bool activate=op=="activate";
             if(activate)
             {
-                if(!Fields(command,{"op","spawn","heading","goofy","difficulty","trucks","generation","velocity","pop","spin","push_speed","push_power","vert_assist"},
+                if(!Fields(command,{"op","spawn","heading","goofy","difficulty","trucks","generation","velocity","pop","spin","push_speed","push_power","vert_assist","feel"},
                     {"op","spawn","heading","goofy","difficulty","trucks"},error))return false;
             }
-            else if(!Fields(command,{"op","goofy","difficulty","trucks","pop","spin","push_speed","push_power","vert_assist"},
+            else if(!Fields(command,{"op","goofy","difficulty","trucks","pop","spin","push_speed","push_power","vert_assist","feel"},
                 {"op","goofy","difficulty","trucks"},error))return false;
             bool goofy=false;std::string difficulty;float trucks=0,pop=1,spin=1,speed=1,power=1,vert_assist=0,heading=0;
             Vec3 spawn{},velocity{};std::uint32_t ride=0;
@@ -388,6 +415,8 @@ bool Run(int argc,char** argv,std::string& error)
                 || !FloatField(command,"spin",spin,error) || !FloatField(command,"push_speed",speed,error)
                 || !FloatField(command,"push_power",power,error)
                 || !FloatField(command,"vert_assist",vert_assist,error))return false;
+            FeelTuning feel;
+            if(const auto* v=Field(command,"feel"))if(!Feel(*v,feel,error))return false;
             if(activate)
             {
                 if(!Vector(*Field(command,"spawn"),spawn,error) || !Float(*Field(command,"heading"),heading,error))return false;
@@ -397,7 +426,8 @@ bool Run(int argc,char** argv,std::string& error)
                 {error="Invalid spawn or equipment";return false;}
             }
             else if(!std::isfinite(trucks)){error="Invalid equipment";return false;}
-            if(!session.Configure(difficulty,goofy,trucks,error) || !session.Tune(pop,spin,speed,power,vert_assist,error))return false;
+            if(!session.Configure(difficulty,goofy,trucks,error) || !session.Tune(pop,spin,speed,power,vert_assist,error)
+                || !session.Feel(feel,error))return false;
             if(activate)
             {
                 if(!session.Activate(spawn,heading,error))return false;

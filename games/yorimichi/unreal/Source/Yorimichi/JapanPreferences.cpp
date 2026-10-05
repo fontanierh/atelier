@@ -31,6 +31,91 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 
+namespace
+{
+// The Skate feel page (docs/SKATE.md, "Skate feel menu"): every value that changes how the board rides, saved as
+// skate_<name>. The mode picks Easy, Normal or Hardcore as made, or Custom, where every value below is tuned on a base
+// difficulty; the stick, mouse and camera (bAlways) apply in every mode. A knob without a field is a choice: the mode
+// (0 easy, 1 normal, 2 hardcore, 3 custom), the base difficulty (0 easy, 1 normal, 2 hardcore) or a switch (0 the
+// difficulty's own, 1 off, 2 on).
+struct FSkateKnob { const TCHAR* Key; const TCHAR* Label; const TCHAR* Hint; float Minimum, Maximum, Step; float FSkateFeel::* Field; bool bAlways = false; };
+struct FSkateGroup { const TCHAR* Name; TArray<FSkateKnob> Knobs; };
+const TArray<FSkateGroup>& SkateGroups()
+{
+    static const TArray<FSkateGroup> Groups = {
+        {TEXT("Mode"), {
+            {TEXT("skate_mode"), TEXT("Skating mode"), TEXT("Easy, Normal or Hardcore as made, or Custom to tune every value."), 0, 3, 1, nullptr, true}}},
+        {TEXT("Custom base"), {
+            {TEXT("skate_difficulty"), TEXT("Base difficulty"), TEXT("The difficulty every custom multiplier scales: easy is forgiving, hardcore strict."), 0, 2, 1, nullptr},
+            {TEXT("skate_trucks"), TEXT("Truck tightness"), TEXT("0 loose, quick to turn; 1 tight and stable."), 0, 1, .05f, &FSkateFeel::TruckTightness}}},
+        {TEXT("Flick-It"), {
+            {TEXT("skate_flick_radius"), TEXT("Flick tolerance"), TEXT("How far a flick may stray from a trick's shape. Higher reads sloppy flicks as tricks."), .5f, 2, .05f, &FSkateFeel::FlickRadius},
+            {TEXT("skate_flick_window"), TEXT("Flick time window"), TEXT("How long a flick may take from start to finish. Higher accepts slower flicks."), .5f, 3, .05f, &FSkateFeel::FlickWindow},
+            {TEXT("skate_flick_pace"), TEXT("Flick speed for full pop"), TEXT("How fast a flick must be to pop at full height. Lower pops high with gentler flicks."), .5f, 2, .05f, &FSkateFeel::FlickPace}}},
+        {TEXT("Air"), {
+            {TEXT("skate_pop"), TEXT("Ollie pop"), TEXT("Ollie and nollie height."), .5f, 2, .05f, &FSkateFeel::Pop},
+            {TEXT("skate_boneless"), TEXT("Boneless height"), TEXT("Height of a boneless."), .5f, 3, .05f, &FSkateFeel::Boneless},
+            {TEXT("skate_hippy"), TEXT("Hippy jump height"), TEXT("Height of a hippy jump."), .5f, 3, .05f, &FSkateFeel::Hippy},
+            {TEXT("skate_gravity"), TEXT("Gravity"), TEXT("Lower floats, higher drops. Jumps keep their height; the time in the air changes."), .5f, 1.5f, .05f, &FSkateFeel::Gravity},
+            {TEXT("skate_spin"), TEXT("Spin speed"), TEXT("How fast the body spins in the air."), .5f, 3, .05f, &FSkateFeel::Spin},
+            {TEXT("skate_assisted_air"), TEXT("Assisted spins and flips"), TEXT("Body spins and flips completed for you."), 0, 2, 1, nullptr},
+            {TEXT("skate_vert_assist"), TEXT("Vert assist"), TEXT("Sends straight airs back into quarter pipes that are short of vertical."), 0, 1, .05f, &FSkateFeel::VertAssist}}},
+        {TEXT("Rails"), {
+            {TEXT("skate_rail_magnetism"), TEXT("Rail magnetism"), TEXT("How far, how sharply and how fast a jump is pulled onto a rail or ledge."), .25f, 3, .05f, &FSkateFeel::RailMagnetism},
+            {TEXT("skate_grind_pop"), TEXT("Grind pop"), TEXT("Height of an ollie out of a grind."), .5f, 2, .05f, &FSkateFeel::GrindPop},
+            {TEXT("skate_grind_friction"), TEXT("Grind friction"), TEXT("How fast grinds and slides slow down. 0 never slows."), 0, 3, .05f, &FSkateFeel::GrindFriction}}},
+        {TEXT("Pushing and rolling"), {
+            {TEXT("skate_push_speed"), TEXT("Top push speed"), TEXT("The speed pushing reaches."), .5f, 2, .05f, &FSkateFeel::PushSpeed},
+            {TEXT("skate_push_power"), TEXT("Push strength"), TEXT("Speed gained with each push."), .5f, 3, .05f, &FSkateFeel::PushPower},
+            {TEXT("skate_auto_push"), TEXT("Auto push"), TEXT("Keeps you rolling without pushing."), 0, 2, 1, nullptr},
+            {TEXT("skate_pump"), TEXT("Pumping"), TEXT("Speed gained by pumping through transitions."), 0, 3, .05f, &FSkateFeel::Pump},
+            {TEXT("skate_rolling_friction"), TEXT("Rolling resistance"), TEXT("How fast speed above cruising bleeds off on the flat. 0 keeps every bit of speed."), 0, 3, .05f, &FSkateFeel::RollingFriction},
+            {TEXT("skate_hill_speed"), TEXT("Hill speed"), TEXT("How hard slopes pull the board down."), 0, 2, .05f, &FSkateFeel::HillSpeed},
+            {TEXT("skate_braking"), TEXT("Braking"), TEXT("How hard the foot brake stops."), .25f, 3, .05f, &FSkateFeel::Braking}}},
+        {TEXT("Turning"), {
+            {TEXT("skate_steering"), TEXT("Steering"), TEXT("How much the stick turns the board."), .5f, 2, .05f, &FSkateFeel::Steering},
+            {TEXT("skate_carve"), TEXT("Carve"), TEXT("How hard a leaning board turns."), .5f, 2, .05f, &FSkateFeel::Carve},
+            {TEXT("skate_grip"), TEXT("Wheel grip"), TEXT("How well the wheels hold a turn before sliding out."), .5f, 2, .05f, &FSkateFeel::Grip},
+            {TEXT("skate_powerslide"), TEXT("Powerslide bite"), TEXT("How hard a powerslide slows the board."), .25f, 3, .05f, &FSkateFeel::Powerslide}}},
+        {TEXT("Balance"), {
+            {TEXT("skate_wobble"), TEXT("Speed wobble"), TEXT("How much the board shakes at speed. 0 never wobbles."), 0, 3, .05f, &FSkateFeel::Wobble},
+            {TEXT("skate_wobble_onset"), TEXT("Wobble starts at"), TEXT("The speed the wobble starts at, as a multiple of the difficulty's."), .5f, 3, .05f, &FSkateFeel::WobbleOnset},
+            {TEXT("skate_manual_drift"), TEXT("Manual drift"), TEXT("How much a manual tips off balance by itself. 0 holds still."), 0, 3, .05f, &FSkateFeel::ManualDrift}}},
+        {TEXT("Bails"), {
+            {TEXT("skate_landing"), TEXT("Landing forgiveness"), TEXT("How crooked and how hard a landing may be before you bail."), .5f, 3, .05f, &FSkateFeel::Landing},
+            {TEXT("skate_impact"), TEXT("Impact toughness"), TEXT("How hard a knock you ride through."), .5f, 3, .05f, &FSkateFeel::Impact},
+            {TEXT("skate_get_up"), TEXT("Time down after a bail"), TEXT("How long the body lies before getting up."), .25f, 2, .05f, &FSkateFeel::GetUpDelay}}},
+        {TEXT("Controls and camera · every mode"), {
+            {TEXT("skate_dead_zone"), TEXT("Stick dead zone"), TEXT("Stick travel ignored around the centre. Raise it for a worn stick."), .25f, .6f, .01f, &FSkateFeel::StickDeadZone, true},
+            {TEXT("skate_stick_reach"), TEXT("Stick full tilt at"), TEXT("Stick travel that counts as fully pushed. Lower reaches the edge sooner."), .6f, 1, .01f, &FSkateFeel::StickReach, true},
+            {TEXT("skate_mouse_flick"), TEXT("Mouse flick strength"), TEXT("How far a mouse movement moves the trick stick, beside look sensitivity."), .25f, 4, .05f, &FSkateFeel::MouseFlick, true},
+            {TEXT("skate_cam_dist"), TEXT("Skate camera distance"), TEXT("Nearer or farther than the skate camera's own."), .6f, 1.6f, .05f, &FSkateFeel::CameraDistance, true},
+            {TEXT("skate_cam_fov"), TEXT("Skate camera field of view"), TEXT("Degrees added to the skate camera's view."), -20, 20, 1, &FSkateFeel::CameraFOV, true}}}};
+    return Groups;
+}
+const TCHAR* const SkateDifficulties[] = {TEXT("easy"), TEXT("normal"), TEXT("hardcore")};
+const TCHAR* const SkateModes[] = {TEXT("Easy"), TEXT("Normal"), TEXT("Hardcore"), TEXT("Custom")};
+constexpr int32 SkateCustom = 3;
+FString SkateChoice(const FString& Key, int32 Choice)
+{
+    if (Key == TEXT("skate_mode")) return SkateModes[FMath::Clamp(Choice, 0, SkateCustom)];
+    if (Key == TEXT("skate_difficulty"))
+        return Choice == 0 ? TEXT("Easy · forgiving") : Choice == 2 ? TEXT("Hardcore · strict") : TEXT("Normal");
+    return Choice == 1 ? TEXT("Off") : Choice == 2 ? TEXT("On") : TEXT("As the difficulty has it");
+}
+// The value a knob starts at: the game's DefaultGame.ini for the settings it had, the stock feel for the rest.
+float SkateDefault(const FSkateKnob& Knob, const FSkateFeel& Defaults)
+{
+    if (Knob.Field) return Defaults.*Knob.Field;
+    if (FCString::Strcmp(Knob.Key, TEXT("skate_difficulty")) == 0 || FCString::Strcmp(Knob.Key, TEXT("skate_mode")) == 0)
+    {
+        for (int32 I = 0; I < 3; ++I) if (Defaults.Difficulty.Equals(SkateDifficulties[I], ESearchCase::IgnoreCase)) return float(I);
+        return 1.f;
+    }
+    return float((FCString::Strcmp(Knob.Key, TEXT("skate_auto_push")) == 0 ? Defaults.AutoPush : Defaults.AssistedAir) + 1);
+}
+}
+
 void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
 {
     Owner = Pawn;
@@ -65,6 +150,12 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         {TEXT("sun_height"),TEXT("Sun elevation"),48.f,5.f,80.f},
         {TEXT("sun_yaw"),TEXT("Sun direction"),15.f,-180.f,180.f}};
+    {
+        const FSkateFeel Defaults = FSkateFeel::Defaults();
+        for (const FSkateGroup& Group : SkateGroups())
+            for (const FSkateKnob& Knob : Group.Knobs)
+                Values.Add({Knob.Key, Knob.Label, SkateDefault(Knob, Defaults), Knob.Minimum, Knob.Maximum, Knob.Step});
+    }
     // The move set (UBotwMoveSet::Chosen: merged by default, Cairo's legacy moves or the legacy BOTW set) and its shield
     // (UBotwMoveSet::SetShield: off by default, the sword guards and parries).
     if (ACairoCharacter::HasBotw() || ABotwRider::Available().Num())
@@ -144,6 +235,12 @@ float UJapanPreferences::Get(const TCHAR* Key) const
 bool UJapanPreferences::SetValue(const FString& Key, float Number)
 {
     if (!FMath::IsFinite(Number)) return false;
+    // Custom from a preset, with nothing tuned yet, starts on that preset's difficulty (the menu and the phone alike).
+    if (Key == TEXT("skate_mode") && FMath::RoundToInt(Number) == SkateCustom && IsSkateCustomStock())
+    {
+        const int32 Was = FMath::RoundToInt(Get(TEXT("skate_mode")));
+        if (Was != SkateCustom) for (FJapanPreference& V : Values) if (V.Key == TEXT("skate_difficulty")) V.Value = float(FMath::Clamp(Was, 0, 2));
+    }
     for (auto& V : Values) if (V.Key == Key)
     {
         V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
@@ -158,7 +255,13 @@ void UJapanPreferences::Apply()
 {
     if (!Owner) return;
     Owner->SetStaminaRings(FMath::RoundToInt(Get(TEXT("stamina_rings"))));
-    if (Owner->GetSkate()) Owner->GetSkate()->SetGoofy(Get(TEXT("goofy")) > .5f);
+    if (USkateComponent* Skate = Owner->GetSkate())
+    {
+        Skate->SetGoofy(Get(TEXT("goofy")) > .5f);
+        // At once, mid-ride too; an unchanged feel leaves the session alone.
+        FString Error;
+        if (!Skate->SetFeel(GetSkateFeel(), Error)) UE_LOG(LogTemp, Warning, TEXT("PREFERENCES skate feel refused: %s"), *Error);
+    }
     // The move set takes the shield and the merged or legacy BOTW rules at once; Cairo's legacy moves need the
     // character switch (ToggleMenu).
     if (UBotwMoveSet* Moves = Owner->GetMoves(); Moves && Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); }))
@@ -249,6 +352,45 @@ void UJapanPreferences::Apply()
     ReportProfile();
 }
 
+FSkateFeel UJapanPreferences::GetSkateFeel() const
+{
+    // Easy, Normal and Hardcore are the difficulty as made; Custom tunes every value on its base difficulty. The stick,
+    // mouse and camera apply in every mode. Custom values stay saved while a preset is played.
+    FSkateFeel Feel = FSkateFeel::Defaults();
+    const int32 Mode = FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))), 0, SkateCustom);
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (Knob.Field && (Knob.bAlways || Mode == SkateCustom)) Feel.*Knob.Field = Get(Knob.Key);
+    if (Mode != SkateCustom) Feel.Difficulty = SkateDifficulties[Mode];
+    else
+    {
+        Feel.Difficulty = SkateDifficulties[FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_difficulty"))), 0, 2)];
+        Feel.AutoPush = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_auto_push"))), 0, 2) - 1);
+        Feel.AssistedAir = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_assisted_air"))), 0, 2) - 1);
+    }
+    // Full tilt stays clear of the dead zone (FSkateFeel::Validate).
+    Feel.StickReach = FMath::Min(1.f, FMath::Max(Feel.StickReach, Feel.StickDeadZone + .2f));
+    return Feel;
+}
+void UJapanPreferences::ResetSkate(bool bCustom)
+{
+    const FSkateFeel Defaults = FSkateFeel::Defaults();
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (Knob.bAlways != bCustom && FCString::Strcmp(Knob.Key, TEXT("skate_mode")) != 0)
+                for (FJapanPreference& V : Values) if (V.Key == Knob.Key) V.Value = SkateDefault(Knob, Defaults);
+    Apply(); Save();
+}
+bool UJapanPreferences::IsSkateCustomStock() const
+{
+    const FSkateFeel Defaults = FSkateFeel::Defaults();
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (!Knob.bAlways && FCString::Strcmp(Knob.Key, TEXT("skate_difficulty")) != 0 && !FMath::IsNearlyEqual(Get(Knob.Key), SkateDefault(Knob, Defaults), 1e-4f))
+                return false;
+    return true;
+}
+
 void UJapanPreferences::ReportProfile() const
 {
     // Read the values back rather than logging what we intended to set: a saved GameUserSettings, a
@@ -326,9 +468,103 @@ void UJapanPreferences::Save()
 void UJapanPreferences::ToggleMenu()
 {
     if (Menu) { CloseMenu(); return; }
+    OpenMenu(false);
+}
+void UJapanPreferences::OpenMenu(bool bSkate)
+{
     if (!GEngine || !GEngine->GameViewport) return;
+    if (Menu) { GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef()); Menu.Reset(); }
     TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
     TSharedPtr<SButton> FirstControl;
+    // A value's slider row: its label, the slider and the value with as many decimals as its step shows.
+    const auto AddSlider = [this,&Rows](int32 I, TFunction<bool()> Enabled, const FString& Hint)
+    {
+        TSharedRef<SSlider> Slider = SNew(SSlider)
+            .StepSize(Values[I].Step > 0.f ? Values[I].Step/(Values[I].Maximum-Values[I].Minimum) : .01f)
+            .IsEnabled_Lambda([Enabled] { return !Enabled || Enabled(); })
+            .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
+            .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });
+        Rows->AddSlot().AutoHeight().Padding(0,6)[SNew(SHorizontalBox).ToolTipText(FText::FromString(Hint))
+            + SHorizontalBox::Slot().FillWidth(.48f)[SNew(STextBlock).Text(FText::FromString(Values[I].Label)).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White)]
+            + SHorizontalBox::Slot().FillWidth(.38f)[Slider]
+            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I]
+            {
+                // As many decimals as the slider's step shows (fog density moves by 0.005).
+                const float Step = Values[I].Step;
+                const int32 Digits = Step <= 0.f ? 2 : Step >= 1.f ? 0 : FMath::Clamp(FMath::CeilToInt(-FMath::LogX(10.f,Step)-1e-3f),1,3);
+                FNumberFormattingOptions Format; Format.SetUseGrouping(false).SetMinimumFractionalDigits(Digits).SetMaximumFractionalDigits(Digits);
+                return FText::AsNumber(Values[I].Value,&Format);
+            })]];
+    };
+    // Another page, out of the click that asked for it.
+    const auto ShowPage = [this](bool bToSkate)
+    {
+        if (AWandererCharacter* Pawn = Owner)
+            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,bToSkate] { if (Menu) OpenMenu(bToSkate); }));
+    };
+    const auto Finish = [this,&Rows,&FirstControl]
+    {
+        Menu = SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
+            [SNew(SBox).WidthOverride(620).MaxDesiredHeight(760)
+                [SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.025f,.032f,.028f,1))
+                    [SNew(SScrollBox)+SScrollBox::Slot()[Rows]]]];
+        GEngine->GameViewport->AddViewportWidgetContent(Menu.ToSharedRef(),20);
+        Owner->SetMenuOpen(true);
+        GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+        FSlateApplication::Get().SetKeyboardFocus(FirstControl, EFocusCause::SetDirectly);
+    };
+    if (bSkate)
+    {
+        // The Skate feel page: the mode (a preset difficulty or Custom), then every custom value by what it changes,
+        // greyed out unless Custom is picked, then the stick, mouse and camera for every mode. Changes apply at once,
+        // mid-ride too, and are saved like the rest.
+        const auto IsCustom = [this] { return FMath::RoundToInt(Get(TEXT("skate_mode"))) == SkateCustom; };
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text(FText::FromString(TEXT("Skate feel"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
+        // The mode: four buttons, the current one lit.
+        TSharedRef<SHorizontalBox> Modes = SNew(SHorizontalBox);
+        for (int32 M = 0; M <= SkateCustom; ++M)
+        {
+            TSharedRef<SButton> Button = SNew(SButton).HAlign(HAlign_Center).Text(FText::FromString(SkateModes[M]))
+                .ToolTipText(FText::FromString(M == SkateCustom ? TEXT("Tune every value below on a base difficulty.") : TEXT("This difficulty as made.")))
+                .ButtonColorAndOpacity_Lambda([this,M] { return FSlateColor(FMath::RoundToInt(Get(TEXT("skate_mode"))) == M ? FLinearColor(.35f,.75f,.55f) : FLinearColor(.45f,.45f,.45f)); })
+                .OnClicked_Lambda([this,M] { SetValue(TEXT("skate_mode"), float(M)); return FReply::Handled(); });
+            if (!FirstControl) FirstControl = Button;
+            Modes->AddSlot().FillWidth(1.f).Padding(M ? 6 : 0,0,0,0)[Button];
+        }
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Modes];
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor(.8f,.84f,.82f))
+            .Text_Lambda([this,IsCustom] { return FText::FromString(IsCustom()
+                ? TEXT("Custom: multipliers on the base difficulty's own values. Changes take effect at once, even mid-ride; Reset custom values puts each back to the game's own. Hover a row for what it does.")
+                : FString::Printf(TEXT("%s, as made. Pick Custom to tune the values below; your custom values are kept while you play a preset."), SkateModes[FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))),0,2)])); })];
+        for (const FSkateGroup& Group : SkateGroups())
+        {
+            if (FCString::Strcmp(Group.Name, TEXT("Mode")) == 0) continue;
+            const bool bAlways = Group.Knobs.Num() && Group.Knobs[0].bAlways;
+            if (bAlways)
+                Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset custom values to stock")))
+                    .IsEnabled_Lambda(IsCustom).OnClicked_Lambda([this] { ResetSkate(true); return FReply::Handled(); })];
+            Rows->AddSlot().AutoHeight().Padding(0,14,0,4)[SNew(STextBlock).Text(FText::FromString(Group.Name)).Font(FCoreStyle::GetDefaultFontStyle("Bold",16))
+                .ColorAndOpacity_Lambda([IsCustom,bAlways] { return FSlateColor(bAlways || IsCustom() ? FLinearColor::White : FLinearColor(.5f,.52f,.5f)); })];
+            for (const FSkateKnob& Knob : Group.Knobs)
+            {
+                const int32 I = Values.IndexOfByPredicate([&Knob](const FJapanPreference& V) { return V.Key == Knob.Key; });
+                if (I == INDEX_NONE) continue;
+                const TFunction<bool()> Enabled = Knob.bAlways ? TFunction<bool()>() : TFunction<bool()>(IsCustom);
+                if (Knob.Field) { AddSlider(I, Enabled, Knob.Hint); continue; }
+                const FString Key = Knob.Key, Label = Knob.Label;
+                const int32 Choices = FMath::RoundToInt(Knob.Maximum) + 1;
+                Rows->AddSlot().AutoHeight().Padding(0,4)[SNew(SButton).ToolTipText(FText::FromString(Knob.Hint)).IsEnabled_Lambda([Enabled] { return !Enabled || Enabled(); })
+                    .Text_Lambda([this,Key,Label] { return FText::FromString(Label+TEXT(": ")+SkateChoice(Key,FMath::RoundToInt(Get(*Key)))); })
+                    .OnClicked_Lambda([this,Key,Choices] { SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%Choices)); return FReply::Handled(); })];
+            }
+        }
+        Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset controls and camera")))
+            .OnClicked_Lambda([this] { ResetSkate(false); return FReply::Handled(); })];
+        Rows->AddSlot().AutoHeight().Padding(0,10,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Back")))
+            .OnClicked_Lambda([ShowPage] { ShowPage(false); return FReply::Handled(); })];
+        Finish();
+        return;
+    }
     Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(STextBlock).Text(FText::FromString(TEXT("Yorimichi — settings"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true)
         .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
@@ -405,39 +641,21 @@ void UJapanPreferences::ToggleMenu()
         if (!FirstControl) FirstControl = Button;
         Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Button];
     }
+    // Every way the board rides, on a page of its own.
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton).Text(FText::FromString(TEXT("Skate feel · pop, flicks, rails, speed, bails...")))
+        .OnClicked_Lambda([ShowPage] { ShowPage(true); return FReply::Handled(); })];
     for (int32 I = 0; I < Values.Num(); ++I)
     {
         // Session-only keys are launch flags (japan/run.sh desktop), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
         if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset")) continue;   // a button above
+        if (Values[I].Key.StartsWith(TEXT("skate_"))) continue;                       // the Skate feel page
         const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
-        TSharedRef<SSlider> Slider = SNew(SSlider)
-            .StepSize(Values[I].Step > 0.f ? Values[I].Step/(Values[I].Maximum-Values[I].Minimum) : .01f)
-            .IsEnabled_Lambda([this,bFogDetail] { return !bFogDetail || Get(TEXT("fog")) > .5f; })
-            .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
-            .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });
-        Rows->AddSlot().AutoHeight().Padding(0,6)[SNew(SHorizontalBox)
-            + SHorizontalBox::Slot().FillWidth(.48f)[SNew(STextBlock).Text(FText::FromString(Values[I].Label)).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White)]
-            + SHorizontalBox::Slot().FillWidth(.38f)[Slider]
-            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I]
-            {
-                // As many decimals as the slider's step shows (fog density moves by 0.005).
-                const float Step = Values[I].Step;
-                const int32 Digits = Step <= 0.f ? 2 : Step >= 1.f ? 0 : FMath::Clamp(FMath::CeilToInt(-FMath::LogX(10.f,Step)-1e-3f),1,3);
-                FNumberFormattingOptions Format; Format.SetUseGrouping(false).SetMinimumFractionalDigits(Digits).SetMaximumFractionalDigits(Digits);
-                return FText::AsNumber(Values[I].Value,&Format);
-            })]];
+        AddSlider(I, bFogDetail ? TFunction<bool()>([this] { return Get(TEXT("fog")) > .5f; }) : TFunction<bool()>(), FString());
     }
     Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Resume"))).OnClicked_Lambda([this] { CloseMenu(); return FReply::Handled(); })];
-    Menu = SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
-        [SNew(SBox).WidthOverride(620).MaxDesiredHeight(760)
-            [SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.025f,.032f,.028f,1))
-                [SNew(SScrollBox)+SScrollBox::Slot()[Rows]]]];
-    GEngine->GameViewport->AddViewportWidgetContent(Menu.ToSharedRef(),20);
-    Owner->SetMenuOpen(true);
-    GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
-    FSlateApplication::Get().SetKeyboardFocus(FirstControl, EFocusCause::SetDirectly);
+    Finish();
 }
 void UJapanPreferences::CloseMenu()
 {
