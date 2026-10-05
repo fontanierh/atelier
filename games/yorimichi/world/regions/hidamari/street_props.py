@@ -11,13 +11,17 @@ import math
 
 # One prop per lot seam, in this order (None: an empty seam), facing the street: a bicycle or a scooter then stands
 # lengthwise in the seam, nose out.
-SEAMS = ['vending_machine', 'potted_plants', 'bicycle', None, 'garbage_station', 'potted_plants', 'scooter',
-         'sake_barrels', None, 'vending_machine', 'bicycle', 'potted_plants', 'postbox', None]
+SEAMS = ['vending_machine', 'potted_plants', 'bicycle', 'planter_box', 'garbage_station', 'drink_crates', 'scooter',
+         'lantern_sign', 'sake_barrels', 'tanuki', 'vending_machine', 'bicycle', 'fire_buckets', 'postbox', 'street_bench',
+         'lantern_sign', 'potted_plants', None]
 # half extents (m) used for the overlap checks: (along x, along y) before yaw
 HALF = {'vending_machine': (.6, .45), 'potted_plants': (.65, .5), 'bicycle': (.35, .9), 'scooter': (.4, .95),
         'garbage_station': (.85, .6), 'sake_barrels': (.85, .5), 'postbox': (.4, .4), 'kei_truck': (.8, 1.75),
         'phone_booth': (.55, .55), 'bus_stop': (1.7, .8), 'stone_lantern': (.5, .5), 'komainu': (.55, .45),
-        'jizo': (.4, .35), 'water_basin': (1.1, .8), 'produce_stand': (1.05, .7)}
+        'jizo': (.4, .35), 'water_basin': (1.1, .8), 'produce_stand': (1.05, .7), 'planter_box': (.8, .32),
+        'drink_crates': (.55, .45), 'tanuki': (.35, .35), 'fire_buckets': (.45, .3), 'street_bench': (.9, .35),
+        'yatai': (1.3, .8), 'lantern_sign': (.35, .7), 'taxi': (.85, 2.3), 'town_bus': (1.25, 4.5),
+        'bicycle_shelter': (2.75, .8)}
 # Fixed groups: (slug, x, y, yaw) in city metres.
 GROUPS = [
     # the shrine (600, 280): guardians and lanterns along the approach from the street, the basin beside it
@@ -36,7 +40,11 @@ GROUPS = [
     # the market (600 and 730, -113, facing the harbour street): stalls before it, a truck between the halls
     ('produce_stand', 590.0, -103.5, 180), ('produce_stand', 611.0, -103.5, 180), ('produce_stand', 721.0, -103.5, 180),
     ('produce_stand', 741.0, -103.5, 180), ('sake_barrels', 625.0, -104.5, 180), ('kei_truck', 662.0, -106.0, 90),
-    ('kei_truck', 520.0, -108.0, -90), ('garbage_station', 690.0, -105.0, 180),
+    ('kei_truck', 520.0, -108.0, -90), ('garbage_station', 690.0, -105.0, 180), ('yatai', 705.0, -104.0, 180),
+    ('drink_crates', 628.0, -104.5, 180),
+    # a food cart closed for the day by the station square, a taxi rank, the bus at its stop and a covered bicycle stand
+    ('yatai', 1180.0, 245.0, 0), ('taxi', 1200.0, 252.0, 90), ('taxi', 1206.0, 252.0, 90),
+    ('town_bus', 1160.0, 232.4, 90), ('bicycle_shelter', 1148.0, 260.0, 90),
 ]
 
 

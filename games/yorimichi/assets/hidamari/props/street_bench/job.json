@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "street_bench",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "f24acdee4c4a84e57b3cacca85ccccce8522c5e6da67e359c96c577a42452c94",
+  "concept_sha256": "f24acdee4c4a84e57b3cacca85ccccce8522c5e6da67e359c96c577a42452c94",
+  "submitted_at": "2026-10-05T11:35:00.229924+00:00",
+  "task_id": "f7028b74-0eac-49f1-83a4-32ffa4048658",
+  "status": "submitted",
+  "user_approval": "Henry (CEO): use all Tripo credits; topped up 2026-10-05",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T11:37:19.268626+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

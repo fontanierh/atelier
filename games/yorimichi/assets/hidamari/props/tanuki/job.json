@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "tanuki",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "b820045214e91463da373555f8ed40786fe034292a219374ba0a973f282e5de0",
+  "concept_sha256": "b820045214e91463da373555f8ed40786fe034292a219374ba0a973f282e5de0",
+  "submitted_at": "2026-10-05T11:32:35.632417+00:00",
+  "task_id": "80ad5bea-4cb5-4c42-bf08-1b1e338551d8",
+  "status": "submitted",
+  "user_approval": "Henry (CEO): use all Tripo credits; topped up 2026-10-05",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T11:34:54.509176+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

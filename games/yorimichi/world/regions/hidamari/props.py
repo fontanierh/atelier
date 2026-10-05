@@ -17,12 +17,20 @@ from treehouse import props as kit
 OUT = yori.OUT/'hidamari'/'props'
 # degrees about z applied after import so the prop's front faces -y (checked on the views)
 TURN = {s: -90 for s in ('kei_truck', 'vending_machine', 'bus_stop', 'garbage_station', 'jizo', 'komainu', 'potted_plants',
-                         'produce_stand', 'sake_barrels', 'water_basin')}
+                         'produce_stand', 'sake_barrels', 'water_basin', 'ac_unit', 'propane_tanks', 'hokora', 'tanuki',
+                         'fire_buckets', 'drink_crates', 'planter_box', 'laundry_stand', 'street_bench', 'bonsai_shelf',
+                         'yatai', 'kei_car', 'taxi', 'town_bus', 'bicycle_shelter')}
+TURN['curve_mirror'] = 180
 # the palette brightness (linear luminance) each prop's texture is brought to; .07 unless given
 TARGET = dict(vending_machine=.16, postbox=.06, stone_lantern=.10, komainu=.10, jizo=.08, water_basin=.08,
-              phone_booth=.10, kei_truck=.18, scooter=.12)
+              phone_booth=.10, kei_truck=.18, scooter=.12, ac_unit=.15, propane_tanks=.11, laundry_stand=.12,
+              curve_mirror=.09, kei_car=.16, taxi=.09, town_bus=.12, bicycle_shelter=.08, lantern_sign=.09,
+              # the wooden ones mostly stand in shade (garden gaps, lot seams, under their own roofs)
+              hokora=.09, tanuki=.09, planter_box=.09, yatai=.09, drink_crates=.09, fire_buckets=.09, bonsai_shelf=.09)
 SOLID = {'vending_machine', 'kei_truck', 'postbox', 'phone_booth', 'stone_lantern', 'komainu', 'jizo', 'water_basin',
-         'sake_barrels', 'produce_stand', 'garbage_station', 'bus_stop'}
+         'sake_barrels', 'produce_stand', 'garbage_station', 'bus_stop', 'ac_unit', 'propane_tanks', 'hokora', 'tanuki',
+         'fire_buckets', 'drink_crates', 'planter_box', 'street_bench', 'bonsai_shelf', 'yatai', 'kei_car', 'taxi', 'town_bus',
+         'bicycle_shelter', 'lantern_sign'}
 
 
 def main():

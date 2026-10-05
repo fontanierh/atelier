@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "drink_crates",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "2f1424938d782e86f7355380aea6c5185ee3d55324c466fd414887693bd5fd1b",
+  "concept_sha256": "2f1424938d782e86f7355380aea6c5185ee3d55324c466fd414887693bd5fd1b",
+  "submitted_at": "2026-10-05T11:34:27.305367+00:00",
+  "task_id": "e575e5ea-eecc-46dd-af12-e419af9c2c78",
+  "status": "submitted",
+  "user_approval": "Henry (CEO): use all Tripo credits; topped up 2026-10-05",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T11:36:25.041510+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

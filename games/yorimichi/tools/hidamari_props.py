@@ -72,6 +72,46 @@ PROPS = {
     'potted_plants': ('a crowded cluster of potted plants as seen outside Japanese houses: a small wooden step stand '
                       'with clay and blue-glazed pots of a little pine bonsai, ferns, red geraniums, a morning glory '
                       'on a bamboo frame and an aloe, with a watering can', 1.2),
+    # The second set (the houses' sides and the shop streets, after the concepts' clutter)
+    'ac_unit': ('an outdoor air-conditioner unit of a Japanese house, a pale beige-grey metal box with a round fan '
+                'grille on the front, on a low metal stand, with a short insulated pipe and a grey cable running up '
+                'from its side', .85),
+    'propane_tanks': ('two tall grey propane gas cylinders standing side by side on a small concrete pad beside a '
+                      'house, each with a domed top, a valve under a round collar and a short chain around them both', 1.3),
+    'curve_mirror': ('a Japanese road curve mirror: a round convex traffic mirror in an orange frame with a small hood, '
+                     'on a tall slim orange metal pole with a concrete foot', 3.0),
+    'hokora': ('a small roadside Shinto shrine (hokora): a little wooden shrine house with a gabled copper-green roof '
+               'and closed lattice doors, on a stacked stone plinth, a tiny red torii in front and a small offering '
+               'of a cup and fruit', 1.5),
+    'tanuki': ('a glazed Shigaraki ceramic tanuki statue as stood outside Japanese shops and inns: a round-bellied '
+               'standing raccoon dog in a straw hat, holding a sake flask in one hand and a ledger in the other, '
+               'warm brown glaze; no writing', 1.0),
+    'fire_buckets': ('a Japanese street fire-bucket stand: a small red metal rack holding a pyramid of six round red '
+                     'buckets, with a red metal water box beneath; no writing', 1.1),
+    'drink_crates': ('a stack of plastic drink crates outside a Japanese liquor shop: yellow and red crates, the top '
+                     'ones holding brown glass bottles, beside two empty crates on the ground; no writing', 1.2),
+    'planter_box': ('a long low wooden planter box outside a Japanese shop, full of orange and yellow potted '
+                    'chrysanthemums and a few green leafy plants', 1.6),
+    'laundry_stand': ('a Japanese garden laundry drying stand: two metal stands holding a long pole, a few towels, '
+                      'a shirt and a folded futon hanging over it, and wooden clothes pegs', 2.4),
+    'street_bench': ('a weathered wooden street bench with a slatted seat and back on dark metal legs, as outside a '
+                     'Japanese sweet shop, a red cloth runner and a small round cushion on the seat', 1.8),
+    'bonsai_shelf': ('a two-tier wooden display shelf of bonsai trees in shallow glazed pots, a little pine, a maple '
+                     'in red autumn leaf and a juniper, with small stones', 1.5),
+    'yatai': ('a Japanese wooden street food cart (yatai) parked closed for the day: a wheeled wooden counter '
+              'with a small sloping roof, a rolled-up indigo cloth curtain, a few stools stacked by it and red paper '
+              'lanterns hanging unlit; no writing', 2.6),
+    # The third set (the station and the parking pads, after the station and house concepts)
+    'kei_car': ('a small white Japanese kei car, a tall boxy two-box hatchback with round headlights, black bumpers '
+                'and small wheels, parked; no writing and a blank number plate', 3.4),
+    'taxi': ('a Japanese town taxi, a boxy dark-green and cream four-door saloon with a small roof lamp, chrome '
+             'bumpers and white seat covers inside; no writing and a blank number plate', 4.6),
+    'town_bus': ('a small Japanese local route bus in cream and green, rounded corners, a big front windscreen, a '
+                 'folding front door and a destination board left blank; no writing anywhere', 9.0),
+    'bicycle_shelter': ('a Japanese bicycle parking shelter: a long low corrugated metal roof on slim green posts '
+                        'over a metal rack, five town bicycles parked in it side by side', 5.5),
+    'lantern_sign': ('a Japanese shop front standing sign: a tall red paper lantern (chochin) hung on a small wooden '
+                     'stand on a low base, beside a blank wooden menu board; no writing', 1.8),
 }
 
 
