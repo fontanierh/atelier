@@ -4,8 +4,9 @@ shrine, a bus stop, and a town gate where the road meets the first street.
 West of the first north-south street (x 410) the old ground was the east-west streets' sidewalk paving carried on up
 the hill (build.land_use); it is grass now. On the hillside either side of the road the paddies step down the slope:
 each a level plate a little above the highest ground under it, held by a stone or earth wall down to the ground on
-its low sides, a grass bund along its rim; harvested stubble in rows, a few still flooded or fallow, rice drying on
-hasa racks. Builder: HD_Arrival (world space, following the ground).
+its low sides, a grass bund along its rim; half still standing golden with ripe rice, others harvested stubble in
+rows, a few flooded or fallow, rice drying on hasa racks. Dry-stone walls hold the banks above the road and a white
+guard rail runs where the ground falls away. Builder: HD_Arrival (world space, following the ground).
 """
 import math, random
 from functools import lru_cache
@@ -23,7 +24,9 @@ PALETTE = {'ar_paddy_earth': (.22, .15, .065), 'ar_stubble_row': (.40, .29, .10)
            'ar_hokora_timber': (.30, .17, .08), 'ar_hokora_roof': (.08, .09, .10), 'ar_red_cloth': (.60, .07, .04),
            'ar_shrine_stone': (.32, .31, .28), 'ar_gate_timber': (.22, .12, .06), 'ar_gate_roof': (.07, .08, .09),
            'ar_gate_stone': (.30, .29, .26), 'ar_gate_sign': (.70, .64, .50), 'ar_lantern_glow': (1., .55, .25),
-           'ar_road_asphalt': (.085, .085, .09), 'ar_road_gravel': (.17, .155, .13), 'ar_road_line': (.62, .60, .55)}
+           'ar_road_asphalt': (.085, .085, .09), 'ar_road_gravel': (.17, .155, .13), 'ar_road_line': (.62, .60, .55),
+           'ar_ripe_rice_lawn': (.44, .32, .075), 'ar_rice_stalk_lawn': (.24, .20, .06), 'ar_wall_stone': (.25, .24, .21),
+           'ar_wall_stone_dark': (.19, .185, .165), 'ar_guard_white': (.62, .62, .60)}
 
 
 def palette():
@@ -74,7 +77,7 @@ def cells():
                 hi, ok = _fits(a, b, c, c+L)
                 if ok: best = (L, hi); break
             if not best: c += 1.5; continue
-            L, hi = best; kind = r.choices(['stubble', 'water', 'fallow'], [.62, .26, .12])[0]
+            L, hi = best; kind = r.choices(['ripe', 'stubble', 'water', 'fallow'], [.5, .28, .14, .08])[0]
             out.append((a+.05, b-.05, c+.05, c+L-.05, hi+.1, kind, kind == 'stubble' and L >= 6.5 and r.random() < .3))
             c += L
         a = b
@@ -133,8 +136,9 @@ def _banks(m, rim, level, height):
 
 def _paddy(m, cell, height, r):
     a, b, c, d, z, kind, rack = cell
-    top = {'stubble': 'ar_paddy_earth', 'water': 'ar_paddy_water', 'fallow': 'ar_paddy_fallow_lawn'}[kind]
+    top = {'ripe': 'ar_paddy_earth', 'stubble': 'ar_paddy_earth', 'water': 'ar_paddy_water', 'fallow': 'ar_paddy_fallow_lawn'}[kind]
     m.poly([(a, c, z), (b, c, z), (b, d, z), (a, d, z)], top)
+    if kind == 'ripe':_crop(m, a+.35, b-.35, c+.35, d-.35, z)
     if kind == 'stubble':
         y = c+.6
         while y < d-.5:
@@ -153,6 +157,49 @@ def _paddy(m, cell, height, r):
             for k in range(n):
                 py = cy-L/2+.16+k*.32
                 for s in (-1, 1):m.box((cx+s*.14, py, z+h-.36), (.14, .26, .7), 'ar_straw_bundle')
+
+
+def _crop(m, a, b, c, d, z):
+    """Standing ripe rice inside a paddy's bund: a golden canopy about 0.8 m up, gently uneven, its stalks down
+    the sides."""
+    top = lambda x, y: z+.78+.05*math.sin(x*2.1+y*1.3)+.035*math.sin(x*.7-y*2.9)
+    xs = [a+(b-a)*k/max(1, round(b-a)) for k in range(max(1, round(b-a))+1)]
+    ys = [c+(d-c)*k/max(1, round(d-c)) for k in range(max(1, round(d-c))+1)]
+    for x0, x1 in zip(xs, xs[1:]):
+        for y0, y1 in zip(ys, ys[1:]):
+            m.poly([(x, y, top(x, y)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))], 'ar_ripe_rice_lawn')
+    for edge in ([(x, c) for x in xs], [(b, y) for y in ys], [(x, d) for x in xs[::-1]], [(a, y) for y in ys[::-1]]):
+        for p, q in zip(edge, edge[1:]):
+            m.poly([(*p, z), (*q, z), (*q, top(*q)), (*p, top(*p))], 'ar_rice_stalk_lawn')
+
+
+def _roadside(m, height):
+    """Along the road's shoulders: a dry-stone retaining wall of rounded stones where the bank beside it rises, a
+    white guard rail where it falls away; clear of the shrine, the bus stop and the gate."""
+    r = random.Random(4403); pts, normals = _samples(); g = lambda x, y: float(height(x, y))
+    for s in (-1, 1):
+        for k in range(len(pts)-2):
+            (px, py), (nx, ny) = pts[k], normals[k]; nx, ny = nx*s, ny*s
+            ex, ey = px+nx*3.75, py+ny*3.75; yaw = math.degrees(math.atan2(ny, nx))   # local x outwards, y along
+            if (math.hypot(ex-SHRINE[0], ey-SHRINE[1]) < 6 or math.hypot(ex-BUS_STOP[0], ey-BUS_STOP[1]) < 5
+                    or ex > GATE_X-4): continue
+            rise = g(px+nx*6.5, py+ny*6.5)-g(ex, ey); base = g(ex, ey)-.15
+            if rise > .45:                                           # a column of stones each metre, overlapping
+                h = min(1.5, rise*.8+.35); z = 0.
+                with m.at((ex, ey, base), yaw):
+                    while z < h:
+                        sh = r.uniform(.28, .4); off = r.uniform(-.06, .06)
+                        m.box((.2+off, 0, z+sh/2), (.55, r.uniform(.85, 1.1), sh),
+                              r.choice(['ar_wall_stone', 'ar_wall_stone', 'ar_wall_stone_dark']), bevel=.09)
+                        z += sh*.9
+                    m.collider((.25, 0, h/2), (.6, 1.05, h))
+            elif rise < -1.0 and k % 2 == 0:                         # a post every 2 m, two rails to the next
+                (qx, qy), (mx, my) = pts[k+2], normals[k+2]; fx, fy = qx+mx*s*3.75, qy+my*s*3.75
+                z, zq = g(ex, ey), g(fx, fy)
+                m.box((ex, ey, z+.45), (.1, .1, 1.0), 'ar_guard_white')
+                for h in (.55, .85):m.beam((ex, ey, z+h), (fx, fy, zq+h), .05, .3, 'ar_guard_white')
+                with m.at(((ex+fx)/2, (ey+fy)/2, (z+zq)/2), math.degrees(math.atan2(fy-ey, fx-ex))):
+                    m.collider((0, 0, .5), (math.hypot(fx-ex, fy-ey), .3, 1.0))
 
 
 def _shrine(m, height):
@@ -187,9 +234,9 @@ def _gate(m, height):
     for s in (-1, 1):m.box((GATE_X+s*.23, GATE_Y, z+4.85), (.04, 4.2, .62), 'ar_gate_sign')
 
 
-def _ribbon(m, height):
-    """The road itself, draped on the hillside from the island road's end to the gate: asphalt with white edge
-    lines and gravel shoulders (the terrain's grid is too coarse to draw a narrow diagonal road)."""
+@lru_cache(maxsize=1)
+def _samples():
+    """(points, left normals) every metre along the road from the island road's end to the gate, its bends rounded."""
     road = _road()
     for _ in range(4):                                               # round the bends (Chaikin), the ends kept
         road = [road[0]]+[(p[0]*w+q[0]*(1-w), p[1]*w+q[1]*(1-w)) for p, q in zip(road, road[1:]) for w in (.75, .25)]+[road[-1]]
@@ -201,7 +248,13 @@ def _ribbon(m, height):
     def side(k):                                                     # the left normal, from the neighbouring samples
         p, q = pts[max(0, k-1)], pts[min(len(pts)-1, k+1)]
         dx, dy = q[0]-p[0], q[1]-p[1]; L = math.hypot(dx, dy); return (-dy/L, dx/L)
-    normals = [side(k) for k in range(len(pts))]
+    return pts, [side(k) for k in range(len(pts))]
+
+
+def _ribbon(m, height):
+    """The road itself, draped on the hillside from the island road's end to the gate: asphalt with white edge
+    lines and gravel shoulders (the terrain's grid is too coarse to draw a narrow diagonal road)."""
+    pts, normals = _samples()
     bands = [(-3.4, -2.6, 'ar_road_gravel', .10), (-2.6, 2.6, 'ar_road_asphalt', .12), (2.6, 3.4, 'ar_road_gravel', .10),
              (-2.45, -2.33, 'ar_road_line', .13), (2.33, 2.45, 'ar_road_line', .13)]
     for k in range(len(pts)-1):
@@ -214,7 +267,7 @@ def _ribbon(m, height):
 def arrival(m, height):
     """HD_Arrival, in world space."""
     palette(); r = random.Random(4402)
-    _ribbon(m, height)
+    _ribbon(m, height); _roadside(m, height)
     for cell in cells(): _paddy(m, cell, height, r)
     _shrine(m, height)
     _gate(m, height)

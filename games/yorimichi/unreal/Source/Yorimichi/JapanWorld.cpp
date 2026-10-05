@@ -121,11 +121,11 @@ void AJapanWorld::Load()
         CityGrade->SetupAttachment(CityBounds);
         CityGrade->bUnbound=false;CityGrade->BlendRadius=4000;CityGrade->Priority=1;
         CityGrade->Settings.bOverride_SceneColorTint=true;
-        CityGrade->Settings.SceneColorTint=FLinearColor(1.05,.985,.88);
+        CityGrade->Settings.SceneColorTint=FLinearColor(1.09,.99,.83);
         CityGrade->Settings.bOverride_ColorGainShadows=true;
-        CityGrade->Settings.ColorGainShadows=FVector4(1.02,.99,.93,1);
+        CityGrade->Settings.ColorGainShadows=FVector4(1.07,1.0,.88,1);
         CityGrade->Settings.bOverride_ColorGainHighlights=true;
-        CityGrade->Settings.ColorGainHighlights=FVector4(1.04,1.0,.93,1);
+        CityGrade->Settings.ColorGainHighlights=FVector4(1.05,1.0,.92,1);
         CityGrade->Settings.bOverride_ColorContrast=true;
         CityGrade->Settings.ColorContrast=FVector4(1.04,1.04,1.04,1);
         CityGrade->RegisterComponent();

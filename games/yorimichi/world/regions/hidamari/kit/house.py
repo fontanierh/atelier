@@ -8,7 +8,7 @@ gutters with downpipes: gable on 0 and 3, hipped on 1, gable-on to the lane on 2
 ground-floor front, broken by a gabled entrance porch on two posts over a lattice door. Windows have wooden frames
 and aluminium sashes with shoji glowing or curtains behind, hoods over the upper ones, a louvred shutter or a lattice
 grille below. An air-conditioner unit and a gas meter on a side wall. Variant 0 has a balcony with a futon and a
-block wall; 1 a persimmon tree and a hedge; 2 a steel side stair, washing under the eaves, a gravel parking pad and
+block wall; 1 a hedge (its garden tree is a foliage instance, house_gardens.py); 2 a steel side stair, washing under the eaves, a gravel parking pad and
 a board fence; 3 ribbed metal upstairs, a balcony of washing and a block wall with openings.
 """
 import math, random
@@ -40,8 +40,7 @@ def palette():
         'hs_gravel': (.24, .22, .18), 'hs_shrub_moss': (.05, .085, .03), 'hs_fence_board': (.19, .125, .07),
         'hs_steel_metal': (.10, .10, .10), 'hs_ac_metal': (.52, .51, .48), 'hs_futon_cloth': (.62, .58, .50),
         'hs_cloth_a': (.55, .56, .58), 'hs_cloth_b': (.15, .24, .45), 'hs_cloth_c': (.50, .30, .26),
-        'hs_curtain_cloth': (.55, .50, .42), 'hs_curtain_b_cloth': (.42, .44, .40), 'hs_fruit': (.75, .30, .04),
-        'hs_leaf': (.24, .13, .035), 'hs_leaf_b': (.15, .12, .035), 'hs_bark': (.07, .045, .03),
+        'hs_curtain_cloth': (.55, .50, .42), 'hs_curtain_b_cloth': (.42, .44, .40),
         'hs_door_wood': (.22, .14, .07), 'hs_soil': (.11, .075, .045), 'hs_louvre_wood': (.20, .12, .06)})
     kawara.palette()
 
@@ -114,8 +113,6 @@ def build(name, variant, lettering):
         v.pot(m, x, y, 0, r.uniform(.9, 1.3), 'clay', plant=True, form=('jar', 'bowl')[k % 2])
     if variant in (0, 2):
         apartment.bicycle(m, -3.6, FRONT-1.15, 0, 90, 'ap_bike_g' if variant == 0 else 'ap_bike_o', seed=variant)
-    if variant == 1:
-        persimmon(m, 3.2, -3.4, r)
     if variant == 2:
         side_stair(m)
         washing(m, -W/2+.6, W/2-.6, Y0+D/2+.45, EAVE-.3, r)
@@ -318,21 +315,6 @@ def ac_unit(m, x, y, z):
 def gas_meter(m, x, y, z):
     m.box((x, y-.1, z), (.35, .18, .45), 'hs_ac_metal'); m.beam((x, y-.1, z-.22), (x, y-.1, .2), .04, .04, 'hs_steel_metal')
     m.box((x+.5, y-.18, .55), (.36, .36, 1.1), 'hs_ac_metal', .1)
-
-
-def persimmon(m, x, y, r):
-    """A small persimmon tree: a forked trunk, a loose crown of leaf clumps in two tones, orange fruit."""
-    m.lathe((x, y, -.2), [(0, .13), (1.6, .09), (2.1, .06)], 'hs_bark', n=7)
-    for a in (.6, 2.6, 4.4):
-        m.beam((x, y, 1.6), (x+math.cos(a)*.7, y+math.sin(a)*.45, 2.6), .07, .07, 'hs_bark')
-    m.collider((x, y, 1.), (.4, .4, 2.4))
-    for k in range(9):
-        a = k*2.4+r.uniform(-.3, .3); d = r.uniform(.25, .75)
-        cx = x+math.cos(a)*d; cy = y+math.sin(a)*d*.55-.15; cz = 2.3+r.uniform(0, 1.0); s = r.uniform(.35, .55)
-        m.lathe((cx, cy, cz-s), [(0, 0), (.3*s, .8*s), (s, s), (1.6*s, .65*s), (1.9*s, 0)], ('hs_leaf', 'hs_leaf_b')[k % 2], n=7)
-        for j in range(2):
-            b = r.uniform(0, math.tau)
-            m.box((cx+math.cos(b)*s*.95, cy+math.sin(b)*s*.95, cz+r.uniform(-.2, .2)), (.14, .14, .14), 'hs_fruit')
 
 
 def side_stair(m):

@@ -30,10 +30,10 @@ def plants(variant, seed):
     # by the porch and the house front
     for x, y in ((-.15, FRONT-.55), (-2.75, FRONT-.6), (3.9, FRONT-.55)):
         if clear_x(x) and not (variant in (0, 2) and x < -2.5):shrub(x, y, .75, ['Bush_Flower_A', 'Bush_Green_B'], (.6, .4))
-    # a small garden maple in a front corner (variant 1 has its persimmon there)
-    maple = {0: (3.6, -3.35), 2: (-4.25, -3.75), 3: (3.7, -3.4)}.get(variant)
-    if maple:
-        out.append(('Tree_Maple_A', maple[0], maple[1], r.uniform(0, 360), r.uniform(.42, .5)))
+    # a garden maple in a front corner, about 4 m tall: smaller ones switch to the coarse foliage LODs within a few
+    # houses' distance
+    mx, my = {0: (3.7, -3.6), 1: (3.2, -3.4), 2: (-4.25, -3.8), 3: (3.75, -3.6)}[variant]
+    out.append(('Tree_Maple_A', mx, my, r.uniform(0, 360), r.uniform(.56, .64)))
     # a stand of pots beside the door
     out.append(('HD_P_potted_plants', .55, FRONT-.55, 0, r.uniform(.9, 1.)))
     return out
