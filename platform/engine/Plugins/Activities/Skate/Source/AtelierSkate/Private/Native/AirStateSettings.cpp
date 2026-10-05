@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "AirStateSettings.h"
+#include "GravityScale.h"
 #include "StockSettingsReader.h"
 #include <cstring>
 #if defined(__clang__)
@@ -51,5 +52,5 @@ bool BindAirLaunchInfo(const AirStateBindingInput& p,AirLaunchInfo& output,std::
     value.cone_angle_x=p.trajectory_cone_x;value.cone_angle_z=p.trajectory_cone_z;value.timestep=p.timestep_2604;value.trajectory_count=(p.flags_2468&0x2000)!=0?7:1;
     output=std::move(value);error.clear();return true;
 }
-Vec4 PhysicsAirHostComAcceleration() {return {0,Float(0xc11ccccd),0,0};}
+Vec4 PhysicsAirHostComAcceleration() {return {0,(Float(0xc11ccccd)*GravityScale()),0,0};}
 }

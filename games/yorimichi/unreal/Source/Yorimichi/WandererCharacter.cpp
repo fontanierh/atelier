@@ -561,6 +561,7 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("guard_release")) ParryReleased(FInputActionValue(false));
     else if (Button == TEXT("weapon")) ToggleWeapon(FInputActionValue(true));
     else if (Button == TEXT("menu")) { if (!Preferences) return false; ToggleMenu(FInputActionValue(true)); }   // the settings menu (closing the map first)
+    else if (Button == TEXT("skate_feel")) { if (!Preferences) return false; Preferences->OpenSkateMenu(); }   // the menu's Skate feel page
     else if (Button == TEXT("bike")) ToggleBike(FInputActionValue(true));
     else if (Button == TEXT("wave")) Wave(FInputActionValue(true));
     else return false;

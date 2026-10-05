@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "LandingOnDeckState.h"
+#include "GravityScale.h"
 #include "LandingDeckMath.h"
 #include <cstdlib>
 #if defined(__clang__)
@@ -53,7 +54,7 @@ void LandingOnDeckState::AdvanceSpin(LandingDeckUpdateOutput value)
 }
 float LandingOnDeckState::AccurateTime(float board_y,float board_velocity_y,float com_velocity_y,std::array<float,2> toes,std::uint32_t wheels)
 {
-    using namespace landing_deck_math;const auto feet=(toes[0]+toes[1])*.5f-.15000001f,velocity=com_velocity_y-board_velocity_y,displacement=board_y-feet,gravity=wheels!=0?-9.8f:-4.9f;
+    using namespace landing_deck_math;const auto feet=(toes[0]+toes[1])*.5f-.15000001f,velocity=com_velocity_y-board_velocity_y,displacement=board_y-feet,gravity=wheels!=0?(-9.8f*GravityScale()):(-4.9f*GravityScale());
     const auto discriminant=velocity*velocity+(displacement*gravity)*2;if(discriminant>0){const auto root=discriminant*Inverse(discriminant,2);return (-velocity-root)/gravity;}return 0;
 }
 void LandingOnDeckState::Finish(const LandingOnDeckSettings& settings,float velocity)

@@ -57,6 +57,14 @@ GroundSettings GroundSettings::Tuned(TrainerTuning tuning) const
     result.wheel_material.dynamic_friction*=tuning.grip;
     result.torque.heading.turn_strength*=tuning.turn_power;
     result.drag.balance_drag*=tuning.manual_drag;
+    for (auto* curve:{&result.speed.surface_friction,&result.speed.no_input_friction,&result.speed.manual_friction})
+        for (auto& y:curve->y) y*=tuning.rolling_friction;
+    result.speed.gravity*=tuning.hill_speed;
+    result.speed.maximum_gravity_acceleration*=tuning.hill_speed;
+    result.wobble_activation*=tuning.wobble_onset;
+    for (auto& y:result.manual.noise_vs_speed.y) y*=tuning.manual_drift;
+    result.manual.procedural_noise_scale*=tuning.manual_drift;
+    result.manual.animation_noise_scale*=tuning.manual_drift;
     return result;
 }
 GroundBoardSettings GroundSettings::Board() const

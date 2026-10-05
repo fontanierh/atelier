@@ -43,7 +43,7 @@ bool GrindRuntime::Contact(GrindRuntimeOwners o,const PlayerGrindObservation& ma
         break;}
     case K::Friction:{
         const auto force=GrindFriction(velocity,normal,manager.geometry.upmost_normal_1408,manager.surface.friction_vs_time_1496,(manager.geometry.flags_1476&0x40000000)!=0,
-            GrindMaterialMultiplier(manager.surface.material_1472),manager.geometry.kind_1464,operation.values);
+            GrindMaterialMultiplier(manager.surface.material_1472)*o.trainer.grind_friction,manager.geometry.kind_1464,operation.values);
         if(GrindFrictionApplies(velocity,normal))ApplyGrindWorldForce(board,force,position);break;}
     case K::Align:{
         const float slope=GrindPinSlope(normal,manager.geometry.upmost_normal_1408,manager.surface.gravity_relief_1512,settings.pin_vs_slope);

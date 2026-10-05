@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "OffboardControllerMath.h"
+#include "GravityScale.h"
 #if defined(__clang__)
 #pragma clang fp contract(off)
 #endif
@@ -66,7 +67,7 @@ void BipedSliding::Update(BipedSlidingInput input,const PointGraph<8>& slope,con
     auto uphill=SlidingUnit(downhill);for(auto& value:uphill)value=-value;
     const auto current_speed=Dot3(input.movement_velocity_480,uphill);
     const auto factor=-(slope.Evaluate(amount)*speed.Evaluate(current_speed));
-    const auto acceleration=SlidingClamp(Mul(downhill,Bits(0xc11ccccd)*factor),5);
+    const auto acceleration=SlidingClamp(Mul(downhill,(Bits(0xc11ccccd)*GravityScale())*factor),5);
     velocity_528=Madd(acceleration,Bits(0x3d4ccccd),Mul(velocity_528,.95f));const auto threshold=Bits(0x3c23d70b);
     if(threshold>Dot3(acceleration,acceleration))velocity_528=Mul(velocity_528,.9f);
     if(input.contact_direction_400)

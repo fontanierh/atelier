@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "PlayerInputPhase.h"
+#include "GravityScale.h"
 #include "StockSettingsReader.h"
 #include <cstring>
 #if defined(__clang__)
@@ -118,7 +119,7 @@ RawVector PlayerPreparedJumpVelocity(PrepareJumpRequest r)
     const auto velocity=Floats(r.skateboard_vector),previous=Floats(r.previous_velocity);
     const float squared=Dot3(velocity,velocity),inverse=InverseLengthSquared(squared,2),length=squared==0.0f ? 0.0f : squared*inverse;
     Vec4 direction{},result;if (length>F(0x358637bd)) for (std::size_t i=0;i<4;++i) direction[i]=velocity[i]*inverse;
-    const float acceleration=F(W(direction[1])^0x80000000)*F(0x411ccccd);
+    const float acceleration=F(W(direction[1])^0x80000000)*(F(0x411ccccd)*GravityScale());
     for (std::size_t i=0;i<4;++i) result[i]=std::fma(direction[i]*acceleration,F(0x3c888889),previous[i]);
     return Words(result);
 }
@@ -182,7 +183,7 @@ bool LoadPlayerInputState(const SettingsDatabase& data,PlayerInputState& output,
 void ResetProcessedPhysicsInput(ProcessedPhysicsInput& input)
 {
     ProcessedPhysicsInput r;r.effective_anim_transform_192={RawVector{0x3f800000,0,0,0},RawVector{0,0x3f800000,0,0},RawVector{0,0,0x3f800000,0},RawVector{}};r.vector_1520=input.vector_1520;r.matrix_1536=input.matrix_1536;r.byte_1600=input.byte_1600;r.external_physics_1616=input.external_physics_1616;r.probe_1792=input.probe_1792;
-    r.flags_2468=0x2000|(input.flags_2468&8);r.flags_2488=input.flags_2488&0x001fffff;r.state_variant_index_2528=1;r.grind_words_2532_2536={0xffffffff,0};r.timestep_2604=F(0x3c888889);r.gravity_2648=F(0xc11ccccd);r.actor_query_2952=0xffffffff;r.external_physics_1616.flags&=0x01ffffff;r.vectors_544_560_592_608[0]={0,0x3f800000,0,0};r.vectors_720_784_800_816_832_864[4]=input.vectors_720_784_800_816_832_864[4];input=r;
+    r.flags_2468=0x2000|(input.flags_2468&8);r.flags_2488=input.flags_2488&0x001fffff;r.state_variant_index_2528=1;r.grind_words_2532_2536={0xffffffff,0};r.timestep_2604=F(0x3c888889);r.gravity_2648=(F(0xc11ccccd)*GravityScale());r.actor_query_2952=0xffffffff;r.external_physics_1616.flags&=0x01ffffff;r.vectors_544_560_592_608[0]={0,0x3f800000,0,0};r.vectors_720_784_800_816_832_864[4]=input.vectors_720_784_800_816_832_864[4];input=r;
 }
 void ResetPhysicalPlayerOutputs(PhysicalPlayerInput& out)
 {

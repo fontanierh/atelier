@@ -86,6 +86,48 @@ sounds and HUD getters.
 The scales apply to the stock values each time the session is configured, so they never compound. A scale outside
 its range is an error and the board does not start.
 
+## Feel
+
+`FSkateFeel` (`Public/SkateFeel.h`) is everything that changes how the board rides, for a game's settings menu.
+`USkateComponent::SetFeel` applies it at once, mid-ride too, and to every later ride. `FSkateFeel::Defaults()` starts
+from the settings above and the stock feel. A game's settings menu shows it, and saves it with the rest of its settings.
+Multipliers scale the active difficulty's authored values, so 1 is the game as made. A switch at -1 keeps the
+difficulty's own choice. Values outside their ranges are refused with the reason (`FSkateFeel::Validate`), and the
+feel then stays as it was.
+
+The session side is `FeelTuning` (`Private/Native/FeelTuning.h`), applied by `GameplayRuntime::Feel`. It works on
+copies of the authored settings captured when the session is created, so values never compound and the defaults are
+bit-exact with stock.
+
+| Field | Range | What it scales |
+| --- | --- | --- |
+| `Difficulty`, `TruckTightness`, `Pop`, `Spin`, `PushSpeed`, `PushPower`, `VertAssist` | as above | The settings above |
+| `FlickRadius` | 0.5 to 2 | Each Flick-It pattern's match radius: how far a flick may stray from a trick's shape |
+| `FlickWindow` | 0.5 to 3 | The samples a flick may take (the stick's authored miss limit) |
+| `FlickPace` | 0.5 to 2 | The flick speeds that map to low and full pop (lower needs a gentler flick) |
+| `StickDeadZone`, `StickReach` | 0.25 to 0.6, 0.6 to 1 | Stick travel ignored, and travel that counts as full: remapped onto the pad's live 0.25 to 0.95 (`SkatePad.h`) |
+| `MouseFlick` | 0.25 to 4 | The mouse trick stick's travel, beside the game's mouse sensitivity |
+| `Gravity` | 0.5 to 1.5 | World gravity, for the rider, the board and every predicted arc. Jump heights stay, air time changes |
+| `Boneless`, `Hippy` | 0.5 to 3 | Boneless and hippy-jump heights |
+| `RailMagnetism` | 0.25 to 3 | The grind lock distance, how far and how sharply a jump may be bent onto a rail, and the crossing and drop speeds still admitted |
+| `GrindPop` | 0.5 to 2 | The ollie out of a grind |
+| `GrindFriction` | 0 to 3 | Grind and slide friction |
+| `Braking` | 0.25 to 3 | Foot-brake force |
+| `Steering`, `Carve`, `Grip` | 0.5 to 2 | Steering scalar, heading turn strength, wheel friction |
+| `Powerslide` | 0.25 to 3 | A powerslide's slowing force |
+| `RollingFriction` | 0 to 3 | Surface, coasting and manual rolling friction: how fast speed above the board's cruising speed bleeds off (it holds its cruising speed on the flat either way) |
+| `HillSpeed` | 0 to 2 | The speed model's downhill pull |
+| `Pump` | 0 to 3 | Pumping acceleration |
+| `Wobble`, `WobbleOnset` | 0 to 3, 0.5 to 3 | Speed-wobble amplitude, and the speed it starts at |
+| `ManualDrift` | 0 to 3 | Manual balance noise |
+| `Landing` | 0.5 to 3 | The landing angles and speeds forgiven before a bail |
+| `Impact` | 0.5 to 3 | The ground and air accelerations ridden through before a bail |
+| `GetUpDelay` | 0.25 to 2 | Ride: the time the body lies before getting up |
+| `AutoPush` | -1, 0, 1 | Auto push |
+| `AssistedAir` | -1, 0, 1 | Easy body spins and perfect body flips |
+| `CameraDistance` | 0.6 to 1.6 | The skate camera's distance from the rider |
+| `CameraFOV` | -20 to 20 | Degrees added to the skate camera's field of view |
+
 `SoundFolder` holds the loops `roll_01`, `grind_01`, `slide_01`, `skid_01` (powerslide) and `scrape_01` (foot brake),
 and one-shot variants `<cue>_01` to `<cue>_08` for `pop`, `land`, `catch`, `push`, `flick` and `clatter`. The loops
 follow the board with volume and pitch set by mode and speed; a one-shot never repeats the previous variant. Sounds

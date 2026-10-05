@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "WipeoutContactResponse.h"
+#include "GravityScale.h"
 #include "WipeoutBody.h"
 #include "WipeoutPhysicalMath.h"
 #ifdef __clang__
@@ -30,7 +31,7 @@ void WipeoutMaterialTenResponse::Update(SkeletonBody& body,Vec4 velocity,std::op
     case 0:{const auto difference=Sub(velocity,previous_velocity);previous_velocity=time>Word(0x3c75c28f)&&Dot3(difference,difference)>1?
         Madd(velocity,Word(0x3d4ccccd),Scale(previous_velocity,Word(0x3f733333))):velocity;break;}
     case 1:{const auto rejected=RejectPositive(Scale(velocity,-0.5f),normal);AddWipeoutBodyVelocity(body,Madd(normal,-1,rejected));break;}
-    case 2:AddWipeoutBodyVelocity(body,Scale(Sub(target_velocity,velocity),1.0f));target_velocity=Madd({0,Word(0xc11ccccd),0,0},Step(),target_velocity);break;
+    case 2:AddWipeoutBodyVelocity(body,Scale(Sub(target_velocity,velocity),1.0f));target_velocity=Madd({0,(Word(0xc11ccccd)*GravityScale()),0,0},Step(),target_velocity);break;
     default:break;
     }
     time+=Step();

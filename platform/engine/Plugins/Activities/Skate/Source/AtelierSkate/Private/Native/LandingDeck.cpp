@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "LandingDeck.h"
+#include "GravityScale.h"
 #include "LandingDeckMath.h"
 #include "StockSettingsReader.h"
 #if defined(__clang__)
@@ -36,6 +37,6 @@ Vec4 CalculateOffboardHippyJump(float height,Vec4 board,Vec4 com,Vec4 up,Vec4 ve
     using namespace landing_deck_math;const auto displacement=Sub(com,board);
     const auto dot=[](Vec4 a,Vec4 b){return std::fma(a[0],b[0],std::fma(a[1],b[1],a[2]*b[2]));};
     const auto current_height=dot(up,displacement),vertical=dot(up,velocity);const auto planar=Sub(velocity,Mul(up,vertical));
-    return Add(planar,Mul(up,std::sqrt((height-current_height)*19.6f)));
+    return Add(planar,Mul(up,std::sqrt((height-current_height)*(19.6f*GravityScale()))));
 }
 }

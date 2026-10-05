@@ -109,7 +109,7 @@ void USkateComponent::AfterNativeRideFrame(float Dt)
     {
         if (Body.IsBailing())
         {
-            const ERideBodyState State = Body.UpdateBail(Dt, FRideTuning::Get().BailSettle);
+            const ERideBodyState State = Body.UpdateBail(Dt, FRideTuning::Get().BailSettle * Feel.GetUpDelay);
             // The actor (and the character's camera) goes with the body; the ride stands still meanwhile, as Ride's root
             // does while it follows the body.
             Pos = Body.GetBodyGround(); Vel = FVector::ZeroVector;

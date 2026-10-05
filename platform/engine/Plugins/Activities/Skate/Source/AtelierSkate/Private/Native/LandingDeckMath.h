@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "LandingDeck.h"
+#include "GravityScale.h"
 #include "OffboardAirMath.h"
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -8,7 +9,7 @@
 namespace atelier::skate::landing_deck_math
 {
 using namespace offboard_air_math;
-inline Vec4 Gravity(){return {0,Bits(0xc11ccccd),0,0};}
+inline Vec4 Gravity(){return {0,(Bits(0xc11ccccd)*GravityScale()),0,0};}
 inline std::int32_t Frames(float time){return Integer(time*Bits(0x426fffff));}
 inline float Root(float q){return q==0?0:q*Inverse(q);}
 inline std::optional<float> GreatestPlaneTime(AirTrajectory t,Vec4 point,Vec4 normal)
