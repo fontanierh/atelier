@@ -6,6 +6,7 @@
 #include "JapanFootsteps.h"
 #include "YorimichiCombatFX.h"
 #include "BotwCreature.h"
+#include "JapanPreferences.h"
 #include "FoxHunter.h"
 #include "MegaRamp.h"
 #include "SuperUltraMegaPark.h"
@@ -20,6 +21,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/WorldSettings.h"
 #include "Misc/App.h"
+#include "Misc/CommandLine.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
@@ -29,6 +31,10 @@
 
 namespace
 {
+    // The paraglider's two handle tubes (right, left) in its own frame (cm): the straight stretch at the bottom of each of
+    // its U-shaped handles, measured on SK_LinkGlider's vertices.
+    const FVector GliderHandles[2][2] = { { FVector(-24.8, -14.2, 1.2), FVector(-30.5, 2.8, 1.1) },
+                                          { FVector(25.4, -14.2, 1.6), FVector(30.1, 2.9, 1.0) } };
     bool In(FName Name, std::initializer_list<const TCHAR*> Names)
     {
         for (const TCHAR* N : Names) if (Name == FName(N)) return true;
@@ -45,7 +51,8 @@ namespace
     bool IsSwordAction(FName N)
     {
         return Prefixed(N, { TEXT("Cut"), TEXT("Charge"), TEXT("Rush"), TEXT("Plunge"), TEXT("JumpCut"), TEXT("Guard"), TEXT("Parry"),
-            TEXT("DashCut"), TEXT("Sneakstrike"), TEXT("Flurry"), TEXT("DrawSword"), TEXT("SheatheSword") });
+            TEXT("DashCut"), TEXT("Sneakstrike"), TEXT("Flurry"), TEXT("DrawSword"), TEXT("SheatheSword"), TEXT("SwordParry"),
+            TEXT("SwordGuard") });
     }
     bool IsAttack(FName N)
     {
@@ -72,13 +79,16 @@ namespace
         if (!Along.IsNearlyZero()) Movement->SafeMoveUpdatedComponent(Along, Rotation, true, Hit);
     }
     bool IsHop(FName N) { return In(N, { TEXT("HopL"), TEXT("HopR"), TEXT("BackFlip") }); }
+    bool IsDoubleJump(FName N) { return In(N, { TEXT("DoubleJump"), TEXT("DoubleJumpTuck") }); }
+    bool IsParry(FName N) { return In(N, { TEXT("Parry"), TEXT("SwordParry") }); }
+    bool IsGuardHit(FName N) { return In(N, { TEXT("GuardHit"), TEXT("SwordGuardHit") }); }
     bool IsLockLoop(FName N) { return Prefixed(N, { TEXT("Lock") }); }
     bool IsClimbMove(FName N) { return In(N, { TEXT("ClimbU"), TEXT("ClimbD"), TEXT("ClimbL"), TEXT("ClimbR"), TEXT("ClimbUL"), TEXT("ClimbUR"), TEXT("ClimbDL"), TEXT("ClimbDR") }); }
     /** Actions the stick does not steer until their cancel point (or their idle point, or their end). */
     bool IsLocking(FName N)
     {
         return IsAttack(N) || IsHop(N) || Prefixed(N, { TEXT("HopLand"), TEXT("BackFlipLand"), TEXT("HardLand"), TEXT("Charge"), TEXT("Hit"),
-            TEXT("Knock"), TEXT("Guard"), TEXT("Parry"), TEXT("Swim"), TEXT("Climb"), TEXT("Glide") });
+            TEXT("Knock"), TEXT("Guard"), TEXT("Parry"), TEXT("SwordParry"), TEXT("SwordGuard"), TEXT("Swim"), TEXT("Climb"), TEXT("Glide") });
     }
     float Smooth(float U) { U = FMath::Clamp(U, 0.f, 1.f); return U * U * (3.f - 2.f * U); }
     const TCHAR* const CutNames[] = { TEXT("CutS1"), TEXT("CutS2"), TEXT("CutS3"), TEXT("CutSF") };
@@ -149,6 +159,13 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
             }
         Moves.Add(M.Name, MoveTemp(M));
     }
+    // The double jump is Cairo's own somersault where the definition has it (DA_CairoBotw): played whole, at its own rate.
+    if (const UAnimSequence* Flip = Definition->FindAction(TEXT("DoubleJump")); Flip && !Moves.Contains(TEXT("DoubleJump")))
+    {
+        FBotwMove M; M.Name = TEXT("DoubleJump");
+        M.Length = M.End = Flip->GetPlayLength(); M.Blend = .05f;
+        Moves.Add(M.Name, MoveTemp(M));
+    }
     for (const TCHAR* Needed : { TEXT("Fall"), TEXT("Land"), TEXT("GlideOn"), TEXT("Glide"), TEXT("ClimbWait"), TEXT("SwimWait"), TEXT("Swim") })
         if (!Has(Needed))
         {
@@ -183,8 +200,17 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                 Glider->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
                 Glider->RegisterComponent();
                 Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, FName(*Hand));
+                GliderSocket = FName(*Hand);
                 FTransform Held; ReadTransform(O, TEXT("held"), Held);
                 Glider->SetRelativeTransform(Held);
+                GliderHeld = Held;
+                // The handles; Link's own glide holds the glider (at his weapon bones), any other body is fitted to it.
+                for (int32 I = 0; I < 2; ++I)
+                {
+                    GripEnds[I][0] = GliderHandles[I][0]; GripEnds[I][1] = GliderHandles[I][1];
+                    BarGrip[I] = (GripEnds[I][0] + GripEnds[I][1]) * .5f;
+                }
+                bOwnGlide = Body->GetBoneIndex(TEXT("Weapon_R")) != INDEX_NONE && Body->GetBoneIndex(TEXT("Weapon_L")) != INDEX_NONE;
                 Glider->SetVisibility(false, true);
                 continue;
             }
@@ -212,6 +238,11 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
         const double Far = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? Box.Max[Axis] : Box.Min[Axis];
         FVector Tip = FVector::ZeroVector; Tip[Axis] = Far;
         BladeBase = Tip * .18; BladeTip = Tip;
+        if (const FSlot* S = Slots.Find(TEXT("sword")))
+        {
+            FistAxis = S->Held.GetRotation().RotateVector(Tip.GetSafeNormal());
+            bFistAxis = true;
+        }
     }
     // Whatever is too steep to climb can be walked up: the walkable slope meets the climbing angle.
     Owner->GetCharacterMovement()->SetWalkableFloorAngle(GetParam(TEXT("ClimbEnableAngle"), 50.f));
@@ -221,9 +252,21 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
     Stamina.RefillSeconds = 1000.f / FMath::Max(GetParam(TEXT("EnergyAutoRecover"), 300.f), 1.f);
     Stamina.Delay = GetParam(TEXT("EnergyAutoRecoverInvalidTime1"), 10.f) / 30.f;
     MeshBase = Body ? Body->GetRelativeLocation() : FVector::ZeroVector;
+    MeshBaseRotation = Body ? Body->GetRelativeRotation().Quaternion() : FQuat::Identity;
+    // The blade's ribbon through every cut (world space, so it stays where the blade passed).
+    if (Props.Contains(TEXT("sword")))
+    {
+        BladeTrail = NewObject<UAtelierTrail>(Owner, TEXT("BotwBladeTrail"));
+        BladeTrail->RegisterComponent();
+    }
+    // The shield is the "Shield" setting's (off by default); -shield / -noshield decide for a scripted session.
+    const TCHAR* Line = FCommandLine::Get();
+    SetShield(FParse::Param(Line, TEXT("shield")) || (!FParse::Param(Line, TEXT("noshield")) && UJapanPreferences::Saved(TEXT("shield"), 0.f) > .5f));
+    SetLegacy(Chosen() == LegacyBotw);
     Mode = EBotwMoveMode::Ground;
-    UE_LOG(LogTemp, Display, TEXT("BOTW move set: %d actions, %d parameters, %d props%s, scale %.2f"), Moves.Num(), Params.Num(), Props.Num(),
-        Glider ? TEXT(" and the paraglider") : TEXT(""), Scale());
+    UE_LOG(LogTemp, Display, TEXT("BOTW move set: %d actions, %d parameters, %d props%s, scale %.2f, %s, double jump %s"), Moves.Num(), Params.Num(), Props.Num(),
+        Glider ? TEXT(" and the paraglider") : TEXT(""), Scale(), bLegacy ? TEXT("legacy BOTW") : bShield ? TEXT("shield") : TEXT("no shield"),
+        Has(TEXT("DoubleJump")) ? TEXT("somersault clip") : Has(TEXT("DoubleJumpTuck")) ? TEXT("tucked") : TEXT("none"));
     return true;
 }
 
@@ -399,9 +442,14 @@ void UBotwMoveSet::Advance(float Dt)
     case EBotwMoveMode::Swim: AdvanceSwim(Dt); break;
     }
     if (bDriving && (Mode == EBotwMoveMode::Ground || Mode == EBotwMoveMode::Air)) AdvanceDrive(Dt);
+    // Standing, climbing or swimming gives the double jump back.
+    if (Mode != EBotwMoveMode::Air && Mode != EBotwMoveMode::Glide) bAirJumpUsed = false;
+    AdvanceDoubleJump(Dt);
     AdvanceCombat(Dt);
     AdvanceEquipment(Dt);
+    AdvanceGliderGrip(Dt);
     AdvanceMeshOffset(Dt);
+    AdvanceEffects(Dt);
 }
 
 void UBotwMoveSet::Phys(float Dt, int32 Iterations)
@@ -421,6 +469,18 @@ bool UBotwMoveSet::OverrideVelocity(FVector& Velocity) const
     if (!Character || (Mode != EBotwMoveMode::Ground && Mode != EBotwMoveMode::Air)) return false;
     const FName Name = CurrentName();
     if (bDriving) { Velocity.X = DriveVelocity.X; Velocity.Y = DriveVelocity.Y; return true; }
+    if (LungeTime > 0.f && Mode == EBotwMoveMode::Ground)
+    {
+        // Toward where the blade reaches the target, stopping there (re-aimed every step as either moves).
+        FVector V = FVector::ZeroVector;
+        if (const AActor* Focus = LungeTarget.Get())
+        {
+            const FVector To = (Focus->GetActorLocation() - Character->GetActorLocation()) * FVector(1, 1, 0);
+            const float Gap = float(To.Size()) - LungeStand;
+            if (Gap > 2.f) V = To.GetSafeNormal() * FMath::Min(Gap / FMath::Max(LungeTime, .03f), 1100.f);
+        }
+        Velocity.X = V.X; Velocity.Y = V.Y; return true;
+    }
     if (Mode == EBotwMoveMode::Air && (IsHop(Name) || In(Name, { TEXT("JumpCut"), TEXT("JumpCutAir") }))) { Velocity.X = HopVelocity.X; Velocity.Y = HopVelocity.Y; return true; }
     if (Mode == EBotwMoveMode::Air && In(Name, { TEXT("Plunge"), TEXT("PlungeAir") })) { Velocity.X = Velocity.Y = 0.; return true; }
     // The flurry rush closes in on its target.
@@ -436,6 +496,7 @@ bool UBotwMoveSet::OverrideVelocity(FVector& Velocity) const
 bool UBotwMoveSet::ControlsRotation() const
 {
     if (Mode == EBotwMoveMode::Glide || Mode == EBotwMoveMode::Climb || Mode == EBotwMoveMode::Swim) return true;
+    if (FlipTime >= 0.f) return true;   // the somersault keeps the heading it set off on
     if (bLocked || bDriving || bDown) return true;
     return IsLocking(CurrentName());
 }
@@ -568,6 +629,7 @@ void UBotwMoveSet::AdvanceAir(float Dt)
     if (In(Name, { TEXT("Jump"), TEXT("RunJumpL"), TEXT("RunJumpR") })) { if (Over()) Play(TEXT("Fall"), .2f); }
     else if (Name == TEXT("JumpCut")) { if (Over() && Has(TEXT("JumpCutAir"))) Play(TEXT("JumpCutAir"), .05f); }
     else if (Name == TEXT("Plunge")) { if (Over() && Has(TEXT("PlungeAir"))) Play(TEXT("PlungeAir"), .05f); }
+    else if (IsDoubleJump(Name)) { if (FlipTime < 0.f && (Name == TEXT("DoubleJumpTuck") || Over())) Play(TEXT("Fall"), .2f); }   // AdvanceDoubleJump times it
     else if (IsHop(Name) || In(Name, { TEXT("Fall"), TEXT("JumpCutAir"), TEXT("PlungeAir"), TEXT("ClimbOff") }) || Prefixed(Name, { TEXT("Hit"), TEXT("Knock") })) {}
     else if (SinceGrounded > .15f || bJumped) Play(TEXT("Fall"), .2f);   // walked off an edge, or whatever played on the ground
     // A hop, jump cut or plunge held up on a bank too steep to stand on (its steering pushes into it): let go and slide off.
@@ -602,7 +664,8 @@ void UBotwMoveSet::Landed(const FHitResult& Hit)
     const float Height = FMath::Max(0.f, FallStartZ - float(Character->GetActorLocation().Z));
     if (UJapanFootstepComponent* Steps = Character->GetFootsteps())
         Steps->Land(Hit, FMath::GetMappedRangeValueClamped(FVector2f(200.f, 1100.f), FVector2f(.55f, 1.4f), FallSpeed));
-    bJumped = false; HopVelocity = FVector::ZeroVector; SinceGrounded = 0.f; FallSpeed = 0.f; FallStartZ = Character->GetActorLocation().Z;
+    if (FlipTime >= 0.f) FlipSettle = .2f;
+    bJumped = false; bAirJumpUsed = false; FlipTime = -1.f; HopVelocity = FVector::ZeroVector; SinceGrounded = 0.f; FallSpeed = 0.f; FallStartZ = Character->GetActorLocation().Z;
     if (Mode != EBotwMoveMode::Ground && Mode != EBotwMoveMode::Air) return;
     Mode = EBotwMoveMode::Ground;
     if (bDown) return;
@@ -654,6 +717,98 @@ void UBotwMoveSet::StartJump()
     Mode = EBotwMoveMode::Air;
     if (Speed > 250.f && Has(TEXT("RunJumpL"))) { Play(bRunFoot ? TEXT("RunJumpL") : TEXT("RunJumpR"), .08f); bRunFoot = !bRunFoot; }
     else Play(TEXT("Jump"), .08f);
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
+        FX->Dust(Character->GetActorLocation() - FVector(0, 0, HalfHeight()), Speed > 250.f ? .55f : .35f, -FVector(Movement->Velocity.GetSafeNormal2D()) * .3f);
+}
+
+// ------------------------------------------------------------------------------------------------------- Double jump
+
+bool UBotwMoveSet::CanDoubleJump() const
+{
+    if (!Character || bLegacy || Mode != EBotwMoveMode::Air || bAirJumpUsed || bDown || CanJump()) return false;
+    if (!Has(TEXT("DoubleJump")) && !Has(TEXT("DoubleJumpTuck"))) return false;
+    // As Cairo's: after a jump at once, after walking off an edge a moment later.
+    if (!bJumped && SinceGrounded < .10f) return false;
+    const FName Name = CurrentName();
+    return !IsAttack(Name) && !IsHop(Name) && !Prefixed(Name, { TEXT("Hit"), TEXT("Knock"), TEXT("Climb") });
+}
+
+/** Cairo's double jump: a fresh 650 cm/s upward launch, the ground speed turned once toward the stick (all of it, even
+ *  backward; the stick at rest keeps the heading), and one forward somersault: his own clip, or a tuck the game turns. */
+void UBotwMoveSet::StartDoubleJump()
+{
+    UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+    FVector Velocity = Movement->Velocity;
+    const FVector W = Wish();
+    if (W.Size2D() > .1f)
+    {
+        const FVector Direction = W.GetSafeNormal2D();
+        Velocity = Direction * Velocity.Size2D();
+        Character->SetActorRotation(FRotator(0, Direction.Rotation().Yaw, 0));
+    }
+    Velocity.Z = GetParam(TEXT("DoubleJumpSpeed"), 650.f);
+    Character->LaunchCharacter(Velocity, true, true);
+    bAirJumpUsed = true; bJumped = true; JumpBuffer = 0.f; FallSpeed = 0.f; HopVelocity = FVector::ZeroVector;
+    FallStartZ = Character->GetActorLocation().Z;
+    ++DoubleJumpCount;
+    const bool bClip = Has(TEXT("DoubleJump"));
+    Play(bClip ? TEXT("DoubleJump") : TEXT("DoubleJumpTuck"), bClip ? .05f : .08f);
+    FlipTime = 0.f; FlipAngle = 0.f; FlipPivot = FVector::ZeroVector; FlipLift = 0.f; FlipSettle = 0.f;
+    if (const USkeletalMeshComponent* Body = Character->GetMesh())
+        FlipHips = Body->GetSocketTransform(Character->GetSkateBone(TEXT("pelvis")), RTS_Component).GetLocation().Z;
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
+    {
+        // A burst of air pushed down from the feet: a pale shock ring, a puff of wind motes and a soft whoosh.
+        const FVector Feet = Character->GetActorLocation() - FVector(0, 0, HalfHeight() * .9f);
+        AAtelierFX::FParticle& Ring = FX->Spawn(AAtelierFX::ESprite::Ring, Feet); Ring.Size0 = 18.f; Ring.Size1 = 130.f; Ring.Life = .26f;
+        Ring.Color = FLinearColor(.78f, .9f, 1.f) * 2.4f;
+        AAtelierFX::FParticle& Inner = FX->Spawn(AAtelierFX::ESprite::Ring, Feet); Inner.Size0 = 8.f; Inner.Size1 = 70.f; Inner.Life = .16f;
+        Inner.Color = FLinearColor(1.f, 1.f, 1.f) * 2.8f;
+        FX->Burst(Feet, FVector(0, 0, -.6f), 18, 520.f, FLinearColor(.85f, .93f, 1.f) * 4.f, .32f, 2.4f);
+        FX->Flash(Feet, 60.f, FLinearColor(.8f, .9f, 1.f) * 2.2f, .1f);
+        FX->Play(TEXT("dash"), Feet, .5f, .1f);
+    }
+}
+
+/** The somersault under way. A tucked one turns the mesh one full turn forward about the ball's middle on Cairo's timing
+ *  (his DoubleJump: the turn from .08 s to .6 s, upright by .63 s), lifted so the hips stay where they were. */
+void UBotwMoveSet::AdvanceDoubleJump(float Dt)
+{
+    if (FlipTime < 0.f) return;
+    const FName Name = CurrentName();
+    if (!IsDoubleJump(Name) || Mode != EBotwMoveMode::Air) { FlipTime = -1.f; return; }   // a glider, a wall, the ground
+    FlipTime += Dt;
+    USkeletalMeshComponent* Body = Character->GetMesh();
+    const float S = Scale();
+    if (Name == TEXT("DoubleJumpTuck"))
+    {
+        constexpr float Start = .08f, Turn = .52f, Done = .63f;
+        FlipAngle = 360.f * Smooth((FlipTime - Start) / Turn);
+        // While the tuck blends in the mesh rises as the hips draw up; then the ball's middle (its hips, a little up, in
+        // the capsule's frame) is fixed as the pivot.
+        if (FlipPivot.IsZero()) FlipLift = HipLift();
+        if (FlipPivot.IsZero() && FlipTime >= Start && Body)
+        {
+            const FVector Local = Body->GetSocketTransform(Character->GetSkateBone(TEXT("pelvis")), RTS_Component).GetLocation();
+            FlipPivot = FTransform(MeshBaseRotation, MeshBase + FVector(0, 0, FlipLift), Body->GetRelativeScale3D()).TransformPosition(Local) + FVector(0, 0, 8.f * S);
+        }
+        if (FlipTime >= Done) { FlipTime = -1.f; FlipSettle = .3f; Play(TEXT("Fall"), .2f); return; }
+    }
+    else if (Over()) { FlipTime = -1.f; Play(TEXT("Fall"), .15f); return; }
+    // A wind swirl around the turning body.
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character); FX && FlipTime > .06f && FlipTime < .6f)
+    {
+        const FVector Center = Character->GetActorLocation() + Character->GetActorRotation().RotateVector(FlipPivot.IsZero() ? FVector::ZeroVector : FlipPivot);
+        const FVector Forward = Character->GetActorForwardVector();
+        for (int32 I = 0; I < 2; ++I)
+        {
+            const float A = FMath::DegreesToRadians(FlipAngle + 180.f * I);
+            const FVector Offset = (Forward * FMath::Sin(A) + FVector::UpVector * FMath::Cos(A)) * 55.f * FMath::Max(S, .6f);
+            AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Glow, Center + Offset);
+            P.V = FVector::CrossProduct(Character->GetActorRightVector(), Offset).GetSafeNormal() * 160.f;
+            P.Life = .22f; P.Size0 = 7.f; P.Size1 = 2.f; P.Drag = 3.f; P.Color = FLinearColor(.82f, .92f, 1.f) * 3.2f; P.FadeIn = .03f;
+        }
+    }
 }
 
 bool UBotwMoveSet::CanDodge() const { return Mode == EBotwMoveMode::Ground && !Busy() && !bDown && Has(TEXT("BackFlip")); }
@@ -688,7 +843,21 @@ void UBotwMoveSet::StartHop()
     Invulnerable = FMath::Min(GetParam(TEXT("PlayerSideStep.NoDamageTime"), 40.f) / 30.f, Flight + .1f);
     JustAvoid = .25f;
     Play(Clip, .05f);
-    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->Dust(Character->GetActorLocation() - FVector(0, 0, HalfHeight()), .6f, -HopVelocity.GetSafeNormal() * .4f);
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
+    {
+        // Kicked-up dust, speed lines streaming away from the leap and a quick whoosh.
+        const FVector Ground = Character->GetActorLocation() - FVector(0, 0, HalfHeight());
+        const FVector Away = -HopVelocity.GetSafeNormal();
+        FX->Dust(Ground, .75f, Away * .5f);
+        for (int32 I = 0; I < 9; ++I)
+        {
+            AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Spark, Character->GetActorLocation() + FVector(0, 0, FMath::FRandRange(-.6f, .6f) * HalfHeight()) + Away * 20.f);
+            P.V = Away * FMath::FRandRange(500.f, 900.f) + FVector(0, 0, FMath::FRandRange(-40.f, 40.f));
+            P.Stretch = .035f; P.Drag = 4.f; P.Life = FMath::FRandRange(.16f, .26f); P.Size0 = 2.6f; P.Size1 = 1.f;
+            P.Color = FLinearColor(.9f, .95f, 1.f) * 3.5f;
+        }
+        FX->Play(TEXT("dash"), Ground, .55f, .1f);
+    }
 }
 
 // ------------------------------------------------------------------------------------------------------- Paraglider
@@ -717,7 +886,16 @@ void UBotwMoveSet::OpenGlider()
     Movement->SetMovementMode(MOVE_Custom, MovementMode);
     Movement->Velocity = Velocity;
     Play(Velocity.Z < -500.f && Has(TEXT("GlideOnFall")) ? TEXT("GlideOnFall") : TEXT("GlideOn"), .1f);
-    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->Play(TEXT("dash"), Character->GetActorLocation(), .5f, .08f);
+    FlipTime = -1.f;
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
+    {
+        // The canopy catches the air: a whoomp of wind motes thrown up and out, and a ring above his head.
+        const FVector Top = Character->GetActorLocation() + FVector(0, 0, HalfHeight() * 1.3f);
+        AAtelierFX::FParticle& Ring = FX->Spawn(AAtelierFX::ESprite::Ring, Top); Ring.Size0 = 30.f; Ring.Size1 = 160.f; Ring.Life = .3f;
+        Ring.Color = FLinearColor(.86f, .95f, 1.f) * 1.8f;
+        FX->Burst(Top, FVector(0, 0, .5f), 22, 420.f, FLinearColor(.9f, .96f, 1.f) * 3.f, .45f, 2.2f);
+        FX->Play(TEXT("dash"), Character->GetActorLocation(), .5f, .08f);
+    }
 }
 
 void UBotwMoveSet::CloseGlider(bool bLanding)
@@ -801,10 +979,148 @@ void UBotwMoveSet::AdvanceGlide(float Dt)
     const FName Name = Now ? Now->Name : NAME_None;
     if (Now && In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall") }) && SourceTime() < (Now->Idle >= 0.f ? Now->Idle : Now->End)) return;
     FName Clip = TEXT("Glide");
-    if (FMath::Abs(GlideTurn) > 40.f) Clip = GlideTurn > 0.f ? TEXT("GlideR") : TEXT("GlideL");
+    // The turning clips lean the body into the turn, which on a fitted body (Cairo's larger head) brings the inner
+    // forearm into the head; there the glider's bank shows the turn and the body keeps the straight glide.
+    if (FMath::Abs(GlideTurn) > 40.f && bOwnGlide) Clip = GlideTurn > 0.f ? TEXT("GlideR") : TEXT("GlideL");
     else if (bGlideBrake) Clip = TEXT("GlideB");
     else if (Wish().Size2D() > .3f) Clip = TEXT("GlideF");
     PlayLoop(Has(Clip) ? Clip : FName(TEXT("Glide")), .3f);
+}
+
+/** The paraglider is held at one hand, which a body other than Link's holds a little off its handles. On the neutral
+ *  glide it is first fitted to both hands (the line between its two grips turned onto the hands' and their middles
+ *  matched); that place on the body is then kept, banking about the grips into the turn, and each hand is put on its
+ *  grip (the animation graph's IK), so the turning clips' arms (made for Link's smaller head) neither let go nor reach
+ *  into Cairo's hair. */
+void UBotwMoveSet::AdvanceGliderGrip(float Dt)
+{
+    USkeletalMeshComponent* Body = Character->GetMesh();
+    if (!Glider || !Body) return;
+    const FName Name = CurrentName();
+    const bool bGliding = Mode == EBotwMoveMode::Glide && bGliderShown;
+    const bool bNeutral = bGliding && In(Name, { TEXT("Glide"), TEXT("GlideF") }) && GlideTime > .5f && FMath::Abs(GlideTurn) < 8.f;
+    const FName HandBone[2] = { Character->GetSkateBone(TEXT("hand_R")), Character->GetSkateBone(TEXT("hand_L")) };
+    if (!bGliderOnBody)
+    {
+        // Fit the one-handed hold onto both hands, then keep it once it has settled on the neutral glide.
+        const FTransform Bone = Body->GetSocketTransform(Glider->GetAttachSocketName());
+        const FTransform Base = GliderHeld * Bone;
+        const FTransform& MeshT = Body->GetComponentTransform();
+        if (bOwnGlide && !bPalmKnown)
+        {
+            // Link's neutral glide holds the handles: each hand's grip is where its handle passes nearest its wrist, kept
+            // in the wrist's frame from then on.
+            if (!bNeutral) return;
+            for (int32 I = 0; I < 2; ++I)
+            {
+                const FTransform Wrist = Body->GetSocketTransform(HandBone[I], RTS_Component);
+                const FVector OnHandle = FMath::ClosestPointOnSegment(Wrist.GetLocation(),
+                    MeshT.InverseTransformPosition(Base.TransformPosition(GripEnds[I][0])), MeshT.InverseTransformPosition(Base.TransformPosition(GripEnds[I][1])));
+                PalmLocal[I] = Wrist.InverseTransformPosition(OnHandle);
+                BarGrip[I] = Base.InverseTransformPosition(MeshT.TransformPosition(OnHandle));
+            }
+            bPalmKnown = true;
+        }
+        const FVector BarR = Base.TransformPosition(BarGrip[0]), BarL = Base.TransformPosition(BarGrip[1]);
+        const FVector HandR = MeshT.TransformPosition(PalmOf(0)), HandL = MeshT.TransformPosition(PalmOf(1));
+        const FQuat Turn = FQuat::FindBetweenNormals((BarL - BarR).GetSafeNormal(), (HandL - HandR).GetSafeNormal());
+        const FTransform Fitted(Turn * Base.GetRotation(), (HandR + HandL) * .5f + Turn.RotateVector(Base.GetLocation() - (BarR + BarL) * .5f), Base.GetScale3D());
+        if (bNeutral)
+        {
+            GliderOnBody = Fitted.GetRelativeTransform(Body->GetComponentTransform());
+            bGliderOnBody = true;
+            for (int32 I = 0; I < 2; ++I)
+                ElbowLocal[I] = GliderOnBody.InverseTransformPosition(
+                    Body->GetSocketTransform(Character->GetSkateBone(I ? TEXT("forearm_L") : TEXT("forearm_R")), RTS_Component).GetLocation());
+        }
+        else if (bGliding) { Glider->SetRelativeTransform(Fitted.GetRelativeTransform(Bone)); return; }
+        else return;
+    }
+    // On the body: carried by the mesh itself (no lag behind a moving hand bone), banked into the turn about the bar.
+    GlideHands = FMath::FInterpConstantTo(GlideHands, bGliding && !In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall"), TEXT("GlideOff") }) ? 1.f : 0.f, Dt, 6.f);
+    if (bGliding && !bGliderBodyAttached)
+    {
+        Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform);
+        bGliderBodyAttached = true;
+    }
+    if (!bGliding)
+    {
+        if (bGliderBodyAttached)
+        {
+            Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, GliderSocket);
+            Glider->SetRelativeTransform(GliderHeld);
+            bGliderBodyAttached = false;
+        }
+        GlideHands = 0.f;
+        return;
+    }
+    // A fitted body banks less: its hands, under handles closer together than its head is wide, would bring the inner
+    // forearm into the head.
+    const float MaxBank = bOwnGlide ? 15.f : 12.f;
+    GlideBank = FMath::FInterpTo(GlideBank, FMath::Clamp(GlideTurn * .12f, -MaxBank, MaxBank), Dt, 5.f);
+    const FTransform& Mesh = Body->GetComponentTransform();
+    const FVector Forward = Mesh.InverseTransformVectorNoScale(Character->GetActorForwardVector());
+    const FVector Pivot = GliderOnBody.TransformPosition((BarGrip[0] + BarGrip[1]) * .5f);
+    const FQuat Bank(Forward, FMath::DegreesToRadians(-GlideBank));   // into the turn: the inner side down
+    FTransform Placed = GliderOnBody * FTransform(-Pivot) * FTransform(Bank) * FTransform(Pivot);
+    // Link's is lowered by as much as the bank lifts the higher grip, which his outer arm (straight overhead) could not
+    // reach; a fitted body's inner hand would come down beside the head instead.
+    const FVector Up = Mesh.InverseTransformVectorNoScale(FVector::UpVector);
+    float Rise = 0.f;
+    for (int32 I = 0; I < 2 && bOwnGlide; ++I)
+        Rise = FMath::Max(Rise, (Placed.TransformPosition(BarGrip[I]) - GliderOnBody.TransformPosition(BarGrip[I])) | Up);
+    Placed.AddToTranslation(-Up * Rise);
+    Glider->SetRelativeTransform(Placed);
+    // Each hand onto its handle where it reaches it: its grip point moved to the nearest point of its grip, the wrist
+    // moved with it. A fitted body's hand is a fist turned round the handle: its grip axis along it (thumb forward) and
+    // its grip point away from the elbow, the wrist placed under it.
+    const bool bFist = GlideFistWeight() > 0.f;
+    for (int32 I = 0; I < 2; ++I)
+    {
+        GlideElbow[I] = Placed.TransformPosition(ElbowLocal[I]);
+        const FVector From = Placed.TransformPosition(GripEnds[I][0]), To = Placed.TransformPosition(GripEnds[I][1]);
+        const FTransform Hand = Body->GetSocketTransform(HandBone[I], RTS_Component);
+        const FVector Grip = PalmOf(I);
+        const FVector OnGrip = FMath::ClosestPointOnSegment(Grip, From, To);
+        if (!bFist) { GlideHandTarget[I] = Hand.GetLocation() + (OnGrip - Grip); continue; }
+        FVector Along = (To - From).GetSafeNormal();
+        if ((Along | Forward) < 0.f) Along = -Along;
+        const FVector GripLocal = Hand.InverseTransformPosition(Grip);
+        const FVector Axis = FistAxis.GetSafeNormal();
+        const FVector Out = (GripLocal - Axis * (GripLocal | Axis)).GetSafeNormal();
+        const FVector Away = OnGrip - GlideElbow[I];
+        const FVector Want = (Away - Along * (Away | Along)).GetSafeNormal();
+        const FQuat Onto = FQuat::FindBetweenNormals(Axis, Along);
+        const FVector Turned = Onto.RotateVector(Out);
+        GlideHandTurn[I] = FQuat(Along, FMath::Atan2((Turned ^ Want) | Along, Turned | Want)) * Onto;
+        GlideHandTarget[I] = OnGrip - FTransform(GlideHandTurn[I], FVector::ZeroVector, Hand.GetScale3D()).TransformVector(GripLocal);
+    }
+}
+
+FVector UBotwMoveSet::PalmOf(int32 Side) const
+{
+    const USkeletalMeshComponent* Body = Character->GetMesh();
+    const FName Hand = Character->GetSkateBone(Side ? TEXT("hand_L") : TEXT("hand_R"));
+    if (bPalmKnown) return Body->GetSocketTransform(Hand, RTS_Component).TransformPosition(PalmLocal[Side]);
+    return FingersOf(Side);
+}
+
+FVector UBotwMoveSet::FingersOf(int32 Side) const
+{
+    // A hand closed round a bar holds it in the middle of its curled fingers: the centroid of the index and middle
+    // fingers' joints (base, middle and end), else the hand bone.
+    const USkeletalMeshComponent* Body = Character->GetMesh();
+    const FName Hand = Character->GetSkateBone(Side ? TEXT("hand_L") : TEXT("hand_R"));
+    const TCHAR* S = Side ? TEXT("_L") : TEXT("_R");
+    FVector Sum = FVector::ZeroVector; int32 Count = 0;
+    for (const TCHAR* Joint : { TEXT("finger_"), TEXT("finger_tip_"), TEXT("finger_end_") })
+        for (int32 Finger = 1; Finger <= 2; ++Finger)
+        {
+            const FName Bone(*FString::Printf(TEXT("%s%d%s"), Joint, Finger, S));
+            if (Body->GetBoneIndex(Bone) == INDEX_NONE) continue;
+            Sum += Body->GetSocketTransform(Bone, RTS_Component).GetLocation(); ++Count;
+        }
+    return Count ? Sum / Count : Body->GetSocketTransform(Hand, RTS_Component).GetLocation();
 }
 
 void UBotwMoveSet::ShowGlider(bool bShow)
@@ -1208,12 +1524,22 @@ bool UBotwMoveSet::Press(FName Button)
         switch (Mode)
         {
         case EBotwMoveMode::Ground:
-            if (IsGuarding() && Has(TEXT("Parry")) && (!Busy() || (Name == TEXT("GuardHit") && Current() && SourceTime() >= Current()->Input))) { Play(TEXT("Parry"), .03f); return true; }
+        {
+            // The parry: the shield's, or without it the sword's (the shield's clip when an older build lacks it).
+            const FName Parry = !HasShield() && Has(TEXT("SwordParry")) ? FName(TEXT("SwordParry")) : FName(TEXT("Parry"));
+            if (IsGuarding() && Has(Parry) && (!Busy() || (IsGuardHit(Name) && Current() && SourceTime() >= Current()->Input)))
+            {
+                Play(Parry, .03f);
+                if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->Play(TEXT("sword_swing"), GuardPoint(), .55f, .08f);
+                return true;
+            }
+        }
             if (bLocked && !bArmed) { if (CanDodge()) StartHop(); return true; }
             if (CanJump()) StartJump(); else JumpBuffer = .15f;
             return true;
         case EBotwMoveMode::Air:
             if (CanJump()) { StartJump(); return true; }   // just off an edge
+            if (CanDoubleJump()) { StartDoubleJump(); return true; }   // Cairo's double jump first, then the glider
             if (CanGlide()) OpenGlider(); else JumpBuffer = .2f;
             return true;
         case EBotwMoveMode::Glide: CloseGlider(false); return true;
@@ -1236,7 +1562,13 @@ bool UBotwMoveSet::Press(FName Button)
         return true;
     }
     if (Button == TEXT("attack_release")) { bAttackHeld = false; return true; }
-    if (Button == TEXT("guard")) { bGuardHeld = true; return true; }
+    if (Button == TEXT("guard"))
+    {
+        // Guarding takes the sword in hand (and the shield with it): sheathed, the press draws.
+        bGuardHeld = true;
+        if (!bLegacy && Mode == EBotwMoveMode::Ground && !bArmed && !bDown && !Busy() && Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword")); bAttackAfterDraw = false; }
+        return true;
+    }
     if (Button == TEXT("guard_release")) { bGuardHeld = false; return true; }
     if (Button == TEXT("weapon"))
     {
@@ -1258,6 +1590,23 @@ void UBotwMoveSet::StartCut(int32 Index)
     if (Character->bIsCrouched) Character->UnCrouch();
     Face(600.f);
     Combo = Index; AttackBuffer = 0.f; bAttackAfterDraw = false;
+    // BOTW homes a cut onto the enemy it is aimed at: a quick step in when it stands beyond the blade's reach. The cuts'
+    // clips open mid-swing, so the step is short and the blow keeps landing until it has closed in.
+    LungeTime = 0.f; LungeTarget = nullptr;
+    if (AActor* Focus = Target.IsValid() ? Target.Get() : FindTarget(Reach() + 250.f, 60.f))
+    {
+        float Radius = 0.f, Half = 0.f;
+        Focus->GetSimpleCollisionCylinder(Radius, Half);
+        const float Stand = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + Radius + BladeLength() * .7f;
+        const float Gap = float(FVector::Dist2D(Focus->GetActorLocation(), Character->GetActorLocation())) - Stand;
+        if (Gap > 5.f) { LungeTarget = Focus; LungeStand = Stand; LungeTime = FMath::Clamp(Gap / 1100.f, .06f, .16f); }
+    }
+    if (const FBotwMove* M = Current())
+    {
+        float End = -1.f;
+        for (const FVector2f& W : M->Active) End = FMath::Max(End, W.Y);
+        ArcEnd = LungeTime > 0.f ? FMath::Max(End, M->Start + (LungeTime + .08f) * M->Rate) : End;
+    }
     Play(Clip, .05f);
 }
 
@@ -1361,9 +1710,13 @@ void UBotwMoveSet::AdvanceCombat(float Dt)
 {
     const FBotwMove* Now = Current();
     const FName Name = Now ? Now->Name : NAME_None;
-    // The blade hits only inside the playing clip's active windows.
-    if (Now && bArmed && Now->Active.Num() && Now->InWindow(Now->Active, SourceTime())) SweepBlade();
-    else PreviousBlade.Reset();
+    LungeTime = FMath::Max(0.f, LungeTime - Dt);
+    if (!IsAttack(Name)) { LungeTime = 0.f; ArcEnd = -1.f; }
+    // The blade hits inside the playing clip's active windows: what it sweeps through, and what stands in its arc; a
+    // homing cut's arc lasts until it has closed in.
+    const bool bActive = Now && bArmed && Now->Active.Num() && Now->InWindow(Now->Active, SourceTime());
+    if (bActive) SweepBlade(); else PreviousBlade.Reset();
+    if (bActive || (Now && bArmed && IsAttack(Name) && SourceTime() <= ArcEnd)) SweepArc();
     if (Mode != EBotwMoveMode::Ground && Mode != EBotwMoveMode::Air) { AttackBuffer = 0.f; bCharging = false; return; }
     // The draw that an attack press started cuts from its input point.
     if (Name == TEXT("DrawSword") && bAttackAfterDraw && Now && SourceTime() >= Now->Input && bArmed) StartCut(0);
@@ -1431,6 +1784,36 @@ void UBotwMoveSet::SweepBlade()
     PreviousBlade = Now;
 }
 
+void UBotwMoveSet::SweepArc()
+{
+    const FVector Here = Character->GetActorLocation();
+    const FVector Forward = Character->GetActorForwardVector();
+    const float Range = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + BladeLength() + 20.f;
+    auto Consider = [&](AActor* A)
+    {
+        if (!A || A == Character || HitThisSwing.Contains(A) || !IsTargetable(A)) return;
+        float Radius = 0.f, Half = 0.f;
+        A->GetSimpleCollisionCylinder(Radius, Half);
+        const FVector To = (A->GetActorLocation() - Here) * FVector(1, 1, 0);
+        if (To.Size() - Radius > Range || (Forward | To.GetSafeNormal()) < FMath::Cos(FMath::DegreesToRadians(75.f))) return;
+        if (FMath::Abs(A->GetActorLocation().Z - Here.Z) > Half + HalfHeight()) return;
+        HitThisSwing.Add(A);
+        const FVector At = A->GetActorLocation() - To.GetSafeNormal() * Radius + FVector(0, 0, HalfHeight() * .3f);
+        Strike(A, Strength, At, Forward);
+    };
+    // The few things a blade can strike (IsTargetable), found directly rather than through a collision channel.
+    UWorld* World = Character->GetWorld();
+    for (TActorIterator<ABotwCreature> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<AFoxHunter> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<ASwordDummy> It(World); It; ++It) Consider(*It);
+}
+
+float UBotwMoveSet::BladeLength() const
+{
+    const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
+    return Sword && *Sword ? float((BladeTip * (*Sword)->GetComponentScale()).Size()) : 60.f;
+}
+
 void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction)
 {
     if (ASwordDummy* Dummy = Cast<ASwordDummy>(Victim)) Dummy->TakeSwordHit(FMath::Min(Power, 3));
@@ -1449,11 +1832,23 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
     AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
     const FVector Here = Character->GetActorLocation();
     const FVector Toward = (From - Here).GetSafeNormal2D();
-    // The shield parry: the strike bounces off and the striker staggers.
-    if (Now && Name == TEXT("Parry") && Now->InWindow(Now->Guard, SourceTime()))
+    // The parry, shield or sword: the strike bounces off and the striker staggers.
+    if (Now && IsParry(Name) && Now->InWindow(Now->Guard, SourceTime()))
     {
         ++ParryCount;
-        if (FX) FX->Parry(ShieldPoint(), Character, Source);
+        if (FX)
+        {
+            const FVector At = GuardPoint();
+            FX->Parry(At, Character, Source);
+            if (Name == TEXT("SwordParry"))
+            {
+                // Steel on steel: a fan of hot sparks off the blade toward the striker, and a second, brighter ring.
+                FX->Burst(At, Toward, 26, 1700.f, FLinearColor(1.f, .7f, .3f) * 9.f, .3f, 2.6f);
+                AAtelierFX::FParticle& Ring = FX->Spawn(AAtelierFX::ESprite::Ring, At); Ring.Size0 = 12.f; Ring.Size1 = 200.f; Ring.Life = .24f;
+                Ring.Color = FLinearColor(1.f, .82f, .5f) * 3.f;
+                FX->Play(TEXT("hit_heavy"), At, .45f, .06f);
+            }
+        }
         if (ABotwCreature* Creature = Cast<ABotwCreature>(Source)) Creature->TakeSwordHit(0, Character);
         return 1;
     }
@@ -1466,7 +1861,17 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
             FlurryTime = GetParam(TEXT("PlayerCutAfterJust.ForceSlowTime"), 80.f) / 30.f;
             Invulnerable = FlurryTime;
             Target = Source;
-            if (FX) FX->SlowMotion(FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
+            if (FX)
+            {
+                FX->SlowMotion(FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
+                // The perfect dodge: a cold flash and a wide ring where he was, and a chime.
+                const FVector Chest = Here + FVector(0, 0, HalfHeight() * .3f);
+                FX->Flash(Chest, 110.f, FLinearColor(.6f, .82f, 1.f) * 3.f, .2f);
+                AAtelierFX::FParticle& Ring = FX->Spawn(AAtelierFX::ESprite::Ring, Chest); Ring.Size0 = 30.f; Ring.Size1 = 260.f; Ring.Life = .4f;
+                Ring.Color = FLinearColor(.55f, .78f, 1.f) * 2.6f;
+                FX->LightFlash(Chest, FLinearColor(.6f, .8f, 1.f), 9000.f, 500.f, .25f);
+                FX->Play(TEXT("charge_ready"), Chest, .8f, .02f);
+            }
             if (!bArmed) SetArmed(true);
         }
         return 2;
@@ -1476,11 +1881,12 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
     const float Guardable = GetParam(TEXT("GuardableAngle"), 120.f) * .5f;
     if (IsGuarding() && Mode == EBotwMoveMode::Ground && (Character->GetActorForwardVector() | Toward) >= FMath::Cos(FMath::DegreesToRadians(Guardable)))
     {
-        if (Has(TEXT("GuardHit"))) Play(TEXT("GuardHit"), .03f);
+        const FName Hit = !HasShield() && Has(TEXT("SwordGuardHit")) ? FName(TEXT("SwordGuardHit")) : FName(TEXT("GuardHit"));
+        if (Has(Hit)) Play(Hit, .03f);
         Character->GetCharacterMovement()->Velocity = -Toward * 220.f;
         if (FX)
         {
-            const FVector At = ShieldPoint();
+            const FVector At = GuardPoint();
             FX->Burst(At, -Toward, 14, 700.f, FLinearColor(1.f, .85f, .55f) * 4.f, .25f, 3.f);
             FX->Play(TEXT("parry"), At, .6f, .06f);
             FX->Shake(.2f);
@@ -1491,10 +1897,13 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
     return 0;
 }
 
-FVector UBotwMoveSet::ShieldPoint() const
+FVector UBotwMoveSet::GuardPoint() const
 {
-    const TObjectPtr<UStaticMeshComponent>* Shield = Props.Find(TEXT("shield"));
-    return Shield && *Shield ? (*Shield)->Bounds.Origin : Character->GetActorLocation() + Character->GetActorForwardVector() * 30.f + FVector(0, 0, 30.f);
+    if (HasShield())
+        if (const TObjectPtr<UStaticMeshComponent>* Shield = Props.Find(TEXT("shield")); Shield && *Shield) return (*Shield)->Bounds.Origin;
+    TArray<FVector> Blade; BladePoints(Blade);
+    if (Blade.Num()) return Blade[Blade.Num() / 2];
+    return Character->GetActorLocation() + Character->GetActorForwardVector() * 30.f + FVector(0, 0, 30.f);
 }
 
 void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact)
@@ -1593,6 +2002,27 @@ void UBotwMoveSet::SetArmed(bool bNow)
         FX->Play(bNow ? TEXT("sword_draw") : TEXT("sword_sheathe"), Character->GetActorLocation() + FVector(0, 0, 30), .8f);
 }
 
+void UBotwMoveSet::SetShield(bool bOn)
+{
+    bShield = bOn;
+    if (const TObjectPtr<UStaticMeshComponent>* Shield = Props.Find(TEXT("shield")); Shield && *Shield) (*Shield)->SetVisibility(HasShield(), true);
+}
+
+void UBotwMoveSet::SetLegacy(bool bOn)
+{
+    bLegacy = bOn;
+    if (bLegacy) { bAirJumpUsed = false; FlipTime = -1.f; }
+    SetShield(bShield);   // the legacy set always carries the shield
+}
+
+int32 UBotwMoveSet::Chosen()
+{
+    FString Name;
+    if (FParse::Value(FCommandLine::Get(), TEXT("moveset="), Name))
+        return Name == TEXT("cairo") ? LegacyCairo : Name == TEXT("botw") ? LegacyBotw : Merged;
+    return FMath::Clamp(FMath::RoundToInt(UJapanPreferences::Saved(TEXT("moveset"), 0.f)), 0, 2);
+}
+
 void UBotwMoveSet::AdvanceEquipment(float Dt)
 {
     const FBotwMove* Now = Current();
@@ -1605,11 +2035,41 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     if (Now && In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall") }) && T < FMath::Max(Now->Bind, 0.f)) bGlider = false;
     if (Now && Name == TEXT("GlideOff") && T < (Now->Unbind >= 0.f ? Now->Unbind : .1f)) bGlider = true;
     ShowGlider(bGlider);
-    // The carry layers: the sword arm over everything but blade work, the raised shield while guarding on foot.
-    const bool bCarry = bArmed && !IsSwordAction(Name) && (Mode == EBotwMoveMode::Ground || Mode == EBotwMoveMode::Air) && !bDown;
+    // The carry layers: the sword arm over everything but blade work, and while guarding on foot the raised shield, or
+    // without it the sword raised across the body (both arms).
+    const bool bGuardPose = IsGuarding() && Mode == EBotwMoveMode::Ground && (Name.IsNone() || IsLockLoop(Name));
+    const bool bSwordGuard = bGuardPose && !HasShield();
+    const bool bCarry = bArmed && !IsSwordAction(Name) && (Mode == EBotwMoveMode::Ground || Mode == EBotwMoveMode::Air) && !bDown && !bSwordGuard;
     SwordCarry = FMath::FInterpConstantTo(SwordCarry, bCarry ? 1.f : 0.f, Dt, 8.f);
-    const bool bShield = IsGuarding() && Mode == EBotwMoveMode::Ground && (Name.IsNone() || IsLockLoop(Name));
-    GuardCarry = FMath::FInterpConstantTo(GuardCarry, bShield ? 1.f : 0.f, Dt, 10.f);
+    GuardCarry = FMath::FInterpConstantTo(GuardCarry, bGuardPose && HasShield() ? 1.f : 0.f, Dt, 10.f);
+    SwordGuardCarry = FMath::FInterpConstantTo(SwordGuardCarry, bSwordGuard ? 1.f : 0.f, Dt, 10.f);
+    // Without the shield the off hand holds nothing: over sword work and the lock-on strafe its arm swings free rather
+    // than holding the shield pose the BOTW clips give it (not in Cairo's two-handed guard, parry and recoil, nor
+    // drawing and sheathing).
+    // Strafing in a one-handed guard the arm swings free too; a two-handed guard keeps both hands on the grip.
+    const bool bTwoHanded = GetParam(TEXT("TwoHandedGuard")) > .5f;
+    const bool bFree = !HasShield() && bArmed && (Mode == EBotwMoveMode::Ground || Mode == EBotwMoveMode::Air) && !bDown &&
+        !(bSwordGuard && bTwoHanded) && !In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit"), TEXT("DrawSword"), TEXT("SheatheSword") });
+    FreeArm = FMath::FInterpConstantTo(FreeArm, bFree ? 1.f : 0.f, Dt, 8.f);
+    // Cairo's own two-handed clips were made for his longer bokken: on this sword the off hand is moved onto the handle.
+    const bool bTwoHand = bTwoHanded && bArmed && !bDown && (bSwordGuard || In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit") }));
+    TwoHandGrip = FMath::FInterpConstantTo(TwoHandGrip, bTwoHand ? 1.f : 0.f, Dt, 12.f);
+    // The off hand closed round the handle: the middle of its curled fingers on the sword's axis, one hand's width
+    // (BOTW's 13 cm) toward the pommel from where the sword hand closes round it; its wrist moved with it.
+    const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
+    USkeletalMeshComponent* Body = Character->GetMesh();
+    if (TwoHandGrip > 0.f && Sword && *Sword && Body && !BladeTip.IsNearlyZero())
+    {
+        const FTransform& MeshT = Body->GetComponentTransform();
+        const FTransform& SwordT = (*Sword)->GetComponentTransform();
+        const FVector Origin = MeshT.InverseTransformPosition(SwordT.GetLocation());
+        const FVector Pommel = MeshT.InverseTransformVectorNoScale(SwordT.TransformVectorNoScale(-BladeTip)).GetSafeNormal();
+        const FVector SwordHand = Origin + Pommel * ((FingersOf(0) - Origin) | Pommel);
+        const FVector Wrist = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component).GetLocation()
+            + (SwordHand + Pommel * 13.f * Scale() - FingersOf(1));
+        // Kept in the sword hand's frame, so it goes with that hand in the frame it is evaluated (the strafe's bob).
+        GripOffset = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_R")), RTS_Component).InverseTransformPosition(Wrist);
+    }
 }
 
 void UBotwMoveSet::EaseMesh(const FVector& From, float Seconds)
@@ -1629,9 +2089,103 @@ void UBotwMoveSet::AdvanceMeshOffset(float Dt)
     if (MeshOffsetLength > 0.f) Offset += MeshOffsetStart * (1.f - Smooth(MeshOffsetTime / MeshOffsetLength));
     if (MeshOffsetTime >= MeshOffsetLength) MeshOffsetLength = 0.f;
     if (bDriving && !MeshDriveLocal.IsZero()) Offset += MeshDriveLocal * (1.f - DriveProgress());
+    // A tucked somersault: after it (or a landing that cut it short) the turn finishes to upright and the lift fades as
+    // the hips come back down.
+    if (FlipTime < 0.f && FlipAngle != 0.f)
+    {
+        FlipAngle = FMath::FInterpConstantTo(FlipAngle, FlipAngle > 180.f ? 360.f : 0.f, Dt, 900.f);
+        if (FlipAngle < .01f || FlipAngle > 359.99f) FlipAngle = 0.f;
+    }
+    if (FlipTime < 0.f && FlipSettle > 0.f)
+    {
+        FlipSettle = FMath::Max(0.f, FlipSettle - Dt);
+        FlipLift = FlipSettle > 0.f ? FMath::Min(FlipLift, HipLift()) * FMath::Min(1.f, FlipSettle / .15f) : 0.f;
+    }
+    else if (FlipTime < 0.f) FlipLift = 0.f;
+    if (FlipAngle != 0.f || FlipLift != 0.f)
+    {
+        FTransform Placed(MeshBaseRotation, MeshBase + Offset + FVector(0, 0, FlipLift), Body->GetRelativeScale3D());
+        if (FlipAngle != 0.f)
+        {
+            // About the capsule's right axis, head first: forward.
+            const FVector Pivot = FlipPivot.IsZero() ? FVector(0, 0, FlipLift) : FlipPivot;
+            Placed = Placed * FTransform(-Pivot) * FTransform(FQuat(FVector::YAxisVector, FMath::DegreesToRadians(FlipAngle))) * FTransform(Pivot);
+        }
+        Body->SetRelativeTransform(Placed);
+        bMeshTurned = bMeshOffset = true;
+        return;
+    }
+    if (bMeshTurned) { Body->SetRelativeRotation(MeshBaseRotation); bMeshTurned = false; bMeshOffset = true; }
     if (Offset.IsNearlyZero(.01) && !bMeshOffset) return;
     Body->SetRelativeLocation(MeshBase + Offset);
     bMeshOffset = !Offset.IsNearlyZero(.01);
+}
+
+/** Cosmetic only: the sprint's dust and speed lines, the glider's wind off its tips and the blade's ribbon. */
+void UBotwMoveSet::AdvanceEffects(float Dt)
+{
+    AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
+    // The blade's ribbon: through every cut's active windows, a little either side, at the blow's strength.
+    if (BladeTrail)
+    {
+        const FBotwMove* Now = Current();
+        bool bEmit = false;
+        if (Now && bArmed && IsAttack(Now->Name))
+            for (const FVector2f& W : Now->Active) bEmit |= SourceTime() >= W.X - .05f && SourceTime() <= W.Y + .04f;
+        TArray<FVector> Blade; BladePoints(Blade);
+        if (Blade.Num()) BladeTrail->Sample(Blade[0], Blade.Last(), bEmit, FMath::Clamp(Strength, 1, 3), Dt);
+    }
+    if (!FX) return;
+    const UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+    const FVector Here = Character->GetActorLocation();
+    const FVector Velocity = Movement->Velocity;
+    // Sprinting: a burst of dust as it starts, then puffs at the heels and pale speed lines streaming past.
+    const bool bSprinting = Mode == EBotwMoveMode::Ground && Character->Stamina.Sprinting && Velocity.Size2D() > 300.f;
+    if (bSprinting)
+    {
+        const FVector Ground = Here - FVector(0, 0, HalfHeight());
+        const FVector Back = -FVector(Velocity.GetSafeNormal2D());
+        if (!bWasSprinting) { FX->Dust(Ground, .8f, Back * .6f); FX->Play(TEXT("dash"), Ground, .3f, .1f); SprintFX = 0.f; }
+        SprintFX += Dt;
+        while (SprintFX >= .09f)
+        {
+            SprintFX -= .09f;
+            FX->Dust(Ground + Back * 25.f, .22f, Back * .5f);
+            for (int32 I = 0; I < 2; ++I)
+            {
+                const FVector Side = FVector::CrossProduct(FVector::UpVector, Back) * FMath::FRandRange(-45.f, 45.f);
+                AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Spark, Here + Side + FVector(0, 0, FMath::FRandRange(-.7f, .5f) * HalfHeight()) - Back * 40.f);
+                P.V = Back * FMath::FRandRange(700.f, 1100.f); P.Stretch = .04f; P.Drag = 2.f;
+                P.Life = FMath::FRandRange(.12f, .2f); P.Size0 = 1.8f; P.Size1 = .8f; P.Color = FLinearColor(.95f, .97f, 1.f) * 2.f;
+            }
+        }
+    }
+    bWasSprinting = bSprinting;
+    // Gliding: wind streaming off the canopy's tips, more of it the faster he flies.
+    if (Mode == EBotwMoveMode::Glide && bGliderShown && Glider)
+    {
+        GlideFX += Dt * FMath::GetMappedRangeValueClamped(FVector2f(150.f, 600.f), FVector2f(10.f, 34.f), GlideSpeed);
+        const FBoxSphereBounds Canopy = Glider->Bounds;
+        const FVector Right = Character->GetActorRightVector(), Back = -Character->GetActorForwardVector();
+        while (GlideFX >= 1.f)
+        {
+            GlideFX -= 1.f;
+            const float Sign = FMath::RandBool() ? 1.f : -1.f;
+            const FVector Tip = Canopy.Origin + Right * Sign * Canopy.BoxExtent.Size2D() * .85f + Back * FMath::FRandRange(0.f, 20.f);
+            AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Spark, Tip);
+            P.V = Back * FMath::FRandRange(250.f, 420.f) + Velocity * .2f; P.Stretch = .06f; P.Drag = 1.2f;
+            P.Life = FMath::FRandRange(.25f, .45f); P.Size0 = 1.6f; P.Size1 = .5f; P.Color = FLinearColor(.92f, .96f, 1.f) * 1.8f; P.FadeIn = .05f;
+        }
+    }
+    else GlideFX = 0.f;
+}
+
+float UBotwMoveSet::HipLift() const
+{
+    const USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
+    if (!Body) return 0.f;
+    const float Now = Body->GetSocketTransform(Character->GetSkateBone(TEXT("pelvis")), RTS_Component).GetLocation().Z;
+    return FMath::Max(0.f, (FlipHips - Now) * float(Body->GetRelativeScale3D().Z));
 }
 
 // --------------------------------------------------------------------------------------------------------- Queries
@@ -1698,7 +2252,7 @@ bool UBotwMoveSet::Climbable(const FHitResult& Hit) const
 bool UBotwMoveSet::IsTargetable(AActor* Actor) const
 {
     if (!Actor || Actor == Character) return false;
-    if (const ABotwCreature* Creature = Cast<ABotwCreature>(Actor)) return !Creature->IsDown();
+    if (Cast<ABotwCreature>(Actor)) return true;   // down or not: a downed one takes blows too
     if (const AFoxHunter* Fox = Cast<AFoxHunter>(Actor)) return Fox->IsAlive();
     return Actor->IsA<ASwordDummy>();
 }
@@ -1744,7 +2298,12 @@ void UBotwMoveSet::Reset()
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = 0.f;
     if (FlurryTime > 0.f) { FlurryTime = 0.f; Character->CustomTimeDilation = 1.f; }
     ClimbShift = ClimbShiftTarget = 0.f; MeshOffsetLength = 0.f; MeshDriveLocal = DriveMesh = FVector::ZeroVector;
-    if (bMeshOffset && Character->GetMesh()) { Character->GetMesh()->SetRelativeLocation(MeshBase); bMeshOffset = false; }
+    FlipTime = -1.f; FlipAngle = FlipLift = FlipSettle = 0.f; bAirJumpUsed = false;
+    if ((bMeshOffset || bMeshTurned) && Character->GetMesh())
+    {
+        Character->GetMesh()->SetRelativeLocationAndRotation(MeshBase, MeshBaseRotation);
+        bMeshOffset = bMeshTurned = false;
+    }
     FallStartZ = Character->GetActorLocation().Z; FallSpeed = 0.f;
 }
 
@@ -1773,12 +2332,32 @@ FString UBotwMoveSet::Describe() const
     O->SetNumberField(TEXT("hits"), HitCount);
     O->SetNumberField(TEXT("parries"), ParryCount);
     O->SetNumberField(TEXT("dodges"), DodgeCount);
+    O->SetNumberField(TEXT("double_jumps"), DoubleJumpCount);
+    O->SetBoolField(TEXT("air_jump_used"), bAirJumpUsed);
+    O->SetNumberField(TEXT("flip"), FlipAngle);
+    O->SetBoolField(TEXT("shield"), HasShield());
+    O->SetBoolField(TEXT("legacy"), bLegacy);
+    O->SetBoolField(TEXT("sword_guard"), IsSwordGuarding());
+    O->SetNumberField(TEXT("sword_guard_carry"), SwordGuardCarry);
     O->SetNumberField(TEXT("sword_carry"), SwordCarry);
     O->SetNumberField(TEXT("guard_carry"), GuardCarry);
     O->SetNumberField(TEXT("speed"), Movement->Velocity.Size2D());
     O->SetNumberField(TEXT("vz"), Movement->Velocity.Z);
     O->SetNumberField(TEXT("glide_speed"), GlideSpeed);
     O->SetNumberField(TEXT("glide_yaw"), GlideYaw);
+    O->SetNumberField(TEXT("glide_bank"), GlideBank);
+    O->SetNumberField(TEXT("glide_hands"), GlideHands);
+    if (USkeletalMeshComponent* Body = Character->GetMesh(); Body && GlideHands > 0.f)
+    {
+        // How far each wrist is from its target on the glider (cm), after the IK.
+        TArray<TSharedPtr<FJsonValue>> Miss;
+        for (int32 I = 0; I < 2; ++I)
+        {
+            const FName Hand = Character->GetSkateBone(I ? TEXT("hand_L") : TEXT("hand_R"));
+            Miss.Add(MakeShared<FJsonValueNumber>(FVector::Dist(Body->GetSocketTransform(Hand, RTS_Component).GetLocation(), GlideHandTarget[I])));
+        }
+        O->SetArrayField(TEXT("glide_hand_miss"), Miss);
+    }
     O->SetNumberField(TEXT("feet"), Feet());
     O->SetNumberField(TEXT("fall_height"), FMath::Max(0.f, FallStartZ - float(Here.Z)));
     O->SetNumberField(TEXT("water"), WaterSurface);

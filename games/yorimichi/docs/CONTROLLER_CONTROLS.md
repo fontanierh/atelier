@@ -13,16 +13,16 @@ controls: see [SKATE.md](SKATE.md).
 | Look | Mouse | Right stick | Right stick | Right stick |
 | Sprint (hold) | Left Shift | Left stick click | L3 | Left stick click |
 | Walk (hold) | Left Alt or J | | | |
-| Jump / double jump | Space | A | Cross | B |
-| Dash | F | X | Square | Y |
-| Roll | Left Ctrl | B | Circle | A |
+| Jump / double jump / paraglider | Space | A | Cross | B |
+| Swim dash | F | X | Square | Y |
+| Dodge (side hop, backflip) | Left Ctrl | B | Circle | A |
 | Crouch | C | Right stick click | R3 | Right stick click |
 | Get on / step off the skateboard | B | Y | Triangle | X |
 | Skateboard to the hand / put it away (Ride backend) | G | D-pad Right | D-pad Right | D-pad Right |
 | Interact, board the zeppelin | E | D-pad Down | D-pad Down | D-pad Down |
 | Sailboat / step ashore | K | D-pad Up | D-pad Up | D-pad Up |
 | Attack (hold to charge) | Left click | RT | R2 | ZR |
-| Parry | Right click | LT | L2 | ZL |
+| Guard and lock on (hold); with Jump, parry | Right click | LT | L2 | ZL |
 | Draw / sheathe the sword | R | D-pad Left | D-pad Left | D-pad Left |
 | Flight speed aboard, choose the stop before boarding | [ / ] | LB / RB | L1 / R1 | L / R |
 | Map | M | View | Touchpad click | Minus |
@@ -34,10 +34,14 @@ controls: see [SKATE.md](SKATE.md).
 Getting on the board while running carries the running speed onto it. Riding, the right stick (or the mouse with the
 left button held) is Flick-It, not the camera. On the sailboat the left stick steers and raises or lowers the sail.
 
-A rider with a Breath of the Wild move set (Link, or Cairo with "Cairo's moves" set to Breath of the Wild; see [the BotW characters](../assets/characters/botw/README.md))
-keeps these buttons with that game's meanings: Jump in the air opens the paraglider (no double jump), Roll is the
-dodge (no roll or air dash), Parry held guards and locks on and Jump while guarding parries, and Dash is the swim
-dash.
+The player plays the merged move set (Link, and Cairo whenever it is built; see [the move set](../assets/characters/botw/README.md#the-merged-move-set)),
+which keeps these buttons with these meanings: Jump in the air is the double jump, and pressed again it opens the
+paraglider; Roll is the dodge (a side hop with the stick left or right, else the backflip); Parry held draws the sword,
+guards (with the shield when the "Shield" setting carries it, else with the sword) and locks on, and Jump while guarding
+parries; Dash is only the swim dash (there is no dash on foot). The "Move set" setting can pick the legacy sets
+instead: Cairo's (Roll is his dive roll, Dash his ground and air dash), which he also plays without the local BOTW
+library and in scripted QA sessions that do not ask for the merged set, or BOTW's (no double jump: Jump in the air
+opens the paraglider).
 
 The map takes the controller while it is open: left stick or D-pad to choose a pin, the bottom face button to travel
 there, the right face button to close, LB / RB (L1 / R1, L / R) to zoom and the right stick to pan when zoomed in. The
@@ -57,7 +61,8 @@ names PS4, PS5 and Xbox pads through Apple's GameController backend, and its Pla
 click.
 
 The hints follow the situation: sailboat steering and sail, zeppelin boarding and flight speed with the interaction
-button, the sword's attack, parry and draw while it is installed, a move set's paraglider, dodge, guard and swim dash,
+button, the sword's attack, parry and draw while it is installed, the move set's double jump and paraglider, dodge,
+guard (shield or sword) and swim dash,
 and the skate controls while riding. With a controller the mouse-release tip is hidden; stamina rings and the FPS
 counter stay. The two hint rows measure their text and shrink to fit the viewport.
 

@@ -54,15 +54,20 @@ bool ACairoCharacter::HasBotw()
 
 void ACairoCharacter::BeginPlay()
 {
-    // At the start the command line picks the move set, else the saved setting (where a person plays: QA, reviews and
-    // benchmarks expect his own moves); a switched-in Cairo was told by the switch.
+    // Where a person plays, the "Move set" setting picks: the merged set (the default) or the legacy BOTW set on Link's
+    // retargeted clips, whenever they are built, or his legacy moves. QA, reviews and benchmarks keep his legacy moves
+    // unless the command line asks (-rider=CairoBotw). A switched-in Cairo was told by the switch.
     if (!bSwitchedIn)
     {
         const FString Requested = ABotwRider::Requested();
         const bool bPlayed = !AJapanGameMode::IsScriptedSession() || FAtelierStream::IsRequested();
-        bBotw = Requested == BotwName() || (Requested.IsEmpty() && bPlayed && HasBotw() && UJapanPreferences::Saved(TEXT("cairo_botw"), 0.f) > .5f);
+        bBotw = Requested == BotwName() || (Requested.IsEmpty() && bPlayed && HasBotw() && UBotwMoveSet::Chosen() != UBotwMoveSet::LegacyCairo);
     }
-    if (bBotw) DefinitionAssetPath = BotwDefinition;
+    if (bBotw)
+    {
+        DefinitionAssetPath = BotwDefinition;
+        SprintSpeedMultiplier = 1.f;   // Link's sprint: the dash clip's own stride speed
+    }
     Super::BeginPlay();
     if (bBotw)
     {

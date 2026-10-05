@@ -13,6 +13,8 @@
 #                 clips keep the depth they hang at).
 #          loop   whether it repeats (default: the clip's own flag)
 #          gait   a looping walk or run whose ground speed the game moves at (the lock-on strafes)
+#          events the clip of another element of the same timeline whose windows it takes (BOTW keeps a timeline's
+#                 events on one element: its sword-only parry has none of its own)
 character = "Link"
 
 [action]
@@ -32,6 +34,9 @@ HopLandL = { clip = "Nml_Lockon_Step_L_Ed", as = "Player_StepLand" }
 HopLandR = { clip = "Nml_Lockon_Step_R_Ed", as = "Player_StepLand" }
 BackFlip = { clip = "Nml_Lockon_Jump_B_St", as = "Player_BackJump", root = "strip" }
 BackFlipLand = { clip = "Nml_Lockon_Jump_B_Ed", as = "Player_BackJumpLand", root = "strip" }
+# The double jump (Cairo's, in the merged move set): a character with its own DoubleJump clip plays it; Link tucks into
+# the slope tumble's ball pose and the game turns him through one forward somersault.
+DoubleJumpTuck = { clip = "Rolldown", loop = true }
 
 # Lock-on: the strafing walk and run while the guard button is held.
 LockWait = { clip = "Nml_Lockon_Wait", loop = true }
@@ -110,6 +115,9 @@ RushFinish = { clip = "Sword_Attack_SF", as = "Player_CutJustFinish" }
 Parry = { clip = "Shield_Guard_Just", as = "Player_GuardJust" }
 GuardHit = { clip = "Shield_Guard_Hit", as = "Player_GuardFailHit" }
 GuardBreak = { clip = "Shield_Guard_Break", as = "Player_GuardBreak" }
+# Without the shield (the "Shield" setting off) the sword guards and parries: the same timelines, sword-only clips.
+SwordParry = { clip = "Sword_Guard_Just", as = "Player_GuardJust", events = "Shield_Guard_Just" }
+SwordGuardHit = { clip = "Sword_Guard_Hit", as = "Player_GuardFailHit", events = "Shield_Guard_Hit" }
 
 # Hit reactions: a light hit from the front, back, left or right; a heavy one knocks him down and he gets up.
 HitF = { clip = "Nml_Damage_S_F", as = "Player_DamageS" }
@@ -121,9 +129,11 @@ KnockB = { clip = "Nml_Damage_L_B", as = "Player_DamageL" }
 KnockUpF = { clip = "Nml_Damage_L_F_Standup", as = "Player_DamageLStand" }
 KnockUpB = { clip = "Nml_Damage_L_B_Standup", as = "Player_DamageLStand" }
 
-# Upper-body poses laid over the legs (the definition's carry layer): sword and shield out, and the raised shield.
+# Upper-body poses laid over the legs (the definition's carry layer): sword and shield out, the raised shield, and the
+# sword raised to guard without the shield.
 SwordCarry = { clip = "A_Pose_Sword_Wait", loop = true }
 GuardCarry = { clip = "Shield_Guard_Wait", loop = true }
+SwordGuardCarry = { clip = "Sword_Guard_Wait", loop = true }
 
 # Locomotion blends. A sample's speed is its clip's ground speed at the rate its timeline plays it, the speed BOTW moves
 # at while playing it (Nml_Move_Run at 1.5 is a 5.6 m/s run); idle samples stand still. The armed blend is the upper

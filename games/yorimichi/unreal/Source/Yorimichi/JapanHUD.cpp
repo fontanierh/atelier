@@ -1,4 +1,5 @@
 #include "JapanHUD.h"
+#include "BotwMoveSet.h"
 #include "ZeppelinService.h"
 #include "WandererCharacter.h"
 #include "JapanPreferences.h"
@@ -171,14 +172,17 @@ void AJapanHUD::DrawHUD()
         Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   %s parry   %s draw / sheathe sword   %s crouch   %s interact   %s map   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
             : TEXT("Left click attack, hold to charge   Right click parry   R draw / sheathe sword   Mouse look   M map   Esc settings   Tab release mouse");
     }
-    // A Breath of the Wild move set: jump in the air opens the paraglider, the roll is the dodge, the parry button
-    // guards and locks on (jump while guarding parries) and the dash swims fast.
-    if (Pawn->GetMoves() && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding()))
+    // The merged move set (or the legacy BOTW set, without the double jump): jump in the air is the double jump, then the paraglider; the roll button is the dodge (side
+    // hop or backflip); the parry button guards and locks on, with the shield or else the sword (jump while guarding
+    // parries); the dash button only swims fast.
+    if (const UBotwMoveSet* Moves = Pawn->GetMoves(); Moves && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding()))
     {
-        Controls = bController ? FString::Printf(TEXT("Left stick move   Hold %s sprint   %s jump / paraglider   %s dodge   %s swim dash   %s crouch"),Pad.Sprint,Pad.Jump,Pad.Roll,Pad.Dash,Pad.Crouch)
-            : TEXT("WASD run   Alt / J walk   Shift sprint   Space jump / paraglider   Ctrl dodge   F swim dash   C crouch   K sailboat   M map");
-        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   Hold %s guard / lock-on, %s parry   %s draw / sheathe   %s map   %s settings"),Pad.Attack,Pad.Parry,Pad.Jump,Pad.Weapon,Pad.Map,Pad.Menu)
-            : TEXT("Left click attack, hold to charge   Hold right click guard / lock-on, Space parry   R draw / sheathe   Mouse look   M map   Esc settings");
+        const TCHAR* Guard = Moves->HasShield() ? TEXT("shield guard") : TEXT("sword guard");
+        const TCHAR* Jump = Moves->IsLegacy() ? TEXT("jump / paraglider") : TEXT("jump / double jump / paraglider");   // the legacy BOTW set has no double jump
+        Controls = bController ? FString::Printf(TEXT("Left stick move   Hold %s sprint   %s %s   %s dodge / backflip   %s swim dash   %s crouch"),Pad.Sprint,Pad.Jump,Jump,Pad.Roll,Pad.Dash,Pad.Crouch)
+            : FString::Printf(TEXT("WASD run   Alt / J walk   Shift sprint   Space %s   Ctrl dodge / backflip   F swim dash   C crouch   K sailboat   M map"),Jump);
+        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   Hold %s %s / lock-on, %s parry   %s draw / sheathe   %s map   %s settings"),Pad.Attack,Pad.Parry,Guard,Pad.Jump,Pad.Weapon,Pad.Map,Pad.Menu)
+            : FString::Printf(TEXT("Left click attack, hold to charge   Hold right click %s / lock-on, Space parry   R draw / sheathe   Mouse look   M map   Esc settings"),Guard);
     }
     if (bController && (bSailboat || Pawn->IsZeppelinPassenger()))
     {
