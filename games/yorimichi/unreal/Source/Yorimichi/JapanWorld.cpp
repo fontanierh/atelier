@@ -10,6 +10,8 @@
 #include "Components/PointLightComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Engine/ExponentialHeightFog.h"
+#include "Engine/DirectionalLight.h"
+#include "Components/LightComponent.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMesh.h"
 #include "Misc/FileHelper.h"
@@ -554,18 +556,6 @@ bool AJapanWorld::SampleGroundHeight(const FVector& Position, float& Height) con
     return true;
 }
 
-// The volumetric mist's density at sea level (docs/VOLUMETRIC_FOG.md: twice this washed a low sun out to white).
-static TAutoConsoleVariable<float> CVarFogDensity(TEXT("japan.FogDensity"),.07f,
-    TEXT("Volumetric fog density at sea level in the countryside (the height fog's FogDensity)."));
-// The froxel grid's reach (cm). Everything beyond it is seen through the whole grid's mist, so the reach sets the veil on
-// every distant view: 90 m put ~30% over Hidamari from the sea, 30 m ~10%.
-static TAutoConsoleVariable<float> CVarFogDistance(TEXT("japan.FogDistance"),3000.f,
-    TEXT("Volumetric fog view distance (cm); the settings menu or a Graphics change applies a new value."));
-
-// Hidamari is already pale from afar: inside its bounds (city.json) the mist thins to this share, over a 300 m edge.
-static TAutoConsoleVariable<float> CVarFogTown(TEXT("japan.FogTown"),.35f,
-    TEXT("Volumetric fog density inside Hidamari's bounds, as a share of the countryside's (docs/VOLUMETRIC_FOG.md)."));
-
 // Diagnosis only. `japan.HideGroups Tree_Broad;Bush` hides every instanced group whose mesh name
 // contains one of those substrings, so one foliage family at a time can be priced and photographed
 // without editing the world. Semicolons separate entries because -ExecCmds already splits on commas.
@@ -630,35 +620,42 @@ void AJapanWorld::ApplyPerformanceSettings(bool bPerformance)
     AppliedPerformanceMode = int32(bPerformance);
 }
 
-void AJapanWorld::ApplyVolumetricFog(bool bOn, bool bPerformance)
+void AJapanWorld::ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look)
 {
     TActorIterator<AExponentialHeightFog> It(GetWorld());
     UExponentialHeightFogComponent* Fog = It ? It->GetComponent() : nullptr;
-    const int32 Look = bOn ? (bPerformance ? 2 : 1) : 0;
-    if (!Fog || AppliedFog == Look) return;
+    if (!Fog || (bFogApplied && (bOn ? AppliedFog == Look : !AppliedFog))) return;
+    TActorIterator<ADirectionalLight> SunIt(GetWorld());
+    ULightComponent* Sun = SunIt ? SunIt->GetLightComponent() : nullptr;
     if (!FogBase)
-        FogBase = FFogBase{Fog->FogDensity, Fog->FogHeightFalloff, Fog->FogCutoffDistance, Fog->VolumetricFogDistance, Fog->bEnableVolumetricFog};
-    AppliedFog = Look;
+        FogBase = FFogBase{Fog->FogDensity, Fog->FogHeightFalloff, Fog->FogCutoffDistance, Fog->VolumetricFogDistance,
+                           Sun ? Sun->VolumetricScatteringIntensity : 1.f, Fog->bEnableVolumetricFog};
+    bFogApplied = true;
     if (!bOn)
     {
+        AppliedFog.Reset();
         Fog->SetFogDensity(FogBase->Density); Fog->SetFogHeightFalloff(FogBase->Falloff);
         Fog->SetFogCutoffDistance(FogBase->Cutoff); Fog->SetVolumetricFogDistance(FogBase->Distance);
         Fog->SetVolumetricFog(FogBase->bVolumetric);
+        if (Sun) Sun->SetVolumetricScatteringIntensity(FogBase->Shafts);
         return;
     }
+    AppliedFog = Look;
     // The medium is the height fog's own: extinction 0.5 * density / 1000 per cm at the fog actor's height (sea level),
-    // halving every 1000 / falloff cm up: 83 m (japan.FogDensity). The shore and the valleys (0-20 m) are mistiest, the
-    // forest lake (75 m) has half as much.
+    // halving every 1000 / falloff cm up (83 m at 0.12): the shore and the valleys are mistiest, the forest lake (75 m)
+    // has half as much. Twice the default density washed a low sun out to white.
     AppliedFogDensity = -1.f;
-    UpdateFogDensity(); Fog->SetFogHeightFalloff(.12f);
+    UpdateFogDensity(0.f); Fog->SetFogHeightFalloff(FMath::Max(.001f, Look.Falloff));
     // Forward scattering: shafts and a halo toward the sun, still some from the side. 0.7 blew a low sun out.
-    Fog->SetVolumetricFogScatteringDistribution(.5f);
+    Fog->SetVolumetricFogScatteringDistribution(FMath::Clamp(Look.Scattering, -.9f, .9f));
     Fog->SetVolumetricFogAlbedo(FColor::White);
     Fog->SetVolumetricFogEmissive(FLinearColor::Black);
     Fog->SetVolumetricFogExtinctionScale(1.f);
-    // The grid's reach is the same in both profiles (Performance has half the slices; japan.FogDistance). The near metres
-    // fade in so the character never wades through blocky froxels.
-    const float Distance = FMath::Clamp(CVarFogDistance.GetValueOnGameThread(), 1000.f, 20000.f);
+    if (Sun) Sun->SetVolumetricScatteringIntensity(FMath::Max(0.f, Look.Shafts));
+    // The grid's reach is the same in both profiles (Performance has half the slices). Everything beyond it is seen
+    // through the whole grid's mist, so the reach sets the veil on every distant view: 90 m put ~30% over Hidamari from
+    // the sea, 30 m ~10%. The near metres fade in so the character never wades through blocky froxels.
+    const float Distance = FMath::Clamp(Look.Reach, 1000.f, 20000.f);
     Fog->SetVolumetricFogDistance(Distance);
     Fog->SetVolumetricFogStartDistance(0.f);
     Fog->SetVolumetricFogNearFadeInDistance(300.f);
@@ -668,22 +665,32 @@ void AJapanWorld::ApplyVolumetricFog(bool bOn, bool bPerformance)
     Fog->SetVolumetricFog(true);
 }
 
-void AJapanWorld::UpdateFogDensity()
+void AJapanWorld::UpdateFogDensity(float Dt)
 {
-    if (AppliedFog <= 0) return;
+    if (!AppliedFog) return;
     TActorIterator<AExponentialHeightFog> It(GetWorld());
     UExponentialHeightFogComponent* Fog = It ? It->GetComponent() : nullptr;
     if (!Fog) return;
+    // How much of Hidamari the view holds: the camera's place and points up to 450 m along its look, each fully in the town
+    // inside its bounds and fading out over 150 m, so the town keeps its contrast seen from the hill or the sea too. A
+    // longer reach thinned the mist on the village road at the start, 550 m from the town and looking toward it.
+    // Eased over about a second, so turning toward the town never pops the mist away.
     float Town = 0.f;
     if (TownBounds.bIsValid)
         if (const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0))
         {
             const FVector C = Camera->GetCameraLocation();
-            const float Outside = FMath::Sqrt(TownBounds.ComputeSquaredDistanceToPoint(FVector2D(C.X, C.Y)));
-            Town = FMath::SmoothStep(0.f, 1.f, 1.f - Outside / 30000.f);
+            const FVector Ahead = Camera->GetCameraRotation().Vector().GetSafeNormal2D();
+            for (const float Reach : {0.f, 15000.f, 30000.f, 45000.f})
+            {
+                const FVector P = C + Ahead * Reach;
+                const float Outside = FMath::Sqrt(TownBounds.ComputeSquaredDistanceToPoint(FVector2D(P.X, P.Y)));
+                Town = FMath::Max(Town, FMath::SmoothStep(0.f, 1.f, 1.f - Outside / 15000.f));
+            }
         }
-    const float Density = FMath::Max(0.f, CVarFogDensity.GetValueOnGameThread()) * FMath::Lerp(1.f, FMath::Clamp(CVarFogTown.GetValueOnGameThread(), 0.f, 1.f), Town);
-    if (FMath::Abs(Density - AppliedFogDensity) < .0005f) return;     // each change re-sends the fog to the renderer
+    TownView = Dt > 0.f ? FMath::FInterpTo(TownView, Town, Dt, 1.5f) : Town;
+    const float Density = FMath::Max(0.f, AppliedFog->Density) * FMath::Lerp(1.f, FMath::Clamp(AppliedFog->Town, 0.f, 1.f), TownView);
+    if (FMath::Abs(Density - AppliedFogDensity) < .0002f) return;     // each change re-sends the fog to the renderer
     Fog->SetFogDensity(Density);
     AppliedFogDensity = Density;
 }
@@ -697,7 +704,7 @@ void AJapanWorld::Tick(float Dt)
 {
     Super::Tick(Dt);
     UpdateHarborLook(this);
-    UpdateFogDensity();
+    UpdateFogDensity(Dt);
     ApplyGroupDiagnostics();
     if (!WindMPC) return;
     UMaterialParameterCollectionInstance* I = GetWorld()->GetParameterCollectionInstance(WindMPC);

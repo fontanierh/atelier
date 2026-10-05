@@ -1,5 +1,5 @@
 """Volumetric fog review (docs/VOLUMETRIC_FOG.md): stills of fixed views with the "fog" setting on and off, and a short
-film of the valley mist and the light shafts.
+film of the mist and the light shafts.
 
     atelier play yorimichi -- -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=200 -RenderOffscreen -ForceRes
     atelier live py "TAKE='fog1'" && atelier live py - < games/yorimichi/scenarios/fog_film.py
@@ -11,7 +11,8 @@ as <view>_on.png and <view>_off.png; the GPU frame time of each (stat unit, aver
 Film: a morning sun low ahead of the camera (the sun settings moved for the shot), each shot labelled; the last one
 switches the setting off and on again in the same view. Runs at a fixed 60 fps step and saves every second step as a
 JPG (30 fps, real time); frames.json gives each frame its shot's caption and whether the fog was on.
-Optional globals: TAKE; ONLY, 'stills' or 'film'; VIEWS_ONLY, the still views to take (names). The sun and fog settings
+Sliders: the settings menu (menu.png), then each fog slider stepped through three values in one view.
+Optional globals: TAKE; ONLY, 'stills', 'film' or 'sliders'; VIEWS_ONLY, the still views to take (names). The sun and fog settings
 are put back as found.
 """
 import json, math, os, traceback
@@ -203,10 +204,6 @@ def film():
     eye, at = (-116.0, 195.0, 81.0), (-80.0, 228.6, 79.0)
     sun(16., ue_yaw(eye, at) + 180. - 15.)
     yield from shot(eye, at, 60., (6., 5., 0.), 7., 'Light shafts through the forest', turn=-10.)
-    # The valley from the overlook: mist pooled low, the hill tops clear.
-    eye, at = (-102.4, -98.5, 101.6), (-68.0, -134.0, 70.0)
-    sun(14., ue_yaw(eye, at) + 180. + 40.)
-    yield from shot(eye, at, 60., (0., 0., -3.), 7., 'The valley: mist pooled low, the hill tops clear', turn=20.)
     # Running through it, the game's own camera.
     yield from run_through()
     # Gliding down into it.
@@ -277,17 +274,42 @@ def glide_into():
     yield from until(lambda s: s.get('mode') in ('ground', 'swim'), 20.)
 
 
+SLIDERS = [('fog_density', 'Fog density', (.03, .07, .14)), ('fog_reach', 'Fog reach (m)', (15., 30., 90.)),
+           ('fog_falloff', 'Fog height falloff', (.04, .12, .4)), ('fog_glow', 'Fog glow toward the sun', (0., .5, .85)),
+           ('fog_shafts', 'Light shafts', (0., 1., 3.))]
+
+
+def sliders():
+    """The settings menu with its fog sliders (menu.png), then each slider stepped through three values in one view by
+    the forest lake, a low sun ahead; each back to its default (the middle value) after."""
+    eye, at = (-116.0, 195.0, 81.0), (-80.0, 228.6, 79.0)
+    sun(16., ue_yaw(eye, at) + 180. - 15.)
+    aim(eye, at, 60.); fog(True)
+    yield from wait(2.)
+    live.press('menu'); yield from wait(.5)
+    L.screenshot(os.path.join(OUT, 'menu.png')); yield from wait(.5)
+    live.press('menu'); yield from wait(.5)
+    for key, name, values in SLIDERS:
+        for v in values:
+            L.set_preference(key, v)
+            yield from wait(.6)                  # the fog's history settles before the shot
+            label(f'Settings: {name} {v:g}' + (' (default)' if v == values[1] else ''))
+            yield from wait(1.6)
+            cut()
+        L.set_preference(key, values[1])
+
+
 # ------------------------------------------------------------------------------------------------- run
 
 def steps():
     st['found'] = saved_settings()
     L.film_hud(True)
-    sections = [('stills', stills), ('film', film)]
+    sections = [('stills', stills), ('film', film), ('sliders', sliders)]
     for name, fn in sections:
         if ONLY and name != ONLY:
             continue
         try:
-            if name == 'film':
+            if name in ('film', 'sliders'):
                 L.fixed_step(60)
             yield from fn()
         except Exception:

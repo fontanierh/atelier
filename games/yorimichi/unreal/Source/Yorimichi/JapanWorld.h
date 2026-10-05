@@ -6,6 +6,19 @@
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMeshComponent;
 
+/** The volumetric fog's look, from the settings menu (UJapanPreferences, docs/VOLUMETRIC_FOG.md). */
+struct FVolumetricFogLook
+{
+    float Density = .07f;       // the height fog's density at sea level, in the countryside
+    float Reach = 3000.f;       // the froxel grid's view distance (cm)
+    float Falloff = .12f;       // the height fog's falloff: the density halves every 1000 / Falloff cm up
+    float Scattering = .5f;     // the phase function's anisotropy: 0 even, toward 0.9 a glow toward the sun
+    float Shafts = 1.f;         // the sun's volumetric scattering intensity
+    float Town = 0.f;           // the share of the density left when the view holds Hidamari
+    bool bPerformance = false;  // the Graphics setting (only the grid's resolution, set by console variables)
+    bool operator==(const FVolumetricFogLook&) const = default;
+};
+
 /** A tree house room for the camera see-through's hole mode (docs/CAMERA.md): Unreal centre (cm), half size (cm; a
  *  round room has its radius on every axis), yaw (radians). */
 struct FSeeThroughRoom
@@ -62,9 +75,9 @@ public:
     // Cosmetic particles sample the generated ground directly; gameplay still uses collision.
     bool SampleGroundHeight(const FVector& Position, float& Height) const;
     void ApplyPerformanceSettings(bool bPerformance);
-    /** Volumetric fog (the settings menu's "fog", docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed by the sun and
-     *  the sky, inside the froxel grid around the camera. Off restores the level's height fog as built. */
-    void ApplyVolumetricFog(bool bOn, bool bPerformance);
+    /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
+     *  by the sun and the sky, inside the froxel grid around the camera. Off restores the level's fog and sun as built. */
+    void ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look);
     // Diagnosis only: honours japan.HideGroups so one foliage family can be priced at a time.
     void ApplyGroupDiagnostics();
 
@@ -88,15 +101,17 @@ private:
     FString AppliedHideGroups;
     float AppliedBackdropCull = 0.f;
     int32 AppliedPerformanceMode = -1;
-    // The level's height fog before the volumetric look (setup_project.py builds it with no density), and the look
-    // applied: -1 none yet, 0 off, 1 quality, 2 performance.
-    struct FFogBase { float Density = 0.f, Falloff = 0.f, Cutoff = 0.f, Distance = 0.f; bool bVolumetric = false; };
+    // The level's height fog and sun before the volumetric look (setup_project.py builds the fog with no density), and
+    // the look applied (unset: off).
+    struct FFogBase { float Density = 0.f, Falloff = 0.f, Cutoff = 0.f, Distance = 0.f, Shafts = 1.f; bool bVolumetric = false; };
     TOptional<FFogBase> FogBase;
-    int32 AppliedFog = -1;
-    // The mist's density as applied, and Hidamari's bounds (Unreal cm), where it thins (UpdateFogDensity).
-    float AppliedFogDensity = -1.f;
+    TOptional<FVolumetricFogLook> AppliedFog;
+    bool bFogApplied = false;
+    // The mist's density as applied, Hidamari's bounds (Unreal cm) and how much of the town the view holds, eased
+    // (UpdateFogDensity: Dt 0 snaps).
+    float AppliedFogDensity = -1.f, TownView = 0.f;
     FBox2D TownBounds = FBox2D(ForceInit);
-    void UpdateFogDensity();
+    void UpdateFogDensity(float Dt);
     bool bSeeThroughProbeIgnored = false;
     void Load();
 };

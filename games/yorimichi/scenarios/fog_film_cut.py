@@ -1,10 +1,10 @@
 """Caption and encode the volumetric fog film (fog_film.py) into an MP4, and pair its stills fog on | fog off.
 
-    python games/yorimichi/scenarios/fog_film_cut.py build/yorimichi/fog_film/fog.mp4 fog1 [--stills]
+    python games/yorimichi/scenarios/fog_film_cut.py build/yorimichi/fog_film/fog.mp4 fog1 [--stills] [--skip TEXT]
 
 Every frame carries its shot's caption and whether the "Volumetric fog" setting was on. The frames are 30 fps and
 real time; the MP4 is H.264 (CRF 20). --stills also writes <take>/compare/<view>.jpg: the view with the fog on (left)
-and off (right), each labelled with its GPU frame time.
+and off (right), each labelled with its GPU frame time. --skip TEXT leaves out every shot whose caption contains TEXT.
 """
 import json, subprocess, sys, tempfile
 from concurrent.futures import ProcessPoolExecutor
@@ -43,9 +43,9 @@ def frame(job):
     img.save(dst, quality=95)
 
 
-def film(out, take):
+def film(out, take, skip=()):
     folder = FILMS / take
-    frames = json.load(open(folder / 'frames.json'))['frames']
+    frames = [f for f in json.load(open(folder / 'frames.json'))['frames'] if not any(t in f[1] for t in skip)]
     with tempfile.TemporaryDirectory() as tmp:
         jobs = [(folder / ('frame_%05d.jpg' % i), Path(tmp) / ('f_%05d.jpg' % n), text, on) for n, (i, text, on) in enumerate(frames)]
         with ProcessPoolExecutor(4) as pool:
@@ -77,8 +77,11 @@ def stills(take):
 
 
 if __name__ == '__main__':
-    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    argv, skip = sys.argv[1:], []
+    while '--skip' in argv:
+        i = argv.index('--skip'); skip.append(argv[i + 1]); del argv[i:i + 2]
+    args = [a for a in argv if not a.startswith('--')]
     if '--stills' in sys.argv:
         stills(args[1])
     if (FILMS / args[1] / 'frames.json').exists() and json.load(open(FILMS / args[1] / 'frames.json'))['frames']:
-        film(Path(args[0]), args[1])
+        film(Path(args[0]), args[1], skip)

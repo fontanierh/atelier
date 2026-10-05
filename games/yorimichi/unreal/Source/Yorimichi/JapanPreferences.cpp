@@ -40,6 +40,13 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("desktop"),TEXT("Desktop profile"),0.f,0.f,1.f},
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
         {TEXT("fog"),TEXT("Volumetric fog"),1.f,0.f,1.f},
+        // The fog's look (AJapanWorld::ApplyVolumetricFog, docs/VOLUMETRIC_FOG.md); the defaults are FVolumetricFogLook's.
+        {TEXT("fog_density"),TEXT("Fog density"),.07f,0.f,.2f,.005f},
+        {TEXT("fog_reach"),TEXT("Fog reach (m)"),30.f,10.f,120.f,5.f},
+        {TEXT("fog_falloff"),TEXT("Fog height falloff"),.12f,.02f,.5f,.01f},
+        {TEXT("fog_glow"),TEXT("Fog glow toward the sun"),.5f,0.f,.9f,.05f},
+        {TEXT("fog_shafts"),TEXT("Light shafts"),1.f,0.f,4.f,.1f},
+        {TEXT("fog_town"),TEXT("Fog in Hidamari"),0.f,0.f,1.f,.05f},
         {TEXT("volume"),TEXT("Volume"),1.f,0.f,1.f},
         {TEXT("goofy"),TEXT("Skate stance"),0.f,0.f,1.f},
         {TEXT("stamina_rings"),TEXT("Stamina rings"),2.f,1.f,5.f},
@@ -140,6 +147,7 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
     for (auto& V : Values) if (V.Key == Key)
     {
         V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
+        if (V.Step > 0.f) V.Value = FMath::Clamp(V.Minimum+FMath::RoundToFloat((V.Value-V.Minimum)/V.Step)*V.Step,V.Minimum,V.Maximum);
         if (IsToggle(Key)) V.Value = V.Value > .5f ? 1.f : 0.f;
         if (Key == TEXT("stamina_rings") || Key == TEXT("moveset")) V.Value=FMath::RoundToFloat(V.Value);
         Apply(); Save(); return true;
@@ -225,11 +233,16 @@ void UJapanPreferences::Apply()
     Set(TEXT("r.VolumetricFog"),Fog ? 1.f : 0.f);
     Set(TEXT("r.VolumetricFog.GridPixelSize"),PerformanceMode ? 16.f : 8.f);
     Set(TEXT("r.VolumetricFog.GridSizeZ"),PerformanceMode ? 64.f : 128.f);
+    FVolumetricFogLook FogLook;
+    FogLook.Density = Get(TEXT("fog_density")); FogLook.Reach = Get(TEXT("fog_reach"))*100.f;
+    FogLook.Falloff = Get(TEXT("fog_falloff")); FogLook.Scattering = Get(TEXT("fog_glow"));
+    FogLook.Shafts = Get(TEXT("fog_shafts")); FogLook.Town = Get(TEXT("fog_town"));
+    FogLook.bPerformance = PerformanceMode != 0;
     for (TActorIterator<AJapanWorld> It(Owner->GetWorld()); It; ++It)
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
         It->ApplyPerformanceSettings(PerformanceMode != 0);
-        It->ApplyVolumetricFog(Fog,PerformanceMode != 0);
+        It->ApplyVolumetricFog(Fog,FogLook);
     }
     for (TActorIterator<ADirectionalLight> It(Owner->GetWorld()); It; ++It) It->SetActorRotation(FRotator(-Get(TEXT("sun_height")),Get(TEXT("sun_yaw")),0));
     if (auto* Scale = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenPercentage"))) Scale->Set(Get(TEXT("render_scale")),ECVF_SetByCode);
@@ -398,13 +411,23 @@ void UJapanPreferences::ToggleMenu()
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
         if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset")) continue;   // a button above
+        const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
         TSharedRef<SSlider> Slider = SNew(SSlider)
+            .StepSize(Values[I].Step > 0.f ? Values[I].Step/(Values[I].Maximum-Values[I].Minimum) : .01f)
+            .IsEnabled_Lambda([this,bFogDetail] { return !bFogDetail || Get(TEXT("fog")) > .5f; })
             .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
             .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });
         Rows->AddSlot().AutoHeight().Padding(0,6)[SNew(SHorizontalBox)
             + SHorizontalBox::Slot().FillWidth(.48f)[SNew(STextBlock).Text(FText::FromString(Values[I].Label)).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White)]
             + SHorizontalBox::Slot().FillWidth(.38f)[Slider]
-            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I] { return FText::FromString(FString::Printf(TEXT("%.2f"),Values[I].Value)); })]];
+            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I]
+            {
+                // As many decimals as the slider's step shows (fog density moves by 0.005).
+                const float Step = Values[I].Step;
+                const int32 Digits = Step <= 0.f ? 2 : Step >= 1.f ? 0 : FMath::Clamp(FMath::CeilToInt(-FMath::LogX(10.f,Step)-1e-3f),1,3);
+                FNumberFormattingOptions Format; Format.SetUseGrouping(false).SetMinimumFractionalDigits(Digits).SetMaximumFractionalDigits(Digits);
+                return FText::AsNumber(Values[I].Value,&Format);
+            })]];
     }
     Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Resume"))).OnClicked_Lambda([this] { CloseMenu(); return FReply::Handled(); })];
     Menu = SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
