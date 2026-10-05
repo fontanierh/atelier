@@ -154,6 +154,11 @@ assert live.L.skate_place(at, 0.0), 'skate_place refused'
         cols = list(zip(*values))
         summary[kind] = dict(frames=len(values), mean=[round(sum(c) / len(c), 1) for c in cols], max=[round(max(c), 1) for c in cols],
                              min=[round(min(c), 1) for c in cols])
+    # Landed: an air phase, then at least half a second rolling on the ground after its last airborne frame.
+    kinds = [m.group(1) if (m := re.search(r'retail=(\w+)', s)) else '' for _, s, _ in rows]
+    last_air = max((i for i, k in enumerate(kinds) if 'Air' in k), default=None)
+    summary['air_frames'] = sum('Air' in k for k in kinds)
+    summary['ground_after_air'] = None if last_air is None else sum(k in ('PhysicsGround', 'GroundAnimation') for k in kinds[last_air + 1:])
     counts = [int(m.group(1)) for _, s, _ in rows if (m := re.search(r'bails=(\d+)', s))]
     summary['bails'] = counts[-1] - counts[0] if counts else None
     return summary
@@ -181,7 +186,11 @@ try:
     # The mini-mega's drop-in, over its kicker and the gap: a big air landed into the transition, no input.
     results['mega_drop_in'] = ride('mega_drop_in', 1, (ox - 2, oy, oz + 12), 0, 6.); print('mega_drop_in', json.dumps(results['mega_drop_in']), flush=True)
     # Ankle and toe heights over the deck in the air or a manual may differ from rolling's by no more than 2 cm.
-    record('mega_drop_in_lands', results['mega_drop_in']['bails'] == 0, json.dumps(results['mega_drop_in']))
+    drop = results['mega_drop_in']
+    record('mega_drop_in_lands', drop['bails'] == 0 and drop['air_frames'] > 10 and (drop['ground_after_air'] or 0) >= 30, json.dumps(drop))
+    # The toe bones sit inside the shoes, above their soles: one at or under the floor means the shoe is sunk into it.
+    toes = [results['on_foot']['bones'].get(b) for b in ('toe_L', 'toe_R')]
+    record('on_foot_toes_above_floor', all(t is not None and t >= 1.0 for t in toes), json.dumps(results['on_foot']))
     record('on_foot_capsule_on_floor', results['on_foot']['capsule_bottom'] is not None and abs(results['on_foot']['capsule_bottom']) <= 2.5,
            json.dumps(results['on_foot']))
     for name, r in results.items():
