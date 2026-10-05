@@ -15,7 +15,8 @@ R_EAVE,I_EAVE=7.0,5.9
 def palette():
     arcade.palette()
     v.PALETTE.update({
-        'iz_roof':(.17,.20,.25),'iz_ridge':(.11,.13,.17),'iz_tile':(.14,.17,.22),'iz_cream':(.48,.41,.27),
+        'iz_roof':(.09,.092,.098),'iz_ridge':(.055,.057,.062),'iz_tile':(.075,.077,.083),   # silver ibushi kawara
+        'iz_cream':(.48,.41,.27),
         'iz_shoji':(.66,.52,.28),'iz_glow':(.62,.48,.24),'iz_downlight':(.70,.50,.22),
         'iz_orange':(.62,.20,.03),'iz_lamp_band':(.35,.10,.02),'iz_vend':(.78,.66,.40),
         'iz_tin':(.48,.12,.07),'iz_tin_dark':(.34,.08,.05),'iz_teal':(.13,.23,.24),'iz_teal_dark':(.09,.17,.18),

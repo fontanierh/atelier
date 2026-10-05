@@ -286,8 +286,9 @@ def build(name,variant,lettering):
     v.PALETTE.update({
         'cc_plaster':(.54,.47,.33) if variant==0 else (.52,.47,.36),
         'cc_surround':(.62,.56,.43),'cc_base':(.40,.33,.22),'cc_stone':(.30,.27,.21),
-        'cc_roof':(.19,.33,.22) if variant==0 else (.17,.29,.26),'cc_roof_dark':(.11,.19,.13),
-        'cc_roof_shade':(.14,.25,.17) if variant==0 else (.13,.22,.20),
+        # a green copper roof, or glazed red-brown sekishu tile as on the port towns' western houses
+        'cc_roof':(.19,.33,.22) if variant==0 else (.16,.065,.035),'cc_roof_dark':(.11,.19,.13) if variant==0 else (.08,.035,.02),
+        'cc_roof_shade':(.14,.25,.17) if variant==0 else (.115,.05,.03),
         'cc_red':(.40,.09,.04),'cc_green':(.08,.20,.11),'cc_white':(.62,.57,.46),
         'cc_iron':(.045,.045,.05),'cc_sign':(.09,.045,.02),'cc_bike':(.12,.30,.15),
         'cc_glass':(.06,.05,.04),'cc_glow':(.28,.15,.06)})
