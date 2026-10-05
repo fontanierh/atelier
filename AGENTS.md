@@ -55,23 +55,34 @@ uv run pytest                            # studio and game Python tests
 
 ## Agent messaging and subscriptions
 
-- At the start of every agent session, choose a unique stable owner name and **always subscribe with a
-  background mechanism that wakes your existing session**. Use `atelier board subscribe --agent OWNER
-  --background --notify '<JSON argv>'` when your client supports existing-session delivery. For Claude Code,
-  run `atelier board wait --agent OWNER --timeout 3600` as a `run_in_background` shell task, act on its exit
-  output, then immediately re-arm it (including timeout exit 3). A never-ending foreground subscriber does
-  not wake a completion-based client. Never use `claude -p --resume` or `claude --continue` as a notifier:
+- At the start of every agent session, choose a unique stable owner name and **verify a persistent board
+  listener before starting work**. On macOS use `atelier board supervise --agent OWNER --addressed-only
+  --notify '<JSON argv>' --checkout "$PWD"`, or verify the existing service with `atelier board status`.
+  launchd owns delivery and restarts the listener at login and after crashes, independently of the agent's
+  turns, tools, compaction and background task completion. Codex uses `board notify-codex` to steer its
+  existing thread; Claude uses `board notify-claude --session-dir DIR` to reach its existing native inbox.
+  The sender's permission class must be accurate; do not evade an explicit inbound hold/refusal. See
+  [the guide](docs/AGENT_BOARD.md) for setup. Never use `claude -p --resume` or `claude --continue` as a notifier:
   that starts a separate writer on the same transcript rather than notifying the live session.
-- Verify delivery and `atelier board status`; keep a subscription/wait armed while working or waiting and
-  restart/check it on session resume. Use `--addressed-only` if broadcast wakeups are too noisy, while still
+- Verify delivery and `atelier board status`; keep the supervised listener armed while working, waiting,
+  idle and between turns. Check its heartbeat, transport error and pending messages on resume. Use
+  `--addressed-only` if broadcast wakeups are too noisy, while still
   reading the render ledger at admission/step boundaries. See [the guide](docs/AGENT_BOARD.md) for adapters,
   timeout/re-arm behavior and shared-tool `--checkout` usage. Remote/ephemeral clients that cannot keep a
   background task alive must report this limitation on the render board rather than claim a subscription;
   an unattended log is not delivery. A NULL status PID means no wait/subscriber is currently armed.
+  A detached subscriber or one-shot background wait is a fallback when supervision/inbox delivery is
+  unavailable, not a persistent listener: report that limitation and immediately re-arm every completed wait.
 - Use `atelier board post/read` for addressed requests, acknowledgements, handoffs, blocked notices and evidence.
   Preserve the Markdown render board's Holding/Waiting/Handoffs/Log entries as the scheduling ledger. Messages are
   durable across worktrees and advisory: the live lock and memory guard still decide admission.
-- Proactively coordinate render turns with the current owner and other waiters. Acknowledge messages promptly;
+- Write readable Markdown messages: lead with the result or request, then use short paragraphs, **bold**
+  labels, bullets, inline code for commands/paths, and fenced blocks only when useful. Include evidence links,
+  the next step and an ETA; keep updates concise. Address one owner with `--to OWNER`; use a broadcast only
+  when everyone needs it. Do not wrap a whole prose update in a code fence or print JSON instead of a message.
+- Proactively coordinate render turns with the current owner and other waiters. Acknowledge actionable requests
+  within 60 seconds of receiving them using `--topic ack --reply-to ID`, before lengthy work; acknowledgement
+  is receipt plus a next step/ETA, not completion. Do not acknowledge routine telemetry or acknowledgements;
   state a concrete next safe boundary and revised ETA when late. Recheck messages and Waiting between heavy
   steps, and yield an agreed turn before per-step reacquisition or a game session. Retain first-ready time on
   refusals/requeues, distinguish blocked from ready, and never reserve a slot while idle. Prefer ready jobs under
@@ -80,7 +91,10 @@ uv run pytest                            # studio and game Python tests
   inspect stdout, memory-health.json and supervisor telemetry, publish diagnosis/ETA, and safely end only your
   own blocked job if needed. Never signal another owner's process, remove shared mutexes, steal locks or bypass
   safety. On release, post exit/duration/evidence and send a named handoff; credit reuse and prompt releases.
-- At session completion, `atelier board unsubscribe --agent OWNER`; keep messages and evidence history.
+- Persistent sessions keep their listener between tasks and idle turns. Only when permanently retiring the
+  session, use `atelier board retire --agent OWNER`; keep messages/evidence history. `unsubscribe` stops
+  unsupervised fallbacks; it does not retire a service-owned listener. Never run a one-shot wait alongside
+  a supervised listener for the same owner.
 
 ## Session responsiveness and progress
 
@@ -90,8 +104,8 @@ uv run pytest                            # studio and game Python tests
   running command and retain its session ID. Poll in bounded calls of at most 10 seconds, returning control
   between checks. Never sit in a foreground sleep loop, blocking join, or oversized tool timeout. If the client
   cannot keep the existing session responsive, do not launch a lengthy job through it.
-- Keep the board subscription/wait armed throughout jobs and waits. Process notifications and user steering
-  promptly; re-arm a completed board wait immediately, before starting or checking another job. Run the job
+- Keep the persistent board listener armed throughout jobs and waits. Process notifications and user steering
+  promptly; if using a fallback wait, re-arm it immediately before starting or checking another job. Run the job
   independently so acknowledging a message does not require waiting for the job to finish or restarting the agent.
 - Long-running scripts must flush meaningful stdout progress at least every 30 seconds, including while waiting
   for prerequisites. Report the current stage, observed completed units or frames, elapsed time, and the condition

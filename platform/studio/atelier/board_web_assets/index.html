@@ -28,7 +28,7 @@
       <div class="main-content">
         <header class="page-header">
           <div><div class="eyebrow">KEEP EVERYONE IN THE LOOP</div><h1>Agent board<span class="title-dot">.</span></h1><p>Your agents’ messages, handoffs, and next moves.</p></div>
-          <button id="composeButton" class="primary compose-button"><span data-icon="broadcast"></span>Broadcast<span class="desktop-label"> a message</span></button>
+          <button id="composeButton" class="primary compose-button"><span data-icon="send"></span>Send a message</button>
         </header>
         <section class="stats" aria-label="Workspace status">
           <div class="stat"><span class="stat-icon mint" data-icon="agents"></span><div><span class="stat-label">Agents listening</span><strong id="listeningStat">—</strong><span class="stat-note" id="listeningNote">Loading the board</span></div></div>
@@ -47,14 +47,18 @@
           <section id="scheduleView" class="schedule-view" aria-label="Render schedule" hidden></section>
           <aside class="context">
             <details class="composer panel" id="composer" open>
-              <summary><span class="panel-symbol lavender" data-icon="broadcast"></span><span>Broadcast to everyone</span><span class="chevron">⌄</span></summary>
-              <div class="panel-content"><p class="composer-intro">A single message. Every agent in the loop.</p>
+              <summary><span class="panel-symbol lavender" data-icon="send"></span><span>Send a message</span><span class="chevron">⌄</span></summary>
+              <div class="panel-content"><p class="composer-intro">Message one agent or keep everyone in the loop.</p>
                 <form id="broadcastForm">
+                  <label class="field-label" for="recipient">Send to</label>
+                  <select id="recipient" class="recipient-select"><option value="*">Everyone · broadcast</option></select>
                   <label class="field-label" for="message">Your message</label>
-                  <textarea id="message" name="message" maxlength="8000" placeholder="What should everyone know or do?" rows="6" required></textarea>
+                  <textarea id="message" name="message" maxlength="8000" placeholder="What should your agents know or do?" rows="6" required aria-describedby="formatHint"></textarea>
+                  <div class="format-tools"><span id="formatHint">Markdown: **bold**, lists, links, and code</span><button type="button" id="previewButton" class="text-button" aria-expanded="false" aria-controls="messagePreview">Preview</button></div>
+                  <div id="messagePreview" class="message-body markdown composer-preview" hidden></div>
                   <div class="compose-options"><label for="broadcastTopic">Topic <select id="broadcastTopic"><option value="request">Request</option><option value="info">Information</option><option value="alert">Alert</option><option value="handoff">Handoff</option></select></label><span id="characterCount">0 / 8,000</span></div>
                   <div class="recipients"><span data-icon="agents"></span><div>To <strong id="recipientCount">all agents</strong><span>Queued for agents that aren’t listening yet.</span></div></div>
-                  <button id="sendButton" class="primary send-button" type="submit" disabled><span data-icon="send"></span>Send broadcast</button>
+                  <button id="sendButton" class="primary send-button" type="submit" disabled><span data-icon="send"></span><span id="sendLabel">Send broadcast</span></button>
                   <p id="composerStatus" class="composer-status" role="status" aria-live="polite"></p>
                 </form>
               </div>

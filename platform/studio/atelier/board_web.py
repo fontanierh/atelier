@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from . import board
+from . import board, board_markdown
 
 ASSETS = Path(__file__).with_name('board_web_assets')
 STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
@@ -58,13 +58,16 @@ def snapshot(query, remote_status=None):
         rows = [dict(row) for row in db.execute(
             'SELECT * FROM messages'+where+' ORDER BY id DESC LIMIT ?', (*parameters, limit+1))]
         agents = []
-        for row in db.execute('SELECT agent,cursor,pid,heartbeat,checkout,stop FROM subscribers ORDER BY agent'):
+        for row in db.execute('SELECT agent,cursor,pid,heartbeat,checkout,stop,supervised,error FROM subscribers ORDER BY agent'):
             item = dict(row)
             item['listening'] = bool(item['pid'] and not item['stop'] and 0 <= now-(item['heartbeat'] or 0) < 90)
             item['pending'] = db.execute(
                 'SELECT count(*) FROM messages WHERE recipient=? AND id>? AND sender!=?',
                 (item['agent'], item['cursor'], item['agent'])).fetchone()[0]
             item['checkout'] = Path(item['checkout']).name if item['checkout'] else None
+            item['supervised'] = bool(item['supervised'])
+            # Transport errors are generated diagnostics, not exception/argv disclosures.
+            item['delivery_error'] = bool(item.pop('error'))
             agents.append(item)
         total = db.execute('SELECT count(*) FROM messages').fetchone()[0]
         # Fetch complete fanouts even when a history/filter boundary cuts through one.
@@ -74,6 +77,9 @@ def snapshot(query, remote_status=None):
         for prefix in prefixes:
             for row in db.execute('SELECT * FROM messages WHERE dedup LIKE ?', (prefix+'%',)):
                 copies[row['id']] = dict(row)
+        ack_ids = {row[0] for row in db.execute('SELECT reply.reply_to FROM messages reply '
+                   'JOIN messages original ON original.id=reply.reply_to '
+                   "WHERE reply.topic='ack' AND reply.sender=original.recipient")}
     ledger = board.root() / 'render-board.md'
     try:
         text = ledger.read_text()
@@ -103,7 +109,11 @@ def snapshot(query, remote_status=None):
             holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
                              'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
                              'time': holder.get('time')}
-    return {'time': now, 'messages': sorted(copies.values(), key=lambda row: row['id'], reverse=True),
+    output = sorted(copies.values(), key=lambda row: row['id'], reverse=True)
+    for item in output:
+        item['body_html'] = board_markdown.render(item['body'])
+        item['acknowledged'] = item['id'] in ack_ids
+    return {'time': now, 'messages': output,
             'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'schedule': sections,
             'holders': holders, 'sessions': sessions,
             'resources': {'fresh': 0 <= now-telemetry.get('time', 0) < 120,
@@ -188,7 +198,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.permitted():
             return
-        if self.path != '/api/broadcast':
+        if self.path not in ('/api/broadcast', '/api/send', '/api/preview'):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
@@ -203,12 +213,20 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length))
             if not isinstance(data, dict):
                 raise ValueError('A message object is required.')
-            messages = board.broadcast(self.server.sender, data.get('body'), data.get('request_id'), data.get('topic', 'request'))
+            if self.path == '/api/preview':
+                body = data.get('body')
+                if not isinstance(body, str) or len(body) > 8000:
+                    raise ValueError('Preview needs a message of at most 8000 characters.')
+                self.send(200, {'html': board_markdown.render(body)})
+                return
+            recipient = data.get('recipient', '*') if self.path == '/api/send' else '*'
+            messages = board.send_web(self.server.sender, data.get('body'), data.get('request_id'),
+                                      data.get('topic', 'request'), recipient)
             self.send(200, {'messages': messages, 'recipients': [row['recipient'] for row in messages]})
         except (ValueError, TypeError, UnicodeError) as error:
             self.send(400, {'error': str(error)})
         except sqlite3.Error:
-            self.send(503, {'error': 'The board is busy. Retry to safely finish this same broadcast.'})
+            self.send(503, {'error': 'The board is busy. Retry to safely finish this same message.'})
 
     def log_message(self, *_):
         # Message bodies, identities, query strings and CSRF tokens stay out of service logs.
