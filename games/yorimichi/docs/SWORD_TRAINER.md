@@ -1,9 +1,9 @@
 # Sword trainer
 
-Kaede, the sword teacher of Momiji Hamlet, spars with the player. Walk up to her and press Interact (E, D-pad Down):
-her menu picks the level (**Gentle**, **Steady**, **Master**), her sword or her sword and shield, and yours (the player's
-"Shield" setting). A bout ends when either of you is knocked down at no health; she says a word, bows if you won, and
-walks back to her spot.
+Kaede, the sword teacher of Momiji Hamlet, spars with the player on the lawn beside the tea house. Walk up to
+her and press Interact (E, D-pad Down): her menu picks the level (**Gentle**, **Steady**, **Master**), her sword or her
+sword and shield, and yours (the player's "Shield" setting). A bout ends when either of you is knocked down at no
+health; she says a word, bows if you won, and walks back to her spot.
 
 Both fighters play the same move set: the player's merged move set (Link's moves from Breath of the Wild with Cairo's
 double jump and two-handed guard, [the botw README](../assets/characters/botw/README.md#the-merged-move-set)). Kaede is

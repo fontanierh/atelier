@@ -59,10 +59,11 @@ namespace
         { TEXT("Steady"), .25f, .25f, .25f, .25f,  .35f,  .65f, 3,    .6f,   .15f,  .14f, .12f, .08f,  .06f, .85f, .5f,   .55f },
         { TEXT("Master"), .12f, .45f, .3f,  .15f,  .75f,  1.05f, 4,   .3f,   .2f,   .16f, .14f, .14f,  .12f, 1.f,  1.f,   .7f },
     };
-    // The training ground: the open apron in front of the tea house, in the hamlet's authored metres (before
-    // `village_point`'s offset), and the way she faces when she waits there (toward the lane).
-    const FVector2D TrainingGround(90.f, 4.f);
-    constexpr float GroundYaw = -60.f;
+    // The training ground: the lawn beside the tea house, between the lane and the trees (8 m clear of every bed,
+    // bush, tree and building), in the hamlet's authored metres (before `village_point`'s offset), and the way she
+    // faces when she waits there (toward the tea house and the lane).
+    const FVector2D TrainingGround(86.5f, -6.f);
+    constexpr float GroundYaw = 120.f;
     constexpr float TalkReach = 340.f, LeaveReach = 3000.f;
 }
 
