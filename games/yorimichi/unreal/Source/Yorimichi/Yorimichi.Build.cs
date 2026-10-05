@@ -9,6 +9,7 @@ public class Yorimichi : ModuleRules
         // The live bridge runs agent Python in uncooked (editor-binary) sessions only.
         if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("PythonScriptPlugin");
         PrivateDependencyModuleNames.Add("AnimationCore");
+        PrivateDependencyModuleNames.Add("RHI");
         PrivateDependencyModuleNames.Add("ImageCore");
         PrivateDependencyModuleNames.Add("ApplicationCore");
     }

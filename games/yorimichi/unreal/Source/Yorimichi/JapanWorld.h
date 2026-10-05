@@ -62,6 +62,9 @@ public:
     // Cosmetic particles sample the generated ground directly; gameplay still uses collision.
     bool SampleGroundHeight(const FVector& Position, float& Height) const;
     void ApplyPerformanceSettings(bool bPerformance);
+    /** Volumetric fog (the settings menu's "fog", docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed by the sun and
+     *  the sky, inside the froxel grid around the camera. Off restores the level's height fog as built. */
+    void ApplyVolumetricFog(bool bOn, bool bPerformance);
     // Diagnosis only: honours japan.HideGroups so one foliage family can be priced at a time.
     void ApplyGroupDiagnostics();
 
@@ -85,6 +88,15 @@ private:
     FString AppliedHideGroups;
     float AppliedBackdropCull = 0.f;
     int32 AppliedPerformanceMode = -1;
+    // The level's height fog before the volumetric look (setup_project.py builds it with no density), and the look
+    // applied: -1 none yet, 0 off, 1 quality, 2 performance.
+    struct FFogBase { float Density = 0.f, Falloff = 0.f, Cutoff = 0.f, Distance = 0.f; bool bVolumetric = false; };
+    TOptional<FFogBase> FogBase;
+    int32 AppliedFog = -1;
+    // The mist's density as applied, and Hidamari's bounds (Unreal cm), where it thins (UpdateFogDensity).
+    float AppliedFogDensity = -1.f;
+    FBox2D TownBounds = FBox2D(ForceInit);
+    void UpdateFogDensity();
     bool bSeeThroughProbeIgnored = false;
     void Load();
 };

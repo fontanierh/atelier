@@ -41,6 +41,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateLoops();
     /** Filming the skating: the HUD keeps only the trick line and the balance needle. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void FilmHud(bool bOn);
+    /** The GPU's time for the last frame (ms), as stat unit shows it: pricing a setting in place. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static float GpuFrameMs();
     static bool IsFilmHud();
     /** The sound log that films mix offline ("start" clears and records, "stop" writes the events to Path as JSON);
      *  AudioFrame sets the frame index. */
