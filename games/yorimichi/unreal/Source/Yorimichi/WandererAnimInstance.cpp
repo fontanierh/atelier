@@ -199,7 +199,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 // The layers' branch bones by the skate contract's names (a character's own clavicles).
                 CarryLayer.LayerSetup[0].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_R"));
                 CarryLayer.LayerSetup[1].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_L"));
-                // The off hand's IK: the left wrist, aimed from the sword hand's bone, its elbow as the clip bends it.
+                // The off hand's IK: the left wrist onto the sword's handle (UBotwMoveSet::TwoHandGripOffset), its elbow
+                // as the clip bends it.
                 GripIK.IKBone.BoneName = Pawn->GetSkateBone(TEXT("hand_L"));
                 GripIK.EffectorTarget = FBoneSocketTarget(Pawn->GetSkateBone(TEXT("hand_R")));
                 GripIK.JointTarget = FBoneSocketTarget(Pawn->GetSkateBone(TEXT("forearm_L")));

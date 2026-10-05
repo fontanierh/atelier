@@ -111,7 +111,7 @@ public:
     /** A two-handed hold (Cairo's bokken guard, parry and recoil) on the move set's sword: how much the off hand is put on
      *  its handle, and where that is from the sword hand's bone (one hand's width along the handle toward the pommel). */
     float TwoHandGripWeight() const { return TwoHandGrip; }
-    FVector TwoHandGripOffset() const { return GripOffset; }
+    FVector TwoHandGripOffset() const { return GripOffset; }   // the off hand's wrist on the handle, in the sword hand's frame
     /** Gliding: how much each wrist is put on its grip on the bar, and where (mesh component space; 0 right, 1 left). */
     float GlideHandWeight() const { return GlideHands; }
     FVector GlideHandLocation(int32 Side) const { return GlideHandTarget[Side & 1]; }
@@ -203,6 +203,8 @@ private:
     bool bPalmKnown = false;
     /** A hand's grip point in the mesh's component space: Link's from his wrist, else the middle of the curled fingers. */
     FVector PalmOf(int32 Side) const;
+    /** The middle of a hand's curled index and middle fingers, in the mesh's component space. */
+    FVector FingersOf(int32 Side) const;
     FName GliderSocket;   // the hand bone it is held at
     // Once fitted to the neutral glide, the glider keeps that place on the body (banking about its grips as he turns) and
     // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.

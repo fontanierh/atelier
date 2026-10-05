@@ -238,10 +238,6 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
         const double Far = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? Box.Max[Axis] : Box.Min[Axis];
         FVector Tip = FVector::ZeroVector; Tip[Axis] = Far;
         BladeBase = Tip * .18; BladeTip = Tip;
-        // The off hand's place in a two-handed hold: one hand's width (BOTW's 13 cm) from the sword hand toward the
-        // pommel, along the blade's axis as the sword hand holds it.
-        if (const FSlot* S = Slots.Find(TEXT("sword")))
-            GripOffset = -S->Held.GetRotation().RotateVector(Tip.GetSafeNormal()) * 13.f * Scale();
     }
     // Whatever is too steep to climb can be walked up: the walkable slope meets the climbing angle.
     Owner->GetCharacterMovement()->SetWalkableFloorAngle(GetParam(TEXT("ClimbEnableAngle"), 50.f));
@@ -1076,8 +1072,15 @@ FVector UBotwMoveSet::PalmOf(int32 Side) const
     const USkeletalMeshComponent* Body = Character->GetMesh();
     const FName Hand = Character->GetSkateBone(Side ? TEXT("hand_L") : TEXT("hand_R"));
     if (bPalmKnown) return Body->GetSocketTransform(Hand, RTS_Component).TransformPosition(PalmLocal[Side]);
+    return FingersOf(Side);
+}
+
+FVector UBotwMoveSet::FingersOf(int32 Side) const
+{
     // A hand closed round a bar holds it in the middle of its curled fingers: the centroid of the index and middle
-    // fingers' joints (base, middle and end).
+    // fingers' joints (base, middle and end), else the hand bone.
+    const USkeletalMeshComponent* Body = Character->GetMesh();
+    const FName Hand = Character->GetSkateBone(Side ? TEXT("hand_L") : TEXT("hand_R"));
     const TCHAR* S = Side ? TEXT("_L") : TEXT("_R");
     FVector Sum = FVector::ZeroVector; int32 Count = 0;
     for (const TCHAR* Joint : { TEXT("finger_"), TEXT("finger_tip_"), TEXT("finger_end_") })
@@ -2021,6 +2024,22 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     // Cairo's own two-handed clips were made for his longer bokken: on this sword the off hand is moved onto the handle.
     const bool bTwoHand = bTwoHanded && bArmed && !bDown && (bSwordGuard || In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit") }));
     TwoHandGrip = FMath::FInterpConstantTo(TwoHandGrip, bTwoHand ? 1.f : 0.f, Dt, 12.f);
+    // The off hand closed round the handle: the middle of its curled fingers on the sword's axis, one hand's width
+    // (BOTW's 13 cm) toward the pommel from where the sword hand closes round it; its wrist moved with it.
+    const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
+    USkeletalMeshComponent* Body = Character->GetMesh();
+    if (TwoHandGrip > 0.f && Sword && *Sword && Body && !BladeTip.IsNearlyZero())
+    {
+        const FTransform& MeshT = Body->GetComponentTransform();
+        const FTransform& SwordT = (*Sword)->GetComponentTransform();
+        const FVector Origin = MeshT.InverseTransformPosition(SwordT.GetLocation());
+        const FVector Pommel = MeshT.InverseTransformVectorNoScale(SwordT.TransformVectorNoScale(-BladeTip)).GetSafeNormal();
+        const FVector SwordHand = Origin + Pommel * ((FingersOf(0) - Origin) | Pommel);
+        const FVector Wrist = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component).GetLocation()
+            + (SwordHand + Pommel * 13.f * Scale() - FingersOf(1));
+        // Kept in the sword hand's frame, so it goes with that hand in the frame it is evaluated (the strafe's bob).
+        GripOffset = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_R")), RTS_Component).InverseTransformPosition(Wrist);
+    }
 }
 
 void UBotwMoveSet::EaseMesh(const FVector& From, float Seconds)
