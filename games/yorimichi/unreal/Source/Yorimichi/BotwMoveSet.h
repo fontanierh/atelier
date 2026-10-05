@@ -191,16 +191,19 @@ private:
     bool bShield = false, bLegacy = false;
     float FreeArm = 0.f, TwoHandGrip = 0.f;
     FVector GripOffset = FVector::ZeroVector;
-    // The paraglider's grips, right then left, in its own frame: each a stretch of handle a hand closes round (Cairo's
-    // record: the mesh's two handle tubes), or the one point Link's own neutral glide holds it at.
+    // The paraglider's grips, right then left, in its own frame: each a stretch of handle a hand closes round, and its
+    // middle (or, on Link, where his neutral glide holds it).
     FTransform GliderHeld = FTransform::Identity;
-    FVector BarGrip[2] = { FVector::ZeroVector, FVector::ZeroVector };   // each grip's middle
+    FVector BarGrip[2] = { FVector::ZeroVector, FVector::ZeroVector };
     FVector GripEnds[2][2] = { { FVector::ZeroVector, FVector::ZeroVector }, { FVector::ZeroVector, FVector::ZeroVector } };
-    FName GripBone[2];   // the bones the hands grip at (Link's weapon bones), else the hands'
-    /** A hand's grip point in the mesh's component space: its grip bone, else its palm (wrist toward the knuckles). */
+    bool bOwnGlide = false;   // Link: his own glide holds the glider (at his weapon bones); any other body is fitted to it
+    // Link's grips in his wrists' frames, from his neutral glide (his right weapon bone is the glider's attach point, not
+    // his palm, and his turning clips move it off his hand).
+    FVector PalmLocal[2] = { FVector::ZeroVector, FVector::ZeroVector };
+    bool bPalmKnown = false;
+    /** A hand's grip point in the mesh's component space: Link's from his wrist, else the middle of the curled fingers. */
     FVector PalmOf(int32 Side) const;
     FName GliderSocket;   // the hand bone it is held at
-    bool bBarKnown = false;
     // Once fitted to the neutral glide, the glider keeps that place on the body (banking about its grips as he turns) and
     // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.
     FTransform GliderOnBody = FTransform::Identity;   // relative to the mesh component

@@ -33,10 +33,6 @@ ROSTER = next(c for c in json.loads((CONTENT / 'Data' / 'botw' / 'roster.json').
 DATA = CONTENT / 'Data' / 'cairo'
 DEST = '/Game/CairoBotw'
 E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools(); P = U.AnimPoseExtensions
-# The paraglider's two handle tubes (right, left) in its own frame (cm): the straight stretch at the bottom of each of
-# its U-shaped handles, measured on the mesh's vertices. The game fits the glider so they fall in Cairo's hands and puts
-# each hand on its own.
-GLIDER_GRIPS = [[[-24.8, -14.2, 1.2], [-30.5, 2.8, 1.1]], [[25.4, -14.2, 1.6], [30.1, 2.9, 1.0]]]
 BODY = CONFIG['body']                      # Cairo's hips over Link's, in BOTW units
 SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his mesh is scaled down)
 # Carried pieces fitted to Cairo's mesh. Moved from Link's chest, the shield sank 4 cm into his deeper torso standing,
@@ -232,7 +228,6 @@ def equipment(link, cairo, glide):
             checks[slot] = {'hand_cm': [round(ls, 2), round(lt, 2)]}
             if 'clip' in item:
                 held, miss = glider(*glide, item, scale)
-                entry['grips'] = GLIDER_GRIPS
                 entry['held'], checks[slot]['grip_miss_cm'] = record_of(held), miss
         if item.get('back') and item.get('carry'):
             carry = item['carry']
