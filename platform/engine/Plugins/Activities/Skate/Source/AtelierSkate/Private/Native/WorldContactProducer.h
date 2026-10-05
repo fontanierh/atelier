@@ -19,6 +19,12 @@ struct BoardWorldVolume
     ContactPrimitive primitive{};
     Vec3 linear_velocity{};
     ContactMaterial material{};
+    // On the board's volumes, the deck's up and the height along it of the lowest wheel's bottom, and the lowest wheel
+    // bottom's world height, for riding over small edges in imported worlds; zero on other volumes. The rider's volumes
+    // take only the world height (rider_floor): the rider can be anywhere the board is not.
+    Vec3 support_up{};
+    float support_floor=0,world_floor=0;
+    bool rider_floor=false;
 };
 class WorldContactProducer
 {

@@ -102,9 +102,35 @@ trick stick.
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | `/Game/SkatePark/Board/SM_Skate{Deck,Truck,Wheel}` | The pier's board |
 | `SoundFolder` | `/Game/Audio/Skate` | Board loops and one-shots |
 | `FallSounds` | `/Game/Audio/Combat/body_fall_01`, `_02` | Body falls for bails |
+| `SurfaceMeshes`, `SurfaceMaterials` | see below | What each kind of ground rides like |
 
 `Difficulty` and `TruckTightness` are not set, so the plugin defaults apply: `normal` and 0.5.
 `tools/check_skate_runtime.py` assumes `AirSpinScale` 1.6; change both together.
+
+## Ground
+
+Grass and sand barely roll and dirt drags; asphalt and stone rumble but keep their speed; concrete, wood and metal are
+smooth. Each has its own rolling sound, and wood, metal and soft ground have their own pop and landing. The plugin
+README's Surfaces section has the rules; `DefaultGame.ini` maps the game's ground:
+
+| Ground | Surface | Named by |
+| --- | --- | --- |
+| Terrain, hills, moss, the northern mountains | Grass | materials `Ground`, `Hills`, `Grass`, `Moss`, `FarForest`, `Flower`, `NorthMountains`, `TH_moss`, `HD_grass`, `HD_moss`, `HD_rice` |
+| Lanes, trails, the Mega Park gate's ground and footpath | Dirt | materials `Lane`, `Dirt`, `Mud`, `Litter`, `NorthGate`, `HD_earth`, `HD_gravel`; meshes `Mega_Trail`, `HD_NorthParkTrail`, `ZP_Trail` |
+| Beaches | Sand | material `Sand` |
+| Roads and their paint | Asphalt | materials `Road`, `Paint`, `HD_asphalt` |
+| Paving, rock, tiles, plaster, the pier's basalt and ceramic | Stone | materials `Stone`, `Rock`, `Tile`, `Plaster`, `RoofTile`, `TH_stone`, `TH_tile`, `Pier_basalt`, `Pier_ceramic`, `HD_flagstone`, `HD_stone`, `HD_drystone`, `HD_brick`, `HD_roof`, `HD_plaster` |
+| The pier's concrete, Hidamari's sidewalks, the parks' collision, anything unlisted | Concrete | `Concrete`, `Pier_concrete`, `Pier_painted`, `Pier_mural`, and the default |
+| Steel | Metal | `Metal`, `Pier_steel`, `HD_metal` |
+| Timber, the mini-mega, the footbridge into Mega Park, gangways | Wood | materials `Wood`, `Lattice`, `Bark`, `Vermilion`, `Pier_wood`, `TH_wood_*`, `TH_hull`, `TH_shingle`, `HD_siding`, `HD_timber`; meshes `Mega_Ramp`, `ZP_MegaPark`, `ZP_Gangway` |
+
+The mini-mega, its trail and the hamlet share the vertex-colour `M_Village`, so they are named by mesh. Hidamari's city
+material gives each face a slot `MI_HD_<slug>` (`world/regions/hidamari/surfaces.py`), keyed `HD_<slug>`. In the game,
+`skate.SurfaceDebug 1` logs every mesh section's surface the next time the collision snapshot is built.
+
+The footbridge's gaps between planks and the mini-mega's seams are edges a board rolls over (the plugin README's
+Collision note). `tools/check_skate_terrain.py` checks them, pushing across planks and every surface offline, and
+`tools/review_skate_terrain.py` rides the mini-mega, the footbridge, a trail and grass in the game.
 
 ## Skate feel menu
 
@@ -167,11 +193,17 @@ cache leaves patches on the large thin decks.
 `audio.skate` (`assets/audio/skate/make.py`) builds the board sounds into `build/yorimichi/audio/skate/`, 48 kHz mono:
 
 - loops `roll`, `grind`, `slide`, `skid` and `scrape`, synthesised as shaped noise so they loop without a seam;
+- a roll for each other surface: `roll_wood` (a hollow box), `roll_metal` (a faint ring), `roll_asphalt` (grit),
+  `roll_stone` (the wheels knocking over joints), `roll_dirt` (a scrunch of grit), `roll_grass` (a soft swish) and
+  `roll_sand` (a dry hiss);
+- `land_` and `pop_` variants for `wood` (boomier), `metal` (a short clang), and `dirt`, `grass` and `sand` (a muffled
+  thud and barely a crack);
 - three variants each of `pop`, `land`, `catch`, `push`, `flick` and `clatter`, built from two wooden stick hits in the
-  Sonniss combat masters (`atelier fetch yorimichi`) with synthetic thumps and clicks.
+  Sonniss combat masters (`atelier fetch yorimichi`) with synthetic thumps and clicks. A landing is a low noise thud,
+  the wheels' broad smack and the stick pitched down and damped, so it lands dull rather than ringing.
 
 `unreal.sounds` imports them into `/Game/Audio/Skate` (`Scripts/import_skate_audio.py`), with the loops set to loop.
-In the game the roll loop follows speed on the ground, grind or slide plays on a rail, skid in a powerslide and
+In the game the roll loop for the ground under the wheels follows speed, grind or slide plays on a rail, skid in a powerslide and
 scrape while braking; `pop` plays on take-off, `land` on landing and `clatter` on a bail.
 
 ## QA

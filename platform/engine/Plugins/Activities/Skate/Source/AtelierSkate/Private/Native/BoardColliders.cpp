@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "BoardColliders.h"
+#include "NativeMath.h"
+#include <algorithm>
+#include <optional>
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
@@ -66,6 +69,16 @@ std::vector<BoardWorldVolume> BoardWorldVolumes(const BoardRuntime& board,const 
         }
         else add(Sphere{pose.translation,settings.wheel_radius},settings.wheel_material);
     }
+    // Where the wheels stand, for riding over small edges in imported worlds (WorldContactProducer.cpp).
+    const auto& deck_up=poses[static_cast<std::size_t>(BoardBodyId::Deck)].basis.columns[1];const Vec3 up{deck_up[0],deck_up[1],deck_up[2]};
+    std::optional<float> floor,world_floor;
+    for (const auto& volume:volumes)
+        if (const auto* wheel=std::get_if<Sphere>(&volume.primitive);wheel && volume.body_contact_id<static_cast<std::uint32_t>(BoardBodyId::FrontTruck))
+        {
+            const float bottom=Dot3(wheel->center,up)-wheel->radius,world=wheel->center.y-wheel->radius;
+            floor=floor ? std::min(*floor,bottom):bottom;world_floor=world_floor ? std::min(*world_floor,world):world;
+        }
+    if (floor) for (auto& volume:volumes) {volume.support_up=up;volume.support_floor=*floor;volume.world_floor=*world_floor;}
     return volumes;
 }
 const std::vector<BoardCollision>& BoardWorldContacts::Query(const WorldGeometry& world,

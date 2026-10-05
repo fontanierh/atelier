@@ -18,6 +18,7 @@ ROOT = yori.OUT
 OUT = ROOT / 'audio/skate'
 SONNISS = cache_dir('sonniss', 'combat')
 SR = 48000
+SURFACES = ['wood', 'metal', 'asphalt', 'stone', 'dirt', 'grass', 'sand']   # ESkateSurface's own sounds, after concrete
 rng = np.random.default_rng(17)
 
 
@@ -91,10 +92,29 @@ def click(seconds, decay, lo, hi, seed):
     return shaped_noise(seconds, lambda f: band(f, lo, hi), seed)[:n] * env(n, .0005, decay)
 
 
+def filtered(x, lo, hi):
+    """x band-passed between lo and hi Hz."""
+    f = np.fft.rfftfreq(len(x), 1 / SR)
+    return np.fft.irfft(np.fft.rfft(x) * band(f, lo, hi), len(x))
+
+
 def mix(*parts):
     n = max(len(p) for p, _ in parts)
     out = np.zeros(n)
     for p, g in parts: out[:len(p)] += p * g
+    return out
+
+
+def impulses(seconds, rate, jitter, shape, seed):
+    """A loop of `shape` hits about `rate` per second at jittered times, wrapping round its end so it stays seamless."""
+    r = np.random.default_rng(seed)
+    n = int(seconds * SR); out = np.zeros(n)
+    count = max(1, int(round(seconds * rate)))
+    for k in range(count):
+        at = int(((k + r.uniform(-jitter, jitter)) / count % 1) * n)
+        hit = shape(r) * r.uniform(.5, 1.)
+        idx = (at + np.arange(len(hit))) % n
+        np.add.at(out, idx, hit)
     return out
 
 
@@ -129,16 +149,61 @@ def main():
     report['skid'] = [write('skid', 1, skid * periodic_mod(1.5, 5, 25, .4, 10) + .35 * squeal, .55)]
     # scrape: a shoe dragged on concrete (foot brake)
     report['scrape'] = [write('scrape', 1, shaped_noise(1.0, lambda f: band(f, 500, 6000) * (1 + peak(f, 2200, 800, .6)), 11) * periodic_mod(1.0, 3, 12, .35, 12), .45)]
+    # Each surface's own roll (USkateComponent plays roll_<surface> on it, else the concrete roll above); the same
+    # speed scaling applies, so each is balanced against the concrete roll at full speed.
+    # wood: ramps and decks, a hollow box resonance under the rumble and a softer grain
+    body = shaped_noise(2.0, lambda f: band(f, 45, 1800, 1.5) * (1 / np.maximum(f, 30) ** .4) * (1 + peak(f, 150, 35, 2.2) + peak(f, 410, 90, 1.3) + peak(f, 760, 160, .5)), 101)
+    report['roll_wood'] = [write('roll_wood', 1, body + .1 * grain, .55)]
+    # metal: plates and grates, the rumble with a faint ring
+    ring = shaped_noise(2.0, lambda f: sum(peak(f, c, w, g) for c, w, g in [(1180, 18, 1.), (2610, 26, .7), (4130, 34, .45)]), 102)
+    report['roll_metal'] = [write('roll_metal', 1, roll + .35 * ring * periodic_mod(2.0, 3, 14, .5, 103) + .2 * grain, .5)]
+    # asphalt: rougher than concrete, the grain louder and gritty
+    grit = shaped_noise(2.0, lambda f: band(f, 1200, 7000), 104) * periodic_mod(2.0, 25, 90, 1.2, 105)
+    report['roll_asphalt'] = [write('roll_asphalt', 1, roll + .45 * grit, .55)]
+    # stone: flagstones and cobbles, the wheels knocking over the joints
+    joint = lambda r: mix((thump(r.uniform(90, 140), .07, .018, .8), 1.0), (click(.03, .005, 400, 3500, int(r.integers(1 << 30))), .4))
+    report['roll_stone'] = [write('roll_stone', 1, roll + .2 * grit + 1.4 * impulses(2.0, 9, .25, joint, 106), .6)]
+    # dirt: packed earth and gravel, a low scrunch of grit under a duller rumble
+    stones = lambda r: click(.012, .0025, 1500, 9000, int(r.integers(1 << 30)))
+    dull = shaped_noise(2.0, lambda f: band(f, 40, 900, 1.5) * (1 / np.maximum(f, 30) ** .5), 107)
+    report['roll_dirt'] = [write('roll_dirt', 1, dull + .5 * shaped_noise(2.0, lambda f: band(f, 600, 4000), 108) * periodic_mod(2.0, 8, 40, 1.4, 109) + 1.2 * impulses(2.0, 70, .5, stones, 110), .5)]
+    # grass: the wheels pressing through blades, a soft brushy swish over a muffled rumble
+    swish = shaped_noise(2.0, lambda f: band(f, 300, 5000) * (1 + peak(f, 1800, 900, .6)), 111) * periodic_mod(2.0, 1.5, 6, .7, 112)
+    report['roll_grass'] = [write('roll_grass', 1, .6 * shaped_noise(2.0, lambda f: band(f, 40, 500), 113) + swish, .35)]
+    # sand: a dry hiss with a scrunch
+    report['roll_sand'] = [write('roll_sand', 1, shaped_noise(2.0, lambda f: band(f, 900, 9000) * (1 + peak(f, 3000, 1500, .5)), 114) * periodic_mod(2.0, 10, 50, .9, 115) + .4 * dull, .35)]
     report['pop'], report['land'], report['catch'], report['push'], report['flick'], report['clatter'] = [], [], [], [], [], []
+    for surface in ['wood', 'metal', 'dirt', 'grass', 'sand']: report['land_' + surface], report['pop_' + surface] = [], []
     for i in range(3):
         # pop: the tail cracking on the ground: a woody crack over a short slab thump and a bright click
         crack = resample(stick_t if i != 1 else sword_t, [1.0, 1.08, .93][i])
         pop = mix((crack, 1.0), (thump([125, 140, 115][i], .12, .035), .8), (click(.03, .004, 2000, 9000, 20 + i), .35))
         report['pop'].append(write('pop', i + 1, pop))
-        # land: four wheels and the deck slapping down: a low thump, the wheels' smack, a dull wood knock
-        knock = resample(sword_t if i != 2 else stick_t, [1.35, 1.25, 1.45][i])
-        land = mix((thump([82, 95, 74][i], .28, .07, .9), 1.0), (click(.05, .012, 250, 2500, 30 + i), .7), (knock, .45))
+        # land: four wheels and the deck slapping down: a low thud of the slab, the wheels' broad smack and a dull wood
+        # knock. The knock is the stick pitched down, muffled and damped and the thud mostly noise: a pitched-up stick
+        # and a pure falling sine rang like metal.
+        n = int(.3 * SR)
+        thud = shaped_noise(.3, lambda f: band(f, 35, 240), 33 + i)[:n] * env(n, .001, .045) + .5 * thump([82, 95, 74][i], .3, .06, .4)
+        knock = filtered(resample(sword_t if i != 2 else stick_t, [.85, .8, .9][i]), 120, 1600)
+        knock *= env(len(knock), .0005, .035)
+        land = mix((thud, 1.0), (click(.06, .007, 150, 6000, 30 + i), .55), (knock, .4))
         report['land'].append(write('land', i + 1, land))
+        # wood: a boomier landing, the ramp's hollow ringing under the deck slap
+        boom = mix((thud, .8), (thump([64, 72, 58][i], .45, .14, .5), .7), (thump([152, 168, 140][i], .2, .04, .2), .25), (click(.06, .007, 150, 6000, 130 + i), .5), (knock, .55))
+        report['land_wood'].append(write('land_wood', i + 1, boom))
+        # metal: the slap with a short clang
+        clang = sum(np.sin(2 * np.pi * c * np.arange(int(.5 * SR)) / SR) * env(int(.5 * SR), .001, d) * g for c, d, g in [(410 * [1, 1.07, .94][i], .18, .6), (1130, .09, .4), (2470, .05, .3)])
+        report['land_metal'].append(write('land_metal', i + 1, mix((land, 1.0), (clang, .25))))
+        # dirt, grass and sand: the wheels sink in, a muffled thud and a scatter of grit or a swish, no wheel smack
+        thud = thump([70, 78, 64][i], .25, .05, .5)
+        report['land_dirt'].append(write('land_dirt', i + 1, mix((thud, 1.0), (click(.18, .05, 900, 6000, 140 + i), .35)), .7))
+        report['land_grass'].append(write('land_grass', i + 1, mix((thud, 1.0), (click(.25, .07, 400, 4000, 150 + i), .25)), .55))
+        report['land_sand'].append(write('land_sand', i + 1, mix((thud, .8), (click(.3, .08, 1500, 9000, 160 + i), .35)), .55))
+        # pops: the tail on wood rings hollow; on soft ground it barely cracks
+        report['pop_wood'].append(write('pop_wood', i + 1, mix((pop, 1.0), (thump([118, 130, 108][i], .25, .09, .5), .5))))
+        report['pop_metal'].append(write('pop_metal', i + 1, mix((pop, 1.0), (clang, .3))))
+        soft = mix((crack, .35), (thump([100, 110, 92][i], .12, .03), .8))
+        for surface in ['dirt', 'grass', 'sand']: report['pop_' + surface].append(write('pop_' + surface, i + 1, soft, .6))
         # catch: the feet slapping the board back after a flip, lighter than a landing
         report['catch'].append(write('catch', i + 1, mix((click(.04, .008, 600, 5000, 40 + i), .8), (resample(sword_t, [1.6, 1.5, 1.7][i]), .5), (thump(180, .08, .02), .4)), .6))
         # push: the shoe scuffing and planting on concrete
@@ -158,7 +223,7 @@ def main():
             s = int(at * SR); e = min(len(out), s + len(hit)); out[s:e] += hit[:e - s]
             at += r.uniform(.12, .25) * (1 - .12 * k); gain *= r.uniform(.45, .7)
         report['clatter'].append(write('clatter', i + 1, out, .7))
-    (OUT / 'manifest.json').write_text(json.dumps({'sample_rate': SR, 'loops': ['roll', 'grind', 'slide', 'skid', 'scrape'], 'cues': report}, indent=1) + '\n')
+    (OUT / 'manifest.json').write_text(json.dumps({'sample_rate': SR, 'loops': ['roll', 'grind', 'slide', 'skid', 'scrape'] + ['roll_' + s for s in SURFACES], 'cues': report}, indent=1) + '\n')
     print('SKATE SFX READY', sum(len(v) for v in report.values()), 'files')
 
 

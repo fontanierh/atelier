@@ -271,18 +271,22 @@ def station(index,h):
 def park_walk(m,z):
  # The footpath to the footbridge is painted on the gate's ground (megapark/gate.py). The footbridge crosses the dell
  # beside the park from a timber sleeper on the level path to a concrete sill against the road deck's edge, which runs
- # across the bridge on a slant (DECK_EDGE); the sill's top is the deck's, so the bridge never lies on the road.
+ # across the bridge on a slant (DECK_EDGE). It is skateable end to end: the planks stand 5 mm proud of the path, and
+ # the sill ramps from the planks' height to the deck's at its edge, then tucks under the deck, so the bridge never
+ # lies on the road and no edge on the way is a step.
  from hidamari.layout import north_height
  (_,y),_=PARK_WALK
- (b0,_),(b1,_)=PARK_BRIDGE;top=z+.03
+ (b0,_),(b1,_)=PARK_BRIDGE;top=z+.005
  for x in np.arange(b0,b1+.1,.24):m.box((float(x)+.11,y,top-.03),(.22,2.2,.06),tuple(c*R.uniform(.95,1.05) for c in PLANK),.008)
  m.box((b0+.15,y,z-.1),(.3,2.5,.2),WOOD,.02)
  (ex,ey,ez),slope,rise=DECK_EDGE
  edge=lambda yy:(ex+slope*(yy-ey),ez+rise*(yy-ey))
- rim=[(b1,y-1.25),(edge(y-1.25)[0]+.05,y-1.25),(edge(y+1.25)[0]+.05,y+1.25),(b1,y+1.25)]
- lift=[edge(y-1.25)[1],edge(y-1.25)[1]-.01,edge(y+1.25)[1]-.01,edge(y+1.25)[1]]
+ south,north=edge(y-1.25),edge(y+1.25)
+ rim=[(b1,y-1.25),(south[0],y-1.25),(north[0],y+1.25),(b1,y+1.25)]
+ lift=[top,south[1],north[1],top]
  foot=z-.7
  m.poly([(a,b,h) for (a,b),h in zip(rim,lift)],STONE)
+ m.poly([(south[0],y-1.25,south[1]),(south[0]+.05,y-1.25,south[1]-.01),(north[0]+.05,y+1.25,north[1]-.01),(north[0],y+1.25,north[1])],STONE)
  for k in (0,2,3):
   (a0,c0),(a1,c1)=rim[k],rim[(k+1)%4];h0,h1=lift[k],lift[(k+1)%4]
   m.poly([(a0,c0,foot),(a1,c1,foot),(a1,c1,h1),(a0,c0,h0)],STONE)

@@ -2,8 +2,8 @@
 
     UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_skate_audio.py -unattended -nosplash -NullRHI -stdout
 
-USkateComponent loads a cue's variants by name (<cue>_01, <cue>_02, ...). The roll, grind, slide, skid and scrape loops are
-imported looping. Re-running replaces the waves in place; nothing else is touched.
+USkateComponent loads a cue's variants by name (<cue>_01, <cue>_02, ...). The manifest's loops (roll, grind, slide, skid, scrape
+and each surface's roll_<surface>) are imported looping. Re-running replaces the waves in place; nothing else is touched.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import json

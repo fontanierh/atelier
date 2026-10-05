@@ -15,6 +15,8 @@ struct WheelLineState
     std::array<Vec3,4> normals{{{0,1,0},{0,1,0},{0,1,0},{0,1,0}}};
     std::array<float,4> distances{};
     std::array<std::uint32_t,4> physics_surfaces{};
+    // The low 7 bits of each hit's packed surface: the game's sound surface (0 none).
+    std::array<std::uint32_t,4> sound_surfaces{};
     float minimum_distance=0;
     void Publish(const std::array<std::optional<WheelLineHit>,4>&);
 };

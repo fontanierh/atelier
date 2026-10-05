@@ -152,6 +152,8 @@ bool BuildGameplayWorld(const GameplayWorldSnapshot& source,ContactMaterial mate
         {error="Invalid SKATE collision triangle normal";return false;}
         vertices.push_back(ids);normals.push_back(Scale(cross,inverse));
     }
+    if(!source.surfaces.empty()&&source.surfaces.size()!=source.triangles.size())
+    {error="SKATE collision surfaces do not match its triangles";return false;}
     std::vector<std::array<float,3>> cosines(vertices.size(),{1,1,1});
     constexpr std::uint32_t one_sided=0x10,use_edge_cosines=0x100;
     std::vector<std::uint32_t> flags(vertices.size(),one_sided|use_edge_cosines|0xe0);
@@ -192,7 +194,8 @@ bool BuildGameplayWorld(const GameplayWorldSnapshot& source,ContactMaterial mate
     QueryMetadata metadata;metadata.packed_surfaces.resize(source.triangles.size(),0);
     for(std::size_t i=0;i<source.triangles.size();++i)
     {
-        auto triangle=WorldTriangle::FromVertices(source.triangles[i],material,0,flags[i],cosines[i],0);
+        const std::uint32_t surface=source.surfaces.empty()?0u:source.surfaces[i];metadata.packed_surfaces[i]=std::uint16_t(surface);
+        auto triangle=WorldTriangle::FromVertices(source.triangles[i],material,surface,flags[i],cosines[i],0);
         if(!triangle){error="Invalid SKATE collision volume at triangle "+std::to_string(i)+": "+DebugPoints(source.triangles[i]);return false;}
         triangles.push_back(std::move(*triangle));
     }

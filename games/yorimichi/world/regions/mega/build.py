@@ -29,8 +29,11 @@ def main():
             for y in [-4,4]:
                 m.poly([(x,y,z),(x,y,z-.15),(xx,y,zz-.15),(xx,y,zz)],edge)
             if i%12==0:m.beam((x,-4,z-.25),(x,4,z-.25),.12,.15,wood)
-            # Fine broad seams, flush with the surface (no collision lips).
-            if i%32==0:m.beam((x,-4,z+.004),(x,4,z+.004),.008,.008,edge)
+            # Fine seams between the sheets: a strip 1 mm above the ply along its normal, a step a wheel rolls over.
+            if i%32==0:
+                L=math.hypot(xx-x,zz-z);tx,tz=(xx-x)/L,(zz-z)/L;nx,nz=-tz,tx
+                (x0,z0),(x1,z1)=[(x+s*.004*tx+.001*nx,z+s*.004*tz+.001*nz) for s in (-1,1)]
+                m.poly([(x0,-4,z0),(x1,-4,z1),(x1,4,z1),(x0,4,z0)],edge)
         a=np.array(profile)
         for x in np.arange(a[0,0],a[-1,0]+.01,2.8):
             z=float(np.interp(x,a[:,0],a[:,1]))-.2

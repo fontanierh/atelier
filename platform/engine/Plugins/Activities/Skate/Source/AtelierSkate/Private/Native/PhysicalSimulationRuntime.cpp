@@ -325,6 +325,9 @@ bool PhysicalSimulationRuntime::Solve(std::array<float,2> truck_targets,std::str
     const auto rider=SkeletonEnabledVolumes(skeleton,skeleton_collision,error);if(!rider)return false;
     auto contacts=world_contacts_.Query(world,board_volumes,settings.query,settings.retention);
     auto skeleton_query=settings.query;skeleton_query.edge_cos_bend_normal_threshold=-1.0f;auto rider_world=*rider;RetainSkeletonWorldVolumes(rider_world,skeleton_collision);
+    // The rider meets small edges at the wheels' height as the board does (WorldContactProducer.cpp).
+    const auto wheel=std::find_if(board_volumes.begin(),board_volumes.end(),[](const BoardWorldVolume& v){return v.body_contact_id<4;});
+    if (wheel!=board_volumes.end()) for (auto& volume:rider_world) {volume.rider_floor=true;volume.world_floor=wheel->world_floor;}
     const auto& rider_contacts=world_contacts_.Query(world,rider_world,skeleton_query,settings.retention);contacts.insert(contacts.end(),rider_contacts.begin(),rider_contacts.end());
     if(!AppendAssemblyContacts(contacts,board_volumes,*rider,board.CollisionGroup(),skeleton_collision,error))return false;
     network_contacts=AppendRemoteContacts(contacts,board_volumes,*rider,network_proxies.volumes);contact_count=contacts.size();generated_contacts=contacts;
