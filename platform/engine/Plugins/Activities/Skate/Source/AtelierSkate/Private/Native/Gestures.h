@@ -29,6 +29,10 @@ struct GestureSettings
 {
     std::uint8_t maximum_misses = 0;
     std::uint32_t difficulty = 0;
+    // The player's flick pace (FeelTuning::flick_pace): the flick speed a full pop needs. The ticks per point that
+    // still pop at full strength, and those past which a flick pops weakest, are divided by it, so below 1 a gentler
+    // flick pops fully.
+    float pace = 1.f;
 };
 
 struct GestureRecognition
@@ -50,6 +54,8 @@ public:
     const std::vector<GesturePattern>& Patterns() const { return patterns_; }
     std::optional<std::size_t> Held(StickPoint sample);
     std::optional<GestureRecognition> Sample(StickPoint sample, GestureSettings settings);
+    // Every pattern's radius as authored times this (FeelTuning::flick_radius); 1 restores them.
+    void ScaleRadius(float scale);
 
 private:
     struct Node
@@ -64,6 +70,7 @@ private:
         float Score(std::size_t count) const;
     };
     std::vector<GesturePattern> patterns_;
+    std::vector<float> authored_tolerance_;
     std::vector<Node> nodes_;
     bool has_previous_sample_ = false;
     bool refractory_ = false;

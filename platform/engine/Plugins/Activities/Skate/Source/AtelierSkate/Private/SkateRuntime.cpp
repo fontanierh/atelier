@@ -8,6 +8,7 @@
 #include "Engine/Engine.h"
 #include "SkateRider.h"
 #include "SkateSettings.h"
+#include "SkateFeel.h"
 #include "SkateRails.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -410,7 +411,7 @@ class FNativeSkateWorker final : public FRunnable
 {
 public:
     struct FPreferences
-    {std::string Difficulty;bool Goofy=false;float Trucks=.5f,Pop=1,Spin=1,PushSpeed=1,PushPower=1,VertAssist=0,PumpTrick=.5f;};
+    {std::string Difficulty;bool Goofy=false;float Trucks=.5f,Pop=1,Spin=1,PushSpeed=1,PushPower=1,VertAssist=0,PumpTrick=.5f;skate_native::FeelTuning Feel;};
     enum class ECommand {Step,Activate,Configure,World,Launch,Suspend};
     struct FCommand
     {
@@ -562,7 +563,8 @@ private:
         {Error="Invalid skating tuning";return false;}
         Session_->pumps.minimum_gain=std::isfinite(P.PumpTrick)?P.PumpTrick:.5f;
         return Session_->Configure(P.Difficulty,P.Goofy,P.Trucks,Error)
-            &&Session_->Tune(P.Pop,P.Spin,P.PushSpeed,P.PushPower,P.VertAssist,Error);
+            &&Session_->Tune(P.Pop,P.Spin,P.PushSpeed,P.PushPower,P.VertAssist,Error)
+            &&Session_->Feel(P.Feel,Error);
     }
     bool Publish(bool Ready,std::string& Error,float StepMs=0,float RenewMs=0)
     {
@@ -668,14 +670,25 @@ public:
     // The shown pose's health for QA (the hybrid's: Native's bones, measured as the Ride backend measures its own).
     FRidePoseMeasure PoseMeasure;float PoseTravel=1;
     FTransform Root=FTransform::Identity,Camera=FTransform::Identity;float CameraFOV=0;
+    // The rider's feel (USkateComponent::SetFeel), sent with every Activate and Configure.
+    FSkateFeel Feel=FSkateFeel::Defaults();
     TArray<FName> Names;TArray<FTransform> Reference,Bones;
     ~FSkateRuntime() {if(PendingWorld.IsValid())PendingWorld.Wait();PendingKeep.Reset();Worker.Reset();}
     FNativeSkateWorker::FPreferences Preferences(bool Goofy) const
     {
-        const USkateSettings* S=GetDefault<USkateSettings>();FNativeSkateWorker::FPreferences P;
-        P.Difficulty=TCHAR_TO_UTF8(*S->Difficulty);P.Goofy=Goofy;P.Trucks=S->TruckTightness;
-        P.Pop=S->PopHeightScale;P.Spin=S->AirSpinScale;P.PushSpeed=S->PushSpeedScale;P.PushPower=S->PushPowerScale;P.VertAssist=S->VertAssist;
-        P.PumpTrick=CVarSkatePumpTrick.GetValueOnAnyThread();return P;
+        const FSkateFeel& S=Feel;FNativeSkateWorker::FPreferences P;
+        P.Difficulty=TCHAR_TO_UTF8(*S.Difficulty);P.Goofy=Goofy;P.Trucks=S.TruckTightness;
+        P.Pop=S.Pop;P.Spin=S.Spin;P.PushSpeed=S.PushSpeed;P.PushPower=S.PushPower;P.VertAssist=S.VertAssist;
+        P.PumpTrick=CVarSkatePumpTrick.GetValueOnAnyThread();
+        auto& N=P.Feel;
+        N.flick_radius=S.FlickRadius;N.flick_window=S.FlickWindow;N.flick_pace=S.FlickPace;
+        N.gravity=S.Gravity;N.boneless=S.Boneless;N.hippy=S.Hippy;
+        N.rail_magnetism=S.RailMagnetism;N.grind_pop=S.GrindPop;N.grind_friction=S.GrindFriction;
+        N.braking=S.Braking;N.steering=S.Steering;N.carve=S.Carve;N.grip=S.Grip;N.powerslide=S.Powerslide;
+        N.rolling_friction=S.RollingFriction;N.hill_speed=S.HillSpeed;N.pump=S.Pump;
+        N.wobble=S.Wobble;N.wobble_onset=S.WobbleOnset;N.manual_drift=S.ManualDrift;
+        N.landing=S.Landing;N.impact=S.Impact;N.auto_push=S.AutoPush;N.assisted_air=S.AssistedAir;
+        return P;
     }
     void FinishPendingWorld(bool Background)
     {
@@ -790,7 +803,7 @@ bool USkateComponent::LaunchNativeSession(TSharedPtr<FSkateRuntime>& Into,const 
     FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Where);
     if(!GatherWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Snapshot,Reach))
     {Failure=TEXT("Skating could not load nearby collision.");return false;}
-    Into=MakeShared<FSkateRuntime>();Into->CollisionCentre=Into->WantCentre=Centre;Into->CollisionReach=Reach;
+    Into=MakeShared<FSkateRuntime>();Into->Feel=Feel;Into->CollisionCentre=Into->WantCentre=Centre;Into->CollisionReach=Reach;
     Into->Worlds=1;Into->WorldTriangles=Snapshot.Num();
     Into->Worker=MakeUnique<FNativeSkateWorker>(RuntimeFolder(),NativeSnapshot(Snapshot),
         SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading));
@@ -1020,6 +1033,17 @@ void USkateComponent::LaunchRetail(const FVector& V)
     if (!R.Ready || R.PendingActivation) { R.PendingLaunch=V; return; }
     FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Launch;C.Velocity=NativeVector(V);R.Worker->Enqueue(MoveTemp(C));
 }
+bool USkateComponent::SetFeel(const FSkateFeel& NewFeel, FString& Error)
+{
+    if(!NewFeel.Validate(Error))return false;
+    if(bFeelSet&&NewFeel==Feel)return true;
+    // Every session the rider has keeps the feel (a preloaded one activates with it); a live ride takes it at once.
+    Feel=NewFeel;bFeelSet=true;
+    if(RetailRuntime)RetailRuntime->Feel=Feel;
+    if(RideNative)RideNative->Feel=Feel;
+    if(bRetailActive)ConfigureRetail();
+    return true;
+}
 void USkateComponent::ConfigureRetail()
 {
     if(!RetailRuntime)return;
@@ -1045,7 +1069,15 @@ bool USkateComponent::GetRetailCamera(FTransform& Out, float& FOV) const
 {
     // A bail handed to the body has no session camera (the session waits): the character's own camera follows the body.
     if (!bRetailActive || !RetailRuntime || !RetailRuntime->HasPose || RetailRuntime->CameraFOV<=0 || bNativeBail) return false;
-    Out=RetailRuntime->Camera; FOV=RetailRuntime->CameraFOV; return true;
+    Out=RetailRuntime->Camera; FOV=RetailRuntime->CameraFOV;
+    // The player's camera (FSkateFeel): nearer or farther along the line to the rider, a wider or narrower view.
+    if(Feel.CameraDistance!=1.f)
+    {
+        const FVector Pivot=RetailRuntime->Root.GetLocation()+FVector(0,0,90);
+        Out.SetLocation(Pivot+(Out.GetLocation()-Pivot)*Feel.CameraDistance);
+    }
+    if(Feel.CameraFOV!=0.f)FOV=FMath::Clamp(FOV+Feel.CameraFOV,20.f,140.f);
+    return true;
 }
 FString USkateComponent::GetRetailState() const
 {

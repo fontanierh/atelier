@@ -78,6 +78,12 @@ GestureRecognizer::GestureRecognizer(std::vector<GesturePattern> patterns)
     : patterns_(std::move(patterns)), nodes_(patterns_.size())
 {
     assert(ValidGesturePatterns(patterns_));
+    for (const auto& pattern : patterns_) authored_tolerance_.push_back(pattern.tolerance_squared);
+}
+
+void GestureRecognizer::ScaleRadius(float scale)
+{
+    for (std::size_t i = 0; i < patterns_.size(); ++i) patterns_[i].tolerance_squared = authored_tolerance_[i] * (scale * scale);
 }
 
 void GestureRecognizer::Node::Tick(const GesturePattern& pattern, StickPoint sample, std::uint8_t maximum_misses)
@@ -156,8 +162,8 @@ std::optional<GestureRecognition> GestureRecognizer::Sample(StickPoint sample, G
     if (!best) return std::nullopt;
     const Node& node = nodes_[*best];
     const float ratio = static_cast<float>(node.elapsed) / static_cast<float>(patterns_[*best].points.size());
-    const float low = settings.difficulty == 2 ? 1.5f : 1.75f;
-    const float high = settings.difficulty == 2 ? 3.f : 4.4f;
+    const float low = (settings.difficulty == 2 ? 1.5f : 1.75f) / settings.pace;
+    const float high = (settings.difficulty == 2 ? 3.f : 4.4f) / settings.pace;
     float strength;
     if (ratio <= low) strength = 1.f;
     else if (ratio >= high) strength = 0.f;

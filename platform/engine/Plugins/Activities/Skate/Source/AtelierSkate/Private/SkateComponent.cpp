@@ -39,6 +39,7 @@ void USkateComponent::Initialize(ACharacter* Character)
 {
     Rider = Character;
     RiderApi = Cast<ISkateRider>(Character);
+    if (!bFeelSet) Feel = FSkateFeel::Defaults();
     checkf(RiderApi, TEXT("USkateComponent: the rider must implement ISkateRider"));
     RailSystem = GetWorld()->GetSubsystem<USkateRailSubsystem>();
     AddTickPrerequisiteComponent(Rider->GetCharacterMovement());
@@ -311,11 +312,18 @@ void USkateComponent::ReadInput(float Dt)
     using atelier::skate_pad::Unsqueeze;
     I.Left.X=Unsqueeze(I.Left.X); I.Left.Y=Unsqueeze(I.Left.Y);
     FVector2D Pad(Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightX)), -Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightY)));
+    // The player's stick travel (FSkateFeel): the native pad reads 0.25..0.95 of a stick's reach as its whole range.
+    if (Feel.StickDeadZone != .25f || Feel.StickReach != .95f)
+    {
+        using atelier::skate_pad::Retravel;
+        float X = I.Left.X, Y = I.Left.Y; Retravel(X, Y, Feel.StickDeadZone, Feel.StickReach); I.Left.X = X; I.Left.Y = Y;
+        X = Pad.X; Y = Pad.Y; Retravel(X, Y, Feel.StickDeadZone, Feel.StickReach); Pad = FVector2D(X, Y);
+    }
     // Mouse: hold the left button and move it like the right stick (skate. on PC).
     if (Down(EKeys::LeftMouseButton))
     {
         float DX = 0.f, DY = 0.f; PC->GetInputMouseDelta(DX, DY);
-        const FVector2D Move = FVector2D(DX, DY) * MouseScale * FMath::Clamp(RiderApi->GetSkateMouseSensitivity() / .4f, .25f, 4.f);
+        const FVector2D Move = FVector2D(DX, DY) * MouseScale * FMath::Clamp(RiderApi->GetSkateMouseSensitivity() / .4f, .25f, 4.f) * Feel.MouseFlick;
         // A quick flick of the mouse points the stick the way it moved (a hand swipes at 45 degrees, it does not trace
         // a chord across the stick's circle); slow movement moves the stick gradually (the load, a manual's tilt).
         if (Move.Size() > .22f) { MouseStick = Move.GetSafeNormal(); MouseQuiet = 0.f; bMouseSwiped=MouseStick.Y>0 || FMath::Abs(MouseStick.X)>.5; }

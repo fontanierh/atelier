@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "SkateFeel.h"
 #include "JapanPreferences.generated.h"
 
 class AWandererCharacter;
@@ -24,6 +25,10 @@ public:
     const TArray<FJapanPreference>& GetValues() const { return Values; }
     bool SetValue(const FString& Key, float Value);
     void ToggleMenu();
+    /** Opens the menu on its Skate feel page. */
+    void OpenSkateMenu() { OpenMenu(true); }
+    /** The skate_ values as the board's feel (FSkateFeel; docs/SKATE.md, "Feel"). */
+    FSkateFeel GetSkateFeel() const;
     void CloseMenu();
     bool ShowFrameRate() const { return Get(TEXT("show_fps")) > .5f; }
     // Keys chosen per launch and never written to the shared settings file.
@@ -41,6 +46,13 @@ private:
     FString SettingsFile;
     TSharedPtr<SWidget> Menu;
     int32 AppliedPerformanceMode = -1;
+    /** Show the menu's main page, or its Skate feel page. */
+    void OpenMenu(bool bSkate);
+    /** Every skate_ value back to the game's defaults (DefaultGame.ini and stock feel). */
+    /** Custom's values (bCustom) or the stick, mouse and camera, back to their defaults. */
+    void ResetSkate(bool bCustom);
+    /** Every custom value is stock (the base difficulty aside). */
+    bool IsSkateCustomStock() const;
     float Get(const TCHAR* Key) const;
     void Save();
     static bool IsToggle(const FString& Key);

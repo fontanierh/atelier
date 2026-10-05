@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "OffboardController.h"
+#include "GravityScale.h"
 #include "OffboardControllerMath.h"
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -63,7 +64,7 @@ BipedGroundResult OffboardController::StepGround(const BipedGroundJob& j)
     s.alternate_709=SelectBipedAlternate(s,j);
     if(s.alternate_709)
     {
-        const auto forward=s.motion.frame_0[2];s.motion.velocity_480=Madd({0,Bits(0xc11ccccd),0,0},Step(),s.motion.velocity_480);
+        const auto forward=s.motion.frame_0[2];s.motion.velocity_480=Madd({0,(Bits(0xc11ccccd)*GravityScale()),0,0},Step(),s.motion.velocity_480);
         s.motion.speed_704=Root(Dot3(s.motion.velocity_480,s.motion.velocity_480));s.motion.frame_0[3]=Madd(s.motion.velocity_480,Step(),s.motion.frame_0[3]);
         s.frame_output.Update(forward,s.surface.final_up,s.surface.spring_normal,s.motion.frame_0[3]);return Output();
     }

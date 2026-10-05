@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "AirTrajectoryLaunch.h"
+#include "GravityScale.h"
 #include "AirTrajectorySelectorMath.h"
 #include <algorithm>
 #if defined(__clang__)
@@ -63,9 +64,9 @@ AirTrajectoryLaunchBatch BuildAirTrajectoryLaunchBatch(const AirLaunchInfo& info
     auto board_position=info.board_position;
     if (info.use_position_override) {origin=info.start_position_override;board_position=info.board_position_override;}
     const auto com_displacement=M::Sub(info.animation_com_position,origin);
-    const float square=std::fma(info.start_velocity[1],info.start_velocity[1],-(s.trajectory_max_drop*M::Bits(0xc19ccccd)));
+    const float square=std::fma(info.start_velocity[1],info.start_velocity[1],-(s.trajectory_max_drop*(M::Bits(0xc19ccccd)*GravityScale())));
     const float root=square==0?0:square*InverseLengthSquared(square,2);
-    const float duration=VectorMin((-info.start_velocity[1]-root)*M::Bits(0xbdd0fac6),s.trajectory_max_time);
+    const float duration=VectorMin((-info.start_velocity[1]-root)*(M::Bits(0xbdd0fac6)/GravityScale()),s.trajectory_max_time);
     std::vector<AirTrajectoryQueryRequest> requests;requests.reserve(velocities.size());
     for (const auto& velocity:velocities)
         requests.push_back({{M::Madd(velocity,info.timestep,origin),velocity,input.gravity,duration},

@@ -106,6 +106,35 @@ trick stick.
 `Difficulty` and `TruckTightness` are not set, so the plugin defaults apply: `normal` and 0.5.
 `tools/check_skate_runtime.py` assumes `AirSpinScale` 1.6; change both together.
 
+## Skate feel menu
+
+Settings (Esc, or Menu / Options / Plus on a pad) → **Skate feel** opens a page with every value that changes how the board rides.
+It starts with the **skating mode**:
+
+- **Easy**, **Normal** and **Hardcore** are the game's own difficulties, as made. The custom values are greyed out and
+  ignored, but kept.
+- **Custom** tunes every value on a base difficulty. Switching to Custom from a preset with nothing tuned yet starts on
+  that preset's difficulty, so Custom begins exactly where you were.
+
+The custom values are grouped as Custom base (base difficulty, trucks), Flick-It, Air, Rails, Pushing and rolling,
+Turning, Balance and Bails. **Controls and camera** (stick dead zone and full tilt, mouse flick strength, skate camera
+distance and field of view) apply in every mode. Hover a row for what it does. Changes apply at once, even mid-ride,
+and are saved in `settings.txt` as `skate_*` keys (`skate_mode` 0 Easy, 1 Normal, 2 Hardcore, 3 Custom). The phone's
+settings show the same values under "Skate mode", "Skate feel · Custom" and "Skate controls & camera". **Reset custom
+values to stock** and **Reset controls and camera** return those values to their defaults.
+
+Custom values multiply the base difficulty's own, so pick the base first. Each starts at the game's own value: 1.00 for
+most, and this game's pop 1.15, spin 1.6, push speed 1.15, push strength 1.45 and vert assist 1 (`DefaultGame.ini`). The plugin README's
+"Feel" table says what each one scales. Some useful starting points:
+
+| To get | Try |
+| --- | --- |
+| Flick tricks that land more easily | Flick tolerance 1.3, Flick time window 1.5, Flick speed for full pop 0.8 |
+| Floatier airs | Gravity 0.8 (heights stay; air time is about 12% longer) |
+| Grinds that catch from farther | Rail magnetism 1.5 to 2 |
+| Endless lines | Rolling resistance 0.5, Grind friction 0.5, Pumping 1.5 |
+| Fewer bails | Landing forgiveness 1.5, Impact toughness 1.5 |
+
 ## Board contract
 
 `world/regions/skatepark/board.py` builds the board as three meshes, in Blender metres; the importer turns Blender

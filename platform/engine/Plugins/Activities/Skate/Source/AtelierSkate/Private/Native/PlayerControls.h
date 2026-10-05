@@ -53,6 +53,7 @@ public:
   bool HasGestures() const{return gestures_.has_value();}
   // The gesture manager's last publication (its per-recognizer trace), for hosts.
   const GestureInputPublication* Gestures() const{return gestures_?&*gestures_:nullptr;}
+  GestureInputPublication* MutableGestures(){return gestures_?&*gestures_:nullptr;}
   std::optional<std::string_view> HeldPattern() const
     {return gestures_?gestures_->HeldPattern():std::nullopt;}
 };

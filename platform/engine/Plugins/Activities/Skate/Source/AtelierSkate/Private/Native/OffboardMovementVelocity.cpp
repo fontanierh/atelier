@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "OffboardControllerMath.h"
+#include "GravityScale.h"
 #if defined(__clang__)
 #pragma clang fp contract(off)
 #endif
@@ -39,7 +40,7 @@ void BipedVelocityState::Update(const BipedVelocitySettings& settings,const Bipe
         auto target=settings.slope_speed_scalar.Evaluate(slope_degrees)*input.desired_speed;
         if(!(input.desired_speed<=.5f)&&!(target>=speed))
         {
-            const auto gravity_delta=velocity[1]>0?(Bits(0xc11ccccd)*Step())*Select(-direction[1],0,direction[1]):0;
+            const auto gravity_delta=velocity[1]>0?((Bits(0xc11ccccd)*GravityScale())*Step())*Select(-direction[1],0,direction[1]):0;
             const auto delta=target-speed,limited_delta=Select(delta- -2.0f,delta,-2)*Step();
             target=speed+Select(gravity_delta-limited_delta,limited_delta,gravity_delta);
         }

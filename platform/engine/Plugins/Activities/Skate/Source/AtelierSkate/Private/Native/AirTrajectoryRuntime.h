@@ -30,6 +30,7 @@ public:
     return pending_results_;
   }
   const AirTrajectoryGrindRuntime &GrindSettings() const { return grind_settings_; }
+  AirTrajectoryGrindRuntime &MutableGrindSettings() { return grind_settings_; }
   const std::vector<std::size_t> &NearbyGrinds() const { return nearby_grinds_; }
   const std::shared_ptr<const PlayerGrindStaticProvider> &GrindWorld() const {
     return grind_world_;

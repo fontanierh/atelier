@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include "FeelTuning.h"
 #include "GameplayFrameRuntime.h"
 namespace atelier::skate
 {
@@ -38,6 +39,9 @@ public:
     bool Tune(float pop,float spin,float push_speed,float push_power,float vert_assist,std::string& error);
     bool Tune(float pop,float spin,float push_speed,float push_power,std::string& error)
     {return Tune(pop,spin,push_speed,push_power,0.0f,error);}
+    // The player's feel beyond Tune (FeelTuning.h): applied over copies of the authored settings captured at Create.
+    bool Feel(const FeelTuning&,std::string& error);
+    const FeelTuning& Feel() const {return feel_;}
     void Launch(Vec3 velocity);
 
     std::shared_ptr<const GameplayResources> resources;
@@ -106,5 +110,21 @@ public:
 private:
     GameplayRuntime():grab(grab_cache),physical_feedback(InitialAnimationPhysicalFeedback()){}
     float stock_spin_speed_=0;
+    // The authored values Feel scales, captured at the end of Create.
+    struct FeelStock
+    {
+        Vec3 gravity;
+        std::array<float,5> grind_lock_distance;
+        AirTrajectoryGrindAssistLimits grind_limits;
+        float grind_maximum_adjust;
+        std::array<GroundPumpingMode,5> pumping;
+        std::array<bool,5> auto_push;
+        std::array<AirReckoningMode,5> reckoning;
+        std::array<bool,5> known_air_flips;
+        WipeoutSettings wipeout;
+        std::array<WipeoutMode,5> wipeout_modes;
+        std::array<PointGraph<8>,5> slide_speed_to_force;
+    } feel_stock_{};
+    FeelTuning feel_;
 };
 }

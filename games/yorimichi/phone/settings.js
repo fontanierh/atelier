@@ -1,12 +1,16 @@
 // Labels, limits and values come from the same preferences used by the Esc menu.
-const choices={performance:['Quality','Performance'],show_fps:['Hidden','Shown'],goofy:['Regular · left foot forward','Goofy · right foot forward'],shield:['Off · the sword parries','Carried · it parries'],moveset:['Merged','Cairo (legacy)','Breath of the Wild (legacy)']};
-const groups=[['Movement',['moveset','shield','stamina_rings','goofy']],['Camera',['mouse','cam_dist','fov']],['Graphics',['performance','show_fps','render_scale']],['Art & world',['painterly','paint_radius','toon','toon_bands','toon_soft','outline','exposure','saturation','wind','sun_height','sun_yaw']]];
+const choices={performance:['Quality','Performance'],show_fps:['Hidden','Shown'],goofy:['Regular · left foot forward','Goofy · right foot forward'],shield:['Off · the sword parries','Carried · it parries'],moveset:['Merged','Cairo (legacy)','Breath of the Wild (legacy)'],skate_mode:['Easy','Normal','Hardcore','Custom · tune every value'],skate_difficulty:['Easy · forgiving','Normal','Hardcore · strict'],skate_auto_push:['As the difficulty has it','Off','On'],skate_assisted_air:['As the difficulty has it','Off','On']};
+const groups=[['Movement',['moveset','shield','stamina_rings','goofy']],['Camera',['mouse','cam_dist','fov']],
+ ['Skate mode',['skate_mode']],['Skate feel · Custom',['skate_difficulty','skate_trucks','skate_flick_radius','skate_flick_window','skate_flick_pace','skate_pop','skate_boneless','skate_hippy','skate_gravity','skate_spin','skate_assisted_air','skate_vert_assist','skate_rail_magnetism','skate_grind_pop','skate_grind_friction','skate_push_speed','skate_push_power','skate_auto_push','skate_pump','skate_rolling_friction','skate_hill_speed','skate_braking','skate_steering','skate_carve','skate_grip','skate_powerslide','skate_wobble','skate_wobble_onset','skate_manual_drift','skate_landing','skate_impact','skate_get_up']],['Skate controls & camera',['skate_dead_zone','skate_stick_reach','skate_mouse_flick','skate_cam_dist','skate_cam_fov']],['Graphics',['performance','show_fps','render_scale']],['Art & world',['painterly','paint_radius','toon','toon_bands','toon_soft','outline','exposure','saturation','wind','sun_height','sun_yaw']]];
 export function renderSettings(rows,onChange){
  const root=document.getElementById('settings-rows'),scroll=root.scrollTop;root.replaceChildren();
  const ordered=new Set();
+ // The custom skate values only apply in the Custom skating mode (docs/SKATE.md).
+ const custom=(rows.find(row=>row.key==='skate_mode')?.value??3)>2.5;
  function addGroup(name,items){
   if(!items.length)return;
   const group=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=name;group.append(legend);
+  if(name==='Skate feel · Custom'&&!custom){group.disabled=true;legend.textContent+=' (pick Custom to tune)'}
   for(const row of items){
    const label=document.createElement('label');label.className='setting-row';label.htmlFor=`setting-${row.key}`;
    const title=document.createElement('span');title.textContent=row.label;label.append(title);
@@ -15,8 +19,9 @@ export function renderSettings(rows,onChange){
    if(choices[row.key]){
     input=document.createElement('select');choices[row.key].forEach((text,value)=>{const option=document.createElement('option');option.value=value;option.textContent=text;input.append(option)});
    }else{
-    input=document.createElement('input');input.type='range';input.min=row.min;input.max=row.max;input.step=row.key==='stamina_rings'?1:row.max>10?1:.01;
-    const format=v=>row.key==='stamina_rings'?`${Number(v).toFixed(0)} rings`:Number(v).toFixed(row.max>10?0:2);
+    input=document.createElement('input');input.type='range';input.min=row.min;input.max=row.max;input.step=row.step??(row.key==='stamina_rings'?1:row.max>10?1:.01);
+    const digits=row.step?Math.max(0,Math.min(3,Math.ceil(-Math.log10(row.step)-1e-3))):row.max>10?0:2;
+    const format=v=>row.key==='stamina_rings'?`${Number(v).toFixed(0)} rings`:Number(v).toFixed(digits);
     output.value=format(row.value);input.oninput=()=>{output.value=format(input.value)};
    }
    input.id=`setting-${row.key}`;input.value=row.value;

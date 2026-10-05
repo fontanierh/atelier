@@ -2,6 +2,7 @@
 #include "Braking.h"
 #include "GroundAnimationRuntime.h"
 #include "GroundJumpMath.h"
+#include <optional>
 #if defined(__clang__)
 #pragma clang fp contract(off)
 #endif
@@ -74,6 +75,14 @@ bool GroundAnimationRuntime::AdvanceBoard(GroundAnimationOwners o,
   mode.minimum_height_64 *= o.trainer.pop;
   mode.minimum_height_68 *= o.trainer.pop;
   mode.maximum_height *= o.trainer.pop;
+  const auto *jump_settings = &a.jump;
+  std::optional<GroundJumpSettings> hippy_jump;
+  if (o.trainer.hippy != 1) {
+    hippy_jump = a.jump;
+    hippy_jump->hippy_minimum_height *= o.trainer.hippy;
+    hippy_jump->hippy_maximum_height *= o.trainer.hippy;
+    jump_settings = &*hippy_jump;
+  }
   jump = CalculateGroundJump(
       {p.flags_2468, p.flags_2480, p.flags_2484, p.flags_2488, t.effective[2],
        t.forward, Decode(p.vectors_400_416[0]),
@@ -82,7 +91,7 @@ bool GroundAnimationRuntime::AdvanceBoard(GroundAnimationOwners o,
        Decode(p.vectors_544_560_592_608[2]), Decode(p.prepared_jump_704),
        o.animation_input.extra.jump_strength,
        o.animation_input.extra.jump_controls, p.gravity_2648, p.scalar_2656},
-      mode, a.jump);
+      mode, *jump_settings);
   if (jump.active) {
     const auto velocity = jump.velocity;
     o.ground_runtime.SetAnimatedVelocity(physical.board, velocity);

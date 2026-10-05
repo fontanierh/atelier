@@ -129,6 +129,11 @@ def press(button):
     return L.press(str(button))
 
 
+def preference(key, value):
+    """Set a settings.txt value live as the menu would, e.g. preference('skate_gravity', .8) (docs/SKATE.md, Skate feel menu)."""
+    return L.set_preference(str(key), float(value))
+
+
 def sword():
     """Draw or sheathe the sword."""
     return L.toggle_sword()

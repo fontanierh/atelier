@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "GameplayRuntime.h"
+#include "GravityScale.h"
 #include <cmath>
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -79,6 +80,16 @@ bool GameplayRuntime::Create(std::shared_ptr<const GameplayResources> source,Wor
         result->footplant,result->handplant,result->grab_cache,result->wipeout.state,result->wobble,
         result->ground_lifecycle.skeleton_elapsed_16505,result->ground_lifecycle.board_animated_290});
     result->stock_spin_speed_=result->air_settings.state.body_spin_scale_428;
+    auto& stock=result->feel_stock_;
+    stock.gravity=result->physical->settings.board.step.simulation.gravity_acceleration;
+    stock.grind_lock_distance=result->air_settings.grind_lock_distance;
+    stock.grind_limits=result->trajectory.GrindSettings().limits;
+    stock.grind_maximum_adjust=result->trajectory.GrindSettings().maximum_adjust;
+    stock.pumping=result->ground.pumping_settings.modes;stock.auto_push=result->ground.auto_push_enabled;
+    stock.reckoning=result->air_reckoning.modes;
+    for(std::size_t i=0;i<stock.known_air_flips.size();++i)stock.known_air_flips[i]=result->known_air.configuration.modes[i].perfect_body_flips_28;
+    stock.wipeout=result->wipeout.settings;stock.wipeout_modes=result->wipeout.modes;
+    for(std::size_t i=0;i<stock.slide_speed_to_force.size();++i)stock.slide_speed_to_force[i]=result->slide.settings.surfaces[i].surface.speed_to_force;
     output=std::move(result);error.clear();return true;
 }
 GameplayFrameOwners GameplayRuntime::BorrowFrame()
@@ -126,6 +137,7 @@ GameplayFrameOwners GameplayRuntime::BorrowFrame()
 }
 bool GameplayRuntime::Advance(const TickInput& packet,std::string& error)
 {
+    gravity_scale=feel_.gravity;
     if(!controls->Sample(packet,input->physical,physical->settings,profile,camera,error))return false;
     auto actions=packet.Actions();
     return AdvanceGameplayFrame(BorrowFrame(),actions,packet.ControllerAvailable(),error);
@@ -155,6 +167,62 @@ bool GameplayRuntime::Tune(float pop,float spin,float push_speed,float push_powe
     air_settings.state.body_spin_scale_428=stock_spin_speed_*spin;
     known_air.SetSpinSpeed(stock_spin_speed_*spin);air_reckoning.SetSpinScale(spin);
     error.clear();return true;
+}
+bool GameplayRuntime::Feel(const FeelTuning& t,std::string& error)
+{
+    const auto in=[](float v,float low,float high){return std::isfinite(v) && v>=low && v<=high;};
+    const auto switch_ok=[](std::int8_t v){return v>=-1 && v<=1;};
+    if(!in(t.flick_radius,0.5f,2.0f) || !in(t.flick_window,0.5f,3.0f) || !in(t.flick_pace,0.5f,2.0f)
+        || !in(t.gravity,0.5f,1.5f) || !in(t.boneless,0.5f,3.0f) || !in(t.hippy,0.5f,3.0f)
+        || !in(t.rail_magnetism,0.25f,3.0f) || !in(t.grind_pop,0.5f,2.0f) || !in(t.grind_friction,0.0f,3.0f)
+        || !in(t.braking,0.25f,3.0f) || !in(t.steering,0.5f,2.0f) || !in(t.carve,0.5f,2.0f) || !in(t.grip,0.5f,2.0f)
+        || !in(t.powerslide,0.25f,3.0f) || !in(t.rolling_friction,0.0f,3.0f) || !in(t.hill_speed,0.0f,2.0f)
+        || !in(t.pump,0.0f,3.0f) || !in(t.wobble,0.0f,3.0f) || !in(t.wobble_onset,0.5f,3.0f) || !in(t.manual_drift,0.0f,3.0f)
+        || !in(t.landing,0.5f,3.0f) || !in(t.impact,0.5f,3.0f) || !switch_ok(t.auto_push) || !switch_ok(t.assisted_air))
+    {error="Invalid skating feel";return false;}
+    auto* gestures=controls->MutableGestures();
+    if(!gestures){error="Skating feel requires the gesture recogniser";return false;}
+    gestures->Tune(t.flick_radius,t.flick_window,t.flick_pace);
+    trainer.grind_pop=t.grind_pop;trainer.grind_friction=t.grind_friction;trainer.hippy=t.hippy;
+    trainer.braking=t.braking;trainer.steering=t.steering;trainer.turn_power=t.carve;trainer.grip=t.grip;
+    trainer.rolling_friction=t.rolling_friction;trainer.hill_speed=t.hill_speed;
+    trainer.wobble=t.wobble;trainer.wobble_onset=t.wobble_onset;trainer.manual_drift=t.manual_drift;
+    boneless.height_scale=t.boneless;
+    const auto& stock=feel_stock_;
+    const auto& g=stock.gravity;
+    physical->settings.board.step.simulation.gravity_acceleration={g.x*t.gravity,g.y*t.gravity,g.z*t.gravity};
+    // Rail magnetism widens (or narrows) the lock distance, how far and how sharply a jump may be bent onto the rail,
+    // and how fast the board may cross or drop onto it. The speed limits are squared speeds.
+    const float m=t.rail_magnetism;
+    for(std::size_t i=0;i<stock.grind_lock_distance.size();++i)air_settings.grind_lock_distance[i]=stock.grind_lock_distance[i]*m;
+    auto& grind_settings=trajectory.MutableGrindSettings();
+    grind_settings.limits=stock.grind_limits;grind_settings.maximum_adjust=stock.grind_maximum_adjust*m;
+    grind_settings.limits.maximum_adjust_angle*=m;grind_settings.limits.max_downward_speed*=m;
+    grind_settings.limits.max_speed_squared_ledge*=m*m;grind_settings.limits.max_speed_squared_rail*=m*m;
+    for(std::size_t i=0;i<stock.pumping.size();++i)
+    {
+        auto& mode=ground.pumping_settings.modes[i].controller;mode=stock.pumping[i].controller;
+        mode.acceleration_factor*=t.pump;mode.maximum_acceleration_per_second*=t.pump;
+        ground.auto_push_enabled[i]=t.auto_push<0?stock.auto_push[i]:t.auto_push!=0;
+        air_reckoning.modes[i]=stock.reckoning[i];
+        known_air.configuration.modes[i].perfect_body_flips_28=stock.known_air_flips[i];
+        if(t.assisted_air>=0)
+        {
+            const bool on=t.assisted_air!=0;
+            air_reckoning.modes[i].easy_body_spins=on;air_reckoning.modes[i].perfect_body_flips=on;
+            known_air.configuration.modes[i].perfect_body_flips_28=on;
+        }
+        wipeout.modes[i]=stock.wipeout_modes[i];
+        wipeout.modes[i].bad_landing_scale*=t.landing;wipeout.modes[i].ground_xz*=t.impact;
+        slide.settings.surfaces[i].surface.speed_to_force=stock.slide_speed_to_force[i];
+        for(auto& y:slide.settings.surfaces[i].surface.speed_to_force.y)y*=t.powerslide;
+    }
+    // Impact: the accelerations a rider survives, on the ground and in the air.
+    wipeout.settings=stock.wipeout;
+    auto& w=wipeout.settings;
+    w.ground.y_acceleration*=t.impact;
+    w.air.xz_acceleration*=t.impact;w.air.y_acceleration*=t.impact;w.air.xz_trick*=t.impact;w.air.y_trick*=t.impact;
+    feel_=t;error.clear();return true;
 }
 void GameplayRuntime::Launch(Vec3 velocity)
 {

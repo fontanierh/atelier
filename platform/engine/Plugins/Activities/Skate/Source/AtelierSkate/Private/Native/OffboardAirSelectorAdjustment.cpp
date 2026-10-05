@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "OffboardAirMath.h"
+#include "GravityScale.h"
 #if defined(__clang__)
 #pragma clang fp contract(off)
 #endif
@@ -14,7 +15,7 @@ void OffboardAirSelectorCore::AdjustAnimation(std::int32_t frame,Vec4 animation,
     const auto t=s.trajectory_8144;const auto end=AirTrajectoryPositionAt(t,float(s.landing_frame_8480)*Step());
     if(launch.up_48[1]<.8f&&Dot(launch.up_48,Flat(t.velocity))<=0&&s.normal_6144[1]>.9f&&end[1]-t.position[1]>-.2f)
     {
-        const auto g=Bits(0x411ccccd),distance=Length(Sub(t.position,end)),square=(2*distance)*Reciprocal(g);
+        const auto g=(Bits(0x411ccccd)*GravityScale()),distance=Length(Sub(t.position,end)),square=(2*distance)*Reciprocal(g);
         const auto root=square==0?0:square*Inverse(square),duration=root*.66f+float(s.landing_frame_8480)*.0056666667f;
         if(duration>.2f)
         {

@@ -18,7 +18,8 @@ bool DefaultTrainer(const TrainerTuning& t)
 {
     return t.pop==1 && t.grind_pop==1 && t.push_speed==1 && t.push_power==1
         && t.braking==1 && t.steering==1 && t.wobble==1 && t.offboard_jump==1
-        && t.grip==1 && t.turn_power==1 && t.manual_drag==1 && !t.hold_fakie;
+        && t.grip==1 && t.turn_power==1 && t.manual_drag==1 && !t.hold_fakie
+        && t.rolling_friction==1 && t.hill_speed==1 && t.wobble_onset==1 && t.manual_drift==1;
 }
 // The deck's accumulated torque is checked after each stage that adds to it, so a non-finite one names its source
 // instead of surfacing later as an anonymous "before shared solve" failure.

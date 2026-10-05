@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "HandplantContact.h"
+#include "GravityScale.h"
 #include "Handplant.h"
 #include "PlantMath.h"
 #include <algorithm>
@@ -72,7 +73,7 @@ SelectHandplantContact(const HandplantSettings &settings, Vec4 com,
   const auto apex = [&](float x, float y) {
     const AirTrajectory trajectory{Point(inverse, com),
                                    {x * sign, y, 0, 0},
-                                   {0, Float(0xc11ccccd), 0, 0},
+                                   {0, (Float(0xc11ccccd)*GravityScale()), 0, 0},
                                    -1};
     auto p = PlantTrajectoryPosition(trajectory, HandplantApexTime(trajectory));
     p[1] -= settings.window_drop;

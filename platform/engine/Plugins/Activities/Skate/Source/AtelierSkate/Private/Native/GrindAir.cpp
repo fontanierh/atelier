@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "GrindAir.h"
+#include "GravityScale.h"
 #include "SkeletonSettingReader.h"
 #include <cstdlib>
 #include <cstring>
@@ -46,7 +47,7 @@ Samples Project(GrindAirInput input,const GrindAirSettings& settings,Vec4 rail,V
 {
     Samples samples{};Mat4 board=input.board;Vec4 velocity=input.velocity;const float speed=Length3(input.angular_velocity);
     const Mat4 rotation=speed<Word(0x37800000)?SkeletonIdentity:Rotation(Scaled(input.angular_velocity,1.0f/speed),speed*input.timestep);
-    const Vec4 acceleration=Madd4(input.up,settings.stomp*input.timestep,{0,input.timestep*Word(0xc11ccccd),0,0});
+    const Vec4 acceleration=Madd4(input.up,settings.stomp*input.timestep,{0,input.timestep*(Word(0xc11ccccd)*GravityScale()),0,0});
     for(std::size_t frame=0;frame<settings.frames;++frame)
     {
         for(unsigned i=0;i<5;++i){const auto p=settings.points[i];samples[frame][i]=Madd4(board[2],p[2],Madd4(board[1],p[1],Madd4(board[0],p[0],board[3])));}
