@@ -1,15 +1,17 @@
 """Ollie in the real game and measure how far Cairo's feet stand off the deck, on the ground and in the air.
 
-    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871]
+    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871] [--rider CairoBotw|Cairo]
 
 Run after unreal.compile. Under the render guard it launches the island, stands Cairo on foot on the mini-mega's flat
 and measures his soles and capsule over the floor, then puts the rider on the board there, pushes and ollies a few
-times, once with the physical rider (skate.RidePhysical 1, the default) and once animated only (0), and last drops in
+times and holds a manual, once with the physical rider (skate.RidePhysical 1, the default) and once animated only (0), and last drops in
 on the mini-mega with no input, over its kicker into the landing. Every frame it keeps the skate state and, in the
 deck's own frame, the height of each
 foot's ankle and toe bones over the deck's top, so a foot that floats off the board in the air shows as a gap the
-ground does not have. Writes build/yorimichi/skate-jump-feet/review/{checks.json, rows_*.json, *.png, game.log}. The
-worker owns and quits only the game process it launches.
+ground does not have, and one sunk into it in a manual shows as a negative one. The rider is Cairo as a person plays
+him, with the merged move set (CairoBotw, the default since #28), or his legacy moves (Cairo), which scripted sessions
+get unless asked. Writes build/yorimichi/skate-jump-feet/review/<rider>/{checks.json, rows_*.json, *.png, game.log}.
+The worker owns and quits only the game process it launches.
 """
 from pathlib import Path
 from contextlib import ExitStack
@@ -26,9 +28,10 @@ from atelier import live
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('--port', type=int, default=8871)
+parser.add_argument('--rider', default='CairoBotw', choices=('CairoBotw', 'Cairo'))
 args = parser.parse_args()
 live.URL = f'http://127.0.0.1:{args.port}'
-ctx = Context('yorimichi'); out = yori.OUT / 'skate-jump-feet' / 'review'; out.mkdir(parents=True, exist_ok=True)
+ctx = Context('yorimichi'); out = yori.OUT / 'skate-jump-feet' / 'review' / args.rider; out.mkdir(parents=True, exist_ok=True)
 
 if not args.worker:
     sys.exit(guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker'] + sys.argv[1:], out / 'guard', timeout=900,
@@ -66,6 +69,7 @@ log = (out / 'game.log').open('w')
 cmd = [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed', '-resx=1280', '-resy=720', '-nosplash', '-stdout', '-nofox',
        f'-liveport={args.port}', '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost',
        '-ExecCmds=t.MaxFPS 60,r.RHISetGPUCaptureOptions 0,DisableAllScreenMessages']
+if args.rider == 'CairoBotw': cmd.append('-rider=CairoBotw')   # without it a scripted session keeps his legacy moves
 p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
 guards = ExitStack(); monitor = None
 
@@ -132,6 +136,10 @@ assert live.L.skate_place(at, 0.0), 'skate_place refused'
         run("live.flick('ollie')"); wait(.55)
         run(f"live.shot({str(out / f'{name}_air{k}.png')!r})"); wait(1.6)
         run("live.skate_script([(.6, {'push': True}), (.1, {})])"); wait(.9)
+    if ollies:
+        # A manual: the right stick half back, nose up on the back wheels.
+        run("live.skate_script([(.6, {'push': True}), (.3, {}), (1.8, {'right': (0, -.5)}), (.1, {})])"); wait(1.6)
+        run(f"live.shot({str(out / f'{name}_manual.png')!r})"); wait(1.6)
     rows = json.loads(run("import json; live.stop('feet_rec'); print(json.dumps(live.FEET))").strip().splitlines()[-1])
     (out / f'rows_{name}.json').write_text(json.dumps(rows, indent=1) + '\n')
     phases = {}
@@ -139,6 +147,7 @@ assert live.L.skate_place(at, 0.0), 'skate_place refused'
         m = re.search(r'retail=(\w+)', s); bail = re.search(r'bail=(\d)', s)
         if not m or (bail and bail.group(1) != '0'): continue
         kind = 'air' if 'Air' in m.group(1) else 'ground' if m.group(1) in ('PhysicsGround', 'GroundAnimation') else None
+        if kind == 'ground' and re.search(r'manual=1', s): kind = 'manual'
         if kind: phases.setdefault(kind, []).append([b[0] for b in bones])
     summary = {}
     for kind, values in phases.items():
@@ -171,7 +180,7 @@ try:
         results[name] = ride(name, physical); print(name, json.dumps(results[name]), flush=True)
     # The mini-mega's drop-in, over its kicker and the gap: a big air landed into the transition, no input.
     results['mega_drop_in'] = ride('mega_drop_in', 1, (ox - 2, oy, oz + 12), 0, 6.); print('mega_drop_in', json.dumps(results['mega_drop_in']), flush=True)
-    # Ankle and toe heights over the deck in the air may rise above the ground's by no more than this (cm).
+    # Ankle and toe heights over the deck in the air or a manual may differ from rolling's by no more than 2 cm.
     record('mega_drop_in_lands', results['mega_drop_in']['bails'] == 0, json.dumps(results['mega_drop_in']))
     record('on_foot_capsule_on_floor', results['on_foot']['capsule_bottom'] is not None and abs(results['on_foot']['capsule_bottom']) <= 2.5,
            json.dumps(results['on_foot']))
@@ -179,8 +188,12 @@ try:
         if name in ('mega_drop_in', 'on_foot'): continue
         if 'air' not in r or 'ground' not in r:
             record(f'{name}_jumped', False, json.dumps(r)); continue
-        lift = [round(a - g, 1) for a, g in zip(r['air']['mean'], r['ground']['mean'])]
-        record(f'{name}_feet_on_deck_in_air', max(lift) <= 2.0, f'air minus ground (ankle L, toe L, ankle R, toe R): {lift} cm; {json.dumps(r)}')
+        for phase in ('air', 'manual'):
+            if phase not in r:
+                record(f'{name}_{phase}_seen', False, json.dumps(r)); continue
+            lift = [round(a - g, 1) for a, g in zip(r[phase]['mean'], r['ground']['mean'])]
+            record(f'{name}_feet_on_deck_in_{phase}', max(map(abs, lift)) <= 2.0,
+                   f'{phase} minus rolling (ankle L, toe L, ankle R, toe R): {lift} cm; {json.dumps(r)}')
     summary = dict(passed=all(c['ok'] for c in checks.values()), checks=checks, runs=results)
     (out / 'checks.json').write_text(json.dumps(summary, indent=2) + '\n')
     print('PASSED' if summary['passed'] else 'FAILED', sum(c['ok'] for c in checks.values()), '/', len(checks), flush=True)
