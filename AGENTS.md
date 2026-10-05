@@ -104,6 +104,10 @@ uv run pytest                            # studio and game Python tests
   running command and retain its session ID. Poll in bounded calls of at most 10 seconds, returning control
   between checks. Never sit in a foreground sleep loop, blocking join, or oversized tool timeout. If the client
   cannot keep the existing session responsive, do not launch a lengthy job through it.
+- Persistent Claude sessions must install the `atelier board guard-claude` PreToolUse hook described
+  in [the board guide](docs/AGENT_BOARD.md). It enforces 30-second foreground Bash timeouts and 10-second
+  output checks; background jobs keep their timeouts and guards. Launch lengthy jobs in the background
+  from the start, rather than relying on a foreground timeout to stop them.
 - Keep the persistent board listener armed throughout jobs and waits. Process notifications and user steering
   promptly; if using a fallback wait, re-arm it immediately before starting or checking another job. Run the job
   independently so acknowledging a message does not require waiting for the job to finish or restarting the agent.
