@@ -20,6 +20,7 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
+#include "HorseRideComponent.h"
 #include "JapanCharacterMovement.h"
 #include "JapanWorld.h"
 #include "JapanCameraArm.h"
@@ -71,6 +72,7 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     SkateRide = CreateDefaultSubobject<USkateComponent>(TEXT("Skate"));
     Sailboat = CreateDefaultSubobject<USailboatComponent>(TEXT("EquippedSailboat"));
     Bike = CreateDefaultSubobject<UBikeComponent>(TEXT("BikeRide"));   // "Bike" is the input action's name
+    Horse = CreateDefaultSubobject<UHorseRideComponent>(TEXT("HorseRide"));
     Footsteps = CreateDefaultSubobject<UJapanFootstepComponent>(TEXT("Footsteps"));
     Sword = CreateDefaultSubobject<UWandererSwordComponent>(TEXT("Sword"));
     GetCapsuleComponent()->InitCapsuleSize(22.f, 75.5f);
@@ -218,6 +220,7 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
     if (!World || !World->bLoaded || IsNpc()) return;
     Sailboat->Initialize(this,World);
     Bike->Initialize(this);
+    Horse->Initialize(this);
     if (!bSwitchedIn)
     {
         SetActorLocation(World->PlayerStart.GetLocation()+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),false,nullptr,ETeleportType::TeleportPhysics);
@@ -237,6 +240,7 @@ void AWandererCharacter::Leave()
     SkateRide->StowImmediately();
     Sailboat->StowImmediately();
     Bike->StowImmediately();
+    Horse->StowImmediately();
     if (APlayerController* PC = Cast<APlayerController>(Controller))
         if (ULocalPlayer* LP = PC->GetLocalPlayer())
             if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
@@ -260,6 +264,7 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     SkateRide->StowImmediately();
     Sailboat->StowImmediately();
     Bike->StowImmediately();
+    Horse->StowImmediately();
     MoveIntent = FVector2D::ZeroVector;
     bJog = bWalk = bSprintHeld = false;
     JumpBuffer = FallSpeed = SinceGrounded = DashCooldown = RollCooldown = RollBuffer = 0.f; bPendingTakeoff = bGroundJumped = bAirJumpUsed = bAirDashUsed = false;
@@ -309,7 +314,7 @@ void AWandererCharacter::BuildInput()
     for (const auto& Pair : TArray<TPair<FName,FKey>>{
         {TEXT("Jog"),EKeys::J},{TEXT("Sprint"),EKeys::LeftShift},{TEXT("Walk"),EKeys::LeftAlt},{TEXT("Jump"),EKeys::SpaceBar},
         {TEXT("Crouch"),EKeys::C},{TEXT("Dodge"),EKeys::LeftControl},{TEXT("Wave"),EKeys::Q},
-        {TEXT("Interact"),EKeys::E},{TEXT("Skateboard"),EKeys::B},{TEXT("Dash"),EKeys::F},{TEXT("Sailboat"),EKeys::K},{TEXT("Bike"),EKeys::V},{TEXT("Map"),EKeys::M},{TEXT("Menu"),EKeys::Escape},{TEXT("MouseRelease"),EKeys::Tab},{TEXT("Screenshot"),EKeys::F12},
+        {TEXT("Interact"),EKeys::E},{TEXT("Skateboard"),EKeys::B},{TEXT("Dash"),EKeys::F},{TEXT("Sailboat"),EKeys::K},{TEXT("Bike"),EKeys::V},{TEXT("Horse"),EKeys::H},{TEXT("Map"),EKeys::M},{TEXT("Menu"),EKeys::Escape},{TEXT("MouseRelease"),EKeys::Tab},{TEXT("Screenshot"),EKeys::F12},
         {TEXT("FlightSlower"),EKeys::LeftBracket},{TEXT("FlightFaster"),EKeys::RightBracket},
         {TEXT("Attack"),EKeys::LeftMouseButton},{TEXT("Parry"),EKeys::RightMouseButton},{TEXT("Weapon"),EKeys::R}})
         Key(Axis(Pair.Key,EInputActionValueType::Boolean),Pair.Value);
@@ -359,7 +364,7 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
         for (const auto& Binding : TArray<TPair<FName,void(AWandererCharacter::*)(const FInputActionValue&)>>{
             {TEXT("Jump"),&AWandererCharacter::RequestJump},{TEXT("Crouch"),&AWandererCharacter::ToggleCrouch},
             {TEXT("Dodge"),&AWandererCharacter::Dodge},{TEXT("Wave"),&AWandererCharacter::Wave},{TEXT("Interact"),&AWandererCharacter::Interact},
-            {TEXT("Skateboard"),&AWandererCharacter::ToggleSkateboard},{TEXT("Dash"),&AWandererCharacter::Dash},{TEXT("Sailboat"),&AWandererCharacter::ToggleSailboat},{TEXT("Bike"),&AWandererCharacter::ToggleBike},{TEXT("Map"),&AWandererCharacter::ToggleMap},{TEXT("Menu"),&AWandererCharacter::ToggleMenu},{TEXT("MouseRelease"),&AWandererCharacter::ToggleMouse},{TEXT("Screenshot"),&AWandererCharacter::Screenshot},
+            {TEXT("Skateboard"),&AWandererCharacter::ToggleSkateboard},{TEXT("Dash"),&AWandererCharacter::Dash},{TEXT("Sailboat"),&AWandererCharacter::ToggleSailboat},{TEXT("Bike"),&AWandererCharacter::ToggleBike},{TEXT("Horse"),&AWandererCharacter::ToggleHorse},{TEXT("Map"),&AWandererCharacter::ToggleMap},{TEXT("Menu"),&AWandererCharacter::ToggleMenu},{TEXT("MouseRelease"),&AWandererCharacter::ToggleMouse},{TEXT("Screenshot"),&AWandererCharacter::Screenshot},
             {TEXT("FlightSlower"),&AWandererCharacter::FlightSlower},{TEXT("FlightFaster"),&AWandererCharacter::FlightFaster},
             {TEXT("Attack"),&AWandererCharacter::AttackPressed},{TEXT("Parry"),&AWandererCharacter::ParryPressed},{TEXT("Weapon"),&AWandererCharacter::ToggleWeapon}})
             E->BindAction(Inputs[Binding.Key],ETriggerEvent::Started,this,Binding.Value);
@@ -465,6 +470,7 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
     const bool bSkating = SkateRide->IsRiding();
     if (bSkating && !(GetCharacterMovement()->IsFalling() && SkateRide->CanYieldToCharacter())) return;
     if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Hop(); return; }
+    if (Horse->IsEquipped()) { if (bReady && !bMenuOpen) Horse->Spur(); return; }
     if (Sailboat->IsEquipped()) return;
     if (Moves) { PressMove(TEXT("jump")); return; }
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;   // a draw, sheathe or deflection finishes first
@@ -506,7 +512,14 @@ void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
     if (Sword && !Sword->CancelForInterrupt(true)) return;
     if (CanAct() && StandForAction() && Sailboat->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
 }
-bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped(); }
+bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped() || Horse->IsEquipped(); }
+void AWandererCharacter::ToggleHorse(const FInputActionValue&)
+{
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || Bike->IsEquipped()) return;
+    if (Horse->IsEquipped()) { Horse->Toggle(); return; }
+    if (Sword && !Sword->CancelForInterrupt(true)) return;
+    if (CanAct() && StandForAction() && Horse->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+}
 void AWandererCharacter::ToggleBike(const FInputActionValue&)
 {
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped()) return;
@@ -539,6 +552,7 @@ bool AWandererCharacter::CanCarrySkateBoard() const
 void AWandererCharacter::ToggleCrouch(const FInputActionValue&)
 {
     if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Skid(); return; }   // on the bike: a skid stop
+    if (Horse->IsEquipped()) return;
     if (PressMove(TEXT("crouch"))) return;   // gliding, climbing, swimming or busy: no crouch
     if (CanAct()) { if (bIsCrouched) UnCrouch(); else Crouch(); SetAction(NAME_None); }
 }
@@ -573,6 +587,7 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("menu")) { if (!Preferences) return false; ToggleMenu(FInputActionValue(true)); }   // the settings menu (closing the map first)
     else if (Button == TEXT("skate_feel")) { if (!Preferences) return false; Preferences->OpenSkateMenu(); }   // the menu's Skate feel page
     else if (Button == TEXT("bike")) ToggleBike(FInputActionValue(true));
+    else if (Button == TEXT("horse")) ToggleHorse(FInputActionValue(true));
     else if (Button == TEXT("wave")) Wave(FInputActionValue(true));
     else return false;
     return true;
@@ -723,10 +738,11 @@ void AWandererCharacter::Dash(const FInputActionValue&)
     M->ApplyRootMotionSource(Source);
     // Neither dash consumes nor restores the separate double-jump allowance.
 }
-void AWandererCharacter::Wave(const FInputActionValue&) { if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Wave(); return; } if (SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
+void AWandererCharacter::Wave(const FInputActionValue&) { if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Wave(); return; } if (Horse->IsEquipped()) { if (bReady && !bMenuOpen) Horse->Rear(); return; } if (SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
 void AWandererCharacter::AttackPressed(const FInputActionValue&)
 {
     if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Bell(); return; }   // before the move set, which is idle on the bike
+    if (Horse->IsEquipped()) return;
     if (Moves) { PressMove(TEXT("attack")); return; }
     if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed();
 }
@@ -751,7 +767,7 @@ void AWandererCharacter::ZeppelinStep(int32 Direction)
     if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
-void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if(bReady&&!bMenuOpen&&AHorseRace::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
+void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding()||Horse->IsEquipped())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if(bReady&&!bMenuOpen&&AHorseRace::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {
     if (!bReady) return;
@@ -1213,6 +1229,7 @@ void AWandererCharacter::Tick(float Dt)
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
     Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
     Bike->SetInput(MoveIntent,bSprintHeld,bMenuOpen || (Map && Map->IsOpen()));
+    Horse->SetInput(MoveIntent,bSprintHeld,bWalk,bMenuOpen || (Map && Map->IsOpen()));
     if (!OnVehicle() && !SkateRide->IsRiding())   // keep state time aligned while settings are open
     {
         if (Moves) Moves->Advance(Dt);
@@ -1227,16 +1244,25 @@ void AWandererCharacter::Tick(float Dt)
     SkateCameraBlend=FMath::FInterpTo(SkateCameraBlend,SkateRide->IsRiding()&&SkateRide->IsOnBoard()?1.f:0.f,Dt,3.f);
     if(SkateCameraBlend<.002f)SkateCameraBlend=0.f;
     // Written only while blending in or out (the last write restores the walking framing).
-    if((SkateCameraBlend>0.f||PreviousSkateCamera>0.f)&&Definition&&!OnVehicle()&&!IsZeppelinPassenger())
+    // On horseback the camera rises over the horse's head and stands further back.
+    const float PreviousHorseCamera=HorseCameraBlend;
+    HorseCameraBlend=FMath::FInterpTo(HorseCameraBlend,Horse->IsEquipped()?1.f:0.f,Dt,2.5f);
+    if(HorseCameraBlend<.002f)HorseCameraBlend=0.f;
+    if((SkateCameraBlend>0.f||PreviousSkateCamera>0.f||HorseCameraBlend>0.f||PreviousHorseCamera>0.f)&&Definition&&(!OnVehicle()||Horse->IsEquipped())&&!IsZeppelinPassenger())
     {
-        CameraArm->TargetOffset.Z=Definition->CameraHeight-20.f*SkateCameraBlend;
-        if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend);
+        CameraArm->TargetOffset.Z=Definition->CameraHeight-20.f*SkateCameraBlend+85.f*HorseCameraBlend;
+        if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend+.55f*HorseCameraBlend);
     }
     // Riding the bike, the camera settles in behind him the same way.
     if(Bike->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&Bike->GetSpeed()>80.f)
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-10.f,GetActorRotation().Yaw,0),Dt,1.6f));
+    }
+    if(Horse->IsEquipped()&&Controller&&!bMenuOpen&&LookGrace<=0&&Horse->GetSpeed()>80.f)
+    {
+        const FRotator Now=Controller->GetControlRotation();
+        Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-12.f,GetActorRotation().Yaw,0),Dt,1.4f));
     }
     if(SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
     {

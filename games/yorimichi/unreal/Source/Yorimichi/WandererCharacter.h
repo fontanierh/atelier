@@ -17,6 +17,7 @@ class UJapanPreferences;
 class USkateComponent;
 class USailboatComponent;
 class UBikeComponent;
+class UHorseRideComponent;
 class FJsonObject;
 class FYorimichiPhone;
 class UJapanMap;
@@ -93,7 +94,8 @@ public:
     ASwordDummy* GetSwordDummy() const { return SwordDummy; }
     USailboatComponent* GetSailboat() const { return Sailboat; }
     UBikeComponent* GetBike() const { return Bike; }
-    /** On the sailboat or the bike: the vehicle owns his movement, his animation and his buttons. */
+    UHorseRideComponent* GetHorse() const { return Horse; }
+    /** On the sailboat, the bike or a horse: the vehicle owns his movement, his animation and his buttons. */
     bool OnVehicle() const;
     UJapanPreferences* GetPreferences() const { return Preferences; }
     UJapanMap* GetMap() const { return Map; }
@@ -145,7 +147,7 @@ private:
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     friend class UBotwMoveSet;
-    float LookGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
+    float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;
     FMinimalViewInfo BoardCamera;
@@ -154,6 +156,7 @@ private:
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
     UPROPERTY() TObjectPtr<UBikeComponent> Bike;
+    UPROPERTY() TObjectPtr<UHorseRideComponent> Horse;
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
     UPROPERTY() TObjectPtr<UWandererSwordComponent> Sword;
     UPROPERTY() TObjectPtr<ASwordDummy> SwordDummy;
@@ -272,6 +275,7 @@ private:
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);
     void ToggleBike(const FInputActionValue& Value);
+    void ToggleHorse(const FInputActionValue& Value);
     void ToggleCrouch(const FInputActionValue& Value);
     void Dodge(const FInputActionValue& Value);
     void Wave(const FInputActionValue& Value);

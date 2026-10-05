@@ -135,7 +135,7 @@ private:
     UPROPERTY() TObjectPtr<UAudioComponent> Crowd;
     UPROPERTY() TMap<FName, TObjectPtr<USoundBase>> Sounds;   // "HR_Hoof_03", "Music_race_cup"
     TMap<FName, int32> Variants;
-    FVector CamEye = FVector::ZeroVector; FRotator CamRot = FRotator::ZeroRotator; float CamFov = 70.f;
+    FVector CamEye = FVector::ZeroVector; FRotator CamRot = FRotator::ZeroRotator; float CamFov = 70.f, CamLift = 0.f;
     bool bCamInit = false;
 
     TSharedPtr<SWidget> Menu;

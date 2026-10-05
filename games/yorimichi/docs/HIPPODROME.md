@@ -25,8 +25,8 @@ The HUD keeps the race clear. Nothing sits over the track ahead or the field:
 - **Results:** the full field waits for the results card, which stands alone.
 
 The rail shows face-button names for the connected pad (PlayStation shapes, Nintendo letters), and the controls line
-fades once the race is under way. The chase camera stays close behind your horse. A rider running in the lane between
-the camera and your horse steps out of the shot until it passes or swings wide.
+fades once the race is under way. The chase camera stays close behind your horse. When a rider runs close behind in
+the camera's lane, the camera cranes up and looks down over it. Every horse stays in view.
 
 - **Judgement:** Perfect within ±50 ms of the beat, Great ±100 ms, Good ±150 ms. Anything later is a miss. A long
   note must be held to its end ("Held!"); letting go early drops it. A press with no note costs a little stride but
@@ -41,7 +41,7 @@ the camera and your horse steps out of the shot until it passes or swings wide.
   it.
 - **The field:** the other riders meet the same notes at their own skill (Urbosa is the strongest), a little
   sharper when they trail and looser when they lead, and spur late. They hold the rail, swing out to pass and
-  never cut across a horse alongside.
+  never cut across a horse alongside. Horses keep 2 m between them side by side (about a metre between flanks).
 
 | Cup | Distance | Song | Field skill | Speeds (m/s) |
 | --- | --- | --- | --- | --- |
@@ -95,6 +95,27 @@ GLBs and `unreal.horses` imports them. The game finds them through `Content/Data
 - **Turns:** at a run or a sprint the horses play the `Curve_L` clips and lean in.
 - **Spur:** the rider's spur kick is a one-off that rejoins the stride when it ends.
 - **The winner:** rears once it has pulled up.
+- **The player:** races as Cairo (`RiderCairo`): `characters.cairo_rider` retargets the riders' clips onto him with
+  his BOTW move set's retarget (`assets/characters/horses/cairo_rider.py`). Playing as Link (`-rider=Link`), you race
+  as Link. A rider mesh that faces another axis than the horse's is turned to face ahead on the saddle.
+
+## Riding about the world
+
+`UHorseRideComponent` puts the player on horseback anywhere on firm ground:
+
+- **H** brings round the horse you last raced (`Saved/hippodrome.json`, else Momo) and mounts it. At a walk, **H**
+  steps off on the horse's near side and leaves it standing; **H** within 15 m mounts it again, and further away a
+  fresh horse comes.
+- **W** trots, **Shift** gallops, **Alt** walks and **S** reins in. Left alone, the horse eases to a stop.
+  **A / D** turn: on the spot at a standstill, tightly at a walk and widely at a gallop.
+- **Space** spurs for a 1.8 s burst at full speed. There are three spurs, and one comes back every 4 s.
+- **Q** rears at a standstill.
+- The horse is an `AHippodromeFigure` (horse and rider) standing on the hidden character's capsule. The capsule keeps
+  its walking physics: floors, slopes, steps and walls. The figure tilts with the ground between fore and hind legs.
+  It stops short of walls, and it plays the race's gaits, curve clips and hooves.
+- The camera rises and stands back, and swings in behind the horse once it moves.
+- Deep water puts you off; the horse waits at the bank.
+- No gamepad button mounts yet: on a controller, ride with the stick, the sprint button and the jump button (spur).
 
 ## Sound
 
@@ -111,6 +132,8 @@ uv run atelier live py "unreal.YorimichiLive.race_start(1, 'HorseRoan', 0.9)"   
 uv run atelier live py "unreal.YorimichiLive.race_state()"            # phase, clock, every runner as JSON
 uv run atelier live py "unreal.YorimichiLive.race_end()"
 uv run atelier live py "unreal.YorimichiLive.race_menu()"             # toggle Hudson's menu
+uv run atelier live py "unreal.YorimichiLive.press('horse')"          # mount or step off (free riding)
+uv run atelier live py "unreal.YorimichiLive.horse_state()"           # mounted, horse, gait, speed, spurs, figure
 ```
 
 The race film runs a guarded 1080p60 game on a fixed clock with autoplay, writes the frames, camera, sounds and the

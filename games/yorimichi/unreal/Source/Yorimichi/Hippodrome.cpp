@@ -88,6 +88,8 @@ const TMap<FString, FHorseSpec>& FHorseSpec::All()
 
 const FHorseSpec* FHorseSpec::Find(const FString& Name) { return All().Find(Name); }
 
+FString FHorseSpec::PlayerRider() { return Find(TEXT("RiderCairo")) ? FString(TEXT("RiderCairo")) : FString(TEXT("RiderLink")); }
+
 // ------------------------------------------------------------------------------------------------------------ Figure
 
 AHippodromeFigure::AHippodromeFigure()
@@ -148,7 +150,9 @@ void AHippodromeFigure::Initialize(const FHorseSpec& BodyData, const FHorseSpec*
         {
             FTransform BoneRest = FTransform::Identity;
             for (int32 I = Bone; I != INDEX_NONE; I = Ref.GetParentIndex(I)) BoneRest = BoneRest * Ref.GetRefBonePose()[I];
-            const FTransform Seat(FQuat::Identity, BoneRest.GetLocation(), FVector(RiderSpec.Scale / FMath::Max(BodySpec.Scale, .01f)));
+            // A rider mesh facing another way than the horse's (Cairo faces +X, the glTF riders +Y) turns to face ahead.
+            const FTransform Seat(FRotator(0, RiderSpec.MeshYaw - BodySpec.MeshYaw, 0), BoneRest.GetLocation(),
+                FVector(RiderSpec.Scale / FMath::Max(BodySpec.Scale, .01f)));
             Rider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, Saddle);
             Rider->SetRelativeTransform(Seat.GetRelativeTransform(BoneRest));
             LoadClips(RiderSpec, RiderClips);

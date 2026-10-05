@@ -6,6 +6,7 @@
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
+#include "HorseRideComponent.h"
 #include "WandererSword.h"
 #include "FoxHunter.h"
 #include "SwordTrainer.h"
@@ -268,6 +269,18 @@ void AJapanHUD::DrawHUD()
     }
     else if (Bike && Bike->IsAvailable() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger())
         Secondary += bController ? FString::Printf(TEXT("   Hold %s bike"),Pad.Skate) : TEXT("   V bike");
+    const UHorseRideComponent* Horse=Pawn->GetHorse();
+    if (Horse && Horse->IsEquipped())
+    {
+        const float Kmh=Horse->GetSpeed()*.036f;
+        FString Spurs; for (int32 I=0;I<UHorseRideComponent::MaxSpurs;++I) Spurs+=I<Horse->GetSpurs()?TEXT("U"):TEXT("-");
+        Controls=bController
+            ? FString::Printf(TEXT("Left stick urge / rein in / turn   Hold %s gallop   %s spur [%s]   H get off (at a walk)      %s   %.0f km/h"),Pad.Sprint,Pad.Jump,*Spurs,*Horse->GetStatus(),Kmh)
+            : FString::Printf(TEXT("W trot   Shift gallop   Alt walk   S rein in   A / D turn   Space spur [%s]   Q rear (standing)   H get off (at a walk)      %s   %.0f km/h"),*Spurs,*Horse->GetStatus(),Kmh);
+        Secondary=bController?FString::Printf(TEXT("Right stick look   %s map   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
+    }
+    else if (Horse && !bRide && !bSailboat && !(Bike && Bike->IsEquipped()) && !Pawn->IsZeppelinPassenger() && Horse->IsAvailable())
+        Secondary += Horse->GetFigure() ? TEXT("   H back on the horse") : TEXT("   H horse");
     if(!bSailboat&&!Pawn->IsZeppelinPassenger())
     {
         const auto& Stamina=Pawn->GetStamina();

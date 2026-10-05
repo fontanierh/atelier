@@ -2,6 +2,7 @@
 #include "AtelierData.h"
 #include "AtelierFX.h"
 #include "Hippodrome.h"
+#include "HorseRideComponent.h"
 #include "WandererCharacter.h"
 #include "Animation/AnimSequence.h"
 #include "Camera/CameraActor.h"
@@ -51,7 +52,7 @@ static const FLinearColor GradeColour[4] = { FLinearColor(1.f, .86f, .3f), FLine
 static const FLinearColor LaneColour[4] = { FLinearColor(.32f, .86f, .38f), FLinearColor(.94f, .32f, .28f), FLinearColor(.32f, .56f, .98f), FLinearColor(.98f, .8f, .24f) };
 static const FKey LaneKeys[4] = { EKeys::D, EKeys::F, EKeys::J, EKeys::K };
 static const FKey LanePads[4] = { EKeys::Gamepad_FaceButton_Bottom, EKeys::Gamepad_FaceButton_Right, EKeys::Gamepad_FaceButton_Left, EKeys::Gamepad_FaceButton_Top };
-static constexpr float SpurBoost = 3.f, SpurSeconds = 2.6f, Separation = 1.3f, BlockLength = 2.8f;
+static constexpr float SpurBoost = 3.f, SpurSeconds = 2.6f, Separation = 2.f, BlockLength = 3.4f;
 static constexpr int32 ComboPerPip = 16, MaxPips = 4;
 
 const FRaceCup AHorseRace::Cups[3] = {
@@ -183,6 +184,7 @@ void AHorseRace::SaveResults()
         if (BestTime.Contains(Cup.Key)) Entry->SetNumberField(TEXT("best_time"), BestTime[Cup.Key]);
         Root->SetObjectField(Cup.Key, Entry);
     }
+    Root->SetStringField(TEXT("horse"), PlayerHorse);   // also the horse ridden about the world (UHorseRideComponent)
     FString Text; FJsonSerializer::Serialize(Root.ToSharedRef(), TJsonWriterFactory<>::Create(&Text));
     FFileHelper::SaveStringToFile(Text, *(FPaths::ProjectSavedDir() / TEXT("hippodrome.json")));
 }
@@ -413,6 +415,8 @@ bool AHorseRace::StartRace(AWandererCharacter* P, int32 Cup, const FString& Hors
     LoadSounds();
     Player = P;
     PlayerHorse = Horses().Contains(Horse) ? Horse : FString(TEXT("HorsePinto"));
+    const FString Own = UHorseRideComponent::RiderFor(P);
+    const FString PlayerRider = Own.IsEmpty() ? FHorseSpec::PlayerRider() : Own;   // Cairo, or Link playing as Link
     for (FRaceRunner& R : Runners) if (R.Figure.IsValid()) R.Figure->Destroy();
     Runners.Reset();
     // Six stalls across the gate; the player draws one of the middle four.
@@ -429,7 +433,7 @@ bool AHorseRace::StartRace(AWandererCharacter* P, int32 Cup, const FString& Hors
         R.Offset = -5.f + Stall * 2.f;
         if (Stall == PlayerIndex)
         {
-            R.bPlayer = true; R.Horse = PlayerHorse; R.Rider = TEXT("RiderLink"); R.Name = TEXT("You"); R.Colour = FLinearColor(1.f, .9f, .4f);
+            R.bPlayer = true; R.Horse = PlayerHorse; R.Rider = PlayerRider; R.Name = TEXT("You"); R.Colour = FLinearColor(1.f, .9f, .4f);
         }
         else
         {
@@ -603,7 +607,7 @@ void AHorseRace::ReadInput(float Dt)
             // Autoplay rides the rail and swings out round a horse it is catching.
             float Want = -4.6f;
             for (const FRaceRunner& O : Runners)
-                if (&O != &Me && O.Progress - Me.Progress > 0. && O.Progress - Me.Progress < 9. && FMath::Abs(O.Offset - Want) < 1.6f) Want = O.Offset + 2.2f;
+                if (&O != &Me && O.Progress - Me.Progress > 0. && O.Progress - Me.Progress < 9. && FMath::Abs(O.Offset - Want) < Separation) Want = O.Offset + Separation + .6f;
             Steer = FMath::Clamp((Want - Me.Offset) * .8f, -1.f, 1.f);
         }
         Me.LateralSpeed = FMath::Clamp(Steer, -1.f, 1.f) * 4.2f;
@@ -755,25 +759,25 @@ void AHorseRace::AdvanceRunners(float Dt)
             for (const FRaceRunner& O : Runners)
             {
                 const double Ahead = O.Progress - R.Progress;
-                if (&O != &R && Ahead > 0. && Ahead < 7. && FMath::Abs(O.Offset - R.Offset) < 1.6f && O.Speed < R.Speed + .4f)
-                { R.PassOffset = FMath::Min(O.Offset + 2.1f, Edge); R.PassTimer = 2.2f; }
+                if (&O != &R && Ahead > 0. && Ahead < 9. && FMath::Abs(O.Offset - R.Offset) < Separation && O.Speed < R.Speed + .4f)
+                { R.PassOffset = FMath::Min(O.Offset + Separation + .6f, Edge); R.PassTimer = 2.2f; }
             }
             if (R.PassTimer > 0.f) { R.PassTimer -= Dt; Want = FMath::Max(Want, R.PassOffset); }
             if (Want < R.Offset)
                 for (const FRaceRunner& O : Runners)
-                    if (&O != &R && FMath::Abs(O.Progress - R.Progress) < 3. && O.Offset < R.Offset && O.Offset > Want - Separation) { Want = R.Offset; break; }
+                    if (&O != &R && FMath::Abs(O.Progress - R.Progress) < 3.6 && O.Offset < R.Offset && O.Offset > Want - Separation) { Want = R.Offset; break; }
             R.LateralSpeed = FMath::Clamp((Want - R.Offset) * 1.2f, -1.8f, 1.8f);
         }
         else if (R.FinishTime >= 0.) R.LateralSpeed = 0.f;
         R.Offset = FMath::Clamp(R.Offset + R.LateralSpeed * Dt, -Edge, Edge);
     }
-    // Two horses never overlap: side by side they lean apart.
+    // Two horses never overlap: within a length of each other they keep a body's width apart (a horse is 2.7 m long).
     for (int32 I = 0; I < Runners.Num(); ++I)
         for (int32 J = I + 1; J < Runners.Num(); ++J)
         {
             FRaceRunner& A = Runners[I]; FRaceRunner& B = Runners[J];
             const float Gap = B.Offset - A.Offset;
-            if (FMath::Abs(B.Progress - A.Progress) > 2.4 || FMath::Abs(Gap) >= Separation) continue;
+            if (FMath::Abs(B.Progress - A.Progress) > 3.2 || FMath::Abs(Gap) >= Separation) continue;
             const float Push = (Separation - FMath::Abs(Gap)) * .5f * (Gap >= 0.f ? 1.f : -1.f);
             A.Offset = FMath::Clamp(A.Offset - Push, -Edge, Edge); B.Offset = FMath::Clamp(B.Offset + Push, -Edge, Edge);
         }
@@ -907,8 +911,17 @@ void AHorseRace::AdvanceCamera(float Dt)
     const FVector Fwd = Facing.Vector(), Right = FRotationMatrix(Facing).GetUnitAxis(EAxis::Y), Up(0, 0, 1);
     // Close behind and above the player's horse (it is the subject), pulled back a little with speed and the spur.
     const float Back = 640.f + Me.Speed * 10.f + (Me.SpurLeft > 0.f ? 120.f : 0.f);
-    FVector Eye = At - Fwd * Back + Up * 300.f + Right * 40.f;
-    FVector Focus = At + Fwd * 650.f + Up * 150.f;
+    // A rider close behind in the camera's lane would fill the foreground: the camera cranes up and looks down over it,
+    // so every horse stays in view and the player's stays clear.
+    bool bCrowded = false;
+    for (const FRaceRunner& R : Runners)
+    {
+        const double Behind = Me.Progress - R.Progress;
+        bCrowded |= !R.bPlayer && Phase == EPhase::Running && Behind > .3 && Behind < Back / 100. + 1.5 && FMath::Abs(R.Offset - Me.Offset) < 2.6f;
+    }
+    CamLift = Dt > 0.f ? FMath::FInterpTo(CamLift, bCrowded ? 1.f : 0.f, Dt, bCrowded ? 3.f : 1.2f) : 0.f;
+    FVector Eye = At - Fwd * Back * (1.f - .2f * CamLift) + Up * (300.f + 280.f * CamLift) + Right * 40.f;
+    FVector Focus = At + Fwd * (650.f - 250.f * CamLift) + Up * 150.f;
     if (Phase >= EPhase::Finished && Me.FinishTime >= 0.)
     {
         // Past the post the camera swings round to the side of the horse.
@@ -946,16 +959,6 @@ void AHorseRace::AdvanceCamera(float Dt)
     CamFov = Dt > 0.f ? FMath::FInterpTo(CamFov, Fov, Dt, 4.f) : Fov;
     Camera->SetActorLocationAndRotation(CamEye, CamRot);
     Camera->GetCameraComponent()->SetFieldOfView(CamFov);
-    // A rider close behind would fill the foreground between the camera and the player's horse: it steps out of the
-    // shot while it runs in that lane, and back in once it passes, swings wide or drops away.
-    const bool bChase = Phase == EPhase::Running && Blend >= 1.f && Me.FinishTime < 0.;
-    for (FRaceRunner& R : Runners)
-        if (!R.bPlayer && R.Figure.IsValid())
-        {
-            const double Behind = Me.Progress - R.Progress;
-            const bool bHide = bChase && Behind > .5 && Behind < Back / 100. + 1. && FMath::Abs(R.Offset - Me.Offset) < 2.4f;
-            if (R.Figure->IsHidden() != bHide) R.Figure->SetActorHiddenInGame(bHide);
-        }
     Camera->GetCameraComponent()->SetConstraintAspectRatio(false);
 }
 

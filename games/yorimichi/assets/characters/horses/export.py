@@ -171,7 +171,11 @@ def export_one(character, owner, out):
     else:
         scale = float(character.get('scale', 1.))
         clips = selected([clip['name'] for clip in curves['animations']], character.get('clips', 'all'))
-        summary = bake.bake(rig, item['curves'], target, clips=clips, rename=unreal_name, in_place=True)
+        # BOTW's curve clips turn the root (up to 70 degrees a cycle) for the game to turn into the horse's heading. The
+        # race steers the horse along the course itself, so they keep only their lean: left in, the horse swung off
+        # its line and snapped back on every loop.
+        turns = [clip for clip in clips if '_Curve_' in clip]
+        summary = bake.bake(rig, item['curves'], target, clips=clips, rename=unreal_name, in_place=True, drive=turns)
         by_source = {clip['name']: clip for clip in curves['animations']}
         speeds = {}
         for role in GAITS:

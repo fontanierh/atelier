@@ -149,6 +149,16 @@ def bike_state():
     return L.bike_state()
 
 
+def horse():
+    """Call the horse and mount it, or (at a walk) step off and leave it standing (docs/HIPPODROME.md). Ride it with
+    drive() (sprint gallops, walk walks); press('jump') spurs, press('wave') rears at a standstill."""
+    return L.press('horse')
+
+
+def horse_state():
+    return L.horse_state()
+
+
 def skate():
     """Get on or off the board (skate. controls, docs/SKATE.md)."""
     return L.skate_toggle()

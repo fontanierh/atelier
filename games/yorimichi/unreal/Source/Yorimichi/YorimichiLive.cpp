@@ -5,6 +5,7 @@
 #include "WandererSword.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "HorseRideComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
 #include "BotwCreature.h"
@@ -170,6 +171,16 @@ FString UYorimichiLive::BikeState()
     return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f steer=%.2f parked=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
         int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->GetSteering(), B->IsParked() ? 1 : 0, *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
         A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
+}
+FString UYorimichiLive::HorseState()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UHorseRideComponent* H = P ? P->GetHorse() : nullptr;
+    if (!H) return TEXT("no horse");
+    const FVector A = P->GetActorLocation(); const AHippodromeFigure* F = H->GetFigure();
+    const FVector At = F ? F->GetActorLocation() : FVector::ZeroVector; const FRotator R = F ? F->GetActorRotation() : FRotator::ZeroRotator;
+    return FString::Printf(TEXT("mounted=%d horse=%s rider=%s gait=%s speed=%.0f spurs=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f figure=%d at=(%.0f,%.0f,%.0f) rot=(%.1f,%.1f) hidden=%d"),
+        H->IsEquipped() ? 1 : 0, *H->GetHorse(), F ? *F->GetRider().Name : TEXT("-"), *H->GetGait().ToString(), H->GetSpeed(), H->GetSpurs(),
+        *H->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw, F ? 1 : 0, At.X, At.Y, At.Z, R.Pitch, R.Yaw, P->IsHidden() ? 1 : 0);
 }
 bool UYorimichiLive::TestWall(FVector Ground, float Yaw, FVector Size)
 {

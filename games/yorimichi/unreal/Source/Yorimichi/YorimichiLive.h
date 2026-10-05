@@ -83,4 +83,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool RaceMenu();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool RaceEnd();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool RaceVisit();
+    /** Riding a horse about the world (UHorseRideComponent): mounted, horse, gait, speed, spurs, status and where it stands. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString HorseState();
 };
