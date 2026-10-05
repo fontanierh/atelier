@@ -47,7 +47,9 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
         if (!OriginalData || OriginalData->LODResources.Num()==0) return false;
         const auto& A=OriginalData->LODResources[0];const auto& B=Data->LODResources[0];
         const auto& AP=A.VertexBuffers.PositionVertexBuffer;const auto& BP=B.VertexBuffers.PositionVertexBuffer;
-        if (!AP.GetVertexData() || !BP.GetVertexData() || AP.GetNumVertices()!=BP.GetNumVertices() ||
+        if (!AP.GetVertexData() || !BP.GetVertexData() ||
+            !A.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() || !B.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() ||
+            AP.GetNumVertices()!=BP.GetNumVertices() ||
             A.GetNumTriangles()!=B.GetNumTriangles() || Original->GetMaterial(0)!=Pair.Value->GetMaterial(0))
         { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS changed production LOD0; refusing swap %s"),*Pair.Key);return false; }
         for (uint32 V=0;V<AP.GetNumVertices();++V)
