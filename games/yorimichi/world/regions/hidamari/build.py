@@ -20,21 +20,29 @@ v.PALETTE.update({'hd_grass':(.125,.18,.048),'hd_yard':(.15,.115,.07),'hd_walk':
 v.PALETTE.update({'paving':(.22,.18,.125),'asphalt':(.085,.08,.073),'park':(.24,.30,.12),'cream':(.66,.57,.41),'blue':(.08,.19,.25),'brick':(.31,.12,.055),'water_city':(.075,.24,.29)})
 M=v.Mesh
 
-def simple_roof(m,w,d,z,rise=2):
-    w+=1.1;d+=1.3
+# The shops' kawara, by variant: mostly ibushi charcoal and silver, some brown-black, a few glazed red-brown sekishu tiles
+# and one indigo glaze (the town from above was a field of blue roofs). Each with the darker key of its tile rows.
+SHOP_ROOFS=['charcoal','silver','brown','charcoal','sekishu','silver','charcoal','brown','indigo','charcoal','silver',
+            'brown','charcoal','sekishu','silver','charcoal']
+for _name,_tile in {'charcoal':(.034,.035,.038),'silver':(.062,.064,.068),'brown':(.05,.036,.028),
+                    'sekishu':(.13,.05,.026),'indigo':(.03,.036,.05)}.items():
+    v.PALETTE.update({f'shop_roof_{_name}':_tile,f'shop_roof_{_name}_edge':tuple(round(c*.5,4) for c in _tile)})
+
+def simple_roof(m,w,d,z,rise=2,key='roof'):
+    w+=1.1;d+=1.3;edge=key+'_edge'
     # Closed soffit prevents sky showing through the projecting gable ends.
     m.box((0,0,z-.06),(w,d,.15),'wood_dark')
     for s in [-1,1]:
         pts=[(-w/2,0,z+rise),(w/2,0,z+rise),(w/2,s*d/2,z),( -w/2,s*d/2,z)]
-        m.poly(pts[::-1] if s<0 else pts,'roof')
-        m.beam((-w/2,s*d/2,z),(w/2,s*d/2,z),.24,.24,'roof_edge')
+        m.poly(pts[::-1] if s<0 else pts,key)
+        m.beam((-w/2,s*d/2,z),(w/2,s*d/2,z),.24,.24,edge)
         for i in range(1,7):
             y=s*d/2*i/7;zz=z+rise*(1-i/7)
-            m.beam((-w/2,y,zz),(w/2,y,zz),.055,.055,'roof_edge')
+            m.beam((-w/2,y,zz),(w/2,y,zz),.055,.055,edge)
     for x in [-w/2,w/2]:
         m.poly([(x,-d/2,z),(x,d/2,z),(x,0,z+rise)][::-1 if x<0 else 1],'plaster_light')
-        m.beam((x,-d/2,z),(x,0,z+rise),.2,.2,'roof_edge');m.beam((x,d/2,z),(x,0,z+rise),.2,.2,'roof_edge')
-    m.beam((-w/2,0,z+rise),(w/2,0,z+rise),.3,.25,'roof_edge')
+        m.beam((x,-d/2,z),(x,0,z+rise),.2,.2,edge);m.beam((x,d/2,z),(x,0,z+rise),.2,.2,edge)
+    m.beam((-w/2,0,z+rise),(w/2,0,z+rise),.3,.25,edge)
 
 def lettering(m,text,position,size=1.0,color='cream'):
     curve=bpy.data.curves.new('sign','FONT');curve.body=text;
@@ -80,7 +88,7 @@ def shop(i):
             for xx in [x-1,x+1]:m.box((xx,-d/2-1,.36),(.12,.65,.7),'wood')
             for k in range(6):
                 m.box((x-1+k*.38,-d/2-1,1.05),(.28,.55,.35),['rust','green','cream'][k%3],.06)
-    simple_roof(m,w,d,h,2.1)
+    simple_roof(m,w,d,h,2.1,f'shop_roof_{SHOP_ROOFS[i]}')
     return m
 
 def civic(name,w,d,h):
@@ -258,13 +266,15 @@ def surface(name,xs,ys,color):
 
 def streets(city):
     m=M('HD_Streets')
-    # Each street at its own width (layout.road_width; the arrival road, last, is a broad one).
-    for path,(paving,asphalt) in itertools.zip_longest(city['roads'],city.get('road_widths',[]),fillvalue=(8,3.8)):
+    # Each street at its own width (layout.road_width; the arrival road, last, is a broad one). On the hillside west
+    # of the town the arrival road is arrival.py's ribbon: a broad strip there paved the slope beside it.
+    arrival=len(city['roads'])-1
+    for k,(path,(paving,asphalt)) in enumerate(itertools.zip_longest(city['roads'],city.get('road_widths',[]),fillvalue=(8,3.8))):
         for width,key,offset in [(paving,'paving',.045),(asphalt,'asphalt',.065)]:
             quads=[];cross=np.linspace(-width,width,math.ceil(width*2)+1)
             for a,b in zip(path,path[1:]):
                 dx=b[0]-a[0];dy=b[1]-a[1];length=math.hypot(dx,dy)
-                if length<.01:continue
+                if length<.01 or (k==arrival and a[0]<400):continue
                 nx,ny=-dy/length,dx/length
                 for lo,hi in zip(cross[:-1],cross[1:]):
                     quads.append([(p[0]+s*nx,p[1]+s*ny) for p,s in [(a,lo),(b,lo),(b,hi),(a,hi)]])

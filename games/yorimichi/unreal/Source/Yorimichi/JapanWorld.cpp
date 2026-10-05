@@ -107,12 +107,13 @@ void AJapanWorld::Load()
             Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
         }
         // Hidamari's late-afternoon grade over the whole city (location.json city_bounds) and the arrival hillside west
-        // of it (x 280): the global sky light and grade's cool shadows turn its cream plaster pale blue, so it also
-        // white-balances warmer. The district grades below (priority 2) take precedence inside.
+        // of it (x 280), out over the harbour to the lighthouse (y -280) and up to 700 m, so the town seen from a glide
+        // above it keeps the same light: the global sky light and grade's cool shadows turn its cream plaster pale
+        // blue, so it also white-balances warmer. The district grades below (priority 2) take precedence inside.
         UBoxComponent* CityBounds=NewObject<UBoxComponent>(this);
         CityBounds->SetupAttachment(RootComponent);
-        CityBounds->SetRelativeLocation(ToUE(770,60,40));
-        CityBounds->SetBoxExtent(FVector(49000,30000,8000));
+        CityBounds->SetRelativeLocation(ToUE(770,40,330));
+        CityBounds->SetBoxExtent(FVector(49000,32000,37000));
         CityBounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
         CityBounds->SetCollisionResponseToAllChannels(ECR_Ignore);
         CityBounds->SetGenerateOverlapEvents(false);
@@ -133,7 +134,8 @@ void AJapanWorld::Load()
         CityGrade->Settings.WhiteTemp=7200;
         CityGrade->RegisterComponent();
         float CityGradeDistance=0.f;
-        UE_LOG(LogTemp,Display,TEXT("City grade bounds: lanes=%d arrival=%d forest=%d"),CityGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&CityGradeDistance),
+        UE_LOG(LogTemp,Display,TEXT("City grade bounds: lanes=%d aerial=%d arrival=%d forest=%d"),CityGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&CityGradeDistance),
+            CityGrade->EncompassesPoint(ToUE(800,40,650),0.f,&CityGradeDistance),
             CityGrade->EncompassesPoint(ToUE(330,80,30),0.f,&CityGradeDistance),CityGrade->EncompassesPoint(ToUE(100,0,30),0.f,&CityGradeDistance));
         // A gentle local warm grade matches the sheltered arcade's art direction.
         // Blend at its approaches; leave every other district and user setting alone.

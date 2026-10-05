@@ -25,7 +25,7 @@ PALETTE = {'ar_paddy_earth': (.22, .15, .065), 'ar_stubble_row': (.40, .29, .10)
            'ar_shrine_stone': (.32, .31, .28), 'ar_gate_timber': (.22, .12, .06), 'ar_gate_roof': (.07, .08, .09),
            'ar_gate_stone': (.30, .29, .26), 'ar_gate_sign': (.70, .64, .50), 'ar_lantern_glow': (1., .55, .25),
            'ar_road_asphalt': (.085, .085, .09), 'ar_road_gravel': (.17, .155, .13), 'ar_road_line': (.62, .60, .55),
-           'ar_rice_canopy': (.50, .34, .055), 'ar_rice_canopy_shade': (.36, .25, .05), 'ar_rice_side': (.27, .22, .065)}
+           'ar_rice_canopy': (.42, .32, .09), 'ar_rice_canopy_shade': (.29, .22, .07), 'ar_rice_side': (.22, .19, .07)}
 
 
 def palette():
