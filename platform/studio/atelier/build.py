@@ -90,6 +90,7 @@ class Step:
     outputs: list = field(default_factory=list)    # must exist after a run; a missing one forces a rerun
     heavy: bool = False                            # take a render slot and the memory guard (Unreal, Blender renders)
     about: str = ''
+    pool_roots: list = field(default_factory=list)  # exclusively owned generated folders, opt-in portable pool
 
 
 # ---------------------------------------------------------------- context
@@ -290,6 +291,10 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
             done[step.name] = current
             echo(f'{print_} touched')
             continue
+        pool_key = None
+        if step.pool_roots:
+            from . import artifact_pool
+            pool_key = artifact_pool.key(ctx, step, current)
         t0 = time.monotonic()
         log_path = ctx.logs / f'{step.name}.log'
         slots, peaks = [], []
@@ -313,7 +318,13 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         if peaks and None not in peaks:   # a step with several commands: its report keeps only the last one's peak
             (ctx.logs / f'{step.name}.guard' / 'step-peak.json').write_text(
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
-        stamp.write_text(json.dumps({'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}) + '\n')
+        result = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}
+        if pool_key is not None:
+            if fingerprint(step, done) != current or artifact_pool.key(ctx, step, current) != pool_key:
+                stamp.unlink(missing_ok=True)
+                raise RuntimeError('Pool tool context changed during build; outputs not certified')
+            result['pool_key'] = pool_key
+        stamp.write_text(json.dumps(result) + '\n')
         done[step.name] = current
         ran += 1
         echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')

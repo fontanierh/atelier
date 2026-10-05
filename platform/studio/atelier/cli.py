@@ -154,6 +154,8 @@ def make_parser():
     p.add_argument('--workers', type=int, default=3, help='headless compiler parallelism (default: 3)')
     p = sub.add_parser('reuse'); p.add_argument('game'); p.add_argument('--from', dest='source', required=True)
     p.add_argument('--to', dest='target', help='fresh worktree path (default: this checkout)')
+    p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status'])
+    p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
@@ -201,6 +203,9 @@ def main(argv=None):
     if args.command == 'reuse':
         from . import reuse
         return reuse.main(args.game, args.source, args.target)
+    if args.command == 'pool':
+        from . import artifact_pool
+        return artifact_pool.main(args.action, args.game, args.step)
     if args.command == 'fetch':
         return fetch(args.game)
     if args.command == 'build':

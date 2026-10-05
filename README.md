@@ -168,6 +168,7 @@ Where to go next, in the order most games grow:
 | `atelier doctor <game>` / `fetch <game>` | check the tools and sources; download what may not be redistributed |
 | `atelier setup [--headless]` | verify Xcode and Metal; prepare the tested installed UE 5.8.2 for SSH builds |
 | `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
+| `atelier pool publish/restore/status <game> <step>` | [pool explicitly owned portable outputs](docs/ARTIFACT_POOL.md) across feature revisions |
 | `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--dry-run`, `--touch` |
 | `atelier play <game> [--profile P]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |
