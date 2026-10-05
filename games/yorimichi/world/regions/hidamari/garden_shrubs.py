@@ -11,6 +11,8 @@ GREEN = [(.045, .085, .018), (.06, .11, .022), (.075, .13, .03), (.10, .16, .04)
 AZALEA = [(.32, .045, .02), (.42, .08, .02), (.24, .035, .018), (.06, .10, .02)]       # satsuki in autumn colour
 AMBER = [(.50, .24, .02), (.36, .12, .02), (.62, .36, .05), (.06, .11, .022)]          # nanten, turning
 CORE = (.022, .045, .011)
+PINE = [(.03, .07, .035), (.045, .09, .04), (.06, .11, .045)]   # black pine needles, blue-green
+BARK = (.07, .045, .03)
 # name: (half extents x, y, z; exponent; leaves; leaf colours and weights)
 KINDS = {
     'Bush_HD_Ball': ((.5, .5, .42), 2.4, 340, GREEN, (3, 3, 2, 1, 2)),
@@ -29,32 +31,31 @@ def surface(extent, p, bumps, d):
     return Vector((d.x*s, d.y*s, d.z*s))
 
 
-def shrub(name):
-    extent, p, leaves, colours, weights = KINDS[name]
-    r = random.Random(sum(map(ord, name)))
-    m = v.Mesh(name); cz = extent[2]-.06          # the centre: the shape sits on the ground, its foot just below
+def pad(m, r, centre, extent, p, leaves, colours, weights, core=CORE):
+    """One clipped mass about centre: the lumpy core, then its leaves."""
+    c0 = Vector(centre)
     bumps = [(Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-.2, 1))).normalized(), r.uniform(.03, .08),
               r.uniform(.15, .4)) for _ in range(7)]
     rings, n = 9, 16
     def at(i, k):
         lat = -math.pi/2*.8+i*(math.pi/2*1.8)/rings; lon = k*math.tau/n
         d = Vector((math.cos(lat)*math.cos(lon), math.cos(lat)*math.sin(lon), math.sin(lat)))
-        return surface(extent, p, bumps, d)+Vector((0, 0, cz))
+        return surface(extent, p, bumps, d)+c0
     grid = [[at(i, k) for k in range(n)] for i in range(rings+1)]
-    top = surface(extent, p, bumps, Vector((0, 0, 1)))+Vector((0, 0, cz))
+    top = surface(extent, p, bumps, Vector((0, 0, 1)))+c0
     for i in range(rings):
         for k in range(n):
             q = [grid[i][k], grid[i][(k+1) % n], grid[i+1][(k+1) % n], grid[i+1][k]]
-            shade = .75+.5*max(0., min(1., (sum(c.z for c in q)/4)/(2*extent[2])))
-            m.poly(q, tuple(c*shade for c in CORE))
-    for k in range(n):m.poly([grid[rings][k], grid[rings][(k+1) % n], top], CORE)
-    m.poly([grid[0][k] for k in range(n)][::-1], CORE)
+            shade = .75+.5*max(0., min(1., i/rings))
+            m.poly(q, tuple(c*shade for c in core))
+    for k in range(n):m.poly([grid[rings][k], grid[rings][(k+1) % n], top], core)
+    m.poly([grid[0][k] for k in range(n)][::-1], core)
     # the leaves: small pointed ovals tilted out of the skin, both faces, lighter towards the sun-facing top
     for _ in range(leaves):
         d = Vector((r.gauss(0, 1), r.gauss(0, 1), r.gauss(0, 1)+.25)).normalized()
         if d.z < -.55:continue
         s = surface(extent, p, bumps, d); normal = Vector((s.x/extent[0]**2, s.y/extent[1]**2, s.z/extent[2]**2)).normalized()
-        pos = s*(1+r.uniform(-.02, .05))+Vector((0, 0, cz))
+        pos = s*(1+r.uniform(-.02, .05))+c0
         size = r.uniform(.07, .12)
         frame = normal.to_track_quat('Z', 'Y').to_matrix().to_4x4()
         frame = frame@Matrix.Rotation(r.uniform(0, math.tau), 4, 'Z')@Matrix.Rotation(r.uniform(.5, 1.1), 4, 'X')
@@ -64,8 +65,32 @@ def shrub(name):
                (-size*.3, size*.45, .02), (-size*.42, -size*.25, .012)]
         world = [Matrix.Translation(pos)@frame@Vector(q) for q in pts]
         m.poly(world, colour); m.poly(world[::-1], tuple(c*.8 for c in colour))
+
+
+def shrub(name):
+    extent, p, leaves, colours, weights = KINDS[name]
+    m = v.Mesh(name)
+    # the centre: the shape sits on the ground, its foot just below
+    pad(m, random.Random(sum(map(ord, name))), (0, 0, extent[2]-.06), extent, p, leaves, colours, weights)
+    return m
+
+
+def niwaki():
+    """A cloud-pruned garden pine about 3 m tall: a leaning, twisting trunk and its branches, each ending in a flat
+    clipped pad of dark needles, the top pad crowning the trunk."""
+    r = random.Random(4180); m = v.Mesh('Bush_HD_Niwaki')
+    trunk = [Vector((0, 0, -.1)), Vector((.25, .05, .9)), Vector((-.05, .2, 1.8)), Vector((.15, .1, 2.6))]
+    for a, b, w in zip(trunk, trunk[1:], (.2, .16, .12)):m.beam(a, b, w, w, BARK)
+    pads = [(trunk[3]+Vector((0, 0, .25)), (.65, .6, .28))]
+    for k, (z, reach, a) in enumerate(((1.0, 1.15, 30), (1.5, 1.0, 165), (2.0, .9, 285), (1.3, .8, 250))):
+        root = trunk[1].lerp(trunk[2], (z-.9)/.9) if z < 1.8 else trunk[2].lerp(trunk[3], (z-1.8)/.8)
+        tip = root+Vector((math.cos(math.radians(a))*reach, math.sin(math.radians(a))*reach, .25))
+        m.beam(root, tip, .07, .07, BARK)
+        pads.append((tip+Vector((0, 0, .12)), (.5+.06*(k % 2), .45, .2)))
+    for centre, extent in pads:
+        pad(m, r, centre, extent, 2.6, 170, PINE, (3, 2, 1), core=(.016, .038, .02))
     return m
 
 
 def builders():
-    return {name: (lambda name=name: shrub(name)) for name in KINDS}
+    return {**{name: (lambda name=name: shrub(name)) for name in KINDS}, 'Bush_HD_Niwaki': niwaki}
