@@ -32,10 +32,10 @@ TONES = {0: ('hs_cream_plaster', 'hs_board'), 1: ('hs_grey_plaster', 'hs_char_bo
 
 def palette():
     v.PALETTE.update({
-        'hs_cream_plaster': (.56, .47, .33), 'hs_grey_plaster': (.46, .43, .38), 'hs_ochre_plaster': (.56, .40, .20),
-        'hs_white_plaster': (.58, .55, .49), 'hs_board': (.15, .09, .05), 'hs_char_board': (.075, .062, .052),
+        'hs_cream_plaster': (.56, .47, .33), 'hs_grey_plaster': (.50, .45, .37), 'hs_ochre_plaster': (.56, .40, .20),
+        'hs_white_plaster': (.60, .55, .46), 'hs_board': (.15, .09, .05), 'hs_char_board': (.075, .062, .052),
         'hs_metal_blue': (.17, .21, .26), 'hs_trim_wood': (.17, .10, .05), 'hs_alu_metal': (.34, .34, .33),
-        'hs_glass': (.045, .055, .065), 'hs_base_concrete': (.27, .26, .24), 'hs_block_concrete': (.33, .32, .29),
+        'hs_glass': (.045, .055, .065), 'hs_base_concrete': (.27, .26, .24), 'hs_block_concrete': (.37, .34, .285),
         'hs_block_joint': (.20, .19, .17), 'hs_wall_roof_cap': (.25, .24, .22), 'hs_path_stone': (.27, .25, .21),
         'hs_gravel': (.24, .22, .18), 'hs_shrub_moss': (.05, .085, .03), 'hs_fence_board': (.19, .125, .07),
         'hs_steel_metal': (.10, .10, .10), 'hs_ac_metal': (.52, .51, .48), 'hs_futon_cloth': (.62, .58, .50),
