@@ -30,6 +30,7 @@ public:
     static int32 CurrentRenderer();
     const FString& GetGraphicsError() const { return GraphicsError; }
     void ToggleMenu();
+    bool IsMenuOpen() const { return Menu.IsValid(); }
     // Every Light key back to its default.
     void ResetLight();
     /** Opens the menu on its Skate feel page. */
