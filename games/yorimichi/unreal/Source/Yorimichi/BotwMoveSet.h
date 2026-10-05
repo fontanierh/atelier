@@ -96,7 +96,8 @@ public:
     /** Stamina recovers only standing on the ground (BOTW's EnergyAutoRecoverInAir is 0). */
     bool HoldsStamina() const { return Mode != EBotwMoveMode::Ground || bCharging; }
     bool IsArmed() const { return bArmed; }
-    bool IsGuarding() const { return bGuardHeld && bArmed; }
+    /** The guard is up: held, the sword out, and not just broken by a heavy blow. */
+    bool IsGuarding() const { return bGuardHeld && bArmed && GuardBroken <= 0.f; }
     bool IsSwordGuarding() const { return IsGuarding() && !HasShield(); }
     bool IsLocked() const { return bLocked; }
     bool IsDown() const { return bDown; }
@@ -123,6 +124,10 @@ public:
      *  (the fingers from the sword guard's fists), and its rotation (component space). */
     float GlideFistWeight() const { return bOwnGlide || !bFistAxis ? 0.f : GlideHands; }
     FQuat GlideHandRotation(int32 Side) const { return GlideHandTurn[Side & 1]; }
+    /** A hit's recoil over the clip (the animation graph's flinch layer): the turn added to the spine (0), chest (1),
+     *  neck (2) and head (3), component space. The body bends away from the blow and springs back, the head last. */
+    FQuat FlinchRotation(int32 Bone) const;
+    bool IsFlinching() const { return FlinchTime >= 0.f; }
     float GetMaxWalkSpeed(float Default) const;
     float GetParam(const TCHAR* Key, float Default = 0.f) const;
     const FBotwMove* Find(FName Name) const { return Moves.Find(Name); }
@@ -249,6 +254,13 @@ private:
     float SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
     bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
     int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, DoubleJumpCount = 0, Strength = 1;
+    // Taking hits: the recoil (time since the blow, -1 when none; its angle in degrees and its time to peak), the axis it
+    // bends about and the twist toward the struck side; how long the guard stays down after a guard break; hits taken
+    // in quick succession (the third staggers).
+    float FlinchTime = -1.f, FlinchAngle = 0.f, FlinchPeak = .07f, FlinchTwist = 0.f, GuardBroken = 0.f, SinceHit = 99.f;
+    FVector FlinchAxis = FVector::ZeroVector;
+    int32 HitStreak = 0, StaggerCount = 0, GuardBreakCount = 0;
+    void Flinch(const FVector& Away, float Degrees, float Peak, float Side);
     // Effects: the sprint's dust and speed lines, the glider's wind.
     float SprintFX = 0.f, GlideFX = 0.f;
     bool bWasSprinting = false;

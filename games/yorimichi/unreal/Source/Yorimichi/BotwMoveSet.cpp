@@ -416,6 +416,8 @@ void UBotwMoveSet::Advance(float Dt)
     Character->ActionTime += Dt;
     AttackBuffer = FMath::Max(0.f, AttackBuffer - Dt); JumpBuffer = FMath::Max(0.f, JumpBuffer - Dt);
     NoClimb = FMath::Max(0.f, NoClimb - Dt); SinceImpact += Dt; Invulnerable = FMath::Max(0.f, Invulnerable - Dt); JustAvoid = FMath::Max(0.f, JustAvoid - Dt);
+    GuardBroken = FMath::Max(0.f, GuardBroken - Dt); SinceHit += Dt;
+    if (FlinchTime >= 0.f) { FlinchTime += Dt; if (FlinchTime > FlinchPeak * 9.f) FlinchTime = -1.f; }
     AdvanceFlurry();
     // Leaving the move set's movement mode from outside (travel, the board) ends gliding, climbing and swimming.
     const bool bCustom = Movement->MovementMode == MOVE_Custom && Movement->CustomMovementMode == MovementMode;
@@ -1897,9 +1899,30 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
     const float Guardable = GetParam(TEXT("GuardableAngle"), 120.f) * .5f;
     if (IsGuarding() && Mode == EBotwMoveMode::Ground && (Character->GetActorForwardVector() | Toward) >= FMath::Cos(FMath::DegreesToRadians(Guardable)))
     {
+        const float Side = Character->GetActorRotation().UnrotateVector(From - Here).Y;
+        // A heavy blow (a full charge, full power) breaks the guard: the arms thrown wide, the guard down for a moment.
+        if (Damage >= GetParam(TEXT("GuardBreakDamage"), 25.f))
+        {
+            const FName Break = !HasShield() && Has(TEXT("SwordGuardBreak")) ? FName(TEXT("SwordGuardBreak")) : FName(TEXT("GuardBreak"));
+            if (Has(Break)) Play(Break, .04f);
+            GuardBroken = GetParam(TEXT("GuardBreakTime"), 1.f); ++GuardBreakCount;
+            bCharging = false; AttackBuffer = 0.f;
+            Character->GetCharacterMovement()->Velocity = -Toward * 380.f;
+            Flinch(-Toward, 18.f, .09f, Side);
+            if (FX)
+            {
+                const FVector At = GuardPoint();
+                FX->Burst(At, -Toward, 26, 1100.f, FLinearColor(1.f, .8f, .45f) * 7.f, .3f, 3.f);
+                FX->Flash(At, 70.f, FLinearColor(1.f, .8f, .5f) * 3.f, .12f);
+                FX->Play(TEXT("hit_heavy"), At, .8f, .05f);
+                FX->Shake(.6f);
+            }
+            return 3;
+        }
         const FName Hit = !HasShield() && Has(TEXT("SwordGuardHit")) ? FName(TEXT("SwordGuardHit")) : FName(TEXT("GuardHit"));
         if (Has(Hit)) Play(Hit, .03f);
         Character->GetCharacterMovement()->Velocity = -Toward * 220.f;
+        Flinch(-Toward, 7.f, .06f, Side);
         if (FX)
         {
             const FVector At = GuardPoint();
@@ -1926,10 +1949,12 @@ void UBotwMoveSet::Deflected(AActor* By)
 {
     if (!Character || bDown || Mode != EBotwMoveMode::Ground) return;
     bCharging = false; AttackBuffer = 0.f; LungeTime = 0.f;
-    // Thrown back off the guard: the front hit reaction, a step back, the next blow from scratch.
+    // Thrown back off the guard: the front stagger, a step back, the next blow from scratch.
     const FVector Away = By ? FVector((Character->GetActorLocation() - By->GetActorLocation()).GetSafeNormal2D()) : -Character->GetActorForwardVector();
-    if (Has(TEXT("HitF"))) Play(TEXT("HitF"), .04f);
-    Character->GetCharacterMovement()->Velocity = Away * 300.f;
+    if (Has(TEXT("HitMF"))) Play(TEXT("HitMF"), .04f);
+    else if (Has(TEXT("HitF"))) Play(TEXT("HitF"), .04f);
+    Character->GetCharacterMovement()->Velocity = Away * 320.f;
+    Flinch(Away, 16.f, .08f, 0.f);
     Combo = 0;
 }
 
@@ -1981,17 +2006,56 @@ void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActo
     UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
     const FVector Local = Character->GetActorRotation().UnrotateVector(From - Character->GetActorLocation());
     const bool bFront = Local.X >= 0.f;
+    const bool bSide = FMath::Abs(Local.X) < FMath::Abs(Local.Y);
     const FVector Away = (Character->GetActorLocation() - From).GetSafeNormal2D();
+    // The way the blow came: front, back, or the side it struck (R: from his right).
+    const TCHAR* Dir = bSide ? (Local.Y > 0 ? TEXT("R") : TEXT("L")) : (bFront ? TEXT("F") : TEXT("B"));
+    HitStreak = SinceHit < GetParam(TEXT("StaggerStreakTime"), 1.2f) ? HitStreak + 1 : 1;
+    SinceHit = 0.f;
     if (bKnock && Has(TEXT("KnockF")) && Has(TEXT("KnockB")))
     {
-        bDown = true; DownTime = 0.f;
-        Play(bFront ? TEXT("KnockF") : TEXT("KnockB"), .05f);
+        bDown = true; DownTime = 0.f; HitStreak = 0;
+        const FName Knock(*(FString(TEXT("Knock")) + Dir));
+        Play(Has(Knock) ? Knock : FName(bFront ? TEXT("KnockF") : TEXT("KnockB")), .05f);
+        Flinch(Away, 12.f, .06f, Local.Y);
         Character->LaunchCharacter(Away * 380.f + FVector(0, 0, 280.f), true, true);
         return;
     }
-    const TCHAR* Clip = FMath::Abs(Local.X) >= FMath::Abs(Local.Y) ? (bFront ? TEXT("HitF") : TEXT("HitB")) : (Local.Y > 0 ? TEXT("HitR") : TEXT("HitL"));
+    // A strong blow, or the third hit in quick succession, staggers: BOTW's medium reaction, a bigger recoil, pushed
+    // further. Anything lighter flinches.
+    const bool bStagger = (Damage >= GetParam(TEXT("StaggerDamage"), 15.f) || HitStreak >= 3) && Has(TEXT("HitMF"));
+    const FName Clip(*(FString(bStagger ? TEXT("HitM") : TEXT("Hit")) + Dir));
     if (Has(Clip)) Play(Clip, .05f);
-    if (Movement->IsMovingOnGround()) Movement->Velocity = Away * 220.f;
+    if (bStagger) { ++StaggerCount; HitStreak = 0; }
+    Flinch(Away, bStagger ? 24.f : 15.f, bStagger ? .09f : .07f, Local.Y);
+    if (Movement->IsMovingOnGround()) Movement->Velocity = Away * (bStagger ? 380.f : 160.f);   // a flinch leaves him in reach of the next cut
+}
+
+void UBotwMoveSet::Flinch(const FVector& Away, float Degrees, float Peak, float Side)
+{
+    // Bent away from the blow (about the horizontal axis across it), twisted a little away from the struck side.
+    FlinchAxis = FVector::CrossProduct(FVector::UpVector, Away.GetSafeNormal2D());
+    if (FlinchAxis.IsNearlyZero()) FlinchAxis = -Character->GetActorRightVector();
+    FlinchAngle = Degrees * GetParam(TEXT("FlinchScale"), 1.f);
+    FlinchPeak = FMath::Max(Peak, .02f);
+    FlinchTwist = FMath::Sign(Side) * .45f;
+    FlinchTime = 0.f;
+}
+
+FQuat UBotwMoveSet::FlinchRotation(int32 Bone) const
+{
+    if (FlinchTime < 0.f || !Character || !Character->GetMesh()) return FQuat::Identity;
+    // An impulse response: up to its peak in FlinchPeak, then easing back (t/T e^(1 - t/T)); each bone further up the
+    // chain peaks a little later, so the head whips after the chest.
+    static const float Share[4] = { .3f, .35f, .15f, .2f };
+    static const float Lag[4] = { 1.f, 1.15f, 1.35f, 1.55f };
+    const float T = FlinchPeak * Lag[Bone & 3];
+    const float U = FlinchTime / T;
+    const float Amount = FlinchAngle * Share[Bone & 3] * U * FMath::Exp(1.f - U);
+    const FTransform& Mesh = Character->GetMesh()->GetComponentTransform();
+    const FVector Axis = Mesh.InverseTransformVectorNoScale(FlinchAxis).GetSafeNormal();
+    const FVector Up = Mesh.InverseTransformVectorNoScale(FVector::UpVector).GetSafeNormal();
+    return FQuat(Up, FMath::DegreesToRadians(Amount * FlinchTwist)) * FQuat(Axis, FMath::DegreesToRadians(Amount));
 }
 
 void UBotwMoveSet::AdvanceDown(float Dt)
@@ -1999,15 +2063,25 @@ void UBotwMoveSet::AdvanceDown(float Dt)
     DownTime += Dt;
     const FBotwMove* Now = Current();
     const FName Name = Now ? Now->Name : NAME_None;
-    if (Name == TEXT("KnockF") || Name == TEXT("KnockB"))
+    if (In(Name, { TEXT("KnockF"), TEXT("KnockB"), TEXT("KnockL"), TEXT("KnockR") }))
     {
-        // He lies where he fell (the clip holds its last frame), then gets up.
-        if (DownTime > GetParam(TEXT("KnockDownTime"), 1.4f) && Character->GetCharacterMovement()->IsMovingOnGround())
-            Play(Name == TEXT("KnockF") ? TEXT("KnockUpF") : TEXT("KnockUpB"), .15f);
+        // BOTW's knockdowns end mid-tumble, curled in the air: once on the ground he falls flat into the first frame of
+        // the get-up the way he fell, and lies there.
+        if (DownTime > .3f && Character->GetCharacterMovement()->IsMovingOnGround())
+        {
+            const FName Up(*(FString(TEXT("KnockUp")) + Name.ToString().RightChop(5)));
+            Play(Has(Up) ? Up : FName(TEXT("KnockUpF")), .22f, -1.f, .001f);
+        }
         return;
     }
-    if (Name == TEXT("KnockUpF") || Name == TEXT("KnockUpB"))
+    if (In(Name, { TEXT("KnockUpF"), TEXT("KnockUpB"), TEXT("KnockUpL"), TEXT("KnockUpR") }))
     {
+        // Lying (the get-up held on its first frame) until the down time is up, then he gets up.
+        if (Character->GetActionPlayRate() < .01f)
+        {
+            if (DownTime > GetParam(TEXT("KnockDownTime"), 1.4f)) Play(Name, .1f);
+            return;
+        }
         if (Over() || (Now->Idle >= 0.f && SourceTime() >= Now->Idle))
         {
             bDown = false; Invulnerable = 1.f;
@@ -2351,7 +2425,8 @@ void UBotwMoveSet::Reset()
     SetArmed(false);
     bLocked = bGuardHeld = bAttackHeld = bJumpHeld = bCharging = bDown = bDriving = bJumped = false;
     Target = nullptr; HopVelocity = DriveVelocity = FVector::ZeroVector;
-    JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = 0.f;
+    JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
+    FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
     if (FlurryTime > 0.f) { FlurryTime = 0.f; Character->CustomTimeDilation = 1.f; }
     ClimbShift = ClimbShiftTarget = 0.f; MeshOffsetLength = 0.f; MeshDriveLocal = DriveMesh = FVector::ZeroVector;
     FlipTime = -1.f; FlipAngle = FlipLift = FlipSettle = 0.f; bAirJumpUsed = false;
@@ -2387,6 +2462,10 @@ FString UBotwMoveSet::Describe() const
     O->SetNumberField(TEXT("health"), Character->GetSword() ? Character->GetSword()->GetHealth() : 0.f);
     O->SetNumberField(TEXT("hits"), HitCount);
     O->SetNumberField(TEXT("parries"), ParryCount);
+    O->SetNumberField(TEXT("staggers"), StaggerCount);
+    O->SetNumberField(TEXT("guard_breaks"), GuardBreakCount);
+    O->SetBoolField(TEXT("guard_broken"), GuardBroken > 0.f);
+    O->SetBoolField(TEXT("flinching"), FlinchTime >= 0.f);
     O->SetNumberField(TEXT("dodges"), DodgeCount);
     O->SetNumberField(TEXT("double_jumps"), DoubleJumpCount);
     O->SetBoolField(TEXT("air_jump_used"), bAirJumpUsed);

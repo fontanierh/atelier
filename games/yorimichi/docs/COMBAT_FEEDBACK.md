@@ -38,6 +38,7 @@ streaks for a painted look). `unreal.fx` runs `unreal/Scripts/import_combat_fx.p
 | Parry raise | | a soft `sword_swing` |
 | Player hit | hit-stop 70 ms; 12 red-orange sparks and streaks; a 405 lm flash; shake 0.6; a red wash on the HUD | `player_hurt` |
 | Player knocked down | as a hit with 120 ms hit-stop, shake 0.9 and a full wash; a thud and dust 0.55 s later | `player_hurt`, `body_fall` |
+| Guard broken (a heavy blow on the guard) | 26 gold sparks thrown back off the guard, a flash; shake 0.6 | `hit_heavy` |
 | Charge winding up and held | embers rising off the blade (26 to 96 a second as the charge fills) and a glow gathering at the tip | `sword_charge` |
 | Charge full | a flash, a ring, 14 sparks, a 360 lm flash | `charge_ready` (a wind bell) |
 | Roll, dash, fox dashes | a dust puff | `dash` |

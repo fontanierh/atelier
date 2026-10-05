@@ -1,5 +1,5 @@
 """Sword trainer review film (docs/SWORD_TRAINER.md): Kaede in Momiji Hamlet, her menu, a bout at each level, every
-opening and answer of hers, and the end of a bout.
+opening and answer of hers, taking hits both ways (flinch, stagger, knockdown, guard break), and the end of a bout.
 
     atelier play yorimichi --memory-gib 13 -- -nofox -nosound -liveport=8872 -RenderOffscreen -ForceRes -ResX=1280 -ResY=720
     atelier live py "TAKE='kaede1'" && atelier live py - < games/yorimichi/scenarios/trainer_film.py
@@ -215,6 +215,95 @@ def showcase():
     YL.trainer_end()
 
 
+def close_in(seconds, act, answer=''):
+    """The player closes to cutting range facing Kaede and does `act` (a generator of presses); her answer to every blow
+    in the meantime is `answer` ('take', 'guard', or '' for her own choice)."""
+    t, gen = 0., None
+    while t < seconds:
+        if answer:
+            YL.trainer_force('', answer)
+        p = L.player().get_actor_location(); k = trainer()['location']
+        d = math.hypot(k[0] - p.x, k[1] - p.y)
+        pc.set_control_rotation(unreal.Rotator(roll=0, pitch=-8, yaw=math.degrees(math.atan2(k[1] - p.y, k[0] - p.x))))
+        st['d'] = d
+        if gen is None and d > 190.:
+            live.drive(1., 0., 'run')
+        else:
+            live.drive(0.)
+            gen = gen or act()
+            next(gen, None)
+        side_camera()
+        t += (yield)
+
+
+def presses(*steps):
+    """Presses spaced in seconds: ('attack', .35) presses attack and waits; ('hold', 1.3) holds it that long."""
+    def act():
+        for what, after in steps:
+            if what == 'hold':
+                # Charging, walking in until she is in reach of the spin.
+                live.press('attack'); t = 0.
+                while t < after or st['d'] > 170.:
+                    if st['d'] > 150.:
+                        live.drive(1., 0., 'walk')
+                    t += unreal.GameplayStatics.get_world_delta_seconds(L.game_world()); yield
+                    if t > after + 3.:
+                        break
+                live.press('attack_release')
+            else:
+                live.press(what); live.press(what + '_release')
+                t = 0.
+                while t < after:
+                    t += unreal.GameplayStatics.get_world_delta_seconds(L.game_world()); yield
+        while True:
+            yield
+    return act
+
+
+def hits():
+    """Taking hits, both ways: the flinch and the stagger from each side, the knockdown, the guard break."""
+    home(); yield from wait(.5)
+    start(0)
+    yield from run_bot(3., 'passive')
+    combo = presses(('attack', .45), ('attack', .45), ('attack', .45), ('attack', 1.))
+    charge = presses(('hold', 1.3))
+    for act, answer, text in ((combo, 'take', 'Kaede takes your combo: she flinches, the third cut and the last stagger her'),
+                              (charge, 'take', 'A full charge knocks her down; she gets up the way she fell'),
+                              (charge, 'guard', 'A full charge on her guard breaks it')):
+        label(text)
+        yield from close_in(5.5, act, answer)
+        cut()
+        yield from run_bot(.6, 'passive')
+    YL.trainer_end()
+    # Kaede's blows on the player, at full weight, the player standing or guarding, then turned side-on.
+    home(); yield from wait(.5)
+    start(2)
+    yield from run_bot(3., 'passive')
+    for attack, guard, side, text in (('combo', False, 0., 'Her combo on you: flinches, then the stagger'),
+                                      ('combo', False, 90., 'From the side: the hits come from your left or right'),
+                                      ('charge', True, 0., 'Her full charge on your guard breaks it'),
+                                      ('charge', False, 0., 'Her full charge knocks you down')):
+        YL.trainer_force(attack, '')
+        if guard:
+            live.press('guard')
+        if side:
+            p = L.player().get_actor_location(); k = trainer()['location']
+            L.teleport_player(p, math.degrees(math.atan2(k[1] - p.y, k[0] - p.x)) + side)
+        label(text)
+        t = 0.
+        while t < 4.:
+            p = L.player().get_actor_location(); k = trainer()['location']
+            if not side:
+                pc.set_control_rotation(unreal.Rotator(roll=0, pitch=-8, yaw=math.degrees(math.atan2(k[1] - p.y, k[0] - p.x))))
+            live.drive(0.); side_camera()
+            t += (yield)
+        if guard:
+            live.press('guard_release')
+        cut()
+        yield from run_bot(1.5, 'passive')
+    YL.trainer_end()
+
+
 def finish_bout():
     """The end of a bout: Kaede at Master against a passive player, then her words and her bow."""
     home(); yield from wait(.5)
@@ -231,7 +320,7 @@ def finish_bout():
 def steps():
     st['home_yaw'] = trainer()['location'] and math.degrees(math.atan2(0, 1))
     sections = [('approach', approach), ('gentle', lambda: bout(0, 'Gentle', 14.)), ('steady', lambda: bout(1, 'Steady', 16.)),
-                ('master', lambda: bout(2, 'Master', 18., True, True)), ('showcase', showcase), ('end', finish_bout)]
+                ('master', lambda: bout(2, 'Master', 18., True, True)), ('showcase', showcase), ('hits', hits), ('end', finish_bout)]
     for name, fn in sections:
         if ONLY and name not in ONLY:
             continue
@@ -258,7 +347,9 @@ def run(dt):
         if st['sim'] % 2 == 0:
             L.screenshot(os.path.join(OUT, 'frame_%05d.jpg' % st['film']))
             k = trainer()
-            st['frames'].append([st['film'], st['label'], {key: k.get(key) for key in ('bout', 'level', 'intent', 'health', 'player_health', 'shield')}])
+            rec = {key: k.get(key) for key in ('bout', 'level', 'intent', 'health', 'player_health', 'shield', 'action')}
+            rec['player_action'] = player_moves().get('action')
+            st['frames'].append([st['film'], st['label'], rec])
             st['film'] += 1
         st['sim'] += 1
 
