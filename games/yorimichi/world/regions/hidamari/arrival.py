@@ -17,8 +17,8 @@ STEP_MAX = 2.2                         # the most a paddy's wall may stand above
 SHRINE = (356.1, 118.9)                # beside the road's bend, facing it
 BUS_STOP = (373.3, 136.7, 45)
 GATE_X = 399.; GATE_Y = 140.; GATE_HALF = 8.8
-PALETTE = {'ar_paddy_earth': (.36, .27, .12), 'ar_stubble_row': (.48, .37, .16), 'ar_paddy_water': (.10, .13, .14),
-           'ar_paddy_fallow_lawn': (.17, .22, .08), 'ar_bund_lawn': (.15, .19, .07), 'ar_terrace_stone': (.27, .26, .22),
+PALETTE = {'ar_paddy_earth': (.22, .15, .065), 'ar_stubble_row': (.40, .29, .10), 'ar_paddy_water': (.11, .16, .20),
+           'ar_paddy_fallow_lawn': (.17, .22, .08), 'ar_bund_lawn': (.15, .19, .07), 'ar_terrace_stone': (.21, .21, .17),
            'ar_bank_lawn': (.16, .20, .07), 'ar_hasa_timber': (.25, .17, .09), 'ar_straw_bundle': (.56, .44, .20),
            'ar_hokora_timber': (.30, .17, .08), 'ar_hokora_roof': (.08, .09, .10), 'ar_red_cloth': (.60, .07, .04),
            'ar_shrine_stone': (.32, .31, .28), 'ar_gate_timber': (.22, .12, .06), 'ar_gate_roof': (.07, .08, .09),
@@ -73,7 +73,7 @@ def cells():
                 hi, ok = _fits(a, b, c, c+L)
                 if ok: best = (L, hi); break
             if not best: c += 1.5; continue
-            L, hi = best; kind = r.choices(['stubble', 'water', 'fallow'], [.78, .13, .09])[0]
+            L, hi = best; kind = r.choices(['stubble', 'water', 'fallow'], [.62, .26, .12])[0]
             out.append((a+.05, b-.05, c+.05, c+L-.05, hi+.1, kind, kind == 'stubble' and L >= 6.5 and r.random() < .3))
             c += L
         a = b
@@ -96,7 +96,7 @@ def place(put, inst, height):
 
 def _bank(level, drop):
     """(key, lean) of a paddy's bank dropping drop below its rim: a grass slope, or a steep stone wall where tall."""
-    return ('ar_terrace_stone', .15*drop) if drop > 1.9 else ('ar_bank_lawn', .55*drop)
+    return ('ar_terrace_stone', .15*drop) if drop > 2.6 else ('ar_bank_lawn', .55*drop)
 
 
 def _facing(m, pts, out, key):
