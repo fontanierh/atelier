@@ -118,7 +118,7 @@ function renderFeed() {
       const list=node("div","delivery-list");
       for(const item of group.messages) {const agent=agents.get(item.recipient), picked=(agent?.cursor||0)>=item.id;const row=node("div","delivery-row");row.append(node("span","",item.recipient),node("span",picked?"picked":"queued",item.acknowledged?"Acknowledged":picked?"Sent to session":agent?.delivery_error?"Retrying":"Pending"));list.append(row);}
       details.append(receipt,list);details.open=deliveryOpen.has(group.key);details.addEventListener("toggle",()=>{details.open?deliveryOpen.add(group.key):deliveryOpen.delete(group.key);});footer.append(details);
-    } else {const agent=agents.get(m.recipient),picked=(agent?.cursor||0)>=m.id;footer.append(node("span","",m.recipient==="*"?"Shared with the board":m.acknowledged?"Acknowledged":picked?"Sent to session · awaiting acknowledgement":agent?.delivery_error?"Delivery retrying":"Pending delivery"));}
+    } else {const agent=agents.get(m.recipient),picked=(agent?.cursor||0)>=m.id;footer.append(node("span","",m.recipient==="*"?"Shared with the board":m.acknowledged?"Acknowledged":m.recipient===state.sender?"In your inbox":picked?"Sent to session · awaiting acknowledgement":agent?.delivery_error?"Delivery retrying":"Pending delivery"));}
     article.append(footer);$("feed").append(article);
   }
 }
