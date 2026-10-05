@@ -45,7 +45,7 @@ private:
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     TArray<FJapanPreference> Values;
     TMap<FString,FString> SavedValues;
-    TMap<FString,float> Defaults;
+    TMap<FString,float> DefaultValues;
     FString SettingsFile;
     TSharedPtr<SWidget> Menu;
     int32 AppliedPerformanceMode = -1;

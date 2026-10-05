@@ -180,8 +180,8 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         Values.Insert({TEXT("shield"),TEXT("Shield"),0.f,0.f,1.f},After);
         Values.Insert({TEXT("moveset"),TEXT("Move set"),0.f,0.f,2.f},After);
     }
-    Defaults.Reset();
-    for (const FJapanPreference& V : Values) Defaults.Add(V.Key,V.Value);
+    DefaultValues.Reset();
+    for (const FJapanPreference& V : Values) DefaultValues.Add(V.Key,V.Value);
     SettingsFile=FilePath();
     UE_LOG(LogTemp,Display,TEXT("PREFERENCES file=%s"),*SettingsFile);
     SavedValues=ReadSaved();
@@ -522,7 +522,7 @@ void UJapanPreferences::ResetLight()
 {
     for (auto& V : Values)
         for (const TCHAR* Key : LightKeys)
-            if (V.Key == Key) V.Value = Defaults.FindRef(V.Key);
+            if (V.Key == Key) V.Value = DefaultValues.FindRef(V.Key);
     Apply(); Save();
 }
 void UJapanPreferences::ToggleMenu()
