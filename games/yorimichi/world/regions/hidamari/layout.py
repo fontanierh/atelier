@@ -227,7 +227,7 @@ def terrain_axes():
             for d in [8.,8.2,8.4]:ys.add(cy+side*d)
     for _,_,y,yaw in house_sites():
         if yaw==180:
-            for d in (-1.7,1.7):ys.add(y+HOUSE[1]/2+HOUSE_ALLEY/2+d)   # the footpath between the rows
+            for d in (-3.5,-3.1,3.1,3.5):ys.add(y+HOUSE[1]/2+HOUSE_ALLEY/2+d)   # the lane between the rows: walls, ditches
     return np.unique(np.round(sorted(xs),6)),np.unique(np.round(sorted(ys),6))
 
 def pond(x,y):return ((x-1030)/46)**2+((y-284)/32)**2<1
