@@ -53,6 +53,13 @@ def database():
                 error TEXT
             );
         ''')
+        columns = {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}
+        if 'supervised' not in columns:
+            try:
+                db.execute('ALTER TABLE subscribers ADD COLUMN supervised TEXT')
+            except sqlite3.OperationalError:
+                if 'supervised' not in {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}:
+                    raise
         yield db
         db.commit()
     finally:
@@ -79,6 +86,10 @@ def post(sender, body, recipient='*', topic='info', reply_to=None, dedup=None):
 
 
 def broadcast(sender, body, request_id, topic='request'):
+    return send_web(sender, body, request_id, topic)
+
+
+def send_web(sender, body, request_id, topic='request', recipient='*'):
     """Atomically address every non-stopped subscriber, including addressed-only listeners.
 
     A retry of the same request returns the original recipient snapshot. The dedup
@@ -86,6 +97,10 @@ def broadcast(sender, body, request_id, topic='request'):
     changing existing delivery cursors or the ordinary '*' broadcast semantics.
     """
     agent_name(sender)
+    if recipient != '*':
+        if not isinstance(recipient, str):
+            raise ValueError('choose a registered recipient')
+        agent_name(recipient)
     if not isinstance(body, str) or not body.strip() or len(body) > 8000 or topic not in TOPICS:
         raise ValueError('use a known topic and a nonempty message of at most 8000 characters')
     try:
@@ -93,16 +108,24 @@ def broadcast(sender, body, request_id, topic='request'):
     except (ValueError, AttributeError, TypeError):
         raise ValueError('broadcast request_id must be a UUID') from None
     prefix = f'web-broadcast:{key}:'
+    direct = f'web-direct:{key}:'
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
         existing = [dict(row) for row in db.execute(
-            'SELECT * FROM messages WHERE dedup LIKE ? ORDER BY id', (prefix+'%',))]
+            'SELECT * FROM messages WHERE dedup LIKE ? OR dedup LIKE ? ORDER BY id', (prefix+'%', direct+'%'))]
         if existing:
-            if any(row['sender'] != sender or row['body'] != body or row['topic'] != topic for row in existing):
+            if (any(row['sender'] != sender or row['body'] != body or row['topic'] != topic for row in existing)
+                    or (recipient == '*' and not existing[0]['dedup'].startswith(prefix))
+                    or (recipient != '*' and (len(existing) != 1 or existing[0]['dedup'] != direct+recipient))):
                 raise ValueError('this broadcast request_id already belongs to a different message')
             return existing
         agents = [row['agent'] for row in db.execute(
             'SELECT agent FROM subscribers WHERE stop=0 AND agent!=? ORDER BY agent', (sender,))]
+        if recipient != '*':
+            if recipient not in agents:
+                raise ValueError('This agent is not registered or has been retired.')
+            agents = [recipient]
+            prefix = direct
         if not agents:
             raise ValueError('No agents are currently registered for broadcasts.')
         created = time.time()
@@ -272,7 +295,7 @@ def subscriber(agent, checkout):
                 db.execute('UPDATE subscribers SET pid=NULL WHERE agent=?', (agent,))
 
 
-def subscribe(agent, command, interval=5, stall_after=900, timeout=None, addressed_only=False, checkout=None):
+def subscribe(agent, command, interval=5, stall_after=900, timeout=None, addressed_only=False, checkout=None, managed=False):
     """Continuous delivery, or exit after one printed batch when timeout is provided."""
     checkout = Path(checkout or paths.REPO).resolve()
     deadline = None if timeout is None else time.monotonic()+timeout
@@ -280,9 +303,9 @@ def subscribe(agent, command, interval=5, stall_after=900, timeout=None, address
         while True:
             with database() as db:
                 row = db.execute('SELECT stop FROM subscribers WHERE agent=?', (agent,)).fetchone()
-                if row['stop']:
+                if row['stop'] and not managed:
                     return 0
-                db.execute('UPDATE subscribers SET heartbeat=? WHERE agent=?', (time.time(), agent))
+                db.execute('UPDATE subscribers SET heartbeat=?,stop=0 WHERE agent=?', (time.time(), agent))
             delay = interval
             try:
                 render_board_changes()
@@ -345,6 +368,12 @@ def configure(sub):
     p.add_argument('--agent', required=True); p.add_argument('--background', action='store_true')
     p.add_argument('--notify', help='JSON argv; a separate {message} argument receives the notification')
     watch_options(p)
+    p.add_argument('--managed', action='store_true', help='service-owned listener; use board retire to stop it')
+    p = actions.add_parser('supervise', help='install a persistent macOS login/crash supervised listener')
+    p.add_argument('--agent', required=True); p.add_argument('--notify', required=True)
+    p.add_argument('--checkout', default=str(paths.REPO)); p.add_argument('--addressed-only', action='store_true')
+    p = actions.add_parser('retire', help='retire a persistent listener without deleting history')
+    p.add_argument('--agent', required=True)
     p = actions.add_parser('wait', help='print one new batch and exit; re-arm as a background task')
     p.add_argument('--agent', required=True)
     p.add_argument('--timeout', type=float, default=3600, help='exit 3 without delivery on timeout')
@@ -361,6 +390,13 @@ def configure(sub):
     p.add_argument('--thread', required=True, help='existing Codex thread UUID')
     p.add_argument('--codex', default='codex', help='Codex executable used to locate the running daemon')
     p.add_argument('--socket', type=Path, help='explicit existing app-server Unix socket')
+    p.add_argument('message')
+    p = actions.add_parser('remote-watch', help='bounded recovery for explicitly owned macOS Claude remote services')
+    p.add_argument('--config', type=Path, required=True, help='private machine service configuration JSON')
+    p = actions.add_parser('notify-claude', help='deliver to an existing native Claude inbox without a second writer')
+    p.add_argument('--session-dir', type=Path, required=True, help='working directory of the existing remote session')
+    p.add_argument('--permission-class', choices=('prompting', 'bypass'), default='prompting',
+                   help='actual permission class of the authorized sender; never escalate to evade an inbound hold')
     p.add_argument('message')
 
 
@@ -384,6 +420,11 @@ def main(args):
             for row in messages(args.after, args.agent, args.limit):
                 print(json.dumps(row))
         elif args.action in ('subscribe', 'wait'):
+            if not getattr(args, 'managed', False):
+                with database() as db:
+                    row = db.execute('SELECT supervised FROM subscribers WHERE agent=?', (args.agent,)).fetchone()
+                    if row and row['supervised']:
+                        raise ValueError('This owner already has a persistent listener; do not re-arm a fallback wait')
             if not 1 <= args.interval <= 60 or not math.isfinite(args.stall_after) or args.stall_after < 60:
                 raise ValueError('--interval must be 1–60 seconds; --stall-after must be at least 60')
             if args.action == 'wait':
@@ -392,12 +433,23 @@ def main(args):
                 return subscribe(args.agent, None, args.interval, args.stall_after,
                                  timeout=args.timeout, addressed_only=args.addressed_only, checkout=args.checkout)
             command = notify_command(args.notify) if args.notify else None
+            if args.managed and command is None:
+                raise ValueError('managed listeners require an existing-session notification transport')
+            if args.managed and args.background:
+                raise ValueError('managed listeners are started by the service manager, without --background')
             if args.background:
                 return background(args)
             return subscribe(args.agent, command, args.interval, args.stall_after,
-                             addressed_only=args.addressed_only, checkout=args.checkout)
+                             addressed_only=args.addressed_only, checkout=args.checkout, managed=args.managed)
+        elif args.action in ('supervise', 'retire'):
+            from . import board_service
+            return board_service.install(args) if args.action == 'supervise' else board_service.retire(args.agent)
         elif args.action == 'unsubscribe':
             with database() as db:
+                row = db.execute('SELECT supervised FROM subscribers WHERE agent=?', (args.agent,)).fetchone()
+                if row and row['supervised']:
+                    print('Persistent listener remains armed; use board retire only when permanently retiring this session')
+                    return 0
                 db.execute('UPDATE subscribers SET stop=1 WHERE agent=?', (args.agent,))
             print('stop requested; subscriber exits after its current bounded notification/poll')
         elif args.action == 'status':
@@ -417,6 +469,18 @@ def main(args):
             except (OSError, board_codex.TransportError) as error:
                 print(str(error), file=sys.stderr)
                 return 1
+        elif args.action == 'notify-claude':
+            from . import board_claude
+            try:
+                print(board_claude.notify(args.session_dir, args.message, args.permission_class))
+            except (OSError, ValueError, subprocess.SubprocessError, board_claude.TransportError) as error:
+                # Native credentials and message bodies never enter transport logs.
+                print(str(error) if isinstance(error, board_claude.TransportError)
+                      else 'Claude inbox unavailable; delivery remains pending', file=sys.stderr)
+                return 1
+        elif args.action == 'remote-watch':
+            from . import board_remote
+            return board_remote.main(args.config)
     except (ValueError, sqlite3.Error) as error:
         print(str(error), file=sys.stderr)
         return 1

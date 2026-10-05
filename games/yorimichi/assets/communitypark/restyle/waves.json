@@ -1,0 +1,31 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "A flat, straight-on mural for the outside wall of a concrete skate park in a stylised game set on a Japanese island in autumn, painted with a roller and stencils on concrete and a little faded and scuffed by skateboards: bold flat shapes, a limited palette of faded indigo, vermilion, mustard yellow and warm cream, soft painterly edges, faint concrete texture showing through the paint. Filling the whole frame edge to edge, with no frame, no perspective, no shadows, no people, no lettering or text of any kind. The mural: deep faded indigo ground covered edge to edge with large white overlapping seigaiha wave arcs in neat rows.",
+  "references": {},
+  "purpose": "Community park restyle texture",
+  "status": "done",
+  "started_at": "2026-10-04T22:02:27.191209+00:00",
+  "usage": {
+    "input_tokens": 144,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 144
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1516
+  },
+  "png_sha256": "363fff9f3bc400fe4e8ffc059971ef2b32865905cfaccc26bc5b757503aaa49f",
+  "output": {
+    "file": "waves.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-04T22:02:51.657798+00:00"
+}

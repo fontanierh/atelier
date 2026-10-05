@@ -109,7 +109,7 @@ def request(server, path='/', payload=None, headers=None):
 
 def test_http_static_and_read_only_api(http_server):
     status, body, headers = request(http_server)
-    assert status == 200 and b'Broadcast to everyone' in body
+    assert status == 200 and b'Send a message' in body and b'id="recipient"' in body
     assert "script-src 'self'" in headers['Content-Security-Policy']
     status, body, _ = request(http_server, '/api/state')
     assert status == 200 and json.loads(body)['csrf'] == http_server.csrf
@@ -141,3 +141,43 @@ def test_no_recipients_is_visible_instead_of_claiming_delivery(cache):
         db.execute('UPDATE subscribers SET stop=1')
     with pytest.raises(ValueError, match='No agents'):
         board.broadcast('operator', 'announcement', str(uuid.uuid4()))
+
+
+def test_direct_send_is_private_routing_atomic_and_retry_safe(http_server):
+    payload = {'body': '**Please review**\n\n- Check the new clips.',
+               'recipient': 'two', 'request_id': str(uuid.uuid4())}
+    status, response, _ = request(http_server, '/api/send', payload)
+    assert status == 200 and json.loads(response)['recipients'] == ['two']
+    assert [row['recipient'] for row in board.messages()] == ['two']
+    assert request(http_server, '/api/send', payload)[1] == response
+    for target in ('one', '*', 'paused', 'unknown', None, ['one']):
+        assert request(http_server, '/api/send', dict(payload, recipient=target))[0] == 400
+    assert request(http_server, '/api/broadcast', payload)[0] == 400
+    assert len(board.messages()) == 1
+    assert request(http_server, '/api/send', dict(payload, request_id=str(uuid.uuid4())),
+                   {'X-Board-CSRF': 'wrong'})[0] == 403
+
+
+def test_preview_and_history_share_safe_markdown_without_posts_or_cursor_changes(http_server):
+    body = ('## Progress\n\n**Done** with `code`.\n\n- One\n- Two\n\n'
+            '[Evidence](https://example.test/review)\n\n'
+            '<script>window.pwned=true</script>\n<img src=x onerror=alert(1)>\n'
+            '[bad](javascript:alert(1))\n![remote](https://example.test/pixel.png)')
+    status, response, _ = request(http_server, '/api/preview', {'body': body})
+    rendered = json.loads(response)['html']
+    assert status == 200 and '<h2>Progress</h2>' in rendered and '<strong>Done</strong>' in rendered
+    assert '<ul>' in rendered and '<code>code</code>' in rendered and 'noopener noreferrer' in rendered
+    assert '<script' not in rendered and '<img' not in rendered and 'href="javascript:' not in rendered
+    assert board.messages() == []
+    number = board.post('one', body, recipient='two')
+    state = board_web.snapshot({})
+    assert state['messages'][0]['body_html'] == rendered
+    assert not state['messages'][0]['acknowledged']
+    # A transport cursor and an unrelated sender's reply are not an acknowledgement.
+    with board.database() as db:
+        db.execute("UPDATE subscribers SET cursor=? WHERE agent='two'", (number,))
+    board.post('one', 'wrong owner ack', recipient='operator', topic='ack', reply_to=number)
+    assert not next(m for m in board_web.snapshot({})['messages'] if m['id'] == number)['acknowledged']
+    board.post('two', '**Received** — review in two minutes.', recipient='one', topic='ack', reply_to=number)
+    assert next(m for m in board_web.snapshot({})['messages'] if m['id'] == number)['acknowledged']
+    assert request(http_server, '/api/preview', {'body': body}, {'Origin': 'https://attacker.test'})[0] == 403

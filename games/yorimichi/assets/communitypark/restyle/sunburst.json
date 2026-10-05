@@ -1,0 +1,31 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "A flat, straight-on mural for the outside wall of a concrete skate park in a stylised game set on a Japanese island in autumn, painted with a roller and stencils on concrete and a little faded and scuffed by skateboards: bold flat shapes, a limited palette of faded indigo, vermilion, mustard yellow and warm cream, soft painterly edges, faint concrete texture showing through the paint. Filling the whole frame edge to edge, with no frame, no perspective, no shadows, no people, no lettering or text of any kind. The mural: a vermilion ground with a large stylised rising sun in warm cream at the lower left, its broad rays sweeping across the whole wall, a thin indigo band along the bottom.",
+  "references": {},
+  "purpose": "Community park restyle texture",
+  "status": "done",
+  "started_at": "2026-10-04T22:02:51.658191+00:00",
+  "usage": {
+    "input_tokens": 159,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 159
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1531
+  },
+  "png_sha256": "7995160dd5a3644418d3f0221427d1bd7c01e088cdca3c2f9962b50b1b52e1ca",
+  "output": {
+    "file": "sunburst.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-04T22:03:18.917467+00:00"
+}
