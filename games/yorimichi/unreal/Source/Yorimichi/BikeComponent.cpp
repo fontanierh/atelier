@@ -28,7 +28,9 @@ namespace
  constexpr float CrashRoom=185.f,CrashRecoil=.3f;   // ClipBlend: the anim instance's
 }
 
-UBikeComponent::UBikeComponent(){PrimaryComponentTick.bCanEverTick=true;}
+// Before physics: the movement component and the mesh wait on it (Initialize), and a later group would carry them, and
+// the skate ride and its physical rider after them, past the physics step: every body a frame behind its board.
+UBikeComponent::UBikeComponent(){PrimaryComponentTick.bCanEverTick=true;PrimaryComponentTick.TickGroup=TG_PrePhysics;}
 
 bool UBikeComponent::LoadData()
 {
