@@ -43,8 +43,9 @@ GROUPS = [
     ('kei_truck', 520.0, -108.0, -90), ('garbage_station', 690.0, -105.0, 180), ('yatai', 705.0, -104.0, 180),
     ('drink_crates', 628.0, -104.5, 180),
     # a food cart closed for the day by the station square, a taxi rank, the bus at its stop and a covered bicycle stand
-    ('yatai', 1180.0, 245.0, 0), ('taxi', 1200.0, 252.0, 90), ('taxi', 1206.0, 252.0, 90),
-    ('town_bus', 1160.0, 232.4, 90), ('bicycle_shelter', 1148.0, 260.0, 90),
+    # (the square runs from x 1155.5 to 1207 between the shop lots)
+    ('yatai', 1180.0, 245.0, 0), ('taxi', 1194.0, 252.0, 90), ('taxi', 1200.0, 252.0, 90),
+    ('town_bus', 1160.0, 232.4, 90), ('bicycle_shelter', 1158.5, 268.0, 90),
 ]
 
 

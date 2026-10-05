@@ -124,7 +124,10 @@ if (OUT/'props'/'props.json').exists() and (not only or any(n.startswith('HD_P_'
     props=json.loads((OUT/'props'/'props.json').read_text())
     for key,mi in city_material.prop_materials(par,report.setdefault('HD_P',{})).items():
         if only and key not in only and 'HD_P_' not in only:continue
-        mesh=import_mesh(OUT/'props'/f'{key}.fbx','/Game/Japan/Assets',key)
+        # Fresh slots: a conserved placeholder slot would keep slot 0 while the prop's faces draw from a second,
+        # unassigned slot (the engine's grey grid material).
+        mesh=import_mesh(OUT/'props'/f'{key}.fbx','/Game/Japan/Assets',key,fresh_slots=True)
+        assert len(mesh.static_materials)==1,(key,'material slots',len(mesh.static_materials))
         mesh.set_material(0,mi)
         # Solid props have a box; the others (plants, bicycles) are walked through.
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_DEFAULT if props[key]['boxes'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
