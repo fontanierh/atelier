@@ -11,6 +11,7 @@
 #include "BotwMoveSet.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
+#include "DynamicRHI.h"
 #include "Misc/FileHelper.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
@@ -76,6 +77,7 @@ bool UYorimichiLive::SkateLaunch(FVector Velocity) { USkateComponent* S = Player
 static bool GFilmHud = false;
 void UYorimichiLive::FilmHud(bool bOn) { GFilmHud = bOn; }
 bool UYorimichiLive::IsFilmHud() { return GFilmHud; }
+float UYorimichiLive::GpuFrameMs() { return FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)); }
 int32 UYorimichiLive::AudioLog(const FString& Command, const FString& Path)
 {
     if (Command == TEXT("start")) { FAtelierAudioLog::Events.Reset(); FAtelierAudioLog::Frame = 0; FAtelierAudioLog::bRecording = true; return 0; }

@@ -62,7 +62,14 @@ def fetch(game):
     return 0
 
 
-def play(game, profile, settings, extra):
+GAME_GIB = 10.        # the memory guard's limit for a game
+GAME_MAX_GIB = 14.    # the most a session may ask for (--memory-gib): a 32 GiB machine keeps room for a small-slot job
+
+
+def play(game, profile, settings, extra, memory_gib=None):
+    limit = GAME_GIB if memory_gib is None else memory_gib
+    if not GAME_GIB <= limit <= GAME_MAX_GIB:
+        raise SystemExit(f'--memory-gib must be {GAME_GIB:g} to {GAME_MAX_GIB:g}')
     ctx = Context(game)
     data = manifest.game(game)
     profiles = data.get('play', {})
@@ -83,8 +90,10 @@ def play(game, profile, settings, extra):
         command.append(f'-set={settings}')
     from .safety import guarded
     print(f'playing {game} ({profile}); log {folder / "game.log"}')
+    if limit != GAME_GIB:
+        print(f'memory guard limit {limit:g} GiB for this session')
     return guarded.run(command, folder, timeout=float(spec.get('timeout', 0)), purpose=f'atelier play {game}', env=ctx.env(),
-                       kind='game')
+                       kind='game', limit_gib=limit)
 
 
 PERSONAL = [
@@ -149,6 +158,8 @@ def make_parser():
     p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
     p.add_argument('--set', default='', help='settings overrides, key=value;key=value')
+    p.add_argument('--memory-gib', type=float, default=None,
+                   help='memory guard limit for this session, 10 (the default) to 14 GiB: say so on the render board')
     p.add_argument('extra', nargs='*', help='Unreal arguments, after --')
     p = sub.add_parser('stream'); p.add_argument('game'); p.add_argument('action', choices=['start', 'stop', 'status', 'build-web'])
     p.add_argument('--local', action='store_true', help='this machine only: no Tailscale Serve')
@@ -196,7 +207,7 @@ def main(argv=None):
             return 0
         return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch)
     if args.command == 'play':
-        return play(args.game, args.profile, args.set, args.extra)
+        return play(args.game, args.profile, args.set, args.extra, args.memory_gib)
     if args.command == 'stream':
         from . import stream
         return stream.main(args.game, args.action, local=args.local, install=args.install)

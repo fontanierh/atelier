@@ -62,6 +62,7 @@ void FYorimichiPhone::SendSettings(const FString& Player)
         auto Row = Object();
         Row->SetStringField(TEXT("key"), V.Key); Row->SetStringField(TEXT("label"), V.Label);
         Row->SetNumberField(TEXT("value"), V.Value); Row->SetNumberField(TEXT("min"), V.Minimum); Row->SetNumberField(TEXT("max"), V.Maximum);
+        if (V.Step > 0.f) Row->SetNumberField(TEXT("step"), V.Step);
         Rows.Add(MakeShared<FJsonValueObject>(Row));
     }
     auto Json = Object(); Json->SetArrayField(TEXT("values"), Rows);

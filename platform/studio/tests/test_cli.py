@@ -25,3 +25,15 @@ def test_play_passes_unreal_arguments_after_double_dash(words, profile, settings
 def test_play_still_rejects_dash_arguments_without_double_dash():
     with pytest.raises(SystemExit):
         parse_args(['play', 'sandbox', '-RenderOffscreen'])
+
+
+def test_play_memory_limit_is_opt_in():
+    assert parse_args(['play', 'sandbox', *UNREAL]).memory_gib is None
+    assert parse_args(['play', 'sandbox', '--memory-gib', '12', *UNREAL]).memory_gib == 12.
+
+
+@pytest.mark.parametrize('gib', [8., 16.])
+def test_play_refuses_a_memory_limit_out_of_range(gib):
+    from atelier.cli import play
+    with pytest.raises(SystemExit, match='--memory-gib'):
+        play('sandbox', 'play', '', [], gib)

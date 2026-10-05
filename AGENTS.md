@@ -124,7 +124,8 @@ uv run pytest                            # studio and game Python tests
 ## Heavy jobs
 
 - Heavy jobs (Unreal, Blender renders) run under the render lock and memory guard (`atelier.safety`). `atelier play`
-  and `atelier build` do this for you.
+  and `atelier build` do this for you. A game's guard stops it above 10 GiB; `atelier play --memory-gib N` (10 to 14)
+  raises that for one session that needs it (Quality graphics at 1080p, for example). Say so in your Holding entry.
 - The render lock has one big slot. A small slot sits beside it when `~/.cache/atelier/render-slots.json` says
   `{"slots": 2}` (`ATELIER_RENDER_SLOTS` overrides the file; no file means one slot). The small slot takes a job
   expected to peak at 3 GiB or less, never a game or a compile, when at least 10 GiB is free and the big slot's job is
