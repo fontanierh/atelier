@@ -191,15 +191,18 @@ private:
     bool bShield = false, bLegacy = false;
     float FreeArm = 0.f, TwoHandGrip = 0.f;
     FVector GripOffset = FVector::ZeroVector;
-    // The paraglider's grips: the bar's two (its own frame) and the hands' two (each in its hand bone's frame); gliding,
-    // the bar is fitted to both hands every frame, so it banks with them and neither lets go.
+    // The paraglider's grips, right then left, in its own frame: each a stretch of handle a hand closes round (Cairo's
+    // record: the mesh's two handle tubes), or the one point Link's own neutral glide holds it at.
     FTransform GliderHeld = FTransform::Identity;
-    FVector BarGrip[2] = { FVector::ZeroVector, FVector::ZeroVector }, HandGrip[2] = { FVector::ZeroVector, FVector::ZeroVector };
-    FName GripBone[2];
+    FVector BarGrip[2] = { FVector::ZeroVector, FVector::ZeroVector };   // each grip's middle
+    FVector GripEnds[2][2] = { { FVector::ZeroVector, FVector::ZeroVector }, { FVector::ZeroVector, FVector::ZeroVector } };
+    FName GripBone[2];   // the bones the hands grip at (Link's weapon bones), else the hands'
+    /** A hand's grip point in the mesh's component space: its grip bone, else its palm (wrist toward the knuckles). */
+    FVector PalmOf(int32 Side) const;
     FName GliderSocket;   // the hand bone it is held at
     bool bBarKnown = false;
-    // Once the bar has been fitted to the neutral glide, the glider keeps that place on the body (banking about its bar as
-    // he turns) and the hands are put on its grips (IK), so the turning clips' arms never carry it, or a hand, into his head.
+    // Once fitted to the neutral glide, the glider keeps that place on the body (banking about its grips as he turns) and
+    // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.
     FTransform GliderOnBody = FTransform::Identity;   // relative to the mesh component
     FVector GlideHandTarget[2] = { FVector::ZeroVector, FVector::ZeroVector };   // the wrists' targets, component space
     float GlideBank = 0.f, GlideHands = 0.f;

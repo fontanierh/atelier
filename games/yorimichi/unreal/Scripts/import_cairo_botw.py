@@ -33,6 +33,10 @@ ROSTER = next(c for c in json.loads((CONTENT / 'Data' / 'botw' / 'roster.json').
 DATA = CONTENT / 'Data' / 'cairo'
 DEST = '/Game/CairoBotw'
 E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools(); P = U.AnimPoseExtensions
+# The paraglider's two handle tubes (right, left) in its own frame (cm): the straight stretch at the bottom of each of
+# its U-shaped handles, measured on the mesh's vertices. The game fits the glider so they fall in Cairo's hands and puts
+# each hand on its own.
+GLIDER_GRIPS = [[[-24.8, -14.2, 1.2], [-30.5, 2.8, 1.1]], [[25.4, -14.2, 1.6], [30.1, 2.9, 1.0]]]
 BODY = CONFIG['body']                      # Cairo's hips over Link's, in BOTW units
 SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his mesh is scaled down)
 # Carried pieces fitted to Cairo's mesh. Moved from Link's chest, the shield sank 4 cm into his deeper torso standing,
@@ -185,9 +189,7 @@ def record_of(t):
 def glider(link, cairo, item, scale):
     """The paraglider's hold, from Link and Cairo posed at the glide. Link holds it at Weapon_R (`item['hand']`), its bar
     across both hands: Cairo's grips are Link's weapon bones moved from each palm to his, the bar's middle goes between
-    them and the canopy keeps its angle to the body. Returns the hold and each grip's miss (cm) once placed, the bar's two
-    grips in the glider's own frame (Link's weapon bones: the glider sits at Weapon_R, so its left grip is Weapon_L there)
-    and Cairo's two grips in his hand bones' frames: the game fits the bar to both hands with them as the hands move."""
+    them and the canopy keeps its angle to the body. Returns the hold and each grip's miss (cm) once placed."""
     Bs, Bt = link.body(), cairo.body()
     grips = []
     for side in 'RL':
@@ -203,10 +205,7 @@ def glider(link, cairo, item, scale):
     p = add(middle_t, to_cairo(sub(link.at(item['hand']), middle_s)))
     held = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('hand_R'))
     miss = [round(math.sqrt(dot(d, d)), 1) for d in (sub(add(middle_t, to_cairo(sub(s, middle_s))), t) for s, t in grips)]
-    local = lambda T, v: [round(c, 3) for c in (lambda q: (q.x, q.y, q.z))(U.MathLibrary.inverse_transform_location(T, U.Vector(*v)))]
-    bar = [[0., 0., 0.], local(link.transform(item['hand']), link.at('Weapon_L'))]
-    hands = [[f'hand_{side}', local(cairo.transform(f'hand_{side}'), grip)] for side, (_, grip) in zip('RL', grips)]
-    return held, miss, bar, hands
+    return held, miss
 
 
 def equipment(link, cairo, glide):
@@ -232,7 +231,8 @@ def equipment(link, cairo, glide):
             entry['hand'], entry['held'] = role, record_of(held)
             checks[slot] = {'hand_cm': [round(ls, 2), round(lt, 2)]}
             if 'clip' in item:
-                held, miss, entry['bar'], entry['grips'] = glider(*glide, item, scale)
+                held, miss = glider(*glide, item, scale)
+                entry['grips'] = GLIDER_GRIPS
                 entry['held'], checks[slot]['grip_miss_cm'] = record_of(held), miss
         if item.get('back') and item.get('carry'):
             carry = item['carry']
