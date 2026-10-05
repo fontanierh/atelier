@@ -19,6 +19,7 @@
 #include "AnimNodes/AnimNode_TwoWayBlend.h"
 #include "AnimNodes/AnimNode_LayeredBoneBlend.h"
 #include "BoneControllers/AnimNode_TwoBoneIK.h"
+#include "BoneControllers/AnimNode_ModifyBone.h"
 #include "WandererSword.h"
 #include "BotwMoveSet.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -118,12 +119,17 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_BlendSpacePlayer_Standalone FreeArm;
     FAnimNode_TwoWayBlend LeftHand;
     FAnimNode_LayeredBoneBlend CarryLayer;
+    // Gliding on a fitted body, the hands' fingers closed into the sword guard's fists round the paraglider's handles.
+    FAnimNode_SequencePlayer_Standalone Fist;
+    FAnimNode_LayeredBoneBlend FistLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
     // A two-handed hold on a sword shorter than the clip's own (Cairo's bokken clips on Link's sword): the off hand is put
     // on the handle beside the sword hand, its elbow bending as the clip has it.
     FAnimNode_TwoBoneIK GripIK;
-    // Gliding, each wrist on its grip on the paraglider's bar (UBotwMoveSet::GlideHandLocation), elbows as the clip bends them.
+    // Gliding, each wrist on its grip on the paraglider's handle (UBotwMoveSet::GlideHandLocation), each elbow toward its
+    // place on the neutral glide; then each fist turned round its handle (UBotwMoveSet::GlideHandRotation).
     FAnimNode_TwoBoneIK GlideIK[2];
+    FAnimNode_ModifyBone GlideTurn[2];
     FGroundContactNode Feet;
     FSailboatStanceNode Stance;
     FAnimNode_ConvertComponentToLocalSpace ToLocal;
@@ -151,7 +157,15 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         CarryLayer.LayerSetup[1].BranchFilters.Add(FBranchFilter{TEXT("clavicle_L"), 0});
         CarryLayer.BlendWeights.SetNum(2); CarryLayer.BlendWeights[0] = CarryLayer.BlendWeights[1] = 0.f;
         CarryLayer.bMeshSpaceRotationBlend = false; CarryLayer.bBlendRootMotionBasedOnRootBone = false;
-        ToComponent.LocalPose.SetLinkNode(&CarryLayer);
+        FistLayer.BasePose.SetLinkNode(&CarryLayer);
+        FistLayer.BlendPoses.SetNum(1); FistLayer.BlendPoses[0].SetLinkNode(&Fist);
+        FistLayer.LayerSetup.SetNum(1);
+        for (const TCHAR* Side : { TEXT("_R"), TEXT("_L") })
+            for (const TCHAR* Digit : { TEXT("thumb"), TEXT("finger_0"), TEXT("finger_1"), TEXT("finger_2"), TEXT("finger_3") })
+                FistLayer.LayerSetup[0].BranchFilters.Add(FBranchFilter{FName(*(FString(Digit) + Side)), 0});
+        FistLayer.BlendWeights.SetNum(1); FistLayer.BlendWeights[0] = 0.f;
+        FistLayer.bMeshSpaceRotationBlend = false; FistLayer.bBlendRootMotionBasedOnRootBone = false;
+        ToComponent.LocalPose.SetLinkNode(&FistLayer);
         GripIK.ComponentPose.SetLinkNode(&ToComponent);
         GripIK.EffectorLocationSpace = BCS_BoneSpace; GripIK.JointTargetLocationSpace = BCS_BoneSpace;
         GripIK.EffectorLocation = GripIK.JointTargetLocation = FVector::ZeroVector;
@@ -161,12 +175,20 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         GlideIK[1].ComponentPose.SetLinkNode(&GlideIK[0]);
         for (FAnimNode_TwoBoneIK& IK : GlideIK)
         {
-            IK.EffectorLocationSpace = BCS_ComponentSpace; IK.JointTargetLocationSpace = BCS_BoneSpace;
+            IK.EffectorLocationSpace = BCS_ComponentSpace; IK.JointTargetLocationSpace = BCS_ComponentSpace;
             IK.EffectorLocation = IK.JointTargetLocation = FVector::ZeroVector;
             IK.bAllowStretching = false; IK.bTakeRotationFromEffectorSpace = false; IK.bMaintainEffectorRelRot = false;
             IK.Alpha = 0.f;
         }
-        Feet.ComponentPose.SetLinkNode(&GlideIK[1]);
+        GlideTurn[0].ComponentPose.SetLinkNode(&GlideIK[1]);
+        GlideTurn[1].ComponentPose.SetLinkNode(&GlideTurn[0]);
+        for (FAnimNode_ModifyBone& Turn : GlideTurn)
+        {
+            Turn.RotationMode = BMM_Replace; Turn.RotationSpace = BCS_ComponentSpace;
+            Turn.TranslationMode = BMM_Ignore; Turn.ScaleMode = BMM_Ignore;
+            Turn.Alpha = 0.f;
+        }
+        Feet.ComponentPose.SetLinkNode(&GlideTurn[1]);
         Feet.Alpha=0.f;
         Stance.ComponentPose.SetLinkNode(&Feet);
         Stance.Alpha = 0.f;
@@ -181,7 +203,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Feet, &Stance, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -195,7 +217,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 ArmedMoving.SetBlendSpace(D->ArmedLocomotion); ArmedCrouching.SetBlendSpace(D->ArmedCrouching); bArmedCrouch = D->ArmedCrouching != nullptr;
                 if (UAnimSequence* Guard = D->FindAction(TEXT("GuardCarry"))) { GuardPose.SetSequence(Guard); GuardPose.SetLoopAnimation(true); GuardPose.SetPlayRate(1.f); }
                 if (UAnimSequence* Guard = D->FindAction(TEXT("SwordGuardCarry")))
-                    for (FAnimNode_SequencePlayer_Standalone* Arm : { &SwordGuardRight, &SwordGuardLeft }) { Arm->SetSequence(Guard); Arm->SetLoopAnimation(true); Arm->SetPlayRate(1.f); }
+                    for (FAnimNode_SequencePlayer_Standalone* Arm : { &SwordGuardRight, &SwordGuardLeft, &Fist }) { Arm->SetSequence(Guard); Arm->SetLoopAnimation(true); Arm->SetPlayRate(1.f); }
                 // The layers' branch bones by the skate contract's names (a character's own clavicles).
                 CarryLayer.LayerSetup[0].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_R"));
                 CarryLayer.LayerSetup[1].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_L"));
@@ -208,7 +230,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 {
                     const TCHAR* Side = I ? TEXT("L") : TEXT("R");
                     GlideIK[I].IKBone.BoneName = Pawn->GetSkateBone(FName(*FString::Printf(TEXT("hand_%s"), Side)));
-                    GlideIK[I].JointTarget = FBoneSocketTarget(Pawn->GetSkateBone(FName(*FString::Printf(TEXT("forearm_%s"), Side))));
+                    GlideTurn[I].BoneToModify.BoneName = GlideIK[I].IKBone.BoneName;
                 }
             }
         FAnimInstanceProxy::Initialize(Instance);
@@ -326,8 +348,11 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         for (int32 I = 0; I < 2; ++I)
         {
             GlideIK[I].Alpha = Moves && !bRiding && !bSailing ? Moves->GlideHandWeight() : 0.f;
-            if (Moves) GlideIK[I].EffectorLocation = Moves->GlideHandLocation(I);
+            if (Moves) { GlideIK[I].EffectorLocation = Moves->GlideHandLocation(I); GlideIK[I].JointTargetLocation = Moves->GlideElbowLocation(I); }
+            GlideTurn[I].Alpha = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
+            if (Moves) GlideTurn[I].Rotation = Moves->GlideHandRotation(I).Rotator();
         }
+        FistLayer.BlendWeights[0] = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
     }

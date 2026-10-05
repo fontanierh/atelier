@@ -238,6 +238,11 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
         const double Far = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? Box.Max[Axis] : Box.Min[Axis];
         FVector Tip = FVector::ZeroVector; Tip[Axis] = Far;
         BladeBase = Tip * .18; BladeTip = Tip;
+        if (const FSlot* S = Slots.Find(TEXT("sword")))
+        {
+            FistAxis = S->Held.GetRotation().RotateVector(Tip.GetSafeNormal());
+            bFistAxis = true;
+        }
     }
     // Whatever is too steep to climb can be walked up: the walkable slope meets the climbing angle.
     Owner->GetCharacterMovement()->SetWalkableFloorAngle(GetParam(TEXT("ClimbEnableAngle"), 50.f));
@@ -974,7 +979,9 @@ void UBotwMoveSet::AdvanceGlide(float Dt)
     const FName Name = Now ? Now->Name : NAME_None;
     if (Now && In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall") }) && SourceTime() < (Now->Idle >= 0.f ? Now->Idle : Now->End)) return;
     FName Clip = TEXT("Glide");
-    if (FMath::Abs(GlideTurn) > 40.f) Clip = GlideTurn > 0.f ? TEXT("GlideR") : TEXT("GlideL");
+    // The turning clips lean the body into the turn, which on a fitted body (Cairo's larger head) brings the inner
+    // forearm into the head; there the glider's bank shows the turn and the body keeps the straight glide.
+    if (FMath::Abs(GlideTurn) > 40.f && bOwnGlide) Clip = GlideTurn > 0.f ? TEXT("GlideR") : TEXT("GlideL");
     else if (bGlideBrake) Clip = TEXT("GlideB");
     else if (Wish().Size2D() > .3f) Clip = TEXT("GlideF");
     PlayLoop(Has(Clip) ? Clip : FName(TEXT("Glide")), .3f);
@@ -1022,6 +1029,9 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         {
             GliderOnBody = Fitted.GetRelativeTransform(Body->GetComponentTransform());
             bGliderOnBody = true;
+            for (int32 I = 0; I < 2; ++I)
+                ElbowLocal[I] = GliderOnBody.InverseTransformPosition(
+                    Body->GetSocketTransform(Character->GetSkateBone(I ? TEXT("forearm_L") : TEXT("forearm_R")), RTS_Component).GetLocation());
         }
         else if (bGliding) { Glider->SetRelativeTransform(Fitted.GetRelativeTransform(Bone)); return; }
         else return;
@@ -1044,26 +1054,46 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         GlideHands = 0.f;
         return;
     }
-    GlideBank = FMath::FInterpTo(GlideBank, FMath::Clamp(GlideTurn * .12f, -15.f, 15.f), Dt, 5.f);
+    // A fitted body banks less: its hands, under handles closer together than its head is wide, would bring the inner
+    // forearm into the head.
+    const float MaxBank = bOwnGlide ? 15.f : 12.f;
+    GlideBank = FMath::FInterpTo(GlideBank, FMath::Clamp(GlideTurn * .12f, -MaxBank, MaxBank), Dt, 5.f);
     const FTransform& Mesh = Body->GetComponentTransform();
     const FVector Forward = Mesh.InverseTransformVectorNoScale(Character->GetActorForwardVector());
     const FVector Pivot = GliderOnBody.TransformPosition((BarGrip[0] + BarGrip[1]) * .5f);
-    const FQuat Bank(Forward, FMath::DegreesToRadians(GlideBank));
+    const FQuat Bank(Forward, FMath::DegreesToRadians(-GlideBank));   // into the turn: the inner side down
     FTransform Placed = GliderOnBody * FTransform(-Pivot) * FTransform(Bank) * FTransform(Pivot);
-    // Lowered by as much as the bank lifts the higher grip, which the outer arm (straight overhead) could not reach.
+    // Link's is lowered by as much as the bank lifts the higher grip, which his outer arm (straight overhead) could not
+    // reach; a fitted body's inner hand would come down beside the head instead.
     const FVector Up = Mesh.InverseTransformVectorNoScale(FVector::UpVector);
     float Rise = 0.f;
-    for (int32 I = 0; I < 2; ++I)
+    for (int32 I = 0; I < 2 && bOwnGlide; ++I)
         Rise = FMath::Max(Rise, (Placed.TransformPosition(BarGrip[I]) - GliderOnBody.TransformPosition(BarGrip[I])) | Up);
     Placed.AddToTranslation(-Up * Rise);
     Glider->SetRelativeTransform(Placed);
     // Each hand onto its handle where it reaches it: its grip point moved to the nearest point of its grip, the wrist
-    // moved with it.
+    // moved with it. A fitted body's hand is a fist turned round the handle: its grip axis along it (thumb forward) and
+    // its grip point away from the elbow, the wrist placed under it.
+    const bool bFist = GlideFistWeight() > 0.f;
     for (int32 I = 0; I < 2; ++I)
     {
+        GlideElbow[I] = Placed.TransformPosition(ElbowLocal[I]);
+        const FVector From = Placed.TransformPosition(GripEnds[I][0]), To = Placed.TransformPosition(GripEnds[I][1]);
+        const FTransform Hand = Body->GetSocketTransform(HandBone[I], RTS_Component);
         const FVector Grip = PalmOf(I);
-        const FVector OnGrip = FMath::ClosestPointOnSegment(Grip, Placed.TransformPosition(GripEnds[I][0]), Placed.TransformPosition(GripEnds[I][1]));
-        GlideHandTarget[I] = Body->GetSocketTransform(HandBone[I], RTS_Component).GetLocation() + (OnGrip - Grip);
+        const FVector OnGrip = FMath::ClosestPointOnSegment(Grip, From, To);
+        if (!bFist) { GlideHandTarget[I] = Hand.GetLocation() + (OnGrip - Grip); continue; }
+        FVector Along = (To - From).GetSafeNormal();
+        if ((Along | Forward) < 0.f) Along = -Along;
+        const FVector GripLocal = Hand.InverseTransformPosition(Grip);
+        const FVector Axis = FistAxis.GetSafeNormal();
+        const FVector Out = (GripLocal - Axis * (GripLocal | Axis)).GetSafeNormal();
+        const FVector Away = OnGrip - GlideElbow[I];
+        const FVector Want = (Away - Along * (Away | Along)).GetSafeNormal();
+        const FQuat Onto = FQuat::FindBetweenNormals(Axis, Along);
+        const FVector Turned = Onto.RotateVector(Out);
+        GlideHandTurn[I] = FQuat(Along, FMath::Atan2((Turned ^ Want) | Along, Turned | Want)) * Onto;
+        GlideHandTarget[I] = OnGrip - FTransform(GlideHandTurn[I], FVector::ZeroVector, Hand.GetScale3D()).TransformVector(GripLocal);
     }
 }
 

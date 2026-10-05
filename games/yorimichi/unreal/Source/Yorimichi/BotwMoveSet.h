@@ -115,6 +115,12 @@ public:
     /** Gliding: how much each wrist is put on its grip on the bar, and where (mesh component space; 0 right, 1 left). */
     float GlideHandWeight() const { return GlideHands; }
     FVector GlideHandLocation(int32 Side) const { return GlideHandTarget[Side & 1]; }
+    /** Gliding: where each elbow bends toward (its place on the neutral glide, component space). */
+    FVector GlideElbowLocation(int32 Side) const { return GlideElbow[Side & 1]; }
+    /** Gliding, a body fitted to the glider (not Link's own hold): how much each hand is a fist turned round its handle
+     *  (the fingers from the sword guard's fists), and its rotation (component space). */
+    float GlideFistWeight() const { return bOwnGlide || !bFistAxis ? 0.f : GlideHands; }
+    FQuat GlideHandRotation(int32 Side) const { return GlideHandTurn[Side & 1]; }
     float GetMaxWalkSpeed(float Default) const;
     float GetParam(const TCHAR* Key, float Default = 0.f) const;
     const FBotwMove* Find(FName Name) const { return Moves.Find(Name); }
@@ -210,6 +216,14 @@ private:
     // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.
     FTransform GliderOnBody = FTransform::Identity;   // relative to the mesh component
     FVector GlideHandTarget[2] = { FVector::ZeroVector, FVector::ZeroVector };   // the wrists' targets, component space
+    // The elbows on the neutral glide, in the glider's frame, so the turning clips' arms (swung in across the face) keep
+    // the straight glide's elbows, banked with it; and where they are now.
+    FVector ElbowLocal[2] = { FVector::ZeroVector, FVector::ZeroVector }, GlideElbow[2] = { FVector::ZeroVector, FVector::ZeroVector };
+    // A fist's grip axis in its hand's frame, toward the thumb: the sword's (its blade comes out on the thumb side), the
+    // same in either hand's frame on this rig. Gliding, each fist is turned so it runs along its handle, thumb forward.
+    FVector FistAxis = FVector::ZeroVector;
+    bool bFistAxis = false;
+    FQuat GlideHandTurn[2] = { FQuat::Identity, FQuat::Identity };
     float GlideBank = 0.f, GlideHands = 0.f;
     bool bGliderOnBody = false, bGliderBodyAttached = false;
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
