@@ -1,107 +1,27 @@
 {
   "from": "SwordTrainer-Rig-r01.blend",
+  "texture": [
+    4096,
+    4096
+  ],
+  "clusters": 16,
+  "shading": 0.3,
+  "normal_map": "disconnected",
+  "regions": 64,
+  "hair_pieces": [
+    0,
+    1,
+    12,
+    13,
+    16
+  ],
+  "dark_texels_cleared": 2537,
+  "head_piece": 18,
   "eye_pieces": [
     2,
     3
   ],
   "brow_pieces": [
     4
-  ],
-  "normal_map": "disconnected (it embossed the old drawing)",
-  "texture": [
-    4096,
-    4096
-  ],
-  "strength": 0.35,
-  "clusters": [
-    {
-      "share": 0.5422,
-      "lab_median": [
-        18.8,
-        2.4,
-        6.4
-      ],
-      "lightness_spread_before": 15.3
-    },
-    {
-      "share": 0.1167,
-      "lab_median": [
-        68.3,
-        10.5,
-        28.0
-      ],
-      "lightness_spread_before": 6.0
-    },
-    {
-      "share": 0.1039,
-      "lab_median": [
-        68.8,
-        1.9,
-        9.7
-      ],
-      "lightness_spread_before": 14.6
-    },
-    {
-      "share": 0.008,
-      "lab_median": [
-        20.6,
-        13.2,
-        13.1
-      ],
-      "lightness_spread_before": 11.6
-    },
-    {
-      "share": 0.2292,
-      "lab_median": [
-        35.9,
-        27.0,
-        24.6
-      ],
-      "lightness_spread_before": 3.6
-    }
-  ],
-  "skin_cluster": 1,
-  "face_cells": [
-    224,
-    325
-  ],
-  "cell_mm": 1.008,
-  "eyes": [
-    {
-      "centre_mm": [
-        35.8,
-        1418.4
-      ],
-      "size_mm": [
-        30.8,
-        43.6
-      ]
-    },
-    {
-      "centre_mm": [
-        -58.0,
-        1417.9
-      ],
-      "size_mm": [
-        30.8,
-        42.6
-      ]
-    }
-  ],
-  "features": [
-    {
-      "kind": "brow",
-      "side": "right"
-    },
-    {
-      "kind": "brow",
-      "side": "left"
-    },
-    {
-      "kind": "mouth"
-    }
-  ],
-  "marks_wiped": 0,
-  "eye_discs": [],
-  "socket_smoothing": {}
+  ]
 }

@@ -1,5 +1,5 @@
 {
-  "about": "Kaede's face as redrawn by sword_trainer_texture.py (docs/TRIPO_CHARACTERS.md): front view, y to her left, z up, in fractions of her height (the rig blend stands 1.0 tall), read off a grid over her Tripo face (rig-r01 front-before.png). Eyes: the painted drawing to wipe (centre, half width, half height) and the disc drawn in its place. Brows: centrelines with a thickness at each point. Mouth: a centreline with a thickness.",
+  "about": "Kaede's face as redrawn by tripo_character_texture.py (docs/TRIPO_CHARACTERS.md): front view, y to her left, z up, in fractions of her height (the rig blend stands 1.0 tall), read off a grid over her Tripo face (rig-r01 front-before.png). Eyes: the painted drawing to wipe (centre, half width, half height) and the disc drawn in its place. Brows: centrelines with a thickness at each point. Mouth: a centreline with a thickness.",
   "eyes": [
     {
       "side": "right",
