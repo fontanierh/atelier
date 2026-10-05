@@ -11,7 +11,7 @@ from hidamari import harbor as harbor_kit
 from hidamari import arcade as arcade_kit
 from hidamari import plaza as plaza_kit
 from hidamari import mountains, living_plaza, pond_garden, living_streets, working_harbor, civic_gardens
-from hidamari import arrival, city_poles, kit, lane_edges, layout, park_grounds, station_yard, surfaces, temple_precinct
+from hidamari import arrival, city_poles, garden_shrubs, kit, lane_edges, layout, park_grounds, station_yard, surfaces, temple_precinct
 from hidamari.layout import backdrop_height,north_height,north_base_height
 v.OUT=OUT
 # Ground land use (surface()): lawn, packed-earth yards, sidewalk paving along the streets, flagstone pavers.
@@ -429,6 +429,7 @@ def main():
         print('HIDAMARI LANE EDGES',lane_edges.build(m,height,city['buildings'],ROAD_X,ROAD_Y,layout.road_width,city_poles.KEEP_OUT),flush=True)
         return m
     builders['HD_LaneEdges']=lane_edge_mesh
+    builders.update(garden_shrubs.builders())
     builders['HD_Pagoda']=temple_precinct.pagoda
     builders['HD_Bamboo']=temple_precinct.bamboo
     builders['HD_Graves']=temple_precinct.graves

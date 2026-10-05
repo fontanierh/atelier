@@ -56,7 +56,7 @@ def place(put, inst, height):
         for i in range(n):
             a = r.uniform(0, math.tau); d = math.sqrt(r.random())*.8
             px, py = bx+math.cos(a)*rx*d, by+math.sin(a)*ry*d
-            name = r.choices(['Bush_Green_A', 'Bush_Green_B', 'Bush_Flower_A', 'Bush_Ochre_A'], [.4, .25, .2, .15])[0]
+            name = r.choices(['Bush_HD_Mound', 'Bush_HD_Ball', 'Bush_HD_Azalea', 'Bush_HD_Amber'], [.4, .25, .2, .15])[0]
             put(name, px, py, yaw=r.uniform(0, 360), scale=r.uniform(.7, 1.0))
     for x, y in LAMPS: put('HD_Lamp', x, y)
 
