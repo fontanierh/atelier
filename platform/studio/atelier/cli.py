@@ -80,7 +80,9 @@ def play(game, profile, settings, extra, memory_gib=None):
     folder = ctx.out / 'logs' / f'play-{profile}-{stamp}'
     folder.mkdir(parents=True, exist_ok=True)
     if 'script' in spec:   # a game-specific launcher (for example the desktop profile)
-        command = [sys.executable, str(ctx.game_dir / spec['script']), *spec.get('args', []), *extra]
+        script_args = [a.replace('{run}', str(folder)).replace('{memory_gib}', f'{limit:g}')
+                       for a in spec.get('args', [])]
+        command = [sys.executable, str(ctx.game_dir / spec['script']), *script_args, *extra]
         if settings:
             command += ['--settings', settings]
         return subprocess.call(command, env=ctx.env())
@@ -152,6 +154,8 @@ def make_parser():
     p.add_argument('--workers', type=int, default=3, help='headless compiler parallelism (default: 3)')
     p = sub.add_parser('reuse'); p.add_argument('game'); p.add_argument('--from', dest='source', required=True)
     p.add_argument('--to', dest='target', help='fresh worktree path (default: this checkout)')
+    p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status'])
+    p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
@@ -199,6 +203,9 @@ def main(argv=None):
     if args.command == 'reuse':
         from . import reuse
         return reuse.main(args.game, args.source, args.target)
+    if args.command == 'pool':
+        from . import artifact_pool
+        return artifact_pool.main(args.action, args.game, args.step)
     if args.command == 'fetch':
         return fetch(args.game)
     if args.command == 'build':

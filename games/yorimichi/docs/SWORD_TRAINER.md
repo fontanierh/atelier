@@ -36,8 +36,10 @@ plain build.
 phone, map or board, an `AAIController` for her view. The move set (`UBotwMoveSet`) treats a sparring partner
 (`IsSparringWith`, from the stance to the end of the bout) as a target: the blade sweep and arc reach it, its lock-on
 and soft lock find it, and a blow that reaches it goes through its own `IncomingStrike` (a parried blow throws the
-striker back, `Deflected`). Blows take `SparringDamage`: 10 a cut, 18 a strong blow, 28 at full power (which knocks
-down), times her level's share for hers.
+striker back, `Deflected`). Blows take `SparringDamage`: 10 a cut, 18 a strong blow (which staggers), 28 at full
+power (which knocks down, or breaks a guard), times her level's share for hers: at Gentle her blows only flinch, at
+Master her full-power blows break the player's guard. Both fighters take hits alike ([the botw
+README](../assets/characters/botw/README.md#the-merged-move-set), "Taking hits").
 
 Her brain, each frame:
 

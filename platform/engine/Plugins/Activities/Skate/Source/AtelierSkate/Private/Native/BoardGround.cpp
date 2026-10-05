@@ -21,12 +21,12 @@ void WheelLineState::Publish(const std::array<std::optional<WheelLineHit>,4>& hi
     minimum_distance=WheelLineLength;
     for(std::size_t i=0;i<4;++i)
     {
-        physics_surfaces[i]=0;
+        physics_surfaces[i]=0;sound_surfaces[i]=0;
         if(hits[i])
         {
             const auto& hit=*hits[i];const float distance=hit.fraction*WheelLineLength;
             minimum_distance=distance-minimum_distance>=-0.0f?minimum_distance:distance;
-            normals[i]=hit.normal;distances[i]=distance;physics_surfaces[i]=(hit.surface_tag>>7)&31u;
+            normals[i]=hit.normal;distances[i]=distance;physics_surfaces[i]=(hit.surface_tag>>7)&31u;sound_surfaces[i]=hit.surface_tag&0x7fu;
         }
     }
 }

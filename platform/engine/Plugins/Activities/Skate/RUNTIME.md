@@ -190,7 +190,8 @@ to check that it is deterministic.
   rejects. The C++ keeps the indexed behaviour.
 - Collision is a static snapshot: moving objects, skeletal meshes, procedural meshes and streamed-out terrain are
   not seen.
-- Every surface gets one default collision material; grass or sand drag is not mapped.
+- Every surface gets one collision material (friction and restitution). Ground kinds differ only by the recovered
+  surface profile that the wheels' vote selects (smooth, rough, slow, very slow), and by their sounds.
 - Rails reach the session as polylines only; their kind, side and radius are not used.
 - A complex-as-simple mesh is seen in a cooked build only if its importer enables CPU access. Editor builds are the
   checked path; cooked loading of the bundle is unverified.

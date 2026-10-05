@@ -87,7 +87,8 @@ Install it with `softwareupdate --install-rosetta --agree-to-license` if missing
 uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
 uv run atelier fetch yorimichi          # downloads the Sonniss sound masters (not redistributed here)
 uv run atelier build yorimichi          # world, characters, sounds, effects, compile, Unreal import
-uv run atelier play yorimichi           # 1080p window; --profile desktop-1440 for the desktop profile
+uv run atelier play yorimichi           # native 1440 window, forward and optimized trees by default
+uv run atelier play yorimichi --profile fullscreen
 ```
 
 `atelier build yorimichi --list` shows every step; name one to run just it (and what it needs). Generated files go
@@ -167,6 +168,7 @@ Where to go next, in the order most games grow:
 | `atelier doctor <game>` / `fetch <game>` | check the tools and sources; download what may not be redistributed |
 | `atelier setup [--headless]` | verify Xcode and Metal; prepare the tested installed UE 5.8.2 for SSH builds |
 | `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
+| `atelier pool publish/restore/status <game> <step>` | [pool explicitly owned portable outputs](docs/ARTIFACT_POOL.md) across feature revisions |
 | `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--dry-run`, `--touch` |
 | `atelier play <game> [--profile P]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |

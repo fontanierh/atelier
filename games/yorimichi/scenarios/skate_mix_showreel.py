@@ -4,7 +4,7 @@
         [--music WAV] [--title TEXT]
 
 One-shots come from audio.json (sim frames at 60 fps), attenuated by distance to the camera (the game's sphere: full
-inside 5 m, -48 dB at 50 m) and panned by bearing; the board's five loops follow loops.csv (volume and pitch every sim
+inside 5 m, -48 dB at 50 m) and panned by bearing; the board's loops (its five, then each surface's roll) follow loops.csv (volume and pitch every sim
 frame, played through a phase accumulator so pitch glides are smooth); the countryside ambience sits under everything.
 The 30 fps viewport frames and the mix become H.264/AAC MP4s (1080p and 720p). The sounds are read from this checkout's
 build/yorimichi/audio, or --audio (another build's audio folder); a one-shot missing there falls back to the file it
@@ -18,7 +18,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 ROOT = yori.OUT
 RATE, SIM, FILM = 48000, 60, 30
-LOOPS = ['roll', 'grind', 'slide', 'skid', 'scrape']
+LOOPS = ['roll', 'grind', 'slide', 'skid', 'scrape'] + ['roll_' + s for s in ('wood', 'metal', 'asphalt', 'stone', 'dirt', 'grass', 'sand')]
 AMBIENCE = 'combat/ambience_countryside/ambience_countryside_01.wav'
 
 
@@ -88,7 +88,9 @@ def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None, m
     sim_t = np.arange(len(rows)) / SIM
     t = np.arange(length) / RATE
     for k, cue in enumerate(LOOPS):
-        wav = read(audio / f'skate/{cue}/{cue}_01.wav')
+        path = audio / f'skate/{cue}/{cue}_01.wav'
+        if not path.exists(): continue          # an older build without the surface rolls
+        wav = read(path)
         vol = np.interp(t, sim_t, [r[2 * k] if len(r) > 2 * k else 0. for r in rows])
         pitch = np.interp(t, sim_t, [r[2 * k + 1] if len(r) > 2 * k + 1 else 1. for r in rows])
         if vol.max() < 1e-3: continue

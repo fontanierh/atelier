@@ -132,6 +132,9 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     // place on the neutral glide; then each fist turned round its handle (UBotwMoveSet::GlideHandRotation).
     FAnimNode_TwoBoneIK GlideIK[2];
     FAnimNode_ModifyBone GlideTurn[2];
+    // A hit's recoil (UBotwMoveSet::FlinchRotation): the spine, chest, neck and head each turned a little further,
+    // added in component space, the bones above following.
+    FAnimNode_ModifyBone Flinch[4];
     FGroundContactNode Feet;
     FSailboatStanceNode Stance;
     // On the bike: the gripping hands follow bars the player steers past the clip's own steering.
@@ -192,7 +195,14 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
             Turn.TranslationMode = BMM_Ignore; Turn.ScaleMode = BMM_Ignore;
             Turn.Alpha = 0.f;
         }
-        Feet.ComponentPose.SetLinkNode(&GlideTurn[1]);
+        for (int32 I = 0; I < 4; ++I)
+        {
+            Flinch[I].ComponentPose.SetLinkNode(I ? static_cast<FAnimNode_Base*>(&Flinch[I - 1]) : &GlideTurn[1]);
+            Flinch[I].RotationMode = BMM_Additive; Flinch[I].RotationSpace = BCS_ComponentSpace;
+            Flinch[I].TranslationMode = BMM_Ignore; Flinch[I].ScaleMode = BMM_Ignore;
+            Flinch[I].Alpha = 0.f;
+        }
+        Feet.ComponentPose.SetLinkNode(&Flinch[3]);
         Feet.Alpha=0.f;
         Stance.ComponentPose.SetLinkNode(&Feet);
         Stance.Alpha = 0.f;
@@ -209,7 +219,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Feet, &Stance, &Grip, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -238,6 +248,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                     GlideIK[I].IKBone.BoneName = Pawn->GetSkateBone(FName(*FString::Printf(TEXT("hand_%s"), Side)));
                     GlideTurn[I].BoneToModify.BoneName = GlideIK[I].IKBone.BoneName;
                 }
+                const TCHAR* const Chain[4] = { TEXT("spine"), TEXT("chest"), TEXT("neck"), TEXT("head") };
+                for (int32 I = 0; I < 4; ++I) Flinch[I].BoneToModify.BoneName = Pawn->GetSkateBone(Chain[I]);
             }
         FAnimInstanceProxy::Initialize(Instance);
     }
@@ -369,6 +381,12 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
             if (Moves) GlideTurn[I].Rotation = Moves->GlideHandRotation(I).Rotator();
         }
         FistLayer.BlendWeights[0] = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
+        const bool bFlinch = Moves && Moves->IsFlinching() && !bRiding && !bSailing && !bBiking;
+        for (int32 I = 0; I < 4; ++I)
+        {
+            Flinch[I].Alpha = bFlinch && !Flinch[I].BoneToModify.BoneName.IsNone() ? 1.f : 0.f;
+            Flinch[I].Rotation = bFlinch ? Moves->FlinchRotation(I).Rotator() : FRotator::ZeroRotator;
+        }
         ArmedTarget = (!State.bAction && Pawn->GetDefinition()->ArmedLocomotion) ? 1.f : 0.f;
         AppliedSerial = State.Serial;
     }

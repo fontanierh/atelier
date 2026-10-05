@@ -48,7 +48,7 @@ stream.addEventListener('webRtcFailed',()=>lost('Could not connect · keep Tails
 stream.addEventListener('subscribeFailed',()=>{status('Game is in use · close other play tabs, then reconnect');$('welcome').hidden=false;$('play').textContent='Reconnect';});
 stream.addEventListener('playStreamRejected',()=>{$('welcome').hidden=false;status('Tap Play to start the video');});
 on('hint',state=>toast(state.text));
-on('settings',state=>{window.yorimichi.settings=state.values;renderSettings(state.values,changeSetting);$('settings-status').textContent='Saved in the game';});
+on('settings',state=>{window.yorimichi.settings=state.values;renderSettings(state.values,changeSetting);const renderer=state.values.find(row=>row.key==='renderer');$('settings-status').textContent=state.error||(renderer&&renderer.running!==renderer.value?(renderer.restart_supported?'Settings saved · restarting the game…':'Lighting saved · applies on the next launch'):'Saved in the game');});
 on('map',state=>{map.receive(state);window.yorimichi.map=state;});
 on('teleport',state=>{const zone=map.data?.zones.find(z=>z.key===state.zone);toast(state.ok?`Arrived: ${zone?.name||state.zone}`:'That place is not on the map');});
 on('status',state=>{
@@ -92,7 +92,8 @@ let resumeAfterSettings=false;
 function requestSettings(){if(connected)message({action:'settings'});}
 function changeSetting(key,value){
  if(!connected){$('settings-status').textContent='Disconnected — reconnect before changing settings';return;}
- $('settings-status').textContent='Saving…';message({action:'setSetting',key,value});
+ const renderer=window.yorimichi.settings?.find(row=>row.key==='renderer');
+ $('settings-status').textContent=key==='renderer'&&renderer?.restart_supported&&value!==renderer.running?'Saving and restarting the game…':'Saving…';message({action:'setSetting',key,value});
 }
 $('settings-button').onclick=()=>{
  resumeAfterSettings=playing;playing=false;reset();$('settings-dialog').showModal();

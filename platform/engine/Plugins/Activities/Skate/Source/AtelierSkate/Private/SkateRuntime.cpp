@@ -1,5 +1,6 @@
 #include "SkateComponent.h"
 #include "Native/GameplaySession.h"
+#include "Native/GroundSurfaceRuntime.h"
 #include "Native/HostScalar.h"
 #include "SkatePad.h"
 #include <deque>
@@ -14,6 +15,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/SkeletalMesh.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "Engine/World.h"
@@ -67,6 +69,8 @@ namespace
     // frame after they start.
     TAutoConsoleVariable<int32> CVarSkateLockstep(TEXT("skate.Lockstep"),-1,
         TEXT("Native skating waits for each step of its thread, so a replay repeats: 1 always, 0 never, -1 under a fixed step or frame rate"));
+    TAutoConsoleVariable<int32> CVarSkateSurfaceDebug(TEXT("skate.SurfaceDebug"),0,
+        TEXT("1 logs every colliding mesh's surface per material slot at the next collision gather (USkateSettings surfaces)."));
     // A successful pump under the hybrid shows as a trick: one rise of the rider on the ground that adds this much speed
     // by the player's crouch (m/s; native's own timed pumps add 2-3, mistimed ones about .3); from the next ride.
     TAutoConsoleVariable<float> CVarSkatePumpTrick(TEXT("skate.PumpTrick"),.5f,
@@ -165,10 +169,65 @@ namespace
     }
 
     /** A static mesh's collision LOD as plain data: three mesh-space points per triangle and the authored normal (the
-     *  first corner's tangent Z) of each. Copied on the game thread, so a worker never reads render data that LOD
-     *  streaming may release. */
-    struct FMeshSurface { TArray<FVector3f> Points, Normals; };
+     *  first corner's tangent Z) and material slot of each. Copied on the game thread, so a worker never reads render
+     *  data that LOD streaming may release. */
+    struct FMeshSurface { TArray<FVector3f> Points, Normals; TArray<uint16> Slots; };
     using FMeshSurfaceRef=TSharedPtr<const FMeshSurface,ESPMode::ThreadSafe>;
+
+    /** The surface's name for QA lines (Wood), "none" for None. */
+    FString SurfaceName(ESkateSurface Surface)
+    {
+        return Surface==ESkateSurface::None ? FString(TEXT("none")) : StaticEnum<ESkateSurface>()->GetNameStringByValue(int64(Surface));
+    }
+    /** A mesh or material name as the surface tables key it: without a leading SM_, MI_ or M_. */
+    FString SurfaceKey(FString Name)
+    {
+        if (!Name.RemoveFromStart(TEXT("SM_")) && !Name.RemoveFromStart(TEXT("MI_"))) Name.RemoveFromStart(TEXT("M_"));
+        return Name;
+    }
+    /** The surface a SkateSurface.<Surface> tag on the component or its actor names, or the mesh's in SurfaceMeshes. */
+    ESkateSurface ComponentSurface(const UStaticMeshComponent* C, const UStaticMesh* Mesh, const USkateSettings& Settings)
+    {
+        auto Tagged=[](const TArray<FName>& Tags)
+        {
+            for (const FName& Tag : Tags)
+            {
+                FString Name=Tag.ToString();
+                if (!Name.RemoveFromStart(TEXT("SkateSurface."))) continue;
+                const int64 Value=StaticEnum<ESkateSurface>()->GetValueByNameString(Name);
+                if (Value!=INDEX_NONE) return ESkateSurface(Value);
+            }
+            return ESkateSurface::None;
+        };
+        ESkateSurface Surface=Tagged(C->ComponentTags);
+        if (Surface==ESkateSurface::None && C->GetOwner()) Surface=Tagged(C->GetOwner()->Tags);
+        if (Surface==ESkateSurface::None && Mesh)
+            if (const ESkateSurface* Found=Settings.SurfaceMeshes.Find(SurfaceKey(Mesh->GetName()))) Surface=*Found;
+        return Surface;
+    }
+    /** A triangle's packed native surface: the authored ground profile it rides (1 smooth, 2 rough, 3 slow, 5 very
+     *  slow) << 7 | the surface itself, which the session reports back for sounds. */
+    uint16 PackSurface(ESkateSurface Surface)
+    {
+        uint16 Physics=1;
+        switch (Surface)
+        {
+        case ESkateSurface::Asphalt: case ESkateSurface::Stone: Physics=2; break;
+        case ESkateSurface::Dirt: Physics=3; break;
+        case ESkateSurface::Grass: case ESkateSurface::Sand: Physics=5; break;
+        default: break;
+        }
+        return uint16(Physics<<7 | uint8(Surface));
+    }
+    /** The packed surface of a component's material slot: its tag or mesh surface, else its material's, else the default. */
+    uint16 SlotSurface(const UStaticMeshComponent* C, int32 Slot, ESkateSurface Override, const USkateSettings& Settings)
+    {
+        ESkateSurface Surface=Override;
+        if (Surface==ESkateSurface::None)
+            if (const UMaterialInterface* Material=C->GetMaterial(Slot))
+                if (const ESkateSurface* Found=Settings.SurfaceMaterials.Find(SurfaceKey(Material->GetName()))) Surface=*Found;
+        return PackSurface(Surface==ESkateSurface::None ? Settings.DefaultSurface : Surface);
+    }
 
     /** The mesh's surface, copied once per mesh and kept (game thread). Null when its collision LOD has no CPU data. */
     FMeshSurfaceRef MeshSurface(UStaticMesh* Mesh)
@@ -185,6 +244,10 @@ namespace
         const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();
         auto Surface=MakeShared<FMeshSurface,ESPMode::ThreadSafe>();
         Surface->Points.Reserve(Indices.Num()/3*3); Surface->Normals.Reserve(Indices.Num()/3);
+        Surface->Slots.SetNumZeroed(Indices.Num()/3);
+        for (const FStaticMeshSection& Section : LOD.Sections)
+            for (uint32 T=Section.FirstIndex/3, End=FMath::Min<uint32>(T+Section.NumTriangles,Surface->Slots.Num()); T<End; ++T)
+                Surface->Slots[T]=uint16(FMath::Clamp(Section.MaterialIndex,0,MAX_uint16));
         for (int32 I=0; I+2<Indices.Num(); I+=3)
         {
             for (int32 K=0;K<3;++K) Surface->Points.Add(Positions.VertexPosition(Indices[I+K]));
@@ -201,12 +264,13 @@ namespace
         FBox Region=FBox(ForceInit);
         int32 Budget=500000;
         TArray<FVector3f> Points;
+        TArray<uint16> Surfaces;   // per triangle, packed (PackSurface)
         TArray<TArray<FVector3f>> Rails;
         FVector3f Spawn=FVector3f::ZeroVector;
         float Heading=0;
         int32 Num() const { return Points.Num()/3; }
         bool Full() const { return Num()>Budget; }
-        void Add(const FVector& A, FVector B, FVector C)
+        void Add(const FVector& A, FVector B, FVector C, uint16 Surface)
         {
             if (Full()) return;
             FBox Bounds(ForceInit); Bounds+=A; Bounds+=B; Bounds+=C;
@@ -217,15 +281,15 @@ namespace
             const FVector3d E1(P[1]-P[0]),E2(P[2]-P[0]);
             const double Twice=FVector3d::CrossProduct(E1,E2).Size();
             if (Twice<1e-9 || Twice<1e-6*E1.Size()*E2.Size()) return;
-            Points.Append(P,3);
+            Points.Append(P,3); Surfaces.Add(Surface);
         }
         // A face of a convex solid, turned away from the solid's centre.
-        void AddFacing(const FVector& Centre, const FVector& A, const FVector& B, const FVector& C)
+        void AddFacing(const FVector& Centre, const FVector& A, const FVector& B, const FVector& C, uint16 Surface)
         {
-            if (FVector::DotProduct(FVector::CrossProduct(B-A,C-A),(A+B+C)/3.-Centre)<0) Add(A,C,B); else Add(A,B,C);
+            if (FVector::DotProduct(FVector::CrossProduct(B-A,C-A),(A+B+C)/3.-Centre)<0) Add(A,C,B,Surface); else Add(A,B,C,Surface);
         }
         // The surface of a mesh whose collision is its own triangles (its collision LOD's, copied by MeshSurface).
-        void AddSurface(const FMeshSurface& Mesh, const FTransform& T)
+        void AddSurface(const FMeshSurface& Mesh, const FTransform& T, const TArray<uint16>& SlotSurfaces)
         {
             for (int32 I=0; I+2<Mesh.Points.Num() && !Full(); I+=3)
             {
@@ -233,21 +297,22 @@ namespace
                 for (int32 K=0;K<3;++K) P[K]=T.TransformPosition(FVector(Mesh.Points[I+K]));
                 const FVector Authored=T.TransformVectorNoScale(FVector(Mesh.Normals[I/3]));
                 if (FVector::DotProduct(FVector::CrossProduct(P[1]-P[0],P[2]-P[0]),Authored)<0) Swap(P[1],P[2]);
-                Add(P[0],P[1],P[2]);
+                const int32 Slot=Mesh.Slots.IsValidIndex(I/3) ? Mesh.Slots[I/3] : 0;
+                Add(P[0],P[1],P[2],SlotSurfaces.IsValidIndex(Slot) ? SlotSurfaces[Slot] : (SlotSurfaces.Num() ? SlotSurfaces[0] : 0));
             }
         }
-        void AddBox(const FTransform& T, const FVector& Half)
+        void AddBox(const FTransform& T, const FVector& Half, uint16 Surface)
         {
             auto Corner=[&](int32 I){ return T.TransformPosition(FVector(I&1?Half.X:-Half.X,I&2?Half.Y:-Half.Y,I&4?Half.Z:-Half.Z)); };
             static const int32 Faces[6][4]={{0,2,6,4},{1,5,7,3},{0,4,5,1},{2,3,7,6},{0,1,3,2},{4,6,7,5}};
             for (const auto& Q : Faces)
             {
-                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[1]),Corner(Q[2]));
-                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[2]),Corner(Q[3]));
+                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[1]),Corner(Q[2]),Surface);
+                AddFacing(T.GetLocation(),Corner(Q[0]),Corner(Q[2]),Corner(Q[3]),Surface);
             }
         }
         // A capsule along local Z whose hemisphere centres sit Half above and below the origin; Half 0 is a sphere.
-        void AddCapsule(const FTransform& T, double Radius, double Half)
+        void AddCapsule(const FTransform& T, double Radius, double Half, uint16 Surface)
         {
             constexpr int32 Segments=10, Steps=4;
             TArray<TArray<FVector>> Rings;
@@ -261,11 +326,11 @@ namespace
             for (int32 R=0;R+1<Rings.Num();++R) for (int32 S=0;S<Segments;++S)
             {
                 const int32 N=(S+1)%Segments;
-                AddFacing(T.GetLocation(),Rings[R][S],Rings[R][N],Rings[R+1][N]);
-                AddFacing(T.GetLocation(),Rings[R][S],Rings[R+1][N],Rings[R+1][S]);
+                AddFacing(T.GetLocation(),Rings[R][S],Rings[R][N],Rings[R+1][N],Surface);
+                AddFacing(T.GetLocation(),Rings[R][S],Rings[R+1][N],Rings[R+1][S],Surface);
             }
         }
-        void AddHull(const FKConvexElem& Hull, const FTransform& T)
+        void AddHull(const FKConvexElem& Hull, const FTransform& T, uint16 Surface)
         {
             if (Hull.VertexData.IsEmpty()) return;
             const TArray<int32> Indices=Hull.IndexData.Num() ? Hull.IndexData : Hull.GetChaosConvexIndices();
@@ -274,7 +339,7 @@ namespace
             Centre/=P.Num();
             for (int32 I=0;I+2<Indices.Num();I+=3)
                 if (P.IsValidIndex(Indices[I]) && P.IsValidIndex(Indices[I+1]) && P.IsValidIndex(Indices[I+2]))
-                    AddFacing(Centre,P[Indices[I]],P[Indices[I+1]],P[Indices[I+2]]);
+                    AddFacing(Centre,P[Indices[I]],P[Indices[I+1]],P[Indices[I+2]],Surface);
         }
     };
 
@@ -285,7 +350,8 @@ namespace
     {
         // A part's bounds and its instances' (an instanced mesh's, else one), for each smaller snapshot to skip what
         // lies outside it as the single-pass gather did.
-        struct FPart { FMeshSurfaceRef Surface; const UBodySetup* Body=nullptr; FBox Bounds; TArray<FTransform> Instances; TArray<FBox> InstanceBounds; };
+        struct FPart { FMeshSurfaceRef Surface; const UBodySetup* Body=nullptr; FBox Bounds; TArray<FTransform> Instances; TArray<FBox> InstanceBounds;
+                       TArray<uint16> SlotSurfaces; };   // packed, per material slot (a body's shapes ride slot 0's)
         TArray<FPart> Parts;
         TArray<TPair<FBox,TArray<FVector>>> Rails;
         TArray<TStrongObjectPtr<UObject>> Keep;
@@ -300,6 +366,7 @@ namespace
         const double Began=FPlatformTime::Seconds();
         const FBox Region(Centre-FVector(GatherRadii[0]),Centre+FVector(GatherRadii[0]));
         Job.Centre=Centre; Job.Spawn=Spawn; Job.Yaw=Yaw;
+        const USkateSettings& Settings=*GetDefault<USkateSettings>();
         for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
         {
             UStaticMeshComponent* C = *It;
@@ -311,6 +378,12 @@ namespace
             FGatherJob::FPart Part; Part.Bounds=C->Bounds.GetBox();
             if (Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple) { Part.Surface=MeshSurface(Mesh); if (!Part.Surface) continue; }
             else { Part.Body=Body; if (bKeep) Job.Keep.Emplace(Body); }
+            const ESkateSurface Override=ComponentSurface(C,Mesh,Settings);
+            for (int32 Slot=0; Slot<FMath::Max(1,C->GetNumMaterials()); ++Slot) Part.SlotSurfaces.Add(SlotSurface(C,Slot,Override,Settings));
+            if (CVarSkateSurfaceDebug.GetValueOnGameThread())
+                for (int32 Slot=0; Slot<Part.SlotSurfaces.Num(); ++Slot)
+                    UE_LOG(LogTemp,Display,TEXT("SKATE surface %s slot %d %s -> %s"),*Mesh->GetName(),Slot,
+                        C->GetMaterial(Slot) ? *C->GetMaterial(Slot)->GetName() : TEXT("none"),*SurfaceName(ESkateSurface(Part.SlotSurfaces[Slot]&0x7f)));
             if (auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
             {
                 const FBox Local=Mesh->GetBounds().GetBox();
@@ -338,11 +411,12 @@ namespace
         double Radius=0; const double Began=FPlatformTime::Seconds();
         for (const double Try : GatherRadii)
         {
-            Radius=Try; Snapshot.Region=FBox(Job.Centre-FVector(Radius),Job.Centre+FVector(Radius)); Snapshot.Points.Reset();
+            Radius=Try; Snapshot.Region=FBox(Job.Centre-FVector(Radius),Job.Centre+FVector(Radius)); Snapshot.Points.Reset(); Snapshot.Surfaces.Reset();
             // Each part's triangles on its own, in parallel, then joined in the parts' order: the snapshot one pass
             // makes (over budget the same way: a snapshot over it is dropped for the next radius either way).
             TArray<TArray<FVector3f>> PartPoints; PartPoints.SetNum(Job.Parts.Num());
-            ParallelFor(Job.Parts.Num(), [&Job,&Snapshot,&PartPoints](int32 P)
+            TArray<TArray<uint16>> PartSurfaces; PartSurfaces.SetNum(Job.Parts.Num());
+            ParallelFor(Job.Parts.Num(), [&Job,&Snapshot,&PartPoints,&PartSurfaces](int32 P)
             {
                 const FGatherJob::FPart& Part=Job.Parts[P];
                 if (!Part.Bounds.Intersect(Snapshot.Region)) return;
@@ -351,16 +425,21 @@ namespace
                 {
                     const FTransform& T=Part.Instances[I];
                     if (Part.InstanceBounds.IsValidIndex(I) && !Part.InstanceBounds[I].Intersect(Local.Region)) continue;
-                    if (Part.Surface) { Local.AddSurface(*Part.Surface,T); continue; }
+                    if (Part.Surface) { Local.AddSurface(*Part.Surface,T,Part.SlotSurfaces); continue; }
+                    const uint16 Surface=Part.SlotSurfaces.Num() ? Part.SlotSurfaces[0] : 0;
                     const FKAggregateGeom& Geom=Part.Body->AggGeom;
-                    for (const FKBoxElem& E : Geom.BoxElems) Local.AddBox(E.GetTransform()*T,FVector(E.X,E.Y,E.Z)*.5);
-                    for (const FKSphereElem& E : Geom.SphereElems) Local.AddCapsule(E.GetTransform()*T,E.Radius,0);
-                    for (const FKSphylElem& E : Geom.SphylElems) Local.AddCapsule(E.GetTransform()*T,E.Radius,E.Length*.5);
-                    for (const FKConvexElem& E : Geom.ConvexElems) Local.AddHull(E,E.GetTransform()*T);
+                    for (const FKBoxElem& E : Geom.BoxElems) Local.AddBox(E.GetTransform()*T,FVector(E.X,E.Y,E.Z)*.5,Surface);
+                    for (const FKSphereElem& E : Geom.SphereElems) Local.AddCapsule(E.GetTransform()*T,E.Radius,0,Surface);
+                    for (const FKSphylElem& E : Geom.SphylElems) Local.AddCapsule(E.GetTransform()*T,E.Radius,E.Length*.5,Surface);
+                    for (const FKConvexElem& E : Geom.ConvexElems) Local.AddHull(E,E.GetTransform()*T,Surface);
                 }
-                PartPoints[P]=MoveTemp(Local.Points);
+                PartPoints[P]=MoveTemp(Local.Points); PartSurfaces[P]=MoveTemp(Local.Surfaces);
             });
-            for (const TArray<FVector3f>& Points : PartPoints) { if (Snapshot.Full()) break; Snapshot.Points.Append(Points); }
+            for (int32 P=0; P<PartPoints.Num(); ++P)
+            {
+                if (Snapshot.Full()) break;
+                Snapshot.Points.Append(PartPoints[P]); Snapshot.Surfaces.Append(PartSurfaces[P]);
+            }
             if (!Snapshot.Full()) break;
         }
         if (Snapshot.Num()==0 || Snapshot.Full()) return false;
@@ -371,8 +450,12 @@ namespace
             for (const FVector& P : Rail.Value) Line.Add(FVector3f(ToNative(P)));
         }
         Snapshot.Spawn=FVector3f(ToNative(Job.Spawn)); Snapshot.Heading=-FMath::DegreesToRadians(Job.Yaw);
-        UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails within %.0f m, collected in %.1f ms, made in %.1f ms%s"),
-            Snapshot.Num(),Snapshot.Rails.Num(),Radius/100.,Job.CollectMs,(FPlatformTime::Seconds()-Began)*1000.,IsInGameThread() ? TEXT("") : TEXT(" off the game thread"));
+        int32 Counts[uint8(ESkateSurface::Sand)+1]={};
+        for (const uint16 Surface : Snapshot.Surfaces) if ((Surface&0x7f)<=uint8(ESkateSurface::Sand)) ++Counts[Surface&0x7f];
+        FString Surfaces;
+        for (int32 S=1; S<=int32(ESkateSurface::Sand); ++S) if (Counts[S]) Surfaces+=FString::Printf(TEXT(" %s=%d"),*SurfaceName(ESkateSurface(S)),Counts[S]);
+        UE_LOG(LogTemp,Display,TEXT("SKATE retail collision: %d triangles, %d rails within %.0f m, collected in %.1f ms, made in %.1f ms%s; surfaces%s"),
+            Snapshot.Num(),Snapshot.Rails.Num(),Radius/100.,Job.CollectMs,(FPlatformTime::Seconds()-Began)*1000.,IsInGameThread() ? TEXT("") : TEXT(" off the game thread"),*Surfaces);
         return true;
     }
 
@@ -394,6 +477,7 @@ namespace
         atelier::skate::GameplayWorldSnapshot Out;Out.triangles.reserve(S.Num());
         for(int32 I=0;I<S.Points.Num();I+=3)
             Out.triangles.push_back({SnapshotPoint(S.Points[I]),SnapshotPoint(S.Points[I+1]),SnapshotPoint(S.Points[I+2])});
+        if(S.Surfaces.Num()==S.Num())Out.surfaces.assign(S.Surfaces.GetData(),S.Surfaces.GetData()+S.Surfaces.Num());
         for(const auto& Rail:S.Rails)
         {
             auto& Line=Out.rails.emplace_back();Line.reserve(Rail.Num());
@@ -431,6 +515,7 @@ public:
         float StepMs=0;   // the session's step (and its collision installs) on the thread, ms
         float RenewMs=0;   // a placement's new runtime on the thread, ms
         uint32 Pumps=0;float PumpGain=0;   // the session's successful pumps and the last one's gain (m/s)
+        uint8 Surface=0,Wheels=0;   // the surface the wheels are on (ESkateSurface, 0 untagged) and the wheels in contact
     };
     FNativeSkateWorker(FString Folder,skate_native::GameplayWorldSnapshot World,
         skate_native::Vec3 Spawn,float Heading)
@@ -579,6 +664,7 @@ private:
         if(!HideTrick_)Out.Trick=G.scoring.CurrentTrick();
         Out.TrickSwitch=G.scoring.State().start_stance[0];Out.TrickFakie=G.scoring.State().start_stance[1];
         Out.Pumps=Session_->pumps.count;Out.PumpGain=Session_->pumps.last_gain;
+        const auto Ground=skate_native::ReportGroundSurface(G.physical->riding);Out.Surface=uint8(Ground.sound);Out.Wheels=uint8(Ground.wheels);
         const auto& Score=G.scoring.session.holder.State().snapshot;
         Out.Score=Score.completed_lines+Score.line;Out.Manual=G.animation_input.fields.balance;Out.Camera=Pose.camera;
         if(Ready)
@@ -667,6 +753,8 @@ public:
     // The hybrid's pumps: the session's count and last gain; those already shown; the repeats in the line, the Native
     // trick they follow while it is shown, and whether they started a line of their own (the last one had faded).
     uint32 Pumps=0;float PumpGain=0;uint32 PumpsSeen=0;int32 PumpCount=0;FString PumpOf;bool PumpAlone=false;
+    // The surface under the wheels (ESkateSurface; None off the ground or on untagged collision) and the wheels on it.
+    ESkateSurface Surface=ESkateSurface::None;int32 Wheels=0;
     // The shown pose's health for QA (the hybrid's: Native's bones, measured as the Ride backend measures its own).
     FRidePoseMeasure PoseMeasure;float PoseTravel=1;
     FTransform Root=FTransform::Identity,Camera=FTransform::Identity;float CameraFOV=0;
@@ -739,6 +827,7 @@ public:
             Trick=TrickLabel(UTF8_TO_TCHAR(Out.Trick.c_str()));
             if(!Trick.IsEmpty()&&(Out.TrickFakie||Out.TrickSwitch))Trick=(Out.TrickFakie?TEXT("Fakie "):TEXT("Switch "))+Trick;
             Score=Out.Score;Tick=Out.Tick;ManualBalance=Out.Manual;Pumps=Out.Pumps;PumpGain=Out.PumpGain;
+            Surface=Out.Surface<=uint8(ESkateSurface::Sand)?ESkateSurface(Out.Surface):ESkateSurface::None;Wheels=Out.Wheels;
             if(Root.ContainsNaN()||Velocity.ContainsNaN()||Bones.ContainsByPredicate([](const FTransform& T){return T.ContainsNaN();}))
             {Error=TEXT("Nonfinite native output");continue;}
             if(Out.Ready)
@@ -773,6 +862,7 @@ public:
     {
         Root=S.Root;Bones=S.Bones;Velocity=S.Velocity;Spin=S.Spin;Switch=S.Switch;Fakie=S.Fakie;Turns=S.Turns;State=S.State;Trick=S.Trick;Score=S.Score;
         ManualBalance=S.ManualBalance;Camera=S.Camera;CameraFOV=S.CameraFOV;Tick=S.Tick;Floor=S.Floor;HasPose=true;
+        Surface=S.Surface;Wheels=S.Wheels;
         if(Names!=S.Names){Names=S.Names;Reference=S.Reference;}
     }
     FTransform Bone(FName Name) const
@@ -1088,15 +1178,16 @@ FString USkateComponent::GetRetailState() const
         // cost= is Native's step on its own thread (mean and worst over the last second, ms), not the game thread's.
         static const skate_native::XboxState Idle{};
         const skate_native::XboxState& I=RideNative?RideNative->Sent:Idle;
-        return FString::Printf(TEXT("%s tick=%llu backend=Ride turns=%u lock=%d bail=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d cost=%.3f/%.3f pump=%u,%.2f spin=%.0f wheel=%.1f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f"),
-            *RetailRuntime->State,RetailRuntime->Tick,RetailRuntime->Turns,Lockstep()?1:0,bNativeBail?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],
+        return FString::Printf(TEXT("%s tick=%llu backend=Ride surface=%s:%d turns=%u lock=%d bail=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d cost=%.3f/%.3f pump=%u,%.2f spin=%.0f wheel=%.1f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f"),
+            *RetailRuntime->State,RetailRuntime->Tick,*SurfaceName(RetailRuntime->Surface),RetailRuntime->Wheels,RetailRuntime->Turns,Lockstep()?1:0,bNativeBail?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],
             RideNative?RideNative->Worlds:0,RideNative?RideNative->WorldTriangles:0,RideNative?RideNative->CostMean:0.f,RideNative?RideNative->CostWorst:0.f,
             RideNative?RideNative->Pumps:0u,RideNative?RideNative->PumpGain:0.f,RetailRuntime->AirSpin,RetailRuntime->WheelTurn(),*RetailRuntime->PoseMeasure.Describe(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"),
             FMath::RadiansToDegrees(RetailRuntime->ArmSwing[0]),FMath::RadiansToDegrees(RetailRuntime->ArmSwing[1]),
             FMath::RadiansToDegrees(RetailRuntime->ArmNeed[0]),FMath::RadiansToDegrees(RetailRuntime->ArmNeed[1]));
     }
     const skate_native::XboxState& I=RetailRuntime->Sent;
-    return FString::Printf(TEXT("%s tick=%llu backend=Native lock=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d turns=%u wheel=%.1f %s"),*RetailRuntime->State,RetailRuntime->Tick,
+    return FString::Printf(TEXT("%s tick=%llu backend=Native surface=%s:%d lock=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d turns=%u wheel=%.1f %s"),*RetailRuntime->State,RetailRuntime->Tick,
+        *SurfaceName(RetailRuntime->Surface),RetailRuntime->Wheels,
         Lockstep()?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],RetailRuntime->Worlds,RetailRuntime->WorldTriangles,
         RetailRuntime->Turns,RetailRuntime->WheelTurn(),*RetailRuntime->PoseMeasure.Describe());
 }
@@ -1174,11 +1265,12 @@ void USkateComponent::StepRetailRuntime(float Dt)
     const ESkateMode NewMode=bRisingOntoBoard||S.Contains(TEXT("Wipeout"))?ESkateMode::Bail:S.Contains(TEXT("Grind"))?ESkateMode::Grind:
         S.Contains(TEXT("Air"))?ESkateMode::Air:ESkateMode::Ground;
     const ESkateMode Was=Mode;
+    Surface=RetailRuntime->Surface;
     if (NewMode!=Mode)
     {
         if (NewMode==ESkateMode::Bail) { ++Bails; PlayCue(TEXT("clatter"),1,1); }
-        if (NewMode==ESkateMode::Air && Mode==ESkateMode::Ground) PlayCue(TEXT("pop"),1,1);
-        if (NewMode==ESkateMode::Ground && Mode==ESkateMode::Air) { ++Landed; PlayCue(TEXT("land"),.8,1); }
+        if (NewMode==ESkateMode::Air && Mode==ESkateMode::Ground) PlaySurfaceCue(TEXT("pop"),1,1);
+        if (NewMode==ESkateMode::Ground && Mode==ESkateMode::Air) { ++Landed; PlaySurfaceCue(TEXT("land"),.8,1); }
         if (NewMode==ESkateMode::Grind) ++Grinds;
         ++Serial; Mode=NewMode;
     }

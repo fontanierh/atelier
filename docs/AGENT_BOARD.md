@@ -55,6 +55,31 @@ Delivery works without a Remote Control connection. Failed, held or refused deli
 and retries with backoff. The native inbox must be responsive; no transport can make a blocked foreground
 tool acknowledge immediately. Keep lengthy tools in native background tasks with bounded checks.
 
+For persistent Claude sessions, enforce bounded foreground calls with this `PreToolUse` hook in the
+session's `.claude/settings.local.json`, preserving other settings and hooks. Replace the executable
+with the absolute path of the canonical checkout's installed `atelier` command:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash|TaskOutput",
+      "hooks": [{"type": "command", "command": "atelier board guard-claude", "timeout": 5}]
+    }]
+  }
+}
+```
+
+`guard-claude` limits foreground Bash execution to 30 seconds and blocking `TaskOutput` checks to
+10 seconds, including omitted/default timeouts. It returns the complete input with only the timeout
+changed, preserving permission decisions, commands and other arguments. Native background Bash jobs
+keep their original timeouts and render guards. A foreground command can time out, so launch lengthy
+or uncertain work with `run_in_background` from the start. This protects steering from a wait loop
+even when its output pattern can never match a completed job. It does not interrupt existing tools,
+restart the session, detect every application stall, or replace progress updates. Settings hooks are
+normally picked up by Claude's file watcher; verify a subsequent tool invocation in the live session.
+See [Claude's hook input control](https://code.claude.com/docs/en/hooks#pretooluse-decision-control).
+
 `--permission-class` describes the authorized sender, not the recipient: its conservative default is
 `prompting`. Use `bypass` only for an operator/agent that actually has bypass authorization. An explicit
 Claude inbound hold/refusal remains in force. See Claude's
@@ -282,3 +307,10 @@ in the repository; machine labels, directories and service configuration remain 
 on [Claude's native resume window](https://code.claude.com/docs/en/remote-control#resume-sessions-after-stopping-the-server),
 and neither software supervision nor board delivery can guarantee availability during power loss,
 pre-login FileVault unlock, or an external service outage.
+
+## Private game ports
+
+The game and sandbox bind HTTP listeners to `localhost` by default, including custom
+`-liveport=N` probes. The LiveBridge still checks that the configured bind address is
+loopback and refuses public listeners. Choose an unused private port per game session;
+a mailbox handoff never authorizes access to another owner's bridge.

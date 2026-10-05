@@ -24,6 +24,11 @@ public:
     void Apply();
     const TArray<FJapanPreference>& GetValues() const { return Values; }
     bool SetValue(const FString& Key, float Value);
+    /** Whether this launch has a renderer restart handshake with its launcher. */
+    static bool CanRestartRenderer();
+    /** The running shader path: 0 forward, 1 deferred/Lumen. */
+    static int32 CurrentRenderer();
+    const FString& GetGraphicsError() const { return GraphicsError; }
     void ToggleMenu();
     // Every Light key back to its default.
     void ResetLight();
@@ -49,15 +54,19 @@ private:
     FString SettingsFile;
     TSharedPtr<SWidget> Menu;
     int32 AppliedPerformanceMode = -1;
+    FString GraphicsError;
     /** Show the menu's main page, or its Skate feel page. */
     void OpenMenu(bool bSkate);
+    /** Confirm the resource cost and, for a renderer change, the required restart. */
+    void OpenGraphicsWarning(const FString& Key);
+    bool SetGraphicsChoice(const FString& Key, float Value);
     /** Every skate_ value back to the game's defaults (DefaultGame.ini and stock feel). */
     /** Custom's values (bCustom) or the stick, mouse and camera, back to their defaults. */
     void ResetSkate(bool bCustom);
     /** Every custom value is stock (the base difficulty aside). */
     bool IsSkateCustomStock() const;
     float Get(const TCHAR* Key) const;
-    void Save();
+    bool Save();
     static bool IsToggle(const FString& Key);
     static FString FilePath();
     static TMap<FString,FString> ReadSaved();

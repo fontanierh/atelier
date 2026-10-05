@@ -10,6 +10,8 @@ struct GameplayWorldSnapshot
 {
     std::vector<std::array<Vec3,3>> triangles;
     std::vector<std::vector<std::array<float,3>>> rails;
+    // Per triangle (or empty for none): the packed surface, physics surface << 7 | sound surface (GroundSurfaceRuntime).
+    std::vector<std::uint16_t> surfaces;
 };
 struct PreparedGameplayWorld
 {

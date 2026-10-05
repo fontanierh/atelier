@@ -104,6 +104,10 @@ uv run pytest                            # studio and game Python tests
   running command and retain its session ID. Poll in bounded calls of at most 10 seconds, returning control
   between checks. Never sit in a foreground sleep loop, blocking join, or oversized tool timeout. If the client
   cannot keep the existing session responsive, do not launch a lengthy job through it.
+- Persistent Claude sessions must install the `atelier board guard-claude` PreToolUse hook described
+  in [the board guide](docs/AGENT_BOARD.md). It enforces 30-second foreground Bash timeouts and 10-second
+  output checks; background jobs keep their timeouts and guards. Launch lengthy jobs in the background
+  from the start, rather than relying on a foreground timeout to stop them.
 - Keep the persistent board listener armed throughout jobs and waits. Process notifications and user steering
   promptly; if using a fallback wait, re-arm it immediately before starting or checking another job. Run the job
   independently so acknowledging a message does not require waiting for the job to finish or restarting the agent.
@@ -123,6 +127,13 @@ uv run pytest                            # studio and game Python tests
 
 ## Heavy jobs
 
+- Yorimichi's normal play defaults to forward lighting and optimized city trees. Use `atelier play yorimichi`
+  for the native 1440 window, or `--profile fullscreen` / `--profile desktop-1440` for fullscreen. Honor saved
+  `renderer` and `tree_optimization` preferences; do not silently force Lumen or disable tree optimization for
+  routine development. The menu warns before enabling Lumen (higher GPU and memory use, restart required), and
+  before disabling tree optimization. The launcher handles the confirmed renderer restart. Keep normal memory
+  guards unless the user explicitly authorizes an exception for that session. See
+  [desktop performance](games/yorimichi/docs/DESKTOP_PERFORMANCE.md) for the launch and readiness contract.
 - Heavy jobs (Unreal, Blender renders) run under the render lock and memory guard (`atelier.safety`). `atelier play`
   and `atelier build` do this for you. A game's guard stops it above 10 GiB; `atelier play --memory-gib N` (10 to 14)
   raises that for one session that needs it (Quality graphics at 1080p, for example). Say so in your Holding entry.

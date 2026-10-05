@@ -29,7 +29,10 @@ FYorimichiPhone::FYorimichiPhone(AWandererCharacter* InRider) : Rider(InRider), 
     {
         AWandererCharacter* C = Rider.Get(); FString Key; double Number = 0;
         if (C && C->GetPreferences() && J.TryGetStringField(TEXT("key"), Key) && J.TryGetNumberField(TEXT("value"), Number) && FMath::IsFinite(Number))
-            if (C->GetPreferences()->SetValue(Key, Number)) SendSettings(Player);
+        {
+            C->GetPreferences()->SetValue(Key, Number);
+            SendSettings(Player); // Failure returns the authoritative unchanged values and an error.
+        }
     });
     Stream->OnAction(TEXT("teleport"), [this](const FString& Player, const FJsonObject& J)
     {
@@ -63,9 +66,15 @@ void FYorimichiPhone::SendSettings(const FString& Player)
         Row->SetStringField(TEXT("key"), V.Key); Row->SetStringField(TEXT("label"), V.Label);
         Row->SetNumberField(TEXT("value"), V.Value); Row->SetNumberField(TEXT("min"), V.Minimum); Row->SetNumberField(TEXT("max"), V.Maximum);
         if (V.Step > 0.f) Row->SetNumberField(TEXT("step"), V.Step);
+        if (V.Key == TEXT("renderer"))
+        {
+            Row->SetBoolField(TEXT("restart_supported"),UJapanPreferences::CanRestartRenderer());
+            Row->SetNumberField(TEXT("running"),UJapanPreferences::CurrentRenderer());
+        }
         Rows.Add(MakeShared<FJsonValueObject>(Row));
     }
     auto Json = Object(); Json->SetArrayField(TEXT("values"), Rows);
+    if (!C->GetPreferences()->GetGraphicsError().IsEmpty()) Json->SetStringField(TEXT("error"),C->GetPreferences()->GetGraphicsError());
     Stream->Send(Player, Json, TEXT("settings"));
 }
 

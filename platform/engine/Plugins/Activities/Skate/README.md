@@ -82,9 +82,36 @@ sounds and HUD getters.
 | `BoardDissolveMaterial` | none | Ride only: a masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
 | `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue) |
+| `SurfaceMeshes`, `SurfaceMaterials` | empty | What the ground rides like, by static mesh or material name (see Surfaces) |
+| `DefaultSurface` | `Concrete` | The surface of a triangle nothing names |
 
 The scales apply to the stock values each time the session is configured, so they never compound. A scale outside
 its range is an error and the board does not start.
+
+### Surfaces
+
+Every colliding triangle in the snapshot carries an `ESkateSurface`, and the board rides it with the recovered
+surface profile Skate 3 gives that kind of ground. The four wheels vote, so a board half on the grass rides half
+slow. The surface's own sounds also play (see Feel).
+
+| Surface | Profile | Rides |
+| --- | --- | --- |
+| `Concrete`, `Wood`, `Metal` | smooth | Full speed. Wood and metal only sound different |
+| `Asphalt`, `Stone` | rough | Nearly full speed, with a rumble |
+| `Dirt` | slow | Coasting stops within about 10 m; pushing still gets going |
+| `Grass`, `Sand` | very slow | Barely rolls; pushing reaches a walking pace |
+
+The first match wins:
+
+1. An actor or component tag `SkateSurface.<Surface>` (`SkateSurface.Wood`).
+2. The static mesh's name in `SurfaceMeshes`.
+3. The triangle's material, read per mesh section, in `SurfaceMaterials`.
+4. `DefaultSurface`.
+
+Names drop a leading `SM_`, `MI_` or `M_`, so `MI_Road` is `Road`. Use a mesh name when several kinds of ground share
+one material. The ini form is `SurfaceMaterials=(("Grass",Grass),("Road",Asphalt))`. `skate.SurfaceDebug 1` logs
+each mesh section's surface the next time the snapshot is built. `GetSurface()` returns the surface under the
+wheels, and `GetRetailState` reports it as `surface=<name>:<wheels>`.
 
 ## Feel
 
@@ -130,7 +157,10 @@ bit-exact with stock.
 
 `SoundFolder` holds the loops `roll_01`, `grind_01`, `slide_01`, `skid_01` (powerslide) and `scrape_01` (foot brake),
 and one-shot variants `<cue>_01` to `<cue>_08` for `pop`, `land`, `catch`, `push`, `flick` and `clatter`. The loops
-follow the board with volume and pitch set by mode and speed; a one-shot never repeats the previous variant. Sounds
+follow the board with volume and pitch set by mode and speed; a one-shot never repeats the previous variant. Each
+surface after `Concrete` can have its own roll loop `roll_<surface>_01` (`roll_wood_01`) and its own `pop_<surface>`
+and `land_<surface>` variants. The board plays whichever the ground under it has, and otherwise falls back to `roll`,
+`pop` or `land`. The roll crossfades as the board crosses from one surface to another. Sounds
 attenuate over a 500 cm inner radius and 4500 cm falloff.
 
 ## Controls
@@ -187,7 +217,9 @@ output from a previous ride never moves a new one.
   inner 60%, the game thread gathers the next snapshot, a background task builds it and the session installs it
   between steps. Within 60 m of an actor tagged `SkatePark` the snapshot stays centred on that actor, so riding
   around a park never rebuilds it. Over open water, where there is nothing to snapshot, the old one stays and the
-  rebuild is retried 20 m further on.
+  rebuild is retried 20 m further on. Game meshes are not authored skate collision, so an edge within 12 mm of the
+  wheels' bottoms (a gap between planks, a seam, trim) is ridden over: the wheel steps up onto it, and the trucks, the
+  deck and the rider's feet pass its face. A taller edge, such as a 3 cm curb, still stops the board.
 - **Input.** Each frame the component samples the controls into an Xbox-style packet and steps the session with the
   frame time; the session runs whole 60 Hz ticks.
 - **Lockstep.** By default the game thread sends the next step only once the last one's pose is back, so a slow step
@@ -218,4 +250,4 @@ physical skeletons, the animation rig, clips, metadata banks and camera shots, l
 `package-manifest.json`. The game's `skate.runtime` build step checks every file against that manifest before Unreal
 compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
 [verification](RUNTIME.md#verification), and lists the [limits](RUNTIME.md#limits): collision is a static snapshot
-with one surface material, and editor builds are the checked path.
+whose triangles carry the [surface](#surfaces) they were classified as, and editor builds are the checked path.

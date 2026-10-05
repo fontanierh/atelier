@@ -393,6 +393,7 @@ def configure(sub):
     p.add_argument('message')
     p = actions.add_parser('remote-watch', help='bounded recovery for explicitly owned macOS Claude remote services')
     p.add_argument('--config', type=Path, required=True, help='private machine service configuration JSON')
+    actions.add_parser('guard-claude', help='PreToolUse hook: bound foreground commands and job output checks')
     p = actions.add_parser('notify-claude', help='deliver to an existing native Claude inbox without a second writer')
     p.add_argument('--session-dir', type=Path, required=True, help='working directory of the existing remote session')
     p.add_argument('--permission-class', choices=('prompting', 'bypass'), default='prompting',
@@ -481,6 +482,9 @@ def main(args):
         elif args.action == 'remote-watch':
             from . import board_remote
             return board_remote.main(args.config)
+        elif args.action == 'guard-claude':
+            from . import board_toolguard
+            return board_toolguard.main()
     except (ValueError, sqlite3.Error) as error:
         print(str(error), file=sys.stderr)
         return 1

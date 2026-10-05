@@ -13,6 +13,29 @@ enum class ESkateBackend : uint8
     Ride
 };
 
+/** What the board rolls on. Each surface picks one of the native session's authored ground profiles (how fast it
+ *  coasts, brakes, grips and wobbles) and its own roll sound (roll_<surface>_01 in SoundFolder, else roll_01). */
+UENUM(BlueprintType)
+enum class ESkateSurface : uint8
+{
+    None = 0 UMETA(Hidden),
+    /** Smooth: park concrete, plaster, tiles. The default. */
+    Concrete = 1,
+    /** Smooth, a hollow roll: ramps, decks, planks. */
+    Wood,
+    /** Smooth, a ringing roll: plates, grates. */
+    Metal,
+    /** Rough: a little more drag and a grainier roll. */
+    Asphalt,
+    /** Rough: flagstones, cobbles, rock. */
+    Stone,
+    /** Slow: packed earth, gravel, mud. Coasting dies within a few metres. */
+    Dirt,
+    /** Very slow: grass, sand. The board barely rolls. */
+    Grass,
+    Sand
+};
+
 /** What skateboarding needs from the game, set in its DefaultGame.ini under [/Script/AtelierSkate.SkateSettings]. */
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Atelier Skate"))
 class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
@@ -50,4 +73,11 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString SoundFolder;
     /** Body hitting the ground in a bail (the "fall" cue). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") TArray<FSoftObjectPath> FallSounds;
+
+    /** What each colliding triangle rides like, first match wins: an actor or component tag SkateSurface.<Surface>
+     *  (SkateSurface.Wood), the static mesh's name in SurfaceMeshes, the triangle's material in SurfaceMaterials, then
+     *  DefaultSurface. Names drop a leading SM_, MI_ or M_ (MI_Road is Road). */
+    UPROPERTY(Config, EditAnywhere, Category = "Surfaces") TMap<FString, ESkateSurface> SurfaceMeshes;
+    UPROPERTY(Config, EditAnywhere, Category = "Surfaces") TMap<FString, ESkateSurface> SurfaceMaterials;
+    UPROPERTY(Config, EditAnywhere, Category = "Surfaces") ESkateSurface DefaultSurface = ESkateSurface::Concrete;
 };

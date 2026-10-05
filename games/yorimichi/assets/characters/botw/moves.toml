@@ -118,16 +118,26 @@ GuardBreak = { clip = "Shield_Guard_Break", as = "Player_GuardBreak" }
 # Without the shield (the "Shield" setting off) the sword guards and parries: the same timelines, sword-only clips.
 SwordParry = { clip = "Sword_Guard_Just", as = "Player_GuardJust", events = "Shield_Guard_Just" }
 SwordGuardHit = { clip = "Sword_Guard_Hit", as = "Player_GuardFailHit", events = "Shield_Guard_Hit" }
+SwordGuardBreak = { clip = "Sword_Guard_Break", as = "Player_GuardBreak", events = "Shield_Guard_Break" }
 
-# Hit reactions: a light hit from the front, back, left or right; a heavy one knocks him down and he gets up.
+# Hit reactions from the front, back, left or right: a light hit flinches, a strong one (or the third in a row)
+# staggers, a heavy one knocks him down and he gets up.
 HitF = { clip = "Nml_Damage_S_F", as = "Player_DamageS" }
 HitB = { clip = "Nml_Damage_S_B", as = "Player_DamageS" }
 HitL = { clip = "Nml_Damage_S_L", as = "Player_DamageS" }
 HitR = { clip = "Nml_Damage_S_R", as = "Player_DamageS" }
+HitMF = { clip = "Nml_Damage_M_F", as = "Player_DamageM" }
+HitMB = { clip = "Nml_Damage_M_B", as = "Player_DamageM" }
+HitML = { clip = "Nml_Damage_M_L", as = "Player_DamageM" }
+HitMR = { clip = "Nml_Damage_M_R", as = "Player_DamageM" }
 KnockF = { clip = "Nml_Damage_L_F", as = "Player_DamageL" }
 KnockB = { clip = "Nml_Damage_L_B", as = "Player_DamageL" }
+KnockL = { clip = "Nml_Damage_L_L", as = "Player_DamageL" }
+KnockR = { clip = "Nml_Damage_L_R", as = "Player_DamageL" }
 KnockUpF = { clip = "Nml_Damage_L_F_Standup", as = "Player_DamageLStand" }
 KnockUpB = { clip = "Nml_Damage_L_B_Standup", as = "Player_DamageLStand" }
+KnockUpL = { clip = "Nml_Damage_L_L_Standup", as = "Player_DamageLStand" }
+KnockUpR = { clip = "Nml_Damage_L_R_Standup", as = "Player_DamageLStand" }
 
 # Upper-body poses laid over the legs (the definition's carry layer): sword and shield out, the raised shield, and the
 # sword raised to guard without the shield.
