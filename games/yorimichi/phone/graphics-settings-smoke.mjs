@@ -48,5 +48,24 @@ try{
  assert.deepEqual(await changes(),[{key:'tree_optimization',value:1}]);
  await render({renderer:1,running:0,restart:false});
  assert.equal(await page.locator('output').first().textContent(),'Restart pending');
+ await page.evaluate(()=>{
+  window.changes=[];
+  window.renderSettings([
+   {key:'tree_optimization',label:'Tree optimization',value:1,min:0,max:1},
+   {key:'tree_lod_mode',label:'Tree detail comparison',value:0,min:0,max:3,step:1},
+   {key:'tree_lod_distance',label:'Keep detail farther (x)',value:1.5,min:.5,max:3,step:.1},
+  ],(key,value)=>window.changes.push({key,value}));
+ });
+ assert.equal(await page.locator('#setting-tree_lod_distance').isEnabled(),true);
+ accept=false;await page.selectOption('#setting-tree_lod_mode','1');
+ assert.deepEqual(await changes(),[],'full detail comparison can be cancelled');
+ accept=true;await page.selectOption('#setting-tree_lod_mode','1');
+ assert.deepEqual(await changes(),[{key:'tree_lod_mode',value:1}]);
+ await page.evaluate(()=>window.renderSettings([
+  {key:'tree_optimization',label:'Trees',value:1,min:0,max:1},
+  {key:'tree_lod_mode',label:'Detail',value:2,min:0,max:3},
+  {key:'tree_lod_distance',label:'Distance',value:1.5,min:.5,max:3,step:.1},
+ ],()=>{}));
+ assert.equal(await page.locator('#setting-tree_lod_distance').isDisabled(),true,'distance applies only in automatic mode');
  console.log('PASS graphics menu choices, cancellation, confirmation, restart messaging and tree toggles');
 }finally{await browser.close();}

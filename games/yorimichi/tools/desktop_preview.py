@@ -102,7 +102,15 @@ def tile_counts(path):
     return len(sources), len(names)
 
 
-def parse_ready(log, baseline=False, windowed=False, tile_manifest=None, tree_optimization=True):
+def tree_lod_choice(values):
+    try:
+        value = float(values.get('tree_lod_mode', 0))
+        return int(math.floor(max(0, min(3, value)) + .5)) if math.isfinite(value) else 0
+    except (ValueError, TypeError):
+        return 0
+
+
+def parse_ready(log, baseline=False, windowed=False, tile_manifest=None, tree_optimization=True, tree_lod_mode=0):
     sizes = re.findall(r'DESKTOP PREVIEW viewport=(\d+)x(\d+) fullscreen=(\d) window_aspect=([0-9.]+)', log)
     if not sizes:
         return None
@@ -113,7 +121,7 @@ def parse_ready(log, baseline=False, windowed=False, tile_manifest=None, tree_op
         raise ValueError('requested renderer not verified')
     originals, tiles = tile_counts(tile_manifest or PROJECT / 'Content' / 'Data' / 'city_surface_tiles' / TILE_TAG / 'manifest.json')
     markers = [f'CITY TILES tag={TILE_TAG} enabled=1 originals={originals} tiles={tiles}',
-               f'CITY TREE LODS tag={TREE_TAG} enabled={int(tree_optimization)} forced=0 groups=3']
+               f'CITY TREE LODS tag={TREE_TAG} enabled={int(tree_optimization)} forced={tree_lod_mode} groups=3']
     if not baseline:
         markers.append('FORWARD FILL nominal_lux=3.000 lights=1')
     missing = [marker for marker in markers if not re.search(re.escape(marker) + r'(?=\s|$)', log)]
@@ -172,7 +180,8 @@ def launch(baseline=False, windowed=False, dry_run=False, shared_settings=False,
             attempt += 1
             continue
         try:
-            status = parse_ready(log, lumen, windowed, tree_optimization=trees)
+            status = parse_ready(log, lumen, windowed, tree_optimization=trees,
+                                 tree_lod_mode=tree_lod_choice(values))
             print('verified:', json.dumps(status) if status else 'the game never reported its viewport')
             if status is None:
                 return 1

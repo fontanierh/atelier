@@ -191,3 +191,27 @@ Capped (`--capped`, `r.VSync 1`) on the wide city approach: 59.995 fps average, 
   character's animation fidelity for it.
 - These numbers hold for the measured views and routes on the reference machine, not for every route, weather,
   background load or external display.
+
+## Compare and tune Hidamari tree detail
+
+The Esc and phone graphics menus have an immediate **Tree optimization** on/off comparison.
+Off restores original full-detail city trees. On defaults to **Automatic**: nearby trees retain
+the original leaf geometry/materials; intermediate/distant LODs simplify leaf outlines only.
+
+**Tree detail comparison** also offers Full detail, Intermediate and Distant. Forced intermediate
+or distant detail stays fixed at every distance for comparison; return to Automatic for normal
+play. Full detail uses the original single-LOD mesh and warns about higher GPU cost. These changes
+apply live without rebuilding or restarting and preserve tree placements and collision.
+
+**Keep tree detail farther (x)** tunes automatic LOD distance from 0.5 to 3.0, default 1.5.
+Higher values retain detailed leaves farther away and can increase GPU cost; smaller values switch
+to lighter outlines earlier. The control is disabled while optimization is off or a comparison LOD
+is forced. The chosen mode/distance persist with the other graphics preferences; failed saves roll
+back the live tree state as well as the setting. Forward lighting remains the normal default.
+
+For an owned scripted comparison, use saved preferences `tree_optimization`, `tree_lod_mode`
+(0 Automatic, 1 Full detail, 2 Intermediate, 3 Distant) and `tree_lod_distance`. Inspect actual
+rendered LOD counts with `foliage.LogFoliageFrame` and retain the game log, close/medium/far captures,
+actual viewport, frame timings and memory guard evidence. Do not infer selected LOD from the asset
+name alone. Global foliage diagnostic force/minimum settings can override normal selection and
+must be reported when diagnosing unexpected permanent low detail.
