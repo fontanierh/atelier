@@ -33,6 +33,11 @@ def partition(source, folder, size, expected):
     assert len(meshes) == 1, (source, [ob.name for ob in meshes])
     original = meshes[0]
     mesh = original.data
+    # The sources share surface materials: a later import names its copies X.001, which would export as slot X_001.
+    for i, slot in enumerate(mesh.materials):
+        base = slot and slot.name.rpartition('.')[0]
+        if base and slot.name.rpartition('.')[2].isdigit() and base in bpy.data.materials:
+            mesh.materials[i] = bpy.data.materials[base]
     positions = values(mesh.vertices, 'co', 3)
     starts = values(mesh.polygons, 'loop_start', 1, np.int32)
     counts = values(mesh.polygons, 'loop_total', 1, np.int32)
