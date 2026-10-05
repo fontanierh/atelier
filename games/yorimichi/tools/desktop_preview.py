@@ -50,7 +50,7 @@ def read_preferences(path, overrides=''):
 def toggle(values, key, default):
     try:
         value = float(values.get(key, default))
-        return value >= .5 if math.isfinite(value) else bool(default)
+        return value > .5 if math.isfinite(value) else bool(default)
     except (ValueError, TypeError):
         return bool(default)
 

@@ -73,6 +73,16 @@ def test_readiness_matches_current_manifest_and_rejects_partial_import(desktop):
         desktop.parse_ready(ready_log())
 
 
+def test_fractional_graphics_choices_match_the_native_threshold(desktop, tmp_path):
+    ctx = SimpleNamespace(unreal_app=Path('Editor'), uproject=Path('Game.uproject'))
+    (desktop.PROJECT / 'Saved' / 'settings.txt').write_text('renderer=0.5\ntree_optimization=0.5\n')
+    command = desktop.command(ctx, tmp_path, shared_settings=True)
+    assert any('r.ForwardShading=True' in arg for arg in command)
+    manifest(desktop)
+    trees = desktop.toggle(desktop.read_preferences(desktop.PROJECT / 'Saved' / 'settings.txt'), 'tree_optimization', 1)
+    assert desktop.parse_ready(ready_log(trees=False), tree_optimization=trees)
+
+
 def test_menu_renderer_restart_reads_saved_choice_and_releases_each_guard(desktop, monkeypatch, tmp_path):
     manifest(desktop)
     preferences = desktop.PROJECT / 'Saved' / 'settings.txt'
