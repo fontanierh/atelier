@@ -426,8 +426,10 @@ def build_level(terrain_mesh, W, MI):
         t = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(0, 0, 0))
         t.set_actor_label("Terrain"); t.static_mesh_component.set_static_mesh(terrain_mesh); t.set_mobility(unreal.ComponentMobility.STATIC)
         sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 3000))
-        # unreal.Rotator(roll, pitch, yaw): the sun sits 44 deg up, shining from the south-west (over the sea) toward the hill
-        sun.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=-48.0, yaw=15.0), False)      # sun behind the traveler (west-south-west): the road is lit along its length, tree shadows fall forward
+        # unreal.Rotator(roll, pitch, yaw): the sun sits 48 deg up and shines toward yaw -30 (east-north-east), so it stands in
+        # the west-south-west, over the sea and behind the traveler: the road is lit along its length, tree shadows fall
+        # forward. The settings menu's Light section (JapanPreferences.cpp) sets the player's sun over this one.
+        sun.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=-48.0, yaw=-30.0), False)
         L = sun.light_component
         L.set_editor_property("forward_shading_priority", 1)
         L.set_mobility(unreal.ComponentMobility.MOVABLE); L.set_intensity(7.0)

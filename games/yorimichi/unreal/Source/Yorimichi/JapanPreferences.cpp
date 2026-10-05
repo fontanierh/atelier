@@ -35,7 +35,7 @@
 // The menu's Light section, in its order. Raising LightVersion gives every saved file the defaults of these keys once.
 static const TCHAR* const LightKeys[] = {TEXT("exposure"),TEXT("saturation"),TEXT("sun_height"),TEXT("sun_yaw"),
     TEXT("sun_warmth"),TEXT("sun_strength"),TEXT("sky_fill"),TEXT("bounce")};
-static constexpr int32 LightVersion = 2;
+static constexpr int32 LightVersion = 3;
 
 void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
 {
@@ -61,11 +61,13 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         // The light (the menu's Light section, LightKeys): the map's sun, sky light and unbound volume
         // (setup_project.py build_level) as the player tunes them. The defaults are a low, warm afternoon sun
-        // with long shadows, chosen in a live trial of five looks (build/yorimichi/scout/hidamari-light1).
+        // with long shadows, chosen in a live trial of five looks (build/yorimichi/scout/hidamari-light1). Its
+        // direction (yaw -30: from the west-south-west, so the south-facing fronts and the city seen from the sea are
+        // in sun and the east-west streets get diagonal shadows) won a trial of five (build/yorimichi/scout/hidamari-v14).
         {TEXT("exposure"),TEXT("Exposure"),.95f,.4f,2.2f},
         {TEXT("saturation"),TEXT("Saturation"),1.f,.6f,1.6f},
         {TEXT("sun_height"),TEXT("Sun elevation"),26.f,5.f,80.f},
-        {TEXT("sun_yaw"),TEXT("Sun direction"),15.f,-180.f,180.f},
+        {TEXT("sun_yaw"),TEXT("Sun direction"),-30.f,-180.f,180.f},
         {TEXT("sun_warmth"),TEXT("Sun warmth"),.9f,0.f,1.f},
         {TEXT("sun_strength"),TEXT("Sun strength (lux)"),11.f,2.f,16.f},
         {TEXT("sky_fill"),TEXT("Sky fill"),2.3f,0.f,6.f},
