@@ -11,6 +11,8 @@
 #include "Engine/PostProcessVolume.h"
 #include "Engine/DirectionalLight.h"
 #include "Components/DirectionalLightComponent.h"
+#include "Engine/SkyLight.h"
+#include "Components/SkyLightComponent.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Components/ExponentialHeightFogComponent.h"
 #include "EngineUtils.h"
@@ -29,6 +31,11 @@
 #include "Widgets/Input/SSlider.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
+
+// The menu's Light section, in its order. Raising LightVersion gives every saved file the defaults of these keys once.
+static const TCHAR* const LightKeys[] = {TEXT("exposure"),TEXT("saturation"),TEXT("sun_height"),TEXT("sun_yaw"),
+    TEXT("sun_warmth"),TEXT("sun_strength"),TEXT("sky_fill"),TEXT("bounce")};
+static constexpr int32 LightVersion = 2;
 
 void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
 {
@@ -51,14 +58,23 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("toon_bands"),TEXT("Toon bands"),7.f,2.f,10.f},
         {TEXT("toon_soft"),TEXT("Toon softness"),.45f,0.f,1.f},
         {TEXT("outline"),TEXT("Outlines"),0.f,0.f,1.f},
+        {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
+        // The light (the menu's Light section, LightKeys): the map's sun, sky light and unbound volume
+        // (setup_project.py build_level) as the player tunes them. The defaults are a low, warm afternoon sun
+        // with long shadows, chosen in a live trial of five looks (build/yorimichi/scout/hidamari-light1).
         {TEXT("exposure"),TEXT("Exposure"),.95f,.4f,2.2f},
         {TEXT("saturation"),TEXT("Saturation"),1.f,.6f,1.6f},
-        {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
-        {TEXT("sun_height"),TEXT("Sun elevation"),48.f,5.f,80.f},
-        {TEXT("sun_yaw"),TEXT("Sun direction"),15.f,-180.f,180.f}};
+        {TEXT("sun_height"),TEXT("Sun elevation"),26.f,5.f,80.f},
+        {TEXT("sun_yaw"),TEXT("Sun direction"),15.f,-180.f,180.f},
+        {TEXT("sun_warmth"),TEXT("Sun warmth"),.9f,0.f,1.f},
+        {TEXT("sun_strength"),TEXT("Sun strength (lux)"),11.f,2.f,16.f},
+        {TEXT("sky_fill"),TEXT("Sky fill"),2.3f,0.f,6.f},
+        {TEXT("bounce"),TEXT("Bounce light"),1.9f,0.f,4.f}};
     // Cairo plays Breath of the Wild's move set instead of his own (ACairoCharacter), when it is built.
     if (ACairoCharacter::HasBotw())
         Values.Insert({TEXT("cairo_botw"),TEXT("Cairo's moves"),0.f,0.f,1.f},Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1);
+    Defaults.Reset();
+    for (const FJapanPreference& V : Values) Defaults.Add(V.Key,V.Value);
     SettingsFile=FilePath();
     UE_LOG(LogTemp,Display,TEXT("PREFERENCES file=%s"),*SettingsFile);
     SavedValues=ReadSaved();
@@ -102,6 +118,13 @@ TMap<FString,FString> UJapanPreferences::ReadSaved()
         // A stale desktop key in the shared file must not switch a phone session into the profile.
         if (Line.Split(TEXT("="),&K,&V) && !IsSessionOnly(K.TrimStartAndEnd()))
             Result.Add(K.TrimStartAndEnd(),V.TrimStartAndEnd());
+    }
+    // A file saved before the current default light keeps every light value it wrote, the old defaults
+    // among them: let it take the new light once. Command-line overrides below still apply.
+    if (float Version = 0; !Result.Contains(TEXT("light_version")) || !LexTryParseString(Version,*Result[TEXT("light_version")]) || Version < LightVersion)
+    {
+        for (const TCHAR* Key : LightKeys) Result.Remove(Key);
+        Result.Add(TEXT("light_version"),FString::FromInt(LightVersion));
     }
     FString Overrides;
     if (FParse::Value(FCommandLine::Get(),TEXT("set="),Overrides))
@@ -210,7 +233,35 @@ void UJapanPreferences::Apply()
         It->WindSpeed = Get(TEXT("wind"))*100.f;
         It->ApplyPerformanceSettings(PerformanceMode != 0);
     }
-    for (TActorIterator<ADirectionalLight> It(Owner->GetWorld()); It; ++It) It->SetActorRotation(FRotator(-Get(TEXT("sun_height")),Get(TEXT("sun_yaw")),0));
+    // The sun: warmth 0 is a white noon sun, .5 the map's own (1, .90, .76), 1 a golden afternoon.
+    const float Warmth = Get(TEXT("sun_warmth"));
+    const FLinearColor SunColour = Warmth < .5f
+        ? FMath::Lerp(FLinearColor(1.f,.97f,.92f),FLinearColor(1.f,.90f,.76f),Warmth*2.f)
+        : FMath::Lerp(FLinearColor(1.f,.90f,.76f),FLinearColor(1.f,.72f,.48f),Warmth*2.f-1.f);
+    for (TActorIterator<ADirectionalLight> It(Owner->GetWorld()); It; ++It)
+    {
+        It->SetActorRotation(FRotator(-Get(TEXT("sun_height")),Get(TEXT("sun_yaw")),0));
+        if (auto* Light = Cast<UDirectionalLightComponent>(It->GetLightComponent()))
+        {
+            Light->SetIntensity(Get(TEXT("sun_strength")));
+            Light->SetLightColor(SunColour);
+        }
+    }
+    // The shadows' fill: the sky light, bluer as the sun warms (the map's (.95, .96, 1) at warmth .5 and below),
+    // and Lumen's bounce on the unbound volume; bounded looks (the harbor's) keep their own.
+    const FLinearColor SkyColour = FMath::Lerp(FLinearColor(.95f,.96f,1.f),FLinearColor(.84f,.89f,1.f),FMath::Max(0.f,Warmth*2.f-1.f));
+    for (TActorIterator<ASkyLight> It(Owner->GetWorld()); It; ++It)
+        if (USkyLightComponent* Sky = It->GetLightComponent())
+        {
+            Sky->SetIntensity(Get(TEXT("sky_fill")));
+            Sky->SetLightColor(SkyColour);
+        }
+    for (TActorIterator<APostProcessVolume> It(Owner->GetWorld()); It; ++It)
+        if (It->bUnbound)
+        {
+            It->Settings.bOverride_IndirectLightingIntensity = true;
+            It->Settings.IndirectLightingIntensity = Get(TEXT("bounce"));
+        }
     if (auto* Scale = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenPercentage"))) Scale->Set(Get(TEXT("render_scale")),ECVF_SetByCode);
     ReportProfile();
 }
@@ -286,6 +337,13 @@ void UJapanPreferences::Save()
     for (const auto& K : Keys) Content += K+TEXT("=")+SavedValues[K]+TEXT("\n");
     FFileHelper::SaveStringToFile(Content,*SettingsFile);
 }
+void UJapanPreferences::ResetLight()
+{
+    for (auto& V : Values)
+        for (const TCHAR* Key : LightKeys)
+            if (V.Key == Key) V.Value = Defaults.FindRef(V.Key);
+    Apply(); Save();
+}
 void UJapanPreferences::ToggleMenu()
 {
     if (Menu) { CloseMenu(); return; }
@@ -356,6 +414,8 @@ void UJapanPreferences::ToggleMenu()
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
         if (IsToggle(Values[I].Key)) continue;
+        if (Values[I].Key == LightKeys[0])
+            Rows->AddSlot().AutoHeight().Padding(0,16,0,4)[SNew(STextBlock).Text(FText::FromString(TEXT("Light"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         TSharedRef<SSlider> Slider = SNew(SSlider)
             .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
             .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });
@@ -364,6 +424,8 @@ void UJapanPreferences::ToggleMenu()
             + SHorizontalBox::Slot().FillWidth(.38f)[Slider]
             + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I] { return FText::FromString(FString::Printf(TEXT("%.2f"),Values[I].Value)); })]];
     }
+    Rows->AddSlot().AutoHeight().Padding(0,8,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset the light")))
+        .OnClicked_Lambda([this] { ResetLight(); return FReply::Handled(); })];
     Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Resume"))).OnClicked_Lambda([this] { CloseMenu(); return FReply::Handled(); })];
     Menu = SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
         [SNew(SBox).WidthOverride(620).MaxDesiredHeight(760)

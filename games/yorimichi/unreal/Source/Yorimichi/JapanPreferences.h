@@ -23,6 +23,8 @@ public:
     const TArray<FJapanPreference>& GetValues() const { return Values; }
     bool SetValue(const FString& Key, float Value);
     void ToggleMenu();
+    // Every Light key back to its default.
+    void ResetLight();
     void CloseMenu();
     bool ShowFrameRate() const { return Get(TEXT("show_fps")) > .5f; }
     // Keys chosen per launch and never written to the shared settings file.
@@ -37,6 +39,7 @@ private:
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     TArray<FJapanPreference> Values;
     TMap<FString,FString> SavedValues;
+    TMap<FString,float> Defaults;
     FString SettingsFile;
     TSharedPtr<SWidget> Menu;
     int32 AppliedPerformanceMode = -1;

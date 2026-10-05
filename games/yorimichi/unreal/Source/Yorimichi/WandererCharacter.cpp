@@ -536,6 +536,7 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("guard")) ParryPressed(FInputActionValue(true));
     else if (Button == TEXT("guard_release")) ParryReleased(FInputActionValue(false));
     else if (Button == TEXT("weapon")) ToggleWeapon(FInputActionValue(true));
+    else if (Button == TEXT("menu")) ToggleMenu(FInputActionValue(true));
     else return false;
     return true;
 }

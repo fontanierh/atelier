@@ -1,6 +1,6 @@
 // Labels, limits and values come from the same preferences used by the Esc menu.
 const choices={performance:['Quality','Performance'],show_fps:['Hidden','Shown'],goofy:['Regular · left foot forward','Goofy · right foot forward'],cairo_botw:['His own','Breath of the Wild']};
-const groups=[['Movement',['stamina_rings','goofy','cairo_botw']],['Camera',['mouse','cam_dist','fov']],['Graphics',['performance','show_fps','render_scale']],['Art & world',['painterly','paint_radius','toon','toon_bands','toon_soft','outline','exposure','saturation','wind','sun_height','sun_yaw']]];
+const groups=[['Movement',['stamina_rings','goofy','cairo_botw']],['Camera',['mouse','cam_dist','fov']],['Graphics',['performance','show_fps','render_scale']],['Art & world',['painterly','paint_radius','toon','toon_bands','toon_soft','outline','wind']],['Light',['exposure','saturation','sun_height','sun_yaw','sun_warmth','sun_strength','sky_fill','bounce']]];
 export function renderSettings(rows,onChange){
  const root=document.getElementById('settings-rows'),scroll=root.scrollTop;root.replaceChildren();
  const ordered=new Set();
