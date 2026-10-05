@@ -125,13 +125,23 @@ def drive(forward=1.0, right=0.0, gait='run'):
 
 
 def press(button):
-    """Press a button as the player would: 'jump', 'jump_release', 'roll' or 'crouch' (toggles)."""
+    """Press a button as the player would: Live_Press lists them (jump, jump_release, roll, crouch toggles, attack, wave, bike...)."""
     return L.press(str(button))
 
 
 def sword():
     """Draw or sheathe the sword."""
     return L.toggle_sword()
+
+
+def bike():
+    """Get the bike out and on it, or (stopped) get off and park it (docs/BIKE.md). Ride it with drive(); press('jump')
+    hops, press('crouch') skid-stops, press('attack') rings the bell, press('wave') waves."""
+    return L.press('bike')
+
+
+def bike_state():
+    return L.bike_state()
 
 
 def skate():

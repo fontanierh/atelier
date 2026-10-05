@@ -1,0 +1,31 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "A seamless tileable texture for a skate park in a stylised game set on a Japanese island in autumn: soft painterly shapes and flat matte colour, hand-painted like the background art of a Japanese animated film, soft strokes that still read as the real material, medium detail that holds up when repeated. Seen perfectly flat and straight-on, filling the square edge to edge: no perspective, no object outline, no border, no joints or lines along the edges, no shadows or lighting gradient, even brightness everywhere, no text. The surface: broom-finished poured concrete in mid warm grey, fine parallel brush texture, small specks of exposed aggregate, faint darker weathering patches.",
+  "references": {},
+  "purpose": "Community park restyle texture",
+  "status": "done",
+  "started_at": "2026-10-04T21:59:20.066099+00:00",
+  "usage": {
+    "input_tokens": 143,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 143
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1899
+  },
+  "png_sha256": "2467ad897da8a8e42d874a8f37b01d1467b9c62a9935334265336cd4100c2b6a",
+  "output": {
+    "file": "poured_concrete.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-04T22:00:04.829696+00:00"
+}

@@ -10,6 +10,7 @@ struct FJapanPreference
 {
     FString Key, Label;
     float Value, Minimum, Maximum;
+    float Step = 0.f;       // a slider's increment (keys, gamepad, and the value it rounds to); 0: continuous
 };
 
 /** World and camera preferences belong to the game UI, independently of the animation system. */

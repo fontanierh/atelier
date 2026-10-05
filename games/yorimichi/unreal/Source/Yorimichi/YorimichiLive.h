@@ -37,10 +37,16 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static FTransform SkateParkSpawn();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateLaunch(FVector Velocity);
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateGoofy(bool bGoofy);
+    /** The bike (docs/BIKE.md) as text: state, clip and its time, speed, steering, the rider and the bike's placement. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeState();
+    /** A plain blocking wall for tests (the bike's crash): Size cm (thickness, width, height) standing on Ground, facing Yaw. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestWall(FVector Ground, float Yaw, FVector Size);
     /** The skate loops now: "volume pitch" for roll, grind, slide, skid and scrape. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateLoops();
     /** Filming the skating: the HUD keeps only the trick line and the balance needle. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void FilmHud(bool bOn);
+    /** The GPU's time for the last frame (ms), as stat unit shows it: pricing a setting in place. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static float GpuFrameMs();
     static bool IsFilmHud();
     /** The sound log that films mix offline ("start" clears and records, "stop" writes the events to Path as JSON);
      *  AudioFrame sets the frame index. */

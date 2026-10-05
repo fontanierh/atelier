@@ -86,6 +86,12 @@ private:
     bool bRunning = false;
     float PhaseLeft = 0.f, PhaseTotal = 0.f, Clock = 0.f, AttackCooldown = 0.f;
     bool bStruck = false;   // this attack has struck (or missed) the player
+    FVector Knockback = FVector::ZeroVector;   // a blow's shove (cm/s), slowing to a stop
+    // BOTW lays a downed creature on its back itself: its down clips stand the lying pose on end. The mesh is tipped back
+    // about its feet by as much as the pose's head stands above its standing height (so the getup rises out of it).
+    FTransform MeshRest = FTransform::Identity;
+    float StandHead = 0.f, LieWeight = 0.f;
+    void AdvanceLying(float Dt);
     void Strike(APawn* Player);
     int32 Showcased = 0, Health = 3;
     TArray<FName> ShowcaseOrder;

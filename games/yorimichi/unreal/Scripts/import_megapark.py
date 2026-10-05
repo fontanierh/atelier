@@ -36,9 +36,9 @@ def ue(point):
     return unreal.Vector(point[0]*100., point[2]*100., point[1]*100.)
 
 
-def texture(path, name, linear=False, normal=False, clamp=False):
+def texture(path, name, linear=False, normal=False, clamp=False, dest=None, wrap=False):
     """Import once, and again whenever the source image changes (its hash is kept in the asset's metadata)."""
-    dest = ROOT + '/Textures'
+    dest = dest or ROOT + '/Textures'
     asset = dest + '/' + name
     digest = sha(Path(path))
     tex = E.load_asset(asset) if E.does_asset_exist(asset) else None
@@ -54,9 +54,9 @@ def texture(path, name, linear=False, normal=False, clamp=False):
     tex.set_editor_property('srgb', not linear and not normal)
     tex.set_editor_property('compression_settings', unreal.TextureCompressionSettings.TC_NORMALMAP if normal
                             else unreal.TextureCompressionSettings.TC_DEFAULT)
-    if clamp:
-        tex.set_editor_property('address_x', unreal.TextureAddress.TA_CLAMP)
-        tex.set_editor_property('address_y', unreal.TextureAddress.TA_CLAMP)
+    if clamp or wrap:
+        address = unreal.TextureAddress.TA_CLAMP if clamp else unreal.TextureAddress.TA_WRAP
+        tex.set_editor_property('address_x', address); tex.set_editor_property('address_y', address)
     E.save_loaded_asset(tex)
     return tex
 
@@ -216,10 +216,12 @@ def materials(report):
     return result
 
 
-def import_mesh(path, name):
-    dest = ROOT+'/Meshes'; asset = dest+'/'+name
-    if not E.does_asset_exist(asset) and path.name != 'SM_MP_ImportSeed.fbx':
-        import_mesh(OUT/'fbx/SM_MP_ImportSeed.fbx', name)
+def import_mesh(path, name, dest=None, seed=None, vertex_colors=False):
+    """Faithful FBX import; another park may supply its own destination and seed."""
+    dest = dest or ROOT+'/Meshes'; seed = seed or OUT/'fbx/SM_MP_ImportSeed.fbx'
+    asset = dest+'/'+name
+    if not E.does_asset_exist(asset) and path.resolve() != seed.resolve():
+        import_mesh(seed, name, dest, seed, vertex_colors)
     task = unreal.AssetImportTask()
     task.filename = str(path); task.destination_path = dest; task.destination_name = name
     task.automated = True; task.replace_existing = True; task.replace_existing_settings = True; task.save = True
@@ -230,6 +232,8 @@ def import_mesh(path, name):
     options = dict(combine_meshes=True, generate_lightmap_u_vs=False, auto_generate_collision=False,
                    convert_scene=True, convert_scene_unit=True, import_uniform_scale=1., build_nanite=False,
                    remove_degenerates=False, normal_import_method=unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
+    if vertex_colors:
+        options['vertex_color_import_option'] = unreal.VertexColorImportOption.REPLACE
     for k, v in options.items(): ui.static_mesh_import_data.set_editor_property(k, v)
     existing = E.load_asset(asset) if E.does_asset_exist(asset) else None
     if existing:

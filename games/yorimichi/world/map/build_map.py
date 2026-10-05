@@ -240,6 +240,11 @@ if os.path.exists(PARK):
     outline=deck_polygon(pier)
     LINES.append([[round(float(x),2),round(float(y),2)] for x,y in outline+[outline[0]]])
 # ---------- buildings, landmarks, props
+from communitypark import layout as communitypark
+from communitypark.plan import draw as draw_communitypark
+if communitypark.available():   # the community park, where its private source was fetched (docs/COMMUNITY_PARK.md)
+    draw_communitypark(d, wp, PX)
+    LINES.append(communitypark.access()[:, :2].round(2).tolist())
 NAVY, NAVY_OUT = (52, 58, 92), (20, 22, 36)
 for b in V['buildings']: rect(b['position'][0], b['position'][1], b['width'], b['depth'], b['yaw'], NAVY, NAVY_OUT)
 for lot in W.get('houses', {}).get('lots', []):   # the houses on the main road: the lot (hedge outline), then the roof
@@ -339,6 +344,10 @@ if W.get('zeppelin'):
     for station in W['zeppelin']['stations']:
         p=station['safe']
         zones.append(dict(key=station['key'],name=station['name'],x=p[0],y=p[1],z=p[2],yaw=90.,hint='Climb the short steps and use the zeppelin to travel'))
+if communitypark.available():
+    zones.append(dict(key='communitypark', name='Hidamari · community skate park',
+                      x=float(communitypark.SPAWN[0]), y=float(communitypark.SPAWN[1]), z=float(communitypark.SPAWN[2]), yaw=communitypark.HEADING,
+                      hint='Bowls, full pipes, street rails and the tall vert ramp above the station. Triangle / Y or B for the board'))
 
 os.makedirs(A.out, exist_ok=True)
 img.save(os.path.join(A.out, 'rough.png'), optimize=True)
@@ -355,6 +364,11 @@ if os.path.exists(registration):
     registered=json.load(open(registration))
     matched=matched and registered.get('projection_x',[])==(X_KNOTS if NORTH else []) and registered.get('projection_y',[])==(Y_KNOTS if NORTH else [])
 sheet = Image.open(committed).convert('RGB') if os.path.exists(committed) and matched else img
+if sheet is not img and communitypark.available():
+    def painted_point(x, y):
+        px, py = wp(x, y)
+        return px*sheet.width/MW, py*sheet.height/MH
+    draw_communitypark(ImageDraw.Draw(sheet), painted_point, PX*sheet.width/MW)
 sheet.save(os.path.join(A.out, 'map.png'), optimize=True)
 sheet.convert('RGB').save(os.path.join(A.out, 'map.jpg'), quality=88, progressive=True)
 print('map sheet:', 'registered painted sheet' if sheet is not img else 'accurate generated layout')

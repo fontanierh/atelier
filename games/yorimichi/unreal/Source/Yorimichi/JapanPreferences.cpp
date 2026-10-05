@@ -1,5 +1,6 @@
 #include "JapanPreferences.h"
 #include "BotwRider.h"
+#include "BotwMoveSet.h"
 #include "CairoCharacter.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
@@ -45,6 +46,14 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         // Session-only desktop tuning; both profiles share instance occlusion culling.
         {TEXT("desktop"),TEXT("Desktop profile"),0.f,0.f,1.f},
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
+        {TEXT("fog"),TEXT("Volumetric fog"),1.f,0.f,1.f},
+        // The fog's look (AJapanWorld::ApplyVolumetricFog, docs/VOLUMETRIC_FOG.md); the defaults are FVolumetricFogLook's.
+        {TEXT("fog_density"),TEXT("Fog density"),.07f,0.f,.2f,.005f},
+        {TEXT("fog_reach"),TEXT("Fog reach (m)"),30.f,10.f,120.f,5.f},
+        {TEXT("fog_falloff"),TEXT("Fog height falloff"),.12f,.02f,.5f,.01f},
+        {TEXT("fog_glow"),TEXT("Fog glow toward the sun"),.5f,0.f,.9f,.05f},
+        {TEXT("fog_shafts"),TEXT("Light shafts"),1.f,0.f,4.f,.1f},
+        {TEXT("fog_town"),TEXT("Fog in Hidamari"),0.f,0.f,1.f,.05f},
         {TEXT("volume"),TEXT("Volume"),1.f,0.f,1.f},
         {TEXT("goofy"),TEXT("Skate stance"),0.f,0.f,1.f},
         {TEXT("stamina_rings"),TEXT("Stamina rings"),2.f,1.f,5.f},
@@ -72,9 +81,14 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("sun_strength"),TEXT("Sun strength (lux)"),11.f,2.f,16.f},
         {TEXT("sky_fill"),TEXT("Sky fill"),2.3f,0.f,6.f},
         {TEXT("bounce"),TEXT("Bounce light"),1.9f,0.f,4.f}};
-    // Cairo plays Breath of the Wild's move set instead of his own (ACairoCharacter), when it is built.
-    if (ACairoCharacter::HasBotw())
-        Values.Insert({TEXT("cairo_botw"),TEXT("Cairo's moves"),0.f,0.f,1.f},Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1);
+    // The move set (UBotwMoveSet::Chosen: merged by default, Cairo's legacy moves or the legacy BOTW set) and its shield
+    // (UBotwMoveSet::SetShield: off by default, the sword guards and parries).
+    if (ACairoCharacter::HasBotw() || ABotwRider::Available().Num())
+    {
+        const int32 After = Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1;
+        Values.Insert({TEXT("shield"),TEXT("Shield"),0.f,0.f,1.f},After);
+        Values.Insert({TEXT("moveset"),TEXT("Move set"),0.f,0.f,2.f},After);
+    }
     Defaults.Reset();
     for (const FJapanPreference& V : Values) Defaults.Add(V.Key,V.Value);
     SettingsFile=FilePath();
@@ -145,7 +159,7 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
 }
 bool UJapanPreferences::IsToggle(const FString& Key)
 {
-    return Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("goofy") || Key == TEXT("cairo_botw");
+    return Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("goofy") || Key == TEXT("shield");
 }
 float UJapanPreferences::Get(const TCHAR* Key) const
 {
@@ -158,8 +172,9 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
     for (auto& V : Values) if (V.Key == Key)
     {
         V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
+        if (V.Step > 0.f) V.Value = FMath::Clamp(V.Minimum+FMath::RoundToFloat((V.Value-V.Minimum)/V.Step)*V.Step,V.Minimum,V.Maximum);
         if (IsToggle(Key)) V.Value = V.Value > .5f ? 1.f : 0.f;
-        if (Key == TEXT("stamina_rings")) V.Value=FMath::RoundToFloat(V.Value);
+        if (Key == TEXT("stamina_rings") || Key == TEXT("moveset")) V.Value=FMath::RoundToFloat(V.Value);
         Apply(); Save(); return true;
     }
     return false;
@@ -169,6 +184,13 @@ void UJapanPreferences::Apply()
     if (!Owner) return;
     Owner->SetStaminaRings(FMath::RoundToInt(Get(TEXT("stamina_rings"))));
     if (Owner->GetSkate()) Owner->GetSkate()->SetGoofy(Get(TEXT("goofy")) > .5f);
+    // The move set takes the shield and the merged or legacy BOTW rules at once; Cairo's legacy moves need the
+    // character switch (ToggleMenu).
+    if (UBotwMoveSet* Moves = Owner->GetMoves(); Moves && Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); }))
+    {
+        Moves->SetLegacy(FMath::RoundToInt(Get(TEXT("moveset"))) == UBotwMoveSet::LegacyBotw);
+        Moves->SetShield(Get(TEXT("shield")) > .5f);
+    }
     const int32 PerformanceMode = Get(TEXT("performance")) > .5f ? 1 : 0;
     const bool Desktop = Get(TEXT("desktop")) > .5f;
     const auto Set = [](const TCHAR* Name, float Value)
@@ -230,10 +252,22 @@ void UJapanPreferences::Apply()
             if (Materials.Contains(Cast<UMaterialInstanceDynamic>(Blend.Object)))
                 Blend.Weight = Get(TEXT("painterly"))+Get(TEXT("toon"))+Get(TEXT("outline"))>.001f ? 1.f : 0.f;
     }
+    // Volumetric fog (docs/VOLUMETRIC_FOG.md): the froxel grid at the engine's Epic scalability in Quality (8 px, 128
+    // slices) and its High one in Performance (16 px, 64 slices); off skips the passes entirely.
+    const bool Fog = Get(TEXT("fog")) > .5f;
+    Set(TEXT("r.VolumetricFog"),Fog ? 1.f : 0.f);
+    Set(TEXT("r.VolumetricFog.GridPixelSize"),PerformanceMode ? 16.f : 8.f);
+    Set(TEXT("r.VolumetricFog.GridSizeZ"),PerformanceMode ? 64.f : 128.f);
+    FVolumetricFogLook FogLook;
+    FogLook.Density = Get(TEXT("fog_density")); FogLook.Reach = Get(TEXT("fog_reach"))*100.f;
+    FogLook.Falloff = Get(TEXT("fog_falloff")); FogLook.Scattering = Get(TEXT("fog_glow"));
+    FogLook.Shafts = Get(TEXT("fog_shafts")); FogLook.Town = Get(TEXT("fog_town"));
+    FogLook.bPerformance = PerformanceMode != 0;
     for (TActorIterator<AJapanWorld> It(Owner->GetWorld()); It; ++It)
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
         It->ApplyPerformanceSettings(PerformanceMode != 0);
+        It->ApplyVolumetricFog(Fog,FogLook);
     }
     // The sun: warmth 0 is a white noon sun, .5 the map's own (1, .90, .76), 1 a golden afternoon.
     const float Warmth = Get(TEXT("sun_warmth"));
@@ -279,7 +313,7 @@ void UJapanPreferences::ReportProfile() const
             return FString::SanitizeFloat(CVar->GetFloat());
         return TEXT("null");
     };
-    FString Fog = TEXT("null"), FogFalloff = TEXT("null"), Contact = TEXT("null");
+    FString Fog = TEXT("null"), FogFalloff = TEXT("null"), FogVolumetric = TEXT("null"), Contact = TEXT("null");
     if (Owner && Owner->GetWorld())
     {
         for (TActorIterator<AExponentialHeightFog> It(Owner->GetWorld()); It; ++It)
@@ -287,6 +321,7 @@ void UJapanPreferences::ReportProfile() const
             {
                 Fog = FString::SanitizeFloat(Component->FogDensity);
                 FogFalloff = FString::SanitizeFloat(Component->FogHeightFalloff);
+                FogVolumetric = Component->bEnableVolumetricFog ? TEXT("1") : TEXT("0");
                 break;
             }
         for (TActorIterator<ADirectionalLight> It(Owner->GetWorld()); It; ++It)
@@ -302,6 +337,7 @@ void UJapanPreferences::ReportProfile() const
         TEXT("\"gi_irradiance_format\": %s, \"gi_stochastic\": %s, ")
         TEXT("\"occlusion_cull\": %s, \"contact_shadows\": %s, \"contact_length\": %s, ")
         TEXT("\"short_range_ao\": %s, \"fog_density\": %s, \"fog_falloff\": %s, ")
+        TEXT("\"volumetric_fog\": %s, \"volumetric_fog_cvar\": %s, \"volumetric_fog_grid\": %s, ")
         TEXT("\"dynres_mode\": %s, \"dynres_min\": %s, \"dynres_max\": %s, \"dynres_headroom\": %s, ")
         TEXT("\"dynres_budget\": %s, \"screen_percentage\": %s, \"aa_method\": %s, \"max_fps\": %s}"),
         Get(TEXT("desktop")),0.f,1.f,
@@ -313,6 +349,7 @@ void UJapanPreferences::ReportProfile() const
         *Number(TEXT("r.Lumen.ScreenProbeGather.StochasticInterpolation")),
         *Number(TEXT("r.InstanceCulling.OcclusionCull")),*Number(TEXT("r.ContactShadows")),*Contact,
         *Number(TEXT("r.Lumen.ScreenProbeGather.ShortRangeAO")),*Fog,*FogFalloff,
+        *FogVolumetric,*Number(TEXT("r.VolumetricFog")),*Number(TEXT("r.VolumetricFog.GridPixelSize")),
         *Number(TEXT("r.DynamicRes.OperationMode")),*Number(TEXT("r.DynamicRes.MinScreenPercentage")),
         *Number(TEXT("r.DynamicRes.MaxScreenPercentage")),*Number(TEXT("r.DynamicRes.TargetedGPUHeadRoomPercentage")),
         *Number(TEXT("r.DynamicRes.FrameTimeBudget")),*Number(TEXT("r.ScreenPercentage")),
@@ -357,7 +394,7 @@ void UJapanPreferences::ToggleMenu()
         .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
             ? TEXT("Performance uses lighter shadows and distant detail to keep movement smooth.")
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
-    // The character switch (ABotwRider::SwitchPlayer): Cairo, with the move set the toggle below picks, and every BOTW
+    // The character switch (ABotwRider::SwitchPlayer): Cairo, with the merged move set when it is built, and every BOTW
     // character with a rider definition. The switch waits for the next tick, out of the menu's click.
     const auto Switch = [this](const FString& Name)
     {
@@ -367,7 +404,8 @@ void UJapanPreferences::ToggleMenu()
     };
     const FString Playing = ABotwRider::NameOf(Owner);
     const bool bPlayingCairo = Playing == TEXT("Cairo") || Playing == ACairoCharacter::BotwName();
-    const auto CairoName = [this] { return Get(TEXT("cairo_botw")) > .5f && ACairoCharacter::HasBotw() ? ACairoCharacter::BotwName() : FString(TEXT("Cairo")); };
+    const auto CairoName = [this] { return ACairoCharacter::HasBotw() && FMath::RoundToInt(Get(TEXT("moveset"))) != UBotwMoveSet::LegacyCairo
+        ? ACairoCharacter::BotwName() : FString(TEXT("Cairo")); };
     if (const TArray<FString> Riders = ABotwRider::Available(); Riders.Num())
     {
         TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
@@ -382,8 +420,8 @@ void UJapanPreferences::ToggleMenu()
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
     }
-    TArray<FString> Toggles = {TEXT("performance"),TEXT("show_fps"),TEXT("goofy")};
-    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("cairo_botw"); })) Toggles.Add(TEXT("cairo_botw"));
+    TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("show_fps"),TEXT("goofy")};
+    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); })) Toggles.Append({TEXT("moveset"),TEXT("shield")});
     for (const FString& Key : Toggles)
     {
         TSharedRef<SButton> Button = SNew(SButton)
@@ -393,18 +431,35 @@ void UJapanPreferences::ToggleMenu()
                 if (Key == TEXT("goofy")) return FText::FromString(Enabled
                     ? TEXT("Skate stance: Goofy · right foot forward")
                     : TEXT("Skate stance: Regular · left foot forward"));
-                if (Key == TEXT("cairo_botw")) return FText::FromString(Enabled
-                    ? TEXT("Cairo's moves: Breath of the Wild")
-                    : TEXT("Cairo's moves: his own"));
+                if (Key == TEXT("moveset"))
+                {
+                    const int32 Choice = FMath::RoundToInt(Get(*Key));
+                    return FText::FromString(Choice == UBotwMoveSet::LegacyCairo ? TEXT("Move set: Cairo (legacy) · roll and dashes")
+                        : Choice == UBotwMoveSet::LegacyBotw ? TEXT("Move set: Breath of the Wild (legacy) · no double jump")
+                        : TEXT("Move set: merged · double jump, glider, dodges"));
+                }
+                if (Key == TEXT("fog")) return FText::FromString(Enabled
+                    ? TEXT("Volumetric fog: on · valley mist and light shafts")
+                    : TEXT("Volumetric fog: off"));
+                if (Key == TEXT("shield")) return FText::FromString(Enabled
+                    ? TEXT("Shield: carried · it guards and parries")
+                    : TEXT("Shield: off · the sword guards and parries"));
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
             })
             .OnClicked_Lambda([this,Key,Switch,CairoName,bPlayingCairo]
             {
-                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);
-                // Playing Cairo, the new move set takes over at once; otherwise it waits for Cairo's turn in the switch.
-                if (Key == TEXT("cairo_botw") && bPlayingCairo) Switch(CairoName());
+                if (Key == TEXT("moveset"))
+                {
+                    // Merged, Cairo (legacy), BOTW (legacy), round again. Cairo between his legacy moves and a move set
+                    // needs the character switch; anything else takes it at once (Apply).
+                    const FString Before = CairoName();
+                    SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%3));
+                    if (bPlayingCairo && CairoName() != Before) Switch(CairoName());
+                    return FReply::Handled();
+                }
+                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);   // Apply hands the shield to the move set at once
                 return FReply::Handled();
             });
         if (!FirstControl) FirstControl = Button;
@@ -415,16 +470,26 @@ void UJapanPreferences::ToggleMenu()
         // Session-only keys are launch flags (japan/run.sh desktop), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
-        if (IsToggle(Values[I].Key)) continue;
+        if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset")) continue;   // a button above
         if (Values[I].Key == LightKeys[0])
             Rows->AddSlot().AutoHeight().Padding(0,16,0,4)[SNew(STextBlock).Text(FText::FromString(TEXT("Light"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
+        const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
         TSharedRef<SSlider> Slider = SNew(SSlider)
+            .StepSize(Values[I].Step > 0.f ? Values[I].Step/(Values[I].Maximum-Values[I].Minimum) : .01f)
+            .IsEnabled_Lambda([this,bFogDetail] { return !bFogDetail || Get(TEXT("fog")) > .5f; })
             .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
             .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });
         Rows->AddSlot().AutoHeight().Padding(0,6)[SNew(SHorizontalBox)
             + SHorizontalBox::Slot().FillWidth(.48f)[SNew(STextBlock).Text(FText::FromString(Values[I].Label)).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White)]
             + SHorizontalBox::Slot().FillWidth(.38f)[Slider]
-            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I] { return FText::FromString(FString::Printf(TEXT("%.2f"),Values[I].Value)); })]];
+            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I]
+            {
+                // As many decimals as the slider's step shows (fog density moves by 0.005).
+                const float Step = Values[I].Step;
+                const int32 Digits = Step <= 0.f ? 2 : Step >= 1.f ? 0 : FMath::Clamp(FMath::CeilToInt(-FMath::LogX(10.f,Step)-1e-3f),1,3);
+                FNumberFormattingOptions Format; Format.SetUseGrouping(false).SetMinimumFractionalDigits(Digits).SetMaximumFractionalDigits(Digits);
+                return FText::AsNumber(Values[I].Value,&Format);
+            })]];
     }
     Rows->AddSlot().AutoHeight().Padding(0,8,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset the light")))
         .OnClicked_Lambda([this] { ResetLight(); return FReply::Handled(); })];

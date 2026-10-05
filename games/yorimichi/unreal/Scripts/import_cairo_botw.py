@@ -1,12 +1,12 @@
 """Import Cairo's Breath of the Wild clips (assets/characters/cairo/botw.py) into /Game/CairoBotw, for Cairo with
-Link's move set (-rider=CairoBotw, or "Cairo's moves" in the settings).
+the merged move set (his default in play; -rider=CairoBotw in scripted sessions).
 
     UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_cairo_botw.py -unattended -nosplash -NullRHI -stdout
 
 Each build/yorimichi/cairo/botw/fbx/A_<Clip>.fbx is imported onto SK_Cairo's skeleton at 30 fps as A_<Clip>, with the
 shared character compression and no root motion. DA_CairoBotw is DA_Cairo (mesh, framing, skate bones) with Link's
-moves in place of Cairo's own: the BOTW locomotion, crouching and armed blends and every action, on Cairo's clips.
-Cairo's own sword set, dashes and roll are cleared; the move set brings BOTW's.
+moves in place of Cairo's own: the BOTW locomotion, crouching and armed blends and every action, on Cairo's clips, and
+his own double jump, and his own bokken guard, parry and recoil for the guard without the shield (OWN). Cairo's own sword set, dashes and roll are cleared; the move set brings BOTW's.
 
 Writes Content/Data/cairo/botw.json, the move record ACairoCharacter gives UBotwMoveSet. It is Link's record (moves.py
 `record`, from the roster) with every length measured on Link's body (action paths, gait speeds, the swim hang) scaled
@@ -43,6 +43,9 @@ SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his me
 # him, his torso and clothes come at most 1 cm through its plate. It sits low enough that his head stays clear of it,
 # except in the crouch: there his chest leans 70 degrees forward and his head dips 6 cm into its top edge.
 CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}}
+# Carried pieces moved out from where Link's chest puts them (cm along Rig.body's axes: backward, left, up): Link's sword
+# and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
+PUSH = {'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]}   # fitted in game: 4 cm still sank in at the hip running, 12 floated
 
 
 def digests(folder):
@@ -236,6 +239,8 @@ def equipment(link, cairo, glide):
             R, p = compose(C, Rp), add(cairo.at('chest'), mul(apply(C, offset), BODY))
             if slot in CARRY:
                 R, p = fitted(R, cairo, CARRY[slot])
+            if slot in PUSH:
+                p = add(p, apply(cairo.body(), PUSH[slot]))
             on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))
             entry['back'], entry['carry'] = 'chest', record_of(on_back)
             # Where it sits in his reference pose (component cm): the fit's frame, for checking it offline.
@@ -273,6 +278,24 @@ locomotion, crouching, armed = blend('locomotion', 'Locomotion'), blend('crouchi
 gaits = [round(s['speed'] * SIZE, 1) for s in moves['blends']['locomotion']]
 actions = {'Idle': clip(LINK['roles']['idle'])}
 actions.update({action: clip(entry['clip']) for action, entry in ROSTER['moves']['actions'].items()})
+# The merged move set's double jump is Cairo's own somersault (UBotwMoveSet::StartDoubleJump), on his own skeleton.
+actions['DoubleJump'] = E.load_asset('/Game/Cairo/A_DoubleJump')
+assert actions['DoubleJump'], 'Cairo has no double jump (build unreal.cairo)'
+# Without the shield he guards and parries with his own two-handed bokken clips rather than Link's sword-only ones
+# (which barely show the blade on him): his guard stance, his parry and its recoil, timed by their authored windows
+# (source-manifest.json: the parry deflects from 0.0333 s to 0.3 s and may be cancelled from 0.3333 s; the recoil's
+# counter opens at 0.1 s).
+OWN = {'SwordGuardCarry': ('A_SwordIdle', {'loop': True}),
+       'SwordParry': ('A_SwordParry', {'guard': [[0.0333, 0.3]], 'input': 0.3333, 'cancel': 0.3333, 'idle': 0.4}),
+       'SwordGuardHit': ('A_SwordParryHit', {'guard': [[0.0, 0.15]], 'input': 0.1, 'cancel': 0.1, 'idle': 0.15})}
+own_timing = {}
+for action, (asset, timing) in OWN.items():
+    sequence = E.load_asset(f'/Game/Cairo/{asset}')
+    assert sequence, (f'Cairo has no {asset} (build unreal.cairo)')
+    actions[action] = sequence
+    length = round(sequence.get_editor_property('sequence_length'), 4)
+    own_timing[action] = {'clip': asset[2:], 'length': length, 'loop': False, 'root': 'keep', 'rate': 1., 'start': 0., 'end': length,
+                          'blend': .05, 'active': [], 'guard': [], 'input': -1, 'cancel': -1, 'idle': -1, 'bind': -1, 'unbind': -1, **timing}
 
 definition = E.duplicate_asset('/Game/Cairo/DA_Cairo', f'{DEST}/DA_CairoBotw')
 assert definition, 'DA_Cairo could not be copied'
@@ -293,9 +316,11 @@ for name, entry in ROSTER['moves']['actions'].items():
     if 'speed' in entry:
         entry['speed'] = round(entry['speed'] * SIZE, 1)
     scaled[name] = entry
+scaled.update(own_timing)
 params = dict(ROSTER['moves']['params'])
 params['SwimHang'] = round(params['SwimHang'] * SIZE, 2)
 params['BodyScale'] = BODY
+params['TwoHandedGuard'] = 1   # his own bokken guard (OWN) holds the grip with both hands
 names = {**LINK['skate'], 'pelvis': 'Waist'}   # botw.py's bone map
 link, cairo = Rig(link_mesh.skeleton, names), Rig(skeleton, {})
 glide, options = ROSTER['moves']['actions']['Glide']['clip'], U.AnimPoseEvaluationOptions()

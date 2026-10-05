@@ -4,6 +4,7 @@
 #include "JapanPreferences.h"
 #include "WandererSword.h"
 #include "SkateComponent.h"
+#include "BikeComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
 #include "BotwCreature.h"
@@ -11,6 +12,11 @@
 #include "BotwMoveSet.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
+#include "DynamicRHI.h"
+#include "Engine/StaticMeshActor.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/CollisionProfile.h"
+#include "Components/StaticMeshComponent.h"
 #include "Misc/FileHelper.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
@@ -73,9 +79,33 @@ FString UYorimichiLive::SkateState()
 }
 bool UYorimichiLive::SkateGoofy(bool bGoofy) { USkateComponent* S = PlayerSkate(); if (!S) return false; S->SetGoofy(bGoofy); return true; }
 bool UYorimichiLive::SkateLaunch(FVector Velocity) { USkateComponent* S = PlayerSkate(); if (!S) return false; S->Launch(Velocity); return true; }
+FString UYorimichiLive::BikeState()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UBikeComponent* B = P ? P->GetBike() : nullptr;
+    if (!B) return TEXT("no bike");
+    const FVector A = P->GetActorLocation(); const FTransform T = B->GetBikeTransform(); const FRotator R = T.Rotator();
+    return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f steer=%.2f parked=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
+        int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->GetSteering(), B->IsParked() ? 1 : 0, *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
+        A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
+}
+bool UYorimichiLive::TestWall(FVector Ground, float Yaw, FVector Size)
+{
+    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
+    UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+    if (!World || !Cube) return false;
+    FActorSpawnParameters Params; Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AStaticMeshActor* Wall = World->SpawnActor<AStaticMeshActor>(Ground + FVector(0, 0, Size.Z * .5f), FRotator(0, Yaw, 0), Params);
+    if (!Wall) return false;
+    Wall->SetMobility(EComponentMobility::Movable);
+    Wall->GetStaticMeshComponent()->SetStaticMesh(Cube);   // the engine cube is 100 cm, centred
+    Wall->GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+    Wall->SetActorScale3D(Size / 100.f);
+    return true;
+}
 static bool GFilmHud = false;
 void UYorimichiLive::FilmHud(bool bOn) { GFilmHud = bOn; }
 bool UYorimichiLive::IsFilmHud() { return GFilmHud; }
+float UYorimichiLive::GpuFrameMs() { return FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)); }
 int32 UYorimichiLive::AudioLog(const FString& Command, const FString& Path)
 {
     if (Command == TEXT("start")) { FAtelierAudioLog::Events.Reset(); FAtelierAudioLog::Frame = 0; FAtelierAudioLog::bRecording = true; return 0; }
@@ -103,8 +133,10 @@ bool UYorimichiLive::SkatePlace(FVector GroundPoint, float Yaw) { USkateComponen
 FTransform UYorimichiLive::SkateParkSpawn()
 {
     UWorld* W = ULiveLibrary::GameWorld(); if (!W) return FTransform::Identity;
-    TActorIterator<ASkatePark> It(W);
-    return It ? FTransform(FRotator(0, It->ParkSpawnYaw, 0), It->ParkSpawn) : FTransform::Identity;
+    for (TActorIterator<ASkatePark> It(W); It; ++It)
+        if (It->ActorHasTag(TEXT("skatepier")))
+            return FTransform(FRotator(0, It->ParkSpawnYaw, 0), It->ParkSpawn);
+    return FTransform::Identity;
 }
 
 static bool BotwModeFromText(const FString& Text, EBotwMode& Mode)
