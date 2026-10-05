@@ -40,6 +40,15 @@ public:
     virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
     virtual void Landed(const FHitResult& Hit) override;
     void EnterWorld(AJapanWorld* World);
+    /** A character the game drives (ASwordTrainer), not a person: no camera, menus, phone, map or ambience, and EnterWorld
+     *  leaves it where it was placed. */
+    virtual bool IsNpc() const { return false; }
+    /** A sparring bout with Other is under way (ASwordTrainer): the move set's blade, lock-on and soft lock take Other as
+     *  a target, and its strikes reach Other's guard, parry and dodges. */
+    virtual bool IsSparringWith(const AActor* Other) const { return false; }
+    /** The health a sparring blow of this strength (1 a cut, 2 a charged or finishing one, 3 full power) takes from
+     *  the partner: a full-power blow knocks down (the move set's HeavyDamage, 25). */
+    virtual float SparringDamage(int32 Power) const { return Power >= 3 ? 28.f : Power == 2 ? 18.f : 10.f; }
     AJapanWorld* GetLandscape() const { return Landscape; }
     /** The character switch (ABotwRider::SwitchPlayer) sets this on the new character before it finishes spawning: it
      *  starts where the old one stood (EnterWorld leaves it in place), with no second ambience and no settling wait. */
@@ -124,6 +133,9 @@ protected:
     // Gameplay tuning; the definition keeps the clip's authored stride speed.
     float SprintSpeedMultiplier = 1.f;
     UPROPERTY() TObjectPtr<UBotwMoveSet> Moves;
+    /** A one-off clip outside the move set (an NPC's bow or a word), and its end. */
+    void PlayGesture(FName Action, float BlendSeconds = .25f) { SetAction(Action, false, BlendSeconds, true); }
+    void StopGesture(float BlendSeconds = .3f) { SetAction(NAME_None, false, BlendSeconds); }
 
 private:
     friend class FYorimichiPhone;

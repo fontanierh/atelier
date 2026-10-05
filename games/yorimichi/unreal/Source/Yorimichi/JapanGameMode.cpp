@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "JapanHUD.h"
 #include "FoxHunter.h"
+#include "SwordTrainer.h"
 #include "Components/CapsuleComponent.h"
 #include "CollisionQueryParams.h"
 #include "Engine/World.h"
@@ -56,4 +57,5 @@ void AJapanGameMode::BeginPlay()
     AWandererCharacter* T = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
     if (T) T->EnterWorld(W);
     SpawnFoxHunter(W, T);
+    if (W && W->bLoaded) ASwordTrainer::SpawnInVillage(W, W->VillageRecord);
 }

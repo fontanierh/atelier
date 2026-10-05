@@ -1,0 +1,16 @@
+# Kaede, the sword teacher of Momiji Hamlet (docs/SWORD_TRAINER.md). Source of truth: the current revision's .blend
+# (textures packed) and its manifest. Her move set is the player's, retargeted onto her (cairo/botw.py --character).
+id = "sword-trainer"
+display_name = "Kaede"
+role = "npc"
+rig = "humanoid"                      # platform/conventions/rigs/humanoid.toml
+rig_optional = ["fingers"]            # 23 core + 30 finger bones
+height_cm = 168
+revision = "rig-r03"
+source = "SwordTrainer-Rig-r03.blend"
+manifest = "source-manifest.json"
+clip_roles = 2                        # her own: Bow, Talk; the move set's clips come from the retarget
+fps = 30
+export = "export_unreal.py"
+unreal_path = "/Game/SwordTrainer"
+licence = "own (Sunburst concept, Tripo mesh and rig, clips authored here)"

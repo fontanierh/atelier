@@ -8,6 +8,7 @@
 #include "BikeComponent.h"
 #include "WandererSword.h"
 #include "FoxHunter.h"
+#include "SwordTrainer.h"
 #include "LiveLibrary.h"
 #include "YorimichiLive.h"
 #include "EngineUtils.h"
@@ -104,8 +105,44 @@ void AJapanHUD::DrawHUD()
         }
         if (Ride->GetScore() > 0) DrawText(FString::Printf(TEXT("%d"), Ride->GetScore()), FLinearColor(1.f, .93f, .72f), Canvas->SizeX - 140 * Scale, 54 * Scale, Font, 1.3f * Scale);
     };
-    // Filming the skating (ULiveLibrary::FilmHud): only the trick line.
-    if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); return; }
+    // The sword trainer (ASwordTrainer): the prompt to ask her, and in a bout her bar and her words at the top (kept in
+    // filmed frames).
+    auto DrawTrainer = [&](bool bController, bool bSailboat)
+    {
+    if (const ASwordTrainer* Trainer = ASwordTrainer::Find(Pawn); Trainer && !bSailboat && !Pawn->IsZeppelinPassenger())
+    {
+        const float Scale = Canvas->SizeY / 1080.f;
+        if (Trainer->CanTalk(Pawn) && !Trainer->IsMenuOpen())
+        {
+            const FString Ask = FString::Printf(TEXT("%s   Talk to Kaede (sword training)"), bController ? TEXT("D-pad Down") : TEXT("E"));
+            float W = 0.f, H = 0.f; Canvas->StrLen(Font, Ask, W, H); const float S = 1.3f * FMath::Max(Scale, .75f);
+            const float X = Canvas->SizeX * .5f - W * S * .5f, Y = Canvas->SizeY * .7f;
+            DrawRect(FLinearColor(0, 0, 0, .45f), X - 14, Y - 8, W * S + 28, H * S + 16);
+            DrawText(Ask, FLinearColor(1.f, .9f, .74f), X, Y, Font, S);
+        }
+        const ASwordTrainer::EBout Bout = Trainer->GetBout();
+        if (Bout == ASwordTrainer::EBout::Ready || Bout == ASwordTrainer::EBout::Fighting || Bout == ASwordTrainer::EBout::Over)
+        {
+            const float W = 420 * Scale, X = Canvas->SizeX * .5f - W * .5f, Y = 64 * Scale;
+            DrawText(FString::Printf(TEXT("KAEDE  ·  %s%s"), Trainer->GetStyle().Name, Trainer->HasOwnShield() ? TEXT("  ·  sword and shield") : TEXT("")),
+                FLinearColor(.97f, .9f, .76f), X, Y - 28 * Scale, Font, 1.4f * Scale);
+            DrawRect(FLinearColor(0, 0, 0, .45f), X - 3 * Scale, Y - 3 * Scale, W + 6 * Scale, 16 * Scale);
+            DrawRect(FLinearColor(.95f, .45f, .22f), X, Y, W * Trainer->GetHealthFraction(), 10 * Scale);
+            DrawText(FString::Printf(TEXT("bouts  you %d  ·  Kaede %d"), Trainer->GetLosses(), Trainer->GetWins()), FLinearColor(.85f, .82f, .74f), X, Y + 16 * Scale, Font, 1.f * Scale);
+        }
+        float Alpha = 0.f;
+        const FString Said = Trainer->GetCallout(Alpha);
+        if (!Said.IsEmpty())
+        {
+            float W = 0.f, H = 0.f; Canvas->StrLen(Font, Said, W, H); const float S = 1.6f * FMath::Max(Scale, .75f);
+            const float X = Canvas->SizeX * .5f - W * S * .5f, Y = Canvas->SizeY * .22f;
+            DrawText(Said, FLinearColor(0, 0, 0, .6f * Alpha), X + 2, Y + 2, Font, S);
+            DrawText(Said, FLinearColor(1.f, .94f, .8f, Alpha), X, Y, Font, S);
+        }
+    }
+    };
+    // Filming the skating (ULiveLibrary::FilmHud): only the trick line, and the sword trainer's bar and words.
+    if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawTrainer(false, false); return; }
     // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
     if (Pawn->GetDamageFlash()>0.f) DrawRect(FLinearColor(.75f,.08f,.04f,.13f*Pawn->GetDamageFlash()),0,0,Canvas->SizeX,Canvas->SizeY);
     // -fightfilm: the filmed fight keeps only the player's health and the fox's bar.
@@ -266,6 +303,7 @@ void AJapanHUD::DrawHUD()
                 DrawRect(Pip<Nearest->GetHealth()?FLinearColor(.95f,.55f,.2f):FLinearColor(.25f,.2f,.16f),TopX+Pip*30,TopY+18,26,7);
         }
     }
+    DrawTrainer(bController, bSailboat);
     if (bSwordSet)
     {
         FString Weapon=Sword->IsArmed()?FString::Printf(TEXT("Sword: %s"),*Sword->StateName()):TEXT("Sword: put away");

@@ -57,6 +57,8 @@ public:
     int32 IncomingStrike(AActor* Source, float Damage, const FVector& From);
     // Health of the wielder: enemy strikes take it; at zero the character is knocked down for a few seconds and gets up restored.
     float GetHealth() const { return Health; }
+    /** Full health again (a sparring bout's start and end, ASwordTrainer). */
+    void RestoreHealth() { Health = MaxHealth; }
     bool IsDown() const { return bDown; }
     static constexpr float MaxHealth = 100.f;
     // Harness only: movement intent and a roll through the character's real handlers.

@@ -1,0 +1,71 @@
+{
+  "input": "tripo-rig-r01/raw/output_model_url.glb",
+  "bones": 53,
+  "vertices": 26311,
+  "fingers": {
+    "added_finger_bones": 30,
+    "detection": {
+      "Left": {
+        "finger_cut": 0.0605,
+        "thumb_cut": 0.7128
+      },
+      "Right": {
+        "finger_cut": 0.0786,
+        "thumb_cut": 0.7051
+      }
+    },
+    "reweighted_vertices": 1647,
+    "chains": {
+      "LeftIndex": {
+        "vertices": 176,
+        "length": 0.0371
+      },
+      "LeftMiddle": {
+        "vertices": 156,
+        "length": 0.0417
+      },
+      "LeftRing": {
+        "vertices": 147,
+        "length": 0.0311
+      },
+      "LeftPinky": {
+        "vertices": 115,
+        "length": 0.0193
+      },
+      "LeftThumb": {
+        "vertices": 195,
+        "length": 0.0487
+      },
+      "RightIndex": {
+        "vertices": 174,
+        "length": 0.0361
+      },
+      "RightMiddle": {
+        "vertices": 154,
+        "length": 0.0418
+      },
+      "RightRing": {
+        "vertices": 144,
+        "length": 0.0309
+      },
+      "RightPinky": {
+        "vertices": 112,
+        "length": 0.0213
+      },
+      "RightThumb": {
+        "vertices": 274,
+        "length": 0.0564
+      }
+    }
+  },
+  "clips": {
+    "Bow": [
+      0.0,
+      66.0
+    ],
+    "Talk": [
+      0.0,
+      80.0
+    ]
+  }
+}

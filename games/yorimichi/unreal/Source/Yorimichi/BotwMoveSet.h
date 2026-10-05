@@ -85,6 +85,8 @@ public:
     void DropHolds() { bAttackHeld = bGuardHeld = false; }
     /** An enemy strike: 0 hit, 1 parried, 2 dodged, 3 absorbed (guarded or recovering) (UWandererSwordComponent's contract). */
     int32 IncomingStrike(AActor* Source, float Damage, const FVector& From);
+    /** This character's blow was parried: it recoils, open, without losing health. */
+    void Deflected(AActor* By);
 
     // Queries for the character, its animation graph, the HUD and the QA scenarios.
     EBotwMoveMode GetMode() const { return Mode; }
@@ -129,6 +131,20 @@ public:
     int32 Parries() const { return ParryCount; }
     int32 Dodges() const { return DodgeCount; }
     int32 DoubleJumps() const { return DoubleJumpCount; }
+    // For a character the game drives (ASwordTrainer) reading its own body and its opponent's, like a player watching.
+    FName GetActionName() const { return CurrentName(); }
+    /** The action's clip time (seconds into its clip) and whether it is a blow (a cut, rush, plunge, the spin...). */
+    float GetActionClipTime() const { return SourceTime(); }
+    bool IsAttacking() const;
+    bool IsCharging() const { return bCharging; }
+    bool IsFullyCharged() const { return bCharging && bFullCharge; }
+    bool IsHopping() const;
+    bool IsBusy() const { return Busy(); }
+    /** Real seconds until the playing blow's next active window opens: 0 inside one, -1 when no blow is coming. */
+    float NextBlowIn() const;
+    /** In a combo cut that can be followed: real seconds until the next cut may come (its input point), 0 from then on;
+     *  -1 otherwise. The cuts strike from their first frame, so a watcher answers the next one, not the one swinging. */
+    float NextCutIn() const;
     /** Live and QA: the facts the scenarios check, as JSON. */
     FString Describe() const;
 

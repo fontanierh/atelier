@@ -17,7 +17,13 @@ paraglider is placed from both glides instead (Glide's clip, posed): its canopy 
 bar's middle goes between Cairo's hands, since his palms turn differently from Link's around the bar. A piece in
 CARRY sits where it was fitted to Cairo's own mesh instead of where Link's chest puts it. Also writes
 build/yorimichi/cairo/botw/unreal_import.json. Cairo's own assets must be byte-identical afterwards.
+
+BOTW_CHARACTER=sword-trainer imports Kaede's copy the same way (characters.sword_trainer_botw, botw.py --character):
+her clips into /Game/SwordTrainer/Botw, DA_SwordTrainer from her own DA_SwordTrainerBase (unreal.sword_trainer), and
+her record Content/Data/sword-trainer/botw.json. Cairo's own clips in the set (DoubleJump and OWN) are her retargeted
+copies of his, imported with the rest at their 60 fps; her equipment keeps Link's chest placement (no CARRY fit).
 """
+import os
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import hashlib, json, math, sys
 from pathlib import Path
@@ -25,13 +31,17 @@ import unreal as U
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import animation_compression
 
-OUT = yori.OUT / 'cairo' / 'botw'
+CHARACTER = os.environ.get('BOTW_CHARACTER', 'cairo')
+CAIRO = CHARACTER == 'cairo'
+# The character's paths: its retargeted clips, its own folder and base definition, where the copy goes, its record.
+NAME = {'cairo': 'Cairo', 'sword-trainer': 'SwordTrainer'}[CHARACTER]
+OUT = yori.OUT / CHARACTER / 'botw'
 CONFIG = json.loads((OUT / 'export.json').read_text())
 LINK = next(c for c in json.loads((yori.OUT / 'botw' / 'export.json').read_text())['characters'] if c['name'] == 'Link')
 CONTENT = Path(__file__).resolve().parents[1] / 'Content'
 ROSTER = next(c for c in json.loads((CONTENT / 'Data' / 'botw' / 'roster.json').read_text())['characters'] if c['name'] == 'Link')
-DATA = CONTENT / 'Data' / 'cairo'
-DEST = '/Game/CairoBotw'
+DATA = CONTENT / 'Data' / CHARACTER
+DEST = '/Game/CairoBotw' if CAIRO else f'/Game/{NAME}/Botw'
 E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools(); P = U.AnimPoseExtensions
 BODY = CONFIG['body']                      # Cairo's hips over Link's, in BOTW units
 SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his mesh is scaled down)
@@ -42,17 +52,17 @@ SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his me
 # stands 2.7 cm off his back. In Link's idle, walk, run, dash, crouch, lock-on, glide, climb and swim retargeted onto
 # him, his torso and clothes come at most 1 cm through its plate. It sits low enough that his head stays clear of it,
 # except in the crouch: there his chest leans 70 degrees forward and his head dips 6 cm into its top edge.
-CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}}
+CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else {}
 # Carried pieces moved out from where Link's chest puts them (cm along Rig.body's axes: backward, left, up): Link's sword
 # and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
-PUSH = {'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]}   # fitted in game: 4 cm still sank in at the hip running, 12 floated
+PUSH = {'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else {}   # fitted in game: 4 cm still sank in at the hip running, 12 floated
 
 
 def digests(folder):
     return {str(p.relative_to(folder)): hashlib.sha256(p.read_bytes()).hexdigest() for p in folder.rglob('*.uasset')}
 
 
-def fbx(name, skeleton):
+def fbx(name, skeleton, fps=None):
     task = U.AssetImportTask()
     for prop, value in dict(filename=str(OUT / 'fbx' / f'A_{name}.fbx'), destination_path=DEST, destination_name=f'A_{name}',
                             automated=True, replace_existing=True, save=True).items():
@@ -63,7 +73,7 @@ def fbx(name, skeleton):
         options.set_editor_property(prop, value)
     data = options.get_editor_property('anim_sequence_import_data')
     for prop, value in dict(animation_length=U.FBXAnimationLengthImportType.FBXALIT_EXPORTED_TIME, use_default_sample_rate=False,
-                            custom_sample_rate=CONFIG['fps'], import_bone_tracks=True, delete_existing_morph_target_curves=True,
+                            custom_sample_rate=fps or CONFIG['fps'], import_bone_tracks=True, delete_existing_morph_target_curves=True,
                             do_not_import_curve_with_zero=False, convert_scene=True).items():
         data.set_editor_property(prop, value)
     task.set_editor_property('options', options)
@@ -253,9 +263,9 @@ def equipment(link, cairo, glide):
 
 # --- Import ----------------------------------------------------------------------------------------------------------
 
-cairo_folder = CONTENT / 'Cairo'
-before = digests(cairo_folder)
-mesh = E.load_asset('/Game/Cairo/SK_Cairo'); assert mesh, 'import Cairo first (unreal.cairo)'
+cairo_folder = CONTENT / NAME   # the character's own assets, which must not change
+before = digests(cairo_folder) if CAIRO else {}
+mesh = E.load_asset(f'/Game/{NAME}/SK_{NAME}'); assert mesh, f'import {NAME} first (unreal.{CHARACTER.replace("-", "_")})'
 skeleton = mesh.skeleton
 link_mesh = E.load_asset(ROSTER['mesh']); assert link_mesh, 'import the BOTW characters first (unreal.botw)'
 if E.does_directory_exist(DEST):
@@ -268,7 +278,11 @@ for name, clip in CONFIG['clips'].items():
     length = sequence.get_editor_property('sequence_length')
     assert abs(length - clip['frames'] / CONFIG['fps']) < .002, (name, length, clip['frames'])
     clips[name] = sequence
-U.log(f'CAIRO BOTW: {len(clips)} clips imported')
+for name, clip in CONFIG.get('own', {}).items():   # Cairo's own clips, retargeted onto another character
+    sequence = fbx(name, skeleton, clip['fps'])
+    assert abs(sequence.get_editor_property('sequence_length') - clip['frames'] / clip['fps']) < .002, (name, clip)
+    clips['Own' + name] = sequence
+U.log(f'BOTW: {len(clips)} clips imported for {NAME}')
 
 moves = LINK['moves']
 clip = lambda name: clips[name]
@@ -279,8 +293,8 @@ gaits = [round(s['speed'] * SIZE, 1) for s in moves['blends']['locomotion']]
 actions = {'Idle': clip(LINK['roles']['idle'])}
 actions.update({action: clip(entry['clip']) for action, entry in ROSTER['moves']['actions'].items()})
 # The merged move set's double jump is Cairo's own somersault (UBotwMoveSet::StartDoubleJump), on his own skeleton.
-actions['DoubleJump'] = E.load_asset('/Game/Cairo/A_DoubleJump')
-assert actions['DoubleJump'], 'Cairo has no double jump (build unreal.cairo)'
+actions['DoubleJump'] = E.load_asset('/Game/Cairo/A_DoubleJump') if CAIRO else clips.get('OwnDoubleJump')
+assert actions['DoubleJump'], 'no double jump (build unreal.cairo, or botw.py --dump-own)'
 # Without the shield he guards and parries with his own two-handed bokken clips rather than Link's sword-only ones
 # (which barely show the blade on him): his guard stance, his parry and its recoil, timed by their authored windows
 # (source-manifest.json: the parry deflects from 0.0333 s to 0.3 s and may be cancelled from 0.3333 s; the recoil's
@@ -290,15 +304,22 @@ OWN = {'SwordGuardCarry': ('A_SwordIdle', {'loop': True}),
        'SwordGuardHit': ('A_SwordParryHit', {'guard': [[0.0, 0.15]], 'input': 0.1, 'cancel': 0.1, 'idle': 0.15})}
 own_timing = {}
 for action, (asset, timing) in OWN.items():
-    sequence = E.load_asset(f'/Game/Cairo/{asset}')
-    assert sequence, (f'Cairo has no {asset} (build unreal.cairo)')
+    sequence = E.load_asset(f'/Game/Cairo/{asset}') if CAIRO else clips.get('Own' + asset[2:])
+    assert sequence, (f'no {asset} (build unreal.cairo, or botw.py --dump-own)')
     actions[action] = sequence
     length = round(sequence.get_editor_property('sequence_length'), 4)
     own_timing[action] = {'clip': asset[2:], 'length': length, 'loop': False, 'root': 'keep', 'rate': 1., 'start': 0., 'end': length,
                           'blend': .05, 'active': [], 'guard': [], 'input': -1, 'cancel': -1, 'idle': -1, 'bind': -1, 'unbind': -1, **timing}
 
-definition = E.duplicate_asset('/Game/Cairo/DA_Cairo', f'{DEST}/DA_CairoBotw')
-assert definition, 'DA_Cairo could not be copied'
+base = '/Game/Cairo/DA_Cairo' if CAIRO else f'/Game/{NAME}/DA_{NAME}Base'
+target = f'{DEST}/DA_CairoBotw' if CAIRO else f'/Game/{NAME}/DA_{NAME}'
+if not CAIRO and E.does_asset_exist(target):
+    E.delete_asset(target)
+definition = E.duplicate_asset(base, target)
+assert definition, f'{base} could not be copied'
+# The base's own clips (another character's gestures: Kaede's bow and words) stay beside the move set's.
+for action, sequence in (dict(definition.get_editor_property('actions')) if not CAIRO else {}).items():
+    actions.setdefault(str(action), sequence)
 for key, value in dict(locomotion=locomotion, crouching=crouching, armed_locomotion=armed, armed_crouching=None, actions=actions,
                        use_authored_movement=True, walk_speed=gaits[1], jog_speed=gaits[1], run_speed=gaits[2], sprint_speed=gaits[3],
                        crouch_speed=round(moves['blends']['crouching'][-1]['speed'] * SIZE, 1),
@@ -332,7 +353,7 @@ record = {'actions': scaled, 'params': params, 'equipment': gear}
 DATA.mkdir(parents=True, exist_ok=True)
 (DATA / 'botw.json').write_text(json.dumps(record, indent=1) + '\n')
 
-after = digests(cairo_folder)
+after = digests(cairo_folder) if CAIRO else {}
 changed = sorted(k for k in set(before) | set(after) if before.get(k) != after.get(k))
 report = {'source': CONFIG['source'], 'source_sha256': CONFIG['source_sha256'], 'body': BODY, 'size': SIZE,
           'body_from_reference_poses': round(body_check, 4), 'gaits_cm': gaits, 'equipment': gear, 'hands': gear_checks,
@@ -342,4 +363,4 @@ report = {'source': CONFIG['source'], 'source_sha256': CONFIG['source_sha256'], 
 assert not changed, ('Cairo assets changed', changed)
 assert max(gear_checks['glider']['grip_miss_cm']) < 6., ('the glider bar misses his hands', gear_checks['glider'])
 assert abs(body_check - BODY) < .02, ('the reference poses disagree with the export', body_check, BODY)
-U.log(f'CAIRO BOTW IMPORT COMPLETE: {len(clips)} clips, {len(actions)} actions, body {BODY}, size {SIZE:.3f}')
+U.log(f'{"CAIRO" if CAIRO else CHARACTER.upper().replace("-", " ")} BOTW IMPORT COMPLETE: {len(clips)} clips, {len(actions)} actions, body {BODY}, size {SIZE:.3f}')

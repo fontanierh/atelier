@@ -540,6 +540,8 @@ void UBotwMoveSet::AdvanceGround(float Dt)
     FName Name = Now ? Now->Name : NAME_None;
     if (bLocked)
     {
+        // Locked on with nothing to face (nothing was in front at the press): look again a few times a second.
+        if (!Target.IsValid() && FMath::FloorToInt(Clock * 4.f) != FMath::FloorToInt((Clock - Dt) * 4.f)) Target = FindTarget(1500.f, 70.f);
         AActor* Focus = Target.Get();
         if (Focus && (FVector::Dist2D(Focus->GetActorLocation(), Here) > 2500.f || !IsTargetable(Focus))) { Target = nullptr; Focus = nullptr; }
         const float FaceYaw = Focus ? (Focus->GetActorLocation() - Here).Rotation().Yaw : LockYaw;
@@ -1806,6 +1808,7 @@ void UBotwMoveSet::SweepArc()
     for (TActorIterator<ABotwCreature> It(World); It; ++It) Consider(*It);
     for (TActorIterator<AFoxHunter> It(World); It; ++It) Consider(*It);
     for (TActorIterator<ASwordDummy> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<AWandererCharacter> It(World); It; ++It) Consider(*It);
 }
 
 float UBotwMoveSet::BladeLength() const
@@ -1816,6 +1819,16 @@ float UBotwMoveSet::BladeLength() const
 
 void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction)
 {
+    // A sparring partner meets the blow with its own move set: its guard, parry and dodges answer it as they answer a
+    // fox's claw, and only a blow that lands counts (the guard, parry and dodge make their own effects).
+    if (AWandererCharacter* Other = Cast<AWandererCharacter>(Victim))
+    {
+        UBotwMoveSet* Theirs = Other->GetMoves();
+        if (!Theirs || Theirs->IncomingStrike(Character, Character->SparringDamage(Power), Character->GetActorLocation()) != 0) return;
+        ++HitCount;
+        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordHit(At, Direction, FMath::Clamp(Power, 1, 3), Character, Victim);
+        return;
+    }
     if (ASwordDummy* Dummy = Cast<ASwordDummy>(Victim)) Dummy->TakeSwordHit(FMath::Min(Power, 3));
     else if (AFoxHunter* Fox = Cast<AFoxHunter>(Victim)) Fox->TakeSwordHit(FMath::Min(Power, 3), Character);
     else if (ABotwCreature* Creature = Cast<ABotwCreature>(Victim)) Creature->TakeSwordHit(Power, Character);
@@ -1850,6 +1863,7 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
             }
         }
         if (ABotwCreature* Creature = Cast<ABotwCreature>(Source)) Creature->TakeSwordHit(0, Character);
+        else if (AWandererCharacter* Other = Cast<AWandererCharacter>(Source); Other && Other->GetMoves()) Other->GetMoves()->Deflected(Character);
         return 1;
     }
     // A hop or backflip in the air: dodged; just as the strike lands, a perfect dodge and the flurry rush.
@@ -1861,7 +1875,9 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
             FlurryTime = GetParam(TEXT("PlayerCutAfterJust.ForceSlowTime"), 80.f) / 30.f;
             Invulnerable = FlurryTime;
             Target = Source;
-            if (FX)
+            // A character the game drives rushes without slowing the world (the person it fights keeps their own time).
+            if (!Character->IsPlayerControlled()) FlurryTime = FMath::Min(FlurryTime, 1.4f);
+            else if (FX)
             {
                 FX->SlowMotion(FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
                 // The perfect dodge: a cold flash and a wide ring where he was, and a chime.
@@ -1906,6 +1922,44 @@ FVector UBotwMoveSet::GuardPoint() const
     return Character->GetActorLocation() + Character->GetActorForwardVector() * 30.f + FVector(0, 0, 30.f);
 }
 
+void UBotwMoveSet::Deflected(AActor* By)
+{
+    if (!Character || bDown || Mode != EBotwMoveMode::Ground) return;
+    bCharging = false; AttackBuffer = 0.f; LungeTime = 0.f;
+    // Thrown back off the guard: the front hit reaction, a step back, the next blow from scratch.
+    const FVector Away = By ? FVector((Character->GetActorLocation() - By->GetActorLocation()).GetSafeNormal2D()) : -Character->GetActorForwardVector();
+    if (Has(TEXT("HitF"))) Play(TEXT("HitF"), .04f);
+    Character->GetCharacterMovement()->Velocity = Away * 300.f;
+    Combo = 0;
+}
+
+bool UBotwMoveSet::IsAttacking() const { return IsAttack(CurrentName()) || bCharging; }
+bool UBotwMoveSet::IsHopping() const { return IsHop(CurrentName()); }
+
+float UBotwMoveSet::NextCutIn() const
+{
+    const FBotwMove* M = Current();
+    if (!M) return -1.f;
+    for (int32 I = 0; I < 3; ++I)
+        if (M->Name == CutNames[I]) return FMath::Max(0.f, (M->Input - SourceTime()) / FMath::Max(Character->GetActionPlayRate(), .05f));
+    return -1.f;
+}
+
+float UBotwMoveSet::NextBlowIn() const
+{
+    const FBotwMove* M = Current();
+    if (!M || !IsAttack(M->Name) || M->Active.IsEmpty()) return -1.f;
+    const float T = SourceTime();
+    float Next = -1.f;
+    for (const FVector2f& W : M->Active)
+    {
+        if (T >= W.X && T <= W.Y) return 0.f;
+        if (W.X > T && (Next < 0.f || W.X < Next)) Next = W.X;
+    }
+    const float Rate = FMath::Max(Character->GetActionPlayRate(), .05f);
+    return Next < 0.f ? -1.f : (Next - T) / Rate;
+}
+
 void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact)
 {
     UWandererSwordComponent* Sword = Character->GetSword();
@@ -1914,7 +1968,7 @@ void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActo
     Sword->Health = FMath::Max(0.f, Sword->Health - Damage);
     Invulnerable = FMath::Max(Invulnerable, .7f);
     const bool bKnock = bHeavy || Sword->Health <= 0.f;
-    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
+    if (AYorimichiCombatFX* FX = Character->IsNpc() ? nullptr : AYorimichiCombatFX::Get(Character))   // the striker's blade made the NPC's
     {
         const FVector Chest = Character->GetActorLocation() + FVector(0, 0, 20);
         FX->PlayerHurt(Chest + (From - Chest).GetSafeNormal2D() * 18.f, From, Damage, Character, Source, bKnock);
@@ -2252,6 +2306,8 @@ bool UBotwMoveSet::Climbable(const FHitResult& Hit) const
 bool UBotwMoveSet::IsTargetable(AActor* Actor) const
 {
     if (!Actor || Actor == Character) return false;
+    if (const AWandererCharacter* Other = Cast<AWandererCharacter>(Actor))
+        return Other->GetMoves() && (Character->IsSparringWith(Other) || Other->IsSparringWith(Character));
     if (Cast<ABotwCreature>(Actor)) return true;   // down or not: a downed one takes blows too
     if (const AFoxHunter* Fox = Cast<AFoxHunter>(Actor)) return Fox->IsAlive();
     return Actor->IsA<ASwordDummy>();
@@ -2270,7 +2326,7 @@ AActor* UBotwMoveSet::FindTarget(float Range, float Cone) const
     AActor* Best = nullptr; float BestScore = TNumericLimits<float>::Max();
     for (TActorIterator<AActor> It(Character->GetWorld()); It; ++It)
     {
-        if (!It->IsA<ABotwCreature>() && !It->IsA<AFoxHunter>() && !It->IsA<ASwordDummy>()) continue;
+        if (!It->IsA<ABotwCreature>() && !It->IsA<AFoxHunter>() && !It->IsA<ASwordDummy>() && !It->IsA<AWandererCharacter>()) continue;
         if (!IsTargetable(*It)) continue;
         const FVector To = (It->GetActorLocation() - Here) * FVector(1, 1, 0);
         const float Distance = float(To.Size());

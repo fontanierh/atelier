@@ -1,0 +1,27 @@
+{
+  "from": "SwordTrainer-Rig-r01.blend",
+  "texture": [
+    4096,
+    4096
+  ],
+  "clusters": 16,
+  "shading": 0.3,
+  "normal_map": "disconnected",
+  "regions": 64,
+  "hair_pieces": [
+    0,
+    1,
+    12,
+    13,
+    16
+  ],
+  "dark_texels_cleared": 2537,
+  "head_piece": 18,
+  "eye_pieces": [
+    2,
+    3
+  ],
+  "brow_pieces": [
+    4
+  ]
+}
