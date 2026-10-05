@@ -176,6 +176,38 @@ def _crop(m, a, b, c, d, z):
             m.poly([(*p, z), (*q, z), (*q, top(*q)), (*p, top(*p))], 'ar_rice_side')
 
 
+def _shrine(m, height):
+    x, y = SHRINE; z = max(float(height(x+dx, y+dy)) for dx in (-1, 1) for dy in (-1, 1))
+    with m.at((x, y, z), 45):                                        # local -Y towards the road, south-east
+        m.box((0, 0, -.3), (2.0, 1.7, 1.0), 'ar_shrine_stone'); m.collider((0, 0, .2), (2.0, 1.7, 2.))
+        m.box((0, 0, .45), (1.0, .8, .5), 'ar_shrine_stone')
+        m.box((0, 0, 1.05), (.8, .65, .7), 'ar_hokora_timber')
+        m.box((0, -.33, 1.0), (.5, .02, .5), 'ar_red_cloth')
+        for s in (-1, 1):
+            m.poly([(-.62, 0, 1.68), (.62, 0, 1.68), (.62, s*.55, 1.38), (-.62, s*.55, 1.38)][::s], 'ar_hokora_roof')
+        m.box((0, 0, 1.7), (1.3, .08, .06), 'ar_hokora_roof')
+
+
+def _gate(m, height):
+    """The town gate over the road at x 399: posts on stone bases, a tie beam, a small tiled roof and a blank board."""
+    z = float(height(GATE_X, GATE_Y))
+    for s in (-1, 1):
+        y = GATE_Y+s*GATE_HALF
+        m.box((GATE_X, y, z+.3), (.9, .9, .6), 'ar_gate_stone'); m.collider((GATE_X, y, z+2.8), (.5, .5, 5.6))
+        m.box((GATE_X, y, z+3.0), (.38, .38, 5.4), 'ar_gate_timber')
+        m.box((GATE_X, y+.6*s, z+.9), (.16, .9, .16), 'ar_gate_timber')
+        m.beam((GATE_X, y, z+4.0), (GATE_X, y-s*1.4, z+5.1), .16, .16, 'ar_gate_timber')
+        m.box((GATE_X+.5, y-s*1.6, z+4.35), (.32, .32, .5), 'ar_lantern_glow')
+        m.box((GATE_X-.5, y-s*1.6, z+4.35), (.32, .32, .5), 'ar_lantern_glow')
+    m.box((GATE_X, GATE_Y, z+5.25), (.42, 2*GATE_HALF+1.6, .45), 'ar_gate_timber')
+    m.box((GATE_X, GATE_Y, z+4.45), (.3, 2*GATE_HALF, .25), 'ar_gate_timber')
+    for s in (-1, 1):
+        m.poly([(GATE_X, GATE_Y-GATE_HALF-1.2, z+6.25), (GATE_X, GATE_Y+GATE_HALF+1.2, z+6.25),
+                (GATE_X+s*1.0, GATE_Y+GATE_HALF+1.2, z+5.6), (GATE_X+s*1.0, GATE_Y-GATE_HALF-1.2, z+5.6)][::s], 'ar_gate_roof')
+    m.box((GATE_X, GATE_Y, z+6.28), (.25, 2*GATE_HALF+2.4, .14), 'ar_gate_roof')
+    for s in (-1, 1):m.box((GATE_X+s*.23, GATE_Y, z+4.85), (.04, 4.2, .62), 'ar_gate_sign')
+
+
 @lru_cache(maxsize=1)
 def _samples():
     """(points, left normals) every metre along the road from the island road's end to the gate, its bends rounded."""
