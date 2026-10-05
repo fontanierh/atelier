@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
 #include "SkateSettings.generated.h"
+struct FHitResult;
 
 /** Which simulation rides the board. */
 UENUM()
@@ -80,4 +81,7 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Surfaces") TMap<FString, ESkateSurface> SurfaceMeshes;
     UPROPERTY(Config, EditAnywhere, Category = "Surfaces") TMap<FString, ESkateSurface> SurfaceMaterials;
     UPROPERTY(Config, EditAnywhere, Category = "Surfaces") ESkateSurface DefaultSurface = ESkateSurface::Concrete;
+    /** The surface a hit is on, by the same rules (for others on the same ground: Cairo's bike). The material needs a
+     *  trace with bTraceComplex and bReturnFaceIndex; without a face only tags, the mesh and DefaultSurface count. */
+    static ESkateSurface SurfaceAt(const FHitResult& Hit);
 };

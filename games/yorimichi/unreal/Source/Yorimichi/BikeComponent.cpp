@@ -13,6 +13,15 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundWave.h"
+#include "Sound/SoundAttenuation.h"
+#include "Kismet/GameplayStatics.h"
+#include "SkateSettings.h"
+#include "AtelierFX.h"
+#include "MaterialShared.h"
+#include "RHIShaderPlatform.h"
+#include "Materials/MaterialInterface.h"
 
 namespace
 {
@@ -22,10 +31,28 @@ namespace
  FQuat Turn(FVector BlenderAxis,float Degrees){return FQuat(FVector(BlenderAxis.X,-BlenderAxis.Y,BlenderAxis.Z).GetSafeNormal(),-FMath::DegreesToRadians(Degrees));}
  enum{ChCrank,ChStand,ChLift,ChPitch,ChLean,ChYaw,ChSteer,ChannelCount};   // a clip frame's bike channels
  const TCHAR* LimbNames[]={TEXT("hand_L"),TEXT("hand_R"),TEXT("foot_L"),TEXT("foot_R")};
- constexpr float TopSpeed=600.f,SprintSpeed=850.f,CrashSpeed=450.f,BarDegrees=18.f,ClipBlend=.2f;
+ constexpr float TopSpeed=600.f,SprintSpeed=1200.f,CrashSpeed=450.f,BarDegrees=18.f,ClipBlend=.2f;
  // BikeCrash throws him over the bars: his hands land 1.64 m ahead of where the bike stopped (rider.py). Against a wall the
  // bike and he rebound in the first CrashRecoil seconds to make that room.
  constexpr float CrashRoom=185.f,CrashRecoil=.3f;   // ClipBlend: the anim instance's
+ // The one-shots on each clip, at rider.py's key times: the saddle taking his weight, the stand flipping up (stowed at
+ // 1.38 s) and down (on the ground at .60 s), the hop's take-off and landing, the bell's two thumb strikes, the crash
+ // into the wall and the bike falling on its side (lean_bike 84 at 1.15 s).
+ struct FClipSound{const TCHAR* Clip;float Time;const TCHAR* Cue;float Volume;};
+ const FClipSound ClipSounds[]={
+  {TEXT("BikeMount"),.95f,TEXT("creak"),.6f},{TEXT("BikeMount"),1.38f,TEXT("stand_up"),.8f},{TEXT("BikeDismount"),.48f,TEXT("creak"),.5f},
+  {TEXT("BikeKickstand"),.60f,TEXT("stand_down"),.9f},{TEXT("BikeHop"),.42f,TEXT("creak"),.45f},{TEXT("BikeHop"),.74f,TEXT("land"),.9f},
+  {TEXT("BikeBell"),.20f,TEXT("bell"),1.f},{TEXT("BikeBell"),.38f,TEXT("bell"),.85f},{TEXT("BikeCrash"),0.f,TEXT("crash"),1.f},
+  {TEXT("BikeCrash"),1.15f,TEXT("fall"),.9f}};
+ // The loops, in UBikeComponent::Loops order: the tyre on smooth ground (concrete, asphalt, metal), then on wood,
+ // stone, dirt (and sand) and grass; the freewheel, chain, wind and the skid on hard and on soft ground.
+ const TCHAR* LoopNames[]={TEXT("tyre"),TEXT("tyre_wood"),TEXT("tyre_stone"),TEXT("tyre_dirt"),TEXT("tyre_grass"),TEXT("freewheel"),TEXT("chain"),TEXT("wind"),TEXT("skid"),TEXT("skid_dirt")};
+ enum{LoopTyre,LoopFreewheel=5,LoopChain,LoopWind,LoopSkid,LoopSkidDirt,LoopCount};
+ int32 TyreLoop(ESkateSurface S)
+ {
+  switch(S){case ESkateSurface::Wood:return 1;case ESkateSurface::Stone:return 2;case ESkateSurface::Dirt:case ESkateSurface::Sand:return 3;case ESkateSurface::Grass:return 4;default:return 0;}
+ }
+ constexpr float ChainTurn=.75f,FreewheelTeeth=12.f,FreewheelLoopTicks=30.f;   // assets/audio/bike/make.py
 }
 
 // Before physics: the movement component and the mesh wait on it (Initialize), and a later group would carry them, and
@@ -96,6 +123,110 @@ void UBikeComponent::Initialize(AWandererCharacter* C)
   if(UAnimSequence* S=LoadObject<UAnimSequence>(nullptr,*FString::Printf(TEXT("/Game/CairoBike/A_%s.A_%s"),*Name,*Name)))Sequences.Add(Pair.Key,S);
  }
  MeshLocation=C->GetMesh()->GetRelativeLocation();MeshRotation=C->GetMesh()->GetRelativeRotation();
+ if(bAssetsReady)LoadSounds();
+ // The parts stay hidden until the bike comes out, and the first summon drew a frame or two in the default material
+ // while M_Bike's shaders were still being made. Finish them now, while the island loads.
+ MaterialsReady(true);
+}
+
+bool UBikeComponent::MaterialsReady(bool bFinish) const
+{
+ bool bReady=true;
+#if WITH_EDITOR
+ for(const UStaticMeshComponent* P:TArray<UStaticMeshComponent*>{Frame,Steer,WheelFront,WheelRear,Crank,PedalL,PedalR,Kickstand,RackBoard})
+  for(int32 I=0;P&&I<P->GetNumMaterials();++I)
+   if(UMaterialInterface* Material=P->GetMaterial(I))
+    if(FMaterialResource* Resource=Material->GetMaterialResource(GMaxRHIShaderPlatform))
+    {
+     if(bFinish)Resource->FinishCompilation();
+     bReady&=Resource->IsCompilationFinished();
+    }
+#endif
+ return bReady;
+}
+
+void UBikeComponent::LoadSounds()
+{
+ auto Load=[](const FString& Name){return LoadObject<USoundWave>(nullptr,*FString::Printf(TEXT("/Game/Audio/Bike/%s.%s"),*Name,*Name),nullptr,LOAD_NoWarn|LOAD_Quiet);};
+ Attenuation=NewObject<USoundAttenuation>(this);
+ FSoundAttenuationSettings& A=Attenuation->Attenuation;
+ A.bAttenuate=true;A.bSpatialize=true;A.AttenuationShape=EAttenuationShape::Sphere;
+ A.AttenuationShapeExtents=FVector(500.f,0.f,0.f);A.FalloffDistance=4000.f;A.DistanceAlgorithm=EAttenuationDistanceModel::NaturalSound;A.dBAttenuationAtMax=-48.f;
+ for(const TCHAR* Cue:{TEXT("bell"),TEXT("stand_up"),TEXT("stand_down"),TEXT("creak"),TEXT("land"),TEXT("rattle"),TEXT("crash"),TEXT("fall")})
+ {
+  const int32 First=Waves.Num();
+  for(int32 I=1;I<=8;++I)if(USoundWave* W=Load(FString::Printf(TEXT("%s_%02d"),Cue,I)))Waves.Add(W);
+  if(Waves.Num()>First)CueRange.Add(FName(Cue),FIntPoint(First,Waves.Num()-First));
+ }
+ for(int32 I=0;I<LoopCount;++I)
+ {
+  auto* L=NewObject<UAudioComponent>(Rider,*FString::Printf(TEXT("BikeLoop%d"),I));
+  L->SetupAttachment(BikeRoot);L->bAutoActivate=false;L->bAllowSpatialization=true;
+  L->AttenuationSettings=Attenuation;L->SetSound(Load(FString::Printf(TEXT("%s_01"),LoopNames[I])));L->RegisterComponent();
+  Loops.Add(L);
+ }
+ LoopVolume.Init(0.f,Loops.Num());
+ UE_LOG(LogTemp,Display,TEXT("BIKE sounds: %d one-shots, %d loops"),Waves.Num(),Loops.FilterByPredicate([](const UAudioComponent* L){return L->Sound!=nullptr;}).Num());
+}
+
+void UBikeComponent::PlayCue(FName Cue,float Volume,float Pitch)
+{
+ const FIntPoint* Range=CueRange.Find(Cue);if(!Range||Range->Y<=0)return;
+ int32 Pick=Range->X+FMath::RandHelper(Range->Y);
+ if(Range->Y>1&&Pick==LastVariant)Pick=Range->X+(Pick-Range->X+1)%Range->Y;   // no back-to-back repeat
+ LastVariant=Pick;
+ const FVector At=BikeRoot->GetComponentLocation()+FVector(0,0,50.f);
+ UGameplayStatics::PlaySoundAtLocation(this,Waves[Pick],At,FRotator::ZeroRotator,Volume,Pitch,0.f,Attenuation);
+ FAtelierAudioLog::Record(Waves[Pick],At,Volume,Pitch,false);
+}
+
+void UBikeComponent::ClipCues()
+{
+ const FClip* C=Clips.Find(Clip);
+ if(C&&!C->bLoop)for(const FClipSound& S:ClipSounds)if(Clip==S.Clip&&S.Time>CueClock&&S.Time<=ClipTime)PlayCue(S.Cue,S.Volume,FMath::FRandRange(.96f,1.04f));
+ CueClock=ClipTime;
+}
+
+void UBikeComponent::UpdateAudio(float Dt,bool bPedal,float Cadence)
+{
+ if(Loops.Num()!=LoopCount)return;
+ auto* M=Rider->GetCharacterMovement();
+ // The ground under the wheels, a few times a second (the material needs the complex trace's face).
+ if((GroundCheck-=Dt)<=0.f)
+ {
+  GroundCheck=.1f;
+  FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeGround),true,Rider);Q.bReturnFaceIndex=true;
+  const FVector From=Rider->GetActorLocation(),To=From-FVector(0,0,Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+40.f);
+  FHitResult Hit;
+  Ground=uint8(GetWorld()->LineTraceSingleByChannel(Hit,From,To,ECC_Visibility,Q)?USkateSettings::SurfaceAt(Hit):ESkateSurface::None);
+ }
+ const ESkateSurface S=ESkateSurface(Ground);
+ const bool bLifted=Displayed.Num()==ChannelCount&&Displayed[ChLift]>.01f;
+ // Off the ground (a drop, not the hop, which the clip sounds): the landing thumps by how fast he came down.
+ if(!M->IsMovingOnGround()){Airborne+=Dt;FallSpeed=FMath::Max(FallSpeed,-M->Velocity.Z);}
+ else{if(Airborne>.2f&&State==EState::Riding)PlayCue(TEXT("land"),FMath::Clamp(FallSpeed/600.f,.3f,1.f));Airborne=FallSpeed=0.f;}
+ const bool bRolling=State==EState::Riding&&M->IsMovingOnGround()&&!bLifted&&Speed>5.f;
+ const bool bSkid=State==EState::Riding&&Clip==TEXT("BikeSkid")&&ClipTime>.1f&&Speed>30.f;
+ const float Fast=FMath::Clamp(Speed/SprintSpeed,0.f,1.f);
+ // A bump now and then on rough ground: the basket and chain case knocking.
+ if(bRolling&&(S==ESkateSurface::Stone||S==ESkateSurface::Dirt)&&Speed>300.f&&(RattleWait-=Dt)<=0.f)
+ {PlayCue(TEXT("rattle"),.35f+.4f*Fast);RattleWait=FMath::FRandRange(.5f,1.6f)*FMath::Clamp(700.f/Speed,.5f,2.f);}
+ float Want[LoopCount]={},Pitch[LoopCount];
+ const float WheelTurns=Speed/(2.f*PI*WheelRadius);
+ for(int32 I=0;I<LoopCount;++I)Pitch[I]=1.f;
+ if(bRolling&&!bSkid){const int32 T=TyreLoop(S);Want[T]=FMath::Clamp(Speed/250.f,0.f,1.f)*(.35f+.45f*Fast);Pitch[T]=.75f+.45f*Fast;}
+ if(bRolling&&!bPedal&&!bSkid&&Speed>20.f){Want[LoopFreewheel]=.3f*FMath::Clamp(Speed/200.f,0.f,1.f);Pitch[LoopFreewheel]=FMath::Clamp(WheelTurns*FreewheelTeeth/FreewheelLoopTicks,.3f,2.5f);}
+ if(Clip==TEXT("BikeRide")&&bPedal&&Speed>10.f){Want[LoopChain]=(bSprint?.45f:.3f)*FMath::Clamp(Speed/200.f,0.f,1.f);Pitch[LoopChain]=FMath::Clamp(Cadence*ChainTurn,.4f,2.5f);}
+ if(State==EState::Riding){Want[LoopWind]=.7f*FMath::Clamp((Speed-350.f)/850.f,0.f,1.f);Pitch[LoopWind]=.8f+.4f*Fast;}
+ if(bSkid){const bool bSoft=S==ESkateSurface::Dirt||S==ESkateSurface::Sand||S==ESkateSurface::Grass;const int32 K=bSoft?LoopSkidDirt:LoopSkid;Want[K]=.9f*FMath::Clamp(Speed/600.f,.3f,1.f);Pitch[K]=.9f+.2f*FMath::Clamp(Speed/800.f,0.f,1.f);}
+ for(int32 I=0;I<LoopCount;++I)
+ {
+  UAudioComponent* L=Loops[I];if(!L||!L->Sound)continue;
+  // A quick attack (a skid starts at once), a softer release.
+  LoopVolume[I]=FMath::FInterpTo(LoopVolume[I],Want[I],Dt,Want[I]>LoopVolume[I]?25.f:8.f);
+  if(LoopVolume[I]>.01f){if(!L->IsPlaying())L->Play(FMath::FRand()*1.5f);L->SetVolumeMultiplier(LoopVolume[I]);L->SetPitchMultiplier(Pitch[I]);}
+  else if(L->IsPlaying())L->Stop();
+ }
 }
 
 UAnimSequence* UBikeComponent::GetSequence() const{const TObjectPtr<UAnimSequence>* S=Sequences.Find(Clip);return S?S->Get():nullptr;}
@@ -183,7 +314,7 @@ bool UBikeComponent::ClearFor(const FVector& Origin,float Yaw) const
 
 void UBikeComponent::Play(FName Name,FName Then)
 {
- Clip=Name;Resume=Then;ClipTime=0.f;AppliedYaw=0.f;++Serial;
+ Clip=Name;Resume=Then;ClipTime=0.f;AppliedYaw=0.f;CueClock=-1.f;++Serial;
  BlendFrom=Displayed;BlendLeft=BlendFrom.Num()==ChannelCount?ClipBlend:0.f;
  // Into the ride loop at the crank's current angle, so the pedals and his legs carry on where they were.
  const FClip* C=Clips.Find(Name);
@@ -230,8 +361,9 @@ bool UBikeComponent::Toggle()
  M->StopMovementImmediately();
  Rider->SetActorLocationAndRotation(Origin+FVector(0,0,Half),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
  SavedFriction=M->GroundFriction;SavedBraking=M->BrakingDecelerationWalking;M->GroundFriction=0.f;M->BrakingDecelerationWalking=0.f;
- State=EState::Mounting;Speed=Steering=Lean=StillTime=0.f;Play(TEXT("BikeMount"),TEXT("BikeRide"));
+ State=EState::Mounting;Speed=Steering=Lean=StillTime=0.f;bSnapGround=true;Play(TEXT("BikeMount"),TEXT("BikeRide"));
  BikeRoot->SetVisibility(true,true);Hint=TEXT("Getting on");
+ UE_LOG(LogTemp,Display,TEXT("BIKE summon: materials ready=%d"),MaterialsReady(false)?1:0);
  TArray<float> C;if(Channels(C))Pose(C);
  return true;
 }
@@ -254,7 +386,8 @@ void UBikeComponent::Park()
    Rider->SetActorLocation(At,false,nullptr,ETeleportType::TeleportPhysics);
  }
  M->bForceNextFloorCheck=true;
- State=EState::Off;Speed=Steering=Lean=BlendLeft=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");
+ State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;
+ for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
 
 void UBikeComponent::StowImmediately()
@@ -270,10 +403,12 @@ void UBikeComponent::StowImmediately()
   if(bParked)BikeRoot->AttachToComponent(Rider->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale);
   BikeRoot->SetVisibility(false,true);
  }
- bParked=false;Speed=Steering=Lean=BlendLeft=0.f;Displayed.Reset();Hint=TEXT("V bike");
+ bParked=false;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=0.f;Displayed.Reset();Hint=TEXT("V bike");bSprint=false;
+ for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
 
-void UBikeComponent::SetInput(FVector2D V,bool bSprintHeld,bool Menu){Input=Menu?FVector2D::ZeroVector:V;bSprint=bSprintHeld;bMenu=Menu;}
+void UBikeComponent::SetInput(FVector2D V,bool Menu){Input=Menu?FVector2D::ZeroVector:V;bMenu=Menu;}
+bool UBikeComponent::ToggleSprint(){if(State!=EState::Riding||bMenu)return false;bSprint=!bSprint;Coast=0.f;return true;}
 bool UBikeComponent::Hop(){if(State!=EState::Riding||Clip==TEXT("BikeHop")||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeHop"),TEXT("BikeRide"));return true;}
 bool UBikeComponent::Skid(){if(State!=EState::Riding||Speed<250.f||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeSkid"),TEXT("BikeFootDown"));return true;}
 bool UBikeComponent::Bell(){if(State!=EState::Riding||Clip!=TEXT("BikeRide"))return false;Play(TEXT("BikeBell"),TEXT("BikeRide"));return true;}
@@ -312,11 +447,14 @@ void UBikeComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickF
  const bool bPedal=Input.Y>.1f&&!bMenu;
  if(State==EState::Riding&&!bMenu)
  {
+  // The sprint is a toggle: it lasts while he keeps pedalling (a moment's let-go is fine) and ends at a brake or stop.
+  Coast=bPedal?0.f:Coast+Dt;
+  if(Coast>.6f||Input.Y<-.1f||Clip==TEXT("BikeSkid")||Clip==TEXT("BikeFootDown"))bSprint=false;
   const float Top=bSprint?SprintSpeed:TopSpeed;
   // The skid locks the back wheel and stops him inside the clip; a foot down at a roll drags him to a stop.
   if(Clip==TEXT("BikeSkid"))Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,950.f);
   else if(Clip==TEXT("BikeFootDown")&&!bPedal)Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,500.f);
-  else if(bPedal)Speed=FMath::FInterpConstantTo(Speed,Top*FMath::Clamp(Input.Y,0.f,1.f),Dt,Speed>Top?220.f:260.f);
+  else if(bPedal)Speed=FMath::FInterpConstantTo(Speed,Top*FMath::Clamp(Input.Y,0.f,1.f),Dt,Speed>Top?300.f:bSprint?420.f:260.f);
   else if(Input.Y<-.1f)Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,700.f*-Input.Y);
   else Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,40.f);
   Steering=FMath::FInterpTo(Steering,Clip==TEXT("BikeSkid")?0.f:Input.X,Dt,5.f);
@@ -330,9 +468,11 @@ void UBikeComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickF
  }
  else if(State==EState::Crashing)Speed=ClipTime<CrashRecoil?-Recoil/CrashRecoil:0.f;
  else Speed=0.f;
- // One crank turn carries the mamachari about 2.3 m; freewheeling, the cranks stop.
- const float Cadence=Clip==TEXT("BikeRide")?(bPedal?Speed/230.f:0.f):1.f;
+ // One crank turn carries the mamachari about 2.3 m up to his cruising speed; faster, he is in the hub's higher gears
+ // and his legs spin up more slowly than the wheels. Freewheeling, the cranks stop.
+ const float Cadence=Clip==TEXT("BikeRide")?(bPedal?Speed/(230.f*FMath::Pow(FMath::Max(1.f,Speed/TopSpeed),.8f)):0.f):1.f;
  ClipTime+=Dt*Cadence;
+ ClipCues();
  if(!C->bLoop&&ClipTime>=C->Duration){ClipTime=C->Duration;TArray<float> Last;if(Channels(Last))Pose(Last);EndClip();if(State==EState::Off)return;C=Clips.Find(Clip);}
  TArray<float> Ch;if(!Channels(Ch))return;
  if(BlendLeft>0.f)
@@ -352,9 +492,12 @@ void UBikeComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickF
  else M->Velocity=FVector(0,0,M->Velocity.Z);
  WheelAngle=FMath::Fmod(WheelAngle+Speed*Dt/WheelRadius,2.f*PI);
  // Into the turn: he and the bike lean together about the ground line under them.
- Lean=FMath::FInterpTo(Lean,State==EState::Riding?-Steering*FMath::Clamp(Speed/TopSpeed,0.f,1.f)*14.f:0.f,Dt,4.f);
- Rider->GetMesh()->SetRelativeLocationAndRotation(MeshLocation,(FQuat(FVector::ForwardVector,FMath::DegreesToRadians(Lean))*MeshRotation.Quaternion()).Rotator());
+ Lean=FMath::FInterpTo(Lean,State==EState::Riding?-Steering*FMath::Clamp(Speed/TopSpeed,0.f,1.5f)*14.f:0.f,Dt,4.f);
+ FollowGround(Dt);
+ Rider->GetMesh()->SetRelativeLocationAndRotation(MeshLocation+FVector(0,0,GroundOffset),
+  (FQuat(FVector::ForwardVector,FMath::DegreesToRadians(Lean))*MeshRotation.Quaternion()*FRotator(GroundPitch,0,0).Quaternion()).Rotator());   // pitch in the bike's frame
  Pose(Ch);
+ UpdateAudio(Dt,bPedal,Cadence);
 }
 
 float UBikeComponent::GetPoseTime() const
@@ -362,6 +505,52 @@ float UBikeComponent::GetPoseTime() const
  const FClip* C=Clips.Find(Clip);const UAnimSequence* S=GetSequence();if(!C||!S)return 0.f;
  const float T=C->bLoop?FMath::Fmod(ClipTime,C->Duration):ClipTime;
  return FMath::Clamp(T,0.f,S->GetPlayLength());
+}
+
+void UBikeComponent::FollowGround(float Dt)
+{
+ // The walking capsule stands level on one point under him, so on a rise the front wheel sank into the ground (and on
+ // a dip it hung in the air). Find the ground under each wheel; he and the bike pitch about the ground line under him
+ // to the slope between them and sit on it there.
+ float WantPitch=0.f,WantOffset=0.f;
+ if(Rider->GetCharacterMovement()->IsMovingOnGround()&&State!=EState::Crashing)
+ {
+  const FTransform Base=FTransform(MeshRotation,MeshLocation)*Rider->GetActorTransform();
+  FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeWheels),false,Rider);
+  auto GroundAt=[&](float X,float& Z)
+  {
+   const FVector P=Base.TransformPosition(FVector(X,0,0));FHitResult H;
+   if(!GetWorld()->LineTraceSingleByChannel(H,P+FVector(0,0,60),P-FVector(0,0,90),ECC_Visibility,Q)||H.ImpactNormal.Z<.6f)return false;
+   Z=H.ImpactPoint.Z-Base.GetLocation().Z;return true;
+  };
+  float Front,Rear;
+  if(GroundAt(FrontAxle.X,Front)&&GroundAt(RearAxle.X,Rear))
+  {
+   WantPitch=FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(Front-Rear,FrontAxle.X-RearAxle.X)),-25.f,25.f);
+   WantOffset=FMath::Clamp(Rear-(Front-Rear)*RearAxle.X/(FrontAxle.X-RearAxle.X),-25.f,25.f);
+  }
+ }
+ if(bSnapGround){GroundPitch=WantPitch;GroundOffset=WantOffset;bSnapGround=false;}
+ else{GroundPitch=FMath::FInterpTo(GroundPitch,WantPitch,Dt,10.f);GroundOffset=FMath::FInterpTo(GroundOffset,WantOffset,Dt,10.f);}
+}
+
+FVector2D UBikeComponent::GetWheelGaps() const
+{
+ FVector2D Gaps(0,0);if(!BikeRoot)return Gaps;
+ FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeGaps),false,Rider);
+ for(int32 I=0;I<2;++I)
+ {
+  const FVector Axle=BikeRoot->GetComponentTransform().TransformPosition(I?RearAxle:FrontAxle);FHitResult H;
+  if(GetWorld()->LineTraceSingleByChannel(H,Axle+FVector(0,0,60),Axle-FVector(0,0,150),ECC_Visibility,Q))Gaps[I]=Axle.Z-WheelRadius-H.ImpactPoint.Z;
+ }
+ return Gaps;
+}
+
+FString UBikeComponent::GetLoopState() const
+{
+ FString Out;
+ for(int32 I=0;I<Loops.Num();++I)Out+=FString::Printf(TEXT("%.3f %.3f "),Loops[I]&&Loops[I]->IsPlaying()?LoopVolume[I]:0.f,Loops[I]?Loops[I]->PitchMultiplier:1.f);
+ return Out;
 }
 
 FTransform UBikeComponent::GetBikeTransform() const{return BikeRoot?BikeRoot->GetComponentTransform():FTransform::Identity;}

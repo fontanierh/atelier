@@ -5,8 +5,11 @@
 Runs in the game's Python (the live bridge). SITE is open, level ground (Unreal cm and yaw): the bike comes out
 there and Cairo mounts, rides, steers both ways, rings the bell, waves, hops, pedals hard into a skid stop, puts a
 foot down and parks it. He then gets back on the parked bike, rides a lap and parks again. CRASH is level ground with room
-ahead: a test wall goes up 11 m in front and he pedals hard into it. Every frame's live.bike_state() goes to rows.json; named stills go to OUT; with
-FILM every other frame goes to OUT/film as a PNG (30 fps). done.json marks the end (with any error).
+ahead: a test wall goes up 11 m in front and he pedals hard into it. Then, on the same run with the wall gone, a test ramp
+(12.5 degrees, 1 m high, then a drop) checks that both wheels stay on a slope. Every frame's live.bike_state() goes to rows.json; named stills go to OUT; with
+FILM every other frame goes to OUT/film as a PNG (30 fps), and for the film's soundtrack the sounds the game starts go to
+audio.json, the bike's loops every frame to loops.csv and the camera every film frame to camera.csv (their clock runs
+only while the film does; tools/review_bike.py mixes them). done.json marks the end (with any error).
 """
 import json, math, os
 import unreal
@@ -14,7 +17,7 @@ import unreal
 L = live.L
 OUT = globals()['OUT']; SITE = globals()['SITE']; CRASH = globals().get('CRASH'); FILM = bool(globals().get('FILM', True))
 os.makedirs(os.path.join(OUT, 'film'), exist_ok=True)
-for name in ('done.json', 'rows.json', 'progress.json'):
+for name in ('done.json', 'rows.json', 'progress.json', 'audio.json', 'loops.csv', 'camera.csv'):
     if os.path.exists(os.path.join(OUT, name)): os.remove(os.path.join(OUT, name))
 review = unreal.MegaParkValidation
 
@@ -107,7 +110,7 @@ STEPS = [
     (14.25, lambda: live.press('jump_release')),
     (14.5, lambda: still('09_hop')),
     (15.6, lambda: camera('game')),
-    (15.7, lambda: drive(1., .25, 'sprint')),
+    (15.7, lambda: (drive(1., .25), live.press('sprint'))),   # a tap: pedalling hard stays on
     (16.9, lambda: still('10_sprint')),
     (17.6, lambda: camera('track', **REAR3, fov=50.)),
     (18.0, lambda: (drive(0.), live.press('crouch'))),
@@ -140,14 +143,37 @@ CRASH_STEPS = [
     (0.0, lambda: (place(CRASH), wall_ahead(CRASH))),
     (1.0, lambda: camera('game')),
     (1.2, lambda: live.press('bike')),
-    (3.0, lambda: drive(1., 0., 'sprint')),
+    (3.0, lambda: (drive(1., 0.), live.press('sprint'))),
     (3.1, lambda: camera('track', eye=(-120, -520, 170), at=(150, 0, 80), fov=55.)),
 ]
 CRASH_AFTER = [(0.35, lambda: still('17_crash_over')), (.9, lambda: still('18_crash_down')), (1.6, lambda: still('19_crash_squat')),
                (2.6, lambda: still('20_crash_up'))]
 
+RAMP = dict(start=300., length=450., rise=100.)   # tools/review_bike.py
+
+
+def ramp_ahead(site):
+    x, y, yaw = site; r = math.radians(yaw)
+    L.clear_tests()
+    ground = L.ground_at(unreal.Vector(x + math.cos(r) * RAMP['start'], y + math.sin(r) * RAMP['start'], 5000.))
+    L.test_ramp(ground, float(yaw), RAMP['length'], RAMP['rise'])
+
+
+SLOPE_STEPS = [
+    (0.0, lambda: (place(CRASH), ramp_ahead(CRASH))),
+    (1.0, lambda: camera('fixed', eye=(320, -700, 170), at=(320, 0, 70), fov=55.)),
+    (1.2, lambda: live.press('bike')),
+    (3.0, lambda: drive(.6)),
+    (4.9, lambda: still('21_ramp_up')),
+    (5.5, lambda: still('22_ramp_top')),
+    (6.3, lambda: still('23_ramp_off')),
+    (6.8, lambda: drive(-1.)),
+    (8.0, lambda: drive(0.)),
+]
+
 S = {'frame': 0, 't': 0., 'segment': 'ride', 'queue': list(STEPS), 'rows': [], 'crash_at': None, 'error': None, 'end': None,
-     'stills': [], 'copies': []}
+     'stills': [], 'copies': [], 'film': 0, 'loops': [], 'camera': []}
+CM = unreal.GameplayStatics.get_player_camera_manager(L.game_world(), 0)
 
 
 def finish(error=None):
@@ -156,6 +182,9 @@ def finish(error=None):
     review.restore_player_camera()
     L.fixed_step(0.)
     json.dump(S['rows'], open(os.path.join(OUT, 'rows.json'), 'w'))
+    L.audio_log('stop', os.path.join(OUT, 'audio.json'))
+    open(os.path.join(OUT, 'loops.csv'), 'w').write('\n'.join(S['loops']) + '\n')
+    open(os.path.join(OUT, 'camera.csv'), 'w').write('frame,x,y,z,yaw\n' + '\n'.join(S['camera']) + '\n')
     json.dump({'error': error, 'frames': S['frame'], 'film_copies': S['copies']}, open(os.path.join(OUT, 'done.json'), 'w'))
 
 
@@ -177,6 +206,16 @@ def tick(_dt):
             if S['t'] > 9. and S['crash_at'] is None:
                 return finish('no crash within 6 s of pedalling at the wall')
         update_camera()
+        filmed = FILM and (bool(S['stills']) or S['frame'] % 2 == 0) and S['t'] > 1.
+        if FILM and S['t'] > 1.:
+            # The soundtrack's clock is the film's at 60 Hz: film frame k is tick 2k (a still taken on an odd frame
+            # adds a film frame, so the clock follows the film, not the simulation).
+            tick_ = 2 * S['film'] if filmed else 2 * S['film'] - 1
+            L.audio_frame(tick_); row = L.bike_loops().strip()
+            while len(S['loops']) <= tick_: S['loops'].append(row)
+            if filmed:
+                loc, rot = CM.get_camera_location(), CM.get_camera_rotation()
+                S['camera'].append('%d,%.1f,%.1f,%.1f,%.2f' % (S['film'], loc.x, loc.y, loc.z, rot.yaw)); S['film'] += 1
         if S['stills']:
             name = os.path.join(OUT, f'bike_{S["stills"].pop(0)}.png'); L.screenshot(name)
             if FILM: S['copies'].append((name, os.path.join(OUT, 'film', f'{S["segment"]}_{S["frame"]:05d}.png')))
@@ -186,11 +225,15 @@ def tick(_dt):
         if S['frame'] % 120 == 0:
             json.dump({'segment': S['segment'], 't': round(S['t'], 2), 'frame': S['frame'], 'clip': f.get('clip'), 'state': f.get('state')},
                       open(os.path.join(OUT, 'progress.json'), 'w'))
-        if S['segment'] == 'ride' and not S['queue'] and S['end'] is None: S['end'] = S['t'] + 1.
+        if S['segment'] in ('ride', 'slope') and not S['queue'] and S['end'] is None: S['end'] = S['t'] + 1.
         if S['end'] is not None and S['t'] >= S['end']:
             if S['segment'] == 'ride' and CRASH:
                 S.update(segment='crash', t=0., queue=list(CRASH_STEPS), end=None)
                 return
+            if S['segment'] == 'crash':
+                S.update(segment='slope', t=0., queue=list(SLOPE_STEPS), end=None)
+                return
+            L.clear_tests()
             finish()
     except Exception as error:
         import traceback
@@ -198,5 +241,6 @@ def tick(_dt):
 
 
 L.fixed_step(60.)
+L.audio_log('start')
 live.behave('bike_qa', tick)
 print('bike qa started')
