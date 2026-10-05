@@ -28,6 +28,7 @@
 #include "MegaRamp.h"
 #include "SkatePark.h"
 #include "SuperUltraMegaPark.h"
+#include "Hippodrome.h"
 #include "ZeppelinService.h"
 #include "SeeThrough.h"
 
@@ -283,6 +284,9 @@ void AJapanWorld::Load()
     TArray<TArray<FVector2D>> ParkClearance = ASkatePark::LoadClearance(ParkPath);
     const FString CommunityParkPath = AtelierDataPath(TEXT("communitypark/park.json"));
     ParkClearance.Append(ASkatePark::LoadClearance(CommunityParkPath));
+    // The hippodrome on the slope north of Hidamari (docs/HIPPODROME.md) keeps its oval and stands clear too.
+    const FString HippodromePath = AtelierDataPath(TEXT("hippodrome/hippodrome.json"));
+    ParkClearance.Append(ASkatePark::LoadClearance(HippodromePath));
     int32 Cleared = 0;
     // Playable ground far from the origin, such as the forest round the Mega Park (megapark/forest.py): the detailed
     // trees there are near ones, with shadows, collision and the camera fade; the low-poly crowns stay backdrop.
@@ -545,6 +549,7 @@ void AJapanWorld::Load()
     ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
     if (FPaths::FileExists(CommunityParkPath))
         if (auto* Park = GetWorld()->SpawnActor<ASkatePark>()) Park->Initialize(CommunityParkPath);
+    if (FPaths::FileExists(HippodromePath)) AHippodrome::Spawn(GetWorld(), HippodromePath);
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK cleared %d vegetation instances"), Cleared);
     // The road guardrails are grindable: the W-beam's top edge is 85 cm over the rail line.
     if (USkateRailSubsystem* Rails = GetWorld()->GetSubsystem<USkateRailSubsystem>())

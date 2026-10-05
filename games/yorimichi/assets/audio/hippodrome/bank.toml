@@ -1,0 +1,3 @@
+id = "hippodrome"
+build = "make.py"                     # -> build/yorimichi/audio/hippodrome (3 race songs, charts.json, 13 race cues)
+licence = "own numpy synthesis, no recorded samples: may ship inside the game and be redistributed"

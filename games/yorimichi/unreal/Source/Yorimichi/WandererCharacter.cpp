@@ -16,6 +16,7 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "WandererDefinition.h"
 #include "WandererAnimInstance.h"
 #include "SwordTrainer.h"
+#include "HorseRace.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
@@ -750,7 +751,7 @@ void AWandererCharacter::ZeppelinStep(int32 Direction)
     if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
-void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
+void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if(bReady&&!bMenuOpen&&AHorseRace::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {
     if (!bReady) return;
@@ -769,6 +770,23 @@ void AWandererCharacter::Screenshot(const FInputActionValue&)
     const FString File = FPaths::ProjectSavedDir()/TEXT("Screenshots")/(TEXT("Wanderer_")+FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"))+TEXT(".png"));
     FScreenshotRequest::RequestScreenshot(File,false,false);
 }
+void AWandererCharacter::SetControlsSuspended(bool bSuspended)
+{
+    if (bControlsSuspended == bSuspended) return;
+    bControlsSuspended = bSuspended;
+    MoveIntent = FVector2D::ZeroVector; bJog = bWalk = bSprintHeld = false;
+    if (Moves) Moves->DropHolds();
+    if (Sword) { Sword->CancelForInterrupt(false); Sword->DropAttackHold(); }
+    JumpBuffer = RollBuffer = 0.f;
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+        if (ULocalPlayer* LP = PC->GetLocalPlayer())
+            if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+            {
+                if (bSuspended) Subsystem->RemoveMappingContext(Mapping);
+                else Subsystem->AddMappingContext(Mapping, 0);
+            }
+}
+
 void AWandererCharacter::SetMenuOpen(bool bOpen)
 {
     bMenuOpen = bOpen; MoveIntent = FVector2D::ZeroVector; bJog = bWalk = bSprintHeld = false;

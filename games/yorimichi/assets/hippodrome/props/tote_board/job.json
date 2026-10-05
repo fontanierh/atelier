@@ -1,0 +1,29 @@
+{
+  "stage": "hippodrome_prop",
+  "slug": "tote_board",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 15000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "f92d535569e3f0433e52250432eec971b7c845052e106b9831e65522cca84c85",
+  "concept_sha256": "f92d535569e3f0433e52250432eec971b7c845052e106b9831e65522cca84c85",
+  "submitted_at": "2026-10-05T18:06:42.047166+00:00",
+  "task_id": "72c00844-b377-41e6-8796-37d3e46331b9",
+  "status": "submitted",
+  "user_approval": "requested by the horse-races session on 2026-10-05 (budget: at most 6 Tripo models)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T18:08:28.959395+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

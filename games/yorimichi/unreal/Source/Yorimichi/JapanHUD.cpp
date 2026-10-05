@@ -9,6 +9,7 @@
 #include "WandererSword.h"
 #include "FoxHunter.h"
 #include "SwordTrainer.h"
+#include "HorseRace.h"
 #include "LiveLibrary.h"
 #include "YorimichiLive.h"
 #include "EngineUtils.h"
@@ -141,6 +142,8 @@ void AJapanHUD::DrawHUD()
         }
     }
     };
+    // A horse race (AHorseRace) takes the whole screen: its note highway, standings, map and stride meter.
+    if (AHorseRace* Race = AHorseRace::Find(Pawn); Race && Race->IsRacing()) { Race->DrawHud(this, Canvas, CurrentControllerStyle()); return; }
     // Filming the skating (ULiveLibrary::FilmHud): only the trick line, and the sword trainer's bar and words.
     if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawTrainer(false, false); return; }
     // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
@@ -304,6 +307,16 @@ void AJapanHUD::DrawHUD()
         }
     }
     DrawTrainer(bController, bSailboat);
+    // Hudson, the race master at the hippodrome: the prompt to ask him for a race.
+    if (const AHorseRace* Race = AHorseRace::Find(Pawn); Race && !bSailboat && Race->CanTalk(Pawn))
+    {
+        const float Scale = Canvas->SizeY / 1080.f;
+        const FString Ask = FString::Printf(TEXT("%s   Talk to Hudson (horse races)"), bController ? TEXT("D-pad Down") : TEXT("E"));
+        float W = 0.f, H = 0.f; Canvas->StrLen(Font, Ask, W, H); const float S = 1.3f * FMath::Max(Scale, .75f);
+        const float X = Canvas->SizeX * .5f - W * S * .5f, Y = Canvas->SizeY * .7f;
+        DrawRect(FLinearColor(0, 0, 0, .45f), X - 14, Y - 8, W * S + 28, H * S + 16);
+        DrawText(Ask, FLinearColor(1.f, .9f, .74f), X, Y, Font, S);
+    }
     if (bSwordSet)
     {
         FString Weapon=Sword->IsArmed()?FString::Printf(TEXT("Sword: %s"),*Sword->StateName()):TEXT("Sword: put away");

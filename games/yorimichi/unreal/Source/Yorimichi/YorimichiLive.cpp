@@ -11,6 +11,8 @@
 #include "BotwRider.h"
 #include "BotwMoveSet.h"
 #include "SwordTrainer.h"
+#include "HorseRace.h"
+#include "Hippodrome.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 #include "DynamicRHI.h"
@@ -40,6 +42,43 @@ bool UYorimichiLive::SetPreference(const FString& Key, float Value)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
+}
+
+FString UYorimichiLive::RaceState()
+{
+    const AHorseRace* R = AHorseRace::Find(ULiveLibrary::Player());
+    return R ? R->Describe() : FString(TEXT("{}"));
+}
+
+bool UYorimichiLive::RaceStart(int32 Cup, const FString& Horse, float AutoAccuracy)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    AHorseRace* R = AHorseRace::Find(P);
+    return R && R->StartRace(P, Cup, Horse, AutoAccuracy);
+}
+
+bool UYorimichiLive::RaceMenu()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    AHorseRace* R = AHorseRace::Find(P);
+    if (!R || R->IsRacing()) return false;
+    if (R->IsMenuOpen()) R->CloseMenu(); else R->OpenMenu(P);
+    return true;
+}
+
+bool UYorimichiLive::RaceEnd()
+{
+    AHorseRace* R = AHorseRace::Find(ULiveLibrary::Player());
+    if (!R) return false;
+    R->EndRace(TEXT("live"));
+    return true;
+}
+
+bool UYorimichiLive::RaceVisit()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    const AHippodrome* V = AHippodrome::Find(P);
+    return P && V && P->TravelTo(V->ReturnGround, V->ReturnYaw, TEXT("hippodrome"));
 }
 
 FString UYorimichiLive::TrainerState()

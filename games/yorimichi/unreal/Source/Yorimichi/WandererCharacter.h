@@ -101,6 +101,9 @@ public:
      *  (the highest surface from Above cm over the position down). */
     bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
     void SetMenuOpen(bool bOpen);
+    /** A minigame that reads the keys itself (the horse races) takes the character's input mapping away until it hands it back. */
+    void SetControlsSuspended(bool bSuspended);
+    bool AreControlsSuspended() const { return bControlsSuspended; }
     void SetStaminaRings(int Rings) { Stamina.SetCapacity(Rings); }
     const FSprintStamina& GetStamina() const { return Stamina; }
     float GetSprintSpeed() const;
@@ -180,6 +183,7 @@ private:
     float ShakeTrauma = 0.f, ShakeClock = 0.f, DamageFlash = 0.f;
     bool bActionLoops = false, bJog = false, bWalk = false;
     bool bReady = false, bMouseReleased = false, bMenuOpen = false;
+    bool bControlsSuspended = false;
     bool bPendingTakeoff = false, bGroundJumped = false, bAirJumpUsed = false;
     float JumpBuffer = 0.f, SinceGrounded = 0.f, FallSpeed = 0.f;
     FVector DodgeDirection = FVector::ZeroVector;
