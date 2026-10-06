@@ -50,6 +50,7 @@ public:
     /** Review the real focused Slate text path, including gameplay-key leakage; requires the map already open. */
     UFUNCTION(BlueprintCallable, Category = "Map|Review") FString ReviewMarkerNameInput(const FString& Text);
     UFUNCTION(BlueprintCallable, Category = "Map|Review") bool ReviewCommitMarkerName();
+    UFUNCTION(BlueprintPure, Category = "Map|Review") bool IsMarkerReviewOnVehicle() const;
     UFUNCTION(BlueprintPure, Category = "Map") bool IsMapOpen() const { return IsOpen(); }
     void CycleMarker(int32 Direction);
     bool IsEditingMarkerName() const;

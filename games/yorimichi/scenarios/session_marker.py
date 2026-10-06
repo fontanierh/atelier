@@ -188,7 +188,7 @@ def main():
             after = snapshot()
             record('name_typing_keeps_map_open_and_player_still', typed == 'mbvhk wasd' and value('m.is_map_open()')
                    and math.dist(after['feet'], prior['feet']) < 2 and after['keys'] == prior['keys']
-                   and value('unreal.YorimichiLive.skate_state()') == board, dict(typed=typed,player=after))
+                   and value('unreal.YorimichiLive.skate_state()') == board and not value('m.is_marker_review_on_vehicle()'), dict(typed=typed,player=after))
             assert value('m.review_commit_marker_name()')
             time.sleep(.3)
             record('enter_saves_typed_name', snapshot()['name'] == 'mbvhk wasd' and len(snapshot()['keys']) == len(prior['keys'])+1, snapshot())

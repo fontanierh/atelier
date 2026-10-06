@@ -65,7 +65,7 @@ public:
     {
         if (UJapanMap* M = Map.Get())
         {
-            if (E.GetKey() == EKeys::Escape) { M->Close(); return FReply::Handled(); }
+            if (E.GetKey() == EKeys::Escape || E.GetKey() == EKeys::Gamepad_FaceButton_Right) { M->Close(); return FReply::Handled(); }
             if (E.GetKey() == EKeys::F5)
             {
                 if (!E.IsRepeat()) M->SaveMarker(GetText().ToString());
@@ -107,6 +107,7 @@ public:
     }
     FString GetControlsHint() const
     {
+        if (const auto* M = Map.Get(); M && M->IsEditingMarkerName()) return TEXT("Enter saves the name · Esc or the right pad button closes · click the sheet to choose pins");
         if (!bPad) return TEXT("scroll to zoom · drag to explore · click a pin to travel · M or Esc closes");
         const FMapPadLabels L = Labels();
         return FString::Printf(TEXT("left stick or d-pad: choose a pin · right stick: pan · %s: zoom · %s: travel · %s or %s: close"),L.Zoom,L.Travel,L.Close,L.Map);
@@ -687,4 +688,9 @@ bool UJapanMap::ReviewCommitMarkerName()
     const FKeyEvent Event(EKeys::Enter,FModifierKeysState(),0,false,13,13);
     App.ProcessKeyDownEvent(Event); App.ProcessKeyUpEvent(Event);
     return true;
+}
+
+bool UJapanMap::IsMarkerReviewOnVehicle() const
+{
+    return Owner && (Owner->OnVehicle() || (Owner->GetSkate() && Owner->GetSkate()->IsRiding()));
 }
