@@ -253,7 +253,8 @@ def feet(name, physical):
     dts = sorted(r['dt'] for _, rows in trials for r in rows)
     return dict({k: dict(frames=len(v), height=mean(v, 'height'), along=mean(v, 'along')) for k, v in phases.items()},
                 bails=sum(rows[-1]['bails'] - rows[0]['bails'] for _, rows in trials if rows),
-                frame_ms=dict(mean=round(1000 * sum(dts) / max(1, len(dts)), 1), p95=round(1000 * dts[int(.95 * (len(dts) - 1))], 1) if dts else None))
+                frame_ms=dict(mean=round(1000 * sum(dts) / max(1, len(dts)), 1), p50=round(1000 * dts[(len(dts) - 1) // 2], 1) if dts else None,
+                              p95=round(1000 * dts[int(.95 * (len(dts) - 1))], 1) if dts else None))
 
 
 def back_on_lane(rows):
@@ -330,6 +331,13 @@ try:
     for fps in (60, 30):
         phys, anim = results[f'physical{fps}'], results[f'animated{fps}']
         seen = lambda r: {k: r[k]['frames'] for k in ('rolling', 'air', 'manual')} | {k: r[k] for k in ('bails', 'frame_ms')}
+        # The lag this guards against is speed x frame time, so each phase must really run at its rate. The median frame
+        # within 5% of the requested one and the 95th percentile within 15%; a reset's clamped 125 ms frame moves neither.
+        # Physical and animated at the same rate, so they compare like for like.
+        target = 1000 / fps; timing = {'physical': phys['frame_ms'], 'animated': anim['frame_ms']}
+        record(f'frame_timing_{fps}', all(t['p50'] is not None and abs(t['p50'] - target) <= .05 * target and t['p95'] <= 1.15 * target
+                                          for t in timing.values()) and abs(timing['physical']['p50'] - timing['animated']['p50']) <= .05 * target,
+               json.dumps(dict(target_ms=round(target, 1)) | timing))
         record(f'rides_clean_{fps}', all(r['bails'] == 0 and min(r[k]['frames'] for k in ('rolling', 'air', 'manual')) >= 20 for r in (phys, anim)),
                json.dumps({'physical': seen(phys), 'animated': seen(anim)}))
         for phase in ('rolling', 'air', 'manual'):
