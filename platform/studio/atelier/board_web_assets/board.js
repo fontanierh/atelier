@@ -977,9 +977,10 @@ function render() {
   renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();
   if(thread)loadThread();
 }
+let loadStarted=0;
 async function load(reset=false,before=0) {
   if(loading&&!reset)return;if(reset)controller?.abort();
-  const number=++requestNumber;const activeController=new AbortController();controller=activeController;loading=true;
+  const number=++requestNumber;const activeController=new AbortController();controller=activeController;loading=true;loadStarted=Date.now();
   const timer=setTimeout(()=>activeController.abort(),12000);
   try {
     const response=await fetch("/api/state?"+query(before),{signal:activeController.signal,cache:"no-store"});
@@ -1076,5 +1077,12 @@ waitFor(()=>state,15000).then(()=>{
   if(new URLSearchParams(location.search).has("m")){openLink(location.href);history.replaceState(history.state,"","/");}
 });
 
-renderTray();grow();formState();load();setInterval(()=>{if(!document.hidden)load();},3000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)load();});
+// iOS freezes the app in the background, and a request caught mid-flight may never settle, which used to block
+// every later refresh until the app was killed. Coming back always starts over, and a request older than 15 s (by
+// the wall clock, which keeps running while frozen) is abandoned.
+function resume() { if(document.hidden)return; load(true); if(thread)loadThread(); }
+renderTray();grow();formState();load();
+setInterval(()=>{if(!document.hidden){if(loading&&Date.now()-loadStarted>15000)load(true);else load();}},3000);
+document.addEventListener("visibilitychange",resume);
+addEventListener("pageshow",event=>{if(event.persisted)resume();});
+addEventListener("focus",resume);addEventListener("online",resume);
