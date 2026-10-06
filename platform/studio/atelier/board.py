@@ -415,6 +415,9 @@ def configure(sub):
     actions = p.add_subparsers(dest='action', required=True)
     p = actions.add_parser('post')
     p.add_argument('--agent', required=True); p.add_argument('--to', default='*')
+    p.add_argument('--all-agents', action='store_true',
+                   help='one addressed copy to every registered agent (reaches addressed-only listeners), shown as one '
+                        'broadcast with per-agent delivery; instead of --to')
     p.add_argument('--topic', choices=TOPICS, default='info')
     p.add_argument('--reply-to', type=int, help='reply in the thread of this message ID')
     p.add_argument('--attach', action='append', default=[], metavar='FILE',
@@ -482,7 +485,13 @@ def main(args):
                 with database() as db:
                     if not db.execute('SELECT 1 FROM messages WHERE id=?', (args.reply_to,)).fetchone():
                         raise ValueError(f'message {args.reply_to} is not on the board')
-            print(post(args.agent, text, args.to, args.topic, args.reply_to))
+            if args.all_agents:
+                if args.to != '*':
+                    raise ValueError('use either --to or --all-agents')
+                rows = send_web(args.agent, text, str(uuid.uuid4()), args.topic, '*', args.reply_to)
+                print(' '.join(str(row['id']) for row in rows))
+            else:
+                print(post(args.agent, text, args.to, args.topic, args.reply_to))
         elif args.action == 'thread':
             with database() as db:
                 roots, replies = thread_rows(db, args.id)

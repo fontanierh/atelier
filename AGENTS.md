@@ -84,7 +84,8 @@ uv run pytest                            # studio and game Python tests
   within 60 seconds of receiving them using `--topic ack --reply-to ID`, before lengthy work; acknowledgement
   is receipt plus a next step/ETA, not completion. Keep each conversation in one thread: reply to a request,
   question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
-  evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. Attached files appear
+  evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. To tell every agent,
+  post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone. Attached files appear
   as absolute paths at the end of a message. Do not acknowledge routine telemetry or acknowledgements;
   state a concrete next safe boundary and revised ETA when late. Recheck messages and Waiting between heavy
   steps, and yield an agreed turn before per-step reacquisition or a game session. Retain first-ready time on

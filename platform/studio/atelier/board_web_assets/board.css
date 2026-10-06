@@ -439,7 +439,7 @@ h1, h2, p { margin: 0; }
 .reply-button:hover { color: var(--coral); }
 .message.mine .reply-button { color: #ffffffb0; }
 .message.mine .meta .reply-button { margin-left: 2px; order: 9; }
-.thread-view { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; background: var(--bg); animation: slide-in .32s cubic-bezier(.2, .8, .3, 1) both; }
+.thread-view { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; background: var(--bg); box-shadow: -18px 0 40px #00000080; will-change: transform; animation: slide-in .32s cubic-bezier(.2, .8, .3, 1) both; }
 .thread-head { flex: none; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 10px) 18px 8px; border-bottom: 1px solid var(--line); }
 .thread-feed { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px calc(var(--dock-h, 120px) + var(--tab-space) + 14px); }
 .app.typing .thread-feed { padding-bottom: calc(var(--dock-h, 120px) + 22px); }
