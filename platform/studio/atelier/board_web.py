@@ -69,7 +69,8 @@ def snapshot(query, remote_status=None, sender='operator'):
         rows = [dict(row) for row in db.execute(
             'SELECT * FROM messages'+where+' ORDER BY id DESC LIMIT ?', (*parameters, limit+1))]
         agents = []
-        for row in db.execute('SELECT agent,cursor,pid,heartbeat,checkout,stop,supervised,error FROM subscribers ORDER BY agent'):
+        for row in db.execute('SELECT agent,cursor,pid,heartbeat,checkout,stop,supervised,error,task FROM subscribers '
+                              'WHERE removed=0 ORDER BY agent'):
             item = dict(row)
             item['listening'] = bool(item['pid'] and not item['stop'] and 0 <= now-(item['heartbeat'] or 0) < 90)
             item['pending'] = db.execute(
@@ -278,7 +279,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.permitted():
             return
-        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload'):
+        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove'):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
@@ -313,12 +314,19 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError('Preview needs a message of at most 8000 characters.')
                 self.send(200, {'html': board_markdown.render(body)})
                 return
+            if self.path == '/api/remove':
+                agent = data.get('agent')
+                if not isinstance(agent, str):
+                    raise ValueError('Choose an agent to remove.')
+                board.remove(agent)
+                self.send(200, {'removed': agent})
+                return
             recipient = data.get('recipient', '*') if self.path == '/api/send' else '*'
             body = with_attachments(data.get('body'), data.get('attachments') or [])
             messages = board.send_web(self.server.sender, body, data.get('request_id'),
                                       data.get('topic', 'request'), recipient, data.get('reply_to'))
             self.send(200, {'messages': messages, 'recipients': [row['recipient'] for row in messages]})
-        except (ValueError, TypeError, UnicodeError) as error:
+        except (ValueError, TypeError, UnicodeError, LookupError) as error:
             self.send(400, {'error': str(error)})
         except sqlite3.Error:
             self.send(503, {'error': 'The board is busy. Retry to safely finish this same message.'})

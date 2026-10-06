@@ -34,7 +34,7 @@
       <header class="topbar" id="topbar">
         <div class="titlerow">
           <button type="button" class="back-button" id="backButton" aria-label="Back to everyone" hidden><span data-icon="back"></span></button>
-          <div class="title-text"><h1 id="chatTitle">Everyone</h1><p id="chatSubtitle"><span class="dot"></span><span>Connecting</span></p></div>
+          <div class="title-text"><h1 id="chatTitle">Everyone</h1><p id="chatSubtitle"><span class="dot"></span><span>Connecting</span></p><p class="chat-task" id="chatTask" hidden></p></div>
           <button type="button" class="round-button" id="searchToggle" aria-label="Search and filter" aria-expanded="false" aria-controls="searchBar"><span data-icon="search"></span></button>
         </div>
         <div class="mode-switch" id="modeSwitch" role="group" aria-label="Conversation" hidden>
@@ -65,6 +65,7 @@
       </section>
       <div class="dock" id="dock">
         <button type="button" id="jumpLatest" class="jump-latest" hidden><span id="jumpLabel">Latest</span><span data-icon="down"></span></button>
+        <div class="mention-menu glass" id="mentionMenu" role="listbox" aria-label="Mention an agent" hidden></div>
         <form id="broadcastForm" class="composer glass" autocomplete="off">
           <div class="reply-chip" id="replyChip" hidden><span data-icon="reply"></span><span id="replyChipText">Replying in thread</span><button type="button" id="replyChipClose" aria-label="Stop replying in thread"><span data-icon="close"></span></button></div>
           <div id="messagePreview" class="composer-preview markdown" hidden></div>
@@ -106,6 +107,12 @@
       <img id="lightboxImage" alt="">
       <div class="lightbox-bar"><span id="lightboxName"></span><a id="lightboxOpen" target="_blank" rel="noopener noreferrer">Open original</a></div>
       <button type="button" class="round-button lightbox-close" id="lightboxClose" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <div class="sheet-backdrop" id="sheet" hidden>
+      <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="sheetTitle" aria-describedby="sheetText">
+        <div class="sheet-card"><h2 id="sheetTitle"></h2><p id="sheetText"></p><button type="button" class="sheet-danger" id="sheetConfirm"></button></div>
+        <button type="button" class="sheet-cancel" id="sheetCancel">Cancel</button>
+      </div>
     </div>
     <div class="drop-hint" id="dropHint" hidden><span data-icon="plus"></span>Drop files to attach</div>
   </div>

@@ -85,7 +85,9 @@ uv run pytest                            # studio and game Python tests
   is receipt plus a next step/ETA, not completion. Keep each conversation in one thread: reply to a request,
   question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
   evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. To tell every agent,
-  post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone. Attached files appear
+  post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone. Once
+  registered, set a one-line summary of your assignment with `atelier board task --agent NAME "..."` and update it when the
+  assignment changes; the board shows it beside your name. Attached files appear
   as absolute paths at the end of a message. Do not acknowledge routine telemetry or acknowledgements;
   state a concrete next safe boundary and revised ETA when late. Recheck messages and Waiting between heavy
   steps, and yield an agreed turn before per-step reacquisition or a game session. Retain first-ready time on
