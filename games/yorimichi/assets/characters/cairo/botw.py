@@ -16,7 +16,7 @@ skeleton at 30 fps, and export.json: the clips, Cairo's body scale against Link'
 ankles and hips sit from where they were asked to be.
 
 Both rest poses are T-poses. Each Cairo bone takes its Link bone's turn from rest, carried into Cairo's frame: a limb or
-finger is first swung to point where Link's points, a hand keeps its palm frame and a foot its sole frame, and the
+finger is first swung to point where Link's points, a hand keeps its palm frame and a foot its level heading, at its own rest pitch, and the
 spine, neck and head keep Cairo's own rest posture (spine_mid takes half of the turn from spine to chest). The hips
 move as Link's do, scaled by the ratio of the two hip heights (`body`, about 0.64). The legs are then solved so each
 ankle goes where Link's does: near the ground, Link's ankle travel at that same scale from Cairo's own stance, so
@@ -273,7 +273,10 @@ class Retarget:
         self.X = {}
         hand = lambda rig, side, names: frame(rig[names['finger_0']] * .5 + rig[names['finger_3']] * .5 - rig[names['hand']],
                                               rig[names['finger_3']] - rig[names['finger_0']])
-        foot = lambda rig, names, up: frame(rig[names['toe']] - rig[names['foot']], up)
+        # A foot is matched on its level heading only: Cairo's flat shoes rest about 9 degrees toe-down where Link's foot
+        # rests 27, so matching the full ankle-to-toe direction tipped his toes 18 degrees into the ground. He keeps his
+        # own rest pitch and moves his foot as Link does from rest.
+        foot = lambda rig, names, up: frame((rig[names['toe']] - rig[names['foot']]) * np.array([1., 1, 0]), up)
         for side in 'LR':
             own = {k: f'{k}_{side}' for k in ('hand', 'finger_0', 'finger_3', 'foot', 'toe')}
             link = {k: self.map[v] for k, v in own.items()}
