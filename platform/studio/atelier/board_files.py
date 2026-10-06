@@ -47,8 +47,17 @@ def size_text(size):
         size /= 1024
 
 
-def store_upload(stream, length, name, mime):
-    """Stream one upload to disk; nothing is posted until a message refers to it."""
+def dimension(value):
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if 0 < number <= 100000 else None
+
+
+def store_upload(stream, length, name, mime, width=None, height=None):
+    """Stream one upload to disk; nothing is posted until a message refers to it. A photo's or video's pixel size,
+    when the uploader knows it, lets the board reserve its space before it loads."""
     if not 0 < length <= ATTACHMENT_LIMIT:
         raise ValueError(f'Files can be up to {ATTACHMENT_LIMIT // 1024 // 1024} MB.')
     mime = mime if re.fullmatch(r'[\w.+-]+/[\w.+-]+', mime or '') else 'application/octet-stream'
@@ -65,11 +74,15 @@ def store_upload(stream, length, name, mime):
                 out.write(chunk)
                 remaining -= len(chunk)
         partial.replace(folder / name)
-        (folder / '.meta.json').write_text(json.dumps({'name': name, 'mime': mime, 'size': length}))
+        width, height = dimension(width), dimension(height)
+        if not (width and height):
+            width = height = None
+        (folder / '.meta.json').write_text(json.dumps({'name': name, 'mime': mime, 'size': length,
+                                                       'width': width, 'height': height}))
     except BaseException:
         shutil.rmtree(folder, ignore_errors=True)
         raise
-    return {'id': ident, 'name': name, 'mime': mime, 'size': length}
+    return {'id': ident, 'name': name, 'mime': mime, 'size': length, 'width': width, 'height': height}
 
 
 def attachment(ident):
@@ -82,6 +95,7 @@ def attachment(ident):
     if not path.is_file():
         return None
     return {'id': ident, 'name': meta['name'], 'mime': meta['mime'], 'size': meta['size'], 'path': path,
+            'width': meta.get('width'), 'height': meta.get('height'),
             'url': f'/api/attachment/{ident}/{quote(meta["name"])}'}
 
 
@@ -111,7 +125,7 @@ def split_attachments(body):
         found = re.search(r'/board-attachments/([0-9a-f]{24})/[^/]+$', line)
         item = attachment(found[1]) if found else None
         if item:
-            files.append({key: item[key] for key in ('id', 'name', 'mime', 'size', 'url')})
+            files.append({key: item[key] for key in ('id', 'name', 'mime', 'size', 'url', 'width', 'height')})
         else:
             files.append({'missing': True, 'name': line[2:].split(' (')[0]})
     return body[:match.start()], files

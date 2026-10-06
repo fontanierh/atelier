@@ -29,7 +29,7 @@ def read_json(path):
         return None
 
 
-def snapshot(query, remote_status=None):
+def snapshot(query, remote_status=None, sender='operator'):
     """Reads never advance subscriber cursors or acquire render locks."""
     before = int(query.get('before', ['0'])[0])
     limit = int(query.get('limit', ['150'])[0])
@@ -44,7 +44,14 @@ def snapshot(query, remote_status=None):
             raise ValueError('unknown topic')
         conditions.append('topic=?'); parameters.append(topic)
     agent = query.get('agent', [''])[0]
-    if agent:
+    direct = query.get('dm', [''])[0]
+    if direct:
+        # A direct conversation: only messages between this agent and the board's sender, never broadcast copies.
+        board.agent_name(direct)
+        conditions.append("((sender=? AND recipient=?) OR (sender=? AND recipient=?)) "
+                          "AND (dedup IS NULL OR dedup NOT LIKE 'web-broadcast:%')")
+        parameters.extend((direct, sender, sender, direct))
+    elif agent:
         board.agent_name(agent)
         conditions.append("(sender=? OR recipient=? OR recipient='*')"); parameters.extend((agent, agent))
     search = query.get('q', [''])[0].strip()
@@ -72,6 +79,9 @@ def snapshot(query, remote_status=None):
             item['supervised'] = bool(item['supervised'])
             # Transport errors are generated diagnostics, not exception/argv disclosures.
             item['delivery_error'] = bool(item.pop('error'))
+            # The newest message this agent sent the board's own sender: the UI marks unread direct messages with it.
+            item['last_to_me'] = db.execute('SELECT max(id) FROM messages WHERE sender=? AND recipient=?',
+                                            (item['agent'], sender)).fetchone()[0] or 0
             agents.append(item)
         total = db.execute('SELECT count(*) FROM messages').fetchone()[0]
         # Fetch complete fanouts even when a history/filter boundary cuts through one.
@@ -244,7 +254,7 @@ class Handler(BaseHTTPRequestHandler):
                 filename, mime = STATIC[parsed.path]
                 self.send(200, (ASSETS / filename).read_bytes(), mime)
             elif parsed.path == '/api/state':
-                state = snapshot(parse_qs(parsed.query), self.server.remote_status)
+                state = snapshot(parse_qs(parsed.query), self.server.remote_status, self.server.sender)
                 state.update(csrf=self.server.csrf, sender=self.server.sender)
                 self.send(200, state)
             elif parsed.path == '/api/thread':
@@ -278,8 +288,9 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 length = int(self.headers.get('Content-Length', '0'))
                 stored = store_upload(self.rfile, length, self.headers.get('X-File-Name', ''),
-                                      self.headers.get('Content-Type', '').split(';')[0].strip())
-                self.send(200, {key: stored[key] for key in ('id', 'name', 'mime', 'size')})
+                                      self.headers.get('Content-Type', '').split(';')[0].strip(),
+                                      self.headers.get('X-Media-Width'), self.headers.get('X-Media-Height'))
+                self.send(200, {key: stored[key] for key in ('id', 'name', 'mime', 'size', 'width', 'height')})
             except ValueError as error:
                 self.close_connection = True
                 self.send(413 if 'MB' in str(error) else 400, {'error': str(error)})

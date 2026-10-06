@@ -36,6 +36,10 @@
           <div class="title-text"><h1 id="chatTitle">Everyone</h1><p id="chatSubtitle"><span class="dot"></span><span>Connecting</span></p></div>
           <button type="button" class="round-button" id="searchToggle" aria-label="Search and filter" aria-expanded="false" aria-controls="searchBar"><span data-icon="search"></span></button>
         </div>
+        <div class="mode-switch" id="modeSwitch" role="group" aria-label="Conversation" hidden>
+          <button type="button" data-mode="dm" aria-pressed="true">Direct</button>
+          <button type="button" data-mode="all" aria-pressed="false">All activity</button>
+        </div>
         <div class="searchbar" id="searchBar" hidden>
           <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Search messages" aria-label="Search message history" autocomplete="off" enterkeyhint="search"></label>
           <div class="search-options">
