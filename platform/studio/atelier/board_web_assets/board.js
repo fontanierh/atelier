@@ -97,11 +97,11 @@ function snippetless(text) { return text.replace(/(^|\n\n)Attachments \(files on
 function snippet(text) { return text.replace(/\n\nAttachments \(files on this machine\):[\s\S]*$/,"").replace(/^Attachments \(files on this machine\):[\s\S]*$/,"Attachment").replace(/[*_`#>]+/g,"").replace(/\s+/g," ").trim().slice(0,140); }
 
 /* Views: one pane at a time on phones, all three side by side on wide screens. */
-function setView(next) {
+function setView(next, animate=true) {
   const app=$("app"), from=VIEWS.indexOf(app.dataset.view), to=VIEWS.indexOf(next);
   app.dataset.view=next;$("tabbar").style.setProperty("--tab",to);
   document.querySelectorAll(".tab").forEach(tab=>{if(tab.dataset.view===next)tab.setAttribute("aria-current","page");else tab.removeAttribute("aria-current");});
-  if(from!==to&&!desktop.matches) {
+  if(from!==to&&animate&&!desktop.matches) {
     const pane=$({messages:"chatPane",agents:"agentsPane",render:"renderPane"}[next]);
     pane.style.setProperty("--dir",to>from?1:-1);pane.classList.remove("entering");void pane.offsetWidth;pane.classList.add("entering");
     setTimeout(()=>pane.classList.remove("entering"),900);
@@ -110,20 +110,21 @@ function setView(next) {
   if(next==="messages"){stickToBottom=true;requestAnimationFrame(()=>{scrollToLatest();markSeen();});}
 }
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
-  if(tab.dataset.view==="messages"&&$("app").dataset.view==="messages"){if(thread)closeThread();else scrollToLatest(true);}
+  if(tab.dataset.view==="messages"&&$("app").dataset.view==="messages"){if(thread)navBack();else scrollToLatest(true);}
   setView(tab.dataset.view);
 }));
 document.querySelectorAll(".render-pane .card, .render-pane .stack > .eyebrow").forEach((n,i)=>n.style.setProperty("--i",i));
 let conversationMode="dm";
-function selectAgent(name, mode="dm") {
+function selectAgent(name, mode="dm", view="messages", animate=true) {
   if(thread)closeThread();
+  if(!name)navForget("dm");
   selectedAgent=name;conversationMode=mode;
   const agent=state?.agents.find(a=>a.agent===name&&!a.stop);
   const target=name===""?"*":agent?name:null;
   if(target&&$("recipient").value!==target&&[...$("recipient").options].some(o=>o.value===target&&!o.disabled)){$("recipient").value=target;draftChanged();}
-  setView("messages");agentsSignature="";renderAgents();renderHeader();refreshFilters();
+  setView(view,animate);agentsSignature="";renderAgents();renderHeader();refreshFilters();
 }
-$("backButton").addEventListener("click",()=>selectAgent(""));
+$("backButton").addEventListener("click",()=>nav.length?navBack():selectAgent(""));
 document.querySelectorAll("#modeSwitch button").forEach(b=>b.addEventListener("click",()=>{if(selectedAgent&&b.dataset.mode!==conversationMode)selectAgent(selectedAgent,b.dataset.mode);}));
 
 /* Search and filters */
@@ -271,7 +272,7 @@ function attachmentNodes(files, many) {
 function openLightbox(f) { $("lightboxImage").src=f.url;$("lightboxImage").alt=f.name;$("lightboxName").textContent=f.name;$("lightboxOpen").href=f.url;$("lightbox").hidden=false;$("lightboxClose").focus(); }
 function closeLightbox() { $("lightbox").hidden=true;$("lightboxImage").removeAttribute("src"); }
 $("lightbox").addEventListener("click",event=>{if(event.target!==$("lightboxOpen"))closeLightbox();});
-addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("lightbox").hidden)closeLightbox();else if(thread)closeThread();}});
+addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
 
 /* Agents: the list pane and the orb row share one render. */
 let seen={};
@@ -307,14 +308,14 @@ function renderAgents() {
     else detail.textContent=`Broadcasts and every conversation`;
     text.append(detail);b.append(orb(name||"*",agent),text);
     if(agent?.pending)b.append(node("span","count",`${agent.pending} queued`));
-    b.append(icon("right"));b.addEventListener("click",()=>selectAgent(name));list.append(b);
+    b.append(icon("right"));b.addEventListener("click",()=>openAgent(name));list.append(b);
     if(agent?.stop)return;
     const o=node("button","orb-button");o.type="button";if(chosen)o.setAttribute("aria-current","true");
     // The orb marks new direct messages from the agent; what is still queued for it lives in the Agents list.
     const face=orb(name||"*",agent);if(agent&&unreadFrom(agent))face.append(node("span","unread-dot"));
     o.append(face,node("span","orb-name",name||"Everyone"));
     o.title=agent?`${name} · ${agentStatus(agent)}`:"All conversations";o.setAttribute("aria-label",o.title);
-    o.addEventListener("click",()=>selectAgent(name));orbs.append(o);
+    o.addEventListener("click",()=>openAgent(name));orbs.append(o);
   }
   row("");
   for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
@@ -479,7 +480,7 @@ function messageNode(group, ctx) {
 // Tapping an agent's name or face opens your direct conversation with them.
 function whoButton(name, cls, content) {
   const b=node("button",cls);b.type="button";b.title=`Message ${name} directly`;b.setAttribute("aria-label",`Open your direct messages with ${name}`);
-  b.append(content);b.addEventListener("click",event=>{event.stopPropagation();selectAgent(name,"dm");});return b;
+  b.append(content);b.addEventListener("click",event=>{event.stopPropagation();openAgent(name);});return b;
 }
 function replyButton(m) {
   const b=node("button","reply-button");b.type="button";b.setAttribute("aria-label","Reply in thread");b.title="Reply in thread";b.append(icon("reply"));
@@ -566,54 +567,177 @@ function renderFeed() {
   updateBadges(stick&&viewing?0:unread);
 }
 
+/* Navigation, as in a native iOS app. A conversation or a thread pushes in from the right over the screen it came
+   from, which drifts a third of the way left under a dim. The back button, a swipe right from anywhere on the screen
+   and the browser's own back all pop it. A swipe follows the finger and is released onto a spring that keeps the
+   flick's speed, so a quick flick finishes fast and a slow drag that stops short settles back. */
+const motion=matchMedia("(prefers-reduced-motion: reduce)");
+const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+document.documentElement.classList.toggle("standalone",standalone);
+const PARALLAX=.3, DIM=.24, springs=CSS.supports?.("animation-timing-function","linear(0, 1)");
+let nav=[], moving=null, backEntry=false, ignorePops=0, historyTimer=0;
+// A critically damped spring, sampled into a CSS linear() easing so the compositor runs it. Its starting velocity is
+// in fractions of the remaining distance per second, and it never overshoots: a screen can't bounce past the edge.
+function spring(velocity=0) {
+  if(!springs)return {easing:"cubic-bezier(.32, .72, 0, 1)",duration:500};
+  const w=2*Math.PI/.42, at=t=>Math.min(1,1+(-1+(velocity-w)*t)*Math.exp(-w*t));
+  let end=1/60;while(end<1&&at(end)<.999)end+=1/120;
+  const points=[];for(let i=0;i<=40;i++)points.push(i===40?1:+at(end*i/40).toFixed(4));
+  return {easing:`linear(${points.join(", ")})`,duration:Math.round(end*1000)};
+}
+// What moves: the pushed screen on top, what it covers underneath, and the dim between them.
+function scene(entry) {
+  const s=entry.kind==="thread"?{entry,top:$("threadView"),under:[$("topbar"),$("feed"),$("errorBanner")],scrim:$("threadScrim")}:{entry,top:$("chatPane"),under:[entry.underlay],scrim:$("navScrim")};
+  s.width=s.top.offsetWidth;return s;
+}
+// p is how far the top screen has gone: 0 covers everything, 1 is off to the right.
+const frame=(s,p)=>({top:{transform:`translate3d(${p*s.width}px,0,0)`},under:{transform:`translate3d(${-(1-p)*PARALLAX*s.width}px,0,0)`},scrim:{opacity:(1-p)*DIM}});
+function paint(s,p) { const f=frame(s,p); s.top.style.transform=f.top.transform; for(const n of s.under)n.style.transform=f.under.transform; s.scrim.style.opacity=f.scrim.opacity; }
+function begin(s) { $("app").classList.add("navigating");s.top.classList.add("nav-top");s.scrim.hidden=false; }
+function end(s) {
+  $("app").classList.remove("navigating");s.top.classList.remove("nav-top");s.scrim.hidden=true;
+  for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.opacity="";
+}
+function glide(s,from,to,velocity=0) {
+  const {easing,duration}=motion.matches?{easing:"linear",duration:1}:spring(velocity), a=frame(s,from), b=frame(s,to);
+  paint(s,to);
+  const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map(n=>n.animate([a.under,b.under],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
+  moving=Promise.all(runs.map(r=>r.finished.catch(()=>{}))).then(()=>{moving=null;});
+  return moving;
+}
+const waitFor=(ready,ms)=>new Promise(done=>{const start=performance.now();(function check(){if(ready()||performance.now()-start>ms)done();else requestAnimationFrame(check);})();});
+// A still copy of the screen a conversation was opened from. It sits underneath while the conversation is open and is
+// what a swipe back reveals, so the live pane can switch to the conversation without losing the screen behind it.
+function snapshot(pane) {
+  const copy=pane.cloneNode(true), selector=".feed, .pane-body, .orbs", scrollers=[...pane.querySelectorAll(selector)], drafts=[...pane.querySelectorAll("textarea")];
+  copy.removeAttribute("id");copy.querySelectorAll("[id]").forEach(n=>n.removeAttribute("id"));
+  copy.classList.remove("entering");copy.classList.add("nav-underlay");copy.inert=true;copy.setAttribute("aria-hidden","true");
+  copy.querySelectorAll("textarea").forEach((n,i)=>{n.value=drafts[i]?.value||"";});
+  $("navScrim").before(copy);
+  copy.querySelectorAll(selector).forEach((n,i)=>{n.scrollTop=scrollers[i]?.scrollTop||0;n.scrollLeft=scrollers[i]?.scrollLeft||0;});
+  return copy;
+}
+// The browser keeps one history entry while anything is pushed, so the system back (Android, a desktop browser, or
+// Safari's own edge swipe in a tab) pops the board instead of leaving it.
+function syncHistory() {
+  clearTimeout(historyTimer);
+  historyTimer=setTimeout(()=>{
+    if(nav.length&&!backEntry){history.pushState({board:"pushed"},"");backEntry=true;}
+    else if(!nav.length&&backEntry){backEntry=false;ignorePops++;history.back();}
+  });
+}
+addEventListener("popstate",()=>{
+  if(ignorePops){ignorePops--;return;}
+  if(!backEntry)return;
+  backEntry=false;
+  // Safari in a tab has already animated its own snapshot of the previous screen; animating again would play it twice.
+  navBack({instant:!standalone||desktop.matches});
+});
+function navPush(entry) { nav.push(entry);syncHistory(); }
+// The app closed a screen itself: drop it (and anything above it) from the stack.
+function navForget(kind) {
+  const index=nav.findLastIndex(e=>e.kind===kind);if(index<0)return;
+  for(const e of nav.splice(index))e.underlay?.remove();
+  syncHistory();
+}
+function openAgent(name) {
+  if(name===selectedAgent){if(thread)navBack();setView("messages");return;}
+  if(!name){const entry=nav.at(-1);if(entry?.kind==="dm"&&entry.from==="messages")navBack();else selectAgent("");return;}
+  if(selectedAgent){selectAgent(name);return;}
+  pushConversation(name);
+}
+async function pushConversation(name) {
+  if(thread)closeThread();
+  const from=$("app").dataset.view, animate=!desktop.matches&&!motion.matches;
+  const entry={kind:"dm",from,underlay:animate?snapshot(from==="agents"?$("agentsPane"):$("chatPane")):null};
+  navPush(entry);
+  selectAgent(name,"dm","messages",!animate);
+  if(!animate)return;
+  const s=scene(entry);begin(s);paint(s,1);
+  // Push once the conversation has painted, as a native app pushes a ready screen, but never keep a tap waiting long.
+  await waitFor(()=>feedPainted,260);
+  if(nav.at(-1)!==entry){end(s);return;}
+  await glide(s,1,0);end(s);
+}
+// Pop the top screen. A swipe hands over its scene, position and speed; the browser's back asks for no animation.
+async function navBack({scene:given=null,from=0,velocity=0,instant=false}={}) {
+  const entry=nav.at(-1);if(!entry){if(given)end(given);return;}
+  const animate=!instant&&!motion.matches&&(entry.kind==="thread"||!desktop.matches);
+  let s=given;
+  if(animate){if(!s){if(moving)return;s=scene(entry);begin(s);}await glide(s,from,1,velocity);}
+  if(entry.kind==="thread"){closeThread();if(s)end(s);return;}
+  const underlay=entry.underlay;entry.underlay=null;
+  selectAgent("","dm",entry.from,false);
+  // The live pane stays off to the right, behind the still copy, until the full conversation has painted again.
+  if(entry.from==="messages"&&s)await waitFor(()=>feedPainted,1200);
+  if(s)end(s);underlay?.remove();
+}
+
 /* Thread view: the original and every reply, with the composer replying in the thread. */
 async function openThread(id, focus=false) {
-  thread={id,data:null,signature:"",newest:Infinity,stick:true,savedRecipient:$("recipient").value};
+  const nested=!!thread;
+  thread={id,data:null,signature:"",newest:Infinity,stick:true,savedRecipient:nested?thread.savedRecipient:$("recipient").value};
   $("threadView").hidden=false;$("app").classList.add("in-thread");
   $("threadTitle").textContent="Thread";$("threadSubtitle").textContent="Loading…";$("threadFeed").replaceChildren();
-  await loadThread();
-  if(focus)$("message").focus();
+  const loaded=loadThread();
+  if(!nested){
+    const entry={kind:"thread"};navPush(entry);
+    if(!motion.matches&&!moving){
+      const s=scene(entry);begin(s);paint(s,1);
+      await waitFor(()=>thread?.data,220);
+      if(thread&&nav.at(-1)===entry){
+        await glide(s,1,0);
+        // The feed behind is out of sight now, so it can settle on the latest message without anyone seeing it move.
+        stickToBottom=true;scrollToLatest();
+      }
+      end(s);
+    }
+  }
+  await loaded;
+  if(focus&&thread)$("message").focus();
 }
 function closeThread() {
   if(!thread)return;
-  const saved=thread.savedRecipient;thread=null;
+  const saved=thread.savedRecipient;thread=null;navForget("thread");
   $("threadView").hidden=true;$("app").classList.remove("in-thread");$("replyChip").hidden=true;
   if([...$("recipient").options].some(o=>o.value===saved&&!o.disabled)&&$("recipient").value!==saved){$("recipient").value=saved;draftChanged();}
   formState();
   stickToBottom=true;requestAnimationFrame(()=>scrollToLatest());
 }
-$("threadBack").addEventListener("click",closeThread);
-// Swipe back from the left edge, as in a native app: a thread follows the finger and closes; a direct conversation
-// goes back to the main feed. A mostly vertical drag stays a scroll.
+$("threadBack").addEventListener("click",()=>navBack());$("replyChipClose").addEventListener("click",()=>navBack());
+// Swipe back: from the left edge, or (as on iOS 26) a rightward drag anywhere that isn't on something that scrolls
+// sideways or takes text. A mostly vertical drag stays a scroll.
 let swipe=null;
 $("chatPane").addEventListener("touchstart",event=>{
-  if(event.touches.length!==1||(!thread&&!selectedAgent))return;
+  const entry=nav.at(-1);
+  if(event.touches.length!==1||!entry||moving||desktop.matches||(entry.kind==="dm"&&!entry.underlay))return;
   const t=event.touches[0];
-  if(t.clientX>32)return;
-  swipe={x:t.clientX,y:t.clientY,dx:0,axis:null,at:performance.now(),target:thread?$("threadView"):$("feed")};
+  if(t.clientX>24&&event.target.closest("textarea, input, select, pre, table, video, audio, .orbs, .dock, .attachments"))return;
+  swipe={entry,x:t.clientX,y:t.clientY,axis:null,samples:[[t.clientX,event.timeStamp]],scene:null};
 },{passive:true});
 $("chatPane").addEventListener("touchmove",event=>{
   if(!swipe)return;
   const t=event.touches[0], dx=t.clientX-swipe.x, dy=t.clientY-swipe.y;
-  if(!swipe.axis&&Math.hypot(dx,dy)>8)swipe.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";
-  if(swipe.axis!=="x"){if(swipe.axis==="y")swipe=null;return;}
-  event.preventDefault();
-  swipe.dx=Math.max(0,dx);
-  swipe.target.style.transition="none";swipe.target.style.transform=`translateX(${swipe.dx}px)`;
-},{passive:false});
-function endSwipe() {
-  if(!swipe)return;
-  const {target,dx,at}=swipe, fast=dx/Math.max(1,performance.now()-at)>.45;
-  swipe=null;
-  if(dx>innerWidth*.3||(dx>40&&fast)){
-    target.style.transition="transform .2s ease-out";target.style.transform="translateX(100%)";
-    setTimeout(()=>{target.style.transition="";target.style.transform="";if(thread)closeThread();else selectAgent("");},200);
-  } else {
-    target.style.transition="transform .2s ease-out";target.style.transform="";
-    setTimeout(()=>{target.style.transition="";},220);
+  if(!swipe.axis){
+    if(Math.hypot(dx,dy)<10)return;
+    swipe.axis=dx>0&&Math.abs(dx)>Math.abs(dy)*1.2?"x":"y";
+    if(swipe.axis==="y"||nav.at(-1)!==swipe.entry||moving){swipe=null;return;}
+    swipe.scene=scene(swipe.entry);begin(swipe.scene);
   }
+  event.preventDefault();
+  swipe.samples.push([t.clientX,event.timeStamp]);if(swipe.samples.length>8)swipe.samples.shift();
+  paint(swipe.scene,Math.max(0,Math.min(1,dx/swipe.scene.width)));
+},{passive:false});
+function endSwipe(event) {
+  const s=swipe;swipe=null;if(!s?.scene)return;
+  const last=s.samples.at(-1), recent=s.samples.filter(([,at])=>at>=last[1]-100), [x0,t0]=recent[0];
+  const speed=last[1]>t0?(last[0]-x0)/(last[1]-t0)*1000:0, p=Math.max(0,Math.min(1,(last[0]-s.x)/s.scene.width));
+  const done=event.type==="touchend"&&(speed>350||(speed>-350&&p>.5));
+  const remaining=(done?1-p:p)*s.scene.width, velocity=remaining>1?(done?speed:-speed)/remaining:0;
+  if(done)navBack({scene:s.scene,from:p,velocity});
+  else glide(s.scene,p,0,velocity).then(()=>end(s.scene));
 }
-$("chatPane").addEventListener("touchend",endSwipe);$("chatPane").addEventListener("touchcancel",endSwipe);$("replyChipClose").addEventListener("click",closeThread);
+$("chatPane").addEventListener("touchend",endSwipe);$("chatPane").addEventListener("touchcancel",endSwipe);
 async function loadThread() {
   const current=thread;if(!current)return;
   try {

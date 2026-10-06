@@ -20,8 +20,11 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
 body {
   color: var(--ink); font: 16px/1.45 var(--font); -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; overscroll-behavior: none;
-  /* A low glow at the top and a fine grain keep the black from feeling flat. */
-  background:
+  background: var(--page-bg);
+}
+/* A low glow at the top and a fine grain keep the black from feeling flat. */
+:root {
+  --page-bg:
     radial-gradient(120% 50% at 15% -10%, #ff4f6d1c, transparent 60%),
     radial-gradient(90% 40% at 100% 0%, #6d5cff1a, transparent 60%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
@@ -445,7 +448,7 @@ h1, h2, p { margin: 0; }
 .reply-button:hover { color: var(--coral); }
 .message.mine .reply-button { color: #ffffffb0; }
 .message.mine .meta .reply-button { margin-left: 2px; order: 9; }
-.thread-view { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; background: var(--bg); box-shadow: -18px 0 40px #00000080; will-change: transform; animation: slide-in .32s cubic-bezier(.2, .8, .3, 1) both; }
+.thread-view { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; background: var(--bg); box-shadow: -18px 0 40px #00000080; }
 .thread-head { flex: none; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 10px) 18px 8px; border-bottom: 1px solid var(--line); }
 .thread-feed { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px calc(var(--dock-h, 120px) + var(--tab-space) + 14px); }
 .app.typing .thread-feed { padding-bottom: calc(var(--dock-h, 120px) + 22px); }
@@ -479,4 +482,20 @@ button.orb-link:active .orb { transform: scale(.9); }
 .message.mine .quote.quote-away { color: #ffffffc0; }
 @media (hover: hover) { .bubble.tappable { cursor: pointer; } .bubble.tappable:hover { border-color: var(--line-strong); } }
 
+/* Navigation: a pushed screen, the still copy of the screen it covers, and the dim between them. The copy and the
+   moving screen each paint as one layer, so nothing inside them can poke through the other. */
+.nav-scrim, .thread-scrim { position: absolute; inset: 0; z-index: 0; background: #000; opacity: 0; pointer-events: none; }
+.thread-scrim { z-index: 3; }
+.pane.nav-underlay { display: flex; z-index: 0; visibility: hidden; pointer-events: none; background: var(--page-bg); }
+.app.navigating .pane.nav-underlay { visibility: visible; }
+.nav-underlay, .nav-underlay * { animation: none !important; transition: none !important; }
+.pane.nav-top { background: var(--page-bg); }
+.app.navigating .chat-pane { overflow: hidden; }
+/* As on iOS 26, the moving screen takes the display's rounded corners while it slides; only an app opened from the
+   Home Screen fills the display edge to edge, so a browser tab keeps square corners. */
+.app.navigating .nav-top { overflow: hidden; border-radius: var(--screen-corner, 0); box-shadow: -10px 0 30px #00000073; }
+.standalone { --screen-corner: 55px; }
+/* App chrome behaves like controls, not a document: no selection or callout on a long press, no double-tap zoom. */
+.tabbar, .topbar, .thread-head, .pane-head, .composer-options, .agent-row, .orb-button, .thread-bar, button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+button, a, label, .bubble.tappable { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
