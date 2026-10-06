@@ -15,6 +15,7 @@
 #include "HorseRace.h"
 #include "Hippodrome.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
 #include "DynamicRHI.h"
 #include "Engine/StaticMeshActor.h"
@@ -178,9 +179,10 @@ FString UYorimichiLive::HorseState()
     if (!H) return TEXT("no horse");
     const FVector A = P->GetActorLocation(); const AHippodromeFigure* F = H->GetFigure();
     const FVector At = F ? F->GetActorLocation() : FVector::ZeroVector; const FRotator R = F ? F->GetActorRotation() : FRotator::ZeroRotator;
-    return FString::Printf(TEXT("mounted=%d horse=%s rider=%s gait=%s speed=%.0f spurs=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f figure=%d at=(%.0f,%.0f,%.0f) rot=(%.1f,%.1f) hidden=%d"),
+    return FString::Printf(TEXT("mounted=%d horse=%s rider=%s gait=%s speed=%.0f spurs=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f figure=%d at=(%.0f,%.0f,%.0f) rot=(%.1f,%.1f) hidden=%d ticking=%d prereq=%d"),
         H->IsEquipped() ? 1 : 0, *H->GetHorse(), F ? *F->GetRider().Name : TEXT("-"), *H->GetGait().ToString(), H->GetSpeed(), H->GetSpurs(),
-        *H->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw, F ? 1 : 0, At.X, At.Y, At.Z, R.Pitch, R.Yaw, P->IsHidden() ? 1 : 0);
+        *H->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw, F ? 1 : 0, At.X, At.Y, At.Z, R.Pitch, R.Yaw, P->IsHidden() ? 1 : 0, H->IsComponentTickEnabled() ? 1 : 0,
+        P->GetCharacterMovement()->PrimaryComponentTick.GetPrerequisites().ContainsByPredicate([H](const FTickPrerequisite& T) { return T.PrerequisiteObject.Get() == H; }) ? 1 : 0);
 }
 bool UYorimichiLive::TestWall(FVector Ground, float Yaw, FVector Size)
 {

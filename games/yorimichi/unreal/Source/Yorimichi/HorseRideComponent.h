@@ -57,6 +57,8 @@ private:
     void Mount(AHippodromeFigure* Horse);
     void Dismount(bool bPark);
     void Pose(float Dt);
+    /** The horse onto the capsule's feet, once the movement component has moved it this frame (OnCharacterMovementUpdated). */
+    UFUNCTION() void Place(float Dt, FVector OldLocation, FVector OldVelocity);
     bool ClearFor(const FVector& Ground, float Yaw) const;
     FVector Feet() const;
     static FString ChosenHorse();

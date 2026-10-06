@@ -25,13 +25,18 @@ namespace
     constexpr float HalfLength = 120.f;
 }
 
-UHorseRideComponent::UHorseRideComponent() { PrimaryComponentTick.bCanEverTick = true; }
+// Off the horse nothing ticks and the movement waits on nothing. In the saddle the speed and heading go in before
+// physics, ahead of the movement component, and the horse is placed on the capsule after it has moved (Place).
+UHorseRideComponent::UHorseRideComponent()
+{
+    PrimaryComponentTick.bCanEverTick = true;
+    PrimaryComponentTick.bStartWithTickEnabled = false;
+    PrimaryComponentTick.TickGroup = TG_PrePhysics;
+}
 
 void UHorseRideComponent::Initialize(AWandererCharacter* Character)
 {
     Rider = Character;
-    // Speed and heading go in before the movement component moves the capsule; the horse follows after it.
-    Character->GetCharacterMovement()->AddTickPrerequisiteComponent(this);
     for (int32 I = 1; I <= 12; ++I)
     {
         const FString Name = FString::Printf(TEXT("HR_Hoof_%02d"), I);
@@ -144,7 +149,11 @@ void UHorseRideComponent::Mount(AHippodromeFigure* Horse)
     Horse->Gait(TEXT("idle"), TEXT("idle"), 1.f);
     Horse->PlayRiderOnce(TEXT("notice"));   // a pat on the neck
     Hint = TEXT("Riding");
+    M->AddTickPrerequisiteComponent(this);
+    Rider->OnCharacterMovementUpdated.AddDynamic(this, &UHorseRideComponent::Place);
+    SetComponentTickEnabled(true);
     Pose(0.f);
+    Place(0.f, FVector::ZeroVector, FVector::ZeroVector);
 }
 
 void UHorseRideComponent::Dismount(bool bPark)
@@ -152,6 +161,9 @@ void UHorseRideComponent::Dismount(bool bPark)
     if (!bRiding) return;
     bRiding = false;
     UCharacterMovementComponent* M = Rider->GetCharacterMovement();
+    SetComponentTickEnabled(false);
+    M->RemoveTickPrerequisiteComponent(this);
+    Rider->OnCharacterMovementUpdated.RemoveDynamic(this, &UHorseRideComponent::Place);
     M->GroundFriction = SavedFriction; M->BrakingDecelerationWalking = SavedBraking;
     M->StopMovementImmediately();
     Rider->SetActorHiddenInGame(false);
@@ -188,6 +200,7 @@ void UHorseRideComponent::StowImmediately()
 
 void UHorseRideComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+    if (bRiding && Rider) Rider->OnCharacterMovementUpdated.RemoveDynamic(this, &UHorseRideComponent::Place);
     if (AHippodromeFigure* Horse = Figure.Get()) Horse->Destroy();
     Super::EndPlay(Reason);
 }
@@ -260,11 +273,17 @@ void UHorseRideComponent::TickComponent(float Dt, ELevelTick Type, FActorCompone
     Pose(Dt);
 }
 
+void UHorseRideComponent::Place(float, FVector, FVector)
+{
+    AHippodromeFigure* Horse = Figure.Get();
+    if (bRiding && Horse) Horse->SetActorLocationAndRotation(Feet(), FRotator(Pitch, Rider->GetActorRotation().Yaw, 0));
+}
+
 void UHorseRideComponent::Pose(float Dt)
 {
     AHippodromeFigure* Horse = Figure.Get();
     if (!Horse) return;
-    // The horse stands on the capsule's feet and tilts with the ground between its forelegs and hind legs.
+    // The horse tilts with the ground between its forelegs and hind legs; Place stands it on the capsule's feet.
     const FVector At = Feet();
     const float Yaw = Rider->GetActorRotation().Yaw;
     const FVector Forward = FRotator(0, Yaw, 0).Vector();
@@ -277,7 +296,6 @@ void UHorseRideComponent::Pose(float Dt)
     }
     const float Slope = FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(Ground[0] - Ground[1], HalfLength * 1.6f)), -22.f, 22.f);
     Pitch = Dt > 0.f ? FMath::FInterpTo(Pitch, Slope, Dt, 6.f) : Slope;
-    Horse->SetActorLocationAndRotation(At, FRotator(Pitch, Yaw, 0));
     if (RearLeft > 0.f) return;
     // The gait by speed, as the race picks it; turning hard at a canter or faster, the horse leans into the curve.
     const FHorseSpec& Spec = Horse->GetBody();
