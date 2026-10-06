@@ -54,8 +54,9 @@ class HelperReap(unittest.TestCase):
         spawn = ''.join(f"subprocess.Popen([{str(self.dir/'bin'/n)!r}, '-c', 'import time; time.sleep({s})']);"
                         for n, s in helpers)
         game = self.run_python(executable, f'import subprocess, time; {spawn} time.sleep({seconds})')
-        deadline = time.monotonic()+5
-        while len(children(game.pid)) < len(helpers) and time.monotonic() < deadline:
+        deadline = time.monotonic()+5   # a forked helper keeps the game's name until its exec
+        while sorted(name(pid) for pid in children(game.pid)) != sorted(n for n, _ in helpers) \
+                and time.monotonic() < deadline:
             time.sleep(.05)
         kids = {name(pid): (pid, usage(pid).started) for pid in children(game.pid)}
         self.leftovers += kids.values()
@@ -108,6 +109,40 @@ class HelperReap(unittest.TestCase):
         guard._owned[game.pid] = (record, started)
         self.assertEqual(guard.reap_helpers(game.pid, grace=.5), [])
         self.assertIsNone(stranger.poll())
+
+
+@unittest.skipUnless(sys.platform == 'darwin', 'libproc')
+class RecordIdentity(unittest.TestCase):
+    """The game (pid 10) started an intermediate (pid 50) that exits, and its pid goes to another process whose own
+    child (pid 77, `dotnet`) must never be recorded as the game's."""
+    GAME, MIDDLE, FOREIGN = 10, 50, 77
+
+    def record(self, middle_starts, foreign_parent=MIDDLE):
+        from unittest import mock
+        from atelier.safety import memory_guard
+        starts = {self.GAME: iter([100]*99), self.MIDDLE: iter(middle_starts+[999]*99), self.FOREIGN: iter([300]*99)}
+        tree = {self.GAME: [self.MIDDLE], foreign_parent: [self.FOREIGN]}
+        names = {self.GAME: 'UnrealEditor', self.MIDDLE: 'bash', self.FOREIGN: 'dotnet'}
+        seen = {}
+        with mock.patch.object(memory_guard, '_started', lambda pid: next(starts[pid])), \
+             mock.patch.object(memory_guard, 'children', lambda pid: tree.get(pid, [])), \
+             mock.patch.object(memory_guard, 'name', lambda pid: names[pid]):
+            memory_guard.record_helpers(self.GAME, 100, Path(tempfile.mkdtemp())/'r.helpers.json', seen)
+        return sorted(h['pid'] for h in seen.values())
+
+    def test_the_same_intermediate_brings_its_children(self):
+        self.assertEqual(self.record([200]*4), [self.MIDDLE, self.FOREIGN])
+
+    def test_an_intermediate_reused_before_its_listing_brings_nothing(self):
+        # Read twice as the game's child (200), then a new process holds the pid when it is listed as a parent.
+        self.assertEqual(self.record([200, 200]), [self.MIDDLE])
+
+    def test_an_intermediate_reused_during_its_listing_brings_nothing(self):
+        self.assertEqual(self.record([200, 200, 200]), [self.MIDDLE])
+
+    def test_a_child_whose_pid_changes_hands_is_not_recorded(self):
+        # The game's child list names 50, but the process read there is gone by the second look.
+        self.assertEqual(self.record([200, 999]), [])
 
 
 if __name__ == '__main__':

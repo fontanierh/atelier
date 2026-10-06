@@ -36,6 +36,20 @@ def name(pid):
 
 def helpers_path(report):return Path(report).with_suffix('.helpers.json')
 
+def _started(pid):
+    try:return usage(pid).started
+    except ProcessLookupError:return None
+
+def owned_children(parent,parent_start):
+    """(pid, start) of each child of this exact parent. A parent is the same process before and after its listing,
+    and a child has the same start on both sides of a second listing, so a reused pid (the parent's or a child's)
+    never brings in another process's children."""
+    if _started(parent)!=parent_start:return []
+    first=children(parent);starts={c:_started(c) for c in first}
+    again=set(children(parent))
+    if _started(parent)!=parent_start:return []
+    return [(c,s) for c,s in starts.items() if s is not None and c in again and _started(c)==s]
+
 def record_helpers(pid,started,path,seen):
     """Every descendant of the owned Unreal, with its start, parent and depth. Once the game exits its helpers are
     reparented to launchd, so this record is the only proof they were ours."""
@@ -43,9 +57,7 @@ def record_helpers(pid,started,path,seen):
     queue=[(pid,started,0)];new=False
     while queue:
         parent,parent_start,depth=queue.pop()
-        for child in children(parent):
-            try:child_start=usage(child).started
-            except ProcessLookupError:continue
+        for child,child_start in owned_children(parent,parent_start):
             key=f'{child}:{child_start}'
             if key not in seen:
                 seen[key]=dict(pid=child,started=child_start,name=name(child),parent=parent,parent_started=parent_start,

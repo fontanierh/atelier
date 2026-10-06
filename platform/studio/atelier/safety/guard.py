@@ -23,7 +23,7 @@ import json, os, signal, subprocess, sys, time
 from contextlib import contextmanager
 from pathlib import Path
 
-from .memory_guard import children, helpers_path, usage
+from .memory_guard import children, helpers_path, owned_children, usage
 
 GUARD = Path(__file__).with_name('memory_guard.py')
 HELPERS = ('dotnet', 'mono', 'bash', 'sh')   # UAT/Turnkey and UnrealBuildTool, and the scripts that start them
@@ -58,8 +58,9 @@ def reap_helpers(pid, grace=3.):
     def ours(helper):
         if helper['name'] not in HELPERS or not _alive(helper['pid'], helper['started']):
             return False
-        return helper['pid'] in orphans or any(helper['pid'] in children(h['pid']) for h in helpers
-                                               if h is not helper and _alive(h['pid'], h['started']))
+        mine = (helper['pid'], helper['started'])
+        return helper['pid'] in orphans or any(mine in owned_children(h['pid'], h['started']) for h in helpers
+                                               if h is not helper)
     targets = sorted((h for h in helpers if ours(h)), key=lambda h: -h['depth'])
     for sig, wait in ((signal.SIGTERM, grace), (signal.SIGKILL, 1.)):
         for helper in targets:
