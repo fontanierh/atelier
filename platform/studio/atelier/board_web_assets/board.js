@@ -1029,5 +1029,60 @@ $("broadcastForm").addEventListener("submit",async event=>{
   finally {clearTimeout(timer);sending=false;$("broadcastForm").classList.remove("sending");formState();}
 });
 desktop.addEventListener("change",()=>{feedSignature="";if(state)renderFeed();});
+/* Notifications: an agent flags a message with board post --notify-operator, this device gets it as a push, and
+   tapping it opens that message's thread. */
+const pushSupported="serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+let pushRegistration=null;
+const notifyNote=text=>{$("notifyNote").textContent=text;};
+function unb64(text) { const raw=atob(text.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-text.length%4)%4)); return Uint8Array.from(raw,c=>c.charCodeAt(0)); }
+async function postJSON(path, body) {
+  const response=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify(body)});
+  const result=await response.json();if(!response.ok)throw Error(result.error||"Something went wrong. Try again.");return result;
+}
+async function setupPush() {
+  if(!pushSupported){
+    notifyNote(/iPhone|iPad/.test(navigator.userAgent)&&!standalone?"To get notifications, add the board to your Home Screen (Share, then Add to Home Screen) and open it from there.":"This browser can't show notifications.");
+    return;
+  }
+  try { pushRegistration=await navigator.serviceWorker.register("/sw.js"); } catch { notifyNote("Notifications aren't available here.");return; }
+  const subscription=await pushRegistration.pushManager.getSubscription(), on=Boolean(subscription)&&Notification.permission==="granted";
+  $("notifyToggle").disabled=false;$("notifyToggle").checked=on;$("notifyTest").hidden=!on;
+  // Re-register an existing subscription, in case the board lost it.
+  if(on)postJSON("/api/push/subscribe",{subscription:subscription.toJSON()}).catch(()=>{});
+  if(Notification.permission==="denied")notifyNote("Notifications are turned off for the board in Settings.");
+}
+$("notifyToggle").addEventListener("change",async()=>{
+  const on=$("notifyToggle").checked;$("notifyToggle").disabled=true;
+  try {
+    if(on) {
+      if(await Notification.requestPermission()!=="granted")throw Error("Allow notifications for the board to turn them on.");
+      const {key}=await (await fetch("/api/push/key",{cache:"no-store"})).json();
+      const subscription=await pushRegistration.pushManager.getSubscription()||await pushRegistration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:unb64(key)});
+      await postJSON("/api/push/subscribe",{subscription:subscription.toJSON()});
+      notifyNote("On. Agents notify you only when you've asked to be told, or it's urgent.");
+    } else {
+      const subscription=await pushRegistration.pushManager.getSubscription();
+      if(subscription){await postJSON("/api/push/unsubscribe",{endpoint:subscription.endpoint});await subscription.unsubscribe();}
+      notifyNote("Off. Flagged messages still appear on the board.");
+    }
+  } catch(error) { $("notifyToggle").checked=!on;notifyNote(error.message); }
+  finally { $("notifyToggle").disabled=false;$("notifyTest").hidden=!$("notifyToggle").checked; }
+});
+$("notifyTest").addEventListener("click",async()=>{
+  try { const result=await postJSON("/api/push/test",{});notifyNote(result.delivered?"Test sent; it should arrive in a moment.":"No device received it. Turn notifications off and on again."); }
+  catch(error) { notifyNote(error.message); }
+});
+// A notification links to /?m=ID: open that message's thread, whether the app was closed or already open.
+function openLink(url) {
+  const id=Number(new URL(url,location.href).searchParams.get("m"));if(!(id>0))return;
+  setView("messages");if(thread?.id!==id){if(thread)closeThread();openThread(id);}
+}
+navigator.serviceWorker?.addEventListener("message",event=>{if(event.data?.open)openLink(event.data.open);});
+waitFor(()=>state,15000).then(()=>{
+  if(!state)return;
+  setupPush();
+  if(new URLSearchParams(location.search).has("m")){openLink(location.href);history.replaceState(history.state,"","/");}
+});
+
 renderTray();grow();formState();load();setInterval(()=>{if(!document.hidden)load();},3000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load();});

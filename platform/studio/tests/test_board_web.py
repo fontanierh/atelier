@@ -346,7 +346,8 @@ def test_posts_that_would_fold_on_the_web_board_warn_the_agent(cache, capsys):
     assert not board.folds('Short and to the point.')
     assert board.folds('x' * 501) and board.folds('\n'.join('line' for _ in range(9)))
     assert not board.folds('Fits.\n\nAttachments (files on this machine):\n' + '\n'.join(f'- /tmp/{i}' for i in range(20)))
-    args = SimpleNamespace(action='post', agent='one', to='*', topic='info', reply_to=None, attach=[], all_agents=False)
+    args = SimpleNamespace(action='post', agent='one', to='*', topic='info', reply_to=None, attach=[], all_agents=False,
+                           notify_operator=False)
     assert board.main(SimpleNamespace(**vars(args), message='Short.')) == 0
     assert 'folded' not in capsys.readouterr().err
     assert board.main(SimpleNamespace(**vars(args), message='y' * 600)) == 0

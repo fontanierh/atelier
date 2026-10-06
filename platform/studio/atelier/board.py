@@ -72,13 +72,32 @@ def database():
                 except sqlite3.OperationalError:
                     if column not in {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}:
                         raise
+        # `notify` marks a message its sender explicitly flagged for a push notification to the operator.
+        if 'notify' not in {row['name'] for row in db.execute('PRAGMA table_info(messages)')}:
+            try:
+                db.execute('ALTER TABLE messages ADD COLUMN notify INTEGER NOT NULL DEFAULT 0')
+            except sqlite3.OperationalError:
+                if 'notify' not in {row['name'] for row in db.execute('PRAGMA table_info(messages)')}:
+                    raise
         yield db
         db.commit()
     finally:
         db.close()
 
 
-def post(sender, body, recipient='*', topic='info', reply_to=None, dedup=None):
+# Phone notifications are for what the operator asked to hear about or must see now, so each agent gets a few an hour.
+NOTIFY_PER_HOUR = 3
+
+
+def notify_allowed(db, sender, now=None):
+    since = (now or time.time()) - 3600
+    used = db.execute('SELECT count(*) FROM messages WHERE sender=? AND notify=1 AND created>?', (sender, since))
+    return used.fetchone()[0] < NOTIFY_PER_HOUR
+
+
+def post(sender, body, recipient='*', topic='info', reply_to=None, dedup=None, notify=False):
+    """Post a message. With notify, it also pushes a phone notification to the operator, within NOTIFY_PER_HOUR;
+    past the limit the message is still posted, without the push. Returns the message ID."""
     agent_name(sender)
     if recipient != '*':
         agent_name(recipient)
@@ -89,9 +108,10 @@ def post(sender, body, recipient='*', topic='info', reply_to=None, dedup=None):
             existing = db.execute('SELECT id FROM messages WHERE dedup=?', (dedup,)).fetchone()
             if existing:
                 return existing['id']
+        notify = bool(notify) and notify_allowed(db, sender)
         result = db.execute('''INSERT OR IGNORE INTO messages
-            (created, sender, recipient, topic, body, reply_to, dedup) VALUES (?, ?, ?, ?, ?, ?, ?)''',
-            (time.time(), sender, recipient, topic, body, reply_to, dedup))
+            (created, sender, recipient, topic, body, reply_to, dedup, notify) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            (time.time(), sender, recipient, topic, body, reply_to, dedup, int(notify)))
         if result.rowcount:
             return result.lastrowid
         return db.execute('SELECT id FROM messages WHERE dedup=?', (dedup,)).fetchone()['id']
@@ -477,6 +497,9 @@ def configure(sub):
                         'broadcast with per-agent delivery; instead of --to')
     p.add_argument('--topic', choices=TOPICS, default='info')
     p.add_argument('--reply-to', type=int, help='reply in the thread of this message ID')
+    p.add_argument('--notify-operator', action='store_true',
+                   help='also push a phone notification to the operator; only when they asked to be told or it is '
+                        f'urgent (at most {NOTIFY_PER_HOUR} an hour)')
     p.add_argument('--attach', action='append', default=[], metavar='FILE',
                    help='attach a file (repeatable, up to 10); it is copied to the board and shown inline on the web')
     p.add_argument('message', nargs='?', default='', help='message text (use - to read stdin; may be empty with --attach)')
@@ -545,13 +568,21 @@ def main(args):
                 with database() as db:
                     if not db.execute('SELECT 1 FROM messages WHERE id=?', (args.reply_to,)).fetchone():
                         raise ValueError(f'message {args.reply_to} is not on the board')
+            notify = args.notify_operator
+            if notify:
+                with database() as db:
+                    if not notify_allowed(db, args.agent):
+                        print(f'Note: you have used your {NOTIFY_PER_HOUR} notifications for this hour; posting '
+                              'without a push.', file=sys.stderr)
             if args.all_agents:
                 if args.to != '*':
                     raise ValueError('use either --to or --all-agents')
+                if notify:
+                    raise ValueError('--notify-operator is for one message to the operator; use it with --to operator')
                 rows = send_web(args.agent, text, str(uuid.uuid4()), args.topic, '*', args.reply_to)
                 print(' '.join(str(row['id']) for row in rows))
             else:
-                print(post(args.agent, text, args.to, args.topic, args.reply_to))
+                print(post(args.agent, text, args.to, args.topic, args.reply_to, notify=notify))
             if folds(text):
                 print(f'Note: over {PREVIEW_CHARS} characters or {PREVIEW_LINES} lines, so people see this folded behind '
                       '"Read more". Lead with the point and keep posts short; put detail in an attachment or a thread '
