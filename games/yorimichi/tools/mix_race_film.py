@@ -9,12 +9,13 @@ started; every other cue is placed at its frame, attenuated by its distance from
 (the 2D cues are centred). Then the frames and the mix become an H.264/AAC MP4 (1080p60 and a 720p copy).
 
 The machine is shared with guarded game runs, so ffmpeg runs at nice 10 with two decoder, filter and encoder threads,
-and reports its progress (or its lack) every ten seconds; a stalled or overlong encode is ended. Encode only when no
-graded game is loading or running.
+and reports its progress (or its lack) every ten seconds; a stalled or overlong encode, or one past 4 GiB, is ended.
+Encode only when no graded game is loading or running.
 """
-import argparse, csv, json, math, queue, subprocess, sys, threading, time, wave
+import argparse, csv, json, math, queue, signal, subprocess, sys, threading, time, wave
 from pathlib import Path
 import numpy as np
+from atelier.safety.guard import attach as attach_memory_guard
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 SOURCE = yori.OUT / 'audio/hippodrome'
@@ -22,47 +23,63 @@ RATE = 48000
 FPS = 60
 THREADS = ['-threads', '2']
 FILTER_THREADS = ['-filter_threads', '2']
+ENCODER_LIMIT_GIB = 4.   # the small render slot's ceiling; the encoder is expected to stay well under 3 GiB
 
 
-def encode(label, inputs, outputs, frames):
+def encode(label, inputs, outputs, frames, report):
     """One ffmpeg run, niced and thread-capped. A film encodes at a few frames a second, so it gets a second a frame
     plus ten minutes in all, and five minutes without a new frame counts as stalled."""
     cmd = ['nice', '-n', '10', 'ffmpeg', '-y', '-loglevel', 'error', '-nostats', '-progress', 'pipe:1', *FILTER_THREADS,
            *inputs, *THREADS, *outputs]
-    watch(cmd, label, frames, deadline=600 + frames, stall=300)
+    watch(cmd, label, frames, report, deadline=600 + frames, stall=300)
 
 
-def watch(cmd, label, frames, deadline, stall):
-    """Run cmd, which writes ffmpeg -progress lines, and say every ten seconds how far it has got, or that it has not
-    moved. Past the deadline or the stall limit, or if it fails, its own child is ended and the error raised."""
+def watch(cmd, label, frames, report, deadline, stall):
+    """Run cmd, which writes ffmpeg -progress lines, under its own memory guard (atelier.safety, pinned to the encoder's
+    pid and start, at ENCODER_LIMIT_GIB): a guard around this script would not see the encoder's memory. Say every ten
+    seconds how far it has got, or that it has not moved. Past the deadline or the stall limit, if the guard stops, or
+    if it fails, its own child is ended and the error raised."""
     lines = queue.Queue()
     with subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True) as p:
         reader = threading.Thread(target=lambda: [lines.put(l) for l in p.stdout], daemon=True); reader.start()
         t0 = last_note = moved = time.monotonic(); done = 0
         try:
-            while p.poll() is None or reader.is_alive() or not lines.empty():
-                try:
-                    line = lines.get(timeout=1)
-                    if line.startswith('frame='):
-                        n = int(line[6:] or 0)
-                        if n > done: done, moved = n, time.monotonic()
-                except queue.Empty:
-                    pass
-                now = time.monotonic()
-                if now - last_note >= 10:
-                    last_note = now
-                    quiet = '' if now - moved < 10 else f', no frame progress for {now - moved:.0f} s'
-                    print(f'{label}: frame {done}/{frames} ({100 * done / max(frames, 1):.0f}%), {now - t0:.0f} s{quiet}', flush=True)
-                if now - t0 > deadline or now - moved > stall:
-                    raise TimeoutError(f'{label}: {"no frame progress for %.0f s" % (now - moved) if now - moved > stall else "past its %.0f s deadline" % deadline}')
+            with attach_memory_guard(p.pid, report / 'memory-health.json', duration=deadline + 60,
+                                     limit_gib=ENCODER_LIMIT_GIB) as monitor:
+                while p.poll() is None or reader.is_alive() or not lines.empty():
+                    try:
+                        line = lines.get(timeout=1)
+                        if line.startswith('frame='):
+                            n = int(line[6:] or 0)
+                            if n > done: done, moved = n, time.monotonic()
+                    except queue.Empty:
+                        pass
+                    now = time.monotonic()
+                    if now - last_note >= 10:
+                        last_note = now
+                        quiet = '' if now - moved < 10 else f', no frame progress for {now - moved:.0f} s'
+                        print(f'{label}: frame {done}/{frames} ({100 * done / max(frames, 1):.0f}%), {now - t0:.0f} s, '
+                              f'{footprint(report)}{quiet}', flush=True)
+                    if p.poll() is None and monitor is not None and monitor.poll() is not None:
+                        raise RuntimeError(f'{label}: the memory guard exited before ffmpeg')
+                    if now - t0 > deadline or now - moved > stall:
+                        raise TimeoutError(f'{label}: {"no frame progress for %.0f s" % (now - moved) if now - moved > stall else "past its %.0f s deadline" % deadline}')
         except BaseException:
             if p.poll() is None:
                 p.terminate()
                 try: p.wait(10)
                 except subprocess.TimeoutExpired: p.kill(); p.wait()
             raise
-    print(f'{label}: frame {done}/{frames}, {time.monotonic() - t0:.0f} s, exit {p.returncode}', flush=True)
+    print(f'{label}: frame {done}/{frames}, {time.monotonic() - t0:.0f} s, {footprint(report)}, exit {p.returncode}',
+          flush=True)
     if p.returncode: raise subprocess.CalledProcessError(p.returncode, cmd)
+
+
+def footprint(report):
+    """The encoder's footprint and peak from its guard's report."""
+    try: h = json.loads((report / 'memory-health.json').read_text())
+    except (OSError, ValueError): return 'footprint not sampled yet'
+    return f'{h.get("footprint_bytes", 0) / 2**30:.2f} GiB footprint, peak {h.get("peak_bytes", 0) / 2**30:.2f} GiB'
 
 
 def read_wav(path):
@@ -164,10 +181,11 @@ def main():
     mp4 = take / f'{a.out}.mp4'
     encode('1080p', [*THREADS, '-framerate', str(FPS), '-i', str(take / 'frame_%05d.jpg'), '-i', str(out_wav)],
            ['-vf', vf, '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-profile:v', 'high',
-            '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', str(mp4)], frames)
+            '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', str(mp4)], frames, take / f'{a.out}.encode-1080p')
     small = take / f'{a.out}-720p.mp4'
     encode('720p', [*THREADS, '-i', str(mp4)], ['-vf', 'scale=1280:720', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22',
-                                               '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', str(small)], frames)
+                                               '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', str(small)], frames,
+           take / f'{a.out}.encode-720p')
     report = {'frames': frames, 'seconds': seconds, 'events': len(events), 'music': film.get('music', []), 'sounds_used': used,
               'video': str(mp4), 'video_720p': str(small), 'bytes': mp4.stat().st_size}
     (take / f'{a.out}-mix.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -175,4 +193,6 @@ def main():
 
 
 if __name__ == '__main__':
+    # A guard stops this script with SIGTERM. Unwind as an exception, so watch() ends its ffmpeg instead of orphaning it.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     main()
