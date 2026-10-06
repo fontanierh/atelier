@@ -411,10 +411,13 @@ STATE = OUT / 'import-state.json'
 
 
 def fingerprint():
-    """What the imported assets depend on: these scripts and the native animation files."""
+    """What the imported assets depend on: the code of these scripts (not their comments or docstrings, see
+    `native.source_digest`) and the native animation files."""
     digest = hashlib.sha256()
-    for path in [HERE / 'import_clips.py', HERE / 'native.py', HERE / 'rider_mesh.py',
-                 *sorted((BUNDLE / 'animation').rglob('*.skate')), *sorted((BUNDLE / 'metadata').glob('*.skate'))]:
+    for path in [HERE / 'import_clips.py', HERE / 'native.py', HERE / 'rider_mesh.py']:
+        digest.update(path.name.encode())
+        digest.update(N.source_digest(path).encode())
+    for path in [*sorted((BUNDLE / 'animation').rglob('*.skate')), *sorted((BUNDLE / 'metadata').glob('*.skate'))]:
         digest.update(path.name.encode())
         digest.update(path.read_bytes())
     return digest.hexdigest()
