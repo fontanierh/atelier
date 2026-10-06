@@ -25,7 +25,7 @@ def test_cpu_metadata_edit_reruns_only_the_tree_overlay_desktop_and_package(tmp_
     versions[recipe.SCRIPTS / 'city_tree_cpu_access.py'] = 'v2'
     after = fingerprints()
     assert {name for name in before if before[name] != after[name]} == {
-        'unreal.city_tree_cpu_access', 'unreal.desktop', 'unreal.package'}
+        'unreal.city_tree_cpu_access', 'unreal.desktop', 'unreal.cook', 'unreal.package'}
 
     # A real world importer change still invalidates the world and overlays.
     versions[recipe.SCRIPTS / 'import_hidamari.py'] = 'v2'

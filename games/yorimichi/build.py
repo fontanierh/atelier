@@ -89,19 +89,36 @@ def package_present(out):
         return False
 
 
+# The cook and download have independent implementation inputs and success stamps.
+_cook_spec = importlib.util.spec_from_file_location('yorimichi_package_cook', TOOLS / 'package_cook.py')
+package_cook = importlib.util.module_from_spec(_cook_spec)
+_cook_spec.loader.exec_module(package_cook)
+
+
+def cook_step(ctx, steps):
+    out = ctx.out
+    engine = getattr(ctx, 'unreal_root', None)
+    engine_inputs = [engine / 'Engine' / 'Build' / 'Build.version',
+                     engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
+    return Step('unreal.cook',
+                [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
+                 Call('certify_cook', package_cook.finish)],
+                inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config', TOOLS / 'package_cook.py', *engine_inputs],
+                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True, explicit=True,
+                outputs=[out / 'package' / 'cook.json'], verify=lambda: package_cook.cook_present(out / 'package'),
+                about='cook the macOS app once and certify its source and immutable archived files')
+
+
 def package_step(ctx, steps):
-    """The packaged macOS game from every Unreal import and the staged runtime data in this checkout. Only built when
-    named: it needs (rather than follows) them, so it reruns by itself whenever any of them changed, without --force."""
+    """The public entry point: independently guarded download assembly from a certified cook."""
     out = ctx.out
     return Step('unreal.package',
-                [UnrealPackage('Yorimichi', out / 'package' / 'archive'), PackageArchive(TOOLS / 'package_archive.py', ('--out', out / 'package'))],
-                # The packaging code itself: a launcher, profile or archive change reruns only the package.
-                inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config',
-                        TOOLS / 'package_archive.py', TOOLS / 'desktop_preview.py'],
-                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True, explicit=True,
+                [PackageArchive(TOOLS / 'package_archive.py', ('--out', out / 'package', '--cook-receipt'))],
+                inputs=[TOOLS / 'package_archive.py', TOOLS / 'desktop_preview.py'],
+                needs=['unreal.cook'], heavy=True, explicit=True,
                 outputs=[out / 'package' / 'manifest.json', out / 'package' / 'SHA256SUMS'],
                 verify=lambda: package_present(out),
-                about='packaged macOS game (.app, Development): cooked, zipped, checksummed in build/<game>/package')
+                about='packaged macOS game (.app, Development): zipped, checksummed in build/<game>/package')
 
 
 def botw_library():
@@ -496,4 +513,4 @@ def steps(ctx):
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
     ] + botw_steps(out) + hippodrome_steps(out)
-    return result + [package_step(ctx, result)]
+    return result + [cook_step(ctx, result), package_step(ctx, result)]
