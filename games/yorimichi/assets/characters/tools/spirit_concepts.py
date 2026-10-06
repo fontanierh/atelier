@@ -263,7 +263,8 @@ def prep(path, maxw=1280):
 
 def gpt_edit(prompt, images, n):
     cmd = ['curl', '-sS', '--max-time', '900', 'https://api.openai.com/v1/images/edits',
-           '-H', f'Authorization: Bearer {key()}', '-F', f'model={MODEL}', '-F', f'prompt={prompt}',
+           '-H', f'Authorization: Bearer {key()}', '-F', f'model={MODEL}',
+           '--form-string', f'prompt={prompt}',   # -F would end the prompt at its first ';' (read as a field attribute)
            '-F', f'size={SIZE}', '-F', f'quality={QUALITY}', '-F', f'n={n}']
     for im in images:
         cmd += ['-F', f'image[]=@{prep(im)}']
