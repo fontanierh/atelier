@@ -115,6 +115,27 @@ Editor builds keep both renderers.
 4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
    the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.
 
+## Before publishing a release
+
+Verify the files that will be uploaded, rather than an app left in a previous staging directory:
+
+```sh
+nice -n 10 uv run python games/yorimichi/tools/verify_package.py \
+  --package build/yorimichi/package --extract build/yorimichi/release-check/extracted \
+  --report build/yorimichi/release-check/verification.json --expected-revision "$(git rev-parse HEAD)"
+```
+
+Choose new extraction and report paths for each run. The tool checks the manifest, SHA256SUMS and actual file hashes,
+joins numbered parts when necessary, and extracts with `ditto` under the normal lock and memory guard. Read the render
+ledger and announce that extraction job before running it. It then checks the launcher permissions, Apple silicon
+executable, every bundled Mach-O dependency, app signature, sandbox audio allowance, symlinks and core staged data.
+Use `--require-communitypark` when the release includes the optional park. The expected revision is the full revision
+in the cook record; an older manifest without that record carries only its short revision.
+
+This verifies the download, not gameplay. Run a separate, guarded standalone smoke test from the extracted launcher's
+folder and quit it promptly. Check that captures and logs were written inside the app's writable sandbox container.
+Upload the verified ZIP or all numbered parts, SHA256SUMS, manifest.json and the verification report together.
+
 ## The shared-PCH rebuild on every cook
 
 **Proven: every UAT `-build -package` run recompiles all game and plugin objects, even with no C++ change.** The
