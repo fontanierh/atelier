@@ -54,9 +54,10 @@ Each zone is a travel target with a key, name, position, yaw and hint. Zones are
 | Main road and hamlet | `spawn`, `hamlet`, `mega` |
 | South-west island | `fishing`, `cove`, `landing`, `temple` |
 | Hidamari | `arrival`, `arcade`, `plaza`, `harbor`, `hillside`, `park`, `station`, `foothills` |
-| Elsewhere | `forest_lake`, `megapark`, `skatepier`, `zeppelin_forest`, `zeppelin_city`, `zeppelin_megapark` |
+| Elsewhere | `forest_lake`, `megapark`, `skatepier`, `hippodrome`, `zeppelin_forest`, `zeppelin_city`, `zeppelin_megapark` |
 
-`UJapanMap` adds a `skatepier` stop from `skatepark/park.json` when `map.json` has none.
+`UJapanMap` adds a `skatepier` stop from `skatepark/park.json`, and a `hippodrome` stop (by Hudson, at the
+grandstand) from `hippodrome/hippodrome.json`, when `map.json` has none ([HIPPODROME.md](HIPPODROME.md)).
 
 ## The painted sheet
 
