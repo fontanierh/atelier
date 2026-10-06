@@ -232,6 +232,15 @@ the others load (`live.park.place`, `live.park.launch`, `live.scenario`). The li
 `skate_input()`, `skate_release()`, `skate_state()`, `skate_place()`, `skate_park()`, `skate_script()` and the
 gesture paths in `FLICKS`.
 
+A packaged game has no Python. `japan.SkateGroundCheck` checks the ground there, opt in from the command line
+(`-ExecCmds="japan.SkateGroundCheck quit"`). At the road's samples 150 and 300, and on the grass beside each clear of
+trees, it rides 4 s at 6 m/s and bails at 12 m/s. It logs a `SKATE GROUND` line per ride and bail: a ride fails when it
+drops more than 50 cm through the ground, a bail when the body's skin goes more than 2 cm under it lying or getting up
+(`skate.RideSkinCheck`, the Ride backend). A check that cannot measure fails too: a sample without both its street and
+grass spot, a ride frame with no ground under it, or a bail with no lying or no get-up reading. The summary is
+`SKATE GROUND CHECK PASS` or `FAIL`; that line is the result. `quit` then exits, asking for status 1 on a failure
+(Windows and Linux pass it on; macOS always exits with 0). Other road samples can be passed as numbers.
+
 Offline, without Unreal, after building the native QA executable (see the plugin's
 [runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md#reference-build)):
 
