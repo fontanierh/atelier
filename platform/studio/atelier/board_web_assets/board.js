@@ -257,8 +257,27 @@ $("sendButton").addEventListener("pointerdown",event=>{if(document.activeElement
 let blurTimer, composerTimer;
 $("broadcastForm").addEventListener("focusin",()=>{clearTimeout(composerTimer);formState();});
 $("broadcastForm").addEventListener("focusout",()=>{composerTimer=setTimeout(formState,180);});
-$("message").addEventListener("focus",()=>{clearTimeout(blurTimer);if(touch.matches)$("app").classList.add("typing");if(stickToBottom)setTimeout(scrollToLatest,250);});
-$("message").addEventListener("blur",()=>{blurTimer=setTimeout(()=>$("app").classList.remove("typing"),120);});
+// The keyboard: what you were reading before it opened is where you are once it closes. While it is up the feed is
+// shorter and gets clamped at its end, which used to flip the board into following the latest message, so closing
+// the keyboard jumped there. Unless you scrolled or sent meanwhile, the reading position is put back.
+let keyboardReturn=null;
+$("message").addEventListener("focus",()=>{
+  clearTimeout(blurTimer);
+  if(touch.matches){$("app").classList.add("typing");if(!keyboardReturn)keyboardReturn={top:$("feed").scrollTop,stick:stickToBottom,moved:false,sent:false};}
+  if(stickToBottom)setTimeout(scrollToLatest,250);
+});
+$("message").addEventListener("blur",()=>{
+  blurTimer=setTimeout(()=>$("app").classList.remove("typing"),120);
+  const saved=keyboardReturn;keyboardReturn=null;
+  if(!saved||saved.moved||saved.sent)return;
+  // Twice: once the keyboard has mostly gone, and again after its animation and the viewport have settled.
+  for(const ms of [350,750])setTimeout(()=>{
+    if(document.activeElement===$("message"))return;
+    settle(250);stickToBottom=saved.stick;
+    if(saved.stick)scrollToLatest();else $("feed").scrollTop=saved.top;
+  },ms);
+});
+$("feed").addEventListener("touchmove",()=>{if(keyboardReturn)keyboardReturn.moved=true;},{passive:true});
 function composerStatus(text, error=false) {
   clearTimeout(statusTimer);$("composerStatus").textContent=text;$("composerStatus").className="composer-status"+(error?" error":"");
   if(text&&!error)statusTimer=setTimeout(()=>composerStatus(""),4000);
@@ -1020,6 +1039,7 @@ $("broadcastForm").addEventListener("submit",async event=>{
     $("message").value="";draftKey=null;draftBody="";
     for(const u of uploads)if(u.preview?.startsWith("blob:"))URL.revokeObjectURL(u.preview);
     uploads=[];renderTray();persistDraft();grow();
+    if(keyboardReturn)keyboardReturn.sent=true;   // after sending, the conversation follows your new message
     if(touch.matches)$("message").blur();   // on a phone the keyboard closes once the message is away
     if(thread){thread.stick=true;loadThread();load();}
     else {
