@@ -89,6 +89,26 @@ def patch_user_directory(text):
     return text.replace(METHOD, METHOD + OVERRIDE, 1)
 
 
+XML_PERSONAL = ('\t\t\t\tDirectoryReference? personalFolder = DirectoryReference.FromString('
+                'Environment.GetFolderPath(Environment.SpecialFolder.Personal));\n')
+XML_PERSONAL_HEADLESS = (
+    '\t\t\t\t// Headless runs never ask macOS for Documents: on .NET 10 Personal is ~/Documents, and its existence check\n'
+    '\t\t\t\t// waits on the privacy prompt forever. UE_HEADLESS_USER_DIR stands in for it.\n'
+    '\t\t\t\tstring? headlessUserDirectory = Environment.GetEnvironmentVariable("UE_HEADLESS_USER_DIR");\n'
+    '\t\t\t\tDirectoryReference? personalFolder = !String.IsNullOrEmpty(headlessUserDirectory)\n'
+    '\t\t\t\t\t? new DirectoryReference(headlessUserDirectory)\n'
+    '\t\t\t\t\t: DirectoryReference.FromString(Environment.GetFolderPath(Environment.SpecialFolder.Personal));\n')
+
+
+def patch_xml_personal(text):
+    """XmlConfig's global BuildConfiguration.xml probe under Documents, which UAT reaches without the XML cache."""
+    if XML_PERSONAL_HEADLESS in text:
+        return text
+    if text.count(XML_PERSONAL) != 1:
+        raise ValueError('Unrecognised XmlConfig.cs; refusing to guess a source patch')
+    return text.replace(XML_PERSONAL, XML_PERSONAL_HEADLESS, 1)
+
+
 def patch_xml_cache_inputs(text):
     if XML_CACHE_LOAD + XML_CACHE_INPUTS in text:
         return text
@@ -136,6 +156,45 @@ def patch_shader_config(text, workers, cores):
     return text[:section.start(1)] + body + text[section.end(1):]
 
 
+def uat_binaries(root):
+    """UAT's own copies of the build tool's assemblies that the engine ships (only these are ever replaced)."""
+    names = ('EpicGames.Build.dll', 'EpicGames.Build.pdb', 'UnrealBuildTool.dll', 'UnrealBuildTool.pdb')
+    folders = (root / 'Engine/Binaries/DotNET/AutomationTool', root / 'Engine/Binaries/DotNET/AutomationTool/AutomationUtils/net10.0')
+    return [folder / name for folder in folders for name in names if (folder / name).exists()]
+
+
+def headless_user_dir(root):
+    """The unprotected user directory the headless repair gives the build tool and UAT (UE_HEADLESS_USER_DIR), or None
+    when this engine has no headless repair. Anything that runs the build tool outside Build.sh needs it: without it the
+    tool resolves ~/Documents, and a headless process waits on the macOS privacy check.
+
+    A repair that is not current for this engine (an older one before UAT was covered, or binaries replaced since) is
+    refused rather than used: UAT would still hang on its unpatched copies."""
+    root = Path(root).resolve()
+    key = hashlib.sha256(str(root).encode()).hexdigest()[:16]
+    # The same folder prepare_headless makes (paths.cache_dir), found without creating anything.
+    cache = Path(os.environ.get('ATELIER_CACHE') or Path.home() / '.cache' / 'atelier') / 'toolchain' / key
+    folder = cache / 'user-config'
+    if not folder.is_dir():
+        return None
+    try:
+        state = json.loads((cache / 'headless.json').read_text())
+    except (OSError, ValueError):
+        state = {}
+    binaries = root / 'Engine/Binaries/DotNET/UnrealBuildTool'
+    try:
+        uat = {str(f.relative_to(root)): _sha(f) for f in uat_binaries(root) if f.suffix == '.dll'}
+        current = (state.get('dll_sha256') == _sha(binaries / 'EpicGames.Build.dll')
+                   and state.get('ubt_dll_sha256') == _sha(binaries / 'UnrealBuildTool.dll')
+                   and 'uat_dll_sha256' in state and state['uat_dll_sha256'] == uat)
+    except OSError:
+        current = False
+    if not current:
+        raise RuntimeError(f'The headless build-tool repair for {root} is out of date (UAT would hang at startup); '
+                           'run `uv run atelier setup --headless` first')
+    return folder
+
+
 def prepare_headless(root, workers=3):
     """Repair only the tested installed engine; rebuild managed tools under the render lock and memory guard."""
     if not isinstance(workers, int) or workers < 1:
@@ -155,22 +214,28 @@ def prepare_headless(root, workers=3):
     dll = binaries / 'EpicGames.Build.dll'
     ubt_dll = binaries / 'UnrealBuildTool.dll'
     binary_names = ('EpicGames.Build.dll', 'EpicGames.Build.pdb', 'UnrealBuildTool.dll', 'UnrealBuildTool.pdb')
+    # UAT loads its own copies of the same two assemblies and reads the XML config in-process (PlatformExports), so the
+    # patched build replaces those too. Only copies the engine ships are replaced; nothing is added.
+    uat_files = uat_binaries(root)
+    uat_dlls = [file for file in uat_files if file.suffix == '.dll']
     dotnet = root / 'Engine/Binaries/ThirdParty/DotNet/10.0/mac-arm64/dotnet'
     with render_lock('prepare headless Unreal build tool', kind='compile'):
         original_source, original_wrapper = source.read_text(), wrapper.read_text()
         new_source = patch_user_directory(original_source)
         original_xml = xml_source.read_text()
-        new_xml = patch_xml_cache_inputs(original_xml)
+        new_xml = patch_xml_personal(patch_xml_cache_inputs(original_xml))
         new_wrapper = patch_build_script(original_wrapper, cache, workers)
         original_shaders = shader_config.read_text()
         new_shaders = patch_shader_config(original_shaders, workers, os.cpu_count() or 8)
         state_file = cache / 'headless.json'
         state = json.loads(state_file.read_text()) if state_file.exists() else {}
         current = (state.get('source_sha256') == _sha(source) and state.get('dll_sha256') == _sha(dll)
-                   and state.get('xml_source_sha256') == _sha(xml_source) and state.get('ubt_dll_sha256') == _sha(ubt_dll))
+                   and state.get('xml_source_sha256') == _sha(xml_source) and state.get('ubt_dll_sha256') == _sha(ubt_dll)
+                   and state.get('uat_dll_sha256', {}) == {str(f.relative_to(root)): _sha(f) for f in uat_dlls})
         previous_binaries = {binaries / name: (binaries / name).read_bytes() if (binaries / name).exists() else None
                              for name in binary_names}
-        files = (source, xml_source, wrapper, shader_config, *(binaries / name for name in binary_names))
+        previous_binaries.update({file: file.read_bytes() for file in uat_files})
+        files = (source, xml_source, wrapper, shader_config, *(binaries / name for name in binary_names), *uat_files)
         modes = {file: file.stat().st_mode & 0o7777 for file in files if file.exists()}
         for file in modes:
             if not os.access(file, os.W_OK) and file.stat().st_uid != os.getuid():
@@ -202,6 +267,9 @@ def prepare_headless(root, workers=3):
                     file = output / name
                     if file.exists():
                         shutil.copy2(file, binaries / name)
+                for target in uat_files:
+                    if (output / target.name).exists():
+                        shutil.copy2(output / target.name, target)
             (cache / 'user-config').mkdir(exist_ok=True)
             # UE 5.8 XmlConfigData serialization v2: no input files, no configured members. Remote mode uses
             # explicit command-line defaults, so protected Documents is never probed for BuildConfiguration.xml.
@@ -211,8 +279,9 @@ def prepare_headless(root, workers=3):
             shader_config.write_text(new_shaders)
             state_file.write_text(json.dumps(dict(engine=str(root), version=version, workers=workers,
                 source_sha256=_sha(source), dll_sha256=_sha(dll), xml_source_sha256=_sha(xml_source),
-                ubt_dll_sha256=_sha(ubt_dll)), indent=2) + '\n')
-        except Exception:
+                ubt_dll_sha256=_sha(ubt_dll), uat_dll_sha256={str(f.relative_to(root)): _sha(f) for f in uat_dlls}),
+                indent=2) + '\n')
+        except BaseException:   # an interrupt mid-install restores everything as well
             source.write_text(original_source)
             xml_source.write_text(original_xml)
             wrapper.write_text(original_wrapper)

@@ -1,5 +1,6 @@
 """The headless repair must be idempotent, preserve the installed engine on failure, and refuse unknown versions."""
 from contextlib import nullcontext
+import hashlib
 import json
 from pathlib import Path
 import shlex
@@ -26,6 +27,18 @@ def test_explicit_xml_cache_also_supplies_incremental_makefile_inputs():
     assert setup.patch_xml_cache_inputs(patched) == patched
     with pytest.raises(ValueError):
         setup.patch_xml_cache_inputs('a different engine source layout')
+
+
+def test_documents_probe_patch_keeps_default_behaviour_and_is_idempotent():
+    original = 'configs.Add(LocalAppData);\n' + setup.XML_PERSONAL + 'if (personalFolder != null) { }\n'
+    patched = setup.patch_xml_personal(original)
+    assert 'Environment.GetEnvironmentVariable("UE_HEADLESS_USER_DIR")' in patched
+    # Without the variable the original lookup still runs, unchanged.
+    assert ': DirectoryReference.FromString(Environment.GetFolderPath(Environment.SpecialFolder.Personal));' in patched
+    assert patched.endswith('if (personalFolder != null) { }\n') and patched.startswith('configs.Add(LocalAppData);\n')
+    assert setup.patch_xml_personal(patched) == patched
+    with pytest.raises(ValueError, match='refusing'):
+        setup.patch_xml_personal('a different engine source layout')
 
 
 def test_wrapper_quotes_cache_paths_and_replaces_only_its_own_block(tmp_path):
@@ -62,7 +75,7 @@ def engine(tmp_path, monkeypatch):
     files = {
         'Engine/Build/Build.version': json.dumps(dict(MajorVersion=5, MinorVersion=8, PatchVersion=2, Changelist=56702186)),
         'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs': setup.METHOD + '\t\t\treturn null;\n\t\t}\n',
-        'Engine/Source/Programs/UnrealBuildTool/Configuration/Xml/XmlConfig.cs': setup.XML_CACHE_LOAD,
+        'Engine/Source/Programs/UnrealBuildTool/Configuration/Xml/XmlConfig.cs': setup.XML_CACHE_LOAD + setup.XML_PERSONAL,
         'Engine/Build/BatchFiles/Mac/Build.sh': '#!/bin/sh\necho Running ' + setup.INVOCATION + '\n' + setup.INVOCATION + '\nExitCode=$?\n',
         'Engine/Config/BaseEngine.ini': '[DevOptions.Shaders]\nNumUnusedShaderCompilingThreads=3\nNumUnusedShaderCompilingThreadsDuringGame=4\nPercentageUnusedShaderCompilingThreads=50\n',
         'Engine/Binaries/DotNET/UnrealBuildTool/EpicGames.Build.dll': 'original binary',
@@ -162,3 +175,89 @@ def test_headless_setup_checks_rosetta_before_modifying_engine(monkeypatch, caps
     monkeypatch.setattr(setup, 'prepare_headless', lambda *args: pytest.fail('must not modify the engine'))
     assert setup.main(headless=True) == 1
     assert 'softwareupdate --install-rosetta' in capsys.readouterr().out
+
+
+UAT = ('Engine/Binaries/DotNET/AutomationTool', 'Engine/Binaries/DotNET/AutomationTool/AutomationUtils/net10.0')
+
+
+def uat_copies(root):
+    for folder in UAT:
+        for name, text in (('EpicGames.Build.dll', 'original UAT build'), ('UnrealBuildTool.dll', 'original UAT UBT')):
+            (root / folder).mkdir(parents=True, exist_ok=True)
+            (root / folder / name).write_text(text)
+
+
+def patched_build(calls):
+    def rebuild(command, folder, **kwargs):
+        calls.append(command)
+        output = Path(command[command.index('-o') + 1])
+        output.mkdir(parents=True, exist_ok=True)
+        (output / 'EpicGames.Build.dll').write_text('patched binary')
+        (output / 'UnrealBuildTool.dll').write_text('patched UBT binary')
+        return 0
+    return rebuild
+
+
+def test_uat_dependency_copies_are_replaced_tracked_and_never_added(engine, monkeypatch, tmp_path):
+    root, _ = engine
+    uat_copies(root)
+    calls = []
+    monkeypatch.setattr(setup.guarded, 'run', patched_build(calls))
+    setup.prepare_headless(root)
+    for folder in UAT:
+        assert (root / folder / 'EpicGames.Build.dll').read_text() == 'patched binary'
+        assert (root / folder / 'UnrealBuildTool.dll').read_text() == 'patched UBT binary'
+        assert not (root / folder / 'EpicGames.Build.pdb').exists(), 'only copies the engine ships are replaced'
+        assert (tmp_path / 'cache/originals' / folder / 'UnrealBuildTool.dll').read_text() == 'original UAT UBT'
+    state = json.loads((tmp_path / 'cache/headless.json').read_text())
+    assert set(state['uat_dll_sha256']) == {f'{folder}/{name}' for folder in UAT for name in ('EpicGames.Build.dll', 'UnrealBuildTool.dll')}
+    xml = (root / 'Engine/Source/Programs/UnrealBuildTool/Configuration/Xml/XmlConfig.cs').read_text()
+    assert setup.XML_PERSONAL_HEADLESS in xml and setup.XML_PERSONAL not in xml
+    # Current: no rebuild. A vendor update of a UAT copy is detected and repaired again.
+    setup.prepare_headless(root)
+    assert len(calls) == 1
+    (root / UAT[0] / 'UnrealBuildTool.dll').write_text('vendor UAT update')
+    setup.prepare_headless(root)
+    assert len(calls) == 2 and (root / UAT[0] / 'UnrealBuildTool.dll').read_text() == 'patched UBT binary'
+
+
+def test_an_interrupt_after_a_uat_copy_was_replaced_restores_everything(engine, monkeypatch):
+    root, files = engine
+    uat_copies(root)
+    monkeypatch.setattr(setup.guarded, 'run', patched_build([]))
+    real_copy, seen = setup.shutil.copy2, []
+
+    def copy(source, target, *args, **kwargs):
+        if str(target).startswith(str(root)) and 'AutomationTool' in str(target):   # installs, not backups
+            seen.append(target)
+            if len(seen) == 2:   # the first UAT copy is already replaced on disk
+                assert 'patched' in Path(seen[0]).read_text()
+                raise KeyboardInterrupt
+        return real_copy(source, target, *args, **kwargs)
+    monkeypatch.setattr(setup.shutil, 'copy2', copy)
+    with pytest.raises(KeyboardInterrupt):
+        setup.prepare_headless(root)
+    for folder in UAT:
+        assert (root / folder / 'EpicGames.Build.dll').read_text() == 'original UAT build'
+        assert (root / folder / 'UnrealBuildTool.dll').read_text() == 'original UAT UBT'
+    for relative, contents in files.items():
+        assert (root / relative).read_text() == contents
+
+
+def test_headless_user_dir_is_given_only_for_a_current_repair(engine, monkeypatch, tmp_path):
+    root, _ = engine
+    monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'atelier'))
+    assert setup.headless_user_dir(root) is None, 'no repair: normal engines run unchanged'
+    key = hashlib.sha256(str(root.resolve()).encode()).hexdigest()[:16]
+    cache = tmp_path / 'atelier/toolchain' / key
+    (cache / 'user-config').mkdir(parents=True)
+    with pytest.raises(RuntimeError, match='setup --headless'):
+        setup.headless_user_dir(root)   # an older repair with no record of UAT
+    uat_copies(root)
+    monkeypatch.setattr(setup.paths, 'cache_dir', lambda *args: cache)
+    monkeypatch.setattr(setup.guarded, 'run', patched_build([]))
+    setup.prepare_headless(root)
+    assert setup.headless_user_dir(root) == cache / 'user-config'
+    (root / UAT[1] / 'UnrealBuildTool.dll').write_text('vendor UAT update')
+    with pytest.raises(RuntimeError, match='out of date'):
+        setup.headless_user_dir(root)

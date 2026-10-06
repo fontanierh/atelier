@@ -162,3 +162,18 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
     stamp_all()
     (tmp_path/'package'/'Yorimichi-macOS-x.zip').unlink()
     assert plan()['unreal.package'] == 'would run'
+
+
+def test_uat_gets_the_headless_user_directory_build_sh_would_export(tmp_path, monkeypatch):
+    from atelier import setup
+    ctx, steps = recipe_steps(tmp_path)
+    uat = next(s for s in steps if s.name == 'unreal.package').commands[0]
+    monkeypatch.delenv('UE_HEADLESS_USER_DIR', raising=False)
+    monkeypatch.setattr(setup, 'headless_user_dir', lambda root: None)
+    assert uat.argv(ctx)[0].endswith('RunUAT.sh'), 'no headless repair installed: run UAT as it is'
+    folder = tmp_path/'user-config'
+    monkeypatch.setattr(setup, 'headless_user_dir', lambda root: folder)
+    # Without it UAT's in-process XML config and the UnrealBuildTool it starts resolve ~/Documents and wait on TCC.
+    assert uat.argv(ctx)[:2] == ['/usr/bin/env', f'UE_HEADLESS_USER_DIR={folder}']
+    monkeypatch.setenv('UE_HEADLESS_USER_DIR', '/explicit')
+    assert uat.argv(ctx)[0].endswith('RunUAT.sh'), 'an explicit choice from the caller wins'
