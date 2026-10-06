@@ -524,16 +524,15 @@ void UBikeComponent::FollowGround(float Dt)
  {
   const FTransform Base=FTransform(MeshRotation,MeshLocation)*Rider->GetActorTransform();
   FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeWheels),false,Rider);
-  auto GroundAt=[&](float X,float& Z)
+  // Under each wheel: the ground, or (nothing within reach) a drop it eases down over, or (higher than a curb, or a
+  // wall's face) the top of something the wheel has met, which leaves that wheel where it was.
+  for(int32 I=0;I<2;++I)
   {
-   const FVector P=Base.TransformPosition(FVector(X,0,0));FHitResult H;
-   // Higher than a curb is the top of something the wheel has met (a fence, a wall), not ground to ride on.
-   if(!GetWorld()->LineTraceSingleByChannel(H,P+FVector(0,0,60),P-FVector(0,0,90),ECC_Visibility,Q)||H.ImpactNormal.Z<.6f||H.ImpactPoint.Z-Base.GetLocation().Z>25.f)return false;
-   Z=H.ImpactPoint.Z-Base.GetLocation().Z;return true;
-  };
-  float Front,Rear;
-  if(GroundAt(FrontAxle.X,Front)&&GroundAt(RearAxle.X,Rear)){Want[0]=FMath::Max(Front,-40.f);Want[1]=FMath::Max(Rear,-40.f);}
-  else{Want[0]=WheelGround[0];Want[1]=WheelGround[1];}
+   const FVector P=Base.TransformPosition(FVector(I?RearAxle.X:FrontAxle.X,0,0));FHitResult H;
+   if(!GetWorld()->LineTraceSingleByChannel(H,P+FVector(0,0,60),P-FVector(0,0,90),ECC_Visibility,Q))Want[I]=-40.f;
+   else if(H.ImpactNormal.Z<.6f||H.ImpactPoint.Z-Base.GetLocation().Z>25.f)Want[I]=WheelGround[I];
+   else Want[I]=FMath::Max(H.ImpactPoint.Z-Base.GetLocation().Z,-40.f);
+  }
  }
  for(int32 I=0;I<2;++I)WheelGround[I]=bSnapGround||Want[I]>WheelGround[I]?Want[I]:FMath::FInterpTo(WheelGround[I],Want[I],Dt,20.f);
  bSnapGround=false;

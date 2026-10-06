@@ -187,12 +187,13 @@ def check(rows, sites):
                f"deepest sink lasting 3 frames {lasting:.1f} cm (t={rolling[held]['t']}), deepest single frame {worst:.1f} cm")
     slope = rows_of(rows, 'slope')
     if slope:
-        # On the ramp (pitched within 1 degree of its 12.5): both wheels on its face. Off its top the front wheel rightly
-        # hangs over the drop, so those rows are not counted.
+        # On the ramp (pitched within 1 degree of its 12.5): the rear wheel on its face and the front on it or, off its
+        # top, hanging over the drop (never in the ramp).
         up = [r for r in slope if r['state'] == '2' and r.get('air') == '0' and num(r, 'groundpitch') > 11.5][3:]   # settled onto it
-        on = [max(abs(g) for g in gaps(r)) for r in up]
-        record('ramp_pitch', len(up) > 20 and max(on) < 3., f"{len(up)} rows pitched up the ramp, top {max((num(r, 'groundpitch') for r in slope), default=0):.1f} deg, "
-               f"wheels within {max(on, default=0):.1f} cm of it")
+        rear = max((abs(gaps(r)[1]) for r in up), default=99.)
+        front = min((gaps(r)[0] for r in up), default=-99.)
+        record('ramp_pitch', len(up) > 20 and rear < 3. and front > -3., f"{len(up)} rows pitched up the ramp, top {max((num(r, 'groundpitch') for r in slope), default=0):.1f} deg, "
+               f"rear wheel within {rear:.1f} cm of its face, front never below it ({front:.1f} cm)")
     else:
         record('ramp_pitch', False, 'no slope segment')
     return results
