@@ -418,10 +418,9 @@ function renderHeader() {
   let text;
   if(failed){dot.classList.add("error");text="Reconnecting…";}
   else if(!state){text="Connecting…";}
-  else if(agent){dot.classList.add(statusOf(agent));text=agentStatus(agent)+(agent.pending?` · ${agent.pending} queued`:"");}
+  else if(agent){dot.classList.add(statusOf(agent));text=agentStatus(agent)+(agent.pending?` · ${agent.pending} queued`:"")+(agent.task?` · ${agent.task}`:"");}
   else {dot.classList.add(listening?"live":"idle");text=`${listening} of ${live.length} agents listening`;}
   subtitle.replaceChildren(dot,node("span","",text));
-  $("chatTask").textContent=agent?.task||"";$("chatTask").hidden=!agent?.task;
 }
 
 /* Removing an agent: swipe its row left in Agents, then confirm on an action sheet. */
@@ -477,7 +476,7 @@ async function removeAgent(name) {
 
 /* Feed: oldest at the top, newest by the composer, like a chat. */
 function feedNearBottom() { const f=$("feed"); return f.scrollHeight-f.scrollTop-f.clientHeight<96; }
-function scrollToLatest(smooth=false) { $("app").classList.remove("reading"); const f=$("feed"); f.scrollTo({top:f.scrollHeight,behavior:smooth?"smooth":"auto"}); stickToBottom=true; markSeen(); }
+function scrollToLatest(smooth=false) { $("app").classList.remove("reading","hide-top"); const f=$("feed"); f.scrollTo({top:f.scrollHeight,behavior:smooth?"smooth":"auto"}); stickToBottom=true; markSeen(); }
 function markSeen() {
   if($("app").dataset.view!=="messages"&&!desktop.matches)return;
   if(feedNearBottom()||stickToBottom){lastSeenId=Math.max(lastSeenId,newestShown);$("jumpLatest").hidden=true;updateBadges();}
@@ -489,13 +488,17 @@ function updateBadges(unread=0) {
 }
 // Our own re-renders and filter switches move the scroll position too; those are not the reader scrolling, so they
 // must not unpin the feed or pull in older history (which used to leave a new conversation stuck at its top).
-let settleUntil=0;
+let settleUntil=0, lastScrollTop=0, scrollTravel=0;
 function settle(ms=500) { settleUntil=performance.now()+ms; }
 $("feed").addEventListener("scroll",()=>{
   if(performance.now()<settleUntil){if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;return;}
   stickToBottom=feedNearBottom();
   const f=$("feed"), gap=f.scrollHeight-f.scrollTop-f.clientHeight, app=$("app");
   if(gap>320)app.classList.add("reading");else if(gap<60)app.classList.remove("reading");
+  // The top bar slides away while you scroll back through history and returns as you scroll down, like Safari's.
+  const delta=f.scrollTop-lastScrollTop;lastScrollTop=f.scrollTop;
+  scrollTravel=Math.sign(delta)===Math.sign(scrollTravel)?scrollTravel+delta:delta;
+  if(gap<60||scrollTravel>36)app.classList.remove("hide-top");else if(scrollTravel<-36&&gap>160)app.classList.add("hide-top");
   if(stickToBottom)markSeen();else $("jumpLatest").hidden=false;
   if($("feed").scrollTop<120&&!historyComplete&&records.size&&!loading)loadOlder();
 },{passive:true});
@@ -505,6 +508,8 @@ const pin=new ResizeObserver(()=>{$("app").style.setProperty("--dock-h",`${$("br
 pin.observe($("feed"));pin.observe($("broadcastForm"));pin.observe($("messages"));
 // The floating agent row's height is the feed's fixed top inset (0 where the row is not shown, e.g. wide screens).
 new ResizeObserver(()=>$("app").style.setProperty("--orbs-h",`${$("agentChips").offsetHeight}px`)).observe($("agentChips"));
+// On a phone the top bar floats over the feed (it hides on scroll), so the feed keeps an inset of its height.
+new ResizeObserver(()=>$("app").style.setProperty("--top-h",`${desktop.matches?0:$("topbar").offsetHeight}px`)).observe($("topbar"));
 function loadOlder() { if(loading||!records.size)return; prepending=true; load(false,Math.min(...records.keys())); }
 $("loadOlder").addEventListener("click",loadOlder);
 function groupsFrom(messages) {
@@ -841,12 +846,12 @@ async function openThread(id, focus=false) {
 function closeThread() {
   if(!thread)return;
   const saved=thread.savedRecipient;thread=null;navForget("thread");
-  $("threadView").hidden=true;$("app").classList.remove("in-thread");$("replyChip").hidden=true;
+  $("threadView").hidden=true;$("app").classList.remove("in-thread");
   if([...$("recipient").options].some(o=>o.value===saved&&!o.disabled)&&$("recipient").value!==saved){$("recipient").value=saved;draftChanged();}
   formState();
   stickToBottom=true;requestAnimationFrame(()=>scrollToLatest());
 }
-$("threadBack").addEventListener("click",()=>navBack());$("replyChipClose").addEventListener("click",()=>navBack());
+$("threadBack").addEventListener("click",()=>navBack());
 // Swipe back: from the left edge, or (as on iOS 26) a rightward drag anywhere that isn't on something that scrolls
 // sideways or takes text. A mostly vertical drag stays a scroll.
 let swipe=null;
@@ -919,7 +924,6 @@ function renderThread(force=false) {
   const usable=[...$("recipient").options].some(o=>o.value===target&&!o.disabled);
   if(usable&&$("recipient").value!==target&&!current.recipientSet){$("recipient").value=target;draftChanged();}
   current.recipientSet=true;current.replyTo=m.id;
-  $("replyChip").hidden=false;$("replyChipText").textContent=`Replying in thread · ${m.sender===state.sender?"your message":m.sender}`;
   formState();
 }
 $("threadFeed").addEventListener("scroll",()=>{if(thread){const f=$("threadFeed");thread.stick=f.scrollHeight-f.scrollTop-f.clientHeight<96;}},{passive:true});

@@ -34,12 +34,12 @@
       <header class="topbar" id="topbar">
         <div class="titlerow">
           <button type="button" class="back-button" id="backButton" aria-label="Back to everyone" hidden><span data-icon="back"></span></button>
-          <div class="title-text"><h1 id="chatTitle">Everyone</h1><p id="chatSubtitle"><span class="dot"></span><span>Connecting</span></p><p class="chat-task" id="chatTask" hidden></p></div>
+          <div class="title-text"><h1 id="chatTitle">Everyone</h1><p id="chatSubtitle"><span class="dot"></span><span>Connecting</span></p></div>
+          <div class="mode-switch" id="modeSwitch" role="group" aria-label="Conversation" hidden>
+            <button type="button" data-mode="dm" aria-pressed="true">Direct</button>
+            <button type="button" data-mode="all" aria-pressed="false">All</button>
+          </div>
           <button type="button" class="round-button" id="searchToggle" aria-label="Search and filter" aria-expanded="false" aria-controls="searchBar"><span data-icon="search"></span></button>
-        </div>
-        <div class="mode-switch" id="modeSwitch" role="group" aria-label="Conversation" hidden>
-          <button type="button" data-mode="dm" aria-pressed="true">Direct</button>
-          <button type="button" data-mode="all" aria-pressed="false">All activity</button>
         </div>
         <div class="searchbar" id="searchBar" hidden>
           <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Search messages" aria-label="Search message history" autocomplete="off" enterkeyhint="search"></label>
@@ -67,11 +67,10 @@
         <button type="button" id="jumpLatest" class="jump-latest" hidden><span id="jumpLabel">Latest</span><span data-icon="down"></span></button>
         <div class="mention-menu glass" id="mentionMenu" role="listbox" aria-label="Mention an agent" hidden></div>
         <form id="broadcastForm" class="composer glass" autocomplete="off">
-          <div class="reply-chip" id="replyChip" hidden><span data-icon="reply"></span><span id="replyChipText">Replying in thread</span><button type="button" id="replyChipClose" aria-label="Stop replying in thread"><span data-icon="close"></span></button></div>
           <div id="messagePreview" class="composer-preview markdown" hidden></div>
           <p id="composerStatus" class="composer-status" role="status" aria-live="polite"></p>
           <div class="composer-options">
-            <label class="select-pill"><span class="pill-label">To</span><span class="pill-value" aria-hidden="true"></span><select id="recipient" aria-label="Send to"><option value="*">Everyone</option></select><span data-icon="chevron"></span></label>
+            <label class="select-pill recipient-pill"><span class="pill-label">To</span><span class="pill-value" aria-hidden="true"></span><select id="recipient" aria-label="Send to"><option value="*">Everyone</option></select><span data-icon="chevron"></span></label>
             <label class="select-pill"><span class="pill-value" aria-hidden="true"></span><select id="broadcastTopic" aria-label="Topic"><option value="request">Request</option><option value="info">Info</option><option value="alert">Alert</option><option value="handoff">Handoff</option></select><span data-icon="chevron"></span></label>
             <button type="button" id="previewButton" class="text-button" aria-expanded="false" aria-controls="messagePreview">Preview</button>
             <span id="characterCount" class="character-count"></span>
