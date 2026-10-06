@@ -148,8 +148,10 @@ uv run python games/yorimichi/tools/mix_race_film.py build/yorimichi/racefilm/st
 bearing from the camera. It writes `race.mp4` and `race-720p.mp4`.
 
 The encode takes no render lock, but it is CPU-heavy. It runs at nice 10, with two threads each for decoding,
-filtering and encoding. It prints its progress every ten seconds and ends an encode that stalls for five minutes.
-Even so, list it under Waiting on the render board and run it only when no graded game is loading or running.
+filtering and encoding. A memory guard watches each ffmpeg and kills it above 4 GiB (the small render slot's
+ceiling), and a stop of the script (SIGTERM) ends its ffmpeg too. It prints its progress and footprint every ten
+seconds and ends an encode that stalls for five minutes. Even so, list it under Waiting on the render board and run
+it only when no graded game is loading or running.
 
 ## Known limits
 

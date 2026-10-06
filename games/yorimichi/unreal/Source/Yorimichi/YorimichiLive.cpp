@@ -22,6 +22,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/CollisionProfile.h"
 #include "Components/StaticMeshComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/FileHelper.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
@@ -184,9 +185,9 @@ FString UYorimichiLive::BikeState()
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UBikeComponent* B = P ? P->GetBike() : nullptr;
     if (!B) return TEXT("no bike");
-    const FVector A = P->GetActorLocation(); const FTransform T = B->GetBikeTransform(); const FRotator R = T.Rotator();
-    return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f steer=%.2f parked=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
-        int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->GetSteering(), B->IsParked() ? 1 : 0, *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
+    const FVector A = P->GetActorLocation(); const FTransform T = B->GetBikeTransform(); const FRotator R = T.Rotator(); const FVector2D Gaps = B->GetWheelGaps();
+    return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f sprint=%d steer=%.2f parked=%d air=%d gaps=(%.1f,%.1f) groundpitch=%.1f hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
+        int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->IsSprinting() ? 1 : 0, B->GetSteering(), B->IsParked() ? 1 : 0, P->GetCharacterMovement()->IsMovingOnGround() ? 0 : 1, Gaps.X, Gaps.Y, B->GetGroundPitch(), *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
         A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
 }
 FString UYorimichiLive::HorseState()
@@ -200,19 +201,36 @@ FString UYorimichiLive::HorseState()
         *H->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw, F ? 1 : 0, At.X, At.Y, At.Z, R.Pitch, R.Yaw, P->IsHidden() ? 1 : 0, H->IsComponentTickEnabled() ? 1 : 0,
         P->GetCharacterMovement()->PrimaryComponentTick.GetPrerequisites().ContainsByPredicate([H](const FTickPrerequisite& T) { return T.PrerequisiteObject.Get() == H; }) ? 1 : 0);
 }
-bool UYorimichiLive::TestWall(FVector Ground, float Yaw, FVector Size)
+// A plain blocking box for tests (the engine cube is 100 cm, centred), tagged so ClearTests removes it.
+static bool SpawnTestBox(const FVector& Centre, const FRotator& Rotation, const FVector& Size)
 {
     UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
     UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
     if (!World || !Cube) return false;
     FActorSpawnParameters Params; Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    AStaticMeshActor* Wall = World->SpawnActor<AStaticMeshActor>(Ground + FVector(0, 0, Size.Z * .5f), FRotator(0, Yaw, 0), Params);
-    if (!Wall) return false;
-    Wall->SetMobility(EComponentMobility::Movable);
-    Wall->GetStaticMeshComponent()->SetStaticMesh(Cube);   // the engine cube is 100 cm, centred
-    Wall->GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
-    Wall->SetActorScale3D(Size / 100.f);
+    AStaticMeshActor* Box = World->SpawnActor<AStaticMeshActor>(Centre, Rotation, Params);
+    if (!Box) return false;
+    Box->SetMobility(EComponentMobility::Movable);
+    Box->GetStaticMeshComponent()->SetStaticMesh(Cube);
+    Box->GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+    Box->SetActorScale3D(Size / 100.f);
+    Box->Tags.Add(TEXT("LiveTest"));
     return true;
+}
+bool UYorimichiLive::TestWall(FVector Ground, float Yaw, FVector Size) { return SpawnTestBox(Ground + FVector(0, 0, Size.Z * .5f), FRotator(0, Yaw, 0), Size); }
+bool UYorimichiLive::TestRamp(FVector Start, float Yaw, float Length, float Rise, float Width)
+{
+    // Its top face rises from Start (on the ground) over Length cm to Rise cm, then drops; the rest of the box is under it.
+    const FRotator Rotation(FMath::RadiansToDegrees(FMath::Atan2(Rise, Length)), Yaw, 0);
+    const float Slope = FMath::Sqrt(Length * Length + Rise * Rise), Thick = Rise + 100.f;
+    return SpawnTestBox(Start + Rotation.Vector() * Slope * .5f - Rotation.RotateVector(FVector(0, 0, Thick * .5f)), Rotation, FVector(Slope, Width, Thick));
+}
+int32 UYorimichiLive::ClearTests()
+{
+    int32 Count = 0;
+    if (UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr)
+        for (TActorIterator<AStaticMeshActor> It(World); It; ++It) if (It->Tags.Contains(TEXT("LiveTest"))) { It->Destroy(); ++Count; }
+    return Count;
 }
 static bool GFilmHud = false;
 void UYorimichiLive::FilmHud(bool bOn) { GFilmHud = bOn; }
@@ -240,6 +258,11 @@ int32 UYorimichiLive::AudioLog(const FString& Command, const FString& Path)
 }
 void UYorimichiLive::AudioFrame(int32 Frame) { FAtelierAudioLog::Frame = Frame; }
 FString UYorimichiLive::SkateLoops() { USkateComponent* S = PlayerSkate(); return S ? S->GetLoopState() : FString(); }
+FString UYorimichiLive::BikeLoops()
+{
+    const AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UBikeComponent* B = P ? P->GetBike() : nullptr;
+    return B ? B->GetLoopState() : FString();
+}
 bool UYorimichiLive::HoldCamera(float Seconds) { AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); if (!P) return false; P->Live_HoldCamera(Seconds); return true; }
 bool UYorimichiLive::SkatePlace(FVector GroundPoint, float Yaw) { USkateComponent* S = PlayerSkate(); return S && S->PlaceAt(GroundPoint, Yaw); }
 FTransform UYorimichiLive::SkateParkSpawn()
