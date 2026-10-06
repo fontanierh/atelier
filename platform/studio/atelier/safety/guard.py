@@ -11,7 +11,7 @@ existing child:
 
 The monitor is a sibling process, so a stalled render thread cannot defeat it, and exactly one
 monitor watches one child. Identity is pinned to the child's start time, so a reused PID is never
-signalled. Ceiling stays at the project default of 10 GiB.
+signalled. The ceiling is `limit_gib`, 10 GiB by default.
 
 An Unreal can leave SDK helpers running after it exits: a Turnkey `dotnet AutomationTool ... -command=VerifySdk`
 outlived its game and held UnrealBuildTool's mutex, so the next game waited in `SDKSetup` until it was ended. The

@@ -209,16 +209,6 @@ private:
     FVector CairoOrigin=FVector::ZeroVector;
     FVector CairoRollOrigin=FVector::ZeroVector;
     bool CairoRollInverted=false;
-    float CairoRollEntrySpeed=0.f, CairoRollMinSpeed=0.f;
-    float CairoRollEndDistance=0.f;
-    bool CairoRollWasAirborne=false;
-    int32 CairoRollGroundContacts=0;
-    float CairoRollMinEntrySpeed=0.f, CairoRollEndSpeed=0.f, CairoRollElapsed=0.f;
-    uint32 CairoRollChainSerial=0;
-    int32 CairoRollChainCount=0, CairoRollChainTucks=0;
-    float CairoRollChainSecondTime=-1.f;
-    FVector CairoAirVelocity=FVector::ZeroVector, CairoAirOrigin=FVector::ZeroVector;
-    float CairoAirLaunchTime=-1.f;
     UPROPERTY() TObjectPtr<AActor> CairoRollObstacle;
     TArray<FString> CairoErrors;
     FString CairoTelemetry=TEXT("time,action,speed,height,falling,air_jump,air_dash,pelvis_up,waist_curve\n");

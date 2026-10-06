@@ -1,6 +1,6 @@
 """Model the five reference buildings, village furniture and continuous lane.
 
-blender -b --threads 6 --python-exit-code 1 --python japan/village/build.py
+blender -b --threads 6 --python-exit-code 1 --python games/yorimichi/world/regions/village/build.py
 All visible parts share one opaque vertex-colour material. Exported meshes
 include deliberately simple UCX volumes; furniture never blocks the lane.
 """

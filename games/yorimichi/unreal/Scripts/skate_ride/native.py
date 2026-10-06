@@ -4,7 +4,7 @@ Standard library only, so the same module runs under `uv run`, in the tests and 
 Skate plugin's readers (Private/Native/AnimationSamples.cpp, AnimationMetadata.cpp, DataReader.h) word for word,
 including their validation: every float word is kept as its original bit pattern, and floats are only made from them.
 
-Native space is metres with axes left/up/forward. The Skate plugin's Unreal adapter (SkateRuntime.cpp, `FromNative`
+Native space is metres with axes left/up/forward. The Skate plugin's Unreal adapter (SkateRuntimeDetail.h, `FromNative`
 and `MatrixValue`) maps a native vector v to Unreal (v.z, -v.x, v.y) * 100: a change of handedness. A bone transform
 is conjugated by that map, so local transforms convert bone by bone and their products stay consistent:
 
@@ -556,7 +556,7 @@ def native_matrix(sample):
 
 
 def adapter_matrix(m):
-    """SkateRuntime.cpp MatrixValue: the Unreal FMatrix rows the adapter builds from a native matrix."""
+    """SkateRuntimeDetail.h MatrixValue: the Unreal FMatrix rows the adapter builds from a native matrix."""
     def axis(i):
         return [m[i][2], -m[i][0], m[i][1]]
     return [axis(2) + [0.0], [-v for v in axis(0)] + [0.0], axis(1) + [0.0], [v * 100.0 for v in axis(3)] + [1.0]]

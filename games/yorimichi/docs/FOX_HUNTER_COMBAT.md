@@ -165,7 +165,7 @@ All under `games/yorimichi/`.
 | --- | --- |
 | State machine, strikes, hit reactions, death and return | `unreal/Source/Yorimichi/FoxHunter.h/.cpp` |
 | Animation graph | `unreal/Source/Yorimichi/FoxHunterAnimInstance.h/.cpp` |
-| Fox QA run | `unreal/Source/Yorimichi/FoxHunterReview.cpp` |
+| Fox QA run | `unreal/Source/Yorimichi/Dev/FoxHunterReview.cpp` |
 | Player side: `IncomingStrike`, health, soft lock | `unreal/Source/Yorimichi/WandererSword.h/.cpp` |
 | Spawning | `unreal/Source/Yorimichi/JapanGameMode.cpp` |
 | Health bar and fox line | `unreal/Source/Yorimichi/JapanHUD.cpp` |

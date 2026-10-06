@@ -5,10 +5,10 @@ The Atelier Skate plugin (module `AtelierSkate`) puts an Unreal character on a s
 contacts and constraints, steering and pushes, Flick-It gestures, manuals and powerslides, grinds, pumping, airs,
 landings and bails, with the recovered animation graphs, trick scoring and skating camera. The game supplies nearby
 static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
-`Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two and retargets the solved rider onto the game's
-character. Under the Ride backend the character's body is an active ragdoll that takes over in bails and plays the
-transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's systems, the data
-bundle and how both are verified.
+`Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two, and `SkateRetarget.cpp` retargets the solved rider
+onto the game's character. Under the Ride backend the character's body is an active ragdoll that takes over in bails
+and plays the transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's
+systems, the data bundle and how both are verified.
 
 ## Adding it to a game
 
@@ -227,7 +227,7 @@ output from a previous ride never moves a new one.
 - **Lockstep.** By default the game thread sends the next step only once the last one's pose is back, so a slow step
   runs later and merges two frames' time. Under a fixed time step or frame rate (`skate.Lockstep` -1, the default), or
   with `skate.Lockstep 1`, each frame waits up to 2 s for the last step and a collision rebuild installs on the frame
-  after it starts, so the same controls ride the same way: `scenarios/ride_session.py` replays a recorded session to
+  after it starts, so the same controls ride the same way: the game's `scenarios/ride_session.py` replays a recorded session to
   the bit. The state string then shows the controls sent (`pad=`) and the collision snapshots sent (`world=`).
 - **Retargeting.** The solved skeleton is mapped onto the host's `root`, `pelvis`, `spine`, `spine_mid`, `chest`,
   `neck`, `head`, clavicles, arms, hands, thighs, shins, feet and toes (`_L` / `_R`). The pose is scaled by the

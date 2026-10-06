@@ -201,7 +201,7 @@ def test_metadata(bundle):
 
 
 def test_unreal_conversion_matches_adapter(bundle):
-    """Converting a sample bone by bone equals SkateRuntime.cpp's MatrixValue of the native matrix, and products of
+    """Converting a sample bone by bone equals SkateRuntimeDetail.h's MatrixValue of the native matrix, and products of
     converted locals equal the converted product (the map is a conjugation)."""
     clip = bundle.clip(0, 'PRO_DILL_MANUAL_NOSEIDLE_N_0_CYC')
     for frame in (0, 40, 142):

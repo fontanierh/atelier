@@ -1,6 +1,6 @@
 """Build distant foliage from the same seeded shapes, UVs and palette as LOD0.
 
-blender -b --python-exit-code 1 --python japan/build_foliage_lods.py
+blender -b --python-exit-code 1 --python games/yorimichi/world/build_foliage_lods.py
 Only new LOD files are exported; the detailed meshes and placements are untouched.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent)); import yori  # noqa: E402,F401

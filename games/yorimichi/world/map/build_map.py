@@ -155,7 +155,7 @@ oa = np.zeros((MH, MW, 4), np.uint8); oa[cont == 1] = (60, 50, 30, 55); oa[cont 
 ov = Image.fromarray(oa, 'RGBA'); img.paste(ov, (0, 0), ov)
 d = ImageDraw.Draw(img, 'RGBA')
 
-LINES = []   # every polyline drawn, kept for the alignment check of the painted sheet (tools/paint_map.py)
+LINES = []   # every polyline drawn, kept for the alignment check of the painted sheet (world/map/repaint_island.py)
 def line(pts, fill, width):
     if len(pts) > 1:
         d.line([wp(p[0], p[1]) for p in pts], fill=fill, width=max(1, int(round(width * PX))), joint='curve')

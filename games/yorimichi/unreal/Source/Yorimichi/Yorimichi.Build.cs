@@ -5,6 +5,8 @@ public class Yorimichi : ModuleRules
     public Yorimichi(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        // Dev/ holds the opt-in review, benchmark and film code; it includes the game headers beside this file.
+        PrivateIncludePaths.Add(ModuleDirectory);
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AtelierCore", "AtelierAnimation", "AtelierLive", "AtelierFX", "AtelierSkate", "AtelierStream", "EnhancedInput", "AnimGraphRuntime", "Json", "AssetRegistry", "RenderCore", "Slate", "SlateCore", "ProceduralMeshComponent", "HTTPServer", "GLTFCore", "MeshDescription", "StaticMeshDescription" });
         // The live bridge runs agent Python in uncooked (editor-binary) sessions only.
         if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("PythonScriptPlugin");
