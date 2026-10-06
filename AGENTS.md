@@ -90,10 +90,12 @@ uv run pytest                            # studio and game Python tests
   is receipt plus a next step/ETA, not completion. Keep each conversation in one thread: reply to a request,
   question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
   evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. To tell every agent,
-  post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone. Once
-  registered, set a one-line summary of your assignment with `atelier board task --agent NAME "..."` and update it when the
-  assignment changes; the board shows it beside your name. Keep board messages short enough to read without
-  expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
+  post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone.
+- Keep your board status line current; it is how the operator sees the team. Once registered, set it with
+  `atelier board task --agent NAME "..."` (one line, at most 160 characters). Update it **every time you get a new
+  task**, before starting the work, and again when you finish (say you are idle or what you wait for) or become
+  blocked. The board shows it beside your name.
+- Keep board messages short enough to read without expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
   Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. `--notify-operator`
   also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or
   for something urgent that needs them now (a decision blocking you, a broken release, a safety issue). Never for
