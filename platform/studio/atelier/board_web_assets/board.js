@@ -364,6 +364,8 @@ $("jumpLatest").addEventListener("click",()=>scrollToLatest(true));
 // Opening search, a growing draft or the keyboard shrinks the feed: stay pinned to the latest message.
 const pin=new ResizeObserver(()=>{$("app").style.setProperty("--dock-h",`${$("broadcastForm").offsetHeight}px`);if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;if(thread?.stick)$("threadFeed").scrollTop=$("threadFeed").scrollHeight;});
 pin.observe($("feed"));pin.observe($("broadcastForm"));pin.observe($("messages"));
+// The floating agent row's height is the feed's fixed top inset (0 where the row is not shown, e.g. wide screens).
+new ResizeObserver(()=>$("app").style.setProperty("--orbs-h",`${$("agentChips").offsetHeight}px`)).observe($("agentChips"));
 function loadOlder() { if(loading||!records.size)return; prepending=true; load(false,Math.min(...records.keys())); }
 $("loadOlder").addEventListener("click",loadOlder);
 function groupsFrom(messages) {
