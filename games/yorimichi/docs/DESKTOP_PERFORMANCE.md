@@ -32,7 +32,7 @@ writes `renderer=0` or `renderer=1` to that file and quits normally. The launche
 verifies the request matches a changed saved choice, consumes it and starts a new guarded
 process with it. Direct editor launches save the choice for the next launch instead of promising an automatic restart.
 On restart the saved menu renderer wins over an earlier `--set renderer=...` or `--baseline` comparison override.
-Tree changes apply in the current game; subsequent launches honor the saved choice.
+Tree changes apply in the current game; subsequent launches honor the saved choice. A renderer restart also waits up to 90 seconds for the old loopback bridge port to become bindable, with progress notes and no render slot held. It fails clearly if the port stays occupied; it does not enable socket sharing or disturb another listener.
 
 | Flag | Effect |
 |---|---|
