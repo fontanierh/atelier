@@ -9,7 +9,6 @@ import uuid
 from pathlib import Path
 
 from . import paths
-from .board import background, notify_command, subscribe
 from .board_store import (
     NOTIFY_PER_HOUR, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TOPICS, agent_name, database, folds, messages,
     notify_allowed, post, send_web, set_task, thread_rows,
@@ -85,6 +84,8 @@ def watch_options(parser):
 
 
 def main(args):
+    # The listener imports this module for its re-exports, so it is imported here, at call time.
+    from .board import background, notify_command, subscribe
     try:
         if getattr(args, 'agent', None):
             agent_name(args.agent)
