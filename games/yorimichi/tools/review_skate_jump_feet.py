@@ -90,7 +90,7 @@ C = P.get_components_by_class(unreal.CameraComponent)[0]
 if getattr(live, 'CAMHOME', None) is None:
     live.CAMHOME = (C.get_attach_parent(), C.get_attach_socket_name(), C.get_relative_transform(), C.get_editor_property('field_of_view'))
 T = D.get_world_transform(); at = T.translation; v = P.get_velocity(); v.z = 0
-f = v.normal() if v.length() > 10 else T.rotation.get_forward_vector()
+f = v.normal() if v.length() > 10 else D.get_forward_vector()
 loc = at + unreal.Vector(-f.y, f.x, 0) * 95 + unreal.Vector(0, 0, 14)
 C.detach_from_component(unreal.DetachmentRule.KEEP_WORLD, unreal.DetachmentRule.KEEP_WORLD, unreal.DetachmentRule.KEEP_WORLD)
 C.set_world_location_and_rotation(loc, unreal.MathLibrary.find_look_at_rotation(loc, at + unreal.Vector(0, 0, 8)), False, True)
@@ -213,8 +213,11 @@ def stand():
     Also each foot's toe drop (ankle minus toe height, cm), to set against the animation's, and the ground normal the
     foot contact node samples under each ankle (its trace, from 45 cm over the capsule's bottom), as degrees from up."""
     to_start()
+    # Its own capsule: to_start's camera-home view leaves the bridge's C bound to the camera.
     measured = run(r'''
 import json, math
+W = unreal.LiveLibrary.game_world(); P = unreal.LiveLibrary.player()
+C = P.get_component_by_class(unreal.CapsuleComponent); half = C.get_scaled_capsule_half_height()
 M = P.get_editor_property('mesh')
 def floor(p):
     h = unreal.SystemLibrary.line_trace_single(W, p + unreal.Vector(0, 0, 60), p - unreal.Vector(0, 0, 60), unreal.TraceTypeQuery.ECC_VISIBILITY, True, [P], unreal.DrawDebugTrace.NONE, True)

@@ -11,6 +11,14 @@ from mega.layout import profiles,rollout,ORIGIN,WIDTH
 from village.layout import upper_surface
 OUT=yori.OUT/'mega'
 
+def behind(profile,p,clear=.15):
+    """p, moved back along the ride's normal until it is at least `clear` behind the ply: a brace ending under the vert's
+    near-vertical face would otherwise poke its beam through it."""
+    a=np.array(profile);p=np.array(p,float);seg=a[1:]-a[:-1];L=np.linalg.norm(seg,axis=1)
+    s=np.clip(((p-a[:-1])*seg).sum(1)/L**2,0,1);foot=a[:-1]+s[:,None]*seg;k=np.linalg.norm(p-foot,axis=1).argmin()
+    n=np.array([-seg[k,1],seg[k,0]])/L[k];depth=float((p-foot[k])@n)   # >0 on the riding side
+    return tuple(p-(depth+clear)*n) if depth>-clear else tuple(p)
+
 def main():
     OUT.mkdir(parents=True,exist_ok=True);(OUT/'assets').mkdir(exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -47,6 +55,7 @@ def main():
                 m.box((x,y,-.04),(.60,.60,.25),(.23,.22,.17),.025)
             nx=min(x+2.8,a[-1,0]);nz=float(np.interp(nx,a[:,0],a[:,1]))-.3
             if min(z,nz)>.7:
+                nx,nz=behind(a,(nx,nz))
                 for y in [-3.75,3.75]:
                     m.beam((x,y,.18),(nx,y,nz),.12,.13,wood)
         for y in [-4.035,4.035]:
