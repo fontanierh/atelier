@@ -208,6 +208,8 @@ Higher values retain detailed leaves farther away and can increase GPU cost; sma
 to lighter outlines earlier. The control is disabled while optimization is off or a comparison LOD
 is forced. The chosen mode/distance persist with the other graphics preferences; failed saves roll
 back the live tree state as well as the setting. Forward lighting remains the normal default.
+If restoring the previous tree state also fails, the menu reports that failure and asks for a
+restart instead of claiming the previous trees were kept.
 
 For an owned scripted comparison, use saved preferences `tree_optimization`, `tree_lod_mode`
 (0 Automatic, 1 Full detail, 2 Intermediate, 3 Distant) and `tree_lod_distance`. Inspect actual
@@ -215,3 +217,8 @@ rendered LOD counts with `foliage.LogFoliageFrame` and retain the game log, clos
 actual viewport, frame timings and memory guard evidence. Do not infer selected LOD from the asset
 name alone. Global foliage diagnostic force/minimum settings can override normal selection and
 must be reported when diagnosing unexpected permanent low detail.
+
+The swap validation reads LOD0 positions/normals from both the original and experimental meshes.
+Editor `-game` runs retain that CPU data; a cooked build must retain CPU access on all three
+original city trees and their variants or the swap will safely refuse. The forced-mode mapping
+uses non-Nanite HISM rendering; Nanite variants are refused because they ignore that selection.
