@@ -270,14 +270,18 @@ try:
         if p.poll() is not None: raise RuntimeError('Game exited ' + str(p.returncode))
         if time.monotonic()-last_notice >= 20:
             print('Waiting for owned bridge; game log bytes', (out/'game.log').stat().st_size, flush=True); last_notice=time.monotonic()
-        try: live.request('/state', timeout=1); break
+        # The bridge answers on the game thread. A cold shader/asset hitch can exceed one second;
+        # allow a bounded request to finish instead of accumulating abandoned requests during startup.
+        try: live.request('/state', timeout=min(10, max(.1, deadline - time.monotonic()))); break
         except OSError: time.sleep(1)
     else: raise RuntimeError('Bridge startup timed out')
     run('import os,unreal; assert os.getpid() == '+str(p.pid)+'; assert os.path.realpath(unreal.Paths.project_dir()) == '+repr(str(ctx.uproject.parent.resolve())))
     owns_bridge = True
     steady, start = None, time.monotonic(); last_notice = 0.
     while time.monotonic() - start < 240:
-        fps = live.request('/state').get('fps', 0)
+        try: fps = live.request('/state', timeout=min(10, max(.1, 240 - (time.monotonic() - start)))).get('fps', 0)
+        except OSError:
+            fps = 0
         if time.monotonic()-last_notice >= 20:
             print(f'Owned game settling: observed {fps:.1f} FPS, elapsed {time.monotonic()-start:.0f}s; waiting for three seconds >=25 FPS', flush=True); last_notice=time.monotonic()
         steady = (steady or time.monotonic()) if fps >= 25 else None
