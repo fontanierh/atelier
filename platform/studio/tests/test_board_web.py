@@ -111,6 +111,11 @@ def test_http_static_and_read_only_api(http_server):
     status, body, headers = request(http_server)
     assert status == 200 and b'Send a message' in body and b'id="recipient"' in body
     assert "script-src 'self'" in headers['Content-Security-Policy']
+    status, body, headers = request(http_server, '/manifest.webmanifest')
+    assert status == 200 and json.loads(body)['display'] == 'standalone'
+    assert headers['Content-Type'] == 'application/manifest+json'
+    status, body, headers = request(http_server, '/apple-touch-icon.png')
+    assert status == 200 and body.startswith(b'\x89PNG') and headers['Content-Type'] == 'image/png'
     status, body, _ = request(http_server, '/api/state')
     assert status == 200 and json.loads(body)['csrf'] == http_server.csrf
     assert request(http_server, '/../../agent-board.sqlite3')[0] == 404
@@ -181,3 +186,68 @@ def test_preview_and_history_share_safe_markdown_without_posts_or_cursor_changes
     board.post('two', '**Received** — review in two minutes.', recipient='one', topic='ack', reply_to=number)
     assert next(m for m in board_web.snapshot({})['messages'] if m['id'] == number)['acknowledged']
     assert request(http_server, '/api/preview', {'body': body}, {'Origin': 'https://attacker.test'})[0] == 403
+
+
+def upload(server, data, name, mime, headers=None):
+    url = f'http://127.0.0.1:{server.server_port}'
+    values = {'Origin': url, 'Content-Type': mime, 'X-Board-CSRF': server.csrf, 'X-File-Name': name}
+    values.update(headers or {})
+    try:
+        response = urlopen(Request(url+'/api/upload', data=data, headers=values), timeout=3)
+    except HTTPError as error:
+        response = error
+    with response:
+        return response.status, json.loads(response.read())
+
+
+def test_attachments_upload_send_stream_and_never_render_inline_markup(http_server):
+    clip = bytes(range(256)) * 40
+    status, video = upload(http_server, clip, 'ride%20take%202.mp4', 'video/mp4')
+    assert status == 200 and video['size'] == len(clip) and video['name'] == 'ride take 2.mp4'
+    _, page = upload(http_server, b'<script>alert(1)</script>', '../../evil.html', 'text/html')
+    assert page['name'] == 'evil.html'
+    assert upload(http_server, b'x', 'a.txt', 'text/plain', {'X-Board-CSRF': 'wrong'})[0] == 403
+
+    payload = {'body': '', 'recipient': 'two', 'request_id': str(uuid.uuid4()), 'attachments': [video['id'], page['id']]}
+    assert request(http_server, '/api/send', payload)[0] == 200
+    stored = board.messages()[0]['body']
+    # Agents reading with the CLI get absolute paths they can open.
+    assert stored.startswith(board_web.TRAILER) and str(board_web.attachments_dir() / video['id'] / 'ride take 2.mp4') in stored
+    assert request(http_server, '/api/send', dict(payload, request_id=str(uuid.uuid4()), attachments=['f'*24]))[0] == 400
+
+    _, state, _ = request(http_server, '/api/state')
+    message = json.loads(state)['messages'][0]
+    assert message['body_html'] == '' and [item['name'] for item in message['attachments']] == ['ride take 2.mp4', 'evil.html']
+
+    status, body, headers = request(http_server, message['attachments'][0]['url'], headers={'Range': 'bytes=100-199'})
+    assert status == 206 and body == clip[100:200] and headers['Content-Range'] == f'bytes 100-199/{len(clip)}'
+    assert headers['Content-Type'] == 'video/mp4' and 'sandbox' in headers['Content-Security-Policy']
+    status, body, headers = request(http_server, message['attachments'][1]['url'])
+    assert status == 200 and headers['Content-Type'] == 'application/octet-stream'
+    assert headers['Content-Disposition'].startswith('attachment')
+    assert request(http_server, '/api/attachment/../../agent-board.sqlite3')[0] == 404
+    assert request(http_server, message['attachments'][0]['url'], headers={'Host': 'board.example.ts.net'})[0] == 403
+
+
+def test_threads_collect_replies_to_replies_and_web_replies_keep_their_thread(http_server):
+    root = board.post('one', 'Can someone check the ramp?', recipient='operator', topic='request')
+    ack = board.post('two', 'On it.', recipient='one', topic='ack', reply_to=root)
+    deeper = board.post('one', 'Thanks, the left side first.', recipient='two', reply_to=ack)
+    board.post('two', 'Unrelated news.')
+    payload = {'body': 'Looks good to me.', 'recipient': 'one', 'request_id': str(uuid.uuid4()), 'reply_to': root}
+    status, response, _ = request(http_server, '/api/send', payload)
+    mine = json.loads(response)['messages'][0]
+    assert status == 200 and mine['reply_to'] == root
+    # A retry must keep the same thread, and the same request cannot move to another thread.
+    assert request(http_server, '/api/send', payload)[1] == response
+    assert request(http_server, '/api/send', dict(payload, reply_to=ack))[0] == 400
+    assert request(http_server, '/api/send', dict(payload, request_id=str(uuid.uuid4()), reply_to=99999))[0] == 400
+    assert request(http_server, '/api/send', dict(payload, request_id=str(uuid.uuid4()), reply_to='1'))[0] == 400
+
+    for member in (root, ack, deeper, mine['id']):
+        status, body, _ = request(http_server, f'/api/thread?id={member}')
+        thread = json.loads(body)
+        assert status == 200 and [row['id'] for row in thread['root']] == [root]
+        assert [row['id'] for row in thread['replies']] == [ack, deeper, mine['id']]
+    assert thread['root'][0]['acknowledged'] is False and thread['replies'][0]['body_html'] == '<p>On it.</p>\n'
+    assert request(http_server, '/api/thread?id=99999')[0] == 404

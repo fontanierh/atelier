@@ -9,10 +9,11 @@ E=unreal.EditorAssetLibrary
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 mat=E.load_asset('/Game/Japan/Materials/M_Village');assert mat
 report={}
-for name in ['Mega_Ramp','Mega_Trail']:
+for name in ['Mega_Ramp','Mega_Trim','Mega_Trail']:
  mesh=helper['import_mesh'](ROOT/'mega/assets'/f'{name}.fbx','/Game/Japan/Assets',name)
  mesh.set_material(0,mat)
- mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+ # Mega_Trim is look only (AMegaRamp gives it no collision), so it keeps no physics mesh.
+ mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX if name=='Mega_Trim' else unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
  E.save_loaded_asset(mesh)
  report[name]={'imported':True,'materials':len(mesh.static_materials)}
 mesh=helper['import_mesh'](ROOT/'terrain.fbx','/Game/Japan','Terrain')

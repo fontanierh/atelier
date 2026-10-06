@@ -4,7 +4,8 @@ A full-scale plywood mega ramp in a sunlit clearing in the woods, at the end of 
 Hamlet. The riding line runs from the roll-in tower through the takeoff, over the open gap and down the landing into
 a circular vert quarter pipe; a side ladder reaches the tower, a rollout returns to the clearing, and a walking route
 surrounds the ramp. The ramp is scenery with collision: `AMegaRamp` places `Mega_Ramp` from `world.json` `mega`, and
-there is no scripted ride on it.
+there is no scripted ride on it. The seams between the sheets and the coping are a separate `Mega_Trim` with no
+collision, so the riding surface is smooth plywood and the deck behind the vert starts on the wall's top edge.
 
 The dimensions follow [Elliot Sloan's description of Sloanyard](https://www.monsterenergy.com/en-us/skateboard/elliot-sloan-talks-sloanyard/).
 
@@ -17,7 +18,7 @@ uv run atelier build yorimichi world.mega unreal.mega
 - `world.layout` calls `mega.layout.integrate` from `gen_world.py`, after the village: it lays the trail from the
   hamlet's last lane, levels the oval clearing, clears the trees and plants in the way, and writes `world['mega']`
   (origin, width, gap, the riding profiles, rollout, ladder and trail).
-- `world.mega` ([`build.py`](build.py), Blender) builds `Mega_Ramp` and `Mega_Trail` in `build/yorimichi/mega/`
+- `world.mega` ([`build.py`](build.py), Blender) builds `Mega_Ramp`, `Mega_Trim` and `Mega_Trail` in `build/yorimichi/mega/`
   with the village kit's single vertex-colour material.
 - `unreal.mega` (`unreal/Scripts/import_mega.py`) imports them into `/Game/Japan/Assets` with `M_Village`.
 
@@ -32,6 +33,7 @@ frame-time measurements.
 | --- | --- |
 | Roll-in platform | 10.7 m |
 | Open gap | 10.4 m (`GAP`) |
+| Landing | a straight 35° from the knuckle, then a 4 m transition to the flat |
 | Vert quarter pipe | 6.1 m, an exact circular transition ending in true vertical |
 | Riding width | 8 m (`WIDTH`) |
 | Origin | (65, 242), deck base at 66.8 m (`ORIGIN`) |

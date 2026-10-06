@@ -273,11 +273,13 @@ def park_walk(m,z):
  # beside the park from a timber sleeper on the level path to a concrete sill against the road deck's edge, which runs
  # across the bridge on a slant (DECK_EDGE). It is skateable end to end: the planks stand 5 mm proud of the path, and
  # the sill ramps from the planks' height to the deck's at its edge, then tucks under the deck, so the bridge never
- # lies on the road and no edge on the way is a step.
+ # lies on the road and no edge on the way is a step. A dark subfloor 1 mm under the planks' tops fills the gaps
+ # between them, so a wheel or a pushing foot rides over a millimetre, never into a gap.
  from hidamari.layout import north_height
  (_,y),_=PARK_WALK
  (b0,_),(b1,_)=PARK_BRIDGE;top=z+.005
  for x in np.arange(b0,b1+.1,.24):m.box((float(x)+.11,y,top-.03),(.22,2.2,.06),tuple(c*R.uniform(.95,1.05) for c in PLANK),.008)
+ m.poly([(b0,y-1.1,top-.001),(b1,y-1.1,top-.001),(b1,y+1.1,top-.001),(b0,y+1.1,top-.001)],WOOD)
  m.box((b0+.15,y,z-.1),(.3,2.5,.2),WOOD,.02)
  (ex,ey,ez),slope,rise=DECK_EDGE
  edge=lambda yy:(ex+slope*(yy-ey),ez+rise*(yy-ey))
