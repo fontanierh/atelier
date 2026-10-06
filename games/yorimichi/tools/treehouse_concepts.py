@@ -16,7 +16,7 @@ _sys.path.insert(0, str(_Path(__file__).resolve().parent))
 import argparse, sys, time
 from concurrent.futures import ThreadPoolExecutor
 
-from treehouse_art import CONCEPTS as OUT, MODEL, QUALITY, SCOUT, SHEETS, keep, ledger_error, rel, sha, sheet as contact_sheet, sunburst
+from treehouse_art import CONCEPTS as OUT, MODEL, QUALITY, SCOUT, SHEETS, keep, rel, sha, sheet as contact_sheet, sunburst
 
 SIZE = '1536x1024'
 
@@ -108,7 +108,7 @@ def concepts():
 
 
 def run(slug, refs, prompt):
-    from atelier.ai.ledger import run_once
+    from atelier.ai.ledger import try_once
     (OUT/f'{slug}.prompt.txt').write_text(prompt + '\n')
     record = OUT/f'{slug}.provenance.json'; t = time.time()
 
@@ -116,13 +116,12 @@ def run(slug, refs, prompt):
         png, usage = sunburst(prompt, SIZE, [STILLS[r][0] for r in refs])
         digest, copy = keep(png, 'concepts', slug, OUT/f'{slug}.jpg')
         return dict(elapsed_seconds=round(time.time()-t, 1), usage=usage, outputs={f'{slug}.png': digest}, compact_copy=copy)
-    try:   # the record is written before the paid call; a failed or uncertain one is never sent again by itself
-        prov = run_once(record, dict(stage='treehouse-concept', concept=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
-                                     endpoint='/v1/images/edits', execution='games/yorimichi/tools/treehouse_concepts.py',
-                                     prompt_file=f'{slug}.prompt.txt', prompt_sha256=sha(prompt.encode()),
-                                     reference_files={rel(STILLS[r][0]): sha(STILLS[r][0].read_bytes()) for r in refs}), paint)
-    except Exception as e:  # noqa: BLE001 - the ledger keeps it; the batch goes on
-        return slug, ledger_error(record, e), round(time.time()-t, 1)
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    prov, error = try_once(record, dict(stage='treehouse-concept', concept=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
+                                        endpoint='/v1/images/edits', execution='games/yorimichi/tools/treehouse_concepts.py',
+                                        prompt_file=f'{slug}.prompt.txt', prompt_sha256=sha(prompt.encode()),
+                                        reference_files={rel(STILLS[r][0]): sha(STILLS[r][0].read_bytes()) for r in refs}), paint)
+    if error: return slug, error, round(time.time()-t, 1)
     return slug, None, prov['elapsed_seconds']
 
 

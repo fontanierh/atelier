@@ -15,11 +15,12 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import argparse, hashlib, json, sys
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 from pathlib import Path
 
+from atelier.ai import ledger
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import spirit_concepts as sc  # noqa: E402  (gpt_edit, prep, sha, key)
+import spirit_concepts as sc  # noqa: E402  (gpt_edit, sha, key)
 
 # ROOT (the archive) comes from _archive
 ASSET = ROOT / 'output/imagegen/yorimichi-fox-hunter-2026-09-13'
@@ -79,6 +80,13 @@ def approval_stub(stage, rev, candidates):
                 decision=None, user_message=None, recorded_at=None)
 
 
+def painted(prompt, stills, p):
+    """The paid call for one ledger record (written first, never sent again by itself): one image to p."""
+    blobs, secs = sc.gpt_edit(prompt, stills, 1)
+    p.write_bytes(blobs[0])
+    return dict(elapsed_seconds=secs, output=p.name, output_sha256=sc.sha(p), approval='pending')
+
+
 def stage_front(rev='r01'):
     out = ASSET / f'front-{rev}'
     out.mkdir(parents=True, exist_ok=True)
@@ -89,25 +97,14 @@ def stage_front(rev='r01'):
     def one(k):
         c = FRONT[k]
         (out / f'{k}.prompt.txt').write_text(c['prompt'] + '\n')
-        started = datetime.now(timezone.utc).isoformat()
-        try:
-            blobs, secs = sc.gpt_edit(c['prompt'], stills, 1)
-            err = None
-        except Exception as e:  # noqa: BLE001
-            blobs, secs, err = [], None, str(e)
-        p = out / f'{k}.png'
-        if blobs:
-            p.write_bytes(blobs[0])
-        prov = dict(asset='fox-hunter', stage='front', revision=rev, candidate=k, label=c['label'],
-                    requested_model=sc.MODEL, quality=sc.QUALITY, size=sc.SIZE, endpoint='/v1/images/edits',
-                    execution='games/yorimichi/assets/characters/tools/fox_hunter_pipeline.py front',
-                    prompt_file=f'{k}.prompt.txt', prompt_sha256=hashlib.sha256(c['prompt'].encode()).hexdigest(),
-                    reference_files={str(s.relative_to(ROOT)): sc.sha(s) for s in stills},
-                    started_at=started, finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs,
-                    output=p.name if blobs else None, output_sha256=sc.sha(p) if blobs else None, error=err,
-                    approval='pending')
-        (out / f'{k}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
-        return k, err, secs
+        prov, err = ledger.try_once(out / f'{k}.provenance.json', dict(
+            asset='fox-hunter', stage='front', revision=rev, candidate=k, label=c['label'],
+            requested_model=sc.MODEL, quality=sc.QUALITY, size=sc.SIZE, endpoint='/v1/images/edits',
+            execution='games/yorimichi/assets/characters/tools/fox_hunter_pipeline.py front',
+            prompt_file=f'{k}.prompt.txt', prompt_sha256=hashlib.sha256(c['prompt'].encode()).hexdigest(),
+            reference_files={str(s.relative_to(ROOT)): sc.sha(s) for s in stills}),
+            lambda: painted(c['prompt'], stills, out / f'{k}.png'))
+        return k, err, prov and prov['elapsed_seconds']
 
     with ThreadPoolExecutor(3) as ex:
         for k, err, secs in ex.map(one, list(FRONT)):
@@ -135,19 +132,15 @@ def stage_front_edit(rev='r02', src_rev='r01', src_choice='C'):
     sc.SIZE = '1024x1024'
     src = ASSET / f'front-{src_rev}' / f'{src_choice}.png'
     (out / 'C.prompt.txt').write_text(FEET_EDIT + '\n')
-    started = datetime.now(timezone.utc).isoformat()
-    blobs, secs = sc.gpt_edit(FEET_EDIT, [src], 1)
-    p = out / 'C.png'
-    p.write_bytes(blobs[0])
-    prov = dict(asset='fox-hunter', stage='front', revision=rev, candidate='C', label='T-pose, short cape, flat sandals',
-                parent=str(src.relative_to(ROOT)), parent_sha256=sc.sha(src), reason='user: remove the stand (platform sandals)',
-                requested_model=sc.MODEL, quality=sc.QUALITY, size=sc.SIZE, endpoint='/v1/images/edits',
-                execution='games/yorimichi/assets/characters/tools/fox_hunter_pipeline.py front --rev r02 --edit',
-                prompt_file='C.prompt.txt', prompt_sha256=hashlib.sha256(FEET_EDIT.encode()).hexdigest(),
-                reference_files={str(src.relative_to(ROOT)): sc.sha(src)},
-                started_at=started, finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs,
-                output='C.png', output_sha256=sc.sha(p), error=None, approval='pending')
-    (out / 'C.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
+    prov = ledger.run_once(out / 'C.provenance.json', dict(
+        asset='fox-hunter', stage='front', revision=rev, candidate='C', label='T-pose, short cape, flat sandals',
+        parent=str(src.relative_to(ROOT)), parent_sha256=sc.sha(src), reason='user: remove the stand (platform sandals)',
+        requested_model=sc.MODEL, quality=sc.QUALITY, size=sc.SIZE, endpoint='/v1/images/edits',
+        execution='games/yorimichi/assets/characters/tools/fox_hunter_pipeline.py front --rev r02 --edit',
+        prompt_file='C.prompt.txt', prompt_sha256=hashlib.sha256(FEET_EDIT.encode()).hexdigest(),
+        reference_files={str(src.relative_to(ROOT)): sc.sha(src)}),
+        lambda: painted(FEET_EDIT, [src], out / 'C.png'))
+    secs = prov['elapsed_seconds']
     ap = out / 'approval.json'
     if not ap.exists():
         ap.write_text(json.dumps(approval_stub('front', rev, {'C': prov['label']}), indent=2) + '\n')
@@ -200,25 +193,14 @@ def stage_views(rev='r01', front_rev='r01', front_choice='C'):
     def one(v):
         prompt = VIEW_COMMON + VIEWS[v] + VIEW_TAIL
         (out / f'{v}.prompt.txt').write_text(prompt + '\n')
-        started = datetime.now(timezone.utc).isoformat()
-        try:
-            blobs, secs = sc.gpt_edit(prompt, [front], 1)
-            err = None
-        except Exception as e:  # noqa: BLE001
-            blobs, secs, err = [], None, str(e)
-        p = out / f'{v}.png'
-        if blobs:
-            p.write_bytes(blobs[0])
-        prov = dict(asset='fox-hunter', stage='views', revision=rev, view=v, requested_model=sc.MODEL,
-                    quality=sc.QUALITY, size=sc.SIZE, endpoint='/v1/images/edits',
-                    execution='games/yorimichi/assets/characters/tools/fox_hunter_pipeline.py views',
-                    prompt_file=f'{v}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
-                    reference_files={str(front.relative_to(ROOT)): sc.sha(front)},
-                    started_at=started, finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs,
-                    output=p.name if blobs else None, output_sha256=sc.sha(p) if blobs else None, error=err,
-                    approval='pending')
-        (out / f'{v}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
-        return v, err, secs
+        prov, err = ledger.try_once(out / f'{v}.provenance.json', dict(
+            asset='fox-hunter', stage='views', revision=rev, view=v, requested_model=sc.MODEL,
+            quality=sc.QUALITY, size=sc.SIZE, endpoint='/v1/images/edits',
+            execution='games/yorimichi/assets/characters/tools/fox_hunter_pipeline.py views',
+            prompt_file=f'{v}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
+            reference_files={str(front.relative_to(ROOT)): sc.sha(front)}),
+            lambda: painted(prompt, [front], out / f'{v}.png'))
+        return v, err, prov and prov['elapsed_seconds']
 
     with ThreadPoolExecutor(3) as ex:
         for v, err, secs in ex.map(one, list(VIEWS)):

@@ -19,8 +19,9 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import argparse, hashlib, json, sys
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 from pathlib import Path
+
+from atelier.ai import ledger
 sys.path.insert(0, str(Path(__file__).parent))
 import cairo_back_concepts as wb
 # ROOT (the archive) comes from _archive
@@ -121,40 +122,45 @@ KEY_PROMPT = (
 )
 
 
+def painted(prompt, stills, out, name):
+    """The paid call for one ledger record (written first, never sent again by itself): one image to out."""
+    blobs, raw, secs = wb.gpt_edit(prompt, stills, 1)
+    out.write_bytes(blobs[0])
+    private_reply(name, raw)
+    return dict(elapsed_seconds=secs, output_sha256=wb.sha(out))
+
+
 def run_key(view, outfit):
     key_dir = OUT.parent / 'key'; key_dir.mkdir(exist_ok=True)
     prompt = KEY_PROMPT.format(outfit=outfit)
     stills = [OUT / f'{view}.png', OUT / f'naked-{view}.png']
     (key_dir / f'key-{view}.prompt.txt').write_text(prompt + '\n')
-    started = datetime.now(timezone.utc).isoformat()
-    blobs, raw, secs = wb.gpt_edit(prompt, stills, 1)
-    out = key_dir / f'key-{view}.png'; out.write_bytes(blobs[0])
-    private_reply(f'key-{view}', raw)
-    prov = dict(stage='body-swap-body-key', view=view, requested_model=wb.MODEL, quality=wb.QUALITY, size=wb.SIZE,
-                endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py --key',
-                prompt_file=f'key-{view}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
-                reference_files={str(s.relative_to(ROOT)): wb.sha(s) for s in stills}, started_at=started,
-                finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs, output_sha256=wb.sha(out))
-    (key_dir / f'key-{view}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
-    return view, secs
+    prov = ledger.run_once(key_dir / f'key-{view}.provenance.json', dict(
+        stage='body-swap-body-key', view=view, requested_model=wb.MODEL, quality=wb.QUALITY, size=wb.SIZE,
+        endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py --key',
+        prompt_file=f'key-{view}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
+        reference_files={str(s.relative_to(ROOT)): wb.sha(s) for s in stills}),
+        lambda: painted(prompt, stills, key_dir / f'key-{view}.png', f'key-{view}'))
+    return view, prov['elapsed_seconds']
 
 
 def make_concept(spec):
     prompt = CONCEPT_PROMPT.format(concept=spec['concept'])
     (OUT.parent / 'concept.prompt.txt').write_text(prompt + '\n')
-    size = wb.SIZE; wb.SIZE = '1536x1024'
-    started = datetime.now(timezone.utc).isoformat()
-    blobs, raw, secs = wb.gpt_edit(prompt, [CONCEPT], 1)
-    wb.SIZE = size
-    out = OUT.parent / 'concept.png'; out.write_bytes(blobs[0]); private_reply('concept', raw)
-    prov = dict(stage='body-swap-outfit-concept', outfit=spec['name'], requested_model=wb.MODEL, quality=wb.QUALITY,
-                size='1536x1024', endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py --make-concept',
-                prompt_file='concept.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
-                reference_files={str(CONCEPT.relative_to(ROOT)): wb.sha(CONCEPT)}, started_at=started,
-                finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs, output_sha256=wb.sha(out),
-                approval='pending')
-    (OUT.parent / 'concept.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
-    print('concept', f'{secs}s')
+    out = OUT.parent / 'concept.png'
+
+    def paint():
+        size = wb.SIZE; wb.SIZE = '1536x1024'
+        try:
+            return dict(painted(prompt, [CONCEPT], out, 'concept'), approval='pending')
+        finally:
+            wb.SIZE = size
+    prov = ledger.run_once(OUT.parent / 'concept.provenance.json', dict(
+        stage='body-swap-outfit-concept', outfit=spec['name'], requested_model=wb.MODEL, quality=wb.QUALITY,
+        size='1536x1024', endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py --make-concept',
+        prompt_file='concept.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
+        reference_files={str(CONCEPT.relative_to(ROOT)): wb.sha(CONCEPT)}), paint)
+    print('concept', f"{prov['elapsed_seconds']}s")
     return out
 
 
@@ -162,18 +168,13 @@ def run(view):
     prompt = COMMON.format(view=view) + VIEWS[view]
     stills = [OUT / f'naked-{view}.png', CONCEPT]
     (OUT / f'{view}.prompt.txt').write_text(prompt + '\n')
-    started = datetime.now(timezone.utc).isoformat()
-    blobs, raw, secs = wb.gpt_edit(prompt, stills, 1)
-    (OUT / f'{view}.png').write_bytes(blobs[0])
-    private_reply(view, raw)
-    prov = dict(stage='body-swap-multiview-reference' + ('-headless' if 'headless' in str(OUT) else ''), view=view, requested_model=wb.MODEL, quality=wb.QUALITY,
-                size=wb.SIZE, endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py',
-                prompt_file=f'{view}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
-                reference_files={str(s.relative_to(ROOT)): wb.sha(s) for s in stills},
-                started_at=started, finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs,
-                output_sha256=wb.sha(OUT / f'{view}.png'), approval='pending')
-    (OUT / f'{view}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
-    return view, secs
+    prov = ledger.run_once(OUT / f'{view}.provenance.json', dict(
+        stage='body-swap-multiview-reference' + ('-headless' if 'headless' in str(OUT) else ''), view=view, requested_model=wb.MODEL, quality=wb.QUALITY,
+        size=wb.SIZE, endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_body_swap_sunburst.py',
+        prompt_file=f'{view}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
+        reference_files={str(s.relative_to(ROOT)): wb.sha(s) for s in stills}),
+        lambda: dict(painted(prompt, stills, OUT / f'{view}.png', view), approval='pending'))
+    return view, prov['elapsed_seconds']
 
 
 if __name__ == '__main__':

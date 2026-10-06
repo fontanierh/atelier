@@ -13,9 +13,8 @@ Reference stills are the 11 September trailer location scouts (current world loo
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
-import argparse, hashlib, json, os, sys
+import argparse, hashlib, os, sys
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 from pathlib import Path
 
 # ROOT (the archive) comes from _archive
@@ -264,26 +263,23 @@ def run(slug, n):
         raise RuntimeError(f'{slug}: missing stills {missing}')
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f'{slug}.prompt.txt').write_text(c['prompt'] + '\n')
-    started = datetime.now(timezone.utc).isoformat()
-    try:
-        blobs, secs = gpt_edit(c['prompt'], stills, n)
-        err = None
-    except Exception as e:  # noqa: BLE001
-        blobs, secs, err = [], None, str(e)
+    from atelier.ai import ledger
     outs = []
-    for i, b in enumerate(blobs):
-        p = OUT / (f'{slug}.png' if n == 1 else f'{slug}-{i + 1}.png')
-        p.write_bytes(b)
-        outs.append(p.name)
-    prov = dict(
+
+    def paint():
+        blobs, secs = gpt_edit(c['prompt'], stills, n)
+        for i, b in enumerate(blobs):
+            p = OUT / (f'{slug}.png' if n == 1 else f'{slug}-{i + 1}.png')
+            p.write_bytes(b)
+            outs.append(p.name)
+        return dict(elapsed_seconds=secs, outputs={o: sha(OUT / o) for o in outs}, approval='pending')
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    prov, err = ledger.try_once(OUT / f'{slug}.provenance.json', dict(
         stage='lore-concept', concept=slug, requested_model=MODEL, quality=QUALITY, size=SIZE, n=n,
         endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/spirit_concepts.py',
         prompt_file=f'{slug}.prompt.txt', prompt_sha256=hashlib.sha256(c['prompt'].encode()).hexdigest(),
-        reference_files={str(s.relative_to(ROOT)): sha(s) for s in stills},
-        started_at=started, finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs,
-        outputs={o: sha(OUT / o) for o in outs}, error=err, approval='pending',
-    )
-    (OUT / f'{slug}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
+        reference_files={str(s.relative_to(ROOT)): sha(s) for s in stills}), paint)
+    secs = prov['elapsed_seconds'] if prov else None
     return slug, outs, secs, err
 
 

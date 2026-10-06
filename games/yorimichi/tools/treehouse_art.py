@@ -88,14 +88,6 @@ def redact(text):
     return re.sub(r'https://\S+', '<URL omitted>', str(text))
 
 
-def ledger_error(record, error):
-    """What a batch reports for a paid call that atelier.ai.ledger did not complete: a record that was already there
-    (an earlier call, done or uncertain: set it aside to paint again), or the redacted error of this one."""
-    if isinstance(error, FileExistsError) and error.filename == str(record):
-        return f'already recorded in {rel(record)}; set it aside (with its image) to paint again'
-    return redact(error)[:600]
-
-
 def sheet(items, dest, w, h, cols):
     """A contact sheet of (image path, caption) pairs."""
     from PIL import Image, ImageDraw, ImageFont

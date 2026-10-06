@@ -23,7 +23,7 @@ _sys.path.insert(0, str(_Path(__file__).resolve().parent))
 import argparse, json, time
 from concurrent.futures import ThreadPoolExecutor
 
-from treehouse_art import MODEL, QUALITY, REFS, SHEETS, TEXTURES as RAW, keep, ledger_error, rel, sha, sunburst
+from treehouse_art import MODEL, QUALITY, REFS, SHEETS, TEXTURES as RAW, keep, rel, sha, sunburst
 
 GAME = yori.OUT/'treehouse'/'textures'
 SIZE = '1024x1024'
@@ -106,21 +106,19 @@ def paint(slug, dry):
     prompt, refs = job(slug); image = RAW/f'{slug}.jpg'
     if dry: print(f'--- {slug} {[r.name for r in refs]}{" (exists, skipped)" if image.exists() else ""}\n{prompt}\n'); return slug, None
     if image.exists(): return slug, None
-    from atelier.ai.ledger import run_once
+    from atelier.ai.ledger import try_once
     (RAW/f'{slug}.prompt.txt').write_text(prompt+'\n')
-    t = time.time(); error = None; ledger = RAW/f'{slug}.provenance.json'
+    t = time.time(); ledger = RAW/f'{slug}.provenance.json'
 
     def generate():
         png, usage = sunburst(prompt, SIZE, refs)
         digest, record = keep(png, 'textures', slug, image)
         return dict(elapsed_seconds=round(time.time()-t, 1), usage=usage, output_sha256=digest, compact_copy=record)
-    try:   # the record is written before the paid call; a failed or uncertain one is never sent again by itself
-        run_once(ledger, dict(
-            stage='treehouse-texture', slug=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
-            endpoint='/v1/images/edits' if refs else '/v1/images/generations', execution='games/yorimichi/tools/treehouse_textures.py',
-            prompt_sha256=sha(prompt.encode()), reference_files={rel(r): sha(r.read_bytes()) for r in refs}), generate)
-    except Exception as e:  # noqa: BLE001 - the ledger keeps it; the batch goes on
-        error = ledger_error(ledger, e)
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    _, error = try_once(ledger, dict(
+        stage='treehouse-texture', slug=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
+        endpoint='/v1/images/edits' if refs else '/v1/images/generations', execution='games/yorimichi/tools/treehouse_textures.py',
+        prompt_sha256=sha(prompt.encode()), reference_files={rel(r): sha(r.read_bytes()) for r in refs}), generate)
     print(slug, error or f'ok {time.time()-t:.0f}s', flush=True)
     return slug, error
 

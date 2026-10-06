@@ -21,7 +21,7 @@ _sys.path.insert(0, str(_Path(__file__).resolve().parent))
 import argparse, json, time
 from concurrent.futures import ThreadPoolExecutor
 
-from treehouse_art import (MODEL, QUALITY, ORIGINALS, REFS, SHEETS, TRIPO, compact_glb, keep, ledger_error, now, redact,
+from treehouse_art import (MODEL, QUALITY, ORIGINALS, REFS, SHEETS, TRIPO, compact_glb, keep, now, redact,
                            rel, set_aside, sha, sheet as contact_sheet, sunburst)
 
 OUT = yori.ASSETS/'treehouse'/'props'
@@ -98,26 +98,24 @@ def concept(slug, dry):
     missing = [rel(r) for r in refs if not r.exists()]
     if missing: return slug, f'missing references {missing}'
     folder.mkdir(parents=True, exist_ok=True)
-    from atelier.ai.ledger import run_once
+    from atelier.ai.ledger import try_once
     image = folder/'concept.jpg'; ledger = folder/'provenance.json'
     if image.exists():   # painting a prop again: its earlier concept and record are set aside, not overwritten
         set_aside(image)
         if (ORIGINALS/'props'/slug/'concept.png').exists(): set_aside(ORIGINALS/'props'/slug/'concept.png')
         if ledger.exists(): set_aside(ledger)
     (folder/'prompt.txt').write_text(prompt+'\n')
-    t = time.time(); error = None
+    t = time.time()
 
     def generate():
         png, usage = sunburst(prompt, SIZE, refs)
         digest, record = keep(png, 'props', f'{slug}/concept', image)
         return dict(elapsed_seconds=round(time.time()-t, 1), usage=usage, concept_sha256=digest, compact_copy=record)
-    try:   # the record is written before the paid call; a failed or uncertain one is never sent again by itself
-        run_once(ledger, dict(
-            stage='treehouse-prop-concept', slug=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
-            endpoint='/v1/images/edits', execution='games/yorimichi/tools/treehouse_props.py', prompt_sha256=sha(prompt.encode()),
-            reference_files={rel(r): sha(r.read_bytes()) for r in refs}), generate)
-    except Exception as e:  # noqa: BLE001 - the ledger keeps it; the batch goes on
-        error = ledger_error(ledger, e)
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    _, error = try_once(ledger, dict(
+        stage='treehouse-prop-concept', slug=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
+        endpoint='/v1/images/edits', execution='games/yorimichi/tools/treehouse_props.py', prompt_sha256=sha(prompt.encode()),
+        reference_files={rel(r): sha(r.read_bytes()) for r in refs}), generate)
     print(slug, error or f'ok {time.time()-t:.0f}s', flush=True)
     return slug, error
 
