@@ -1,6 +1,7 @@
 """The packaged macOS game: one guarded compile-kind turn, then a zip a GitHub release can carry."""
 import importlib.util
 import json
+import plistlib
 
 import pytest
 import os
@@ -91,6 +92,8 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
     folder = tmp_path/'Yorimichi'
     game = folder/'Yorimichi.app'/'Contents'/'MacOS'/'Yorimichi'
     game.parent.mkdir(parents=True)
+    bundle_id = 'org.atelier.PackageTest'
+    (game.parent.parent/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': bundle_id}))
     game.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > "$HOME/args.txt"\n'); game.chmod(0o755)
     launcher = folder/'Play Yorimichi.command'
     launcher.write_text(archive_tool().desktop_preview().packaged_launcher()); launcher.chmod(0o755)
@@ -100,7 +103,9 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
         subprocess.run([str(launcher)], env={'HOME': str(home), 'PATH': '/usr/bin:/bin'}, check=True)
         return (home/'args.txt').read_text().splitlines()
     args = launch()
-    settings = home/'Library'/'Application Support'/'Yorimichi'/'settings.txt'
+    container = home/'Library'/'Containers'/bundle_id/'Data'
+    settings = container/'Library'/'Application Support'/'Yorimichi'/'settings.txt'
+    assert f'-abslog={container/"Library"/"Logs"/"Yorimichi"/"game.log"}' in args
     assert '-desktopnative1440' in args and f'-preferencesfile={settings}' in args
     assert '-set=desktop=1;performance=1;render_scale=100;renderer=0' in args
     assert any('r.ForwardShading=True' in a and 'DesktopPreviewViewportClient' in a for a in args)
@@ -111,6 +116,11 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
     args = launch()
     assert '-set=desktop=1;renderer=0' in args and any('r.ForwardShading=True' in a for a in args)
     assert not any('r.ForwardShading=False' in a for a in args)
+    # A malformed bundle identity must not redirect the launcher outside the container or run the game.
+    (game.parent.parent/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': '../outside'}))
+    (home/'args.txt').unlink()
+    refused = subprocess.run([str(launcher)], env={'HOME': str(home), 'PATH': '/usr/bin:/bin'}, capture_output=True)
+    assert refused.returncode != 0 and not (home/'args.txt').exists()
 
 
 def test_content_changes_rerun_the_package_while_current_prerequisites_stay_current(tmp_path, monkeypatch):

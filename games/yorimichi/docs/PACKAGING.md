@@ -63,8 +63,17 @@ Double-clicking `Yorimichi.app` starts the game without the desktop profile. `Pl
 - the native 1440 viewport
 - the optimized city tiles and trees, and the tuned lighting
 
-It honours saved settings, except the renderer. Settings are in `~/Library/Application Support/Yorimichi/settings.txt`
-and the log is `~/Library/Logs/Yorimichi/game.log`. The package is cooked for forward shading only (the project's
+It honours saved settings, except the renderer. Xcode signs the app with App Sandbox, so the launcher reads its bundle
+identifier from `Yorimichi.app/Contents/Info.plist` and uses that container's writable directories:
+
+- settings: `~/Library/Containers/<bundle-id>/Data/Library/Application Support/Yorimichi/settings.txt`
+- log: `~/Library/Containers/<bundle-id>/Data/Library/Logs/Yorimichi/game.log`
+
+Capture and benchmark output paths must also be inside that container. An absolute path elsewhere can fail to write
+even when the app reports that its scenario completed. Check that fresh output files actually exist. Keep the signed
+app's sandbox enabled; a launcher-only correction needs a new archive, not another compile or cook.
+
+The package is cooked for forward shading only (the project's
 `r.ForwardShading`), so the launcher always starts Forward. The packaged menu says so: its Lighting row reads
 "Forward · Lumen is not in this build" and explains instead of switching, and a Lumen request from the phone is
 refused before anything is saved. Packaged Lumen would need a deferred cook and a verified switch, and neither exists.
@@ -90,3 +99,12 @@ Editor builds keep both renderers.
 
 4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
    the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.
+
+## Diagnosing a repeated compile
+
+Preserve each run's `UBA-Yorimichi-Mac-Development.txt` and changed `.rsp` files before retrying: UBT overwrites its
+logs. In one same-source retry, 12 SharedPCH response files changed and caused a 494-action rebuild. The subsequent
+`ApplePostBuildSync` Xcode generation rewrote those files again with additional UHT include paths. A response file
+newer than its `.gch` is a useful lead; recurrence needs comparison of preserved per-run files. Adding `-package`
+also introduced `-skipdeploy` and a one-time makefile regeneration, which alone does not explain recompilation.
+Do not clear caches, remove `-build` or accept stale binaries to hide the cause.

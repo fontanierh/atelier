@@ -102,13 +102,20 @@ def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, 
 LAUNCHER = """#!/bin/bash
 # Yorimichi with the desktop profile: the forward renderer, the native 1440 viewport and the optimized city tiles and
 # trees. Generated from games/yorimichi/tools/desktop_preview.py for the packaged game. Settings are kept in
-# ~/Library/Application Support/Yorimichi/settings.txt. The package is cooked for forward shading only, so it always
+# the app's macOS sandbox container. The package is cooked for forward shading only, so it always
 # starts Forward: a Lumen choice saved in the menu does not apply to the packaged game.
 set -u
 cd "$(dirname "$0")"
 GAME="$PWD/Yorimichi.app/Contents/MacOS/Yorimichi"
-SUPPORT="$HOME/Library/Application Support/Yorimichi"
-LOGS="$HOME/Library/Logs/Yorimichi"
+# Xcode signs the app with App Sandbox. Absolute paths outside its container are denied even when the launcher
+# can create them. Read the shipped bundle identity rather than hard-coding a project or machine-specific path.
+BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PWD/Yorimichi.app/Contents/Info.plist") || exit 1
+case "$BUNDLE_ID" in
+  ''|*[!A-Za-z0-9.-]*) echo "Invalid application bundle identifier" >&2; exit 1 ;;
+esac
+APP_DATA="$HOME/Library/Containers/$BUNDLE_ID/Data"
+SUPPORT="$APP_DATA/Library/Application Support/Yorimichi"
+LOGS="$APP_DATA/Library/Logs/Yorimichi"
 mkdir -p "$SUPPORT" "$LOGS"
 PREFS="$SUPPORT/settings.txt"
 touch "$PREFS"
