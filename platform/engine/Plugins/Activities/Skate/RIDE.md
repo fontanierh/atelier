@@ -58,7 +58,7 @@ Measured with `wc -l` on this tree, headers included:
 | `Private/Native/` | 769 (410 `.cpp`, 359 `.h`) | about 59,400 (43,273 + 16,088) | All of the riding, as recovered |
 | `Private/Ride/` with the solver (`479a895`) | 23 | 11,492 | The body, bails, get-up, transitions and the solver |
 | of which the solver's own files (`RideSession.*`, `RideFlick.*`, `RideManual.*`, `RideNative.cpp`, `RideSpeedModel.*`) | 9 | 3,555 | Removed; about 4,000 with its parts of `RideTuning.*`, `RideComponent.cpp` and `RideAnimator.*` (inferred) |
-| The glue (`SkateRuntime.cpp`, `SkateComponent.*`, `SkatePad.h`, `AnimNode_SkateRider.*`, `AnimNode_RideInertialization.*`, `SkateRails.*`, `SkateSettings.*`, `SkateFeel.h`, `SkateInput.h`, `SkateRider.h`, `AtelierSkateModule.cpp`) | 16 | about 4,000 | Hosting, snapshot, threading, retarget, audio, HUD |
+| The glue (`SkateRuntime.cpp`, `SkateRuntimeDetail.h`, `SkateRetarget.cpp`, `SkateComponent.*`, `SkatePad.h`, `AnimNode_SkateRider.*`, `AnimNode_RideInertialization.*`, `SkateRails.*`, `SkateSettings.*`, `SkateFeel.h`, `SkateInput.h`, `SkateRider.h`, `AtelierSkateModule.cpp`) | 18 | about 4,100 | Hosting, snapshot, threading, retarget, audio, HUD |
 
 "Ported" here means Unreal code does the job and Native's version of it does not run. By that measure the ride's
 **body** is ported: the active ragdoll, the bail ragdoll, the get-up, the transitions on and off the board, the
