@@ -17,7 +17,7 @@ from atelier import live, paths
 
 
 def py(code):
-    result = live.request('/python', "p=unreal.LiveLibrary.player(); m=p.get_editor_property('map')\n"+code, timeout=10)
+    result = live.request('/python', "p=unreal.LiveLibrary.player(); m=p.get_map()\n"+code, timeout=10)
     if not result.get('ok'):
         raise RuntimeError(result)
     return result.get('output', '')

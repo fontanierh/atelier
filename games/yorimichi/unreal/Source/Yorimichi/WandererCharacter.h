@@ -98,6 +98,7 @@ public:
     /** On the sailboat, the bike or a horse: the vehicle owns his movement, his animation and his buttons. */
     bool OnVehicle() const;
     UJapanPreferences* GetPreferences() const { return Preferences; }
+    UFUNCTION(BlueprintPure, Category = "Map")
     UJapanMap* GetMap() const { return Map; }
     /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there
      *  (the highest surface from Above cm over the position down). */
