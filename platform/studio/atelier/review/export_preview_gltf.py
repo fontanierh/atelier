@@ -4,7 +4,7 @@ JPEGs downscaled to --texture-size. For hosting on pages that serve only standar
 (JSON, scripts, images) and whose security policy may block data: fetches; the page rebuilds a GLB in
 memory (JSON chunk + BIN chunk) and hands it to GLTFLoader.parse.
 
-blender -b review.blend --python platform/studio/atelier/export_preview_gltf.py -- --output preview --name Asset --texture-size 2048
+blender -b review.blend --python platform/studio/atelier/review/export_preview_gltf.py -- --output preview --name Asset --texture-size 2048
 """
 import argparse, base64, json, sys
 from pathlib import Path
