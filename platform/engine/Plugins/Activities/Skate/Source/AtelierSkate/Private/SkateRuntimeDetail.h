@@ -22,6 +22,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Engine/SkeletalMesh.h"
 #include "PhysicsEngine/BodySetup.h"
+#include "Chaos/TriangleMeshImplicitObject.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
@@ -70,6 +71,8 @@ namespace SkateRuntimeDetail
     // frame after they start.
     extern TAutoConsoleVariable<int32> CVarSkateLockstep;
     extern TAutoConsoleVariable<int32> CVarSkateSurfaceDebug;
+    // QA: complex-as-simple meshes read their cooked collision triangles even where their render data keeps CPU copies.
+    extern TAutoConsoleVariable<int32> CVarSkateCookedSurface;
     // A successful pump under the hybrid shows as a trick: one rise of the rider on the ground that adds this much speed
     // by the player's crouch (m/s; native's own timed pumps add 2-3, mistimed ones about .3); from the next ride.
     extern TAutoConsoleVariable<float> CVarSkatePumpTrick;
@@ -226,18 +229,57 @@ namespace SkateRuntimeDetail
         return PackSurface(Surface==ESkateSurface::None ? Settings.DefaultSurface : Surface);
     }
 
-    /** The mesh's surface, copied once per mesh and kept (game thread). Null when its collision LOD has no CPU data. */
+    /** The surface from the mesh's cooked collision triangles: what Chaos itself collides with, kept in a cooked build
+     *  whether or not the render data keeps CPU copies. Cooking turns Unreal's render winding (clockwise seen from the
+     *  front) into the physics one, so (B-A)x(C-A) of a cooked triangle points out of its front: that stands in for
+     *  the authored normal. The slots are its sections'. Null when the body has none. */
+    inline TSharedPtr<FMeshSurface,ESPMode::ThreadSafe> CollisionSurface(UStaticMesh* Mesh)
+    {
+        const UBodySetup* Body=Mesh->GetBodySetup();
+        if (!Body || Body->TriMeshGeometries.IsEmpty()) return nullptr;
+        auto Surface=MakeShared<FMeshSurface,ESPMode::ThreadSafe>();
+        for (const Chaos::FTriangleMeshImplicitObjectPtr& TriMesh : Body->TriMeshGeometries)
+        {
+            if (!TriMesh) continue;
+            const auto& Particles=TriMesh->Particles();
+            const Chaos::FTrimeshIndexBuffer& Elements=TriMesh->Elements();
+            auto AddAll=[&](const auto& Triangles)
+            {
+                for (int32 T=0; T<Triangles.Num(); ++T)
+                {
+                    const FVector3f P[3]={FVector3f(Particles.GetX(Triangles[T][0])),FVector3f(Particles.GetX(Triangles[T][1])),FVector3f(Particles.GetX(Triangles[T][2]))};
+                    Surface->Points.Append(P,3);
+                    Surface->Normals.Add(FVector3f::CrossProduct(P[1]-P[0],P[2]-P[0]).GetSafeNormal());
+                    Surface->Slots.Add(TriMesh->GetMaterialIndex(T));
+                }
+            };
+            if (Elements.RequiresLargeIndices()) AddAll(Elements.GetLargeIndexBuffer()); else AddAll(Elements.GetSmallIndexBuffer());
+        }
+        if (Surface->Slots.IsEmpty()) return nullptr;
+        return Surface;
+    }
+
+    /** The mesh's surface, copied once per mesh and kept (game thread): its collision LOD's render triangles, or in a
+     *  cooked build without CPU copies of them its cooked collision triangles. Null when it has neither. */
     inline FMeshSurfaceRef MeshSurface(UStaticMesh* Mesh)
     {
         check(IsInGameThread());
         static TMap<TObjectKey<UStaticMesh>,FMeshSurfaceRef> Cache;
         const TObjectKey<UStaticMesh> Key(Mesh);
         if (const FMeshSurfaceRef* Found=Cache.Find(Key)) return *Found;
-        if (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return nullptr;
+        auto Collision=[&]() -> FMeshSurfaceRef
+        {
+            const FMeshSurfaceRef Surface=CollisionSurface(Mesh);
+            if (Surface) { UE_LOG(LogTemp,Log,TEXT("SKATE surface %s: %d cooked collision triangles"),*Mesh->GetName(),Surface->Slots.Num()); }
+            else { UE_LOG(LogTemp,Warning,TEXT("SKATE surface %s: no CPU render data and no cooked collision triangles; the board does not collide with it"),*Mesh->GetName()); }
+            return Cache.Add(Key,Surface);
+        };
+        if (CVarSkateCookedSurface.GetValueOnGameThread()>0) return Collision();
+        if (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return Collision();
         const auto& LODs=Mesh->GetRenderData()->LODResources;
         const FStaticMeshLODResources& LOD=LODs[FMath::Clamp(Mesh->LODForCollision,0,LODs.Num()-1)];
         const FPositionVertexBuffer& Positions=LOD.VertexBuffers.PositionVertexBuffer;
-        if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) return nullptr;
+        if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) return Collision();
         const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();
         auto Surface=MakeShared<FMeshSurface,ESPMode::ThreadSafe>();
         Surface->Points.Reserve(Indices.Num()/3*3); Surface->Normals.Reserve(Indices.Num()/3);
