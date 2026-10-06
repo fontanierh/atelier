@@ -193,7 +193,7 @@ h1, h2, p { margin: 0; }
 .message.mine .quote-text { color: #ffffffc0; }
 .body { font-size: 15px; line-height: 1.42; color: var(--ink); }
 .message.mine .body { color: #fff; }
-.body.collapsed { max-height: 8.6em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 65%, transparent); mask-image: linear-gradient(#000 65%, transparent); }
+.body.collapsed { max-height: 13em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 65%, transparent); mask-image: linear-gradient(#000 65%, transparent); }
 .more { border: 0; background: none; padding: 4px 0 0; color: var(--coral); font-weight: 650; font-size: 13px; }
 .message.mine .more { color: #fff; text-decoration: underline; }
 

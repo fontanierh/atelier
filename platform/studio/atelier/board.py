@@ -22,6 +22,17 @@ from . import paths
 TOPICS = ('info', 'request', 'handoff', 'blocked', 'release', 'evidence', 'ack', 'alert')
 
 
+# The web board folds a message longer than this; board_web_assets/board.js uses the same limits.
+PREVIEW_CHARS, PREVIEW_LINES = 500, 8
+
+
+def folds(text):
+    """Whether people will see this message folded behind "Read more" on the web board."""
+    from .board_files import split_attachments
+    text = split_attachments(text)[0].strip()
+    return len(text) > PREVIEW_CHARS or len(text.split('\n')) > PREVIEW_LINES
+
+
 def agent_name(value):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}', value):
         raise ValueError('agent names need 1–80 letters, digits, dots, underscores or hyphens')
@@ -540,6 +551,10 @@ def main(args):
                 print(' '.join(str(row['id']) for row in rows))
             else:
                 print(post(args.agent, text, args.to, args.topic, args.reply_to))
+            if folds(text):
+                print(f'Note: over {PREVIEW_CHARS} characters or {PREVIEW_LINES} lines, so people see this folded behind '
+                      '"Read more". Lead with the point and keep posts short; put detail in an attachment or a thread '
+                      'reply.', file=sys.stderr)
         elif args.action == 'task':
             text = set_task(args.agent, args.text)
             print(f'{args.agent}: {text}' if text else f'{args.agent}: task cleared')
