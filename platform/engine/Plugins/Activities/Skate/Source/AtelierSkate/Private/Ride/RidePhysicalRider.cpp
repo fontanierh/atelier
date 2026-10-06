@@ -488,6 +488,15 @@ void URidePhysicsControl::TickComponent(float DeltaTime, ELevelTick TickType, FA
     Super::TickComponent(DeltaTime + SkippedTime, TickType, ThisTickFunction);
     SkippedTime = 0;
     if (TickType == LEVELTICK_All) UpdatedFrame = GFrameCounter;
+    // Its targets must reach the bodies before the physics step, or every body trails the board by a frame (RIDE.md,
+    // tick order). A component the mesh waits on, ticking in a later group, carries the mesh and this after it.
+    static bool bWarnedLate = false;
+    if (TickType == LEVELTICK_All && ThisTickFunction && ThisTickFunction->GetActualTickGroup() > TG_PrePhysics && !bWarnedLate)
+    {
+        bWarnedLate = true;
+        UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: Physics Control ticks after the physics step (group %d, mesh %d): the rider trails the board by a frame; whatever the mesh waits on must tick in TG_PrePhysics"),
+            int32(ThisTickFunction->GetActualTickGroup()), M ? int32(M->PrimaryComponentTick.GetActualTickGroup()) : -1);
+    }
 }
 
 void URidePhysicsControl::ForgetWidenedLimits(const USkeletalMeshComponent* SkeletalMesh)

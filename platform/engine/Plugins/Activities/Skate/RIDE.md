@@ -241,6 +241,12 @@ knocks and landings, and feet that stay on the board.
   (`Anchor_Pelvis`, `Anchor_Feet`, `Anchor_Hands` the strong ones) and a body modifier per body. Targets come from the
   mesh's animated pose; an update with no component-space pose is skipped. The ride moves the actor with
   `ETeleportType::None`.
+- **Tick order.** The mesh and `URidePhysicsControl` must tick before the physics step (`TG_PrePhysics`), or every
+  body's target lands a step late and the rider trails the board by its speed times the frame (at 8 m/s and 30 fps,
+  27 cm: feet off the back of the deck in the air, into it in a manual). A game component that makes the mesh or the
+  movement component wait on it must tick in `TG_PrePhysics` too, since a prerequisite in a later group carries them
+  after it (the game's bike and sailboat components did, U123). The rider warns once in the log when Physics Control
+  ticks after the step.
 - **Phases.** Profiles `Riding`, `Air`, `Landing`, `Grind`, `Manual`, `Bail`, `GetUp` and `OnFoot`, built from
   `URidePhysicalSettings` (Project Settings › Plugins › Skate Physical Rider; `skate.RidePhysicalReload` rebuilds
   them). Strengths: pelvis anchor 16 Hz (damping ratio 0.5), feet 12 Hz, joints 10 Hz, an 8 Hz anchor on every body,
@@ -380,11 +386,12 @@ in but no one has ridden it yet.
 | U120 | After losing the board, getting back on could move the character 4–12 m at once | The actor followed Native's root while Native's rider walked away from the board; fixed by handing Native's on-foot states to the character (`TakeNativeOnFoot`), to playtest | `RideComponent.cpp` |
 | U121 | A successful pump did not show in the trick line | Native scores no pump; fixed (the session counts pumps, `skate.PumpTrick`), to playtest. QA: the timed bowl pumps show `Pump` and `Pump x2` (0.6 m/s a rise); the mistimed row's rises that gain speed show too (0.5-0.67 m/s each), although that row ends slower than coasting, so the count is per rise, not per line | The trick line in `SkateRuntime.cpp`, `pump=` |
 | U122 | On foot after a get-up, sprint, double jump and dash stayed off while the board was carried | The carry blocked them; fixed (using one puts the board away), to playtest. A rider with a BotW move set (Link) puts the board away the same way before its dodge or dash; untested, as this checkout had no move-set import | `RideTransition.cpp`, the game's character |
+| U123 | In jumps the feet hovered behind and above the deck, in manuals they clipped into it, worse at speed and at 30 fps | The game's bike and sailboat components ticked in `TG_DuringPhysics` with the mesh waiting on them, which carried the mesh and Physics Control past the physics step (a frame's lag); fixed (both tick in `TG_PrePhysics`). QA: the physical feet now match the animated ones at every speed (4.0 cm along the deck, 1–9.75 m/s), and in the air they stay within 9 cm (60 fps) and 4.3 cm (30 fps) above the deck, from 15.5 and 27 cm. `review_skate_jump_feet.py` checks the physical feet against the animated ones at 60 and 30 fps, and fails on the late-tick warning. To playtest | `BikeComponent.cpp`, `SailboatComponent.cpp`, the tick order above |
 | H65 | `caveman_run` and `caveman_sprint` fail one run in three: a one-frame move or speed spike (8 cm, 340 cm/s) at the air mount's landing | Native's wheels touching a frame before its state lands, or a double step on a long frame; the rows pass on reruns | `skate_transitions` `caveman_*`, the landing frame in `continuity` |
 | U5, U13 | Turning, the rider bends too much for the board's tilt | The retarget of Native's lean onto our proportions (inferred) | `RetargetRetailPose` |
 | U19 | Hopping off with the board in hand, the tail clips the ground | The carry clip's board on our character | `RideTransition.cpp` |
 | U58 | Ragdoll fallbacks: an invalid physics asset silently rides animation-only; large errors reset to the animation | Recovery by reset instead of failure | `URidePhysicalRider` |
-| U73 | The foot-on-deck check fails at a placement frame and entering a push (3–4 cm a frame) | Unknown | The physical rider's foot anchors |
+| U73 | The foot-on-deck check fails at a placement frame and entering a push (3–4 cm a frame) | Unknown; possibly the frame's lag of U123 (a push is the fastest change of speed), to recheck | The physical rider's foot anchors |
 | U111 | The transitions' clip player has none of Native's spin overlays or physical feedback | It plays clips only | `RideClipPlayer.h` |
 | K2 | The landing legs reach 75 cm above the deck before an ollie lands; Native's 81 | The retarget's scale or the body | `RetargetRetailPose` |
 | K6 | Frame time p99 up to 26 ms in dense scenes; one 68 ms frame | Unknown, with the physical rider on | Frame traces |

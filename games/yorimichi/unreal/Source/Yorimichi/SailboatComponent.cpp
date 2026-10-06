@@ -13,7 +13,9 @@
 #include "Engine/World.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
-USailboatComponent::USailboatComponent(){PrimaryComponentTick.bCanEverTick=true;}
+// Before physics, like the movement component it follows: the mesh waits on it (Initialize), so a later group would carry
+// the mesh, and the skate rider's physics control after it, past the physics step.
+USailboatComponent::USailboatComponent(){PrimaryComponentTick.bCanEverTick=true;PrimaryComponentTick.TickGroup=TG_PrePhysics;}
 void USailboatComponent::Initialize(AWandererCharacter* C,AJapanWorld* W)
 {
  Rider=C;Landscape=W;
