@@ -27,7 +27,7 @@ struct FSkateHostPad
 
 namespace atelier::skate_pad
 {
-    /** The project's 0.25 per-axis dead zone undone (DefaultInput.ini squeezes the stick): a real stick position. */
+    /** The engine's 0.25 per-axis dead zone undone (BaseInput.ini squeezes the stick): a real stick position. */
     inline float Unsqueeze(float A)
     {
         return std::fabs(A) > 1e-4f ? (A > 0.f ? 1.f : -1.f) * (.25f + .75f * std::fabs(A)) : 0.f;

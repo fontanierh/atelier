@@ -36,7 +36,7 @@ enum class EBotwMode : uint8
 
 /**
  * A BOTW character in the world: a skeletal mesh playing its baked clips, kept on the ground by a trace, with a capsule
- * the sword sweeps hit (WandererSword.cpp, BotwMoveSet.cpp). In camp mode it strikes a player with a move set, who can
+ * the sword sweeps hit (WandererSword.cpp, BotwMoveSetCombat.cpp). In camp mode it strikes a player with a move set, who can
  * guard, parry or dodge it; a crouched player is noticed only close by and in front, and can sneakstrike it. Spawned by
  * the live verbs (YorimichiLive BotwSpawn and friends), which the demo films use.
  */

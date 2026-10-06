@@ -1,6 +1,6 @@
 """Ride record: the player's pad, keys and skate state, one JSON line per frame, while they play. It only reads, so a
-playtest can run under it; scenarios/ride_replay.py plays a recording back through a skating backend and
-tools/ride_replay_report.py scores the replays against it.
+playtest can run under it. To replay a ride exactly through either skating backend, record it with
+scenarios/ride_session.py instead.
 
     atelier live py "REC_TAKE='native-2302'" && atelier live py - < games/yorimichi/scenarios/ride_record.py
     ... the player plays, then:

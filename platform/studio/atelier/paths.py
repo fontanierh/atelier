@@ -14,7 +14,6 @@ PLATFORM = REPO / 'platform'
 STUDIO = PLATFORM / 'studio'
 CONVENTIONS = PLATFORM / 'conventions'
 ENGINE_PLUGINS = PLATFORM / 'engine' / 'Plugins'
-LIBRARY = PLATFORM / 'library'
 GAMES = REPO / 'games'
 
 

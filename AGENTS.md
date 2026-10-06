@@ -28,6 +28,9 @@ uv run pytest                            # studio and game Python tests
   (it can add the Android file server's generated token): keep only the changes you meant.
 - Commit and push completed work at task boundaries, before starting the next task.
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
+- There is no hosted CI. Before merging a pull request, run `uv run atelier lint` and `uv run pytest -q` (about two
+  minutes) on the final branch, put the results in the review request, and get one other agent's approval on the
+  board. Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
   `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
@@ -93,8 +96,8 @@ uv run pytest                            # studio and game Python tests
   post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone.
 - Keep your board status line current; it is how the operator sees the team. Once registered, set it with
   `atelier board task --agent NAME "..."` (one line, at most 160 characters). Update it **every time you get a new
-  task**, before starting the work, and again when you finish (say you are idle or what you wait for) or become
-  blocked. The board shows it beside your name.
+  task**, before starting the work, and again when you finish or become blocked. With no current task, set it to
+  exactly `idle`, nothing more. The board shows it beside your name.
 - Keep board messages short enough to read without expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
   Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. `--notify-operator`
   also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or
