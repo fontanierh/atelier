@@ -323,14 +323,22 @@ bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
         const int32 NextMode=Key==TEXT("tree_lod_mode")?FMath::RoundToInt(Number):BeforeMode;
         const float NextDistance=Key==TEXT("tree_lod_distance")?Number:BeforeDistance;
         TArray<AJapanWorld*> ChangedWorlds;
+        const auto RestoreTrees = [&]()
+        {
+            bool bRestored = true;
+            for (AJapanWorld* World : ChangedWorlds)
+                if (!World->ApplyTreeOptimization(BeforeEnabled,BeforeMode,BeforeDistance)) bRestored = false;
+            return bRestored;
+        };
         if (bTree && Owner && Owner->GetWorld())
             for (TActorIterator<AJapanWorld> It(Owner->GetWorld());It;++It) if (It->bLoaded)
             {
                 ChangedWorlds.Add(*It);
                 if (!It->ApplyTreeOptimization(NextEnabled,NextMode,NextDistance))
                 {
-                    for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(BeforeEnabled,BeforeMode,BeforeDistance);
-                    GraphicsError = TEXT("Tree detail could not be changed. Your previous setting is kept. Check that the game's tree assets are built.");
+                    GraphicsError = RestoreTrees()
+                        ? TEXT("Tree detail could not be changed. Your previous setting is kept. Check that the game's tree assets are built.")
+                        : TEXT("Tree detail could not be changed or restored. Restart the game before changing tree detail again.");
                     return false;
                 }
             }
@@ -338,8 +346,9 @@ bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
         if (!Save())
         {
             Value.Value = Before;
-            for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(BeforeEnabled,BeforeMode,BeforeDistance);
-            GraphicsError = TEXT("Settings could not be saved. The game has not restarted. Try again after checking storage access.");
+            GraphicsError = RestoreTrees()
+                ? TEXT("Settings could not be saved. The game has not restarted. Try again after checking storage access.")
+                : TEXT("Settings could not be saved and the previous tree detail could not be restored. Restart the game before changing tree detail again.");
             return false;
         }
         const FString Request = RendererRestartRequest();

@@ -40,6 +40,8 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
     // each LOD's actual vertex extent, not combined bounds containing LOD0.
     if (OptimizedMesh) for (const auto& Pair:Replacements)
     {
+        if (Pair.Value->IsNaniteEnabled())
+        { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS require non-Nanite HISM meshes; refusing swap %s"),*Pair.Key); return false; }
         auto* Original=LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"),*Pair.Key,*Pair.Key));
         const auto* Data=Pair.Value->GetRenderData();
         if (!Original || !Data || Data->LODResources.Num()!=3) return false;
@@ -96,6 +98,8 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
                             if (!Changed || Group->GetStaticMesh()!=Pair.Value)
                             { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS failed mesh swap %s"),*Pair.Key); return false; }
                         }
+                        // Groups are HISM: positive N selects LOD N. Plain ISM
+                        // uses N-1 instead, so this mapping must remain HISM-only.
                         Group->SetForcedLodModel(OptimizedMesh && Forced>=2 ? Forced-1 : 0);
                         Group->SetLODDistanceScale(Enabled ? DistanceScale : 1.f);
                         // No minimum-LOD override may permanently remove near detail.
