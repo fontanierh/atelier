@@ -25,7 +25,10 @@ renderer, the native 1440 view and the optimized city. Starting Yorimichi.app di
 The first time: if macOS says the launcher or the app cannot be opened, right-click "Play Yorimichi.command", choose
 Open, then Open again. The launcher removes the download quarantine itself.
 
-Settings: ~/Library/Application Support/Yorimichi/settings.txt. Log: ~/Library/Logs/Yorimichi/game.log.
+Settings and logs are inside the app's macOS sandbox container:
+~/Library/Containers/<bundle-id>/Data/Library/Application Support/Yorimichi/settings.txt
+~/Library/Containers/<bundle-id>/Data/Library/Logs/Yorimichi/game.log
+The launcher reads <bundle-id> from Yorimichi.app/Contents/Info.plist.
 This build always uses the forward renderer: choosing Lumen in the menu has no effect here.
 """
 
