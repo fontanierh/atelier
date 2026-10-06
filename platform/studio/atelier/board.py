@@ -170,10 +170,6 @@ def remove(agent):
         db.execute('UPDATE subscribers SET stop=1, removed=1 WHERE agent=?', (agent,))
 
 
-def broadcast(sender, body, request_id, topic='request'):
-    return send_web(sender, body, request_id, topic)
-
-
 def send_web(sender, body, request_id, topic='request', recipient='*', reply_to=None):
     """Atomically address every non-stopped subscriber, including addressed-only listeners.
 
