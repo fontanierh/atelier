@@ -6,13 +6,15 @@ Run after unreal.compile, unreal.bike, unreal.cairo_bike and data.stage. Under t
 island, finds open level ground for the ride and a clear run for the crash near the towns (or takes --site/--crash in
 Unreal cm and degrees), runs scenarios/bike_live.py on a fixed 60 fps step, then checks the recorded rows: the bike
 comes out beside him, he mounts, pedals, turns both ways, rings, waves, hops, skids to a foot-down stop, parks on the
-stand, gets back on the same parked bike, and crashes at speed into a test wall put up across his path. Writes
-build/yorimichi/bike/review/{checks.json, rows.json, sites.json, bike_*.png, bike.mp4, game.log}. The worker owns and
-quits only the game process it launches.
+stand, gets back on the same parked bike, crashes at speed into a test wall put up across his path, and rides up a test
+ramp with both wheels on it. Writes
+build/yorimichi/bike/review/{checks.json, rows.json, sites.json, bike_*.png, bike.mp4, game.log}, and bike_sound.mp4
+(and -720p): the film with its soundtrack mixed from the sounds the game played, the bike's loops and the camera
+(scenarios/skate_mix_showreel.py). The worker owns and quits only the game process it launches.
 """
 from pathlib import Path
 from contextlib import ExitStack
-import argparse, json, math, shutil, subprocess, sys, time
+import argparse, csv, json, math, shutil, subprocess, sys, time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 import yori
 from atelier.build import Context
@@ -124,8 +126,18 @@ def check(rows, sites):
         seen = clip in clips(ride, t0, t1); back = at(ride, t1 - .1)['clip'] == 'BikeRide'
         record(name, seen and back, f'{clip} seen={seen}, back on BikeRide={back}')
     lift = [r for r in ride if r['clip'] == 'BikeHop']
-    sprint = max(num(r, 'speed') for r in ride if 15.7 <= r['t'] <= 18.)
-    record('sprint', sprint > 650, f'{sprint:.0f} cm/s pedalling hard')
+    dash = rows_of(rows, 'sprint')
+    if dash:
+        sprint = max(num(r, 'speed') for r in dash if 3. <= r['t'] <= 5.6)
+        record('sprint', sprint > 1000, f'{sprint:.0f} cm/s pedalling hard from a standstill in 2.5 s (cruising tops at 600)')
+        held = [r['sprint'] for r in dash if 3.1 <= r['t'] <= 5.45]
+        ended = at(dash, 6.)['sprint']
+        record('sprint_toggles', bool(held) and all(h == '1' for h in held) and ended == '0', f'on after one tap for {len(held)} rows, off at the skid: {ended == "0"}')
+        skid = [r for r in dash if r['clip'] == 'BikeSkid']
+        stop = next((r for r in dash if r['t'] > 5.5 and num(r, 'speed') < 15), None)
+        record('sprint_skid_stop', bool(skid) and stop is not None and stop['t'] < 7.5, f"skid from {num(skid[0], 'speed') if skid else 0:.0f} cm/s, stopped at t={stop['t'] if stop else None}")
+    else:
+        record('sprint', False, 'no sprint segment (needs --crash)')
     skid = [r for r in ride if r['clip'] == 'BikeSkid']
     stop = next((r for r in ride if r['t'] > 18. and num(r, 'speed') < 15), None)
     record('skid_stop', bool(skid) and stop is not None and stop['t'] < 20. and 'BikeFootDown' in clips(ride, 18., 20.6),
@@ -161,6 +173,29 @@ def check(rows, sites):
             record('crash_bike_down', end['state'] == '0' and abs(roll) > 50, f"end state={end['state']}, bike roll {roll:.0f} deg")
     else:
         record('crash', False, 'no clear 13 m run found near the towns: pass --crash x,y,yaw')
+    # Wheels on the ground: neither sinks in while he rides on the ground, on the level or up the test ramp. The walking
+    # capsule steps down over a kink in the terrain a few cm in one frame, so a sink counts once it lasts three frames
+    # (the reported bug was a front wheel buried for as long as he rode a slope); one frame may not go past 9 cm.
+    def gaps(r): return vec(r['gaps'])
+    for seg in ('ride', 'sprint', 'slope'):
+        rolling = [r for r in rows if r['seg'] == seg and r['state'] == '2' and r.get('air') == '0' and r['clip'] in ('BikeRide', 'BikeFootDown')]
+        if len(rolling) < 3: continue
+        low = [min(gaps(r)) for r in rolling]
+        held = max(range(len(low) - 2), key=lambda i: -max(low[i:i + 3]))
+        lasting, worst = max(low[held:held + 3]), min(low)
+        record(f'wheels_not_sunk_{seg}', lasting > -4. and worst > -9.,
+               f"deepest sink lasting 3 frames {lasting:.1f} cm (t={rolling[held]['t']}), deepest single frame {worst:.1f} cm")
+    slope = rows_of(rows, 'slope')
+    if slope:
+        # On the ramp (pitched within 1 degree of its 12.5): the rear wheel on its face and the front on it or, off its
+        # top, hanging over the drop (never in the ramp).
+        up = [r for r in slope if r['state'] == '2' and r.get('air') == '0' and num(r, 'groundpitch') > 11.5][3:]   # settled onto it
+        rear = max((abs(gaps(r)[1]) for r in up), default=99.)
+        front = min((gaps(r)[0] for r in up), default=-99.)
+        record('ramp_pitch', len(up) > 20 and rear < 3. and front > -3., f"{len(up)} rows pitched up the ramp, top {max((num(r, 'groundpitch') for r in slope), default=0):.1f} deg, "
+               f"rear wheel within {rear:.1f} cm of its face, front never below it ({front:.1f} cm)")
+    else:
+        record('ramp_pitch', False, 'no slope segment')
     return results
 
 
@@ -242,14 +277,27 @@ try:
     rows = json.loads((out / 'rows.json').read_text())
     if done['error']: print(done['error'], flush=True)
     results = check(rows, sites) if not done['error'] or rows else {}
+    log.flush()
+    summons = [line.split('ready=')[1].strip() for line in (out / 'game.log').read_text(errors='replace').splitlines() if 'BIKE summon: materials ready=' in line]
+    results['materials_ready_at_summon'] = dict(ok=bool(summons) and all(r == '1' for r in summons), note=f"M_Bike's shaders made at each summon: {summons}")
+    print(('PASS ' if results['materials_ready_at_summon']['ok'] else 'FAIL ') + 'materials_ready_at_summon: ' + results['materials_ready_at_summon']['note'], flush=True)
     for still, frame in done.get('film_copies', []):
         if Path(still).exists(): shutil.copyfile(still, frame)
-    film = sorted((out / 'film').glob('ride_*.png')) + sorted((out / 'film').glob('crash_*.png'))
+    film = [f for seg in ('ride', 'sprint', 'crash', 'slope') for f in sorted((out / 'film').glob(f'{seg}_*.png'))]
     if film:
         listing = out / 'film' / 'list.txt'
         listing.write_text(''.join(f"file '{f.name}'\nduration 0.0333333\n" for f in film))
         subprocess.run(['nice', '-n', '10', 'ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', str(listing), '-vf', 'fps=30,format=yuv420p',
                         '-c:v', 'libx264', '-crf', '22', '-preset', 'medium', '-threads', '3', str(out / 'bike.mp4')], check=True)
+        if (out / 'audio.json').exists() and (out / 'loops.csv').exists() and (out / 'loops.csv').read_text().strip():
+            # The soundtrack: the film's frames in order, the camera per frame and the bike's loops per 60 Hz tick.
+            sys.path.insert(0, str(yori.GAME / 'scenarios')); import skate_mix_showreel as showreel
+            for k, f in enumerate(film): (out / 'film' / f'seq_{k:05d}.png').symlink_to(f.name)
+            cams = [[float(r['frame']), float(r['x']), float(r['y']), float(r['z']), float(r['yaw'])] for r in csv.DictReader(open(out / 'camera.csv'))]
+            loops = json.loads((yori.OUT / 'audio' / 'bike' / 'manifest.json').read_text())['loops']
+            sound = showreel.mix(out, out / 'film' / 'seq_%05d.png', len(film), cams, [r for r in (out / 'loops.csv').read_text().split('\n') if r.strip()],
+                                 json.loads((out / 'audio.json').read_text()), 'bike_sound', loops=('bike', loops))
+            print('soundtrack', json.dumps(sound), flush=True)
         if not args.keep_frames: shutil.rmtree(out / 'film')
     summary = dict(passed=bool(results) and all(r['ok'] for r in results.values()) and not done['error'], error=done['error'],
                    frames=done['frames'], checks=results, sites=sites)
