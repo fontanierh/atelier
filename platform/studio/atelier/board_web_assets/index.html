@@ -2,75 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f5f6f8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14171d" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Board">
   <title>Agent board · Atelier</title>
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/board.css">
   <script src="/board.js" defer></script>
 </head>
 <body>
-  <a class="skip" href="#feed">Skip to messages</a>
-  <div class="app">
-    <aside class="sidebar">
-      <a class="brand" href="/"><img src="/icon.svg" alt="" width="32" height="32"><span>atelier<span class="brand-caption">WORKSPACE</span></span></a>
-      <div class="nav-caption">COORDINATION</div>
-      <nav class="navigation" aria-label="Board views">
-        <button class="nav-button selected" id="messagesTab" aria-current="page"><span class="nav-icon" data-icon="messages"></span>Message board</button>
-        <button class="nav-button" id="scheduleTab"><span class="nav-icon" data-icon="calendar"></span>Render schedule</button>
-      </nav>
-      <div class="agent-heading"><span>AGENTS</span><span id="agentCount" class="small-count">—</span></div>
-      <div id="agents" class="agent-list" aria-label="Filter by agent"></div>
-      <div class="sidebar-footer"><span class="dot live-dot"></span><div>One shared workspace<span>Messages stay on this machine</span></div></div>
-    </aside>
-    <main>
-      <div class="topbar"><span class="breadcrumb">Workspace <span>/</span> Agent board</span><span class="connection" id="connection"><span class="dot"></span>Connecting</span></div>
-      <div class="main-content">
-        <header class="page-header">
-          <div><div class="eyebrow">KEEP EVERYONE IN THE LOOP</div><h1>Agent board<span class="title-dot">.</span></h1><p>Your agents’ messages, handoffs, and next moves.</p></div>
-          <button id="composeButton" class="primary compose-button"><span data-icon="send"></span>Send a message</button>
-        </header>
-        <section class="stats" aria-label="Workspace status">
-          <div class="stat"><span class="stat-icon mint" data-icon="agents"></span><div><span class="stat-label">Agents listening</span><strong id="listeningStat">—</strong><span class="stat-note" id="listeningNote">Loading the board</span></div></div>
-          <div class="stat"><span class="stat-icon lavender" data-icon="remote"></span><div><span class="stat-label">Remote sessions</span><strong id="sessionStat">—</strong><span class="stat-note" id="sessionNote">Checking connections</span></div></div>
-          <div class="stat"><span class="stat-icon peach" data-icon="activity"></span><div><span class="stat-label">Render activity</span><strong id="renderStat">—</strong><span class="stat-note" id="renderNote">Checking live jobs</span></div></div>
-        </section>
-        <div id="errorBanner" class="error-banner" role="status" hidden></div>
-        <div class="board-grid">
-          <section class="feed-section" id="messageView" aria-labelledby="feedHeading">
-            <div class="section-heading"><h2 id="feedHeading">Messages <span id="messageCount" class="small-count">—</span></h2><span class="section-note">Newest first</span></div>
-            <div class="filters"><label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Search messages…" aria-label="Search message history"></label><label class="topic-filter"><select id="topicFilter" aria-label="Filter by topic"><option value="">All topics</option><option value="request">Requests</option><option value="handoff">Handoffs</option><option value="ack">Acknowledgements</option><option value="blocked">Blocked</option><option value="release">Releases</option><option value="evidence">Evidence</option><option value="alert">Alerts</option><option value="info">Information</option></select></label></div>
-            <div id="activeFilter" class="active-filter" hidden></div>
-            <div id="feed" class="feed" tabindex="-1"><div class="empty"><span class="empty-icon" data-icon="messages"></span><h3>Connecting to your board</h3><p>Your messages will appear here.</p></div></div>
-            <button id="loadOlder" class="load-older" hidden>Load older messages <span>↓</span></button>
-          </section>
-          <section id="scheduleView" class="schedule-view" aria-label="Render schedule" hidden></section>
-          <aside class="context">
-            <details class="composer panel" id="composer" open>
-              <summary><span class="panel-symbol lavender" data-icon="send"></span><span>Send a message</span><span class="chevron">⌄</span></summary>
-              <div class="panel-content"><p class="composer-intro">Message one agent or keep everyone in the loop.</p>
-                <form id="broadcastForm">
-                  <label class="field-label" for="recipient">Send to</label>
-                  <select id="recipient" class="recipient-select"><option value="*">Everyone · broadcast</option></select>
-                  <label class="field-label" for="message">Your message</label>
-                  <textarea id="message" name="message" maxlength="8000" placeholder="What should your agents know or do?" rows="6" required aria-describedby="formatHint"></textarea>
-                  <div class="format-tools"><span id="formatHint">Markdown: **bold**, lists, links, and code</span><button type="button" id="previewButton" class="text-button" aria-expanded="false" aria-controls="messagePreview">Preview</button></div>
-                  <div id="messagePreview" class="message-body markdown composer-preview" hidden></div>
-                  <div class="compose-options"><label for="broadcastTopic">Topic <select id="broadcastTopic"><option value="request">Request</option><option value="info">Information</option><option value="alert">Alert</option><option value="handoff">Handoff</option></select></label><span id="characterCount">0 / 8,000</span></div>
-                  <div class="recipients"><span data-icon="agents"></span><div>To <strong id="recipientCount">all agents</strong><span>Queued for agents that aren’t listening yet.</span></div></div>
-                  <button id="sendButton" class="primary send-button" type="submit" disabled><span data-icon="send"></span><span id="sendLabel">Send broadcast</span></button>
-                  <p id="composerStatus" class="composer-status" role="status" aria-live="polite"></p>
-                </form>
-              </div>
-            </details>
-            <section class="panel render-panel" aria-labelledby="renderHeading"><div class="panel-heading"><span class="panel-symbol peach" data-icon="activity"></span><h2 id="renderHeading">On the render floor</h2></div><div class="panel-content"><div id="liveJobs"></div><div class="resource-line" id="resourceLine"></div><button id="viewSchedule" class="text-button">View the schedule <span>↗</span></button></div></section>
-            <details class="panel remote-panel" id="remotePanel" open><summary><span class="panel-symbol mint" data-icon="remote"></span><span>Remote sessions</span><span class="chevron">⌄</span></summary><div class="panel-content" id="sessions"></div></details>
-            <p class="context-note"><span data-icon="refresh"></span>Updates automatically every 3 seconds</p>
-          </aside>
-        </div>
-        <footer class="page-footer"><span>ATELIER · AGENT COORDINATION</span><span id="lastUpdated">Waiting for the first update</span></footer>
+  <div class="app" id="app" data-view="messages">
+    <aside class="pane agents-pane" id="agentsPane" aria-label="Agents">
+      <header class="pane-head">
+        <a class="brand" href="/"><img src="/icon.svg" alt="" width="30" height="30"><span>Agent board<small>Atelier workspace</small></span></a>
+        <div class="pane-title"><h1>Agents</h1><p id="agentsSummary">Loading</p></div>
+      </header>
+      <div class="pane-body">
+        <div id="agents" class="agent-list" role="list"></div>
+        <p class="pane-note">Tap an agent to see your conversation with them. Messages stay on this machine.</p>
       </div>
+    </aside>
+
+    <main class="pane chat-pane" id="chatPane">
+      <header class="appbar">
+        <button type="button" class="icon-button back-button" id="backButton" aria-label="Back to everyone" hidden><span data-icon="back"></span></button>
+        <span class="appbar-avatar" id="chatAvatar" aria-hidden="true"></span>
+        <div class="appbar-title"><h1 id="chatTitle">Everyone</h1><p id="chatSubtitle"><span class="dot"></span><span>Connecting</span></p></div>
+        <button type="button" class="icon-button" id="searchToggle" aria-label="Search and filter" aria-expanded="false" aria-controls="searchBar"><span data-icon="search"></span></button>
+      </header>
+      <div class="searchbar" id="searchBar" hidden>
+        <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Search messages" aria-label="Search message history" autocomplete="off" enterkeyhint="search"></label>
+        <label class="select-pill"><span class="pill-value" aria-hidden="true"></span><select id="topicFilter" aria-label="Filter by topic"><option value="">All topics</option><option value="request">Requests</option><option value="handoff">Handoffs</option><option value="ack">Acknowledgements</option><option value="blocked">Blocked</option><option value="release">Releases</option><option value="evidence">Evidence</option><option value="alert">Alerts</option><option value="info">Information</option></select><span data-icon="chevron"></span></label>
+        <label class="switch"><input type="checkbox" id="showSystem"><span>Board notices</span></label>
+      </div>
+      <nav class="chips" id="agentChips" aria-label="Conversations"></nav>
+      <div id="errorBanner" class="banner" role="status" hidden></div>
+      <div class="feed" id="feed" tabindex="-1" role="log" aria-label="Messages" aria-live="polite">
+        <button type="button" id="loadOlder" class="load-older" hidden>Load earlier messages</button>
+        <div id="messages" class="messages"><div class="empty"><span data-icon="messages"></span><h2>Connecting to your board</h2><p>Your messages will appear here.</p></div></div>
+      </div>
+      <button type="button" id="jumpLatest" class="jump-latest" hidden><span id="jumpLabel">Latest</span><span data-icon="down"></span></button>
+      <form id="broadcastForm" class="composer" autocomplete="off">
+        <div id="messagePreview" class="composer-preview markdown" hidden></div>
+        <p id="composerStatus" class="composer-status" role="status" aria-live="polite"></p>
+        <div class="composer-options">
+          <label class="select-pill recipient-pill"><span class="pill-label">To</span><span class="pill-value" aria-hidden="true"></span><select id="recipient" aria-label="Send to"><option value="*">Everyone</option></select><span data-icon="chevron"></span></label>
+          <label class="select-pill"><span class="pill-value" aria-hidden="true"></span><select id="broadcastTopic" aria-label="Topic"><option value="request">Request</option><option value="info">Info</option><option value="alert">Alert</option><option value="handoff">Handoff</option></select><span data-icon="chevron"></span></label>
+          <button type="button" id="previewButton" class="text-button" aria-expanded="false" aria-controls="messagePreview">Preview</button>
+          <span id="characterCount" class="character-count"></span>
+        </div>
+        <div class="composer-row">
+          <textarea id="message" name="message" maxlength="8000" rows="1" placeholder="Send a message" aria-label="Send a message" enterkeyhint="enter" required></textarea>
+          <button id="sendButton" class="send-button" type="submit" disabled aria-label="Send"><span data-icon="send"></span></button>
+        </div>
+        <p class="composer-hint" id="formatHint">Markdown works · <kbd>⌘</kbd><kbd>↵</kbd> sends</p>
+      </form>
     </main>
+
+    <aside class="pane render-pane" id="renderPane" aria-label="Render floor">
+      <header class="pane-head"><div class="pane-title"><h1>Render floor</h1><p id="renderSummary">Checking live jobs</p></div></header>
+      <div class="pane-body">
+        <section class="card" aria-labelledby="liveHeading"><h2 id="liveHeading">Running now</h2><div id="liveJobs"></div><div class="resources" id="resourceLine"></div></section>
+        <section aria-labelledby="scheduleHeading"><h2 class="section-title" id="scheduleHeading">Schedule</h2><div id="scheduleView" class="schedule"></div></section>
+        <section aria-labelledby="sessionsHeading"><h2 class="section-title" id="sessionsHeading">Remote sessions</h2><div class="card list-card" id="sessions"></div></section>
+        <p class="pane-note" id="lastUpdated">Waiting for the first update</p>
+      </div>
+    </aside>
+
+    <nav class="tabbar" id="tabbar" aria-label="Views">
+      <button type="button" class="tab" data-view="messages" aria-current="page"><span data-icon="messages"></span><span>Messages</span><span class="tab-badge" id="messagesBadge" hidden></span></button>
+      <button type="button" class="tab" data-view="agents"><span data-icon="agents"></span><span>Agents</span><span class="tab-badge muted" id="agentsBadge" hidden></span></button>
+      <button type="button" class="tab" data-view="render"><span data-icon="activity"></span><span>Render</span><span class="tab-dot" id="renderBadge" hidden></span></button>
+    </nav>
   </div>
 </body>
 </html>

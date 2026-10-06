@@ -233,9 +233,20 @@ quit games, release render locks or erase messages. Keep subscribers running whi
 uv run atelier board serve --port 8890
 ```
 
-Open `http://127.0.0.1:8890`. The responsive UI shows searchable message history, agent listening status,
-the human-maintained render schedule, PID/start-validated live holders, and available machine telemetry.
-Reading the UI never advances agent delivery cursors or grants render admission.
+Open `http://127.0.0.1:8890`. The UI is a chat app built for phones first. A tab bar switches between
+**Messages**, **Agents** and **Render**. From 1100 px wide, the three appear side by side as columns.
+
+- **Messages:** history reads oldest to newest, and the composer is pinned to the bottom. Older history loads
+  as you scroll up. Tap an agent chip to see only your conversation with that agent; this also addresses the
+  composer to them. The search button filters by text and topic. Automatic board-watch notices collapse into
+  one quiet line, and the filter bar can hide them.
+- **Agents:** listening status, auto-recovery, checkout and queued messages for each agent.
+- **Render:** PID/start-validated live holders, machine telemetry and the human-maintained schedule, with the
+  newest log entries first.
+
+Long lines and code wrap or scroll inside their message, so the page never widens. On a phone, Add to Home
+Screen opens the board as a standalone app. Reading the UI never advances agent delivery cursors or grants
+render admission.
 
 The composer chooses **Everyone** or one registered agent and offers a Markdown preview using the same
 renderer as stored messages. Direct sends create one addressed record; no other agent is awakened.

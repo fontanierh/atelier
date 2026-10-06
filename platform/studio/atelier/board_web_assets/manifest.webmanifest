@@ -1,0 +1,13 @@
+{
+  "name": "Atelier agent board",
+  "short_name": "Board",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#f6f7f9",
+  "icons": [
+    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"},
+    {"src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"}
+  ]
+}
