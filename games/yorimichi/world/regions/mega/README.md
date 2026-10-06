@@ -17,17 +17,21 @@ uv run atelier build yorimichi world.mega unreal.mega
 
 - `world.layout` calls `mega.layout.integrate` from `gen_world.py`, after the village: it lays the trail from the
   hamlet's last lane, levels the oval clearing, clears the trees and plants in the way, and writes `world['mega']`
-  (origin, width, gap, the riding profiles, rollout, ladder and trail).
-- `world.mega` ([`build.py`](build.py), Blender) builds `Mega_Ramp`, `Mega_Trim` and `Mega_Trail` in `build/yorimichi/mega/`
-  with the village kit's single vertex-colour material.
-- `unreal.mega` (`unreal/Scripts/import_mega.py`) imports them into `/Game/Japan/Assets` with `M_Village`.
+  (origin, trail width, gap, ladder and trail).
+- `world.mega` ([`build.py`](build.py), Blender) builds `Mega_Ramp` and `Mega_Trim` from [`ramp.py`](ramp.py), and
+  `Mega_Trail`, in `build/yorimichi/mega/` with the village kit's single vertex-colour material.
+- `unreal.mega` (`unreal/Scripts/import_mega.py`) imports them into `/Game/Japan/Assets` with `M_Village`. The terrain
+  under them belongs to `unreal.world` and `unreal.southwest`.
 
 `python games/yorimichi/tools/benchmark.py NAME --view road_walk --route mega --seconds 55` walks the trail with
 frame-time measurements.
 
 ## Reference
 
-[`layout.py`](layout.py) is the one metre-space profile both the mesh and the collision come from.
+[`ramp.py`](ramp.py) is the one metre-space profile both the mesh and the collision come from; [`layout.py`](layout.py)
+holds its place, the clearing and the trail. Only `world.mega` and `world.map` read `ramp.py`, so a change to the
+ramp's shape rebuilds the ramp and the map (`world.mega`, `unreal.mega`, `world.map`) without regenerating the terrain
+or reimporting `/Game/Japan`. A change to `layout.py` rebuilds the world.
 
 | Dimension | Value |
 | --- | --- |
@@ -35,8 +39,8 @@ frame-time measurements.
 | Open gap | 10.4 m (`GAP`) |
 | Landing | a straight 35° from the knuckle, then a 4 m transition to the flat |
 | Vert quarter pipe | 6.1 m, an exact circular transition ending in true vertical |
-| Riding width | 8 m (`WIDTH`) |
+| Riding width | 8 m (`ramp.WIDTH`) |
 | Origin | (65, 242), deck base at 66.8 m (`ORIGIN`) |
 
-The world map draws the two riding sections, the gap, the rollout and the ladder from `world['mega']`
+The world map draws the two riding sections, the gap and the rollout from `ramp.py`, and the trail from `world['mega']`
 ([WORLD_MAP.md](../../../docs/WORLD_MAP.md)).

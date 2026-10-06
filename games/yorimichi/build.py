@@ -363,7 +363,7 @@ def steps(ctx):
              inputs=[ASSETS / 'vehicles' / 'kei', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'kei' / 'manifest.json'], about='the four kei cars in the Mega Park car park'),
         Step('world.map', [Python(WORLD / 'map' / 'build_map.py')],
-             inputs=[WORLD / 'map', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'gate.py', *park_inputs,
+             inputs=[WORLD / 'map', REGIONS / 'mega' / 'ramp.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'gate.py', *park_inputs,
                      *([REGIONS / 'communitypark' / 'plan.py'] if park else [])],
              needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin'],
              outputs=[out / 'map' / 'map.json', out / 'map' / 'map.png'], about='map zones and the painted sheet'),

@@ -16,12 +16,6 @@ for name in ['Mega_Ramp','Mega_Trim','Mega_Trail']:
  mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX if name=='Mega_Trim' else unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
  E.save_loaded_asset(mesh)
  report[name]={'imported':True,'materials':len(mesh.static_materials)}
-mesh=helper['import_mesh'](ROOT/'terrain.fbx','/Game/Japan','Terrain')
-for i,slot in enumerate(mesh.static_materials):
- key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
- material=E.load_asset('/Game/Japan/Materials/MI_'+key);assert material,key
- mesh.set_material(i,material)
-mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-E.save_loaded_asset(mesh)
+# The terrain belongs to unreal.world and unreal.southwest: a change to the ramp alone leaves it as it is.
 (ROOT/'mega/import-report.json').write_text(json.dumps(report,indent=2)+'\n')
 unreal.log('MEGA IMPORT COMPLETE')

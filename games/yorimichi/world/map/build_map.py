@@ -202,22 +202,23 @@ if W.get('forest_lake'):
     line(lake['trail'],(206,178,128),2.5)
     rect(lake['cabin'][0],lake['cabin'][1],7,5,-135,(66,72,104),(40,20,12))
     line([[-59.1,218.1],[-65.2,224.2]],(173,127,78),2)
+from mega.ramp import profiles as mega_profiles, rollout as mega_rollout, WIDTH as MEGA_WIDTH
 M = W['mega']
 line(M['trail'], (90, 60, 30), M['width'] + 1.4); line(M['trail'], (190, 160, 110), M['width'])
 # Draw the actual two riding sections and their open gap, not an ambiguous
 # landmark dot that a map painter can mistake for a cottage.
 mega_x, mega_y = M['origin'][:2]
-for profile in M['profiles']:
+for profile in mega_profiles():
     LINES.append([[mega_x+p[0],mega_y] for p in profile])
     for a, b in zip(profile, profile[1:]):
         height = (a[1]+b[1])*.5
         shade = int(min(30, height*2.5))
-        corners = [wp(mega_x+a[0],mega_y-M['width']/2),wp(mega_x+b[0],mega_y-M['width']/2),
-                   wp(mega_x+b[0],mega_y+M['width']/2),wp(mega_x+a[0],mega_y+M['width']/2)]
+        corners = [wp(mega_x+a[0],mega_y-MEGA_WIDTH/2),wp(mega_x+b[0],mega_y-MEGA_WIDTH/2),
+                   wp(mega_x+b[0],mega_y+MEGA_WIDTH/2),wp(mega_x+a[0],mega_y+MEGA_WIDTH/2)]
         d.polygon(corners,fill=(192+shade,154+shade,101+shade))
     for side in (-1,1):
-        d.line([wp(mega_x+p[0],mega_y+side*M['width']/2) for p in profile],fill=(75,57,38),width=max(1,round(PX)))
-line([[mega_x+p[0],mega_y+p[1],p[2]] for p in M['rollout']],(190,154,103),3)
+        d.line([wp(mega_x+p[0],mega_y+side*MEGA_WIDTH/2) for p in profile],fill=(75,57,38),width=max(1,round(PX)))
+line([[mega_x+p[0],mega_y+p[1],p[2]] for p in mega_rollout()],(190,154,103),3)
 line([[mega_x-2.05,mega_y-5.55,0],[mega_x-1.8,mega_y,10.7]],(90,64,37),1.2)
 # The Mega Park: its riding footprint in 5 m cells, concrete shaded by height so the bowls and canyons read.
 _sys.path.insert(0, str(yori.REGIONS)); from megapark import placement as megapark  # noqa: E402

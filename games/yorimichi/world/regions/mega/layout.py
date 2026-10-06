@@ -1,35 +1,11 @@
-"""Sloanyard-scale forest extension. Metres; one profile drives mesh and physics."""
-import math
+"""Sloanyard-scale forest extension: the trail, the clearing and the ramp's place, in metres. The ramp's shape is in
+`ramp.py`."""
 import numpy as np
 from village.layout import spline,nearest,sample,upper_surface,smooth
 ORIGIN=(65.,242.,66.8)
-WIDTH=8.
+TRAIL_WIDTH=8.
 GAP=10.4
 BOUNDS=(20.,220.,150.,292.)
-
-def bezier(points,n=100):
-    a,b,c,d=np.array(points,float)
-    return [(a*(1-t)**3+3*b*t*(1-t)**2+3*c*t*t*(1-t)+d*t**3).tolist() for t in np.linspace(0,1,n+1)]
-
-def profiles():
-    roll=[[-3.,10.7],[0.,10.7]]+bezier([(0,10.7),(4,10.7),(2,.45),(16.5,.45)],180)[1:]
-    roll+=bezier([(16.5,.45),(20,.45),(24,1.285),(27.5,2.7)],100)[1:]
-    # The landing drops from its knuckle at a straight 35 degrees, then a 4 m transition meets the flat: a short gap
-    # flown at a lower takeoff speed still lands on the slope, not on a flattened run-out.
-    a,r=math.radians(35),4.
-    drop=2.7-.45-r*(1-math.cos(a));x1=37.9+drop/math.tan(a);cx=x1+r*math.sin(a)
-    land=[[37.9,2.7]]+[[cx-r*math.sin(t),.45+r*(1-math.cos(t))] for t in np.linspace(a,0,60)]
-    land.append([56.,.45])
-    # Exact circular transition ends in true vertical: no over-vertical hook.
-    land += [[56+5.65*math.sin(t),.45+5.65*(1-math.cos(t))] for t in np.linspace(0,math.pi/2,151)[1:]]
-    return [roll,land]
-
-def rollout():
-    # Tangent-continuous return route, descending gently onto the clearing.
-    p=np.array(bezier([(52,0,.455),(44,0,.455),(43,-8,.12),(47,-12,.055)],120))
-    # Stay flush while overlapping the main flat; descend beyond its edge.
-    p[:,2]=.455-.4*smooth((np.abs(p[:,1])-4.3)/7.7)
-    return p.tolist()
 
 def integrate(world,h):
     before=h.copy();ox,oy,oz=ORIGIN
@@ -67,6 +43,6 @@ def integrate(world,h):
                 if tree:a[i,2]=min(float(upper_surface(h,px[i]+dx,py[i]+dy)) for dx,dy in [(0,0),(.5,0),(-.5,0),(0,.5),(0,-.5)])-.15
         world['instances'][name]=a[keep].tolist();removed[name]=int(remove.sum())
     world['instances']['Mega_Trail']=[[0,0,0,0,1]]
-    world['mega']={'origin':list(ORIGIN),'width':WIDTH,'gap':GAP,'profiles':profiles(),'rollout':rollout(),'trail':path.tolist(),
+    world['mega']={'origin':list(ORIGIN),'width':TRAIL_WIDTH,'gap':GAP,'trail':path.tolist(),
         'ladder':[-2.,-4.65,0.], 'edit_bounds':list(BOUNDS),'removed':removed}
     world['shots'] += [[35,208,oz+27.2,32,-21],[55,226,oz+3.2,40,5],[96,218,oz+51.2,90,-65]]
