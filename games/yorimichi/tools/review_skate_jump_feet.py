@@ -349,6 +349,7 @@ try:
     summary = dict(passed=all(c['ok'] for c in checks.values()), checks=checks, runs=results)
     (out / 'checks.json').write_text(json.dumps(summary, indent=2) + '\n')
     print('PASSED' if summary['passed'] else 'FAILED', sum(c['ok'] for c in checks.values()), '/', len(checks), flush=True)
+    sys.exit(0 if summary['passed'] else 1)
 finally:
     if not owns_bridge and p.poll() is None:
         reap(p)
