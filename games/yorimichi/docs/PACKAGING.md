@@ -16,6 +16,11 @@ build configuration waits forever on the macOS Documents privacy check (README, 
 
 ## What it does
 
+- **Cooked tree buffers:** `unreal.city_tree_cpu_access` retains CPU buffers on the three production city trees before
+  `unreal.desktop` creates their optimized variants. The runtime verifies the original and variant geometry before
+  swapping. This metadata layer changes three assets without clearing or reimporting the world; a later world
+  import invalidates the layer automatically.
+
 - **One guarded turn:** RunUAT `BuildCookRun` builds the game target, cooks all content (the game loads about 83 assets
   by path at run time), stages, paks, packages and archives. On a Mac, `-package` has Xcode finalize a self-contained
   `.app` (paks and `Content/Data` inside `Contents/UE`). Without it, the archive step copies the bare

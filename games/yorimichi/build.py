@@ -88,6 +88,20 @@ class PackageArchive(Python):
     progress: float = 25.
 
 
+def city_tree_cpu_access_present(ctx):
+    """A same-input world reimport can overwrite these flags without changing its fingerprint: verify the overlay."""
+    import hashlib
+    try:
+        report = json.loads((ctx.out / 'city_tree_lods' / 'production-cpu-access.json').read_text())
+        root = ctx.uproject.parent / 'Content' / 'Japan' / 'Assets'
+        names = ('HD_ArcadeTree', 'HD_PlazaTreeGold', 'HD_PlazaTreeOrange')
+        return all(report[name]['allow_cpu_access'] is True and
+                   hashlib.sha256((root / (name + '.uasset')).read_bytes()).hexdigest() == report[name]['sha256']
+                   for name in names)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return False
+
+
 def package_present(out):
     """The zip or every part the manifest lists, at its recorded size: names vary with the revision and the split."""
     root = out / 'package'
@@ -470,11 +484,17 @@ def steps(ctx):
         Step('unreal.see_through', [UnrealScript(SCRIPTS / 'see_through.py', 'SEE-THROUGH COMPLETE')],
              inputs=[SCRIPTS / 'see_through.py'], needs=['unreal.world', 'unreal.cairo'], heavy=True,
              about='camera see-through on leaves, grass, trunks, the guardrail, poles, torii and Cairo (/Game/SeeThrough)'),
+        # Runtime metadata is a separate overlay: changing it must not clear/reimport /Game/Japan.
+        Step('unreal.city_tree_cpu_access', [UnrealScript(SCRIPTS / 'city_tree_cpu_access.py', 'CITY TREE CPU ACCESS COMPLETE')],
+             inputs=[SCRIPTS / 'city_tree_cpu_access.py'], needs=['unreal.world'], heavy=True,
+             outputs=[out / 'city_tree_lods' / 'production-cpu-access.json'],
+             verify=lambda: city_tree_cpu_access_present(ctx),
+             about='retain cooked CPU buffers for the three production trees used by runtime LOD validation'),
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
-             after=['unreal.world'], needs=['world.city_tiles', 'world.city_trees'], heavy=True,
+             needs=['unreal.city_tree_cpu_access', 'world.city_tiles', 'world.city_trees'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         # The Ride skating clips: the native rig and every native clip as Unreal assets (/Game/SkateRide), the manifest
         # the Ride runtime reads, and the measurement of the compressed poses against the native data. Both scripts

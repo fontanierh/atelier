@@ -15,8 +15,6 @@ ROOT = yori.OUT;OUT=ROOT/'hidamari'
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()
 manifest=json.loads((OUT/'manifest.json').read_text());only=set(filter(None,os.environ.get('HIDAMARI_ASSETS','').split(',')))
-# Meshes whose vertices the game reads on the CPU at run time (see allow_cpu_access below).
-CITY_TREES=('HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange')
 arcade_mat=arcade_material() if not only or any(n.startswith(('HD_Arcade','HD_Plaza','HD_Shop_')) or n in ['HD_ClockHall','HD_Square','HD_Station','HD_Shrine','HD_Park','HD_Streets','HD_CivicGardens'] for n in only) else None
 paving_mat=arcade_material(paving=True) if not only or only & {'HD_ArcadeFloor','HD_PlazaFloor'} else None
 plaza_paving=paving_material() if not only or 'HD_PlazaFloor' in only else None
@@ -118,11 +116,6 @@ for name,entry in manifest.items():
     body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if not entry['collision_boxes'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AND_COMPLEX)
     box=mesh.get_bounding_box()
     assert abs(box.max.z-entry['max'][2]*100)<.3,(name,'unit conversion',box.max.z)
-    if name in CITY_TREES:
-        # The city-tree LOD swap (CityTreeLODExperiment) compares these meshes' vertices on the CPU. A cooked game keeps
-        # CPU vertex data only for meshes that allow it (StaticMesh.cpp SerializeBuffers), so without this the
-        # packaged game refuses the optimized trees. The tree-LOD variants are duplicated from these and inherit it.
-        mesh.set_editor_property('allow_cpu_access',True)
     unreal.EditorAssetLibrary.save_loaded_asset(mesh)
     report[name]={'imported':True,'triangles':entry['triangles'],'max_z_cm':box.max.z,'material':selected.get_path_name()}
     if 'slots' in entry:report[name]['surfaces']=entry['slots']
