@@ -15,6 +15,7 @@ FLIGHTS = 18
 STEPS = 14
 RUN = 6.3
 WIDTH = 2.4
+RIDGE = (1293.55, 592.22)  # the top landing on the source ridge, 3.4 m deep
 # Source mesh indices (source.json pins them): the low and straight ledges and the flat rail keep their own short
 # legs; the medium and small full pipes bear on their bottoms.
 SLENDER = (17, 18, 21)
@@ -38,6 +39,7 @@ class Mesh:
     faces: list = field(default_factory=list)
     uv: list = field(default_factory=list)
     members: list = field(default_factory=list)
+    textured: bool = True
 
     def face(self, points):
         p = np.asarray(points, float); start = len(self.vertices)
@@ -138,6 +140,50 @@ def _plan_distance(polygon, a, b):
                      + [_point_segment(p, a, b) for p, q in edges]))
 
 
+def _overlap(p, q):
+    """Area shared by two convex plane polygons (2D, either winding)."""
+    def cross(a, b): return a[..., 0]*b[..., 1]-a[..., 1]*b[..., 0]
+    def ccw(r): return r if cross(r[1]-r[0], r[2]-r[0]) > 0 else r[::-1]
+    out, q = ccw(p), ccw(q)
+    for a, b in zip(q, np.roll(q, -1, 0)):
+        side = cross(b-a, out-a); inside = side >= -1e-12; kept = []
+        for i in range(len(out)):
+            s, e = out[i-1], out[i]
+            if inside[i] != inside[i-1]: kept.append(s+(e-s)*side[i-1]/(side[i-1]-side[i]))
+            if inside[i]: kept.append(e)
+        if len(kept) < 3: return 0.
+        out = np.asarray(kept)
+    x, y = out[:, 0], out[:, 1]
+    return float(abs(x@np.roll(y, -1)-y@np.roll(x, -1))/2)
+
+
+def flicker(meshes, area=1e-4):
+    """Overlapping coplanar faces that face the same way but shade differently, so the depth test flickers.
+
+    Two faces of one material render the same pixels when it is untextured or their texture frames agree.
+    Returns (area m², centre, material, material) for each conflicting pair."""
+    planes = {}
+    for mesh in meshes:
+        points = np.asarray(mesh.vertices)
+        for face in mesh.faces:
+            p = points[face]; n = np.cross(p[1]-p[0], p[2]-p[0]); n /= np.linalg.norm(n)
+            u = (p[1]-p[0])/np.linalg.norm(p[1]-p[0])
+            planes.setdefault((*np.round(n, 3)+0., round(float(n@p[0]), 3)+0.), []).append((mesh, p, u, n))
+    found = []
+    for faces in planes.values():
+        if len(faces) < 2: continue
+        n = faces[0][3]; e1 = np.cross(n, [0., 0., 1.] if abs(n[2]) < .9 else [1., 0., 0.]); e1 /= np.linalg.norm(e1)
+        e2 = np.cross(n, e1); flat = [p@np.column_stack((e1, e2)) for _, p, _, _ in faces]
+        for i, (mesh, p, u, _) in enumerate(faces):
+            for j in range(i+1, len(faces)):
+                other = faces[j][0]
+                if mesh.material == other.material and (not mesh.textured or np.allclose(u, faces[j][2], atol=1e-6)):
+                    continue
+                shared = _overlap(flat[i], flat[j])
+                if shared > area: found.append((shared, p.mean(0).round(2).tolist(), mesh.material, other.material))
+    return found
+
+
 def body_intrusions(triangles, route, radius=.25, low=.4, high=1.95):
     """Triangles reaching into the walking body swept along each route segment, measured exactly in plan.
 
@@ -220,7 +266,7 @@ def raised_groups(source):
 
 
 def build(base_sampler):
-    steel = Mesh('SM_CP_StructureSteel', 'CP_StructureSteel')
+    steel = Mesh('SM_CP_StructureSteel', 'CP_StructureSteel', textured=False)  # a flat indigo
     timber = Mesh('SM_CP_ServiceTimber', 'CP_ServiceTimber')
     source = scene(); all_triangles = L.place(source.triangles()); contacts = []
 
@@ -433,11 +479,12 @@ def build(base_sampler):
     def landing(east, z, entrance=False, bridge_exit=False):
         x0, x1 = (1310.1, 1312.4) if east else (1301.5, 1303.8)
         timber.box([(x0+x1)/2, 602.1, z-.12], [x1-x0, 6., .24])
+        # Edge beams run 10 cm past the deck so their end caps never share its side faces.
         for y in (599.1, 605.1):
-            steel.beam([x0, y, z-.27], [x1, y, z-.27], .2)
+            steel.beam([x0-.1, y, z-.27], [x1+.1, y, z-.27], .2)
             rail([x0, y, z], [x1, y, z])
         outside = x1 if east else x0
-        steel.beam([outside, 599.1, z-.27], [outside, 605.1, z-.27], .2)
+        steel.beam([outside, 599.0, z-.27], [outside, 605.2, z-.27], .2)
         if bridge_exit:
             # The 2.2 m bridge continues west through the top landing's wall.
             rail([outside, 599.1, z], [outside, 599.2, z])
@@ -454,7 +501,8 @@ def build(base_sampler):
             top = z+(step+1)*rise/STEPS
             timber.box([x+direction*(step+.5)*RUN/STEPS, y, top-.11], [RUN/STEPS+.005, WIDTH, .22])
         for side in (-1, 1):
-            a = [x, y+side*(WIDTH/2-.10), z-.20]
+            # Stringers stand 2 cm proud of the tread ends: a shared face z-fights wood through the steel.
+            a = [x, y+side*(WIDTH/2-.08), z-.20]
             b = [x+direction*RUN, a[1], z+rise-.20]
             steel.beam(a, b, .20, .30)
             rail([x, y+side*WIDTH/2, z], [b[0], y+side*WIDTH/2, z+rise])
@@ -466,12 +514,15 @@ def build(base_sampler):
 
     # The top bridge runs behind the original ramp, then meets its 85.586 m ridge.
     bridge = route[-4:]
-    for corner in bridge[1:-1]:
-        timber.box(corner-[0, 0, .12], [2.2, 2.2, .24])
+    # Its decking abuts the top landing, the corner and the ridge landing rather than overlapping them:
+    # coplanar treads with crossing grain flicker.
+    corner = bridge[2]-[0, 0, .12]
+    timber.box(corner, [2.2, 2.2, .24])
+    timber.beam([1301.5, corner[1], corner[2]], corner+[1.1, 0, 0], 2.2, .24)
+    timber.beam(corner-[0, 1.1, 0], [corner[0], RIDGE[1]+1.7, corner[2]], 2.2, .24)
     for a, b in zip(bridge, bridge[1:]):
         direction = b[:2]-a[:2]
         if np.linalg.norm(direction) < .01: continue
-        timber.beam(a-[0, 0, .12], b-[0, 0, .12], 2.2, .24)
         n = np.array([-direction[1], direction[0], 0.]); n /= np.linalg.norm(n)
         for side in (-1, 1):
             steel.beam(a+side*n*.95-[0, 0, .28], b+side*n*.95-[0, 0, .28], .2)
@@ -481,7 +532,7 @@ def build(base_sampler):
     for edge in (east_edge, west_edge):
         for a, b in zip(edge, edge[1:]): rail(a, b)
     # A usable top landing touches the source ridge; its west edge is open for drop-in.
-    timber.box([1293.55, 592.22, TOP-.12], [2.2, 3.4, .24])
+    timber.box([*RIDGE, TOP-.12], [2.2, 3.4, .24])
     # The bridge rests on one exterior tower, rather than four poles in bowls.
     anchor = outside_anchor(np.array([1293.55, 600.3, TOP]))
     reserve_frame(anchor, TOP-.28)
