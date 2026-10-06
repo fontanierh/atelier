@@ -24,7 +24,7 @@ The worker owns and quits only the game process it launches.
 """
 from pathlib import Path
 from contextlib import ExitStack
-import argparse, itertools, json, re, subprocess, sys, time
+import argparse, itertools, json, re, socket, subprocess, sys, time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world' / 'regions'))
 import yori
@@ -103,6 +103,10 @@ def record(name, ok, note):
 
 
 checks = {}
+owns_bridge = False
+with socket.socket() as probe:
+    if probe.connect_ex(('127.0.0.1', args.port)) == 0:
+        raise RuntimeError(f'Review port {args.port} is occupied; refusing another game')
 log = (out / 'game.log').open('w')
 cmd = [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed', '-resx=1280', '-resy=720', '-nosplash', '-stdout', '-nofox',
        f'-liveport={args.port}', '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost',
@@ -261,17 +265,25 @@ def airs_out(name, physical, push, at=LANE, window=None):
 try:
     monitor = guards.enter_context(attach_memory_guard(p.pid, out / 'memory-health.json', duration=800))
     deadline = time.monotonic() + 300
+    last_notice = 0.
     while time.monotonic() < deadline:
         if p.poll() is not None: raise RuntimeError('Game exited ' + str(p.returncode))
+        if time.monotonic()-last_notice >= 20:
+            print('Waiting for owned bridge; game log bytes', (out/'game.log').stat().st_size, flush=True); last_notice=time.monotonic()
         try: live.request('/state', timeout=1); break
         except OSError: time.sleep(1)
     else: raise RuntimeError('Bridge startup timed out')
-    steady, start = None, time.monotonic()
+    run('import os,unreal; assert os.getpid() == '+str(p.pid)+'; assert os.path.realpath(unreal.Paths.project_dir()) == '+repr(str(ctx.uproject.parent.resolve())))
+    owns_bridge = True
+    steady, start = None, time.monotonic(); last_notice = 0.
     while time.monotonic() - start < 240:
         fps = live.request('/state').get('fps', 0)
+        if time.monotonic()-last_notice >= 20:
+            print(f'Owned game settling: observed {fps:.1f} FPS, elapsed {time.monotonic()-start:.0f}s; waiting for three seconds >=25 FPS', flush=True); last_notice=time.monotonic()
         steady = (steady or time.monotonic()) if fps >= 25 else None
         if steady and time.monotonic() - steady > 3: break
         time.sleep(.5)
+    else: raise RuntimeError('Owned game did not settle at >=25 FPS within 240s')
     print('bridge up and steady', flush=True)
     results = {}
     results['on_foot'] = stand(); print('on_foot', json.dumps(results['on_foot']), flush=True)
@@ -317,7 +329,7 @@ try:
     print('PASSED' if summary['passed'] else 'FAILED', sum(c['ok'] for c in checks.values()), '/', len(checks), flush=True)
 finally:
     try:
-        if p.poll() is None: live.request('/python', "unreal.SystemLibrary.quit_game(unreal.LiveLibrary.game_world(),None,unreal.QuitPreference.QUIT,False)", timeout=5)
+        if p.poll() is None and owns_bridge: live.request('/python', "unreal.SystemLibrary.quit_game(unreal.LiveLibrary.game_world(),None,unreal.QuitPreference.QUIT,False)", timeout=5)
     except Exception: pass
     try: p.wait(timeout=20)
     except subprocess.TimeoutExpired: reap(p)
