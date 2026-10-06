@@ -59,6 +59,32 @@ Each zone is a travel target with a key, name, position, yaw and hint. Zones are
 `UJapanMap` adds a `skatepier` stop from `skatepark/park.json`, and a `hippodrome` stop (by Hudson, at the
 grandstand) from `hippodrome/hippodrome.json`, when `map.json` has none ([HIPPODROME.md](HIPPODROME.md)).
 
+## Saved skate-line markers
+
+Press **F5** while grounded to save a new place and heading; **F9** returns to the selected marker. Each F5 press
+adds a new `Marker N`, keeping your earlier locations. Open the map with **M** to enter a name and **Save here**,
+choose **Previous** / **Next**, **Rename selected**, or **Delete selected**. Clicking a blue **M** pin selects and
+returns to that place. With the map open, the controller's top face button saves a new place and its left face
+button returns; the hint names the connected pad's buttons. Controller users can choose any saved pin with the
+stick or d-pad and travel with the bottom face button. The phone receives the same named marker zones.
+
+Up to 64 places are saved, with unique names of 1–48 characters. Positions, headings and the selected marker are
+written to `markers.json` beside the game's preferences file (normally `unreal/Saved/settings.txt` in development;
+in the packaged game's user container beside `settings.txt`). They survive character switches and game restarts,
+including a new package with the same bundle identity. Saving uses a temporary sibling and an atomic replacement;
+a failed write or unreadable save preserves the previous file and reports the problem.
+
+Returns stow vehicles and clear momentum through normal travel. A local ground trace keeps a place under a roof
+under it. Missing, changed or obstructed ground refuses travel and preserves the marker. An airborne or ungrounded
+save attempt also leaves previous places intact.
+
+The durable review scenario is `uv run atelier qa yorimichi session_marker --port PORT --save-file FILE`. Start a
+fresh guarded CairoBotw game with `-markersave=FILE` pointing to a new review file; the scenario refuses to operate
+on a game using the player's normal save. It checks keyboard input, several named places, selection, rename/delete,
+map/phone travel, airborne refusal, roofs, blocked or removed floors and character switches. Restart with the same
+review save and add `--reload` to verify persisted places, headings and selection. Evidence goes to
+`build/yorimichi/session-marker/review/`; test files remain under `build/`.
+
 ## The painted sheet
 
 The painted sheet is committed in [`world/map/painted/`](../world/map/painted/), because it cannot be reproduced
@@ -128,7 +154,8 @@ belong in the archive; an existing ledger is never removed to retry an uncertain
   names and the player arrow; clicking a pin travels.
 - **Controller:** View / Touchpad / Minus opens and closes it. The left stick moves a reticle that catches the nearest
   pin, the d-pad hops to the nearest pin in that direction, the right stick pans, the shoulders zoom about the
-  reticle, the bottom button travels and the right button closes. Other pad buttons are swallowed. Moving the mouse
+  reticle, the bottom button travels and the right button closes. The top/left buttons set/return to the selected saved marker;
+  other pad buttons are swallowed. Moving the mouse
   hands the sheet back to hover and click; the header and hint lines name the connected pad's buttons.
 - **Phone:** `{action:"map"}` returns the bounds, knots, zones and the sheet URL (`/map/map.jpg`, served from
   `build/yorimichi/map` by the `[stream] routes` entry in `game.toml`); `{action:"teleport", zone}` travels. The
