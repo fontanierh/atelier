@@ -10,6 +10,10 @@ plugins, `unreal/Config` or the packaging code (`tools/package_archive.py`, `too
 nice -n 10 uv run atelier build yorimichi unreal.package
 ```
 
+On a Mac without a logged-in GUI session, run `uv run atelier setup --headless` first. Without it, UAT's in-process
+build configuration waits forever on the macOS Documents privacy check (README, "headless"). The step exports
+`UE_HEADLESS_USER_DIR` for UAT and the build tool it starts.
+
 ## What it does
 
 - **One guarded turn:** RunUAT `BuildCookRun` builds the game target, cooks all content (the game loads about 83 assets

@@ -88,7 +88,13 @@ class UnrealPackage:
     progress: float = 25.               # quiet UAT phases still print at least every 30 s
 
     def argv(self, ctx):
-        return [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
+        # UAT reads the build tool's XML config in-process and then runs UnrealBuildTool directly, both past the
+        # patched Build.sh that exports the headless user directory. Without it the tool resolves ~/Documents and a
+        # headless run waits forever on the macOS privacy check (the first package stalled exactly there).
+        from .setup import headless_user_dir
+        folder = None if os.environ.get('UE_HEADLESS_USER_DIR') else headless_user_dir(ctx.unreal_root)
+        prefix = ['/usr/bin/env', f'UE_HEADLESS_USER_DIR={folder}'] if folder else []
+        return prefix + [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
                 f'-target={self.target}', '-platform=Mac', f'-clientconfig={self.config}', '-build',
                 f'-ubtargs=-MaxParallelActions={self.workers}', '-cook', '-cookall', '-stage', '-pak', '-archive',
                 f'-archivedirectory={self.archive}', '-nocompileeditor', '-noP4', '-unattended', '-utf8output']

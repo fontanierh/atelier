@@ -80,6 +80,11 @@ other engine versions are refused without modification. Repeating it is safe. Us
 This mode bypasses user and project `BuildConfiguration.xml`; pass desired build settings on the command line.
 It also needs Rosetta for the managed tool's Intel protobuf compiler; setup checks this before modifying the engine.
 Install it with `softwareupdate --install-rosetta --agree-to-license` if missing.
+AutomationTool (UAT, used by packaging) loads its own copies of the build tool's DLLs and reads the XML config
+in-process. On .NET 10, `SpecialFolder.Personal` is `~/Documents`, and looking it up waits on the macOS privacy prompt,
+so a headless UAT would hang at startup. The repair therefore also patches that lookup to use `UE_HEADLESS_USER_DIR`, and
+replaces UAT's shipped copies with the rebuilt ones (originals kept, restored on failure). `unreal.package` exports the
+variable for UAT and the build tool it starts.
 
 ## Build Yorimichi
 
