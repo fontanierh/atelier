@@ -165,3 +165,24 @@ def test_forced_tree_comparison_readiness_and_invalid_saved_modes(desktop):
     assert desktop.tree_lod_choice({'tree_lod_mode':'1.5'})==2
     assert desktop.tree_lod_choice({'tree_lod_mode':'nan'})==0
     assert desktop.tree_lod_choice({'tree_lod_mode':'bad'})==0
+
+
+def test_renderer_restart_waits_for_an_occupied_loopback_port(desktop):
+    import socket
+    import pytest
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as owner:
+        owner.bind(('127.0.0.1', 0))
+        owner.listen()
+        port = owner.getsockname()[1]
+        with pytest.raises(TimeoutError, match='stayed occupied'):
+            desktop.wait_for_bridge_port(['-liveport='+str(port)], timeout=.03)
+        # The check must not take over, close or share the owner's listener.
+        assert owner.getsockname() == ('127.0.0.1', port)
+        owner.listen()
+    desktop.wait_for_bridge_port(['-liveport='+str(port)], timeout=.03)
+
+
+def test_renderer_restart_rejects_an_invalid_port(desktop):
+    import pytest
+    with pytest.raises(ValueError, match='live bridge port'):
+        desktop.wait_for_bridge_port(['-liveport=65536'], timeout=.03)

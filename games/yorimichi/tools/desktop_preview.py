@@ -12,7 +12,7 @@ verified from the log: the viewport size, the renderer, and each desktop feature
 Needs `atelier build yorimichi` (including the unreal.desktop step). Settings are the game's own Saved/settings.txt
 with --shared-settings, or a copy per session otherwise.
 """
-import argparse, json, math, os, re, shlex, sys, time
+import argparse, errno, json, math, os, re, shlex, socket, sys, time
 from pathlib import Path
 
 GAME = Path(__file__).resolve().parents[1]
@@ -141,6 +141,31 @@ def parse_ready(log, baseline=False, windowed=False, tile_manifest=None, tree_op
     return dict(width=width, height=height, fullscreen=bool(full))
 
 
+def wait_for_bridge_port(command, timeout=90.):
+    """Wait without a render slot for the old listener's TCP state to expire; never share an occupied port."""
+    port = next((int(arg.split('=', 1)[1]) for arg in command if arg.lower().startswith('-liveport=')), 8830)
+    if not 1 <= port <= 65535:
+        raise ValueError('live bridge port must be 1 to 65535')
+    started = time.monotonic()
+    deadline = started + timeout
+    last_note = None
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            try:
+                probe.bind(('127.0.0.1', port))
+                return
+            except OSError as error:
+                if error.errno != errno.EADDRINUSE:
+                    raise
+        now = time.monotonic()
+        if now >= deadline:
+            raise TimeoutError(f'renderer restart: loopback bridge port {port} stayed occupied for {timeout:g} s')
+        if last_note is None or now-last_note >= 10:
+            print(f'Renderer restart waiting for loopback bridge port {port}: {now-started:.0f} s; no render slot held.', flush=True)
+            last_note = now
+        time.sleep(min(1., deadline-now))
+
+
 def launch(baseline=False, windowed=False, dry_run=False, shared_settings=False, settings='', memory_gib=10., extra=()):
     if not math.isfinite(memory_gib) or not 10 <= memory_gib <= 14:
         raise ValueError('--memory-gib must be 10 to 14 GiB')
@@ -188,6 +213,9 @@ def launch(baseline=False, windowed=False, dry_run=False, shared_settings=False,
             # override or comparison flag on the next process.
             settings = ';'.join(pair for pair in settings.split(';') if pair.partition('=')[0].strip() != 'renderer')
             baseline = False
+            # A fast restart can outrun TCP TIME_WAIT on the bridge. Do not enable
+            # address/port sharing: wait before seeking normal render admission.
+            wait_for_bridge_port(cmd)
             attempt += 1
             continue
         try:
