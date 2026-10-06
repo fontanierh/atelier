@@ -49,8 +49,8 @@ if not args.worker:
                          purpose='skate jump feet review', kind='game'))
 
 ox, oy, oz = ORIGIN
-START = (ox + 30, oy - 2, oz + 2)     # the mini-mega's flat, on foot
-LANE = (ox + 44.6, oy - 2, oz + 2)    # the landing's wood flat before the quarter, riding toward +x
+START = (ox + 50, oy + 3, oz + 2)     # on foot: the landing's level wood (0.45 m from x 49 to 56), clear of the rollout
+LANE = (ox + 44.6, oy - 2, oz + 2)    # the landing's run-out (4° down) before the quarter, riding toward +x
 DROP_IN = (ox - 2.6, oy, oz + 12)     # the roll-in's top deck
 QUARTER_X = 56.                       # where the quarter's transition starts, along the ramp
 OLLIES = 3
