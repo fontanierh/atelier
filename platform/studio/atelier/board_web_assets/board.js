@@ -732,16 +732,19 @@ function scene(entry) {
 // p is how far the top screen has gone: 0 covers everything, 1 is off to the right.
 const frame=(s,p)=>({top:{transform:`translate3d(${p*s.width}px,0,0)`},under:{transform:`translate3d(${-(1-p)*PARALLAX*s.width}px,0,0)`},scrim:{opacity:(1-p)*DIM}});
 function paint(s,p) { const f=frame(s,p); s.top.style.transform=f.top.transform; for(const n of s.under)n.style.transform=f.under.transform; s.scrim.style.opacity=f.scrim.opacity; }
-function begin(s) { $("app").classList.add("navigating");s.top.classList.add("nav-top");s.scrim.hidden=false; }
+// Only this scene's layers take part: a conversation's still copy stays hidden while a thread moves over it.
+function begin(s) { $("app").classList.add("navigating");s.top.classList.add("nav-top");for(const n of s.under)n.classList.add("nav-under");s.scrim.hidden=false; }
 function end(s) {
-  $("app").classList.remove("navigating");s.top.classList.remove("nav-top");s.scrim.hidden=true;
+  $("app").classList.remove("navigating");s.top.classList.remove("nav-top");for(const n of s.under)n.classList.remove("nav-under");s.scrim.hidden=true;
   for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.opacity="";
 }
 function glide(s,from,to,velocity=0) {
   const {easing,duration}=motion.matches?{easing:"linear",duration:1}:spring(velocity), a=frame(s,from), b=frame(s,to);
   paint(s,to);
   const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map(n=>n.animate([a.under,b.under],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
-  moving=Promise.all(runs.map(r=>r.finished.catch(()=>{}))).then(()=>{moving=null;});
+  // Settle on time even if the browser never reports an animation finished, so nothing stays mid-transition.
+  moving=Promise.race([Promise.all(runs.map(r=>r.finished.catch(()=>{}))),new Promise(done=>setTimeout(done,duration+250))])
+    .then(()=>{for(const r of runs)r.cancel();moving=null;});
   return moving;
 }
 const waitFor=(ready,ms)=>new Promise(done=>{const start=performance.now();(function check(){if(ready()||performance.now()-start>ms)done();else requestAnimationFrame(check);})();});
@@ -1005,7 +1008,7 @@ $("broadcastForm").addEventListener("submit",async event=>{
   try {
     const response=await fetch("/api/send",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({body:draftBody,topic:draftTopic,recipient:target,request_id:draftKey,attachments:files,reply_to:replyTo}),signal:abort.signal});
     const result=await response.json();if(!response.ok)throw Error(result.error||"Message failed. Your draft is saved; retry safely.");
-    composerStatus(replyTo?"Replied in thread":target==="*"?`Sent to ${result.recipients.length} agents`:`Sent to ${describe(target)}`);closeMentions();
+    composerStatus("");closeMentions();   // the message appearing in the feed is the confirmation
     $("message").value="";draftKey=null;draftBody="";
     for(const u of uploads)if(u.preview?.startsWith("blob:"))URL.revokeObjectURL(u.preview);
     uploads=[];renderTray();persistDraft();grow();
