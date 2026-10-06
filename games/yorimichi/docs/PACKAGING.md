@@ -71,8 +71,8 @@ A packaged game does not start the live bridge (the HTTP remote control and its 
 ## The launcher
 
 Double-clicking `Yorimichi.app` starts the game without the desktop profile. `Play Yorimichi.command` is generated from
-`tools/desktop_preview.py`, so it carries the same profile as `atelier play yorimichi --profile desktop-1440
---shared-settings`:
+`tools/desktop_preview.py`, so it carries the same profile as `atelier play yorimichi --profile desktop-1440`,
+which already selects shared settings:
 
 - forward rendering
 - the native 1440 viewport

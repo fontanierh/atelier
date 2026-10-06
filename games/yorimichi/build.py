@@ -1,7 +1,9 @@
 """How Yorimichi is built from this repository: `atelier build yorimichi [step ...]`.
 
-Order: world data and meshes (Python and Blender) -> characters -> sounds and effect textures -> the Unreal module ->
-the Unreal imports -> runtime data staged into unreal/Content/Data. Every output goes to build/yorimichi (or
+Order: world exports (Python and Blender) -> characters -> sounds and effect textures -> the Unreal module ->
+the Unreal imports -> runtime data staged into unreal/Content/Data. The small factories below preserve that order;
+optional character and region steps are appended when their source is available. Packaging is explicit, with a
+certified cook and independently stamped download assembly. Generated outputs go to build/yorimichi (or
 $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build yorimichi --list` prints the steps.
 
 The Unreal imports run in the order the prototype established: `setup_project.py` rebuilds everything under
@@ -252,14 +254,11 @@ def communitypark_steps(out):
     ]
 
 
-def steps(ctx):
+def world_steps(ctx, park):
+    """World exports; the optional park contributes ground, map and vegetation inputs."""
     out = ctx.out
-    combat, armed, locomotion = cairo_roles()
-    cairo = CHARS / 'cairo' / 'export_unreal.py'
-    # The ground, map and vegetation round the community park, which exist only where its source was fetched.
-    park = communitypark(out)
     park_inputs = [REGIONS / 'communitypark' / 'layout.py', REGIONS / 'communitypark' / 'source.py', park] if park else []
-    result = [
+    return [
         # ------------------------------------------------------------ world
         Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI],
              outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
@@ -367,6 +366,15 @@ def steps(ctx):
         Step('world.city_trees', [Blender(WORLD / 'city_tree_lods.py', ('--tag', 'v4'))],
              inputs=[WORLD / 'city_tree_lods.py', REGIONS / 'hidamari' / 'arcade.py', REGIONS / 'hidamari' / 'plaza.py'],
              needs=['world.hidamari'], outputs=[out / 'city_tree_lods' / 'v4' / 'manifest.json'], about='desktop profile: city tree LODs'),
+    ]
+
+
+def character_steps(ctx):
+    """The base player and villagers; optional move sets are appended separately."""
+    out = ctx.out
+    combat, armed, locomotion = cairo_roles()
+    cairo = CHARS / 'cairo' / 'export_unreal.py'
+    return [
         # ------------------------------------------------------------ characters
         Step('characters.cairo', [
                 Blender(cairo, ('--sword', '--clips', ','.join(locomotion)), threads=4),
@@ -381,6 +389,13 @@ def steps(ctx):
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips'),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
              inputs=[CHARS / 'wanderer'], outputs=[out / 'wanderer' / 'build.json'], about='the villagers (procedural model and clips)'),
+    ]
+
+
+def sound_effect_steps(ctx):
+    """Offline sound slices and procedural effect textures."""
+    out = ctx.out
+    return [
         # ------------------------------------------------------------ sounds and effects
         Step('audio.footsteps', [Python(AUDIO / 'footsteps' / 'slice.py')], inputs=[AUDIO / 'footsteps', paths.cache_dir('sonniss', 'footsteps')],
              outputs=[out / 'audio' / 'footsteps' / 'manifest.json'], about='531 footstep one-shots (needs `atelier fetch`)'),
@@ -392,6 +407,13 @@ def steps(ctx):
              outputs=[out / 'audio' / 'bike' / 'manifest.json'], about="the bike's tyres, freewheel, chain, wind, bell and knocks"),
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
              outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
+    ]
+
+
+def unreal_steps(ctx):
+    """Native checks, editor compilation and ordered content imports."""
+    out = ctx.out
+    return [
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
@@ -506,11 +528,24 @@ def steps(ctx):
         Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
              inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'native.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
              outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
-    ] + communitypark_steps(out) + [
+    ] + communitypark_steps(out)
+
+
+def staging_steps(ctx, park):
+    """Runtime data copied into Content/Data after its producers complete."""
+    out = ctx.out
+    return [
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
-    ] + botw_steps(out) + hippodrome_steps(out)
+    ]
+
+
+def steps(ctx):
+    """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
+    park = communitypark(ctx.out)
+    result = (world_steps(ctx, park) + character_steps(ctx) + sound_effect_steps(ctx)
+              + unreal_steps(ctx) + staging_steps(ctx, park) + botw_steps(ctx.out) + hippodrome_steps(ctx.out))
     return result + [cook_step(ctx, result), package_step(ctx, result)]
