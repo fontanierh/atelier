@@ -38,7 +38,7 @@ and the engine. Native's file names are its families in `Private/Native/` (see [
 | Bail ragdoll | Unreal | The rider's own Chaos bodies (`URidePhysicalRider`), limp under Physics Control's `Bail` profile, inside a joint envelope taken from Native's bail limits (`BailJoints`). |
 | Board during a bail | Native, then Chaos | The session goes on with its wipeout and a Chaos box is placed on Native's board every frame; it is released to Chaos with Native's motion. See [Bails](#bails). |
 | Get-up | Unreal | The body's snapshot blends into a get-up clip (`BlendFromSnapshot`); `GetUpFromNativeBail` (`RideComponent.cpp`) starts the next ride on a fresh session where the body lies. |
-| Mount, dismount, carry, run-out, kick-out, caveman, step-on | Unreal | `RideTransition.*`: Native's clips played by Ride's clip player (`FRideClipPlayer`, `RideClipPlayer.h`) and retargeted like a ride. See [Transitions](#transitions). |
+| Mount, dismount, carry, run-out, kick-out, caveman, step-on | Unreal | `RideTransition*`: Native's clips played by Ride's clip player (`FRideClipPlayer`, `RideClipPlayer.h`) and retargeted like a ride. See [Transitions](#transitions). |
 | Native's on-foot states | Native, handed to Unreal | When Native's rider leaves the board on foot by itself (`BipedGround` for 0.2 s outside a bail or get-up), `TakeNativeOnFoot` (`RideComponent.cpp`) suspends the session, puts the character on its feet with the rider's velocity and lets the board roll on from Native's deck (U120). |
 | Riding pose | Native, then Unreal | Native's motion graph and animation (`MotionGraph*`, `RidingAnimation*`, `Skeleton*`, `Footplant*`, `FootIk*`) give the pose; `RetargetRetailPose` (`SkateRuntime.cpp`) fits it onto the character; `FAnimNode_SkateRider` shows it with inertialization. See [Rider pose](#rider-pose). |
 | Active ragdoll | Unreal | `URidePhysicalRider` and `URidePhysicsControl`: the character's bodies follow the retargeted pose. See [Physical rider](#physical-rider). |
@@ -290,7 +290,7 @@ contacts. Its cost is game-thread updates for about 32 controls.
 
 ## Transitions
 
-Getting on and off the board (`RideTransition.*`, `USkateComponent`) keeps one continuous character; the actor is
+Getting on and off the board (`RideTransition*`, `USkateComponent`) keeps one continuous character; the actor is
 never moved to a new place. The capsule changes size about its centre, the mesh keeps its world place across each
 switch and eases back onto the capsule over `MeshSettle`, the pose switches by inertialization
 (`FAnimNode_SkateRider`, on a `RequestPoseBlend`), and the speed carries over both ways. The Native backend switches
@@ -372,7 +372,7 @@ in but no one has ridden it yet.
 | H11 | Frame pacing p99 17.1 ms (limit 17) and a worst frame of 38.5 ms in the transitions run | Not the snapshot gather, which is off the game thread; unknown | Frame traces around mounts; `CollectWorld`; the transitions |
 | H23 | Native maths on the game thread runs outside the floating-point scope; two session failures in a row (one during the get-up) stow the board | The scope covers the worker's calls only | `FScopedNativeFloatEnvironment` callers in `SkateRuntime.cpp`; `RelaunchNativeRide` |
 | H26 | Hands inside the thighs at rest: the main rider -7.8 / -4.3 cm, a second rider -5.2 cm | Native's idle pose on our riders' proportions; `ClearArms` runs on Native's pose, but whether it covers this case is unchecked | `RetargetRetailPose`, `ClearArms`, the `arm_need=` field |
-| H29 | The board inside geometry: 19.3 cm into a wall in a run-out carrying the board; one frame 104 cm past a floor at a corner | The run-out case is the transition's carried board, not Native's; the floor case is unexplained | The run-out in `RideTransition.cpp`; the snapshot near thin meshes |
+| H29 | The board inside geometry: 19.3 cm into a wall in a run-out carrying the board; one frame 104 cm past a floor at a corner | The run-out case is the transition's carried board, not Native's; the floor case is unexplained | The run-out in `RideTransitionMount.cpp`; the snapshot near thin meshes |
 | H30 | A 360 hardflip onto a rail lands into a 5-0 5 cm from the rail's line, then bails | Unknown: Native's own outcome or the rail's polyline | Rail registration, `Grind*` |
 | H35 | A foot joint goes 1.8–3.5 degrees past its range in the joint check | Unknown | `skate.RideJointCheck`, `BailJoints` |
 | H37 | A quarter pipe's straight air is not repeatable (an occasional 70-degree yaw on the face, a bail at the landing) | Possibly fixed by fresh sessions; to measure again | The same launch repeated on both backends |
@@ -385,11 +385,11 @@ in but no one has ridden it yet.
 | U119 | Hard to lock into a grind, and a grind loses much speed | Investigating: grinds are Native's own, so a difference would come from what the session is given (rails, collision, input) | The same rail on both backends |
 | U120 | After losing the board, getting back on could move the character 4–12 m at once | The actor followed Native's root while Native's rider walked away from the board; fixed by handing Native's on-foot states to the character (`TakeNativeOnFoot`), to playtest | `RideComponent.cpp` |
 | U121 | A successful pump did not show in the trick line | Native scores no pump; fixed (the session counts pumps, `skate.PumpTrick`), to playtest. QA: the timed bowl pumps show `Pump` and `Pump x2` (0.6 m/s a rise); the mistimed row's rises that gain speed show too (0.5-0.67 m/s each), although that row ends slower than coasting, so the count is per rise, not per line | The trick line in `SkateRuntime.cpp`, `pump=` |
-| U122 | On foot after a get-up, sprint, double jump and dash stayed off while the board was carried | The carry blocked them; fixed (using one puts the board away), to playtest. A rider with a BotW move set (Link) puts the board away the same way before its dodge or dash; untested, as this checkout had no move-set import | `RideTransition.cpp`, the game's character |
+| U122 | On foot after a get-up, sprint, double jump and dash stayed off while the board was carried | The carry blocked them; fixed (using one puts the board away), to playtest. A rider with a BotW move set (Link) puts the board away the same way before its dodge or dash; untested, as this checkout had no move-set import | `RideTransitionAir.cpp` (`PutBoardAway`), the game's character |
 | U123 | In jumps the feet hovered behind and above the deck, in manuals they clipped into it, worse at speed and at 30 fps | The game's bike and sailboat components ticked in `TG_DuringPhysics` with the mesh waiting on them, which carried the mesh and Physics Control past the physics step (a frame's lag); fixed (both tick in `TG_PrePhysics`). QA: the physical feet now match the animated ones at every speed (4.0 cm along the deck, 1–9.75 m/s), and in the air they stay within 9 cm (60 fps) and 4.3 cm (30 fps) above the deck, from 15.5 and 27 cm. `review_skate_jump_feet.py` checks the physical feet against the animated ones at 60 and 30 fps, and fails on the late-tick warning. To playtest | `BikeComponent.cpp`, `SailboatComponent.cpp`, the tick order above |
 | H65 | `caveman_run` and `caveman_sprint` fail one run in three: a one-frame move or speed spike (8 cm, 340 cm/s) at the air mount's landing | Native's wheels touching a frame before its state lands, or a double step on a long frame; the rows pass on reruns | `skate_transitions` `caveman_*`, the landing frame in `continuity` |
 | U5, U13 | Turning, the rider bends too much for the board's tilt | The retarget of Native's lean onto our proportions (inferred) | `RetargetRetailPose` |
-| U19 | Hopping off with the board in hand, the tail clips the ground | The carry clip's board on our character | `RideTransition.cpp` |
+| U19 | Hopping off with the board in hand, the tail clips the ground | The carry clip's board on our character | `RideTransitionAir.cpp` (the carry) |
 | U58 | Ragdoll fallbacks: an invalid physics asset silently rides animation-only; large errors reset to the animation | Recovery by reset instead of failure | `URidePhysicalRider` |
 | U73 | The foot-on-deck check fails at a placement frame and entering a push (3–4 cm a frame) | Unknown; possibly the frame's lag of U123 (a push is the fastest change of speed), to recheck | The physical rider's foot anchors |
 | U111 | The transitions' clip player has none of Native's spin overlays or physical feedback | It plays clips only | `RideClipPlayer.h` |
@@ -399,10 +399,10 @@ in but no one has ridden it yet.
 | K8 | One 281 ms frame switching to a second character | Asset loading | The game's character switch |
 | K9 | Physics follow-up: a stability sweep, the get-up's foot margin, a second rider's legs and accessories at its feet | Open | `URidePhysicalRider` |
 | G6 | No wipeout control (the left stick in a bail) and no active falls (flail, brace) | Not built on the Chaos bail | `StartBail`, the `Bail` profile |
-| G18 | No skitching, moving objects, board throw, jump-out or fakie dismount clips | Not built | `RideTransition.cpp` |
+| G18 | No skitching, moving objects, board throw, jump-out or fakie dismount clips | Not built | `RideTransitionMount.cpp` |
 | G20 | No sounds per grind material, no ragdoll impacts, no tail scrape (ground surfaces have their own roll, pop and land) | Not built | `UpdateAudio` |
 | G22 | The camera jumps 30 cm or more on some mounts; a kicked-out board stays in the world | Pending | The transitions, the game's camera |
-| G29 | The air dismount clips for a Christ air and a tuck knee look wrong (inferred) | Unchecked | `RideTransition.cpp` |
+| G29 | The air dismount clips for a Christ air and a tuck knee look wrong (inferred) | Unchecked | `RideTransitionAir.cpp` (`BeginAirDismountClip`) |
 | G30 | On the Native backend Y, D-pad, Start and Back never reach the session; the keyboard has no X | The reference's input wiring | `ReadHostPad` |
 | U108 | Native backend rows are one frame behind their pad | It polls the previous step before sending the frame's input | `PollIdleRetail`, the QA timing |
 | U118 | A QA row bails only after other rows ran in the same game | State leaking between rows | The QA reset |
