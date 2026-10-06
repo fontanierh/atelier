@@ -29,7 +29,9 @@ def changed_by(edited, tmp_path, monkeypatch):
 
 
 def test_ramp_shape_rebuilds_only_the_ramp_and_the_map(tmp_path, monkeypatch):
-    assert changed_by(MEGA/'ramp.py', tmp_path, monkeypatch) == {'world.mega', 'world.map', 'unreal.mega', 'data.stage'}
+    # unreal.package needs every import and only runs when named, so a playtest build picks up the new ramp.
+    assert changed_by(MEGA/'ramp.py', tmp_path, monkeypatch) == {'world.mega', 'world.map', 'unreal.mega', 'data.stage',
+                                                                 'unreal.package'}
 
 
 def test_ramp_place_still_reshapes_the_terrain(tmp_path, monkeypatch):
