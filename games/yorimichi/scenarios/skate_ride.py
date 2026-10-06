@@ -36,7 +36,12 @@ import json
 import math
 import os
 import time
+from pathlib import Path
+
 import skate as qa
+
+# In-game code this scenario sends to the running game, kept as real files so it can be read, linted and diffed.
+INGAME = Path(__file__).resolve().parent / 'ingame'
 
 # live.FLICKS name -> the trick name Ride shows.
 FLIPS = {
@@ -74,25 +79,7 @@ GOOFY_NOLLIES = ('Nollie', 'Nollie Kickflip', 'Nollie Heelflip', 'Nollie FS Pop 
 # so up is injected negative). Each frame the stick moves on to the timeline's next point once its time has come (one
 # point a frame, so a slow frame never skips one); the rows record each frame's state with its time (padt; the state
 # line has its own t=) and the point (pt).
-PAD_RUN = """
-def _pad_run(timeline, push_until, duration):
-    live.REC = []; st = {'t': 0.0, 'i': 0, 'push': None}
-    def axes(x, y):
-        live.L.input_key('Gamepad_RightX', 'axis', float(x)); live.L.input_key('Gamepad_RightY', 'axis', float(-y))
-    def tick(dt):
-        t = st['t']
-        if st['i'] + 1 < len(timeline) and timeline[st['i'] + 1][0] <= t: st['i'] += 1
-        axes(*timeline[st['i']][1])
-        down = push_until is not None and t < push_until
-        if down != st['push']:
-            live.L.input_key('Gamepad_FaceButton_Bottom', 'press' if down else 'release', 1 if down else 0); st['push'] = down
-        live.REC.append('padt=%.4f pt=%d ' % (t, st['i']) + live.skate_state())
-        st['t'] = t + dt
-        if t >= duration:
-            axes(0, 0); live.L.input_key('Gamepad_FaceButton_Bottom', 'release', 0); live.stop('pad_flick')
-    live.behave('pad_flick', tick)
-live.pad_run = _pad_run
-"""
+PAD_RUN = (INGAME / 'skate_ride' / 'pad_run.py').read_text()
 
 
 def pad_timeline(points, at=.4, load=.16, step=.034):
@@ -188,40 +175,8 @@ HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True)
 # The rest close-up shows the right hand from the rider's right side (out from the hips through the hand), frozen at
 # the idle loop's worst phase for that hand: a watcher reads hand_gap= every frame for 1.6 s (more than the loop), then
 # stops time (global time dilation) when the right hand is back within 0.3 cm of the deepest it went.
-REST_AIM = """
-import unreal
-st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
-P = unreal.Vector(*[float(v) for v in st.get('hips', st.get('hip')).split(',')])
-H = P
-try:
-    _m = live.L.player().get_editor_property('mesh')
-    _b = next((n for n in ('hand_R', 'Wrist_R', 'hand_r') if _m.get_bone_index(n) != -1), None)
-    H = _m.get_socket_location(_b) if _b else P
-except Exception as e:
-    print('no right hand:', e)
-_out = unreal.Vector(H.x - P.x, H.y - P.y, 0)
-_out = _out * (1 / _out.length()) if _out.length() > 1 else live.L.player().get_actor_right_vector()
-unreal.MegaParkValidation.review_camera(H + _out * 85 + unreal.Vector(0, 0, 8), H, 40)
-"""
-WORST_PHASE = """
-import unreal
-live.HW = {'t': 0., 'min': 99., 'done': False, 'at': None}
-def _hw(dt):
-    s = live.HW
-    if s['done']:
-        return
-    st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
-    if 'hand_gap' not in st:
-        return
-    r = float(st['hand_gap'].split(',')[1])
-    s['t'] += dt
-    if s['t'] < 1.6:
-        s['min'] = min(s['min'], r)
-    elif r <= s['min'] + .3 or s['t'] > 4.5:
-        unreal.GameplayStatics.set_global_time_dilation(live.L.game_world(), .0001)
-        s['done'], s['at'] = True, r
-live.behave('handworst', _hw)
-"""
+REST_AIM = (INGAME / 'skate_ride' / 'rest_aim.py').read_text()
+WORST_PHASE = (INGAME / 'skate_ride' / 'worst_phase.py').read_text()
 
 
 def hand_rows(record):
@@ -626,14 +581,7 @@ def main():
 POOL = (-108., 1258.5, 82.)
 POOL_OUT = (0, 1)
 # Held from the take-off: the left stick, full right, for HOLD seconds of the air.
-SPIN_HOLD = """
-live.AIRT=[0.0]
-def _spin(dt):
-    s=live.skate_state(); air='mode=2 ' in s
-    live.AIRT[0]=live.AIRT[0]+dt if air else 0.0
-    live.skate_input(left=(1,0) if air and live.AIRT[0]<HOLD else (0,0))
-live.behave('spin', _spin)
-"""
+SPIN_HOLD = (INGAME / 'skate_ride' / 'spin_hold.py').read_text()
 
 # Native's body spin (BodySpin.cpp: PhysicalBodySpin's normal mode at spin scale 1.6) is the spin rows' reference. Its
 # tables against the air's time (s): the rate per unit of stick (rad/s) and the most it changes in a tick; and the
@@ -702,19 +650,7 @@ def native_spin(stick, takeoff, last, carry=0., scale=1.6):
 # In the game, each frame: the left stick's x from LEFT, an expression of t (the seconds since the start), a (the
 # seconds in the air), air and up (the deck's up z); the right stick through an ollie when OLLIE, held down from .4 s
 # to POP and flicked up for two ticks; and a log of (the ride's tick, x): the x it set goes to the ticks after that one.
-SPIN_RUN = """
-import re
-live.SPIN=[0.0, 0.0, []]
-def _spin(dt):
-    s=live.skate_state(); f=lambda k, d: float((re.search(' '+k+'=([-0-9.]+)', s) or [0, d])[1])
-    air=f('mode', 1)==2; up=f('deckup', 1)
-    live.SPIN[0]+=dt; live.SPIN[1]=live.SPIN[1]+dt if air else 0.0
-    t, a = live.SPIN[0], live.SPIN[1]
-    x=float(LEFT)
-    live.SPIN[2].append((int(f('tick', 0)), x))
-    live.skate_input(left=(x,0), right=(0,-1) if OLLIE and .4<=t<POP else (0,1) if OLLIE and POP<=t<POP+.033 else (0,0))
-live.behave('spin', _spin)
-"""
+SPIN_RUN = (INGAME / 'skate_ride' / 'spin_run.py').read_text()
 
 
 def spin_run(place, left, seconds, ollie=False, load=.16):
@@ -775,14 +711,7 @@ def spin_held(record):
 # Pumping (RIDE.md, "Pumping"): in the pier's bowl, launched east across its floor (20 m between the walls) at 6 m/s,
 # the triggers pulled to PULL while WHEN holds, an expression of ground and up (the deck's up z). Native's reference
 # pumps pull the left trigger to 200 of 255.
-PUMP_RUN = """
-import re
-def _pump(dt):
-    s=live.skate_state(); f=lambda k, d: float((re.search(' '+k+'=([-0-9.]+)', s) or [0, d])[1])
-    ground=f('mode', 1)==1; up=f('deckup', 1)
-    live.skate_input(grab_left=PULL if (WHEN) else 0)
-live.behave('pump', _pump)
-"""
+PUMP_RUN = (INGAME / 'skate_ride' / 'pump_run.py').read_text()
 PUMP_PULL = 200 / 255
 PUMP_RECIPES = (('pump_coast', 'False'),                       # no trigger: the transitions crouch him (MinCrouchVsGroundAngle)
                 ('pump_timed', 'ground and up > .985'),        # crouched across the floor, standing up through each transition
@@ -832,13 +761,7 @@ def pump_rows(record, parity):
 # counter-clockwise from east). Each comes down on the face it left, below the lip and within 1.5 m of it, in under
 # 3.5 s, without a bail.
 PLAYER_QUARTER = ((58, 22.5, 15), (60, 20.5, 30), (62, 19, 45))
-PLAYER_STEER = """
-live.LIPP=[False]
-def _lipp(dt):
-    live.LIPP[0]=live.LIPP[0] or 'mode=2 ' in live.skate_state()
-    live.skate_input(left=(0,0) if live.LIPP[0] else (STEER,0))
-live.behave('lipp', _lipp)
-"""
+PLAYER_STEER = (INGAME / 'skate_ride' / 'player_steer.py').read_text()
 
 
 MANUAL_PADS = (('manual_pad_kickflip', (0.0, -.5), (-0.908571, 0.417143)), ('manual_pad_nollie', (0.0, .5), (0.0, -1.0)))
@@ -1045,63 +968,9 @@ def vert_checks(record):
 
 # Each frame, every wheel's clearance along the ground's normal under it: the wheel's centre (its bone) to the ground,
 # less the wheel's reach toward it (the radius, by the axle's tilt to the normal), in cm.
-WHEELS = """
-import math
-_ch = unreal.GameplayStatics.get_player_character(live.L.game_world(), 0)
-# The board as shown: the skate component's wheel meshes (SkateWheel<end><side>, placed at the wheel bones' centres:
-# front right, front left, back right, back left), not the hidden pose mesh, which stays in the clips' root space.
-_parts = {c.get_name(): c for c in _ch.get_components_by_class(unreal.StaticMeshComponent)}
-_w = [_parts[n] for n in ('SkateWheel00', 'SkateWheel01', 'SkateWheel10', 'SkateWheel11')]
-_objects = [unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY1, unreal.ObjectTypeQuery.OBJECT_TYPE_QUERY2]
-_skip = [_ch] + list(_ch.get_attached_actors() or [])
-live.WHITS = {}
-def _hit(a, b):
-    # The first hit that starts clear of what it hits: a trace that starts inside something (the rider's feet, a
-    # volume) reports its own start, which is not the ground. What it skipped and what it took is counted in WHITS.
-    a, b = unreal.Vector(*a), unreal.Vector(*b)
-    hits = unreal.SystemLibrary.line_trace_multi_for_objects(live.L.game_world(), a, b, _objects, True, _skip, unreal.DrawDebugTrace.NONE, True) or []
-    for h in hits:
-        t = h.to_tuple()
-        name = (t[9].get_name() if t[9] else '?') + '/' + (t[10].get_name() if t[10] else '?')
-        if t[1] or t[3] <= 0:
-            live.WHITS['skipped ' + name] = live.WHITS.get('skipped ' + name, 0) + 1
-            continue
-        live.WHITS[name] = live.WHITS.get(name, 0) + 1
-        return ((t[5].x, t[5].y, t[5].z), (t[7].x, t[7].y, t[7].z))
-    return None
-def _wheels(dt):
-    c = []
-    for w in _w:
-        l = w.get_world_location(); c.append((l.x, l.y, l.z))
-    out = []
-    for i, p in enumerate(c):
-        q = c[i ^ 1]; ax = [q[k] - p[k] for k in range(3)]; s = math.sqrt(sum(v * v for v in ax)) or 1.
-        # From 5 cm above the wheel's centre (under the deck, above the wheel's top) down the vertical for the ground's
-        # normal, then down the normal itself, so a wheel up to 8 cm into the ground still reads.
-        down = _hit((p[0], p[1], p[2] + 5), (p[0], p[1], p[2] - 80))
-        hit = down and _hit(tuple(p[k] + down[1][k] * 5 for k in range(3)), tuple(p[k] - down[1][k] * 80 for k in range(3)))
-        if not hit: out.append(None); continue
-        n = down[1]; na = sum(n[k] * ax[k] for k in range(3)) / s
-        out.append(round(sum((p[k] - hit[0][k]) * n[k] for k in range(3)) - WHEEL_R * math.sqrt(max(0., 1 - na * na)), 2))
-    live.WREC.append((live.skate_state(), out))
-live._wheels = _wheels
-"""
+WHEELS = (INGAME / 'skate_ride' / 'wheels.py').read_text()
 # A low close-up from the inside of a carve (the board's right in a right turn), at wheel height.
-CLOSEUP = """
-import math
-live.SHOT=[0]
-def _closeup(dt):
-    live.SHOT[0]+=1; n=live.SHOT[0]
-    if n < 48: return
-    if n > 70: unreal.MegaParkValidation.restore_player_camera(); live.stop('closeup'); return
-    s=live.skate_state(); yaw=math.radians(float(s.split('yaw=')[1].split()[0]))
-    pawn=unreal.GameplayStatics.get_player_pawn(live.L.game_world(), 0)
-    at=next(c for c in pawn.get_components_by_class(unreal.StaticMeshComponent) if c.get_name() == 'SkateDeck').get_world_location()
-    ahead=unreal.Vector(math.cos(yaw), math.sin(yaw), 0.0); right=unreal.Vector(-math.sin(yaw), math.cos(yaw), 0.0)
-    unreal.MegaParkValidation.review_camera(at+right*150.0+ahead*30.0+unreal.Vector(0,0,-2), at+unreal.Vector(0,0,-4), 38.0)
-    if n == 62: live.L.screenshot(PATH)
-live.behave('closeup', _closeup)
-"""
+CLOSEUP = (INGAME / 'skate_ride' / 'closeup.py').read_text()
 WHEEL_RUNS = [(f'carve {v / 100:.0f} m/s {"right" if d > 0 else "left"}', f"{OPEN[0]},{OPEN[1]},0,{v},[(.3,{{'left':({d},0)}}),(1.2,{{}})],duration=1.5", 1.5)
               for v in (300, 600, 900) for d in (1, -1)]
 
@@ -1626,13 +1495,7 @@ def physical_bail_fast(record):
 
 # A Christ air (left trigger and B) from the take-off to the touch-down, which wipes out as native's does (a hand grab
 # held into the landing rides away); the controls let go once the air ends.
-CHRIST_AIR = ("live.CHRIST=[False]\n"
-              "def _christ(dt):\n"
-              "    s=live.skate_state(); air='mode=2 ' in s\n"
-              "    if live.CHRIST[0] and not air: live.stop('christ'); live.skate_input(); return\n"
-              "    live.CHRIST[0]=live.CHRIST[0] or air\n"
-              "    live.skate_input(grab_left=live.CHRIST[0], brake=live.CHRIST[0])\n"
-              "live.behave('christ', _christ)\n")
+CHRIST_AIR = (INGAME / 'skate_ride' / 'christ_air.py').read_text()
 QUARTER_AIR = f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
 
 
@@ -1668,41 +1531,8 @@ JOINT_ENTRY = .15
 GRIND_BAIL = 2.
 # The close-up reruns the worst bail and stops time (global time dilation) when a joint is back within a little of the
 # worst it went, or just after that moment of the fall, and frames the joint and the hips from beside them.
-JOINT_FREEZE = """
-import unreal
-live.JW = {'t': -1., 'done': False, 'at': None, 'joint': None, 'angles': None, 'when': None}
-def _jw(dt):
-    s = live.JW
-    if s['done']:
-        return
-    st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
-    if st.get('mode') != '4' or st.get('phys') != 'Bail' or 'joint_past' not in st:
-        if s['t'] >= 0 and st.get('mode') != '4':
-            s['done'] = 'over'
-        return
-    s['t'] = s['t'] + dt if s['t'] >= 0 else 0.
-    past = float(st['joint_past'])
-    if past >= TARGET or s['t'] >= LATEST:
-        unreal.GameplayStatics.set_global_time_dilation(live.L.game_world(), .0001)
-        s.update(done=True, at=past, joint=st.get('joint'), angles=st.get('joint_angles'), when=s['t'])
-live.behave('jointworst', _jw)
-"""
-JOINT_AIM = """
-import unreal
-st = dict(kv.split('=', 1) for kv in live.skate_state().split() if '=' in kv)
-P = unreal.Vector(*[float(v) for v in st['hips'].split(',')])
-J = P
-try:
-    _m = live.L.player().get_editor_property('mesh')
-    if live.JW.get('joint') and _m.get_bone_index(live.JW['joint']) != -1:
-        J = _m.get_socket_location(live.JW['joint'])
-except Exception as e:
-    print('no joint bone:', e)
-_out = unreal.Vector(J.x - P.x, J.y - P.y, 0)
-_out = _out * (1 / _out.length()) if _out.length() > 5 else live.L.player().get_actor_right_vector()
-_mid = (J + P) * .5
-unreal.MegaParkValidation.review_camera(_mid + _out * 120 + unreal.Vector(0, 0, 70), _mid, 45)
-"""
+JOINT_FREEZE = (INGAME / 'skate_ride' / 'joint_freeze.py').read_text()
+JOINT_AIM = (INGAME / 'skate_ride' / 'joint_aim.py').read_text()
 
 
 def joint_check(on):
@@ -2165,114 +1995,7 @@ COLLIDE_ROWS = (tuple(f'collide_wall_pier_{v // 100}' for v in SPEEDS) + tuple(f
 # face steeper than 45 degrees (or a ceiling) met on the way, other than in a grind, is the deck going into it by what
 # was left of the move. A deck hidden in a frame is not swept or crossed from it (a placement, the get-up's board).
 # A frame that raises an error records it, and the row fails.
-BOARD_GUARD = """
-import math
-_world = live.L.game_world()
-_ch = unreal.GameplayStatics.get_player_character(_world, 0)
-_deck = next(c for c in _ch.get_components_by_class(unreal.StaticMeshComponent) if c.get_name() == 'SkateDeck')
-_lo, _hi = _deck.get_local_bounds()
-_box = [unreal.Vector(x, y, z) for x in (_lo.x, _hi.x) for y in (_lo.y, _hi.y) for z in (_lo.z, _hi.z)]
-_skip = [_ch] + list(_ch.get_attached_actors() or [])
-live.GUARD_BOX = [_lo.x, _lo.y, _lo.z, _hi.x, _hi.y, _hi.z]
-live.GUARD_ERR = []
-_half = [(_hi.x - _lo.x) * .5, (_hi.y - _lo.y) * .5, (_hi.z - _lo.z) * .5]
-_mid = unreal.Vector((_lo.x + _hi.x) * .5, (_lo.y + _hi.y) * .5, (_lo.z + _hi.z) * .5)
-_tlerp = getattr(unreal.MathLibrary, 't_lerp', None)
-live.GUARD_TURNS = 4 if _tlerp else 1
-def _trace(a, b):
-    h = unreal.SystemLibrary.line_trace_single_by_profile(_world, a, b, 'Pawn', False, _skip, unreal.DrawDebugTrace.NONE, True)
-    return h.to_tuple() if h else None
-def _dot(a, b):
-    return a.x * b.x + a.y * b.y + a.z * b.z
-def _past(p, t):
-    d = _dot(t[5] - p, t[7])
-    if d <= .05:
-        return 0.
-    return d if _trace(p, p + t[7] * (d + 2.)) else 0.
-def _named(t):
-    return (t[10].get_name() if t[10] else '?') + '/' + (t[9].get_name() if t[9] else '?')
-def _swept(xa, xb):
-    s = xb.scale3d
-    he = unreal.Vector(max(.5, _half[0] * s.x - 1.5), max(.5, _half[1] * s.y - 1.5), max(.5, _half[2] * s.z - 1.5))
-    worst, what, last = 0., '', xa
-    for k in range(1, live.GUARD_TURNS + 1):
-        x = _tlerp(xa, xb, k / float(live.GUARD_TURNS)) if _tlerp else xb
-        a = unreal.MathLibrary.transform_location(last, _mid)
-        b = unreal.MathLibrary.transform_location(x, _mid)
-        last = x
-        h = unreal.SystemLibrary.box_trace_single_by_profile(_world, a, b, he, x.rotation.rotator(), 'Pawn', False, _skip,
-                                                            unreal.DrawDebugTrace.NONE, True)
-        if not h:
-            continue
-        t = h.to_tuple()
-        if t[1] or t[7].z >= .7:
-            continue
-        past = (1. - t[2]) * math.sqrt(_dot(b - a, b - a))
-        if past > worst:
-            worst, what = past, 'swept ' + _named(t)
-    return worst, what
-def _guard(dt):
-    try:
-        xf = _deck.get_world_transform()
-        o = _deck.get_world_location()
-        pts = [o] + [unreal.MathLibrary.transform_location(xf, c) for c in _box]
-        worst = {'wall': [0., ''], 'floor': [0., '']}
-        def note(what, t, depth):
-            kind = 'floor' if t[7].z >= .7 else 'wall'
-            if depth > worst[kind][0]:
-                worst[kind] = [depth, what + ' ' + _named(t)]
-        inside = 0
-        for i, p in enumerate(pts[1:]):
-            t = _trace(o, p)
-            if t is None:
-                continue
-            if t[1]:
-                inside = 1
-                break
-            note('corner%d' % i, t, _past(p, t))
-        prev = live.GUARD_PREV[0]
-        if prev is not None:
-            for i, (a, p) in enumerate(zip(prev, pts)):
-                if _dot(p - a, p - a) < .0025:
-                    continue
-                t = _trace(a, p)
-                if t is None or t[1] or _dot(a - t[5], t[7]) <= 0:
-                    continue
-                note(('top' if i == 0 else 'corner%d' % (i - 1)) + ' crossed', t, _past(p, t))
-        state = live.skate_state()
-        swept = [0., '']
-        if live.GUARD_PREV_XF[0] is not None and ' mode=3 ' not in ' ' + state.split(' | ')[0] + ' ':
-            swept = list(_swept(live.GUARD_PREV_XF[0], xf))
-        # A deck hidden this frame (dissolved out, to come back in elsewhere: the get-up's board) is placed, not moved:
-        # the next frame is not swept or crossed from it.
-        hidden = ' vis=0 ' in ' ' + state.split(' | ')[0] + ' '
-        live.GUARD_PREV[0] = None if hidden else pts
-        live.GUARD_PREV_XF[0] = None if hidden else xf
-        live.GUARD.append([state, round(worst['wall'][0], 2), worst['wall'][1], round(worst['floor'][0], 2),
-                           worst['floor'][1], inside, round(swept[0], 2), swept[1]])
-    except Exception as e:
-        live.GUARD_ERR.append(repr(e))
-live._guard = _guard
-def _ground(x, y, z):
-    h = _trace(unreal.Vector(x, y, z), unreal.Vector(x, y, z - 1500.))
-    return None if h is None or h[1] else [h[5].x, h[5].y, h[5].z]
-def _face(x, y, z, yaw, reach, heights):
-    # From the ground under (x, y, z), a level trace along yaw at each height over it: the face each meets.
-    g = _ground(x, y, z)
-    if g is None:
-        return None
-    d = unreal.Vector(math.cos(math.radians(yaw)), math.sin(math.radians(yaw)), 0.)
-    hits = []
-    for up in heights:
-        a = unreal.Vector(g[0], g[1], g[2] + up)
-        t = _trace(a, a + d * reach)
-        hits.append(None if t is None or t[1] else [t[3], [t[5].x, t[5].y, t[5].z], [t[7].x, t[7].y, t[7].z], _named(t)])
-    # The ground along the way, at each quarter of the reach (None where there is none).
-    path = [_ground(g[0] + d.x * reach * k / 4, g[1] + d.y * reach * k / 4, g[2] + 300.) for k in (1, 2, 3)]
-    return {'ground': g, 'dir': [d.x, d.y], 'hits': hits, 'path': path}
-live._ground = _ground
-live._face = _face
-"""
+BOARD_GUARD = (INGAME / 'skate_ride' / 'board_guard.py').read_text()
 
 
 def ground(x, y, z):
@@ -2381,8 +2104,7 @@ def wait_riding(limit=12.):
     qa.py('live.skate_input()')
 
 
-BAIL_KEYS = ("for k in ['Gamepad_LeftThumbstick','Gamepad_RightThumbstick']: live.L.input_key(k,'{0}',{1})\n"
-             "for k in ['Gamepad_LeftTriggerAxis','Gamepad_RightTriggerAxis']: live.L.input_key(k,'axis',{1})\n")
+BAIL_KEYS = (INGAME / 'skate_ride' / 'bail_keys.py').read_text()
 
 
 def head_on(record, wanted, name, face, where):
