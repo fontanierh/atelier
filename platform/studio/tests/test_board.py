@@ -240,3 +240,14 @@ def test_cli_attaches_files_and_reads_whole_threads(tmp_path, monkeypatch, capsy
     assert board.main(parse_args(['board', 'thread', '99999'])) == 1
     assert board.main(parse_args(['board', 'post', '--agent', 'review', '--reply-to', '99999', 'x'])) == 1
     assert board.main(parse_args(['board', 'post', '--agent', 'review', '--attach', str(tmp_path / 'missing.png')])) == 1
+
+
+def test_post_to_all_agents_is_one_grouped_broadcast_for_addressed_listeners(cache, capsys):
+    register('one'); register('two'); register('poster')
+    assert board.main(parse_args(['board', 'post', '--agent', 'poster', '--all-agents', 'Freeze canonical.'])) == 0
+    ids = [int(x) for x in capsys.readouterr().out.split()]
+    rows = board.messages()
+    assert [row['recipient'] for row in rows] == ['one', 'two'] and [row['id'] for row in rows] == ids
+    # Addressed-only listeners get their copy, and every copy knows the whole audience.
+    assert board.messages(agent='one', addressed_only=True)[0]['audience'] == ['one', 'two']
+    assert board.main(parse_args(['board', 'post', '--agent', 'poster', '--all-agents', '--to', 'one', 'x'])) == 1

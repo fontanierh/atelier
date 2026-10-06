@@ -106,7 +106,8 @@ function setView(next) {
     pane.style.setProperty("--dir",to>from?1:-1);pane.classList.remove("entering");void pane.offsetWidth;pane.classList.add("entering");
     setTimeout(()=>pane.classList.remove("entering"),900);
   }
-  if(next==="messages"){stickToBottom=stickToBottom||!newestShown;requestAnimationFrame(()=>{if(stickToBottom)scrollToLatest();markSeen();});}
+  // Coming back to the conversation lands on its latest message and keeps following new ones.
+  if(next==="messages"){stickToBottom=true;requestAnimationFrame(()=>{scrollToLatest();markSeen();});}
 }
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
   if(tab.dataset.view==="messages"&&$("app").dataset.view==="messages"){if(thread)closeThread();else scrollToLatest(true);}
@@ -366,12 +367,19 @@ pin.observe($("feed"));pin.observe($("broadcastForm"));pin.observe($("messages")
 function loadOlder() { if(loading||!records.size)return; prepending=true; load(false,Math.min(...records.keys())); }
 $("loadOlder").addEventListener("click",loadOlder);
 function groupsFrom(messages) {
-  const groups=new Map();
-  for(const m of messages) {
+  const groups=new Map(), loops=new Map();
+  for(const m of [...messages].sort((a,b)=>a.id-b.id)) {
     const broadcast=(m.dedup||"").match(/^web-broadcast:([a-f0-9-]+):/);
-    const key=broadcast?broadcast[1]:String(m.id);
+    let key=broadcast?broadcast[1]:String(m.id), merged=false;
+    // The same text sent to several agents one by one (a loop of direct posts) reads as one message to them all.
+    if(!broadcast&&m.recipient!=="*"&&!isSystem(m)) {
+      const same=`${m.sender}\u0000${m.topic}\u0000${m.reply_to||""}\u0000${m.body}`, open=loops.get(same);
+      if(open&&m.created-open.created<15&&!open.recipients.has(m.recipient)){key=open.key;merged=true;open.recipients.add(m.recipient);}
+      else loops.set(same,{key,created:m.created,recipients:new Set([m.recipient])});
+    }
     if(!groups.has(key))groups.set(key,{key,broadcast:Boolean(broadcast),messages:[]});
-    groups.get(key).messages.push(m);
+    const group=groups.get(key);group.messages.push(m);
+    if(merged){group.broadcast=true;group.merged=true;}
   }
   for(const g of groups.values()){g.messages.sort((a,b)=>a.id-b.id);g.first=g.messages[0];}
   return [...groups.values()].sort((a,b)=>a.first.id-b.first.id);
@@ -429,7 +437,9 @@ function messageNode(group, ctx) {
     const meta=node("div","meta");
     meta.append(mine||isSystem(m)?node("span","sender",mine?"You":m.sender):whoButton(m.sender,"sender who",document.createTextNode(m.sender)));
     const to=group.broadcast||m.recipient==="*"?"everyone":m.recipient===state.sender?"you":m.recipient;
-    meta.append(node("span","route",`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
+    const people=group.messages.map(x=>x.recipient===state.sender?"you":x.recipient);
+    meta.append(node("span","route",group.merged?`to ${people.length>3?`${people.length} agents`:people.join(", ")}`
+      :`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
     if(m.topic!=="info")meta.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
     const time=node("time","time",clock(m.created));time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;meta.append(time);
     if(!ctx.inThread&&!ctx.replies?.length)meta.append(replyButton(m));
@@ -568,8 +578,40 @@ function closeThread() {
   $("threadView").hidden=true;$("app").classList.remove("in-thread");$("replyChip").hidden=true;
   if([...$("recipient").options].some(o=>o.value===saved&&!o.disabled)&&$("recipient").value!==saved){$("recipient").value=saved;draftChanged();}
   formState();
+  stickToBottom=true;requestAnimationFrame(()=>scrollToLatest());
 }
-$("threadBack").addEventListener("click",closeThread);$("replyChipClose").addEventListener("click",closeThread);
+$("threadBack").addEventListener("click",closeThread);
+// Swipe back from the left edge, as in a native app: a thread follows the finger and closes; a direct conversation
+// goes back to the main feed. A mostly vertical drag stays a scroll.
+let swipe=null;
+$("chatPane").addEventListener("touchstart",event=>{
+  if(event.touches.length!==1||(!thread&&!selectedAgent))return;
+  const t=event.touches[0];
+  if(t.clientX>32)return;
+  swipe={x:t.clientX,y:t.clientY,dx:0,axis:null,at:performance.now(),target:thread?$("threadView"):$("feed")};
+},{passive:true});
+$("chatPane").addEventListener("touchmove",event=>{
+  if(!swipe)return;
+  const t=event.touches[0], dx=t.clientX-swipe.x, dy=t.clientY-swipe.y;
+  if(!swipe.axis&&Math.hypot(dx,dy)>8)swipe.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";
+  if(swipe.axis!=="x"){if(swipe.axis==="y")swipe=null;return;}
+  event.preventDefault();
+  swipe.dx=Math.max(0,dx);
+  swipe.target.style.transition="none";swipe.target.style.transform=`translateX(${swipe.dx}px)`;
+},{passive:false});
+function endSwipe() {
+  if(!swipe)return;
+  const {target,dx,at}=swipe, fast=dx/Math.max(1,performance.now()-at)>.45;
+  swipe=null;
+  if(dx>innerWidth*.3||(dx>40&&fast)){
+    target.style.transition="transform .2s ease-out";target.style.transform="translateX(100%)";
+    setTimeout(()=>{target.style.transition="";target.style.transform="";if(thread)closeThread();else selectAgent("");},200);
+  } else {
+    target.style.transition="transform .2s ease-out";target.style.transform="";
+    setTimeout(()=>{target.style.transition="";},220);
+  }
+}
+$("chatPane").addEventListener("touchend",endSwipe);$("chatPane").addEventListener("touchcancel",endSwipe);$("replyChipClose").addEventListener("click",closeThread);
 async function loadThread() {
   const current=thread;if(!current)return;
   try {
@@ -702,6 +744,7 @@ $("broadcastForm").addEventListener("submit",async event=>{
     $("message").value="";draftKey=null;draftBody="";
     for(const u of uploads)if(u.preview?.startsWith("blob:"))URL.revokeObjectURL(u.preview);
     uploads=[];renderTray();persistDraft();grow();
+    if(touch.matches)$("message").blur();   // on a phone the keyboard closes once the message is away
     if(!$("messagePreview").hidden)$("previewButton").click();$("messagePreview").replaceChildren();
     if(thread){thread.stick=true;loadThread();load();}
     else {
