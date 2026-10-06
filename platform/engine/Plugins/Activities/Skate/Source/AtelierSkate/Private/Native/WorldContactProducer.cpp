@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "WorldContactProducer.h"
 #include "NativeMath.h"
+#include <algorithm>
 #include <cstring>
 #include <limits>
 #if defined(__clang__)
@@ -65,19 +66,34 @@ bool ImportedInternalFloorEdge(std::size_t source_index,const WorldTriangle& sou
 // instead, so the wheel steps up onto it, and the other volumes' contacts against its side, from the wheels' bottoms up,
 // are dropped. Heights are measured along the board's up (seams on a ramp), else along the world's (a board pitched by
 // the last bump, whose up leans over the next edge). Taller edges, contacts from above and edges a wheel is rolling
-// off keep their own normal.
+// off keep their own normal. A ramp is not an edge, though near the wheels it can look like one: a transition's face
+// meets the front wheels tilted back against their travel, and a board landing pitched meets it with its trucks. So a
+// wheel steps up where it touches an edge or corner, or the flat of a face no taller than SmallEdgeStep in the world
+// (a plank's bevel), never a ramp's; and the other volumes pass only faces that rise no higher than SmallEdgeStep over
+// the wheels' bottoms in the world, as a plank's side or a lip does.
 constexpr float SmallEdgeStep=0.012f,RiderGapDepth=0.05f;
 enum class SmallEdge {None,StepUp,Drop};
-SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,Vec3 up,float floor,float lowest,ContactPair& pair,Vec3& normal)
+SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,const Triangle& face,Vec3 up,float floor,float lowest,ContactPair& pair,Vec3& normal)
 {
     const float height=Dot3(pair.b,up)-floor,along=Dot3(normal,up);
     if (height>SmallEdgeStep) return SmallEdge::None;
     // The trucks and deck (body ids 4 up; 0-3 are the wheels) stand above the wheels' bottoms, so nothing there or lower
     // is theirs to meet before a wheel's.
     const auto* wheel=std::get_if<Sphere>(&volume.primitive);
-    if (!wheel || volume.body_contact_id>=4) return height>=lowest && along>-0.9f && along<0.9f ? SmallEdge::Drop:SmallEdge::None;
+    if (!wheel || volume.body_contact_id>=4)
+    {
+        if (!(height>=lowest && along>-0.9f && along<0.9f)) return SmallEdge::None;
+        for (const auto& corner:face.vertices) if (corner.y-volume.world_floor>SmallEdgeStep) return SmallEdge::None;
+        return SmallEdge::Drop;
+    }
     if (height<-SmallEdgeStep) return SmallEdge::None;
     if (along>=0.999f || along<=0.0f) return SmallEdge::None;
+    if (std::fabs(Dot3(normal,face.feature.normal))>0.9999f)
+    {
+        float low=face.vertices[0].y,high=low;
+        for (const auto& corner:face.vertices) {low=std::min(low,corner.y);high=std::max(high,corner.y);}
+        if (high-low>SmallEdgeStep) return SmallEdge::None;
+    }
     const float step=wheel->radius-Dot3(Subtract(wheel->center,pair.b),up);
     if (step>SmallEdgeStep) return SmallEdge::None;
     const auto across=Subtract(normal,Scale(up,along));
@@ -87,16 +103,16 @@ SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,Vec3 up,float floor,f
     normal=up;pair.a=Subtract(wheel->center,Scale(up,wheel->radius));pair.b=Madd(up,step,pair.a);
     return SmallEdge::StepUp;
 }
-SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,ContactPair& pair,Vec3& normal)
+SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,const Triangle& face,ContactPair& pair,Vec3& normal)
 {
     // A pushing foot slides over the edges the wheels roll over, rather than catching in a gap between planks, however
     // far down into the gap it reaches.
-    if (volume.rider_floor) return RideOverSmallEdge(volume,Vec3{0,1,0},volume.world_floor,-RiderGapDepth,pair,normal);
+    if (volume.rider_floor) return RideOverSmallEdge(volume,face,Vec3{0,1,0},volume.world_floor,-RiderGapDepth,pair,normal);
     if (Dot3(volume.support_up,volume.support_up)<0.5f) return SmallEdge::None;
     // Along the world's up a board can lie wheels-up, so there only edges near the wheels' height count.
     const float unbounded=-std::numeric_limits<float>::infinity();
-    const auto deck=RideOverSmallEdge(volume,volume.support_up,volume.support_floor,unbounded,pair,normal);
-    return deck!=SmallEdge::None ? deck:RideOverSmallEdge(volume,Vec3{0,1,0},volume.world_floor,-SmallEdgeStep,pair,normal);
+    const auto deck=RideOverSmallEdge(volume,face,volume.support_up,volume.support_floor,unbounded,pair,normal);
+    return deck!=SmallEdge::None ? deck:RideOverSmallEdge(volume,face,Vec3{0,1,0},volume.world_floor,-SmallEdgeStep,pair,normal);
 }
 ContactRecord Seed(std::uint32_t id,ContactPair pair,Vec3 normal,ContactMaterial material,std::uint32_t tag)
 {
@@ -139,7 +155,7 @@ const std::vector<ContactRecord>& WorldContactProducer::QueryPrimitives(const Wo
                 const auto pair=manifold->points[point];
                 const bool rejected=imported_floor_seams_ && ImportedInternalFloorEdge(index,entry,pair.b,manifold->normal,candidates,triangles,triangle_bounds);
                 auto seeded=pair;auto normal=manifold->normal;
-                if (rejected || (imported_floor_seams_ && RideOverSmallEdge(volume,seeded,normal)==SmallEdge::Drop)) continue;
+                if (rejected || (imported_floor_seams_ && RideOverSmallEdge(volume,entry.triangle,seeded,normal)==SmallEdge::Drop)) continue;
                 const auto slot=buffer_.Allocate(publish);
                 if (!slot) {buffer_.Flush(publish);return contacts_;}
                 buffer_.records[*slot]=Seed(volume.body_contact_id,seeded,normal,material,entry.tag);

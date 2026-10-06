@@ -55,6 +55,41 @@ def test_default_forward_and_saved_lumen_keep_distinct_mesh_generation(desktop, 
     assert 'r.ScreenPercentage 100' not in ' '.join(lumen)
 
 
+def test_probe_renderer_flags_preserve_lumen_and_default_viewport(desktop):
+    for lumen in (False, True):
+        flags = desktop.renderer_arguments(lumen)
+        assert '-noshaderworker' in flags
+        assert ('r.ForwardShading=' + ('False' if lumen else 'True')) in ' '.join(flags)
+        assert any(arg.startswith('-ForceDPCVars=') for arg in flags) == (not lumen)
+        assert 'GameViewportClientClassName' not in ' '.join(flags)
+        assert 'DesktopPreviewViewportClient' in ' '.join(desktop.renderer_arguments(lumen, desktop_viewport=True))
+
+
+def test_bridge_binding_failure_wins_over_misleading_listening_announcement(desktop):
+    failure = 'LogHttpListener: Error: HttpListener unable to bind to 127.0.0.1:8857'
+    log = failure + '\nLIVE bridge listening on 8857\n'
+    assert desktop.bridge_bind_error(log, 8857) == failure
+    assert desktop.bridge_bind_error(log, 8858) is None
+    assert desktop.bridge_bind_error(log.replace(':8857', ':88570'), 8857) is None
+    assert desktop.bridge_bind_error('LIVE bridge listening on 8857\n', 8857) is None
+
+
+def test_isolated_shared_preferences_use_normal_profile_without_overwriting_saved_choices(desktop, tmp_path):
+    primary = desktop.PROJECT / 'Saved' / 'settings.txt'
+    primary.write_text('renderer=1\nexposure=1.5\n')
+    isolated = tmp_path / 'isolated.txt'
+    isolated.write_text('renderer=0\nperformance=0\nrender_scale=85\nexposure=1.2\n')
+    ctx = SimpleNamespace(unreal_app=Path('Editor'), uproject=Path('Game.uproject'))
+    command = desktop.command(ctx, tmp_path, windowed=True, shared_settings=True, preferences=isolated)
+    assert '-preferencesfile=' + str(isolated) in command
+    assert any('r.ForwardShading=True' in arg for arg in command)
+    profile = next(arg for arg in command if arg.startswith('-set='))
+    assert 'desktop=1' in profile and 'renderer=0' in profile
+    assert 'performance=1' not in profile and 'render_scale=100' not in profile and 'exposure=' not in profile
+    assert 'japan.CitySurfaceTiles v1_128m 1' in ' '.join(command)
+    assert primary.read_text() == 'renderer=1\nexposure=1.5\n'
+
+
 def test_readiness_matches_current_manifest_and_rejects_partial_import(desktop):
     manifest(desktop)
     assert desktop.parse_ready(ready_log())['height'] == 1440

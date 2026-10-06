@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_skate_feel as feel  # noqa: E402
 
 OUTPUT = feel.ROOT / 'build/yorimichi/skate-native/terrain'
+DIFFICULTIES = ('easy', 'normal', 'hardcore')
 # Packed as the plugin packs ESkateSurface: physics << 7 | surface. Physics 1 smooth, 2 rough, 3 slow, 5 very slow.
 SURFACES = {'concrete': (1, 1), 'wood': (1, 2), 'asphalt': (2, 4), 'stone': (2, 5), 'dirt': (3, 6), 'grass': (5, 7)}
 
@@ -52,10 +53,11 @@ def box(cx, cy, cz, w, h, d, bevel=0.):
 
 def planks(gap=.02, width=.22, thick=.06, bevel=.008):
     """The footbridge: bevelled boards across the ride with gaps between them, after a run-up deck at the same height,
-    over ground a metre down."""
+    over ground a metre down. It runs 60 m, past where a 5 s push or a 4 s coast at 7 m/s ends (at 20 m, Easy's push
+    rode off its end and stopped in the ground below)."""
     tris = [[[p[0], p[1] - 1, p[2]] for p in t] for t in feel.FLAT] + box(0, -thick / 2, -4, 2.2, thick, 6)
     z = -1.
-    while z < 20:
+    while z < 60:
         tris += box(0, -thick / 2, z + width / 2, 2.2, thick, width, bevel)
         z += width + gap
     return tris
@@ -71,18 +73,33 @@ def lips(height, spacing=1.5):
     return tris
 
 
-def roll(binary, package, triangles, name, speed, frames=240, controls=None, surfaces=None):
-    world = {'triangles': triangles, 'rails': [], 'spawn': [0, 0, -3], 'heading': 0}
+def quarter(radius=3., vert=.3, segments=32):
+    """A quarter pipe ahead of the rider: flat ground, a transition of `radius` from z 10 rising to vertical in
+    `segments` faces, `vert` of wall and a deck on top."""
+    import math
+    tris = quad([-4, 0, -40], [-4, 0, 10], [4, 0, 10], [4, 0, -40])
+    pts = [(10 + radius * math.sin(a), radius - radius * math.cos(a)) for a in (i * math.pi / 2 / segments for i in range(segments + 1))]
+    pts.append((10 + radius, radius + vert))
+    for (za, ya), (zb, yb) in zip(pts, pts[1:]):
+        tris += quad([-4, ya, za], [-4, yb, zb], [4, yb, zb], [4, ya, za])
+    top, z = radius + vert, 10 + radius
+    return tris + quad([-4, top, z], [-4, top, z + 3], [4, top, z + 3], [4, top, z])
+
+
+def roll(binary, package, triangles, name, speed, frames=240, controls=None, surfaces=None, start=-3, difficulty='normal'):
+    world = {'triangles': triangles, 'rails': [], 'spawn': [0, 0, start], 'heading': 0}
     if surfaces is not None:
         world['surfaces'] = surfaces
     session = feel.Session(binary, package, world, name)
     try:
-        rows = session.ride(frames, controls or (lambda f: (0, [0, 0], [0, 0])), None, velocity=(0, 0, speed), spawn=(0, 0, -3))
+        rows = session.ride(frames, controls or (lambda f: (0, [0, 0], [0, 0])), None, velocity=(0, 0, speed), spawn=(0, 0, start),
+                            difficulty=difficulty)
     finally:
         session.close()
     speeds = [feel.speed(r) for r in rows]
     moving = next((k for k, v in enumerate(speeds) if v > 3), None)
-    return dict(end_speed_mps=round(speeds[-1], 2), distance_m=round(rows[-1]['root'][14] - rows[0]['root'][14], 2),
+    return dict(end_speed_mps=round(speeds[-1], 2), peak_m=round(max(session.deck_height(r) for r in rows), 2),
+                distance_m=round(rows[-1]['root'][14] - rows[0]['root'][14], 2),
                 slowest_once_moving_mps=round(min(speeds[moving:]), 2) if moving is not None else None,
                 bailed=any('Wipeout' in r['state'] or 'Bail' in r['state'] for r in rows),
                 surface=rows[min(60, len(rows) - 1)].get('surface'))
@@ -119,10 +136,17 @@ def main():
     # Pushing across the planks from a standstill: the pushing foot slides over the gaps rather than catching in one, so
     # once moving the board never falls back to a crawl (a caught foot stopped it dead, from 7 m/s to under 1).
     pushing = lambda f: (feel.PUSH, [0, 0], [0, 0])
-    report['pushing'] = {name: roll(args.binary, args.native_package, worlds[name], f'push_{name}', 0, 300, pushing) for name in ('flat', 'planks')}
-    flat, planked = report['pushing']['flat'], report['pushing']['planks']
-    check('pushes_over_planks', planked['distance_m'] >= .8 * flat['distance_m'] and (planked['slowest_once_moving_mps'] or 0) > 3
-          and not planked['bailed'], report['pushing'])
+    report['pushing'] = {d: {name: roll(args.binary, args.native_package, worlds[name], f'push_{name}_{d}', 0, 300, pushing, difficulty=d)
+                             for name in ('flat', 'planks')} for d in DIFFICULTIES}
+    # A ramp is not a small edge: going straight up a quarter pipe fast enough to air out of it, with no input, the
+    # board comes back down into the transition and rides away. (Taking the transition's faces for small edges made
+    # these landings bail.) Both on every difficulty the game offers.
+    report['quarter'] = {d: {str(v): roll(args.binary, args.native_package, quarter(), f'quarter_{v}_{d}', v, 600, start=0, difficulty=d)
+                             for v in (9, 10, 11)} for d in DIFFICULTIES}
+    check('lands_back_in_transition', all(not r['bailed'] and r['peak_m'] > 3.6 for q in report['quarter'].values() for r in q.values()),
+          report['quarter'])
+    check('pushes_over_planks', all(p['planks']['distance_m'] >= .8 * p['flat']['distance_m'] and (p['planks']['slowest_once_moving_mps'] or 0) > 3
+                                     and not p['planks']['bailed'] for p in report['pushing'].values()), report['pushing'])
 
     # Surfaces: a 4 s coast from 6 m/s and 6 s of pushing from a standstill on flat ground of each kind.
     report['surfaces'] = {}
