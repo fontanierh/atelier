@@ -111,7 +111,9 @@ uv run python games/yorimichi/tools/review_communitypark.py --gait 1
 
 The riding audit samples every open riding edge of the collision every 10 cm and
 fails on any piece edge left more than 12 mm above its neighbour (208 samples
-before the ramps, none after). The import audit also compares `SM_CP_Collision`
+before the ramps, none after). It also counts the 45 samples, at 13 corners, where a
+ramp's run ends against a third piece and its side cheek keeps up to the original
+lip. Those are not ramped yet. The import audit also compares `SM_CP_Collision`
 triangle for triangle.
 The source audit samples upward triangles at intervals of at most two metres,
 checks that ground stays below them, checks the access grade and its deck join,

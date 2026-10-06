@@ -86,7 +86,8 @@ def riding_audit():
     before = C.steps(*C.weld(parts), obstacles); after = C.steps(vertices, faces, owner, obstacles)
     pieces = [(p.round(3).tolist(), round(r*1000, 1)) for p, r, k in after if k >= 0]
     assert not pieces, ('joint lips over 12 mm', pieces[:8])
-    # A ramp's cheek stays where its run meets a real step; those are counted, not ridden into.
+    # Where a ramp's run ends against a third piece (a bowl wall or pad corner), its side cheek keeps up to the
+    # original lip there. Those corner samples are counted, not yet ramped.
     return report | {'lips_over_12mm_before': len(before), 'lips_over_12mm_after': len(pieces),
                      'ramp_cheek_samples_over_12mm': len(after)-len(pieces)}
 
