@@ -149,6 +149,11 @@ uv run pytest                            # studio and game Python tests
   When diagnosing slow work, check the actual child PID in `memory-health.json`, not just the lock owner's PID:
   `ps -o pid,ni,pri -p PID`. A child still in the background band invalidates normal-performance comparisons.
   Preserve caches and measure CPU throughput before changing memory limits or worker counts.
+- The memory guard records an owned Unreal's descendants in `memory-health.helpers.json`. Once the game has exited,
+  `guard.reap` (and the end of `guard.attach`) ends the recorded SDK helpers (`dotnet`, `mono`, `bash`, `sh`) that
+  are still the same processes and still orphaned: a Turnkey `VerifySdk` left behind otherwise holds UnrealBuildTool's
+  mutex and the next game waits in `SDKSetup`. Shared services (Zen, Trace) are never ended; never end another
+  agent's helpers by name.
 - The render lock has one big slot. A small slot sits beside it when `~/.cache/atelier/render-slots.json` says
   `{"slots": 2}` (`ATELIER_RENDER_SLOTS` overrides the file; no file means one slot). The small slot takes a job
   expected to peak at 3 GiB or less, never a game or a compile, when at least 10 GiB is free and the big slot's job is
