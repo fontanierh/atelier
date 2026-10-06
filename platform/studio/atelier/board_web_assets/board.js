@@ -159,6 +159,9 @@ function formState() {
   $("sendButton").setAttribute("aria-label",busy?"Waiting for uploads":target==="*"?`Send to all ${count} agents`:`Send to ${target}`);
   $("sendButton").disabled=sending||busy||!state||!count||!($("message").value.trim()||ready)||(target!=="*"&&!state.agents.some(a=>a.agent===target&&!a.stop));
   $("broadcastForm").classList.toggle("has-text",Boolean(length));
+  const form=$("broadcastForm"), focused=form.contains(document.activeElement);
+  form.classList.toggle("expanded",Boolean(length||uploads.length||focused||thread||!$("messagePreview").hidden));
+  $("message").placeholder=thread?"Reply in thread…":target==="*"?"Message everyone…":`Message ${target}…`;
 }
 $("message").addEventListener("input",()=>{grow();draftChanged();}); $("broadcastTopic").addEventListener("change",draftChanged);$("recipient").addEventListener("change",draftChanged);
 async function preview() {
@@ -171,7 +174,9 @@ $("previewButton").addEventListener("click",()=>{const show=$("messagePreview").
 $("message").addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key==="Enter"&&!$("sendButton").disabled){event.preventDefault();$("broadcastForm").requestSubmit();}});
 // Keep the keyboard up when tapping send, so the button doesn't move under the finger.
 $("sendButton").addEventListener("pointerdown",event=>{if(document.activeElement===$("message"))event.preventDefault();});
-let blurTimer;
+let blurTimer, composerTimer;
+$("broadcastForm").addEventListener("focusin",()=>{clearTimeout(composerTimer);formState();});
+$("broadcastForm").addEventListener("focusout",()=>{composerTimer=setTimeout(formState,180);});
 $("message").addEventListener("focus",()=>{clearTimeout(blurTimer);if(touch.matches)$("app").classList.add("typing");if(stickToBottom)setTimeout(scrollToLatest,250);});
 $("message").addEventListener("blur",()=>{blurTimer=setTimeout(()=>$("app").classList.remove("typing"),120);});
 function composerStatus(text, error=false) {
@@ -269,8 +274,7 @@ function renderAgents() {
     const o=node("button","orb-button");o.type="button";if(chosen)o.setAttribute("aria-current","true");
     const face=orb(name||"*",agent);if(agent?.pending)face.append(node("span","count-badge",String(agent.pending)));
     o.append(face,node("span","orb-name",name||"Everyone"));
-    o.append(node("span","orb-state "+statusOf(agent),agent?(agent.delivery_error?"Retrying":agent.listening?"Online":"Offline"):`${listening} online`));
-    o.title=agent?`${name} · ${agentStatus(agent)}`:"All conversations";
+    o.title=agent?`${name} · ${agentStatus(agent)}`:"All conversations";o.setAttribute("aria-label",o.title);
     o.addEventListener("click",()=>selectAgent(name));orbs.append(o);
   }
   row("");
@@ -293,7 +297,7 @@ function renderHeader() {
 
 /* Feed: oldest at the top, newest by the composer, like a chat. */
 function feedNearBottom() { const f=$("feed"); return f.scrollHeight-f.scrollTop-f.clientHeight<96; }
-function scrollToLatest(smooth=false) { const f=$("feed"); f.scrollTo({top:f.scrollHeight,behavior:smooth?"smooth":"auto"}); stickToBottom=true; markSeen(); }
+function scrollToLatest(smooth=false) { $("app").classList.remove("reading"); const f=$("feed"); f.scrollTo({top:f.scrollHeight,behavior:smooth?"smooth":"auto"}); stickToBottom=true; markSeen(); }
 function markSeen() {
   if($("app").dataset.view!=="messages"&&!desktop.matches)return;
   if(feedNearBottom()||stickToBottom){lastSeenId=Math.max(lastSeenId,newestShown);$("jumpLatest").hidden=true;updateBadges();}
@@ -305,6 +309,8 @@ function updateBadges(unread=0) {
 }
 $("feed").addEventListener("scroll",()=>{
   stickToBottom=feedNearBottom();
+  const f=$("feed"), gap=f.scrollHeight-f.scrollTop-f.clientHeight, app=$("app");
+  if(gap>320)app.classList.add("reading");else if(gap<60)app.classList.remove("reading");
   if(stickToBottom)markSeen();else $("jumpLatest").hidden=false;
   if($("feed").scrollTop<120&&!historyComplete&&records.size&&!loading)loadOlder();
 },{passive:true});
@@ -381,6 +387,7 @@ function messageNode(group, ctx) {
     meta.append(node("span","route",`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
     if(m.topic!=="info")meta.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
     const time=node("time","time",clock(m.created));time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;meta.append(time);
+    if(!ctx.inThread&&!ctx.replies?.length)meta.append(replyButton(m));
     bubble.append(meta);
   }
   if(m.reply_to&&!ctx.inThread) {
@@ -393,17 +400,20 @@ function messageNode(group, ctx) {
   const hasText=Boolean(m.body_html&&m.body_html.trim());
   if(hasText) {
     // Long messages start folded to about six lines; "Read more" opens them in place.
-    const text=snippetless(m.body), long=text.length>420||text.split("\n").length>6, collapsed=long&&!expanded.has(group.key);
+    const text=snippetless(m.body), long=text.length>280||text.split("\n").length>5, collapsed=long&&!expanded.has(group.key);
     const body=node("div","body"+(collapsed?" collapsed":""));markdown(body,m.body_html,m.body);bubble.append(body);
     if(long){const more=node("button","more",collapsed?"Read more":"Show less");more.type="button";more.addEventListener("click",()=>{collapsed?expanded.add(group.key):expanded.delete(group.key);ctx.inThread?renderThread(true):(feedSignature="",renderFeed());});bubble.append(more);}
   }
   if(m.attachments?.length)bubble.append(attachmentNodes(m.attachments));
-  if(ctx.continued){const time=node("time","bubble-time",clock(m.created));time.title=`#${m.id}`;bubble.append(time);}
+  if(ctx.continued){const line=node("div","bubble-time"), time=node("time","",clock(m.created));time.title=`#${m.id}`;line.append(time);if(!ctx.inThread&&!ctx.replies?.length)line.append(replyButton(m));bubble.append(line);}
   column.append(bubble);
   if(mine)column.append(receipt(group,agents));
   if(ctx.replies?.length)column.append(threadBar(group,ctx.replies,()=>openThread(m.id)));
-  else if(!ctx.inThread&&!isSystem(m)){const reply=node("button","reply-link");reply.type="button";reply.append(icon("reply"),node("span","","Reply"));reply.addEventListener("click",()=>openThread(m.id,true));column.append(reply);}
   article.append(column);return article;
+}
+function replyButton(m) {
+  const b=node("button","reply-button");b.type="button";b.setAttribute("aria-label","Reply in thread");b.title="Reply in thread";b.append(icon("reply"));
+  b.addEventListener("click",event=>{event.stopPropagation();openThread(m.id,true);});return b;
 }
 function continues(previous, group) {
   const m=group.first;
