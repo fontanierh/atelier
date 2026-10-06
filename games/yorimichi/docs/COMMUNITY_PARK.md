@@ -88,9 +88,17 @@ banners on the lawn 1.2–3.5 m beyond the pieces, off the approach, the stair
 route and the tower footprints.
 
 `unreal.communitypark` imports `/Game/CommunityPark`, checks scale, bounds and
-UV count, binds the restyled materials, and enables complex collision
-from the rendered triangles. `ASkatePark` loads the generated manifest through
-its optional asset root and key. Sunset Pier retains its existing assets and
+UV count, binds the restyled materials, and enables complex collision on the
+blocking meshes. The 30 rendered source meshes do not block. The skate rides the
+hidden `SM_CP_Collision` instead (`collision.py`): the same triangles with
+coincident vertices welded across the 586 placements. Wherever a riding edge
+stands 4 mm to 8 cm proud of the neighbouring piece, a 1:8 ramp runs from it
+down onto that piece's plane. The ramp's run ends taper along the edge too. The
+native skate rolls over at most 12 mm, so a taller joint lip used to stop the
+wheels and bail the rider. Ledges and the flat rail stay sharp; steps over
+8 cm stay as they are. `ASkatePark` loads the generated manifest through its
+optional asset root and key. A manifest entry marked `hidden` is collision
+only. Sunset Pier retains its existing assets and
 QA spawn. Rails, ledges and continuous coping paths derive from source edges.
 
 ## Validation and captures
@@ -101,6 +109,12 @@ uv run python games/yorimichi/world/regions/communitypark/validate.py --imported
 uv run python games/yorimichi/tools/review_communitypark.py --gait 1
 ```
 
+The riding audit samples every open riding edge of the collision every 10 cm and
+fails on any piece edge left more than 12 mm above its neighbour (208 samples
+before the ramps, none after). It also counts the 45 samples, at 13 corners, where a
+ramp's run ends against a third piece and its side cheek keeps up to the original
+lip. Those are not ramped yet. The import audit also compares `SM_CP_Collision`
+triangle for triangle.
 The source audit samples upward triangles at intervals of at most two metres,
 checks that ground stays below them, checks the access grade and its deck join,
 and compares the patch boundary. The import audit compares all 30 built source
