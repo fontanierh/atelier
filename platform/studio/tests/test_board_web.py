@@ -383,3 +383,16 @@ def test_review_pages_are_static_and_only_from_the_reviews_folder(http_server):
         assert "script-src" not in headers['Content-Security-Policy'] and "default-src 'none'" in headers['Content-Security-Policy']
     for path in ('/review/missing', '/review/..%2Fagent-board', '/review/Bad_Name'):
         assert request(http_server, path)[0] == 404
+
+
+def test_bare_addresses_become_safe_readable_links():
+    from atelier import board_markdown
+    html = board_markdown.render('Report: https://claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf. See (https://github.com/o/r/pull/85) '
+                                 'and `https://in.code/x` or [docs](https://example.com/guide) javascript:alert(1)')
+    assert '<a href="https://claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf" class="url"' in html
+    assert '>claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf</a>.' in html, 'the full stop stays outside the link'
+    assert 'href="https://github.com/o/r/pull/85"' in html and '85</a>)' in html, 'so does the closing bracket'
+    assert '<code>https://in.code/x</code>' in html and html.count('href="https://example.com/guide"') == 1
+    assert 'href="javascript' not in html
+    long = board_markdown.render('https://example.com/a/very/long/path/that/goes/on/and/on/to/the/final-segment-name')
+    assert '>example.com/…/final-segment-name</a>' in long

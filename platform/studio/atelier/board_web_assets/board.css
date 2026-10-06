@@ -593,6 +593,12 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .dock > .jump-latest { box-shadow: 0 8px 22px #1f3a3626; }
 .nav-scrim, .thread-scrim { background: #1f3a36; }
 .app.navigating .nav-top { box-shadow: -10px 0 30px #1f3a362e; }
+/* Links: Markdown links read as underlined words; bare addresses become a compact chip named by host and path. */
+.markdown a { font-weight: 550; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.markdown a.url { padding: .05em .35em; border-radius: 6px; background: #c94f8614; text-decoration: none; overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.markdown a.url::after { content: "↗"; margin-left: .2em; font-size: .8em; opacity: .7; }
+.message.mine .markdown a.url { background: #4f8fc41f; }
 /* Small notes that land over the flowers sit on a soft frosted pill. */
 .pane-note { justify-self: center; padding: 4px 12px; border-radius: 12px; background: #f6faf9b3; color: var(--muted); }
 .lightbox { background: #10201de6; }
