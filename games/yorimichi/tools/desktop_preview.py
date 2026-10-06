@@ -67,6 +67,12 @@ def renderer_arguments(lumen, desktop_viewport=False):
             ['-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0'])]
 
 
+def bridge_bind_error(text, port):
+    """A listening announcement alone does not prove the requested socket bound."""
+    pattern = r'HttpListener unable to bind to (?:127\.0\.0\.1|localhost|\[?::1\]?):' + re.escape(str(port)) + r'(?!\d)'
+    return next((line.strip() for line in text.splitlines() if re.search(pattern, line)), None)
+
+
 def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, settings='', extra=(), preferences=None):
     preferences = Path(preferences) if preferences is not None else preference_path(folder, shared_settings)
     saved = read_preferences(preferences, settings)

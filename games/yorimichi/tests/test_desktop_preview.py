@@ -65,6 +65,15 @@ def test_probe_renderer_flags_preserve_lumen_and_default_viewport(desktop):
         assert 'DesktopPreviewViewportClient' in ' '.join(desktop.renderer_arguments(lumen, desktop_viewport=True))
 
 
+def test_bridge_binding_failure_wins_over_misleading_listening_announcement(desktop):
+    failure = 'LogHttpListener: Error: HttpListener unable to bind to 127.0.0.1:8857'
+    log = failure + '\nLIVE bridge listening on 8857\n'
+    assert desktop.bridge_bind_error(log, 8857) == failure
+    assert desktop.bridge_bind_error(log, 8858) is None
+    assert desktop.bridge_bind_error(log.replace(':8857', ':88570'), 8857) is None
+    assert desktop.bridge_bind_error('LIVE bridge listening on 8857\n', 8857) is None
+
+
 def test_isolated_shared_preferences_use_normal_profile_without_overwriting_saved_choices(desktop, tmp_path):
     primary = desktop.PROJECT / 'Saved' / 'settings.txt'
     primary.write_text('renderer=1\nexposure=1.5\n')

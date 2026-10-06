@@ -34,7 +34,7 @@ from atelier.build import Context
 from atelier.safety import guarded
 from atelier.safety.guard import attach as attach_memory_guard, reap
 from atelier import live
-from desktop_preview import command as desktop_command, read_preferences, renderer_arguments, toggle
+from desktop_preview import bridge_bind_error, command as desktop_command, read_preferences, renderer_arguments, toggle
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
@@ -281,6 +281,10 @@ try:
     last_notice = 0.
     while time.monotonic() < deadline:
         if p.poll() is not None: raise RuntimeError('Game exited ' + str(p.returncode))
+        for path in (out / 'game.log', out / 'console.log'):
+            error = bridge_bind_error(path.read_text(errors='replace'), args.port) if path.exists() else None
+            if error:
+                raise RuntimeError('Owned bridge failed to bind; ending this game: ' + error)
         if time.monotonic()-last_notice >= 20:
             game_log = out / 'game.log'
             print('Waiting for owned bridge; game log bytes', game_log.stat().st_size if game_log.exists() else 0, flush=True); last_notice=time.monotonic()
@@ -346,6 +350,8 @@ try:
     (out / 'checks.json').write_text(json.dumps(summary, indent=2) + '\n')
     print('PASSED' if summary['passed'] else 'FAILED', sum(c['ok'] for c in checks.values()), '/', len(checks), flush=True)
 finally:
+    if not owns_bridge and p.poll() is None:
+        reap(p)
     try:
         if p.poll() is None and owns_bridge: live.request('/python', "unreal.SystemLibrary.quit_game(unreal.LiveLibrary.game_world(),None,unreal.QuitPreference.QUIT,False)", timeout=5)
     except Exception: pass
