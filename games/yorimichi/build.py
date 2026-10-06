@@ -231,7 +231,7 @@ def steps(ctx):
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py'],
              needs=['world.treehouse_trees'],
-             outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'treehouse' / 'layout.json',
+             outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
                       out / 'megapark' / 'trail.json'],
              about='terrain heightfield, road, scatter and every region layout -> world.json'),
         Step('world.props', [Blender(WORLD / 'build_assets.py')], inputs=[WORLD / 'build_assets.py'], needs=['world.textures'],
