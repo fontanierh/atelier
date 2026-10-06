@@ -132,7 +132,7 @@ uv run python games/yorimichi/tools/benchmark.py village-walk-01 --view road_wal
 |---|---|
 | `--view` | static cameras: `spawn` (default), `portrait`, `forest`, `coast`, `village`, `north_overview`, `park`, `station`, `lake`, `harbor`, `arcade`, `plaza`, `city`, `custom` (with `--camera X Y Z PITCH YAW FOV`, player hidden); moving: `traverse` (walk, jog, run and a jump), `road_walk` (runs a scripted route) |
 | `--route` | with `road_walk`: `village` (default), `village_loop`, `mega`, `hidamari`, `arcade`, `plaza`, `harbor`, `harbor_pier`, `north`; `--road-index N` starts at route sample N |
-| `--desktop-fullscreen` | the visible fullscreen game with the desktop viewport client; needs `--height 1440` and a `--width` matching the display's aspect. Without it the capture renders offscreen at `--width` × `--height` (default 1920×1080) |
+| `--desktop-fullscreen` | the visible fullscreen game with the desktop viewport client and session-only `desktop=1`; needs `--height 1440` and a `--width` matching the display's aspect. An explicit `--settings 'desktop=0'` retains a baseline experiment. Without it the capture renders offscreen at `--width` × `--height` (default 1920×1080) |
 | `--capped` | `t.MaxFPS 60` instead of uncapped; VSync stays off unless `--commands` adds `r.VSync 1` |
 | `--settings`, `--commands`, `--ini`, `--launch-arg` | preferences (`-set=`), console commands at startup, `-ini:Engine:` overrides, extra Unreal arguments |
 | `--compare-before`, `--compare-after` | a paired ABABAB test on a static view: six phases of `--seconds`, each after 8 s of settling; settling and screenshots are excluded from timing; `results.json` gets the three paired savings |
@@ -140,6 +140,10 @@ uv run python games/yorimichi/tools/benchmark.py village-walk-01 --view road_wal
 | `--boot` | the 900-frame boot capture instead of a scene view |
 
 Rules for numbers:
+
+- `desktop` is session-only: a preferences file containing `desktop=1` does not enable it. Fullscreen captures add
+  it to `--settings` unless explicitly overridden, preserve the other settings, and verify the effective profile in
+  the game's `PROFILE` log. Supply launch-time preferences through `--settings`, rather than another `-set=` argument.
 
 - Desktop claims need `--desktop-fullscreen`. Offscreen captures run slower on the reference machine (29 to 35 ms
   against 17 ms visible, deferred spawn at 2228×1440), and fixed-step captures (`capture.py`, the QA scenarios) are

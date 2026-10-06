@@ -29,6 +29,20 @@ PROJECT = ROOT / 'unreal'
 ENGINE = Path(os.environ.get('UE_ROOT', '/Users/Shared/Epic Games/UE_5.8'))
 
 
+def desktop_settings(settings):
+    """Enable the session-only desktop profile unless a capture explicitly overrides it."""
+    if not any(pair.partition('=')[0] == 'desktop' for pair in settings.split(';')):
+        return ';'.join(filter(None, (settings, 'desktop=1')))
+    return settings
+
+
+def verify_desktop_profile(profile, settings):
+    requested = dict(pair.split('=', 1) for pair in settings.split(';') if '=' in pair).get('desktop', '1')
+    expected = float(requested)
+    if not math.isfinite(expected) or profile.get('desktop') != int(expected > .5):
+        raise RuntimeError('Fullscreen capture did not apply the requested desktop session profile')
+
+
 def other_render_processes(ignore_pid=None):
     """Reject overlapping game/editor/art jobs instead of reporting their slowdown."""
     processes = subprocess.check_output(['ps','-axo','pid=,comm='],text=True)
@@ -197,6 +211,10 @@ def main():
     p.add_argument('--desktop-fullscreen', action='store_true',
                    help='Measure the visible native 1440-high desktop viewport; width must match display aspect')
     args = p.parse_args()
+    if args.desktop_fullscreen:
+        if any(arg.lower().startswith('-set=') for arg in args.launch_arg):
+            p.error('With --desktop-fullscreen, pass session overrides through --settings, not --launch-arg=-set=')
+        args.settings = desktop_settings(args.settings)
     if args.desktop_fullscreen and (args.height != 1440 or args.boot):
         p.error('--desktop-fullscreen requires --height 1440 and a scene benchmark')
     if (args.view == 'custom') != (args.camera is not None):
@@ -342,6 +360,8 @@ def main():
     (folder/'route.json').write_text(json.dumps(route, indent=2)+'\n')
     result['route'] = {k: v for k, v in route.items() if k != 'stalls_over_2s'}
     result['profile'] = profile_from_log(folder/'game.log')
+    if args.desktop_fullscreen:
+        verify_desktop_profile(result['profile'], args.settings)
     result['output'] = [args.width, args.height]
     if args.compare_after:
         for phase in range(1,6):
