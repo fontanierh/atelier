@@ -65,6 +65,22 @@ def test_probe_renderer_flags_preserve_lumen_and_default_viewport(desktop):
         assert 'DesktopPreviewViewportClient' in ' '.join(desktop.renderer_arguments(lumen, desktop_viewport=True))
 
 
+def test_isolated_shared_preferences_use_normal_profile_without_overwriting_saved_choices(desktop, tmp_path):
+    primary = desktop.PROJECT / 'Saved' / 'settings.txt'
+    primary.write_text('renderer=1\nexposure=1.5\n')
+    isolated = tmp_path / 'isolated.txt'
+    isolated.write_text('renderer=0\nperformance=0\nrender_scale=85\nexposure=1.2\n')
+    ctx = SimpleNamespace(unreal_app=Path('Editor'), uproject=Path('Game.uproject'))
+    command = desktop.command(ctx, tmp_path, windowed=True, shared_settings=True, preferences=isolated)
+    assert '-preferencesfile=' + str(isolated) in command
+    assert any('r.ForwardShading=True' in arg for arg in command)
+    profile = next(arg for arg in command if arg.startswith('-set='))
+    assert 'desktop=1' in profile and 'renderer=0' in profile
+    assert 'performance=1' not in profile and 'render_scale=100' not in profile and 'exposure=' not in profile
+    assert 'japan.CitySurfaceTiles v1_128m 1' in ' '.join(command)
+    assert primary.read_text() == 'renderer=1\nexposure=1.5\n'
+
+
 def test_readiness_matches_current_manifest_and_rejects_partial_import(desktop):
     manifest(desktop)
     assert desktop.parse_ready(ready_log())['height'] == 1440

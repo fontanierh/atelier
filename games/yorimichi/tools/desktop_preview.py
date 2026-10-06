@@ -67,8 +67,8 @@ def renderer_arguments(lumen, desktop_viewport=False):
             ['-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0'])]
 
 
-def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, settings='', extra=()):
-    preferences = preference_path(folder, shared_settings)
+def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, settings='', extra=(), preferences=None):
+    preferences = Path(preferences) if preferences is not None else preference_path(folder, shared_settings)
     saved = read_preferences(preferences, settings)
     lumen = baseline or toggle(saved, 'renderer', 0)
     # Shared play keeps the user's quality, light and art choices. Performance
