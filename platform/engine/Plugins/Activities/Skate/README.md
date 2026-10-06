@@ -212,7 +212,9 @@ output from a previous ride never moves a new one.
   is immediate. The session stays loaded between rides: getting off suspends its input, `EndPlay` releases it.
 - **Collision.** The adapter snapshots registered, collision-enabled static meshes that block `Pawn` within a 100 m
   cube around the rider, shrinking it to 60, 35 or 20 m when it exceeds 500,000 triangles. Complex-as-simple meshes
-  give their collision triangles; other meshes give their boxes, spheres, capsules and convex hulls. Instanced meshes
+  give their collision triangles: their collision LOD's render triangles, or, in a cooked build that keeps no CPU copy
+  of those, the cooked Chaos triangles Unreal itself collides with (`skate.CookedSurface 1` reads those in the editor
+  too). Other meshes give their boxes, spheres, capsules and convex hulls. Instanced meshes
   count; the rider's own components do not. Registered rails within the cube go with it. When the rider leaves the
   inner 60%, the game thread gathers the next snapshot, a background task builds it and the session installs it
   between steps. Within 60 m of an actor tagged `SkatePark` the snapshot stays centred on that actor, so riding

@@ -64,6 +64,8 @@ namespace SkateRuntimeDetail
         TEXT("Native skating waits for each step of its thread, so a replay repeats: 1 always, 0 never, -1 under a fixed step or frame rate"));
     TAutoConsoleVariable<int32> CVarSkateSurfaceDebug(TEXT("skate.SurfaceDebug"),0,
         TEXT("1 logs every colliding mesh's surface per material slot at the next collision gather (USkateSettings surfaces)."));
+    TAutoConsoleVariable<int32> CVarSkateCookedSurface(TEXT("skate.CookedSurface"),0,
+        TEXT("QA: 1 makes complex-as-simple meshes not yet gathered read their cooked collision triangles, as a cooked build without CPU render copies does."));
     TAutoConsoleVariable<float> CVarSkatePumpTrick(TEXT("skate.PumpTrick"),.5f,
         TEXT("m/s one intentional pump must add to show as Pump in the hybrid's trick line, from the next ride"));
     TAutoConsoleVariable<int32> CVarSkateFailNative(TEXT("skate.FailNative"),0,
