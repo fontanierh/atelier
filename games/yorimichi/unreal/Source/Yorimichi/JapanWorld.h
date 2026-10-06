@@ -78,6 +78,8 @@ public:
     // Cosmetic particles sample the generated ground directly; gameplay still uses collision.
     bool SampleGroundHeight(const FVector& Position, float& Height) const;
     void ApplyPerformanceSettings(bool bPerformance);
+    /** The menu's city-tree optimization: unchanged close trees and collision, lighter distant leaf outlines. */
+    bool ApplyTreeOptimization(bool bEnabled);
     /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
      *  by the sun and the sky, inside the froxel grid around the camera. Off restores the level's fog and sun as built. */
     void ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look);
@@ -104,6 +106,7 @@ private:
     FString AppliedHideGroups;
     float AppliedBackdropCull = 0.f;
     int32 AppliedPerformanceMode = -1;
+    int32 AppliedTreeOptimization = -1;
     // The level's height fog and sun before the volumetric look (setup_project.py builds the fog with no density), and
     // the look applied (unset: off).
     struct FFogBase { float Density = 0.f, Falloff = 0.f, Cutoff = 0.f, Distance = 0.f, Shafts = 1.f; bool bVolumetric = false; };

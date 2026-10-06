@@ -1,42 +1,60 @@
 # Desktop performance
 
-The desktop target is the game at its native 1440-pixel height, 100% render scale, at a steady 60 fps. The `desktop`
-and `desktop-1440` play profiles reach it on the reference machine (an M3 Pro) with the forward renderer, city surfaces
-split into visibility tiles and lighter city-tree LODs. The default `play` profile keeps the deferred Lumen look at
-1080p in a window. This page covers the desktop profiles, the settings that matter, how to measure with
+The desktop target is the game at its native 1440-pixel height, 100% render scale, at a steady 60 fps. The default
+`play` profile uses the measured desktop tuning on the reference machine (an M3 Pro): forward rendering, city surfaces
+split into visibility tiles and optimized city-tree LODs. `fullscreen` uses the same tuning in fullscreen;
+`desktop` and `desktop-1440` remain aliases. Saved quality and art preferences are preserved. This page covers the
+desktop profiles, the settings that matter, how to measure with
 `tools/benchmark.py`, the scripted routes it drives, and the reference measurements.
 
 ## Desktop play profiles
 
 ```sh
 atelier build yorimichi                                   # includes unreal.desktop: city tiles and tree LODs
+atelier play yorimichi                                    # default native 1440 window
+atelier play yorimichi --profile fullscreen               # same defaults fullscreen
 atelier play yorimichi --profile desktop-1440             # fullscreen
 atelier play yorimichi --profile desktop                  # in a window
 atelier play yorimichi --profile desktop --set 'show_fps=0'
 ```
 
-Both profiles run `tools/desktop_preview.py --shared-settings` (`desktop` adds `--windowed`); `--set` is passed on as
+All four profiles run `tools/desktop_preview.py --shared-settings` (`play` and `desktop` add `--windowed`); `--set` is passed on as
 `--settings`. The launcher starts the editor binary with `-game` at `-resx=2560 -resy=1440`, under the render lock and
 the 10 GiB memory guard, and chooses the renderer per process with Unreal's `-ini:` override, so `DefaultEngine.ini` is
-never rewritten.
+never rewritten. `--memory-gib N` reaches the launcher too; the normal 10 to 14 GiB range remains enforced.
+
+Forward lighting and tree optimization are the defaults, including when `Saved/settings.txt` has no corresponding
+keys. The graphics menu saves `renderer=0` (forward) or `renderer=1` (Lumen), and `tree_optimization=1` or `0`.
+Enabling Lumen requires confirmation of its higher GPU and memory use and a restart; disabling tree optimization
+requires confirmation that it can lower the frame rate. The launcher passes `-renderrestart` and a fresh
+`-renderrestartrequest=<run>/renderer-restart.txt` path. After a confirmed renderer change the game saves the preference,
+writes `renderer=0` or `renderer=1` to that file and quits normally. The launcher releases the old render lock,
+verifies the request matches a changed saved choice, consumes it and starts a new guarded
+process with it. Direct editor launches save the choice for the next launch instead of promising an automatic restart.
+On restart the saved menu renderer wins over an earlier `--set renderer=...` or `--baseline` comparison override.
+Tree changes apply in the current game; subsequent launches honor the saved choice.
 
 | Flag | Effect |
 |---|---|
 | `--windowed` | a window instead of fullscreen |
-| `--shared-settings` | use and save the game's own `unreal/Saved/settings.txt` (camera, controls, art); only `desktop=1;performance=1;render_scale=100` are set for the session. Without it, the session gets a copy of that file and a fixed look (painterly 0.35, exposure 0.9, sun 48°/15°, FPS shown) |
+| `--shared-settings` | use and save the game's own `unreal/Saved/settings.txt` (camera, controls, quality, art, renderer and trees); `desktop=1` is session-only. Performance mode and 100% render scale are defaults when absent, rather than overwriting saved choices. Without it, the session gets a copy of that file and a fixed look (painterly 0.35, exposure 0.9, sun 48°/15°, FPS shown) |
 | `--settings 'key=value;...'` | extra preference overrides for this session |
-| `--baseline` | the deferred renderer with the full sky light and the same commands, for comparison |
+| `--baseline` | explicitly use deferred Lumen and the full sky light for comparison; the launcher prints its resource warning |
+| `--memory-gib N` | guard ceiling for this run, 10 to 14 GiB |
 | `--dry-run` | print the launch command |
 
-`YORIMICHI_EXTRA_ARGS` appends Unreal arguments. Each run writes `build/yorimichi/logs/desktop-<YYYYmmdd-HHMMSS>/`:
+`YORIMICHI_EXTRA_ARGS` and CLI arguments after `--` append Unreal arguments. Each run writes `build/yorimichi/logs/desktop-<YYYYmmdd-HHMMSS>/`:
 `game.log`, `stdout.log`, the guard's `memory-health.json`, `ready.png` (the game buffer a few seconds after startup)
-and, without `--shared-settings`, the session's `settings.txt`. When the game exits, the launcher checks the log and
+and, without `--shared-settings`, the session's `settings.txt`. Renderer restarts have separate `restart-N` log
+directories but keep the same preference file. When the game exits, the launcher checks the log and
 prints `verified: {...}` or `not verified: ...` (exit code 1):
 
 - the viewport is 1440 high, 1600 to 3840 wide, in the requested window mode;
-- the log reports `r.ForwardShading = "1"`;
-- each desktop feature reported itself loaded: `CITY TILES tag=v1_128m enabled=1 originals=3 tiles=85`,
-  `CITY TREE LODS tag=v4 enabled=1 forced=0 groups=3` and `FORWARD FILL nominal_lux=3.000 lights=1`. A missing marker
+- the log reports the selected renderer (`r.ForwardShading = "1"` for forward, `"0"` for Lumen);
+- `CITY TILES` reports exactly the source and tile counts in the completed staged
+  `Content/Data/city_surface_tiles/v1_128m/manifest.json`, rather than a historical fixed count;
+- `CITY TREE LODS tag=v4 enabled=0|1 forced=0 groups=3` matches the selected tree preference, and forward launches
+  report `FORWARD FILL nominal_lux=3.000 lights=1`. A missing marker
   means the imports are missing: `atelier build yorimichi unreal.desktop`.
 
 This is a local build run from the editor binary, not a cooked package.
@@ -47,13 +65,14 @@ Set by the launcher (`desktop_preview.py`):
 
 | Setting | Value | Why |
 |---|---|---|
-| `r.ForwardShading` (`-ini:` override) | True | the forward renderer: no Lumen, and none of its irradiance-field bands on the character |
+| `r.ForwardShading` (`-ini:` override) | True by default | forward lighting; saved Lumen selects False at process startup |
+| `r.GenerateMeshDistanceFields`, `r.MeshCardRepresentation` (`-ForceDPCVars`) | 0 for forward only | avoids generating unused distance fields and cards during first editor play; Lumen retains their generation |
 | `-desktopnative1440`, `DesktopPreviewViewportClient` | | a separate scene target fixed at 1440 high and the window's aspect, independent of macOS's scaled window drawable |
 | `r.SkylightIntensityMultiplier` | 0.33 | forward has no Lumen bounce; the full sky light washes out the ambient and the water |
 | `japan.ForwardHarborFill` | 3 (lux) | a warm, shadowless spot light standing in for the harbor's second directional fill, which forward cannot render |
-| `japan.CitySurfaceTiles` | `v1_128m 1` | the city surfaces split into 85 tiles of 128 m for culling, with every polygon and attribute kept |
-| `japan.CityTreeLODs` | `v4 1` | city-tree LOD1/2 that keep every leaf and simplify only the leaf outlines |
-| `r.DynamicRes.OperationMode`, `r.ScreenPercentage` | 0, 100 | native resolution, no dynamic resolution |
+| `japan.CitySurfaceTiles` | `v1_128m 1` | the city surfaces split into 128 m visibility tiles, with every polygon and attribute kept; count follows the current manifest |
+| `tree_optimization` (native preference) | 1 by default | city-tree LOD1/2 that keep every leaf and simplify only the leaf outlines; the menu can restore original trees |
+| `r.DynamicRes.OperationMode`, render scale | 0, 100% by default | native resolution without dynamic resolution; saved render scale remains in effect |
 | `t.MaxFPS`, `r.VSync` | 60, 1 | the 60 fps cap |
 | `r.Shadow.CSMCaching` | 0 | caching saved −0.18 / +0.11 / −0.14 ms in three fullscreen spawn pairs, with no consistent tail gain: not worth its shadow differences |
 | `r.RHISetGPUCaptureOptions` | 0 | Metal's per-frame GPU-capture labels otherwise accumulate in a development build |
@@ -151,7 +170,7 @@ timestep. Moving runs cover 182.7 m in 45 s with no stalls or recoveries.
 
 | Scene | Median | p95 | p99 | Frames ≤ 16.67 ms |
 |---|---:|---:|---:|---:|
-| Deferred (`play` renderer), spawn | 17.23 ms | 19.97 ms | 20.60 ms | 11.00% |
+| Deferred Lumen, spawn | 17.23 ms | 19.97 ms | 20.60 ms | 11.00% |
 | Desktop profile, spawn | 11.53 ms | 13.93 ms | 14.83 ms | 99.77% |
 | Desktop profile, village, running | 10.77 ms | 13.20 ms | 14.32 ms | 99.98% |
 | Desktop profile, city centre and plaza, running | 12.47 ms | 15.20 ms | 15.80 ms | 99.77% |

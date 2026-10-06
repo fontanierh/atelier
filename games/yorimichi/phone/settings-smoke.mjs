@@ -7,8 +7,9 @@ const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const settingsFile=new URL('../unreal/Saved/settings.txt',import.meta.url);
 const out=new URL('stream/smoke/',BUILD);await fs.mkdir(out,{recursive:true});
 let original=[];
-// Settings saved to disk: desktop switches the renderer profile for the session only and is left alone here.
-const saved=()=>original.filter(r=>r.key!=='desktop');
+// Desktop tuning stays session-only. Graphics choices have separate browser menu tests;
+// a renderer restart or a costly tree mode must never be an incidental effect of this live smoke run.
+const saved=()=>original.filter(r=>r.key!=='desktop'&&r.key!=='renderer'&&r.key!=='tree_optimization');
 async function request(){await page.evaluate(()=>window.yorimichi.stream.emitUIInteraction({yorimichi:1,action:'settings'}));}
 async function set(key,value){
  await page.evaluate(()=>window.yorimichi.settings=null);

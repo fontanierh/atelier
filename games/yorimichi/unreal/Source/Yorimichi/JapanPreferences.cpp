@@ -22,6 +22,12 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "HAL/IConsoleManager.h"
+#include "HAL/PlatformMisc.h"
+#include "HAL/PlatformFileManager.h"
+#include "HAL/PlatformFile.h"
+#if PLATFORM_WINDOWS
+#include "Windows/WindowsHWrapper.h"
+#endif
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -40,6 +46,14 @@ static constexpr int32 LightVersion = 3;
 
 namespace
 {
+FString RendererRestartRequest()
+{
+    FString Request;
+    if (FParse::Param(FCommandLine::Get(),TEXT("renderrestart")))
+        FParse::Value(FCommandLine::Get(),TEXT("renderrestartrequest="),Request);
+    return Request;
+}
+const TCHAR* RendererName(int32 Renderer) { return Renderer ? TEXT("Lumen") : TEXT("Forward"); }
 // The Skate feel page (docs/SKATE.md, "Skate feel menu"): every value that changes how the board rides, saved as
 // skate_<name>. The mode picks Easy, Normal or Hardcore as made, or Custom, where every value below is tuned on a base
 // difficulty; the stick, mouse and camera (bAlways) apply in every mode. A knob without a field is a choice: the mode
@@ -128,6 +142,8 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
     Owner = Pawn;
     Values = {
         {TEXT("performance"),TEXT("Graphics"),1.f,0.f,1.f},
+        {TEXT("renderer"),TEXT("Lighting"),0.f,0.f,1.f},
+        {TEXT("tree_optimization"),TEXT("Tree optimization"),1.f,0.f,1.f},
         // Session-only desktop tuning; both profiles share instance occlusion culling.
         {TEXT("desktop"),TEXT("Desktop profile"),0.f,0.f,1.f},
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
@@ -250,7 +266,8 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
 }
 bool UJapanPreferences::IsToggle(const FString& Key)
 {
-    return Key == TEXT("performance") || Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("goofy") || Key == TEXT("shield");
+    return Key == TEXT("performance") || Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
+        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("goofy") || Key == TEXT("shield");
 }
 float UJapanPreferences::Get(const TCHAR* Key) const
 {
@@ -259,7 +276,9 @@ float UJapanPreferences::Get(const TCHAR* Key) const
 }
 bool UJapanPreferences::SetValue(const FString& Key, float Number)
 {
+    GraphicsError.Reset();
     if (!FMath::IsFinite(Number)) return false;
+    if (Key == TEXT("renderer") || Key == TEXT("tree_optimization")) return SetGraphicsChoice(Key,Number);
     // Custom from a preset, with nothing tuned yet, starts on that preset's difficulty (the menu and the phone alike).
     if (Key == TEXT("skate_mode") && FMath::RoundToInt(Number) == SkateCustom && IsSkateCustomStock())
     {
@@ -273,6 +292,56 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
         if (IsToggle(Key)) V.Value = V.Value > .5f ? 1.f : 0.f;
         if (Key == TEXT("stamina_rings") || Key == TEXT("moveset")) V.Value=FMath::RoundToFloat(V.Value);
         Apply(); Save(); return true;
+    }
+    return false;
+}
+bool UJapanPreferences::CanRestartRenderer() { return !RendererRestartRequest().IsEmpty(); }
+int32 UJapanPreferences::CurrentRenderer()
+{
+    const auto* Forward = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForwardShading"));
+    return Forward && Forward->GetInt() == 0 ? 1 : 0;
+}
+bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
+{
+    for (FJapanPreference& Value : Values) if (Value.Key == Key)
+    {
+        const float Before = Value.Value;
+        TArray<AJapanWorld*> ChangedWorlds;
+        if (Key == TEXT("tree_optimization") && Owner && Owner->GetWorld())
+            for (TActorIterator<AJapanWorld> It(Owner->GetWorld());It;++It) if (It->bLoaded)
+            {
+                ChangedWorlds.Add(*It);
+                if (!It->ApplyTreeOptimization(Number > .5f))
+                {
+                    for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(Before > .5f);
+                    GraphicsError = TEXT("Tree detail could not be changed. Your previous setting is kept. Check that the game's tree assets are built.");
+                    return false;
+                }
+            }
+        Value.Value = Number > .5f ? 1.f : 0.f;
+        if (!Save())
+        {
+            Value.Value = Before;
+            for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(Before > .5f);
+            GraphicsError = TEXT("Settings could not be saved. The game has not restarted. Try again after checking storage access.");
+            return false;
+        }
+        const FString Request = RendererRestartRequest();
+        if (Key == TEXT("renderer") && CurrentRenderer() != int32(Value.Value) && !Request.IsEmpty())
+        {
+            // macOS's generic RequestExitWithStatus ignores a requested return code.
+            // The launcher consumes this attempt-specific request after a clean exit.
+            if (!FFileHelper::SaveStringToFile(FString::Printf(TEXT("renderer=%d\n"),int32(Value.Value)),*Request,
+                FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+            {
+                GraphicsError = TEXT("Your setting is saved, but the restart could not be requested. The game is still running; try again or relaunch later.");
+                return false;
+            }
+            UE_LOG(LogTemp,Display,TEXT("GRAPHICS RESTART renderer=%s request=%s"),RendererName(int32(Value.Value)),*Request);
+            FPlatformMisc::RequestExit(false);
+        }
+        else Apply();
+        return true;
     }
     return false;
 }
@@ -370,6 +439,8 @@ void UJapanPreferences::Apply()
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
         It->ApplyPerformanceSettings(PerformanceMode != 0);
+        if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f) && It->bLoaded)
+            GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
         It->ApplyVolumetricFog(Fog,FogLook);
     }
     // The sun: warmth 0 is a white noon sun, .5 the map's own (1, .90, .76), 1 a golden afternoon.
@@ -474,6 +545,7 @@ void UJapanPreferences::ReportProfile() const
             }
     }
     UE_LOG(LogTemp,Display,TEXT("PROFILE {\"desktop\": %.0f, \"haze\": %.3f, \"supersample\": %.3f, ")
+        TEXT("\"forward_shading\": %s, \"renderer_requested\": %.0f, \"tree_optimization_requested\": %.0f, ")
         TEXT("\"performance\": %.0f, \"render_scale\": %.1f, \"painterly\": %.3f, ")
         TEXT("\"gi_quality\": %s, \"gi_gather\": %s, \"gi_probe_resolution\": %s, \"gi_probe_budget\": %s, ")
         TEXT("\"gi_irradiance_format\": %s, \"gi_stochastic\": %s, ")
@@ -483,6 +555,7 @@ void UJapanPreferences::ReportProfile() const
         TEXT("\"dynres_mode\": %s, \"dynres_min\": %s, \"dynres_max\": %s, \"dynres_headroom\": %s, ")
         TEXT("\"dynres_budget\": %s, \"screen_percentage\": %s, \"aa_method\": %s, \"max_fps\": %s}"),
         Get(TEXT("desktop")),0.f,1.f,
+        *Number(TEXT("r.ForwardShading")),Get(TEXT("renderer")),Get(TEXT("tree_optimization")),
         Get(TEXT("performance")),Get(TEXT("render_scale")),Get(TEXT("painterly")),
         *Number(TEXT("sg.GlobalIlluminationQuality")),*Number(TEXT("r.Lumen.FinalGatherMethod")),
         *Number(TEXT("r.Lumen.ScreenProbeGather.RadianceCache.ProbeResolution")),
@@ -506,17 +579,41 @@ bool UJapanPreferences::IsSessionOnly(const FString& Key)
     return Key == TEXT("desktop") || Key == TEXT("haze") || Key == TEXT("supersample");
 }
 
-void UJapanPreferences::Save()
+bool UJapanPreferences::Save()
 {
+    TMap<FString,FString> NextValues = SavedValues;
     for (const auto& V : Values)
     {
-        if (IsSessionOnly(V.Key)) { SavedValues.Remove(V.Key); continue; }
-        SavedValues.Add(V.Key,FString::SanitizeFloat(V.Value));
+        if (IsSessionOnly(V.Key)) { NextValues.Remove(V.Key); continue; }
+        NextValues.Add(V.Key,FString::SanitizeFloat(V.Value));
     }
-    TArray<FString> Keys; SavedValues.GetKeys(Keys); Keys.Sort();
+    TArray<FString> Keys; NextValues.GetKeys(Keys); Keys.Sort();
     FString Content;
-    for (const auto& K : Keys) Content += K+TEXT("=")+SavedValues[K]+TEXT("\n");
-    FFileHelper::SaveStringToFile(Content,*SettingsFile);
+    for (const auto& K : Keys) Content += K+TEXT("=")+NextValues[K]+TEXT("\n");
+    // Flush a unique sibling first: an incomplete write must never truncate the previous settings.
+    const FString Temporary = FPaths::CreateTempFilename(*FPaths::GetPath(SettingsFile),TEXT("settings-"));
+    IPlatformFile& Files = FPlatformFileManager::Get().GetPlatformFile();
+    bool Saved = FFileHelper::SaveStringToFile(Content,*Temporary,FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+    if (Saved)
+    {
+#if PLATFORM_WINDOWS
+        // Windows's IPlatformFile::MoveFile does not replace existing files.
+        const FString From = Files.ConvertToAbsolutePathForExternalAppForWrite(*Temporary);
+        const FString To = Files.ConvertToAbsolutePathForExternalAppForWrite(*SettingsFile);
+        Saved = ::MoveFileExW(*From,*To,MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+        // Apple/Unix MoveFile uses rename(), which replaces a same-filesystem sibling atomically.
+        // IFileManager::Move deletes the destination first, so it is unsafe for this operation.
+        Saved = Files.MoveFile(*SettingsFile,*Temporary);
+#endif
+    }
+    if (Saved) SavedValues = MoveTemp(NextValues);
+    else
+    {
+        Files.DeleteFile(*Temporary);
+        UE_LOG(LogTemp,Error,TEXT("PREFERENCES could not save %s; previous file preserved"),*SettingsFile);
+    }
+    return Saved;
 }
 void UJapanPreferences::ResetLight()
 {
@@ -630,6 +727,38 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
             ? TEXT("Performance uses lighter shadows and distant detail to keep movement smooth.")
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text_Lambda([this] { return FText::FromString(GraphicsError); })
+        .AutoWrapText(true).ColorAndOpacity(FLinearColor(1.f,.5f,.4f))];
+    // Renderer selection is persisted, but forward/deferred shaders are chosen before the process starts.
+    // Never try to turn r.ForwardShading into a runtime console toggle.
+    FirstControl = SNew(SButton).Text_Lambda([this]
+        {
+            const int32 Choice = Get(TEXT("renderer")) > .5f ? 1 : 0;
+            return FText::FromString(FString::Printf(TEXT("Lighting: %s%s"),RendererName(Choice),
+                Choice == CurrentRenderer() ? TEXT("") : TEXT(" · saved, restart pending")));
+        })
+        .OnClicked_Lambda([this]
+        {
+            GraphicsError.Reset();
+            Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
+                [this] { if (Menu) OpenGraphicsWarning(TEXT("renderer")); }));
+            return FReply::Handled();
+        });
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[FirstControl.ToSharedRef()];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton).Text_Lambda([this]
+        { return FText::FromString(Get(TEXT("tree_optimization")) > .5f
+            ? TEXT("Tree optimization: on · lighter distant leaves") : TEXT("Tree optimization: off · full detail at every distance")); })
+        .OnClicked_Lambda([this]
+        {
+            if (Get(TEXT("tree_optimization")) < .5f) SetValue(TEXT("tree_optimization"),1.f);
+            else
+            {
+                GraphicsError.Reset();
+                Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
+                    [this] { if (Menu) OpenGraphicsWarning(TEXT("tree_optimization")); }));
+            }
+            return FReply::Handled();
+        })];
     // The character switch (ABotwRider::SwitchPlayer): Cairo, with the merged move set when it is built, and every BOTW
     // character with a rider definition. The switch waits for the next tick, out of the menu's click.
     const auto Switch = [this](const FString& Name)
@@ -720,6 +849,55 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .OnClicked_Lambda([this] { ResetLight(); return FReply::Handled(); })];
     Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Resume"))).OnClicked_Lambda([this] { CloseMenu(); return FReply::Handled(); })];
     Finish();
+}
+void UJapanPreferences::OpenGraphicsWarning(const FString& Key)
+{
+    if (!Owner || !GEngine || !GEngine->GameViewport) return;
+    const bool bRenderer = Key == TEXT("renderer");
+    const float Choice = Get(*Key) > .5f ? 0.f : 1.f;
+    const bool bRestart = bRenderer && CurrentRenderer() != int32(Choice);
+    const bool bLauncherRestart = CanRestartRenderer();
+    const FString Title = bRenderer ? FString::Printf(TEXT("Switch to %s?"),RendererName(int32(Choice)))
+        : TEXT("Turn off tree optimization?");
+    FString Warning = bRenderer
+        ? (Choice > .5f ? TEXT("Lumen is a resource hog: it uses substantially more GPU time and memory, and can lower the frame rate. Forward is the recommended default for smooth play.")
+            : TEXT("Forward uses lighter lighting and is the recommended default for smooth play."))
+        : TEXT("Full-detail trees at every distance use more GPU time and can lower the frame rate. Optimization preserves close trees, materials and collision, while simplifying distant leaf outlines. This change applies immediately.");
+    if (bRestart) Warning += bLauncherRestart
+        ? TEXT("\n\nThe game must restart to change lighting. Your settings will be saved; your position in the current session will be lost.")
+        : TEXT("\n\nLighting changes take effect on the next launch through the game launcher. Your current lighting stays active until then.");
+    if (Menu) GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef());
+    TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,16)[SNew(STextBlock).Text(FText::FromString(Title))
+        .Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(STextBlock).Text(FText::FromString(Warning)).AutoWrapText(true)
+        .ColorAndOpacity(FLinearColor(.9f,.85f,.7f))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text_Lambda([this] { return FText::FromString(GraphicsError); })
+        .AutoWrapText(true).ColorAndOpacity(FLinearColor(1.f,.5f,.4f))];
+    TSharedRef<SButton> Cancel = SNew(SButton).Text(FText::FromString(TEXT("Cancel")))
+        .OnClicked_Lambda([this]
+        {
+            Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this] { if (Menu) OpenMenu(false); }));
+            return FReply::Handled();
+        });
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Cancel];
+    Rows->AddSlot().AutoHeight()[SNew(SButton).Text(FText::FromString(bRestart && bLauncherRestart ? TEXT("Save and restart")
+        : bRestart ? TEXT("Save for next launch") : TEXT("Confirm")))
+        .OnClicked_Lambda([this,Key,Choice,bRestart,bLauncherRestart]
+        {
+            if (!SetValue(Key,Choice)) return FReply::Handled();
+            if (!bRestart || !bLauncherRestart)
+                Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this] { if (Menu) OpenMenu(false); }));
+            return FReply::Handled();
+        })];
+    Menu = SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+        .BorderBackgroundColor(FLinearColor(0,0,0,.55f))
+        [SNew(SBox).WidthOverride(620)[SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+            .BorderBackgroundColor(FLinearColor(.025f,.032f,.028f,1))[Rows]]];
+    GEngine->GameViewport->AddViewportWidgetContent(Menu.ToSharedRef(),20);
+    Owner->SetMenuOpen(true);
+    GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+    FSlateApplication::Get().SetKeyboardFocus(Cancel,EFocusCause::SetDirectly);
 }
 void UJapanPreferences::CloseMenu()
 {

@@ -1,7 +1,7 @@
 // Labels, limits and values come from the same preferences used by the Esc menu.
-const choices={performance:['Quality','Performance'],show_fps:['Hidden','Shown'],goofy:['Regular · left foot forward','Goofy · right foot forward'],shield:['Off · the sword parries','Carried · it parries'],moveset:['Merged','Cairo (legacy)','Breath of the Wild (legacy)'],skate_mode:['Easy','Normal','Hardcore','Custom · tune every value'],skate_difficulty:['Easy · forgiving','Normal','Hardcore · strict'],skate_auto_push:['As the difficulty has it','Off','On'],skate_assisted_air:['As the difficulty has it','Off','On']};
+const choices={performance:['Quality','Performance'],renderer:['Forward · recommended','Lumen · higher resource use'],tree_optimization:['Off · full detail at every distance','On · lighter distant leaves'],show_fps:['Hidden','Shown'],goofy:['Regular · left foot forward','Goofy · right foot forward'],shield:['Off · the sword parries','Carried · it parries'],moveset:['Merged','Cairo (legacy)','Breath of the Wild (legacy)'],skate_mode:['Easy','Normal','Hardcore','Custom · tune every value'],skate_difficulty:['Easy · forgiving','Normal','Hardcore · strict'],skate_auto_push:['As the difficulty has it','Off','On'],skate_assisted_air:['As the difficulty has it','Off','On']};
 const groups=[['Movement',['moveset','shield','stamina_rings','goofy']],['Camera',['mouse','cam_dist','fov']],
- ['Skate mode',['skate_mode']],['Skate feel · Custom',['skate_difficulty','skate_trucks','skate_flick_radius','skate_flick_window','skate_flick_pace','skate_pop','skate_boneless','skate_hippy','skate_gravity','skate_spin','skate_assisted_air','skate_vert_assist','skate_rail_magnetism','skate_grind_pop','skate_grind_friction','skate_push_speed','skate_push_power','skate_auto_push','skate_pump','skate_rolling_friction','skate_hill_speed','skate_braking','skate_steering','skate_carve','skate_grip','skate_powerslide','skate_wobble','skate_wobble_onset','skate_manual_drift','skate_landing','skate_impact','skate_get_up']],['Skate controls & camera',['skate_dead_zone','skate_stick_reach','skate_mouse_flick','skate_cam_dist','skate_cam_fov']],['Graphics',['performance','show_fps','render_scale']],['Art & world',['painterly','paint_radius','toon','toon_bands','toon_soft','outline','wind']],['Light',['exposure','saturation','sun_height','sun_yaw','sun_warmth','sun_strength','sky_fill','bounce']]];
+ ['Skate mode',['skate_mode']],['Skate feel · Custom',['skate_difficulty','skate_trucks','skate_flick_radius','skate_flick_window','skate_flick_pace','skate_pop','skate_boneless','skate_hippy','skate_gravity','skate_spin','skate_assisted_air','skate_vert_assist','skate_rail_magnetism','skate_grind_pop','skate_grind_friction','skate_push_speed','skate_push_power','skate_auto_push','skate_pump','skate_rolling_friction','skate_hill_speed','skate_braking','skate_steering','skate_carve','skate_grip','skate_powerslide','skate_wobble','skate_wobble_onset','skate_manual_drift','skate_landing','skate_impact','skate_get_up']],['Skate controls & camera',['skate_dead_zone','skate_stick_reach','skate_mouse_flick','skate_cam_dist','skate_cam_fov']],['Graphics',['performance','renderer','tree_optimization','show_fps','render_scale']],['Art & world',['painterly','paint_radius','toon','toon_bands','toon_soft','outline','wind']],['Light',['exposure','saturation','sun_height','sun_yaw','sun_warmth','sun_strength','sky_fill','bounce']]];
 export function renderSettings(rows,onChange){
  const root=document.getElementById('settings-rows'),scroll=root.scrollTop;root.replaceChildren();
  const ordered=new Set();
@@ -25,7 +25,18 @@ export function renderSettings(rows,onChange){
     output.value=format(row.value);input.oninput=()=>{output.value=format(input.value)};
    }
    input.id=`setting-${row.key}`;input.value=row.value;
-   input.onchange=()=>onChange(row.key,Number(input.value));label.append(input,output);group.append(label);ordered.add(row.key);
+   if(row.key==='renderer'&&row.running!==undefined&&row.running!==row.value)output.value='Restart pending';
+   input.onchange=()=>{
+    const value=Number(input.value);
+    if(value===Number(row.value))return;
+    let warning='';
+    if(row.key==='renderer'){
+     warning=value===1?'Lumen is a resource hog: it uses substantially more GPU time and memory and can lower the frame rate.':'Forward is the recommended default for smooth play.';
+     if(value!==row.running)warning+=row.restart_supported?'\n\nThe game must restart. Your settings will be saved, but your current position will be lost. Restart now?':'\n\nThis choice takes effect on the next launch through the game launcher. Save for next launch?';
+    }else if(row.key==='tree_optimization'&&value===0)warning='Full-detail trees at every distance use more GPU time and can lower the frame rate. Optimization preserves close trees and collision while simplifying distant leaf outlines. Turn it off now?';
+    if(warning&&!window.confirm(warning)){input.value=row.value;return;}
+    onChange(row.key,value);
+   };label.append(input,output);group.append(label);ordered.add(row.key);
   }
   root.append(group);
  }

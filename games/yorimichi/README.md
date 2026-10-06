@@ -25,8 +25,8 @@ Play profiles (`--profile`, defined in [game.toml](game.toml)):
 
 | Profile | What |
 |---|---|
-| `play` | the default: deferred Lumen, 1080p window |
-| `desktop`, `desktop-1440` | the desktop profile: forward renderer, city tiles and tree LODs, 1440 pixels high, windowed or fullscreen ([docs/DESKTOP_PERFORMANCE.md](docs/DESKTOP_PERFORMANCE.md)) |
+| `play`, `desktop` | the default desktop tuning: native 1440 window, forward renderer and optimized trees by default; saved menu choices are honored ([docs/DESKTOP_PERFORMANCE.md](docs/DESKTOP_PERFORMANCE.md)) |
+| `fullscreen`, `desktop-1440` | the same tuning and preferences, fullscreen at native 1440 |
 | `megapark`, `megapark-fullscreen` | the Super Ultra Mega Park in its own level |
 | `foxqa`, `swordqa` | scripted fights at a fixed 60 Hz that write `fox_qa.json` / `sword_qa.json` to the run folder |
 
