@@ -44,10 +44,11 @@ def prep(path,maxw=1280):
     if im.width>maxw:im=im.resize((maxw,round(im.height*maxw/im.width)))
     out=tmp/(hashlib.sha256(str(path).encode()).hexdigest()[:10]+'.jpg');im.save(out,quality=92);return out
 
+# The key header goes on stdin (argv is visible to ps); --form-string sends the prompt whole, -F would cut it at its first ';'.
 def gpt_edit(prompt,images,n=1,size='1536x1024',quality='high',model='gpt-image-2.5-sunburst'):
-    cmd=['curl','-sS','--max-time','900','https://api.openai.com/v1/images/edits','-H',f'Authorization: Bearer {key()}','-F',f'model={model}','-F',f'prompt={prompt}','-F',f'size={size}','-F',f'quality={quality}','-F',f'n={n}']
+    cmd=['curl','-sS','--max-time','900','https://api.openai.com/v1/images/edits','-H','@-','-F',f'model={model}','--form-string',f'prompt={prompt}','-F',f'size={size}','-F',f'quality={quality}','-F',f'n={n}']
     for im in images:cmd+=['-F',f'image[]=@{prep(im)}']
-    t=time.time();res=subprocess.run(cmd,capture_output=True,text=True);js=json.loads(res.stdout or '{}')
+    t=time.time();res=subprocess.run(cmd,input=f'Authorization: Bearer {key()}\n',capture_output=True,text=True);js=json.loads(res.stdout or '{}')
     if 'error' in js or 'data' not in js:raise SystemExit(f'gpt-image error: {js.get("error",res.stdout[:400])}')
     return [base64.b64decode(d['b64_json']) for d in js['data']],round(time.time()-t)
 
