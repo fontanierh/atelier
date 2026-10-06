@@ -1,7 +1,7 @@
 """Ride Cairo in the real game and check his feet stay on the board: rolling, in ollies and manuals, at 60 and 30 fps,
 and that big airs land back in the transition.
 
-    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871] [--rider CairoBotw|Cairo] [--settings FILE]
+    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871] [--rider CairoBotw|Cairo] [--settings FILE] [--desktop-profile]
 
 Run after unreal.compile. Under the render guard it launches the island and:
 - stands Cairo on foot on the mini-mega's flat and measures his soles and capsule over the floor;
@@ -20,6 +20,7 @@ The close shots look at the deck from the side. The rider is Cairo as a person p
 plays with a saved settings file (a copy of a player's settings.txt: skate mode, feel, stance), copied into the output
 folder so the game's own saves leave the original alone. Writes
 build/yorimichi/skate-jump-feet/review/<rider>[-<label>]/{checks.json, rows_*.json, *.png, game.log}.
+--desktop-profile uses normal native 1440p play (including city tiles), preserving an isolated copy of saved preferences.
 The worker owns and quits only the game process it launches.
 """
 from pathlib import Path
@@ -33,7 +34,7 @@ from atelier.build import Context
 from atelier.safety import guarded
 from atelier.safety.guard import attach as attach_memory_guard, reap
 from atelier import live
-from desktop_preview import read_preferences, renderer_arguments, toggle
+from desktop_preview import command as desktop_command, read_preferences, renderer_arguments, toggle
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
@@ -41,6 +42,7 @@ parser.add_argument('--port', type=int, default=8871)
 parser.add_argument('--rider', default='CairoBotw', choices=('CairoBotw', 'Cairo'))
 parser.add_argument('--settings', type=Path, help="a player's settings.txt to play with")
 parser.add_argument('--label', default='', help='output subfolder suffix, to keep runs with different settings apart')
+parser.add_argument('--desktop-profile', action='store_true', help='normal native 1440p play profile, with an isolated copy of saved preferences')
 args = parser.parse_args()
 live.URL = f'http://127.0.0.1:{args.port}'
 ctx = Context('yorimichi'); out = yori.OUT / 'skate-jump-feet' / 'review' / (args.rider + (f'-{args.label}' if args.label else '')); out.mkdir(parents=True, exist_ok=True)
@@ -108,7 +110,8 @@ owns_bridge = False
 with socket.socket() as probe:
     if probe.connect_ex(('127.0.0.1', args.port)) == 0:
         raise RuntimeError(f'Review port {args.port} is occupied; refusing another game')
-log = (out / 'game.log').open('w')
+# The desktop launcher writes its own abslog; never point redirected stdout at that same file.
+log = (out / ('console.log' if args.desktop_profile else 'game.log')).open('w')
 cmd = [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed', '-resx=1280', '-resy=720', '-nosplash', '-stdout', '-nofox',
        f'-liveport={args.port}', '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost',
        '-ExecCmds=t.MaxFPS 60,r.RHISetGPUCaptureOptions 0,DisableAllScreenMessages']
@@ -117,6 +120,13 @@ if args.settings:
     (out / 'settings.txt').write_text(args.settings.read_text()); cmd.append(f"-preferencesfile={out / 'settings.txt'}")
 preferences = out / 'settings.txt' if args.settings else ctx.uproject.parent / 'Saved' / 'settings.txt'
 cmd.extend(renderer_arguments(toggle(read_preferences(preferences), 'renderer', 0)))
+if args.desktop_profile:
+    if not args.settings:
+        (out / 'settings.txt').write_text(preferences.read_text() if preferences.exists() else '')
+    cmd = desktop_command(ctx, out, windowed=True, shared_settings=True, preferences=out / 'settings.txt',
+                          extra=['-nofox', f'-liveport={args.port}',
+                                 '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost',
+                                 *(['-rider=CairoBotw'] if args.rider == 'CairoBotw' else [])])
 p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
 guards = ExitStack(); monitor = None
 
@@ -272,7 +282,8 @@ try:
     while time.monotonic() < deadline:
         if p.poll() is not None: raise RuntimeError('Game exited ' + str(p.returncode))
         if time.monotonic()-last_notice >= 20:
-            print('Waiting for owned bridge; game log bytes', (out/'game.log').stat().st_size, flush=True); last_notice=time.monotonic()
+            game_log = out / 'game.log'
+            print('Waiting for owned bridge; game log bytes', game_log.stat().st_size if game_log.exists() else 0, flush=True); last_notice=time.monotonic()
         # The bridge answers on the game thread. A cold shader/asset hitch can exceed one second;
         # allow a bounded request to finish instead of accumulating abandoned requests during startup.
         try: live.request('/state', timeout=min(10, max(.1, deadline - time.monotonic()))); break
