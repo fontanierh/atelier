@@ -108,6 +108,31 @@ def botw_steps(out):
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'cairo' / 'botw.json'], heavy=True,
              about='/Game/CairoBotw: Cairo with the BOTW move set (-rider=CairoBotw): his clips, definition and move record'),
         *sword_trainer_steps(out),
+        *horse_steps(out),
+    ]
+
+
+def horse_steps(out):
+    """The hippodrome's horses and riders (assets/characters/horses/README.md), from the same BOTW library."""
+    spec = importlib.util.spec_from_file_location('horse_export', CHARS / 'horses' / 'export.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    horses = CHARS / 'horses'
+    botw = CHARS / 'botw'
+    return [
+        Step('characters.horses', [Python(horses / 'export.py')],
+             inputs=[horses, botw / 'bake.py', botw / 'library.py', botw / 'outfit.py', botw / 'export.py',
+                     *module.sources()],
+             outputs=[out / 'horses' / 'export.json'], about='Horses (every coat, mane merged) and their riders, baked'),
+        Step('characters.cairo_rider', [Blender(horses / 'cairo_rider.py', threads=4)],
+             inputs=[horses / 'cairo_rider.py', CHARS / 'cairo', NAMES], needs=['characters.horses', 'characters.botw'],
+             outputs=[out / 'horses' / 'cairo' / 'export.json'],
+             about="The riders' clips retargeted onto Cairo, to FBX: the player on horseback"),
+        Step('unreal.horses', [UnrealScript(SCRIPTS / 'import_horses.py', 'HORSES IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_horses.py', SCRIPTS / 'animation_compression.py'],
+             needs=['characters.horses', 'characters.cairo_rider', 'unreal.botw', 'unreal.cairo'],
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'horses' / 'roster.json'], heavy=True,
+             about='/Game/Horses: the horses, riders and race master, and the roster the race reads'),
     ]
 
 
@@ -133,6 +158,28 @@ def sword_trainer_steps(out):
              needs=['characters.sword_trainer_botw', 'unreal.sword_trainer', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'sword-trainer' / 'botw.json'], heavy=True,
              about='/Game/SwordTrainer/Botw and DA_SwordTrainer: her merged move set, definition and move record'),
+    ]
+
+
+def hippodrome_steps(out):
+    """The Hidamari Hippodrome (docs/HIPPODROME.md): the racecourse north of the city, built without Blender."""
+    region = REGIONS / 'hippodrome'
+    return [
+        Step('world.hippodrome', [Python(region / 'build.py')],
+             inputs=[region, ASSETS / 'hippodrome' / 'props', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py'],
+             needs=['world.layout'], outputs=[out / 'hippodrome' / 'region' / 'hippodrome.json'],
+             about='hippodrome course meshes (platform, skirt, track, rails, lane), its Tripo structures and race data'),
+        Step('unreal.hippodrome', [UnrealScript(SCRIPTS / 'import_hippodrome.py', 'HIPPODROME IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_hippodrome.py'], needs=['world.hippodrome', 'unreal.botw'], heavy=True,
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hippodrome' / 'hippodrome.json'],
+             about='/Game/Hippodrome: the course meshes with collision, and the data AHippodrome places them from'),
+        Step('audio.hippodrome', [Python(AUDIO / 'hippodrome' / 'make.py')], inputs=[AUDIO / 'hippodrome'],
+             outputs=[out / 'audio' / 'hippodrome' / 'manifest.json', out / 'audio' / 'hippodrome' / 'charts.json'],
+             about='race music (three cups), their rhythm charts and the race sounds, all synthesised'),
+        Step('unreal.hippodrome_audio', [UnrealScript(SCRIPTS / 'import_hippodrome_audio.py', 'HIPPODROME AUDIO IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_hippodrome_audio.py'], needs=['unreal.world', 'audio.hippodrome'], heavy=True,
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hippodrome' / 'charts.json'],
+             about='/Game/Audio/Hippodrome: the race music and sounds, and the charts the race reads'),
     ]
 
 
@@ -412,4 +459,4 @@ def steps(ctx):
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
-    ] + botw_steps(out)
+    ] + botw_steps(out) + hippodrome_steps(out)

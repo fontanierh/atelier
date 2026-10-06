@@ -1,0 +1,37 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "Concept art for Yorimichi, a stylised Japanese autumn exploration game made in Unreal: a polished commercial stylised look (Ghibli-inspired and painterly like Breath of the Wild), hand-crafted, cosy and lived-in, warm afternoon sunlight, red and orange maples, yellow ginkgo and deep green cedars, a snowcapped volcanic summit to the north. It must read as a believable real-time game frame built from meshes, textures and foliage, not a loose illustration. No text, no logos, no watermark unless asked for. Images 1 and 2 set the art direction. Eye-level view from the front row of the wooden grandstand of the Hidamari hippodrome as a race thunders past the finish post: six horses at full gallop on the dirt track, each ridden by a young adventurer-style rider in a coloured tunic and scarf (no jockey silks, no helmets with logos), kicking up dust, white running rails in the foreground, the grass infield with its pond and judges' tower beyond, the autumn forest ringing the course and the snowcapped summit behind. Horses are stylised, sturdy and expressive: bay, chestnut, dapple grey, black, white, pinto. Spectators in yukata and autumn coats cheer, paper lanterns hang from the grandstand eaves.",
+  "references": {
+    "games/yorimichi/assets/hidamari/concepts/temple_hillside.jpg": "225388adc3ceb420ccd68a4fcc12ef8711d59860dd2261cc6d479d21886aad0f",
+    "games/yorimichi/assets/hidamari/concepts/sunlit_park.jpg": "6aa7278349c85d4ea904e889cdf9c5a0f0f86099d452b81430bddf26da3f4e49"
+  },
+  "purpose": "Hidamari hippodrome and horse race concept",
+  "execution": "games/yorimichi/tools/hippodrome_concepts.py",
+  "status": "done",
+  "started_at": "2026-10-05T17:52:49.203945+00:00",
+  "usage": {
+    "input_tokens": 2459,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 299
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3831
+  },
+  "png_sha256": "2e364f1d479e380808ae7a50ecffefdd98962ffbf3b4b71b3290b590cbf0cbad",
+  "seconds": 40.6,
+  "compact_copy": {
+    "file": "grandstand.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-05T17:53:29.809948+00:00"
+}

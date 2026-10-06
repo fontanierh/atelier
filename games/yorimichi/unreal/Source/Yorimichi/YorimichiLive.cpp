@@ -5,13 +5,17 @@
 #include "WandererSword.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "HorseRideComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
 #include "BotwCreature.h"
 #include "BotwRider.h"
 #include "BotwMoveSet.h"
 #include "SwordTrainer.h"
+#include "HorseRace.h"
+#include "Hippodrome.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
 #include "DynamicRHI.h"
 #include "Engine/StaticMeshActor.h"
@@ -56,6 +60,43 @@ bool UYorimichiLive::SetPreference(const FString& Key, float Value)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
+}
+
+FString UYorimichiLive::RaceState()
+{
+    const AHorseRace* R = AHorseRace::Find(ULiveLibrary::Player());
+    return R ? R->Describe() : FString(TEXT("{}"));
+}
+
+bool UYorimichiLive::RaceStart(int32 Cup, const FString& Horse, float AutoAccuracy)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    AHorseRace* R = AHorseRace::Find(P);
+    return R && R->StartRace(P, Cup, Horse, AutoAccuracy);
+}
+
+bool UYorimichiLive::RaceMenu()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    AHorseRace* R = AHorseRace::Find(P);
+    if (!R || R->IsRacing()) return false;
+    if (R->IsMenuOpen()) R->CloseMenu(); else R->OpenMenu(P);
+    return true;
+}
+
+bool UYorimichiLive::RaceEnd()
+{
+    AHorseRace* R = AHorseRace::Find(ULiveLibrary::Player());
+    if (!R) return false;
+    R->EndRace(TEXT("live"));
+    return true;
+}
+
+bool UYorimichiLive::RaceVisit()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    const AHippodrome* V = AHippodrome::Find(P);
+    return P && V && P->TravelTo(V->ReturnGround, V->ReturnYaw, TEXT("hippodrome"));
 }
 
 FString UYorimichiLive::TrainerState()
@@ -147,6 +188,17 @@ FString UYorimichiLive::BikeState()
     return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f steer=%.2f parked=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
         int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->GetSteering(), B->IsParked() ? 1 : 0, *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
         A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
+}
+FString UYorimichiLive::HorseState()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UHorseRideComponent* H = P ? P->GetHorse() : nullptr;
+    if (!H) return TEXT("no horse");
+    const FVector A = P->GetActorLocation(); const AHippodromeFigure* F = H->GetFigure();
+    const FVector At = F ? F->GetActorLocation() : FVector::ZeroVector; const FRotator R = F ? F->GetActorRotation() : FRotator::ZeroRotator;
+    return FString::Printf(TEXT("mounted=%d horse=%s rider=%s gait=%s speed=%.0f spurs=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f figure=%d at=(%.0f,%.0f,%.0f) rot=(%.1f,%.1f) hidden=%d ticking=%d prereq=%d"),
+        H->IsEquipped() ? 1 : 0, *H->GetHorse(), F ? *F->GetRider().Name : TEXT("-"), *H->GetGait().ToString(), H->GetSpeed(), H->GetSpurs(),
+        *H->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw, F ? 1 : 0, At.X, At.Y, At.Z, R.Pitch, R.Yaw, P->IsHidden() ? 1 : 0, H->IsComponentTickEnabled() ? 1 : 0,
+        P->GetCharacterMovement()->PrimaryComponentTick.GetPrerequisites().ContainsByPredicate([H](const FTickPrerequisite& T) { return T.PrerequisiteObject.Get() == H; }) ? 1 : 0);
 }
 bool UYorimichiLive::TestWall(FVector Ground, float Yaw, FVector Size)
 {

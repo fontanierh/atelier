@@ -1,0 +1,29 @@
+{
+  "stage": "hippodrome_prop",
+  "slug": "judges_tower",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 15000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "b7646514b579a0711bc125002c591e8840b77e0d9ba4b0ce8e50d41aec2da087",
+  "concept_sha256": "b7646514b579a0711bc125002c591e8840b77e0d9ba4b0ce8e50d41aec2da087",
+  "submitted_at": "2026-10-05T18:09:12.740892+00:00",
+  "task_id": "13d66ee9-7f6a-447a-a77d-ada02b839472",
+  "status": "submitted",
+  "user_approval": "requested by the horse-races session on 2026-10-05 (budget: at most 6 Tripo models)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T18:10:59.690386+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

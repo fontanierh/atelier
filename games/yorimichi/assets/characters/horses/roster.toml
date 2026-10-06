@@ -1,0 +1,116 @@
+# The hippodrome's horses and riders, imported from the local BOTW asset library (README.md) beside the BOTW roster
+# (../botw/roster.toml), whose fields these share; export.py adds two of its own.
+#
+# parts    horse parts (library entries) merged onto the mesh: the mane and tail, rigged on the horse's own bones
+# coat     a coat of the standard horse (library/horses/Horse/coats/coats.json id): its body and foot albedos, and the
+#          mane and tail colour that goes with it
+#
+# A rider's clips are BOTW's own riding clips: its Root sits on the horse's Saddle_Root (the clips are authored that
+# way), and each Horse_Move_Gear_<n> is the rider's half of the horse's Move_Gear_<n>, frame for frame.
+
+scale = 0.8
+
+[[character]]
+id = "Horse"
+name = "Horse"
+parts = ["Horse_Mane"]
+clips = ["Wait", "Wait_Shake", "Wait_Flehmen", "Wait_Eat", "Move_Gear_0To3", "Move_Gear_1", "Move_Gear_2", "Move_Gear_3",
+         "Move_Gear_3_Curve_L", "Move_Gear_3_Curve_R", "Move_Gear_Top", "Move_Gear_Top_Fast", "Move_Gear_Top_Start",
+         "Move_Gear_Top_Curve_L", "Move_Gear_Top_Curve_R", "Move_Gear_Top_Curve_L_Fast", "Move_Gear_Top_Curve_R_Fast",
+         "Move_Gear_1_Stop_F12", "Courbette_Gear_3", "Stagger_L", "Stagger_R"]
+roles = { idle = "Wait", walk = "Move_Gear_1", trot = "Move_Gear_2", canter = "Move_Gear_3", run = "Move_Gear_Top", sprint = "Move_Gear_Top_Fast", start = "Move_Gear_0To3", left = "Move_Gear_Top_Curve_L", right = "Move_Gear_Top_Curve_R", stop = "Move_Gear_1_Stop_F12", rear = "Courbette_Gear_3", dance = "Wait_Shake" }
+
+[[character]]
+id = "Horse"
+name = "HorsePinto"
+shares = "Horse"
+parts = ["Horse_Mane"]
+coat = "Docile_00"
+
+[[character]]
+id = "Horse"
+name = "HorseBlack"
+shares = "Horse"
+parts = ["Horse_Mane"]
+coat = "Touchy_13"
+
+[[character]]
+id = "Horse"
+name = "HorseRoan"
+shares = "Horse"
+parts = ["Horse_Mane"]
+coat = "Docile_22"
+
+[[character]]
+id = "Horse"
+name = "HorseLilac"
+shares = "Horse"
+parts = ["Horse_Mane"]
+coat = "Touchy_29"
+
+[[character]]
+id = "Horse"
+name = "HorseDun"
+shares = "Horse"
+parts = ["Horse_Mane"]
+coat = "Docile_12"
+
+[[character]]
+id = "Horse_White"
+name = "HorseWhite"
+shares = "Horse"
+parts = ["Horse_Mane"]
+
+[[character]]
+id = "Horse_Epona"
+name = "Epona"
+shares = "Horse"
+parts = ["Horse_Mane"]
+
+# The riders. Link rides for the player, in his Champion's Tunic; the other five are the field.
+[[character]]
+id = "GameROMPlayer"
+name = "RiderLink"
+outfit = ["Armor_116_Upper", "Armor_001_Lower"]
+clips = ["Horse_Wait", "Horse_Move_Gear_1", "Horse_Move_Gear_2", "Horse_Move_Gear_3", "Horse_Move_Gear_Top",
+         "Horse_Move_Gear_Top_Go", "Horse_Move_Gear_3_Go", "Horse_Move_Gear_1_Go", "Horse_Move_Gear_Top_Curve_L",
+         "Horse_Move_Gear_Top_Curve_R", "Horse_Move_Gear_1_Brake", "Horse_Move_Soothe", "Horse_Courbette_Gear_3",
+         "Horse_Rodeo_Soothe", "Horse_Talk_Hello_N", "Horse_Talk_Yes_N"]
+roles = { idle = "Horse_Wait", walk = "Horse_Move_Gear_1", trot = "Horse_Move_Gear_2", canter = "Horse_Move_Gear_3", run = "Horse_Move_Gear_Top", spur = "Horse_Move_Gear_Top_Go", start = "Horse_Move_Gear_1_Go", left = "Horse_Move_Gear_Top_Curve_L", right = "Horse_Move_Gear_Top_Curve_R", stop = "Horse_Move_Gear_1_Brake", soothe = "Horse_Move_Soothe", rear = "Horse_Courbette_Gear_3", notice = "Horse_Talk_Hello_N", dance = "Horse_Talk_Yes_N" }
+
+[[character]]
+id = "Dm_Npc_Gerdo_Hero"
+name = "RiderUrbosa"
+clips = ["re:^Horse_"]
+roles = { idle = "Horse_Wait", walk = "Horse_Move_Gear_1", trot = "Horse_Move_Gear_2", canter = "Horse_Move_Gear_3", run = "Horse_Move_Gear_Top", spur = "Horse_Move_Gear_1_Go", start = "Horse_Move_Gear_1_Go", stop = "Horse_Move_Gear_1_Brake", soothe = "Horse_Move_Soothe" }
+
+[[character]]
+id = "Dm_Npc_Zora_Hero"
+name = "RiderMipha"
+clips = ["re:^Horse_"]
+roles = { idle = "Horse_Wait", walk = "Horse_Move_Gear_1", trot = "Horse_Move_Gear_2", canter = "Horse_Move_Gear_3", run = "Horse_Move_Gear_Top", spur = "Horse_Move_Gear_1_Go", start = "Horse_Move_Gear_1_Go", stop = "Horse_Move_Gear_1_Brake", soothe = "Horse_Move_Soothe" }
+
+[[character]]
+id = "Npc_Kakariko002"
+name = "RiderPaya"
+clips = ["re:^Horse_"]
+roles = { idle = "Horse_Wait", walk = "Horse_Move_Gear_1", trot = "Horse_Move_Gear_2", canter = "Horse_Move_Gear_3", run = "Horse_Move_Gear_Top", spur = "Horse_Move_Gear_1_Go", start = "Horse_Move_Gear_1_Go", stop = "Horse_Move_Gear_1_Brake", soothe = "Horse_Move_Soothe" }
+
+[[character]]
+id = "Npc_oasis038"
+name = "RiderTali"
+clips = ["re:^Horse_"]
+roles = { idle = "Horse_Wait", walk = "Horse_Move_Gear_1", trot = "Horse_Move_Gear_2", canter = "Horse_Move_Gear_3", run = "Horse_Move_Gear_Top", spur = "Horse_Move_Gear_1_Go", start = "Horse_Move_Gear_1_Go", stop = "Horse_Move_Gear_1_Brake", soothe = "Horse_Move_Soothe" }
+
+[[character]]
+id = "Npc_oasis029"
+name = "RiderKohm"
+clips = ["re:^Horse_"]
+roles = { idle = "Horse_Wait", walk = "Horse_Move_Gear_1", trot = "Horse_Move_Gear_2", canter = "Horse_Move_Gear_3", run = "Horse_Move_Gear_Top", spur = "Horse_Move_Gear_1_Go", start = "Horse_Move_Gear_1_Go", stop = "Horse_Move_Gear_1_Brake", soothe = "Horse_Move_Soothe" }
+
+# The race master by the grandstand: BOTW's stable keeper's idle and talk.
+[[character]]
+id = "Npc_UMiiVillage031"
+name = "Hudson"
+clips = ["Default_Wait", "Default_Move_Walk", "UH_M_Umayado_Wait", "UH_M_Umayado_Talk", "Default_Joy_Hello", "Default_Point", "Default_Normal_Talk", "Common_Victory"]
+roles = { idle = "UH_M_Umayado_Wait", walk = "Default_Move_Walk", notice = "Default_Joy_Hello", talk = "UH_M_Umayado_Talk", point = "Default_Point", dance = "Common_Victory" }

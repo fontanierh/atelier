@@ -78,4 +78,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerEnd();
     UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerForce(const FString& Attack, const FString& Defence);
     UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerPlace(FVector Ground, float Yaw);
+    /** The horse races (AHorseRace, docs/HIPPODROME.md): the race as JSON; a race (cup 0 Maiden, 1 Stakes, 2 Cup; a roster
+     *  coat; AutoAccuracy > 0 plays the player's notes at that skill); Hudson's menu toggled; the race ended; the player
+     *  stood by Hudson. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString RaceState();
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool RaceStart(int32 Cup = 0, const FString& Horse = TEXT("HorsePinto"), float AutoAccuracy = 0.f);
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool RaceMenu();
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool RaceEnd();
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool RaceVisit();
+    /** Riding a horse about the world (UHorseRideComponent): mounted, horse, gait, speed, spurs, status and where it stands. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString HorseState();
 };

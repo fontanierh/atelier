@@ -337,6 +337,23 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
             Zones.Add(Zone);
         }
     }
+    // The hippodrome (docs/HIPPODROME.md) is newer than the painted sheet too: its stop is the grandstand's walk, by Hudson.
+    if (!Zones.ContainsByPredicate([](const FJapanMapZone& Zone) { return Zone.Key == TEXT("hippodrome"); }))
+    {
+        FString HippodromeText; TSharedPtr<FJsonObject> Hippodrome;
+        const TArray<TSharedPtr<FJsonValue>>* Origin = nullptr; const TSharedPtr<FJsonObject>* Return = nullptr; const TArray<TSharedPtr<FJsonValue>>* At = nullptr;
+        if (FFileHelper::LoadFileToString(HippodromeText, *AtelierDataPath(TEXT("hippodrome/hippodrome.json")))
+            && FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(HippodromeText), Hippodrome) && Hippodrome.IsValid()
+            && Hippodrome->TryGetArrayField(TEXT("origin"), Origin) && Origin->Num() >= 3
+            && Hippodrome->TryGetObjectField(TEXT("return"), Return) && (*Return)->TryGetArrayField(TEXT("at"), At) && At->Num() >= 2)
+        {
+            FJapanMapZone Zone; Zone.Key = TEXT("hippodrome"); Zone.Name = TEXT("Hidamari Hippodrome");
+            Zone.Hint = TEXT("The racecourse north of the city: ask Hudson by the grandstand for a race");
+            Zone.Location = AJapanWorld::ToUE((*Origin)[0]->AsNumber() + (*At)[0]->AsNumber(), (*Origin)[1]->AsNumber() + (*At)[1]->AsNumber(), (*Origin)[2]->AsNumber());
+            Zone.Yaw = -float((*Return)->GetNumberField(TEXT("yaw")));
+            Zones.Add(Zone);
+        }
+    }
     ImageFile = Dir/TEXT("map.png");
     Texture = FImageUtils::ImportFileAsTexture2D(ImageFile);
     if (Texture)

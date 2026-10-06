@@ -1,0 +1,29 @@
+{
+  "stage": "hippodrome_prop",
+  "slug": "finish_post",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 6000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "63e10adbe2c4ce07b2c782e205251cca219ad24edc5c499d58b7e29eb95f07ee",
+  "concept_sha256": "63e10adbe2c4ce07b2c782e205251cca219ad24edc5c499d58b7e29eb95f07ee",
+  "submitted_at": "2026-10-05T18:06:41.917586+00:00",
+  "task_id": "c3f66034-a443-44e1-ac12-bc4a9a617bb9",
+  "status": "submitted",
+  "user_approval": "requested by the horse-races session on 2026-10-05 (budget: at most 6 Tripo models)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T18:07:46.163673+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}
