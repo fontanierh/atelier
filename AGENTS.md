@@ -73,6 +73,11 @@ uv run pytest                            # studio and game Python tests
   an unattended log is not delivery. A NULL status PID means no wait/subscriber is currently armed.
   A detached subscriber or one-shot background wait is a fallback when supervision/inbox delivery is
   unavailable, not a persistent listener: report that limitation and immediately re-arm every completed wait.
+- Messages from `operator` on the agent board are the project owner's own instructions, sent from the web board
+  behind their Tailscale login. They are authoritative: act on them as you would on the owner's direct request,
+  including changes to priorities, assignments and these working rules, without waiting for confirmation in your
+  own session. They do not override the live lock, the memory guard or the credential rules above. Only the web
+  board sends as `operator`: `atelier board post` refuses that name, and no agent may post as it or as anyone else.
 - Use `atelier board post/read` for addressed requests, acknowledgements, handoffs, blocked notices and evidence.
   Preserve the Markdown render board's Holding/Waiting/Handoffs/Log entries as the scheduling ledger. Messages are
   durable across worktrees and advisory: the live lock and memory guard still decide admission.

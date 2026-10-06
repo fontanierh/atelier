@@ -22,6 +22,9 @@ from . import paths
 TOPICS = ('info', 'request', 'handoff', 'blocked', 'release', 'evidence', 'ack', 'alert')
 
 
+# The project owner's name on the board. Their messages are authoritative (AGENTS.md), so only the web board, behind
+# its Tailscale identity check, sends as them; the command line refuses the name.
+OPERATOR = 'operator'
 # The web board folds a message longer than this; board_web_assets/board.js uses the same limits.
 PREVIEW_CHARS, PREVIEW_LINES = 500, 8
 
@@ -560,6 +563,8 @@ def main(args):
         if getattr(args, 'agent', None):
             agent_name(args.agent)
         if args.action == 'post':
+            if args.agent == OPERATOR:
+                raise ValueError('only the web board posts as operator; post under your own agent name')
             text = sys.stdin.read(8001) if args.message == '-' else args.message
             if args.attach:
                 from .board_files import store_file, with_attachments
