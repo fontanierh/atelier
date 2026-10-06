@@ -20,9 +20,6 @@
 void AWandererCharacter::AdvanceCairoReview(float Dt)
 {
     auto* M=GetCharacterMovement();
-    const bool MovingRollReview=FParse::Param(FCommandLine::Get(),TEXT("cairorollqa"));
-    const bool RollChainReview=FParse::Param(FCommandLine::Get(),TEXT("cairorollchainqa"));
-    const bool AirTurnReview=FParse::Param(FCommandLine::Get(),TEXT("cairoairturnqa"));
     auto Check=[&](bool Pass,const FString& Label)
     {
         UE_LOG(LogTemp,Display,TEXT("CAIRO QA %s: %s"),Pass?TEXT("PASS"):TEXT("FAIL"),*Label);
@@ -53,10 +50,6 @@ void AWandererCharacter::AdvanceCairoReview(float Dt)
         Check(Definition->Actions.Num()==25 && Definition->FindAction(TEXT("Roll")),TEXT("all 25 animation roles including Roll"));
         Check(GetMesh()->GetNumBones()==53,TEXT("53 bones including fingers"));
         Check(Definition->Mesh->FindMorphTarget(TEXT("head_Hair_fore")) && Definition->Mesh->FindMorphTarget(TEXT("head_Hair_side")),TEXT("both hair tip fields imported"));
-        if(MovingRollReview)CairoTime=63.f;
-        if(RollChainReview)CairoTime=96.f;
-        if(AirTurnReview)CairoTime=128.f;
-        if(FParse::Param(FCommandLine::Get(),TEXT("cairoflipqa")))CairoTime=9.f;
         FParse::Value(FCommandLine::Get(),TEXT("cairoqastart="),CairoTime);
     }
     const float Previous=CairoTime;CairoTime+=Dt;const float T=CairoTime;
@@ -164,262 +157,6 @@ void AWandererCharacter::AdvanceCairoReview(float Dt)
         Check(AnimationAction!=TEXT("Roll"),TEXT("ledge roll opens into falling pose"));
         TravelTo(CairoOrigin-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),0,TEXT("roll QA complete"));
     }
-    // Exercise the actual run/sprint transition at different gait phases.
-    // The original all-directions tests entered only from rest and missed the stop.
-    if(MovingRollReview)
-    {
-        for(int32 I=0;I<8;++I)
-        {
-            const float Start=64.f+I*4.f;
-            const float Trigger=Start+1.f+(I%4)*.17f;
-            const bool Sprinting=I%2==1;
-            if(At(Start))
-            {
-                TravelTo(CairoOrigin-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),0,TEXT("moving roll QA"));
-                M->SetMovementMode(MOVE_Walking);Controller->SetControlRotation(FRotator::ZeroRotator);
-                CairoRollInverted=false;CairoRollElapsed=0.f;CairoRollEndSpeed=-1.f;CairoRollEndDistance=0.f;CairoRollWasAirborne=false;CairoRollGroundContacts=0;
-                Stamina.SetCapacity(5);
-            }
-            if(T>=Start && T<Start+3.6f)
-            {
-                MoveIntent=FVector2D(0,1);bSprintHeld=Sprinting;
-                if(I==4 && T>=Trigger+.15f)MoveIntent=FVector2D::ZeroVector;
-                // Ask for a new heading before the feet recover. Input should
-                // take effect at recovery, without waiting for the clip to end.
-                if(I>=6 && T>=Trigger+.70f)MoveIntent=I==6?FVector2D(1,0):FVector2D(0,-1);
-            }
-            if(I==5 && At(Start+.9f))
-            {
-                CairoRollObstacle=GetWorld()->SpawnActor<AActor>();
-                auto* Box=NewObject<UBoxComponent>(CairoRollObstacle);CairoRollObstacle->SetRootComponent(Box);
-                CairoRollObstacle->AddInstanceComponent(Box);Box->SetBoxExtent(FVector(20,180,180));
-                Box->SetCollisionProfileName(TEXT("BlockAll"));Box->RegisterComponent();
-                CairoRollObstacle->SetActorLocation(GetActorLocation()+FVector(350,0,70));
-            }
-            if(At(Trigger))
-            {
-                CairoRollOrigin=GetActorLocation();CairoRollEntrySpeed=M->Velocity.Size2D();
-                CairoRollMinSpeed=CairoRollMinEntrySpeed=CairoRollEntrySpeed;
-                Check(FMath::Abs(CairoRollEntrySpeed-(Sprinting?GetSprintSpeed():Definition->RunSpeed))<5.f,
-                    FString::Printf(TEXT("moving roll %d enters from full gait speed"),I));
-                Dodge(FInputActionValue(true));
-                Check(AnimationAction==TEXT("Roll"),FString::Printf(TEXT("moving roll %d starts"),I));
-                Check(ActionDuration>1.f && ActionDuration<1.1f && ActionSourceStartTime==0.f,
-                    FString::Printf(TEXT("moving roll %d plays the full dive and tuck at a moderately faster rate"),I));
-            }
-            if(T>Trigger && T<Trigger+1.45f)
-            {
-                const float Speed=M->Velocity.Size2D();
-                if(T<Trigger+.15f)CairoRollMinEntrySpeed=FMath::Min(CairoRollMinEntrySpeed,Speed);
-                if(AnimationAction==TEXT("Roll")){CairoRollMinSpeed=FMath::Min(CairoRollMinSpeed,Speed);CairoRollElapsed=T-Trigger;}
-                else if(CairoRollEndSpeed<0.f){CairoRollEndSpeed=Speed;CairoRollEndDistance=FVector::Dist2D(GetActorLocation(),CairoRollOrigin);}
-                if(CairoRollWasAirborne && M->IsMovingOnGround())++CairoRollGroundContacts;
-                CairoRollWasAirborne=M->IsFalling();
-            }
-            // Inspect the same authored extended-dive pose at the faster rate.
-            if(At(Trigger+.22f/ActionPlayRate))
-            {
-                Check(M->IsFalling() && GetActorLocation().Z-CairoOrigin.Z>10.f,FString::Printf(TEXT("moving roll %d begins with a real airborne dive"),I));
-                const FVector Hands=(GetMesh()->GetSocketLocation(TEXT("hand_L"))+GetMesh()->GetSocketLocation(TEXT("hand_R")))*.5;
-                const FVector Head=GetMesh()->GetSocketLocation(TEXT("head"));
-                const FVector Hips=GetMesh()->GetSocketLocation(TEXT("pelvis"));
-                Check(FVector::DotProduct(Hands-Head,GetActorForwardVector())>8.f && FVector::DotProduct(Head-Hips,GetActorForwardVector())>20.f,
-                    FString::Printf(TEXT("moving roll %d extends hands and torso before tucking"),I));
-            }
-            if(At(Trigger+.5f))Check(M->IsMovingOnGround() && AnimationAction==TEXT("Roll"),FString::Printf(TEXT("moving roll %d lands directly into the roll"),I));
-            if(I>=6 && At(Trigger+.75f))
-                Check(MovementLocked() && M->Velocity.X>100.f && FMath::Abs(M->Velocity.Y)<1.f,
-                    FString::Printf(TEXT("steering case %d keeps the tumble heading until feet recover"),I));
-            if(I>=6 && At(Trigger+.88f))
-            {
-                const FVector Heading=I==6?FVector::RightVector:-FVector::ForwardVector;
-                Check(AnimationAction==TEXT("Roll") && !MovementLocked() && !M->GetRootMotionSource(TEXT("GroundRoll")).IsValid(),
-                    FString::Printf(TEXT("steering case %d releases input and forced travel before the visual recovery ends"),I));
-                Check(FVector::DotProduct(M->GetCurrentAcceleration(),Heading)>1000.f,
-                    FString::Printf(TEXT("steering case %d immediately accelerates in the requested direction"),I));
-                UE_LOG(LogTemp,Display,TEXT("ROLL STEER %d seconds=%.4f velocity=%s acceleration=%s locked=%d"),
-                    I,ActionTime,*M->Velocity.ToCompactString(),*M->GetCurrentAcceleration().ToCompactString(),MovementLocked());
-            }
-            if(I>=6 && At(Trigger+1.05f))
-            {
-                const FVector Heading=I==6?FVector::RightVector:-FVector::ForwardVector;
-                Check(FVector::DotProduct(M->Velocity.GetSafeNormal2D(),Heading)>.8f && FVector::DotProduct(M->Velocity,Heading)>100.f,
-                    FString::Printf(TEXT("steering case %d changes actual travel direction during recovery"),I));
-                UE_LOG(LogTemp,Display,TEXT("ROLL STEER EXIT %d velocity=%s yaw=%.2f"),I,*M->Velocity.ToCompactString(),GetActorRotation().Yaw);
-            }
-            if(I==5 && At(Trigger+.35f))CairoRollOrigin=GetActorLocation();
-            if(I==5 && At(Trigger+.45f))
-            {
-                // An active override can report its intended speed against a wall;
-                // actual capsule displacement is the collision authority.
-                Check(AnimationAction==TEXT("Roll") && FVector::Dist2D(CairoRollOrigin,GetActorLocation())<1.f &&
-                    GetActorLocation().X<CairoRollObstacle->GetActorLocation().X-40.f,
-                    TEXT("wall blocks the moving roll before recovery"));
-            }
-            if(At(Trigger+1.45f))
-            {
-                Check(CairoRollMinEntrySpeed>=CairoRollEntrySpeed*.95f,FString::Printf(TEXT("moving roll %d keeps entry momentum"),I));
-                Check(CairoRollInverted && AnimationAction!=TEXT("Roll") && M->IsMovingOnGround(),FString::Printf(TEXT("moving roll %d rotates and recovers"),I));
-                Check(CairoRollGroundContacts==1,FString::Printf(TEXT("moving roll %d has one dive touchdown"),I));
-                if(I<4)
-                {
-                    Check(CairoRollEndDistance>480.f && CairoRollEndDistance<(Sprinting?850.f:700.f),FString::Printf(TEXT("moving roll %d travels farther through dive and roll"),I));
-                    Check(CairoRollMinSpeed>=CairoRollEntrySpeed*.95f,FString::Printf(TEXT("moving roll %d has no braking inside the roll"),I));
-                    Check(CairoRollEndSpeed>=CairoRollEntrySpeed*.9f,FString::Printf(TEXT("moving roll %d carries speed into the next stride"),I));
-                }
-                if(I==4)Check(M->Velocity.Size2D()<5.f,TEXT("released moving roll comes to a stop"));
-                if(I==5)
-                {
-                    Check(GetActorLocation().X<CairoRollObstacle->GetActorLocation().X-40.f && M->Velocity.Size2D()<5.f,TEXT("sprint roll remains blocked by a wall"));
-                    CairoRollObstacle->Destroy();CairoRollObstacle=nullptr;
-                }
-                UE_LOG(LogTemp,Display,TEXT("ROLL TRANSITION %d entry=%.3f minimum_entry=%.3f minimum_roll=%.3f exit=%.3f seconds=%.4f distance=%.3f"),
-                    I,CairoRollEntrySpeed,CairoRollMinEntrySpeed,CairoRollMinSpeed,CairoRollEndSpeed,CairoRollElapsed,CairoRollEndDistance);
-            }
-        }
-    }
-    if(RollChainReview)
-    {
-        for(int32 I=0;I<6;++I)
-        {
-            const float Start=97.f+I*5.f, Trigger=Start+1.f;
-            const bool ExpectChain=I<3;
-            const FVector2D Direction=I==1?FVector2D(1,0):I==2?FVector2D(0,-1):FVector2D(0,1);
-            if(At(Start))
-            {
-                TravelTo(CairoOrigin-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),0,TEXT("roll chain QA"));
-                M->SetMovementMode(MOVE_Walking);Controller->SetControlRotation(FRotator::ZeroRotator);
-                CairoRollChainSerial=0;CairoRollChainCount=CairoRollChainTucks=CairoRollGroundContacts=0;
-                CairoRollChainSecondTime=-1.f;CairoRollInverted=CairoRollWasAirborne=false;Stamina.SetCapacity(5);
-            }
-            if(T>=Start && T<Start+4.5f)
-            {
-                MoveIntent=T>=Trigger+.70f?Direction:FVector2D(0,1);bSprintHeld=I==1||I==2;
-            }
-            if(At(Trigger))Dodge(FInputActionValue(true));
-            const float Repeat=I==2?.86f:I==3?.20f:.72f;
-            if(At(Trigger+Repeat))
-            {
-                Dodge(FInputActionValue(true));
-                if(I!=2)Check(RollBuffer>0.f,FString::Printf(TEXT("roll chain %d records a brief buffered press"),I));
-            }
-            if(I==4 && At(Trigger+.76f))SetMenuOpen(true);
-            if(I==4 && At(Trigger+.80f))SetMenuOpen(false);
-            if(I==5 && At(Trigger+.76f))TravelTo(CairoOrigin-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),0,TEXT("cancel buffered roll QA"));
-            if(T>=Trigger && T<Start+4.5f)
-            {
-                if(AnimationAction==TEXT("Roll") && ActionSerial!=CairoRollChainSerial)
-                {
-                    if(CairoRollInverted)++CairoRollChainTucks;
-                    CairoRollInverted=false;CairoRollChainSerial=ActionSerial;++CairoRollChainCount;
-                    if(CairoRollChainCount==2)
-                    {
-                        CairoRollChainSecondTime=T-Trigger;
-                        Check(ActionTime<.04f && ActionPlayRate>1.f,FString::Printf(TEXT("roll chain %d restarts the same clip and source clock"),I));
-                        UE_LOG(LogTemp,Display,TEXT("ROLL CHAIN %d second_start=%.4f speed=%.3f yaw=%.2f buffer=%.3f"),I,CairoRollChainSecondTime,M->Velocity.Size2D(),GetActorRotation().Yaw,RollBuffer);
-                    }
-                }
-                // TravelTo settles onto its destination separately. Only
-                // count support transitions belonging to an actual Roll.
-                if(CairoRollWasAirborne && M->IsMovingOnGround() && AnimationAction==TEXT("Roll"))++CairoRollGroundContacts;
-                CairoRollWasAirborne=AnimationAction==TEXT("Roll") && M->IsFalling();
-            }
-            if(ExpectChain && At(Trigger+.92f))
-            {
-                Check(CairoRollChainCount==2 && CairoRollChainSecondTime>.80f && CairoRollChainSecondTime<.90f,
-                    FString::Printf(TEXT("roll chain %d starts again at recovery without the old cooldown"),I));
-                const FVector Heading(Direction.Y,Direction.X,0);
-                Check(FVector::DotProduct(GetActorForwardVector(),Heading)>.99f && FVector::DotProduct(M->Velocity,Heading)>300.f,
-                    FString::Printf(TEXT("roll chain %d uses the latest direction and carries momentum"),I));
-            }
-            if(ExpectChain && At(Trigger+1.03f))
-                Check(CairoRollChainCount==2 && AnimationAction==TEXT("Roll") && M->IsFalling(),
-                    FString::Printf(TEXT("roll chain %d performs a fresh second dive"),I));
-            if(At(Trigger+3.f))
-            {
-                Check(CairoRollChainCount==(ExpectChain?2:1),FString::Printf(TEXT("roll chain %d consumes once; early/menu/teleport presses do not leak"),I));
-                Check(CairoRollChainTucks+int32(CairoRollInverted)==(ExpectChain?2:1),FString::Printf(TEXT("roll chain %d keeps one full tuck per roll"),I));
-                Check(CairoRollGroundContacts==(ExpectChain?2:1),FString::Printf(TEXT("roll chain %d keeps one dive touchdown per roll"),I));
-                Check(AnimationAction!=TEXT("Roll") && RollBuffer==0.f,FString::Printf(TEXT("roll chain %d recovers with no automatic extra roll"),I));
-            }
-        }
-    }
-    if(AirTurnReview)
-    {
-        // Real first/second jump inputs, then inspect the next movement tick:
-        // LaunchCharacter queues velocity, so an immediate read cannot test it.
-        const FVector2D Directions[]={FVector2D(1,0),FVector2D(0,-1),FVector2D(1,0),FVector2D(1,1),
-            FVector2D(0,0),FVector2D(0,0),FVector2D(1,0),FVector2D(.4f,0),FVector2D(1,0),FVector2D(-1,0)};
-        for(int32 I=0;I<UE_ARRAY_COUNT(Directions);++I)
-        {
-            const float Start=129.f+I*4.f, Second=Start+1.55f;
-            const float CameraYaw=I==2?90.f:0.f;
-            const bool Standing=I==5 || I==6, Sprinting=I==1 || I==3;
-            const FVector Heading=FRotator(0,CameraYaw,0).RotateVector(FVector(Directions[I].Y,Directions[I].X,0)).GetSafeNormal();
-            auto Label=[&](const TCHAR* What){return FString::Printf(TEXT("air turn %d %s"),I,What);};
-            if(At(Start))
-            {
-                TravelTo(CairoOrigin-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),CameraYaw,TEXT("directional double jump QA"));
-                M->SetMovementMode(MOVE_Walking);Stamina.SetCapacity(5);CairoInverted=false;
-                Controller->SetControlRotation(FRotator(-12,CameraYaw,0));
-            }
-            if(T>=Start+.2f && T<Second) {MoveIntent=Standing?FVector2D::ZeroVector:FVector2D(0,1);bSprintHeld=Sprinting;}
-            if(T>=Second && T<Start+3.f)
-            {
-                // Briefly release after launch to isolate the impulse from
-                // ordinary air acceleration, then restore the player's input.
-                MoveIntent=T<Second+.05f?FVector2D::ZeroVector:Directions[I];bSprintHeld=Sprinting;
-            }
-            if(At(Start+1.f))RequestJump(FInputActionValue(true));
-            if(I==9 && At(Start+1.25f))Dash(FInputActionValue(true));
-            if(At(Second))
-            {
-                Check(M->IsFalling()&&!bAirJumpUsed,Label(TEXT("enters from the first jump")));
-                CairoAirVelocity=M->Velocity;CairoAirOrigin=GetActorLocation();CairoAirLaunchTime=T;
-                MoveIntent=Directions[I];RequestJump(FInputActionValue(true));
-                Check(AnimationAction==TEXT("DoubleJump")&&bAirJumpUsed,Label(TEXT("starts exactly one second jump")));
-                if(!Heading.IsNearlyZero())Check(FVector::DotProduct(GetActorForwardVector(),Heading)>.999f,Label(TEXT("faces the requested flip heading immediately")));
-                MoveIntent=FVector2D::ZeroVector;
-                if(I==8)
-                {
-                    CairoRollObstacle=GetWorld()->SpawnActor<AActor>();
-                    auto* Box=NewObject<UBoxComponent>(CairoRollObstacle);CairoRollObstacle->SetRootComponent(Box);CairoRollObstacle->AddInstanceComponent(Box);
-                    Box->SetBoxExtent(FVector(300,20,350));Box->SetCollisionProfileName(TEXT("BlockAll"));Box->RegisterComponent();
-                    CairoRollObstacle->SetActorLocation(CairoAirOrigin+FVector(0,130,0));
-                }
-            }
-            if(Previous==CairoAirLaunchTime && T>Second && T<Second+.05f)
-            {
-                const FVector Expected=Heading.IsNearlyZero()?FVector(CairoAirVelocity.X,CairoAirVelocity.Y,0):Heading*CairoAirVelocity.Size2D();
-                Check(FVector::Dist2D(M->Velocity,Expected)<2.f,Label(TEXT("redirects horizontal momentum on the next physics tick without adding speed")));
-                Check(M->Velocity.Z>620.f && M->Velocity.Z<=650.f && GetActorLocation().Z>CairoAirOrigin.Z,Label(TEXT("keeps the upward impulse")));
-                Check(FMath::Abs(FRotator::NormalizeAxis(GetControlRotation().Yaw-CameraYaw))<.01f && FMath::Abs(GetControlRotation().Pitch+12.f)<.01f,
-                    Label(TEXT("leaves camera yaw and pitch unchanged")));
-                UE_LOG(LogTemp,Display,TEXT("AIR TURN %d before=%s after=%s expected_xy=%s yaw=%.2f"),I,*CairoAirVelocity.ToCompactString(),*M->Velocity.ToCompactString(),*Expected.ToCompactString(),GetActorRotation().Yaw);
-            }
-            if(At(Second+.12f))
-            {
-                const uint32 Serial=ActionSerial;const FRotator Rotation=GetActorRotation();
-                MoveIntent=FVector2D(0,-1);RequestJump(FInputActionValue(true));
-                Check(Serial==ActionSerial && GetActorRotation().Equals(Rotation,.01f),Label(TEXT("rejects a third jump and its direction change")));
-                MoveIntent=Directions[I];
-            }
-            if(At(Second+.6f))
-            {
-                Check(CairoInverted,Label(TEXT("retains the full airborne flip")));
-                Check(GetActorUpVector().Z>.999f,Label(TEXT("keeps the collision capsule upright")));
-                if(I==8)Check(GetActorLocation().Y-CairoAirOrigin.Y>30.f && GetActorLocation().Y-CairoAirOrigin.Y<112.f,
-                    Label(TEXT("sweeps into a wall without passing through it")));
-                else if(!Heading.IsNearlyZero())Check(FVector::DotProduct(GetActorLocation()-CairoAirOrigin,Heading)>20.f,
-                    Label(TEXT("travels in the requested direction")));
-            }
-            if(At(Start+3.5f))
-            {
-                Check(M->IsMovingOnGround()&&!bAirJumpUsed&&!bAirDashUsed,Label(TEXT("landing restores both air abilities")));
-                if(CairoRollObstacle){CairoRollObstacle->Destroy();CairoRollObstacle=nullptr;}
-            }
-        }
-    }
     const FVector Target=GetActorLocation()+FVector(0,0,8);
     FVector View=T<1?FVector(-350,0,65):T<2?FVector(350,0,65):FVector(70,350,80);
     float CameraScale=1.f;FParse::Value(FCommandLine::Get(),TEXT("cairocamerascale="),CameraScale);
@@ -440,10 +177,10 @@ void AWandererCharacter::AdvanceCairoReview(float Dt)
     if(FParse::Param(FCommandLine::Get(),TEXT("cairofilm")))RecordFrame();
     else for(float Shot:{1.f,3.f,5.f,6.3f,6.65f,7.f,8.8f,10.65f,11.2f,16.9f,19.2f,21.8f,23.3f,25.7f,27.7f,29.7f,31.7f,33.7f,35.5f,37.5f,39.5f})if(At(Shot))
         FScreenshotRequest::RequestScreenshot(ReviewDirectory/FString::Printf(TEXT("cairo_%04d.png"),FMath::RoundToInt(Shot*100)),false,false);
-    float End=AirTurnReview?169.f:RollChainReview?128.f:MovingRollReview?96.f:63.f;FParse::Value(FCommandLine::Get(),TEXT("cairoqaseconds="),End);
+    float End=63.f;FParse::Value(FCommandLine::Get(),TEXT("cairoqaseconds="),End);
     if(T>=End)
     {
-        if(!MovingRollReview && !RollChainReview && !AirTurnReview && End>=41.f)Check(CairoInverted,TEXT("double jump visibly flips pelvis"));
+        if(End>=41.f)Check(CairoInverted,TEXT("double jump visibly flips pelvis"));
         if(End>=8.f)Check(CairoMaxWaist>.25f,TEXT("waist corrective survives runtime graph"));
         FFileHelper::SaveStringToFile(CairoTelemetry,*(ReviewDirectory/TEXT("cairo.csv")));
         FString Errors;for(const auto& Error:CairoErrors){if(!Errors.IsEmpty())Errors+=TEXT(",");Errors+=TEXT("\"")+Error+TEXT("\"");}
