@@ -23,6 +23,14 @@ def request(path, body=None, timeout=120):
         return json.loads(r.read().decode())
 
 
+def free_port():
+    """A loopback port nothing listens on now, for a game started with -liveport=N beside another game."""
+    import socket
+    with socket.socket() as s:
+        s.bind(('127.0.0.1', 0))
+        return s.getsockname()[1]
+
+
 def run(code):
     out = request('/python', code)
     if out.get('output', '').strip(): print(out['output'].rstrip())
