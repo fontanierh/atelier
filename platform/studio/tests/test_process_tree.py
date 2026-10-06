@@ -60,7 +60,7 @@ def tracker(monkeypatch, tmp_path, attached):
 
 def test_a_child_first_seen_as_sh_is_guarded_once_it_execs_the_cook(monkeypatch, tmp_path):
     # PID 77, start 300: the same identity is recorded as `sh`, then execs UnrealEditor-Cmd (review #1506).
-    names = {77: Then(['sh', 'UnrealEditor-Cmd'])}
+    names = {77: Then(['sh', 'sh', 'UnrealEditor-Cmd'])}   # read once while walking, once when guarding
     world(monkeypatch, starts={10: 100, 77: 300}, kids={10: [77]}, names=names)
     attached = []
     stack, tree = tracker(monkeypatch, tmp_path, attached)
@@ -104,3 +104,30 @@ def test_unwind_rechecks_identity_before_every_signal(monkeypatch, tmp_path):
     tree.poll()
     tree.unwind(grace=0)
     assert sent == [], 'a reused pid is never signalled'
+
+
+def test_shared_engine_services_are_never_signalled(monkeypatch, tmp_path):
+    # A cook (77) starts Zen (88); both are recorded, only the cook is stopped.
+    world(monkeypatch, starts={10: 100, 77: 300, 88: 400}, kids={10: [77], 77: [88]},
+          names={77: 'UnrealEditor-Cmd', 88: 'zenserver'})
+    attached, sent = [], []
+    stack, tree = tracker(monkeypatch, tmp_path, attached)
+    monkeypatch.setattr(guarded.os, 'kill', lambda pid, number: sent.append(pid))
+    with stack:
+        tree.poll()
+        assert (88, 400) in tree.depth and (88, 400) in tree.shared
+        assert [pid for pid, _, _ in attached] == [77], 'shared services get no guard'
+        tree.unwind(grace=0)
+    assert 88 not in sent and 77 in sent
+
+
+def test_an_orphaned_intermediate_still_brings_in_the_cook_it_starts(monkeypatch, tmp_path):
+    # 77 is recorded under the root, then its parent link is lost (reparented); it later starts the cook 99.
+    world(monkeypatch, starts={10: 100, 77: 300}, kids={10: [77]}, names={77: 'sh'})
+    attached = []
+    stack, tree = tracker(monkeypatch, tmp_path, attached)
+    with stack:
+        tree.poll()
+        world(monkeypatch, starts={10: 100, 77: 300, 99: 500}, kids={10: [], 77: [99]}, names={77: 'sh', 99: 'UnrealEditor-Cmd'})
+        tree.poll()
+        assert (99, 500) in tree.depth and [pid for pid, _, _ in attached] == [99]

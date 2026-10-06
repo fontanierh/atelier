@@ -1,10 +1,20 @@
 """The packaged macOS game: one guarded compile-kind turn, then a zip a GitHub release can carry."""
+import importlib.util
 import json
+
+import pytest
 import os
 import subprocess
 from types import SimpleNamespace
 
 from atelier import build
+
+
+def archive_tool():
+    path = build.load_recipe('yorimichi').TOOLS / 'package_archive.py'
+    spec = importlib.util.spec_from_file_location('yorimichi_package_archive', path)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
 
 
 def recipe_steps(tmp_path):
@@ -24,7 +34,10 @@ def test_package_runs_after_every_import_as_one_capped_compile_turn(tmp_path):
     assert 'unreal.package' in {s.name for s in build.order(steps, ['unreal.package'])}
     # Compile kind: the big slot and the small one, like any compile.
     assert build.slot_request(ctx, package) == ('compile', None)
-    uat = package.commands[0]
+    uat, archive = package.commands
+    # The archive phase is its own guarded job (a released boundary after UAT) whose ditto/split children are watched.
+    assert archive.script.name == 'package_archive.py' and {'ditto', 'split'} <= set(archive.watch)
+    assert archive.marker == 'PACKAGE ARCHIVE COMPLETE' and 0 < archive.progress <= 30 and archive.timeout > 0
     argv = uat.argv(ctx)
     assert argv[0].endswith('RunUAT.sh') and argv[1] == 'BuildCookRun'
     # UAT runs UnrealBuildTool itself, past the capped Build.sh wrapper, so the worker cap is passed explicitly.
@@ -35,15 +48,21 @@ def test_package_runs_after_every_import_as_one_capped_compile_turn(tmp_path):
 
 def test_package_zip_checksums_and_splits_for_release_assets(tmp_path, monkeypatch):
     ctx, steps = recipe_steps(tmp_path)
-    recipe = build.load_recipe('yorimichi')
+    recipe, tool = build.load_recipe('yorimichi'), archive_tool()
     app = tmp_path/'package'/'archive'/'Mac'/'Yorimichi.app'/'Contents'/'MacOS'
     app.mkdir(parents=True)
     binary = os.urandom(100_000)   # incompressible, so the zip really exceeds a tiny part size
     (app/'Yorimichi').write_bytes(binary)
     (app.parent/'Info.plist').write_text('<plist/>')
     (app.parent/'Current').symlink_to('MacOS')
+    data = app.parent/'UE'/'Yorimichi'/'Content'/'Data'
     log = open(tmp_path/'log.txt', 'w')
-    recipe.package_zip(ctx, log)
+    # Without the loose runtime data the package would start into an empty world: refuse it.
+    with pytest.raises(RuntimeError, match='staged runtime data'):
+        tool.package_zip(tmp_path/'package', log)
+    for rel in tool.STAGED_DATA:
+        (data/rel).parent.mkdir(parents=True, exist_ok=True); (data/rel).write_text('{}')
+    tool.package_zip(tmp_path/'package', log)
     manifest = json.loads((tmp_path/'package'/'manifest.json').read_text())
     assert manifest['app'] == 'Yorimichi.app' and not manifest['split'] and len(manifest['files']) == 1
     assert recipe.package_present(tmp_path)
@@ -51,8 +70,8 @@ def test_package_zip_checksums_and_splits_for_release_assets(tmp_path, monkeypat
     assert manifest['files'][0]['sha256'] in sums and manifest['zip'] in sums
 
     # Larger than one release asset: numbered parts that rejoin into the same zip.
-    monkeypatch.setattr(recipe, 'PART_BYTES', 20_000)
-    recipe.package_zip(ctx, log)
+    monkeypatch.setattr(tool, 'PART_BYTES', 20_000)
+    tool.package_zip(tmp_path/'package', log)
     manifest = json.loads((tmp_path/'package'/'manifest.json').read_text())
     parts = [tmp_path/'package'/f['file'] for f in manifest['files']]
     assert manifest['split'] and len(parts) > 1 and not (tmp_path/'package'/manifest['zip']).exists()
@@ -67,13 +86,12 @@ def test_package_zip_checksums_and_splits_for_release_assets(tmp_path, monkeypat
 
 
 def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tmp_path):
-    recipe = build.load_recipe('yorimichi')
     folder = tmp_path/'Yorimichi'
     game = folder/'Yorimichi.app'/'Contents'/'MacOS'/'Yorimichi'
     game.parent.mkdir(parents=True)
     game.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > "$HOME/args.txt"\n'); game.chmod(0o755)
     launcher = folder/'Play Yorimichi.command'
-    launcher.write_text(recipe.desktop_preview().packaged_launcher()); launcher.chmod(0o755)
+    launcher.write_text(archive_tool().desktop_preview().packaged_launcher()); launcher.chmod(0o755)
     home = tmp_path/'home'; home.mkdir()
 
     def launch():
@@ -99,7 +117,10 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
     world = build.Step('unreal.world', [], inputs=[content], heavy=True)
     data = build.Step('data.stage', [])
     package = recipe.package_step(ctx, [world, data])
-    package = build.Step(package.name, [], needs=package.needs, explicit=True, outputs=package.outputs, verify=package.verify)
+    assert {recipe.TOOLS/'package_archive.py', recipe.TOOLS/'desktop_preview.py'} <= set(package.inputs)
+    source = tmp_path/'desktop_preview.py'; source.write_text('profile v1')
+    package = build.Step(package.name, [], inputs=[source], needs=package.needs, explicit=True, outputs=package.outputs,
+                         verify=package.verify)
     steps = [world, data, package]
     ctx.stamps.mkdir()
 
@@ -128,6 +149,11 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
     for step in steps[:2]:
         done[step.name] = build.fingerprint(step, done)
         (ctx.stamps/f'{step.name}.json').write_text(json.dumps({'fingerprint': done[step.name]}))
+    assert plan() == {'unreal.world': 'up to date', 'data.stage': 'up to date', 'unreal.package': 'would run'}
+
+    # A launcher or profile edit reruns only the package.
+    stamp_all()
+    source.write_text('profile v2')
     assert plan() == {'unreal.world': 'up to date', 'data.stage': 'up to date', 'unreal.package': 'would run'}
 
     # A missing part makes the package stale even with a current stamp.

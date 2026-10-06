@@ -20,7 +20,8 @@ A launcher whose heavy work runs in descendants (UAT's BuildCookRun starts the c
 compilers) passes `watch`: every descendant is recorded by pid and start time as it appears, and those whose executable
 name is in `watch` get their own memory guard (`memory-health-<name>-<pid>.json`) under the same ceiling and the same
 outer slot turn. When the run ends, for any reason, recorded descendants still running as the same processes are stopped,
-deepest first, before the child itself; nothing else is ever signalled. `progress` prints a line that often while the child is quiet.
+deepest first, before the child itself. Shared engine services a cook starts (Zen, Unreal Trace Server) and anything
+under them are never signalled, nor is anything outside the recorded tree. `progress` prints a line that often while the child is quiet.
 """
 import argparse, os, signal, subprocess, sys, time
 from contextlib import ExitStack
@@ -32,28 +33,46 @@ from .render_lock import KINDS, SMALL_LIMIT_GIB, render_lock
 from .process import spawn
 
 
+# Engine services a cook may start and other work then shares: recorded, never guarded or signalled.
+SHARED_SERVICES = frozenset({'zenserver', 'UnrealTraceServer'})
+
+
 class Descendants:
     """The child's process tree as it grows. Records are keyed by (pid, start) and reached only through pinned parents;
     names are read again on every poll, so a child first seen as `sh` that execs the cook still gets its guard."""
     def __init__(self, root, root_start, folder, watch, duration, limit_gib, stack):
         self.root, self.folder, self.watch, self.duration, self.limit_gib, self.stack = (
             (root, root_start), folder, set(watch), duration, limit_gib, stack)
-        self.depth, self.guarded = {}, {}
+        self.depth, self.guarded, self.shared = {}, {}, set()
 
     def same(self, key):
         return process_tree.started(key[0]) == key[1]
 
     def poll(self):
-        queue = [(*self.root, 0)]
+        # Walk from the root and from every recorded process still alive: an intermediate that lost the root's
+        # ancestry (its parent exited) can still start the cook.
+        queue = [(*self.root, 0)] + [(*key, depth) for key, depth in self.depth.items()
+                                     if key not in self.shared and self.same(key)]
+        seen = set()
         while queue:
             parent, parent_start, depth = queue.pop()
+            if (parent, parent_start) in seen:
+                continue
+            seen.add((parent, parent_start))
             for child, child_start in process_tree.owned_children(parent, parent_start):
-                self.depth.setdefault((child, child_start), depth+1)
-                queue.append((child, child_start, depth+1))
+                key = (child, child_start)
+                self.depth.setdefault(key, depth+1)
+                if process_tree.name(child) in SHARED_SERVICES:
+                    self.shared.add(key)
+                if key not in self.shared:
+                    queue.append((child, child_start, depth+1))
         for key in self.depth:
-            if key in self.guarded or not self.same(key):
+            if key in self.guarded or key in self.shared or not self.same(key):
                 continue
             label = process_tree.name(key[0])
+            if label in SHARED_SERVICES:   # a child that exec'd a shared service after it was recorded
+                self.shared.add(key)
+                continue
             if label not in self.watch:
                 continue
             report = self.folder/f'memory-health-{label}-{key[0]}.json'
@@ -74,7 +93,7 @@ class Descendants:
 
     def unwind(self, grace=10.):
         """Stop recorded descendants that are still the same processes, deepest first."""
-        live = sorted(self.depth, key=self.depth.get, reverse=True)
+        live = sorted((key for key in self.depth if key not in self.shared), key=self.depth.get, reverse=True)
         for key in live:
             self.signal(key, signal.SIGTERM)
         deadline = time.monotonic()+grace

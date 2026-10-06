@@ -3,7 +3,7 @@
 `atelier build yorimichi unreal.package` builds a packaged Yorimichi `.app` (Mac, Development) for playtests on another
 Mac. The step needs every Unreal import and the staged runtime data in the same checkout, so in a checkout whose imports
 are current only the package runs. It reruns by itself whenever any of them, the C++ source, the project file, the engine
-plugins or `unreal/Config` changed. It is only built when named exactly, never by a plain `atelier build yorimichi` or
+plugins, `unreal/Config` or the packaging code (`tools/package_archive.py`, `tools/desktop_preview.py`) changed. It is only built when named exactly, never by a plain `atelier build yorimichi` or
 `atelier build yorimichi unreal`. Do not add `--force`: that reruns everything in the plan, including every import.
 
 ```sh
@@ -23,10 +23,17 @@ nice -n 10 uv run atelier build yorimichi unreal.package
   guard, started with its validated start time; the reports are at
   `build/yorimichi/logs/unreal.package.guard/memory-health-<name>-<pid>.json`. If a guard exits while its process is
   still running, the run fails at once.
-- **Cleanup:** when the run ends, every recorded descendant is stopped, deepest first. Each signal is sent only if
+- **Orphans and shared services:** each poll walks from the root and from every recorded process still alive, so an
+  intermediate that lost its parent still brings in the cook it starts. Shared engine services that a cook starts
+  (`zenserver`, `UnrealTraceServer`), and anything under them, are recorded but never guarded or signalled.
+- **Cleanup:** when the run ends, every other recorded descendant is stopped, deepest first. Each signal is sent only if
   the process still has its pinned identity at that moment; nothing else is signalled.
-- **Deadline and progress:** the whole package has a 4-hour deadline. While UAT is quiet, a progress line prints every
-  25 s. The zip, split and checksum phases are each bounded to 45 minutes and report progress every 25 s too.
+- **Deadline and progress:** the UAT turn has a 4-hour deadline. While UAT is quiet, a progress line prints every
+  25 s.
+- **Archive job:** once UAT releases its turn, `tools/package_archive.py` runs as a guarded job of its own. It takes
+  its own slot turn, has its own deadline, and its `ditto` and `split` children are watched. Its zip, split and checksum
+  phases are each bounded to 45 minutes and report progress every 25 s. Before anything moves, it refuses an app whose
+  staged `Content/Data` lacks `world.json`, `heightmap.bin` or `map/map.json`.
 - **Release files:** the download folder `Yorimichi/` holds the `.app`, `Play Yorimichi.command` and `README.txt`.
   It is zipped with `ditto` into `build/yorimichi/package/Yorimichi-macOS-<revision>.zip`, split into
   `.zip.part-aa`, `-ab`, … if it is larger than 1.9 GB, with `SHA256SUMS` and `manifest.json`. The step counts as up
