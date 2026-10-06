@@ -103,3 +103,39 @@ def test_a_body_swap_view_raises_rather_than_paying_twice(monkeypatch, tmp_path)
     with pytest.raises(FileExistsError):
         tool.run('left')
     assert len(calls) == 1
+
+
+def test_an_outfit_redo_under_spend_sets_the_old_records_aside_and_pays_once_more(monkeypatch, tmp_path):
+    outfit = load('cairo_outfit', monkeypatch)
+    from atelier.ai import ledger
+    d = tmp_path / 'body-swap-test'
+    (d / 'references').mkdir(parents=True); (d / 'key').mkdir()
+    for v in outfit.VIEWS:
+        (d / f'references/naked-{v}.png').write_bytes(b'naked')
+    (d / 'references/envelope.json').write_text('{}')
+    spec = tmp_path / 'test.toml'; spec.write_text('name = "test"\n')
+    monkeypatch.setattr(outfit, 'ROOT', tmp_path)
+    monkeypatch.setattr(outfit, 'CHAR', tmp_path)
+    monkeypatch.setattr(outfit.env, 'load', lambda *a: None)
+    paid = []
+
+    def sunburst_tool(cmd, log, environ):   # like cairo_body_swap_sunburst.py: one ledger record per image, never repaid
+        folder, name = ('key', 'key-{}') if '--key' in cmd else ('references', '{}')
+        for v in ['concept'] if '--make-concept' in cmd else outfit.VIEWS:
+            out = d / 'concept.png' if v == 'concept' else d / folder / f'{name.format(v)}.png'
+            ledger.run_once(out.with_suffix('.provenance.json'), {}, lambda: out.write_bytes(b'png') and {})
+            paid.append(out.name)
+        return 0
+    monkeypatch.setattr(outfit, 'run', sunburst_tool)
+    argv = ['cairo_outfit.py', str(spec), '--dir', d.name, '--spend', '--until', 'key']
+    monkeypatch.setattr('sys.argv', argv)
+    outfit.main()
+    assert len(paid) == 9
+    monkeypatch.setattr('sys.argv', argv + ['--redo', 'views'])
+    outfit.main()
+    assert len(paid) == 17
+    assert (d / 'references/front.rejected-1.provenance.json').exists() and (d / 'key/key-front.rejected-1.provenance.json').exists()
+    assert json.loads((d / 'references/front.provenance.json').read_text())['status'] == 'done'
+    monkeypatch.setattr('sys.argv', argv)
+    outfit.main()   # done: nothing runs, nothing is set aside
+    assert len(paid) == 17 and not (d / 'references/front.rejected-2.provenance.json').exists()

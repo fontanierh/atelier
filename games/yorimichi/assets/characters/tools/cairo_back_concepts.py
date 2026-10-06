@@ -329,9 +329,9 @@ def run(slug, n):
     (priv / '.gitignore').write_text('*\n')
     (OUT / f'{slug}.prompt.txt').write_text(prompt + '\n')
     from atelier.ai import ledger
-    outs = []
 
     def paint():
+        outs = []
         blobs, raw, secs = gpt_edit(prompt, STILLS, n)
         p = priv / f'{slug}.response.json'
         p.write_text(json.dumps(raw, indent=1))
@@ -349,7 +349,9 @@ def run(slug, n):
         reference_files={str(s.relative_to(ROOT)): sha(s) for s in STILLS},
         reference_source='body-swap-r02-headless captures (game-r11 outfit) + back-concepts-r04 study' if STILLS is SWORD_STILLS else 'outfit-r05/WarmOriginal-Outfit-r05.blend (accepted r05; Cycles captures, unchanged)',
     ), paint)
-    return slug, outs, prov and prov['elapsed_seconds'], err
+    if not prov:   # images of a failed call are not reported as outputs
+        return slug, [], None, err
+    return slug, list(prov['outputs']), prov['elapsed_seconds'], None
 
 
 def main():

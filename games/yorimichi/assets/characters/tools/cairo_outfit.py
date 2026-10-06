@@ -68,6 +68,23 @@ def outputs(stage, d, stem):
             'export': [d / f'assembled/{stem}.glb']}[stage]
 
 
+def records(stage, d):
+    """The ledger records of a Sunburst stage (atelier.ai.ledger: the tool never sends a recorded call again by itself)."""
+    return {'concept': [d / 'concept.provenance.json'], 'views': [d / f'references/{v}.provenance.json' for v in VIEWS],
+            'key': [d / f'key/key-{v}.provenance.json' for v in VIEWS]}.get(stage, [])
+
+
+def set_aside(stage, d):
+    """--spend on a Sunburst stage that runs again pays for it again: its earlier records are kept as
+    <name>.rejected-N.provenance.json, so the stage can write new ones."""
+    for record in records(stage, d):
+        if record.exists():
+            name, n = record.name.removesuffix('.provenance.json'), 1
+            while record.with_name(f'{name}.rejected-{n}.provenance.json').exists():
+                n += 1
+            record.rename(record.with_name(f'{name}.rejected-{n}.provenance.json'))
+
+
 def approved(d):
     p = d / 'references/approval.json'
     if not p.exists():
@@ -193,7 +210,8 @@ def main():
                 print('  ' + '  '.join(str(d / f'key/key-{v}.png') for v in VIEWS))
                 print('  The four views must agree (hem, collar, sleeves, shoes, colours); cuffs and the collar open, no head, no hands.')
                 print('  The keys must be green exactly where the mannequin shows (neck stump, chest in the neckline, wrist stumps,')
-                print('  bare arms or legs) and nowhere on cloth. Redo a bad view: --redo views (or run the Sunburst tool with --only).')
+                print('  bare arms or legs) and nowhere on cloth. Redo a bad view: --redo views --spend (or set aside its')
+                print('  references/<view>.provenance.json and run the Sunburst tool with --only).')
                 print('  Then rerun with --approve "<who reviewed, what they checked>".')
                 return
             images = {f'{v}.png': sha(d / f'references/{v}.png') for v in VIEWS}
@@ -212,6 +230,7 @@ def main():
                 if json.loads((d / 'job.json').read_text()).get('approved_inputs') != json.loads((d / 'references/approval.json').read_text())['images']:
                     sys.exit('The views changed after Tripo ran in this folder: start a new revision folder (--dir) for new views.')
                 print(f'{s:11s} a Tripo job already exists ({d / "job.json"}); fetching it, not paying again')
+            set_aside(s, d)
         print(f'{s:11s} running ...', flush=True)
         unshare(s, d, stem)
         t0 = time.time(); log = d / f'logs/{s}.log'

@@ -264,9 +264,9 @@ def run(slug, n):
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f'{slug}.prompt.txt').write_text(c['prompt'] + '\n')
     from atelier.ai import ledger
-    outs = []
 
     def paint():
+        outs = []
         blobs, secs = gpt_edit(c['prompt'], stills, n)
         for i, b in enumerate(blobs):
             p = OUT / (f'{slug}.png' if n == 1 else f'{slug}-{i + 1}.png')
@@ -279,8 +279,9 @@ def run(slug, n):
         endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/spirit_concepts.py',
         prompt_file=f'{slug}.prompt.txt', prompt_sha256=hashlib.sha256(c['prompt'].encode()).hexdigest(),
         reference_files={str(s.relative_to(ROOT)): sha(s) for s in stills}), paint)
-    secs = prov['elapsed_seconds'] if prov else None
-    return slug, outs, secs, err
+    if not prov:   # images of a failed call are not reported as outputs
+        return slug, [], None, err
+    return slug, list(prov['outputs']), prov['elapsed_seconds'], None
 
 
 def main():
