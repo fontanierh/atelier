@@ -267,7 +267,8 @@ def notification(batch):
                      f"[{item['topic']}]: {item['body'][:600]}")
     lines.append('Read full messages with atelier board read; check render-board.md and live locks. '
                  'Acknowledge actionable handoffs through atelier board post --topic ack --reply-to ID. '
-                 'Preserve first-ready age; never signal other owners or bypass safety.')
+                 f'Keep posts short ({PREVIEW_CHARS} characters, {PREVIEW_LINES} lines): point first, detail in '
+                 'an attachment or the thread. Preserve first-ready age; never signal other owners or bypass safety.')
     return '\n'.join(lines)
 
 
