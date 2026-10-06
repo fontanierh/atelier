@@ -1,0 +1,43 @@
+# Fast checks on every pull request and on main: a fresh clone installs from the lock file, lint passes, and the unit
+# tests pass. Three jobs run side by side so the whole check stays around a minute; nothing here needs Unreal, Blender,
+# the network beyond the install, or a render slot.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: ${{ matrix.name }}
+    runs-on: macos-latest
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Lint and platform tests
+            run: uv run --frozen atelier lint && uv run --frozen pytest -q platform/studio/tests
+          - name: Megapark tests
+            run: uv run --frozen pytest -q games/yorimichi/tests/test_megapark_*.py
+          - name: Other game tests
+            run: uv run --frozen pytest -q games --ignore-glob='*/test_megapark_*.py'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install from the lock file, as a new clone would
+        run: uv sync --locked
+      - name: Check
+        run: ${{ matrix.run }}
