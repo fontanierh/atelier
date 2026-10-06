@@ -28,6 +28,7 @@ from . import paths
 from .build import Context
 from .safety import memory_guard
 from .safety.memory_guard import usage
+from .safety.process import spawn as spawn_owned
 
 WEB = paths.PLATFORM / 'web'
 STREAM_WEB = WEB / 'stream'
@@ -189,8 +190,9 @@ pidfile={g.out}/turn.pid
 
     def spawn(name, args, marker, env=None):
         with (g.out / f'{name}.log').open('ab') as log:
-            proc = subprocess.Popen(args, cwd=paths.REPO, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                                    start_new_session=True, env=env)
+            proc = spawn_owned(args, kind='game' if name == 'game' else 'job',
+                               cwd=paths.REPO, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                               start_new_session=True, env=env)
         state[name] = {'pid': proc.pid, 'marker': marker, 'started': usage(proc.pid).started}
         g.state_file.write_text(json.dumps(state, indent=2) + '\n')
         return proc

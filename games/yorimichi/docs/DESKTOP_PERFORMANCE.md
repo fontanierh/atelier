@@ -59,6 +59,14 @@ prints `verified: {...}` or `not verified: ...` (exit code 1):
 
 This is a local build run from the editor binary, not a cooked package.
 
+Agent-launched processes use `atelier.safety.process` on macOS: application scheduling policies, at least
+nice 10, without imposing a thread QoS clamp. This prevents inherited background scheduling from distorting imports
+and game measurements. Native review and benchmark launchers use the same helper. The command still owns the
+actual child PID, render admission, memory ceiling and cleanup; worker counts and caches stay unchanged.
+For unexpectedly slow runs, inspect `ps -o pid,ni,pri -p PID` using the actual child from `memory-health.json`.
+An inherited background band can limit CPU throughput even with abundant free RAM and no swap. Correct the
+launch context before comparing performance or raising resource limits; compare equivalent cached inputs.
+
 ## Settings that matter
 
 Set by the launcher (`desktop_preview.py`):

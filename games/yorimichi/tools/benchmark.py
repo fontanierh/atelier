@@ -20,6 +20,7 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'world')); import yori  # noqa: E402
 from contextlib import ExitStack
 from atelier.safety.guard import attach as attach_memory_guard, reap
+from atelier.safety.process import spawn_game
 from atelier.safety.render_lock import render_lock
 from atelier.safety.provenance import profile_from_log
 
@@ -301,7 +302,7 @@ def main():
         stack.enter_context(render_lock(f'benchmark {args.name} {args.view}',
                                        wait=max(0.,slot_deadline-time.monotonic())))
         log = stack.enter_context((folder/'stdout.log').open('w'))
-        process = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
+        process = spawn_game(cmd, stdout=log, stderr=subprocess.STDOUT)
         stack.callback(reap, process)
         duration=args.seconds*6+40 if args.compare_after else args.seconds
         deadline = time.monotonic()+duration+300

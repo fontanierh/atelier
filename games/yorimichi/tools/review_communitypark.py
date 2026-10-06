@@ -15,6 +15,7 @@ from communitypark.validate import surface_at
 from atelier.build import Context
 from atelier.safety import guarded
 from atelier.safety.guard import attach, reap
+from atelier.safety.process import spawn_game
 from atelier import live
 
 CLIMB_HOLDS = (90, 180)   # stair waypoints where the climb pauses for climb_90 and climb_180
@@ -47,7 +48,7 @@ def main():
            '-ForceRes', '-resx=1600', '-resy=1000', '-nosplash', '-stdout', '-nofox', f'-liveport={args.port}',
            '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost', '-preferencesfile='+str(out/'settings.txt'),
            '-ExecCmds=t.MaxFPS 60,r.RHISetGPUCaptureOptions 0,DisableAllScreenMessages']
-    process = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
+    process = spawn_game(cmd, stdout=log, stderr=subprocess.STDOUT)
     def run(code):
         if process.poll() is not None: raise RuntimeError('Owned game exited')
         if monitor is not None and monitor.poll() is not None: raise RuntimeError('Game memory monitor exited')

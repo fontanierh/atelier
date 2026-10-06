@@ -137,6 +137,13 @@ uv run pytest                            # studio and game Python tests
 - Heavy jobs (Unreal, Blender renders) run under the render lock and memory guard (`atelier.safety`). `atelier play`
   and `atelier build` do this for you. A game's guard stops it above 10 GiB; `atelier play --memory-gib N` (10 to 14)
   raises that for one session that needs it (Quality graphics at 1080p, for example). Say so in your Holding entry.
+- On macOS, the shared process launcher restores application scheduling policies so work does not inherit an
+  agent daemon's background clamp. Builds and games keep normal thread QoS and at least nice 10.
+  Use `atelier.safety.process.spawn` (`spawn_game` for Unreal games) for a harness
+  that owns its launch, together with its existing lock and actual-child memory guard. Do not add a second lock.
+  When diagnosing slow work, check the actual child PID in `memory-health.json`, not just the lock owner's PID:
+  `ps -o pid,ni,pri -p PID`. A child still in the background band invalidates normal-performance comparisons.
+  Preserve caches and measure CPU throughput before changing memory limits or worker counts.
 - The render lock has one big slot. A small slot sits beside it when `~/.cache/atelier/render-slots.json` says
   `{"slots": 2}` (`ATELIER_RENDER_SLOTS` overrides the file; no file means one slot). The small slot takes a job
   expected to peak at 3 GiB or less, never a game or a compile, when at least 10 GiB is free and the big slot's job is
