@@ -14,6 +14,8 @@ is conjugated by that map, so local transforms convert bone by bone and their pr
 """
 from __future__ import annotations
 
+import ast
+import hashlib
 import math
 import struct
 from dataclasses import dataclass, field
@@ -668,3 +670,16 @@ def snap_guard(key, reference):
     if quaternion_angle(q, rq) <= 2e-6 and math.dist(t, rt) <= 2e-6 and max(abs(x - y) for x, y in zip(s, rs)) <= 2e-6:
         return key, False
     return ((t[0] + SNAP_GUARD_CM, t[1], t[2]), q, s), True
+
+
+def source_digest(path):
+    """A digest of a Python file's code: its syntax tree without docstrings, so an edit to a comment, a docstring or the
+    layout keeps it. The clip importer's fingerprint uses it, so such an edit does not rebuild /Game/SkateRide. The
+    tree's form can change between Python versions; Unreal's Python, which computes the fingerprint, is fixed."""
+    tree = ast.parse(Path(path).read_text(encoding='utf-8'))
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and node.body:
+            first = node.body[0]
+            if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+                node.body = node.body[1:] or [ast.Pass()]
+    return hashlib.sha256(ast.dump(tree).encode()).hexdigest()

@@ -268,3 +268,25 @@ def test_agrees_with_cpp_reader(bundle, rig, probe, tmp_path):
     for path in bundle.clip_paths()[::97] + [bundle.clip_paths()[-1]]:
         dump = subprocess.run([str(probe), 'clip', str(path), str(tmp_path)], capture_output=True, check=True).stdout
         assert dump == raw_dump(N.load_clip(path.read_bytes())), path.name
+
+
+def test_source_digest_ignores_comments_docstrings_and_layout(tmp_path):
+    """The clip importer's fingerprint hashes code, so an edit to the words alone does not rebuild /Game/SkateRide."""
+    base = tmp_path / 'base.py'
+    base.write_text('"""Module."""\nX = 1\n\n\nclass A:\n    """A."""\n    def f(self):\n        """F."""\n        return X\n')
+    edited = tmp_path / 'edited.py'
+    edited.write_text('"""The module, reworded."""\n# a comment\nX = 1  # one\n\nclass A:\n    """Another A."""\n\n'
+                      '    def f(self):\n        """Another F."""\n        return X\n')
+    assert N.source_digest(base) == N.source_digest(edited)
+
+
+def test_source_digest_follows_code(tmp_path):
+    """A change to the code, a string that is not a docstring included, changes the digest."""
+    variants = ['X = 1\n', 'X = 2\n', 'X = 1\nY = "words"\n', 'X = 1\nY = "other words"\n', 'def f():\n    """F."""\n',
+                'def f():\n    """F."""\n    return 1\n']
+    digests = []
+    for i, text in enumerate(variants):
+        path = tmp_path / f'v{i}.py'
+        path.write_text(text)
+        digests.append(N.source_digest(path))
+    assert len(set(digests)) == len(variants)
