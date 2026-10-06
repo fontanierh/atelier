@@ -19,21 +19,26 @@ def main():
     mat.node_tree.links.new(vc.outputs['Color'],mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
     mat.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value=.92
     meshlib.OUT=OUT
-    m=Mesh('Mega_Ramp');wood=(.16,.073,.027);edge=(.25,.13,.055);ply=(.52,.32,.13);metal=(.08,.085,.078)
+    # Mega_Ramp is everything ridden or stood on and is the ramp's collision. Mega_Trim is look only (AMegaRamp gives
+    # it no collision): the seams between the sheets and the coping, so no wheel catches on a millimetre of trim.
+    m=Mesh('Mega_Ramp');trim=Mesh('Mega_Trim');wood=(.16,.073,.027);edge=(.25,.13,.055);ply=(.52,.32,.13);metal=(.08,.085,.078)
     for profile in profiles():
+        # The backing sheet sits 15 cm behind the ply along its normal, so it stays behind the vert's true vertical.
+        t=np.gradient(np.array(profile),axis=0);t/=np.linalg.norm(t,axis=1)[:,None]
+        back=(np.array(profile)-.15*np.column_stack([-t[:,1],t[:,0]])).tolist()
         for i,(a,b) in enumerate(zip(profile[:-1],profile[1:])):
-            x,z=a;xx,zz=b
+            x,z=a;xx,zz=b;(bx,bz),(bxx,bzz)=back[i],back[i+1]
             shade=1+.018*math.sin((x+xx)*.9)
             m.poly([(x,-4,z),(xx,-4,zz),(xx,4,zz),(x,4,z)],tuple(c*shade for c in ply))
-            m.poly([(x,4,z-.15),(xx,4,zz-.15),(xx,-4,zz-.15),(x,-4,z-.15)],wood)
+            m.poly([(bx,4,bz),(bxx,4,bzz),(bxx,-4,bzz),(bx,-4,bz)],wood)
             for y in [-4,4]:
-                m.poly([(x,y,z),(x,y,z-.15),(xx,y,zz-.15),(xx,y,zz)],edge)
+                m.poly([(x,y,z),(bx,y,bz),(bxx,y,bzz),(xx,y,zz)],edge)
             if i%12==0:m.beam((x,-4,z-.25),(x,4,z-.25),.12,.15,wood)
-            # Fine seams between the sheets: a strip 1 mm above the ply along its normal, a step a wheel rolls over.
+            # Fine seams between the sheets: a strip 1 mm above the ply along its normal.
             if i%32==0:
                 L=math.hypot(xx-x,zz-z);tx,tz=(xx-x)/L,(zz-z)/L;nx,nz=-tz,tx
                 (x0,z0),(x1,z1)=[(x+s*.004*tx+.001*nx,z+s*.004*tz+.001*nz) for s in (-1,1)]
-                m.poly([(x0,-4,z0),(x1,-4,z1),(x1,4,z1),(x0,4,z0)],edge)
+                trim.poly([(x0,-4,z0),(x1,-4,z1),(x1,4,z1),(x0,4,z0)],edge)
         a=np.array(profile)
         for x in np.arange(a[0,0],a[-1,0]+.01,2.8):
             z=float(np.interp(x,a[:,0],a[:,1]))-.2
@@ -46,7 +51,7 @@ def main():
                     m.beam((x,y,.18),(nx,y,nz),.12,.13,wood)
         for y in [-4.035,4.035]:
             for a,b in zip(profile[:-1],profile[1:]):
-                if y<0 and 43<a[0]<53:continue
+                if y<0 and b[0]>43 and a[0]<53:continue   # the rollout leaves over this side
                 m.beam((a[0],y,a[1]-.1),(b[0],y,b[1]-.1),.09,.13,edge)
     route=np.array(rollout());tangent=np.gradient(route[:,:2],axis=0)
     tangent/=np.linalg.norm(tangent,axis=1)[:,None]
@@ -72,12 +77,16 @@ def main():
     for z in np.arange(.30,11.0,.30):
         y=-5.55+z/11.75*1.55
         m.beam((-2.6,y,z),(-1.5,y,z),.075,.075,edge)
-    end=profiles()[1][-1][0]
-    m.box((end+1.35,0,6.0),(2.7,8,.2),ply)
-    m.beam((end,-4,6.10),(end,4,6.10),.065,.065,metal)
+    end,top=profiles()[1][-1]
+    # The deck behind the vert starts on the wall's own top edge: no face of it stands at the lip.
+    b,f=top-.2,end+2.7
+    for poly in [[(end,-4,top),(f,-4,top),(f,4,top),(end,4,top)],[(end,-4,b),(end,4,b),(f,4,b),(f,-4,b)],
+                 [(f,-4,b),(f,4,b),(f,4,top),(f,-4,top)],[(end,-4,b),(f,-4,b),(f,-4,top),(end,-4,top)],
+                 [(f,4,b),(end,4,b),(end,4,top),(f,4,top)]]:m.poly(poly,ply)
+    trim.beam((end,-4,top),(end,4,top),.065,.065,metal)
     for x in [end+.15,end+2.7]:
-        for y in [-4,4]:m.box((x,y,3.55),(.20,.20,7.1),wood)
-    for z in [6.65,7.15]:
+        for y in [-4,4]:m.box((x,y,(top+1)/2),(.20,.20,top+1),wood)
+    for z in [top+.55,top+1.05]:
         m.beam((end+2.7,-4,z),(end+2.7,4,z),.11,.11,edge)
         for y in [-4,4]:m.beam((end,y,z),(end+2.7,y,z),.11,.11,edge)
     # Quiet rest spot beside the return route.
@@ -90,6 +99,7 @@ def main():
     for x in [-8.23,-7.77]:m.box((x,-6.10,1.78),(.09,.05,.09),(.72,.60,.34),.02)
     objects={};report={}
     objects[m.name],report[m.name]=meshlib.export(m,mat)
+    objects[trim.name],report[trim.name]=meshlib.export(trim,mat)
     world=json.loads((yori.OUT/'world.json').read_text());h=np.load(yori.OUT/'heightmap.npy')
     path=np.array(world['mega']['trail']);m=Mesh('Mega_Trail')
     tangent=np.gradient(path[:,:2],axis=0);tangent/=np.linalg.norm(tangent,axis=1)[:,None]
@@ -103,7 +113,7 @@ def main():
             if side<0:points.reverse()
             m.poly(points,(.26,.14,.046))
     objects[m.name],report[m.name]=meshlib.export(m,mat)
-    objects['Mega_Ramp'].location=ORIGIN
+    objects['Mega_Ramp'].location=objects['Mega_Trim'].location=ORIGIN
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'ForestMega.blend'))
     report['dimensions']={'roll_in_height_m':10.7,'gap_m':10.4,'quarter_pipe_height_m':6.1,'width_m':8.}
     (OUT/'manifest.json').write_text(json.dumps(report,indent=2)+'\n')

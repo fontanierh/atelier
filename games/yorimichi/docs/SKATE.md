@@ -128,8 +128,9 @@ The mini-mega, its trail and the hamlet share the vertex-colour `M_Village`, so 
 material gives each face a slot `MI_HD_<slug>` (`world/regions/hidamari/surfaces.py`), keyed `HD_<slug>`. In the game,
 `skate.SurfaceDebug 1` logs every mesh section's surface the next time the collision snapshot is built.
 
-The footbridge's gaps between planks and the mini-mega's seams are edges a board rolls over (the plugin README's
-Collision note). `tools/check_skate_terrain.py` checks them, pushing across planks and every surface offline, and
+The footbridge's gaps between planks are edges a board rolls over (the plugin README's Collision note): a subfloor 1 mm
+under the plank tops makes each gap 1 mm deep. The mini-mega's seams and coping are `Mega_Trim`, which has no
+collision, so no wheel catches on them. `tools/check_skate_terrain.py` checks them, pushing across planks and every surface offline, and
 `tools/review_skate_terrain.py` rides the mini-mega, the footbridge, a trail and grass in the game.
 
 ## Skate feel menu
