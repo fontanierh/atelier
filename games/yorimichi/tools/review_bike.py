@@ -1,6 +1,6 @@
 """Ride Cairo's bike through every move in the real game, check what happened and film it (docs/BIKE.md).
 
-    uv run python games/yorimichi/tools/review_bike.py [--port 8871] [--no-film] [--site x,y,yaw] [--crash x,y,yaw]
+    uv run python games/yorimichi/tools/review_bike.py [--port N] [--no-film] [--site x,y,yaw] [--crash x,y,yaw]
 
 Run after unreal.compile, unreal.bike, unreal.cairo_bike and data.stage. Under the render guard it launches the
 island, finds open level ground for the ride and a clear run for the crash near the towns (or takes --site/--crash in
@@ -25,13 +25,14 @@ from atelier import live
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--port', type=int, default=8871)
+parser.add_argument('--port', type=int, help='live bridge port (default: a free one, so two reviews can run at once)')
 parser.add_argument('--no-film', action='store_true')
 parser.add_argument('--site', default='', help='x,y,yaw (Unreal cm, degrees): level ground for the ride')
 parser.add_argument('--crash', default='', help='x,y,yaw: at least 13 m of level, clear ground ahead (a test wall goes up at 11 m)')
 parser.add_argument('--keep-frames', action='store_true')
 parser.add_argument('--recheck', action='store_true', help='check the last run\'s rows.json again without the game')
 args = parser.parse_args()
+args.port = args.port or live.free_port()
 live.URL = f'http://127.0.0.1:{args.port}'
 ctx = Context('yorimichi'); out = yori.OUT / 'bike' / 'review'; out.mkdir(parents=True, exist_ok=True)
 

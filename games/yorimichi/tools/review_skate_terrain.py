@@ -1,6 +1,6 @@
 """Ride the island's ground in the real game and check each kind rides as it should (docs/SKATE.md, "Ground").
 
-    uv run python games/yorimichi/tools/review_skate_terrain.py [--port 8871]
+    uv run python games/yorimichi/tools/review_skate_terrain.py [--port N]
 
 Run after unreal.compile, unreal.world, unreal.mega and unreal.sounds. Under the render guard it launches the island
 with skate.SurfaceDebug on and puts the rider on the board: dropping in on the mini-mega and riding its flat and landing
@@ -26,8 +26,9 @@ from atelier import live
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--port', type=int, default=8871)
+parser.add_argument('--port', type=int, help='live bridge port (default: a free one, so two reviews can run at once)')
 args = parser.parse_args()
+args.port = args.port or live.free_port()
 live.URL = f'http://127.0.0.1:{args.port}'
 ctx = Context('yorimichi'); out = yori.OUT / 'skate-terrain' / 'review'; out.mkdir(parents=True, exist_ok=True)
 

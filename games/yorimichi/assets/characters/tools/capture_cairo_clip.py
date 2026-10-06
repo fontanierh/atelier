@@ -70,7 +70,9 @@ for view in args.views.split(','):
         records.append({'view': view, 'frame': frame, 'time': (frame - 1) / scene.render.fps, 'file': path.name})
 (OUT / 'captures.json').write_text(json.dumps({'blend': args.blend, 'clip': args.clip, 'frames': records}, indent=2) + '\n')
 if args.sheet:
-    subprocess.run([sys.executable, str(Path(__file__).parent / 'contact_sheet.py'), str(OUT)], check=True)
+    # The sheet needs Pillow, which Blender's Python lacks: run the shared tiler with the repository's Python.
+    subprocess.run(['uv', 'run', '--project', str(yori.REPO), 'python',
+                    str(yori.REPO / 'platform/studio/atelier/review/contact_sheet.py'), str(OUT)], check=True)
 if args.reel:
     for view in args.views.split(','):
         seq = OUT / f'{view}-reel'; seq.mkdir(exist_ok=True)

@@ -1,7 +1,7 @@
 """Ride Cairo in the real game and check his feet stay on the board: rolling, in ollies and manuals, at 60 and 30 fps,
 and that big airs land back in the transition.
 
-    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871] [--rider CairoBotw|Cairo] [--settings FILE] [--desktop-profile]
+    uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port N] [--rider CairoBotw|Cairo] [--settings FILE] [--desktop-profile]
 
 Run after unreal.compile. Under the render guard it launches the island and:
 - stands Cairo on foot on the mini-mega's flat and measures his soles and capsule over the floor;
@@ -39,13 +39,14 @@ from desktop_preview import bridge_bind_error, command as desktop_command, read_
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--port', type=int, default=8871)
+parser.add_argument('--port', type=int, help='live bridge port (default: a free one, so two reviews can run at once)')
 parser.add_argument('--rider', default='CairoBotw', choices=('CairoBotw', 'Cairo'))
 parser.add_argument('--settings', type=Path, help="a player's settings.txt to play with")
 parser.add_argument('--label', default='', help='output subfolder suffix, to keep runs with different settings apart')
 parser.add_argument('--settle-fps', type=float, default=25., help='frame rate to hold for 3 s before the checks (a slower host may name a lower one; the phases\' own frame timing is still graded)')
 parser.add_argument('--desktop-profile', action='store_true', help='normal native 1440p play profile, with an isolated copy of saved preferences')
 args = parser.parse_args()
+args.port = args.port or live.free_port()
 live.URL = f'http://127.0.0.1:{args.port}'
 ctx = Context('yorimichi'); out = yori.OUT / 'skate-jump-feet' / 'review' / (args.rider + (f'-{args.label}' if args.label else '')); out.mkdir(parents=True, exist_ok=True)
 

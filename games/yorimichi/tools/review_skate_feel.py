@@ -1,6 +1,6 @@
 """Open the Skate feel menu in the real game, set skate_* values live and check the board feels them (docs/SKATE.md).
 
-    uv run python games/yorimichi/tools/review_skate_feel.py [--port 8871]
+    uv run python games/yorimichi/tools/review_skate_feel.py [--port N]
 
 Run after unreal.compile and data.stage. Under the render guard it launches the island, captures the settings menu and
 its Skate feel page, then puts the rider on the skate pier and ollies on flat deck: stock (Normal), Normal with a custom
@@ -21,8 +21,9 @@ from atelier import live
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--port', type=int, default=8871)
+parser.add_argument('--port', type=int, help='live bridge port (default: a free one, so two reviews can run at once)')
 args = parser.parse_args()
+args.port = args.port or live.free_port()
 live.URL = f'http://127.0.0.1:{args.port}'
 ctx = Context('yorimichi'); out = yori.OUT / 'skate-feel' / 'review'; out.mkdir(parents=True, exist_ok=True)
 
