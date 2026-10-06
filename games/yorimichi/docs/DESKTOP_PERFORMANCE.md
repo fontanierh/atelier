@@ -32,7 +32,7 @@ writes `renderer=0` or `renderer=1` to that file and quits normally. The launche
 verifies the request matches a changed saved choice, consumes it and starts a new guarded
 process with it. Direct editor launches save the choice for the next launch instead of promising an automatic restart.
 On restart the saved menu renderer wins over an earlier `--set renderer=...` or `--baseline` comparison override.
-Tree changes apply in the current game; subsequent launches honor the saved choice.
+Tree changes apply in the current game; subsequent launches honor the saved choice. A renderer restart also waits up to 90 seconds for the old loopback bridge port to become bindable, with progress notes and no render slot held. It fails clearly if the port stays occupied; it does not enable socket sharing or disturb another listener.
 
 | Flag | Effect |
 |---|---|
@@ -200,3 +200,34 @@ Capped (`--capped`, `r.VSync 1`) on the wide city approach: 59.995 fps average, 
   character's animation fidelity for it.
 - These numbers hold for the measured views and routes on the reference machine, not for every route, weather,
   background load or external display.
+
+## Compare and tune Hidamari tree detail
+
+The Esc and phone graphics menus have an immediate **Tree optimization** on/off comparison.
+Off restores original full-detail city trees. On defaults to **Automatic**: nearby trees retain
+the original leaf geometry/materials; intermediate/distant LODs simplify leaf outlines only.
+
+**Tree detail comparison** also offers Full detail, Intermediate and Distant. Forced intermediate
+or distant detail stays fixed at every distance for comparison; return to Automatic for normal
+play. Full detail uses the original single-LOD mesh and warns about higher GPU cost. These changes
+apply live without rebuilding or restarting and preserve tree placements and collision.
+
+**Keep tree detail farther (x)** tunes automatic LOD distance from 0.5 to 3.0, default 1.5.
+Higher values retain detailed leaves farther away and can increase GPU cost; smaller values switch
+to lighter outlines earlier. The control is disabled while optimization is off or a comparison LOD
+is forced. The chosen mode/distance persist with the other graphics preferences; failed saves roll
+back the live tree state as well as the setting. Forward lighting remains the normal default.
+If restoring the previous tree state also fails, the menu reports that failure and asks for a
+restart instead of claiming the previous trees were kept.
+
+For an owned scripted comparison, use saved preferences `tree_optimization`, `tree_lod_mode`
+(0 Automatic, 1 Full detail, 2 Intermediate, 3 Distant) and `tree_lod_distance`. Inspect actual
+rendered LOD counts with `foliage.LogFoliageFrame` and retain the game log, close/medium/far captures,
+actual viewport, frame timings and memory guard evidence. Do not infer selected LOD from the asset
+name alone. Global foliage diagnostic force/minimum settings can override normal selection and
+must be reported when diagnosing unexpected permanent low detail.
+
+The swap validation reads LOD0 positions/normals from both the original and experimental meshes.
+Editor `-game` runs retain that CPU data; a cooked build must retain CPU access on all three
+original city trees and their variants or the swap will safely refuse. The forced-mode mapping
+uses non-Nanite HISM rendering; Nanite variants are refused because they ignore that selection.
