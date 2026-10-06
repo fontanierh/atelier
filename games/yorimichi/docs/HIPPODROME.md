@@ -147,6 +147,10 @@ uv run python games/yorimichi/tools/mix_race_film.py build/yorimichi/racefilm/st
 `mix_race_film.py` lays the stereo song down as the game played it and places every other cue by its distance and
 bearing from the camera. It writes `race.mp4` and `race-720p.mp4`.
 
+The encode takes no render lock, but it is CPU-heavy. It runs at nice 10, with two threads each for decoding,
+filtering and encoding. It prints its progress every ten seconds and ends an encode that stalls for five minutes.
+Even so, list it under Waiting on the render board and run it only when no graded game is loading or running.
+
 ## Known limits
 
 - **Starting gate:** the stall doors are modelled half open, and the number plates read 1, 2, 3, blank, 4, blank,
