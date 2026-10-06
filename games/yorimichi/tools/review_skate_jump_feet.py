@@ -57,7 +57,10 @@ LANE = (ox + 44.6, oy - 2, oz + 2)    # the landing's run-out (4° down) before 
 DROP_IN = (ox - 2.6, oy, oz + 12)     # the roll-in's top deck
 QUARTER_X = 56.                       # where the quarter's transition starts, along the ramp
 OLLIES = 3
-QUARTER_PUSHES = (2.5, 3.0, 3.5)   # seconds of pushing from the flat, enough to air out of the quarter
+QUARTER_PUSHES = (2.5, 3.0, 3.5)   # seconds of pushing from the lane, as a player would; the board reaches the transition
+                                   # ~11 m on, at 8.4-8.9 m/s (Easy, Normal), so a longer push adds nothing
+QUARTER_LAUNCHES = (11., 12., 13.)  # m/s along +x from the lane, no push: the native regression's speeds, as from a drop-in.
+                                    # A regression trial for landing back in the transition, not a measure of ordinary pushing
 # A physical foot may differ from the animated one by this much (cm, a phase's mean, any bone, up or along the deck).
 # They match within 0.6 cm when Physics Control ticks before the physics step; a frame behind, the feet sit 10 cm off
 # at 60 fps (5.5 m/s for 17 ms) and twice that at 30.
@@ -262,17 +265,20 @@ def back_on_lane(rows):
     return rows[:back] if back else rows
 
 
-def airs_out(name, physical, push, at=LANE, window=None):
-    """Pushes for `push` seconds and lets the board run, to air out of a transition and land back: each air of 10
-    frames or more, and whether the board then rolled on for half a second."""
+def airs_out(name, physical, push, at=LANE, window=None, launch=None):
+    """Pushes for `push` seconds (or is launched at `launch` m/s along +x) and lets the board run, to air out of a
+    transition and land back: each air of 10 frames or more, and whether the board then rolled on for half a second."""
     place(at, physical)
-    run(f"live.skate_script([({push}, {{'push': True}}), (.05, {{}})])")
+    if launch: run(f'assert unreal.YorimichiLive.skate_launch(unreal.Vector({launch * 100!r}, 0, 0))')
+    else: run(f"live.skate_script([({push}, {{'push': True}}), (.05, {{}})])")
     wait(push + 9.); rows = frames(); (out / f'rows_{name}.json').write_text(json.dumps(rows) + '\n')
     rows = window(rows) if window else rows
     runs = [(air, len(list(g))) for air, g in itertools.groupby('Air' in r['retail'] for r in rows)]
     airs = [dict(frames=n, landed=k + 1 < len(runs) and runs[k + 1][1] >= 30) for k, (air, n) in enumerate(runs) if air and n >= 10]
     return dict(airs=airs, bails=rows[-1]['bails'] - rows[0]['bails'] if rows else None,
-                top_speed_mps=round(max((r['speed'] for r in rows), default=0) / 100, 2))
+                top_speed_mps=round(max((r['speed'] for r in rows), default=0) / 100, 2),
+                # The speed as the deck reaches the quarter's transition: what the quarter actually gets.
+                entry_speed_mps=next((round(r['speed'] / 100, 2) for r in rows if r['deck'][0] > (ox + QUARTER_X) * 100), None))
 
 
 try:
@@ -316,6 +322,9 @@ try:
     console('t.MaxFPS 60')
     for push in QUARTER_PUSHES:
         results[f'quarter_{push}'] = airs_out(f'quarter_{push}', 1, push, window=back_on_lane); print(f'quarter_{push}', json.dumps(results[f'quarter_{push}']), flush=True)
+    for v in QUARTER_LAUNCHES:
+        name = f'quarter_launch_{v:g}mps'
+        results[name] = airs_out(name, 1, 0., launch=v, window=back_on_lane); print(name, json.dumps(results[name]), flush=True)
     results['mega_drop_in'] = airs_out('mega_drop_in', 1, 1., DROP_IN); print('mega_drop_in', json.dumps(results['mega_drop_in']), flush=True)
 
     for fps in (60, 30):
@@ -337,6 +346,11 @@ try:
         r = results[name]
         record(f'{name}_lands', r['bails'] == 0 and (r['airs'] or name.startswith('quarter')) and all(a['landed'] for a in r['airs'][:-1])
                and (not r['airs'] or r['airs'][0]['landed']), json.dumps(r))
+    # Regression trials, apart from ordinary pushing: launched at drop-in speed, the board must air out and land back.
+    for v in QUARTER_LAUNCHES:
+        name = f'quarter_launch_{v:g}mps'; r = results[name]
+        record(f'{name}_airs_and_lands', r['bails'] == 0 and bool(r['airs']) and all(a['landed'] for a in r['airs'][:-1])
+               and r['airs'][0]['landed'], json.dumps(r))
     record('quarter_airs_out', any(results[f'quarter_{push}']['airs'] for push in QUARTER_PUSHES),
            json.dumps({push: results[f'quarter_{push}']['airs'] for push in QUARTER_PUSHES}))
     # The toe bones sit inside the shoes, above their soles: one at or under the floor means the shoe is sunk into it.
