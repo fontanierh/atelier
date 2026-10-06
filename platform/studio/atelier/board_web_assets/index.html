@@ -74,12 +74,10 @@
         <button type="button" id="jumpLatest" class="jump-latest" hidden><span id="jumpLabel">Latest</span><span data-icon="down"></span></button>
         <div class="mention-menu glass" id="mentionMenu" role="listbox" aria-label="Mention an agent" hidden></div>
         <form id="broadcastForm" class="composer glass" autocomplete="off">
-          <div id="messagePreview" class="composer-preview markdown" hidden></div>
           <p id="composerStatus" class="composer-status" role="status" aria-live="polite"></p>
           <div class="composer-options">
             <label class="select-pill recipient-pill"><span class="pill-label">To</span><span class="pill-value" aria-hidden="true"></span><select id="recipient" aria-label="Send to"><option value="*">Everyone</option></select><span data-icon="chevron"></span></label>
-            <label class="select-pill"><span class="pill-value" aria-hidden="true"></span><select id="broadcastTopic" aria-label="Topic"><option value="request">Request</option><option value="info">Info</option><option value="alert">Alert</option><option value="handoff">Handoff</option></select><span data-icon="chevron"></span></label>
-            <button type="button" id="previewButton" class="text-button" aria-expanded="false" aria-controls="messagePreview">Preview</button>
+            <input type="hidden" id="broadcastTopic" value="request">
             <span id="characterCount" class="character-count"></span>
           </div>
           <div class="tray" id="tray" hidden></div>
