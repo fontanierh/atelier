@@ -40,7 +40,13 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
     // each LOD's actual vertex extent, not combined bounds containing LOD0.
     if (OptimizedMesh) for (const auto& Pair:Replacements)
     {
-        if (Pair.Value->IsNaniteEnabled())
+#if WITH_EDITORONLY_DATA
+        const bool bNanite=Pair.Value->IsNaniteEnabled();
+#else
+        // A cooked build has no Nanite build settings, only what was built: reject meshes cooked with Nanite data.
+        const bool bNanite=Pair.Value->HasValidNaniteData();
+#endif
+        if (bNanite)
         { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS require non-Nanite HISM meshes; refusing swap %s"),*Pair.Key); return false; }
         auto* Original=LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"),*Pair.Key,*Pair.Key));
         const auto* Data=Pair.Value->GetRenderData();

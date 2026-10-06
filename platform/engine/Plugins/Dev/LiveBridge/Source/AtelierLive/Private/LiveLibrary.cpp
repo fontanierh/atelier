@@ -130,7 +130,12 @@ namespace
                 }
             }
             const FName Slot(*FString::FromInt(MaterialIndex));
-            Mesh->GetStaticMaterials().Add(FStaticMaterial(MID ? static_cast<UMaterialInterface*>(MID) : Painted(), Slot, Slot));
+            UMaterialInterface* const Material = MID ? static_cast<UMaterialInterface*>(MID) : Painted();
+#if WITH_EDITORONLY_DATA
+            Mesh->GetStaticMaterials().Add(FStaticMaterial(Material, Slot, Slot));   // the imported slot name is editor metadata
+#else
+            Mesh->GetStaticMaterials().Add(FStaticMaterial(Material, Slot));
+#endif
         }
         UStaticMesh::FBuildMeshDescriptionsParams Params;
         Params.bFastBuild = true; Params.bBuildSimpleCollision = true; Params.bAllowCpuAccess = true; Params.bCommitMeshDescription = false;
