@@ -600,4 +600,34 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .lightbox-close { background: #ffffff26; color: #fff; border-color: #ffffff40; }
 .drop-hint { background: #eef4f3e6; }
 @media (min-width: 1100px) { .agents-pane, .render-pane { background: #f3f7f6a6; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); } }
+/* Ambience: mist drifting across the meadow, a dandelion seed floating by now and then, and on a phone the meadow
+   moving a little slower than the messages. Transforms and opacity only, so the compositor runs it all; Reduce
+   Motion stills it. The layer sits behind each pane's content (the chat pane isolates it from the panes around). */
+.ambience { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.chat-pane { isolation: isolate; }
+.painting { position: absolute; left: 0; right: 0; top: -44px; height: calc(100% + 44px); background: var(--page-bg); will-change: transform; }
+.mist { position: absolute; left: -60%; width: 220%; top: 16%; height: 46%; opacity: .7; will-change: transform;
+  background: radial-gradient(38% 50% at 30% 50%, #ffffffb3, #ffffff00 70%), radial-gradient(28% 42% at 72% 46%, #ffffff8c, #ffffff00 70%);
+  animation: drift 80s ease-in-out infinite alternate; }
+.mist.far { top: 46%; height: 38%; opacity: .5; animation-duration: 110s; animation-direction: alternate-reverse; }
+.seed { position: absolute; left: 0; top: 72%; width: 14px; height: 14px; opacity: 0; will-change: transform, opacity; animation: float-by 46s linear -6s infinite; }
+.seed i { display: block; width: 100%; height: 100%; border-radius: 50%; animation: bob 5s ease-in-out infinite alternate;
+  background: radial-gradient(circle, #fff 0 1.6px, #ffffffd9 2.2px, #ffffff66 3.6px, #ffffff00 7px); }
+.seed.s2 { top: 58%; width: 11px; height: 11px; animation-duration: 58s; animation-delay: -27s; }
+.seed.s3 { top: 38%; width: 10px; height: 10px; animation-duration: 64s; animation-delay: -44s; }
+.seed.s4 { top: 84%; animation-duration: 52s; animation-delay: -15s; }
+@keyframes drift { from { transform: translate3d(-12%, 0, 0); } to { transform: translate3d(12%, -3%, 0); } }
+@keyframes float-by {
+  0% { transform: translate3d(-24px, 0, 0); opacity: 0; } 3% { opacity: .95; }
+  33% { opacity: .95; } 36% { transform: translate3d(calc(100vw + 24px), -24vh, 0); opacity: 0; }
+  100% { transform: translate3d(calc(100vw + 24px), -24vh, 0); opacity: 0; } }
+@keyframes bob { from { transform: translate3d(0, -10px, 0) rotate(-18deg); } to { transform: translate3d(0, 10px, 0) rotate(18deg); } }
+/* A soft halo ripples out of an agent's orb as its new message lands. */
+.message.enter > .orb-link .orb, .message.enter > .orb { animation: halo 1.8s ease-out .15s both; }
+@keyframes halo {
+  from { box-shadow: 0 0 0 0 hsl(var(--hue) 75% 72% / .75), 0 3px 10px hsl(var(--hue) 40% 40% / .22); }
+  to { box-shadow: 0 0 0 16px hsl(var(--hue) 75% 72% / 0), 0 3px 10px hsl(var(--hue) 40% 40% / .22); } }
+/* One ambience per screen: the chat pane's own on a phone, the app's behind all three columns on a wide screen. */
+@media (max-width: 1099px) { .app[data-view="messages"] > .ambience { display: none; } }
+@media (min-width: 1100px) { .chat-pane > .ambience { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
