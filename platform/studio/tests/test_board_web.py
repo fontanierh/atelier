@@ -352,3 +352,14 @@ def test_posts_that_would_fold_on_the_web_board_warn_the_agent(cache, capsys):
     assert 'folded' not in capsys.readouterr().err
     assert board.main(SimpleNamespace(**vars(args), message='y' * 600)) == 0
     assert 'folded behind "Read more"' in capsys.readouterr().err
+
+
+def test_static_files_load_fast_gzipped_revalidated_and_paintings_cached(http_server):
+    import gzip
+    status, body, headers = request(http_server, '/board.js', headers={'Accept-Encoding': 'gzip'})
+    assert status == 200 and headers['Content-Encoding'] == 'gzip' and headers['Cache-Control'] == 'no-cache'
+    assert gzip.decompress(body) == (board_web.ASSETS / 'board.js').read_bytes()
+    assert request(http_server, '/board.js', headers={'If-None-Match': headers['ETag']})[0] == 304
+    status, body, headers = request(http_server, '/meadow-portrait-1.webp')
+    assert status == 200 and headers['Content-Type'] == 'image/webp' and 'immutable' in headers['Cache-Control']
+    assert body[:4] == b'RIFF' and len(body) < 150_000, 'the phone background stays small'

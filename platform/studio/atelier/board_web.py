@@ -1,4 +1,6 @@
 """Private, loopback-only UI for the existing board. Standard library, no build step."""
+import gzip
+import hashlib
 import hmac
 import json
 import re
@@ -20,7 +22,22 @@ STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
           '/icon.svg': ('icon.svg', 'image/svg+xml'),
           '/apple-touch-icon.png': ('apple-touch-icon.png', 'image/png'),
           '/manifest.webmanifest': ('manifest.webmanifest', 'application/manifest+json'),
-          '/sw.js': ('sw.js', 'text/javascript; charset=utf-8')}
+          '/sw.js': ('sw.js', 'text/javascript; charset=utf-8'),
+          '/meadow-portrait-1.webp': ('meadow-portrait-1.webp', 'image/webp'),
+          '/meadow-landscape-1.webp': ('meadow-landscape-1.webp', 'image/webp')}
+_assets = {}
+
+
+def asset(filename):
+    """A static file, its ETag and (for text) a gzip copy, reread only when the file changes on disk."""
+    path = ASSETS / filename
+    stamp = path.stat().st_mtime_ns
+    cached = _assets.get(filename)
+    if not cached or cached[0] != stamp:
+        data = path.read_bytes()
+        packed = None if filename.endswith(('.webp', '.png')) else gzip.compress(data, 9)
+        cached = _assets[filename] = (stamp, data, f'"{hashlib.sha256(data).hexdigest()[:24]}"', packed)
+    return cached[1:]
 PUSH_PATHS = ('/api/push/subscribe', '/api/push/unsubscribe', '/api/push/test')
 
 
@@ -185,19 +202,38 @@ class Handler(BaseHTTPRequestHandler):
         super().setup()
         self.connection.settimeout(10)
 
-    def send(self, status, body, mime='application/json; charset=utf-8'):
+    def send(self, status, body, mime='application/json; charset=utf-8', cache='no-store', headers=()):
         if not isinstance(body, bytes):
             body = json.dumps(body, ensure_ascii=False).encode()
         self.send_response(status)
         self.send_header('Content-Type', mime)
         self.send_header('Content-Length', str(len(body)))
-        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Cache-Control', cache)
+        for name, value in headers:
+            self.send_header(name, value)
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'no-referrer')
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; "
                          "img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         self.end_headers()
         self.wfile.write(body)
+
+    def static(self, filename, mime):
+        """Fast loads: the versioned paintings cache for a year (a new painting gets a new name); the app's own files
+        revalidate with an ETag, so a reload costs a 304 until they change, and travel gzipped."""
+        data, tag, packed = asset(filename)
+        cache = 'public, max-age=31536000, immutable' if filename.endswith('.webp') else 'no-cache'
+        if self.headers.get('If-None-Match') == tag:
+            self.send_response(304)
+            self.send_header('ETag', tag)
+            self.send_header('Cache-Control', cache)
+            self.end_headers()
+            return
+        headers = [('ETag', tag), ('Vary', 'Accept-Encoding')]
+        if packed and 'gzip' in self.headers.get('Accept-Encoding', ''):
+            data = packed
+            headers.append(('Content-Encoding', 'gzip'))
+        self.send(200, data, mime, cache, headers)
 
     def send_attachment(self, ident):
         item = attachment(ident)
@@ -256,8 +292,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlsplit(self.path)
         try:
             if parsed.path in STATIC:
-                filename, mime = STATIC[parsed.path]
-                self.send(200, (ASSETS / filename).read_bytes(), mime)
+                self.static(*STATIC[parsed.path])
             elif parsed.path == '/api/state':
                 state = snapshot(parse_qs(parsed.query), self.server.remote_status, self.server.sender)
                 state.update(csrf=self.server.csrf, sender=self.server.sender)

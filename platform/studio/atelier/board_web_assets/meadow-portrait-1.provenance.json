@@ -1,0 +1,40 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1536",
+  "prompt": "Paint only the background landscape of the reference image, with no user interface at all: no cards, no text,\nno avatars, no buttons, no bars. A soft hand-painted watercolor of a misty early-morning spring meadow: pale silvery\nblue-green sky with a calm pastel sunrise glow low on the horizon, layers of soft fog drifting between gentle rolling\nhills, distant pale trees fading into the mist, dew, delicate white and pale-blue wildflowers along the bottom edge.\nKeep the middle of the picture calm and airy (mostly sky and mist) because a chat interface will sit on top of it.\nLight, dreamy and elegant, visible watercolor paper texture, no people, no animals, no buildings, no text.",
+  "inputs": [
+    "meadow-mist.png"
+  ],
+  "purpose": "Agent board Misty morning background",
+  "status": "done",
+  "started_at": "2026-10-06T12:20:42.572348+00:00",
+  "usage": {
+    "input_tokens": 1700,
+    "input_tokens_details": {
+      "image_tokens": 1536,
+      "text_tokens": 164
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3072
+  },
+  "png_sha256": "bb6f3a412886e518994fbbbe2894c5d4f4c251d6c7c09e19a084bbefe8ea9ca7",
+  "output": {
+    "file": "bg-portrait.png"
+  },
+  "finished_at": "2026-10-06T12:21:18.430195+00:00",
+  "derived": {
+    "file": "meadow-portrait-1.webp",
+    "size": [
+      900,
+      1350
+    ],
+    "format": "WebP quality 60",
+    "sha256": "fa93cbf92cf1b677f2489e1099de3fefa3d18e6f548ba22445e82178e7893aa7"
+  },
+  "reference": "meadow-mist.png: a Sunburst concept of the board restyled as a misty spring meadow, made from a screenshot of a synthetic demo board; this call painted its landscape without the UI"
+}
