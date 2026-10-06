@@ -196,8 +196,10 @@ to check that it is deterministic.
 - Every surface gets one collision material (friction and restitution). Ground kinds differ only by the recovered
   surface profile that the wheels' vote selects (smooth, rough, slow, very slow), and by their sounds.
 - Rails reach the session as polylines only; their kind, side and radius are not used.
-- A complex-as-simple mesh is seen in a cooked build only if its importer enables CPU access. Editor builds are the
-  checked path; cooked loading of the bundle is unverified.
+- A complex-as-simple mesh whose importer does not enable CPU access has no CPU render triangles in a cooked build;
+  the snapshot then reads its cooked Chaos collision triangles instead. Those lose the authored per-vertex normal, so
+  each triangle faces by its cooked winding (the physics convention, the reverse of the render one). A mesh with neither is logged once and not collided with. Cooked loading of
+  the bundle is otherwise unverified.
 - The solver keeps the recovered rider's proportions, so contacts near low obstacles can need visual review on a
   differently proportioned character. Grab grips scale with the host's hand, but the finger curl angles are fixed:
   on a hand with short fingers for its knuckle spacing, the fingertips end at the rail rather than under the deck.

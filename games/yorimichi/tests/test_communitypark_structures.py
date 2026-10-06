@@ -84,6 +84,22 @@ class StructureTests(unittest.TestCase):
         beside = S.Mesh('post', 'none'); beside.box([1303.75, 603.9-.3, S.TOP+.55], [.06, .06, 1.1])
         self.assertEqual(S.body_intrusions(beside.triangles(), route), [])
 
+    def test_no_coplanar_faces_flicker(self):
+        # Tread ends shared the stringers' outer faces: in play, wood stripes flickered through the blue steel.
+        self.assertEqual(S.flicker(self.meshes), [])
+
+    def test_flicker_finds_shared_faces_that_shade_differently(self):
+        timber = S.Mesh('tread', 'CP_ServiceTimber'); timber.box([0, 0, 0], [.45, 2.4, .22])
+        stringer = S.Mesh('stringer', 'CP_StructureSteel', textured=False); stringer.beam([-1, 1.1, -.2], [1, 1.1, .2], .2, .3)
+        self.assertGreater(sum(area for area, *_ in S.flicker([timber, stringer])), .05)
+        # One texture frame, or an untextured material, renders the same pixels.
+        tread = S.Mesh('tread', 'CP_ServiceTimber'); tread.box([.2, 0, 0], [.45, 2.4, .22])
+        self.assertEqual(S.flicker([timber, tread]), [])
+        cross = S.Mesh('cross', 'CP_ServiceTimber'); cross.beam([-1, 0, 0], [1, 0, 0], 2.4, .22)
+        self.assertTrue(S.flicker([timber, cross]))
+        brace = S.Mesh('brace', 'CP_StructureSteel', textured=False); brace.beam([1, 1.1, .2], [-1, 1.1, -.2], .2, .3)
+        self.assertEqual(S.flicker([stringer, brace]), [])
+
     def test_raised_groups_have_contacts_on_original_surface_or_ground(self):
         groups = S.raised_groups(self.source)
         self.assertEqual(len(groups), 5)

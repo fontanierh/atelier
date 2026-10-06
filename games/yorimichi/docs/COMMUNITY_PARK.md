@@ -124,6 +124,9 @@ every ascent waypoint and at 25 cm intervals between them, the deck riding
 lane, and every added mesh (structures, murals, props) after import. It also sweeps a 25 cm walking body
 along every route segment, from 0.40 to 1.95 m above the floor, measuring the
 exact plan distance to each nearby triangle so thin posts between samples fail.
+No two added faces may share a plane, face the same way, overlap and shade differently: the depth test
+flickers between them. Stair stringers stand 2 cm proud of the tread ends, and the top bridge's decking
+abuts its landings instead of overlapping them.
 Every tower leg and frame footing must sit outside every original piece's footprint with a 65 cm margin. A separate solid-member audit
 samples each frame beam's width and depth against the original scene, checking
 a 70 cm rider width and up to three metres of previously usable skating
