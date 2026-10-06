@@ -29,7 +29,7 @@ const desktop=matchMedia("(min-width:1100px)"), touch=matchMedia("(hover:none)")
 let state=null, selectedAgent="", records=new Map(), expanded=new Set(), deliveryOpen=new Set(), logShown=12;
 let loading=false, requestNumber=0, controller=null, historyComplete=false, sending=false, failed=false;
 let feedSignature="", agentsSignature="", scheduleSignature="", contextSignature="";
-let draftKey=null, draftBody="", draftTopic="", draftRecipient="*", recipientSignature="", previewRequest=0;
+let draftKey=null, draftBody="", draftTopic="", draftRecipient="*", recipientSignature="";
 let stickToBottom=true, prepending=false, lastSeenId=0, newestShown=0, statusTimer=0, feedPainted=false;
 let showSystem=true, uploads=[], thread=null;
 try { showSystem=localStorage.getItem("atelier.board.notices")!=="hidden"; } catch {}
@@ -57,7 +57,7 @@ function persistDraft() {
 try {
   const draft=JSON.parse(localStorage.getItem("atelier.board.draft")||"null");
   if(draft) {
-    $("message").value=draft.body||""; if([...$("broadcastTopic").options].some(o=>o.value===draft.topic))$("broadcastTopic").value=draft.topic;
+    $("message").value=draft.body||"";
     draftKey=draft.key; draftBody=$("message").value; draftTopic=$("broadcastTopic").value;draftRecipient=draft.recipient||"*";
     uploads=(draft.files||[]).map(f=>({...f,key:f.id,status:"done",progress:100,preview:`/api/attachment/${f.id}/${encodeURIComponent(f.name)}`}));
   }
@@ -218,8 +218,8 @@ function renderRecipients() {
   if(selected!=="*"&&!available.some(a=>a.agent===selected)){const option=new Option(selected+" · retired",selected);option.disabled=true;$("recipient").add(option);}
   $("recipient").value=selected;
 }
-let previewTimer;
-function draftChanged() { if($("message").value!==draftBody || $("broadcastTopic").value!==draftTopic || $("recipient").value!==draftRecipient)draftKey=null;draftRecipient=$("recipient").value;persistDraft();formState();if(!$("messagePreview").hidden){clearTimeout(previewTimer);previewTimer=setTimeout(preview,250);} }
+// The operator's messages are always requests: agents treat them as actionable, so there is no type to pick.
+function draftChanged() { if($("message").value!==draftBody || $("recipient").value!==draftRecipient)draftKey=null;draftRecipient=$("recipient").value;persistDraft();formState(); }
 function grow() { const box=$("message"); box.style.height="auto"; box.style.height=`${box.scrollHeight}px`; }
 function syncPills() {
   document.querySelectorAll(".select-pill").forEach(pill=>{const option=pill.querySelector("select").selectedOptions[0];pill.querySelector(".pill-value").textContent=option?option.textContent.replace(/ · .*/,""):"";});
@@ -237,17 +237,10 @@ function formState() {
   $("sendButton").disabled=sending||busy||!state||!count||!($("message").value.trim()||ready)||(target!=="*"&&![target].flat().every(name=>state.agents.some(a=>a.agent===name&&!a.stop)));
   $("broadcastForm").classList.toggle("has-text",Boolean(length));
   const form=$("broadcastForm"), focused=form.contains(document.activeElement);
-  form.classList.toggle("expanded",Boolean(length||uploads.length||focused||thread||!$("messagePreview").hidden));
+  form.classList.toggle("expanded",Boolean(length||uploads.length||focused||thread));
   $("message").placeholder=thread?"Reply in thread…":target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
 }
-$("message").addEventListener("input",()=>{grow();draftChanged();}); $("broadcastTopic").addEventListener("change",draftChanged);$("recipient").addEventListener("change",draftChanged);
-async function preview() {
-  if(!state)return;const number=++previewRequest, abort=new AbortController(), timer=setTimeout(()=>abort.abort(),5000);
-  try {const response=await fetch("/api/preview",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({body:$("message").value}),signal:abort.signal});const result=await response.json();if(!response.ok)throw Error();if(number===previewRequest)markdown($("messagePreview"),result.html);}
-  catch {if(number===previewRequest)$("messagePreview").textContent="Preview unavailable. Your draft is saved.";}
-  finally {clearTimeout(timer);}
-}
-$("previewButton").addEventListener("click",()=>{const show=$("messagePreview").hidden;$("messagePreview").hidden=!show;$("previewButton").textContent=show?"Edit":"Preview";$("previewButton").setAttribute("aria-expanded",String(show));if(show)preview();});
+$("message").addEventListener("input",()=>{grow();draftChanged();}); $("recipient").addEventListener("change",draftChanged);
 $("message").addEventListener("keydown",event=>{
   if(mentionChoices.length&&!event.isComposing){
     const step={ArrowDown:1,ArrowUp:-1}[event.key];
@@ -1017,7 +1010,6 @@ $("broadcastForm").addEventListener("submit",async event=>{
     for(const u of uploads)if(u.preview?.startsWith("blob:"))URL.revokeObjectURL(u.preview);
     uploads=[];renderTray();persistDraft();grow();
     if(touch.matches)$("message").blur();   // on a phone the keyboard closes once the message is away
-    if(!$("messagePreview").hidden)$("previewButton").click();$("messagePreview").replaceChildren();
     if(thread){thread.stick=true;loadThread();load();}
     else {
       const before=selectedAgent, filtered=Boolean($("search").value||$("topicFilter").value);
