@@ -381,9 +381,14 @@ void UBikeComponent::Park()
   const float Half=Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
   const FVector Feet=FVector(Bike.GetLocation().X,Bike.GetLocation().Y,Rider->GetActorLocation().Z-Half)+FRotator(0,Rider->GetActorRotation().Yaw,0).RotateVector(FVector(C->EndOffset,0));
   FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeStepOff),false,Rider);
-  const FVector At=Feet+FVector(0,0,Half+2.f);
-  if(!GetWorld()->OverlapBlockingTestByChannel(At,FQuat::Identity,ECC_Pawn,Rider->GetCapsuleComponent()->GetCollisionShape(),Q))
-   Rider->SetActorLocation(At,false,nullptr,ETeleportType::TeleportPhysics);
+  // A little higher on a slope, where the capsule just above his feet already meets the rising ground; the floor check
+  // then sets him down.
+  for(const float Lift:{2.f,12.f,25.f})
+  {
+   const FVector At=Feet+FVector(0,0,Half+Lift);
+   if(!GetWorld()->OverlapBlockingTestByChannel(At,FQuat::Identity,ECC_Pawn,Rider->GetCapsuleComponent()->GetCollisionShape(),Q))
+   {Rider->SetActorLocation(At,false,nullptr,ETeleportType::TeleportPhysics);break;}
+  }
  }
  M->bForceNextFloorCheck=true;
  State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;
@@ -441,7 +446,10 @@ void UBikeComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickF
   const bool Ahead=GetWorld()->LineTraceSingleByChannel(Hit,From,From+Rider->GetActorForwardVector()*Reach,ECC_Visibility,Q)&&Hit.ImpactNormal.Z<.6f;
   if(Ahead&&Speed>CrashSpeed&&Clip!=TEXT("BikeSkid"))
   {State=EState::Crashing;Play(TEXT("BikeCrash"));Hint=TEXT("Ouch");C=Clips.Find(Clip);Recoil=FMath::Max(0.f,CrashRoom-Hit.Distance);Speed=0.f;}
-  else if(Ahead||(M->IsMovingOnGround()&&Speed>60.f&&Moved<Speed*.4f)){Speed=FMath::Min(Speed,FMath::Max(0.f,Moved));}
+  // Slower, he stops as the front wheel meets it (the capsule alone stopped half a bike length on, the wheel and basket
+  // through the wall).
+  else if(Ahead)Speed=0.f;
+  else if(M->IsMovingOnGround()&&Speed>60.f&&Moved<Speed*.4f)Speed=FMath::Min(Speed,FMath::Max(0.f,Moved));
  }
  // The clock: the ride loop turns at the cadence of the wheels; everything else plays in real time.
  const bool bPedal=Input.Y>.1f&&!bMenu;
@@ -519,11 +527,13 @@ void UBikeComponent::FollowGround(float Dt)
   auto GroundAt=[&](float X,float& Z)
   {
    const FVector P=Base.TransformPosition(FVector(X,0,0));FHitResult H;
-   if(!GetWorld()->LineTraceSingleByChannel(H,P+FVector(0,0,60),P-FVector(0,0,90),ECC_Visibility,Q)||H.ImpactNormal.Z<.6f)return false;
+   // Higher than a curb is the top of something the wheel has met (a fence, a wall), not ground to ride on.
+   if(!GetWorld()->LineTraceSingleByChannel(H,P+FVector(0,0,60),P-FVector(0,0,90),ECC_Visibility,Q)||H.ImpactNormal.Z<.6f||H.ImpactPoint.Z-Base.GetLocation().Z>25.f)return false;
    Z=H.ImpactPoint.Z-Base.GetLocation().Z;return true;
   };
   float Front,Rear;
-  if(GroundAt(FrontAxle.X,Front)&&GroundAt(RearAxle.X,Rear)){Want[0]=FMath::Clamp(Front,-40.f,40.f);Want[1]=FMath::Clamp(Rear,-40.f,40.f);}
+  if(GroundAt(FrontAxle.X,Front)&&GroundAt(RearAxle.X,Rear)){Want[0]=FMath::Max(Front,-40.f);Want[1]=FMath::Max(Rear,-40.f);}
+  else{Want[0]=WheelGround[0];Want[1]=WheelGround[1];}
  }
  for(int32 I=0;I<2;++I)WheelGround[I]=bSnapGround||Want[I]>WheelGround[I]?Want[I]:FMath::FInterpTo(WheelGround[I],Want[I],Dt,20.f);
  bSnapGround=false;
