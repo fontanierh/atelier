@@ -363,6 +363,11 @@ void AtelierLive::SetTeleport(TFunction<bool(APawn*, const FVector&, float)> InT
 void AtelierLive::Start(UWorld* World)
 {
     if (bStarted || !World || FParse::Param(FCommandLine::Get(), TEXT("nolive"))) return;
+#if !WITH_EDITOR
+    // A packaged game is not inside the repository its overlays and Python helper come from, and should not listen
+    // for remote control: the bridge runs only when the player passes -live.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("live"))) return;
+#endif
     bStarted = true;
     int32 Port = Settings().Port; FParse::Value(FCommandLine::Get(), TEXT("liveport="), Port);
     if (!LoopbackOnly(Port))

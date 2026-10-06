@@ -12,7 +12,7 @@ after it. The player is installed in the prototype's three layers (full, sword, 
 import importlib.util, json, shutil, os
 from pathlib import Path
 
-from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, Call
+from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
 from atelier import paths
 
 GAME = Path(__file__).resolve().parent
@@ -75,6 +75,56 @@ def stage_data(ctx, log):
         log.write(f'staged {rel}\n')
     if not communitypark(ctx.out):
         (data / 'communitypark' / 'park.json').unlink(missing_ok=True)
+
+
+# GitHub release assets must stay under 2 GiB each.
+PART_BYTES = 1900 * 1024 * 1024
+
+
+def package_zip(ctx, log):
+    """Zip the archived .app for download (ditto keeps its symlinks, signature and permissions), split it into parts
+    when it is too large for a GitHub release asset, and record sizes and SHA-256 checksums."""
+    import hashlib, subprocess
+    root = ctx.out / 'package'
+    apps = sorted((root / 'archive').glob('**/*.app'))
+    if len(apps) != 1:
+        raise RuntimeError(f'expected one archived .app under {root / "archive"}, found {len(apps)}')
+    app = apps[0]
+    revision = subprocess.run(['git', 'rev-parse', '--short=8', 'HEAD'], cwd=paths.REPO, capture_output=True, text=True).stdout.strip()
+    name = f'Yorimichi-macOS-{revision or "local"}'
+    for old in root.glob('Yorimichi-macOS-*'):
+        old.unlink()
+    archive = root / f'{name}.zip'
+    subprocess.run(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(app), str(archive)], check=True)
+    files = [archive]
+    if archive.stat().st_size > PART_BYTES:
+        prefix = root / f'{name}.zip.part-'
+        subprocess.run(['split', '-b', str(PART_BYTES), '-a', '2', str(archive), str(prefix)], check=True)
+        archive.unlink()
+        files = sorted(root.glob(f'{name}.zip.part-*'))
+    def sha256(path):
+        digest = hashlib.sha256()
+        with path.open('rb') as handle:
+            for block in iter(lambda: handle.read(1 << 20), b''):
+                digest.update(block)
+        return digest.hexdigest()
+    entries = [{'file': f.name, 'bytes': f.stat().st_size, 'sha256': sha256(f)} for f in files]
+    (root / 'SHA256SUMS').write_text(''.join(f"{e['sha256']}  {e['file']}\n" for e in entries))
+    manifest = {'app': app.name, 'revision': revision, 'zip': f'{name}.zip', 'split': len(files) > 1, 'files': entries}
+    (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    for e in entries:
+        log.write(f"packaged {e['file']} {e['bytes'] / 2**30:.2f} GiB sha256 {e['sha256']}\n")
+
+
+def package_step(ctx, steps):
+    """The packaged macOS game, after every Unreal import and the staged runtime data in this checkout."""
+    out = ctx.out
+    return Step('unreal.package',
+                [UnrealPackage('Yorimichi', out / 'package' / 'archive'), Call('package_zip', package_zip)],
+                inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config'],
+                after=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True,
+                outputs=[out / 'package' / 'manifest.json', out / 'package' / 'SHA256SUMS'],
+                about='packaged macOS game (.app, Development): cooked, zipped, checksummed in build/<game>/package')
 
 
 def botw_library():
@@ -215,7 +265,7 @@ def steps(ctx):
     # The ground, map and vegetation round the community park, which exist only where its source was fetched.
     park = communitypark(out)
     park_inputs = [REGIONS / 'communitypark' / 'layout.py', REGIONS / 'communitypark' / 'source.py', park] if park else []
-    return [
+    result = [
         # ------------------------------------------------------------ world
         Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI],
              outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
@@ -463,3 +513,4 @@ def steps(ctx):
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
     ] + botw_steps(out) + hippodrome_steps(out)
+    return result + [package_step(ctx, result)]

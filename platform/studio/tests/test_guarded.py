@@ -118,6 +118,24 @@ class GuardedRunTests(unittest.TestCase):
         self.assertLess(time.monotonic()-started, 30)
         self.assertTrue(gone(self.seen[0]))
 
+    def test_watched_descendants_are_guarded_and_unwound_on_the_deadline(self):
+        self.fake_attach()
+        launcher = [sys.executable, '-c', 'import subprocess, time; subprocess.Popen(["/bin/sleep", "60"]); time.sleep(60)']
+        with self.assertRaises(SystemExit):
+            guarded_run.run(launcher, self.folder, timeout=3, watch=('sleep',))
+        self.assertEqual(len(self.seen), 2, 'the launcher and its heavy descendant each get a guard')
+        self.assertTrue(gone(self.seen[0]) and gone(self.seen[1]))
+        self.assertTrue((self.folder/f'memory-health-sleep-{self.seen[1]}.json').exists())
+
+    def test_leftover_descendants_are_reaped_but_unrelated_processes_are_not(self):
+        self.fake_attach()
+        bystander = subprocess.Popen(['/bin/sleep', '60'])
+        self.addCleanup(bystander.kill)
+        launcher = [sys.executable, '-c', 'import subprocess, time; subprocess.Popen(["/bin/sleep", "60"]); time.sleep(2)']
+        self.assertEqual(guarded_run.run(launcher, self.folder, timeout=30, watch=('sleep',), progress=.5), 0)
+        self.assertTrue(gone(self.seen[1]), 'a descendant left running after success is reaped')
+        self.assertTrue(alive(bystander.pid), 'a process outside the recorded tree is never signalled')
+
     def test_no_deadline_is_honoured_by_the_guard_too(self):
         # `--timeout 0` must not smuggle a 24-hour kill into the monitor.
         captured = {}

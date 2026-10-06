@@ -74,6 +74,27 @@ class UnrealCompile:
 
 
 @dataclass
+class UnrealPackage:
+    """Build, cook, stage and archive the packaged game with UAT BuildCookRun. The editor must already be compiled.
+    Everything under Content is cooked, because the game loads many assets by path at run time."""
+    target: str
+    archive: Path
+    config: str = 'Development'
+    workers: int = 3                    # UAT calls UnrealBuildTool directly, past the capped Build.sh wrapper
+    marker: str = 'BUILD SUCCESSFUL'
+    timeout: float = 4 * 3600           # the whole package: compile, cook, stage and archive
+    # The heavy work happens in UAT's descendants: each gets its own memory guard in the same slot turn.
+    watch: tuple = ('UnrealEditor-Cmd', 'UnrealEditor', 'ShaderCompileWorker', 'dotnet')
+    progress: float = 60.
+
+    def argv(self, ctx):
+        return [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
+                f'-target={self.target}', '-platform=Mac', f'-clientconfig={self.config}', '-build',
+                f'-ubtargs=-MaxParallelActions={self.workers}', '-cook', '-cookall', '-stage', '-pak', '-archive',
+                f'-archivedirectory={self.archive}', '-nocompileeditor', '-noP4', '-unattended', '-utf8output']
+
+
+@dataclass
 class Call:
     """A Python function `fn(ctx, log)` in the game's build module; `name` makes it part of the fingerprint."""
     name: str
@@ -200,7 +221,7 @@ def slot_request(ctx, step):
     """How a heavy step asks for a render slot: (kind, expected peak in GiB). A compile always takes the big slot (and
     holds the small one); a step with no guard report has no expected peak and takes the big one. render_lock decides
     the rest (the 3 GiB bound, the switch, free memory)."""
-    if any(isinstance(c, UnrealCompile) for c in step.commands):
+    if any(isinstance(c, (UnrealCompile, UnrealPackage)) for c in step.commands):
         return 'compile', None
     return 'job', expected_peak_gib(ctx.logs / f'{step.name}.guard')
 
@@ -225,7 +246,8 @@ def run_command(ctx, step, command, log, request=None, slots=None):
             why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
         code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
-                           small_gib=small_gib, kind=kind, on_slot=note)
+                           small_gib=small_gib, kind=kind, on_slot=note, timeout=getattr(command, 'timeout', 0.),
+                           watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.))
         text = (folder / 'stdout.log').read_text(errors='ignore')
         log.write(text)
         if code and used == ['small']:
