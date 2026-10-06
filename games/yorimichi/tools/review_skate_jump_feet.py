@@ -95,6 +95,19 @@ C.attach_to_component(D, '', unreal.AttachmentRule.KEEP_WORLD, unreal.Attachment
 C.set_editor_property('field_of_view', 45.0)
 unreal.YorimichiLive.hold_camera(6.0)
 '''
+# The on-foot close view: low beside Cairo, level with his shoes, so a sole sunk into the floor shows against it.
+FOOT_CLOSE = r'''
+P = unreal.LiveLibrary.player(); C = P.get_components_by_class(unreal.CameraComponent)[0]
+if getattr(live, 'CAMHOME', None) is None:
+    live.CAMHOME = (C.get_attach_parent(), C.get_attach_socket_name(), C.get_relative_transform(), C.get_editor_property('field_of_view'))
+M = P.get_editor_property('mesh'); f = P.get_actor_forward_vector(); f.z = 0; f = f.normal()
+feet = (M.get_socket_location('foot_L') + M.get_socket_location('foot_R')) * .5
+loc = feet + unreal.Vector(-f.y, f.x, 0) * 70 + unreal.Vector(0, 0, 1)
+C.detach_from_component(unreal.DetachmentRule.KEEP_WORLD, unreal.DetachmentRule.KEEP_WORLD, unreal.DetachmentRule.KEEP_WORLD)
+C.set_world_location_and_rotation(loc, unreal.MathLibrary.find_look_at_rotation(loc, feet - unreal.Vector(0, 0, 2)), False, True)
+C.set_editor_property('field_of_view', 35.0)
+unreal.YorimichiLive.hold_camera(6.0)
+'''
 HOME = r'''
 P = unreal.LiveLibrary.player(); C = P.get_components_by_class(unreal.CameraComponent)[0]
 parent, sock, rel, fov = live.CAMHOME
@@ -163,7 +176,9 @@ def shot(name): run(f"live.shot({str(out / f'{name}.png')!r})")
 
 def stand():
     """Cairo on foot on the flat: each ankle and toe bone's height over the floor traced under it, the capsule's bottom
-    over the floor and the mesh's offset from that bottom (cm), so soles sunk into the ground show which one is off."""
+    over the floor and the mesh's offset from that bottom (cm), so soles sunk into the ground show which one is off.
+    Also each foot's toe drop (ankle minus toe height, cm), to set against the animation's, and the ground normal the
+    foot contact node samples under each ankle (its trace, from 45 cm over the capsule's bottom), as degrees from up."""
     x, y, z = START
     run(f'''
 W = unreal.LiveLibrary.game_world(); P = unreal.LiveLibrary.player(); M = P.get_editor_property('mesh')
@@ -174,7 +189,7 @@ unreal.YorimichiLive.drive(unreal.Vector2D(), 0)
 ''')
     wait(2.)
     measured = run(r'''
-import json
+import json, math
 def floor(p):
     h = unreal.SystemLibrary.line_trace_single(W, p + unreal.Vector(0, 0, 60), p - unreal.Vector(0, 0, 60), unreal.TraceTypeQuery.ECC_VISIBILITY, True, [P], unreal.DrawDebugTrace.NONE, True)
     return None if h is None else h.to_tuple()[5].z
@@ -184,10 +199,18 @@ for b in ('foot_L', 'toe_L', 'foot_R', 'toe_R'):
     p = M.get_socket_location(b); f = floor(p)
     bones[b] = None if f is None else round(p.z - f, 2)
 f = floor(bottom)
+drop = {s: round(M.get_socket_location('foot_' + s).z - M.get_socket_location('toe_' + s).z, 2) for s in 'LR'}
+ground = {}
+for s in 'LR':
+    a = M.get_socket_location('foot_' + s); a.z = bottom.z + 45
+    h = unreal.SystemLibrary.line_trace_single(W, a, a - unreal.Vector(0, 0, 95), unreal.TraceTypeQuery.ECC_VISIBILITY, False, [P], unreal.DrawDebugTrace.NONE, True)
+    n = None if h is None else h.to_tuple()[7]
+    ground[s] = None if n is None else dict(normal=[round(n.x, 4), round(n.y, 4), round(n.z, 4)], tilt_deg=round(math.degrees(math.acos(max(-1., min(1., n.z)))), 2))
 print(json.dumps(dict(bones=bones, capsule_bottom=None if f is None else round(bottom.z - f, 2),
-                      mesh_from_bottom=round(M.get_world_location().z - bottom.z, 2), half=round(half, 2))))
+                      mesh_from_bottom=round(M.get_world_location().z - bottom.z, 2), half=round(half, 2), toe_drop=drop, ground=ground)))
 ''')
     result = json.loads(measured.strip().splitlines()[-1]); shot('on_foot')
+    view(FOOT_CLOSE, 'on-foot close view'); wait(.3); shot('on_foot_side'); view(HOME, 'camera home')
     return result
 
 
@@ -364,6 +387,14 @@ try:
     # The toe bones sit inside the shoes, above their soles: one at or under the floor means the shoe is sunk into it.
     toes = [results['on_foot']['bones'].get(b) for b in ('toe_L', 'toe_R')]
     record('on_foot_toes_above_floor', all(t is not None and t >= 1.0 for t in toes), json.dumps(results['on_foot']))
+    # The toe bone sits 2.1-2.5 cm over Cairo's sole, so its height alone cannot tell a level shoe from one tipped into
+    # the floor. His standing idles keep the rest pose's toe drop (ankle minus toe height); the game should too, unless
+    # the ground under the foot is sloped (its normal is recorded beside it).
+    rest = json.loads((yori.OUT / 'cairo' / 'unreal_validation.json').read_text())['rest_bones_cm']
+    authored = {s: rest[f'foot_{s}'][2] - rest[f'toe_{s}'][2] for s in 'LR'}
+    drops = results['on_foot'].get('toe_drop') or {}
+    record('on_foot_toe_drop_as_animated', all(drops.get(s) is not None and abs(drops[s] - authored[s]) <= .5 for s in 'LR'),
+           json.dumps(dict(game=drops, authored={s: round(v, 2) for s, v in authored.items()}, ground=results['on_foot'].get('ground'))))
     record('on_foot_capsule_on_floor', results['on_foot']['capsule_bottom'] is not None and abs(results['on_foot']['capsule_bottom']) <= 2.5,
            json.dumps(results['on_foot']))
     log.flush(); late = [l.strip() for l in (out / 'game.log').read_text(errors='replace').splitlines() if LATE_TICK in l]
