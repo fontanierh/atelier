@@ -16,7 +16,7 @@ import struct
 import subprocess
 import tempfile
 
-from . import paths
+from . import engine, paths
 from .safety import guarded
 from .safety.render_lock import render_lock
 
@@ -45,7 +45,7 @@ XML_CACHE_INPUTS = '''
 
 
 def engine_root():
-    return Path(os.environ.get('UE_ROOT') or '/Users/Shared/Epic Games/UE_5.8').resolve()
+    return engine.unreal_root().resolve()
 
 
 def _command(args, timeout=15):
