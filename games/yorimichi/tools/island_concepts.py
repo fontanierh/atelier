@@ -12,7 +12,7 @@ into games/yorimichi/assets/southwest/concepts/; the full-size PNG goes to
 build/yorimichi/southwest/originals/concepts/. Model gpt-image-2.5-sunburst, quality high, 1536x1024, through
 /v1/images/edits.
 
-The provenance file is the ledger of the paid call (the repository has no shared ledger module): it is written with
+The provenance file is the ledger of the paid call (its own, like atelier.ai.ledger but older): it is written with
 status `submitted` before the call is sent and completed (or marked failed) afterwards. A view that has a provenance
 file is never sent again, whatever its status; rename its files to <slug>.rejected-N.* to paint it again.
 
