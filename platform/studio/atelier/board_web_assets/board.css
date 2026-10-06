@@ -527,7 +527,9 @@ button.orb-link:active .orb { transform: scale(.9); }
 .nav-scrim, .thread-scrim { position: absolute; inset: 0; z-index: 0; background: #000; opacity: 0; pointer-events: none; }
 .thread-scrim { z-index: 3; }
 .pane.nav-underlay { display: flex; z-index: 0; visibility: hidden; pointer-events: none; background: var(--page-bg); }
-.app.navigating .pane.nav-underlay { visibility: visible; }
+.pane.nav-underlay.nav-under { visibility: visible; }
+/* Opaque, so nothing behind the conversation can show through it. */
+@media (max-width: 1099px) { .chat-pane { background: var(--page-bg); } }
 .nav-underlay, .nav-underlay * { animation: none !important; transition: none !important; }
 .pane.nav-top { background: var(--page-bg); }
 .app.navigating .chat-pane { overflow: hidden; }
