@@ -3,7 +3,7 @@
     atelier new <game> [--title T]     start a new game from the sandbox (module, classes, project and paths renamed)
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
     atelier setup [--headless]         check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
-    atelier reuse <game> --from PATH   seed this fresh worktree from a verified build of the same revision
+    atelier reuse <game> --from PATH [--to PATH]   seed a fresh worktree (this one by default) from a verified build of the same revision
     atelier pool publish|restore|status <game> <step>   share explicitly owned portable outputs (docs/ARTIFACT_POOL.md)
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
