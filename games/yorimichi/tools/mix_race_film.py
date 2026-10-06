@@ -9,9 +9,10 @@ started; every other cue is placed at its frame, attenuated by its distance from
 (the 2D cues are centred). Then the frames and the mix become an H.264/AAC MP4 (1080p60 and a 720p copy).
 
 The machine is shared with guarded game runs, so ffmpeg runs at nice 10 with two decoder, filter and encoder threads,
-and reports its progress every ten seconds. Encode only when no graded game is loading or running.
+and reports its progress (or its lack) every ten seconds; a stalled or overlong encode is ended. Encode only when no
+graded game is loading or running.
 """
-import argparse, csv, json, math, subprocess, sys, time, wave
+import argparse, csv, json, math, queue, subprocess, sys, threading, time, wave
 from pathlib import Path
 import numpy as np
 
@@ -24,16 +25,43 @@ FILTER_THREADS = ['-filter_threads', '2']
 
 
 def encode(label, inputs, outputs, frames):
-    """One ffmpeg run, niced and thread-capped, printing frames done every ten seconds until it exits."""
+    """One ffmpeg run, niced and thread-capped. A film encodes at a few frames a second, so it gets a second a frame
+    plus ten minutes in all, and five minutes without a new frame counts as stalled."""
     cmd = ['nice', '-n', '10', 'ffmpeg', '-y', '-loglevel', 'error', '-nostats', '-progress', 'pipe:1', *FILTER_THREADS,
            *inputs, *THREADS, *outputs]
-    t0 = last = time.monotonic(); done = 0
+    watch(cmd, label, frames, deadline=600 + frames, stall=300)
+
+
+def watch(cmd, label, frames, deadline, stall):
+    """Run cmd, which writes ffmpeg -progress lines, and say every ten seconds how far it has got, or that it has not
+    moved. Past the deadline or the stall limit, or if it fails, its own child is ended and the error raised."""
+    lines = queue.Queue()
     with subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True) as p:
-        for line in p.stdout:
-            if line.startswith('frame='): done = int(line[6:] or 0)
-            if time.monotonic() - last >= 10 or line.startswith('progress=end'):
-                last = time.monotonic()
-                print(f'{label}: frame {done}/{frames} ({100 * done / max(frames, 1):.0f}%), {last - t0:.0f} s', flush=True)
+        reader = threading.Thread(target=lambda: [lines.put(l) for l in p.stdout], daemon=True); reader.start()
+        t0 = last_note = moved = time.monotonic(); done = 0
+        try:
+            while reader.is_alive() or not lines.empty():
+                try:
+                    line = lines.get(timeout=1)
+                    if line.startswith('frame='):
+                        n = int(line[6:] or 0)
+                        if n > done: done, moved = n, time.monotonic()
+                except queue.Empty:
+                    pass
+                now = time.monotonic()
+                if now - last_note >= 10:
+                    last_note = now
+                    quiet = '' if now - moved < 10 else f', no frame progress for {now - moved:.0f} s'
+                    print(f'{label}: frame {done}/{frames} ({100 * done / max(frames, 1):.0f}%), {now - t0:.0f} s{quiet}', flush=True)
+                if p.poll() is None and (now - t0 > deadline or now - moved > stall):
+                    raise TimeoutError(f'{label}: {"no frame progress for %.0f s" % (now - moved) if now - moved > stall else "past its %.0f s deadline" % deadline}')
+        except BaseException:
+            if p.poll() is None:
+                p.terminate()
+                try: p.wait(10)
+                except subprocess.TimeoutExpired: p.kill(); p.wait()
+            raise
+    print(f'{label}: frame {done}/{frames}, {time.monotonic() - t0:.0f} s, exit {p.returncode}', flush=True)
     if p.returncode: raise subprocess.CalledProcessError(p.returncode, cmd)
 
 
