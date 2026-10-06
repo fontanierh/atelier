@@ -15,7 +15,9 @@ ASSETS = Path(__file__).with_name('board_web_assets')
 STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
           '/board.css': ('board.css', 'text/css; charset=utf-8'),
           '/board.js': ('board.js', 'text/javascript; charset=utf-8'),
-          '/icon.svg': ('icon.svg', 'image/svg+xml')}
+          '/icon.svg': ('icon.svg', 'image/svg+xml'),
+          '/apple-touch-icon.png': ('apple-touch-icon.png', 'image/png'),
+          '/manifest.webmanifest': ('manifest.webmanifest', 'application/manifest+json')}
 
 
 def read_json(path):
