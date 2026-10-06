@@ -12,6 +12,7 @@ const icons = {
   down:'<path d="M12 5v14M5 12l7 7 7-7"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   close:'<path d="M6 6l12 12M18 6 6 18"/>',
+  remove:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
   file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/>',
   play:'<path d="M8 5v14l11-7L8 5Z"/>',
   thread:'<path d="M7 8h10M7 12h6"/><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z"/>',
@@ -68,6 +69,23 @@ function markdown(container, html, raw="") {
   // HTML comes exclusively from the server's HTML-disabled Markdown renderer.
   const template=document.createElement("template");template.innerHTML=html;container.replaceChildren(template.content);
   container.querySelectorAll("table").forEach(table=>{const wrap=node("div","table-scroll");table.replaceWith(wrap);wrap.append(table);});
+  linkMentions(container);
+}
+// @name of an agent on the board becomes a tappable mention that opens your conversation with them.
+function linkMentions(container) {
+  const names=new Set((state?.agents||[]).map(a=>a.agent));if(!names.size)return;
+  const walker=document.createTreeWalker(container,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest("code, pre, a, button")?NodeFilter.FILTER_REJECT:n.nodeValue.includes("@")?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
+  const texts=[];while(walker.nextNode())texts.push(walker.currentNode);
+  for(const text of texts){
+    const parts=[];let last=0;
+    for(const m of text.nodeValue.matchAll(MENTION)){
+      const name=trimMention(m[2]);if(!names.has(name))continue;
+      const at=m.index+m[1].length;parts.push(document.createTextNode(text.nodeValue.slice(last,at)));
+      const b=node("button","mention","@"+name);b.type="button";b.addEventListener("click",event=>{event.stopPropagation();openAgent(name);});
+      parts.push(b);last=at+1+name.length;
+    }
+    if(parts.length){parts.push(document.createTextNode(text.nodeValue.slice(last)));text.replaceWith(...parts);}
+  }
 }
 // Ledger text is plain; only `code` spans are styled, everything else stays text.
 function inline(text) { const span=node("span"); text.split("`").forEach((part,i)=>span.append(i%2?node("code","",part):document.createTextNode(part))); return span; }
@@ -141,6 +159,55 @@ $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=
 $("topicFilter").addEventListener("change",()=>{syncPills();refreshFilters();});
 $("showSystem").addEventListener("change",()=>{showSystem=$("showSystem").checked;try{localStorage.setItem("atelier.board.notices",showSystem?"shown":"hidden");}catch{}feedSignature="";renderFeed();});
 
+/* @mentions: typing @ suggests agents, and a message that mentions agents goes to exactly them (plus the agent
+   whose conversation you're in). */
+const MENTION=/(^|[^\w@.-])@([A-Za-z0-9][\w.-]*)/g;
+const trimMention=name=>name.replace(/[.-]+$/,"");
+function mentioned(text) {
+  const names=new Set(liveAgents().map(a=>a.agent)), found=[];
+  for(const m of text.matchAll(MENTION)){const name=trimMention(m[2]);if(names.has(name)&&!found.includes(name))found.push(name);}
+  return found;
+}
+// Who a draft goes to: '*', one agent, or the list of agents it mentions.
+function recipients() {
+  const mentions=mentioned($("message").value), chosen=$("recipient").value;
+  if(!mentions.length)return chosen;
+  if(chosen!=="*"&&!mentions.includes(chosen))mentions.unshift(chosen);
+  return mentions.length===1?mentions[0]:mentions;
+}
+const describe=target=>target==="*"?"everyone":Array.isArray(target)?target.join(", "):target;
+function mentionQuery() {
+  const box=$("message");if(document.activeElement!==box||box.selectionStart!==box.selectionEnd)return null;
+  const before=box.value.slice(0,box.selectionStart), m=before.match(/(^|[^\w@.-])@([\w.-]*)$/);
+  return m?{start:before.length-m[2].length-1,text:m[2].toLowerCase()}:null;
+}
+let mentionChoices=[], mentionIndex=0;
+function renderMentions() {
+  const query=mentionQuery(), menu=$("mentionMenu");
+  const choices=query?liveAgents().filter(a=>a.agent.toLowerCase().includes(query.text))
+    .sort((a,b)=>b.agent.toLowerCase().startsWith(query.text)-a.agent.toLowerCase().startsWith(query.text)||b.listening-a.listening||a.agent.localeCompare(b.agent)).slice(0,6):[];
+  if(choices.map(a=>a.agent).join()!==mentionChoices.map(a=>a.agent).join())mentionIndex=0;
+  mentionChoices=choices;menu.hidden=!choices.length;
+  if(menu.hidden)return;
+  menu.replaceChildren(...choices.map((a,i)=>{
+    const b=node("button","mention-option");b.type="button";b.id=`mention-${i}`;b.setAttribute("role","option");b.setAttribute("aria-selected",String(i===mentionIndex));
+    const text=node("span","mention-text");text.append(node("span","mention-name",a.agent),node("span","mention-task",a.task||agentStatus(a)));
+    b.append(orb(a.agent,a),text);
+    // Choosing keeps focus (and the phone keyboard) in the composer.
+    b.addEventListener("pointerdown",event=>event.preventDefault());b.addEventListener("click",()=>pickMention(a.agent));
+    return b;
+  }));
+  $("message").setAttribute("aria-activedescendant",`mention-${mentionIndex}`);
+}
+function pickMention(name) {
+  const query=mentionQuery();if(!query)return;
+  const box=$("message");box.setRangeText(`@${name} `,query.start,box.selectionStart,"end");
+  grow();draftChanged();renderMentions();
+}
+function closeMentions() { $("mentionMenu").hidden=true;mentionChoices=[];$("message").removeAttribute("aria-activedescendant"); }
+for(const type of ["input","click","keyup"])$("message").addEventListener(type,event=>{if(!(type==="keyup"&&["ArrowDown","ArrowUp","Enter","Tab","Escape"].includes(event.key)))renderMentions();});
+$("message").addEventListener("blur",()=>setTimeout(()=>{if(document.activeElement!==$("message"))closeMentions();},150));
+
 /* Composer */
 function renderRecipients() {
   const available=liveAgents(), signature=JSON.stringify(available.map(a=>[a.agent,a.listening,a.delivery_error]));
@@ -154,18 +221,24 @@ function renderRecipients() {
 let previewTimer;
 function draftChanged() { if($("message").value!==draftBody || $("broadcastTopic").value!==draftTopic || $("recipient").value!==draftRecipient)draftKey=null;draftRecipient=$("recipient").value;persistDraft();formState();if(!$("messagePreview").hidden){clearTimeout(previewTimer);previewTimer=setTimeout(preview,250);} }
 function grow() { const box=$("message"); box.style.height="auto"; box.style.height=`${box.scrollHeight}px`; }
-function syncPills() { document.querySelectorAll(".select-pill").forEach(pill=>{const option=pill.querySelector("select").selectedOptions[0];pill.querySelector(".pill-value").textContent=option?option.textContent.replace(/ · .*/,""):"";}); }
+function syncPills() {
+  document.querySelectorAll(".select-pill").forEach(pill=>{const option=pill.querySelector("select").selectedOptions[0];pill.querySelector(".pill-value").textContent=option?option.textContent.replace(/ · .*/,""):"";});
+  // Mentions decide who a message goes to; the To pill says so.
+  const target=state?recipients():"*", pill=$("recipient").closest(".select-pill"), mentioning=Array.isArray(target)||target!==$("recipient").value;
+  pill.classList.toggle("mentioning",mentioning);
+  if(mentioning)pill.querySelector(".pill-value").textContent=Array.isArray(target)?`${target.length} people`:target;
+}
 function formState() {
   syncPills();
-  const target=$("recipient").value, count=liveAgents().length, length=$("message").value.length;
+  const target=recipients(), count=liveAgents().length, length=$("message").value.length;
   const ready=uploads.filter(u=>u.status==="done").length, busy=uploads.some(u=>u.status!=="done");
   $("characterCount").textContent=length>6000?`${length.toLocaleString()} / 8,000`:"";
-  $("sendButton").setAttribute("aria-label",busy?"Waiting for uploads":target==="*"?`Send to all ${count} agents`:`Send to ${target}`);
-  $("sendButton").disabled=sending||busy||!state||!count||!($("message").value.trim()||ready)||(target!=="*"&&!state.agents.some(a=>a.agent===target&&!a.stop));
+  $("sendButton").setAttribute("aria-label",busy?"Waiting for uploads":target==="*"?`Send to all ${count} agents`:`Send to ${describe(target)}`);
+  $("sendButton").disabled=sending||busy||!state||!count||!($("message").value.trim()||ready)||(target!=="*"&&![target].flat().every(name=>state.agents.some(a=>a.agent===name&&!a.stop)));
   $("broadcastForm").classList.toggle("has-text",Boolean(length));
   const form=$("broadcastForm"), focused=form.contains(document.activeElement);
   form.classList.toggle("expanded",Boolean(length||uploads.length||focused||thread||!$("messagePreview").hidden));
-  $("message").placeholder=thread?"Reply in thread…":target==="*"?"Message everyone…":`Message ${target}…`;
+  $("message").placeholder=thread?"Reply in thread…":target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
 }
 $("message").addEventListener("input",()=>{grow();draftChanged();}); $("broadcastTopic").addEventListener("change",draftChanged);$("recipient").addEventListener("change",draftChanged);
 async function preview() {
@@ -176,6 +249,12 @@ async function preview() {
 }
 $("previewButton").addEventListener("click",()=>{const show=$("messagePreview").hidden;$("messagePreview").hidden=!show;$("previewButton").textContent=show?"Edit":"Preview";$("previewButton").setAttribute("aria-expanded",String(show));if(show)preview();});
 $("message").addEventListener("keydown",event=>{
+  if(mentionChoices.length&&!event.isComposing){
+    const step={ArrowDown:1,ArrowUp:-1}[event.key];
+    if(step){event.preventDefault();mentionIndex=(mentionIndex+step+mentionChoices.length)%mentionChoices.length;renderMentions();return;}
+    if(event.key==="Enter"||event.key==="Tab"){event.preventDefault();pickMention(mentionChoices[mentionIndex].agent);return;}
+    if(event.key==="Escape"){event.preventDefault();event.stopPropagation();closeMentions();return;}
+  }
   if(event.key!=="Enter"||event.isComposing)return;
   const send=event.metaKey||event.ctrlKey||(!touch.matches&&!event.shiftKey&&!event.altKey);
   if(send&&!$("sendButton").disabled){event.preventDefault();$("broadcastForm").requestSubmit();}
@@ -292,7 +371,7 @@ function markRead(names) {
 }
 function renderAgents() {
   markRead([]);
-  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,unreadFrom(a)])]);
+  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,unreadFrom(a)])]);
   if(signature===agentsSignature)return; agentsSignature=signature;
   const live=liveAgents(), listening=live.filter(a=>a.listening).length, errors=live.filter(a=>a.delivery_error).length;
   $("agentsSummary").textContent=`${listening} of ${live.length} listening${errors?` · ${errors} retrying delivery`:""}`;
@@ -301,20 +380,27 @@ function renderAgents() {
   let index=0;
   function row(name, agent) {
     const chosen=selectedAgent===name;
-    const b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";b.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
-    b.style.setProperty("--i",index++);
+    const cell=node("div","agent-cell"), b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";cell.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
+    cell.style.setProperty("--i",index++);cell.dataset.agent=name;
     const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));if(agent&&unreadFrom(agent))b.classList.add("unread");
+    if(agent?.task)text.append(node("span","agent-task",agent.task));
     if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
     else detail.textContent=`Broadcasts and every conversation`;
     text.append(detail);b.append(orb(name||"*",agent),text);
     if(agent?.pending)b.append(node("span","count",`${agent.pending} queued`));
-    b.append(icon("right"));b.addEventListener("click",()=>openAgent(name));list.append(b);
+    b.append(icon("right"));b.addEventListener("click",()=>{if(!closeSwiped())openAgent(name);});cell.append(b);list.append(cell);
+    if(agent){
+      // Behind the row, revealed by swiping it left (or shown on hover with a mouse): take an evicted agent off the board.
+      const remove=node("button","agent-remove");remove.type="button";remove.append(icon("remove"),node("span","","Remove"));
+      remove.setAttribute("aria-label",`Remove ${name}`);remove.addEventListener("click",event=>{event.stopPropagation();removeAgent(name);});
+      cell.prepend(remove);
+    }
     if(agent?.stop)return;
     const o=node("button","orb-button");o.type="button";if(chosen)o.setAttribute("aria-current","true");
     // The orb marks new direct messages from the agent; what is still queued for it lives in the Agents list.
     const face=orb(name||"*",agent);if(agent&&unreadFrom(agent))face.append(node("span","unread-dot"));
     o.append(face,node("span","orb-name",name||"Everyone"));
-    o.title=agent?`${name} · ${agentStatus(agent)}`:"All conversations";o.setAttribute("aria-label",o.title);
+    o.title=agent?`${name} · ${agentStatus(agent)}${agent.task?` · ${agent.task}`:""}`:"All conversations";o.setAttribute("aria-label",o.title);
     o.addEventListener("click",()=>openAgent(name));orbs.append(o);
   }
   row("");
@@ -335,6 +421,58 @@ function renderHeader() {
   else if(agent){dot.classList.add(statusOf(agent));text=agentStatus(agent)+(agent.pending?` · ${agent.pending} queued`:"");}
   else {dot.classList.add(listening?"live":"idle");text=`${listening} of ${live.length} agents listening`;}
   subtitle.replaceChildren(dot,node("span","",text));
+  $("chatTask").textContent=agent?.task||"";$("chatTask").hidden=!agent?.task;
+}
+
+/* Removing an agent: swipe its row left in Agents, then confirm on an action sheet. */
+let rowSwipe=null;
+function closeSwiped(except) {
+  let closed=false;
+  document.querySelectorAll(".agent-cell.open").forEach(cell=>{if(cell!==except){cell.classList.remove("open");cell.querySelector(".agent-row").style.transform="";closed=true;}});
+  return closed;
+}
+$("agents").addEventListener("touchstart",event=>{
+  const cell=event.target.closest(".agent-cell");
+  if(event.touches.length!==1||!cell?.querySelector(".agent-remove")||event.target.closest(".agent-remove"))return;
+  const t=event.touches[0], row=cell.querySelector(".agent-row");
+  rowSwipe={cell,row,x:t.clientX,y:t.clientY,axis:null,base:cell.classList.contains("open")?-92:0,dx:0,at:event.timeStamp};
+},{passive:true});
+$("agents").addEventListener("touchmove",event=>{
+  if(!rowSwipe)return;
+  const t=event.touches[0], dx=t.clientX-rowSwipe.x, dy=t.clientY-rowSwipe.y;
+  if(!rowSwipe.axis){if(Math.hypot(dx,dy)<8)return;rowSwipe.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";if(rowSwipe.axis==="y"){rowSwipe=null;return;}closeSwiped(rowSwipe.cell);rowSwipe.row.style.transition="none";}
+  event.preventDefault();
+  let x=rowSwipe.base+dx;if(x>0)x=0;if(x<-92)x=-92+(x+92)/3;   // resists past the button, like a native list
+  rowSwipe.dx=dx;rowSwipe.row.style.transform=`translateX(${x}px)`;
+},{passive:false});
+function endRowSwipe() {
+  const s=rowSwipe;rowSwipe=null;if(!s||s.axis!=="x")return;
+  s.row.style.transition="";
+  const open=s.base+s.dx<-46;s.cell.classList.toggle("open",open);s.row.style.transform=open?"translateX(-92px)":"";
+}
+$("agents").addEventListener("touchend",endRowSwipe);$("agents").addEventListener("touchcancel",endRowSwipe);
+document.addEventListener("pointerdown",event=>{if(!event.target.closest(".agent-cell.open"))closeSwiped();},{capture:true});
+function confirmSheet(title, text, action) {
+  return new Promise(done=>{
+    const sheet=$("sheet");$("sheetTitle").textContent=title;$("sheetText").textContent=text;$("sheetConfirm").textContent=action;
+    sheet.hidden=false;requestAnimationFrame(()=>sheet.classList.add("shown"));$("sheetCancel").focus();
+    const finish=answer=>{sheet.classList.remove("shown");setTimeout(()=>{sheet.hidden=true;},260);$("sheetConfirm").onclick=$("sheetCancel").onclick=sheet.onclick=null;done(answer);};
+    $("sheetConfirm").onclick=()=>finish(true);$("sheetCancel").onclick=()=>finish(false);
+    sheet.onclick=event=>{if(event.target===sheet)finish(false);};
+  });
+}
+async function removeAgent(name) {
+  const agent=state?.agents.find(a=>a.agent===name);
+  const ok=await confirmSheet(`Remove ${name}?`,`${name} leaves the board and stops receiving messages${agent?.pending?`, including ${agent.pending} still queued`:""}. Its messages stay in the history, and it comes back if it subscribes again.`,`Remove ${name}`);
+  if(!ok){closeSwiped();return;}
+  try {
+    const response=await fetch("/api/remove",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({agent:name})});
+    const result=await response.json();if(!response.ok)throw Error(result.error||"Could not remove the agent.");
+    const cell=document.querySelector(`.agent-cell[data-agent="${CSS.escape(name)}"]`);
+    if(cell){cell.style.height=`${cell.offsetHeight}px`;cell.classList.add("leaving");}
+    if(selectedAgent===name){if(nav.at(-1)?.kind==="dm")navBack();else selectAgent("");}
+    setTimeout(()=>{agentsSignature="";recipientSignature="";load();},280);
+  } catch(error) { closeSwiped();$("errorBanner").textContent=error.message;$("errorBanner").hidden=false; }
 }
 
 /* Feed: oldest at the top, newest by the composer, like a chat. */
@@ -372,7 +510,7 @@ $("loadOlder").addEventListener("click",loadOlder);
 function groupsFrom(messages) {
   const groups=new Map(), loops=new Map();
   for(const m of [...messages].sort((a,b)=>a.id-b.id)) {
-    const broadcast=(m.dedup||"").match(/^web-broadcast:([a-f0-9-]+):/);
+    const broadcast=(m.dedup||"").match(/^web-broadcast:([a-f0-9-]+(~m)?):/);
     let key=broadcast?broadcast[1]:String(m.id), merged=false;
     // The same text sent to several agents one by one (a loop of direct posts) reads as one message to them all.
     if(!broadcast&&m.recipient!=="*"&&!isSystem(m)) {
@@ -380,7 +518,7 @@ function groupsFrom(messages) {
       if(open&&m.created-open.created<15&&!open.recipients.has(m.recipient)){key=open.key;merged=true;open.recipients.add(m.recipient);}
       else loops.set(same,{key,created:m.created,recipients:new Set([m.recipient])});
     }
-    if(!groups.has(key))groups.set(key,{key,broadcast:Boolean(broadcast),messages:[]});
+    if(!groups.has(key))groups.set(key,{key,broadcast:Boolean(broadcast),mentions:Boolean(broadcast?.[2]),messages:[]});
     const group=groups.get(key);group.messages.push(m);
     if(merged){group.broadcast=true;group.merged=true;}
   }
@@ -441,7 +579,7 @@ function messageNode(group, ctx) {
     meta.append(mine||isSystem(m)?node("span","sender",mine?"You":m.sender):whoButton(m.sender,"sender who",document.createTextNode(m.sender)));
     const to=group.broadcast||m.recipient==="*"?"everyone":m.recipient===state.sender?"you":m.recipient;
     const people=group.messages.map(x=>x.recipient===state.sender?"you":x.recipient);
-    meta.append(node("span","route",group.merged?`to ${people.length>3?`${people.length} agents`:people.join(", ")}`
+    meta.append(node("span","route",group.merged||group.mentions?`to ${people.length>3?`${people.length} agents`:people.join(", ")}`
       :`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
     if(m.topic!=="info")meta.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
     const time=node("time","time",clock(m.created));time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;meta.append(time);
@@ -862,11 +1000,11 @@ $("broadcastForm").addEventListener("submit",async event=>{
   if(sending||!state||!($("message").value.trim()||files.length)||uploads.some(u=>u.status!=="done"))return;
   if(!draftKey)draftKey=crypto.randomUUID();draftBody=$("message").value;draftTopic=$("broadcastTopic").value;draftRecipient=$("recipient").value;persistDraft();sending=true;formState();
   $("broadcastForm").classList.add("sending");composerStatus("Sending…");
-  const replyTo=thread?.replyTo??null, abort=new AbortController(), timer=setTimeout(()=>abort.abort(),15000);
+  const replyTo=thread?.replyTo??null, target=recipients(), abort=new AbortController(), timer=setTimeout(()=>abort.abort(),15000);
   try {
-    const response=await fetch("/api/send",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({body:draftBody,topic:draftTopic,recipient:draftRecipient,request_id:draftKey,attachments:files,reply_to:replyTo}),signal:abort.signal});
+    const response=await fetch("/api/send",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({body:draftBody,topic:draftTopic,recipient:target,request_id:draftKey,attachments:files,reply_to:replyTo}),signal:abort.signal});
     const result=await response.json();if(!response.ok)throw Error(result.error||"Message failed. Your draft is saved; retry safely.");
-    composerStatus(replyTo?"Replied in thread":draftRecipient==="*"?`Sent to ${result.recipients.length} agents`:`Sent to ${draftRecipient}`);
+    composerStatus(replyTo?"Replied in thread":target==="*"?`Sent to ${result.recipients.length} agents`:`Sent to ${describe(target)}`);closeMentions();
     $("message").value="";draftKey=null;draftBody="";
     for(const u of uploads)if(u.preview?.startsWith("blob:"))URL.revokeObjectURL(u.preview);
     uploads=[];renderTray();persistDraft();grow();
@@ -875,7 +1013,7 @@ $("broadcastForm").addEventListener("submit",async event=>{
     if(thread){thread.stick=true;loadThread();load();}
     else {
       const before=selectedAgent, filtered=Boolean($("search").value||$("topicFilter").value);
-      if(selectedAgent&&selectedAgent!==draftRecipient)selectedAgent=draftRecipient==="*"?"":draftRecipient;
+      if(selectedAgent&&!Array.isArray(target)&&selectedAgent!==target)selectedAgent=target==="*"?"":target;
       $("search").value="";$("topicFilter").value="";syncPills();agentsSignature="";stickToBottom=true;
       if(selectedAgent!==before||filtered)refreshFilters();else load();
     }

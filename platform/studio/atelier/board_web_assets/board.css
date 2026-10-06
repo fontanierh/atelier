@@ -482,6 +482,46 @@ button.orb-link:active .orb { transform: scale(.9); }
 .message.mine .quote.quote-away { color: #ffffffc0; }
 @media (hover: hover) { .bubble.tappable { cursor: pointer; } .bubble.tappable:hover { border-color: var(--line-strong); } }
 
+/* Agents: a one-line assignment under each name, and a Remove action behind the row. */
+.agent-task { font-size: 14px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-task { margin-top: 1px; font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agent-cell { position: relative; border-radius: 22px; }
+.agent-cell .agent-row { position: relative; z-index: 1; transition: transform .32s cubic-bezier(.32, .72, 0, 1), background .2s, border-color .2s; }
+.agent-remove { position: absolute; z-index: 0; top: 0; bottom: 0; right: 0; width: 120px; padding-left: 28px; border: 0; border-radius: 22px; background: var(--error); color: #fff; display: grid; place-content: center; justify-items: center; gap: 2px; font: 650 12px/1 var(--font); opacity: 0; transition: opacity .2s; }
+.agent-remove .icon svg { width: 20px; height: 20px; }
+.agent-cell.open .agent-remove, .agent-cell:has(.agent-row[style*="translateX"]) .agent-remove { opacity: 1; }
+.agent-cell.leaving { overflow: hidden; transition: height .26s ease, opacity .2s ease, margin .26s ease; height: 0 !important; opacity: 0; margin-bottom: -10px; }
+@media (hover: hover) {
+  .agent-remove { z-index: 2; top: 50%; bottom: auto; right: 44px; width: auto; height: 30px; padding: 0 12px; border-radius: 15px; transform: translateY(-50%); display: flex; gap: 6px; font-size: 12.5px; pointer-events: none; }
+  .agent-remove .icon svg { width: 15px; height: 15px; }
+  .agent-cell:hover .agent-remove, .agent-remove:focus-visible { opacity: 1; pointer-events: auto; }
+}
+@media (min-width: 1100px) { .agent-cell { border-radius: 18px; } .agent-remove { right: 12px; } }
+/* @mention suggestions sit just above the composer. */
+.mention-menu { pointer-events: auto; display: grid; padding: 6px; border-radius: 20px; max-height: 40vh; overflow-y: auto; animation: rise .22s cubic-bezier(.2, .9, .25, 1.04) both; }
+.mention-option { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 7px 10px; border: 0; border-radius: 14px; background: none; text-align: left; }
+.mention-option[aria-selected="true"] { background: #ffffff14; }
+.mention-option .orb { width: 32px; height: 32px; font-size: 12px; flex: none; }
+.mention-text { display: grid; min-width: 0; }
+.mention-name { font-weight: 650; font-size: 15px; }
+.mention-task { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mention { border: 0; padding: 0 3px; margin: 0 -1px; border-radius: 6px; background: #ff4f6d26; color: var(--link); font: inherit; font-weight: 650; }
+.message.mine .mention { background: #ffffff33; color: #fff; }
+.select-pill.mentioning { border-color: #ff4f6d73; color: var(--link); }
+.select-pill.mentioning select { pointer-events: none; }
+/* An iOS action sheet for confirming destructive actions. */
+.sheet-backdrop { position: fixed; inset: 0; z-index: 30; background: #0000; display: flex; align-items: flex-end; justify-content: center; padding: 0 10px max(10px, var(--safe-bottom)); transition: background .26s ease; }
+.sheet-backdrop.shown { background: #00000080; }
+.sheet { width: 100%; max-width: 440px; display: grid; gap: 8px; transform: translateY(110%); transition: transform .34s cubic-bezier(.32, .72, 0, 1); }
+.sheet-backdrop.shown .sheet { transform: none; }
+.sheet-card, .sheet-cancel { border-radius: 16px; background: var(--card-hi); border: 1px solid var(--line); overflow: hidden; }
+.sheet-card { text-align: center; }
+.sheet-card h2 { margin: 0; padding: 14px 16px 2px; font: 650 14px/1.3 var(--font); color: var(--ink-2); }
+.sheet-card p { margin: 0; padding: 2px 18px 14px; font-size: 13px; color: var(--muted); }
+.sheet-danger, .sheet-cancel { display: block; width: 100%; min-height: 56px; border: 0; background: none; font: 600 18px/1 var(--font); }
+.sheet-danger { border-top: 1px solid var(--line); color: var(--error); }
+.sheet-cancel { background: var(--card-hi); font-weight: 700; color: var(--ink); }
+.sheet-danger:active, .sheet-cancel:active { background: #ffffff10; }
 /* Navigation: a pushed screen, the still copy of the screen it covers, and the dim between them. The copy and the
    moving screen each paint as one layer, so nothing inside them can poke through the other. */
 .nav-scrim, .thread-scrim { position: absolute; inset: 0; z-index: 0; background: #000; opacity: 0; pointer-events: none; }

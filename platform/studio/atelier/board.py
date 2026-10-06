@@ -53,13 +53,14 @@ def database():
                 error TEXT
             );
         ''')
-        columns = {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}
-        if 'supervised' not in columns:
-            try:
-                db.execute('ALTER TABLE subscribers ADD COLUMN supervised TEXT')
-            except sqlite3.OperationalError:
-                if 'supervised' not in {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}:
-                    raise
+        # `task` is the agent's one-line assignment; `removed` hides an evicted agent from the board's lists.
+        for column, kind in (('supervised', 'TEXT'), ('task', 'TEXT'), ('removed', 'INTEGER NOT NULL DEFAULT 0')):
+            if column not in {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}:
+                try:
+                    db.execute(f'ALTER TABLE subscribers ADD COLUMN {column} {kind}')
+                except sqlite3.OperationalError:
+                    if column not in {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}:
+                        raise
         yield db
         db.commit()
     finally:
@@ -108,6 +109,33 @@ def thread_rows(db, message_id):
     return with_audience(db, roots), with_audience(db, replies)
 
 
+def set_task(agent, text):
+    """Record the agent's one-line assignment, shown beside its name on the board. Empty text clears it."""
+    agent_name(agent)
+    text = ' '.join((text or '').split())
+    if len(text) > 160:
+        raise ValueError('keep the task to one line of at most 160 characters')
+    with database() as db:
+        if not db.execute('UPDATE subscribers SET task=? WHERE agent=?', (text or None, agent)).rowcount:
+            raise LookupError(f'{agent} is not registered on the board; subscribe or wait first')
+    return text
+
+
+def remove(agent):
+    """Take an evicted agent off the board. Its listener is retired (a supervised one through launchd), so nothing
+    more queues for it, and it leaves every list. History stays, and subscribing again brings the agent back."""
+    agent_name(agent)
+    with database() as db:
+        row = db.execute('SELECT supervised FROM subscribers WHERE agent=?', (agent,)).fetchone()
+    if row is None:
+        raise LookupError(f'{agent} is not registered on the board')
+    if row['supervised']:
+        from . import board_service
+        board_service.retire(agent)
+    with database() as db:
+        db.execute('UPDATE subscribers SET stop=1, removed=1 WHERE agent=?', (agent,))
+
+
 def broadcast(sender, body, request_id, topic='request'):
     return send_web(sender, body, request_id, topic)
 
@@ -115,12 +143,21 @@ def broadcast(sender, body, request_id, topic='request'):
 def send_web(sender, body, request_id, topic='request', recipient='*', reply_to=None):
     """Atomically address every non-stopped subscriber, including addressed-only listeners.
 
+    `recipient` is '*', one agent, or a list of agents (the people a message @mentions). A list
+    is sent like a broadcast to just those agents: one addressed copy each, shown as one message.
     A retry of the same request returns the original recipient snapshot. The dedup
     prefix lets the web UI display the addressed copies as one broadcast without
     changing existing delivery cursors or the ordinary '*' broadcast semantics.
     """
     agent_name(sender)
-    if recipient != '*':
+    group = None
+    if isinstance(recipient, list):
+        if not 1 <= len(recipient) <= 50 or not all(isinstance(name, str) for name in recipient):
+            raise ValueError('choose up to 50 registered recipients')
+        group = sorted({agent_name(name) for name in recipient})
+        if len(group) == 1:
+            recipient, group = group[0], None
+    if group is None and recipient != '*':
         if not isinstance(recipient, str):
             raise ValueError('choose a registered recipient')
         agent_name(recipient)
@@ -132,22 +169,30 @@ def send_web(sender, body, request_id, topic='request', recipient='*', reply_to=
         key = str(uuid.UUID(request_id))
     except (ValueError, AttributeError, TypeError):
         raise ValueError('broadcast request_id must be a UUID') from None
-    prefix = f'web-broadcast:{key}:'
+    # A mention group is stored as a broadcast to just those agents; `~m` lets the feed say who, not "everyone".
+    prefix = f'web-broadcast:{key}~m:' if group else f'web-broadcast:{key}:'
     direct = f'web-direct:{key}:'
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
         existing = [dict(row) for row in db.execute(
-            'SELECT * FROM messages WHERE dedup LIKE ? OR dedup LIKE ? ORDER BY id', (prefix+'%', direct+'%'))]
+            'SELECT * FROM messages WHERE dedup LIKE ? OR dedup LIKE ? ORDER BY id', (f'web-broadcast:{key}%', direct+'%'))]
         if existing:
             if (any(row['sender'] != sender or row['body'] != body or row['topic'] != topic
                     or row['reply_to'] != reply_to for row in existing)
-                    or (recipient == '*' and not existing[0]['dedup'].startswith(prefix))
-                    or (recipient != '*' and (len(existing) != 1 or existing[0]['dedup'] != direct+recipient))):
+                    or ((recipient == '*' or group) and not existing[0]['dedup'].startswith(prefix))
+                    or (group and sorted(row['recipient'] for row in existing) != group)
+                    or (not group and recipient != '*'
+                        and (len(existing) != 1 or existing[0]['dedup'] != direct+recipient))):
                 raise ValueError('this broadcast request_id already belongs to a different message')
             return existing
         agents = [row['agent'] for row in db.execute(
             'SELECT agent FROM subscribers WHERE stop=0 AND agent!=? ORDER BY agent', (sender,))]
-        if recipient != '*':
+        if group:
+            missing = [name for name in group if name not in agents]
+            if missing:
+                raise ValueError(f"Not registered or retired: {', '.join(missing)}.")
+            agents = group
+        elif recipient != '*':
             if recipient not in agents:
                 raise ValueError('This agent is not registered or has been retired.')
             agents = [recipient]
@@ -342,7 +387,7 @@ def subscriber(agent, checkout):
         with database() as db:
             db.execute('''INSERT INTO subscribers (agent, pid, heartbeat, checkout) VALUES (?, ?, ?, ?)
                 ON CONFLICT(agent) DO UPDATE SET pid=excluded.pid, heartbeat=excluded.heartbeat,
-                checkout=excluded.checkout, stop=0, error=NULL''',
+                checkout=excluded.checkout, stop=0, removed=0, error=NULL''',
                 (agent, os.getpid(), time.time(), str(checkout)))
         try:
             yield
@@ -423,6 +468,9 @@ def configure(sub):
     p.add_argument('--attach', action='append', default=[], metavar='FILE',
                    help='attach a file (repeatable, up to 10); it is copied to the board and shown inline on the web')
     p.add_argument('message', nargs='?', default='', help='message text (use - to read stdin; may be empty with --attach)')
+    p = actions.add_parser('task', help='set your one-line assignment, shown beside your name on the board')
+    p.add_argument('--agent', required=True)
+    p.add_argument('text', help='one line, at most 160 characters (empty clears it)')
     p = actions.add_parser('thread', help='print a whole thread: the original, then every reply in order')
     p.add_argument('id', type=int, help='any message ID in the thread')
     p = actions.add_parser('read')
@@ -492,6 +540,9 @@ def main(args):
                 print(' '.join(str(row['id']) for row in rows))
             else:
                 print(post(args.agent, text, args.to, args.topic, args.reply_to))
+        elif args.action == 'task':
+            text = set_task(args.agent, args.text)
+            print(f'{args.agent}: {text}' if text else f'{args.agent}: task cleared')
         elif args.action == 'thread':
             with database() as db:
                 roots, replies = thread_rows(db, args.id)

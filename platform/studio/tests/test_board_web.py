@@ -279,3 +279,63 @@ def test_uploads_keep_media_size_so_the_feed_can_reserve_space(http_server):
     assert status == 200 and (image['width'], image['height']) == (1320, 2868)
     _, bad = upload(http_server, b'x' * 10, 'odd.png', 'image/png', {'X-Media-Width': '-4', 'X-Media-Height': 'tall'})
     assert bad['width'] is None and bad['height'] is None
+
+
+def test_mentions_reach_exactly_the_mentioned_agents_as_one_message(http_server):
+    with board.database() as db:
+        db.execute("INSERT INTO subscribers (agent) VALUES ('three')")
+    key = str(uuid.uuid4())
+    mention = {'body': '@two @one please pair on this.', 'recipient': ['two', 'one'], 'request_id': key}
+    status, body, _ = request(http_server, '/api/send', mention)
+    assert status == 200 and json.loads(body)['recipients'] == ['one', 'two']
+    rows = json.loads(body)['messages']
+    assert all(row['dedup'].startswith(f'web-broadcast:{key}~m:') for row in rows), 'one message to both, by name'
+    assert request(http_server, '/api/send', {**mention, 'recipient': '*'})[0] == 400
+    assert json.loads(request(http_server, '/api/send', mention)[1])['messages'] == rows, 'a retry is the same send'
+    assert request(http_server, '/api/send', {**mention, 'recipient': ['one']})[0] == 400
+    assert board.messages(agent='three', addressed_only=True) == []
+    assert board.messages(agent='one', addressed_only=True)[0]['audience'] == ['one', 'two']
+
+    before = len(board.messages())
+    retired = {'body': 'Hi', 'recipient': ['one', 'paused'], 'request_id': str(uuid.uuid4())}
+    status, body, _ = request(http_server, '/api/send', retired)
+    assert status == 400 and 'paused' in json.loads(body)['error'] and len(board.messages()) == before
+    single = {'body': 'Just you.', 'recipient': ['one'], 'request_id': str(uuid.uuid4())}
+    assert json.loads(request(http_server, '/api/send', single)[1])['messages'][0]['dedup'].startswith('web-direct:')
+
+
+def test_removing_an_evicted_agent_hides_it_and_stops_delivery_but_keeps_history(http_server, monkeypatch):
+    said = board.post('two', 'Last words before eviction.')
+    status, body, _ = request(http_server, '/api/remove', {'agent': 'two'})
+    assert status == 200
+    state = json.loads(request(http_server, '/api/state')[1])
+    assert 'two' not in {a['agent'] for a in state['agents']} and said in {m['id'] for m in state['messages']}
+    assert request(http_server, '/api/send', {'body': 'Hi', 'recipient': 'two', 'request_id': str(uuid.uuid4())})[0] == 400
+    assert [row['recipient'] for row in board.broadcast('operator', 'All hands.', str(uuid.uuid4()))] == ['one']
+    assert request(http_server, '/api/remove', {'agent': 'nobody'})[0] == 400
+    assert request(http_server, '/api/remove', {'agent': 'one'}, headers={'X-Board-CSRF': 'wrong'})[0] == 403
+
+    # A supervised listener is retired through its service manager, so launchd cannot bring it back.
+    from atelier import board_service
+    retired = []
+    monkeypatch.setattr(board_service, 'retire', retired.append)
+    with board.database() as db:
+        db.execute("UPDATE subscribers SET supervised='label' WHERE agent='one'")
+    assert request(http_server, '/api/remove', {'agent': 'one'})[0] == 200 and retired == ['one']
+
+    # Subscribing again brings an agent back.
+    with board.subscriber('two', http_server.server_address[0]):
+        state = json.loads(request(http_server, '/api/state')[1])
+        assert 'two' in {a['agent'] for a in state['agents']}
+
+
+def test_each_agent_has_a_one_line_task_on_the_board(http_server):
+    assert board.set_task('one', '  Build the\n  agent board app  ') == 'Build the agent board app'
+    agents = {a['agent']: a for a in json.loads(request(http_server, '/api/state')[1])['agents']}
+    assert agents['one']['task'] == 'Build the agent board app' and agents['two']['task'] is None
+    with pytest.raises(ValueError):
+        board.set_task('one', 'x' * 161)
+    with pytest.raises(LookupError):
+        board.set_task('nobody', 'Anything')
+    assert board.set_task('one', '') == ''
+    assert json.loads(request(http_server, '/api/state')[1])['agents'][0]['task'] is None
