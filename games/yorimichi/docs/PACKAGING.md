@@ -45,6 +45,11 @@ build configuration waits forever on the macOS Documents privacy check (README, 
   its own slot turn, has its own deadline, and its `ditto` and `split` children are watched. Its zip, split and checksum
   phases are each bounded to 45 minutes and report progress every 25 s. Before anything moves, it refuses an app whose
   staged `Content/Data` lacks `world.json`, `heightmap.bin` or `map/map.json`.
+- **Audio signing:** the ad-hoc playtest archive preserves the signed app's sandbox and existing entitlements, adding
+  one exact Mach lookup allowance for `com.apple.cmio.registerassistantservice.system-extensions`. On macOS 26,
+  CoreAudio's first default-output-device query can wait on this denied lookup before the game starts. The archive
+  verifies the resulting entitlements and full signature before zipping; it refuses to replace a Developer ID signature.
+  This uses [Apple's documented Mach lookup exception](https://developer.apple.com/library/archive/documentation/Miscellaneous/Reference/EntitlementKeyReference/Chapters/AppSandboxTemporaryExceptionEntitlements.html).
 - **Release files:** the download folder `Yorimichi/` holds the `.app`, `Play Yorimichi.command` and `README.txt`.
   It is zipped with `ditto` into `build/yorimichi/package/Yorimichi-macOS-<revision>.zip`, split into
   `.zip.part-aa`, `-ab`, … if it is larger than 1.9 GB, with `SHA256SUMS` and `manifest.json`. The step counts as up

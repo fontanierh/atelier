@@ -52,6 +52,7 @@ def test_package_runs_after_every_import_as_one_capped_compile_turn(tmp_path):
 def test_package_zip_checksums_and_splits_for_release_assets(tmp_path, monkeypatch):
     ctx, steps = recipe_steps(tmp_path)
     recipe, tool = build.load_recipe('yorimichi'), archive_tool()
+    monkeypatch.setattr(tool, 'audio_compatibility', lambda app, log: None)
     app = tmp_path/'package'/'archive'/'Mac'/'Yorimichi.app'/'Contents'/'MacOS'
     app.mkdir(parents=True)
     binary = os.urandom(100_000)   # incompressible, so the zip really exceeds a tiny part size
@@ -189,3 +190,60 @@ def test_uat_gets_the_headless_user_directory_build_sh_would_export(tmp_path, mo
     assert uat.argv(ctx)[:2] == ['/usr/bin/env', f'UE_HEADLESS_USER_DIR={folder}']
     monkeypatch.setenv('UE_HEADLESS_USER_DIR', '/explicit')
     assert uat.argv(ctx)[0].endswith('RunUAT.sh'), 'an explicit choice from the caller wins'
+
+
+def test_audio_signing_preserves_sandbox_and_existing_allowances(tmp_path, monkeypatch):
+    import io
+    tool = archive_tool()
+    original = {'com.apple.security.app-sandbox': True, 'com.apple.security.network.client': True,
+                tool.MACH_LOOKUP: ['existing.service']}
+    current, calls = dict(original), []
+
+    def run(args, **kwargs):
+        nonlocal current
+        calls.append(args)
+        if '--entitlements' in args and '--xml' in args:
+            return SimpleNamespace(stdout=plistlib.dumps(current), stderr=b'')
+        if '--verbose=4' in args:
+            return SimpleNamespace(stdout=b'', stderr=b'Signature=adhoc\n')
+        if '--sign' in args:
+            current = plistlib.loads(open(args[args.index('--entitlements') + 1], 'rb').read())
+        return SimpleNamespace(stdout=b'', stderr=b'')
+
+    monkeypatch.setattr(tool.subprocess, 'run', run)
+    tool.audio_compatibility(tmp_path/'Yorimichi.app', io.StringIO())
+    assert current == {**original, tool.MACH_LOOKUP: ['existing.service', tool.AUDIO_SERVICE]}
+    assert '--verify' in calls[-1] and '--deep' in calls[-1] and '--strict' in calls[-1]
+    first_signs = sum('--sign' in call for call in calls)
+    tool.audio_compatibility(tmp_path/'Yorimichi.app', io.StringIO())
+    assert sum('--sign' in call for call in calls) == first_signs
+
+
+def test_audio_signing_refuses_to_replace_developer_id_signature(tmp_path, monkeypatch):
+    import io
+    tool = archive_tool()
+    calls = []
+
+    def run(args, **kwargs):
+        calls.append(args)
+        return SimpleNamespace(stdout=plistlib.dumps({'com.apple.security.app-sandbox': True}),
+                               stderr=b'Authority=Developer ID Application\n')
+
+    monkeypatch.setattr(tool.subprocess, 'run', run)
+    with pytest.raises(RuntimeError, match='ad-hoc'):
+        tool.audio_compatibility(tmp_path/'Yorimichi.app', io.StringIO())
+    assert not any('--sign' in call for call in calls)
+
+
+def test_audio_signing_accepts_verified_apps_without_sandbox_entitlements(tmp_path, monkeypatch):
+    import io
+    tool = archive_tool()
+    calls = []
+
+    def run(args, **kwargs):
+        calls.append(args)
+        return SimpleNamespace(stdout=b'', stderr=b'')
+
+    monkeypatch.setattr(tool.subprocess, 'run', run)
+    tool.audio_compatibility(tmp_path/'Yorimichi.app', io.StringIO())
+    assert not any('--sign' in call for call in calls) and '--verify' in calls[-1]

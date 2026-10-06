@@ -7,7 +7,7 @@
 README. It is zipped with ditto, which keeps the app's symlinks, signature and permissions, and split into parts when it
 is too large for a GitHub release asset. Every phase is bounded and reports progress.
 """
-import argparse, hashlib, importlib.util, json, shutil, subprocess, sys, time
+import argparse, hashlib, importlib.util, json, plistlib, shutil, subprocess, sys, tempfile, time
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
@@ -74,6 +74,39 @@ def staged_data(app):
         raise RuntimeError(f'the packaged app lacks staged runtime data: {missing}')
 
 
+# CoreAudio's first HAL call on macOS 26 looks up this service even for output-only audio. Without this exact
+# allowance the standard UE App Sandbox signature can hang before the game starts. Keep the sandbox and its
+# other entitlements; the local Development download is ad-hoc signed, never a Developer ID/notarized product.
+AUDIO_SERVICE = 'com.apple.cmio.registerassistantservice.system-extensions'
+MACH_LOOKUP = 'com.apple.security.temporary-exception.mach-lookup.global-name'
+
+
+def audio_compatibility(app, log):
+    def codesign(*args):
+        return subprocess.run(['codesign', *args, str(app)], capture_output=True, check=True, timeout=120)
+    raw = codesign('-d', '--entitlements', '-', '--xml').stdout
+    entitlements = plistlib.loads(raw) if raw.strip() else {}
+    if entitlements.get('com.apple.security.app-sandbox'):
+        services = entitlements.get(MACH_LOOKUP, [])
+        if not isinstance(services, list) or not all(isinstance(name, str) for name in services):
+            raise RuntimeError('invalid existing Mach lookup entitlements')
+        if AUDIO_SERVICE not in services:
+            details = codesign('-d', '--verbose=4').stderr.decode(errors='replace')
+            if 'Signature=adhoc' not in details:
+                raise RuntimeError('audio compatibility signing requires an ad-hoc playtest app')
+            entitlements[MACH_LOOKUP] = [*services, AUDIO_SERVICE]
+            log.write('signing sandbox CoreAudio service allowance; existing entitlements preserved\n'); log.flush()
+            with tempfile.TemporaryDirectory(prefix='yorimichi-signing-') as scratch:
+                path = Path(scratch) / 'audio.entitlements'
+                path.write_bytes(plistlib.dumps(entitlements))
+                codesign('--force', '--sign', '-', '--preserve-metadata=identifier,requirements,flags',
+                         '--entitlements', str(path))
+            applied = plistlib.loads(codesign('-d', '--entitlements', '-', '--xml').stdout)
+            if applied != entitlements:
+                raise RuntimeError('signed app entitlements do not match the preserved audio allowance')
+    codesign('--verify', '--deep', '--strict')
+
+
 def package_zip(root, log):
     """Zip the archived .app for download (ditto keeps its symlinks, signature and permissions), split it into parts
     when it is too large for a GitHub release asset, and record sizes and SHA-256 checksums. Every phase is bounded and
@@ -93,6 +126,7 @@ def package_zip(root, log):
     if len(apps) != 1:
         raise RuntimeError(f'no packaged .app under {root / "archive"} or {folder}')
     app = apps[0]
+    audio_compatibility(app, log)
     launcher = folder / 'Play Yorimichi.command'
     launcher.write_text(desktop_preview().packaged_launcher()); launcher.chmod(0o755)
     (folder / 'README.txt').write_text(PLAYTEST_README)
