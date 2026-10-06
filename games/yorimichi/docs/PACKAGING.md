@@ -105,11 +105,38 @@ Editor builds keep both renderers.
 4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
    the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.
 
-## Diagnosing a repeated compile
+## The shared-PCH rebuild on every package
 
-Preserve each run's `UBA-Yorimichi-Mac-Development.txt` and changed `.rsp` files before retrying: UBT overwrites its
-logs. In one same-source retry, 12 SharedPCH response files changed and caused a 494-action rebuild. The subsequent
-`ApplePostBuildSync` Xcode generation rewrote those files again with additional UHT include paths. A response file
-newer than its `.gch` is a useful lead; recurrence needs comparison of preserved per-run files. Adding `-package`
-also introduced `-skipdeploy` and a one-time makefile regeneration, which alone does not explain recompilation.
-Do not clear caches, remove `-build` or accept stale binaries to hide the cause.
+**Proven: every `-build -package` run recompiles all game and plugin objects, even with no C++ change.** The
+installed UE 5.8 engine causes this loop on Mac:
+
+1. The build writes the 12 `SharedPCH.*.rsp` response files under
+   `Intermediate/Build/Mac/arm64/Yorimichi/Development/`, then compiles and links.
+2. Its last action, `ApplePostBuildSync`, generates a stub Xcode project. `AppleToolChain.GenerateProjectFiles`
+   sets `ProjectFileGenerator.bGenerateProjectFiles = true` (`Platform/Apple/AppleToolChain.cs:973` under
+   `Engine/Source/Programs/UnrealBuildTool`). With that flag `UEBuildModuleCPP.AddModuleToCompileEnvironment` adds a
+   `-I".../Inc/<Module>/UHT"` line for every dependency module (`Configuration/UEBuildModuleCPP.cs:519`).
+3. The generator's native-target pass (`ProjectFiles/Xcode/XcodeProjectFileGenerator.cs:577` and `:583`) writes
+   those response files into the build's own folder: on an installed engine the separate project-file folder is
+   never used (`Configuration/UEBuildTarget.cs:1332` and `:1894`), and its null action-graph builder still writes
+   files (`Actions/ActionGraphBuilder.cs:121-130`). Stage and Package run the same generator again.
+4. The next build writes the files without the `/UHT` lines, finds all 12 changed, and rebuilds every shared PCH and
+   everything that includes them.
+
+Evidence (refresh at `dc144aa9`): the preserved pre-refresh response files and the rebuilt ones differ only by
+removed `/UHT` lines (3 to 30 per file); the log shows 12 `Updating ... SharedPCH...rsp: contents have changed`
+lines followed by all 494 actions. The editor target's response files, which get no post-build sync, did not change.
+Measured cost: all 494 actions, 586 s and 593 s of build time on two consecutive same-source runs (three parallel
+actions), before cooking starts.
+
+Two mitigations are **unvalidated**; neither is in use, and each needs one measured run before adoption:
+
+- Add `-NoSharedPCH` to the package build's `-ubtargs` (`Configuration/Rules/TargetRules.cs:2398`), so the build
+  never reads the rewritten files. It costs one full rebuild, and later full builds are slower.
+- Inside the same guarded package run, after BuildCookRun, restore each `SharedPCH*.rsp` from its `.rsp.old` when
+  the only difference is the added `/UHT` lines.
+
+`UE_BUILD_FROM_XCODE=1` is not a fix: Stage and Package still regenerate the project. A missing ISPC folder also
+invalidates the makefile on every run, but that costs seconds and is not the cause. Preserve each run's
+`UBA-Yorimichi-Mac-Development.txt` and changed `.rsp` files when investigating: UBT overwrites its logs. Do not
+clear caches, remove `-build` or accept stale binaries to hide the cause.
