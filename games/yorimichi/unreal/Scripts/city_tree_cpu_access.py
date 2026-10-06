@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori  # noqa: E402
 import json
+import hashlib
 import unreal as U
 
 TREES = ('HD_ArcadeTree', 'HD_PlazaTreeGold', 'HD_PlazaTreeOrange')
@@ -34,7 +35,9 @@ def main():
             assert U.EditorAssetLibrary.save_loaded_asset(mesh, only_if_is_dirty=False), name
         assert mesh.get_editor_property('allow_cpu_access'), name
         assert geometry(mesh) == before, ('CPU metadata changed production geometry/material', name)
-        report[name] = dict(asset=mesh.get_path_name(), allow_cpu_access=True, changed=changed, geometry=before)
+        package = yori.GAME / 'unreal' / 'Content' / 'Japan' / 'Assets' / (name + '.uasset')
+        report[name] = dict(asset=mesh.get_path_name(), allow_cpu_access=True, changed=changed, geometry=before,
+                            sha256=hashlib.sha256(package.read_bytes()).hexdigest())
         U.log('CITY TREE CPU ACCESS ' + name + ' enabled=1 changed=' + str(int(changed)))
     folder = yori.OUT / 'city_tree_lods'
     folder.mkdir(parents=True, exist_ok=True)

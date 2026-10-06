@@ -1,5 +1,7 @@
 """Runtime tree metadata must not invalidate the much larger world import."""
 from types import SimpleNamespace
+import hashlib
+import json
 
 from atelier import build
 
@@ -40,3 +42,23 @@ def test_cpu_overlay_is_ordered_before_variants_and_records_a_required_output(tm
     assert names.index('unreal.world') < names.index('unreal.city_tree_cpu_access') < names.index('unreal.desktop')
     overlay = next(s for s in steps if s.name == 'unreal.city_tree_cpu_access')
     assert overlay.heavy and overlay.outputs == [tmp_path / 'city_tree_lods' / 'production-cpu-access.json']
+
+
+def test_overwritten_tree_invalidates_the_overlay_even_with_unchanged_world_inputs(tmp_path):
+    recipe = build.load_recipe('yorimichi')
+    ctx = SimpleNamespace(out=tmp_path / 'build', uproject=tmp_path / 'unreal' / 'Yorimichi.uproject')
+    assert not recipe.city_tree_cpu_access_present(ctx)
+    root = ctx.uproject.parent / 'Content' / 'Japan' / 'Assets'
+    root.mkdir(parents=True)
+    report = {}
+    for name in ('HD_ArcadeTree', 'HD_PlazaTreeGold', 'HD_PlazaTreeOrange'):
+        data = (name + '-cpu-access').encode()
+        (root / (name + '.uasset')).write_bytes(data)
+        report[name] = {'allow_cpu_access': True, 'sha256': hashlib.sha256(data).hexdigest()}
+    path = ctx.out / 'city_tree_lods' / 'production-cpu-access.json'
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(report))
+    assert recipe.city_tree_cpu_access_present(ctx)
+    # A forced/partial import can reset the flag with the same recipe inputs. Cached JSON alone is insufficient.
+    (root / 'HD_ArcadeTree.uasset').write_bytes(b'reimported mesh')
+    assert not recipe.city_tree_cpu_access_present(ctx)
