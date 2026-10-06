@@ -10,7 +10,7 @@ Every artefact lands in build/yorimichi/kit/SLUG/ (ref_N.jpg, render_vK_front.jp
 reconciled_N.jpg, provenance.json; full-size PNG frames stay in build/yorimichi/captures/kit-SLUG-vK/). Blender and Unreal steps take file locks so several buildings can be
 worked on in parallel; the OpenAI key is read from $OPENAI_API_KEY or the file in $OPENAI_API_KEY_FILE.
 """
-import argparse,base64,fcntl,hashlib,json,os,shutil,subprocess,sys,time,uuid
+import argparse,fcntl,json,os,shutil,subprocess,sys,time,uuid
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[3]));import yori  # noqa: E402
 ROOT=yori.REGIONS;sys.path.insert(0,str(yori.GAME/'tools'))
@@ -38,19 +38,11 @@ def key():
 def brief(slug):
     b=json.loads(BRIEFS.read_text());assert slug in b,f'{slug} not in {BRIEFS}: {list(b)}';return b[slug]
 
-def prep(path,maxw=1280):
-    from PIL import Image
-    tmp=DOCS/'_upload';tmp.mkdir(parents=True,exist_ok=True);im=Image.open(path).convert('RGB')
-    if im.width>maxw:im=im.resize((maxw,round(im.height*maxw/im.width)))
-    out=tmp/(hashlib.sha256(str(path).encode()).hexdigest()[:10]+'.jpg');im.save(out,quality=92);return out
-
-# The key header goes on stdin (argv is visible to ps); --form-string sends the prompt whole, -F would cut it at its first ';'.
 def gpt_edit(prompt,images,n=1,size='1536x1024',quality='high',model='gpt-image-2.5-sunburst'):
-    cmd=['curl','-sS','--max-time','900','https://api.openai.com/v1/images/edits','-H','@-','-F',f'model={model}','--form-string',f'prompt={prompt}','-F',f'size={size}','-F',f'quality={quality}','-F',f'n={n}']
-    for im in images:cmd+=['-F',f'image[]=@{prep(im)}']
-    t=time.time();res=subprocess.run(cmd,input=f'Authorization: Bearer {key()}\n',capture_output=True,text=True);js=json.loads(res.stdout or '{}')
-    if 'error' in js or 'data' not in js:raise SystemExit(f'gpt-image error: {js.get("error",res.stdout[:400])}')
-    return [base64.b64decode(d['b64_json']) for d in js['data']],round(time.time()-t)
+    from atelier.ai import images as client  # one Sunburst client: the key travels in a header, never in argv
+    try:blobs,_,secs=client.sunburst(prompt,size,images,n,model=model,quality=quality,key=key())
+    except Exception as e:raise SystemExit(f'gpt-image error: {type(e).__name__}: {e}')  # as with curl: a timeout or HTTP error ends the run cleanly
+    return blobs,round(secs)
 
 def record(slug,entry):
     d=DOCS/slug;d.mkdir(parents=True,exist_ok=True);p=d/'provenance.json'

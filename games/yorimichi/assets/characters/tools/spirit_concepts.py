@@ -13,7 +13,7 @@ Reference stills are the 11 September trailer location scouts (current world loo
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
-import argparse, base64, hashlib, io, json, os, subprocess, sys, time
+import argparse, hashlib, json, os, sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -249,31 +249,11 @@ def sha(p):
     return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 
-def prep(path, maxw=1280):
-    from PIL import Image
-    tmp = OUT / '_upload'
-    tmp.mkdir(parents=True, exist_ok=True)
-    im = Image.open(path).convert('RGB')
-    if im.width > maxw:
-        im = im.resize((maxw, round(im.height * maxw / im.width)))
-    out = tmp / (hashlib.sha256(str(path).encode()).hexdigest()[:10] + '.jpg')
-    im.save(out, quality=92)
-    return out
-
-
 def gpt_edit(prompt, images, n):
-    cmd = ['curl', '-sS', '--max-time', '900', 'https://api.openai.com/v1/images/edits',
-           '-H', '@-', '-F', f'model={MODEL}',   # the key header comes on stdin, never in argv where ps shows it
-           '--form-string', f'prompt={prompt}',   # -F would end the prompt at its first ';' (read as a field attribute)
-           '-F', f'size={SIZE}', '-F', f'quality={QUALITY}', '-F', f'n={n}']
-    for im in images:
-        cmd += ['-F', f'image[]=@{prep(im)}']
-    t = time.time()
-    res = subprocess.run(cmd, input=f'Authorization: Bearer {key()}\n', capture_output=True, text=True)
-    js = json.loads(res.stdout or '{}')
-    if 'error' in js or 'data' not in js:
-        raise RuntimeError(f'gpt-image error: {js.get("error", res.stdout[:400])}')
-    return [base64.b64decode(d['b64_json']) for d in js['data']], round(time.time() - t, 1)
+    """n Sunburst edits of the context images (atelier.ai.images). Returns (PNG bytes list, seconds)."""
+    from atelier.ai import images as client
+    blobs, _, seconds = client.sunburst(prompt, SIZE, images, n, model=MODEL, quality=QUALITY, key=key())
+    return blobs, seconds
 
 
 def run(slug, n):
