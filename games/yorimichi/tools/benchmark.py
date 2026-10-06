@@ -292,7 +292,7 @@ def main():
     inputs.extend(sorted((PROJECT/'Content/Experiments').rglob('*.uasset')))
     inputs.extend(sorted((PROJECT/'Content/Japan/FoliageCoverage').rglob('*.uasset')))
     inputs.extend(sorted((yori.OUT/'foliage_coverage').glob('*/manifest.json')))
-    manifest['asset_sha256']={str(path.relative_to(ROOT)):hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs}
+    manifest['asset_sha256']={os.path.relpath(path, ROOT):hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs}
     (folder/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     overlap = {}
     # One render job at a time on this machine, and ownership of the child from the instant it
