@@ -47,8 +47,9 @@ uv run python $T/cairo_outfit.py $O/<slug>.toml --status    # what is done, what
 Paid stages run only with `--spend`. Tripo runs only after `--approve` has recorded the hashes of the four views in
 `references/approval.json`: nobody can pay for a model from images no one has looked at, and a folder that already has
 a Tripo job never pays again. Rerunning the same command continues where it stopped: a stage is skipped when its files
-exist and are newer than the stage before. `--redo assemble` reruns a stage and everything after it; `--until <stage>`
-stops early; `--dir` and `--stem` name the revision folder and the assembled file (default `Cairo-BodySwap-<slug>`);
+exist and are newer than the stage before. `--redo assemble` reruns a stage and everything after it. A Sunburst stage
+that runs again under `--spend` first renames its earlier `*.provenance.json` records to `*.rejected-N.provenance.json`,
+because the Sunburst tool never pays again for a call it has recorded. `--until <stage>` stops early; `--dir` and `--stem` name the revision folder and the assembled file (default `Cairo-BodySwap-<slug>`);
 `--concept <image>` uses a design picked elsewhere instead of redrawing the concept sheet; `--source` picks the base
 character (section 0). Blender output goes to `logs/<stage>.log`, and `outfit-run.json` records every stage run. API
 keys come from the environment or the ignored `.env` of this checkout or the archive.

@@ -16,7 +16,6 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
 import argparse, hashlib, json, os, sys
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 from pathlib import Path
 
 # ROOT (the archive) comes from _archive
@@ -329,31 +328,30 @@ def run(slug, n):
     priv.mkdir(exist_ok=True, mode=0o700)
     (priv / '.gitignore').write_text('*\n')
     (OUT / f'{slug}.prompt.txt').write_text(prompt + '\n')
-    started = datetime.now(timezone.utc).isoformat()
-    try:
+    from atelier.ai import ledger
+
+    def paint():
+        outs = []
         blobs, raw, secs = gpt_edit(prompt, STILLS, n)
-        err = None
         p = priv / f'{slug}.response.json'
         p.write_text(json.dumps(raw, indent=1))
         p.chmod(0o600)
-    except Exception as e:  # noqa: BLE001
-        blobs, secs, err = [], None, str(e)
-    outs = []
-    for i, b in enumerate(blobs):
-        p = OUT / (f'{slug}.png' if n == 1 else f'{slug}-{i + 1}.png')
-        p.write_bytes(b)
-        outs.append(p.name)
-    prov = dict(
+        for i, b in enumerate(blobs):
+            p = OUT / (f'{slug}.png' if n == 1 else f'{slug}-{i + 1}.png')
+            p.write_bytes(b)
+            outs.append(p.name)
+        return dict(elapsed_seconds=secs, outputs={o: sha(OUT / o) for o in outs}, approval='pending')
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    prov, err = ledger.try_once(OUT / f'{slug}.provenance.json', dict(
         stage={'r01': 'back-view-concept', 'r04': 'skate-outfit-concept'}.get(OUT.name[-3:], 'sword-stage-concept' if 'sword' in OUT.name else 'cooler-look-concept'), concept=slug, requested_model=MODEL, quality=QUALITY, size=SIZE, n=n,
         endpoint='/v1/images/edits', execution='games/yorimichi/assets/characters/tools/cairo_back_concepts.py',
         prompt_file=f'{slug}.prompt.txt', prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
         reference_files={str(s.relative_to(ROOT)): sha(s) for s in STILLS},
         reference_source='body-swap-r02-headless captures (game-r11 outfit) + back-concepts-r04 study' if STILLS is SWORD_STILLS else 'outfit-r05/WarmOriginal-Outfit-r05.blend (accepted r05; Cycles captures, unchanged)',
-        started_at=started, finished_at=datetime.now(timezone.utc).isoformat(), elapsed_seconds=secs,
-        outputs={o: sha(OUT / o) for o in outs}, error=err, approval='pending',
-    )
-    (OUT / f'{slug}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
-    return slug, outs, secs, err
+    ), paint)
+    if not prov:   # images of a failed call are not reported as outputs
+        return slug, [], None, err
+    return slug, list(prov['outputs']), prov['elapsed_seconds'], None
 
 
 def main():

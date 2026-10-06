@@ -30,3 +30,18 @@ def run_once(path, metadata, operation):
         temporary = path.with_suffix(path.suffix + '.tmp')
         temporary.write_text(json.dumps(record, indent=2) + '\n')
         temporary.replace(path)
+
+
+def try_once(path, metadata, operation):
+    """`run_once` for a batch that goes on: (record, None) when the call is done, else (None, why). why says that the
+    path was recorded before (set the record aside to pay again) or names this call's error, with any URL left out;
+    it is for printing only, never recorded. A failed call stays recorded as uncertain."""
+    import re
+    try:
+        return run_once(path, metadata, operation), None
+    except FileExistsError as error:
+        if error.filename != str(path):
+            return None, f'{type(error).__name__}: {error}'
+        return None, f'already recorded in {Path(path).name}; set it aside to pay for this call again'
+    except Exception as error:  # noqa: BLE001 - run_once has recorded it
+        return None, re.sub(r'https://\S+', '<URL omitted>', f'{type(error).__name__}: {error}')[:600]

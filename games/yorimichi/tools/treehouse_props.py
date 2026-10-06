@@ -98,23 +98,24 @@ def concept(slug, dry):
     missing = [rel(r) for r in refs if not r.exists()]
     if missing: return slug, f'missing references {missing}'
     folder.mkdir(parents=True, exist_ok=True)
-    image = folder/'concept.jpg'
-    if image.exists():
+    from atelier.ai.ledger import try_once
+    image = folder/'concept.jpg'; ledger = folder/'provenance.json'
+    if image.exists():   # painting a prop again: its earlier concept and record are set aside, not overwritten
         set_aside(image)
         if (ORIGINALS/'props'/slug/'concept.png').exists(): set_aside(ORIGINALS/'props'/slug/'concept.png')
-    t = time.time(); started = now(); error = usage = digest = record = None
-    try:
+        if ledger.exists(): set_aside(ledger)
+    (folder/'prompt.txt').write_text(prompt+'\n')
+    t = time.time()
+
+    def generate():
         png, usage = sunburst(prompt, SIZE, refs)
         digest, record = keep(png, 'props', f'{slug}/concept', image)
-    except Exception as e:  # noqa: BLE001 - recorded, the batch goes on
-        error = redact(e)[:600]
-    (folder/'prompt.txt').write_text(prompt+'\n')
-    (folder/'provenance.json').write_text(json.dumps(dict(
+        return dict(elapsed_seconds=round(time.time()-t, 1), usage=usage, concept_sha256=digest, compact_copy=record)
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    _, error = try_once(ledger, dict(
         stage='treehouse-prop-concept', slug=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
         endpoint='/v1/images/edits', execution='games/yorimichi/tools/treehouse_props.py', prompt_sha256=sha(prompt.encode()),
-        reference_files={rel(r): sha(r.read_bytes()) for r in refs}, started_at=started,
-        finished_at=now(), elapsed_seconds=round(time.time()-t, 1), usage=usage,
-        concept_sha256=digest, error=error, compact_copy=record), indent=2)+'\n')
+        reference_files={rel(r): sha(r.read_bytes()) for r in refs}), generate)
     print(slug, error or f'ok {time.time()-t:.0f}s', flush=True)
     return slug, error
 

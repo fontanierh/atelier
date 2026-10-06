@@ -24,9 +24,8 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 _sys.path.insert(0, str(_Path(__file__).resolve().parent))
 import argparse, json, sys, time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 
-from treehouse_art import (CAPTURES, CONCEPTS as C, MODEL, PLAN, QUALITY, REFS as OUT, SCOUT as S, SHEETS, keep, redact,
+from treehouse_art import (CAPTURES, CONCEPTS as C, MODEL, PLAN, QUALITY, REFS as OUT, SCOUT as S, SHEETS, keep,
                            rel, sha, sheet as contact_sheet, sunburst)
 
 SIZE = '1536x1024'
@@ -297,21 +296,21 @@ def prompt_for(refs, view):
 
 
 def run(slug, refs, prompt):
+    from atelier.ai.ledger import try_once
     (OUT/f'{slug}.prompt.txt').write_text(prompt + '\n')
-    started = datetime.now(timezone.utc).isoformat(); t = time.time(); error = usage = record = None; outputs = {}
-    try:
+    record = OUT/f'{slug}.provenance.json'; t = time.time()
+
+    def paint():
         png, usage = sunburst(prompt, SIZE, [CONTEXT[r][0] for r in refs])
-        digest, record = keep(png, 'refs', slug, OUT/f'{slug}.jpg'); outputs[f'{slug}.png'] = digest
-    except Exception as e:  # noqa: BLE001 - recorded in provenance, the batch goes on
-        error = redact(e)[:600]
-    prov = dict(stage='treehouse-reference', reference=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
-                endpoint='/v1/images/edits', execution='games/yorimichi/tools/treehouse_refs.py',
-                prompt_file=f'{slug}.prompt.txt', prompt_sha256=sha(prompt.encode()),
-                reference_files={rel(CONTEXT[r][0]): sha(CONTEXT[r][0].read_bytes()) for r in refs},
-                started_at=started, finished_at=datetime.now(timezone.utc).isoformat(),
-                elapsed_seconds=round(time.time()-t, 1), usage=usage, outputs=outputs, error=error, compact_copy=record)
-    (OUT/f'{slug}.provenance.json').write_text(json.dumps(prov, indent=2) + '\n')
-    return slug, error, prov['elapsed_seconds'], usage
+        digest, copy = keep(png, 'refs', slug, OUT/f'{slug}.jpg')
+        return dict(elapsed_seconds=round(time.time()-t, 1), usage=usage, outputs={f'{slug}.png': digest}, compact_copy=copy)
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    prov, error = try_once(record, dict(stage='treehouse-reference', reference=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
+                                        endpoint='/v1/images/edits', execution='games/yorimichi/tools/treehouse_refs.py',
+                                        prompt_file=f'{slug}.prompt.txt', prompt_sha256=sha(prompt.encode()),
+                                        reference_files={rel(CONTEXT[r][0]): sha(CONTEXT[r][0].read_bytes()) for r in refs}), paint)
+    if error: return slug, error, round(time.time()-t, 1), None
+    return slug, None, prov['elapsed_seconds'], prov['usage']
 
 
 def sheet():
