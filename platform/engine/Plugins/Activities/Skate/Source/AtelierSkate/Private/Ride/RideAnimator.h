@@ -12,7 +12,7 @@ class USkeletalMeshComponent;
 class USkateRideAnimInstance;
 
 /**
- * The transitions' clip player for the Ride backend (RIDE.md, "Rider"). The mount, dismount, carry, run-out, kick-out,
+ * The transitions' clip player for the Ride backend (RIDE.md, "Transitions"). The mount, dismount, carry, run-out, kick-out,
  * recover and get-up clips play through Unreal's animation system on a hidden mesh of the native rig (SK_SkateRider
  * with USkateRideAnimInstance), which this class ticks once per drawn frame: the caller (RideTransition.cpp) picks the
  * clips and their times as override layers, and the graph blends, mirrors and cross-fades them. The evaluated
