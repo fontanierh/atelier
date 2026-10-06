@@ -263,13 +263,13 @@ def prep(path, maxw=1280):
 
 def gpt_edit(prompt, images, n):
     cmd = ['curl', '-sS', '--max-time', '900', 'https://api.openai.com/v1/images/edits',
-           '-H', f'Authorization: Bearer {key()}', '-F', f'model={MODEL}',
+           '-H', '@-', '-F', f'model={MODEL}',   # the key header comes on stdin, never in argv where ps shows it
            '--form-string', f'prompt={prompt}',   # -F would end the prompt at its first ';' (read as a field attribute)
            '-F', f'size={SIZE}', '-F', f'quality={QUALITY}', '-F', f'n={n}']
     for im in images:
         cmd += ['-F', f'image[]=@{prep(im)}']
     t = time.time()
-    res = subprocess.run(cmd, capture_output=True, text=True)
+    res = subprocess.run(cmd, input=f'Authorization: Bearer {key()}\n', capture_output=True, text=True)
     js = json.loads(res.stdout or '{}')
     if 'error' in js or 'data' not in js:
         raise RuntimeError(f'gpt-image error: {js.get("error", res.stdout[:400])}')
