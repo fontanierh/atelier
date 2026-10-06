@@ -7,7 +7,8 @@ import numpy as np
 ROOT=yori.REGIONS
 import village.build as meshlib
 from village.build import Mesh
-from mega.layout import profiles,rollout,ORIGIN,WIDTH
+from mega.layout import ORIGIN
+from mega.ramp import profiles,rollout,WIDTH
 from village.layout import upper_surface
 OUT=yori.OUT/'mega'
 
