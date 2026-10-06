@@ -202,7 +202,7 @@ All under `games/yorimichi/`.
 | What | Where |
 | --- | --- |
 | State machine, sweeps, soft lock, player health, training post | `unreal/Source/Yorimichi/WandererSword.h/.cpp` |
-| Sword QA run and `-sworddummy` | `unreal/Source/Yorimichi/WandererSwordReview.cpp` |
+| Sword QA run and `-sworddummy` | `unreal/Source/Yorimichi/Dev/WandererSwordReview.cpp` |
 | `FWandererSwordClip` and the sword fields | `unreal/Source/Yorimichi/WandererDefinition.h` |
 | Carry layer and armed blend spaces | `unreal/Source/Yorimichi/WandererAnimInstance.cpp` |
 | Inputs, cancels, armed clip swaps | `unreal/Source/Yorimichi/WandererCharacter.cpp` |
