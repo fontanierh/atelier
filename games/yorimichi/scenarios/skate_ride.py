@@ -1919,7 +1919,7 @@ def slide_rows(record):
     every slide entered holds at least 1.5 s with no bail, and an ollie out at 1.2 s still leaves it within half a
     second and rides away."""
     held = {0: [], 1: []}
-    rows_seen = []
+    rows_seen, centred = [], []
     try:
         for balance in (0, 1):
             qa.py(f"live.preference('skate_slide_balance', {balance})")
@@ -1934,6 +1934,10 @@ def slide_rows(record):
                     end = next((i for i in range(first, len(rows)) if rows[i].get('retail') != 'GrindTipslide'), len(rows))
                     seconds = sum(float(r.get('dt', 16.7)) for r in rows[first:end]) / 1000
                     held[balance].append((round(seconds, 2), bool(qa.count(rows, 'bails')), qa.combos(rows)))
+                    # tip=across,stick: the deck centre's distance across the bar (m) and the stick Slide balance sent.
+                    across = sorted(abs(float(r['tip'].split(',')[0])) for r in rows[first:end] if r.get('tip'))
+                    if balance and across:
+                        centred.append(round(across[len(across) // 2], 3))
         # long_ledge, reported only: a slide set this way meets the ledge from below its top, so its hanging end can
         # strike the ledge's face, which no stick holds against.
         ledge = []
@@ -1961,7 +1965,8 @@ def slide_rows(record):
     on, off = held[1], held[0]
     ok_exit = bool(exits) and all(1.2 <= left < 1.7 and not bailed and mode == '1' for left, bailed, mode in exits)
     ok = len(on) >= 2 and all(s >= 1.5 and not bailed for s, bailed, _ in on) and off and max(s for s, _, _ in off) < 1. and ok_exit
-    record('slides', rows_seen, ok, f"held with Slide balance 1: {[s for s, _, _ in on]} s, bails {sum(b for _, b, _ in on)}; "
+    record('slides', rows_seen, ok, f"held with Slide balance 1: {[s for s, _, _ in on]} s, bails {sum(b for _, b, _ in on)}, "
+           f"median deck centre across the bar {centred} m (target 0.35); "
            f"ollied out at 1.2 s (left at, bailed, last mode): {exits}; "
            f"with 0: {[s for s, _, _ in off]} s, bails {sum(b for _, b, _ in off)}; long_ledge with 1 (held s, bailed): {ledge}; "
            f"{' / '.join(dict.fromkeys(c for _, _, c in on + off if c))}")

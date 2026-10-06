@@ -790,6 +790,9 @@ public:
     // take-off, positive with the left stick; the last forward it was measured from; the name a landing gave it ("FS
     // 360") and the Native trick it follows while that trick is shown.
     float AirSpin=0;FVector SpinForward=FVector::ZeroVector;FString SpinLabel,SpinOf;
+    // Slide balance on the last step (USkateComponent::BalanceTipslide): the deck centre's distance across the rail (m)
+    // and the left stick sent; both 0 when it did not act. GetRetailState shows them as tip=.
+    float TipAcross=0,TipStick=0;
     // The hybrid's pumps: the session's count and last gain; those already shown; the repeats in the line, the Native
     // trick they follow while it is shown, and whether they started a line of their own (the last one had faded).
     uint32 Pumps=0;float PumpGain=0;uint32 PumpsSeen=0;int32 PumpCount=0;FString PumpOf;bool PumpAlone=false;

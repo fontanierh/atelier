@@ -378,18 +378,19 @@ FString USkateComponent::GetRetailState() const
         // cost= is Native's step on its own thread (mean and worst over the last second, ms), not the game thread's.
         static const skate_native::XboxState Idle{};
         const skate_native::XboxState& I=RideNative?RideNative->Sent:Idle;
-        return FString::Printf(TEXT("%s tick=%llu backend=Ride surface=%s:%d turns=%u lock=%d bail=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d cost=%.3f/%.3f pump=%u,%.2f spin=%.0f wheel=%.1f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f"),
+        return FString::Printf(TEXT("%s tick=%llu backend=Ride surface=%s:%d turns=%u lock=%d bail=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d cost=%.3f/%.3f pump=%u,%.2f spin=%.0f wheel=%.1f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f tip=%.3f,%.2f"),
             *RetailRuntime->State,RetailRuntime->Tick,*SurfaceName(RetailRuntime->Surface),RetailRuntime->Wheels,RetailRuntime->Turns,Lockstep()?1:0,bNativeBail?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],
             RideNative?RideNative->Worlds:0,RideNative?RideNative->WorldTriangles:0,RideNative?RideNative->CostMean:0.f,RideNative?RideNative->CostWorst:0.f,
             RideNative?RideNative->Pumps:0u,RideNative?RideNative->PumpGain:0.f,RetailRuntime->AirSpin,RetailRuntime->WheelTurn(),*RetailRuntime->PoseMeasure.Describe(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"),
             FMath::RadiansToDegrees(RetailRuntime->ArmSwing[0]),FMath::RadiansToDegrees(RetailRuntime->ArmSwing[1]),
-            FMath::RadiansToDegrees(RetailRuntime->ArmNeed[0]),FMath::RadiansToDegrees(RetailRuntime->ArmNeed[1]));
+            FMath::RadiansToDegrees(RetailRuntime->ArmNeed[0]),FMath::RadiansToDegrees(RetailRuntime->ArmNeed[1]),
+            RideNative?RideNative->TipAcross:0.f,RideNative?RideNative->TipStick:0.f);
     }
     const skate_native::XboxState& I=RetailRuntime->Sent;
-    return FString::Printf(TEXT("%s tick=%llu backend=Native surface=%s:%d lock=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d turns=%u wheel=%.1f %s"),*RetailRuntime->State,RetailRuntime->Tick,
+    return FString::Printf(TEXT("%s tick=%llu backend=Native surface=%s:%d lock=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d turns=%u wheel=%.1f %s tip=%.3f,%.2f"),*RetailRuntime->State,RetailRuntime->Tick,
         *SurfaceName(RetailRuntime->Surface),RetailRuntime->Wheels,
         Lockstep()?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],RetailRuntime->Worlds,RetailRuntime->WorldTriangles,
-        RetailRuntime->Turns,RetailRuntime->WheelTurn(),*RetailRuntime->PoseMeasure.Describe());
+        RetailRuntime->Turns,RetailRuntime->WheelTurn(),*RetailRuntime->PoseMeasure.Describe(),RetailRuntime->TipAcross,RetailRuntime->TipStick);
 }
 
 FSkateHostPad USkateComponent::ReadHostPad() const
@@ -574,8 +575,9 @@ void USkateComponent::NameNativePump()
     O.Trick=O.PumpAlone||O.Trick.IsEmpty()?Label:O.Trick+TEXT(" + ")+Label;
 }
 
-void USkateComponent::BalanceTipslide(const FSkateRuntime& R, FSkateHostPad& Pad) const
+void USkateComponent::BalanceTipslide(FSkateRuntime& R, FSkateHostPad& Pad) const
 {
+    R.TipAcross=0; R.TipStick=0;
     // A nose or tail slide (or a blunt on a thin rail) stays on only while the left stick balances it
     // (atelier::skate_pad::TipBalance). With both sticks left centred (inside the native pad's 0.25 dead zone), the
     // stick it needs is sent for the player; any stick the player moves, steering off or the flick of an ollie out,
@@ -587,9 +589,11 @@ void USkateComponent::BalanceTipslide(const FSkateRuntime& R, FSkateHostPad& Pad
     if (RailSystem->FindNear(Deck,60.f,-40.f,40.f,S,Point,Tangent)==INDEX_NONE) return;
     using SkateRuntimeDetail::ToNative;
     const auto Native=[](const FVector& V){ return std::array<double,3>{V.X,V.Y,V.Z}; };
+    double Across=0;
     Pad.LeftX=atelier::skate_pad::TipBalance(Native(ToNative(Deck)),Native(ToNative(Point)),Native(ToNative(Tangent)),
-        Native(ToNative(R.Velocity)),Feel.SlideBalance);
+        Native(ToNative(R.Velocity)),Feel.SlideBalance,.35,&Across);
     Pad.LeftY=0;
+    R.TipAcross=float(Across); R.TipStick=float(Pad.LeftX);
 }
 
 bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool& bFailed)

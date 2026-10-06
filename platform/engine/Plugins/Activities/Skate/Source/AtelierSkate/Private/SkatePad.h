@@ -51,9 +51,10 @@ namespace atelier::skate_pad
      *  pulls it back, so the deck walks out of the tip window (0.243..0.458 m along the deck) in a few tenths of a
      *  second. This keeps the deck's centre `Centre` m across from the rail, the window's middle, by its distance and
      *  how fast it moves out. Strength (0..1) scales it. Native coordinates (metres, y up): Deck the deck's origin,
-     *  Point the nearest rail point, Tangent the rail's direction either way, Velocity the board's. */
+     *  Point the nearest rail point, Tangent the rail's direction either way, Velocity the board's. OutAcross, when
+     *  given, gets the deck centre's distance across the rail (m, signed by TipStability's side). */
     inline double TipBalance(const std::array<double, 3>& Deck, const std::array<double, 3>& Point, const std::array<double, 3>& Tangent,
-        const std::array<double, 3>& Velocity, double Strength, double Centre = .35)
+        const std::array<double, 3>& Velocity, double Strength, double Centre = .35, double* OutAcross = nullptr)
     {
         const double Along = Tangent[0] * Velocity[0] + Tangent[2] * Velocity[2];
         const double Flat = std::sqrt(Tangent[0] * Tangent[0] + Tangent[2] * Tangent[2]);
@@ -62,6 +63,7 @@ namespace atelier::skate_pad
         const double OffX = Deck[0] - Point[0], OffZ = Deck[2] - Point[2];
         // Across the rail (up x direction), and which way the deck's centre lies from it.
         const double Across = DirZ * OffX - DirX * OffZ, Out = Across > 0 ? 1. : -1.;
+        if (OutAcross) *OutAcross = Across;
         const double Outward = (DirZ * Velocity[0] - DirX * Velocity[2]) * Out;
         const double Push = std::clamp(10. * (std::fabs(Across) - Centre) + 1.5 * Outward, -1., 1.);
         // TipStability's sign: up.(direction x offset), which is Across.
