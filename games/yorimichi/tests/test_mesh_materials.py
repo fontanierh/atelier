@@ -37,10 +37,12 @@ class Mesh:
         self.array_writes = self.builds = self.physics_refreshes = 0
         self.dirty = False
 
-    def get_static_materials(self):
+    @property
+    def static_materials(self):
         return self.slots
 
-    def set_static_materials(self, slots):
+    @static_materials.setter
+    def static_materials(self, slots):
         self.array_writes += 1
         self.slots = slots
 
