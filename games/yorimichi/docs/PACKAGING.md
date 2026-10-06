@@ -54,8 +54,10 @@ Double-clicking `Yorimichi.app` starts the game without the desktop profile. `Pl
 
 It honours saved settings, except the renderer. Settings are in `~/Library/Application Support/Yorimichi/settings.txt`
 and the log is `~/Library/Logs/Yorimichi/game.log`. The package is cooked for forward shading only (the project's
-`r.ForwardShading`), so the launcher always starts Forward and a Lumen choice saved in the menu does not apply. Packaged
-Lumen would need a deferred cook and a verified switch, and neither exists.
+`r.ForwardShading`), so the launcher always starts Forward. The packaged menu says so: its Lighting row reads
+"Forward · Lumen is not in this build" and explains instead of switching, and a Lumen request from the phone is
+refused before anything is saved. Packaged Lumen would need a deferred cook and a verified switch, and neither exists.
+Editor builds keep both renderers.
 
 ## On the playtest Mac
 
