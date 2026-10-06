@@ -38,3 +38,14 @@ def test_gpt_edit_delegates_to_the_shared_client(name, monkeypatch):
     assert (sent, refs, n) == (prompt, ['ref.png'], 2)
     assert options == {'model': 'gpt-image-2.5-sunburst', 'quality': 'high', 'key': 'sk-test'}
     assert size == getattr(module, 'SIZE', '1536x1024')
+
+
+def test_the_lab_ends_cleanly_when_the_request_fails(monkeypatch):
+    lab = load('hidamari_lab', monkeypatch)
+    monkeypatch.setenv('OPENAI_API_KEY', 'sk-test')
+
+    def timeout(*args, **kwargs):
+        raise TimeoutError('read timed out')
+    monkeypatch.setattr(images, 'sunburst', timeout)
+    with pytest.raises(SystemExit, match='gpt-image error: TimeoutError'):
+        lab.gpt_edit('p', [], 1)

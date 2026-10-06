@@ -41,7 +41,7 @@ def brief(slug):
 def gpt_edit(prompt,images,n=1,size='1536x1024',quality='high',model='gpt-image-2.5-sunburst'):
     from atelier.ai import images as client  # one Sunburst client: the key travels in a header, never in argv
     try:blobs,_,secs=client.sunburst(prompt,size,images,n,model=model,quality=quality,key=key())
-    except RuntimeError as e:raise SystemExit(f'gpt-image error: {e}')
+    except Exception as e:raise SystemExit(f'gpt-image error: {type(e).__name__}: {e}')  # as with curl: a timeout or HTTP error ends the run cleanly
     return blobs,round(secs)
 
 def record(slug,entry):
