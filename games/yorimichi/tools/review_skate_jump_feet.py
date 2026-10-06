@@ -1,22 +1,30 @@
-"""Ollie in the real game and measure how far Cairo's feet stand off the deck, on the ground and in the air.
+"""Ride Cairo in the real game and check his feet stay on the board: rolling, in ollies and manuals, at 60 and 30 fps,
+and that big airs land back in the transition.
 
     uv run python games/yorimichi/tools/review_skate_jump_feet.py [--port 8871] [--rider CairoBotw|Cairo] [--settings FILE]
 
-Run after unreal.compile. Under the render guard it launches the island, stands Cairo on foot on the mini-mega's flat
-and measures his soles and capsule over the floor, then puts the rider on the board there, pushes and ollies a few
-times and holds a manual, once with the physical rider (skate.RidePhysical 1, the default) and once animated only (0), and last drops in
-on the mini-mega with no input, over its kicker into the landing. Every frame it keeps the skate state and, in the
-deck's own frame, the height of each
-foot's ankle and toe bones over the deck's top, so a foot that floats off the board in the air shows as a gap the
-ground does not have, and one sunk into it in a manual shows as a negative one. The rider is Cairo as a person plays
-him, with the merged move set (CairoBotw, the default since #28), or his legacy moves (Cairo), which scripted sessions
-get unless asked. --settings plays with a saved settings file (a copy of a player's settings.txt: skate feel, stance),
-copied into the output folder so the game's own saves leave the original alone. Writes build/yorimichi/skate-jump-feet/review/<rider>/{checks.json, rows_*.json, *.png, game.log}.
+Run after unreal.compile. Under the render guard it launches the island and:
+- stands Cairo on foot on the mini-mega's flat and measures his soles and capsule over the floor;
+- on the wood flat before the mini-mega's quarter, puts him back on the board before every trial, pushes and ollies
+  (three times) and holds a manual, with the physical rider (skate.RidePhysical 1, the default) and animated only (0),
+  at 60 and then 30 fps. Every frame it keeps the frame's time, the skate state and, in the deck's own frame, each ankle
+  and toe bone's height over the deck's top and offset along it. The animated rider stands on the deck by construction,
+  so the physical rider's feet must match it: one that trails the board (Physics Control ticking after the physics
+  step) shows as feet behind and above the deck in the air and sunk into it in a manual, by the speed times the frame;
+- pushes from the flat into the quarter three times, harder each time, so the board airs out and lands back in the
+  transition;
+- pushes off the mini-mega's roll-in, over its kicker into the landing;
+- reads the game's log for the physical rider's warning that it ticks after the physics step.
+The close shots look at the deck from the side. The rider is Cairo as a person plays him, with the merged move set
+(CairoBotw, the default since #28), or his legacy moves (Cairo), which scripted sessions get unless asked. --settings
+plays with a saved settings file (a copy of a player's settings.txt: skate mode, feel, stance), copied into the output
+folder so the game's own saves leave the original alone. Writes
+build/yorimichi/skate-jump-feet/review/<rider>[-<label>]/{checks.json, rows_*.json, *.png, game.log}.
 The worker owns and quits only the game process it launches.
 """
 from pathlib import Path
 from contextlib import ExitStack
-import argparse, json, re, subprocess, sys, time
+import argparse, itertools, json, re, subprocess, sys, time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world' / 'regions'))
 import yori
@@ -41,25 +49,52 @@ if not args.worker:
                          purpose='skate jump feet review', kind='game'))
 
 ox, oy, oz = ORIGIN
-START = (ox + 30, oy - 2, oz + 2)   # the mini-mega's flat, riding toward +x
+START = (ox + 30, oy - 2, oz + 2)     # the mini-mega's flat, on foot
+LANE = (ox + 44.6, oy - 2, oz + 2)    # the landing's wood flat before the quarter, riding toward +x
+DROP_IN = (ox - 2.6, oy, oz + 12)     # the roll-in's top deck
+QUARTER_X = 56.                       # where the quarter's transition starts, along the ramp
 OLLIES = 3
-# The recorder: the skate state, then per bone (ankle and toe, left then right) its height over the deck's top in the
-# deck's frame (cm) and its offset along and across the deck.
+QUARTER_PUSHES = (2.5, 3.0, 3.5)   # seconds of pushing from the flat, enough to air out of the quarter
+# A physical foot may differ from the animated one by this much (cm, a phase's mean, any bone, up or along the deck).
+# They match within 0.6 cm when Physics Control ticks before the physics step; a frame behind, the feet sit 10 cm off
+# at 60 fps (5.5 m/s for 17 ms) and twice that at 30.
+TRACKING = 2.0
+LATE_TICK = 'Physics Control ticks after the physics step'
+# The recorder: the frame's time, the skate state, then per bone (ankle and toe, left then right) its height over the
+# deck's top in the deck's frame (cm) and its offset along and across the deck.
 RECORDER = r'''
-import json
-P = live.player(); M = P.get_editor_property('mesh')
+P = unreal.LiveLibrary.player(); M = P.get_editor_property('mesh')
 D = next(c for c in P.get_components_by_class(unreal.StaticMeshComponent) if c.get_name() == 'SkateDeck')
-_box = D.get_editor_property('static_mesh').get_bounding_box()
-live.DECK_TOP = _box.max.z
+live.DECK_TOP = D.get_editor_property('static_mesh').get_bounding_box().max.z
 live.FEET = []
 def _feet(dt):
-    T = D.get_world_transform()
-    bones = []
+    T = D.get_world_transform(); bones = []
     for b in ('foot_L', 'toe_L', 'foot_R', 'toe_R'):
-        p = T.inverse_transform_location(M.get_socket_location(b))
-        bones.append((round(p.z - live.DECK_TOP, 2), round(p.x, 1), round(p.y, 1)))
+        p = T.inverse_transform_location(M.get_socket_location(b)); bones.append((round(p.z - live.DECK_TOP, 2), round(p.x, 1), round(p.y, 1)))
     live.FEET.append((dt, live.L.skate_state(), bones))
 live.behave('feet_rec', _feet)
+'''
+# The close view: the player's camera beside the deck, looking at it, held there over the game's own camera.
+CLOSE = r'''
+P = unreal.LiveLibrary.player(); D = next(c for c in P.get_components_by_class(unreal.StaticMeshComponent) if c.get_name() == 'SkateDeck')
+C = P.get_components_by_class(unreal.CameraComponent)[0]
+if getattr(live, 'CAMHOME', None) is None:
+    live.CAMHOME = (C.get_attach_parent(), C.get_attach_socket_name(), C.get_relative_transform(), C.get_editor_property('field_of_view'))
+T = D.get_world_transform(); at = T.translation; v = P.get_velocity(); v.z = 0
+f = v.normal() if v.length() > 10 else T.rotation.get_forward_vector()
+loc = at + unreal.Vector(-f.y, f.x, 0) * 95 + unreal.Vector(0, 0, 14)
+C.detach_from_component(unreal.DetachmentRule.KEEP_WORLD, unreal.DetachmentRule.KEEP_WORLD, unreal.DetachmentRule.KEEP_WORLD)
+C.set_world_location_and_rotation(loc, unreal.MathLibrary.find_look_at_rotation(loc, at + unreal.Vector(0, 0, 8)), False, True)
+C.attach_to_component(D, '', unreal.AttachmentRule.KEEP_WORLD, unreal.AttachmentRule.KEEP_WORLD, unreal.AttachmentRule.KEEP_WORLD, False)
+C.set_editor_property('field_of_view', 45.0)
+unreal.YorimichiLive.hold_camera(6.0)
+'''
+HOME = r'''
+P = unreal.LiveLibrary.player(); C = P.get_components_by_class(unreal.CameraComponent)[0]
+parent, sock, rel, fov = live.CAMHOME
+C.attach_to_component(parent, sock, unreal.AttachmentRule.KEEP_RELATIVE, unreal.AttachmentRule.KEEP_RELATIVE, unreal.AttachmentRule.KEEP_RELATIVE, False)
+C.set_relative_transform(rel, False, True); C.set_editor_property('field_of_view', fov)
+unreal.YorimichiLive.hold_camera(0.0)
 '''
 
 
@@ -91,7 +126,19 @@ def wait(seconds):
     end = time.monotonic() + seconds
     while time.monotonic() < end:
         if p.poll() is not None: raise RuntimeError('Game exited ' + str(p.returncode))
-        time.sleep(.25)
+        time.sleep(.1)
+
+
+def console(command): run(f"unreal.SystemLibrary.execute_console_command(unreal.LiveLibrary.game_world(), {command!r})")
+
+
+def view(code, what):
+    """The close view is for people to look at; the checks do not need it."""
+    try: run(code)
+    except RuntimeError as e: print(what + ' failed:', str(e)[:300], flush=True)
+
+
+def shot(name): run(f"live.shot({str(out / f'{name}.png')!r})")
 
 
 def stand():
@@ -120,53 +167,95 @@ f = floor(bottom)
 print(json.dumps(dict(bones=bones, capsule_bottom=None if f is None else round(bottom.z - f, 2),
                       mesh_from_bottom=round(M.get_world_location().z - bottom.z, 2), half=round(half, 2))))
 ''')
-    result = json.loads(measured.strip().splitlines()[-1]); run(f"live.shot({str(out / 'on_foot.png')!r})")
+    result = json.loads(measured.strip().splitlines()[-1]); shot('on_foot')
     return result
 
 
-def ride(name, physical, at=None, ollies=OLLIES, coast=0.):
-    x, y, z = at or START
+def place(at, physical):
+    """On the board at rest at `at`, recording from here on."""
+    x, y, z = at
     run(f'''
 unreal.SystemLibrary.execute_console_command(unreal.LiveLibrary.game_world(), 'skate.RidePhysical {physical}')
+live.stop('feet_rec'); live.stop('skate_script')
 at = live.L.ground_at(unreal.Vector({x * 100!r}, {-y * 100!r}, {z * 100!r}))
 assert live.L.skate_place(at, 0.0), 'skate_place refused'
-{RECORDER}
 ''')
-    wait(1.)
-    if coast:
-        wait(.6); run(f"live.shot({str(out / f'{name}_air.png')!r})"); wait(coast)
-    else:
-        run("live.skate_script([(1.6, {'push': True}), (.2, {})])"); wait(2.)
-    for k in range(ollies):
-        run("live.flick('ollie')"); wait(.55)
-        run(f"live.shot({str(out / f'{name}_air{k}.png')!r})"); wait(1.6)
-        run("live.skate_script([(.6, {'push': True}), (.1, {})])"); wait(.9)
-    if ollies:
-        # A manual: the right stick half back, nose up on the back wheels.
-        run("live.skate_script([(.6, {'push': True}), (.3, {}), (1.8, {'right': (0, -.5)}), (.1, {})])"); wait(1.6)
-        run(f"live.shot({str(out / f'{name}_manual.png')!r})"); wait(1.6)
+    wait(1.2); run(RECORDER)
+
+
+F = lambda pattern, s, default=None: (m.group(1) if (m := re.search(pattern, s)) else default)
+
+
+def frames():
     rows = json.loads(run("import json; live.stop('feet_rec'); print(json.dumps(live.FEET))").strip().splitlines()[-1])
-    (out / f'rows_{name}.json').write_text(json.dumps(rows, indent=1) + '\n')
-    phases = {}
-    for _, s, bones in rows:
-        m = re.search(r'retail=(\w+)', s); bail = re.search(r'bail=(\d)', s)
-        if not m or (bail and bail.group(1) != '0'): continue
-        kind = 'air' if 'Air' in m.group(1) else 'ground' if m.group(1) in ('PhysicsGround', 'GroundAnimation') else None
-        if kind == 'ground' and re.search(r'manual=1', s): kind = 'manual'
-        if kind: phases.setdefault(kind, []).append([b[0] for b in bones])
-    summary = {}
-    for kind, values in phases.items():
-        cols = list(zip(*values))
-        summary[kind] = dict(frames=len(values), mean=[round(sum(c) / len(c), 1) for c in cols], max=[round(max(c), 1) for c in cols],
-                             min=[round(min(c), 1) for c in cols])
-    # Landed: an air phase, then at least half a second rolling on the ground after its last airborne frame.
-    kinds = [m.group(1) if (m := re.search(r'retail=(\w+)', s)) else '' for _, s, _ in rows]
-    last_air = max((i for i, k in enumerate(kinds) if 'Air' in k), default=None)
-    summary['air_frames'] = sum('Air' in k for k in kinds)
-    summary['ground_after_air'] = None if last_air is None else sum(k in ('PhysicsGround', 'GroundAnimation') for k in kinds[last_air + 1:])
-    counts = [int(m.group(1)) for _, s, _ in rows if (m := re.search(r'bails=(\d+)', s))]
-    summary['bails'] = counts[-1] - counts[0] if counts else None
-    return summary
+    return [dict(dt=dt, retail=F(r'retail=(\w+)', s, ''), phys=F(r'phys=(\w+)', s, ''), manual=F(r'manual=(\d)', s) == '1',
+                 push=F(r' push=(\d)', s) == '1' or F(r' ps=(\d)', s, '0') != '0', bail=F(r' bail=(\d)', s, '0') != '0',
+                 speed=float(F(r' speed=(-?\d+)', s, 0)), bails=int(F(r'bails=(\d+)', s, 0)), surface=F(r'surface=(\w+)', s, ''),
+                 deck=[float(v) for v in F(r'deck=(-?[\d.]+,-?[\d.]+,-?[\d.]+)', s, '0,0,0').split(',')],
+                 height=[b[0] for b in bones], along=[b[1] for b in bones]) for dt, s, bones in rows]
+
+
+def mean(rows, key):
+    return [round(sum(c) / len(c), 1) for c in zip(*[r[key] for r in rows])] if rows else None
+
+
+def ollie(name, physical):
+    place(LANE, physical); view(CLOSE, 'close view')
+    run("live.skate_script([(.5, {'push': True}), (.05, {})])"); wait(1.1)
+    if name.endswith('0'): shot(name + '_rolling')
+    run("live.flick('ollie')"); wait(.45); shot(name + '_air'); wait(1.4)
+    view(HOME, 'camera home')
+    return frames()
+
+
+def manual(name, physical):
+    # The right stick half back, nose up on the back wheels.
+    place(LANE, physical); view(CLOSE, 'close view')
+    run("live.skate_script([(.5, {'push': True}), (.5, {}), (1.8, {'right': (0, -.5)}), (.1, {})])"); wait(1.9)
+    shot(name); wait(1.2)
+    view(HOME, 'camera home')
+    return frames()
+
+
+def feet(name, physical):
+    """Each phase's mean ankle and toe heights over the deck and offsets along it. Rolling is the coast before the
+    first ollie, not pushing (the pushing foot is off the deck)."""
+    trials = [('ollie', ollie(f'{name}_ollie{k}', physical)) for k in range(OLLIES)] + [('manual', manual(f'{name}_manual', physical))]
+    (out / f'rows_{name}.json').write_text(json.dumps(trials) + '\n')
+    phases = {'rolling': [], 'air': [], 'manual': []}
+    for kind, rows in trials:
+        first_air = next((i for i, r in enumerate(rows) if 'Air' in r['retail']), len(rows))
+        clean = lambda r: not r['bail'] and r['phys'] not in ('Bail', 'GetUp')
+        phases['rolling'] += [r for r in rows[:first_air] if clean(r) and r['retail'] in ('PhysicsGround', 'GroundAnimation') and not r['push']
+                              and not r['manual'] and r['phys'] in ('Riding', '') and r['speed'] > 50]
+        if kind == 'ollie': phases['air'] += [r for r in rows if clean(r) and 'Air' in r['retail']]
+        else: phases['manual'] += [r for r in rows if clean(r) and r['manual']]
+    dts = sorted(r['dt'] for _, rows in trials for r in rows)
+    return dict({k: dict(frames=len(v), height=mean(v, 'height'), along=mean(v, 'along')) for k, v in phases.items()},
+                bails=sum(rows[-1]['bails'] - rows[0]['bails'] for _, rows in trials if rows),
+                frame_ms=dict(mean=round(1000 * sum(dts) / max(1, len(dts)), 1), p95=round(1000 * dts[int(.95 * (len(dts) - 1))], 1) if dts else None))
+
+
+def back_on_lane(rows):
+    """The frames up to the board's return across the lane from the quarter: a board that stalls short of the lip
+    rolls back fakie, and a push still held then carries it backwards up the landing and over the gap, which is not
+    the quarter's landing."""
+    up = next((k for k, r in enumerate(rows) if r['deck'][0] > (ox + QUARTER_X) * 100), None)
+    back = next((k for k in range(up, len(rows)) if rows[k]['deck'][0] < (LANE[0] - 2) * 100), None) if up is not None else None
+    return rows[:back] if back else rows
+
+
+def airs_out(name, physical, push, at=LANE, window=None):
+    """Pushes for `push` seconds and lets the board run, to air out of a transition and land back: each air of 10
+    frames or more, and whether the board then rolled on for half a second."""
+    place(at, physical)
+    run(f"live.skate_script([({push}, {{'push': True}}), (.05, {{}})])")
+    wait(push + 9.); rows = frames(); (out / f'rows_{name}.json').write_text(json.dumps(rows) + '\n')
+    rows = window(rows) if window else rows
+    runs = [(air, len(list(g))) for air, g in itertools.groupby('Air' in r['retail'] for r in rows)]
+    airs = [dict(frames=n, landed=k + 1 < len(runs) and runs[k + 1][1] >= 30) for k, (air, n) in enumerate(runs) if air and n >= 10]
+    return dict(airs=airs, bails=rows[-1]['bails'] - rows[0]['bails'] if rows else None,
+                top_speed_mps=round(max((r['speed'] for r in rows), default=0) / 100, 2))
 
 
 try:
@@ -186,28 +275,43 @@ try:
     print('bridge up and steady', flush=True)
     results = {}
     results['on_foot'] = stand(); print('on_foot', json.dumps(results['on_foot']), flush=True)
-    for name, physical in (('physical', 1), ('animated', 0)):
-        results[name] = ride(name, physical); print(name, json.dumps(results[name]), flush=True)
-    # The mini-mega's drop-in, over its kicker and the gap: a big air landed into the transition, no input.
-    results['mega_drop_in'] = ride('mega_drop_in', 1, (ox - 2, oy, oz + 12), 0, 6.); print('mega_drop_in', json.dumps(results['mega_drop_in']), flush=True)
-    # Ankle and toe heights over the deck in the air or a manual may differ from rolling's by no more than 2 cm.
-    drop = results['mega_drop_in']
-    record('mega_drop_in_lands', drop['bails'] == 0 and drop['air_frames'] > 10 and (drop['ground_after_air'] or 0) >= 30, json.dumps(drop))
+    for fps in (60, 30):
+        console(f't.MaxFPS {fps}'); wait(.5)
+        for name, physical in ((f'physical{fps}', 1), (f'animated{fps}', 0)):
+            results[name] = feet(name, physical); print(name, json.dumps(results[name]), flush=True)
+    console('t.MaxFPS 60')
+    for push in QUARTER_PUSHES:
+        results[f'quarter_{push}'] = airs_out(f'quarter_{push}', 1, push, window=back_on_lane); print(f'quarter_{push}', json.dumps(results[f'quarter_{push}']), flush=True)
+    results['mega_drop_in'] = airs_out('mega_drop_in', 1, 1., DROP_IN); print('mega_drop_in', json.dumps(results['mega_drop_in']), flush=True)
+
+    for fps in (60, 30):
+        phys, anim = results[f'physical{fps}'], results[f'animated{fps}']
+        seen = lambda r: {k: r[k]['frames'] for k in ('rolling', 'air', 'manual')} | {k: r[k] for k in ('bails', 'frame_ms')}
+        record(f'rides_clean_{fps}', all(r['bails'] == 0 and min(r[k]['frames'] for k in ('rolling', 'air', 'manual')) >= 20 for r in (phys, anim)),
+               json.dumps({'physical': seen(phys), 'animated': seen(anim)}))
+        for phase in ('rolling', 'air', 'manual'):
+            a, b = phys[phase], anim[phase]
+            if not a['frames'] or not b['frames']:
+                record(f'physical_feet_track_animated_{phase}_{fps}', False, f'no {phase} frames'); continue
+            off = {k: [round(x - y, 1) for x, y in zip(a[k], b[k])] for k in ('height', 'along')}
+            record(f'physical_feet_track_animated_{phase}_{fps}', max(abs(v) for d in off.values() for v in d) <= TRACKING,
+                   f'physical minus animated (ankle L, toe L, ankle R, toe R), cm: up {off["height"]}, along {off["along"]}; '
+                   f'physical up {a["height"]}, along {a["along"]}')
+    # Every air lands and rolls on; the last may still be in the air when the recording ends. A push too short to clear
+    # the quarter's lip rolls back down the transition without bailing; one of them airs out.
+    for name in [f'quarter_{push}' for push in QUARTER_PUSHES] + ['mega_drop_in']:
+        r = results[name]
+        record(f'{name}_lands', r['bails'] == 0 and (r['airs'] or name.startswith('quarter')) and all(a['landed'] for a in r['airs'][:-1])
+               and (not r['airs'] or r['airs'][0]['landed']), json.dumps(r))
+    record('quarter_airs_out', any(results[f'quarter_{push}']['airs'] for push in QUARTER_PUSHES),
+           json.dumps({push: results[f'quarter_{push}']['airs'] for push in QUARTER_PUSHES}))
     # The toe bones sit inside the shoes, above their soles: one at or under the floor means the shoe is sunk into it.
     toes = [results['on_foot']['bones'].get(b) for b in ('toe_L', 'toe_R')]
     record('on_foot_toes_above_floor', all(t is not None and t >= 1.0 for t in toes), json.dumps(results['on_foot']))
     record('on_foot_capsule_on_floor', results['on_foot']['capsule_bottom'] is not None and abs(results['on_foot']['capsule_bottom']) <= 2.5,
            json.dumps(results['on_foot']))
-    for name, r in results.items():
-        if name in ('mega_drop_in', 'on_foot'): continue
-        if 'air' not in r or 'ground' not in r:
-            record(f'{name}_jumped', False, json.dumps(r)); continue
-        for phase in ('air', 'manual'):
-            if phase not in r:
-                record(f'{name}_{phase}_seen', False, json.dumps(r)); continue
-            lift = [round(a - g, 1) for a, g in zip(r[phase]['mean'], r['ground']['mean'])]
-            record(f'{name}_feet_on_deck_in_{phase}', max(map(abs, lift)) <= 2.0,
-                   f'{phase} minus rolling (ankle L, toe L, ankle R, toe R): {lift} cm; {json.dumps(r)}')
+    log.flush(); late = [l.strip() for l in (out / 'game.log').read_text(errors='replace').splitlines() if LATE_TICK in l]
+    record('physics_control_before_physics', not late, late[0][-300:] if late else 'no late-tick warning')
     summary = dict(passed=all(c['ok'] for c in checks.values()), checks=checks, runs=results)
     (out / 'checks.json').write_text(json.dumps(summary, indent=2) + '\n')
     print('PASSED' if summary['passed'] else 'FAILED', sum(c['ok'] for c in checks.values()), '/', len(checks), flush=True)

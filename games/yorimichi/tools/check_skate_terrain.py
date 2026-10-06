@@ -53,10 +53,11 @@ def box(cx, cy, cz, w, h, d, bevel=0.):
 
 def planks(gap=.02, width=.22, thick=.06, bevel=.008):
     """The footbridge: bevelled boards across the ride with gaps between them, after a run-up deck at the same height,
-    over ground a metre down."""
+    over ground a metre down. It runs 60 m, past where a 5 s push or a 4 s coast at 7 m/s ends (at 20 m, Easy's push
+    rode off its end and stopped in the ground below)."""
     tris = [[[p[0], p[1] - 1, p[2]] for p in t] for t in feel.FLAT] + box(0, -thick / 2, -4, 2.2, thick, 6)
     z = -1.
-    while z < 20:
+    while z < 60:
         tris += box(0, -thick / 2, z + width / 2, 2.2, thick, width, bevel)
         z += width + gap
     return tris
