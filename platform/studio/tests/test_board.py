@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -216,3 +217,26 @@ def test_wait_heartbeat_exclusion_and_background_task_completion(cache):
         process.communicate(timeout=6)
     with board.database() as db:
         assert db.execute('SELECT pid FROM subscribers').fetchone()['pid'] is None
+
+
+def test_cli_attaches_files_and_reads_whole_threads(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'cache'))
+    clip = tmp_path / 'ramp clip.mp4'; clip.write_bytes(b'\0' * 2048)
+    notes = tmp_path / 'notes.txt'; notes.write_text('left side first')
+    root = board.post('review', 'Can someone check the ramp?', recipient='move-sets', topic='request')
+    assert board.main(parse_args(['board', 'post', '--agent', 'move-sets', '--to', 'review', '--reply-to', str(root),
+                                  '--attach', str(clip), '--attach', str(notes), 'Checked; clip attached.'])) == 0
+    reply = int(capsys.readouterr().out)
+    body = board.messages()[-1]['body']
+    assert body.startswith('Checked; clip attached.\n\nAttachments (files on this machine):\n- ramp clip.mp4 (video/mp4, 2.0 KB): ')
+    # The trailer names the stored copy, which agents can open directly.
+    stored = Path(body.splitlines()[-2].rsplit(': ', 1)[1])
+    assert stored.read_bytes() == clip.read_bytes() and stored.parent.parent.name == 'board-attachments'
+    assert board.main(parse_args(['board', 'post', '--agent', 'review', '--attach', str(notes)])) == 0
+    later = board.post('review', 'Thanks!', recipient='move-sets', reply_to=reply)
+    capsys.readouterr()
+    assert board.main(parse_args(['board', 'thread', str(later)])) == 0
+    assert [json.loads(line)['id'] for line in capsys.readouterr().out.splitlines()] == [root, reply, later]
+    assert board.main(parse_args(['board', 'thread', '99999'])) == 1
+    assert board.main(parse_args(['board', 'post', '--agent', 'review', '--reply-to', '99999', 'x'])) == 1
+    assert board.main(parse_args(['board', 'post', '--agent', 'review', '--attach', str(tmp_path / 'missing.png')])) == 1
