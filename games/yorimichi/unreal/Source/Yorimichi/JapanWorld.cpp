@@ -279,7 +279,7 @@ void AJapanWorld::Load()
     const TArray<TSharedPtr<FJsonValue>>* WD = nullptr;
     if (Root->TryGetArrayField(TEXT("wind_dir"), WD) && WD->Num() >= 2) WindDir = FVector((*WD)[0]->AsNumber(), -(*WD)[1]->AsNumber(), 0).GetSafeNormal();
     WindSpeed = Root->HasField(TEXT("wind_speed")) ? Root->GetNumberField(TEXT("wind_speed")) * 100.0 : 350.f;
-    // The skate pier clears its own ground of trees, bushes, grass and litter (japan/skatepark/park.json).
+    // The skate pier clears its own ground of trees, bushes, grass and litter (world/regions/skatepark/park.json).
     const FString ParkPath = AtelierDataPath(TEXT("skatepark/park.json"));
     TArray<TArray<FVector2D>> ParkClearance = ASkatePark::LoadClearance(ParkPath);
     const FString CommunityParkPath = AtelierDataPath(TEXT("communitypark/park.json"));

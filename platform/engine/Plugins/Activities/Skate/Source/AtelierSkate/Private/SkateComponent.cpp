@@ -331,8 +331,8 @@ void USkateComponent::ReadInput(float Dt)
     auto Down = [&](const FKey& K) { return PC->IsInputKeyDown(K); };
     I.Left.X = FMath::Clamp(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX) + ((Down(EKeys::D) || Down(EKeys::Right)) ? 1.f : 0.f) - ((Down(EKeys::A) || Down(EKeys::Left)) ? 1.f : 0.f), -1.f, 1.f);
     I.Left.Y = PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftY);
-    // SceneViewport negates Gamepad_RightY (up reads negative); Flick-It wants up positive. The project's 0.25 dead
-    // zone on each axis (DefaultInput.ini) squeezes the stick (half-way reads as a third, diagonals bend); Flick-It and
+    // SceneViewport negates Gamepad_RightY (up reads negative); Flick-It wants up positive. The engine's 0.25 dead
+    // zone on each axis (BaseInput.ini) squeezes the stick (half-way reads as a third, diagonals bend); Flick-It and
     // the manual's balance are laid out in real stick positions, so undo it and keep a small round dead zone instead
     // (SkatePad.h, which the offline input replay shares).
     using atelier::skate_pad::Unsqueeze;
