@@ -10,9 +10,10 @@ the level), so every later import that writes under /Game/Japan, or uses its ani
 after it. The player is installed in the prototype's three layers (full, sword, armed) from one source blend.
 """
 import importlib.util, json, shutil, os
+from dataclasses import dataclass
 from pathlib import Path
 
-from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, Call
+from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
 from atelier import paths
 
 GAME = Path(__file__).resolve().parent
@@ -75,6 +76,41 @@ def stage_data(ctx, log):
         log.write(f'staged {rel}\n')
     if not communitypark(ctx.out):
         (data / 'communitypark' / 'park.json').unlink(missing_ok=True)
+
+
+@dataclass
+class PackageArchive(Python):
+    """The download folder, zip, split and checksums: a guarded job of its own after UAT releases its turn, with its
+    ditto and split children guarded too."""
+    marker: str = 'PACKAGE ARCHIVE COMPLETE'
+    timeout: float = 3 * 3600
+    watch: tuple = ('ditto', 'split')
+    progress: float = 25.
+
+
+def package_present(out):
+    """The zip or every part the manifest lists, at its recorded size: names vary with the revision and the split."""
+    root = out / 'package'
+    try:
+        manifest = json.loads((root / 'manifest.json').read_text())
+        return bool(manifest['files']) and all((root / e['file']).stat().st_size == e['bytes'] for e in manifest['files'])
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
+def package_step(ctx, steps):
+    """The packaged macOS game from every Unreal import and the staged runtime data in this checkout. Only built when
+    named: it needs (rather than follows) them, so it reruns by itself whenever any of them changed, without --force."""
+    out = ctx.out
+    return Step('unreal.package',
+                [UnrealPackage('Yorimichi', out / 'package' / 'archive'), PackageArchive(TOOLS / 'package_archive.py', ('--out', out / 'package'))],
+                # The packaging code itself: a launcher, profile or archive change reruns only the package.
+                inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config',
+                        TOOLS / 'package_archive.py', TOOLS / 'desktop_preview.py'],
+                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True, explicit=True,
+                outputs=[out / 'package' / 'manifest.json', out / 'package' / 'SHA256SUMS'],
+                verify=lambda: package_present(out),
+                about='packaged macOS game (.app, Development): cooked, zipped, checksummed in build/<game>/package')
 
 
 def botw_library():
@@ -215,7 +251,7 @@ def steps(ctx):
     # The ground, map and vegetation round the community park, which exist only where its source was fetched.
     park = communitypark(out)
     park_inputs = [REGIONS / 'communitypark' / 'layout.py', REGIONS / 'communitypark' / 'source.py', park] if park else []
-    return [
+    result = [
         # ------------------------------------------------------------ world
         Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI],
              outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
@@ -463,3 +499,4 @@ def steps(ctx):
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
     ] + botw_steps(out) + hippodrome_steps(out)
+    return result + [package_step(ctx, result)]

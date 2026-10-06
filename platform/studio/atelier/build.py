@@ -74,6 +74,27 @@ class UnrealCompile:
 
 
 @dataclass
+class UnrealPackage:
+    """Build, cook, stage and archive the packaged game with UAT BuildCookRun. The editor must already be compiled.
+    Everything under Content is cooked, because the game loads many assets by path at run time."""
+    target: str
+    archive: Path
+    config: str = 'Development'
+    workers: int = 3                    # UAT calls UnrealBuildTool directly, past the capped Build.sh wrapper
+    marker: str = 'BUILD SUCCESSFUL'
+    timeout: float = 4 * 3600           # the whole package: compile, cook, stage and archive
+    # The heavy work happens in UAT's descendants: each gets its own memory guard in the same slot turn.
+    watch: tuple = ('UnrealEditor-Cmd', 'UnrealEditor', 'ShaderCompileWorker', 'dotnet')
+    progress: float = 25.               # quiet UAT phases still print at least every 30 s
+
+    def argv(self, ctx):
+        return [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
+                f'-target={self.target}', '-platform=Mac', f'-clientconfig={self.config}', '-build',
+                f'-ubtargs=-MaxParallelActions={self.workers}', '-cook', '-cookall', '-stage', '-pak', '-archive',
+                f'-archivedirectory={self.archive}', '-nocompileeditor', '-noP4', '-unattended', '-utf8output']
+
+
+@dataclass
 class Call:
     """A Python function `fn(ctx, log)` in the game's build module; `name` makes it part of the fingerprint."""
     name: str
@@ -91,6 +112,13 @@ class Step:
     heavy: bool = False                            # take a render slot and the memory guard (Unreal, Blender renders)
     about: str = ''
     pool_roots: list = field(default_factory=list)  # exclusively owned generated folders, opt-in portable pool
+    explicit: bool = False                         # only when named exactly (a release package): never in a plain
+                                                   # or prefix build
+    verify: object = field(default=None, compare=False, repr=False)  # () -> bool: outputs whose names vary are present
+
+
+def outputs_present(step):
+    return all(Path(o).exists() for o in step.outputs) and (step.verify is None or bool(step.verify()))
 
 
 # ---------------------------------------------------------------- context
@@ -173,9 +201,9 @@ def order(steps, wanted):
         chosen.add(name)
         for need in by_name[name].needs + by_name[name].after:
             add(need)
-    for w in wanted or [s.name for s in steps]:
+    for w in wanted or [s.name for s in steps if not s.explicit]:
         for s in steps:
-            if s.name == w or s.name.startswith(w + '.'):
+            if s.name == w or (s.name.startswith(w + '.') and not s.explicit):
                 add(s.name)
     return [s for s in steps if s.name in chosen]
 
@@ -200,7 +228,7 @@ def slot_request(ctx, step):
     """How a heavy step asks for a render slot: (kind, expected peak in GiB). A compile always takes the big slot (and
     holds the small one); a step with no guard report has no expected peak and takes the big one. render_lock decides
     the rest (the 3 GiB bound, the switch, free memory)."""
-    if any(isinstance(c, UnrealCompile) for c in step.commands):
+    if any(isinstance(c, (UnrealCompile, UnrealPackage)) for c in step.commands):
         return 'compile', None
     return 'job', expected_peak_gib(ctx.logs / f'{step.name}.guard')
 
@@ -225,7 +253,8 @@ def run_command(ctx, step, command, log, request=None, slots=None):
             why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
         code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
-                           small_gib=small_gib, kind=kind, on_slot=note)
+                           small_gib=small_gib, kind=kind, on_slot=note, timeout=getattr(command, 'timeout', 0.),
+                           watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.))
         text = (folder / 'stdout.log').read_text(errors='ignore')
         log.write(text)
         if code and used == ['small']:
@@ -276,7 +305,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         stamp = ctx.stamps / f'{step.name}.json'
         current = fingerprint(step, done)
         previous = json.loads(stamp.read_text()) if stamp.exists() else {}
-        outputs_ok = all(Path(o).exists() for o in step.outputs)
+        outputs_ok = outputs_present(step)
         if not force and previous.get('fingerprint') == current and outputs_ok:
             done[step.name] = current
             echo(f'{print_} up to date')
@@ -308,6 +337,8 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
                     if step.heavy and not isinstance(command, Call):
                         peaks.append(report_peak(ctx.logs / f'{step.name}.guard' / 'memory-health.json'))
                 missing = [str(o) for o in step.outputs if not Path(o).exists()]
+                if step.verify is not None and not step.verify():
+                    missing.append(f'{step.name} verification')
                 if missing:
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
             except Exception as error:

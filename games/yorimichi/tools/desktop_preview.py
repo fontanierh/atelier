@@ -99,6 +99,39 @@ def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, 
             '-ExecCmds=' + commands, *shlex.split(os.environ.get('YORIMICHI_EXTRA_ARGS', '')), *extra]
 
 
+LAUNCHER = """#!/bin/bash
+# Yorimichi with the desktop profile: the forward renderer, the native 1440 viewport and the optimized city tiles and
+# trees. Generated from games/yorimichi/tools/desktop_preview.py for the packaged game. Settings are kept in
+# ~/Library/Application Support/Yorimichi/settings.txt. The package is cooked for forward shading only, so it always
+# starts Forward: a Lumen choice saved in the menu does not apply to the packaged game.
+set -u
+cd "$(dirname "$0")"
+GAME="$PWD/Yorimichi.app/Contents/MacOS/Yorimichi"
+SUPPORT="$HOME/Library/Application Support/Yorimichi"
+LOGS="$HOME/Library/Logs/Yorimichi"
+mkdir -p "$SUPPORT" "$LOGS"
+PREFS="$SUPPORT/settings.txt"
+touch "$PREFS"
+xattr -dr com.apple.quarantine "$PWD" 2>/dev/null || true
+saved() { grep -E "^[[:space:]]*$1[[:space:]]*=" "$PREFS" | tail -1 | cut -d= -f2- | tr -d '[:space:]'; }
+PROFILE="desktop=1"
+[ -n "$(saved performance)" ] || PROFILE="$PROFILE;performance=1"
+[ -n "$(saved render_scale)" ] || PROFILE="$PROFILE;render_scale=100"
+RENDERER=0; RENDER=(@FORWARD@); COMMANDS=@FORWARD_COMMANDS@
+exec "$GAME" -fullscreen -ForceRes -resx=2560 -resy=1440 -desktopnative1440 -nosplash -abslog="$LOGS/game.log" \\
+  -set="$PROFILE;renderer=$RENDERER" -preferencesfile="$PREFS" "${RENDER[@]}" -ExecCmds="$COMMANDS" "$@"
+"""
+
+
+def packaged_launcher():
+    """`Play Yorimichi.command` beside the packaged .app: this profile's shared-settings launch, without the repository,
+    Python or the guard. It honours saved settings like --shared-settings, except the renderer: the package is cooked
+    for forward shading only (the project's r.ForwardShading), so it always starts Forward."""
+    commands = COMMON.replace('r.ScreenPercentage 100,', '') + ',japan.CitySurfaceTiles ' + TILE_TAG + ' 1,'
+    return (LAUNCHER.replace('@FORWARD@', ' '.join(map(shlex.quote, renderer_arguments(False, desktop_viewport=True))))
+            .replace('@FORWARD_COMMANDS@', shlex.quote(commands + CANDIDATE)))
+
+
 def tile_counts(path):
     try:
         manifest = json.loads(path.read_text())

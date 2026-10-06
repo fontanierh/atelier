@@ -54,6 +54,10 @@ FString RendererRestartRequest()
     return Request;
 }
 const TCHAR* RendererName(int32 Renderer) { return Renderer ? TEXT("Lumen") : TEXT("Forward"); }
+// A packaged game is cooked for forward shading only (the shader compiler fixes FORWARD_SHADING for the target), so it
+// has no Lumen shaders to switch to. The editor keeps both.
+constexpr bool bLumenAvailable = WITH_EDITOR != 0;
+const TCHAR* const LumenUnavailable = TEXT("Lumen is not available in this build: it is packaged for forward lighting only.");
 // The Skate feel page (docs/SKATE.md, "Skate feel menu"): every value that changes how the board rides, saved as
 // skate_<name>. The mode picks Easy, Normal or Hardcore as made, or Custom, where every value below is tuned on a base
 // difficulty; the stick, mouse and camera (bAlways) apply in every mode. A knob without a field is a choice: the mode
@@ -283,6 +287,11 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
 {
     GraphicsError.Reset();
     if (!FMath::IsFinite(Number)) return false;
+    if (Key == TEXT("renderer") && Number > .5f && !bLumenAvailable)
+    {
+        GraphicsError = LumenUnavailable;   // refused before anything is changed or saved
+        return false;
+    }
     if (Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
         Key == TEXT("tree_lod_mode") || Key == TEXT("tree_lod_distance")) return SetGraphicsChoice(Key,Number);
     // Custom from a preset, with nothing tuned yet, starts on that preset's difficulty (the menu and the phone alike).
@@ -757,8 +766,10 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .AutoWrapText(true).ColorAndOpacity(FLinearColor(1.f,.5f,.4f))];
     // Renderer selection is persisted, but forward/deferred shaders are chosen before the process starts.
     // Never try to turn r.ForwardShading into a runtime console toggle.
+    // It stays focusable (it is the menu's first control); in a packaged build it explains instead of switching.
     FirstControl = SNew(SButton).Text_Lambda([this]
         {
+            if (!bLumenAvailable) return FText::FromString(TEXT("Lighting: Forward · Lumen is not in this build"));
             const int32 Choice = Get(TEXT("renderer")) > .5f ? 1 : 0;
             return FText::FromString(FString::Printf(TEXT("Lighting: %s%s"),RendererName(Choice),
                 Choice == CurrentRenderer() ? TEXT("") : TEXT(" · saved, restart pending")));
@@ -766,6 +777,11 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .OnClicked_Lambda([this]
         {
             GraphicsError.Reset();
+            if (!bLumenAvailable)
+            {
+                GraphicsError = LumenUnavailable;
+                return FReply::Handled();
+            }
             Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
                 [this] { if (Menu) OpenGraphicsWarning(TEXT("renderer")); }));
             return FReply::Handled();
