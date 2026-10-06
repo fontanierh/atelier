@@ -56,6 +56,8 @@ def main():
             assert meshes.set_lod_from_static_mesh(target, lod['level'], source, 0, True) == lod['level']
             editor.save_loaded_asset(source)
         target.set_editor_property('lod_for_collision', 0)
+        # The game validates every LOD's vertices on the CPU before swapping; cooked builds keep them only with this.
+        target.set_editor_property('allow_cpu_access', True)
         target.set_material(0, material)
         assert target.get_num_lods() == 3
         assert target.get_num_triangles(0) == original.get_num_triangles(0), name
