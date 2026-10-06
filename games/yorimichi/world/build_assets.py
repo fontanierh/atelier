@@ -1,6 +1,6 @@
 """Painterly Japan-countryside props (Blender headless) -> build/yorimichi/assets/<Name>.fbx (+ check render)
 
-    blender -b --python japan/build_assets.py -- [--render]
+    blender -b --python games/yorimichi/world/build_assets.py -- [--render]
 
 Metres, Z up; the FBX exporter converts to Unreal centimetres. Every canopy is a handful of
 alpha cards whose custom normals point away from the canopy centre so it shades as one soft

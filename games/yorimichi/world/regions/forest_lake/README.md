@@ -21,7 +21,7 @@ uv run atelier qa yorimichi lake LABEL [shot ...]
   cabin's joinery and the shoreline pieces.
 - `unreal.lake` (`unreal/Scripts/import_forest_lake.py`) imports them into `/Game/Japan/Assets` with `M_Village`,
   and gives `Lake_Water` its own material (`forest_lake_material.py`).
-- The `lake` scenario launches its own game under the render guard, captures twelve views (hero, overview, the four
+- The `lake` scenario launches its own game under the render guard, captures twelve views (hero, overview, the three
   cabin sides, wood store, jetty, boat interior, rock islet, shore, trail, aerial) and probes seven jetty and step
   heights to 4 cm, into `build/yorimichi/forest_lake/LABEL/`. It fails if a probe fails.
 - [`phone/forest-lake-smoke.mjs`](../../../phone/forest-lake-smoke.mjs) drives the streamed touch controls along the

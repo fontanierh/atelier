@@ -72,6 +72,7 @@ The capture deadline defaults to 300 seconds, including final image saving. The 
 
 - `layout.py`: dimensions, profiles, routes, contact lines and the coastal path.
 - `features.py`: skating surfaces, street features, pier and promenade.
+- `board.py`: the trick board's deck, truck and wheel meshes (`SM_SkateDeck`, `SM_SkateTruck`, `SM_SkateWheel`).
 - `geom.py`: shared-vertex geometry, material routing, colour/AO and FBX export.
 - `build.py`: geometry build, checks and gameplay contract.
 - `review.py`: textured overview, street, rail-lane, sunset, bowl and mini renders.
