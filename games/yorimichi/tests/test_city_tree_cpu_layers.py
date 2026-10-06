@@ -62,3 +62,28 @@ def test_overwritten_tree_invalidates_the_overlay_even_with_unchanged_world_inpu
     # A forced/partial import can reset the flag with the same recipe inputs. Cached JSON alone is insufficient.
     (root / 'HD_ArcadeTree.uasset').write_bytes(b'reimported mesh')
     assert not recipe.city_tree_cpu_access_present(ctx)
+
+
+def test_bounds_rounding_preserves_exact_topology_and_material(monkeypatch):
+    import copy
+    import runpy
+    import sys
+
+    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace())
+    module = runpy.run_path(str(build.load_recipe('yorimichi').SCRIPTS / 'city_tree_cpu_access.py'))
+    matches = module['geometry_matches']
+    before = dict(lods=1, triangles=56964, sections=1, material='/Game/Japan/Materials/M_Arcade',
+                  bounds=dict(origin=[4.8125457763671875, 2.2609710693359375, 484.3774404525757],
+                              box_extent=[432.87681579589844, 434.5858612060547, 514.3774423599243]))
+    # Actual native before/after values from changing and saving the production tree CPU flag.
+    after = copy.deepcopy(before)
+    after['bounds'] = dict(origin=[4.8125457763671875, 2.2609710693359375, 484.37744140625],
+                          box_extent=[432.8768310546875, 434.58587646484375, 514.37744140625])
+    assert matches(before, after)
+    moved = copy.deepcopy(after)
+    moved['bounds']['origin'][0] += .0011
+    assert not matches(before, moved)
+    for field, changed in (('lods', 2), ('triangles', 56963), ('sections', 2), ('material', '/Different')):
+        modified = copy.deepcopy(after)
+        modified[field] = changed
+        assert not matches(before, modified), field
