@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "WorldContactProducer.h"
 #include "NativeMath.h"
+#include <algorithm>
 #include <cstring>
 #include <limits>
 #if defined(__clang__)
@@ -67,8 +68,9 @@ bool ImportedInternalFloorEdge(std::size_t source_index,const WorldTriangle& sou
 // the last bump, whose up leans over the next edge). Taller edges, contacts from above and edges a wheel is rolling
 // off keep their own normal. A ramp is not an edge, though near the wheels it can look like one: a transition's face
 // meets the front wheels tilted back against their travel, and a board landing pitched meets it with its trucks. So a
-// wheel steps up only where it touches an edge or corner, never a face's flat, and the other volumes pass only faces
-// that rise no higher than SmallEdgeStep over the wheels' bottoms in the world, as a plank's side or a lip does.
+// wheel steps up where it touches an edge or corner, or the flat of a face no taller than SmallEdgeStep in the world
+// (a plank's bevel), never a ramp's; and the other volumes pass only faces that rise no higher than SmallEdgeStep over
+// the wheels' bottoms in the world, as a plank's side or a lip does.
 constexpr float SmallEdgeStep=0.012f,RiderGapDepth=0.05f;
 enum class SmallEdge {None,StepUp,Drop};
 SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,const Triangle& face,Vec3 up,float floor,float lowest,ContactPair& pair,Vec3& normal)
@@ -85,7 +87,13 @@ SmallEdge RideOverSmallEdge(const BoardWorldVolume& volume,const Triangle& face,
         return SmallEdge::Drop;
     }
     if (height<-SmallEdgeStep) return SmallEdge::None;
-    if (along>=0.999f || along<=0.0f || std::fabs(Dot3(normal,face.feature.normal))>0.9999f) return SmallEdge::None;
+    if (along>=0.999f || along<=0.0f) return SmallEdge::None;
+    if (std::fabs(Dot3(normal,face.feature.normal))>0.9999f)
+    {
+        float low=face.vertices[0].y,high=low;
+        for (const auto& corner:face.vertices) {low=std::min(low,corner.y);high=std::max(high,corner.y);}
+        if (high-low>SmallEdgeStep) return SmallEdge::None;
+    }
     const float step=wheel->radius-Dot3(Subtract(wheel->center,pair.b),up);
     if (step>SmallEdgeStep) return SmallEdge::None;
     const auto across=Subtract(normal,Scale(up,along));
