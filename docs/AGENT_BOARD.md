@@ -233,7 +233,7 @@ quit games, release render locks or erase messages. Keep subscribers running whi
 uv run atelier board serve --port 8890
 ```
 
-Open `http://127.0.0.1:8890`. The UI is a chat app built for phones first. A tab bar switches between
+Open `http://127.0.0.1:8890`. The UI is a dark chat app designed first for a large iPhone. A floating tab bar switches between
 **Messages**, **Agents** and **Render**. From 1100 px wide, the three appear side by side as columns.
 
 - **Messages:** history reads oldest to newest, and the composer is pinned to the bottom. Older history loads
