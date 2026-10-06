@@ -85,7 +85,7 @@ class UnrealPackage:
     timeout: float = 4 * 3600           # the whole package: compile, cook, stage and archive
     # The heavy work happens in UAT's descendants: each gets its own memory guard in the same slot turn.
     watch: tuple = ('UnrealEditor-Cmd', 'UnrealEditor', 'ShaderCompileWorker', 'dotnet')
-    progress: float = 60.
+    progress: float = 25.               # quiet UAT phases still print at least every 30 s
 
     def argv(self, ctx):
         return [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
@@ -112,6 +112,13 @@ class Step:
     heavy: bool = False                            # take a render slot and the memory guard (Unreal, Blender renders)
     about: str = ''
     pool_roots: list = field(default_factory=list)  # exclusively owned generated folders, opt-in portable pool
+    explicit: bool = False                         # only when named exactly (a release package): never in a plain
+                                                   # or prefix build
+    verify: object = field(default=None, compare=False, repr=False)  # () -> bool: outputs whose names vary are present
+
+
+def outputs_present(step):
+    return all(Path(o).exists() for o in step.outputs) and (step.verify is None or bool(step.verify()))
 
 
 # ---------------------------------------------------------------- context
@@ -194,9 +201,9 @@ def order(steps, wanted):
         chosen.add(name)
         for need in by_name[name].needs + by_name[name].after:
             add(need)
-    for w in wanted or [s.name for s in steps]:
+    for w in wanted or [s.name for s in steps if not s.explicit]:
         for s in steps:
-            if s.name == w or s.name.startswith(w + '.'):
+            if s.name == w or (s.name.startswith(w + '.') and not s.explicit):
                 add(s.name)
     return [s for s in steps if s.name in chosen]
 
@@ -298,7 +305,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         stamp = ctx.stamps / f'{step.name}.json'
         current = fingerprint(step, done)
         previous = json.loads(stamp.read_text()) if stamp.exists() else {}
-        outputs_ok = all(Path(o).exists() for o in step.outputs)
+        outputs_ok = outputs_present(step)
         if not force and previous.get('fingerprint') == current and outputs_ok:
             done[step.name] = current
             echo(f'{print_} up to date')
@@ -330,6 +337,8 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
                     if step.heavy and not isinstance(command, Call):
                         peaks.append(report_peak(ctx.logs / f'{step.name}.guard' / 'memory-health.json'))
                 missing = [str(o) for o in step.outputs if not Path(o).exists()]
+                if step.verify is not None and not step.verify():
+                    missing.append(f'{step.name} verification')
                 if missing:
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
             except Exception as error:

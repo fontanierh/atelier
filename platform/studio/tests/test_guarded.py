@@ -69,7 +69,7 @@ class GuardedRunTests(unittest.TestCase):
     def fake_attach(self, monitor=None, raises=None):
         """Replace the memory guard, recording the child pid it was asked to watch."""
         @contextmanager
-        def attach(pid, report, duration, limit_gib=10.):
+        def attach(pid, report, duration, limit_gib=10., expected_start=None):
             self.seen.append(pid)
             Path(report).parent.mkdir(parents=True, exist_ok=True)
             Path(report).write_text('{"state": "fake"}')
@@ -141,7 +141,7 @@ class GuardedRunTests(unittest.TestCase):
         captured = {}
 
         @contextmanager
-        def attach(pid, report, duration, limit_gib=10.):
+        def attach(pid, report, duration, limit_gib=10., expected_start=None):
             captured['duration'] = duration
             Path(report).write_text('{}')
             yield FakeMonitor()

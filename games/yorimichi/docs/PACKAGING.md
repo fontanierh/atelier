@@ -1,34 +1,53 @@
 # Packaging the macOS game
 
 `atelier build yorimichi unreal.package` builds a packaged Yorimichi `.app` (Mac, Development) for playtests on another
-Mac. It runs after every Unreal import and the staged runtime data in the same checkout, so package a checkout whose
-imports are current. Use `--force` to repackage after content changes: the step reruns by itself only when the C++
-source, the project file, the engine plugins or `unreal/Config` change.
+Mac. The step needs every Unreal import and the staged runtime data in the same checkout, so in a checkout whose imports
+are current only the package runs. It reruns by itself whenever any of them, the C++ source, the project file, the engine
+plugins or `unreal/Config` changed. It is only built when named exactly, never by a plain `atelier build yorimichi` or
+`atelier build yorimichi unreal`. Do not add `--force`: that reruns everything in the plan, including every import.
 
 ```sh
-nice -n 10 uv run atelier build yorimichi unreal.package --force
+nice -n 10 uv run atelier build yorimichi unreal.package
 ```
 
 ## What it does
 
-- **One guarded turn:** RunUAT `BuildCookRun` builds the game target, cooks all content, then stages, paks and
-  archives. It cooks everything because the game loads about 83 assets by path at run time.
-- **Slots and workers:** the run takes both render slots like a compile. UAT calls UnrealBuildTool directly, past the
-  capped `Build.sh`, so the step passes `-MaxParallelActions=3` itself. Shader workers keep the engine's patched
-  limits.
-- **Memory guards:** the heavy work happens in UAT's descendants. Each cook editor, shader worker and `dotnet` process
-  gets its own memory guard, pinned to its pid and start time, with a report at
-  `build/yorimichi/logs/unreal.package.guard/memory-health-<name>-<pid>.json`.
-- **Deadline and progress:** the whole package has a 4-hour deadline. A progress line prints every minute while UAT
-  is quiet.
-- **Cleanup:** when the run ends, recorded descendants that are still the same processes are stopped. Nothing else is
-  signalled.
-- **Release files:** the `.app` is zipped with `ditto` into `build/yorimichi/package/Yorimichi-macOS-<revision>.zip`,
-  alongside `SHA256SUMS` and `manifest.json`. A zip over 1.9 GB is split into `.zip.part-aa`, `-ab`, … parts, each
-  small enough for a GitHub release asset.
+- **One guarded turn:** RunUAT `BuildCookRun` builds the game target, cooks all content (the game loads about 83 assets
+  by path at run time), stages, paks and archives.
+- **Slots and workers:** the step is compile-kind, so it holds both render slots for the whole run. UAT calls
+  UnrealBuildTool directly, past the capped `Build.sh`, so the step passes `-ubtargs=-MaxParallelActions=3`. Shader
+  workers keep the engine's patched limits.
+- **Descendant guards:** the heavy work runs in UAT's descendants. `guarded.run(watch=...)` reaches every descendant
+  through pinned parents and records it by pid and start time. It reads names again on every poll, so a process that
+  execs the cook is still caught. Each UnrealEditor(-Cmd), ShaderCompileWorker and `dotnet` process gets its own memory
+  guard, started with its validated start time; the reports are at
+  `build/yorimichi/logs/unreal.package.guard/memory-health-<name>-<pid>.json`. If a guard exits while its process is
+  still running, the run fails at once.
+- **Cleanup:** when the run ends, every recorded descendant is stopped, deepest first. Each signal is sent only if
+  the process still has its pinned identity at that moment; nothing else is signalled.
+- **Deadline and progress:** the whole package has a 4-hour deadline. While UAT is quiet, a progress line prints every
+  25 s. The zip, split and checksum phases are each bounded to 45 minutes and report progress every 25 s too.
+- **Release files:** the download folder `Yorimichi/` holds the `.app`, `Play Yorimichi.command` and `README.txt`.
+  It is zipped with `ditto` into `build/yorimichi/package/Yorimichi-macOS-<revision>.zip`, split into
+  `.zip.part-aa`, `-ab`, … if it is larger than 1.9 GB, with `SHA256SUMS` and `manifest.json`. The step counts as up
+  to date only while every listed zip or part exists at its recorded size.
 
 A packaged game does not start the live bridge (the HTTP remote control and its overlays) unless it is launched with
 `-live`. The game is not inside the repository those overlays come from.
+
+## The launcher
+
+Double-clicking `Yorimichi.app` starts the game without the desktop profile. `Play Yorimichi.command` is generated from
+`tools/desktop_preview.py`, so it carries the same profile as `atelier play yorimichi --profile desktop-1440
+--shared-settings`:
+
+- forward rendering, or the saved Lumen choice
+- the native 1440 viewport
+- the optimized city tiles and trees, and the tuned lighting
+
+It honours saved settings. Settings are in `~/Library/Application Support/Yorimichi/settings.txt` and the log is
+`~/Library/Logs/Yorimichi/game.log`. The packaged game cannot restart its renderer the way the Python launcher does: a
+renderer chosen in the menu applies the next time the game is started.
 
 ## On the playtest Mac
 
@@ -48,10 +67,5 @@ A packaged game does not start the live bridge (the HTTP remote control and its 
 
 3. Unzip by double-clicking the zip, or with `ditto -x -k Yorimichi-macOS.zip .`.
 
-4. The app is not notarised, so remove the download quarantine before the first launch:
-
-   ```sh
-   xattr -dr com.apple.quarantine Yorimichi.app
-   ```
-
-   Then open it. Alternatively, right-click the app, choose Open, then choose Open again.
+4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
+   the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.

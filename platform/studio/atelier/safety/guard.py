@@ -35,11 +35,15 @@ def reap(child, grace=10.):
 
 
 @contextmanager
-def attach(pid, report, duration, limit_gib=10.):
-    """`duration=None` means no time limit: the ceiling still applies, nothing kills on the clock."""
+def attach(pid, report, duration, limit_gib=10., expected_start=None):
+    """`duration=None` means no time limit: the ceiling still applies, nothing kills on the clock. `expected_start`
+    carries an identity validated earlier: a different process now holding the pid gets no monitor (None)."""
     try:
         started = usage(pid).started
     except ProcessLookupError:
+        yield None
+        return
+    if expected_start is not None and started != expected_start:
         yield None
         return
     command = [sys.executable, str(GUARD), '--pid', str(pid),

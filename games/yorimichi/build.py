@@ -81,49 +81,126 @@ def stage_data(ctx, log):
 PART_BYTES = 1900 * 1024 * 1024
 
 
+PACKAGE_PHASE_SECONDS = 45 * 60      # each of zip, split and checksum
+PLAYTEST_README = """Yorimichi playtest build (macOS, Apple silicon).
+
+Start the game by double-clicking "Play Yorimichi.command". It starts the game with the desktop profile: the forward
+renderer, the native 1440 view and the optimized city. Starting Yorimichi.app directly skips that profile.
+
+The first time: if macOS says the launcher or the app cannot be opened, right-click "Play Yorimichi.command", choose
+Open, then Open again. The launcher removes the download quarantine itself.
+
+Settings: ~/Library/Application Support/Yorimichi/settings.txt. Log: ~/Library/Logs/Yorimichi/game.log.
+A renderer chosen in the menu takes effect the next time you start the game.
+"""
+
+
+def desktop_preview():
+    spec = importlib.util.spec_from_file_location('yorimichi_desktop_preview', TOOLS / 'desktop_preview.py')
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+PACKAGE_PROGRESS_SECONDS = 25
+
+
+def bounded(argv, log, label, watch):
+    """Run one packaging tool to completion within its deadline, saying how far it has got at least every 25 s."""
+    import subprocess, time
+    process = subprocess.Popen(argv)
+    started = time.monotonic()
+    try:
+        while True:
+            try:
+                process.wait(timeout=PACKAGE_PROGRESS_SECONDS)
+                break
+            except subprocess.TimeoutExpired:
+                elapsed = time.monotonic() - started
+                if elapsed > PACKAGE_PHASE_SECONDS:
+                    raise RuntimeError(f'{label} exceeded {PACKAGE_PHASE_SECONDS} s')
+                written = sum(p.stat().st_size for p in watch() if p.exists())
+                line = f'{label}: {elapsed / 60:.1f} min, {written / 2**30:.2f} GiB written'
+                print(line, flush=True); log.write(line + '\n'); log.flush()
+    finally:
+        if process.poll() is None:
+            process.kill(); process.wait()
+    if process.returncode:
+        raise RuntimeError(f'{label} exited {process.returncode}')
+
+
 def package_zip(ctx, log):
     """Zip the archived .app for download (ditto keeps its symlinks, signature and permissions), split it into parts
-    when it is too large for a GitHub release asset, and record sizes and SHA-256 checksums."""
-    import hashlib, subprocess
+    when it is too large for a GitHub release asset, and record sizes and SHA-256 checksums. Every phase is bounded and
+    reports progress."""
+    import hashlib, subprocess, time
     root = ctx.out / 'package'
-    apps = sorted((root / 'archive').glob('**/*.app'))
+    # The download is a folder: the .app, a launcher carrying the desktop profile, and how to start it. A fresh
+    # archive moves in; a retry after a failed zip reuses the app already moved.
+    folder = root / 'Yorimichi'
+    archived = sorted((root / 'archive').glob('*/*.app'))
+    if len(archived) > 1:
+        raise RuntimeError(f'expected one archived .app under {root / "archive"}, found {len(archived)}')
+    if archived:
+        shutil.rmtree(folder, ignore_errors=True); folder.mkdir()
+        archived[0].rename(folder / archived[0].name)
+    apps = sorted(folder.glob('*.app'))
     if len(apps) != 1:
-        raise RuntimeError(f'expected one archived .app under {root / "archive"}, found {len(apps)}')
+        raise RuntimeError(f'no packaged .app under {root / "archive"} or {folder}')
     app = apps[0]
+    launcher = folder / 'Play Yorimichi.command'
+    launcher.write_text(desktop_preview().packaged_launcher()); launcher.chmod(0o755)
+    (folder / 'README.txt').write_text(PLAYTEST_README)
     revision = subprocess.run(['git', 'rev-parse', '--short=8', 'HEAD'], cwd=paths.REPO, capture_output=True, text=True).stdout.strip()
     name = f'Yorimichi-macOS-{revision or "local"}'
-    for old in root.glob('Yorimichi-macOS-*'):
-        old.unlink()
+    for old in [*root.glob('Yorimichi-macOS-*'), root / 'manifest.json', root / 'SHA256SUMS']:
+        old.unlink(missing_ok=True)
     archive = root / f'{name}.zip'
-    subprocess.run(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(app), str(archive)], check=True)
+    bounded(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(folder), str(archive)], log, 'zip', lambda: [archive])
     files = [archive]
     if archive.stat().st_size > PART_BYTES:
         prefix = root / f'{name}.zip.part-'
-        subprocess.run(['split', '-b', str(PART_BYTES), '-a', '2', str(archive), str(prefix)], check=True)
+        bounded(['split', '-b', str(PART_BYTES), '-a', '2', str(archive), str(prefix)], log, 'split',
+                lambda: list(root.glob(f'{name}.zip.part-*')))
         archive.unlink()
         files = sorted(root.glob(f'{name}.zip.part-*'))
-    def sha256(path):
+    entries, started, spoken = [], time.monotonic(), time.monotonic()
+    for f in files:
         digest = hashlib.sha256()
-        with path.open('rb') as handle:
+        with f.open('rb') as handle:
             for block in iter(lambda: handle.read(1 << 20), b''):
                 digest.update(block)
-        return digest.hexdigest()
-    entries = [{'file': f.name, 'bytes': f.stat().st_size, 'sha256': sha256(f)} for f in files]
+                now = time.monotonic()
+                if now - started > PACKAGE_PHASE_SECONDS:
+                    raise RuntimeError(f'checksums exceeded {PACKAGE_PHASE_SECONDS} s')
+                if now - spoken >= PACKAGE_PROGRESS_SECONDS:
+                    spoken = now; line = f'checksum: {f.name}, {(now - started) / 60:.1f} min'
+                    print(line, flush=True); log.write(line + '\n'); log.flush()
+        entries.append({'file': f.name, 'bytes': f.stat().st_size, 'sha256': digest.hexdigest()})
     (root / 'SHA256SUMS').write_text(''.join(f"{e['sha256']}  {e['file']}\n" for e in entries))
-    manifest = {'app': app.name, 'revision': revision, 'zip': f'{name}.zip', 'split': len(files) > 1, 'files': entries}
+    manifest = {'app': app.name, 'launcher': launcher.name, 'revision': revision, 'zip': f'{name}.zip', 'split': len(files) > 1, 'files': entries}
     (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     for e in entries:
         log.write(f"packaged {e['file']} {e['bytes'] / 2**30:.2f} GiB sha256 {e['sha256']}\n")
 
 
+def package_present(out):
+    """The zip or every part the manifest lists, at its recorded size: names vary with the revision and the split."""
+    root = out / 'package'
+    try:
+        manifest = json.loads((root / 'manifest.json').read_text())
+        return bool(manifest['files']) and all((root / e['file']).stat().st_size == e['bytes'] for e in manifest['files'])
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 def package_step(ctx, steps):
-    """The packaged macOS game, after every Unreal import and the staged runtime data in this checkout."""
+    """The packaged macOS game from every Unreal import and the staged runtime data in this checkout. Only built when
+    named: it needs (rather than follows) them, so it reruns by itself whenever any of them changed, without --force."""
     out = ctx.out
     return Step('unreal.package',
                 [UnrealPackage('Yorimichi', out / 'package' / 'archive'), Call('package_zip', package_zip)],
                 inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config'],
-                after=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True,
+                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True, explicit=True,
                 outputs=[out / 'package' / 'manifest.json', out / 'package' / 'SHA256SUMS'],
+                verify=lambda: package_present(out),
                 about='packaged macOS game (.app, Development): cooked, zipped, checksummed in build/<game>/package')
 
 

@@ -27,69 +27,69 @@ from contextlib import ExitStack
 from pathlib import Path
 
 from .guard import attach as attach_memory_guard, reap
-from .memory_guard import usage
+from . import process_tree
 from .render_lock import KINDS, SMALL_LIMIT_GIB, render_lock
 from .process import spawn
 
 
-def descendants(root):
-    """(pid, executable name) of every live descendant of `root`, parents before children."""
-    listing = subprocess.run(['ps', '-axo', 'pid=,ppid=,comm='], capture_output=True, text=True).stdout
-    children = {}
-    for line in listing.splitlines():
-        parts = line.split(None, 2)
-        if len(parts) == 3 and parts[0].isdigit() and parts[1].isdigit():
-            children.setdefault(int(parts[1]), []).append((int(parts[0]), os.path.basename(parts[2].strip())))
-    found, queue = [], [root]
-    while queue:
-        for pid, name in children.get(queue.pop(0), []):
-            found.append((pid, name)); queue.append(pid)
-    return found
-
-
 class Descendants:
-    """The child's process tree as it grows: identities recorded on sight, heavy ones guarded."""
-    def __init__(self, root, folder, watch, duration, limit_gib, stack):
-        self.root, self.folder, self.watch, self.duration, self.limit_gib, self.stack = root, folder, set(watch), duration, limit_gib, stack
-        self.owned, self.guarded = {}, []
+    """The child's process tree as it grows. Records are keyed by (pid, start) and reached only through pinned parents;
+    names are read again on every poll, so a child first seen as `sh` that execs the cook still gets its guard."""
+    def __init__(self, root, root_start, folder, watch, duration, limit_gib, stack):
+        self.root, self.folder, self.watch, self.duration, self.limit_gib, self.stack = (
+            (root, root_start), folder, set(watch), duration, limit_gib, stack)
+        self.depth, self.guarded = {}, {}
+
+    def same(self, key):
+        return process_tree.started(key[0]) == key[1]
 
     def poll(self):
-        for pid, name in descendants(self.root):
-            if pid in self.owned:
+        queue = [(*self.root, 0)]
+        while queue:
+            parent, parent_start, depth = queue.pop()
+            for child, child_start in process_tree.owned_children(parent, parent_start):
+                self.depth.setdefault((child, child_start), depth+1)
+                queue.append((child, child_start, depth+1))
+        for key in self.depth:
+            if key in self.guarded or not self.same(key):
                 continue
-            try:
-                self.owned[pid] = usage(pid).started
-            except ProcessLookupError:
+            label = process_tree.name(key[0])
+            if label not in self.watch:
                 continue
-            if name in self.watch:
-                monitor = self.stack.enter_context(attach_memory_guard(
-                    pid, self.folder/f'memory-health-{name}-{pid}.json', duration=self.duration, limit_gib=self.limit_gib))
-                self.guarded.append((pid, name, monitor))
-                print(f'guarding {name} pid {pid}, report {self.folder/f"memory-health-{name}-{pid}.json"}', flush=True)
+            report = self.folder/f'memory-health-{label}-{key[0]}.json'
+            monitor = self.stack.enter_context(attach_memory_guard(
+                key[0], report, duration=self.duration, limit_gib=self.limit_gib, expected_start=key[1]))
+            if monitor is None:
+                if self.same(key):
+                    raise SystemExit(f'could not guard {label} {key[0]}')
+                continue
+            self.guarded[key] = (label, monitor)
+            print(f'guarding {label} pid {key[0]}, report {report}', flush=True)
 
-    def same(self, pid):
-        try:
-            return usage(pid).started == self.owned[pid]
-        except ProcessLookupError:
-            return False
+    def check(self):
+        """A watched process must never outlive its guard."""
+        for key, (label, monitor) in self.guarded.items():
+            if monitor.poll() is not None and self.same(key):
+                raise SystemExit(f'memory guard for {label} {key[0]} exited before it')
 
     def unwind(self, grace=10.):
         """Stop recorded descendants that are still the same processes, deepest first."""
-        live = [pid for pid in reversed(list(self.owned)) if self.same(pid)]
-        for pid in live:
+        live = sorted(self.depth, key=self.depth.get, reverse=True)
+        for key in live:
+            self.signal(key, signal.SIGTERM)
+        deadline = time.monotonic()+grace
+        while time.monotonic() < deadline and any(self.same(key) for key in live):
+            time.sleep(.2)
+        for key in live:
+            self.signal(key, signal.SIGKILL)
+
+    def signal(self, key, number):
+        """Signal one recorded process only if its pinned identity still holds at this instant."""
+        if self.same(key):
             try:
-                os.kill(pid, signal.SIGTERM)
+                os.kill(key[0], number)
             except ProcessLookupError:
                 pass
-        deadline = time.monotonic()+grace
-        while time.monotonic() < deadline and any(self.same(pid) for pid in live):
-            time.sleep(.2)
-        for pid in live:
-            if self.same(pid):
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
 
 
 def last_line(path):
@@ -130,7 +130,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                                                           duration=horizon, limit_gib=limit_gib))
         tree = None
         if watch:
-            tree = Descendants(child.pid, folder, watch, horizon, limit_gib, stack)
+            tree = Descendants(child.pid, process_tree.started(child.pid), folder, watch, horizon, limit_gib, stack)
             # Runs before the child is reaped; after a success it only reaps leftovers such as shader workers.
             stack.callback(tree.unwind)
         started = time.monotonic()
@@ -139,9 +139,10 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         while child.poll() is None:
             if tree is not None:
                 tree.poll()
+                tree.check()
             if progress and time.monotonic()-spoken >= progress:
                 spoken = time.monotonic()
-                watched = ', '.join(f'{name} {pid}' for pid, name, _ in tree.guarded if tree.same(pid)) if tree else ''
+                watched = ', '.join(f'{label} {key[0]}' for key, (label, _) in tree.guarded.items() if tree.same(key)) if tree else ''
                 print(f'{(spoken-started)/60:.0f} min{f" [{watched}]" if watched else ""}: {last_line(folder/"stdout.log")}', flush=True)
             if monitor is not None and monitor.poll() is not None and child.poll() is None:
                 raise SystemExit('memory guard exited before the child')
