@@ -144,6 +144,8 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("performance"),TEXT("Graphics"),1.f,0.f,1.f},
         {TEXT("renderer"),TEXT("Lighting"),0.f,0.f,1.f},
         {TEXT("tree_optimization"),TEXT("Tree optimization"),1.f,0.f,1.f},
+        {TEXT("tree_lod_mode"),TEXT("Tree detail comparison"),0.f,0.f,3.f,1.f},
+        {TEXT("tree_lod_distance"),TEXT("Keep tree detail farther (x)"),1.5f,.5f,3.f,.1f},
         // Session-only desktop tuning; both profiles share instance occlusion culling.
         {TEXT("desktop"),TEXT("Desktop profile"),0.f,0.f,1.f},
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
@@ -207,6 +209,9 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
             float Number = 0;
             if (LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
         }
+    for (FJapanPreference& V : Values)
+        if (V.Key==TEXT("tree_lod_mode") || V.Key==TEXT("tree_lod_distance"))
+            V.Value=FMath::Clamp(V.Minimum+FMath::RoundToFloat((V.Value-V.Minimum)/V.Step)*V.Step,V.Minimum,V.Maximum);
     // The skating engine is the game's config (Ride); Native is a console-only reference (skate.Backend), so an engine
     // saved by an older menu no longer applies.
     SavedValues.Remove(TEXT("skate_engine"));
@@ -278,7 +283,8 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
 {
     GraphicsError.Reset();
     if (!FMath::IsFinite(Number)) return false;
-    if (Key == TEXT("renderer") || Key == TEXT("tree_optimization")) return SetGraphicsChoice(Key,Number);
+    if (Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
+        Key == TEXT("tree_lod_mode") || Key == TEXT("tree_lod_distance")) return SetGraphicsChoice(Key,Number);
     // Custom from a preset, with nothing tuned yet, starts on that preset's difficulty (the menu and the phone alike).
     if (Key == TEXT("skate_mode") && FMath::RoundToInt(Number) == SkateCustom && IsSkateCustomStock())
     {
@@ -306,23 +312,33 @@ bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
     for (FJapanPreference& Value : Values) if (Value.Key == Key)
     {
         const float Before = Value.Value;
+        Number=FMath::Clamp(Number,Value.Minimum,Value.Maximum);
+        if (Value.Step>0.f) Number=FMath::Clamp(Value.Minimum+FMath::RoundToFloat((Number-Value.Minimum)/Value.Step)*Value.Step,Value.Minimum,Value.Maximum);
+        if (IsToggle(Key)) Number=Number>.5f?1.f:0.f;
+        const bool bTree=Key==TEXT("tree_optimization") || Key==TEXT("tree_lod_mode") || Key==TEXT("tree_lod_distance");
+        const bool BeforeEnabled=Get(TEXT("tree_optimization"))>.5f;
+        const int32 BeforeMode=FMath::RoundToInt(Get(TEXT("tree_lod_mode")));
+        const float BeforeDistance=Get(TEXT("tree_lod_distance"));
+        const bool NextEnabled=Key==TEXT("tree_optimization")?Number>.5f:BeforeEnabled;
+        const int32 NextMode=Key==TEXT("tree_lod_mode")?FMath::RoundToInt(Number):BeforeMode;
+        const float NextDistance=Key==TEXT("tree_lod_distance")?Number:BeforeDistance;
         TArray<AJapanWorld*> ChangedWorlds;
-        if (Key == TEXT("tree_optimization") && Owner && Owner->GetWorld())
+        if (bTree && Owner && Owner->GetWorld())
             for (TActorIterator<AJapanWorld> It(Owner->GetWorld());It;++It) if (It->bLoaded)
             {
                 ChangedWorlds.Add(*It);
-                if (!It->ApplyTreeOptimization(Number > .5f))
+                if (!It->ApplyTreeOptimization(NextEnabled,NextMode,NextDistance))
                 {
-                    for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(Before > .5f);
+                    for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(BeforeEnabled,BeforeMode,BeforeDistance);
                     GraphicsError = TEXT("Tree detail could not be changed. Your previous setting is kept. Check that the game's tree assets are built.");
                     return false;
                 }
             }
-        Value.Value = Number > .5f ? 1.f : 0.f;
+        Value.Value = Number;
         if (!Save())
         {
             Value.Value = Before;
-            for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(Before > .5f);
+            for (AJapanWorld* World : ChangedWorlds) World->ApplyTreeOptimization(BeforeEnabled,BeforeMode,BeforeDistance);
             GraphicsError = TEXT("Settings could not be saved. The game has not restarted. Try again after checking storage access.");
             return false;
         }
@@ -439,7 +455,8 @@ void UJapanPreferences::Apply()
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
         It->ApplyPerformanceSettings(PerformanceMode != 0);
-        if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f) && It->bLoaded)
+        if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f,
+            FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),Get(TEXT("tree_lod_distance"))) && It->bLoaded)
             GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
         It->ApplyVolumetricFog(Fog,FogLook);
     }
@@ -759,6 +776,24 @@ void UJapanPreferences::OpenMenu(bool bSkate)
             }
             return FReply::Handled();
         })];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton)
+        .IsEnabled_Lambda([this] { return Get(TEXT("tree_optimization"))>.5f; })
+        .Text_Lambda([this]
+        {
+            const TCHAR* Names[]={TEXT("Automatic · nearby trees retain full detail"),TEXT("Full detail · higher GPU cost"),
+                TEXT("Intermediate detail · comparison at every distance"),TEXT("Distant detail · comparison at every distance")};
+            return FText::FromString(FString(TEXT("Tree detail: "))+Names[FMath::Clamp(FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),0,3)]);
+        })
+        .OnClicked_Lambda([this]
+        {
+            const int32 Next=(FMath::RoundToInt(Get(TEXT("tree_lod_mode")))+1)%4;
+            if (Next==1) Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
+                [this] { if (Menu) OpenGraphicsWarning(TEXT("tree_lod_mode")); }));
+            else SetValue(TEXT("tree_lod_mode"),float(Next));
+            return FReply::Handled();
+        })];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(STextBlock).AutoWrapText(true)
+        .Text(FText::FromString(TEXT("Automatic changes distant leaf outlines only. Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default. Turning optimization off restores original full-detail trees immediately.")))];
     // The character switch (ABotwRider::SwitchPlayer): Cairo, with the merged move set when it is built, and every BOTW
     // character with a rider definition. The switch waits for the next tick, out of the menu's click.
     const auto Switch = [this](const FString& Name)
@@ -838,11 +873,13 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         // Session-only keys are launch flags (japan/run.sh desktop), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
-        if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset")) continue;   // a button above
+        if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset") || Values[I].Key == TEXT("tree_lod_mode")) continue;   // a button above
         if (Values[I].Key.StartsWith(TEXT("skate_"))) continue;                       // the Skate feel page
         if (Values[I].Key == LightKeys[0])
             Rows->AddSlot().AutoHeight().Padding(0,16,0,4)[SNew(STextBlock).Text(FText::FromString(TEXT("Light"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
+        if (Values[I].Key==TEXT("tree_lod_distance"))
+        { AddSlider(I,[this] { return Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },FString());continue; }
         AddSlider(I, bFogDetail ? TFunction<bool()>([this] { return Get(TEXT("fog")) > .5f; }) : TFunction<bool()>(), FString());
     }
     Rows->AddSlot().AutoHeight().Padding(0,8,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset the light")))
@@ -854,11 +891,12 @@ void UJapanPreferences::OpenGraphicsWarning(const FString& Key)
 {
     if (!Owner || !GEngine || !GEngine->GameViewport) return;
     const bool bRenderer = Key == TEXT("renderer");
+    const bool bFullComparison=Key==TEXT("tree_lod_mode");
     const float Choice = Get(*Key) > .5f ? 0.f : 1.f;
     const bool bRestart = bRenderer && CurrentRenderer() != int32(Choice);
     const bool bLauncherRestart = CanRestartRenderer();
     const FString Title = bRenderer ? FString::Printf(TEXT("Switch to %s?"),RendererName(int32(Choice)))
-        : TEXT("Turn off tree optimization?");
+        : bFullComparison ? TEXT("Compare full-detail trees?") : TEXT("Turn off tree optimization?");
     FString Warning = bRenderer
         ? (Choice > .5f ? TEXT("Lumen is a resource hog: it uses substantially more GPU time and memory, and can lower the frame rate. Forward is the recommended default for smooth play.")
             : TEXT("Forward uses lighter lighting and is the recommended default for smooth play."))

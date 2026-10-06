@@ -119,3 +119,14 @@ def test_restart_requires_a_changed_saved_choice(desktop, monkeypatch, tmp_path)
         return 0
     monkeypatch.setattr(desktop.guarded, 'run', run)
     assert desktop.launch(shared_settings=True) == 1
+
+
+def test_forced_tree_comparison_readiness_and_invalid_saved_modes(desktop):
+    manifest(desktop)
+    forced=ready_log().replace('forced=0','forced=2')
+    assert desktop.parse_ready(forced,tree_lod_mode=2)['height']==1440
+    with pytest.raises(ValueError,match='CITY TREE LODS'):
+        desktop.parse_ready(forced,tree_lod_mode=0)
+    assert desktop.tree_lod_choice({'tree_lod_mode':'1.5'})==2
+    assert desktop.tree_lod_choice({'tree_lod_mode':'nan'})==0
+    assert desktop.tree_lod_choice({'tree_lod_mode':'bad'})==0

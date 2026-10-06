@@ -18,6 +18,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Drive(FVector2D Intent, int32 Gait = 1);
     /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
+    /** Send accept (Enter), next (Tab) or previous (Shift+Tab) through the open native settings menu's actual widgets.
+     *  Refuses unknown keys or a closed menu; useful for reviewing warnings and cancellation without changing preferences directly. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool MenuKey(const FString& Key);
     /** Change a setting as the Esc menu and the phone do (UJapanPreferences::SetValue, saved); false for an unknown key. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SetPreference(const FString& Key, float Value);
     /** A BOTW move set's state (UBotwMoveSet::Describe: mode, action, stamina, glider, wall, target, counts) as JSON;

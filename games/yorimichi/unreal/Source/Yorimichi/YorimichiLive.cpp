@@ -26,6 +26,9 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Input/Events.h"
+#include "InputCoreTypes.h"
 
 // Yorimichi's verbs for the live bridge (the platform's are in ULiveLibrary).
 
@@ -38,6 +41,19 @@ bool UYorimichiLive::Drive(FVector2D Intent, int32 Gait)
 bool UYorimichiLive::Press(const FString& Button)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); return P && P->Live_Press(FName(*Button));
+}
+
+bool UYorimichiLive::MenuKey(const FString& Key)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    if (!P || !P->GetPreferences() || !P->GetPreferences()->IsMenuOpen() || !FSlateApplication::IsInitialized()) return false;
+    if (Key != TEXT("accept") && Key != TEXT("next") && Key != TEXT("previous")) return false;
+    const FModifierKeysState Modifiers(Key == TEXT("previous"),false,false,false,false,false,false,false,false);
+    const FKeyEvent Event(Key == TEXT("accept") ? EKeys::Enter : EKeys::Tab,Modifiers,uint32(0),false,0,0);
+    auto& Slate = FSlateApplication::Get();
+    const bool Down = Slate.ProcessKeyDownEvent(Event);
+    const bool Up = Slate.ProcessKeyUpEvent(Event);
+    return Down || Up;
 }
 
 bool UYorimichiLive::SetPreference(const FString& Key, float Value)
