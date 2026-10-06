@@ -37,6 +37,14 @@ def desktop_preview():
     spec = importlib.util.spec_from_file_location('yorimichi_desktop_preview', TOOLS / 'desktop_preview.py')
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
+
+
+def cook_tool():
+    spec = importlib.util.spec_from_file_location('yorimichi_package_cook', TOOLS / 'package_cook.py')
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
 PACKAGE_PROGRESS_SECONDS = 25
 # Loose runtime files the game cannot start without (unreal/Content/Data, written by data.stage).
 STAGED_DATA = ('world.json', 'heightmap.bin', 'map/map.json')
@@ -107,35 +115,53 @@ def audio_compatibility(app, log):
     codesign('--verify', '--deep', '--strict')
 
 
-def package_zip(root, log):
-    """Zip the archived .app for download (ditto keeps its symlinks, signature and permissions), split it into parts
-    when it is too large for a GitHub release asset, and record sizes and SHA-256 checksums. Every phase is bounded and
-    reports progress."""
-    # The download is a folder: the .app, a launcher carrying the desktop profile, and how to start it. A fresh
-    # archive moves in; a retry after a failed zip reuses the app already moved.
-    folder = root / 'Yorimichi'
+def package_zip(root, log, *, cook_receipt=False):
+    """Assemble an independent download copy. Keep the cook and previous release intact until assembly succeeds."""
+    receipt = cook_tool().read_receipt(root) if cook_receipt else None
     archived = sorted((root / 'archive').glob('*/*.app'))
-    if len(archived) > 1:
-        raise RuntimeError(f'expected one archived .app under {root / "archive"}, found {len(archived)}')
-    for candidate in archived or folder.glob('*.app'):
-        staged_data(candidate)   # before anything moves, so a refused package leaves the archive as it was
-    if archived:
-        shutil.rmtree(folder, ignore_errors=True); folder.mkdir()
-        archived[0].rename(folder / archived[0].name)
-    apps = sorted(folder.glob('*.app'))
+    apps = archived or sorted((root / 'Yorimichi').glob('*.app'))
     if len(apps) != 1:
-        raise RuntimeError(f'no packaged .app under {root / "archive"} or {folder}')
-    app = apps[0]
-    audio_compatibility(app, log)
-    launcher = folder / 'Play Yorimichi.command'
-    launcher.write_text(desktop_preview().packaged_launcher()); launcher.chmod(0o755)
-    (folder / 'README.txt').write_text(PLAYTEST_README)
-    revision = subprocess.run(['git', 'rev-parse', '--short=8', 'HEAD'], cwd=REPO, capture_output=True, text=True).stdout.strip()
+        raise RuntimeError(f'expected one packaged .app under {root / "archive"} or {root / "Yorimichi"}')
+    staged_data(apps[0])
+    revision = receipt['revision'][:8] if receipt else subprocess.run(
+        ['git', 'rev-parse', '--short=8', 'HEAD'], cwd=REPO, capture_output=True, text=True).stdout.strip()
+    with tempfile.TemporaryDirectory(prefix='.assemble-', dir=root) as scratch:
+        candidate = Path(scratch)
+        folder = candidate / 'Yorimichi'; folder.mkdir()
+        app = folder / apps[0].name
+        bounded(['ditto', str(apps[0]), str(app)], log, 'copy cooked app', lambda: list(app.rglob('*')))
+        if receipt:
+            cook_tool().verify_copy(app, receipt, log)
+        audio_compatibility(app, log)
+        launcher = folder / 'Play Yorimichi.command'
+        launcher.write_text(desktop_preview().packaged_launcher()); launcher.chmod(0o755)
+        (folder / 'README.txt').write_text(PLAYTEST_README)
+        manifest = release_files(candidate, app.name, launcher.name, revision, log)
+        if receipt:
+            if cook_tool().read_receipt(root) != receipt:
+                raise RuntimeError('cook changed during download assembly')
+            manifest['cook'] = {key: receipt[key] for key in ('revision', 'fingerprint', 'engine', 'source_dirty')}
+        (candidate / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+        # Every fallible copy, signing, zip, split and checksum phase has completed. Publish the manifest last.
+        old_folder = root / 'Yorimichi'
+        if old_folder.exists():
+            old_folder.rename(candidate / 'previous-download')
+        folder.rename(old_folder)
+        keep = {entry['file'] for entry in manifest['files']}
+        for entry in manifest['files']:
+            (candidate / entry['file']).replace(root / entry['file'])
+        (candidate / 'SHA256SUMS').replace(root / 'SHA256SUMS')
+        (candidate / 'manifest.json').replace(root / 'manifest.json')
+        for old in root.glob('Yorimichi-macOS-*'):
+            if old.name not in keep:
+                old.unlink()
+
+
+def release_files(root, app, launcher, revision, log):
+    """Write the ZIP or parts and their checksums in the candidate directory."""
     name = f'Yorimichi-macOS-{revision or "local"}'
-    for old in [*root.glob('Yorimichi-macOS-*'), root / 'manifest.json', root / 'SHA256SUMS']:
-        old.unlink(missing_ok=True)
     archive = root / f'{name}.zip'
-    bounded(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(folder), str(archive)], log, 'zip', lambda: [archive])
+    bounded(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(root / 'Yorimichi'), str(archive)], log, 'zip', lambda: [archive])
     files = [archive]
     if archive.stat().st_size > PART_BYTES:
         prefix = root / f'{name}.zip.part-'
@@ -157,18 +183,19 @@ def package_zip(root, log):
                     log.write(line + '\n'); log.flush()
         entries.append({'file': f.name, 'bytes': f.stat().st_size, 'sha256': digest.hexdigest()})
     (root / 'SHA256SUMS').write_text(''.join(f"{e['sha256']}  {e['file']}\n" for e in entries))
-    manifest = {'app': app.name, 'launcher': launcher.name, 'revision': revision, 'zip': f'{name}.zip', 'split': len(files) > 1, 'files': entries}
-    (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    manifest = {'app': app, 'launcher': launcher, 'revision': revision, 'zip': f'{name}.zip', 'split': len(files) > 1, 'files': entries}
     for e in entries:
         log.write(f"packaged {e['file']} {e['bytes'] / 2**30:.2f} GiB sha256 {e['sha256']}\n")
+    return manifest
 
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--out', type=Path, required=True, help='the package folder: archive/ in, release files out')
+    parser.add_argument('--cook-receipt', action='store_true', help='require the certified cook and preserve its source revision')
     args = parser.parse_args(argv)
-    package_zip(args.out, sys.stdout)
+    package_zip(args.out, sys.stdout, cook_receipt=args.cook_receipt)
     print('PACKAGE ARCHIVE COMPLETE', flush=True)
 
 
