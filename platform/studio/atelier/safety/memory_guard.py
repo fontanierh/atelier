@@ -1,4 +1,4 @@
-"""Bound the Mac stream's physical footprint, including compressed/GPU memory.
+"""Bound one owned process's physical footprint (a game, a build, a stream), including compressed/GPU memory.
 
 Runs outside Unreal so a stalled render/game thread cannot defeat the limit.
 Never signals a reused PID: each sample must match its original process start.

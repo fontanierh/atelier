@@ -18,11 +18,11 @@ build/            ignored: everything a build generates, per game
 
 | Piece | Where | What |
 |---|---|---|
-| `atelier` command | `platform/studio/atelier` | `new`, `doctor`, `fetch`, `build` (incremental steps), `play` (profiles), `stream`, `live`, `qa`, `lint`; the render lock and memory guard around every heavy process (`atelier.safety`) |
+| `atelier` command | `platform/studio/atelier` | `new`, `doctor`, `setup`, `fetch`, `build` (incremental steps), `reuse`, `pool`, `play` (profiles), `stream`, `live`, `qa`, `lint`, `board` (agent messages); the render lock and memory guard around every heavy process (`atelier.safety`) |
 | AI and review tools | `platform/studio/atelier/{ai,review,blender}`, `platform/studio/node` | Tripo, Sunburst, H3 and Seedance helpers, the paid-call ledger, the UniMate and Kimodo runners, contact sheets, glTF previews |
 | Conventions | `platform/conventions` | units and axes, humanoid bones, clip roles, sound cues, naming |
 | AtelierCore | `engine/Plugins/AtelierCore` | runtime data files (`AtelierDataPath`), sprint stamina |
-| AtelierAnimation | `engine/Plugins/AtelierAnimation` | ground contact and sailboat stance animation nodes |
+| AtelierAnimation | `engine/Plugins/AtelierAnimation` | ground contact, sailboat stance and bike grip animation nodes |
 | AtelierFX | `engine/Plugins/AtelierFX` | sprites, light flashes, hit-stop, slow motion, camera shake, sound cues, blade trails |
 | Skate | `engine/Plugins/Activities/Skate` | in-process native skateboarding behind `ISkateRider`, with its tracked data checks |
 | AtelierStream | `engine/Plugins/Streaming` | the game's end of a browser stream: actions and leased touch controls |

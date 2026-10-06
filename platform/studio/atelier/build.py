@@ -4,7 +4,7 @@ A game describes its build in `games/<game>/build.py`, a module with `steps()` r
 fingerprint is the hash of its inputs (files or folders, by content), its commands, and the fingerprints of the steps
 it needs; `build/<game>/stamps/<step>.json` remembers the last good one. Logs go to `build/<game>/logs/<step>.log`.
 
-Commands are plain data (`Python`, `Blender`, `UnrealScript`, `UnrealCompile`, `Call`), so the fingerprint changes
+Commands are plain data (`Python`, `Blender`, `UnrealScript`, `UnrealCompile`, `UnrealPackage`, `Call`), so the fingerprint changes
 when a command does.
 
 A `heavy` step's commands run under `atelier.safety.guarded`: a render slot and the memory guard, whose report is

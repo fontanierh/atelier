@@ -4,13 +4,14 @@
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
     atelier setup [--headless]         check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
     atelier reuse <game> --from PATH   seed this fresh worktree from a verified build of the same revision
+    atelier pool publish|restore|status <game> <step>   share explicitly owned portable outputs (docs/ARTIFACT_POOL.md)
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
-    atelier play <game> [--profile P] [-- unreal args]   launch the game under the render lock and memory guard
+    atelier play <game> [--profile P] [--memory-gib N] [-- unreal args]   launch the game under the render lock and memory guard
     atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
-    atelier board post|read|subscribe|wait|unsubscribe|status   coordinate machine-local agents
+    atelier board post|read|thread|task|supervise|retire|wait|status|serve ...   coordinate machine-local agents (docs/AGENT_BOARD.md)
     atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
 """
 import argparse, datetime, importlib.util, os, re, shutil, subprocess, sys

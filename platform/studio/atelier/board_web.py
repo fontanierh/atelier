@@ -1,4 +1,4 @@
-"""Private, loopback-only UI for the existing board. Standard library, no build step."""
+"""Private, loopback-only UI for the existing board. Uses the project's Python dependencies; no front-end build step."""
 import gzip
 import hashlib
 import hmac

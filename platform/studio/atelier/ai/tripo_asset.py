@@ -1,6 +1,6 @@
 """Submit one reviewed multiview set to Tripo and retain its outputs.
 
-Use the imagegen Python environment (httpx), with TRIPO_API_KEY or the private
+Run with `uv run python` (httpx is a project dependency), with TRIPO_API_KEY or the private
 project credential file. A saved task is resumed; uncertain POSTs are never
 automatically repeated. Raw API responses stay in ignored api-private folders.
 """
