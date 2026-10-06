@@ -17,7 +17,9 @@ build configuration waits forever on the macOS Documents privacy check (README, 
 ## What it does
 
 - **One guarded turn:** RunUAT `BuildCookRun` builds the game target, cooks all content (the game loads about 83 assets
-  by path at run time), stages, paks and archives.
+  by path at run time), stages, paks, packages and archives. On a Mac, `-package` has Xcode finalize a self-contained
+  `.app` (paks and `Content/Data` inside `Contents/UE`). Without it, the archive step copies the bare
+  `Binaries/Mac` app, and the archive job refuses it.
 - **Slots and workers:** the step is compile-kind, so it holds both render slots for the whole run. UAT calls
   UnrealBuildTool directly, past the capped `Build.sh`, so the step passes `-ubtargs=-MaxParallelActions=3`. Shader
   workers keep the engine's patched limits.

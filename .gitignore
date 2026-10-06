@@ -12,6 +12,15 @@ games/*/unreal/Binaries/
 games/*/unreal/Intermediate/
 games/*/unreal/Saved/
 games/*/unreal/DerivedDataCache/
+# Files BuildCookRun writes into the project on every Mac package run (counters, cook logs, templates it copies in when
+# missing, PixelStreaming helper scripts). Listed one by one so authored build resources are never hidden.
+games/*/unreal/Build/Mac/unreal.PackageVersionCounter
+games/*/unreal/Build/Mac/FileOpenOrder/
+games/*/unreal/Build/Mac/Resources/Info.Template.plist
+games/*/unreal/Build/Mac/Resources/Sandbox.NoNet.entitlements
+games/*/unreal/Build/Mac/Resources/Sandbox.Server.entitlements
+games/*/unreal/Samples/PixelStreaming2/WebServers/get_ps_servers.bat
+games/*/unreal/Samples/PixelStreaming2/WebServers/get_ps_servers.sh
 games/*/unreal/Content/
 # Skate's runtime data is source-controlled at the exact path the game reads.
 !games/yorimichi/unreal/Content/
