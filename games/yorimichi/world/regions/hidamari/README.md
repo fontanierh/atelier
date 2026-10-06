@@ -53,6 +53,11 @@ Do not run a benchmark beside Blender or another Unreal session; it rejects cont
 | [`living_streets.py`](living_streets.py), [`living_plaza.py`](living_plaza.py), [`working_harbor.py`](working_harbor.py) | Street details, plaza furniture, the fish market |
 | [`pond_garden.py`](pond_garden.py), [`garden_bridge.py`](garden_bridge.py), [`civic_gardens.py`](civic_gardens.py), [`hero_approaches.py`](hero_approaches.py) | The park, its bridge, temple gardens, the station forecourt and the stone approaches |
 | [`mountains.py`](mountains.py), [`forest_backdrop.py`](forest_backdrop.py) | The north foothills, volcano and trail; tree cover on the eastern hills |
+| [`arrival.py`](arrival.py), [`park_grounds.py`](park_grounds.py), [`temple_precinct.py`](temple_precinct.py), [`station_yard.py`](station_yard.py) | The arrival road's rice terraces, the pond park's grounds, the temple precinct, the railway behind the station |
+| [`lane_edges.py`](lane_edges.py), [`city_poles.py`](city_poles.py) | What lines the narrow lanes; utility poles and their wires |
+| [`garden_shrubs.py`](garden_shrubs.py), [`house_gardens.py`](house_gardens.py) | The clipped garden shrubs; the planting of the back-lane houses' front plots |
+| [`props.py`](props.py), [`street_props.py`](street_props.py) | The Tripo street props made into game meshes (`world.hidamari_props`); where they stand |
+| [`surfaces.py`](surfaces.py) | The surface each face of a textured city mesh is made of (`HDS_<slug>` material slots) |
 | [`kit/`](kit/GUIDE.md) | The building kit (see its guide) |
 | [`textures/`](textures/prompts.json) | `paving.png` and `timber.png`, with their prompts |
 | [`fonts/`](fonts/README.md) | The Japanese font for signs |

@@ -1,4 +1,4 @@
-"""blender -b --python-exit-code 1 --python japan/southwest/build.py -- --models stand [--export] [--views front,three_quarter,side,back,detail]
+"""blender -b --python-exit-code 1 --python games/yorimichi/world/regions/southwest/build.py -- --models stand [--export] [--views front,three_quarter,side,back,detail]
 Builds the south-west detour props, renders review views into build/yorimichi/southwest/review/<model>/, exports FBX."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
 import argparse, json, sys, math

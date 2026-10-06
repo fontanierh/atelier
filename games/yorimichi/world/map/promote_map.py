@@ -2,7 +2,8 @@
 
 Writes map.png (the texture the game loads), map.jpg (served to phones) and painted.txt (which sheet, so build_map.py
 keeps it when the rough sheet is regenerated). The painted sheet covers exactly the bounds in map.json, so nothing
-else changes; re-run paint_map.py after any world change and check paint_check_N.jpg before promoting again."""
+else changes; after any world change, repaint (repaint_island.py, docs/WORLD_MAP.md "Local repaints") and check its
+registration-check.jpg before promoting again."""
 import argparse, os, shutil, time, json
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1])); import yori  # noqa: E402
 from PIL import Image
