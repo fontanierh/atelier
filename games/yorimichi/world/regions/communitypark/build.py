@@ -1,6 +1,8 @@
 """Build the original scene, supporting ground and access into /Game/CommunityPark.
 
-Geometry is batched by the shared source meshes without changing placements.
+Geometry is batched by the shared source meshes without changing placements. Those rendered pieces do not block:
+the skate rides one hidden collision mesh of the same triangles, welded across placements with the joint lips ramped
+(collision.py).
 The zero-area source triangles (source.json counts them) are omitted explicitly for
 Unreal import; the private source retains them. No other render face is removed or simplified.
 """
@@ -17,7 +19,8 @@ import numpy as np
 from communitypark import layout as L
 from communitypark.source import scene, SPEC
 from communitypark.rails import paths
-from communitypark.structures import build as build_structures
+from communitypark.structures import SLENDER, build as build_structures
+from communitypark.collision import riding_collision
 from communitypark.murals import PANELS, build as build_murals
 from communitypark.props import build as build_props
 from hidamari.layout import north_surface
@@ -108,9 +111,9 @@ def build():
     source = scene(); materials = source_materials(source); entries = []; report = {}
     spec = json.loads(SPEC.read_text()); skipped = 0
 
-    def emit(name, vertices, faces, mat, *args, blocks=True, **options):
+    def emit(name, vertices, faces, mat, *args, blocks=True, hidden=False, **options):
         obj = mesh(name, vertices, faces, mat, *args, **options)
-        report[obj.name] = export(obj); entries.append({'name': obj.name, 'blocks': blocks})
+        report[obj.name] = export(obj); entries.append({'name': obj.name, 'blocks': blocks} | ({'hidden': True} if hidden else {}))
     for index, item in enumerate(source.gltf['meshes']):
         vertices = []; normals = []; uv0 = []; uv1 = []; faces = []; slot = None
         for part in source.parts:
@@ -125,9 +128,12 @@ def build():
             slot = part['material']
         suffix = item['name'].split('/')[-1].replace('cmn_prp_dev_bk_', '').replace('_mesh', '')
         name = f'SM_CP_{index:02d}_{suffix}'
-        emit(name, vertices, faces, materials[slot], uv0, uv1, normals)
+        emit(name, vertices, faces, materials[slot], uv0, uv1, normals, blocks=False)
     if skipped != spec['zero_area_faces'] or sum(v['triangles'] for v in report.values()) != spec['triangles']-skipped:
         raise ValueError('Source render geometry changed')
+    vertices, faces, _, riding = riding_collision([(part['vertices'], part['faces']) for part in source.parts],
+                                                  {k for k, part in enumerate(source.parts) if part['mesh'] in SLENDER})
+    emit('SM_CP_Collision', vertices.tolist(), faces.tolist(), materials[0], blocks=True, hidden=True)
     # The fine ground replaces the corresponding coarse mountain cells.
     x, y, z = L.grid(north_surface); h, w = x.shape
     world = np.stack((x, y, z), axis=-1); points = L.local(world).reshape(-1, 3)
@@ -183,7 +189,7 @@ def build():
                        'path_top': {'pos': list(L.ACCESS[0]), 'yaw_deg': 90.}}}
     (OUT / 'park.json').write_text(json.dumps(park, indent=2)+'\n')
     report = {'source_instances': len(source.instances), 'source_triangles': spec['triangles'], 'zero_area_faces': skipped,
-              'riding_triangles': spec['triangles']-skipped, 'meshes': report,
+              'riding_triangles': spec['triangles']-skipped, 'riding_collision': riding, 'meshes': report,
               'murals': Counter(m['panel'] for m in murals), 'props': Counter(p['kind'] for p in props),
               'park_sha256': hashlib.sha256((OUT / 'park.json').read_bytes()).hexdigest(),
               'source_sha256': spec['sha256'], 'rails': len(park['rails'])}

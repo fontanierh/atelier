@@ -117,9 +117,13 @@ bool ASkatePark::Initialize(const FString& Path)
     int32 Meshes = 0;
     for (const auto& Entry : Root->GetArrayField(TEXT("meshes")))
     {
-        FString Name; bool bBlocks = true;
+        FString Name; bool bBlocks = true, bHidden = false;
         if (Entry->Type == EJson::String) Name = Entry->AsString();
-        else { Name = Entry->AsObject()->GetStringField(TEXT("name")); Entry->AsObject()->TryGetBoolField(TEXT("blocks"), bBlocks); }
+        else
+        {
+            Name = Entry->AsObject()->GetStringField(TEXT("name"));
+            Entry->AsObject()->TryGetBoolField(TEXT("blocks"), bBlocks); Entry->AsObject()->TryGetBoolField(TEXT("hidden"), bHidden);
+        }
         UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
         if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Skate park: mesh %s is not imported"), *Name); continue; }
         auto* C = NewObject<UStaticMeshComponent>(this, *Name);
@@ -128,6 +132,8 @@ bool ASkatePark::Initialize(const FString& Path)
         C->SetCollisionEnabled(bBlocks ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
         C->SetCollisionResponseToAllChannels(ECR_Block);
         C->SetCanEverAffectNavigation(false);
+        // A hidden mesh is collision only, such as a park's welded riding surface under its rendered pieces.
+        if (bHidden) { C->SetVisibility(false); C->SetHiddenInGame(true); C->SetCastShadow(false); }
         C->RegisterComponent(); ++Meshes;
     }
     // Reuse the island's detailed trees in the perimeter stone gardens. Their

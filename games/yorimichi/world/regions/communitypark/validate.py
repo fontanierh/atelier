@@ -1,4 +1,4 @@
-"""Audit the private source, ground support and imported Unreal render triangles.
+"""Audit the private source, ground support, riding collision and imported Unreal triangles.
 
     uv run python games/yorimichi/world/regions/communitypark/validate.py [--imported]
 
@@ -19,7 +19,7 @@ import numpy as np
 from communitypark.source import scene
 from communitypark import layout as L
 from communitypark import structures as S
-from communitypark import murals, props
+from communitypark import collision as C, murals, props
 from hidamari.layout import north_surface
 
 
@@ -72,6 +72,25 @@ def source_audit():
             'spawn_height_m': surface_at(*L.SPAWN[:2]), 'entry_width_samples': 5}
 
 
+@lru_cache(maxsize=1)
+def riding():
+    s = scene()
+    parts = [(p['vertices'], p['faces']) for p in s.parts]
+    obstacles = {k for k, p in enumerate(s.parts) if p['mesh'] in S.SLENDER}
+    return parts, obstacles, C.riding_collision(parts, obstacles)
+
+
+def riding_audit():
+    """No joint lip the skate cannot roll over (12 mm) is left on a riding edge of the hidden collision."""
+    parts, obstacles, (vertices, faces, owner, report) = riding()
+    before = C.steps(*C.weld(parts), obstacles); after = C.steps(vertices, faces, owner, obstacles)
+    pieces = [(p.round(3).tolist(), round(r*1000, 1)) for p, r, k in after if k >= 0]
+    assert not pieces, ('joint lips over 12 mm', pieces[:8])
+    # A ramp's cheek stays where its run meets a real step; those are counted, not ridden into.
+    return report | {'lips_over_12mm_before': len(before), 'lips_over_12mm_after': len(pieces),
+                     'ramp_cheek_samples_over_12mm': len(after)-len(pieces)}
+
+
 def triangle_error(expected, actual, tolerance=.01):
     """Pair every triangle once, independently of FBX face/vertex ordering.
 
@@ -116,8 +135,11 @@ def import_audit():
         expected = L.local(mesh.triangles())*[100., -100., 100.]
         actual = np.fromfile(yori.OUT/'communitypark/import-audit'/f'{mesh.name}.triangles.f64', dtype='<f8').reshape(-1, 3, 3)
         additions[mesh.name] = triangle_error(expected, actual)
+    vertices, faces = riding()[2][:2]
+    actual = np.fromfile(yori.OUT/'communitypark/import-audit/SM_CP_Collision.triangles.f64', dtype='<f8').reshape(-1, 3, 3)
+    collision = triangle_error(vertices[faces]*[100., -100., 100.], actual)
     return {'source_meshes': len(errors), 'maximum_triangle_error_cm': max(errors.values()), 'meshes': errors,
-            'structures': additions}
+            'structures': additions, 'riding_collision_cm': collision}
 
 
 def member_probes(member):
@@ -255,6 +277,7 @@ def structure_audit():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('--imported', action='store_true')
     args = parser.parse_args(); evidence = source_audit(); evidence['structures'] = structure_audit()
+    evidence['riding_collision'] = riding_audit()
     if args.imported:
         evidence['imported'] = import_audit()
     (yori.OUT/'communitypark/validation.json').write_text(json.dumps(evidence, indent=2)+'\n')
