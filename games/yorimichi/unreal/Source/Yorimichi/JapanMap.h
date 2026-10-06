@@ -47,6 +47,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Map") bool SelectMarker(const FString& Key);
     UFUNCTION(BlueprintCallable, Category = "Map") bool RenameMarker(const FString& Name);
     UFUNCTION(BlueprintCallable, Category = "Map") bool DeleteMarker();
+    /** Review the real focused Slate text path, including gameplay-key leakage; requires the map already open. */
+    UFUNCTION(BlueprintCallable, Category = "Map|Review") FString ReviewMarkerNameInput(const FString& Text);
+    UFUNCTION(BlueprintCallable, Category = "Map|Review") bool ReviewCommitMarkerName();
+    UFUNCTION(BlueprintPure, Category = "Map") bool IsMapOpen() const { return IsOpen(); }
     void CycleMarker(int32 Direction);
     bool IsEditingMarkerName() const;
     const FJapanMapZone* FindZone(const FString& Key) const;

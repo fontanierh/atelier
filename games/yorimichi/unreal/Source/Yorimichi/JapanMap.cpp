@@ -55,6 +55,32 @@ static FMapPadLabels MapPadLabels(int32 Style)
     }
 }
 
+/** Consume keys left unhandled by the text editor before they reach the game viewport. Character events still
+ *  reach its inner editor, and navigation/clipboard/Enter keep their normal text-editing behavior. */
+class SMarkerNameBox : public SEditableTextBox
+{
+public:
+    TWeakObjectPtr<UJapanMap> Map;
+    virtual FReply OnPreviewKeyDown(const FGeometry&, const FKeyEvent& E) override
+    {
+        if (UJapanMap* M = Map.Get())
+        {
+            if (E.GetKey() == EKeys::Escape) { M->Close(); return FReply::Handled(); }
+            if (E.GetKey() == EKeys::F5)
+            {
+                if (!E.IsRepeat()) M->SaveMarker(GetText().ToString());
+                return FReply::Handled();
+            }
+        }
+        return FReply::Unhandled();
+    }
+    virtual FReply OnKeyDown(const FGeometry& G, const FKeyEvent& E) override
+    {
+        const FReply Reply = SEditableTextBox::OnKeyDown(G,E);
+        return Reply.IsEventHandled() ? Reply : FReply::Handled();
+    }
+};
+
 /** The sheet itself: the painted map fitted into the available space, the zone pins with their names, the player.
  *  Mouse: hover a pin and click it. Controller: the left stick moves a reticle that catches the nearest pin, the d-pad
  *  hops pin to pin, the right stick pans, the shoulders zoom, the bottom button travels and the right button closes. */
@@ -564,6 +590,18 @@ void UJapanMap::Open()
 {
     if (IsOpen() || !bLoaded || !Owner || !GEngine || !GEngine->GameViewport) return;
     TSharedRef<SJapanMapSheet> Sheet = SNew(SJapanMapSheet).Map(this).PadStyle(AJapanHUD::CurrentControllerStyle());
+    TSharedRef<SMarkerNameBox> NameInput = SNew(SMarkerNameBox)
+        .HintText(FText::FromString(TEXT("Name this skate-line spot · Enter saves")))
+        .Text(FText::FromString(MarkerStore()->NextName()))
+        .ClearKeyboardFocusOnCommit(false)
+        .SelectAllTextWhenFocused(true)
+        .OnTextCommitted_Lambda([this](const FText& Text, ETextCommit::Type Type)
+        {
+            if (Type == ETextCommit::OnEnter && SaveMarker(Text.ToString()))
+                MarkerName->SetText(FText::FromString(MarkerStore()->NextName()));
+        });
+    NameInput->Map = this; MarkerName = NameInput;
+
     Widget = SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.02f,.03f,.03f,.86f)).Padding(FMargin(30,18,30,16))
         [SNew(SVerticalBox)
             + SVerticalBox::Slot().AutoHeight().Padding(0,0,0,10)
@@ -574,8 +612,7 @@ void UJapanMap::Open()
             + SVerticalBox::Slot().AutoHeight().Padding(0,10,0,0)
                 [SNew(SHorizontalBox)
                     + SHorizontalBox::Slot().FillWidth(1).Padding(0,0,10,0)
-                        [SAssignNew(MarkerName,SEditableTextBox).HintText(FText::FromString(TEXT("Name this skate-line spot")))
-                            .Text(FText::FromString(MarkerStore()->NextName()))]
+                        [NameInput]
                     + SHorizontalBox::Slot().AutoWidth().Padding(0,0,10,0)
                         [SNew(SButton).IsFocusable(false).Text(FText::FromString(TEXT("Save here")))
                             .OnClicked_Lambda([this] { if (SaveMarker(MarkerName->GetText().ToString())) MarkerName->SetText(FText::FromString(MarkerStore()->NextName())); return FReply::Handled(); })]
@@ -624,4 +661,30 @@ void UJapanMap::Close()
     if (Widget && GEngine && GEngine->GameViewport) GEngine->GameViewport->RemoveViewportWidgetContent(Widget.ToSharedRef());
     Widget.Reset(); MarkerName.Reset();
     if (Owner) Owner->SetMenuOpen(false);
+}
+
+FString UJapanMap::ReviewMarkerNameInput(const FString& Text)
+{
+    if (!IsOpen() || !MarkerName || Text.Len()>48) return FString();
+    MarkerName->SetText(FText::GetEmpty());
+    auto& App = FSlateApplication::Get();
+    App.SetKeyboardFocus(MarkerName,EFocusCause::SetDirectly);
+    for (TCHAR C : Text)
+    {
+        const FKey Key = C == TEXT(' ') ? EKeys::SpaceBar : FKey(*FString::Chr(FChar::ToUpper(C)));
+        const FKeyEvent Event(Key,FModifierKeysState(),0,false,C,C);
+        App.ProcessKeyDownEvent(Event);
+        App.ProcessKeyCharEvent(FCharacterEvent(C,FModifierKeysState(),0,false));
+        App.ProcessKeyUpEvent(Event);
+    }
+    return MarkerName ? MarkerName->GetText().ToString() : FString();
+}
+
+bool UJapanMap::ReviewCommitMarkerName()
+{
+    if (!IsEditingMarkerName()) return false;
+    auto& App = FSlateApplication::Get();
+    const FKeyEvent Event(EKeys::Enter,FModifierKeysState(),0,false,13,13);
+    App.ProcessKeyDownEvent(Event); App.ProcessKeyUpEvent(Event);
+    return true;
 }

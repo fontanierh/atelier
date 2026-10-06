@@ -63,8 +63,8 @@ grandstand) from `hippodrome/hippodrome.json`, when `map.json` has none ([HIPPOD
 
 Press **F5** while grounded to save a new place and heading; **F9** returns to the selected marker. Each F5 press
 adds a new `Marker N`, keeping your earlier locations. Open the map with **M** to enter a name and **Save here**,
-choose **Previous** / **Next**, **Rename selected**, or **Delete selected**. Clicking a blue **M** pin selects and
-returns to that place. With the map open, the controller's top face button saves a new place and its left face
+press **Enter** to save the name, choose **Previous** / **Next**, **Rename selected**, or **Delete selected**.
+Clicking a blue **M** pin selects and returns to that place. With the map open, the controller's top face button saves a new place and its left face
 button returns; the hint names the connected pad's buttons. Controller users can choose any saved pin with the
 stick or d-pad and travel with the bottom face button. The phone receives the same named marker zones.
 
@@ -81,8 +81,8 @@ save attempt also leaves previous places intact.
 The durable review scenario is `uv run atelier qa yorimichi session_marker --port PORT --save-file FILE`. Start a
 fresh guarded CairoBotw game with `-markersave=FILE` pointing to a new review file; the scenario refuses to operate
 on a game using the player's normal save. It checks keyboard input, several named places, selection, rename/delete,
-map/phone travel, airborne refusal, roofs, blocked or removed floors and character switches. Restart with the same
-review save and add `--reload` to verify persisted places, headings and selection. Evidence goes to
+map/phone travel, text-input isolation and Enter-to-save, airborne refusal, roofs, blocked or removed floors and
+character switches. Restart with the same review save and add `--reload` to verify persisted places, headings and selection. Evidence goes to
 `build/yorimichi/session-marker/review/`; test files remain under `build/`.
 
 ## The painted sheet
