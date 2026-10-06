@@ -14,7 +14,11 @@ def bezier(points,n=100):
 def profiles():
     roll=[[-3.,10.7],[0.,10.7]]+bezier([(0,10.7),(4,10.7),(2,.45),(16.5,.45)],180)[1:]
     roll+=bezier([(16.5,.45),(20,.45),(24,1.285),(27.5,2.7)],100)[1:]
-    land=bezier([(37.9,2.7),(41.,.65),(44.,.45),(49.,.45)],100)
+    # The landing drops from its knuckle at a straight 35 degrees, then a 4 m transition meets the flat: a short gap
+    # flown at a lower takeoff speed still lands on the slope, not on a flattened run-out.
+    a,r=math.radians(35),4.
+    drop=2.7-.45-r*(1-math.cos(a));x1=37.9+drop/math.tan(a);cx=x1+r*math.sin(a)
+    land=[[37.9,2.7]]+[[cx-r*math.sin(t),.45+r*(1-math.cos(t))] for t in np.linspace(a,0,60)]
     land.append([56.,.45])
     # Exact circular transition ends in true vertical: no over-vertical hook.
     land += [[56+5.65*math.sin(t),.45+5.65*(1-math.cos(t))] for t in np.linspace(0,math.pi/2,151)[1:]]

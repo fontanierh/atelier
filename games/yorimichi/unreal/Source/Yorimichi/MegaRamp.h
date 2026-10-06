@@ -4,8 +4,9 @@
 #include "MegaRamp.generated.h"
 class FJsonObject;
 
-/** The mini-mega ramp in the clearing: the Mega_Ramp mesh with its collision, placed from world.json "mega". Scenery
- *  now; its scripted ride went with the old cruiser skateboard (in the prototype archive). */
+/** The mini-mega ramp in the clearing: the Mega_Ramp mesh with its collision and the Mega_Trim mesh without (seams,
+ *  coping), placed from world.json "mega". Scenery now; its scripted ride went with the old cruiser skateboard (in the
+ *  prototype archive). */
 UCLASS()
 class YORIMICHI_API AMegaRamp : public AActor
 {
