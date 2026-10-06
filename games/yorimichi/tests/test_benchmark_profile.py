@@ -27,7 +27,7 @@ def test_explicit_baseline_and_duplicate_last_value_remain_authoritative(benchma
         benchmark.verify_desktop_profile({'desktop': 1}, baseline)
 
 
-@pytest.mark.parametrize('profile', [{}, {'desktop': 0}])
+@pytest.mark.parametrize('profile', [None, {}, {'desktop': 0}])
 def test_missing_or_ineffective_profile_cannot_pass_desktop_capture(benchmark, profile):
     with pytest.raises(RuntimeError):
         benchmark.verify_desktop_profile(profile, 'desktop=1')
@@ -35,3 +35,9 @@ def test_missing_or_ineffective_profile_cannot_pass_desktop_capture(benchmark, p
 
 def test_logged_effective_desktop_profile_passes(benchmark):
     benchmark.verify_desktop_profile({'desktop': 1}, 'performance=1;desktop=1')
+
+
+@pytest.mark.parametrize('value', ['', 'invalid', 'nan', 'inf'])
+def test_invalid_override_fails_before_capture(benchmark, value):
+    with pytest.raises(ValueError, match='desktop must be a finite number'):
+        benchmark.desktop_settings('desktop=' + value)

@@ -29,17 +29,27 @@ PROJECT = ROOT / 'unreal'
 ENGINE = Path(os.environ.get('UE_ROOT', '/Users/Shared/Epic Games/UE_5.8'))
 
 
+def desktop_value(settings):
+    requested = dict(pair.split('=', 1) for pair in settings.split(';') if '=' in pair).get('desktop', '1')
+    try:
+        value = float(requested)
+    except ValueError:
+        raise ValueError('desktop must be a finite number; use desktop=1 or desktop=0') from None
+    if not math.isfinite(value):
+        raise ValueError('desktop must be a finite number; use desktop=1 or desktop=0')
+    return int(value > .5)
+
+
 def desktop_settings(settings):
     """Enable the session-only desktop profile unless a capture explicitly overrides it."""
     if not any(pair.partition('=')[0] == 'desktop' for pair in settings.split(';')):
-        return ';'.join(filter(None, (settings, 'desktop=1')))
+        settings = ';'.join(filter(None, (settings, 'desktop=1')))
+    desktop_value(settings)   # refuse invalid overrides before launching a long capture
     return settings
 
 
 def verify_desktop_profile(profile, settings):
-    requested = dict(pair.split('=', 1) for pair in settings.split(';') if '=' in pair).get('desktop', '1')
-    expected = float(requested)
-    if not math.isfinite(expected) or profile.get('desktop') != int(expected > .5):
+    if (profile or {}).get('desktop') != desktop_value(settings):
         raise RuntimeError('Fullscreen capture did not apply the requested desktop session profile')
 
 
@@ -214,7 +224,10 @@ def main():
     if args.desktop_fullscreen:
         if any(arg.lower().startswith('-set=') for arg in args.launch_arg):
             p.error('With --desktop-fullscreen, pass session overrides through --settings, not --launch-arg=-set=')
-        args.settings = desktop_settings(args.settings)
+        try:
+            args.settings = desktop_settings(args.settings)
+        except ValueError as error:
+            p.error(str(error))
     if args.desktop_fullscreen and (args.height != 1440 or args.boot):
         p.error('--desktop-fullscreen requires --height 1440 and a scene benchmark')
     if (args.view == 'custom') != (args.camera is not None):
