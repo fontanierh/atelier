@@ -169,8 +169,19 @@ function mentioned(text) {
   return found;
 }
 // Who a draft goes to: '*', one agent, or the list of agents it mentions.
+// Who a thread's replies go to: the agent who started it, or the agents your opening message mentioned, plus every
+// agent who has joined in the replies. A message you sent to the whole board keeps its replies there.
+function threadAudience(root, replies) {
+  const m=root.first, live=new Set(liveAgents().map(a=>a.agent));
+  if(m.sender===state.sender&&!root.mentions&&(root.broadcast||m.recipient==="*"))return "*";
+  const names=new Set(m.sender===state.sender?root.messages.map(x=>x.recipient):[m.sender]);
+  for(const g of replies)for(const x of g.messages)names.add(x.sender===state.sender?x.recipient:x.sender);
+  const list=[...names].filter(name=>live.has(name)&&name!==state.sender);
+  return list.length===0?"*":list.length===1?list[0]:list;
+}
 function recipients() {
   const mentions=mentioned($("message").value), chosen=$("recipient").value;
+  if(thread?.audience){const list=[...thread.audience];for(const name of mentions)if(!list.includes(name))list.push(name);return list;}
   if(!mentions.length)return chosen;
   if(chosen!=="*"&&!mentions.includes(chosen))mentions.unshift(chosen);
   return mentions.length===1?mentions[0]:mentions;
@@ -238,7 +249,7 @@ function formState() {
   $("broadcastForm").classList.toggle("has-text",Boolean(length));
   const form=$("broadcastForm"), focused=form.contains(document.activeElement);
   form.classList.toggle("expanded",Boolean(length||uploads.length||focused||thread));
-  $("message").placeholder=thread?"Reply in thread…":target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
+  $("message").placeholder=thread?`Reply to ${describe(target)}…`:target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
 }
 $("message").addEventListener("input",()=>{grow();draftChanged();}); $("recipient").addEventListener("change",draftChanged);
 $("message").addEventListener("keydown",event=>{
@@ -941,9 +952,10 @@ function renderThread(force=false) {
   for(const key of [...cache.keys()])if(!used.has(key))cache.delete(key);
   current.newest=newest;
   reconcile(feed,nodes);if(stick)feed.scrollTop=feed.scrollHeight;
-  // Replies go to the agent who wrote the original, or back to everyone a broadcast reached.
-  const m=root.first, target=m.sender===state.sender?(root.broadcast||m.recipient==="*"?"*":m.recipient):m.sender;
-  const usable=[...$("recipient").options].some(o=>o.value===target&&!o.disabled);
+  const m=root.first, target=threadAudience(root,replies);
+  // Several agents: the thread keeps them all as its audience, so a reply never falls back to everyone.
+  current.audience=Array.isArray(target)?target:null;
+  const usable=typeof target==="string"&&[...$("recipient").options].some(o=>o.value===target&&!o.disabled);
   if(usable&&$("recipient").value!==target&&!current.recipientSet){$("recipient").value=target;draftChanged();}
   current.recipientSet=true;current.replyTo=m.id;
   formState();
