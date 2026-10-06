@@ -483,7 +483,17 @@ function updateBadges(unread=0) {
 // must not unpin the feed or pull in older history (which used to leave a new conversation stuck at its top).
 let settleUntil=0, lastScrollTop=0, scrollTravel=0;
 function settle(ms=500) { settleUntil=performance.now()+ms; }
+// Parallax: as you scroll back through history the meadow follows at a fraction of the speed, up to 44 px.
+let parallaxFrame=0;
+function parallax() {
+  if(parallaxFrame||motion.matches||desktop.matches)return;
+  parallaxFrame=requestAnimationFrame(()=>{
+    parallaxFrame=0;const f=$("feed"), gap=Math.max(0,f.scrollHeight-f.scrollTop-f.clientHeight);
+    $("painting").style.transform=`translate3d(0,${Math.min(44,gap*.035).toFixed(1)}px,0)`;
+  });
+}
 $("feed").addEventListener("scroll",()=>{
+  parallax();
   if(performance.now()<settleUntil){if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;return;}
   stickToBottom=feedNearBottom();
   const f=$("feed"), gap=f.scrollHeight-f.scrollTop-f.clientHeight, app=$("app");
