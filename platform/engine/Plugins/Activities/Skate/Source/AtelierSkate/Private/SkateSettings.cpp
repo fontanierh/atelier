@@ -39,6 +39,7 @@ bool FSkateFeel::Validate(FString& Error) const
         {TEXT("StickDeadZone"), StickDeadZone, .25f, .6f}, {TEXT("StickReach"), StickReach, .6f, 1}, {TEXT("MouseFlick"), MouseFlick, .25f, 4},
         {TEXT("Gravity"), Gravity, .5f, 1.5f}, {TEXT("Boneless"), Boneless, .5f, 3}, {TEXT("Hippy"), Hippy, .5f, 3},
         {TEXT("RailMagnetism"), RailMagnetism, .25f, 3}, {TEXT("GrindPop"), GrindPop, .5f, 2}, {TEXT("GrindFriction"), GrindFriction, 0, 3},
+        {TEXT("SlideBalance"), SlideBalance, 0, 1},
         {TEXT("Braking"), Braking, .25f, 3}, {TEXT("Steering"), Steering, .5f, 2}, {TEXT("Carve"), Carve, .5f, 2}, {TEXT("Grip"), Grip, .5f, 2},
         {TEXT("Powerslide"), Powerslide, .25f, 3}, {TEXT("RollingFriction"), RollingFriction, 0, 3}, {TEXT("HillSpeed"), HillSpeed, 0, 2},
         {TEXT("Pump"), Pump, 0, 3}, {TEXT("Wobble"), Wobble, 0, 3}, {TEXT("WobbleOnset"), WobbleOnset, .5f, 3}, {TEXT("ManualDrift"), ManualDrift, 0, 3},

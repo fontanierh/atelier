@@ -574,6 +574,24 @@ void USkateComponent::NameNativePump()
     O.Trick=O.PumpAlone||O.Trick.IsEmpty()?Label:O.Trick+TEXT(" + ")+Label;
 }
 
+void USkateComponent::BalanceTipslide(const FSkateRuntime& R, FSkateHostPad& Pad) const
+{
+    // A nose or tail slide (or a blunt on a thin rail) stays on only while the left stick balances it
+    // (atelier::skate_pad::TipBalance). With both sticks left centred (inside the native pad's 0.25 dead zone), the
+    // stick it needs is sent for the player; any stick the player moves, steering off or the flick of an ollie out,
+    // goes to Native as it is.
+    if (Feel.SlideBalance<=0.f || R.State!=TEXT("GrindTipslide") || !RailSystem) return;
+    if (FMath::Sqrt(Pad.LeftX*Pad.LeftX+Pad.LeftY*Pad.LeftY)>=.25 || FMath::Sqrt(Pad.RightX*Pad.RightX+Pad.RightY*Pad.RightY)>=.25) return;
+    const FVector Deck=R.Bone(TEXT("SKATEBOARD_ROOT")).GetLocation();
+    float S=0.f; FVector Point,Tangent;
+    if (RailSystem->FindNear(Deck,60.f,-40.f,40.f,S,Point,Tangent)==INDEX_NONE) return;
+    using SkateRuntimeDetail::ToNative;
+    const auto Native=[](const FVector& V){ return std::array<double,3>{V.X,V.Y,V.Z}; };
+    Pad.LeftX=atelier::skate_pad::TipBalance(Native(ToNative(Deck)),Native(ToNative(Point)),Native(ToNative(Tangent)),
+        Native(ToNative(R.Velocity)),Feel.SlideBalance);
+    Pad.LeftY=0;
+}
+
 bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool& bFailed)
 {
     bool Changed=Lockstep() && R.AwaitingPose && R.AwaitPose();
@@ -584,7 +602,9 @@ bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool
     R.FrameTime=FMath::Min(.1f,R.FrameTime+Dt);
     if (R.AwaitingPose) return Changed;
     // The canonical pad (SkatePad.h); GameplaySession takes the host transfer bit off before Xbox sampling.
-    const skate_native::XboxState Input=bNeutral?skate_native::XboxState{}:atelier::skate_pad::Pack(ReadHostPad());
+    FSkateHostPad Pad=ReadHostPad();
+    BalanceTipslide(R,Pad);
+    const skate_native::XboxState Input=bNeutral?skate_native::XboxState{}:atelier::skate_pad::Pack(Pad);
     auto Send=[&R,&Input]()
     {
         FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::Step;Command.Dt=R.FrameTime;

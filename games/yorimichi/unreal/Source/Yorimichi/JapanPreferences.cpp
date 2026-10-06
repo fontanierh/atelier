@@ -88,7 +88,8 @@ const TArray<FSkateGroup>& SkateGroups()
         {TEXT("Rails"), {
             {TEXT("skate_rail_magnetism"), TEXT("Rail magnetism"), TEXT("How far, how sharply and how fast a jump is pulled onto a rail or ledge."), .25f, 3, .05f, &FSkateFeel::RailMagnetism},
             {TEXT("skate_grind_pop"), TEXT("Grind pop"), TEXT("Height of an ollie out of a grind."), .5f, 2, .05f, &FSkateFeel::GrindPop},
-            {TEXT("skate_grind_friction"), TEXT("Grind friction"), TEXT("How fast grinds and slides slow down. 0 never slows."), 0, 3, .05f, &FSkateFeel::GrindFriction}}},
+            {TEXT("skate_grind_friction"), TEXT("Grind friction"), TEXT("How fast grinds and slides slow down. 0 never slows."), 0, 3, .05f, &FSkateFeel::GrindFriction},
+            {TEXT("skate_slide_balance"), TEXT("Slide balance"), TEXT("How much nose and tail slides and blunts balance themselves while you leave the sticks alone. 0 leaves it all to the left stick."), 0, 1, .05f, &FSkateFeel::SlideBalance}}},
         {TEXT("Pushing and rolling"), {
             {TEXT("skate_push_speed"), TEXT("Top push speed"), TEXT("The speed pushing reaches."), .5f, 2, .05f, &FSkateFeel::PushSpeed},
             {TEXT("skate_push_power"), TEXT("Push strength"), TEXT("Speed gained with each push."), .5f, 3, .05f, &FSkateFeel::PushPower},

@@ -6,7 +6,8 @@ Mounts with skate.Backend Ride, then checks a ride's first frame (it moves like 
 floor (it starts on it), pushing (from rest, nose-first), steering, braking, the ollie's height, every Flick-It trick,
 flicks on the player's pad (`--only pad`: native's quickest ollie, an ollie flicked mid-push, a manual flicked into a
 kickflip and a nose manual into a nollie, every nollie in native's table, goofy and rolling fakie too), a grab, a 360,
-a grind, a manual, a bail and its recovery, the hands clear of the body and the pushing foot out of the ground (Cairo
+a grind, nose and tail slides held with the sticks left alone and an ollie out of one (`--only slides`), a manual,
+a bail and its recovery, the hands clear of the body and the pushing foot out of the ground (Cairo
 regular and goofy, Link), lip airs
 back into the transition (straight, 180 and 360 on the pier's quarter; straight and across on Mega Park's pool wall)
 and a coasting back-and-forth in the bowl (`--only vert`), a player's lip airs (an angled approach with the stick held
@@ -129,6 +130,8 @@ FLAT = (-28, 38)       # the pier's long flat run, heading east between flatbar_
 STEER = {1: FLAT, -1: (FLAT[0], FLAT[1] - 1)}
 RAIL = (-36, 43)       # an ollie at .98 s onto flatbar_red, along it (it starts 8 m ahead, x -28 to -10)
 RAIL_FAST = (-38, 43)  # the same take-off at 700 cm/s
+SLIDE_BAR = (-24, 43)  # a slide set across flatbar_red, 4 m along it
+SLIDE_LEDGE = (-24, 24.65)  # and across long_ledge's edge (y 25), its centre over the deck beside it
 QUARTER = (57, 25)     # east_return's quarter (lip at x 70, 2 m radius, 0.15 m vert), launched east at 950 cm/s
 QUARTER_OUT = (-1, 0)  # its face's level normal, Unreal x, y: back into the ramp, west
 OPEN = (0, 52)         # an open run east between the bars (y 43) and the north gardens (y 61), for hard carves
@@ -490,6 +493,8 @@ def main():
         lip_air_player(record)
     if wanted('grind'):
         grind_rows(record)
+    if wanted('slides'):
+        slide_rows(record)
     if wanted('manual'):
         # Native's manual (RIDE.md, Manuals): half way down (or up) the stick starts one 0.2 s on, and it lasts, without
         # a fall, until the stick centres at 1.8 s. The nose manual's balance comes after its Into, 25 ticks later.
@@ -1903,6 +1908,63 @@ def parapet_corner(record):
             f"(mode {rows[end]['mode']}); slowest {slowest:.0f} cm/s up to 0.6 s after; "
             f"{'bailed' if bailed else 'no bail'}; largest step at the lock {jump:.1f} cm beyond the speed; {qa.combos(rows)}")
            if end is not None else f"states {','.join(sorted(qa.modes(rows)))}; never {'locked' if lock is None else 'left the line'}")
+
+
+def slide_rows(record):
+    """Nose and tail slides, and blunts on a thin rail (Native's GrindTipslide), are held only by the left stick, which
+    way depending on the side and the way the board travels; with both sticks left alone, Slide balance
+    (FSkateFeel::SlideBalance, skate_slide_balance) supplies it. The board is set across flatbar_red 48 cm over the
+    deck, its centre 0.35 m to one side (the bar under its nose or tail), and sent along the bar at 5.5 m/s from both
+    sides, facing both ways. With Slide balance 0 (Native's own) the slides drop off the bar within a second; with 1,
+    every slide entered holds at least 1.5 s with no bail, and an ollie out at 1.2 s still leaves it within half a
+    second and rides away."""
+    held = {0: [], 1: []}
+    rows_seen = []
+    try:
+        for balance in (0, 1):
+            qa.py(f"live.preference('skate_slide_balance', {balance})")
+            for side in (-.35, .35):
+                for heading in (90, -90):
+                    rows = qa.run_scenario(f"{SLIDE_BAR[0]},{SLIDE_BAR[1] + side},{heading},550,[],duration=3.5,height=.48,"
+                                           f"velocity_heading=0", 3.5)
+                    rows_seen += rows
+                    first = next((i for i, r in enumerate(rows) if r.get('retail') == 'GrindTipslide'), None)
+                    if first is None:
+                        continue
+                    end = next((i for i in range(first, len(rows)) if rows[i].get('retail') != 'GrindTipslide'), len(rows))
+                    seconds = sum(float(r.get('dt', 16.7)) for r in rows[first:end]) / 1000
+                    held[balance].append((round(seconds, 2), bool(qa.count(rows, 'bails')), qa.combos(rows)))
+        # long_ledge, reported only: a slide set this way meets the ledge from below its top, so its hanging end can
+        # strike the ledge's face, which no stick holds against.
+        ledge = []
+        for heading in (90, -90):
+            rows = qa.run_scenario(f"{SLIDE_LEDGE[0]},{SLIDE_LEDGE[1]},{heading},550,[],duration=3.5,height=.48,velocity_heading=0", 3.5)
+            rows_seen += rows
+            first = next((i for i, r in enumerate(rows) if r.get('retail') == 'GrindTipslide'), None)
+            if first is not None:
+                end = next((i for i in range(first, len(rows)) if rows[i].get('retail') != 'GrindTipslide'), len(rows))
+                ledge.append((round(sum(float(r.get('dt', 16.7)) for r in rows[first:end]) / 1000, 2), bool(qa.count(rows, 'bails'))))
+        # An ollie out at 1.2 s still leaves the slide (Slide balance gives way to any stick) and rides away.
+        exits = []
+        for side, heading in ((-.35, 90), (.35, -90), (-.35, -90), (.35, 90)):
+            rows = qa.run_scenario(f"{SLIDE_BAR[0]},{SLIDE_BAR[1] + side},{heading},550,[(1.2,('flick','ollie'))],duration=3.5,"
+                                   f"height=.48,velocity_heading=0", 3.5)
+            rows_seen += rows
+            first = next((i for i, r in enumerate(rows) if r.get('retail') == 'GrindTipslide'), None)
+            if first is None:
+                continue
+            end = next((i for i in range(first, len(rows)) if rows[i].get('retail') != 'GrindTipslide'), len(rows))
+            left = sum(float(r.get('dt', 16.7)) for r in rows[:end]) / 1000
+            exits.append((round(left, 2), bool(qa.count(rows, 'bails')), rows[-1]['mode']))
+    finally:
+        qa.py("live.preference('skate_slide_balance', 1)")
+    on, off = held[1], held[0]
+    ok_exit = bool(exits) and all(1.2 <= left < 1.7 and not bailed and mode == '1' for left, bailed, mode in exits)
+    ok = len(on) >= 2 and all(s >= 1.5 and not bailed for s, bailed, _ in on) and off and max(s for s, _, _ in off) < 1. and ok_exit
+    record('slides', rows_seen, ok, f"held with Slide balance 1: {[s for s, _, _ in on]} s, bails {sum(b for _, b, _ in on)}; "
+           f"ollied out at 1.2 s (left at, bailed, last mode): {exits}; "
+           f"with 0: {[s for s, _, _ in off]} s, bails {sum(b for _, b, _ in off)}; long_ledge with 1 (held s, bailed): {ledge}; "
+           f"{' / '.join(dict.fromkeys(c for _, _, c in on + off if c))}")
 
 
 def grind_rows(record):

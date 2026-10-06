@@ -164,6 +164,8 @@ private:
     bool ActivateNative(FSkateRuntime& Runtime);
     /** Step a Native session one frame (neutral controls if bNeutral): whether a new pose arrived. */
     bool StepNative(FSkateRuntime& Runtime, float Dt, bool bNeutral, bool& bFailed);
+    /** With both sticks centred in a nose/tail slide or a thin-rail blunt, the left stick that balances it (Feel.SlideBalance). */
+    void BalanceTipslide(const FSkateRuntime& Runtime, FSkateHostPad& Pad) const;
     /** Under the hybrid: count the air's spin from the shown pose and name it at the landing (Native names none). */
     void NameNativeSpin(ESkateMode Was);
     /** Under the hybrid: show each successful pump Native's session counted in the trick line (Native names none). */

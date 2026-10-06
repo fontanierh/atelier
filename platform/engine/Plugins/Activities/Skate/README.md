@@ -139,6 +139,7 @@ bit-exact with stock.
 | `RailMagnetism` | 0.25 to 3 | The grind lock distance, how far and how sharply a jump may be bent onto a rail, and the crossing and drop speeds still admitted |
 | `GrindPop` | 0.5 to 2 | The ollie out of a grind |
 | `GrindFriction` | 0 to 3 | Grind and slide friction |
+| `SlideBalance` | 0 to 1 | How much a nose or tail slide (and a blunt on a thin rail) balances itself while both sticks rest. The native session holds one only by the left stick, in a direction that depends on the side and the way the board travels; 0 leaves it to the stick, as the native session does |
 | `Braking` | 0.25 to 3 | Foot-brake force |
 | `Steering`, `Carve`, `Grip` | 0.5 to 2 | Steering scalar, heading turn strength, wheel friction |
 | `Powerslide` | 0.25 to 3 | A powerslide's slowing force |

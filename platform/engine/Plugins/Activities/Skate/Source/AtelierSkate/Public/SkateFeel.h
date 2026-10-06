@@ -32,6 +32,7 @@ struct ATELIERSKATE_API FSkateFeel
     float RailMagnetism = 1.f;                   // how far a jump is pulled onto a rail or ledge (0.25..3)
     float GrindPop = 1.f;                        // the pop off a grind (0.5..2)
     float GrindFriction = 1.f;                   // how fast a grind slows (0..3)
+    float SlideBalance = 1.f;                    // a nose/tail slide or blunt balancing itself while the sticks rest (0..1)
 
     // Rolling.
     float Braking = 1.f;                         // (0.25..3)

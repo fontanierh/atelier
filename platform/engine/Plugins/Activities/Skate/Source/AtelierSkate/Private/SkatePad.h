@@ -45,6 +45,32 @@ namespace atelier::skate_pad
         X *= Scale; Y *= Scale;
     }
 
+    /** The left stick (real position, x) that balances a nose or tail slide, and a blunt on a thin rail: Native's
+     *  GrindTipslide. Native holds it only by that stick: TipStability pushes the deck toward the rail by lx x 37, signed
+     *  by normal.(direction x offset), the direction the way the board travels, and with the stick centred nothing
+     *  pulls it back, so the deck walks out of the tip window (0.243..0.458 m along the deck) in a few tenths of a
+     *  second. This keeps the deck's centre `Centre` m across from the rail, the window's middle, by its distance and
+     *  how fast it moves out. Strength (0..1) scales it. Native coordinates (metres, y up): Deck the deck's origin,
+     *  Point the nearest rail point, Tangent the rail's direction either way, Velocity the board's. */
+    inline double TipBalance(const std::array<double, 3>& Deck, const std::array<double, 3>& Point, const std::array<double, 3>& Tangent,
+        const std::array<double, 3>& Velocity, double Strength, double Centre = .35)
+    {
+        const double Along = Tangent[0] * Velocity[0] + Tangent[2] * Velocity[2];
+        const double Flat = std::sqrt(Tangent[0] * Tangent[0] + Tangent[2] * Tangent[2]);
+        if (Flat < 1e-6 || std::fabs(Along) < 1e-6) return 0;
+        const double DirX = (Along > 0 ? Tangent[0] : -Tangent[0]) / Flat, DirZ = (Along > 0 ? Tangent[2] : -Tangent[2]) / Flat;
+        const double OffX = Deck[0] - Point[0], OffZ = Deck[2] - Point[2];
+        // Across the rail (up x direction), and which way the deck's centre lies from it.
+        const double Across = DirZ * OffX - DirX * OffZ, Out = Across > 0 ? 1. : -1.;
+        const double Outward = (DirZ * Velocity[0] - DirX * Velocity[2]) * Out;
+        const double Push = std::clamp(10. * (std::fabs(Across) - Centre) + 1.5 * Outward, -1., 1.);
+        // TipStability's sign: up.(direction x offset), which is Across.
+        const double Balance = Out * Push * std::clamp(Strength, 0., 1.);
+        if (std::fabs(Balance) < .02) return 0;
+        // The native pad's live range starts at 0.25 of the stick's travel (ConditionStick).
+        return (Balance > 0 ? 1. : -1.) * (.25 + .7 * std::fmin(1., std::fabs(Balance)));
+    }
+
     /** FMath::RoundToInt: the floor of the value plus a half, in the value's own width. */
     inline std::int32_t RoundToInt(float F) { return static_cast<std::int32_t>(std::floor(F + .5f)); }
     inline std::int64_t RoundToInt(double F) { return static_cast<std::int64_t>(std::floor(F + .5)); }
