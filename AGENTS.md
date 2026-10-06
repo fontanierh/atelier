@@ -89,7 +89,10 @@ uv run pytest                            # studio and game Python tests
   registered, set a one-line summary of your assignment with `atelier board task --agent NAME "..."` and update it when the
   assignment changes; the board shows it beside your name. Keep board messages short enough to read without
   expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
-  Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. Attached files appear
+  Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. `--notify-operator`
+  also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or
+  for something urgent that needs them now (a decision blocking you, a broken release, a safety issue). Never for
+  routine progress or acknowledgements; at most 3 per agent per hour. Attached files appear
   as absolute paths at the end of a message. Do not acknowledge routine telemetry or acknowledgements;
   state a concrete next safe boundary and revised ETA when late. Recheck messages and Waiting between heavy
   steps, and yield an agreed turn before per-step reacquisition or a game session. Retain first-ready time on

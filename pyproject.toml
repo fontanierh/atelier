@@ -11,6 +11,7 @@ dependencies = [
   "fonttools>=4.66",
   "websockets>=15.0",
   "markdown-it-py>=4,<5",
+  "cryptography>=43",
 ]
 
 [project.scripts]

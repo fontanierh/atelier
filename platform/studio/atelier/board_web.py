@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
-from . import board, board_markdown
+from . import board, board_markdown, board_push
 from .board_files import (ATTACHMENT_LIMIT, INLINE_TYPES, TRAILER, attachment, attachments_dir,  # noqa: F401
                           split_attachments, store_upload, with_attachments)
 
@@ -19,7 +19,9 @@ STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
           '/board.js': ('board.js', 'text/javascript; charset=utf-8'),
           '/icon.svg': ('icon.svg', 'image/svg+xml'),
           '/apple-touch-icon.png': ('apple-touch-icon.png', 'image/png'),
-          '/manifest.webmanifest': ('manifest.webmanifest', 'application/manifest+json')}
+          '/manifest.webmanifest': ('manifest.webmanifest', 'application/manifest+json'),
+          '/sw.js': ('sw.js', 'text/javascript; charset=utf-8')}
+PUSH_PATHS = ('/api/push/subscribe', '/api/push/unsubscribe', '/api/push/test')
 
 
 def read_json(path):
@@ -168,6 +170,8 @@ class Server(ThreadingHTTPServer):
                 raise ValueError('public-origin must be an exact HTTPS origin without a path')
             self.origins.add(origin)
         self.allowed_user, self.sender, self.remote_status = allowed_user, sender, remote_status
+        # VAPID asks for a contact; the board's own HTTPS origin identifies this machine without personal details.
+        self.push_subject = next((origin for origin in origins), 'https://localhost')
         self.csrf = secrets.token_urlsafe(32)
         super().__init__(address, Handler)
         # Port 0 is used by integration tests; origin needs the actual bound port.
@@ -258,6 +262,8 @@ class Handler(BaseHTTPRequestHandler):
                 state = snapshot(parse_qs(parsed.query), self.server.remote_status, self.server.sender)
                 state.update(csrf=self.server.csrf, sender=self.server.sender)
                 self.send(200, state)
+            elif parsed.path == '/api/push/key':
+                self.send(200, {'key': board_push.public_key()})
             elif parsed.path == '/api/thread':
                 try:
                     self.send(200, thread(int(parse_qs(parsed.query).get('id', ['0'])[0])))
@@ -279,7 +285,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.permitted():
             return
-        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove'):
+        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove', *PUSH_PATHS):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
@@ -314,6 +320,9 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError('Preview needs a message of at most 8000 characters.')
                 self.send(200, {'html': board_markdown.render(body)})
                 return
+            if self.path in PUSH_PATHS:
+                self.push(data)
+                return
             if self.path == '/api/remove':
                 agent = data.get('agent')
                 if not isinstance(agent, str):
@@ -330,6 +339,23 @@ class Handler(BaseHTTPRequestHandler):
             self.send(400, {'error': str(error)})
         except sqlite3.Error:
             self.send(503, {'error': 'The board is busy. Retry to safely finish this same message.'})
+        except OSError:
+            self.send(503, {'error': 'The board could not save that. Try again.'})
+
+    def push(self, data):
+        if self.path == '/api/push/subscribe':
+            board_push.subscribe(data.get('subscription'))
+            self.send(200, {'subscribed': True})
+        elif self.path == '/api/push/unsubscribe':
+            endpoint = data.get('endpoint')
+            if not isinstance(endpoint, str):
+                raise ValueError('A push endpoint is required.')
+            board_push.unsubscribe(endpoint)
+            self.send(200, {'subscribed': False})
+        else:
+            # A sample notification, so the person can check this device receives them.
+            sample = {'id': 0, 'sender': 'Atelier board', 'topic': 'info', 'body': 'Notifications work on this device.'}
+            self.send(200, {'delivered': board_push.send(sample, self.server.push_subject)})
 
     def log_message(self, *_):
         # Message bodies, identities, query strings and CSRF tokens stay out of service logs.
@@ -343,6 +369,7 @@ def serve(args):
         pass
     server = Server(('127.0.0.1', args.port), origins=args.public_origin, allowed_user=args.allowed_user,
                     sender=args.sender, remote_status=args.remote_status)
+    board_push.Pusher(server.sender, server.push_subject).start()
     print(f'Agent board listening on http://127.0.0.1:{args.port}', flush=True)
     try:
         server.serve_forever()

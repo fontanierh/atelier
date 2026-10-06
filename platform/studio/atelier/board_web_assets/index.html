@@ -26,6 +26,13 @@
       <div class="pane-body">
         <div id="agents" class="agent-list" role="list"></div>
         <p class="pane-note">Tap an agent to open your conversation with them.</p>
+        <section class="card notify-card" aria-labelledby="notifyHeading">
+          <div class="notify-row">
+            <div class="notify-text"><h2 id="notifyHeading">Notifications</h2><p id="notifyNote">Only when an agent flags something for you.</p></div>
+            <label class="toggle"><input type="checkbox" id="notifyToggle" aria-label="Notifications on this device" disabled><span class="toggle-track"></span></label>
+          </div>
+          <button type="button" class="text-button" id="notifyTest" hidden>Send a test notification</button>
+        </section>
       </div>
     </aside>
 
