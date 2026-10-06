@@ -213,6 +213,7 @@ def stand():
     to_start()
     measured = run(r'''
 import json, math
+M = P.get_editor_property('mesh')
 def floor(p):
     h = unreal.SystemLibrary.line_trace_single(W, p + unreal.Vector(0, 0, 60), p - unreal.Vector(0, 0, 60), unreal.TraceTypeQuery.ECC_VISIBILITY, True, [P], unreal.DrawDebugTrace.NONE, True)
     return None if h is None else h.to_tuple()[5].z
