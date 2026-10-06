@@ -251,3 +251,31 @@ def test_threads_collect_replies_to_replies_and_web_replies_keep_their_thread(ht
         assert [row['id'] for row in thread['replies']] == [ack, deeper, mine['id']]
     assert thread['root'][0]['acknowledged'] is False and thread['replies'][0]['body_html'] == '<p>On it.</p>\n'
     assert request(http_server, '/api/thread?id=99999')[0] == 404
+
+
+def test_agents_see_every_recipient_and_direct_views_exclude_broadcast_copies(http_server):
+    broadcast = {'body': 'Everyone: freeze canonical.', 'request_id': str(uuid.uuid4())}
+    assert request(http_server, '/api/broadcast', broadcast)[0] == 200
+    direct = {'body': 'Only for one.', 'recipient': 'one', 'request_id': str(uuid.uuid4())}
+    assert request(http_server, '/api/send', direct)[0] == 200
+    reply = board.post('one', 'Got it.', recipient='operator', reply_to=board.messages()[-1]['id'])
+
+    # Each agent holds one copy of a broadcast, so the copy alone looks direct: the audience says otherwise.
+    copies = [row for row in board.messages(agent='one', addressed_only=True)]
+    assert copies[0]['audience'] == ['one', 'two'] and copies[1]['audience'] == ['one']
+    text = board.notification(copies)
+    assert 'broadcast to 2 agents: one, two' in text and 'direct: only you' in text
+
+    _, body, _ = request(http_server, '/api/state?dm=one')
+    ids = [m['id'] for m in json.loads(body)['messages']]
+    assert ids == [reply, copies[1]['id']], 'the direct view has the DM and its reply, never the broadcast copy'
+    agents = {a['agent']: a for a in json.loads(body)['agents']}
+    assert agents['one']['last_to_me'] == reply and agents['two']['last_to_me'] == 0
+
+
+def test_uploads_keep_media_size_so_the_feed_can_reserve_space(http_server):
+    status, image = upload(http_server, b'\x89PNG' + b'\0' * 64, 'shot.png', 'image/png',
+                           {'X-Media-Width': '1320', 'X-Media-Height': '2868'})
+    assert status == 200 and (image['width'], image['height']) == (1320, 2868)
+    _, bad = upload(http_server, b'x' * 10, 'odd.png', 'image/png', {'X-Media-Width': '-4', 'X-Media-Height': 'tall'})
+    assert bad['width'] is None and bad['height'] is None

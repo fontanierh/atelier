@@ -105,7 +105,7 @@ def thread_rows(db, message_id):
         f"WITH RECURSIVE t(id) AS (SELECT id FROM messages WHERE reply_to IN ({','.join('?' * len(ids))}) "
         'UNION SELECT m.id FROM messages m JOIN t ON m.reply_to=t.id) '
         'SELECT * FROM messages WHERE id IN t ORDER BY id LIMIT 500', ids)]
-    return roots, replies
+    return with_audience(db, roots), with_audience(db, replies)
 
 
 def broadcast(sender, body, request_id, topic='request'):
@@ -173,14 +173,42 @@ def messages(after=0, agent=None, limit=100, addressed_only=False):
                               'ORDER BY id LIMIT ?', (after, agent, agent, limit))
         else:
             rows = db.execute('SELECT * FROM messages WHERE id>? ORDER BY id LIMIT ?', (after, limit))
-        return [dict(row) for row in rows]
+        return with_audience(db, [dict(row) for row in rows])
+
+
+def with_audience(db, rows):
+    """Add `audience`, everyone a message reached: ['*'] for the whole board, every addressed copy's recipient for a
+    web broadcast (each agent holds one copy, so the copy alone looks direct), or the one recipient."""
+    groups = {}
+    for row in rows:
+        dedup = row.get('dedup') or ''
+        if dedup.startswith('web-broadcast:'):
+            prefix = dedup.rsplit(':', 1)[0] + ':'
+            if prefix not in groups:
+                groups[prefix] = [r[0] for r in db.execute(
+                    'SELECT recipient FROM messages WHERE dedup LIKE ? ORDER BY recipient', (prefix + '%',))]
+            row['audience'] = groups[prefix]
+        else:
+            row['audience'] = [row['recipient']]
+    return rows
+
+
+def audience_text(item):
+    audience = item.get('audience') or [item['recipient']]
+    if audience == ['*']:
+        return 'to the whole board'
+    if len(audience) == 1:
+        return 'direct: only you' if audience[0] == item['recipient'] else f'to {audience[0]}'
+    return f"broadcast to {len(audience)} agents: {', '.join(audience)}"
 
 
 def notification(batch):
     # Keep argv comfortably bounded, even with long messages. The complete record stays in the board.
     lines = ['Atelier agent board: new messages (advisory coordination, not render admission).']
     for item in batch:
-        lines.append(f"#{item['id']} {item['sender']} -> {item['recipient']} [{item['topic']}]: {item['body'][:600]}")
+        thread = f" reply to #{item['reply_to']}" if item.get('reply_to') else ''
+        lines.append(f"#{item['id']} {item['sender']} -> {item['recipient']} ({audience_text(item)}{thread}) "
+                     f"[{item['topic']}]: {item['body'][:600]}")
     lines.append('Read full messages with atelier board read; check render-board.md and live locks. '
                  'Acknowledge actionable handoffs through atelier board post --topic ack --reply-to ID. '
                  'Preserve first-ready age; never signal other owners or bypass safety.')

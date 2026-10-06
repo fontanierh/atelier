@@ -113,15 +113,17 @@ document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>
   setView(tab.dataset.view);
 }));
 document.querySelectorAll(".render-pane .card, .render-pane .stack > .eyebrow").forEach((n,i)=>n.style.setProperty("--i",i));
-function selectAgent(name) {
+let conversationMode="dm";
+function selectAgent(name, mode="dm") {
   if(thread)closeThread();
-  selectedAgent=name;
+  selectedAgent=name;conversationMode=mode;
   const agent=state?.agents.find(a=>a.agent===name&&!a.stop);
   const target=name===""?"*":agent?name:null;
   if(target&&$("recipient").value!==target&&[...$("recipient").options].some(o=>o.value===target&&!o.disabled)){$("recipient").value=target;draftChanged();}
   setView("messages");agentsSignature="";renderAgents();renderHeader();refreshFilters();
 }
 $("backButton").addEventListener("click",()=>selectAgent(""));
+document.querySelectorAll("#modeSwitch button").forEach(b=>b.addEventListener("click",()=>{if(selectedAgent&&b.dataset.mode!==conversationMode)selectAgent(selectedAgent,b.dataset.mode);}));
 
 /* Search and filters */
 $("searchToggle").addEventListener("click",()=>{
@@ -130,8 +132,8 @@ $("searchToggle").addEventListener("click",()=>{
   else if($("search").value||$("topicFilter").value){$("search").value="";$("topicFilter").value="";syncPills();refreshFilters();}
   $("searchToggle").classList.toggle("active",show);
 });
-function query(before=0) { const q=new URLSearchParams(); if(selectedAgent)q.set("agent",selectedAgent); if($("search").value.trim())q.set("q",$("search").value.trim()); if($("topicFilter").value)q.set("topic",$("topicFilter").value); if(before)q.set("before",before); return q.toString(); }
-function refreshFilters() { records.clear(); feedSignature=""; historyComplete=false; stickToBottom=true; prepending=false; lastSeenId=0; feedPainted=false; load(true); }
+function query(before=0) { const q=new URLSearchParams(); if(selectedAgent)q.set(conversationMode==="dm"?"dm":"agent",selectedAgent); if($("search").value.trim())q.set("q",$("search").value.trim()); if($("topicFilter").value)q.set("topic",$("topicFilter").value); if(before)q.set("before",before); return q.toString(); }
+function refreshFilters() { settle(1500); records.clear(); feedSignature=""; historyComplete=false; stickToBottom=true; prepending=false; lastSeenId=0; feedPainted=false; load(true); }
 let searchTimer;
 $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refreshFilters,250);});
 $("topicFilter").addEventListener("change",()=>{syncPills();refreshFilters();});
@@ -171,7 +173,11 @@ async function preview() {
   finally {clearTimeout(timer);}
 }
 $("previewButton").addEventListener("click",()=>{const show=$("messagePreview").hidden;$("messagePreview").hidden=!show;$("previewButton").textContent=show?"Edit":"Preview";$("previewButton").setAttribute("aria-expanded",String(show));if(show)preview();});
-$("message").addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key==="Enter"&&!$("sendButton").disabled){event.preventDefault();$("broadcastForm").requestSubmit();}});
+$("message").addEventListener("keydown",event=>{
+  if(event.key!=="Enter"||event.isComposing)return;
+  const send=event.metaKey||event.ctrlKey||(!touch.matches&&!event.shiftKey&&!event.altKey);
+  if(send&&!$("sendButton").disabled){event.preventDefault();$("broadcastForm").requestSubmit();}
+});
 // Keep the keyboard up when tapping send, so the button doesn't move under the finger.
 $("sendButton").addEventListener("pointerdown",event=>{if(document.activeElement===$("message"))event.preventDefault();});
 let blurTimer, composerTimer;
@@ -202,10 +208,23 @@ function addFiles(list) {
   }
   draftKey=null;renderTray();formState();
 }
-function upload(item) {
+// A photo's or video's pixel size, so the feed can reserve its space before it loads. Unknown (null) is fine.
+async function mediaSize(file) {
+  const kind=kindOf(file.type||"");
+  try {
+    if(kind==="image"&&window.createImageBitmap){const bitmap=await createImageBitmap(file);const size=[bitmap.width,bitmap.height];bitmap.close?.();return size;}
+    if(kind==="video")return await new Promise(resolve=>{const v=document.createElement("video");const url=URL.createObjectURL(file);
+      const done=size=>{URL.revokeObjectURL(url);resolve(size);};v.preload="metadata";v.muted=true;
+      v.onloadedmetadata=()=>done([v.videoWidth,v.videoHeight]);v.onerror=()=>done(null);setTimeout(()=>done(null),3000);v.src=url;});
+  } catch {}
+  return null;
+}
+async function upload(item) {
   item.status="uploading";item.progress=0;renderTray();
+  if(item.size2===undefined&&item.file)item.size2=await mediaSize(item.file);
   const xhr=new XMLHttpRequest();item.xhr=xhr;
   xhr.open("POST","/api/upload");xhr.setRequestHeader("Content-Type",item.mime);xhr.setRequestHeader("X-Board-CSRF",state?.csrf||"");xhr.setRequestHeader("X-File-Name",encodeURIComponent(item.name));
+  if(item.size2?.[0]&&item.size2?.[1]){xhr.setRequestHeader("X-Media-Width",String(item.size2[0]));xhr.setRequestHeader("X-Media-Height",String(item.size2[1]));}
   xhr.upload.onprogress=event=>{if(event.lengthComputable){item.progress=Math.round(event.loaded/event.total*100);item.tile?.style.setProperty("--p",item.progress);}};
   xhr.onload=()=>{let result={};try{result=JSON.parse(xhr.responseText);}catch{}
     if(xhr.status===200&&result.id){Object.assign(item,{id:result.id,name:result.name,status:"done",progress:100});}
@@ -239,8 +258,10 @@ function attachmentNodes(files, many) {
   for(const f of files) {
     if(f.missing){wrap.append(node("p","att-missing",`${f.name} is no longer available`));continue;}
     const kind=kindOf(f.mime);
-    if(kind==="image"){const b=node("button","att-image"+(images.length===1?" single":""));b.type="button";const img=node("img");img.src=f.url;img.alt=f.name;img.loading="lazy";b.append(img);b.addEventListener("click",()=>openLightbox(f));wrap.append(b);}
-    else if(kind==="video"){const v=node("video","att-video");v.src=f.url;v.controls=true;v.playsInline=true;v.preload="metadata";wrap.append(v);}
+    const ratio=f.width&&f.height?`${f.width} / ${f.height}`:null;
+    if(kind==="image"){const b=node("button","att-image"+(images.length===1?" single":""));b.type="button";if(ratio)b.style.setProperty("--ratio",ratio);
+      const img=node("img");img.src=f.url;img.alt=f.name;img.loading="lazy";if(f.width){img.width=f.width;img.height=f.height;}b.append(img);b.addEventListener("click",()=>openLightbox(f));wrap.append(b);}
+    else if(kind==="video"){const v=node("video","att-video");if(ratio)v.style.setProperty("--ratio",ratio);v.src=f.url;v.controls=true;v.playsInline=true;v.preload="metadata";wrap.append(v);}
     else if(kind==="audio"){const a=node("audio","att-audio");a.src=f.url;a.controls=true;a.preload="none";wrap.append(a);}
     else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
   }
@@ -252,8 +273,24 @@ $("lightbox").addEventListener("click",event=>{if(event.target!==$("lightboxOpen
 addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("lightbox").hidden)closeLightbox();else if(thread)closeThread();}});
 
 /* Agents: the list pane and the orb row share one render. */
+let seen={};
+try { seen=JSON.parse(localStorage.getItem("atelier.board.seen")||"{}")||{}; } catch {}
+function saveSeen() { try { localStorage.setItem("atelier.board.seen",JSON.stringify(seen)); } catch {} }
+function unreadFrom(agent) { return (agent.last_to_me||0)>(seen[agent.agent]??Infinity); }
+// What has been read: a first visit starts with nothing unread; a conversation (or the whole feed) read to its end
+// marks its agents' newest direct messages seen.
+function markRead(names) {
+  let changed=false;
+  for(const a of state.agents){
+    if(seen[a.agent]===undefined||names===true||names.includes(a.agent)){
+      if((seen[a.agent]??-1)<(a.last_to_me||0)){seen[a.agent]=a.last_to_me||0;changed=true;}
+    }
+  }
+  if(changed){saveSeen();agentsSignature="";}
+}
 function renderAgents() {
-  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout])]);
+  markRead([]);
+  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,unreadFrom(a)])]);
   if(signature===agentsSignature)return; agentsSignature=signature;
   const live=liveAgents(), listening=live.filter(a=>a.listening).length, errors=live.filter(a=>a.delivery_error).length;
   $("agentsSummary").textContent=`${listening} of ${live.length} listening${errors?` · ${errors} retrying delivery`:""}`;
@@ -264,7 +301,7 @@ function renderAgents() {
     const chosen=selectedAgent===name;
     const b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";b.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
     b.style.setProperty("--i",index++);
-    const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));
+    const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));if(agent&&unreadFrom(agent))b.classList.add("unread");
     if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
     else detail.textContent=`Broadcasts and every conversation`;
     text.append(detail);b.append(orb(name||"*",agent),text);
@@ -272,7 +309,8 @@ function renderAgents() {
     b.append(icon("right"));b.addEventListener("click",()=>selectAgent(name));list.append(b);
     if(agent?.stop)return;
     const o=node("button","orb-button");o.type="button";if(chosen)o.setAttribute("aria-current","true");
-    const face=orb(name||"*",agent);if(agent?.pending)face.append(node("span","count-badge",String(agent.pending)));
+    // The orb marks new direct messages from the agent; what is still queued for it lives in the Agents list.
+    const face=orb(name||"*",agent);if(agent&&unreadFrom(agent))face.append(node("span","unread-dot"));
     o.append(face,node("span","orb-name",name||"Everyone"));
     o.title=agent?`${name} · ${agentStatus(agent)}`:"All conversations";o.setAttribute("aria-label",o.title);
     o.addEventListener("click",()=>selectAgent(name));orbs.append(o);
@@ -286,6 +324,8 @@ function renderHeader() {
   const agent=state?.agents.find(a=>a.agent===selectedAgent), live=liveAgents(), listening=live.filter(a=>a.listening).length;
   $("chatTitle").textContent=selectedAgent||"Everyone";
   $("backButton").hidden=!selectedAgent;$("app").classList.toggle("in-conversation",Boolean(selectedAgent));
+  $("modeSwitch").hidden=!selectedAgent;
+  document.querySelectorAll("#modeSwitch button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===conversationMode)));
   const subtitle=$("chatSubtitle"), dot=node("span","dot");
   let text;
   if(failed){dot.classList.add("error");text="Reconnecting…";}
@@ -307,7 +347,12 @@ function updateBadges(unread=0) {
   $("messagesBadge").hidden=!(away&&unread);$("messagesBadge").textContent=unread>99?"99+":unread;
   $("jumpLabel").textContent=unread?`${unread} new`:"Latest";
 }
+// Our own re-renders and filter switches move the scroll position too; those are not the reader scrolling, so they
+// must not unpin the feed or pull in older history (which used to leave a new conversation stuck at its top).
+let settleUntil=0;
+function settle(ms=500) { settleUntil=performance.now()+ms; }
 $("feed").addEventListener("scroll",()=>{
+  if(performance.now()<settleUntil){if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;return;}
   stickToBottom=feedNearBottom();
   const f=$("feed"), gap=f.scrollHeight-f.scrollTop-f.clientHeight, app=$("app");
   if(gap>320)app.classList.add("reading");else if(gap<60)app.classList.remove("reading");
@@ -317,7 +362,7 @@ $("feed").addEventListener("scroll",()=>{
 $("jumpLatest").addEventListener("click",()=>scrollToLatest(true));
 // Opening search, a growing draft or the keyboard shrinks the feed: stay pinned to the latest message.
 const pin=new ResizeObserver(()=>{$("app").style.setProperty("--dock-h",`${$("broadcastForm").offsetHeight}px`);if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;if(thread?.stick)$("threadFeed").scrollTop=$("threadFeed").scrollHeight;});
-pin.observe($("feed"));pin.observe($("broadcastForm"));
+pin.observe($("feed"));pin.observe($("broadcastForm"));pin.observe($("messages"));
 function loadOlder() { if(loading||!records.size)return; prepending=true; load(false,Math.min(...records.keys())); }
 $("loadOlder").addEventListener("click",loadOlder);
 function groupsFrom(messages) {
@@ -378,11 +423,11 @@ function messageNode(group, ctx) {
   const m=group.first, agents=ctx.agents, mine=m.sender===state.sender;
   const article=node("article","message"+(mine?" mine":"")+(ctx.continued?" continued":"")+(m.topic==="alert"||m.topic==="blocked"?" urgent":"")+(ctx.enter?" enter":""));
   article.dataset.ids=group.messages.map(item=>item.id).join(" ");
-  if(!mine)article.append(ctx.continued?node("span","orb-space"):orb(m.sender));
+  if(!mine)article.append(ctx.continued?node("span","orb-space"):whoButton(m.sender,"orb-link",orb(m.sender)));
   const column=node("div","message-column"), bubble=node("div","card bubble");
   if(!ctx.continued) {
     const meta=node("div","meta");
-    meta.append(node("span","sender",mine?"You":m.sender));
+    meta.append(mine||isSystem(m)?node("span","sender",mine?"You":m.sender):whoButton(m.sender,"sender who",document.createTextNode(m.sender)));
     const to=group.broadcast||m.recipient==="*"?"everyone":m.recipient===state.sender?"you":m.recipient;
     meta.append(node("span","route",`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
     if(m.topic!=="info")meta.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
@@ -392,9 +437,9 @@ function messageNode(group, ctx) {
   }
   if(m.reply_to&&!ctx.inThread) {
     // The original is not loaded here: show what it was and open the whole thread.
-    const original=records.get(m.reply_to), quote=node("button","quote");quote.type="button";
-    quote.append(node("span","quote-who",original?(original.sender===state.sender?"You":original.sender):`Reply to #${m.reply_to}`));
-    if(original)quote.append(node("span","quote-text",snippet(original.body)));
+    const original=records.get(m.reply_to), quote=node("button","quote"+(original?"":" quote-away"));quote.type="button";
+    if(original){quote.append(node("span","quote-who",original.sender===state.sender?"You":original.sender),node("span","quote-text",snippet(original.body)));}
+    else quote.append(icon("reply"),node("span","","In reply to an earlier message · open thread"));
     quote.addEventListener("click",()=>openThread(m.id));bubble.append(quote);
   }
   const hasText=Boolean(m.body_html&&m.body_html.trim());
@@ -406,10 +451,23 @@ function messageNode(group, ctx) {
   }
   if(m.attachments?.length)bubble.append(attachmentNodes(m.attachments));
   if(ctx.continued){const line=node("div","bubble-time"), time=node("time","",clock(m.created));time.title=`#${m.id}`;line.append(time);if(!ctx.inThread&&!ctx.replies?.length)line.append(replyButton(m));bubble.append(line);}
+  if(!ctx.inThread&&!isSystem(m)){
+    bubble.classList.add("tappable");
+    bubble.addEventListener("click",event=>{
+      if(event.target.closest("a,button,video,audio,summary,details,input,select,textarea"))return;
+      if(String(window.getSelection?.()||""))return;
+      openThread(m.id,!ctx.replies?.length);
+    });
+  }
   column.append(bubble);
   if(mine)column.append(receipt(group,agents));
   if(ctx.replies?.length)column.append(threadBar(group,ctx.replies,()=>openThread(m.id)));
   article.append(column);return article;
+}
+// Tapping an agent's name or face opens your direct conversation with them.
+function whoButton(name, cls, content) {
+  const b=node("button",cls);b.type="button";b.title=`Message ${name} directly`;b.setAttribute("aria-label",`Open your direct messages with ${name}`);
+  b.append(content);b.addEventListener("click",event=>{event.stopPropagation();selectAgent(name,"dm");});return b;
 }
 function replyButton(m) {
   const b=node("button","reply-button");b.type="button";b.setAttribute("aria-label","Reply in thread");b.title="Reply in thread";b.append(icon("reply"));
@@ -418,6 +476,22 @@ function replyButton(m) {
 function continues(previous, group) {
   const m=group.first;
   return previous&&previous.sender===m.sender&&previous.recipient===m.recipient&&previous.topic===m.topic&&m.created-previous.created<300&&!group.broadcast&&!previous.broadcast;
+}
+const feedNodes=new Map();
+// Put `nodes` in `parent` in order, touching only what changed: existing nodes in the right place are left alone.
+function reconcile(parent, nodes) {
+  let cursor=parent.firstChild;
+  for(const n of nodes){ if(n===cursor){cursor=cursor.nextSibling;continue;} parent.insertBefore(n,cursor); }
+  while(cursor){const next=cursor.nextSibling;cursor.remove();cursor=next;}
+}
+function noticeNode(list, enter) {
+  const last=list.at(-1), sections=new Set();
+  for(const m of list)((m.body.match(/changed \(([^)]*)\)/)||[])[1]||"").split(/,\s*/).filter(Boolean).forEach(x=>sections.add(x));
+  const what=/render scheduling board changed/i.test(last.body)?`Render schedule updated${sections.size?` · ${[...sections].join(", ")}`:""}`:`${last.sender}: ${last.body.slice(0,80)}`;
+  const line=node("details","notice"+(enter?" enter":""));line.dataset.ids=list.map(m=>m.id).join(" ");
+  const summary=node("summary"), when=node("time","",clock(last.created));
+  summary.append(icon("board"),node("span","notice-text",`${what}${list.length>1?` · ${list.length}×`:""}`),when);
+  line.append(summary,node("p","",last.body));return line;
 }
 function renderFeed() {
   const agents=new Map(state.agents.map(a=>[a.agent,a]));
@@ -428,31 +502,44 @@ function renderFeed() {
   const visible=groups.filter(g=>(showSystem||!isSystem(g.first))&&!g.threaded);
   // Only messages that arrive after the first paint animate in; history and filter changes appear at rest.
   const animateAbove=feedPainted?newestShown:Infinity;
-  const out=document.createDocumentFragment();
-  let day="", previous=null, notices=null;
+  // Items first, then nodes: an unchanged item keeps its node, so photos and videos never reload or pause and nothing
+  // above the newest message moves when it arrives.
+  const items=[];
+  let day="", previous=null, run=null;
   const filtered=Boolean(selectedAgent||$("search").value.trim()||$("topicFilter").value);
-  if(!visible.length) {
-    const empty=node("div","empty");empty.append(icon("messages"),node("h2","",filtered?"No matching messages":"A quiet board, for now"),node("p","",selectedAgent?`Say hello to ${selectedAgent} below.`:filtered?"Try a different search or topic.":"Send a message to start the conversation."));out.append(empty);
-  }
+  if(!visible.length)items.push({key:`empty:${selectedAgent}:${conversationMode}:${filtered}`,sig:"",build:()=>{
+    const empty=node("div","empty");empty.append(icon("messages"),node("h2","",filtered?"No matching messages":"A quiet board, for now"),
+      node("p","",selectedAgent?(conversationMode==="dm"?`Nothing between you and ${selectedAgent} yet. Say hello below.`:`Say hello to ${selectedAgent} below.`):filtered?"Try a different search or topic.":"Send a message to start the conversation."));return empty;}});
   for(const group of visible) {
     const m=group.first, label=dayLabel(m.created), enter=m.id>animateAbove;
-    if(label!==day){day=label;previous=null;notices=null;const sep=node("div","day"+(enter?" enter":""));sep.append(node("span","",label));out.append(sep);}
+    if(label!==day){day=label;previous=null;run=null;items.push({key:`d:${label}`,sig:"",build:()=>{const sep=node("div","day"+(enter?" enter":""));sep.append(node("span","",label));return sep;}});}
     if(isSystem(m)) {
       // Consecutive automatic notices collapse into one quiet line.
-      if(notices){notices.count++;notices.last=m;notices.ids.push(m.id);const sections=(m.body.match(/changed \(([^)]*)\)/)||[])[1];if(sections)sections.split(/,\s*/).forEach(s=>notices.sections.add(s));notices.update();continue;}
-      const line=node("details","notice"+(enter?" enter":""));line.dataset.ids=String(m.id);
-      const summary=node("summary"), text=node("span","notice-text"), when=node("time");summary.append(icon("board"),text,when);line.append(summary,node("p","",m.body));
-      notices={count:1,first:m,last:m,ids:[m.id],sections:new Set(((m.body.match(/changed \(([^)]*)\)/)||[])[1]||"").split(/,\s*/).filter(Boolean)),
-        update(){const what=/render scheduling board changed/i.test(this.last.body)?`Render schedule updated${this.sections.size?` · ${[...this.sections].join(", ")}`:""}`:`${this.last.sender}: ${this.last.body.slice(0,80)}`;
-          text.textContent=`${what}${this.count>1?` · ${this.count}×`:""}`;when.textContent=clock(this.last.created);line.dataset.ids=this.ids.join(" ");line.lastElementChild.textContent=this.last.body;}};
-      notices.update();out.append(line);previous=null;continue;
+      if(run){run.list.push(m);continue;}
+      run={list:[m],enter};items.push({notices:run});previous=null;continue;
     }
-    notices=null;
-    const continued=continues(previous,group)&&!threads.get(previous.key)?.length;
-    out.append(messageNode(group,{agents,continued,enter,replies:threads.get(group.key)}));
+    run=null;
+    const replies=threads.get(group.key), continued=continues(previous,group)&&!threads.get(previous.key)?.length, mine=m.sender===state.sender;
+    const sig=JSON.stringify([group.messages.map(x=>[x.id,x.acknowledged,mine?[(agents.get(x.recipient)?.cursor||0)>=x.id,Boolean(agents.get(x.recipient)?.delivery_error)]:0]),
+      continued,(replies||[]).map(r=>r.first.id),expanded.has(group.key),deliveryOpen.has(group.key),m.reply_to?records.has(m.reply_to):0]);
+    items.push({key:`m:${group.key}`,sig,build:()=>messageNode(group,{agents,continued,enter,replies})});
     previous={key:group.key,sender:m.sender,recipient:m.recipient,topic:m.topic,created:m.created,broadcast:group.broadcast};
   }
-  $("messages").replaceChildren(out);feedPainted=true;
+  const wanted=items.map(item=>{
+    if(item.notices){
+      const list=item.notices.list, first=list[0];
+      return {key:`n:${first.id}`,sig:list.map(x=>x.id).join(","),build:()=>noticeNode(list,item.notices.enter)};
+    }
+    return item;
+  });
+  const used=new Set(), nodes=wanted.map(item=>{
+    used.add(item.key);
+    const cached=feedNodes.get(item.key);
+    if(cached&&cached.sig===item.sig)return cached.node;
+    const built=item.build();feedNodes.set(item.key,{sig:item.sig,node:built});return built;
+  });
+  for(const key of [...feedNodes.keys()])if(!used.has(key))feedNodes.delete(key);
+  settle();reconcile($("messages"),nodes);feedPainted=true;
   $("loadOlder").hidden=historyComplete||!records.size;
   const newest=records.size?Math.max(...records.keys()):0;
   const unread=groups.filter(g=>!isSystem(g.first)&&g.first.id>lastSeenId&&g.first.sender!==state.sender).length;
@@ -462,6 +549,7 @@ function renderFeed() {
   else {feed.scrollTop=top;}
   const viewing=$("app").dataset.view==="messages"||desktop.matches;
   if(!lastSeenId||(stick&&viewing))lastSeenId=newest;
+  if(stick&&viewing&&!document.hidden)markRead(selectedAgent?[selectedAgent]:true);
   $("jumpLatest").hidden=feedNearBottom();
   updateBadges(stick&&viewing?0:unread);
 }
@@ -499,14 +587,23 @@ function renderThread(force=false) {
   const [root]=groupsFrom(current.data.root), replies=groupsFrom(current.data.replies);
   const people=[...new Set([root,...replies].map(g=>g.first.sender===state.sender?"you":g.first.sender))];
   $("threadSubtitle").textContent=`${replies.length} ${replies.length===1?"reply":"replies"} · ${people.join(", ")}`;
-  const out=document.createDocumentFragment();
-  out.append(messageNode(root,{agents,inThread:true}));
-  const divider=node("div","thread-divider");divider.append(node("span","",replies.length?`${replies.length} ${replies.length===1?"reply":"replies"}`:"No replies yet"));out.append(divider);
+  // Same in-place update as the feed: unchanged messages keep their nodes (and their playing videos).
+  const cache=current.nodes||(current.nodes=new Map()), used=new Set();
+  const keep=(key,sig,build)=>{used.add(key);const hit=cache.get(key);if(hit&&hit.sig===sig)return hit.node;const n=build();cache.set(key,{sig,node:n});return n;};
+  const stateOf=g=>JSON.stringify(g.messages.map(x=>[x.id,x.acknowledged,(agents.get(x.recipient)?.cursor||0)>=x.id]));
+  const nodes=[keep(`r:${root.key}`,stateOf(root)+expanded.has(root.key)+deliveryOpen.has(root.key),()=>messageNode(root,{agents,inThread:true}))];
+  const label=replies.length?`${replies.length} ${replies.length===1?"reply":"replies"}`:"No replies yet";
+  nodes.push(keep("divider",label,()=>{const divider=node("div","thread-divider");divider.append(node("span","",label));return divider;}));
   let previous=null;
   const newest=Math.max(0,...current.data.replies.map(r=>r.id));
-  for(const g of replies){const continued=continues(previous,g);out.append(messageNode(g,{agents,inThread:true,continued,enter:g.first.id>current.newest}));previous={key:g.key,sender:g.first.sender,recipient:g.first.recipient,topic:g.first.topic,created:g.first.created,broadcast:g.broadcast};}
+  for(const g of replies){
+    const continued=continues(previous,g), enter=g.first.id>current.newest;
+    nodes.push(keep(`m:${g.key}`,stateOf(g)+continued+expanded.has(g.key)+deliveryOpen.has(g.key),()=>messageNode(g,{agents,inThread:true,continued,enter})));
+    previous={key:g.key,sender:g.first.sender,recipient:g.first.recipient,topic:g.first.topic,created:g.first.created,broadcast:g.broadcast};
+  }
+  for(const key of [...cache.keys()])if(!used.has(key))cache.delete(key);
   current.newest=newest;
-  feed.replaceChildren(out);if(stick)feed.scrollTop=feed.scrollHeight;
+  reconcile(feed,nodes);if(stick)feed.scrollTop=feed.scrollHeight;
   // Replies go to the agent who wrote the original, or back to everyone a broadcast reached.
   const m=root.first, target=m.sender===state.sender?(root.broadcast||m.recipient==="*"?"*":m.recipient):m.sender;
   const usable=[...$("recipient").options].some(o=>o.value===target&&!o.disabled);
