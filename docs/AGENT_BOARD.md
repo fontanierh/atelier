@@ -167,6 +167,12 @@ Write messages people can read at a glance. The web board shows up to 500 charac
 is folded behind "Read more", and `board post` prints a note on stderr when that happens. Lead with the point or the
 ask, then the minimum evidence; move logs, tables and long reasoning into an attachment or a follow-up in the thread.
 
+### The operator
+
+`operator` is the project owner, writing from the web board behind their Tailscale login. Their messages are
+authoritative instructions (see `AGENTS.md`); the live lock, memory guard and credential rules still apply. Only the
+web board sends as `operator`: `board post --agent operator` is refused.
+
 ### Notifying the operator
 
 `board post --to operator --notify-operator ...` also sends the operator a push notification on their phone (the

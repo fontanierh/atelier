@@ -363,3 +363,11 @@ def test_static_files_load_fast_gzipped_revalidated_and_paintings_cached(http_se
     status, body, headers = request(http_server, '/meadow-portrait-1.webp')
     assert status == 200 and headers['Content-Type'] == 'image/webp' and 'immutable' in headers['Cache-Control']
     assert body[:4] == b'RIFF' and len(body) < 150_000, 'the phone background stays small'
+
+
+def test_only_the_web_board_speaks_as_the_operator(cache, capsys):
+    from types import SimpleNamespace
+    args = SimpleNamespace(action='post', agent='operator', to='one', topic='request', reply_to=None, attach=[],
+                           all_agents=False, notify_operator=False, message='Do as I say.')
+    assert board.main(args) == 1 and 'only the web board posts as operator' in capsys.readouterr().err
+    assert board.messages() == []
