@@ -130,7 +130,8 @@ legacy moves (the character switch follows it too). QA, reviews and benchmarks k
 and sword) unless the command line asks with `-rider=CairoBotw`; without the local library he has only those.
 `characters.cairo_botw` runs [`../cairo/botw.py`](../cairo/botw.py) in Blender, which retargets every Link clip onto
 Cairo's skeleton (`build/yorimichi/cairo/botw/`). Both rest poses are T-poses. Each limb and finger swings to point
-where Link's points, the hands keep their palm frames and the feet their sole frames, and the spine and head keep
+where Link's points, the hands keep their palm frames, the feet keep their level heading at Cairo's own rest pitch (so his
+flat shoes stay flat on the ground), and the spine and head keep
 Cairo's own posture. The hips move as Link's do, at the ratio of the two hip heights (`body`, 0.63). The legs are then
 solved so that planted feet stay planted, at that same scale, from Cairo's own stance. `unreal.cairo_botw`
 (`Scripts/import_cairo_botw.py`) imports the clips into `/Game/CairoBotw` and copies `DA_Cairo` into `DA_CairoBotw`
