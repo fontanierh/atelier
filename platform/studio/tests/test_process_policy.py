@@ -1,8 +1,11 @@
 """Launch policy and actual owned-child lifecycle; no Unreal or Blender work."""
 import os
+import io
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -29,6 +32,13 @@ class PolicyTests(unittest.TestCase):
             self.assertEqual(process.policy_command(['compile'], kind='compile'),
                              ['/usr/sbin/taskpolicy', '-a', 'compile'])
 
+    def test_negative_and_partial_nice_reach_ten(self):
+        for inherited, adjustment in ((-5, '15'), (5, '5')):
+            with self.subTest(inherited=inherited), patch.object(process.sys, 'platform', 'darwin'), \
+                    patch.object(process.os, 'getpriority', return_value=inherited):
+                self.assertEqual(process.policy_command(['tool']),
+                                 ['/usr/sbin/taskpolicy', '-a', '/usr/bin/nice', '-n', adjustment, 'tool'])
+
     def test_spawn_preserves_io_and_environment(self):
         env = {'SAMPLE': 'not a shell expansion'}
         with patch.object(process.sys, 'platform', 'linux'), patch.object(process.subprocess, 'Popen') as popen:
@@ -39,6 +49,20 @@ class PolicyTests(unittest.TestCase):
         with self.assertRaises(ValueError): process.spawn(['tool'], shell=True)
         with self.assertRaises(TypeError): process.policy_command('tool')
         with self.assertRaises(ValueError): process.policy_command([])
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'macOS launch policies')
+    def test_procedural_build_child_uses_application_policies(self):
+        from atelier.build import Python, Step, run_command
+        with tempfile.TemporaryDirectory() as folder:
+            script = Path(folder)/'procedural.py'
+            script.write_text("import os,subprocess\nprint(subprocess.check_output(['ps','-o','ni=,pri=','-p',str(os.getpid())],text=True).strip())\n")
+            command = Python(script)
+            log = io.StringIO()
+            ctx = SimpleNamespace(env=lambda extra: dict(os.environ))
+            run_command(ctx, Step('procedural', [command]), command, log)
+            nice, priority = map(int, log.getvalue().splitlines()[-1].split())
+            self.assertGreaterEqual(nice, 10)
+            self.assertGreater(priority, 4)
 
     @unittest.skipUnless(sys.platform == 'darwin', 'macOS launch policies')
     def test_native_child_and_descendant_leave_the_background_band(self):

@@ -1,9 +1,10 @@
-"""Launch owned work without inheriting a macOS agent daemon's background clamp.
+"""Launch owned work with application resource policies on macOS.
 
 taskpolicy execs the command in the same process: Popen's PID, pipes, exit status
 and the existing memory guard/cleanup still refer to the actual owned child.
 Jobs and games use normal application policies and keep at least nice 10.
 No service, extra writer, render admission or worker count is added.
+Explicit PRIO_DARWIN_BG and QoS clamps are separate policies, not cleared here.
 """
 import os
 import subprocess

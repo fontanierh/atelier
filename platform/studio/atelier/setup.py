@@ -191,7 +191,7 @@ def prepare_headless(root, workers=3):
                 env = dict(os.environ, DOTNET_ROOT=str(dotnet.parent), DOTNET_CLI_TELEMETRY_OPTOUT='1',
                            DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1')
                 output = cache / 'compiled'
-                command = ['nice', '-n', '10', str(dotnet), 'build', str(project),
+                command = [str(dotnet), 'build', str(project),
                            '-c', 'Development', '-o', str(output), '-maxcpucount:2', '-p:BuildInParallel=false']
                 code = guarded.run(command, cache / 'rebuild.guard', timeout=600, lock=False, env=env, kind='compile')
                 if code:
