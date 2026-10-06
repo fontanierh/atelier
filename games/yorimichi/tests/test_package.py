@@ -42,6 +42,8 @@ def test_package_runs_after_every_import_as_one_capped_compile_turn(tmp_path):
     assert argv[0].endswith('RunUAT.sh') and argv[1] == 'BuildCookRun'
     # UAT runs UnrealBuildTool itself, past the capped Build.sh wrapper, so the worker cap is passed explicitly.
     assert '-build' in argv and '-ubtargs=-MaxParallelActions=3' in argv and '-cookall' in argv
+    # Without -package the Mac archive copies Binaries/Mac/<game>.app: no paks, no Content/Data.
+    assert argv.index('-stage') < argv.index('-package') < argv.index('-archive')
     assert f'-archivedirectory={tmp_path/"package"/"archive"}' in argv and '-nocompileeditor' in argv
     assert uat.timeout > 0 and 'UnrealEditor-Cmd' in uat.watch and 0 < uat.progress <= 30
 

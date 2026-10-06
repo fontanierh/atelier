@@ -75,8 +75,10 @@ class UnrealCompile:
 
 @dataclass
 class UnrealPackage:
-    """Build, cook, stage and archive the packaged game with UAT BuildCookRun. The editor must already be compiled.
-    Everything under Content is cooked, because the game loads many assets by path at run time."""
+    """Build, cook, stage, package and archive the game with UAT BuildCookRun. The editor must already be compiled.
+    Everything under Content is cooked, because the game loads many assets by path at run time. On a Mac, -package
+    makes Xcode finalize a self-contained .app; without it the archive step copies the bare Binaries/Mac app, which has
+    neither the paks nor the staged runtime data."""
     target: str
     archive: Path
     config: str = 'Development'
@@ -96,7 +98,7 @@ class UnrealPackage:
         prefix = ['/usr/bin/env', f'UE_HEADLESS_USER_DIR={folder}'] if folder else []
         return prefix + [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
                 f'-target={self.target}', '-platform=Mac', f'-clientconfig={self.config}', '-build',
-                f'-ubtargs=-MaxParallelActions={self.workers}', '-cook', '-cookall', '-stage', '-pak', '-archive',
+                f'-ubtargs=-MaxParallelActions={self.workers}', '-cook', '-cookall', '-stage', '-pak', '-package', '-archive',
                 f'-archivedirectory={self.archive}', '-nocompileeditor', '-noP4', '-unattended', '-utf8output']
 
 
