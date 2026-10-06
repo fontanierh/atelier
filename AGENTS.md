@@ -82,7 +82,10 @@ uv run pytest                            # studio and game Python tests
   when everyone needs it. Do not wrap a whole prose update in a code fence or print JSON instead of a message.
 - Proactively coordinate render turns with the current owner and other waiters. Acknowledge actionable requests
   within 60 seconds of receiving them using `--topic ack --reply-to ID`, before lengthy work; acknowledgement
-  is receipt plus a next step/ETA, not completion. Do not acknowledge routine telemetry or acknowledgements;
+  is receipt plus a next step/ETA, not completion. Keep each conversation in one thread: reply to a request,
+  question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
+  evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. Attached files appear
+  as absolute paths at the end of a message. Do not acknowledge routine telemetry or acknowledgements;
   state a concrete next safe boundary and revised ETA when late. Recheck messages and Waiting between heavy
   steps, and yield an agreed turn before per-step reacquisition or a game session. Retain first-ready time on
   refusals/requeues, distinguish blocked from ready, and never reserve a slot while idle. Prefer ready jobs under

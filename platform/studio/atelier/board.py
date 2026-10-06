@@ -85,11 +85,34 @@ def post(sender, body, recipient='*', topic='info', reply_to=None, dedup=None):
         return db.execute('SELECT id FROM messages WHERE dedup=?', (dedup,)).fetchone()['id']
 
 
+def thread_rows(db, message_id):
+    """The conversation holding message_id: its root (every copy of a web broadcast) and all replies below it."""
+    row = db.execute('SELECT * FROM messages WHERE id=?', (message_id,)).fetchone()
+    if not row:
+        raise LookupError(f'message {message_id} is not on the board')
+    seen = {row['id']}
+    while row['reply_to'] and len(seen) < 200:
+        parent = db.execute('SELECT * FROM messages WHERE id=?', (row['reply_to'],)).fetchone()
+        if not parent or parent['id'] in seen:
+            break
+        row = parent; seen.add(row['id'])
+    roots = [dict(row)]
+    if (row['dedup'] or '').startswith(('web-broadcast:', 'web-direct:')):
+        prefix = row['dedup'].rsplit(':', 1)[0] + ':'
+        roots = [dict(r) for r in db.execute('SELECT * FROM messages WHERE dedup LIKE ? ORDER BY id', (prefix+'%',))]
+    ids = [r['id'] for r in roots]
+    replies = [dict(r) for r in db.execute(
+        f"WITH RECURSIVE t(id) AS (SELECT id FROM messages WHERE reply_to IN ({','.join('?' * len(ids))}) "
+        'UNION SELECT m.id FROM messages m JOIN t ON m.reply_to=t.id) '
+        'SELECT * FROM messages WHERE id IN t ORDER BY id LIMIT 500', ids)]
+    return roots, replies
+
+
 def broadcast(sender, body, request_id, topic='request'):
     return send_web(sender, body, request_id, topic)
 
 
-def send_web(sender, body, request_id, topic='request', recipient='*'):
+def send_web(sender, body, request_id, topic='request', recipient='*', reply_to=None):
     """Atomically address every non-stopped subscriber, including addressed-only listeners.
 
     A retry of the same request returns the original recipient snapshot. The dedup
@@ -103,6 +126,8 @@ def send_web(sender, body, request_id, topic='request', recipient='*'):
         agent_name(recipient)
     if not isinstance(body, str) or not body.strip() or len(body) > 8000 or topic not in TOPICS:
         raise ValueError('use a known topic and a nonempty message of at most 8000 characters')
+    if reply_to is not None and (isinstance(reply_to, bool) or not isinstance(reply_to, int) or reply_to < 1):
+        raise ValueError('reply_to must be a message id')
     try:
         key = str(uuid.UUID(request_id))
     except (ValueError, AttributeError, TypeError):
@@ -114,7 +139,8 @@ def send_web(sender, body, request_id, topic='request', recipient='*'):
         existing = [dict(row) for row in db.execute(
             'SELECT * FROM messages WHERE dedup LIKE ? OR dedup LIKE ? ORDER BY id', (prefix+'%', direct+'%'))]
         if existing:
-            if (any(row['sender'] != sender or row['body'] != body or row['topic'] != topic for row in existing)
+            if (any(row['sender'] != sender or row['body'] != body or row['topic'] != topic
+                    or row['reply_to'] != reply_to for row in existing)
                     or (recipient == '*' and not existing[0]['dedup'].startswith(prefix))
                     or (recipient != '*' and (len(existing) != 1 or existing[0]['dedup'] != direct+recipient))):
                 raise ValueError('this broadcast request_id already belongs to a different message')
@@ -128,11 +154,13 @@ def send_web(sender, body, request_id, topic='request', recipient='*'):
             prefix = direct
         if not agents:
             raise ValueError('No agents are currently registered for broadcasts.')
+        if reply_to is not None and not db.execute('SELECT 1 FROM messages WHERE id=?', (reply_to,)).fetchone():
+            raise ValueError('The message you are replying to no longer exists.')
         created = time.time()
         for agent in agents:
             agent_name(agent)
-            db.execute('''INSERT INTO messages (created, sender, recipient, topic, body, dedup)
-                VALUES (?, ?, ?, ?, ?, ?)''', (created, sender, agent, topic, body, prefix+agent))
+            db.execute('''INSERT INTO messages (created, sender, recipient, topic, body, reply_to, dedup)
+                VALUES (?, ?, ?, ?, ?, ?, ?)''', (created, sender, agent, topic, body, reply_to, prefix+agent))
         return [dict(row) for row in db.execute(
             'SELECT * FROM messages WHERE dedup LIKE ? ORDER BY id', (prefix+'%',))]
 
@@ -359,8 +387,13 @@ def configure(sub):
     actions = p.add_subparsers(dest='action', required=True)
     p = actions.add_parser('post')
     p.add_argument('--agent', required=True); p.add_argument('--to', default='*')
-    p.add_argument('--topic', choices=TOPICS, default='info'); p.add_argument('--reply-to', type=int)
-    p.add_argument('message', help='message text (use - to read stdin)')
+    p.add_argument('--topic', choices=TOPICS, default='info')
+    p.add_argument('--reply-to', type=int, help='reply in the thread of this message ID')
+    p.add_argument('--attach', action='append', default=[], metavar='FILE',
+                   help='attach a file (repeatable, up to 10); it is copied to the board and shown inline on the web')
+    p.add_argument('message', nargs='?', default='', help='message text (use - to read stdin; may be empty with --attach)')
+    p = actions.add_parser('thread', help='print a whole thread: the original, then every reply in order')
+    p.add_argument('id', type=int, help='any message ID in the thread')
     p = actions.add_parser('read')
     p.add_argument('--agent'); p.add_argument('--after', type=int, default=0)
     p.add_argument('--limit', type=int, default=100)
@@ -414,7 +447,19 @@ def main(args):
             agent_name(args.agent)
         if args.action == 'post':
             text = sys.stdin.read(8001) if args.message == '-' else args.message
+            if args.attach:
+                from .board_files import store_file, with_attachments
+                text = with_attachments(text, [store_file(path)['id'] for path in args.attach])
+            if args.reply_to is not None:
+                with database() as db:
+                    if not db.execute('SELECT 1 FROM messages WHERE id=?', (args.reply_to,)).fetchone():
+                        raise ValueError(f'message {args.reply_to} is not on the board')
             print(post(args.agent, text, args.to, args.topic, args.reply_to))
+        elif args.action == 'thread':
+            with database() as db:
+                roots, replies = thread_rows(db, args.id)
+            for row in roots + replies:
+                print(json.dumps(row))
         elif args.action == 'read':
             if args.after < 0 or not 1 <= args.limit <= 1000:
                 raise ValueError('--after must be nonnegative; --limit must be 1–1000')
@@ -485,7 +530,7 @@ def main(args):
         elif args.action == 'guard-claude':
             from . import board_toolguard
             return board_toolguard.main()
-    except (ValueError, sqlite3.Error) as error:
+    except (ValueError, LookupError, sqlite3.Error) as error:
         print(str(error), file=sys.stderr)
         return 1
     return 0

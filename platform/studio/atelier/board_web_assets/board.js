@@ -3,8 +3,6 @@ const $ = id => document.getElementById(id);
 const icons = {
   messages:'<path d="M21 11a8 8 0 0 1-8 8H7l-4 3V11a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z"/><path d="M8 9h8M8 13h5"/>',
   agents:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M21 20v-2a6 6 0 0 0-4-5"/>',
-  remote:'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8M12 16v5M7 8l3 2-3 2M13 12h4"/>',
-  activity:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
   search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   send:'<path d="M21.5 2.5 10.5 13.5M21.5 2.5l-7 19-4-8-8-4 19-7Z"/>',
   check:'<path d="m5 12 4 4L19 6"/>',
@@ -12,6 +10,12 @@ const icons = {
   chevron:'<path d="m6 9 6 6 6-6"/>',
   right:'<path d="m9 5 7 7-7 7"/>',
   down:'<path d="M12 5v14M5 12l7 7 7-7"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  close:'<path d="M6 6l12 12M18 6 6 18"/>',
+  file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/>',
+  play:'<path d="M8 5v14l11-7L8 5Z"/>',
+  thread:'<path d="M7 8h10M7 12h6"/><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z"/>',
+  reply:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/>',
   board:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
   render:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
 };
@@ -19,13 +23,14 @@ function node(tag, cls, text) { const n=document.createElement(tag); if(cls)n.cl
 function icon(name) { const n=node("span","icon"); n.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.messages}</svg>`; return n; }
 document.querySelectorAll("[data-icon]").forEach(n=>n.append(icon(n.dataset.icon)));
 const names={info:"Info",request:"Request",handoff:"Handoff",blocked:"Blocked",release:"Release",evidence:"Evidence",ack:"Ack",alert:"Alert"};
+const VIEWS=["messages","agents","render"];
 const desktop=matchMedia("(min-width:1100px)"), touch=matchMedia("(hover:none)");
 let state=null, selectedAgent="", records=new Map(), expanded=new Set(), deliveryOpen=new Set(), logShown=12;
 let loading=false, requestNumber=0, controller=null, historyComplete=false, sending=false, failed=false;
 let feedSignature="", agentsSignature="", scheduleSignature="", contextSignature="";
 let draftKey=null, draftBody="", draftTopic="", draftRecipient="*", recipientSignature="", previewRequest=0;
-let stickToBottom=true, prepending=false, lastSeenId=0, newestShown=0, statusTimer=0;
-let showSystem=true;
+let stickToBottom=true, prepending=false, lastSeenId=0, newestShown=0, statusTimer=0, feedPainted=false;
+let showSystem=true, uploads=[], thread=null;
 try { showSystem=localStorage.getItem("atelier.board.notices")!=="hidden"; } catch {}
 $("showSystem").checked=showSystem;
 
@@ -44,8 +49,18 @@ function fitViewport() {
 window.visualViewport?.addEventListener("resize",fitViewport);window.visualViewport?.addEventListener("scroll",fitViewport);
 addEventListener("resize",fitViewport);fitViewport();
 
-function persistDraft() { try { localStorage.setItem("atelier.board.draft",JSON.stringify({body:$("message").value,topic:$("broadcastTopic").value,recipient:$("recipient").value||draftRecipient,key:draftKey})); } catch {} }
-try { const draft=JSON.parse(localStorage.getItem("atelier.board.draft")||"null"); if(draft) {$("message").value=draft.body||""; if([...$("broadcastTopic").options].some(o=>o.value===draft.topic))$("broadcastTopic").value=draft.topic; draftKey=draft.key; draftBody=$("message").value; draftTopic=$("broadcastTopic").value;draftRecipient=draft.recipient||"*";} } catch {}
+function persistDraft() {
+  try { localStorage.setItem("atelier.board.draft",JSON.stringify({body:$("message").value,topic:$("broadcastTopic").value,recipient:$("recipient").value||draftRecipient,key:draftKey,
+    files:uploads.filter(u=>u.id).map(({id,name,mime,size})=>({id,name,mime,size}))})); } catch {}
+}
+try {
+  const draft=JSON.parse(localStorage.getItem("atelier.board.draft")||"null");
+  if(draft) {
+    $("message").value=draft.body||""; if([...$("broadcastTopic").options].some(o=>o.value===draft.topic))$("broadcastTopic").value=draft.topic;
+    draftKey=draft.key; draftBody=$("message").value; draftTopic=$("broadcastTopic").value;draftRecipient=draft.recipient||"*";
+    uploads=(draft.files||[]).map(f=>({...f,key:f.id,status:"done",progress:100,preview:`/api/attachment/${f.id}/${encodeURIComponent(f.name)}`}));
+  }
+} catch {}
 
 function markdown(container, html, raw="") {
   container.classList.add("markdown");
@@ -63,7 +78,7 @@ function orb(name, agent) {
   const o=node("span","orb");
   if(name==="*"||!name){o.classList.add("everyone");o.append(icon("agents"));return o;}
   o.textContent=initials(name).slice(0,1);o.style.setProperty("--hue",hue(name));
-  if(agent&&!agent.stop)o.append(node("span","badge "+statusOf(agent)));
+  if(agent&&!agent.stop){const badge=node("span","badge "+statusOf(agent));badge.style.setProperty("--delay",`${(hue(name)%9)*.29}s`);o.append(badge);}
   return o;
 }
 function clock(timestamp) { return new Date(timestamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); }
@@ -73,21 +88,33 @@ function dayLabel(timestamp) {
   if(date.toDateString()===yesterday.toDateString())return "Yesterday";
   return date.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"});
 }
+function sizeText(size) { return size<1024?`${size} bytes`:size<1048576?`${(size/1024).toFixed(0)} KB`:size<1073741824?`${(size/1048576).toFixed(1)} MB`:`${(size/1073741824).toFixed(1)} GB`; }
+function kindOf(mime) { return /^image\//.test(mime)?"image":/^video\//.test(mime)?"video":/^audio\//.test(mime)?"audio":"file"; }
 function agentStatus(a) { return a.stop?"Retired":a.delivery_error?"Delivery retrying":a.listening?"Listening":"Offline"; }
 function isSystem(m) { return /(^|-)watch$/.test(m.sender); }
 function liveAgents() { return state?state.agents.filter(a=>!a.stop):[]; }
+function snippetless(text) { return text.replace(/(^|\n\n)Attachments \(files on this machine\):[\s\S]*$/,""); }
+function snippet(text) { return text.replace(/\n\nAttachments \(files on this machine\):[\s\S]*$/,"").replace(/^Attachments \(files on this machine\):[\s\S]*$/,"Attachment").replace(/[*_`#>]+/g,"").replace(/\s+/g," ").trim().slice(0,140); }
 
 /* Views: one pane at a time on phones, all three side by side on wide screens. */
 function setView(next) {
-  $("app").dataset.view=next;
+  const app=$("app"), from=VIEWS.indexOf(app.dataset.view), to=VIEWS.indexOf(next);
+  app.dataset.view=next;$("tabbar").style.setProperty("--tab",to);
   document.querySelectorAll(".tab").forEach(tab=>{if(tab.dataset.view===next)tab.setAttribute("aria-current","page");else tab.removeAttribute("aria-current");});
+  if(from!==to&&!desktop.matches) {
+    const pane=$({messages:"chatPane",agents:"agentsPane",render:"renderPane"}[next]);
+    pane.style.setProperty("--dir",to>from?1:-1);pane.classList.remove("entering");void pane.offsetWidth;pane.classList.add("entering");
+    setTimeout(()=>pane.classList.remove("entering"),900);
+  }
   if(next==="messages"){stickToBottom=stickToBottom||!newestShown;requestAnimationFrame(()=>{if(stickToBottom)scrollToLatest();markSeen();});}
 }
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
-  if(tab.dataset.view==="messages"&&$("app").dataset.view==="messages")scrollToLatest(true);
+  if(tab.dataset.view==="messages"&&$("app").dataset.view==="messages"){if(thread)closeThread();else scrollToLatest(true);}
   setView(tab.dataset.view);
 }));
+document.querySelectorAll(".render-pane .card, .render-pane .stack > .eyebrow").forEach((n,i)=>n.style.setProperty("--i",i));
 function selectAgent(name) {
+  if(thread)closeThread();
   selectedAgent=name;
   const agent=state?.agents.find(a=>a.agent===name&&!a.stop);
   const target=name===""?"*":agent?name:null;
@@ -104,7 +131,7 @@ $("searchToggle").addEventListener("click",()=>{
   $("searchToggle").classList.toggle("active",show);
 });
 function query(before=0) { const q=new URLSearchParams(); if(selectedAgent)q.set("agent",selectedAgent); if($("search").value.trim())q.set("q",$("search").value.trim()); if($("topicFilter").value)q.set("topic",$("topicFilter").value); if(before)q.set("before",before); return q.toString(); }
-function refreshFilters() { records.clear(); feedSignature=""; historyComplete=false; stickToBottom=true; prepending=false; lastSeenId=0; load(true); }
+function refreshFilters() { records.clear(); feedSignature=""; historyComplete=false; stickToBottom=true; prepending=false; lastSeenId=0; feedPainted=false; load(true); }
 let searchTimer;
 $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refreshFilters,250);});
 $("topicFilter").addEventListener("change",()=>{syncPills();refreshFilters();});
@@ -127,9 +154,10 @@ function syncPills() { document.querySelectorAll(".select-pill").forEach(pill=>{
 function formState() {
   syncPills();
   const target=$("recipient").value, count=liveAgents().length, length=$("message").value.length;
+  const ready=uploads.filter(u=>u.status==="done").length, busy=uploads.some(u=>u.status!=="done");
   $("characterCount").textContent=length>6000?`${length.toLocaleString()} / 8,000`:"";
-  $("sendButton").setAttribute("aria-label",target==="*"?`Send to all ${count} agents`:`Send to ${target}`);
-  $("sendButton").disabled=sending||!state||!count||!$("message").value.trim()||(target!=="*"&&!state.agents.some(a=>a.agent===target&&!a.stop));
+  $("sendButton").setAttribute("aria-label",busy?"Waiting for uploads":target==="*"?`Send to all ${count} agents`:`Send to ${target}`);
+  $("sendButton").disabled=sending||busy||!state||!count||!($("message").value.trim()||ready)||(target!=="*"&&!state.agents.some(a=>a.agent===target&&!a.stop));
   $("broadcastForm").classList.toggle("has-text",Boolean(length));
 }
 $("message").addEventListener("input",()=>{grow();draftChanged();}); $("broadcastTopic").addEventListener("change",draftChanged);$("recipient").addEventListener("change",draftChanged);
@@ -147,9 +175,76 @@ let blurTimer;
 $("message").addEventListener("focus",()=>{clearTimeout(blurTimer);if(touch.matches)$("app").classList.add("typing");if(stickToBottom)setTimeout(scrollToLatest,250);});
 $("message").addEventListener("blur",()=>{blurTimer=setTimeout(()=>$("app").classList.remove("typing"),120);});
 function composerStatus(text, error=false) {
-  clearTimeout(statusTimer);$("composerStatus").textContent=text;$("composerStatus").className="composer-status"+(error?" error":"")+(text?" shown":"");
+  clearTimeout(statusTimer);$("composerStatus").textContent=text;$("composerStatus").className="composer-status"+(error?" error":"");
   if(text&&!error)statusTimer=setTimeout(()=>composerStatus(""),4000);
 }
+
+/* Attachments: files upload as soon as they are picked; the message only refers to them. */
+$("attachButton").addEventListener("click",()=>$("fileInput").click());
+$("fileInput").addEventListener("change",()=>{addFiles($("fileInput").files);$("fileInput").value="";});
+$("message").addEventListener("paste",event=>{const files=[...(event.clipboardData?.files||[])];if(files.length){event.preventDefault();addFiles(files);}});
+let dragDepth=0;
+addEventListener("dragenter",event=>{if([...(event.dataTransfer?.types||[])].includes("Files")){dragDepth++;$("dropHint").hidden=false;}});
+addEventListener("dragleave",()=>{if(--dragDepth<=0){dragDepth=0;$("dropHint").hidden=true;}});
+addEventListener("dragover",event=>{if([...(event.dataTransfer?.types||[])].includes("Files"))event.preventDefault();});
+addEventListener("drop",event=>{if(!event.dataTransfer?.files?.length)return;event.preventDefault();dragDepth=0;$("dropHint").hidden=true;setView("messages");addFiles(event.dataTransfer.files);});
+function addFiles(list) {
+  for(const file of [...list]) {
+    if(uploads.length>=10){composerStatus("You can attach up to 10 files to one message.",true);break;}
+    if(file.size>512*1048576){composerStatus(`${file.name} is larger than 512 MB.`,true);continue;}
+    const item={key:crypto.randomUUID(),file,name:file.name||"file",mime:file.type||"application/octet-stream",size:file.size,status:"uploading",progress:0,preview:URL.createObjectURL(file)};
+    uploads.push(item);upload(item);
+  }
+  draftKey=null;renderTray();formState();
+}
+function upload(item) {
+  item.status="uploading";item.progress=0;renderTray();
+  const xhr=new XMLHttpRequest();item.xhr=xhr;
+  xhr.open("POST","/api/upload");xhr.setRequestHeader("Content-Type",item.mime);xhr.setRequestHeader("X-Board-CSRF",state?.csrf||"");xhr.setRequestHeader("X-File-Name",encodeURIComponent(item.name));
+  xhr.upload.onprogress=event=>{if(event.lengthComputable){item.progress=Math.round(event.loaded/event.total*100);item.tile?.style.setProperty("--p",item.progress);}};
+  xhr.onload=()=>{let result={};try{result=JSON.parse(xhr.responseText);}catch{}
+    if(xhr.status===200&&result.id){Object.assign(item,{id:result.id,name:result.name,status:"done",progress:100});}
+    else {item.status="error";composerStatus(result.error||`${item.name} could not be uploaded. Tap it to retry.`,true);}
+    persistDraft();renderTray();formState();};
+  xhr.onerror=()=>{item.status="error";renderTray();formState();composerStatus(`${item.name} could not be uploaded. Tap it to retry.`,true);};
+  xhr.send(item.file);
+}
+function removeUpload(item) { item.xhr?.abort();if(item.preview?.startsWith("blob:"))URL.revokeObjectURL(item.preview);uploads=uploads.filter(u=>u!==item);draftKey=null;persistDraft();renderTray();formState(); }
+function renderTray() {
+  const tray=$("tray");tray.hidden=!uploads.length;
+  const existing=new Map([...tray.children].map(tile=>[tile.dataset.key,tile]));
+  for(const item of uploads) {
+    let tile=existing.get(item.key);existing.delete(item.key);
+    if(!tile) {
+      const kind=kindOf(item.mime);tile=node("div","tile "+kind);tile.dataset.key=item.key;item.tile=tile;
+      if(kind==="image"){const img=node("img");img.src=item.preview;img.alt=item.name;tile.append(img);}
+      else if(kind==="video"){const video=node("video");video.src=item.preview+"#t=0.1";video.muted=true;video.playsInline=true;video.preload="metadata";tile.append(video,node("span","tile-kind","▶ Video"));}
+      else {tile.classList.add("file");tile.append(icon("file"),node("span","tile-name",item.name));}
+      const progress=node("div","tile-progress");const retry=node("button","tile-retry","Retry");retry.type="button";retry.addEventListener("click",()=>upload(item));progress.append(retry);
+      const remove=node("button","tile-remove");remove.type="button";remove.setAttribute("aria-label",`Remove ${item.name}`);remove.append(icon("close"));remove.addEventListener("click",()=>removeUpload(item));
+      tile.append(progress,remove);tray.append(tile);
+    }
+    tile.classList.toggle("error",item.status==="error");tile.querySelector(".tile-progress").hidden=item.status==="done";
+    tile.querySelector(".tile-retry").hidden=item.status!=="error";tile.style.setProperty("--p",item.progress);tile.title=`${item.name} · ${sizeText(item.size)}`;
+  }
+  for(const tile of existing.values())tile.remove();
+}
+function attachmentNodes(files, many) {
+  const wrap=node("div","attachments"), images=files.filter(f=>!f.missing&&kindOf(f.mime)==="image");
+  for(const f of files) {
+    if(f.missing){wrap.append(node("p","att-missing",`${f.name} is no longer available`));continue;}
+    const kind=kindOf(f.mime);
+    if(kind==="image"){const b=node("button","att-image"+(images.length===1?" single":""));b.type="button";const img=node("img");img.src=f.url;img.alt=f.name;img.loading="lazy";b.append(img);b.addEventListener("click",()=>openLightbox(f));wrap.append(b);}
+    else if(kind==="video"){const v=node("video","att-video");v.src=f.url;v.controls=true;v.playsInline=true;v.preload="metadata";wrap.append(v);}
+    else if(kind==="audio"){const a=node("audio","att-audio");a.src=f.url;a.controls=true;a.preload="none";wrap.append(a);}
+    else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
+  }
+  return wrap;
+}
+function openLightbox(f) { $("lightboxImage").src=f.url;$("lightboxImage").alt=f.name;$("lightboxName").textContent=f.name;$("lightboxOpen").href=f.url;$("lightbox").hidden=false;$("lightboxClose").focus(); }
+function closeLightbox() { $("lightbox").hidden=true;$("lightboxImage").removeAttribute("src"); }
+$("lightbox").addEventListener("click",event=>{if(event.target!==$("lightboxOpen"))closeLightbox();});
+addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("lightbox").hidden)closeLightbox();else if(thread)closeThread();}});
 
 /* Agents: the list pane and the orb row share one render. */
 function renderAgents() {
@@ -159,9 +254,11 @@ function renderAgents() {
   $("agentsSummary").textContent=`${listening} of ${live.length} listening${errors?` · ${errors} retrying delivery`:""}`;
   $("agentsBadge").hidden=!errors;$("agentsBadge").textContent=errors;
   const list=$("agents"), orbs=$("agentChips");list.replaceChildren();orbs.replaceChildren();
+  let index=0;
   function row(name, agent) {
     const chosen=selectedAgent===name;
     const b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";b.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
+    b.style.setProperty("--i",index++);
     const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));
     if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
     else detail.textContent=`Broadcasts and every conversation`;
@@ -189,9 +286,8 @@ function renderHeader() {
   let text;
   if(failed){dot.classList.add("error");text="Reconnecting…";}
   else if(!state){text="Connecting…";}
-  else if(agent){dot.classList.add(agent.delivery_error?"error":agent.listening?"live":"idle");text=agentStatus(agent)+(agent.pending?` · ${agent.pending} queued`:"");}
+  else if(agent){dot.classList.add(statusOf(agent));text=agentStatus(agent)+(agent.pending?` · ${agent.pending} queued`:"");}
   else {dot.classList.add(listening?"live":"idle");text=`${listening} of ${live.length} agents listening`;}
-  if(agent)dot.className="dot "+statusOf(agent);
   subtitle.replaceChildren(dot,node("span","",text));
 }
 
@@ -214,14 +310,10 @@ $("feed").addEventListener("scroll",()=>{
 },{passive:true});
 $("jumpLatest").addEventListener("click",()=>scrollToLatest(true));
 // Opening search, a growing draft or the keyboard shrinks the feed: stay pinned to the latest message.
-const pin=new ResizeObserver(()=>{$("app").style.setProperty("--dock-h",`${$("broadcastForm").offsetHeight}px`);if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;});
+const pin=new ResizeObserver(()=>{$("app").style.setProperty("--dock-h",`${$("broadcastForm").offsetHeight}px`);if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;if(thread?.stick)$("threadFeed").scrollTop=$("threadFeed").scrollHeight;});
 pin.observe($("feed"));pin.observe($("broadcastForm"));
 function loadOlder() { if(loading||!records.size)return; prepending=true; load(false,Math.min(...records.keys())); }
 $("loadOlder").addEventListener("click",loadOlder);
-function jumpTo(id) {
-  const target=$("messages").querySelector(`[data-ids~="${id}"]`);
-  if(!target)return;$("feed").scrollTo({top:target.offsetTop-$("feed").clientHeight/3,behavior:"smooth"});target.classList.remove("flash");void target.offsetWidth;target.classList.add("flash");
-}
 function groupsFrom(messages) {
   const groups=new Map();
   for(const m of messages) {
@@ -252,12 +344,80 @@ function receipt(group, agents) {
   }
   wrap.append(list);return wrap;
 }
+/* Threads: a reply whose original is on the board folds under it, Slack style. */
+function threadIndex(groups) {
+  const groupOf=new Map(), replies=new Map();
+  for(const g of groups)for(const m of g.messages)groupOf.set(m.id,g);
+  function rootOf(g) {
+    let current=g, seen=new Set();
+    while(current.first.reply_to&&groupOf.has(current.first.reply_to)&&!seen.has(current.key)){seen.add(current.key);current=groupOf.get(current.first.reply_to);}
+    return current;
+  }
+  for(const g of groups) {
+    if(!g.first.reply_to||!groupOf.has(g.first.reply_to)||isSystem(g.first))continue;
+    const root=rootOf(g);if(root===g)continue;
+    if(!replies.has(root.key))replies.set(root.key,[]);replies.get(root.key).push(g);g.threaded=true;
+  }
+  return replies;
+}
+function threadBar(root, replies, open) {
+  const bar=node("button","thread-bar");bar.type="button";
+  const faces=node("span","thread-faces");
+  for(const sender of [...new Set(replies.map(r=>r.first.sender))].slice(0,3))faces.append(orb(sender===state.sender?"*":sender));
+  const last=replies.at(-1).first;
+  bar.append(faces,node("span","thread-count",`${replies.length} ${replies.length===1?"reply":"replies"}`),node("span","thread-last",`Last ${clock(last.created)}`),icon("right"));
+  bar.addEventListener("click",open);return bar;
+}
+function messageNode(group, ctx) {
+  const m=group.first, agents=ctx.agents, mine=m.sender===state.sender;
+  const article=node("article","message"+(mine?" mine":"")+(ctx.continued?" continued":"")+(m.topic==="alert"||m.topic==="blocked"?" urgent":"")+(ctx.enter?" enter":""));
+  article.dataset.ids=group.messages.map(item=>item.id).join(" ");
+  if(!mine)article.append(ctx.continued?node("span","orb-space"):orb(m.sender));
+  const column=node("div","message-column"), bubble=node("div","card bubble");
+  if(!ctx.continued) {
+    const meta=node("div","meta");
+    meta.append(node("span","sender",mine?"You":m.sender));
+    const to=group.broadcast||m.recipient==="*"?"everyone":m.recipient===state.sender?"you":m.recipient;
+    meta.append(node("span","route",`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
+    if(m.topic!=="info")meta.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
+    const time=node("time","time",clock(m.created));time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;meta.append(time);
+    bubble.append(meta);
+  }
+  if(m.reply_to&&!ctx.inThread) {
+    // The original is not loaded here: show what it was and open the whole thread.
+    const original=records.get(m.reply_to), quote=node("button","quote");quote.type="button";
+    quote.append(node("span","quote-who",original?(original.sender===state.sender?"You":original.sender):`Reply to #${m.reply_to}`));
+    if(original)quote.append(node("span","quote-text",snippet(original.body)));
+    quote.addEventListener("click",()=>openThread(m.id));bubble.append(quote);
+  }
+  const hasText=Boolean(m.body_html&&m.body_html.trim());
+  if(hasText) {
+    // Long messages start folded to about six lines; "Read more" opens them in place.
+    const text=snippetless(m.body), long=text.length>420||text.split("\n").length>6, collapsed=long&&!expanded.has(group.key);
+    const body=node("div","body"+(collapsed?" collapsed":""));markdown(body,m.body_html,m.body);bubble.append(body);
+    if(long){const more=node("button","more",collapsed?"Read more":"Show less");more.type="button";more.addEventListener("click",()=>{collapsed?expanded.add(group.key):expanded.delete(group.key);ctx.inThread?renderThread(true):(feedSignature="",renderFeed());});bubble.append(more);}
+  }
+  if(m.attachments?.length)bubble.append(attachmentNodes(m.attachments));
+  if(ctx.continued){const time=node("time","bubble-time",clock(m.created));time.title=`#${m.id}`;bubble.append(time);}
+  column.append(bubble);
+  if(mine)column.append(receipt(group,agents));
+  if(ctx.replies?.length)column.append(threadBar(group,ctx.replies,()=>openThread(m.id)));
+  else if(!ctx.inThread&&!isSystem(m)){const reply=node("button","reply-link");reply.type="button";reply.append(icon("reply"),node("span","","Reply"));reply.addEventListener("click",()=>openThread(m.id,true));column.append(reply);}
+  article.append(column);return article;
+}
+function continues(previous, group) {
+  const m=group.first;
+  return previous&&previous.sender===m.sender&&previous.recipient===m.recipient&&previous.topic===m.topic&&m.created-previous.created<300&&!group.broadcast&&!previous.broadcast;
+}
 function renderFeed() {
   const agents=new Map(state.agents.map(a=>[a.agent,a]));
   const signature=JSON.stringify([[...records.keys()],state.agents.map(a=>[a.agent,a.cursor,a.delivery_error]),[...records.values()].map(m=>m.acknowledged),[...expanded],[...deliveryOpen],showSystem,historyComplete]);
   if(signature===feedSignature)return; feedSignature=signature;
   const feed=$("feed"), top=feed.scrollTop, fromBottom=feed.scrollHeight-feed.scrollTop, stick=stickToBottom;
-  const groups=groupsFrom([...records.values()]), visible=groups.filter(g=>showSystem||!isSystem(g.first));
+  const groups=groupsFrom([...records.values()]), threads=threadIndex(groups);
+  const visible=groups.filter(g=>(showSystem||!isSystem(g.first))&&!g.threaded);
+  // Only messages that arrive after the first paint animate in; history and filter changes appear at rest.
+  const animateAbove=feedPainted?newestShown:Infinity;
   const out=document.createDocumentFragment();
   let day="", previous=null, notices=null;
   const filtered=Boolean(selectedAgent||$("search").value.trim()||$("topicFilter").value);
@@ -265,12 +425,12 @@ function renderFeed() {
     const empty=node("div","empty");empty.append(icon("messages"),node("h2","",filtered?"No matching messages":"A quiet board, for now"),node("p","",selectedAgent?`Say hello to ${selectedAgent} below.`:filtered?"Try a different search or topic.":"Send a message to start the conversation."));out.append(empty);
   }
   for(const group of visible) {
-    const m=group.first, label=dayLabel(m.created);
-    if(label!==day){day=label;previous=null;notices=null;const sep=node("div","day");sep.append(node("span","",label));out.append(sep);}
+    const m=group.first, label=dayLabel(m.created), enter=m.id>animateAbove;
+    if(label!==day){day=label;previous=null;notices=null;const sep=node("div","day"+(enter?" enter":""));sep.append(node("span","",label));out.append(sep);}
     if(isSystem(m)) {
       // Consecutive automatic notices collapse into one quiet line.
       if(notices){notices.count++;notices.last=m;notices.ids.push(m.id);const sections=(m.body.match(/changed \(([^)]*)\)/)||[])[1];if(sections)sections.split(/,\s*/).forEach(s=>notices.sections.add(s));notices.update();continue;}
-      const line=node("details","notice");line.dataset.ids=String(m.id);
+      const line=node("details","notice"+(enter?" enter":""));line.dataset.ids=String(m.id);
       const summary=node("summary"), text=node("span","notice-text"), when=node("time");summary.append(icon("board"),text,when);line.append(summary,node("p","",m.body));
       notices={count:1,first:m,last:m,ids:[m.id],sections:new Set(((m.body.match(/changed \(([^)]*)\)/)||[])[1]||"").split(/,\s*/).filter(Boolean)),
         update(){const what=/render scheduling board changed/i.test(this.last.body)?`Render schedule updated${this.sections.size?` · ${[...this.sections].join(", ")}`:""}`:`${this.last.sender}: ${this.last.body.slice(0,80)}`;
@@ -278,39 +438,14 @@ function renderFeed() {
       notices.update();out.append(line);previous=null;continue;
     }
     notices=null;
-    const mine=m.sender===state.sender;
-    const continued=previous&&previous.sender===m.sender&&previous.recipient===m.recipient&&previous.topic===m.topic&&m.created-previous.created<300&&!group.broadcast&&!previous.broadcast;
-    const article=node("article","message"+(mine?" mine":"")+(continued?" continued":"")+(m.topic==="alert"||m.topic==="blocked"?" urgent":""));
-    article.dataset.ids=group.messages.map(item=>item.id).join(" ");
-    if(!mine)article.append(continued?node("span","orb-space"):orb(m.sender));
-    const column=node("div","message-column"), bubble=node("div","card bubble");
-    if(!continued) {
-      const meta=node("div","meta");
-      meta.append(node("span","sender",mine?"You":m.sender));
-      const to=group.broadcast||m.recipient==="*"?"everyone":m.recipient===state.sender?"you":m.recipient;
-      meta.append(node("span","route",`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
-      if(m.topic!=="info")meta.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
-      const time=node("time","time",clock(m.created));time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;meta.append(time);
-      bubble.append(meta);
-    }
-    if(m.reply_to) {
-      const original=records.get(m.reply_to), quote=node("button","quote");quote.type="button";
-      quote.append(node("span","quote-who",original?(original.sender===state.sender?"You":original.sender):`Reply to #${m.reply_to}`));
-      if(original)quote.append(node("span","quote-text",original.body.replace(/[*_`#>]+/g,"").replace(/\s+/g," ").trim().slice(0,140)));
-      quote.addEventListener("click",()=>jumpTo(m.reply_to));bubble.append(quote);
-    }
-    const long=m.body.length>900||m.body.split("\n").length>14, collapsed=long&&!expanded.has(group.key);
-    const body=node("div","body"+(collapsed?" collapsed":""));markdown(body,m.body_html,m.body);bubble.append(body);
-    if(long){const more=node("button","more",collapsed?"Read more":"Show less");more.type="button";more.addEventListener("click",()=>{collapsed?expanded.add(group.key):expanded.delete(group.key);renderFeed();});bubble.append(more);}
-    if(continued){const time=node("time","bubble-time",clock(m.created));time.title=`#${m.id}`;bubble.append(time);}
-    column.append(bubble);
-    if(mine)column.append(receipt(group,agents));
-    article.append(column);out.append(article);previous={sender:m.sender,recipient:m.recipient,topic:m.topic,created:m.created,broadcast:group.broadcast};
+    const continued=continues(previous,group)&&!threads.get(previous.key)?.length;
+    out.append(messageNode(group,{agents,continued,enter,replies:threads.get(group.key)}));
+    previous={key:group.key,sender:m.sender,recipient:m.recipient,topic:m.topic,created:m.created,broadcast:group.broadcast};
   }
-  $("messages").replaceChildren(out);
+  $("messages").replaceChildren(out);feedPainted=true;
   $("loadOlder").hidden=historyComplete||!records.size;
-  const newest=visible.length?Math.max(...visible.at(-1).messages.map(item=>item.id)):0;
-  const unread=visible.filter(g=>!isSystem(g.first)&&g.first.id>lastSeenId&&g.first.sender!==state.sender).length;
+  const newest=records.size?Math.max(...records.keys()):0;
+  const unread=groups.filter(g=>!isSystem(g.first)&&g.first.id>lastSeenId&&g.first.sender!==state.sender).length;
   newestShown=newest;
   if(prepending){feed.scrollTop=feed.scrollHeight-fromBottom;prepending=false;}
   else if(stick){feed.scrollTop=feed.scrollHeight;}
@@ -320,6 +455,57 @@ function renderFeed() {
   $("jumpLatest").hidden=feedNearBottom();
   updateBadges(stick&&viewing?0:unread);
 }
+
+/* Thread view: the original and every reply, with the composer replying in the thread. */
+async function openThread(id, focus=false) {
+  thread={id,data:null,signature:"",newest:Infinity,stick:true,savedRecipient:$("recipient").value};
+  $("threadView").hidden=false;$("app").classList.add("in-thread");
+  $("threadTitle").textContent="Thread";$("threadSubtitle").textContent="Loading…";$("threadFeed").replaceChildren();
+  await loadThread();
+  if(focus)$("message").focus();
+}
+function closeThread() {
+  if(!thread)return;
+  const saved=thread.savedRecipient;thread=null;
+  $("threadView").hidden=true;$("app").classList.remove("in-thread");$("replyChip").hidden=true;
+  if([...$("recipient").options].some(o=>o.value===saved&&!o.disabled)&&$("recipient").value!==saved){$("recipient").value=saved;draftChanged();}
+  formState();
+}
+$("threadBack").addEventListener("click",closeThread);$("replyChipClose").addEventListener("click",closeThread);
+async function loadThread() {
+  const current=thread;if(!current)return;
+  try {
+    const response=await fetch(`/api/thread?id=${current.id}`,{cache:"no-store"});const result=await response.json();
+    if(thread!==current)return;
+    if(!response.ok){$("threadSubtitle").textContent=result.error||"This conversation could not be loaded.";return;}
+    current.data=result;renderThread();
+  } catch { if(thread===current)$("threadSubtitle").textContent="Reconnecting…"; }
+}
+function renderThread(force=false) {
+  const current=thread;if(!current?.data||!state)return;
+  const signature=JSON.stringify([current.data,state.agents.map(a=>[a.agent,a.cursor]),[...expanded],[...deliveryOpen]]);
+  if(signature===current.signature&&!force)return;current.signature=signature;
+  const agents=new Map(state.agents.map(a=>[a.agent,a])), feed=$("threadFeed"), stick=current.stick;
+  const [root]=groupsFrom(current.data.root), replies=groupsFrom(current.data.replies);
+  const people=[...new Set([root,...replies].map(g=>g.first.sender===state.sender?"you":g.first.sender))];
+  $("threadSubtitle").textContent=`${replies.length} ${replies.length===1?"reply":"replies"} · ${people.join(", ")}`;
+  const out=document.createDocumentFragment();
+  out.append(messageNode(root,{agents,inThread:true}));
+  const divider=node("div","thread-divider");divider.append(node("span","",replies.length?`${replies.length} ${replies.length===1?"reply":"replies"}`:"No replies yet"));out.append(divider);
+  let previous=null;
+  const newest=Math.max(0,...current.data.replies.map(r=>r.id));
+  for(const g of replies){const continued=continues(previous,g);out.append(messageNode(g,{agents,inThread:true,continued,enter:g.first.id>current.newest}));previous={key:g.key,sender:g.first.sender,recipient:g.first.recipient,topic:g.first.topic,created:g.first.created,broadcast:g.broadcast};}
+  current.newest=newest;
+  feed.replaceChildren(out);if(stick)feed.scrollTop=feed.scrollHeight;
+  // Replies go to the agent who wrote the original, or back to everyone a broadcast reached.
+  const m=root.first, target=m.sender===state.sender?(root.broadcast||m.recipient==="*"?"*":m.recipient):m.sender;
+  const usable=[...$("recipient").options].some(o=>o.value===target&&!o.disabled);
+  if(usable&&$("recipient").value!==target&&!current.recipientSet){$("recipient").value=target;draftChanged();}
+  current.recipientSet=true;current.replyTo=m.id;
+  $("replyChip").hidden=false;$("replyChipText").textContent=`Replying in thread · ${m.sender===state.sender?"your message":m.sender}`;
+  formState();
+}
+$("threadFeed").addEventListener("scroll",()=>{if(thread){const f=$("threadFeed");thread.stick=f.scrollHeight-f.scrollTop-f.clientHeight<96;}},{passive:true});
 
 /* Render floor */
 function entries(text) {
@@ -335,10 +521,10 @@ function renderSchedule() {
   const signature=JSON.stringify([state.schedule,logShown]);if(signature===scheduleSignature)return;scheduleSignature=signature;
   const view=$("scheduleView");view.replaceChildren();
   const blurbs={Holding:"Nobody is holding a render slot.",Waiting:"Nobody is waiting for a slot.",Handoffs:"No handoffs recorded.",Log:"No log entries yet."};
-  for(const title of ["Holding","Waiting","Handoffs","Log"]) {
+  for(const [i,title] of ["Holding","Waiting","Handoffs","Log"].entries()) {
     let items=entries(state.schedule[title]);
     if(title==="Log")items=items.reverse();
-    const card=node("details","card schedule-card");card.open=title!=="Handoffs";
+    const card=node("details","card schedule-card");card.open=title!=="Handoffs";card.style.setProperty("--i",i+3);
     const summary=node("summary");summary.append(node("span","",title),node("span","count-pill",String(items.length)),icon("chevron"));card.append(summary);
     if(!items.length){card.append(node("p","quiet",blurbs[title]));view.append(card);continue;}
     const list=node("ul","entries");
@@ -375,6 +561,7 @@ function renderContext() {
 function render() {
   $("lastUpdated").textContent=`Live · last synced ${clock(state.time)} · updates every 3 seconds`;
   renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();
+  if(thread)loadThread();
 }
 async function load(reset=false,before=0) {
   if(loading&&!reset)return;if(reset)controller?.abort();
@@ -395,21 +582,30 @@ async function load(reset=false,before=0) {
   } finally { clearTimeout(timer);if(number===requestNumber)loading=false; }
 }
 $("broadcastForm").addEventListener("submit",async event=>{
-  event.preventDefault();if(sending||!state||!$("message").value.trim())return;
+  event.preventDefault();
+  const files=uploads.filter(u=>u.status==="done").map(u=>u.id);
+  if(sending||!state||!($("message").value.trim()||files.length)||uploads.some(u=>u.status!=="done"))return;
   if(!draftKey)draftKey=crypto.randomUUID();draftBody=$("message").value;draftTopic=$("broadcastTopic").value;draftRecipient=$("recipient").value;persistDraft();sending=true;formState();
   $("broadcastForm").classList.add("sending");composerStatus("Sending…");
-  const abort=new AbortController(), timer=setTimeout(()=>abort.abort(),15000);
+  const replyTo=thread?.replyTo??null, abort=new AbortController(), timer=setTimeout(()=>abort.abort(),15000);
   try {
-    const response=await fetch("/api/send",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({body:draftBody,topic:draftTopic,recipient:draftRecipient,request_id:draftKey}),signal:abort.signal});
+    const response=await fetch("/api/send",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({body:draftBody,topic:draftTopic,recipient:draftRecipient,request_id:draftKey,attachments:files,reply_to:replyTo}),signal:abort.signal});
     const result=await response.json();if(!response.ok)throw Error(result.error||"Message failed. Your draft is saved; retry safely.");
-    composerStatus(draftRecipient==="*"?`Sent to ${result.recipients.length} agents`:`Sent to ${draftRecipient}`);
-    $("message").value="";draftKey=null;draftBody="";persistDraft();grow();
+    composerStatus(replyTo?"Replied in thread":draftRecipient==="*"?`Sent to ${result.recipients.length} agents`:`Sent to ${draftRecipient}`);
+    $("message").value="";draftKey=null;draftBody="";
+    for(const u of uploads)if(u.preview?.startsWith("blob:"))URL.revokeObjectURL(u.preview);
+    uploads=[];renderTray();persistDraft();grow();
     if(!$("messagePreview").hidden)$("previewButton").click();$("messagePreview").replaceChildren();
-    if(selectedAgent&&selectedAgent!==draftRecipient)selectedAgent=draftRecipient==="*"?"":draftRecipient;
-    $("search").value="";$("topicFilter").value="";agentsSignature="";refreshFilters();
+    if(thread){thread.stick=true;loadThread();load();}
+    else {
+      const before=selectedAgent, filtered=Boolean($("search").value||$("topicFilter").value);
+      if(selectedAgent&&selectedAgent!==draftRecipient)selectedAgent=draftRecipient==="*"?"":draftRecipient;
+      $("search").value="";$("topicFilter").value="";syncPills();agentsSignature="";stickToBottom=true;
+      if(selectedAgent!==before||filtered)refreshFilters();else load();
+    }
   } catch(error) {composerStatus(error.name==="AbortError"?"The connection timed out. Your draft is saved; tap send to finish this same message.":error.message,true);}
   finally {clearTimeout(timer);sending=false;$("broadcastForm").classList.remove("sending");formState();}
 });
 desktop.addEventListener("change",()=>{feedSignature="";if(state)renderFeed();});
-grow();formState();load();setInterval(()=>{if(!document.hidden)load();},3000);
+renderTray();grow();formState();load();setInterval(()=>{if(!document.hidden)load();},3000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load();});

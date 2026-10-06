@@ -7,9 +7,11 @@ import sqlite3
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 
 from . import board, board_markdown
+from .board_files import (ATTACHMENT_LIMIT, INLINE_TYPES, TRAILER, attachment, attachments_dir,  # noqa: F401
+                          split_attachments, store_upload, with_attachments)
 
 ASSETS = Path(__file__).with_name('board_web_assets')
 STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
@@ -113,14 +115,34 @@ def snapshot(query, remote_status=None):
                              'time': holder.get('time')}
     output = sorted(copies.values(), key=lambda row: row['id'], reverse=True)
     for item in output:
-        item['body_html'] = board_markdown.render(item['body'])
-        item['acknowledged'] = item['id'] in ack_ids
+        decorate(item, ack_ids)
     return {'time': now, 'messages': output,
             'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'schedule': sections,
             'holders': holders, 'sessions': sessions,
             'resources': {'fresh': 0 <= now-telemetry.get('time', 0) < 120,
                           'cpu': telemetry.get('cpu_busy_percent'),
                           'available_gib': (telemetry.get('memory') or {}).get('available_gib')}}
+
+
+def decorate(item, ack_ids):
+    text, item['attachments'] = split_attachments(item['body'])
+    item['body_html'] = board_markdown.render(text)
+    item['acknowledged'] = item['id'] in ack_ids
+    return item
+
+
+def thread(message_id):
+    """A whole conversation: the root (every copy of a web broadcast) and all replies beneath it, oldest first."""
+    path = board.root() / 'agent-board.sqlite3'
+    with sqlite3.connect(f'{path.as_uri()}?mode=ro', uri=True, timeout=5) as db:
+        db.row_factory = sqlite3.Row
+        roots, replies = board.thread_rows(db, message_id)
+        ids = [r['id'] for r in roots]
+        ack_ids = {r[0] for r in db.execute(
+            'SELECT reply.reply_to FROM messages reply JOIN messages original ON original.id=reply.reply_to '
+            f"WHERE reply.topic='ack' AND reply.sender=original.recipient AND reply.reply_to IN ({','.join('?' * len(ids + [r['id'] for r in replies]))})",
+            ids + [r['id'] for r in replies])}
+    return {'root': [decorate(r, ack_ids) for r in roots], 'replies': [decorate(r, ack_ids) for r in replies]}
 
 
 class Server(ThreadingHTTPServer):
@@ -158,9 +180,48 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'no-referrer')
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; "
-                         "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+                         "img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         self.end_headers()
         self.wfile.write(body)
+
+    def send_attachment(self, ident):
+        item = attachment(ident)
+        if not item:
+            self.send(404, {'error': 'This attachment is no longer available.'}); return
+        size, start, end, status = item['size'], 0, item['size'] - 1, 200
+        # Byte ranges let Safari stream and seek videos.
+        ranged = re.fullmatch(r'bytes=(\d*)-(\d*)', self.headers.get('Range', '').strip())
+        if ranged and (ranged[1] or ranged[2]):
+            if ranged[1]:
+                start, end = int(ranged[1]), min(int(ranged[2]) if ranged[2] else size - 1, size - 1)
+            else:
+                start = max(0, size - int(ranged[2]))
+            if start > end:
+                self.send_response(416); self.send_header('Content-Range', f'bytes */{size}')
+                self.send_header('Content-Length', '0'); self.end_headers(); return
+            status = 206
+        inline = item['mime'] in INLINE_TYPES
+        self.send_response(status)
+        self.send_header('Content-Type', item['mime'] if inline else 'application/octet-stream')
+        self.send_header('Content-Length', str(end - start + 1))
+        self.send_header('Accept-Ranges', 'bytes')
+        if status == 206:
+            self.send_header('Content-Range', f'bytes {start}-{end}/{size}')
+        self.send_header('Content-Disposition', f"{'inline' if inline else 'attachment'}; filename*=UTF-8''{quote(item['name'])}")
+        self.send_header('Cache-Control', 'private, max-age=86400')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('Referrer-Policy', 'no-referrer')
+        self.send_header('Content-Security-Policy', "sandbox; default-src 'none'; img-src 'self'; media-src 'self'")
+        self.end_headers()
+        with item['path'].open('rb') as source:
+            source.seek(start)
+            remaining = end - start + 1
+            while remaining:
+                chunk = source.read(min(1 << 20, remaining))
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                remaining -= len(chunk)
 
     def permitted(self):
         host = self.headers.get('Host', '')
@@ -186,6 +247,13 @@ class Handler(BaseHTTPRequestHandler):
                 state = snapshot(parse_qs(parsed.query), self.server.remote_status)
                 state.update(csrf=self.server.csrf, sender=self.server.sender)
                 self.send(200, state)
+            elif parsed.path == '/api/thread':
+                try:
+                    self.send(200, thread(int(parse_qs(parsed.query).get('id', ['0'])[0])))
+                except LookupError:
+                    self.send(404, {'error': 'This conversation is no longer on the board.'})
+            elif parsed.path.startswith('/api/attachment/'):
+                self.send_attachment(parsed.path.split('/')[3])
             elif parsed.path == '/healthz':
                 with sqlite3.connect(f'{(board.root()/"agent-board.sqlite3").as_uri()}?mode=ro', uri=True) as db:
                     db.execute('SELECT id FROM messages LIMIT 1').fetchall()
@@ -200,12 +268,25 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.permitted():
             return
-        if self.path not in ('/api/broadcast', '/api/send', '/api/preview'):
+        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload'):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
                 or not hmac.compare_digest(self.headers.get('X-Board-CSRF', '').encode(), self.server.csrf.encode())):
             self.send(403, {'error': 'Please refresh the board before sending.'}); return
+        if self.path == '/api/upload':
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                stored = store_upload(self.rfile, length, self.headers.get('X-File-Name', ''),
+                                      self.headers.get('Content-Type', '').split(';')[0].strip())
+                self.send(200, {key: stored[key] for key in ('id', 'name', 'mime', 'size')})
+            except ValueError as error:
+                self.close_connection = True
+                self.send(413 if 'MB' in str(error) else 400, {'error': str(error)})
+            except OSError:
+                self.close_connection = True
+                self.send(503, {'error': 'The file could not be saved. Try again.'})
+            return
         if self.headers.get('Content-Type', '').split(';')[0].strip() != 'application/json':
             self.send(415, {'error': 'A JSON message is required.'}); return
         try:
@@ -222,8 +303,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, {'html': board_markdown.render(body)})
                 return
             recipient = data.get('recipient', '*') if self.path == '/api/send' else '*'
-            messages = board.send_web(self.server.sender, data.get('body'), data.get('request_id'),
-                                      data.get('topic', 'request'), recipient)
+            body = with_attachments(data.get('body'), data.get('attachments') or [])
+            messages = board.send_web(self.server.sender, body, data.get('request_id'),
+                                      data.get('topic', 'request'), recipient, data.get('reply_to'))
             self.send(200, {'messages': messages, 'recipients': [row['recipient'] for row in messages]})
         except (ValueError, TypeError, UnicodeError) as error:
             self.send(400, {'error': str(error)})

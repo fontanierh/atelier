@@ -53,9 +53,17 @@
         <button type="button" id="loadOlder" class="load-older" hidden>Load earlier messages</button>
         <div id="messages" class="messages"><div class="empty"><span data-icon="messages"></span><h2>Connecting to your board</h2><p>Your messages will appear here.</p></div></div>
       </div>
+      <section class="thread-view" id="threadView" aria-label="Thread" hidden>
+        <header class="thread-head">
+          <button type="button" class="back-button" id="threadBack" aria-label="Close thread"><span data-icon="back"></span></button>
+          <div class="title-text"><h1 id="threadTitle">Thread</h1><p id="threadSubtitle"></p></div>
+        </header>
+        <div class="thread-feed" id="threadFeed"></div>
+      </section>
       <div class="dock" id="dock">
         <button type="button" id="jumpLatest" class="jump-latest" hidden><span id="jumpLabel">Latest</span><span data-icon="down"></span></button>
         <form id="broadcastForm" class="composer glass" autocomplete="off">
+          <div class="reply-chip" id="replyChip" hidden><span data-icon="reply"></span><span id="replyChipText">Replying in thread</span><button type="button" id="replyChipClose" aria-label="Stop replying in thread"><span data-icon="close"></span></button></div>
           <div id="messagePreview" class="composer-preview markdown" hidden></div>
           <p id="composerStatus" class="composer-status" role="status" aria-live="polite"></p>
           <div class="composer-options">
@@ -64,7 +72,10 @@
             <button type="button" id="previewButton" class="text-button" aria-expanded="false" aria-controls="messagePreview">Preview</button>
             <span id="characterCount" class="character-count"></span>
           </div>
+          <div class="tray" id="tray" hidden></div>
           <div class="composer-row">
+            <button type="button" class="attach-button" id="attachButton" aria-label="Add photos, videos or files"><span data-icon="plus"></span></button>
+            <input type="file" id="fileInput" multiple hidden>
             <textarea id="message" name="message" maxlength="8000" rows="1" placeholder="Message the team…" aria-label="Send a message" enterkeyhint="enter" required></textarea>
             <button id="sendButton" class="send-button" type="submit" disabled aria-label="Send"><span data-icon="send"></span></button>
           </div>
@@ -83,10 +94,17 @@
     </aside>
 
     <nav class="tabbar glass" id="tabbar" aria-label="Views">
+      <span class="tab-indicator" aria-hidden="true"></span>
       <button type="button" class="tab" data-view="messages" aria-current="page"><span data-icon="messages"></span><span>Messages</span><span class="tab-badge" id="messagesBadge" hidden></span></button>
       <button type="button" class="tab" data-view="agents"><span data-icon="agents"></span><span>Agents</span><span class="tab-badge warn" id="agentsBadge" hidden></span></button>
       <button type="button" class="tab" data-view="render"><span data-icon="render"></span><span>Render</span><span class="tab-dot" id="renderBadge" hidden></span></button>
     </nav>
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo" hidden>
+      <img id="lightboxImage" alt="">
+      <div class="lightbox-bar"><span id="lightboxName"></span><a id="lightboxOpen" target="_blank" rel="noopener noreferrer">Open original</a></div>
+      <button type="button" class="round-button lightbox-close" id="lightboxClose" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <div class="drop-hint" id="dropHint" hidden><span data-icon="plus"></span>Drop files to attach</div>
   </div>
 </body>
 </html>
