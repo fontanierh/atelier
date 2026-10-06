@@ -40,7 +40,7 @@ def watch(cmd, label, frames, deadline, stall):
         reader = threading.Thread(target=lambda: [lines.put(l) for l in p.stdout], daemon=True); reader.start()
         t0 = last_note = moved = time.monotonic(); done = 0
         try:
-            while reader.is_alive() or not lines.empty():
+            while p.poll() is None or reader.is_alive() or not lines.empty():
                 try:
                     line = lines.get(timeout=1)
                     if line.startswith('frame='):
@@ -53,7 +53,7 @@ def watch(cmd, label, frames, deadline, stall):
                     last_note = now
                     quiet = '' if now - moved < 10 else f', no frame progress for {now - moved:.0f} s'
                     print(f'{label}: frame {done}/{frames} ({100 * done / max(frames, 1):.0f}%), {now - t0:.0f} s{quiet}', flush=True)
-                if p.poll() is None and (now - t0 > deadline or now - moved > stall):
+                if now - t0 > deadline or now - moved > stall:
                     raise TimeoutError(f'{label}: {"no frame progress for %.0f s" % (now - moved) if now - moved > stall else "past its %.0f s deadline" % deadline}')
         except BaseException:
             if p.poll() is None:
