@@ -6,13 +6,14 @@ const icons = {
   remote:'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8M12 16v5M7 8l3 2-3 2M13 12h4"/>',
   activity:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
   search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
-  send:'<path d="M12 19V5M5 12l7-7 7 7"/>',
+  send:'<path d="M21.5 2.5 10.5 13.5M21.5 2.5l-7 19-4-8-8-4 19-7Z"/>',
   check:'<path d="m5 12 4 4L19 6"/>',
   back:'<path d="m15 5-7 7 7 7"/>',
   chevron:'<path d="m6 9 6 6 6-6"/>',
   right:'<path d="m9 5 7 7-7 7"/>',
   down:'<path d="M12 5v14M5 12l7 7 7-7"/>',
-  board:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  board:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  render:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
 };
 function node(tag, cls, text) { const n=document.createElement(tag); if(cls)n.className=cls; if(text!==undefined)n.textContent=text; return n; }
 function icon(name) { const n=node("span","icon"); n.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.messages}</svg>`; return n; }
@@ -56,11 +57,14 @@ function markdown(container, html, raw="") {
 // Ledger text is plain; only `code` spans are styled, everything else stays text.
 function inline(text) { const span=node("span"); text.split("`").forEach((part,i)=>span.append(i%2?node("code","",part):document.createTextNode(part))); return span; }
 function hue(name) { let h=0; for(const c of name)h=(h*31+c.charCodeAt(0))%360; return h; }
-function avatar(name, cls="avatar") {
-  const a=node("span",cls);
-  if(name==="*"){a.classList.add("everyone");a.append(icon("agents"));return a;}
-  a.textContent=name.replace(/[^a-z0-9]/gi," ").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";
-  a.style.setProperty("--hue",hue(name));return a;
+function initials(name) { return name.replace(/[^a-z0-9]/gi," ").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?"; }
+function statusOf(agent) { return !agent?"":agent.delivery_error?"error":agent.listening?"live":"idle"; }
+function orb(name, agent) {
+  const o=node("span","orb");
+  if(name==="*"||!name){o.classList.add("everyone");o.append(icon("agents"));return o;}
+  o.textContent=initials(name).slice(0,1);o.style.setProperty("--hue",hue(name));
+  if(agent&&!agent.stop)o.append(node("span","badge "+statusOf(agent)));
+  return o;
 }
 function clock(timestamp) { return new Date(timestamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); }
 function dayLabel(timestamp) {
@@ -95,7 +99,7 @@ $("backButton").addEventListener("click",()=>selectAgent(""));
 /* Search and filters */
 $("searchToggle").addEventListener("click",()=>{
   const show=$("searchBar").hidden;$("searchBar").hidden=!show;$("searchToggle").setAttribute("aria-expanded",String(show));
-  if(show)$("search").focus();
+  if(show&&!touch.matches)$("search").focus();
   else if($("search").value||$("topicFilter").value){$("search").value="";$("topicFilter").value="";syncPills();refreshFilters();}
   $("searchToggle").classList.toggle("active",show);
 });
@@ -147,42 +151,39 @@ function composerStatus(text, error=false) {
   if(text&&!error)statusTimer=setTimeout(()=>composerStatus(""),4000);
 }
 
-/* Agents: the list pane and the quick-switch chips share one render. */
+/* Agents: the list pane and the orb row share one render. */
 function renderAgents() {
   const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout])]);
   if(signature===agentsSignature)return; agentsSignature=signature;
   const live=liveAgents(), listening=live.filter(a=>a.listening).length, errors=live.filter(a=>a.delivery_error).length;
   $("agentsSummary").textContent=`${listening} of ${live.length} listening${errors?` · ${errors} retrying delivery`:""}`;
   $("agentsBadge").hidden=!errors;$("agentsBadge").textContent=errors;
-  const list=$("agents"), chips=$("agentChips");list.replaceChildren();chips.replaceChildren();
+  const list=$("agents"), orbs=$("agentChips");list.replaceChildren();orbs.replaceChildren();
   function row(name, agent) {
-    const b=node("button","agent-row"+(selectedAgent===name?" selected":"")+(agent?.stop?" retired":""));
-    b.type="button";b.setAttribute("role","listitem");if(selectedAgent===name)b.setAttribute("aria-current","true");
-    const face=node("span","avatar-wrap");face.append(avatar(name||"*"));
-    if(agent)face.append(node("span","status-dot"+(agent.delivery_error?" error":agent.listening?" live":"")));
-    const text=node("span","agent-text");text.append(node("span","agent-name",name||"Everyone"));
-    const detail=agent?[agentStatus(agent),agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean).join(" · "):`Broadcasts and all conversations`;
-    text.append(node("span","agent-detail",detail));b.append(face,text);
+    const chosen=selectedAgent===name;
+    const b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";b.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
+    const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));
+    if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
+    else detail.textContent=`Broadcasts and every conversation`;
+    text.append(detail);b.append(orb(name||"*",agent),text);
     if(agent?.pending)b.append(node("span","count",`${agent.pending} queued`));
-    b.append(icon("right"));
-    b.addEventListener("click",()=>selectAgent(name));list.append(b);
+    b.append(icon("right"));b.addEventListener("click",()=>selectAgent(name));list.append(b);
     if(agent?.stop)return;
-    const chip=node("button","chip"+(selectedAgent===name?" selected":""));chip.type="button";
-    if(selectedAgent===name)chip.setAttribute("aria-current","true");
-    if(agent)chip.append(node("span","status-dot"+(agent.delivery_error?" error":agent.listening?" live":"")));
-    chip.append(node("span","",name||"Everyone"));if(agent?.pending)chip.append(node("span","chip-count",String(agent.pending)));
-    chip.title=agent?`${name} · ${agentStatus(agent)}`:"All conversations";
-    chip.addEventListener("click",()=>selectAgent(name));chips.append(chip);
+    const o=node("button","orb-button");o.type="button";if(chosen)o.setAttribute("aria-current","true");
+    const face=orb(name||"*",agent);if(agent?.pending)face.append(node("span","count-badge",String(agent.pending)));
+    o.append(face,node("span","orb-name",name||"Everyone"));
+    o.append(node("span","orb-state "+statusOf(agent),agent?(agent.delivery_error?"Retrying":agent.listening?"Online":"Offline"):`${listening} online`));
+    o.title=agent?`${name} · ${agentStatus(agent)}`:"All conversations";
+    o.addEventListener("click",()=>selectAgent(name));orbs.append(o);
   }
   row("");
   for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
-  const chosen=chips.querySelector(".selected");
-  if(chosen&&(chosen.offsetLeft<chips.scrollLeft||chosen.offsetLeft+chosen.offsetWidth>chips.scrollLeft+chips.clientWidth))chips.scrollLeft=chosen.offsetLeft-12;
+  const current=orbs.querySelector('[aria-current="true"]');
+  if(current&&(current.offsetLeft<orbs.scrollLeft||current.offsetLeft+current.offsetWidth>orbs.scrollLeft+orbs.clientWidth))orbs.scrollLeft=current.offsetLeft-14;
 }
 function renderHeader() {
   const agent=state?.agents.find(a=>a.agent===selectedAgent), live=liveAgents(), listening=live.filter(a=>a.listening).length;
   $("chatTitle").textContent=selectedAgent||"Everyone";
-  $("chatAvatar").replaceChildren(avatar(selectedAgent||"*"));
   $("backButton").hidden=!selectedAgent;$("app").classList.toggle("in-conversation",Boolean(selectedAgent));
   const subtitle=$("chatSubtitle"), dot=node("span","dot");
   let text;
@@ -190,6 +191,7 @@ function renderHeader() {
   else if(!state){text="Connecting…";}
   else if(agent){dot.classList.add(agent.delivery_error?"error":agent.listening?"live":"idle");text=agentStatus(agent)+(agent.pending?` · ${agent.pending} queued`:"");}
   else {dot.classList.add(listening?"live":"idle");text=`${listening} of ${live.length} agents listening`;}
+  if(agent)dot.className="dot "+statusOf(agent);
   subtitle.replaceChildren(dot,node("span","",text));
 }
 
@@ -212,7 +214,8 @@ $("feed").addEventListener("scroll",()=>{
 },{passive:true});
 $("jumpLatest").addEventListener("click",()=>scrollToLatest(true));
 // Opening search, a growing draft or the keyboard shrinks the feed: stay pinned to the latest message.
-new ResizeObserver(()=>{$("chatPane").style.setProperty("--composer-height",`${$("broadcastForm").offsetHeight}px`);if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;}).observe($("feed"));
+const pin=new ResizeObserver(()=>{$("app").style.setProperty("--dock-h",`${$("broadcastForm").offsetHeight}px`);if(stickToBottom)$("feed").scrollTop=$("feed").scrollHeight;});
+pin.observe($("feed"));pin.observe($("broadcastForm"));
 function loadOlder() { if(loading||!records.size)return; prepending=true; load(false,Math.min(...records.keys())); }
 $("loadOlder").addEventListener("click",loadOlder);
 function jumpTo(id) {
@@ -268,10 +271,10 @@ function renderFeed() {
       // Consecutive automatic notices collapse into one quiet line.
       if(notices){notices.count++;notices.last=m;notices.ids.push(m.id);const sections=(m.body.match(/changed \(([^)]*)\)/)||[])[1];if(sections)sections.split(/,\s*/).forEach(s=>notices.sections.add(s));notices.update();continue;}
       const line=node("details","notice");line.dataset.ids=String(m.id);
-      const summary=node("summary"), text=node("span");summary.append(icon("board"),text);line.append(summary,node("p","",m.body));
+      const summary=node("summary"), text=node("span","notice-text"), when=node("time");summary.append(icon("board"),text,when);line.append(summary,node("p","",m.body));
       notices={count:1,first:m,last:m,ids:[m.id],sections:new Set(((m.body.match(/changed \(([^)]*)\)/)||[])[1]||"").split(/,\s*/).filter(Boolean)),
         update(){const what=/render scheduling board changed/i.test(this.last.body)?`Render schedule updated${this.sections.size?` · ${[...this.sections].join(", ")}`:""}`:`${this.last.sender}: ${this.last.body.slice(0,80)}`;
-          text.textContent=`${what}${this.count>1?` · ${this.count}×`:""} · ${clock(this.last.created)}`;line.dataset.ids=this.ids.join(" ");line.lastElementChild.textContent=this.last.body;}};
+          text.textContent=`${what}${this.count>1?` · ${this.count}×`:""}`;when.textContent=clock(this.last.created);line.dataset.ids=this.ids.join(" ");line.lastElementChild.textContent=this.last.body;}};
       notices.update();out.append(line);previous=null;continue;
     }
     notices=null;
@@ -279,18 +282,17 @@ function renderFeed() {
     const continued=previous&&previous.sender===m.sender&&previous.recipient===m.recipient&&previous.topic===m.topic&&m.created-previous.created<300&&!group.broadcast&&!previous.broadcast;
     const article=node("article","message"+(mine?" mine":"")+(continued?" continued":"")+(m.topic==="alert"||m.topic==="blocked"?" urgent":""));
     article.dataset.ids=group.messages.map(item=>item.id).join(" ");
-    if(!mine)article.append(continued?node("span","avatar-space"):avatar(m.sender));
-    const column=node("div","message-column");
+    if(!mine)article.append(continued?node("span","orb-space"):orb(m.sender));
+    const column=node("div","message-column"), bubble=node("div","card bubble");
     if(!continued) {
       const meta=node("div","meta");
-      if(!mine)meta.append(node("span","sender",m.sender));
+      meta.append(node("span","sender",mine?"You":m.sender));
       const to=group.broadcast||m.recipient==="*"?"everyone":m.recipient===state.sender?"you":m.recipient;
-      meta.append(node("span","route",mine?`To ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`:`to ${to}`));
+      meta.append(node("span","route",`to ${to==="everyone"&&group.broadcast?`everyone (${group.messages.length})`:to}`));
       if(m.topic!=="info")meta.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
       const time=node("time","time",clock(m.created));time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;meta.append(time);
-      column.append(meta);
+      bubble.append(meta);
     }
-    const bubble=node("div","bubble");
     if(m.reply_to) {
       const original=records.get(m.reply_to), quote=node("button","quote");quote.type="button";
       quote.append(node("span","quote-who",original?(original.sender===state.sender?"You":original.sender):`Reply to #${m.reply_to}`));
