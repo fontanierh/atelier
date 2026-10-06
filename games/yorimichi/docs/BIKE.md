@@ -10,11 +10,15 @@ gamepad), rides it on the island's ground with the walking physics, and parks it
 |---|---|---|
 | Bike out and on / off and parked (stopped) | V | Hold Y (0.4 s; a tap is still the skateboard) |
 | Pedal / brake / steer | W / S / A, D | Left stick |
-| Pedal hard | Shift | Sprint |
+| Pedal hard (on / off) | Shift | Sprint (press the left stick) |
 | Hop | Space | Jump |
 | Skid stop | C | Crouch |
 | Bell | Left click | Attack |
 | Wave | Q | |
+
+He cruises at up to 22 km/h (600 cm/s). Pedalling hard is a toggle: one press and he pulls away harder, up to 43 km/h
+(1200 cm/s), and keeps it while he pedals. It ends at a second press, a brake, a skid, a stop or when he stops pedalling
+for more than 0.6 s. Above cruising speed the hub's higher gears keep his legs from spinning with the wheels.
 
 Getting off needs him stopped (the HUD says "Slow down to get off"). Getting the bike out needs level ground beside
 him: it appears at his left, facing his way or the nearest clear way (30 and 60 degrees either side, or behind). V
@@ -41,17 +45,41 @@ the next V brings it out fresh.
   and the ride. Each tick it sets his speed and heading before the movement component moves him (floors, slopes and
   walls stay the walking physics'), runs the clip clock (the ride loop turns with the wheels, one crank turn per
   2.3 m, and stops when he freewheels) and poses the parts from the clip's channels plus the live steering and wheel
-  roll. Rider and bike lean into turns together about the ground line. A new clip blends in over 0.2 s, the bike's
+  roll. Rider and bike lean into turns together about the ground line, and pitch to the ground under the two wheels
+(the walking capsule stays level on one point, so on a rise the front wheel used to sink in). The material's shaders
+are finished when the component starts, so the first summon never draws the bike in the default material. A new clip blends in over 0.2 s, the bike's
   channels on the same curve as the rider's pose, and the ride loop starts at the crank's current angle.
 - The animation instance plays the component's clip at the component's clock. `FBikeGripNode` (AtelierAnimation)
   keeps his hands on the bars as the player steers past the clip's own steering: each gripping hand moves with its
   grip and turns with the bars, and the arm is re-solved in its authored bend plane.
 
+## Sounds
+
+`assets/audio/bike/make.py` (step `audio.bike`) synthesises them with the skateboard's DSP helpers and two Sonniss
+masters, and `unreal.sounds` imports them to `/Game/Audio/Bike` (`import_bike_audio.py`). `UBikeComponent` plays:
+
+- **Loops on the bike:**
+  - The tyres, by the ground under them. A complex trace through `USkateSettings::SurfaceAt` uses the skateboard's
+    surface tables. Smooth ground (concrete, asphalt, metal) has its own loop, and so do wood planks, cobbles, gravel
+    and dirt (sand too) and grass.
+  - The freewheel ticking while he coasts, at the wheel's rate.
+  - The chain while he pedals (one loop is one crank turn, played at the cadence).
+  - Wind above about 13 km/h.
+  - The back tyre skidding, with a gravel version on soft ground.
+- **One-shots at the clips' key times:** the saddle creaking as he sits and hops, the stand flipping up and coming
+  down, the bell's two thumb strikes, the hop's landing, and the crash into the wall followed by the bike falling on
+  its side.
+- **Other one-shots:** a landing after a drop (louder for a harder fall) and the basket rattling over cobbles and
+  gravel at speed.
+
 ## Checking it
 
 `uv run python games/yorimichi/tools/review_bike.py` (under the render guard, after the steps above and
 `unreal.compile`) launches the island, finds open level ground near the towns, and rides every move on a fixed 60 fps
-step (`scenarios/bike_live.py`). The crash is into a test wall (`live.L.test_wall`) put up 11 m ahead. It checks the
-recorded states, speeds, turns, parking and crash, and writes `build/yorimichi/bike/review/` with `checks.json`,
-stills and `bike.mp4`. The live bridge has `live.bike()`, `live.bike_state()` and `live.press('jump' | 'crouch' |
-'attack' | 'wave')` for trying things by hand.
+step (`scenarios/bike_live.py`). The crash is into a test wall (`live.L.test_wall`) put up 11 m ahead. On the same run with the wall gone, he rides a
+test ramp (`live.L.test_ramp`, 12.5 degrees up to 1 m, then a drop), and both wheels must stay on the ground and the
+ramp. It checks the
+recorded states, speeds, turns, the sprint toggle, parking and crash, and writes `build/yorimichi/bike/review/` with
+`checks.json`, stills, `bike.mp4` and `bike_sound.mp4`. The second is the same film with its soundtrack, mixed from
+the sounds the game played and the bike's loops every frame (`skate_mix_showreel.mix`). The live bridge has
+`live.bike()`, `live.bike_state()` and `live.press('jump' | 'crouch' | 'attack' | 'wave' | 'sprint')` for trying things by hand.

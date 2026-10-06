@@ -15,6 +15,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/HitResult.h"
 #include "Materials/MaterialInterface.h"
 #include "Engine/SkeletalMesh.h"
 #include "PhysicsEngine/BodySetup.h"
@@ -485,6 +486,20 @@ namespace
         }
         return Out;
     }
+}
+
+ESkateSurface USkateSettings::SurfaceAt(const FHitResult& Hit)
+{
+    const USkateSettings& Settings=*GetDefault<USkateSettings>();
+    if (const UStaticMeshComponent* C=Cast<UStaticMeshComponent>(Hit.GetComponent()))
+    {
+        const ESkateSurface Own=ComponentSurface(C,C->GetStaticMesh(),Settings);
+        if (Own!=ESkateSurface::None) return Own;
+        int32 Section=INDEX_NONE;
+        if (const UMaterialInterface* Material=Hit.FaceIndex>=0 ? C->GetMaterialFromCollisionFaceIndex(Hit.FaceIndex,Section) : nullptr)
+            if (const ESkateSurface* Found=Settings.SurfaceMaterials.Find(SurfaceKey(Material->GetName()))) return *Found;
+    }
+    return Settings.DefaultSurface;
 }
 
 namespace skate_native=atelier::skate;

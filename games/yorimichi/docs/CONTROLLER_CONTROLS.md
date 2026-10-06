@@ -34,7 +34,7 @@ controls: see [SKATE.md](SKATE.md).
 
 Getting on the board while running carries the running speed onto it. Riding, the right stick (or the mouse with the
 left button held) is Flick-It, not the camera. On the sailboat the left stick steers and raises or lowers the sail.
-On the bike (see [BIKE.md](BIKE.md)) the left stick pedals, brakes and steers, Sprint pedals hard, Jump hops, Crouch
+On the bike (see [BIKE.md](BIKE.md)) the left stick pedals, brakes and steers, a press of Sprint (the left stick) pedals hard until pressed again or he stops pedalling, Jump hops, Crouch
 is a skid stop, Attack rings the bell and Wave waves.
 
 The player plays the merged move set (Link, and Cairo whenever it is built; see [the move set](../assets/characters/botw/README.md#the-merged-move-set)),

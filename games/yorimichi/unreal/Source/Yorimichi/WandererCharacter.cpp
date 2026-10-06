@@ -411,6 +411,8 @@ void AWandererCharacter::Sprint(const FInputActionValue& V)
     // A sprint pressed on foot with the skateboard takes over from it on the ground, as soon as the skate component lets
     // it while the button is held (only the press: a board taken while sprinting stays in hand).
     const bool bHeld = V.Get<bool>();
+    // On the bike a press toggles pedalling hard (no holding the stick down while steering with it).
+    if (bHeld && !bSprintHeld && Bike->IsRiding()) { bSprintHeld = true; if (bReady && !bMenuOpen) Bike->ToggleSprint(); return; }
     if (bHeld && !bSprintHeld) bSprintTakeOver = true;
     bSprintHeld = bHeld;
     if (bSprintTakeOver && (!bHeld || (bReady && !bMenuOpen && GetCharacterMovement()->IsMovingOnGround() && TakeOverFromSkate(false))))
@@ -588,6 +590,7 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("skate_feel")) { if (!Preferences) return false; Preferences->OpenSkateMenu(); }   // the menu's Skate feel page
     else if (Button == TEXT("bike")) ToggleBike(FInputActionValue(true));
     else if (Button == TEXT("horse")) ToggleHorse(FInputActionValue(true));
+    else if (Button == TEXT("sprint")) { Sprint(FInputActionValue(true)); Sprint(FInputActionValue(false)); }   // a tap (the bike's toggle)
     else if (Button == TEXT("wave")) Wave(FInputActionValue(true));
     else return false;
     return true;
@@ -1228,7 +1231,7 @@ void AWandererCharacter::Tick(float Dt)
     if (PhoneInput) PhoneInput->Tick(Dt);
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
     Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
-    Bike->SetInput(MoveIntent,bSprintHeld,bMenuOpen || (Map && Map->IsOpen()));
+    Bike->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
     Horse->SetInput(MoveIntent,bSprintHeld,bWalk,bMenuOpen || (Map && Map->IsOpen()));
     if (!OnVehicle() && !SkateRide->IsRiding())   // keep state time aligned while settings are open
     {

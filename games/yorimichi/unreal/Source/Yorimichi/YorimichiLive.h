@@ -41,8 +41,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeState();
     /** A plain blocking wall for tests (the bike's crash): Size cm (thickness, width, height) standing on Ground, facing Yaw. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool TestWall(FVector Ground, float Yaw, FVector Size);
+    /** A test ramp facing Yaw: from Start on the ground it rises Rise cm over Length cm, then drops off (the bike's slopes). */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestRamp(FVector Start, float Yaw, float Length, float Rise, float Width = 300.f);
+    /** Removes the test walls and ramps; returns how many. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static int32 ClearTests();
     /** The skate loops now: "volume pitch" for roll, grind, slide, skid and scrape. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateLoops();
+    /** The bike's loops, "volume pitch" each (UBikeComponent::GetLoopState). */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeLoops();
     /** Filming the skating: the HUD keeps only the trick line and the balance needle. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void FilmHud(bool bOn);
     /** The GPU's time for the last frame (ms), as stat unit shows it: pricing a setting in place. */
