@@ -5,10 +5,10 @@ The Atelier Skate plugin (module `AtelierSkate`) puts an Unreal character on a s
 contacts and constraints, steering and pushes, Flick-It gestures, manuals and powerslides, grinds, pumping, airs,
 landings and bails, with the recovered animation graphs, trick scoring and skating camera. The game supplies nearby
 static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
-`Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two and retargets the solved rider onto the game's
-character. Under the Ride backend the character's body is an active ragdoll that takes over in bails and plays the
-transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's systems, the data
-bundle and how both are verified.
+`Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two, and `SkateRetarget.cpp` retargets the solved rider
+onto the game's character. Under the Ride backend the character's body is an active ragdoll that takes over in bails
+and plays the transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's
+systems, the data bundle and how both are verified.
 
 ## Adding it to a game
 

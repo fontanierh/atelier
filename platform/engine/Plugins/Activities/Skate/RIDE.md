@@ -7,7 +7,7 @@ controls, recognises the tricks, scores them, decides landings and bails, poses 
 hosts the ride in CharacterMovement, retargets Native's pose onto the game's character, makes that character an active
 ragdoll with Chaos and Physics Control, takes over the body in a bail, gets it up, and plays the transitions on and off
 the board from Native's clips. Ride's sources are in `Source/AtelierSkate/Private/Ride/`; the glue between Native and
-Unreal is `Source/AtelierSkate/Private/SkateRuntime.cpp` and `SkateComponent.cpp`.
+Unreal is `Source/AtelierSkate/Private/SkateRuntime.cpp` (with `SkateRuntimeDetail.h` and `SkateRetarget.cpp`) and `SkateComponent.cpp`.
 
 Native's own backend (`skate.Backend Native`: the session's pose with no physical body, no transitions and no Chaos
 bails) is kept only as the reference that QA and replays compare the ride against. Games do not offer it to players.
@@ -40,7 +40,7 @@ and the engine. Native's file names are its families in `Private/Native/` (see [
 | Get-up | Unreal | The body's snapshot blends into a get-up clip (`BlendFromSnapshot`); `GetUpFromNativeBail` (`RideComponent.cpp`) starts the next ride on a fresh session where the body lies. |
 | Mount, dismount, carry, run-out, kick-out, caveman, step-on | Unreal | `RideTransition*`: Native's clips played by Ride's clip player (`FRideClipPlayer`, `RideClipPlayer.h`) and retargeted like a ride. See [Transitions](#transitions). |
 | Native's on-foot states | Native, handed to Unreal | When Native's rider leaves the board on foot by itself (`BipedGround` for 0.2 s outside a bail or get-up), `TakeNativeOnFoot` (`RideComponent.cpp`) suspends the session, puts the character on its feet with the rider's velocity and lets the board roll on from Native's deck (U120). |
-| Riding pose | Native, then Unreal | Native's motion graph and animation (`MotionGraph*`, `RidingAnimation*`, `Skeleton*`, `Footplant*`, `FootIk*`) give the pose; `RetargetRetailPose` (`SkateRuntime.cpp`) fits it onto the character; `FAnimNode_SkateRider` shows it with inertialization. See [Rider pose](#rider-pose). |
+| Riding pose | Native, then Unreal | Native's motion graph and animation (`MotionGraph*`, `RidingAnimation*`, `Skeleton*`, `Footplant*`, `FootIk*`) give the pose; `RetargetRetailPose` (`SkateRetarget.cpp`) fits it onto the character; `FAnimNode_SkateRider` shows it with inertialization. See [Rider pose](#rider-pose). |
 | Active ragdoll | Unreal | `URidePhysicalRider` and `URidePhysicsControl`: the character's bodies follow the retargeted pose. See [Physical rider](#physical-rider). |
 | Camera | Native while riding | Native's camera (`Camera*`, `GrindCamera`), returned by `GetRetailCamera`. In a Chaos bail it returns nothing and the game's own camera follows. The game converts the vertical FOV and blends its own camera in and out. |
 | Audio | Unreal | `USkateComponent::UpdateAudio` loops roll, grind, slide, skid and scrape by mode and speed; one-shots play on Native's changes of mode (`pop` on take-off, `land`, `clatter` on a bail). The push, flick, catch and fall sounds are loaded but not played (H62). |
@@ -58,7 +58,7 @@ Measured with `wc -l` on this tree, headers included:
 | `Private/Native/` | 769 (410 `.cpp`, 359 `.h`) | about 59,400 (43,273 + 16,088) | All of the riding, as recovered |
 | `Private/Ride/` with the solver (`479a895`) | 23 | 11,492 | The body, bails, get-up, transitions and the solver |
 | of which the solver's own files (`RideSession.*`, `RideFlick.*`, `RideManual.*`, `RideNative.cpp`, `RideSpeedModel.*`) | 9 | 3,555 | Removed; about 4,000 with its parts of `RideTuning.*`, `RideComponent.cpp` and `RideAnimator.*` (inferred) |
-| The glue (`SkateRuntime.cpp`, `SkateComponent.*`, `SkatePad.h`, `AnimNode_SkateRider.*`, `AnimNode_RideInertialization.*`, `SkateRails.*`, `SkateSettings.*`, `SkateFeel.h`, `SkateInput.h`, `SkateRider.h`, `AtelierSkateModule.cpp`) | 16 | about 4,000 | Hosting, snapshot, threading, retarget, audio, HUD |
+| The glue (`SkateRuntime.cpp`, `SkateRuntimeDetail.h`, `SkateRetarget.cpp`, `SkateComponent.*`, `SkatePad.h`, `AnimNode_SkateRider.*`, `AnimNode_RideInertialization.*`, `SkateRails.*`, `SkateSettings.*`, `SkateFeel.h`, `SkateInput.h`, `SkateRider.h`, `AtelierSkateModule.cpp`) | 18 | about 4,100 | Hosting, snapshot, threading, retarget, audio, HUD |
 
 "Ported" here means Unreal code does the job and Native's version of it does not run. By that measure the ride's
 **body** is ported: the active ragdoll, the bail ragdoll, the get-up, the transitions on and off the board, the
@@ -162,7 +162,7 @@ stance (`riding_switch`, `fakie`).
 
 ## Rider pose
 
-`RetargetRetailPose` (`SkateRuntime.cpp`) fits Native's skeleton onto the character through the bone contract
+`RetargetRetailPose` (`SkateRetarget.cpp`) fits Native's skeleton onto the character through the bone contract
 (`ISkateRider::GetSkateBone`): it scales the pose by the hip-to-foot height ratio, keeps the character's bind bone
 lengths, solves both legs with two-bone IK to Native's feet, traces the feet to the ground (`skate.FootGround`,
 0.5 cm), keeps the arms clear of the body outside bails (`ClearArms`, `skate.ArmClear`, 2 cm), and in a grab hooks the
