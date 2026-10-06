@@ -80,7 +80,7 @@ private:
  bool bSprint=false,bMenu=false,bAssetsReady=false,bParked=false;
  float Coast=0;   // s since he last pedalled, for ending the sprint
  // The ground under the wheels: he and the bike pitch to it and sit on it between them (cm), snapped on getting on.
- float GroundPitch=0,GroundOffset=0; bool bSnapGround=false;
+ float GroundPitch=0,GroundOffset=0,WheelGround[2]={0,0}; bool bSnapGround=false;   // WheelGround: front, rear (cm)
  void FollowGround(float Dt);
  /** M_Bike's shaders are made (editor builds; bFinish: wait for them). */
  bool MaterialsReady(bool bFinish) const;

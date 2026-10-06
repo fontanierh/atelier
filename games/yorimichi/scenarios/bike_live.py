@@ -111,8 +111,8 @@ STEPS = [
     (14.25, lambda: live.press('jump_release')),
     (14.5, lambda: still('09_hop')),
     (15.6, lambda: camera('game')),
-    (15.7, lambda: drive(1., .25)),
-    (16.9, lambda: still('10_fast')),
+    (15.7, lambda: drive(.7, -.2)),   # bearing away from the station's walls (the sprint has its own run)
+    (16.9, lambda: still('10_cruise')),
     (17.6, lambda: camera('track', **REAR3, fov=50.)),
     (18.0, lambda: (drive(0.), live.press('crouch'))),
     (18.45, lambda: still('11_skid')),

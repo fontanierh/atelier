@@ -386,7 +386,7 @@ void UBikeComponent::Park()
    Rider->SetActorLocation(At,false,nullptr,ETeleportType::TeleportPhysics);
  }
  M->bForceNextFloorCheck=true;
- State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;
+ State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;
  for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
 
@@ -403,7 +403,7 @@ void UBikeComponent::StowImmediately()
   if(bParked)BikeRoot->AttachToComponent(Rider->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale);
   BikeRoot->SetVisibility(false,true);
  }
- bParked=false;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=0.f;Displayed.Reset();Hint=TEXT("V bike");bSprint=false;
+ bParked=false;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=0.f;Displayed.Reset();Hint=TEXT("V bike");bSprint=false;
  for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
 
@@ -510,9 +510,8 @@ float UBikeComponent::GetPoseTime() const
 void UBikeComponent::FollowGround(float Dt)
 {
  // The walking capsule stands level on one point under him, so on a rise the front wheel sank into the ground (and on
- // a dip it hung in the air). Find the ground under each wheel; he and the bike pitch about the ground line under him
- // to the slope between them and sit on it there.
- float WantPitch=0.f,WantOffset=0.f;
+ // a dip it hung in the air). Find the ground under each wheel: each wheel rises with the ground at once (so it never trails into a rise) and eases down when it falls away.
+ float Want[2]={0.f,0.f};
  if(Rider->GetCharacterMovement()->IsMovingOnGround()&&State!=EState::Crashing)
  {
   const FTransform Base=FTransform(MeshRotation,MeshLocation)*Rider->GetActorTransform();
@@ -524,14 +523,14 @@ void UBikeComponent::FollowGround(float Dt)
    Z=H.ImpactPoint.Z-Base.GetLocation().Z;return true;
   };
   float Front,Rear;
-  if(GroundAt(FrontAxle.X,Front)&&GroundAt(RearAxle.X,Rear))
-  {
-   WantPitch=FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(Front-Rear,FrontAxle.X-RearAxle.X)),-25.f,25.f);
-   WantOffset=FMath::Clamp(Rear-(Front-Rear)*RearAxle.X/(FrontAxle.X-RearAxle.X),-25.f,25.f);
-  }
+  if(GroundAt(FrontAxle.X,Front)&&GroundAt(RearAxle.X,Rear)){Want[0]=FMath::Clamp(Front,-40.f,40.f);Want[1]=FMath::Clamp(Rear,-40.f,40.f);}
  }
- if(bSnapGround){GroundPitch=WantPitch;GroundOffset=WantOffset;bSnapGround=false;}
- else{GroundPitch=FMath::FInterpTo(GroundPitch,WantPitch,Dt,20.f);GroundOffset=FMath::FInterpTo(GroundOffset,WantOffset,Dt,20.f);}
+ for(int32 I=0;I<2;++I)WheelGround[I]=bSnapGround||Want[I]>WheelGround[I]?Want[I]:FMath::FInterpTo(WheelGround[I],Want[I],Dt,20.f);
+ bSnapGround=false;
+ // He and the bike pitch about the ground line under him to the slope between the wheels and sit on it there.
+ const float Wheelbase=FrontAxle.X-RearAxle.X;
+ GroundPitch=FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(WheelGround[0]-WheelGround[1],Wheelbase)),-25.f,25.f);
+ GroundOffset=FMath::Clamp(WheelGround[1]-(WheelGround[0]-WheelGround[1])*RearAxle.X/Wheelbase,-25.f,25.f);
 }
 
 FVector2D UBikeComponent::GetWheelGaps() const

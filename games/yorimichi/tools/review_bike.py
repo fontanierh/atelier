@@ -173,17 +173,23 @@ def check(rows, sites):
             record('crash_bike_down', end['state'] == '0' and abs(roll) > 50, f"end state={end['state']}, bike roll {roll:.0f} deg")
     else:
         record('crash', False, 'no clear 13 m run found near the towns: pass --crash x,y,yaw')
-    # Wheels on the ground: neither sinks in while he rides on the ground, on the level or up the test ramp.
+    # Wheels on the ground: neither sinks in while he rides on the ground, on the level or up the test ramp. The walking
+    # capsule steps down over a kink in the terrain a few cm in one frame, so a sink counts once it lasts three frames
+    # (the reported bug was a front wheel buried for as long as he rode a slope); one frame may not go past 9 cm.
     def gaps(r): return vec(r['gaps'])
-    rolling = [r for r in rows if r['seg'] in ('ride', 'sprint', 'slope') and r['state'] == '2' and r.get('air') == '0' and r['clip'] in ('BikeRide', 'BikeFootDown')]
-    if rolling:
-        worst = min(rolling, key=lambda r: min(gaps(r)))
-        record('wheels_not_sunk', min(gaps(worst)) > -6., f"lowest wheel {min(gaps(worst)):.1f} cm (front, rear {worst['gaps']}) at {worst['seg']} t={worst['t']}")
+    for seg in ('ride', 'sprint', 'slope'):
+        rolling = [r for r in rows if r['seg'] == seg and r['state'] == '2' and r.get('air') == '0' and r['clip'] in ('BikeRide', 'BikeFootDown')]
+        if len(rolling) < 3: continue
+        low = [min(gaps(r)) for r in rolling]
+        held = max(range(len(low) - 2), key=lambda i: -max(low[i:i + 3]))
+        lasting, worst = max(low[held:held + 3]), min(low)
+        record(f'wheels_not_sunk_{seg}', lasting > -4. and worst > -9.,
+               f"deepest sink lasting 3 frames {lasting:.1f} cm (t={rolling[held]['t']}), deepest single frame {worst:.1f} cm")
     slope = rows_of(rows, 'slope')
     if slope:
         # On the ramp (pitched within 1 degree of its 12.5): both wheels on its face. Off its top the front wheel rightly
         # hangs over the drop, so those rows are not counted.
-        up = [r for r in slope if r['state'] == '2' and r.get('air') == '0' and num(r, 'groundpitch') > 11.5]
+        up = [r for r in slope if r['state'] == '2' and r.get('air') == '0' and num(r, 'groundpitch') > 11.5][3:]   # settled onto it
         on = [max(abs(g) for g in gaps(r)) for r in up]
         record('ramp_pitch', len(up) > 20 and max(on) < 3., f"{len(up)} rows pitched up the ramp, top {max((num(r, 'groundpitch') for r in slope), default=0):.1f} deg, "
                f"wheels within {max(on, default=0):.1f} cm of it")
