@@ -9,7 +9,7 @@ The Unreal imports run in the order the prototype established: `setup_project.py
 the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
 after it. The player is installed in the prototype's three layers (full, sword, armed) from one source blend.
 """
-import importlib.util, json, shutil, os
+import importlib.util, json, os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -44,38 +44,15 @@ def cairo_roles():
     return combat, armed, roles
 
 
-# Runtime files the game reads through AtelierDataPath, relative to unreal/Content/Data. Each is also an output of
-# data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
-STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
-          'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json',
-          'treehouse/runtime.json', 'megapark/park.json', 'bike/manifest.json', 'cairo/bike/export.json')
-
-
-def communitypark(out):
-    """The private community park's fetched source (docs/COMMUNITY_PARK.md), or None: the island builds without it."""
-    source = out / 'communitypark' / 'source' / 'megapark-textured.glb'
-    return source if source.is_file() else None
-
-
-def staged(out):
-    return STAGED + (('communitypark/park.json',) if communitypark(out) else ())
-
-
-def staged_source(out, rel):
-    """Where a staged file comes from: build output, except the committed park."""
-    return {'skatepark/park.json': REGIONS / 'skatepark' / 'park.json'}.get(rel, out / rel)
-
-
-def stage_data(ctx, log):
-    """Copy the runtime files the game reads into unreal/Content/Data."""
-    data = paths.content_data(ctx.game)
-    for rel in staged(ctx.out):
-        dst = data / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(staged_source(ctx.out, rel), dst)
-        log.write(f'staged {rel}\n')
-    if not communitypark(ctx.out):
-        (data / 'communitypark' / 'park.json').unlink(missing_ok=True)
+# Keep the recipe's helpers available while the staging implementation has its own narrow input.
+_spec = importlib.util.spec_from_file_location('yorimichi_runtime_data', GAME / 'runtime_data.py')
+runtime_data = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(runtime_data)
+STAGED = runtime_data.STAGED
+communitypark = runtime_data.communitypark
+staged = runtime_data.staged
+staged_source = runtime_data.staged_source
+stage_data = runtime_data.stage_data
 
 
 @dataclass
@@ -514,7 +491,7 @@ def steps(ctx):
              outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
     ] + communitypark_steps(out) + [
         Step('data.stage', [Call('stage_data', stage_data)],
-             inputs=[REGIONS / 'skatepark' / 'park.json'],
+             inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
