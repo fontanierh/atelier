@@ -15,6 +15,7 @@ from megapark import placement
 from atelier.build import Context
 from atelier.safety import guarded
 from atelier.safety.guard import attach as attach_memory_guard, reap
+from atelier.safety.process import spawn_game
 from atelier import live
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker',action='store_true',help=argparse.SUPPRESS)
@@ -62,7 +63,7 @@ if args.shots:SHOTS=[s for s in SHOTS if s[0] in args.shots.split(',')]
 (out/'passed.json').unlink(missing_ok=True)
 log=(out/'game.log').open('w')
 cmd=[str(ctx.unreal_app),str(ctx.uproject),'/Game/Japan/Maps/Slice' if args.island else '/Game/MegaPark/Maps/SuperUltraMegaPark','-game','-windowed','-resx=1600','-resy=1000','-nosplash','-stdout',f'-liveport={args.port}','-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost','-preferencesfile='+str(out/'settings.txt')]+([] if args.island else ['-set=painterly=0;toon=0;outline=0;wind=0;exposure=0;saturation=1'])+['-ExecCmds=t.MaxFPS 60,r.RHISetGPUCaptureOptions 0,DisableAllScreenMessages']
-p=subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT)
+p=spawn_game(cmd,stdout=log,stderr=subprocess.STDOUT)
 guards=ExitStack()
 monitor=None
 def run(code):

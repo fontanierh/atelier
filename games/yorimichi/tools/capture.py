@@ -21,6 +21,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from benchmark import other_render_processes
 from contextlib import ExitStack
 from atelier.safety.guard import attach as attach_memory_guard, reap
+from atelier.safety.process import spawn_game
 from atelier.safety.render_lock import render_lock
 
 
@@ -73,7 +74,7 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
     with ExitStack() as stack:
         stack.enter_context(render_lock(f'trailer {session}/{name}'))
         log=stack.enter_context((folder/'stdout.log').open('w'))
-        shot=subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT)
+        shot=spawn_game(cmd,stdout=log,stderr=subprocess.STDOUT)
         stack.callback(reap,shot)
         monitor=stack.enter_context(attach_memory_guard(shot.pid,folder/'memory-health.json',duration=1840))
         deadline=time.monotonic()+1800

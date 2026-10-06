@@ -36,6 +36,7 @@ def source(event, audio=None):
     audio = Path(audio or ROOT / 'audio')
     name = event['sound'].split('.')[-1]
     if '/Audio/Skate/' in event['sound']: path = audio / 'skate' / name.rsplit('_', 1)[0] / f'{name}.wav'
+    elif '/Audio/Bike/' in event['sound']: path = audio / 'bike' / name.rsplit('_', 1)[0] / f'{name}.wav'
     elif '/Audio/Combat/' in event['sound']: path = audio / 'combat' / name.rsplit('_', 1)[0] / f'{name}.wav'
     elif '/Audio/Footsteps/' in event['sound']: path = audio / 'footsteps' / event['sound'].split('/')[-2] / f'{name}.wav'
     else: path = None
@@ -58,11 +59,12 @@ def load(take):
     return done['film_frames'], cams, rows, events
 
 
-def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None, music=None, title=None):
+def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None, music=None, title=None, loops=('skate', LOOPS)):
     """Mix the sounds under `frames` film frames (the ffmpeg input `pattern`, 30 fps) and encode the MP4s. cams: per
     film frame [frame, x, y, z, yaw, ...] (Unreal cm, degrees); rows: the loops' 'volume pitch' x5 per 60 Hz frame;
     events: the one-shots, their 'frame' on the 60 Hz clock (negative: before the film). music: a soundtrack WAV under
-    the mix; title: text over the first five seconds."""
+    the mix; title: text over the first five seconds; loops: the folder and names the rows' loops are in (the bike's:
+    review_bike.py)."""
     audio = Path(audio or ROOT / 'audio')
     seconds = frames / FILM
     length = int(seconds * RATE)
@@ -87,8 +89,9 @@ def mix(take, pattern, frames, cams, rows, events, out='showreel', audio=None, m
     rows = [list(map(float, line.split())) for line in rows]
     sim_t = np.arange(len(rows)) / SIM
     t = np.arange(length) / RATE
-    for k, cue in enumerate(LOOPS):
-        path = audio / f'skate/{cue}/{cue}_01.wav'
+    folder, names = loops
+    for k, cue in enumerate(names):
+        path = audio / f'{folder}/{cue}/{cue}_01.wav'
         if not path.exists(): continue          # an older build without the surface rolls
         wav = read(path)
         vol = np.interp(t, sim_t, [r[2 * k] if len(r) > 2 * k else 0. for r in rows])

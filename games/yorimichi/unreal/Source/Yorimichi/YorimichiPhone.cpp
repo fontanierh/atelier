@@ -2,6 +2,7 @@
 #include "AtelierStream.h"
 #include "WandererCharacter.h"
 #include "SailboatComponent.h"
+#include "BikeComponent.h"
 #include "JapanPreferences.h"
 #include "JapanMap.h"
 #include "ZeppelinService.h"
@@ -136,6 +137,7 @@ void FYorimichiPhone::Tick(float Dt)
     C->MoveIntent = C->bMenuOpen ? FVector2D::ZeroVector : Move;
     C->bJog = (In.Buttons & Walk) != 0;
     C->bSprintHeld = (In.Buttons & Sprint) != 0;
+    if ((Pressed & Sprint) && !C->bMenuOpen && C->GetBike()->IsRiding()) C->GetBike()->ToggleSprint();   // on the bike a press toggles
     if (C->Controller && !C->bMenuOpen)
     {
         FRotator R = C->Controller->GetControlRotation();

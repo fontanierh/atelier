@@ -33,6 +33,7 @@ from mega.layout import ORIGIN
 from atelier.build import Context
 from atelier.safety import guarded
 from atelier.safety.guard import attach as attach_memory_guard, reap
+from atelier.safety.process import spawn_game
 from atelier import live
 from desktop_preview import bridge_bind_error, command as desktop_command, read_preferences, renderer_arguments, toggle
 
@@ -146,7 +147,7 @@ if args.desktop_profile:
                           extra=['-nofox', f'-liveport={args.port}',
                                  '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost',
                                  *(['-rider=CairoBotw'] if args.rider == 'CairoBotw' else [])])
-p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
+p = spawn_game(cmd, stdout=log, stderr=subprocess.STDOUT)
 guards = ExitStack(); monitor = None
 
 

@@ -263,8 +263,8 @@ void AJapanHUD::DrawHUD()
     {
         const float Kmh=Bike->GetSpeed()*.036f;
         Controls=bController
-            ? FString::Printf(TEXT("Left stick pedal / brake / steer   Hold %s pedal hard   %s hop   %s skid stop   %s bell   Hold %s get off (stopped)      %s   %.0f km/h"),Pad.Sprint,Pad.Jump,Pad.Crouch,Pad.Attack,Pad.Skate,*Bike->GetStatus(),Kmh)
-            : FString::Printf(TEXT("W pedal   S brake   A / D steer   Shift pedal hard   Space hop   C skid stop   Left click bell   Q wave   V get off (stopped)      %s   %.0f km/h"),*Bike->GetStatus(),Kmh);
+            ? FString::Printf(TEXT("Left stick pedal / brake / steer   %s pedal hard (on / off)   %s hop   %s skid stop   %s bell   Hold %s get off (stopped)      %s   %.0f km/h"),Pad.Sprint,Pad.Jump,Pad.Crouch,Pad.Attack,Pad.Skate,*Bike->GetStatus(),Kmh)
+            : FString::Printf(TEXT("W pedal   S brake   A / D steer   Shift pedal hard (on / off)   Space hop   C skid stop   Left click bell   Q wave   V get off (stopped)      %s   %.0f km/h"),*Bike->GetStatus(),Kmh);
         Secondary=bController?FString::Printf(TEXT("Right stick look   %s map   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
     }
     else if (Bike && Bike->IsAvailable() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger())

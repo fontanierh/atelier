@@ -1,0 +1,4 @@
+id = "bike"
+needs = ["combat"]                    # made from two combat masters plus synthesis
+build = "make.py"                     # -> build/yorimichi/audio/bike (10 loops, 8 cues of 3)
+licence = "Sonniss GDC bundles and own synthesis: may ship inside the game; no AI use"

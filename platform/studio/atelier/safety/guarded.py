@@ -22,6 +22,7 @@ from pathlib import Path
 
 from .guard import attach as attach_memory_guard, reap
 from .render_lock import KINDS, SMALL_LIMIT_GIB, render_lock
+from .process import spawn
 
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
@@ -44,7 +45,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         if slot == 'small':
             limit_gib = min(limit_gib, SMALL_LIMIT_GIB)
         log = stack.enter_context((folder/'stdout.log').open('w'))
-        child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env)
+        child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env)
         stack.callback(reap, child)
         where = f', small render slot, {limit_gib:g} GiB limit' if slot == 'small' else ''
         print(f'pid {child.pid}, guard report {folder/"memory-health.json"}{where}', flush=True)
