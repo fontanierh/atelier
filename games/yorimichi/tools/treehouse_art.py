@@ -1,5 +1,5 @@
 """Shared pieces of the tree house art tools (treehouse_concepts, treehouse_refs, treehouse_textures and
-treehouse_props): where the files live, the Sunburst call, the compact JPEG copies and the compact GLB.
+treehouse_props): where the files live, the Sunburst call (atelier.ai.images), the compact JPEG copies and the compact GLB.
 
 In git, under games/yorimichi/assets/treehouse/: a compact copy of every chosen painting and model, with its prompt and
 provenance. Not in git, under build/yorimichi/treehouse/: the full-size PNGs the API returned (originals/), the Tripo
@@ -10,7 +10,7 @@ the world scripts can make again.
 Only the standard library is imported at load time, so treehouse_props.py can be imported from Blender's Python.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
-import base64, hashlib, io, json, re, struct
+import hashlib, io, json, re, struct
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,7 +24,6 @@ PLAN = yori.REVIEW / 'treehouse' / 'plan'          # plan-map.png, plan-section.
 CAPTURES = WORK / 'captures' / 'blockout-r01'      # the in-game blockout still of each view
 SHEETS = yori.REVIEW / 'treehouse'                 # contact sheets for checking, never needed by the game
 MODEL, QUALITY = 'gpt-image-2.5-sunburst', 'high'
-API = 'https://api.openai.com/v1'
 # the committed copies: (largest width in pixels, JPEG quality, chroma subsampling); smaller images are never
 # enlarged. Textures keep full colour resolution (4:4:4): finish divides a surface by its mean, which magnifies errors.
 COMPACT = {'concepts': (1600, 88, '4:2:0'), 'refs': (1600, 88, '4:2:0'), 'textures': (1024, 92, '4:4:4'),
@@ -49,36 +48,13 @@ def rel(path):
     return path.name
 
 
-def upload(path, maxw=1280):
-    """An image as the API gets it: RGB JPEG, at most maxw wide."""
-    from PIL import Image
-    im = Image.open(path).convert('RGB')
-    if im.width > maxw: im = im.resize((maxw, round(im.height*maxw/im.width)))
-    buf = io.BytesIO(); im.save(buf, 'JPEG', quality=92)
-    return (Path(path).stem+'.jpg', buf.getvalue(), 'image/jpeg')
-
-
 def sunburst(prompt, size, images=()):
     """One image from gpt-image-2.5-sunburst at quality high: /v1/images/edits with the context images, or
     /v1/images/generations without. Returns (PNG bytes, usage). The key comes from OPENAI_API_KEY (or the ignored
     .env) and is never printed."""
-    import httpx
-    from atelier.env import require
-    headers = {'Authorization': 'Bearer '+require('OPENAI_API_KEY')}
-    fields = {'model': MODEL, 'prompt': prompt, 'size': size, 'quality': QUALITY}
-    with httpx.Client(timeout=httpx.Timeout(900, connect=30)) as client:
-        if images:
-            response = client.post(API+'/images/edits', headers=headers, data={**fields, 'n': '1'},
-                                   files=[('image[]', upload(p)) for p in images])
-        else:
-            response = client.post(API+'/images/generations', headers=headers, json={**fields, 'n': 1})
-    try:
-        body = response.json()
-    except ValueError:
-        raise RuntimeError(f'Sunburst HTTP {response.status_code} without JSON') from None
-    if response.status_code >= 400 or not body.get('data'):
-        raise RuntimeError(f'Sunburst HTTP {response.status_code}: {(body.get("error") or {}).get("message", "no image")}')
-    return base64.b64decode(body['data'][0]['b64_json']), body.get('usage')
+    from atelier.ai import images as client
+    blobs, body, _ = client.sunburst(prompt, size, images, model=MODEL, quality=QUALITY)
+    return blobs[0], body.get('usage')
 
 
 def compact(image, dest, kind):
