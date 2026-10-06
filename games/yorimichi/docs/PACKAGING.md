@@ -48,13 +48,14 @@ Double-clicking `Yorimichi.app` starts the game without the desktop profile. `Pl
 `tools/desktop_preview.py`, so it carries the same profile as `atelier play yorimichi --profile desktop-1440
 --shared-settings`:
 
-- forward rendering, or the saved Lumen choice
+- forward rendering
 - the native 1440 viewport
 - the optimized city tiles and trees, and the tuned lighting
 
-It honours saved settings. Settings are in `~/Library/Application Support/Yorimichi/settings.txt` and the log is
-`~/Library/Logs/Yorimichi/game.log`. The packaged game cannot restart its renderer the way the Python launcher does: a
-renderer chosen in the menu applies the next time the game is started.
+It honours saved settings, except the renderer. Settings are in `~/Library/Application Support/Yorimichi/settings.txt`
+and the log is `~/Library/Logs/Yorimichi/game.log`. The package is cooked for forward shading only (the project's
+`r.ForwardShading`), so the launcher always starts Forward and a Lumen choice saved in the menu does not apply. Packaged
+Lumen would need a deferred cook and a verified switch, and neither exists.
 
 ## On the playtest Mac
 

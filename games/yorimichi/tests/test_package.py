@@ -103,10 +103,12 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
     assert '-set=desktop=1;performance=1;render_scale=100;renderer=0' in args
     assert any('r.ForwardShading=True' in a and 'DesktopPreviewViewportClient' in a for a in args)
     assert any(a.startswith('-ExecCmds=') and 'japan.CitySurfaceTiles v1_128m 1' in a for a in args)
-    # Saved choices win: no default overrides them, and a saved Lumen renderer starts Lumen.
+    # Saved choices win, except the renderer: the package is cooked for forward shading, so a saved Lumen choice still
+    # starts Forward.
     settings.write_text('performance=0\nrender_scale=80\nrenderer=1\n')
     args = launch()
-    assert '-set=desktop=1;renderer=1' in args and any('r.ForwardShading=False' in a for a in args)
+    assert '-set=desktop=1;renderer=0' in args and any('r.ForwardShading=True' in a for a in args)
+    assert not any('r.ForwardShading=False' in a for a in args)
 
 
 def test_content_changes_rerun_the_package_while_current_prerequisites_stay_current(tmp_path, monkeypatch):

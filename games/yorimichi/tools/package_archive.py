@@ -26,7 +26,7 @@ The first time: if macOS says the launcher or the app cannot be opened, right-cl
 Open, then Open again. The launcher removes the download quarantine itself.
 
 Settings: ~/Library/Application Support/Yorimichi/settings.txt. Log: ~/Library/Logs/Yorimichi/game.log.
-A renderer chosen in the menu takes effect the next time you start the game.
+This build always uses the forward renderer: choosing Lumen in the menu has no effect here.
 """
 
 
