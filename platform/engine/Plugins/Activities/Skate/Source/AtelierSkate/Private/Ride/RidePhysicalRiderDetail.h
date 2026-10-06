@@ -190,7 +190,7 @@ namespace RidePhysicalRiderDetail
     // Chaos's swing limit stays under a half turn (4 atan2(.., 1 + w) reaches 360 at the far pole).
     constexpr float MaxLimit = 179.f;
 
-    // Native's bail envelope on the contract's joints. In a bail (wipeout ragdoll modes 7 to 9, WipeoutRagdoll.cpp:20)
+    // Native's bail envelope on the contract's joints. In a bail (wipeout ragdoll modes 7 to 9, WipeoutRagdollSetup::Request)
     // Native holds each of its joints within a circular cone of max(0.01, skel x bail mult x 0.5) about its parent
     // frame's X and a twist of +-max(0.01, skel x bail mult x 0.6), centred where its two frames meet; mode 10 and a
     // restored joint take max(0.01, skel x mult), the riding range, which here stays the asset's. Centre is the child's
