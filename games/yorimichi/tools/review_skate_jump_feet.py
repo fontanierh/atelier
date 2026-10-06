@@ -174,20 +174,34 @@ def view(code, what):
 def shot(name): run(f"live.shot({str(out / f'{name}.png')!r})")
 
 
-def stand():
-    """Cairo on foot on the flat: each ankle and toe bone's height over the floor traced under it, the capsule's bottom
-    over the floor and the mesh's offset from that bottom (cm), so soles sunk into the ground show which one is off.
-    Also each foot's toe drop (ankle minus toe height, cm), to set against the animation's, and the ground normal the
-    foot contact node samples under each ankle (its trace, from 45 cm over the capsule's bottom), as degrees from up."""
+def to_start():
+    """Cairo on foot, standing still on the flat START, the park's view: the fixture every check starts from. Refuses
+    unless a floor is under the capsule and it is level (within 1°), so no check runs on the wrong ground."""
     x, y, z = START
-    run(f'''
+    level = run(f'''
+import json, math
 W = unreal.LiveLibrary.game_world(); P = unreal.LiveLibrary.player(); M = P.get_editor_property('mesh')
 C = P.get_component_by_class(unreal.CapsuleComponent); half = C.get_scaled_capsule_half_height()
 P.get_movement_component().stop_movement_immediately()
 P.set_actor_location(unreal.Vector({x * 100!r}, {-y * 100!r}, {z * 100!r}) + unreal.Vector(0, 0, half + 3), False, True)
 unreal.YorimichiLive.drive(unreal.Vector2D(), 0)
-''')
-    wait(2.)
+a = C.get_world_location()
+h = unreal.SystemLibrary.line_trace_single(W, a, a - unreal.Vector(0, 0, half + 60), unreal.TraceTypeQuery.ECC_VISIBILITY, False, [P], unreal.DrawDebugTrace.NONE, True)
+n = None if h is None else h.to_tuple()[7]
+print(json.dumps(None if n is None else round(math.degrees(math.acos(max(-1., min(1., n.z)))), 2)))
+''').strip().splitlines()[-1]
+    tilt = json.loads(level)
+    if tilt is None or tilt > 1: raise RuntimeError(f'START fixture is not level ground under Cairo (tilt {tilt})')
+    view(HOME, 'camera home')
+    return tilt
+
+
+def stand():
+    """Cairo on foot on the flat: each ankle and toe bone's height over the floor traced under it, the capsule's bottom
+    over the floor and the mesh's offset from that bottom (cm), so soles sunk into the ground show which one is off.
+    Also each foot's toe drop (ankle minus toe height, cm), to set against the animation's, and the ground normal the
+    foot contact node samples under each ankle (its trace, from 45 cm over the capsule's bottom), as degrees from up."""
+    to_start(); wait(2.)
     measured = run(r'''
 import json, math
 def floor(p):
@@ -325,6 +339,13 @@ try:
     else: raise RuntimeError('Bridge startup timed out')
     run('import os,unreal; assert os.getpid() == '+str(p.pid)+'; assert os.path.realpath(unreal.Paths.project_dir()) == '+repr(str(ctx.uproject.parent.resolve())))
     owns_bridge = True
+    # Settle where the checks run, not at the spawn: the forest road's view is a different, heavier frame. The phases'
+    # own frame timing still has to meet its requested rate.
+    for attempt in range(6):   # the park's collision may still be streaming in just after startup
+        try: print('START fixture level, tilt', to_start(), 'deg', flush=True); break
+        except RuntimeError as e:
+            if attempt == 5: raise
+            print('START fixture not ready:', str(e)[:200], flush=True); time.sleep(5)
     steady, start = None, time.monotonic(); last_notice = 0.
     while time.monotonic() - start < 240:
         try: fps = live.request('/state', timeout=min(10, max(.1, 240 - (time.monotonic() - start)))).get('fps', 0)
