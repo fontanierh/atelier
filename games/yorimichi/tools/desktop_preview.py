@@ -27,8 +27,6 @@ COMMON = ('r.DynamicRes.OperationMode 0,r.ScreenPercentage 100,r.RHISetGPUCaptur
           'r.Shadow.CSMCaching 0,r.Shadow.CSMSlopeScaleDepthBias 3,t.MaxFPS 60,r.VSync 1,'
           'r.ForwardShading,japan.PreviewInfo')
 CANDIDATE = 'r.SkylightIntensityMultiplier .33,japan.ForwardHarborFill 3'
-INI = ('-ini:Engine:[/Script/Engine.RendererSettings]:r.ForwardShading={forward},'
-       '[/Script/Engine.Engine]:GameViewportClientClassName=/Script/Yorimichi.DesktopPreviewViewportClient')
 TILE_TAG = 'v1_128m'
 TREE_TAG = 'v4'
 
@@ -59,6 +57,16 @@ def preference_path(folder, shared_settings):
     return PROJECT / 'Saved' / 'settings.txt' if shared_settings else folder / 'settings.txt'
 
 
+def renderer_arguments(lumen, desktop_viewport=False):
+    """Keep scripted probes and normal play on the same renderer startup path."""
+    ini = '-ini:Engine:[/Script/Engine.RendererSettings]:r.ForwardShading=' + ('False' if lumen else 'True')
+    if desktop_viewport:
+        ini += ',[/Script/Engine.Engine]:GameViewportClientClassName=/Script/Yorimichi.DesktopPreviewViewportClient'
+    # Forward play does not use these expensive editor mesh derivatives. Lumen still needs them.
+    return ['-noshaderworker', ini, *([] if lumen else
+            ['-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0'])]
+
+
 def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, settings='', extra=()):
     preferences = preference_path(folder, shared_settings)
     saved = read_preferences(preferences, settings)
@@ -78,13 +86,10 @@ def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, 
     commands += 'r.SkylightIntensityMultiplier 1' if lumen else CANDIDATE
     return [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed' if windowed else '-fullscreen', '-ForceRes',
             '-resx=2560', '-resy=1440', '-desktopnative1440', '-previewcapture=' + str(folder / 'ready.png'),
-            '-noshaderworker', '-nosplash', '-stdout', '-abslog=' + str(folder / 'game.log'), '-set=' + profile,
+            '-nosplash', '-stdout', '-abslog=' + str(folder / 'game.log'), '-set=' + profile,
             '-preferencesfile=' + str(preferences), '-renderrestart',
             '-renderrestartrequest=' + str(folder / 'renderer-restart.txt'),
-            INI.format(forward='False' if lumen else 'True'),
-            # These expensive editor mesh derivatives are unused by forward
-            # play. Retain normal generation for the deferred Lumen path.
-            *([] if lumen else ['-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0']),
+            *renderer_arguments(lumen, desktop_viewport=True),
             '-ExecCmds=' + commands, *shlex.split(os.environ.get('YORIMICHI_EXTRA_ARGS', '')), *extra]
 
 

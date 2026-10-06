@@ -33,6 +33,7 @@ from atelier.build import Context
 from atelier.safety import guarded
 from atelier.safety.guard import attach as attach_memory_guard, reap
 from atelier import live
+from desktop_preview import read_preferences, renderer_arguments, toggle
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
@@ -114,6 +115,8 @@ cmd = [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed', '-resx=1280
 if args.rider == 'CairoBotw': cmd.append('-rider=CairoBotw')   # without it a scripted session keeps his legacy moves
 if args.settings:
     (out / 'settings.txt').write_text(args.settings.read_text()); cmd.append(f"-preferencesfile={out / 'settings.txt'}")
+preferences = out / 'settings.txt' if args.settings else ctx.uproject.parent / 'Saved' / 'settings.txt'
+cmd.extend(renderer_arguments(toggle(read_preferences(preferences), 'renderer', 0)))
 p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
 guards = ExitStack(); monitor = None
 
