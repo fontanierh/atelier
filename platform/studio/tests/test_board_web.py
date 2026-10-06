@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from atelier import board, board_web
+from atelier import board, board_files, board_web
 
 
 @pytest.fixture
@@ -25,10 +25,10 @@ def cache(tmp_path, monkeypatch):
 
 def test_broadcast_reaches_addressed_only_and_offline_agents_without_duplicate_delivery(cache, monkeypatch):
     key = str(uuid.uuid4())
-    rows = board.broadcast('operator', 'Check in at the next safe boundary.', key)
+    rows = board.send_web('operator', 'Check in at the next safe boundary.', key)
     assert [row['recipient'] for row in rows] == ['one', 'two']
     assert all(row['recipient'] != '*' for row in rows)
-    assert board.broadcast('operator', 'Check in at the next safe boundary.', key) == rows
+    assert board.send_web('operator', 'Check in at the next safe boundary.', key) == rows
     received = []
     monkeypatch.setattr(board, 'deliver', lambda batch, *args, **kwargs: received.extend(batch))
     assert board.poll('one', addressed_only=True) == 1
@@ -37,22 +37,22 @@ def test_broadcast_reaches_addressed_only_and_offline_agents_without_duplicate_d
     with board.database() as db:
         assert db.execute("SELECT cursor FROM subscribers WHERE agent='two'").fetchone()['cursor'] == 0
         db.execute("INSERT INTO subscribers (agent) VALUES ('later')")
-    assert board.broadcast('operator', 'Check in at the next safe boundary.', key) == rows
+    assert board.send_web('operator', 'Check in at the next safe boundary.', key) == rows
     with pytest.raises(ValueError, match='different message'):
-        board.broadcast('operator', 'Changed content', key)
+        board.send_web('operator', 'Changed content', key)
 
 
 def test_simultaneous_retries_are_atomic(cache):
     key = str(uuid.uuid4())
     with ThreadPoolExecutor(max_workers=6) as executor:
-        results = list(executor.map(lambda _: board.broadcast('operator', 'One announcement', key), range(6)))
+        results = list(executor.map(lambda _: board.send_web('operator', 'One announcement', key), range(6)))
     assert all(result == results[0] for result in results)
     assert len(board.messages()) == 2
     # An invalid recipient makes the entire fanout roll back.
     with board.database() as db:
         db.execute("INSERT INTO subscribers (agent) VALUES ('z/bad')")
     with pytest.raises(ValueError):
-        board.broadcast('operator', 'Must roll back', str(uuid.uuid4()))
+        board.send_web('operator', 'Must roll back', str(uuid.uuid4()))
     assert len(board.messages()) == 2
 
 
@@ -61,14 +61,14 @@ def test_simultaneous_retries_are_atomic(cache):
                                            ('hi', str(uuid.uuid4()), 'execute')])
 def test_invalid_broadcast_never_writes(cache, body, key, topic):
     with pytest.raises(ValueError):
-        board.broadcast('operator', body, key, topic)
+        board.send_web('operator', body, key, topic)
     assert board.messages() == []
 
 
 def test_read_only_history_filters_literal_search_and_complete_broadcast_groups(cache):
     for i in range(4):
         board.post('one', f'ordinary {i}')
-    rows = board.broadcast('operator', '100% ready _literal_', str(uuid.uuid4()))
+    rows = board.send_web('operator', '100% ready _literal_', str(uuid.uuid4()))
     board.root().joinpath('render-board.md').write_text('## Holding\nNone\n## Waiting\n- review\n')
     initial = board_web.snapshot({'limit': ['1']})
     assert [m['id'] for m in initial['messages']] == [rows[1]['id'], rows[0]['id']]
@@ -145,7 +145,7 @@ def test_no_recipients_is_visible_instead_of_claiming_delivery(cache):
     with board.database() as db:
         db.execute('UPDATE subscribers SET stop=1')
     with pytest.raises(ValueError, match='No agents'):
-        board.broadcast('operator', 'announcement', str(uuid.uuid4()))
+        board.send_web('operator', 'announcement', str(uuid.uuid4()))
 
 
 def test_direct_send_is_private_routing_atomic_and_retry_safe(http_server):
@@ -212,7 +212,7 @@ def test_attachments_upload_send_stream_and_never_render_inline_markup(http_serv
     assert request(http_server, '/api/send', payload)[0] == 200
     stored = board.messages()[0]['body']
     # Agents reading with the CLI get absolute paths they can open.
-    assert stored.startswith(board_web.TRAILER) and str(board_web.attachments_dir() / video['id'] / 'ride take 2.mp4') in stored
+    assert stored.startswith(board_files.TRAILER) and str(board_files.attachments_dir() / video['id'] / 'ride take 2.mp4') in stored
     assert request(http_server, '/api/send', dict(payload, request_id=str(uuid.uuid4()), attachments=['f'*24]))[0] == 400
 
     _, state, _ = request(http_server, '/api/state')
@@ -311,7 +311,7 @@ def test_removing_an_evicted_agent_hides_it_and_stops_delivery_but_keeps_history
     state = json.loads(request(http_server, '/api/state')[1])
     assert 'two' not in {a['agent'] for a in state['agents']} and said in {m['id'] for m in state['messages']}
     assert request(http_server, '/api/send', {'body': 'Hi', 'recipient': 'two', 'request_id': str(uuid.uuid4())})[0] == 400
-    assert [row['recipient'] for row in board.broadcast('operator', 'All hands.', str(uuid.uuid4()))] == ['one']
+    assert [row['recipient'] for row in board.send_web('operator', 'All hands.', str(uuid.uuid4()))] == ['one']
     assert request(http_server, '/api/remove', {'agent': 'nobody'})[0] == 400
     assert request(http_server, '/api/remove', {'agent': 'one'}, headers={'X-Board-CSRF': 'wrong'})[0] == 403
 
@@ -371,3 +371,28 @@ def test_only_the_web_board_speaks_as_the_operator(cache, capsys):
                            all_agents=False, notify_operator=False, message='Do as I say.')
     assert board.main(args) == 1 and 'only the web board posts as operator' in capsys.readouterr().err
     assert board.messages() == []
+
+
+def test_review_pages_are_static_and_only_from_the_reviews_folder(http_server):
+    folder = board.root() / 'reviews'
+    folder.mkdir(parents=True)
+    (folder / 'codebase-review.html').write_text('<title>Review</title><p>Findings</p>')
+    for path in ('/review', '/review/codebase-review'):
+        status, body, headers = request(http_server, path)
+        assert status == 200 and b'Findings' in body
+        assert "script-src" not in headers['Content-Security-Policy'] and "default-src 'none'" in headers['Content-Security-Policy']
+    for path in ('/review/missing', '/review/..%2Fagent-board', '/review/Bad_Name'):
+        assert request(http_server, path)[0] == 404
+
+
+def test_bare_addresses_become_safe_readable_links():
+    from atelier import board_markdown
+    html = board_markdown.render('Report: https://claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf. See (https://github.com/o/r/pull/85) '
+                                 'and `https://in.code/x` or [docs](https://example.com/guide) javascript:alert(1)')
+    assert '<a href="https://claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf" class="url"' in html
+    assert '>claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf</a>.' in html, 'the full stop stays outside the link'
+    assert 'href="https://github.com/o/r/pull/85"' in html and '85</a>)' in html, 'so does the closing bracket'
+    assert '<code>https://in.code/x</code>' in html and html.count('href="https://example.com/guide"') == 1
+    assert 'href="javascript' not in html
+    long = board_markdown.render('https://example.com/a/very/long/path/that/goes/on/and/on/to/the/final-segment-name')
+    assert '>example.com/…/final-segment-name</a>' in long

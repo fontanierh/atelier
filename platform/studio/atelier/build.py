@@ -4,7 +4,7 @@ A game describes its build in `games/<game>/build.py`, a module with `steps()` r
 fingerprint is the hash of its inputs (files or folders, by content), its commands, and the fingerprints of the steps
 it needs; `build/<game>/stamps/<step>.json` remembers the last good one. Logs go to `build/<game>/logs/<step>.log`.
 
-Commands are plain data (`Python`, `Blender`, `UnrealScript`, `UnrealCompile`, `Call`), so the fingerprint changes
+Commands are plain data (`Python`, `Blender`, `UnrealScript`, `UnrealCompile`, `UnrealPackage`, `Call`), so the fingerprint changes
 when a command does.
 
 A `heavy` step's commands run under `atelier.safety.guarded`: a render slot and the memory guard, whose report is
@@ -12,11 +12,11 @@ A `heavy` step's commands run under `atelier.safety.guarded`: a render slot and 
 guard reports peaked at 3 GiB or less asks for the small slot; a compile, or a step with no report yet, takes the big
 one. The step's log names the slot each command used, and the summary line names it too when two slots are on.
 """
-import hashlib, importlib.util, json, os, shutil, subprocess, sys, time
+import hashlib, importlib.util, json, os, subprocess, sys, time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import paths
+from . import engine, paths
 from .safety import guarded
 from .safety.render_lock import GiB, slot_count
 
@@ -137,11 +137,10 @@ class Context:
         self.out = paths.build_dir(game)
         self.logs = self.out / 'logs'
         self.stamps = self.out / 'stamps'
-        self.unreal_root = Path(os.environ.get('UE_ROOT') or '/Users/Shared/Epic Games/UE_5.8')
-        self.unreal_cmd = self.unreal_root / 'Engine/Binaries/Mac/UnrealEditor-Cmd'
-        self.unreal_app = self.unreal_root / 'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
-        # Resolved: Blender finds its bundled Python and data next to its real executable, not next to a PATH symlink.
-        self.blender = os.path.realpath(os.environ.get('BLENDER') or shutil.which('blender') or '/Applications/Blender.app/Contents/MacOS/Blender')
+        self.unreal_root = engine.unreal_root()
+        self.unreal_cmd = engine.unreal_cmd(self.unreal_root)
+        self.unreal_app = engine.unreal_app(self.unreal_root)
+        self.blender = engine.blender()
         try:
             self.uproject = paths.uproject(game)
         except FileNotFoundError:

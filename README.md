@@ -147,7 +147,8 @@ Where to go next, in the order most games grow:
    `assets/characters/<name>/` with a `character.toml` and follows the humanoid bone contract, so the platform's
    animation and gameplay code fits it.
 4. **Mechanics.** Switch on platform plugins in your `.uproject`: effects (`AtelierFX`), skateboarding (`Skate`; give
-   your character `ISkateRider`), streaming (`AtelierStream`). Each plugin's README says what your game provides.
+   your character `ISkateRider`), streaming (`AtelierStream`). Each plugin's README says what your game provides (AtelierStream's is
+   [platform/web/stream](platform/web/stream/README.md)).
 5. **Play anywhere.** `uv run atelier stream moon_garden start --local`, then open http://127.0.0.1:8080 (keyboard,
    mouse or a controller), or drop `--local` to reach it from your phone over Tailscale.
 
@@ -156,7 +157,7 @@ Where to go next, in the order most games grow:
 | Part | Where | What |
 |---|---|---|
 | The `atelier` command | [platform/studio](platform/studio/atelier) | new, doctor, fetch, build, play, stream, live, qa, lint; AI helpers for Tripo, Sunburst, H3 and Seedance; review sheets; machine safety (one heavy job at a time, optionally a small one beside it, a memory guard) |
-| Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance), effects, skateboarding, streaming, the live bridge |
+| Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance, bike grip), effects, skateboarding, streaming, the live bridge |
 | Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera; tracked native data and its checks |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
@@ -250,7 +251,7 @@ mesh, about two minutes and 120 credits. Blender scripts then clean up details s
 </tr></table>
 
 ```sh
-python platform/studio/atelier/ai/tripo_asset.py generate --references <revision>/references --output <revision> --faces 8000
+uv run python platform/studio/atelier/ai/tripo_asset.py generate --references <revision>/references --output <revision> --faces 8000
 blender -b --python games/yorimichi/assets/characters/tools/review_tripo_model.py -- --input model.glb --output review
 ```
 
@@ -265,7 +266,7 @@ gameplay code work for any character.
 </tr></table>
 
 ```sh
-python platform/studio/atelier/ai/tripo_asset.py rig --source <cleanup>.glb --output <revision>
+uv run python platform/studio/atelier/ai/tripo_asset.py rig --source <cleanup>.glb --output <revision>
 blender -b --python games/yorimichi/assets/characters/tools/add_tripo_fingers.py
 ```
 
@@ -294,7 +295,7 @@ reads well in the game ([H3 workflow](games/yorimichi/docs/H3_ANIMATION_REFERENC
 ```sh
 node --env-file=.env platform/studio/node/h3_max_reference.mjs submit --resolution 480p --out <revision>
 node --env-file=.env platform/studio/node/seedance_vercel.mjs submit --out <revision>
-python platform/studio/atelier/review/video_reference.py <revision>        # timestamped frame sheets to author from
+uv run python platform/studio/atelier/review/video_reference.py <revision>        # timestamped frame sheets to author from
 ```
 
 **7. Motion capture, retargeted.** For the sword, a great-sword combo from Adobe's

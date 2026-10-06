@@ -17,7 +17,7 @@ struct FJapanFootstepBank
 };
 
 /** The footstep library: one pool per surface, built by Scripts/import_footsteps.py from the
- *  sliced Sonniss masters in japan/audio/footsteps. */
+ *  Sonniss masters, sliced by assets/audio/footsteps/slice.py. */
 UCLASS(BlueprintType)
 class YORIMICHI_API UJapanFootstepSet : public UDataAsset
 {

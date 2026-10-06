@@ -24,18 +24,24 @@ def recipe_steps(tmp_path):
     return ctx, build.load_recipe('yorimichi').steps(ctx)
 
 
-def test_package_runs_after_every_import_as_one_capped_compile_turn(tmp_path):
+def test_package_cooks_after_every_import_then_assembles_in_a_separate_turn(tmp_path):
     ctx, steps = recipe_steps(tmp_path)
     package = next(s for s in steps if s.name == 'unreal.package')
-    imports = {s.name for s in steps if s.name.startswith('unreal.') and s.name != 'unreal.package'}
-    assert imports <= set(package.needs) and 'data.stage' in package.needs and package.heavy and package.explicit
+    cook = next(s for s in steps if s.name == 'unreal.cook')
+    imports = {s.name for s in steps if s.name.startswith('unreal.') and s.name not in {'unreal.cook', 'unreal.package'}}
+    assert imports <= set(cook.needs) and 'data.stage' in cook.needs and cook.heavy and cook.explicit
+    assert package.needs == ['unreal.cook'] and package.heavy and package.explicit
     # Never part of a plain or prefix build: only when named.
-    assert 'unreal.package' not in {s.name for s in build.order(steps, [])}
-    assert 'unreal.package' not in {s.name for s in build.order(steps, ['unreal'])}
+    assert not {'unreal.package', 'unreal.cook'} & {s.name for s in build.order(steps, [])}
+    assert not {'unreal.package', 'unreal.cook'} & {s.name for s in build.order(steps, ['unreal'])}
     assert 'unreal.package' in {s.name for s in build.order(steps, ['unreal.package'])}
     # Compile kind: the big slot and the small one, like any compile.
-    assert build.slot_request(ctx, package) == ('compile', None)
-    uat, archive = package.commands
+    assert build.slot_request(ctx, cook) == ('compile', None)
+    assert build.slot_request(ctx, package)[0] == 'job'
+    prepare, uat, certify = cook.commands
+    archive, = package.commands
+    assert prepare.name == 'prepare_cook'
+    assert certify.name == 'certify_cook' and '--cook-receipt' in archive.args
     # The archive phase is its own guarded job (a released boundary after UAT) whose ditto/split children are watched.
     assert archive.script.name == 'package_archive.py' and {'ditto', 'split'} <= set(archive.watch)
     assert archive.marker == 'PACKAGE ARCHIVE COMPLETE' and 0 < archive.progress <= 30 and archive.timeout > 0
@@ -131,12 +137,14 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
     content = tmp_path/'import_world.py'; content.write_text('v1')
     world = build.Step('unreal.world', [], inputs=[content], heavy=True)
     data = build.Step('data.stage', [])
+    cpp = tmp_path/'game.cpp'; cpp.write_text('v1')
+    cook = build.Step('unreal.cook', [], inputs=[cpp], needs=['unreal.world', 'data.stage'], explicit=True)
     package = recipe.package_step(ctx, [world, data])
     assert {recipe.TOOLS/'package_archive.py', recipe.TOOLS/'desktop_preview.py'} <= set(package.inputs)
     source = tmp_path/'desktop_preview.py'; source.write_text('profile v1')
     package = build.Step(package.name, [], inputs=[source], needs=package.needs, explicit=True, outputs=package.outputs,
                          verify=package.verify)
-    steps = [world, data, package]
+    steps = [world, data, cook, package]
     ctx.stamps.mkdir()
 
     def stamp_all():
@@ -156,20 +164,25 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
         lines = []
         assert build.build('yorimichi', ['unreal.package'], dry=True, echo=lines.append) == 0
         return {line.split()[0]: ' '.join(line.split()[1:]) for line in lines if line.split()[0] in {s.name for s in steps}}
-    assert plan() == {'unreal.world': 'up to date', 'data.stage': 'up to date', 'unreal.package': 'up to date'}
+    current = {'unreal.world': 'up to date', 'data.stage': 'up to date', 'unreal.cook': 'up to date', 'unreal.package': 'up to date'}
+    assert plan() == current
 
-    # The world is reimported elsewhere (its stamp is current again): only the package reruns.
+    # The world is reimported elsewhere: it stays current; the cook and its download must be renewed.
     content.write_text('v2')
     done = {}
     for step in steps[:2]:
         done[step.name] = build.fingerprint(step, done)
         (ctx.stamps/f'{step.name}.json').write_text(json.dumps({'fingerprint': done[step.name]}))
-    assert plan() == {'unreal.world': 'up to date', 'data.stage': 'up to date', 'unreal.package': 'would run'}
+    assert plan() == {**current, 'unreal.cook': 'would run', 'unreal.package': 'would run'}
 
     # A launcher or profile edit reruns only the package.
     stamp_all()
     source.write_text('profile v2')
-    assert plan() == {'unreal.world': 'up to date', 'data.stage': 'up to date', 'unreal.package': 'would run'}
+    assert plan() == {**current, 'unreal.package': 'would run'}
+
+    stamp_all()
+    cpp.write_text('v2')
+    assert plan() == {**current, 'unreal.cook': 'would run', 'unreal.package': 'would run'}
 
     # A missing part makes the package stale even with a current stamp.
     stamp_all()
@@ -180,7 +193,7 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
 def test_uat_gets_the_headless_user_directory_build_sh_would_export(tmp_path, monkeypatch):
     from atelier import setup
     ctx, steps = recipe_steps(tmp_path)
-    uat = next(s for s in steps if s.name == 'unreal.package').commands[0]
+    uat = next(s for s in steps if s.name == 'unreal.cook').commands[1]
     monkeypatch.delenv('UE_HEADLESS_USER_DIR', raising=False)
     monkeypatch.setattr(setup, 'headless_user_dir', lambda root: None)
     assert uat.argv(ctx)[0].endswith('RunUAT.sh'), 'no headless repair installed: run UAT as it is'

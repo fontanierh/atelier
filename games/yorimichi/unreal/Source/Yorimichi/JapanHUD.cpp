@@ -145,7 +145,7 @@ void AJapanHUD::DrawHUD()
     };
     // A horse race (AHorseRace) takes the whole screen: its note highway, standings, map and stride meter.
     if (AHorseRace* Race = AHorseRace::Find(Pawn); Race && Race->IsRacing()) { Race->DrawHud(this, Canvas, CurrentControllerStyle()); return; }
-    // Filming the skating (ULiveLibrary::FilmHud): only the trick line, and the sword trainer's bar and words.
+    // Filming the skating (UYorimichiLive::FilmHud): only the trick line, and the sword trainer's bar and words.
     if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawTrainer(false, false); return; }
     // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
     if (Pawn->GetDamageFlash()>0.f) DrawRect(FLinearColor(.75f,.08f,.04f,.13f*Pawn->GetDamageFlash()),0,0,Canvas->SizeX,Canvas->SizeY);

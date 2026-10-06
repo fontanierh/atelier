@@ -1,7 +1,9 @@
 """How Yorimichi is built from this repository: `atelier build yorimichi [step ...]`.
 
-Order: world data and meshes (Python and Blender) -> characters -> sounds and effect textures -> the Unreal module ->
-the Unreal imports -> runtime data staged into unreal/Content/Data. Every output goes to build/yorimichi (or
+Order: world exports (Python and Blender) -> characters -> sounds and effect textures -> the Unreal module ->
+the Unreal imports -> runtime data staged into unreal/Content/Data. The small factories below preserve that order;
+optional character and region steps are appended when their source is available. Packaging is explicit, with a
+certified cook and independently stamped download assembly. Generated outputs go to build/yorimichi (or
 $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build yorimichi --list` prints the steps.
 
 The Unreal imports run in the order the prototype established: `setup_project.py` rebuilds everything under
@@ -9,7 +11,7 @@ The Unreal imports run in the order the prototype established: `setup_project.py
 the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
 after it. The player is installed in the prototype's three layers (full, sword, armed) from one source blend.
 """
-import importlib.util, json, shutil, os
+import importlib.util, json, os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -44,38 +46,15 @@ def cairo_roles():
     return combat, armed, roles
 
 
-# Runtime files the game reads through AtelierDataPath, relative to unreal/Content/Data. Each is also an output of
-# data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
-STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
-          'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json',
-          'treehouse/runtime.json', 'megapark/park.json', 'bike/manifest.json', 'cairo/bike/export.json')
-
-
-def communitypark(out):
-    """The private community park's fetched source (docs/COMMUNITY_PARK.md), or None: the island builds without it."""
-    source = out / 'communitypark' / 'source' / 'megapark-textured.glb'
-    return source if source.is_file() else None
-
-
-def staged(out):
-    return STAGED + (('communitypark/park.json',) if communitypark(out) else ())
-
-
-def staged_source(out, rel):
-    """Where a staged file comes from: build output, except the committed park."""
-    return {'skatepark/park.json': REGIONS / 'skatepark' / 'park.json'}.get(rel, out / rel)
-
-
-def stage_data(ctx, log):
-    """Copy the runtime files the game reads into unreal/Content/Data."""
-    data = paths.content_data(ctx.game)
-    for rel in staged(ctx.out):
-        dst = data / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(staged_source(ctx.out, rel), dst)
-        log.write(f'staged {rel}\n')
-    if not communitypark(ctx.out):
-        (data / 'communitypark' / 'park.json').unlink(missing_ok=True)
+# Keep the recipe's helpers available while the staging implementation has its own narrow input.
+_spec = importlib.util.spec_from_file_location('yorimichi_runtime_data', GAME / 'runtime_data.py')
+runtime_data = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(runtime_data)
+STAGED = runtime_data.STAGED
+communitypark = runtime_data.communitypark
+staged = runtime_data.staged
+staged_source = runtime_data.staged_source
+stage_data = runtime_data.stage_data
 
 
 @dataclass
@@ -112,19 +91,36 @@ def package_present(out):
         return False
 
 
+# The cook and download have independent implementation inputs and success stamps.
+_cook_spec = importlib.util.spec_from_file_location('yorimichi_package_cook', TOOLS / 'package_cook.py')
+package_cook = importlib.util.module_from_spec(_cook_spec)
+_cook_spec.loader.exec_module(package_cook)
+
+
+def cook_step(ctx, steps):
+    out = ctx.out
+    engine = getattr(ctx, 'unreal_root', None)
+    engine_inputs = [engine / 'Engine' / 'Build' / 'Build.version',
+                     engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
+    return Step('unreal.cook',
+                [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
+                 Call('certify_cook', package_cook.finish)],
+                inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config', TOOLS / 'package_cook.py', *engine_inputs],
+                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True, explicit=True,
+                outputs=[out / 'package' / 'cook.json'], verify=lambda: package_cook.cook_present(out / 'package'),
+                about='cook the macOS app once and certify its source and immutable archived files')
+
+
 def package_step(ctx, steps):
-    """The packaged macOS game from every Unreal import and the staged runtime data in this checkout. Only built when
-    named: it needs (rather than follows) them, so it reruns by itself whenever any of them changed, without --force."""
+    """The public entry point: independently guarded download assembly from a certified cook."""
     out = ctx.out
     return Step('unreal.package',
-                [UnrealPackage('Yorimichi', out / 'package' / 'archive'), PackageArchive(TOOLS / 'package_archive.py', ('--out', out / 'package'))],
-                # The packaging code itself: a launcher, profile or archive change reruns only the package.
-                inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config',
-                        TOOLS / 'package_archive.py', TOOLS / 'desktop_preview.py'],
-                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True, explicit=True,
+                [PackageArchive(TOOLS / 'package_archive.py', ('--out', out / 'package', '--cook-receipt'))],
+                inputs=[TOOLS / 'package_archive.py', TOOLS / 'desktop_preview.py'],
+                needs=['unreal.cook'], heavy=True, explicit=True,
                 outputs=[out / 'package' / 'manifest.json', out / 'package' / 'SHA256SUMS'],
                 verify=lambda: package_present(out),
-                about='packaged macOS game (.app, Development): cooked, zipped, checksummed in build/<game>/package')
+                about='packaged macOS game (.app, Development): zipped, checksummed in build/<game>/package')
 
 
 def botw_library():
@@ -258,14 +254,11 @@ def communitypark_steps(out):
     ]
 
 
-def steps(ctx):
+def world_steps(ctx, park):
+    """World exports; the optional park contributes ground, map and vegetation inputs."""
     out = ctx.out
-    combat, armed, locomotion = cairo_roles()
-    cairo = CHARS / 'cairo' / 'export_unreal.py'
-    # The ground, map and vegetation round the community park, which exist only where its source was fetched.
-    park = communitypark(out)
     park_inputs = [REGIONS / 'communitypark' / 'layout.py', REGIONS / 'communitypark' / 'source.py', park] if park else []
-    result = [
+    return [
         # ------------------------------------------------------------ world
         Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI],
              outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
@@ -373,6 +366,15 @@ def steps(ctx):
         Step('world.city_trees', [Blender(WORLD / 'city_tree_lods.py', ('--tag', 'v4'))],
              inputs=[WORLD / 'city_tree_lods.py', REGIONS / 'hidamari' / 'arcade.py', REGIONS / 'hidamari' / 'plaza.py'],
              needs=['world.hidamari'], outputs=[out / 'city_tree_lods' / 'v4' / 'manifest.json'], about='desktop profile: city tree LODs'),
+    ]
+
+
+def character_steps(ctx):
+    """The base player and villagers; optional move sets are appended separately."""
+    out = ctx.out
+    combat, armed, locomotion = cairo_roles()
+    cairo = CHARS / 'cairo' / 'export_unreal.py'
+    return [
         # ------------------------------------------------------------ characters
         Step('characters.cairo', [
                 Blender(cairo, ('--sword', '--clips', ','.join(locomotion)), threads=4),
@@ -387,6 +389,13 @@ def steps(ctx):
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips'),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
              inputs=[CHARS / 'wanderer'], outputs=[out / 'wanderer' / 'build.json'], about='the villagers (procedural model and clips)'),
+    ]
+
+
+def sound_effect_steps(ctx):
+    """Offline sound slices and procedural effect textures."""
+    out = ctx.out
+    return [
         # ------------------------------------------------------------ sounds and effects
         Step('audio.footsteps', [Python(AUDIO / 'footsteps' / 'slice.py')], inputs=[AUDIO / 'footsteps', paths.cache_dir('sonniss', 'footsteps')],
              outputs=[out / 'audio' / 'footsteps' / 'manifest.json'], about='531 footstep one-shots (needs `atelier fetch`)'),
@@ -398,6 +407,13 @@ def steps(ctx):
              outputs=[out / 'audio' / 'bike' / 'manifest.json'], about="the bike's tyres, freewheel, chain, wind, bell and knocks"),
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
              outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
+    ]
+
+
+def unreal_steps(ctx):
+    """Native checks, editor compilation and ordered content imports."""
+    out = ctx.out
+    return [
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
@@ -512,11 +528,24 @@ def steps(ctx):
         Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
              inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'native.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
              outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
-    ] + communitypark_steps(out) + [
+    ] + communitypark_steps(out)
+
+
+def staging_steps(ctx, park):
+    """Runtime data copied into Content/Data after its producers complete."""
+    out = ctx.out
+    return [
         Step('data.stage', [Call('stage_data', stage_data)],
-             inputs=[REGIONS / 'skatepark' / 'park.json'],
+             inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
-    ] + botw_steps(out) + hippodrome_steps(out)
-    return result + [package_step(ctx, result)]
+    ]
+
+
+def steps(ctx):
+    """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
+    park = communitypark(ctx.out)
+    result = (world_steps(ctx, park) + character_steps(ctx) + sound_effect_steps(ctx)
+              + unreal_steps(ctx) + staging_steps(ctx, park) + botw_steps(ctx.out) + hippodrome_steps(ctx.out))
+    return result + [cook_step(ctx, result), package_step(ctx, result)]

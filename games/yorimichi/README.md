@@ -12,14 +12,20 @@ From the repository root (requirements in the [top-level README](../../README.md
 
 ```sh
 uv run atelier fetch yorimichi      # the sound masters, once per machine
-uv run atelier build yorimichi      # everything; only changed steps rerun
-uv run atelier play yorimichi       # 1080p window
+nice -n 10 uv run atelier build yorimichi  # development steps; only changed steps rerun
+nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferences honored
 ```
 
 `uv run atelier build yorimichi --list` shows every step: world data and meshes (`world.*`), characters
 (`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating data check (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
-just it and what it needs. Most of a clean build is Unreal's first shader compile.
+just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
+reuse completed steps. The optional community park is included only when its source is present. Build stamps,
+generated Content and the shared derived-data cache are kept for incremental work.
+
+Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download
+assembly, and neither runs in an ordinary development build. Launcher edits and failed ZIP retries reuse the completed
+cook. See [PACKAGING.md](docs/PACKAGING.md) for the guards, release files and independent download verification.
 
 Play profiles (`--profile`, defined in [game.toml](game.toml)):
 

@@ -325,7 +325,7 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
             Zone.Yaw = -(*O)->GetNumberField(TEXT("yaw"));
             if (!Zone.Key.IsEmpty()) Zones.Add(Zone);
         }
-    // The skate pier (japan/skatepark) is newer than the painted sheet: add its stop unless map.json already has one.
+    // The skate pier (world/regions/skatepark) is newer than the painted sheet: add its stop unless map.json already has one.
     if (!Zones.ContainsByPredicate([](const FJapanMapZone& Zone) { return Zone.Key == TEXT("skatepier"); }))
     {
         FVector World; float Yaw = 0.f;
