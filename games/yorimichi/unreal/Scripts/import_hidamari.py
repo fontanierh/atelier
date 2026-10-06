@@ -5,6 +5,7 @@ from pathlib import Path
 import unreal
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from import_village import import_mesh,material
+from mesh_materials import assign_materials
 from mountain_material import material as mountain_material,gate_material
 from harbor_material import material as harbor_material
 from arcade_material import material as arcade_material
@@ -88,11 +89,12 @@ for name,entry in manifest.items():
         if not build.get_editor_property('use_full_precision_u_vs'):
             build.set_editor_property('use_full_precision_u_vs',True);lod_settings_subsystem.set_lod_build_settings(mesh,0,build)
         slots=[]
-        for i,slot in enumerate(mesh.static_materials):
+        for slot in mesh.static_materials:
             key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0].removeprefix('HDS_')
             assert key in city_mis,(name,'unknown surface',key)
-            mesh.set_material(i,city_mis[key]);slots.append(key)
+            slots.append(key)
         assert sorted(slots)==sorted(entry['slots']),(name,slots,sorted(entry['slots']))
+        assign_materials(mesh,[city_mis[key] for key in slots])
         selected=city_mis[slots[0]]
     else:
         assert selected,(name,'missing material')
@@ -137,11 +139,13 @@ if not only or os.environ.get('HIDAMARI_TERRAIN')=='1':
     mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
     from import_southwest import sand_material
     sand_material()   # the beach slot; the south-west import (later in a fresh build) owns it
-    for i,slot in enumerate(mesh.static_materials):
+    materials=[]
+    for slot in mesh.static_materials:
         key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
         mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/MI_'+key)
         assert mat,key
-        mesh.set_material(i,mat)
+        materials.append(mat)
+    assign_materials(mesh,materials)
     mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
     unreal.EditorAssetLibrary.save_loaded_asset(mesh)
 (OUT/'import-report.json').write_text(json.dumps(report,indent=2)+'\n')
