@@ -237,6 +237,9 @@ def structure_audit():
     # Point probes can step over a thin post; sweep the 22 cm capsule (+3 cm) exactly in plan.
     intrusions = S.body_intrusions(all_triangles, route)
     assert not intrusions, ('swept body intrusion', [(i, route[i].tolist(), route[i+1].tolist()) for i, _ in intrusions[:5]])
+    # Coplanar faces that shade differently z-fight (wood flickering through the stair stringers).
+    flicker = S.flicker(meshes)
+    assert not flicker, ('coplanar faces flicker', sorted(flicker, reverse=True)[:5])
     # Keep the deck lane used by the live riding check open below head height.
     for y in np.linspace(572, 603, 63):
         hits = S.heights(added, 1250, y)
@@ -247,7 +250,7 @@ def structure_audit():
             'ascent_length_m': float(np.linalg.norm(np.diff(route, axis=0), axis=1).sum()),
             'height_gain_m': S.TOP-S.DECK, 'step_rise_m': metadata['step_rise_m'],
             'continuous_body_clearance_samples': clearance_samples,
-            'swept_body_segments': len(route)-1, 'swept_body_radius_m': .25,
+            'swept_body_segments': len(route)-1, 'swept_body_radius_m': .25, 'coplanar_flicker_pairs': len(flicker),
             'riding_clearance': riding_clearance(meshes[0], metadata, original, scene().parts,
                                                yori.OUT/'communitypark/support-intrusions.json')}
 
