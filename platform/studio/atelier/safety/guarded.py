@@ -43,7 +43,7 @@ class Descendants:
     def __init__(self, root, root_start, folder, watch, duration, limit_gib, stack):
         self.root, self.folder, self.watch, self.duration, self.limit_gib, self.stack = (
             (root, root_start), folder, set(watch), duration, limit_gib, stack)
-        self.depth, self.guarded, self.shared = {}, {}, set()
+        self.depth, self.parent, self.guarded, self.shared = {}, {}, {}, set()
 
     def same(self, key):
         return process_tree.started(key[0]) == key[1]
@@ -62,6 +62,7 @@ class Descendants:
             for child, child_start in process_tree.owned_children(parent, parent_start):
                 key = (child, child_start)
                 self.depth.setdefault(key, depth+1)
+                self.parent.setdefault(key, (parent, parent_start))
                 if process_tree.name(child) in SHARED_SERVICES:
                     self.shared.add(key)
                 if key not in self.shared:
@@ -91,9 +92,28 @@ class Descendants:
             if monitor.poll() is not None and self.same(key):
                 raise SystemExit(f'memory guard for {label} {key[0]} exited before it')
 
+    def shared_now(self):
+        """Recorded processes at or under a shared service, judged on current names: a recorded `sh` may have exec'd
+        zenserver since the last poll, and everything under it is then the service's too."""
+        for key in self.depth:
+            if key not in self.shared and self.same(key) and process_tree.name(key[0]) in SHARED_SERVICES:
+                self.shared.add(key)
+
+        def under(key):
+            seen = set()
+            while key in self.parent and key not in seen:
+                if key in self.shared:
+                    return True
+                seen.add(key)
+                key = self.parent[key]
+            return key in self.shared
+        return {key for key in self.depth if under(key)}
+
     def unwind(self, grace=10.):
-        """Stop recorded descendants that are still the same processes, deepest first."""
-        live = sorted((key for key in self.depth if key not in self.shared), key=self.depth.get, reverse=True)
+        """Stop recorded descendants that are still the same processes, deepest first, never a shared service or
+        anything under one."""
+        excluded = self.shared_now()
+        live = sorted((key for key in self.depth if key not in excluded), key=self.depth.get, reverse=True)
         for key in live:
             self.signal(key, signal.SIGTERM)
         deadline = time.monotonic()+grace
@@ -103,8 +123,9 @@ class Descendants:
             self.signal(key, signal.SIGKILL)
 
     def signal(self, key, number):
-        """Signal one recorded process only if its pinned identity still holds at this instant."""
-        if self.same(key):
+        """Signal one recorded process only if its pinned identity still holds at this instant and it has not become a
+        shared service."""
+        if self.same(key) and process_tree.name(key[0]) not in SHARED_SERVICES:
             try:
                 os.kill(key[0], number)
             except ProcessLookupError:

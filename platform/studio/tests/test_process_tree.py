@@ -131,3 +131,16 @@ def test_an_orphaned_intermediate_still_brings_in_the_cook_it_starts(monkeypatch
         world(monkeypatch, starts={10: 100, 77: 300, 99: 500}, kids={10: [], 77: [99]}, names={77: 'sh', 99: 'UnrealEditor-Cmd'})
         tree.poll()
         assert (99, 500) in tree.depth and [pid for pid, _, _ in attached] == [99]
+
+
+def test_a_recorded_shell_that_execs_a_shared_service_keeps_itself_and_its_children(monkeypatch, tmp_path):
+    # Root 10 -> sh 11 -> worker 12 are recorded; 11 then execs zenserver with no further poll before cleanup (#1560).
+    world(monkeypatch, starts={10: 100, 11: 110, 12: 120}, kids={10: [11], 11: [12]}, names={11: 'sh', 12: 'worker'})
+    sent = []
+    monkeypatch.setattr(guarded.os, 'kill', lambda pid, number: sent.append(pid))
+    tree = guarded.Descendants(10, 100, tmp_path, ('UnrealEditor-Cmd',), None, 10., ExitStack())
+    tree.poll()
+    assert set(tree.depth) == {(11, 110), (12, 120)} and not tree.shared
+    world(monkeypatch, starts={10: 100, 11: 110, 12: 120}, kids={10: [11], 11: [12]}, names={11: 'zenserver', 12: 'worker'})
+    tree.unwind(grace=0)
+    assert sent == [], 'neither the service nor anything under it is signalled'
