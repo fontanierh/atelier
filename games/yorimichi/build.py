@@ -362,7 +362,7 @@ def steps(ctx):
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
                                           'import_hidamari.py', 'import_southwest.py', 'arcade_material.py', 'plaza_material.py',
                                           'harbor_material.py', 'sea_look.py', 'mountain_material.py', 'import_sailboat.py', 'sailboat_material.py',
-                                          'import_zeppelin.py', 'atmosphere.py', 'city_material.py')],
+                                          'import_zeppelin.py', 'atmosphere.py', 'city_material.py', 'mesh_materials.py')],
              after=['unreal.compile'], needs=['world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari', 'world.hidamari_textures', 'world.hidamari_props',
                     'world.zeppelin', 'world.terrain', 'world.village', 'world.sailboat', 'characters.wanderer'],
              heavy=True, about='world assets, materials, the villager and the level (/Game/Japan)'),
