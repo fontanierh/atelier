@@ -14,7 +14,7 @@ are kept in the ignored api-private/ subfolder.
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))  # Blender's --python does not add the script's folder
 from _archive import ROOT, TOOLS  # noqa: E402  (ROOT: the prototype archive holding the revision history)
-import argparse, base64, hashlib, json, os, sys, time, uuid, urllib.request, urllib.error
+import argparse, hashlib, json, os, sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -316,48 +316,10 @@ def sha(p):
     return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 
-def prep(path, maxw=1280):
-    from PIL import Image
-    tmp = OUT / 'api-private/_upload'
-    tmp.mkdir(parents=True, exist_ok=True, mode=0o700)
-    im = Image.open(path).convert('RGB')
-    if im.width > maxw:
-        im = im.resize((maxw, round(im.height * maxw / im.width)))
-    out = tmp / (hashlib.sha256(str(path).encode()).hexdigest()[:10] + '.jpg')
-    part = out.with_name(f'{out.stem}.{uuid.uuid4().hex[:8]}.part.jpg')   # parallel views share image 2: write
-    im.save(part, quality=92)                                               # aside, then rename (atomic)
-    part.replace(out)
-    return out
-
-
-def multipart(fields, files):
-    boundary = '----warm' + uuid.uuid4().hex
-    body = bytearray()
-    for k, v in fields:
-        body += f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode()
-    for k, p in files:
-        body += (f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"; filename="{p.name}"\r\n'
-                 f'Content-Type: image/jpeg\r\n\r\n').encode()
-        body += p.read_bytes() + b'\r\n'
-    body += f'--{boundary}--\r\n'.encode()
-    return bytes(body), f'multipart/form-data; boundary={boundary}'
-
-
 def gpt_edit(prompt, images, n):
-    body, ctype = multipart([('model', MODEL), ('prompt', prompt), ('size', SIZE), ('quality', QUALITY), ('n', str(n))],
-                            [('image[]', prep(im)) for im in images])
-    req = urllib.request.Request('https://api.openai.com/v1/images/edits', data=body, method='POST',
-                                 headers={'Content-Type': ctype, 'Authorization': 'Bearer ' + key()})
-    t = time.time()
-    try:
-        with urllib.request.urlopen(req, timeout=900) as r:
-            js = json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        js = json.loads(e.read() or b'{}')
-    if 'error' in js or 'data' not in js:
-        raise RuntimeError(f'gpt-image error: {js.get("error", js)}')
-    blobs = [base64.b64decode(d.pop('b64_json')) for d in js['data']]
-    return blobs, js, round(time.time() - t, 1)
+    """n Sunburst edits of the context images (atelier.ai.images). Returns (PNG bytes list, response, seconds)."""
+    from atelier.ai import images as client
+    return client.sunburst(prompt, SIZE, images, n, model=MODEL, quality=QUALITY, key=key())
 
 
 def run(slug, n):
