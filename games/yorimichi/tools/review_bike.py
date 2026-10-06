@@ -126,11 +126,18 @@ def check(rows, sites):
         seen = clip in clips(ride, t0, t1); back = at(ride, t1 - .1)['clip'] == 'BikeRide'
         record(name, seen and back, f'{clip} seen={seen}, back on BikeRide={back}')
     lift = [r for r in ride if r['clip'] == 'BikeHop']
-    sprint = max(num(r, 'speed') for r in ride if 15.7 <= r['t'] <= 18.)
-    record('sprint', sprint > 1000, f'{sprint:.0f} cm/s pedalling hard')
-    held = [r['sprint'] for r in ride if 15.8 <= r['t'] <= 17.95]
-    ended = at(ride, 18.3)['sprint']
-    record('sprint_toggles', held and all(h == '1' for h in held) and ended == '0', f'on after one tap for {len(held)} rows, off at the skid: {ended == "0"}')
+    dash = rows_of(rows, 'sprint')
+    if dash:
+        sprint = max(num(r, 'speed') for r in dash if 3. <= r['t'] <= 5.6)
+        record('sprint', sprint > 1000, f'{sprint:.0f} cm/s pedalling hard from a standstill in 2.5 s (cruising tops at 600)')
+        held = [r['sprint'] for r in dash if 3.1 <= r['t'] <= 5.45]
+        ended = at(dash, 6.)['sprint']
+        record('sprint_toggles', bool(held) and all(h == '1' for h in held) and ended == '0', f'on after one tap for {len(held)} rows, off at the skid: {ended == "0"}')
+        skid = [r for r in dash if r['clip'] == 'BikeSkid']
+        stop = next((r for r in dash if r['t'] > 5.5 and num(r, 'speed') < 15), None)
+        record('sprint_skid_stop', bool(skid) and stop is not None and stop['t'] < 7.5, f"skid from {num(skid[0], 'speed') if skid else 0:.0f} cm/s, stopped at t={stop['t'] if stop else None}")
+    else:
+        record('sprint', False, 'no sprint segment (needs --crash)')
     skid = [r for r in ride if r['clip'] == 'BikeSkid']
     stop = next((r for r in ride if r['t'] > 18. and num(r, 'speed') < 15), None)
     record('skid_stop', bool(skid) and stop is not None and stop['t'] < 20. and 'BikeFootDown' in clips(ride, 18., 20.6),
@@ -168,15 +175,17 @@ def check(rows, sites):
         record('crash', False, 'no clear 13 m run found near the towns: pass --crash x,y,yaw')
     # Wheels on the ground: neither sinks in while he rides on the ground, on the level or up the test ramp.
     def gaps(r): return vec(r['gaps'])
-    rolling = [r for r in rows if r['seg'] in ('ride', 'slope') and r['state'] == '2' and r.get('air') == '0' and r['clip'] in ('BikeRide', 'BikeFootDown')]
+    rolling = [r for r in rows if r['seg'] in ('ride', 'sprint', 'slope') and r['state'] == '2' and r.get('air') == '0' and r['clip'] in ('BikeRide', 'BikeFootDown')]
     if rolling:
         worst = min(rolling, key=lambda r: min(gaps(r)))
         record('wheels_not_sunk', min(gaps(worst)) > -6., f"lowest wheel {min(gaps(worst)):.1f} cm (front, rear {worst['gaps']}) at {worst['seg']} t={worst['t']}")
     slope = rows_of(rows, 'slope')
     if slope:
-        up = [r for r in slope if r['state'] == '2' and r.get('air') == '0' and num(r, 'groundpitch') > 6.]
+        # On the ramp (pitched within 1 degree of its 12.5): both wheels on its face. Off its top the front wheel rightly
+        # hangs over the drop, so those rows are not counted.
+        up = [r for r in slope if r['state'] == '2' and r.get('air') == '0' and num(r, 'groundpitch') > 11.5]
         on = [max(abs(g) for g in gaps(r)) for r in up]
-        record('ramp_pitch', bool(up) and max(on) < 8., f"{len(up)} rows pitched up the ramp, top {max((num(r, 'groundpitch') for r in slope), default=0):.1f} deg, "
+        record('ramp_pitch', len(up) > 20 and max(on) < 3., f"{len(up)} rows pitched up the ramp, top {max((num(r, 'groundpitch') for r in slope), default=0):.1f} deg, "
                f"wheels within {max(on, default=0):.1f} cm of it")
     else:
         record('ramp_pitch', False, 'no slope segment')
@@ -267,13 +276,13 @@ try:
     print(('PASS ' if results['materials_ready_at_summon']['ok'] else 'FAIL ') + 'materials_ready_at_summon: ' + results['materials_ready_at_summon']['note'], flush=True)
     for still, frame in done.get('film_copies', []):
         if Path(still).exists(): shutil.copyfile(still, frame)
-    film = sorted((out / 'film').glob('ride_*.png')) + sorted((out / 'film').glob('crash_*.png')) + sorted((out / 'film').glob('slope_*.png'))
+    film = [f for seg in ('ride', 'sprint', 'crash', 'slope') for f in sorted((out / 'film').glob(f'{seg}_*.png'))]
     if film:
         listing = out / 'film' / 'list.txt'
         listing.write_text(''.join(f"file '{f.name}'\nduration 0.0333333\n" for f in film))
         subprocess.run(['nice', '-n', '10', 'ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', str(listing), '-vf', 'fps=30,format=yuv420p',
                         '-c:v', 'libx264', '-crf', '22', '-preset', 'medium', '-threads', '3', str(out / 'bike.mp4')], check=True)
-        if (out / 'audio.json').exists() and (out / 'loops.csv').exists():
+        if (out / 'audio.json').exists() and (out / 'loops.csv').exists() and (out / 'loops.csv').read_text().strip():
             # The soundtrack: the film's frames in order, the camera per frame and the bike's loops per 60 Hz tick.
             sys.path.insert(0, str(yori.GAME / 'scenarios')); import skate_mix_showreel as showreel
             for k, f in enumerate(film): (out / 'film' / f'seq_{k:05d}.png').symlink_to(f.name)

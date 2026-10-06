@@ -5,7 +5,8 @@
 Runs in the game's Python (the live bridge). SITE is open, level ground (Unreal cm and yaw): the bike comes out
 there and Cairo mounts, rides, steers both ways, rings the bell, waves, hops, pedals hard into a skid stop, puts a
 foot down and parks it. He then gets back on the parked bike, rides a lap and parks again. CRASH is level ground with room
-ahead: a test wall goes up 11 m in front and he pedals hard into it. Then, on the same run with the wall gone, a test ramp
+ahead: first he pedals hard from a standstill (one tap of Sprint) and skids to a stop; then a test wall goes up 11 m in
+front and he pedals hard into it. Then, on the same run with the wall gone, a test ramp
 (12.5 degrees, 1 m high, then a drop) checks that both wheels stay on a slope. Every frame's live.bike_state() goes to rows.json; named stills go to OUT; with
 FILM every other frame goes to OUT/film as a PNG (30 fps), and for the film's soundtrack the sounds the game starts go to
 audio.json, the bike's loops every frame to loops.csv and the camera every film frame to camera.csv (their clock runs
@@ -110,8 +111,8 @@ STEPS = [
     (14.25, lambda: live.press('jump_release')),
     (14.5, lambda: still('09_hop')),
     (15.6, lambda: camera('game')),
-    (15.7, lambda: (drive(1., .25), live.press('sprint'))),   # a tap: pedalling hard stays on
-    (16.9, lambda: still('10_sprint')),
+    (15.7, lambda: drive(1., .25)),
+    (16.9, lambda: still('10_fast')),
     (17.6, lambda: camera('track', **REAR3, fov=50.)),
     (18.0, lambda: (drive(0.), live.press('crouch'))),
     (18.45, lambda: still('11_skid')),
@@ -158,6 +159,20 @@ def ramp_ahead(site):
     ground = L.ground_at(unreal.Vector(x + math.cos(r) * RAMP['start'], y + math.sin(r) * RAMP['start'], 5000.))
     L.test_ramp(ground, float(yaw), RAMP['length'], RAMP['rise'])
 
+
+# Pedalling hard needs a long straight: on the crash run (before its wall goes up) he taps Sprint once, pulls away
+# from a standstill past 1000 cm/s, skids to a stop and parks.
+SPRINT_STEPS = [
+    (0.0, lambda: place(CRASH)),
+    (1.0, lambda: camera('game')),
+    (1.2, lambda: live.press('bike')),
+    (3.0, lambda: (drive(1.), live.press('sprint'))),   # one tap: pedalling hard stays on
+    (4.4, lambda: camera('track', **REAR3, fov=50.)),
+    (5.0, lambda: still('10_sprint')),
+    (5.5, lambda: (drive(0.), live.press('crouch'))),
+    (6.0, lambda: still('10b_sprint_skid')),
+    (8.0, lambda: live.press('bike')),
+]
 
 SLOPE_STEPS = [
     (0.0, lambda: (place(CRASH), ramp_ahead(CRASH))),
@@ -225,9 +240,12 @@ def tick(_dt):
         if S['frame'] % 120 == 0:
             json.dump({'segment': S['segment'], 't': round(S['t'], 2), 'frame': S['frame'], 'clip': f.get('clip'), 'state': f.get('state')},
                       open(os.path.join(OUT, 'progress.json'), 'w'))
-        if S['segment'] in ('ride', 'slope') and not S['queue'] and S['end'] is None: S['end'] = S['t'] + 1.
+        if S['segment'] in ('ride', 'sprint', 'slope') and not S['queue'] and S['end'] is None: S['end'] = S['t'] + (3. if S['segment'] == 'sprint' else 1.)
         if S['end'] is not None and S['t'] >= S['end']:
             if S['segment'] == 'ride' and CRASH:
+                S.update(segment='sprint', t=0., queue=list(SPRINT_STEPS), end=None)
+                return
+            if S['segment'] == 'sprint':
                 S.update(segment='crash', t=0., queue=list(CRASH_STEPS), end=None)
                 return
             if S['segment'] == 'crash':

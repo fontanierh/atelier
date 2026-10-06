@@ -531,7 +531,7 @@ void UBikeComponent::FollowGround(float Dt)
   }
  }
  if(bSnapGround){GroundPitch=WantPitch;GroundOffset=WantOffset;bSnapGround=false;}
- else{GroundPitch=FMath::FInterpTo(GroundPitch,WantPitch,Dt,10.f);GroundOffset=FMath::FInterpTo(GroundOffset,WantOffset,Dt,10.f);}
+ else{GroundPitch=FMath::FInterpTo(GroundPitch,WantPitch,Dt,20.f);GroundOffset=FMath::FInterpTo(GroundOffset,WantOffset,Dt,20.f);}
 }
 
 FVector2D UBikeComponent::GetWheelGaps() const
