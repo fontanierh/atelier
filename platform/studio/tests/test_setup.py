@@ -123,6 +123,7 @@ def test_repeat_setup_skips_rebuild_but_detects_replaced_binary(engine, monkeypa
 
     def rebuild(command, folder, **kwargs):
         assert kwargs['lock'] is False  # the enclosing repair holds both slots as a compile
+        assert Path(command[0]).name == 'dotnet'  # guarded.run owns the single nice adjustment
         calls.append(command)
         output = Path(command[command.index('-o') + 1])
         output.mkdir(parents=True, exist_ok=True)

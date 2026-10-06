@@ -21,6 +21,7 @@ from zeppelin.layout import PARK_BRIDGE, DECK_EDGE
 from atelier.build import Context
 from atelier.safety import guarded
 from atelier.safety.guard import attach as attach_memory_guard, reap
+from atelier.safety.process import spawn_game
 from atelier import live
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -57,7 +58,7 @@ log = (out / 'game.log').open('w')
 cmd = [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed', '-resx=1280', '-resy=720', '-nosplash', '-stdout', '-nofox',
        f'-liveport={args.port}', '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost',
        '-ExecCmds=t.MaxFPS 60,r.RHISetGPUCaptureOptions 0,DisableAllScreenMessages,skate.SurfaceDebug 1']
-p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
+p = spawn_game(cmd, stdout=log, stderr=subprocess.STDOUT)
 guards = ExitStack(); monitor = None
 
 
