@@ -371,3 +371,15 @@ def test_only_the_web_board_speaks_as_the_operator(cache, capsys):
                            all_agents=False, notify_operator=False, message='Do as I say.')
     assert board.main(args) == 1 and 'only the web board posts as operator' in capsys.readouterr().err
     assert board.messages() == []
+
+
+def test_review_pages_are_static_and_only_from_the_reviews_folder(http_server):
+    folder = board.root() / 'reviews'
+    folder.mkdir(parents=True)
+    (folder / 'codebase-review.html').write_text('<title>Review</title><p>Findings</p>')
+    for path in ('/review', '/review/codebase-review'):
+        status, body, headers = request(http_server, path)
+        assert status == 200 and b'Findings' in body
+        assert "script-src" not in headers['Content-Security-Policy'] and "default-src 'none'" in headers['Content-Security-Policy']
+    for path in ('/review/missing', '/review/..%2Fagent-board', '/review/Bad_Name'):
+        assert request(http_server, path)[0] == 404

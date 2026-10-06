@@ -202,7 +202,7 @@ class Handler(BaseHTTPRequestHandler):
         super().setup()
         self.connection.settimeout(10)
 
-    def send(self, status, body, mime='application/json; charset=utf-8', cache='no-store', headers=()):
+    def send(self, status, body, mime='application/json; charset=utf-8', cache='no-store', headers=(), csp=None):
         if not isinstance(body, bytes):
             body = json.dumps(body, ensure_ascii=False).encode()
         self.send_response(status)
@@ -213,7 +213,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(name, value)
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'no-referrer')
-        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; "
+        self.send_header('Content-Security-Policy', csp or "default-src 'self'; script-src 'self'; style-src 'self'; "
                          "img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         self.end_headers()
         self.wfile.write(body)
@@ -234,6 +234,17 @@ class Handler(BaseHTTPRequestHandler):
             data = packed
             headers.append(('Content-Encoding', 'gzip'))
         self.send(200, data, mime, cache, headers)
+
+    def review(self, name):
+        """A report page (an agents' research write-up) from the board cache, for the same people as the board.
+        Pages are static: no scripts run, and only their own inline styles and Google Fonts load."""
+        path = board.root() / 'reviews' / f'{name}.html'
+        if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,79}', name) or not path.is_file():
+            self.send(404, {'error': 'There is no review by that name.'}); return
+        self.send(200, path.read_bytes(), 'text/html; charset=utf-8', 'no-cache',
+                  csp="default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; "
+                      "font-src https://fonts.gstatic.com; img-src data:; base-uri 'none'; form-action 'none'; "
+                      "frame-ancestors 'none'")
 
     def send_attachment(self, ident):
         item = attachment(ident)
@@ -297,6 +308,8 @@ class Handler(BaseHTTPRequestHandler):
                 state = snapshot(parse_qs(parsed.query), self.server.remote_status, self.server.sender)
                 state.update(csrf=self.server.csrf, sender=self.server.sender)
                 self.send(200, state)
+            elif parsed.path == '/review' or parsed.path.startswith('/review/'):
+                self.review(parsed.path.removeprefix('/review').strip('/') or 'codebase-review')
             elif parsed.path == '/api/push/key':
                 self.send(200, {'key': board_push.public_key()})
             elif parsed.path == '/api/thread':
