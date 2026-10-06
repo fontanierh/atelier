@@ -607,7 +607,7 @@ void UJapanPreferences::ReportProfile() const
 }
 bool UJapanPreferences::IsSessionOnly(const FString& Key)
 {
-    // Desktop-specific tuning is chosen per launch (japan/run.sh desktop), never saved.
+    // Desktop-specific tuning is chosen per launch (the desktop play profile in game.toml), never saved.
     // Retired haze/supersample keys stay excluded so old experiment files cannot leak into saves.
     // One shared settings.txt serves the phone stream from this same project, and a saved desktop=1
     // would silently switch the phone into the desktop profile the next time the stream started.
@@ -895,7 +895,7 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .OnClicked_Lambda([ShowPage] { ShowPage(true); return FReply::Handled(); })];
     for (int32 I = 0; I < Values.Num(); ++I)
     {
-        // Session-only keys are launch flags (japan/run.sh desktop), not player settings, so they
+        // Session-only keys are launch flags (the desktop play profile), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
         if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset") || Values[I].Key == TEXT("tree_lod_mode")) continue;   // a button above

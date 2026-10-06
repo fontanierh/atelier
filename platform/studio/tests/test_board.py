@@ -251,3 +251,11 @@ def test_post_to_all_agents_is_one_grouped_broadcast_for_addressed_listeners(cac
     # Addressed-only listeners get their copy, and every copy knows the whole audience.
     assert board.messages(agent='one', addressed_only=True)[0]['audience'] == ['one', 'two']
     assert board.main(parse_args(['board', 'post', '--agent', 'poster', '--all-agents', '--to', 'one', 'x'])) == 1
+
+
+def test_board_modules_import_in_any_order():
+    import subprocess, sys
+    for first, second in (('board', 'board_cli'), ('board_cli', 'board'), ('board_store', 'board_cli')):
+        code = f'import atelier.{first}, atelier.{second}; import atelier.board; assert atelier.board.main is atelier.board_cli.main'
+        result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr

@@ -15,12 +15,15 @@ assistance), built with Rust 1.97.1. The plugin [README](README.md) covers the U
 | Call | Effect |
 | --- | --- |
 | `Create(resources, world, anchor, heading, out, error)` | Builds a session from loaded data and a collision snapshot |
+| `CreateBlank(resources, out, error)` | A session on no world, made ahead of a ride on any thread |
 | `Configure(difficulty, goofy, trucks)` | Controller preset, stance and truck tightness |
 | `Tune(pop, spin, speed, power, vert_assist)` | Scales on the stock values; out-of-range values are an error |
+| `Feel(feel)` | The `FeelTuning` scales (flick, air, rails, rolling, balance; README "Feel"); out-of-range values are an error |
 | `Activate(position, heading)` | Puts the rider on the board at a spot |
 | `Step(pad, frame_interval)` | Adds host time and runs whole ticks |
 | `SuspendInput()` | Stops reading the pad between rides |
 | `InstallCollision(world)` | Swaps in a prepared collision snapshot between steps |
+| `AdoptWorld(from)` | Takes over another session's installed collision and grind world |
 | `Pose()`, `ReferencePose()` | Root, bones, bone names, camera frame, velocity, tick and state name |
 | `Launch(velocity)` | Sets the velocity of every board and rider body (QA) |
 

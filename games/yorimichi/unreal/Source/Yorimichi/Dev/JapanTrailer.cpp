@@ -1,7 +1,7 @@
 #include "WandererCharacter.h"
 #include "AtelierData.h"
 #include "JapanWorld.h"
-#include "HidamariReview.h"
+#include "Dev/HidamariReview.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "ZeppelinService.h"

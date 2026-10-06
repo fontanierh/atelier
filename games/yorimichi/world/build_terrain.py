@@ -1,6 +1,6 @@
 """Terrain + road + wires (one FBX) and the sea plane from build/yorimichi/world.json + heightmap.npy
 
-    blender -b --python japan/build_terrain.py
+    blender -b --python games/yorimichi/world/build_terrain.py
 -> build/yorimichi/terrain.fbx (objects Terrain, Road, Wires: material slots Ground, Road, Metal), build/yorimichi/assets/Sea.fbx
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent)); import yori  # noqa: E402,F401

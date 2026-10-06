@@ -1,10 +1,14 @@
 # Packaging the macOS game
 
-`atelier build yorimichi unreal.package` builds a packaged Yorimichi `.app` (Mac, Development) for playtests on another
-Mac. The step needs every Unreal import and the staged runtime data in the same checkout, so in a checkout whose imports
-are current only the package runs. It reruns by itself whenever any of them, the C++ source, the project file, the engine
-plugins, `unreal/Config` or the packaging code (`tools/package_archive.py`, `tools/desktop_preview.py`) changed. It is only built when named exactly, never by a plain `atelier build yorimichi` or
-`atelier build yorimichi unreal`. Do not add `--force`: that reruns everything in the plan, including every import.
+`atelier build yorimichi unreal.package` produces a packaged Yorimichi `.app` (Mac, Development) for another Mac.
+It plans two independently stamped steps: `unreal.cook` builds and certifies the app, then `unreal.package` assembles the
+download. The cook needs every Unreal import and the staged runtime data in the same checkout. A C++ source, project,
+plugin, Config or imported-content change invalidates the cook and its download. A launcher or archive-script edit
+invalidates only download assembly, so it reuses the completed cook.
+
+Both steps are explicit: a plain `atelier build yorimichi` or `atelier build yorimichi unreal` never plans either.
+Do not add `--force`: it reruns every prerequisite, including every import. The first build after this split needs a
+cook to establish `cook.json`; an older package is not silently certified as current.
 
 ```sh
 nice -n 10 uv run atelier build yorimichi unreal.package
@@ -32,7 +36,7 @@ build configuration waits forever on the macOS Documents privacy check (README, 
   through pinned parents and records it by pid and start time. It reads names again on every poll, so a process that
   execs the cook is still caught. Each UnrealEditor(-Cmd), ShaderCompileWorker and `dotnet` process gets its own memory
   guard, started with its validated start time; the reports are at
-  `build/yorimichi/logs/unreal.package.guard/memory-health-<name>-<pid>.json`. If a guard exits while its process is
+  `build/yorimichi/logs/unreal.cook.guard/memory-health-<name>-<pid>.json`. If a guard exits while its process is
   still running, the run fails at once.
 - **Orphans and shared services:** each poll walks from the root and from every recorded process still alive, so an
   intermediate that lost its parent still brings in the cook it starts. Shared engine services that a cook starts
@@ -43,8 +47,14 @@ build configuration waits forever on the macOS Documents privacy check (README, 
   25 s.
 - **Archive job:** once UAT releases its turn, `tools/package_archive.py` runs as a guarded job of its own. It takes
   its own slot turn, has its own deadline, and its `ditto` and `split` children are watched. Its zip, split and checksum
-  phases are each bounded to 45 minutes and report progress every 25 s. Before anything moves, it refuses an app whose
-  staged `Content/Data` lacks `world.json`, `heightmap.bin` or `map/map.json`.
+  phases are each bounded to 45 minutes and report progress every 25 s. It requires a certified app whose
+  staged `Content/Data` contains `world.json`, `heightmap.bin` and `map/map.json`.
+- **Cook identity and retries:** `package/cook.json` records the source revision, engine version, prerequisite
+  fingerprint and file hashes. The app remains under `package/archive/`; assembly makes an independent copy, verifies
+  it against that record, and signs only the copy. A failed ZIP or signing phase leaves the cook and previous download
+  intact. The ZIP name and manifest retain the cook's source revision even if a later docs or launcher commit changes
+  HEAD. A removed or changed cooked file invalidates the cook. All candidate files are finished before publication;
+  the manifest is published last.
 - **Audio signing:** the ad-hoc playtest archive preserves the signed app's sandbox and existing entitlements, adding
   one exact Mach lookup allowance for `com.apple.cmio.registerassistantservice.system-extensions`. On macOS 26,
   CoreAudio's first default-output-device query can wait on this denied lookup before the game starts. The archive
@@ -61,8 +71,8 @@ A packaged game does not start the live bridge (the HTTP remote control and its 
 ## The launcher
 
 Double-clicking `Yorimichi.app` starts the game without the desktop profile. `Play Yorimichi.command` is generated from
-`tools/desktop_preview.py`, so it carries the same profile as `atelier play yorimichi --profile desktop-1440
---shared-settings`:
+`tools/desktop_preview.py`, so it carries the same profile as `atelier play yorimichi --profile desktop-1440`,
+which already selects shared settings:
 
 - forward rendering
 - the native 1440 viewport
@@ -105,9 +115,30 @@ Editor builds keep both renderers.
 4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
    the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.
 
-## The shared-PCH rebuild on every package
+## Before publishing a release
 
-**Proven: every `-build -package` run recompiles all game and plugin objects, even with no C++ change.** The
+Verify the files that will be uploaded, rather than an app left in a previous staging directory:
+
+```sh
+nice -n 10 uv run python games/yorimichi/tools/verify_package.py \
+  --package build/yorimichi/package --extract build/yorimichi/release-check/extracted \
+  --report build/yorimichi/release-check/verification.json --expected-revision "$(git rev-parse HEAD)"
+```
+
+Choose new extraction and report paths for each run. The tool checks the manifest, SHA256SUMS and actual file hashes,
+joins numbered parts when necessary, and extracts with `ditto` under the normal lock and memory guard. Read the render
+ledger and announce that extraction job before running it. It then checks the launcher permissions, Apple silicon
+executable, every bundled Mach-O dependency, app signature, sandbox audio allowance, symlinks and core staged data.
+Use `--require-communitypark` when the release includes the optional park. The expected revision is the full revision
+in the cook record; an older manifest without that record carries only its short revision.
+
+This verifies the download, not gameplay. Run a separate, guarded standalone smoke test from the extracted launcher's
+folder and quit it promptly. Check that captures and logs were written inside the app's writable sandbox container.
+Upload the verified ZIP or all numbered parts, SHA256SUMS, manifest.json and the verification report together.
+
+## The shared-PCH rebuild on every cook
+
+**Proven: every UAT `-build -package` run recompiles all game and plugin objects, even with no C++ change.** The
 installed UE 5.8 engine causes this loop on Mac:
 
 1. The build writes the 12 `SharedPCH.*.rsp` response files under

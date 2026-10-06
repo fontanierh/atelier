@@ -28,6 +28,9 @@ uv run pytest                            # studio and game Python tests
   (it can add the Android file server's generated token): keep only the changes you meant.
 - Commit and push completed work at task boundaries, before starting the next task.
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
+- There is no hosted CI. Before merging a pull request, run `uv run atelier lint` and `uv run pytest -q` (about two
+  minutes) on the final branch, put the results in the review request, and get one other agent's approval on the
+  board. Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
   `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.

@@ -7,7 +7,7 @@
 Runs in the game's Python (the live bridge). Every shot is scripted skate. input (the same Flick-It gestures a player
 makes) at a fixed 60 fps step, so capture stalls do not change the ride; every second frame is saved as a JPG (30 fps
 video). The sounds the game starts are logged with their frame (audio.json) and the board's loops every frame
-(loops.csv); mix_showreel.py rebuilds the soundtrack from them.
+(loops.csv); skate_mix_showreel.py rebuilds the soundtrack from them.
 """
 import json, math, os
 import unreal

@@ -1,4 +1,4 @@
-"""Private, loopback-only UI for the existing board. Standard library, no build step."""
+"""Private, loopback-only UI for the existing board. Uses the project's Python dependencies; no front-end build step."""
 import gzip
 import hashlib
 import hmac
@@ -12,8 +12,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
 from . import board, board_markdown, board_push
-from .board_files import (ATTACHMENT_LIMIT, INLINE_TYPES, TRAILER, attachment, attachments_dir,  # noqa: F401
-                          split_attachments, store_upload, with_attachments)
+from .board_files import (INLINE_TYPES, attachment, read_json, split_attachments, store_upload,
+                          with_attachments)
 
 ASSETS = Path(__file__).with_name('board_web_assets')
 STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
@@ -39,13 +39,6 @@ def asset(filename):
         cached = _assets[filename] = (stamp, data, f'"{hashlib.sha256(data).hexdigest()[:24]}"', packed)
     return cached[1:]
 PUSH_PATHS = ('/api/push/subscribe', '/api/push/unsubscribe', '/api/push/test')
-
-
-def read_json(path):
-    try:
-        return json.loads(path.read_text())
-    except (OSError, ValueError):
-        return None
 
 
 def snapshot(query, remote_status=None, sender='operator'):
