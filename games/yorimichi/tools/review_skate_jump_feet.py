@@ -42,6 +42,7 @@ parser.add_argument('--port', type=int, default=8871)
 parser.add_argument('--rider', default='CairoBotw', choices=('CairoBotw', 'Cairo'))
 parser.add_argument('--settings', type=Path, help="a player's settings.txt to play with")
 parser.add_argument('--label', default='', help='output subfolder suffix, to keep runs with different settings apart')
+parser.add_argument('--settle-fps', type=float, default=25., help='frame rate to hold for 3 s before the checks (a slower host may name a lower one; the phases\' own frame timing is still graded)')
 parser.add_argument('--desktop-profile', action='store_true', help='normal native 1440p play profile, with an isolated copy of saved preferences')
 args = parser.parse_args()
 live.URL = f'http://127.0.0.1:{args.port}'
@@ -362,11 +363,11 @@ try:
         except OSError:
             fps = 0
         if time.monotonic()-last_notice >= 20:
-            print(f'Owned game settling: observed {fps:.1f} FPS, elapsed {time.monotonic()-start:.0f}s; waiting for three seconds >=25 FPS', flush=True); last_notice=time.monotonic()
-        steady = (steady or time.monotonic()) if fps >= 25 else None
+            print(f'Owned game settling: observed {fps:.1f} FPS, elapsed {time.monotonic()-start:.0f}s; waiting for three seconds >={args.settle_fps:g} FPS', flush=True); last_notice=time.monotonic()
+        steady = (steady or time.monotonic()) if fps >= args.settle_fps else None
         if steady and time.monotonic() - steady > 3: break
         time.sleep(.5)
-    else: raise RuntimeError('Owned game did not settle at >=25 FPS within 240s')
+    else: raise RuntimeError(f'Owned game did not settle at >={args.settle_fps:g} FPS within 240s')
     print('bridge up and steady', flush=True)
     results = {}
     results['on_foot'] = stand(); print('on_foot', json.dumps(results['on_foot']), flush=True)
@@ -430,7 +431,7 @@ try:
            json.dumps(results['on_foot']))
     log.flush(); late = [l.strip() for l in (out / 'game.log').read_text(errors='replace').splitlines() if LATE_TICK in l]
     record('physics_control_before_physics', not late, late[0][-300:] if late else 'no late-tick warning')
-    summary = dict(passed=all(c['ok'] for c in checks.values()), checks=checks, runs=results)
+    summary = dict(passed=all(c['ok'] for c in checks.values()), settle_fps=args.settle_fps, checks=checks, runs=results)
     (out / 'checks.json').write_text(json.dumps(summary, indent=2) + '\n')
     print('PASSED' if summary['passed'] else 'FAILED', sum(c['ok'] for c in checks.values()), '/', len(checks), flush=True)
     sys.exit(0 if summary['passed'] else 1)
