@@ -52,6 +52,7 @@ if not args.worker:
                          purpose='skate jump feet review', kind='game'))
 
 ox, oy, oz = ORIGIN
+FLAT_Z = oz + .45                       # the START flat's height (m)
 START = (ox + 50, oy + 3, oz + 2)     # on foot: the landing's level wood (0.45 m from x 49 to 56), clear of the rollout
 LANE = (ox + 44.6, oy - 2, oz + 2)    # the landing's run-out (4° down) before the quarter, riding toward +x
 DROP_IN = (ox - 2.6, oy, oz + 12)     # the roll-in's top deck
@@ -110,9 +111,10 @@ unreal.YorimichiLive.hold_camera(6.0)
 '''
 HOME = r'''
 P = unreal.LiveLibrary.player(); C = P.get_components_by_class(unreal.CameraComponent)[0]
-parent, sock, rel, fov = live.CAMHOME
-C.attach_to_component(parent, sock, unreal.AttachmentRule.KEEP_RELATIVE, unreal.AttachmentRule.KEEP_RELATIVE, unreal.AttachmentRule.KEEP_RELATIVE, False)
-C.set_relative_transform(rel, False, True); C.set_editor_property('field_of_view', fov)
+if getattr(live, 'CAMHOME', None) is not None:   # nothing to restore before a close view has moved the camera
+    parent, sock, rel, fov = live.CAMHOME
+    C.attach_to_component(parent, sock, unreal.AttachmentRule.KEEP_RELATIVE, unreal.AttachmentRule.KEEP_RELATIVE, unreal.AttachmentRule.KEEP_RELATIVE, False)
+    C.set_relative_transform(rel, False, True); C.set_editor_property('field_of_view', fov)
 unreal.YorimichiLive.hold_camera(0.0)
 '''
 
@@ -174,22 +176,44 @@ def view(code, what):
 def shot(name): run(f"live.shot({str(out / f'{name}.png')!r})")
 
 
-def stand():
-    """Cairo on foot on the flat: each ankle and toe bone's height over the floor traced under it, the capsule's bottom
-    over the floor and the mesh's offset from that bottom (cm), so soles sunk into the ground show which one is off.
-    Also each foot's toe drop (ankle minus toe height, cm), to set against the animation's, and the ground normal the
-    foot contact node samples under each ankle (its trace, from 45 cm over the capsule's bottom), as degrees from up."""
+def to_start():
+    """Cairo on foot, standing still on the flat START, the park's view: the fixture every check starts from. START is
+    above the flat, so he falls and settles first; then refuses unless he stands on it (capsule bottom within 5 cm of
+    the floor traced under him, at the flat's height within 10 cm) and it is level (within 1°)."""
     x, y, z = START
     run(f'''
-W = unreal.LiveLibrary.game_world(); P = unreal.LiveLibrary.player(); M = P.get_editor_property('mesh')
-C = P.get_component_by_class(unreal.CapsuleComponent); half = C.get_scaled_capsule_half_height()
+P = unreal.LiveLibrary.player(); C = P.get_component_by_class(unreal.CapsuleComponent); half = C.get_scaled_capsule_half_height()
 P.get_movement_component().stop_movement_immediately()
 P.set_actor_location(unreal.Vector({x * 100!r}, {-y * 100!r}, {z * 100!r}) + unreal.Vector(0, 0, half + 3), False, True)
 unreal.YorimichiLive.drive(unreal.Vector2D(), 0)
 ''')
     wait(2.)
+    fixture = json.loads(run(r'''
+import json, math
+W = unreal.LiveLibrary.game_world(); P = unreal.LiveLibrary.player()
+C = P.get_component_by_class(unreal.CapsuleComponent); half = C.get_scaled_capsule_half_height()
+a = C.get_world_location()
+h = unreal.SystemLibrary.line_trace_single(W, a, a - unreal.Vector(0, 0, half + 400), unreal.TraceTypeQuery.ECC_VISIBILITY, False, [P], unreal.DrawDebugTrace.NONE, True)
+t = None if h is None else h.to_tuple()
+print(json.dumps(None if t is None else dict(floor=round(t[5].z, 2), gap=round(a.z - half - t[5].z, 2),
+                                             tilt=round(math.degrees(math.acos(max(-1., min(1., t[7].z)))), 2))))
+''').strip().splitlines()[-1])
+    if (fixture is None or abs(fixture['gap']) > 5 or abs(fixture['floor'] - FLAT_Z * 100) > 10 or fixture['tilt'] > 1):
+        raise RuntimeError(f'Cairo is not standing on the level START flat: {fixture}')
+    tilt = fixture['tilt']
+    view(HOME, 'camera home')
+    return tilt
+
+
+def stand():
+    """Cairo on foot on the flat: each ankle and toe bone's height over the floor traced under it, the capsule's bottom
+    over the floor and the mesh's offset from that bottom (cm), so soles sunk into the ground show which one is off.
+    Also each foot's toe drop (ankle minus toe height, cm), to set against the animation's, and the ground normal the
+    foot contact node samples under each ankle (its trace, from 45 cm over the capsule's bottom), as degrees from up."""
+    to_start()
     measured = run(r'''
 import json, math
+M = P.get_editor_property('mesh')
 def floor(p):
     h = unreal.SystemLibrary.line_trace_single(W, p + unreal.Vector(0, 0, 60), p - unreal.Vector(0, 0, 60), unreal.TraceTypeQuery.ECC_VISIBILITY, True, [P], unreal.DrawDebugTrace.NONE, True)
     return None if h is None else h.to_tuple()[5].z
@@ -325,6 +349,13 @@ try:
     else: raise RuntimeError('Bridge startup timed out')
     run('import os,unreal; assert os.getpid() == '+str(p.pid)+'; assert os.path.realpath(unreal.Paths.project_dir()) == '+repr(str(ctx.uproject.parent.resolve())))
     owns_bridge = True
+    # Settle where the checks run, not at the spawn: the forest road's view is a different, heavier frame. The phases'
+    # own frame timing still has to meet its requested rate.
+    for attempt in range(6):   # the park's collision may still be streaming in just after startup
+        try: print('START fixture level, tilt', to_start(), 'deg', flush=True); break
+        except RuntimeError as e:
+            if attempt == 5: raise
+            print('START fixture not ready:', str(e)[:200], flush=True); time.sleep(5)
     steady, start = None, time.monotonic(); last_notice = 0.
     while time.monotonic() - start < 240:
         try: fps = live.request('/state', timeout=min(10, max(.1, 240 - (time.monotonic() - start)))).get('fps', 0)
