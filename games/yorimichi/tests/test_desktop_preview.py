@@ -55,6 +55,16 @@ def test_default_forward_and_saved_lumen_keep_distinct_mesh_generation(desktop, 
     assert 'r.ScreenPercentage 100' not in ' '.join(lumen)
 
 
+def test_probe_renderer_flags_preserve_lumen_and_default_viewport(desktop):
+    for lumen in (False, True):
+        flags = desktop.renderer_arguments(lumen)
+        assert '-noshaderworker' in flags
+        assert ('r.ForwardShading=' + ('False' if lumen else 'True')) in ' '.join(flags)
+        assert any(arg.startswith('-ForceDPCVars=') for arg in flags) == (not lumen)
+        assert 'GameViewportClientClassName' not in ' '.join(flags)
+        assert 'DesktopPreviewViewportClient' in ' '.join(desktop.renderer_arguments(lumen, desktop_viewport=True))
+
+
 def test_readiness_matches_current_manifest_and_rejects_partial_import(desktop):
     manifest(desktop)
     assert desktop.parse_ready(ready_log())['height'] == 1440
