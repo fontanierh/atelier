@@ -75,7 +75,7 @@ h1, h2, p { margin: 0; }
 .topbar { flex: none; position: relative; z-index: 3; padding: calc(var(--safe-top) + 6px) 0 0; border-bottom: 1px solid var(--line); background: #0c0c0ecc; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
 .round-button { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); background: #ffffff0a; display: grid; place-items: center; color: var(--ink-2); }
 .round-button.active { background: #ffffff1f; color: var(--ink); }
-.titlerow { display: flex; align-items: center; gap: 8px; padding: 4px 12px 6px 18px; min-width: 0; }
+.titlerow { display: flex; align-items: center; gap: 8px; padding: 2px 10px 5px 16px; min-width: 0; }
 .title-text { flex: 1; min-width: 0; }
 .title-text h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .title-text p { display: flex; align-items: center; gap: 7px; margin-top: 1px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; }
@@ -102,6 +102,16 @@ h1, h2, p { margin: 0; }
 /* On a phone the agent row floats over the top of the feed instead of taking layout space, so hiding it while you read
    back (and showing it again) never moves the messages under your finger. The feed keeps a fixed inset for it. */
 @media (max-width: 1099px) {
+  /* The top bar floats over the feed too, so it can slide away as you scroll back without moving the messages. A
+     strip under the status bar stays, so text never scrolls beneath the clock. */
+  .topbar { position: absolute; top: 0; left: 0; right: 0; transition: transform .3s cubic-bezier(.32, .72, 0, 1); }
+  .app.hide-top .topbar { transform: translateY(-100%); }
+  .app.hide-top .orbs { visibility: hidden; }
+  .chat-pane::before { content: ""; position: absolute; z-index: 4; top: 0; left: 0; right: 0; height: var(--safe-top); background: #0c0c0ecc; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); pointer-events: none; }
+  .banner { position: absolute; z-index: 2; top: calc(var(--top-h, 0px) + 6px); left: 0; right: 0; }
+  .round-button { width: 34px; height: 34px; }
+  .title-text h1 { font-size: 18px; }
+  .title-text p { font-size: 12.5px; }
   /* Solid: a blur nested inside the header's own backdrop blur only sees the header, not the feed below. */
   .orbs { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg); border-bottom: 1px solid var(--line); transition: transform .28s cubic-bezier(.2, .8, .3, 1), opacity .22s ease, visibility 0s linear 0s; }
   .app.reading .orbs, .app.typing .orbs { transform: translateY(-12px); opacity: 0; visibility: hidden; pointer-events: none; transition: transform .28s cubic-bezier(.2, .8, .3, 1), opacity .22s ease, visibility 0s linear .28s; }
@@ -135,7 +145,7 @@ h1, h2, p { margin: 0; }
 .banner { flex: none; margin: 6px 16px 0; padding: 11px 14px; border-radius: 14px; background: #ff5c741f; border: 1px solid #ff5c7440; color: #ffb3bf; font-size: 14px; }
 
 /* Feed */
-.feed { -webkit-mask-image: linear-gradient(transparent, #000 12px); mask-image: linear-gradient(transparent, #000 12px); flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; overflow-anchor: none; padding: calc(var(--orbs-h, 0px) + 2px) 10px calc(var(--dock-h, 60px) + var(--tab-space) + 12px); -webkit-overflow-scrolling: touch; }
+.feed { -webkit-mask-image: linear-gradient(transparent, #000 12px); mask-image: linear-gradient(transparent, #000 12px); flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; overflow-anchor: none; padding: calc(var(--top-h, 0px) + var(--orbs-h, 0px) + 2px) 10px calc(var(--dock-h, 60px) + var(--tab-space) + 12px); -webkit-overflow-scrolling: touch; }
 .app.typing .feed { padding-bottom: calc(var(--dock-h, 120px) + 22px); }
 .messages { display: flex; flex-direction: column; max-width: 760px; margin: 0 auto; min-width: 0; }
 .load-older { display: block; margin: 8px auto 6px; border: 1px solid var(--line-strong); background: #ffffff08; color: var(--ink-2); font-size: 13.5px; padding: 8px 16px; border-radius: 18px; }
@@ -244,25 +254,27 @@ h1, h2, p { margin: 0; }
 .dock > .jump-latest { justify-self: end; width: auto; margin: 0 4px 0 auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--glass-edge); border-radius: 20px; padding: 8px 12px 8px 15px; background: var(--card-hi); color: var(--ink); font-weight: 650; font-size: 14px; box-shadow: 0 10px 26px #00000080; }
 .jump-latest .icon { color: var(--coral); }
 .jump-latest .icon svg { width: 17px; height: 17px; }
-.composer { display: grid; gap: 8px; padding: 6px 6px 6px 8px; border-radius: 24px; }
+.composer { display: grid; gap: 5px; padding: 5px 5px 5px 7px; border-radius: 22px; }
 /* The pickers only appear while writing; idle, the composer is one slim row. */
 .composer:not(.expanded) .composer-options { display: none; }
-.composer-options { display: flex; align-items: center; gap: 7px; min-width: 0; }
-.select-pill { position: relative; display: inline-flex; align-items: center; gap: 5px; min-width: 0; height: 34px; padding: 0 10px 0 13px; border-radius: 17px; border: 1px solid var(--line-strong); background: #ffffff0a; color: var(--ink-2); font-size: 14px; font-weight: 600; }
+.composer-options { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 1px 0 0 2px; }
+.select-pill { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 0; height: 26px; padding: 0 7px 0 10px; border-radius: 13px; border: 1px solid var(--line-strong); background: #ffffff0a; color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
+/* In a direct conversation or a thread the recipient is implied; the pill returns only when @mentions change it. */
+.app.in-conversation .recipient-pill:not(.mentioning), .app.in-thread .recipient-pill:not(.mentioning) { display: none; }
 /* The native picker covers the pill invisibly, so the phone opens its own wheel while the pill shows a short label. */
 .select-pill select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; appearance: none; -webkit-appearance: none; border: 0; font-size: 16px; cursor: pointer; }
 .select-pill:focus-within { box-shadow: 0 0 0 2px var(--coral); }
 .select-pill .icon { color: var(--muted); }
-.select-pill .icon svg { width: 15px; height: 15px; }
+.select-pill .icon svg { width: 13px; height: 13px; }
 .pill-label { color: var(--muted); font-weight: 500; }
 .pill-value { min-width: 0; max-width: 30vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
-.text-button { border: 0; background: none; color: var(--coral); font-size: 14px; font-weight: 650; padding: 6px; margin-left: auto; }
+.text-button { border: 0; background: none; color: var(--coral); font-size: 13px; font-weight: 650; padding: 3px 6px; margin-left: auto; }
 .character-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.composer-row { display: flex; align-items: flex-end; gap: 10px; }
-.composer textarea { flex: 1; min-width: 0; resize: none; border: 0; background: none; padding: 8px 4px 8px 4px; font-size: 16px; line-height: 1.35; max-height: min(34vh, 220px); min-height: 40px; outline: 0; overflow-y: auto; color: var(--ink); }
+.composer-row { display: flex; align-items: flex-end; gap: 8px; }
+.composer textarea { flex: 1; min-width: 0; resize: none; border: 0; background: none; padding: 7px 4px 7px 4px; font-size: 16px; line-height: 1.3; max-height: min(34vh, 220px); min-height: 36px; outline: 0; overflow-y: auto; color: var(--ink); }
 .composer textarea::placeholder { color: var(--faint); }
-.send-button { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--mine); color: #fff; box-shadow: 0 6px 18px #ff4f6d59, 0 1px 0 #ffffff59 inset; transition: transform .15s, opacity .15s, filter .15s; }
-.send-button .icon svg { width: 21px; height: 21px; stroke-width: 2.2; }
+.send-button { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--mine); color: #fff; box-shadow: 0 6px 18px #ff4f6d59, 0 1px 0 #ffffff59 inset; transition: transform .15s, opacity .15s, filter .15s; }
+.send-button .icon svg { width: 19px; height: 19px; stroke-width: 2.2; }
 .send-button:disabled { background: #ffffff12; color: var(--faint); box-shadow: none; cursor: default; }
 .send-button:not(:disabled):active { transform: scale(.9); }
 .composer.sending .send-button { opacity: .6; }
@@ -348,8 +360,8 @@ h1, h2, p { margin: 0; }
   .dock { left: 24px; right: 24px; }
 }
 /* Attachments: the tray in the composer */
-.attach-button { flex: none; width: 36px; height: 36px; margin-bottom: 2px; border-radius: 50%; border: 1px solid var(--line-strong); background: #ffffff0d; color: var(--ink-2); display: grid; place-items: center; transition: transform .2s, background .2s; }
-.attach-button .icon svg { width: 22px; height: 22px; stroke-width: 2; }
+.attach-button { flex: none; width: 34px; height: 34px; margin-bottom: 1px; border-radius: 50%; border: 1px solid var(--line-strong); background: #ffffff0d; color: var(--ink-2); display: grid; place-items: center; transition: transform .2s, background .2s; }
+.attach-button .icon svg { width: 20px; height: 20px; stroke-width: 2; }
 .attach-button:active { transform: scale(.9) rotate(90deg); background: #ffffff1f; }
 .tray { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
 .tray::-webkit-scrollbar { display: none; }
@@ -456,16 +468,12 @@ h1, h2, p { margin: 0; }
 .thread-divider { display: flex; align-items: center; gap: 12px; margin: 18px 4px 2px; color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
 .thread-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .app.in-thread .jump-latest { display: none !important; }
-.reply-chip { display: flex; align-items: center; gap: 8px; padding: 2px 4px 0 6px; font-size: 13px; font-weight: 600; color: var(--coral); animation: drop .25s ease both; }
-.reply-chip > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.reply-chip .icon svg { width: 16px; height: 16px; }
-.reply-chip button { width: 26px; height: 26px; border-radius: 50%; border: 0; background: #ffffff12; color: var(--ink-2); display: grid; place-items: center; padding: 0; }
-.reply-chip button .icon svg { width: 13px; height: 13px; }
 @media (min-width: 1100px) { .thread-head { padding-top: 20px; } .thread-feed { padding: 6px 28px calc(var(--dock-h, 120px) + 34px); } }
 
 /* Direct conversations */
-.mode-switch { display: inline-flex; gap: 2px; margin: 0 0 8px 18px; padding: 3px; border-radius: 12px; background: #ffffff0d; border: 1px solid var(--line); }
-.mode-switch button { border: 0; background: none; color: var(--muted); font-size: 12.5px; font-weight: 650; padding: 5px 12px; border-radius: 9px; transition: background .2s, color .2s; }
+.mode-switch { flex: none; display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: #ffffff0d; border: 1px solid var(--line); }
+.mode-switch[hidden] { display: none; }
+.mode-switch button { border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 650; padding: 4px 9px; border-radius: 8px; transition: background .2s, color .2s; }
 .mode-switch button[aria-pressed="true"] { background: #ffffff1a; color: var(--ink); }
 .who { border: 0; background: none; padding: 0; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; border-radius: 4px; }
 .who:hover .sender, .sender.who:hover { color: var(--coral); }
@@ -484,7 +492,6 @@ button.orb-link:active .orb { transform: scale(.9); }
 
 /* Agents: a one-line assignment under each name, and a Remove action behind the row. */
 .agent-task { font-size: 14px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chat-task { margin-top: 1px; font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .agent-cell { position: relative; border-radius: 22px; }
 .agent-cell .agent-row { position: relative; z-index: 1; transition: transform .32s cubic-bezier(.32, .72, 0, 1), background .2s, border-color .2s; }
 .agent-remove { position: absolute; z-index: 0; top: 0; bottom: 0; right: 0; width: 120px; padding-left: 28px; border: 0; border-radius: 22px; background: var(--error); color: #fff; display: grid; place-content: center; justify-items: center; gap: 2px; font: 650 12px/1 var(--font); opacity: 0; transition: opacity .2s; }
