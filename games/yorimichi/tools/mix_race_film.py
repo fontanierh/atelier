@@ -7,8 +7,11 @@ and the song's start, its jumps back into the loop and its fade at the finish (f
 stereo and is laid down exactly as the game played it; the crowd loop runs under the race from the moment it
 started; every other cue is placed at its frame, attenuated by its distance from the camera and panned by its bearing
 (the 2D cues are centred). Then the frames and the mix become an H.264/AAC MP4 (1080p60 and a 720p copy).
+
+The machine is shared with guarded game runs, so ffmpeg runs at nice 10 with two decoder, filter and encoder threads,
+and reports its progress every ten seconds. Encode only when no graded game is loading or running.
 """
-import argparse, csv, json, math, subprocess, sys, wave
+import argparse, csv, json, math, subprocess, sys, time, wave
 from pathlib import Path
 import numpy as np
 
@@ -16,6 +19,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world')); import y
 SOURCE = yori.OUT / 'audio/hippodrome'
 RATE = 48000
 FPS = 60
+THREADS = ['-threads', '2']
+FILTER_THREADS = ['-filter_threads', '2']
+
+
+def encode(label, inputs, outputs, frames):
+    """One ffmpeg run, niced and thread-capped, printing frames done every ten seconds until it exits."""
+    cmd = ['nice', '-n', '10', 'ffmpeg', '-y', '-loglevel', 'error', '-nostats', '-progress', 'pipe:1', *FILTER_THREADS,
+           *inputs, *THREADS, *outputs]
+    t0 = last = time.monotonic(); done = 0
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True) as p:
+        for line in p.stdout:
+            if line.startswith('frame='): done = int(line[6:] or 0)
+            if time.monotonic() - last >= 10 or line.startswith('progress=end'):
+                last = time.monotonic()
+                print(f'{label}: frame {done}/{frames} ({100 * done / max(frames, 1):.0f}%), {last - t0:.0f} s', flush=True)
+    if p.returncode: raise subprocess.CalledProcessError(p.returncode, cmd)
 
 
 def read_wav(path):
@@ -115,12 +134,12 @@ def main():
     seconds = frames / FPS
     vf = f'fade=t=in:st=0:d=0.5,fade=t=out:st={seconds - 1.5:.3f}:d=1.5'
     mp4 = take / f'{a.out}.mp4'
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(FPS), '-i', str(take / 'frame_%05d.jpg'), '-i', str(out_wav),
-                    '-vf', vf, '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-profile:v', 'high',
-                    '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', str(mp4)], check=True)
+    encode('1080p', [*THREADS, '-framerate', str(FPS), '-i', str(take / 'frame_%05d.jpg'), '-i', str(out_wav)],
+           ['-vf', vf, '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-profile:v', 'high',
+            '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', str(mp4)], frames)
     small = take / f'{a.out}-720p.mp4'
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(mp4), '-vf', 'scale=1280:720', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22',
-                    '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', str(small)], check=True)
+    encode('720p', [*THREADS, '-i', str(mp4)], ['-vf', 'scale=1280:720', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22',
+                                               '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', str(small)], frames)
     report = {'frames': frames, 'seconds': seconds, 'events': len(events), 'music': film.get('music', []), 'sounds_used': used,
               'video': str(mp4), 'video_720p': str(small), 'bytes': mp4.stat().st_size}
     (take / f'{a.out}-mix.json').write_text(json.dumps(report, indent=2) + '\n')
