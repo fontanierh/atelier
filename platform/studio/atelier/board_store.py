@@ -61,7 +61,17 @@ def database():
                 pid INTEGER, heartbeat REAL, checkout TEXT, stop INTEGER NOT NULL DEFAULT 0,
                 error TEXT
             );
+            -- How far each reader has read each thread (keyed as board_inbox.group_key keys a thread's root), or
+            -- everything ('*'); `unfollowed` is the newest message when they unfollowed it.
+            CREATE TABLE IF NOT EXISTS reads (
+                reader TEXT NOT NULL, thread TEXT NOT NULL, last_read INTEGER NOT NULL DEFAULT 0, unfollowed INTEGER,
+                PRIMARY KEY (reader, thread)
+            );
         ''')
+        # History from before read state existed starts read: the first store to have the table records where.
+        db.execute("INSERT OR IGNORE INTO reads (reader, thread, last_read) "
+                   "SELECT '*', '*', coalesce(max(id), 0) FROM messages")
+        db.commit()   # so callers can still BEGIN IMMEDIATE
         # `task` is the agent's one-line assignment (set at `task_at`); `removed` hides an evicted agent from the
         # board's lists; `session` is whether its own session is 'busy' or 'idle', since `session_since`.
         for column, kind in (('supervised', 'TEXT'), ('task', 'TEXT'), ('removed', 'INTEGER NOT NULL DEFAULT 0'),

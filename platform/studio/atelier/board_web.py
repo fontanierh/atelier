@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
-from . import board, board_markdown, board_presence, board_push
+from . import board, board_inbox, board_markdown, board_presence, board_push
 from .board_files import (INLINE_TYPES, MARKDOWN_SUFFIXES, attachment, read_json, readable, split_attachments,
                           store_upload, with_attachments)
 
@@ -141,6 +141,8 @@ def snapshot(query, remote_status=None, sender='operator'):
         ack_ids = {row[0] for row in db.execute('SELECT reply.reply_to FROM messages reply '
                    'JOIN messages original ON original.id=reply.reply_to '
                    "WHERE reply.topic='ack' AND reply.sender=original.recipient")}
+        # The Threads and Activity tabs' unread badges.
+        inbox = board_inbox.summary(db, sender)
     sections, holders = render_floor()
     telemetry = read_json(board.root() / 'render-supervisor/latest.json') or {}
     sessions = []
@@ -160,7 +162,7 @@ def snapshot(query, remote_status=None, sender='operator'):
     for item in output:
         decorate(item, ack_ids)
     return {'time': now, 'messages': output,
-            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'tasks': operator_tasks, 'schedule': sections,
+            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'tasks': operator_tasks, 'schedule': sections, 'inbox': inbox,
             'holders': holders, 'sessions': sessions,
             'resources': {'fresh': 0 <= now-telemetry.get('time', 0) < 120,
                           'cpu': telemetry.get('cpu_busy_percent'),
@@ -172,6 +174,22 @@ def decorate(item, ack_ids):
     item['body_html'] = board_markdown.render(text)
     item['acknowledged'] = item['id'] in ack_ids
     return item
+
+
+def inbox(view, query, reader):
+    """The Threads or Activity view for the board's sender, read-only."""
+    def number(name, default, high):
+        value = int(query.get(name, [str(default)])[0])
+        if not 1 <= value <= high:
+            raise ValueError(f'{name} must be between 1 and {high}')
+        return value
+    path = board.root() / 'agent-board.sqlite3'
+    with sqlite3.connect(f'{path.as_uri()}?mode=ro', uri=True, timeout=5) as db:
+        db.row_factory = sqlite3.Row
+        if view == 'threads':
+            return board_inbox.threads(db, reader, number('limit', 30, 200))
+        return board_inbox.activity(db, reader, query.get('kind', [''])[0], query.get('unread', [''])[0] == '1',
+                                    number('limit', 60, 300))
 
 
 def thread(message_id):
@@ -335,6 +353,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.review(parsed.path.removeprefix('/review').strip('/') or 'codebase-review')
             elif parsed.path == '/api/push/key':
                 self.send(200, {'key': board_push.public_key()})
+            elif parsed.path in ('/api/threads', '/api/activity'):
+                self.send(200, inbox(parsed.path.removeprefix('/api/'), parse_qs(parsed.query), self.server.sender))
             elif parsed.path == '/api/thread':
                 try:
                     self.send(200, thread(int(parse_qs(parsed.query).get('id', ['0'])[0])))
@@ -359,7 +379,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.permitted():
             return
         if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove', '/api/task/dismiss',
-                             *PUSH_PATHS):
+                             '/api/read', *PUSH_PATHS):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
@@ -403,6 +423,14 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError('Choose a task to dismiss.')
                 closed = board.close_task(task, self.server.sender, data.get('note') or '', operator=True)
                 self.send(200, {'dismissed': task, 'already': not closed})
+                return
+            if self.path == '/api/read':
+                follow = data.get('follow')
+                if follow is not None and not isinstance(follow, bool):
+                    raise ValueError('follow must be true or false')
+                key = board_inbox.mark_read(self.server.sender, data.get('id'), data.get('through'),
+                                            data.get('all') is True, follow)
+                self.send(200, {'read': key})
                 return
             if self.path == '/api/remove':
                 agent = data.get('agent')

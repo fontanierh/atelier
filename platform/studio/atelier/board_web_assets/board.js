@@ -18,6 +18,7 @@ const icons = {
   thread:'<path d="M7 8h10M7 12h6"/><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z"/>',
   reply:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/>',
   board:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  activity:'<path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 8 2.5 8h-17S6 15 6 9Z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
   tasks:'<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
   render:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
 };
@@ -25,7 +26,7 @@ function node(tag, cls, text) { const n=document.createElement(tag); if(cls)n.cl
 function icon(name) { const n=node("span","icon"); n.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.messages}</svg>`; return n; }
 document.querySelectorAll("[data-icon]").forEach(n=>n.append(icon(n.dataset.icon)));
 const names={info:"Info",request:"Request",handoff:"Handoff",blocked:"Blocked",release:"Release",evidence:"Evidence",ack:"Ack",alert:"Alert"};
-const VIEWS=["messages","tasks","agents","render"];
+const VIEWS=["messages","threads","activity","tasks","agents","render"];
 const desktop=matchMedia("(min-width:1100px)"), touch=matchMedia("(hover:none)");
 let state=null, selectedAgent="", records=new Map(), expanded=new Set(), deliveryOpen=new Set(), logShown=12;
 let loading=false, requestNumber=0, controller=null, historyComplete=false, sending=false, failed=false;
@@ -135,12 +136,14 @@ function setView(next, animate=true) {
   app.dataset.view=next;$("tabbar").style.setProperty("--tab",to);
   document.querySelectorAll(".tab").forEach(tab=>{if(tab.dataset.view===next)tab.setAttribute("aria-current","page");else tab.removeAttribute("aria-current");});
   if(from!==to&&animate&&!desktop.matches) {
-    const pane=$({messages:"chatPane",tasks:"tasksPane",agents:"agentsPane",render:"renderPane"}[next]);
+    const pane=$({messages:"chatPane",threads:"threadsPane",activity:"activityPane",tasks:"tasksPane",agents:"agentsPane",render:"renderPane"}[next]);
     pane.style.setProperty("--dir",to>from?1:-1);pane.classList.remove("entering");void pane.offsetWidth;pane.classList.add("entering");
     setTimeout(()=>pane.classList.remove("entering"),900);
   }
   // Coming back to the conversation lands on its latest message and keeps following new ones.
   if(next==="messages"){stickToBottom=true;requestAnimationFrame(()=>{scrollToLatest();markSeen();});}
+  if(state)inboxBadges();
+  if(next==="threads"||next==="activity"){if(inbox[next])next==="threads"?renderThreads():renderActivity();loadInbox(next);}
 }
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
   if(tab.dataset.view==="messages"&&$("app").dataset.view==="messages"){if(thread)navBack();else scrollToLatest(true);}
@@ -916,7 +919,7 @@ async function pushConversation(name) {
 // Pop the top screen. A swipe hands over its scene, position and speed; the browser's back asks for no animation.
 async function navBack({scene:given=null,from=0,velocity=0,instant=false}={}) {
   const entry=nav.at(-1);if(!entry){if(given)end(given);return;}
-  const animate=!instant&&!motion.matches&&!desktop.matches;
+  const animate=!instant&&!motion.matches&&!desktop.matches&&!(entry.kind==="thread"&&thread?.origin);
   let s=given;
   if(animate){if(!s){if(moving)return;s=scene(entry);begin(s);}await glide(s,from,1,velocity);}
   if(entry.kind==="thread"){
@@ -941,16 +944,18 @@ function enter(nodes, name) {
 }
 
 /* Thread view: the original and every reply, with the composer replying in the thread. */
-async function openThread(id, focus=false) {
+// `origin` is the Threads or Activity view it was opened from, which closing it returns to.
+async function openThread(id, focus=false, origin="") {
   const nested=!!thread;
-  thread={id,data:null,signature:"",newest:Infinity,stick:true,savedRecipient:nested?thread.savedRecipient:$("recipient").value};
+  thread={id,data:null,signature:"",newest:Infinity,stick:true,savedRecipient:nested?thread.savedRecipient:$("recipient").value,origin:nested?thread.origin:origin};
   $("threadView").hidden=false;$("app").classList.add("in-thread");
   $("threadTitle").textContent="Thread";$("threadSubtitle").textContent="Loading…";$("threadFeed").replaceChildren();
   const loaded=loadThread();
   if(!nested){
     const entry={kind:"thread"};navPush(entry);
     // A wide screen opens the thread in place over the conversation, which steps out of sight; a phone pushes it.
-    if(desktop.matches){if(!motion.matches)enter([$("threadView")],"thread-in");}
+    // From Threads or Activity it fades in the same way, since the conversation beneath is not what it came from.
+    if(desktop.matches||thread.origin){if(!motion.matches)enter([$("threadView")],"thread-in");}
     else if(!motion.matches&&!moving){
       const s=scene(entry);begin(s);paint(s,1);
       await waitFor(()=>thread?.data,220);
@@ -967,11 +972,12 @@ async function openThread(id, focus=false) {
 }
 function closeThread() {
   if(!thread)return;
-  const saved=thread.savedRecipient;thread=null;navForget("thread");
+  const saved=thread.savedRecipient, origin=thread.origin;thread=null;navForget("thread");
   $("threadView").hidden=true;$("app").classList.remove("in-thread");
   if([...$("recipient").options].some(o=>o.value===saved&&!o.disabled)&&$("recipient").value!==saved){$("recipient").value=saved;draftChanged();}
   formState();
   stickToBottom=true;requestAnimationFrame(()=>scrollToLatest());
+  if(origin&&$("app").dataset.view==="messages")setView(origin,false);
 }
 $("threadBack").addEventListener("click",()=>navBack());
 // Swipe back: from the left edge, or (as on iOS 26) a rightward drag anywhere that isn't on something that scrolls
@@ -979,7 +985,7 @@ $("threadBack").addEventListener("click",()=>navBack());
 let swipe=null;
 $("chatPane").addEventListener("touchstart",event=>{
   const entry=nav.at(-1);
-  if(event.touches.length!==1||!entry||moving||desktop.matches||(entry.kind==="dm"&&!entry.underlay))return;
+  if(event.touches.length!==1||!entry||moving||desktop.matches||(entry.kind==="dm"&&!entry.underlay)||(entry.kind==="thread"&&thread?.origin))return;
   const t=event.touches[0];
   if(t.clientX>24&&event.target.closest("textarea, input, select, pre, table, video, audio, .orbs, .dock, .attachments"))return;
   swipe={entry,x:t.clientX,y:t.clientY,axis:null,samples:[[t.clientX,event.timeStamp]],scene:null};
@@ -1048,8 +1054,204 @@ function renderThread(force=false) {
   if(usable&&$("recipient").value!==target&&!current.recipientSet){$("recipient").value=target;draftChanged();}
   current.recipientSet=true;current.replyTo=m.id;
   formState();
+  // Seeing a thread reads it (on the board, so Threads and Activity agree everywhere), up to what was shown.
+  const shown=Math.max(m.id,newest);
+  if(shown>(current.readThrough||0)&&!document.hidden){current.readThrough=shown;postJSON("/api/read",{id:m.id,through:shown}).then(()=>{if(thread===current)load();}).catch(()=>{});}
 }
 $("threadFeed").addEventListener("scroll",()=>{if(thread){const f=$("threadFeed");thread.stick=f.scrollHeight-f.scrollTop-f.clientHeight<96;}},{passive:true});
+
+/* Threads and Activity, as in Slack. Threads lists every conversation with replies that you started, joined, or were
+   addressed or @mentioned in: unread ones first, then newest reply first, each with its latest replies and a reply box.
+   Activity is everything that involves you, newest first. Read state is kept by the board, so devices agree. */
+const inbox={threads:null,activity:null,threadLimit:30,activityLimit:60,kind:"",unreadOnly:false,loading:{},signature:{}};
+const threadCards=new Map();
+const inboxView=()=>["threads","activity"].includes($("app").dataset.view)?$("app").dataset.view:"";
+async function loadInbox(view=inboxView()) {
+  if(!view||inbox.loading[view]||!state)return;
+  inbox.loading[view]=true;
+  const q=view==="threads"?`limit=${inbox.threadLimit}`:`limit=${inbox.activityLimit}${inbox.kind?`&kind=${inbox.kind}`:""}${inbox.unreadOnly?"&unread=1":""}`;
+  try {
+    const response=await fetch(`/api/${view}?${q}`,{cache:"no-store"}), result=await response.json();
+    if(!response.ok)throw Error(result.error||"Could not load.");
+    inbox[view]=result;view==="threads"?renderThreads():renderActivity();
+  } catch(error) { $(`${view}Summary`).textContent=error instanceof TypeError?"Reconnecting…":error.message; }
+  finally { inbox.loading[view]=false; }
+}
+async function markInboxRead(body) {
+  try { await postJSON("/api/read",body); } catch {}
+  load();loadInbox();
+}
+function inboxBadges() {
+  const counts=state?.inbox||{threads:0,activity:0};
+  for(const [id,n] of [["threadsBadge",counts.threads],["activityBadge",counts.activity],["threadsCount",counts.threads],["activityCount",counts.activity]]){
+    $(id).hidden=!n;$(id).textContent=n>99?"99+":n;
+  }
+  document.querySelectorAll(".inbox-link").forEach(b=>{if(b.dataset.view===$("app").dataset.view)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
+}
+// Who your reply goes to: as in the thread view, the agents in the conversation still on the board, else everyone.
+function replyTarget(audience, text) {
+  const live=new Set(liveAgents().map(a=>a.agent));
+  let target=audience==="*"?"*":audience.filter(name=>live.has(name)&&name!==state.sender);
+  const extra=mentioned(text);
+  if(target==="*")return extra.length?(extra.length===1?extra[0]:extra):"*";
+  for(const name of extra)if(!target.includes(name))target.push(name);
+  return target.length===0?"*":target.length===1?target[0]:target;
+}
+function who(name) { return name===state.sender?"You":name; }
+function people(names) {
+  const list=[...new Set(names.map(who))];
+  return list.length<=3?list.join(", "):`${list.slice(0,2).join(", ")} and ${list.length-2} others`;
+}
+// A reply box that keeps its draft and request id across refreshes, like the Tasks page's.
+function replyBox(label, send) {
+  const form=node("form","task-reply inbox-reply"), box=node("textarea"), button=node("button","send-button"), status=node("p","task-status");
+  box.rows=1;box.maxLength=8000;box.setAttribute("aria-label",label);
+  button.type="submit";button.disabled=true;button.setAttribute("aria-label","Send reply");button.append(icon("send"));
+  status.setAttribute("role","status");form.append(box,button);
+  const entry={form,box,status,key:null,sending:false};
+  const grow=()=>{box.style.height="auto";box.style.height=`${box.scrollHeight}px`;};
+  box.addEventListener("input",()=>{entry.key=null;button.disabled=!box.value.trim()||entry.sending;grow();});
+  box.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey&&!touch.matches&&!event.isComposing){event.preventDefault();form.requestSubmit();}});
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();const text=box.value.trim();if(!text||entry.sending)return;
+    entry.key??=crypto.randomUUID();entry.sending=true;button.disabled=true;status.textContent="Sending…";status.classList.remove("error");
+    try { const target=await send(text,entry.key);box.value="";entry.key=null;grow();status.textContent=`Sent to ${describe(target)}.`;load();loadInbox(); }
+    catch(error) { status.textContent=error.message;status.classList.add("error"); }
+    finally { entry.sending=false;button.disabled=!box.value.trim(); }
+  });
+  return entry;
+}
+function sendReply(audience, replyTo) {
+  return async(text,key)=>{
+    const target=replyTarget(audience,text);
+    await postJSON("/api/send",{body:text,topic:"info",recipient:target,request_id:key,reply_to:replyTo});
+    return target;
+  };
+}
+function openFromInbox(id, focus=false) { const from=inboxView();setView("messages",false);openThread(id,focus,from); }
+function inboxMessage(m, cls="") {
+  const row=node("div","inbox-message"+(m.unread?" unread":"")+(cls?" "+cls:""));
+  const head=node("div","inbox-meta"), time=node("time","time",since(m.created));
+  time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;
+  head.append(node("b","",who(m.sender)));
+  if(m.topic!=="info")head.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
+  head.append(time);
+  const text=snippetless(m.body), long=text.length>280||text.split("\n").length>5;
+  const body=node("div","body"+(long?" collapsed short":""));markdown(body,m.body_html,m.body);
+  const column=node("div","inbox-column");column.append(head,body);
+  if(m.attachments?.length)column.append(attachmentNodes(m.attachments));
+  row.append(orb(m.sender===state.sender?"you":m.sender,state.agents.find(a=>a.agent===m.sender)),column);
+  return row;
+}
+function threadCard(t) {
+  const card=node("article","card inbox-thread"), head=node("header","inbox-thread-head"), title=node("div","inbox-thread-title");
+  card.setAttribute("role","listitem");
+  const reply=replyBox("Reply in thread",sendReply(t.reply_audience,t.id));
+  const entry={card,reply,signature:""};
+  const open=node("button","text-button","Open");open.type="button";open.addEventListener("click",()=>openFromInbox(t.id));
+  const read=node("button","text-button","Mark read");read.type="button";
+  read.addEventListener("click",()=>markInboxRead({id:entry.t.id,through:entry.t.newest}));
+  const unfollow=node("button","text-button quiet-button","Unfollow");unfollow.type="button";
+  unfollow.title="Hide this thread until someone @mentions you in it";
+  unfollow.addEventListener("click",()=>{card.classList.add("leaving");markInboxRead({id:entry.t.id,through:entry.t.newest,follow:false});});
+  const actions=node("div","inbox-actions");actions.append(read,unfollow,open);
+  head.append(title,actions);
+  const content=node("div","inbox-thread-body");
+  card.append(head,content,reply.form,reply.status);
+  entry.update=t=>{
+    entry.t=t;
+    const signature=JSON.stringify([t.newest,t.unread,t.replies,t.root.id,t.latest.map(m=>[m.id,m.unread]),Math.floor((state.time-t.last_activity)/60)]);
+    if(signature===entry.signature)return;entry.signature=signature;
+    card.classList.toggle("unread",t.unread>0);read.hidden=!t.unread;
+    title.replaceChildren(node("span","inbox-people",people(t.participants)));
+    if(t.unread)title.append(node("span","new-pill",`${t.unread} new`));
+    title.append(node("span","inbox-when",`${t.replies} ${t.replies===1?"reply":"replies"} · ${since(t.last_activity)}`));
+    const nodes=[inboxMessage(t.root,"inbox-root")];
+    nodes[0].addEventListener("click",event=>{if(!event.target.closest("a,button,video,audio,summary,details"))openFromInbox(t.id);});
+    if(t.replies>t.latest.length){
+      const more=node("button","text-button inbox-earlier",`Show ${t.replies-t.latest.length} more ${t.replies-t.latest.length===1?"reply":"replies"}`);
+      more.type="button";more.addEventListener("click",()=>openFromInbox(t.id));nodes.push(more);
+    }
+    for(const m of t.latest)nodes.push(inboxMessage(m,"inbox-reply-row"));
+    content.replaceChildren(...nodes);
+    const target=replyTarget(t.reply_audience,"");
+    reply.box.placeholder=`Reply to ${describe(target)}…`;
+  };
+  return entry;
+}
+function renderThreads() {
+  const data=inbox.threads;if(!data||!state)return;
+  $("threadsSummary").textContent=data.total?`${data.unread?`${data.unread} with new replies · `:""}${data.total} ${data.total===1?"thread":"threads"} you're part of`:"No threads yet";
+  $("threadsAllRead").hidden=!data.unread;
+  const keep=new Set(data.threads.map(t=>t.id));
+  for(const id of [...threadCards.keys()])if(!keep.has(id))threadCards.delete(id);
+  const nodes=data.threads.map(t=>{let entry=threadCards.get(t.id);if(!entry){entry=threadCard(t);threadCards.set(t.id,entry);}entry.update(t);return entry.card;});
+  if(!nodes.length){const empty=node("div","empty inbox-empty");empty.append(icon("thread"),node("h2","","No threads yet"),node("p","","When you reply to an agent, or one replies to you, the conversation shows up here."));nodes.push(empty);}
+  reconcile($("threadsList"),nodes);
+  $("threadsMore").hidden=data.total<=data.threads.length;
+}
+const KIND_TEXT={mention:"Mentioned you",dm:"Direct message",ack:"Acknowledged",reply:"Replied"};
+const activityRows=new Map();
+function activityText(item) {
+  if(item.kind==="ack")return `${people(item.senders)} acknowledged your message`;
+  if(item.kind==="reply"&&item.count>1)return `${item.count} new replies from ${people(item.senders)}`;
+  if(item.kind==="reply")return `${who(item.message.sender)} replied${item.message.recipient===state.sender?" to you":""} in a thread`;
+  if(item.kind==="mention")return `${who(item.message.sender)} mentioned you`;
+  return `${who(item.message.sender)} messaged you`;
+}
+function activityRow(item) {
+  const row=node("article","activity-item"+(item.unread?" unread":""));row.setAttribute("role","listitem");
+  const main=node("button","activity-main");main.type="button";
+  const face=orb(item.message.sender===state.sender?"you":item.message.sender,state.agents.find(a=>a.agent===item.message.sender));
+  const text=node("span","activity-text"), line=node("span","activity-line");
+  line.append(node("span","kind-tag "+item.kind,KIND_TEXT[item.kind]),node("span","inbox-when",since(item.created)));
+  text.append(line,node("span","activity-summary",activityText(item)));
+  const quoted=item.kind==="ack"?item.target:item.message;
+  if(quoted)text.append(node("span","activity-snippet",quoted.snippet||""));
+  if(item.root&&item.kind!=="ack")text.append(node("span","activity-context",`in thread: ${who(item.root.sender)}: ${item.root.snippet}`));
+  main.append(face,text);
+  main.addEventListener("click",()=>{if(item.unread)postJSON("/api/read",{id:item.id,through:item.id}).catch(()=>{});openFromInbox(item.id);});
+  const actions=node("div","inbox-actions");
+  if(item.unread){const read=node("button","text-button","Mark read");read.type="button";read.addEventListener("click",()=>markInboxRead({id:item.id,through:item.id}));actions.append(read);}
+  if(item.kind!=="ack"){
+    const replyButton=node("button","text-button","Reply");replyButton.type="button";actions.append(replyButton);
+    let box=null;
+    replyButton.addEventListener("click",()=>{
+      if(!box){box=replyBox(`Reply to ${item.message.sender}`,sendReply(item.reply_audience,item.id));box.box.placeholder=`Reply to ${describe(replyTarget(item.reply_audience,""))}…`;row.append(box.form,box.status);}
+      box.box.focus();
+    });
+  }
+  row.append(main,actions);return row;
+}
+function renderActivity() {
+  const data=inbox.activity;if(!data||!state)return;
+  const n=data.unread.all;
+  $("activitySummary").textContent=n?`${n} unread`:"You're all caught up";
+  $("activityAllRead").hidden=!n&&!data.unread.ack;
+  document.querySelectorAll("#activityKinds button").forEach(b=>{
+    b.setAttribute("aria-pressed",String(b.dataset.kind===inbox.kind));
+    const count=b.dataset.kind?data.unread[b.dataset.kind]:0;b.dataset.count=count&&b.dataset.kind!=="ack"?count:"";
+  });
+  const signature=JSON.stringify([data.items.map(i=>[i.id,i.unread,i.count]),inbox.kind,inbox.unreadOnly,Math.floor(state.time/60)]);
+  if(signature===inbox.signature.activity)return;inbox.signature.activity=signature;
+  // A row with a reply being typed keeps its node.
+  const nodes=data.items.map(item=>{
+    const key=`${item.kind}:${item.id}:${item.unread}:${item.count}`, cached=activityRows.get(item.id);
+    if(cached&&(cached.key===key||cached.node.querySelector("textarea")?.value))return cached.node;
+    const built=activityRow(item);activityRows.set(item.id,{key,node:built});return built;
+  });
+  for(const id of [...activityRows.keys()])if(!data.items.some(i=>i.id===id))activityRows.delete(id);
+  if(!nodes.length){const empty=node("div","empty inbox-empty");empty.append(icon("activity"),node("h2","",inbox.unreadOnly?"Nothing unread":"No activity yet"),node("p","","Mentions, replies to you and direct messages land here."));nodes.push(empty);}
+  reconcile($("activityList"),nodes);
+  $("activityMore").hidden=data.total<=data.items.length;
+}
+$("threadsMore").addEventListener("click",()=>{inbox.threadLimit=Math.min(200,inbox.threadLimit+30);loadInbox("threads");});
+$("activityMore").addEventListener("click",()=>{inbox.activityLimit=Math.min(300,inbox.activityLimit+60);loadInbox("activity");});
+$("threadsAllRead").addEventListener("click",()=>markInboxRead({all:true}));
+$("activityAllRead").addEventListener("click",()=>markInboxRead({all:true}));
+document.querySelectorAll("#activityKinds button").forEach(b=>b.addEventListener("click",()=>{inbox.kind=b.dataset.kind;inbox.activityLimit=60;renderActivity();loadInbox("activity");}));
+$("activityUnread").addEventListener("change",()=>{inbox.unreadOnly=$("activityUnread").checked;loadInbox("activity");});
+document.querySelectorAll(".inbox-link").forEach(b=>b.addEventListener("click",()=>{if(thread)closeThread();setView(b.dataset.view);}));
 
 /* Render floor */
 function entries(text) {
@@ -1168,8 +1370,9 @@ function renderTasks() {
 }
 function render() {
   $("lastUpdated").textContent=`Live · last synced ${clock(state.time)} · updates every 3 seconds`;
-  renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();renderTasks();
+  renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();renderTasks();inboxBadges();
   if(thread)loadThread();
+  if(inboxView())loadInbox();
 }
 let loadStarted=0;
 async function load(reset=false,before=0) {
