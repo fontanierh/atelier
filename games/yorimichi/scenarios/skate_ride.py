@@ -1972,8 +1972,8 @@ MEGA_LEDGES = (((-6992.9, -138247.4, 13000.), 159.2), ((-7304.2, -139147.8, 1300
 # JapanWorld: House_A's and House_B's fronts from the road, through their lots' gates (world.json houses.lots).
 JAPAN_WALLS = (((-20238., 9558., 1160.), 73.6), ((-14865., 7801., 1290.), -106.3))
 # U23: on the seven terrace (park-local metres), riding east toward its south stair rail (y 25.5, 55 cm over the deck
-# from x -52), popped 6 m on, 2 m before the rail starts; the user rode at 638 to 780 cm/s.
-STAIR_RAIL = (-60., 27.6, -10.)
+# from x -48, the top nosing), popped 6 m on, 2 m before the rail starts; the user rode at 638 to 780 cm/s.
+STAIR_RAIL = (-56., 27.6, -10.)
 U23_SPEEDS = (640, 780)
 RAIL_NEAR = 60.    # cm: the board's centre this near the rail's line (beside or over it) is the rail encounter
 # U24: the pier's quarter at 9.5 m/s (park headings) and Mega Park's pool wall at 11.5 m/s (degrees across its face).
@@ -2245,7 +2245,7 @@ def u23_rows(record, wanted):
     (a drift turned into a late fall through the map fails)."""
     lx, ly, heading = STAIR_RAIL
     deck = ground(*json.loads(qa.py(f"import json; v=live.park.ue(-40,25,3.0); print(json.dumps([v.x, v.y, v.z]))").strip().splitlines()[-1]))
-    rail = json.loads(qa.py("import json; a=live.park.ue(-52,25.5,3.0); b=live.park.ue(-30,25.5,3.0); "
+    rail = json.loads(qa.py("import json; a=live.park.ue(-48,25.5,3.0); b=live.park.ue(-30,25.5,3.0); "
                             "print(json.dumps([a.x, a.y, b.x, b.y]))").strip().splitlines()[-1])
     ax, ay = rail[0], rail[1]
     ux, uy = rail[2] - ax, rail[3] - ay

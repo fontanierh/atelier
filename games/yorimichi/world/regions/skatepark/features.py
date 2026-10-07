@@ -6,6 +6,7 @@ solid features (no coplanar overlap, no lips)."""
 import math
 import numpy as np
 import layout as L
+import modules as MOD
 from geom import MeshData, PAL
 
 XS, YS = L.grid_lines()
@@ -146,19 +147,21 @@ def terraces(m):
             if y not in (17.,21.) and (access['axis']!='y' or abs(y-access['top'])>1e-6):wall(m,'y',y,x0,x1,0,h,'terracotta',(0,side,0))
         for a,b in [(t['stair0']-.7,t['stair0']),(t['stair1'],t['stair1']+.7)]:
             wall(m,'x',x1,a,b,0,h,'terracotta',(1,0,0))
-        ys=wl(YS,t['stair0'],t['stair1']);rise=h/t['steps']
-        for k in range(t['steps']):
-            x=x1+k*t['tread'];z=h-k*rise
-            wall(m,'x',x,t['stair0'],t['stair1'],z-rise,z,'concrete',(1,0,0),wlines=ys,zsteps=1)
-            if k<t['steps']-1:
-                flat(m,x,x+t['tread'],t['stair0'],t['stair1'],z-rise,'concrete',xl=[x,x+t['tread']],yl=ys)
-                for y,side in [(t['stair0'],-1),(t['stair1'],1)]:wall(m,'y',y,x,x+t['tread'],0,z-rise,'terracotta',(0,side,0))
-        for y,top in L.terrace_rails(t):
-            axis=L.offset_polyline(top,L.BAR_R)
-            m.tube([(x,y,z) for x,z in axis],L.BAR_R,'red','rail',sides=10)
-            for i in (0,2,3):
-                x,z=axis[i]; ground=h if i==0 else 0
-                m.box((x-.025,y-.025,ground),(x+.025,y+.025,z),'red','rail')
+        if MOD.available():
+            for item in L.terrace_modules(t):module(m,item)
+        else:
+            # Stand-ins on the modules' lines: the set's top tread continues the deck, its risers follow.
+            ys=wl(YS,t['stair0'],t['stair1']);rise=h/t['steps']
+            flat(m,x1,x1+t['tread'],t['stair0'],t['stair1'],h,'concrete',xl=[x1,x1+t['tread']],yl=ys)
+            for y,side in [(t['stair0'],-1),(t['stair1'],1)]:wall(m,'y',y,x1,x1+t['tread'],0,h,'terracotta',(0,side,0))
+            for k in range(t['steps']):
+                x=x1+(k+1)*t['tread'];z=h-k*rise
+                wall(m,'x',x,t['stair0'],t['stair1'],z-rise,z,'concrete',(1,0,0),wlines=ys,zsteps=1)
+                if k<t['steps']-1:
+                    flat(m,x,x+t['tread'],t['stair0'],t['stair1'],z-rise,'concrete',xl=[x,x+t['tread']],yl=ys)
+                    for y,side in [(t['stair0'],-1),(t['stair1'],1)]:wall(m,'y',y,x,x+t['tread'],0,z-rise,'terracotta',(0,side,0))
+            for item in L.terrace_modules(t):
+                if item['finish']=='painted':module(m,item)
         prof=L.hubba_profile(t)
         for a in (t['stair0']-.7,t['stair1']):
             ramp(m,prof,'x',[a,a+.05,a+.65,a+.7],'concrete_light',(0,0,1),'concrete',lambda i,j:'steel' if j in (0,2) else 'concrete_light')
@@ -215,6 +218,62 @@ def bowl(m):
                    uv=[(width[k],profile[j]),(width[k+1],profile[j]),(width[k+1],profile[j+1]),(width[k],profile[j+1])])
 
 
+def _finish(item, n):
+    """(tag, colour) for one face of a module, from its finish and which way the face looks."""
+    finish, colour = item['finish'], item['colour']
+    if finish == 'painted': return 'rail', colour
+    if finish == 'steel': return 'steel', 'steel'
+    if finish == 'wood': return 'wood', 'timber'
+    if finish == 'stairs':
+        if n[2] > .7: return 'concrete', 'concrete_light'
+        a = math.radians(item['yaw']); down = (math.sin(a), -math.cos(a))    # the downhill direction (local -y)
+        if n[0]*down[0] + n[1]*down[1] > .7: return 'joint', 'concrete_dark'  # risers
+        return 'wall', 'terracotta'
+    return 'concrete', 'concrete_light' if n[2] > .7 else colour
+
+
+def module(m, item):
+    """An extracted obstacle (modules.py) in the pier's own surfaces: painted bars and handrails, two-tone stairs, steel
+    angles on ledge lips. Without the fetched meshes, a stand-in on the same lines and footprint."""
+    if not MOD.available():
+        return stand_in(m, item)
+    index = {}
+    def vert(p):
+        key = tuple(round(float(c), 5) for c in p)
+        if key not in index: index[key] = m.vert(key)
+        return index[key]
+    smooth = item['finish'] == 'painted'
+    joints = L.joints(item['id'])
+    for tri in MOD.triangles(item):
+        n = np.cross(tri[1]-tri[0], tri[2]-tri[0]); size = np.linalg.norm(n)
+        if size < 1e-10: continue
+        n = n / size
+        if any(abs(n[:2] @ d) > .9 and np.all(np.abs((tri[:, :2] - at) @ d) < .002) for at, d in joints): continue
+        tag, colour = _finish(item, n)
+        m.face([vert(p) for p in tri], colour, tag, smooth, want=tuple(n))
+    if item.get('grind') == 'edges' and item['finish'] == 'concrete' and item['part'] != 'bench':
+        for pts, (sx, sy) in MOD.edges(item):
+            (x0, y0, z), (x1, y1, _) = pts[0], pts[-1]
+            if abs(sy) > .5: steel_side_band(m, 'x', y0, min(x0, x1), max(x0, x1), z, 1 if sy > 0 else -1)
+            else: steel_side_band(m, 'y', x0, min(y0, y1), max(y0, y1), z, 1 if sx > 0 else -1)
+
+
+def stand_in(m, item):
+    """A procedural obstacle where the extracted mesh is missing: bars and handrails as a tube on their line with posts
+    at the ends, solids as concrete boxes on their footprint."""
+    if item['finish'] in ('painted', 'steel') and 'line' in MOD.part(item['part']):
+        width = MOD.part(item['part'])['bounds'][1][0] - MOD.part(item['part'])['bounds'][0][0]
+        r = min(.045, width/2); colour = item['colour'] if item['finish'] == 'painted' else 'steel'
+        tag = 'rail' if item['finish'] == 'painted' else 'steel'
+        pts = [(x, y, z-r) for x, y, z in MOD.line(item)]
+        m.tube(pts, r, colour, tag, sides=10)
+        for x, y, z in (pts[0], pts[-1]):
+            m.box((x-r, y-r, 0), (x+r, y+r, z), colour, tag)
+        return
+    x0, x1, y0, y1 = MOD.footprint(item)
+    ledge_box(m, x0, x1, y0, y1, MOD.height(item), steel_y=item.get('grind') == 'edges')
+
+
 def park_features():
     m=MeshData('SM_SkateParkFeatures')
     for q in L.QUARTERS:quarter(m,q)
@@ -222,11 +281,7 @@ def park_features():
     terraces(m);street_link(m);flow_table(m);bowl(m);mini_return(m)
     for hip in L.HIPS:flow_table(m,hip)
     for p in L.PADS:ledge_box(m,p['x0'],p['x1'],p['y0'],p['y1'],p['height'],side_color='sage',steel_x=True)
-    for bar in L.BARS:
-        x0,x1,y,h=[bar[k] for k in ('x0','x1','y','top')];r=L.BAR_R
-        if bar['square']:m.box((x0,y-r,h-2*r),(x1,y+r,h),bar['color'],'rail')
-        else:m.tube([(x0,y,h-r),(x1,y,h-r)],r,bar['color'],'rail',sides=10)
-        for x in np.linspace(x0+.6,x1-.6,max(3,math.ceil((x1-x0)/5))):m.box((x-r,y-r,0),(x+r,y+r,h-r),bar['color'],'rail')
+    for item in L.MODULES:module(m,item)
     f=L.CURVE_BAR
     m.tube(L.arc_points(f,z=f['height']-L.BAR_R),L.BAR_R,'red','rail',sides=10)
     for x,y,z in L.arc_points(f,z=f['height']-L.BAR_R)[::20]:

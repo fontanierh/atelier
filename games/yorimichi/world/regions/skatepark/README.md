@@ -30,20 +30,21 @@ remain in the ignored build folder.
 
 | Area | Features and approach |
 | --- | --- |
-| North rail promenade | Three separate 18–20 m bars at y = 43: 36 cm round vermilion, 30 cm square sage, and 42 cm round. Wide approaches and exits serve both directions. |
+| North rail promenade | Bars from the extracted park kits at y = 43: an 18 m vermilion flat bar (three 6 m park bars, 50 cm), a sage hi-lo kink rail (6 m, 96 cm down to 20 cm) and, after a 9 m run-out, a 6 m, 50 cm round rail (both set into the deck), and a blue rainbow pair (85 and 66 cm). Wide approaches and exits serve both directions. |
+| Street plaza | North of the rainbows: a 6 m, 75 cm concrete ledge and a 50 cm manual pad with steel lips, two 44 cm concrete benches, a 46 cm steel curb rail, a pair of jersey barriers and a picnic table. |
 | Manual promenade | Two 14 m pads at y = 53–56, 22 and 30 cm high, with a 9 m link. The entrance opens onto the broad promenade behind them. |
-| Street court | 22 m approach decks for four and seven stairs. Gentler stair runs, handrails with 4 m lead-ins and 3 m exits, steel-edged hubbas and access/return banks. A smooth rise connects the two terraces. |
-| Market plaza | A 20 m approach deck, low three stairs, rails and hubbas, with front and back banks. Nearby a 21 m, 16 cm curb and a 22 m crescent rail offer low street practice. |
+| Street court | 22 m approach decks. The big terrace drops 1.5 m down the kit's eight-stair (two sets side by side) with its two sloped handrails, 36 cm over every nosing; the low terrace drops 75 cm down the park's two-step set with its handrails, flat over the top step and set 40 cm into the ground so they ride 55 cm over the top nosing. Steel-edged hubbas and access/return banks; a smooth rise connects the two terraces. |
+| Market plaza | A 20 m approach deck, the park's two-step 75 cm set with its handrails and hubbas, with front and back banks. Nearby a 21 m, 16 cm curb and a 22 m crescent rail offer low street practice. |
 | Central street | A 20 m low ledge, a 20 m higher stone ledge, a 14 m skate bench and a curved steel-edged wave ledge. A low kicker/landing connects the approach lanes. |
 | Central wave | A 65 cm table with wide tapered shoulders for diagonal transfers and low-speed flow. |
-| Sunset line | A low 14 m manual pad, a broad 75 cm hip, a bump-to-20 m bar and a wide mellow return. The southern pavilion and planted seats face this line. |
+| Sunset line | A low 14 m manual pad, a broad 75 cm hip, a bump to a 12 m mustard flat bar (four 3 m kit bars, 54 cm) and a wide mellow return. The southern pavilion and planted seats face this line. |
 | Transitions | The horseshoe mini, deep rounded bowl, east return and a separate 1.6 m mellow quarter. Access banks reach the decks. |
 | Promenade | Cedar seats and pavilion, rounded stone gardens, island maples and coastal pines, ornamental grasses, lamps and an original wave mural. Dressing stays outside riding approaches. |
 
 ## Geometry and runtime checks
 
 The riding surfaces use their render triangles for collision. Rail contact lines come from the same dimensions as
-visible geometry. The build checks every contact point against the meshes (within 1 cm), tangent changes on ramp
+visible geometry; a module's line is its measured top (`assets/skatepark/modules.json`). The build checks every contact point against the meshes (within 1 cm), tangent changes on ramp
 profiles, floor/toe joins, the terrain-following path, furniture clearance and FBX bounds after reimport.
 
 The entrance remains in the original world position despite the larger deck. `ASkatePark` derives its bounds,
@@ -68,9 +69,21 @@ input and state; bails, silent walking transitions, repeated captured poses and 
 The capture deadline defaults to 300 seconds, including final image saving. The mixer preserves
 16:9 proportions, combines recorded board audio with an original procedural beat, and exports 1080p and 720p MP4s.
 
+## Extracted modules
+
+The bars, stair sets, handrails and plaza pieces are obstacles recovered from a skate game's 2024 playtest build, the
+same handoff the community park comes from (`docs/COMMUNITY_PARK.md`). Recovered meshes belong to their original
+owners: the public repository holds only the pin, `assets/skatepark/modules.json`, with the release archive, each
+member's SHA-256 and the measured sizes and grind lines. `atelier fetch yorimichi` downloads the archive into the
+ignored cache and extracts the pinned members to `build/yorimichi/skatepark/modules/`; it needs `gh` signed in with
+access to the private handoff. `modules.py` places them; `features.py` gives them the pier's own surfaces (painted
+bars and handrails, two-tone stairs, steel angles on ledge lips, timber, steel). Without the fetch the pier builds
+procedural stand-ins on the same lines and footprints, so `park.json` and every grind line are the same either way.
+
 ## Sources
 
-- `layout.py`: dimensions, profiles, routes, contact lines and the coastal path.
+- `layout.py`: dimensions, profiles, routes, contact lines, module placements and the coastal path.
+- `modules.py`: the pinned extracted obstacles, placed (with `assets/skatepark/fetch.py`).
 - `features.py`: skating surfaces, street features, pier and promenade.
 - `board.py`: the trick board's deck, truck and wheel meshes (`SM_SkateDeck`, `SM_SkateTruck`, `SM_SkateWheel`).
 - `geom.py`: shared-vertex geometry, material routing, colour/AO and FBX export.

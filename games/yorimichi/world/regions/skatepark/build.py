@@ -1,10 +1,10 @@
 """Skate pier, its path and the trick skateboard (docs/SKATE.md).
 
-blender -b --threads 6 --python-exit-code 1 --python games/yorimichi/world/regions/skatepark/build.py [-- --review]
+blender -b --threads 6 --python-exit-code 1 --python games/yorimichi/world/regions/skatepark/build.py [-- --review [--only shot,shot]]
 
 Writes build/yorimichi/skatepark/{assets,board}/*.fbx, SkatePark.blend, build-report.json and the
 committed gameplay contract games/yorimichi/world/regions/skatepark/park.json. --review also renders the review
-images into build/yorimichi/skatepark/review/ (EEVEE).
+images into build/yorimichi/skatepark/review/ (EEVEE); --only names the shots to render (review.py).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
 import hashlib
@@ -191,7 +191,7 @@ def check_bar_clearance(rails, meshes):
         base=len(verts); verts.extend(mesh.verts)
         polys.extend(tuple(i+base for i in f) for f,tag in zip(mesh.faces,mesh.tags) if tag!='rail')
     tree=BVHTree.FromPolygons(verts,polys,all_triangles=False)
-    ids={b['id'] for b in L.BARS}|{L.CURVE_BAR['id']}
+    ids={g['id'] for g in L.GRIND_LINES}|{L.CURVE_BAR['id']}
     ids.update(t['id']+'_handrail_'+str(i) for t in L.TERRACES for i in range(2))
     result={}
     for rail in rails:
@@ -209,7 +209,7 @@ def check_bar_clearance(rails, meshes):
     for terrace in L.TERRACES:
         high=0.
         for y,profile in L.terrace_rails(terrace):
-            end=profile[-1][0]
+            end=max(x for x,_ in profile)   # the stairs run down to the east
             for x in np.linspace(end+.3,end+8.,40):
                 for offset in (-.6,0,.6):
                     hit,_,_,_=tree.ray_cast(Vector((x,y+offset,15)),Vector((0,0,-1)),30)
@@ -439,7 +439,8 @@ def main():
                                                  'rails_worst_mm': report['rails']['worst_mm'], 'path': report['path']}, default=float), flush=True)
     if review:
         import review as rv
-        rv.render_all(OUT / 'review', park, objs, data, world, h, pl)
+        only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
+        rv.render_all(OUT / 'review', park, objs, data, world, h, pl, only)
 
 
 if __name__ == '__main__':
