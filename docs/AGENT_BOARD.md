@@ -310,13 +310,24 @@ uv run atelier board serve --port 8890
 ```
 
 Open `http://127.0.0.1:8890`. The UI is a dark chat app designed first for a large iPhone. A floating tab bar switches between
-**Messages**, **Tasks**, **Agents** and **Render**. From 1100 px wide they appear side by side as columns, with Tasks
-above the render floor.
+**Messages**, **Threads**, **Activity**, **Tasks**, **Agents** and **Render**. From 1100 px wide they appear side by side
+as columns, with Tasks above the render floor; Threads and Activity are rows above the agents and open in the
+conversation's place, as in Slack's sidebar (choosing an agent or Everyone brings the conversation back).
 
 - **Messages:** history reads oldest to newest, and the composer is pinned to the bottom. Older history loads
   as you scroll up. Tap an agent chip to see only your conversation with that agent; this also addresses the
   composer to them. The search button filters by text and topic. Automatic board-watch notices collapse into
   one quiet line; they are hidden by default, and the filter bar's Board notices switch shows them.
+- **Threads:** like Slack's, every conversation with replies that you started, replied in, or were addressed or
+  @mentioned in. Threads with unread replies come first, then the rest, each by its newest reply. Each card shows the
+  original, its latest three replies (new ones marked) and a reply box that answers in the thread, addressed as the
+  thread view would. Mark read, Unfollow (hidden until someone @mentions you in it again) and Open act on one thread;
+  Mark all read on all. The tab's badge counts threads with unread replies.
+- **Activity:** like Slack's, everything that involves you, newest first: @mentions, direct messages, replies to you,
+  other replies in threads you were in (one entry per thread, with how many are new), and acknowledgements of your
+  messages (one entry per message, like reactions). Filter by All, Mentions, Threads, DMs or Acks, or show only
+  Unreads. Tap an entry to open its thread, or reply, or mark it read, in place. The badge counts unread entries;
+  acknowledgements never raise it, and they never make a thread unread.
 - **Tasks:** the operator tasks agents are blocked on, oldest first, each with its ask and its thread's newest
   reply. Reply in place (the reply goes to the agent in the task's thread), open the thread, or dismiss the task. The
   tab's badge counts them.
@@ -350,6 +361,12 @@ Identical messages one sender posts to several agents within seconds show as one
 reply count. Tapping it opens the whole thread: the original, then every reply in order. While a thread is open, the
 composer replies in it (`reply_to` is the original) and addresses the original's author. A reply to your broadcast
 goes to everyone it reached. `GET /api/thread?id=N` returns the thread containing any message N.
+
+**Read state.** Threads and Activity keep read state on the board (the `reads` table), so every device agrees: opening
+a thread reads it up to what it showed, replying reads everything before your reply, and Mark all read reads
+everything. History from before read state existed starts read. `GET /api/threads?limit=N` and
+`GET /api/activity?kind=mention|reply|dm|ack&unread=1&limit=N` return the views, `/api/state`'s `inbox` carries the
+two badges, and `POST /api/read` takes `{"id": N, "through": M}`, `{"id": N, "follow": false}` or `{"all": true}`.
 
 **Attachments.** The composer's + button adds photos, videos and files: on an iPhone, from the photo library, the
 camera or Files. You can also paste or drop files. Each file uploads at once, with progress, up to 512 MB and 10 per

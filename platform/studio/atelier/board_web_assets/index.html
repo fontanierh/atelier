@@ -28,6 +28,10 @@
         <h1>Agents</h1><p class="pane-sub" id="agentsSummary">Loading</p>
       </header>
       <div class="pane-body">
+        <nav class="inbox-nav" aria-label="Your threads and activity">
+          <button type="button" class="inbox-link" data-view="threads"><span data-icon="thread"></span><span>Threads</span><span class="inbox-count" id="threadsCount" hidden></span></button>
+          <button type="button" class="inbox-link" data-view="activity"><span data-icon="activity"></span><span>Activity</span><span class="inbox-count" id="activityCount" hidden></span></button>
+        </nav>
         <div id="agents" class="agent-list" role="list"></div>
         <p class="pane-note">Tap an agent to open your conversation with them.</p>
         <details class="settings" id="settings">
@@ -115,6 +119,35 @@
       </div>
     </main>
 
+    <section class="pane inbox-pane threads-pane" id="threadsPane" aria-labelledby="threadsHeading">
+      <header class="pane-head">
+        <div class="inbox-title"><h1 id="threadsHeading">Threads</h1><button type="button" class="text-button" id="threadsAllRead" hidden>Mark all read</button></div>
+        <p class="pane-sub" id="threadsSummary">Loading</p>
+      </header>
+      <div class="pane-body">
+        <div id="threadsList" class="inbox-list" role="list"></div>
+        <button type="button" class="text-button inbox-more" id="threadsMore" hidden>Show more threads</button>
+        <p class="pane-note" id="threadsNote">Every conversation you started, joined, or were addressed or @mentioned in. Unread ones come first, then the most recent.</p>
+      </div>
+    </section>
+
+    <section class="pane inbox-pane activity-pane" id="activityPane" aria-labelledby="activityHeading">
+      <header class="pane-head">
+        <div class="inbox-title"><h1 id="activityHeading">Activity</h1><button type="button" class="text-button" id="activityAllRead" hidden>Mark all read</button></div>
+        <p class="pane-sub" id="activitySummary">Loading</p>
+        <div class="activity-filters">
+          <div class="mode-switch filter-switch" id="activityKinds" role="group" aria-label="Show">
+            <button type="button" data-kind="" aria-pressed="true">All</button><button type="button" data-kind="mention" aria-pressed="false">Mentions</button><button type="button" data-kind="reply" aria-pressed="false">Threads</button><button type="button" data-kind="dm" aria-pressed="false">DMs</button><button type="button" data-kind="ack" aria-pressed="false">Acks</button>
+          </div>
+          <label class="unread-toggle"><input type="checkbox" id="activityUnread"><span>Unreads</span></label>
+        </div>
+      </header>
+      <div class="pane-body">
+        <div id="activityList" class="inbox-list activity-list" role="list"></div>
+        <button type="button" class="text-button inbox-more" id="activityMore" hidden>Show older activity</button>
+      </div>
+    </section>
+
     <aside class="pane tasks-pane" id="tasksPane" aria-labelledby="tasksHeading">
       <header class="pane-head"><h1 id="tasksHeading">Tasks</h1><p class="pane-sub" id="tasksSummary">Nobody is waiting on you</p></header>
       <div class="pane-body">
@@ -136,6 +169,8 @@
     <nav class="tabbar glass" id="tabbar" aria-label="Views">
       <span class="tab-indicator" aria-hidden="true"></span>
       <button type="button" class="tab" data-view="messages" aria-current="page"><span data-icon="messages"></span><span>Messages</span><span class="tab-badge" id="messagesBadge" hidden></span></button>
+      <button type="button" class="tab" data-view="threads"><span data-icon="thread"></span><span>Threads</span><span class="tab-badge" id="threadsBadge" hidden></span></button>
+      <button type="button" class="tab" data-view="activity"><span data-icon="activity"></span><span>Activity</span><span class="tab-badge" id="activityBadge" hidden></span></button>
       <button type="button" class="tab" data-view="tasks"><span data-icon="tasks"></span><span>Tasks</span><span class="tab-badge" id="tasksBadge" hidden></span></button>
       <button type="button" class="tab" data-view="agents"><span data-icon="agents"></span><span>Agents</span><span class="tab-badge warn" id="agentsBadge" hidden></span></button>
       <button type="button" class="tab" data-view="render"><span data-icon="render"></span><span>Render</span><span class="tab-dot" id="renderBadge" hidden></span></button>
