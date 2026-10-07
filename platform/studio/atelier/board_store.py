@@ -97,11 +97,11 @@ NOTIFY_PER_HOUR = 3
 
 def notify_allowed(db, sender, now=None):
     since = (now or time.time()) - 3600
-    # Operator task asks and edits always push, so they leave this allowance alone.
+    # Operator task asks and edits always push, so they leave this allowance alone. Edit notes carry a TASK_EDIT
+    # dedup key, which only edit_task sets.
     used = db.execute('SELECT count(*) FROM messages WHERE sender=? AND notify=1 AND created>? '
                       'AND id NOT IN (SELECT message FROM operator_tasks) '
-                      'AND NOT (coalesce(reply_to, 0) IN (SELECT message FROM operator_tasks) '
-                      "AND body LIKE 'Updated the ask:%')", (sender, since))
+                      "AND coalesce(dedup, '') NOT LIKE ?", (sender, since, TASK_EDIT + '%'))
     return used.fetchone()[0] < NOTIFY_PER_HOUR
 
 
@@ -187,6 +187,7 @@ def remove(agent):
 # needs, and the agent dismisses its own as soon as it no longer applies. The question is an ordinary message to the
 # operator, so answers are its thread replies.
 OPEN_TASKS, TASK_CHARS = 1, 500
+TASK_EDIT = 'task-edit:'
 
 
 def _ask(body):
@@ -237,9 +238,10 @@ def edit_task(task_id, agent, body):
             raise ValueError(f'operator task {task_id} was dismissed; open a new one if you still need the operator')
         now = time.time()
         db.execute('UPDATE operator_tasks SET body=?, edited=? WHERE id=?', (body, now, task_id))
-        return db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to, notify) "
-                          "VALUES (?, ?, ?, 'info', ?, ?, 1)",
-                          (now, agent, OPERATOR, f'Updated the ask: {body}', row['message'])).lastrowid
+        return db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to, dedup, notify) "
+                          "VALUES (?, ?, ?, 'info', ?, ?, ?, 1)",
+                          (now, agent, OPERATOR, f'Updated the ask: {body}', row['message'],
+                           f'{TASK_EDIT}{task_id}:{uuid.uuid4().hex}')).lastrowid
 
 
 def close_task(task_id, by, note='', operator=False, removed=False):
@@ -296,8 +298,8 @@ def tasks(db, agent=None, include_closed=False):
             'WITH RECURSIVE r(id) AS (SELECT id FROM messages WHERE reply_to=? '
             'UNION SELECT m.id FROM messages m JOIN r ON m.reply_to=r.id) '
             # An edit's note is the ask itself, already on the card, so it is not a reply.
-            'SELECT sender, body, created FROM messages WHERE id IN r '
-            "AND NOT (sender=? AND body LIKE 'Updated the ask:%') ORDER BY id", (row['message'], row['agent'])).fetchall()
+            "SELECT sender, body, created FROM messages WHERE id IN r AND coalesce(dedup, '') NOT LIKE ? ORDER BY id",
+            (row['message'], TASK_EDIT + '%')).fetchall()
         row['replies'] = len(replies)
         row['last_reply'] = dict(replies[-1]) if replies else None
     return rows

@@ -547,12 +547,12 @@ def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
             "SELECT notify FROM messages WHERE sender='one' AND (topic='blocked' OR body='Look at this.' "
             "OR body LIKE 'Updated the ask:%') ORDER BY id")]
     assert flags == [1] * (board.NOTIFY_PER_HOUR + 3)
-    # Other pushed replies in a task's thread still spend the allowance.
+    # Other pushed replies in a task's thread still spend the allowance, even worded like an edit's note.
     with board.database() as db:
         asked = db.execute('SELECT message FROM operator_tasks WHERE id=?', (again,)).fetchone()[0]
-        for _ in range(board.NOTIFY_PER_HOUR):
-            db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to, notify) "
-                       "VALUES (?, 'two', 'operator', 'info', 'Seen it.', ?, 1)", (time.time(), asked))
+    for _ in range(board.NOTIFY_PER_HOUR):
+        board.post('two', 'Updated the ask: mine now.', 'operator', reply_to=asked, notify=True)
+    with board.database() as db:
         assert not board.notify_allowed(db, 'two')
 
     # Concurrent asks still respect the cap.
