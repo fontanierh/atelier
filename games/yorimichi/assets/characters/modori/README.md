@@ -28,7 +28,8 @@ SHA-256 and the counts below.
 - **Coat:** fitted by [`modori_coat.py`](../tools/modori_coat.py): cuffs on the wrist bones, pushed 4 mm clear of
   the body, the body's bone weights with the skirt blending to the hips. `cloth_pin` is 1 on the torso and sleeves,
   falling to 0 just below the hips (0.44 to 0.52 m at 1 m scale). The blend keeps a Blender cloth modifier and a
-  130-frame test take (`Modori-RigAction`: rest, arms down, a few steps, a quick turn) as a look check only.
+  130-frame test take (`Modori-RigAction`: rest, arms down, a few steps, a quick turn) as a look check only; the
+  baked frames are not kept, so the cloth simulates again when the take plays.
 
 ## Putting him in the game
 
@@ -39,8 +40,8 @@ are the model:
    the floor, rename the Mixamo bones to the humanoid contract (`atelier.character.names.mixamo_aliases`,
    [`platform/conventions/rigs/humanoid.toml`](../../../../../platform/conventions/rigs/humanoid.toml)), drop the
    Blender cloth modifier and the test action, and write the skinned mesh (body and coat) and textures to FBX.
-2. **Coat in Unreal:** Chaos Cloth on the coat's skirt, its max-distance mask painted from `cloth_pin` (0 pinned,
-   free where the pin is 0), the body as the collider; or skirt bones if cloth costs too much.
+2. **Coat in Unreal:** Chaos Cloth on the coat's skirt, its max-distance mask painted from `cloth_pin` (max
+   distance 0 where `cloth_pin` is 1, free where it is 0), the body as the collider; or skirt bones if cloth costs too much.
 3. **Moves:** retarget the merged move set onto him as for Kaede (`cairo/botw.py --character modori`, which loads
    this folder's `export_unreal.py` for its `prepare`, `SOURCE` and `OUT`). His own weapon
    (a knotted rope with a bell-metal weight, left off the T-pose) and its clips come later.
@@ -65,7 +66,8 @@ blender -b --python-exit-code 1 --python $T/modori_texture.py -- --input "$B/ani
 uv run python $T/modori_texture.py --input "$B/anime+character+3d+model.fbx" --output $B/texture-r01 --stage paint --variant redo
 blender -b --python-exit-code 1 --python $T/modori_coat.py -- --body $B/rigged/modori-rigged.fbx \
     --texture $B/texture-r01/basecolor-redo.png --coat "$M/tripo-coat-r01/long+coat+3d+model.fbx" --output $M/fit-r02 --stage fit
-blender -b --python-exit-code 1 --python $T/modori_coat.py -- ... --stage sim   # writes Modori-Coat.blend
+blender -b --python-exit-code 1 --python $T/modori_coat.py -- ... --stage sim   # writes Modori-Rig.blend
 ```
 
-`Modori-Coat.blend` is copied here as the next `Modori-Rig-rNN.blend`, with its manifest updated.
+`Modori-Rig.blend` (no machine paths, unlike `Modori-Coat.blend` beside it) is copied here as the next
+`Modori-Rig-rNN.blend`, with its manifest updated.

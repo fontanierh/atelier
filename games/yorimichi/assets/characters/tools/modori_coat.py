@@ -17,7 +17,8 @@ Run both under the guard (python -m atelier.safety.guarded --small 3 ...).
 2. Sim: a short scripted take (rest, arms down, a few steps forward, a quick turn) drives the skeleton; the coat's
    cloth modifier follows the armature, the pin group holds the torso and the sleeves to it and the body collides.
    Gravity is scaled by the model's size (1 m for a 1.75 m character) so the cloth falls at real speed. Writes
-   sim/frame-*.png, sim/coat-sim.mp4 and Modori-Coat.blend (baked). The Blender cloth is a look check: in Unreal the
+   sim/frame-*.png, sim/coat-sim.mp4, Modori-Coat.blend (baked) and Modori-Rig.blend (the copy for the repository, with
+   no machine paths and no baked frames). The Blender cloth is a look check: in Unreal the
    coat will be Chaos Cloth painted from the same pin weights, or skirt bones.
 """
 import argparse, json, math, subprocess, sys, time
@@ -326,4 +327,19 @@ if a.stage == 'sim':
                     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '24', str(out / 'sim' / 'coat-sim.mp4')], check=True)
     scene.frame_set(START)
     bpy.ops.wm.save_as_mainfile(filepath=str(out / 'Modori-Coat.blend'), compress=True)
+    # Modori-Rig.blend, the copy for the public repository: no machine paths (the packed images keep only their names;
+    # the data blocks are written without the window manager, which remembers the last directory). The baked cloth
+    # frames live in memory and are not written: the cloth simulates again when the take plays.
+    scene.render.filepath = '//'
+    for img in bpy.data.images:
+        if img.packed_file:
+            name = '//' + Path(img.filepath).name
+            for packed in img.packed_files:
+                packed.filepath = name
+            img.filepath_raw = img.filepath = name
+    ids = set()
+    for data in (bpy.data.scenes, bpy.data.collections, bpy.data.objects, bpy.data.meshes, bpy.data.armatures,
+                 bpy.data.materials, bpy.data.images, bpy.data.actions, bpy.data.worlds):
+        ids |= set(data)
+    bpy.data.libraries.write(str(out / 'Modori-Rig.blend'), ids, path_remap='NONE', compress=True)
     say('SIM SAVED')

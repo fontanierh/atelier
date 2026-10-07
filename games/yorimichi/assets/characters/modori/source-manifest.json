@@ -1,17 +1,33 @@
 {
   "native": "Modori-Rig-r01.blend",
-  "native_sha256": "02cd32f1db2ddc957a7a4ebe2b8cf7d03bd857fd48c03dee62d99d8541b4e6ed",
+  "native_sha256": "d455d593f413af9cc026a2bbf6aa77f5a2419220b505d215f05ac54ee9279be1",
   "height_cm": 175,
   "model_height_m": 1.0,
   "axes": "Z up, facing -Y",
   "rig": "Tripo Studio's Mixamo skeleton, 65 bones with fingers (mixamorig:*), not yet renamed to the humanoid contract",
   "objects": {
     "Modori-Rig": "armature",
-    "Modori-Body": {"vertices": 5172, "texture": [4096, 4096], "material": "matte, normal map disconnected"},
-    "Modori-Coat": {"vertices": 5404, "texture": [4096, 4096], "vertex_groups": ["cloth_pin"]}
+    "Modori-Body": {
+      "vertices": 5172,
+      "texture": [
+        4096,
+        4096
+      ],
+      "material": "matte, normal map disconnected"
+    },
+    "Modori-Coat": {
+      "vertices": 5404,
+      "texture": [
+        4096,
+        4096
+      ],
+      "vertex_groups": [
+        "cloth_pin"
+      ]
+    }
   },
   "texture": "redo variant of modori_texture.py: head triangles labelled skin, hair or collar and painted fresh; face drawn from FACE",
-  "coat": "modori_coat.py fit (scale 0.7657, 4 mm clear, cloth_pin 1 above 0.52 m to 0 below 0.44 m) and sim (test take Modori-RigAction, frames 1-130 at 24 fps, look check only)",
+  "coat": "modori_coat.py fit (scale 0.7657, 4 mm clear, cloth_pin 1 above 0.52 m to 0 below 0.44 m) and sim (test take Modori-RigAction, frames 1-130 at 24 fps, look check only; the baked frames are not kept, the cloth simulates again when it plays)",
   "inputs": {
     "body": "Tripo Studio body r01 (Smart Mesh, Smart UV, rigged): build/yorimichi/characters/modori/tripo-body-r01/",
     "coat": "Tripo Studio coat r01 (Smart Mesh, Smart UV): build/yorimichi/characters/modori/tripo-coat-r01/",
