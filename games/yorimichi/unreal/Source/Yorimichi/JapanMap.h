@@ -59,6 +59,8 @@ public:
     UFUNCTION(BlueprintPure, Category = "Map|Review") bool IsMarkerReviewOnVehicle() const;
     /** Review the bar's real focused Slate key path: one press and release of Key; requires the bar already open. */
     UFUNCTION(BlueprintCallable, Category = "Map|Review") bool ReviewMarkerBarKey(const FString& Key);
+    /** One key press or release through Slate's normal routing (the focused widget, else the game viewport). */
+    UFUNCTION(BlueprintCallable, Category = "Map|Review") bool ReviewSlateKey(const FString& Key, bool bPressed);
     UFUNCTION(BlueprintPure, Category = "Map") bool IsMapOpen() const { return IsOpen(); }
     void CycleMarker(int32 Direction);
     bool IsEditingMarkerName() const;

@@ -11,6 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
+#include "GameFramework/PlayerController.h"
 #include "Engine/Texture2D.h"
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
@@ -431,9 +432,9 @@ private:
     {
         const UJapanMap* M = Map.Get();
         if (bConfirmDelete && M) return FString::Printf(TEXT("Delete %s?  %s again deletes it  ·  any other button keeps it"),*M->GetMarkerName(),bPad ? TEXT("D-pad Down") : TEXT("Delete"));
-        if (!bPad) return TEXT("F5 save here  ·  Enter or F9 return  ·  arrows choose  ·  Delete removes  ·  Esc close");
+        if (!bPad) return TEXT("F5 save  ·  Enter go  ·  arrows choose, Delete twice deletes  ·  Esc close");
         const FMapPadLabels L = MapPadLabels(PadStyle ? PadStyle : 4);
-        return FString::Printf(TEXT("%s save here  ·  %s return  ·  d-pad choose  ·  d-pad Down delete  ·  %s close"),L.Mark,L.Travel,L.Close);
+        return FString::Printf(TEXT("%s save  ·  %s go  ·  d-pad choose, Down twice deletes  ·  %s close"),L.Mark,L.Travel,L.Close);
     }
 };
 
@@ -769,6 +770,9 @@ void UJapanMap::OpenMarkerBar()
     MarkerBar = Bar;
     GEngine->GameViewport->AddViewportWidgetContent(Bar,18);
     Owner->SetMenuOpen(true);
+    // The bar takes focus while View is still held, so a real pad's release lands on the bar. Release the held keys
+    // now so the next View tap and hold start clean.
+    if (APlayerController* PC = Cast<APlayerController>(Owner->GetController())) PC->FlushPressedKeys();
     FSlateApplication::Get().SetKeyboardFocus(Bar,EFocusCause::SetDirectly);
     UE_LOG(LogTemp,Display,TEXT("MARKERS bar opened: %d saved places"),GetMarkerKeys().Num());
 }
@@ -780,6 +784,15 @@ void UJapanMap::CloseMarkerBar()
     MarkerBar.Reset();
     if (Owner) Owner->SetMenuOpen(false);
     if (FSlateApplication::IsInitialized()) FSlateApplication::Get().SetAllUserFocusToGameViewport();
+}
+
+bool UJapanMap::ReviewSlateKey(const FString& Key, bool bPressed)
+{
+    const FKey K(*Key);
+    if (!K.IsValid()) return false;
+    const FKeyEvent Event(K,FModifierKeysState(),0,false,0,0);
+    if (bPressed) FSlateApplication::Get().ProcessKeyDownEvent(Event); else FSlateApplication::Get().ProcessKeyUpEvent(Event);
+    return true;
 }
 
 bool UJapanMap::ReviewMarkerBarKey(const FString& Key)
