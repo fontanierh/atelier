@@ -62,8 +62,10 @@ def database():
                 error TEXT
             );
         ''')
-        # `task` is the agent's one-line assignment; `removed` hides an evicted agent from the board's lists.
-        for column, kind in (('supervised', 'TEXT'), ('task', 'TEXT'), ('removed', 'INTEGER NOT NULL DEFAULT 0')):
+        # `task` is the agent's one-line assignment (set at `task_at`); `removed` hides an evicted agent from the
+        # board's lists; `session` is whether its own session is 'busy' or 'idle', since `session_since`.
+        for column, kind in (('supervised', 'TEXT'), ('task', 'TEXT'), ('removed', 'INTEGER NOT NULL DEFAULT 0'),
+                             ('task_at', 'REAL'), ('session', 'TEXT'), ('session_since', 'REAL')):
             if column not in {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}:
                 try:
                     db.execute(f'ALTER TABLE subscribers ADD COLUMN {column} {kind}')
@@ -157,7 +159,8 @@ def set_task(agent, text):
     if len(text) > 160:
         raise ValueError('keep the task to one line of at most 160 characters')
     with database() as db:
-        if not db.execute('UPDATE subscribers SET task=? WHERE agent=?', (text or None, agent)).rowcount:
+        if not db.execute('UPDATE subscribers SET task=?, task_at=? WHERE agent=?',
+                          (text or None, time.time(), agent)).rowcount:
             raise LookupError(f'{agent} is not registered on the board; subscribe or wait first')
     return text
 
