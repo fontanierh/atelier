@@ -49,6 +49,37 @@ class Surfaces:
             if u >= -1e-9 and v >= -1e-9 and u+v <= 1+1e-9: found.append(k)
         return found
 
+    def crossings(self, a, b):
+        """Fractions where a plan segment enters or leaves a triangle, including narrow gaps."""
+        a, b = np.asarray(a), np.asarray(b)
+        lo_cell = np.floor(np.minimum(a, b)/self.cell).astype(int)
+        hi_cell = np.floor(np.maximum(a, b)/self.cell).astype(int)
+        candidates = set()
+        for i in range(lo_cell[0], hi_cell[0]+1):
+            for j in range(lo_cell[1], hi_cell[1]+1):
+                candidates.update(self.index.get((i, j), ()))
+        if not candidates: return []
+        triangles = self.triangles[list(candidates), :, :2]
+        origin = triangles[:, 0]; ab = triangles[:, 1]-origin; ac = triangles[:, 2]-origin
+        determinant = ab[:, 0]*ac[:, 1]-ab[:, 1]*ac[:, 0]
+        valid = abs(determinant) >= 1e-12
+        origin, ab, ac, determinant = origin[valid], ab[valid], ac[valid], determinant[valid]
+        def weights(point):
+            offset = point-origin
+            u = (offset[:, 0]*ac[:, 1]-offset[:, 1]*ac[:, 0])/determinant
+            v = (ab[:, 0]*offset[:, 1]-ab[:, 1]*offset[:, 0])/determinant
+            return np.column_stack((u, v, 1-u-v))
+        first = weights(a); change = weights(b)-first
+        lo, hi = np.zeros(len(first)), np.ones(len(first))
+        for start, delta in zip(first.T, change.T):
+            moving = abs(delta) > 1e-12
+            crossing = np.divide(-start, delta, out=np.zeros_like(start), where=moving)
+            lo = np.where(delta > 1e-12, np.maximum(lo, crossing), lo)
+            hi = np.where(delta < -1e-12, np.minimum(hi, crossing), hi)
+            hi = np.where(~moving & (start < -1e-9), -1., hi)
+        valid = lo <= hi
+        return np.concatenate((lo[valid], hi[valid])).tolist()
+
     def height(self, k, x, y):
         """Height of triangle k's plane at (x, y), so a neighbour that only starts beyond an edge still extends to it."""
         n = self.normal[k]; p = self.triangles[k, 0]
@@ -121,19 +152,27 @@ def buried_walls(vertices, faces, owner, obstacles=(), groups=None):
         if owner[k] in obstacles: continue
         direction = normals[k, :2]; direction = direction/np.linalg.norm(direction)
         triangle = triangles[k]
-        samples = [triangle.mean(0)]
-        for a, b in zip(triangle, np.roll(triangle, -1, 0)):
-            length = np.linalg.norm(b[:2]-a[:2])
-            samples.extend(np.linspace(a, b, max(1, int(np.ceil(length/SEGMENT)))+1))
-        # Inset the boundary slightly so adjoining, unrelated outside edges don't defeat a buried joint.
         centre = triangle.mean(0)
-        samples = np.asarray(samples)*.999+centre*.001
+        samples = [centre]
+        # Inset the boundary slightly so adjoining, unrelated outside edges don't defeat a buried joint.
+        boundary = triangle*.999+centre*.001
+        for a, b in zip(boundary, np.roll(boundary, -1, 0)):
+            length = np.linalg.norm(b[:2]-a[:2])
+            fractions = np.linspace(0., 1., max(1, int(np.ceil(length/SEGMENT)))+1).tolist()
+            # A fixed spacing alone can skip a slot between two neighbours. Split at every plan coverage
+            # boundary and check each interval, however narrow, as well as the height samples.
+            for lookup, side in ((surfaces, -1), (surfaces, 1), (undersides, 1)):
+                fractions.extend(lookup.crossings(a[:2]+side*direction*PROBE, b[:2]+side*direction*PROBE))
+            fractions = np.unique(fractions)
+            fractions = np.unique(np.r_[fractions, (fractions[:-1]+fractions[1:])/2])
+            samples.extend(a+(b-a)*fraction for fraction in fractions)
         covered = True
         for point in samples:
             inside = [surfaces.height(j, *point[:2]) for j in surfaces.over(*(point[:2]-direction*PROBE))
                       if surfaces.owner[j] == part[k]]
             inside = [height for height in inside if height >= point[2]-LIP[1]]
             outside = point[:2]+direction*PROBE
+            # Select the neighbour just outside the cap, then extend its plane to the cap itself.
             below = {undersides.owner[j] for j in undersides.over(*outside)
                      if undersides.height(j, *point[:2]) <= point[2]+ROLLABLE+WELD}
             # Use the nearest riding level, and require the neighbour's solid span to cover the wall.
@@ -217,10 +256,13 @@ def riding_collision(parts, obstacles=(), groups=None):
         vertices = np.vstack([vertices, np.concatenate(added)])
         faces = np.vstack([faces, start+np.arange(3*len(added)).reshape(-1, 3)])
         owner = np.concatenate([owner, added_owner])
-        vertices, faces, keep = _merge(vertices, faces); owner = owner[keep]
+    # A floor's top can coincide with a ramp's underside. Keep both piece identities until the cap check;
+    # merging repeats first would discard the ramp's foundation and leave a buried cap at that joint.
     buried = buried_walls(vertices, faces, owner, obstacles, groups)
     keep = np.ones(len(faces), bool); keep[buried] = False
     faces, owner = faces[keep], owner[keep]
+    if added:
+        vertices, faces, keep = _merge(vertices, faces); owner = owner[keep]
     report['buried_wall_triangles'] = len(buried)
     report['triangles'] = len(faces)
     return vertices, faces, owner, report

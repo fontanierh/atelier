@@ -74,6 +74,15 @@ class RidingCollisionTest(unittest.TestCase):
         _, _, _, report = C.riding_collision(pieces)
         self.assertEqual(report['buried_wall_triangles'], 0)
 
+    def test_narrow_slots_between_neighbours_keep_the_exposed_cap(self):
+        for lo, hi in ((.03, .07), (.12, .19), (.53, .58), (.031, .036)):
+            with self.subTest(slot=(lo, hi)):
+                pieces = [slab(-4, -4, 0, 4, -.2, 0.),
+                          slab(0, -4, 4, lo, -.2, 0.), slab(0, hi, 4, 4, -.2, 0.)]
+                vertices, faces, owner, _ = C.riding_collision(pieces)
+                cap = (owner == 0) & np.all(abs(vertices[faces, 0]) < 1e-9, axis=1)
+                self.assertEqual(sum(cap), 2)
+
     def test_an_overhead_deck_does_not_bury_a_lower_wall(self):
         floor = slab(-4, -4, 0, 4, -.2, 0.)
         roof = slab(-4, -4, 4, 4, 2.8, 3.)
@@ -105,6 +114,20 @@ class RidingCollisionTest(unittest.TestCase):
         second = slab(0, -4, 4, 4, -.17, 0.)
         _, _, owner, _ = C.riding_collision([first, second])
         self.assertEqual(sum(owner == 0), 12)
+
+    def test_a_floor_coincident_with_the_ramp_underside_keeps_its_coverage(self):
+        parts = floor_tiles()
+        ramps = [slab(-4, -4, 0, 4, 0., .2), slab(0, -4, 4, 4, 0., .2)]
+        for vertices, _ in ramps:
+            vertices[4:, 2] += (vertices[4:, 1]+4)*.005
+        # A separate proud pad exercises the same wedge-and-merge path as the real park.
+        pad = [slab(6, -4, 10, 4, -.2, 0.), slab(7, -1, 9, 1, 0., .02)]
+        vertices, faces, owner, report = C.riding_collision(parts+ramps+pad)
+        self.assertGreater(report['wedges'], 0)
+        joint = np.isin(owner, (2, 3)) & np.all(abs(vertices[faces, 0]) < 1e-9, axis=1)
+        self.assertEqual(sum(joint), 0)
+        # Upward ramp faces and the foundation remain in the collision.
+        self.assertTrue(np.any((owner == 2) & (C._normals(vertices[faces])[0][:, 2] > C.UP)))
 
     def test_material_parts_share_one_piece_for_cap_coverage(self):
         parts = []
