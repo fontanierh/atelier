@@ -9,7 +9,7 @@ Two places: the Sunset Pier deck between long_ledge and flatbar_red (skatepark x
 grass by the forest lake's cabin, from (-51, 235) north to (-51, 241) (an 8 m corridor measured level to 0.6 cm in the
 game; GRASS=((x, y), (x, y)) in island metres sets another). Should that grass ever stop being level, the levellest 6 m
 line by GroundAt within 20 m of it, above the lake's surface, is used. A place whose ground spans more than 10 cm along
-the walk is reported as not level and its foot checks are skipped, not failed. At each, Cairo stands 3 s, walks 6 m across
+the walk, or with no ground under any point of it, is reported as not level and its foot checks are skipped. At each, Cairo stands 3 s, walks 6 m across
 the camera's view and stands again; the walk is checked to be the merged move set's (ground mode, not the legacy set,
 walking speed). Stills: a wide side-on view standing; close-ups of each shoe from its own
 side, the camera 3 cm over the floor and 70 cm away, standing before and after the walk; and every 0.3 s of the walk,
@@ -148,9 +148,19 @@ def soles(heading, when):
 
 
 def along(start, toward, height, n=7):
-    """Ground heights (cm) at n points from start to toward."""
-    return [L.ground_at(ue(start[0] + (toward[0] - start[0]) * k / (n - 1), start[1] + (toward[1] - start[1]) * k / (n - 1), height)).z
-            for k in range(n)]
+    """Ground heights (cm) at n points from start to toward; None where nothing lies under a point (GroundAt then
+    answers the height it was asked from, which would read as level ground)."""
+    out = []
+    for k in range(n):
+        at = ue(start[0] + (toward[0] - start[0]) * k / (n - 1), start[1] + (toward[1] - start[1]) * k / (n - 1), height)
+        z = L.ground_at(at).z
+        out.append(None if abs(z - at.z) < 1e-3 else z)
+    return out
+
+
+def spread(ground):
+    """How far the ground rises or falls along a walk (cm); infinite when any point has no ground."""
+    return math.inf if None in ground else max(ground) - min(ground)
 
 
 def level_line(near, height, reach=20., step=5., length=6.):
@@ -163,26 +173,27 @@ def level_line(near, height, reach=20., step=5., length=6.):
             for a in range(0, 360, 45):
                 toward = (start[0] + length * math.cos(math.radians(a)), start[1] + length * math.sin(math.radians(a)))
                 g = along(start, toward, height)
-                if min(g) < (LAKE_Z + .2) * 100. or max(g) - min(g) >= LEVEL:
+                if spread(g) >= LEVEL or min(g) < (LAKE_Z + .2) * 100.:
                     continue
-                if best is None or max(g) - min(g) < best[0]:
-                    best = (max(g) - min(g), start, toward)
+                if best is None or spread(g) < best[0]:
+                    best = (spread(g), start, toward)
     return best and best[1:]
 
 
 def visit(name, start, toward, height):
     st['place'] = name
     ground = along(start, toward, height)
-    if name == 'grass' and max(ground) - min(ground) > LEVEL:
+    if name == 'grass' and spread(ground) > LEVEL:
         found = level_line(start, height)
-        check('a level place was found', found is not None, near=list(start), span_there_cm=round(max(ground) - min(ground), 1))
+        check('a level place was found', found is not None, near=list(start), span_there_cm=round(spread(ground), 1),
+              no_ground_points=ground.count(None))
         if found is None:
             return
         start, toward = found
         ground = along(start, toward, height)
-    span = max(ground) - min(ground)      # gated unrounded: 10.04 cm is not level
-    check('the walk is level', span <= LEVEL, ground_span_cm=round(span, 2), start=[round(v, 2) for v in start],
-          toward=[round(v, 2) for v in toward])
+    span = spread(ground)                 # gated unrounded: 10.04 cm is not level; no ground is not level either
+    check('the walk is level', span <= LEVEL, ground_span_cm=round(span, 2) if span < math.inf else None,
+          no_ground_points=ground.count(None), start=[round(v, 2) for v in start], toward=[round(v, 2) for v in toward])
     if span > LEVEL:
         return
     heading = yaw_to(start, toward)
