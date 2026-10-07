@@ -7,13 +7,14 @@ import re
 import secrets
 import sqlite3
 import time
+from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
 from . import board, board_markdown, board_push
-from .board_files import (INLINE_TYPES, attachment, read_json, split_attachments, store_upload,
-                          with_attachments)
+from .board_files import (INLINE_TYPES, MARKDOWN_SUFFIXES, attachment, read_json, readable, split_attachments,
+                          store_upload, with_attachments)
 
 ASSETS = Path(__file__).with_name('board_web_assets')
 STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
@@ -25,8 +26,11 @@ STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
           '/apple-touch-icon.png': ('apple-touch-icon.png', 'image/png'),
           '/manifest.webmanifest': ('manifest.webmanifest', 'application/manifest+json'),
           '/sw.js': ('sw.js', 'text/javascript; charset=utf-8'),
+          '/board-theme.js': ('board-theme.js', 'text/javascript; charset=utf-8'),
           '/meadow-portrait-1.webp': ('meadow-portrait-1.webp', 'image/webp'),
-          '/meadow-landscape-1.webp': ('meadow-landscape-1.webp', 'image/webp')}
+          '/meadow-landscape-2.webp': ('meadow-landscape-2.webp', 'image/webp'),
+          '/meadow-night-portrait-1.webp': ('meadow-night-portrait-1.webp', 'image/webp'),
+          '/meadow-night-landscape-1.webp': ('meadow-night-landscape-1.webp', 'image/webp')}
 _assets = {}
 
 
@@ -241,6 +245,16 @@ class Handler(BaseHTTPRequestHandler):
                       "font-src https://fonts.gstatic.com; img-src data:; base-uri 'none'; form-action 'none'; "
                       "frame-ancestors 'none'")
 
+    def send_document(self, ident):
+        """A Markdown or text attachment rendered for the board's reader, so it opens in place instead of downloading."""
+        item = attachment(ident)
+        if not item or not readable(item):
+            self.send(404, {'error': 'This attachment cannot be read here.'}); return
+        text = item['path'].read_bytes().decode('utf-8', 'replace')
+        html = board_markdown.render(text) if item['name'].lower().endswith(MARKDOWN_SUFFIXES) else \
+            '<pre><code>' + escape(text) + '</code></pre>'
+        self.send(200, {'name': item['name'], 'url': item['url'], 'size': item['size'], 'html': html})
+
     def send_attachment(self, ident):
         item = attachment(ident)
         if not item:
@@ -314,6 +328,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.send(404, {'error': 'This conversation is no longer on the board.'})
             elif parsed.path.startswith('/api/attachment/'):
                 self.send_attachment(parsed.path.split('/')[3])
+            elif parsed.path.startswith('/api/document/'):
+                self.send_document(parsed.path.split('/')[3])
             elif parsed.path == '/healthz':
                 with sqlite3.connect(f'{(board.root()/"agent-board.sqlite3").as_uri()}?mode=ro', uri=True) as db:
                     db.execute('SELECT id FROM messages LIMIT 1').fetchall()

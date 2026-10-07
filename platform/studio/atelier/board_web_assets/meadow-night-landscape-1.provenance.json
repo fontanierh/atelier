@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Repaint the reference as the same place on a clear spring night, keeping exactly the same composition: the same hills, trees, mist layers, winding river and wildflowers in the same places. Replace the sunrise glow with a soft full moon at the same spot in the upper right, a gentle halo around it, a deep indigo to midnight-blue sky with a few faint stars, cool silver moonlight on the mist, the river reflecting moonlight, the wildflowers pale and softly lit, a few tiny warm fireflies in the grass. Hand-painted watercolor with visible paper texture, dreamy and elegant, dark but not black, low contrast in the middle because a chat interface sits on top of it. Paint only the landscape, with no user interface at all: no cards, no text, no avatars, no buttons, no bars. No people, no animals, no buildings, no text, no signature.",
+  "inputs": [
+    "day-landscape.png"
+  ],
+  "purpose": "Agent board dark mode desktop background",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "3072x2048",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "3a73a447e098ed6ae63557e0251ea7ef2d49b8317735653e060db19efb52664b",
+  "status": "done",
+  "started_at": "2026-10-07T09:17:03.186042+00:00",
+  "output": "night-landscape.png",
+  "output_sha256": "a5e6437f840d45ce6c1b73352e31cf3800aa219dcdadba77c4aaced82bf49669",
+  "usage": {
+    "input_tokens": 1279,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 199
+    },
+    "output_tokens": 3184,
+    "output_tokens_details": {
+      "image_tokens": 3184,
+      "text_tokens": 0
+    },
+    "total_tokens": 4463
+  },
+  "elapsed_seconds": 43.4,
+  "finished_at": "2026-10-07T09:17:46.620947+00:00",
+  "derived": {
+    "file": "meadow-night-landscape-1.webp",
+    "size": [
+      3072,
+      2048
+    ],
+    "format": "WebP quality 72",
+    "sha256": "3ac48118f4127e530a3d5d328d9d615d2b1bcaaa9ea9079c702307750a18cddd"
+  },
+  "reference": "day-landscape.png, the call that made meadow-landscape-2.webp, so the night painting keeps its composition"
+}

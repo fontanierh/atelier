@@ -120,6 +120,11 @@ def test_http_static_and_read_only_api(http_server):
     assert b'src="/board-scene.js"' in request(http_server)[1]
     status, body, headers = request(http_server, '/board-scene.js')
     assert status == 200 and b'boardScene' in body and headers['Content-Type'].startswith('text/javascript')
+    page = request(http_server)[1]
+    # The theme script runs before the stylesheet, so the board never paints in the wrong theme first.
+    assert page.index(b'<script src="/board-theme.js"></script>') < page.index(b'href="/board.css"')
+    status, body, headers = request(http_server, '/board-theme.js')
+    assert status == 200 and b'boardTheme' in body and headers['Content-Type'].startswith('text/javascript')
     status, body, headers = request(http_server, '/apple-touch-icon.png')
     assert status == 200 and body.startswith(b'\x89PNG') and headers['Content-Type'] == 'image/png'
     status, body, _ = request(http_server, '/api/state')
@@ -234,6 +239,24 @@ def test_attachments_upload_send_stream_and_never_render_inline_markup(http_serv
     assert request(http_server, '/api/attachment/../../agent-board.sqlite3')[0] == 404
     assert request(http_server, message['attachments'][0]['url'], headers={'Host': 'board.example.ts.net'})[0] == 403
 
+
+
+def test_markdown_and_text_attachments_open_in_the_reader_rendered_safely(http_server):
+    _, notes = upload(http_server, b'# Bowl lead\n\n- **seam** <script>x</script>', 'bowl-lead.md', 'text/markdown')
+    _, log = upload(http_server, b'step <1> ok', 'run.log', 'text/plain')
+    _, page = upload(http_server, b'<p>hi</p>', 'page.html', 'text/html')
+    payload = {'body': 'Notes', 'recipient': 'two', 'request_id': str(uuid.uuid4()), 'attachments': [notes['id'], log['id'], page['id']]}
+    assert request(http_server, '/api/send', payload)[0] == 200
+    _, state, _ = request(http_server, '/api/state')
+    assert [f['readable'] for f in json.loads(state)['messages'][0]['attachments']] == [True, True, False]
+
+    status, body, headers = request(http_server, f"/api/document/{notes['id']}")
+    document = json.loads(body)
+    assert status == 200 and headers['Content-Type'].startswith('application/json') and document['name'] == 'bowl-lead.md'
+    assert '<h1>Bowl lead</h1>' in document['html'] and '<strong>seam</strong>' in document['html'] and '<script>' not in document['html']
+    assert json.loads(request(http_server, f"/api/document/{log['id']}")[1])['html'] == '<pre><code>step &lt;1&gt; ok</code></pre>'
+    assert request(http_server, f"/api/document/{page['id']}")[0] == 404
+    assert request(http_server, '/api/document/../../agent-board.sqlite3')[0] == 404
 
 def test_threads_collect_replies_to_replies_and_web_replies_keep_their_thread(http_server):
     root = board.post('one', 'Can someone check the ramp?', recipient='operator', topic='request')
@@ -366,9 +389,13 @@ def test_static_files_load_fast_gzipped_revalidated_and_paintings_cached(http_se
     assert status == 200 and headers['Content-Encoding'] == 'gzip' and headers['Cache-Control'] == 'no-cache'
     assert gzip.decompress(body) == (board_web.ASSETS / 'board.js').read_bytes()
     assert request(http_server, '/board.js', headers={'If-None-Match': headers['ETag']})[0] == 304
-    status, body, headers = request(http_server, '/meadow-portrait-1.webp')
-    assert status == 200 and headers['Content-Type'] == 'image/webp' and 'immutable' in headers['Cache-Control']
-    assert body[:4] == b'RIFF' and len(body) < 150_000, 'the phone background stays small'
+    for painting in ('/meadow-portrait-1.webp', '/meadow-night-portrait-1.webp'):
+        status, body, headers = request(http_server, painting)
+        assert status == 200 and headers['Content-Type'] == 'image/webp' and 'immutable' in headers['Cache-Control']
+        assert body[:4] == b'RIFF' and len(body) < 150_000, 'the phone backgrounds stay small'
+    for painting in ('/meadow-landscape-2.webp', '/meadow-night-landscape-1.webp'):
+        status, body, _ = request(http_server, painting)
+        assert status == 200 and body[:4] == b'RIFF' and len(body) < 600_000
 
 
 def test_only_the_web_board_speaks_as_the_operator(cache, capsys):
