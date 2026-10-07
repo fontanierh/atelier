@@ -6,9 +6,10 @@ grass, each foot's height over the ground measured every frame, and sole close-u
     ... wait for build/yorimichi/cairo/shoes/<take>/done.json
 
 Two places: the Sunset Pier deck between long_ledge and flatbar_red (skatepark x -24 to -16, y 35: bare concrete), and
-grass by the forest lake's cabin: the levellest 6 m line found by GroundAt within 20 m of (-30, 215), above the lake's
-surface (GRASS=((x, y), (x, y)) in island metres sets one instead). A place whose ground spans more than 10 cm along the
-walk is reported as not level and its foot checks are skipped, not failed. At each, Cairo stands 3 s, walks 6 m across
+grass by the forest lake's cabin, from (-51, 235) north to (-51, 241) (an 8 m corridor measured level to 0.6 cm in the
+game; GRASS=((x, y), (x, y)) in island metres sets another). Should that grass ever stop being level, the levellest 6 m
+line by GroundAt within 20 m of it, above the lake's surface, is used. A place whose ground spans more than 10 cm along
+the walk is reported as not level and its foot checks are skipped, not failed. At each, Cairo stands 3 s, walks 6 m across
 the camera's view and stands again; the walk is checked to be the merged move set's (ground mode, not the legacy set,
 walking speed). Stills: a wide side-on view standing; close-ups of each shoe from its own
 side, the camera 3 cm over the floor and 70 cm away, standing before and after the walk; and every 0.3 s of the walk,
@@ -41,8 +42,8 @@ PIER = (-110., -234., 1.8)    # skatepark/park.json origin (island metres): skat
 # Name, start, toward, and a height near the ground there (m): the player is placed on the ground under it, traced from
 # 20 m above.
 PLACES = [('concrete', (PIER[0] - 24., PIER[1] + 35.), (PIER[0] - 16., PIER[1] + 35.), PIER[2] + 1.),
-          ('grass', *(globals().get('GRASS') or (None, None)), 75.)]
-GRASS_NEAR, LAKE_Z = (-30., 215.), 75.      # where to look for level grass; the forest lake's surface (m, world.json)
+          ('grass', *(globals().get('GRASS') or ((-51., 235.), (-51., 241.))), 76.)]
+LAKE_Z = 75.                                 # the forest lake's surface (m, world.json)
 LEVEL = 10.                                  # cm: the most the ground may rise or fall along a walk
 ONLY = globals().get('ONLY') or [p[0] for p in PLACES]
 if isinstance(ONLY, str) or not set(ONLY) <= {p[0] for p in PLACES}:
@@ -171,13 +172,14 @@ def level_line(near, height, reach=20., step=5., length=6.):
 
 def visit(name, start, toward, height):
     st['place'] = name
-    if start is None:
-        found = level_line(GRASS_NEAR, height)
-        check('a level place was found', found is not None, near=GRASS_NEAR)
+    ground = along(start, toward, height)
+    if name == 'grass' and max(ground) - min(ground) > LEVEL:
+        found = level_line(start, height)
+        check('a level place was found', found is not None, near=list(start), span_there_cm=round(max(ground) - min(ground), 1))
         if found is None:
             return
         start, toward = found
-    ground = along(start, toward, height)
+        ground = along(start, toward, height)
     span = round(max(ground) - min(ground), 1)
     check('the walk is level', span <= LEVEL, ground_span_cm=span, start=[round(v, 2) for v in start], toward=[round(v, 2) for v in toward])
     if span > LEVEL:
