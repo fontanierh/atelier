@@ -7,6 +7,8 @@
 class AWandererCharacter;
 class UTexture2D;
 class SWidget;
+class SEditableTextBox;
+class FJapanMarkers;
 
 /** A place the player can travel to from the map. Positions are Unreal centimetres, yaw is Unreal degrees. */
 struct FJapanMapZone
@@ -31,9 +33,29 @@ public:
     void Open();
     void Close();
     void Toggle() { if (IsOpen()) Close(); else Open(); }
-    const TArray<FJapanMapZone>& GetZones() const { return Zones; }
+    const TArray<FJapanMapZone>& GetZones() const;
+    /** Save a new place on solid ground, using the next unused Marker N name. */
+    UFUNCTION(BlueprintCallable, Category = "Map") bool SetMarker();
+    UFUNCTION(BlueprintCallable, Category = "Map") bool SaveMarker(const FString& Name);
+    /** Normal travel to the selected saved floor and heading; refuses unavailable or obstructed ground. */
+    UFUNCTION(BlueprintCallable, Category = "Map") bool ReturnToMarker();
+    UFUNCTION(BlueprintPure, Category = "Map") bool HasMarker() const;
+    UFUNCTION(BlueprintPure, Category = "Map") FTransform GetMarkerTransform() const;
+    UFUNCTION(BlueprintPure, Category = "Map") TArray<FString> GetMarkerKeys() const;
+    UFUNCTION(BlueprintPure, Category = "Map") FString GetMarkerName() const;
+    UFUNCTION(BlueprintPure, Category = "Map") FString GetSelectedMarkerKey() const;
+    UFUNCTION(BlueprintCallable, Category = "Map") bool SelectMarker(const FString& Key);
+    UFUNCTION(BlueprintCallable, Category = "Map") bool RenameMarker(const FString& Name);
+    UFUNCTION(BlueprintCallable, Category = "Map") bool DeleteMarker();
+    /** Review the real focused Slate text path, including gameplay-key leakage; requires the map already open. */
+    UFUNCTION(BlueprintCallable, Category = "Map|Review") FString ReviewMarkerNameInput(const FString& Text);
+    UFUNCTION(BlueprintCallable, Category = "Map|Review") bool ReviewCommitMarkerName();
+    UFUNCTION(BlueprintPure, Category = "Map|Review") bool IsMarkerReviewOnVehicle() const;
+    UFUNCTION(BlueprintPure, Category = "Map") bool IsMapOpen() const { return IsOpen(); }
+    void CycleMarker(int32 Direction);
+    bool IsEditingMarkerName() const;
     const FJapanMapZone* FindZone(const FString& Key) const;
-    bool TeleportToZone(const FString& Key);
+    UFUNCTION(BlueprintCallable, Category = "Map") bool TeleportToZone(const FString& Key);
     /** Blender-metre bounds of the sheet: min x, min y, max x, max y (north up). */
     const FBox2D& GetBounds() const { return Bounds; }
     /** Unreal position -> sheet uv (0..1, top-left origin). */
@@ -49,10 +71,13 @@ private:
     UPROPERTY() TObjectPtr<AWandererCharacter> Owner;
     UPROPERTY() TObjectPtr<UTexture2D> Texture;
     FSlateBrush Brush;
-    TArray<FJapanMapZone> Zones;
+    mutable TArray<FJapanMapZone> Zones;
     TArray<FVector2D> ProjectionX,ProjectionY;
     FBox2D Bounds = FBox2D(FVector2D(-300, -300), FVector2D(300, 300));
     TSharedPtr<SWidget> Widget;
     FString ImageFile;
+    TSharedPtr<SEditableTextBox> MarkerName;
+    FJapanMarkers* MarkerStore() const;
+    bool MarkerResult(bool Result);
     bool bLoaded = false;
 };

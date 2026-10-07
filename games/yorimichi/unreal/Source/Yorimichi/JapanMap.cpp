@@ -4,6 +4,11 @@
 #include "SkatePark.h"
 #include "WandererCharacter.h"
 #include "JapanWorld.h"
+#include "LiveLibrary.h"
+#include "SkateComponent.h"
+#include "Engine/World.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/Texture2D.h"
@@ -21,6 +26,10 @@
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SEditableTextBox.h"
+
+static const FString MarkerPrefix = TEXT("marker_");
 
 static FSlateBrush ShapeBrush(float Radius)
 {
@@ -34,17 +43,43 @@ static FSlateBrush ShapeBrush(float Radius)
 }
 
 /** The controller buttons the map names, in the HUD's label style (AJapanHUD::CurrentControllerStyle). */
-struct FMapPadLabels { const TCHAR *Travel, *Close, *Zoom, *Map; };
+struct FMapPadLabels { const TCHAR *Travel, *Close, *Zoom, *Map, *Mark, *Return; };
 static FMapPadLabels MapPadLabels(int32 Style)
 {
     switch (Style)
     {
-        case 1: return {TEXT("A"),TEXT("B"),TEXT("LB / RB"),TEXT("View")};
-        case 2: return {TEXT("Cross"),TEXT("Circle"),TEXT("L1 / R1"),TEXT("Touchpad")};
-        case 3: return {TEXT("B"),TEXT("A"),TEXT("L / R"),TEXT("Minus")};
-        default: return {TEXT("Bottom button"),TEXT("Right button"),TEXT("Shoulder buttons"),TEXT("View / Select")};
+        case 1: return {TEXT("A"),TEXT("B"),TEXT("LB / RB"),TEXT("View"),TEXT("Y"),TEXT("X")};
+        case 2: return {TEXT("Cross"),TEXT("Circle"),TEXT("L1 / R1"),TEXT("Touchpad"),TEXT("Triangle"),TEXT("Square")};
+        case 3: return {TEXT("B"),TEXT("A"),TEXT("L / R"),TEXT("Minus"),TEXT("X"),TEXT("Y")};
+        default: return {TEXT("Bottom button"),TEXT("Right button"),TEXT("Shoulder buttons"),TEXT("View / Select"),TEXT("Top button"),TEXT("Left button")};
     }
 }
+
+/** Consume keys left unhandled by the text editor before they reach the game viewport. Character events still
+ *  reach its inner editor, and navigation/clipboard/Enter keep their normal text-editing behavior. */
+class SMarkerNameBox : public SEditableTextBox
+{
+public:
+    TWeakObjectPtr<UJapanMap> Map;
+    virtual FReply OnPreviewKeyDown(const FGeometry&, const FKeyEvent& E) override
+    {
+        if (UJapanMap* M = Map.Get())
+        {
+            if (E.GetKey() == EKeys::Escape || E.GetKey() == EKeys::Gamepad_FaceButton_Right) { M->Close(); return FReply::Handled(); }
+            if (E.GetKey() == EKeys::F5)
+            {
+                if (!E.IsRepeat()) M->SaveMarker(GetText().ToString());
+                return FReply::Handled();
+            }
+        }
+        return FReply::Unhandled();
+    }
+    virtual FReply OnKeyDown(const FGeometry& G, const FKeyEvent& E) override
+    {
+        const FReply Reply = SEditableTextBox::OnKeyDown(G,E);
+        return Reply.IsEventHandled() ? Reply : FReply::Handled();
+    }
+};
 
 /** The sheet itself: the painted map fitted into the available space, the zone pins with their names, the player.
  *  Mouse: hover a pin and click it. Controller: the left stick moves a reticle that catches the nearest pin, the d-pad
@@ -72,9 +107,18 @@ public:
     }
     FString GetControlsHint() const
     {
+        if (const auto* M = Map.Get(); M && M->IsEditingMarkerName()) return TEXT("Enter saves the name · Esc or the right pad button closes · click the sheet to choose pins");
         if (!bPad) return TEXT("scroll to zoom · drag to explore · click a pin to travel · M or Esc closes");
         const FMapPadLabels L = Labels();
         return FString::Printf(TEXT("left stick or d-pad: choose a pin · right stick: pan · %s: zoom · %s: travel · %s or %s: close"),L.Zoom,L.Travel,L.Close,L.Map);
+    }
+    FString GetMarkerHint() const
+    {
+        const UJapanMap* M = Map.Get();
+        const FString State = M && M->HasMarker() ? M->GetMarkerName()+FString::Printf(TEXT(" · %d saved places"),M->GetMarkerKeys().Num()) : TEXT("No saved markers");
+        if (!bPad) return State + TEXT(" · F5: save a new place · F9: return");
+        const FMapPadLabels L = Labels();
+        return State + FString::Printf(TEXT(" · %s: save here · %s: return"),L.Mark,L.Return);
     }
     virtual FVector2D ComputeDesiredSize(float) const override { return FVector2D(900,600); }
     virtual bool SupportsKeyboardFocus() const override { return true; }
@@ -97,8 +141,9 @@ public:
                 const FVector2D P = SheetOffset + M->ToSheet(Zones[I].Location) * SheetSize;
                 const float R = bHot ? 11.f : 8.f;
                 Disc(Out,Layer+1,G,P,R+2.5f,FLinearColor(1,.97f,.9f,1));
-                Disc(Out,Layer+2,G,P,R,bHot ? FLinearColor(.95f,.45f,.18f,1) : FLinearColor(.72f,.18f,.12f,1));
-                const FString Number=FString::FromInt(I+1);
+                const bool bMarker = Zones[I].Key.StartsWith(MarkerPrefix);
+                Disc(Out,Layer+2,G,P,R,bMarker ? FLinearColor(.12f,.45f,.85f,1) : bHot ? FLinearColor(.95f,.45f,.18f,1) : FLinearColor(.72f,.18f,.12f,1));
+                const FString Number=bMarker ? TEXT("M") : FString::FromInt(I+1);
                 const FVector2D NumberSize=Measure->Measure(Number,Font);
                 FSlateDrawElement::MakeText(Out,Layer+3,G.ToPaintGeometry(FVector2f(NumberSize),FSlateLayoutTransform(FVector2f(P-NumberSize*.5f))),Number,Font,ESlateDrawEffect::None,FLinearColor::White);
                 if(!bHot)continue;
@@ -140,8 +185,9 @@ public:
     {
         SLeafWidget::Tick(G,Now,Dt);
         // the controller talks to the focused widget: keep it here (a click on the frame round the sheet gives it to the game view)
-        if (!HasKeyboardFocus()) FSlateApplication::Get().SetKeyboardFocus(AsShared(),EFocusCause::SetDirectly);
         const UJapanMap* M = Map.Get();
+        if (!M) return;
+        if (!HasKeyboardFocus() && !M->IsEditingMarkerName()) FSlateApplication::Get().SetKeyboardFocus(AsShared(),EFocusCause::SetDirectly);
         if (!bPad || !M) return;
         Fit(G);
         const FVector2D Area = G.GetLocalSize();
@@ -167,6 +213,16 @@ public:
     {
         const FKey K = E.GetKey();
         UJapanMap* M = Map.Get();
+        if (M && (K == EKeys::F5 || K == EKeys::F9 || K == EKeys::Gamepad_FaceButton_Top || K == EKeys::Gamepad_FaceButton_Left))
+        {
+            bPad = K.IsGamepadKey();
+            if (!E.IsRepeat())
+            {
+                if (K == EKeys::F5 || K == EKeys::Gamepad_FaceButton_Top) M->SetMarker();
+                else if (M->ReturnToMarker()) M->Close();
+            }
+            return FReply::Handled();
+        }
         // keyboard keys (M, Esc) and the controller's map and menu buttons go on to the game, which closes the map
         if (!M || !K.IsGamepadKey() || K == EKeys::Gamepad_Special_Left || K == EKeys::Gamepad_Special_Right) return FReply::Unhandled();
         const FVector2D Dir = K == EKeys::Gamepad_DPad_Up ? FVector2D(0,-1) : K == EKeys::Gamepad_DPad_Down ? FVector2D(0,1)
@@ -368,14 +424,150 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
     UE_LOG(LogTemp,Display,TEXT("world map: %d zones, sheet %s, bounds x %.0f..%.0f y %.0f..%.0f"),Zones.Num(),Texture ? *FString::Printf(TEXT("%dx%d"),Texture->GetSizeX(),Texture->GetSizeY()) : TEXT("missing"),Bounds.Min.X,Bounds.Max.X,Bounds.Min.Y,Bounds.Max.Y);
 }
 
+FJapanMarkers* UJapanMap::MarkerStore() const
+{
+    if (!Owner || !Owner->GetLandscape()) return nullptr;
+    auto* Store = &Owner->GetLandscape()->Markers; Store->Load(); return Store;
+}
+
+const TArray<FJapanMapZone>& UJapanMap::GetZones() const
+{
+    const auto* Store = MarkerStore();
+    Zones.RemoveAll([Store](const FJapanMapZone& Z)
+    {
+        return Z.Key.StartsWith(MarkerPrefix) && (!Store || !Store->All().ContainsByPredicate([&](const FJapanMarker& M) { return M.Key == Z.Key; }));
+    });
+    if (Store) for (const auto& M : Store->All())
+    {
+        auto* Z = Zones.FindByPredicate([&](const FJapanMapZone& Zone) { return Zone.Key == M.Key; });
+        if (!Z) Z = &Zones.AddDefaulted_GetRef();
+        Z->Key = M.Key; Z->Name = M.Name; Z->Hint = TEXT("Saved skate-line location");
+        Z->Location = M.Ground.GetLocation(); Z->Yaw = M.Ground.Rotator().Yaw;
+    }
+    return Zones;
+}
+
+bool UJapanMap::HasMarker() const
+{
+    const auto* Store = MarkerStore(); return Store && Store->Selected();
+}
+
+FTransform UJapanMap::GetMarkerTransform() const
+{
+    const auto* Store = MarkerStore();
+    return Store && Store->Selected() ? Store->Selected()->Ground : FTransform::Identity;
+}
+
+TArray<FString> UJapanMap::GetMarkerKeys() const
+{
+    TArray<FString> Keys;
+    if (const auto* Store = MarkerStore()) for (const auto& M : Store->All()) Keys.Add(M.Key);
+    return Keys;
+}
+
+FString UJapanMap::GetMarkerName() const
+{
+    const auto* Store = MarkerStore(); return Store && Store->Selected() ? Store->Selected()->Name : FString();
+}
+
+FString UJapanMap::GetSelectedMarkerKey() const
+{
+    const auto* Store = MarkerStore(); return Store && Store->Selected() ? Store->Selected()->Key : FString();
+}
+
+bool UJapanMap::MarkerResult(bool Result)
+{
+    if (!Result) if (const auto* Store = MarkerStore()) ULiveLibrary::Say(Store->Error.IsEmpty() ? TEXT("Choose a saved marker first.") : Store->Error);
+    return Result;
+}
+
+bool UJapanMap::SelectMarker(const FString& Key)
+{
+    auto* Store = MarkerStore(); return Store && MarkerResult(Store->Select(Key));
+}
+
+bool UJapanMap::RenameMarker(const FString& Name)
+{
+    auto* Store = MarkerStore();
+    if (!Store || !MarkerResult(Store->Rename(Name))) return false;
+    ULiveLibrary::Say(TEXT("Marker renamed.")); return true;
+}
+
+bool UJapanMap::DeleteMarker()
+{
+    auto* Store = MarkerStore();
+    if (!Store || !MarkerResult(Store->Delete())) return false;
+    ULiveLibrary::Say(TEXT("Marker deleted.")); return true;
+}
+
+void UJapanMap::CycleMarker(int32 Direction)
+{
+    const auto Keys = GetMarkerKeys(); if (Keys.IsEmpty()) return;
+    const int32 I = Keys.Find(GetSelectedMarkerKey());
+    SelectMarker(Keys[(FMath::Max(0,I)+Direction+Keys.Num())%Keys.Num()]);
+}
+
+bool UJapanMap::IsEditingMarkerName() const
+{
+    return MarkerName.IsValid() && MarkerName->HasKeyboardFocus();
+}
+
+bool UJapanMap::SetMarker()
+{
+    const auto* Store = MarkerStore(); return Store && SaveMarker(Store->NextName());
+}
+
+bool UJapanMap::SaveMarker(const FString& Name)
+{
+    if (!Owner || Owner->IsCinematic() || Owner->AreControlsSuspended() || !Owner->GetLandscape() || !Owner->GetLandscape()->bLoaded) return false;
+    const bool bGrounded = Owner->GetCharacterMovement()->IsMovingOnGround() || (Owner->GetSkate() && Owner->GetSkate()->IsRiding() && Owner->GetSkate()->GetMode() == ESkateMode::Ground);
+    if (!bGrounded) { ULiveLibrary::Say(TEXT("Stand on solid ground to save a marker.")); return false; }
+    const FVector Feet = Owner->GetActorLocation() - FVector(0,0,Owner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    FHitResult Hit;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(SavedMarker),false,Owner);
+    if (!Owner->GetWorld()->LineTraceSingleByChannel(Hit,Feet+FVector(0,0,60),Feet-FVector(0,0,120),ECC_Visibility,Params)
+        || FMath::Abs(Feet.Z-Hit.ImpactPoint.Z) > 35.f || !Owner->GetCharacterMovement()->IsWalkable(Hit))
+    {
+        ULiveLibrary::Say(TEXT("Stand on solid ground to save a marker.")); return false;
+    }
+    if (!MarkerResult(MarkerStore()->Add(Name,FTransform(FRotator(0,Owner->GetActorRotation().Yaw,0),Hit.ImpactPoint)))) return false;
+    ULiveLibrary::Say(GetMarkerName()+TEXT(" saved. F9 returns here.")); return true;
+}
+
+bool UJapanMap::ReturnToMarker()
+{
+    if (!Owner || Owner->IsCinematic() || Owner->AreControlsSuspended()) return false;
+    if (!HasMarker()) { ULiveLibrary::Say(TEXT("Save a marker first (F5 or the map).")); return false; }
+    const FTransform Marker = GetMarkerTransform();
+    const FVector Ground = Marker.GetLocation();
+    FHitResult Hit;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(SavedMarkerReturn),false,Owner);
+    const auto* Capsule = Owner->GetCapsuleComponent();
+    // Travel resets crouching: test clearance for the standing capsule, even when saving or returning crouched.
+    const auto* Standing = Owner->GetClass()->GetDefaultObject<AWandererCharacter>()->GetCapsuleComponent();
+    const float Half = FMath::Max(Capsule->GetUnscaledCapsuleHalfHeight(),Standing->GetUnscaledCapsuleHalfHeight())*Capsule->GetShapeScale();
+    const float Radius = FMath::Max(Capsule->GetUnscaledCapsuleRadius(),Standing->GetUnscaledCapsuleRadius())*Capsule->GetShapeScale();
+    // A local trace keeps a marker below a bridge or roof on its original floor.
+    if (!Owner->GetWorld()->LineTraceSingleByChannel(Hit,Ground+FVector(0,0,30),Ground-FVector(0,0,50),ECC_Visibility,Params)
+        || FMath::Abs(Ground.Z-Hit.ImpactPoint.Z) > 20.f || !Owner->GetCharacterMovement()->IsWalkable(Hit)
+        || Owner->GetWorld()->OverlapBlockingTestByProfile(Hit.ImpactPoint+FVector(0,0,Half+3.f),FQuat::Identity,
+            Capsule->GetCollisionProfileName(),FCollisionShape::MakeCapsule(Radius,Half),Params))
+    {
+        ULiveLibrary::Say(TEXT("This marker's ground is unavailable or obstructed. Try again when it is clear.")); return false;
+    }
+    if (!Owner->TravelTo(Hit.ImpactPoint,Marker.Rotator().Yaw,*GetMarkerName(),30.f)) return false;
+    ULiveLibrary::Say(TEXT("Returned to ")+GetMarkerName()+TEXT(".")); return true;
+}
+
 const FJapanMapZone* UJapanMap::FindZone(const FString& Key) const
 {
-    for (const auto& Z : Zones) if (Z.Key == Key) return &Z;
+    for (const auto& Z : GetZones()) if (Z.Key == Key) return &Z;
     return nullptr;
 }
 
 bool UJapanMap::TeleportToZone(const FString& Key)
 {
+    if (Key.StartsWith(MarkerPrefix)) return SelectMarker(Key) && ReturnToMarker();
     const FJapanMapZone* Z = FindZone(Key);
     if (!Z || !Owner) return false;
     return Owner->TravelTo(Z->Location,Z->Yaw,*Z->Name);
@@ -399,6 +591,18 @@ void UJapanMap::Open()
 {
     if (IsOpen() || !bLoaded || !Owner || !GEngine || !GEngine->GameViewport) return;
     TSharedRef<SJapanMapSheet> Sheet = SNew(SJapanMapSheet).Map(this).PadStyle(AJapanHUD::CurrentControllerStyle());
+    TSharedRef<SMarkerNameBox> NameInput = SNew(SMarkerNameBox)
+        .HintText(FText::FromString(TEXT("Name this skate-line spot · Enter saves")))
+        .Text(FText::FromString(MarkerStore()->NextName()))
+        .ClearKeyboardFocusOnCommit(false)
+        .SelectAllTextWhenFocused(true)
+        .OnTextCommitted_Lambda([this](const FText& Text, ETextCommit::Type Type)
+        {
+            if (Type == ETextCommit::OnEnter && SaveMarker(Text.ToString()))
+                MarkerName->SetText(FText::FromString(MarkerStore()->NextName()));
+        });
+    NameInput->Map = this; MarkerName = NameInput;
+
     Widget = SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.02f,.03f,.03f,.86f)).Padding(FMargin(30,18,30,16))
         [SNew(SVerticalBox)
             + SVerticalBox::Slot().AutoHeight().Padding(0,0,0,10)
@@ -406,6 +610,38 @@ void UJapanMap::Open()
                     + SHorizontalBox::Slot().FillWidth(1)[SNew(STextBlock).Text(FText::FromString(TEXT("Yorimichi  ·  world map"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",22)).ColorAndOpacity(FLinearColor(1,.96f,.86f,1))]
                     + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Bottom)[SNew(STextBlock).Text_Lambda([Sheet] { return FText::FromString(Sheet->GetControlsHint()); }).Font(FCoreStyle::GetDefaultFontStyle("Regular",13)).ColorAndOpacity(FLinearColor(.78f,.79f,.72f,1))]]
             + SVerticalBox::Slot().FillHeight(1)[Sheet]
+            + SVerticalBox::Slot().AutoHeight().Padding(0,10,0,0)
+                [SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot().FillWidth(1).Padding(0,0,10,0)
+                        [NameInput]
+                    + SHorizontalBox::Slot().AutoWidth().Padding(0,0,10,0)
+                        [SNew(SButton).IsFocusable(false).Text(FText::FromString(TEXT("Save here")))
+                            .OnClicked_Lambda([this] { if (SaveMarker(MarkerName->GetText().ToString())) MarkerName->SetText(FText::FromString(MarkerStore()->NextName())); return FReply::Handled(); })]
+                    + SHorizontalBox::Slot().AutoWidth().Padding(0,0,10,0)
+                        [SNew(SButton).IsFocusable(false).Text(FText::FromString(TEXT("Rename selected")))
+                            .IsEnabled_Lambda([this] { return HasMarker(); })
+                            .OnClicked_Lambda([this] { RenameMarker(MarkerName->GetText().ToString()); return FReply::Handled(); })]
+                    + SHorizontalBox::Slot().AutoWidth()
+                        [SNew(SButton).IsFocusable(false).Text(FText::FromString(TEXT("Delete selected")))
+                            .IsEnabled_Lambda([this] { return HasMarker(); })
+                            .OnClicked_Lambda([this] { DeleteMarker(); return FReply::Handled(); })]]
+            + SVerticalBox::Slot().AutoHeight().Padding(0,8,0,0)
+                [SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot().AutoWidth().Padding(0,0,10,0)
+                        [SNew(SButton).IsFocusable(false).Text(FText::FromString(TEXT("Previous")))
+                            .IsEnabled_Lambda([this] { return HasMarker(); })
+                            .OnClicked_Lambda([this] { CycleMarker(-1); return FReply::Handled(); })]
+                    + SHorizontalBox::Slot().AutoWidth().Padding(0,0,10,0)
+                        [SNew(SButton).IsFocusable(false).Text(FText::FromString(TEXT("Next")))
+                            .IsEnabled_Lambda([this] { return HasMarker(); })
+                            .OnClicked_Lambda([this] { CycleMarker(1); return FReply::Handled(); })]
+                    + SHorizontalBox::Slot().AutoWidth().Padding(0,0,16,0)
+                        [SNew(SButton).IsFocusable(false).Text(FText::FromString(TEXT("Return (F9)")))
+                            .IsEnabled_Lambda([this] { return HasMarker(); })
+                            .OnClicked_Lambda([this] { if (ReturnToMarker()) Close(); return FReply::Handled(); })]
+                    + SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center)
+                        [SNew(STextBlock).Text_Lambda([Sheet] { return FText::FromString(Sheet->GetMarkerHint()); })
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor(.78f,.79f,.72f,1))]]
             + SVerticalBox::Slot().AutoHeight().Padding(0,10,0,0)
                 [SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor(1,.9f,.6f,1))
                     .Text_Lambda([Sheet,this]
@@ -424,6 +660,37 @@ void UJapanMap::Open()
 void UJapanMap::Close()
 {
     if (Widget && GEngine && GEngine->GameViewport) GEngine->GameViewport->RemoveViewportWidgetContent(Widget.ToSharedRef());
-    Widget.Reset();
+    Widget.Reset(); MarkerName.Reset();
     if (Owner) Owner->SetMenuOpen(false);
+}
+
+FString UJapanMap::ReviewMarkerNameInput(const FString& Text)
+{
+    if (!IsOpen() || !MarkerName || Text.Len()>48) return FString();
+    MarkerName->SetText(FText::GetEmpty());
+    auto& App = FSlateApplication::Get();
+    App.SetKeyboardFocus(MarkerName,EFocusCause::SetDirectly);
+    for (TCHAR C : Text)
+    {
+        const FKey Key = C == TEXT(' ') ? EKeys::SpaceBar : FKey(*FString::Chr(FChar::ToUpper(C)));
+        const FKeyEvent Event(Key,FModifierKeysState(),0,false,C,C);
+        App.ProcessKeyDownEvent(Event);
+        App.ProcessKeyCharEvent(FCharacterEvent(C,FModifierKeysState(),0,false));
+        App.ProcessKeyUpEvent(Event);
+    }
+    return MarkerName ? MarkerName->GetText().ToString() : FString();
+}
+
+bool UJapanMap::ReviewCommitMarkerName()
+{
+    if (!IsEditingMarkerName()) return false;
+    auto& App = FSlateApplication::Get();
+    const FKeyEvent Event(EKeys::Enter,FModifierKeysState(),0,false,13,13);
+    App.ProcessKeyDownEvent(Event); App.ProcessKeyUpEvent(Event);
+    return true;
+}
+
+bool UJapanMap::IsMarkerReviewOnVehicle() const
+{
+    return Owner && (Owner->OnVehicle() || (Owner->GetSkate() && Owner->GetSkate()->IsRiding()));
 }

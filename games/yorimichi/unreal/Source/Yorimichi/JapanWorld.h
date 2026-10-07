@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "JapanMarkers.h"
 class FJsonObject;
 #include "JapanWorld.generated.h"
 
@@ -52,6 +53,8 @@ public:
 
     UPROPERTY() TObjectPtr<class AZeppelinService> Zeppelin;
     FTransform PlayerStart;
+    /** Named player locations loaded from the save, shared across character switches. */
+    FJapanMarkers Markers;
     TArray<FWorldShot> Shots;
     bool bLoaded = false;
     /** Momiji Hamlet's record in world.json (offset, buildings, residents), for what lives there (ASwordTrainer). */
