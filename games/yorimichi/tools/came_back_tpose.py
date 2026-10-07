@@ -3,6 +3,8 @@
 
     uv run python games/yorimichi/tools/came_back_tpose.py front     # the front T-pose, from the concept sheet
     uv run python games/yorimichi/tools/came_back_tpose.py views     # back, left and right, from the front
+    uv run python games/yorimichi/tools/came_back_tpose.py parts     # body-<view> and coat-<view>, from each view
+    uv run python games/yorimichi/tools/came_back_tpose.py collect   # the Tripo upload folder (no paid call)
 
 Same stages as the sword trainer's (assets/characters/tools/sword_trainer_pipeline.py): one figure in, one figure
 out. The front is painted from single-figure crops of the approved sheet (concepts/came-back.jpg: the front view and
@@ -86,6 +88,58 @@ VIEWS = {
 }
 
 
+# The parts: two Tripo generations instead of one, so the coat is not fused to the body and the face is blank skin
+# for our own face painting. Each part view is an edit of the same full view (same pose, scale and framing).
+EDIT_HEAD = (
+    'Input image: the approved {view} T-pose reference of a playable hero of our stylised 3D game Yorimichi. Edit it '
+    'and keep everything not mentioned exactly as it is: the same T-pose, the same image scale, framing, head height '
+    'and floor baseline, the same soft smooth stylised 3D matte finish, plain light-grey background, soft even '
+    'diffuse light, no ground plane, no cast shadow. Include only this one figure: no labels, border, props, insets, '
+    'text or extra figures. '
+)
+PARTS = {
+    'body': (
+        'REMOVE THE LONG COAT ENTIRELY, collar, sleeves and skirt: he is shown in what he wears under it. Under the '
+        'coat: a fitted black long-sleeved top with a high neck, its sleeves reaching the wrists and following the '
+        'straight arms; the dark belt with the small silver buckle; the loose slate-grey trousers gathered into the '
+        'black leg wraps from mid-shin; the black split-toe boots; bare hands with five fingers. Every part of the '
+        'top, belt and trousers the coat used to hide is now drawn plainly, with no trace or shadow of the coat. Keep '
+        'the head and the hair exactly as they are: the spiky near-black clumps, the white streak, the fringe over '
+        'his right eye, the ears. BLANK FACE: remove the eyes, the eyebrows and the mouth completely; the face is '
+        'smooth, plain, evenly coloured warm peach skin with only the soft shape of the nose and cheeks, no lines, '
+        'marks, holes or shading where the features were. '),
+    'coat': (
+        'Show ONLY THE LONG COAT, as a garment on an invisible person (a ghost-mannequin product shot): exactly the '
+        'same coat, in exactly the same place, shape and scale as in the image, the sleeves still straight out along '
+        'the invisible T-pose arms. REMOVE EVERYTHING ELSE: no head, hair, neck, hands or skin, no top, belt, '
+        'trousers, leg wraps or boots; nothing is inside the coat. The coat is hollow: the tall stand-up collar is an '
+        'empty ring with its inside visible, each sleeve ends in an open hollow cuff with nothing coming out of it, '
+        'and below the coat there is only the background. Keep its charcoal colour, the lighter grey collar edging '
+        'and the pale icy-blue frost fade on the hem and the sleeve ends. The inside of the coat is a slightly darker '
+        'plain charcoal lining. '),
+}
+PART_VIEWS = {
+    'body': {
+        'front': '',
+        'back': 'This is the back view: draw the back of the top, the back of the belt and the trousers. ',
+        'left': 'This is the left profile: the near arm points at the camera, so the end of its black sleeve and the '
+                'hand are seen end-on; the blank face is seen in profile with no eye, brow or mouth. ',
+        'right': 'This is the right profile: the near arm points at the camera, so the end of its black sleeve and '
+                 'the hand are seen end-on; the blank face is seen in profile with no eye, brow or mouth. ',
+    },
+    'coat': {
+        'front': 'Through the open front we see the inside of the coat\'s back panel, plain dark lining, from the '
+                 'collar down to the hem. ',
+        'back': 'This is the back view: the plain back of the coat, the collar from behind with a little of its '
+                'inside showing at the top. ',
+        'left': 'This is the left profile: the near sleeve points at the camera, so it is seen end-on as an open '
+                'round hollow cuff with dark lining inside and nothing in it. ',
+        'right': 'This is the right profile: the near sleeve points at the camera, so it is seen end-on as an open '
+                 'round hollow cuff with dark lining inside and nothing in it. ',
+    },
+}
+
+
 def paint(view, prompt, refs):
     from atelier.ai.ledger import run_once
     OUT.mkdir(parents=True, exist_ok=True); WORK.mkdir(parents=True, exist_ok=True)
@@ -136,13 +190,69 @@ def run(jobs):
         sys.exit(f'stopped: {", ".join(failed)} failed and are not retried')
 
 
+def extent(image):
+    """(top, bottom, left, right) of the figure: pixels more than 40 away from the row's background (the mean of the
+    outer 40 px columns; the background is a soft vertical gradient)."""
+    import numpy as np
+    a = np.asarray(image.convert('RGB')).astype(int)
+    bg = np.concatenate([a[:, :40], a[:, -40:]], 1).mean(1, keepdims=True)
+    ys, xs = np.where(np.abs(a - bg).sum(2) > 40)
+    return int(ys.min()), int(ys.max()), int(xs.min()), int(xs.max())
+
+
+def collect():
+    """The upload folder for Tripo Studio: full/, body/ and coat/, each front, back, left, right. Sunburst drew the
+    coat views at slightly different sizes once the body was gone (the right one about 9% shorter), so each coat view
+    is scaled about its figure's centre to the front's height and top line; the body views already match the full
+    views pixel for pixel. No paid call."""
+    import json, shutil
+    from PIL import Image
+    out = WORK / 'tripo'
+    record = {}
+    for part in ('full', 'body', 'coat'):
+        (out / part).mkdir(parents=True, exist_ok=True)
+        for v in ('front', 'back', 'left', 'right'):
+            src = WORK / (f'{v}.png' if part == 'full' else f'{part}-{v}.png')
+            if part != 'coat':
+                shutil.copyfile(src, out / part / f'{v}.png'); continue
+            im = Image.open(src).convert('RGB')
+            top, bottom, left, right = extent(im)
+            ftop, fbottom, _, _ = extent(Image.open(WORK / 'coat-front.png'))
+            scale = (fbottom - ftop) / (bottom - top)
+            big = im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
+            cx = (left + right) / 2
+            import numpy as np
+            a = np.asarray(im).astype(float)    # the gradient background, rebuilt from the outer columns' rows
+            rows = np.concatenate([a[:, :40], a[:, -40:]], 1).mean(1, keepdims=True)
+            canvas = Image.fromarray(np.broadcast_to(rows, a.shape).round().astype('uint8'))
+            # only the figure is pasted (a soft mask of it), so no edge of the scaled picture shows
+            from PIL import ImageFilter
+            b = np.asarray(big).astype(int)
+            bb = np.concatenate([b[:, :40], b[:, -40:]], 1).mean(1, keepdims=True)
+            mask = Image.fromarray(((np.abs(b - bb).sum(2) > 30) * 255).astype('uint8')).filter(
+                ImageFilter.MaxFilter(9)).filter(ImageFilter.GaussianBlur(3))
+            canvas.paste(big, (round(cx - cx * scale), round(ftop - top * scale)), mask)
+            canvas.save(out / part / f'{v}.png')
+            record[v] = dict(source=f'{part}-{v}.png', scale=round(scale, 4), extent_before=[top, bottom, left, right],
+                             extent_after=list(extent(canvas)))
+    (out / 'coat-normalisation.json').write_text(json.dumps(record, indent=2) + '\n')
+    for v, r in record.items():
+        print(f'coat {v}: scale {r["scale"]}, extent {r["extent_after"]}')
+    print(f'upload folder: {rel(out)}')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('stage', choices=['front', 'views'])
+    ap.add_argument('stage', choices=['front', 'views', 'parts', 'collect'])
     ap.add_argument('--dry-run', action='store_true', help='print the prompts and stop')
     args = ap.parse_args()
+    if args.stage == 'collect':
+        return collect()
     if args.stage == 'front':
         jobs = [('front', FRONT, FRONT_REFS)]
+    elif args.stage == 'parts':
+        jobs = [(f'{part}-{v}', EDIT_HEAD.format(view=v.upper()) + PARTS[part] + extra, [WORK / f'{v}.png'])
+                for part, views in PART_VIEWS.items() for v, extra in views.items()]
     else:
         jobs = [(v, VIEW_HEAD + text + VIEW_TAIL, [WORK / 'front.png']) for v, text in VIEWS.items()]
     if args.dry_run:
