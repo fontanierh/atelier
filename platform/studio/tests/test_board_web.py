@@ -1,4 +1,5 @@
 """Private HTTP boundary and durable broadcast fanout, with an isolated mailbox."""
+import gzip
 import json
 import sqlite3
 import threading
@@ -83,6 +84,17 @@ def test_read_only_history_filters_literal_search_and_complete_broadcast_groups(
     assert [a['pending'] for a in initial['agents'] if a['agent'] == 'two'] == [1]
 
 
+def test_snapshot_carries_only_the_recent_render_log(cache):
+    log = '\n'.join(f'- entry {i}\n  detail {i}' for i in range(100))
+    board.root().joinpath('render-board.md').write_text(f'## Holding\nNone\n## Log\nheader line\n{log}\n')
+    state = board_web.snapshot({'log': ['3']})
+    assert state['schedule']['Log'] == '- entry 97\n  detail 97\n- entry 98\n  detail 98\n- entry 99\n  detail 99'
+    assert state['log_total'] == 101
+    assert board_web.snapshot({})['schedule']['Log'].count('- entry') == 30
+    with pytest.raises(ValueError):
+        board_web.snapshot({'log': ['0']})
+
+
 @pytest.fixture
 def http_server(cache):
     server = board_web.Server(('127.0.0.1', 0), origins=['https://board.example.ts.net'], allowed_user='owner@example.test')
@@ -129,6 +141,10 @@ def test_http_static_and_read_only_api(http_server):
     assert status == 200 and body.startswith(b'\x89PNG') and headers['Content-Type'] == 'image/png'
     status, body, _ = request(http_server, '/api/state')
     assert status == 200 and json.loads(body)['csrf'] == http_server.csrf
+    # A poll travels gzipped when the browser accepts it.
+    status, body, headers = request(http_server, '/api/state', headers={'Accept-Encoding': 'gzip'})
+    assert status == 200 and headers['Content-Encoding'] == 'gzip'
+    assert json.loads(gzip.decompress(body))['csrf'] == http_server.csrf
     assert request(http_server, '/../../agent-board.sqlite3')[0] == 404
     assert request(http_server, '/api/state?limit=99999')[0] == 400
     assert request(http_server, '/api/state', headers={'Host': 'attacker.test'})[0] == 403
