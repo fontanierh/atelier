@@ -33,6 +33,54 @@ bool FJapanDefenceTimelineTest::RunTest(const FString&)
             Clock.OriginalPress(StepMs + 40, 10.001, Press));
         TestTrue(TEXT("The wait still matches the entire accepted rewind"), Clock.Wait == Clock.MaximumRewind && Clock.Wait <= .15);
     }
+    // Recorded 20 Hz host / 30 Hz guest, 60 ms delay, 15 ms variance, 2% loss.
+    // The fastest ACK was over eight seconds before the press: a two-second
+    // minimum misses it and leaves the jump less than 1 ms inside the new bound.
+    Clock.Reset();
+    Clock.MapAccepted(.966895, 15.135253, .148917, .023806, Mapped, .033339, .05);
+    Clock.MapAccepted(7.536004, 21.686925, .199059, .025808, Mapped, .033340, .05);
+    const double Recorded[][4] = {
+        {9.203249, 23.387701, .249000, .022729},
+        {9.236588, 23.437701, .249043, .022246},
+    };
+    for (const auto& R : Recorded)
+    {
+        TestTrue(TEXT("Recorded delayed-ACK movement maps"), Clock.MapAccepted(R[0], R[1], R[2], R[3], Mapped, .03334, .05));
+        TestTrue(TEXT("Recorded guard and jump keep the measured transit floor"), FMath::IsNearlyEqual(Clock.OneWay, .0744585, .000001));
+        TestTrue(TEXT("Both recorded honest presses are accepted"), Clock.OriginalPress(33, R[1], Press));
+        TestTrue(TEXT("Recorded presses have at least 10 ms timing margin"), Press - (R[1] - Clock.MaximumRewind) >= .01);
+        const uint16 TooOld = uint16(FMath::CeilToInt((Clock.MaximumRewind - (R[1] - Mapped)) * 1000.) + 1);
+        TestFalse(TEXT("An edge beyond the measured allowance plus 1 ms is rejected"), Clock.OriginalPress(TooOld, R[1], Press));
+    }
+    const double WorstArrival = 9.269922 + 14.150921 + .0674;
+    Clock.MapAccepted(9.269922, WorstArrival, .249043, .023, Mapped, .03334, .05);
+    TestTrue(TEXT("The observed worst 67.4 ms arrival spread plus a guest step fits"), Clock.OriginalPress(33, WorstArrival, Press));
+
+    FJapanDefenceClock Normal = Clock, Spike = Clock;
+    double NormalTime = 0., SpikeTime = 0.;
+    Normal.MapAccepted(9.31, 23.52, .199, .023, NormalTime, .03334, .05);
+    Spike.MapAccepted(9.31, 23.52, .9, .023, SpikeTime, .03334, .05);
+    TestTrue(TEXT("One delayed ACK cannot backdate the mapped movement"), NormalTime == SpikeTime);
+    TestTrue(TEXT("One delayed ACK cannot widen contact waiting"), Normal.MaximumRewind == Spike.MaximumRewind);
+    for (double HostDt : {1. / 60., .05, .1, 2.})
+    {
+        Clock.Reset(); Clock.MapAccepted(1., 10., .3, .05, Mapped, .03334, HostDt);
+        const double Expected = FMath::Min(.2, .15 + FMath::Max(0., FMath::Min(HostDt, .1) - 1. / 60.));
+        TestTrue(TEXT("Only host frame time beyond 60 Hz increases the old bound"), FMath::IsNearlyEqual(Clock.MaximumRewind, Expected, .000001));
+        TestTrue(TEXT("Every allowed rewind has an equal bounded contact wait"), Clock.Wait == Clock.MaximumRewind && Clock.Wait <= .2);
+    }
+    Clock.Reset(); Clock.MapAccepted(1., 10., .12, 0., Mapped);
+    Clock.MapAccepted(12., 21.5, .4, 0., Mapped);
+    TestTrue(TEXT("An expired transit minimum cannot survive a route change"), Clock.Samples.Num() == 1 && Clock.OneWay == .15);
+    Clock.MapAccepted(.1, 21.6, .02, 0., Mapped);
+    TestTrue(TEXT("A validated CMC timestamp generation resets both minima"), Clock.Generation == 1 && Clock.Samples.Num() == 1 && Clock.OneWay == .01);
+    TestTrue(TEXT("A clock generation never moves mapped history backwards"), Mapped >= 21.35);
+    Clock.Reset(); Clock.MapAccepted(1., 10., 0., 0., Mapped);
+    Clock.MapAccepted(1.03, 10.03, .12, 0., Mapped);
+    TestTrue(TEXT("An initial unknown RTT does not pin the minimum to zero"), Clock.OneWay == .06);
+    for (int32 I = 1; I <= 700; ++I) Clock.MapAccepted(2. + I / 60., 11. + I / 60., .12, 0., Mapped);
+    TestTrue(TEXT("The ten-second window has bounded bucket storage"), Clock.Samples.Num() <= 102);
+
     FJapanDefenceTimeline History;
     FJapanDefenceSample Sample;
     Sample.Time = 1.; Sample.bCanParry = Sample.bCanDodge = Sample.bArmed = Sample.bGround = true;

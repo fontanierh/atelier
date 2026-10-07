@@ -42,7 +42,8 @@ void UBotwMoveSet::MapDefenceMove(float Timestamp, float Dt)
     const UNetConnection* Conn = Controller ? Controller->GetNetConnection() : nullptr;
     double Mapped = 0.;
     bDefenceMapped = DefenceClock.MapAccepted(Timestamp, Character->GetWorld()->GetTimeSeconds(),
-        Conn ? Conn->RawPingInSeconds : 0., Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, Dt);
+        Conn ? Conn->RawPingInSeconds : 0., Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, Dt,
+        Character->GetWorld()->GetDeltaSeconds());
     if (TraceNetworkDefence())
         UE_LOG(LogTemp, Display, TEXT("NETWORK defence move ts=%.6f dt=%.6f host_dt=%.6f now=%.6f rtt=%.6f avg_rtt=%.6f jitter=%.6f mapped=%.6f one_way=%.6f wait=%.6f valid=%d"),
             Timestamp, Dt, Character->GetWorld()->GetDeltaSeconds(), Character->GetWorld()->GetTimeSeconds(),

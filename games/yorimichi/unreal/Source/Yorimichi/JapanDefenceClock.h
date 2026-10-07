@@ -6,8 +6,10 @@
  * supplies a world-clock delta, ping, jitter or an adjudication wait. */
 struct FJapanDefenceClock
 {
-    struct FSample { double Arrival = 0., Offset = 0.; };
-    TArray<FSample, TInlineAllocator<24>> Samples;
+    static constexpr double MaximumCompensation = .2;
+    static constexpr double SampleWindow = 10.;
+    struct FSample { double Arrival = 0., Offset = 0., RTT = 0.; };
+    TArray<FSample, TInlineAllocator<104>> Samples;
     double LastTimestamp = -1., LastMapped = -1.;
     double OneWay = 0., Wait = .03, MaximumRewind = .03;
     uint32 Generation = 0;
@@ -22,27 +24,42 @@ struct FJapanDefenceClock
     }
 
     void Reset() { *this = FJapanDefenceClock(); }
-    bool MapAccepted(double Timestamp, double Now, double HostRTT, double HostJitter, double& Mapped, double AcceptedDt = 0.)
+    bool MapAccepted(double Timestamp, double Now, double HostRTT, double HostJitter, double& Mapped,
+        double AcceptedDt = 0., double HostDt = 0.)
     {
         if (!FMath::IsFinite(Timestamp) || !FMath::IsFinite(Now) || !FMath::IsFinite(HostRTT) ||
-            !FMath::IsFinite(HostJitter) || !FMath::IsFinite(AcceptedDt) || AcceptedDt < 0. || Timestamp < 0. || Now < 0. || HostRTT < 0. || HostJitter < 0.) return false;
+            !FMath::IsFinite(HostJitter) || !FMath::IsFinite(AcceptedDt) || !FMath::IsFinite(HostDt) ||
+            AcceptedDt < 0. || HostDt < 0. || Timestamp < 0. || Now < 0. || HostRTT < 0. || HostJitter < 0.) return false;
         // UE has already validated its periodic CMC timestamp reset before this call.
         // Existing contacts/history use host time and survive this clock generation.
         if (LastTimestamp >= 0. && Timestamp < LastTimestamp - 1.) { Samples.Reset(); ++Generation; }
         else if (Timestamp <= LastTimestamp) return false;
-        OneWay = FMath::Clamp(HostRTT * .5, 0., .15);
-        // Edges are sampled at the start of the accepted movement step. Their
-        // wire age includes that step, independently of transport delay/jitter.
-        const double Step = FMath::Clamp(AcceptedDt, 0., .1);
-        MaximumRewind = FMath::Clamp(OneWay + FMath::Min(HostJitter, .05) + .03 + Step, .03, .15);
-        Wait = MaximumRewind;
-        while (!Samples.IsEmpty() && Now - Samples[0].Arrival > 2.) Samples.RemoveAt(0, 1, EAllowShrinking::No);
+        while (!Samples.IsEmpty() && Now - Samples[0].Arrival > SampleWindow) Samples.RemoveAt(0, 1, EAllowShrinking::No);
         const double Delta = Now - Timestamp;
         if (!Samples.IsEmpty() && Now - Samples.Last().Arrival < .1)
+        {
             Samples.Last().Offset = FMath::Min(Samples.Last().Offset, Delta);
-        else Samples.Add({Now, Delta});
-        double Offset = Delta;
-        for (const auto& Sample : Samples) Offset = FMath::Min(Offset, Sample.Offset);
+            if (HostRTT > 0.) Samples.Last().RTT = Samples.Last().RTT > 0. ? FMath::Min(Samples.Last().RTT, HostRTT) : HostRTT;
+        }
+        else Samples.Add({Now, Delta, HostRTT});
+        double Offset = Delta, MinimumRTT = TNumericLimits<double>::Max();
+        for (const auto& Sample : Samples)
+        {
+            Offset = FMath::Min(Offset, Sample.Offset);
+            if (Sample.RTT > 0.) MinimumRTT = FMath::Min(MinimumRTT, Sample.RTT);
+        }
+        // RawPing is the maximum ACK RTT in a frame. A single delayed ACK must
+        // not backdate every defensive press. Retain the fastest measured path
+        // over the SAME bounded window as the arrival offset; zero is unknown.
+        OneWay = MinimumRTT == TNumericLimits<double>::Max() ? 0. : FMath::Clamp(MinimumRTT * .5, 0., .15);
+        // Edges include their first accepted movement step. The original budget
+        // covers a 60 Hz host; only its additional measured frame time is new
+        // allowance. The same estimate dates input and bounds contact waiting.
+        const double Step = FMath::Clamp(AcceptedDt, 0., .1);
+        const double SlowHost = FMath::Max(0., FMath::Min(HostDt, .1) - 1. / 60.);
+        const double Base = FMath::Clamp(OneWay + FMath::Min(HostJitter, .05) + .03 + Step, .03, .15);
+        MaximumRewind = FMath::Min(MaximumCompensation, Base + SlowHost);
+        Wait = MaximumRewind;
         Mapped = FMath::Clamp(Timestamp + Offset - OneWay, FMath::Max(0., Now - .5), Now);
         // Updated RTT/minimum samples cannot move accepted history backwards. Short
         // plateaus replace an equal-time sample; no new future interval is invented.

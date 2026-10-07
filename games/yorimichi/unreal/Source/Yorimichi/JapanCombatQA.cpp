@@ -198,7 +198,7 @@ void Contact(AWandererCharacter* Victim, int32 Person, int32 Phase, const TShare
     Report->SetBoolField(TEXT("recovering_at_contact"), Victim->GetMoves()->DefenceRecovering());
     Report->SetNumberField(TEXT("contact_after_press_ms"), (Now - Plan->GetNumberField(TEXT("press_at"))) * 1000.);
     Report->SetNumberField(TEXT("defence_wait_ms"), Victim->GetMoves()->DefenceWait() * 1000.);
-    Report->SetNumberField(TEXT("compensation_cap_ms"), 150.);
+    Report->SetNumberField(TEXT("compensation_cap_ms"), FJapanDefenceClock::MaximumCompensation * 1000.);
     const float BeforeHealth = Victim->GetSword()->GetHealth();
     const uint32 Epoch = Victim->GetActivityEpoch(), Queued = Resolver->Queued, Resolved = Resolver->Resolved,
         Cancelled = Resolver->Cancelled, Flushed = Resolver->Flushed;

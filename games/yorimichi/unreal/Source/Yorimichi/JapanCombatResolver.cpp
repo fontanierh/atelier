@@ -35,7 +35,7 @@ void UJapanCombatResolver::Strike(AActor* Source, AWandererCharacter* Victim,
     }
     UBotwMoveSet* Moves = Victim->GetMoves();
     const double Now = GetWorld()->GetTimeSeconds();
-    const double Wait = FMath::Clamp(Moves->DefenceWait(), 0., .15);
+    const double Wait = FMath::Clamp(Moves->DefenceWait(), 0., FJapanDefenceClock::MaximumCompensation);
     int32 VictimCount = 0;
     double Due = Now + Wait;
     for (const FContact& C : Pending)
