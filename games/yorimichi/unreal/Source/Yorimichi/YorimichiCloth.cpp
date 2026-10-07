@@ -7,11 +7,15 @@
 #include "ClothingSystemEditorInterfaceModule.h"
 #include "Modules/ModuleManager.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Misc/PackageName.h"
+#include "UObject/Package.h"
 #include "Rendering/SkeletalMeshModel.h"
 #include "SkeletalMeshClothingSystemUtilities.h"
 #endif
 
-FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotName, float MaxDistanceCm)
+FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotName, float MaxDistanceCm, UPhysicsAsset* Colliders)
 {
 #if WITH_EDITOR
     if (!Mesh || !Mesh->GetImportedModel() || !Mesh->GetImportedModel()->LODModels.Num()) return FString();
@@ -33,7 +37,8 @@ FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotN
     Params.AssetName = SlotName.ToString() + TEXT("_Cloth");
     Params.LodIndex = 0;
     Params.SourceSection = Section;
-    Params.PhysicsAsset = Mesh->GetPhysicsAsset();
+    UPhysicsAsset* Collision = Colliders ? Colliders : Mesh->GetPhysicsAsset();
+    Params.PhysicsAsset = Collision;
     FClothingSystemEditorInterfaceModule& Module = FModuleManager::LoadModuleChecked<FClothingSystemEditorInterfaceModule>(TEXT("ClothingSystemEditorInterface"));
     UClothingAssetCommon* Cloth = Cast<UClothingAssetCommon>(Module.GetClothingAssetFactory()->CreateFromSkeletalMesh(Mesh, Params));
     if (!Cloth || !Cloth->LodData.Num())
@@ -89,8 +94,63 @@ FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotN
     }
     Mesh->MarkPackageDirty();
     return FString::Printf(TEXT("section %d, %d cloth vertices (%d pinned, %d free), max distance %.0f cm, %d collision bodies"),
-        Section, Colours.Num(), Pinned, Free, MaxDistanceCm, Mesh->GetPhysicsAsset() ? Mesh->GetPhysicsAsset()->SkeletalBodySetups.Num() : 0);
+        Section, Colours.Num(), Pinned, Free, MaxDistanceCm, Collision ? Collision->SkeletalBodySetups.Num() : 0);
 #else
     return FString();
+#endif
+}
+
+UPhysicsAsset* UYorimichiClothLibrary::MakeCapsuleColliders(USkeletalMesh* Mesh, const FString& PackagePath, const TArray<FName>& Bones,
+    const TArray<FName>& From, const TArray<FName>& To, const TArray<float>& RadiiCm)
+{
+#if WITH_EDITOR
+    if (!Mesh || Bones.Num() != From.Num() || Bones.Num() != To.Num() || Bones.Num() != RadiiCm.Num()) return nullptr;
+    const FReferenceSkeleton& Ref = Mesh->GetRefSkeleton();
+    // The reference pose in component space.
+    TArray<FTransform> Space;
+    Space.SetNum(Ref.GetNum());
+    for (int32 I = 0; I < Ref.GetNum(); ++I)
+    {
+        const int32 Parent = Ref.GetParentIndex(I);
+        Space[I] = Parent == INDEX_NONE ? Ref.GetRefBonePose()[I] : Ref.GetRefBonePose()[I] * Space[Parent];
+    }
+    UPackage* Package = CreatePackage(*PackagePath);
+    const FString Name = FPackageName::GetLongPackageAssetName(PackagePath);
+    UPhysicsAsset* Asset = FindObject<UPhysicsAsset>(Package, *Name);
+    const bool bNew = !Asset;
+    if (bNew) Asset = NewObject<UPhysicsAsset>(Package, *Name, RF_Public | RF_Standalone | RF_Transactional);
+    Asset->Modify();
+    Asset->SkeletalBodySetups.Empty();
+    Asset->ConstraintSetup.Empty();
+    for (int32 K = 0; K < Bones.Num(); ++K)
+    {
+        const int32 Bone = Ref.FindBoneIndex(Bones[K]), A = Ref.FindBoneIndex(From[K]), B = Ref.FindBoneIndex(To[K]);
+        if (Bone == INDEX_NONE || A == INDEX_NONE || B == INDEX_NONE)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Cloth colliders: %s has no bone %s, %s or %s"), *Mesh->GetName(), *Bones[K].ToString(), *From[K].ToString(), *To[K].ToString());
+            return nullptr;
+        }
+        const FVector Start = Space[Bone].InverseTransformPosition(Space[A].GetLocation());
+        const FVector End = Space[Bone].InverseTransformPosition(Space[B].GetLocation());
+        const FVector Axis = End - Start;
+        FKSphylElem Capsule;
+        Capsule.Center = (Start + End) * .5f;
+        Capsule.Rotation = FRotationMatrix::MakeFromZ(Axis.GetSafeNormal()).Rotator();
+        Capsule.Radius = RadiiCm[K];
+        Capsule.Length = Axis.Size();
+        USkeletalBodySetup* Body = NewObject<USkeletalBodySetup>(Asset, NAME_None, RF_Transactional);
+        Body->BoneName = Bones[K];
+        Body->PhysicsType = PhysType_Kinematic;
+        Body->AggGeom.SphylElems.Add(Capsule);
+        Asset->SkeletalBodySetups.Add(Body);
+    }
+    Asset->UpdateBodySetupIndexMap();
+    Asset->UpdateBoundsBodiesArray();
+    Asset->SetPreviewMesh(Mesh);
+    if (bNew) FAssetRegistryModule::AssetCreated(Asset);
+    Asset->MarkPackageDirty();
+    return Asset;
+#else
+    return nullptr;
 #endif
 }

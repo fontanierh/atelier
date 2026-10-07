@@ -137,6 +137,35 @@ def pin_colours(coat):
     return {'vertices': len(values), 'pinned': sum(w >= .999 for w in values), 'free': sum(w <= .001 for w in values)}
 
 
+# The coat's collision (Unreal cloth collides with capsules): each (bone carrying it, from joint, to joint, the bones
+# whose skin sets its radius), measured on the body alone, so the coat hangs on his legs and hips, not on itself.
+COLLIDERS = [('pelvis', 'thigh_L', 'thigh_R', ('pelvis',)), ('spine', 'spine', 'chest', ('spine', 'spine_mid')),
+             ('thigh_L', 'thigh_L', 'shin_L', ('thigh_L',)), ('thigh_R', 'thigh_R', 'shin_R', ('thigh_R',)),
+             ('shin_L', 'shin_L', 'foot_L', ('shin_L',)), ('shin_R', 'shin_R', 'foot_R', ('shin_R',))]
+
+
+def colliders(arm, body):
+    """Capsules for the cloth, in centimetres: a segment between two joints and the radius that holds 80% of the skin
+    of the bones around it (the rest is the joints' bulge and the coat's thickness adds the margin)."""
+    import numpy as np
+    head = {b.name: np.array(arm.matrix_world @ b.head_local) for b in arm.data.bones}
+    names = {g.index: g.name for g in body.vertex_groups}
+    points = {}
+    for v in body.data.vertices:
+        if v.groups:
+            strongest = max(v.groups, key=lambda g: g.weight)
+            points.setdefault(names[strongest.group], []).append(np.array(body.matrix_world @ v.co))
+    out = []
+    for bone, start, end, skin in COLLIDERS:
+        a, b = head[start], head[end]
+        p = np.array([q for name in skin for q in points.get(name, [])])
+        assert len(p) > 20, (bone, 'too little skin to size its capsule', len(p))
+        t = np.clip((p - a) @ (b - a) / ((b - a) @ (b - a)), 0, 1)
+        distance = np.linalg.norm(p - (a + t[:, None] * (b - a)), axis=1)
+        out.append({'bone': bone, 'from': start, 'to': end, 'radius_cm': round(float(np.percentile(distance, 80)) * 100, 2)})
+    return out
+
+
 def main(args):
     (OUT / 'fbx').mkdir(parents=True, exist_ok=True)
     (OUT / 'textures').mkdir(exist_ok=True)
@@ -170,6 +199,7 @@ def main(args):
                                         'two_sided': obj.name.endswith('Coat'), 'roughness': 1., 'metallic': 0., 'specular': 0.}
     coat = next(o for o in meshes if o.name.endswith('Coat'))
     pins = pin_colours(coat)
+    capsules = colliders(arm, next(o for o in meshes if o.name.endswith('Body')))
     bpy.ops.object.select_all(action='DESELECT')
     for obj in [arm, *meshes]:
         obj.hide_viewport = False
@@ -183,7 +213,7 @@ def main(args):
               'height_cm': HEIGHT * 100, 'sole_cm': .65, 'source_floor': modori.floor, 'facing': '+X',
               'rest_ankles_cm': {side: p[2] * 100 for side, p in feet.items()}, 'bones': modori.original_names,
               'dropped_bones': modori.dropped, 'meshes': {o.name: len(o.data.vertices) for o in meshes},
-              'cloth': {'mesh': coat.name, 'mask': PIN, 'channel': 'vertex colour red', **pins},
+              'cloth': {'mesh': coat.name, 'mask': PIN, 'channel': 'vertex colour red', 'colliders': capsules, **pins},
               'materials': materials, 'clips': {}}
     (OUT / 'export.json').write_text(json.dumps(report, indent=2) + '\n')
     print('MODORI EXPORT READY', json.dumps({k: report[k] for k in ('model_scale', 'rest_ankles_cm', 'meshes', 'cloth')}), flush=True)

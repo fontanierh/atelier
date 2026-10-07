@@ -173,7 +173,8 @@ def mount_ride():
 # thigh bodies (cm, below 0 inside), skin_groups= the skin under the ground (skate.RideSkinCheck).
 HAND_GAP = -1.   # cm: no hand deeper inside the rider's own body than this, at rest, rolling or carving
 ARM_STEP, ARM_JITTER = 3., 2.   # degrees per 60 Hz frame: the arm swing's largest step, and its step's largest change
-HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False))
+HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False),
+               ('modori_regular', 'Modori', False), ('modori_goofy', 'Modori', True))
 # The rest close-up shows the right hand from the rider's right side (out from the hips through the hand), frozen at
 # the idle loop's worst phase for that hand: a watcher reads hand_gap= every frame for 1.6 s (more than the loop), then
 # stops time (global time dilation) when the right hand is back within 0.3 cm of the deepest it went.
@@ -183,7 +184,7 @@ WORST_PHASE = (INGAME / 'skate_ride' / 'worst_phase.py').read_text()
 
 def hand_rows(record):
     """Each hand against the rider's own body (hand_gap=) and the feet's skin under the ground (skin_groups= feet) at
-    rest for a second, then through a push, rolling and carving both ways, for Cairo regular and goofy and Link; a
+    rest for a second, then through a push, rolling and carving both ways, for Cairo and Modori regular and goofy and Link; a
     close-up at rest (build/yorimichi/skateqa/ride-hands-<rider>.png)."""
     qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck 1')")
     who_now = 'Cairo'
