@@ -1,4 +1,5 @@
 #include "YorimichiPhone.h"
+#include "JapanNetwork.h"
 #include "AtelierStream.h"
 #include "WandererCharacter.h"
 #include "SailboatComponent.h"
@@ -115,10 +116,12 @@ void FYorimichiPhone::Tick(float Dt)
     if (In.bLeaseExpired)
     {
         // On a lost connection, stop rather than drift out of view.
-        C->GetCharacterMovement()->StopMovementImmediately(); C->Sailboat->EmergencyStop();
+        if(!JapanNetwork::IsOnline(C->GetWorld()))
+        {C->GetCharacterMovement()->StopMovementImmediately(); C->Sailboat->EmergencyStop();}
         C->MoveIntent = FVector2D::ZeroVector; C->bJog = C->bSprintHeld = false;
         bBrakeAfterLease = C->Sailboat->IsEquipped();
     }
+    C->bVehicleBrakeIntent = In.bPaused || bBrakeAfterLease;
     if (!In.bActive)
     {
         if (In.Released & Jump) C->ReleaseJump(FInputActionValue(false));
@@ -126,7 +129,8 @@ void FYorimichiPhone::Tick(float Dt)
         return;   // no touch page: the game's own input (or the plain player's) is in charge
     }
     bBrakeAfterLease = false;
-    if (In.bPaused) C->Sailboat->EmergencyStop();
+    C->bVehicleBrakeIntent=In.bPaused;
+    if (In.bPaused&&!JapanNetwork::IsOnline(C->GetWorld())) C->Sailboat->EmergencyStop();
     FVector2D Move = In.Move, Look = In.Look; uint32 Pressed = In.Pressed, Released = In.Released;
     if (Pressed & Spawn)
     {

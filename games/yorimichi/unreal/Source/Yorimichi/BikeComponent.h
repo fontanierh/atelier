@@ -1,6 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "JapanBikeState.h"
+#include "JapanSkateClock.h"
 #include "BikeComponent.generated.h"
 class AWandererCharacter; class UStaticMeshComponent; class USceneComponent; class UAnimSequence; class UAudioComponent; class USoundWave; class USoundAttenuation; class UPhysicsAsset;
 
@@ -26,6 +28,19 @@ public:
  bool IsSprinting() const { return bSprint; }
  bool Hop(); bool Skid(); bool Bell(); bool Wave();
  virtual void TickComponent(float,ELevelTick,FActorComponentTickFunction*) override;
+ /** Online simulation is called once inside the saved movement step. It emits no presentation or parking side effects. */
+ void RefreshTickOrder();
+ void SimulateNetwork(float Dt,FVector2D Stick,bool Menu);
+ FJapanBikeState CaptureNetworkState() const;
+ bool ApplyNetworkActivity(const FJapanBikeState& Snapshot);
+ bool ApplyNetworkState(const FJapanBikeState& Snapshot,bool RestoreFacing=true);
+ void ReceiveNetworkPresentation(uint32 Epoch,double Stamp,const FJapanBikeState& Snapshot);
+ bool NeedsNetworkPark() const { return bTerminal; }
+ /** Host activity handoff only; never call from movement simulation or correction replay. */
+ bool CommitNetworkPark();
+ bool ForceNetworkPark(FJapanBikeState& ParkedPose);
+ bool ShowNetworkParked(const FJapanBikeState& Pose,const FTransform& Transform);
+ void HideNetworkParked();
  bool IsAvailable() const { return bAssetsReady; }
  /** He is on (or getting on or off) the bike: the bike owns his movement and his animation. */
  bool IsEquipped() const { return State!=EState::Off; }
@@ -37,6 +52,8 @@ public:
  UAnimSequence* GetSequence() const;
  FName GetClip() const { return Clip; }
  float GetClipTime() const { return ClipTime; }
+ /** Authored visual hop lift in centimetres; does not imply ballistic CMC movement. */
+ float GetAuthoredLift() const;
  /** Where the animation should be in the clip: the clock wrapped for loops, held at the end for one-shots. */
  float GetPoseTime() const;
  FString GetStatus() const { return Hint; }
@@ -81,6 +98,21 @@ private:
  float ClipTime=0,Speed=0,Steering=0,Lean=0,WheelAngle=0,StillTime=0,AppliedYaw=0,CrankAngle=0;
  FVector2D Input=FVector2D::ZeroVector;
  bool bSprint=false,bMenu=false,bAssetsReady=false,bParked=false;
+ bool bTickModeSet=false,bNetworkTickOrder=false;
+ bool QueueNetworkAction(FName Button,bool& Accepted);
+ float SimCrank=0.f; bool bTerminal=false,bNetworkPedalling=false;
+ uint32 PresentedSerial=0,PresentedEpoch=0;
+ uint32 PresentationBufferEpoch=0;
+ struct FNetworkPose { double At; FJapanBikeState State; };
+ TArray<FNetworkPose> NetworkPoses;
+ FJapanSkatePlayout NetworkPlayout;
+ double LastPresentationStamp=-1.;
+ void SampleNetworkPresentation();
+ TSet<uint64> PlayedNetworkCues;
+ TArray<uint64> NetworkCueOrder;
+ bool AdvanceSimulation(float Dt,bool& Pedal,float& Cadence);
+ void PresentNetwork(float Dt);
+ void PresentParts(float Dt,TArray<float>& Channels,bool Pedal,float Cadence);
  float Coast=0;   // s since he last pedalled, for ending the sprint
  // The ground under the wheels: he and the bike pitch to it and sit on it between them (cm), snapped on getting on.
  float GroundPitch=0,GroundOffset=0,WheelGround[2]={0,0},WheelFall[2]={0,0}; bool bSnapGround=false;   // front, rear: cm, cm/s

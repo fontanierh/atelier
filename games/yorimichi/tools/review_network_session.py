@@ -90,7 +90,7 @@ def defence_edge_statistics(folder):
     return dict(edges=edges, invalid=invalid)
 
 
-def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20, enemy=False):
+def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20, enemy=False, vehicle_case=None):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -218,6 +218,11 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
         flushed = read('combat-guest-4-result')
         checks['forced_recovery_resolves_contact_before_epoch'] = (flushed.get('forced_flush_passed') is True and
                                                                    flushed.get('flushed') == 1 and flushed.get('cancelled') == 0)
+    if vehicle_case:
+        from network_vehicle_review import compare_vehicle
+        from network_fixed_collision_review import compare_fixed_collision
+        checks.update(compare_vehicle(folder, vehicle_case))
+        checks.update(compare_fixed_collision(server, client))
     if enemy:
         from network_enemy_review import compare_enemy
         checks.update(compare_enemy(folder))
@@ -247,7 +252,7 @@ def modori_checks(folder, shield):
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -305,7 +310,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                            '-unattended', '-stdout', '-FullStdOutLogOutput',
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
-                           '-ExecCmds=t.MaxFPS ' + (str(combat_host_fps) if combat and role == 'server' else '30')]
+                           '-ExecCmds=t.MaxFPS ' + ('60' if vehicle_case and role == 'server' else str(combat_host_fps) if combat and role == 'server' else '30')]
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
                 if modori_shield is not None:
                     command += ['-rider=Modori', '-set=shield=' + str(modori_shield if role == 'server' else 1-modori_shield)]
@@ -315,6 +320,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     command += ['-networkcombat', '-networkcombathostfps=' + str(combat_host_fps)]
                 if enemy:
                     command += ['-networkenemy', '-foxhunter']
+                if vehicle_case:
+                    command += ['-networkvehicles', '-networkvehiclecase=' + vehicle_case]
                 if gameplay:
                     command.append('-networkgameplay')
                     if role == 'client':
@@ -395,7 +402,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         if plain_package:
             checks = plain_launch_checks(folder, (folder / 'plain.log').read_text(errors='replace'), games[0][1].returncode, package_source['code_digest'])
         else:
-            checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy)
+            checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy, vehicle_case)
             if app:
                 checks.update(runtime_identity_checks(folder, expected_identity, package_source['code_digest']))
         if movement_hitch_ms or skate_hitch_ms:
@@ -448,6 +455,7 @@ def main():
     parser.add_argument('--port', type=int)
     parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
     parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
+    parser.add_argument('--vehicle-case', choices=('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash'), help='Native motion and vehicle-hit route; each pending and terminal route needs its own native receipt')
     parser.add_argument('--enemy', action='store_true', help='Real shared-hunter attacks, AI claw and replicated death')
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
@@ -459,12 +467,19 @@ def main():
     if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
         parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
     if args.modori_shield is not None:
-        if args.app or args.combat or args.enemy:
+        if args.app or args.combat or args.enemy or args.vehicle_case:
             parser.error('Modori loadout proof uses an editor listen/gameplay pair')
         args.listen = True
+    if args.vehicle_case and (args.enemy or args.combat or args.gameplay):
+        parser.error('--vehicle-case uses a separate native route')
     if args.enemy and (args.combat or args.gameplay):
         parser.error('--enemy has a separate native route; do not combine it with combat/gameplay')
-    if args.enemy:
+    if args.vehicle_case:
+        if (args.lag_ms, args.variance_ms, args.loss_percent) != (60, 15, 2):
+            parser.error('Vehicle acceptance requires --lag-ms 60 --variance-ms 15 --loss-percent 2')
+        args.listen = True
+        args.gameplay = False
+    elif args.enemy:
         if (args.lag_ms, args.variance_ms, args.loss_percent) != (60, 15, 2):
             parser.error('Shared-enemy acceptance requires --lag-ms 60 --variance-ms 15 --loss-percent 2')
         args.listen = True
@@ -502,7 +517,7 @@ def main():
         folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
         folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -513,7 +528,7 @@ def main():
                        (['--modori-shield', str(args.modori_shield)] if args.modori_shield is not None else []) +
                        (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []) +
                        (['--app', str(args.app.resolve()), '--cook-receipt', str(args.cook_receipt.resolve()), '--expected-identity', args.expected_identity] if args.app else []) +
-                       (['--plain-package'] if args.plain_package else []),
+                       (['--plain-package'] if args.plain_package else []) + (['--vehicle-case', args.vehicle_case] if args.vehicle_case else []),
                        folder / 'guard', timeout=750 if args.app else 330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

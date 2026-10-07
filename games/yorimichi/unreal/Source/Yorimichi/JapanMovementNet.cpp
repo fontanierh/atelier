@@ -9,7 +9,7 @@ namespace
 {
 const FName Buttons[] = { TEXT("jump"), TEXT("jump_release"), TEXT("dodge"), TEXT("attack"),
     TEXT("attack_release"), TEXT("guard"), TEXT("guard_release"), TEXT("weapon"), TEXT("crouch"),
-    TEXT("dash"), TEXT("drop_holds"), TEXT("wave") };
+    TEXT("dash"), TEXT("drop_holds"), TEXT("wave"), TEXT("bike_sprint") };
 UJapanCharacterMovement* MovementOf(ACharacter* Character)
 {
     return Character ? Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()) : nullptr;
@@ -80,7 +80,7 @@ void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
     Super::PostUpdate(Character, Mode);
     if (auto* Movement = MovementOf(Character); Movement && Movement->PredictsMoves())
     {
-        PostState = CastChecked<AWandererCharacter>(Character)->GetMoves()->CaptureNetworkState();
+        PostState = Movement->CaptureMovementState();
         PostEdge = Movement->GetProcessedEdge();
         PostCrouch = Movement->bWantsToCrouch;
         static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));

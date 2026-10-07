@@ -27,6 +27,17 @@ void UJapanCombatResolver::Strike(AActor* Source, AWandererCharacter* Victim,
 {
     if (!Source || !Victim || !Victim->HasAuthority() || !Victim->GetSword() ||
         !FMath::IsFinite(Damage) || Damage < 0.f || From.ContainsNaN()) return;
+    // Vehicle contacts are immediate and undefended. They never consult foot
+    // defence history, and the old mount epoch is invalidated before damage.
+    if(JapanNetwork::IsOnline(GetWorld())&&
+        (Victim->GetNetworkActivity()==EJapanActivity::Bike||Victim->GetNetworkActivity()==EJapanActivity::Sailboat))
+    {
+        const bool Alive=Victim->GetSword()->GetHealth()>0.f;
+        const int32 Outcome=Alive&&Victim->ExitNetworkVehicleForStrike()?
+            (Victim->GetMoves()?Victim->GetMoves()->ResolveUnprotectedStrike(Source,Damage,From):
+                Victim->GetSword()->IncomingStrike(Source,Damage,From)):3;
+        ++Resolved;if(Result)Result(Outcome);return;
+    }
     if (!JapanNetwork::IsOnline(GetWorld()) || !Victim->GetMoves() || Victim->IsNpc() || Victim->IsLocallyControlled())
     {
         const int32 Outcome = Victim->GetSword()->IncomingStrike(Source, Damage, From);

@@ -196,3 +196,9 @@ int32 UBotwMoveSet::ResolveNetworkStrike(AActor* Source, float Damage, const FVe
     DefenceTimeline.Reaction(Contact, Recovery, GuardBroken > PriorGuardBroken ? GuardBroken : 0.);
     return Outcome;
 }
+
+int32 UBotwMoveSet::ResolveUnprotectedStrike(AActor* Source, float Damage, const FVector& From)
+{
+    TGuardValue<TOptional<EJapanDefence>> Override(DefenceOverride,TOptional<EJapanDefence>(EJapanDefence::None));
+    return IncomingStrike(Source,Damage,From);
+}

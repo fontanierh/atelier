@@ -1,5 +1,6 @@
 #include "JapanCharacterMovement.h"
 #include "JapanEnemyQA.h"
+#include "JapanVehicleTelemetry.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
@@ -7,6 +8,8 @@
 #include "WandererSword.h"
 #include "BotwMoveSet.h"
 #include "SkateComponent.h"
+#include "BikeComponent.h"
+#include "SailboatComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
@@ -50,7 +53,7 @@ bool UJapanCharacterMovement::PredictsMoves() const
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     return Rider && JapanNetwork::IsOnline(GetWorld()) && !Rider->IsNpc() && Rider->GetMoves() &&
-        Rider->GetNetworkActivity() == EJapanActivity::OnFoot;
+        (Rider->GetNetworkActivity() == EJapanActivity::OnFoot || Rider->GetNetworkActivity() == EJapanActivity::Bike || Rider->GetNetworkActivity() == EJapanActivity::Sailboat);
 }
 
 uint32 UJapanCharacterMovement::GetActivityEpoch() const
@@ -74,7 +77,7 @@ void UJapanCharacterMovement::ResetActivityPrediction()
 bool UJapanCharacterMovement::ForcePositionUpdate(float Dt)
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
-    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() != EJapanActivity::OnFoot)
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves())
         return false; // Trusted skating owns its clock and root; CMC does not advance either.
     if (PredictsMoves() && !bReceivedMoveInEpoch)
     {
@@ -155,7 +158,7 @@ bool UJapanCharacterMovement::VerifyClientTimeStamp(float Timestamp, FNetworkPre
 void UJapanCharacterMovement::ReplicateMoveToServer(float Dt, const FVector& NewAcceleration)
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
-    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() != EJapanActivity::OnFoot)
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves())
     {
         // Trusted skating has a separate position/pose stream. Simulate normally without saving or sending CMC moves.
         Acceleration = NewAcceleration.GetClampedToMaxSize(GetMaxAcceleration());
@@ -191,6 +194,7 @@ void UJapanCharacterMovement::ServerMove_PerformMovement(const FCharacterNetwork
 #if !UE_BUILD_SHIPPING
         if (bStaleProbe) ++NetworkStats.StaleProbeRejected;
 #endif
+        JapanVehicleTelemetry::RejectedMove(Cast<AWandererCharacter>(CharacterOwner),Custom.Input.ActivityEpoch);
         return;
     }
     if (PredictsMoves())
@@ -268,7 +272,8 @@ FJapanMoveInput UJapanCharacterMovement::ReadMoveInput() const
     Input.ActivityEpoch = GetActivityEpoch();
     if (const auto* Rider = Cast<AWandererCharacter>(CharacterOwner))
     {
-        const bool Menu = Rider->bMenuOpen || Rider->bControlsSuspended;
+        const bool Menu = Rider->bMenuOpen || Rider->bControlsSuspended ||
+            (Rider->GetNetworkActivity()==EJapanActivity::Sailboat && Rider->bVehicleBrakeIntent);
         const FVector2D Stick = Menu ? FVector2D::ZeroVector : Rider->MoveIntent.GetClampedToMaxSize(1.);
         Input.X = int8(FMath::Clamp(FMath::RoundToInt(Stick.X * 127.), -127, 127));
         Input.Y = int8(FMath::Clamp(FMath::RoundToInt(Stick.Y * 127.), -127, 127));
@@ -333,6 +338,47 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
     TGuardValue<bool> Executing(bExecutingMove, true);
     UBotwMoveSet* Moves = Rider->GetMoves();
     if (bReplaying) ++NetworkStats.ReplayedMoves;
+    const FVector VehicleBefore=Rider->GetActorLocation();
+    const float VehicleYawBefore=Rider->GetActorRotation().Yaw;
+    if (Rider->GetNetworkActivity() == EJapanActivity::Sailboat)
+    {
+        ActiveInput.ApplyNewEdges(ProcessedEdge, [](uint8) {}); // No combat or bike actions while sailing.
+        if (Rider->HasAuthority() && Rider->IsLocallyControlled()) AcknowledgeEdges(ProcessedEdge);
+        Rider->GetSailboat()->SimulateNetwork(Dt, ActiveInput.Stick(), (ActiveInput.Flags & FJapanMoveInput::Menu) != 0);
+        Acceleration=FVector::ZeroVector;AnalogInputModifier=0.f;
+        Super::PerformMovement(Dt);
+        JapanVehicleTelemetry::Move(Rider,ActiveInput,Dt,bReplaying,VehicleBefore,VehicleYawBefore);
+        bInputPrepared=false;
+        if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
+        return;
+    }
+    if (Rider->GetNetworkActivity() == EJapanActivity::Bike)
+    {
+        auto* Bike = Rider->GetBike();
+        const bool MoveMenu = (ActiveInput.Flags & FJapanMoveInput::Menu) != 0;
+        // Menu braking is part of this move; a host's own menus never brake its guest.
+        Bike->SetInput(ActiveInput.Stick(), MoveMenu);
+        ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
+        {
+            if (!Rider->bReady || MoveMenu || Bike->NeedsNetworkPark()) return;
+            const FName Button = FJapanMoveInput::ButtonName(Edge);
+            bool Accepted=false;
+            if (Button == TEXT("jump")) Accepted=Bike->Hop();
+            else if (Button == TEXT("dodge")) Accepted=Bike->Skid();
+            else if (Button == TEXT("attack")) Accepted=Bike->Bell();
+            else if (Button == TEXT("wave")) Accepted=Bike->Wave();
+            else if (Button == TEXT("bike_sprint")) Accepted=Bike->ToggleSprint();
+            JapanVehicleTelemetry::Action(Rider,Button,ProcessedEdge,Accepted,bReplaying);
+        });
+        if (Rider->HasAuthority() && Rider->IsLocallyControlled()) AcknowledgeEdges(ProcessedEdge);
+        Bike->SimulateNetwork(Dt, ActiveInput.Stick(), MoveMenu);
+        Acceleration = FVector::ZeroVector; AnalogInputModifier = 0.f; MaxWalkSpeed = 1200.f;
+        Super::PerformMovement(Dt);
+        JapanVehicleTelemetry::Move(Rider,ActiveInput,Dt,bReplaying,VehicleBefore,VehicleYawBefore);
+        bInputPrepared = false;
+        if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
+        return;
+    }
     if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge, Dt, bAcceptedDefenceMove);
     ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
     {
@@ -376,6 +422,9 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
 void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Flags, const FVector& Accel)
 {
     TGuardValue<bool> DefenceMoveScope(bAcceptedDefenceMove, false);
+    if (CharacterOwner && CharacterOwner->HasAuthority() && Dt > 0.f)
+        if (const auto* Data = static_cast<const FJapanNetworkMoveData*>(GetCurrentNetworkMoveData()))
+            JapanVehicleTelemetry::AcceptedMove(CastChecked<AWandererCharacter>(CharacterOwner), Data->Input.ActivityEpoch);
     if (PredictsMoves())
         if (const auto* Data = static_cast<const FJapanNetworkMoveData*>(GetCurrentNetworkMoveData()))
         {
@@ -391,7 +440,8 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             {
                 MoveClock.Accepted(FPlatformTime::Seconds(), Dt);
                 bWaitingAfterClockReset = false;
-                bAcceptedDefenceMove = CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->MapDefenceMove(Timestamp, Dt);
+                bAcceptedDefenceMove = CastChecked<AWandererCharacter>(CharacterOwner)->GetNetworkActivity() == EJapanActivity::OnFoot &&
+                    CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->MapDefenceMove(Timestamp, Dt);
             }
             SetMoveInput(Data->Input);
             LastServerHolds = Data->Input.Flags & (FJapanMoveInput::AttackHeld | FJapanMoveInput::GuardHeld | FJapanMoveInput::JumpHeld | FJapanMoveInput::Menu);
@@ -447,7 +497,7 @@ void UJapanCharacterMovement::ServerMoveHandleClientError(float Timestamp, float
     PendingAcknowledgedEdge = ProcessedEdge;
     if (PredictsMoves() && !Server->PendingAdjustment.bAckGoodMove)
     {
-        PendingCheckpoint = CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->CaptureNetworkState();
+        PendingCheckpoint = CaptureMovementState();
 
     }
 }
@@ -500,14 +550,19 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     ProcessedEdge = Custom.bHasCheckpoint ? Custom.AcknowledgedEdge : Saved.PostEdge;
     auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     TGuardValue<bool> Replay(bReplaying, true);
-    if (PredictsMoves() && (!Rider || !Rider->GetMoves() || !Rider->GetMoves()->ApplyNetworkState(State)))
+    if (PredictsMoves() && (!Rider || !ApplyMovementState(State)))
     {
         ++NetworkStats.Rejected;
+        if(Rider)JapanVehicleTelemetry::Checkpoint(Rider,false,State.Bytes.Num());
         UE_LOG(LogTemp, Error, TEXT("Network movement correction rejected: invalid traversal checkpoint"));
         if (auto* Session = GetWorld()->GetGameInstance<UJapanGameInstance>())
             Session->ReturnWithError(TEXT("The host sent incompatible movement state. Rejoin using the same build."));
     }
-    else if (PredictsMoves() && Custom.bHasCheckpoint) ++NetworkStats.Checkpoints;
+    else if (PredictsMoves() && Custom.bHasCheckpoint)
+    {
+        ++NetworkStats.Checkpoints;
+        if(Rider)JapanVehicleTelemetry::Checkpoint(Rider,true,State.Bytes.Num());
+    }
 }
 
 void UJapanCharacterMovement::SendClientAdjustment()

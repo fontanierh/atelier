@@ -177,6 +177,9 @@ void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
     DOREPLIFETIME(AWandererCharacter, NetworkHitsTaken);
     DOREPLIFETIME(AWandererCharacter, NetworkActivity);
     DOREPLIFETIME_CONDITION(AWandererCharacter, bNetworkMovementReady, COND_OwnerOnly);
+    DOREPLIFETIME(AWandererCharacter, NetworkParkedBike);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkBikePresentation, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkSailPresentation, COND_SimulatedOnly);
 }
 void AWandererCharacter::OnRep_NetworkAvatar() { bNetworkAvatarReceived = true; }
 void AWandererCharacter::OnRep_NetworkHealth() { if (Sword) Sword->ApplyNetworkHealth(NetworkHealth, NetworkHitsTaken); }
@@ -292,10 +295,10 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
 {
     Landscape = World;
     if (!World || !World->bLoaded || IsNpc()) return;
+    Bike->Initialize(this);
+    Sailboat->Initialize(this,World);
     if (!JapanNetwork::IsOnline(GetWorld()) || IsLocallyControlled())
     {
-        Sailboat->Initialize(this,World);
-        Bike->Initialize(this);
         Horse->Initialize(this);
     }
     if (!bSwitchedIn && !JapanNetwork::IsOnline(GetWorld()))
@@ -615,11 +618,13 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
 void AWandererCharacter::ReleaseJump(const FInputActionValue&) { StopJumping(); if (Moves) Moves->Press(TEXT("jump_release")); }
 bool AWandererCharacter::PressMove(FName Button)
 {
+    if (JapanNetwork::IsOnline(GetWorld()) && NetworkActivity.Kind == EJapanActivity::Bike)
+        return bReady && !bMenuOpen && CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->QueueMoveButton(Button);
     return Moves && bReady && !bMenuOpen && !SkateRide->IsRiding() && !OnVehicle() && !IsZeppelinPassenger() && Moves->Press(Button);
 }
 void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 {
-    if (JapanNetwork::IsOnline(GetWorld())) return; // Enabled by the vehicle prediction layer.
+    if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkSail(); return; } // Enabled by the vehicle prediction layer.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding()) return;
     if (Sailboat->IsEquipped()) { Sailboat->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
@@ -636,7 +641,7 @@ void AWandererCharacter::ToggleHorse(const FInputActionValue&)
 }
 void AWandererCharacter::ToggleBike(const FInputActionValue&)
 {
-    if (JapanNetwork::IsOnline(GetWorld())) return; // Enabled by the vehicle prediction layer.
+    if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkBike(); return; } // Enabled by the vehicle prediction layer.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped()) return;
     if (Bike->IsEquipped()) { Bike->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
@@ -704,6 +709,7 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("menu")) { if (!Preferences) return false; ToggleMenu(FInputActionValue(true)); }   // the settings menu (closing the map first)
     else if (Button == TEXT("skate_feel")) { if (!Preferences) return false; Preferences->OpenSkateMenu(); }   // the menu's Skate feel page
     else if (Button == TEXT("bike")) ToggleBike(FInputActionValue(true));
+    else if (Button == TEXT("sailboat")) ToggleSailboat(FInputActionValue(true));
     else if (Button == TEXT("horse")) ToggleHorse(FInputActionValue(true));
     else if (Button == TEXT("sprint")) { Sprint(FInputActionValue(true)); Sprint(FInputActionValue(false)); }   // a tap (the bike's toggle)
     else if (Button == TEXT("wave")) Wave(FInputActionValue(true));
@@ -1287,7 +1293,7 @@ void AWandererCharacter::Tick(float Dt)
         if (!HasAuthority() && !IsLocallyControlled())
         {
             bReady = true;
-            if (Moves && bNetworkAvatarReceived && SkateRide->GetRetailPose().IsEmpty()) Moves->ApplyPresentation(NetworkAvatar, Dt);
+            if (NetworkActivity.Kind == EJapanActivity::OnFoot && Moves && bNetworkAvatarReceived && SkateRide->GetRetailPose().IsEmpty()) Moves->ApplyPresentation(NetworkAvatar, Dt);
             return;
         }
         if (HasAuthority())
@@ -1398,8 +1404,8 @@ void AWandererCharacter::Tick(float Dt)
     if (!TrailerSpecPath.IsEmpty()) AdvanceTrailer(Dt);
     if (PhoneInput) PhoneInput->Tick(Dt);
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
-    Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
-    Bike->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
+    if (!JapanNetwork::IsOnline(GetWorld())) Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
+    if (!JapanNetwork::IsOnline(GetWorld())) Bike->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
     Horse->SetInput(MoveIntent,bSprintHeld,bWalk,bMenuOpen || (Map && Map->IsOpen()));
     const bool bPredictedMoves = CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->PredictsMoves();
     if (!bPredictedMoves && !OnVehicle() && !SkateRide->IsRiding())   // offline moves advance in actor Tick

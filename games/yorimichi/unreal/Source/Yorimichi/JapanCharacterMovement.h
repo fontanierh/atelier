@@ -45,6 +45,8 @@ class YORIMICHI_API UJapanCharacterMovement : public UCharacterMovementComponent
 public:
     UJapanCharacterMovement(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     bool PredictsMoves() const;
+    FJapanMoveCheckpoint CaptureMovementState() const;
+    bool ApplyMovementState(const FJapanMoveCheckpoint& State);
     bool QueueMoveButton(FName Button);
     bool QueueAuthoritativeRecovery(FVector Shore, float Yaw, float Damage);
     virtual void SendClientAdjustment() override;

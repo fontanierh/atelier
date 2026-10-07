@@ -26,12 +26,14 @@ def main():
     result = guarded.run(command, folder / 'guard', timeout=120, purpose='native network wire tests',
                          kind='game', progress=15, track_tree=True)
     text = (folder / 'guard/stdout.log').read_text(errors='replace')
-    outcomes = dict((name, state) for state, name in re.findall(
-        r'Test Completed\. Result=\{([^}]+)\} Name=\{[^}]*\} Path=\{([^}]+)\}', text))
-    expected = {'Yorimichi.Network.' + name for name in ('JoinEndpoint', 'OrderedInput', 'TraversalCheckpoint', 'SkateWire', 'SkateBudget', 'DefenceTimeline', 'PlayerCollision', 'MoveClock')}
+    rows = re.findall(r'Test Completed\. Result=\{([^}]+)\} Name=\{[^}]*\} Path=\{([^}]+)\}', text)
+    outcomes = {name: state for state, name in rows}
+    names = [name for _, name in rows if name.startswith('Yorimichi.Network.')]
+    duplicates = sorted({name for name in names if names.count(name) > 1})
+    expected = {'Yorimichi.Network.' + name for name in ('JoinEndpoint', 'OrderedInput', 'TraversalCheckpoint', 'SkateWire', 'SkateBudget', 'DefenceTimeline', 'PlayerCollision', 'MoveClock', 'BikeCheckpoint', 'SailCheckpoint')}
     unchanged = source_revision() == revision and current_native_build(ctx) == binary
-    passed = unchanged and result == 0 and expected <= outcomes.keys() and all(state == 'Success' for name, state in outcomes.items() if name.startswith('Yorimichi.Network.'))
-    receipt = dict(passed=passed, process_exit=result, tests=outcomes, missing=sorted(expected - outcomes.keys()),
+    passed = not duplicates and unchanged and result == 0 and expected <= outcomes.keys() and all(state == 'Success' for name, state in outcomes.items() if name.startswith('Yorimichi.Network.'))
+    receipt = dict(passed=passed, process_exit=result, tests=outcomes, duplicates=duplicates, missing=sorted(expected - outcomes.keys()),
                    source=revision, native_build=binary, source_and_build_unchanged=unchanged)
     (folder / 'checks.json').write_text(json.dumps(receipt, indent=2) + '\n')
     print(json.dumps(receipt, indent=2), flush=True)

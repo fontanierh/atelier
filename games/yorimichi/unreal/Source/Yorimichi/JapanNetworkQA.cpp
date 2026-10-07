@@ -3,6 +3,8 @@
 #include "JapanGameplayQA.h"
 #include "JapanCombatQA.h"
 #include "JapanEnemyQA.h"
+#include "JapanVehicleQA.h"
+#include "JapanGameplayCollisionQA.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
 #include "BotwMoveSet.h"
@@ -182,6 +184,7 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
                     }
                 }
             Report->SetArrayField(TEXT("collision_probes"), Probes);
+            JapanGameplayCollisionQA::Write(World, Report);
         }
     }
     FString JSON;
@@ -238,7 +241,13 @@ bool UJapanGameInstance::TickNetworkQA(float)
     const auto* State = World->GetGameState<AJapanGameState>();
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     bool GameplayDone = true;
-    if (FParse::Param(FCommandLine::Get(), TEXT("networkenemy")) && World->GetNetMode() != NM_Standalone)
+    if (FParse::Param(FCommandLine::Get(), TEXT("networkvehicles")) && World->GetNetMode() != NM_Standalone)
+    {
+        FString Error;
+        GameplayDone = JapanVehicleQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
+        if (!Error.IsEmpty()) return Fail(Error);
+    }
+    else if (FParse::Param(FCommandLine::Get(), TEXT("networkenemy")) && World->GetNetMode() != NM_Standalone)
     {
         FString Error;
         GameplayDone = JapanEnemyQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
@@ -277,6 +286,11 @@ bool UJapanGameInstance::TickNetworkQA(float)
             {
                 FString Error;
                 if (!JapanCombatQA::Finalize(NetworkQADirectory, Error)) return Fail(Error.IsEmpty() ? TEXT("Could not save final combat audit") : Error);
+            }
+            if (FParse::Param(FCommandLine::Get(), TEXT("networkvehicles")))
+            {
+                FString Error;
+                if (!JapanVehicleQA::Finalize(NetworkQADirectory, Error)) return Fail(Error.IsEmpty() ? TEXT("Could not save final vehicle audit") : Error);
             }
             if (FParse::Param(FCommandLine::Get(), TEXT("networkenemy")))
             {

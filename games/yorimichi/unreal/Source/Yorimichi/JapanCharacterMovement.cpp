@@ -1,6 +1,8 @@
 #include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "SailboatComponent.h"
+#include "BikeComponent.h"
+#include "JapanNetwork.h"
 #include "SkateComponent.h"
 #include "BotwMoveSet.h"
 
@@ -8,6 +10,7 @@ float UJapanCharacterMovement::GetMaxSpeed() const
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) return 1400.f;
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Bike) return 1200.f;
     return Super::GetMaxSpeed();
 }
 
@@ -17,12 +20,13 @@ void UJapanCharacterMovement::CalcVelocity(float Dt, float Friction, bool bFluid
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) { Velocity = FVector::ZeroVector; return; }
     Super::CalcVelocity(Dt, Friction, bFluid, BrakingDeceleration);
     // A move set's hop, driven attack or plunge sets the velocity across the ground (falling keeps its own vertical).
-    if (Rider && Rider->GetMoves()) Rider->GetMoves()->OverrideVelocity(Velocity);
+    if (Rider && Rider->GetMoves() && (!JapanNetwork::IsOnline(GetWorld()) || Rider->GetNetworkActivity() == EJapanActivity::OnFoot)) Rider->GetMoves()->OverrideVelocity(Velocity);
 }
 
 void UJapanCharacterMovement::PhysicsRotation(float Dt)
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Bike) return;
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) return;
     if (Rider && Rider->GetSkate() && Rider->GetSkate()->IsRiding()) return;   // the board frame is the actor's rotation
     if (Rider && Rider->GetMoves() && Rider->GetMoves()->ControlsRotation()) return;   // lock-on, gliding, climbing, attacks

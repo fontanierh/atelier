@@ -80,6 +80,7 @@ public:
     UFUNCTION(NetMulticast, Unreliable) void CombatEvent(const FJapanCombatEvent& Event);
     uint32 NextCombatSerial = 0, LastCombatSerial = 0;
     UPROPERTY(Replicated) bool bTrustedSkating = true;
+    UPROPERTY(Replicated) bool bPredictedVehicles = false;
     UPROPERTY(Replicated) bool bWorldReady = false;
 };
 

@@ -1,12 +1,15 @@
 #include "WandererCharacter.h"
 #include "JapanCharacterMovement.h"
 #include "JapanNetwork.h"
+#include "JapanWorld.h"
 #include "JapanEncounters.h"
 #include "JapanCombatResolver.h"
 #include "JapanSession.h"
 #include "JapanSkateNetwork.h"
 #include "BotwMoveSet.h"
 #include "SkateComponent.h"
+#include "BikeComponent.h"
+#include "SailboatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
@@ -18,6 +21,38 @@ bool FiniteInWorld(const FVector& Value, double Maximum)
     return !Value.ContainsNaN() && FMath::Abs(Value.X) <= Maximum &&
         FMath::Abs(Value.Y) <= Maximum && FMath::Abs(Value.Z) <= Maximum;
 }
+}
+
+bool AWandererCharacter::ExitNetworkVehicleForStrike()
+{
+    if(!HasAuthority()||!JapanNetwork::IsOnline(GetWorld()))return false;
+    bool Falling=GetCharacterMovement()->IsFalling();
+    if(NetworkActivity.Kind==EJapanActivity::Bike)
+    {
+        FJapanBikeState ParkedPose;
+        bool Parked=false;
+        if(Bike->NeedsNetworkPark())
+        {
+            // A completed kickstand/crash already owns its authored end pose.
+            ParkedPose=Bike->CaptureNetworkState();
+            Parked=Bike->CommitNetworkPark();
+        }
+        else Parked=Bike->ForceNetworkPark(ParkedPose);
+        if(Parked)
+        {
+            NetworkParkedBike.Visible=true;NetworkParkedBike.Pose=ParkedPose;
+            NetworkParkedBike.Transform=Bike->GetBikeTransform();
+        }
+        else {Bike->StowImmediately();NetworkParkedBike.Visible=false;}
+    }
+    else if(NetworkActivity.Kind==EJapanActivity::Sailboat)
+    {Sailboat->StowImmediately();Falling=true;}
+    else return false;
+    SetAction(NAME_None);
+    // The server commits exit before applying damage in this same call. All
+    // outstanding vehicle moves now carry a stale epoch and cannot restore it.
+    BeginNetworkActivity(EJapanActivity::OnFoot,Falling);
+    return true;
 }
 
 void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling, uint8 ClockCorrection)
@@ -33,6 +68,8 @@ void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling
     NetworkActivity.Velocity = GetCharacterMovement()->Velocity;
     NetworkActivity.bFalling = bFalling;
     NetworkActivity.ClockCorrection = ClockCorrection;
+    NetworkActivity.Sail = Kind == EJapanActivity::Sailboat ? Sailboat->CaptureNetworkState() : FJapanSailState();
+    NetworkActivity.Bike = Kind == EJapanActivity::Bike ? Bike->CaptureNetworkState() : FJapanBikeState();
     OnRep_NetworkActivity();
     ForceNetUpdate();
 }
@@ -40,6 +77,13 @@ void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling
 void AWandererCharacter::OnRep_NetworkActivity()
 {
     if (AppliedActivityEpoch == NetworkActivity.Epoch) return;
+    if ((NetworkActivity.Kind==EJapanActivity::Sailboat&&!Sailboat->IsAvailable()) ||
+        (NetworkActivity.Kind==EJapanActivity::Bike&&!Bike->IsAvailable()))
+    {
+        if(Landscape&&Landscape->bGameplayReady)if(auto* Session=GetWorld()->GetGameInstance<UJapanGameInstance>())
+            Session->ReturnWithError(TEXT("The vehicle data does not match the host. Rejoin using the same build."));
+        return; // Assets may still be loading before world readiness.
+    }
     AppliedActivityEpoch = NetworkActivity.Epoch;
     bNetworkActivityPending = false; bNetworkSkateObserved = false;
     auto* Movement = CastChecked<UJapanCharacterMovement>(GetCharacterMovement());
@@ -56,7 +100,28 @@ void AWandererCharacter::OnRep_NetworkActivity()
     if (NetworkActivity.Kind == EJapanActivity::OnFoot)
     {
         if (SkateRide->IsRiding()) SkateRide->StowImmediately();
+        if (Bike->IsEquipped()) Bike->StowImmediately();
+        if (Sailboat->IsEquipped()) Sailboat->StowImmediately();
+        OnRep_NetworkParkedBike();
         Movement->SetMovementMode(NetworkActivity.bFalling ? MOVE_Falling : MOVE_Walking);
+        return;
+    }
+    if (NetworkActivity.Kind == EJapanActivity::Sailboat)
+    {
+        if (SkateRide->IsRiding()) SkateRide->StowImmediately();
+        Movement->SetMovementMode(MOVE_Flying);
+        if(!Sailboat->ApplyNetworkActivity(NetworkActivity.Sail))
+            if(auto* Session=GetWorld()->GetGameInstance<UJapanGameInstance>())
+                Session->ReturnWithError(TEXT("The sailboat data does not match the host. Rejoin using the same build."));
+        return;
+    }
+    if (NetworkActivity.Kind == EJapanActivity::Bike)
+    {
+        if (SkateRide->IsRiding()) SkateRide->StowImmediately();
+        Movement->SetMovementMode(NetworkActivity.bFalling ? MOVE_Falling : MOVE_Walking);
+        if (!Bike->ApplyNetworkActivity(NetworkActivity.Bike))
+            if (auto* Session = GetWorld()->GetGameInstance<UJapanGameInstance>())
+                Session->ReturnWithError(TEXT("The bike data does not match the host. Rejoin using the same build."));
         return;
     }
     if (NetworkActivity.Kind == EJapanActivity::Skate)
@@ -150,6 +215,9 @@ void AWandererCharacter::ClientActivityRejected_Implementation(const FString& Re
 
 void AWandererCharacter::TickNetworkActivity()
 {
+    if (AppliedActivityEpoch != NetworkActivity.Epoch) OnRep_NetworkActivity();
+    TickNetworkBike();
+    TickNetworkSail();
     if (!IsLocallyControlled()) return;
     if (bNetworkActivityPending && GetWorld()->GetTimeSeconds() - NetworkActivityRequestTime > 8.)
     {

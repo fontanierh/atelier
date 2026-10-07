@@ -103,6 +103,7 @@ public:
     void ResetDefence();
     double DefenceWait() const;
     void RetainDefenceThrough(double Time) { DefenceTimeline.RetainThrough(Time); }
+    int32 ResolveUnprotectedStrike(AActor* Source, float Damage, const FVector& From);
     int32 ResolveNetworkStrike(AActor* Source, float Damage, const FVector& From, double Contact);
     uint32 DefenceRejectedTimes = 0, DefensiveRejectedTimes = 0;
     uint32 DefenceMissingSamples() const { return DefenceTimeline.MissingSamples; }
@@ -169,6 +170,8 @@ public:
     bool IsFullyCharged() const { return bCharging && bFullCharge; }
     bool IsHopping() const;
     bool IsBusy() const { return Busy(); }
+    /** Shared water support for swimming and online sailing admission. */
+    bool WaterAt(const FVector& Where, float& Surface) const;
     /** Real seconds until the playing blow's next active window opens: 0 inside one, -1 when no blow is coming. */
     float NextBlowIn() const;
     /** In a combo cut that can be followed: real seconds until the next cut may come (its input point), 0 from then on;
@@ -390,7 +393,6 @@ private:
     bool Climbable(const FHitResult& Hit) const;
     bool FindWall(const FVector& Direction, FHitResult& Hit, float Up = 0.f, float Side = 0.f, float Reach = 0.f) const;
     void ClimbBasis(FVector& Forward, FVector& Right, FVector& Up) const;
-    bool WaterAt(const FVector& Where, float& Surface) const;
     AActor* FindTarget(float Range, float Cone) const;
     bool IsTargetable(AActor* Actor) const;
     bool IsUnawareTarget(AActor* Actor) const;

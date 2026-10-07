@@ -1,6 +1,10 @@
 #include "BikeComponent.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
+#include "JapanVehicleTelemetry.h"
+#include "JapanVehicleVisuals.h"
+#include "JapanNetwork.h"
+#include "JapanGameplayCollision.h"
 #include "WandererCharacter.h"
 #include "ModoriCharacter.h"
 #include "AtelierData.h"
@@ -12,6 +16,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "Misc/FileHelper.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
@@ -101,10 +106,11 @@ FString UBikeComponent::RiderRig() const { return Rider&&Rider->IsA<AModoriChara
 
 void UBikeComponent::Initialize(AWandererCharacter* C)
 {
+ if (Rider) return; // Possession and world readiness may both initialize the same replicated pawn.
  Rider=C;
- auto* Movement=C->GetCharacterMovement();
  // Speed and heading are set here before the movement component moves him, and the parts are posed before the mesh.
- Movement->AddTickPrerequisiteComponent(this);C->GetMesh()->AddTickPrerequisiteComponent(this);
+ RefreshTickOrder();
+ C->GetMesh()->AddTickPrerequisiteComponent(this);
  BikeRoot=NewObject<USceneComponent>(C,TEXT("BikeRoot"));BikeRoot->SetupAttachment(C->GetMesh());BikeRoot->RegisterComponent();
  auto Part=[&](const TCHAR* Name,const TCHAR* Asset)
  {
@@ -311,6 +317,16 @@ bool UBikeComponent::ClearFor(const FVector& Origin,float Yaw) const
 {
  const FQuat R=FRotator(0,Yaw,0).Quaternion();
  FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeClear),false,Rider);
+ if(JapanNetwork::IsOnline(GetWorld()))
+ {
+  // Fixed-geometry traces intentionally ignore players. Mount admission is a host
+  // decision and separately excludes occupied space even though capsules ignore Pawn.
+  TArray<FOverlapResult> Occupants;
+  FCollisionObjectQueryParams People;People.AddObjectTypesToQuery(ECC_Pawn);
+  GetWorld()->OverlapMultiByObjectType(Occupants,Origin+R.RotateVector(FVector(5,0,62)),R,People,
+      FCollisionShape::MakeBox(FVector(90,45,62)),Q);
+  if(!Occupants.IsEmpty())return false;
+ }
  if(GetWorld()->OverlapBlockingTestByChannel(Origin+R.RotateVector(FVector(5,0,62)),R,ECC_WorldStatic,FCollisionShape::MakeBox(FVector(70,22,48)),Q))return false;
  for(const FVector& Axle:{FrontAxle,RearAxle})
  {
@@ -322,19 +338,22 @@ bool UBikeComponent::ClearFor(const FVector& Origin,float Yaw) const
 
 void UBikeComponent::Play(FName Name,FName Then)
 {
- Clip=Name;Resume=Then;ClipTime=0.f;AppliedYaw=0.f;CueClock=-1.f;++Serial;
- BlendFrom=Displayed;BlendLeft=BlendFrom.Num()==ChannelCount?ClipBlend:0.f;
- // Into the ride loop at the crank's current angle, so the pedals and his legs carry on where they were.
+ const bool Online=JapanNetwork::IsOnline(GetWorld());
+ Clip=Name;Resume=Then;ClipTime=0.f;AppliedYaw=0.f;++Serial;
+ if(!Online){CueClock=-1.f;BlendFrom=Displayed;BlendLeft=BlendFrom.Num()==ChannelCount?ClipBlend:0.f;}
+ // Network simulation has its own phase: a correction must not sample the rendered blend.
  const FClip* C=Clips.Find(Name);
- if(C&&C->bLoop&&Name==TEXT("BikeRide")&&BlendFrom.Num()==ChannelCount&&C->Frames.Num()>1)
+ if(C&&C->bLoop&&Name==TEXT("BikeRide")&&(Online||BlendFrom.Num()==ChannelCount)&&C->Frames.Num()>1)
  {
   const float PerSecond=(C->Frames.Last()[ChCrank]-C->Frames[0][ChCrank])/(C->Duration*(C->Frames.Num()-1)/C->Frames.Num());
-  if(FMath::Abs(PerSecond)>1.f){const float Phase=(BlendFrom[ChCrank]-C->Frames[0][ChCrank])/(PerSecond*C->Duration);ClipTime=(Phase-FMath::FloorToFloat(Phase))*C->Duration;}
+  const float CrankPhase=Online?SimCrank:BlendFrom[ChCrank];
+  if(FMath::Abs(PerSecond)>1.f){const float Phase=(CrankPhase-C->Frames[0][ChCrank])/(PerSecond*C->Duration);ClipTime=(Phase-FMath::FloorToFloat(Phase))*C->Duration;}
  }
 }
 
 bool UBikeComponent::Toggle()
 {
+ if(JapanNetwork::IsOnline(GetWorld())&&(!Rider||!Rider->HasAuthority()))return false;
  if(!bAssetsReady||!Rider){Hint=TEXT("The bike is not installed");return false;}
  UAnimSequence* Ride=Sequences.FindRef(TEXT("BikeRide"));
  const USkeletalMesh* Body=Rider->GetMesh()->GetSkeletalMeshAsset();
@@ -352,7 +371,8 @@ bool UBikeComponent::Toggle()
  FVector Origin;float Yaw;
  if(bParked&&FVector::Dist2D(BikeRoot->GetComponentLocation(),Feet)<300.f&&FMath::Abs(BikeRoot->GetComponentLocation().Z-Feet.Z)<80.f&&
     FMath::Abs(BikeRoot->GetComponentRotation().Roll)<5.f)
- {Origin=BikeRoot->GetComponentLocation();Yaw=BikeRoot->GetComponentRotation().Yaw;}
+ {Origin=BikeRoot->GetComponentLocation();Yaw=BikeRoot->GetComponentRotation().Yaw;
+  if(JapanNetwork::IsOnline(GetWorld())&&!ClearFor(Origin,Yaw)){Hint=TEXT("The parked bike needs some space");return false;}}
  else
  {
   // The bike appears with him at its left side, where BikeMount starts, facing his way (or the nearest clear way).
@@ -369,6 +389,7 @@ bool UBikeComponent::Toggle()
  M->StopMovementImmediately();
  Rider->SetActorLocationAndRotation(Origin+FVector(0,0,Half),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
  SavedFriction=M->GroundFriction;SavedBraking=M->BrakingDecelerationWalking;M->GroundFriction=0.f;M->BrakingDecelerationWalking=0.f;
+ bTerminal=false;SimCrank=Coast=Recoil=0.f;
  State=EState::Mounting;Speed=Steering=Lean=StillTime=0.f;bSnapGround=true;Play(TEXT("BikeMount"),TEXT("BikeRide"));
  BikeRoot->SetVisibility(true,true);Hint=TEXT("Getting on");
  UE_LOG(LogTemp,Display,TEXT("BIKE summon: materials ready=%d"),MaterialsReady(false)?1:0);
@@ -383,7 +404,7 @@ void UBikeComponent::Park()
  const FTransform Bike=BikeRoot->GetComponentTransform();
  BikeRoot->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);bParked=true;
  auto* M=Rider->GetCharacterMovement();M->GroundFriction=SavedFriction;M->BrakingDecelerationWalking=SavedBraking;M->StopMovementImmediately();
- Rider->GetMesh()->SetRelativeLocationAndRotation(MeshLocation,MeshRotation);
+ JapanVehicleVisuals::SetRiderPose(Rider,MeshLocation,MeshRotation.Quaternion(),false);
  if(C&&C->bEndOffset)
  {
   const float Half=Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
@@ -394,7 +415,10 @@ void UBikeComponent::Park()
   for(const float Lift:{2.f,12.f,25.f})
   {
    const FVector At=Feet+FVector(0,0,Half+Lift);
-   if(!GetWorld()->OverlapBlockingTestByChannel(At,FQuat::Identity,ECC_Pawn,Rider->GetCapsuleComponent()->GetCollisionShape(),Q))
+   FCollisionObjectQueryParams People;People.AddObjectTypesToQuery(ECC_Pawn);
+   TArray<FOverlapResult> OtherRiders;
+   if(JapanNetwork::IsOnline(GetWorld()))GetWorld()->OverlapMultiByObjectType(OtherRiders,At,FQuat::Identity,People,Rider->GetCapsuleComponent()->GetCollisionShape(),Q);
+   if(OtherRiders.IsEmpty()&&!GetWorld()->OverlapBlockingTestByChannel(At,FQuat::Identity,ECC_Pawn,Rider->GetCapsuleComponent()->GetCollisionShape(),Q))
    {Rider->SetActorLocation(At,false,nullptr,ETeleportType::TeleportPhysics);break;}
   }
  }
@@ -408,7 +432,7 @@ void UBikeComponent::StowImmediately()
  if(State!=EState::Off)
  {
   auto* M=Rider->GetCharacterMovement();M->GroundFriction=SavedFriction;M->BrakingDecelerationWalking=SavedBraking;M->StopMovementImmediately();
-  Rider->GetMesh()->SetRelativeLocationAndRotation(MeshLocation,MeshRotation);
+  JapanVehicleVisuals::SetRiderPose(Rider,MeshLocation,MeshRotation.Quaternion(),false);
   State=EState::Off;Clip=NAME_None;++Serial;ClothColliders(false);
  }
  if(BikeRoot)
@@ -421,11 +445,11 @@ void UBikeComponent::StowImmediately()
 }
 
 void UBikeComponent::SetInput(FVector2D V,bool Menu){Input=Menu?FVector2D::ZeroVector:V;bMenu=Menu;}
-bool UBikeComponent::ToggleSprint(){if(State!=EState::Riding||bMenu)return false;bSprint=!bSprint;Coast=0.f;return true;}
-bool UBikeComponent::Hop(){if(State!=EState::Riding||Clip==TEXT("BikeHop")||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeHop"),TEXT("BikeRide"));return true;}
-bool UBikeComponent::Skid(){if(State!=EState::Riding||Speed<250.f||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeSkid"),TEXT("BikeFootDown"));return true;}
-bool UBikeComponent::Bell(){if(State!=EState::Riding||Clip!=TEXT("BikeRide"))return false;Play(TEXT("BikeBell"),TEXT("BikeRide"));return true;}
-bool UBikeComponent::Wave(){if(State!=EState::Riding||Clip!=TEXT("BikeRide"))return false;Play(TEXT("BikeWave"),TEXT("BikeRide"));return true;}
+bool UBikeComponent::ToggleSprint(){bool Accepted=false;if(QueueNetworkAction(TEXT("bike_sprint"),Accepted))return Accepted;if(State!=EState::Riding||bMenu)return false;bSprint=!bSprint;Coast=0.f;return true;}
+bool UBikeComponent::Hop(){bool Accepted=false;if(QueueNetworkAction(TEXT("jump"),Accepted))return Accepted;if(State!=EState::Riding||Clip==TEXT("BikeHop")||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeHop"),TEXT("BikeRide"));return true;}
+bool UBikeComponent::Skid(){bool Accepted=false;if(QueueNetworkAction(TEXT("dodge"),Accepted))return Accepted;if(State!=EState::Riding||Speed<250.f||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeSkid"),TEXT("BikeFootDown"));return true;}
+bool UBikeComponent::Bell(){bool Accepted=false;if(QueueNetworkAction(TEXT("attack"),Accepted))return Accepted;if(State!=EState::Riding||Clip!=TEXT("BikeRide"))return false;Play(TEXT("BikeBell"),TEXT("BikeRide"));return true;}
+bool UBikeComponent::Wave(){bool Accepted=false;if(QueueNetworkAction(TEXT("wave"),Accepted))return Accepted;if(State!=EState::Riding||Clip!=TEXT("BikeRide"))return false;Play(TEXT("BikeWave"),TEXT("BikeRide"));return true;}
 
 void UBikeComponent::EndClip()
 {
@@ -433,7 +457,8 @@ void UBikeComponent::EndClip()
  {
  case EState::Mounting: State=EState::Riding;Play(TEXT("BikeRide"));Hint=TEXT("Riding");ClothColliders(true);break;
  case EState::Dismounting: State=EState::Parking;Play(TEXT("BikeKickstand"));break;
- case EState::Parking: case EState::Crashing: Park();break;
+ case EState::Parking: case EState::Crashing:
+  if(JapanNetwork::IsOnline(GetWorld())){bTerminal=true;Speed=0.f;}else Park();break;
  default: Play(Resume.IsNone()?FName(TEXT("BikeRide")):Resume);break;
  }
 }
@@ -441,26 +466,37 @@ void UBikeComponent::EndClip()
 void UBikeComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickFunction* Tick)
 {
  Super::TickComponent(Dt,Type,Tick);
+ RefreshTickOrder();
  if(State==EState::Off||!Rider)return;
+ if(JapanNetwork::IsOnline(GetWorld())){PresentNetwork(Dt);return;}
+ bool Pedal=false;float Cadence=0.f;
+ if(!AdvanceSimulation(Dt,Pedal,Cadence)){if(State!=EState::Off)StowImmediately();return;}
+ TArray<float> Ch;if(Channels(Ch))PresentParts(Dt,Ch,Pedal,Cadence);
+}
+
+bool UBikeComponent::AdvanceSimulation(float Dt,bool& bPedal,float& Cadence)
+{
  auto* M=Rider->GetCharacterMovement();
- const FClip* C=Clips.Find(Clip);if(!C){StowImmediately();return;}
+ const FClip* C=Clips.Find(Clip);if(!C)return false;
  // Walls: the movement component slid or stopped him last frame; a hard stop at speed throws him over the bars.
  if(State==EState::Riding)
  {
   const float Moved=FVector::DotProduct(M->Velocity,Rider->GetActorForwardVector());
-  FHitResult Hit;FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeAhead),false,Rider);
+  FHitResult Hit;
+  const bool Online=JapanNetwork::IsOnline(GetWorld());
+  FCollisionQueryParams Q=Online?JapanGameplayCollision::Query(GetWorld(),SCENE_QUERY_STAT(BikeAhead),false):FCollisionQueryParams(SCENE_QUERY_STAT(BikeAhead),false,Rider);Q.AddIgnoredActor(Rider);
   const FVector From=Rider->GetActorLocation()-FVector(0,0,Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()-40.f);
   const float Reach=Speed>CrashSpeed?190.f:FrontAxle.X+WheelRadius+Speed*Dt;
-  const bool Ahead=GetWorld()->LineTraceSingleByChannel(Hit,From,From+Rider->GetActorForwardVector()*Reach,ECC_Visibility,Q)&&Hit.ImpactNormal.Z<.6f;
+  const bool Ahead=GetWorld()->LineTraceSingleByChannel(Hit,From,From+Rider->GetActorForwardVector()*Reach,Online?JapanGameplayCollision::Channel:ECC_Visibility,Q)&&Hit.ImpactNormal.Z<.6f;
   if(Ahead&&Speed>CrashSpeed&&Clip!=TEXT("BikeSkid"))
-  {State=EState::Crashing;Play(TEXT("BikeCrash"));Hint=TEXT("Ouch");C=Clips.Find(Clip);Recoil=FMath::Max(0.f,CrashRoom-Hit.Distance);Speed=0.f;}
+  {JapanVehicleTelemetry::Crash(Rider,Hit,Speed);State=EState::Crashing;Play(TEXT("BikeCrash"));Hint=TEXT("Ouch");C=Clips.Find(Clip);Recoil=FMath::Max(0.f,CrashRoom-Hit.Distance);Speed=0.f;}
   // Slower, he stops as the front wheel meets it (the capsule alone stopped half a bike length on, the wheel and basket
   // through the wall).
   else if(Ahead)Speed=0.f;
   else if(M->IsMovingOnGround()&&Speed>60.f&&Moved<Speed*.4f)Speed=FMath::Min(Speed,FMath::Max(0.f,Moved));
  }
  // The clock: the ride loop turns at the cadence of the wheels; everything else plays in real time.
- const bool bPedal=Input.Y>.1f&&!bMenu;
+ bPedal=Input.Y>.1f&&!bMenu;
  if(State==EState::Riding&&!bMenu)
  {
   // The sprint is a toggle: it lasts while he keeps pedalling (a moment's let-go is fine) and ends at a brake or stop.
@@ -486,11 +522,28 @@ void UBikeComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickF
  else Speed=0.f;
  // One crank turn carries the mamachari about 2.3 m up to his cruising speed; faster, he is in the hub's higher gears
  // and his legs spin up more slowly than the wheels. Freewheeling, the cranks stop.
- const float Cadence=Clip==TEXT("BikeRide")?(bPedal?Speed/(230.f*FMath::Pow(FMath::Max(1.f,Speed/TopSpeed),.8f)):0.f):1.f;
+ Cadence=Clip==TEXT("BikeRide")?(bPedal?Speed/(230.f*FMath::Pow(FMath::Max(1.f,Speed/TopSpeed),.8f)):0.f):1.f;
  ClipTime+=Dt*Cadence;
- ClipCues();
- if(!C->bLoop&&ClipTime>=C->Duration){ClipTime=C->Duration;TArray<float> Last;if(Channels(Last))Pose(Last);EndClip();if(State==EState::Off)return;C=Clips.Find(Clip);}
- TArray<float> Ch;if(!Channels(Ch))return;
+ if(!JapanNetwork::IsOnline(GetWorld()))ClipCues();
+ if(!C->bLoop&&ClipTime>=C->Duration){ClipTime=C->Duration;TArray<float> Last;if(Channels(Last)){if(JapanNetwork::IsOnline(GetWorld()))SimCrank=Last[ChCrank];else Pose(Last);}EndClip();if(State==EState::Off)return false;C=Clips.Find(Clip);}
+ TArray<float> Ch;if(!Channels(Ch))return false;
+ // A clip's yaw (the skid's quarter turn) turns him and the bike together; Blender's left turn is Unreal's negative yaw.
+ Rider->AddActorWorldRotation(FRotator(0,-(Ch[ChYaw]-AppliedYaw),0));AppliedYaw=Ch[ChYaw];
+ if(State==EState::Riding||State==EState::Crashing)
+ {
+  FVector V=Rider->GetActorForwardVector()*Speed;V.Z=M->Velocity.Z;M->Velocity=V;
+ }
+ else M->Velocity=FVector(0,0,M->Velocity.Z);
+ if(JapanNetwork::IsOnline(GetWorld()))
+ {
+  SimCrank=Ch[ChCrank];Coast=FMath::Min(Coast,10.f);StillTime=FMath::Min(StillTime,10.f);
+  if(C&&C->bLoop&&C->Duration>0.f)ClipTime=FMath::Fmod(ClipTime,C->Duration);
+ }
+ return true;
+}
+
+void UBikeComponent::PresentParts(float Dt,TArray<float>& Ch,bool bPedal,float Cadence)
+{
  if(BlendLeft>0.f)
  {
   // The rider blends into a new clip over ClipBlend; the bike's channels follow on the same curve (the crank the short way).
@@ -499,21 +552,46 @@ void UBikeComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickF
    Ch[I]=I==ChCrank?Ch[I]-FMath::FindDeltaAngleDegrees(Ch[I],BlendFrom[I])*(1.f-A):FMath::Lerp(BlendFrom[I],Ch[I],A);
   BlendLeft-=Dt;
  }
- // A clip's yaw (the skid's quarter turn) turns him and the bike together; Blender's left turn is Unreal's negative yaw.
- Rider->AddActorWorldRotation(FRotator(0,-(Ch[ChYaw]-AppliedYaw),0));AppliedYaw=Ch[ChYaw];
- if(State==EState::Riding||State==EState::Crashing)
- {
-  FVector V=Rider->GetActorForwardVector()*Speed;V.Z=M->Velocity.Z;M->Velocity=V;
- }
- else M->Velocity=FVector(0,0,M->Velocity.Z);
  WheelAngle=FMath::Fmod(WheelAngle+Speed*Dt/WheelRadius,2.f*PI);
  // Into the turn: he and the bike lean together about the ground line under them.
  Lean=FMath::FInterpTo(Lean,State==EState::Riding?-Steering*FMath::Clamp(Speed/TopSpeed,0.f,1.5f)*14.f:0.f,Dt,4.f);
  FollowGround(Dt);
- Rider->GetMesh()->SetRelativeLocationAndRotation(MeshLocation+FVector(0,0,GroundOffset),
-  (FQuat(FVector::ForwardVector,FMath::DegreesToRadians(Lean))*MeshRotation.Quaternion()*FRotator(GroundPitch,0,0).Quaternion()).Rotator());   // pitch in the bike's frame
+ JapanVehicleVisuals::SetRiderPose(Rider,MeshLocation+FVector(0,0,GroundOffset),
+  (FQuat(FVector::ForwardVector,FMath::DegreesToRadians(Lean))*MeshRotation.Quaternion()*FRotator(GroundPitch,0,0).Quaternion()).GetNormalized());   // pitch in the bike's frame
  Pose(Ch);
  UpdateAudio(Dt,bPedal,Cadence);
+}
+
+void UBikeComponent::PresentNetwork(float Dt)
+{
+ SampleNetworkPresentation();
+ const uint32 Epoch=Rider->GetActivityEpoch();
+ if(PresentedEpoch!=Epoch)
+ {PresentedEpoch=Epoch;PresentedSerial=0;PlayedNetworkCues.Reset();NetworkCueOrder.Reset();}
+ if(PresentedSerial!=Serial)
+ {
+  PresentedSerial=Serial;CueClock=-1.f;
+  BlendFrom=Displayed;BlendLeft=BlendFrom.Num()==ChannelCount?ClipBlend:0.f;
+ }
+ // Presentation runs once after CMC has finished any correction replay. A replay
+ // can cross the same sound marker again; epoch/clip-serial/marker emits it once.
+ const FClip* C=Clips.Find(Clip);
+ if(C&&!C->bLoop)for(int32 I=0;I<UE_ARRAY_COUNT(ClipSounds);++I)
+ {
+  const FClipSound& S=ClipSounds[I];
+  const uint64 Key=(uint64(Serial)<<8)|uint64(I);
+  if(Clip==S.Clip&&S.Time>CueClock&&S.Time<=ClipTime&&!PlayedNetworkCues.Contains(Key))
+  {
+   PlayedNetworkCues.Add(Key);NetworkCueOrder.Add(Key);
+   if(NetworkCueOrder.Num()>256){PlayedNetworkCues.Remove(NetworkCueOrder[0]);NetworkCueOrder.RemoveAt(0);}
+   PlayCue(S.Cue,S.Volume);
+  }
+ }
+ CueClock=ClipTime;
+ TArray<float> Ch;if(!Channels(Ch))return;
+ const bool Pedal=bNetworkPedalling;
+ const float Cadence=Clip==TEXT("BikeRide")?(Pedal?Speed/(230.f*FMath::Pow(FMath::Max(1.f,Speed/TopSpeed),.8f)):0.f):1.f;
+ PresentParts(Dt,Ch,Pedal,Cadence);
 }
 
 float UBikeComponent::GetPoseTime() const
@@ -533,13 +611,14 @@ void UBikeComponent::FollowGround(float Dt)
  if(Rider->GetCharacterMovement()->IsMovingOnGround()&&State!=EState::Crashing)
  {
   const FTransform Base=FTransform(MeshRotation,MeshLocation)*Rider->GetActorTransform();
-  FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeWheels),false,Rider);
+  const bool Online=JapanNetwork::IsOnline(GetWorld());
+  FCollisionQueryParams Q=Online?JapanGameplayCollision::Query(GetWorld(),SCENE_QUERY_STAT(BikeWheels),false):FCollisionQueryParams(SCENE_QUERY_STAT(BikeWheels),false,Rider);Q.AddIgnoredActor(Rider);
   // Under each wheel: the ground, or (nothing within reach) a drop it eases down over, or (higher than a curb, or a
   // wall's face) the top of something the wheel has met, which leaves that wheel where it was.
   for(int32 I=0;I<2;++I)
   {
    const FVector P=Base.TransformPosition(FVector(I?RearAxle.X:FrontAxle.X,0,0));FHitResult H;
-   if(!GetWorld()->LineTraceSingleByChannel(H,P+FVector(0,0,60),P-FVector(0,0,90),ECC_Visibility,Q))Want[I]=-40.f;
+   if(!GetWorld()->LineTraceSingleByChannel(H,P+FVector(0,0,60),P-FVector(0,0,90),Online?JapanGameplayCollision::Channel:ECC_Visibility,Q))Want[I]=-40.f;
    else if(H.ImpactNormal.Z<.6f||H.ImpactPoint.Z-Base.GetLocation().Z>25.f)Want[I]=WheelGround[I];
    else Want[I]=FMath::Max(H.ImpactPoint.Z-Base.GetLocation().Z,-40.f);
   }
@@ -611,4 +690,10 @@ void UBikeComponent::ClothColliders(bool bOn)
  if(!ClothBodies)return;
  Mesh->RemoveClothCollisionSource(Mesh,ClothBodies);
  if(bOn)Mesh->AddClothCollisionSource(Mesh,ClothBodies);
+}
+
+float UBikeComponent::GetAuthoredLift() const
+{
+ TArray<float> Sample;const auto* Value=Channels(Sample);
+ return Value&&Value->IsValidIndex(ChLift)?(*Value)[ChLift]*100.f:0.f;
 }
