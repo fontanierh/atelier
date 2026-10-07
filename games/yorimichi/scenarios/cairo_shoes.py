@@ -5,9 +5,13 @@ grass, each foot's height over the ground measured every frame, and sole close-u
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/cairo_shoes.py
     ... wait for build/yorimichi/cairo/shoes/<take>/done.json
 
-Two places: the Sunset Pier deck between long_ledge and flatbar_red (skatepark x -24 to -16, y 35: bare concrete), and the
-clear, nearly flat ground south-east of the forest lake's cabin (botw_moves' RUN: grass). At each, Cairo stands 3 s, walks
-6 m across the camera's view and stands again. Stills: a wide side-on view standing; close-ups of each shoe from its own
+Two places: the Sunset Pier deck between long_ledge and flatbar_red (skatepark x -24 to -16, y 35: bare concrete), and
+grass by the forest lake's cabin, from (-51, 235) north to (-51, 241) (an 8 m corridor measured level to 0.6 cm in the
+game; GRASS=((x, y), (x, y)) in island metres sets another). Should that grass ever stop being level, the levellest 6 m
+line by GroundAt within 20 m of it, above the lake's surface, is used. A place whose ground spans more than 10 cm along
+the walk, or with no ground under any point of it, is reported as not level and its foot checks are skipped. At each, Cairo stands 3 s, walks 6 m across
+the camera's view and stands again; the walk is checked to be the merged move set's (ground mode, not the legacy set,
+walking speed). Stills: a wide side-on view standing; close-ups of each shoe from its own
 side, the camera 3 cm over the floor and 70 cm away, standing before and after the walk; and every 0.3 s of the walk,
 a camera 1.2 m to his left at the same height tracking his feet. The close-ups are the evidence that the shoe mesh meets
 the floor: the joint heights below are only a proxy for the sole.
@@ -38,7 +42,9 @@ PIER = (-110., -234., 1.8)    # skatepark/park.json origin (island metres): skat
 # Name, start, toward, and a height near the ground there (m): the player is placed on the ground under it, traced from
 # 20 m above.
 PLACES = [('concrete', (PIER[0] - 24., PIER[1] + 35.), (PIER[0] - 16., PIER[1] + 35.), PIER[2] + 1.),
-          ('grass', (-30., 215.), (-35., 206.34), 75.)]
+          ('grass', *(globals().get('GRASS') or ((-51., 235.), (-51., 241.))), 76.)]
+LAKE_Z = 75.                                 # the forest lake's surface (m, world.json)
+LEVEL = 10.                                  # cm: the most the ground may rise or fall along a walk
 ONLY = globals().get('ONLY') or [p[0] for p in PLACES]
 if isinstance(ONLY, str) or not set(ONLY) <= {p[0] for p in PLACES}:
     raise ValueError(f'ONLY must list places from {[p[0] for p in PLACES]}, got {ONLY!r}')
@@ -103,7 +109,9 @@ def wait(seconds):
 def watch(seconds, phase):
     seen, t = [], 0.
     while t < seconds:
-        h = heights(); h['t'] = round(t, 3); h['phase'] = phase; h['action'] = state().get('action')
+        s = state()
+        h = heights(); h['t'] = round(t, 3); h['phase'] = phase
+        h.update(action=s.get('action'), mode=s.get('mode'), speed=round(s.get('speed', 0.), 1), legacy=bool(s.get('legacy')))
         seen.append(h); st['log'].append(dict(place=st['place'], **h))
         t += (yield)
     return seen
@@ -139,20 +147,65 @@ def soles(heading, when):
     MV.restore_player_camera()
 
 
+def along(start, toward, height, n=7):
+    """Ground heights (cm) at n points from start to toward; None where nothing lies under a point (GroundAt then
+    answers the height it was asked from, which would read as level ground)."""
+    out = []
+    for k in range(n):
+        at = ue(start[0] + (toward[0] - start[0]) * k / (n - 1), start[1] + (toward[1] - start[1]) * k / (n - 1), height)
+        z = L.ground_at(at).z
+        out.append(None if abs(z - at.z) < 1e-3 else z)
+    return out
+
+
+def spread(ground):
+    """How far the ground rises or falls along a walk (cm); infinite when any point has no ground."""
+    return math.inf if None in ground else max(ground) - min(ground)
+
+
+def level_line(near, height, reach=20., step=5., length=6.):
+    """The levellest walk of `length` m within `reach` m of `near`, its ground above the lake's surface and spanning
+    under LEVEL: (start, toward), or None. The stills show what it stands on."""
+    best = None
+    for dx in range(-int(reach), int(reach) + 1, int(step)):
+        for dy in range(-int(reach), int(reach) + 1, int(step)):
+            start = (near[0] + dx, near[1] + dy)
+            for a in range(0, 360, 45):
+                toward = (start[0] + length * math.cos(math.radians(a)), start[1] + length * math.sin(math.radians(a)))
+                g = along(start, toward, height)
+                if spread(g) >= LEVEL or min(g) < (LAKE_Z + .2) * 100.:
+                    continue
+                if best is None or spread(g) < best[0]:
+                    best = (spread(g), start, toward)
+    return best and best[1:]
+
+
 def visit(name, start, toward, height):
     st['place'] = name
+    ground = along(start, toward, height)
+    if name == 'grass' and spread(ground) > LEVEL:
+        found = level_line(start, height)
+        check('a level place was found', found is not None, near=list(start), span_there_cm=round(spread(ground), 1),
+              no_ground_points=ground.count(None))
+        if found is None:
+            return
+        start, toward = found
+        ground = along(start, toward, height)
+    span = spread(ground)                 # gated unrounded: 10.04 cm is not level; no ground is not level either
+    check('the walk is level', span <= LEVEL, ground_span_cm=round(span, 2) if span < math.inf else None,
+          no_ground_points=ground.count(None), start=[round(v, 2) for v in start], toward=[round(v, 2) for v in toward])
+    if span > LEVEL:
+        return
     heading = yaw_to(start, toward)
     st['camera'] = unreal.Rotator(0, -4, heading - 90.)    # pitch -4, yaw 90 degrees left of his heading: side-on
     live.drive(0)
     L.teleport_player(ue(*start, height), heading)
     yield from wait(2.5)
-    ground = [L.ground_at(ue(start[0] + (toward[0] - start[0]) * k / 6, start[1] + (toward[1] - start[1]) * k / 6, height)).z for k in range(7)]
     still = yield from watch(3., 'idle')
     shot('idle')
     yield from soles(heading, 'standing')
     toes = {b: round(sum(h[b] for h in still) / len(still), 2) for b in BONES}
-    check('standing: toe joints at rest height (proxy)', all(LOW <= toes[b] <= HIGH for b in ('toe_L', 'toe_R')), heights=toes,
-          ground_span_cm=round(max(ground) - min(ground), 1))
+    check('standing: toe joints at rest height (proxy)', all(LOW <= toes[b] <= HIGH for b in ('toe_L', 'toe_R')), heights=toes)
     live.drive(0., 1., 'walk')     # the stick's frame is side-on, so camera-right is his heading
     st['track'] = heading
     walk = []
@@ -169,8 +222,13 @@ def visit(name, start, toward, height):
     walk = [h for h in walk if not h['blocked']] or walk
     plant = {b: planted(walk, b) for b in ('toe_L', 'toe_R', 'foot_L', 'foot_R')}
     lowest = {b: min(h[b] for h in walk) for b in ('toe_L', 'toe_R')}
+    speeds = sorted(h['speed'] for h in walk)
+    modes = sorted({h['mode'] for h in walk})
+    check('walking on the merged move set', modes == ['ground'] and not any(h['legacy'] for h in walk) and speeds[len(speeds) // 2] > 50.,
+          modes=modes, legacy=any(h['legacy'] for h in walk), median_speed=round(speeds[len(speeds) // 2]),
+          actions=sorted({h['action'] for h in walk}))
     check('walking: planted toe joints at rest height (proxy)', all(LOW <= plant[b] <= HIGH for b in ('toe_L', 'toe_R')),
-          planted=plant, actions=sorted({h['action'] for h in walk}))
+          planted=plant)
     check('walking: no toe joint near the floor (proxy)', all(v >= FLOOR for v in lowest.values()), lowest=lowest)
     yield from wait(1.)
     still = yield from watch(1.5, 'stop')
