@@ -68,6 +68,19 @@ Clicking a blue **M** pin selects and returns to that place. With the map open, 
 button returns; the hint names the connected pad's buttons. Controller users can choose any saved pin with the
 stick or d-pad and travel with the bottom face button. The phone receives the same named marker zones.
 
+**In the game with a controller.** Hold **View** (Touchpad, Minus) for 0.4 s to open the saved-places bar at the
+bottom of the screen; a tap still opens the map. The bar shows the selected place, its position in the list and
+its distance:
+- the d-pad, left stick or shoulders choose a place;
+- the top face button saves here as a new `Marker N` and closes;
+- the bottom or left face button returns there and closes;
+- d-pad Down twice deletes the selected place;
+- the right face button, View or Menu closes.
+
+The game pauses input while the bar is open, as it does for the map, so no jump or sword fires behind it. The keyboard
+works in the bar too: arrows, F5, Enter or F9, Delete twice, Esc. Messages after a save or a refused return name the
+connected pad's buttons.
+
 Up to 64 places are saved, with unique names of 1–48 characters. Positions, headings and the selected marker are
 written to `markers.json` beside the game's preferences file (normally `unreal/Saved/settings.txt` in development;
 in the packaged game's user container beside `settings.txt`). They survive character switches and game restarts,
@@ -80,7 +93,8 @@ save attempt also leaves previous places intact.
 
 The durable review scenario is `uv run atelier qa yorimichi session_marker --port PORT --save-file FILE`. Start a
 fresh guarded CairoBotw game with `-markersave=FILE` pointing to a new review file; the scenario refuses to operate
-on a game using the player's normal save. It checks keyboard input, several named places, selection, rename/delete,
+on a game using the player's normal save. It checks keyboard input, the controller's View tap and hold, the
+saved-places bar (choose, save, return, two-press delete, close), several named places, selection, rename/delete,
 map/phone travel, text-input isolation and Enter-to-save, airborne refusal, roofs, blocked or removed floors and
 character switches. Restart with the same review save and add `--reload` to verify persisted places, headings and selection. Evidence goes to
 `build/yorimichi/session-marker/review/`; test files remain under `build/`.
@@ -155,6 +169,7 @@ belong in the archive; an existing ledger is never removed to retry an uncertain
 - **Controller:** View / Touchpad / Minus opens and closes it. The left stick moves a reticle that catches the nearest
   pin, the d-pad hops to the nearest pin in that direction, the right stick pans, the shoulders zoom about the
   reticle, the bottom button travels and the right button closes. The top/left buttons set/return to the selected saved marker;
+  holding View outside the map opens the saved-places bar instead (see Saved skate-line markers);
   other pad buttons are swallowed. Moving the mouse
   hands the sheet back to hover and click; the header and hint lines name the connected pad's buttons.
 - **Phone:** `{action:"map"}` returns the bounds, knots, zones and the sheet URL (`/map/map.jpg`, served from

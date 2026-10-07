@@ -21,7 +21,9 @@ struct FJapanMapZone
 /** The world map (Content/Data/map: the painted sheet plus map.json with its bounds and the teleport zones).
  *  Desktop: M (or the controller's View / Touchpad) opens a full-screen overlay showing the whole world, the player's
  *  position and heading, and the zones as pins; clicking a pin travels there. With a controller, the left stick or d-pad
- *  picks a pin and the bottom button travels. Phones get the same data over the stream and draw the map themselves. */
+ *  picks a pin and the bottom button travels. Holding View instead opens the saved-places bar over the game, so a
+ *  controller can save, choose, return to and delete markers without the map or a keyboard. Phones get the same data
+ *  over the stream and draw the map themselves. */
 UCLASS()
 class YORIMICHI_API UJapanMap : public UObject
 {
@@ -31,7 +33,11 @@ public:
     bool IsLoaded() const { return bLoaded; }
     bool IsOpen() const { return Widget.IsValid(); }
     void Open();
+    /** Closes the map and the saved-places bar. */
     void Close();
+    void OpenMarkerBar();
+    void CloseMarkerBar();
+    UFUNCTION(BlueprintPure, Category = "Map") bool IsMarkerBarOpen() const { return MarkerBar.IsValid(); }
     void Toggle() { if (IsOpen()) Close(); else Open(); }
     const TArray<FJapanMapZone>& GetZones() const;
     /** Save a new place on solid ground, using the next unused Marker N name. */
@@ -51,6 +57,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Map|Review") FString ReviewMarkerNameInput(const FString& Text);
     UFUNCTION(BlueprintCallable, Category = "Map|Review") bool ReviewCommitMarkerName();
     UFUNCTION(BlueprintPure, Category = "Map|Review") bool IsMarkerReviewOnVehicle() const;
+    /** Review the bar's real focused Slate key path: one press and release of Key; requires the bar already open. */
+    UFUNCTION(BlueprintCallable, Category = "Map|Review") bool ReviewMarkerBarKey(const FString& Key);
     UFUNCTION(BlueprintPure, Category = "Map") bool IsMapOpen() const { return IsOpen(); }
     void CycleMarker(int32 Direction);
     bool IsEditingMarkerName() const;
@@ -74,7 +82,7 @@ private:
     mutable TArray<FJapanMapZone> Zones;
     TArray<FVector2D> ProjectionX,ProjectionY;
     FBox2D Bounds = FBox2D(FVector2D(-300, -300), FVector2D(300, 300));
-    TSharedPtr<SWidget> Widget;
+    TSharedPtr<SWidget> Widget, MarkerBar;
     FString ImageFile;
     TSharedPtr<SEditableTextBox> MarkerName;
     FJapanMarkers* MarkerStore() const;
