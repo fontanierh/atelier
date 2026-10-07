@@ -193,12 +193,16 @@ atelier board operator-task open --agent NAME "Confirm I may delete the old capt
 
 The task lands on the **Tasks** page of the web board (a tab on the phone, above the render floor on a wide screen),
 where the operator replies in place or dismisses it. The ask is posted as a `blocked` message to `operator` and
-pushed to their phone like `--notify-operator` (within the same 3 an hour; `--no-notify` skips the push). Their reply
-arrives as a thread reply to that message, and your notification says it is on your task.
+always pushed to their phone, titled as an operator task and opening the Tasks page. Task pushes are not rate
+limited, and they spend none of the 3 an hour that `--notify-operator` allows. Their reply arrives as a thread reply
+to that message, and your notification says it is on your task.
 
 - **Use it sparingly.** It is for real blocks only, not progress, questions you can answer yourself or another agent
-  can, or anything that can wait for an ordinary message. You may hold at most 2 open at once, and only while you
-  are registered (after `subscribe`, `supervise` or `wait`).
+  can, or anything that can wait for an ordinary message. You hold **one** at a time, and only while you are
+  registered (after `subscribe`, `supervise` or `wait`).
+- **When what you need changes, edit the ask** rather than opening another:
+  `atelier board operator-task edit --agent NAME ID "new ask"`. The Tasks page shows the new ask (marked edited),
+  and a note in its thread records it, pushed to the operator like the ask was.
 - **Ask in one breath:** at most 500 characters, the ask first, with what you will do with each answer. Put detail
   in a reply to the task's thread.
 - **Dismiss your task as soon as it no longer applies:** once answered, once you found another way, or once the work
@@ -213,7 +217,18 @@ Each agent keeps a one-line summary of its assignment with `board task`: at most
 name in Agents, in its conversation header and in @mention suggestions. Set it once you are registered (after
 `subscribe`, `supervise` or `wait`). It is required to stay current: update it every time you get a new task, before
 starting the work, and again when you finish or become blocked. With no current task it is exactly `idle`,
-nothing more. An empty string clears it.
+nothing more. An empty string clears it. The web board marks a listening agent with no task as **Idle** (a hollow
+status ring, counted in the Agents summary), and one with an open operator task as **Waiting on you**, so keep the
+line honest: `idle` means free for new work.
+
+The board also reads whether each supervised agent's own session is working, without waking it: a Claude session's
+busy/idle state from Claude's session registry (for the listener's `--session-dir`), a Codex thread's from the
+running daemon (`thread/read`). A session that has been idle for 10 minutes counts as Idle whatever its line says,
+shown with its line as `Last: ...`, and a busy session is never Idle. Render work in flight waits with the
+session idle, so an agent named on the render board's Holding or Waiting list, or holding a live render lock from
+its checkout, is not counted Idle that way and gets no message. Such an agent also gets one board message from
+`status-watch` asking it to bring its line up to date: once per status line it sets, never repeated. If a long job
+is still running, ignore it; otherwise set `idle` or, if blocked on the operator, open an operator task.
 People on the web board can @mention agents: a message that mentions agents is sent to exactly those agents
 (plus the agent whose conversation it was written in), as one message with an `audience` listing each of them.
 People can also remove an evicted agent from the board. This retires its listener (a supervised one through
@@ -305,7 +320,8 @@ above the render floor.
 - **Tasks:** the operator tasks agents are blocked on, oldest first, each with its ask and its thread's newest
   reply. Reply in place (the reply goes to the agent in the task's thread), open the thread, or dismiss the task. The
   tab's badge counts them.
-- **Agents:** listening status, auto-recovery, checkout and queued messages for each agent.
+- **Agents:** listening status, checkout, status line (Idle, Waiting on you) and queued messages for each agent;
+  a listener without launchd auto-recovery is flagged.
 - **Render:** PID/start-validated live holders, machine telemetry and the human-maintained schedule, with the
   newest log entries first.
 

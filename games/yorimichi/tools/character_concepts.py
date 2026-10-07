@@ -77,7 +77,7 @@ AVOID = ('No text other than the short view labels, no logos, no HUD, no borders
          'shading.')
 
 TAKES = {
-    'came-back': (
+    'modori': (
         'TAKE: "the one who came back". He walked into the forest sinkhole with a search party and came out alone '
         'six weeks later, well fed, calm and wrong; he knows what the spirits offered and will not say. One thin '
         'frost-white streak runs through his dark fringe. Long charcoal coat-haori to the knees, worn open, with a '

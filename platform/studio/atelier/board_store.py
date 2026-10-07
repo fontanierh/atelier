@@ -62,8 +62,10 @@ def database():
                 error TEXT
             );
         ''')
-        # `task` is the agent's one-line assignment; `removed` hides an evicted agent from the board's lists.
-        for column, kind in (('supervised', 'TEXT'), ('task', 'TEXT'), ('removed', 'INTEGER NOT NULL DEFAULT 0')):
+        # `task` is the agent's one-line assignment (set at `task_at`); `removed` hides an evicted agent from the
+        # board's lists; `session` is whether its own session is 'busy' or 'idle', since `session_since`.
+        for column, kind in (('supervised', 'TEXT'), ('task', 'TEXT'), ('removed', 'INTEGER NOT NULL DEFAULT 0'),
+                             ('task_at', 'REAL'), ('session', 'TEXT'), ('session_since', 'REAL')):
             if column not in {row['name'] for row in db.execute('PRAGMA table_info(subscribers)')}:
                 try:
                     db.execute(f'ALTER TABLE subscribers ADD COLUMN {column} {kind}')
@@ -77,6 +79,14 @@ def database():
             except sqlite3.OperationalError:
                 if 'notify' not in {row['name'] for row in db.execute('PRAGMA table_info(messages)')}:
                     raise
+        # An operator task's `body` is its ask once its agent edited it (the original stays in its message).
+        for column, kind in (('body', 'TEXT'), ('edited', 'REAL')):
+            if column not in {row['name'] for row in db.execute('PRAGMA table_info(operator_tasks)')}:
+                try:
+                    db.execute(f'ALTER TABLE operator_tasks ADD COLUMN {column} {kind}')
+                except sqlite3.OperationalError:
+                    if column not in {row['name'] for row in db.execute('PRAGMA table_info(operator_tasks)')}:
+                        raise
         yield db
         db.commit()
     finally:
@@ -89,7 +99,11 @@ NOTIFY_PER_HOUR = 3
 
 def notify_allowed(db, sender, now=None):
     since = (now or time.time()) - 3600
-    used = db.execute('SELECT count(*) FROM messages WHERE sender=? AND notify=1 AND created>?', (sender, since))
+    # Operator task asks and edits always push, so they leave this allowance alone. Edit notes carry a TASK_EDIT
+    # dedup key, which only edit_task sets.
+    used = db.execute('SELECT count(*) FROM messages WHERE sender=? AND notify=1 AND created>? '
+                      'AND id NOT IN (SELECT message FROM operator_tasks) '
+                      "AND coalesce(dedup, '') NOT LIKE ?", (sender, since, TASK_EDIT + '%'))
     return used.fetchone()[0] < NOTIFY_PER_HOUR
 
 
@@ -145,7 +159,8 @@ def set_task(agent, text):
     if len(text) > 160:
         raise ValueError('keep the task to one line of at most 160 characters')
     with database() as db:
-        if not db.execute('UPDATE subscribers SET task=? WHERE agent=?', (text or None, agent)).rowcount:
+        if not db.execute('UPDATE subscribers SET task=?, task_at=? WHERE agent=?',
+                          (text or None, time.time(), agent)).rowcount:
             raise LookupError(f'{agent} is not registered on the board; subscribe or wait first')
     return text
 
@@ -171,36 +186,65 @@ def remove(agent):
 
 # Operator tasks: an agent that cannot go on without the operator's guidance, help or confirmation opens one, and the
 # web board lists it where the operator answers or dismisses it in a tap. They are for real blocks only: an agent
-# holds at most OPEN_TASKS at once, each says in a few lines what it needs, and the agent dismisses its own as soon
-# as it no longer applies. The question is an ordinary message to the operator, so answers are its thread replies.
-OPEN_TASKS, TASK_CHARS = 2, 500
+# holds at most OPEN_TASKS at once (editing its ask when what it needs changes), each says in a few lines what it
+# needs, and the agent dismisses its own as soon as it no longer applies. The question is an ordinary message to the
+# operator, so answers are its thread replies.
+OPEN_TASKS, TASK_CHARS = 1, 500
+TASK_EDIT = 'task-edit:'
 
 
-def open_task(agent, body, notify=True):
-    """Open an operator task for `agent`. It posts the question to the operator (a `blocked` message, pushed to their
-    phone within NOTIFY_PER_HOUR unless notify is off) and returns (task id, message id)."""
-    agent_name(agent)
-    if agent == OPERATOR:
-        raise ValueError('operator tasks are opened by agents, for the operator')
+def _ask(body):
     body = (body or '').strip()
     if not body or len(body) > TASK_CHARS:
         raise ValueError(f'say what you need from the operator in at most {TASK_CHARS} characters; put detail in a '
                          'reply to the task\'s thread')
+    return body
+
+
+def open_task(agent, body):
+    """Open an operator task for `agent`. It posts the question to the operator (a `blocked` message, always pushed to
+    their phone, outside NOTIFY_PER_HOUR) and returns (task id, message id)."""
+    agent_name(agent)
+    if agent == OPERATOR:
+        raise ValueError('operator tasks are opened by agents, for the operator')
+    body = _ask(body)
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
         if not db.execute('SELECT 1 FROM subscribers WHERE agent=? AND removed=0', (agent,)).fetchone():
             raise LookupError(f'{agent} is not on the board; subscribe before opening an operator task')
-        open_count = db.execute('SELECT count(*) FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,))
-        if open_count.fetchone()[0] >= OPEN_TASKS:
-            raise ValueError(f'you already have {OPEN_TASKS} open operator tasks; dismiss one that no longer applies '
-                             '(board operator-task list) or add to its thread instead')
+        held = [row[0] for row in db.execute(
+            'SELECT id FROM operator_tasks WHERE agent=? AND closed IS NULL ORDER BY id', (agent,))]
+        if len(held) >= OPEN_TASKS:
+            raise ValueError(f'you already have open operator task {held[0]}; change its ask (board operator-task edit '
+                             f'--agent {agent} {held[0]} "...") or dismiss it if it no longer applies')
         now = time.time()
-        notify = bool(notify) and notify_allowed(db, agent, now)
         message = db.execute('INSERT INTO messages (created, sender, recipient, topic, body, notify) '
-                             "VALUES (?, ?, ?, 'blocked', ?, ?)", (now, agent, OPERATOR, body, int(notify))).lastrowid
+                             "VALUES (?, ?, ?, 'blocked', ?, 1)", (now, agent, OPERATOR, body)).lastrowid
         task = db.execute('INSERT INTO operator_tasks (created, agent, message) VALUES (?, ?, ?)',
                           (now, agent, message)).lastrowid
     return task, message
+
+
+def edit_task(task_id, agent, body):
+    """Change the ask of `agent`'s open operator task. The Tasks page shows the new ask, and a note in its thread
+    records it, pushed to the operator like the ask was. Returns that note's message id."""
+    agent_name(agent)
+    body = _ask(body)
+    with database() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row = db.execute('SELECT * FROM operator_tasks WHERE id=?', (task_id,)).fetchone()
+        if row is None:
+            raise LookupError(f'operator task {task_id} does not exist')
+        if row['agent'] != agent:
+            raise ValueError(f"operator task {task_id} is {row['agent']}'s; only it can change the ask")
+        if row['closed'] is not None:
+            raise ValueError(f'operator task {task_id} was dismissed; open a new one if you still need the operator')
+        now = time.time()
+        db.execute('UPDATE operator_tasks SET body=?, edited=? WHERE id=?', (body, now, task_id))
+        return db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to, dedup, notify) "
+                          "VALUES (?, ?, ?, 'info', ?, ?, ?, 1)",
+                          (now, agent, OPERATOR, f'Updated the ask: {body}', row['message'],
+                           f'{TASK_EDIT}{task_id}:{uuid.uuid4().hex}')).lastrowid
 
 
 def close_task(task_id, by, note='', operator=False, removed=False):
@@ -249,13 +293,16 @@ def tasks(db, agent=None, include_closed=False):
         conditions.append('t.closed IS NULL')
     where = ' WHERE ' + ' AND '.join(conditions) if conditions else ''
     rows = [dict(row) for row in db.execute(
-        'SELECT t.*, m.body, m.created AS asked FROM operator_tasks t JOIN messages m ON m.id=t.message'
+        'SELECT t.id, t.created, t.agent, t.message, t.closed, t.closed_by, t.note, t.edited, '
+        'coalesce(t.body, m.body) AS body, m.created AS asked FROM operator_tasks t JOIN messages m ON m.id=t.message'
         + where + ' ORDER BY t.id LIMIT 200', parameters)]
     for row in rows:
         replies = db.execute(
             'WITH RECURSIVE r(id) AS (SELECT id FROM messages WHERE reply_to=? '
             'UNION SELECT m.id FROM messages m JOIN r ON m.reply_to=r.id) '
-            'SELECT sender, body, created FROM messages WHERE id IN r ORDER BY id', (row['message'],)).fetchall()
+            # An edit's note is the ask itself, already on the card, so it is not a reply.
+            "SELECT sender, body, created FROM messages WHERE id IN r AND coalesce(dedup, '') NOT LIKE ? ORDER BY id",
+            (row['message'], TASK_EDIT + '%')).fetchall()
         row['replies'] = len(replies)
         row['last_reply'] = dict(replies[-1]) if replies else None
     return rows

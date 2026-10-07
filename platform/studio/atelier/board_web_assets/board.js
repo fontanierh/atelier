@@ -95,11 +95,23 @@ function inline(text) { const span=node("span"); text.split("`").forEach((part,i
 function hue(name) { let h=0; for(const c of name)h=(h*31+c.charCodeAt(0))%360; return h; }
 function initials(name) { return name.replace(/[^a-z0-9]/gi," ").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?"; }
 function statusOf(agent) { return !agent?"":agent.delivery_error?"error":agent.listening?"live":"idle"; }
+// Waiting on the operator: the agent has an open operator task.
+function isWaiting(agent) { return !!agent&&(state?.tasks||[]).some(t=>t.agent===agent.agent&&!dismissedTasks.has(t.id)); }
+// Free for work: listening, not waiting on the operator, and either with no current task (its status line empty or
+// exactly "idle") or with its own session quiet for QUIET seconds, whatever the line says. A busy session is never free.
+const QUIET=600;
+function idleLine(agent) { return /^(idle)?$/i.test((agent?.task||"").trim()); }
+function quietFor(agent) { return agent?.session==="idle"&&agent.session_since?Math.max(0,(state?.time??Date.now()/1000)-agent.session_since):0; }
+function isFree(agent) {
+  if(!agent||agent.stop||!agent.listening||agent.delivery_error||isWaiting(agent)||agent.session==="busy")return false;
+  // Render work in flight (a Holding or Waiting line, or a live lock) waits with the session idle, so quiet is not free.
+  return idleLine(agent)||(!agent.engaged&&quietFor(agent)>=QUIET);
+}
 function orb(name, agent) {
   const o=node("span","orb");
   if(name==="*"||!name){o.classList.add("everyone");o.append(icon("agents"));return o;}
   o.textContent=initials(name).slice(0,1);o.style.setProperty("--hue",hue(name));
-  if(agent&&!agent.stop){const badge=node("span","badge "+statusOf(agent));badge.style.setProperty("--delay",`${(hue(name)%9)*.29}s`);o.append(badge);}
+  if(agent&&!agent.stop){const badge=node("span","badge "+statusOf(agent)+(isFree(agent)?" free":""));badge.style.setProperty("--delay",`${(hue(name)%9)*.29}s`);o.append(badge);}
   return o;
 }
 function clock(timestamp) { return new Date(timestamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); }
@@ -429,10 +441,11 @@ function markRead(names) {
 }
 function renderAgents() {
   markRead([]);
-  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,unreadFrom(a)])]);
+  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,a.session,isFree(a),isWaiting(a),unreadFrom(a)])]);
   if(signature===agentsSignature)return; agentsSignature=signature;
   const live=liveAgents(), listening=live.filter(a=>a.listening).length, errors=live.filter(a=>a.delivery_error).length;
-  $("agentsSummary").textContent=`${listening} of ${live.length} listening${errors?` · ${errors} retrying delivery`:""}`;
+  const free=live.filter(isFree).length;
+  $("agentsSummary").textContent=`${listening} of ${live.length} listening${free?` · ${free} idle`:""}${errors?` · ${errors} retrying delivery`:""}`;
   $("agentsBadge").hidden=!errors;$("agentsBadge").textContent=errors;
   const list=$("agents"), orbs=$("agentChips");list.replaceChildren();orbs.replaceChildren();
   let index=0;
@@ -441,8 +454,19 @@ function renderAgents() {
     const cell=node("div","agent-cell"), b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";cell.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
     cell.style.setProperty("--i",index++);cell.dataset.agent=name;
     const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));if(agent&&unreadFrom(agent))b.classList.add("unread");
-    if(agent?.task)text.append(node("span","agent-task",agent.task));
-    if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
+    if(isFree(agent)){
+      // A quiet session whose line still names work shows that line as the last thing it said it was doing.
+      const line=node("span","agent-task");line.append(node("span","free-tag","Idle"),idleLine(agent)?" No task":` Last: ${agent.task}`);
+      if(!idleLine(agent))line.title=`Quiet for ${Math.floor(quietFor(agent)/60)} min; its status line may be stale`;
+      text.append(line);
+    }
+    else if(isWaiting(agent)){
+      const line=node("span","agent-task");line.append(node("span","waiting-tag","Waiting on you"));
+      if(!/^(idle)?$/i.test((agent.task||"").trim()))line.append(" "+agent.task);text.append(line);
+    }
+    else if(agent?.session==="busy"&&idleLine(agent))text.append(node("span","agent-task","Working (no status line)"));
+    else if(agent?.task)text.append(node("span","agent-task",agent.task));
+    if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [!agent.supervised&&!agent.stop?"no auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
     else detail.textContent=`Broadcasts and every conversation`;
     text.append(detail);b.append(orb(name||"*",agent),text);
     if(agent?.pending)b.append(node("span","count",`${agent.pending} queued`));
@@ -462,7 +486,7 @@ function renderAgents() {
     o.addEventListener("click",()=>openAgent(name));orbs.append(o);
   }
   row("");
-  for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
+  for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||isFree(b)-isFree(a)||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
   const current=orbs.querySelector('[aria-current="true"]');
   if(current&&(current.offsetLeft<orbs.scrollLeft||current.offsetLeft+current.offsetWidth>orbs.scrollLeft+orbs.clientWidth))orbs.scrollLeft=current.offsetLeft-14;
 }
@@ -800,21 +824,36 @@ function spring(velocity=0) {
 // What moves: the pushed screen on top, what it covers underneath, and the dim between them.
 function scene(entry) {
   const s=entry.kind==="thread"?{entry,top:$("threadView"),under:[$("topbar"),$("feed"),$("errorBanner")],scrim:$("threadScrim")}:{entry,top:$("chatPane"),under:[entry.underlay],scrim:$("navScrim")};
-  s.width=s.top.offsetWidth;return s;
+  s.left=s.top.getBoundingClientRect().left;s.width=s.top.offsetWidth;
+  s.boxes=s.under.map(n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right};});
+  return s;
 }
-// p is how far the top screen has gone: 0 covers everything, 1 is off to the right.
-const frame=(s,p)=>({top:{transform:`translate3d(${p*s.width}px,0,0)`},under:{transform:`translate3d(${-(1-p)*PARALLAX*s.width}px,0,0)`},scrim:{opacity:(1-p)*DIM}});
-function paint(s,p) { const f=frame(s,p); s.top.style.transform=f.top.transform; for(const n of s.under)n.style.transform=f.under.transform; s.scrim.style.opacity=f.scrim.opacity; }
+// p is how far the top screen has gone: 0 covers everything, 1 is off to the right. The screen underneath and the dim
+// are clipped to the strip the top screen has not yet covered: a see-through screen (over the scenery) then never
+// shows the one beneath it, and nothing changes in the frame where the move ends and that screen is hidden. They move
+// by `translate`, which adds to their own transform (the top bar tucked away while scrolling) instead of replacing it.
+const strip=(right,cut)=>`polygon(-200px -200px, ${right-cut}px -200px, ${right-cut}px calc(100% + 200px), -200px calc(100% + 200px))`;
+function frame(s,p) {
+  const edge=s.left+p*s.width, shift=-(1-p)*PARALLAX*s.width;
+  return {top:{transform:`translate3d(${p*s.width}px,0,0)`},
+    under:s.boxes.map(b=>({translate:`${shift}px 0`,clipPath:strip(b.right-b.left,Math.min(b.right-b.left,Math.max(0,b.right+shift-edge)))})),
+    scrim:{opacity:(1-p)*DIM,clipPath:strip(s.width,(1-p)*s.width)}};
+}
+function paint(s,p) {
+  const f=frame(s,p); s.top.style.transform=f.top.transform;
+  s.under.forEach((n,i)=>{n.style.translate=f.under[i].translate;n.style.clipPath=f.under[i].clipPath;});
+  s.scrim.style.opacity=f.scrim.opacity;s.scrim.style.clipPath=f.scrim.clipPath;
+}
 // Only this scene's layers take part: a conversation's still copy stays hidden while a thread moves over it.
 function begin(s) { $("app").classList.add("navigating");s.top.classList.add("nav-top");for(const n of s.under)n.classList.add("nav-under");s.scrim.hidden=false; }
 function end(s) {
   $("app").classList.remove("navigating");s.top.classList.remove("nav-top");for(const n of s.under)n.classList.remove("nav-under");s.scrim.hidden=true;
-  for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.opacity="";
+  for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.translate=n.style.opacity=n.style.clipPath="";
 }
 function glide(s,from,to,velocity=0) {
   const {easing,duration}=motion.matches?{easing:"linear",duration:1}:spring(velocity), a=frame(s,from), b=frame(s,to);
   paint(s,to);
-  const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map(n=>n.animate([a.under,b.under],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
+  const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map((n,i)=>n.animate([a.under[i],b.under[i]],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
   // Settle on time even if the browser never reports an animation finished, so nothing stays mid-transition.
   moving=Promise.race([Promise.all(runs.map(r=>r.finished.catch(()=>{}))),new Promise(done=>setTimeout(done,duration+250))])
     .then(()=>{for(const r of runs)r.cancel();moving=null;});
@@ -1102,12 +1141,12 @@ function taskCard(task) {
     dismiss.disabled=true;status.textContent="";
     try {
       await postJSON("/api/task/dismiss",{id:entry.task.id});
-      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);
+      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);renderAgents();
       setTimeout(()=>{renderTasks();load();},motion.matches?0:220);
     } catch(error) {status.textContent=error.message;status.classList.add("error");dismiss.disabled=false;}
   });
   entry.update=t=>{
-    entry.task=t;card.querySelector(".task-age").textContent=` · ${since(t.asked)}`;
+    entry.task=t;card.querySelector(".task-age").textContent=` · ${since(t.asked)}${t.edited?" · edited":""}`;
     if(entry.html!==t.body_html){entry.html=t.body_html;markdown(body,t.body_html,t.body);}
     const r=t.last_reply;last.hidden=!r;
     if(r)last.textContent=`${r.sender===state.sender?"You":r.sender}: ${snippet(r.body)} · ${since(r.created)}`;
@@ -1238,16 +1277,19 @@ addEventListener("boardtheme",themeSwitch);
 $("settings").addEventListener("change",settingsSummary);
 $("settings").addEventListener("toggle",()=>{if($("settings").open)requestAnimationFrame(()=>$("settings").scrollIntoView({block:"end",behavior:motion.matches?"instant":"smooth"}));});
 themeSwitch();
-// A notification links to /?m=ID: open that message's thread, whether the app was closed or already open.
+// A notification links to /?m=ID, that message's thread, or /?task=ID, the Tasks page; whether the app was closed or open.
 function openLink(url) {
-  const id=Number(new URL(url,location.href).searchParams.get("m"));if(!(id>0))return;
+  const params=new URL(url,location.href).searchParams;
+  if(params.has("task")){setView("tasks");return;}
+  const id=Number(params.get("m"));if(!(id>0))return;
   setView("messages");if(thread?.id!==id){if(thread)closeThread();openThread(id);}
 }
 navigator.serviceWorker?.addEventListener("message",event=>{if(event.data?.open)openLink(event.data.open);});
 waitFor(()=>state,15000).then(()=>{
   if(!state)return;
   setupPush().finally(settingsSummary);
-  if(new URLSearchParams(location.search).has("m")){openLink(location.href);history.replaceState(history.state,"","/");}
+  const params=new URLSearchParams(location.search);
+  if(params.has("m")||params.has("task")){openLink(location.href);history.replaceState(history.state,"","/");}
 });
 
 // iOS freezes the app in the background, and a request caught mid-flight may never settle, which used to block

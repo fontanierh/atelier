@@ -1,15 +1,15 @@
 {
-  "stage": "came-back-tpose",
+  "stage": "modori-tpose",
   "view": "body-back",
   "requested_model": "gpt-image-2.5-sunburst",
   "quality": "high",
   "size": "1024x1024",
   "endpoint": "/v1/images/edits",
-  "execution": "games/yorimichi/tools/came_back_tpose.py",
+  "execution": "games/yorimichi/tools/modori_tpose.py",
   "prompt_file": "body-back.prompt.txt",
   "prompt_sha256": "8c9ef0203f534dfaee7652c59fd76ac3d4e30dd42d1cd5e17a0a08bfa61faac4",
   "reference_files": {
-    "build/yorimichi/characters/concepts/came-back-tpose/back.png": "cf4c8fc98139071d76b1a69dfae62b995657aa1de9bd924c878c181d5f81d9a5"
+    "build/yorimichi/characters/concepts/modori-tpose/back.png": "cf4c8fc98139071d76b1a69dfae62b995657aa1de9bd924c878c181d5f81d9a5"
   },
   "hashes": "of the files as the API saw and returned them; the full-size PNG stays in build/",
   "status": "done",

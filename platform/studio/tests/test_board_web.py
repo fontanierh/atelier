@@ -458,12 +458,23 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     board.poll('one')
     assert next(item for item in delivered if item['id'] == deeper)['operator_task'] == task
 
-    # Agents hold few open at once and keep asks short; only the asker or the operator dismisses one.
-    second, _ = board.open_task('one', 'Second ask.', notify=False)
-    with pytest.raises(ValueError, match='open operator tasks'):
-        board.open_task('one', 'A third.')
+    # An agent holds one task and keeps its ask short, editing it when what it needs changes; the operator sees the
+    # new ask and is notified, in the task's thread.
+    with pytest.raises(ValueError, match=f'already have open operator task {task}'):
+        board.open_task('one', 'Second ask.')
     with pytest.raises(ValueError):
         board.open_task('two', 'x' * (board.TASK_CHARS + 1))
+    edit = board.edit_task(task, 'one', 'Confirm I may delete the old captures **and** logs?')
+    with board.database() as db:
+        row = db.execute('SELECT * FROM messages WHERE id=?', (edit,)).fetchone()
+    assert (row['sender'], row['recipient'], row['reply_to'], row['notify']) == ('one', 'operator', message, 1)
+    shown = json.loads(request(http_server, '/api/state')[1])['tasks'][0]
+    assert '<strong>and</strong> logs' in shown['body_html'] and shown['edited'] and shown['replies'] == 2
+    for who, text, error in (('two', 'Mine now.', ValueError), ('one', 'x' * (board.TASK_CHARS + 1), ValueError)):
+        with pytest.raises(error):
+            board.edit_task(task, who, text)
+    with pytest.raises(LookupError):
+        board.edit_task(999, 'one', 'Anyone?')
     with pytest.raises(ValueError):
         board.close_task(task, 'two')
     with pytest.raises(LookupError):
@@ -480,8 +491,11 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     note = board.messages()[-1]
     assert note['sender'] == 'operator' and note['recipient'] == 'one' and note['reply_to'] == message
     assert board.close_task(task, 'operator', operator=True) is False
+    with pytest.raises(ValueError, match='was dismissed'):
+        board.edit_task(task, 'one', 'Still there?')
 
     # The agent dismisses its own from the command line.
+    second, _ = board.open_task('one', 'Second ask.')
     args = SimpleNamespace(action='operator-task', task_action='dismiss', agent='one', id=second, note='Solved it.')
     assert board.main(args) == 0 and 'dismissed' in capsys.readouterr().out
     assert board.messages()[-1]['body'].endswith('Solved it.')
@@ -490,10 +504,10 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
         assert len(board.tasks(db, 'one', include_closed=True)) == 2
 
     # Nobody stays blocked on a removed agent's behalf, and the operator never opens tasks.
-    board.open_task('two', 'Still need you.', notify=False)
+    board.open_task('two', 'Still need you.')
     assert request(http_server, '/api/remove', {'agent': 'two'})[0] == 200
     assert json.loads(request(http_server, '/api/state')[1])['tasks'] == []
-    args = SimpleNamespace(action='operator-task', task_action='open', agent='operator', no_notify=True, message='Hi')
+    args = SimpleNamespace(action='operator-task', task_action='open', agent='operator', message='Hi')
     assert board.main(args) == 1
     # Only registered agents ask, so neither an unknown name nor a removed agent can go around the cap.
     for name in ('ghost', 'two'):
@@ -504,7 +518,7 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
 def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
     import io
     from atelier.cli import parse_args
-    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', '--no-notify', 'Need your OK.'])) == 0
+    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', 'Need your OK.'])) == 0
     assert 'operator task 1' in capsys.readouterr().out
     assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one'])) == 0
     listed = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
@@ -522,17 +536,29 @@ def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
     with board.database() as db:
         assert board.tasks(db, 'one') == []
 
-    # The push shares the agent's hourly allowance with --notify-operator.
-    for _ in range(board.NOTIFY_PER_HOUR):
-        board.post('two', 'Look at this.', 'operator', notify=True)
-    _, message = board.open_task('two', 'Need your OK, quietly.')
+    # An ask always pushes, and spends none of the agent's hourly allowance for --notify-operator.
+    for _ in range(board.NOTIFY_PER_HOUR):   # after task 1's ask, which pushed
+        board.post('one', 'Look at this.', 'operator', notify=True)
+    again, _ = board.open_task('one', 'Need your OK again.')
+    assert board.main(parse_args(['board', 'operator-task', 'edit', '--agent', 'one', str(again), 'Need your OK.'])) == 0
+    assert capsys.readouterr().out.startswith(f'operator task {again} updated')
     with board.database() as db:
-        assert db.execute('SELECT notify FROM messages WHERE id=?', (message,)).fetchone()[0] == 0
+        flags = [row[0] for row in db.execute(
+            "SELECT notify FROM messages WHERE sender='one' AND (topic='blocked' OR body='Look at this.' "
+            "OR body LIKE 'Updated the ask:%') ORDER BY id")]
+    assert flags == [1] * (board.NOTIFY_PER_HOUR + 3)
+    # Other pushed replies in a task's thread still spend the allowance, even worded like an edit's note.
+    with board.database() as db:
+        asked = db.execute('SELECT message FROM operator_tasks WHERE id=?', (again,)).fetchone()[0]
+    for _ in range(board.NOTIFY_PER_HOUR):
+        board.post('two', 'Updated the ask: mine now.', 'operator', reply_to=asked, notify=True)
+    with board.database() as db:
+        assert not board.notify_allowed(db, 'two')
 
     # Concurrent asks still respect the cap.
     def ask(i):
         try:
-            return board.open_task('paused', f'Ask {i}.', notify=False)
+            return board.open_task('paused', f'Ask {i}.')
         except ValueError:
             return None
     with ThreadPoolExecutor(8) as pool:

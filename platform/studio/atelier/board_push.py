@@ -140,14 +140,18 @@ def vapid(endpoint, subject, key=None):
 
 
 def payload(message):
-    """What the notification shows, and where tapping it goes: the message's thread."""
+    """What the notification shows, and where tapping it goes: the message's thread, or the Tasks page for an
+    operator task's ask and anything flagged in its thread (an edited ask)."""
     text = split_attachments(message['body'])[0]
     text = re.sub(r'[*_`#>]+', '', text)
     text = ' '.join(text.split())
     topic = TOPIC_NAMES.get(message['topic'], message['topic']) if message['topic'] != 'info' else ''
+    if message.get('task'):
+        topic = 'Operator task'
     return {'title': message['sender'] + (f' · {topic}' if topic else ''),
             'body': text[:240] + ('…' if len(text) > 240 else '') or 'Sent you files',
-            'url': f"/?m={message['id']}", 'tag': f"board-{message['id']}"}
+            'url': f"/?task={message['task']}" if message.get('task') else f"/?m={message['id']}",
+            'tag': f"board-{message['id']}"}
 
 
 def send(message, subject, client=None, key=None):
@@ -193,7 +197,9 @@ class Pusher(threading.Thread):
     def due(self):
         with self.connect() as db:
             return [dict(row) for row in db.execute(
-                'SELECT * FROM messages WHERE id>? AND notify=1 AND sender!=? ORDER BY id LIMIT 20',
+                'SELECT m.*, t.id AS task FROM messages m '
+                'LEFT JOIN operator_tasks t ON t.message IN (m.id, m.reply_to) '
+                'WHERE m.id>? AND m.notify=1 AND m.sender!=? ORDER BY m.id LIMIT 20',
                 (self.after, self.sender))]
 
     def step(self, client=None):

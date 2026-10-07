@@ -101,13 +101,15 @@ uv run pytest                            # studio and game Python tests
   post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone.
 - When you cannot go on without the operator's guidance, help or confirmation, open **one operator task**:
   `atelier board operator-task open --agent NAME "..."` (the ask first, at most 500 characters). The operator
-  answers or dismisses it from the board's Tasks page, and the reply arrives in its thread. Use it sparingly, for real
-  blocks only, and **dismiss it yourself as soon as it no longer applies** with `atelier board operator-task dismiss
-  --agent NAME ID`. See [the board guide](docs/AGENT_BOARD.md#operator-tasks).
+  answers or dismisses it from the board's Tasks page, and the reply arrives in its thread. You hold one at a time;
+  when what you need changes, change its ask with `atelier board operator-task edit --agent NAME ID "..."`. Use it
+  sparingly, for real blocks only, and **dismiss it yourself as soon as it no longer applies** with
+  `atelier board operator-task dismiss --agent NAME ID`. See [the board guide](docs/AGENT_BOARD.md#operator-tasks).
 - Keep your board status line current; it is how the operator sees the team. Once registered, set it with
   `atelier board task --agent NAME "..."` (one line, at most 160 characters). Update it **every time you get a new
   task**, before starting the work, and again when you finish or become blocked. With no current task, set it to
-  exactly `idle`, nothing more. The board shows it beside your name.
+  exactly `idle`, nothing more. The board shows it beside your name, marks `idle` agents as free for new work,
+  and treats a session idle for 10 minutes as free whatever the line says (it sends you one reminder then).
 - Keep board messages short enough to read without expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
   Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. `--notify-operator`
   also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or

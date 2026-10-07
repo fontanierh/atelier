@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
-from . import board, board_markdown, board_push
+from . import board, board_markdown, board_presence, board_push
 from .board_files import (INLINE_TYPES, MARKDOWN_SUFFIXES, attachment, read_json, readable, split_attachments,
                           store_upload, with_attachments)
 
@@ -45,6 +45,30 @@ def asset(filename):
         cached = _assets[filename] = (stamp, data, f'"{hashlib.sha256(data).hexdigest()[:24]}"', packed)
     return cached[1:]
 PUSH_PATHS = ('/api/push/subscribe', '/api/push/unsubscribe', '/api/push/test')
+
+
+
+def render_floor():
+    """The render board's human-maintained scheduling sections, and the live render lock holders."""
+    ledger = board.root() / 'render-board.md'
+    try:
+        text = ledger.read_text()
+    except FileNotFoundError:
+        text = ''
+    # Telemetry markup is advisory; return human-maintained scheduling sections separately.
+    text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->', '', text, flags=re.S)
+    sections = {match[1]: match[2].strip() for match in re.finditer(
+        r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
+    # Use the owning library's PID/start validation; stale lock text is never a live owner.
+    from .safety import render_lock
+    holders = {}
+    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
+        holder = render_lock.read_holder(path)
+        if holder:
+            holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
+                             'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
+                             'time': holder.get('time')}
+    return sections, holders
 
 
 def snapshot(query, remote_status=None, sender='operator'):
@@ -87,8 +111,8 @@ def snapshot(query, remote_status=None, sender='operator'):
         rows = [dict(row) for row in db.execute(
             'SELECT * FROM messages'+where+' ORDER BY id DESC LIMIT ?', (*parameters, limit+1))]
         agents = []
-        for row in db.execute('SELECT agent,cursor,pid,heartbeat,checkout,stop,supervised,error,task FROM subscribers '
-                              'WHERE removed=0 ORDER BY agent'):
+        for row in db.execute('SELECT agent, cursor, pid, heartbeat, checkout, stop, supervised, error, task, task_at, '
+                              'session, session_since FROM subscribers WHERE removed=0 ORDER BY agent'):
             item = dict(row)
             item['listening'] = bool(item['pid'] and not item['stop'] and 0 <= now-(item['heartbeat'] or 0) < 90)
             item['pending'] = db.execute(
@@ -117,15 +141,7 @@ def snapshot(query, remote_status=None, sender='operator'):
         ack_ids = {row[0] for row in db.execute('SELECT reply.reply_to FROM messages reply '
                    'JOIN messages original ON original.id=reply.reply_to '
                    "WHERE reply.topic='ack' AND reply.sender=original.recipient")}
-    ledger = board.root() / 'render-board.md'
-    try:
-        text = ledger.read_text()
-    except FileNotFoundError:
-        text = ''
-    # Telemetry markup is advisory; return human-maintained scheduling sections separately.
-    text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->', '', text, flags=re.S)
-    sections = {match[1]: match[2].strip() for match in re.finditer(
-        r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
+    sections, holders = render_floor()
     telemetry = read_json(board.root() / 'render-supervisor/latest.json') or {}
     sessions = []
     if remote_status:
@@ -137,15 +153,9 @@ def snapshot(query, remote_status=None, sender='operator'):
             sessions.append({'name': item.get('name', label), 'url': url,
                              'health': item.get('health'), 'connection': item.get('connection'),
                              'fresh': 0 <= now-item.get('checked_at', 0) < 120})
-    # Use the owning library's PID/start validation; stale lock text is never a live owner.
-    from .safety import render_lock
-    holders = {}
-    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
-        holder = render_lock.read_holder(path)
-        if holder:
-            holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
-                             'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
-                             'time': holder.get('time')}
+    engaged = board_presence.engaged(sections, holders, {item['agent']: item['checkout'] for item in agents})
+    for item in agents:
+        item['engaged'] = item['agent'] in engaged
     output = sorted(copies.values(), key=lambda row: row['id'], reverse=True)
     for item in output:
         decorate(item, ack_ids)
@@ -441,6 +451,7 @@ def serve(args):
     server = Server(('127.0.0.1', args.port), origins=args.public_origin, allowed_user=args.allowed_user,
                     sender=args.sender, remote_status=args.remote_status)
     board_push.Pusher(server.sender, server.push_subject).start()
+    board_presence.Presence().start()
     print(f'Agent board listening on http://127.0.0.1:{args.port}', flush=True)
     try:
         server.serve_forever()
