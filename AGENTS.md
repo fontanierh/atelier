@@ -33,8 +33,9 @@ uv run pytest                            # studio and game Python tests
   board. Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
 - The full Python suite needs no render lock and no no-heavy window: run it whenever you need it, even while
   another agent's job runs. Its safety tests briefly start sleeping processes named `Blender` and `UnrealEditor-Fake`;
-  while they exist (about two minutes), the render admission scan may refuse a job that is just starting; start it
-  again once the suite has finished. A job that is already running is unaffected.
+  while they exist (about two minutes), the render admission scan may refuse a game or build step that is just being
+  admitted, including the next step of a running `atelier build`. Rerun it once the suite has finished; a game or step
+  that is already running is unaffected.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
   `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
