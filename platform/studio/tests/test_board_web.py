@@ -459,7 +459,7 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     assert next(item for item in delivered if item['id'] == deeper)['operator_task'] == task
 
     # Agents hold few open at once and keep asks short; only the asker or the operator dismisses one.
-    second, _ = board.open_task('one', 'Second ask.', notify=False)
+    second, _ = board.open_task('one', 'Second ask.')
     with pytest.raises(ValueError, match='open operator tasks'):
         board.open_task('one', 'A third.')
     with pytest.raises(ValueError):
@@ -490,10 +490,10 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
         assert len(board.tasks(db, 'one', include_closed=True)) == 2
 
     # Nobody stays blocked on a removed agent's behalf, and the operator never opens tasks.
-    board.open_task('two', 'Still need you.', notify=False)
+    board.open_task('two', 'Still need you.')
     assert request(http_server, '/api/remove', {'agent': 'two'})[0] == 200
     assert json.loads(request(http_server, '/api/state')[1])['tasks'] == []
-    args = SimpleNamespace(action='operator-task', task_action='open', agent='operator', no_notify=True, message='Hi')
+    args = SimpleNamespace(action='operator-task', task_action='open', agent='operator', message='Hi')
     assert board.main(args) == 1
     # Only registered agents ask, so neither an unknown name nor a removed agent can go around the cap.
     for name in ('ghost', 'two'):
@@ -504,7 +504,7 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
 def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
     import io
     from atelier.cli import parse_args
-    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', '--no-notify', 'Need your OK.'])) == 0
+    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', 'Need your OK.'])) == 0
     assert 'operator task 1' in capsys.readouterr().out
     assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one'])) == 0
     listed = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
@@ -522,17 +522,19 @@ def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
     with board.database() as db:
         assert board.tasks(db, 'one') == []
 
-    # The push shares the agent's hourly allowance with --notify-operator.
-    for _ in range(board.NOTIFY_PER_HOUR):
-        board.post('two', 'Look at this.', 'operator', notify=True)
-    _, message = board.open_task('two', 'Need your OK, quietly.')
+    # An ask always pushes, and spends none of the agent's hourly allowance for --notify-operator.
+    for _ in range(board.NOTIFY_PER_HOUR):   # after task 1's ask, which pushed
+        board.post('one', 'Look at this.', 'operator', notify=True)
+    board.open_task('one', 'Need your OK again.')
     with board.database() as db:
-        assert db.execute('SELECT notify FROM messages WHERE id=?', (message,)).fetchone()[0] == 0
+        flags = [row[0] for row in db.execute(
+            "SELECT notify FROM messages WHERE sender='one' AND (topic='blocked' OR body='Look at this.') ORDER BY id")]
+    assert flags == [1] * (board.NOTIFY_PER_HOUR + 2)
 
     # Concurrent asks still respect the cap.
     def ask(i):
         try:
-            return board.open_task('paused', f'Ask {i}.', notify=False)
+            return board.open_task('paused', f'Ask {i}.')
         except ValueError:
             return None
     with ThreadPoolExecutor(8) as pool:

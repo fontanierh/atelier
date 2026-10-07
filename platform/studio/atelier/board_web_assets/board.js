@@ -1253,16 +1253,19 @@ addEventListener("boardtheme",themeSwitch);
 $("settings").addEventListener("change",settingsSummary);
 $("settings").addEventListener("toggle",()=>{if($("settings").open)requestAnimationFrame(()=>$("settings").scrollIntoView({block:"end",behavior:motion.matches?"instant":"smooth"}));});
 themeSwitch();
-// A notification links to /?m=ID: open that message's thread, whether the app was closed or already open.
+// A notification links to /?m=ID, that message's thread, or /?task=ID, the Tasks page; whether the app was closed or open.
 function openLink(url) {
-  const id=Number(new URL(url,location.href).searchParams.get("m"));if(!(id>0))return;
+  const params=new URL(url,location.href).searchParams;
+  if(params.has("task")){setView("tasks");return;}
+  const id=Number(params.get("m"));if(!(id>0))return;
   setView("messages");if(thread?.id!==id){if(thread)closeThread();openThread(id);}
 }
 navigator.serviceWorker?.addEventListener("message",event=>{if(event.data?.open)openLink(event.data.open);});
 waitFor(()=>state,15000).then(()=>{
   if(!state)return;
   setupPush().finally(settingsSummary);
-  if(new URLSearchParams(location.search).has("m")){openLink(location.href);history.replaceState(history.state,"","/");}
+  const params=new URLSearchParams(location.search);
+  if(params.has("m")||params.has("task")){openLink(location.href);history.replaceState(history.state,"","/");}
 });
 
 // iOS freezes the app in the background, and a request caught mid-flight may never settle, which used to block

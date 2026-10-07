@@ -89,7 +89,9 @@ NOTIFY_PER_HOUR = 3
 
 def notify_allowed(db, sender, now=None):
     since = (now or time.time()) - 3600
-    used = db.execute('SELECT count(*) FROM messages WHERE sender=? AND notify=1 AND created>?', (sender, since))
+    # Operator task asks always push and are capped by OPEN_TASKS instead, so they leave this allowance alone.
+    used = db.execute('SELECT count(*) FROM messages WHERE sender=? AND notify=1 AND created>? '
+                      'AND id NOT IN (SELECT message FROM operator_tasks)', (sender, since))
     return used.fetchone()[0] < NOTIFY_PER_HOUR
 
 
@@ -176,9 +178,9 @@ def remove(agent):
 OPEN_TASKS, TASK_CHARS = 2, 500
 
 
-def open_task(agent, body, notify=True):
-    """Open an operator task for `agent`. It posts the question to the operator (a `blocked` message, pushed to their
-    phone within NOTIFY_PER_HOUR unless notify is off) and returns (task id, message id)."""
+def open_task(agent, body):
+    """Open an operator task for `agent`. It posts the question to the operator (a `blocked` message, always pushed to
+    their phone, outside NOTIFY_PER_HOUR) and returns (task id, message id)."""
     agent_name(agent)
     if agent == OPERATOR:
         raise ValueError('operator tasks are opened by agents, for the operator')
@@ -195,9 +197,8 @@ def open_task(agent, body, notify=True):
             raise ValueError(f'you already have {OPEN_TASKS} open operator tasks; dismiss one that no longer applies '
                              '(board operator-task list) or add to its thread instead')
         now = time.time()
-        notify = bool(notify) and notify_allowed(db, agent, now)
         message = db.execute('INSERT INTO messages (created, sender, recipient, topic, body, notify) '
-                             "VALUES (?, ?, ?, 'blocked', ?, ?)", (now, agent, OPERATOR, body, int(notify))).lastrowid
+                             "VALUES (?, ?, ?, 'blocked', ?, 1)", (now, agent, OPERATOR, body)).lastrowid
         task = db.execute('INSERT INTO operator_tasks (created, agent, message) VALUES (?, ?, ?)',
                           (now, agent, message)).lastrowid
     return task, message
