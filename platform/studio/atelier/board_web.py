@@ -71,11 +71,26 @@ def render_floor():
     return sections, holders
 
 
+def recent_log(text, count):
+    """The newest count entries of the render board's Log (newest last, as written) and how many there are. The
+    page shows a dozen and pages back on request, so a poll need not carry the whole history."""
+    entries = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        if re.match(r'\s*[-*]\s', line) or not entries:
+            entries.append(line)
+        else:
+            entries[-1] += '\n'+line
+    return '\n'.join(entries[-count:]), len(entries)
+
+
 def snapshot(query, remote_status=None, sender='operator'):
     """Reads never advance subscriber cursors or acquire render locks."""
     before = int(query.get('before', ['0'])[0])
     limit = int(query.get('limit', ['150'])[0])
-    if before < 0 or not 1 <= limit <= 300:
+    log = int(query.get('log', ['30'])[0])
+    if before < 0 or not 1 <= limit <= 300 or not 1 <= log <= 5000:
         raise ValueError('invalid history page')
     conditions, parameters = [], []
     if before:
@@ -158,11 +173,13 @@ def snapshot(query, remote_status=None, sender='operator'):
     engaged = board_presence.engaged(sections, holders, {item['agent']: item['checkout'] for item in agents})
     for item in agents:
         item['engaged'] = item['agent'] in engaged
+    sections['Log'], log_total = recent_log(sections.get('Log', ''), log)
     output = sorted(copies.values(), key=lambda row: row['id'], reverse=True)
     for item in output:
         decorate(item, ack_ids)
     return {'time': now, 'messages': output,
-            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'tasks': operator_tasks, 'schedule': sections, 'inbox': inbox,
+            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'tasks': operator_tasks, 'schedule': sections, 'log_total': log_total,
+            'inbox': inbox,
             'holders': holders, 'sessions': sessions,
             'resources': {'fresh': 0 <= now-telemetry.get('time', 0) < 120,
                           'cpu': telemetry.get('cpu_busy_percent'),
@@ -236,6 +253,10 @@ class Handler(BaseHTTPRequestHandler):
     def send(self, status, body, mime='application/json; charset=utf-8', cache='no-store', headers=(), csp=None):
         if not isinstance(body, bytes):
             body = json.dumps(body, ensure_ascii=False).encode()
+            # The page polls every few seconds, often over a relayed tailnet link: JSON travels gzipped.
+            if len(body) > 1024 and 'gzip' in self.headers.get('Accept-Encoding', ''):
+                body = gzip.compress(body, 5)
+                headers = (*headers, ('Content-Encoding', 'gzip'), ('Vary', 'Accept-Encoding'))
         self.send_response(status)
         self.send_header('Content-Type', mime)
         self.send_header('Content-Length', str(len(body)))
