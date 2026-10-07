@@ -4,12 +4,12 @@ import json
 import math
 import numpy as np
 try:
-    from . import modules as M   # imported as skatepark.layout (gen_world, other regions)
+    from . import modules as M   # imported as skatepark.layout (other regions)
+    from .pier_site import ORIGIN, HALF_X, HALF_Y
 except ImportError:
     import modules as M
+    from pier_site import ORIGIN, HALF_X, HALF_Y
 JAPAN = yori.REGIONS
-ORIGIN = (-110., -234., 1.8)
-HALF_X, HALF_Y = 85., 66.
 RAIL_INSET, RAILING_H, SLAB = .15, 1.1, .5
 ENTRANCE_X, PATH_HALF = 6., 2.
 COPING_R = .025  # flush rounded steel shoulder; no undercut for wheels to catch
