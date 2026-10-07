@@ -103,6 +103,10 @@ def snapshot(query, remote_status=None, sender='operator'):
                                             (item['agent'], sender)).fetchone()[0] or 0
             agents.append(item)
         total = db.execute('SELECT count(*) FROM messages').fetchone()[0]
+        # The operator's open tasks: what agents are blocked on, oldest first, answered from the Tasks page.
+        operator_tasks = board.tasks(db)
+        for task in operator_tasks:
+            task['body_html'] = board_markdown.render(split_attachments(task['body'])[0])
         # Fetch complete fanouts even when a history/filter boundary cuts through one.
         prefixes = {row['dedup'].rsplit(':', 1)[0]+':' for row in rows[:limit]
                     if (row['dedup'] or '').startswith('web-broadcast:')}
@@ -146,7 +150,7 @@ def snapshot(query, remote_status=None, sender='operator'):
     for item in output:
         decorate(item, ack_ids)
     return {'time': now, 'messages': output,
-            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'schedule': sections,
+            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'tasks': operator_tasks, 'schedule': sections,
             'holders': holders, 'sessions': sessions,
             'resources': {'fresh': 0 <= now-telemetry.get('time', 0) < 120,
                           'cpu': telemetry.get('cpu_busy_percent'),
@@ -344,7 +348,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.permitted():
             return
-        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove', *PUSH_PATHS):
+        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove', '/api/task/dismiss',
+                             *PUSH_PATHS):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
@@ -381,6 +386,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path in PUSH_PATHS:
                 self.push(data)
+                return
+            if self.path == '/api/task/dismiss':
+                task = data.get('id')
+                if isinstance(task, bool) or not isinstance(task, int):
+                    raise ValueError('Choose a task to dismiss.')
+                closed = board.close_task(task, self.server.sender, data.get('note') or '', operator=True)
+                self.send(200, {'dismissed': task, 'already': not closed})
                 return
             if self.path == '/api/remove':
                 agent = data.get('agent')

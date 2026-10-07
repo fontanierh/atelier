@@ -10,8 +10,8 @@ from pathlib import Path
 
 from . import paths
 from .board_store import (
-    NOTIFY_PER_HOUR, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TOPICS, agent_name, database, folds, messages,
-    notify_allowed, post, send_web, set_task, thread_rows,
+    NOTIFY_PER_HOUR, OPEN_TASKS, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TASK_CHARS, TOPICS, agent_name, close_task,
+    database, folds, messages, notify_allowed, open_task, post, send_web, set_task, tasks, thread_rows,
 )
 
 
@@ -34,6 +34,22 @@ def configure(sub):
     p = actions.add_parser('task', help='set your one-line assignment, shown beside your name on the board')
     p.add_argument('--agent', required=True)
     p.add_argument('text', help='one line, at most 160 characters (empty clears it)')
+    p = actions.add_parser('operator-task', help='ask the operator to unblock you; sparingly, and dismiss it once '
+                           'it no longer applies', description=(
+        'Open an operator task only when you cannot go on without the operator: guidance, help or a confirmation '
+        'only they can give. It lands on the Tasks page of the web board, where they reply or dismiss it, and is '
+        f'pushed to their phone. You may hold {OPEN_TASKS} open at once. Replies arrive as thread replies to its '
+        'message; dismiss the task yourself as soon as it no longer applies.'))
+    task_actions = p.add_subparsers(dest='task_action', required=True)
+    q = task_actions.add_parser('open', help='open a task: what you need from the operator, in a few lines')
+    q.add_argument('--agent', required=True)
+    q.add_argument('--no-notify', action='store_true', help='do not push it to the operator\'s phone')
+    q.add_argument('message', help=f'at most {TASK_CHARS} characters, the ask first (use - to read stdin)')
+    q = task_actions.add_parser('list', help='open operator tasks (yours with --agent)')
+    q.add_argument('--agent'); q.add_argument('--all', action='store_true', help='include dismissed tasks')
+    q = task_actions.add_parser('dismiss', help='dismiss your task once it no longer applies')
+    q.add_argument('--agent', required=True); q.add_argument('id', type=int)
+    q.add_argument('--note', default='', help='optional one line on why, kept in its thread')
     p = actions.add_parser('thread', help='print a whole thread: the original, then every reply in order')
     p.add_argument('id', type=int, help='any message ID in the thread')
     p = actions.add_parser('read')
@@ -122,6 +138,23 @@ def main(args):
         elif args.action == 'task':
             text = set_task(args.agent, args.text)
             print(f'{args.agent}: {text}' if text else f'{args.agent}: task cleared')
+        elif args.action == 'operator-task':
+            if getattr(args, 'agent', None) == OPERATOR:
+                raise ValueError('operator tasks are for agents; the operator answers them on the web board')
+            if args.task_action == 'open':
+                text = sys.stdin.read() if args.message == '-' else args.message
+                task, message = open_task(args.agent, text, notify=not args.no_notify)
+                print(f'operator task {task} (message {message}); replies arrive in its thread. Dismiss it with '
+                      f'atelier board operator-task dismiss --agent {args.agent} {task} as soon as it no longer applies.')
+            elif args.task_action == 'list':
+                with database() as db:
+                    for row in tasks(db, args.agent, include_closed=args.all):
+                        print(json.dumps(row))
+            else:
+                if not close_task(args.id, args.agent, args.note):
+                    print(f'operator task {args.id} was already dismissed')
+                else:
+                    print(f'operator task {args.id} dismissed')
         elif args.action == 'thread':
             with database() as db:
                 roots, replies = thread_rows(db, args.id)

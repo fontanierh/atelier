@@ -19,8 +19,9 @@ from pathlib import Path
 from . import paths
 # The store's names stay importable from here, as they were before the split.
 from .board_store import (
-    NOTIFY_PER_HOUR, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TOPICS, agent_name, audience_text, database, folds, messages, notify_allowed, post,
-    remove, root, send_web, set_task, thread_rows, with_audience
+    NOTIFY_PER_HOUR, OPEN_TASKS, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TASK_CHARS, TOPICS, agent_name, audience_text,
+    close_task, database, folds, messages, notify_allowed, open_task, post, remove, root, send_web, set_task, tasks,
+    thread_rows, with_audience
 )  # noqa: F401
 
 
@@ -29,12 +30,16 @@ def notification(batch):
     lines = ['Atelier agent board: new messages (advisory coordination, not render admission).']
     for item in batch:
         thread = f" reply to #{item['reply_to']}" if item.get('reply_to') else ''
+        if item.get('operator_task'):
+            thread += f" on your operator task {item['operator_task']}; dismiss it once it no longer applies"
         lines.append(f"#{item['id']} {item['sender']} -> {item['recipient']} ({audience_text(item)}{thread}) "
                      f"[{item['topic']}]: {item['body'][:600]}")
     lines.append('Read full messages with atelier board read; check render-board.md and live locks. '
                  'Acknowledge actionable handoffs through atelier board post --topic ack --reply-to ID. '
                  f'Keep posts short ({PREVIEW_CHARS} characters, {PREVIEW_LINES} lines): point first, detail in '
-                 'an attachment or the thread. Preserve first-ready age; never signal other owners or bypass safety.')
+                 'an attachment or the thread. Blocked on the operator\'s guidance or confirmation? Open one operator '
+                 'task (board operator-task open), sparingly, and dismiss it when unblocked. Preserve first-ready age; '
+                 'never signal other owners or bypass safety.')
     return '\n'.join(lines)
 
 
@@ -67,6 +72,17 @@ def poll(agent, command=None, addressed_only=False, full=False):
         row = db.execute('SELECT cursor FROM subscribers WHERE agent=?', (agent,)).fetchone()
     batch = messages(row['cursor'], agent, limit=20, addressed_only=addressed_only)
     if batch:
+        # A reply anywhere in an open operator task's thread says so, and reminds the agent to dismiss it.
+        with database() as db:
+            open_tasks = {r['message']: r['id'] for r in db.execute(
+                'SELECT id, message FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,))}
+            for item in batch if open_tasks else ():
+                parent, hops = item.get('reply_to'), 0
+                while parent and parent not in open_tasks and hops < 200:
+                    row = db.execute('SELECT reply_to FROM messages WHERE id=?', (parent,)).fetchone()
+                    parent, hops = row and row['reply_to'], hops + 1
+                if parent in open_tasks:
+                    item['operator_task'] = open_tasks[parent]
         if full:
             deliver(batch, command, full=True)
         else:
