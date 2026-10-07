@@ -900,7 +900,13 @@ void AWandererCharacter::SetMouseReleased(bool bReleased)
     }
 }
 void AWandererCharacter::ApplyCameraPreferences(float Sensitivity,float Distance,float FieldOfView)
-{ MouseSensitivity = Sensitivity; PreferredArmLength = Distance; if(Sailboat)Sailboat->SetCameraDistance(Distance);else CameraArm->TargetArmLength = Distance; PreferredFOV = FieldOfView; if(IsZeppelinPassenger())GetZeppelin()->SetPassengerCameraDistance(Distance); }
+{
+    MouseSensitivity = Sensitivity; PreferredArmLength = Distance; PreferredFOV = FieldOfView;
+    CameraArm->TargetArmLength = Distance;
+    // A replicated pawn can receive its local preferences before EnterWorld initializes its boat.
+    if (Sailboat && Sailboat->IsEquipped()) Sailboat->SetCameraDistance(Distance);
+    if (IsZeppelinPassenger()) GetZeppelin()->SetPassengerCameraDistance(Distance);
+}
 
 void AWandererCharacter::SetAction(FName Action,bool bLoop,float BlendSeconds,bool bRestart)
 {
