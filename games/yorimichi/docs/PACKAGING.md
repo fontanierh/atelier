@@ -144,8 +144,8 @@ Upload the verified ZIP or all numbered parts, SHA256SUMS, manifest.json and the
 unchanged app started normally.** The launcher's process ends with SIGSEGV (exit -11) within seconds, before
 `game.log` exists. macOS writes `Yorimichi-<date>.ips` under `~/Library/Logs/DiagnosticReports/`.
 
-- 2026-10-06 12:05: the first launch of the re-signed `afc541e1` package. A launch six seconds later started, and
-  that build shipped.
+- 2026-10-06 12:05: the first launch of the re-signed `afc541e1` package, an earlier build that day (not a
+  published release). A launch six seconds later started.
 - 2026-10-07 03:06: the first launch of the extracted r4 package (`7250edaf`). The unchanged app's next launch
   started and its map check ran.
 
