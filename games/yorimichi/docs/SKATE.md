@@ -243,6 +243,17 @@ grass spot, a ride frame with no ground under it, or a bail with no lying or no 
 `SKATE GROUND CHECK PASS` or `FAIL`; that line is the result. `quit` then exits, asking for status 1 on a failure
 (Windows and Linux pass it on; macOS always exits with 0). Other road samples can be passed as numbers.
 
+`japan.SkateBowlCheck` rides the community park's bowl, which the ground and pier checks never reach
+(`-ExecCmds="japan.SkateBowlCheck speeds=600/1000 quit"`; `-ExecCmds` splits at commas, so lists there take slashes).
+From the measured bowl start (world.json 1263.5, 576.2, 46.012 m, yaw 180) it places the rider, waits 3 s, then
+launches at each speed and coasts 10 s with empty scripted input, giving the controls back however the run ends. Every
+frame logs a `SKATE BOWL ... route` line (world.json metres, mode, ground under it). Past 0.5 s, a velocity change over
+150 cm/s between two frames both rolling on the ground is a shock and fails the run. The same change into or out of the
+air or a grind is logged as a jolt and does not fail. A bail fails too. A run that cannot measure fails as well: the
+bowl's ground never streams in, the placement fails, a frame has no ground or has the rider off the board, the route is
+under 1 m, or the launch never takes. `at=`, `yaw=`, `shock=` and `seconds=` override the defaults, and an unknown
+argument fails. The `SKATE BOWL CHECK PASS` or `FAIL` line is the result, with the same exit status caveat.
+
 Only the extracted package proves the ground in a cooked build. Release acceptance runs this command there, without a
 `skate.CookedSurface` override, and reads all four ride and bail lines and the summary; a process exit of 0 passes
 nothing on macOS. An editor run, even with `skate.CookedSurface 1`, shows only what the cooked collision triangles
