@@ -84,6 +84,23 @@ class RidingCollisionTest(unittest.TestCase):
                 self.assertGreater(len(ramps), 0)
                 self.assertGreaterEqual(ramps[..., 0].min(), -width-1e-9)
 
+    def test_shared_feet_do_not_cut_across_a_neighbour_end(self):
+        # The extra floor ends at y=0. One foot can extend, while the next must stay short;
+        # the diagonal between them must not cross the open quadrant x<-.15, y>0.
+        pieces = [slab(-.15, -1, 0, 1, -.2, 0.), slab(0, -1, 1, 1, -.18796, .01204),
+                  slab(-.4, -1, -.15, 0, -.2, 0.)]
+        vertices, faces, owner, _ = C.riding_collision(pieces)
+        ramps = vertices[faces[owner == -2]]
+        self.assertGreater(len(ramps), 0)
+        self.assertLessEqual(ramps[..., 0].min(), -.3+1e-9)
+        for triangle in ramps:
+            feet = triangle[abs(triangle[:, 2]) < 1e-9]
+            if len(feet) == 2:
+                centre = feet.mean(0)
+                self.assertFalse(centre[0] < -.15-1e-9 and centre[1] > 1e-9)
+        feet = ramps[(abs(ramps[..., 2]) < 1e-9) & (abs(ramps[..., 1]) < 1e-9)]
+        np.testing.assert_allclose(np.unique(feet[:, 0]), [-.1])
+
     def test_ledges_and_real_steps_stay_sharp(self):
         ledge = slab(-1, -.2, 1, .2, -.1, .04)
         step = slab(2, -3, 3.5, 3, -.1, .3)

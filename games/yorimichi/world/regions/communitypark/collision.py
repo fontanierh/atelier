@@ -235,13 +235,13 @@ def riding_collision(parts, obstacles=(), groups=None):
     vertices, faces, owner = weld(parts)
     added, added_owner = [], []
     report = {'welded_vertices': len(vertices), 'wedges': 0, 'max_rise_m': 0., 'wedged_length_m': 0.}
-    def slope(point, under, drop, direction):
+    def slope(point, under, drop, direction, extend=True):
         """Extend the prior run only when its added length stays on existing neighbouring riding planes."""
         n = surfaces.normal[under]; slide = np.array([*direction, 0.]); slide -= (slide@n)*n
         slide /= np.linalg.norm(slide)
         length = max(SLOPE*drop, .1)
         foot = point-drop*n+slide*length
-        if length >= MIN_RUN: return foot
+        if not extend or length >= MIN_RUN: return foot
         extended = point-drop*n+slide*MIN_RUN
         return extended if surfaces.supports_segment(foot, extended, part) else foot
 
@@ -255,15 +255,39 @@ def riding_collision(parts, obstacles=(), groups=None):
         wedged = [r is not None and s is not None and max(r, s) >= LIP[0]
                   for (_, r, _), (_, s, _) in zip(samples, samples[1:])]
         along = samples[-1][0][:2]-samples[0][0][:2]; along /= np.linalg.norm(along)
+        short = [None if k is None else slope(p, k, r, out, False) for p, r, k in samples]
+        feet = [None if k is None else slope(p, k, r, out) for p, r, k in samples]
+        tips, short_tips = {}, {}
+        for i, (p, r, k) in enumerate(samples):
+            if r is None or r < LIP[0]: continue
+            for sign, end in ((-1, i < len(wedged) and wedged[i] and (i == 0 or not wedged[i-1])),
+                              (1, i > 0 and wedged[i-1] and (i == len(wedged) or not wedged[i]))):
+                if end:
+                    tips[i, sign] = slope(p, k, r, sign*along)
+                    short_tips[i, sign] = slope(p, k, r, sign*along, False)
+        # A shortened endpoint is shared by both adjacent ramp segments. Recheck their foot edges until
+        # none of the added length cuts across a neighbour's boundary, including the end taper.
+        changed = True
+        while changed:
+            changed = False
+            for i, use in enumerate(wedged):
+                if not use or all(np.array_equal(feet[j], short[j]) for j in (i, i+1)): continue
+                if not surfaces.supports_segment(feet[i], feet[i+1], part):
+                    feet[i], feet[i+1] = short[i], short[i+1]; changed = True
+            for key, tip in list(tips.items()):
+                i, _ = key
+                if np.array_equal(feet[i], short[i]) and np.array_equal(tip, short_tips[key]): continue
+                if any(surfaces.owner[j] != part for j in surfaces.over(*tip[:2])) and not surfaces.supports_segment(feet[i], tip, part):
+                    feet[i], tips[key] = short[i], short_tips[key]; changed = True
         for i, ((p, r, k), (q, s, m)) in enumerate(zip(samples, samples[1:])):
             if not wedged[i]: continue
-            fp, fq = slope(p, k, r, out), slope(q, m, s, out)
+            fp, fq = feet[i], feet[i+1]
             add([p, q, fq], k, part); add([p, fq, fp], k, part)
             # Where a run stops, taper its side down along the edge too rather than leave a vertical cheek.
             for end, (point, rise, under, foot), sign in ((i == 0 or not wedged[i-1], (p, r, k, fp), -1),
                                                           (i == len(wedged)-1 or not wedged[i+1], (q, s, m, fq), 1)):
                 if not end or rise < LIP[0]: continue
-                tip = slope(point, under, rise, sign*along)
+                tip = tips[(i if sign < 0 else i+1), sign]
                 if any(surfaces.owner[j] != part for j in surfaces.over(*tip[:2])): add([point, foot, tip], under, part)
             report['wedges'] += 1; report['max_rise_m'] = max(report['max_rise_m'], r, s)
             report['wedged_length_m'] += float(np.linalg.norm(q[:2]-p[:2]))
