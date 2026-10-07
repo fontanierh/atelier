@@ -97,9 +97,14 @@ function initials(name) { return name.replace(/[^a-z0-9]/gi," ").trim().split(/\
 function statusOf(agent) { return !agent?"":agent.delivery_error?"error":agent.listening?"live":"idle"; }
 // Waiting on the operator: the agent has an open operator task.
 function isWaiting(agent) { return !!agent&&(state?.tasks||[]).some(t=>t.agent===agent.agent&&!dismissedTasks.has(t.id)); }
-// Free for work: listening, with no current task (its status line empty or exactly "idle") and no open operator task.
+// Free for work: listening, not waiting on the operator, and either with no current task (its status line empty or
+// exactly "idle") or with its own session quiet for QUIET seconds, whatever the line says. A busy session is never free.
+const QUIET=600;
+function idleLine(agent) { return /^(idle)?$/i.test((agent?.task||"").trim()); }
+function quietFor(agent) { return agent?.session==="idle"&&agent.session_since?Math.max(0,(state?.time??Date.now()/1000)-agent.session_since):0; }
 function isFree(agent) {
-  return !!agent&&!agent.stop&&agent.listening&&!agent.delivery_error&&/^(idle)?$/i.test((agent.task||"").trim())&&!isWaiting(agent);
+  if(!agent||agent.stop||!agent.listening||agent.delivery_error||isWaiting(agent)||agent.session==="busy")return false;
+  return idleLine(agent)||quietFor(agent)>=QUIET;
 }
 function orb(name, agent) {
   const o=node("span","orb");
@@ -435,7 +440,7 @@ function markRead(names) {
 }
 function renderAgents() {
   markRead([]);
-  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,isFree(a),isWaiting(a),unreadFrom(a)])]);
+  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,a.session,isFree(a),isWaiting(a),unreadFrom(a)])]);
   if(signature===agentsSignature)return; agentsSignature=signature;
   const live=liveAgents(), listening=live.filter(a=>a.listening).length, errors=live.filter(a=>a.delivery_error).length;
   const free=live.filter(isFree).length;
@@ -448,13 +453,19 @@ function renderAgents() {
     const cell=node("div","agent-cell"), b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";cell.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
     cell.style.setProperty("--i",index++);cell.dataset.agent=name;
     const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));if(agent&&unreadFrom(agent))b.classList.add("unread");
-    if(isFree(agent)){const line=node("span","agent-task");line.append(node("span","free-tag","Idle")," No task");text.append(line);}
+    if(isFree(agent)){
+      // A quiet session whose line still names work shows that line as the last thing it said it was doing.
+      const line=node("span","agent-task");line.append(node("span","free-tag","Idle"),idleLine(agent)?" No task":` Last: ${agent.task}`);
+      if(!idleLine(agent))line.title=`Quiet for ${Math.floor(quietFor(agent)/60)} min; its status line may be stale`;
+      text.append(line);
+    }
     else if(isWaiting(agent)){
       const line=node("span","agent-task");line.append(node("span","waiting-tag","Waiting on you"));
       if(!/^(idle)?$/i.test((agent.task||"").trim()))line.append(" "+agent.task);text.append(line);
     }
+    else if(agent?.session==="busy"&&idleLine(agent))text.append(node("span","agent-task","Working (no status line)"));
     else if(agent?.task)text.append(node("span","agent-task",agent.task));
-    if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
+    if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [!agent.supervised&&!agent.stop?"no auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
     else detail.textContent=`Broadcasts and every conversation`;
     text.append(detail);b.append(orb(name||"*",agent),text);
     if(agent?.pending)b.append(node("span","count",`${agent.pending} queued`));

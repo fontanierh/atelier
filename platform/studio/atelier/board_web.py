@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
-from . import board, board_markdown, board_push
+from . import board, board_markdown, board_presence, board_push
 from .board_files import (INLINE_TYPES, MARKDOWN_SUFFIXES, attachment, read_json, readable, split_attachments,
                           store_upload, with_attachments)
 
@@ -87,8 +87,8 @@ def snapshot(query, remote_status=None, sender='operator'):
         rows = [dict(row) for row in db.execute(
             'SELECT * FROM messages'+where+' ORDER BY id DESC LIMIT ?', (*parameters, limit+1))]
         agents = []
-        for row in db.execute('SELECT agent,cursor,pid,heartbeat,checkout,stop,supervised,error,task FROM subscribers '
-                              'WHERE removed=0 ORDER BY agent'):
+        for row in db.execute('SELECT agent, cursor, pid, heartbeat, checkout, stop, supervised, error, task, task_at, '
+                              'session, session_since FROM subscribers WHERE removed=0 ORDER BY agent'):
             item = dict(row)
             item['listening'] = bool(item['pid'] and not item['stop'] and 0 <= now-(item['heartbeat'] or 0) < 90)
             item['pending'] = db.execute(
@@ -441,6 +441,7 @@ def serve(args):
     server = Server(('127.0.0.1', args.port), origins=args.public_origin, allowed_user=args.allowed_user,
                     sender=args.sender, remote_status=args.remote_status)
     board_push.Pusher(server.sender, server.push_subject).start()
+    board_presence.Presence().start()
     print(f'Agent board listening on http://127.0.0.1:{args.port}', flush=True)
     try:
         server.serve_forever()

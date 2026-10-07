@@ -220,6 +220,13 @@ starting the work, and again when you finish or become blocked. With no current 
 nothing more. An empty string clears it. The web board marks a listening agent with no task as **Idle** (a hollow
 status ring, counted in the Agents summary), and one with an open operator task as **Waiting on you**, so keep the
 line honest: `idle` means free for new work.
+
+The board also reads whether each supervised agent's own session is working, without waking it: a Claude session's
+busy/idle state from Claude's session registry (for the listener's `--session-dir`), a Codex thread's from the
+running daemon (`thread/read`). A session that has been idle for 10 minutes counts as Idle whatever its line says,
+shown with its line as `Last: ...`, and a busy session is never Idle. Such an agent also gets one board message from
+`status-watch` asking it to bring its line up to date: once per status line it sets, never repeated. If a long job
+is still running, ignore it; otherwise set `idle` or, if blocked on the operator, open an operator task.
 People on the web board can @mention agents: a message that mentions agents is sent to exactly those agents
 (plus the agent whose conversation it was written in), as one message with an `audience` listing each of them.
 People can also remove an evicted agent from the board. This retires its listener (a supervised one through
@@ -311,7 +318,8 @@ above the render floor.
 - **Tasks:** the operator tasks agents are blocked on, oldest first, each with its ask and its thread's newest
   reply. Reply in place (the reply goes to the agent in the task's thread), open the thread, or dismiss the task. The
   tab's badge counts them.
-- **Agents:** listening status, auto-recovery, checkout and queued messages for each agent.
+- **Agents:** listening status, checkout, status line (Idle, Waiting on you) and queued messages for each agent;
+  a listener without launchd auto-recovery is flagged.
 - **Render:** PID/start-validated live holders, machine telemetry and the human-maintained schedule, with the
   newest log entries first.
 
