@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
   <meta name="theme-color" content="#e6eef0">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,10 +13,11 @@
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="preload" as="image" type="image/webp" href="/meadow-portrait-1.webp" media="(max-width: 1099px)">
-  <link rel="preload" as="image" type="image/webp" href="/meadow-landscape-1.webp" media="(min-width: 1100px)">
+  <script src="/board-theme.js"></script>
   <link rel="stylesheet" href="/board.css">
   <script src="/board.js" defer></script>
+  <script src="/board-fx.js" defer></script>
+  <script src="/board-scene.js" defer></script>
 </head>
 <body>
   <div class="app" id="app" data-view="messages">
@@ -29,13 +30,32 @@
       <div class="pane-body">
         <div id="agents" class="agent-list" role="list"></div>
         <p class="pane-note">Tap an agent to open your conversation with them.</p>
-        <section class="card notify-card" aria-labelledby="notifyHeading">
-          <div class="notify-row">
-            <div class="notify-text"><h2 id="notifyHeading">Notifications</h2><p id="notifyNote">Only when an agent flags something for you.</p></div>
-            <label class="toggle"><input type="checkbox" id="notifyToggle" aria-label="Notifications on this device" disabled><span class="toggle-track"></span></label>
+        <details class="settings" id="settings">
+          <summary><span data-icon="board"></span><span class="settings-text"><b>Settings</b><small id="settingsSummary">Notifications, motion and appearance</small></span><span data-icon="chevron"></span></summary>
+          <div class="settings-body">
+            <section class="card notify-card" aria-labelledby="themeHeading">
+              <div class="notify-text"><h2 id="themeHeading">Appearance</h2><p id="themeNote">Follows this device.</p></div>
+              <div class="mode-switch theme-switch" role="group" aria-labelledby="themeHeading">
+                <button type="button" data-theme-choice="auto" aria-pressed="true">Auto</button>
+                <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+                <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+              </div>
+            </section>
+            <section class="card notify-card" aria-labelledby="notifyHeading">
+              <div class="notify-row">
+                <div class="notify-text"><h2 id="notifyHeading">Notifications</h2><p id="notifyNote">Only when an agent flags something for you.</p></div>
+                <label class="toggle"><input type="checkbox" id="notifyToggle" aria-label="Notifications on this device" disabled><span class="toggle-track"></span></label>
+              </div>
+              <button type="button" class="text-button" id="notifyTest" hidden>Send a test notification</button>
+            </section>
+            <section class="card notify-card" aria-labelledby="playfulHeading">
+              <div class="notify-row">
+                <div class="notify-text"><h2 id="playfulHeading">Playful motion</h2><p id="playfulNote">Comets, fireworks and a living meadow.</p></div>
+                <label class="toggle"><input type="checkbox" id="playfulToggle" aria-label="Playful motion on this device" checked><span class="toggle-track"></span></label>
+              </div>
+            </section>
           </div>
-          <button type="button" class="text-button" id="notifyTest" hidden>Send a test notification</button>
-        </section>
+        </details>
       </div>
     </aside>
 
@@ -69,7 +89,7 @@
       <div class="thread-scrim" id="threadScrim" hidden></div>
       <section class="thread-view" id="threadView" aria-label="Thread" hidden>
         <header class="thread-head">
-          <button type="button" class="back-button" id="threadBack" aria-label="Close thread"><span data-icon="back"></span></button>
+          <button type="button" class="back-button" id="threadBack" aria-label="Close thread"><span data-icon="back"></span><span class="back-label">Back</span></button>
           <div class="title-text"><h1 id="threadTitle">Thread</h1><p id="threadSubtitle"></p></div>
         </header>
         <div class="thread-feed" id="threadFeed"></div>
@@ -95,6 +115,14 @@
       </div>
     </main>
 
+    <aside class="pane tasks-pane" id="tasksPane" aria-labelledby="tasksHeading">
+      <header class="pane-head"><h1 id="tasksHeading">Tasks</h1><p class="pane-sub" id="tasksSummary">Nobody is waiting on you</p></header>
+      <div class="pane-body">
+        <div id="tasks" class="task-list" role="list"></div>
+        <p class="pane-note" id="tasksNote">When an agent can’t go on without your answer or OK, it asks here. Reply in place, or dismiss it.</p>
+      </div>
+    </aside>
+
     <aside class="pane render-pane" id="renderPane" aria-label="Render floor">
       <header class="pane-head"><h1>Render floor</h1><p class="pane-sub" id="renderSummary">Checking live jobs</p></header>
       <div class="pane-body">
@@ -108,6 +136,7 @@
     <nav class="tabbar glass" id="tabbar" aria-label="Views">
       <span class="tab-indicator" aria-hidden="true"></span>
       <button type="button" class="tab" data-view="messages" aria-current="page"><span data-icon="messages"></span><span>Messages</span><span class="tab-badge" id="messagesBadge" hidden></span></button>
+      <button type="button" class="tab" data-view="tasks"><span data-icon="tasks"></span><span>Tasks</span><span class="tab-badge" id="tasksBadge" hidden></span></button>
       <button type="button" class="tab" data-view="agents"><span data-icon="agents"></span><span>Agents</span><span class="tab-badge warn" id="agentsBadge" hidden></span></button>
       <button type="button" class="tab" data-view="render"><span data-icon="render"></span><span>Render</span><span class="tab-dot" id="renderBadge" hidden></span></button>
     </nav>
@@ -115,6 +144,16 @@
       <img id="lightboxImage" alt="">
       <div class="lightbox-bar"><span id="lightboxName"></span><a id="lightboxOpen" target="_blank" rel="noopener noreferrer">Open original</a></div>
       <button type="button" class="round-button lightbox-close" id="lightboxClose" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="readerTitle" hidden>
+      <article class="reader-card">
+        <header class="reader-head">
+          <span data-icon="file"></span><h2 id="readerTitle"></h2>
+          <a class="text-button" id="readerOpen">Download</a>
+          <button type="button" class="round-button" id="readerClose" aria-label="Close"><span data-icon="close"></span></button>
+        </header>
+        <div class="reader-body" id="readerBody"></div>
+      </article>
     </div>
     <div class="sheet-backdrop" id="sheet" hidden>
       <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="sheetTitle" aria-describedby="sheetText">

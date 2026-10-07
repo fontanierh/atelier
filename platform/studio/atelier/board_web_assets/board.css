@@ -6,8 +6,11 @@
   --ink: #22312f; --ink-2: #3c4d4a; --muted: #6a7b78; --faint: #94a39f;
   --coral: #c94f86; --mine: linear-gradient(160deg, #e8f2f9 0%, #d6e8f3 100%);
   --live: #3fae7a; --error: #d9546a; --warn: #c98a2b; --link: #b5487a;
-  --glass: #f6faf9c7; --glass-edge: #ffffffe0; --glass-shine: #ffffff;
+  --glass: #f6faf9c7; --glass-solid: #f6faf9ed; --glass-edge: #ffffffe0; --glass-shine: #ffffff;
   --shadow: 0 1px 0 #ffffffb3 inset, 0 6px 22px #2a4a4614;
+  /* Washes and shadows in the ink's hue, and the frosted surfaces, as channels so each use keeps its own alpha. */
+  --tint: 42 74 70; --shade: 42 74 70; --tint-deep: 31 58 54; --shade-deep: 31 58 54;
+  --frost: 238 244 243; --frost-2: 243 248 247; --frost-3: 246 250 249;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
   --display: ui-serif, "New York", "Iowan Old Style", "Palatino", Georgia, serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -22,13 +25,13 @@ body {
   color: var(--ink); font: 16px/1.45 var(--font); -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; overscroll-behavior: none;
   background: var(--page-bg);
 }
-/* The meadow painting (80 KB on a phone, a wide one from 1100px). Its colours, as a gradient, show until it has
+/* The meadow painting (80 KB on a phone, a sharp wide one from 1100px; dark mode has its moonlit twin). Its colours, as a gradient, show until it has
    loaded, so the first paint already looks right. */
 :root {
   --page-bg: url("/meadow-portrait-1.webp") center / cover no-repeat, linear-gradient(#dfe9ee, #edf2f1 45%, #d3e2d3);
 }
 @media (min-width: 1100px) {
-  :root { --page-bg: url("/meadow-landscape-1.webp") center / cover no-repeat, linear-gradient(#dfe9ee, #edf2f1 45%, #d3e2d3); }
+  :root { --page-bg: url("/meadow-landscape-2.webp") center / cover no-repeat, linear-gradient(#dfe9ee, #edf2f1 45%, #d3e2d3); }
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -36,16 +39,16 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 h1, h2, p { margin: 0; }
 .icon { display: inline-flex; flex: none; }
 .icon svg { width: 20px; height: 20px; }
-.glass { background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%); border: 1px solid var(--glass-edge); box-shadow: 0 1px 0 var(--glass-shine) inset, 0 18px 40px #1f3a362e; }
+.glass { background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%); border: 1px solid var(--glass-edge); box-shadow: 0 1px 0 var(--glass-shine) inset, 0 18px 40px rgb(var(--shade-deep) / .18); }
 .eyebrow { font-size: 11.5px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 
 /* Shell */
 .app { position: fixed; left: 0; right: 0; top: var(--app-top, 0); height: var(--app-height, 100dvh); overflow: hidden; }
 /* Content fades out under the floating bars instead of showing through them. */
-.app::after { content: ""; position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: calc(var(--tab-space) + var(--dock-h, 52px) + 30px); background: linear-gradient(#eef4f300, #eef4f3eb 40%, var(--bg)); pointer-events: none; }
+.app::after { content: ""; position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: calc(var(--tab-space) + var(--dock-h, 52px) + 30px); background: linear-gradient(rgb(var(--frost) / 0), rgb(var(--frost) / .922) 40%, var(--bg)); pointer-events: none; }
 .app.typing::after { display: none; }
 .pane { position: absolute; inset: 0; display: none; flex-direction: column; min-width: 0; min-height: 0; }
-.app[data-view="messages"] .chat-pane, .app[data-view="agents"] .agents-pane, .app[data-view="render"] .render-pane { display: flex; }
+.app[data-view="messages"] .chat-pane, .app[data-view="tasks"] .tasks-pane, .app[data-view="agents"] .agents-pane, .app[data-view="render"] .render-pane { display: flex; }
 .wordmark { font: 750 20px/1 var(--display); letter-spacing: -.01em; }
 .wordmark small { display: block; margin-top: 5px; font: 600 9.5px/1 var(--font); letter-spacing: .32em; text-transform: uppercase; color: var(--muted); }
 .pane-head { flex: none; padding: calc(var(--safe-top) + 18px) 22px 14px; display: grid; gap: 4px; }
@@ -58,13 +61,35 @@ h1, h2, p { margin: 0; }
 .stack { display: grid; gap: 10px; }
 .stack > .eyebrow { padding-left: 4px; }
 
+/* Operator tasks: one card per agent blocked on you, its ask, the thread's newest reply, a reply box and Dismiss. */
+.task-list { display: grid; gap: 12px; }
+.task-card { display: grid; gap: 10px; transition: opacity .2s, transform .2s; }
+.task-card.leaving { opacity: 0; transform: translateX(24px) scale(.98); }
+.task-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.task-head .orb { width: 34px; height: 34px; font-size: 13px; flex: none; }
+.task-who { min-width: 0; flex: 1; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-age { color: var(--muted); font-size: 13px; }
+.task-thread { display: inline-flex; align-items: center; gap: 2px; margin: 0; flex: none; }
+.task-thread .icon svg { width: 15px; height: 15px; }
+.task-body { font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
+.task-last { color: var(--muted); font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.task-reply { display: flex; align-items: flex-end; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 20px; background: rgb(var(--tint) / .055); border: 1px solid var(--line); }
+.task-reply:focus-within { border-color: var(--line-strong); }
+.task-reply textarea { flex: 1; min-width: 0; resize: none; border: 0; background: none; padding: 7px 0; font: inherit; font-size: 16px; line-height: 1.3; min-height: 36px; max-height: 180px; outline: 0; color: var(--ink); }
+.task-reply textarea::placeholder { color: var(--faint); }
+.task-status { font-size: 13px; color: var(--muted); min-height: 0; }
+.task-status:empty { display: none; }
+.task-status.error { color: var(--error); }
+.task-dismiss { justify-self: end; margin: -4px 0 0; color: var(--muted); }
+.task-dismiss:hover { color: var(--ink); }
+
 /* Floating glass tab bar */
-.tabbar { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: max(var(--safe-bottom), var(--tabbar-gap)); height: var(--tabbar-h); border-radius: 27px; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; }
+.tabbar { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: max(var(--safe-bottom), var(--tabbar-gap)); height: var(--tabbar-h); border-radius: 27px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; }
 .tab { position: relative; z-index: 1; border: 0; background: none; border-radius: 23px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: .01em; transition: color .2s, background .2s; }
 .tab .icon svg { width: 21px; height: 21px; }
 .tab[aria-current="page"] { color: var(--ink); }
 /* One highlight glides between tabs with a little spring. */
-.tab-indicator { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3); border-radius: 23px; background: #2a4a4614; box-shadow: 0 1px 0 #2a4a4614 inset; transform: translateX(calc(var(--tab, 0) * 100%)); transition: transform .45s cubic-bezier(.3, 1.35, .45, 1); pointer-events: none; }
+.tab-indicator { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 4); border-radius: 23px; background: rgb(var(--tint) / .078); box-shadow: 0 1px 0 rgb(var(--shade) / .078) inset; transform: translateX(calc(var(--tab, 0) * 100%)); transition: transform .45s cubic-bezier(.3, 1.35, .45, 1); pointer-events: none; }
 .tab[aria-current="page"] .icon { color: var(--coral); }
 .tab-badge { position: absolute; top: 4px; left: calc(50% + 7px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--coral); color: #fff; font-size: 11px; line-height: 18px; text-align: center; font-weight: 700; }
 .tab-badge.warn { background: var(--warn); color: #3a2a00; }
@@ -72,15 +97,24 @@ h1, h2, p { margin: 0; }
 .app.typing .tabbar { display: none; }
 
 /* Chat header */
-.topbar { flex: none; position: relative; z-index: 3; padding: calc(var(--safe-top) + 6px) 0 0; border-bottom: 1px solid var(--line); background: #eef4f3cc; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
-.round-button { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); background: #2a4a460a; display: grid; place-items: center; color: var(--ink-2); }
-.round-button.active { background: #2a4a461f; color: var(--ink); }
+.topbar { flex: none; position: relative; z-index: 3; padding: calc(var(--safe-top) + 6px) 0 0; border-bottom: 1px solid var(--line); background: rgb(var(--frost) / .8); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.round-button { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgb(var(--tint) / .039); display: grid; place-items: center; color: var(--ink-2); }
+.round-button.active { background: rgb(var(--tint) / .122); color: var(--ink); }
 .titlerow { display: flex; align-items: center; gap: 8px; padding: 2px 10px 5px 16px; min-width: 0; }
 .title-text { flex: 1; min-width: 0; }
 .title-text h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .title-text p { display: flex; align-items: center; gap: 7px; margin-top: 1px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; }
 .back-button { flex: none; margin-left: -10px; width: 30px; height: 38px; border: 0; background: none; color: var(--coral); display: grid; place-items: center; }
 .back-button .icon svg { width: 28px; height: 28px; stroke-width: 2.2; }
+.back-label { display: none; }
+/* On a wide screen the thread says plainly how to leave it. */
+@media (min-width: 1100px) {
+  #threadBack { width: auto; height: 34px; margin-left: -8px; padding: 0 14px 0 4px; gap: 1px; display: inline-flex; align-items: center;
+    border-radius: 17px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s ease; }
+  #threadBack:hover { background: rgb(var(--tint) / .08); }
+  #threadBack .icon svg { width: 24px; height: 24px; }
+  #threadBack .back-label { display: inline; }
+}
 .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
 .dot.live { background: var(--live); box-shadow: 0 0 10px #3fae7a99; }
 .dot.error { background: var(--error); box-shadow: 0 0 10px #d9546a99; }
@@ -91,7 +125,7 @@ h1, h2, p { margin: 0; }
 .search-options { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .toggle { position: relative; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
 .toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.toggle-track { position: relative; width: 38px; height: 23px; border-radius: 12px; background: #2a4a4624; transition: background .2s; }
+.toggle-track { position: relative; width: 38px; height: 23px; border-radius: 12px; background: rgb(var(--tint) / .141); transition: background .2s; }
 .toggle-track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px #0006; }
 .toggle input:checked + .toggle-track { background: var(--live); }
 .toggle input:checked + .toggle-track::after { transform: translateX(15px); }
@@ -107,7 +141,7 @@ h1, h2, p { margin: 0; }
   .topbar { position: absolute; top: 0; left: 0; right: 0; transition: transform .3s cubic-bezier(.32, .72, 0, 1); }
   .app.hide-top .topbar { transform: translateY(-100%); }
   .app.hide-top .orbs { visibility: hidden; }
-  .chat-pane::before { content: ""; position: absolute; z-index: 4; top: 0; left: 0; right: 0; height: var(--safe-top); background: #eef4f3cc; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); pointer-events: none; }
+  .chat-pane::before { content: ""; position: absolute; z-index: 4; top: 0; left: 0; right: 0; height: var(--safe-top); background: rgb(var(--frost) / .8); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); pointer-events: none; }
   .banner { position: absolute; z-index: 2; top: calc(var(--top-h, 0px) + 6px); left: 0; right: 0; }
   .round-button { width: 34px; height: 34px; }
   .title-text h1 { font-size: 18px; }
@@ -121,7 +155,7 @@ h1, h2, p { margin: 0; }
 .orb-button .orb { width: 42px; height: 42px; font-size: 16px; }
 .orb-name { max-width: 58px; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .orb-button[aria-current="true"] .orb-name { color: var(--ink); font-weight: 650; }
-.orb-button[aria-current="true"] .orb { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 4px #2a4a46d0, 0 0 26px hsl(var(--hue) 95% 60% / .45); }
+.orb-button[aria-current="true"] .orb { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 4px rgb(var(--shade) / .816), 0 0 26px hsl(var(--hue) 95% 60% / .45); }
 .orb {
   --hue: 220; position: relative; flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
   border: 2.5px solid transparent; font: 650 14px/1 var(--display); color: #fff; letter-spacing: -.01em;
@@ -148,14 +182,14 @@ h1, h2, p { margin: 0; }
 .feed { -webkit-mask-image: linear-gradient(transparent, #000 12px); mask-image: linear-gradient(transparent, #000 12px); flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; overflow-anchor: none; padding: calc(var(--top-h, 0px) + var(--orbs-h, 0px) + 2px) 10px calc(var(--dock-h, 60px) + var(--tab-space) + 12px); -webkit-overflow-scrolling: touch; }
 .app.typing .feed { padding-bottom: calc(var(--dock-h, 120px) + 22px); }
 .messages { display: flex; flex-direction: column; max-width: 760px; margin: 0 auto; min-width: 0; }
-.load-older { display: block; margin: 8px auto 6px; border: 1px solid var(--line-strong); background: #2a4a4608; color: var(--ink-2); font-size: 13.5px; padding: 8px 16px; border-radius: 18px; }
+.load-older { display: block; margin: 8px auto 6px; border: 1px solid var(--line-strong); background: rgb(var(--tint) / .031); color: var(--ink-2); font-size: 13.5px; padding: 8px 16px; border-radius: 18px; }
 .day { display: flex; align-items: center; gap: 12px; margin: 12px 4px 2px; color: var(--faint); font-size: 11.5px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; }
 .day::before, .day::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .empty { display: grid; justify-items: center; gap: 8px; text-align: center; color: var(--muted); padding: 14vh 24px 0; }
 .empty .icon svg { width: 44px; height: 44px; color: var(--faint); }
 .empty h2 { color: var(--ink); font: 650 19px/1.2 var(--display); }
 
-.notice { margin: 7px 0 0; border-radius: 12px; background: #2a4a4605; border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.notice { margin: 7px 0 0; border-radius: 12px; background: rgb(var(--tint) / .02); border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
 .notice summary { list-style: none; display: flex; align-items: center; gap: 9px; padding: 6px 12px; cursor: pointer; }
 .notice summary::-webkit-details-marker { display: none; }
 .notice .icon svg { width: 15px; height: 15px; color: var(--faint); }
@@ -174,7 +208,7 @@ h1, h2, p { margin: 0; }
 .bubble.card { border-radius: 18px; padding: 9px 12px 10px; }
 .bubble { overflow-wrap: anywhere; word-break: break-word; }
 .message.continued .bubble { border-top-left-radius: 8px; }
-.message.mine .bubble { background: var(--mine); border-color: transparent; color: var(--ink); box-shadow: 0 10px 28px #c94f8638, 0 1px 0 #2a4a4640 inset; }
+.message.mine .bubble { background: var(--mine); border-color: transparent; color: var(--ink); box-shadow: 0 10px 28px #c94f8638, 0 1px 0 rgb(var(--shade) / .251) inset; }
 .message.mine.continued .bubble { border-top-right-radius: 8px; border-top-left-radius: 18px; }
 .message.urgent .bubble { border-color: #d9546a66; box-shadow: 0 0 0 1px #d9546a33, 0 10px 30px #d9546a1f; }
 .message.flash .bubble { animation: flash 1.6s ease-out; }
@@ -183,24 +217,24 @@ h1, h2, p { margin: 0; }
 .sender { font-weight: 700; color: var(--ink-2); overflow-wrap: anywhere; }
 .route { letter-spacing: .01em; text-transform: none; font-size: 11.5px; color: var(--faint); }
 .time { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
-.message.mine .meta { justify-content: flex-end; color: #2a4a46c8; }
+.message.mine .meta { justify-content: flex-end; color: rgb(var(--tint) / .784); }
 .message.mine .sender, .message.mine .route { color: var(--ink); }
 .message.mine .route { opacity: .8; }
-.topic { font-size: 9.5px; font-weight: 750; letter-spacing: .1em; padding: 2px 6px; border-radius: 6px; background: #2a4a4610; color: var(--ink-2); }
+.topic { font-size: 9.5px; font-weight: 750; letter-spacing: .1em; padding: 2px 6px; border-radius: 6px; background: rgb(var(--tint) / .063); color: var(--ink-2); }
 .topic.request { background: #e0a43a24; color: #8c5a14; }
 .topic.alert, .topic.blocked { background: #d9546a29; color: #b23a52; }
 .topic.ack { background: #3fae7a1f; color: #2b7d57; }
 .topic.handoff, .topic.release { background: #8b6fd124; color: #6a4fb0; }
 .topic.evidence { background: #4f8fc421; color: #2f6a99; }
-.message.mine .topic { background: #1f3a360f; color: var(--ink); }
+.message.mine .topic { background: rgb(var(--tint-deep) / .059); color: var(--ink); }
 .bubble-time { display: flex; justify-content: flex-end; align-items: center; gap: 4px; font-size: 10.5px; color: var(--faint); margin-top: 2px; font-variant-numeric: tabular-nums; }
-.message.mine .bubble-time { color: #2a4a46b0; }
-.quote { display: grid; gap: 1px; width: 100%; text-align: left; border: 0; border-left: 2.5px solid var(--coral); background: #2a4a4608; border-radius: 8px; padding: 5px 9px; margin: 2px 0 6px; font-size: 12.5px; min-width: 0; }
-.message.mine .quote { background: #1f3a360e; border-left-color: var(--ink); }
+.message.mine .bubble-time { color: rgb(var(--tint) / .69); }
+.quote { display: grid; gap: 1px; width: 100%; text-align: left; border: 0; border-left: 2.5px solid var(--coral); background: rgb(var(--tint) / .031); border-radius: 8px; padding: 5px 9px; margin: 2px 0 6px; font-size: 12.5px; min-width: 0; }
+.message.mine .quote { background: rgb(var(--tint-deep) / .055); border-left-color: var(--ink); }
 .quote-who { font-weight: 700; color: var(--coral); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; }
 .message.mine .quote-who { color: var(--ink); }
 .quote-text { color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.message.mine .quote-text { color: #2a4a46c0; }
+.message.mine .quote-text { color: rgb(var(--tint) / .753); }
 .body { font-size: 15px; line-height: 1.42; color: var(--ink); }
 .message.mine .body { color: var(--ink); }
 .body.collapsed { max-height: 13em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 65%, transparent); mask-image: linear-gradient(#000 65%, transparent); }
@@ -219,10 +253,10 @@ h1, h2, p { margin: 0; }
 .markdown strong { font-weight: 650; color: var(--ink); }
 .markdown a { color: var(--link); text-decoration-color: #b5487a66; text-underline-offset: 2px; }
 .message.mine .markdown a { color: var(--ink); }
-.markdown code { font: .86em/1.4 var(--mono); background: #2a4a4610; border: 1px solid #2a4a460d; padding: .08em .38em; border-radius: 6px; overflow-wrap: anywhere; word-break: break-all; color: #8a3f5f; }
-.message.mine .markdown code { background: #1f3a3610; border-color: transparent; color: var(--ink); }
-.markdown pre { max-width: 100%; overflow-x: auto; background: #1f3a3623; border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; }
-.message.mine .markdown pre { background: #1f3a3614; border-color: transparent; }
+.markdown code { font: .86em/1.4 var(--mono); background: rgb(var(--tint) / .063); border: 1px solid rgb(var(--tint) / .051); padding: .08em .38em; border-radius: 6px; overflow-wrap: anywhere; word-break: break-all; color: #8a3f5f; }
+.message.mine .markdown code { background: rgb(var(--tint-deep) / .063); border-color: transparent; color: var(--ink); }
+.markdown pre { max-width: 100%; overflow-x: auto; background: rgb(var(--tint-deep) / .137); border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; }
+.message.mine .markdown pre { background: rgb(var(--tint-deep) / .078); border-color: transparent; }
 .markdown pre code { background: none; border: 0; padding: 0; white-space: pre; word-break: normal; overflow-wrap: normal; font-size: 12.5px; color: var(--ink-2); }
 .message.mine .markdown pre code { color: var(--ink); }
 .markdown blockquote { border-left: 2px solid var(--line-strong); padding-left: 11px; color: var(--muted); }
@@ -251,14 +285,14 @@ h1, h2, p { margin: 0; }
 .dock { position: absolute; z-index: 4; left: 10px; right: 10px; bottom: calc(var(--tab-space) - 4px); display: grid; gap: 8px; pointer-events: none; }
 .dock > * { pointer-events: auto; width: 100%; max-width: 780px; margin: 0 auto; }
 .app.typing .dock { bottom: 8px; }
-.dock > .jump-latest { justify-self: end; width: auto; margin: 0 4px 0 auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--glass-edge); border-radius: 20px; padding: 8px 12px 8px 15px; background: var(--card-hi); color: var(--ink); font-weight: 650; font-size: 14px; box-shadow: 0 10px 26px #1f3a3633; }
+.dock > .jump-latest { justify-self: end; width: auto; margin: 0 4px 0 auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--glass-edge); border-radius: 20px; padding: 8px 12px 8px 15px; background: var(--card-hi); color: var(--ink); font-weight: 650; font-size: 14px; box-shadow: 0 10px 26px rgb(var(--shade-deep) / .2); }
 .jump-latest .icon { color: var(--coral); }
 .jump-latest .icon svg { width: 17px; height: 17px; }
 .composer { display: grid; gap: 5px; padding: 5px 5px 5px 7px; border-radius: 22px; }
 /* The pickers only appear while writing; idle, the composer is one slim row. */
 .composer:not(.expanded) .composer-options { display: none; }
 .composer-options { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 1px 0 0 2px; }
-.select-pill { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 0; height: 26px; padding: 0 7px 0 10px; border-radius: 13px; border: 1px solid var(--line-strong); background: #2a4a460a; color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
+.select-pill { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 0; height: 26px; padding: 0 7px 0 10px; border-radius: 13px; border: 1px solid var(--line-strong); background: rgb(var(--tint) / .039); color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
 /* In a direct conversation or a thread the recipient is implied; the pill returns only when @mentions change it. */
 .app.in-conversation .recipient-pill:not(.mentioning), .app.in-thread .recipient-pill:not(.mentioning) { display: none; }
 /* With nothing left to show there, the row goes too. */
@@ -275,9 +309,9 @@ h1, h2, p { margin: 0; }
 .composer-row { display: flex; align-items: flex-end; gap: 8px; }
 .composer textarea { flex: 1; min-width: 0; resize: none; border: 0; background: none; padding: 7px 4px 7px 4px; font-size: 16px; line-height: 1.3; max-height: min(34vh, 220px); min-height: 36px; outline: 0; overflow-y: auto; color: var(--ink); }
 .composer textarea::placeholder { color: var(--faint); }
-.send-button { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--mine); color: #fff; box-shadow: 0 6px 18px #c94f8659, 0 1px 0 #2a4a4659 inset; transition: transform .15s, opacity .15s, filter .15s; }
+.send-button { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--mine); color: #fff; box-shadow: 0 6px 18px #c94f8659, 0 1px 0 rgb(var(--shade) / .349) inset; transition: transform .15s, opacity .15s, filter .15s; }
 .send-button .icon svg { width: 19px; height: 19px; stroke-width: 2.2; }
-.send-button:disabled { background: #2a4a4612; color: var(--faint); box-shadow: none; cursor: default; }
+.send-button:disabled { background: rgb(var(--tint) / .071); color: var(--faint); box-shadow: none; cursor: default; }
 .send-button:not(:disabled):active { transform: scale(.9); }
 .composer.sending .send-button { opacity: .6; }
 .composer-status { font-size: 13px; color: var(--live); text-align: center; }
@@ -308,18 +342,18 @@ h1, h2, p { margin: 0; }
 .job-purpose { font-size: 15.5px; overflow-wrap: anywhere; }
 .job-checkout { font: 12.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
 .resources { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.resources span { font-size: 13px; color: var(--ink-2); background: #2a4a460a; border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px; font-variant-numeric: tabular-nums; }
+.resources span { font-size: 13px; color: var(--ink-2); background: rgb(var(--tint) / .039); border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px; font-variant-numeric: tabular-nums; }
 .quiet { color: var(--muted); font-size: 15px; }
 .schedule-card { padding: 0; overflow: hidden; }
 .schedule-card summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 15px 16px; font: 650 17px/1.2 var(--display); cursor: pointer; }
 .schedule-card summary::-webkit-details-marker { display: none; }
 .schedule-card summary .icon { margin-left: auto; color: var(--faint); transition: transform .2s; }
 .schedule-card[open] summary .icon { transform: rotate(180deg); }
-.count-pill { font: 650 12px/1 var(--font); color: var(--ink-2); background: #2a4a4612; border-radius: 9px; padding: 4px 8px; }
+.count-pill { font: 650 12px/1 var(--font); color: var(--ink-2); background: rgb(var(--tint) / .071); border-radius: 9px; padding: 4px 8px; }
 .schedule-card > .quiet, .schedule-card > .text-button { margin: 0 16px 16px; display: block; }
 .entries { list-style: none; margin: 0; padding: 0 16px 8px; }
 .entries li { padding: 11px 0; border-top: 1px solid var(--line); font-size: 14.5px; line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; word-break: break-word; }
-.entries code { font: 12.5px var(--mono); background: #2a4a4610; border-radius: 5px; padding: 0 4px; word-break: break-all; color: #8a3f5f; }
+.entries code { font: 12.5px var(--mono); background: rgb(var(--tint) / .063); border-radius: 5px; padding: 0 4px; word-break: break-all; color: #8a3f5f; }
 .list-card { padding: 0; overflow: hidden; }
 .list-card > .quiet { padding: 16px; }
 .session { display: flex; align-items: center; gap: 10px; padding: 14px 16px; color: var(--ink); text-decoration: none; border-top: 1px solid var(--line); min-width: 0; }
@@ -338,13 +372,21 @@ h1, h2, p { margin: 0; }
   .tabbar { left: 50%; right: auto; width: 420px; transform: translateX(-50%); }
 }
 
-/* Wide screens: agents | conversation | render floor */
+/* Wide screens: agents | conversation | tasks over the render floor */
 @media (min-width: 1100px) {
+  .app { grid-template-rows: auto minmax(0, 1fr); }
+  .agents-pane { grid-area: 1 / 1 / 3 / 2; } .chat-pane { grid-area: 1 / 2 / 3 / 3; }
+  .tasks-pane { grid-area: 1 / 3 / 2 / 4; max-height: 56dvh; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgb(var(--frost-2) / .702); }
+  .render-pane { grid-area: 2 / 3 / 3 / 4; }
+  .tasks-pane .pane-head { padding-bottom: 10px; }
+  .app:not(.has-tasks) .tasks-pane .pane-body { display: none; }
+  .tasks-pane .pane-head h1 { font-size: 22px; }
+  .render-pane .pane-head { padding-top: 16px; }
   :root { --tab-space: 18px; }
   .app { display: grid; grid-template-columns: 300px minmax(0, 1fr) 370px; height: 100dvh; top: 0; }
   .pane, .app[data-view] .pane { position: relative; inset: auto; display: flex; }
-  .tabbar, .orbs, .back-button, .app::after { display: none !important; }
-  .agents-pane, .render-pane { background: #f3f7f6b3; }
+  .tabbar, .orbs, #backButton, .app::after { display: none !important; }
+  .agents-pane, .render-pane { background: rgb(var(--frost-2) / .702); }
   .agents-pane { border-right: 1px solid var(--line); }
   .render-pane { border-left: 1px solid var(--line); }
   .pane-head h1 { font-size: 26px; }
@@ -361,9 +403,9 @@ h1, h2, p { margin: 0; }
   .dock { left: 24px; right: 24px; }
 }
 /* Attachments: the tray in the composer */
-.attach-button { flex: none; width: 34px; height: 34px; margin-bottom: 1px; border-radius: 50%; border: 1px solid var(--line-strong); background: #2a4a460d; color: var(--ink-2); display: grid; place-items: center; transition: transform .2s, background .2s; }
+.attach-button { flex: none; width: 34px; height: 34px; margin-bottom: 1px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgb(var(--tint) / .051); color: var(--ink-2); display: grid; place-items: center; transition: transform .2s, background .2s; }
 .attach-button .icon svg { width: 20px; height: 20px; stroke-width: 2; }
-.attach-button:active { transform: scale(.9) rotate(90deg); background: #2a4a461f; }
+.attach-button:active { transform: scale(.9) rotate(90deg); background: rgb(var(--tint) / .122); }
 .tray { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
 .tray::-webkit-scrollbar { display: none; }
 .tile { position: relative; flex: none; width: 76px; height: 76px; border-radius: 16px; overflow: hidden; background: var(--card-hi); border: 1px solid var(--line); animation: pop .35s cubic-bezier(.3, 1.4, .5, 1) both; }
@@ -375,7 +417,7 @@ h1, h2, p { margin: 0; }
 .tile-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: #000000b3; color: #fff; display: grid; place-items: center; padding: 0; }
 .tile-remove .icon svg { width: 13px; height: 13px; stroke-width: 2.6; }
 .tile-progress { position: absolute; inset: 0; display: grid; place-items: center; background: #0000008c; }
-.tile-progress::before { content: ""; width: 34px; height: 34px; border-radius: 50%; background: conic-gradient(var(--coral) calc(var(--p, 0) * 1%), #2a4a4626 0); -webkit-mask: radial-gradient(circle, transparent 12px, #000 13px); mask: radial-gradient(circle, transparent 12px, #000 13px); transition: --p .2s; }
+.tile-progress::before { content: ""; width: 34px; height: 34px; border-radius: 50%; background: conic-gradient(var(--coral) calc(var(--p, 0) * 1%), rgb(var(--tint) / .149) 0); -webkit-mask: radial-gradient(circle, transparent 12px, #000 13px); mask: radial-gradient(circle, transparent 12px, #000 13px); transition: --p .2s; }
 .tile.error .tile-progress { background: #d9546a80; }
 .tile.error .tile-progress::before { display: none; }
 .tile-retry { border: 0; background: none; color: #fff; font: 700 12px/1.2 var(--font); }
@@ -383,15 +425,15 @@ h1, h2, p { margin: 0; }
 /* Attachments inside messages */
 .attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 6px; margin-top: 10px; }
 .bubble > .attachments:first-child, .meta + .attachments { margin-top: 0; }
-.att-image { position: relative; border: 0; padding: 0; border-radius: 14px; overflow: hidden; background: #2a4a460a; aspect-ratio: 1; cursor: zoom-in; }
+.att-image { position: relative; border: 0; padding: 0; border-radius: 14px; overflow: hidden; background: rgb(var(--tint) / .039); aspect-ratio: 1; cursor: zoom-in; }
 .att-image img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
 .att-image:hover img { transform: scale(1.04); }
 .attachments .single { grid-column: 1 / -1; aspect-ratio: var(--ratio, 4 / 3); max-height: 420px; }
 .attachments .single img { width: 100%; height: 100%; object-fit: contain; }
 .att-video { grid-column: 1 / -1; width: 100%; aspect-ratio: var(--ratio, 16 / 9); max-height: 460px; border-radius: 14px; background: #000; display: block; }
 .att-audio { grid-column: 1 / -1; width: 100%; }
-.att-file { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 12px; border-radius: 14px; background: #2a4a460d; border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
-.message.mine .att-file { background: #1f3a3610; border-color: transparent; color: var(--ink); }
+.att-file { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 12px; border-radius: 14px; background: rgb(var(--tint) / .051); border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.message.mine .att-file { background: rgb(var(--tint-deep) / .063); border-color: transparent; color: var(--ink); }
 .att-file .icon svg { width: 26px; height: 26px; color: var(--coral); }
 .message.mine .att-file .icon svg { color: var(--ink); }
 .att-file span { min-width: 0; display: grid; }
@@ -406,7 +448,7 @@ h1, h2, p { margin: 0; }
 .lightbox-bar { position: absolute; left: 16px; right: 16px; bottom: calc(var(--safe-bottom) + 18px); display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--ink-2); }
 .lightbox-bar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lightbox-bar a { flex: none; color: var(--coral); font-weight: 650; text-decoration: none; }
-.drop-hint { position: fixed; inset: 12px; z-index: 15; border: 2px dashed var(--coral); border-radius: 28px; background: #eef4f3cc; display: grid; place-content: center; justify-items: center; gap: 10px; font: 650 18px var(--display); color: var(--ink); pointer-events: none; animation: fade .2s both; }
+.drop-hint { position: fixed; inset: 12px; z-index: 15; border: 2px dashed var(--coral); border-radius: 28px; background: rgb(var(--frost) / .8); display: grid; place-content: center; justify-items: center; gap: 10px; font: 650 18px var(--display); color: var(--ink); pointer-events: none; animation: fade .2s both; }
 .drop-hint .icon svg { width: 36px; height: 36px; color: var(--coral); }
 
 /* Motion: new messages rise in, your own spring up from the composer, views slide, status lights breathe. */
@@ -445,9 +487,12 @@ h1, h2, p { margin: 0; }
 .lightbox-close .icon svg { width: 20px; height: 20px; }
 
 /* Threads */
-.thread-bar { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; margin: 4px 0 0 4px; padding: 3px 8px 3px 4px; border-radius: 13px; border: 1px solid var(--line); background: #2a4a4608; color: var(--ink-2); font-size: 12.5px; transition: background .2s, transform .2s; animation: fade .4s ease both; }
+.thread-bar { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; margin: 4px 0 0 4px; padding: 3px 8px 3px 4px; border-radius: 13px; border: 1px solid var(--line); background: rgb(var(--tint) / .031); color: var(--ink-2); font-size: 12.5px; transition: background .2s, transform .2s; animation: fade .4s ease both; }
 .message.mine .thread-bar { align-self: flex-end; margin-right: 4px; }
-.thread-bar:hover { background: #2a4a4612; }
+.thread-bar:hover { background: rgb(var(--tint) / .071); }
+/* Over the painting the reply bar and the board's quiet notices carry their own glass, so their small text reads. */
+.app .thread-bar, .app .notice { background: rgb(var(--frost) / .8); border-color: var(--line-strong); box-shadow: 0 2px 10px rgb(var(--shade-deep) / .08); }
+.app .thread-bar:hover { background: rgb(var(--frost-3) / .92); }
 .thread-bar:active { transform: scale(.97); }
 .thread-faces { display: flex; }
 .thread-faces .orb { width: 20px; height: 20px; font-size: 9px; border-width: 1.5px; box-shadow: 0 0 0 2px var(--bg); }
@@ -459,9 +504,9 @@ h1, h2, p { margin: 0; }
 .reply-button { margin-left: auto; width: 22px; height: 18px; border: 0; padding: 0; background: none; color: var(--faint); display: inline-grid; place-items: center; border-radius: 6px; }
 .reply-button .icon svg { width: 14px; height: 14px; }
 .reply-button:hover { color: var(--coral); }
-.message.mine .reply-button { color: #2a4a46b0; }
+.message.mine .reply-button { color: rgb(var(--tint) / .69); }
 .message.mine .meta .reply-button { margin-left: 2px; order: 9; }
-.thread-view { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; background: var(--bg); box-shadow: -18px 0 40px #1f3a3633; }
+.thread-view { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; background: var(--bg); box-shadow: -18px 0 40px rgb(var(--shade-deep) / .2); }
 .thread-head { flex: none; display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-top) + 10px) 18px 8px; border-bottom: 1px solid var(--line); }
 .thread-feed { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px calc(var(--dock-h, 120px) + var(--tab-space) + 14px); }
 .app.typing .thread-feed { padding-bottom: calc(var(--dock-h, 120px) + 22px); }
@@ -469,13 +514,19 @@ h1, h2, p { margin: 0; }
 .thread-divider { display: flex; align-items: center; gap: 12px; margin: 18px 4px 2px; color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
 .thread-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .app.in-thread .jump-latest { display: none !important; }
+.app.in-thread:not(.navigating) :is(#topbar, #feed, #errorBanner) { visibility: hidden; }
+/* On a wide screen a thread opens in place, and closing it brings the conversation back; nothing slides. */
+@keyframes thread-in { from { opacity: 0; transform: translate3d(16px, 0, 0); } }
+@keyframes view-in { from { opacity: 0; transform: translate3d(-10px, 0, 0); } }
+.thread-in { animation: thread-in .22s cubic-bezier(.2, .8, .2, 1) both; }
+.view-in { animation: view-in .22s cubic-bezier(.2, .8, .2, 1) both; }
 @media (min-width: 1100px) { .thread-head { padding-top: 20px; } .thread-feed { padding: 6px 28px calc(var(--dock-h, 120px) + 34px); } }
 
 /* Direct conversations */
-.mode-switch { flex: none; display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: #2a4a460d; border: 1px solid var(--line); }
+.mode-switch { flex: none; display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: rgb(var(--tint) / .051); border: 1px solid var(--line); }
 .mode-switch[hidden] { display: none; }
 .mode-switch button { border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 650; padding: 4px 9px; border-radius: 8px; transition: background .2s, color .2s; }
-.mode-switch button[aria-pressed="true"] { background: #2a4a461a; color: var(--ink); }
+.mode-switch button[aria-pressed="true"] { background: rgb(var(--tint) / .102); color: var(--ink); }
 .who { border: 0; background: none; padding: 0; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; border-radius: 4px; }
 .who:hover .sender, .sender.who:hover { color: var(--coral); }
 button.orb-link { padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; flex: none; margin-top: 1px; }
@@ -488,7 +539,7 @@ button.orb-link:active .orb { transform: scale(.9); }
 .agent-row.unread .agent-name::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 50%; background: var(--coral); vertical-align: middle; }
 .quote.quote-away { display: flex; align-items: center; gap: 6px; border-left: 0; background: none; padding: 0; margin: 0 0 5px; color: var(--muted); font-size: 12px; }
 .quote.quote-away .icon svg { width: 13px; height: 13px; }
-.message.mine .quote.quote-away { color: #2a4a46c0; }
+.message.mine .quote.quote-away { color: rgb(var(--tint) / .753); }
 @media (hover: hover) { .bubble.tappable { cursor: pointer; } .bubble.tappable:hover { border-color: var(--line-strong); } }
 
 /* Agents: a one-line assignment under each name, and a Remove action behind the row. */
@@ -499,22 +550,27 @@ button.orb-link:active .orb { transform: scale(.9); }
 .agent-remove .icon svg { width: 20px; height: 20px; }
 .agent-cell.open .agent-remove, .agent-cell:has(.agent-row[style*="translateX"]) .agent-remove { opacity: 1; }
 .agent-cell.leaving { overflow: hidden; transition: height .26s ease, opacity .2s ease, margin .26s ease; height: 0 !important; opacity: 0; margin-bottom: -10px; }
+/* With a pointer, a small trash button waits in the card's top corner instead. */
 @media (hover: hover) {
-  .agent-remove { z-index: 2; top: 50%; bottom: auto; right: 44px; width: auto; height: 30px; padding: 0 12px; border-radius: 15px; transform: translateY(-50%); display: flex; gap: 6px; font-size: 12.5px; pointer-events: none; }
-  .agent-remove .icon svg { width: 15px; height: 15px; }
+  .agent-remove { z-index: 2; top: 7px; right: 7px; bottom: auto; width: 26px; height: 26px; padding: 0; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--card-hi); color: var(--muted); display: grid; place-items: center;
+    box-shadow: 0 2px 8px rgb(var(--shade) / .12); pointer-events: none; transition: opacity .15s, color .15s, background .15s, scale .15s; }
+  .agent-remove > :not(.icon) { display: none; }
+  .agent-remove .icon svg { width: 14px; height: 14px; }
   .agent-cell:hover .agent-remove, .agent-remove:focus-visible { opacity: 1; pointer-events: auto; }
+  .agent-remove:hover { color: var(--error); background: color-mix(in srgb, var(--error) 14%, var(--card-hi)); scale: 1.08; }
 }
-@media (min-width: 1100px) { .agent-cell { border-radius: 18px; } .agent-remove { right: 12px; } }
+@media (min-width: 1100px) { .agent-cell { border-radius: 18px; } }
 /* @mention suggestions sit just above the composer. */
 .mention-menu { pointer-events: auto; display: grid; padding: 6px; border-radius: 20px; max-height: 40vh; overflow-y: auto; animation: rise .22s cubic-bezier(.2, .9, .25, 1.04) both; }
 .mention-option { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 7px 10px; border: 0; border-radius: 14px; background: none; text-align: left; }
-.mention-option[aria-selected="true"] { background: #2a4a4614; }
+.mention-option[aria-selected="true"] { background: rgb(var(--tint) / .078); }
 .mention-option .orb { width: 32px; height: 32px; font-size: 12px; flex: none; }
 .mention-text { display: grid; min-width: 0; }
 .mention-name { font-weight: 650; font-size: 15px; }
 .mention-task { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mention { border: 0; padding: 0 3px; margin: 0 -1px; border-radius: 6px; background: #c94f8626; color: var(--link); font: inherit; font-weight: 650; }
-.message.mine .mention { background: #2a4a4633; color: var(--ink); }
+.message.mine .mention { background: rgb(var(--tint) / .2); color: var(--ink); }
 .select-pill.mentioning { border-color: #c94f8673; color: var(--link); }
 .select-pill.mentioning select { pointer-events: none; }
 /* An iOS action sheet for confirming destructive actions. */
@@ -529,8 +585,25 @@ button.orb-link:active .orb { transform: scale(.9); }
 .sheet-danger, .sheet-cancel { display: block; width: 100%; min-height: 56px; border: 0; background: none; font: 600 18px/1 var(--font); }
 .sheet-danger { border-top: 1px solid var(--line); color: var(--error); }
 .sheet-cancel { background: var(--card-hi); font-weight: 700; color: var(--ink); }
-.sheet-danger:active, .sheet-cancel:active { background: #2a4a4610; }
-/* Notifications setting, at the foot of Agents. */
+.sheet-danger:active, .sheet-cancel:active { background: rgb(var(--tint) / .063); }
+/* Settings fold away at the foot of Agents: one quiet row that says how they are set. */
+.agents-pane .pane-body { grid-template-rows: max-content max-content 1fr; }
+.settings { align-self: end; display: grid; gap: 10px; }
+.settings summary { list-style: none; display: flex; align-items: center; gap: 11px; padding: 10px 14px; border-radius: 16px; cursor: pointer;
+  color: var(--muted); background: rgb(var(--frost-3) / .7); border: 1px solid var(--line); transition: background .2s; }
+.settings summary::-webkit-details-marker { display: none; }
+.settings summary:hover { background: var(--card); }
+.settings summary > .icon svg { width: 18px; height: 18px; }
+.settings summary > .icon:last-child { margin-left: auto; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1); }
+.settings[open] summary > .icon:last-child { transform: rotate(180deg); }
+.settings-text { min-width: 0; display: grid; }
+.settings-text b { font: 600 15px/1.3 var(--display); color: var(--ink); }
+.settings-text small { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-body { display: grid; gap: 10px; }
+.settings[open] .settings-body { animation: drop .25s ease both; }
+.theme-switch { justify-self: start; margin-top: 4px; }
+.theme-switch button { padding: 5px 13px; font-size: 13px; }
+/* The settings cards. */
 .notify-card { display: grid; gap: 6px; padding: 14px 16px; }
 .notify-row { display: flex; align-items: center; gap: 12px; }
 .notify-text { flex: 1; min-width: 0; }
@@ -550,7 +623,7 @@ button.orb-link:active .orb { transform: scale(.9); }
 .app.navigating .chat-pane { overflow: hidden; }
 /* As on iOS 26, the moving screen takes the display's rounded corners while it slides; only an app opened from the
    Home Screen fills the display edge to edge, so a browser tab keeps square corners. */
-.app.navigating .nav-top { overflow: hidden; border-radius: var(--screen-corner, 0); box-shadow: -10px 0 30px #1f3a362e; }
+.app.navigating .nav-top { overflow: hidden; border-radius: var(--screen-corner, 0); box-shadow: -10px 0 30px rgb(var(--shade-deep) / .18); }
 .standalone { --screen-corner: 55px; }
 /* App chrome behaves like controls, not a document: no selection or callout on a long press, no double-tap zoom. */
 .tabbar, .topbar, .thread-head, .pane-head, .composer-options, .agent-row, .orb-button, .thread-bar, button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -566,13 +639,13 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 }
 .orb-button[aria-current="true"] .orb { box-shadow: 0 0 0 2.5px #ffffff, 0 0 0 4.5px var(--coral), 0 6px 16px hsl(var(--hue) 40% 40% / .3); }
 .badge { box-shadow: 0 0 0 2.5px #ffffff; }
-.topbar, .thread-head { background: #f3f8f7b8; -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%); }
+.topbar, .thread-head { background: rgb(var(--frost-2) / .722); -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%); }
 @media (max-width: 1099px) {
-  .chat-pane::before { background: #f3f8f7b8; }
-  .orbs { background: #f3f8f7e6; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+  .chat-pane::before { background: rgb(var(--frost-2) / .722); }
+  .orbs { background: rgb(var(--frost-2) / .902); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 }
-.app::after { background: linear-gradient(#eef4f300, #eef4f3cc 45%, #eef4f3f2); }
-.thread-view { background: var(--page-bg); box-shadow: -14px 0 34px #1f3a361f; }
+.app::after { background: linear-gradient(rgb(var(--frost) / 0), rgb(var(--frost) / .8) 45%, rgb(var(--frost) / .949)); }
+.thread-view { background: var(--page-bg); box-shadow: -14px 0 34px rgb(var(--shade-deep) / .122); }
 .card, .bubble.card { -webkit-backdrop-filter: none; backdrop-filter: none; }
 .message.mine .bubble { color: var(--ink); border-color: #ffffffcc; box-shadow: 0 6px 18px #4f8fc41f, 0 1px 0 #ffffff inset; }
 .message.mine .meta, .message.mine .bubble-time, .message.mine .route { color: var(--muted); }
@@ -581,18 +654,18 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .message.mine .more, .message.mine .markdown a { color: var(--link); }
 .message.mine .mention { background: #c94f861f; color: var(--link); }
 .message.mine .quote-who { color: var(--coral); }
-.topic { background: #2a4a4610; color: var(--ink-2); }
+.topic { background: rgb(var(--tint) / .063); color: var(--ink-2); }
 .topic.request { background: #4f8fc41f; color: #2f6a99; }
 .topic.release, .topic.handoff { background: #8b6fd124; color: #6a4fb0; }
 .topic.evidence { background: #3fae9a22; color: #2a7f72; }
 .send-button { background: linear-gradient(160deg, #6fb0d4, #4f8fc4); color: #fff; box-shadow: 0 6px 16px #4f8fc440, 0 1px 0 #ffffff80 inset; }
-.send-button:disabled { background: #2a4a4612; color: var(--faint); box-shadow: none; }
+.send-button:disabled { background: rgb(var(--tint) / .071); color: var(--faint); box-shadow: none; }
 .tab[aria-current="page"] { color: var(--coral); }
 .tab-indicator { background: #c94f861c; box-shadow: none; }
-.glass { box-shadow: 0 1px 0 #ffffff inset, 0 12px 32px #1f3a361f; }
-.dock > .jump-latest { box-shadow: 0 8px 22px #1f3a3626; }
-.nav-scrim, .thread-scrim { background: #1f3a36; }
-.app.navigating .nav-top { box-shadow: -10px 0 30px #1f3a362e; }
+.glass { box-shadow: 0 1px 0 #ffffff inset, 0 12px 32px rgb(var(--shade-deep) / .122); }
+.dock > .jump-latest { box-shadow: 0 8px 22px rgb(var(--shade-deep) / .149); }
+.nav-scrim, .thread-scrim { background: rgb(var(--shade-deep)); }
+.app.navigating .nav-top { box-shadow: -10px 0 30px rgb(var(--shade-deep) / .18); }
 /* Links: Markdown links read as underlined words; bare addresses become a compact chip named by host and path. */
 .markdown a { font-weight: 550; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .markdown a.url { padding: .05em .35em; border-radius: 6px; background: #c94f8614; text-decoration: none; overflow-wrap: anywhere;
@@ -600,12 +673,12 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .markdown a.url::after { content: "↗"; margin-left: .2em; font-size: .8em; opacity: .7; }
 .message.mine .markdown a.url { background: #4f8fc41f; }
 /* Small notes that land over the flowers sit on a soft frosted pill. */
-.pane-note { justify-self: center; padding: 4px 12px; border-radius: 12px; background: #f6faf9b3; color: var(--muted); }
+.pane-note { justify-self: center; padding: 4px 12px; border-radius: 12px; background: rgb(var(--frost-3) / .702); color: var(--muted); }
 .lightbox { background: #10201de6; }
 .lightbox-bar { color: #e8f0ee; }
 .lightbox-close { background: #ffffff26; color: #fff; border-color: #ffffff40; }
-.drop-hint { background: #eef4f3e6; }
-@media (min-width: 1100px) { .agents-pane, .render-pane { background: #f3f7f6a6; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); } }
+.drop-hint { background: rgb(var(--frost) / .902); }
+@media (min-width: 1100px) { .agents-pane, .render-pane, .tasks-pane { background: rgb(var(--frost-2) / .651); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); } }
 /* Ambience: mist drifting across the meadow, a dandelion seed floating by now and then, and on a phone the meadow
    moving a little slower than the messages. Transforms and opacity only, so the compositor runs it all; Reduce
    Motion stills it. The layer sits behind each pane's content (the chat pane isolates it from the panes around). */
@@ -636,4 +709,307 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 /* One ambience per screen: the chat pane's own on a phone, the app's behind all three columns on a wide screen. */
 @media (max-width: 1099px) { .app[data-view="messages"] > .ambience { display: none; } }
 @media (min-width: 1100px) { .chat-pane > .ambience { display: none; } }
+/* Playful motion (board-fx.js; the switch under Agents). Messages land with a bounce, orbs bob and the listening
+   ones glint, tabs hop, a release glows, butterflies cross the meadow by day and fireflies come out after dusk. The
+   particle canvas floats above the app and never takes a tap. Transforms and opacity, except the composer's ring. */
+.fx-layer { position: fixed; inset: 0; z-index: 12; width: 100%; height: 100%; pointer-events: none; }
+@keyframes land { 0% { opacity: 0; transform: translateY(26px) scale(.9, .84); } 42% { opacity: 1; transform: translateY(-5px) scale(1.02, 1.05); }
+  64% { transform: translateY(1.5px) scale(.995, .975); } 82% { transform: translateY(-.5px) scale(1, 1.008); } 100% { transform: none; } }
+.app.playful .message.enter { animation: land .78s cubic-bezier(.2, .8, .3, 1) both; transform-origin: 0 100%; }
+.app.playful .message.mine.enter { animation-duration: .7s; transform-origin: 100% 100%; }
+@keyframes nudge { 0%, 100% { translate: 0; } 15%, 55% { translate: -5px 0; } 35%, 75% { translate: 5px 0; } }
+.app.playful .message.enter.urgent .bubble { animation: nudge .55s ease-in-out .55s 1; }
+@keyframes chip-pop { 0% { scale: .4; opacity: 0; } 60% { scale: 1.25; opacity: 1; } 100% { scale: 1; } }
+.app.playful .message.enter .topic { display: inline-block; animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) .3s both; }
+/* A release keeps a slowly travelling rainbow edge and a shine across its label. */
+@keyframes rainbow-edge { to { background-position: 0 0, 300% 0; } }
+.app.playful .message:has(.topic.release) .bubble { border-color: transparent;
+  background: linear-gradient(var(--card-hi), var(--card-hi)) padding-box, linear-gradient(100deg, #f7c96b, #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #f29ac0) border-box;
+  background-size: auto, 300% 100%; box-shadow: 0 8px 26px #f29ac033, 0 1px 0 #fff inset; }
+.app.playful .message.enter:has(.topic.release) .bubble { animation: rainbow-edge 3s linear 1; }
+@keyframes shine { 0%, 70% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+.app.playful .message.enter .topic.release, .app.playful .message.enter .topic.ack { background-image: linear-gradient(100deg, transparent 35%, #ffffffd9 50%, transparent 65%); background-size: 250% 100%; background-repeat: no-repeat; }
+.app.playful .message.enter .topic.release, .app.playful .message.enter .topic.ack { animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) .3s both, shine 2.2s ease-in-out .8s 2; }
+/* The day line draws out from its label. */
+@keyframes draw-left { from { transform: scaleX(0); } } @keyframes draw-right { from { transform: scaleX(0); } }
+.app.playful .day.enter::before { transform-origin: 100% 50%; animation: draw-left .7s cubic-bezier(.2, .8, .3, 1) both; }
+.app.playful .day.enter::after { transform-origin: 0 50%; animation: draw-right .7s cubic-bezier(.2, .8, .3, 1) both; }
+@media (hover: hover) { .app.playful .bubble.card { transition: translate .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s; } .app.playful .bubble.card:hover { translate: 0 -2px; } }
+
+/* Orbs bob on their own beat; a listening agent's orb has a glint travelling round its rim. */
+@keyframes bob-orb { from { translate: 0 -2px; } to { translate: 0 2.5px; } }
+.app.playful .orb-button .orb, .app.playful .agent-row .orb { animation: bob-orb 2.6s ease-in-out infinite alternate; }
+.app.playful .orb-button:nth-child(3n+1) .orb, .app.playful .agent-cell:nth-child(3n+1) .orb { animation-duration: 3.1s; animation-delay: -1.2s; }
+.app.playful .orb-button:nth-child(3n+2) .orb, .app.playful .agent-cell:nth-child(3n+2) .orb { animation-duration: 2.3s; animation-delay: -.5s; }
+@keyframes glint { to { rotate: 360deg; } }
+.app.playful .orb:has(> .badge.live)::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, #fff0 0 58%, hsl(var(--hue) 90% 58% / .95) 76%, #fff 82%, #fff0 92%);
+  -webkit-mask: radial-gradient(circle, #0000 calc(100% - 5px), #000 calc(100% - 4px)); mask: radial-gradient(circle, #0000 calc(100% - 5px), #000 calc(100% - 4px));
+  animation: glint 3.4s linear infinite; }
+@keyframes wobble { 0%, 100% { rotate: 0deg; } 25% { rotate: -12deg; } 55% { rotate: 9deg; } 80% { rotate: -4deg; } }
+@media (hover: hover) {
+  .app.playful .agent-row:hover .orb, .app.playful .orb-button:hover .orb { animation: wobble .6s ease-in-out, bob-orb 2.6s ease-in-out infinite alternate; }
+  .app.playful .agent-row { transition: background .2s, border-color .2s, translate .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s; }
+  .app.playful .agent-row:hover { translate: 0 -2px; box-shadow: 0 1px 0 #ffffffb3 inset, 0 12px 28px rgb(var(--shade) / .122); }
+}
+.app.playful .thread-faces .orb + .orb { transition: margin .25s cubic-bezier(.3, 1.4, .5, 1); }
+.app.playful .thread-bar:hover .thread-faces .orb + .orb { margin-left: -2px; }
+
+/* Tabs hop, the highlight squishes as it lands, and new counts jiggle. */
+@keyframes hop { 0% { translate: 0; scale: 1; } 30% { translate: 0 -6px; scale: 1.18 .9; } 55% { translate: 0 0; scale: .92 1.08; } 75% { scale: 1.04 .97; } 100% { scale: 1; } }
+.app.playful .tab[aria-current="page"] .icon { animation: hop .6s cubic-bezier(.3, 1.3, .5, 1); }
+@keyframes squish { 0% { scale: 1; } 35% { scale: 1.14 .82; } 65% { scale: .96 1.06; } 100% { scale: 1; } }
+.app.playful .tab-indicator.squish { animation: squish .55s cubic-bezier(.3, 1.3, .5, 1) .08s; }
+@keyframes jiggle { 0%, 100% { rotate: 0deg; scale: 1; } 20% { rotate: -16deg; scale: 1.3; } 45% { rotate: 12deg; scale: 1.1; } 70% { rotate: -6deg; } }
+.app.playful .jiggle { animation: jiggle .6s ease-in-out; }
+.app.playful .count-badge, .app.playful .count { animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+
+/* The composer: a pastel ring turns round it while you write; the send button glows when there is something to send. */
+@keyframes ring-breathe { from { opacity: .55; } to { opacity: 1; } }
+.app.playful .composer { position: relative; }
+.app.playful .composer::before { content: ""; position: absolute; inset: -1.5px; border-radius: inherit; padding: 2px; pointer-events: none; opacity: 0; transition: opacity .35s;
+  background: conic-gradient(from 200deg, #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #f29ac0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.app.playful .composer:focus-within::before { opacity: 1; animation: ring-breathe 2.6s ease-in-out .35s infinite alternate; }
+@keyframes send-glow { 0%, 100% { box-shadow: 0 6px 16px #4f8fc440, 0 1px 0 #ffffff80 inset; } 50% { box-shadow: 0 6px 22px #4f8fc499, 0 0 0 4px #4f8fc41f, 0 1px 0 #ffffff80 inset; } }
+.app.playful .send-button:not(:disabled) { animation: pop .3s cubic-bezier(.3, 1.4, .5, 1), send-glow 2.4s ease-in-out .3s 3; }
+@media (hover: hover) { .app.playful .send-button:not(:disabled):hover { rotate: -14deg; scale: 1.08; } .app.playful .send-button { transition: rotate .25s cubic-bezier(.3, 1.6, .5, 1), scale .25s, opacity .15s; } }
+@keyframes nod { 0%, 100% { translate: 0 0; } 50% { translate: 0 3px; } }
+.app.playful .jump-latest .icon { animation: nod 1.2s ease-in-out infinite; }
+@keyframes float-icon { from { translate: 0 -4px; rotate: -4deg; } to { translate: 0 4px; rotate: 4deg; } }
+.app.playful .empty .icon { animation: float-icon 2.8s ease-in-out infinite alternate; }
+.app.playful .mention-menu .mention-option { animation: rise .32s cubic-bezier(.2, .9, .25, 1.04) both; }
+.app.playful .mention-menu .mention-option:nth-child(2) { animation-delay: 40ms; } .app.playful .mention-menu .mention-option:nth-child(3) { animation-delay: 80ms; }
+.app.playful .mention-menu .mention-option:nth-child(n+4) { animation-delay: 120ms; }
+
+/* The wordmark catches the light now and then (and tapping it blows on the dandelion). */
+@keyframes wordmark-shine { 0%, 82% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
+.app.playful .wordmark { cursor: pointer; background: linear-gradient(100deg, var(--ink) 42%, var(--coral) 50%, #e0a43a 54%, var(--ink) 62%) 120% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: wordmark-shine 9s ease-in-out 3; }
+.app.playful .wordmark small { -webkit-text-fill-color: var(--muted); }
+
+/* Render floor: a live job has a light running along its top and its dot beats. The light moves inside its own track,
+   so the card clips nothing (the dot's glow included). */
+@keyframes scan { from { background-position: -62% 0, 0 0; } to { background-position: 162% 0, 0 0; } }
+.app.playful .job::before { content: ""; display: block; height: 3px; margin-bottom: 6px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--live), #9cc8f0, transparent) -62% 0 / 38% 100% no-repeat, #3fae7a1f;
+  animation: scan 1.9s ease-in-out infinite; }
+@keyframes beat { 0%, 100% { scale: 1; opacity: 1; } 15% { scale: 1.45; } 30% { scale: 1; } 45% { scale: 1.25; opacity: .8; } }
+.app.playful .job-label .dot.live { animation: beat 1.4s ease-in-out infinite; }
+.app.playful .schedule-card[open] .entries li { animation: rise .4s cubic-bezier(.2, .9, .25, 1.04) both; }
+.app.playful .schedule-card[open] .entries li:nth-child(2) { animation-delay: 50ms; } .app.playful .schedule-card[open] .entries li:nth-child(3) { animation-delay: 100ms; }
+.app.playful .schedule-card[open] .entries li:nth-child(n+4) { animation-delay: 150ms; }
+
+/* The meadow: two butterflies, sunbeams by day, a warm cast before sunset and fireflies after dark. */
+.tint, .sunbeams, .butterfly, .firefly { display: none; }
+.app.playful .tint, .app.playful .sunbeams, .app.playful .butterfly { display: block; }
+.app.playful .sunbeams { position: absolute; top: -30%; left: -10%; width: 120%; height: 130%; opacity: .55; transform-origin: 20% 0; will-change: transform, opacity;
+  background: linear-gradient(104deg, #fff8e000 18%, #fff8e0aa 24%, #fff8e000 31%, #fff8e000 44%, #fff8e080 49%, #fff8e000 55%, #fff8e000 66%, #fff8e066 70%, #fff8e000 76%);
+  animation: beams 18s ease-in-out infinite alternate; }
+@keyframes beams { from { transform: rotate(-3deg); opacity: .35; } to { transform: rotate(3deg); opacity: .7; } }
+.app.playful .tint { position: absolute; inset: 0; opacity: 0; transition: opacity 2s; }
+.app.playful.golden .tint { opacity: 1; background: linear-gradient(#f7c96b00 30%, #f7a96b2e); }
+.app.playful.dusk .tint { opacity: 1; background: linear-gradient(#4a5290d9 0%, #7a6aa880 45%, #e3a07a4d); mix-blend-mode: multiply; }
+.app.playful.dusk .sunbeams { display: none; }
+.app.playful.dusk .firefly { display: block; }
+.butterfly { position: absolute; left: 0; top: 34%; width: 24px; height: 18px; opacity: 0; will-change: transform, opacity; animation: wander 44s linear -9s infinite; }
+.butterfly.b2 { --bh: 48; top: 62%; width: 20px; height: 15px; animation-duration: 57s; animation-delay: -38s; animation-direction: reverse; }
+.butterfly i { position: absolute; inset: 0; animation: flutter-bob 1.9s ease-in-out infinite alternate; }
+.butterfly i::before, .butterfly i::after { content: ""; position: absolute; top: 0; width: 50%; height: 100%;
+  background: radial-gradient(circle at 50% 38%, hsl(var(--bh, 330) 90% 86%), hsl(var(--bh, 330) 72% 66%) 70%, hsl(var(--bh, 330) 50% 45%)); }
+.butterfly i::before { left: 0; border-radius: 70% 20% 40% 60%; transform-origin: 100% 50%; animation: wing-left .18s ease-in-out infinite alternate; }
+.butterfly i::after { right: 0; border-radius: 20% 70% 60% 40%; transform-origin: 0 50%; animation: wing-right .18s ease-in-out infinite alternate; }
+@keyframes wing-left { from { transform: scaleX(1); } to { transform: scaleX(.2); } }
+@keyframes wing-right { from { transform: scaleX(1); } to { transform: scaleX(.2); } }
+@keyframes flutter-bob { from { transform: translateY(-7px) rotate(-10deg); } to { transform: translateY(7px) rotate(8deg); } }
+@keyframes wander {
+  0% { transform: translate3d(-30px, 0, 0); opacity: 0; } 2% { opacity: .95; }
+  9% { transform: translate3d(14vw, -7vh, 0); } 17% { transform: translate3d(27vw, 2vh, 0); } 25% { transform: translate3d(42vw, -9vh, 0); }
+  33% { transform: translate3d(60vw, -3vh, 0); } 41% { transform: translate3d(80vw, -11vh, 0); opacity: .95; }
+  47% { transform: translate3d(calc(100vw + 30px), -6vh, 0); opacity: 0; } 100% { transform: translate3d(calc(100vw + 30px), -6vh, 0); opacity: 0; } }
+.firefly { position: absolute; width: 9px; height: 9px; border-radius: 50%; left: 18%; top: 70%; opacity: 0; will-change: transform, opacity;
+  background: radial-gradient(circle, #fffbd0 0 2px, #f7e27a 3px, #f7e27a00 9px); box-shadow: 0 0 18px 5px #f7e27a73;
+  animation: firefly-path 13s ease-in-out infinite alternate, blink 3.2s ease-in-out infinite; }
+.firefly:nth-of-type(2) { left: 72%; top: 58%; animation-duration: 17s, 4.1s; animation-delay: -4s, -1s; }
+.firefly:nth-of-type(3) { left: 44%; top: 82%; animation-duration: 11s, 2.7s; animation-delay: -7s, -2s; }
+.firefly:nth-of-type(4) { left: 86%; top: 40%; animation-duration: 15s, 3.6s; animation-delay: -2s, -.4s; }
+.firefly:nth-of-type(5) { left: 8%; top: 46%; animation-duration: 19s, 4.6s; animation-delay: -11s, -3s; }
+.firefly:nth-of-type(6) { left: 58%; top: 30%; animation-duration: 14s, 3s; animation-delay: -6s, -1.6s; }
+.firefly:nth-of-type(7) { left: 30%; top: 54%; animation-duration: 16s, 3.9s; animation-delay: -9s, -2.4s; }
+@keyframes firefly-path { 0% { transform: translate3d(0, 0, 0); } 33% { transform: translate3d(34px, -26px, 0); } 66% { transform: translate3d(-22px, -48px, 0); } 100% { transform: translate3d(18px, -12px, 0); } }
+@keyframes blink { 0%, 100% { opacity: 0; } 40%, 60% { opacity: 1; } }
+/* The living meadow (board-scene.js) paints the world behind every pane once it is running; until then, and
+   without it, the still painting shows. */
+.scene-canvas { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity 1.4s ease; }
+.app.scene-on .scene-canvas { opacity: 1; }
+@media (max-width: 1099px) { .app.scene-on .chat-pane:not(.nav-top):not(.nav-underlay) { background: transparent; } }
+.app.scene-on .painting, .app.scene-on .mist, .app.scene-on .seed, .app.scene-on .sunbeams, .app.scene-on .tint, .app.scene-on .firefly { display: none !important; }
+.app.scene-on .thread-view { background: rgb(var(--frost) / .82); }
+/* Nothing over the moving meadow blurs it: a backdrop blur would be redrawn every frame, for every bubble, bar and
+   pane, and it is most of what the scene would cost the GPU. The glass over it is a little more opaque instead. */
+.app.scene-on :is(.agents-pane, .render-pane, .tasks-pane) { background: rgb(var(--frost-2) / .8); }
+.app.scene-on :is(.topbar, .thread-head, .orbs) { background: rgb(var(--frost-2) / .84); }
+.app.scene-on :is(.glass, .agents-pane, .render-pane, .tasks-pane, .topbar, .thread-head, .orbs), .app.scene-on .chat-pane::before { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.app.scene-on .glass { background: var(--glass-solid); }
+/* Calm holds the mist and seeds still: under the blurred bars, even the slowest drift is a full redraw every frame. */
+.app:not(.playful) :is(.mist, .seed, .seed i) { animation: none; }
+/* Deliveries (board-fx.js). The orb pops as its comet lands (--d is the comet's flight), the bubble unfolds out of it
+   on a spring and the words fade up out of a blur one by one. A message the board rebuilt (.again) or one you sent
+   (it flies out of the composer, .morph) skips the unfold. */
+@keyframes orb-pop { 0% { scale: 0; } 55% { scale: 1.28; } 75% { scale: .92; } 100% { scale: 1; } }
+@keyframes unfold { from { transform: translate(-10px, -12px) scale(.06, .1) rotate(-4deg); } to { transform: none; } }
+@keyframes unfold-mine { from { transform: translateY(20px) scale(.5, .3); } to { transform: none; } }
+@keyframes unblur { from { opacity: 0; filter: blur(12px) saturate(2); } to { opacity: 1; filter: none; } }
+@keyframes word { from { opacity: 0; filter: blur(7px); } to { opacity: 1; filter: none; } }
+.app.playful .message.enter { animation: none; }
+.app.playful .message.enter:not(.again) > .orb-link .orb { animation: orb-pop .6s cubic-bezier(.3, 1.5, .5, 1) var(--d, 0s) both, halo 1.8s ease-out var(--d, 0s) both; }
+.app.playful .message.enter:not(.again):not(.morph) .message-column { transform-origin: 0 0;
+  animation: unfold .9s cubic-bezier(.3, 1.35, .5, 1) calc(var(--d, 0s) + .05s) both, unblur .5s ease-out calc(var(--d, 0s) + .05s) both;
+  animation-timing-function: linear(0, .009, .035 2.1%, .141, .281 6.7%, .723 12.9%, .938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, .991, .977 51%, .974 53.8%, .975 57.1%, .997 69.8%, 1.003 76.9%, 1.004 83.8%, 1), ease-out; }
+.app.playful .message.mine.enter:not(.again):not(.morph) .message-column { transform-origin: 100% 100%; animation-name: unfold-mine, unblur; }
+.app.playful .message.enter.again .topic, .app.playful .message.enter.again .bubble { animation: none; }
+.app.playful .message.enter .topic { animation-delay: calc(var(--d, 0s) + .35s); }
+.app.playful .body.streaming .w { animation: word .6s cubic-bezier(.2, .8, .3, 1) calc(var(--d, 0s) + .2s + var(--wd, 0ms)) both; }
+
+/* Living orbs: an iridescent swirl turns inside the orbs in the strip and the Agents list; the speaker's orb rings out
+   as its comet leaves. */
+.app.playful .orb { isolation: isolate; }
+.app.playful .orb-button .orb::before, .app.playful .agent-row .orb::before, .app.playful .message.enter > .orb-link .orb::before {
+  content: ""; position: absolute; inset: 1px; z-index: -1; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; will-change: transform;
+  background: conic-gradient(from 0deg, hsl(var(--hue) 95% 62% / 0), hsl(calc(var(--hue) + 70) 95% 66% / .7) 18%, hsl(var(--hue) 95% 60% / 0) 38%,
+    hsl(calc(var(--hue) - 60) 95% 68% / .6) 62%, hsl(calc(var(--hue) + 140) 90% 70% / .35) 80%, hsl(var(--hue) 95% 62% / 0));
+  filter: blur(3px); animation: glint 6s linear infinite; }
+.app.playful .agent-row .orb::before { animation-duration: 8s; animation-direction: reverse; }
+.app.playful .message.enter > .orb-link .orb::before { animation-iteration-count: 2; }
+@keyframes speak { 0% { box-shadow: 0 0 0 0 hsl(var(--hue) 95% 70% / .8), 0 0 0 0 hsl(var(--hue) 95% 70% / .5); }
+  100% { box-shadow: 0 0 0 14px hsl(var(--hue) 95% 70% / 0), 0 0 0 26px hsl(var(--hue) 95% 70% / 0); } }
+.app.playful .orb.speaking { animation: speak .8s ease-out 3, bob-orb 2.6s ease-in-out infinite alternate; }
+
+/* Liquid glass over the living meadow: frosted bubbles with a bright rim, and a specular streak that slides across
+   each one as it scrolls through the view (or follows the pointer while a desktop bubble tilts toward it). */
+.app.scene-on .message:not(.mine) .bubble { background: linear-gradient(165deg, #ffffffe6, #ffffffc2 60%, #ffffffd4); border-color: #ffffffd0;
+  box-shadow: 0 1px 0 #ffffff inset, 0 -1px 0 #ffffff59 inset, 0 12px 32px rgb(var(--shade-deep) / .149), 0 2px 6px rgb(var(--shade-deep) / .078); }
+.app.playful .bubble { isolation: isolate; }
+.app.playful .bubble::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .75; mix-blend-mode: soft-light;
+  background: linear-gradient(112deg, #fff0 38%, #ffffffe6 48%, #ffffff40 52%, #fff0 60%) 50% 0 / 300% 100% no-repeat; }
+@supports (animation-timeline: view()) {
+  @keyframes gloss { from { background-position: 100% 0; } to { background-position: 0 0; } }
+  .app.playful .bubble::after { animation: gloss linear both; animation-timeline: view(); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .app.playful .message-column { perspective: 900px; }
+  .app.playful .bubble.card { transition: translate .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s, transform .5s cubic-bezier(.3, 1.4, .5, 1); }
+  .app.playful .bubble.tilt { transform: rotateX(calc(var(--ty, 0) * -5deg)) rotateY(calc(var(--tx, 0) * 6deg)); transition: translate .25s, box-shadow .25s, transform .12s ease-out; }
+  .app.playful .bubble.tilt::after { animation: none; background-position: calc(50% - var(--tx, 0) * 40%) 0; opacity: 1; }
+}
+
+/* The composer's aurora: soft colour turning inside the glass while you write. */
+.app.playful .composer { isolation: isolate; }
+.aurora { display: none; }
+.app.playful .aurora { display: block; position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .6s; }
+.aurora i { position: absolute; left: 50%; top: 50%; width: max(130%, 420px); aspect-ratio: 1; translate: -50% -50%; will-change: transform;
+  background: conic-gradient(from 0deg, #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #c9a8f0, #f29ac0); filter: blur(26px); animation: glint 10s linear infinite paused; }
+.app.playful .composer:focus-within .aurora { opacity: .42; }
+.app.playful .composer:focus-within .aurora i { animation-play-state: running; }
+
+/* A release's moment: the screen glows, its first line springs up letter by letter, and it fades at a tap. */
+.celebration { --hue: 330; position: fixed; inset: 0; z-index: 11; display: grid; place-items: center; padding: 24px 20px; cursor: pointer; opacity: 0; transition: opacity .45s ease;
+  background: radial-gradient(70% 55% at 50% 46%, #fff8e8f0, hsl(var(--hue) 80% 90% / .8) 45%, #2a2350a6 100%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%); backdrop-filter: blur(8px) saturate(150%); }
+.celebration.show { opacity: 1; }
+.celebration.hide { opacity: 0; transition-duration: .6s; pointer-events: none; }
+.cel-card { max-width: min(92vw, 760px); text-align: center; display: grid; gap: 14px; justify-items: center; }
+.cel-kicker { margin: 0; font: 750 12px/1 var(--font); letter-spacing: .3em; text-transform: uppercase; color: hsl(var(--hue) 60% 42%); animation: rise .6s ease-out .1s both; }
+.cel-title { margin: 0; font: 600 clamp(34px, 9vw, 72px)/1.04 var(--display); letter-spacing: -.02em; color: #2a1f3a; text-wrap: balance;
+  text-shadow: 0 2px 0 #fff, 0 0 40px hsl(var(--hue) 95% 75% / .9); }
+.cw { display: inline-block; white-space: nowrap; }
+.cl { display: inline-block; animation: letter 1s cubic-bezier(.3, 1.5, .5, 1) calc(.2s + var(--i) * 24ms) both; }
+@keyframes letter { from { opacity: 0; transform: translateY(.7em) rotate(10deg) scale(.4); filter: blur(8px); } 40% { opacity: 1; filter: none; } to { transform: none; } }
+.cel-hint { margin: 6px 0 0; font-size: 13px; color: #4a3f5c; opacity: 0; animation: rise .5s ease-out 1.6s both; }
+
+/* Dark: the same meadow by moonlight (its own painting), indigo glass like lanterns in the grass, and ink like
+   moonlight. board-theme.js sets data-theme before the board paints. */
+:root[data-theme="dark"] {
+  --bg: #0e1530; --card: #18213fc7; --card-hi: #1f2a4ceb; --line: #c8d4ff1a; --line-strong: #c8d4ff2e;
+  --ink: #edf1ff; --ink-2: #c9d2ee; --muted: #98a4c6; --faint: #717da2;
+  --coral: #f08bb8; --link: #f4a7cc; --live: #5fd39a; --error: #ff7d92; --warn: #f0b75a;
+  --mine: linear-gradient(160deg, #343f7ae6, #283266e6);
+  --glass: #141c38cc; --glass-solid: #141c38f0; --glass-edge: #ffffff1f; --glass-shine: #ffffff2e;
+  --shadow: 0 1px 0 #ffffff12 inset, 0 8px 26px #03061466;
+  --tint: 200 212 255; --shade: 3 6 20; --tint-deep: 200 212 255; --shade-deep: 3 6 20;
+  --frost: 14 21 44; --frost-2: 18 26 51; --frost-3: 22 30 58;
+  --page-bg: url("/meadow-night-portrait-1.webp") center / cover no-repeat, linear-gradient(#1b2552, #121a3a 45%, #0f1c2a);
+  color-scheme: dark;
+}
+@media (min-width: 1100px) {
+  :root[data-theme="dark"] { --page-bg: url("/meadow-night-landscape-1.webp") center / cover no-repeat, linear-gradient(#1b2552, #121a3a 45%, #0f1c2a); }
+}
+[data-theme="dark"] .topic.request, [data-theme="dark"] .message.mine .topic { color: #9fcbf2; }
+[data-theme="dark"] .topic.release, [data-theme="dark"] .topic.handoff { color: #c9b6ff; }
+[data-theme="dark"] .topic.evidence { color: #8fe0d2; } [data-theme="dark"] .topic.ack { color: #93e2b8; }
+[data-theme="dark"] .topic.alert, [data-theme="dark"] .topic.blocked { color: #ff9aac; }
+/* Light text behind dark glass shows through more than dark text behind light glass: the phone's bars are denser. */
+@media (max-width: 1099px) {
+  [data-theme="dark"] .topbar, [data-theme="dark"] .chat-pane::before { background: rgb(var(--frost-2) / .92); }
+  [data-theme="dark"] .orbs { background: rgb(var(--frost-2) / .97); }
+}
+[data-theme="dark"] .count { color: #f3c47c; }
+[data-theme="dark"] .notice { color: var(--ink-2); }
+[data-theme="dark"] .thread-last, [data-theme="dark"] .notice time, [data-theme="dark"] .thread-bar > .icon svg, [data-theme="dark"] .notice .icon svg { color: var(--muted); }
+[data-theme="dark"] .banner { color: #ffb3c0; }
+[data-theme="dark"] .markdown code, [data-theme="dark"] .entries code { color: #f4a7cc; }
+[data-theme="dark"] .message.mine .markdown code, [data-theme="dark"] .message.mine .markdown pre code { color: var(--ink); }
+/* The pastel orbs keep their colour; the rings that cut them out of the page take the page's colour. */
+[data-theme="dark"] .orb { border-color: #ffffff3d; box-shadow: 0 3px 12px #03061499, 0 0 16px hsl(var(--hue) 80% 70% / .18); }
+[data-theme="dark"] .orb-button[aria-current="true"] .orb { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 4.5px var(--coral), 0 0 22px hsl(var(--hue) 80% 70% / .4); }
+[data-theme="dark"] .badge, [data-theme="dark"] .tab-dot { box-shadow: 0 0 0 2.5px var(--bg); }
+[data-theme="dark"] .agent-row .badge { box-shadow: 0 0 0 2.5px #1d2747; }
+[data-theme="dark"] .glass { box-shadow: 0 1px 0 #ffffff1f inset, 0 14px 36px #03061499; }
+[data-theme="dark"] .message.mine .bubble { border-color: #ffffff2e; box-shadow: 0 1px 0 #ffffff26 inset, 0 10px 28px #04071680; }
+[data-theme="dark"] .app .message:not(.mine) .bubble { background: linear-gradient(165deg, #232e58e6, #18213fd4 60%, #1d2749de); border-color: #ffffff21;
+  box-shadow: 0 1px 0 #ffffff1c inset, 0 12px 32px #04071680, 0 0 24px #f7e27a0d; }
+[data-theme="dark"] .app.playful .agent-row:hover { box-shadow: 0 1px 0 #ffffff17 inset, 0 12px 28px #03061480; }
+[data-theme="dark"] .app.playful .message:has(.topic.release) .bubble { box-shadow: 0 8px 26px #f29ac026, 0 1px 0 #ffffff1f inset; }
+[data-theme="dark"] .app.playful .bubble::after { mix-blend-mode: overlay; opacity: .35; }
+[data-theme="dark"] .send-button:not(:disabled) { box-shadow: 0 6px 18px #4f8fc455, 0 1px 0 #ffffff40 inset; }
+/* Without the living scene, the still night painting gets a thin moonlit mist, its fireflies and no sunbeams. */
+[data-theme="dark"] .mist { opacity: .22; } [data-theme="dark"] .mist.far { opacity: .14; }
+[data-theme="dark"] .sunbeams, [data-theme="dark"] .tint { display: none !important; }
+[data-theme="dark"] .app.playful .firefly { display: block; }
+/* A release by night: a deep glow rather than a white flash. */
+[data-theme="dark"] .celebration { background: radial-gradient(70% 55% at 50% 46%, #2b2a5cf2, hsl(var(--hue) 45% 28% / .82) 45%, #060917e0 100%); }
+[data-theme="dark"] .cel-kicker { color: hsl(var(--hue) 85% 78%); }
+[data-theme="dark"] .cel-title { color: #fff; text-shadow: 0 0 34px hsl(var(--hue) 95% 70% / .75); }
+[data-theme="dark"] .cel-hint { color: #c9c3e6; }
+
+/* The reader: a Markdown or text attachment opened over the board. A plain, opaque page, so it scrolls lightly. */
+.reader { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px);
+  background: rgb(var(--shade-deep) / .55); animation: fade .2s ease both; }
+.reader-card { width: min(100%, 780px); height: 100%; display: flex; flex-direction: column; min-height: 0; border-radius: 22px; overflow: hidden;
+  background: var(--bg); border: 1px solid var(--line-strong); box-shadow: 0 24px 60px rgb(var(--shade-deep) / .35); animation: zoom .28s cubic-bezier(.2, .9, .3, 1.05) both; }
+.reader-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 18px; border-bottom: 1px solid var(--line); }
+.reader-head > .icon { color: var(--coral); }
+.reader-head h2 { flex: 1; min-width: 0; font: 600 17px/1.25 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-head .text-button { margin: 0; text-decoration: none; }
+.reader-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 26px 30px; font-size: 16px; line-height: 1.6; color: var(--ink); }
+.reader-body.markdown h1 { font: 600 26px/1.2 var(--display); margin: .2em 0 .5em; }
+.reader-body.markdown h2 { font: 600 20px/1.25 var(--display); margin: 1.2em 0 .4em; }
+.reader-body.markdown h3, .reader-body.markdown h4 { font-size: 16.5px; margin: 1.1em 0 .3em; }
+.reader-body.markdown p, .reader-body.markdown ul, .reader-body.markdown ol, .reader-body.markdown pre, .reader-body.markdown blockquote { margin-bottom: .85em; max-width: 68ch; }
+.reader-body.markdown code { word-break: normal; }
+.reader-body .quiet { padding: 24px 0; text-align: center; }
+@media (max-width: 699px) {
+  .reader { padding: 0; }
+  .reader-card { border-radius: 0; border: 0; }
+  .reader-head { padding-top: calc(var(--safe-top) + 10px); }
+  .reader-body { padding: 14px 18px calc(var(--safe-bottom) + 24px); }
+}
+
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
+
+/* A window behind others (.at-rest) holds every looping animation where it is, so it draws nothing; entrances still
+   finish, so a message that arrives meanwhile shows. */
+.app.at-rest :is(.badge.live, .title-text .dot.live, .badge.error, .mist, .seed, .seed i, .orb, .jump-latest .icon, .empty .icon,
+  .job-label .dot, .sunbeams, .butterfly, .butterfly i, .firefly, .wordmark, .aurora i),
+.app.at-rest :is(.badge.live, .title-text .dot.live, .orb, .composer, .job, .butterfly i)::before,
+.app.at-rest :is(.orb, .butterfly i)::after { animation-play-state: paused !important; }

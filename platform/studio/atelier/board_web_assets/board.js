@@ -18,21 +18,24 @@ const icons = {
   thread:'<path d="M7 8h10M7 12h6"/><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z"/>',
   reply:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/>',
   board:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  tasks:'<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
   render:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
 };
 function node(tag, cls, text) { const n=document.createElement(tag); if(cls)n.className=cls; if(text!==undefined)n.textContent=text; return n; }
 function icon(name) { const n=node("span","icon"); n.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.messages}</svg>`; return n; }
 document.querySelectorAll("[data-icon]").forEach(n=>n.append(icon(n.dataset.icon)));
 const names={info:"Info",request:"Request",handoff:"Handoff",blocked:"Blocked",release:"Release",evidence:"Evidence",ack:"Ack",alert:"Alert"};
-const VIEWS=["messages","agents","render"];
+const VIEWS=["messages","tasks","agents","render"];
 const desktop=matchMedia("(min-width:1100px)"), touch=matchMedia("(hover:none)");
 let state=null, selectedAgent="", records=new Map(), expanded=new Set(), deliveryOpen=new Set(), logShown=12;
 let loading=false, requestNumber=0, controller=null, historyComplete=false, sending=false, failed=false;
 let feedSignature="", agentsSignature="", scheduleSignature="", contextSignature="";
 let draftKey=null, draftBody="", draftTopic="", draftRecipient="*", recipientSignature="";
 let stickToBottom=true, prepending=false, lastSeenId=0, newestShown=0, statusTimer=0, feedPainted=false;
-let showSystem=true, uploads=[], thread=null;
-try { showSystem=localStorage.getItem("atelier.board.notices")!=="hidden"; } catch {}
+// Automatic notices (the render schedule's watcher, and the like) stay out of the stream unless Settings shows them;
+// the render floor has the schedule itself. A new key, so an earlier "shown" from when they showed by default lapses.
+let showSystem=false, uploads=[], thread=null;
+try { showSystem=localStorage.getItem("atelier.board.system-notices")==="shown"; } catch {}
 $("showSystem").checked=showSystem;
 
 // The app shell follows the visual viewport so the composer stays above the on-screen keyboard.
@@ -120,7 +123,7 @@ function setView(next, animate=true) {
   app.dataset.view=next;$("tabbar").style.setProperty("--tab",to);
   document.querySelectorAll(".tab").forEach(tab=>{if(tab.dataset.view===next)tab.setAttribute("aria-current","page");else tab.removeAttribute("aria-current");});
   if(from!==to&&animate&&!desktop.matches) {
-    const pane=$({messages:"chatPane",agents:"agentsPane",render:"renderPane"}[next]);
+    const pane=$({messages:"chatPane",tasks:"tasksPane",agents:"agentsPane",render:"renderPane"}[next]);
     pane.style.setProperty("--dir",to>from?1:-1);pane.classList.remove("entering");void pane.offsetWidth;pane.classList.add("entering");
     setTimeout(()=>pane.classList.remove("entering"),900);
   }
@@ -157,7 +160,7 @@ function refreshFilters() { settle(1500); records.clear(); feedSignature=""; his
 let searchTimer;
 $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refreshFilters,250);});
 $("topicFilter").addEventListener("change",()=>{syncPills();refreshFilters();});
-$("showSystem").addEventListener("change",()=>{showSystem=$("showSystem").checked;try{localStorage.setItem("atelier.board.notices",showSystem?"shown":"hidden");}catch{}feedSignature="";renderFeed();});
+$("showSystem").addEventListener("change",()=>{showSystem=$("showSystem").checked;try{localStorage.setItem("atelier.board.system-notices",showSystem?"shown":"hidden");}catch{}feedSignature="";renderFeed();});
 
 /* @mentions: typing @ suggests agents, and a message that mentions agents goes to exactly them (plus the agent
    whose conversation you're in). */
@@ -367,14 +370,46 @@ function attachmentNodes(files, many) {
       const img=node("img");img.src=f.url;img.alt=f.name;img.loading="lazy";if(f.width){img.width=f.width;img.height=f.height;}b.append(img);b.addEventListener("click",()=>openLightbox(f));wrap.append(b);}
     else if(kind==="video"){const v=node("video","att-video");if(ratio)v.style.setProperty("--ratio",ratio);v.src=f.url;v.controls=true;v.playsInline=true;v.preload="metadata";wrap.append(v);}
     else if(kind==="audio"){const a=node("audio","att-audio");a.src=f.url;a.controls=true;a.preload="none";wrap.append(a);}
-    else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
+    else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";
+      if(f.readable)a.addEventListener("click",event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();openReader(f);});const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
   }
   return wrap;
 }
 function openLightbox(f) { $("lightboxImage").src=f.url;$("lightboxImage").alt=f.name;$("lightboxName").textContent=f.name;$("lightboxOpen").href=f.url;$("lightbox").hidden=false;$("lightboxClose").focus(); }
 function closeLightbox() { $("lightbox").hidden=true;$("lightboxImage").removeAttribute("src"); }
 $("lightbox").addEventListener("click",event=>{if(event.target!==$("lightboxOpen"))closeLightbox();});
-addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
+// Markdown and text attachments open in a reader over the board (rendered by the server) instead of downloading.
+// While it is open the meadow behind it rests.
+let readerFor=null, readerReturn=null, readerBehind=[];
+// While the reader is open the rest of the board is inert, so Tab and screen readers stay inside it.
+function holdBoard(held) {
+  if(held){readerBehind=[...$("app").children].filter(el=>el!==$("reader")&&!el.inert);for(const el of readerBehind)el.inert=true;}
+  else{for(const el of readerBehind)el.inert=false;readerBehind=[];}
+}
+async function openReader(f) {
+  readerFor=f.id;readerReturn=document.activeElement;
+  $("readerTitle").textContent=f.name;$("readerOpen").href=f.url;$("readerOpen").download=f.name;
+  $("readerBody").replaceChildren(node("p","quiet","Opening…"));$("readerBody").scrollTop=0;
+  $("reader").hidden=false;$("app").classList.add("reader-open");holdBoard(true);$("readerClose").focus();
+  try {
+    const response=await fetch(`/api/document/${f.id}`);const result=await response.json();
+    if(!response.ok)throw Error(result.error||"This file could not be opened.");
+    if(readerFor===f.id)markdown($("readerBody"),result.html);
+  } catch(error) { if(readerFor===f.id)$("readerBody").replaceChildren(node("p","quiet",error.message||"This file could not be opened.")); }
+}
+function closeReader() { readerFor=null;$("reader").hidden=true;$("app").classList.remove("reader-open");holdBoard(false);$("readerBody").replaceChildren();readerReturn?.focus?.();readerReturn=null; }
+$("readerClose").addEventListener("click",closeReader);
+$("reader").addEventListener("click",event=>{if(event.target===$("reader"))closeReader();});
+// Tab and Shift+Tab wrap around the reader's own controls and links.
+$("reader").addEventListener("keydown",event=>{
+  if(event.key!=="Tab")return;
+  const stops=[...$("reader").querySelectorAll("a[href],button:not(:disabled),[tabindex]:not([tabindex='-1'])")].filter(el=>el.getClientRects().length);
+  if(!stops.length)return;
+  const first=stops[0], last=stops[stops.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+});
+addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("reader").hidden)closeReader();else if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
 
 /* Agents: the list pane and the orb row share one render. */
 let seen={};
@@ -842,15 +877,28 @@ async function pushConversation(name) {
 // Pop the top screen. A swipe hands over its scene, position and speed; the browser's back asks for no animation.
 async function navBack({scene:given=null,from=0,velocity=0,instant=false}={}) {
   const entry=nav.at(-1);if(!entry){if(given)end(given);return;}
-  const animate=!instant&&!motion.matches&&(entry.kind==="thread"||!desktop.matches);
+  const animate=!instant&&!motion.matches&&!desktop.matches;
   let s=given;
   if(animate){if(!s){if(moving)return;s=scene(entry);begin(s);}await glide(s,from,1,velocity);}
-  if(entry.kind==="thread"){closeThread();if(s)end(s);return;}
+  if(entry.kind==="thread"){
+    closeThread();if(s)end(s);
+    else if(desktop.matches&&!instant&&!motion.matches)enter([$("topbar"),$("feed")],"view-in");
+    return;
+  }
   const underlay=entry.underlay;entry.underlay=null;
   selectAgent("","dm",entry.from,false);
   // The live pane stays off to the right, behind the still copy, until the full conversation has painted again.
   if(entry.from==="messages"&&s)await waitFor(()=>feedPainted,1200);
   if(s)end(s);underlay?.remove();
+}
+
+// A short entrance (on a wide screen, instead of a slide); the class goes once its own animation has played.
+function enter(nodes, name) {
+  for(const n of nodes){
+    n.classList.remove(name);void n.offsetWidth;n.classList.add(name);
+    const done=event=>{if(event.target!==n)return;n.classList.remove(name);n.removeEventListener("animationend",done);};
+    n.addEventListener("animationend",done);
+  }
 }
 
 /* Thread view: the original and every reply, with the composer replying in the thread. */
@@ -862,7 +910,9 @@ async function openThread(id, focus=false) {
   const loaded=loadThread();
   if(!nested){
     const entry={kind:"thread"};navPush(entry);
-    if(!motion.matches&&!moving){
+    // A wide screen opens the thread in place over the conversation, which steps out of sight; a phone pushes it.
+    if(desktop.matches){if(!motion.matches)enter([$("threadView")],"thread-in");}
+    else if(!motion.matches&&!moving){
       const s=scene(entry);begin(s);paint(s,1);
       await waitFor(()=>thread?.data,220);
       if(thread&&nav.at(-1)===entry){
@@ -1013,9 +1063,73 @@ function renderContext() {
   }
   if(!state.sessions.length)$("sessions").append(node("p","quiet","No remote session monitor configured."));
 }
+/* Operator tasks: an agent blocked on the operator asks once, and the Tasks page holds the ask until someone dismisses
+   it. Each card is built once and then only updated, so a reply being typed survives the board's refreshes. */
+const taskCards=new Map(), dismissedTasks=new Set();
+function since(timestamp) {
+  const s=Math.max(0,(state?.time??Date.now()/1000)-timestamp);
+  return s<60?"just now":s<3600?`${Math.floor(s/60)} min ago`:s<86400?`${Math.floor(s/3600)} h ago`:`${Math.floor(s/86400)} d ago`;
+}
+function taskCard(task) {
+  const card=node("article","card task-card"), head=node("header","task-head"), who=node("span","task-who");
+  card.setAttribute("role","listitem");
+  const agent=state.agents.find(a=>a.agent===task.agent);
+  who.append(node("b","",task.agent),node("span","task-age"));
+  const open=node("button","text-button task-thread");open.type="button";open.append(node("span","","Thread"),icon("right"));
+  open.addEventListener("click",()=>{setView("messages");openThread(task.message);});
+  head.append(orb(task.agent,agent),who,open);
+  const body=node("div","task-body markdown"), last=node("p","task-last");
+  const form=node("form","task-reply"), box=node("textarea");box.rows=1;box.maxLength=8000;box.placeholder=`Reply to ${task.agent}…`;
+  box.setAttribute("aria-label",`Reply to ${task.agent}`);
+  const send=node("button","send-button");send.type="submit";send.disabled=true;send.setAttribute("aria-label","Send reply");send.append(icon("send"));
+  const dismiss=node("button","text-button task-dismiss","Dismiss");dismiss.type="button";
+  const status=node("p","task-status");status.setAttribute("role","status");
+  form.append(box,send);card.append(head,body,last,form,status,dismiss);
+  const entry={card,task,key:null,sending:false,html:null};
+  const grow=()=>{box.style.height="auto";box.style.height=`${box.scrollHeight}px`;};
+  box.addEventListener("input",()=>{entry.key=null;send.disabled=!box.value.trim()||entry.sending;grow();});
+  box.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey&&!touch.matches&&!event.isComposing){event.preventDefault();form.requestSubmit();}});
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();const text=box.value.trim();if(!text||entry.sending)return;
+    entry.key??=crypto.randomUUID();entry.sending=true;send.disabled=true;status.textContent="Sending…";status.classList.remove("error");
+    try {
+      await postJSON("/api/send",{body:text,topic:"info",recipient:entry.task.agent,request_id:entry.key,reply_to:entry.task.message});
+      box.value="";entry.key=null;grow();status.textContent=`Sent to ${entry.task.agent}.`;load();
+    } catch(error) {status.textContent=error.message;status.classList.add("error");}
+    finally {entry.sending=false;send.disabled=!box.value.trim();}
+  });
+  dismiss.addEventListener("click",async()=>{
+    dismiss.disabled=true;status.textContent="";
+    try {
+      await postJSON("/api/task/dismiss",{id:entry.task.id});
+      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);
+      setTimeout(()=>{renderTasks();load();},motion.matches?0:220);
+    } catch(error) {status.textContent=error.message;status.classList.add("error");dismiss.disabled=false;}
+  });
+  entry.update=t=>{
+    entry.task=t;card.querySelector(".task-age").textContent=` · ${since(t.asked)}`;
+    if(entry.html!==t.body_html){entry.html=t.body_html;markdown(body,t.body_html,t.body);}
+    const r=t.last_reply;last.hidden=!r;
+    if(r)last.textContent=`${r.sender===state.sender?"You":r.sender}: ${snippet(r.body)} · ${since(r.created)}`;
+  };
+  return entry;
+}
+function renderTasks() {
+  // A snapshot already in flight when a task was dismissed must not bring its card back.
+  const list=(state.tasks||[]).filter(t=>!dismissedTasks.has(t.id)), n=list.length;
+  $("tasksBadge").hidden=!n;$("tasksBadge").textContent=n>99?"99+":n;
+  const who=new Set(list.map(t=>t.agent)).size;
+  $("tasksSummary").textContent=n?`${who} ${who===1?"agent is":"agents are"} waiting on you`:"Nobody is waiting on you";
+  $("app").classList.toggle("has-tasks",n>0);
+  const keep=new Set(list.map(t=>t.id));
+  for(const [id,entry] of taskCards)if(!keep.has(id))taskCards.delete(id);
+  const nodes=list.map(t=>{let entry=taskCards.get(t.id);if(!entry){entry=taskCard(t);taskCards.set(t.id,entry);}entry.update(t);return entry.card;});
+  reconcile($("tasks"),nodes);
+  $("tasksNote").hidden=n>0&&desktop.matches;
+}
 function render() {
   $("lastUpdated").textContent=`Live · last synced ${clock(state.time)} · updates every 3 seconds`;
-  renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();
+  renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();renderTasks();
   if(thread)loadThread();
 }
 let loadStarted=0;
@@ -1101,12 +1215,29 @@ $("notifyToggle").addEventListener("change",async()=>{
       notifyNote("Off. Flagged messages still appear on the board.");
     }
   } catch(error) { $("notifyToggle").checked=!on;notifyNote(error.message); }
-  finally { $("notifyToggle").disabled=false;$("notifyTest").hidden=!$("notifyToggle").checked; }
+  finally { $("notifyToggle").disabled=false;$("notifyTest").hidden=!$("notifyToggle").checked;settingsSummary(); }
 });
 $("notifyTest").addEventListener("click",async()=>{
   try { const result=await postJSON("/api/push/test",{});notifyNote(result.delivered?"Test sent; it should arrive in a moment.":"No device received it. Turn notifications off and on again."); }
   catch(error) { notifyNote(error.message); }
 });
+// Settings fold away under Agents; their row says how they are set.
+const THEMES={auto:"Auto",light:"Light",dark:"Dark"};
+function settingsSummary() {
+  $("settingsSummary").textContent=[`Notifications ${$("notifyToggle").checked?"on":"off"}`,$("playfulToggle").checked?"Playful":"Calm",
+    THEMES[window.boardTheme?.choice]||"Auto"].join(" · ");
+}
+function themeSwitch() {
+  const choice=window.boardTheme?.choice||"auto";
+  document.querySelectorAll("[data-theme-choice]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.themeChoice===choice)));
+  $("themeNote").textContent=choice==="auto"?`Follows this device: ${window.boardTheme?.dark?"dark":"light"} now.`:choice==="dark"?"The meadow by moonlight.":"The misty morning meadow.";
+  settingsSummary();
+}
+document.querySelectorAll("[data-theme-choice]").forEach(b=>b.addEventListener("click",()=>window.boardTheme?.set(b.dataset.themeChoice)));
+addEventListener("boardtheme",themeSwitch);
+$("settings").addEventListener("change",settingsSummary);
+$("settings").addEventListener("toggle",()=>{if($("settings").open)requestAnimationFrame(()=>$("settings").scrollIntoView({block:"end",behavior:motion.matches?"instant":"smooth"}));});
+themeSwitch();
 // A notification links to /?m=ID: open that message's thread, whether the app was closed or already open.
 function openLink(url) {
   const id=Number(new URL(url,location.href).searchParams.get("m"));if(!(id>0))return;
@@ -1115,7 +1246,7 @@ function openLink(url) {
 navigator.serviceWorker?.addEventListener("message",event=>{if(event.data?.open)openLink(event.data.open);});
 waitFor(()=>state,15000).then(()=>{
   if(!state)return;
-  setupPush();
+  setupPush().finally(settingsSummary);
   if(new URLSearchParams(location.search).has("m")){openLink(location.href);history.replaceState(history.state,"","/");}
 });
 
@@ -1128,3 +1259,7 @@ setInterval(()=>{if(!document.hidden){if(loading&&Date.now()-loadStarted>15000)l
 document.addEventListener("visibilitychange",resume);
 addEventListener("pageshow",event=>{if(event.persisted)resume();});
 addEventListener("focus",resume);addEventListener("online",resume);
+// A window behind others holds its looping animations where they are, as the scene does. A toggle that changes
+// nothing records no mutation, which the scene's class observer relies on.
+function rest() { $("app").classList.toggle("at-rest",document.hidden||!document.hasFocus()); }
+addEventListener("blur",rest);addEventListener("focus",rest);document.addEventListener("visibilitychange",rest);rest();

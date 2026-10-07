@@ -114,6 +114,17 @@ def test_http_static_and_read_only_api(http_server):
     status, body, headers = request(http_server, '/manifest.webmanifest')
     assert status == 200 and json.loads(body)['display'] == 'standalone'
     assert headers['Content-Type'] == 'application/manifest+json'
+    assert b'src="/board-fx.js"' in request(http_server)[1]
+    status, body, headers = request(http_server, '/board-fx.js')
+    assert status == 200 and b'playfulToggle' in body and headers['Content-Type'].startswith('text/javascript')
+    assert b'src="/board-scene.js"' in request(http_server)[1]
+    status, body, headers = request(http_server, '/board-scene.js')
+    assert status == 200 and b'boardScene' in body and headers['Content-Type'].startswith('text/javascript')
+    page = request(http_server)[1]
+    # The theme script runs before the stylesheet, so the board never paints in the wrong theme first.
+    assert page.index(b'<script src="/board-theme.js"></script>') < page.index(b'href="/board.css"')
+    status, body, headers = request(http_server, '/board-theme.js')
+    assert status == 200 and b'boardTheme' in body and headers['Content-Type'].startswith('text/javascript')
     status, body, headers = request(http_server, '/apple-touch-icon.png')
     assert status == 200 and body.startswith(b'\x89PNG') and headers['Content-Type'] == 'image/png'
     status, body, _ = request(http_server, '/api/state')
@@ -228,6 +239,24 @@ def test_attachments_upload_send_stream_and_never_render_inline_markup(http_serv
     assert request(http_server, '/api/attachment/../../agent-board.sqlite3')[0] == 404
     assert request(http_server, message['attachments'][0]['url'], headers={'Host': 'board.example.ts.net'})[0] == 403
 
+
+
+def test_markdown_and_text_attachments_open_in_the_reader_rendered_safely(http_server):
+    _, notes = upload(http_server, b'# Bowl lead\n\n- **seam** <script>x</script>', 'bowl-lead.md', 'text/markdown')
+    _, log = upload(http_server, b'step <1> ok', 'run.log', 'text/plain')
+    _, page = upload(http_server, b'<p>hi</p>', 'page.html', 'text/html')
+    payload = {'body': 'Notes', 'recipient': 'two', 'request_id': str(uuid.uuid4()), 'attachments': [notes['id'], log['id'], page['id']]}
+    assert request(http_server, '/api/send', payload)[0] == 200
+    _, state, _ = request(http_server, '/api/state')
+    assert [f['readable'] for f in json.loads(state)['messages'][0]['attachments']] == [True, True, False]
+
+    status, body, headers = request(http_server, f"/api/document/{notes['id']}")
+    document = json.loads(body)
+    assert status == 200 and headers['Content-Type'].startswith('application/json') and document['name'] == 'bowl-lead.md'
+    assert '<h1>Bowl lead</h1>' in document['html'] and '<strong>seam</strong>' in document['html'] and '<script>' not in document['html']
+    assert json.loads(request(http_server, f"/api/document/{log['id']}")[1])['html'] == '<pre><code>step &lt;1&gt; ok</code></pre>'
+    assert request(http_server, f"/api/document/{page['id']}")[0] == 404
+    assert request(http_server, '/api/document/../../agent-board.sqlite3')[0] == 404
 
 def test_threads_collect_replies_to_replies_and_web_replies_keep_their_thread(http_server):
     root = board.post('one', 'Can someone check the ramp?', recipient='operator', topic='request')
@@ -360,9 +389,13 @@ def test_static_files_load_fast_gzipped_revalidated_and_paintings_cached(http_se
     assert status == 200 and headers['Content-Encoding'] == 'gzip' and headers['Cache-Control'] == 'no-cache'
     assert gzip.decompress(body) == (board_web.ASSETS / 'board.js').read_bytes()
     assert request(http_server, '/board.js', headers={'If-None-Match': headers['ETag']})[0] == 304
-    status, body, headers = request(http_server, '/meadow-portrait-1.webp')
-    assert status == 200 and headers['Content-Type'] == 'image/webp' and 'immutable' in headers['Cache-Control']
-    assert body[:4] == b'RIFF' and len(body) < 150_000, 'the phone background stays small'
+    for painting in ('/meadow-portrait-1.webp', '/meadow-night-portrait-1.webp'):
+        status, body, headers = request(http_server, painting)
+        assert status == 200 and headers['Content-Type'] == 'image/webp' and 'immutable' in headers['Cache-Control']
+        assert body[:4] == b'RIFF' and len(body) < 150_000, 'the phone backgrounds stay small'
+    for painting in ('/meadow-landscape-2.webp', '/meadow-night-landscape-1.webp'):
+        status, body, _ = request(http_server, painting)
+        assert status == 200 and body[:4] == b'RIFF' and len(body) < 600_000
 
 
 def test_only_the_web_board_speaks_as_the_operator(cache, capsys):
@@ -396,3 +429,111 @@ def test_bare_addresses_become_safe_readable_links():
     assert 'href="javascript' not in html
     long = board_markdown.render('https://example.com/a/very/long/path/that/goes/on/and/on/to/the/final-segment-name')
     assert '>example.com/…/final-segment-name</a>' in long
+
+
+def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, monkeypatch):
+    from types import SimpleNamespace
+    # An agent asks; the ask is a blocked message to the operator, pushed within the hourly allowance.
+    task, message = board.open_task('one', 'Confirm I may delete the old captures?')
+    asked = board.messages()[-1]
+    assert asked['id'] == message and asked['recipient'] == 'operator' and asked['topic'] == 'blocked'
+    with board.database() as db:
+        assert db.execute('SELECT notify FROM messages WHERE id=?', (message,)).fetchone()[0] == 1
+    state = json.loads(request(http_server, '/api/state')[1])
+    assert [(t['id'], t['agent'], t['replies']) for t in state['tasks']] == [(task, 'one', 0)]
+    assert 'Confirm' in state['tasks'][0]['body_html']
+
+    # The operator's quick reply is a thread reply that reaches the agent, flagged as being on its task.
+    status, _, _ = request(http_server, '/api/send', {'body': 'Yes, delete them.', 'topic': 'info', 'recipient': 'one',
+                                                       'request_id': str(uuid.uuid4()), 'reply_to': message})
+    assert status == 200
+    state = json.loads(request(http_server, '/api/state')[1])
+    assert state['tasks'][0]['replies'] == 1 and state['tasks'][0]['last_reply']['sender'] == 'operator'
+    delivered = []
+    monkeypatch.setattr(board, 'deliver', lambda batch, command=None, full=False: delivered.extend(batch))
+    board.poll('one')
+    reply = next(item for item in delivered if item['reply_to'] == message)
+    assert reply['operator_task'] == task and 'operator task' in board.notification([reply])
+    deeper = board.post('operator', 'And keep the newest one.', 'one', reply_to=reply['id'])
+    board.poll('one')
+    assert next(item for item in delivered if item['id'] == deeper)['operator_task'] == task
+
+    # Agents hold few open at once and keep asks short; only the asker or the operator dismisses one.
+    second, _ = board.open_task('one', 'Second ask.', notify=False)
+    with pytest.raises(ValueError, match='open operator tasks'):
+        board.open_task('one', 'A third.')
+    with pytest.raises(ValueError):
+        board.open_task('two', 'x' * (board.TASK_CHARS + 1))
+    with pytest.raises(ValueError):
+        board.close_task(task, 'two')
+    with pytest.raises(LookupError):
+        board.close_task(999, 'operator', operator=True)
+    with pytest.raises(ValueError):
+        board.close_task(task, 'operator')   # the name alone is not the web board
+
+    # The operator dismisses from the web board; the agent hears it in the thread.
+    assert request(http_server, '/api/task/dismiss', {'id': task})[0] == 200
+    assert request(http_server, '/api/task/dismiss', {'id': task}, headers={'X-Board-CSRF': 'wrong'})[0] == 403
+    assert request(http_server, '/api/task/dismiss', {'id': 'x'})[0] == 400
+    assert request(http_server, '/api/task/dismiss', {'id': task, 'note': 5})[0] == 400
+    assert json.loads(request(http_server, '/api/task/dismiss', {'id': task})[1]) == {'dismissed': task, 'already': True}
+    note = board.messages()[-1]
+    assert note['sender'] == 'operator' and note['recipient'] == 'one' and note['reply_to'] == message
+    assert board.close_task(task, 'operator', operator=True) is False
+
+    # The agent dismisses its own from the command line.
+    args = SimpleNamespace(action='operator-task', task_action='dismiss', agent='one', id=second, note='Solved it.')
+    assert board.main(args) == 0 and 'dismissed' in capsys.readouterr().out
+    assert board.messages()[-1]['body'].endswith('Solved it.')
+    assert json.loads(request(http_server, '/api/state')[1])['tasks'] == []
+    with board.database() as db:
+        assert len(board.tasks(db, 'one', include_closed=True)) == 2
+
+    # Nobody stays blocked on a removed agent's behalf, and the operator never opens tasks.
+    board.open_task('two', 'Still need you.', notify=False)
+    assert request(http_server, '/api/remove', {'agent': 'two'})[0] == 200
+    assert json.loads(request(http_server, '/api/state')[1])['tasks'] == []
+    args = SimpleNamespace(action='operator-task', task_action='open', agent='operator', no_notify=True, message='Hi')
+    assert board.main(args) == 1
+    # Only registered agents ask, so neither an unknown name nor a removed agent can go around the cap.
+    for name in ('ghost', 'two'):
+        with pytest.raises(LookupError, match='not on the board'):
+            board.open_task(name, 'Let me in.')
+
+
+def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
+    import io
+    from atelier.cli import parse_args
+    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', '--no-notify', 'Need your OK.'])) == 0
+    assert 'operator task 1' in capsys.readouterr().out
+    assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one'])) == 0
+    listed = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [(t['id'], t['body']) for t in listed] == [(1, 'Need your OK.')]
+    assert board.main(parse_args(['board', 'operator-task', 'dismiss', '--agent', 'one', '1'])) == 0
+    assert capsys.readouterr().out.strip() == 'operator task 1 dismissed'
+    assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one'])) == 0
+    assert capsys.readouterr().out == ''
+    assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one', '--all'])) == 0
+    assert json.loads(capsys.readouterr().out)['closed_by'] == 'one'
+
+    # An over-long ask on stdin is refused whole rather than cut to fit.
+    monkeypatch.setattr('sys.stdin', io.StringIO(' ' * 50 + 'x' * board.TASK_CHARS + ' and the rest'))
+    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', '-'])) == 1
+    with board.database() as db:
+        assert board.tasks(db, 'one') == []
+
+    # The push shares the agent's hourly allowance with --notify-operator.
+    for _ in range(board.NOTIFY_PER_HOUR):
+        board.post('two', 'Look at this.', 'operator', notify=True)
+    _, message = board.open_task('two', 'Need your OK, quietly.')
+    with board.database() as db:
+        assert db.execute('SELECT notify FROM messages WHERE id=?', (message,)).fetchone()[0] == 0
+
+    # Concurrent asks still respect the cap.
+    def ask(i):
+        try:
+            return board.open_task('paused', f'Ask {i}.', notify=False)
+        except ValueError:
+            return None
+    with ThreadPoolExecutor(8) as pool:
+        assert sum(result is not None for result in pool.map(ask, range(8))) == board.OPEN_TASKS

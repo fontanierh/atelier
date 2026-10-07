@@ -28,6 +28,14 @@ TRAILER_PATTERN = re.compile(r'(?:\A|\n\n)' + re.escape(TRAILER) + r'\n((?:- [^\
 INLINE_TYPES = {'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/heic', 'image/heif', 'image/avif',
                 'video/mp4', 'video/quicktime', 'video/webm', 'audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/x-m4a',
                 'audio/wav', 'application/pdf'}
+# Markdown and text attachments up to this size open in the board's reader; larger ones download.
+READABLE_LIMIT = 512 * 1024
+MARKDOWN_SUFFIXES = ('.md', '.markdown')
+TEXT_SUFFIXES = MARKDOWN_SUFFIXES + ('.txt', '.log')
+
+
+def readable(item):
+    return item['size'] <= READABLE_LIMIT and item['name'].lower().endswith(TEXT_SUFFIXES)
 
 
 def attachments_dir():
@@ -125,7 +133,8 @@ def split_attachments(body):
         found = re.search(r'/board-attachments/([0-9a-f]{24})/[^/]+$', line)
         item = attachment(found[1]) if found else None
         if item:
-            files.append({key: item[key] for key in ('id', 'name', 'mime', 'size', 'url', 'width', 'height')})
+            files.append({**{key: item[key] for key in ('id', 'name', 'mime', 'size', 'url', 'width', 'height')},
+                          'readable': readable(item)})
         else:
             files.append({'missing': True, 'name': line[2:].split(' (')[0]})
     return body[:match.start()], files

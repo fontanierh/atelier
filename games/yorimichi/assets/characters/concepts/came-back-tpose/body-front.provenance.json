@@ -1,0 +1,41 @@
+{
+  "stage": "came-back-tpose",
+  "view": "body-front",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/came_back_tpose.py",
+  "prompt_file": "body-front.prompt.txt",
+  "prompt_sha256": "17933831b98545e2a2aae388c440ba8c82f61964cced32578dcc4fc453742a7e",
+  "reference_files": {
+    "build/yorimichi/characters/concepts/came-back-tpose/front.png": "ebfee1d648a59662d76ba87637601da3f4e908af702b6ac6a59da6a6cc504f1b"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size PNG stays in build/",
+  "status": "done",
+  "started_at": "2026-10-07T10:16:18.508124+00:00",
+  "usage": {
+    "input_tokens": 1352,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 328
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3108
+  },
+  "outputs": {
+    "body-front.png": "07926ad3c61fac4483033da7b930840f20339fff5b09da930824bd13cf97a526"
+  },
+  "compact_copy": {
+    "file": "body-front.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "elapsed_seconds": 34.1,
+  "finished_at": "2026-10-07T10:16:52.596017+00:00"
+}
