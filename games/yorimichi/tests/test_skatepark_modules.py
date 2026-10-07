@@ -61,7 +61,9 @@ class PierModules(unittest.TestCase):
                 for piece in g['pieces']:
                     F.module(m, L.MODULE[piece])
                 verts = np.asarray(m.verts)
-                for at, d in L.joints(g['pieces'][0]) + L.joints(g['pieces'][-1]):
+                joints = {(tuple(at), tuple(d)) for piece in g['pieces'] for at, d in L.joints(piece)}
+                self.assertEqual(len(joints), len(g['pieces']) - 1, g['id'])
+                for at, d in map(lambda j: (np.asarray(j[0]), np.asarray(j[1])), joints):
                     across = [f for f in m.faces if np.all(np.abs((verts[list(f)][:, :2] - at) @ d) < .002)]
                     self.assertEqual(across, [], f"{g['id']} has faces across its joint at {at}")
 
