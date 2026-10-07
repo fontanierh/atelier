@@ -183,28 +183,36 @@ void UJapanSkateNetwork::ReceivePose(const FJapanSkateChunk& Chunk)
 void UJapanSkateNetwork::Accept(const FJapanSkateFrame& Frame)
 {
     ReceivedFrame = Frame.Frame;
-    if (!Frames.IsEmpty() && Frame.Time <= Frames.Last().Time) return;
-    ++ReceivedFrameCount;
     const double Arrival = GetWorld()->GetTimeSeconds();
+    FJapanSkateFrame Local = Frame;
+    // A newly joined client's replicated GameState clock can lag or lead while
+    // loading. Presentation needs capture spacing on this observer's clock,
+    // including outbound transit, rather than an assumed world-clock offset.
+    Local.Time = ViewClock.Map(Frame.Time, Arrival);
+    if (!Frames.IsEmpty() && Local.Time <= Frames.Last().Time) return;
+    ++ReceivedFrameCount;
     const double Spacing = PreviousArrival < 0. ? double(Frame.Interval) : FMath::Clamp(Arrival - PreviousArrival, 1./120., 30.);
     DeliveryInterval = FMath::Max(double(Frame.Interval), FMath::Lerp(DeliveryInterval, Spacing, .2));
-    if (const auto* Clock = GetWorld()->GetGameState())
-        DeliveryAge = FMath::Lerp(DeliveryAge, FMath::Clamp(double(Clock->GetServerWorldTimeSeconds() - Frame.Time), 0., .5), .2);
+    // The offset removes constant transit; the remaining age measures jitter.
+    // Retain its decaying peak so a burst is not hidden by a small average.
+    DeliveryAge = FMath::Max(FMath::Clamp(Arrival - Local.Time, 0., .5), DeliveryAge * .98);
     PreviousArrival = Arrival;
-    Frames.Add(Frame);
-    while (Frames.Num() > 6) Frames.RemoveAt(0, 1, EAllowShrinking::No);
+    Frames.Add(MoveTemp(Local));
+    // Keep enough history for the bounded 500 ms age plus interpolation delay
+    // at 30 Hz. Six frames discarded the target during a jitter burst.
+    while (Frames.Num() > 32) Frames.RemoveAt(0, 1, EAllowShrinking::No);
 }
 
 void UJapanSkateNetwork::Show(float Dt)
 {
-    const auto* Clock = GetWorld()->GetGameState();
-    if (!Clock) return;
-    const double Now = Clock->GetServerWorldTimeSeconds();
+    const double Now = GetWorld()->GetTimeSeconds();
     const double TargetDelay = FMath::Clamp(DeliveryAge + 1.5 * DeliveryInterval + .05, .1, 30.);
     // At most 250 ms/s of adjustment: growing delay cannot rewind the display clock.
     ViewDelay += FMath::Clamp(TargetDelay - ViewDelay, -.25 * double(Dt), .25 * double(Dt));
-    const double ShowAt = Now - ViewDelay;
-    if (Frames.IsEmpty()) { ShowBoard(ShowAt); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
+    const double RequestedTime = Now - ViewDelay;
+    if (Frames.IsEmpty()) { ShowBoard(RequestedTime); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
+    const bool bBefore = RequestedTime < Frames[0].Time, bAfter = RequestedTime > Frames.Last().Time;
+    const double ShowAt = FMath::Clamp(RequestedTime, Frames[0].Time, Frames.Last().Time);
     while (Frames.Num() >= 3 && Frames[1].Time <= ShowAt) Frames.RemoveAt(0, 1, EAllowShrinking::No);
     const FJapanSkateFrame& A = Frames[0];
     const FJapanSkateFrame& B = Frames.Num() > 1 ? Frames[1] : A;
@@ -229,6 +237,8 @@ void UJapanSkateNetwork::Show(float Dt)
     Rider->GetSkate()->ApplyNetworkBoard(Deck, Shown);
     if (Rider->GetSkate()->ApplyNetworkPose(Pose, Mesh))
     {
+        if (bBefore) ++BeforeBufferCount;
+        if (bAfter) ++AfterBufferCount;
         if (Alpha > 0.f && Alpha < 1.f) ++InterpolatedFrameCount; else ++HeldFrameCount;
         const auto& Applied = Alpha < .5f ? A : B;
         if (LastAppliedEpoch != Applied.Epoch || LastAppliedFrame != Applied.Frame)
@@ -316,8 +326,10 @@ void UJapanSkateNetwork::ReceiveBodies(const FJapanSkateBodies& State)
 {
     if (!Rider || Rider->IsLocallyControlled() || !Newer(State.Pose.Frame, ReceivedBodies) || !ValidBodies(State)) return;
     ReceivedBodies = State.Pose.Frame;
-    if (!Bodies.IsEmpty() && State.Pose.Time <= Bodies.Last().Pose.Time) return;
-    Bodies.Add(State);
+    FJapanSkateBodies Local = State;
+    Local.Pose.Time = ViewClock.Map(State.Pose.Time, GetWorld()->GetTimeSeconds());
+    if (!Bodies.IsEmpty() && Local.Pose.Time <= Bodies.Last().Pose.Time) return;
+    Bodies.Add(MoveTemp(Local));
     while (Bodies.Num() > 12) Bodies.RemoveAt(0, 1, EAllowShrinking::No);
 }
 
@@ -350,8 +362,11 @@ void UJapanSkateNetwork::ShowBodies(double ShowAt, TArray<FTransform>& Pose, FTr
 
 void UJapanSkateNetwork::OnRep_Board()
 {
-    if (!Boards.IsEmpty() && (!Newer(Board.Sequence, Boards.Last().Sequence) || Board.Time <= Boards.Last().Time)) return;
-    Boards.Add(Board);
+    if (!Boards.IsEmpty() && !Newer(Board.Sequence, Boards.Last().Sequence)) return;
+    FJapanBoardState Local = Board;
+    Local.Time = ViewClock.Map(Board.Time, GetWorld()->GetTimeSeconds());
+    if (!Boards.IsEmpty() && Local.Time <= Boards.Last().Time) return;
+    Boards.Add(MoveTemp(Local));
     while (Boards.Num() > 12) Boards.RemoveAt(0, 1, EAllowShrinking::No);
 }
 

@@ -72,6 +72,9 @@ bool UJapanCharacterMovement::ForcePositionUpdate(float Dt)
         ++NetworkStats.InitialForcedUpdatesSkipped;
         return false;
     }
+    if (PredictsMoves() && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
+        UE_LOG(LogTemp, Display, TEXT("NETWORK forced move epoch=%u dt=%.6f timestamp=%.6f"),
+            GetActivityEpoch(), Dt, GetPredictionData_Server_Character()->CurrentClientTimeStamp);
     return Super::ForcePositionUpdate(Dt);
 }
 
@@ -253,6 +256,11 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);
         }
     Super::MoveAutonomous(Timestamp, Dt, Flags, Accel);
+    if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= .8f &&
+        FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
+        UE_LOG(LogTemp, Display, TEXT("NETWORK move server epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u accel=%s maxspeed=%.3f position=%s velocity=%s"),
+            GetActivityEpoch(), Timestamp, Dt, ActiveInput.X, ActiveInput.Y, ActiveInput.Flags,
+            *Acceleration.ToString(), GetMaxSpeed(), *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString());
 }
 
 bool UJapanCharacterMovement::ClientUpdatePositionAfterServerUpdate()

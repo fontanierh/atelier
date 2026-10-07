@@ -3,6 +3,7 @@
 #include "WandererCharacter.h"
 #include "BotwMoveSet.h"
 #include "Engine/PackageMapClient.h"
+#include "Misc/CommandLine.h"
 
 namespace
 {
@@ -79,6 +80,10 @@ void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
         PostState = CastChecked<AWandererCharacter>(Character)->GetMoves()->CaptureNetworkState();
         PostEdge = Movement->GetProcessedEdge();
         PostCrouch = Movement->bWantsToCrouch;
+        if (Mode == PostUpdate_Record && TimeStamp <= .8f && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
+            UE_LOG(LogTemp, Display, TEXT("NETWORK move client epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u accel=%s maxspeed=%.3f position=%s velocity=%s"),
+                Input.ActivityEpoch, TimeStamp, DeltaTime, Input.X, Input.Y, Input.Flags, *Movement->GetCurrentAcceleration().ToString(),
+                Movement->GetMaxSpeed(), *SavedLocation.ToString(), *SavedVelocity.ToString());
     }
 }
 

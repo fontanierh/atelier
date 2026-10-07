@@ -25,6 +25,7 @@ struct FScript
     FJapanMovementStats MovementStats;
     uint16 MaximumProcessedEdge = 0;
     uint32 InterpolatedFrames = 0, HeldFrames = 0;
+    uint32 BeforeBufferFrames = 0, AfterBufferFrames = 0;
     FVector Start = FVector::ZeroVector, Foot = FVector::ZeroVector;
     float WalkDistance = 0.f, JumpHeight = 0.f, SkateSeconds = 0.f, ResumedWalkDistance = 0.f;
     uint32 HighestEpoch = 1, AcceptedFrames = 0, MaximumSavedMoves = 0, PeerFrames = 0, ReceivedPeerFrames = 0;
@@ -49,6 +50,8 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("processed_edges"), State.MaximumProcessedEdge);
     Data->SetNumberField(TEXT("interpolated_peer_frames"), State.InterpolatedFrames);
     Data->SetNumberField(TEXT("held_peer_frames"), State.HeldFrames);
+    Data->SetNumberField(TEXT("before_buffer_peer_frames"), State.BeforeBufferFrames);
+    Data->SetNumberField(TEXT("after_buffer_peer_frames"), State.AfterBufferFrames);
     const double PeerApplications = double(State.InterpolatedFrames) + State.HeldFrames;
     Data->SetNumberField(TEXT("interpolated_peer_fraction"), PeerApplications > 0. ? State.InterpolatedFrames / PeerApplications : 0.);
     Data->SetNumberField(TEXT("observed_seconds"), State.ObservedSeconds);
@@ -136,6 +139,8 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
                     Script.ReceivedPeerFrames = FMath::Max(Script.ReceivedPeerFrames, Stream->GetReceivedFrameCount());
                     Script.InterpolatedFrames = FMath::Max(Script.InterpolatedFrames, Stream->GetInterpolatedFrameCount());
                     Script.HeldFrames = FMath::Max(Script.HeldFrames, Stream->GetHeldFrameCount());
+                    Script.BeforeBufferFrames = FMath::Max(Script.BeforeBufferFrames, Stream->GetBeforeBufferCount());
+                    Script.AfterBufferFrames = FMath::Max(Script.AfterBufferFrames, Stream->GetAfterBufferCount());
                 }
     const double Now = World->GetTimeSeconds();
     auto* Movement = CastChecked<UJapanCharacterMovement>(Player->GetCharacterMovement());

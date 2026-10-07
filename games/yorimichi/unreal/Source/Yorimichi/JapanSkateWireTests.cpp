@@ -22,6 +22,21 @@ bool FJapanSkateWireTest::RunTest(const FString&)
     TestTrue(TEXT("Expired minimum offset adapts to a changed route"), FMath::IsNearlyEqual(Clock.Map(12., 12.3), 12.3, .00001));
     for (int32 I = 0; I < 1000; ++I) Clock.Map(20. + I * .01, 20.2 + I * .01);
     TestTrue(TEXT("The shared pose/body/board clock has bounded history"), Clock.Samples.Num() <= 22);
+    for (double ObserverOffset : {-12., 12.})
+    {
+        FJapanSkateClock Observer;
+        TArray<double> LocalFrames;
+        for (int32 I = 0; I < 12; ++I)
+        {
+            const double Capture = 20. + I / 30.;
+            LocalFrames.Add(Observer.Map(Capture, Capture + ObserverOffset + .06));
+        }
+        const double ShowAt = 20. + 11./30. + ObserverOffset + .06 - .1;
+        TestTrue(TEXT("An observer with either clock skew has buffered interpolation history"),
+            LocalFrames[0] < ShowAt && ShowAt < LocalFrames.Last());
+        TestTrue(TEXT("Observer mapping preserves capture spacing"),
+            FMath::IsNearlyEqual(LocalFrames.Last() - LocalFrames[0], 11./30., .00001));
+    }
     FJapanSkateChunk Chunk;
     Chunk.Epoch = 3; Chunk.Frame = 10; Chunk.Time = 5.f; Chunk.TotalBones = 64;
     Chunk.Bones.Init(FTransform(FRotator(25,-60,170), FVector(-120,53.2,240.5), FVector(1)), 32);
