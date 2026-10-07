@@ -185,7 +185,7 @@ def import_equipment(name, folder, equipment, masters):
         place = f'{folder}/{slot.capitalize()}'
         E.make_directory(place)
         skinned = 'clip' in item
-        found = import_glb(item['glb'], place, pipelines(static=not skinned))
+        found = import_glb(str(OUT / item['glb']), place, pipelines(static=not skinned))
         entry = {key: item[key] for key in ('hand', 'back', 'carry') if key in item}
         if skinned:
             assert len(found.get('SkeletalMesh', [])) == 1 and len(found.get('Skeleton', [])) == 1, (title, found)
@@ -258,7 +258,8 @@ def import_character(character, owners, masters):
     owner = owners.get(character['skeleton']) if character['skeleton'] != name else None
     assert not (owner and character.get('moves')), (name, 'a variant cannot carry its own move set')
     started = time.time()
-    found = import_glb(character['glb'], folder, pipelines(owner['skeleton_asset'] if owner else None))
+    found = import_glb(str(OUT / character['glb']), folder,   # relative to OUT (older exports: absolute)
+                       pipelines(owner['skeleton_asset'] if owner else None))
     meshes = found.get('SkeletalMesh', [])
     assert len(meshes) == 1, (name, 'expected one skeletal mesh', found)
     # The skeleton first: the mesh is saved after it, so its package names the skeleton's final path.

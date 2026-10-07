@@ -116,7 +116,8 @@ def equipment(spec, character, out):
     for slot, item in spec.get('equipment', {}).items():
         source = library.entry(item['id'])
         target = out / f"{character}{slot.capitalize()}.glb"
-        record = {'id': item['id'], 'glb': str(target), 'hand': item.get('hand', ''), 'back': item.get('back', '')}
+        # Relative to out's parent, the folder export.json sits in (absolute paths outlive a reuse into another checkout).
+        record = {'id': item['id'], 'glb': str(target.relative_to(out.parent)), 'hand': item.get('hand', ''), 'back': item.get('back', '')}
         if 'clip' in item:
             summary = bake.bake(source['glb'], source['curves'], target, clips=[item['clip']])
             record['clip'] = summary['clips'][0]['name']
