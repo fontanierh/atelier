@@ -4,7 +4,7 @@
 #include "Misc/AutomationTest.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanEndpointTest, "Yorimichi.Network.JoinEndpoint",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 
 bool FJapanEndpointTest::RunTest(const FString&)
 {

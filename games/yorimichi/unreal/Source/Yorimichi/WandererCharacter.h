@@ -35,7 +35,7 @@ class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTar
 public:
     AWandererCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     virtual void BeginPlay() override;
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void PawnClientRestart() override;
     virtual void ConfigureNetworkRider(const FString& Name, bool bShield);
     const FString& GetNetworkRiderName() const { return NetworkRiderName; }

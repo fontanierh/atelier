@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Containers/Ticker.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -42,7 +43,7 @@ private:
     bool TickNetworkQA(float Dt);
     bool WriteNetworkQA(const TCHAR* Stage, const FString& Error = FString());
     FString NetworkQARole, NetworkQADirectory;
-    FDelegateHandle NetworkQATicker;
+    FTSTicker::FDelegateHandle NetworkQATicker;
     double NetworkQAStarted = 0, NetworkQAConnected = 0, NetworkQALeaving = 0;
     bool bNetworkQAWorld = false, bNetworkQASawPeer = false;
 };
@@ -52,7 +53,7 @@ class YORIMICHI_API AJapanPlayerState : public APlayerState
 {
     GENERATED_BODY()
 public:
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     UPROPERTY(Replicated) FString SessionPlayerId;
     UPROPERTY(Replicated) FString RiderName;
     UPROPERTY(Replicated) bool bShield = false;
@@ -64,7 +65,7 @@ class YORIMICHI_API AJapanGameState : public AGameStateBase
 {
     GENERATED_BODY()
 public:
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     UPROPERTY(Replicated) FString SessionId;
     UPROPERTY(Replicated) FString ContentIdentity;
     UPROPERTY(Replicated) FString StartupError;

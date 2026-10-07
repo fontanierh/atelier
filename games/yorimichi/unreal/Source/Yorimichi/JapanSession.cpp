@@ -198,17 +198,17 @@ void UJapanGameInstance::CloseFriends()
     }
 }
 
-void AJapanPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const
+void AJapanPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    Super::GetLifetimeReplicatedProps(Out);
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AJapanPlayerState, SessionPlayerId);
     DOREPLIFETIME(AJapanPlayerState, RiderName);
     DOREPLIFETIME(AJapanPlayerState, bShield);
     DOREPLIFETIME(AJapanPlayerState, bWorldReady);
 }
-void AJapanGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const
+void AJapanGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    Super::GetLifetimeReplicatedProps(Out);
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AJapanGameState, SessionId);
     DOREPLIFETIME(AJapanGameState, ContentIdentity);
     DOREPLIFETIME(AJapanGameState, StartupError);

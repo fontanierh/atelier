@@ -158,9 +158,9 @@ void AWandererCharacter::BeginPlay()
     InitializeLocalPlayer();
 }
 
-void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const
+void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    Super::GetLifetimeReplicatedProps(Out);
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkRiderName, COND_InitialOnly);
     DOREPLIFETIME(AWandererCharacter, bNetworkShield);
 }

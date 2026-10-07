@@ -191,8 +191,9 @@ bool Identity(FString& Signature, FString& Error)
 
 AJapanWorld* FindWorld(UWorld* World)
 {
-    if (World) for (TActorIterator<AJapanWorld> It(World); It; ++It) return *It;
-    return nullptr;
+    if (!World) return nullptr;
+    TActorIterator<AJapanWorld> It(World);
+    return It ? *It : nullptr;
 }
 AJapanWorld* EnsureWorld(UWorld* World)
 {
