@@ -2,7 +2,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "BikeComponent.generated.h"
-class AWandererCharacter; class UStaticMeshComponent; class USceneComponent; class UAnimSequence; class UAudioComponent; class USoundWave; class USoundAttenuation;
+class AWandererCharacter; class UStaticMeshComponent; class USceneComponent; class UAnimSequence; class UAudioComponent; class USoundWave; class USoundAttenuation; class UPhysicsAsset;
 
 /** Cairo's teal mamachari (assets/vehicles/bike, docs/BIKE.md). Summoned beside him, mounted, ridden with walking
  *  physics (floors, slopes and walls stay the movement component's), parked on its stand or crashed. Every rider move
@@ -66,6 +66,9 @@ private:
  UPROPERTY() TObjectPtr<UStaticMeshComponent> PedalR;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> Kickstand;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> RackBoard;
+ /** A rider's cloth (Modori's coat) collides with the bike while he rides it: the rack and its board, the rear wheel. */
+ UPROPERTY() TObjectPtr<UPhysicsAsset> ClothBodies;
+ void ClothColliders(bool bOn);
  UPROPERTY() TMap<FName,TObjectPtr<UAnimSequence>> Sequences;
  TMap<FName,FClip> Clips;
  int32 Fps=60;

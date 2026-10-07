@@ -1,4 +1,6 @@
 #include "BikeComponent.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
 #include "WandererCharacter.h"
 #include "ModoriCharacter.h"
 #include "AtelierData.h"
@@ -340,7 +342,7 @@ bool UBikeComponent::Toggle()
  if(State==EState::Riding)
  {
   if(Speed>40.f){Hint=TEXT("Slow down to get off");return false;}
-  State=EState::Dismounting;Speed=0;Play(TEXT("BikeDismount"),TEXT("BikeKickstand"));Hint=TEXT("Parking");return true;
+  State=EState::Dismounting;Speed=0;Play(TEXT("BikeDismount"),TEXT("BikeKickstand"));Hint=TEXT("Parking");ClothColliders(false);return true;
  }
  if(State!=EState::Off)return false;
  auto* M=Rider->GetCharacterMovement();
@@ -397,7 +399,7 @@ void UBikeComponent::Park()
   }
  }
  M->bForceNextFloorCheck=true;
- State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=WheelFall[0]=WheelFall[1]=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;
+ State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=WheelFall[0]=WheelFall[1]=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;ClothColliders(false);
  for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
 
@@ -407,7 +409,7 @@ void UBikeComponent::StowImmediately()
  {
   auto* M=Rider->GetCharacterMovement();M->GroundFriction=SavedFriction;M->BrakingDecelerationWalking=SavedBraking;M->StopMovementImmediately();
   Rider->GetMesh()->SetRelativeLocationAndRotation(MeshLocation,MeshRotation);
-  State=EState::Off;Clip=NAME_None;++Serial;
+  State=EState::Off;Clip=NAME_None;++Serial;ClothColliders(false);
  }
  if(BikeRoot)
  {
@@ -429,7 +431,7 @@ void UBikeComponent::EndClip()
 {
  switch(State)
  {
- case EState::Mounting: State=EState::Riding;Play(TEXT("BikeRide"));Hint=TEXT("Riding");break;
+ case EState::Mounting: State=EState::Riding;Play(TEXT("BikeRide"));Hint=TEXT("Riding");ClothColliders(true);break;
  case EState::Dismounting: State=EState::Parking;Play(TEXT("BikeKickstand"));break;
  case EState::Parking: case EState::Crashing: Park();break;
  default: Play(Resume.IsNone()?FName(TEXT("BikeRide")):Resume);break;
@@ -574,3 +576,39 @@ FString UBikeComponent::GetLoopState() const
 }
 
 FTransform UBikeComponent::GetBikeTransform() const{return BikeRoot?BikeRoot->GetComponentTransform():FTransform::Identity;}
+
+void UBikeComponent::ClothColliders(bool bOn)
+{
+ USkeletalMeshComponent* Mesh=Rider?Rider->GetMesh():nullptr;
+ if(!Mesh||!Mesh->GetSkeletalMeshAsset()||!Mesh->GetSkeletalMeshAsset()->GetMeshClothingAssets().Num())return;
+ if(bOn&&!ClothBodies&&BikeRoot)
+ {
+  // Capsules on the root bone where the rack, its board and the rear wheel sit while he rides (the bike stands still
+  // relative to him but for its lean), in the bone's own units: its x100 import scale divides them (Chaos scales back).
+  const FTransform Root=Mesh->GetBoneTransform(0,FTransform::Identity);
+  const float Unit=FMath::Max(Root.GetScale3D().GetAbsMax(),KINDA_SMALL_NUMBER);
+  ClothBodies=NewObject<UPhysicsAsset>(this,TEXT("BikeCloth"));
+  USkeletalBodySetup* Setup=NewObject<USkeletalBodySetup>(ClothBodies);
+  Setup->BoneName=Mesh->GetBoneName(0);Setup->PhysicsType=PhysType_Kinematic;
+  for(const UStaticMeshComponent* Part:{RackBoard.Get(),WheelRear.Get()})
+  {
+   if(!Part||!Part->GetStaticMesh())continue;
+   const FBox Box=Part->GetStaticMesh()->GetBoundingBox();const FVector E=Box.GetExtent();
+   const FTransform ToComponent=Part->GetComponentTransform().GetRelativeTransform(Mesh->GetComponentTransform());
+   // The board: a capsule along its length, its width across. The wheel: along its axle, its rim round.
+   const int32 Long=Part==RackBoard?(E.X>=E.Y&&E.X>=E.Z?0:E.Y>=E.Z?1:2):(E.X<=E.Y&&E.X<=E.Z?0:E.Y<=E.Z?1:2);
+   FVector Half=FVector::ZeroVector;Half[Long]=E[Long];
+   float Radius=0.f;for(int32 K=0;K<3;++K)if(K!=Long)Radius=FMath::Max(Radius,E[K]);
+   if(Part==RackBoard)Radius=FMath::Min(Radius,12.f);
+   const FVector A=Root.InverseTransformPosition(ToComponent.TransformPosition(Box.GetCenter()-Half));
+   const FVector B=Root.InverseTransformPosition(ToComponent.TransformPosition(Box.GetCenter()+Half));
+   FKSphylElem Capsule;Capsule.Radius=Radius*ToComponent.GetScale3D().GetAbsMax()/Unit;Capsule.Center=(A+B)*.5f;
+   Capsule.Rotation=FRotationMatrix::MakeFromZ((B-A).GetSafeNormal()).Rotator();Capsule.Length=FMath::Max((B-A).Size()-2.f*Capsule.Radius,0.f);
+   Setup->AggGeom.SphylElems.Add(Capsule);
+  }
+  ClothBodies->SkeletalBodySetups.Add(Setup);ClothBodies->UpdateBodySetupIndexMap();
+ }
+ if(!ClothBodies)return;
+ Mesh->RemoveClothCollisionSource(Mesh,ClothBodies);
+ if(bOn)Mesh->AddClothCollisionSource(Mesh,ClothBodies);
+}
