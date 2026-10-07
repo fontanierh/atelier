@@ -16,6 +16,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -632,6 +634,44 @@ void UBotwMoveSet::Attach(FName Slot)
     if (!S || !Prop || !*Prop || !Character->GetMesh()) return;
     (*Prop)->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, S->bInHand ? S->Hand : S->Back);
     (*Prop)->SetRelativeTransform(S->bInHand ? S->Held : S->Carry);
+    if (Slot == TEXT("sword")) BladeCloth(S->bInHand);
+}
+
+void UBotwMoveSet::BladeCloth(bool bInHand)
+{
+    USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
+    const FSlot* S = Slots.Find(TEXT("sword"));
+    const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(TEXT("sword"));
+    if (!Body || !S || !Prop || !*Prop || !(*Prop)->GetStaticMesh() || !Body->GetSkeletalMeshAsset()
+        || !Body->GetSkeletalMeshAsset()->GetMeshClothingAssets().Num()) return;
+    if (!BladeCollision)
+    {
+        // The blade's capsule in the hand bone's space, its scale included (Chaos scales the shape by the bone's, an
+        // FBX in metres puts x100 on it): along the piece's longest axis, through its bounds, 2 cm round.
+        const int32 Bone = Body->GetBoneIndex(S->Hand);
+        if (Bone == INDEX_NONE) return;
+        const float BoneScale = FMath::Max(Body->GetBoneTransform(Bone, FTransform::Identity).GetScale3D().GetAbsMax(), KINDA_SMALL_NUMBER);
+        const FBox Bounds = (*Prop)->GetStaticMesh()->GetBoundingBox();
+        const FVector Extent = Bounds.GetExtent();
+        const int32 Long = Extent.X >= Extent.Y && Extent.X >= Extent.Z ? 0 : Extent.Y >= Extent.Z ? 1 : 2;
+        FVector Axis = FVector::ZeroVector;
+        Axis[Long] = Extent[Long];
+        const FVector A = S->Held.TransformPosition(Bounds.GetCenter() - Axis), B = S->Held.TransformPosition(Bounds.GetCenter() + Axis);
+        FKSphylElem Capsule;
+        Capsule.Radius = 2.f / BoneScale;
+        Capsule.Center = (A + B) * .5f;
+        Capsule.Rotation = FRotationMatrix::MakeFromZ((B - A).GetSafeNormal()).Rotator();
+        Capsule.Length = FMath::Max((B - A).Size() - 2.f * Capsule.Radius, 0.f);
+        BladeCollision = NewObject<UPhysicsAsset>(this, TEXT("BladeCloth"));
+        USkeletalBodySetup* Setup = NewObject<USkeletalBodySetup>(BladeCollision);
+        Setup->BoneName = S->Hand;
+        Setup->PhysicsType = PhysType_Kinematic;
+        Setup->AggGeom.SphylElems.Add(Capsule);
+        BladeCollision->SkeletalBodySetups.Add(Setup);
+        BladeCollision->UpdateBodySetupIndexMap();
+    }
+    Body->RemoveClothCollisionSource(Body, BladeCollision);
+    if (bInHand) Body->AddClothCollisionSource(Body, BladeCollision);
 }
 
 void UBotwMoveSet::SetArmed(bool bNow)
