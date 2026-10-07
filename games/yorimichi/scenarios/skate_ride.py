@@ -130,6 +130,7 @@ STEER = {1: FLAT, -1: (FLAT[0], FLAT[1] - 1)}
 RAIL = (-36, 43)       # an ollie at .98 s onto flatbar_red, along it (it starts 8 m ahead, x -28 to -10)
 RAIL_FAST = (-38, 43)  # the same take-off at 700 cm/s
 STALL_DESCENT = 1.5    # s: from a stall on the square flatbar's top down to the deck
+STALL_TOP = 200.       # cm/s: a grind ending on the bar's top this slowly is a stall (at speed it runs off the end)
 QUARTER = (57, 25)     # east_return's quarter (lip at x 70, 2 m radius, 0.15 m vert), launched east at 950 cm/s
 QUARTER_OUT = (-1, 0)  # its face's level normal, Unreal x, y: back into the ramp, west
 OPEN = (0, 52)         # an open run east between the bars (y 43) and the north gardens (y 61), for hard carves
@@ -1927,7 +1928,7 @@ def grind_rows(record):
         along = (position(rows[end - 1])[0] - position(rows[lock])[0]) / 100
         deck = float(rows[min(5, lock)]['z'])
         on_top = rows[end]['mode'] == '1' and float(rows[end]['z']) > deck + 10
-        stalled = speed(rows[end - 1]) < 60 or on_top
+        stalled = speed(rows[end - 1]) < 60 or (on_top and speed(rows[end - 1]) < STALL_TOP)
         ok = rows[-1]['mode'] == '1' and not bailed and 70 < loss < 125 and stalled == (name == 'grind_stall')
         off = ''
         if name == 'grind_stall':
