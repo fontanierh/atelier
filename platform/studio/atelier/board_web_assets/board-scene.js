@@ -105,13 +105,15 @@ void main(){
   function shader(type, src) { const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s; }
   // Program, quad and texture. A restored context starts empty, so this runs again then. Compiling goes on in the
   // background where the browser can (KHR_parallel_shader_compile); asking for a status before then would wait.
-  let U={}, tex=null, compiling=false;
+  // A restore while one is compiling starts a new one, and the stale one stops at its next check.
+  let U={}, tex=null, compiling=false, generation=0;
   function compile() {
-    if(compiling)return;compiling=true;
+    const mine=++generation;compiling=true;
     const parallel=gl.getExtension("KHR_parallel_shader_compile");
     const vs=shader(gl.VERTEX_SHADER,VERT), fs=shader(gl.FRAGMENT_SHADER,FRAG);
     const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
     const check=()=>{
+      if(mine!==generation)return;
       if(parallel&&!gl.getProgramParameter(prog,parallel.COMPLETION_STATUS_KHR)){setTimeout(check,50);return;}
       compiling=false;
       if(init(prog,vs,fs))load();
@@ -136,8 +138,9 @@ void main(){
   }
 
   let painting=null, ready=false, raf=0, lastFrame=0, start=performance.now();
+  // Nothing loads until the program is ready (a theme or width change can come first); compile() loads then.
   function load() {
-    if(!gl)return;
+    if(!gl||compiling||!tex)return;
     const want=(wide.matches?PAINTINGS.landscape:PAINTINGS.portrait)[dark()?"night":"day"];
     if(painting===want)return;painting=want;
     const img=new Image();img.decoding="async";
