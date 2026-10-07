@@ -78,6 +78,7 @@ sounds and HUD getters.
 | `PushSpeedScale` | 1 | 0.5 to 2; scales the animation-timed push speed target |
 | `PushPowerScale` | 1 | 0.5 to 3; scales the planted-foot push propulsion |
 | `VertAssist` | 0 | 0 to 1; how far short of vertical a quarter pipe still sends a straight air back into it (1 reaches lips of about 50°) |
+| `bTightFlicks` | false | Also read a hardflip or inward heelflip flicked close to straight down then up (newer skate games' motion), beside the authored wide arc: the main gesture set gains a narrower copy of each (`GestureInputPublication::Tune`). Off is stock |
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
 | `BoardDissolveMaterial` | none | Ride only: a masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
@@ -129,6 +130,7 @@ bit-exact with stock.
 | Field | Range | What it scales |
 | --- | --- | --- |
 | `Difficulty`, `TruckTightness`, `Pop`, `Spin`, `PushSpeed`, `PushPower`, `VertAssist` | as above | The settings above |
+| `TightFlicks` | 0, 1 | `bTightFlicks` |
 | `FlickRadius` | 0.5 to 2 | Each Flick-It pattern's match radius: how far a flick may stray from a trick's shape |
 | `FlickWindow` | 0.5 to 3 | The samples a flick may take (the stick's authored miss limit) |
 | `FlickPace` | 0.5 to 2 | The flick speeds that map to low and full pop (lower needs a gentler flick) |

@@ -60,6 +60,11 @@ around for 360s, and starting from up for nollies. With the mouse, pull back the
 for a kickflip, forward-right for a heelflip, and back then sideways for a shove-it. The mouse flick scales with the
 game's mouse sensitivity. Goofy stance mirrors the gestures.
 
+Hardflips and inward heelflips take either motion. The Skate 3 arc starts wide (down and towards the toe side for a
+hardflip, the heel side for an inward heelflip), rolls through down and finishes about 40° off up on that side. The
+skate. motion starts just off down and finishes just off up. **Tight hardflips and inwards** (Skate feel menu, on by
+default, `bTightFlicks` in `DefaultGame.ini`) adds the second. Without it, a tight flick usually reads as an ollie.
+
 A grab never sends Cairo over the coping; only the transfer input does.
 
 ### Trick line and HUD
@@ -144,8 +149,8 @@ It starts with the **skating mode**:
   that preset's difficulty, so Custom begins exactly where you were.
 
 The custom values are grouped as Custom base (base difficulty, trucks), Flick-It, Air, Rails, Pushing and rolling,
-Turning, Balance and Bails. **Controls and camera** (stick dead zone and full tilt, mouse flick strength, skate camera
-distance and field of view) apply in every mode. Hover a row for what it does. Changes apply at once, even mid-ride,
+Turning, Balance and Bails. **Controls and camera** (stick dead zone and full tilt, mouse flick strength, tight
+hardflips and inwards, skate camera distance and field of view) apply in every mode. Hover a row for what it does. Changes apply at once, even mid-ride,
 and are saved in `settings.txt` as `skate_*` keys (`skate_mode` 0 Easy, 1 Normal, 2 Hardcore, 3 Custom). The phone's
 settings show the same values under "Skate mode", "Skate feel · Custom" and "Skate controls & camera". **Reset custom
 values to stock** and **Reset controls and camera** return those values to their defaults.
