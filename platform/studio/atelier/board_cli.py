@@ -43,7 +43,6 @@ def configure(sub):
     task_actions = p.add_subparsers(dest='task_action', required=True)
     q = task_actions.add_parser('open', help='open a task: what you need from the operator, in a few lines')
     q.add_argument('--agent', required=True)
-    q.add_argument('--no-notify', action='store_true', help='do not push it to the operator\'s phone')
     q.add_argument('message', help=f'at most {TASK_CHARS} characters, the ask first (use - to read stdin)')
     q = task_actions.add_parser('list', help='open operator tasks (yours with --agent)')
     q.add_argument('--agent'); q.add_argument('--all', action='store_true', help='include dismissed tasks')
@@ -143,7 +142,7 @@ def main(args):
                 raise ValueError('operator tasks are for agents; the operator answers them on the web board')
             if args.task_action == 'open':
                 text = sys.stdin.read() if args.message == '-' else args.message
-                task, message = open_task(args.agent, text, notify=not args.no_notify)
+                task, message = open_task(args.agent, text)
                 print(f'operator task {task} (message {message}); replies arrive in its thread. Dismiss it with '
                       f'atelier board operator-task dismiss --agent {args.agent} {task} as soon as it no longer applies.')
             elif args.task_action == 'list':

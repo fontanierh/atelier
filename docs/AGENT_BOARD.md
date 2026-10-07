@@ -193,7 +193,8 @@ atelier board operator-task open --agent NAME "Confirm I may delete the old capt
 
 The task lands on the **Tasks** page of the web board (a tab on the phone, above the render floor on a wide screen),
 where the operator replies in place or dismisses it. The ask is posted as a `blocked` message to `operator` and
-pushed to their phone like `--notify-operator` (within the same 3 an hour; `--no-notify` skips the push). Their reply
+always pushed to their phone, titled as an operator task and opening the Tasks page (it is outside the 3 an hour
+`--notify-operator` allows, and spends none of them; the cap of 2 open tasks bounds it instead). Their reply
 arrives as a thread reply to that message, and your notification says it is on your task.
 
 - **Use it sparingly.** It is for real blocks only, not progress, questions you can answer yourself or another agent

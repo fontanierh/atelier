@@ -104,6 +104,9 @@ h1, h2, p { margin: 0; }
 .title-text { flex: 1; min-width: 0; }
 .title-text h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .title-text p { display: flex; align-items: center; gap: 7px; margin-top: 1px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+/* Only the words are cut short: the status dot's glow and ping spread past the line, so its line must not clip them. */
+.title-text p:has(> .dot) { overflow: visible; }
+.title-text p > .dot ~ span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .back-button { flex: none; margin-left: -10px; width: 30px; height: 38px; border: 0; background: none; color: var(--coral); display: grid; place-items: center; }
 .back-button .icon svg { width: 28px; height: 28px; stroke-width: 2.2; }
 .back-label { display: none; }
