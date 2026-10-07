@@ -96,7 +96,8 @@ def import_character(character, owners, masters):
     E.make_directory(folder)
     owner = owners.get(character['skeleton']) if character['skeleton'] != name else None
     started = time.time()
-    found = import_glb(character['glb'], folder, pipelines(owner['skeleton_asset'] if owner else None))
+    found = import_glb(str(OUT / character['glb']), folder,   # relative to OUT (older exports: absolute)
+                       pipelines(owner['skeleton_asset'] if owner else None))
     meshes = found.get('SkeletalMesh', [])
     assert len(meshes) == 1, (name, 'expected one skeletal mesh', found)
     if owner:
