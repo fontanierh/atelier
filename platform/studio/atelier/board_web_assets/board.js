@@ -40,7 +40,7 @@ try { showSystem=localStorage.getItem("atelier.board.system-notices")==="shown";
 $("showSystem").checked=showSystem;
 
 // The app shell follows the visual viewport so the composer stays above the on-screen keyboard.
-let fullHeight=0, viewportWidth=0, keyboardOpen=false;
+let fullHeight=0, viewportWidth=0, keyboardOpen=false, inboxKeyboard=null, inboxRestore=null;
 function fitViewport() {
   const vv=window.visualViewport, root=document.documentElement.style, height=vv?vv.height:innerHeight;
   root.setProperty("--app-height",`${height}px`);root.setProperty("--app-top",`${vv?vv.offsetTop:0}px`);
@@ -50,6 +50,7 @@ function fitViewport() {
   const open=fullHeight-height>120;
   if(keyboardOpen&&!open&&touch.matches&&document.activeElement===$("message"))$("message").blur();
   keyboardOpen=open;
+  inboxKeyboardFit();
 }
 window.visualViewport?.addEventListener("resize",fitViewport);window.visualViewport?.addEventListener("scroll",fitViewport);
 addEventListener("resize",fitViewport);fitViewport();
@@ -1257,6 +1258,44 @@ $("activityAllRead").addEventListener("click",()=>markInboxRead({all:true}));
 document.querySelectorAll("#activityKinds button").forEach(b=>b.addEventListener("click",()=>{inbox.kind=b.dataset.kind;inbox.activityLimit=60;renderActivity();loadInbox("activity");}));
 $("activityUnread").addEventListener("change",()=>{inbox.unreadOnly=$("activityUnread").checked;loadInbox("activity");});
 document.querySelectorAll(".inbox-link").forEach(b=>b.addEventListener("click",()=>{if(thread)closeThread();setView(b.dataset.view);}));
+
+// The phone keyboard in Threads and Activity: what you were looking at moves up by the keyboard's height, and once the
+// keyboard has gone the pane is exactly where it was, unless you scrolled meanwhile.
+let inboxTouchTop=null;
+function inboxKeyboardFit() {
+  const k=inboxKeyboard;if(!k)return;
+  const shrink=Math.max(0,k.height-k.pane.clientHeight);
+  if(shrink>120)k.opened=true;
+  // Dismissed without leaving the field (Android back): leave it, as the chat composer does.
+  else if(k.opened&&shrink<40){inboxKeyboardEnd();k.field.blur();return;}
+  if(k.moved)return;
+  // Room below for the push, then up by the keyboard, but never so far that the field being typed in leaves the top.
+  k.pane.style.paddingBottom=`${k.base+shrink}px`;
+  const field=k.field.getBoundingClientRect().top-k.pane.getBoundingClientRect().top+k.pane.scrollTop;
+  k.pane.scrollTop=k.top+Math.max(0,Math.min(shrink,field-k.top-8));
+}
+function inboxKeyboardEnd() {
+  const k=inboxKeyboard;inboxKeyboard=null;if(!k)return;
+  k.pane.style.paddingBottom="";
+  if(k.moved)return;
+  // Again once the keyboard's animation and the viewport have settled.
+  inboxRestore=k;const restore=()=>{if(inboxRestore===k&&!inboxKeyboard)k.pane.scrollTop=k.top;};
+  restore();for(const ms of [350,750])setTimeout(restore,ms);
+}
+document.querySelectorAll(".inbox-pane .pane-body").forEach(pane=>{
+  // Where the pane was before a tap, since the browser may scroll to the field as it takes focus.
+  pane.addEventListener("pointerdown",()=>{if(!inboxKeyboard)inboxTouchTop=pane.scrollTop;},{capture:true,passive:true});
+  pane.addEventListener("focusin",event=>{
+    if(!touch.matches||!event.target.matches("textarea"))return;
+    if(inboxKeyboard?.pane===pane){inboxKeyboard.field=event.target;return;}   // another reply box, same keyboard
+    inboxKeyboardEnd();inboxRestore=null;
+    inboxKeyboard={pane,field:event.target,top:inboxTouchTop??pane.scrollTop,height:pane.clientHeight,
+      base:parseFloat(getComputedStyle(pane).paddingBottom)||0,opened:false,moved:false};
+    inboxTouchTop=null;inboxKeyboardFit();
+  });
+  pane.addEventListener("focusout",()=>setTimeout(()=>{if(inboxKeyboard?.pane===pane&&!pane.contains(document.activeElement))inboxKeyboardEnd();},120));
+  pane.addEventListener("touchmove",()=>{if(inboxKeyboard?.pane===pane)inboxKeyboard.moved=true;if(inboxRestore?.pane===pane)inboxRestore=null;},{passive:true});
+});
 
 /* Render floor */
 function entries(text) {
