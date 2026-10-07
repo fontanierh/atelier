@@ -224,7 +224,7 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -238,7 +238,19 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
     if free is None or free < 12 * 1024**3:
         raise RuntimeError('The compound smoke needs at least 12 GiB available before either game starts')
     ctx = Context('yorimichi')
-    binary = current_native_build(ctx)
+    package_source = None
+    if app:
+        from network_package_target import package_fingerprint, verify_cook_source, packaged_command, runtime_identity_checks, plain_launch_checks, cook_binding_checks
+        from atelier import paths
+        cook = load(cook_receipt)
+        if not cook: raise RuntimeError('Missing cook provenance receipt')
+        package_source = verify_cook_source(paths.REPO, cook)
+        binary = package_fingerprint(app, expected_identity)
+        package_binding = cook_binding_checks(cook, binary, package_source, expected_identity)
+        if not all(package_binding.values()):
+            raise RuntimeError("Package does not match its cook/source: " + str(package_binding))
+    else:
+        binary = current_native_build(ctx)
     if tailnet:
         from network_review_common import tailnet_ipv4
         host = tailnet_ipv4()
@@ -282,6 +294,14 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     command.append('-networkgameplay')
                 if listen:
                     command.append('-networklisten')
+                if app:
+                    if plain_package:
+                        command = ['-game', '-nullrhi', '-nosound', '-nosplash', '-nolive', '-unattended',
+                                   '-stdout', '-FullStdOutLogOutput', '-seconds=45', '-ExecCmds=t.MaxFPS 30',
+                                   '-preferencesfile=' + str(folder / 'plain-preferences.txt')]
+                    else:
+                        command = command[3:]
+                    command = packaged_command(app, destination, role, folder, command)
                 (folder / (role + '-command.json')).write_text(json.dumps(command, indent=2) + '\n')
                 game = spawn_game(command, stdout=log, stderr=subprocess.STDOUT)
                 games.append((role, game))
@@ -320,14 +340,19 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     time.sleep(.25)
                 raise RuntimeError(stage + ' deadline expired')
 
-            server, server_guard = launch('server', '/Game/Japan/Maps/Slice?game=/Script/Yorimichi.JapanNetworkGameMode?capacity=2' + ('?listen' if listen else ''))
-            wait_for('server world', lambda: load(folder / 'server-world.json'), began + 120,
-                     [('server', server, server_guard)])
-            client, client_guard = launch('client', f'{host}:{port}')
-            running = [('server', server, server_guard), ('client', client, client_guard)]
-            wait_for('admission and clean disconnect',
-                     lambda: all(load(folder / (role + '-complete.json')) for role in ('server', 'client')),
-                     began + 290, running)
+            if plain_package:
+                game, game_guard = launch('plain', '/Game/Japan/Maps/Slice')
+                wait_for('ordinary packaged Solo deadline', lambda: game.poll() is not None, began + 100,
+                         [('plain', game, game_guard)])
+            else:
+                server, server_guard = launch('server', '/Game/Japan/Maps/Slice?game=/Script/Yorimichi.JapanNetworkGameMode?capacity=2' + ('?listen' if listen else ''))
+                wait_for('server world', lambda: load(folder / 'server-world.json'), began + 120,
+                         [('server', server, server_guard)])
+                client, client_guard = launch('client', f'{host}:{port}')
+                running = [('server', server, server_guard), ('client', client, client_guard)]
+                wait_for('admission and clean disconnect',
+                         lambda: all(load(folder / (role + '-complete.json')) for role in ('server', 'client')),
+                         began + 290, running)
             for role, game in games:
                 try:
                     code = game.wait(timeout=10)
@@ -340,13 +365,26 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         if monitor.wait(timeout=5) != 0:
             raise RuntimeError('Aggregate monitor rejected teardown')
         emulation = dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent)
-        checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy)
+        if plain_package:
+            checks = plain_launch_checks(folder, (folder / 'plain.log').read_text(errors='replace'), games[0][1].returncode, package_source['code_digest'])
+        else:
+            checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy)
+            if app:
+                checks.update(runtime_identity_checks(folder, expected_identity, package_source['code_digest']))
         checks['source_unchanged'] = source_revision() == revision
-        checks['native_build_unchanged'] = current_native_build(ctx) == binary
+        checks['native_build_unchanged'] = (package_fingerprint(app, expected_identity) if app else current_native_build(ctx)) == binary
+        if app:
+            checks['package_source_unchanged'] = verify_cook_source(paths.REPO, cook) == package_source
+            checks.update(package_binding)
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
                       emulation=emulation, source=revision, native_build=binary,
                       scope=('Same-machine Tailscale listener; ' if tailnet else 'Loopback listener; ') +
                             'NullRHI editor smoke. Packaged, rendered and two-machine acceptance remain separate')
+        if app:
+            report['packaged_build'] = report.pop('native_build')
+            report['package_source'] = package_source
+            report['scope'] = ('Ordinary packaged Solo, no network QA flags; ' if plain_package else
+                               'Same-machine packaged listen/client; cooked collision and compiled identity; ') + 'NullRHI. Rendered and two-machine acceptance remain separate.'
         if combat:
             report['combat_host_frames'] = host_frame_statistics(folder)
             report['combat_defence_edges'] = defence_edge_statistics(folder)
@@ -363,6 +401,10 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--app', type=Path, help='Independently extracted signed macOS Development app')
+    parser.add_argument('--cook-receipt', type=Path, help='Cook receipt on the current clean source commit')
+    parser.add_argument('--expected-identity', help='Identity from the accepted native receipt at that cook revision')
+    parser.add_argument('--plain-package', action='store_true', help='Ordinary Solo with no network QA flags, bounded by UE seconds')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
@@ -392,13 +434,31 @@ def main():
         args.gameplay = False
     elif args.listen:
         args.gameplay = True
+    if args.app:
+        if not args.cook_receipt or not args.expected_identity:
+            parser.error('--app requires --cook-receipt and --expected-identity')
+        if not args.plain_package and not args.listen:
+            parser.error('Packaged acceptance currently requires a listen pair')
+        if args.plain_package and (args.combat or args.enemy or args.gameplay or args.listen or args.lag_ms or args.variance_ms or args.loss_percent):
+            parser.error('Ordinary packaged Solo cannot include network stimuli or emulation')
+    elif args.cook_receipt or args.expected_identity or args.plain_package:
+        parser.error('Package options require --app')
     from atelier.build import Context
     from atelier.safety import guarded
     ctx = Context('yorimichi')
-    folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
-    folder.mkdir(parents=True, exist_ok=True)
+    if args.app:
+        from network_package_target import runtime_directory, package_layout
+        import uuid
+        folder = args.output or runtime_directory(args.app, time.strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:8])
+        _, _, _, container = package_layout(args.app)
+        if container.resolve() not in folder.resolve().parents:
+            raise RuntimeError('All packaged run output must be in its own sandbox container')
+        folder.mkdir(parents=True, exist_ok=True)
+    else:
+        folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
+        folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -406,8 +466,10 @@ def main():
         port = sock.getsockname()[1]
     return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port), '--combat-host-fps', str(args.combat_host_fps),
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent)] +
-                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []),
-                       folder / 'guard', timeout=330, purpose='native local network session smoke', kind='game',
+                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []) +
+                       (['--app', str(args.app.resolve()), '--cook-receipt', str(args.cook_receipt.resolve()), '--expected-identity', args.expected_identity] if args.app else []) +
+                       (['--plain-package'] if args.plain_package else []),
+                       folder / 'guard', timeout=750 if args.app else 330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 
 

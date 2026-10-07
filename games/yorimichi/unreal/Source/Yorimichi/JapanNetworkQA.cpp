@@ -24,7 +24,15 @@
 // network control endpoint, and do not substitute for a cooked dedicated-server test.
 void UJapanGameInstance::StartNetworkQA()
 {
-    if (!FParse::Value(FCommandLine::Get(), TEXT("networkqa="), NetworkQARole)) return;
+    if (!FParse::Value(FCommandLine::Get(), TEXT("networkqa="), NetworkQARole))
+    {
+        UE_LOG(LogTemp, Display, TEXT("NETWORK diagnostics session=%d gameplay=%d combat=%d enemy=%d vehicles=%d code=%s target=%s input=%s"),
+            NetworkQATicker.IsValid() ? 1 : 0, FParse::Param(FCommandLine::Get(),TEXT("networkgameplay")) ? 1 : 0,
+            FParse::Param(FCommandLine::Get(),TEXT("networkcombat")) ? 1 : 0, FParse::Param(FCommandLine::Get(),TEXT("networkenemy")) ? 1 : 0,
+            FParse::Param(FCommandLine::Get(),TEXT("networkvehicles")) ? 1 : 0,
+            UTF8_TO_TCHAR(YORIMICHI_NETWORK_BUILD_ID),UTF8_TO_TCHAR(YORIMICHI_COMPILED_TARGET),UTF8_TO_TCHAR(YORIMICHI_COMPILED_INPUT_DIGEST));
+        return;
+    }
     if ((NetworkQARole != TEXT("server") && NetworkQARole != TEXT("client") && NetworkQARole != TEXT("bind-failure")) ||
         !FParse::Value(FCommandLine::Get(), TEXT("networkqadir="), NetworkQADirectory))
     {
@@ -39,6 +47,9 @@ void UJapanGameInstance::StartNetworkQA()
 bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error)
 {
     auto Report = MakeShared<FJsonObject>();
+    Report->SetStringField(TEXT("compiled_code_digest"), UTF8_TO_TCHAR(YORIMICHI_NETWORK_BUILD_ID));
+    Report->SetStringField(TEXT("compiled_input_digest"), UTF8_TO_TCHAR(YORIMICHI_COMPILED_INPUT_DIGEST));
+    Report->SetStringField(TEXT("compiled_target"), UTF8_TO_TCHAR(YORIMICHI_COMPILED_TARGET));
     Report->SetStringField(TEXT("role"), NetworkQARole);
     Report->SetStringField(TEXT("stage"), Stage);
     Report->SetStringField(TEXT("error"), Error);

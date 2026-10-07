@@ -29,9 +29,15 @@ public class Yorimichi : ModuleRules
                 Records.Append(Path.GetRelativePath(Root, File).Replace('\\', '/')).Append('\0')
                     .Append(Convert.ToHexString(Hash.ComputeHash(Stream)).ToLowerInvariant()).Append('\n');
         }
+        string Code;
         using (SHA1 Hash = SHA1.Create())
-            PublicDefinitions.Add("YORIMICHI_NETWORK_BUILD_ID=\"" +
-                Convert.ToHexString(Hash.ComputeHash(Encoding.UTF8.GetBytes(Records.ToString()))).ToLowerInvariant() + "\"");
+            Code = Convert.ToHexString(Hash.ComputeHash(Encoding.UTF8.GetBytes(Records.ToString()))).ToLowerInvariant();
+        PublicDefinitions.Add("YORIMICHI_NETWORK_BUILD_ID=\"" + Code + "\"");
+        string BuildTarget = Target.Platform + "/" + Target.Type + "/" + Target.Configuration;
+        PublicDefinitions.Add("YORIMICHI_COMPILED_TARGET=\"" + BuildTarget + "\"");
+        using (SHA256 Hash = SHA256.Create())
+            PublicDefinitions.Add("YORIMICHI_COMPILED_INPUT_DIGEST=\"" +
+                Convert.ToHexString(Hash.ComputeHash(Encoding.UTF8.GetBytes(Code + "\n" + BuildTarget + "\n"))).ToLowerInvariant() + "\"");
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         // Dev/ holds the opt-in review, benchmark and film code; it includes the game headers beside this file.
         PrivateIncludePaths.Add(ModuleDirectory);
