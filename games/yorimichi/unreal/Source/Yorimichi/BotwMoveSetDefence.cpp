@@ -6,8 +6,22 @@
 #include "GameFramework/PlayerController.h"
 #include "Engine/NetConnection.h"
 #include "Engine/World.h"
+#include "Misc/CommandLine.h"
 
 using namespace BotwMoveSetDetail;
+
+namespace
+{
+bool TraceNetworkDefence()
+{
+#if !UE_BUILD_SHIPPING
+    static const bool Enabled = FParse::Param(FCommandLine::Get(), TEXT("networkcombat"));
+    return Enabled;
+#else
+    return false;
+#endif
+}
+}
 
 void UBotwMoveSet::ResetDefence()
 {
@@ -29,6 +43,11 @@ void UBotwMoveSet::MapDefenceMove(float Timestamp, float Dt)
     double Mapped = 0.;
     bDefenceMapped = DefenceClock.MapAccepted(Timestamp, Character->GetWorld()->GetTimeSeconds(),
         Conn ? Conn->RawPingInSeconds : 0., Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, Dt);
+    if (TraceNetworkDefence())
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence move ts=%.6f dt=%.6f host_dt=%.6f now=%.6f rtt=%.6f avg_rtt=%.6f jitter=%.6f mapped=%.6f one_way=%.6f wait=%.6f valid=%d"),
+            Timestamp, Dt, Character->GetWorld()->GetDeltaSeconds(), Character->GetWorld()->GetTimeSeconds(),
+            Conn ? Conn->RawPingInSeconds : 0., Conn ? Conn->AvgLag : 0.,
+            Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, DefenceClock.OneWay, DefenceClock.Wait, bDefenceMapped);
 }
 
 void UBotwMoveSet::RecordDefence(uint16 ThroughEdge)
@@ -67,8 +86,14 @@ bool UBotwMoveSet::PressNetwork(FName Button, uint16 Edge, uint16 AgeMillisecond
         return Button == TEXT("drop_holds") ? (DropHolds(), true) : Press(Button);
     const double Now = Character->GetWorld()->GetTimeSeconds();
     double Original = Now - AgeMilliseconds * .001;
-    bool Valid = bDefenceMapped && DefenceClock.OriginalPress(AgeMilliseconds, Now, Original);
-    Valid &= Original >= DefenceLastPress;
+    const bool TimeValid = bDefenceMapped && DefenceClock.OriginalPress(AgeMilliseconds, Now, Original);
+    const bool Ordered = Original >= DefenceLastPress;
+    const bool Valid = TimeValid && Ordered;
+    if (TraceNetworkDefence())
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence edge=%u button=%s ts=%.6f age_ms=%u now=%.6f mapped=%.6f press=%.6f press_source=%s prior=%.6f oldest=%.6f map_valid=%d time_valid=%d ordered=%d valid=%d"),
+            Edge, *Button.ToString(), DefenceClock.LastTimestamp, AgeMilliseconds, Now, DefenceClock.LastMapped,
+            Original, bDefenceMapped ? TEXT("mapped") : TEXT("raw_now_minus_age"), DefenceLastPress,
+            Now - DefenceClock.MaximumRewind, bDefenceMapped, TimeValid, Ordered, Valid);
     if (!Valid)
     {
         ++DefenceRejectedTimes;
