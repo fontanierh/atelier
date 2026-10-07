@@ -69,7 +69,7 @@ bool UJapanIpNetDriver::InitListen(FNetworkNotify* Notify, FURL& URL, bool bReus
     if (!bListening && IsRunningDedicatedServer())
     {
         UE_LOG(LogTemp, Error, TEXT("Private dedicated listener failed: %s"), *Error);
-        FPlatformMisc::RequestExitWithStatus(false, 1);
+        JapanNetwork::RequestFailureExit();
     }
     return bListening;
 }

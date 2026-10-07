@@ -44,6 +44,7 @@ def bind_checks(code, dedicated, text, owners, blocker_pid, receipt=None, live=N
                   sole_blocker=owners == [blocker_pid])
     if dedicated:
         checks['dedicated_error'] = 'Private dedicated listener failed:' in text
+        checks['clean_shutdown'] = 'LogExit: Exiting.' in text
     else:
         receipt = receipt or {}
         live = live or {}

@@ -38,12 +38,13 @@ def test_failed_map_or_lost_error_is_not_accepted(recovered, field, value):
 
 
 def test_dedicated_requires_exit_one_from_real_bind_failure():
-    log = BIND_LOG + '\nPrivate dedicated listener failed: Could not open game port'
+    log = BIND_LOG + '\nPrivate dedicated listener failed: Could not open game port\nLogExit: Exiting.'
     assert all(review.bind_checks(1, True, log, [42], 42).values())
     assert not all(review.bind_checks(0, True, log, [42], 42).values())
     assert not all(review.bind_checks(-15, True, log, [42], 42).values())
     assert not all(review.bind_checks(1, True, 'Private dedicated listener failed: No Tailscale', [42], 42).values())
     assert not all(review.bind_checks(1, True, log, [], 42).values())
+    assert not all(review.bind_checks(1, True, log.replace('LogExit: Exiting.', ''), [42], 42).values())
 
 
 def test_port_receipt_after_exit_cannot_certify_live_recovery(recovered):

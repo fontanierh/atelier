@@ -20,6 +20,8 @@ namespace JapanNetwork
     bool Allows(UWorld* World, EActivity Activity);
     bool IsTailnetIPv4(const FString& Address);
     bool PrivateHostAddress(FString& Address, FString& Error);
+    /** Shut down normally, preserving failure status on platforms whose UE fallback ignores it. */
+    void RequestFailureExit();
     /** Copyable bound private endpoint, or the available tailnet adapter before hosting. */
     FString LocalEndpoint(UWorld* World);
     /** A strict host[:port] endpoint; never accept travel options, paths or console commands from the join field. */

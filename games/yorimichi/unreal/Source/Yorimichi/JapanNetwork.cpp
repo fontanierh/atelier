@@ -16,6 +16,8 @@
 #include "Serialization/JsonSerializer.h"
 #include "SocketSubsystem.h"
 #include "IPAddress.h"
+#include <cstdlib>
+#include <cstdio>
 
 #ifndef YORIMICHI_NETWORK_BUILD_ID
 #define YORIMICHI_NETWORK_BUILD_ID "unprepared"
@@ -23,6 +25,40 @@
 
 namespace JapanNetwork
 {
+namespace
+{
+#if PLATFORM_MAC
+bool bFailedExit = false;
+void PreserveFailedExitStatus()
+{
+    // Runs after the ordinary engine shutdown. No UObject, delegate or log is
+    // accessed here. UE keeps module code loaded at shutdown; packaged code is monolithic.
+    if (bFailedExit) { std::fflush(nullptr); std::_Exit(1); }
+}
+#endif
+}
+
+void RequestFailureExit()
+{
+#if PLATFORM_MAC
+    // Mac inherits the generic RequestExitWithStatus, which discards ReturnCode.
+    // Register only on failure so an ordinary Solo/listen shutdown still returns zero.
+    if (!bFailedExit)
+    {
+        bFailedExit = true;
+        if (std::atexit(PreserveFailedExitStatus) != 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Could not register the network failure exit status"));
+            if (GLog) GLog->Flush();
+            std::_Exit(1);
+        }
+    }
+    FPlatformMisc::RequestExit(false);
+#else
+    FPlatformMisc::RequestExitWithStatus(false, 1);
+#endif
+}
+
 const TCHAR* Map() { return TEXT("/Game/Japan/Maps/Slice"); }
 bool IsOnline(const UWorld* World) { return World && World->GetNetMode() != NM_Standalone; }
 
