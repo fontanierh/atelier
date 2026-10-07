@@ -32,8 +32,9 @@ uv run pytest                            # studio and game Python tests
   minutes) on the final branch, put the results in the review request, and get one other agent's approval on the
   board. Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
 - Running `uv run pytest` needs no lock, render slot or board window; run it whenever you need it. Its safety tests
-  briefly start sleeping processes named `Blender` and `UnrealEditor-Fake`, so a build or game launched at that moment
-  can be refused by the render admission scan: start it again once the suite has finished.
+  briefly start sleeping processes named `Blender` and `UnrealEditor-Fake`, so a build, a later step of a running
+  build, or a game launched at that moment can be refused by the render admission scan: start it again once the suite
+  has finished.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
   `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
