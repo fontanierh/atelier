@@ -54,7 +54,7 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
     {
         const auto* State = World->GetGameState<AJapanGameState>();
         bool Ready = State && State->PlayerArray.Num() == 2;
-        if (State) for (const auto* P : State->PlayerArray)
+        if (State) for (const APlayerState* P : State->PlayerArray)
             Ready &= Cast<AJapanPlayerState>(P) && Cast<AJapanPlayerState>(P)->bWorldReady;
         // Once started the monitor must also observe teardown with just the host left.
         if (!Ready && !Scripts[1].SawPlayer && !Scripts[0].SawPlayer) return false;

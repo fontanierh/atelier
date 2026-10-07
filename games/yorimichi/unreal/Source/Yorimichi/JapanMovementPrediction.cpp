@@ -317,7 +317,7 @@ bool UJapanCharacterMovement::QueueAuthoritativeRecovery(FVector Shore, float Ya
         bRecoveryQueued = false;
         if (Epoch == GetActivityEpoch())
             if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->TravelTo(Shore, Yaw, TEXT("swim recovery"), 100.f))
-                if (auto* Sword = Rider->GetSword()) Sword->Health = FMath::Max(1.f, Sword->Health - Damage);
+                if (auto* Sword = Rider->GetSword()) Sword->ApplyRecoveryDamage(Damage);
     }));
     return true;
 }

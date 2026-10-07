@@ -25,7 +25,7 @@ public:
     void ReceivePose(const FJapanSkateChunk& Chunk);
     UFUNCTION(Server, Unreliable) void ServerBodies(const FJapanSkateBodies& State);
     void ReceiveBodies(const FJapanSkateBodies& State);
-    UFUNCTION(Server, Unreliable) void ServerBoard(const FJapanBoardState& Board);
+    UFUNCTION(Server, Unreliable) void ServerBoard(const FJapanBoardState& State);
 private:
     UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
     UPROPERTY(ReplicatedUsing=OnRep_Board) FJapanBoardState Board;

@@ -21,6 +21,12 @@
 
 UWandererSwordComponent::UWandererSwordComponent() { PrimaryComponentTick.bCanEverTick = false; }
 
+void UWandererSwordComponent::ApplyRecoveryDamage(float Damage)
+{
+    if (GetOwner() && GetOwner()->HasAuthority() && FMath::IsFinite(Damage))
+        Health = FMath::Max(1.f, Health - FMath::Max(0.f, Damage));
+}
+
 void UWandererSwordComponent::Initialize(AWandererCharacter* Owner)
 {
     Character = Owner;
