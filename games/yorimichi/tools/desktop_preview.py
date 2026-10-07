@@ -125,18 +125,32 @@ PROFILE="desktop=1"
 [ -n "$(saved performance)" ] || PROFILE="$PROFILE;performance=1"
 [ -n "$(saved render_scale)" ] || PROFILE="$PROFILE;render_scale=100"
 RENDERER=0; RENDER=(@FORWARD@); COMMANDS=@FORWARD_COMMANDS@
-exec "$GAME" -fullscreen -ForceRes -resx=2560 -resy=1440 -desktopnative1440 -nosplash -abslog="$LOGS/game.log" \\
-  -set="$PROFILE;renderer=$RENDERER" -preferencesfile="$PREFS" "${RENDER[@]}" -ExecCmds="$COMMANDS" "$@"
+LOG="$LOGS/game.log"
+ARGS=(-fullscreen -ForceRes -resx=2560 -resy=1440 -desktopnative1440 -nosplash -abslog="$LOG"
+  -set="$PROFILE;renderer=$RENDERER" -preferencesfile="$PREFS" "${RENDER[@]}" -ExecCmds="$COMMANDS" "$@")
+# A Development package can segfault at startup: the engine's memory tracker frees itself on the game thread while
+# AppKit's launch event allocates through it on the main thread (docs/PACKAGING.md). Retry that crash once, and only
+# when it ended the game within @STARTUP_SECONDS@ s without touching game.log; a crash after the engine started is real.
+log_identity() { stat -f '%i:%z:%m' "$LOG" 2>/dev/null || echo none; }
+BEFORE=$(log_identity); START=$SECONDS
+"$GAME" "${ARGS[@]}"; STATUS=$?
+if [ "$STATUS" -eq 139 ] && [ $((SECONDS - START)) -lt @STARTUP_SECONDS@ ] && [ "$(log_identity)" = "$BEFORE" ]; then
+  echo "$(date '+%Y-%m-%d %H:%M:%S') Yorimichi crashed at startup after $((SECONDS - START)) s, before game.log;" \\
+    "opening it once more. macOS kept the report in ~/Library/Logs/DiagnosticReports." | tee -a "$LOGS/launcher.log" >&2
+  exec "$GAME" "${ARGS[@]}"
+fi
+exit "$STATUS"
 """
 
 
-def packaged_launcher():
+def packaged_launcher(startup_seconds=20):
     """`Play Yorimichi.command` beside the packaged .app: this profile's shared-settings launch, without the repository,
     Python or the guard. It honours saved settings like --shared-settings, except the renderer: the package is cooked
     for forward shading only (the project's r.ForwardShading), so it always starts Forward."""
     commands = COMMON.replace('r.ScreenPercentage 100,', '') + ',japan.CitySurfaceTiles ' + TILE_TAG + ' 1,'
     return (LAUNCHER.replace('@FORWARD@', ' '.join(map(shlex.quote, renderer_arguments(False, desktop_viewport=True))))
-            .replace('@FORWARD_COMMANDS@', shlex.quote(commands + CANDIDATE)))
+            .replace('@FORWARD_COMMANDS@', shlex.quote(commands + CANDIDATE))
+            .replace('@STARTUP_SECONDS@', str(int(startup_seconds))))
 
 
 def tile_counts(path):
