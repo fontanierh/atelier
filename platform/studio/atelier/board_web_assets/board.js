@@ -800,21 +800,36 @@ function spring(velocity=0) {
 // What moves: the pushed screen on top, what it covers underneath, and the dim between them.
 function scene(entry) {
   const s=entry.kind==="thread"?{entry,top:$("threadView"),under:[$("topbar"),$("feed"),$("errorBanner")],scrim:$("threadScrim")}:{entry,top:$("chatPane"),under:[entry.underlay],scrim:$("navScrim")};
-  s.width=s.top.offsetWidth;return s;
+  s.left=s.top.getBoundingClientRect().left;s.width=s.top.offsetWidth;
+  s.boxes=s.under.map(n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right};});
+  return s;
 }
-// p is how far the top screen has gone: 0 covers everything, 1 is off to the right.
-const frame=(s,p)=>({top:{transform:`translate3d(${p*s.width}px,0,0)`},under:{transform:`translate3d(${-(1-p)*PARALLAX*s.width}px,0,0)`},scrim:{opacity:(1-p)*DIM}});
-function paint(s,p) { const f=frame(s,p); s.top.style.transform=f.top.transform; for(const n of s.under)n.style.transform=f.under.transform; s.scrim.style.opacity=f.scrim.opacity; }
+// p is how far the top screen has gone: 0 covers everything, 1 is off to the right. The screen underneath and the dim
+// are clipped to the strip the top screen has not yet covered: a see-through screen (over the scenery) then never
+// shows the one beneath it, and nothing changes in the frame where the move ends and that screen is hidden. They move
+// by `translate`, which adds to their own transform (the top bar tucked away while scrolling) instead of replacing it.
+const strip=(right,cut)=>`polygon(-200px -200px, ${right-cut}px -200px, ${right-cut}px calc(100% + 200px), -200px calc(100% + 200px))`;
+function frame(s,p) {
+  const edge=s.left+p*s.width, shift=-(1-p)*PARALLAX*s.width;
+  return {top:{transform:`translate3d(${p*s.width}px,0,0)`},
+    under:s.boxes.map(b=>({translate:`${shift}px 0`,clipPath:strip(b.right-b.left,Math.min(b.right-b.left,Math.max(0,b.right+shift-edge)))})),
+    scrim:{opacity:(1-p)*DIM,clipPath:strip(s.width,(1-p)*s.width)}};
+}
+function paint(s,p) {
+  const f=frame(s,p); s.top.style.transform=f.top.transform;
+  s.under.forEach((n,i)=>{n.style.translate=f.under[i].translate;n.style.clipPath=f.under[i].clipPath;});
+  s.scrim.style.opacity=f.scrim.opacity;s.scrim.style.clipPath=f.scrim.clipPath;
+}
 // Only this scene's layers take part: a conversation's still copy stays hidden while a thread moves over it.
 function begin(s) { $("app").classList.add("navigating");s.top.classList.add("nav-top");for(const n of s.under)n.classList.add("nav-under");s.scrim.hidden=false; }
 function end(s) {
   $("app").classList.remove("navigating");s.top.classList.remove("nav-top");for(const n of s.under)n.classList.remove("nav-under");s.scrim.hidden=true;
-  for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.opacity="";
+  for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.translate=n.style.opacity=n.style.clipPath="";
 }
 function glide(s,from,to,velocity=0) {
   const {easing,duration}=motion.matches?{easing:"linear",duration:1}:spring(velocity), a=frame(s,from), b=frame(s,to);
   paint(s,to);
-  const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map(n=>n.animate([a.under,b.under],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
+  const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map((n,i)=>n.animate([a.under[i],b.under[i]],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
   // Settle on time even if the browser never reports an animation finished, so nothing stays mid-transition.
   moving=Promise.race([Promise.all(runs.map(r=>r.finished.catch(()=>{}))),new Promise(done=>setTimeout(done,duration+250))])
     .then(()=>{for(const r of runs)r.cancel();moving=null;});
