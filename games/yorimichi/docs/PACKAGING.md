@@ -163,11 +163,13 @@ LaunchServices asString / _LSCopyApplicationInformation
 -[NSApplication run] / tchar_main / main
 ```
 
-AppKit's launch event makes LaunchServices allocate on the main thread before the engine has started. The engine's
-low-level memory tracker (LLM), compiled into Development and Test packages by default (`LLM_ENABLED_IN_CONFIG` and
-`ALLOW_LOW_LEVEL_MEM_TRACKER_IN_TEST` in `Runtime/Core/Public/HAL/LowLevelMemTrackerDefines.h`), wraps that allocation
-in its bootstrap scope and fails in `PopTag`. Nothing in the project configures LLM. The cause is read from the
-stacks, not reproduced: treat it as an intermittent engine and LaunchServices race on a newly registered app.
+The matching stacks establish where it crashes: AppKit's launch event makes LaunchServices allocate on the main
+thread before the engine has started, and the engine's low-level memory tracker (LLM), compiled into Development and
+Test packages by default (`LLM_ENABLED_IN_CONFIG` and `ALLOW_LOW_LEVEL_MEM_TRACKER_IN_TEST` in
+`Runtime/Core/Public/HAL/LowLevelMemTrackerDefines.h`), wraps that allocation in its bootstrap scope and fails in
+`PopTag`. Nothing in the project configures LLM. Why it fails is not established: a race between the engine and
+LaunchServices on a newly registered app is one possible explanation, inferred from the stacks and the retries, not
+reproduced or proven.
 
 When it happens, keep the `.ips` report and launch the same extracted app once more. Report it as a known first-launch
 limitation if that launch starts. A crash on a second launch, or a different stack, is a new failure.
