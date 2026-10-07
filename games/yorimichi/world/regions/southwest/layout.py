@@ -143,7 +143,7 @@ def integrate(world,h):
     lx,ly=ISL.LANDING;wx,wy,wz=to_world(lx,ly,0.6)
     ex,ey,_=to_world(ISL.LANDING[0],ISL.LANDING[1]+23,0)
     # Sail around Sunset Pier's west edge; its enlarged deck occupies the old crossing start.
-    from skatepark import layout as SK
+    from skatepark import pier_site as SK
     west=SK.ORIGIN[0]-SK.HALF_X-20.0
     south=SK.ORIGIN[1]-SK.HALF_Y-20.0
     world['southwest']=dict(terrace=[*TERRACE,TERRACE_Z],lane=lane.tolist(),buildings=buildings,props=[list(p[1][:2]) for p in PROPS],

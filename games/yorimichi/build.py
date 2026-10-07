@@ -269,7 +269,7 @@ def world_steps(ctx, park):
         Step('world.layout', [Python(WORLD / 'gen_world.py')],
              inputs=[WORLD / 'gen_world.py', REGIONS / 'houses' / 'layout.py', WORLD / 'torii_clearance.py', YORI,
                      REGIONS / 'village' / 'layout.py', REGIONS / 'mega' / 'layout.py', REGIONS / 'southwest',
-                     REGIONS / 'skatepark' / 'layout.py',
+                     REGIONS / 'skatepark' / 'pier_site.py',
                      REGIONS / 'forest_lake' / 'layout.py', REGIONS / 'zeppelin' / 'layout.py', TREEHOUSE / 'layout.py',
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py'],
