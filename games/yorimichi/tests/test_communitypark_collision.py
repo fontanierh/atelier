@@ -22,13 +22,24 @@ def floor_tiles():
     return [slab(-4, -4, 0, 4, -.2, 0.), slab(0, -4, 4, 4, -.2, 0.)]
 
 
+def thin_plate(x0, y0, x1, y1, split=False):
+    boundary = [(x0, y0, 0), (x1, y0, 0), (x1, y1, 0), (x0, y1, 0)]
+    if split: boundary.append((x0, (y0+y1)/2, 0))
+    n = len(boundary)
+    vertices = np.array(boundary+[((x0+x1)/2, (y0+y1)/2, 0),
+                                 (x0+(x1-x0)*.6, (y0+y1)/2, 0)])
+    faces = [(a, (a+1)%n, n) for a in range(n)]+[((a+1)%n, a, n+1) for a in range(n)]
+    return vertices, np.array(faces)
+
+
 class RidingCollisionTest(unittest.TestCase):
     def test_zero_thickness_plate_keeps_its_top_and_a_closed_ceiling(self):
         vertices = np.array([(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0), (1, 1, 0.)])
         faces = np.array([(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4), (0, 2, 1), (0, 3, 2)])
         owner = np.zeros(len(faces), int)
         v, f, _, report = C.solid_sheet_undersides(vertices, faces, owner)
-        self.assertEqual(report, {'solid_sheet_patches': 1, 'lowered_sheet_triangles': 2,
+        self.assertEqual(report, {'solid_sheet_patches': 1, 'partial_sheet_patches_kept': 0,
+                                  'lowered_sheet_triangles': 2,
                                   'sheet_skirt_triangles': 8})
         triangles = v[f]; normals = C._normals(triangles)[0]
         np.testing.assert_array_equal(triangles[normals[:, 2] > .99], vertices[faces[:4]])
@@ -67,6 +78,33 @@ class RidingCollisionTest(unittest.TestCase):
         for triangle in vertices[faces[-2:]]:
             self.assertTrue(any(np.array_equal(t, triangle) for t in triangles))
         self.assertFalse(any(np.all(t[:, 1] == 0) and np.min(t[:, 2]) < 0 for t in triangles))
+
+    def test_flush_plate_t_junctions_do_not_gain_internal_skirts(self):
+        vertices, faces, owner = C.weld([thin_plate(0, 0, 2, 2), thin_plate(2, 0, 4, 2, split=True)])
+        v, f, _, report = C.solid_sheet_undersides(vertices, faces, owner)
+        self.assertEqual(report['solid_sheet_patches'], 2)
+        self.assertEqual(report['partial_sheet_patches_kept'], 0)
+        triangles = v[f]; normals = C._normals(triangles)[0]
+        self.assertFalse(any(np.all(t[:, 0] == 2) for t in triangles[abs(normals[:, 2]) < .01]))
+        np.testing.assert_array_equal(triangles[normals[:, 2] > .99],
+                                      vertices[faces][C._normals(vertices[faces])[0][:, 2] > .99])
+
+    def test_partially_abutting_plate_keeps_its_original_unsplit_rim(self):
+        vertices, faces, owner = C.weld([thin_plate(0, 0, 2, 2), thin_plate(2, 0, 4, 1, split=True)])
+        v, f, o, report = C.solid_sheet_undersides(vertices, faces, owner)
+        self.assertEqual(report['partial_sheet_patches_kept'], 1)
+        np.testing.assert_array_equal(v[f][o == 0], vertices[faces][owner == 0])
+
+    def test_unpaired_plate_t_edge_does_not_gain_a_new_contact_partner(self):
+        vertices = np.array([(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0),
+                             (2, 1, 0), (1, 1, 0.)])
+        faces = np.array([(0, 1, 5), (1, 4, 5), (4, 2, 5), (2, 3, 5), (3, 0, 5),
+                          (0, 2, 1), (0, 3, 2)])
+        v, f, _, report = C.solid_sheet_undersides(vertices, faces, np.zeros(len(faces), int))
+        self.assertEqual(report['solid_sheet_patches'], 1)
+        self.assertEqual(report['sheet_skirt_triangles'], 6)
+        triangles = v[f]; normals = C._normals(triangles)[0]
+        self.assertFalse(any(np.all(t[:, 0] == 2) for t in triangles[abs(normals[:, 2]) < .01]))
 
     def test_flush_tiles_weld_without_ramps(self):
         vertices, faces, owner, report = C.riding_collision(floor_tiles())

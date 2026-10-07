@@ -518,8 +518,9 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
     """Give horizontal, coincident top/back plates thickness without moving their riding faces.
 
     Only a surviving reversed rim with the same piece's coplanar top seeds a patch. Follow connected flat
-    undersides of that piece, lower them by two weld cells, and skirt the free perimeter. A rim already joined
-    to a non-mirror face retains that join rather than gain another contact partner.
+    undersides of that piece, lower them by two weld cells, and skirt free edges whose sole reverse partner
+    was the mirror. Unpaired T-edges and rims joined to non-mirror faces do not gain a contact partner.
+    Flush neighbours are checked spatially too; partly joined patches retain their original geometry.
     Existing solid slabs, tilted shells and obstacles retain their original geometry and collision.
     """
     triangles = vertices[faces]; normals = _normals(triangles)[0]
@@ -539,9 +540,10 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
                    and np.max(abs((triangles[j]-triangles[k, 0])@normals[k])) <= .0001
                    for j, x, y in edges[tuple(sorted((int(a), int(b))))]):
                 seeds.add(k)
-    selected, extra, extra_owner, patches = set(), [], [], 0
+    tops = Surfaces(triangles[normals[:, 2] > .99999], part[normals[:, 2] > .99999])
+    selected, visited, extra, extra_owner, patches, partial = set(), set(), [], [], 0, 0
     for seed in sorted(seeds):
-        if seed in selected: continue
+        if seed in visited: continue
         patch, pending = set(), [seed]
         while pending:
             k = pending.pop()
@@ -552,26 +554,51 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
                     if (j in down and j not in patch and part[j] == part[seed]
                             and np.max(abs((triangles[j]-triangles[seed, 0])@normals[seed])) <= .0001):
                         pending.append(j)
+        visited.update(patch)
         boundary = {}
         for k in sorted(patch):
-            lowered = triangles[k].copy(); lowered[:, 2] -= 2*WELD
-            extra.append(lowered); extra_owner.append(owner[k])
             for a, b in zip(faces[k], np.roll(faces[k], -1)):
                 key = tuple(sorted((int(a), int(b))))
                 if key in boundary: boundary.pop(key)
                 else: boundary[key] = (k, int(a), int(b))
+        skirt = []; partly_joined = False
         for k, a, b in boundary.values():
-            if any(j not in patch and x == b and y == a
-                   and (normals[j]@normals[k] >= -.99
-                        or np.max(abs((triangles[j]-triangles[k, 0])@normals[k])) > .0001)
-                   for j, x, y in edges[tuple(sorted((a, b)))]):
+            partners = [j for j, x, y in edges[tuple(sorted((a, b)))]
+                        if j not in patch and x == b and y == a]
+            if not partners or any(normals[j]@normals[k] >= -.99
+                                   or np.max(abs((triangles[j]-triangles[k, 0])@normals[k])) > .0001
+                                   for j in partners):
                 continue
-            a, b = vertices[[a, b]]; fa, fb = a.copy(), b.copy()
+            a, b = vertices[[a, b]]
+            direction = b[:2]-a[:2]; out = np.array([-direction[1], direction[0]])/np.linalg.norm(direction)
+            # A flush neighbour can meet a long rim through a T-junction, with no equal edge key.
+            # Check every plan interval on both probes; a partial join keeps the original patch rather
+            # than split its riding rim into more unmatched edges.
+            fractions = np.unique([0., 1., *tops.crossings(a[:2]+out*WELD, b[:2]+out*WELD),
+                                   *tops.crossings(a[:2]+out*2*WELD, b[:2]+out*2*WELD)])
+            joined = []
+            for fraction in (fractions[:-1]+fractions[1:])/2:
+                point = a+(b-a)*fraction
+                joined.append(all(any(abs(tops.height(j, *xy)-point[2]) <= .0001
+                                      for j in tops.over(*xy))
+                                  for xy in (point[:2]+out*WELD, point[:2]+out*2*WELD)))
+            if any(joined):
+                if not all(joined): partly_joined = True; break
+                continue
+            skirt.append((a, b))
+        if partly_joined:
+            partial += 1; continue
+        for k in sorted(patch):
+            lowered = triangles[k].copy(); lowered[:, 2] -= 2*WELD
+            extra.append(lowered); extra_owner.append(owner[k])
+        for a, b in skirt:
+            fa, fb = a.copy(), b.copy()
             fa[2] -= 2*WELD; fb[2] -= 2*WELD
             extra.extend((np.array([a, b, fb]), np.array([a, fb, fa])))
             extra_owner.extend((owner[seed], owner[seed]))
         selected.update(patch); patches += 1
-    report = {'solid_sheet_patches': patches, 'lowered_sheet_triangles': len(selected),
+    report = {'solid_sheet_patches': patches, 'partial_sheet_patches_kept': partial,
+              'lowered_sheet_triangles': len(selected),
               'sheet_skirt_triangles': len(extra)-len(selected)}
     if not selected: return vertices, faces, owner, report
     keep = np.ones(len(faces), bool); keep[list(selected)] = False
