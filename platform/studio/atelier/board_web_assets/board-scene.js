@@ -46,40 +46,55 @@ void main(){
   uv.y+=sin(t*1.9+uv.x*140.)*.0011*rv;
   vec3 c=texture2D(T,clamp(uv,.001,.999)).rgb;
   float ar=I.x/I.y;
-  float m=fbm(vec2(uv.x*2.6-t*.022,uv.y*5.5+t*.004))*fbm(vec2(uv.x*1.3+t*.011,uv.y*2.6-t*.006)+3.1);
   float band=smoothstep(.12,.32,uv.y)*smoothstep(.88,.58,uv.y);
-  c=mix(c,mix(vec3(.99,1.,1.),vec3(.6,.67,.86),moonlit),smoothstep(.16,.52,m)*band*(.42-.12*day)*(1.-.45*moonlit));
-  vec2 d=(uv-S)*vec2(ar,1.);float r=length(d),a=atan(d.y,d.x);
-  float glow=exp(-r*6.5)*.32+exp(-r*26.)*.55;
-  float rays=pow(.5+.5*sin(a*11.+t*.12)*sin(a*6.-t*.09+1.),3.)*exp(-r*2.2)*smoothstep(.02,.22,r)*.26;
+  if(band>0.){
+    float m=fbm(vec2(uv.x*2.6-t*.022,uv.y*5.5+t*.004))*fbm(vec2(uv.x*1.3+t*.011,uv.y*2.6-t*.006)+3.1);
+    c=mix(c,mix(vec3(.99,1.,1.),vec3(.6,.67,.86),moonlit),smoothstep(.16,.52,m)*band*(.42-.12*day)*(1.-.45*moonlit));
+  }
+  // Each pixel works out only the light that shows: the sun's by day and dusk, the night's after dark.
+  vec2 d=(uv-S)*vec2(ar,1.);float r=length(d);
   vec3 sunC=mix(vec3(1.,.94,.8),vec3(1.,.7,.42),gold);
   float lit=1.-night;
-  c+=sunC*(glow+rays*(1.-.5*day))*lit;
-  vec2 q=uv*vec2(ar*34.,34.)+vec2(t*.15,-t*.32);vec2 cell=floor(q);float k=h(cell);
-  vec2 o=fract(q)-vec2(h(cell+7.),h(cell+3.));float mote=smoothstep(.06,.0,length(o))*step(.82,k)*(.5+.5*sin(t*2.+k*40.));
-  c+=sunC*mote*.55*lit*smoothstep(.95,.35,uv.y)*(.4+exp(-r*2.)*1.2);
-  float g=h(floor(uv*vec2(520.,110.))+floor(t*4.));
-  c+=vec3(1.,.97,.88)*step(.982,g)*rv*(.8*lit+.35*night);
+  if(lit>.001){
+    float a=atan(d.y,d.x);
+    float glow=exp(-r*6.5)*.32+exp(-r*26.)*.55;
+    float rays=pow(.5+.5*sin(a*11.+t*.12)*sin(a*6.-t*.09+1.),3.)*exp(-r*2.2)*smoothstep(.02,.22,r)*.26;
+    c+=sunC*(glow+rays*(1.-.5*day))*lit;
+    if(uv.y<.95){
+      vec2 q=uv*vec2(ar*34.,34.)+vec2(t*.15,-t*.32);vec2 cell=floor(q);float k=h(cell);
+      vec2 o=fract(q)-vec2(h(cell+7.),h(cell+3.));float mote=smoothstep(.06,.0,length(o))*step(.82,k)*(.5+.5*sin(t*2.+k*40.));
+      c+=sunC*mote*.55*lit*smoothstep(.95,.35,uv.y)*(.4+exp(-r*2.)*1.2);
+    }
+  }
+  if(rv>.001){float g=h(floor(uv*vec2(520.,110.))+floor(t*4.));c+=vec3(1.,.97,.88)*step(.982,g)*rv*(.8*lit+.35*night);}
   c*=mix(vec3(1.),vec3(1.08,.95,.8),gold*.9);
   c=mix(c,c*1.04+vec3(.012,.02,.01),day);
-  vec3 nightC=mix(c*vec3(.26,.31,.52)+vec3(.015,.02,.06),c,moonlit);
-  float sky=smoothstep(.42,.08,uv.y);
-  vec2 sq=uv*vec2(ar*90.,90.);vec2 sc=floor(sq);float sk=h(sc);
-  float star=smoothstep(.09,.0,length(fract(sq)-vec2(h(sc+1.),h(sc+2.))))*step(.93,sk)*(.55+.45*sin(t*(1.+sk*3.)+sk*90.));
-  nightC+=vec3(.85,.9,1.)*star*sky*(1.3-.5*moonlit);
-  float au=fbm(vec2(uv.x*3.+t*.03,t*.05))*smoothstep(.36,.12,uv.y)*smoothstep(.0,.1,uv.y);
-  float curtain=pow(.5+.5*sin(uv.x*9.+fbm(vec2(uv.x*4.,t*.07))*6.),4.);
-  nightC+=mix(vec3(.15,.85,.55),vec3(.55,.35,.95),smoothstep(.1,.32,uv.y))*au*curtain*(.5-.3*moonlit);
-  vec2 md=(uv-S-vec2(-.05,.02)*(1.-moonlit))*vec2(ar,1.);float mr=length(md);
-  nightC+=vec3(.85,.9,1.)*(smoothstep(.028,.022,mr)*.9*(1.-moonlit)+exp(-mr*14.)*(.25-.08*moonlit)*(.85+.15*sin(t*.5)));
-  float ss=fract(t/11.);vec2 sp=vec2(.15+ss*.6,.05+ss*.18);vec2 sd=uv-sp;float sl=dot(sd,normalize(vec2(-.95,-.3)));
-  float streak=smoothstep(.004,.0,abs(sd.x*.3-sd.y*.95))*smoothstep(.0,.002,sl)*smoothstep(.09,.0,sl)*step(ss,.18)*step(.5,h(vec2(floor(t/11.))));
-  nightC+=vec3(1.)*streak*sky;
-  vec2 fq=uv*vec2(ar*14.,14.)+vec2(sin(t*.3)*.6,t*.05);vec2 fc=floor(fq);float fk=h(fc);
-  vec2 fo=fract(fq)-.5-vec2(sin(t*.7+fk*20.),cos(t*.6+fk*30.))*.3;
-  float fly=smoothstep(.12,.0,length(fo))*step(.72,fk)*pow(.5+.5*sin(t*(1.2+fk*2.)+fk*60.),3.);
-  nightC+=vec3(1.,.9,.4)*fly*smoothstep(flowers-.15,flowers+.1,uv.y)*1.4;
-  c=mix(c,nightC,night);
+  if(night>.001){
+    vec3 nightC=mix(c*vec3(.26,.31,.52)+vec3(.015,.02,.06),c,moonlit);
+    float sky=smoothstep(.42,.08,uv.y);
+    if(sky>0.){
+      vec2 sq=uv*vec2(ar*90.,90.);vec2 sc=floor(sq);float sk=h(sc);
+      float star=smoothstep(.09,.0,length(fract(sq)-vec2(h(sc+1.),h(sc+2.))))*step(.93,sk)*(.55+.45*sin(t*(1.+sk*3.)+sk*90.));
+      nightC+=vec3(.85,.9,1.)*star*sky*(1.3-.5*moonlit);
+      if(uv.y<.36){
+        float au=fbm(vec2(uv.x*3.+t*.03,t*.05))*smoothstep(.36,.12,uv.y)*smoothstep(.0,.1,uv.y);
+        float curtain=pow(.5+.5*sin(uv.x*9.+fbm(vec2(uv.x*4.,t*.07))*6.),4.);
+        nightC+=mix(vec3(.15,.85,.55),vec3(.55,.35,.95),smoothstep(.1,.32,uv.y))*au*curtain*(.5-.3*moonlit);
+      }
+      float ss=fract(t/11.);vec2 sp=vec2(.15+ss*.6,.05+ss*.18);vec2 sd=uv-sp;float sl=dot(sd,normalize(vec2(-.95,-.3)));
+      float streak=smoothstep(.004,.0,abs(sd.x*.3-sd.y*.95))*smoothstep(.0,.002,sl)*smoothstep(.09,.0,sl)*step(ss,.18)*step(.5,h(vec2(floor(t/11.))));
+      nightC+=vec3(1.)*streak*sky;
+    }
+    vec2 md=(uv-S-vec2(-.05,.02)*(1.-moonlit))*vec2(ar,1.);float mr=length(md);
+    nightC+=vec3(.85,.9,1.)*(smoothstep(.028,.022,mr)*.9*(1.-moonlit)+exp(-mr*14.)*(.25-.08*moonlit)*(.85+.15*sin(t*.5)));
+    if(uv.y>flowers-.15){
+      vec2 fq=uv*vec2(ar*14.,14.)+vec2(sin(t*.3)*.6,t*.05);vec2 fc=floor(fq);float fk=h(fc);
+      vec2 fo=fract(fq)-.5-vec2(sin(t*.7+fk*20.),cos(t*.6+fk*30.))*.3;
+      float fly=smoothstep(.12,.0,length(fo))*step(.72,fk)*pow(.5+.5*sin(t*(1.2+fk*2.)+fk*60.),3.);
+      nightC+=vec3(1.,.9,.4)*fly*smoothstep(flowers-.15,flowers+.1,uv.y)*1.4;
+    }
+    c=mix(c,nightC,night);
+  }
   vec2 pm=(v-M)*vec2(R.x/R.y,1.);
   c+=mix(vec3(1.,.95,.84),vec3(1.,.85,.5),night)*exp(-dot(pm,pm)*14.)*(.16+.2*night)*mouseOn;
   c+=vec3(1.,.97,.9)*flash;
@@ -115,11 +130,13 @@ void main(){
   }
   // About one canvas pixel per CSS pixel (a little more on a sharp screen), at most 2.2 million of them, and fewer
   // while the frame rate is low.
-  let quality=1, slow=0;
+  // The canvas's CSS size comes from a ResizeObserver, so a frame never reads layout.
+  let quality=1, slow=0, cssW=canvas.clientWidth, cssH=canvas.clientHeight;
+  new ResizeObserver(([entry])=>{cssW=entry.contentRect.width;cssH=entry.contentRect.height;}).observe(canvas);
   function size() {
-    const area=canvas.clientWidth*canvas.clientHeight||1;
+    const area=cssW*cssH||1;
     const scale=Math.min(Math.min(devicePixelRatio||1,1.25),Math.sqrt(2.2e6/area))*quality;
-    const w=Math.max(2,Math.round(canvas.clientWidth*scale)), hgt=Math.max(2,Math.round(canvas.clientHeight*scale));
+    const w=Math.max(2,Math.round(cssW*scale)), hgt=Math.max(2,Math.round(cssH*scale));
     if(canvas.width!==w||canvas.height!==hgt){canvas.width=w;canvas.height=hgt;gl.viewport(0,0,w,hgt);}
     gl.uniform2f(U.R,w,hgt);
   }

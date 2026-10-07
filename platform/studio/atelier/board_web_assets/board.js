@@ -1192,3 +1192,7 @@ setInterval(()=>{if(!document.hidden){if(loading&&Date.now()-loadStarted>15000)l
 document.addEventListener("visibilitychange",resume);
 addEventListener("pageshow",event=>{if(event.persisted)resume();});
 addEventListener("focus",resume);addEventListener("online",resume);
+// A window behind others holds its looping animations where they are, as the scene does. A toggle that changes
+// nothing records no mutation, which the scene's class observer relies on.
+function rest() { $("app").classList.toggle("at-rest",document.hidden||!document.hasFocus()); }
+addEventListener("blur",rest);addEventListener("focus",rest);document.addEventListener("visibilitychange",rest);rest();
