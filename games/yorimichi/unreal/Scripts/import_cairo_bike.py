@@ -7,17 +7,22 @@ with the shared character compression and no root motion. The clips live in thei
 action map, which Cairo's own imports rewrite: UBikeComponent loads them by path. The bike's channels for each frame
 (crank, stand, lift, pitch, lean, yaw, steer) and the limb contact windows stay in export.json, which data.stage copies
 to Content/Data/cairo/bike/export.json for the component. Writes build/yorimichi/cairo/bike/unreal_import.json.
+
+BIKE_CHARACTER=modori imports another playable character's clips the same way (rider.py --character modori): onto
+SK_Modori's skeleton, into /Game/ModoriBike, from build/yorimichi/modori/bike/.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
-import json, sys
+import json, os, sys
 from pathlib import Path
 import unreal as U
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import animation_compression
 
-OUT = yori.OUT / 'cairo' / 'bike'
+CHARACTER = os.environ.get('BIKE_CHARACTER', 'cairo')
+NAME = {'cairo': 'Cairo', 'modori': 'Modori'}[CHARACTER]
+OUT = yori.OUT / CHARACTER / 'bike'
 CONFIG = json.loads((OUT / 'export.json').read_text())
-DEST = '/Game/CairoBike'
+DEST = f'/Game/{NAME}Bike'
 E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools()
 
 
@@ -45,7 +50,7 @@ def fbx(name, skeleton):
     return clip
 
 
-mesh = E.load_asset('/Game/Cairo/SK_Cairo'); assert mesh, 'import Cairo first (unreal.cairo)'
+mesh = E.load_asset(f'/Game/{NAME}/SK_{NAME}'); assert mesh, f'import {NAME} first (unreal.{CHARACTER})'
 report = {}
 for name, entry in CONFIG['clips'].items():
     clip = fbx(name, mesh.skeleton)
@@ -54,4 +59,4 @@ for name, entry in CONFIG['clips'].items():
     assert abs(length - entry['duration']) < 1.5 / CONFIG['fps'], (name, 'length', length, entry['duration'])
     report[name] = {'length': round(length, 4), 'frames': entry['frames'], 'loop': entry['loop']}
 (OUT / 'unreal_import.json').write_text(json.dumps({'fps': CONFIG['fps'], 'source_sha256': CONFIG['source_sha256'], 'clips': report}, indent=2) + '\n')
-U.log('CAIRO BIKE IMPORT COMPLETE')
+U.log(f'{CHARACTER.upper()} BIKE IMPORT COMPLETE')

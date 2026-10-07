@@ -11,6 +11,7 @@
 #include "GroundContactNode.h"
 #include "ZeppelinService.h"
 #include "CairoCharacter.h"
+#include "ModoriCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "SailboatStanceNode.h"
@@ -143,6 +144,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     float Speed = 0.f, CrouchTarget = 0.f, CrouchWeight = 0.f, StanceWeight = 0.f, ArmedTarget = 0.f, ArmedWeight = 0.f;
     float AuthoredTopSpeed = 300.f, AuthoredCrouchSpeed = 50.f;
     uint32 AppliedSerial = MAX_uint32;
+    /** Thigh to ankle in the reference pose (cm), for the sailboat seat: 0 until measured. */
+    float LegLength = 0.f;
     FName AppliedClip;
     // The skate pose over everything above, with the switches between them inertialized.
     FAnimNode_SkateRider Skate;
@@ -282,7 +285,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         // up. Finish blending shortly after steering returns at source .94.
         const float Recovery=MovingRoll?FMath::Clamp((Pawn->GetActionSourceTime()-.85f)/.15f,0.f,1.f):0.f;
         State.RecoveryAlpha=Recovery*Recovery*(3.f-2.f*Recovery);
-        const bool Grounded=Pawn->IsA<ACairoCharacter>() && !bSailing && !bBiking &&
+        const bool Grounded=(Pawn->IsA<ACairoCharacter>() || Pawn->IsA<AModoriCharacter>()) && !bSailing && !bBiking &&
             Pawn->GetCharacterMovement()->IsMovingOnGround() && Pawn->GetAnimationAction()!=TEXT("Roll");
         Feet.Alpha=Grounded?1.f:0.f;
         Feet.DeltaSeconds=Dt;
@@ -315,6 +318,21 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         {
             const FTransform& MeshTransform = Pawn->GetMesh()->GetComponentTransform();
             auto Point=[&](FVector P){return MeshTransform.InverseTransformPosition(SailboatC->PosePoint(P));};
+            // The seat was fitted to Cairo's 55 cm thigh and shin: a longer leg puts its foot and knee further forward.
+            if (LegLength <= 0.f)
+                if (const USkeletalMesh* Body = Pawn->GetMesh()->GetSkeletalMeshAsset())
+                {
+                    const FReferenceSkeleton& Ref = Body->GetRefSkeleton();
+                    auto Where = [&Ref](const TCHAR* Name)
+                    {
+                        FTransform T = FTransform::Identity;
+                        for (int32 I = Ref.FindBoneIndex(Name); I != INDEX_NONE; I = Ref.GetParentIndex(I)) T = T * Ref.GetRefBonePose()[I];
+                        return T.GetLocation();
+                    };
+                    LegLength = FVector::Dist(Where(TEXT("thigh_L")), Where(TEXT("shin_L"))) + FVector::Dist(Where(TEXT("shin_L")), Where(TEXT("foot_L")));
+                }
+            // Only Modori's longer legs move them; Cairo and the others keep the stance as it was fitted.
+            const float Reach = Pawn->IsA<AModoriCharacter>() ? FMath::Clamp(LegLength / 55.f, 1.f, 1.6f) : 1.f;
             const FVector HullRight=(SailboatC->PosePoint(FVector(0,1,0))-SailboatC->PosePoint(FVector::ZeroVector)).GetSafeNormal();
             const float GripSide=FVector::DotProduct(SailboatC->HandPoint(1)-SailboatC->PosePoint(FVector::ZeroVector),HullRight);
             // Slide naturally along the wide thwart to keep the moving tiller within the child's reach.
@@ -330,8 +348,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 Stance.HandTarget[Side]=Side?MeshTransform.InverseTransformPosition(SailboatC->HandPoint(Side)):Point(FVector(-112,-27+SeatShift,53));
                 Stance.ElbowPole[Side]=Point(FVector(-120,S*42+SeatShift,70));
                 // 29cm thigh + 26cm shin: keep the ankle within reach and above the 10cm cockpit floor.
-                Stance.FootTarget[Side]=Point(FVector(-88,S*18+SeatShift,21.5));
-                Stance.KneePole[Side]=Point(FVector(-48,S*21+SeatShift,49));
+                Stance.FootTarget[Side]=Point(FVector(-115+27*Reach,S*18+SeatShift,21.5));
+                Stance.KneePole[Side]=Point(FVector(-115+67*Reach,S*21+SeatShift,49));
             }
         }
         // The bike's clips play on the bike's clock, which also poses the bike from the same frame of the clip.

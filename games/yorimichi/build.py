@@ -154,6 +154,7 @@ def botw_steps(out):
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'cairo' / 'botw.json'], heavy=True,
              about='/Game/CairoBotw: Cairo with the BOTW move set (-rider=CairoBotw): his clips, definition and move record'),
         *sword_trainer_steps(out),
+        *modori_steps(out),
         *horse_steps(out),
     ]
 
@@ -204,6 +205,33 @@ def sword_trainer_steps(out):
              needs=['characters.sword_trainer_botw', 'unreal.sword_trainer', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'sword-trainer' / 'botw.json'], heavy=True,
              about='/Game/SwordTrainer/Botw and DA_SwordTrainer: her merged move set, definition and move record'),
+    ]
+
+
+def modori_steps(out):
+    """Modori, the rival (assets/characters/modori/README.md), as a playable character: his body and coat, and the merged
+    move set retargeted onto him."""
+    modori = CHARS / 'modori'
+    return [
+        Step('characters.modori', [Blender(modori / 'export_unreal.py', threads=4)], inputs=[modori, NAMES],
+             outputs=[out / 'modori' / 'export.json'], about="Modori's body, coat (its cloth mask in the vertex colours) and textures, to FBX"),
+        Step('unreal.modori', [UnrealScript(SCRIPTS / 'import_modori.py', 'MODORI IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_modori.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
+             needs=['characters.modori', 'unreal.compile'], outputs=[GAME / 'unreal' / 'Content' / 'Modori' / 'SK_Modori.uasset'],
+             heavy=True, about='/Game/Modori: his mesh, materials and base definition'),
+        Step('characters.modori_botw', [Blender(CHARS / 'cairo' / 'botw.py', ('--character', 'modori'), threads=4)],
+             inputs=[modori, CHARS / 'cairo' / 'botw.py', NAMES], needs=['characters.botw', 'characters.cairo_botw'],
+             outputs=[out / 'modori' / 'botw' / 'export.json'], about="The merged move set retargeted onto Modori, to FBX"),
+        Step('unreal.modori_botw', [UnrealScript(SCRIPTS / 'import_cairo_botw.py', 'MODORI BOTW IMPORT COMPLETE', null_rhi=True,
+                                                 env=(('BOTW_CHARACTER', 'modori'),))],
+             inputs=[SCRIPTS / 'import_cairo_botw.py', SCRIPTS / 'animation_compression.py'],
+             needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw'],
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'botw.json'], heavy=True,
+             about='/Game/Modori/Botw and DA_Modori: his merged move set, definition and move record'),
+        Step('unreal.modori_bike', [UnrealScript(SCRIPTS / 'import_cairo_bike.py', 'MODORI BIKE IMPORT COMPLETE', null_rhi=True,
+                                                 env=(('BIKE_CHARACTER', 'modori'),))],
+             inputs=[SCRIPTS / 'import_cairo_bike.py', SCRIPTS / 'animation_compression.py'], needs=['characters.modori_bike', 'unreal.modori'],
+             heavy=True, about="/Game/ModoriBike: his bike clips on SK_Modori"),
     ]
 
 
@@ -387,6 +415,10 @@ def character_steps(ctx):
         Step('characters.cairo_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py')], inputs=[CHARS / 'cairo', NAMES, ASSETS / 'vehicles' / 'bike'],
              needs=['world.bike'], outputs=[out / 'cairo' / 'bike' / 'export.json'],
              about="Cairo's bike clips (ride, mount, dismount, kickstand, hop, skid, foot down, bell, wave, crash) and the bike's channels"),
+        # Declared here, before data.stage stages its export: it needs only his rig and the bike, not the BOTW library.
+        Step('characters.modori_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py', ('--character', 'modori'))],
+             inputs=[CHARS / 'modori', NAMES, ASSETS / 'vehicles' / 'bike'], needs=['world.bike'],
+             outputs=[out / 'modori' / 'bike' / 'export.json'], about="Cairo's bike clips authored on Modori's rig, and the bike's channels"),
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips'),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
@@ -539,7 +571,7 @@ def staging_steps(ctx, park):
     return [
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
-             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike',
+             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike', 'characters.modori_bike',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
     ]
