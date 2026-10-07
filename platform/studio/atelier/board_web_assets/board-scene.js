@@ -115,7 +115,7 @@ void main(){
   }
   // About one canvas pixel per CSS pixel (a little more on a sharp screen), at most 2.2 million of them, and fewer
   // while the frame rate is low.
-  let quality=1, slow=0;
+  let quality=1, slow=0, wasFocused=false;
   function size() {
     const area=canvas.clientWidth*canvas.clientHeight||1;
     const scale=Math.min(Math.min(devicePixelRatio||1,1.25),Math.sqrt(2.2e6/area))*quality;
@@ -157,10 +157,12 @@ void main(){
     if(resting())return;
     raf=requestAnimationFrame(frame);
     const gap=now-lastFrame;
-    if(gap<(document.hasFocus()?32:90))return;
+    const focused=document.hasFocus();
+    if(gap<(focused?32:90))return;
     // Two seconds of frames slower than about 22 a second lower the resolution a step; it never goes below half.
-    if(lastFrame&&gap<250){slow=gap>45?slow+1:Math.max(0,slow-1);if(slow>40&&quality>.5){quality=Math.max(.5,quality*.8);slow=0;}}
-    const dt=Math.min(.1,gap/1000);lastFrame=now;
+    // Frames in a background window are slow on purpose and do not count.
+    if(lastFrame&&focused&&wasFocused&&gap<250){slow=gap>45?slow+1:Math.max(0,slow-1);if(slow>40&&quality>.5){quality=Math.max(.5,quality*.8);slow=0;}}
+    const dt=Math.min(.1,gap/1000);lastFrame=now;wasFocused=focused;
     size();
     const scroll=feed?Math.min(1,feed.scrollTop/Math.max(1,feed.scrollHeight-feed.clientHeight)):0;
     const k=1-Math.pow(.04,dt);

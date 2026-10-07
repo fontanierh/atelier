@@ -377,21 +377,35 @@ function closeLightbox() { $("lightbox").hidden=true;$("lightboxImage").removeAt
 $("lightbox").addEventListener("click",event=>{if(event.target!==$("lightboxOpen"))closeLightbox();});
 // Markdown and text attachments open in a reader over the board (rendered by the server) instead of downloading.
 // While it is open the meadow behind it rests.
-let readerFor=null, readerReturn=null;
+let readerFor=null, readerReturn=null, readerBehind=[];
+// While the reader is open the rest of the board is inert, so Tab and screen readers stay inside it.
+function holdBoard(held) {
+  if(held){readerBehind=[...$("app").children].filter(el=>el!==$("reader")&&!el.inert);for(const el of readerBehind)el.inert=true;}
+  else{for(const el of readerBehind)el.inert=false;readerBehind=[];}
+}
 async function openReader(f) {
   readerFor=f.id;readerReturn=document.activeElement;
   $("readerTitle").textContent=f.name;$("readerOpen").href=f.url;$("readerOpen").download=f.name;
   $("readerBody").replaceChildren(node("p","quiet","Opening…"));$("readerBody").scrollTop=0;
-  $("reader").hidden=false;$("app").classList.add("reader-open");$("readerClose").focus();
+  $("reader").hidden=false;$("app").classList.add("reader-open");holdBoard(true);$("readerClose").focus();
   try {
     const response=await fetch(`/api/document/${f.id}`);const result=await response.json();
     if(!response.ok)throw Error(result.error||"This file could not be opened.");
     if(readerFor===f.id)markdown($("readerBody"),result.html);
   } catch(error) { if(readerFor===f.id)$("readerBody").replaceChildren(node("p","quiet",error.message||"This file could not be opened.")); }
 }
-function closeReader() { readerFor=null;$("reader").hidden=true;$("app").classList.remove("reader-open");$("readerBody").replaceChildren();readerReturn?.focus?.();readerReturn=null; }
+function closeReader() { readerFor=null;$("reader").hidden=true;$("app").classList.remove("reader-open");holdBoard(false);$("readerBody").replaceChildren();readerReturn?.focus?.();readerReturn=null; }
 $("readerClose").addEventListener("click",closeReader);
 $("reader").addEventListener("click",event=>{if(event.target===$("reader"))closeReader();});
+// Tab and Shift+Tab wrap around the reader's own controls and links.
+$("reader").addEventListener("keydown",event=>{
+  if(event.key!=="Tab")return;
+  const stops=[...$("reader").querySelectorAll("a[href],button:not(:disabled),[tabindex]:not([tabindex='-1'])")].filter(el=>el.getClientRects().length);
+  if(!stops.length)return;
+  const first=stops[0], last=stops[stops.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+});
 addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("reader").hidden)closeReader();else if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
 
 /* Agents: the list pane and the orb row share one render. */
