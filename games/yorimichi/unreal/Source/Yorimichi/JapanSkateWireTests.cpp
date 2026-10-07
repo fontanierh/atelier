@@ -53,8 +53,8 @@ bool FJapanSkateWireTest::RunTest(const FString&)
         {
             const double Sender = 20. + I / 30.;
             const double Route = I >= 60 && I < 150 ? .20 : .06;
-            const double Jitter = (I % 3) * .005 + (I >= 180 && I < 184 ? .15 : 0.);
-            Packets.Add({Sender, Sender - 12. + Route + Jitter});
+            const double PacketJitter = (I % 3) * .005 + (I >= 180 && I < 184 ? .15 : 0.);
+            Packets.Add({Sender, Sender - 12. + Route + PacketJitter});
         }
         Packets.Sort([](const auto& A, const auto& B) { return A.At < B.At; });
         FJapanSkatePlayout Observer;
