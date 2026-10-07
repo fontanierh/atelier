@@ -28,9 +28,9 @@ def main():
     text = (folder / 'guard/stdout.log').read_text(errors='replace')
     outcomes = dict((name, state) for state, name in re.findall(
         r'Test Completed\. Result=\{([^}]+)\} Name=\{[^}]*\} Path=\{([^}]+)\}', text))
-    expected = {'Yorimichi.Network.' + name for name in ('JoinEndpoint', 'OrderedInput', 'TraversalCheckpoint', 'SkateWire', 'SkateBudget', 'DefenceTimeline')}
+    expected = {'Yorimichi.Network.' + name for name in ('JoinEndpoint', 'OrderedInput', 'TraversalCheckpoint', 'SkateWire', 'SkateBudget', 'DefenceTimeline', 'PlayerCollision')}
     unchanged = source_revision() == revision and current_native_build(ctx) == binary
-    passed = unchanged and result == 0 and expected <= outcomes.keys() and all(outcomes[name] == 'Success' for name in expected)
+    passed = unchanged and result == 0 and expected <= outcomes.keys() and all(state == 'Success' for name, state in outcomes.items() if name.startswith('Yorimichi.Network.'))
     receipt = dict(passed=passed, process_exit=result, tests=outcomes, missing=sorted(expected - outcomes.keys()),
                    source=revision, native_build=binary, source_and_build_unchanged=unchanged)
     (folder / 'checks.json').write_text(json.dumps(receipt, indent=2) + '\n')

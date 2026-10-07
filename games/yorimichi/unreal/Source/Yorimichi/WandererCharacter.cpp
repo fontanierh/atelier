@@ -147,7 +147,7 @@ void AWandererCharacter::BeginPlay()
     }
     if (JapanNetwork::IsOnline(GetWorld()))
     {
-        GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+        JapanNetwork::ConfigurePlayerCollision(GetCapsuleComponent());
         NetUpdateFrequency = 30.f;
         MinNetUpdateFrequency = 10.f;
         if (!IsLocallyControlled())

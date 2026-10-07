@@ -3,6 +3,7 @@
 
 class AJapanWorld;
 class UWorld;
+class UCapsuleComponent;
 
 /** The same compatibility contract is checked before hosting and before a client becomes playable. */
 namespace JapanNetwork
@@ -12,6 +13,8 @@ namespace JapanNetwork
     constexpr int32 MaximumCapacity = 64;
     const TCHAR* Map();
     bool IsOnline(const UWorld* World);
+    /** Players pass through one another while authored Pawn-channel attacks still see their capsules. */
+    void ConfigurePlayerCollision(UCapsuleComponent* Capsule);
     enum class EActivity : uint8 { Horse, Race, WorldEdit };
     /** One policy for every entry point, including menus and live commands. */
     bool Allows(UWorld* World, EActivity Activity);

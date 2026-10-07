@@ -1,4 +1,5 @@
 #include "JapanNetwork.h"
+#include "Components/CapsuleComponent.h"
 #include "AtelierData.h"
 #include "BotwRider.h"
 #include "CairoCharacter.h"
@@ -217,4 +218,9 @@ FString DefaultRider()
     const FString Requested = ABotwRider::Requested();
     return IsPlayableRider(Requested) ? Requested : ACairoCharacter::BotwName();
 }
+}
+
+void JapanNetwork::ConfigurePlayerCollision(UCapsuleComponent* Capsule)
+{
+    if (Capsule) Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 }
