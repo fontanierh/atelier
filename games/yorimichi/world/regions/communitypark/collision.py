@@ -16,8 +16,9 @@ Horizontal zero-thickness plates keep their tops and gain a 4 mm underside and p
 can make the native solver treat a riding rim as a 180-degree fold; a closed thin plate retains the real rim.
 Curved pieces arrive faceted: bowl corners and transitions bend up to 17 degrees between rows, and their twisted
 quads tilt up and back down. At 10 m/s a bend of about 8 degrees in one frame jolts the board past the native shock
-limit. Once every joint is resolved, their upward faces are Loop-subdivided twice, so the riding surface bends
-about a quarter as much per facet; pieces sharing a profile smooth across the join.
+limit. Once every joint is resolved, their upward faces are Loop-subdivided once, so the riding surface bends
+about half as much per facet; pieces sharing a profile smooth across the join, and faces beside them are split
+at the same midpoints so every edge keeps its partner.
 """
 import numpy as np
 
@@ -31,7 +32,7 @@ SEGMENT = .1
 PROBE = .02
 CREASE = 30.            # a sharper bend is a real edge: coping, lip or end cap
 FACETED = 1.            # a piece whose upward faces bend more than this between facets is smoothed
-LEVELS = 2
+LEVELS = 1
 
 
 def _normals(triangles):
@@ -428,14 +429,34 @@ def _loop_vertex(points, x, ring, crease):
     return (1-n*beta)*points[x]+beta*points[list(ring[x])].sum(0)
 
 
+def _split_neighbours(faces, owner, middle):
+    """Split each face at the midpoints added on its edges, keeping its orientation."""
+    out, out_owner = [], []
+    for face, o in zip(faces, owner):
+        ring = []
+        for a, b in zip(face, face[1:]+face[:1]):
+            ring.append(a)
+            if (min(a, b), max(a, b)) in middle: ring.append(middle[min(a, b), max(a, b)])
+        if len(ring) == 3: split = [face]
+        elif len(ring) == 6: split = [[ring[0], ring[1], ring[5]], [ring[1], ring[2], ring[3]], [ring[3], ring[4], ring[5]], [ring[1], ring[3], ring[5]]]
+        else:  # fan from a midpoint: it lies on no other side
+            start = next(k for k in range(len(ring)) if ring[k] not in face)
+            ring = ring[start:]+ring[:start]
+            split = [[ring[0], ring[k], ring[k+1]] for k in range(1, len(ring)-1)]
+        out += split; out_owner += [o]*len(split)
+    return out, out_owner
+
+
 def smooth_riding(vertices, faces, owner, obstacles=(), levels=LEVELS):
     """Loop-subdivide the upward faces of every faceted piece in the finished, welded collision.
 
     A piece is faceted when its own upward faces bend by more than FACETED and less than CREASE somewhere. Its
     faces then join one surface with any faceted neighbour, so a profile shared by two bowl pieces smooths across
     the join. Creases (CREASE or sharper, open or shared by more than two faces) follow the cubic B-spline rule
-    and end at their corners. An edge shared with any other face (a flat floor, a wedge, a near-vertical wall)
-    stays fixed, so that face still meets it. Returns vertices, faces, owner and the faceted pieces."""
+    and end at their corners; a wall or coping on a crease follows it. Any other edge or vertex shared with
+    another face (a flat floor, a wedge) stays fixed. Faces outside are split at the same midpoints, so every
+    edge keeps its partner.
+    Returns vertices, faces, owner and the faceted pieces."""
     normal = _normals(vertices[faces])[0]
     candidate = (normal[:, 2] > .01) & (owner >= 0) & ~np.isin(owner, list(obstacles))
     edges = {}
@@ -458,7 +479,7 @@ def smooth_riding(vertices, faces, owner, obstacles=(), levels=LEVELS):
     rest_owner, f_owner = owner[~region].tolist(), owner[region].tolist()
     opposite, ring, crease = _loop_topology(f, kind)
     v = vertices.copy()
-    fixed = {x for e, k in kind.items() if k == 'fixed' for x in e}
+    fixed = {x for e, k in kind.items() if k == 'fixed' for x in e} | (set(faces[~region].ravel().tolist())-set(crease))
     for x, ys in crease.items():
         a, b = (v[ys[0]]-v[x], v[ys[1]]-v[x]) if len(ys) == 2 else (v[x], v[x])
         if len(ys) != 2 or np.degrees(np.arccos(np.clip(a@b/np.linalg.norm(a)/np.linalg.norm(b), -1, 1))) <= 180.-CREASE:
@@ -482,6 +503,7 @@ def smooth_riding(vertices, faces, owner, obstacles=(), levels=LEVELS):
         f = [g for a, b, c in f for g in ((a, mid(a, b), mid(c, a)), (b, mid(b, c), mid(a, b)),
                                          (c, mid(c, a), mid(b, c)), (mid(a, b), mid(b, c), mid(c, a)))]
         f_owner = [o for o in f_owner for _ in range(4)]
+        rest, rest_owner = _split_neighbours(rest, rest_owner, middle)
     return np.asarray(v), np.asarray(rest+f), np.asarray(rest_owner+f_owner), faceted
 
 

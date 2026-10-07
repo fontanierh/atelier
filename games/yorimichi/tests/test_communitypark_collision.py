@@ -58,6 +58,24 @@ def transition(x0, x1, bend=15., rows=4, radius=1., base=-.2):
     return (vertices, np.array(faces)), profile
 
 
+def open_edges(faces):
+    """Edges used by exactly one face."""
+    edges, count = np.unique(np.sort(np.asarray(faces)[:, [0, 1, 1, 2, 2, 0]].reshape(-1, 2), axis=1),
+                             axis=0, return_counts=True)
+    return edges[count == 1]
+
+
+def lost_partners(before, after, tolerance=1e-6):
+    """Open edges after smoothing that lie on no open edge before it: a split left their partner whole."""
+    (v0, f0), (v1, f1) = before, after
+    a, b = v0[open_edges(f0)].transpose(1, 0, 2)
+    lost = 0
+    for p in v1[open_edges(f1)].mean(1):
+        d = b-a; t = np.clip(((p-a)*d).sum(1)/(d*d).sum(1), 0, 1)
+        lost += np.linalg.norm(a+t[:, None]*d-p, axis=1).min() > tolerance
+    return int(lost)
+
+
 def riding_bends(vertices, faces, up=.3):
     """Bend in degrees across every edge shared by two upward faces of a welded mesh."""
     normals = C._normals(vertices[faces])[0]; edges = {}
@@ -205,9 +223,12 @@ class RidingCollisionTest(unittest.TestCase):
         self.assertEqual(report['wedges'], 0)
         self.assertEqual(C.steps(vertices, faces, owner), [])
         bends = riding_bends(vertices, faces)
-        self.assertLess(bends[bends < C.CREASE].max(), 4.)
-        # Loop draws a concave transition slightly inward: up to about 13 mm above these 26 cm facets, never
-        # below them, and still flush with the floor.
+        self.assertLess(bends[bends < C.CREASE].max(), 8.)
+        # The floor and the exposed side cheeks are split at the same midpoints: no T-junction leaves an
+        # edge without its partner, which the native weld would read as a real edge.
+        self.assertEqual(lost_partners(before[:2], C.smooth_riding(*before)[:2]), 0)
+        # Loop draws a concave transition slightly inward: under 15 mm above these 26 cm facets, never below
+        # them, and still flush with the floor.
         triangles = vertices[faces]; up = C._normals(triangles)[0][:, 2] > .3
         points = np.unique(triangles[up].reshape(-1, 3), axis=0)
         y, z = np.array(profile).T
@@ -215,6 +236,16 @@ class RidingCollisionTest(unittest.TestCase):
         rise = on[:, 2]-np.interp(on[:, 1], y, z)
         self.assertGreaterEqual(rise.min(), -1e-9); self.assertLess(rise.max(), .015)
         self.assertEqual(abs(points[points[:, 1] <= 0, 2]).max(), 0.)
+
+    def test_neighbours_split_into_whole_triangles(self):
+        # A face beside smoothed faces is split at their midpoints, on one, two or three sides, without slivers.
+        v = np.array([[0., 0, 0], [2, 0, 0], [0, 2, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]])
+        for split in ({(0, 1): 3}, {(0, 1): 3, (1, 2): 4}, {(0, 1): 3, (1, 2): 4, (0, 2): 5}):
+            faces, owner = C._split_neighbours([[0, 1, 2]], [7], split)
+            area = C._normals(v[faces])[1]
+            self.assertEqual(len(faces), len(split)+1); self.assertEqual(owner, [7]*len(faces))
+            self.assertAlmostEqual(area.sum(), 2.); self.assertGreater(area.min(), .4)
+            self.assertTrue((C._normals(v[faces])[0][:, 2] > 0).all())
 
     def test_flat_and_sharp_pieces_are_not_smoothed(self):
         for piece in (slab(-1, -1, 1, 1, -.2, 0.), slab(-1, -.2, 1, .2, -.1, .04)):

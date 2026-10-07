@@ -99,15 +99,17 @@ wheels and bail the rider. Ledges and the flat rail stay sharp; steps over
 8 cm stay as they are. The curved pieces (bowl corners and transitions, pipes,
 curved kickers) arrive faceted, bending up to 17° between rows, and at 10 m/s a
 crease of about 8° in one frame jolts the board past the native shock limit.
-Their upward faces are Loop-subdivided twice in the collision only, with edges
-of 30° or more kept as creases. Riding joints bending more than 8° fall from
-478 m to 48 m of edge, and the packaged floor-to-wall line from hidamari's bowl
-check steps at most 1.7° between 1.2 cm samples (5.9° before). Centimetre-sized
-spots of up to 24° remain where a smoothed surface pinches into a fixed piece
-corner. The riding surface moves 3 mm off the facets typically and at most about
-2 cm. The collision grows from 31,387 to about 358,000
-triangles. `ASkatePark` loads the generated manifest through its
-optional asset root and key. A manifest entry marked `hidden` is collision
+Their upward faces are Loop-subdivided once in the collision only, with edges
+of 30° or more kept as creases. Faces beside them are split at the same
+midpoints, so no edge loses its partner. Riding joints bending more than 8°
+fall from 478 m to 85 m of edge, and the packaged floor-to-wall line from
+hidamari's bowl check steps at most 3.5° between 1.2 cm samples (5.9° before).
+Bends over 20° grow from 2.1 m to 4 m of edge, in small spots where a smoothed
+surface pinches into a fixed piece corner. The riding surface moves about 1 mm off the facets typically,
+at most about 2 cm above a concave corner and 1.7 cm below the cradle's convex
+lip. Only bowl, pipe, quarter-pipe and curved-kicker pieces are smoothed. The
+collision grows from 31,387 to 98,792 triangles. `ASkatePark` loads the
+generated manifest through its optional asset root and key. A manifest entry marked `hidden` is collision
 only. Sunset Pier retains its existing assets and
 QA spawn. Rails, ledges and continuous coping paths derive from source edges.
 
