@@ -116,6 +116,9 @@ public:
      *  its handle, and where that is from the sword hand's bone (one hand's width along the handle toward the pommel). */
     float TwoHandGripWeight() const { return TwoHandGrip; }
     FVector TwoHandGripOffset() const { return GripOffset; }   // the off hand's wrist on the handle, in the sword hand's frame
+    /** The two-handed grip: how much the off hand is a fist turned round the handle, and its rotation (component space). */
+    float TwoHandFistWeight() const { return bFistAxis ? TwoHandGrip : 0.f; }
+    FQuat TwoHandRotation() const { return TwoHandTurn; }
     /** Gliding: how much each wrist is put on its grip on the bar, and where (mesh component space; 0 right, 1 left). */
     float GlideHandWeight() const { return GlideHands; }
     FVector GlideHandLocation(int32 Side) const { return GlideHandTarget[Side & 1]; }
@@ -220,6 +223,7 @@ private:
     bool bShield = false, bLegacy = false;
     float FreeArm = 0.f, TwoHandGrip = 0.f;
     FVector GripOffset = FVector::ZeroVector;
+    FQuat TwoHandTurn = FQuat::Identity;
     // The paraglider's grips, right then left, in its own frame: each a stretch of handle a hand closes round, and its
     // middle (or, on Link, where his neutral glide holds it).
     FTransform GliderHeld = FTransform::Identity;

@@ -398,6 +398,9 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
             GlideTurn[I].Alpha = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
             if (Moves) GlideTurn[I].Rotation = Moves->GlideHandRotation(I).Rotator();
         }
+        // In the two-handed grip the off hand's turn is the grip's (the glide's turn is idle then).
+        const float GripFist = bCarrying && Moves ? Moves->TwoHandFistWeight() : 0.f;
+        if (GripFist > GlideTurn[1].Alpha) { GlideTurn[1].Alpha = GripFist; GlideTurn[1].Rotation = Moves->TwoHandRotation().Rotator(); }
         FistLayer.BlendWeights[0] = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
         const bool bFlinch = Moves && Moves->IsFlinching() && !bRiding && !bSailing && !bBiking;
         for (int32 I = 0; I < 4; ++I)

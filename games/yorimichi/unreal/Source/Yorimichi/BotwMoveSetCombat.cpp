@@ -750,8 +750,26 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
         const FVector Origin = MeshT.InverseTransformPosition(SwordT.GetLocation());
         const FVector Pommel = MeshT.InverseTransformVectorNoScale(SwordT.TransformVectorNoScale(-BladeTip)).GetSafeNormal();
         const FVector SwordHand = Origin + Pommel * ((FingersOf(0) - Origin) | Pommel);
-        const FVector Wrist = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component).GetLocation()
-            + (SwordHand + Pommel * 13.f * Scale() - FingersOf(1));
+        const FVector OnGrip = SwordHand + Pommel * 13.f * Scale();
+        const FTransform Hand = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component);
+        FVector Wrist = Hand.GetLocation() + (OnGrip - FingersOf(1));
+        if (bFistAxis)
+        {
+            // The clip's hand kept its own turn (Cairo's guard on his thicker bokken left Modori's palm flat beside the
+            // handle): a fist turned round the handle as on the glider's, its grip axis along it toward the blade (both
+            // thumbs forward) and its fingers on the far side from the elbow, the wrist placed under them.
+            const FVector Along = -Pommel;
+            const FVector GripLocal = Hand.InverseTransformPosition(FingersOf(1));
+            const FVector Axis = FistAxis.GetSafeNormal();
+            const FVector Out = (GripLocal - Axis * (GripLocal | Axis)).GetSafeNormal();
+            const FVector Elbow = Body->GetSocketTransform(Character->GetSkateBone(TEXT("forearm_L")), RTS_Component).GetLocation();
+            const FVector Away = OnGrip - Elbow;
+            const FVector Want = (Away - Along * (Away | Along)).GetSafeNormal();
+            const FQuat Onto = FQuat::FindBetweenNormals(Axis, Along);
+            const FVector Turned = Onto.RotateVector(Out);
+            TwoHandTurn = FQuat(Along, FMath::Atan2((Turned ^ Want) | Along, Turned | Want)) * Onto;
+            Wrist = OnGrip - FTransform(TwoHandTurn, FVector::ZeroVector, Hand.GetScale3D()).TransformVector(GripLocal);
+        }
         // Kept in the sword hand's frame, so it goes with that hand in the frame it is evaluated (the strafe's bob).
         GripOffset = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_R")), RTS_Component).InverseTransformPosition(Wrist);
     }
