@@ -11,7 +11,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
-#include "GameFramework/PlayerController.h"
 #include "Engine/Texture2D.h"
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
@@ -770,9 +769,9 @@ void UJapanMap::OpenMarkerBar()
     MarkerBar = Bar;
     GEngine->GameViewport->AddViewportWidgetContent(Bar,18);
     Owner->SetMenuOpen(true);
-    // The bar takes focus while View is still held, so a real pad's release lands on the bar. Release the held keys
-    // now so the next View tap and hold start clean.
-    if (APlayerController* PC = Cast<APlayerController>(Owner->GetController())) PC->FlushPressedKeys();
+    // The bar takes focus while View is still held. It leaves key releases unhandled, so that release still reaches the
+    // game through the viewport and the next View tap and hold start clean. Flushing the held keys here instead makes
+    // Enhanced Input ignore View until a further release, which swallows the next hold.
     FSlateApplication::Get().SetKeyboardFocus(Bar,EFocusCause::SetDirectly);
     UE_LOG(LogTemp,Display,TEXT("MARKERS bar opened: %d saved places"),GetMarkerKeys().Num());
 }
