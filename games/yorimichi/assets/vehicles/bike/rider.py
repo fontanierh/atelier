@@ -1,6 +1,10 @@
 """Cairo's bike clips: the pedalling cycle and the one-shots, authored in bike space on Cairo's own rig.
 
     blender -b --python games/yorimichi/assets/vehicles/bike/rider.py [-- --clips BikeRide,BikeBell] [--review DIR]
+        [--character modori]
+
+--character authors the same clips on another playable character's rig (its folder's export_unreal.prepare), into
+build/yorimichi/<character>/bike/: the solve reaches the same grips, pedals and saddle with that body's limbs.
 
 Opens Cairo's source through export_unreal.prepare (sha checked, contract bone names, 1.48 m; the blend is never
 saved) and reads the bike's contact points from build/yorimichi/bike/manifest.json. Bike space is the bike model's:
@@ -36,7 +40,7 @@ import export_unreal as cairo   # noqa: E402  (also puts the world folder, and y
 import yori   # noqa: E402
 
 BIKE = yori.OUT / 'bike'
-OUT = yori.OUT / 'cairo' / 'bike'
+OUT = yori.OUT / 'cairo' / 'bike'   # the character's own folder with --character (main)
 FPS = 60
 GROUND_SPACE = 'g'   # a target tagged ('g', x, y, z) is on the ground, not carried by the bike's lift, pitch or lean
 
@@ -567,8 +571,22 @@ def render_clip(scene, cam, parts, base, rig, hands, name, clip, out, count=7):
             scene.render.filepath = str(out / f'{name}_{view}_{i}.png'); bpy.ops.render.render(write_still=True)
 
 
+def character(name):
+    """The character's export module (its prepare, SOURCE and FBX) and its bike output folder."""
+    if name == 'cairo':
+        return cairo, OUT
+    import importlib.util
+    folder = HERE.parents[1] / 'characters' / name
+    spec = importlib.util.spec_from_file_location(f'{name.replace("-", "_")}_export', folder / 'export_unreal.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module, module.OUT / 'bike'
+
+
 def main(args):
-    prepared = cairo.prepare(cairo.SOURCE)
+    global OUT
+    module, OUT = character(args.character)
+    prepared = module.prepare(module.SOURCE)
     scene, arm = prepared.scene, prepared.arm
     scene.render.fps, scene.render.fps_base = FPS, 1
     for pb in arm.pose.bones: pb.matrix_basis.identity()
@@ -588,9 +606,9 @@ def main(args):
         scene.frame_start, scene.frame_end = 0, info['frames'] - 1
         scene.frame_set(0)
         bpy.ops.object.select_all(action='DESELECT'); arm.select_set(True); bpy.context.view_layer.objects.active = arm
-        bpy.ops.export_scene.fbx(filepath=str(OUT / 'fbx' / f'A_{name}.fbx'), object_types={'ARMATURE'}, bake_anim=True, **cairo.FBX)
+        bpy.ops.export_scene.fbx(filepath=str(OUT / 'fbx' / f'A_{name}.fbx'), object_types={'ARMATURE'}, bake_anim=True, **module.FBX)
         report['clips'][name] = info
-        print('CAIRO BIKE CLIP', name, info['frames'], json.dumps(info['reach_error_cm']), flush=True)
+        print(args.character.upper(), 'BIKE CLIP', name, info['frames'], json.dumps(info['reach_error_cm']), flush=True)
     (OUT / ('export.json' if wanted == set(CLIPS) else 'export-partial.json')).write_text(json.dumps(report, indent=1) + '\n')
     if args.review or args.frames:
         cam = studio(scene); parts, base = load_bike()
@@ -612,7 +630,7 @@ def main(args):
                 pose_bike(parts, base, c)
                 look(cam, eye, (-.05, 0, .58), lens=40)
                 scene.render.filepath = str(out / f'start_{name}.png'); bpy.ops.render.render(write_still=True)
-    print(f'CAIRO BIKE EXPORT COMPLETE: {len(report["clips"])} clips', flush=True)
+    print(f'{args.character.upper()} BIKE EXPORT COMPLETE: {len(report["clips"])} clips', flush=True)
 
 
 if __name__ == '__main__':
@@ -620,4 +638,5 @@ if __name__ == '__main__':
     parser.add_argument('--clips', help='comma-separated clip names (default: all)')
     parser.add_argument('--review', help='render key moments of each clip into this folder')
     parser.add_argument('--frames', help='render the video references\' starting frames into this folder')
+    parser.add_argument('--character', default='cairo', help='the playable character folder to author on (cairo, modori)')
     main(parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []))

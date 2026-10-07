@@ -105,11 +105,17 @@ Keep a completed build and Unreal's shared derived-data cache for subsequent wor
 same source revision can reuse independent copies of the generated assets and compiled modules:
 
 ```sh
+(cd ../fresh-worktree && uv run atelier fetch yorimichi)  # obtain the same optional source inputs first
 uv run atelier reuse yorimichi --from ../completed-checkout --to ../fresh-worktree
 cd ../fresh-worktree && uv sync
 uv run atelier build yorimichi          # confirms the carried-over steps are up to date
 uv run atelier play yorimichi
 ```
+
+Fetch in the target first: optional downloaded sources can select additional recipe steps. For example, the
+community park's source GLB enables its steps and feeds the city, terrain and map. If a source present in the
+completed checkout cannot be fetched in the target, resolve that mismatch before reusing; a clean matching Git
+revision is necessary but does not cover these inputs.
 
 The reuse command checks source fingerprints, outputs, engine version and compiled module build IDs before writing
 stamps. On APFS it uses independent copy-on-write clones. It excludes mutable `Intermediate`, logs and capture

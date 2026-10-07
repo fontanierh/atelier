@@ -77,7 +77,7 @@ def riding():
     s = scene()
     parts = [(p['vertices'], p['faces']) for p in s.parts]
     obstacles = {k for k, p in enumerate(s.parts) if p['mesh'] in S.SLENDER}
-    return parts, obstacles, C.riding_collision(parts, obstacles)
+    return parts, obstacles, C.riding_collision(parts, obstacles, [p['node'] for p in s.parts])
 
 
 def riding_audit():

@@ -1,0 +1,41 @@
+{
+  "stage": "modori-tpose",
+  "view": "body-back",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/modori_tpose.py",
+  "prompt_file": "body-back.prompt.txt",
+  "prompt_sha256": "8c9ef0203f534dfaee7652c59fd76ac3d4e30dd42d1cd5e17a0a08bfa61faac4",
+  "reference_files": {
+    "build/yorimichi/characters/concepts/modori-tpose/back.png": "cf4c8fc98139071d76b1a69dfae62b995657aa1de9bd924c878c181d5f81d9a5"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size PNG stays in build/",
+  "status": "done",
+  "started_at": "2026-10-07T10:16:18.508841+00:00",
+  "usage": {
+    "input_tokens": 1374,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 350
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3130
+  },
+  "outputs": {
+    "body-back.png": "9ff725ab1a2244948e68e55e5d362e88658b70085e5352e32cff52a0907e958c"
+  },
+  "compact_copy": {
+    "file": "body-back.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "elapsed_seconds": 38.7,
+  "finished_at": "2026-10-07T10:16:57.222502+00:00"
+}

@@ -9,7 +9,8 @@ build = "build.py"                      # the build recipe: `atelier build yorim
 
 [fetch]
 # Non-redistributable downloads stay in the ignored Atelier cache. The optional community park needs authenticated gh.
-scripts = ["assets/audio/footsteps/fetch.py", "assets/audio/combat/fetch.py", "assets/communitypark/fetch.py"]
+scripts = ["assets/audio/footsteps/fetch.py", "assets/audio/combat/fetch.py", "assets/communitypark/fetch.py",
+           "assets/skatepark/fetch.py"]
 needs = ["sonniss/footsteps", "sonniss/combat"]
 
 [play.play]

@@ -1,0 +1,41 @@
+{
+  "stage": "modori-tpose",
+  "view": "coat-back",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/modori_tpose.py",
+  "prompt_file": "coat-back.prompt.txt",
+  "prompt_sha256": "f08e0e271a71b621bea724131821c19a7c959232f93724783191b0e9962364e2",
+  "reference_files": {
+    "build/yorimichi/characters/concepts/modori-tpose/back.png": "cf4c8fc98139071d76b1a69dfae62b995657aa1de9bd924c878c181d5f81d9a5"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size PNG stays in build/",
+  "status": "done",
+  "started_at": "2026-10-07T10:16:18.508881+00:00",
+  "usage": {
+    "input_tokens": 1347,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 323
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3103
+  },
+  "outputs": {
+    "coat-back.png": "be84139ce58ab781dee5384c6cb0f2cdc57d13911d8d31256081e425b8d0ff12"
+  },
+  "compact_copy": {
+    "file": "coat-back.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "elapsed_seconds": 34.8,
+  "finished_at": "2026-10-07T10:16:53.331681+00:00"
+}

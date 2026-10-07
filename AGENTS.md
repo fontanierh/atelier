@@ -31,9 +31,11 @@ uv run pytest                            # studio and game Python tests
 - There is no hosted CI. Before merging a pull request, run `uv run atelier lint` and `uv run pytest -q` (about two
   minutes) on the final branch, put the results in the review request, and get one other agent's approval on the
   board. Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
-- Arrange a no-heavy-job window on the board before running the full Python suite, and finish it before starting
-  a build or game. Safety tests start sleeping processes named `Blender` and `UnrealEditor-Fake`; the normal render
-  admission scan recognizes them and refuses a competing job. Check both live locks and the board first.
+- The full Python suite needs no render lock and no no-heavy window: run it whenever you need it, even while
+  another agent's job runs. Its safety tests briefly start sleeping processes named `Blender` and `UnrealEditor-Fake`;
+  while they exist (about two minutes), the render admission scan may refuse a game or build step that is just being
+  admitted, including the next step of a running `atelier build`. Rerun it once the suite has finished; a game or step
+  that is already running is unaffected.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
   `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
@@ -97,10 +99,17 @@ uv run pytest                            # studio and game Python tests
   question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
   evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. To tell every agent,
   post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone.
+- When you cannot go on without the operator's guidance, help or confirmation, open **one operator task**:
+  `atelier board operator-task open --agent NAME "..."` (the ask first, at most 500 characters). The operator
+  answers or dismisses it from the board's Tasks page, and the reply arrives in its thread. You hold one at a time;
+  when what you need changes, change its ask with `atelier board operator-task edit --agent NAME ID "..."`. Use it
+  sparingly, for real blocks only, and **dismiss it yourself as soon as it no longer applies** with
+  `atelier board operator-task dismiss --agent NAME ID`. See [the board guide](docs/AGENT_BOARD.md#operator-tasks).
 - Keep your board status line current; it is how the operator sees the team. Once registered, set it with
   `atelier board task --agent NAME "..."` (one line, at most 160 characters). Update it **every time you get a new
   task**, before starting the work, and again when you finish or become blocked. With no current task, set it to
-  exactly `idle`, nothing more. The board shows it beside your name.
+  exactly `idle`, nothing more. The board shows it beside your name, marks `idle` agents as free for new work,
+  and treats a session idle for 10 minutes as free whatever the line says (it sends you one reminder then).
 - Keep board messages short enough to read without expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
   Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. `--notify-operator`
   also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or
@@ -206,6 +215,12 @@ uv run pytest                            # studio and game Python tests
   Use `uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>`; it verifies fingerprints,
   required outputs and engine build IDs before carrying over successful stamps. Run the incremental build afterward
   to confirm every unchanged step is up to date. It leaves absolute-path-dependent Intermediate files behind.
+- Fetch optional source inputs in the fresh worktree before reuse (`uv run atelier fetch <game>` from that
+  worktree). Their presence can select build steps: Yorimichi's fetched community-park GLB enables the park steps
+  and is an input to the city, terrain and map. Matching clean Git revisions alone therefore do not guarantee
+  matching recipes. If a fetch skips a source present in the donor, stop and resolve that input mismatch; do not
+  bypass verification or manufacture stamps. An independent copy of that pinned source is valid only after its
+  size and checksum match the committed source manifest, followed by the normal verified reuse command.
 - Reuse only outputs whose source fingerprints and required files match. `--touch` records existing outputs as
   built: use it only after verifying those outputs, never to hide a failed or incomplete build. A source change
   must still invalidate its affected steps and compile when required.

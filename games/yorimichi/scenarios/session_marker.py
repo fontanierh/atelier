@@ -49,6 +49,20 @@ def key(name):
     time.sleep(.4)
 
 
+def pad(name, seconds=.15):
+    """A controller button through the player's input, held for the given time."""
+    py(f"unreal.LiveLibrary.input_key({name!r}, 'press', 1)")
+    time.sleep(seconds)
+    py(f"unreal.LiveLibrary.input_key({name!r}, 'release', 0)")
+    time.sleep(.4)
+
+
+def bar(name):
+    """A key through the focused saved-places bar's real Slate path."""
+    assert value(f'm.review_marker_bar_key({name!r})')
+    time.sleep(.3)
+
+
 def travel(point, yaw=0):
     assert value(f'unreal.LiveLibrary.teleport_player(unreal.Vector({point[0]},{point[1]},{point[2]}),{yaw})')
     time.sleep(1)
@@ -212,6 +226,65 @@ def main():
             py(f'unreal.LiveLibrary.screenshot({str(args.out / "marker-map.png")!r})')
             time.sleep(1)
             key('M')
+
+            # The controller in the game: a View tap toggles the map, a hold opens the saved-places bar.
+            pad('Gamepad_Special_Left')
+            tapped = value('m.is_map_open()') and not value('m.is_marker_bar_open()')
+            pad('Gamepad_Special_Left')
+            record('view_tap_toggles_map', tapped and not value('m.is_map_open()'), snapshot())
+            pad('Gamepad_Special_Left', .8)
+            prior = snapshot()
+            record('view_hold_opens_marker_bar', value('m.is_marker_bar_open()') and not value('m.is_map_open()'), prior)
+            bar('Gamepad_DPad_Right')
+            chosen = snapshot()
+            expected = prior['keys'][(prior['keys'].index(prior['key'])+1) % len(prior['keys'])]
+            bar('Gamepad_DPad_Left')
+            record('bar_dpad_chooses_places', chosen['key'] == expected and snapshot()['key'] == prior['key'], chosen)
+            bar('Gamepad_RightTrigger')
+            bar('Gamepad_LeftTrigger')
+            after = snapshot()
+            record('bar_swallows_gameplay_buttons', value('m.is_marker_bar_open()') and math.dist(after['feet'], prior['feet']) < 2
+                   and after['key'] == prior['key'], after)
+            py(f'unreal.LiveLibrary.screenshot({str(args.out / "marker-bar.png")!r})')
+            time.sleep(1)
+            bar('Gamepad_FaceButton_Top')
+            pad_saved = snapshot()
+            record('bar_top_button_saves_here_and_closes', not value('m.is_marker_bar_open()') and len(pad_saved['keys']) == len(prior['keys'])+1
+                   and pad_saved['key'] not in prior['keys'] and math.dist(pad_saved['feet'], pad_saved['marker'][:3]) < 6, pad_saved)
+            travel([pad_saved['marker'][0]+1000, pad_saved['marker'][1], pad_saved['marker'][2]], 41)
+            pad('Gamepad_Special_Left', .8)
+            bar('Gamepad_FaceButton_Bottom')
+            closed = not value('m.is_marker_bar_open()')
+            returned('bar_bottom_button_returns_and_closes', pad_saved['marker'])
+            record('bar_closes_after_return', closed, snapshot())
+            pad('Gamepad_Special_Left', .8)
+            bar('Gamepad_DPad_Down')
+            bar('Gamepad_RightTrigger')
+            bar('Gamepad_DPad_Down')
+            kept = snapshot()
+            bar('Gamepad_DPad_Down')
+            deleted = snapshot()
+            record('bar_deletes_only_on_a_second_press', pad_saved['key'] in kept['keys'] and pad_saved['key'] not in deleted['keys']
+                   and set(deleted['keys']) == set(prior['keys']) and value('m.is_marker_bar_open()'), dict(kept=kept, deleted=deleted))
+            bar('Gamepad_Special_Left')
+            time.sleep(.5)
+            record('bar_view_closes_without_opening_map', not value('m.is_marker_bar_open()') and not value('m.is_map_open()'), snapshot())
+            pad('Gamepad_Special_Left', .8)
+            bar('Gamepad_FaceButton_Right')
+            record('bar_right_button_closes', not value('m.is_marker_bar_open()'), snapshot())
+            # A real pad's View release lands on the focused bar: the next tap and hold must still work.
+            py("unreal.LiveLibrary.input_key('Gamepad_Special_Left', 'press', 1)")
+            time.sleep(.8)
+            opened = value('m.is_marker_bar_open()')
+            assert value("m.review_slate_key('Gamepad_Special_Left', False)")
+            time.sleep(.3)
+            bar('Gamepad_FaceButton_Right')
+            pad('Gamepad_Special_Left')
+            tapped = value('m.is_map_open()')
+            pad('Gamepad_Special_Left')
+            pad('Gamepad_Special_Left', .8)
+            record('release_on_bar_keeps_view_tap_and_hold', opened and tapped and value('m.is_marker_bar_open()'), snapshot())
+            bar('Gamepad_FaceButton_Right')
             persisted = json.loads(save.read_text())
             record('disk_has_all_places_and_selection', {r['id'] for r in persisted['markers']} == set(snapshot()['keys'])
                    and persisted['selected'] == snapshot()['key'], persisted)

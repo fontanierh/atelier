@@ -33,6 +33,7 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "ZeppelinService.h"
 #include "JapanPreferences.h"
 #include "JapanMap.h"
+#include "TimerManager.h"
 #include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -101,6 +102,11 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetRenderCustomDepth(true);
     GetMesh()->SetCustomDepthStencilValue(1);
+    // The player's own shadow map: performance mode's 1024 two-cascade sun gives about 8 cm texels near the camera,
+    // which smear the rider's shadow and make it swim frame to frame while skating (docs/DESKTOP_PERFORMANCE.md).
+    // Things attached to the mesh (sword, props, bike) share it; the skateboard hangs off the capsule and does not.
+    GetMesh()->bCastInsetShadow = true;
+    GetMesh()->bLightAttachmentsAsGroup = true;
     GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     GetMesh()->bEnableUpdateRateOptimizations = false;
     // The arm stops on solid things only, pulls in fast and eases back out; thin things fade whole (docs/CAMERA.md).
@@ -413,7 +419,6 @@ void AWandererCharacter::BuildInput()
     Key(Inputs[TEXT("Sprint")],EKeys::Gamepad_LeftThumbstick);
     Key(Inputs[TEXT("Dodge")],EKeys::Gamepad_FaceButton_Right);
     Key(Inputs[TEXT("Crouch")],EKeys::Gamepad_RightThumbstick);
-    Key(Inputs[TEXT("Map")],EKeys::Gamepad_Special_Left);
     Key(Inputs[TEXT("Menu")],EKeys::Gamepad_Special_Right);
     Key(Inputs[TEXT("Sailboat")],EKeys::Gamepad_DPad_Up);
     // The top face button: a tap mounts or steps off the board, a 0.4 s hold gets the bike out or parks it.
@@ -421,6 +426,13 @@ void AWandererCharacter::BuildInput()
         FEnhancedActionKeyMapping& Tap = Mapping->MapKey(Axis(TEXT("SkateboardPad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Top);
         auto* TapTrigger = NewObject<UInputTriggerTap>(Mapping); TapTrigger->TapReleaseTimeThreshold = .35f; Tap.Triggers.Add(TapTrigger);
         FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("BikePad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Top);
+        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
+    }
+    // View: a tap opens or closes the map, a 0.4 s hold opens the saved-places bar over the game (UJapanMap::OpenMarkerBar).
+    {
+        FEnhancedActionKeyMapping& Tap = Mapping->MapKey(Axis(TEXT("MapPad"),EInputActionValueType::Boolean),EKeys::Gamepad_Special_Left);
+        auto* TapTrigger = NewObject<UInputTriggerTap>(Mapping); TapTrigger->TapReleaseTimeThreshold = .35f; Tap.Triggers.Add(TapTrigger);
+        FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("MarkersPad"),EInputActionValueType::Boolean),EKeys::Gamepad_Special_Left);
         auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
     }
     // The board button on foot: a board to the hand, or put away (the Ride backend's carry).
@@ -457,6 +469,15 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
         { if (bReady && !bMenuOpen && Map) Map->SetMarker(); });
         E->BindActionValueLambda(Inputs[TEXT("ReturnMarker")],ETriggerEvent::Started,[this](const FInputActionValue&)
         { if (bReady && !bMenuOpen && Map) Map->ReturnToMarker(); });
+        E->BindAction(Inputs[TEXT("MapPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleMap);
+        // The bar opens on the next tick, outside Enhanced Input's evaluation. Its focus change flushes the held View
+        // key, and a flush inside this callback is forgotten before the next tick, so the hold trigger never sees View
+        // come up and swallows the following hold.
+        E->BindActionValueLambda(Inputs[TEXT("MarkersPad")],ETriggerEvent::Triggered,[this](const FInputActionValue&)
+        {
+            GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this]
+            { if (bReady && !bMenuOpen && !bCinematic && Map) Map->OpenMarkerBar(); }));
+        });
         E->BindAction(Inputs[TEXT("SkateboardHand")],ETriggerEvent::Started,this,&AWandererCharacter::SkateboardHand);
         E->BindAction(Inputs[TEXT("SkateboardPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleSkateboard);
         E->BindAction(Inputs[TEXT("BikePad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleBike);

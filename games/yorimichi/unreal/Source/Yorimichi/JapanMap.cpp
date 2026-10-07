@@ -23,6 +23,7 @@
 #include "Rendering/DrawElements.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/SLeafWidget.h"
+#include "Widgets/SCompoundWidget.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Text/STextBlock.h"
@@ -350,6 +351,92 @@ private:
     }
 };
 
+/** The saved-places bar: markers from the game itself, with a controller and no keyboard. Holding View opens it at the
+ *  bottom of the screen. The d-pad, left stick or shoulders choose a place, the top button saves here, the bottom or left
+ *  button returns, d-pad Down twice deletes, and the right button, View or Menu closes. The keyboard has the same
+ *  actions: arrows, F5, Enter or F9, Delete twice and Esc. Every other key is swallowed: no jump or sword behind it. */
+class SMarkerBar : public SCompoundWidget
+{
+public:
+    SLATE_BEGIN_ARGS(SMarkerBar) : _Map(nullptr), _PadStyle(0) {}
+        SLATE_ARGUMENT(UJapanMap*, Map)
+        SLATE_ARGUMENT(int32, PadStyle)
+    SLATE_END_ARGS()
+    void Construct(const FArguments& In)
+    {
+        Map = In._Map; PadStyle = In._PadStyle; bPad = PadStyle != 0;
+        const FLinearColor Muted(.78f,.79f,.72f,1);
+        ChildSlot.HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(FMargin(16,0,16,110))
+        [SNew(SBorder).BorderImage(&PanelBrush).BorderBackgroundColor(FLinearColor(.02f,.03f,.03f,.86f)).Padding(FMargin(28,12,28,14))
+            [SNew(SVerticalBox)
+                + SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+                    [SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(Muted).Text_Lambda([this] { return FText::FromString(Heading()); })]
+                + SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0,4,0,6)
+                    [SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor(1,.96f,.86f,1)).Text_Lambda([this] { return FText::FromString(Place()); })]
+                + SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+                    [SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor(1,.9f,.6f,1)).Text_Lambda([this] { return FText::FromString(Controls()); })]]];
+    }
+    virtual bool SupportsKeyboardFocus() const override { return true; }
+    virtual void Tick(const FGeometry& G,const double Now,const float Dt) override
+    {
+        SCompoundWidget::Tick(G,Now,Dt);
+        if (Map.IsValid() && !HasKeyboardFocus()) FSlateApplication::Get().SetKeyboardFocus(AsShared(),EFocusCause::SetDirectly);
+    }
+    virtual FReply OnKeyDown(const FGeometry&,const FKeyEvent& E) override
+    {
+        UJapanMap* M = Map.Get();
+        if (!M) return FReply::Unhandled();
+        const FKey K = E.GetKey();
+        if (K.IsGamepadKey()) bPad = true; else if (!K.IsMouseButton()) bPad = false;
+        const bool bPrevious = K == EKeys::Gamepad_DPad_Left || K == EKeys::Gamepad_LeftStick_Left || K == EKeys::Gamepad_LeftShoulder || K == EKeys::Left;
+        const bool bNext = K == EKeys::Gamepad_DPad_Right || K == EKeys::Gamepad_LeftStick_Right || K == EKeys::Gamepad_RightShoulder || K == EKeys::Right;
+        if (bPrevious || bNext) { bConfirmDelete = false; M->CycleMarker(bNext ? 1 : -1); return FReply::Handled(); }
+        if (E.IsRepeat()) return FReply::Handled();
+        const bool bConfirmed = bConfirmDelete; bConfirmDelete = false;
+        if (K == EKeys::Gamepad_FaceButton_Top || K == EKeys::F5) { if (M->SetMarker()) M->CloseMarkerBar(); }
+        else if (K == EKeys::Gamepad_FaceButton_Bottom || K == EKeys::Gamepad_FaceButton_Left || K == EKeys::Enter || K == EKeys::F9)
+        { if (M->ReturnToMarker()) M->CloseMarkerBar(); }
+        else if (K == EKeys::Gamepad_DPad_Down || K == EKeys::Delete || K == EKeys::BackSpace)
+        { if (bConfirmed) M->DeleteMarker(); else bConfirmDelete = M->HasMarker(); }
+        else if (K == EKeys::Gamepad_FaceButton_Right || K == EKeys::Gamepad_Special_Left || K == EKeys::Gamepad_Special_Right || K == EKeys::Escape)
+            M->CloseMarkerBar();
+        return FReply::Handled();
+    }
+    virtual FReply OnAnalogValueChanged(const FGeometry&,const FAnalogInputEvent& E) override
+    {
+        return E.GetKey().IsGamepadKey() ? FReply::Handled() : FReply::Unhandled();
+    }
+    virtual FNavigationReply OnNavigation(const FGeometry&,const FNavigationEvent&) override { return FNavigationReply::Stop(); }
+private:
+    TWeakObjectPtr<UJapanMap> Map;
+    int32 PadStyle = 0; bool bPad = false, bConfirmDelete = false;
+    FSlateBrush PanelBrush = ShapeBrush(10.f);
+    FString Heading() const
+    {
+        const UJapanMap* M = Map.Get();
+        const TArray<FString> Keys = M ? M->GetMarkerKeys() : TArray<FString>();
+        if (!M || !M->HasMarker()) return TEXT("Saved places");
+        FString Text = FString::Printf(TEXT("Saved places  ·  %d of %d"),Keys.Find(M->GetSelectedMarkerKey())+1,Keys.Num());
+        if (const AWandererCharacter* Pawn = M->GetOwnerPawn())
+            Text += FString::Printf(TEXT("  ·  %.0f m away"),FVector::Dist(Pawn->GetActorLocation(),M->GetMarkerTransform().GetLocation())/100.0);
+        return Text;
+    }
+    FString Place() const
+    {
+        const UJapanMap* M = Map.Get();
+        if (!M || !M->HasMarker()) return TEXT("No saved places yet");
+        return M->GetMarkerKeys().Num() > 1 ? TEXT("<   ")+M->GetMarkerName()+TEXT("   >") : M->GetMarkerName();
+    }
+    FString Controls() const
+    {
+        const UJapanMap* M = Map.Get();
+        if (bConfirmDelete && M) return FString::Printf(TEXT("Delete %s?  %s again deletes it  ·  any other button keeps it"),*M->GetMarkerName(),bPad ? TEXT("D-pad Down") : TEXT("Delete"));
+        if (!bPad) return TEXT("F5 save  ·  Enter go  ·  arrows choose, Delete twice deletes  ·  Esc close");
+        const FMapPadLabels L = MapPadLabels(PadStyle ? PadStyle : 4);
+        return FString::Printf(TEXT("%s save  ·  %s go  ·  d-pad choose, Down twice deletes  ·  %s close"),L.Mark,L.Travel,L.Close);
+    }
+};
+
 void UJapanMap::Initialize(AWandererCharacter* Pawn)
 {
     Owner = Pawn;
@@ -531,13 +618,22 @@ bool UJapanMap::SaveMarker(const FString& Name)
         ULiveLibrary::Say(TEXT("Stand on solid ground to save a marker.")); return false;
     }
     if (!MarkerResult(MarkerStore()->Add(Name,FTransform(FRotator(0,Owner->GetActorRotation().Yaw,0),Hit.ImpactPoint)))) return false;
-    ULiveLibrary::Say(GetMarkerName()+TEXT(" saved. F9 returns here.")); return true;
+    const int32 Style = AJapanHUD::CurrentControllerStyle();
+    const FMapPadLabels L = MapPadLabels(Style);
+    ULiveLibrary::Say(GetMarkerName()+(Style ? FString::Printf(TEXT(" saved. Hold %s, then %s returns here."),L.Map,L.Travel) : FString(TEXT(" saved. F9 returns here."))));
+    return true;
 }
 
 bool UJapanMap::ReturnToMarker()
 {
     if (!Owner || Owner->IsCinematic() || Owner->AreControlsSuspended()) return false;
-    if (!HasMarker()) { ULiveLibrary::Say(TEXT("Save a marker first (F5 or the map).")); return false; }
+    if (!HasMarker())
+    {
+        const int32 Style = AJapanHUD::CurrentControllerStyle();
+        const FMapPadLabels L = MapPadLabels(Style);
+        ULiveLibrary::Say(Style ? FString::Printf(TEXT("Save a marker first: hold %s, then %s."),L.Map,L.Mark) : FString(TEXT("Save a marker first (F5 or the map).")));
+        return false;
+    }
     const FTransform Marker = GetMarkerTransform();
     const FVector Ground = Marker.GetLocation();
     FHitResult Hit;
@@ -590,6 +686,7 @@ FVector2D UJapanMap::ToSheet(const FVector& Location) const
 void UJapanMap::Open()
 {
     if (IsOpen() || !bLoaded || !Owner || !GEngine || !GEngine->GameViewport) return;
+    CloseMarkerBar();
     TSharedRef<SJapanMapSheet> Sheet = SNew(SJapanMapSheet).Map(this).PadStyle(AJapanHUD::CurrentControllerStyle());
     TSharedRef<SMarkerNameBox> NameInput = SNew(SMarkerNameBox)
         .HintText(FText::FromString(TEXT("Name this skate-line spot · Enter saves")))
@@ -659,9 +756,52 @@ void UJapanMap::Open()
 
 void UJapanMap::Close()
 {
+    CloseMarkerBar();
     if (Widget && GEngine && GEngine->GameViewport) GEngine->GameViewport->RemoveViewportWidgetContent(Widget.ToSharedRef());
     Widget.Reset(); MarkerName.Reset();
     if (Owner) Owner->SetMenuOpen(false);
+}
+
+void UJapanMap::OpenMarkerBar()
+{
+    if (IsMarkerBarOpen() || IsOpen() || !Owner || Owner->IsCinematic() || Owner->AreControlsSuspended() || !MarkerStore() || !GEngine || !GEngine->GameViewport) return;
+    TSharedRef<SMarkerBar> Bar = SNew(SMarkerBar).Map(this).PadStyle(AJapanHUD::CurrentControllerStyle());
+    MarkerBar = Bar;
+    GEngine->GameViewport->AddViewportWidgetContent(Bar,18);
+    Owner->SetMenuOpen(true);
+    // The bar takes focus while View is still held. It leaves key releases unhandled, so that release still reaches the
+    // game through the viewport. The View hold opens it a tick late (AWandererCharacter::SetupPlayerInputComponent), so
+    // the hold trigger still sees View come up after the flush this focus change causes, and the next tap and hold start clean.
+    FSlateApplication::Get().SetKeyboardFocus(Bar,EFocusCause::SetDirectly);
+    UE_LOG(LogTemp,Display,TEXT("MARKERS bar opened: %d saved places"),GetMarkerKeys().Num());
+}
+
+void UJapanMap::CloseMarkerBar()
+{
+    if (!MarkerBar) return;
+    if (GEngine && GEngine->GameViewport) GEngine->GameViewport->RemoveViewportWidgetContent(MarkerBar.ToSharedRef());
+    MarkerBar.Reset();
+    if (Owner) Owner->SetMenuOpen(false);
+    if (FSlateApplication::IsInitialized()) FSlateApplication::Get().SetAllUserFocusToGameViewport();
+}
+
+bool UJapanMap::ReviewSlateKey(const FString& Key, bool bPressed)
+{
+    const FKey K(*Key);
+    if (!K.IsValid()) return false;
+    const FKeyEvent Event(K,FModifierKeysState(),0,false,0,0);
+    if (bPressed) FSlateApplication::Get().ProcessKeyDownEvent(Event); else FSlateApplication::Get().ProcessKeyUpEvent(Event);
+    return true;
+}
+
+bool UJapanMap::ReviewMarkerBarKey(const FString& Key)
+{
+    const FKey K(*Key);
+    if (!IsMarkerBarOpen() || !K.IsValid()) return false;
+    auto& App = FSlateApplication::Get();
+    const FKeyEvent Event(K,FModifierKeysState(),0,false,0,0);
+    App.ProcessKeyDownEvent(Event); App.ProcessKeyUpEvent(Event);
+    return true;
 }
 
 FString UJapanMap::ReviewMarkerNameInput(const FString& Text)

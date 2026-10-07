@@ -129,6 +129,8 @@ FLAT = (-28, 38)       # the pier's long flat run, heading east between flatbar_
 STEER = {1: FLAT, -1: (FLAT[0], FLAT[1] - 1)}
 RAIL = (-36, 43)       # an ollie at .98 s onto flatbar_red, along it (it starts 8 m ahead, x -28 to -10)
 RAIL_FAST = (-38, 43)  # the same take-off at 700 cm/s
+STALL_DESCENT = 1.5    # s: from a stall on the square flatbar's top down to the deck
+STALL_TOP = 200.       # cm/s: a grind ending on the bar's top this slowly is a stall (at speed it runs off the end)
 QUARTER = (57, 25)     # east_return's quarter (lip at x 70, 2 m radius, 0.15 m vert), launched east at 950 cm/s
 QUARTER_OUT = (-1, 0)  # its face's level normal, Unreal x, y: back into the ramp, west
 OPEN = (0, 52)         # an open run east between the bars (y 43) and the north gardens (y 61), for hard carves
@@ -171,7 +173,8 @@ def mount_ride():
 # thigh bodies (cm, below 0 inside), skin_groups= the skin under the ground (skate.RideSkinCheck).
 HAND_GAP = -1.   # cm: no hand deeper inside the rider's own body than this, at rest, rolling or carving
 ARM_STEP, ARM_JITTER = 3., 2.   # degrees per 60 Hz frame: the arm swing's largest step, and its step's largest change
-HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False))
+HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False),
+               ('modori_regular', 'Modori', False), ('modori_goofy', 'Modori', True))
 # The rest close-up shows the right hand from the rider's right side (out from the hips through the hand), frozen at
 # the idle loop's worst phase for that hand: a watcher reads hand_gap= every frame for 1.6 s (more than the loop), then
 # stops time (global time dilation) when the right hand is back within 0.3 cm of the deepest it went.
@@ -181,7 +184,7 @@ WORST_PHASE = (INGAME / 'skate_ride' / 'worst_phase.py').read_text()
 
 def hand_rows(record):
     """Each hand against the rider's own body (hand_gap=) and the feet's skin under the ground (skin_groups= feet) at
-    rest for a second, then through a push, rolling and carving both ways, for Cairo regular and goofy and Link; a
+    rest for a second, then through a push, rolling and carving both ways, for Cairo and Modori regular and goofy and Link; a
     close-up at rest (build/yorimichi/skateqa/ride-hands-<rider>.png)."""
     qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck 1')")
     who_now = 'Cairo'
@@ -1907,9 +1910,11 @@ def parapet_corner(record):
 
 def grind_rows(record):
     """flatbar_red is 18 m long and a grind loses 0.97 m/s² on a rail (Native's):
-    at 7 m/s the board grinds it to its end, flies off and rolls away; at 5.2 m/s it stalls about 14 m along, steps
-    off the line with a small hop and stands on the deck beside it (at the deck's height, at least 20 cm off the line,
-    on the ground from its landing on), neither bailing."""
+    at 7 m/s the board grinds it to its end, flies off and rolls away; at 5.2 m/s it stalls about 13 m along and comes
+    down on the deck beside it (at the deck's height, at least 20 cm off the line, on the ground from its deck landing
+    on), neither bailing. The bar is square (an extracted 15 cm park flatbar), so a stall can end on its flat top
+    rather than in the air: that counts as the stall, logged, and the board must then drop to the deck within
+    STALL_DESCENT seconds."""
     for name, spot, entry, seconds in (('grind', RAIL_FAST, 700, 6.5), ('grind_stall', RAIL, 520, 8.5)):
         rows = qa.run_scenario(f"{spot[0]},{spot[1]},0,{entry},[(.98,('flick','ollie'))],duration={seconds}", seconds)
         lock = next((i for i, r in enumerate(rows) if r['mode'] == '3'), None)
@@ -1922,21 +1927,27 @@ def grind_rows(record):
         held = sum(float(r.get('dt', 16.7)) for r in rows[lock:end]) / 1000
         loss = (speed(rows[lock]) - speed(rows[end - 1])) / max(held, .1)
         along = (position(rows[end - 1])[0] - position(rows[lock])[0]) / 100
-        stalled = speed(rows[end - 1]) < 60
+        deck = float(rows[min(5, lock)]['z'])
+        on_top = rows[end]['mode'] == '1' and float(rows[end]['z']) > deck + 10
+        stalled = speed(rows[end - 1]) < 60 or (on_top and speed(rows[end - 1]) < STALL_TOP)
         ok = rows[-1]['mode'] == '1' and not bailed and 70 < loss < 125 and stalled == (name == 'grind_stall')
         off = ''
         if name == 'grind_stall':
             # Off the line onto the deck: the board's height back to the deck's before the grind, beside the line (the
             # last position's distance from the line through the grind's ends), and on the ground from the landing on.
-            deck, last_z = float(rows[min(5, lock)]['z']), float(rows[-1]['z'])
-            landed = next((i for i in range(end, len(rows)) if rows[i]['mode'] == '1'), len(rows))
+            last_z = float(rows[-1]['z'])
+            # The deck landing: the first frame on the ground at the deck's height (not on the bar's top).
+            landed = next((i for i in range(end, len(rows)) if rows[i]['mode'] == '1' and abs(float(rows[i]['z']) - deck) < 3),
+                          len(rows))
+            descent = sum(float(r.get('dt', 16.7)) for r in rows[end:landed]) / 1000
             flicker = sum(1 for r in rows[landed:] if r['mode'] != '1')
             a, b, c = position(rows[lock]), position(rows[end - 1]), position(rows[-1])
             run = math.hypot(b[0] - a[0], b[1] - a[1]) or 1.
             aside = abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) / run
-            ok = ok and abs(last_z - deck) < 3 and aside >= 20 and flicker == 0
-            off = (f"; stood at z {last_z:.0f} (the deck {deck:.0f}), {aside:.0f} cm beside the line, {flicker} frames off the "
-                   f"ground after landing")
+            ok = ok and abs(last_z - deck) < 3 and aside >= 20 and flicker == 0 and landed < len(rows) and descent <= STALL_DESCENT
+            off = (f"; {'ended on the bar top at z ' + format(float(rows[end]['z']), '.0f') + ', ' if on_top else ''}"
+                   f"down to the deck in {descent:.2f} s; stood at z {last_z:.0f} (the deck {deck:.0f}), {aside:.0f} cm beside "
+                   f"the line, {flicker} frames off the ground after the deck landing")
         record(name, rows, ok,
                f"locked at {speed(rows[lock]):.0f} cm/s, grinded {held:.2f} s and {along:.1f} m, left at {speed(rows[end - 1]):.0f} cm/s "
                f"({'a stall' if stalled else 'off the end'}), losing {loss:.0f} cm/s² (reference 97); last mode {rows[-1]['mode']}, "
@@ -1972,8 +1983,8 @@ MEGA_LEDGES = (((-6992.9, -138247.4, 13000.), 159.2), ((-7304.2, -139147.8, 1300
 # JapanWorld: House_A's and House_B's fronts from the road, through their lots' gates (world.json houses.lots).
 JAPAN_WALLS = (((-20238., 9558., 1160.), 73.6), ((-14865., 7801., 1290.), -106.3))
 # U23: on the seven terrace (park-local metres), riding east toward its south stair rail (y 25.5, 55 cm over the deck
-# from x -52), popped 6 m on, 2 m before the rail starts; the user rode at 638 to 780 cm/s.
-STAIR_RAIL = (-60., 27.6, -10.)
+# from x -48, the top nosing), popped 6 m on, 2 m before the rail starts; the user rode at 638 to 780 cm/s.
+STAIR_RAIL = (-56., 27.6, -10.)
 U23_SPEEDS = (640, 780)
 RAIL_NEAR = 60.    # cm: the board's centre this near the rail's line (beside or over it) is the rail encounter
 # U24: the pier's quarter at 9.5 m/s (park headings) and Mega Park's pool wall at 11.5 m/s (degrees across its face).
@@ -2245,7 +2256,7 @@ def u23_rows(record, wanted):
     (a drift turned into a late fall through the map fails)."""
     lx, ly, heading = STAIR_RAIL
     deck = ground(*json.loads(qa.py(f"import json; v=live.park.ue(-40,25,3.0); print(json.dumps([v.x, v.y, v.z]))").strip().splitlines()[-1]))
-    rail = json.loads(qa.py("import json; a=live.park.ue(-52,25.5,3.0); b=live.park.ue(-30,25.5,3.0); "
+    rail = json.loads(qa.py("import json; a=live.park.ue(-48,25.5,3.0); b=live.park.ue(-30,25.5,3.0); "
                             "print(json.dumps([a.x, a.y, b.x, b.y]))").strip().splitlines()[-1])
     ax, ay = rail[0], rail[1]
     ux, uy = rail[2] - ax, rail[3] - ay

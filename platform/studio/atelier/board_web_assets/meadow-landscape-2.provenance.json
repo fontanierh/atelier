@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Repaint the reference as a larger, finer, crisper version with exactly the same composition: the same pale sunrise glow in the upper right, the same rolling hills, mist layers, distant trees, the same winding river, and the same white and pale-blue wildflowers along the bottom edge. A soft hand-painted watercolor of a misty early-morning spring meadow with delicate brushwork, fine wet-on-wet edges and visible cold-press watercolor paper texture, rendered with high detail so it stays sharp on a large desktop screen. Keep the middle calm and airy (mostly sky and mist) because a chat interface sits on top of it. Paint only the landscape, with no user interface at all: no cards, no text, no avatars, no buttons, no bars. No people, no animals, no buildings, no text, no signature.",
+  "inputs": [
+    "meadow-landscape-1.webp"
+  ],
+  "purpose": "Agent board sharp desktop morning background",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "3072x2048",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "91299988b29a4f944108eaef7d962da4aed41dc5e6039b04c5824898b1115ebf",
+  "status": "done",
+  "started_at": "2026-10-07T09:15:59.986788+00:00",
+  "output": "day-landscape.png",
+  "output_sha256": "cb17af2f792d63778dff578732684c6da13b73f70edd274c21860f5d1c0b6eb0",
+  "usage": {
+    "input_tokens": 1267,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 187
+    },
+    "output_tokens": 3184,
+    "output_tokens_details": {
+      "image_tokens": 3184,
+      "text_tokens": 0
+    },
+    "total_tokens": 4451
+  },
+  "elapsed_seconds": 43.0,
+  "finished_at": "2026-10-07T09:16:43.053225+00:00",
+  "derived": {
+    "file": "meadow-landscape-2.webp",
+    "size": [
+      3072,
+      2048
+    ],
+    "format": "WebP quality 72",
+    "sha256": "cc7b5a246178ad2bf25e875dc81aa2e81463903cab0b15c651061f69cccf72ce"
+  },
+  "reference": "The earlier 1600 px board landscape (painted from meadow-mist.png, a Sunburst concept of the board as a misty spring meadow), repainted larger and sharper for desktop screens"
+}

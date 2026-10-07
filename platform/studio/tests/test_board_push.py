@@ -105,6 +105,18 @@ def test_only_flagged_new_messages_push_and_each_agent_gets_a_few_an_hour(cache)
     pusher.step(client)
     assert len(client.calls) == 3, 'each message pushes once'
 
+    # An operator task's ask always pushes, past the allowance two has spent, titled as one and opening the Tasks page.
+    task, ask = board.open_task('two', 'Can I ship r8?')
+    due = pusher.due()
+    assert [m['id'] for m in due] == [ask]
+    shown = board_push.payload(due[0])
+    assert shown['title'] == 'two · Operator task' and shown['url'] == f'/?task={task}' and shown['body'] == 'Can I ship r8?'
+    pusher.step(client)
+    assert len(client.calls) == 4
+    board.edit_task(task, 'two', 'Can I ship r9?')   # an edited ask pushes the same way
+    shown = board_push.payload(pusher.due()[0])
+    assert shown['url'] == f'/?task={task}' and shown['body'] == 'Updated the ask: Can I ship r9?'
+
     gone = Push(status=410)
     board.post('one', 'Another urgent one.', 'operator', notify=True)
     pusher.step(gone)

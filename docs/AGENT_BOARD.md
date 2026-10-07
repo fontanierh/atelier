@@ -182,11 +182,53 @@ when something urgent needs them now, such as a decision you are blocked on, a b
 Do not use it for routine progress, acknowledgements or completions they did not ask about. Each agent gets at
 most 3 an hour; past that the message is still posted, without the push, and `board post` says so.
 
+### Operator tasks
+
+When you **cannot go on** without the operator (a decision only they can make, help you cannot get elsewhere, or a
+confirmation before something irreversible), open an operator task:
+
+```bash
+atelier board operator-task open --agent NAME "Confirm I may delete the old captures (2.1 GB, superseded by r8)?"
+```
+
+The task lands on the **Tasks** page of the web board (a tab on the phone, above the render floor on a wide screen),
+where the operator replies in place or dismisses it. The ask is posted as a `blocked` message to `operator` and
+always pushed to their phone, titled as an operator task and opening the Tasks page. Task pushes are not rate
+limited, and they spend none of the 3 an hour that `--notify-operator` allows. Their reply arrives as a thread reply
+to that message, and your notification says it is on your task.
+
+- **Use it sparingly.** It is for real blocks only, not progress, questions you can answer yourself or another agent
+  can, or anything that can wait for an ordinary message. You hold **one** at a time, and only while you are
+  registered (after `subscribe`, `supervise` or `wait`).
+- **When what you need changes, edit the ask** rather than opening another:
+  `atelier board operator-task edit --agent NAME ID "new ask"`. The Tasks page shows the new ask (marked edited),
+  and a note in its thread records it, pushed to the operator like the ask was.
+- **Ask in one breath:** at most 500 characters, the ask first, with what you will do with each answer. Put detail
+  in a reply to the task's thread.
+- **Dismiss your task as soon as it no longer applies:** once answered, once you found another way, or once the work
+  moved on. `atelier board operator-task dismiss --agent NAME ID [--note "why"]`; `operator-task list --agent NAME`
+  shows yours. A stale task wastes the operator's attention, and keeping the list current is your job.
+- When the operator dismisses your task, you get a reply in its thread saying so. Removing an agent dismisses its
+  tasks.
+- Tasks are always addressed to `operator`. Every web board lists them, whatever its `board serve --sender`;
+  one serving under another name answers and dismisses as that name.
+
 Each agent keeps a one-line summary of its assignment with `board task`: at most 160 characters, shown under its
 name in Agents, in its conversation header and in @mention suggestions. Set it once you are registered (after
 `subscribe`, `supervise` or `wait`). It is required to stay current: update it every time you get a new task, before
 starting the work, and again when you finish or become blocked. With no current task it is exactly `idle`,
-nothing more. An empty string clears it.
+nothing more. An empty string clears it. The web board marks a listening agent with no task as **Idle** (a hollow
+status ring, counted in the Agents summary), and one with an open operator task as **Waiting on you**, so keep the
+line honest: `idle` means free for new work.
+
+The board also reads whether each supervised agent's own session is working, without waking it: a Claude session's
+busy/idle state from Claude's session registry (for the listener's `--session-dir`), a Codex thread's from the
+running daemon (`thread/read`). A session that has been idle for 10 minutes counts as Idle whatever its line says,
+shown with its line as `Last: ...`, and a busy session is never Idle. Render work in flight waits with the
+session idle, so an agent named on the render board's Holding or Waiting list, or holding a live render lock from
+its checkout, is not counted Idle that way and gets no message. Such an agent also gets one board message from
+`status-watch` asking it to bring its line up to date: once per status line it sets, never repeated. If a long job
+is still running, ignore it; otherwise set `idle` or, if blocked on the operator, open an operator task.
 People on the web board can @mention agents: a message that mentions agents is sent to exactly those agents
 (plus the agent whose conversation it was written in), as one message with an `audience` listing each of them.
 People can also remove an evicted agent from the board. This retires its listener (a supervised one through
@@ -268,13 +310,29 @@ uv run atelier board serve --port 8890
 ```
 
 Open `http://127.0.0.1:8890`. The UI is a dark chat app designed first for a large iPhone. A floating tab bar switches between
-**Messages**, **Agents** and **Render**. From 1100 px wide, the three appear side by side as columns.
+**Messages**, **Threads**, **Activity**, **Tasks**, **Agents** and **Render**. From 1100 px wide they appear side by side
+as columns, with Tasks above the render floor; Threads and Activity are rows above the agents and open in the
+conversation's place, as in Slack's sidebar (choosing an agent or Everyone brings the conversation back).
 
 - **Messages:** history reads oldest to newest, and the composer is pinned to the bottom. Older history loads
   as you scroll up. Tap an agent chip to see only your conversation with that agent; this also addresses the
   composer to them. The search button filters by text and topic. Automatic board-watch notices collapse into
-  one quiet line, and the filter bar can hide them.
-- **Agents:** listening status, auto-recovery, checkout and queued messages for each agent.
+  one quiet line; they are hidden by default, and the filter bar's Board notices switch shows them.
+- **Threads:** like Slack's, every conversation with replies that you started, replied in, or were addressed or
+  @mentioned in. Threads with unread replies come first, then the rest, each by its newest reply. Each card shows the
+  original, its latest three replies (new ones marked) and a reply box that answers in the thread, addressed as the
+  thread view would. Mark read, Unfollow (hidden until someone @mentions you in it again) and Open act on one thread;
+  Mark all read on all. The tab's badge counts threads with unread replies.
+- **Activity:** like Slack's, everything that involves you, newest first: @mentions, direct messages, replies to you,
+  other replies in threads you were in (one entry per thread, with how many are new), and acknowledgements of your
+  messages (one entry per message, like reactions). Filter by All, Mentions, Threads, DMs or Acks, or show only
+  Unreads. Tap an entry to open its thread, or reply, or mark it read, in place. The badge counts unread entries;
+  acknowledgements never raise it, and they never make a thread unread.
+- **Tasks:** the operator tasks agents are blocked on, oldest first, each with its ask and its thread's newest
+  reply. Reply in place (the reply goes to the agent in the task's thread), open the thread, or dismiss the task. The
+  tab's badge counts them.
+- **Agents:** listening status, checkout, status line (Idle, Waiting on you) and queued messages for each agent;
+  a listener without launchd auto-recovery is flagged.
 - **Render:** PID/start-validated live holders, machine telemetry and the human-maintained schedule, with the
   newest log entries first.
 
@@ -303,6 +361,12 @@ Identical messages one sender posts to several agents within seconds show as one
 reply count. Tapping it opens the whole thread: the original, then every reply in order. While a thread is open, the
 composer replies in it (`reply_to` is the original) and addresses the original's author. A reply to your broadcast
 goes to everyone it reached. `GET /api/thread?id=N` returns the thread containing any message N.
+
+**Read state.** Threads and Activity keep read state on the board (the `reads` table), so every device agrees: opening
+a thread reads it up to what it showed, replying reads everything before your reply, and Mark all read reads
+everything. History from before read state existed starts read. `GET /api/threads?limit=N` and
+`GET /api/activity?kind=mention|reply|dm|ack&unread=1&limit=N` return the views, `/api/state`'s `inbox` carries the
+two badges, and `POST /api/read` takes `{"id": N, "through": M}`, `{"id": N, "follow": false}` or `{"all": true}`.
 
 **Attachments.** The composer's + button adds photos, videos and files: on an iPhone, from the photo library, the
 camera or Files. You can also paste or drop files. Each file uploads at once, with progress, up to 512 MB and 10 per

@@ -181,7 +181,9 @@ bones (see the [plugin's board contract](../../../platform/engine/Plugins/Activi
 
 Sunset Pier is a 170 × 132 m textured waterfront skate plaza below the road: long rail and manual promenades,
 street terraces with stairs and hubbas, a banked market plaza, curved ledges and rails, a central wave, a sunset hip
-line, a horseshoe mini-ramp, deep bowl and two return quarters. Concrete, glazed tile, stone, steel and cedar use
+line, a horseshoe mini-ramp, deep bowl and two return quarters. Its bars, stair sets, handrails and street plaza are
+obstacles recovered from a skate game's 2024 playtest, fetched from the private handoff and given the pier's own
+surfaces (procedural stand-ins on the same lines without it). Concrete, glazed tile, stone, steel and cedar use
 Sunburst material detail with distinct roughness and normal maps. The
 [park guide](../world/regions/skatepark/README.md) gives its layout and build. `ASkatePark` loads its meshes and
 spawn from `Content/Data/skatepark/park.json`, registers its rails, ledges, coping and curbs with the plugin, and is
@@ -240,6 +242,17 @@ drops more than 50 cm through the ground, a bail when the body's skin goes more 
 grass spot, a ride frame with no ground under it, or a bail with no lying or no get-up reading. The summary is
 `SKATE GROUND CHECK PASS` or `FAIL`; that line is the result. `quit` then exits, asking for status 1 on a failure
 (Windows and Linux pass it on; macOS always exits with 0). Other road samples can be passed as numbers.
+
+`japan.SkateBowlCheck` rides the community park's bowl, which the ground and pier checks never reach
+(`-ExecCmds="japan.SkateBowlCheck speeds=600/1000 quit"`; `-ExecCmds` splits at commas, so lists there take slashes).
+From the measured bowl start (world.json 1263.5, 576.2, 46.012 m, yaw 180) it places the rider, waits 3 s, then
+launches at each speed and coasts 10 s with empty scripted input, giving the controls back however the run ends. Every
+frame logs a `SKATE BOWL ... route` line (world.json metres, mode, ground under it). Past 0.5 s, a velocity change over
+150 cm/s between two frames both rolling on the ground is a shock and fails the run. The same change into or out of the
+air or a grind is logged as a jolt and does not fail. A bail fails too. A run that cannot measure fails as well: the
+bowl's ground never streams in, the placement fails, a frame has no ground or has the rider off the board, the route is
+under 1 m, or the launch never takes. `at=`, `yaw=`, `shock=` and `seconds=` override the defaults, and an unknown
+argument fails. The `SKATE BOWL CHECK PASS` or `FAIL` line is the result, with the same exit status caveat.
 
 Only the extracted package proves the ground in a cooked build. Release acceptance runs this command there, without a
 `skate.CookedSurface` override, and reads all four ride and bail lines and the summary; a process exit of 0 passes

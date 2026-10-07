@@ -34,7 +34,7 @@ import animation_compression
 CHARACTER = os.environ.get('BOTW_CHARACTER', 'cairo')
 CAIRO = CHARACTER == 'cairo'
 # The character's paths: its retargeted clips, its own folder and base definition, where the copy goes, its record.
-NAME = {'cairo': 'Cairo', 'sword-trainer': 'SwordTrainer'}[CHARACTER]
+NAME = {'cairo': 'Cairo', 'sword-trainer': 'SwordTrainer', 'modori': 'Modori'}[CHARACTER]
 OUT = yori.OUT / CHARACTER / 'botw'
 CONFIG = json.loads((OUT / 'export.json').read_text())
 LINK = next(c for c in json.loads((yori.OUT / 'botw' / 'export.json').read_text())['characters'] if c['name'] == 'Link')
@@ -55,7 +55,12 @@ SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his me
 CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else {}
 # Carried pieces moved out from where Link's chest puts them (cm along Rig.body's axes: backward, left, up): Link's sword
 # and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
-PUSH = {'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else {}   # fitted in game: 4 cm still sank in at the hip running, 12 floated
+# Modori's coat stands off his back and his hair reaches his collar: from Link's chest his sword and sheath sank 2 cm into
+# the coat with the hilt in his hair, and the shield 10 cm (YorimichiFit in game: clear from 4 and 6 cm back). The sword
+# also comes down 12 cm, so the hilt's tip sits at his collar below the hair (close shots standing and crouched: 4 cm
+# down still reached into it).
+PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
+        {'sword': [5., 0., -12.], 'sheath': [5., 0., -12.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
 
 
 def digests(folder):
@@ -317,6 +322,10 @@ if not CAIRO and E.does_asset_exist(target):
     E.delete_asset(target)
 definition = E.duplicate_asset(base, target)
 assert definition, f'{base} could not be copied'
+# Cairo's everyday gestures (botw.py GAME_CLIPS: wave, interact, sit), retargeted, where the base has none of its own.
+for name in ('Interact', 'Wave', 'SitDown', 'SitIdle', 'StandUp'):
+    if not CAIRO and 'Own' + name in clips:
+        actions.setdefault(name, clips['Own' + name])
 # The base's own clips (another character's gestures: Kaede's bow and words) stay beside the move set's.
 for action, sequence in (dict(definition.get_editor_property('actions')) if not CAIRO else {}).items():
     actions.setdefault(str(action), sequence)

@@ -7,24 +7,30 @@ import re
 import secrets
 import sqlite3
 import time
+from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
-from . import board, board_markdown, board_push
-from .board_files import (INLINE_TYPES, attachment, read_json, split_attachments, store_upload,
-                          with_attachments)
+from . import board, board_inbox, board_markdown, board_presence, board_push
+from .board_files import (INLINE_TYPES, MARKDOWN_SUFFIXES, attachment, read_json, readable, split_attachments,
+                          store_upload, with_attachments)
 
 ASSETS = Path(__file__).with_name('board_web_assets')
 STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
           '/board.css': ('board.css', 'text/css; charset=utf-8'),
           '/board.js': ('board.js', 'text/javascript; charset=utf-8'),
+          '/board-fx.js': ('board-fx.js', 'text/javascript; charset=utf-8'),
+          '/board-scene.js': ('board-scene.js', 'text/javascript; charset=utf-8'),
           '/icon.svg': ('icon.svg', 'image/svg+xml'),
           '/apple-touch-icon.png': ('apple-touch-icon.png', 'image/png'),
           '/manifest.webmanifest': ('manifest.webmanifest', 'application/manifest+json'),
           '/sw.js': ('sw.js', 'text/javascript; charset=utf-8'),
+          '/board-theme.js': ('board-theme.js', 'text/javascript; charset=utf-8'),
           '/meadow-portrait-1.webp': ('meadow-portrait-1.webp', 'image/webp'),
-          '/meadow-landscape-1.webp': ('meadow-landscape-1.webp', 'image/webp')}
+          '/meadow-landscape-2.webp': ('meadow-landscape-2.webp', 'image/webp'),
+          '/meadow-night-portrait-1.webp': ('meadow-night-portrait-1.webp', 'image/webp'),
+          '/meadow-night-landscape-1.webp': ('meadow-night-landscape-1.webp', 'image/webp')}
 _assets = {}
 
 
@@ -39,6 +45,30 @@ def asset(filename):
         cached = _assets[filename] = (stamp, data, f'"{hashlib.sha256(data).hexdigest()[:24]}"', packed)
     return cached[1:]
 PUSH_PATHS = ('/api/push/subscribe', '/api/push/unsubscribe', '/api/push/test')
+
+
+
+def render_floor():
+    """The render board's human-maintained scheduling sections, and the live render lock holders."""
+    ledger = board.root() / 'render-board.md'
+    try:
+        text = ledger.read_text()
+    except FileNotFoundError:
+        text = ''
+    # Telemetry markup is advisory; return human-maintained scheduling sections separately.
+    text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->', '', text, flags=re.S)
+    sections = {match[1]: match[2].strip() for match in re.finditer(
+        r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
+    # Use the owning library's PID/start validation; stale lock text is never a live owner.
+    from .safety import render_lock
+    holders = {}
+    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
+        holder = render_lock.read_holder(path)
+        if holder:
+            holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
+                             'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
+                             'time': holder.get('time')}
+    return sections, holders
 
 
 def snapshot(query, remote_status=None, sender='operator'):
@@ -81,8 +111,8 @@ def snapshot(query, remote_status=None, sender='operator'):
         rows = [dict(row) for row in db.execute(
             'SELECT * FROM messages'+where+' ORDER BY id DESC LIMIT ?', (*parameters, limit+1))]
         agents = []
-        for row in db.execute('SELECT agent,cursor,pid,heartbeat,checkout,stop,supervised,error,task FROM subscribers '
-                              'WHERE removed=0 ORDER BY agent'):
+        for row in db.execute('SELECT agent, cursor, pid, heartbeat, checkout, stop, supervised, error, task, task_at, '
+                              'session, session_since FROM subscribers WHERE removed=0 ORDER BY agent'):
             item = dict(row)
             item['listening'] = bool(item['pid'] and not item['stop'] and 0 <= now-(item['heartbeat'] or 0) < 90)
             item['pending'] = db.execute(
@@ -97,6 +127,10 @@ def snapshot(query, remote_status=None, sender='operator'):
                                             (item['agent'], sender)).fetchone()[0] or 0
             agents.append(item)
         total = db.execute('SELECT count(*) FROM messages').fetchone()[0]
+        # The operator's open tasks: what agents are blocked on, oldest first, answered from the Tasks page.
+        operator_tasks = board.tasks(db)
+        for task in operator_tasks:
+            task['body_html'] = board_markdown.render(split_attachments(task['body'])[0])
         # Fetch complete fanouts even when a history/filter boundary cuts through one.
         prefixes = {row['dedup'].rsplit(':', 1)[0]+':' for row in rows[:limit]
                     if (row['dedup'] or '').startswith('web-broadcast:')}
@@ -107,15 +141,9 @@ def snapshot(query, remote_status=None, sender='operator'):
         ack_ids = {row[0] for row in db.execute('SELECT reply.reply_to FROM messages reply '
                    'JOIN messages original ON original.id=reply.reply_to '
                    "WHERE reply.topic='ack' AND reply.sender=original.recipient")}
-    ledger = board.root() / 'render-board.md'
-    try:
-        text = ledger.read_text()
-    except FileNotFoundError:
-        text = ''
-    # Telemetry markup is advisory; return human-maintained scheduling sections separately.
-    text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->', '', text, flags=re.S)
-    sections = {match[1]: match[2].strip() for match in re.finditer(
-        r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
+        # The Threads and Activity tabs' unread badges.
+        inbox = board_inbox.summary(db, sender)
+    sections, holders = render_floor()
     telemetry = read_json(board.root() / 'render-supervisor/latest.json') or {}
     sessions = []
     if remote_status:
@@ -127,20 +155,14 @@ def snapshot(query, remote_status=None, sender='operator'):
             sessions.append({'name': item.get('name', label), 'url': url,
                              'health': item.get('health'), 'connection': item.get('connection'),
                              'fresh': 0 <= now-item.get('checked_at', 0) < 120})
-    # Use the owning library's PID/start validation; stale lock text is never a live owner.
-    from .safety import render_lock
-    holders = {}
-    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
-        holder = render_lock.read_holder(path)
-        if holder:
-            holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
-                             'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
-                             'time': holder.get('time')}
+    engaged = board_presence.engaged(sections, holders, {item['agent']: item['checkout'] for item in agents})
+    for item in agents:
+        item['engaged'] = item['agent'] in engaged
     output = sorted(copies.values(), key=lambda row: row['id'], reverse=True)
     for item in output:
         decorate(item, ack_ids)
     return {'time': now, 'messages': output,
-            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'schedule': sections,
+            'has_more': len(rows) > limit, 'agents': agents, 'total': total, 'tasks': operator_tasks, 'schedule': sections, 'inbox': inbox,
             'holders': holders, 'sessions': sessions,
             'resources': {'fresh': 0 <= now-telemetry.get('time', 0) < 120,
                           'cpu': telemetry.get('cpu_busy_percent'),
@@ -152,6 +174,22 @@ def decorate(item, ack_ids):
     item['body_html'] = board_markdown.render(text)
     item['acknowledged'] = item['id'] in ack_ids
     return item
+
+
+def inbox(view, query, reader):
+    """The Threads or Activity view for the board's sender, read-only."""
+    def number(name, default, high):
+        value = int(query.get(name, [str(default)])[0])
+        if not 1 <= value <= high:
+            raise ValueError(f'{name} must be between 1 and {high}')
+        return value
+    path = board.root() / 'agent-board.sqlite3'
+    with sqlite3.connect(f'{path.as_uri()}?mode=ro', uri=True, timeout=5) as db:
+        db.row_factory = sqlite3.Row
+        if view == 'threads':
+            return board_inbox.threads(db, reader, number('limit', 30, 200))
+        return board_inbox.activity(db, reader, query.get('kind', [''])[0], query.get('unread', [''])[0] == '1',
+                                    number('limit', 60, 300))
 
 
 def thread(message_id):
@@ -239,6 +277,16 @@ class Handler(BaseHTTPRequestHandler):
                       "font-src https://fonts.gstatic.com; img-src data:; base-uri 'none'; form-action 'none'; "
                       "frame-ancestors 'none'")
 
+    def send_document(self, ident):
+        """A Markdown or text attachment rendered for the board's reader, so it opens in place instead of downloading."""
+        item = attachment(ident)
+        if not item or not readable(item):
+            self.send(404, {'error': 'This attachment cannot be read here.'}); return
+        text = item['path'].read_bytes().decode('utf-8', 'replace')
+        html = board_markdown.render(text) if item['name'].lower().endswith(MARKDOWN_SUFFIXES) else \
+            '<pre><code>' + escape(text) + '</code></pre>'
+        self.send(200, {'name': item['name'], 'url': item['url'], 'size': item['size'], 'html': html})
+
     def send_attachment(self, ident):
         item = attachment(ident)
         if not item:
@@ -305,6 +353,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.review(parsed.path.removeprefix('/review').strip('/') or 'codebase-review')
             elif parsed.path == '/api/push/key':
                 self.send(200, {'key': board_push.public_key()})
+            elif parsed.path in ('/api/threads', '/api/activity'):
+                self.send(200, inbox(parsed.path.removeprefix('/api/'), parse_qs(parsed.query), self.server.sender))
             elif parsed.path == '/api/thread':
                 try:
                     self.send(200, thread(int(parse_qs(parsed.query).get('id', ['0'])[0])))
@@ -312,6 +362,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.send(404, {'error': 'This conversation is no longer on the board.'})
             elif parsed.path.startswith('/api/attachment/'):
                 self.send_attachment(parsed.path.split('/')[3])
+            elif parsed.path.startswith('/api/document/'):
+                self.send_document(parsed.path.split('/')[3])
             elif parsed.path == '/healthz':
                 with sqlite3.connect(f'{(board.root()/"agent-board.sqlite3").as_uri()}?mode=ro', uri=True) as db:
                     db.execute('SELECT id FROM messages LIMIT 1').fetchall()
@@ -326,7 +378,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.permitted():
             return
-        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove', *PUSH_PATHS):
+        if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove', '/api/task/dismiss',
+                             '/api/read', *PUSH_PATHS):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
@@ -363,6 +416,21 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path in PUSH_PATHS:
                 self.push(data)
+                return
+            if self.path == '/api/task/dismiss':
+                task = data.get('id')
+                if isinstance(task, bool) or not isinstance(task, int):
+                    raise ValueError('Choose a task to dismiss.')
+                closed = board.close_task(task, self.server.sender, data.get('note') or '', operator=True)
+                self.send(200, {'dismissed': task, 'already': not closed})
+                return
+            if self.path == '/api/read':
+                follow = data.get('follow')
+                if follow is not None and not isinstance(follow, bool):
+                    raise ValueError('follow must be true or false')
+                key = board_inbox.mark_read(self.server.sender, data.get('id'), data.get('through'),
+                                            data.get('all') is True, follow)
+                self.send(200, {'read': key})
                 return
             if self.path == '/api/remove':
                 agent = data.get('agent')
@@ -411,6 +479,7 @@ def serve(args):
     server = Server(('127.0.0.1', args.port), origins=args.public_origin, allowed_user=args.allowed_user,
                     sender=args.sender, remote_status=args.remote_status)
     board_push.Pusher(server.sender, server.push_subject).start()
+    board_presence.Presence().start()
     print(f'Agent board listening on http://127.0.0.1:{args.port}', flush=True)
     try:
         server.serve_forever()

@@ -1,0 +1,41 @@
+{
+  "stage": "modori-tpose",
+  "view": "right",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/modori_tpose.py",
+  "prompt_file": "right.prompt.txt",
+  "prompt_sha256": "2547855e670909995eb81620ed10993817685a3d06c5ea07693ecaedec3c5b52",
+  "reference_files": {
+    "build/yorimichi/characters/concepts/modori-tpose/front.png": "ebfee1d648a59662d76ba87637601da3f4e908af702b6ac6a59da6a6cc504f1b"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size PNG stays in build/",
+  "status": "done",
+  "started_at": "2026-10-07T10:03:01.042839+00:00",
+  "usage": {
+    "input_tokens": 1468,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 444
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3224
+  },
+  "outputs": {
+    "right.png": "2fc439be9b430e77a5d395f18e23f610c6deefdbdd7c33b7d53ebb18992f004a"
+  },
+  "compact_copy": {
+    "file": "right.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "elapsed_seconds": 35.6,
+  "finished_at": "2026-10-07T10:03:36.650157+00:00"
+}

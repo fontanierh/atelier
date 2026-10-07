@@ -14,6 +14,7 @@ class UStaticMeshComponent;
 class USkeletalMeshComponent;
 class UAnimSequence;
 class UAtelierTrail;
+class UPhysicsAsset;
 struct FHitResult;
 
 /** One action of a move set (assets/characters/botw/moves.py `record`): where its clip starts and ends, the rate it plays
@@ -196,6 +197,7 @@ private:
     UPROPERTY() TObjectPtr<USkeletalMeshComponent> Glider;
     UPROPERTY() TObjectPtr<UAnimSequence> GliderClip;
     UPROPERTY() TObjectPtr<UAtelierTrail> BladeTrail;
+    UPROPERTY() TObjectPtr<UPhysicsAsset> BladeCollision;
     TMap<FName, FBotwMove> Moves;
     TMap<FString, float> Params;
     TMap<FName, FSlot> Slots;
@@ -375,6 +377,9 @@ private:
     void TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact);
     void SetArmed(bool bNow);
     void Attach(FName Slot);
+    /** A garment that simulates as cloth (Modori's coat) collides with the drawn blade: a capsule along it on the hand
+     *  bone, a collision source while the sword is in hand. */
+    void BladeCloth(bool bInHand);
     void ShowGlider(bool bShow);
     void EaseMesh(const FVector& From, float Seconds);
 

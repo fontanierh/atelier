@@ -10,6 +10,7 @@ const icons = {
   chevron:'<path d="m6 9 6 6 6-6"/>',
   right:'<path d="m9 5 7 7-7 7"/>',
   down:'<path d="M12 5v14M5 12l7 7 7-7"/>',
+  up:'<path d="M12 19V5M5 12l7-7 7 7"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   close:'<path d="M6 6l12 12M18 6 6 18"/>',
   remove:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
@@ -18,25 +19,29 @@ const icons = {
   thread:'<path d="M7 8h10M7 12h6"/><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z"/>',
   reply:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/>',
   board:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  activity:'<path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 8 2.5 8h-17S6 15 6 9Z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+  tasks:'<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
   render:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
 };
 function node(tag, cls, text) { const n=document.createElement(tag); if(cls)n.className=cls; if(text!==undefined)n.textContent=text; return n; }
 function icon(name) { const n=node("span","icon"); n.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.messages}</svg>`; return n; }
 document.querySelectorAll("[data-icon]").forEach(n=>n.append(icon(n.dataset.icon)));
 const names={info:"Info",request:"Request",handoff:"Handoff",blocked:"Blocked",release:"Release",evidence:"Evidence",ack:"Ack",alert:"Alert"};
-const VIEWS=["messages","agents","render"];
+const VIEWS=["messages","threads","activity","tasks","agents","render"];
 const desktop=matchMedia("(min-width:1100px)"), touch=matchMedia("(hover:none)");
 let state=null, selectedAgent="", records=new Map(), expanded=new Set(), deliveryOpen=new Set(), logShown=12;
 let loading=false, requestNumber=0, controller=null, historyComplete=false, sending=false, failed=false;
 let feedSignature="", agentsSignature="", scheduleSignature="", contextSignature="";
 let draftKey=null, draftBody="", draftTopic="", draftRecipient="*", recipientSignature="";
 let stickToBottom=true, prepending=false, lastSeenId=0, newestShown=0, statusTimer=0, feedPainted=false;
-let showSystem=true, uploads=[], thread=null;
-try { showSystem=localStorage.getItem("atelier.board.notices")!=="hidden"; } catch {}
+// Automatic notices (the render schedule's watcher, and the like) stay out of the stream unless Settings shows them;
+// the render floor has the schedule itself. A new key, so an earlier "shown" from when they showed by default lapses.
+let showSystem=false, uploads=[], thread=null;
+try { showSystem=localStorage.getItem("atelier.board.system-notices")==="shown"; } catch {}
 $("showSystem").checked=showSystem;
 
 // The app shell follows the visual viewport so the composer stays above the on-screen keyboard.
-let fullHeight=0, viewportWidth=0, keyboardOpen=false;
+let fullHeight=0, viewportWidth=0, keyboardOpen=false, inboxKeyboard=null, inboxRestore=null;
 function fitViewport() {
   const vv=window.visualViewport, root=document.documentElement.style, height=vv?vv.height:innerHeight;
   root.setProperty("--app-height",`${height}px`);root.setProperty("--app-top",`${vv?vv.offsetTop:0}px`);
@@ -46,6 +51,7 @@ function fitViewport() {
   const open=fullHeight-height>120;
   if(keyboardOpen&&!open&&touch.matches&&document.activeElement===$("message"))$("message").blur();
   keyboardOpen=open;
+  inboxKeyboardFit();
 }
 window.visualViewport?.addEventListener("resize",fitViewport);window.visualViewport?.addEventListener("scroll",fitViewport);
 addEventListener("resize",fitViewport);fitViewport();
@@ -92,11 +98,23 @@ function inline(text) { const span=node("span"); text.split("`").forEach((part,i
 function hue(name) { let h=0; for(const c of name)h=(h*31+c.charCodeAt(0))%360; return h; }
 function initials(name) { return name.replace(/[^a-z0-9]/gi," ").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?"; }
 function statusOf(agent) { return !agent?"":agent.delivery_error?"error":agent.listening?"live":"idle"; }
+// Waiting on the operator: the agent has an open operator task.
+function isWaiting(agent) { return !!agent&&(state?.tasks||[]).some(t=>t.agent===agent.agent&&!dismissedTasks.has(t.id)); }
+// Free for work: listening, not waiting on the operator, and either with no current task (its status line empty or
+// exactly "idle") or with its own session quiet for QUIET seconds, whatever the line says. A busy session is never free.
+const QUIET=600;
+function idleLine(agent) { return /^(idle)?$/i.test((agent?.task||"").trim()); }
+function quietFor(agent) { return agent?.session==="idle"&&agent.session_since?Math.max(0,(state?.time??Date.now()/1000)-agent.session_since):0; }
+function isFree(agent) {
+  if(!agent||agent.stop||!agent.listening||agent.delivery_error||isWaiting(agent)||agent.session==="busy")return false;
+  // Render work in flight (a Holding or Waiting line, or a live lock) waits with the session idle, so quiet is not free.
+  return idleLine(agent)||(!agent.engaged&&quietFor(agent)>=QUIET);
+}
 function orb(name, agent) {
   const o=node("span","orb");
   if(name==="*"||!name){o.classList.add("everyone");o.append(icon("agents"));return o;}
   o.textContent=initials(name).slice(0,1);o.style.setProperty("--hue",hue(name));
-  if(agent&&!agent.stop){const badge=node("span","badge "+statusOf(agent));badge.style.setProperty("--delay",`${(hue(name)%9)*.29}s`);o.append(badge);}
+  if(agent&&!agent.stop){const badge=node("span","badge "+statusOf(agent)+(isFree(agent)?" free":""));badge.style.setProperty("--delay",`${(hue(name)%9)*.29}s`);o.append(badge);}
   return o;
 }
 function clock(timestamp) { return new Date(timestamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); }
@@ -120,12 +138,15 @@ function setView(next, animate=true) {
   app.dataset.view=next;$("tabbar").style.setProperty("--tab",to);
   document.querySelectorAll(".tab").forEach(tab=>{if(tab.dataset.view===next)tab.setAttribute("aria-current","page");else tab.removeAttribute("aria-current");});
   if(from!==to&&animate&&!desktop.matches) {
-    const pane=$({messages:"chatPane",agents:"agentsPane",render:"renderPane"}[next]);
+    const pane=$({messages:"chatPane",threads:"threadsPane",activity:"activityPane",tasks:"tasksPane",agents:"agentsPane",render:"renderPane"}[next]);
     pane.style.setProperty("--dir",to>from?1:-1);pane.classList.remove("entering");void pane.offsetWidth;pane.classList.add("entering");
     setTimeout(()=>pane.classList.remove("entering"),900);
   }
   // Coming back to the conversation lands on its latest message and keeps following new ones.
   if(next==="messages"){stickToBottom=true;requestAnimationFrame(()=>{scrollToLatest();markSeen();});}
+  if(state)inboxBadges();
+  if(next==="threads"&&from!==to&&animate)threadsOrder=null;
+  if(next==="threads"||next==="activity"){if(inbox[next])next==="threads"?renderThreads():renderActivity();loadInbox(next);}
 }
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
   if(tab.dataset.view==="messages"&&$("app").dataset.view==="messages"){if(thread)navBack();else scrollToLatest(true);}
@@ -157,7 +178,7 @@ function refreshFilters() { settle(1500); records.clear(); feedSignature=""; his
 let searchTimer;
 $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refreshFilters,250);});
 $("topicFilter").addEventListener("change",()=>{syncPills();refreshFilters();});
-$("showSystem").addEventListener("change",()=>{showSystem=$("showSystem").checked;try{localStorage.setItem("atelier.board.notices",showSystem?"shown":"hidden");}catch{}feedSignature="";renderFeed();});
+$("showSystem").addEventListener("change",()=>{showSystem=$("showSystem").checked;try{localStorage.setItem("atelier.board.system-notices",showSystem?"shown":"hidden");}catch{}feedSignature="";renderFeed();});
 
 /* @mentions: typing @ suggests agents, and a message that mentions agents goes to exactly them (plus the agent
    whose conversation you're in). */
@@ -187,6 +208,8 @@ function recipients() {
   return mentions.length===1?mentions[0]:mentions;
 }
 const describe=target=>target==="*"?"everyone":Array.isArray(target)?target.join(", "):target;
+// A reply box's hint names one person and counts the rest, so it fits on a phone's single line.
+const replyHint=target=>`Reply to ${Array.isArray(target)&&target.length>1?`${target[0]} +${target.length-1}`:describe(target)}…`;
 function mentionQuery() {
   const box=$("message");if(document.activeElement!==box||box.selectionStart!==box.selectionEnd)return null;
   const before=box.value.slice(0,box.selectionStart), m=before.match(/(^|[^\w@.-])@([\w.-]*)$/);
@@ -249,7 +272,7 @@ function formState() {
   $("broadcastForm").classList.toggle("has-text",Boolean(length));
   const form=$("broadcastForm"), focused=form.contains(document.activeElement);
   form.classList.toggle("expanded",Boolean(length||uploads.length||focused||thread));
-  $("message").placeholder=thread?`Reply to ${describe(target)}…`:target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
+  $("message").placeholder=thread?replyHint(target):target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
 }
 $("message").addEventListener("input",()=>{grow();draftChanged();}); $("recipient").addEventListener("change",draftChanged);
 $("message").addEventListener("keydown",event=>{
@@ -367,14 +390,46 @@ function attachmentNodes(files, many) {
       const img=node("img");img.src=f.url;img.alt=f.name;img.loading="lazy";if(f.width){img.width=f.width;img.height=f.height;}b.append(img);b.addEventListener("click",()=>openLightbox(f));wrap.append(b);}
     else if(kind==="video"){const v=node("video","att-video");if(ratio)v.style.setProperty("--ratio",ratio);v.src=f.url;v.controls=true;v.playsInline=true;v.preload="metadata";wrap.append(v);}
     else if(kind==="audio"){const a=node("audio","att-audio");a.src=f.url;a.controls=true;a.preload="none";wrap.append(a);}
-    else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
+    else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";
+      if(f.readable)a.addEventListener("click",event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();openReader(f);});const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
   }
   return wrap;
 }
 function openLightbox(f) { $("lightboxImage").src=f.url;$("lightboxImage").alt=f.name;$("lightboxName").textContent=f.name;$("lightboxOpen").href=f.url;$("lightbox").hidden=false;$("lightboxClose").focus(); }
 function closeLightbox() { $("lightbox").hidden=true;$("lightboxImage").removeAttribute("src"); }
 $("lightbox").addEventListener("click",event=>{if(event.target!==$("lightboxOpen"))closeLightbox();});
-addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
+// Markdown and text attachments open in a reader over the board (rendered by the server) instead of downloading.
+// While it is open the meadow behind it rests.
+let readerFor=null, readerReturn=null, readerBehind=[];
+// While the reader is open the rest of the board is inert, so Tab and screen readers stay inside it.
+function holdBoard(held) {
+  if(held){readerBehind=[...$("app").children].filter(el=>el!==$("reader")&&!el.inert);for(const el of readerBehind)el.inert=true;}
+  else{for(const el of readerBehind)el.inert=false;readerBehind=[];}
+}
+async function openReader(f) {
+  readerFor=f.id;readerReturn=document.activeElement;
+  $("readerTitle").textContent=f.name;$("readerOpen").href=f.url;$("readerOpen").download=f.name;
+  $("readerBody").replaceChildren(node("p","quiet","Opening…"));$("readerBody").scrollTop=0;
+  $("reader").hidden=false;$("app").classList.add("reader-open");holdBoard(true);$("readerClose").focus();
+  try {
+    const response=await fetch(`/api/document/${f.id}`);const result=await response.json();
+    if(!response.ok)throw Error(result.error||"This file could not be opened.");
+    if(readerFor===f.id)markdown($("readerBody"),result.html);
+  } catch(error) { if(readerFor===f.id)$("readerBody").replaceChildren(node("p","quiet",error.message||"This file could not be opened.")); }
+}
+function closeReader() { readerFor=null;$("reader").hidden=true;$("app").classList.remove("reader-open");holdBoard(false);$("readerBody").replaceChildren();readerReturn?.focus?.();readerReturn=null; }
+$("readerClose").addEventListener("click",closeReader);
+$("reader").addEventListener("click",event=>{if(event.target===$("reader"))closeReader();});
+// Tab and Shift+Tab wrap around the reader's own controls and links.
+$("reader").addEventListener("keydown",event=>{
+  if(event.key!=="Tab")return;
+  const stops=[...$("reader").querySelectorAll("a[href],button:not(:disabled),[tabindex]:not([tabindex='-1'])")].filter(el=>el.getClientRects().length);
+  if(!stops.length)return;
+  const first=stops[0], last=stops[stops.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+});
+addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("reader").hidden)closeReader();else if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
 
 /* Agents: the list pane and the orb row share one render. */
 let seen={};
@@ -394,10 +449,11 @@ function markRead(names) {
 }
 function renderAgents() {
   markRead([]);
-  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,unreadFrom(a)])]);
+  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,a.session,isFree(a),isWaiting(a),unreadFrom(a)])]);
   if(signature===agentsSignature)return; agentsSignature=signature;
   const live=liveAgents(), listening=live.filter(a=>a.listening).length, errors=live.filter(a=>a.delivery_error).length;
-  $("agentsSummary").textContent=`${listening} of ${live.length} listening${errors?` · ${errors} retrying delivery`:""}`;
+  const free=live.filter(isFree).length;
+  $("agentsSummary").textContent=`${listening} of ${live.length} listening${free?` · ${free} idle`:""}${errors?` · ${errors} retrying delivery`:""}`;
   $("agentsBadge").hidden=!errors;$("agentsBadge").textContent=errors;
   const list=$("agents"), orbs=$("agentChips");list.replaceChildren();orbs.replaceChildren();
   let index=0;
@@ -406,8 +462,19 @@ function renderAgents() {
     const cell=node("div","agent-cell"), b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";cell.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
     cell.style.setProperty("--i",index++);cell.dataset.agent=name;
     const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));if(agent&&unreadFrom(agent))b.classList.add("unread");
-    if(agent?.task)text.append(node("span","agent-task",agent.task));
-    if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
+    if(isFree(agent)){
+      // A quiet session whose line still names work shows that line as the last thing it said it was doing.
+      const line=node("span","agent-task");line.append(node("span","free-tag","Idle"),idleLine(agent)?" No task":` Last: ${agent.task}`);
+      if(!idleLine(agent))line.title=`Quiet for ${Math.floor(quietFor(agent)/60)} min; its status line may be stale`;
+      text.append(line);
+    }
+    else if(isWaiting(agent)){
+      const line=node("span","agent-task");line.append(node("span","waiting-tag","Waiting on you"));
+      if(!/^(idle)?$/i.test((agent.task||"").trim()))line.append(" "+agent.task);text.append(line);
+    }
+    else if(agent?.session==="busy"&&idleLine(agent))text.append(node("span","agent-task","Working (no status line)"));
+    else if(agent?.task)text.append(node("span","agent-task",agent.task));
+    if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [!agent.supervised&&!agent.stop?"no auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
     else detail.textContent=`Broadcasts and every conversation`;
     text.append(detail);b.append(orb(name||"*",agent),text);
     if(agent?.pending)b.append(node("span","count",`${agent.pending} queued`));
@@ -427,7 +494,7 @@ function renderAgents() {
     o.addEventListener("click",()=>openAgent(name));orbs.append(o);
   }
   row("");
-  for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
+  for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||isFree(b)-isFree(a)||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
   const current=orbs.querySelector('[aria-current="true"]');
   if(current&&(current.offsetLeft<orbs.scrollLeft||current.offsetLeft+current.offsetWidth>orbs.scrollLeft+orbs.clientWidth))orbs.scrollLeft=current.offsetLeft-14;
 }
@@ -765,21 +832,36 @@ function spring(velocity=0) {
 // What moves: the pushed screen on top, what it covers underneath, and the dim between them.
 function scene(entry) {
   const s=entry.kind==="thread"?{entry,top:$("threadView"),under:[$("topbar"),$("feed"),$("errorBanner")],scrim:$("threadScrim")}:{entry,top:$("chatPane"),under:[entry.underlay],scrim:$("navScrim")};
-  s.width=s.top.offsetWidth;return s;
+  s.left=s.top.getBoundingClientRect().left;s.width=s.top.offsetWidth;
+  s.boxes=s.under.map(n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right};});
+  return s;
 }
-// p is how far the top screen has gone: 0 covers everything, 1 is off to the right.
-const frame=(s,p)=>({top:{transform:`translate3d(${p*s.width}px,0,0)`},under:{transform:`translate3d(${-(1-p)*PARALLAX*s.width}px,0,0)`},scrim:{opacity:(1-p)*DIM}});
-function paint(s,p) { const f=frame(s,p); s.top.style.transform=f.top.transform; for(const n of s.under)n.style.transform=f.under.transform; s.scrim.style.opacity=f.scrim.opacity; }
+// p is how far the top screen has gone: 0 covers everything, 1 is off to the right. The screen underneath and the dim
+// are clipped to the strip the top screen has not yet covered: a see-through screen (over the scenery) then never
+// shows the one beneath it, and nothing changes in the frame where the move ends and that screen is hidden. They move
+// by `translate`, which adds to their own transform (the top bar tucked away while scrolling) instead of replacing it.
+const strip=(right,cut)=>`polygon(-200px -200px, ${right-cut}px -200px, ${right-cut}px calc(100% + 200px), -200px calc(100% + 200px))`;
+function frame(s,p) {
+  const edge=s.left+p*s.width, shift=-(1-p)*PARALLAX*s.width;
+  return {top:{transform:`translate3d(${p*s.width}px,0,0)`},
+    under:s.boxes.map(b=>({translate:`${shift}px 0`,clipPath:strip(b.right-b.left,Math.min(b.right-b.left,Math.max(0,b.right+shift-edge)))})),
+    scrim:{opacity:(1-p)*DIM,clipPath:strip(s.width,(1-p)*s.width)}};
+}
+function paint(s,p) {
+  const f=frame(s,p); s.top.style.transform=f.top.transform;
+  s.under.forEach((n,i)=>{n.style.translate=f.under[i].translate;n.style.clipPath=f.under[i].clipPath;});
+  s.scrim.style.opacity=f.scrim.opacity;s.scrim.style.clipPath=f.scrim.clipPath;
+}
 // Only this scene's layers take part: a conversation's still copy stays hidden while a thread moves over it.
 function begin(s) { $("app").classList.add("navigating");s.top.classList.add("nav-top");for(const n of s.under)n.classList.add("nav-under");s.scrim.hidden=false; }
 function end(s) {
   $("app").classList.remove("navigating");s.top.classList.remove("nav-top");for(const n of s.under)n.classList.remove("nav-under");s.scrim.hidden=true;
-  for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.opacity="";
+  for(const n of [s.top,...s.under,s.scrim])n.style.transform=n.style.translate=n.style.opacity=n.style.clipPath="";
 }
 function glide(s,from,to,velocity=0) {
   const {easing,duration}=motion.matches?{easing:"linear",duration:1}:spring(velocity), a=frame(s,from), b=frame(s,to);
   paint(s,to);
-  const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map(n=>n.animate([a.under,b.under],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
+  const runs=[s.top.animate([a.top,b.top],{duration,easing}),...s.under.map((n,i)=>n.animate([a.under[i],b.under[i]],{duration,easing})),s.scrim.animate([a.scrim,b.scrim],{duration,easing})];
   // Settle on time even if the browser never reports an animation finished, so nothing stays mid-transition.
   moving=Promise.race([Promise.all(runs.map(r=>r.finished.catch(()=>{}))),new Promise(done=>setTimeout(done,duration+250))])
     .then(()=>{for(const r of runs)r.cancel();moving=null;});
@@ -842,10 +924,14 @@ async function pushConversation(name) {
 // Pop the top screen. A swipe hands over its scene, position and speed; the browser's back asks for no animation.
 async function navBack({scene:given=null,from=0,velocity=0,instant=false}={}) {
   const entry=nav.at(-1);if(!entry){if(given)end(given);return;}
-  const animate=!instant&&!motion.matches&&(entry.kind==="thread"||!desktop.matches);
+  const animate=!instant&&!motion.matches&&!desktop.matches&&!(entry.kind==="thread"&&thread?.origin);
   let s=given;
   if(animate){if(!s){if(moving)return;s=scene(entry);begin(s);}await glide(s,from,1,velocity);}
-  if(entry.kind==="thread"){closeThread();if(s)end(s);return;}
+  if(entry.kind==="thread"){
+    closeThread();if(s)end(s);
+    else if(desktop.matches&&!instant&&!motion.matches)enter([$("topbar"),$("feed")],"view-in");
+    return;
+  }
   const underlay=entry.underlay;entry.underlay=null;
   selectAgent("","dm",entry.from,false);
   // The live pane stays off to the right, behind the still copy, until the full conversation has painted again.
@@ -853,16 +939,29 @@ async function navBack({scene:given=null,from=0,velocity=0,instant=false}={}) {
   if(s)end(s);underlay?.remove();
 }
 
+// A short entrance (on a wide screen, instead of a slide); the class goes once its own animation has played.
+function enter(nodes, name) {
+  for(const n of nodes){
+    n.classList.remove(name);void n.offsetWidth;n.classList.add(name);
+    const done=event=>{if(event.target!==n)return;n.classList.remove(name);n.removeEventListener("animationend",done);};
+    n.addEventListener("animationend",done);
+  }
+}
+
 /* Thread view: the original and every reply, with the composer replying in the thread. */
-async function openThread(id, focus=false) {
+// `origin` is the Threads or Activity view it was opened from, which closing it returns to.
+async function openThread(id, focus=false, origin="") {
   const nested=!!thread;
-  thread={id,data:null,signature:"",newest:Infinity,stick:true,savedRecipient:nested?thread.savedRecipient:$("recipient").value};
+  thread={id,data:null,signature:"",newest:Infinity,stick:true,savedRecipient:nested?thread.savedRecipient:$("recipient").value,origin:nested?thread.origin:origin};
   $("threadView").hidden=false;$("app").classList.add("in-thread");
   $("threadTitle").textContent="Thread";$("threadSubtitle").textContent="Loading…";$("threadFeed").replaceChildren();
   const loaded=loadThread();
   if(!nested){
     const entry={kind:"thread"};navPush(entry);
-    if(!motion.matches&&!moving){
+    // A wide screen opens the thread in place over the conversation, which steps out of sight; a phone pushes it.
+    // From Threads or Activity it fades in the same way, since the conversation beneath is not what it came from.
+    if(desktop.matches||thread.origin){if(!motion.matches)enter([$("threadView")],"thread-in");}
+    else if(!motion.matches&&!moving){
       const s=scene(entry);begin(s);paint(s,1);
       await waitFor(()=>thread?.data,220);
       if(thread&&nav.at(-1)===entry){
@@ -878,11 +977,12 @@ async function openThread(id, focus=false) {
 }
 function closeThread() {
   if(!thread)return;
-  const saved=thread.savedRecipient;thread=null;navForget("thread");
+  const saved=thread.savedRecipient, origin=thread.origin;thread=null;navForget("thread");
   $("threadView").hidden=true;$("app").classList.remove("in-thread");
   if([...$("recipient").options].some(o=>o.value===saved&&!o.disabled)&&$("recipient").value!==saved){$("recipient").value=saved;draftChanged();}
   formState();
   stickToBottom=true;requestAnimationFrame(()=>scrollToLatest());
+  if(origin&&$("app").dataset.view==="messages")setView(origin,false);
 }
 $("threadBack").addEventListener("click",()=>navBack());
 // Swipe back: from the left edge, or (as on iOS 26) a rightward drag anywhere that isn't on something that scrolls
@@ -890,7 +990,7 @@ $("threadBack").addEventListener("click",()=>navBack());
 let swipe=null;
 $("chatPane").addEventListener("touchstart",event=>{
   const entry=nav.at(-1);
-  if(event.touches.length!==1||!entry||moving||desktop.matches||(entry.kind==="dm"&&!entry.underlay))return;
+  if(event.touches.length!==1||!entry||moving||desktop.matches||(entry.kind==="dm"&&!entry.underlay)||(entry.kind==="thread"&&thread?.origin))return;
   const t=event.touches[0];
   if(t.clientX>24&&event.target.closest("textarea, input, select, pre, table, video, audio, .orbs, .dock, .attachments"))return;
   swipe={entry,x:t.clientX,y:t.clientY,axis:null,samples:[[t.clientX,event.timeStamp]],scene:null};
@@ -959,8 +1059,369 @@ function renderThread(force=false) {
   if(usable&&$("recipient").value!==target&&!current.recipientSet){$("recipient").value=target;draftChanged();}
   current.recipientSet=true;current.replyTo=m.id;
   formState();
+  // Seeing a thread reads it (on the board, so Threads and Activity agree everywhere), up to what was shown.
+  const shown=Math.max(m.id,newest);
+  if(shown>(current.readThrough||0)&&!document.hidden){current.readThrough=shown;postJSON("/api/read",{id:m.id,through:shown}).then(()=>{if(thread===current)load();}).catch(()=>{});}
 }
 $("threadFeed").addEventListener("scroll",()=>{if(thread){const f=$("threadFeed");thread.stick=f.scrollHeight-f.scrollTop-f.clientHeight<96;}},{passive:true});
+
+/* Threads and Activity, as in Slack. Threads lists every conversation with replies that you started, joined, or were
+   addressed or @mentioned in: unread ones first, then newest reply first, each with its latest replies and a reply box.
+   Activity is everything that involves you, newest first. Read state is kept by the board, so devices agree. */
+const inbox={threads:null,activity:null,threadLimit:30,activityLimit:60,kind:"",unreadOnly:false,loading:{},signature:{}};
+const threadCards=new Map();
+const inboxView=()=>["threads","activity"].includes($("app").dataset.view)?$("app").dataset.view:"";
+async function loadInbox(view=inboxView()) {
+  if(!view||inbox.loading[view]||!state)return;
+  inbox.loading[view]=true;
+  const q=view==="threads"?`limit=${inbox.threadLimit}`:`limit=${inbox.activityLimit}${inbox.kind?`&kind=${inbox.kind}`:""}${inbox.unreadOnly?"&unread=1":""}`;
+  try {
+    const response=await fetch(`/api/${view}?${q}`,{cache:"no-store"}), result=await response.json();
+    if(!response.ok)throw Error(result.error||"Could not load.");
+    inbox[view]=result;view==="threads"?renderThreads():renderActivity();
+  } catch(error) { $(`${view}Summary`).textContent=error instanceof TypeError?"Reconnecting…":error.message; }
+  finally { inbox.loading[view]=false; }
+}
+async function markInboxRead(body) {
+  try { await postJSON("/api/read",body); } catch {}
+  load();loadInbox();
+}
+function inboxBadges() {
+  const counts=state?.inbox||{threads:0,activity:0};
+  for(const [id,n] of [["threadsBadge",counts.threads],["activityBadge",counts.activity],["threadsCount",counts.threads],["activityCount",counts.activity]]){
+    $(id).hidden=!n;$(id).textContent=n>99?"99+":n;
+  }
+  document.querySelectorAll(".inbox-link").forEach(b=>{if(b.dataset.view===$("app").dataset.view)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
+}
+// Who your reply goes to: as in the thread view, the agents in the conversation still on the board, else everyone.
+function replyTarget(audience, text) {
+  const live=new Set(liveAgents().map(a=>a.agent));
+  let target=audience==="*"?"*":audience.filter(name=>live.has(name)&&name!==state.sender);
+  const extra=mentioned(text);
+  if(target==="*")return extra.length?(extra.length===1?extra[0]:extra):"*";
+  for(const name of extra)if(!target.includes(name))target.push(name);
+  return target.length===0?"*":target.length===1?target[0]:target;
+}
+function who(name) { return name===state.sender?"You":name; }
+function people(names) {
+  const list=[...new Set(names.map(who))];
+  return list.length<=3?list.join(", "):`${list.slice(0,2).join(", ")} and ${list.length-2} others`;
+}
+// A reply box that keeps its draft and request id across refreshes, like the Tasks page's.
+function replyBox(label, send) {
+  const form=node("form","task-reply inbox-reply"), box=node("textarea"), button=node("button","send-button"), status=node("p","task-status");
+  box.rows=1;box.maxLength=8000;box.setAttribute("aria-label",label);
+  button.type="submit";button.disabled=true;button.setAttribute("aria-label","Send reply");button.append(icon("send"));
+  status.setAttribute("role","status");form.append(box,button);
+  const entry={form,box,status,key:null,sending:false};
+  const grow=()=>{box.style.height="auto";box.style.height=`${box.scrollHeight}px`;};
+  box.addEventListener("input",()=>{entry.key=null;button.disabled=!box.value.trim()||entry.sending;grow();});
+  box.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey&&!touch.matches&&!event.isComposing){event.preventDefault();form.requestSubmit();}});
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();const text=box.value.trim();if(!text||entry.sending)return;
+    entry.key??=crypto.randomUUID();entry.sending=true;button.disabled=true;status.textContent="Sending…";status.classList.remove("error");
+    try { const target=await send(text,entry.key);box.value="";entry.key=null;grow();status.textContent=`Sent to ${describe(target)}.`;load();loadInbox(); }
+    catch(error) { status.textContent=error.message;status.classList.add("error"); }
+    finally { entry.sending=false;button.disabled=!box.value.trim(); }
+  });
+  return entry;
+}
+function sendReply(audience, replyTo) {
+  return async(text,key)=>{
+    const target=replyTarget(audience,text);
+    await postJSON("/api/send",{body:text,topic:"info",recipient:target,request_id:key,reply_to:replyTo});
+    return target;
+  };
+}
+const inboxExpanded=new Set();
+function openFromInbox(id, focus=false) { const from=inboxView();setView("messages",false);openThread(id,focus,from); }
+function inboxMessage(m, cls="") {
+  const row=node("div","inbox-message"+(m.unread?" unread":"")+(cls?" "+cls:""));
+  const head=node("div","inbox-meta"), time=node("time","time",since(m.created));
+  time.dateTime=new Date(m.created*1000).toISOString();time.title=`${new Date(m.created*1000).toLocaleString()} · #${m.id}`;
+  head.append(node("b","",who(m.sender)));
+  if(m.topic!=="info")head.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
+  head.append(time);
+  // Long messages fold as in the chat, with the same Read more, and stay open across refreshes.
+  const text=snippetless(m.body), long=text.length>500||text.split("\n").length>8;
+  const body=node("div","body"+(long&&!inboxExpanded.has(m.id)?" collapsed":""));markdown(body,m.body_html,m.body);
+  const column=node("div","inbox-column");column.append(head,body);
+  if(long){const more=node("button","more",inboxExpanded.has(m.id)?"Show less":"Read more");more.type="button";
+    more.addEventListener("click",()=>{const folded=body.classList.toggle("collapsed");folded?inboxExpanded.delete(m.id):inboxExpanded.add(m.id);more.textContent=folded?"Read more":"Show less";});
+    column.append(more);}
+  if(m.attachments?.length)column.append(attachmentNodes(m.attachments));
+  row.append(orb(m.sender===state.sender?"you":m.sender,state.agents.find(a=>a.agent===m.sender)),column);
+  return row;
+}
+function threadCard(t) {
+  const card=node("article","card inbox-thread"), head=node("header","inbox-thread-head"), title=node("div","inbox-thread-title");
+  card.setAttribute("role","listitem");card.dataset.key=t.id;
+  const reply=replyBox("Reply in thread",sendReply(t.reply_audience,t.id));
+  const entry={card,reply,signature:""};
+  const open=node("button","text-button","Open");open.type="button";open.addEventListener("click",()=>openFromInbox(t.id));
+  const read=node("button","text-button","Mark read");read.type="button";
+  read.addEventListener("click",()=>markInboxRead({id:entry.t.id,through:entry.t.newest}));
+  const unfollow=node("button","text-button quiet-button","Unfollow");unfollow.type="button";
+  unfollow.title="Hide this thread until someone @mentions you in it";
+  unfollow.addEventListener("click",()=>{card.classList.add("leaving");markInboxRead({id:entry.t.id,through:entry.t.newest,follow:false});});
+  const actions=node("div","inbox-actions");actions.append(read,unfollow,open);
+  head.append(title,actions);
+  const content=node("div","inbox-thread-body"), replies=node("div","inbox-replies");repliesFit.observe(replies);
+  // On a phone a thread is one screen with no Read more: a tap on a reply opens the whole thread.
+  replies.addEventListener("click",event=>{if(snapping(threadsBody)&&!event.target.closest("a,button,video,audio,summary,details"))openFromInbox(entry.t.id);});
+  card.append(head,content,reply.form,reply.status);
+  entry.update=t=>{
+    entry.t=t;
+    const signature=JSON.stringify([t.newest,t.unread,t.replies,t.root.id,t.latest.map(m=>[m.id,m.unread]),Math.floor((state.time-t.last_activity)/60)]);
+    if(signature===entry.signature)return;entry.signature=signature;
+    card.classList.toggle("unread",t.unread>0);read.hidden=!t.unread;
+    title.replaceChildren(node("span","inbox-people",people(t.participants)));
+    if(t.unread)title.append(node("span","new-pill",`${t.unread} new`));
+    title.append(node("span","inbox-when",`${t.replies} ${t.replies===1?"reply":"replies"} · ${since(t.last_activity)}`));
+    const nodes=[inboxMessage(t.root,"inbox-root")];
+    nodes[0].addEventListener("click",event=>{if(!event.target.closest("a,button,video,audio,summary,details"))openFromInbox(t.id);});
+    if(t.replies>t.latest.length){
+      const more=node("button","text-button inbox-earlier",`Show ${t.replies-t.latest.length} more ${t.replies-t.latest.length===1?"reply":"replies"}`);
+      more.type="button";more.addEventListener("click",()=>openFromInbox(t.id));nodes.push(more);
+    }
+    for(const row of replies.children)repliesFit.unobserve(row);
+    replies.replaceChildren(...t.latest.map(m=>inboxMessage(m,"inbox-reply-row")));
+    for(const row of replies.children)repliesFit.observe(row);
+    content.replaceChildren(...nodes,replies);fitReplies(replies);
+    const target=replyTarget(t.reply_audience,"");
+    reply.box.placeholder=replyHint(target);
+  };
+  return entry;
+}
+/* New threads and replies never shove what you are reading. Scrolled down, the item you are on stays exactly where it
+   is while others arrive or move above it, and a pill says how many; at the top, they slide in and the rest glide
+   down to make room. */
+const unseenAbove=new Map();
+function paneEdge(pane) { return pane.getBoundingClientRect().top+(parseFloat(getComputedStyle(pane).scrollPaddingTop)||parseFloat(getComputedStyle(pane).paddingTop)||0); }
+function steadyRender(list, nodes, release=false) {
+  const pane=list.closest(".pane-body"), edge=paneEdge(pane), keyed=[...list.children].filter(n=>n.dataset.key);
+  const before=new Map(keyed.map(n=>[n.dataset.key,n.getBoundingClientRect().top]));
+  const snap=snapping(pane), atTop=release||!snap&&pane.scrollTop<24&&!pane.contains(document.activeElement);
+  const anchor=snap&&snapCard?.isConnected&&list.contains(snapCard)?snapCard:keyed.find(n=>n.getBoundingClientRect().bottom>edge+1);
+  const anchorTop=anchor?.getBoundingClientRect().top, above=new Set(keyed.slice(0,keyed.indexOf(anchor)).map(n=>n.dataset.key));
+  reconcile(list,nodes);
+  // A snapping pane would otherwise snap back to the card that was first.
+  if(release){pane.scrollTop=0;requestAnimationFrame(()=>{pane.scrollTop=0;});}
+  if(!before.size)return;
+  if(atTop){
+    for(const n of nodes){
+      if(!n.dataset.key)continue;
+      if(!before.has(n.dataset.key)){n.classList.remove("arrive");void n.offsetWidth;n.classList.add("arrive");continue;}
+      // Snap points follow transforms, so a snapping pane would be dragged along by the glide.
+      const shift=before.get(n.dataset.key)-n.getBoundingClientRect().top;if(snap||Math.abs(shift)<1)continue;
+      n.style.transition="none";n.style.transform=`translateY(${shift}px)`;void n.offsetWidth;
+      n.style.transition="transform .45s cubic-bezier(.2, .9, .25, 1)";n.style.transform="";
+      n.addEventListener("transitionend",()=>{n.style.transition="";},{once:true});
+    }
+    return;
+  }
+  const key=anchor?.dataset.key, now=key&&nodes.find(n=>n.dataset.key===key);
+  if(!now)return;
+  const shift=now.getBoundingClientRect().top-anchorTop;
+  if(Math.abs(shift)>=1){
+    pane.scrollTop+=shift;
+    for(const k of [inboxKeyboard,inboxRestore])if(k?.pane===pane)k.top+=shift;
+  }
+  if(snap)snapCard=now;
+  const unseen=unseenAbove.get(pane)||new Set();unseenAbove.set(pane,unseen);
+  for(const n of nodes){if(n===now)break;if(n.dataset.key&&!above.has(n.dataset.key))unseen.add(n.dataset.key);}
+  showUnseen(pane);
+}
+function showUnseen(pane) {
+  const unseen=unseenAbove.get(pane)||new Set();unseenAbove.set(pane,unseen);
+  const edge=paneEdge(pane);
+  for(const key of [...unseen]){const n=pane.querySelector(`[data-key="${key}"]`);if(!n||pane.scrollTop<4||n.getBoundingClientRect().bottom>edge+1)unseen.delete(key);}
+  let pill=pane.parentElement.querySelector(".inbox-new-above");
+  const count=unseen.size+(pane===threadsBody?threadsHeld.size+threadsMoved.size:0);
+  if(!pill&&count){
+    pill=node("button","inbox-new-above");pill.type="button";pill.append(icon("up"),node("span",""));pane.after(pill);
+    pill.addEventListener("click",()=>{if(pane===threadsBody)releaseThreads();else pane.scrollTo({top:0,behavior:"smooth"});});
+  }
+  if(!pill)return;
+  pill.style.top=`${pane.offsetTop+10}px`;
+  pill.lastChild.textContent=`${count} new`;pill.hidden=!count;
+}
+document.querySelectorAll(".inbox-pane .pane-body").forEach(pane=>pane.addEventListener("scroll",()=>{if(unseenAbove.get(pane)?.size)showUnseen(pane);},{passive:true}));
+
+/* Phones: Threads is one thread per screen, as in a short-video feed. A swipe moves to the next thread, or back to the
+   one above; a thread's latest replies sit just over its reply box, and the keyboard lifts the box with them, since
+   the card shrinks to the room left rather than the list scrolling. */
+const snapScreen=matchMedia("(max-width: 699px)"), threadsBody=$("threadsPane").querySelector(".pane-body");
+let snapCard=null, snapHold=0, snapTimer=0, snapBlur=0;
+function snapping(pane) { return snapScreen.matches&&pane===threadsBody; }
+function snapTop(card) { return card.getBoundingClientRect().top-paneEdge(threadsBody)+threadsBody.scrollTop; }
+function snapAlign() {
+  if(!snapping(threadsBody)||!snapCard?.isConnected||$("app").dataset.view!=="threads")return;
+  const top=Math.round(snapTop(snapCard));if(Math.abs(threadsBody.scrollTop-top)>=1)threadsBody.scrollTop=top;
+}
+// The thread you are on is where the pane rests once you stop swiping; near the end, older threads load.
+threadsBody.addEventListener("scroll",()=>{
+  clearTimeout(snapTimer);
+  snapTimer=setTimeout(()=>{
+    if(!snapping(threadsBody)||performance.now()<snapHold)return;
+    const cards=[...$("threadsList").querySelectorAll(":scope > .inbox-thread")];if(!cards.length)return;
+    snapCard=cards.reduce((best,card)=>Math.abs(snapTop(card)-threadsBody.scrollTop)<Math.abs(snapTop(best)-threadsBody.scrollTop)?card:best);
+    if(cards.indexOf(snapCard)>=cards.length-3&&!$("threadsMore").hidden&&!inbox.loading.threads)$("threadsMore").click();
+  },140);
+},{passive:true});
+// The keyboard, a growing reply or a phone turning resizes the pane: it stays on the same thread.
+new ResizeObserver(snapAlign).observe(threadsBody);
+// As the keyboard opens the browser may scroll toward the field, so for a moment the pane holds on to the thread.
+function snapFollow(ms=900) {
+  const running=performance.now()<snapHold;snapHold=performance.now()+ms;if(running)return;
+  const step=()=>{snapAlign();if(performance.now()<snapHold)requestAnimationFrame(step);};requestAnimationFrame(step);
+}
+threadsBody.addEventListener("focusin",event=>{
+  if(!touch.matches||!event.target.matches("textarea")||!snapping(threadsBody))return;
+  clearTimeout(snapBlur);snapCard=event.target.closest(".inbox-thread")||snapCard;
+  $("app").classList.add("typing");snapFollow();
+});
+threadsBody.addEventListener("focusout",()=>{
+  snapBlur=setTimeout(()=>{if(!threadsBody.contains(document.activeElement)&&document.activeElement!==$("message")){$("app").classList.remove("typing");snapFollow();}},120);
+});
+threadsBody.addEventListener("touchmove",()=>{snapHold=0;},{passive:true});
+// Replies that outgrow their card show the newest, just above the reply box, fading out at the top. The rows are
+// watched too, since an image or video can grow one after it renders.
+const repliesFit=new ResizeObserver(entries=>new Set(entries.map(e=>e.target.closest(".inbox-replies"))).forEach(fitReplies));
+function fitReplies(box) {
+  const rows=[...box.children], gap=parseFloat(getComputedStyle(box).rowGap)||0;
+  const need=rows.reduce((sum,row)=>sum+row.offsetHeight,0)+gap*Math.max(0,rows.length-1);
+  box.classList.toggle("overflowing",need>box.clientHeight+1);
+}
+// While Threads is on screen its order holds: a thread with a new reply updates where it is, and threads new to the
+// list wait behind the pill, which also counts unread threads that would now move up. Coming back to the view, or
+// tapping the pill, brings the current order.
+let threadsOrder=null;
+const threadsHeld=new Set(), threadsMoved=new Set();
+function releaseThreads() { snapCard=null;threadsBody.scrollTop=0;renderThreads(true); }
+function renderThreads(release=false) {
+  const data=inbox.threads;if(!data||!state)return;
+  $("threadsSummary").textContent=data.total?`${data.unread?`${data.unread} with new replies · `:""}${data.total} ${data.total===1?"thread":"threads"} you're part of`:"No threads yet";
+  $("threadsAllRead").hidden=!data.unread;
+  const keep=new Set(data.threads.map(t=>t.id));
+  for(const id of [...threadCards.keys()])if(!keep.has(id))threadCards.delete(id);
+  let shown=data.threads;threadsHeld.clear();threadsMoved.clear();
+  if(threadsOrder&&!release){
+    const byId=new Map(data.threads.map((t,i)=>[t.id,i])), kept=threadsOrder.filter(id=>byId.has(id)), last=Math.max(-1,...kept.map(id=>byId.get(id)));
+    const fresh=data.threads.filter(t=>!threadsOrder.includes(t.id));
+    // Older threads loaded with Show more go after the rest; newer ones are held.
+    for(const t of fresh)if(byId.get(t.id)<last)threadsHeld.add(t.id);
+    let latest=-1;for(const id of kept){const rank=byId.get(id);if(rank<latest&&data.threads[rank].unread)threadsMoved.add(id);latest=Math.max(latest,rank);}
+    shown=[...kept.map(id=>data.threads[byId.get(id)]),...fresh.filter(t=>!threadsHeld.has(t.id))];
+  }
+  threadsOrder=shown.map(t=>t.id);
+  const nodes=shown.map(t=>{let entry=threadCards.get(t.id);if(!entry){entry=threadCard(t);threadCards.set(t.id,entry);}entry.update(t);return entry.card;});
+  if(!nodes.length){const empty=node("div","empty inbox-empty");empty.append(icon("thread"),node("h2","","No threads yet"),node("p","","When you reply to an agent, or one replies to you, the conversation shows up here."));nodes.push(empty);}
+  steadyRender($("threadsList"),nodes,release);showUnseen(threadsBody);
+  $("threadsMore").hidden=data.total<=data.threads.length;
+}
+const KIND_TEXT={mention:"Mentioned you",dm:"Direct message",ack:"Acknowledged",reply:"Replied"};
+const activityRows=new Map();
+function activityText(item) {
+  if(item.kind==="ack")return `${people(item.senders)} acknowledged your message`;
+  if(item.kind==="reply"&&item.count>1)return `${item.count} new replies from ${people(item.senders)}`;
+  if(item.kind==="reply")return `${who(item.message.sender)} replied${item.message.recipient===state.sender?" to you":""} in a thread`;
+  if(item.kind==="mention")return `${who(item.message.sender)} mentioned you`;
+  return `${who(item.message.sender)} messaged you`;
+}
+function activityRow(item) {
+  const row=node("article","activity-item"+(item.unread?" unread":""));row.setAttribute("role","listitem");row.dataset.key=item.id;
+  const main=node("button","activity-main");main.type="button";
+  const face=orb(item.message.sender===state.sender?"you":item.message.sender,state.agents.find(a=>a.agent===item.message.sender));
+  const text=node("span","activity-text"), line=node("span","activity-line");
+  line.append(node("span","kind-tag "+item.kind,KIND_TEXT[item.kind]),node("span","inbox-when",since(item.created)));
+  text.append(line,node("span","activity-summary",activityText(item)));
+  const quoted=item.kind==="ack"?item.target:item.message;
+  if(quoted)text.append(node("span","activity-snippet",quoted.snippet||""));
+  if(item.root&&item.kind!=="ack")text.append(node("span","activity-context",`in thread: ${who(item.root.sender)}: ${item.root.snippet}`));
+  main.append(face,text);
+  main.addEventListener("click",()=>{if(item.unread)postJSON("/api/read",{id:item.id,through:item.id}).catch(()=>{});openFromInbox(item.id);});
+  const actions=node("div","inbox-actions");
+  if(item.unread){const read=node("button","text-button","Mark read");read.type="button";read.addEventListener("click",()=>markInboxRead({id:item.id,through:item.id}));actions.append(read);}
+  if(item.kind!=="ack"){
+    const replyButton=node("button","text-button","Reply");replyButton.type="button";actions.append(replyButton);
+    let box=null;
+    replyButton.addEventListener("click",()=>{
+      if(!box){box=replyBox(`Reply to ${item.message.sender}`,sendReply(item.reply_audience,item.id));box.box.placeholder=replyHint(replyTarget(item.reply_audience,""));row.append(box.form,box.status);}
+      box.box.focus();
+    });
+  }
+  row.append(main,actions);return row;
+}
+function renderActivity() {
+  const data=inbox.activity;if(!data||!state)return;
+  const n=data.unread.all;
+  $("activitySummary").textContent=n?`${n} unread`:"You're all caught up";
+  $("activityAllRead").hidden=!n&&!data.unread.ack;
+  document.querySelectorAll("#activityKinds button").forEach(b=>{
+    b.setAttribute("aria-pressed",String(b.dataset.kind===inbox.kind));
+    const count=b.dataset.kind?data.unread[b.dataset.kind]:0;b.dataset.count=count&&b.dataset.kind!=="ack"?count:"";
+  });
+  const signature=JSON.stringify([data.items.map(i=>[i.id,i.unread,i.count]),inbox.kind,inbox.unreadOnly,Math.floor(state.time/60)]);
+  if(signature===inbox.signature.activity)return;inbox.signature.activity=signature;
+  // A row with a reply being typed keeps its node.
+  const nodes=data.items.map(item=>{
+    const key=`${item.kind}:${item.id}:${item.unread}:${item.count}`, cached=activityRows.get(item.id);
+    if(cached&&(cached.key===key||cached.node.querySelector("textarea")?.value))return cached.node;
+    const built=activityRow(item);activityRows.set(item.id,{key,node:built});return built;
+  });
+  for(const id of [...activityRows.keys()])if(!data.items.some(i=>i.id===id))activityRows.delete(id);
+  if(!nodes.length){const empty=node("div","empty inbox-empty");empty.append(icon("activity"),node("h2","",inbox.unreadOnly?"Nothing unread":"No activity yet"),node("p","","Mentions, replies to you and direct messages land here."));nodes.push(empty);}
+  steadyRender($("activityList"),nodes);
+  $("activityMore").hidden=data.total<=data.items.length;
+}
+$("threadsMore").addEventListener("click",()=>{inbox.threadLimit=Math.min(200,inbox.threadLimit+30);loadInbox("threads");});
+$("activityMore").addEventListener("click",()=>{inbox.activityLimit=Math.min(300,inbox.activityLimit+60);loadInbox("activity");});
+$("threadsAllRead").addEventListener("click",()=>markInboxRead({all:true}));
+$("activityAllRead").addEventListener("click",()=>markInboxRead({all:true}));
+document.querySelectorAll("#activityKinds button").forEach(b=>b.addEventListener("click",()=>{inbox.kind=b.dataset.kind;inbox.activityLimit=60;renderActivity();loadInbox("activity");}));
+$("activityUnread").addEventListener("change",()=>{inbox.unreadOnly=$("activityUnread").checked;loadInbox("activity");});
+document.querySelectorAll(".inbox-link").forEach(b=>b.addEventListener("click",()=>{if(thread)closeThread();setView(b.dataset.view);}));
+
+// The phone keyboard in Threads and Activity: what you were looking at moves up by the keyboard's height, and once the
+// keyboard has gone the pane is exactly where it was, unless you scrolled meanwhile.
+let inboxTouchTop=null;
+function inboxKeyboardFit() {
+  const k=inboxKeyboard;if(!k)return;
+  const shrink=Math.max(0,k.height-k.pane.clientHeight);
+  if(shrink>120)k.opened=true;
+  // Dismissed without leaving the field (Android back): leave it, as the chat composer does.
+  else if(k.opened&&shrink<40){inboxKeyboardEnd();k.field.blur();return;}
+  if(k.moved)return;
+  // Room below for the push, then up by the keyboard, but never so far that the field being typed in leaves the top.
+  // Only real changes are written: rewriting an unchanged scroll position makes phones repaint the list mid-animation.
+  const padding=`${k.base+shrink}px`;if(k.pane.style.paddingBottom!==padding)k.pane.style.paddingBottom=padding;
+  const field=k.field.getBoundingClientRect().top-k.pane.getBoundingClientRect().top+k.pane.scrollTop;
+  const top=Math.round(k.top+Math.max(0,Math.min(shrink,field-k.top-8)));
+  if(Math.abs(k.pane.scrollTop-top)>=1)k.pane.scrollTop=top;
+}
+function inboxKeyboardEnd() {
+  const k=inboxKeyboard;inboxKeyboard=null;if(!k)return;
+  k.pane.style.paddingBottom="";
+  if(k.moved)return;
+  // Again once the keyboard's animation and the viewport have settled.
+  inboxRestore=k;const restore=()=>{if(inboxRestore===k&&!inboxKeyboard&&Math.abs(k.pane.scrollTop-k.top)>=1)k.pane.scrollTop=k.top;};
+  restore();for(const ms of [350,750])setTimeout(restore,ms);
+}
+document.querySelectorAll(".inbox-pane .pane-body").forEach(pane=>{
+  // Where the pane was before a tap, since the browser may scroll to the field as it takes focus.
+  pane.addEventListener("pointerdown",()=>{if(!inboxKeyboard)inboxTouchTop=pane.scrollTop;},{capture:true,passive:true});
+  pane.addEventListener("focusin",event=>{
+    if(!touch.matches||!event.target.matches("textarea")||snapping(pane))return;
+    if(inboxKeyboard?.pane===pane){inboxKeyboard.field=event.target;return;}   // another reply box, same keyboard
+    inboxKeyboardEnd();inboxRestore=null;
+    inboxKeyboard={pane,field:event.target,top:inboxTouchTop??pane.scrollTop,height:pane.clientHeight,
+      base:parseFloat(getComputedStyle(pane).paddingBottom)||0,opened:false,moved:false};
+    inboxTouchTop=null;inboxKeyboardFit();
+  });
+  pane.addEventListener("focusout",()=>setTimeout(()=>{if(inboxKeyboard?.pane===pane&&!pane.contains(document.activeElement))inboxKeyboardEnd();},120));
+  pane.addEventListener("touchmove",()=>{if(inboxKeyboard?.pane===pane)inboxKeyboard.moved=true;if(inboxRestore?.pane===pane)inboxRestore=null;},{passive:true});
+});
 
 /* Render floor */
 function entries(text) {
@@ -1013,10 +1474,75 @@ function renderContext() {
   }
   if(!state.sessions.length)$("sessions").append(node("p","quiet","No remote session monitor configured."));
 }
+/* Operator tasks: an agent blocked on the operator asks once, and the Tasks page holds the ask until someone dismisses
+   it. Each card is built once and then only updated, so a reply being typed survives the board's refreshes. */
+const taskCards=new Map(), dismissedTasks=new Set();
+function since(timestamp) {
+  const s=Math.max(0,(state?.time??Date.now()/1000)-timestamp);
+  return s<60?"just now":s<3600?`${Math.floor(s/60)} min ago`:s<86400?`${Math.floor(s/3600)} h ago`:`${Math.floor(s/86400)} d ago`;
+}
+function taskCard(task) {
+  const card=node("article","card task-card"), head=node("header","task-head"), who=node("span","task-who");
+  card.setAttribute("role","listitem");
+  const agent=state.agents.find(a=>a.agent===task.agent);
+  who.append(node("b","",task.agent),node("span","task-age"));
+  const open=node("button","text-button task-thread");open.type="button";open.append(node("span","","Thread"),icon("right"));
+  open.addEventListener("click",()=>{setView("messages");openThread(task.message);});
+  head.append(orb(task.agent,agent),who,open);
+  const body=node("div","task-body markdown"), last=node("p","task-last");
+  const form=node("form","task-reply"), box=node("textarea");box.rows=1;box.maxLength=8000;box.placeholder=`Reply to ${task.agent}…`;
+  box.setAttribute("aria-label",`Reply to ${task.agent}`);
+  const send=node("button","send-button");send.type="submit";send.disabled=true;send.setAttribute("aria-label","Send reply");send.append(icon("send"));
+  const dismiss=node("button","text-button task-dismiss","Dismiss");dismiss.type="button";
+  const status=node("p","task-status");status.setAttribute("role","status");
+  form.append(box,send);card.append(head,body,last,form,status,dismiss);
+  const entry={card,task,key:null,sending:false,html:null};
+  const grow=()=>{box.style.height="auto";box.style.height=`${box.scrollHeight}px`;};
+  box.addEventListener("input",()=>{entry.key=null;send.disabled=!box.value.trim()||entry.sending;grow();});
+  box.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey&&!touch.matches&&!event.isComposing){event.preventDefault();form.requestSubmit();}});
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();const text=box.value.trim();if(!text||entry.sending)return;
+    entry.key??=crypto.randomUUID();entry.sending=true;send.disabled=true;status.textContent="Sending…";status.classList.remove("error");
+    try {
+      await postJSON("/api/send",{body:text,topic:"info",recipient:entry.task.agent,request_id:entry.key,reply_to:entry.task.message});
+      box.value="";entry.key=null;grow();status.textContent=`Sent to ${entry.task.agent}.`;load();
+    } catch(error) {status.textContent=error.message;status.classList.add("error");}
+    finally {entry.sending=false;send.disabled=!box.value.trim();}
+  });
+  dismiss.addEventListener("click",async()=>{
+    dismiss.disabled=true;status.textContent="";
+    try {
+      await postJSON("/api/task/dismiss",{id:entry.task.id});
+      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);renderAgents();
+      setTimeout(()=>{renderTasks();load();},motion.matches?0:220);
+    } catch(error) {status.textContent=error.message;status.classList.add("error");dismiss.disabled=false;}
+  });
+  entry.update=t=>{
+    entry.task=t;card.querySelector(".task-age").textContent=` · ${since(t.asked)}${t.edited?" · edited":""}`;
+    if(entry.html!==t.body_html){entry.html=t.body_html;markdown(body,t.body_html,t.body);}
+    const r=t.last_reply;last.hidden=!r;
+    if(r)last.textContent=`${r.sender===state.sender?"You":r.sender}: ${snippet(r.body)} · ${since(r.created)}`;
+  };
+  return entry;
+}
+function renderTasks() {
+  // A snapshot already in flight when a task was dismissed must not bring its card back.
+  const list=(state.tasks||[]).filter(t=>!dismissedTasks.has(t.id)), n=list.length;
+  $("tasksBadge").hidden=!n;$("tasksBadge").textContent=n>99?"99+":n;
+  const who=new Set(list.map(t=>t.agent)).size;
+  $("tasksSummary").textContent=n?`${who} ${who===1?"agent is":"agents are"} waiting on you`:"Nobody is waiting on you";
+  $("app").classList.toggle("has-tasks",n>0);
+  const keep=new Set(list.map(t=>t.id));
+  for(const [id,entry] of taskCards)if(!keep.has(id))taskCards.delete(id);
+  const nodes=list.map(t=>{let entry=taskCards.get(t.id);if(!entry){entry=taskCard(t);taskCards.set(t.id,entry);}entry.update(t);return entry.card;});
+  reconcile($("tasks"),nodes);
+  $("tasksNote").hidden=n>0&&desktop.matches;
+}
 function render() {
   $("lastUpdated").textContent=`Live · last synced ${clock(state.time)} · updates every 3 seconds`;
-  renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();
+  renderRecipients();formState();renderAgents();renderHeader();renderFeed();renderContext();renderSchedule();renderTasks();inboxBadges();
   if(thread)loadThread();
+  if(inboxView())loadInbox();
 }
 let loadStarted=0;
 async function load(reset=false,before=0) {
@@ -1101,22 +1627,42 @@ $("notifyToggle").addEventListener("change",async()=>{
       notifyNote("Off. Flagged messages still appear on the board.");
     }
   } catch(error) { $("notifyToggle").checked=!on;notifyNote(error.message); }
-  finally { $("notifyToggle").disabled=false;$("notifyTest").hidden=!$("notifyToggle").checked; }
+  finally { $("notifyToggle").disabled=false;$("notifyTest").hidden=!$("notifyToggle").checked;settingsSummary(); }
 });
 $("notifyTest").addEventListener("click",async()=>{
   try { const result=await postJSON("/api/push/test",{});notifyNote(result.delivered?"Test sent; it should arrive in a moment.":"No device received it. Turn notifications off and on again."); }
   catch(error) { notifyNote(error.message); }
 });
-// A notification links to /?m=ID: open that message's thread, whether the app was closed or already open.
+// Settings fold away under Agents; their row says how they are set.
+const THEMES={auto:"Auto",light:"Light",dark:"Dark"};
+function settingsSummary() {
+  $("settingsSummary").textContent=[`Notifications ${$("notifyToggle").checked?"on":"off"}`,$("playfulToggle").checked?"Playful":"Calm",
+    THEMES[window.boardTheme?.choice]||"Auto"].join(" · ");
+}
+function themeSwitch() {
+  const choice=window.boardTheme?.choice||"auto";
+  document.querySelectorAll("[data-theme-choice]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.themeChoice===choice)));
+  $("themeNote").textContent=choice==="auto"?`Follows this device: ${window.boardTheme?.dark?"dark":"light"} now.`:choice==="dark"?"The meadow by moonlight.":"The misty morning meadow.";
+  settingsSummary();
+}
+document.querySelectorAll("[data-theme-choice]").forEach(b=>b.addEventListener("click",()=>window.boardTheme?.set(b.dataset.themeChoice)));
+addEventListener("boardtheme",themeSwitch);
+$("settings").addEventListener("change",settingsSummary);
+$("settings").addEventListener("toggle",()=>{if($("settings").open)requestAnimationFrame(()=>$("settings").scrollIntoView({block:"end",behavior:motion.matches?"instant":"smooth"}));});
+themeSwitch();
+// A notification links to /?m=ID, that message's thread, or /?task=ID, the Tasks page; whether the app was closed or open.
 function openLink(url) {
-  const id=Number(new URL(url,location.href).searchParams.get("m"));if(!(id>0))return;
+  const params=new URL(url,location.href).searchParams;
+  if(params.has("task")){setView("tasks");return;}
+  const id=Number(params.get("m"));if(!(id>0))return;
   setView("messages");if(thread?.id!==id){if(thread)closeThread();openThread(id);}
 }
 navigator.serviceWorker?.addEventListener("message",event=>{if(event.data?.open)openLink(event.data.open);});
 waitFor(()=>state,15000).then(()=>{
   if(!state)return;
-  setupPush();
-  if(new URLSearchParams(location.search).has("m")){openLink(location.href);history.replaceState(history.state,"","/");}
+  setupPush().finally(settingsSummary);
+  const params=new URLSearchParams(location.search);
+  if(params.has("m")||params.has("task")){openLink(location.href);history.replaceState(history.state,"","/");}
 });
 
 // iOS freezes the app in the background, and a request caught mid-flight may never settle, which used to block
@@ -1128,3 +1674,7 @@ setInterval(()=>{if(!document.hidden){if(loading&&Date.now()-loadStarted>15000)l
 document.addEventListener("visibilitychange",resume);
 addEventListener("pageshow",event=>{if(event.persisted)resume();});
 addEventListener("focus",resume);addEventListener("online",resume);
+// A window behind others holds its looping animations where they are, as the scene does. A toggle that changes
+// nothing records no mutation, which the scene's class observer relies on.
+function rest() { $("app").classList.toggle("at-rest",document.hidden||!document.hasFocus()); }
+addEventListener("blur",rest);addEventListener("focus",rest);document.addEventListener("visibilitychange",rest);rest();
