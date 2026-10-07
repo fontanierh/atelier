@@ -130,6 +130,47 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
     assert refused.returncode != 0 and not (home/'args.txt').exists()
 
 
+@pytest.mark.parametrize('runs, startup_seconds, expected_runs, expected_status', [
+    (['segv', 'ok'], 20, 2, 0),           # the startup race: one retry, then the game runs
+    (['segv', 'segv'], 20, 2, -11),       # never more than one retry: the retry is the game itself (exec)
+    (['log-segv', 'ok'], 20, 1, 139),     # the engine had started (game.log written): a real crash
+    (['rewrite-segv', 'ok'], 20, 1, 139), # a same-size rewrite of the old log within the same second also counts
+    (['segv', 'ok'], 0, 1, 139),          # a crash after the startup window is never retried
+    (['fail', 'ok'], 20, 1, 3),           # other exits pass straight through
+    (['ok', 'ok'], 20, 1, 0),
+])
+def test_the_packaged_launcher_retries_only_an_early_startup_segfault(tmp_path, runs, startup_seconds, expected_runs,
+                                                                     expected_status):
+    folder = tmp_path/'Yorimichi'
+    game = folder/'Yorimichi.app'/'Contents'/'MacOS'/'Yorimichi'
+    game.parent.mkdir(parents=True)
+    bundle_id = 'org.atelier.PackageTest'
+    (game.parent.parent/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': bundle_id}))
+    # Each run takes the next behaviour: exit 0, exit 3, SIGSEGV, or append to or rewrite game.log and then SIGSEGV.
+    game.write_text('#!/bin/bash\n'
+                    'n=$(( $(wc -l < "$HOME/runs.txt" 2>/dev/null || echo 0) + 1 )); printf "%s\\n" "$*" >> "$HOME/runs.txt"\n'
+                    'log=$(printf "%s\\n" "$@" | sed -n "s/^-abslog=//p")\n'
+                    'case $(sed -n "${n}p" "$HOME/plan.txt") in\n'
+                    '  ok) exit 0 ;; fail) exit 3 ;; segv) kill -SEGV $$ ;; log-segv) echo started >> "$log"; kill -SEGV $$ ;;\n'
+                    '  rewrite-segv) echo earlier > "$log"; kill -SEGV $$ ;;\n'
+                    'esac\n'); game.chmod(0o755)
+    launcher = folder/'Play Yorimichi.command'
+    launcher.write_text(archive_tool().desktop_preview().packaged_launcher(startup_seconds)); launcher.chmod(0o755)
+    home = tmp_path/'home'; home.mkdir()
+    (home/'plan.txt').write_text('\n'.join(runs) + '\n')
+    logs = home/'Library'/'Containers'/bundle_id/'Data'/'Library'/'Logs'/'Yorimichi'
+    logs.mkdir(parents=True); (logs/'game.log').write_text('earlier\n')   # the previous session's log
+    result = subprocess.run([str(launcher), '-extra'], env={'HOME': str(home), 'PATH': '/usr/bin:/bin'},
+                            capture_output=True, text=True)
+    lines = (home/'runs.txt').read_text().splitlines()
+    assert (len(lines), result.returncode) == (expected_runs, expected_status)
+    assert len(set(lines)) == 1 and lines[0].endswith('-extra')   # the retry repeats the same arguments
+    note = logs/'launcher.log'
+    assert note.exists() == (expected_runs == 2)
+    if expected_runs == 2:
+        assert 'crashed at startup' in note.read_text() and 'crashed at startup' in result.stderr
+
+
 def test_content_changes_rerun_the_package_while_current_prerequisites_stay_current(tmp_path, monkeypatch):
     recipe = build.load_recipe('yorimichi')
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs', stamps=tmp_path/'stamps',
