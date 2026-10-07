@@ -686,9 +686,8 @@ def camera(s, c, dt):
 # Every shot: start (x, y, probe z, UE yaw of travel), the launch speed (m/s), how it is steered (way: a polyline of
 # (x, y, want speed; a negative want is a cap), carve: (UE yaw, amplitude, period) or a straight heading), timed events
 # (t, effect), position triggers ({'when': fn(s, c), 'do': [effects], 'steer': False to stop steering or 'air' to hold
-# it until the board leaves the ground, 'act': an on-foot action}), cameras [(t or fn(s, c), camera)] that latch in
-# order, rec_from, an end predicate and `secs` at most. Times are seconds from the launch. Headings: UE yaw 0 east, 90
-# south, -90 north, 180 west.
+# it until the board leaves the ground, 'act': an on-foot action}), cameras [(t or fn(s, c), camera)] that latch in order, rec_from, an end predicate and `secs` at
+# most. Times are seconds from the launch. Headings: UE yaw 0 east, 90 south, -90 north, 180 west.
 def landed_after(n=1, secs=1.2, min_h=0.):
     """End `secs` after the n-th landing from an air at least min_h high."""
     def end(s, c):
