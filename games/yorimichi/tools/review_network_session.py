@@ -92,18 +92,25 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
     from atelier.safety.process import spawn_game
     from atelier.safety.render_lock import available_bytes
+    from network_review_common import require_clean_source, source_revision
+    revision = require_clean_source()
     free = available_bytes()
     # Admission budgets the pair, not one game's current usage before launching another.
     # The independent runtime ceiling below includes both complete owned process trees.
     if free is None or free < 12 * 1024**3:
         raise RuntimeError('The compound smoke needs at least 12 GiB available before either game starts')
     ctx = Context('yorimichi')
+    if tailnet:
+        from network_review_common import tailnet_ipv4
+        host = tailnet_ipv4()
+    else:
+        host = '127.0.0.1'
     pid, started = os.getpid(), process_tree.started(os.getpid())
     aggregate_report, stop = folder / 'aggregate-memory.json', folder / 'aggregate-stop'
     monitor = subprocess.Popen([sys.executable, '-m', 'atelier.safety.tree_guard', '--pid', str(pid),
@@ -132,7 +139,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
                            '-ExecCmds=t.MaxFPS 30']
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
-                command.append('-MULTIHOME=127.0.0.1')
+                if not tailnet:
+                    command.append('-MULTIHOME=127.0.0.1')
                 if gameplay:
                     command.append('-networkgameplay')
                 if listen:
@@ -178,7 +186,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             server, server_guard = launch('server', '/Game/Japan/Maps/Slice?game=/Script/Yorimichi.JapanNetworkGameMode?capacity=2' + ('?listen' if listen else ''))
             wait_for('server world', lambda: load(folder / 'server-world.json'), began + 120,
                      [('server', server, server_guard)])
-            client, client_guard = launch('client', f'127.0.0.1:{port}')
+            client, client_guard = launch('client', f'{host}:{port}')
             running = [('server', server, server_guard), ('client', client, client_guard)]
             wait_for('admission and clean disconnect',
                      lambda: all(load(folder / (role + '-complete.json')) for role in ('server', 'client')),
@@ -195,9 +203,10 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         if monitor.wait(timeout=5) != 0:
             raise RuntimeError('Aggregate monitor rejected teardown')
         emulation = dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent)
-        checks = compare_receipts(folder, gameplay, listen, emulation, f'127.0.0.1:{port}')
+        checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}')
+        checks['source_unchanged'] = source_revision() == revision
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
-                      emulation=emulation,
+                      emulation=emulation, source=revision,
                       scope='Local NullRHI editor session smoke; packaged/rendered/network acceptance remains separate')
         (folder / 'checks.json').write_text(json.dumps(report, indent=2) + '\n')
         for name, ok in checks.items():
@@ -215,6 +224,7 @@ def main():
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
+    parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
     parser.add_argument('--listen', action='store_true', help='Two local players across listen-host/client processes; validates the observer relay within the same aggregate guard')
     parser.add_argument('--lag-ms', type=int, default=0, help='Emulated one-way packet delay on both processes (0..200 ms)')
@@ -231,7 +241,7 @@ def main():
     folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
     folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -239,7 +249,7 @@ def main():
         port = sock.getsockname()[1]
     return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port),
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent)] +
-                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []),
+                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []),
                        folder / 'guard', timeout=330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

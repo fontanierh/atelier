@@ -4,10 +4,24 @@
 #include "JapanMovementNet.h"
 #include "JapanCharacterMovement.generated.h"
 
+struct FJapanCorrectionSample
+{
+    double WorldTime = 0.;
+    float Timestamp = 0.f, DeltaTime = 0.f;
+    uint32 Epoch = 0;
+    uint16 ThroughEdge = 0, PredictedEdge = 0;
+    uint8 PredictedMode = 0, AuthoritativeMode = 0;
+    FVector PredictedLocation = FVector::ZeroVector, AuthoritativeLocation = FVector::ZeroVector;
+    FVector PredictedVelocity = FVector::ZeroVector, AuthoritativeVelocity = FVector::ZeroVector;
+    FName PredictedAction, AuthoritativeAction;
+    int32 CheckpointBytes = 0;
+};
+
 struct FJapanMovementStats
 {
     uint32 Corrections = 0, PositionCorrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
     float LargestCorrectionCm = 0.f;
+    FJapanCorrectionSample LargestCorrection;
 };
 
 /** The player's movement: ordinary CharacterMovement, the sailboat holding its own velocity, the skate plugin's custom

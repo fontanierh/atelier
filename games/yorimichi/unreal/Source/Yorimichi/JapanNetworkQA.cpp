@@ -23,10 +23,10 @@
 void UJapanGameInstance::StartNetworkQA()
 {
     if (!FParse::Value(FCommandLine::Get(), TEXT("networkqa="), NetworkQARole)) return;
-    if ((NetworkQARole != TEXT("server") && NetworkQARole != TEXT("client")) ||
+    if ((NetworkQARole != TEXT("server") && NetworkQARole != TEXT("client") && NetworkQARole != TEXT("bind-failure")) ||
         !FParse::Value(FCommandLine::Get(), TEXT("networkqadir="), NetworkQADirectory))
     {
-        UE_LOG(LogTemp, Error, TEXT("NETWORK QA requires role server|client and an output directory"));
+        UE_LOG(LogTemp, Error, TEXT("NETWORK QA requires role server|client|bind-failure and an output directory"));
         FPlatformMisc::RequestExitWithStatus(false, 1); return;
     }
     IFileManager::Get().MakeDirectory(*NetworkQADirectory, true);
@@ -44,8 +44,13 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
     Report->SetNumberField(TEXT("local_players"), GetLocalPlayers().Num());
     UWorld* World = GetWorld();
     Report->SetNumberField(TEXT("net_mode"), World ? int32(World->GetNetMode()) : -1);
+    Report->SetStringField(TEXT("session_status"), Status);
+    Report->SetBoolField(TEXT("friends_menu_open"), Menu.IsValid());
+    Report->SetBoolField(TEXT("listen_failure_seen"), bNetworkQABindFailure);
     if (World)
     {
+        Report->SetBoolField(TEXT("has_game_driver"), World->GetNetDriver() != nullptr);
+        Report->SetStringField(TEXT("game_mode"), World->GetAuthGameMode() ? World->GetAuthGameMode()->GetClass()->GetPathName() : FString());
 #if DO_ENABLE_NET_TEST
         if (const UNetDriver* Driver = World->GetNetDriver())
         {
@@ -75,11 +80,14 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
         int32 Pawns = 0;
         for (TActorIterator<AWandererCharacter> It(World); It; ++It) if (!It->IsNpc()) ++Pawns;
         Report->SetNumberField(TEXT("player_pawns"), Pawns);
+        // Solo uses the engine's ordinary GameState. Count its PlayerStates too so
+        // teardown acceptance cannot disappear with the session-only subclass.
+        if (const AGameStateBase* State = World->GetGameState())
+            Report->SetNumberField(TEXT("players"), State->PlayerArray.Num());
         if (const auto* State = World->GetGameState<AJapanGameState>())
         {
             Report->SetStringField(TEXT("session"), State->SessionId);
             Report->SetStringField(TEXT("identity"), State->ContentIdentity);
-            Report->SetNumberField(TEXT("players"), State->PlayerArray.Num());
             TArray<TSharedPtr<FJsonValue>> People;
             for (const APlayerState* Person : State->PlayerArray)
                 if (const auto* P = Cast<AJapanPlayerState>(Person))
@@ -164,6 +172,31 @@ bool UJapanGameInstance::TickNetworkQA(float)
     if (Now - NetworkQAStarted > 240.) return Fail(TEXT("Native session lifecycle deadline expired"));
     UWorld* World = GetWorld();
     if (!World || !World->HasBegunPlay()) return true;
+    if (NetworkQARole == TEXT("bind-failure"))
+    {
+        if (Now - NetworkQAStarted > 90.) return Fail(TEXT("Occupied-port host recovery deadline expired"));
+        if (!bNetworkQAHostRequested)
+        {
+            auto* Pawn = Cast<AWandererCharacter>(GetFirstLocalPlayerController() ? GetFirstLocalPlayerController()->GetPawn() : nullptr);
+            if (!Pawn || !Pawn->IsReady()) return true;
+            bNetworkQAHostRequested = true;
+            NetworkQAConnected = Now;
+            HostGame(2); // Same path as the menu, including real Tailscale verification.
+            return true;
+        }
+        if (!bNetworkQABindFailure)
+        {
+            if (Now - NetworkQAConnected > 30.) return Fail(TEXT("Hosting did not reach the expected occupied-port failure: ") + Status);
+            return true;
+        }
+        // The failed Listen map is also Standalone. Require the normal Solo GameMode
+        // and visible preserved notice after the deferred return, not just NM_Standalone.
+        if (bReturnSoloAfterListenFailure || bShowAfterTravel || !Menu.IsValid() || World->GetNetMode() != NM_Standalone ||
+            World->GetNetDriver() || !World->GetAuthGameMode() || World->GetAuthGameMode()->GetClass() != AJapanGameMode::StaticClass()) return true;
+        if (Status.IsEmpty()) return Fail(TEXT("Host bind failure lost its user-facing notice"));
+        if (!WriteNetworkQA(TEXT("complete"))) return Fail(TEXT("Could not save occupied-port recovery receipt"));
+        FPlatformMisc::RequestExit(false); return false;
+    }
     const auto* State = World->GetGameState<AJapanGameState>();
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     bool GameplayDone = true;

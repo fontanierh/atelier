@@ -50,6 +50,7 @@ private:
     FTSTicker::FDelegateHandle NetworkQATicker;
     double NetworkQAStarted = 0, NetworkQAConnected = 0, NetworkQALeaving = 0;
     bool bNetworkQAWorld = false, bNetworkQASawPeer = false;
+    bool bNetworkQAHostRequested = false, bNetworkQABindFailure = false;
 };
 
 UCLASS()

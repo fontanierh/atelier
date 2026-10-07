@@ -110,6 +110,11 @@ void UJapanGameInstance::NetworkFailure(UWorld* World, UNetDriver*, ENetworkFail
     Status = Reason.IsEmpty() ? TEXT("Connection lost. Check that the host is running and reachable, then join again.") : Reason;
     bReturnSoloAfterListenFailure = Failure == ENetworkFailure::NetDriverListenFailure;
     bShowAfterTravel = true; CloseFriends();
+    if (NetworkQARole == TEXT("bind-failure") && bReturnSoloAfterListenFailure)
+    {
+        bNetworkQABindFailure = true;
+        WriteNetworkQA(TEXT("listen-failed"));
+    }
     // Engine disconnect handling returns to the default map; do not start a second competing travel here.
     UE_LOG(LogTemp, Warning, TEXT("NETWORK failure: %s"), *Status);
 }

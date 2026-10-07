@@ -11,6 +11,7 @@
 #include "Interfaces/MovementBaseInterface.h"
 #include "Components/PrimitiveComponent.h"
 #include "TimerManager.h"
+#include "Misc/CommandLine.h"
 
 UJapanCharacterMovement::UJapanCharacterMovement(const FObjectInitializer& Initializer) : Super(Initializer)
 {
@@ -285,7 +286,24 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     ++NetworkStats.Corrections;
     const float CorrectionCm = float(FVector::Dist(Saved.SavedLocation, CharacterOwner->GetActorLocation()));
     if (CorrectionCm > 1.f) ++NetworkStats.PositionCorrections;
-    NetworkStats.LargestCorrectionCm = FMath::Max(NetworkStats.LargestCorrectionCm, CorrectionCm);
+    if (CorrectionCm > NetworkStats.LargestCorrectionCm)
+    {
+        NetworkStats.LargestCorrectionCm = CorrectionCm;
+        auto& Detail = NetworkStats.LargestCorrection;
+        Detail.WorldTime = GetWorld()->GetTimeSeconds(); Detail.Timestamp = Saved.TimeStamp; Detail.DeltaTime = Saved.DeltaTime;
+        Detail.Epoch = GetActivityEpoch(); Detail.ThroughEdge = Custom.AcknowledgedEdge; Detail.PredictedEdge = Saved.PostEdge;
+        Detail.PredictedMode = Saved.EndPackedMovementMode; Detail.AuthoritativeMode = PackNetworkMovementMode();
+        Detail.PredictedLocation = Saved.SavedLocation; Detail.AuthoritativeLocation = CharacterOwner->GetActorLocation();
+        Detail.PredictedVelocity = Saved.SavedVelocity; Detail.AuthoritativeVelocity = Velocity;
+        Detail.PredictedAction = Saved.PostState.Action; Detail.AuthoritativeAction = Custom.Checkpoint.Action;
+        Detail.CheckpointBytes = Custom.bHasCheckpoint ? Custom.Checkpoint.Bytes.Num() : 0;
+    }
+    if (CorrectionCm > 1.f && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
+        UE_LOG(LogTemp, Display, TEXT("NETWORK position correction cm=%.3f world=%.3f timestamp=%.3f dt=%.4f epoch=%u edge=%u/%u mode=%u/%u checkpoint=%d action=%s/%s predicted=%s authoritative=%s velocity=%s/%s"),
+            CorrectionCm, GetWorld()->GetTimeSeconds(), Saved.TimeStamp, Saved.DeltaTime, GetActivityEpoch(), Saved.PostEdge, Custom.AcknowledgedEdge,
+            Saved.EndPackedMovementMode, PackNetworkMovementMode(), Custom.bHasCheckpoint ? Custom.Checkpoint.Bytes.Num() : 0,
+            *Saved.PostState.Action.ToString(), *Custom.Checkpoint.Action.ToString(), *Saved.SavedLocation.ToString(),
+            *CharacterOwner->GetActorLocation().ToString(), *Saved.SavedVelocity.ToString(), *Velocity.ToString());
     const FJapanMoveCheckpoint& State = Custom.bHasCheckpoint ? Custom.Checkpoint : Saved.PostState;
     if (!Custom.bHasCheckpoint && State.Bytes.IsEmpty())
     {

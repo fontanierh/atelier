@@ -60,6 +60,27 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("checkpoints_rejected"), State.MovementStats.Rejected);
     Data->SetNumberField(TEXT("replayed_moves"), State.MovementStats.ReplayedMoves);
     Data->SetNumberField(TEXT("largest_correction_cm"), State.MovementStats.LargestCorrectionCm);
+    if (State.MovementStats.LargestCorrectionCm > 0.f)
+    {
+        const auto& Event = State.MovementStats.LargestCorrection;
+        auto Detail = MakeShared<FJsonObject>();
+        Detail->SetNumberField(TEXT("world_time"), Event.WorldTime);
+        Detail->SetNumberField(TEXT("move_timestamp"), Event.Timestamp);
+        Detail->SetNumberField(TEXT("move_dt"), Event.DeltaTime);
+        Detail->SetNumberField(TEXT("epoch"), Event.Epoch);
+        Detail->SetNumberField(TEXT("predicted_edge"), Event.PredictedEdge);
+        Detail->SetNumberField(TEXT("acknowledged_edge"), Event.ThroughEdge);
+        Detail->SetNumberField(TEXT("predicted_mode"), Event.PredictedMode);
+        Detail->SetNumberField(TEXT("authoritative_mode"), Event.AuthoritativeMode);
+        Detail->SetStringField(TEXT("predicted_position"), Event.PredictedLocation.ToString());
+        Detail->SetStringField(TEXT("authoritative_position"), Event.AuthoritativeLocation.ToString());
+        Detail->SetStringField(TEXT("predicted_velocity"), Event.PredictedVelocity.ToString());
+        Detail->SetStringField(TEXT("authoritative_velocity"), Event.AuthoritativeVelocity.ToString());
+        Detail->SetStringField(TEXT("predicted_action"), Event.PredictedAction.ToString());
+        Detail->SetStringField(TEXT("authoritative_action"), Event.AuthoritativeAction.ToString());
+        Detail->SetNumberField(TEXT("checkpoint_bytes"), Event.CheckpointBytes);
+        Data->SetObjectField(TEXT("largest_correction"), Detail);
+    }
     FString Text; FJsonSerializer::Serialize(Data, TJsonWriterFactory<>::Create(&Text));
     IFileManager::Get().MakeDirectory(*Folder, true);
     const FString File = Folder / (Server ? TEXT("server-gameplay.json") : TEXT("client-gameplay.json"));
