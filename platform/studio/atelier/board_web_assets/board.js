@@ -96,7 +96,7 @@ function hue(name) { let h=0; for(const c of name)h=(h*31+c.charCodeAt(0))%360; 
 function initials(name) { return name.replace(/[^a-z0-9]/gi," ").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?"; }
 function statusOf(agent) { return !agent?"":agent.delivery_error?"error":agent.listening?"live":"idle"; }
 // Waiting on the operator: the agent has an open operator task.
-function isWaiting(agent) { return !!agent&&(state?.tasks||[]).some(t=>t.agent===agent.agent); }
+function isWaiting(agent) { return !!agent&&(state?.tasks||[]).some(t=>t.agent===agent.agent&&!dismissedTasks.has(t.id)); }
 // Free for work: listening, with no current task (its status line empty or exactly "idle") and no open operator task.
 function isFree(agent) {
   return !!agent&&!agent.stop&&agent.listening&&!agent.delivery_error&&/^(idle)?$/i.test((agent.task||"").trim())&&!isWaiting(agent);
@@ -1129,7 +1129,7 @@ function taskCard(task) {
     dismiss.disabled=true;status.textContent="";
     try {
       await postJSON("/api/task/dismiss",{id:entry.task.id});
-      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);
+      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);renderAgents();
       setTimeout(()=>{renderTasks();load();},motion.matches?0:220);
     } catch(error) {status.textContent=error.message;status.classList.add("error");dismiss.disabled=false;}
   });
