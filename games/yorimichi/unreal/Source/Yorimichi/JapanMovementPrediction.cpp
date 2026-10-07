@@ -14,6 +14,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "TimerManager.h"
 #include "Misc/CommandLine.h"
+#include "Misc/ScopeExit.h"
 
 DEFINE_LOG_CATEGORY(LogJapanMovementQA);
 namespace
@@ -65,6 +66,7 @@ void UJapanCharacterMovement::ResetActivityPrediction()
     HeldButtons = LastServerHolds = 0; bRecoveryQueued = false; bInputPrepared = false; ActiveInput = FJapanMoveInput();
     PendingCheckpoint = FJapanMoveCheckpoint(); PendingCheckpointTime = -1.f;
     LastCustomCorrection = -1.; bReceivedMoveInEpoch = false;
+    MoveClock = FJapanMoveClock(); bClockResetPending = bWaitingAfterClockReset = false;
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->ResetDefence();
     ClearAccumulatedForces(); CurrentRootMotion.Clear();
 }
@@ -76,19 +78,78 @@ bool UJapanCharacterMovement::ForcePositionUpdate(float Dt)
         return false; // Trusted skating owns its clock and root; CMC does not advance either.
     if (PredictsMoves() && !bReceivedMoveInEpoch)
     {
-        // UE advances CurrentClientTimeStamp in a forced update. During initial
-        // world/possession readiness the owner sends no CMC moves, so advancing it
-        // here makes the first real inputs look stale and snaps a walking guest
-        // back to spawn. Every activity epoch starts only on an accepted move;
-        // after that, UE retains its normal forced-update/stall protection.
         ++NetworkStats.InitialForcedUpdatesSkipped;
         return false;
     }
-    if (PredictsMoves() && TraceNetworkGameplay() && ForcedTraceRows++ < 16)
-        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK forced move epoch=%u dt=%.6f timestamp=%.6f mode=%u position=%s velocity=%s"),
-            GetActivityEpoch(), Dt, GetPredictionData_Server_Character()->CurrentClientTimeStamp, PackNetworkMovementMode(),
-            *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString());
+    if (PredictsMoves())
+    {
+        // A forced tick advances UE's client timestamp and discards late real
+        // moves inside that span. Wait within a bounded window, then hand off
+        // once to a fresh epoch; never guess timestamps in the owner's epoch.
+        ++NetworkStats.DeferredForcedUpdates;
+        if (MoveClock.Expired(FPlatformTime::Seconds())) QueueClockReset(1);
+        return false;
+    }
     return Super::ForcePositionUpdate(Dt);
+}
+
+void UJapanCharacterMovement::RecordClockCorrection(uint8 Reason)
+{
+    if (Reason == 1) ++NetworkStats.TimeoutCorrections;
+    if (Reason == 2) ++NetworkStats.TimeBudgetCorrections;
+}
+
+void UJapanCharacterMovement::QueueClockReset(uint8 Reason)
+{
+    if (bClockResetPending || bWaitingAfterClockReset) return;
+    bClockResetPending = true;
+    const uint32 Epoch = GetActivityEpoch();
+    // UE's caller can still hold prediction/scoped-movement pointers. Reset only
+    // after it returns, and coalesce every rejection in this burst into one handoff.
+    GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this, Epoch, Reason]()
+    {
+        if (Epoch != GetActivityEpoch() || !PredictsMoves()) return;
+        bClockResetPending = false;
+        auto* Rider = CastChecked<AWandererCharacter>(CharacterOwner);
+        Rider->BeginNetworkActivity(EJapanActivity::OnFoot, !IsMovingOnGround(), Reason);
+        bWaitingAfterClockReset = true;
+        ClockResetAt = FPlatformTime::Seconds();
+        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK movement clock reset reason=%u old_epoch=%u epoch=%u"),
+            Reason, Epoch, GetActivityEpoch());
+    }));
+}
+
+void UJapanCharacterMovement::TickComponent(float Dt, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+    Super::TickComponent(Dt, TickType, ThisTickFunction);
+    if (bWaitingAfterClockReset && PredictsMoves() && CharacterOwner->HasAuthority() && !CharacterOwner->IsLocallyControlled())
+    {
+        // After timeout the host advances neutral physics (including gravity),
+        // until the first move in the new epoch arrives. No client time is consumed.
+        FJapanMoveInput Neutral; Neutral.ActivityEpoch = GetActivityEpoch(); SetMoveInput(Neutral);
+        Acceleration = FVector::ZeroVector;
+        PerformMovement(FMath::Min(Dt, .125f));
+        NetworkStats.NeutralMaxAcceleration = FMath::Max(NetworkStats.NeutralMaxAcceleration, float(Acceleration.Size()));
+        if (IsMovingOnGround() && FPlatformTime::Seconds() - ClockResetAt >= .2)
+        {
+            ++NetworkStats.NeutralLateGroundFrames;
+            NetworkStats.NeutralLateMaxSpeed = FMath::Max(NetworkStats.NeutralLateMaxSpeed, float(Velocity.Size2D()));
+        }
+    }
+}
+
+bool UJapanCharacterMovement::VerifyClientTimeStamp(float Timestamp, FNetworkPredictionData_Server_Character& Data)
+{
+    if (!Super::VerifyClientTimeStamp(Timestamp, Data)) return false;
+    if (!PredictsMoves()) return true;
+    const float Dt = Data.GetServerMoveDeltaTime(Timestamp, CharacterOwner->GetActorTimeDilation());
+    if (!MoveClock.Allows(FPlatformTime::Seconds(), Dt))
+    {
+        ++NetworkStats.TimeBudgetRejected;
+        QueueClockReset(2);
+        return false; // Before UE advances CurrentClientTimeStamp or simulates.
+    }
+    return true;
 }
 
 void UJapanCharacterMovement::ReplicateMoveToServer(float Dt, const FVector& NewAcceleration)
@@ -110,9 +171,32 @@ void UJapanCharacterMovement::ReplicateMoveToServer(float Dt, const FVector& New
 void UJapanCharacterMovement::ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData)
 {
     const auto& Custom = static_cast<const FJapanNetworkMoveData&>(MoveData);
-    if (JapanNetwork::IsOnline(GetWorld()) && (!PredictsMoves() || Custom.Input.ActivityEpoch != GetActivityEpoch())) return;
+#if !UE_BUILD_SHIPPING
+    const bool bStaleProbe = TraceNetworkGameplay() && Custom.Input.FirstEdge == 60000 && MoveData.TimeStamp == 123.25f;
+    const FVector ProbeRoot = bStaleProbe ? CharacterOwner->GetActorLocation() : FVector::ZeroVector;
+    const float ProbeClock = bStaleProbe ? GetPredictionData_Server_Character()->CurrentClientTimeStamp : 0.f;
+    ON_SCOPE_EXIT
+    {
+        if (bStaleProbe)
+        {
+            NetworkStats.StaleProbeRootCm = FMath::Max(NetworkStats.StaleProbeRootCm, float(FVector::Dist(ProbeRoot, CharacterOwner->GetActorLocation())));
+            NetworkStats.StaleProbeClockDelta = FMath::Max(NetworkStats.StaleProbeClockDelta,
+                FMath::Abs(ProbeClock - GetPredictionData_Server_Character()->CurrentClientTimeStamp));
+        }
+    };
+#endif
+    if (JapanNetwork::IsOnline(GetWorld()) && (!PredictsMoves() || Custom.Input.ActivityEpoch != GetActivityEpoch()))
+    {
+        ++NetworkStats.StaleEpochMoves;
+#if !UE_BUILD_SHIPPING
+        if (bStaleProbe) ++NetworkStats.StaleProbeRejected;
+#endif
+        return;
+    }
     if (PredictsMoves())
     {
+        if (bClockResetPending) return;
+        if (MoveClock.Expired(FPlatformTime::Seconds())) { QueueClockReset(1); return; }
         const auto* Rider = CastChecked<AWandererCharacter>(CharacterOwner);
         if (!Rider->Definition || !Rider->Landscape || !Rider->bReady) { ++NetworkStats.MovesBeforeReady; return; }
         if (auto* PC = Cast<APlayerController>(Rider->Controller); PC && PC->AcknowledgedPawn != Rider)
@@ -123,6 +207,23 @@ void UJapanCharacterMovement::ServerMove_PerformMovement(const FCharacterNetwork
         }
     }
     Super::ServerMove_PerformMovement(MoveData);
+}
+
+void UJapanCharacterMovement::SendStaleClockProbe()
+{
+#if !UE_BUILD_SHIPPING
+    if (!TraceNetworkGameplay() || GetNetMode() != NM_Client || !CharacterOwner->IsLocallyControlled() ||
+        !NetworkStats.TimeoutCorrections || NetworkStats.StaleProbeSent) return;
+    FSavedMove_Japan Probe;
+    Probe.Clear(); Probe.TimeStamp = 123.25f; Probe.DeltaTime = .125f;
+    Probe.Input.ActivityEpoch = GetActivityEpoch() - 1;
+    Probe.Input.FirstEdge = 60000; Probe.Input.Y = 127; Probe.Input.Flags = FJapanMoveInput::Sprint;
+    Probe.Acceleration = FVector(1000., 0., 0.);
+    Probe.SavedLocation = CharacterOwner->GetActorLocation() + FVector(1000., 0., 0.);
+    Probe.EndPackedMovementMode = PackNetworkMovementMode();
+    ++NetworkStats.StaleProbeSent;
+    CallServerMovePacked(&Probe, nullptr, nullptr);
+#endif
 }
 
 FNetworkPredictionData_Client* UJapanCharacterMovement::GetPredictionData_Client() const
@@ -287,7 +388,11 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
                         GetActivityEpoch(), Timestamp, Dt, NetworkStats.InitialForcedUpdatesSkipped, NetworkStats.MovesBeforeReady, NetworkStats.MovesBeforeAck);
             }
             if (CharacterOwner->HasAuthority() && Dt > 0.f)
+            {
+                MoveClock.Accepted(FPlatformTime::Seconds(), Dt);
+                bWaitingAfterClockReset = false;
                 bAcceptedDefenceMove = CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->MapDefenceMove(Timestamp, Dt);
+            }
             SetMoveInput(Data->Input);
             LastServerHolds = Data->Input.Flags & (FJapanMoveInput::AttackHeld | FJapanMoveInput::GuardHeld | FJapanMoveInput::JumpHeld | FJapanMoveInput::Menu);
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);

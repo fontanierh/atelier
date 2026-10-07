@@ -224,7 +224,7 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -292,6 +292,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     command += ['-networkenemy', '-foxhunter']
                 if gameplay:
                     command.append('-networkgameplay')
+                    if role == 'client':
+                        command += [f'-networkmovementhitch={movement_hitch_ms}', f'-networkskatehitch={skate_hitch_ms}']
                 if listen:
                     command.append('-networklisten')
                 if app:
@@ -371,6 +373,10 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy)
             if app:
                 checks.update(runtime_identity_checks(folder, expected_identity, package_source['code_digest']))
+        if movement_hitch_ms or skate_hitch_ms:
+            from network_clock_review import clock_checks
+            checks.update(clock_checks(load(folder / 'server-gameplay.json') or {},
+                load(folder / 'client-gameplay.json') or {}, movement_hitch_ms, skate_hitch_ms))
         checks['source_unchanged'] = source_revision() == revision
         checks['native_build_unchanged'] = (package_fingerprint(app, expected_identity) if app else current_native_build(ctx)) == binary
         if app:
@@ -405,6 +411,8 @@ def main():
     parser.add_argument('--cook-receipt', type=Path, help='Cook receipt on the current clean source commit')
     parser.add_argument('--expected-identity', help='Identity from the accepted native receipt at that cook revision')
     parser.add_argument('--plain-package', action='store_true', help='Ordinary Solo with no network QA flags, bounded by UE seconds')
+    parser.add_argument('--movement-hitch-ms', type=int, choices=(0, 229, 1050), default=0)
+    parser.add_argument('--skate-hitch-ms', type=int, choices=(0, 229), default=0)
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
@@ -434,6 +442,8 @@ def main():
         args.gameplay = False
     elif args.listen:
         args.gameplay = True
+    if (args.movement_hitch_ms or args.skate_hitch_ms) and (not args.listen or args.combat or args.enemy or args.plain_package or args.lag_ms or args.variance_ms or args.loss_percent):
+        parser.error('Hitch regressions require a zero-lag listen/gameplay pair')
     if args.app:
         if not args.cook_receipt or not args.expected_identity:
             parser.error('--app requires --cook-receipt and --expected-identity')
@@ -458,14 +468,14 @@ def main():
         folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
         folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind(('127.0.0.1', args.port or 0))
         port = sock.getsockname()[1]
     return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port), '--combat-host-fps', str(args.combat_host_fps),
-                        '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent)] +
+                        '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent), '--movement-hitch-ms', str(args.movement_hitch_ms), '--skate-hitch-ms', str(args.skate_hitch_ms)] +
                        (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []) +
                        (['--app', str(args.app.resolve()), '--cook-receipt', str(args.cook_receipt.resolve()), '--expected-identity', args.expected_identity] if args.app else []) +
                        (['--plain-package'] if args.plain_package else []),

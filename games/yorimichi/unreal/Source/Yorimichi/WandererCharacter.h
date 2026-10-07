@@ -114,7 +114,7 @@ public:
     bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
     uint32 GetActivityEpoch() const { return NetworkActivity.Epoch; }
     EJapanActivity GetNetworkActivity() const { return NetworkActivity.Kind; }
-    void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false);
+    void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false, uint8 ClockCorrection = 0);
     UFUNCTION(Server, Reliable) void ServerTravelTo(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch);
     UFUNCTION(Server, Reliable) void ServerRequestSkate(uint32 Epoch);
     UFUNCTION(Server, Reliable) void ServerFinishSkate(uint32 Epoch, FVector_NetQuantize100 Location,

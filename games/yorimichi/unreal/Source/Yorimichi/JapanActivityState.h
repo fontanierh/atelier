@@ -17,4 +17,6 @@ struct FJapanActivityState
     UPROPERTY() FRotator Rotation = FRotator::ZeroRotator;
     UPROPERTY() FVector_NetQuantize100 Velocity = FVector::ZeroVector;
     UPROPERTY() bool bFalling = false;
+    /** 0: ordinary activity; 1: input timeout; 2: excessive simulation-time burst. */
+    UPROPERTY() uint8 ClockCorrection = 0;
 };

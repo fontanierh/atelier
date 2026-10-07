@@ -6,6 +6,7 @@
 #include "JapanSkateNetwork.h"
 #include "WandererCharacter.h"
 #include "SkateComponent.h"
+#include "BotwMoveSet.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Dom/JsonObject.h"
@@ -31,6 +32,8 @@ struct FScript
     uint32 HighestEpoch = 1, AcceptedFrames = 0, MaximumSavedMoves = 0, PeerFrames = 0, ReceivedPeerFrames = 0;
     bool SawPlayer = false, SawSkate = false, Finished = false, JumpReleased = false;
     bool SawHostTakeoff = false;
+    bool PreparedTimeoutGuard = false, GuardBeforeTimeout = false, ClearedTimeoutHolds = false;
+    double MovementHitchSeconds = 0., SkateHitchSeconds = 0.;
 };
 FScript Scripts[2];
 
@@ -70,6 +73,22 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("started_movement_epochs"), State.MovementStats.StartedEpochs);
     Data->SetNumberField(TEXT("first_accepted_move_timestamp"), State.MovementStats.FirstMoveTimestamp);
     Data->SetNumberField(TEXT("largest_correction_cm"), State.MovementStats.LargestCorrectionCm);
+    Data->SetNumberField(TEXT("movement_hitch_seconds"), State.MovementHitchSeconds);
+    Data->SetNumberField(TEXT("skate_hitch_seconds"), State.SkateHitchSeconds);
+    Data->SetNumberField(TEXT("timeout_corrections"), State.MovementStats.TimeoutCorrections);
+    Data->SetNumberField(TEXT("time_budget_corrections"), State.MovementStats.TimeBudgetCorrections);
+    Data->SetNumberField(TEXT("time_budget_rejected"), State.MovementStats.TimeBudgetRejected);
+    Data->SetNumberField(TEXT("stale_epoch_moves"), State.MovementStats.StaleEpochMoves);
+    Data->SetNumberField(TEXT("deferred_forced_updates"), State.MovementStats.DeferredForcedUpdates);
+    Data->SetNumberField(TEXT("stale_probe_sent"), State.MovementStats.StaleProbeSent);
+    Data->SetNumberField(TEXT("stale_probe_rejected"), State.MovementStats.StaleProbeRejected);
+    Data->SetNumberField(TEXT("stale_probe_root_cm"), State.MovementStats.StaleProbeRootCm);
+    Data->SetNumberField(TEXT("stale_probe_clock_delta"), State.MovementStats.StaleProbeClockDelta);
+    Data->SetNumberField(TEXT("neutral_max_acceleration"), State.MovementStats.NeutralMaxAcceleration);
+    Data->SetNumberField(TEXT("neutral_late_ground_frames"), State.MovementStats.NeutralLateGroundFrames);
+    Data->SetNumberField(TEXT("neutral_late_max_speed"), State.MovementStats.NeutralLateMaxSpeed);
+    Data->SetBoolField(TEXT("guard_before_timeout"), State.GuardBeforeTimeout);
+    Data->SetBoolField(TEXT("cleared_timeout_holds"), State.ClearedTimeoutHolds);
     if (State.MovementStats.LargestCorrectionCm > 0.f)
     {
         const auto& Event = State.MovementStats.LargestCorrection;
@@ -149,6 +168,11 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
     if (!Script.SawPlayer) { Script.SawPlayer = true; Script.Start = Player->GetActorLocation(); Script.FirstSeen = Script.Began = Now; }
     Script.ObservedSeconds = Now - Script.FirstSeen;
     Script.MovementStats = Movement->GetNetworkStats();
+    if (Script.MovementStats.TimeoutCorrections > 0 && Player->GetMoves())
+    {
+        Script.ClearedTimeoutHolds |= !Player->GetMoves()->HasInputHolds();
+        if (!Server && World->GetNetMode() == NM_Client) Movement->SendStaleClockProbe();
+    }
     Script.MaximumProcessedEdge = FMath::Max(Script.MaximumProcessedEdge, Movement->GetProcessedEdge());
     Script.HighestEpoch = FMath::Max(Script.HighestEpoch, Player->GetActivityEpoch());
     if (Server)
@@ -166,12 +190,32 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
         return false;
     }
     const double Elapsed = Now - Script.Began;
+    int32 HitchMs = 0, SkateHitchMs = 0;
+#if !UE_BUILD_SHIPPING
+    if (World->GetNetMode() == NM_Client)
+    {
+        FParse::Value(FCommandLine::Get(), TEXT("networkmovementhitch="), HitchMs);
+        FParse::Value(FCommandLine::Get(), TEXT("networkskatehitch="), SkateHitchMs);
+        HitchMs = FMath::Clamp(HitchMs, 0, 1050); SkateHitchMs = FMath::Clamp(SkateHitchMs, 0, 229);
+    }
+#endif
     const auto Next = [&]() { ++Script.Step; Script.Began = Now; };
     switch (Script.Step)
     {
     case 0:
         Player->Live_Drive(FVector2D(0,1), 0);
-        if (Elapsed > 1.5)
+        if (HitchMs > 750 && Elapsed > .25 && !Script.PreparedTimeoutGuard)
+        { Player->Live_Press(TEXT("guard")); Script.PreparedTimeoutGuard = true; }
+        if (HitchMs && Elapsed > .65 && Script.MovementHitchSeconds == 0.)
+        {
+            Script.GuardBeforeTimeout = Player->GetMoves() && Player->GetMoves()->IsGuarding();
+            if (HitchMs > 750 && !Script.GuardBeforeTimeout)
+            { Error = TEXT("Timeout stimulus did not establish a live guard before the outage"); break; }
+            const double Began = FPlatformTime::Seconds();
+            FPlatformProcess::Sleep(HitchMs / 1000.f);
+            Script.MovementHitchSeconds = FPlatformTime::Seconds() - Began;
+        }
+        if (Elapsed > 1.5 + Script.MovementHitchSeconds)
         {
             Player->Live_Drive(FVector2D::ZeroVector, 1);
             Script.WalkDistance = FVector::Dist2D(Script.Start, Player->GetActorLocation());
@@ -198,6 +242,12 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
     case 4:
         if (Player->GetNetworkActivity() != EJapanActivity::Skate) { Error = TEXT("Skate epoch ended unexpectedly during sustained ride"); break; }
         Script.SkateSeconds = Elapsed;
+        if (SkateHitchMs && Elapsed > 2. && Script.SkateHitchSeconds == 0.)
+        {
+            const double Began = FPlatformTime::Seconds();
+            FPlatformProcess::Sleep(SkateHitchMs / 1000.f);
+            Script.SkateHitchSeconds = FPlatformTime::Seconds() - Began;
+        }
         Script.MaximumSavedMoves = FMath::Max(Script.MaximumSavedMoves, uint32(Movement->GetPredictionData_Client_Character()->SavedMoves.Num()));
         if (Elapsed > 12. && Listen && Script.PeerFrames < 60) { Error = TEXT("The observer did not successfully apply 60 distinct peer pose frames"); break; }
         if (Elapsed > 5. && (!Listen || Script.PeerFrames >= 60))

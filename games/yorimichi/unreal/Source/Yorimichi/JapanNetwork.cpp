@@ -16,6 +16,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "SocketSubsystem.h"
 #include "IPAddress.h"
+#include "Misc/OutputDeviceRedirector.h"
 #include <cstdlib>
 #include <cstdio>
 

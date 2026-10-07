@@ -1,5 +1,6 @@
 #include "JapanMovementNet.h"
 #include "BotwNetworkState.h"
+#include "JapanMoveClock.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
@@ -10,9 +11,49 @@
 #include "Serialization/MemoryWriter.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/GameNetworkManager.h"
+#include "HAL/IConsoleManager.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Misc/ScopeExit.h"
+#include <limits>
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanMoveClockTest, "Yorimichi.Network.MoveClock",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FJapanMoveClockTest::RunTest(const FString&)
+{
+    FJapanMoveClock Clock;
+    double Now = 10.;
+    for (int32 I = 0; I < 30; ++I)
+    {
+        Now += 1. / 30.;
+        TestTrue(TEXT("Normal owner steps fit host real time"), Clock.Allows(Now, 1. / 30.));
+        Clock.Accepted(Now, 1. / 30.);
+    }
+    const double Last = Now;
+    Now += .229;
+    TestFalse(TEXT("229ms client hitch does not expire the epoch"), Clock.Expired(Now));
+    // Pending pre-hitch move, capped hitch move and following move arrive together.
+    for (double Dt : {1. / 30., .125, 1. / 30.})
+    {
+        TestTrue(TEXT("Late real moves fit without inventing a forced timestamp"), Clock.Allows(Now, Dt));
+        Clock.Accepted(Now, Dt);
+    }
+    TestFalse(TEXT("Boundary below the named timeout waits"), Clock.Expired(Now + FJapanMoveClock::Timeout - .001));
+    TestTrue(TEXT("Timeout boundary requires a new epoch"), Clock.Expired(Now + FJapanMoveClock::Timeout));
+    TestTrue(TEXT("Actual hitch exceeded zero time"), Now > Last);
+    FJapanMoveClock Burst;
+    double Accepted = 0.;
+    for (int32 I = 0; I < 1000; ++I)
+        if (Burst.Allows(20., .025)) { Burst.Accepted(20., .025); Accepted += .025; }
+    TestTrue(TEXT("One receive frame cannot bank more than initial host slack"), Accepted <= .125001);
+    TestFalse(TEXT("Excess burst is rejected"), Burst.Allows(20., .025));
+    Burst.Refill(120.);
+    TestEqual(TEXT("A long outage cannot bank more than the timeout"), Burst.Credit, FJapanMoveClock::Timeout);
+    TestFalse(TEXT("Nonfinite elapsed input is refused"), Burst.Allows(120., std::numeric_limits<double>::infinity()));
+    return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanMoveInputTest, "Yorimichi.Network.OrderedInput",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
@@ -97,6 +138,11 @@ bool FJapanCheckpointTest::RunTest(const FString&)
     auto* Movement = Character->GetCharacterMovement();
     FNetworkPredictionData_Client_Character Client(*Movement);
     FNetworkPredictionData_Server_Character Server(*Movement);
+    const auto* Scalar = IConsoleManager::Get().FindConsoleVariable(TEXT("p.NetServerMaxMoveDeltaTimeScalar"));
+    TestNotNull(TEXT("Server move cap scalar exists"), Scalar);
+    TestTrue(TEXT("Initial clock slack admits UE's maximum first move at current dilation"), Scalar &&
+        FJapanMoveClock::InitialSlack + 1.e-6 >= GetDefault<AGameNetworkManager>()->MaxMoveDeltaTime *
+            Scalar->GetFloat() * Character->GetActorTimeDilation());
     for (float FrameDelta : {1.f / 30.f, .22f, 1.f / 30.f})
     {
         const float ClientDelta = Client.UpdateTimeStampAndDeltaTime(FrameDelta, *Character, *Movement);

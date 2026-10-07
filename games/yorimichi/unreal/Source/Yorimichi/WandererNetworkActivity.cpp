@@ -20,7 +20,7 @@ bool FiniteInWorld(const FVector& Value, double Maximum)
 }
 }
 
-void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling)
+void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling, uint8 ClockCorrection)
 {
     if (!HasAuthority() || !JapanNetwork::IsOnline(GetWorld())) return;
     // Automatic server recoveries cannot erase a contact made in the old epoch.
@@ -32,6 +32,7 @@ void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling
     NetworkActivity.Rotation = GetActorRotation();
     NetworkActivity.Velocity = GetCharacterMovement()->Velocity;
     NetworkActivity.bFalling = bFalling;
+    NetworkActivity.ClockCorrection = ClockCorrection;
     OnRep_NetworkActivity();
     ForceNetUpdate();
 }
@@ -43,6 +44,7 @@ void AWandererCharacter::OnRep_NetworkActivity()
     bNetworkActivityPending = false; bNetworkSkateObserved = false;
     auto* Movement = CastChecked<UJapanCharacterMovement>(GetCharacterMovement());
     Movement->ResetActivityPrediction();
+    Movement->RecordClockCorrection(NetworkActivity.ClockCorrection);
     if (Moves) { Moves->Reset(); Moves->DropHolds(); }
     MoveIntent = FVector2D::ZeroVector; bSprintHeld = bWalk = bJog = false;
     JumpBuffer = RollBuffer = 0.f; bPendingTakeoff = false;

@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "JapanMovementNet.h"
+#include "JapanMoveClock.h"
 #include "JapanCharacterMovement.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogJapanMovementQA, Log, All);
@@ -23,6 +24,11 @@ struct FJapanMovementStats
 {
     uint32 Corrections = 0, PositionCorrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
     uint32 InitialForcedUpdatesSkipped = 0, MovesBeforeReady = 0, MovesBeforeAck = 0, StartedEpochs = 0;
+    uint32 DeferredForcedUpdates = 0, TimeBudgetRejected = 0, StaleEpochMoves = 0;
+    uint32 TimeoutCorrections = 0, TimeBudgetCorrections = 0;
+    uint32 StaleProbeSent = 0, StaleProbeRejected = 0, NeutralLateGroundFrames = 0;
+    float StaleProbeRootCm = 0.f, StaleProbeClockDelta = 0.f;
+    float NeutralMaxAcceleration = 0.f, NeutralLateMaxSpeed = 0.f;
     float FirstMoveTimestamp = -1.f;
     float LargestCorrectionCm = 0.f;
     FJapanCorrectionSample LargestCorrection;
@@ -46,6 +52,8 @@ public:
     FJapanMoveInput ConsumeMoveInput(float Dt);
     void SetMoveInput(const FJapanMoveInput& Input) { ActiveInput = Input; bInputPrepared = true; }
     void ResetActivityPrediction();
+    void RecordClockCorrection(uint8 Reason);
+    void SendStaleClockProbe();
     uint32 GetActivityEpoch() const;
     virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
     uint16 GetProcessedEdge() const { return ProcessedEdge; }
@@ -61,6 +69,8 @@ public:
     virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
     virtual void PerformMovement(float Dt) override;
     virtual bool ForcePositionUpdate(float Dt) override;
+    virtual bool VerifyClientTimeStamp(float Timestamp, FNetworkPredictionData_Server_Character& Data) override;
+    virtual void TickComponent(float Dt, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     virtual void ReplicateMoveToServer(float Dt, const FVector& NewAcceleration) override;
     virtual void SetBase(FMovementBaseInterfaceData* Base, const FName Bone = NAME_None, bool bNotifyActor = true) override;
     virtual void MoveAutonomous(float Timestamp, float Dt, uint8 Flags, const FVector& Accel) override;
@@ -89,6 +99,10 @@ private:
     void AcknowledgeEdges(uint16 Through);
     bool bInputPrepared = false, bExecutingMove = false, bReplaying = false;
     bool bAcceptedDefenceMove = false;
+    FJapanMoveClock MoveClock;
+    bool bClockResetPending = false, bWaitingAfterClockReset = false;
+    double ClockResetAt = 0.;
+    void QueueClockReset(uint8 Reason);
     double LastCustomCorrection = -1.;
     FJapanMovementStats NetworkStats;
     uint32 ClientTraceRows = 0, ServerTraceRows = 0, ForcedTraceRows = 0;
