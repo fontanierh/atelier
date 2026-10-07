@@ -96,6 +96,9 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetRenderCustomDepth(true);
     GetMesh()->SetCustomDepthStencilValue(1);
+    // The player's own shadow map: performance mode's 1024 two-cascade sun gives about 8 cm texels near the camera,
+    // which smear the rider's shadow and make it swim frame to frame while skating (docs/DESKTOP_PERFORMANCE.md).
+    GetMesh()->bCastInsetShadow = true;
     GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     GetMesh()->bEnableUpdateRateOptimizations = false;
     // The arm stops on solid things only, pulls in fast and eases back out; thin things fade whole (docs/CAMERA.md).
