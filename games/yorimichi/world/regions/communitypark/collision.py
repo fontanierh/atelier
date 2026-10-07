@@ -14,6 +14,10 @@ closed pocket down to the neighbouring slab foundation, retaining a flat ceiling
 tops stay exact. Exposed overhangs, steep kicker noses and pockets over other source riding surfaces stay exact.
 Horizontal zero-thickness plates keep their tops and gain a 4 mm underside and perimeter. A coincident ceiling
 can make the native solver treat a riding rim as a 180-degree fold; a closed thin plate retains the real rim.
+Curved pieces arrive faceted: bowl corners and transitions bend up to 17 degrees between rows, and their twisted
+quads tilt up and back down. At 10 m/s a bend of about 8 degrees in one frame jolts the board past the native shock
+limit. Once every joint is resolved, their upward faces are Loop-subdivided twice, so the riding surface bends
+about a quarter as much per facet; pieces sharing a profile smooth across the join.
 """
 import numpy as np
 
@@ -25,6 +29,9 @@ WELD = .002
 ROLLABLE = .012
 SEGMENT = .1
 PROBE = .02
+CREASE = 30.            # a sharper bend is a real edge: coping, lip or end cap
+FACETED = 1.            # a piece whose upward faces bend more than this between facets is smoothed
+LEVELS = 2
 
 
 def _normals(triangles):
@@ -399,6 +406,85 @@ def _open_edges(vertices, faces, owner, obstacles=()):
         yield part, out, [tuple(sample) for sample in samples], surfaces
 
 
+def _loop_topology(faces, kind):
+    """Opposite corners of each edge, each vertex's neighbours, and its neighbours along creases."""
+    opposite, ring, crease = {}, {}, {}
+    for a, b, c in faces:
+        for x, y, z in ((a, b, c), (b, c, a), (c, a, b)):
+            opposite.setdefault((min(x, y), max(x, y)), []).append(z)
+    for (x, y), zs in opposite.items():
+        ring.setdefault(x, set()).add(y); ring.setdefault(y, set()).add(x)
+        if kind.setdefault((x, y), 'smooth' if len(zs) == 2 else 'crease') == 'crease':
+            crease.setdefault(x, []).append(y); crease.setdefault(y, []).append(x)
+    return opposite, ring, crease
+
+
+def _loop_vertex(points, x, ring, crease):
+    """Loop's vertex rule; the cubic B-spline along a crease."""
+    if x in crease:
+        a, b = crease[x]
+        return .75*points[x]+.125*(points[a]+points[b])
+    n = len(ring[x]); beta = (5/8-(3/8+np.cos(2*np.pi/n)/4)**2)/n
+    return (1-n*beta)*points[x]+beta*points[list(ring[x])].sum(0)
+
+
+def smooth_riding(vertices, faces, owner, obstacles=(), levels=LEVELS):
+    """Loop-subdivide the upward faces of every faceted piece in the finished, welded collision.
+
+    A piece is faceted when its own upward faces bend by more than FACETED and less than CREASE somewhere. Its
+    faces then join one surface with any faceted neighbour, so a profile shared by two bowl pieces smooths across
+    the join. Creases (CREASE or sharper, open or shared by more than two faces) follow the cubic B-spline rule
+    and end at their corners. An edge shared with any other face (a flat floor, a wedge, a near-vertical wall)
+    stays fixed, so that face still meets it. Returns vertices, faces, owner and the faceted pieces."""
+    normal = _normals(vertices[faces])[0]
+    candidate = (normal[:, 2] > .01) & (owner >= 0) & ~np.isin(owner, list(obstacles))
+    edges = {}
+    for k, face in enumerate(faces):
+        for a, b in zip(face, np.roll(face, -1)):
+            edges.setdefault((min(a, b), max(a, b)), []).append(k)
+    def bend(near):
+        return np.degrees(np.arccos(np.clip(normal[near[0]]@normal[near[1]], -1, 1))) if len(near) == 2 else 180.
+    faceted = {int(owner[near[0]]) for near in edges.values() if len(near) == 2 and all(candidate[near])
+               and owner[near[0]] == owner[near[1]] and FACETED < bend(near) < CREASE}
+    region = candidate & np.isin(owner, list(faceted))
+    if not region.any(): return vertices, faces, owner, faceted
+    kind = {}
+    for e, near in edges.items():
+        inside = sum(region[near])
+        if not inside: continue
+        if len(near) != 2 or bend(near) >= CREASE: kind[e] = 'crease'
+        elif inside == 1: kind[e] = 'fixed'
+    rest, f = faces[~region].tolist(), faces[region].tolist()
+    rest_owner, f_owner = owner[~region].tolist(), owner[region].tolist()
+    opposite, ring, crease = _loop_topology(f, kind)
+    v = vertices.copy()
+    fixed = {x for e, k in kind.items() if k == 'fixed' for x in e}
+    for x, ys in crease.items():
+        a, b = (v[ys[0]]-v[x], v[ys[1]]-v[x]) if len(ys) == 2 else (v[x], v[x])
+        if len(ys) != 2 or np.degrees(np.arccos(np.clip(a@b/np.linalg.norm(a)/np.linalg.norm(b), -1, 1))) <= 180.-CREASE:
+            fixed.add(x)
+    v = list(v)
+    for level in range(levels):
+        if level: opposite, ring, crease = _loop_topology(f, kind)
+        old = np.asarray(v); new = old.copy()
+        for x in ring:
+            if x not in fixed: new[x] = _loop_vertex(old, x, ring, crease)
+        v = list(new); middle, child = {}, {}
+        for (x, y), zs in opposite.items():
+            k = kind[x, y]
+            m = len(v); middle[x, y] = m
+            v.append(.375*(old[x]+old[y])+.125*(old[zs[0]]+old[zs[1]]) if k == 'smooth' else (old[x]+old[y])/2)
+            if k != 'smooth':
+                child[min(x, m), max(x, m)] = k; child[min(y, m), max(y, m)] = k
+                if k == 'fixed': fixed.add(m)
+        kind = child
+        mid = lambda x, y: middle[min(x, y), max(x, y)]
+        f = [g for a, b, c in f for g in ((a, mid(a, b), mid(c, a)), (b, mid(b, c), mid(a, b)),
+                                         (c, mid(c, a), mid(b, c)), (mid(a, b), mid(b, c), mid(c, a)))]
+        f_owner = [o for o in f_owner for _ in range(4)]
+    return np.asarray(v), np.asarray(rest+f), np.asarray(rest_owner+f_owner), faceted
+
+
 def riding_collision(parts, obstacles=(), groups=None):
     """parts: (vertices, faces) for each placed piece, in park-local metres; obstacles: indices of pieces kept sharp.
 
@@ -509,6 +595,8 @@ def riding_collision(parts, obstacles=(), groups=None):
         vertices, faces, keep = _merge(vertices, faces); owner = owner[keep]
     vertices, faces, owner, sheet_report = solid_sheet_undersides(vertices, faces, owner, obstacles, groups)
     report.update(sheet_report)
+    vertices, faces, owner, faceted = smooth_riding(vertices, faces, owner, obstacles)
+    report['smoothed_pieces'] = len(faceted)
     report['buried_wall_triangles'] = len(buried)
     report['triangles'] = len(faces)
     return vertices, faces, owner, report

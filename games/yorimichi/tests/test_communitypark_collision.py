@@ -32,6 +32,42 @@ def thin_plate(x0, y0, x1, y1, split=False):
     return vertices, np.array(faces)
 
 
+def transition(x0, x1, bend=15., rows=4, radius=1., base=-.2):
+    """A closed bowl transition piece, faceted like the source: rows of `bend` degrees up a circular profile, swept
+    along x in two spans. Returns (vertices, faces) and the profile's (y, z) points."""
+    profile = [(radius*np.sin(np.radians(bend*i)), radius*(1-np.cos(np.radians(bend*i)))) for i in range(rows+1)]
+    xs = (x0, (x0+x1)/2, x1); top = len(profile)*len(xs)
+    vertices = [(x, y, z) for y, z in profile for x in xs] + [(x, y, base) for y in (0., profile[-1][0]) for x in (x0, x1)]
+    def at(i, j): return i*len(xs)+j
+    groups = []
+    for i in range(rows):
+        for j in range(2):
+            groups.append(((at(i, j), at(i, j+1), at(i+1, j+1)), (0, 0, 1)))
+            groups.append(((at(i, j), at(i+1, j+1), at(i+1, j)), (0, 0, 1)))
+    a, b, c, d = top, top+1, top+2, top+3     # bottom: front x0, front x1, back x0, back x1
+    groups += [((a, b, d), (0, 0, -1)), ((a, d, c), (0, 0, -1)),
+               ((a, at(0, 0), at(0, 2)), (0, -1, 0)), ((a, at(0, 2), b), (0, -1, 0)),
+               ((c, at(rows, 0), at(rows, 2)), (0, 1, 0)), ((c, at(rows, 2), d), (0, 1, 0))]
+    for end, j, (front, back) in ((-1, 0, (a, c)), (1, 2, (b, d))):
+        ring = [front] + [at(i, j) for i in range(rows+1)] + [back]
+        groups += [((back, ring[k], ring[k+1]), (end, 0, 0)) for k in range(len(ring)-2)]
+    vertices = np.array(vertices, float); faces = []
+    for face, outward in groups:
+        n = np.cross(vertices[face[1]]-vertices[face[0]], vertices[face[2]]-vertices[face[0]])
+        faces.append(face if n@outward > 0 else face[::-1])
+    return (vertices, np.array(faces)), profile
+
+
+def riding_bends(vertices, faces, up=.3):
+    """Bend in degrees across every edge shared by two upward faces of a welded mesh."""
+    normals = C._normals(vertices[faces])[0]; edges = {}
+    for k in np.flatnonzero(normals[:, 2] > up):
+        for a, b in zip(faces[k], np.roll(faces[k], -1)):
+            edges.setdefault((min(a, b), max(a, b)), []).append(k)
+    return np.array([np.degrees(np.arccos(np.clip(normals[k[0]]@normals[k[1]], -1, 1)))
+                     for k in edges.values() if len(k) == 2])
+
+
 class RidingCollisionTest(unittest.TestCase):
     def test_zero_thickness_plate_keeps_its_top_and_a_closed_ceiling(self):
         vertices = np.array([(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0), (1, 1, 0.)])
@@ -156,6 +192,36 @@ class RidingCollisionTest(unittest.TestCase):
         else:
             np.testing.assert_array_equal(triangles, vertices[faces])
             np.testing.assert_array_equal(o, owner)
+
+    def test_faceted_transitions_ride_smoothly_and_stay_joined(self):
+        # The community bowl's transitions bend up to 17 degrees between rows; at 10 m/s one such crease
+        # in a frame jolts the board past the native shock limit. Two pieces share a profile at x=1.
+        (first, profile), (second, _) = transition(0., 1.), transition(1., 2.)
+        floor = slab(0., -2., 2., 0., -.2, 0.)
+        before = C.weld([floor, first, second])
+        self.assertAlmostEqual(riding_bends(before[0], before[1]).max(), 15., places=6)
+        vertices, faces, owner, report = C.riding_collision([floor, first, second])
+        self.assertEqual(report['smoothed_pieces'], 2)
+        self.assertEqual(report['wedges'], 0)
+        self.assertEqual(C.steps(vertices, faces, owner), [])
+        bends = riding_bends(vertices, faces)
+        self.assertLess(bends[bends < C.CREASE].max(), 4.)
+        # Loop draws a concave transition slightly inward: up to about 13 mm above these 26 cm facets, never
+        # below them, and still flush with the floor.
+        triangles = vertices[faces]; up = C._normals(triangles)[0][:, 2] > .3
+        points = np.unique(triangles[up].reshape(-1, 3), axis=0)
+        y, z = np.array(profile).T
+        on = points[(points[:, 1] >= 0) & (points[:, 1] <= y[-1])]
+        rise = on[:, 2]-np.interp(on[:, 1], y, z)
+        self.assertGreaterEqual(rise.min(), -1e-9); self.assertLess(rise.max(), .015)
+        self.assertEqual(abs(points[points[:, 1] <= 0, 2]).max(), 0.)
+
+    def test_flat_and_sharp_pieces_are_not_smoothed(self):
+        for piece in (slab(-1, -1, 1, 1, -.2, 0.), slab(-1, -.2, 1, .2, -.1, .04)):
+            welded = C.weld([piece])
+            self.assertIs(C.smooth_riding(*welded)[0], welded[0])
+        _, _, _, report = C.riding_collision(floor_tiles())
+        self.assertEqual(report['smoothed_pieces'], 0)
 
     def test_flush_tiles_weld_without_ramps(self):
         vertices, faces, owner, report = C.riding_collision(floor_tiles())
