@@ -685,8 +685,8 @@ def camera(s, c, dt):
 # ------------------------------------------------------------------------------------------------ the shots
 # Every shot: start (x, y, probe z, UE yaw of travel), the launch speed (m/s), how it is steered (way: a polyline of
 # (x, y, want speed; a negative want is a cap), carve: (UE yaw, amplitude, period) or a straight heading), timed events
-# (t, effect), position triggers ({'when': fn(s, c), 'do': [effects], 'steer': False to stop steering, 'act': an
-# on-foot action}), cameras [(t or fn(s, c), camera)] that latch in order, rec_from, an end predicate and `secs` at
+# (t, effect), position triggers ({'when': fn(s, c), 'do': [effects], 'steer': False to stop steering or 'air' to hold
+# it until the board leaves the ground, 'act': an on-foot action}), cameras [(t or fn(s, c), camera)] that latch in order, rec_from, an end predicate and `secs` at
 # most. Times are seconds from the launch. Headings: UE yaw 0 east, 90 south, -90 north, 180 west.
 def landed_after(n=1, secs=1.2, min_h=0.):
     """End `secs` after the n-th landing from an air at least min_h high."""
@@ -1050,7 +1050,7 @@ def next_shot():
     k = st['k']; st['k'] += 1
     s.update(k=k, dir='%02d_%s' % (k, s['name']), ph='place', pt=0., t=0., f=0, hz=90 if s.get('slow') else 60,
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
-             air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], body=[], combos=[], lasts=[], retail=[], first=None,
+             air=None, airs=[], prev_mode=None, steer_on=True, steer_until_air=False, wk=0, log=[], body=[], combos=[], lasts=[], retail=[], first=None,
              bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, stall_t=None, mounted=None, dismounted=None, jumped=None, foot_gait=None, max_spd=0., min_spd=1e9,
              max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0, ground_wait=0)
     if s.get('steer') is False: s['steer_on'] = False
@@ -1062,7 +1062,10 @@ def next_shot():
         # Off the end and rolling on, or (Ride stops a slow grind dead at the parapet's corner) half a second after it stalls.
         s.setdefault('end', lambda s, c: (s['land_after_grind'] is not None and c.t > s['land_after_grind'] + 1.4)
                      or (s['stall_t'] is not None and c.t > s['stall_t'] + .5))
-        s['trig'] = [{'when': rail_ready, 'do': [flick('ollie', s.get('rail_load', .32))] + list(s.get('rail_do', []))}] + list(s.get('trig', []))
+        # Steering on towards the line's outside point through the pop's load would close on the line faster than
+        # rail_ready allowed for, and the air would clear the edge.
+        s['trig'] = [{'when': rail_ready, 'do': [flick('ollie', s.get('rail_load', .32))] + list(s.get('rail_do', [])),
+                      'steer': 'air'}] + list(s.get('trig', []))
     s['trig'] = [dict(t) for t in s.get('trig', [])]; s['fired'] = [None] * len(s['trig'])
     s['pending'] = sorted(s.get('events', []), key=lambda e: e[0])
     s['acts_left'] = sorted(s.get('acts', []), key=lambda e: e[0])
@@ -1270,7 +1273,9 @@ def ride(s, c, dt):
             s['fired'][n] = c.t; s['log'].append([round(c.t, 3), 'trigger', n])
             for spec in tr.get('do', []): activate(s, c, spec)
             if tr.get('steer') is False: s['steer_on'] = False
+            if tr.get('steer') == 'air': s['steer_on'], s['steer_until_air'] = False, True
             if tr.get('act'): act(s, c, tr['act'])
+    if s['steer_until_air'] and c.mode != 1: s['steer_on'], s['steer_until_air'] = True, False
     a = s['air']
     if s.get('plan') and a is not None and c.mode == 2 and 'plan' not in a:     # a line's next trick, chosen at the lip
         a['plan'] = None
