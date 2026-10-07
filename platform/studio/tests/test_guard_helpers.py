@@ -5,6 +5,9 @@
 The fake game and helpers are this Python under other names (`UnrealEditor-Fake`, `dotnet`, `UnrealTraceServer`):
 the guard reads a process's executable name, and a copied system binary would not run. Each helper is a real
 descendant of the fake game, reparented to launchd when it exits, as Turnkey's VerifySdk was.
+
+Run these checks in a no-heavy-job window. The real process names (including `Blender`) deliberately match the
+render admission scan, so a concurrent build or game can be refused even though these children only sleep.
 """
 import json
 import os
