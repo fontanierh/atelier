@@ -13,6 +13,8 @@ struct FJapanZeppelinAdmission
 {
     uint32 Epoch = 0;
     int32 Station = INDEX_NONE;
+    /** Host path-length/speed lower bound; zero only when already at the slot. */
+    double MinimumBoardingSeconds = 0.;
     bool bReady = false, bOnFoot = false, bGrounded = false, bNearStation = false;
     bool bMenuOpen = false, bMovementLocked = false, bPendingContact = false, bEncounterHeld = false;
 };
@@ -64,7 +66,7 @@ public:
         uint32 Lease, int32 SpeedIndex, double Now);
     EJapanZeppelinReply VoteSkip(const FString& Player, uint32 Epoch, uint32 Trip, uint32 Roster, bool bVote, double Now);
     bool WantsSkip(double Now) const;
-    EJapanZeppelinReply Call(const FString& Player, uint32 Epoch, uint32 Trip, int32 Station,
+    EJapanZeppelinReply Call(const FString& Player, uint32 Epoch, int32 Station,
         double Now, const FJapanZeppelinAdmission& Host);
     bool CancelCall(const FString& Player, uint32 Epoch, double Now);
     /** Only an empty, clear dock may dispatch a call. Already-at-dock calls are consumed too. */

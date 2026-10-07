@@ -20,6 +20,8 @@ that the actor adapter or a shared ride works.
   enter the scripted activity in the same call, returning its new epoch. A
   refusal returns zero without changing the pawn. Callbacks cannot yield or
   re-enter the manifest. Geometry must be validated before this final handoff.
+  Any nonzero result is committed: an unchanged epoch emits an invariant error
+  but still retains the passenger record so safe release remains possible.
 - Accepted passengers are protected throughout scripted boarding, flight and
   disembark. There is no unprotected scripted reservation. Dock-call waiters
   remain ordinary on-foot players. The combat adapter must reject and count
@@ -31,6 +33,9 @@ that the actor adapter or a shared ride works.
   until the adapter validates a safe return. Such a passenger prevents departure.
   A bystander on the hull or gangway also prevents departure. Safety can keep a
   ship docked with a visible explanation; it cannot leave a passenger behind.
+  The host supplies a minimum walk duration from the validated boarding path;
+  admission closes when that duration no longer fits before the deadline. The
+  adapter retries unsafe expiries every host tick while boarding is overdue.
 - Slots remain stable when someone leaves. The physical adapter chooses a deck
   capacity from one to eight after checking capsule dimensions and authored slot
   spacing; eight is a storage limit, not a demonstrated physical capacity.
@@ -40,9 +45,12 @@ that the actor adapter or a shared ride works.
   changes a flying ship's destination, even when the last passenger leaves.
 - The first passenger receives route control. On removal the oldest ready
   passenger inherits it, or the oldest boarding passenger if none is ready yet.
+  When somebody reaches their slot and the current controller is still walking,
+  control passes to the oldest ready passenger immediately.
   Another ready passenger may request control after thirty seconds without a
   route/speed change. Every lease transfer changes its generation, so an old
   queued command cannot become valid again if control returns to the same player.
+  Flight speed persists across trips, matching the standalone preference.
 - Skip needs every current passenger's vote. Votes are revocable, expire after
   ten seconds, and clear on roster or trip changes. A skip only authorizes safe
   docking; it does not directly teleport or release a passenger. Requests include
@@ -53,6 +61,8 @@ that the actor adapter or a shared ride works.
   that caller's request but does not reset a leg already in progress. Personal
   travel and character replacement cancel the old epoch's call through
   `CancelCall`; a stale cancellation cannot remove a new epoch's request.
+  A call uses epoch and station only: a route transition cannot stale a waiter's
+  unrelated request.
 - Trip revision changes on route selection, departure and arrival. Boarding
   changes a separate roster revision, so simultaneous valid admissions from the
   same trip snapshot do not invalidate each other.

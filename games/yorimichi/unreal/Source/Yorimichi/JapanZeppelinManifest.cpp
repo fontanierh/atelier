@@ -52,14 +52,19 @@ EJapanZeppelinReply FJapanZeppelinManifest::Board(const FString& Player, uint32 
     if (Host.Station != Dock) return EJapanZeppelinReply::Unavailable;
     if (Phase != EJapanZeppelinPhase::Docked && Phase != EJapanZeppelinPhase::Boarding)
         return EJapanZeppelinReply::BoardingClosed;
-    if (Phase == EJapanZeppelinPhase::Boarding && Now >= BoardingDeadline) return EJapanZeppelinReply::BoardingClosed;
+    const double Deadline = Phase == EJapanZeppelinPhase::Boarding ? BoardingDeadline : Now + BoardingSeconds;
+    if (!FMath::IsFinite(Host.MinimumBoardingSeconds) || Host.MinimumBoardingSeconds < 0. ||
+        Now >= Deadline || Now + Host.MinimumBoardingSeconds >= Deadline) return EJapanZeppelinReply::BoardingClosed;
     if (Passengers.Num() >= PassengerCapacity) return EJapanZeppelinReply::Full;
     int32 Slot = 0;
     while (Passengers.ContainsByPredicate([&](const FJapanZeppelinPassenger& P) { return P.Slot == Slot; })) ++Slot;
     // The adapter rechecks live pending contacts and encounter ownership here.
     // A failed handoff must leave both the pawn and manifest unchanged.
     const uint32 ProtectedEpoch = EnterProtected(Slot);
-    if (!ProtectedEpoch || ProtectedEpoch == Epoch) return EJapanZeppelinReply::Unsafe;
+    if (!ProtectedEpoch) return EJapanZeppelinReply::Unsafe;
+    // A nonzero callback return is a committed pawn. Retain its reservation even
+    // if the adapter broke its epoch contract, so safe release remains possible.
+    ensureAlwaysMsgf(ProtectedEpoch != Epoch, TEXT("Zeppelin committed admission without advancing the epoch"));
     FJapanZeppelinPassenger P; P.Player = Player; P.RequestEpoch = Epoch; P.Epoch = ProtectedEpoch; P.Slot = Slot;
     Passengers.Add(MoveTemp(P));
     Calls.RemoveAll([&](const FJapanZeppelinCall& C) { return C.Player == Player; });
@@ -74,7 +79,8 @@ bool FJapanZeppelinManifest::ReachedSlot(const FString& Player, uint32 Epoch, do
     if (!AdvanceTime(Now) || Phase != EJapanZeppelinPhase::Boarding || Now >= BoardingDeadline) return false;
     auto* P = FindMutable(Player); if (!P || P->Epoch != Epoch) return false;
     P->bAtSlot = true;
-    if (Controller.IsEmpty()) ElectController(Now);
+    const auto* Current = Find(Controller);
+    if (!Current || !Current->bAtSlot) ElectController(Now);
     return true;
 }
 
@@ -149,6 +155,7 @@ void FJapanZeppelinManifest::ClearVotes() { for (auto& P : Passengers) P.SkipUnt
 void FJapanZeppelinManifest::NewTrip() { AdvanceZeppelinRevision(TripRevision); ClearVotes(); }
 void FJapanZeppelinManifest::SetController(const FString& Player, double Now)
 {
+    if (Controller == Player) return;
     Controller = Player; LastControl = Now; AdvanceZeppelinRevision(LeaseRevision);
 }
 void FJapanZeppelinManifest::ElectController(double Now)
@@ -161,7 +168,8 @@ void FJapanZeppelinManifest::ElectController(double Now)
 void FJapanZeppelinManifest::RosterChanged(double Now)
 {
     AdvanceZeppelinRevision(RosterRevision); ClearVotes();
-    if (!Find(Controller)) ElectController(Now);
+    const auto* Current = Find(Controller);
+    if (!Current || !Current->bAtSlot) ElectController(Now);
 }
 
 EJapanZeppelinReply FJapanZeppelinManifest::RequestControl(const FString& Player, uint32 Epoch,
@@ -225,7 +233,7 @@ bool FJapanZeppelinManifest::WantsSkip(double Now) const
     return true;
 }
 
-EJapanZeppelinReply FJapanZeppelinManifest::Call(const FString& Player, uint32 Epoch, uint32 Trip,
+EJapanZeppelinReply FJapanZeppelinManifest::Call(const FString& Player, uint32 Epoch,
     int32 Station, double Now, const FJapanZeppelinAdmission& Host)
 {
     if (!AdvanceTime(Now) || !ZeppelinPlayerValid(Player) || !StationValid(Station)) return EJapanZeppelinReply::Invalid;
@@ -238,7 +246,6 @@ EJapanZeppelinReply FJapanZeppelinManifest::Call(const FString& Player, uint32 E
             EJapanZeppelinReply::Duplicate : EJapanZeppelinReply::Stale;
     if (const auto* Old = Calls.FindByPredicate([&](const FJapanZeppelinCall& C) { return C.Player == Player; }))
         return Old->Epoch == Epoch && Old->Station == Station ? EJapanZeppelinReply::Duplicate : EJapanZeppelinReply::Stale;
-    if (Trip != TripRevision) return EJapanZeppelinReply::Stale;
     if (Calls.Num() + (ActiveCall.Player.IsEmpty() ? 0 : 1) >= MaximumCalls) return EJapanZeppelinReply::Full;
     FJapanZeppelinCall C; C.Player = Player; C.Epoch = Epoch; C.Station = Station; Calls.Add(MoveTemp(C));
     return EJapanZeppelinReply::Accepted;

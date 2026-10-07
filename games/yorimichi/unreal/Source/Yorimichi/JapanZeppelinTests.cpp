@@ -22,6 +22,53 @@ bool FJapanZeppelinManifestTest::RunTest(const FString&)
     using Reply = EJapanZeppelinReply;
     using Phase = EJapanZeppelinPhase;
     {
+        FJapanZeppelinManifest M; M.Initialize(3, 0);
+        AddExpectedError(TEXT("Zeppelin committed admission without advancing the epoch"),
+            EAutomationExpectedErrorFlags::Contains, 0);
+        TestTrue(TEXT("Committed callback is never refused after mutation"),
+            M.Board(TEXT("bad-adapter"), 1, M.GetTrip(), 0., ZeppelinReady(),
+                [](int32) -> uint32 { return 1; }) == Reply::Accepted);
+        TestTrue(TEXT("Even an adapter invariant failure retains safe release"),
+            M.Release(TEXT("bad-adapter"), 1, 0., ZeppelinSafeExit));
+    }
+    {
+        FJapanZeppelinManifest M; M.Initialize(3, 0);
+        auto Enter = [](int32) -> uint32 { return 2; };
+        const uint32 Trip = M.GetTrip();
+        M.Board(TEXT("slow"), 1, Trip, 0., ZeppelinReady(), Enter);
+        M.Board(TEXT("ready"), 1, Trip, 0., ZeppelinReady(), Enter);
+        TestTrue(TEXT("Second passenger can become ready first"), M.ReachedSlot(TEXT("ready"), 2, 1.));
+        TestTrue(TEXT("Slow boarder cannot monopolize the boarding lease"), M.GetController() == TEXT("ready"));
+        TestTrue(TEXT("Ready controller can select destination before departure"),
+            M.SelectDestination(TEXT("ready"), 2, Trip, M.GetLease(), 2, 1.) == Reply::Accepted);
+        TestTrue(TEXT("Destination change stales old concurrent boarding snapshot"),
+            M.Board(TEXT("late"), 1, Trip, 1., ZeppelinReady(), Enter) == Reply::Stale);
+        auto H = ZeppelinReady(); H.MinimumBoardingSeconds = 2.;
+        TestTrue(TEXT("Admission closes if the walk cannot fit"),
+            M.Board(TEXT("late"), 1, M.GetTrip(), 7., H, Enter) == Reply::BoardingClosed);
+        TestEqual(TEXT("Expired slow first boarder safely removed"), M.ExpireBoarding(8., ZeppelinSafeExit), 1);
+        TestTrue(TEXT("Ready controller survives expiry"), M.GetController() == TEXT("ready"));
+        M.Depart(8., true); M.Arrive(20.);
+        M.Disconnect(TEXT("ready"), 20.);
+        TestTrue(TEXT("Disembark disconnect stays at destination"), M.GetPhase() == Phase::Disembarking);
+        TestEqual(TEXT("Disembark disconnect retains arrived dock"), M.GetDock(), 2);
+        TestTrue(TEXT("Disconnected final passenger permits dock completion"), M.FinishDisembarking(20., 0));
+    }
+    {
+        FJapanZeppelinManifest M; M.Initialize(3, 0);
+        auto Enter = [](int32) -> uint32 { return 2; };
+        M.Board(TEXT("a"), 1, M.GetTrip(), 0., ZeppelinReady(), Enter);
+        const uint32 Lease = M.GetLease();
+        M.Board(TEXT("b"), 1, M.GetTrip(), 0., ZeppelinReady(), Enter);
+        TestEqual(TEXT("Another reservation does not renew unchanged lease"), M.GetLease(), Lease);
+        TestEqual(TEXT("Only controller has a safe expiry location"), M.ExpireBoarding(8.,
+            [](const FJapanZeppelinPassenger& P) { return P.Player == TEXT("a"); }), 1);
+        TestTrue(TEXT("Expired controller's unsafe companion inherits lease"), M.GetController() == TEXT("b"));
+        TestTrue(TEXT("Unsafe companion remains protected"), M.Find(TEXT("b")) != nullptr);
+        TestEqual(TEXT("Next tick retries safe expiry"), M.ExpireBoarding(8.1, ZeppelinSafeExit), 1);
+        TestTrue(TEXT("All expired passengers return ship to docked"), M.GetPhase() == Phase::Docked);
+    }
+    {
         FJapanZeppelinManifest M;
         TestFalse(TEXT("Reject incomplete line"), M.Initialize(1, 0));
         TestFalse(TEXT("Reject unbounded capacity"), M.Initialize(3, 0, 9));
@@ -133,27 +180,26 @@ bool FJapanZeppelinManifestTest::RunTest(const FString&)
     }
     {
         FJapanZeppelinManifest M; M.Initialize(3, 0);
-        const uint32 Trip = M.GetTrip();
         for (int32 I = 0; I < FJapanZeppelinManifest::MaximumCalls; ++I)
-            TestTrue(TEXT("Bounded dock calls accepted"), M.Call(FString::Printf(TEXT("p%d"), I), 1, Trip,
+            TestTrue(TEXT("Bounded dock calls accepted"), M.Call(FString::Printf(TEXT("p%d"), I), 1,
                 1, 1., ZeppelinReady(1, 1)) == Reply::Accepted);
-        TestTrue(TEXT("Ninth distinct caller refused"), M.Call(TEXT("overflow"), 1, Trip, 1, 1., ZeppelinReady(1, 1)) == Reply::Full);
-        TestTrue(TEXT("Repeat call idempotent even while full"), M.Call(TEXT("p0"), 1, Trip, 1, 1., ZeppelinReady(1, 1)) == Reply::Duplicate);
-        TestTrue(TEXT("Same caller cannot queue another station"), M.Call(TEXT("p0"), 1, Trip, 2, 1., ZeppelinReady(1, 2)) == Reply::Stale);
+        TestTrue(TEXT("Ninth distinct caller refused"), M.Call(TEXT("overflow"), 1, 1, 1., ZeppelinReady(1, 1)) == Reply::Full);
+        TestTrue(TEXT("Repeat call idempotent even while full"), M.Call(TEXT("p0"), 1, 1, 1., ZeppelinReady(1, 1)) == Reply::Duplicate);
+        TestTrue(TEXT("Same caller cannot queue another station"), M.Call(TEXT("p0"), 1, 2, 1., ZeppelinReady(1, 2)) == Reply::Stale);
         TestFalse(TEXT("Call cannot remove a bystander's floor"), M.DispatchCall(2., false));
         TestTrue(TEXT("Clear empty ship serves oldest call"), M.DispatchCall(2., true));
         TestTrue(TEXT("Active call remains unserved until arrival"), M.GetActiveCall().Player == TEXT("p0"));
         TestTrue(TEXT("In-flight duplicate cannot create a second request"),
-            M.Call(TEXT("p0"), 1, Trip, 1, 3., ZeppelinReady(1, 1)) == Reply::Duplicate);
+            M.Call(TEXT("p0"), 1, 1, 3., ZeppelinReady(1, 1)) == Reply::Duplicate);
         TestTrue(TEXT("Active call counts against total bound"),
-            M.Call(TEXT("overflow"), 1, M.GetTrip(), 1, 3., ZeppelinReady(1, 1)) == Reply::Full);
+            M.Call(TEXT("overflow"), 1, 1, 3., ZeppelinReady(1, 1)) == Reply::Full);
         TestFalse(TEXT("Stale call cancellation cannot remove current pickup"), M.CancelCall(TEXT("p0"), 99, 4.));
         TestTrue(TEXT("Personal travel cancels only its call"), M.CancelCall(TEXT("p0"), 1, 4.));
         M.Disconnect(TEXT("p0"), 4.);
         TestTrue(TEXT("Caller disconnect cannot reset in-flight service"), M.GetPhase() == Phase::Flying);
         TestEqual(TEXT("Other queued callers remain"), M.GetCalls().Num(), 7);
         TestTrue(TEXT("Vacated request slot can be filled"),
-            M.Call(TEXT("next"), 1, M.GetTrip(), 2, 4., ZeppelinReady(1, 2)) == Reply::Accepted);
+            M.Call(TEXT("next"), 1, 2, 4., ZeppelinReady(1, 2)) == Reply::Accepted);
         TestFalse(TEXT("Another call cannot teleport active flight"), M.DispatchCall(4., true));
         M.Arrive(10.); M.FinishDisembarking(10., 2);
         TestTrue(TEXT("Already fulfilled same-dock calls drained before next station"), M.DispatchCall(11., true));
