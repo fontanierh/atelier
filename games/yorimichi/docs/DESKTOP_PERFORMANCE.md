@@ -100,11 +100,12 @@ Set by the game's preferences with `desktop=1` and `performance=1` (`JapanPrefer
 | `r.InstanceCulling.OcclusionCull` | 1 | culls instances the depth buffer hides (both profiles) |
 | `japan.HarborFillAuto` | 1 | no cascades for the harbor's second directional light when every receiver is beyond cascade range |
 
-The player's mesh casts an inset (per-object) shadow in both profiles (`WandererCharacter.cpp`). With only two
-1024 cascades, the first one spans about 43 m at roughly 8 cm per texel, so the rider's cascade shadow was a soft
-blob that changed shape every frame while skating on the pier. In a fixed-step 5 m/s coast, the blob's dark area
-jumped by more than 2% of its region in 48 of 89 frames; with the inset shadow (or 2048 or four cascades) no frame did.
-The inset shadow adds one small depth pass for a single character instead of raising the whole cascade budget.
+The player's mesh casts an inset (per-object) shadow in both profiles, shared by what is attached to it (sword, props,
+bike; `WandererCharacter.cpp`). With only two 1024 cascades, the first one spans about 43 m at roughly 8 cm per texel,
+so the rider's cascade shadow was a soft blob that changed shape every frame while skating on the pier. In a
+fixed-step 5 m/s coast, the blob's dark area jumped by more than 2% of its region in 48 of 89 frames; with the inset
+shadow (or 2048 or four cascades) no frame did. The inset shadow adds one small depth pass for a single character
+instead of raising the whole cascade budget.
 
 In `unreal/Config/DefaultEngine.ini`, for the deferred path: `r.Lumen.IrradianceFieldGather.ProbeOcclusionBias=0.8`,
 the engine's default. A larger offset puts opposite sides of the inverted character into different probe cells and
