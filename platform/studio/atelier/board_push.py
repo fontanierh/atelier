@@ -140,8 +140,8 @@ def vapid(endpoint, subject, key=None):
 
 
 def payload(message):
-    """What the notification shows, and where tapping it goes: the message's thread, or the Tasks page for the ask
-    that opened an operator task."""
+    """What the notification shows, and where tapping it goes: the message's thread, or the Tasks page for an
+    operator task's ask and anything flagged in its thread (an edited ask)."""
     text = split_attachments(message['body'])[0]
     text = re.sub(r'[*_`#>]+', '', text)
     text = ' '.join(text.split())
@@ -197,7 +197,8 @@ class Pusher(threading.Thread):
     def due(self):
         with self.connect() as db:
             return [dict(row) for row in db.execute(
-                'SELECT m.*, t.id AS task FROM messages m LEFT JOIN operator_tasks t ON t.message=m.id '
+                'SELECT m.*, t.id AS task FROM messages m '
+                'LEFT JOIN operator_tasks t ON t.message IN (m.id, m.reply_to) '
                 'WHERE m.id>? AND m.notify=1 AND m.sender!=? ORDER BY m.id LIMIT 20',
                 (self.after, self.sender))]
 

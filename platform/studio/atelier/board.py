@@ -20,8 +20,8 @@ from . import paths
 # The store's names stay importable from here, as they were before the split.
 from .board_store import (
     NOTIFY_PER_HOUR, OPEN_TASKS, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TASK_CHARS, TOPICS, agent_name, audience_text,
-    close_task, database, folds, messages, notify_allowed, open_task, post, remove, root, send_web, set_task, tasks,
-    thread_rows, with_audience
+    close_task, database, edit_task, folds, messages, notify_allowed, open_task, post, remove, root, send_web, set_task,
+    tasks, thread_rows, with_audience
 )  # noqa: F401
 
 

@@ -1122,7 +1122,7 @@ function taskCard(task) {
     } catch(error) {status.textContent=error.message;status.classList.add("error");dismiss.disabled=false;}
   });
   entry.update=t=>{
-    entry.task=t;card.querySelector(".task-age").textContent=` · ${since(t.asked)}`;
+    entry.task=t;card.querySelector(".task-age").textContent=` · ${since(t.asked)}${t.edited?" · edited":""}`;
     if(entry.html!==t.body_html){entry.html=t.body_html;markdown(body,t.body_html,t.body);}
     const r=t.last_reply;last.hidden=!r;
     if(r)last.textContent=`${r.sender===state.sender?"You":r.sender}: ${snippet(r.body)} · ${since(r.created)}`;

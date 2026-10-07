@@ -113,6 +113,9 @@ def test_only_flagged_new_messages_push_and_each_agent_gets_a_few_an_hour(cache)
     assert shown['title'] == 'two · Operator task' and shown['url'] == f'/?task={task}' and shown['body'] == 'Can I ship r8?'
     pusher.step(client)
     assert len(client.calls) == 4
+    board.edit_task(task, 'two', 'Can I ship r9?')   # an edited ask pushes the same way
+    shown = board_push.payload(pusher.due()[0])
+    assert shown['url'] == f'/?task={task}' and shown['body'] == 'Updated the ask: Can I ship r9?'
 
     gone = Push(status=410)
     board.post('one', 'Another urgent one.', 'operator', notify=True)

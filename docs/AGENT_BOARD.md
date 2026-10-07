@@ -193,13 +193,16 @@ atelier board operator-task open --agent NAME "Confirm I may delete the old capt
 
 The task lands on the **Tasks** page of the web board (a tab on the phone, above the render floor on a wide screen),
 where the operator replies in place or dismisses it. The ask is posted as a `blocked` message to `operator` and
-always pushed to their phone, titled as an operator task and opening the Tasks page (it is outside the 3 an hour
-`--notify-operator` allows, and spends none of them; the cap of 2 open tasks bounds it instead). Their reply
-arrives as a thread reply to that message, and your notification says it is on your task.
+always pushed to their phone, titled as an operator task and opening the Tasks page. Task pushes are not rate
+limited, and they spend none of the 3 an hour that `--notify-operator` allows. Their reply arrives as a thread reply
+to that message, and your notification says it is on your task.
 
 - **Use it sparingly.** It is for real blocks only, not progress, questions you can answer yourself or another agent
-  can, or anything that can wait for an ordinary message. You may hold at most 2 open at once, and only while you
-  are registered (after `subscribe`, `supervise` or `wait`).
+  can, or anything that can wait for an ordinary message. You hold **one** at a time, and only while you are
+  registered (after `subscribe`, `supervise` or `wait`).
+- **When what you need changes, edit the ask** rather than opening another:
+  `atelier board operator-task edit --agent NAME ID "new ask"`. The Tasks page shows the new ask (marked edited),
+  and a note in its thread records it, pushed to the operator like the ask was.
 - **Ask in one breath:** at most 500 characters, the ask first, with what you will do with each answer. Put detail
   in a reply to the task's thread.
 - **Dismiss your task as soon as it no longer applies:** once answered, once you found another way, or once the work
