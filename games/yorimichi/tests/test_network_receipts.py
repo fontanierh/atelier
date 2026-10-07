@@ -236,7 +236,7 @@ def fast_combat_receipts(combat_receipts):
     # Duplicate moves from one arrival frame must not inflate the evidence count.
     (combat_receipts / 'server.log').write_text(''.join(
         f'NETWORK defence move ts={i} host_dt=0.016670 now={i / 60:.6f}\n' * 2 for i in range(60)) + ''.join(
-        f'NETWORK defence edge={i} button={button} now=1.000000 press=.880000 oldest=.850000 valid=1\n'
+        f'NETWORK defence edge={i} button={button} now=1.000000 press=.880000 oldest=.850000 valid=1 one_way=.060000 spread=.030000 step=.030000 slow_host=.000000\n'
         for i, button in enumerate(('guard', 'jump', 'dodge'))))
     return combat_receipts
 
@@ -270,12 +270,16 @@ def test_fast_global_clock_does_not_hide_a_slow_actual_parry(fast_combat_receipt
 
 
 @pytest.mark.parametrize('edit', [
-    lambda s: s.replace('oldest=.850000', 'oldest=.842000'),  # 158 ms bound hides a slow host.
+    lambda s: s.replace('oldest=.850000', 'oldest=.842000'),  # Bound differs from the measured allowance formula.
     lambda s: s.replace('press=.880000', 'press=.855000'),  # Less than 10 ms margin.
     lambda s: '\n'.join(line for line in s.splitlines() if 'NETWORK defence edge=' not in line),
     lambda s: s.replace('button=dodge', 'button=attack'),
     lambda s: s.replace('valid=1', 'valid=0'),
     lambda s: s.replace('oldest=.850000', 'oldest=nan'),
+    lambda s: s.replace('spread=.030000', 'spread=.100000'),
+    lambda s: s.replace('spread=.030000', 'spread=nan'),
+    lambda s: s.replace(' one_way=.060000', ''),
+    lambda s: s.replace('slow_host=.000000', 'slow_host=.020000').replace('oldest=.850000', 'oldest=.830000'),
 ])
 def test_fast_host_requires_real_bounded_defence_edges(fast_combat_receipts, edit):
     path = fast_combat_receipts / 'server.log'
@@ -293,3 +297,9 @@ def test_defence_edge_evidence_reports_bound_and_margin(fast_combat_receipts):
         assert edge['accepted']
         assert edge['bound'] == pytest.approx(.150)
         assert edge['margin'] == pytest.approx(.030)
+
+
+def test_fast_host_allows_measured_arrival_tail_within_hard_ceiling(fast_combat_receipts):
+    path = fast_combat_receipts / 'server.log'
+    path.write_text(path.read_text().replace('spread=.030000', 'spread=.045000').replace('oldest=.850000', 'oldest=.835000'))
+    assert review.compare_receipts(fast_combat_receipts, listen=True, combat=True, combat_host_fps=60)['combat_fast_defence_edges']

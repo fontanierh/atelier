@@ -10,13 +10,13 @@ bool FJapanDefenceTimelineTest::RunTest(const FString&)
     double Mapped = 0.;
     TestTrue(TEXT("Accepted CMC time maps using a host-only transit estimate"), Clock.MapAccepted(1., 10.06, .12, .015, Mapped));
     TestTrue(TEXT("Combat mapping removes, rather than adds, inbound transit"), FMath::IsNearlyEqual(Mapped, 10., .00001));
-    TestTrue(TEXT("The wait covers one-way transit plus measured jitter and margin"), FMath::IsNearlyEqual(Clock.Wait, .105, .00001));
+    TestTrue(TEXT("The wait covers one-way transit plus measured arrival spread and margin"), FMath::IsNearlyEqual(Clock.Wait, .09, .00001));
     TestTrue(TEXT("Packet jitter is not added to the original press time"), Clock.MapAccepted(1.03, 10.12, .12, .015, Mapped));
     TestTrue(TEXT("Original input spacing survives a jittered arrival"), FMath::IsNearlyEqual(Mapped, 10.03, .00001));
     TestFalse(TEXT("Duplicate accepted timestamps cannot remap defence history"), Clock.MapAccepted(1.03, 10.13, .12, .015, Mapped));
     Clock.Reset();
     TestTrue(TEXT("Excessive measured ping still has a bounded result wait"), Clock.MapAccepted(1., 20., 1., .3, Mapped));
-    TestTrue(TEXT("A bad connection cannot delay contacts indefinitely"), Clock.Wait <= .15 && Clock.OneWay <= .15);
+    TestTrue(TEXT("A bad connection cannot delay contacts indefinitely"), Clock.Wait <= .2 && Clock.OneWay <= .15);
     double Press = 0.;
     Clock.Reset(); Clock.MapAccepted(1., 10.06, .12, .015, Mapped);
     TestTrue(TEXT("A recent journal edge fits the measured transit allowance"), Clock.OriginalPress(10, 10.06, Press));
@@ -64,8 +64,8 @@ bool FJapanDefenceTimelineTest::RunTest(const FString&)
     TestTrue(TEXT("One delayed ACK cannot widen contact waiting"), Normal.MaximumRewind == Spike.MaximumRewind);
     for (double HostDt : {1. / 60., .05, .1, 2.})
     {
-        Clock.Reset(); Clock.MapAccepted(1., 10., .3, .05, Mapped, .03334, HostDt);
-        const double Expected = FMath::Min(.2, .15 + FMath::Max(0., FMath::Min(HostDt, .1) - 1. / 60.));
+        Clock.Reset(); Clock.MapAccepted(1., 10., .12, .05, Mapped, .03334, HostDt);
+        const double Expected = FMath::Min(.2, .12334 + FMath::Max(0., FMath::Min(HostDt, .1) - 1. / 60.));
         TestTrue(TEXT("Only host frame time beyond 60 Hz increases the old bound"), FMath::IsNearlyEqual(Clock.MaximumRewind, Expected, .000001));
         TestTrue(TEXT("Every allowed rewind has an equal bounded contact wait"), Clock.Wait == Clock.MaximumRewind && Clock.Wait <= .2);
     }
@@ -80,6 +80,54 @@ bool FJapanDefenceTimelineTest::RunTest(const FString&)
     TestTrue(TEXT("An initial unknown RTT does not pin the minimum to zero"), Clock.OneWay == .06);
     for (int32 I = 1; I <= 700; ++I) Clock.MapAccepted(2. + I / 60., 11. + I / 60., .12, 0., Mapped);
     TestTrue(TEXT("The ten-second window has bounded bucket storage"), Clock.Samples.Num() <= 102);
+    Clock.Reset(); Clock.MapAccepted(1., 10., .12, 0., Mapped, .033333, 1. / 60.);
+    Clock.MapAccepted(1.03, 10.08, .12, 0., Mapped, .033333, 1. / 60.);
+    TestTrue(TEXT("A single warmup bucket cannot buy jitter allowance"), Clock.Samples.Num() == 1 && Clock.ArrivalSpread == 0.);
+    for (double HostDt : {1. / 60., .05, .1, 2.})
+    {
+        Clock.Reset();
+        for (int32 I = 0; I < 20; ++I)
+        {
+            const double Ts = 1. + I * .2;
+            Clock.MapAccepted(Ts, Ts + 10. + (I % 2 ? .06 : 0.), .3, .05, Mapped, .033333, HostDt);
+        }
+        TestTrue(TEXT("Sustained tail and high RTT saturate the total 200 ms ceiling at every host rate"),
+            Clock.ArrivalSpread == .05 && Clock.MaximumRewind == .2 && Clock.Wait == .2);
+    }
+    // Reproduce the fast-host guard's measured floor, 39.6 ms arrival tail,
+    // and 33 ms input age. The prior smoothed-jitter bound left only 4.8 ms.
+    Clock.Reset();
+    Clock.MapAccepted(.033348, 19.959806, .199148, .02915, Mapped, .033348, .016676);
+    Clock.MapAccepted(.066693, 19.993155, .132289, .027391, Mapped, .033345, .016667);
+    for (int32 I = 1; I <= 60; ++I)
+    {
+        const double Ts = .1 + I * .11;
+        Clock.MapAccepted(Ts, Ts + 19.926458 + (I % 2 ? .038 : .004), .15, .014, Mapped, .033343, 1. / 60.);
+    }
+    Clock.MapAccepted(7.035473, 27.001529, .149738, .013999, Mapped, .033343, .016701);
+    TestTrue(TEXT("Recorded fast-host guard keeps ten milliseconds inside the measured tail"),
+        Clock.OriginalPress(33, 27.001529, Press) && Press - (27.001529 - Clock.MaximumRewind) >= .01);
+    TestTrue(TEXT("Arrival spread is bounded and separate from mean ACK jitter"),
+        Clock.ArrivalSpread >= .037 && Clock.ArrivalSpread <= .05 && Clock.Wait <= .2);
+    Normal = Clock; Spike = Clock;
+    Normal.MapAccepted(7.2, 27.164458, .15, .014, NormalTime, .033343, 1. / 60.);
+    Spike.MapAccepted(7.2, 27.214458, .15, .014, SpikeTime, .033343, 1. / 60.);
+    TestTrue(TEXT("One deliberately held packet cannot widen the arrival-tail allowance"),
+        Normal.MaximumRewind == Spike.MaximumRewind);
+    Clock.Reset();
+    for (int32 I = 0; I < 50; ++I)
+    {
+        const double Ts = 1. + I * .12;
+        Clock.MapAccepted(Ts, Ts + 10. + (I % 2 ? .0467 : 0.), .132, .001, Mapped, .033333, 1. / 60.);
+    }
+    const double TailNow = 7. + 10. + .0467;
+    Clock.MapAccepted(7., TailNow, .132, .001, Mapped, .033333, 1. / 60.);
+    TestTrue(TEXT("A sustained 60/15 tail plus host quantization keeps honest input inside"),
+        Clock.OriginalPress(33, TailNow, Press) && Press - (TailNow - Clock.Wait) >= .01);
+    const uint16 Beyond = uint16(FMath::CeilToInt((Clock.Wait - (TailNow - Mapped)) * 1000.) + 1);
+    TestFalse(TEXT("A claimed press beyond the measured tail plus one millisecond is rejected"),
+        Clock.OriginalPress(Beyond, TailNow, Press));
+
 
     // The host may process an input 150 ms after its original movement step.
     // Eligibility uses that step's origin, not the time its packet was received.

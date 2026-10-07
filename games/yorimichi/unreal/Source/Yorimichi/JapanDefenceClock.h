@@ -8,9 +8,10 @@ struct FJapanDefenceClock
 {
     static constexpr double MaximumCompensation = .2;
     static constexpr double SampleWindow = 10.;
-    struct FSample { double Arrival = 0., Offset = 0., RTT = 0.; };
+    struct FSample { double Arrival = 0., Offset = 0., RTT = 0., MaximumOffset = 0.; };
     TArray<FSample, TInlineAllocator<104>> Samples;
     double LastTimestamp = -1., LastMapped = -1.;
+    double ArrivalSpread = 0., AcceptedStep = 0., SlowHost = 0.;
     double OneWay = 0., Wait = .03, MaximumRewind = .03;
     uint32 Generation = 0;
 
@@ -39,15 +40,25 @@ struct FJapanDefenceClock
         if (!Samples.IsEmpty() && Now - Samples.Last().Arrival < .1)
         {
             Samples.Last().Offset = FMath::Min(Samples.Last().Offset, Delta);
+            Samples.Last().MaximumOffset = FMath::Max(Samples.Last().MaximumOffset, Delta);
             if (HostRTT > 0.) Samples.Last().RTT = Samples.Last().RTT > 0. ? FMath::Min(Samples.Last().RTT, HostRTT) : HostRTT;
         }
-        else Samples.Add({Now, Delta, HostRTT});
+        else Samples.Add({Now, Delta, HostRTT, Delta});
+        TArray<double, TInlineAllocator<104>> BucketOffsets;
         double Offset = Delta, MinimumRTT = TNumericLimits<double>::Max();
         for (const auto& Sample : Samples)
         {
             Offset = FMath::Min(Offset, Sample.Offset);
+            BucketOffsets.Add(Sample.MaximumOffset);
             if (Sample.RTT > 0.) MinimumRTT = FMath::Min(MinimumRTT, Sample.RTT);
         }
+        // A sustained arrival tail is different from one late/held packet. Use
+        // the upper-trimmed p90 of 100 ms bucket maxima, capped at 50 ms. Always
+        // discard at least one bucket; a single outlier during warmup buys no wait.
+        BucketOffsets.Sort();
+        const int32 Trim = FMath::Max(1, FMath::CeilToInt(BucketOffsets.Num() * .1));
+        const int32 Quantile = BucketOffsets.Num() - Trim - 1;
+        ArrivalSpread = Quantile < 0 ? 0. : FMath::Clamp(BucketOffsets[Quantile] - Offset, 0., .05);
         // RawPing is the maximum ACK RTT in a frame. A single delayed ACK must
         // not backdate every defensive press. Retain the fastest measured path
         // over the SAME bounded window as the arrival offset; zero is unknown.
@@ -55,14 +66,14 @@ struct FJapanDefenceClock
         // Edges include their first accepted movement step. The original budget
         // covers a 60 Hz host; only its additional measured frame time is new
         // allowance. The same estimate dates input and bounds contact waiting.
-        const double Step = FMath::Clamp(AcceptedDt, 0., .1);
-        const double SlowHost = FMath::Max(0., FMath::Min(HostDt, .1) - 1. / 60.);
-        const double Base = FMath::Clamp(OneWay + FMath::Min(HostJitter, .05) + .03 + Step, .03, .15);
+        AcceptedStep = FMath::Clamp(AcceptedDt, 0., .1);
+        SlowHost = FMath::Max(0., FMath::Min(HostDt, .1) - 1. / 60.);
+        const double Base = FMath::Clamp(OneWay + ArrivalSpread + .03 + AcceptedStep, .03, MaximumCompensation);
         MaximumRewind = FMath::Min(MaximumCompensation, Base + SlowHost);
         Wait = MaximumRewind;
         Mapped = FMath::Clamp(Timestamp + Offset - OneWay, FMath::Max(0., Now - .5), Now);
         // Updated RTT/minimum samples cannot move accepted history backwards. Short
-        // plateaus replace an equal-time sample; no new future interval is invented.
+        // plateaus retain the pre-step sample; no new future interval is invented.
         if (LastMapped >= 0.) Mapped = FMath::Max(LastMapped, Mapped);
         if (Mapped > Now) return false;
         LastTimestamp = Timestamp; LastMapped = Mapped;

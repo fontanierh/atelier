@@ -45,10 +45,10 @@ bool UBotwMoveSet::MapDefenceMove(float Timestamp, float Dt)
         Conn ? Conn->RawPingInSeconds : 0., Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, Dt,
         Character->GetWorld()->GetDeltaSeconds());
     if (TraceNetworkDefence())
-        UE_LOG(LogTemp, Display, TEXT("NETWORK defence move ts=%.6f dt=%.6f host_dt=%.6f now=%.6f rtt=%.6f avg_rtt=%.6f jitter=%.6f mapped=%.6f one_way=%.6f wait=%.6f valid=%d"),
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence move ts=%.6f dt=%.6f host_dt=%.6f now=%.6f rtt=%.6f avg_rtt=%.6f jitter=%.6f mapped=%.6f one_way=%.6f spread=%.6f wait=%.6f valid=%d"),
             Timestamp, Dt, Character->GetWorld()->GetDeltaSeconds(), Character->GetWorld()->GetTimeSeconds(),
             Conn ? Conn->RawPingInSeconds : 0., Conn ? Conn->AvgLag : 0.,
-            Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, DefenceClock.OneWay, DefenceClock.Wait, bDefenceMapped);
+            Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, DefenceClock.OneWay, DefenceClock.ArrivalSpread, DefenceClock.Wait, bDefenceMapped);
     return bDefenceMapped;
 }
 
@@ -102,10 +102,11 @@ bool UBotwMoveSet::PressNetwork(FName Button, uint16 Edge, uint16 AgeMillisecond
     const bool Ordered = Original >= DefenceLastPress;
     const bool Valid = TimeValid && Ordered;
     if (TraceNetworkDefence())
-        UE_LOG(LogTemp, Display, TEXT("NETWORK defence edge=%u button=%s ts=%.6f age_ms=%u now=%.6f mapped=%.6f press=%.6f press_source=%s prior=%.6f oldest=%.6f map_valid=%d time_valid=%d ordered=%d valid=%d"),
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence edge=%u button=%s ts=%.6f age_ms=%u now=%.6f mapped=%.6f press=%.6f press_source=%s prior=%.6f oldest=%.6f map_valid=%d time_valid=%d ordered=%d valid=%d one_way=%.6f spread=%.6f step=%.6f slow_host=%.6f"),
             Edge, *Button.ToString(), DefenceClock.LastTimestamp, AgeMilliseconds, Now, DefenceClock.LastMapped,
             Original, bDefenceMapped ? TEXT("mapped") : TEXT("raw_now_minus_age"), DefenceLastPress,
-            Now - DefenceClock.MaximumRewind, bDefenceMapped, TimeValid, Ordered, Valid);
+            Now - DefenceClock.MaximumRewind, bDefenceMapped, TimeValid, Ordered, Valid,
+            DefenceClock.OneWay, DefenceClock.ArrivalSpread, DefenceClock.AcceptedStep, DefenceClock.SlowHost);
     if (!Valid)
     {
         ++DefenceRejectedTimes;

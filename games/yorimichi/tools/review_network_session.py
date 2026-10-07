@@ -72,11 +72,19 @@ def defence_edge_statistics(folder):
         try:
             at, press, oldest = (float(fields[k]) for k in ('now', 'press', 'oldest'))
             accepted = int(fields['valid'])
+            one_way, spread, step, slow_host = (float(fields[k]) for k in ('one_way', 'spread', 'step', 'slow_host'))
+            if (not all(math.isfinite(v) for v in (one_way, spread, step, slow_host)) or
+                    not 0 <= one_way <= .15 or not 0 <= spread <= .05 or not 0 <= step <= .1 or
+                    not 0 <= slow_host <= .1 - 1/60 + 1e-6):
+                raise ValueError('invalid measured allowance')
+            expected = min(.2, one_way + spread + .03 + step + slow_host)
             if (not all(math.isfinite(v) for v in (at, press, oldest)) or accepted not in (0, 1)
                     or oldest > at or press > at):
                 raise ValueError('invalid defence edge')
             edges.append(dict(edge=int(fields['edge']), button=fields['button'], accepted=bool(accepted),
-                              now=at, press=press, oldest=oldest, bound=at-oldest, margin=press-oldest))
+                              now=at, press=press, oldest=oldest, bound=at-oldest, margin=press-oldest, one_way=one_way, spread=spread,
+                              step=step, slow_host=slow_host, expected_bound=expected,
+                              formula_matches=abs(at-oldest-expected) <= 5e-6))
         except (KeyError, ValueError):
             invalid += 1
     return dict(edges=edges, invalid=invalid)
@@ -163,7 +171,8 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
             accepted = [edge for edge in defence['edges'] if edge['accepted']]
             checks['combat_fast_defence_edges'] = (defence['invalid'] == 0 and
                 {edge['button'] for edge in accepted} == {'guard', 'jump', 'dodge'} and
-                all(edge['bound'] <= .152 + 1e-6 and edge['margin'] >= .010 - 1e-6 for edge in accepted))
+                all(edge['formula_matches'] and edge['bound'] <= .2 + 1e-6 and
+                    edge['slow_host'] <= .002 + 1e-6 and edge['margin'] >= .010 - 1e-6 for edge in accepted))
         # D1 is a latency test, not just a successful local hit.
         expected_lag = dict(lag_ms=60, variance_ms=15, loss_percent=2)
         checks['combat_emulated_defence'] = all(
