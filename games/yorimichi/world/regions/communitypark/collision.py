@@ -4,7 +4,8 @@ The native skate rolls over an edge of at most 12 mm; a taller lip where two sep
 the wheels and bails the rider. The rendered pieces keep their exact geometry and stop blocking. This mesh welds
 coincident vertices across placements and, wherever a riding edge stands 4 mm to 8 cm proud of the neighbouring
 piece's surface, adds a 1:8 wedge from the edge down onto that surface, laid in its plane so bowl walls blend too.
-The run is at least 30 cm: a short wedge over a small floor lip can abruptly slow the board.
+Small floor lips use a 30 cm run where the extra length rests on neighbouring riding surfaces: a short wedge can
+abruptly slow the board. Short or curved neighbours keep the prior run rather than carry a floating extension.
 Closed pieces also carry vertical end caps at their joins: a swept board can hit them through the meeting
 riding surfaces. Remove only caps covered on both sides by adjoining pieces at the same riding height. Taller
 steps and exposed walls stay, and so do the grind obstacles (ledges, rails), which are meant to be ollied onto.
@@ -90,6 +91,14 @@ class Surfaces:
     def rise(self, k, point):
         """Distance of a point above triangle k's plane, measured along its normal."""
         return float((point-self.triangles[k, 0])@self.normal[k])
+
+    def supports_segment(self, a, b, part):
+        """Every plan coverage interval lies on a neighbouring riding plane, within the weld tolerance."""
+        fractions = np.unique([0., 1., *self.crossings(a[:2], b[:2])])
+        fractions = np.r_[fractions, (fractions[:-1]+fractions[1:])/2]
+        return all(any(self.owner[k] != part and abs(self.rise(k, point)) <= WELD
+                       for k in self.over(*point[:2]))
+                   for point in (a+(b-a)*t for t in fractions))
 
 
 def _rise(surfaces, point, out, part):
@@ -227,9 +236,14 @@ def riding_collision(parts, obstacles=(), groups=None):
     added, added_owner = [], []
     report = {'welded_vertices': len(vertices), 'wedges': 0, 'max_rise_m': 0., 'wedged_length_m': 0.}
     def slope(point, under, drop, direction):
-        """Foot of a 1:SLOPE run from an edge point down onto the neighbour's plane, heading `direction` in plan."""
+        """Extend the prior run only when its added length stays on existing neighbouring riding planes."""
         n = surfaces.normal[under]; slide = np.array([*direction, 0.]); slide -= (slide@n)*n
-        return point-drop*n+slide/np.linalg.norm(slide)*max(SLOPE*drop, MIN_RUN)
+        slide /= np.linalg.norm(slide)
+        length = max(SLOPE*drop, .1)
+        foot = point-drop*n+slide*length
+        if length >= MIN_RUN: return foot
+        extended = point-drop*n+slide*MIN_RUN
+        return extended if surfaces.supports_segment(foot, extended, part) else foot
 
     def add(tri, k, part):
         tri = np.asarray(tri)

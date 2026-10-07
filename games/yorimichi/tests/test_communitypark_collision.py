@@ -65,6 +65,25 @@ class RidingCollisionTest(unittest.TestCase):
         self.assertLessEqual(ramps[..., 2].max(), .01204+1e-9)
         self.assertEqual(C.steps(vertices, faces, owner), [])
 
+    def test_longer_run_does_not_leave_short_or_convex_neighbours(self):
+        for kind in ('short', 'convex', 'gap'):
+            with self.subTest(neighbour=kind):
+                width = .18 if kind == 'gap' else .15
+                pieces = [slab(-width, -1, 0, 1, -.2, 0.),
+                          slab(0, -1, 1, 1, -.18796, .01204)]
+                if kind == 'convex':
+                    v, f = slab(-1, -1, -.15, 1, -.2, 0.)
+                    v[:, 2] += .2*(v[:, 0]+.15)
+                    pieces.append((v, f))
+                elif kind == 'gap':
+                    # The supported far endpoint must not hide a 5 mm gap along the extra run.
+                    pieces.append(slab(-.4, -1, -.185, 1, -.2, 0.))
+                vertices, faces, owner, report = C.riding_collision(pieces)
+                ramps = vertices[faces[owner == -2]]
+                self.assertGreater(report['wedges'], 0)
+                self.assertGreater(len(ramps), 0)
+                self.assertGreaterEqual(ramps[..., 0].min(), -width-1e-9)
+
     def test_ledges_and_real_steps_stay_sharp(self):
         ledge = slab(-1, -.2, 1, .2, -.1, .04)
         step = slab(2, -3, 3.5, 3, -.1, .3)
