@@ -1,5 +1,7 @@
 #include "YorimichiCloth.h"
 #include "Engine/SkeletalMesh.h"
+#include "ClothingSystemRuntimeTypes.h"
+#include "Components/SkeletalMeshComponent.h"
 #if WITH_EDITOR
 #include "ChaosCloth/ChaosClothConfig.h"
 #include "ClothingAsset.h"
@@ -136,8 +138,10 @@ UPhysicsAsset* UYorimichiClothLibrary::MakeCapsuleColliders(USkeletalMesh* Mesh,
         FKSphylElem Capsule;
         Capsule.Center = (Start + End) * .5f;
         Capsule.Rotation = FRotationMatrix::MakeFromZ(Axis.GetSafeNormal()).Rotator();
-        Capsule.Radius = RadiiCm[K];
-        Capsule.Length = Axis.Size();
+        // The shape lives in the bone's space, scale included: an FBX in metres imports with its x100 on the root, so
+        // the joints above are already divided by it and the radius must be too (Chaos scales the capsule back up).
+        Capsule.Radius = RadiiCm[K] / Space[Bone].GetMaximumAxisScale();
+        Capsule.Length = Axis.Size();   // already in the bone's scaled units, like Center
         USkeletalBodySetup* Body = NewObject<USkeletalBodySetup>(Asset, NAME_None, RF_Transactional);
         Body->BoneName = Bones[K];
         Body->PhysicsType = PhysType_Kinematic;
@@ -221,4 +225,31 @@ FString UYorimichiClothLibrary::DescribeCloth(USkeletalMesh* Mesh)
 #else
     return FString();
 #endif
+}
+
+FString UYorimichiClothLibrary::DescribeRunningCloth(USkeletalMeshComponent* Component)
+{
+    if (!Component) return TEXT("no component");
+    FString Out = FString::Printf(TEXT("component %s scale %s; "), *Component->GetComponentTransform().ToString(),
+        *Component->GetComponentScale().ToString());
+    const TArray<FTransform>& Space = Component->GetComponentSpaceTransforms();
+    for (int32 I = 0; I < FMath::Min(4, Space.Num()); ++I)
+        Out += FString::Printf(TEXT("bone %d %s: %s; "), I, *Component->GetBoneName(I).ToString(), *Space[I].ToString());
+    for (const TPair<int32, FClothSimulData>& Pair : Component->GetCurrentClothingData_GameThread())
+    {
+        const FClothSimulData& Data = Pair.Value;
+        FBox3f Raw(ForceInit);
+        FBox Moved(ForceInit);
+        int32 Bad = 0;
+        for (const FVector3f& P : Data.Positions)
+        {
+            if (P.ContainsNaN()) { ++Bad; continue; }
+            Raw += P;
+            Moved += Data.Transform.TransformPosition(FVector(P));
+        }
+        Out += FString::Printf(TEXT("cloth %d: lod %d, %d positions (%d NaN), raw box %s, moved box %s, transform %s, component relative %s; "),
+            Pair.Key, Data.LODIndex, Data.Positions.Num(), Bad, *Raw.ToString(), *Moved.ToString(), *Data.Transform.ToString(),
+            *Data.ComponentRelativeTransform.ToString());
+    }
+    return Out;
 }

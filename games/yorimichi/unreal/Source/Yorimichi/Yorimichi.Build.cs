@@ -11,8 +11,9 @@ public class Yorimichi : ModuleRules
         // The live bridge runs agent Python in uncooked (editor-binary) sessions only.
         if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("PythonScriptPlugin");
         // Character cloth is built by editor scripting (YorimichiCloth.cpp, run by Scripts/import_modori.py).
-        if (Target.bBuildEditor) PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "ClothingSystemEditorInterface", "ClothingSystemRuntimeCommon", "ClothingSystemRuntimeInterface", "SkeletalMeshEditor", "ChaosCloth" });
+        if (Target.bBuildEditor) PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "ClothingSystemEditorInterface", "ClothingSystemRuntimeCommon", "SkeletalMeshEditor", "ChaosCloth" });
         PrivateDependencyModuleNames.Add("AnimationCore");
+        PrivateDependencyModuleNames.Add("ClothingSystemRuntimeInterface");   // YorimichiCloth: the running cloth's data
         PrivateDependencyModuleNames.Add("RHI");
         PrivateDependencyModuleNames.Add("AIModule");
         PrivateDependencyModuleNames.Add("ImageCore");

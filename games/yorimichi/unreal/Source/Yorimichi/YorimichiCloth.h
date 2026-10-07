@@ -4,6 +4,7 @@
 
 class UPhysicsAsset;
 class USkeletalMesh;
+class USkeletalMeshComponent;
 
 /** Editor scripting for character cloth (import scripts run it; Python cannot create or bind clothing data itself). */
 UCLASS()
@@ -31,4 +32,10 @@ public:
      *  mesh). Editor only. */
     UFUNCTION(BlueprintCallable, Category = "Yorimichi|Editor")
     static FString DescribeCloth(USkeletalMesh* Mesh);
+
+    /** A diagnostic summary of Component's running cloth: each simulated asset's particle positions (their box as
+     *  simulated and once moved by the data's own transform into component space), that transform, and the component
+     *  space transforms of the skeleton's first bones, against the component's transform. */
+    UFUNCTION(BlueprintCallable, Category = "Yorimichi|Debug")
+    static FString DescribeRunningCloth(USkeletalMeshComponent* Component);
 };
