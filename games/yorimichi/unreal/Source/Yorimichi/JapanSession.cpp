@@ -24,6 +24,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Containers/Ticker.h"
 
 void UJapanGameInstance::Init()
 {
@@ -34,9 +35,11 @@ void UJapanGameInstance::Init()
         GEngine->OnTravelFailure().AddUObject(this, &UJapanGameInstance::TravelFailure);
     }
     FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UJapanGameInstance::MapLoaded);
+    StartNetworkQA();
 }
 void UJapanGameInstance::Shutdown()
 {
+    FTSTicker::GetCoreTicker().RemoveTicker(NetworkQATicker);
     CloseFriends();
     if (GEngine)
     {

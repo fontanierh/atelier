@@ -37,6 +37,14 @@ private:
     void NetworkFailure(UWorld*, UNetDriver*, ENetworkFailure::Type, const FString&);
     void TravelFailure(UWorld*, ETravelFailure::Type, const FString&);
     void MapLoaded(UWorld*);
+    // Opt-in native lifecycle proof; available in packaged Development without editor Python.
+    void StartNetworkQA();
+    bool TickNetworkQA(float Dt);
+    bool WriteNetworkQA(const TCHAR* Stage, const FString& Error = FString());
+    FString NetworkQARole, NetworkQADirectory;
+    FDelegateHandle NetworkQATicker;
+    double NetworkQAStarted = 0, NetworkQAConnected = 0, NetworkQALeaving = 0;
+    bool bNetworkQAWorld = false, bNetworkQASawPeer = false;
 };
 
 UCLASS()
