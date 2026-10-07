@@ -37,7 +37,7 @@ struct FBotwSpec
     TSharedPtr<FJsonObject> Moves;
     /** The roster, loaded once; empty when the BOTW characters have not been built (assets/characters/botw/README.md). */
     static const TMap<FString, FBotwSpec>& All();
-    static const FBotwSpec* Find(const FString& Name);
+    static const FBotwSpec* Find(const FString& InName);
 };
 
 UENUM()
@@ -63,7 +63,7 @@ class YORIMICHI_API ABotwCreature : public AActor
 public:
     ABotwCreature();
     /** Spawn `Name` standing at `Ground` (a point on the ground), facing `Yaw`. Null when the roster lacks it. */
-    static ABotwCreature* SpawnAt(UWorld* World, const FString& Name, const FVector& Ground, float Yaw, EBotwMode Mode);
+    static ABotwCreature* SpawnAt(UWorld* World, const FString& Name, const FVector& Ground, float Yaw, EBotwMode InMode);
 
     virtual void Tick(float Dt) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

@@ -53,7 +53,7 @@ static const FLinearColor GradeColour[4] = { FLinearColor(1.f, .86f, .3f), FLine
 static const FLinearColor LaneColour[4] = { FLinearColor(.32f, .86f, .38f), FLinearColor(.94f, .32f, .28f), FLinearColor(.32f, .56f, .98f), FLinearColor(.98f, .8f, .24f) };
 static const FKey LaneKeys[4] = { EKeys::D, EKeys::F, EKeys::J, EKeys::K };
 static const FKey LanePads[4] = { EKeys::Gamepad_FaceButton_Bottom, EKeys::Gamepad_FaceButton_Right, EKeys::Gamepad_FaceButton_Left, EKeys::Gamepad_FaceButton_Top };
-static constexpr float SpurBoost = 3.f, SpurSeconds = 2.6f, Separation = 2.f, BlockLength = 3.4f;
+static constexpr float SpurBoost = 3.f, RaceSpurSeconds = 2.6f, Separation = 2.f, BlockLength = 3.4f;
 static constexpr int32 ComboPerPip = 16, MaxPips = 4;
 
 const FRaceCup AHorseRace::Cups[3] = {
@@ -618,7 +618,7 @@ void AHorseRace::ReadInput(float Dt)
             || (AutoAccuracy > 0.f && Me.Pips > 0 && (Distance() - Me.Progress < 280. || Me.Pips >= MaxPips));
         if (bSpur && Me.Pips > 0 && Me.SpurLeft <= 0.f)
         {
-            --Me.Pips; Me.SpurLeft = SpurSeconds;
+            --Me.Pips; Me.SpurLeft = RaceSpurSeconds;
             Play(TEXT("HR_Spur"), FVector::ZeroVector, .7f, true);
             if (Me.Figure.IsValid()) Me.Figure->PlayRiderOnce(TEXT("spur"));
             Say(TEXT("Spur!"), .9f);
@@ -720,7 +720,7 @@ void AHorseRace::AdvanceOthers()
             while (G < 3 && Roll > W[G]) Roll -= W[G++];
             Grade(R, G);
             const bool bLate = Distance() - R.Progress < 300.;
-            if (R.Pips > 0 && R.SpurLeft <= 0.f && (bLate || R.Pips >= MaxPips) && Dice.FRand() < .25f) { --R.Pips; R.SpurLeft = SpurSeconds; if (R.Figure.IsValid()) R.Figure->PlayRiderOnce(TEXT("spur")); }
+            if (R.Pips > 0 && R.SpurLeft <= 0.f && (bLate || R.Pips >= MaxPips) && Dice.FRand() < .25f) { --R.Pips; R.SpurLeft = RaceSpurSeconds; if (R.Figure.IsValid()) R.Figure->PlayRiderOnce(TEXT("spur")); }
         }
     }
 }
@@ -816,24 +816,24 @@ void AHorseRace::PlaceRunner(FRaceRunner& R, float Dt)
     F->SetActorLocationAndRotation(At, FRotator(0, R.Yaw, 0));
     const FHorseSpec& H = F->GetBody();
     const float V = R.Speed * 100.f;
-    FName Role = TEXT("idle"), RiderRole = TEXT("idle"); float Ref = 0.f;
+    FName GaitName = TEXT("idle"), RiderRole = TEXT("idle"); float Ref = 0.f;
     if (V > 30.f)
     {
         static const FName Gaits[5] = { TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("run"), TEXT("sprint") };
         static const float Limits[5] = { 300.f, 540.f, 740.f, 960.f, 1e9f };
         int32 G = 0; while (V > Limits[G]) ++G;
-        Role = Gaits[G]; RiderRole = G == 4 ? FName(TEXT("run")) : Gaits[G];
-        Ref = H.SpeedsCm.FindRef(Role);
+        GaitName = Gaits[G]; RiderRole = G == 4 ? FName(TEXT("run")) : Gaits[G];
+        Ref = H.SpeedsCm.FindRef(GaitName);
         if (Venue->Course.InTurn(Venue->Course.GateS + R.Progress) && G >= 3)
         {
             // The turns are all to the left: the horses lean into them.
-            Role = G == 4 ? FName(TEXT("Move_Gear_Top_Curve_L_Fast")) : FName(TEXT("Move_Gear_Top_Curve_L"));
+            GaitName = G == 4 ? FName(TEXT("Move_Gear_Top_Curve_L_Fast")) : FName(TEXT("Move_Gear_Top_Curve_L"));
             if (F->RiderHas(TEXT("left"))) RiderRole = TEXT("left");
         }
     }
     const float Rate = Ref > 1.f ? FMath::Clamp(V / Ref, .5f, 2.f) : 1.f;
-    F->Gait(Role, RiderRole, Rate);
-    R.GaitRole = Role;
+    F->Gait(GaitName, RiderRole, Rate);
+    R.GaitRole = GaitName;
     // Hooves: two falls a stride for the horses near the camera.
     if (V > 30.f && Ref > 1.f && Camera)
     {

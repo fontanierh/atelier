@@ -88,7 +88,7 @@ void AFoxHunter::BeginPlay()
     UE_LOG(LogTemp, Display, TEXT("Fox hunter ready: %d clips, capsule %.0f/%.0f, home %s"), Definition->Clips.Num(), Definition->CapsuleRadius, Definition->CapsuleHalfHeight, *Home.ToString());
 }
 
-const FFoxHunterClip* AFoxHunter::Clip(FName Role) const { return Definition ? Definition->FindClip(Role) : nullptr; }
+const FFoxHunterClip* AFoxHunter::Clip(FName RoleName) const { return Definition ? Definition->FindClip(RoleName) : nullptr; }
 void AFoxHunter::Note(const FString& Text) { Event = Text; EventTime = Clock; UE_LOG(LogTemp, Verbose, TEXT("Fox: %s"), *Text); }
 void AFoxHunter::Cue(FName Sound, const FVector& At, float Volume) { if (JapanCombat::Publish(this, EJapanCombatCue::Sound, At, FVector::ZeroVector, Volume, this, nullptr, false, Sound)) return; if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this)) FX->Play(Sound, At, Volume, .06f); }
 void AFoxHunter::DashDust()
@@ -156,16 +156,16 @@ void AFoxHunter::StartAttack()
 {
     if (JapanNetwork::IsOnline(GetWorld()) && !GetWorld()->GetSubsystem<UJapanEncounters>()->ReserveAttack(this, Target, 3.f))
     { Enter(EFoxState::Recover, NAME_None, .16f); Cooldown = .35f; return; }
-    FName Role = ForcedAttack; ForcedAttack = NAME_None;
-    if (Role.IsNone())
+    FName AttackRole = ForcedAttack; ForcedAttack = NAME_None;
+    if (AttackRole.IsNone())
     {
         const float R = Rand.FRand();
-        Role = R < .24f ? TEXT("AttackR_A") : R < .48f ? TEXT("AttackL_A") : R < .66f ? TEXT("AttackL_B") : R < .84f ? TEXT("AttackR_B") : TEXT("Kick");
+        AttackRole = R < .24f ? TEXT("AttackR_A") : R < .48f ? TEXT("AttackL_A") : R < .66f ? TEXT("AttackL_B") : R < .84f ? TEXT("AttackR_B") : TEXT("Kick");
     }
-    bComboFollowUp = Role != TEXT("Kick") && Rand.FRand() < .45f;
+    bComboFollowUp = AttackRole != TEXT("Kick") && Rand.FRand() < .45f;
     bStruckThisAttack = false; bSwipeCue = false; ++Attacks;
-    Enter(EFoxState::Attack, Role, .08f);
-    Note(Role == TEXT("Kick") ? TEXT("kick") : TEXT("claw"));
+    Enter(EFoxState::Attack, AttackRole, .08f);
+    Note(AttackRole == TEXT("Kick") ? TEXT("kick") : TEXT("claw"));
 }
 
 FVector AFoxHunter::StrikePoint() const

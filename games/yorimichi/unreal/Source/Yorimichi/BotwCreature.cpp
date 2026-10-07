@@ -48,15 +48,15 @@ const TMap<FString, FBotwSpec>& FBotwSpec::All()
             S.Loops.Add(FName(*Clip.Key), Entry->GetBoolField(TEXT("loop")));
         }
         for (const auto& Role : C->GetObjectField(TEXT("roles"))->Values) S.Roles.Add(FName(*Role.Key), FName(*Role.Value->AsString()));
-        const TSharedPtr<FJsonObject>* Moves = nullptr;
-        if (C->TryGetObjectField(TEXT("moves"), Moves)) S.Moves = *Moves;
+        const TSharedPtr<FJsonObject>* MovesField = nullptr;
+        if (C->TryGetObjectField(TEXT("moves"), MovesField)) S.Moves = *MovesField;
         Roster.Add(S.Name, MoveTemp(S));
     }
     UE_LOG(LogTemp, Display, TEXT("BOTW roster: %d characters"), Roster.Num());
     return Roster;
 }
 
-const FBotwSpec* FBotwSpec::Find(const FString& Name) { return All().Find(Name); }
+const FBotwSpec* FBotwSpec::Find(const FString& InName) { return All().Find(InName); }
 
 ABotwCreature::ABotwCreature()
 {
@@ -78,13 +78,13 @@ ABotwCreature::ABotwCreature()
     Mesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 }
 
-ABotwCreature* ABotwCreature::SpawnAt(UWorld* World, const FString& Name, const FVector& Ground, float Yaw, EBotwMode Mode)
+ABotwCreature* ABotwCreature::SpawnAt(UWorld* World, const FString& Name, const FVector& Ground, float Yaw, EBotwMode InMode)
 {
     const FBotwSpec* Spec = FBotwSpec::Find(Name);
     if (!World || !Spec || World->GetNetMode() == NM_Client) return nullptr;
     FActorSpawnParameters Params; Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     ABotwCreature* Creature = World->SpawnActor<ABotwCreature>(Ground + FVector(0, 0, Spec->HeightCm * .5f), FRotator(0, Yaw, 0), Params);
-    if (Creature) Creature->Initialize(*Spec, Mode);
+    if (Creature) Creature->Initialize(*Spec, InMode);
     return Creature;
 }
 
