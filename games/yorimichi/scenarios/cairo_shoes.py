@@ -180,8 +180,9 @@ def visit(name, start, toward, height):
             return
         start, toward = found
         ground = along(start, toward, height)
-    span = round(max(ground) - min(ground), 1)
-    check('the walk is level', span <= LEVEL, ground_span_cm=span, start=[round(v, 2) for v in start], toward=[round(v, 2) for v in toward])
+    span = max(ground) - min(ground)      # gated unrounded: 10.04 cm is not level
+    check('the walk is level', span <= LEVEL, ground_span_cm=round(span, 2), start=[round(v, 2) for v in start],
+          toward=[round(v, 2) for v in toward])
     if span > LEVEL:
         return
     heading = yaw_to(start, toward)
