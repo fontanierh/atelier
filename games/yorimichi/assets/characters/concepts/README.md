@@ -31,3 +31,15 @@ The archive holds Cairo's r05 captures; only their names and hashes are recorded
 (`*.prompt.txt`) and the ledger record of the paid call (`*.provenance.json`). A take with a provenance file is never
 sent again: rename its files to `<slug>.rejected-N.*` to paint it again. Full-size originals stay in
 `build/yorimichi/characters/concepts/originals/`.
+
+## The chosen take: came-back in T-pose
+
+`came-back` is the one going to 3D, without the rope and bell weight. [`came-back-tpose/`](came-back-tpose) holds
+the four Tripo multiview references (front, back, left, right), painted by
+[`came_back_tpose.py`](../../../tools/came_back_tpose.py): the front from single-figure crops of the sheet, the
+other three from the front, one figure per image as for Kaede ([Tripo characters](../../../docs/TRIPO_CHARACTERS.md)).
+The full-size PNGs to upload to Tripo are in `build/yorimichi/characters/concepts/came-back-tpose/`.
+
+The knee-length coat is his look, but it breaks the Tripo workflow's rule that nothing hangs below the hips except
+the trousers: after rigging, expect the coat skirt to need its own weights or cloth bones so it does not stretch
+between the legs.
