@@ -166,6 +166,42 @@ class RidingCollisionTest(unittest.TestCase):
         _, _, owner, _ = C.riding_collision([first, second])
         self.assertEqual(sum(owner == 0), 12)
 
+    def test_a_closed_transition_shell_does_not_leave_a_cap_at_its_crest(self):
+        # The measured bowl transition meets the slab in a knife edge. Its underside
+        # closes the small void within 30 cm; the crest must not snag the board.
+        floor = slab(-2, -1, 0, 1, -.3, 0.)
+        def shell(x0, x1):
+            vertices, faces = slab(x0, -1, x1, 1, -.3, 0.)
+            vertices[:4, 2] = -.96*vertices[:4, 0]
+            vertices[4:, 2] = -vertices[4:, 0]/6
+            return vertices, faces
+        for kind in ('closed', 'short', 'gap', 'underpass'):
+            with self.subTest(neighbour=kind):
+                pieces = [floor, shell(0., .2 if kind == 'short' else 1.)]
+                groups = None
+                if kind == 'gap':
+                    pieces = [floor, shell(0., .1), shell(.12, 1.)]
+                    groups = [0, 1, 1]
+                elif kind == 'underpass':
+                    pieces[0] = slab(-2, -1, 0, 1, -1.5, 0.)
+                vertices, faces, owner, _ = C.riding_collision(pieces, groups=groups)
+                cap = (owner == 0) & np.all(abs(vertices[faces, 0]) < 1e-9, axis=1)
+                self.assertEqual(sum(cap), 0 if kind == 'closed' else 2)
+
+    def test_measured_bowl_shell_closes_before_its_short_edge_ends(self):
+        joint, end = -10.19744873046875, -9.89764404296875
+        floor = slab(17.01348876953125, -13.19744873046875, 20.0140380859375, joint,
+                     7.227691650390625, 7.527740478515625)
+        vertices, faces = slab(17.01397705078125, joint, 21.5140380859375, end, 0., 1.)
+        along = (vertices[:, 1]-joint)/(end-joint)
+        vertices[:4, 2] = 7.5276947021484375+along[:4]*(7.2386322021484375-7.5276947021484375)
+        vertices[4:, 2] = 7.5276947021484375+along[4:]*(7.4749603271484375-7.5276947021484375)
+        vertices, faces, owner, _ = C.riding_collision([floor, (vertices, faces)])
+        cap = (owner == 0) & np.all(abs(vertices[faces, 1]-joint) < 1e-9, axis=1)
+        self.assertEqual(sum(cap), 0)
+        outer = (owner == 0) & np.all(abs(vertices[faces, 1]+13.19744873046875) < 1e-9, axis=1)
+        self.assertEqual(sum(outer), 2)
+
     def test_a_floor_coincident_with_the_ramp_underside_keeps_its_coverage(self):
         parts = floor_tiles()
         ramps = [slab(-4, -4, 0, 4, 0., .2), slab(0, -4, 4, 4, 0., .2)]

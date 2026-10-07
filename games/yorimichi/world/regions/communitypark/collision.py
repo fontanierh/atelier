@@ -158,6 +158,23 @@ def buried_walls(vertices, faces, owner, obstacles=(), groups=None):
     surfaces = Surfaces(triangles[up], part[up])
     down = normals[:, 2] < -1e-4
     undersides = Surfaces(triangles[down], part[down])
+    def closed_shell(point, direction, neighbour, riding_height, base):
+        """The shell closes within the joint reach to this cap triangle's lowest vertex."""
+        outside = point[:2]+direction*PROBE
+        if not any(undersides.owner[j] == neighbour and
+                   abs(undersides.height(j, *point[:2])-riding_height) <= WELD
+                   for j in undersides.over(*outside)):
+            return False
+        end = point[:2]+direction*MIN_RUN
+        fractions = np.unique([0., 1., *undersides.crossings(outside, end)])
+        fractions = np.sort(np.r_[fractions, (fractions[:-1]+fractions[1:])/2])
+        for fraction in fractions:
+            xy = outside+(end-outside)*fraction
+            heights = [undersides.height(j, *xy) for j in undersides.over(*xy)
+                       if undersides.owner[j] == neighbour]
+            if not heights: return False
+            if min(heights) <= base+ROLLABLE+WELD: return True
+        return False
     removed = []
     for k in np.flatnonzero((abs(normals[:, 2]) < .01) & (owner >= 0)):
         if owner[k] in obstacles: continue
@@ -189,9 +206,12 @@ def buried_walls(vertices, faces, owner, obstacles=(), groups=None):
             # Use the nearest riding level, and require the neighbour's solid span to cover the wall.
             # Foundation offsets no larger than the rollable edge plus weld tolerance are closed joints;
             # a roof at the same height must not remove the exposed wall of an underpass below it.
-            if not inside or not any(surfaces.owner[j] != part[k] and surfaces.owner[j] in below
+            if not inside or not any(surfaces.owner[j] != part[k]
                                      and surfaces.height(j, *point[:2]) >= point[2]-LIP[1]
                                      and abs(min(inside)-surfaces.height(j, *point[:2])) <= LIP[1]
+                                     and (surfaces.owner[j] in below or
+                                          closed_shell(point, direction, surfaces.owner[j],
+                                                       surfaces.height(j, *point[:2]), triangle[:, 2].min()))
                                      for j in surfaces.over(*outside)):
                 covered = False; break
         if covered: removed.append(k)
