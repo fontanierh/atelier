@@ -55,5 +55,26 @@ height (`coat-normalisation.json`) and gathers the Tripo Studio upload folder,
 `build/yorimichi/characters/concepts/came-back-tpose/tripo/{full,body,coat}/{front,back,left,right}.png`.
 
 Two Tripo generations, both as game-ready quad meshes (the API runs used `quad` with a 12,000 face limit), then
-Smart UV on each. In Blender the coat is aligned to the body at the shoulders and skinned with the body swap's skirt
-rules first; a cloth simulation, if it is wanted, drives the coat below the hips from a low-poly proxy.
+Smart UV on each. In Blender the coat is fitted onto the rigged body and its skirt simulated as cloth (below).
+
+### The models: texture, face and coat
+
+Tripo Studio built both parts (Smart Mesh, then Smart UV; the body also rigged, a Mixamo skeleton). The files stay in
+`build/yorimichi/characters/came-back/` (`tripo-body-r01/`, its `rigged/` copy, `tripo-coat-r01/`).
+
+[`came_back_texture.py`](../tools/came_back_texture.py) cleans the body texture and paints the face. Every texel is
+placed on the body in 3D, so it works on any UV layout. On the head, a texel whose colour disagrees with the surface
+round it (skin colour on a lock, hair colour or a thin dark line on the cheek) takes that surface's colour. The vote is
+taken within the texel's own UV island, so a lock lying over the cheek keeps its hair. Tripo's baked shadow behind the
+ears and under the hair stays. The eyes, brows and mouth are then drawn from the `FACE` table, measured on the concept
+and projected from the front onto the skin only. `--variant redo` is the comparison: Tripo's colours on the head are
+dropped, only the labels (skin, hair, the white streak, the collar) stay, and the skin and hair are painted fresh with
+soft shading from the geometry (`basecolor-redo.png`). The rigged FBX has the same mesh and UVs, so the texture
+applies to it.
+
+[`came_back_coat.py`](../tools/came_back_coat.py) fits the coat: scaled until its cuffs sit on the wrist bones
+(0.766), centred on the chest, then pushed 4 mm clear of the body. It takes the body's bone weights, the skirt
+blending to the hips below 0.50 m, and a `cloth_pin` group (the torso and the sleeves pinned, the skirt free below
+0.44 m). Its `sim` stage drives the skeleton through a short take (arms down, a few steps, a quick turn) and bakes the
+skirt as cloth with the body colliding, gravity scaled for a 1 m model. The Blender cloth is a look check; in Unreal
+the same pin weights paint a Chaos Cloth mask, or the skirt gets bones.
