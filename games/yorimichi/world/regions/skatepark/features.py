@@ -266,7 +266,12 @@ def stand_in(m, item):
         r = min(.045, width/2); colour = item['colour'] if item['finish'] == 'painted' else 'steel'
         tag = 'rail' if item['finish'] == 'painted' else 'steel'
         pts = [(x, y, z-r) for x, y, z in MOD.line(item)]
-        m.tube(pts, r, colour, tag, sides=10)
+        # A line of several pieces is one tube, drawn with its first piece: no caps buried at the joints.
+        pieces = next((g['pieces'] for g in L.GRIND_LINES if item['id'] in g['pieces'] and len(g['pieces']) > 1), None)
+        if pieces is None:
+            m.tube(pts, r, colour, tag, sides=10)
+        elif pieces[0] == item['id']:
+            m.tube([(x, y, z-r) for x, y, z in L.grind_line(pieces)], r, colour, tag, sides=10)
         for x, y, z in (pts[0], pts[-1]):
             m.box((x-r, y-r, 0), (x+r, y+r, z), colour, tag)
         return

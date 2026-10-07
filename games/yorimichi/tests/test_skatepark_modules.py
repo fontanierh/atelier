@@ -1,5 +1,6 @@
 """Skate pier module placements and grind lines come from the committed pin, not from the private meshes."""
 import itertools
+import numpy as np
 import math
 import sys
 import unittest
@@ -10,6 +11,9 @@ import yori  # noqa: E402,F401
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'world'/'regions'/'skatepark'))
 import modules as M  # noqa: E402
 import layout as L  # noqa: E402
+import features as F  # noqa: E402
+from geom import MeshData  # noqa: E402
+from unittest import mock  # noqa: E402
 
 
 def placements():
@@ -46,6 +50,20 @@ class PierModules(unittest.TestCase):
         for (a, p), (b, q) in itertools.combinations(boxes.items(), 2):
             overlap = min(p[1], q[1]) - max(p[0], q[0]), min(p[3], q[3]) - max(p[2], q[2])
             self.assertFalse(overlap[0] > .01 and overlap[1] > .01, f'{a} overlaps {b}')
+
+    def test_stand_in_joints_have_no_buried_caps(self):
+        """Without the fetched meshes a line of several pieces is one tube: no face stands across it at a joint."""
+        with mock.patch.object(M, 'available', return_value=False):
+            for g in L.GRIND_LINES:
+                if len(g['pieces']) < 2:
+                    continue
+                m = MeshData('test')
+                for piece in g['pieces']:
+                    F.module(m, L.MODULE[piece])
+                verts = np.asarray(m.verts)
+                for at, d in L.joints(g['pieces'][0]) + L.joints(g['pieces'][-1]):
+                    across = [f for f in m.faces if np.all(np.abs((verts[list(f)][:, :2] - at) @ d) < .002)]
+                    self.assertEqual(across, [], f"{g['id']} has faces across its joint at {at}")
 
     def test_rails_have_unique_ids(self):
         ids = [r['id'] for r in L.rails()]
