@@ -455,7 +455,7 @@ void UBikeComponent::EndClip()
 {
  switch(State)
  {
- case EState::Mounting: State=EState::Riding;Play(TEXT("BikeRide"));Hint=TEXT("Riding");ClothColliders(true);break;
+ case EState::Mounting: State=EState::Riding;Play(TEXT("BikeRide"));Hint=TEXT("Riding");if(!JapanNetwork::IsOnline(GetWorld()))ClothColliders(true);break;
  case EState::Dismounting: State=EState::Parking;Play(TEXT("BikeKickstand"));break;
  case EState::Parking: case EState::Crashing:
   if(JapanNetwork::IsOnline(GetWorld())){bTerminal=true;Speed=0.f;}else Park();break;
@@ -565,6 +565,9 @@ void UBikeComponent::PresentParts(float Dt,TArray<float>& Ch,bool bPedal,float C
 void UBikeComponent::PresentNetwork(float Dt)
 {
  SampleNetworkPresentation();
+ // Both prediction and proxy snapshots reach this once after movement replay.
+ // A late join can start already Riding, without ever running EndClip(Mounting).
+ ClothColliders(State==EState::Riding);
  const uint32 Epoch=Rider->GetActivityEpoch();
  if(PresentedEpoch!=Epoch)
  {PresentedEpoch=Epoch;PresentedSerial=0;PlayedNetworkCues.Reset();NetworkCueOrder.Reset();}
@@ -658,6 +661,7 @@ FTransform UBikeComponent::GetBikeTransform() const{return BikeRoot?BikeRoot->Ge
 
 void UBikeComponent::ClothColliders(bool bOn)
 {
+ if(bOn==bClothCollidersOn)return;
  USkeletalMeshComponent* Mesh=Rider?Rider->GetMesh():nullptr;
  if(!Mesh||!Mesh->GetSkeletalMeshAsset()||!Mesh->GetSkeletalMeshAsset()->GetMeshClothingAssets().Num())return;
  if(bOn&&!ClothBodies&&BikeRoot)
@@ -690,6 +694,7 @@ void UBikeComponent::ClothColliders(bool bOn)
  if(!ClothBodies)return;
  Mesh->RemoveClothCollisionSource(Mesh,ClothBodies);
  if(bOn)Mesh->AddClothCollisionSource(Mesh,ClothBodies);
+ bClothCollidersOn=bOn;
 }
 
 float UBikeComponent::GetAuthoredLift() const

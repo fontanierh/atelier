@@ -114,7 +114,8 @@ void UJapanCharacterMovement::QueueClockReset(uint8 Reason)
         if (Epoch != GetActivityEpoch() || !PredictsMoves()) return;
         bClockResetPending = false;
         auto* Rider = CastChecked<AWandererCharacter>(CharacterOwner);
-        Rider->BeginNetworkActivity(EJapanActivity::OnFoot, !IsMovingOnGround(), Reason);
+        if(!Rider->ExitNetworkVehicle(Reason))
+            Rider->BeginNetworkActivity(EJapanActivity::OnFoot, !IsMovingOnGround(), Reason);
         bWaitingAfterClockReset = true;
         ClockResetAt = FPlatformTime::Seconds();
         UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK movement clock reset reason=%u old_epoch=%u epoch=%u"),

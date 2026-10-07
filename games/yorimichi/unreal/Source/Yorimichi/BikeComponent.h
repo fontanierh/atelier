@@ -85,6 +85,7 @@ private:
  UPROPERTY() TObjectPtr<UStaticMeshComponent> RackBoard;
  /** A rider's cloth (Modori's coat) collides with the bike while he rides it: the rack and its board, the rear wheel. */
  UPROPERTY() TObjectPtr<UPhysicsAsset> ClothBodies;
+ bool bClothCollidersOn=false;
  void ClothColliders(bool bOn);
  UPROPERTY() TMap<FName,TObjectPtr<UAnimSequence>> Sequences;
  TMap<FName,FClip> Clips;

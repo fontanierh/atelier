@@ -23,7 +23,7 @@ bool FiniteInWorld(const FVector& Value, double Maximum)
 }
 }
 
-bool AWandererCharacter::ExitNetworkVehicleForStrike()
+bool AWandererCharacter::ExitNetworkVehicle(uint8 ClockCorrection)
 {
     if(!HasAuthority()||!JapanNetwork::IsOnline(GetWorld()))return false;
     bool Falling=GetCharacterMovement()->IsFalling();
@@ -49,9 +49,12 @@ bool AWandererCharacter::ExitNetworkVehicleForStrike()
     {Sailboat->StowImmediately();Falling=true;}
     else return false;
     SetAction(NAME_None);
-    // The server commits exit before applying damage in this same call. All
-    // outstanding vehicle moves now carry a stale epoch and cannot restore it.
-    BeginNetworkActivity(EJapanActivity::OnFoot,Falling);
+    // Timeout/budget recovery must not carry bike/sail velocity into walking.
+    // Neutral physics resumes gravity after this single activity handoff.
+    if(ClockCorrection)GetCharacterMovement()->StopMovementImmediately();
+    // Strikes commit this same exit before damage. Outstanding vehicle moves
+    // carry a stale epoch and cannot restore the mounted state.
+    BeginNetworkActivity(EJapanActivity::OnFoot,Falling,ClockCorrection);
     return true;
 }
 

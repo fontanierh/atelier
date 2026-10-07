@@ -33,7 +33,7 @@ void UJapanCombatResolver::Strike(AActor* Source, AWandererCharacter* Victim,
         (Victim->GetNetworkActivity()==EJapanActivity::Bike||Victim->GetNetworkActivity()==EJapanActivity::Sailboat))
     {
         const bool Alive=Victim->GetSword()->GetHealth()>0.f;
-        const int32 Outcome=Alive&&Victim->ExitNetworkVehicleForStrike()?
+        const int32 Outcome=Alive&&Victim->ExitNetworkVehicle()?
             (Victim->GetMoves()?Victim->GetMoves()->ResolveUnprotectedStrike(Source,Damage,From):
                 Victim->GetSword()->IncomingStrike(Source,Damage,From)):3;
         ++Resolved;if(Result)Result(Outcome);return;
