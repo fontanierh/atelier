@@ -25,7 +25,7 @@ def load(path):
         return None
 
 
-def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None):
+def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -94,10 +94,59 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
                     total > 0 and receipt.get('interpolated_peer_frames', 0) / total >= .7)
                 checks[role + '_within_pose_buffer'] = total > 0 and outside / total <= .15
                 checks[role + '_bounded_timestamp_drops'] = 0 <= receipt.get('peer_timestamp_drops', -1) <= 2
+                if not any((emulation or {}).get(key, 0) for key in ('lag_ms', 'variance_ms', 'loss_percent')):
+                    checks[role + '_zero_lag_prediction'] = (receipt.get('position_corrections_over_1cm') == 0 and
+                        0 <= receipt.get('largest_correction_cm', -1) < 1)
+    if combat:
+        # D1 is a latency test, not just a successful local hit.
+        expected_lag = dict(lag_ms=60, variance_ms=15, loss_percent=2)
+        checks['combat_emulated_defence'] = all(
+            all(r.get('emulation', {}).get(k) == v for k, v in expected_lag.items()) for r in (server, client))
+        final = read('combat-final').get('cases', [])
+        final_by_case = {(r.get('person'), r.get('phase')): r for r in final}
+        checks['combat_final_contact_count'] = len(final) == len(final_by_case) == 10
+        for person_id, person in enumerate(('host', 'guest')):
+            for phase in range(5):
+                receipt = read(f'combat-{person}-{phase}-result')
+                confirmed = read(f'combat-{person}-{phase}-confirmed')
+                expected = (1, 2, 3, 0, 0)[phase]
+                health_delta = receipt.get('health_before', -1000) - receipt.get('health_after', 1000)
+                checks[f'combat_{person}_{phase}'] = (receipt.get('passed') is True and receipt.get('callbacks') == 1 and
+                    receipt.get('host_fps') == combat_host_fps and receipt.get('outcome') == expected and abs(health_delta - (8 if expected == 0 else 0)) < .01 and
+                    receipt.get('queued') == person_id and receipt.get('resolved') == person_id and
+                    receipt.get('cancelled') == 0 and (phase != 0 or receipt.get('parries') == 1) and
+                    (phase != 1 or receipt.get('dodges') == 1))
+                final_case = final_by_case.get((person_id, phase), {})
+                checks[f'combat_{person}_{phase}_final'] = (final_case.get('callbacks') == 1 and
+                    final_case.get('health_before') == receipt.get('health_before') and
+                    final_case.get('health_after') == receipt.get('health_after') and
+                    abs(confirmed.get('health', -1000) - receipt.get('health_after', 1000)) < .01 and
+                    0 <= confirmed.get('health_confirm_delay_ms', -1) <= 1000)
+                if phase < 3:
+                    checks[f'combat_{person}_{phase}_clean_defence'] = all(receipt.get(key) == 0 for key in
+                        ('overflows', 'missing_samples', 'authored_fallbacks', 'rejected_defence_times'))
+                if phase < 2:
+                    for role, frames, fps in (('host', receipt, combat_host_fps), ('owner', confirmed, combat_host_fps if person_id == 0 else 30)):
+                        checks[f'combat_{person}_{phase}_{role}_fps'] = (frames.get('frame_count', 0) >= 2 and
+                            frames.get('frame_min', 0) >= (.045 if fps == 20 else .030) and
+                            frames.get('frame_min', 100) <= frames.get('frame_max', 0) <= .1)
+                    checks[f'combat_{person}_{phase}_stimulus_in_window'] = (receipt.get('contact_lateness_ms', -1) >= 0 and
+                        receipt.get('window_margin_ms', -1) >= 15)
+                if phase == 2:
+                    checks[f'combat_{person}_actual_guard'] = (receipt.get('guard_hit') is True and
+                        receipt.get('recovering_at_contact') is False)
+        pending = read('combat-guest-3-result')
+        checks['pending_contact_blocks_optional_activity'] = (pending.get('pending_gate_passed') is True and
+            pending.get('pending_skate_refusals') == pending.get('pending_travel_refusals') == 1)
+        checks['destroyed_source_contact_resolves'] = (pending.get('source_destroyed_before_resolution') is True and
+                                                      pending.get('outcome') == 0 and pending.get('resolved') == 1)
+        flushed = read('combat-guest-4-result')
+        checks['forced_recovery_resolves_contact_before_epoch'] = (flushed.get('forced_flush_passed') is True and
+                                                                   flushed.get('flushed') == 1 and flushed.get('cancelled') == 0)
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -143,10 +192,12 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                            '-unattended', '-stdout', '-FullStdOutLogOutput',
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
-                           '-ExecCmds=t.MaxFPS 30']
+                           '-ExecCmds=t.MaxFPS ' + (str(combat_host_fps) if combat and role == 'server' else '30')]
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
                 if not tailnet:
                     command.append('-MULTIHOME=127.0.0.1')
+                if combat:
+                    command += ['-networkcombat', '-networkcombathostfps=' + str(combat_host_fps)]
                 if gameplay:
                     command.append('-networkgameplay')
                 if listen:
@@ -209,7 +260,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         if monitor.wait(timeout=5) != 0:
             raise RuntimeError('Aggregate monitor rejected teardown')
         emulation = dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent)
-        checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}')
+        checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps)
         checks['source_unchanged'] = source_revision() == revision
         checks['native_build_unchanged'] = current_native_build(ctx) == binary
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
@@ -233,6 +284,8 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
     parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
+    parser.add_argument('--combat-host-fps', type=int, choices=(20, 30), default=20)
+    parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
     parser.add_argument('--listen', action='store_true', help='Two local players across listen-host/client processes; validates the observer relay within the same aggregate guard')
     parser.add_argument('--lag-ms', type=int, default=0, help='Emulated one-way packet delay on both processes (0..200 ms)')
@@ -241,7 +294,12 @@ def main():
     args = parser.parse_args()
     if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
         parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
-    if args.listen:
+    if args.combat:
+        if (args.lag_ms, args.variance_ms, args.loss_percent) != (60, 15, 2):
+            parser.error('Combat acceptance requires --lag-ms 60 --variance-ms 15 --loss-percent 2')
+        args.listen = True
+        args.gameplay = False
+    elif args.listen:
         args.gameplay = True
     from atelier.build import Context
     from atelier.safety import guarded
@@ -249,15 +307,15 @@ def main():
     folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
     folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind(('127.0.0.1', args.port or 0))
         port = sock.getsockname()[1]
-    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port),
+    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port), '--combat-host-fps', str(args.combat_host_fps),
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent)] +
-                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []),
+                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []),
                        folder / 'guard', timeout=330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

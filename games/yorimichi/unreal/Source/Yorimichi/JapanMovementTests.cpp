@@ -8,6 +8,11 @@
 #include "Serialization/BitWriter.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "Misc/ScopeExit.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanMoveInputTest, "Yorimichi.Network.OrderedInput",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
@@ -19,9 +24,10 @@ bool FJapanMoveInputTest::RunTest(const FString&)
     Input.Edges = { uint8(FJapanMoveInput::ButtonIndex(TEXT("attack"))),
         uint8(FJapanMoveInput::ButtonIndex(TEXT("attack_release"))),
         uint8(FJapanMoveInput::ButtonIndex(TEXT("jump"))) };
+    Input.EdgeAgeMilliseconds = {0, 67, 511};
     FBitWriter Writer(256, true);
     TestTrue(TEXT("Input encodes"), Input.Serialize(Writer));
-    TestTrue(TEXT("Three input edges and journal identity fit in eleven bytes"), Writer.GetNumBits() <= 88);
+    TestTrue(TEXT("Three timed edges and journal identity fit in fifteen bytes"), Writer.GetNumBits() <= 120);
     FBitReader Reader(Writer.GetData(), Writer.GetNumBits());
     FJapanMoveInput Decoded;
     TestTrue(TEXT("Input decodes"), Decoded.Serialize(Reader));
@@ -30,6 +36,7 @@ bool FJapanMoveInputTest::RunTest(const FString&)
     TestEqual(TEXT("Sprint and jump hold levels survive"), Decoded.Flags, Input.Flags);
     TestEqual(TEXT("Journal sequence survives wrap boundary"), Decoded.FirstEdge, Input.FirstEdge);
     TestTrue(TEXT("Press-release-jump ordering survives"), Decoded.Edges == Input.Edges);
+    TestTrue(TEXT("Press ages and the expired marker survive"), Decoded.EdgeAgeMilliseconds == Input.EdgeAgeMilliseconds);
     TestTrue(TEXT("Diagonal input is normalized"), Decoded.Stick().Size() <= 1.000001);
 
     FBitReader Truncated(Writer.GetData(), Writer.GetNumBits() - 4);
@@ -75,6 +82,29 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanCheckpointTest, "Yorimichi.Network.Traver
 
 bool FJapanCheckpointTest::RunTest(const FString&)
 {
+    // Exercise UE's actual timestamp/cap paths. A hitch used to simulate 125 ms
+    // on the owner but 218.75 ms on the host, producing a 9.37 cm walking snap.
+    UWorld* TestWorld = nullptr;
+    for (const FWorldContext& Context : GEngine->GetWorldContexts())
+        if (Context.World() && Context.World()->IsGameWorld()) { TestWorld = Context.World(); break; }
+    if (!TestNotNull(TEXT("Movement timing regression has a native game world"), TestWorld)) return false;
+    FActorSpawnParameters Spawn;
+    Spawn.ObjectFlags |= RF_Transient;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    auto* Character = TestWorld->SpawnActor<ACharacter>(FVector::ZeroVector, FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("Movement timing regression owns a temporary character"), Character)) return false;
+    ON_SCOPE_EXIT { Character->Destroy(); };
+    auto* Movement = Character->GetCharacterMovement();
+    FNetworkPredictionData_Client_Character Client(*Movement);
+    FNetworkPredictionData_Server_Character Server(*Movement);
+    for (float FrameDelta : {1.f / 30.f, .22f, 1.f / 30.f})
+    {
+        const float ClientDelta = Client.UpdateTimeStampAndDeltaTime(FrameDelta, *Character, *Movement);
+        const float ServerDelta = Server.GetServerMoveDeltaTime(Client.CurrentTimeStamp, Character->GetActorTimeDilation());
+        TestTrue(TEXT("Owner and host simulate the same step before, during and after a hitch"),
+            FMath::IsNearlyEqual(ClientDelta, ServerDelta, .000001f));
+        Server.CurrentClientTimeStamp = Client.CurrentTimeStamp;
+    }
     FBotwNetworkState State;
     State.MeshBaseRotation = FQuat::Identity;
     State.Stamina.Capacity = 2.f; State.Stamina.Units = 1.25f;

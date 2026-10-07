@@ -243,6 +243,7 @@ void UBotwMoveSet::Play(FName Name, float Blend, float StartAt, float Speed)
 {
     const FBotwMove* M = Moves.Find(Name);
     if (!M || !Character) return;
+    EndDefenceAction();
     const bool bLoop = M->bLoop || In(Name, { TEXT("Fall"), TEXT("PlungeAir"), TEXT("JumpCutAir") });
     Character->SetAction(Name, bLoop, Blend >= 0.f ? Blend : FMath::Clamp(M->Blend, .06f, .25f), true);
     if (Character->GetAnimationAction() != Name) return;
@@ -269,6 +270,7 @@ void UBotwMoveSet::PlayLoop(FName Name, float Blend)
 
 void UBotwMoveSet::Stop(float Blend)
 {
+    EndDefenceAction();
     if (Character) Character->SetAction(NAME_None, false, Blend);
     bDriving = false; DriveVelocity = FVector::ZeroVector; DriveMesh = FVector::ZeroVector;
 }
@@ -354,6 +356,7 @@ void UBotwMoveSet::Advance(float Dt)
     NoClimb = FMath::Max(0.f, NoClimb - Dt); SinceImpact += Dt; Invulnerable = FMath::Max(0.f, Invulnerable - Dt); JustAvoid = FMath::Max(0.f, JustAvoid - Dt);
     GuardBroken = FMath::Max(0.f, GuardBroken - Dt); SinceHit += Dt;
     if (FlinchTime >= 0.f) { FlinchTime += Dt; if (FlinchTime > FlinchPeak * 9.f) FlinchTime = -1.f; }
+    if (Invulnerable <= 0.f) bHopInvulnerability = false;
     AdvanceFlurry(Dt);
     // Leaving the move set's movement mode from outside (travel, the board) ends gliding, climbing and swimming.
     const bool bCustom = Movement->MovementMode == MOVE_Custom && IsTraversalMode(Movement->CustomMovementMode);
@@ -785,7 +788,7 @@ void UBotwMoveSet::StartHop()
     Mode = EBotwMoveMode::Air; bJumped = true; JumpBuffer = 0.f; FallStartZ = Character->GetActorLocation().Z;
     const float Flight = 2.f * float(V.Z) / FMath::Max(G, 1.f);
     Invulnerable = FMath::Min(GetParam(TEXT("PlayerSideStep.NoDamageTime"), 40.f) / 30.f, Flight + .1f);
-    JustAvoid = .25f;
+    JustAvoid = .25f; bHopInvulnerability = true;
     Play(Clip, .05f);
     if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
     {

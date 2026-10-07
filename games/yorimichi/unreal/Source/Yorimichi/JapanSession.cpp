@@ -256,6 +256,7 @@ void AJapanPlayerController::OpenFriends()
 void AJapanPlayerController::Tick(float Dt)
 {
     Super::Tick(Dt);
+    DrainCombatResults();
     if (IsLocalController()) if (auto* Session = GetGameInstance<UJapanGameInstance>()) Session->ShowPendingStatus();
     if (!JapanNetwork::IsOnline(GetWorld())) return;
     if (HasAuthority() && !IsLocalController()) DrainSkateFrames();
@@ -329,6 +330,7 @@ void AJapanNetworkGameMode::BeginPlay()
     // Deliberately skip the offline mode's player-0 bootstrap. This server can have no local controller.
     AGameModeBase::BeginPlay();
     SessionWorld = JapanNetwork::EnsureWorld(GetWorld());
+    if (SessionWorld && SessionWorld->bGameplayReady) SpawnFoxHunter(SessionWorld, nullptr);
     if (auto* State = GetGameState<AJapanGameState>())
     {
         State->SessionId = FGuid::NewGuid().ToString(EGuidFormats::Digits);
@@ -412,4 +414,59 @@ void AJapanNetworkGameMode::Admit(AJapanPlayerController* Player, const FString&
     Player->ClientSessionReady();
     Person->ForceNetUpdate();
     UE_LOG(LogTemp, Display, TEXT("NETWORK admitted player=%s rider=%s"), *Person->SessionPlayerId, *Person->RiderName);
+}
+
+void AJapanGameState::PublishCombat(FJapanCombatEvent Event)
+{
+    if (!HasAuthority()) return;
+    Event.Serial = ++NextCombatSerial;
+    if (const auto* Player = Cast<AWandererCharacter>(Event.Actor))
+    {
+        Event.ActivityEpoch = Player->GetActivityEpoch();
+        if (JapanCombat::DurableOwnerCue(Event.Kind))
+            if (auto* Controller = Cast<AJapanPlayerController>(Player->GetController())) Controller->ClientCombatResult(Event);
+    }
+    CombatEvent(Event);
+}
+
+void AJapanGameState::CombatEvent_Implementation(const FJapanCombatEvent& Event)
+{
+    if (int32(Event.Serial - LastCombatSerial) <= 0) return;
+    LastCombatSerial = Event.Serial;
+    JapanCombat::Present(this, Event);
+}
+
+void AJapanPlayerController::ClientCombatResult_Implementation(const FJapanCombatEvent& Event)
+{
+    if (!JapanCombat::DurableOwnerCue(Event.Kind) || int32(Event.Serial - LastCombatResult) <= 0) return;
+    for (const FJapanCombatEvent& Waiting : PendingCombatResults) if (Waiting.Serial == Event.Serial) return;
+    if (PendingCombatResults.Num() >= 32)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Network combat: owner presentation queue full"));
+        return;
+    }
+    // The reliable controller result and replicated pawn epoch use different channels.
+    // Keep a future epoch's cue until the corresponding pawn handoff is actually applied.
+    PendingCombatResults.Add(Event);
+    PendingCombatDeadlines.Add(FPlatformTime::Seconds() + 3.);
+    DrainCombatResults();
+}
+
+void AJapanPlayerController::DrainCombatResults()
+{
+    const auto* Player = Cast<AWandererCharacter>(GetPawn());
+    const double Now = FPlatformTime::Seconds();
+    while (!PendingCombatResults.IsEmpty())
+    {
+        const FJapanCombatEvent& Event = PendingCombatResults[0];
+        const bool bExpired = Now >= PendingCombatDeadlines[0];
+        const bool bCurrentPawn = Player && Event.Actor == Player;
+        const int32 EpochDelta = bCurrentPawn ? int32(Event.ActivityEpoch - Player->GetActivityEpoch()) : 1;
+        if (!bExpired && (!bCurrentPawn || EpochDelta > 0)) break;
+        if (!bExpired && EpochDelta == 0 && int32(Event.Serial - LastCombatResult) > 0)
+            JapanCombat::Present(this, Event, true);
+        LastCombatResult = Event.Serial;
+        PendingCombatResults.RemoveAt(0);
+        PendingCombatDeadlines.RemoveAt(0);
+    }
 }

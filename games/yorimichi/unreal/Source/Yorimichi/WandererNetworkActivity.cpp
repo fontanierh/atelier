@@ -1,6 +1,8 @@
 #include "WandererCharacter.h"
 #include "JapanCharacterMovement.h"
 #include "JapanNetwork.h"
+#include "JapanEncounters.h"
+#include "JapanCombatResolver.h"
 #include "JapanSession.h"
 #include "JapanSkateNetwork.h"
 #include "BotwMoveSet.h"
@@ -21,6 +23,8 @@ bool FiniteInWorld(const FVector& Value, double Maximum)
 void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling)
 {
     if (!HasAuthority() || !JapanNetwork::IsOnline(GetWorld())) return;
+    // Automatic server recoveries cannot erase a contact made in the old epoch.
+    GetWorld()->GetSubsystem<UJapanCombatResolver>()->Flush(this);
     ++NetworkActivity.Epoch;
     if (!NetworkActivity.Epoch) ++NetworkActivity.Epoch;
     NetworkActivity.Kind = Kind;
@@ -84,9 +88,15 @@ bool AWandererCharacter::RequestNetworkSkate()
 
 void AWandererCharacter::ServerRequestSkate_Implementation(uint32 Epoch)
 {
+    auto* Combat = GetWorld()->GetSubsystem<UJapanCombatResolver>();
+    if (!Combat) { ClientActivityRejected(TEXT("Combat state is unavailable.")); return; }
+    if (Epoch == NetworkActivity.Epoch && Combat->HasPending(this))
+    { ++Combat->PendingSkateRefusals; ClientActivityRejected(TEXT("Finish the incoming hit before skating.")); return; }
     const auto* Rules = GetWorld()->GetGameState<AJapanGameState>();
     if (Epoch != NetworkActivity.Epoch || NetworkActivity.Kind != EJapanActivity::OnFoot ||
-        !Rules || !Rules->bTrustedSkating || !bReady || MovementLocked() || OnVehicle())
+        !Rules || !Rules->bTrustedSkating || !bReady || MovementLocked() || OnVehicle() ||
+        GetWorld()->GetSubsystem<UJapanEncounters>()->HoldsPlayer(this) ||
+        GetWorld()->GetSubsystem<UJapanCombatResolver>()->HasPending(this))
     {
         ClientActivityRejected(TEXT("Skating is unavailable during this action."));
         return;
@@ -116,9 +126,16 @@ void AWandererCharacter::ServerTravelTo_Implementation(FVector_NetQuantize100 Lo
     // The host can already have recovered from water and advanced the epoch. Its
     // replicated handoff supersedes this late request; do not show a false failure.
     if (Epoch != NetworkActivity.Epoch) return;
+    auto* Combat = GetWorld()->GetSubsystem<UJapanCombatResolver>();
+    if (!Combat) { ClientActivityRejected(TEXT("Combat state is unavailable.")); return; }
+    if (Combat->HasPending(this))
+    { ++Combat->PendingTravelRefusals; ClientActivityRejected(TEXT("Finish the incoming hit before travelling.")); return; }
     if (!FiniteInWorld(Location, 2000000.) || !FMath::IsFinite(Yaw) ||
         GetWorld()->GetTimeSeconds() - LastNetworkTravel < 1.)
     { ClientActivityRejected(TEXT("Travel is unavailable just now.")); return; }
+    if (GetWorld()->GetSubsystem<UJapanEncounters>()->HoldsPlayer(this) ||
+        GetWorld()->GetSubsystem<UJapanCombatResolver>()->HasPending(this))
+    { ClientActivityRejected(TEXT("Finish or leave the encounter before travelling.")); return; }
     LastNetworkTravel = GetWorld()->GetTimeSeconds();
     if (!TravelTo(Location, Yaw, TEXT("player map"))) ClientActivityRejected(TEXT("Could not find a safe destination."));
 }

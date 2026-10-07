@@ -1,4 +1,5 @@
 #include "BotwMoveSet.h"
+#include "JapanCombat.h"
 #include "JapanNetwork.h"
 #include "JapanCharacterMovement.h"
 #include "BotwMoveSetDetail.h"
@@ -24,6 +25,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/WorldSettings.h"
 #include "Misc/App.h"
+#include "Misc/ScopeExit.h"
 #include "Misc/CommandLine.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
@@ -267,7 +269,7 @@ void UBotwMoveSet::AdvanceCombat(float Dt)
             AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
             TArray<FVector> Blade; BladePoints(Blade);
             if (FX && Blade.Num()) FX->ChargeTick(Blade[0], Blade.Last(), FMath::Clamp(ChargeTime / Full, 0.f, 1.f), Dt);
-            if (!bFullCharge && ChargeTime >= Full) { bFullCharge = true; if (FX && Blade.Num()) FX->ChargeReady(Blade.Last()); }
+            if (!bFullCharge && ChargeTime >= Full) { bFullCharge = true; if (Blade.Num() && !JapanCombat::Publish(Character, EJapanCombatCue::ChargeReady, Blade.Last(), FVector::ZeroVector, 0.f, Character) && FX) FX->ChargeReady(Blade.Last()); }
             if (!bAttackHeld || Character->Stamina.Exhausted)
             {
                 bCharging = false;
@@ -293,7 +295,8 @@ void UBotwMoveSet::SweepBlade()
 {
     TArray<FVector> Now; BladePoints(Now);
     if (Now.IsEmpty()) return;
-    if (!bSwung) { bSwung = true; if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordSwing(Now.Last(), FMath::Min(Strength, 3)); }
+    if (!bSwung) { bSwung = true; if (!JapanCombat::Publish(Character, EJapanCombatCue::Swing, Now.Last(), FVector::ZeroVector, FMath::Min(Strength, 3), Character))
+        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordSwing(Now.Last(), FMath::Min(Strength, 3)); }
     if (PreviousBlade.Num() == Now.Num())
     {
         FCollisionQueryParams Query(SCENE_QUERY_STAT(BotwBlade), false, Character);
@@ -351,10 +354,20 @@ void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const 
     // fox's claw, and only a blow that lands counts (the guard, parry and dodge make their own effects).
     if (AWandererCharacter* Other = Cast<AWandererCharacter>(Victim))
     {
-        UBotwMoveSet* Theirs = Other->GetMoves();
-        if (!Theirs || Theirs->IncomingStrike(Character, Character->SparringDamage(Power), Character->GetActorLocation()) != 0) return;
-        ++HitCount;
-        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordHit(At, Direction, FMath::Clamp(Power, 1, 3), Character, Victim);
+        if (!Other->GetMoves()) return;
+        TWeakObjectPtr<UBotwMoveSet> WeakSelf(this);
+        TWeakObjectPtr<AWandererCharacter> TargetPlayer(Other);
+        JapanCombat::Strike(Character, Other, Character->SparringDamage(Power), Character->GetActorLocation(),
+            [WeakSelf, TargetPlayer, Power, At, Direction](int32 Outcome)
+            {
+                UBotwMoveSet* Self = WeakSelf.Get();
+                if (Outcome != 0 || !Self || !Self->Character || !TargetPlayer.IsValid()) return;
+                ++Self->HitCount;
+                if (!JapanCombat::Publish(Self->Character, EJapanCombatCue::Hit, At, Direction,
+                    FMath::Clamp(Power, 1, 3), Self->Character, TargetPlayer.Get()))
+                    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Self->Character))
+                        FX->SwordHit(At, Direction, FMath::Clamp(Power, 1, 3), Self->Character, TargetPlayer.Get());
+            });
         return;
     }
     if (ASwordDummy* Dummy = Cast<ASwordDummy>(Victim)) Dummy->TakeSwordHit(FMath::Min(Power, 3));
@@ -362,23 +375,34 @@ void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const 
     else if (ABotwCreature* Creature = Cast<ABotwCreature>(Victim)) Creature->TakeSwordHit(Power, Character);
     else return;
     ++HitCount;
-    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordHit(At, Direction, FMath::Clamp(Power, 1, 3), Character, Victim);
+    if (!JapanCombat::Publish(Character, EJapanCombatCue::Hit, At, Direction, FMath::Clamp(Power, 1, 3), Character, Victim))
+        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordHit(At, Direction, FMath::Clamp(Power, 1, 3), Character, Victim);
 }
 
 int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& From)
 {
     if (!Character) return 0;
     if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return 3;
+    ON_SCOPE_EXIT
+    {
+        if (JapanNetwork::IsOnline(Character->GetWorld()))
+        {
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->ForceClientAdjustment();
+            Character->ForceNetUpdate();
+        }
+    };
+    TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
     const FBotwMove* Now = Current();
     const FName Name = Now ? Now->Name : NAME_None;
     AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
     const FVector Here = Character->GetActorLocation();
     const FVector Toward = (From - Here).GetSafeNormal2D();
     // The parry, shield or sword: the strike bounces off and the striker staggers.
-    if (Now && IsParry(Name) && Now->InWindow(Now->Guard, SourceTime()))
+    if (DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::Parry : (Now && IsParry(Name) && Now->InWindow(Now->Guard, SourceTime())))
     {
         ++ParryCount;
-        if (FX)
+        const bool NetworkParry = JapanCombat::Publish(Character, EJapanCombatCue::Parry, GuardPoint(), Toward, (!HasShield() && Has(TEXT("SwordParry"))) ? 1.f : 0.f, Character, Source);
+        if (FX && !NetworkParry)
         {
             const FVector At = GuardPoint();
             FX->Parry(At, Character, Source);
@@ -396,10 +420,10 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
         return 1;
     }
     // A hop or backflip in the air: dodged; just as the strike lands, a perfect dodge and the flurry rush.
-    if (IsHop(Name) && Invulnerable > 0.f)
+    if (DefenceOverride.IsSet() ? (DefenceOverride.GetValue() == EJapanDefence::Dodge || DefenceOverride.GetValue() == EJapanDefence::PerfectDodge) : (IsHop(Name) && Invulnerable > 0.f))
     {
         ++DodgeCount;
-        if (JustAvoid > 0.f && (bArmed || Has(TEXT("DrawSword"))) && Has(TEXT("Flurry")))
+        if ((DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::PerfectDodge : JustAvoid > 0.f) && (bArmed || Has(TEXT("DrawSword"))) && Has(TEXT("Flurry")))
         {
             FlurryTime = GetParam(TEXT("PlayerCutAfterJust.ForceSlowTime"), 80.f) / 30.f;
             Target = Source;
@@ -408,7 +432,9 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
             const float OriginalInvulnerability = FlurryTime;
             if (!Character->IsPlayerControlled() || JapanNetwork::IsOnline(Character->GetWorld())) FlurryTime = FMath::Min(FlurryTime, 1.4f);
             Invulnerable = JapanNetwork::IsOnline(Character->GetWorld()) ? FlurryTime : OriginalInvulnerability;
-            if (Character->IsPlayerControlled() && FX)
+            bHopInvulnerability = false;
+            const bool NetworkDodge = JapanCombat::Publish(Character, EJapanCombatCue::Dodge, Here + FVector(0,0,HalfHeight()*.3f), Toward, 0.f, Character, Source);
+            if (Character->IsPlayerControlled() && FX && !NetworkDodge)
             {
                 if (!JapanNetwork::IsOnline(Character->GetWorld())) FX->SlowMotion(FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
                 // The perfect dodge: a cold flash and a wide ring where he was, and a chime.
@@ -423,10 +449,10 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
         }
         return 2;
     }
-    if (bDown || Invulnerable > 0.f || InFlurry()) return 3;
+    if (bDown || (DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::Recovering : (Invulnerable > 0.f || InFlurry()))) return 3;
     // Guarding with the shield toward the strike: absorbed, pushed back a little.
     const float Guardable = GetParam(TEXT("GuardableAngle"), 120.f) * .5f;
-    if (IsGuarding() && Mode == EBotwMoveMode::Ground && (Character->GetActorForwardVector() | Toward) >= FMath::Cos(FMath::DegreesToRadians(Guardable)))
+    if (DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::Guard : (IsGuarding() && Mode == EBotwMoveMode::Ground && (Character->GetActorForwardVector() | Toward) >= FMath::Cos(FMath::DegreesToRadians(Guardable))))
     {
         const float Side = Character->GetActorRotation().UnrotateVector(From - Here).Y;
         // A heavy blow (a full charge, full power) breaks the guard: the arms thrown wide, the guard down for a moment.
@@ -438,7 +464,7 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
             bCharging = false; AttackBuffer = 0.f;
             Character->GetCharacterMovement()->Velocity = -Toward * 380.f;
             Flinch(-Toward, 18.f, .09f, Side);
-            if (FX)
+            if (!JapanCombat::Publish(Character, EJapanCombatCue::GuardBreak, GuardPoint(), -Toward, 0.f, Character, Source) && FX)
             {
                 const FVector At = GuardPoint();
                 FX->Burst(At, -Toward, 26, 1100.f, FLinearColor(1.f, .8f, .45f) * 7.f, .3f, 3.f);
@@ -452,7 +478,7 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
         if (Has(Hit)) Play(Hit, .03f);
         Character->GetCharacterMovement()->Velocity = -Toward * 220.f;
         Flinch(-Toward, 7.f, .06f, Side);
-        if (FX)
+        if (!JapanCombat::Publish(Character, EJapanCombatCue::Guard, GuardPoint(), -Toward, 0.f, Character, Source) && FX)
         {
             const FVector At = GuardPoint();
             FX->Burst(At, -Toward, 14, 700.f, FLinearColor(1.f, .85f, .55f) * 4.f, .25f, 3.f);
@@ -476,6 +502,7 @@ FVector UBotwMoveSet::GuardPoint() const
 
 void UBotwMoveSet::Deflected(AActor* By)
 {
+    TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
     if (!Character || bDown || Mode != EBotwMoveMode::Ground) return;
     bCharging = false; AttackBuffer = 0.f; LungeTime = 0.f;
     // Thrown back off the guard: the front stagger, a step back, the next blow from scratch.
@@ -516,17 +543,29 @@ float UBotwMoveSet::NextBlowIn() const
 
 void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact)
 {
+    TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
+    bHopInvulnerability = false;
     if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
+    ON_SCOPE_EXIT
+    {
+        if (JapanNetwork::IsOnline(Character->GetWorld()))
+        {
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->ForceClientAdjustment();
+            Character->ForceNetUpdate();
+        }
+    };
     UWandererSwordComponent* Sword = Character->GetSword();
     if (!Sword) return;
     ++Sword->HitsTakenCount;
     Sword->Health = FMath::Max(0.f, Sword->Health - Damage);
     Invulnerable = FMath::Max(Invulnerable, .7f);
     const bool bKnock = bHeavy || Sword->Health <= 0.f;
-    if (AYorimichiCombatFX* FX = Character->IsNpc() ? nullptr : AYorimichiCombatFX::Get(Character))   // the striker's blade made the NPC's
+    if (!Character->IsNpc())
     {
         const FVector Chest = Character->GetActorLocation() + FVector(0, 0, 20);
-        FX->PlayerHurt(Chest + (From - Chest).GetSafeNormal2D() * 18.f, From, Damage, Character, Source, bKnock);
+        const FVector At = Chest + (From - Chest).GetSafeNormal2D() * 18.f;
+        if (!JapanCombat::Publish(Character, EJapanCombatCue::Hurt, At, From, Damage, Character, Source, bKnock))
+            if (auto* FX = AYorimichiCombatFX::Get(Character)) FX->PlayerHurt(At, From, Damage, Character, Source, bKnock);
     }
     if (!bReact) return;
     bCharging = false; AttackBuffer = 0.f;
@@ -662,6 +701,7 @@ void UBotwMoveSet::SetArmed(bool bNow)
         const bool bHand = bNow && !Pair.Value.Hand.IsNone();
         if (bHand != Pair.Value.bInHand) { Pair.Value.bInHand = bHand; Attach(Pair.Key); }
     }
+    if (!JapanCombat::Publish(Character, EJapanCombatCue::Draw, Character->GetActorLocation()+FVector(0,0,30), FVector::ZeroVector, bNow ? 1.f : 0.f, Character))
     if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
         FX->Play(bNow ? TEXT("sword_draw") : TEXT("sword_sheathe"), Character->GetActorLocation() + FVector(0, 0, 30), .8f);
 }

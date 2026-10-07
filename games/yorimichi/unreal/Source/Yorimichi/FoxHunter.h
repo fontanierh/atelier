@@ -64,6 +64,25 @@ enum class EFoxState : uint8 { Idle, Approach, Stalk, Attack, Recover, Lunge, Re
  * strikes reach the player through the sword's parry/dodge/hit contract; the player's blade reaches it through
  * TakeSwordHit. It respawns at its home spot a while after dying, so the fight can be replayed.
  */
+USTRUCT()
+struct FFoxNetworkState
+{
+    GENERATED_BODY()
+    UPROPERTY() FName Action;
+    UPROPERTY() uint32 Serial = 0;
+    UPROPERTY() uint32 Encounter = 0;
+    UPROPERTY() TObjectPtr<AWandererCharacter> Target;
+    UPROPERTY() int32 MaximumHealth = 6;
+    UPROPERTY() float Time = 0.f;
+    UPROPERTY() float StateTime = 0.f;
+    UPROPERTY() float Blend = .16f;
+    UPROPERTY() float ServerTime = 0.f;
+    UPROPERTY() float Flash = 0.f;
+    UPROPERTY() int32 Health = 6;
+    UPROPERTY() uint8 State = 0;
+    UPROPERTY() bool bLoop = false;
+};
+
 UCLASS()
 class YORIMICHI_API AFoxHunter : public ACharacter
 {
@@ -71,6 +90,7 @@ class YORIMICHI_API AFoxHunter : public ACharacter
 public:
     AFoxHunter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     virtual void BeginPlay() override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void Tick(float Dt) override;
     // ---- combat contract with the player's sword
     /** The player's blade landed: Strength 1 light, 2 charged, 3 full charge. */
@@ -106,6 +126,15 @@ public:
     // Death: the body lands (DeathFallTime), then burns away into embers from DissolveStart over DissolveTime.
     static constexpr float DeathFallTime = 1.95f, DissolveStart = 2.45f, DissolveTime = 1.7f;
 private:
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkState) FFoxNetworkState NetworkState;
+    UFUNCTION() void OnRep_NetworkState();
+    void PublishNetworkState();
+    void PresentNetworkState();
+    double LastNetworkPublication = -1.;
+    void EngageNetworkEncounter();
+    void PresentDeath();
+    bool bHealthScaled = false;
+    int32 EncounterHealth = MaxHealth;
     void Enter(EFoxState Next, FName Clip, float Blend, bool bLoop = false);
     void SetAction(FName Action, bool bLoop, float Blend);
     void AdvanceAction(float Dt);

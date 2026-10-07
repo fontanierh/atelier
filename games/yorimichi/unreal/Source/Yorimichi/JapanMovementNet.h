@@ -13,6 +13,8 @@ struct FJapanMoveInput
     uint32 ActivityEpoch = 1;
     uint16 FirstEdge = 1; // The journal is repeated until acknowledged, independently of CMC old-move selection.
     TArray<uint8, TInlineAllocator<MaximumEdges>> Edges;
+    // 511 marks an input too old for historical defence; it may still drive the live action.
+    TArray<uint16, TInlineAllocator<MaximumEdges>> EdgeAgeMilliseconds;
     FVector2D Stick() const { return FVector2D(X / 127., Y / 127.).GetClampedToMaxSize(1.); }
     bool Serialize(FArchive& Ar);
     void ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply) const;

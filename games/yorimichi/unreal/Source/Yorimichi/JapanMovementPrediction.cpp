@@ -64,6 +64,7 @@ void UJapanCharacterMovement::ResetActivityPrediction()
     HeldButtons = LastServerHolds = 0; bRecoveryQueued = false; bInputPrepared = false; ActiveInput = FJapanMoveInput();
     PendingCheckpoint = FJapanMoveCheckpoint(); PendingCheckpointTime = -1.f;
     LastCustomCorrection = -1.; bReceivedMoveInEpoch = false;
+    if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->ResetDefence();
     ClearAccumulatedForces(); CurrentRootMotion.Clear();
 }
 
@@ -143,7 +144,7 @@ bool UJapanCharacterMovement::QueueMoveButton(FName Button)
     if (Button == TEXT("jump_release")) HeldButtons &= ~FJapanMoveInput::JumpHeld;
     if (Button == TEXT("drop_holds")) HeldButtons = 0;
     if (CastChecked<AWandererCharacter>(CharacterOwner)->IsNetworkActivityPending()) return true;
-    if (PendingEdges.Num() < 64) PendingEdges.Add(uint8(Index));
+    if (PendingEdges.Num() < 64) PendingEdges.Add({uint8(Index), -1.});
     else
     {
         // Bounded input journal. Hold levels still release safely if a disconnected peer fills it.
@@ -170,12 +171,21 @@ FJapanMoveInput UJapanCharacterMovement::ReadMoveInput() const
     return Input;
 }
 
-FJapanMoveInput UJapanCharacterMovement::ConsumeMoveInput()
+FJapanMoveInput UJapanCharacterMovement::ConsumeMoveInput(float Dt)
 {
     FJapanMoveInput Input = ReadMoveInput();
     Input.FirstEdge = JournalFirstEdge;
     const int32 Count = FMath::Min(PendingEdges.Num(), int32(FJapanMoveInput::MaximumEdges));
-    for (int32 I = 0; I < Count; ++I) Input.Edges.Add(PendingEdges[I]);
+    const double Now = FPlatformTime::Seconds();
+    // First sampling, not retransmission, anchors the press at its simulation-step start.
+    // A CMC timestamp denotes the end of that move; an age includes this first step's Dt.
+    for (FPendingEdge& Edge : PendingEdges) if (Edge.FirstSample < 0.) Edge.FirstSample = Now - FMath::Max(0.f, Dt);
+    for (int32 I = 0; I < Count; ++I)
+    {
+        Input.Edges.Add(PendingEdges[I].Button);
+        const double Age = FMath::Max(0., Now - PendingEdges[I].FirstSample);
+        Input.EdgeAgeMilliseconds.Add(Age > .5 ? 511 : uint16(FMath::RoundToInt(Age * 1000.)));
+    }
     return Input;
 }
 
@@ -209,19 +219,23 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
     {
         FJapanMoveInput Stall;
         Stall.ActivityEpoch = GetActivityEpoch(); Stall.Flags = LastServerHolds;
-        SetMoveInput(Rider->IsLocallyControlled() ? ConsumeMoveInput() : Stall);
+        SetMoveInput(Rider->IsLocallyControlled() ? ConsumeMoveInput(Dt) : Stall);
     }
     TGuardValue<bool> SimulationMenu(Rider->bMenuOpen, (ActiveInput.Flags & FJapanMoveInput::Menu) != 0);
     ApplyMoveInput(ActiveInput);
     TGuardValue<bool> Executing(bExecutingMove, true);
     UBotwMoveSet* Moves = Rider->GetMoves();
     if (bReplaying) ++NetworkStats.ReplayedMoves;
+    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge);
     ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
     {
         if (!Rider->bReady || Rider->bMenuOpen || Rider->OnVehicle() || Rider->IsZeppelinPassenger()) return;
         const FName Button = FJapanMoveInput::ButtonName(Edge);
-        if (Button == TEXT("drop_holds")) Moves->DropHolds();
-        else if (!Moves->Press(Button) && Button == TEXT("crouch"))
+        const int32 Index = uint16(ProcessedEdge - ActiveInput.FirstEdge);
+        const uint16 Age = ActiveInput.EdgeAgeMilliseconds.IsValidIndex(Index) ? ActiveInput.EdgeAgeMilliseconds[Index] : 511;
+        const bool Handled = Rider->HasAuthority() ? Moves->PressNetwork(Button, ProcessedEdge, Age)
+            : Button == TEXT("drop_holds") ? (Moves->DropHolds(), true) : Moves->Press(Button);
+        if (!Handled && Button == TEXT("crouch"))
         {
             if (Rider->bIsCrouched) Rider->UnCrouch(); else Rider->Crouch();
         }
@@ -244,6 +258,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
         : ConstrainInputAcceleration(Wish) * GetMaxAcceleration();
     AnalogInputModifier = ComputeAnalogInputModifier();
     Super::PerformMovement(Dt);
+    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge);
     bInputPrepared = false;
     // Quantized simulation inputs must not rewrite the user's actual stick state or menu after the prediction step.
     if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
@@ -262,6 +277,7 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
                     UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK movement start epoch=%u timestamp=%.4f dt=%.4f initial_forced_skips=%u loading_moves=%u pre_ack_moves=%u"),
                         GetActivityEpoch(), Timestamp, Dt, NetworkStats.InitialForcedUpdatesSkipped, NetworkStats.MovesBeforeReady, NetworkStats.MovesBeforeAck);
             }
+            if (CharacterOwner->HasAuthority()) CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->MapDefenceMove(Timestamp, Dt);
             SetMoveInput(Data->Input);
             LastServerHolds = Data->Input.Flags & (FJapanMoveInput::AttackHeld | FJapanMoveInput::GuardHeld | FJapanMoveInput::JumpHeld | FJapanMoveInput::Menu);
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);

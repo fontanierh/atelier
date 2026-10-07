@@ -1,4 +1,9 @@
 #include "BotwCreature.h"
+#include "JapanNetwork.h"
+#include "JapanCombat.h"
+#include "JapanEncounters.h"
+#include "Net/UnrealNetwork.h"
+#include "GameFramework/GameStateBase.h"
 #include "AtelierData.h"
 #include "Animation/AnimSequence.h"
 #include "Components/CapsuleComponent.h"
@@ -56,6 +61,8 @@ const FBotwSpec* FBotwSpec::Find(const FString& Name) { return All().Find(Name);
 ABotwCreature::ABotwCreature()
 {
     PrimaryActorTick.bCanEverTick = true;
+    bReplicates = true; SetReplicateMovement(true);
+    SetNetUpdateFrequency(20.f); SetMinNetUpdateFrequency(10.f);
     Capsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
     RootComponent = Capsule;
     // The sword sweeps on the visibility channel and the player bumps into it, as with the fox hunter's pawn capsule.
@@ -74,7 +81,7 @@ ABotwCreature::ABotwCreature()
 ABotwCreature* ABotwCreature::SpawnAt(UWorld* World, const FString& Name, const FVector& Ground, float Yaw, EBotwMode Mode)
 {
     const FBotwSpec* Spec = FBotwSpec::Find(Name);
-    if (!World || !Spec) return nullptr;
+    if (!World || !Spec || World->GetNetMode() == NM_Client) return nullptr;
     FActorSpawnParameters Params; Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     ABotwCreature* Creature = World->SpawnActor<ABotwCreature>(Ground + FVector(0, 0, Spec->HeightCm * .5f), FRotator(0, Yaw, 0), Params);
     if (Creature) Creature->Initialize(*Spec, Mode);
@@ -97,9 +104,10 @@ void ABotwCreature::Initialize(const FBotwSpec& Spec, EBotwMode StartMode)
                            FName("hit"), FName("down"), FName("getup"), FName("dance"), FName("talk"), FName("sleep") })
         if (Loaded.Contains(Role(R))) ShowcaseOrder.AddUnique(Role(R));
     Home = Target = GetActorLocation();
-    Ground();
+    if (HasAuthority()) Ground();
     UE_LOG(LogTemp, Display, TEXT("BOTW %s (%s): %d clips, %.0f cm"), *Data.Name, *Data.Label, Loaded.Num(), Data.HeightCm);
-    SetMode(StartMode);
+    if (HasAuthority()) SetMode(StartMode);
+    else Mode = StartMode;
 }
 
 UAnimSequence* ABotwCreature::Clip(FName Name) const { const TObjectPtr<UAnimSequence>* S = Loaded.Find(Name); return S ? S->Get() : nullptr; }
@@ -111,7 +119,7 @@ float ABotwCreature::Play(const FString& ClipOrRole, bool bLoop, float Rate, flo
     if (!Sequence) return 0.f;
     Mesh->PlayAnimation(Sequence, bLoop);
     Mesh->SetPlayRate(Rate);
-    Current = Name;
+    Current = Name; ClipBegan = GetWorld()->GetTimeSeconds(); ClipRate = Rate; bClipLoop = bLoop; ++ClipSerial;
     return Sequence->GetPlayLength() / FMath::Max(Rate, .01f);
 }
 
@@ -124,7 +132,8 @@ float ABotwCreature::PlayRole(FName RoleName, bool bLoop, float Rate)
 
 void ABotwCreature::SetMode(EBotwMode NewMode)
 {
-    Mode = NewMode; Showcased = 0; Health = 3;
+    Mode = NewMode; Showcased = 0; Health = 3; bHealthScaled = false;
+    if (HasAuthority() && JapanNetwork::IsOnline(GetWorld())) GetWorld()->GetSubsystem<UJapanEncounters>()->End(this);
     Rest();
     if (Mode == EBotwMode::Showcase && ShowcaseOrder.Num()) { Phase = EPhase::Action; PhaseLeft = FMath::Max(Play(ShowcaseOrder[0].ToString(), true), 2.5f); }
 }
@@ -145,6 +154,13 @@ void ABotwCreature::MoveTo(const FVector& Ground, bool bRun)
 
 void ABotwCreature::TakeSwordHit(int32 Strength, AActor* From)
 {
+    if (!HasAuthority()) return;
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        auto* Player = Cast<AWandererCharacter>(From);
+        if (!UJapanEncounters::Eligible(Player)) return;
+        EngageNetworkEncounter(); GetWorld()->GetSubsystem<UJapanEncounters>()->AddThreat(this, Player, Strength);
+    }
     if (Phase == EPhase::Down || Phase == EPhase::GetUp)
     {
         // Struck where it lies or rising: it still takes the blow (the striker's sparks and sound) and slides back.
@@ -184,13 +200,14 @@ void ABotwCreature::AdvanceLying(float Dt)
 
 void ABotwCreature::Strike(APawn* Player)
 {
+    if (!HasAuthority()) return;
     // Only a player with a move set (its guard, parry and dodges) is struck; the others keep the old sparring.
     AWandererCharacter* Wanderer = Cast<AWandererCharacter>(Player);
     if (!Wanderer || !Wanderer->GetMoves() || !Wanderer->GetSword()) return;
     const FVector To = (Player->GetActorLocation() - GetActorLocation()) * FVector(1, 1, 0);
     if (To.Size() > Data.RadiusCm + 170.f || (GetActorForwardVector() | To.GetSafeNormal()) < .4f) return;
     if (FMath::Abs(Player->GetActorLocation().Z - GetActorLocation().Z) > Data.HeightCm) return;
-    Wanderer->GetSword()->IncomingStrike(this, 12.f, GetActorLocation() + FVector(0, 0, Data.HeightCm * .3f));
+    JapanCombat::Strike(this, Wanderer, 12.f, GetActorLocation() + FVector(0, 0, Data.HeightCm * .3f));
 }
 
 void ABotwCreature::Steer(const FVector& Goal, float Speed, float Dt)
@@ -217,11 +234,22 @@ void ABotwCreature::Ground()
 void ABotwCreature::Tick(float Dt)
 {
     Super::Tick(Dt);
+    if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority())
+    {
+        PresentNetworkState(); AdvanceLying(Dt); return;
+    }
     if (!Mesh->GetSkeletalMeshAsset()) return;
     Clock += Dt; AttackCooldown = FMath::Max(0.f, AttackCooldown - Dt);
     Think(Dt);
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        auto* Encounters = GetWorld()->GetSubsystem<UJapanEncounters>();
+        if (Phase != EPhase::Attack) Encounters->ReleaseAttack(this);
+        // Down/get-up is still the same encounter: its difficulty, threat and membership survive.
+    }
     Ground();
-    AdvanceLying(Dt);
+    if (GetWorld()->GetNetMode() != NM_DedicatedServer) AdvanceLying(Dt);
+    PublishNetworkState();
 }
 
 void ABotwCreature::Think(float Dt)
@@ -233,13 +261,27 @@ void ABotwCreature::Think(float Dt)
         AddActorWorldOffset(Knockback * Dt, true);
         Knockback = FMath::VInterpTo(Knockback, FVector::ZeroVector, Dt, 7.f);
     }
-    APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        auto* Encounters = GetWorld()->GetSubsystem<UJapanEncounters>();
+        Encounters->Refresh(this, 3000.f);
+        if (Encounters->Identity(this))
+        {
+            if (Phase != EPhase::Attack || !UJapanEncounters::Eligible(CombatTarget)) CombatTarget = Encounters->Select(this, CombatTarget);
+        }
+        else CombatTarget = JapanCombat::FindPlayer(this, CombatTarget, 3000.f);
+    }
+    APawn* Player = JapanNetwork::IsOnline(GetWorld()) ? CombatTarget.Get() : UGameplayStatics::GetPlayerPawn(this, 0);
     const float PlayerDistance = Player ? FVector::Dist2D(Player->GetActorLocation(), GetActorLocation()) : 1e9f;
     switch (Phase)
     {
     case EPhase::Moving:
         Steer(Target, bRunning ? Run : Walk, Dt);
-        if (FVector::Dist2D(Target, GetActorLocation()) < 20.f) Rest();
+        if (FVector::Dist2D(Target, GetActorLocation()) < 20.f)
+        {
+            if (bReturningFromEncounter) { Health = 3; bHealthScaled = false; bReturningFromEncounter = false; }
+            Rest();
+        }
         return;
     case EPhase::Action:
         if (PhaseLeft > 0.f) return;
@@ -260,7 +302,11 @@ void ABotwCreature::Think(float Dt)
         if (PhaseLeft <= 0.f) { Phase = EPhase::GetUp; PhaseLeft = FMath::Max(Play(Role("getup").ToString(), false), .5f); }
         return;
     case EPhase::GetUp:
-        if (PhaseLeft <= 0.f) { Health = 3; Phase = EPhase::Chase; PlayRole("run", true); }
+        if (PhaseLeft <= 0.f)
+        {
+            Health = JapanNetwork::IsOnline(GetWorld()) ? GetWorld()->GetSubsystem<UJapanEncounters>()->FrozenHealth(this, 3) : 3;
+            Phase = EPhase::Chase; PlayRole("run", true);
+        }
         return;
     case EPhase::Notice:
         if (PhaseLeft <= 0.f) { Phase = EPhase::Chase; PlayRole("run", true); }
@@ -271,11 +317,11 @@ void ABotwCreature::Think(float Dt)
         if (PhaseLeft <= 0.f) { AttackCooldown = 1.2f; Phase = EPhase::Chase; PlayRole("battle", true); }
         return;
     case EPhase::Chase:
-        if (!Player || PlayerDistance > 3000.f) { MoveTo(Home, false); return; }
+        if (!Player || PlayerDistance > 3000.f) { if (JapanNetwork::IsOnline(GetWorld())) { GetWorld()->GetSubsystem<UJapanEncounters>()->End(this); bReturningFromEncounter = true; } MoveTo(Home, false); return; }
         if (PlayerDistance < Data.RadiusCm + 150.f)
         {
             SetActorRotation(FRotator(0, (Player->GetActorLocation() - GetActorLocation()).Rotation().Yaw, 0));
-            if (AttackCooldown <= 0.f) { Phase = EPhase::Attack; PhaseLeft = PhaseTotal = FMath::Max(Play(Role("attack").ToString(), false), .5f); bStruck = false; }
+            if (AttackCooldown <= 0.f && (!JapanNetwork::IsOnline(GetWorld()) || GetWorld()->GetSubsystem<UJapanEncounters>()->ReserveAttack(this, CombatTarget, 5.f))) { Phase = EPhase::Attack; PhaseLeft = PhaseTotal = FMath::Max(Play(Role("attack").ToString(), false), .5f); bStruck = false; }
             else PlayRole(Clip(Role("battle")) ? FName("battle") : FName("idle"), true);
             return;
         }
@@ -290,6 +336,7 @@ void ABotwCreature::Think(float Dt)
         if (Mode == EBotwMode::Camp && Player && (bSneaking ? PlayerDistance < 200.f || (bInFront && PlayerDistance < 450.f) : PlayerDistance < 1400.f))
         {
             SetActorRotation(FRotator(0, (Player->GetActorLocation() - GetActorLocation()).Rotation().Yaw, 0));
+            EngageNetworkEncounter();
             Phase = EPhase::Notice; PhaseLeft = FMath::Max(Play(Role("notice").ToString(), false), .3f);
             return;
         }
@@ -306,4 +353,56 @@ void ABotwCreature::Think(float Dt)
         else Rest();
         return;
     }
+}
+
+
+void ABotwCreature::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ABotwCreature, NetworkState);
+}
+
+void ABotwCreature::PublishNetworkState()
+{
+    if (!HasAuthority() || !JapanNetwork::IsOnline(GetWorld())) return;
+    NetworkState.SpecName = Data.Name; NetworkState.Clip = Current; NetworkState.Serial = ClipSerial;
+    NetworkState.Began = ClipBegan; NetworkState.Rate = ClipRate; NetworkState.bLoop = bClipLoop;
+    NetworkState.Mode = uint8(Mode); NetworkState.Phase = uint8(Phase); NetworkState.Health = Health;
+}
+
+void ABotwCreature::OnRep_NetworkState() { PresentNetworkState(); }
+
+void ABotwCreature::PresentNetworkState()
+{
+    if (HasAuthority() || NetworkState.SpecName.IsEmpty()) return;
+    if (Data.Name != NetworkState.SpecName)
+    {
+        const auto* Spec = FBotwSpec::Find(NetworkState.SpecName);
+        if (!Spec) return;
+        Initialize(*Spec, EBotwMode(NetworkState.Mode));
+    }
+    auto* Animation = Clip(NetworkState.Clip);
+    if (!Animation) return;
+    if (AppliedClipSerial != NetworkState.Serial || Current != NetworkState.Clip)
+    {
+        Mesh->PlayAnimation(Animation, NetworkState.bLoop);
+        Mesh->SetPlayRate(NetworkState.Rate);
+        AppliedClipSerial = NetworkState.Serial; Current = NetworkState.Clip;
+    }
+    const auto* ClockSource = GetWorld()->GetGameState();
+    const double Now = ClockSource ? ClockSource->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+    float At = FMath::Max(0.f, float(Now - NetworkState.Began)) * NetworkState.Rate;
+    if (NetworkState.bLoop && Animation->GetPlayLength() > 0.f) At = FMath::Fmod(At, Animation->GetPlayLength());
+    else At = FMath::Clamp(At, 0.f, Animation->GetPlayLength());
+    Mesh->SetPosition(At, false);
+    Phase = EPhase(NetworkState.Phase); Mode = EBotwMode(NetworkState.Mode); Health = NetworkState.Health;
+}
+
+
+void ABotwCreature::EngageNetworkEncounter()
+{
+    if (!HasAuthority() || !JapanNetwork::IsOnline(GetWorld())) return;
+    if (bReturningFromEncounter) { Health = 3; bHealthScaled = false; bReturningFromEncounter = false; }
+    const int32 Scaled = GetWorld()->GetSubsystem<UJapanEncounters>()->Engage(this, 1400.f, 3);
+    if (!bHealthScaled) { Health += Scaled - 3; bHealthScaled = true; }
 }

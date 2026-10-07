@@ -1,6 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "JapanDefenceTimeline.h"
+#include "JapanDefenceClock.h"
 #include "BotwMoveSet.generated.h"
 
 class AWandererCharacter;
@@ -94,6 +96,17 @@ public:
     void DropHolds();
     /** An enemy strike: 0 hit, 1 parried, 2 dodged, 3 absorbed (guarded or recovering) (UWandererSwordComponent's contract). */
     int32 IncomingStrike(AActor* Source, float Damage, const FVector& From);
+    void MapDefenceMove(float Timestamp, float Dt);
+    void RecordDefence(uint16 ThroughEdge);
+    bool PressNetwork(FName Button, uint16 Edge, uint16 AgeMilliseconds);
+    void ResetDefence();
+    double DefenceWait() const;
+    void RetainDefenceThrough(double Time) { DefenceTimeline.RetainThrough(Time); }
+    int32 ResolveNetworkStrike(AActor* Source, float Damage, const FVector& From, double Contact);
+    uint32 DefenceRejectedTimes = 0, DefensiveRejectedTimes = 0;
+    uint32 DefenceMissingSamples() const { return DefenceTimeline.MissingSamples; }
+    uint32 DefenceAuthoredFallbacks() const { return DefenceTimeline.AuthoredFallbacks; }
+    bool DefenceRecovering() const { return bDown || Invulnerable > 0.f || InFlurry(); }
     /** This character's blow was parried: it recoils, open, without losing health. */
     void Deflected(AActor* By);
 
@@ -164,6 +177,13 @@ public:
 
 private:
     friend struct FBotwNetworkState;
+    FJapanDefenceTimeline DefenceTimeline;
+    FJapanDefenceClock DefenceClock;
+    uint32 DefenceActionSerial = 0;
+    double DefenceActionStart = 0., DefenceInputTime = -1., DefenceLastPress = -1.;
+    bool bExternalDefenceChange = false, bHopInvulnerability = false, bDefenceMapped = false;
+    TOptional<EJapanDefence> DefenceOverride;
+    void EndDefenceAction();
     struct FSlot
     {
         FName Hand, Back;

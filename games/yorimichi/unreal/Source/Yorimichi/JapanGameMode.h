@@ -14,6 +14,6 @@ public:
     virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
     /** Scripted sessions (reviews, benchmarks, films, demos, the phone stream) keep the road clear unless asked. */
     static bool IsScriptedSession();
-private:
+protected:
     void SpawnFoxHunter(class AJapanWorld* World, class AWandererCharacter* Player);
 };

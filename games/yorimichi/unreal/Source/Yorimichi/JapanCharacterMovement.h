@@ -43,7 +43,7 @@ public:
     bool QueueAuthoritativeRecovery(FVector Shore, float Yaw, float Damage);
     virtual void SendClientAdjustment() override;
     FJapanMoveInput ReadMoveInput() const;
-    FJapanMoveInput ConsumeMoveInput();
+    FJapanMoveInput ConsumeMoveInput(float Dt);
     void SetMoveInput(const FJapanMoveInput& Input) { ActiveInput = Input; bInputPrepared = true; }
     void ResetActivityPrediction();
     uint32 GetActivityEpoch() const;
@@ -81,7 +81,8 @@ private:
     FJapanNetworkMoveContainer NetworkMoves;
     FJapanMoveResponse NetworkResponse;
     FJapanMoveInput ActiveInput;
-    TArray<uint8> PendingEdges;
+    struct FPendingEdge { uint8 Button; double FirstSample = -1.; };
+    TArray<FPendingEdge> PendingEdges;
     uint16 JournalFirstEdge = 1, ProcessedEdge = 0;
     uint8 HeldButtons = 0, LastServerHolds = 0;
     bool bRecoveryQueued = false, bReceivedMoveInEpoch = false;

@@ -42,11 +42,14 @@ bool FJapanMoveInput::Serialize(FArchive& Ar)
     uint8 Count = uint8(Edges.Num());
     Ar.SerializeBits(&Count, 5);
     if (Count > MaximumEdges || X == -128 || Y == -128) { Ar.SetError(); return false; }
-    if (Ar.IsLoading()) Edges.SetNum(Count);
-    for (uint8& Edge : Edges)
+    if (Ar.IsLoading()) { Edges.SetNum(Count); EdgeAgeMilliseconds.SetNum(Count); }
+    else if (EdgeAgeMilliseconds.IsEmpty()) EdgeAgeMilliseconds.SetNumZeroed(Count);
+    if (EdgeAgeMilliseconds.Num() != Count) { Ar.SetError(); return false; }
+    for (int32 I = 0; I < Count; ++I)
     {
-        Ar.SerializeBits(&Edge, 4);
-        if (Edge >= UE_ARRAY_COUNT(Buttons)) { Ar.SetError(); return false; }
+        Ar.SerializeBits(&Edges[I], 4);
+        Ar.SerializeBits(&EdgeAgeMilliseconds[I], 9);
+        if (Edges[I] >= UE_ARRAY_COUNT(Buttons) || (EdgeAgeMilliseconds[I] > 500 && EdgeAgeMilliseconds[I] != 511)) { Ar.SetError(); return false; }
     }
     return !Ar.IsError();
 }
@@ -94,7 +97,7 @@ void FSavedMove_Japan::SetMoveFor(ACharacter* Character, float Dt, const FVector
     Super::SetMoveFor(Character, Dt, Accel, ClientData);
     if (UJapanCharacterMovement* Movement = MovementOf(Character))
     {
-        Input = Movement->ConsumeMoveInput();
+        Input = Movement->ConsumeMoveInput(Dt);
         Movement->SetMoveInput(Input);
     }
 }

@@ -1,4 +1,5 @@
 #include "WandererSword.h"
+#include "JapanCombat.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
 #include "BotwMoveSet.h"
@@ -545,8 +546,15 @@ void ASwordDummy::Tick(float Dt)
             Post->SetRelativeScale3D(FVector(.5f, .5f, 1.4f));
             if (Target && Target->GetSword() && FVector::Dist2D(Target->GetActorLocation(), GetActorLocation()) <= Reach)
             {
-                if (Target->GetSword()->IncomingStrike(this)) { ++StrikesParried; Stagger = 1.2f; }
-                else ++StrikesLanded;
+                TWeakObjectPtr<ASwordDummy> WeakSelf(this);
+                JapanCombat::Strike(this, Target, 0.f, FVector::ZeroVector, [WeakSelf](int32 Outcome)
+                {
+                    if (auto* Self = WeakSelf.Get())
+                    {
+                        if (Outcome == 1) { ++Self->StrikesParried; Self->Stagger = 1.2f; }
+                        else ++Self->StrikesLanded;
+                    }
+                });
             }
             else ++StrikesMissed;
         }

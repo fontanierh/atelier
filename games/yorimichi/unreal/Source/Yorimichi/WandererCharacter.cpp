@@ -1,4 +1,5 @@
 #include "WandererCharacter.h"
+#include "JapanCombatResolver.h"
 #include "JapanNetwork.h"
 #include "JapanSkateNetwork.h"
 #include "JapanSession.h"
@@ -338,6 +339,7 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
         }
         return false; // The map closes when the authoritative handoff arrives.
     }
+    if (JapanNetwork::IsOnline(GetWorld())) GetWorld()->GetSubsystem<UJapanCombatResolver>()->Flush(this);
     if(GetZeppelin())GetZeppelin()->Cancel(this);
     auto* Movement = GetCharacterMovement();
     // Leave custom ramp physics before restoring the ordinary character pose.

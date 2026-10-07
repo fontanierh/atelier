@@ -1,6 +1,7 @@
 #include "JapanSession.h"
 #include "JapanNetwork.h"
 #include "JapanGameplayQA.h"
+#include "JapanCombatQA.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
 #include "AtelierData.h"
@@ -209,7 +210,13 @@ bool UJapanGameInstance::TickNetworkQA(float)
     const auto* State = World->GetGameState<AJapanGameState>();
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     bool GameplayDone = true;
-    if (FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")) && World->GetNetMode() != NM_Standalone)
+    if (FParse::Param(FCommandLine::Get(), TEXT("networkcombat")) && World->GetNetMode() != NM_Standalone)
+    {
+        FString Error;
+        GameplayDone = JapanCombatQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
+        if (!Error.IsEmpty()) return Fail(Error);
+    }
+    else if (FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")) && World->GetNetMode() != NM_Standalone)
     {
         FString Error;
         GameplayDone = JapanGameplayQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
@@ -232,6 +239,11 @@ bool UJapanGameInstance::TickNetworkQA(float)
         {
             for (TActorIterator<AWandererCharacter> It(World); It; ++It)
                 if (!It->IsNpc() && (!Listen || !It->IsLocallyControlled())) return true; // wait for pawn destruction, not just PlayerState removal
+            if (FParse::Param(FCommandLine::Get(), TEXT("networkcombat")))
+            {
+                FString Error;
+                if (!JapanCombatQA::Finalize(NetworkQADirectory, Error)) return Fail(Error.IsEmpty() ? TEXT("Could not save final combat audit") : Error);
+            }
             if (!WriteNetworkQA(TEXT("complete"))) return Fail(TEXT("Could not save teardown receipt"));
             FPlatformMisc::RequestExit(false); return false;
         }

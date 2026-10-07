@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "JapanGameMode.h"
+#include "JapanCombat.h"
 #include "JapanSkateWire.h"
 #include "JapanSkateBudget.h"
 #include "JapanSession.generated.h"
@@ -75,6 +76,9 @@ public:
     UPROPERTY(Replicated) FString ContentIdentity;
     UPROPERTY(Replicated) FString StartupError;
     UPROPERTY(Replicated) int32 Capacity = 2;
+    void PublishCombat(FJapanCombatEvent Event);
+    UFUNCTION(NetMulticast, Unreliable) void CombatEvent(const FJapanCombatEvent& Event);
+    uint32 NextCombatSerial = 0, LastCombatSerial = 0;
     UPROPERTY(Replicated) bool bTrustedSkating = true;
     UPROPERTY(Replicated) bool bWorldReady = false;
 };
@@ -85,6 +89,7 @@ class YORIMICHI_API AJapanPlayerController : public APlayerController
     GENERATED_BODY()
 public:
     AJapanPlayerController();
+    UFUNCTION(Client, Reliable) void ClientCombatResult(const FJapanCombatEvent& Event);
     virtual void BeginPlay() override;
     virtual void Tick(float Dt) override;
     virtual void SetupInputComponent() override;
@@ -98,6 +103,10 @@ public:
     UFUNCTION(Client, Unreliable) void ClientSkateBodies(AWandererCharacter* Subject, const FJapanSkateBodies& State);
     void MarkAdmissionComplete() { bAdmissionComplete = true; }
 private:
+    UPROPERTY() TArray<FJapanCombatEvent> PendingCombatResults;
+    TArray<double> PendingCombatDeadlines;
+    uint32 LastCombatResult = 0;
+    void DrainCombatResults();
     struct FSkateDelivery
     {
         double NextPose = -1., NextBodies = -1., PoseQueued = 0., BodiesQueued = 0.;
