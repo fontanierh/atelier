@@ -20,10 +20,15 @@ def clock_checks(server, guest, movement_ms, skate_ms):
                   clock_no_honest_budget_rejection=count(server, 'time_budget_rejected', 0))
     if movement_ms:
         checks['clock_real_movement_hitch'] = measured('movement_hitch_seconds', movement_ms)
+    # The 229ms regression is below UE's ordinary 250ms forced-update interval.
+    # A separate 500ms outage proves the deferred branch without timing out.
+    if movement_ms > 250:
         checks['clock_host_deferred_forced_update'] = type(server.get('deferred_forced_updates')) is int and server['deferred_forced_updates'] > 0
     if skate_ms:
         checks['clock_real_skate_hitch'] = measured('skate_hitch_seconds', skate_ms)
     if timeout:
+        began = guest.get('movement_hitch_at_seconds')
+        checks['clock_timeout_setup_bounded'] = type(began) in (float, int) and math.isfinite(began) and .65 < began < 5.
         checks['clock_timeout_cleared_live_holds'] = guest.get('guard_before_timeout') is True and guest.get('cleared_timeout_holds') is True
         checks['clock_timeout_old_epoch_refused'] = (count(guest, 'stale_probe_sent', 1) and count(server, 'stale_probe_rejected', 1) and
             type(server.get('stale_probe_root_cm')) in (float, int) and server['stale_probe_root_cm'] == 0 and

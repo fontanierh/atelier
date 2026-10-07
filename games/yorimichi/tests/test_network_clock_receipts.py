@@ -15,6 +15,7 @@ def fixtures(timeout=False):
                   neutral_late_ground_frames=2, neutral_late_max_speed=0.)
     guest = dict(timeout_corrections=int(timeout), time_budget_corrections=0,
                  movement_hitch_seconds=1.051 if timeout else .230, skate_hitch_seconds=.230,
+                 movement_hitch_at_seconds=1.2,
                  guard_before_timeout=True, cleared_timeout_holds=True, stale_probe_sent=1)
     return server, guest
 
@@ -25,10 +26,25 @@ def test_hitch_and_timeout_require_observed_stimulus_and_exact_recovery(timeout)
     assert all(review.clock_checks(server, guest, 1050 if timeout else 229, 229).values())
 
 
+def test_short_hitch_and_deferred_branch_are_separate_coverage():
+    server, guest = fixtures()
+    server['deferred_forced_updates'] = 0
+    assert all(review.clock_checks(server, guest, 229, 229).values())
+    guest['movement_hitch_seconds'] = .501
+    assert not all(review.clock_checks(server, guest, 500, 0).values())
+    server['deferred_forced_updates'] = 4
+    assert all(review.clock_checks(server, guest, 500, 0).values())
+    # A receipt from the shorter run cannot stand in for branch coverage.
+    guest['movement_hitch_seconds'] = .230
+    assert not all(review.clock_checks(server, guest, 500, 0).values())
+
+
 @pytest.mark.parametrize('field,value', [('movement_hitch_seconds', 0), ('movement_hitch_seconds', float('nan')),
     ('movement_hitch_seconds', True), ('skate_hitch_seconds', .1), ('timeout_corrections', 2),
     ('timeout_corrections', True), ('time_budget_corrections', 1), ('guard_before_timeout', False),
-    ('cleared_timeout_holds', False)])
+    ('cleared_timeout_holds', False), ('movement_hitch_at_seconds', None),
+    ('movement_hitch_at_seconds', True), ('movement_hitch_at_seconds', float('nan')),
+    ('movement_hitch_at_seconds', .65), ('movement_hitch_at_seconds', 5.)])
 def test_vacuous_or_repeated_timeout_is_not_accepted(field, value):
     server, guest = fixtures(True); guest[field] = value
     assert not all(review.clock_checks(server, guest, 1050, 229).values())

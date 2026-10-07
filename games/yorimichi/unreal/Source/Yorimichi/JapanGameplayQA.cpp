@@ -33,7 +33,7 @@ struct FScript
     bool SawPlayer = false, SawSkate = false, Finished = false, JumpReleased = false;
     bool SawHostTakeoff = false;
     bool PreparedTimeoutGuard = false, GuardBeforeTimeout = false, ClearedTimeoutHolds = false;
-    double MovementHitchSeconds = 0., SkateHitchSeconds = 0.;
+    double MovementHitchSeconds = 0., SkateHitchSeconds = 0., MovementHitchAt = 0.;
 };
 FScript Scripts[2];
 
@@ -74,6 +74,7 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("first_accepted_move_timestamp"), State.MovementStats.FirstMoveTimestamp);
     Data->SetNumberField(TEXT("largest_correction_cm"), State.MovementStats.LargestCorrectionCm);
     Data->SetNumberField(TEXT("movement_hitch_seconds"), State.MovementHitchSeconds);
+    Data->SetNumberField(TEXT("movement_hitch_at_seconds"), State.MovementHitchAt);
     Data->SetNumberField(TEXT("skate_hitch_seconds"), State.SkateHitchSeconds);
     Data->SetNumberField(TEXT("timeout_corrections"), State.MovementStats.TimeoutCorrections);
     Data->SetNumberField(TEXT("time_budget_corrections"), State.MovementStats.TimeBudgetCorrections);
@@ -209,13 +210,20 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
         if (HitchMs && Elapsed > .65 && Script.MovementHitchSeconds == 0.)
         {
             Script.GuardBeforeTimeout = Player->GetMoves() && Player->GetMoves()->IsGuarding();
-            if (HitchMs > 750 && !Script.GuardBeforeTimeout)
-            { Error = TEXT("Timeout stimulus did not establish a live guard before the outage"); break; }
+            if (HitchMs > 750)
+            {
+                // Drawing the sword has an authored bind time. Wait for the real
+                // state; the outage must never start with a merely queued press.
+                if (Elapsed >= 5.)
+                { Error = TEXT("Timeout stimulus did not establish a live guard within five seconds"); break; }
+                if (!Script.GuardBeforeTimeout) break;
+            }
+            Script.MovementHitchAt = Elapsed;
             const double Began = FPlatformTime::Seconds();
             FPlatformProcess::Sleep(HitchMs / 1000.f);
             Script.MovementHitchSeconds = FPlatformTime::Seconds() - Began;
         }
-        if (Elapsed > 1.5 + Script.MovementHitchSeconds)
+        if (Elapsed > FMath::Max(1.5, Script.MovementHitchAt + .85) + Script.MovementHitchSeconds)
         {
             Player->Live_Drive(FVector2D::ZeroVector, 1);
             Script.WalkDistance = FVector::Dist2D(Script.Start, Player->GetActorLocation());

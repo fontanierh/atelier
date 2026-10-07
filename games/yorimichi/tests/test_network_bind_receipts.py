@@ -66,3 +66,21 @@ def test_live_socket_probe_checks_local_port_on_every_address(monkeypatch, socke
     monkeypatch.setattr(review.subprocess, 'run', run)
     assert review.process_udp(99, 7777)['no_game_port'] is expected
     assert calls == [['lsof', '-nP', '-a', '-p', '99', '-iUDP', '-Fpn']]
+
+
+@pytest.mark.parametrize('exit_code', [0, 1])
+def test_normal_child_exit_between_guard_polls_is_reaped(exit_code):
+    from unittest.mock import Mock
+    game = Mock(); game.poll.side_effect = [None, exit_code]
+    guard = Mock(); guard.poll.return_value = 0
+    assert review.guarded_game_running(game, guard, 'host') is False
+    assert game.poll.call_count == 2
+
+
+@pytest.mark.parametrize('guard_exit,child_exit', [(0, None), (1, None), (1, 0), (-9, None)])
+def test_stopped_guard_never_leaves_live_game_running(guard_exit, child_exit):
+    from unittest.mock import Mock
+    game = Mock(); game.poll.side_effect = [None, child_exit]
+    guard = Mock(); guard.poll.return_value = guard_exit
+    with pytest.raises(RuntimeError, match='lost its actual-child guard'):
+        review.guarded_game_running(game, guard, 'host')

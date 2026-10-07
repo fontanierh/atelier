@@ -440,7 +440,7 @@ def main():
     parser.add_argument('--cook-receipt', type=Path, help='Cook receipt on the current clean source commit')
     parser.add_argument('--expected-identity', help='Identity from the accepted native receipt at that cook revision')
     parser.add_argument('--plain-package', action='store_true', help='Ordinary Solo with no network QA flags, bounded by UE seconds')
-    parser.add_argument('--movement-hitch-ms', type=int, choices=(0, 229, 1050), default=0)
+    parser.add_argument('--movement-hitch-ms', type=int, choices=(0, 229, 500, 1050), default=0)
     parser.add_argument('--skate-hitch-ms', type=int, choices=(0, 229), default=0)
     parser.add_argument('--modori-shield', type=int, choices=(0, 1), help='Modori host shield; guest uses the opposite value, checked per pawn')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
