@@ -77,8 +77,10 @@ namespace RidePhysicalRiderDetail
         UObject* Outer = Game && Game->IsGameWorld() ? static_cast<UObject*>(Game) : GetTransientPackage();
         UPhysicsAsset* Built = URidePhysicalRider::BuildPhysicsAsset(Skeletal, RiderApi, Outer, bFitToSkin, &Fitted, &Bail);
         if (!Built) return nullptr;
+        // Its name is unique in its world only: it takes one unique in the transient package (onto another's is fatal).
         if (Built->GetOuter() != GetTransientPackage() &&
-            !Built->Rename(nullptr, GetTransientPackage(), REN_DontCreateRedirectors | REN_NonTransactional | REN_DoNotDirty))
+            !Built->Rename(*MakeUniqueObjectName(GetTransientPackage(), UPhysicsAsset::StaticClass()).ToString(), GetTransientPackage(),
+                REN_DontCreateRedirectors | REN_NonTransactional | REN_DoNotDirty))
         {
             // Rooted in the world it would keep that world: this ride's world keeps it, and the next ride builds again.
             UE_LOG(LogTemp, Error, TEXT("SKATE ride physical rider: the physics asset for %s could not leave its world, so it is not kept"),
