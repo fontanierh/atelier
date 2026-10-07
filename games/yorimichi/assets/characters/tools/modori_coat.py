@@ -1,9 +1,9 @@
-"""The came-back rival dressed in his long coat: the Tripo coat fitted onto the rigged Tripo body, skinned to its Mixamo
+"""Modori dressed in his long coat: the Tripo coat fitted onto the rigged Tripo body, skinned to its Mixamo
 skeleton, and the skirt simulated as cloth (the torso and sleeves ride the skeleton; the skirt hangs from the hips).
 
-    blender -b --python-exit-code 1 --python came_back_coat.py -- --body <rigged.fbx> --texture <basecolor.png> \\
+    blender -b --python-exit-code 1 --python modori_coat.py -- --body <rigged.fbx> --texture <basecolor.png> \\
         --coat <coat.fbx> --output <out> --stage fit
-    blender -b --python-exit-code 1 --python came_back_coat.py -- ... --stage sim
+    blender -b --python-exit-code 1 --python modori_coat.py -- ... --stage sim
 
 Run both under the guard (python -m atelier.safety.guarded --small 3 ...).
 
@@ -13,11 +13,12 @@ Run both under the guard (python -m atelier.safety.guarded --small 3 ...).
    the collar) is pushed out along the body's normal, the push smoothed over the coat so the cloth does not crease.
    The coat takes the body's bone weights from the nearest point of the body, the skirt blending to the hips, and a
    `cloth_pin` group: 1 on the torso and the sleeves, falling to 0 just below the hips. Writes fit/fit.json, renders
-   fit/fit-*.png (T-pose, with the body) and CameBack-Fit.blend.
+   fit/fit-*.png (T-pose, with the body) and Modori-Fit.blend.
 2. Sim: a short scripted take (rest, arms down, a few steps forward, a quick turn) drives the skeleton; the coat's
    cloth modifier follows the armature, the pin group holds the torso and the sleeves to it and the body collides.
    Gravity is scaled by the model's size (1 m for a 1.75 m character) so the cloth falls at real speed. Writes
-   sim/frame-*.png, sim/coat-sim.mp4 and CameBack-Coat.blend (baked). The Blender cloth is a look check: in Unreal the
+   sim/frame-*.png, sim/coat-sim.mp4, Modori-Coat.blend (baked) and Modori-Rig.blend (the copy for the repository, with
+   no machine paths and no baked frames). The Blender cloth is a look check: in Unreal the
    coat will be Chaos Cloth painted from the same pin weights, or skirt bones.
 """
 import argparse, json, math, subprocess, sys, time
@@ -76,18 +77,26 @@ def aim(cam, yaw, scale, target):
 if a.stage == 'fit':
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.fbx(filepath=str(Path(a.body).resolve()))
-    arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE'); arm.name = 'CameBack-Rig'
-    body = next(o for o in bpy.data.objects if o.type == 'MESH'); body.name = 'CameBack-Body'
+    arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE'); arm.name = 'Modori-Rig'
+    body = next(o for o in bpy.data.objects if o.type == 'MESH'); body.name = 'Modori-Body'
     nt = body.data.materials[0].node_tree
     bsdf = next(n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED')
     img = bpy.data.images.load(str(Path(a.texture).resolve())); img.pack()
     bsdf.inputs['Base Color'].links[0].from_node.image = img
     for link in [l for l in nt.links if l.to_node == bsdf and l.to_socket.name == 'Normal']:
         nt.links.remove(link)   # Tripo's normal map was baked with the smears in it
+    for name in ('Specular IOR Level', 'Specular'):   # matte, as modori_texture.py packs it
+        if name in bsdf.inputs:
+            for link in list(bsdf.inputs[name].links):
+                nt.links.remove(link)
+            bsdf.inputs[name].default_value = 0
+    for link in list(bsdf.inputs['Roughness'].links):
+        nt.links.remove(link)
+    bsdf.inputs['Roughness'].default_value = 1
 
     before = set(bpy.data.objects)
     bpy.ops.import_scene.fbx(filepath=str(Path(a.coat).resolve()))
-    coat = next(o for o in bpy.data.objects if o not in before and o.type == 'MESH'); coat.name = 'CameBack-Coat'
+    coat = next(o for o in bpy.data.objects if o not in before and o.type == 'MESH'); coat.name = 'Modori-Coat'
     bpy.ops.object.select_all(action='DESELECT'); coat.select_set(True); bpy.context.view_layer.objects.active = coat
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     for o in [o for o in bpy.data.objects if o not in before and o != coat]:
@@ -209,7 +218,10 @@ if a.stage == 'fit':
         aim(cam, yaw, .35, (0, 0, .76))
         scene.render.filepath = str(out / 'fit' / f'fit-collar-{name}.png'); bpy.ops.render.render(write_still=True)
     bpy.data.objects.remove(cam)
-    bpy.ops.wm.save_as_mainfile(filepath=str(out / 'CameBack-Fit.blend'), compress=True)
+    for img in bpy.data.images:   # the coat's texture too, so the blend stands alone
+        if img.source == 'FILE' and not img.packed_file:
+            img.pack()
+    bpy.ops.wm.save_as_mainfile(filepath=str(out / 'Modori-Fit.blend'), compress=True)
     say('FIT SAVED')
 
 
@@ -228,9 +240,9 @@ def combine(pb, *steps):
 
 
 if a.stage == 'sim':
-    bpy.ops.wm.open_mainfile(filepath=str(out / 'CameBack-Fit.blend'))
+    bpy.ops.wm.open_mainfile(filepath=str(out / 'Modori-Fit.blend'))
     scene = bpy.context.scene
-    arm, body, coat = (bpy.data.objects[n] for n in ('CameBack-Rig', 'CameBack-Body', 'CameBack-Coat'))
+    arm, body, coat = (bpy.data.objects[n] for n in ('Modori-Rig', 'Modori-Body', 'Modori-Coat'))
     scene.render.fps = 24
     START, ARMS, WALK, STOP, TURN, END = 1, 24, 30, 90, 100, 130
     scene.frame_start, scene.frame_end = START, END
@@ -314,5 +326,20 @@ if a.stage == 'sim':
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', '24', '-i', str(out / 'sim' / 'frame-%04d.png'),
                     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '24', str(out / 'sim' / 'coat-sim.mp4')], check=True)
     scene.frame_set(START)
-    bpy.ops.wm.save_as_mainfile(filepath=str(out / 'CameBack-Coat.blend'), compress=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(out / 'Modori-Coat.blend'), compress=True)
+    # Modori-Rig.blend, the copy for the public repository: no machine paths (the packed images keep only their names;
+    # the data blocks are written without the window manager, which remembers the last directory). The baked cloth
+    # frames live in memory and are not written: the cloth simulates again when the take plays.
+    scene.render.filepath = '//'
+    for img in bpy.data.images:
+        if img.packed_file:
+            name = '//' + Path(img.filepath).name
+            for packed in img.packed_files:
+                packed.filepath = name
+            img.filepath_raw = img.filepath = name
+    ids = set()
+    for data in (bpy.data.scenes, bpy.data.collections, bpy.data.objects, bpy.data.meshes, bpy.data.armatures,
+                 bpy.data.materials, bpy.data.images, bpy.data.actions, bpy.data.worlds):
+        ids |= set(data)
+    bpy.data.libraries.write(str(out / 'Modori-Rig.blend'), ids, path_remap='NONE', compress=True)
     say('SIM SAVED')

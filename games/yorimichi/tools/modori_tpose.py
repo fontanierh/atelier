@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""T-pose reference views of the chosen rival concept, "came-back", for Tripo's multiview model generation.
+"""T-pose reference views of the chosen rival concept (Modori), for Tripo's multiview model generation.
 
-    uv run python games/yorimichi/tools/came_back_tpose.py front     # the front T-pose, from the concept sheet
-    uv run python games/yorimichi/tools/came_back_tpose.py views     # back, left and right, from the front
-    uv run python games/yorimichi/tools/came_back_tpose.py parts     # body-<view> and coat-<view>, from each view
-    uv run python games/yorimichi/tools/came_back_tpose.py collect   # the Tripo upload folder (no paid call)
+    uv run python games/yorimichi/tools/modori_tpose.py front     # the front T-pose, from the concept sheet
+    uv run python games/yorimichi/tools/modori_tpose.py views     # back, left and right, from the front
+    uv run python games/yorimichi/tools/modori_tpose.py parts     # body-<view> and coat-<view>, from each view
+    uv run python games/yorimichi/tools/modori_tpose.py collect   # the Tripo upload folder (no paid call)
 
 Same stages as the sword trainer's (assets/characters/tools/sword_trainer_pipeline.py): one figure in, one figure
-out. The front is painted from single-figure crops of the approved sheet (concepts/came-back.jpg: the front view and
-the face close-up, cut from the full-size original into build/.../came-back-tpose/refs/); the other three views are
+out. The front is painted from single-figure crops of the approved sheet (concepts/modori.jpg: the front view and
+the face close-up, cut from the full-size original into build/.../modori-tpose/refs/); the other three views are
 painted from the front alone. The rope and bell weapon of the sheet is left out. Model gpt-image-2.5-sunburst,
 quality high, 1024x1024, /v1/images/edits, each call through atelier.ai.ledger.
 
 Committed: <view>.jpg, <view>.prompt.txt and <view>.provenance.json in
-games/yorimichi/assets/characters/concepts/came-back-tpose/. The full-size PNGs, the ones to upload to Tripo, are in
-build/yorimichi/characters/concepts/came-back-tpose/. A view with a provenance file is never sent again.
+games/yorimichi/assets/characters/concepts/modori-tpose/. The full-size PNGs, the ones to upload to Tripo, are in
+build/yorimichi/characters/concepts/modori-tpose/. A view with a provenance file is never sent again.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 _sys.path.insert(0, str(_Path(__file__).resolve().parent))
@@ -23,8 +23,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 from treehouse_art import MODEL, QUALITY, compact, redact, rel, sha, sunburst
 
-OUT = yori.ASSETS / 'characters' / 'concepts' / 'came-back-tpose'
-WORK = yori.OUT / 'characters' / 'concepts' / 'came-back-tpose'
+OUT = yori.ASSETS / 'characters' / 'concepts' / 'modori-tpose'
+WORK = yori.OUT / 'characters' / 'concepts' / 'modori-tpose'
 SIZE = '1024x1024'
 
 FRONT_REFS = [WORK / 'refs' / 'sheet-front.png', WORK / 'refs' / 'sheet-face.png']
@@ -144,8 +144,8 @@ def paint(view, prompt, refs):
     from atelier.ai.ledger import run_once
     OUT.mkdir(parents=True, exist_ok=True); WORK.mkdir(parents=True, exist_ok=True)
     (OUT / f'{view}.prompt.txt').write_text(prompt + '\n')
-    metadata = dict(stage='came-back-tpose', view=view, requested_model=MODEL, quality=QUALITY, size=SIZE,
-                    endpoint='/v1/images/edits', execution='games/yorimichi/tools/came_back_tpose.py',
+    metadata = dict(stage='modori-tpose', view=view, requested_model=MODEL, quality=QUALITY, size=SIZE,
+                    endpoint='/v1/images/edits', execution='games/yorimichi/tools/modori_tpose.py',
                     prompt_file=f'{view}.prompt.txt', prompt_sha256=sha(prompt.encode()),
                     reference_files={rel(p): sha(p.read_bytes()) for p in refs},
                     hashes='of the files as the API saw and returned them; the full-size PNG stays in build/')
