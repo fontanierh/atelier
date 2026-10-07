@@ -114,6 +114,8 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
     settings = container/'Library'/'Application Support'/'Yorimichi'/'settings.txt'
     assert f'-abslog={container/"Library"/"Logs"/"Yorimichi"/"game.log"}' in args
     assert '-desktopnative1440' in args and f'-preferencesfile={settings}' in args
+    # The memory tracker stays on, so the engine never disables and frees it at startup (docs/PACKAGING.md).
+    assert args.count('-llm') == 1
     assert '-set=desktop=1;performance=1;render_scale=100;renderer=0' in args
     assert any('r.ForwardShading=True' in a and 'DesktopPreviewViewportClient' in a for a in args)
     assert any(a.startswith('-ExecCmds=') and 'japan.CitySurfaceTiles v1_128m 1' in a for a in args)
@@ -122,6 +124,7 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
     settings.write_text('performance=0\nrender_scale=80\nrenderer=1\n')
     args = launch()
     assert '-set=desktop=1;renderer=0' in args and any('r.ForwardShading=True' in a for a in args)
+    assert args.count('-llm') == 1
     assert not any('r.ForwardShading=False' in a for a in args)
     # A malformed bundle identity must not redirect the launcher outside the container or run the game.
     (game.parent.parent/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': '../outside'}))
@@ -165,6 +168,7 @@ def test_the_packaged_launcher_retries_only_an_early_startup_segfault(tmp_path, 
     lines = (home/'runs.txt').read_text().splitlines()
     assert (len(lines), result.returncode) == (expected_runs, expected_status)
     assert len(set(lines)) == 1 and lines[0].endswith('-extra')   # the retry repeats the same arguments
+    assert ' -llm ' in f' {lines[0]} '
     note = logs/'launcher.log'
     assert note.exists() == (expected_runs == 2)
     if expected_runs == 2:
