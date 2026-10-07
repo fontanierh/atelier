@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "JapanMovementNet.h"
 #include "JapanCharacterMovement.generated.h"
 
 /** The player's movement: ordinary CharacterMovement, the sailboat holding its own velocity, the skate plugin's custom
@@ -12,9 +13,52 @@ class YORIMICHI_API UJapanCharacterMovement : public UCharacterMovementComponent
 {
     GENERATED_BODY()
 public:
+    UJapanCharacterMovement(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+    bool PredictsMoves() const;
+    bool QueueMoveButton(FName Button);
+    bool QueueAuthoritativeRecovery(FVector Shore, float Yaw, float Damage);
+    virtual void SendClientAdjustment() override;
+    FJapanMoveInput ReadMoveInput() const;
+    FJapanMoveInput ConsumeMoveInput();
+    void SetMoveInput(const FJapanMoveInput& Input) { ActiveInput = Input; bInputPrepared = true; }
+    void ResetActivityPrediction();
+    uint32 GetActivityEpoch() const;
+    virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
+    uint16 GetProcessedEdge() const { return ProcessedEdge; }
+    uint16 PendingAcknowledgedEdge = 0;
+    bool IsReplaying() const { return bReplaying; }
+    bool IsExecutingMove() const { return bExecutingMove; }
+    FVector GetPendingLaunch() const { return PendingLaunchVelocity; }
+    void SetPendingLaunch(const FVector& Value) { PendingLaunchVelocity = Value; }
+    FJapanMoveCheckpoint PendingCheckpoint;
+    float PendingCheckpointTime = -1.f;
+    virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
+    virtual void PerformMovement(float Dt) override;
+    virtual void ReplicateMoveToServer(float Dt, const FVector& NewAcceleration) override;
+    virtual void SetBase(FMovementBaseInterfaceData* Base, const FName Bone = NAME_None, bool bNotifyActor = true) override;
+    virtual void MoveAutonomous(float Timestamp, float Dt, uint8 Flags, const FVector& Accel) override;
+    virtual bool ClientUpdatePositionAfterServerUpdate() override;
+    virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& Response) override;
+    virtual bool ServerCheckClientError(float Timestamp, float Dt, const FVector& Accel,
+        const FVector& ClientLocation, const FVector& RelativeLocation, FMovementBaseInterfaceData* Base,
+        FName Bone, uint8 Mode) override;
+    virtual void ServerMoveHandleClientError(float Timestamp, float Dt, const FVector& Accel,
+        const FVector& RelativeLocation, FMovementBaseInterfaceData* Base, FName Bone, uint8 Mode) override;
     virtual void CalcVelocity(float Dt, float Friction, bool bFluid, float BrakingDeceleration) override;
     virtual void PhysicsRotation(float Dt) override;
     virtual float GetMaxSpeed() const override;
     virtual void PhysCustom(float Dt, int32 Iterations) override;
     virtual void HandleImpact(const FHitResult& Hit, float TimeSlice = 0.f, const FVector& MoveDelta = FVector::ZeroVector) override;
+private:
+    void ApplyMoveInput(const FJapanMoveInput& Input);
+    FJapanNetworkMoveContainer NetworkMoves;
+    FJapanMoveResponse NetworkResponse;
+    FJapanMoveInput ActiveInput;
+    TArray<uint8> PendingEdges;
+    uint16 JournalFirstEdge = 1, ProcessedEdge = 0;
+    uint8 HeldButtons = 0, LastServerHolds = 0;
+    bool bRecoveryQueued = false;
+    void AcknowledgeEdges(uint16 Through);
+    bool bInputPrepared = false, bExecutingMove = false, bReplaying = false;
+    double LastCustomCorrection = -1.;
 };

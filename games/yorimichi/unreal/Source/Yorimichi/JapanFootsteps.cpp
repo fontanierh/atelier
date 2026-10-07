@@ -1,4 +1,5 @@
 #include "JapanFootsteps.h"
+#include "JapanCharacterMovement.h"
 #include "YorimichiCombatFX.h"
 #include "JapanWorld.h"
 #include "HorseRideComponent.h"
@@ -90,6 +91,8 @@ FName UJapanFootstepComponent::SurfaceAt(const FHitResult& Hit) const
 
 void UJapanFootstepComponent::Play(FName Surface,const FVector& At,float Volume,float Pitch)
 {
+    if (const auto* Rider = Cast<ACharacter>(GetOwner()))
+        if (const auto* Movement = Cast<UJapanCharacterMovement>(Rider->GetCharacterMovement()); Movement && Movement->IsReplaying()) return;
     const float Scale=CVarFootstepVolume.GetValueOnGameThread();
     if(!Set || Scale<=0.f) return;
     const FJapanFootstepBank* Bank=Set->Find(Surface);

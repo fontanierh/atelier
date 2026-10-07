@@ -25,7 +25,7 @@ def load(path):
         return None
 
 
-def compare_receipts(folder):
+def compare_receipts(folder, gameplay=False):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -59,10 +59,16 @@ def compare_receipts(folder):
                                  server_end.get('local_players') == 0 and server_end.get('net_mode') == 1)
     checks['client_returned_to_solo'] = (client_end.get('net_mode') == 0 and
                                         client_end.get('local_players') == client_end.get('player_pawns') == 1)
+    if gameplay:
+        gameplay_server, gameplay_client = read('server-gameplay'), read('client-gameplay')
+        checks['native_gameplay'] = gameplay_server.get('passed') is True and gameplay_client.get('passed') is True
+        checks['host_received_sustained_skating'] = gameplay_server.get('accepted_pose_frames', 0) >= 60
+        checks['owner_skated_without_saved_moves'] = (gameplay_client.get('skate_seconds', 0) >= 5 and
+                                                     gameplay_client.get('maximum_saved_skate_moves') == 0)
     return checks
 
 
-def worker(folder, port):
+def worker(folder, port, gameplay=False):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -101,6 +107,8 @@ def worker(folder, port):
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
                            '-ExecCmds=t.MaxFPS 30']
+                if gameplay:
+                    command.append('-networkgameplay')
                 (folder / (role + '-command.json')).write_text(json.dumps(command, indent=2) + '\n')
                 game = spawn_game(command, stdout=log, stderr=subprocess.STDOUT)
                 games.append((role, game))
@@ -158,7 +166,7 @@ def worker(folder, port):
         stop.touch()
         if monitor.wait(timeout=5) != 0:
             raise RuntimeError('Aggregate monitor rejected teardown')
-        checks = compare_receipts(folder)
+        checks = compare_receipts(folder, gameplay)
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
                       scope='Local NullRHI editor session smoke; packaged/rendered/network acceptance remains separate')
         (folder / 'checks.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -177,6 +185,7 @@ def main():
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
+    parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
     args = parser.parse_args()
     from atelier.build import Context
     from atelier.safety import guarded
@@ -184,13 +193,13 @@ def main():
     folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
     folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port)
+        return worker(folder, args.port, args.gameplay)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind(('127.0.0.1', args.port or 0))
         port = sock.getsockname()[1]
-    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port)],
+    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port)] + (['--gameplay'] if args.gameplay else []),
                        folder / 'guard', timeout=330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

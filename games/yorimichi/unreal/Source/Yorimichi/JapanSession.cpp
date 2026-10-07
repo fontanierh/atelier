@@ -242,6 +242,7 @@ void AJapanPlayerController::Tick(float Dt)
     Super::Tick(Dt);
     if (IsLocalController()) if (auto* Session = GetGameInstance<UJapanGameInstance>()) Session->ShowPendingStatus();
     if (!JapanNetwork::IsOnline(GetWorld())) return;
+    if (HasAuthority() && !IsLocalController()) DrainSkateFrames();
     if (HasAuthority() && !bAdmissionComplete && FPlatformTime::Seconds() - AdmissionStarted > 180.)
     {
         bAdmissionComplete = true;

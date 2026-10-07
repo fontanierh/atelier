@@ -5,6 +5,8 @@
 #include "SprintStamina.h"
 #include "AtelierFX.h"
 #include "SkateRider.h"
+#include "JapanAvatarState.h"
+#include "JapanActivityState.h"
 #include "WandererCharacter.generated.h"
 
 class UWandererDefinition;
@@ -108,6 +110,17 @@ public:
     /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there
      *  (the highest surface from Above cm over the position down). */
     bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
+    uint32 GetActivityEpoch() const { return NetworkActivity.Epoch; }
+    EJapanActivity GetNetworkActivity() const { return NetworkActivity.Kind; }
+    void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false);
+    UFUNCTION(Server, Reliable) void ServerTravelTo(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerRequestSkate(uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerFinishSkate(uint32 Epoch, FVector_NetQuantize100 Location,
+        FRotator Rotation, FVector_NetQuantize100 Velocity, bool bFalling);
+    UFUNCTION(Client, Reliable) void ClientActivityRejected(const FString& Reason);
+    bool RequestNetworkSkate();
+    void TickNetworkActivity();
+    bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
     void SetMenuOpen(bool bOpen);
     /** A minigame that reads the keys itself (the horse races) takes the character's input mapping away until it hands it back. */
     void SetControlsSuspended(bool bSuspended);
@@ -153,11 +166,26 @@ private:
     UFUNCTION() void OnRep_NetworkLoadout();
     UPROPERTY(Replicated) FString NetworkRiderName;
     UPROPERTY(ReplicatedUsing=OnRep_NetworkLoadout) bool bNetworkShield = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkActivity) FJapanActivityState NetworkActivity;
+    UFUNCTION() void OnRep_NetworkActivity();
+    uint32 AppliedActivityEpoch = 1;
+    bool bApplyingNetworkActivity = false, bNetworkSkateObserved = false, bNetworkActivityPending = false;
+    double LastNetworkTravel = -10., NetworkActivityRequestTime = 0.;
+    UPROPERTY() TObjectPtr<class UJapanSkateNetwork> NetworkSkate;
     bool bLocalPlayerInitialized = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkAvatar) FJapanAvatarState NetworkAvatar;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) float NetworkHealth = 100.f;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) int32 NetworkHitsTaken = 0;
+    UFUNCTION() void OnRep_NetworkAvatar();
+    UFUNCTION() void OnRep_NetworkHealth();
+    bool bNetworkAvatarReceived = false;
+    float LastAvatarPublication = -1.f;
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     friend class UBotwMoveSet;
+    friend class UJapanCharacterMovement;
+    friend struct FBotwNetworkState;
     float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;

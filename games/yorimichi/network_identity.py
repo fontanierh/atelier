@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 PROTOCOL = 1
-CODE_SUFFIXES = {'.h', '.hpp', '.cpp', '.c', '.cs', '.uplugin', '.inl', '.inc', '.mm', '.m', '.ush', '.usf'}
+CODE_SUFFIXES = {'.h', '.hpp', '.cpp', '.c', '.cs', '.uplugin', '.inl', '.inc', '.mm', '.m', '.ush', '.usf', '.ini', '.uproject'}
 IGNORED = {'Binaries', 'Intermediate', 'Saved', 'DerivedDataCache', '__pycache__'}
 
 
@@ -19,11 +19,13 @@ def sha1_file(path):
 
 
 def code_files(repo):
-    roots = [repo / 'games/yorimichi/unreal/Source', repo / 'platform/engine/Plugins']
-    return sorted((p for root in roots for p in root.rglob('*')
+    roots = [repo / 'games/yorimichi/unreal/Source', repo / 'games/yorimichi/unreal/Config',
+             repo / 'platform/engine/Plugins']
+    files = [p for root in roots for p in root.rglob('*')
                    if p.is_file() and p.suffix in CODE_SUFFIXES
-                   and not (set(p.relative_to(root).parts) & IGNORED)),
-                  key=lambda p: p.relative_to(repo).as_posix())
+                   and not (set(p.relative_to(root).parts) & IGNORED)]
+    files.extend((repo / 'games/yorimichi/unreal').glob('*.uproject'))
+    return sorted(files, key=lambda p: p.relative_to(repo).as_posix())
 
 
 def records_digest(records):

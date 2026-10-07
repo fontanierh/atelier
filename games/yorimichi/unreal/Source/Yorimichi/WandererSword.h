@@ -57,6 +57,8 @@ public:
     int32 IncomingStrike(AActor* Source, float Damage, const FVector& From);
     // Health of the wielder: enemy strikes take it; at zero the character is knocked down for a few seconds and gets up restored.
     float GetHealth() const { return Health; }
+    /** Presentation of the server's health on an online pawn; not a damage request. */
+    void ApplyNetworkHealth(float Value, int32 Hits) { Health = FMath::Clamp(Value, 0.f, MaxHealth); HitsTakenCount = FMath::Max(0, Hits); }
     /** Full health again (a sparring bout's start and end, ASwordTrainer). */
     void RestoreHealth() { Health = MaxHealth; }
     bool IsDown() const { return bDown; }

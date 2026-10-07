@@ -423,7 +423,7 @@ def unreal_steps(ctx):
                      paths.content_data(ctx.game) / 'SkateNative'],
              outputs=[out / 'skate-native/verification.json'],
              about='verify committed native skating data for the in-process C++ backend'),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              inputs=[SCRIPTS / n for n in ('setup_project.py', 'painterly_kernel.py', 'foliage_material.py', 'import_foliage_lods.py',
@@ -553,7 +553,8 @@ def steps(ctx):
     identity_spec.loader.exec_module(identity)
     content = GAME / 'unreal' / 'Content'
     result.append(Step('data.network', [Call('network_identity', identity.stage)],
-                       inputs=[GAME / 'network_identity.py', SOURCE, paths.ENGINE_PLUGINS, *identity.content_files(content)],
+                       inputs=[GAME / 'network_identity.py', SOURCE, ctx.uproject, GAME / 'unreal/Config',
+                               paths.ENGINE_PLUGINS, *identity.content_files(content)],
                        needs=[s.name for s in result if s.name.startswith('unreal.')] + ['data.stage'],
                        outputs=[content / 'Data/Network/session.json'],
                        about='matching multiplayer code, imported assets and staged gameplay data'))

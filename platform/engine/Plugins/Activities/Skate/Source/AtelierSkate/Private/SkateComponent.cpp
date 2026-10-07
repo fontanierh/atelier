@@ -37,6 +37,16 @@ UCharacterMovementComponent* USkateComponent::Movement() const { return Rider ? 
 
 void USkateComponent::Initialize(ACharacter* Character)
 {
+    if (BoardRoot)
+    {
+        if (bNetworkProxy && Character && Character->IsLocallyControlled())
+        {
+            bNetworkProxy = false;
+            if (Loops.IsEmpty()) LoadSounds();
+            SetComponentTickEnabled(true);
+        }
+        return;
+    }
     Rider = Character;
     RiderApi = Cast<ISkateRider>(Character);
     if (!bFeelSet) Feel = FSkateFeel::Defaults();
@@ -75,7 +85,7 @@ void USkateComponent::Initialize(ACharacter* Character)
     }
     BoardRoot->SetVisibility(false, true);
     bAvailable = DeckMesh && TruckMesh && WheelMesh;
-    LoadSounds();
+    if (!bNetworkProxy && GetWorld()->GetNetMode() != NM_DedicatedServer) LoadSounds();
     UE_LOG(LogTemp, Display, TEXT("SKATE available=%d board=%s"), bAvailable, DeckMesh ? *DeckMesh->GetName() : TEXT("none"));
 }
 
@@ -212,6 +222,7 @@ void USkateComponent::SetMeshForRiding(bool bRiding)
 
 bool USkateComponent::Toggle()
 {
+    if (bNetworkProxy) return false;
     if (!Rider || !bAvailable) return false;
     // The Ride backend gets on and off as one continuous character (RideTransition.cpp); a ride keeps the backend it
     // started with until it ends.
@@ -426,10 +437,11 @@ void USkateComponent::ResetInput()
     In={}; MouseStick=FVector2D::ZeroVector; MouseQuiet=0; bMouseSwiped=false;
     SpaceHeld=SpaceRelease=-1.f;
 }
-void USkateComponent::PhysSkate(float Dt) { StepRetailRuntime(Dt); }
+void USkateComponent::PhysSkate(float Dt) { if (!bNetworkProxy) StepRetailRuntime(Dt); }
 void USkateComponent::Launch(const FVector& Velocity) { LaunchRetail(Velocity); }
 void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickFunction* Tick)
 {
+    if (bNetworkProxy) return;
     Super::TickComponent(Dt,Type,Tick);
     if (Mode != ESkateMode::Off) UpdateAudio(Dt);
     // Preload the native skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).

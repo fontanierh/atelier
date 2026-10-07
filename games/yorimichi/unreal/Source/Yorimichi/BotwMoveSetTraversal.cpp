@@ -1,4 +1,6 @@
 #include "BotwMoveSet.h"
+#include "JapanCharacterMovement.h"
+#include "JapanNetwork.h"
 #include "BotwMoveSetDetail.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -325,7 +327,7 @@ void UBotwMoveSet::StartClimb(const FHitResult& Wall, bool bFromAir)
     if (Character->bIsCrouched) Character->UnCrouch();
     bLocked = false; bCharging = false; Target = nullptr;
     Mode = EBotwMoveMode::Climb;
-    Movement->SetMovementMode(MOVE_Custom, MovementMode);
+    Movement->SetMovementMode(MOVE_Custom, JapanNetwork::IsOnline(Character->GetWorld()) ? ClimbMovementMode : MovementMode);
     Movement->Velocity = FVector::ZeroVector;
     WallNormal = Wall.ImpactNormal.GetSafeNormal(); WallPoint = Wall.ImpactPoint;
     // Hold the capsule off the wall, facing it; the body leans in to the wall by the rest (the mesh shift).
@@ -554,7 +556,7 @@ void UBotwMoveSet::StartSwim()
     SwimYaw = Character->GetActorRotation().Yaw;
     SwimSpeed = FMath::Min(float(Movement->Velocity.Size2D()) * .5f, 200.f);
     Mode = EBotwMoveMode::Swim;
-    Movement->SetMovementMode(MOVE_Custom, MovementMode);
+    Movement->SetMovementMode(MOVE_Custom, JapanNetwork::IsOnline(Character->GetWorld()) ? SwimMovementMode : MovementMode);
     Movement->Velocity = FVector::ZeroVector;
     WaterSurface = Surface;
     // The mesh's origin floats at the surface and the swimming body hangs below it; the body keeps its height a moment.
@@ -657,13 +659,21 @@ void UBotwMoveSet::AdvanceSwim(float Dt)
     }
     if (Name == TEXT("SwimDie"))
     {
-        if (Over())
+        if (Over() && (!JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority()))
         {
             // Out of stamina in deep water: back to the last dry ground, a little hurt.
-            if (UWandererSwordComponent* Sword = Character->GetSword()) Sword->Health = FMath::Max(1.f, Sword->Health - GetParam(TEXT("DrownDamage"), 10.f));
             const FVector Shore = bHasSafeShore ? SafeShore : Character->GetActorLocation();
+            const bool Online = JapanNetwork::IsOnline(Character->GetWorld());
+            if (Online)
+            {
+                CastChecked<UJapanCharacterMovement>(Character->GetCharacterMovement())->QueueAuthoritativeRecovery(
+                    Shore, Character->GetActorRotation().Yaw, GetParam(TEXT("DrownDamage"), 10.f));
+                return;
+            }
+            // Several moves may run before the deferred recovery. Only the first applies drowning damage.
+            if (UWandererSwordComponent* Sword = Character->GetSword()) Sword->Health = FMath::Max(1.f, Sword->Health - GetParam(TEXT("DrownDamage"), 10.f));
             // The shore is a spot he stood on: land on it, not on a canopy above it.
-            Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"), 100.f);
+            if (!Online) Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"), 100.f);
         }
         return;
     }

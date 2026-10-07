@@ -12,10 +12,11 @@ public class Yorimichi : ModuleRules
         // Match network_identity.py: relative UTF-8 path, NUL, file SHA1, newline.
         // Track every enumerated source so UBT cannot reuse an old compatibility definition.
         string Root = Path.GetFullPath(Path.Combine(ModuleDirectory, "../../../../.."));
-        string[] Roots = { Path.Combine(Root, "games/yorimichi/unreal/Source"), Path.Combine(Root, "platform/engine/Plugins") };
-        string[] Extensions = { ".h", ".hpp", ".cpp", ".c", ".cs", ".uplugin", ".inl", ".inc", ".mm", ".m", ".ush", ".usf" };
+        string[] Roots = { Path.Combine(Root, "games/yorimichi/unreal/Source"), Path.Combine(Root, "games/yorimichi/unreal/Config"), Path.Combine(Root, "platform/engine/Plugins") };
+        string[] Extensions = { ".h", ".hpp", ".cpp", ".c", ".cs", ".uplugin", ".inl", ".inc", ".mm", ".m", ".ush", ".usf", ".ini", ".uproject" };
         string[] Ignored = { "Binaries", "Intermediate", "Saved", "DerivedDataCache", "__pycache__" };
         var Files = Roots.SelectMany(Dir => Directory.EnumerateFiles(Dir, "*", SearchOption.AllDirectories))
+            .Concat(Directory.EnumerateFiles(Path.Combine(Root, "games/yorimichi/unreal"), "*.uproject"))
             .Where(File => Extensions.Contains(Path.GetExtension(File)) &&
                 !Path.GetRelativePath(Root, File).Split(Path.DirectorySeparatorChar).Any(Ignored.Contains))
             .OrderBy(File => Path.GetRelativePath(Root, File).Replace('\\', '/'), StringComparer.Ordinal);

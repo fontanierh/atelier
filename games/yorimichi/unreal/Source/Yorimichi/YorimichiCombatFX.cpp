@@ -1,12 +1,19 @@
 #include "YorimichiCombatFX.h"
 #include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "Engine/World.h"
 
 // Yorimichi's combat reactions, composed from the platform's effects (AAtelierFX): which sparks, flashes, rings, light,
 // shake, slow motion and sound each moment of the sword fight gets.
 
-AYorimichiCombatFX* AYorimichiCombatFX::Get(const UObject* WorldContext) { return Cast<AYorimichiCombatFX>(AAtelierFX::Get(WorldContext)); }
+AYorimichiCombatFX* AYorimichiCombatFX::Get(const UObject* WorldContext)
+{
+    if (!WorldContext || !WorldContext->GetWorld() || WorldContext->GetWorld()->GetNetMode() == NM_DedicatedServer) return nullptr;
+    if (const auto* Rider = Cast<AWandererCharacter>(WorldContext))
+        if (const auto* Movement = Cast<UJapanCharacterMovement>(Rider->GetCharacterMovement()); Movement && Movement->IsReplaying()) return nullptr;
+    return Cast<AYorimichiCombatFX>(AAtelierFX::Get(WorldContext));
+}
 
 void AYorimichiCombatFX::HitStop(float Seconds, AActor* A, AActor* B)
 {

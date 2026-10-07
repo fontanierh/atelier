@@ -1,5 +1,6 @@
 #include "JapanSession.h"
 #include "JapanNetwork.h"
+#include "JapanGameplayQA.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
 #include "AtelierData.h"
@@ -73,6 +74,7 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
             if (Rails) for (const FSkateRail& Rail : Rails->Rails)
             {
                 FString Record = Rail.Id.ToString() + FString::Printf(TEXT(":%d:%.3f:"), int32(Rail.Kind), Rail.Radius);
+                Record += FString::Printf(TEXT("side=%.3f,%.3f,%.3f:"), Rail.Side.X, Rail.Side.Y, Rail.Side.Z);
                 for (const FVector& Point : Rail.Points) Record += FString::Printf(TEXT("%.3f,%.3f,%.3f;"), Point.X, Point.Y, Point.Z);
                 Records.Add(Record);
             }
@@ -136,6 +138,13 @@ bool UJapanGameInstance::TickNetworkQA(float)
     UWorld* World = GetWorld();
     if (!World || !World->HasBegunPlay()) return true;
     const auto* State = World->GetGameState<AJapanGameState>();
+    bool GameplayDone = true;
+    if (FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")) && World->GetNetMode() != NM_Standalone)
+    {
+        FString Error;
+        GameplayDone = JapanGameplayQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
+        if (!Error.IsEmpty()) return Fail(Error);
+    }
     if (NetworkQARole == TEXT("server"))
     {
         if (World->GetNetMode() != NM_DedicatedServer || GetLocalPlayers().Num() != 0)
@@ -176,7 +185,7 @@ bool UJapanGameInstance::TickNetworkQA(float)
                 if (!WriteNetworkQA(TEXT("connected"))) return Fail(TEXT("Could not save connected receipt"));
                 NetworkQAConnected = Now;
             }
-            if (Now - NetworkQAConnected > 5.) { NetworkQALeaving = Now; LeaveGame(); }
+            if (GameplayDone && Now - NetworkQAConnected > 5.) { NetworkQALeaving = Now; LeaveGame(); }
         }
         else if (NetworkQAConnected > 0) return Fail(TEXT("Connection lost before intentional leave"));
     }

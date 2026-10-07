@@ -64,3 +64,18 @@ def test_missing_world_cannot_be_certified(project):
     with pytest.raises(ValueError, match='before world data'):
         identity.create(repo, content, io.StringIO())
     assert not (content / 'Data/Network/session.json').exists()
+
+
+@pytest.mark.parametrize('relative', [
+    'games/yorimichi/unreal/Config/DefaultEngine.ini',
+    'games/yorimichi/unreal/Yorimichi.uproject',
+    'platform/engine/Plugins/Skate/Config/DefaultSkate.ini',
+])
+def test_gameplay_configuration_changes_executable_identity(project, relative):
+    repo, content = project
+    write(repo, relative, b'original settings')
+    first = identity.create(repo, content, io.StringIO())
+    write(repo, relative, b'changed physics or plugin settings')
+    second = identity.create(repo, content, io.StringIO())
+    assert second['code'] != first['code']
+    assert second['signature'] != first['signature']

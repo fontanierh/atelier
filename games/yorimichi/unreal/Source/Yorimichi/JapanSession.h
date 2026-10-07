@@ -6,10 +6,13 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "JapanGameMode.h"
+#include "JapanSkateWire.h"
+#include "JapanSkateBudget.h"
 #include "JapanSession.generated.h"
 
 class SWidget;
 class AJapanWorld;
+class AWandererCharacter;
 
 UCLASS()
 class YORIMICHI_API UJapanGameInstance : public UGameInstance
@@ -86,8 +89,27 @@ public:
     UFUNCTION(Server, Reliable) void ServerWorldReady(const FString& Identity, const FString& RiderName, bool bShield);
     UFUNCTION(Client, Reliable) void ClientAdmissionFailure(const FString& Reason);
     UFUNCTION(Client, Reliable) void ClientSessionReady();
+    // Server routes complete frames per connection, never back to the predicting owner.
+    void SendSkateFrame(AWandererCharacter* Subject, const FJapanSkateFrame& Frame);
+    void SendSkateBodies(AWandererCharacter* Subject, const FJapanSkateBodies& State);
+    UFUNCTION(Client, Unreliable) void ClientSkatePose(AWandererCharacter* Subject, const FJapanSkateChunk& Chunk);
+    UFUNCTION(Client, Unreliable) void ClientSkateBodies(AWandererCharacter* Subject, const FJapanSkateBodies& State);
     void MarkAdmissionComplete() { bAdmissionComplete = true; }
 private:
+    struct FSkateDelivery
+    {
+        double Pose = -1., Bodies = -1.;
+        FJapanSkateFrame LatestPose;
+        FJapanSkateBodies LatestBodies;
+        bool bPose = false, bBodies = false;
+    };
+    TMap<TWeakObjectPtr<AWandererCharacter>, FSkateDelivery> SkateDelivery;
+    FJapanSkateBudget SkateBudget;
+    int32 SkateRoundRobin = 0;
+    void DrainSkateFrames();
+    void DeliverSkateFrame(AWandererCharacter* Subject, const FJapanSkateFrame& Frame);
+    void DeliverSkateBodies(AWandererCharacter* Subject, const FJapanSkateBodies& State);
+    double SkateInterest(AWandererCharacter* Subject, bool bBodies, double& TotalWeight) const;
     void OpenFriends();
     bool bReadinessSent = false;
     bool bServerReadinessReceived = false;

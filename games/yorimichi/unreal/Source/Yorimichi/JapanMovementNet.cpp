@@ -1,0 +1,154 @@
+#include "JapanMovementNet.h"
+#include "JapanCharacterMovement.h"
+#include "WandererCharacter.h"
+#include "BotwMoveSet.h"
+#include "Engine/PackageMapClient.h"
+
+namespace
+{
+const FName Buttons[] = { TEXT("jump"), TEXT("jump_release"), TEXT("dodge"), TEXT("attack"),
+    TEXT("attack_release"), TEXT("guard"), TEXT("guard_release"), TEXT("weapon"), TEXT("crouch"),
+    TEXT("dash"), TEXT("drop_holds"), TEXT("wave") };
+UJapanCharacterMovement* MovementOf(ACharacter* Character)
+{
+    return Character ? Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()) : nullptr;
+}
+}
+
+int32 FJapanMoveInput::ButtonIndex(FName Name)
+{
+    for (int32 I = 0; I < UE_ARRAY_COUNT(Buttons); ++I) if (Buttons[I] == Name) return I;
+    return INDEX_NONE;
+}
+
+FName FJapanMoveInput::ButtonName(uint8 Index) { return Index < UE_ARRAY_COUNT(Buttons) ? Buttons[Index] : NAME_None; }
+
+void FJapanMoveInput::ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply) const
+{
+    for (int32 I = 0; I < Edges.Num(); ++I)
+        if (uint16(FirstEdge + I) == uint16(LastApplied + 1))
+        {
+            ++LastApplied;
+            Apply(Edges[I]);
+        }
+}
+
+bool FJapanMoveInput::Serialize(FArchive& Ar)
+{
+    Ar << X << Y;
+    Ar.SerializeBits(&Flags, 7);
+    Ar << FirstEdge << ActivityEpoch;
+    uint8 Count = uint8(Edges.Num());
+    Ar.SerializeBits(&Count, 5);
+    if (Count > MaximumEdges || X == -128 || Y == -128) { Ar.SetError(); return false; }
+    if (Ar.IsLoading()) Edges.SetNum(Count);
+    for (uint8& Edge : Edges)
+    {
+        Ar.SerializeBits(&Edge, 4);
+        if (Edge >= UE_ARRAY_COUNT(Buttons)) { Ar.SetError(); return false; }
+    }
+    return !Ar.IsError();
+}
+
+bool FJapanMoveCheckpoint::Serialize(FArchive& Ar, UPackageMap* Map)
+{
+    uint32 Count = Bytes.Num();
+    Ar.SerializeIntPacked(Count);
+    if (Count == 0 || Count > MaximumBytes || !Map) { Ar.SetError(); return false; }
+    if (Ar.IsLoading()) Bytes.SetNumUninitialized(Count);
+    Ar.Serialize(Bytes.GetData(), Count);
+    Map->SerializeName(Ar, Action);
+    UObject* Focus = Target.Get();
+    UObject* Lunge = LungeTarget.Get();
+    Map->SerializeObject(Ar, AActor::StaticClass(), Focus);
+    Map->SerializeObject(Ar, AActor::StaticClass(), Lunge);
+    if (Ar.IsLoading()) { Target = Cast<AActor>(Focus); LungeTarget = Cast<AActor>(Lunge); }
+    return !Ar.IsError();
+}
+
+void FSavedMove_Japan::Clear()
+{
+    Super::Clear(); Input = FJapanMoveInput(); PostState = FJapanMoveCheckpoint(); PostEdge = 0; PostCrouch = false;
+}
+
+void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
+{
+    Super::PostUpdate(Character, Mode);
+    if (auto* Movement = MovementOf(Character); Movement && Movement->PredictsMoves())
+    {
+        PostState = CastChecked<AWandererCharacter>(Character)->GetMoves()->CaptureNetworkState();
+        PostEdge = Movement->GetProcessedEdge();
+        PostCrouch = Movement->bWantsToCrouch;
+    }
+}
+
+void FSavedMove_Japan::SetMoveFor(ACharacter* Character, float Dt, const FVector& Accel,
+    FNetworkPredictionData_Client_Character& ClientData)
+{
+    Super::SetMoveFor(Character, Dt, Accel, ClientData);
+    if (UJapanCharacterMovement* Movement = MovementOf(Character))
+    {
+        Input = Movement->ConsumeMoveInput();
+        Movement->SetMoveInput(Input);
+    }
+}
+
+void FSavedMove_Japan::PrepMoveFor(ACharacter* Character)
+{
+    Super::PrepMoveFor(Character);
+    // Replay inputs against the corrected state. Restoring a predicted state here would undo the server's correction.
+    if (UJapanCharacterMovement* Movement = MovementOf(Character)) Movement->SetMoveInput(Input);
+}
+
+bool FSavedMove_Japan::CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* Character, float MaxDelta) const
+{
+    const auto& Next = static_cast<const FSavedMove_Japan&>(*NewMove);
+    if (!Input.Edges.IsEmpty() || !Next.Input.Edges.IsEmpty() || Input.Flags != Next.Input.Flags ||
+        Input.X != Next.Input.X || Input.Y != Next.Input.Y || Input.ActivityEpoch != Next.Input.ActivityEpoch) return false;
+    if (const UJapanCharacterMovement* Movement = MovementOf(Character); Movement && Movement->PredictsMoves()) return false;
+    return Super::CanCombineWith(NewMove, Character, MaxDelta);
+}
+
+bool FSavedMove_Japan::IsImportantMove(const FSavedMovePtr& LastAcked) const
+{
+    if (!Input.Edges.IsEmpty()) return true;
+    if (LastAcked.IsValid())
+    {
+        const FJapanMoveInput& Previous = static_cast<const FSavedMove_Japan&>(*LastAcked).Input;
+        if (Input.Flags != Previous.Flags || Input.X != Previous.X || Input.Y != Previous.Y) return true;
+    }
+    return Super::IsImportantMove(LastAcked);
+}
+
+void FJapanNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Character& Move, ENetworkMoveType Type)
+{
+    FCharacterNetworkMoveData::ClientFillNetworkMoveData(Move, Type);
+    Input = static_cast<const FSavedMove_Japan&>(Move).Input;
+}
+
+bool FJapanNetworkMoveData::Serialize(UCharacterMovementComponent& Movement, FArchive& Ar,
+    UPackageMap* Map, ENetworkMoveType Type)
+{
+    return FCharacterNetworkMoveData::Serialize(Movement, Ar, Map, Type) && Input.Serialize(Ar);
+}
+
+void FJapanMoveResponse::ServerFillResponseData(const UCharacterMovementComponent& Movement,
+    const FClientAdjustment& Adjustment)
+{
+    FCharacterMoveResponseDataContainer::ServerFillResponseData(Movement, Adjustment);
+    ActivityEpoch = static_cast<const UJapanCharacterMovement&>(Movement).GetActivityEpoch();
+    bHasRotation = IsCorrection();
+    AcknowledgedEdge = static_cast<const UJapanCharacterMovement&>(Movement).PendingAcknowledgedEdge;
+    Checkpoint = static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpoint;
+    bHasCheckpoint = IsCorrection() && !Checkpoint.Bytes.IsEmpty() &&
+        static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpointTime == Adjustment.TimeStamp;
+}
+
+bool FJapanMoveResponse::Serialize(UCharacterMovementComponent& Movement, FArchive& Ar, UPackageMap* Map)
+{
+    if (!FCharacterMoveResponseDataContainer::Serialize(Movement, Ar, Map)) return false;
+    Ar << AcknowledgedEdge << ActivityEpoch;
+    if (!IsCorrection()) return !Ar.IsError();
+    Ar.SerializeBits(&bHasCheckpoint, 1);
+    return !bHasCheckpoint || Checkpoint.Serialize(Ar, Map);
+}

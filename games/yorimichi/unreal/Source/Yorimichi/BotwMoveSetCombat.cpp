@@ -1,5 +1,6 @@
 #include "BotwMoveSet.h"
 #include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
 #include "BotwMoveSetDetail.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -38,7 +39,13 @@ using namespace BotwMoveSetDetail;
 bool UBotwMoveSet::Press(FName Button)
 {
     if (!Character) return false;
+    if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()); Movement && Movement->QueueMoveButton(Button)) return true;
     const FName Name = CurrentName();
+    if (Button == TEXT("wave"))
+    {
+        if (Character->CanAct() && Character->StandForAction()) Character->SetAction(TEXT("Wave"));
+        return true;
+    }
     if (Button == TEXT("jump"))
     {
         bJumpHeld = true;
@@ -114,14 +121,14 @@ void UBotwMoveSet::StartCut(int32 Index)
     Combo = Index; AttackBuffer = 0.f; bAttackAfterDraw = false;
     // BOTW homes a cut onto the enemy it is aimed at: a quick step in when it stands beyond the blade's reach. The cuts'
     // clips open mid-swing, so the step is short and the blow keeps landing until it has closed in.
-    LungeTime = 0.f; LungeTarget = nullptr;
+    LungeTime = 0.f; LungeTarget = nullptr; bLungePoint = false;
     if (AActor* Focus = Target.IsValid() ? Target.Get() : FindTarget(Reach() + 250.f, 60.f))
     {
         float Radius = 0.f, Half = 0.f;
         Focus->GetSimpleCollisionCylinder(Radius, Half);
         const float Stand = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + Radius + BladeLength() * .7f;
         const float Gap = float(FVector::Dist2D(Focus->GetActorLocation(), Character->GetActorLocation())) - Stand;
-        if (Gap > 5.f) { LungeTarget = Focus; LungeStand = Stand; LungeTime = FMath::Clamp(Gap / 1100.f, .06f, .16f); }
+        if (Gap > 5.f) { LungeTarget = Focus; LungePoint = Focus->GetActorLocation(); bLungePoint = true; LungeStand = Stand; LungeTime = FMath::Clamp(Gap / 1100.f, .06f, .16f); }
     }
     if (const FBotwMove* M = Current())
     {
@@ -339,6 +346,7 @@ float UBotwMoveSet::BladeLength() const
 
 void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction)
 {
+    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
     // A sparring partner meets the blow with its own move set: its guard, parry and dodges answer it as they answer a
     // fox's claw, and only a blow that lands counts (the guard, parry and dodge make their own effects).
     if (AWandererCharacter* Other = Cast<AWandererCharacter>(Victim))
@@ -360,6 +368,7 @@ void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const 
 int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& From)
 {
     if (!Character) return 0;
+    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return 3;
     const FBotwMove* Now = Current();
     const FName Name = Now ? Now->Name : NAME_None;
     AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
@@ -393,13 +402,15 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
         if (JustAvoid > 0.f && (bArmed || Has(TEXT("DrawSword"))) && Has(TEXT("Flurry")))
         {
             FlurryTime = GetParam(TEXT("PlayerCutAfterJust.ForceSlowTime"), 80.f) / 30.f;
-            Invulnerable = FlurryTime;
             Target = Source;
+            FlurryPoint = Source ? Source->GetActorLocation() : Here; bFlurryPoint = Source != nullptr;
             // A character the game drives rushes without slowing the world (the person it fights keeps their own time).
-            if (!Character->IsPlayerControlled()) FlurryTime = FMath::Min(FlurryTime, 1.4f);
-            else if (FX)
+            const float OriginalInvulnerability = FlurryTime;
+            if (!Character->IsPlayerControlled() || JapanNetwork::IsOnline(Character->GetWorld())) FlurryTime = FMath::Min(FlurryTime, 1.4f);
+            Invulnerable = JapanNetwork::IsOnline(Character->GetWorld()) ? FlurryTime : OriginalInvulnerability;
+            if (Character->IsPlayerControlled() && FX)
             {
-                FX->SlowMotion(FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
+                if (!JapanNetwork::IsOnline(Character->GetWorld())) FX->SlowMotion(FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
                 // The perfect dodge: a cold flash and a wide ring where he was, and a chime.
                 const FVector Chest = Here + FVector(0, 0, HalfHeight() * .3f);
                 FX->Flash(Chest, 110.f, FLinearColor(.6f, .82f, 1.f) * 3.f, .2f);
@@ -505,6 +516,7 @@ float UBotwMoveSet::NextBlowIn() const
 
 void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact)
 {
+    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
     UWandererSwordComponent* Sword = Character->GetSword();
     if (!Sword) return;
     ++Sword->HitsTakenCount;
@@ -603,7 +615,7 @@ void UBotwMoveSet::AdvanceDown(float Dt)
         if (Over() || (Now->Idle >= 0.f && SourceTime() >= Now->Idle))
         {
             bDown = false; Invulnerable = 1.f;
-            if (UWandererSwordComponent* Sword = Character->GetSword(); Sword && Sword->Health <= 0.f) Sword->Health = UWandererSwordComponent::MaxHealth;
+            if (UWandererSwordComponent* Sword = Character->GetSword(); Sword && Sword->Health <= 0.f && (!JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority())) Sword->Health = UWandererSwordComponent::MaxHealth;
             Stop(.25f);
         }
         return;
@@ -680,6 +692,9 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     const FBotwMove* Now = Current();
     const FName Name = Now ? Now->Name : NAME_None;
     const float T = SourceTime();
+    const bool bRemotePresentation = JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority() && !Character->IsLocallyControlled();
+    if (!bRemotePresentation)
+    {
     if (Name == TEXT("DrawSword") && T >= FMath::Max(Now->Bind, 0.f)) SetArmed(true);
     if (Name == TEXT("SheatheSword") && T >= (Now->Unbind >= 0.f ? Now->Unbind : Now->End * .5f)) SetArmed(false);
     // The paraglider is in the hands from the opening's bind point until the closing's unbind point.
@@ -687,6 +702,7 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     if (Now && In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall") }) && T < FMath::Max(Now->Bind, 0.f)) bGlider = false;
     if (Now && Name == TEXT("GlideOff") && T < (Now->Unbind >= 0.f ? Now->Unbind : .1f)) bGlider = true;
     ShowGlider(bGlider);
+    }
     // The carry layers: the sword arm over everything but blade work, and while guarding on foot the raised shield, or
     // without it the sword raised across the body (both arms).
     const bool bGuardPose = IsGuarding() && Mode == EBotwMoveMode::Ground && (Name.IsNone() || IsLockLoop(Name));
