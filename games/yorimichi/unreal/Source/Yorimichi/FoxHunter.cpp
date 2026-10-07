@@ -1,4 +1,5 @@
 #include "FoxHunter.h"
+#include "JapanEnemyQA.h"
 #include "JapanCombat.h"
 #include "JapanEncounters.h"
 #include "JapanNetwork.h"
@@ -82,6 +83,7 @@ void AFoxHunter::BeginPlay()
     Paint = GetNetMode() == NM_DedicatedServer ? nullptr : GetMesh()->CreateDynamicMaterialInstance(0);
     Home = GetActorLocation(); HomeYaw = GetActorRotation().Yaw;
     Rand.Initialize(int32(FPlatformTime::Cycles() & 0x7fffffff));
+    JapanEnemyQA::BeginHunter(this);
     if (FParse::Param(FCommandLine::Get(), TEXT("foxqa"))) Review = CreateFoxReview(this);
     UE_LOG(LogTemp, Display, TEXT("Fox hunter ready: %d clips, capsule %.0f/%.0f, home %s"), Definition->Clips.Num(), Definition->CapsuleRadius, Definition->CapsuleHalfHeight, *Home.ToString());
 }
@@ -130,6 +132,7 @@ void AFoxHunter::Enter(EFoxState Next, FName ClipName, float Blend, bool bLoop)
         if (Next == EFoxState::Return || Next == EFoxState::Dead || Next == EFoxState::Idle) Encounters->End(this);
         if (Next == EFoxState::Idle) { Health = MaxHealth; EncounterHealth = MaxHealth; bHealthScaled = false; }
     }
+    if (State == EFoxState::Idle && Next == EFoxState::Approach) JapanEnemyQA::Noticed(this);
     State = Next; StateTime = 0.f; CurrentClip = ClipName; PreviousStrike.Reset();
     SetAnimRootMotionTranslationScale(RootMotionScale);
     if (ClipName.IsNone()) { if (!AnimationAction.IsNone()) SetAction(NAME_None, false, Blend); }
@@ -174,6 +177,7 @@ FVector AFoxHunter::StrikePoint() const
 /** Spheres along the striking hand or foot, swept between frames inside the clip's window; one contact per attack. */
 void AFoxHunter::SweepStrike()
 {
+    JapanEnemyQA::Sweep(this);
     const FFoxHunterClip* C = Clip(CurrentClip);
     if (!HasAuthority() || !C || bStruckThisAttack || !Target) return;
     const FVector A = GetMesh()->GetSocketLocation(C->StrikeBone), B = GetMesh()->GetSocketLocation(C->StrikeTipBone);
@@ -193,8 +197,10 @@ void AFoxHunter::SweepStrike()
                 const float Damage = CurrentClip == TEXT("Kick") ? KickDamage : ClawDamage;
                 TWeakObjectPtr<AFoxHunter> WeakSelf(this);
                 TWeakObjectPtr<AWandererCharacter> Victim(Target);
-                JapanCombat::Strike(this, Target, Damage, GetActorLocation(), [WeakSelf, Victim](int32 Outcome)
+                const uint32 ProbeContact = JapanEnemyQA::Contact(this, Target, Damage);
+                JapanCombat::Strike(this, Target, Damage, GetActorLocation(), [WeakSelf, Victim, ProbeContact](int32 Outcome)
                 {
+                    JapanEnemyQA::Resolved(ProbeContact, Outcome);
                     auto* Self = WeakSelf.Get();
                     if (!Self || !Self->IsAlive()) return;
                     if (Outcome == 1)
@@ -229,7 +235,10 @@ void AFoxHunter::TakeSwordHit(int32 Strength, AActor* From)
         EngageNetworkEncounter();
         GetWorld()->GetSubsystem<UJapanEncounters>()->AddThreat(this, Player, Strength);
     }
-    Health = FMath::Max(0, Health - Strength); ++HitsTaken; Flash = .22f; NoticeBlock = 0.f;
+    const int32 BeforeHealth = Health;
+    Health = FMath::Max(0, Health - Strength);
+    JapanEnemyQA::SwordDamage(this, From, Strength, BeforeHealth, Health);
+    ++HitsTaken; Flash = .22f; NoticeBlock = 0.f;
     // The fox's cry is sparing: the first hit, heavy hits and the death always, otherwise every other hit.
     if (Health <= 0 || Strength >= 2 || HitsTaken % 2 == 1) Cue(TEXT("fox_hurt"), GetActorLocation() + FVector(0, 0, 60), Health <= 0 ? 1.f : .8f);
     if (!Target) Target = Cast<AWandererCharacter>(From);
@@ -281,6 +290,7 @@ void AFoxHunter::Tick(float Dt)
     Super::Tick(Dt);
     if (!IsReady()) return;
     if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority()) { PresentNetworkState(); return; }
+    JapanEnemyQA::AuthorityTick(this);
     Clock += Dt;
     if (JapanNetwork::IsOnline(GetWorld()))
     {

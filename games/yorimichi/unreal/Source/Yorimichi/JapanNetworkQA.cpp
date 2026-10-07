@@ -2,6 +2,7 @@
 #include "JapanNetwork.h"
 #include "JapanGameplayQA.h"
 #include "JapanCombatQA.h"
+#include "JapanEnemyQA.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
 #include "AtelierData.h"
@@ -210,7 +211,13 @@ bool UJapanGameInstance::TickNetworkQA(float)
     const auto* State = World->GetGameState<AJapanGameState>();
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     bool GameplayDone = true;
-    if (FParse::Param(FCommandLine::Get(), TEXT("networkcombat")) && World->GetNetMode() != NM_Standalone)
+    if (FParse::Param(FCommandLine::Get(), TEXT("networkenemy")) && World->GetNetMode() != NM_Standalone)
+    {
+        FString Error;
+        GameplayDone = JapanEnemyQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
+        if (!Error.IsEmpty()) return Fail(Error);
+    }
+    else if (FParse::Param(FCommandLine::Get(), TEXT("networkcombat")) && World->GetNetMode() != NM_Standalone)
     {
         FString Error;
         GameplayDone = JapanCombatQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
@@ -243,6 +250,11 @@ bool UJapanGameInstance::TickNetworkQA(float)
             {
                 FString Error;
                 if (!JapanCombatQA::Finalize(NetworkQADirectory, Error)) return Fail(Error.IsEmpty() ? TEXT("Could not save final combat audit") : Error);
+            }
+            if (FParse::Param(FCommandLine::Get(), TEXT("networkenemy")))
+            {
+                FString Error;
+                if (!JapanEnemyQA::Finalize(NetworkQADirectory, Error)) return Fail(Error.IsEmpty() ? TEXT("Could not save final enemy audit") : Error);
             }
             if (!WriteNetworkQA(TEXT("complete"))) return Fail(TEXT("Could not save teardown receipt"));
             FPlatformMisc::RequestExit(false); return false;

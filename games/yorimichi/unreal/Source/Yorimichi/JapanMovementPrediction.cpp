@@ -1,4 +1,5 @@
 #include "JapanCharacterMovement.h"
+#include "JapanEnemyQA.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
@@ -144,7 +145,12 @@ bool UJapanCharacterMovement::QueueMoveButton(FName Button)
     if (Button == TEXT("jump_release")) HeldButtons &= ~FJapanMoveInput::JumpHeld;
     if (Button == TEXT("drop_holds")) HeldButtons = 0;
     if (CastChecked<AWandererCharacter>(CharacterOwner)->IsNetworkActivityPending()) return true;
-    if (PendingEdges.Num() < 64) PendingEdges.Add({uint8(Index), -1.});
+    if (PendingEdges.Num() < 64)
+    {
+        if (Button == TEXT("attack")) JapanEnemyQA::QueuedAttack(CastChecked<AWandererCharacter>(CharacterOwner),
+            GetActivityEpoch(), uint16(JournalFirstEdge + PendingEdges.Num()));
+        PendingEdges.Add({uint8(Index), -1.});
+    }
     else
     {
         // Bounded input journal. Hold levels still release safely if a disconnected peer fills it.
@@ -233,6 +239,8 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
         const FName Button = FJapanMoveInput::ButtonName(Edge);
         const int32 Index = uint16(ProcessedEdge - ActiveInput.FirstEdge);
         const uint16 Age = ActiveInput.EdgeAgeMilliseconds.IsValidIndex(Index) ? ActiveInput.EdgeAgeMilliseconds[Index] : 511;
+        if (Button == TEXT("attack") && Rider->HasAuthority())
+            JapanEnemyQA::AcceptedAttack(Rider, GetActivityEpoch(), ProcessedEdge);
         const bool Handled = Rider->HasAuthority() ? Moves->PressNetwork(Button, ProcessedEdge, Age)
             : Button == TEXT("drop_holds") ? (Moves->DropHolds(), true) : Moves->Press(Button);
         if (!Handled && Button == TEXT("crouch"))

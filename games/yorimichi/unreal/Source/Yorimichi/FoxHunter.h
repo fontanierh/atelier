@@ -165,5 +165,6 @@ private:
     FRandomStream Rand;
     // -foxqa: the scripted fight review
     friend struct FFoxReview;
+    friend struct FJapanEnemyProbe;
     TSharedPtr<FFoxReview> Review;
 };

@@ -82,7 +82,7 @@ def defence_edge_statistics(folder):
     return dict(edges=edges, invalid=invalid)
 
 
-def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20):
+def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20, enemy=False):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -209,10 +209,13 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
         flushed = read('combat-guest-4-result')
         checks['forced_recovery_resolves_contact_before_epoch'] = (flushed.get('forced_flush_passed') is True and
                                                                    flushed.get('flushed') == 1 and flushed.get('cancelled') == 0)
+    if enemy:
+        from network_enemy_review import compare_enemy
+        checks.update(compare_enemy(folder))
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -264,6 +267,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     command.append('-MULTIHOME=127.0.0.1')
                 if combat:
                     command += ['-networkcombat', '-networkcombathostfps=' + str(combat_host_fps)]
+                if enemy:
+                    command += ['-networkenemy', '-foxhunter']
                 if gameplay:
                     command.append('-networkgameplay')
                 if listen:
@@ -326,7 +331,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         if monitor.wait(timeout=5) != 0:
             raise RuntimeError('Aggregate monitor rejected teardown')
         emulation = dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent)
-        checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps)
+        checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy)
         checks['source_unchanged'] = source_revision() == revision
         checks['native_build_unchanged'] = current_native_build(ctx) == binary
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
@@ -354,6 +359,7 @@ def main():
     parser.add_argument('--port', type=int)
     parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
     parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
+    parser.add_argument('--enemy', action='store_true', help='Real shared-hunter attacks, AI claw and replicated death')
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
     parser.add_argument('--listen', action='store_true', help='Two local players across listen-host/client processes; validates the observer relay within the same aggregate guard')
@@ -363,7 +369,14 @@ def main():
     args = parser.parse_args()
     if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
         parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
-    if args.combat:
+    if args.enemy and (args.combat or args.gameplay):
+        parser.error('--enemy has a separate native route; do not combine it with combat/gameplay')
+    if args.enemy:
+        if (args.lag_ms, args.variance_ms, args.loss_percent) != (60, 15, 2):
+            parser.error('Shared-enemy acceptance requires --lag-ms 60 --variance-ms 15 --loss-percent 2')
+        args.listen = True
+        args.gameplay = False
+    elif args.combat:
         if (args.lag_ms, args.variance_ms, args.loss_percent) != (60, 15, 2):
             parser.error('Combat acceptance requires --lag-ms 60 --variance-ms 15 --loss-percent 2')
         args.listen = True
@@ -376,7 +389,7 @@ def main():
     folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
     folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -384,7 +397,7 @@ def main():
         port = sock.getsockname()[1]
     return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port), '--combat-host-fps', str(args.combat_host_fps),
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent)] +
-                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []),
+                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []),
                        folder / 'guard', timeout=330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

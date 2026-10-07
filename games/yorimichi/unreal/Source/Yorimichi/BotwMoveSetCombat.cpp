@@ -1,4 +1,5 @@
 #include "BotwMoveSet.h"
+#include "JapanEnemyQA.h"
 #include "JapanCombat.h"
 #include "JapanNetwork.h"
 #include "JapanCharacterMovement.h"
@@ -120,6 +121,7 @@ void UBotwMoveSet::StartCut(int32 Index)
     if (!Has(Clip)) return;
     if (Character->bIsCrouched) Character->UnCrouch();
     Face(600.f);
+    const bool HadBufferedPress = AttackBuffer > 0.f;
     Combo = Index; AttackBuffer = 0.f; bAttackAfterDraw = false;
     // BOTW homes a cut onto the enemy it is aimed at: a quick step in when it stands beyond the blade's reach. The cuts'
     // clips open mid-swing, so the step is short and the blow keeps landing until it has closed in.
@@ -139,6 +141,7 @@ void UBotwMoveSet::StartCut(int32 Index)
         ArcEnd = LungeTime > 0.f ? FMath::Max(End, M->Start + (LungeTime + .08f) * M->Rate) : End;
     }
     Play(Clip, .05f);
+    JapanEnemyQA::StartedCut(Character, HadBufferedPress);
 }
 
 /** Turns to the nearest enemy in reach and in front (a soft lock), else to the stick. */
@@ -349,6 +352,7 @@ float UBotwMoveSet::BladeLength() const
 
 void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction)
 {
+    JapanEnemyQA::BladeCandidate(Character, Victim);
     if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
     // A sparring partner meets the blow with its own move set: its guard, parry and dodges answer it as they answer a
     // fox's claw, and only a blow that lands counts (the guard, parry and dodge make their own effects).
