@@ -2,6 +2,7 @@
 #include "JapanSkateBudget.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
+#include "Misc/ScopedCVar.h"
 #include "Serialization/BitReader.h"
 #include "Serialization/BitWriter.h"
 
@@ -39,8 +40,13 @@ bool FJapanSkateWireTest::RunTest(const FString&)
     TestTrue(TEXT("The new frame still completes"), Assembly.Add(Newer, Complete));
     FBitReader Truncated(Writer.GetData(), Writer.GetNumBits()-8);
     FJapanSkateChunk Missing;
-    Missing.NetSerialize(Truncated, nullptr, Success);
-    TestFalse(TEXT("A truncated bone cannot be shown"), Success);
+    {
+        FScopedCVar<int32> OverflowLog(TEXT("net.BitReader.EnsureOnOverflow"), 0);
+        AddExpectedErrorPlain(TEXT("FBitReader::SetOverflowed() called!"));
+        Missing.NetSerialize(Truncated, nullptr, Success);
+        TestFalse(TEXT("A truncated bone cannot be shown"), Success);
+        TestTrue(TEXT("Truncation leaves the pose archive rejected"), Truncated.IsError());
+    }
     for (const double Pitch : {89.99, 90., 90.01, -90., 180., 270.})
     {
         const FQuat Turn = FRotator(Pitch, 175., -123.).Quaternion();

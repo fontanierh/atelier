@@ -3,6 +3,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
+#include "Misc/ScopedCVar.h"
 #include "Serialization/BitReader.h"
 #include "Serialization/BitWriter.h"
 #include "Serialization/MemoryReader.h"
@@ -33,7 +34,13 @@ bool FJapanMoveInputTest::RunTest(const FString&)
 
     FBitReader Truncated(Writer.GetData(), Writer.GetNumBits() - 4);
     FJapanMoveInput MissingRelease;
-    TestFalse(TEXT("A truncated transition stream cannot be applied"), MissingRelease.Serialize(Truncated));
+    {
+        // Malformed-input coverage expects the reader error, rather than triggering a handled ensure.
+        FScopedCVar<int32> OverflowLog(TEXT("net.BitReader.EnsureOnOverflow"), 0);
+        AddExpectedErrorPlain(TEXT("FBitReader::SetOverflowed() called!"));
+        TestFalse(TEXT("A truncated transition stream cannot be applied"), MissingRelease.Serialize(Truncated));
+        TestTrue(TEXT("Truncation leaves the archive rejected"), Truncated.IsError());
+    }
     FBitWriter Malformed(128, true);
     int8 X = 0, Y = 0; uint8 Flags = 0, Count = 17;
     uint16 FirstEdge = 1;
