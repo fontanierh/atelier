@@ -55,7 +55,11 @@ SIZE = BODY / CONFIG['link_scale']         # Cairo over Link as he plays (his me
 CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else {}
 # Carried pieces moved out from where Link's chest puts them (cm along Rig.body's axes: backward, left, up): Link's sword
 # and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
-PUSH = {'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else {}   # fitted in game: 4 cm still sank in at the hip running, 12 floated
+# Modori's coat stands off his back and his hair reaches his collar: from Link's chest his sword and sheath sank 2 cm into
+# the coat with the hilt in his hair, and the shield 10 cm (measured in game with YorimichiFit, clear from 4 and 6 cm back);
+# the sword also comes down 4 cm, out of the hair.
+PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
+        {'sword': [5., 0., -4.], 'sheath': [5., 0., -4.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
 
 
 def digests(folder):
