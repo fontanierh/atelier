@@ -7,6 +7,7 @@
 #include "BotwRider.h"
 #include "BotwMoveSet.h"
 #include "CairoCharacter.h"
+#include "ModoriCharacter.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -367,6 +368,7 @@ void AJapanNetworkGameMode::HandleStartingNewPlayer_Implementation(APlayerContro
 UClass* AJapanNetworkGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
 {
     const auto* State = Controller ? Controller->GetPlayerState<AJapanPlayerState>() : nullptr;
+    if (State && State->RiderName == AModoriCharacter::Name()) return AModoriCharacter::StaticClass();
     return State && State->RiderName != ACairoCharacter::BotwName() ? ABotwRider::StaticClass() : ACairoCharacter::StaticClass();
 }
 APawn* AJapanNetworkGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* Controller, const FTransform& Transform)
