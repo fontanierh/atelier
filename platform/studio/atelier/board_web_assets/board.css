@@ -765,4 +765,105 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .firefly:nth-of-type(7) { left: 30%; top: 54%; animation-duration: 16s, 3.9s; animation-delay: -9s, -2.4s; }
 @keyframes firefly-path { 0% { transform: translate3d(0, 0, 0); } 33% { transform: translate3d(34px, -26px, 0); } 66% { transform: translate3d(-22px, -48px, 0); } 100% { transform: translate3d(18px, -12px, 0); } }
 @keyframes blink { 0%, 100% { opacity: 0; } 40%, 60% { opacity: 1; } }
+/* The living meadow (board-scene.js) paints the world behind every pane once it is running; until then, and
+   without it, the still painting shows. */
+.scene-canvas { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity 1.4s ease; }
+.app.scene-on .scene-canvas { opacity: 1; }
+@media (max-width: 1099px) { .app.scene-on .chat-pane:not(.nav-top):not(.nav-underlay) { background: transparent; } }
+.app.scene-on .painting, .app.scene-on .mist, .app.scene-on .seed, .app.scene-on .sunbeams, .app.scene-on .tint, .app.scene-on .firefly { display: none !important; }
+.app.scene-on .thread-view { background: #eef4f35c; -webkit-backdrop-filter: blur(28px) saturate(150%); backdrop-filter: blur(28px) saturate(150%); }
+/* Deliveries (board-fx.js). The orb pops as its comet lands (--d is the comet's flight), the bubble unfolds out of it
+   on a spring and the words fade up out of a blur one by one. A message the board rebuilt (.again) or one you sent
+   (it flies out of the composer, .morph) skips the unfold. */
+@keyframes orb-pop { 0% { scale: 0; } 55% { scale: 1.28; } 75% { scale: .92; } 100% { scale: 1; } }
+@keyframes unfold { from { transform: translate(-10px, -12px) scale(.06, .1) rotate(-4deg); } to { transform: none; } }
+@keyframes unfold-mine { from { transform: translateY(20px) scale(.5, .3); } to { transform: none; } }
+@keyframes unblur { from { opacity: 0; filter: blur(12px) saturate(2); } to { opacity: 1; filter: none; } }
+@keyframes word { from { opacity: 0; filter: blur(7px); } to { opacity: 1; filter: none; } }
+.app.playful .message.enter { animation: none; }
+.app.playful .message.enter:not(.again) > .orb-link .orb { animation: orb-pop .6s cubic-bezier(.3, 1.5, .5, 1) var(--d, 0s) both, halo 1.8s ease-out var(--d, 0s) both; }
+.app.playful .message.enter:not(.again):not(.morph) .message-column { transform-origin: 0 0;
+  animation: unfold .9s cubic-bezier(.3, 1.35, .5, 1) calc(var(--d, 0s) + .05s) both, unblur .5s ease-out calc(var(--d, 0s) + .05s) both;
+  animation-timing-function: linear(0, .009, .035 2.1%, .141, .281 6.7%, .723 12.9%, .938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, .991, .977 51%, .974 53.8%, .975 57.1%, .997 69.8%, 1.003 76.9%, 1.004 83.8%, 1), ease-out; }
+.app.playful .message.mine.enter:not(.again):not(.morph) .message-column { transform-origin: 100% 100%; animation-name: unfold-mine, unblur; }
+.app.playful .message.enter.again .topic, .app.playful .message.enter.again .bubble { animation: none; }
+.app.playful .message.enter .topic { animation-delay: calc(var(--d, 0s) + .35s); }
+.app.playful .body.streaming .w { animation: word .6s cubic-bezier(.2, .8, .3, 1) calc(var(--d, 0s) + .2s + var(--wd, 0ms)) both; }
+
+/* Living orbs: an iridescent swirl turns inside the orbs in the strip and the Agents list; the speaker's orb rings out
+   as its comet leaves. */
+.app.playful .orb { isolation: isolate; }
+.app.playful .orb-button .orb::before, .app.playful .agent-row .orb::before, .app.playful .message.enter > .orb-link .orb::before {
+  content: ""; position: absolute; inset: 1px; z-index: -1; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; will-change: transform;
+  background: conic-gradient(from 0deg, hsl(var(--hue) 95% 62% / 0), hsl(calc(var(--hue) + 70) 95% 66% / .7) 18%, hsl(var(--hue) 95% 60% / 0) 38%,
+    hsl(calc(var(--hue) - 60) 95% 68% / .6) 62%, hsl(calc(var(--hue) + 140) 90% 70% / .35) 80%, hsl(var(--hue) 95% 62% / 0));
+  filter: blur(3px); animation: glint 6s linear infinite; }
+.app.playful .agent-row .orb::before { animation-duration: 8s; animation-direction: reverse; }
+.app.playful .message.enter > .orb-link .orb::before { animation-iteration-count: 2; }
+@keyframes speak { 0% { box-shadow: 0 0 0 0 hsl(var(--hue) 95% 70% / .8), 0 0 0 0 hsl(var(--hue) 95% 70% / .5); }
+  100% { box-shadow: 0 0 0 14px hsl(var(--hue) 95% 70% / 0), 0 0 0 26px hsl(var(--hue) 95% 70% / 0); } }
+.app.playful .orb.speaking { animation: speak .8s ease-out 3, bob-orb 2.6s ease-in-out infinite alternate; }
+
+/* Liquid glass over the living meadow: frosted bubbles with a bright rim, and a specular streak that slides across
+   each one as it scrolls through the view (or follows the pointer while a desktop bubble tilts toward it). */
+.app.scene-on .message:not(.mine) .bubble { background: linear-gradient(165deg, #ffffffd6, #ffffffa8 60%, #ffffffc0); border-color: #ffffffd0;
+  -webkit-backdrop-filter: blur(14px) saturate(175%); backdrop-filter: blur(14px) saturate(175%);
+  box-shadow: 0 1px 0 #ffffff inset, 0 -1px 0 #ffffff59 inset, 0 12px 32px #1f3a3626, 0 2px 6px #1f3a3614; }
+.app.scene-on .message.mine .bubble { -webkit-backdrop-filter: blur(14px) saturate(175%); backdrop-filter: blur(14px) saturate(175%); }
+.app.playful .bubble::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .75; mix-blend-mode: soft-light;
+  background: linear-gradient(112deg, #fff0 38%, #ffffffe6 48%, #ffffff40 52%, #fff0 60%) 50% 0 / 300% 100% no-repeat; }
+@supports (animation-timeline: view()) {
+  @keyframes gloss { from { background-position: 100% 0; } to { background-position: 0 0; } }
+  .app.playful .bubble::after { animation: gloss linear both; animation-timeline: view(); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .app.playful .message-column { perspective: 900px; }
+  .app.playful .bubble.card { transition: translate .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s, transform .5s cubic-bezier(.3, 1.4, .5, 1); }
+  .app.playful .bubble.tilt { transform: rotateX(calc(var(--ty, 0) * -5deg)) rotateY(calc(var(--tx, 0) * 6deg)); transition: translate .25s, box-shadow .25s, transform .12s ease-out; }
+  .app.playful .bubble.tilt::after { animation: none; background-position: calc(50% - var(--tx, 0) * 40%) 0; opacity: 1; }
+}
+
+/* The composer's aurora: soft colour turning inside the glass while you write. */
+.app.playful .composer { isolation: isolate; }
+.aurora { display: none; }
+.app.playful .aurora { display: block; position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .6s; }
+.aurora i { position: absolute; left: 50%; top: 50%; width: max(130%, 420px); aspect-ratio: 1; translate: -50% -50%; will-change: transform;
+  background: conic-gradient(from 0deg, #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #c9a8f0, #f29ac0); filter: blur(26px); animation: glint 10s linear infinite paused; }
+.app.playful .composer:focus-within .aurora { opacity: .42; }
+.app.playful .composer:focus-within .aurora i { animation-play-state: running; }
+
+/* A release's moment: the screen glows, its first line springs up letter by letter, and it fades at a tap. */
+.celebration { --hue: 330; position: fixed; inset: 0; z-index: 11; display: grid; place-items: center; padding: 24px 20px; cursor: pointer; opacity: 0; transition: opacity .45s ease;
+  background: radial-gradient(70% 55% at 50% 46%, #fff8e8f0, hsl(var(--hue) 80% 90% / .8) 45%, #2a2350a6 100%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%); backdrop-filter: blur(8px) saturate(150%); }
+.celebration.show { opacity: 1; }
+.celebration.hide { opacity: 0; transition-duration: .6s; pointer-events: none; }
+.cel-card { max-width: min(92vw, 760px); text-align: center; display: grid; gap: 14px; justify-items: center; }
+.cel-kicker { margin: 0; font: 750 12px/1 var(--font); letter-spacing: .3em; text-transform: uppercase; color: hsl(var(--hue) 60% 42%); animation: rise .6s ease-out .1s both; }
+.cel-title { margin: 0; font: 600 clamp(34px, 9vw, 72px)/1.04 var(--display); letter-spacing: -.02em; color: #2a1f3a; text-wrap: balance;
+  text-shadow: 0 2px 0 #fff, 0 0 40px hsl(var(--hue) 95% 75% / .9); }
+.cw { display: inline-block; white-space: nowrap; }
+.cl { display: inline-block; animation: letter 1s cubic-bezier(.3, 1.5, .5, 1) calc(.2s + var(--i) * 24ms) both; }
+@keyframes letter { from { opacity: 0; transform: translateY(.7em) rotate(10deg) scale(.4); filter: blur(8px); } 40% { opacity: 1; filter: none; } to { transform: none; } }
+.cel-hint { margin: 6px 0 0; font-size: 13px; color: #4a3f5c; opacity: 0; animation: rise .5s ease-out 1.6s both; }
+
+/* Night over the meadow: the glass goes dark like lanterns in the grass and the ink turns to moonlight. */
+.app.scene-night { --bg: #121a30; --card: #1a2342c4; --card-hi: #212b4ce6; --line: #c8d4ff1c; --line-strong: #c8d4ff30;
+  --ink: #eef2ff; --ink-2: #ccd5ef; --muted: #9aa6c8; --faint: #7480a3; --mine: linear-gradient(160deg, #3a3f7ae0, #2c3466e0);
+  --glass: #161e3acc; --glass-edge: #ffffff24; --glass-shine: #ffffff40; --link: #f4a7cc; --shadow: 0 1px 0 #ffffff14 inset, 0 8px 26px #05081a66; color-scheme: dark; }
+.app.scene-night { color: var(--ink); }
+.app.scene-night .topic.request { color: #9fcbf2; } .app.scene-night .topic.release, .app.scene-night .topic.handoff { color: #c9b6ff; }
+.app.scene-night .topic.evidence { color: #8fe0d2; } .app.scene-night .topic.ack { color: #93e2b8; }
+.app.scene-night .topic.alert, .app.scene-night .topic.blocked { color: #ff9aac; }
+.app.scene-night .topbar, .app.scene-night .thread-head, .app.scene-night .chat-pane::before { background: #121a33b8; }
+@media (max-width: 1099px) { .app.scene-night .orbs { background: #121a33e0; } }
+.app.scene-night::after { background: linear-gradient(#0e152c00, #0e152ccc 45%, #0e152cf2); }
+.app.scene-night .agents-pane, .app.scene-night .render-pane { background: #121a33b3; }
+.app.scene-night .pane-note, .app.scene-night .drop-hint { background: #161e3ab3; }
+.app.scene-night .thread-view { background: #0e152c80; }
+.app.scene-night .message:not(.mine) .bubble { background: linear-gradient(165deg, #232e58cc, #18213fb8 60%, #1d2749c4); border-color: #ffffff26;
+  box-shadow: 0 1px 0 #ffffff1f inset, 0 12px 32px #04071680, 0 0 24px #f7e27a0f; }
+.app.scene-night .message.mine .bubble { border-color: #ffffff2e; box-shadow: 0 1px 0 #ffffff26 inset, 0 10px 28px #04071680; }
+.app.scene-night .round-button, .app.scene-night .topic, .app.scene-night .markdown code { background: #ffffff12; }
+.app.scene-night .bubble::after { mix-blend-mode: overlay; opacity: .35; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

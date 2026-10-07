@@ -117,6 +117,9 @@ def test_http_static_and_read_only_api(http_server):
     assert b'src="/board-fx.js"' in request(http_server)[1]
     status, body, headers = request(http_server, '/board-fx.js')
     assert status == 200 and b'playfulToggle' in body and headers['Content-Type'].startswith('text/javascript')
+    assert b'src="/board-scene.js"' in request(http_server)[1]
+    status, body, headers = request(http_server, '/board-scene.js')
+    assert status == 200 and b'boardScene' in body and headers['Content-Type'].startswith('text/javascript')
     status, body, headers = request(http_server, '/apple-touch-icon.png')
     assert status == 200 and body.startswith(b'\x89PNG') and headers['Content-Type'] == 'image/png'
     status, body, _ = request(http_server, '/api/state')
