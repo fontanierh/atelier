@@ -1,9 +1,12 @@
 #include "JapanMovementNet.h"
+#include "BotwNetworkState.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
 #include "Serialization/BitReader.h"
 #include "Serialization/BitWriter.h"
+#include "Serialization/MemoryReader.h"
+#include "Serialization/MemoryWriter.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanMoveInputTest, "Yorimichi.Network.OrderedInput",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
@@ -60,4 +63,38 @@ bool FJapanMoveInputTest::RunTest(const FString&)
     TestEqual(TEXT("Sequences wrap through zero"), LastApplied, uint16(0));
     return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanCheckpointTest, "Yorimichi.Network.TraversalCheckpoint",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FJapanCheckpointTest::RunTest(const FString&)
+{
+    FBotwNetworkState State;
+    State.MeshBaseRotation = FQuat::Identity;
+    State.Stamina.Capacity = 2.f; State.Stamina.Units = 1.25f;
+    State.Clock = 40.f; State.ActionTime = .35f;
+    State.DriveOrigin = FVector(1200., -400., 75.); State.DriveScale = FVector(1., 2., 3.);
+    State.DrivePrevious = .3f; State.GlideSpeed = 875.f; State.GlideYaw = 123.f; State.GlideTurn = -.4f;
+    State.bGuardHeld = true; State.WallPoint = FVector(60., 30., 200.); State.ClimbShift = 24.f;
+    State.PendingLaunch = FVector(0., 0., 340.);
+    TArray<uint8> Bytes;
+    FMemoryWriter Writer(Bytes, true);
+    TestTrue(TEXT("A complete traversal checkpoint encodes"), State.Serialize(Writer));
+    TestTrue(TEXT("The full checkpoint fits the correction payload cap"), Bytes.Num() <= FJapanMoveCheckpoint::MaximumBytes);
+    FMemoryReader Reader(Bytes, true);
+    FBotwNetworkState Restored;
+    TestTrue(TEXT("A complete traversal checkpoint decodes"), Restored.Serialize(Reader));
+    TestEqual(TEXT("Action phase survives a correction"), Restored.ActionTime, State.ActionTime);
+    TestEqual(TEXT("Previous authored-path time survives"), Restored.DrivePrevious, State.DrivePrevious);
+    TestTrue(TEXT("Path origin and scale survive"), Restored.DriveOrigin.Equals(State.DriveOrigin) && Restored.DriveScale.Equals(State.DriveScale));
+    TestEqual(TEXT("Glide speed survives"), Restored.GlideSpeed, State.GlideSpeed);
+    TestEqual(TEXT("Glide turn survives"), Restored.GlideTurn, State.GlideTurn);
+    TestTrue(TEXT("Climb anchor and pending launch survive"), Restored.WallPoint.Equals(State.WallPoint) && Restored.PendingLaunch.Equals(State.PendingLaunch));
+    TestTrue(TEXT("Stamina and held guard survive"), Restored.Stamina.Units == State.Stamina.Units && Restored.bGuardHeld);
+    Bytes[0] = 255;
+    FMemoryReader BadSchema(Bytes, true);
+    FBotwNetworkState Rejected;
+    TestFalse(TEXT("A mismatched checkpoint schema is rejected"), Rejected.Serialize(BadSchema));
+    return true;
+}
+
 #endif
