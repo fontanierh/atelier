@@ -74,10 +74,18 @@ def main():
         print(('PASS ' if ok else 'FAIL ') + name + ': ' + json.dumps(evidence), flush=True)
 
     def returned(name, marker):
-        current = snapshot()
-        distance = math.dist(current['feet'][:2], marker[:2])
-        yaw = abs((current['yaw']-marker[3]+180) % 360-180)
-        record(name, distance < 2 and abs(current['feet'][2]-marker[2]) < 6 and yaw < 1 and current['speed'] < 5, current)
+        start = time.monotonic()
+        # Travel places the capsule just above the floor. A cold game may need another
+        # movement tick to land; keep the same thresholds and bound that wait.
+        while True:
+            current = snapshot()
+            distance = math.dist(current['feet'][:2], marker[:2])
+            yaw = abs((current['yaw']-marker[3]+180) % 360-180)
+            ok = distance < 2 and abs(current['feet'][2]-marker[2]) < 6 and yaw < 1 and current['speed'] < 5
+            if ok or time.monotonic()-start >= 4:
+                break
+            time.sleep(.1)
+        record(name, ok, dict(current, settle_seconds=round(time.monotonic()-start, 3)))
 
     before = snapshot()
     try:
