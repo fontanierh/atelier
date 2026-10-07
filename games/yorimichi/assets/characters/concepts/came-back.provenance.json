@@ -1,0 +1,44 @@
+{
+  "stage": "character-concept",
+  "concept": "came-back",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/character_concepts.py",
+  "prompt_file": "came-back.prompt.txt",
+  "prompt_sha256": "046e1af63e8c077659537ef996a98759f195599ffcc9987552335818bade80b1",
+  "reference_files": {
+    "01-standing-three-quarter.png": "1008c97a5b0189f8f1fe8e0374c7cc2377bffb343911b2517c9aca7c65286160",
+    "02-standing-front.png": "eb8d1468c851cde9120a5f2b3ed41429364e99587aa19c3a93819bd17d8930c8",
+    "03-standing-back.png": "1dbf535aa6142aa60c4eeb16d422ba156aff79e9ff8d34cbf0277e00088851b5",
+    "games/yorimichi/assets/characters/wanderer/references/design-sheet.png": "3eefbe3a66710e46a5e9f1ecf17d322e28d4dd9f1935ce0461a4ede22bea815e"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository",
+  "status": "done",
+  "started_at": "2026-10-07T09:56:23.362467+00:00",
+  "usage": {
+    "input_tokens": 5203,
+    "input_tokens_details": {
+      "image_tokens": 4440,
+      "text_tokens": 763
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 6575
+  },
+  "outputs": {
+    "came-back.png": "f8658d901a8ba121c253f852224ffdd6e95be20aa74c38814397103c8cacbce2"
+  },
+  "compact_copy": {
+    "file": "came-back.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "elapsed_seconds": 38.0,
+  "finished_at": "2026-10-07T09:57:01.322930+00:00"
+}
