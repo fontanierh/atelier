@@ -141,11 +141,30 @@ def outer_shell(coat, arm):
     return out
 
 
+# Passes of averaging the pin over each vertex's neighbours. Tripo's cloth_pin falls from 1 to 0 within a ring or two at
+# the hips, so the coat leaning with his torso above it creased into a sharp corner against the skirt hanging below as he
+# leant into a run (the operator's photo, #6349); averaged, the coat comes free over about a hand's width.
+SOFTEN_PASSES = 20
+
+
+def soften(coat, weight):
+    """The pin weights averaged with their neighbours' (along the mesh's edges) SOFTEN_PASSES times; a vertex fully pinned
+    and far from the free part stays pinned."""
+    near = {i: [] for i in weight}
+    for e in coat.data.edges:
+        a, b = e.vertices
+        near[a].append(b); near[b].append(a)
+    for _ in range(SOFTEN_PASSES):
+        weight = {i: (w + sum(weight[j] for j in near[i])) / (1 + len(near[i])) for i, w in weight.items()}
+    return weight
+
+
 def pin_colours(coat, arm):
     """The coat's cloth_pin weights as its vertex colour (red), the mask Unreal's cloth paints its max distance from, and
     its outer surface as green (1 outer, 0 inner): Unreal simulates the outer surface and carries the inner one on it."""
     group = coat.vertex_groups[PIN]
     weight = {v.index: next((g.weight for g in v.groups if g.group == group.index), 0.) for v in coat.data.vertices}
+    weight = soften(coat, weight)
     outer = outer_shell(coat, arm)
     attribute = coat.data.color_attributes.new(PIN, 'BYTE_COLOR', 'CORNER')
     for loop in coat.data.loops:
