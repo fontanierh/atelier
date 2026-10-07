@@ -29,6 +29,9 @@ def clock_checks(server, guest, movement_ms, skate_ms):
     if timeout:
         began = guest.get('movement_hitch_at_seconds')
         checks['clock_timeout_setup_bounded'] = type(began) in (float, int) and math.isfinite(began) and .65 < began < 5.
+        speed, driving = guest.get('movement_hitch_speed_cm_s'), guest.get('timeout_drive_seconds')
+        checks['clock_timeout_was_driving'] = (type(speed) in (float, int) and math.isfinite(speed) and speed > 40 and
+            type(driving) in (float, int) and math.isfinite(driving) and .15 <= driving < 5.)
         checks['clock_timeout_cleared_live_holds'] = guest.get('guard_before_timeout') is True and guest.get('cleared_timeout_holds') is True
         checks['clock_timeout_old_epoch_refused'] = (count(guest, 'stale_probe_sent', 1) and count(server, 'stale_probe_rejected', 1) and
             type(server.get('stale_probe_root_cm')) in (float, int) and server['stale_probe_root_cm'] == 0 and

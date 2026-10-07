@@ -16,6 +16,7 @@ def fixtures(timeout=False):
     guest = dict(timeout_corrections=int(timeout), time_budget_corrections=0,
                  movement_hitch_seconds=1.051 if timeout else .230, skate_hitch_seconds=.230,
                  movement_hitch_at_seconds=1.2,
+                 movement_hitch_speed_cm_s=142.7, timeout_drive_seconds=.2,
                  guard_before_timeout=True, cleared_timeout_holds=True, stale_probe_sent=1)
     return server, guest
 
@@ -44,7 +45,11 @@ def test_short_hitch_and_deferred_branch_are_separate_coverage():
     ('timeout_corrections', True), ('time_budget_corrections', 1), ('guard_before_timeout', False),
     ('cleared_timeout_holds', False), ('movement_hitch_at_seconds', None),
     ('movement_hitch_at_seconds', True), ('movement_hitch_at_seconds', float('nan')),
-    ('movement_hitch_at_seconds', .65), ('movement_hitch_at_seconds', 5.)])
+    ('movement_hitch_at_seconds', .65), ('movement_hitch_at_seconds', 5.),
+    ('movement_hitch_speed_cm_s', 0), ('movement_hitch_speed_cm_s', 40),
+    ('movement_hitch_speed_cm_s', float('nan')), ('movement_hitch_speed_cm_s', True),
+    ('timeout_drive_seconds', .1), ('timeout_drive_seconds', 5.),
+    ('timeout_drive_seconds', None), ('timeout_drive_seconds', float('nan'))])
 def test_vacuous_or_repeated_timeout_is_not_accepted(field, value):
     server, guest = fixtures(True); guest[field] = value
     assert not all(review.clock_checks(server, guest, 1050, 229).values())

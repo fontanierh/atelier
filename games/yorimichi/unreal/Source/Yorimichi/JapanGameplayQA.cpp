@@ -33,7 +33,9 @@ struct FScript
     bool SawPlayer = false, SawSkate = false, Finished = false, JumpReleased = false;
     bool SawHostTakeoff = false;
     bool PreparedTimeoutGuard = false, GuardBeforeTimeout = false, ClearedTimeoutHolds = false;
-    double MovementHitchSeconds = 0., SkateHitchSeconds = 0., MovementHitchAt = 0.;
+    double MovementHitchSeconds = 0., SkateHitchSeconds = 0., MovementHitchAt = 0., GuardEstablishedAt = -1.;
+    double TimeoutDriveSeconds = 0.;
+    float MovementHitchSpeed = 0.f;
 };
 FScript Scripts[2];
 
@@ -75,6 +77,8 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("largest_correction_cm"), State.MovementStats.LargestCorrectionCm);
     Data->SetNumberField(TEXT("movement_hitch_seconds"), State.MovementHitchSeconds);
     Data->SetNumberField(TEXT("movement_hitch_at_seconds"), State.MovementHitchAt);
+    Data->SetNumberField(TEXT("movement_hitch_speed_cm_s"), State.MovementHitchSpeed);
+    Data->SetNumberField(TEXT("timeout_drive_seconds"), State.TimeoutDriveSeconds);
     Data->SetNumberField(TEXT("skate_hitch_seconds"), State.SkateHitchSeconds);
     Data->SetNumberField(TEXT("timeout_corrections"), State.MovementStats.TimeoutCorrections);
     Data->SetNumberField(TEXT("time_budget_corrections"), State.MovementStats.TimeBudgetCorrections);
@@ -205,20 +209,31 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
     {
     case 0:
         Player->Live_Drive(FVector2D(0,1), 0);
-        if (HitchMs > 750 && Elapsed > .25 && !Script.PreparedTimeoutGuard)
-        { Player->Live_Press(TEXT("guard")); Script.PreparedTimeoutGuard = true; }
+        if (HitchMs > 750 && Script.MovementHitchSeconds == 0.)
+        {
+            if (Elapsed >= 5.)
+            { Error = TEXT("Timeout stimulus did not establish a moving live guard within five seconds"); break; }
+            if (Elapsed > .25)
+            {
+                // Movement can cancel DrawSword before its equipment update at
+                // low frame rates. Draw with neutral input, then resume driving.
+                if (!Player->GetMoves() || !Player->GetMoves()->IsGuarding())
+                {
+                    Player->Live_Drive(FVector2D::ZeroVector, 1);
+                    if (!Script.PreparedTimeoutGuard)
+                    { Player->Live_Press(TEXT("guard")); Script.PreparedTimeoutGuard = true; }
+                    break;
+                }
+                if (Script.GuardEstablishedAt < 0.) Script.GuardEstablishedAt = Elapsed;
+                Script.TimeoutDriveSeconds = Elapsed - Script.GuardEstablishedAt;
+                if (Script.TimeoutDriveSeconds < .15 || Movement->Velocity.Size2D() <= 40.f) break;
+            }
+        }
         if (HitchMs && Elapsed > .65 && Script.MovementHitchSeconds == 0.)
         {
             Script.GuardBeforeTimeout = Player->GetMoves() && Player->GetMoves()->IsGuarding();
-            if (HitchMs > 750)
-            {
-                // Drawing the sword has an authored bind time. Wait for the real
-                // state; the outage must never start with a merely queued press.
-                if (Elapsed >= 5.)
-                { Error = TEXT("Timeout stimulus did not establish a live guard within five seconds"); break; }
-                if (!Script.GuardBeforeTimeout) break;
-            }
             Script.MovementHitchAt = Elapsed;
+            Script.MovementHitchSpeed = Movement->Velocity.Size2D();
             const double Began = FPlatformTime::Seconds();
             FPlatformProcess::Sleep(HitchMs / 1000.f);
             Script.MovementHitchSeconds = FPlatformTime::Seconds() - Began;
