@@ -72,9 +72,8 @@ The capture deadline defaults to 300 seconds, including final image saving. The 
 ## Extracted modules
 
 The bars, stair sets, handrails and plaza pieces are obstacles recovered from a skate game's 2024 playtest build, the
-same handoff the community park comes from (`docs/COMMUNITY_PARK.md`). Recovered meshes belong to their original
-owners: the public repository holds only the pin, `assets/skatepark/modules.json`, with the release archive, each
-member's SHA-256 and the measured sizes and grind lines. `atelier fetch yorimichi` downloads the archive into the
+same handoff the community park comes from (`docs/COMMUNITY_PARK.md`). The repository holds only the pin,
+`assets/skatepark/modules.json`, with the release archive, each member's SHA-256 and the measured sizes and grind lines. `atelier fetch yorimichi` downloads the archive into the
 ignored cache and extracts the pinned members to `build/yorimichi/skatepark/modules/`; it needs `gh` signed in with
 access to the private handoff. `modules.py` places them; `features.py` gives them the pier's own surfaces (painted
 bars and handrails, two-tone stairs, steel angles on ledge lips, timber, steel). Without the fetch the pier builds

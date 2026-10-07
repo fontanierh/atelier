@@ -350,6 +350,8 @@ static FAutoConsoleCommandWithWorldAndArgs SkatePierCheckCommand(TEXT("japan.Ska
                     Rail->Length()/100.f,bHit ? *FString::Printf(TEXT("%.1f"),Off) : TEXT("-"),
                     bHit && Hit.GetComponent() ? *Hit.GetComponent()->GetName() : TEXT("nothing"),bOk ? TEXT("PASS") : TEXT("FAIL"));
             }
+            if (!Checked)   // a package gate: no line to check is a failure, not a pass
+            { UE_LOG(LogTemp,Error,TEXT("SKATE PIER CHECK FAIL: skatepark/park.json has no rail, ledge or curb lines")); return Finish(1); }
             UE_LOG(LogTemp,Display,TEXT("SKATE PIER CHECK %s: %d of %d lines failed"),Failed ? TEXT("FAIL") : TEXT("PASS"),Failed,Checked);
             return Finish(Failed);
         });

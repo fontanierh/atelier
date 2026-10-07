@@ -4,7 +4,6 @@
  "asset": "skate-parks-and-obstacles.zip",
  "bytes": 8463163,
  "sha256": "70eaa68d7560b0414317286ecc36cd4062203a3577cdd3acc8063b5097c51613",
- "ownership": "Recovered game assets remain with their original owners. Fetch from the private handoff; do not redistribute the meshes in this public repository.",
  "parts": {
   "park_flatbar": {
    "member": "skate-parks-and-obstacles/obstacles/rails/cmn_prp_skatepark_01_railflatrectangularlarge_50x15x600cm_hxwxd_mesh_ee7e5ae9.glb",
