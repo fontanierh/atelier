@@ -1,5 +1,6 @@
 #include "BikeComponent.h"
 #include "WandererCharacter.h"
+#include "ModoriCharacter.h"
 #include "AtelierData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -63,7 +64,8 @@ bool UBikeComponent::LoadData()
 {
  FString Text;TSharedPtr<FJsonObject> Manifest,Export;
  if(!FFileHelper::LoadFileToString(Text,*AtelierDataPath(TEXT("bike/manifest.json")))||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Manifest)||!Manifest)return false;
- if(!FFileHelper::LoadFileToString(Text,*AtelierDataPath(TEXT("cairo/bike/export.json")))||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Export)||!Export)return false;
+ // Each playable character has its own clips on its own rig (rider.py --character): Cairo's, or Modori's.
+ if(!FFileHelper::LoadFileToString(Text,*AtelierDataPath(RiderRig().ToLower()/TEXT("bike/export.json")))||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Export)||!Export)return false;
  const TSharedPtr<FJsonObject> Pivots=Manifest->GetObjectField(TEXT("pivots")),Seat=Manifest->GetObjectField(TEXT("rider"));
  HeadPivot=FromBlender(Pivots->GetArrayField(TEXT("BK_Steer")));
  FrontAxle=FromBlender(Pivots->GetArrayField(TEXT("BK_WheelFront")));RearAxle=FromBlender(Pivots->GetArrayField(TEXT("BK_WheelRear")));
@@ -93,6 +95,8 @@ bool UBikeComponent::LoadData()
  return Clips.Contains(TEXT("BikeRide"))&&Clips.Contains(TEXT("BikeMount"));
 }
 
+FString UBikeComponent::RiderRig() const { return Rider&&Rider->IsA<AModoriCharacter>()?TEXT("Modori"):TEXT("Cairo"); }
+
 void UBikeComponent::Initialize(AWandererCharacter* C)
 {
  Rider=C;
@@ -120,7 +124,7 @@ void UBikeComponent::Initialize(AWandererCharacter* C)
  if(bAssetsReady)for(const auto& Pair:Clips)
  {
   const FString Name=Pair.Key.ToString();
-  if(UAnimSequence* S=LoadObject<UAnimSequence>(nullptr,*FString::Printf(TEXT("/Game/CairoBike/A_%s.A_%s"),*Name,*Name)))Sequences.Add(Pair.Key,S);
+  if(UAnimSequence* S=LoadObject<UAnimSequence>(nullptr,*FString::Printf(TEXT("/Game/%sBike/A_%s.A_%s"),*RiderRig(),*Name,*Name)))Sequences.Add(Pair.Key,S);
  }
  MeshLocation=C->GetMesh()->GetRelativeLocation();MeshRotation=C->GetMesh()->GetRelativeRotation();
  if(bAssetsReady)LoadSounds();
@@ -330,7 +334,7 @@ bool UBikeComponent::Toggle()
  if(!bAssetsReady||!Rider){Hint=TEXT("The bike is not installed");return false;}
  UAnimSequence* Ride=Sequences.FindRef(TEXT("BikeRide"));
  const USkeletalMesh* Body=Rider->GetMesh()->GetSkeletalMeshAsset();
- if(!Ride||!Body||Ride->GetSkeleton()!=Body->GetSkeleton()){Hint=TEXT("Only Cairo rides the bike");return false;}
+ if(!Ride||!Body||Ride->GetSkeleton()!=Body->GetSkeleton()){Hint=TEXT("Only Cairo and Modori ride the bike");return false;}
  if(State==EState::Riding)
  {
   if(Speed>40.f){Hint=TEXT("Slow down to get off");return false;}

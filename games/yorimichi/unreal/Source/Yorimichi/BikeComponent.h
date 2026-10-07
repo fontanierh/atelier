@@ -103,6 +103,8 @@ private:
  void ClipCues();
  void UpdateAudio(float Dt,bool bPedal,float Cadence);
  bool LoadData();
+ /** The rider's rig, naming its bike clips and data: "Cairo" or "Modori" (rider.py --character). */
+ FString RiderRig() const;
  void Play(FName Name,FName Then=NAME_None);
  const TArray<float>* Channels(TArray<float>& Out) const;
  float ContactWeight(int32 Limb) const;

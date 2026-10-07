@@ -26,8 +26,9 @@ public:
     /** The pawn class a game mode uses when a rider is requested (this class, or Cairo's for CairoBotw), else null (the
      *  mode's own default). */
     static UClass* PawnOverride();
-    /** The BOTW characters the character switch offers: those with a move set (Link) and an imported rider definition,
-     *  in roster order. Checks the definitions exist without loading them. */
+    /** The characters the character switch offers besides Cairo: Modori when he is built, then the BOTW characters with
+     *  a move set (Link) and an imported rider definition, in roster order. Checks the definitions exist without loading
+     *  them. */
     static TArray<FString> Available();
     /** The playing character's name: the rider's, "Cairo" or "CairoBotw". */
     static FString NameOf(const AWandererCharacter* Character);

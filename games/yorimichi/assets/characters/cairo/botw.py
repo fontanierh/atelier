@@ -44,6 +44,9 @@ OWN = OUT / 'own.npz'   # Cairo's own clips in the merged set, sampled for other
 FPS = bake.FPS
 # Cairo's clips the merged set plays on him (import_cairo_botw.py: DoubleJump and OWN), by role, at their 60 fps.
 OWN_CLIPS = ('DoubleJump', 'SwordIdle', 'SwordParry', 'SwordParryHit')
+# Cairo's everyday gestures the merged set has no clip for (WandererCharacter's Wave and Interact, WandererSword's sit):
+# retargeted with OWN_CLIPS onto another character, whose base definition then carries them as Cairo's DA_CairoBotw does.
+GAME_CLIPS = ('Interact', 'Wave', 'SitDown', 'SitIdle', 'StandUp')
 OWN_FPS = 60
 GLTF_TO_BLENDER = np.array([[1., 0, 0], [0, 0, -1], [0, 1, 0]])   # glTF is Y up, Blender Z up
 # The bones that keep Cairo's own rest posture (no swing onto Link's directions).
@@ -172,8 +175,8 @@ def dump_own():
         pb.matrix_basis.identity()
     bpy.context.view_layer.update()
     rest = np.stack([to_gltf @ A @ np.array(arm.data.bones[n].matrix_local) for n in names])
-    out = {'names': np.array(names), 'rest': rest, 'clips': np.array(OWN_CLIPS)}
-    for role in OWN_CLIPS:
+    out = {'names': np.array(names), 'rest': rest, 'clips': np.array(OWN_CLIPS + GAME_CLIPS)}
+    for role in OWN_CLIPS + GAME_CLIPS:
         action = bpy.data.actions[roles[role]]
         cairo.set_clip(arm, action)
         start, end = map(int, action.frame_range)
@@ -466,6 +469,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--clips', help='comma-separated Link clips (default: all)')
-    parser.add_argument('--character', default='cairo', help='the character folder to retarget onto (cairo, sword-trainer)')
+    parser.add_argument('--character', default='cairo', help='the character folder to retarget onto (cairo, sword-trainer, modori)')
     parser.add_argument('--dump-own', action='store_true', help="sample Cairo's own merged-set clips for other characters")
     main(parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []))

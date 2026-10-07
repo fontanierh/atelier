@@ -2,6 +2,7 @@
 #include "BotwCreature.h"
 #include "BotwMoveSet.h"
 #include "CairoCharacter.h"
+#include "ModoriCharacter.h"
 #include "JapanWorld.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
@@ -28,6 +29,12 @@ FString ABotwRider::Requested()
         UE_LOG(LogTemp, Warning, TEXT("BOTW rider %s: not imported (build unreal.cairo_botw)"), *Name);
         return FString();
     }
+    if (Name == AModoriCharacter::Name())
+    {
+        if (AModoriCharacter::IsBuilt()) return Name;
+        UE_LOG(LogTemp, Warning, TEXT("%s: not imported (build unreal.modori_botw)"), *Name);
+        return FString();
+    }
     if (!FBotwSpec::Find(Name) || !LoadObject<UWandererDefinition>(nullptr, *DefinitionPath(Name), nullptr, LOAD_NoWarn | LOAD_Quiet))
     {
         UE_LOG(LogTemp, Warning, TEXT("BOTW rider %s: no %s (build unreal.botw)"), *Name, *DefinitionPath(Name));
@@ -40,6 +47,7 @@ UClass* ABotwRider::PawnOverride()
 {
     const FString Name = Requested();
     if (Name.IsEmpty()) return nullptr;
+    if (Name == AModoriCharacter::Name()) return AModoriCharacter::StaticClass();
     return Name == ACairoCharacter::BotwName() ? ACairoCharacter::StaticClass() : ABotwRider::StaticClass();
 }
 
@@ -97,8 +105,9 @@ void ABotwRider::BeginPlay()
 
 TArray<FString> ABotwRider::Available()
 {
-    // Only the riders with a move set (Link) are playable for now; -rider=<Name> still starts any of them.
+    // Modori first when he is built, then the riders with a move set (Link); -rider=<Name> still starts any of them.
     TArray<FString> Names;
+    if (AModoriCharacter::IsBuilt()) Names.Add(AModoriCharacter::Name());
     for (const auto& Pair : FBotwSpec::All())
         if (Pair.Value.Moves.IsValid() && HasDefinition(Pair.Key)) Names.Add(Pair.Key);
     return Names;
@@ -107,6 +116,7 @@ TArray<FString> ABotwRider::Available()
 FString ABotwRider::NameOf(const AWandererCharacter* Character)
 {
     if (const ABotwRider* Rider = Cast<ABotwRider>(Character)) return Rider->RiderName;
+    if (Cast<AModoriCharacter>(Character)) return AModoriCharacter::Name();
     const ACairoCharacter* Cairo = Cast<ACairoCharacter>(Character);
     return Cairo && Cairo->IsBotw() ? ACairoCharacter::BotwName() : FString(TEXT("Cairo"));
 }
@@ -133,7 +143,8 @@ AWandererCharacter* ABotwRider::SwitchPlayer(AWandererCharacter* From, const FSt
     const FRotator Facing(0, From->GetActorRotation().Yaw, 0);
     From->Leave();
     From->SetActorEnableCollision(false);
-    UClass* Class = bCairo ? ACairoCharacter::StaticClass() : ABotwRider::StaticClass();
+    const bool bModori = Name == AModoriCharacter::Name();
+    UClass* Class = bCairo ? ACairoCharacter::StaticClass() : bModori ? AModoriCharacter::StaticClass() : ABotwRider::StaticClass();
     AWandererCharacter* To = World->SpawnActorDeferred<AWandererCharacter>(Class, FTransform(Facing, Feet), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
     if (!To) { From->SetActorEnableCollision(true); return nullptr; }
     if (ABotwRider* Rider = Cast<ABotwRider>(To)) { Rider->RiderName = Name; Rider->DefinitionAssetPath = DefinitionPath(Name); Rider->Fit(); }

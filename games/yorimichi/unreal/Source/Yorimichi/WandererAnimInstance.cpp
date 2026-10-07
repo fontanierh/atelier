@@ -11,6 +11,7 @@
 #include "GroundContactNode.h"
 #include "ZeppelinService.h"
 #include "CairoCharacter.h"
+#include "ModoriCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "SailboatStanceNode.h"
@@ -282,7 +283,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         // up. Finish blending shortly after steering returns at source .94.
         const float Recovery=MovingRoll?FMath::Clamp((Pawn->GetActionSourceTime()-.85f)/.15f,0.f,1.f):0.f;
         State.RecoveryAlpha=Recovery*Recovery*(3.f-2.f*Recovery);
-        const bool Grounded=Pawn->IsA<ACairoCharacter>() && !bSailing && !bBiking &&
+        const bool Grounded=(Pawn->IsA<ACairoCharacter>() || Pawn->IsA<AModoriCharacter>()) && !bSailing && !bBiking &&
             Pawn->GetCharacterMovement()->IsMovingOnGround() && Pawn->GetAnimationAction()!=TEXT("Roll");
         Feet.Alpha=Grounded?1.f:0.f;
         Feet.DeltaSeconds=Dt;

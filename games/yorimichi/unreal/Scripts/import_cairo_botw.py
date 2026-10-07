@@ -34,7 +34,7 @@ import animation_compression
 CHARACTER = os.environ.get('BOTW_CHARACTER', 'cairo')
 CAIRO = CHARACTER == 'cairo'
 # The character's paths: its retargeted clips, its own folder and base definition, where the copy goes, its record.
-NAME = {'cairo': 'Cairo', 'sword-trainer': 'SwordTrainer'}[CHARACTER]
+NAME = {'cairo': 'Cairo', 'sword-trainer': 'SwordTrainer', 'modori': 'Modori'}[CHARACTER]
 OUT = yori.OUT / CHARACTER / 'botw'
 CONFIG = json.loads((OUT / 'export.json').read_text())
 LINK = next(c for c in json.loads((yori.OUT / 'botw' / 'export.json').read_text())['characters'] if c['name'] == 'Link')
@@ -317,6 +317,10 @@ if not CAIRO and E.does_asset_exist(target):
     E.delete_asset(target)
 definition = E.duplicate_asset(base, target)
 assert definition, f'{base} could not be copied'
+# Cairo's everyday gestures (botw.py GAME_CLIPS: wave, interact, sit), retargeted, where the base has none of its own.
+for name in ('Interact', 'Wave', 'SitDown', 'SitIdle', 'StandUp'):
+    if not CAIRO and 'Own' + name in clips:
+        actions.setdefault(name, clips['Own' + name])
 # The base's own clips (another character's gestures: Kaede's bow and words) stay beside the move set's.
 for action, sequence in (dict(definition.get_editor_property('actions')) if not CAIRO else {}).items():
     actions.setdefault(str(action), sequence)
