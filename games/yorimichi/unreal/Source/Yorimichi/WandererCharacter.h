@@ -165,6 +165,7 @@ private:
     void InitializeLocalPlayer();
     UFUNCTION() void OnRep_NetworkLoadout();
     UPROPERTY(Replicated) FString NetworkRiderName;
+    UPROPERTY(Replicated) bool bNetworkMovementReady = false;
     UPROPERTY(ReplicatedUsing=OnRep_NetworkLoadout) bool bNetworkShield = false;
     UPROPERTY(ReplicatedUsing=OnRep_NetworkActivity) FJapanActivityState NetworkActivity;
     UFUNCTION() void OnRep_NetworkActivity();

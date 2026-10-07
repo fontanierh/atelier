@@ -59,6 +59,10 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("checkpoints_applied"), State.MovementStats.Checkpoints);
     Data->SetNumberField(TEXT("checkpoints_rejected"), State.MovementStats.Rejected);
     Data->SetNumberField(TEXT("replayed_moves"), State.MovementStats.ReplayedMoves);
+    Data->SetNumberField(TEXT("initial_forced_updates_skipped"), State.MovementStats.InitialForcedUpdatesSkipped);
+    Data->SetNumberField(TEXT("moves_before_host_ready"), State.MovementStats.MovesBeforeReady);
+    Data->SetNumberField(TEXT("started_movement_epochs"), State.MovementStats.StartedEpochs);
+    Data->SetNumberField(TEXT("first_accepted_move_timestamp"), State.MovementStats.FirstMoveTimestamp);
     Data->SetNumberField(TEXT("largest_correction_cm"), State.MovementStats.LargestCorrectionCm);
     if (State.MovementStats.LargestCorrectionCm > 0.f)
     {

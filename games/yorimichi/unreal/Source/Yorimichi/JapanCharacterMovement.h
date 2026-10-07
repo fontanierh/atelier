@@ -20,6 +20,8 @@ struct FJapanCorrectionSample
 struct FJapanMovementStats
 {
     uint32 Corrections = 0, PositionCorrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
+    uint32 InitialForcedUpdatesSkipped = 0, MovesBeforeReady = 0, StartedEpochs = 0;
+    float FirstMoveTimestamp = -1.f;
     float LargestCorrectionCm = 0.f;
     FJapanCorrectionSample LargestCorrection;
 };
@@ -55,6 +57,7 @@ public:
     float PendingCheckpointTime = -1.f;
     virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
     virtual void PerformMovement(float Dt) override;
+    virtual bool ForcePositionUpdate(float Dt) override;
     virtual void ReplicateMoveToServer(float Dt, const FVector& NewAcceleration) override;
     virtual void SetBase(FMovementBaseInterfaceData* Base, const FName Bone = NAME_None, bool bNotifyActor = true) override;
     virtual void MoveAutonomous(float Timestamp, float Dt, uint8 Flags, const FVector& Accel) override;
@@ -78,7 +81,7 @@ private:
     TArray<uint8> PendingEdges;
     uint16 JournalFirstEdge = 1, ProcessedEdge = 0;
     uint8 HeldButtons = 0, LastServerHolds = 0;
-    bool bRecoveryQueued = false;
+    bool bRecoveryQueued = false, bReceivedMoveInEpoch = false;
     void AcknowledgeEdges(uint16 Through);
     bool bInputPrepared = false, bExecutingMove = false, bReplaying = false;
     double LastCustomCorrection = -1.;

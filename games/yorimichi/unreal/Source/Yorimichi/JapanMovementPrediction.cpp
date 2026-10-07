@@ -52,8 +52,23 @@ void UJapanCharacterMovement::ResetActivityPrediction()
     PendingEdges.Reset(); JournalFirstEdge = 1; ProcessedEdge = PendingAcknowledgedEdge = 0;
     HeldButtons = LastServerHolds = 0; bRecoveryQueued = false; bInputPrepared = false; ActiveInput = FJapanMoveInput();
     PendingCheckpoint = FJapanMoveCheckpoint(); PendingCheckpointTime = -1.f;
-    LastCustomCorrection = -1.;
+    LastCustomCorrection = -1.; bReceivedMoveInEpoch = false;
     ClearAccumulatedForces(); CurrentRootMotion.Clear();
+}
+
+bool UJapanCharacterMovement::ForcePositionUpdate(float Dt)
+{
+    if (PredictsMoves() && !bReceivedMoveInEpoch)
+    {
+        // UE advances CurrentClientTimeStamp in a forced update. During initial
+        // world/possession readiness the owner sends no CMC moves, so advancing it
+        // here makes the first real inputs look stale and snaps a walking guest
+        // back to spawn. Every activity epoch starts only on an accepted move;
+        // after that, UE retains its normal forced-update/stall protection.
+        ++NetworkStats.InitialForcedUpdatesSkipped;
+        return false;
+    }
+    return Super::ForcePositionUpdate(Dt);
 }
 
 void UJapanCharacterMovement::ReplicateMoveToServer(float Dt, const FVector& NewAcceleration)
@@ -68,7 +83,7 @@ void UJapanCharacterMovement::ReplicateMoveToServer(float Dt, const FVector& New
         PerformMovement(Dt);
         return;
     }
-    if (PredictsMoves() && (!Rider->Definition || !Rider->Landscape || !Rider->bReady)) return;
+    if (PredictsMoves() && (!Rider->Definition || !Rider->Landscape || !Rider->bReady || !Rider->bNetworkMovementReady)) return;
     Super::ReplicateMoveToServer(Dt, NewAcceleration);
 }
 
@@ -79,7 +94,7 @@ void UJapanCharacterMovement::ServerMove_PerformMovement(const FCharacterNetwork
     if (PredictsMoves())
     {
         const auto* Rider = CastChecked<AWandererCharacter>(CharacterOwner);
-        if (!Rider->Definition || !Rider->Landscape || !Rider->bReady) return;
+        if (!Rider->Definition || !Rider->Landscape || !Rider->bReady) { ++NetworkStats.MovesBeforeReady; return; }
     }
     Super::ServerMove_PerformMovement(MoveData);
 }
@@ -215,6 +230,14 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
     if (PredictsMoves())
         if (const auto* Data = static_cast<const FJapanNetworkMoveData*>(GetCurrentNetworkMoveData()))
         {
+            if (CharacterOwner->HasAuthority() && Dt > 0.f && !bReceivedMoveInEpoch)
+            {
+                bReceivedMoveInEpoch = true; ++NetworkStats.StartedEpochs;
+                if (NetworkStats.FirstMoveTimestamp < 0.f) NetworkStats.FirstMoveTimestamp = Timestamp;
+                if (FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
+                    UE_LOG(LogTemp, Display, TEXT("NETWORK movement start epoch=%u timestamp=%.4f dt=%.4f initial_forced_skips=%u loading_moves=%u"),
+                        GetActivityEpoch(), Timestamp, Dt, NetworkStats.InitialForcedUpdatesSkipped, NetworkStats.MovesBeforeReady);
+            }
             SetMoveInput(Data->Input);
             LastServerHolds = Data->Input.Flags & (FJapanMoveInput::AttackHeld | FJapanMoveInput::GuardHeld | FJapanMoveInput::JumpHeld | FJapanMoveInput::Menu);
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);

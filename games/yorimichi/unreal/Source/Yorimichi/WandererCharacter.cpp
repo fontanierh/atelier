@@ -169,6 +169,7 @@ void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
     DOREPLIFETIME(AWandererCharacter, NetworkHealth);
     DOREPLIFETIME(AWandererCharacter, NetworkHitsTaken);
     DOREPLIFETIME(AWandererCharacter, NetworkActivity);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, bNetworkMovementReady, COND_OwnerOnly);
 }
 void AWandererCharacter::OnRep_NetworkAvatar() { bNetworkAvatarReceived = true; }
 void AWandererCharacter::OnRep_NetworkHealth() { if (Sword) Sword->ApplyNetworkHealth(NetworkHealth, NetworkHitsTaken); }
@@ -192,6 +193,9 @@ void AWandererCharacter::InitializeLocalPlayer()
 {
     if (bLocalPlayerInitialized || IsNpc() || !Definition || !IsLocallyControlled() || GetNetMode() == NM_DedicatedServer) return;
     bLocalPlayerInitialized = true;
+    // A replicated pawn can tick as a presentation proxy before possession arrives.
+    // Its proxy-ready flag must not bypass the owner's prediction startup gate.
+    if (JapanNetwork::IsOnline(GetWorld())) bReady = false;
     SkateRide->SetComponentTickEnabled(true);
     CameraArm->SetComponentTickEnabled(true);
     SeeThrough->SetComponentTickEnabled(true);
@@ -1341,14 +1345,22 @@ void AWandererCharacter::Tick(float Dt)
         }
     }
     ReadyTime += Dt;
-    if (!bReady) { bReady = ReadyTime > 1.5f; if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
+    if (!bReady)
     {
-        // Live bridge teleports go through the game's own travel (stows the board or boat, settles the camera).
-        AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
-        { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
-        AtelierLive::Start(GetWorld());
+        // Start owner prediction only after both local setup and the host pawn are
+        // ready. World admission alone precedes character initialization.
+        bReady = ReadyTime > 1.5f && (!JapanNetwork::IsOnline(GetWorld()) || HasAuthority() || bNetworkMovementReady);
+        if (bReady && HasAuthority() && JapanNetwork::IsOnline(GetWorld()))
+        { bNetworkMovementReady = true; ForceNetUpdate(); }
+        if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
+        {
+            // Live bridge teleports go through the game's own travel (stows the board or boat, settles the camera).
+            AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
+            { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
+            AtelierLive::Start(GetWorld());
+        }
+        return;
     }
-    return; }
     if (bCairoReview) AdvanceCairoReview(Dt);
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview) AdvanceMapReview(Dt);
