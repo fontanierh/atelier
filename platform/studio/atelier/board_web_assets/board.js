@@ -1154,7 +1154,7 @@ function themeSwitch() {
 document.querySelectorAll("[data-theme-choice]").forEach(b=>b.addEventListener("click",()=>window.boardTheme?.set(b.dataset.themeChoice)));
 addEventListener("boardtheme",themeSwitch);
 $("settings").addEventListener("change",settingsSummary);
-$("settings").addEventListener("toggle",()=>{if($("settings").open)requestAnimationFrame(()=>$("settings").scrollIntoView({block:"end",behavior:"smooth"}));});
+$("settings").addEventListener("toggle",()=>{if($("settings").open)requestAnimationFrame(()=>$("settings").scrollIntoView({block:"end",behavior:motion.matches?"instant":"smooth"}));});
 themeSwitch();
 // A notification links to /?m=ID: open that message's thread, whether the app was closed or already open.
 function openLink(url) {
