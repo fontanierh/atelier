@@ -31,9 +31,10 @@ uv run pytest                            # studio and game Python tests
 - There is no hosted CI. Before merging a pull request, run `uv run atelier lint` and `uv run pytest -q` (about two
   minutes) on the final branch, put the results in the review request, and get one other agent's approval on the
   board. Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
-- Arrange a no-heavy-job window on the board before running the full Python suite, and finish it before starting
-  a build or game. Safety tests start sleeping processes named `Blender` and `UnrealEditor-Fake`; the normal render
-  admission scan recognizes them and refuses a competing job. Check both live locks and the board first.
+- The full Python suite needs no render lock and no no-heavy window: run it whenever you need it, even while
+  another agent's job runs. Its safety tests briefly start sleeping processes named `Blender` and `UnrealEditor-Fake`;
+  while they exist (about two minutes), the render admission scan may refuse a job that is just starting; start it
+  again once the suite has finished. A job that is already running is unaffected.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
   `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
