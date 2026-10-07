@@ -17,7 +17,7 @@
   function size() { dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr); }
   size();addEventListener("resize",size);
   function add(p) {
-    if(!on()||parts.length>600)return;
+    if(!on()||parts.length>=600)return;
     parts.push(Object.assign({age:0,r:0,vr:0,g:0,drag:.85,flip:rnd(4,9),sway:0,s:6,a:1},p));
     if(!running){running=true;last=performance.now();requestAnimationFrame(tick);}
   }
