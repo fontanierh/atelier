@@ -8,6 +8,7 @@ The first run requires an empty review save. Restart the guarded game with the s
 import argparse
 import json
 import math
+import re
 import stat
 from pathlib import Path
 import sys
@@ -183,12 +184,20 @@ def main():
             key('M')
             prior = snapshot()
             board = value('unreal.YorimichiLive.skate_state()')
+            vehicle_before = value('m.is_marker_review_on_vehicle()')
             typed = value('m.review_marker_name_input("mbvhk wasd")')
             time.sleep(1)
             after = snapshot()
+            board_after = value('unreal.YorimichiLive.skate_state()')
+            vehicle_after = value('m.is_marker_review_on_vehicle()')
+            # The debug string also contains changing animation and simulation values.
+            # Compare the riding mode, with independent checks for the other vehicles.
+            modes = [re.search(r'\bmode=(\d+)\b', state) for state in (board, board_after)]
             record('name_typing_keeps_map_open_and_player_still', typed == 'mbvhk wasd' and value('m.is_map_open()')
                    and math.dist(after['feet'], prior['feet']) < 2 and after['keys'] == prior['keys']
-                   and value('unreal.YorimichiLive.skate_state()') == board and not value('m.is_marker_review_on_vehicle()'), dict(typed=typed,player=after))
+                   and all(mode and mode[1] == '0' for mode in modes) and not vehicle_before and not vehicle_after,
+                   dict(typed=typed, player=after, skate_before=board, skate_after=board_after,
+                        vehicle_before=vehicle_before, vehicle_after=vehicle_after))
             assert value('m.review_commit_marker_name()')
             time.sleep(.3)
             record('enter_saves_typed_name', snapshot()['name'] == 'mbvhk wasd' and len(snapshot()['keys']) == len(prior['keys'])+1, snapshot())
