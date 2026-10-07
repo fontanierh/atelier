@@ -1,5 +1,5 @@
 """The board's durable store: the SQLite mailbox and its schema, the message model (posts, web sends, threads and
-audiences), agents' tasks and removal, and the limits that keep messages short and notifications rare."""
+audiences), agents' tasks and removal, operator tasks, and the limits that keep messages short and notifications rare."""
 import re
 import sqlite3
 import time
@@ -51,6 +51,10 @@ def database():
                 dedup TEXT UNIQUE
             );
             CREATE TABLE IF NOT EXISTS observations (name TEXT PRIMARY KEY, value TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS operator_tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, created REAL NOT NULL, agent TEXT NOT NULL,
+                message INTEGER NOT NULL REFERENCES messages(id), closed REAL, closed_by TEXT, note TEXT
+            );
             CREATE TABLE IF NOT EXISTS subscribers (
                 agent TEXT PRIMARY KEY, cursor INTEGER NOT NULL DEFAULT 0,
                 pid INTEGER, heartbeat REAL, checkout TEXT, stop INTEGER NOT NULL DEFAULT 0,
@@ -158,6 +162,94 @@ def remove(agent):
         board_service.retire(agent)
     with database() as db:
         db.execute('UPDATE subscribers SET stop=1, removed=1 WHERE agent=?', (agent,))
+        open_tasks = [row[0] for row in db.execute(
+            'SELECT id FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,))]
+    # Nobody is left to unblock: its tasks leave the operator's list.
+    for task in open_tasks:
+        close_task(task, agent, removed=True)
+
+
+# Operator tasks: an agent that cannot go on without the operator's guidance, help or confirmation opens one, and the
+# web board lists it where the operator answers or dismisses it in a tap. They are for real blocks only: an agent
+# holds at most OPEN_TASKS at once, each says in a few lines what it needs, and the agent dismisses its own as soon
+# as it no longer applies. The question is an ordinary message to the operator, so answers are its thread replies.
+OPEN_TASKS, TASK_CHARS = 2, 500
+
+
+def open_task(agent, body, notify=True):
+    """Open an operator task for `agent`. It posts the question to the operator (a `blocked` message, pushed to their
+    phone within NOTIFY_PER_HOUR unless notify is off) and returns (task id, message id)."""
+    agent_name(agent)
+    if agent == OPERATOR:
+        raise ValueError('operator tasks are opened by agents, for the operator')
+    body = (body or '').strip()
+    if not body or len(body) > TASK_CHARS:
+        raise ValueError(f'say what you need from the operator in at most {TASK_CHARS} characters; put detail in a '
+                         'reply to the task\'s thread')
+    with database() as db:
+        db.execute('BEGIN IMMEDIATE')
+        open_count = db.execute('SELECT count(*) FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,))
+        if open_count.fetchone()[0] >= OPEN_TASKS:
+            raise ValueError(f'you already have {OPEN_TASKS} open operator tasks; dismiss one that no longer applies '
+                             '(board operator-task list) or add to its thread instead')
+        now = time.time()
+        notify = bool(notify) and notify_allowed(db, agent, now)
+        message = db.execute('INSERT INTO messages (created, sender, recipient, topic, body, notify) '
+                             "VALUES (?, ?, ?, 'blocked', ?, ?)", (now, agent, OPERATOR, body, int(notify))).lastrowid
+        task = db.execute('INSERT INTO operator_tasks (created, agent, message) VALUES (?, ?, ?)',
+                          (now, agent, message)).lastrowid
+    return task, message
+
+
+def close_task(task_id, by, note='', operator=False, removed=False):
+    """Dismiss an open operator task. The operator (`by` the web board's sender, with operator) may dismiss any, an
+    agent only its own; removing an agent dismisses its tasks (removed). The thread records it, so the agent hears
+    when the operator dismissed its task and the operator sees why an agent dropped one. False if already closed."""
+    agent_name(by)
+    note = ' '.join((note or '').split())
+    if len(note) > 300:
+        raise ValueError('keep the dismissal note to at most 300 characters')
+    with database() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row = db.execute('SELECT * FROM operator_tasks WHERE id=?', (task_id,)).fetchone()
+        if row is None:
+            raise LookupError(f'operator task {task_id} does not exist')
+        if not (operator or removed) and by != row['agent']:
+            raise ValueError(f"operator task {task_id} is {row['agent']}'s; only it or the operator can dismiss it")
+        if row['closed'] is not None:
+            return False
+        now = time.time()
+        db.execute('UPDATE operator_tasks SET closed=?, closed_by=?, note=? WHERE id=?', (now, by, note or None, task_id))
+        if removed:
+            sender, recipient, text = 'board-watch', OPERATOR, 'Dismissed this operator task: its agent left the board.'
+        elif operator:
+            sender, recipient, text = by, row['agent'], 'Dismissed this operator task.'
+        else:
+            sender, recipient, text = row['agent'], OPERATOR, 'Dismissed this operator task: it no longer applies.'
+        db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to) VALUES (?, ?, ?, 'info', ?, ?)",
+                   (now, sender, recipient, text + (f' {note}' if note else ''), row['message']))
+    return True
+
+
+def tasks(db, agent=None, include_closed=False):
+    """Operator tasks, oldest first, each with its question and its thread's newest reply."""
+    conditions, parameters = [], []
+    if agent:
+        conditions.append('t.agent=?'); parameters.append(agent)
+    if not include_closed:
+        conditions.append('t.closed IS NULL')
+    where = ' WHERE ' + ' AND '.join(conditions) if conditions else ''
+    rows = [dict(row) for row in db.execute(
+        'SELECT t.*, m.body, m.created AS asked FROM operator_tasks t JOIN messages m ON m.id=t.message'
+        + where + ' ORDER BY t.id LIMIT 200', parameters)]
+    for row in rows:
+        replies = db.execute(
+            'WITH RECURSIVE r(id) AS (SELECT id FROM messages WHERE reply_to=? '
+            'UNION SELECT m.id FROM messages m JOIN r ON m.reply_to=r.id) '
+            'SELECT sender, body, created FROM messages WHERE id IN r ORDER BY id', (row['message'],)).fetchall()
+        row['replies'] = len(replies)
+        row['last_reply'] = dict(replies[-1]) if replies else None
+    return rows
 
 
 def send_web(sender, body, request_id, topic='request', recipient='*', reply_to=None):

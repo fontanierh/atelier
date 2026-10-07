@@ -429,3 +429,73 @@ def test_bare_addresses_become_safe_readable_links():
     assert 'href="javascript' not in html
     long = board_markdown.render('https://example.com/a/very/long/path/that/goes/on/and/on/to/the/final-segment-name')
     assert '>example.com/…/final-segment-name</a>' in long
+
+
+def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, monkeypatch):
+    from types import SimpleNamespace
+    # An agent asks; the ask is a blocked message to the operator, pushed within the hourly allowance.
+    task, message = board.open_task('one', 'Confirm I may delete the old captures?')
+    asked = board.messages()[-1]
+    assert asked['id'] == message and asked['recipient'] == 'operator' and asked['topic'] == 'blocked'
+    with board.database() as db:
+        assert db.execute('SELECT notify FROM messages WHERE id=?', (message,)).fetchone()[0] == 1
+    state = json.loads(request(http_server, '/api/state')[1])
+    assert [(t['id'], t['agent'], t['replies']) for t in state['tasks']] == [(task, 'one', 0)]
+    assert 'Confirm' in state['tasks'][0]['body_html']
+
+    # The operator's quick reply is a thread reply that reaches the agent, flagged as being on its task.
+    status, _, _ = request(http_server, '/api/send', {'body': 'Yes, delete them.', 'topic': 'info', 'recipient': 'one',
+                                                       'request_id': str(uuid.uuid4()), 'reply_to': message})
+    assert status == 200
+    state = json.loads(request(http_server, '/api/state')[1])
+    assert state['tasks'][0]['replies'] == 1 and state['tasks'][0]['last_reply']['sender'] == 'operator'
+    delivered = []
+    monkeypatch.setattr(board, 'deliver', lambda batch, command=None, full=False: delivered.extend(batch))
+    board.poll('one')
+    reply = next(item for item in delivered if item['reply_to'] == message)
+    assert reply['operator_task'] == task and 'operator task' in board.notification([reply])
+
+    # Agents hold few open at once and keep asks short; only the asker or the operator dismisses one.
+    second, _ = board.open_task('one', 'Second ask.', notify=False)
+    with pytest.raises(ValueError, match='open operator tasks'):
+        board.open_task('one', 'A third.')
+    with pytest.raises(ValueError):
+        board.open_task('two', 'x' * (board.TASK_CHARS + 1))
+    with pytest.raises(ValueError):
+        board.close_task(task, 'two')
+    with pytest.raises(LookupError):
+        board.close_task(999, 'operator', operator=True)
+    with pytest.raises(ValueError):
+        board.close_task(task, 'operator')   # the name alone is not the web board
+
+    # The operator dismisses from the web board; the agent hears it in the thread.
+    assert request(http_server, '/api/task/dismiss', {'id': task})[0] == 200
+    assert request(http_server, '/api/task/dismiss', {'id': task}, headers={'X-Board-CSRF': 'wrong'})[0] == 403
+    assert request(http_server, '/api/task/dismiss', {'id': 'x'})[0] == 400
+    note = board.messages()[-1]
+    assert note['sender'] == 'operator' and note['recipient'] == 'one' and note['reply_to'] == message
+    assert board.close_task(task, 'operator', operator=True) is False
+
+    # The agent dismisses its own from the command line.
+    args = SimpleNamespace(action='operator-task', task_action='dismiss', agent='one', id=second, note='Solved it.')
+    assert board.main(args) == 0 and 'dismissed' in capsys.readouterr().out
+    assert board.messages()[-1]['body'].endswith('Solved it.')
+    assert json.loads(request(http_server, '/api/state')[1])['tasks'] == []
+    with board.database() as db:
+        assert len(board.tasks(db, 'one', include_closed=True)) == 2
+
+    # Nobody stays blocked on a removed agent's behalf, and the operator never opens tasks.
+    board.open_task('two', 'Still need you.', notify=False)
+    assert request(http_server, '/api/remove', {'agent': 'two'})[0] == 200
+    assert json.loads(request(http_server, '/api/state')[1])['tasks'] == []
+    args = SimpleNamespace(action='operator-task', task_action='open', agent='operator', no_notify=True, message='Hi')
+    assert board.main(args) == 1
+
+
+def test_operator_task_cli_opens_and_lists(cache, capsys):
+    from atelier.cli import parse_args
+    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', '--no-notify', 'Need your OK.'])) == 0
+    assert 'operator task 1' in capsys.readouterr().out
+    assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one'])) == 0
+    listed = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [(t['id'], t['body']) for t in listed] == [(1, 'Need your OK.')]

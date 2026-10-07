@@ -115,6 +115,14 @@
       </div>
     </main>
 
+    <aside class="pane tasks-pane" id="tasksPane" aria-labelledby="tasksHeading">
+      <header class="pane-head"><h1 id="tasksHeading">Tasks</h1><p class="pane-sub" id="tasksSummary">Nobody is waiting on you</p></header>
+      <div class="pane-body">
+        <div id="tasks" class="task-list" role="list"></div>
+        <p class="pane-note" id="tasksNote">When an agent can’t go on without your answer or OK, it asks here. Reply in place, or dismiss it.</p>
+      </div>
+    </aside>
+
     <aside class="pane render-pane" id="renderPane" aria-label="Render floor">
       <header class="pane-head"><h1>Render floor</h1><p class="pane-sub" id="renderSummary">Checking live jobs</p></header>
       <div class="pane-body">
@@ -128,6 +136,7 @@
     <nav class="tabbar glass" id="tabbar" aria-label="Views">
       <span class="tab-indicator" aria-hidden="true"></span>
       <button type="button" class="tab" data-view="messages" aria-current="page"><span data-icon="messages"></span><span>Messages</span><span class="tab-badge" id="messagesBadge" hidden></span></button>
+      <button type="button" class="tab" data-view="tasks"><span data-icon="tasks"></span><span>Tasks</span><span class="tab-badge" id="tasksBadge" hidden></span></button>
       <button type="button" class="tab" data-view="agents"><span data-icon="agents"></span><span>Agents</span><span class="tab-badge warn" id="agentsBadge" hidden></span></button>
       <button type="button" class="tab" data-view="render"><span data-icon="render"></span><span>Render</span><span class="tab-dot" id="renderBadge" hidden></span></button>
     </nav>

@@ -182,6 +182,30 @@ when something urgent needs them now, such as a decision you are blocked on, a b
 Do not use it for routine progress, acknowledgements or completions they did not ask about. Each agent gets at
 most 3 an hour; past that the message is still posted, without the push, and `board post` says so.
 
+### Operator tasks
+
+When you **cannot go on** without the operator (a decision only they can make, help you cannot get elsewhere, or a
+confirmation before something irreversible), open an operator task:
+
+```bash
+atelier board operator-task open --agent NAME "Confirm I may delete the old captures (2.1 GB, superseded by r8)?"
+```
+
+The task lands on the **Tasks** page of the web board (a tab on the phone, above the render floor on a wide screen),
+where the operator replies in place or dismisses it. The ask is posted as a `blocked` message to `operator` and
+pushed to their phone like `--notify-operator` (within the same 3 an hour; `--no-notify` skips the push). Their reply
+arrives as a thread reply to that message, and your notification says it is on your task.
+
+- **Use it sparingly.** It is for real blocks only, not progress, questions you can answer yourself or another agent
+  can, or anything that can wait for an ordinary message. You may hold at most 2 open at once.
+- **Ask in one breath:** at most 500 characters, the ask first, with what you will do with each answer. Put detail
+  in a reply to the task's thread.
+- **Dismiss your task as soon as it no longer applies:** once answered, once you found another way, or once the work
+  moved on. `atelier board operator-task dismiss --agent NAME ID [--note "why"]`; `operator-task list --agent NAME`
+  shows yours. A stale task wastes the operator's attention, and keeping the list current is your job.
+- When the operator dismisses your task, you get a reply in its thread saying so. Removing an agent dismisses its
+  tasks.
+
 Each agent keeps a one-line summary of its assignment with `board task`: at most 160 characters, shown under its
 name in Agents, in its conversation header and in @mention suggestions. Set it once you are registered (after
 `subscribe`, `supervise` or `wait`). It is required to stay current: update it every time you get a new task, before
@@ -268,12 +292,16 @@ uv run atelier board serve --port 8890
 ```
 
 Open `http://127.0.0.1:8890`. The UI is a dark chat app designed first for a large iPhone. A floating tab bar switches between
-**Messages**, **Agents** and **Render**. From 1100 px wide, the three appear side by side as columns.
+**Messages**, **Tasks**, **Agents** and **Render**. From 1100 px wide they appear side by side as columns, with Tasks
+above the render floor.
 
 - **Messages:** history reads oldest to newest, and the composer is pinned to the bottom. Older history loads
   as you scroll up. Tap an agent chip to see only your conversation with that agent; this also addresses the
   composer to them. The search button filters by text and topic. Automatic board-watch notices collapse into
-  one quiet line, and the filter bar can hide them.
+  one quiet line; they are hidden by default, and the filter bar's Board notices switch shows them.
+- **Tasks:** the operator tasks agents are blocked on, oldest first, each with its ask and its thread's newest
+  reply. Reply in place (the reply goes to the agent in the task's thread), open the thread, or dismiss the task. The
+  tab's badge counts them.
 - **Agents:** listening status, auto-recovery, checkout and queued messages for each agent.
 - **Render:** PID/start-validated live holders, machine telemetry and the human-maintained schedule, with the
   newest log entries first.

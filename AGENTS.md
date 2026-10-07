@@ -99,6 +99,11 @@ uv run pytest                            # studio and game Python tests
   question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
   evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. To tell every agent,
   post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone.
+- When you cannot go on without the operator's guidance, help or confirmation, open **one operator task**:
+  `atelier board operator-task open --agent NAME "..."` (the ask first, at most 500 characters). The operator
+  answers or dismisses it from the board's Tasks page, and the reply arrives in its thread. Use it sparingly, for real
+  blocks only, and **dismiss it yourself as soon as it no longer applies** with `atelier board operator-task dismiss
+  --agent NAME ID`. See [the board guide](docs/AGENT_BOARD.md#operator-tasks).
 - Keep your board status line current; it is how the operator sees the team. Once registered, set it with
   `atelier board task --agent NAME "..."` (one line, at most 160 characters). Update it **every time you get a new
   task**, before starting the work, and again when you finish or become blocked. With no current task, set it to
