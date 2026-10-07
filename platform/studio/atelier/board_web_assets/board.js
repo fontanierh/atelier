@@ -31,8 +31,10 @@ let loading=false, requestNumber=0, controller=null, historyComplete=false, send
 let feedSignature="", agentsSignature="", scheduleSignature="", contextSignature="";
 let draftKey=null, draftBody="", draftTopic="", draftRecipient="*", recipientSignature="";
 let stickToBottom=true, prepending=false, lastSeenId=0, newestShown=0, statusTimer=0, feedPainted=false;
-let showSystem=true, uploads=[], thread=null;
-try { showSystem=localStorage.getItem("atelier.board.notices")!=="hidden"; } catch {}
+// Automatic notices (the render schedule's watcher, and the like) stay out of the stream unless Settings shows them;
+// the render floor has the schedule itself. A new key, so an earlier "shown" from when they showed by default lapses.
+let showSystem=false, uploads=[], thread=null;
+try { showSystem=localStorage.getItem("atelier.board.system-notices")==="shown"; } catch {}
 $("showSystem").checked=showSystem;
 
 // The app shell follows the visual viewport so the composer stays above the on-screen keyboard.
@@ -157,7 +159,7 @@ function refreshFilters() { settle(1500); records.clear(); feedSignature=""; his
 let searchTimer;
 $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refreshFilters,250);});
 $("topicFilter").addEventListener("change",()=>{syncPills();refreshFilters();});
-$("showSystem").addEventListener("change",()=>{showSystem=$("showSystem").checked;try{localStorage.setItem("atelier.board.notices",showSystem?"shown":"hidden");}catch{}feedSignature="";renderFeed();});
+$("showSystem").addEventListener("change",()=>{showSystem=$("showSystem").checked;try{localStorage.setItem("atelier.board.system-notices",showSystem?"shown":"hidden");}catch{}feedSignature="";renderFeed();});
 
 /* @mentions: typing @ suggests agents, and a message that mentions agents goes to exactly them (plus the agent
    whose conversation you're in). */
@@ -1192,3 +1194,7 @@ setInterval(()=>{if(!document.hidden){if(loading&&Date.now()-loadStarted>15000)l
 document.addEventListener("visibilitychange",resume);
 addEventListener("pageshow",event=>{if(event.persisted)resume();});
 addEventListener("focus",resume);addEventListener("online",resume);
+// A window behind others holds its looping animations where they are, as the scene does. A toggle that changes
+// nothing records no mutation, which the scene's class observer relies on.
+function rest() { $("app").classList.toggle("at-rest",document.hidden||!document.hasFocus()); }
+addEventListener("blur",rest);addEventListener("focus",rest);document.addEventListener("visibilitychange",rest);rest();

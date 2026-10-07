@@ -6,7 +6,7 @@
   --ink: #22312f; --ink-2: #3c4d4a; --muted: #6a7b78; --faint: #94a39f;
   --coral: #c94f86; --mine: linear-gradient(160deg, #e8f2f9 0%, #d6e8f3 100%);
   --live: #3fae7a; --error: #d9546a; --warn: #c98a2b; --link: #b5487a;
-  --glass: #f6faf9c7; --glass-edge: #ffffffe0; --glass-shine: #ffffff;
+  --glass: #f6faf9c7; --glass-solid: #f6faf9ed; --glass-edge: #ffffffe0; --glass-shine: #ffffff;
   --shadow: 0 1px 0 #ffffffb3 inset, 0 6px 22px #2a4a4614;
   /* Washes and shadows in the ink's hue, and the frosted surfaces, as channels so each use keeps its own alpha. */
   --tint: 42 74 70; --shade: 42 74 70; --tint-deep: 31 58 54; --shade-deep: 31 58 54;
@@ -815,12 +815,14 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 @media (max-width: 1099px) { .app.scene-on .chat-pane:not(.nav-top):not(.nav-underlay) { background: transparent; } }
 .app.scene-on .painting, .app.scene-on .mist, .app.scene-on .seed, .app.scene-on .sunbeams, .app.scene-on .tint, .app.scene-on .firefly { display: none !important; }
 .app.scene-on .thread-view { background: rgb(var(--frost) / .82); }
-/* Nothing over the moving meadow blurs it: a backdrop blur would be redrawn every frame, for every bubble and pane.
-   The glass over it is a little more opaque instead. */
-@media (min-width: 1100px) {
-  .app.scene-on .agents-pane, .app.scene-on .render-pane { background: rgb(var(--frost-2) / .8); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .app.scene-on .topbar, .app.scene-on .thread-head { background: rgb(var(--frost-2) / .84); -webkit-backdrop-filter: none; backdrop-filter: none; }
-}
+/* Nothing over the moving meadow blurs it: a backdrop blur would be redrawn every frame, for every bubble, bar and
+   pane, and it is most of what the scene would cost the GPU. The glass over it is a little more opaque instead. */
+.app.scene-on :is(.agents-pane, .render-pane) { background: rgb(var(--frost-2) / .8); }
+.app.scene-on :is(.topbar, .thread-head, .orbs) { background: rgb(var(--frost-2) / .84); }
+.app.scene-on :is(.glass, .agents-pane, .render-pane, .topbar, .thread-head, .orbs), .app.scene-on .chat-pane::before { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.app.scene-on .glass { background: var(--glass-solid); }
+/* Calm holds the mist and seeds still: under the blurred bars, even the slowest drift is a full redraw every frame. */
+.app:not(.playful) :is(.mist, .seed, .seed i) { animation: none; }
 /* Deliveries (board-fx.js). The orb pops as its comet lands (--d is the comet's flight), the bubble unfolds out of it
    on a spring and the words fade up out of a blur one by one. A message the board rebuilt (.again) or one you sent
    (it flies out of the composer, .morph) skips the unfold. */
@@ -902,7 +904,7 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
   --ink: #edf1ff; --ink-2: #c9d2ee; --muted: #98a4c6; --faint: #717da2;
   --coral: #f08bb8; --link: #f4a7cc; --live: #5fd39a; --error: #ff7d92; --warn: #f0b75a;
   --mine: linear-gradient(160deg, #343f7ae6, #283266e6);
-  --glass: #141c38cc; --glass-edge: #ffffff1f; --glass-shine: #ffffff2e;
+  --glass: #141c38cc; --glass-solid: #141c38f0; --glass-edge: #ffffff1f; --glass-shine: #ffffff2e;
   --shadow: 0 1px 0 #ffffff12 inset, 0 8px 26px #03061466;
   --tint: 200 212 255; --shade: 3 6 20; --tint-deep: 200 212 255; --shade-deep: 3 6 20;
   --frost: 14 21 44; --frost-2: 18 26 51; --frost-3: 22 30 58;
@@ -974,3 +976,10 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
+
+/* A window behind others (.at-rest) holds every looping animation where it is, so it draws nothing; entrances still
+   finish, so a message that arrives meanwhile shows. */
+.app.at-rest :is(.badge.live, .title-text .dot.live, .badge.error, .mist, .seed, .seed i, .orb, .jump-latest .icon, .empty .icon,
+  .job-label .dot, .sunbeams, .butterfly, .butterfly i, .firefly, .wordmark, .aurora i),
+.app.at-rest :is(.badge.live, .title-text .dot.live, .orb, .composer, .job, .butterfly i)::before,
+.app.at-rest :is(.orb, .butterfly i)::after { animation-play-state: paused !important; }
