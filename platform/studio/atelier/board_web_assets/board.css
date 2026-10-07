@@ -652,10 +652,11 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 @keyframes rainbow-edge { to { background-position: 0 0, 300% 0; } }
 .app.playful .message:has(.topic.release) .bubble { border-color: transparent;
   background: linear-gradient(var(--card-hi), var(--card-hi)) padding-box, linear-gradient(100deg, #f7c96b, #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #f29ac0) border-box;
-  background-size: auto, 300% 100%; animation: rainbow-edge 9s linear infinite; box-shadow: 0 8px 26px #f29ac033, 0 1px 0 #fff inset; }
+  background-size: auto, 300% 100%; box-shadow: 0 8px 26px #f29ac033, 0 1px 0 #fff inset; }
+.app.playful .message.enter:has(.topic.release) .bubble { animation: rainbow-edge 3s linear 1; }
 @keyframes shine { 0%, 70% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
-.app.playful .topic.release, .app.playful .topic.ack { background-image: linear-gradient(100deg, transparent 35%, #ffffffd9 50%, transparent 65%); background-size: 250% 100%; background-repeat: no-repeat; animation: shine 4.5s ease-in-out infinite; }
-.app.playful .message.enter .topic.release, .app.playful .message.enter .topic.ack { animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) .3s both, shine 4.5s ease-in-out .8s infinite; }
+.app.playful .message.enter .topic.release, .app.playful .message.enter .topic.ack { background-image: linear-gradient(100deg, transparent 35%, #ffffffd9 50%, transparent 65%); background-size: 250% 100%; background-repeat: no-repeat; }
+.app.playful .message.enter .topic.release, .app.playful .message.enter .topic.ack { animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) .3s both, shine 2.2s ease-in-out .8s 2; }
 /* The day line draws out from its label. */
 @keyframes draw-left { from { transform: scaleX(0); } } @keyframes draw-right { from { transform: scaleX(0); } }
 .app.playful .day.enter::before { transform-origin: 100% 50%; animation: draw-left .7s cubic-bezier(.2, .8, .3, 1) both; }
@@ -691,15 +692,14 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .app.playful .count-badge, .app.playful .count { animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
 
 /* The composer: a pastel ring turns round it while you write; the send button glows when there is something to send. */
-@property --ring { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
-@keyframes ring-turn { to { --ring: 360deg; } }
+@keyframes ring-breathe { from { opacity: .55; } to { opacity: 1; } }
 .app.playful .composer { position: relative; }
 .app.playful .composer::before { content: ""; position: absolute; inset: -1.5px; border-radius: inherit; padding: 2px; pointer-events: none; opacity: 0; transition: opacity .35s;
-  background: conic-gradient(from var(--ring), #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #f29ac0);
+  background: conic-gradient(from 200deg, #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #f29ac0);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-.app.playful .composer:focus-within::before { opacity: 1; animation: ring-turn 5s linear infinite; }
+.app.playful .composer:focus-within::before { opacity: 1; animation: ring-breathe 2.6s ease-in-out .35s infinite alternate; }
 @keyframes send-glow { 0%, 100% { box-shadow: 0 6px 16px #4f8fc440, 0 1px 0 #ffffff80 inset; } 50% { box-shadow: 0 6px 22px #4f8fc499, 0 0 0 4px #4f8fc41f, 0 1px 0 #ffffff80 inset; } }
-.app.playful .send-button:not(:disabled) { animation: pop .3s cubic-bezier(.3, 1.4, .5, 1), send-glow 2.4s ease-in-out .3s infinite; }
+.app.playful .send-button:not(:disabled) { animation: pop .3s cubic-bezier(.3, 1.4, .5, 1), send-glow 2.4s ease-in-out .3s 3; }
 @media (hover: hover) { .app.playful .send-button:not(:disabled):hover { rotate: -14deg; scale: 1.08; } .app.playful .send-button { transition: rotate .25s cubic-bezier(.3, 1.6, .5, 1), scale .25s, opacity .15s; } }
 @keyframes nod { 0%, 100% { translate: 0 0; } 50% { translate: 0 3px; } }
 .app.playful .jump-latest .icon { animation: nod 1.2s ease-in-out infinite; }
@@ -712,12 +712,15 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 /* The wordmark catches the light now and then (and tapping it blows on the dandelion). */
 @keyframes wordmark-shine { 0%, 82% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
 .app.playful .wordmark { cursor: pointer; background: linear-gradient(100deg, var(--ink) 42%, var(--coral) 50%, #e0a43a 54%, var(--ink) 62%) 120% 0 / 260% 100% no-repeat;
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: wordmark-shine 9s ease-in-out infinite; }
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: wordmark-shine 9s ease-in-out 3; }
 .app.playful .wordmark small { -webkit-text-fill-color: var(--muted); }
 
 /* Render floor: a live job has a scanning light along its top and a beating dot. */
-@keyframes scan { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
-.app.playful .job::before { content: ""; display: block; height: 3px; margin-bottom: 6px; border-radius: 2px; background: #3fae7a1f linear-gradient(90deg, transparent, var(--live), #9cc8f0, transparent) -60% 0 / 45% 100% no-repeat; animation: scan 1.9s ease-in-out infinite; }
+@keyframes scan { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+.app.playful .job { position: relative; overflow: hidden; }
+.app.playful .job::before { content: ""; display: block; height: 3px; margin-bottom: 6px; border-radius: 2px; background: #3fae7a1f; }
+.app.playful .job::after { content: ""; position: absolute; top: 0; left: 0; width: 38%; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--live), #9cc8f0, transparent); animation: scan 1.9s ease-in-out infinite; will-change: transform; }
+.app.playful .job:not(:first-child)::after { top: 12px; }
 @keyframes beat { 0%, 100% { scale: 1; opacity: 1; } 15% { scale: 1.45; } 30% { scale: 1; } 45% { scale: 1.25; opacity: .8; } }
 .app.playful .job-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--live); box-shadow: 0 0 8px var(--live); animation: beat 1.4s ease-in-out infinite; }
 .app.playful .schedule-card[open] .entries li { animation: rise .4s cubic-bezier(.2, .9, .25, 1.04) both; }

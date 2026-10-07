@@ -121,7 +121,7 @@
     // A burst of history (a catch-up after the app wakes) celebrates only the newest few.
     fresh.slice(-3).forEach((m,i)=>setTimeout(()=>landed(m),170+i*150));
   });
-  for(const id of ["messages","threadFeed"])feeds.observe(document.getElementById(id),{childList:true,subtree:true});
+  for(const id of ["messages","threadFeed"]){const feed=document.getElementById(id);if(feed)feeds.observe(feed,{childList:true,subtree:true});}
 
   const form=document.getElementById("broadcastForm");let wasSending=false;
   new MutationObserver(()=>{
