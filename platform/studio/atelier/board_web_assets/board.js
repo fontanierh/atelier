@@ -1065,7 +1065,7 @@ function renderContext() {
 }
 /* Operator tasks: an agent blocked on the operator asks once, and the Tasks page holds the ask until someone dismisses
    it. Each card is built once and then only updated, so a reply being typed survives the board's refreshes. */
-const taskCards=new Map();
+const taskCards=new Map(), dismissedTasks=new Set();
 function since(timestamp) {
   const s=Math.max(0,(state?.time??Date.now()/1000)-timestamp);
   return s<60?"just now":s<3600?`${Math.floor(s/60)} min ago`:s<86400?`${Math.floor(s/3600)} h ago`:`${Math.floor(s/86400)} d ago`;
@@ -1102,7 +1102,7 @@ function taskCard(task) {
     dismiss.disabled=true;status.textContent="";
     try {
       await postJSON("/api/task/dismiss",{id:entry.task.id});
-      card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);
+      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);
       setTimeout(()=>{renderTasks();load();},motion.matches?0:220);
     } catch(error) {status.textContent=error.message;status.classList.add("error");dismiss.disabled=false;}
   });
@@ -1115,9 +1115,11 @@ function taskCard(task) {
   return entry;
 }
 function renderTasks() {
-  const list=state.tasks||[], n=list.length;
+  // A snapshot already in flight when a task was dismissed must not bring its card back.
+  const list=(state.tasks||[]).filter(t=>!dismissedTasks.has(t.id)), n=list.length;
   $("tasksBadge").hidden=!n;$("tasksBadge").textContent=n>99?"99+":n;
-  $("tasksSummary").textContent=n?`${n} ${n===1?"agent is":"agents are"} waiting on you`:"Nobody is waiting on you";
+  const who=new Set(list.map(t=>t.agent)).size;
+  $("tasksSummary").textContent=n?`${who} ${who===1?"agent is":"agents are"} waiting on you`:"Nobody is waiting on you";
   $("app").classList.toggle("has-tasks",n>0);
   const keep=new Set(list.map(t=>t.id));
   for(const [id,entry] of taskCards)if(!keep.has(id))taskCards.delete(id);

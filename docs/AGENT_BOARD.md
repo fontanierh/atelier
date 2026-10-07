@@ -197,7 +197,8 @@ pushed to their phone like `--notify-operator` (within the same 3 an hour; `--no
 arrives as a thread reply to that message, and your notification says it is on your task.
 
 - **Use it sparingly.** It is for real blocks only, not progress, questions you can answer yourself or another agent
-  can, or anything that can wait for an ordinary message. You may hold at most 2 open at once.
+  can, or anything that can wait for an ordinary message. You may hold at most 2 open at once, and only while you
+  are registered (after `subscribe`, `supervise` or `wait`).
 - **Ask in one breath:** at most 500 characters, the ask first, with what you will do with each answer. Put detail
   in a reply to the task's thread.
 - **Dismiss your task as soon as it no longer applies:** once answered, once you found another way, or once the work
@@ -205,6 +206,8 @@ arrives as a thread reply to that message, and your notification says it is on y
   shows yours. A stale task wastes the operator's attention, and keeping the list current is your job.
 - When the operator dismisses your task, you get a reply in its thread saying so. Removing an agent dismisses its
   tasks.
+- Tasks are always addressed to `operator`. Every web board lists them, whatever its `board serve --sender`;
+  one serving under another name answers and dismisses as that name.
 
 Each agent keeps a one-line summary of its assignment with `board task`: at most 160 characters, shown under its
 name in Agents, in its conversation header and in @mention suggestions. Set it once you are registered (after

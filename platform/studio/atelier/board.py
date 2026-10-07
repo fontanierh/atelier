@@ -72,13 +72,17 @@ def poll(agent, command=None, addressed_only=False, full=False):
         row = db.execute('SELECT cursor FROM subscribers WHERE agent=?', (agent,)).fetchone()
     batch = messages(row['cursor'], agent, limit=20, addressed_only=addressed_only)
     if batch:
-        # A reply on one of this agent's open operator tasks says so, and reminds it to dismiss the task.
+        # A reply anywhere in an open operator task's thread says so, and reminds the agent to dismiss it.
         with database() as db:
             open_tasks = {r['message']: r['id'] for r in db.execute(
                 'SELECT id, message FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,))}
-        for item in batch:
-            if item.get('reply_to') in open_tasks:
-                item['operator_task'] = open_tasks[item['reply_to']]
+            for item in batch if open_tasks else ():
+                parent, hops = item.get('reply_to'), 0
+                while parent and parent not in open_tasks and hops < 200:
+                    row = db.execute('SELECT reply_to FROM messages WHERE id=?', (parent,)).fetchone()
+                    parent, hops = row and row['reply_to'], hops + 1
+                if parent in open_tasks:
+                    item['operator_task'] = open_tasks[parent]
         if full:
             deliver(batch, command, full=True)
         else:

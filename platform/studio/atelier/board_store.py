@@ -50,6 +50,7 @@ def database():
                 body TEXT NOT NULL, reply_to INTEGER REFERENCES messages(id),
                 dedup TEXT UNIQUE
             );
+            CREATE INDEX IF NOT EXISTS messages_reply_to ON messages(reply_to);
             CREATE TABLE IF NOT EXISTS observations (name TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS operator_tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, created REAL NOT NULL, agent TEXT NOT NULL,
@@ -161,12 +162,11 @@ def remove(agent):
         from . import board_service
         board_service.retire(agent)
     with database() as db:
+        db.execute('BEGIN IMMEDIATE')
         db.execute('UPDATE subscribers SET stop=1, removed=1 WHERE agent=?', (agent,))
-        open_tasks = [row[0] for row in db.execute(
-            'SELECT id FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,))]
-    # Nobody is left to unblock: its tasks leave the operator's list.
-    for task in open_tasks:
-        close_task(task, agent, removed=True)
+        # Nobody is left to unblock: its tasks leave the operator's list, in the same transaction.
+        for (task,) in db.execute('SELECT id FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,)).fetchall():
+            _close_task(db, task, agent, '', removed=True)
 
 
 # Operator tasks: an agent that cannot go on without the operator's guidance, help or confirmation opens one, and the
@@ -188,6 +188,8 @@ def open_task(agent, body, notify=True):
                          'reply to the task\'s thread')
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
+        if not db.execute('SELECT 1 FROM subscribers WHERE agent=? AND removed=0', (agent,)).fetchone():
+            raise LookupError(f'{agent} is not on the board; subscribe before opening an operator task')
         open_count = db.execute('SELECT count(*) FROM operator_tasks WHERE agent=? AND closed IS NULL', (agent,))
         if open_count.fetchone()[0] >= OPEN_TASKS:
             raise ValueError(f'you already have {OPEN_TASKS} open operator tasks; dismiss one that no longer applies '
@@ -206,28 +208,35 @@ def close_task(task_id, by, note='', operator=False, removed=False):
     agent only its own; removing an agent dismisses its tasks (removed). The thread records it, so the agent hears
     when the operator dismissed its task and the operator sees why an agent dropped one. False if already closed."""
     agent_name(by)
+    if not isinstance(note or '', str):
+        raise ValueError('the dismissal note must be text')
     note = ' '.join((note or '').split())
     if len(note) > 300:
         raise ValueError('keep the dismissal note to at most 300 characters')
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
-        row = db.execute('SELECT * FROM operator_tasks WHERE id=?', (task_id,)).fetchone()
-        if row is None:
-            raise LookupError(f'operator task {task_id} does not exist')
-        if not (operator or removed) and by != row['agent']:
-            raise ValueError(f"operator task {task_id} is {row['agent']}'s; only it or the operator can dismiss it")
-        if row['closed'] is not None:
-            return False
-        now = time.time()
-        db.execute('UPDATE operator_tasks SET closed=?, closed_by=?, note=? WHERE id=?', (now, by, note or None, task_id))
-        if removed:
-            sender, recipient, text = 'board-watch', OPERATOR, 'Dismissed this operator task: its agent left the board.'
-        elif operator:
-            sender, recipient, text = by, row['agent'], 'Dismissed this operator task.'
-        else:
-            sender, recipient, text = row['agent'], OPERATOR, 'Dismissed this operator task: it no longer applies.'
-        db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to) VALUES (?, ?, ?, 'info', ?, ?)",
-                   (now, sender, recipient, text + (f' {note}' if note else ''), row['message']))
+        return _close_task(db, task_id, by, note, operator, removed)
+
+
+def _close_task(db, task_id, by, note, operator=False, removed=False):
+    """close_task's work inside the caller's transaction."""
+    row = db.execute('SELECT * FROM operator_tasks WHERE id=?', (task_id,)).fetchone()
+    if row is None:
+        raise LookupError(f'operator task {task_id} does not exist')
+    if not (operator or removed) and by != row['agent']:
+        raise ValueError(f"operator task {task_id} is {row['agent']}'s; only it or the operator can dismiss it")
+    if row['closed'] is not None:
+        return False
+    now = time.time()
+    db.execute('UPDATE operator_tasks SET closed=?, closed_by=?, note=? WHERE id=?', (now, by, note or None, task_id))
+    if removed:
+        sender, recipient, text = 'board-watch', OPERATOR, 'Dismissed this operator task: its agent left the board.'
+    elif operator:
+        sender, recipient, text = by, row['agent'], 'Dismissed this operator task.'
+    else:
+        sender, recipient, text = row['agent'], OPERATOR, 'Dismissed this operator task: it no longer applies.'
+    db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to) VALUES (?, ?, ?, 'info', ?, ?)",
+               (now, sender, recipient, text + (f' {note}' if note else ''), row['message']))
     return True
 
 

@@ -454,6 +454,9 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     board.poll('one')
     reply = next(item for item in delivered if item['reply_to'] == message)
     assert reply['operator_task'] == task and 'operator task' in board.notification([reply])
+    deeper = board.post('operator', 'And keep the newest one.', 'one', reply_to=reply['id'])
+    board.poll('one')
+    assert next(item for item in delivered if item['id'] == deeper)['operator_task'] == task
 
     # Agents hold few open at once and keep asks short; only the asker or the operator dismisses one.
     second, _ = board.open_task('one', 'Second ask.', notify=False)
@@ -472,6 +475,8 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     assert request(http_server, '/api/task/dismiss', {'id': task})[0] == 200
     assert request(http_server, '/api/task/dismiss', {'id': task}, headers={'X-Board-CSRF': 'wrong'})[0] == 403
     assert request(http_server, '/api/task/dismiss', {'id': 'x'})[0] == 400
+    assert request(http_server, '/api/task/dismiss', {'id': task, 'note': 5})[0] == 400
+    assert json.loads(request(http_server, '/api/task/dismiss', {'id': task})[1]) == {'dismissed': task, 'already': True}
     note = board.messages()[-1]
     assert note['sender'] == 'operator' and note['recipient'] == 'one' and note['reply_to'] == message
     assert board.close_task(task, 'operator', operator=True) is False
@@ -490,12 +495,45 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     assert json.loads(request(http_server, '/api/state')[1])['tasks'] == []
     args = SimpleNamespace(action='operator-task', task_action='open', agent='operator', no_notify=True, message='Hi')
     assert board.main(args) == 1
+    # Only registered agents ask, so neither an unknown name nor a removed agent can go around the cap.
+    for name in ('ghost', 'two'):
+        with pytest.raises(LookupError, match='not on the board'):
+            board.open_task(name, 'Let me in.')
 
 
-def test_operator_task_cli_opens_and_lists(cache, capsys):
+def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
+    import io
     from atelier.cli import parse_args
     assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', '--no-notify', 'Need your OK.'])) == 0
     assert 'operator task 1' in capsys.readouterr().out
     assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one'])) == 0
     listed = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
     assert [(t['id'], t['body']) for t in listed] == [(1, 'Need your OK.')]
+    assert board.main(parse_args(['board', 'operator-task', 'dismiss', '--agent', 'one', '1'])) == 0
+    assert capsys.readouterr().out.strip() == 'operator task 1 dismissed'
+    assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one'])) == 0
+    assert capsys.readouterr().out == ''
+    assert board.main(parse_args(['board', 'operator-task', 'list', '--agent', 'one', '--all'])) == 0
+    assert json.loads(capsys.readouterr().out)['closed_by'] == 'one'
+
+    # An over-long ask on stdin is refused whole rather than cut to fit.
+    monkeypatch.setattr('sys.stdin', io.StringIO(' ' * 50 + 'x' * board.TASK_CHARS + ' and the rest'))
+    assert board.main(parse_args(['board', 'operator-task', 'open', '--agent', 'one', '-'])) == 1
+    with board.database() as db:
+        assert board.tasks(db, 'one') == []
+
+    # The push shares the agent's hourly allowance with --notify-operator.
+    for _ in range(board.NOTIFY_PER_HOUR):
+        board.post('two', 'Look at this.', 'operator', notify=True)
+    _, message = board.open_task('two', 'Need your OK, quietly.')
+    with board.database() as db:
+        assert db.execute('SELECT notify FROM messages WHERE id=?', (message,)).fetchone()[0] == 0
+
+    # Concurrent asks still respect the cap.
+    def ask(i):
+        try:
+            return board.open_task('paused', f'Ask {i}.', notify=False)
+        except ValueError:
+            return None
+    with ThreadPoolExecutor(8) as pool:
+        assert sum(result is not None for result in pool.map(ask, range(8))) == board.OPEN_TASKS

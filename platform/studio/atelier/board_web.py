@@ -391,8 +391,8 @@ class Handler(BaseHTTPRequestHandler):
                 task = data.get('id')
                 if isinstance(task, bool) or not isinstance(task, int):
                     raise ValueError('Choose a task to dismiss.')
-                board.close_task(task, self.server.sender, data.get('note') or '', operator=True)
-                self.send(200, {'dismissed': task})
+                closed = board.close_task(task, self.server.sender, data.get('note') or '', operator=True)
+                self.send(200, {'dismissed': task, 'already': not closed})
                 return
             if self.path == '/api/remove':
                 agent = data.get('agent')

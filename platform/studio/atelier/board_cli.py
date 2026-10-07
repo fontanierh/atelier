@@ -142,7 +142,7 @@ def main(args):
             if getattr(args, 'agent', None) == OPERATOR:
                 raise ValueError('operator tasks are for agents; the operator answers them on the web board')
             if args.task_action == 'open':
-                text = sys.stdin.read(TASK_CHARS + 1) if args.message == '-' else args.message
+                text = sys.stdin.read() if args.message == '-' else args.message
                 task, message = open_task(args.agent, text, notify=not args.no_notify)
                 print(f'operator task {task} (message {message}); replies arrive in its thread. Dismiss it with '
                       f'atelier board operator-task dismiss --agent {args.agent} {task} as soon as it no longer applies.')
