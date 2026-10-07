@@ -57,10 +57,10 @@ CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else
 # and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
 # Modori's coat stands off his back and his hair reaches his collar: from Link's chest his sword and sheath sank 2 cm into
 # the coat with the hilt in his hair, and the shield 10 cm (YorimichiFit in game: clear from 4 and 6 cm back). The sword
-# also comes down 12 cm, so the hilt's tip sits at his collar below the hair (close shots standing and crouched: 4 cm
-# down still reached into it).
+# also comes down 17 cm, so the hilt's tip sits at his collar below the hair (close shots standing and crouched: 4 cm
+# down still reached into it; 12 cm, standing clear, still met his hair crouched, his chest leant 70 degrees forward).
 PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
-        {'sword': [5., 0., -12.], 'sheath': [5., 0., -12.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
+        {'sword': [5., 0., -17.], 'sheath': [5., 0., -17.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
 # Carried pieces pitched about his left axis (degrees; positive brings the lower end out backward) through the top end of
 # the first of them (the sword's pommel), which keeps the place PUSH gives it. Modori's coat flares out over the small of
 # his back, where the sheath's lower half sank into it (the operator's photo from behind, standing); pitched about their
