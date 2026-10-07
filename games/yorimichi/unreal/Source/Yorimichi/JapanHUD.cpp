@@ -204,14 +204,14 @@ void AJapanHUD::DrawHUD()
     if (bController)
         Controls = bSailboat ? FString::Printf(TEXT("D-pad Up step ashore   Left stick steer / raise or lower sail      %s   %.0f km/h"),*Pawn->GetSailboat()->GetStatus(),Pawn->GetSailboat()->GetSpeed()*.036f)
             : FString::Printf(TEXT("Left stick move   Hold %s sprint   %s jump / double jump   %s dash   %s roll"),Pad.Sprint,Pad.Jump,Pad.Dash,Pad.Roll);
-    FString Secondary = bController ? FString::Printf(TEXT("Right stick look   %s crouch   %s interact   %s map   %s settings   D-pad Up sailboat"),Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
+    FString Secondary = bController ? FString::Printf(TEXT("Right stick look   %s crouch   %s interact   %s map (hold: places)   %s settings   D-pad Up sailboat"),Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
         : TEXT("Mouse look   M map & travel   Esc settings   Tab release mouse   F12 screenshot");
     const UWandererSwordComponent* Sword=Pawn->GetSword();
     const bool bSwordSet=Sword && Sword->IsInstalled() && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding());
     if (bSwordSet)
     {
         // Sword hints replace the wave/interact tail so the line stays readable; the weapon line shows the live state.
-        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   %s parry   %s draw / sheathe sword   %s crouch   %s interact   %s map   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
+        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   %s parry   %s draw / sheathe sword   %s crouch   %s interact   %s map (hold: places)   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
             : TEXT("Left click attack, hold to charge   Right click parry   R draw / sheathe sword   Mouse look   M map   Esc settings   Tab release mouse");
     }
     // The merged move set (or the legacy BOTW set, without the double jump): jump in the air is the double jump, then the paraglider; the roll button is the dodge (side
@@ -223,12 +223,12 @@ void AJapanHUD::DrawHUD()
         const TCHAR* Jump = Moves->IsLegacy() ? TEXT("jump / paraglider") : TEXT("jump / double jump / paraglider");   // the legacy BOTW set has no double jump
         Controls = bController ? FString::Printf(TEXT("Left stick move   Hold %s sprint   %s %s   %s dodge / backflip   %s swim dash   %s crouch"),Pad.Sprint,Pad.Jump,Jump,Pad.Roll,Pad.Dash,Pad.Crouch)
             : FString::Printf(TEXT("WASD run   Alt / J walk   Shift sprint   Space %s   Ctrl dodge / backflip   F swim dash   C crouch   K sailboat   M map"),Jump);
-        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   Hold %s %s / lock-on, %s parry   %s draw / sheathe   %s map   %s settings"),Pad.Attack,Pad.Parry,Guard,Pad.Jump,Pad.Weapon,Pad.Map,Pad.Menu)
+        Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   Hold %s %s / lock-on, %s parry   %s draw / sheathe   %s map (hold: places)   %s settings"),Pad.Attack,Pad.Parry,Guard,Pad.Jump,Pad.Weapon,Pad.Map,Pad.Menu)
             : FString::Printf(TEXT("Left click attack, hold to charge   Hold right click %s / lock-on, Space parry   R draw / sheathe   Mouse look   M map   Esc settings"),Guard);
     }
     if (bController && (bSailboat || Pawn->IsZeppelinPassenger()))
     {
-        Secondary=FString::Printf(TEXT("Right stick look   %s map   %s settings"),Pad.Map,Pad.Menu);
+        Secondary=FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu);
         if (Pawn->IsZeppelinPassenger())
             Secondary+=FString::Printf(TEXT("   %s flight speed"),ControllerStyle==2?TEXT("L1 / R1"):ControllerStyle==3?TEXT("L / R"):TEXT("LB / RB"));
     }
@@ -265,7 +265,7 @@ void AJapanHUD::DrawHUD()
         Controls=bController
             ? FString::Printf(TEXT("Left stick pedal / brake / steer   %s pedal hard (on / off)   %s hop   %s skid stop   %s bell   Hold %s get off (stopped)      %s   %.0f km/h"),Pad.Sprint,Pad.Jump,Pad.Crouch,Pad.Attack,Pad.Skate,*Bike->GetStatus(),Kmh)
             : FString::Printf(TEXT("W pedal   S brake   A / D steer   Shift pedal hard (on / off)   Space hop   C skid stop   Left click bell   Q wave   V get off (stopped)      %s   %.0f km/h"),*Bike->GetStatus(),Kmh);
-        Secondary=bController?FString::Printf(TEXT("Right stick look   %s map   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
+        Secondary=bController?FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
     }
     else if (Bike && Bike->IsAvailable() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger())
         Secondary += bController ? FString::Printf(TEXT("   Hold %s bike"),Pad.Skate) : TEXT("   V bike");
@@ -277,7 +277,7 @@ void AJapanHUD::DrawHUD()
         Controls=bController
             ? FString::Printf(TEXT("Left stick urge / rein in / turn   Hold %s gallop   %s spur [%s]   H get off (at a walk)      %s   %.0f km/h"),Pad.Sprint,Pad.Jump,*Spurs,*Horse->GetStatus(),Kmh)
             : FString::Printf(TEXT("W trot   Shift gallop   Alt walk   S rein in   A / D turn   Space spur [%s]   Q rear (standing)   H get off (at a walk)      %s   %.0f km/h"),*Spurs,*Horse->GetStatus(),Kmh);
-        Secondary=bController?FString::Printf(TEXT("Right stick look   %s map   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
+        Secondary=bController?FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
     }
     else if (Horse && !bRide && !bSailboat && !(Bike && Bike->IsEquipped()) && !Pawn->IsZeppelinPassenger() && Horse->IsAvailable())
         Secondary += Horse->GetFigure() ? TEXT("   H back on the horse") : TEXT("   H horse");
