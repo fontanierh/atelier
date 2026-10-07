@@ -224,7 +224,30 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0):
+def modori_checks(folder, shield):
+    """Mixed loadouts must remain attached to their own admitted local player ids."""
+    receipts = {role: load(folder / (role + '-connected.json')) or {} for role in ('server', 'client')}
+    host_id, guest_id = (receipts[role].get('local_player_id') for role in ('server', 'client'))
+    mapped = (isinstance(host_id, str) and bool(host_id) and isinstance(guest_id, str) and
+              bool(guest_id) and host_id != guest_id)
+    expected = {host_id: bool(shield), guest_id: not bool(shield)} if mapped else {}
+    checks = dict(modori_player_mapping=mapped)
+    for role in ('server', 'client'):
+        people = receipts[role].get('people', [])
+        checks[role + '_modori_pawns'] = (mapped and len(people) == 2 and
+            {p.get('id') for p in people} == set(expected) and all(
+                p.get('id') and p.get('ready') is True and p.get('rider') == 'Modori' and
+                p.get('pawn_class') == '/Script/Yorimichi.ModoriCharacter' and
+                p.get('moves_ready') is True and p.get('pawn_shield') is expected[p['id']] and
+                p.get('applied_shield') is expected[p['id']] for p in people))
+        log = folder / (role + '.log')
+        text = log.read_text(errors='replace') if log.is_file() else ''
+        checks[role + '_modori_load'] = ('Character ready: /Game/Modori/DA_Modori.DA_Modori' in text and
+            '/Game/Botw/Modori' not in text and 'Modori: no merged move set' not in text)
+    return checks
+
+
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -284,6 +307,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
                            '-ExecCmds=t.MaxFPS ' + (str(combat_host_fps) if combat and role == 'server' else '30')]
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
+                if modori_shield is not None:
+                    command += ['-rider=Modori', '-set=shield=' + str(modori_shield if role == 'server' else 1-modori_shield)]
                 if not tailnet:
                     command.append('-MULTIHOME=127.0.0.1')
                 if combat:
@@ -377,6 +402,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             from network_clock_review import clock_checks
             checks.update(clock_checks(load(folder / 'server-gameplay.json') or {},
                 load(folder / 'client-gameplay.json') or {}, movement_hitch_ms, skate_hitch_ms))
+        if modori_shield is not None:
+            checks.update(modori_checks(folder, modori_shield))
         checks['source_unchanged'] = source_revision() == revision
         checks['native_build_unchanged'] = (package_fingerprint(app, expected_identity) if app else current_native_build(ctx)) == binary
         if app:
@@ -391,6 +418,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             report['package_source'] = package_source
             report['scope'] = ('Ordinary packaged Solo, no network QA flags; ' if plain_package else
                                'Same-machine packaged listen/client; cooked collision and compiled identity; ') + 'NullRHI. Rendered and two-machine acceptance remain separate.'
+        if modori_shield is not None:
+            report['modori_shield'] = dict(host=modori_shield, guest=1-modori_shield)
         if combat:
             report['combat_host_frames'] = host_frame_statistics(folder)
             report['combat_defence_edges'] = defence_edge_statistics(folder)
@@ -413,6 +442,7 @@ def main():
     parser.add_argument('--plain-package', action='store_true', help='Ordinary Solo with no network QA flags, bounded by UE seconds')
     parser.add_argument('--movement-hitch-ms', type=int, choices=(0, 229, 1050), default=0)
     parser.add_argument('--skate-hitch-ms', type=int, choices=(0, 229), default=0)
+    parser.add_argument('--modori-shield', type=int, choices=(0, 1), help='Modori host shield; guest uses the opposite value, checked per pawn')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
@@ -428,6 +458,10 @@ def main():
     args = parser.parse_args()
     if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
         parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
+    if args.modori_shield is not None:
+        if args.app or args.combat or args.enemy:
+            parser.error('Modori loadout proof uses an editor listen/gameplay pair')
+        args.listen = True
     if args.enemy and (args.combat or args.gameplay):
         parser.error('--enemy has a separate native route; do not combine it with combat/gameplay')
     if args.enemy:
@@ -468,7 +502,7 @@ def main():
         folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
         folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -476,6 +510,7 @@ def main():
         port = sock.getsockname()[1]
     return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port), '--combat-host-fps', str(args.combat_host_fps),
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent), '--movement-hitch-ms', str(args.movement_hitch_ms), '--skate-hitch-ms', str(args.skate_hitch_ms)] +
+                       (['--modori-shield', str(args.modori_shield)] if args.modori_shield is not None else []) +
                        (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []) +
                        (['--app', str(args.app.resolve()), '--cook-receipt', str(args.cook_receipt.resolve()), '--expected-identity', args.expected_identity] if args.app else []) +
                        (['--plain-package'] if args.plain_package else []),

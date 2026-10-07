@@ -303,3 +303,66 @@ def test_fast_host_allows_measured_arrival_tail_within_hard_ceiling(fast_combat_
     path = fast_combat_receipts / 'server.log'
     path.write_text(path.read_text().replace('spread=.030000', 'spread=.045000').replace('oldest=.850000', 'oldest=.835000'))
     assert review.compare_receipts(fast_combat_receipts, listen=True, combat=True, combat_host_fps=60)['combat_fast_defence_edges']
+
+
+@pytest.fixture(params=(0, 1))
+def modori_receipts(listen_receipts, request):
+    shield = request.param
+    for role in ('server', 'client'):
+        def configure(value):
+            value['local_player_id'] = 'host' if role == 'server' else 'player'
+            for person in value['people']:
+                applied = bool(shield) if person['id'] == 'host' else not bool(shield)
+                person.update(rider='Modori', pawn_class='/Script/Yorimichi.ModoriCharacter',
+                              moves_ready=True, pawn_shield=applied, applied_shield=applied)
+        change(listen_receipts, role + '-connected', configure)
+        (listen_receipts / (role + '.log')).write_text(
+            'Character ready: /Game/Modori/DA_Modori.DA_Modori, skeletal mesh and 100 actions\n')
+    return listen_receipts, shield
+
+
+def test_modori_actual_class_and_applied_loadout(modori_receipts):
+    folder, shield = modori_receipts
+    assert all(review.modori_checks(folder, shield).values())
+
+
+@pytest.mark.parametrize('role', ('server', 'client'))
+@pytest.mark.parametrize('index', (0, 1))
+@pytest.mark.parametrize('edit', [
+    lambda p: p.update(pawn_class='/Script/Yorimichi.BotwRider'),
+    lambda p: p.update(pawn_shield=not p['pawn_shield']),
+    lambda p: p.update(applied_shield=not p['applied_shield']),
+    lambda p: p.update(applied_shield=int(p['applied_shield'])),
+    lambda p: p.update(moves_ready=False),
+    lambda p: p.pop('applied_shield'),
+    lambda p: p.update(id=''),
+])
+def test_modori_rejects_wrong_or_missing_per_pawn_evidence(modori_receipts, role, index, edit):
+    folder, shield = modori_receipts
+    change(folder, role + '-connected', lambda v: edit(v['people'][index]))
+    assert not all(review.modori_checks(folder, shield).values())
+
+
+@pytest.mark.parametrize('role', ('server', 'client'))
+@pytest.mark.parametrize('warning', ('/Game/Botw/Modori/DA_ModoriRider', 'Modori: no merged move set'))
+def test_modori_rejects_old_spawn_and_missing_moves(modori_receipts, role, warning):
+    folder, shield = modori_receipts
+    with (folder / (role + '.log')).open('a') as log:
+        log.write(warning + '\n')
+    assert not all(review.modori_checks(folder, shield).values())
+
+
+@pytest.mark.parametrize('fault', ('host_to_all', 'swapped_ids', 'missing_id'))
+def test_modori_loadout_must_follow_its_own_identity(modori_receipts, fault):
+    folder, shield = modori_receipts
+    for role in ('server', 'client'):
+        def corrupt(value):
+            if fault == 'host_to_all':
+                for person in value['people']:
+                    person.update(pawn_shield=bool(shield), applied_shield=bool(shield))
+            elif fault == 'swapped_ids':
+                value['local_player_id'] = 'player' if role == 'server' else 'host'
+            else:
+                value.pop('local_player_id')
+        change(folder, role + '-connected', corrupt)
+    assert not all(review.modori_checks(folder, shield).values())

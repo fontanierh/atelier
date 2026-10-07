@@ -5,6 +5,7 @@
 #include "JapanEnemyQA.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
+#include "BotwMoveSet.h"
 #include "AtelierData.h"
 #include "SkateRails.h"
 #include "Containers/Ticker.h"
@@ -55,6 +56,11 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
     Report->SetStringField(TEXT("error"), Error);
     Report->SetNumberField(TEXT("elapsed"), FPlatformTime::Seconds() - NetworkQAStarted);
     Report->SetNumberField(TEXT("local_players"), GetLocalPlayers().Num());
+#if !UE_BUILD_SHIPPING
+    if (const APlayerController* Local = GetFirstLocalPlayerController())
+        if (const auto* Person = Local->GetPlayerState<AJapanPlayerState>())
+            Report->SetStringField(TEXT("local_player_id"), Person->SessionPlayerId);
+#endif
     UWorld* World = GetWorld();
     Report->SetNumberField(TEXT("net_mode"), World ? int32(World->GetNetMode()) : -1);
     Report->SetStringField(TEXT("session_status"), Status);
@@ -109,6 +115,16 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
                     Record->SetStringField(TEXT("id"), P->SessionPlayerId);
                     Record->SetStringField(TEXT("rider"), P->RiderName);
                     Record->SetBoolField(TEXT("ready"), P->bWorldReady);
+#if !UE_BUILD_SHIPPING
+                    // Read actual per-pawn application, not just the requested loadout.
+                    if (const auto* Pawn = Cast<AWandererCharacter>(P->GetPawn()))
+                    {
+                        Record->SetStringField(TEXT("pawn_class"), Pawn->GetClass()->GetPathName());
+                        Record->SetBoolField(TEXT("pawn_shield"), Pawn->GetNetworkShield());
+                        Record->SetBoolField(TEXT("moves_ready"), Pawn->GetMoves() != nullptr);
+                        if (Pawn->GetMoves()) Record->SetBoolField(TEXT("applied_shield"), Pawn->GetMoves()->HasShield());
+                    }
+#endif
                     People.Add(MakeShared<FJsonValueObject>(Record));
                 }
             Report->SetArrayField(TEXT("people"), People);
