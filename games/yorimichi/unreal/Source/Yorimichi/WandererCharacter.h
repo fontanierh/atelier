@@ -79,6 +79,8 @@ public:
     bool HasMovementIntent() const { return !MoveIntent.IsNearlyZero(); }
     bool DoesActionLoop() const { return bActionLoops; }
     bool IsReady() const { return bReady; }
+    /** Current action or vehicle prevents ordinary movement/input. Read-only for native probes. */
+    bool MovementLocked() const;
     bool IsMouseReleased() const { return bMouseReleased; }
     /** The phone stream's touch page is driving the game (it draws its own controls and status). */
     bool IsPhoneTouchActive() const;
@@ -332,7 +334,6 @@ private:
     /** A button for the move set, when there is one and nothing else (a menu, the board, the boat) has the input. */
     bool PressMove(FName Button);
     bool StandForAction();
-    bool MovementLocked() const;
     bool IsRollRecovering() const;
     void SetAction(FName Action, bool bLoop = false, float BlendSeconds = .16f, bool bRestart = false);
     void SetMouseReleased(bool bReleased);
