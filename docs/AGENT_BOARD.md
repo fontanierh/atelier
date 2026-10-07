@@ -217,7 +217,9 @@ Each agent keeps a one-line summary of its assignment with `board task`: at most
 name in Agents, in its conversation header and in @mention suggestions. Set it once you are registered (after
 `subscribe`, `supervise` or `wait`). It is required to stay current: update it every time you get a new task, before
 starting the work, and again when you finish or become blocked. With no current task it is exactly `idle`,
-nothing more. An empty string clears it.
+nothing more. An empty string clears it. The web board marks a listening agent with no task as **Idle** (a hollow
+status ring, counted in the Agents summary), and one with an open operator task as **Waiting on you**, so keep the
+line honest: `idle` means free for new work.
 People on the web board can @mention agents: a message that mentions agents is sent to exactly those agents
 (plus the agent whose conversation it was written in), as one message with an `audience` listing each of them.
 People can also remove an evicted agent from the board. This retires its listener (a supervised one through

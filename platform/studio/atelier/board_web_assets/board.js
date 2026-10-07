@@ -95,11 +95,17 @@ function inline(text) { const span=node("span"); text.split("`").forEach((part,i
 function hue(name) { let h=0; for(const c of name)h=(h*31+c.charCodeAt(0))%360; return h; }
 function initials(name) { return name.replace(/[^a-z0-9]/gi," ").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?"; }
 function statusOf(agent) { return !agent?"":agent.delivery_error?"error":agent.listening?"live":"idle"; }
+// Waiting on the operator: the agent has an open operator task.
+function isWaiting(agent) { return !!agent&&(state?.tasks||[]).some(t=>t.agent===agent.agent&&!dismissedTasks.has(t.id)); }
+// Free for work: listening, with no current task (its status line empty or exactly "idle") and no open operator task.
+function isFree(agent) {
+  return !!agent&&!agent.stop&&agent.listening&&!agent.delivery_error&&/^(idle)?$/i.test((agent.task||"").trim())&&!isWaiting(agent);
+}
 function orb(name, agent) {
   const o=node("span","orb");
   if(name==="*"||!name){o.classList.add("everyone");o.append(icon("agents"));return o;}
   o.textContent=initials(name).slice(0,1);o.style.setProperty("--hue",hue(name));
-  if(agent&&!agent.stop){const badge=node("span","badge "+statusOf(agent));badge.style.setProperty("--delay",`${(hue(name)%9)*.29}s`);o.append(badge);}
+  if(agent&&!agent.stop){const badge=node("span","badge "+statusOf(agent)+(isFree(agent)?" free":""));badge.style.setProperty("--delay",`${(hue(name)%9)*.29}s`);o.append(badge);}
   return o;
 }
 function clock(timestamp) { return new Date(timestamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); }
@@ -429,10 +435,11 @@ function markRead(names) {
 }
 function renderAgents() {
   markRead([]);
-  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,unreadFrom(a)])]);
+  const agents=state.agents, signature=JSON.stringify([selectedAgent,agents.map(a=>[a.agent,a.listening,a.stop,a.pending,a.supervised,a.delivery_error,a.checkout,a.task,isFree(a),isWaiting(a),unreadFrom(a)])]);
   if(signature===agentsSignature)return; agentsSignature=signature;
   const live=liveAgents(), listening=live.filter(a=>a.listening).length, errors=live.filter(a=>a.delivery_error).length;
-  $("agentsSummary").textContent=`${listening} of ${live.length} listening${errors?` · ${errors} retrying delivery`:""}`;
+  const free=live.filter(isFree).length;
+  $("agentsSummary").textContent=`${listening} of ${live.length} listening${free?` · ${free} idle`:""}${errors?` · ${errors} retrying delivery`:""}`;
   $("agentsBadge").hidden=!errors;$("agentsBadge").textContent=errors;
   const list=$("agents"), orbs=$("agentChips");list.replaceChildren();orbs.replaceChildren();
   let index=0;
@@ -441,7 +448,12 @@ function renderAgents() {
     const cell=node("div","agent-cell"), b=node("button","agent-row"+(agent?.stop?" retired":""));b.type="button";cell.setAttribute("role","listitem");if(chosen)b.setAttribute("aria-current","true");
     cell.style.setProperty("--i",index++);cell.dataset.agent=name;
     const text=node("span","agent-text"), detail=node("span","agent-detail");text.append(node("span","agent-name",name||"Everyone"));if(agent&&unreadFrom(agent))b.classList.add("unread");
-    if(agent?.task)text.append(node("span","agent-task",agent.task));
+    if(isFree(agent)){const line=node("span","agent-task");line.append(node("span","free-tag","Idle")," No task");text.append(line);}
+    else if(isWaiting(agent)){
+      const line=node("span","agent-task");line.append(node("span","waiting-tag","Waiting on you"));
+      if(!/^(idle)?$/i.test((agent.task||"").trim()))line.append(" "+agent.task);text.append(line);
+    }
+    else if(agent?.task)text.append(node("span","agent-task",agent.task));
     if(agent){detail.append(node("span","state "+statusOf(agent),agentStatus(agent)));for(const part of [agent.supervised&&!agent.stop?"auto-recovery":"",agent.checkout||""].filter(Boolean))detail.append(document.createTextNode(" · "+part));}
     else detail.textContent=`Broadcasts and every conversation`;
     text.append(detail);b.append(orb(name||"*",agent),text);
@@ -462,7 +474,7 @@ function renderAgents() {
     o.addEventListener("click",()=>openAgent(name));orbs.append(o);
   }
   row("");
-  for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
+  for(const agent of [...agents].sort((a,b)=>a.stop-b.stop||b.listening-a.listening||isFree(b)-isFree(a)||a.agent.localeCompare(b.agent)))row(agent.agent,agent);
   const current=orbs.querySelector('[aria-current="true"]');
   if(current&&(current.offsetLeft<orbs.scrollLeft||current.offsetLeft+current.offsetWidth>orbs.scrollLeft+orbs.clientWidth))orbs.scrollLeft=current.offsetLeft-14;
 }
@@ -1117,7 +1129,7 @@ function taskCard(task) {
     dismiss.disabled=true;status.textContent="";
     try {
       await postJSON("/api/task/dismiss",{id:entry.task.id});
-      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);
+      dismissedTasks.add(entry.task.id);card.classList.add("leaving");state.tasks=state.tasks.filter(t=>t.id!==entry.task.id);renderAgents();
       setTimeout(()=>{renderTasks();load();},motion.matches?0:220);
     } catch(error) {status.textContent=error.message;status.classList.add("error");dismiss.disabled=false;}
   });

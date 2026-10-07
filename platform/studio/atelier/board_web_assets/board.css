@@ -177,6 +177,12 @@ h1, h2, p { margin: 0; }
 .badge.error { background: var(--error); }
 .badge.error::after { content: "!"; }
 .agent-row .badge { box-shadow: 0 0 0 2.5px var(--card); }
+/* Free for work: a hollow, still ring instead of the filled, pulsing dot. */
+.badge.live.free { background: var(--bg); box-shadow: inset 0 0 0 3px var(--live), 0 0 0 2.5px var(--bg); }
+.agent-row .badge.live.free { background: var(--card); box-shadow: inset 0 0 0 3px var(--live), 0 0 0 2.5px var(--card); }
+.badge.live.free::before { content: none; }
+.free-tag, .waiting-tag { display: inline-block; margin-right: 4px; font-size: 12px; line-height: 1.4; font-weight: 700; color: var(--live); background: color-mix(in srgb, var(--live) 14%, transparent); border-radius: 11px; padding: 1px 8px; }
+.waiting-tag { color: var(--coral); background: color-mix(in srgb, var(--coral) 14%, transparent); }
 .count-badge { position: absolute; top: -5px; right: -9px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--coral); color: #fff; font: 700 10.5px/18px var(--font); text-align: center; text-shadow: none; box-shadow: 0 0 0 2.5px var(--bg); }
 
 .banner { flex: none; margin: 6px 16px 0; padding: 11px 14px; border-radius: 14px; background: #d9546a1f; border: 1px solid #d9546a40; color: #9c2f45; font-size: 14px; }
