@@ -4,7 +4,9 @@ The native skate rolls over an edge of at most 12 mm; a taller lip where two sep
 the wheels and bails the rider. The rendered pieces keep their exact geometry and stop blocking. This mesh welds
 coincident vertices across placements and, wherever a riding edge stands 4 mm to 8 cm proud of the neighbouring
 piece's surface, adds a 1:8 wedge from the edge down onto that surface, laid in its plane so bowl walls blend too.
-Taller steps stay, and so do the grind obstacles (ledges, rails), which are meant to be ollied onto.
+Closed pieces also carry vertical end caps at their joins: a swept board can hit them through the meeting
+riding surfaces. Remove only caps covered on both sides by adjoining pieces at the same riding height. Taller
+steps and exposed walls stay, and so do the grind obstacles (ledges, rails), which are meant to be ollied onto.
 """
 import numpy as np
 
@@ -12,6 +14,7 @@ LIP = (.004, .08)       # rises that get a wedge; below is flush, above is a led
 SLOPE = 8.              # wedge run per metre of rise
 UP = .5                 # riding surfaces face up at least this much
 WELD = .002
+ROLLABLE = .012
 SEGMENT = .1
 PROBE = .02
 
@@ -96,6 +99,55 @@ def _merge(vertices, faces):
     return merged, faces[keep], keep
 
 
+def buried_walls(vertices, faces, owner, obstacles=(), groups=None):
+    """Indices of vertical piece faces covered by riding surfaces on both sides.
+
+    Closed ramp pieces bring their end caps to every joint. Although the riding surfaces meet, the skate's
+    swept board can hit those buried faces and reverse. Keep exposed walls, tall steps and grind obstacles;
+    remove a cap only when another piece meets the same riding height along its boundary and covers its vertical
+    span. Existing lip ramps count as coverage. groups identifies material primitives of the same placed piece.
+    """
+    triangles = vertices[faces]
+    normals = _normals(triangles)[0]
+    up = normals[:, 2] > 1e-4
+    # A lip ramp belongs to the piece whose edge it ramps.
+    part = np.where(owner < 0, -1-owner, owner)
+    if groups is not None: part = np.asarray(groups)[part]
+    surfaces = Surfaces(triangles[up], part[up])
+    down = normals[:, 2] < -1e-4
+    undersides = Surfaces(triangles[down], part[down])
+    removed = []
+    for k in np.flatnonzero((abs(normals[:, 2]) < .01) & (owner >= 0)):
+        if owner[k] in obstacles: continue
+        direction = normals[k, :2]; direction = direction/np.linalg.norm(direction)
+        triangle = triangles[k]
+        samples = [triangle.mean(0)]
+        for a, b in zip(triangle, np.roll(triangle, -1, 0)):
+            length = np.linalg.norm(b[:2]-a[:2])
+            samples.extend(np.linspace(a, b, max(1, int(np.ceil(length/SEGMENT)))+1))
+        # Inset the boundary slightly so adjoining, unrelated outside edges don't defeat a buried joint.
+        centre = triangle.mean(0)
+        samples = np.asarray(samples)*.999+centre*.001
+        covered = True
+        for point in samples:
+            inside = [surfaces.height(j, *point[:2]) for j in surfaces.over(*(point[:2]-direction*PROBE))
+                      if surfaces.owner[j] == part[k]]
+            inside = [height for height in inside if height >= point[2]-LIP[1]]
+            outside = point[:2]+direction*PROBE
+            below = {undersides.owner[j] for j in undersides.over(*outside)
+                     if undersides.height(j, *point[:2]) <= point[2]+ROLLABLE+WELD}
+            # Use the nearest riding level, and require the neighbour's solid span to cover the wall.
+            # Foundation offsets no larger than the rollable edge plus weld tolerance are closed joints;
+            # a roof at the same height must not remove the exposed wall of an underpass below it.
+            if not inside or not any(surfaces.owner[j] != part[k] and surfaces.owner[j] in below
+                                     and surfaces.height(j, *point[:2]) >= point[2]-LIP[1]
+                                     and abs(min(inside)-surfaces.height(j, *point[:2])) <= LIP[1]
+                                     for j in surfaces.over(*outside)):
+                covered = False; break
+        if covered: removed.append(k)
+    return np.asarray(removed, dtype=int)
+
+
 def _open_edges(vertices, faces, owner, obstacles=()):
     """Each open edge of the riding surface, sampled every SEGMENT, with its rise over the neighbouring piece.
 
@@ -124,11 +176,12 @@ def _open_edges(vertices, faces, owner, obstacles=()):
         yield part, out, [tuple(sample) for sample in samples], surfaces
 
 
-def riding_collision(parts, obstacles=()):
+def riding_collision(parts, obstacles=(), groups=None):
     """parts: (vertices, faces) for each placed piece, in park-local metres; obstacles: indices of pieces kept sharp.
 
     Returns (vertices, faces, owner, report). owner is the piece of each face; a wedge belongs to -1-piece, the
-    piece whose edge it ramps, so audits see it as a neighbour."""
+    piece whose edge it ramps, so audits see it as a neighbour. groups optionally gives each part's placed-piece
+    identity when materials split one piece into several parts."""
     vertices, faces, owner = weld(parts)
     added, added_owner = [], []
     report = {'welded_vertices': len(vertices), 'wedges': 0, 'max_rise_m': 0., 'wedged_length_m': 0.}
@@ -165,11 +218,15 @@ def riding_collision(parts, obstacles=()):
         faces = np.vstack([faces, start+np.arange(3*len(added)).reshape(-1, 3)])
         owner = np.concatenate([owner, added_owner])
         vertices, faces, keep = _merge(vertices, faces); owner = owner[keep]
+    buried = buried_walls(vertices, faces, owner, obstacles, groups)
+    keep = np.ones(len(faces), bool); keep[buried] = False
+    faces, owner = faces[keep], owner[keep]
+    report['buried_wall_triangles'] = len(buried)
     report['triangles'] = len(faces)
     return vertices, faces, owner, report
 
 
-def steps(vertices, faces, owner, obstacles=(), limit=.012):
+def steps(vertices, faces, owner, obstacles=(), limit=ROLLABLE):
     """Open riding edges standing more than `limit` (the skate's rollable edge) above a neighbouring piece and no
     more than LIP[1]: (point, rise, piece). Taller steps and the obstacles are deliberate."""
     return [(p, r, part) for part, _, samples, _ in _open_edges(vertices, faces, owner, obstacles)

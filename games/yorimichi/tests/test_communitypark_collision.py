@@ -28,6 +28,12 @@ class RidingCollisionTest(unittest.TestCase):
         self.assertEqual(report['wedges'], 0)
         self.assertLess(report['welded_vertices'], 16)
         self.assertEqual(C.steps(vertices, faces, owner), [])
+        self.assertEqual(report['buried_wall_triangles'], 4)
+        triangles = vertices[faces]
+        self.assertFalse(np.any(np.all(abs(triangles[:, :, 0]) < 1e-9, axis=1)))
+        # The outside caps still stop a rider leaving the deck sideways.
+        self.assertEqual(sum(np.all(abs(triangles[:, :, 0]-4) < 1e-9, axis=1)), 2)
+        self.assertEqual(sum(np.all(abs(triangles[:, :, 0]+4) < 1e-9, axis=1)), 2)
 
     def test_a_proud_pad_gets_a_shallow_ramp_on_every_side(self):
         pad = slab(-1, -1, 1, 1, -.1, .02)
@@ -50,6 +56,62 @@ class RidingCollisionTest(unittest.TestCase):
         vertices, faces, owner, report = C.riding_collision(floor_tiles()+[ledge, step], obstacles={2})
         self.assertEqual(report['wedges'], 0)
         self.assertEqual(C.steps(vertices, faces, owner, obstacles={2}), [])
+        for part in (2, 3):
+            self.assertEqual(sum(owner == part), 12)
+
+    def test_sloped_join_caps_are_buried_but_the_riding_faces_stay(self):
+        parts = floor_tiles()
+        parts = [(v+np.column_stack((np.zeros(len(v)), np.zeros(len(v)), v[:, 1]*.4)), f) for v, f in parts]
+        original = np.concatenate([v[f] for v, f in parts])
+        riding = original[C._normals(original)[0][:, 2] > C.UP]
+        vertices, faces, owner, report = C.riding_collision(parts)
+        self.assertEqual(report['buried_wall_triangles'], 4)
+        actual = vertices[faces][C._normals(vertices[faces])[0][:, 2] > C.UP]
+        np.testing.assert_allclose(actual, riding)
+
+    def test_cap_with_a_gap_beside_it_stays(self):
+        pieces = [slab(-4, -4, 0, 4, -.2, 0.), slab(.1, -4, 4, 4, -.2, 0.)]
+        _, _, _, report = C.riding_collision(pieces)
+        self.assertEqual(report['buried_wall_triangles'], 0)
+
+    def test_an_overhead_deck_does_not_bury_a_lower_wall(self):
+        floor = slab(-4, -4, 0, 4, -.2, 0.)
+        roof = slab(-4, -4, 4, 4, 2.8, 3.)
+        _, _, owner, report = C.riding_collision([floor, roof])
+        self.assertEqual(report['buried_wall_triangles'], 0)
+        self.assertEqual(sum(owner == 0), 12)
+
+    def test_one_piece_with_floor_and_roof_keeps_its_lower_wall(self):
+        floor = slab(-4, -4, 0, 4, -.2, 0.)
+        roof = slab(-4, -4, 0, 4, 2.8, 3.)
+        neighbour_roof = slab(0, -4, 4, 4, 2.8, 3.)
+        _, _, owner, _ = C.riding_collision([floor, roof, neighbour_roof], groups=[0, 0, 1])
+        self.assertEqual(sum(owner == 0), 12)
+
+    def test_a_roof_beside_a_tall_piece_leaves_the_underpass_wall(self):
+        wall = slab(-4, -4, 0, 4, 0., 3.)
+        roof = slab(0, -4, 4, 4, 2.8, 3.)
+        _, _, owner, _ = C.riding_collision([wall, roof])
+        self.assertEqual(sum(owner == 0), 12)
+
+    def test_small_foundation_offsets_do_not_leave_a_cap_above_the_join(self):
+        first = slab(-4, -4, 0, 4, -.2, 0.)
+        second = slab(0, -4, 4, 4, -.188, 0.)
+        _, _, _, report = C.riding_collision([first, second])
+        self.assertEqual(report['buried_wall_triangles'], 4)
+
+    def test_larger_foundation_gaps_keep_the_lower_wall(self):
+        first = slab(-4, -4, 0, 4, -.2, 0.)
+        second = slab(0, -4, 4, 4, -.17, 0.)
+        _, _, owner, _ = C.riding_collision([first, second])
+        self.assertEqual(sum(owner == 0), 12)
+
+    def test_material_parts_share_one_piece_for_cap_coverage(self):
+        parts = []
+        for v, f in floor_tiles():
+            parts.extend([(v, f[:4]), (v, f[4:])])
+        _, _, _, report = C.riding_collision(parts, groups=[0, 0, 1, 1])
+        self.assertEqual(report['buried_wall_triangles'], 4)
 
 
 if __name__ == '__main__':
