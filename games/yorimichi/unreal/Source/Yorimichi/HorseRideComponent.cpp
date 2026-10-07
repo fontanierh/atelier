@@ -2,7 +2,6 @@
 #include "AtelierFX.h"
 #include "BotwRider.h"
 #include "CairoCharacter.h"
-#include "ModoriCharacter.h"
 #include "Hippodrome.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
@@ -60,7 +59,6 @@ FString UHorseRideComponent::RiderFor(const AWandererCharacter* Character)
 {
     if (!Character) return FString();
     if (Character->IsA<ACairoCharacter>()) return FHorseSpec::PlayerRider();
-    if (Character->IsA<AModoriCharacter>()) return FHorseSpec::Find(TEXT("RiderModori")) ? FString(TEXT("RiderModori")) : FString();
     const FString Name = TEXT("Rider") + ABotwRider::Requested();
     return FHorseSpec::Find(Name) ? Name : FString();
 }
