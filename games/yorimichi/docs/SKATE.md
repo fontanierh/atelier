@@ -241,6 +241,12 @@ grass spot, a ride frame with no ground under it, or a bail with no lying or no 
 `SKATE GROUND CHECK PASS` or `FAIL`; that line is the result. `quit` then exits, asking for status 1 on a failure
 (Windows and Linux pass it on; macOS always exits with 0). Other road samples can be passed as numbers.
 
+Only the extracted package proves the ground in a cooked build. Release acceptance runs this command there, without a
+`skate.CookedSurface` override, and reads all four ride and bail lines and the summary; a process exit of 0 passes
+nothing on macOS. An editor run, even with `skate.CookedSurface 1`, shows only what the cooked collision triangles
+contain, not that a packaged game picks them: a cooked mesh without CPU access still reports its render index count,
+and that once sent every terrain and road mesh down an empty render path (#122).
+
 Offline, without Unreal, after building the native QA executable (see the plugin's
 [runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md#reference-build)):
 
