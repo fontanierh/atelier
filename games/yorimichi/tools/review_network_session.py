@@ -65,6 +65,10 @@ def compare_receipts(folder, gameplay=False, listen=False):
         gameplay_server, gameplay_client = read('server-gameplay'), read('client-gameplay')
         checks['native_gameplay'] = gameplay_server.get('passed') is True and gameplay_client.get('passed') is True
         checks['host_received_sustained_skating'] = gameplay_server.get('accepted_pose_frames', 0) >= 60
+        checks['host_applied_jump_and_release'] = (gameplay_server.get('jump_cm', 0) >= 25 and
+                                                   gameplay_server.get('processed_edges', 0) >= 2)
+        checks['client_applied_valid_checkpoints'] = (gameplay_client.get('checkpoints_applied', 0) > 0 and
+                                                       gameplay_client.get('checkpoints_rejected', -1) == 0)
         checks['owner_skated_without_saved_moves'] = (gameplay_client.get('skate_seconds', 0) >= 5 and
                                                      gameplay_client.get('maximum_saved_skate_moves') == 0)
         if listen:
@@ -74,10 +78,12 @@ def compare_receipts(folder, gameplay=False, listen=False):
             checks['both_peers_applied_skating'] = (gameplay_client.get('applied_peer_frames', 0) >= 60 and
                                                      gameplay_host.get('applied_peer_frames', 0) >= 60)
             checks['listen_host_drove'] = gameplay_host.get('passed') is True and gameplay_host.get('skate_seconds', 0) >= 5
+            checks['both_peers_interpolated_skating'] = (gameplay_client.get('interpolated_peer_frames', 0) > 0 and
+                                                         gameplay_host.get('interpolated_peer_frames', 0) > 0)
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -116,6 +122,8 @@ def worker(folder, port, gameplay=False, listen=False):
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
                            '-ExecCmds=t.MaxFPS 30']
+                command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
+                command.append('-MULTIHOME=127.0.0.1')
                 if gameplay:
                     command.append('-networkgameplay')
                 if listen:
@@ -179,6 +187,7 @@ def worker(folder, port, gameplay=False, listen=False):
             raise RuntimeError('Aggregate monitor rejected teardown')
         checks = compare_receipts(folder, gameplay, listen)
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
+                      emulation=dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent),
                       scope='Local NullRHI editor session smoke; packaged/rendered/network acceptance remains separate')
         (folder / 'checks.json').write_text(json.dumps(report, indent=2) + '\n')
         for name, ok in checks.items():
@@ -198,7 +207,12 @@ def main():
     parser.add_argument('--port', type=int)
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
     parser.add_argument('--listen', action='store_true', help='Two local players across listen-host/client processes; validates the observer relay within the same aggregate guard')
+    parser.add_argument('--lag-ms', type=int, default=0, help='Emulated one-way packet delay on both processes (0..200 ms)')
+    parser.add_argument('--variance-ms', type=int, default=0, help='Packet delay variance (0..50 ms)')
+    parser.add_argument('--loss-percent', type=int, default=0, help='Emulated packet loss on both processes (0..10 percent)')
     args = parser.parse_args()
+    if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
+        parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
     if args.listen:
         args.gameplay = True
     from atelier.build import Context
@@ -207,13 +221,15 @@ def main():
     folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
     folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind(('127.0.0.1', args.port or 0))
         port = sock.getsockname()[1]
-    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port)] + (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []),
+    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port),
+                        '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent)] +
+                       (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []),
                        folder / 'guard', timeout=330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

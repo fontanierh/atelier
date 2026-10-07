@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "JapanSkateWire.h"
+#include "JapanSkateClock.h"
 #include "JapanSkateNetwork.generated.h"
 
 class AWandererCharacter;
@@ -17,6 +18,8 @@ public:
     bool AcceptsRoot(const FVector& Location) const;
     uint32 GetReceivedFrameCount() const { return ReceivedFrameCount; }
     uint32 GetAppliedFrameCount() const { return AppliedFrameCount; }
+    uint32 GetInterpolatedFrameCount() const { return InterpolatedFrameCount; }
+    uint32 GetHeldFrameCount() const { return HeldFrameCount; }
     uint8 GetHostMode() const { return HostMode; }
     uint32 GetAcceptedFrameCount() const { return AcceptedFrameCount; }
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
@@ -37,6 +40,9 @@ private:
     bool bWarnedBodyLimit = false, bWarnedSkeletonLimit = false, bWarnedRoot = false;
     double LastActivePose = -2.;
     double DeliveryInterval = 1./30., ViewDelay = .1, PreviousArrival = -1.;
+    double DeliveryAge = 0.;
+    FJapanSkateClock ArrivalClock;
+    uint32 InterpolatedFrameCount = 0, HeldFrameCount = 0;
     void ShowBoard(double ShowAt);
     FJapanSkateAssembly HostAssembly, ViewAssembly;
     TArray<FJapanSkateFrame> Frames;

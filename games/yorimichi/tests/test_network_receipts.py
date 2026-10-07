@@ -70,7 +70,8 @@ def listen_receipts(receipts):
     (receipts / 'host').mkdir()
     for name in ('server-gameplay', 'client-gameplay', 'host/client-gameplay'):
         (receipts / (name + '.json')).write_text(json.dumps(dict(passed=True, accepted_pose_frames=100,
-            skate_seconds=6, maximum_saved_skate_moves=0, received_peer_frames=100, applied_peer_frames=80)))
+            skate_seconds=6, maximum_saved_skate_moves=0, received_peer_frames=100, applied_peer_frames=80,
+            jump_cm=60, processed_edges=2, checkpoints_applied=20, checkpoints_rejected=0, interpolated_peer_frames=70)))
     return receipts
 
 
@@ -85,6 +86,11 @@ def test_listen_pair_requires_both_observers_and_host_survives_leave(listen_rece
     ('host/client-gameplay', 'received_peer_frames', 0),
     ('server-complete', 'player_pawns', 0),
     ('client-complete', 'players', 2),
+    ('server-gameplay', 'jump_cm', 0),
+    ('server-gameplay', 'processed_edges', 0),
+    ('client-gameplay', 'checkpoints_applied', 0),
+    ('client-gameplay', 'checkpoints_rejected', 1),
+    ('host/client-gameplay', 'interpolated_peer_frames', 0),
 ])
 def test_received_packets_alone_or_bad_listen_teardown_fail(listen_receipts, name, field, value):
     change(listen_receipts, name, lambda v: v.update({field: value}))

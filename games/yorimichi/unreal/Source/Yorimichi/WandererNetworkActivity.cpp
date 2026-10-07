@@ -114,9 +114,10 @@ void AWandererCharacter::ServerFinishSkate_Implementation(uint32 Epoch, FVector_
 void AWandererCharacter::ServerTravelTo_Implementation(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch)
 {
     if (Epoch != NetworkActivity.Epoch || !FiniteInWorld(Location, 2000000.) || !FMath::IsFinite(Yaw) ||
-        GetWorld()->GetTimeSeconds() - LastNetworkTravel < 1.) return;
+        GetWorld()->GetTimeSeconds() - LastNetworkTravel < 1.)
+    { ClientActivityRejected(TEXT("Travel is unavailable just now.")); return; }
     LastNetworkTravel = GetWorld()->GetTimeSeconds();
-    TravelTo(Location, Yaw, TEXT("player map"));
+    if (!TravelTo(Location, Yaw, TEXT("player map"))) ClientActivityRejected(TEXT("Could not find a safe destination."));
 }
 
 void AWandererCharacter::ClientActivityRejected_Implementation(const FString& Reason)

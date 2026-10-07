@@ -21,10 +21,15 @@ struct FScript
     TWeakObjectPtr<UWorld> World;
     int32 Step = 0;
     double Began = 0.;
+    double FirstSeen = 0., ObservedSeconds = 0.;
+    FJapanMovementStats MovementStats;
+    uint16 MaximumProcessedEdge = 0;
+    uint32 InterpolatedFrames = 0, HeldFrames = 0;
     FVector Start = FVector::ZeroVector, Foot = FVector::ZeroVector;
     float WalkDistance = 0.f, JumpHeight = 0.f, SkateSeconds = 0.f;
     uint32 HighestEpoch = 1, AcceptedFrames = 0, MaximumSavedMoves = 0, PeerFrames = 0, ReceivedPeerFrames = 0;
     bool SawPlayer = false, SawSkate = false, Finished = false, JumpReleased = false;
+    bool SawHostTakeoff = false;
 };
 FScript Scripts[2];
 
@@ -40,6 +45,15 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("activity_epoch"), State.HighestEpoch);
     Data->SetNumberField(TEXT("accepted_pose_frames"), State.AcceptedFrames);
     Data->SetNumberField(TEXT("maximum_saved_skate_moves"), State.MaximumSavedMoves);
+    Data->SetNumberField(TEXT("processed_edges"), State.MaximumProcessedEdge);
+    Data->SetNumberField(TEXT("interpolated_peer_frames"), State.InterpolatedFrames);
+    Data->SetNumberField(TEXT("held_peer_frames"), State.HeldFrames);
+    Data->SetNumberField(TEXT("corrections"), State.MovementStats.Corrections);
+    Data->SetNumberField(TEXT("corrections_per_second"), State.MovementStats.Corrections / FMath::Max(.001, State.ObservedSeconds));
+    Data->SetNumberField(TEXT("checkpoints_applied"), State.MovementStats.Checkpoints);
+    Data->SetNumberField(TEXT("checkpoints_rejected"), State.MovementStats.Rejected);
+    Data->SetNumberField(TEXT("replayed_moves"), State.MovementStats.ReplayedMoves);
+    Data->SetNumberField(TEXT("largest_correction_cm"), State.MovementStats.LargestCorrectionCm);
     FString Text; FJsonSerializer::Serialize(Data, TJsonWriterFactory<>::Create(&Text));
     IFileManager::Get().MakeDirectory(*Folder, true);
     const FString File = Folder / (Server ? TEXT("server-gameplay.json") : TEXT("client-gameplay.json"));
@@ -72,8 +86,9 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
     {
         if (Server && Script.SawPlayer && !Player)
         {
-            if (!Script.SawSkate || Script.HighestEpoch < 3 || Script.AcceptedFrames < 60 || Script.WalkDistance < 60.f)
-                Error = TEXT("Host did not observe walking, sustained skate poses and the on-foot handoff");
+            if (!Script.SawSkate || Script.HighestEpoch < 3 || Script.AcceptedFrames < 60 || Script.WalkDistance < 60.f ||
+                Script.JumpHeight < 25.f || Script.MaximumProcessedEdge < 2)
+                Error = TEXT("Host did not observe walking, jump/release edges, sustained skate poses and the on-foot handoff");
             else if (!Save(Folder, true, Script)) Error = TEXT("Could not save host gameplay receipt");
             else Script.Finished = true;
         }
@@ -86,15 +101,25 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
                 {
                     Script.PeerFrames = FMath::Max(Script.PeerFrames, Stream->GetAppliedFrameCount());
                     Script.ReceivedPeerFrames = FMath::Max(Script.ReceivedPeerFrames, Stream->GetReceivedFrameCount());
+                    Script.InterpolatedFrames = FMath::Max(Script.InterpolatedFrames, Stream->GetInterpolatedFrameCount());
+                    Script.HeldFrames = FMath::Max(Script.HeldFrames, Stream->GetHeldFrameCount());
                 }
     const double Now = World->GetTimeSeconds();
     auto* Movement = CastChecked<UJapanCharacterMovement>(Player->GetCharacterMovement());
-    if (!Script.SawPlayer) { Script.SawPlayer = true; Script.Start = Player->GetActorLocation(); Script.Began = Now; }
+    if (!Script.SawPlayer) { Script.SawPlayer = true; Script.Start = Player->GetActorLocation(); Script.FirstSeen = Script.Began = Now; }
+    Script.ObservedSeconds = Now - Script.FirstSeen;
+    Script.MovementStats = Movement->GetNetworkStats();
+    Script.MaximumProcessedEdge = FMath::Max(Script.MaximumProcessedEdge, Movement->GetProcessedEdge());
     Script.HighestEpoch = FMath::Max(Script.HighestEpoch, Player->GetActivityEpoch());
     if (Server)
     {
         if (!Script.SawSkate && Player->GetNetworkActivity() == EJapanActivity::OnFoot)
+        {
             Script.WalkDistance = FMath::Max(Script.WalkDistance, float(FVector::Dist2D(Script.Start, Player->GetActorLocation())));
+            if (!Script.SawHostTakeoff && Movement->IsFalling() && Movement->Velocity.Z > 100.f)
+            { Script.SawHostTakeoff = true; Script.Foot = Player->GetActorLocation(); }
+            if (Script.SawHostTakeoff) Script.JumpHeight = FMath::Max(Script.JumpHeight, float(Player->GetActorLocation().Z - Script.Foot.Z));
+        }
         Script.SawSkate |= Player->GetNetworkActivity() == EJapanActivity::Skate;
         if (const auto* Net = Player->FindComponentByClass<UJapanSkateNetwork>())
             Script.AcceptedFrames = Net->GetAcceptedFrameCount();

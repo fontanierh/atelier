@@ -175,6 +175,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
     ApplyMoveInput(ActiveInput);
     TGuardValue<bool> Executing(bExecutingMove, true);
     UBotwMoveSet* Moves = Rider->GetMoves();
+    if (bReplaying) ++NetworkStats.ReplayedMoves;
     ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
     {
         if (!Rider->bReady || Rider->bMenuOpen || Rider->OnVehicle() || Rider->IsZeppelinPassenger()) return;
@@ -281,6 +282,9 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     AcknowledgeEdges(Custom.AcknowledgedEdge);
     if (!Custom.IsCorrection()) return;
     const auto& Saved = static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove);
+    ++NetworkStats.Corrections;
+    NetworkStats.LargestCorrectionCm = FMath::Max(NetworkStats.LargestCorrectionCm,
+        float(FVector::Dist(Saved.SavedLocation, CharacterOwner->GetActorLocation())));
     const FJapanMoveCheckpoint& State = Custom.bHasCheckpoint ? Custom.Checkpoint : Saved.PostState;
     if (!Custom.bHasCheckpoint && State.Bytes.IsEmpty())
     {
@@ -292,10 +296,12 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     TGuardValue<bool> Replay(bReplaying, true);
     if (PredictsMoves() && (!Rider || !Rider->GetMoves() || !Rider->GetMoves()->ApplyNetworkState(State)))
     {
+        ++NetworkStats.Rejected;
         UE_LOG(LogTemp, Error, TEXT("Network movement correction rejected: invalid traversal checkpoint"));
         if (auto* Session = GetWorld()->GetGameInstance<UJapanGameInstance>())
             Session->ReturnWithError(TEXT("The host sent incompatible movement state. Rejoin using the same build."));
     }
+    else if (PredictsMoves() && Custom.bHasCheckpoint) ++NetworkStats.Checkpoints;
 }
 
 void UJapanCharacterMovement::SendClientAdjustment()

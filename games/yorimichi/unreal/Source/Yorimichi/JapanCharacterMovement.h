@@ -4,6 +4,12 @@
 #include "JapanMovementNet.h"
 #include "JapanCharacterMovement.generated.h"
 
+struct FJapanMovementStats
+{
+    uint32 Corrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
+    float LargestCorrectionCm = 0.f;
+};
+
 /** The player's movement: ordinary CharacterMovement, the sailboat holding its own velocity, the skate plugin's custom
  *  movement mode (USkateComponent::MovementMode) handed to the board, and a BOTW move set's (UBotwMoveSet::MovementMode:
  *  gliding, climbing, swimming), which also sets the velocity of its hops and driven attacks, turns the character and
@@ -28,6 +34,7 @@ public:
     uint16 PendingAcknowledgedEdge = 0;
     bool IsReplaying() const { return bReplaying; }
     bool IsExecutingMove() const { return bExecutingMove; }
+    const FJapanMovementStats& GetNetworkStats() const { return NetworkStats; }
     FVector GetPendingLaunch() const { return PendingLaunchVelocity; }
     void SetPendingLaunch(const FVector& Value) { PendingLaunchVelocity = Value; }
     FJapanMoveCheckpoint PendingCheckpoint;
@@ -61,4 +68,5 @@ private:
     void AcknowledgeEdges(uint16 Through);
     bool bInputPrepared = false, bExecutingMove = false, bReplaying = false;
     double LastCustomCorrection = -1.;
+    FJapanMovementStats NetworkStats;
 };

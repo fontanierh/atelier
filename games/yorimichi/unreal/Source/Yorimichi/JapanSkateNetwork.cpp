@@ -61,6 +61,7 @@ void UJapanSkateNetwork::TickComponent(float Dt, ELevelTick Type, FActorComponen
         ReceivedFrame = HostFrame = ReceivedBodies = HostBodies = 0; Bodies.Reset();
         bWarnedRoot = false; HostMode = 0;
         DeliveryInterval = 1./30.; ViewDelay = .1; PreviousArrival = -1.;
+        DeliveryAge = 0.; ArrivalClock = FJapanSkateClock();
         LastHostRoot = Rider->GetActorLocation(); LastHostRootTime = GetWorld()->GetTimeSeconds();
         if (!Rider->IsLocallyControlled()) Rider->GetSkate()->ClearNetworkPose();
     }
@@ -164,7 +165,7 @@ void UJapanSkateNetwork::ServerPose_Implementation(const FJapanSkateChunk& Chunk
         Rider->GetCharacterMovement()->Velocity = Complete.Velocity;
     }
     const double ServerTime = Rules->GetServerWorldTimeSeconds();
-    Complete.Time = FMath::Clamp(double(Complete.Time), FMath::Max(0., ServerTime - .5), ServerTime);
+    Complete.Time = ArrivalClock.Map(Complete.Time, ServerTime);
     HostMode = Complete.Mode;
     // Listen-host visuals consume the validated frame locally, with no network echo to its owner.
     if (!Rider->IsLocallyControlled() && GetWorld()->GetNetMode() != NM_DedicatedServer) Accept(Complete);
@@ -187,6 +188,8 @@ void UJapanSkateNetwork::Accept(const FJapanSkateFrame& Frame)
     const double Arrival = GetWorld()->GetTimeSeconds();
     const double Spacing = PreviousArrival < 0. ? double(Frame.Interval) : FMath::Clamp(Arrival - PreviousArrival, 1./120., 30.);
     DeliveryInterval = FMath::Max(double(Frame.Interval), FMath::Lerp(DeliveryInterval, Spacing, .2));
+    if (const auto* Clock = GetWorld()->GetGameState())
+        DeliveryAge = FMath::Lerp(DeliveryAge, FMath::Clamp(double(Clock->GetServerWorldTimeSeconds() - Frame.Time), 0., .5), .2);
     PreviousArrival = Arrival;
     Frames.Add(Frame);
     while (Frames.Num() > 6) Frames.RemoveAt(0, 1, EAllowShrinking::No);
@@ -197,7 +200,7 @@ void UJapanSkateNetwork::Show(float Dt)
     const auto* Clock = GetWorld()->GetGameState();
     if (!Clock) return;
     const double Now = Clock->GetServerWorldTimeSeconds();
-    const double TargetDelay = FMath::Clamp(1.5 * DeliveryInterval + .05, .1, 30.);
+    const double TargetDelay = FMath::Clamp(DeliveryAge + 1.5 * DeliveryInterval + .05, .1, 30.);
     // At most 250 ms/s of adjustment: growing delay cannot rewind the display clock.
     ViewDelay += FMath::Clamp(TargetDelay - ViewDelay, -.25 * double(Dt), .25 * double(Dt));
     const double ShowAt = Now - ViewDelay;
@@ -206,7 +209,7 @@ void UJapanSkateNetwork::Show(float Dt)
     const FJapanSkateFrame& A = Frames[0];
     const FJapanSkateFrame& B = Frames.Num() > 1 ? Frames[1] : A;
     if (B.Bones.IsEmpty()) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(ShowAt); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
-    if (Now - B.Time > FMath::Max(.5, 2.5 * DeliveryInterval + .1))
+    if (GetWorld()->GetTimeSeconds() - PreviousArrival > FMath::Max(.5, 2.5 * DeliveryInterval + .1))
     {
         Rider->GetSkate()->SilenceNetworkAudio(Dt);
         if (Rider->GetNetworkActivity() == EJapanActivity::OnFoot) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(ShowAt); }
@@ -222,10 +225,11 @@ void UJapanSkateNetwork::Show(float Dt)
         Mesh.Blend(A.Mesh, B.Mesh, Alpha);
         Deck.Blend(A.Deck, B.Deck, Alpha); Shown = FMath::Lerp(A.Shown, B.Shown, Alpha);
     }
-    ShowBodies(Now - .1, Pose, Mesh, Deck, Shown);
+    ShowBodies(ShowAt, Pose, Mesh, Deck, Shown);
     Rider->GetSkate()->ApplyNetworkBoard(Deck, Shown);
     if (Rider->GetSkate()->ApplyNetworkPose(Pose, Mesh))
     {
+        if (Alpha > 0.f && Alpha < 1.f) ++InterpolatedFrameCount; else ++HeldFrameCount;
         const auto& Applied = Alpha < .5f ? A : B;
         if (LastAppliedEpoch != Applied.Epoch || LastAppliedFrame != Applied.Frame)
         {
@@ -244,7 +248,7 @@ void UJapanSkateNetwork::ServerBoard_Implementation(const FJapanBoardState& Stat
     if (Now - RateWindow >= 1.) { RateWindow = Now; ReceivedChunks = ReceivedBoards = ReceivedBodyPackets = 0; }
     if (++ReceivedBoards > 90) return;
     Board = State;
-    Board.Time = FMath::Clamp(double(State.Time), FMath::Max(0., Now - .5), Now);
+    Board.Time = ArrivalClock.Map(State.Time, Now);
     OnRep_Board();
 }
 
@@ -302,7 +306,7 @@ void UJapanSkateNetwork::ServerBodies_Implementation(const FJapanSkateBodies& St
     if (++ReceivedBodyPackets > 90) return;
     HostBodies = State.Pose.Frame;
     FJapanSkateBodies Relay = State;
-    Relay.Pose.Time = FMath::Clamp(double(State.Pose.Time), FMath::Max(0., Now - .5), Now);
+    Relay.Pose.Time = ArrivalClock.Map(State.Pose.Time, Now);
     if (GetWorld()->GetNetMode() != NM_DedicatedServer) ReceiveBodies(Relay);
     for (auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
         if (auto* Player = Cast<AJapanPlayerController>(It->Get())) Player->SendSkateBodies(Rider, Relay);

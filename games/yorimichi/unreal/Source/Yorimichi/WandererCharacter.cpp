@@ -325,8 +325,13 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     if (!bReady || !Landscape || !Landscape->bLoaded) return false;
     if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority())
     {
-        if (IsLocallyControlled() && !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsExecutingMove() &&
-            !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsReplaying()) ServerTravelTo(Target, Yaw, NetworkActivity.Epoch);
+        if (IsLocallyControlled() && !bNetworkActivityPending && !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsExecutingMove() &&
+            !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsReplaying())
+        {
+            bNetworkActivityPending = true;
+            NetworkActivityRequestTime = GetWorld()->GetTimeSeconds();
+            ServerTravelTo(Target, Yaw, NetworkActivity.Epoch);
+        }
         return false; // The map closes when the authoritative handoff arrives.
     }
     if(GetZeppelin())GetZeppelin()->Cancel(this);
@@ -1325,7 +1330,16 @@ void AWandererCharacter::Tick(float Dt)
         else if(GetCharacterMovement()->IsMovingOnGround())
         {LastSafeCityLocation=Here;bHasSafeCityLocation=true;}
     }
-    if(bRemountSkate && GetCharacterMovement()->IsMovingOnGround()){bRemountSkate=false;if(!SkateRide->IsRiding())SkateRide->Toggle();}
+    if (bRemountSkate && GetCharacterMovement()->IsMovingOnGround() &&
+        (!JapanNetwork::IsOnline(GetWorld()) || (!bNetworkActivityPending && !MovementLocked())))
+    {
+        bRemountSkate = false;
+        if (!SkateRide->IsRiding())
+        {
+            if (JapanNetwork::IsOnline(GetWorld())) RequestNetworkSkate();
+            else SkateRide->Toggle();
+        }
+    }
     ReadyTime += Dt;
     if (!bReady) { bReady = ReadyTime > 1.5f; if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
     {

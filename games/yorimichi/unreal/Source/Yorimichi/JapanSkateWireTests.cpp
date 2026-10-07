@@ -1,5 +1,6 @@
 #include "JapanSkateWire.h"
 #include "JapanSkateBudget.h"
+#include "JapanSkateClock.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
 #include "Misc/ScopedCVar.h"
@@ -11,6 +12,16 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanSkateWireTest, "Yorimichi.Network.SkateWi
 
 bool FJapanSkateWireTest::RunTest(const FString&)
 {
+    FJapanSkateClock Clock;
+    const double First = Clock.Map(9.94, 10.06); // 60 ms clock bias plus 60 ms inbound transit.
+    const double Second = Clock.Map(9.97, 10.09);
+    const double Jitter = Clock.Map(10.00, 10.15); // Extra 30 ms delay must not distort capture spacing.
+    TestTrue(TEXT("Skate capture clock maps onto host arrival time"), FMath::IsNearlyEqual(First, 10.06, .00001));
+    TestTrue(TEXT("Constant latency preserves capture intervals"), FMath::IsNearlyEqual(Second - First, .03, .00001));
+    TestTrue(TEXT("Jitter retains capture spacing rather than receipt spacing"), FMath::IsNearlyEqual(Jitter - Second, .03, .00001));
+    TestTrue(TEXT("Expired minimum offset adapts to a changed route"), FMath::IsNearlyEqual(Clock.Map(12., 12.3), 12.3, .00001));
+    for (int32 I = 0; I < 1000; ++I) Clock.Map(20. + I * .01, 20.2 + I * .01);
+    TestTrue(TEXT("The shared pose/body/board clock has bounded history"), Clock.Samples.Num() <= 22);
     FJapanSkateChunk Chunk;
     Chunk.Epoch = 3; Chunk.Frame = 10; Chunk.Time = 5.f; Chunk.TotalBones = 64;
     Chunk.Bones.Init(FTransform(FRotator(25,-60,170), FVector(-120,53.2,240.5), FVector(1)), 32);
