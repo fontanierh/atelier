@@ -220,6 +220,80 @@ class RidingCollisionTest(unittest.TestCase):
         # Upward ramp faces and the foundation remain in the collision.
         self.assertTrue(np.any((owner == 2) & (C._normals(vertices[faces])[0][:, 2] > C.UP)))
 
+    def test_knife_edge_fill_keeps_a_ceiling_below_the_riding_crest(self):
+        # The measured bowl crest with synthetic full-width slab coverage. A speculative
+        # truck contact on its downward face cut 3.39 m/s from a faithful replay.
+        # The real park has two adjacent slabs across this width;
+        # partial coverage is tested separately. The pocket closes to their base in 30 cm.
+        joint, end = -10.19744873046875, -9.89764404296875
+        floor = slab(17.01348876953125, -13.19744873046875, 21.5140380859375, joint,
+                     7.227691650390625, 7.527740478515625)
+        vertices, faces = slab(17.01397705078125, joint, 21.5140380859375, end, 0., 1.)
+        along = (vertices[:, 1]-joint)/(end-joint)
+        vertices[:4, 2] = 7.5276947021484375+along[:4]*(7.2386322021484375-7.5276947021484375)
+        vertices[4:, 2] = 7.5276947021484375+along[4:]*(7.4749603271484375-7.5276947021484375)
+        source = C.weld([floor, (vertices, faces)])
+        down = C._normals(source[0][source[1]])[0][:, 2] < 0
+        removed = C.crest_pockets(*source)
+        self.assertEqual(set(removed), set(np.flatnonzero(down & (source[2] == 1))))
+        self.assertEqual(len(removed), 2)
+        actual_vertices, actual_faces, owner, report = C.riding_collision([floor, (vertices, faces)])
+        actual = actual_vertices[actual_faces]
+        self.assertEqual(report['filled_underside_triangles'], 2)
+        self.assertEqual(report['filled_crest_pockets'], 1)
+        ceilings = actual[(owner == 1) & (C._normals(actual)[0][:, 2] < 0)]
+        self.assertEqual(len(ceilings), 2)
+        np.testing.assert_allclose(ceilings[:, :, 2], 7.227691650390625)
+        # Their extended planes remain below both riding tops, even across the old crest.
+        self.assertTrue(np.all(C._normals(ceilings)[0][:, 2] < -.999))
+        self.assertTrue(np.any((owner == 1) & (C._normals(actual)[0][:, 2] > C.UP)))
+
+    def test_underpasses_overhangs_and_open_pockets_keep_their_undersides(self):
+        for kind in ('underpass', 'overhang', 'short', 'gap', 'not_knife_edge', 'obstacle', 'long_pocket'):
+            with self.subTest(pocket=kind):
+                floor = slab(-2, -1, 0, 1, -1.6 if kind == 'underpass' else -.3, 0.)
+                end = .2 if kind == 'short' else 1.
+                v, f = slab(0, -1, end, 1, -.3, 0.)
+                v[:4, 2] = -(.4 if kind == 'long_pocket' else .96)*v[:4, 0]
+                v[4:, 2] = -v[4:, 0]/6
+                if kind == 'not_knife_edge': v[:4, 2] -= .02
+                pieces = [floor, (v, f)]
+                if kind == 'overhang': pieces = [(v, f)]
+                if kind == 'gap':
+                    pieces = [slab(-2, -1, 0, -.031, -.3, 0.),
+                              slab(-2, -.026, 0, 1, -.3, 0.), (v, f)]
+                self.assertEqual(len(C.crest_pockets(*C.weld(pieces),
+                                                       obstacles={1} if kind == 'obstacle' else ())), 0)
+
+    def test_lower_riding_space_preserves_the_entire_underside_patch(self):
+        floor = slab(-2, -1, 0, 1, -.3, 0.)
+        vertices, faces = slab(0, -1, .3, 1, -.3, 0.)
+        vertices[:4, 2] = -.96*vertices[:4, 0]
+        vertices[4:, 2] = -vertices[4:, 0]/6
+        for depth in (.01, .4, 1., 2.):
+            with self.subTest(lower_floor_depth=depth):
+                # Even a narrow lower platform must be found between any fixed-spacing probes.
+                lower = slab(.12, .031, .19, .036, -depth-.2, -depth)
+                lower[0][:, 2] -= .96*lower[0][:, 0]
+                removed = C.crest_pockets(*C.weld([floor, (vertices, faces), lower]))
+                self.assertEqual(len(removed), 2 if depth <= C.ROLLABLE+C.WELD else 0)
+
+    def test_a_steep_lower_riding_wall_preserves_the_ceiling(self):
+        floor = slab(-2, -1, 0, 1, -.3, 0.)
+        vertices, faces = slab(0, -1, .3, 1, -.3, 0.)
+        vertices[:4, 2] = -.96*vertices[:4, 0]
+        vertices[4:, 2] = -vertices[4:, 0]/6
+        lower = slab(.12, .031, .14, .036, -.6, -.4)
+        lower[0][:, 2] += np.tan(np.deg2rad(70))*(lower[0][:, 0]-.12)
+        self.assertEqual(len(C.crest_pockets(*C.weld([floor, (vertices, faces), lower]))), 0)
+
+    def test_partial_crest_coverage_keeps_both_halves_of_the_patch(self):
+        floor = slab(-2, -1, 0, .5, -.3, 0.)
+        vertices, faces = slab(0, -1, .3, 1, -.3, 0.)
+        vertices[:4, 2] = -.96*vertices[:4, 0]
+        vertices[4:, 2] = -vertices[4:, 0]/6
+        self.assertEqual(len(C.crest_pockets(*C.weld([floor, (vertices, faces)]))), 0)
+
     def test_material_parts_share_one_piece_for_cap_coverage(self):
         parts = []
         for v, f in floor_tiles():

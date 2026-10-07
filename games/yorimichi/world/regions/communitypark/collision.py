@@ -9,6 +9,9 @@ abruptly slow the board. Short or curved neighbours keep the prior run rather th
 Closed pieces also carry vertical end caps at their joins: a swept board can hit them through the meeting
 riding surfaces. Remove only caps covered on both sides by adjoining pieces at the same riding height. Taller
 steps and exposed walls stay, and so do the grind obstacles (ledges, rails), which are meant to be ollied onto.
+An angled underside meeting a riding crest can create a speculative contact above the crest. Fill its small
+closed pocket down to the neighbouring slab foundation, retaining a flat ceiling and the outside walls. Riding
+tops stay exact. Exposed overhangs, steep kicker noses and pockets over other source riding surfaces stay exact.
 """
 import numpy as np
 
@@ -220,6 +223,152 @@ def buried_walls(vertices, faces, owner, obstacles=(), groups=None):
     return np.asarray(removed, dtype=int)
 
 
+def crest_pockets(vertices, faces, owner, obstacles=(), groups=None, evidence=None):
+    """Ceiling patches enclosing a small knife-edge pocket beside a riding slab.
+
+    The riding top and the underside share the crest edge. On the other side, another piece's riding top
+    meets it and its foundation bounds the pocket. Require continuous underside coverage from the crest to
+    that foundation, within the longest lip-ramp reach; a real overhang or underpass must stay collidable.
+    Inspect the unmerged source so both material identities and the neighbouring foundations are available.
+    """
+    triangles = vertices[faces]; normals = _normals(triangles)[0]
+    part = np.where(owner < 0, -1-owner, owner)
+    if groups is not None: part = np.asarray(groups)[part]
+    up = normals[:, 2] > UP
+    down = normals[:, 2] < -1e-4
+    riding = normals[:, 2] > 1e-4
+    floors = Surfaces(triangles[riding], part[riding])
+    floor_indices = np.flatnonzero(riding)
+    tops = Surfaces(triangles[up], part[up])
+    bottoms = Surfaces(triangles[down], part[down])
+    edge_faces = {}
+    for k, face in enumerate(faces):
+        for a, b in zip(face, np.roll(face, -1)):
+            edge_faces.setdefault(tuple(sorted((int(a), int(b)))), []).append(k)
+    candidates = set(np.flatnonzero((normals[:, 2] <= -UP) & (owner >= 0) & ~np.isin(owner, list(obstacles))).tolist())
+    removed = []
+    reach = SLOPE*LIP[1]
+    def riding_space(patch):
+        """Keep any patch over a lower riding surface, except a closed, rollable seam.
+
+        Intersect plan triangles, rather than cast a sparse grid that could miss a narrow lower platform.
+        Height differences are linear on each intersection, so its vertices bound every point inside it.
+        A closer floor may hide a lower one; retaining the underside in that case is deliberate.
+        """
+        maximum = None; lower = {}
+        for triangle in patch:
+            lo = np.floor(triangle[:, :2].min(0)/floors.cell).astype(int)
+            hi = np.floor(triangle[:, :2].max(0)/floors.cell).astype(int)
+            candidates = set()
+            for x in range(lo[0], hi[0]+1):
+                for y in range(lo[1], hi[1]+1):
+                    candidates.update(floors.index.get((x, y), ()))
+            normal = _normals(triangle[None])[0][0]
+            for k in candidates:
+                polygon = triangle[:, :2].copy()
+                boundary = floors.triangles[k, :, :2]
+                for a, b in zip(boundary, np.roll(boundary, -1, 0)):
+                    if not len(polygon): break
+                    direction = b-a
+                    side = (direction[0]*(polygon[:, 1]-a[1])-direction[1]*(polygon[:, 0]-a[0]))
+                    clipped = []
+                    for i in range(len(polygon)):
+                        j = (i+1) % len(polygon)
+                        if side[i] >= -1e-9: clipped.append(polygon[i])
+                        if (side[i] < 0) != (side[j] < 0):
+                            clipped.append(polygon[i]+(polygon[j]-polygon[i])*side[i]/(side[i]-side[j]))
+                    polygon = np.asarray(clipped).reshape(-1, 2)
+                if len(polygon) < 3: continue
+                shifted = polygon-polygon[0]
+                following = np.roll(shifted, -1, 0)
+                area = abs(np.sum(shifted[:, 0]*following[:, 1]-shifted[:, 1]*following[:, 0]))/2
+                if area <= 1e-10: continue
+                under = triangle[0, 2]-((polygon-triangle[0, :2])@normal[:2])/normal[2]
+                floor = np.asarray([floors.height(k, *xy) for xy in polygon])
+                gaps = under-floor; gap = float(gaps.max())
+                maximum = gap if maximum is None else max(maximum, gap)
+                if gap > WELD:
+                    index = int(floor_indices[k])
+                    lower[index] = {'face': index, 'part': int(floors.owner[k]),
+                                     'minimum_gap_m': float(gaps.min()), 'maximum_gap_m': gap}
+        return maximum is not None and maximum > ROLLABLE+WELD, maximum, list(lower.values())
+    while candidates:
+        first = candidates.pop(); patch = {first}; pending = [first]
+        # Classify both halves of a planar quad together, without spreading around a facet crease.
+        while pending:
+            k = pending.pop()
+            for a, b in zip(faces[k], np.roll(faces[k], -1)):
+                for j in edge_faces[tuple(sorted((int(a), int(b))))]:
+                    if j not in candidates or part[j] != part[first]: continue
+                    if normals[j]@normals[first] < 1-1e-6: continue
+                    if abs((triangles[j, 0]-triangles[first, 0])@normals[first]) > WELD: continue
+                    candidates.remove(j); patch.add(j); pending.append(j)
+        lookup = Surfaces(triangles[sorted(patch)], np.full(len(patch), part[first]))
+        points = triangles[sorted(patch)].reshape(-1, 3)
+        boundary = {tuple(sorted((int(a), int(b)))) for k in patch
+                    for a, b in zip(faces[k], np.roll(faces[k], -1))}
+        receipt = {'faces': sorted(patch), 'filled': False, 'covering_parts': [],
+                   'maximum_floor_clearance_m': None}
+        for a, b in sorted(boundary):
+            neighbours = edge_faces[a, b]
+            if not any(k in patch for k in neighbours): continue
+            if not any(up[k] and part[k] == part[first] for k in neighbours): continue
+            start, end = vertices[[a, b]]
+            # A horizontal crest bounds the pocket's highest edge. Sloping exposed side edges don't qualify.
+            if abs(start[2]-end[2]) > WELD or points[:, 2].max() > min(start[2], end[2])+WELD: continue
+            along = end[:2]-start[:2]; length = np.linalg.norm(along)
+            if length <= 2*WELD: continue
+            along /= length
+            out = np.array([along[1], -along[0]])
+            if out@(points[:, :2].mean(0)-start[:2]) < 0: out = -out
+            distances = (points[:, :2]-start[:2])@out
+            if distances.min() < -WELD or distances.max() > reach+WELD: continue
+            inset_start = start[:2]+along*WELD; inset_end = end[:2]-along*WELD
+            fractions = [0., 1.]
+            for surface in (tops, bottoms):
+                fractions.extend(surface.crossings(inset_start-out*PROBE, inset_end-out*PROBE))
+            fractions = np.unique(fractions)
+            fractions = np.r_[fractions, (fractions[:-1]+fractions[1:])/2]
+            closed = True
+            covering = []; bases = []
+            for fraction in fractions:
+                xy = inset_start+(inset_end-inset_start)*fraction
+                crest = (start[2]+end[2])/2
+                inside = xy-out*PROBE
+                neighbours = [j for j in tops.over(*inside) if tops.owner[j] != part[first]
+                              and abs(tops.height(j, *xy)-crest) <= WELD]
+                foundations = [bottoms.height(k, *xy) for j in neighbours for k in bottoms.over(*inside)
+                               if bottoms.owner[k] == tops.owner[j]
+                               and WELD < crest-bottoms.height(k, *xy) <= reach]
+                # No matching slab foundation means an exposed overhang, rather than a closed little pocket.
+                if not foundations: closed = False; break
+                covering.append({'fraction': float(fraction),
+                                 'parts': sorted({int(tops.owner[j]) for j in neighbours})})
+                base = max(foundations); bases.append(base)
+                ray_start = xy+out*WELD; ray_end = xy+out*reach
+                crossings = np.unique([0., 1., *lookup.crossings(ray_start, ray_end)])
+                crossings = np.sort(np.r_[crossings, (crossings[:-1]+crossings[1:])/2])
+                closure = False
+                for t in crossings:
+                    point = ray_start+(ray_end-ray_start)*t
+                    heights = [lookup.height(j, *point) for j in lookup.over(*point)]
+                    if not heights: break
+                    if min(heights) <= base+ROLLABLE+WELD: closure = True; break
+                if not closure: closed = False; break
+            if closed:
+                usable, maximum, lower_rows = riding_space(triangles[sorted(patch)])
+                receipt.update(covering_parts=covering, maximum_floor_clearance_m=maximum,
+                               upward_faces_below=lower_rows, usable_riding_space_below=usable)
+                if not usable and max(bases)-min(bases) <= WELD:
+                    # A plane that stays below the neighbouring riding top cannot create the crest ghost.
+                    behind = inset_start-out*PROBE
+                    if lookup.height(0, *behind) > (start[2]+end[2])/2+WELD:
+                        removed.extend(patch); receipt.update(filled=True, ceiling_z=min(bases))
+                break
+        if evidence is not None: evidence.append(receipt)
+    return np.asarray(sorted(removed), dtype=int)
+
+
 def _open_edges(vertices, faces, owner, obstacles=()):
     """Each open edge of the riding surface, sampled every SEGMENT, with its rise over the neighbouring piece.
 
@@ -321,9 +470,40 @@ def riding_collision(parts, obstacles=(), groups=None):
     # A floor's top can coincide with a ramp's underside. Keep both piece identities until the cap check;
     # merging repeats first would discard the ramp's foundation and leave a buried cap at that joint.
     buried = buried_walls(vertices, faces, owner, obstacles, groups)
-    keep = np.ones(len(faces), bool); keep[buried] = False
+    pockets = []
+    undersides = crest_pockets(vertices, faces, owner, obstacles, groups, pockets)
+    added_faces, added_parts = [], []
+    for pocket in pockets:
+        if not pocket['filled']: continue
+        indices = pocket['faces']; level = pocket['ceiling_z']
+        boundary = {}
+        for k in indices:
+            flat = vertices[faces[k]].copy(); flat[:, 2] = level
+            added_faces.append(flat); added_parts.append(owner[k])
+            for a, b in zip(faces[k], np.roll(faces[k], -1)):
+                key = tuple(sorted((int(a), int(b))))
+                if key in boundary: boundary.pop(key)
+                else: boundary[key] = (int(a), int(b))
+        highest = vertices[faces[indices], 2].max()
+        for a, b in boundary.values():
+            a, b = vertices[[a, b]]
+            # The crest is internal to the adjoining solid slab. A cap here would recreate its riding snag.
+            if min(a[2], b[2]) >= highest-WELD: continue
+            fa, fb = a.copy(), b.copy(); fa[2] = fb[2] = level
+            for triangle in (np.array([a, b, fb]), np.array([a, fb, fa])):
+                if _normals(triangle[None])[1][0] <= 1e-10: continue
+                added_faces.append(triangle); added_parts.append(owner[indices[0]])
+    keep = np.ones(len(faces), bool); keep[np.r_[buried, undersides]] = False
     faces, owner = faces[keep], owner[keep]
-    if added:
+    if added_faces:
+        start = len(vertices)
+        vertices = np.vstack([vertices, np.concatenate(added_faces)])
+        faces = np.vstack([faces, start+np.arange(3*len(added_faces)).reshape(-1, 3)])
+        owner = np.r_[owner, added_parts]
+    report['filled_crest_pockets'] = sum(p['filled'] for p in pockets)
+    report['filled_underside_triangles'] = len(undersides)
+    report['fill_skirt_triangles'] = len(added_faces)-len(undersides)
+    if added or added_faces:
         vertices, faces, keep = _merge(vertices, faces); owner = owner[keep]
     report['buried_wall_triangles'] = len(buried)
     report['triangles'] = len(faces)
