@@ -517,10 +517,12 @@ def riding_collision(parts, obstacles=(), groups=None):
 def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
     """Give horizontal, coincident top/back plates thickness without moving their riding faces.
 
-    Only a surviving reversed rim with the same piece's coplanar top seeds a patch. Follow connected flat
-    undersides of that piece, lower them by two weld cells, and skirt free edges whose sole reverse partner
-    was the mirror. Unpaired T-edges and rims joined to non-mirror faces do not gain a contact partner.
-    Flush neighbours are checked spatially too; partly joined patches retain their original geometry.
+    Only backs with a surviving reversed rim against the same piece's coplanar top form a patch. An adjoining
+    back beneath a curved top stays authored. Lower the selected backs by two weld cells, and skirt free edges
+    whose sole reverse partner was the mirror. Unpaired T-edges and rims joined to non-mirror faces do not gain
+    a contact partner. Flush neighbours include sloped riding aprons; partly joined patches stay authored.
+    Fully joined patches change only when a whole rim meets a horizontal slab, the measured floor-seam case.
+    Patches connected only through sloped aprons stay authored.
     Patches with every mirrored riding rim covered by another top within 3 cm also stay unchanged.
     Existing solid slabs, tilted shells and obstacles retain their original geometry and collision.
     """
@@ -541,7 +543,8 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
                    and np.max(abs((triangles[j]-triangles[k, 0])@normals[k])) <= .0001
                    for j, x, y in edges[tuple(sorted((int(a), int(b))))]):
                 seeds.add(k)
-    tops = Surfaces(triangles[normals[:, 2] > .99999], part[normals[:, 2] > .99999])
+    down.intersection_update(seeds)
+    tops = Surfaces(triangles[normals[:, 2] > 0], part[normals[:, 2] > 0])
     riding = Surfaces(triangles[normals[:, 2] > 0], part[normals[:, 2] > 0])
     selected, visited, extra, extra_owner, patches, partial, covered = set(), set(), [], [], 0, 0, 0
     for seed in sorted(seeds):
@@ -563,7 +566,7 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
                 key = tuple(sorted((int(a), int(b))))
                 if key in boundary: boundary.pop(key)
                 else: boundary[key] = (k, int(a), int(b))
-        skirt = []; partly_joined = False; exposed = False
+        skirt = []; partly_joined = False; exposed = False; flat_join = False
         for k, a, b in boundary.values():
             partners = [j for j, x, y in edges[tuple(sorted((a, b)))]
                         if j not in patch and x == b and y == a]
@@ -585,19 +588,26 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
             # than split its riding rim into more unmatched edges.
             fractions = np.unique([0., 1., *tops.crossings(a[:2]+out*WELD, b[:2]+out*WELD),
                                    *tops.crossings(a[:2]+out*2*WELD, b[:2]+out*2*WELD)])
-            joined = []
+            joined = []; flat = []
             for fraction in (fractions[:-1]+fractions[1:])/2:
                 point = a+(b-a)*fraction
-                joined.append(all(any(abs(tops.height(j, *xy)-point[2]) <= .0001
+                # Probe coverage outside the rim, but compare the neighbouring plane at the rim itself:
+                # a flush sloped apron drops slightly at the probe and must not gain an internal wall.
+                joined.append(all(any(abs(tops.height(j, *point[:2])-point[2]) <= .0001
                                       for j in tops.over(*xy))
                                   for xy in (point[:2]+out*WELD, point[:2]+out*2*WELD)))
+                flat.append(all(any(tops.normal[j, 2] > .99999
+                                    and abs(tops.height(j, *point[:2])-point[2]) <= .0001
+                                    for j in tops.over(*xy))
+                                for xy in (point[:2]+out*WELD, point[:2]+out*2*WELD)))
             if any(joined):
                 if not all(joined): partly_joined = True; break
+                flat_join |= all(flat)
                 continue
             skirt.append((a, b))
         if partly_joined:
             partial += 1; continue
-        if not exposed:
+        if not exposed or (not skirt and not flat_join):
             covered += 1; continue
         for k in sorted(patch):
             lowered = triangles[k].copy(); lowered[:, 2] -= 2*WELD

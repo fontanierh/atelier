@@ -117,6 +117,46 @@ class RidingCollisionTest(unittest.TestCase):
         np.testing.assert_array_equal(v[f], vertices[faces])
         np.testing.assert_array_equal(o, owner)
 
+    def test_back_beneath_a_curved_top_is_not_flooded_into_the_sheet_patch(self):
+        vertices = np.array([(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0),
+                             (4, 1, 0), (4, 1, 1.)])
+        faces = np.array([(0, 1, 2), (0, 2, 3), (2, 1, 0), (3, 2, 0),
+                          (1, 2, 4), (2, 1, 5)])
+        v, f, _, report = C.solid_sheet_undersides(vertices, faces, np.zeros(len(faces), int))
+        self.assertEqual(report['lowered_sheet_triangles'], 2)
+        triangles = v[f]
+        self.assertTrue(any(np.array_equal(t, vertices[faces[4]]) for t in triangles))
+        self.assertTrue(any(np.array_equal(t, vertices[faces[5]]) for t in triangles))
+        self.assertFalse(any(np.all(t[:, 0] == 2) and np.min(t[:, 2]) < 0 for t in triangles))
+
+    def test_sheet_joined_only_to_sloped_aprons_stays_authored(self):
+        self.check_apron_joins(flat_west=False)
+
+    def test_sheet_at_a_flat_floor_join_gets_no_wall_across_sloped_aprons(self):
+        self.check_apron_joins(flat_west=True)
+
+    def check_apron_joins(self, flat_west):
+        pieces = [thin_plate(0, 0, 2, 2)]
+        # A half-millimetre source seam, inside the weld tolerance: the probes lie on the apron, whose
+        # extrapolated plane is flush at the rim. Its actual probe height differs from that rim height.
+        for points in ([[(-.1, -.3005, -.012), (2.1, -.3005, -.012), (2.1, -.0005, 0), (-.1, -.0005, 0)],
+                        [(-.1, 2.0005, 0), (2.1, 2.0005, 0), (2.1, 2.3005, -.012), (-.1, 2.3005, -.012)],
+                        [(2.0005, -.1, 0), (2.3005, -.1, -.012), (2.3005, 2.1, -.012), (2.0005, 2.1, 0)],
+                        [(-.3005, -.1, 0 if flat_west else -.012), (-.0005, -.1, 0), (-.0005, 2.1, 0),
+                         (-.3005, 2.1, 0 if flat_west else -.012)]]):
+            pieces.append((np.array(points), np.array([(0, 1, 2), (0, 2, 3)])))
+        vertices, faces, owner = C.weld(pieces)
+        v, f, o, report = C.solid_sheet_undersides(vertices, faces, owner)
+        triangles = v[f]; normals = C._normals(triangles)[0]
+        self.assertEqual(report['sheet_skirt_triangles'], 0)
+        if flat_west:
+            self.assertEqual(report['lowered_sheet_triangles'], 4)
+            before = vertices[faces]; up = C._normals(before)[0][:, 2] > 0
+            np.testing.assert_array_equal(triangles[normals[:, 2] > 0], before[up])
+        else:
+            np.testing.assert_array_equal(triangles, vertices[faces])
+            np.testing.assert_array_equal(o, owner)
+
     def test_flush_tiles_weld_without_ramps(self):
         vertices, faces, owner, report = C.riding_collision(floor_tiles())
         self.assertEqual(report['wedges'], 0)
