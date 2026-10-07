@@ -1184,7 +1184,9 @@ function threadCard(t) {
       const more=node("button","text-button inbox-earlier",`Show ${t.replies-t.latest.length} more ${t.replies-t.latest.length===1?"reply":"replies"}`);
       more.type="button";more.addEventListener("click",()=>openFromInbox(t.id));nodes.push(more);
     }
+    for(const row of replies.children)repliesFit.unobserve(row);
     replies.replaceChildren(...t.latest.map(m=>inboxMessage(m,"inbox-reply-row")));
+    for(const row of replies.children)repliesFit.observe(row);
     content.replaceChildren(...nodes,replies);fitReplies(replies);
     const target=replyTarget(t.reply_audience,"");
     reply.box.placeholder=replyHint(target);
@@ -1283,8 +1285,9 @@ threadsBody.addEventListener("focusout",()=>{
   snapBlur=setTimeout(()=>{if(!threadsBody.contains(document.activeElement)&&document.activeElement!==$("message")){$("app").classList.remove("typing");snapFollow();}},120);
 });
 threadsBody.addEventListener("touchmove",()=>{snapHold=0;},{passive:true});
-// Replies that outgrow their card show the newest, just above the reply box, fading out at the top.
-const repliesFit=new ResizeObserver(entries=>entries.forEach(e=>fitReplies(e.target)));
+// Replies that outgrow their card show the newest, just above the reply box, fading out at the top. The rows are
+// watched too, since an image or video can grow one after it renders.
+const repliesFit=new ResizeObserver(entries=>new Set(entries.map(e=>e.target.closest(".inbox-replies"))).forEach(fitReplies));
 function fitReplies(box) {
   const rows=[...box.children], gap=parseFloat(getComputedStyle(box).rowGap)||0;
   const need=rows.reduce((sum,row)=>sum+row.offsetHeight,0)+gap*Math.max(0,rows.length-1);
