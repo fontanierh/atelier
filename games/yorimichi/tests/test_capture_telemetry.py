@@ -1,6 +1,8 @@
 """A capture must reject state text that shifts the numeric telemetry columns."""
 import csv
+import hashlib
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -40,3 +42,40 @@ def test_corrupt_or_incomplete_capture_cannot_pass(capture, tmp_path, data, expe
     path.write_text(data)
     with pytest.raises(RuntimeError, match=message):
         capture.read_telemetry(path, expected)
+
+
+@pytest.mark.parametrize('external_build', [False, True])
+def test_capture_hashes_generated_and_game_inputs_before_render_admission(capture, tmp_path, monkeypatch, external_build):
+    game = tmp_path / 'checkout/games/yorimichi'
+    project = game / 'unreal'
+    output = tmp_path / ('cache/yorimichi' if external_build else 'checkout/build/yorimichi')
+    for path, data in [
+        (project / 'Saved/settings.txt', b''),
+        (project / 'Binaries/Mac/libUnrealEditor-Yorimichi.dylib', b'native binary'),
+        (project / 'Content/Japan/Terrain.uasset', b'terrain'),
+        (output / 'world.json', b'world'),
+    ]:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    monkeypatch.setattr(capture, 'ROOT', game)
+    monkeypatch.setattr(capture, 'PROJECT', project)
+    monkeypatch.setattr(capture.yori, 'OUT', output)
+    monkeypatch.setattr(capture, 'other_render_processes', lambda: [])
+    monkeypatch.setattr(capture.subprocess, 'check_output', lambda *args, **kwargs: 'a' * 40)
+
+    class AtAdmission(Exception):
+        pass
+
+    def stop_at_admission(purpose):
+        raise AtAdmission(purpose)
+
+    monkeypatch.setattr(capture, 'render_lock', stop_at_admission)
+    monkeypatch.setattr(capture, 'spawn_game', lambda *args, **kwargs: pytest.fail('Must not launch a real game'))
+    with pytest.raises(AtAdmission):
+        capture.capture('manifest-test', 'pier', {'seconds': 1})
+    manifest = json.loads((output / 'captures/manifest-test/pier/manifest.json').read_text())
+    world_key = '../../../cache/yorimichi/world.json' if external_build else '../../build/yorimichi/world.json'
+    assert manifest['scene_sha256'] == {
+        world_key: hashlib.sha256(b'world').hexdigest(),
+        'unreal/Content/Japan/Terrain.uasset': hashlib.sha256(b'terrain').hexdigest(),
+    }

@@ -85,7 +85,7 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
     inputs=[yori.OUT/'world.json',yori.OUT/'hidamari/city.json',PROJECT/'Content/Japan/Terrain.uasset',PROJECT/'Config/DefaultEngine.ini']
     inputs+=sorted((PROJECT/'Content/Japan/Assets').glob('HD_*.uasset'))
     inputs+=sorted((PROJECT/'Content/Japan/Materials').glob('*.uasset'))
-    manifest['scene_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs if p.exists()}
+    manifest['scene_sha256']={os.path.relpath(p,ROOT):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs if p.exists()}
     (folder/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print('CAPTURING',name,flush=True)
     # One render job at a time, and ownership of the child from the instant it exists: a monitor
