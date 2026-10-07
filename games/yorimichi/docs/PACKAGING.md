@@ -146,8 +146,8 @@ unchanged app started normally.** The launcher's process ends with SIGSEGV (exit
 
 - 2026-10-06 12:05: the first launch of the re-signed `afc541e1` package, an earlier build that day (not a
   published release). A launch six seconds later started.
-- 2026-10-07 03:06: the first launch of the extracted r4 package (`7250edaf`). The unchanged app's next launch
-  started and its map check ran.
+- 2026-10-07 03:06: the first launch of an extracted r4 package build (`7250edaf`, before the release was rebuilt
+  at `5452c5dd`). The unchanged app's next launch started and its map check ran.
 
 Both reports have the same main-thread stack and the same faulting address (`KERN_INVALID_ADDRESS at 0x3`):
 
