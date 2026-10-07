@@ -99,7 +99,10 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
                     {
                         FHitResult Hit;
                         FCollisionQueryParams Query(SCENE_QUERY_STAT(NetworkParity), bComplex);
-                        const bool bHit = World->LineTraceSingleByChannel(Hit, At + FVector(0,0,300), At - FVector(0,0,1800), ECC_WorldStatic, Query);
+                        // A trace channel named WorldStatic still hits pawns that block it. Query static objects
+                        // explicitly: a player's falling capsule must not become the spawn ground sample.
+                        const bool bHit = World->LineTraceSingleByObjectType(Hit, At + FVector(0,0,300), At - FVector(0,0,1800),
+                            FCollisionObjectQueryParams(ECC_WorldStatic), Query);
                         auto Probe = MakeShared<FJsonObject>();
                         Probe->SetStringField(TEXT("key"), Z->GetStringField(TEXT("key")));
                         Probe->SetBoolField(TEXT("complex"), bComplex);
