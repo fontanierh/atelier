@@ -249,6 +249,7 @@ private:
     FQuat GlideHandTurn[2] = { FQuat::Identity, FQuat::Identity };
     float GlideBank = 0.f, GlideHands = 0.f;
     bool bGliderOnBody = false, bGliderBodyAttached = false;
+    bool bGliderRefit = false;   // placed from the import's fit; fitted again to the hands on the first neutral glide
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
     TWeakObjectPtr<AActor> LungeTarget;
     float LungeTime = 0.f, LungeStand = 0.f;
