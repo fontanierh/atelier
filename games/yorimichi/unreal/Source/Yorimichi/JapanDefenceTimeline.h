@@ -52,6 +52,8 @@ public:
     bool Add(uint16 Edge, double Press, EJapanDefence Kind, double StartAfterPress,
         double EndAfterPress, double PerfectAfterPress = 0.); // zero means no perfect-dodge window
     EJapanDefence Resolve(double Contact, const FVector& From, float GuardCosine, uint16& UsedEdge);
+    /** Read-only diagnostic; callers opt in with the nonshipping combat QA flag. */
+    void Trace(double Time, const TCHAR* Reason) const;
 private:
     struct FReaction { double Time, RecoveryEnd, GuardEnd; };
     TArray<FReaction, TInlineAllocator<32>> Reactions;

@@ -68,6 +68,11 @@ void UBotwMoveSet::RecordDefence(uint16 ThroughEdge)
     S.bRecovering = bDown || InFlurry() || (Invulnerable > 0.f && !bHopInvulnerability);
     S.Location = Character->GetActorLocation(); S.Forward = Character->GetActorForwardVector();
     DefenceTimeline.Record(S);
+    if (TraceNetworkDefence() && !Character->IsLocallyControlled())
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence sample time=%.6f mapped=%.6f ts=%.6f through=%u ground=%d armed=%d can_parry=%d can_dodge=%d held=%d broken=%d recovering=%d busy=%d action=%s source_time=%.6f serial=%u"),
+            S.Time, DefenceClock.LastMapped, DefenceClock.LastTimestamp, ThroughEdge,
+            S.bGround, S.bArmed, S.bCanParry, S.bCanDodge, S.bGuardHeld, S.bGuardBroken,
+            S.bRecovering, Busy(), *CurrentName().ToString(), SourceTime(), Character->GetActionSerial());
 }
 
 void UBotwMoveSet::EndDefenceAction()
@@ -109,13 +114,29 @@ bool UBotwMoveSet::PressNetwork(FName Button, uint16 Edge, uint16 AgeMillisecond
         if (Button == TEXT("guard")) DefenceTimeline.Hold(Edge, Original, true);
         if (Button == TEXT("guard_release") || Button == TEXT("drop_holds")) DefenceTimeline.Hold(Edge, Original, false);
         const auto* Sample = DefenceTimeline.At(Original);
+        if (TraceNetworkDefence())
+            UE_LOG(LogTemp, Display, TEXT("NETWORK defence eligibility edge=%u button=%s press=%.6f sample=%.6f through=%u ground=%d armed=%d can_parry=%d can_dodge=%d jump_dodge=%d held=%d broken=%d recovering=%d"),
+                Edge, *Button.ToString(), Original, Sample ? Sample->Time : -1., Sample ? Sample->ThroughEdge : 0,
+                Sample && Sample->bGround, Sample && Sample->bArmed, Sample && Sample->bCanParry,
+                Sample && Sample->bCanDodge, Sample && Sample->bJumpDodge, Sample && DefenceTimeline.GuardHeld(Original, *Sample),
+                Sample && Sample->bGuardBroken, Sample && Sample->bRecovering);
         if (Sample && Button == TEXT("jump") && Sample->bCanParry && Sample->bArmed && DefenceTimeline.GuardHeld(Original, *Sample))
         {
             const FName Name = !HasShield() && Has(TEXT("SwordParry")) ? FName(TEXT("SwordParry")) : FName(TEXT("Parry"));
             if (const FBotwMove* M = Find(Name))
+            {
+                if (TraceNetworkDefence())
+                    UE_LOG(LogTemp, Display, TEXT("NETWORK defence authored edge=%u action=%s intervals=%d"), Edge, *Name.ToString(), M->Guard.Num());
                 for (const FVector2f& W : M->Guard)
-                    Added |= DefenceTimeline.Add(Edge, Original, EJapanDefence::Parry,
-                        FMath::Max(0., double(W.X - M->Start) / M->Rate), double(W.Y - M->Start) / M->Rate);
+                {
+                    const double Start = FMath::Max(0., double(W.X - M->Start) / M->Rate), End = double(W.Y - M->Start) / M->Rate;
+                    const bool IntervalAdded = DefenceTimeline.Add(Edge, Original, EJapanDefence::Parry, Start, End);
+                    Added |= IntervalAdded;
+                    if (TraceNetworkDefence())
+                        UE_LOG(LogTemp, Display, TEXT("NETWORK defence interval edge=%u start=%.6f end=%.6f added=%d"),
+                            Edge, Original + Start, Original + End, IntervalAdded);
+                }
+            }
         }
         else if (Sample && (Button == TEXT("dodge") || (Button == TEXT("jump") && Sample->bJumpDodge)))
         {
@@ -135,6 +156,13 @@ bool UBotwMoveSet::PressNetwork(FName Button, uint16 Edge, uint16 AgeMillisecond
         DefenceActionSerial = Character->GetActionSerial(); DefenceActionStart = Now;
         DefenceTimeline.BindAction(Edge, DefenceActionSerial, Now);
     }
+    if (TraceNetworkDefence())
+    {
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence added edge=%u button=%s added=%d handled=%d action=%s serial_before=%u serial_after=%u bound_serial=%u"),
+            Edge, *Button.ToString(), Added, Result, *CurrentName().ToString(), Previous,
+            Character->GetActionSerial(), DefenceActionSerial);
+        DefenceTimeline.Trace(Original, TEXT("press"));
+    }
     return Result;
 }
 
@@ -143,6 +171,17 @@ int32 UBotwMoveSet::ResolveNetworkStrike(AActor* Source, float Damage, const FVe
     const float Cosine = FMath::Cos(FMath::DegreesToRadians(GetParam(TEXT("GuardableAngle"), 120.f) * .5f));
     uint16 Edge = 0;
     const EJapanDefence Decision = DefenceTimeline.Resolve(Contact, From, Cosine, Edge);
+    if (TraceNetworkDefence())
+    {
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence resolve now=%.6f contact=%.6f decision=%u edge=%u latest_sample=%.6f"),
+            Character->GetWorld()->GetTimeSeconds(), Contact, uint32(Decision), Edge, DefenceTimeline.LatestTime());
+        const auto* Sample = DefenceTimeline.At(Contact);
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence contact_sample contact=%.6f sample=%.6f through=%u ground=%d armed=%d held=%d broken=%d recovering=%d"),
+            Contact, Sample ? Sample->Time : -1., Sample ? Sample->ThroughEdge : 0,
+            Sample && Sample->bGround, Sample && Sample->bArmed,
+            Sample && DefenceTimeline.GuardHeld(Contact, *Sample), Sample && Sample->bGuardBroken, Sample && Sample->bRecovering);
+        DefenceTimeline.Trace(Contact, TEXT("contact"));
+    }
     TGuardValue<TOptional<EJapanDefence>> Override(DefenceOverride, TOptional<EJapanDefence>(Decision));
     const float PriorGuardBroken = GuardBroken;
     const int32 Outcome = IncomingStrike(Source, Damage, From);

@@ -1,5 +1,18 @@
 #include "JapanDefenceTimeline.h"
 
+void FJapanDefenceTimeline::Trace(double Time, const TCHAR* Reason) const
+{
+#if !UE_BUILD_SHIPPING
+    for (const FWindow& W : Windows)
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence window reason=%s time=%.6f edge=%u kind=%u press=%.6f start=%.6f end=%.6f cutoff=%.6f consumed=%d serial=%u live_start=%.6f"),
+            Reason, Time, W.Edge, uint32(W.Kind), W.Press, W.Start, W.End,
+            W.SelfCutoff, W.bConsumed, W.ActionSerial, W.LiveStart);
+    for (const FReaction& R : Reactions)
+        UE_LOG(LogTemp, Display, TEXT("NETWORK defence reaction reason=%s time=%.6f contact=%.6f recovery_end=%.6f guard_end=%.6f"),
+            Reason, Time, R.Time, R.RecoveryEnd, R.GuardEnd);
+#endif
+}
+
 void FJapanDefenceTimeline::Record(const FJapanDefenceSample& Sample)
 {
     if (!FMath::IsFinite(Sample.Time) || Sample.Location.ContainsNaN() || Sample.Forward.ContainsNaN()) return;
