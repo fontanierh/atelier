@@ -88,6 +88,21 @@ bool FJapanSkateBudgetTest::RunTest(const FString&)
         PoseBytes <= FJapanSkateBudget::PoseRate * 10.1);
     TestTrue(TEXT("Bail traffic has its own bounded share"), BodyBytes <= FJapanSkateBudget::BodyRate * 10.1);
     TestTrue(TEXT("Neither stream is starved"), PoseBytes > FJapanSkateBudget::PoseRate * 9. && BodyBytes > FJapanSkateBudget::BodyRate * 9.);
+    FJapanSkateBudget Slow;
+    int64 SlowPose = 0, SlowBody = 0;
+    for (int32 Tick = 0; Tick < 300; ++Tick)
+    {
+        const double Now = Tick / 30.;
+        Slow.Refill(Now);
+        for (int32 Rider = 0; Rider < 8; ++Rider)
+        {
+            if (Slow.Spend(Now, 6 * 768, false)) SlowPose += 6 * 768;
+            if (Slow.Spend(Now, 768, true)) SlowBody += 768;
+        }
+    }
+    TestTrue(TEXT("30 fps obeys UE's 60 Hz refill ceiling for poses"), SlowPose <= FJapanSkateBudget::PoseRate * 5.1);
+    TestTrue(TEXT("30 fps obeys UE's 60 Hz refill ceiling for bodies"), SlowBody <= FJapanSkateBudget::BodyRate * 5.1);
+    TestTrue(TEXT("Slow ticks still serve both streams"), SlowPose > FJapanSkateBudget::PoseRate * 4.5 && SlowBody > FJapanSkateBudget::BodyRate * 4.5);
     const double Before = Budget.PoseTokens;
     TestFalse(TEXT("An oversized frame is refused before any chunks are sent"), Budget.Spend(10., 20000, false));
     TestTrue(TEXT("A refused frame consumes no tokens"), Budget.PoseTokens >= Before);

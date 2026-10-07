@@ -25,7 +25,7 @@ def load(path):
         return None
 
 
-def compare_receipts(folder, gameplay=False):
+def compare_receipts(folder, gameplay=False, listen=False):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -37,12 +37,14 @@ def compare_receipts(folder, gameplay=False):
     checks = {}
     checks['same_session'] = bool(server.get('session')) and server['session'] == client.get('session')
     checks['same_identity'] = bool(server.get('identity')) and server['identity'] == client.get('identity')
-    checks['headless_server'] = server.get('local_players') == 0 and server.get('net_mode') == 1
-    checks['admitted_player'] = (server.get('players') == client.get('players') == 1 and
-                                server.get('player_pawns') == client.get('player_pawns') == 1)
-    checks['player_identity'] = (server.get('people') == client.get('people') and
-                                len(server.get('people', [])) == 1 and
-                                bool(server['people'][0].get('id')) and server['people'][0].get('ready') is True)
+    checks['server_role'] = server.get('local_players') == int(listen) and server.get('net_mode') == (2 if listen else 1)
+    players = 2 if listen else 1
+    checks['admitted_player'] = (server.get('players') == client.get('players') == players and
+                                server.get('player_pawns') == client.get('player_pawns') == players)
+    people_a, people_b = [sorted(r.get('people', []), key=lambda p: p.get('id', '')) for r in (server, client)]
+    checks['player_identity'] = (people_a == people_b and len(people_a) == players and
+                                len({p.get('id') for p in people_a}) == players and
+                                all(p.get('id') and p.get('ready') is True for p in people_a))
     checks['world_ready'] = server.get('world_ready') is True and client.get('world_ready') is True
     checks['same_instances'] = server.get('instances', 0) > 0 and server['instances'] == client.get('instances')
     checks['same_rails'] = (server.get('rails', 0) > 0 and server['rails'] == client.get('rails') and
@@ -55,20 +57,27 @@ def compare_receipts(folder, gameplay=False):
                                      left.get('hit') is True and right.get('hit') is True and
                                      abs(left['z'] - right['z']) <= .1 and
                                      abs(left['normal_z'] - right['normal_z']) <= .001)
-    checks['server_teardown'] = (server_end.get('players') == server_end.get('player_pawns') == 0 and
-                                 server_end.get('local_players') == 0 and server_end.get('net_mode') == 1)
+    checks['server_teardown'] = (server_end.get('players') == server_end.get('player_pawns') == int(listen) and
+                                 server_end.get('local_players') == int(listen) and server_end.get('net_mode') == (2 if listen else 1))
     checks['client_returned_to_solo'] = (client_end.get('net_mode') == 0 and
-                                        client_end.get('local_players') == client_end.get('player_pawns') == 1)
+                                        client_end.get('local_players') == client_end.get('player_pawns') == client_end.get('players') == 1)
     if gameplay:
         gameplay_server, gameplay_client = read('server-gameplay'), read('client-gameplay')
         checks['native_gameplay'] = gameplay_server.get('passed') is True and gameplay_client.get('passed') is True
         checks['host_received_sustained_skating'] = gameplay_server.get('accepted_pose_frames', 0) >= 60
         checks['owner_skated_without_saved_moves'] = (gameplay_client.get('skate_seconds', 0) >= 5 and
                                                      gameplay_client.get('maximum_saved_skate_moves') == 0)
+        if listen:
+            gameplay_host = read('host/client-gameplay')
+            checks['both_peers_received_skating'] = (gameplay_client.get('received_peer_frames', 0) >= 60 and
+                                                      gameplay_host.get('received_peer_frames', 0) >= 60)
+            checks['both_peers_applied_skating'] = (gameplay_client.get('applied_peer_frames', 0) >= 60 and
+                                                     gameplay_host.get('applied_peer_frames', 0) >= 60)
+            checks['listen_host_drove'] = gameplay_host.get('passed') is True and gameplay_host.get('skate_seconds', 0) >= 5
     return checks
 
 
-def worker(folder, port, gameplay=False):
+def worker(folder, port, gameplay=False, listen=False):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -102,13 +111,15 @@ def worker(folder, port, gameplay=False):
             def launch(role, destination):
                 log = guards.enter_context((folder / (role + '.log')).open('w'))
                 command = [str(ctx.unreal_app), str(ctx.uproject), destination,
-                           '-server' if role == 'server' else '-game', '-nullrhi', '-nosound', '-nosplash', '-nolive',
+                           '-server' if role == 'server' and not listen else '-game', '-nullrhi', '-nosound', '-nosplash', '-nolive',
                            '-unattended', '-stdout', '-FullStdOutLogOutput',
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
                            '-ExecCmds=t.MaxFPS 30']
                 if gameplay:
                     command.append('-networkgameplay')
+                if listen:
+                    command.append('-networklisten')
                 (folder / (role + '-command.json')).write_text(json.dumps(command, indent=2) + '\n')
                 game = spawn_game(command, stdout=log, stderr=subprocess.STDOUT)
                 games.append((role, game))
@@ -147,7 +158,7 @@ def worker(folder, port, gameplay=False):
                     time.sleep(.25)
                 raise RuntimeError(stage + ' deadline expired')
 
-            server, server_guard = launch('server', '/Game/Japan/Maps/Slice?game=/Script/Yorimichi.JapanNetworkGameMode?capacity=2')
+            server, server_guard = launch('server', '/Game/Japan/Maps/Slice?game=/Script/Yorimichi.JapanNetworkGameMode?capacity=2' + ('?listen' if listen else ''))
             wait_for('server world', lambda: load(folder / 'server-world.json'), began + 120,
                      [('server', server, server_guard)])
             client, client_guard = launch('client', f'127.0.0.1:{port}')
@@ -166,7 +177,7 @@ def worker(folder, port, gameplay=False):
         stop.touch()
         if monitor.wait(timeout=5) != 0:
             raise RuntimeError('Aggregate monitor rejected teardown')
-        checks = compare_receipts(folder, gameplay)
+        checks = compare_receipts(folder, gameplay, listen)
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
                       scope='Local NullRHI editor session smoke; packaged/rendered/network acceptance remains separate')
         (folder / 'checks.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -186,20 +197,23 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
+    parser.add_argument('--listen', action='store_true', help='Two local players across listen-host/client processes; validates the observer relay within the same aggregate guard')
     args = parser.parse_args()
+    if args.listen:
+        args.gameplay = True
     from atelier.build import Context
     from atelier.safety import guarded
     ctx = Context('yorimichi')
     folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
     folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay)
+        return worker(folder, args.port, args.gameplay, args.listen)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind(('127.0.0.1', args.port or 0))
         port = sock.getsockname()[1]
-    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port)] + (['--gameplay'] if args.gameplay else []),
+    return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port)] + (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []),
                        folder / 'guard', timeout=330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

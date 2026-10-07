@@ -183,6 +183,7 @@ void UJapanSkateNetwork::Accept(const FJapanSkateFrame& Frame)
 {
     ReceivedFrame = Frame.Frame;
     if (!Frames.IsEmpty() && Frame.Time <= Frames.Last().Time) return;
+    ++ReceivedFrameCount;
     const double Arrival = GetWorld()->GetTimeSeconds();
     const double Spacing = PreviousArrival < 0. ? double(Frame.Interval) : FMath::Clamp(Arrival - PreviousArrival, 1./120., 30.);
     DeliveryInterval = FMath::Max(double(Frame.Interval), FMath::Lerp(DeliveryInterval, Spacing, .2));
@@ -223,7 +224,14 @@ void UJapanSkateNetwork::Show(float Dt)
     }
     ShowBodies(Now - .1, Pose, Mesh, Deck, Shown);
     Rider->GetSkate()->ApplyNetworkBoard(Deck, Shown);
-    Rider->GetSkate()->ApplyNetworkPose(Pose, Mesh);
+    if (Rider->GetSkate()->ApplyNetworkPose(Pose, Mesh))
+    {
+        const auto& Applied = Alpha < .5f ? A : B;
+        if (LastAppliedEpoch != Applied.Epoch || LastAppliedFrame != Applied.Frame)
+        {
+            ++AppliedFrameCount; LastAppliedEpoch = Applied.Epoch; LastAppliedFrame = Applied.Frame;
+        }
+    }
     const auto& Heard = Alpha < .5f ? A : B;
     Rider->GetSkate()->ApplyNetworkAudio(Heard.Mode, Heard.Surface, Heard.AudioFlags, FMath::Lerp(A.Velocity, B.Velocity, Alpha), Dt);
 }

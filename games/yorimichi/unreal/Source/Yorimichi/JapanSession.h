@@ -98,7 +98,8 @@ public:
 private:
     struct FSkateDelivery
     {
-        double Pose = -1., Bodies = -1.;
+        double NextPose = -1., NextBodies = -1., PoseQueued = 0., BodiesQueued = 0.;
+        bool bWarnedCapacity = false;
         FJapanSkateFrame LatestPose;
         FJapanSkateBodies LatestBodies;
         bool bPose = false, bBodies = false;
@@ -106,6 +107,10 @@ private:
     TMap<TWeakObjectPtr<AWandererCharacter>, FSkateDelivery> SkateDelivery;
     FJapanSkateBudget SkateBudget;
     int32 SkateRoundRobin = 0;
+    uint64 SkateSuperseded = 0, SkateRoomRefused = 0, SkateBudgetRefused = 0;
+    double LastSkateStats = -1.;
+    uint64 LastSkateStatsTotal = 0;
+    bool bSkateRoomBlocked = false;
     void DrainSkateFrames();
     void DeliverSkateFrame(AWandererCharacter* Subject, const FJapanSkateFrame& Frame);
     void DeliverSkateBodies(AWandererCharacter* Subject, const FJapanSkateBodies& State);

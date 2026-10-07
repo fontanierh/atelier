@@ -67,17 +67,27 @@ double AJapanPlayerController::SkateInterest(AWandererCharacter* Subject, bool b
 
 void AJapanPlayerController::DeliverSkateFrame(AWandererCharacter* Subject, const FJapanSkateFrame& Frame)
 {
+    UNetConnection* Connection = GetNetConnection();
+    if (!Connection) return;
+    FSkateDelivery& Delivery = SkateDelivery.FindChecked(Subject);
+    const double Now = GetWorld()->GetTimeSeconds();
+    if (Now < Delivery.NextPose) return;
     double TotalWeight = 0.;
     const double Interest = SkateInterest(Subject, false, TotalWeight);
-    if (!Interest) return;
-    const double Now = GetWorld()->GetTimeSeconds();
+    if (!Interest) { Delivery.bPose = false; Delivery.LatestPose = {}; return; }
     // Conservative wire allowance includes each RPC's actor reference and packet overhead.
     const int32 Count = FMath::Max(1, FMath::DivideAndRoundUp(Frame.Bones.Num(), FJapanSkateChunk::BonesPerChunk));
-    const int32 Bytes = Count * 768;
+    const int32 Bytes = Count * (720 + Connection->PacketOverhead + 32);
     const double Interval = FMath::Max(1. / (30. * Interest), Bytes * TotalWeight / (FJapanSkateBudget::PoseRate * Interest));
-    FSkateDelivery& Delivery = SkateDelivery.FindOrAdd(Subject);
-    if (Now - Delivery.Pose < Interval * .8 || !HasFrameRoom(GetNetConnection(), Subject, Bytes) || !SkateBudget.Spend(Now, Bytes, false)) return;
-    Delivery.Pose = Now; Delivery.bPose = false;
+    if (Bytes + 1024 > 2. * Connection->CurrentNetSpeed / 60.)
+    {
+        if (!Delivery.bWarnedCapacity) UE_LOG(LogTemp, Warning, TEXT("Skate pose needs %d bytes plus gameplay reserve; connection %d B/s cannot bank that at 60 Hz"), Bytes, Connection->CurrentNetSpeed);
+        Delivery.bWarnedCapacity = true;
+        Delivery.bPose = false; Delivery.LatestPose = {}; return;
+    }
+    if (!HasFrameRoom(Connection, Subject, Bytes)) { ++SkateRoomRefused; bSkateRoomBlocked = true; return; }
+    if (!SkateBudget.Spend(Now, Bytes, false)) { ++SkateBudgetRefused; return; }
+    Delivery.NextPose = Now + Interval * .8; Delivery.bPose = false;
     for (int32 I = 0; I < Count; ++I)
     {
         FJapanSkateChunk Relay;
@@ -91,20 +101,26 @@ void AJapanPlayerController::DeliverSkateFrame(AWandererCharacter* Subject, cons
             Relay.Bones.Add(Frame.Bones[Bone]);
         ClientSkatePose(Subject, Relay);
     }
+    Delivery.LatestPose = {};
 }
 
 void AJapanPlayerController::DeliverSkateBodies(AWandererCharacter* Subject, const FJapanSkateBodies& State)
 {
+    UNetConnection* Connection = GetNetConnection();
+    if (!Connection) return;
+    FSkateDelivery& Delivery = SkateDelivery.FindChecked(Subject);
+    const double Now = GetWorld()->GetTimeSeconds();
+    if (Now < Delivery.NextBodies) return;
     double TotalWeight = 0.;
     const double Interest = SkateInterest(Subject, true, TotalWeight);
-    if (!Interest) return;
-    const double Now = GetWorld()->GetTimeSeconds();
-    const int32 Bytes = 224 + State.Indices.Num() * 17;
+    if (!Interest) { Delivery.bBodies = false; Delivery.LatestBodies = {}; return; }
+    const int32 Bytes = 224 + State.Indices.Num() * 17 + Connection->PacketOverhead + 32;
     const double Interval = FMath::Max(1. / 60., Bytes * TotalWeight / (FJapanSkateBudget::BodyRate * Interest));
-    FSkateDelivery& Delivery = SkateDelivery.FindOrAdd(Subject);
-    if (Now - Delivery.Bodies < Interval * .8 || !HasFrameRoom(GetNetConnection(), Subject, Bytes) || !SkateBudget.Spend(Now, Bytes, true)) return;
-    Delivery.Bodies = Now; Delivery.bBodies = false;
+    if (!HasFrameRoom(Connection, Subject, Bytes)) { ++SkateRoomRefused; bSkateRoomBlocked = true; return; }
+    if (!SkateBudget.Spend(Now, Bytes, true)) { ++SkateBudgetRefused; return; }
+    Delivery.NextBodies = Now + Interval * .8; Delivery.bBodies = false;
     ClientSkateBodies(Subject, State);
+    Delivery.LatestBodies = {};
 }
 
 void AJapanPlayerController::ClientSkatePose_Implementation(AWandererCharacter* Subject, const FJapanSkateChunk& Chunk)
@@ -122,16 +138,29 @@ void AJapanPlayerController::SendSkateFrame(AWandererCharacter* Subject, const F
 {
     if (!HasAuthority() || IsLocalController() || !Subject || Subject == GetPawn()) return;
     auto& Delivery = SkateDelivery.FindOrAdd(Subject);
-    Delivery.LatestPose = Frame; Delivery.bPose = true;
+    if (Delivery.bPose) ++SkateSuperseded;
+    Delivery.LatestPose = Frame; Delivery.bPose = true; Delivery.PoseQueued = GetWorld()->GetTimeSeconds();
 }
 void AJapanPlayerController::SendSkateBodies(AWandererCharacter* Subject, const FJapanSkateBodies& State)
 {
     if (!HasAuthority() || IsLocalController() || !Subject || Subject == GetPawn()) return;
     auto& Delivery = SkateDelivery.FindOrAdd(Subject);
-    Delivery.LatestBodies = State; Delivery.bBodies = true;
+    if (Delivery.bBodies) ++SkateSuperseded;
+    Delivery.LatestBodies = State; Delivery.bBodies = true; Delivery.BodiesQueued = GetWorld()->GetTimeSeconds();
 }
 void AJapanPlayerController::DrainSkateFrames()
 {
+    bSkateRoomBlocked = false;
+    const double Now = GetWorld()->GetTimeSeconds();
+    SkateBudget.Refill(Now);
+    const uint64 Total = SkateSuperseded + SkateRoomRefused + SkateBudgetRefused;
+    if (Now - LastSkateStats >= 5. && Total != LastSkateStatsTotal)
+    {
+        UE_LOG(LogTemp, Display, TEXT("Skate delivery totals: superseded=%llu room_refused=%llu budget_refused=%llu net_speed=%d"),
+            static_cast<unsigned long long>(SkateSuperseded), static_cast<unsigned long long>(SkateRoomRefused),
+            static_cast<unsigned long long>(SkateBudgetRefused), GetNetConnection() ? GetNetConnection()->CurrentNetSpeed : 0);
+        LastSkateStats = Now; LastSkateStatsTotal = Total;
+    }
     TArray<TWeakObjectPtr<AWandererCharacter>> Subjects;
     for (auto It = SkateDelivery.CreateIterator(); It; ++It)
     {
@@ -148,13 +177,19 @@ void AJapanPlayerController::DrainSkateFrames()
         auto& Delivery = SkateDelivery.FindChecked(Subject);
         if (Delivery.bPose)
         {
-            if (Delivery.LatestPose.Epoch != Subject->GetActivityEpoch()) Delivery.bPose = false;
+            if (Delivery.LatestPose.Epoch != Subject->GetActivityEpoch() || Now - Delivery.PoseQueued > .25)
+            { Delivery.bPose = false; Delivery.LatestPose = {}; }
             else DeliverSkateFrame(Subject, Delivery.LatestPose);
         }
+        // Keep this subject at the head until a whole pose fits. Body packets must not
+        // repeatedly consume the allowance it needs while the connection bank recovers.
+        if (bSkateRoomBlocked) { SkateRoundRobin = (Start + I) % Subjects.Num(); break; }
         if (Delivery.bBodies)
         {
-            if (Delivery.LatestBodies.Pose.Epoch != Subject->GetActivityEpoch()) Delivery.bBodies = false;
+            if (Delivery.LatestBodies.Pose.Epoch != Subject->GetActivityEpoch() || Now - Delivery.BodiesQueued > .25)
+            { Delivery.bBodies = false; Delivery.LatestBodies = {}; }
             else DeliverSkateBodies(Subject, Delivery.LatestBodies);
         }
+        if (bSkateRoomBlocked) { SkateRoundRobin = (Start + I) % Subjects.Num(); break; }
     }
 }

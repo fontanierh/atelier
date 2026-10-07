@@ -138,6 +138,7 @@ bool UJapanGameInstance::TickNetworkQA(float)
     UWorld* World = GetWorld();
     if (!World || !World->HasBegunPlay()) return true;
     const auto* State = World->GetGameState<AJapanGameState>();
+    const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     bool GameplayDone = true;
     if (FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")) && World->GetNetMode() != NM_Standalone)
     {
@@ -147,19 +148,21 @@ bool UJapanGameInstance::TickNetworkQA(float)
     }
     if (NetworkQARole == TEXT("server"))
     {
-        if (World->GetNetMode() != NM_DedicatedServer || GetLocalPlayers().Num() != 0)
-            return Fail(TEXT("The server proof requires zero local players"));
+        if (Listen ? (World->GetNetMode() != NM_ListenServer || GetLocalPlayers().Num() != 1)
+                   : (World->GetNetMode() != NM_DedicatedServer || GetLocalPlayers().Num() != 0))
+            return Fail(TEXT("The native server mode or local-player count is incorrect"));
         if (!State) return true;
         if (!State->StartupError.IsEmpty()) return Fail(State->StartupError);
         if (!bNetworkQAWorld && State->bWorldReady)
         { bNetworkQAWorld = WriteNetworkQA(TEXT("world")); if (!bNetworkQAWorld) return Fail(TEXT("Could not save world receipt")); }
         for (const APlayerState* P : State->PlayerArray)
-            if (const auto* Person = Cast<AJapanPlayerState>(P); Person && Person->bWorldReady && !bNetworkQASawPeer)
+            if (const auto* Person = Cast<AJapanPlayerState>(P); Person && Person->bWorldReady && !bNetworkQASawPeer &&
+                (!Listen || (State->PlayerArray.Num() == 2 && Person->GetOwningController() && !Person->GetOwningController()->IsLocalController())))
             { bNetworkQASawPeer = true; if (!WriteNetworkQA(TEXT("connected"))) return Fail(TEXT("Could not save admission receipt")); }
-        if (bNetworkQASawPeer && State->PlayerArray.IsEmpty())
+        if (bNetworkQASawPeer && State->PlayerArray.Num() == (Listen ? 1 : 0))
         {
             for (TActorIterator<AWandererCharacter> It(World); It; ++It)
-                if (!It->IsNpc()) return true; // wait for pawn destruction, not just PlayerState removal
+                if (!It->IsNpc() && (!Listen || !It->IsLocallyControlled())) return true; // wait for pawn destruction, not just PlayerState removal
             if (!WriteNetworkQA(TEXT("complete"))) return Fail(TEXT("Could not save teardown receipt"));
             FPlatformMisc::RequestExit(false); return false;
         }
@@ -180,6 +183,14 @@ bool UJapanGameInstance::TickNetworkQA(float)
         if (World->GetNetMode() == NM_Client && PC && PC->GetPawn() && Person && Person->bWorldReady &&
             !Person->SessionPlayerId.IsEmpty() && State && !State->SessionId.IsEmpty())
         {
+            if (Listen)
+            {
+                int32 Pawns = 0;
+                for (TActorIterator<AWandererCharacter> It(World); It; ++It) if (!It->IsNpc()) ++Pawns;
+                if (State->PlayerArray.Num() != 2 || Pawns != 2) return true;
+                for (const APlayerState* P : State->PlayerArray)
+                    if (const auto* Peer = Cast<AJapanPlayerState>(P); !Peer || !Peer->bWorldReady || Peer->SessionPlayerId.IsEmpty()) return true;
+            }
             if (NetworkQAConnected == 0)
             {
                 if (!WriteNetworkQA(TEXT("connected"))) return Fail(TEXT("Could not save connected receipt"));
