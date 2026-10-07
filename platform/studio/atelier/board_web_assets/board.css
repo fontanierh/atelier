@@ -1103,3 +1103,27 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .inbox-column > .more { justify-self: start; }
 /* The phone keyboard push sets these panes' scroll itself; the browser's scroll anchoring must not adjust it too. */
 .inbox-pane .pane-body { overflow-anchor: none; }
+.task-reply textarea::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inbox-replies { display: grid; gap: 10px; }
+.inbox-list > .arrive { animation: rise .45s cubic-bezier(.2, .9, .25, 1.04) both; }
+.inbox-new-above { position: absolute; z-index: 4; left: 50%; translate: -50% 0; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--glass-edge); border-radius: 20px; padding: 7px 14px 7px 11px; background: var(--card-hi); color: var(--ink); font: inherit; font-weight: 650; font-size: 14px; box-shadow: 0 10px 26px rgb(var(--shade-deep) / .2); animation: pop .3s cubic-bezier(.3, 1.4, .5, 1) both; cursor: pointer; }
+.inbox-new-above .icon { color: var(--coral); }
+.inbox-new-above .icon svg { width: 16px; height: 16px; }
+
+/* Phones: one thread per screen. The pane snaps a whole card at a time; each card is exactly the room between the
+   header and the tab bar (or the keyboard), its root and reply box fixed and the latest replies in between. */
+@media (max-width: 699px) {
+  .threads-pane .pane-body { container-type: size; scroll-snap-type: y mandatory; scroll-padding-block: 6px calc(var(--tab-space) + 18px); }
+  .app.typing .threads-pane .pane-body { padding-bottom: 10px; scroll-padding-bottom: 10px; }
+  .threads-pane .inbox-thread { height: 100cqh; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; overflow: hidden; }
+  .threads-pane .inbox-thread-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+  .threads-pane .inbox-root .body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-height: 5.8em; overflow: hidden; -webkit-mask-image: none; mask-image: none; }
+  .threads-pane .inbox-replies { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; }
+  .threads-pane .inbox-replies > * { flex: none; }
+  .threads-pane .inbox-replies.overflowing { justify-content: flex-end; -webkit-mask-image: linear-gradient(transparent, #000 2.5em); mask-image: linear-gradient(transparent, #000 2.5em); }
+  .threads-pane .inbox-column > .more { display: none; }
+  .threads-pane .inbox-reply-row { cursor: pointer; }
+  .threads-pane .inbox-thread > .inbox-reply, .threads-pane .inbox-thread > .task-status, .threads-pane .inbox-thread-head { flex: none; }
+  /* Older threads load as you near the end, so nothing sits past the last card. */
+  .threads-pane .inbox-more, .threads-pane .pane-note { display: none; }
+}

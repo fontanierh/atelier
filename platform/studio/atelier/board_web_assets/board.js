@@ -10,6 +10,7 @@ const icons = {
   chevron:'<path d="m6 9 6 6 6-6"/>',
   right:'<path d="m9 5 7 7-7 7"/>',
   down:'<path d="M12 5v14M5 12l7 7 7-7"/>',
+  up:'<path d="M12 19V5M5 12l7-7 7 7"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   close:'<path d="M6 6l12 12M18 6 6 18"/>',
   remove:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
@@ -144,6 +145,7 @@ function setView(next, animate=true) {
   // Coming back to the conversation lands on its latest message and keeps following new ones.
   if(next==="messages"){stickToBottom=true;requestAnimationFrame(()=>{scrollToLatest();markSeen();});}
   if(state)inboxBadges();
+  if(next==="threads"&&from!==to&&animate)threadsOrder=null;
   if(next==="threads"||next==="activity"){if(inbox[next])next==="threads"?renderThreads():renderActivity();loadInbox(next);}
 }
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
@@ -206,6 +208,8 @@ function recipients() {
   return mentions.length===1?mentions[0]:mentions;
 }
 const describe=target=>target==="*"?"everyone":Array.isArray(target)?target.join(", "):target;
+// A reply box's hint names one person and counts the rest, so it fits on a phone's single line.
+const replyHint=target=>`Reply to ${Array.isArray(target)&&target.length>1?`${target[0]} +${target.length-1}`:describe(target)}…`;
 function mentionQuery() {
   const box=$("message");if(document.activeElement!==box||box.selectionStart!==box.selectionEnd)return null;
   const before=box.value.slice(0,box.selectionStart), m=before.match(/(^|[^\w@.-])@([\w.-]*)$/);
@@ -268,7 +272,7 @@ function formState() {
   $("broadcastForm").classList.toggle("has-text",Boolean(length));
   const form=$("broadcastForm"), focused=form.contains(document.activeElement);
   form.classList.toggle("expanded",Boolean(length||uploads.length||focused||thread));
-  $("message").placeholder=thread?`Reply to ${describe(target)}…`:target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
+  $("message").placeholder=thread?replyHint(target):target==="*"?"Message everyone, or @someone…":`Message ${describe(target)}…`;
 }
 $("message").addEventListener("input",()=>{grow();draftChanged();}); $("recipient").addEventListener("change",draftChanged);
 $("message").addEventListener("keydown",event=>{
@@ -1151,7 +1155,7 @@ function inboxMessage(m, cls="") {
 }
 function threadCard(t) {
   const card=node("article","card inbox-thread"), head=node("header","inbox-thread-head"), title=node("div","inbox-thread-title");
-  card.setAttribute("role","listitem");
+  card.setAttribute("role","listitem");card.dataset.key=t.id;
   const reply=replyBox("Reply in thread",sendReply(t.reply_audience,t.id));
   const entry={card,reply,signature:""};
   const open=node("button","text-button","Open");open.type="button";open.addEventListener("click",()=>openFromInbox(t.id));
@@ -1162,7 +1166,9 @@ function threadCard(t) {
   unfollow.addEventListener("click",()=>{card.classList.add("leaving");markInboxRead({id:entry.t.id,through:entry.t.newest,follow:false});});
   const actions=node("div","inbox-actions");actions.append(read,unfollow,open);
   head.append(title,actions);
-  const content=node("div","inbox-thread-body");
+  const content=node("div","inbox-thread-body"), replies=node("div","inbox-replies");repliesFit.observe(replies);
+  // On a phone a thread is one screen with no Read more: a tap on a reply opens the whole thread.
+  replies.addEventListener("click",event=>{if(snapping(threadsBody)&&!event.target.closest("a,button,video,audio,summary,details"))openFromInbox(entry.t.id);});
   card.append(head,content,reply.form,reply.status);
   entry.update=t=>{
     entry.t=t;
@@ -1178,22 +1184,137 @@ function threadCard(t) {
       const more=node("button","text-button inbox-earlier",`Show ${t.replies-t.latest.length} more ${t.replies-t.latest.length===1?"reply":"replies"}`);
       more.type="button";more.addEventListener("click",()=>openFromInbox(t.id));nodes.push(more);
     }
-    for(const m of t.latest)nodes.push(inboxMessage(m,"inbox-reply-row"));
-    content.replaceChildren(...nodes);
+    replies.replaceChildren(...t.latest.map(m=>inboxMessage(m,"inbox-reply-row")));
+    content.replaceChildren(...nodes,replies);fitReplies(replies);
     const target=replyTarget(t.reply_audience,"");
-    reply.box.placeholder=`Reply to ${describe(target)}…`;
+    reply.box.placeholder=replyHint(target);
   };
   return entry;
 }
-function renderThreads() {
+/* New threads and replies never shove what you are reading. Scrolled down, the item you are on stays exactly where it
+   is while others arrive or move above it, and a pill says how many; at the top, they slide in and the rest glide
+   down to make room. */
+const unseenAbove=new Map();
+function paneEdge(pane) { return pane.getBoundingClientRect().top+(parseFloat(getComputedStyle(pane).scrollPaddingTop)||parseFloat(getComputedStyle(pane).paddingTop)||0); }
+function steadyRender(list, nodes, release=false) {
+  const pane=list.closest(".pane-body"), edge=paneEdge(pane), keyed=[...list.children].filter(n=>n.dataset.key);
+  const before=new Map(keyed.map(n=>[n.dataset.key,n.getBoundingClientRect().top]));
+  const snap=snapping(pane), atTop=release||!snap&&pane.scrollTop<24&&!pane.contains(document.activeElement);
+  const anchor=snap&&snapCard?.isConnected&&list.contains(snapCard)?snapCard:keyed.find(n=>n.getBoundingClientRect().bottom>edge+1);
+  const anchorTop=anchor?.getBoundingClientRect().top, above=new Set(keyed.slice(0,keyed.indexOf(anchor)).map(n=>n.dataset.key));
+  reconcile(list,nodes);
+  // A snapping pane would otherwise snap back to the card that was first.
+  if(release){pane.scrollTop=0;requestAnimationFrame(()=>{pane.scrollTop=0;});}
+  if(!before.size)return;
+  if(atTop){
+    for(const n of nodes){
+      if(!n.dataset.key)continue;
+      if(!before.has(n.dataset.key)){n.classList.remove("arrive");void n.offsetWidth;n.classList.add("arrive");continue;}
+      // Snap points follow transforms, so a snapping pane would be dragged along by the glide.
+      const shift=before.get(n.dataset.key)-n.getBoundingClientRect().top;if(snap||Math.abs(shift)<1)continue;
+      n.style.transition="none";n.style.transform=`translateY(${shift}px)`;void n.offsetWidth;
+      n.style.transition="transform .45s cubic-bezier(.2, .9, .25, 1)";n.style.transform="";
+      n.addEventListener("transitionend",()=>{n.style.transition="";},{once:true});
+    }
+    return;
+  }
+  const key=anchor?.dataset.key, now=key&&nodes.find(n=>n.dataset.key===key);
+  if(!now)return;
+  const shift=now.getBoundingClientRect().top-anchorTop;
+  if(Math.abs(shift)>=1){
+    pane.scrollTop+=shift;
+    for(const k of [inboxKeyboard,inboxRestore])if(k?.pane===pane)k.top+=shift;
+  }
+  if(snap)snapCard=now;
+  const unseen=unseenAbove.get(pane)||new Set();unseenAbove.set(pane,unseen);
+  for(const n of nodes){if(n===now)break;if(n.dataset.key&&!above.has(n.dataset.key))unseen.add(n.dataset.key);}
+  showUnseen(pane);
+}
+function showUnseen(pane) {
+  const unseen=unseenAbove.get(pane)||new Set();unseenAbove.set(pane,unseen);
+  const edge=paneEdge(pane);
+  for(const key of [...unseen]){const n=pane.querySelector(`[data-key="${key}"]`);if(!n||pane.scrollTop<4||n.getBoundingClientRect().bottom>edge+1)unseen.delete(key);}
+  let pill=pane.parentElement.querySelector(".inbox-new-above");
+  const count=unseen.size+(pane===threadsBody?threadsHeld.size+threadsMoved.size:0);
+  if(!pill&&count){
+    pill=node("button","inbox-new-above");pill.type="button";pill.append(icon("up"),node("span",""));pane.after(pill);
+    pill.addEventListener("click",()=>{if(pane===threadsBody)releaseThreads();else pane.scrollTo({top:0,behavior:"smooth"});});
+  }
+  if(!pill)return;
+  pill.style.top=`${pane.offsetTop+10}px`;
+  pill.lastChild.textContent=`${count} new`;pill.hidden=!count;
+}
+document.querySelectorAll(".inbox-pane .pane-body").forEach(pane=>pane.addEventListener("scroll",()=>{if(unseenAbove.get(pane)?.size)showUnseen(pane);},{passive:true}));
+
+/* Phones: Threads is one thread per screen, as in a short-video feed. A swipe moves to the next thread, or back to the
+   one above; a thread's latest replies sit just over its reply box, and the keyboard lifts the box with them, since
+   the card shrinks to the room left rather than the list scrolling. */
+const snapScreen=matchMedia("(max-width: 699px)"), threadsBody=$("threadsPane").querySelector(".pane-body");
+let snapCard=null, snapHold=0, snapTimer=0, snapBlur=0;
+function snapping(pane) { return snapScreen.matches&&pane===threadsBody; }
+function snapTop(card) { return card.getBoundingClientRect().top-paneEdge(threadsBody)+threadsBody.scrollTop; }
+function snapAlign() {
+  if(!snapping(threadsBody)||!snapCard?.isConnected||$("app").dataset.view!=="threads")return;
+  const top=Math.round(snapTop(snapCard));if(Math.abs(threadsBody.scrollTop-top)>=1)threadsBody.scrollTop=top;
+}
+// The thread you are on is where the pane rests once you stop swiping; near the end, older threads load.
+threadsBody.addEventListener("scroll",()=>{
+  clearTimeout(snapTimer);
+  snapTimer=setTimeout(()=>{
+    if(!snapping(threadsBody)||performance.now()<snapHold)return;
+    const cards=[...$("threadsList").querySelectorAll(":scope > .inbox-thread")];if(!cards.length)return;
+    snapCard=cards.reduce((best,card)=>Math.abs(snapTop(card)-threadsBody.scrollTop)<Math.abs(snapTop(best)-threadsBody.scrollTop)?card:best);
+    if(cards.indexOf(snapCard)>=cards.length-3&&!$("threadsMore").hidden&&!inbox.loading.threads)$("threadsMore").click();
+  },140);
+},{passive:true});
+// The keyboard, a growing reply or a phone turning resizes the pane: it stays on the same thread.
+new ResizeObserver(snapAlign).observe(threadsBody);
+// As the keyboard opens the browser may scroll toward the field, so for a moment the pane holds on to the thread.
+function snapFollow(ms=900) {
+  const running=performance.now()<snapHold;snapHold=performance.now()+ms;if(running)return;
+  const step=()=>{snapAlign();if(performance.now()<snapHold)requestAnimationFrame(step);};requestAnimationFrame(step);
+}
+threadsBody.addEventListener("focusin",event=>{
+  if(!touch.matches||!event.target.matches("textarea")||!snapping(threadsBody))return;
+  clearTimeout(snapBlur);snapCard=event.target.closest(".inbox-thread")||snapCard;
+  $("app").classList.add("typing");snapFollow();
+});
+threadsBody.addEventListener("focusout",()=>{
+  snapBlur=setTimeout(()=>{if(!threadsBody.contains(document.activeElement)&&document.activeElement!==$("message")){$("app").classList.remove("typing");snapFollow();}},120);
+});
+threadsBody.addEventListener("touchmove",()=>{snapHold=0;},{passive:true});
+// Replies that outgrow their card show the newest, just above the reply box, fading out at the top.
+const repliesFit=new ResizeObserver(entries=>entries.forEach(e=>fitReplies(e.target)));
+function fitReplies(box) {
+  const rows=[...box.children], gap=parseFloat(getComputedStyle(box).rowGap)||0;
+  const need=rows.reduce((sum,row)=>sum+row.offsetHeight,0)+gap*Math.max(0,rows.length-1);
+  box.classList.toggle("overflowing",need>box.clientHeight+1);
+}
+// While Threads is on screen its order holds: a thread with a new reply updates where it is, and threads new to the
+// list wait behind the pill, which also counts unread threads that would now move up. Coming back to the view, or
+// tapping the pill, brings the current order.
+let threadsOrder=null;
+const threadsHeld=new Set(), threadsMoved=new Set();
+function releaseThreads() { snapCard=null;threadsBody.scrollTop=0;renderThreads(true); }
+function renderThreads(release=false) {
   const data=inbox.threads;if(!data||!state)return;
   $("threadsSummary").textContent=data.total?`${data.unread?`${data.unread} with new replies · `:""}${data.total} ${data.total===1?"thread":"threads"} you're part of`:"No threads yet";
   $("threadsAllRead").hidden=!data.unread;
   const keep=new Set(data.threads.map(t=>t.id));
   for(const id of [...threadCards.keys()])if(!keep.has(id))threadCards.delete(id);
-  const nodes=data.threads.map(t=>{let entry=threadCards.get(t.id);if(!entry){entry=threadCard(t);threadCards.set(t.id,entry);}entry.update(t);return entry.card;});
+  let shown=data.threads;threadsHeld.clear();threadsMoved.clear();
+  if(threadsOrder&&!release){
+    const byId=new Map(data.threads.map((t,i)=>[t.id,i])), kept=threadsOrder.filter(id=>byId.has(id)), last=Math.max(-1,...kept.map(id=>byId.get(id)));
+    const fresh=data.threads.filter(t=>!threadsOrder.includes(t.id));
+    // Older threads loaded with Show more go after the rest; newer ones are held.
+    for(const t of fresh)if(byId.get(t.id)<last)threadsHeld.add(t.id);
+    let latest=-1;for(const id of kept){const rank=byId.get(id);if(rank<latest&&data.threads[rank].unread)threadsMoved.add(id);latest=Math.max(latest,rank);}
+    shown=[...kept.map(id=>data.threads[byId.get(id)]),...fresh.filter(t=>!threadsHeld.has(t.id))];
+  }
+  threadsOrder=shown.map(t=>t.id);
+  const nodes=shown.map(t=>{let entry=threadCards.get(t.id);if(!entry){entry=threadCard(t);threadCards.set(t.id,entry);}entry.update(t);return entry.card;});
   if(!nodes.length){const empty=node("div","empty inbox-empty");empty.append(icon("thread"),node("h2","","No threads yet"),node("p","","When you reply to an agent, or one replies to you, the conversation shows up here."));nodes.push(empty);}
-  reconcile($("threadsList"),nodes);
+  steadyRender($("threadsList"),nodes,release);showUnseen(threadsBody);
   $("threadsMore").hidden=data.total<=data.threads.length;
 }
 const KIND_TEXT={mention:"Mentioned you",dm:"Direct message",ack:"Acknowledged",reply:"Replied"};
@@ -1206,7 +1327,7 @@ function activityText(item) {
   return `${who(item.message.sender)} messaged you`;
 }
 function activityRow(item) {
-  const row=node("article","activity-item"+(item.unread?" unread":""));row.setAttribute("role","listitem");
+  const row=node("article","activity-item"+(item.unread?" unread":""));row.setAttribute("role","listitem");row.dataset.key=item.id;
   const main=node("button","activity-main");main.type="button";
   const face=orb(item.message.sender===state.sender?"you":item.message.sender,state.agents.find(a=>a.agent===item.message.sender));
   const text=node("span","activity-text"), line=node("span","activity-line");
@@ -1223,7 +1344,7 @@ function activityRow(item) {
     const replyButton=node("button","text-button","Reply");replyButton.type="button";actions.append(replyButton);
     let box=null;
     replyButton.addEventListener("click",()=>{
-      if(!box){box=replyBox(`Reply to ${item.message.sender}`,sendReply(item.reply_audience,item.id));box.box.placeholder=`Reply to ${describe(replyTarget(item.reply_audience,""))}…`;row.append(box.form,box.status);}
+      if(!box){box=replyBox(`Reply to ${item.message.sender}`,sendReply(item.reply_audience,item.id));box.box.placeholder=replyHint(replyTarget(item.reply_audience,""));row.append(box.form,box.status);}
       box.box.focus();
     });
   }
@@ -1248,7 +1369,7 @@ function renderActivity() {
   });
   for(const id of [...activityRows.keys()])if(!data.items.some(i=>i.id===id))activityRows.delete(id);
   if(!nodes.length){const empty=node("div","empty inbox-empty");empty.append(icon("activity"),node("h2","",inbox.unreadOnly?"Nothing unread":"No activity yet"),node("p","","Mentions, replies to you and direct messages land here."));nodes.push(empty);}
-  reconcile($("activityList"),nodes);
+  steadyRender($("activityList"),nodes);
   $("activityMore").hidden=data.total<=data.items.length;
 }
 $("threadsMore").addEventListener("click",()=>{inbox.threadLimit=Math.min(200,inbox.threadLimit+30);loadInbox("threads");});
@@ -1276,14 +1397,6 @@ function inboxKeyboardFit() {
   const top=Math.round(k.top+Math.max(0,Math.min(shrink,field-k.top-8)));
   if(Math.abs(k.pane.scrollTop-top)>=1)k.pane.scrollTop=top;
 }
-// Phones report the keyboard's height in a few late steps, so while it slides the pane follows it every frame
-// instead of jumping at each report.
-let inboxTrackUntil=0;
-function inboxKeyboardTrack(ms=700) {
-  const running=performance.now()<inboxTrackUntil;inboxTrackUntil=performance.now()+ms;if(running)return;
-  const step=()=>{fitViewport();if(performance.now()<inboxTrackUntil&&(inboxKeyboard||inboxRestore))requestAnimationFrame(step);};
-  requestAnimationFrame(step);
-}
 function inboxKeyboardEnd() {
   const k=inboxKeyboard;inboxKeyboard=null;if(!k)return;
   k.pane.style.paddingBottom="";
@@ -1291,27 +1404,17 @@ function inboxKeyboardEnd() {
   // Again once the keyboard's animation and the viewport have settled.
   inboxRestore=k;const restore=()=>{if(inboxRestore===k&&!inboxKeyboard&&Math.abs(k.pane.scrollTop-k.top)>=1)k.pane.scrollTop=k.top;};
   restore();for(const ms of [350,750])setTimeout(restore,ms);
-  inboxKeyboardTrack();
 }
 document.querySelectorAll(".inbox-pane .pane-body").forEach(pane=>{
   // Where the pane was before a tap, since the browser may scroll to the field as it takes focus.
   pane.addEventListener("pointerdown",()=>{if(!inboxKeyboard)inboxTouchTop=pane.scrollTop;},{capture:true,passive:true});
-  // A first tap on a reply box focuses it without the browser's own scroll to the field, which the push would
-  // otherwise have to undo while you watch.
-  let tap=null;
-  pane.addEventListener("touchstart",event=>{const t=event.touches[0];tap=event.touches.length===1?{x:t.clientX,y:t.clientY}:null;},{passive:true});
-  pane.addEventListener("touchend",event=>{
-    const field=event.target.closest?.(".inbox-reply textarea"), t=event.changedTouches[0];
-    if(!field||!tap||document.activeElement===field||Math.hypot(t.clientX-tap.x,t.clientY-tap.y)>10)return;
-    event.preventDefault();field.focus({preventScroll:true});
-  });
   pane.addEventListener("focusin",event=>{
-    if(!touch.matches||!event.target.matches("textarea"))return;
+    if(!touch.matches||!event.target.matches("textarea")||snapping(pane))return;
     if(inboxKeyboard?.pane===pane){inboxKeyboard.field=event.target;return;}   // another reply box, same keyboard
     inboxKeyboardEnd();inboxRestore=null;
     inboxKeyboard={pane,field:event.target,top:inboxTouchTop??pane.scrollTop,height:pane.clientHeight,
       base:parseFloat(getComputedStyle(pane).paddingBottom)||0,opened:false,moved:false};
-    inboxTouchTop=null;inboxKeyboardFit();inboxKeyboardTrack();
+    inboxTouchTop=null;inboxKeyboardFit();
   });
   pane.addEventListener("focusout",()=>setTimeout(()=>{if(inboxKeyboard?.pane===pane&&!pane.contains(document.activeElement))inboxKeyboardEnd();},120));
   pane.addEventListener("touchmove",()=>{if(inboxKeyboard?.pane===pane)inboxKeyboard.moved=true;if(inboxRestore?.pane===pane)inboxRestore=null;},{passive:true});
