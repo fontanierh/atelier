@@ -132,7 +132,8 @@ def build():
     if skipped != spec['zero_area_faces'] or sum(v['triangles'] for v in report.values()) != spec['triangles']-skipped:
         raise ValueError('Source render geometry changed')
     vertices, faces, _, riding = riding_collision([(part['vertices'], part['faces']) for part in source.parts],
-                                                  {k for k, part in enumerate(source.parts) if part['mesh'] in SLENDER})
+                                                  {k for k, part in enumerate(source.parts) if part['mesh'] in SLENDER},
+                                                  [part['node'] for part in source.parts])
     emit('SM_CP_Collision', vertices.tolist(), faces.tolist(), materials[0], blocks=True, hidden=True)
     # The fine ground replaces the corresponding coarse mountain cells.
     x, y, z = L.grid(north_surface); h, w = x.shape
