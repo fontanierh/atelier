@@ -43,3 +43,17 @@ The full-size PNGs to upload to Tripo are in `build/yorimichi/characters/concept
 The knee-length coat is his look, but it breaks the Tripo workflow's rule that nothing hangs below the hips except
 the trousers: after rigging, expect the coat skirt to need its own weights or cloth bones so it does not stretch
 between the legs.
+
+### In two parts: the body and the coat
+
+`came_back_tpose.py parts` edits each full view twice: `body-<view>` is him without the coat (a black long-sleeved
+high-neck top under it) and with a blank face, so the eyes, brows and mouth are painted later on clean skin rather
+than fought out of Tripo's eye pieces; `coat-<view>` is the coat alone on an invisible body, hollow at the collar and
+cuffs, its lining seen through the open front. The body views match the full views pixel for pixel. The coat views
+came back at slightly different sizes (the right one about 9% shorter), so `collect` scales each to the front's
+height (`coat-normalisation.json`) and gathers the Tripo Studio upload folder,
+`build/yorimichi/characters/concepts/came-back-tpose/tripo/{full,body,coat}/{front,back,left,right}.png`.
+
+Two Tripo generations, both as game-ready quad meshes (the API runs used `quad` with a 12,000 face limit), then
+Smart UV on each. In Blender the coat is aligned to the body at the shoulders and skinned with the body swap's skirt
+rules first; a cloth simulation, if it is wanted, drives the coat below the hips from a low-poly proxy.

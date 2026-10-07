@@ -1,0 +1,41 @@
+{
+  "stage": "came-back-tpose",
+  "view": "coat-left",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/came_back_tpose.py",
+  "prompt_file": "coat-left.prompt.txt",
+  "prompt_sha256": "78ee12d7d4a647338987ed626a0764767ca03f6d847876dfd4ca8a7aabcb1f55",
+  "reference_files": {
+    "build/yorimichi/characters/concepts/came-back-tpose/left.png": "90b20d979aaa55bb97070f6a07bc4511a2307a5701a2109faf271ec4235ea9d1"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size PNG stays in build/",
+  "status": "done",
+  "started_at": "2026-10-07T10:16:18.508786+00:00",
+  "usage": {
+    "input_tokens": 1354,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 330
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3110
+  },
+  "outputs": {
+    "coat-left.png": "e1d61400852c42b1b46d85f02ada5aa6c41b120cd6bb26e45e5dccf49e6a0913"
+  },
+  "compact_copy": {
+    "file": "coat-left.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "elapsed_seconds": 33.0,
+  "finished_at": "2026-10-07T10:16:51.485697+00:00"
+}
