@@ -1,0 +1,42 @@
+{
+  "stage": "came-back-tpose",
+  "view": "front",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/came_back_tpose.py",
+  "prompt_file": "front.prompt.txt",
+  "prompt_sha256": "ead74943bf9529b56ff64366f6e6b944b0b3614bf417bb7c735e488f206c00de",
+  "reference_files": {
+    "build/yorimichi/characters/concepts/came-back-tpose/refs/sheet-front.png": "c4fb2fb4828d51ad9b1d6b77e6b6f9a5750ae0ad72afd3af1bdbbe21cdd47969",
+    "build/yorimichi/characters/concepts/came-back-tpose/refs/sheet-face.png": "494bfdc39c3036c60d9c3e824f1f7fdc7e92dacc8710177851ce84aa36859046"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size PNG stays in build/",
+  "status": "done",
+  "started_at": "2026-10-07T10:02:12.493304+00:00",
+  "usage": {
+    "input_tokens": 1670,
+    "input_tokens_details": {
+      "image_tokens": 1116,
+      "text_tokens": 554
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3426
+  },
+  "outputs": {
+    "front.png": "ebfee1d648a59662d76ba87637601da3f4e908af702b6ac6a59da6a6cc504f1b"
+  },
+  "compact_copy": {
+    "file": "front.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "elapsed_seconds": 36.2,
+  "finished_at": "2026-10-07T10:02:48.711325+00:00"
+}
