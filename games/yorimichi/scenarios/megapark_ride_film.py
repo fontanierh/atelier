@@ -854,12 +854,12 @@ SHOTS = [
          expect=['50-50']),
     # A boardslide: the board turned across the line in the air (onto the parapet 22 m from its end, before the lamp post).
     dict(name='rail_board', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.4, rail_load=.33, secs=10.,
-         gain=12., b_d=-1.6, keep=grind_held, retry=1,
+         gain=12., b_d=-1.6, keep=grind_held, retry=1, rail_path=True,
          rail_do=[spin(to=88., dir=1.)], land_dz=-.5,           # the deck square to the line when it meets the ledge's top
          cams=[(0., chase(back=2.2, side=-2.3, up=.7))], expect=['Boardslide']),
     # A 5-0, from the side (onto the parapet before its lamp post too): a shallower line than the 50-50's lands on one truck.
     dict(name='rail_5_0', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.33, secs=10.,
-         gain=12., b_d=-1.6, keep=grind_held, retry=2,
+         gain=12., b_d=-1.6, keep=grind_held, retry=2, rail_path=True,
          rail_do=[stick(0., -.55)],
          cams=[(0., chase(back=3.0, side=-1.6, up=1.0)), (mode_is(3), fixed((-71.2, 1389.5, 125., 1.0)))],
          expect=['5 0']),          # native names it FS 5 0
@@ -960,7 +960,7 @@ SHOTS = [
     # A 50-50 down the parapet, popped out at its end, and an Indy grabbed going down the plaza's step held into the
     # landing (the pop off the low end is only a hop: the grab waits for the step's longer air).
     dict(name='bail_grind', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.34, secs=15.,
-         slow=True, replay=BAIL_REPLAY, rec_from=1.5, gain=12., b_d=-1.9,
+         slow=True, replay=BAIL_REPLAY, rec_from=1.5, gain=12., b_d=-1.9, rail_path=True,
          keep=lambda s, c: s['d_grinds'] > 0 and s['d_bails'] > 0, retry=2,
          trig=[{'when': lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 3., 'do': [flick('ollie', .12)]},
                {'when': lambda s, c: s['land_after_grind'] is not None and c.mode == 2 and air_t(s, c) > .06, 'do': [grab('indy', None)]}],
@@ -970,7 +970,7 @@ SHOTS = [
     # The final line: a 50-50 down the parapet and a 360 flip out of it before its corner (the grind slows to a stop
     # against the corner and drops off the outside), down onto the slope beyond and away.
     dict(name='finale', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.32, gain=12., b_d=-1.9,
-         secs=14., keep=grind_held, retry=2,
+         secs=14., keep=grind_held, retry=2, rail_path=True,
          rail_out=[(-66.3, 1369.3, None), (-61., 1367.2, None), (-52., 1366.2, 6.5), (-34., 1366., 6.5), (-20., 1366., 6.5)],
          trig=[{'when': lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 9., 'do': [flick('360_flip', .12)]}],
          end=lambda s, c: s['land_after_grind'] is not None and c.t > s['land_after_grind'] + 1.2,
