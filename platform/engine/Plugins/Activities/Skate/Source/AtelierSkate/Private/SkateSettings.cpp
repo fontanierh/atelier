@@ -24,7 +24,7 @@ FSkateFeel FSkateFeel::Defaults()
     FSkateFeel F;
     F.Difficulty = S->Difficulty; F.TruckTightness = S->TruckTightness; F.Pop = S->PopHeightScale; F.Spin = S->AirSpinScale;
     F.PushSpeed = S->PushSpeedScale; F.PushPower = S->PushPowerScale; F.VertAssist = S->VertAssist;
-    F.TightFlicks = S->bTightFlicks ? 1 : 0;
+    F.TightFlicks = int8(S->bTightFlicks ? 1 : 0);
     return F;
 }
 
