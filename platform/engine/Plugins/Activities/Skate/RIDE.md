@@ -261,8 +261,9 @@ knocks and landings, and feet that stay on the board.
   speed or height it was never given, or falls through a floor, is unstable and ends the bail. `skate.RideBailTrace N`
   logs the bail's first N frames.
 - **Get-up.** When the body has settled (still for 0.4 s, after at least 1.6 s), its pose snapshot blends into the
-  clip over `GetUpBlend`, lifted so that no bone or body goes lower than the lower of its two ends. The bodies stay
-  simulating until Physics Control's pelvis and head are within 10 cm of the snapshot (at most five frames).
+  clip over `GetUpBlend`, lifted so that no bone or body goes lower than the lower of its two ends, and no body comes
+  nearer the ground below it than the nearer of its two ends (on a slope a foot moving uphill meets higher ground
+  than at either end). The bodies stay simulating until Physics Control's pelvis and head are within 10 cm of the snapshot (at most five frames).
 - **Debugging.** The Chaos Visual Debugger records the bodies, controls and contacts. The state line ends with the
   phase, the physics weight, the pelvis, feet and worst body's distance from the animation, the bail's `lie` and
   `drag`, the get-up blend, the last bail's kind and the skipped updates. `skate.RideJointCheck`,
