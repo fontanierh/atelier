@@ -458,12 +458,23 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     board.poll('one')
     assert next(item for item in delivered if item['id'] == deeper)['operator_task'] == task
 
-    # Agents hold few open at once and keep asks short; only the asker or the operator dismisses one.
-    second, _ = board.open_task('one', 'Second ask.')
-    with pytest.raises(ValueError, match='open operator tasks'):
-        board.open_task('one', 'A third.')
+    # An agent holds one task and keeps its ask short, editing it when what it needs changes; the operator sees the
+    # new ask and is notified, in the task's thread.
+    with pytest.raises(ValueError, match=f'already have open operator task {task}'):
+        board.open_task('one', 'Second ask.')
     with pytest.raises(ValueError):
         board.open_task('two', 'x' * (board.TASK_CHARS + 1))
+    edit = board.edit_task(task, 'one', 'Confirm I may delete the old captures **and** logs?')
+    with board.database() as db:
+        row = db.execute('SELECT * FROM messages WHERE id=?', (edit,)).fetchone()
+    assert (row['sender'], row['recipient'], row['reply_to'], row['notify']) == ('one', 'operator', message, 1)
+    shown = json.loads(request(http_server, '/api/state')[1])['tasks'][0]
+    assert '<strong>and</strong> logs' in shown['body_html'] and shown['edited'] and shown['replies'] == 2
+    for who, text, error in (('two', 'Mine now.', ValueError), ('one', 'x' * (board.TASK_CHARS + 1), ValueError)):
+        with pytest.raises(error):
+            board.edit_task(task, who, text)
+    with pytest.raises(LookupError):
+        board.edit_task(999, 'one', 'Anyone?')
     with pytest.raises(ValueError):
         board.close_task(task, 'two')
     with pytest.raises(LookupError):
@@ -480,8 +491,11 @@ def test_operator_tasks_are_asked_answered_and_dismissed(http_server, capsys, mo
     note = board.messages()[-1]
     assert note['sender'] == 'operator' and note['recipient'] == 'one' and note['reply_to'] == message
     assert board.close_task(task, 'operator', operator=True) is False
+    with pytest.raises(ValueError, match='was dismissed'):
+        board.edit_task(task, 'one', 'Still there?')
 
     # The agent dismisses its own from the command line.
+    second, _ = board.open_task('one', 'Second ask.')
     args = SimpleNamespace(action='operator-task', task_action='dismiss', agent='one', id=second, note='Solved it.')
     assert board.main(args) == 0 and 'dismissed' in capsys.readouterr().out
     assert board.messages()[-1]['body'].endswith('Solved it.')
@@ -525,11 +539,21 @@ def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
     # An ask always pushes, and spends none of the agent's hourly allowance for --notify-operator.
     for _ in range(board.NOTIFY_PER_HOUR):   # after task 1's ask, which pushed
         board.post('one', 'Look at this.', 'operator', notify=True)
-    board.open_task('one', 'Need your OK again.')
+    again, _ = board.open_task('one', 'Need your OK again.')
+    assert board.main(parse_args(['board', 'operator-task', 'edit', '--agent', 'one', str(again), 'Need your OK.'])) == 0
+    assert capsys.readouterr().out.startswith(f'operator task {again} updated')
     with board.database() as db:
         flags = [row[0] for row in db.execute(
-            "SELECT notify FROM messages WHERE sender='one' AND (topic='blocked' OR body='Look at this.') ORDER BY id")]
-    assert flags == [1] * (board.NOTIFY_PER_HOUR + 2)
+            "SELECT notify FROM messages WHERE sender='one' AND (topic='blocked' OR body='Look at this.' "
+            "OR body LIKE 'Updated the ask:%') ORDER BY id")]
+    assert flags == [1] * (board.NOTIFY_PER_HOUR + 3)
+    # Other pushed replies in a task's thread still spend the allowance.
+    with board.database() as db:
+        asked = db.execute('SELECT message FROM operator_tasks WHERE id=?', (again,)).fetchone()[0]
+        for _ in range(board.NOTIFY_PER_HOUR):
+            db.execute("INSERT INTO messages (created, sender, recipient, topic, body, reply_to, notify) "
+                       "VALUES (?, 'two', 'operator', 'info', 'Seen it.', ?, 1)", (time.time(), asked))
+        assert not board.notify_allowed(db, 'two')
 
     # Concurrent asks still respect the cap.
     def ask(i):
