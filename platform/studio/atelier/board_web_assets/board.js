@@ -173,7 +173,7 @@ $("searchToggle").addEventListener("click",()=>{
   else if($("search").value||$("topicFilter").value){$("search").value="";$("topicFilter").value="";syncPills();refreshFilters();}
   $("searchToggle").classList.toggle("active",show);
 });
-function query(before=0) { const q=new URLSearchParams(); if(selectedAgent)q.set(conversationMode==="dm"?"dm":"agent",selectedAgent); if($("search").value.trim())q.set("q",$("search").value.trim()); if($("topicFilter").value)q.set("topic",$("topicFilter").value); if(before)q.set("before",before); q.set("log",logShown); return q.toString(); }
+function query(before=0) { const q=new URLSearchParams(); if(selectedAgent)q.set(conversationMode==="dm"?"dm":"agent",selectedAgent); if($("search").value.trim())q.set("q",$("search").value.trim()); if($("topicFilter").value)q.set("topic",$("topicFilter").value); if(before)q.set("before",before); q.set("log",Math.min(logShown,5000)); return q.toString(); }
 function refreshFilters() { settle(1500); records.clear(); feedSignature=""; historyComplete=false; stickToBottom=true; prepending=false; lastSeenId=0; feedPainted=false; load(true); }
 let searchTimer;
 $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refreshFilters,250);});
