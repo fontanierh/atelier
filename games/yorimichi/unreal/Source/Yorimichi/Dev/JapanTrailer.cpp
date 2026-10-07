@@ -236,11 +236,22 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         if (TrailerFrame != EventFrame) continue;
         const FString Action = E->GetStringField(TEXT("action"));
         if (Action == TEXT("equip")) ToggleSkateboard(FInputActionValue());
+        if(Action==TEXT("place_on_board"))
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Start=nullptr;
+            if(!Skate || !TrailerSpec->TryGetArrayField(TEXT("player_position"),Start) || Start->Num()!=3 ||
+               !SkateRide->PlaceAt(AJapanWorld::ToUE((*Start)[0]->AsNumber(),(*Start)[1]->AsNumber(),(*Start)[2]->AsNumber()),TrailerHeading))
+            {UE_LOG(LogTemp,Error,TEXT("TRAILER place_on_board requires a skate shot, player_position and a placed ride"));FPlatformMisc::RequestExitWithStatus(false,2);return;}
+            const FSkateInput Still;SkateRide->SetScriptedInput(&Still);
+            UE_LOG(LogTemp,Display,TEXT("TRAILER BOARD PLACED frame=%d at=%s"),TrailerFrame,*GetActorLocation().ToString());
+        }
         if(Action==TEXT("launch"))
         {
             double Speed=0.;E->TryGetNumberField(TEXT("speed"),Speed);
-            if(!SkateRide->IsRiding() || !FMath::IsFinite(Speed) || Speed<=0.)
-            {UE_LOG(LogTemp,Error,TEXT("TRAILER LAUNCH requires an equipped board and positive speed in cm/s"));FPlatformMisc::RequestExitWithStatus(false,2);return;}
+            // IsRiding also covers the mount clip, before Launch can reach the Native session.
+            if(SkateRide->GetMode()!=ESkateMode::Ground || !SkateRide->GetRetailState().StartsWith(TEXT("PhysicsGround ")) ||
+               !FMath::IsFinite(Speed) || Speed<=0.)
+            {UE_LOG(LogTemp,Error,TEXT("TRAILER LAUNCH requires a ready PhysicsGround ride and positive speed in cm/s: %s"),*SkateRide->GetRetailState());FPlatformMisc::RequestExitWithStatus(false,2);return;}
             const FSkateInput Coast;SkateRide->SetScriptedInput(&Coast);
             const FVector Velocity=ReviewForward*Speed;
             SkateRide->Launch(Velocity);

@@ -187,7 +187,9 @@ A trailer shot can set `follow_road: 0` to disable route steering and stall reco
 
 `camera_mode: "player"` keeps the normal player camera, spring arm and skating camera blend; `camera_pitch` sets the initial control pitch (default -14 degrees). Without this option, the existing trailer camera remains in use. Camera telemetry in player mode records the last rendered view.
 
-A `launch` event takes a positive `speed` in Unreal cm/s along `player_yaw`, requires an equipped board, logs the launch frame/position/vector, and holds empty scripted skate input for the remaining coast. See `tools/shadow-player.json`: explicit CairoBotw rider, launch at frame 40, then inspect frames 50–139. It captures at fixed 60 Hz and exits after 140 frames. Verify the requested start, launch speed, no `ROUTE RECOVERY`, uninterrupted motion and a non-empty shadow crop before comparing shadows. Screenshot readback is not a frame-pacing measurement. CSV state/action strings are quoted; `capture.py` refuses malformed columns, missing rows and out-of-order frames.
+A `place_on_board` event uses the existing QA placement at `player_position`, bypasses the mount animation and holds empty skate input. It requires a skate shot and fails if placement fails. A `launch` event takes a positive `speed` in Unreal cm/s along `player_yaw`, requires a ready `PhysicsGround` ride, logs the launch frame/position/vector, and holds empty scripted skate input for the remaining coast. `capture.py` also requires measured telemetry to reach the requested speed within 100 ms (5% or 5 cm/s tolerance).
+
+See `tools/shadow-player.json`: explicit CairoBotw rider, board placement at frame 0, launch at frame 40, then inspect frames 50–139. It captures at fixed 60 Hz and exits after 140 frames. Verify the requested start, launch speed, no `ROUTE RECOVERY`, uninterrupted motion and a non-empty shadow crop before comparing shadows. Screenshot readback is not a frame-pacing measurement. CSV state/action strings are quoted; `capture.py` refuses malformed columns, missing rows and out-of-order frames.
 
 ## Reference measurements
 

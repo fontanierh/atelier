@@ -17,7 +17,7 @@
     "events": [
       {
         "time": 0,
-        "action": "equip"
+        "action": "place_on_board"
       },
       {
         "time": 0.6666666666666666,

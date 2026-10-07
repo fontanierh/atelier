@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import struct
@@ -41,6 +42,32 @@ def read_telemetry(path, expected):
         if frame != index:
             raise RuntimeError(f'Telemetry frame {frame} is out of order; expected {index}')
     return rows
+
+
+def verify_launches(spec, rows, fps):
+    """A logged launch must reach the board, not just its mounting animation."""
+    launches = []
+    for event in spec.get('events', []):
+        if event['action'] != 'launch':
+            continue
+        index = round(float(event['time']) * fps)
+        speed = float(event['speed'])
+        if not math.isfinite(speed) or speed <= 0 or not 0 <= index < len(rows):
+            raise RuntimeError('Launch needs a positive speed and a captured frame')
+        row = rows[index]
+        if row['skating'] != '1' or not row['clip'].startswith('PhysicsGround '):
+            raise RuntimeError(f'Launch frame {index} has no ready PhysicsGround ride')
+        # The Native command takes effect after the launch frame. Require measured velocity
+        # within 100 ms, rather than accepting the requested vector printed by the event.
+        following = rows[index + 1:index + 1 + math.ceil(.1 * fps)]
+        reached = [r for r in following if math.isfinite(float(r['speed']))
+                   and abs(float(r['speed']) - speed) <= max(5, speed * .05)]
+        if not reached:
+            raise RuntimeError(f'Launch frame {index} never reached {speed:g} cm/s in telemetry')
+        launches.append({'frame': index, 'requested_cm_s': speed,
+                         'observed_frame': int(reached[0]['frame']),
+                         'observed_cm_s': float(reached[0]['speed'])})
+    return launches
 
 
 def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
@@ -123,12 +150,13 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
             with Image.open(path) as image: size=image.size; image.verify()
         assert size==(width,height),size
     rows=read_telemetry(folder/'telemetry.csv',expected)
+    launches=verify_launches(spec,rows,fps)
     report={'frames':expected,'resolution':[width,height],'fps':fps,'max_speed':max(float(r['speed']) for r in rows),
             'air_frames':sum(int(r['falling']) for r in rows),'clips':sorted(set(r['clip'] for r in rows)),
             'settings_unchanged':True,'actions':sorted(set(r.get('action','') for r in rows)),
             'sailing_frames':sum(int(r.get('sailing',0)) for r in rows),
             'zeppelin_stages':sorted(set(int(r.get('zeppelin_stage',-1)) for r in rows)),
-            'passed':True}
+            'launches':launches,'passed':True}
     (folder/'checks.json').write_text(json.dumps(report,indent=2)+'\n')
     print('COMPLETE',name,json.dumps(report),flush=True)
 

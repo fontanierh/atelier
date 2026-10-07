@@ -44,6 +44,26 @@ def test_corrupt_or_incomplete_capture_cannot_pass(capture, tmp_path, data, expe
         capture.read_telemetry(path, expected)
 
 
+def launch_rows(speed, state='PhysicsGround tick=10 backend=Ride'):
+    return [{'frame': str(i), 'skating': '1', 'clip': state, 'speed': str(speed if i else 0)}
+            for i in range(8)]
+
+
+def test_launch_is_verified_after_native_command_is_applied(capture):
+    result = capture.verify_launches({'events': [{'time': 0, 'action': 'launch', 'speed': 500}]}, launch_rows(498), 60)
+    assert result == [{'frame': 0, 'requested_cm_s': 500, 'observed_frame': 1, 'observed_cm_s': 498}]
+
+
+@pytest.mark.parametrize('speed,state,message', [
+    (50, '', 'no ready PhysicsGround'),
+    (50, 'PhysicsGround tick=10 backend=Ride', 'never reached 500'),
+    (float('nan'), 'PhysicsGround tick=10 backend=Ride', 'never reached 500'),
+])
+def test_ignored_or_unmeasured_launch_cannot_pass(capture, speed, state, message):
+    with pytest.raises(RuntimeError, match=message):
+        capture.verify_launches({'events': [{'time': 0, 'action': 'launch', 'speed': 500}]}, launch_rows(speed, state), 60)
+
+
 @pytest.mark.parametrize('external_build', [False, True])
 def test_capture_hashes_generated_and_game_inputs_before_render_admission(capture, tmp_path, monkeypatch, external_build):
     game = tmp_path / 'checkout/games/yorimichi'
