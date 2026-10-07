@@ -178,11 +178,12 @@ bool GameplayRuntime::Feel(const FeelTuning& t,std::string& error)
         || !in(t.braking,0.25f,3.0f) || !in(t.steering,0.5f,2.0f) || !in(t.carve,0.5f,2.0f) || !in(t.grip,0.5f,2.0f)
         || !in(t.powerslide,0.25f,3.0f) || !in(t.rolling_friction,0.0f,3.0f) || !in(t.hill_speed,0.0f,2.0f)
         || !in(t.pump,0.0f,3.0f) || !in(t.wobble,0.0f,3.0f) || !in(t.wobble_onset,0.5f,3.0f) || !in(t.manual_drift,0.0f,3.0f)
-        || !in(t.landing,0.5f,3.0f) || !in(t.impact,0.5f,3.0f) || !switch_ok(t.auto_push) || !switch_ok(t.assisted_air))
+        || !in(t.landing,0.5f,3.0f) || !in(t.impact,0.5f,3.0f) || !switch_ok(t.auto_push) || !switch_ok(t.assisted_air)
+        || t.tight_flicks<0 || t.tight_flicks>1)
     {error="Invalid skating feel";return false;}
     auto* gestures=controls->MutableGestures();
     if(!gestures){error="Skating feel requires the gesture recogniser";return false;}
-    gestures->Tune(t.flick_radius,t.flick_window,t.flick_pace);
+    gestures->Tune(t.flick_radius,t.flick_window,t.flick_pace,t.tight_flicks==1);
     trainer.grind_pop=t.grind_pop;trainer.grind_friction=t.grind_friction;trainer.hippy=t.hippy;
     trainer.braking=t.braking;trainer.steering=t.steering;trainer.turn_power=t.carve;trainer.grip=t.grip;
     trainer.rolling_friction=t.rolling_friction;trainer.hill_speed=t.hill_speed;

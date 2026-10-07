@@ -56,6 +56,9 @@ public:
     std::optional<GestureRecognition> Sample(StickPoint sample, GestureSettings settings);
     // Every pattern's radius as authored times this (FeelTuning::flick_radius); 1 restores them.
     void ScaleRadius(float scale);
+    // Patterns recognised beside the authored ones, appended after them so an authored pattern wins a tied score.
+    // Replaces any earlier extras; an empty list restores the authored set.
+    void SetExtraPatterns(std::vector<GesturePattern> extra);
 
 private:
     struct Node
@@ -71,6 +74,8 @@ private:
     };
     std::vector<GesturePattern> patterns_;
     std::vector<float> authored_tolerance_;
+    std::size_t authored_count_ = 0;
+    float radius_scale_ = 1.f;
     std::vector<Node> nodes_;
     bool has_previous_sample_ = false;
     bool refractory_ = false;

@@ -27,12 +27,13 @@ public:
     { return held_pattern_ ? std::optional<std::string_view>(*held_pattern_) : std::nullopt; }
     const std::vector<GestureEventTrace>& LastEvents() const { return trace_; }
     // The player's flick feel (FeelTuning): pattern radius, the ticks a flick may stray before it is dropped, and
-    // pace, each a scale on the authored values (1 restores them).
-    void Tune(float radius,float window,float pace);
+    // pace, each a scale on the authored values (1 restores them), and tight flicks (FeelTuning::tight_flicks).
+    void Tune(float radius,float window,float pace,bool tight_flicks=false);
 private:
     std::vector<std::pair<std::uint32_t,GestureRecognizer>> recognizers_;
     std::array<std::uint8_t,2> maximum_misses_{},authored_misses_{};
     float pace_=1.f;
+    bool tight_flicks_=false;
     std::optional<std::string> held_pattern_;
     std::vector<GestureEventTrace> trace_;
 };
