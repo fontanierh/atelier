@@ -72,6 +72,14 @@ int main()
     auto wall=sheet;wall.triangles={sheet.triangles[0],{b,a,{0,-1,0}}};
     const auto wall_old=Build(wall,false),wall_new=Build(wall,true);
     SameFeatures(wall_old.collision,wall_new.collision);
+    auto junction=sheet;junction.triangles.push_back(wall.triangles[1]);
+    const auto junction_old=Build(junction,false),junction_new=Build(junction,true);
+    const auto& top_old=junction_old.collision.Triangles()[0].triangle.feature;
+    const auto& top_new=junction_new.collision.Triangles()[0].triangle.feature;
+    Require(top_new.edge_cosines[0]==top_old.edge_cosines[0],"real wall remains the top edge partner despite a mirrored back");
+    Require((top_new.flags&0x600u)==0,"real wall keeps both top rim corners active");
+    Require((junction_new.collision.Triangles()[1].triangle.feature.flags&0x600u)==0,
+        "real wall keeps both ceiling rim corners active");
     // A top fan and a two-triangle back need not share all triangulation edges.
     const Vec3 d{2,0,2},centre{1,0,1};
     GameplayWorldSnapshot fan;
