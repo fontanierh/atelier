@@ -34,6 +34,7 @@ for name, cfg in CONFIG['materials'].items():
     mat.set_editor_property('blend_mode', U.BlendMode.BLEND_OPAQUE)
     mat.set_editor_property('two_sided', cfg['two_sided'])
     mat.set_editor_property('used_with_skeletal_mesh', True)
+    mat.set_editor_property('used_with_clothing', True)   # the coat simulates as cloth (without it the engine draws the default material)
     if cfg['texture']:
         task = U.AssetImportTask()
         for k, v in dict(filename=str(OUT / cfg['texture']), destination_path=DEST + '/Textures', automated=True, replace_existing=True, save=True).items():
@@ -116,6 +117,7 @@ E.save_loaded_asset(colliders)
 cloth = U.YorimichiClothLibrary.add_section_cloth(mesh, 'M_' + CONFIG['cloth']['mesh'], MAX_DISTANCE, colliders)
 assert cloth, 'the coat cloth could not be built (see the log)'
 U.log('MODORI CLOTH: ' + cloth)
+U.log('MODORI CLOTH DATA: ' + U.YorimichiClothLibrary.describe_cloth(mesh))
 E.save_loaded_asset(mesh)
 editor = U.get_editor_subsystem(U.SkeletalMeshEditorSubsystem)
 pending, bones = ['root'], []

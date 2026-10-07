@@ -154,3 +154,71 @@ UPhysicsAsset* UYorimichiClothLibrary::MakeCapsuleColliders(USkeletalMesh* Mesh,
     return nullptr;
 #endif
 }
+
+FString UYorimichiClothLibrary::DescribeCloth(USkeletalMesh* Mesh)
+{
+#if WITH_EDITOR
+    if (!Mesh || !Mesh->GetImportedModel() || !Mesh->GetImportedModel()->LODModels.Num()) return TEXT("no mesh");
+    FString Out;
+    const FReferenceSkeleton& Ref = Mesh->GetRefSkeleton();
+    for (UClothingAssetBase* Base : Mesh->GetMeshClothingAssets())
+    {
+        const UClothingAssetCommon* Cloth = Cast<UClothingAssetCommon>(Base);
+        if (!Cloth || !Cloth->LodData.Num()) continue;
+        const FClothPhysicalMeshData& Phys = Cloth->LodData[0].PhysicalMeshData;
+        int32 NoWeight = 0, Partial = 0, BadBone = 0;
+        for (const FClothVertBoneData& Bone : Phys.BoneData)
+        {
+            float Sum = 0.f;
+            for (int32 I = 0; I < Bone.NumInfluences; ++I)
+            {
+                Sum += Bone.BoneWeights[I];
+                if (!Cloth->UsedBoneNames.IsValidIndex(Bone.BoneIndices[I])) ++BadBone;
+            }
+            NoWeight += Bone.NumInfluences == 0 || Sum < .01f;
+            Partial += Sum >= .01f && Sum < .99f;
+        }
+        int32 Missing = 0;
+        for (const FName& Name : Cloth->UsedBoneNames) Missing += Ref.FindBoneIndex(Name) == INDEX_NONE;
+        const FPointWeightMap* Distance = Phys.FindWeightMap(EWeightMapTargetCommon::MaxDistance);
+        float Lo = 0.f, Hi = 0.f;
+        if (Distance && Distance->Values.Num())
+        {
+            Lo = Hi = Distance->Values[0];
+            for (const float V : Distance->Values) { Lo = FMath::Min(Lo, V); Hi = FMath::Max(Hi, V); }
+        }
+        FBox3f Box(Phys.Vertices);
+        Out += FString::Printf(TEXT("asset %s: %d bones (%d not in skeleton), reference bone %d; physical %d vertices, %d triangles, box %s; "
+            "%d without weight, %d partial, %d bad bone indices; max distance map %s %.1f..%.1f cm; "),
+            *Cloth->GetName(), Cloth->UsedBoneNames.Num(), Missing, Cloth->ReferenceBoneIndex, Phys.Vertices.Num(), Phys.Indices.Num() / 3,
+            *Box.ToString(), NoWeight, Partial, BadBone, Distance ? TEXT("yes") : TEXT("missing"), Lo, Hi);
+    }
+    const TArray<FSkelMeshSection>& Sections = Mesh->GetImportedModel()->LODModels[0].Sections;
+    for (int32 S = 0; S < Sections.Num(); ++S)
+    {
+        const FSkelMeshSection& Section = Sections[S];
+        if (!Section.ClothingData.AssetGuid.IsValid() && !Section.ClothMappingDataLODs.Num()) continue;
+        const int32 Entries = Section.ClothMappingDataLODs.Num() ? Section.ClothMappingDataLODs[0].Num() : 0;
+        int32 PhysVerts = 0;
+        for (UClothingAssetBase* Base : Mesh->GetMeshClothingAssets())
+            if (const UClothingAssetCommon* Cloth = Cast<UClothingAssetCommon>(Base); Cloth && Cloth->LodData.Num())
+                PhysVerts = Cloth->LodData[0].PhysicalMeshData.Vertices.Num();
+        int32 Past = 0, Zero = 0, Skinned = 0;
+        float Far = 0.f;
+        if (Entries)
+            for (const FMeshToMeshVertData& V : Section.ClothMappingDataLODs[0])
+            {
+                Skinned += V.SourceMeshVertIndices[3] == 0xFFFF;
+                Past += V.SourceMeshVertIndices[0] >= PhysVerts || V.SourceMeshVertIndices[1] >= PhysVerts || V.SourceMeshVertIndices[2] >= PhysVerts;
+                Zero += V.Weight <= 0.f;
+                Far = FMath::Max(Far, FMath::Abs(V.PositionBaryCoordsAndDist.W));
+            }
+        Out += FString::Printf(TEXT("section %d: %d vertices, cloth asset index %d, %d mapping entries (%d past the physical mesh, %d zero weight, "
+            "%d skin-only, largest offset along the normal %.2f cm); "), S, Section.NumVertices, Section.CorrespondClothAssetIndex, Entries, Past,
+            Zero, Skinned, Far);
+    }
+    return Out;
+#else
+    return FString();
+#endif
+}

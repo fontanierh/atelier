@@ -25,4 +25,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Yorimichi|Editor")
     static UPhysicsAsset* MakeCapsuleColliders(USkeletalMesh* Mesh, const FString& PackagePath, const TArray<FName>& Bones,
         const TArray<FName>& From, const TArray<FName>& To, const TArray<float>& RadiiCm);
+
+    /** A diagnostic summary of Mesh's cloth: its clothing asset's bones, physical mesh (vertices without bone weights,
+     *  the max distance range) and each bound section's render-to-cloth mapping (entries pointing past the physical
+     *  mesh). Editor only. */
+    UFUNCTION(BlueprintCallable, Category = "Yorimichi|Editor")
+    static FString DescribeCloth(USkeletalMesh* Mesh);
 };
