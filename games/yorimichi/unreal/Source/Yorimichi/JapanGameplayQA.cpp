@@ -48,8 +48,14 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("processed_edges"), State.MaximumProcessedEdge);
     Data->SetNumberField(TEXT("interpolated_peer_frames"), State.InterpolatedFrames);
     Data->SetNumberField(TEXT("held_peer_frames"), State.HeldFrames);
+    const double PeerApplications = double(State.InterpolatedFrames) + State.HeldFrames;
+    Data->SetNumberField(TEXT("interpolated_peer_fraction"), PeerApplications > 0. ? State.InterpolatedFrames / PeerApplications : 0.);
+    Data->SetNumberField(TEXT("observed_seconds"), State.ObservedSeconds);
     Data->SetNumberField(TEXT("corrections"), State.MovementStats.Corrections);
     Data->SetNumberField(TEXT("corrections_per_second"), State.MovementStats.Corrections / FMath::Max(.001, State.ObservedSeconds));
+    // Forced traversal checkpoints also use CMC adjustments. Separate visible position error.
+    Data->SetNumberField(TEXT("position_corrections_over_1cm"), State.MovementStats.PositionCorrections);
+    Data->SetNumberField(TEXT("position_corrections_per_second"), State.MovementStats.PositionCorrections / FMath::Max(.001, State.ObservedSeconds));
     Data->SetNumberField(TEXT("checkpoints_applied"), State.MovementStats.Checkpoints);
     Data->SetNumberField(TEXT("checkpoints_rejected"), State.MovementStats.Rejected);
     Data->SetNumberField(TEXT("replayed_moves"), State.MovementStats.ReplayedMoves);

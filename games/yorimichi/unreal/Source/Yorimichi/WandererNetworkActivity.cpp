@@ -113,7 +113,10 @@ void AWandererCharacter::ServerFinishSkate_Implementation(uint32 Epoch, FVector_
 
 void AWandererCharacter::ServerTravelTo_Implementation(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch)
 {
-    if (Epoch != NetworkActivity.Epoch || !FiniteInWorld(Location, 2000000.) || !FMath::IsFinite(Yaw) ||
+    // The host can already have recovered from water and advanced the epoch. Its
+    // replicated handoff supersedes this late request; do not show a false failure.
+    if (Epoch != NetworkActivity.Epoch) return;
+    if (!FiniteInWorld(Location, 2000000.) || !FMath::IsFinite(Yaw) ||
         GetWorld()->GetTimeSeconds() - LastNetworkTravel < 1.)
     { ClientActivityRejected(TEXT("Travel is unavailable just now.")); return; }
     LastNetworkTravel = GetWorld()->GetTimeSeconds();

@@ -6,7 +6,7 @@
 
 struct FJapanMovementStats
 {
-    uint32 Corrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
+    uint32 Corrections = 0, PositionCorrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
     float LargestCorrectionCm = 0.f;
 };
 

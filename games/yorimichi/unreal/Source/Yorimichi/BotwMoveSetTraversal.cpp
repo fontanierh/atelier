@@ -666,14 +666,14 @@ void UBotwMoveSet::AdvanceSwim(float Dt)
             const bool Online = JapanNetwork::IsOnline(Character->GetWorld());
             if (Online)
             {
+                // Several moves may run before recovery. The queue applies drowning damage once.
                 CastChecked<UJapanCharacterMovement>(Character->GetCharacterMovement())->QueueAuthoritativeRecovery(
                     Shore, Character->GetActorRotation().Yaw, GetParam(TEXT("DrownDamage"), 10.f));
                 return;
             }
-            // Several moves may run before the deferred recovery. Only the first applies drowning damage.
             if (UWandererSwordComponent* Sword = Character->GetSword()) Sword->Health = FMath::Max(1.f, Sword->Health - GetParam(TEXT("DrownDamage"), 10.f));
             // The shore is a spot he stood on: land on it, not on a canopy above it.
-            if (!Online) Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"), 100.f);
+            Character->TravelTo(Shore, Character->GetActorRotation().Yaw, TEXT("swim recovery"), 100.f);
         }
         return;
     }

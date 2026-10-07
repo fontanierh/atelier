@@ -121,7 +121,7 @@ bool FBotwNetworkState::Serialize(FArchive& Ar)
     Field(Ar, Stamina.Exhausted); Field(Ar, Stamina.Sprinting);
     Field(Ar, bWantsToCrouch); Field(Ar, PendingLaunch);
     Field(Ar, bImpactClimbable); Field(Ar, ImpactPoint); Field(Ar, ImpactNormal);
-    if (Stamina.Capacity != 2.f || Stamina.Units < 0.f || Stamina.Units > Stamina.Capacity ||
+    if (Stamina.Capacity != FSprintStamina().Capacity || Stamina.Units < 0.f || Stamina.Units > Stamina.Capacity ||
         Stamina.SprintSeconds <= 0.f || Stamina.RefillSeconds <= 0.f || ActionPlayRate < 0.f) Ar.SetError();
     return !Ar.IsError();
 }

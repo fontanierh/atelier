@@ -8,6 +8,7 @@
 #include "Containers/Ticker.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
+#include "Engine/NetDriver.h"
 #include "EngineUtils.h"
 #include "HAL/FileManager.h"
 #include "Misc/CommandLine.h"
@@ -45,6 +46,27 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
     Report->SetNumberField(TEXT("net_mode"), World ? int32(World->GetNetMode()) : -1);
     if (World)
     {
+#if DO_ENABLE_NET_TEST
+        if (const UNetDriver* Driver = World->GetNetDriver())
+        {
+            // Record the live driver, not the requested command line: ignored emulation
+            // flags must not turn a lag/loss acceptance run into a silent zero-lag pass.
+            const FPacketSimulationSettings& Settings = Driver->PacketSimulationSettings;
+            auto Emulation = MakeShared<FJsonObject>();
+            Emulation->SetNumberField(TEXT("lag_ms"), Settings.PktLag);
+            Emulation->SetNumberField(TEXT("variance_ms"), Settings.PktLagVariance);
+            Emulation->SetNumberField(TEXT("loss_percent"), Settings.PktLoss);
+            Emulation->SetNumberField(TEXT("order"), Settings.PktOrder);
+            Emulation->SetNumberField(TEXT("duplicate_percent"), Settings.PktDup);
+            Emulation->SetNumberField(TEXT("lag_min_ms"), Settings.PktLagMin);
+            Emulation->SetNumberField(TEXT("lag_max_ms"), Settings.PktLagMax);
+            Emulation->SetNumberField(TEXT("incoming_lag_min_ms"), Settings.PktIncomingLagMin);
+            Emulation->SetNumberField(TEXT("incoming_lag_max_ms"), Settings.PktIncomingLagMax);
+            Emulation->SetNumberField(TEXT("incoming_loss_percent"), Settings.PktIncomingLoss);
+            Emulation->SetNumberField(TEXT("jitter_ms"), Settings.PktJitter);
+            Report->SetObjectField(TEXT("emulation"), Emulation);
+        }
+#endif
         int32 Pawns = 0;
         for (TActorIterator<AWandererCharacter> It(World); It; ++It) if (!It->IsNpc()) ++Pawns;
         Report->SetNumberField(TEXT("player_pawns"), Pawns);

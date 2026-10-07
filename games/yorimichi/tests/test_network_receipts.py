@@ -57,6 +57,24 @@ def test_process_exit_without_native_receipt_is_not_success(receipts):
         review.compare_receipts(receipts)
 
 
+@pytest.mark.parametrize('lag,variance,loss', [(0, 0, 0), (60, 15, 2)])
+def test_emulation_requires_both_live_drivers_to_match(receipts, lag, variance, loss):
+    requested = dict(lag_ms=lag, variance_ms=variance, loss_percent=loss)
+    actual = dict(order=0, duplicate_percent=0, lag_min_ms=0, lag_max_ms=0,
+                  incoming_lag_min_ms=0, incoming_lag_max_ms=0, incoming_loss_percent=0,
+                  jitter_ms=0) | requested
+    # Merely declaring launch flags cannot certify the network conditions.
+    assert not all(review.compare_receipts(receipts, emulation=requested).values())
+    for role in ('server', 'client'):
+        change(receipts, role + '-connected', lambda v: v.update(emulation=actual))
+    assert all(review.compare_receipts(receipts, emulation=requested).values())
+    change(receipts, 'client-connected', lambda v: v['emulation'].update(lag_ms=lag + 1))
+    assert not all(review.compare_receipts(receipts, emulation=requested).values())
+    change(receipts, 'client-connected', lambda v: v.update(emulation=actual))
+    change(receipts, 'server-connected', lambda v: v['emulation'].update(order=1))
+    assert not all(review.compare_receipts(receipts, emulation=requested).values())
+
+
 @pytest.fixture
 def listen_receipts(receipts):
     for role in ('server', 'client'):

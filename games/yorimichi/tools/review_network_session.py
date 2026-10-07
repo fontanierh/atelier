@@ -25,7 +25,7 @@ def load(path):
         return None
 
 
-def compare_receipts(folder, gameplay=False, listen=False):
+def compare_receipts(folder, gameplay=False, listen=False, emulation=None):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -35,6 +35,12 @@ def compare_receipts(folder, gameplay=False, listen=False):
     server, client = read('server-connected'), read('client-connected')
     server_end, client_end = read('server-complete'), read('client-complete')
     checks = {}
+    if emulation is not None:
+        expected = dict(order=0, duplicate_percent=0, lag_min_ms=0, lag_max_ms=0,
+                        incoming_lag_min_ms=0, incoming_lag_max_ms=0, incoming_loss_percent=0,
+                        jitter_ms=0) | emulation
+        for role, receipt in (('server', server), ('client', client)):
+            checks[role + '_actual_emulation'] = receipt.get('emulation') == expected
     checks['same_session'] = bool(server.get('session')) and server['session'] == client.get('session')
     checks['same_identity'] = bool(server.get('identity')) and server['identity'] == client.get('identity')
     checks['server_role'] = server.get('local_players') == int(listen) and server.get('net_mode') == (2 if listen else 1)
@@ -185,9 +191,10 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         stop.touch()
         if monitor.wait(timeout=5) != 0:
             raise RuntimeError('Aggregate monitor rejected teardown')
-        checks = compare_receipts(folder, gameplay, listen)
+        emulation = dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent)
+        checks = compare_receipts(folder, gameplay, listen, emulation)
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
-                      emulation=dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent),
+                      emulation=emulation,
                       scope='Local NullRHI editor session smoke; packaged/rendered/network acceptance remains separate')
         (folder / 'checks.json').write_text(json.dumps(report, indent=2) + '\n')
         for name, ok in checks.items():

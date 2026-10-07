@@ -283,8 +283,9 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     if (!Custom.IsCorrection()) return;
     const auto& Saved = static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove);
     ++NetworkStats.Corrections;
-    NetworkStats.LargestCorrectionCm = FMath::Max(NetworkStats.LargestCorrectionCm,
-        float(FVector::Dist(Saved.SavedLocation, CharacterOwner->GetActorLocation())));
+    const float CorrectionCm = float(FVector::Dist(Saved.SavedLocation, CharacterOwner->GetActorLocation()));
+    if (CorrectionCm > 1.f) ++NetworkStats.PositionCorrections;
+    NetworkStats.LargestCorrectionCm = FMath::Max(NetworkStats.LargestCorrectionCm, CorrectionCm);
     const FJapanMoveCheckpoint& State = Custom.bHasCheckpoint ? Custom.Checkpoint : Saved.PostState;
     if (!Custom.bHasCheckpoint && State.Bytes.IsEmpty())
     {
