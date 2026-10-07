@@ -31,10 +31,12 @@ FString PlayerId(const AWandererCharacter* Player)
     const auto* State = Player ? Player->GetPlayerState<AJapanPlayerState>() : nullptr;
     return State ? State->SessionPlayerId : FString();
 }
-uint32 ActorId(const AActor* Actor)
+FString ActorId(const AActor* Actor)
 {
     const auto* Driver = Actor ? Actor->GetNetDriver() : nullptr;
-    return Driver && Driver->GuidCache ? Driver->GuidCache->GetNetGUID(Actor).Value : 0;
+    if (!Driver || !Driver->GuidCache) return {};
+    const FNetworkGUID Guid = Driver->GuidCache->GetNetGUID(Actor);
+    return Guid.IsValid() ? Guid.ToString() : FString();
 }
 bool Write(const FString& File, const TSharedPtr<FJsonObject>& Data)
 {
@@ -86,7 +88,8 @@ struct FJapanEnemyProbe
     int32 Phase = 0, SeenPhase = -1, InitialMaximum = 0, PreviousHealth = -1;
     int32 HealthChanges = 0, DeathChanges = 0;
     EFoxState PreviousState = EFoxState::Idle;
-    uint32 Identity = 0, PhaseHitStart = 0;
+    FString Identity;
+    uint32 PhaseHitStart = 0;
     FString HostId, GuestId;
     FVector Home = FVector::ZeroVector, Axis = FVector::ForwardVector;
     float GuestHealthBefore = 0.f;
@@ -113,7 +116,7 @@ struct FJapanEnemyProbe
     {
         auto Data = MakeShared<FJsonObject>();
         Data->SetNumberField(TEXT("phase"), Phase);
-        Data->SetNumberField(TEXT("net_guid"), ActorId(Fox));
+        Data->SetStringField(TEXT("net_guid"), ActorId(Fox));
         Data->SetNumberField(TEXT("health"), Fox->Health);
         Data->SetNumberField(TEXT("phase_start_health"), PhaseHealth);
         Data->SetNumberField(TEXT("frame_count"), Frames);
@@ -239,7 +242,7 @@ void JapanEnemyQA::SwordDamage(AFoxHunter* Fox, AActor* Attacker, int32 Power, i
             Bound->GetNumberField(TEXT("action")) == Player->GetActionSerial()) Row->SetObjectField(TEXT("input"), Bound);
     }
     if (!Row->HasField(TEXT("input"))) Probe.Fail(TEXT("Credited sword action has no accepted owner-input edge"));
-    Row->SetNumberField(TEXT("enemy_guid"), ActorId(Fox));
+    Row->SetStringField(TEXT("enemy_guid"), ActorId(Fox));
     Row->SetNumberField(TEXT("power"), Power);
     Row->SetNumberField(TEXT("before"), Before); Row->SetNumberField(TEXT("after"), After);
     Row->SetNumberField(TEXT("at"), Fox->GetWorld()->GetTimeSeconds());
@@ -328,7 +331,7 @@ void FJapanEnemyProbe::Observe(AFoxHunter* Fox)
         if (LastGuestHealth >= 0.f && !FMath::IsNearlyEqual(LastGuestHealth, Health, .01f)) ++GuestHealthChanges;
         LastGuestHealth = Health;
     }
-    if (!Identity) Identity = ActorId(Fox);
+    if (Identity.IsEmpty()) Identity = ActorId(Fox);
     else if (Identity != ActorId(Fox)) Fail(TEXT("Shared hunter identity changed"));
     if (!Fox->HasAuthority() && (Fox->GetLocalRole() != ROLE_SimulatedProxy || Fox->GetController() || AiTicks || Sweeps))
         Fail(TEXT("Guest hunter ran local authority or collision logic"));
@@ -402,7 +405,7 @@ bool FJapanEnemyProbe::PeerMatches(const TSharedPtr<FJsonObject>& Other) const
 {
     if (!Other || !Other->GetStringField(TEXT("error")).IsEmpty()) return false;
     const auto* Fox = Hunter.Get();
-    return Other->GetNumberField(TEXT("phase")) == Phase && Other->GetNumberField(TEXT("net_guid")) == Identity &&
+    return Other->GetNumberField(TEXT("phase")) == Phase && Other->GetStringField(TEXT("net_guid")) == Identity &&
         Other->GetNumberField(TEXT("health")) == Fox->Health && Other->GetNumberField(TEXT("maximum_health")) == Fox->EncounterHealth &&
         Other->GetNumberField(TEXT("action_serial")) == Fox->ActionSerial &&
         Other->GetBoolField(TEXT("simulated_proxy")) && !Other->GetBoolField(TEXT("has_controller")) &&
