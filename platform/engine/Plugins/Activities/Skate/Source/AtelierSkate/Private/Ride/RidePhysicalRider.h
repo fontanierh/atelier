@@ -407,11 +407,14 @@ private:
     TArray<FTransform> SnapshotWorld;
     TWeakObjectPtr<USkeletalMesh> SnapshotMesh;
     TWeakObjectPtr<USkeletalMeshComponent> SnapshotComponent;
-    // Each body's shape as points in its bone's space (a hull's vertices, a capsule's or sphere's surface), and its
-    // lowest point where the body lay: the get-up keeps every shape above the lower of its two ends, not just the
-    // bones (BlendFromSnapshot).
-    struct FGetUpShape { int32 Bone = INDEX_NONE; TArray<FVector> Points; double SnapshotLow = 0.; };
+    // Each body's shape as points in its bone's space (a hull's vertices, a capsule's or sphere's surface), its
+    // lowest point where the body lay, and how far it lay over the ground below it: the get-up keeps every shape above
+    // the lower of its two ends, and as far over the ground as the nearer of them, not just the bones (BlendFromSnapshot).
+    struct FGetUpShape { int32 Bone = INDEX_NONE; TArray<FVector> Points; double SnapshotLow = 0., SnapshotClear = 0.; };
     TArray<FGetUpShape> GetUpShapes;
+    /** How far a shape, placed by World, stays over the ground's plane straight below its lowest point (below 0 under
+     *  it); UE_DOUBLE_BIG_NUMBER when no ground lies within reach. */
+    double GroundClearance(const FTransform& World, const TArray<FVector>& Points) const;
     TWeakObjectPtr<UWorld> TickWorld;
 
     // Surfaces made physical around the body: whole components, and instances of instanced meshes one by one (a

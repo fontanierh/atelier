@@ -286,6 +286,7 @@ void URidePhysicalRider::StartGetUp(ERideGetUpExit Exit)
             if (Shape.Points.IsEmpty()) continue;
             Shape.SnapshotLow = UE_DOUBLE_BIG_NUMBER;
             for (const FVector& P : Shape.Points) Shape.SnapshotLow = FMath::Min(Shape.SnapshotLow, SnapshotWorld[Bone].TransformPosition(P).Z);
+            Shape.SnapshotClear = GroundClearance(SnapshotWorld[Bone], Shape.Points);
             GetUpShapes.Add(MoveTemp(Shape));
         }
     // From here the pose is the blend, held at the snapshot until the bodies are handed over. The mesh shows the pose
@@ -343,6 +344,30 @@ FTransform URidePhysicalRider::ShownTransform(const USceneComponent* Component)
     return Component->GetRelativeTransform() * Parent->GetSocketTransform(Component->GetAttachSocketName());
 }
 
+double URidePhysicalRider::GroundClearance(const FTransform& World, const TArray<FVector>& Points) const
+{
+    FVector Lowest(0, 0, UE_DOUBLE_BIG_NUMBER);
+    for (const FVector& P : Points) { const FVector At = World.TransformPosition(P); if (At.Z < Lowest.Z) Lowest = At; }
+    const UWorld* Game = Rider ? Rider->GetWorld() : nullptr;
+    if (!Game || Lowest.Z == UE_DOUBLE_BIG_NUMBER) return UE_DOUBLE_BIG_NUMBER;
+    // From 30 cm over the lowest point (a shape sunk that far is found from above) to a metre under it (further off,
+    // the ground does not hold the shape).
+    FHitResult Hit;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(RideGetUpGround), false, Rider);
+    if (LooseBoard) Params.AddIgnoredComponent(LooseBoard.Get());
+    if (!Game->LineTraceSingleByChannel(Hit, Lowest + FVector(0, 0, 30.f), Lowest - FVector(0, 0, 100.f), ECC_Pawn, Params) || Hit.ImpactNormal.Z < .2f)
+        return UE_DOUBLE_BIG_NUMBER;
+    // The ground as the plane it shows there: on a slope the shape's uphill end is the one nearest it.
+    const FVector N = Hit.ImpactNormal, G = Hit.ImpactPoint;
+    double Clear = UE_DOUBLE_BIG_NUMBER;
+    for (const FVector& P : Points)
+    {
+        const FVector At = World.TransformPosition(P);
+        Clear = FMath::Min(Clear, At.Z - (G.Z - (N.X * (At.X - G.X) + N.Y * (At.Y - G.Y)) / N.Z));
+    }
+    return Clear;
+}
+
 // The snapshot as a local pose of the current component: bones under the root keep their place in the world at
 // alpha 0, the root itself is the pose's, so the body moves straight from where it lay to the clip.
 bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float Alpha) const
@@ -353,9 +378,9 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
     if (LocalPose.Num() != Ref.GetNum() || SnapshotWorld.Num() != Ref.GetNum()) return false;
     const FTransform Component = ShownTransform(Target);
     const float A = FMath::SmoothStep(0.f, 1.f, FMath::Clamp(Alpha, 0.f, 1.f));
-    // Each bone's height, and each body shape's lowest point, at the blend's two ends: where it lay, and in the pose
-    // it rises to.
-    const auto Heights = [&](TArray<double>& Out, TArray<double>& Low)
+    // Each bone's height, and each body shape's lowest point and how far it is over the ground below it, at the
+    // blend's two ends: where it lay, and in the pose it rises to.
+    const auto Heights = [&](TArray<double>& Out, TArray<double>& Low, TArray<double>& Clear)
     {
         TArray<FTransform> Space; Space.SetNum(LocalPose.Num()); Out.SetNum(LocalPose.Num());
         for (int32 I = 0; I < LocalPose.Num(); ++I)
@@ -364,16 +389,17 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
             Space[I] = Parent >= 0 ? LocalPose[I] * Space[Parent] : LocalPose[I];
             Out[I] = Component.TransformPosition(Space[I].GetLocation()).Z;
         }
-        Low.SetNum(GetUpShapes.Num());
+        Low.SetNum(GetUpShapes.Num()); Clear.SetNum(GetUpShapes.Num());
         for (int32 S = 0; S < GetUpShapes.Num(); ++S)
         {
             const FTransform World = Space.IsValidIndex(GetUpShapes[S].Bone) ? Space[GetUpShapes[S].Bone] * Component : Component;
             Low[S] = UE_DOUBLE_BIG_NUMBER;
             for (const FVector& P : GetUpShapes[S].Points) Low[S] = FMath::Min(Low[S], World.TransformPosition(P).Z);
+            Clear[S] = GroundClearance(World, GetUpShapes[S].Points);
         }
     };
-    TArray<double> Risen, Shown, RisenLow, ShownLow;
-    Heights(Risen, RisenLow);
+    TArray<double> Risen, Shown, RisenLow, ShownLow, RisenClear, ShownClear;
+    Heights(Risen, RisenLow, RisenClear);
     // The pose's root in the world, which the root's children are measured from.
     for (int32 I = 1; I < Ref.GetNum(); ++I)
     {
@@ -388,11 +414,17 @@ bool URidePhysicalRider::BlendFromSnapshot(TArray<FTransform>& LocalPose, float 
     // Joint by joint, the rotations swing a limb through the floor on its way from lying to standing (a foot 15 cm
     // under it half way up). No bone, and no body's shape, goes lower than the lower of its two ends: the root rises
     // by the deepest shortfall. The shapes carry the skin past the bones (a toe 4 cm under the floor while its ankle
-    // stayed above).
-    Heights(Shown, ShownLow);
+    // stayed above). On a slope a shape moving uphill meets higher ground than at either end, so it also keeps the
+    // nearer of its two ends' distances over the ground below it (a foot 5 cm under 15 degree grass half way up).
+    Heights(Shown, ShownLow, ShownClear);
     double Lift = 0.;
     for (int32 I = 1; I < Shown.Num(); ++I) Lift = FMath::Max(Lift, FMath::Min(SnapshotWorld[I].GetLocation().Z, Risen[I]) - Shown[I]);
-    for (int32 S = 0; S < GetUpShapes.Num(); ++S) Lift = FMath::Max(Lift, FMath::Min(GetUpShapes[S].SnapshotLow, RisenLow[S]) - ShownLow[S]);
+    for (int32 S = 0; S < GetUpShapes.Num(); ++S)
+    {
+        Lift = FMath::Max(Lift, FMath::Min(GetUpShapes[S].SnapshotLow, RisenLow[S]) - ShownLow[S]);
+        const double Kept = FMath::Min(GetUpShapes[S].SnapshotClear, RisenClear[S]);
+        if (Kept < UE_DOUBLE_BIG_NUMBER && ShownClear[S] < UE_DOUBLE_BIG_NUMBER) Lift = FMath::Max(Lift, Kept - ShownClear[S]);
+    }
     if (Lift > 0.) LocalPose[0].AddToTranslation(Component.InverseTransformVector(FVector(0, 0, Lift)));
     return true;
 }
