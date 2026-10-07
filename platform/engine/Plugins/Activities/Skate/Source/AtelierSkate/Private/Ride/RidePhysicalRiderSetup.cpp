@@ -160,7 +160,7 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     {
         if (!Built || BuiltFor != Skeletal || bBuiltFit != S->bFitBodiesToSkin)
         {
-            Built = KeptPhysicsAsset(Skeletal, Api, S->bFitBodiesToSkin, BuiltFitted, BailEnvelopes);
+            Built = KeptPhysicsAsset(Skeletal, Api, Rider->GetWorld(), S->bFitBodiesToSkin, BuiltFitted, BailEnvelopes);
             BuiltFor = Skeletal; bBuiltFit = S->bFitBodiesToSkin;
         }
         if (!Built) { Mesh = nullptr; Rider = nullptr; return false; }
@@ -454,7 +454,7 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
             const FVector Extent = Convex.ElemBox.GetSize() * Bind[B].GetMaximumAxisScale();
             const int32 Stray = Strays.FindRef(B);
             UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider body %s: %s (%d of %d vertices; %.0f x %.0f x %.0f cm, %.1fx the capsule's volume)%s"),
-                *Ref.GetBoneName(B).ToString(), Body ? TEXT("fitted to the skin") : TEXT("capsule, too little skin"), Convex.VertexData.Num(),
+                *Ref.GetBoneName(B).ToString(), Body ? TEXT("fitted to the skin") : Volume <= 0. ? TEXT("capsule, its hull has no collision") : TEXT("capsule, too little skin"), Convex.VertexData.Num(),
                 Points->Num(), Extent.X, Extent.Y, Extent.Z, Volume / FMath::Max(CapsuleVolume, 1e-9),
                 Stray ? *FString::Printf(TEXT("; %d vertices further than %.0f cm from the bone left out"), Stray, SkinReach * Size) : TEXT(""));
         }

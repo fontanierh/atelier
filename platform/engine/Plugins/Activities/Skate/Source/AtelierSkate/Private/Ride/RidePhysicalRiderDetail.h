@@ -10,6 +10,7 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
@@ -57,7 +58,7 @@ namespace RidePhysicalRiderDetail
     struct FBuiltAsset { TWeakObjectPtr<UPhysicsAsset> Asset; int32 Fitted = 0; TMap<FName, FRideJointEnvelope> Bail; };
     inline TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset> GBuiltAssets[2];
 
-    inline UPhysicsAsset* KeptPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, bool bFitToSkin, int32& Fitted,
+    inline UPhysicsAsset* KeptPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, UWorld* Game, bool bFitToSkin, int32& Fitted,
         TMap<FName, FRideJointEnvelope>& Bail)
     {
         TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset>& Kept = GBuiltAssets[bFitToSkin ? 1 : 0];
@@ -69,8 +70,21 @@ namespace RidePhysicalRiderDetail
             }
         if (const FBuiltAsset* Found = Kept.Find(Skeletal)) { Fitted = Found->Fitted; Bail = Found->Bail; return Found->Asset.Get(); }
         const double Start = FPlatformTime::Seconds();
-        UPhysicsAsset* Built = URidePhysicalRider::BuildPhysicsAsset(Skeletal, RiderApi, GetTransientPackage(), bFitToSkin, &Fitted, &Bail);
+        // A cooked game makes a fitted hull's collision only for a body in a game world (UBodySetup::CreatePhysicsMeshes
+        // cooks one with no cooked data only when IsRuntime; the editor cooks it anyway): outside one the hull has no
+        // volume and every body is the contract's capsule. So the asset is built in the rider's world, then moved to
+        // the transient package, so that keeping it for the session keeps no world.
+        UObject* Outer = Game && Game->IsGameWorld() ? static_cast<UObject*>(Game) : GetTransientPackage();
+        UPhysicsAsset* Built = URidePhysicalRider::BuildPhysicsAsset(Skeletal, RiderApi, Outer, bFitToSkin, &Fitted, &Bail);
         if (!Built) return nullptr;
+        if (Built->GetOuter() != GetTransientPackage() &&
+            !Built->Rename(nullptr, GetTransientPackage(), REN_DontCreateRedirectors | REN_NonTransactional | REN_DoNotDirty))
+        {
+            // Rooted in the world it would keep that world: this ride's world keeps it, and the next ride builds again.
+            UE_LOG(LogTemp, Error, TEXT("SKATE ride physical rider: the physics asset for %s could not leave its world, so it is not kept"),
+                *Skeletal->GetName());
+            return Built;
+        }
         Built->AddToRoot();
         Kept.Add(Skeletal, FBuiltAsset{Built, Fitted, Bail});
         UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider: physics asset for %s built in %.1f ms, kept for the session"),
