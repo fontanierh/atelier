@@ -1101,3 +1101,5 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 /* Scroll areas: a thin bar in the theme's tint instead of the platform's default track. */
 .pane-body, .feed, .thread-feed, .reader-body, .mention-menu { scrollbar-width: thin; scrollbar-color: rgb(var(--tint) / .26) transparent; }
 .inbox-column > .more { justify-self: start; }
+/* The phone keyboard push sets these panes' scroll itself; the browser's scroll anchoring must not adjust it too. */
+.inbox-pane .pane-body { overflow-anchor: none; }

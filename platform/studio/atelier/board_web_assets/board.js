@@ -1270,28 +1270,48 @@ function inboxKeyboardFit() {
   else if(k.opened&&shrink<40){inboxKeyboardEnd();k.field.blur();return;}
   if(k.moved)return;
   // Room below for the push, then up by the keyboard, but never so far that the field being typed in leaves the top.
-  k.pane.style.paddingBottom=`${k.base+shrink}px`;
+  // Only real changes are written: rewriting an unchanged scroll position makes phones repaint the list mid-animation.
+  const padding=`${k.base+shrink}px`;if(k.pane.style.paddingBottom!==padding)k.pane.style.paddingBottom=padding;
   const field=k.field.getBoundingClientRect().top-k.pane.getBoundingClientRect().top+k.pane.scrollTop;
-  k.pane.scrollTop=k.top+Math.max(0,Math.min(shrink,field-k.top-8));
+  const top=Math.round(k.top+Math.max(0,Math.min(shrink,field-k.top-8)));
+  if(Math.abs(k.pane.scrollTop-top)>=1)k.pane.scrollTop=top;
+}
+// Phones report the keyboard's height in a few late steps, so while it slides the pane follows it every frame
+// instead of jumping at each report.
+let inboxTrackUntil=0;
+function inboxKeyboardTrack(ms=700) {
+  const running=performance.now()<inboxTrackUntil;inboxTrackUntil=performance.now()+ms;if(running)return;
+  const step=()=>{fitViewport();if(performance.now()<inboxTrackUntil&&(inboxKeyboard||inboxRestore))requestAnimationFrame(step);};
+  requestAnimationFrame(step);
 }
 function inboxKeyboardEnd() {
   const k=inboxKeyboard;inboxKeyboard=null;if(!k)return;
   k.pane.style.paddingBottom="";
   if(k.moved)return;
   // Again once the keyboard's animation and the viewport have settled.
-  inboxRestore=k;const restore=()=>{if(inboxRestore===k&&!inboxKeyboard)k.pane.scrollTop=k.top;};
+  inboxRestore=k;const restore=()=>{if(inboxRestore===k&&!inboxKeyboard&&Math.abs(k.pane.scrollTop-k.top)>=1)k.pane.scrollTop=k.top;};
   restore();for(const ms of [350,750])setTimeout(restore,ms);
+  inboxKeyboardTrack();
 }
 document.querySelectorAll(".inbox-pane .pane-body").forEach(pane=>{
   // Where the pane was before a tap, since the browser may scroll to the field as it takes focus.
   pane.addEventListener("pointerdown",()=>{if(!inboxKeyboard)inboxTouchTop=pane.scrollTop;},{capture:true,passive:true});
+  // A first tap on a reply box focuses it without the browser's own scroll to the field, which the push would
+  // otherwise have to undo while you watch.
+  let tap=null;
+  pane.addEventListener("touchstart",event=>{const t=event.touches[0];tap=event.touches.length===1?{x:t.clientX,y:t.clientY}:null;},{passive:true});
+  pane.addEventListener("touchend",event=>{
+    const field=event.target.closest?.(".inbox-reply textarea"), t=event.changedTouches[0];
+    if(!field||!tap||document.activeElement===field||Math.hypot(t.clientX-tap.x,t.clientY-tap.y)>10)return;
+    event.preventDefault();field.focus({preventScroll:true});
+  });
   pane.addEventListener("focusin",event=>{
     if(!touch.matches||!event.target.matches("textarea"))return;
     if(inboxKeyboard?.pane===pane){inboxKeyboard.field=event.target;return;}   // another reply box, same keyboard
     inboxKeyboardEnd();inboxRestore=null;
     inboxKeyboard={pane,field:event.target,top:inboxTouchTop??pane.scrollTop,height:pane.clientHeight,
       base:parseFloat(getComputedStyle(pane).paddingBottom)||0,opened:false,moved:false};
-    inboxTouchTop=null;inboxKeyboardFit();
+    inboxTouchTop=null;inboxKeyboardFit();inboxKeyboardTrack();
   });
   pane.addEventListener("focusout",()=>setTimeout(()=>{if(inboxKeyboard?.pane===pane&&!pane.contains(document.activeElement))inboxKeyboardEnd();},120));
   pane.addEventListener("touchmove",()=>{if(inboxKeyboard?.pane===pane)inboxKeyboard.moved=true;if(inboxRestore?.pane===pane)inboxRestore=null;},{passive:true});
