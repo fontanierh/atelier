@@ -858,7 +858,8 @@ SHOTS = [
          rail_do=[spin(to=88., dir=1.)], land_dz=-.5,           # the deck square to the line when it meets the ledge's top
          cams=[(0., chase(back=2.2, side=-2.3, up=.7))], expect=['Boardslide']),
     # A 5-0, from the side (onto the parapet before its lamp post too): a shallower line than the 50-50's lands on one truck.
-    dict(name='rail_5_0', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.33, secs=10.,
+    # It approaches at the boardslide's speed: at 7.6 m/s the pop came 1.2 m later, already on the parapet's face.
+    dict(name='rail_5_0', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.4, rail_load=.33, secs=10.,
          gain=12., b_d=-1.6, keep=grind_held, retry=2, rail_path=True,
          rail_do=[stick(0., -.55)],
          cams=[(0., chase(back=3.0, side=-1.6, up=1.0)), (mode_is(3), fixed((-71.2, 1389.5, 125., 1.0)))],
