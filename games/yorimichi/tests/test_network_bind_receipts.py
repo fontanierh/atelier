@@ -9,6 +9,7 @@ review = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(review)
 
 BIND_LOG = 'Private listener initialization failed: Address already in use'
+LIVE = dict(game_alive_before=True, game_alive_after=True, no_game_port=True, sole_blocker=True)
 
 
 @pytest.fixture
@@ -19,10 +20,10 @@ def recovered():
 
 
 def test_native_failed_bind_and_visible_solo_recovery_are_required(recovered):
-    assert all(review.bind_checks(0, False, BIND_LOG, [42], 42, recovered).values())
+    assert all(review.bind_checks(0, False, BIND_LOG, [42], 42, recovered, LIVE).values())
     assert not all(review.bind_checks(0, False, BIND_LOG, [42], 42).values())
-    assert not all(review.bind_checks(0, False, '', [42], 42, recovered).values())
-    assert not all(review.bind_checks(0, False, BIND_LOG, [42, 99], 42, recovered).values())
+    assert not all(review.bind_checks(0, False, '', [42], 42, recovered, LIVE).values())
+    assert not all(review.bind_checks(0, False, BIND_LOG, [42, 99], 42, recovered, LIVE).values())
 
 
 @pytest.mark.parametrize('field,value', [
@@ -33,7 +34,7 @@ def test_native_failed_bind_and_visible_solo_recovery_are_required(recovered):
 ])
 def test_failed_map_or_lost_error_is_not_accepted(recovered, field, value):
     recovered[field] = value
-    assert not all(review.bind_checks(0, False, BIND_LOG, [42], 42, recovered).values())
+    assert not all(review.bind_checks(0, False, BIND_LOG, [42], 42, recovered, LIVE).values())
 
 
 def test_dedicated_requires_exit_one_from_real_bind_failure():
@@ -43,3 +44,24 @@ def test_dedicated_requires_exit_one_from_real_bind_failure():
     assert not all(review.bind_checks(-15, True, log, [42], 42).values())
     assert not all(review.bind_checks(1, True, 'Private dedicated listener failed: No Tailscale', [42], 42).values())
     assert not all(review.bind_checks(1, True, log, [], 42).values())
+
+
+def test_port_receipt_after_exit_cannot_certify_live_recovery(recovered):
+    assert not all(review.bind_checks(0, False, BIND_LOG, [42], 42, recovered).values())
+    for key in LIVE:
+        assert not all(review.bind_checks(0, False, BIND_LOG, [42], 42, recovered, LIVE | {key: False}).values())
+
+
+@pytest.mark.parametrize('socket_name,expected', [
+    ('*:7777', False), ('[::1]:7777', False), ('192.0.2.3:7777', False),
+    ('192.0.2.3:45000->192.0.2.4:7777', True), ('*:45000', True),
+])
+def test_live_socket_probe_checks_local_port_on_every_address(monkeypatch, socket_name, expected):
+    from types import SimpleNamespace
+    calls = []
+    def run(argv, **kwargs):
+        calls.append(argv)
+        return SimpleNamespace(returncode=0, stdout='p99\nn' + socket_name + '\n')
+    monkeypatch.setattr(review.subprocess, 'run', run)
+    assert review.process_udp(99, 7777)['no_game_port'] is expected
+    assert calls == [['lsof', '-nP', '-a', '-p', '99', '-iUDP', '-Fpn']]

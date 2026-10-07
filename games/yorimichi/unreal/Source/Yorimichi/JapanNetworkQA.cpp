@@ -194,8 +194,17 @@ bool UJapanGameInstance::TickNetworkQA(float)
         if (bReturnSoloAfterListenFailure || bShowAfterTravel || !Menu.IsValid() || World->GetNetMode() != NM_Standalone ||
             World->GetNetDriver() || !World->GetAuthGameMode() || World->GetAuthGameMode()->GetClass() != AJapanGameMode::StaticClass()) return true;
         if (Status.IsEmpty()) return Fail(TEXT("Host bind failure lost its user-facing notice"));
-        if (!WriteNetworkQA(TEXT("complete"))) return Fail(TEXT("Could not save occupied-port recovery receipt"));
-        FPlatformMisc::RequestExit(false); return false;
+        if (NetworkQALeaving <= 0.)
+        {
+            if (!WriteNetworkQA(TEXT("complete"))) return Fail(TEXT("Could not save occupied-port recovery receipt"));
+            NetworkQALeaving = Now;
+        }
+        // Stay alive for the harness's per-process UDP inspection. An exited process
+        // having no socket would not establish correct live recovery.
+        if (Now - NetworkQALeaving > 10.) return Fail(TEXT("The harness did not certify the recovered host's live sockets"));
+        if (Now - NetworkQALeaving >= 3. && IFileManager::Get().FileExists(*(NetworkQADirectory / TEXT("bind-release"))))
+        { FPlatformMisc::RequestExit(false); return false; }
+        return true;
     }
     const auto* State = World->GetGameState<AJapanGameState>();
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));

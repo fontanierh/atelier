@@ -12,9 +12,10 @@ import time
 def main():
     from atelier.build import Context
     from atelier.safety import guarded
-    from network_review_common import require_clean_source, source_revision
+    from network_review_common import require_clean_source, source_revision, current_native_build
     ctx = Context('yorimichi')
     revision = require_clean_source()
+    binary = current_native_build(ctx)
     folder = ctx.out / 'network-wire' / time.strftime('%Y%m%d-%H%M%S')
     folder.mkdir(parents=True, exist_ok=False)
     command = [str(ctx.unreal_app), str(ctx.uproject), '/Engine/Maps/Entry?game=/Script/Engine.GameModeBase',
@@ -28,10 +29,10 @@ def main():
     outcomes = dict((name, state) for state, name in re.findall(
         r'Test Completed\. Result=\{([^}]+)\} Name=\{[^}]*\} Path=\{([^}]+)\}', text))
     expected = {'Yorimichi.Network.' + name for name in ('JoinEndpoint', 'OrderedInput', 'TraversalCheckpoint', 'SkateWire', 'SkateBudget')}
-    unchanged = source_revision() == revision
+    unchanged = source_revision() == revision and current_native_build(ctx) == binary
     passed = unchanged and result == 0 and expected <= outcomes.keys() and all(outcomes[name] == 'Success' for name in expected)
     receipt = dict(passed=passed, process_exit=result, tests=outcomes, missing=sorted(expected - outcomes.keys()),
-                   source=revision, source_unchanged=unchanged)
+                   source=revision, native_build=binary, source_and_build_unchanged=unchanged)
     (folder / 'checks.json').write_text(json.dumps(receipt, indent=2) + '\n')
     print(json.dumps(receipt, indent=2), flush=True)
     print('Native wire evidence: ' + str(folder), flush=True)

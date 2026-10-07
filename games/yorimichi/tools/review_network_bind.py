@@ -22,6 +22,15 @@ def port_owners(address, port):
     return dict(owners=sorted(owners), lsof=result.stdout)
 
 
+def process_udp(pid, port):
+    result = subprocess.run(['lsof', '-nP', '-a', '-p', str(pid), '-iUDP', '-Fpn'],
+                            capture_output=True, text=True, timeout=3, check=False)
+    if result.returncode not in (0, 1):
+        raise RuntimeError('Could not inspect the live game UDP sockets')
+    local = [line[1:].split('->', 1)[0] for line in result.stdout.splitlines() if line.startswith('n')]
+    return dict(no_game_port=all(name.rsplit(':', 1)[-1] != str(port) for name in local), lsof=result.stdout)
+
+
 def load(path):
     try:
         return json.loads(path.read_text())
@@ -29,7 +38,7 @@ def load(path):
         return None
 
 
-def bind_checks(code, dedicated, text, owners, blocker_pid, receipt=None):
+def bind_checks(code, dedicated, text, owners, blocker_pid, receipt=None, live=None):
     checks = dict(exit_code=code == int(dedicated),
                   real_bind_failed='Private listener initialization failed:' in text,
                   sole_blocker=owners == [blocker_pid])
@@ -37,7 +46,10 @@ def bind_checks(code, dedicated, text, owners, blocker_pid, receipt=None):
         checks['dedicated_error'] = 'Private dedicated listener failed:' in text
     else:
         receipt = receipt or {}
+        live = live or {}
         checks.update(native_receipt=bool(receipt) and not receipt.get('error'),
+                      live_socket_check=all(live.get(key) is True for key in
+                          ('game_alive_before', 'game_alive_after', 'no_game_port', 'sole_blocker')),
                       failure_seen=receipt.get('listen_failure_seen') is True,
                       solo=receipt.get('net_mode') == 0 and receipt.get('game_mode') == '/Script/Yorimichi.JapanGameMode',
                       no_driver=receipt.get('has_game_driver') is False,
@@ -51,11 +63,12 @@ def worker(folder):
     from atelier.build import Context
     from atelier.safety.guard import attach, reap
     from atelier.safety.process import spawn_game
-    from network_review_common import tailnet_ipv4, require_clean_source, source_revision
+    from network_review_common import tailnet_ipv4, require_clean_source, source_revision, current_native_build
     ctx = Context('yorimichi')
     revision = require_clean_source()
+    binary = current_native_build(ctx)
     address, port = tailnet_ipv4(), 7777
-    proof = dict(passed=False, endpoint=f'{address}:{port}', blocker_pid=os.getpid(), runs=[], source=revision)
+    proof = dict(passed=False, endpoint=f'{address}:{port}', blocker_pid=os.getpid(), runs=[], source=revision, native_build=binary)
     games = []
     try:
         # Deliberately no SO_REUSEADDR or SO_REUSEPORT. Refuse if anything already owns it.
@@ -80,6 +93,7 @@ def worker(folder):
                     game = spawn_game(command, stdout=log, stderr=subprocess.STDOUT)
                     games.append(game)
                     print(f'{role}: owned pid {game.pid}; actual private listener against exclusive blocker', flush=True)
+                    live = None
                     with attach(game.pid, folder / (role + '-memory.json'), duration=100) as guard:
                         if guard is None:
                             raise RuntimeError('Actual-child guard could not attach')
@@ -90,6 +104,18 @@ def worker(folder):
                             now = time.monotonic()
                             if now - began > 95:
                                 raise RuntimeError(role + ' bind-failure proof exceeded its deadline')
+                            if not dedicated and live is None and load(folder / 'bind-failure-complete.json'):
+                                before = game.poll() is None
+                                sockets = process_udp(game.pid, port)
+                                blocker_now = port_owners(address, port)
+                                live = dict(game_alive_before=before, game_alive_after=game.poll() is None,
+                                            no_game_port=sockets['no_game_port'], sole_blocker=blocker_now['owners'] == [os.getpid()],
+                                            game_udp=sockets['lsof'], blocker_udp=blocker_now['lsof'])
+                                (folder / 'host-live-sockets.json').write_text(json.dumps(live, indent=2) + '\n')
+                                if not all(live[k] for k in ('game_alive_before', 'game_alive_after', 'no_game_port', 'sole_blocker')):
+                                    raise RuntimeError('Recovered host failed its live UDP socket inspection')
+                                (folder / 'bind-release').touch()
+                                print('host: live recovered process has no game-port socket on any address; release certified', flush=True)
                             if now - spoken >= 15:
                                 spoken = now
                                 print(f'{role}: waiting for native bind-failure/exit proof, {now-began:.1f}s elapsed', flush=True)
@@ -98,14 +124,15 @@ def worker(folder):
                 owners = port_owners(address, port)
                 text = (folder / (role + '.log')).read_text(errors='replace')
                 checks = bind_checks(game.returncode, dedicated, text, owners['owners'], os.getpid(),
-                                     load(folder / 'bind-failure-complete.json'))
-                proof['runs'].append(dict(role=role, exit=game.returncode, checks=checks, port=owners))
+                                     load(folder / 'bind-failure-complete.json'), live)
+                proof['runs'].append(dict(role=role, exit=game.returncode, checks=checks, port=owners, live=live))
                 print(role + ': ' + json.dumps(checks), flush=True)
                 if not all(checks.values()):
                     raise RuntimeError(role + ' failed its actual bind/recovery acceptance checks')
             proof['source_unchanged'] = source_revision() == revision
-            if not proof['source_unchanged']:
-                raise RuntimeError('Source changed during native bind acceptance')
+            proof['native_build_unchanged'] = current_native_build(ctx) == binary
+            if not proof['source_unchanged'] or not proof['native_build_unchanged']:
+                raise RuntimeError('Source or compiled files changed during native bind acceptance')
             proof['passed'] = True
         return 0
     finally:

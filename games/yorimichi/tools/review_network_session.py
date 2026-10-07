@@ -98,7 +98,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
     from atelier.safety.guard import attach, reap
     from atelier.safety.process import spawn_game
     from atelier.safety.render_lock import available_bytes
-    from network_review_common import require_clean_source, source_revision
+    from network_review_common import require_clean_source, source_revision, current_native_build
     revision = require_clean_source()
     free = available_bytes()
     # Admission budgets the pair, not one game's current usage before launching another.
@@ -106,6 +106,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
     if free is None or free < 12 * 1024**3:
         raise RuntimeError('The compound smoke needs at least 12 GiB available before either game starts')
     ctx = Context('yorimichi')
+    binary = current_native_build(ctx)
     if tailnet:
         from network_review_common import tailnet_ipv4
         host = tailnet_ipv4()
@@ -205,9 +206,11 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         emulation = dict(lag_ms=lag_ms, variance_ms=variance_ms, loss_percent=loss_percent)
         checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}')
         checks['source_unchanged'] = source_revision() == revision
+        checks['native_build_unchanged'] = current_native_build(ctx) == binary
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
-                      emulation=emulation, source=revision,
-                      scope='Local NullRHI editor session smoke; packaged/rendered/network acceptance remains separate')
+                      emulation=emulation, source=revision, native_build=binary,
+                      scope=('Same-machine Tailscale listener; ' if tailnet else 'Loopback listener; ') +
+                            'NullRHI editor smoke. Packaged, rendered and two-machine acceptance remain separate')
         (folder / 'checks.json').write_text(json.dumps(report, indent=2) + '\n')
         for name, ok in checks.items():
             print(('PASS ' if ok else 'FAIL ') + name, flush=True)
