@@ -770,8 +770,8 @@ void UJapanMap::OpenMarkerBar()
     GEngine->GameViewport->AddViewportWidgetContent(Bar,18);
     Owner->SetMenuOpen(true);
     // The bar takes focus while View is still held. It leaves key releases unhandled, so that release still reaches the
-    // game through the viewport and the next View tap and hold start clean. Flushing the held keys here instead makes
-    // Enhanced Input ignore View until a further release, which swallows the next hold.
+    // game through the viewport. The View hold opens it a tick late (AWandererCharacter::SetupPlayerInputComponent), so
+    // the hold trigger still sees View come up after the flush this focus change causes, and the next tap and hold start clean.
     FSlateApplication::Get().SetKeyboardFocus(Bar,EFocusCause::SetDirectly);
     UE_LOG(LogTemp,Display,TEXT("MARKERS bar opened: %d saved places"),GetMarkerKeys().Num());
 }

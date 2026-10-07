@@ -28,6 +28,7 @@ void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "ZeppelinService.h"
 #include "JapanPreferences.h"
 #include "JapanMap.h"
+#include "TimerManager.h"
 #include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -385,8 +386,14 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
         E->BindActionValueLambda(Inputs[TEXT("ReturnMarker")],ETriggerEvent::Started,[this](const FInputActionValue&)
         { if (bReady && !bMenuOpen && Map) Map->ReturnToMarker(); });
         E->BindAction(Inputs[TEXT("MapPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleMap);
+        // The bar opens on the next tick, outside Enhanced Input's evaluation. Its focus change flushes the held View
+        // key, and a flush inside this callback is forgotten before the next tick, so the hold trigger never sees View
+        // come up and swallows the following hold.
         E->BindActionValueLambda(Inputs[TEXT("MarkersPad")],ETriggerEvent::Triggered,[this](const FInputActionValue&)
-        { if (bReady && !bMenuOpen && !bCinematic && Map) Map->OpenMarkerBar(); });
+        {
+            GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this]
+            { if (bReady && !bMenuOpen && !bCinematic && Map) Map->OpenMarkerBar(); }));
+        });
         E->BindAction(Inputs[TEXT("SkateboardHand")],ETriggerEvent::Started,this,&AWandererCharacter::SkateboardHand);
         E->BindAction(Inputs[TEXT("SkateboardPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleSkateboard);
         E->BindAction(Inputs[TEXT("BikePad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleBike);
