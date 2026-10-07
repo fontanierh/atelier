@@ -19,6 +19,10 @@ def cache(tmp_path, monkeypatch):
     return tmp_path
 
 
+def empty():
+    return {}, {}
+
+
 def job(folder, label, command):
     with (folder / f'{label}.plist').open('wb') as stream:
         plistlib.dump({'Label': label, 'ProgramArguments': [
@@ -55,15 +59,15 @@ def test_claude_state_comes_from_the_one_live_session_in_its_directory(tmp_path)
 def test_a_quiet_session_with_a_working_line_gets_one_note_per_status(cache):
     now, states = time.time(), {'job.one': ('busy', None)}
     board.set_task('one', 'Shipping r9')
-    assert board_presence.step(now, states.get) == []
+    assert board_presence.step(floor=empty, now=now, read=states.get) == []
     with board.database() as db:
         row = db.execute("SELECT session, session_since FROM subscribers WHERE agent='one'").fetchone()
     assert (row['session'], row['session_since']) == ('busy', now)
 
     states['job.one'] = ('idle', now - board_presence.QUIET + 60)
-    assert board_presence.step(now, states.get) == []        # not quiet long enough yet
-    assert board_presence.step(now + 60, states.get) == ['one']
-    assert board_presence.step(now + 120, states.get) == []  # never repeated for the same status
+    assert board_presence.step(floor=empty, now=now, read=states.get) == []        # not quiet long enough yet
+    assert board_presence.step(floor=empty, now=now + 60, read=states.get) == ['one']
+    assert board_presence.step(floor=empty, now=now + 120, read=states.get) == []  # never repeated for the same status
     with board.database() as db:
         notes = db.execute("SELECT sender, recipient, body FROM messages WHERE sender=?",
                            (board_presence.WATCH,)).fetchall()
@@ -71,17 +75,41 @@ def test_a_quiet_session_with_a_working_line_gets_one_note_per_status(cache):
     assert '"Shipping r9"' in notes[0]['body'] and 'atelier board task --agent one idle' in notes[0]['body']
 
     board.set_task('one', 'Shipping r10')                    # a new status line may be noted once more
-    assert board_presence.step(now + 180, states.get) == ['one']
+    assert board_presence.step(floor=empty, now=now + 180, read=states.get) == ['one']
     board.set_task('one', 'idle')
-    assert board_presence.step(now + 240, states.get) == []
+    assert board_presence.step(floor=empty, now=now + 240, read=states.get) == []
     board.set_task('one', 'Waiting on the operator')
     board.open_task('one', 'Can I ship r10?')
-    assert board_presence.step(now + 300, states.get) == []  # its open operator task already says it is blocked
+    # Its open operator task already says it is blocked.
+    assert board_presence.step(floor=empty, now=now + 300, read=states.get) == []
 
 
 def test_an_unreadable_session_clears_its_state(cache):
-    board_presence.step(time.time(), {'job.one': ('idle', 5.0)}.get)
-    board_presence.step(time.time(), {}.get)
+    board_presence.step(floor=empty, now=time.time(), read={'job.one': ('idle', 5.0)}.get)
+    board_presence.step(floor=empty, now=time.time(), read={}.get)
     with board.database() as db:
         row = db.execute("SELECT session, session_since FROM subscribers WHERE agent='one'").fetchone()
     assert (row['session'], row['session_since']) == (None, None)
+
+
+LINES = {
+    'Holding': '- 2026-10-07 13:37:12 CEST one, ~/dev/atelier: RUNNING world.communitypark, actual small slot',
+    'Waiting': '- 2026-10-07 13:35:11 CEST two ~/dev/atelier-two: READY compile only\n'
+               '- 2026-10-07 13:40 three (branch x): READY one game, after one',
+    'Log': '- 2026-10-07 13:00:00 CEST four: finished',
+}
+
+
+def test_render_work_in_flight_is_not_idle():
+    holders = {'big': {'checkout': 'atelier-five'}, 'small': {'checkout': ''}}
+    checkouts = {'one': 'atelier', 'four': 'atelier-four', 'five': 'atelier-five', 'six': None}
+    assert board_presence.engaged(LINES, holders, checkouts) == {'one', 'two', 'three', 'five'}
+    assert board_presence.engaged({}, {}, checkouts) == set()
+
+
+def test_an_agent_on_the_render_board_gets_no_note(cache):
+    now = time.time()
+    board.set_task('one', 'Importing the park')
+    read = {'job.one': ('idle', now - 2 * board_presence.QUIET)}.get
+    assert board_presence.step(floor=lambda: (LINES, {}), now=now, read=read) == []
+    assert board_presence.step(floor=empty, now=now, read=read) == ['one']

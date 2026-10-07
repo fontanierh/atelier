@@ -104,7 +104,8 @@ function idleLine(agent) { return /^(idle)?$/i.test((agent?.task||"").trim()); }
 function quietFor(agent) { return agent?.session==="idle"&&agent.session_since?Math.max(0,(state?.time??Date.now()/1000)-agent.session_since):0; }
 function isFree(agent) {
   if(!agent||agent.stop||!agent.listening||agent.delivery_error||isWaiting(agent)||agent.session==="busy")return false;
-  return idleLine(agent)||quietFor(agent)>=QUIET;
+  // Render work in flight (a Holding or Waiting line, or a live lock) waits with the session idle, so quiet is not free.
+  return idleLine(agent)||(!agent.engaged&&quietFor(agent)>=QUIET);
 }
 function orb(name, agent) {
   const o=node("span","orb");

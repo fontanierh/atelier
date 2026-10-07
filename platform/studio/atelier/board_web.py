@@ -47,6 +47,30 @@ def asset(filename):
 PUSH_PATHS = ('/api/push/subscribe', '/api/push/unsubscribe', '/api/push/test')
 
 
+
+def render_floor():
+    """The render board's human-maintained scheduling sections, and the live render lock holders."""
+    ledger = board.root() / 'render-board.md'
+    try:
+        text = ledger.read_text()
+    except FileNotFoundError:
+        text = ''
+    # Telemetry markup is advisory; return human-maintained scheduling sections separately.
+    text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->', '', text, flags=re.S)
+    sections = {match[1]: match[2].strip() for match in re.finditer(
+        r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
+    # Use the owning library's PID/start validation; stale lock text is never a live owner.
+    from .safety import render_lock
+    holders = {}
+    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
+        holder = render_lock.read_holder(path)
+        if holder:
+            holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
+                             'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
+                             'time': holder.get('time')}
+    return sections, holders
+
+
 def snapshot(query, remote_status=None, sender='operator'):
     """Reads never advance subscriber cursors or acquire render locks."""
     before = int(query.get('before', ['0'])[0])
@@ -117,15 +141,7 @@ def snapshot(query, remote_status=None, sender='operator'):
         ack_ids = {row[0] for row in db.execute('SELECT reply.reply_to FROM messages reply '
                    'JOIN messages original ON original.id=reply.reply_to '
                    "WHERE reply.topic='ack' AND reply.sender=original.recipient")}
-    ledger = board.root() / 'render-board.md'
-    try:
-        text = ledger.read_text()
-    except FileNotFoundError:
-        text = ''
-    # Telemetry markup is advisory; return human-maintained scheduling sections separately.
-    text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->', '', text, flags=re.S)
-    sections = {match[1]: match[2].strip() for match in re.finditer(
-        r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
+    sections, holders = render_floor()
     telemetry = read_json(board.root() / 'render-supervisor/latest.json') or {}
     sessions = []
     if remote_status:
@@ -137,15 +153,9 @@ def snapshot(query, remote_status=None, sender='operator'):
             sessions.append({'name': item.get('name', label), 'url': url,
                              'health': item.get('health'), 'connection': item.get('connection'),
                              'fresh': 0 <= now-item.get('checked_at', 0) < 120})
-    # Use the owning library's PID/start validation; stale lock text is never a live owner.
-    from .safety import render_lock
-    holders = {}
-    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
-        holder = render_lock.read_holder(path)
-        if holder:
-            holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
-                             'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
-                             'time': holder.get('time')}
+    engaged = board_presence.engaged(sections, holders, {item['agent']: item['checkout'] for item in agents})
+    for item in agents:
+        item['engaged'] = item['agent'] in engaged
     output = sorted(copies.values(), key=lambda row: row['id'], reverse=True)
     for item in output:
         decorate(item, ack_ids)

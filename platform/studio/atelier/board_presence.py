@@ -7,6 +7,7 @@ never wakes, steers or signals one, and the note travels like any other board me
 """
 import json
 import plistlib
+import re
 import sys
 import threading
 import time
@@ -80,19 +81,35 @@ def session_state(label):
     return codex_state(way['thread'], way['codex'], way['socket'])
 
 
+# A Holding or Waiting line starts with its timestamp and then the agent it belongs to.
+SCHEDULED = re.compile(r'^\s*-\s+\d{4}-\d\d-\d\d[ T]\d\d:\d\d(?::\d\d)?(?:\s+[A-Z]{2,5})?\s+([A-Za-z0-9][\w.-]*)', re.M)
+
+
+def engaged(sections, holders, checkouts):
+    """Agents with render work in flight, which waits on a background job with the session idle: those named on a
+    Holding or Waiting line of the render board, or holding a live render lock from their checkout."""
+    named = {match[1] for part in ('Holding', 'Waiting') for match in SCHEDULED.finditer(sections.get(part, ''))}
+    locked = {holder['checkout'] for holder in holders.values() if holder.get('checkout')}
+    return named | {agent for agent, checkout in checkouts.items() if checkout and checkout in locked}
+
+
 def free_line(task):
     return not task or task.strip().lower() == 'idle'
 
 
-def step(now=None, read=session_state):
+def step(now=None, read=session_state, floor=None):
     """Record every supervised agent's session state, and leave one note for an agent quiet for QUIET seconds whose
-    status line still names work. Returns the agents noted."""
+    status line still names work and that has no render work in flight. Returns the agents noted."""
     now = now or time.time()
+    if floor is None:
+        from .board_web import render_floor as floor
     with database() as db:
         rows = [dict(row) for row in db.execute(
-            'SELECT agent, supervised, task, task_at, session, session_since FROM subscribers '
+            'SELECT agent, supervised, checkout, task, task_at, session, session_since FROM subscribers '
             'WHERE stop=0 AND removed=0 AND supervised IS NOT NULL')]
-        waiting = {row[0] for row in db.execute('SELECT agent FROM operator_tasks WHERE closed IS NULL')}
+        exempt = {row[0] for row in db.execute('SELECT agent FROM operator_tasks WHERE closed IS NULL')}
+    sections, holders = floor()
+    exempt |= engaged(sections, holders, {row['agent']: Path(row['checkout'] or '').name for row in rows})
     noted = []
     for row in rows:
         state = read(row['supervised'])
@@ -106,7 +123,7 @@ def step(now=None, read=session_state):
         with database() as db:
             db.execute('UPDATE subscribers SET session=?, session_since=? WHERE agent=?', (status, since, row['agent']))
         if (status == 'idle' and since and now - since >= QUIET and not free_line(row['task'])
-                and row['agent'] not in waiting):
+                and row['agent'] not in exempt):
             key = f"{WATCH}:{row['agent']}:{row['task_at'] or 0}"
             with database() as db:
                 if db.execute('SELECT 1 FROM messages WHERE dedup=?', (key,)).fetchone():

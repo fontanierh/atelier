@@ -224,7 +224,9 @@ line honest: `idle` means free for new work.
 The board also reads whether each supervised agent's own session is working, without waking it: a Claude session's
 busy/idle state from Claude's session registry (for the listener's `--session-dir`), a Codex thread's from the
 running daemon (`thread/read`). A session that has been idle for 10 minutes counts as Idle whatever its line says,
-shown with its line as `Last: ...`, and a busy session is never Idle. Such an agent also gets one board message from
+shown with its line as `Last: ...`, and a busy session is never Idle. Render work in flight waits with the
+session idle, so an agent named on the render board's Holding or Waiting list, or holding a live render lock from
+its checkout, is not counted Idle that way and gets no message. Such an agent also gets one board message from
 `status-watch` asking it to bring its line up to date: once per status line it sets, never repeated. If a long job
 is still running, ignore it; otherwise set `idle` or, if blocked on the operator, open an operator task.
 People on the web board can @mention agents: a message that mentions agents is sent to exactly those agents
