@@ -114,7 +114,7 @@ colliders = U.YorimichiClothLibrary.make_capsule_colliders(mesh, DEST + '/PA_Mod
                                                            [c['radius_cm'] for c in capsules])
 assert colliders, 'the coat colliders could not be built (see the log)'
 E.save_loaded_asset(colliders)
-cloth = U.YorimichiClothLibrary.add_section_cloth(mesh, 'M_' + CONFIG['cloth']['mesh'], MAX_DISTANCE, colliders)
+cloth = U.YorimichiClothLibrary.add_section_cloth(mesh, 'M_' + CONFIG['cloth']['mesh'], MAX_DISTANCE, colliders, True)
 assert cloth, 'the coat cloth could not be built (see the log)'
 U.log('MODORI CLOTH: ' + cloth)
 U.log('MODORI CLOTH DATA: ' + U.YorimichiClothLibrary.describe_cloth(mesh))

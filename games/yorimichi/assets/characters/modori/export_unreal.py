@@ -123,18 +123,39 @@ def prepare(source):
                            floor=floor, original_names=original_names, dropped=extra)
 
 
-def pin_colours(coat):
-    """The coat's cloth_pin weights as its vertex colour (red), the mask Unreal's cloth paints its max distance from."""
+def outer_shell(coat, arm):
+    """Which coat vertices are on its outer surface. Tripo's coat is a solid with thickness, an outer and an inner surface
+    joined at the hems: a vertex is outer when its normal points away from the bone carrying most of its weight (its
+    nearest point on that bone's segment), inner when it points back at the body."""
+    bones = {g.index: arm.data.bones.get(g.name) for g in coat.vertex_groups}
+    out = {}
+    for v in coat.data.vertices:
+        g = max((g for g in v.groups if bones.get(g.group) is not None), key=lambda g: g.weight, default=None)
+        if g is None:
+            out[v.index] = True; continue
+        bone = bones[g.group]
+        a, b = arm.matrix_world @ bone.head_local, arm.matrix_world @ bone.tail_local
+        d = b - a
+        t = min(1., max(0., (v.co - a).dot(d) / max(d.length_squared, 1e-12)))
+        out[v.index] = v.normal.dot(v.co - (a + d * t)) >= 0.
+    return out
+
+
+def pin_colours(coat, arm):
+    """The coat's cloth_pin weights as its vertex colour (red), the mask Unreal's cloth paints its max distance from, and
+    its outer surface as green (1 outer, 0 inner): Unreal simulates the outer surface and carries the inner one on it."""
     group = coat.vertex_groups[PIN]
     weight = {v.index: next((g.weight for g in v.groups if g.group == group.index), 0.) for v in coat.data.vertices}
+    outer = outer_shell(coat, arm)
     attribute = coat.data.color_attributes.new(PIN, 'BYTE_COLOR', 'CORNER')
     for loop in coat.data.loops:
         w = weight[loop.vertex_index]
-        attribute.data[loop.index].color = (w, w, w, 1.)
+        attribute.data[loop.index].color = (w, float(outer[loop.vertex_index]), w, 1.)
     coat.data.color_attributes.active_color = attribute
     coat.data.color_attributes.render_color_index = coat.data.color_attributes.active_color_index
     values = list(weight.values())
-    return {'vertices': len(values), 'pinned': sum(w >= .999 for w in values), 'free': sum(w <= .001 for w in values)}
+    return {'vertices': len(values), 'pinned': sum(w >= .999 for w in values), 'free': sum(w <= .001 for w in values),
+            'outer': sum(outer.values())}
 
 
 # The coat's collision (Unreal cloth collides with capsules): each (bone carrying it, from joint, to joint, the bones
@@ -198,7 +219,7 @@ def main(args):
             materials[material.name] = {'source_name': old, 'base_color': list(color.default_value), 'texture': texture,
                                         'two_sided': obj.name.endswith('Coat'), 'roughness': 1., 'metallic': 0., 'specular': 0.}
     coat = next(o for o in meshes if o.name.endswith('Coat'))
-    pins = pin_colours(coat)
+    pins = pin_colours(coat, arm)
     capsules = colliders(arm, next(o for o in meshes if o.name.endswith('Body')))
     bpy.ops.object.select_all(action='DESELECT')
     for obj in [arm, *meshes]:
@@ -213,7 +234,7 @@ def main(args):
               'height_cm': HEIGHT * 100, 'sole_cm': .65, 'source_floor': modori.floor, 'facing': '+X',
               'rest_ankles_cm': {side: p[2] * 100 for side, p in feet.items()}, 'bones': modori.original_names,
               'dropped_bones': modori.dropped, 'meshes': {o.name: len(o.data.vertices) for o in meshes},
-              'cloth': {'mesh': coat.name, 'mask': PIN, 'channel': 'vertex colour red', 'colliders': capsules, **pins},
+              'cloth': {'mesh': coat.name, 'mask': PIN, 'channel': 'vertex colour red (pin), green (outer surface)', 'colliders': capsules, **pins},
               'materials': materials, 'clips': {}}
     (OUT / 'export.json').write_text(json.dumps(report, indent=2) + '\n')
     print('MODORI EXPORT READY', json.dumps({k: report[k] for k in ('model_scale', 'rest_ankles_cm', 'meshes', 'cloth')}), flush=True)

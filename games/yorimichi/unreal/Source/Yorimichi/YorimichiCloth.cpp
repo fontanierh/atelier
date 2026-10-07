@@ -17,7 +17,56 @@
 #include "SkeletalMeshClothingSystemUtilities.h"
 #endif
 
-FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotName, float MaxDistanceCm, UPhysicsAsset* Colliders)
+#if WITH_EDITOR
+namespace
+{
+    template <typename T, typename A>
+    void KeepWhere(TArray<T, A>& Values, const TArray<bool>& Keep)
+    {
+        if (Values.Num() != Keep.Num()) return;
+        int32 Kept = 0;
+        for (int32 I = 0; I < Values.Num(); ++I)
+            if (Keep[I]) Values[Kept++] = Values[I];
+        Values.SetNum(Kept);
+    }
+
+    /** Drops the cloth's inner surface (vertex colour green under half) from its physical mesh: the sim runs on the
+     *  outer surface, and binding maps the inner one onto it at its offset, so the two can never cross. Returns how
+     *  many vertices it dropped. */
+    int32 KeepOuterShell(FClothLODDataCommon& Lod)
+    {
+        FClothPhysicalMeshData& Phys = Lod.PhysicalMeshData;
+        TArray<bool> Keep;
+        Keep.SetNum(Phys.Vertices.Num());
+        TArray<int32> Index;
+        Index.Init(INDEX_NONE, Phys.Vertices.Num());
+        int32 Kept = 0;
+        for (int32 I = 0; I < Keep.Num(); ++I)
+        {
+            Keep[I] = !Phys.VertexColors.IsValidIndex(I) || Phys.VertexColors[I].G >= 128;
+            if (Keep[I]) Index[I] = Kept++;
+        }
+        if (Kept == Keep.Num() || Kept < 3) return 0;
+        TArray<uint32> Indices;
+        for (int32 T = 0; T + 2 < Phys.Indices.Num(); T += 3)
+            if (Keep[Phys.Indices[T]] && Keep[Phys.Indices[T + 1]] && Keep[Phys.Indices[T + 2]])
+                for (int32 K = 0; K < 3; ++K) Indices.Add(Index[Phys.Indices[T + K]]);
+        Phys.Indices = MoveTemp(Indices);
+        KeepWhere(Phys.Vertices, Keep);
+        KeepWhere(Phys.Normals, Keep);
+        KeepWhere(Phys.VertexColors, Keep);
+        KeepWhere(Phys.BoneData, Keep);
+        KeepWhere(Phys.InverseMasses, Keep);
+        for (TPair<uint32, FPointWeightMap>& Map : Phys.WeightMaps) KeepWhere(Map.Value.Values, Keep);
+        for (FPointWeightMap& Map : Lod.PointWeightMaps) KeepWhere(Map.Values, Keep);
+        Phys.SelfCollisionVertexSet.Reset();
+        Phys.SelfCollisionIndices.Reset();
+        return Keep.Num() - Kept;
+    }
+}
+#endif
+
+FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotName, float MaxDistanceCm, UPhysicsAsset* Colliders, bool bOuterShell)
 {
 #if WITH_EDITOR
     if (!Mesh || !Mesh->GetImportedModel() || !Mesh->GetImportedModel()->LODModels.Num()) return FString();
@@ -48,6 +97,7 @@ FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotN
         UE_LOG(LogTemp, Error, TEXT("Cloth: could not build clothing from %s section %d"), *Mesh->GetName(), Section);
         return FString();
     }
+    const int32 Inner = bOuterShell ? KeepOuterShell(Cloth->LodData[0]) : 0;
     Mesh->AddClothingAsset(Cloth);   // also gives it its Chaos configs
 
     // The max distance mask from the pin colour, before binding (the bind reads it to build the skinning data).
@@ -95,8 +145,8 @@ FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotN
         return FString();
     }
     Mesh->MarkPackageDirty();
-    return FString::Printf(TEXT("section %d, %d cloth vertices (%d pinned, %d free), max distance %.0f cm, %d collision bodies"),
-        Section, Colours.Num(), Pinned, Free, MaxDistanceCm, Collision ? Collision->SkeletalBodySetups.Num() : 0);
+    return FString::Printf(TEXT("section %d, %d cloth vertices (%d pinned, %d free; %d inner surface carried), max distance %.0f cm, %d collision bodies"),
+        Section, Colours.Num(), Pinned, Free, Inner, MaxDistanceCm, Collision ? Collision->SkeletalBodySetups.Num() : 0);
 #else
     return FString();
 #endif

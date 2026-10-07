@@ -15,10 +15,12 @@ public:
     /** Makes the LOD 0 section drawn with material slot SlotName simulate as Chaos cloth (Scripts/import_modori.py: his
      *  coat). Its vertex colours' red is the pin mask: 1 follows the skin, 0 hangs free up to MaxDistanceCm from it; it
      *  collides with Colliders' capsules and spheres (MakeCapsuleColliders), or the mesh's physics asset when null.
-     *  Replaces cloth bound before (a reimport drops the binding, so the import runs this after every import). Returns
-     *  a summary, empty on failure. Editor only. */
+     *  With bOuterShell, a garment modelled as a solid (an outer and an inner surface) simulates its outer surface only
+     *  (green 1) and carries the inner one (green 0) at its offset, so the two cannot cross. Replaces cloth bound before
+     *  (a reimport drops the binding, so the import runs this after every import). Returns a summary, empty on failure.
+     *  Editor only. */
     UFUNCTION(BlueprintCallable, Category = "Yorimichi|Editor")
-    static FString AddSectionCloth(USkeletalMesh* Mesh, FName SlotName, float MaxDistanceCm, UPhysicsAsset* Colliders);
+    static FString AddSectionCloth(USkeletalMesh* Mesh, FName SlotName, float MaxDistanceCm, UPhysicsAsset* Colliders, bool bOuterShell = false);
 
     /** A physics asset of kinematic capsules for cloth to collide with (not the mesh's own physics asset, which the
      *  skating rider reads): capsule I rides bone Bones[I], spans the reference-pose joints From[I] to To[I], radius
