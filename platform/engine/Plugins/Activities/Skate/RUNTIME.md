@@ -139,6 +139,16 @@ outputs bit for bit. The docstring of each script says what it covers; `--help` 
 - `check_latest_gameplay_session_parity.py`: the transfer button and vert assistance against `1536531`, given the
   previous check's output as `--baseline-build`.
 
+The Unreal mesh importer opts into `GameplayWorldSnapshot::exclude_coincident_backfaces`. Coincident,
+oppositely wound sheet faces remain collision surfaces on both sides, but are excluded from each other's
+edge and vertex adjacency. This is a C++ host policy extension; the recovered solver is unchanged. The
+default flag is false, and the Rust world/input parity corpus tests that original construction. Dedicated
+contact and query regressions can be staged with
+`python3 platform/engine/Plugins/Activities/Skate/Tests/build_native_session_cli.py --sheet-check --out build/skate-sheet-check`.
+Use the normal compile guard when adding `--compile`. The JSON session transport accepts the same optional
+boolean so imported-world replay can exercise the policy without deleting either face. Course replay and
+in-game riding checks are required alongside these synthetic regressions.
+
 Compiling and running probes is heavy: run it under the render lock and memory guard. With `<game>` the game whose
 history holds the original assets:
 

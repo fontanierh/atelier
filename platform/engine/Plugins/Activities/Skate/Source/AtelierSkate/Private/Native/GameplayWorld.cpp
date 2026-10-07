@@ -61,6 +61,19 @@ std::int32_t TotalOrder(float value)
     std::int32_t bits;std::memcpy(&bits,&value,4);
     bits^=std::int32_t(std::uint32_t(bits>>31)>>1);return bits;
 }
+bool CoincidentBackfaces(const GameplayWorldSnapshot& source,const std::vector<Vec3>& normals,
+    std::size_t a,std::size_t b)
+{
+    if(Dot3(normals[a],normals[b])>=-0.99f)return false;
+    // Normal opposition alone includes real folded/thin solids. Require both
+    // faces to occupy the same plane, tighter than the 1 mm adjacency weld.
+    constexpr float plane_tolerance=0.0001f;
+    for(auto p:source.triangles[b])
+        if(std::abs(Dot3(Subtract(p,source.triangles[a][0]),normals[a]))>plane_tolerance)return false;
+    for(auto p:source.triangles[a])
+        if(std::abs(Dot3(Subtract(p,source.triangles[b][0]),normals[b]))>plane_tolerance)return false;
+    return true;
+}
 bool BuildRails(const GameplayWorldSnapshot& source,
     std::shared_ptr<const PlayerGrindStaticProvider>& output,std::string& error)
 {
@@ -170,6 +183,8 @@ bool BuildGameplayWorld(const GameplayWorldSnapshot& source,ContactMaterial mate
         for(const auto& candidate:entry.second)
         {
             if(candidate.triangle==face.triangle || candidate.a!=face.b || candidate.b!=face.a)continue;
+            if(source.exclude_coincident_backfaces
+                &&CoincidentBackfaces(source,normals,face.triangle,candidate.triangle))continue;
             const float dot=Dot3(normals[face.triangle],normals[candidate.triangle]);
             // Iterator::max_by chooses the last equal maximum.
             if(!other || TotalOrder(dot)>=TotalOrder(best)){other=candidate.triangle;best=dot;}
@@ -187,8 +202,24 @@ bool BuildGameplayWorld(const GameplayWorldSnapshot& source,ContactMaterial mate
     {
         const auto& faces=adjacent[vertex];const auto reference=normals[faces[0]];
         if(std::all_of(faces.begin(),faces.end(),[&](auto i){return std::abs(Dot3(reference,normals[i])-1.0f)<=0.01f;}))
+        {
             for(auto i:faces)for(std::size_t corner=0;corner<3;++corner)
                 if(vertices[i][corner]==vertex)flags[i]|=0x200u<<corner;
+        }
+        else if(source.exclude_coincident_backfaces)
+        {
+            // Top fans and back quads can have different triangulations. At a
+            // welded corner, evaluate flatness separately on each face's side
+            // of the sheet; a coincident back must not reactivate its vertex.
+            for(auto face:faces)
+                if(std::any_of(faces.begin(),faces.end(),[&](auto i)
+                    {return CoincidentBackfaces(source,normals,face,i);})
+                    &&std::all_of(faces.begin(),faces.end(),[&](auto i)
+                    {return CoincidentBackfaces(source,normals,face,i)
+                        ||std::abs(Dot3(normals[face],normals[i])-1.0f)<=0.01f;}))
+                    for(std::size_t corner=0;corner<3;++corner)
+                        if(vertices[face][corner]==vertex)flags[face]|=0x200u<<corner;
+        }
     }
     std::vector<WorldTriangle> triangles;triangles.reserve(source.triangles.size());
     QueryMetadata metadata;metadata.packed_surfaces.resize(source.triangles.size(),0);

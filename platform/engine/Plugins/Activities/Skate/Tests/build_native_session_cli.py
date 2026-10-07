@@ -6,7 +6,8 @@ coordinator may use --compile, inside the repository render lock and memory
 guard. This executable is a test artifact, never the Unreal backend. Its source
 closure is the complete native source directory compiled by Unreal; no Rust
 toolchain, historical Git objects, original asset reader, probe friend or
-substitute producer is required.
+substitute producer is required. --sheet-check selects the native contact/query
+regressions for the opt-in imported-sheet policy instead of the session CLI.
 """
 import argparse
 import hashlib
@@ -36,7 +37,7 @@ def copy_source(source, destination):
     return sha(data)
 
 
-def stage(out):
+def stage(out, source=SOURCE):
     out = out.resolve()
     if not out.is_relative_to((ROOT / 'build').resolve()):
         raise ValueError('Generated QA sources must remain inside repository build/')
@@ -54,7 +55,7 @@ def stage(out):
     for name in units:
         path = CODE / (name + '.cpp')
         sources[str(path.relative_to(ROOT))] = copy_source(path, snapshot / path.name)
-    sources[str(SOURCE.relative_to(ROOT))] = copy_source(SOURCE, snapshot / SOURCE.name)
+    sources[str(source.relative_to(ROOT))] = copy_source(source, snapshot / source.name)
 
     # Reuse the accepted project's existing JSON transport and f32 decimal
     # conversion. Extraction ends before its authored-document field schema.
@@ -71,13 +72,15 @@ def stage(out):
     (snapshot / 'gameplay_cli_json.inc').write_bytes(helper)
     if b'class Reader\n{' not in helper or b'float Number(std::string_view s)' not in helper:
         raise ValueError('Expected original JSON transport declarations')
-    executable = out / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
+    executable_name = 'gameplay-session-cli' if source == SOURCE else 'gameplay-sheet-edge-check'
+    executable = out / (executable_name + ('.exe' if sys.platform == 'win32' else ''))
     command = ['clang++', *FLAGS, '-I', str(snapshot),
                *(str(snapshot / (name + '.cpp')) for name in units),
-               str(snapshot / SOURCE.name), '-o', str(executable)]
-    syntax = ['clang++', *FLAGS, '-I', str(snapshot), '-fsyntax-only', str(snapshot / SOURCE.name)]
+               str(snapshot / source.name), '-o', str(executable)]
+    syntax = ['clang++', *FLAGS, '-I', str(snapshot), '-fsyntax-only', str(snapshot / source.name)]
     report = {
-        'purpose': 'offline QA transport over the sole in-process native GameplaySession',
+        'purpose': ('offline QA transport over the sole in-process native GameplaySession' if source == SOURCE
+                    else 'native contact/query regressions for imported coincident sheets'),
         'units': list(units), 'unit_count': len(units),
         'closure_source': str(CODE.relative_to(ROOT)),
         'builder_sha256': sha(Path(__file__).read_bytes()),
@@ -90,7 +93,8 @@ def stage(out):
         },
         'compile_command': command, 'syntax_command': syntax,
         'output': str(executable.relative_to(ROOT)),
-        'scope': 'Source-authored JSON worlds and raw controller packets; all simulation, input, graph, solver, pose, camera, score and elapsed state belongs to the actual native session. OS I/O and asynchronous thread completion timing are transport boundaries.',
+        'scope': ('Source-authored JSON worlds and raw controller packets; all simulation, input, graph, solver, pose, camera, score and elapsed state belongs to the actual native session. OS I/O and asynchronous thread completion timing are transport boundaries.' if source == SOURCE
+                  else 'Opt-in host world adjacency; recovered triangle contact acceptance and top/ceiling queries execute unchanged.'),
         'compiled': False,
     }
     (out / 'build-manifest.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -100,13 +104,17 @@ def stage(out):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, default=DEFAULT_OUT)
+    parser.add_argument('--sheet-check', action='store_true', help='Stage/build the opt-in sheet contact and query regressions')
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument('--preflight', action='store_true', help='Stage immutable sources without compiling (default)')
     modes.add_argument('--compile', action='store_true', help='Explicit guarded root-only build')
     args = parser.parse_args()
-    executable, report = stage(args.out)
+    source = TESTS / 'Native/check_gameplay_sheet_edges.cpp' if args.sheet_check else SOURCE
+    executable, report = stage(args.out, source)
     if args.compile:
         subprocess.run(report['compile_command'], check=True)
+        if args.sheet_check:
+            subprocess.run([str(executable)], check=True)
         report.update(compiled=True, executable_sha256=sha(executable.read_bytes()),
                       executable_bytes=executable.stat().st_size)
         (args.out.resolve() / 'build-manifest.json').write_text(json.dumps(report, indent=2) + '\n')

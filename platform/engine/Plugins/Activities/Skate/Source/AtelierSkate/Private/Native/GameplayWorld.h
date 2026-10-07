@@ -12,6 +12,10 @@ struct GameplayWorldSnapshot
     std::vector<std::vector<std::array<float,3>>> rails;
     // Per triangle (or empty for none): the packed surface, physics surface << 7 | sound surface (GroundSurfaceRuntime).
     std::vector<std::uint16_t> surfaces;
+    // Imported two-sided sheets retain both collision faces, but their
+    // coincident backs are not adjoining bends. Off by default so construction
+    // of the recovered host/reference corpus remains bit-exact.
+    bool exclude_coincident_backfaces=false;
 };
 struct PreparedGameplayWorld
 {
