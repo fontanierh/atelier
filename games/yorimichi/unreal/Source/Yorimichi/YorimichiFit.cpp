@@ -82,5 +82,15 @@ FString UYorimichiFitLibrary::PropClearance(USkeletalMeshComponent* Body, UStati
         const FName Slot = Materials.IsValidIndex(Section.MaterialIndex) ? Materials[Section.MaterialIndex].MaterialSlotName : NAME_None;
         Slots += FString::Printf(TEXT("; %s %d %.1f crossed %d"), *Slot.ToString(), Inside, Depth, Crossed);
     }
-    return FString::Printf(TEXT("%s inside %d, deepest %.1f cm%s"), bRod ? TEXT("rod") : TEXT("disc"), Total, Deepest, *Slots);
+    // Where the skin and the piece were, to check the measure itself: the skin's world box and its box in the piece's
+    // frame (centimetres about the piece's centre), and the piece's half sizes.
+    FBox World(ForceInit), InPiece(ForceInit);
+    for (int32 I = 0; I < Skinned.Num(); ++I)
+    {
+        World += ToWorld.TransformPosition(FVector(Skinned[I]));
+        InPiece += Local[I];
+    }
+    return FString::Printf(TEXT("%s inside %d, deepest %.1f cm%s | skin %d verts, world %s, in piece %s, half %s, piece at %s"),
+        bRod ? TEXT("rod") : TEXT("disc"), Total, Deepest, *Slots, Skinned.Num(), *World.ToString(), *InPiece.ToString(),
+        *Half.ToString(), *Piece.GetLocation().ToString());
 }
