@@ -25,6 +25,24 @@ from atelier.safety.process import spawn_game
 from atelier.safety.render_lock import render_lock
 
 
+def read_telemetry(path, expected):
+    """Reject truncated or unquoted state rows before reporting capture results."""
+    with path.open(encoding='utf-8-sig', newline='') as handle:
+        rows = list(csv.DictReader(handle))
+    if len(rows) != expected:
+        raise RuntimeError(f'Telemetry has {len(rows)} rows; expected {expected}')
+    for index, row in enumerate(rows):
+        if None in row or None in row.values():
+            raise RuntimeError(f'Telemetry row {index} has the wrong number of CSV fields')
+        try:
+            frame = int(row['frame'])
+        except (KeyError, ValueError):
+            raise RuntimeError(f'Telemetry row {index} has no valid frame number') from None
+        if frame != index:
+            raise RuntimeError(f'Telemetry frame {frame} is out of order; expected {index}')
+    return rows
+
+
 def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
     busy=other_render_processes()
     if busy and not allow_visual_overlap: raise RuntimeError(f'Other render jobs active: {busy}')
@@ -59,6 +77,7 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
     if spec.get('study_renderer'):
         cmd.append('-ini:Engine:[/Script/Engine.RendererSettings]:r.ForwardShading='+('True' if spec['study_renderer']=='forward' else 'False'))
     if spec.get('route'): cmd += ['-reviewroute='+spec['route']]
+    if spec.get('rider'): cmd += ['-rider='+spec['rider']]
     saved=(PROJECT/'Saved/settings.txt').read_bytes()
     manifest={'command':cmd,'spec':spec,'git_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         'native_binary_sha256':hashlib.sha256((PROJECT/'Binaries/Mac/libUnrealEditor-Yorimichi.dylib').read_bytes()).hexdigest(),
@@ -77,8 +96,13 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
         shot=spawn_game(cmd,stdout=log,stderr=subprocess.STDOUT)
         stack.callback(reap,shot)
         monitor=stack.enter_context(attach_memory_guard(shot.pid,folder/'memory-health.json',duration=1840))
-        deadline=time.monotonic()+1800
+        started=time.monotonic(); deadline=started+1800; next_progress=started+30
         while shot.poll() is None:
+            now=time.monotonic()
+            if now>=next_progress:
+                saved_frames=sum(1 for _ in folder.glob(f'frame_*.{ext}'))
+                print(f'CAPTURE PROGRESS {name}: {now-started:.0f}s elapsed, {saved_frames} frames saved',flush=True)
+                next_progress=now+30
             if monitor is not None and monitor.poll() is not None and shot.poll() is None:
                 raise RuntimeError('Memory guard exited before the shot finished')
             if time.monotonic()>deadline: raise TimeoutError('Trailer shot exceeded 1800 s')
@@ -98,8 +122,7 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
             from PIL import Image
             with Image.open(path) as image: size=image.size; image.verify()
         assert size==(width,height),size
-    rows=list(csv.DictReader((folder/'telemetry.csv').open()))
-    assert len(rows)==expected
+    rows=read_telemetry(folder/'telemetry.csv',expected)
     report={'frames':expected,'resolution':[width,height],'fps':fps,'max_speed':max(float(r['speed']) for r in rows),
             'air_frames':sum(int(r['falling']) for r in rows),'clips':sorted(set(r['clip'] for r in rows)),
             'settings_unchanged':True,'actions':sorted(set(r.get('action','') for r in rows)),
