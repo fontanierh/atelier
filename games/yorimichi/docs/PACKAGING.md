@@ -114,6 +114,8 @@ Editor builds keep both renderers.
 
 4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
    the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.
+   If the game quits within seconds of its first launch, before any window, open the launcher again (see "A first
+   launch can crash before the game starts").
 
 ## Before publishing a release
 
@@ -135,6 +137,48 @@ in the cook record; an older manifest without that record carries only its short
 This verifies the download, not gameplay. Run a separate, guarded standalone smoke test from the extracted launcher's
 folder and quit it promptly. Check that captures and logs were written inside the app's writable sandbox container.
 Upload the verified ZIP or all numbered parts, SHA256SUMS, manifest.json and the verification report together.
+
+## A first launch can crash before the game starts
+
+**Observed twice, each time on the first launch of a freshly signed or extracted app; the next launch of the same,
+unchanged app started normally.** The launcher's process ends with SIGSEGV (exit -11) within seconds, before
+`game.log` exists. macOS writes `Yorimichi-<date>.ips` under `~/Library/Logs/DiagnosticReports/`.
+
+- 2026-10-06 12:05: the first launch of the re-signed `afc541e1` package. A launch six seconds later started, and
+  that build shipped.
+- 2026-10-07 03:06: the first launch of the extracted r4 package (`7250edaf`). The unchanged app's next launch
+  started and its map check ran.
+
+Both reports have the same main-thread stack and the same faulting address (`KERN_INVALID_ADDRESS at 0x3`):
+
+```text
+FGenericPlatformMisc::RaiseException
+UE::LLMPrivate::FLLMTracker::PopTag
+FLLMScope::DestructInTheOpen
+FMallocBinned3::PushNewPoolToFront / FMallocBinned3::Malloc
+FMallocPoisonProxy::Malloc
+operator new
+LaunchServices asString / _LSCopyApplicationInformation
+-[NSApplication _sendFinishLaunchingNotification] (via _handleAEOpenEvent)
+-[NSApplication run] / tchar_main / main
+```
+
+AppKit's launch event makes LaunchServices allocate on the main thread before the engine has started. The engine's
+low-level memory tracker (LLM), compiled into Development and Test packages by default (`LLM_ENABLED_IN_CONFIG` and
+`ALLOW_LOW_LEVEL_MEM_TRACKER_IN_TEST` in `Runtime/Core/Public/HAL/LowLevelMemTrackerDefines.h`), wraps that allocation
+in its bootstrap scope and fails in `PopTag`. Nothing in the project configures LLM. The cause is read from the
+stacks, not reproduced: treat it as an intermittent engine and LaunchServices race on a newly registered app.
+
+When it happens, keep the `.ips` report and launch the same extracted app once more. Report it as a known first-launch
+limitation if that launch starts. A crash on a second launch, or a different stack, is a new failure.
+
+Two mitigations are **unvalidated**; neither is in use, and each needs a cook and repeated first launches of
+freshly extracted copies before adoption:
+
+- Build the game target with `LLM_ENABLED_IN_CONFIG=0`. This needs a unique build environment for the target, so the
+  engine modules it uses compile with the game.
+- Package the Shipping configuration, which leaves LLM out (Test keeps it). Shipping also drops logging and console
+  commands, which the launcher's `-ExecCmds` tuning and the release checks' `game.log` rely on.
 
 ## The shared-PCH rebuild on every cook
 
