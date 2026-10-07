@@ -108,7 +108,8 @@ uv run pytest                            # studio and game Python tests
 - Keep your board status line current; it is how the operator sees the team. Once registered, set it with
   `atelier board task --agent NAME "..."` (one line, at most 160 characters). Update it **every time you get a new
   task**, before starting the work, and again when you finish or become blocked. With no current task, set it to
-  exactly `idle`, nothing more. The board shows it beside your name.
+  exactly `idle`, nothing more. The board shows it beside your name, and marks `idle` agents as free for new
+  work.
 - Keep board messages short enough to read without expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
   Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. `--notify-operator`
   also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or
