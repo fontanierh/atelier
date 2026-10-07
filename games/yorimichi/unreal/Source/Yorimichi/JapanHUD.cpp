@@ -1,4 +1,6 @@
 #include "JapanHUD.h"
+#include "JapanNetwork.h"
+#include "JapanSession.h"
 #include "BotwMoveSet.h"
 #include "ZeppelinService.h"
 #include "WandererCharacter.h"
@@ -70,8 +72,18 @@ void AJapanHUD::DrawHUD()
 {
     Super::DrawHUD();
     const AWandererCharacter* Pawn = Cast<AWandererCharacter>(GetOwningPawn());
-    if (!Pawn || !Canvas || !GEngine) return;
+    if (!Canvas || !GEngine) return;
     UFont* Font = GEngine->GetSmallFont();
+    if (!Pawn)
+    {
+        if (JapanNetwork::IsOnline(GetWorld()))
+        {
+            DrawRect(FLinearColor(.04f,.06f,.06f,1),0,0,Canvas->SizeX,Canvas->SizeY);
+            DrawText(TEXT("YORIMICHI   /   loading the shared world"),FLinearColor(.93f,.87f,.72f),Canvas->SizeX*.3f,Canvas->SizeY*.45f,Font,1.4f);
+            DrawText(TEXT("Checking matching content and collision. F10 opens session controls."),FLinearColor::White,Canvas->SizeX*.3f,Canvas->SizeY*.5f,Font,1.f);
+        }
+        return;
+    }
     if (!Pawn->IsReady())
     {
         DrawRect(FLinearColor(.04f,.06f,.06f,1),0,0,Canvas->SizeX,Canvas->SizeY);

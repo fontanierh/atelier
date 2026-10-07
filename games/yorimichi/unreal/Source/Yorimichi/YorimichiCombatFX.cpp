@@ -1,4 +1,5 @@
 #include "YorimichiCombatFX.h"
+#include "JapanNetwork.h"
 #include "WandererCharacter.h"
 #include "Engine/World.h"
 
@@ -6,6 +7,15 @@
 // shake, slow motion and sound each moment of the sword fight gets.
 
 AYorimichiCombatFX* AYorimichiCombatFX::Get(const UObject* WorldContext) { return Cast<AYorimichiCombatFX>(AAtelierFX::Get(WorldContext)); }
+
+void AYorimichiCombatFX::HitStop(float Seconds, AActor* A, AActor* B)
+{
+    if (!JapanNetwork::IsOnline(GetWorld())) Super::HitStop(Seconds, A, B);
+}
+void AYorimichiCombatFX::SlowMotion(float Seconds, float Dilation)
+{
+    if (!JapanNetwork::IsOnline(GetWorld())) Super::SlowMotion(Seconds, Dilation);
+}
 
 static FVector RandomUnit(FRandomStream& R) { return R.GetUnitVector(); }
 

@@ -1,4 +1,5 @@
 #include "BotwMoveSet.h"
+#include "JapanNetwork.h"
 #include "BotwMoveSetDetail.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -610,9 +611,15 @@ void UBotwMoveSet::AdvanceDown(float Dt)
     bDown = false;
 }
 
-void UBotwMoveSet::AdvanceFlurry()
+void UBotwMoveSet::AdvanceFlurry(float Dt)
 {
     if (FlurryTime <= 0.f) return;
+    if (JapanNetwork::IsOnline(Character->GetWorld()))
+    {
+        FlurryTime = FMath::Max(0.f, FlurryTime - Dt);
+        if (FlurryTime <= 0.f) Target = nullptr;
+        return;
+    }
     FlurryTime -= FApp::GetDeltaTime();
     // The world is slowed; the player is not (a hit-stop freeze, far below one, is left alone).
     if (Character->CustomTimeDilation > .1f)

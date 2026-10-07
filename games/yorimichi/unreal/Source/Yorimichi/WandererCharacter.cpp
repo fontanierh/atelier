@@ -1,4 +1,7 @@
 #include "WandererCharacter.h"
+#include "JapanNetwork.h"
+#include "JapanSession.h"
+#include "Net/UnrealNetwork.h"
 #include "AtelierData.h"
 #include "YorimichiCombatFX.h"
 #include "LiveLibrary.h"
@@ -120,22 +123,6 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
 void AWandererCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    if (FParse::Param(FCommandLine::Get(),TEXT("controllertrace")))
-    {
-#if WITH_EDITOR
-        FSlateApplication::Get().OnApplicationPreInputKeyDownListener().AddWeakLambda(this,[](const FKeyEvent& Event)
-        {
-            if (Event.GetKey().IsGamepadKey() || Event.GetKey()==EKeys::Escape)
-                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE slate key=%s repeat=%d device=%d"),*Event.GetKey().ToString(),Event.IsRepeat(),Event.GetInputDeviceId().GetId());
-        });
-#endif
-        GetWorld()->GetGameViewport()->OnInputKey().AddWeakLambda(this,[](const FInputKeyEventArgs& Event)
-        {
-            if (Event.Key.IsGamepadKey() || Event.Key==EKeys::Escape)
-                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE viewport key=%s event=%d value=%.2f device=%d"),*Event.Key.ToString(),int32(Event.Event),Event.AmountDepressed,Event.InputDevice.GetId());
-        });
-    }
-    if (FAtelierStream::IsRequested()) PhoneInput=MakeShared<FYorimichiPhone>(this);
     Definition = LoadObject<UWandererDefinition>(nullptr,*DefinitionAssetPath);
     if (Definition && Definition->Mesh && Definition->Locomotion && Definition->Crouching)
     {
@@ -155,6 +142,67 @@ void AWandererCharacter::BeginPlay()
         FollowCamera->Deactivate();
         return;
     }
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+        NetUpdateFrequency = 30.f;
+        MinNetUpdateFrequency = 10.f;
+        if (!IsLocallyControlled())
+        {
+            SkateRide->SetComponentTickEnabled(false);
+            CameraArm->SetComponentTickEnabled(false);
+            SeeThrough->SetComponentTickEnabled(false);
+            FollowCamera->Deactivate();
+        }
+    }
+    InitializeLocalPlayer();
+}
+
+void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const
+{
+    Super::GetLifetimeReplicatedProps(Out);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkRiderName, COND_InitialOnly);
+    DOREPLIFETIME(AWandererCharacter, bNetworkShield);
+}
+void AWandererCharacter::ConfigureNetworkRider(const FString& Name, bool bShield)
+{
+    NetworkRiderName = Name;
+    bNetworkShield = bShield;
+    OnRep_NetworkLoadout();
+}
+void AWandererCharacter::OnRep_NetworkLoadout()
+{
+    if (Moves) { Moves->SetLegacy(false); Moves->SetShield(bNetworkShield); }
+}
+void AWandererCharacter::PawnClientRestart()
+{
+    Super::PawnClientRestart();
+    InitializeLocalPlayer();
+}
+void AWandererCharacter::InitializeLocalPlayer()
+{
+    if (bLocalPlayerInitialized || IsNpc() || !Definition || !IsLocallyControlled() || GetNetMode() == NM_DedicatedServer) return;
+    bLocalPlayerInitialized = true;
+    SkateRide->SetComponentTickEnabled(true);
+    CameraArm->SetComponentTickEnabled(true);
+    SeeThrough->SetComponentTickEnabled(true);
+    FollowCamera->Activate();
+    if (FParse::Param(FCommandLine::Get(),TEXT("controllertrace")))
+    {
+#if WITH_EDITOR
+        FSlateApplication::Get().OnApplicationPreInputKeyDownListener().AddWeakLambda(this,[](const FKeyEvent& Event)
+        {
+            if (Event.GetKey().IsGamepadKey() || Event.GetKey()==EKeys::Escape)
+                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE slate key=%s repeat=%d device=%d"),*Event.GetKey().ToString(),Event.IsRepeat(),Event.GetInputDeviceId().GetId());
+        });
+#endif
+        GetWorld()->GetGameViewport()->OnInputKey().AddWeakLambda(this,[](const FInputKeyEventArgs& Event)
+        {
+            if (Event.Key.IsGamepadKey() || Event.Key==EKeys::Escape)
+                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE viewport key=%s event=%d value=%.2f device=%d"),*Event.Key.ToString(),int32(Event.Event),Event.AmountDepressed,Event.InputDevice.GetId());
+        });
+    }
+    if (FAtelierStream::IsRequested()) PhoneInput=MakeShared<FYorimichiPhone>(this);
     SkateRide->Initialize(this);
     Preferences = NewObject<UJapanPreferences>(this);
     Preferences->Initialize(this);
@@ -199,6 +247,12 @@ void AWandererCharacter::BeginPlay()
         IFileManager::Get().MakeDirectory(*ReviewDirectory,true);
     }
     SetMouseReleased(!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty());
+    if (Landscape && Landscape->bGameplayReady)
+    {
+        if (JapanNetwork::IsOnline(GetWorld()))
+        { Sailboat->Initialize(this,Landscape); Bike->Initialize(this); Horse->Initialize(this); }
+        if (Preferences) Preferences->Apply();
+    }
 }
 
 void AWandererCharacter::EndPlay(const EEndPlayReason::Type Reason)
@@ -218,10 +272,13 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
 {
     Landscape = World;
     if (!World || !World->bLoaded || IsNpc()) return;
-    Sailboat->Initialize(this,World);
-    Bike->Initialize(this);
-    Horse->Initialize(this);
-    if (!bSwitchedIn)
+    if (!JapanNetwork::IsOnline(GetWorld()) || IsLocallyControlled())
+    {
+        Sailboat->Initialize(this,World);
+        Bike->Initialize(this);
+        Horse->Initialize(this);
+    }
+    if (!bSwitchedIn && !JapanNetwork::IsOnline(GetWorld()))
     {
         SetActorLocation(World->PlayerStart.GetLocation()+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),false,nullptr,ETeleportType::TeleportPhysics);
         SetActorRotation(World->PlayerStart.Rotator());
@@ -1160,6 +1217,10 @@ void AWandererCharacter::Landed(const FHitResult& Hit)
 void AWandererCharacter::Tick(float Dt)
 {
     Super::Tick(Dt);
+    InitializeLocalPlayer();
+    if (!Landscape && JapanNetwork::IsOnline(GetWorld()))
+        if (AJapanWorld* World = JapanNetwork::FindWorld(GetWorld()); World && World->bGameplayReady) EnterWorld(World);
+    if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority() && !IsLocallyControlled()) { bReady = true; return; }
     if (!Definition || !Landscape || !Landscape->bLoaded) return;
     if(!BuildingReviewSpecPath.IsEmpty())
     {
@@ -1219,7 +1280,7 @@ void AWandererCharacter::Tick(float Dt)
     }
     if(bRemountSkate && GetCharacterMovement()->IsMovingOnGround()){bRemountSkate=false;if(!SkateRide->IsRiding())SkateRide->Toggle();}
     ReadyTime += Dt;
-    if (!bReady) { bReady = ReadyTime > 1.5f; if (bReady && IsPlayerControlled())
+    if (!bReady) { bReady = ReadyTime > 1.5f; if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
     {
         // Live bridge teleports go through the game's own travel (stows the board or boat, settles the camera).
         AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
@@ -1262,17 +1323,17 @@ void AWandererCharacter::Tick(float Dt)
         if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend+.55f*HorseCameraBlend);
     }
     // Riding the bike, the camera settles in behind him the same way.
-    if(Bike->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&Bike->GetSpeed()>80.f)
+    if(IsLocallyControlled()&&Bike->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&Bike->GetSpeed()>80.f)
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-10.f,GetActorRotation().Yaw,0),Dt,1.6f));
     }
-    if(Horse->IsEquipped()&&Controller&&!bMenuOpen&&LookGrace<=0&&Horse->GetSpeed()>80.f)
+    if(IsLocallyControlled()&&Horse->IsEquipped()&&Controller&&!bMenuOpen&&LookGrace<=0&&Horse->GetSpeed()>80.f)
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-12.f,GetActorRotation().Yaw,0),Dt,1.4f));
     }
-    if(SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
+    if(IsLocallyControlled()&&SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-8.f,SkateYaw,0),Dt,2.4f));

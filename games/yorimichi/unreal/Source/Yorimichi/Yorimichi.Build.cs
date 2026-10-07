@@ -1,13 +1,40 @@
 using UnrealBuildTool;
+using System;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 public class Yorimichi : ModuleRules
 {
     public Yorimichi(ReadOnlyTargetRules Target) : base(Target)
     {
+        // Match network_identity.py: relative UTF-8 path, NUL, file SHA1, newline.
+        // Track every enumerated source so UBT cannot reuse an old compatibility definition.
+        string Root = Path.GetFullPath(Path.Combine(ModuleDirectory, "../../../../.."));
+        string[] Roots = { Path.Combine(Root, "games/yorimichi/unreal/Source"), Path.Combine(Root, "platform/engine/Plugins") };
+        string[] Extensions = { ".h", ".hpp", ".cpp", ".c", ".cs", ".uplugin", ".inl", ".inc", ".mm", ".m", ".ush", ".usf" };
+        string[] Ignored = { "Binaries", "Intermediate", "Saved", "DerivedDataCache", "__pycache__" };
+        var Files = Roots.SelectMany(Dir => Directory.EnumerateFiles(Dir, "*", SearchOption.AllDirectories))
+            .Where(File => Extensions.Contains(Path.GetExtension(File)) &&
+                !Path.GetRelativePath(Root, File).Split(Path.DirectorySeparatorChar).Any(Ignored.Contains))
+            .OrderBy(File => Path.GetRelativePath(Root, File).Replace('\\', '/'), StringComparer.Ordinal);
+        StringBuilder Records = new StringBuilder();
+        foreach (string File in Files)
+        {
+            ExternalDependencies.Add(File);
+            using (SHA1 Hash = SHA1.Create())
+            using (FileStream Stream = System.IO.File.OpenRead(File))
+                Records.Append(Path.GetRelativePath(Root, File).Replace('\\', '/')).Append('\0')
+                    .Append(Convert.ToHexString(Hash.ComputeHash(Stream)).ToLowerInvariant()).Append('\n');
+        }
+        using (SHA1 Hash = SHA1.Create())
+            PublicDefinitions.Add("YORIMICHI_NETWORK_BUILD_ID=\"" +
+                Convert.ToHexString(Hash.ComputeHash(Encoding.UTF8.GetBytes(Records.ToString()))).ToLowerInvariant() + "\"");
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         // Dev/ holds the opt-in review, benchmark and film code; it includes the game headers beside this file.
         PrivateIncludePaths.Add(ModuleDirectory);
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AtelierCore", "AtelierAnimation", "AtelierLive", "AtelierFX", "AtelierSkate", "AtelierStream", "EnhancedInput", "AnimGraphRuntime", "Json", "AssetRegistry", "RenderCore", "Slate", "SlateCore", "ProceduralMeshComponent", "HTTPServer", "GLTFCore", "MeshDescription", "StaticMeshDescription" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AtelierCore", "AtelierAnimation", "AtelierLive", "AtelierFX", "AtelierSkate", "AtelierStream", "EnhancedInput", "AnimGraphRuntime", "Json", "AssetRegistry", "RenderCore", "Slate", "SlateCore", "ProceduralMeshComponent", "HTTPServer", "Sockets", "GLTFCore", "MeshDescription", "StaticMeshDescription" });
         // The live bridge runs agent Python in uncooked (editor-binary) sessions only.
         if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("PythonScriptPlugin");
         PrivateDependencyModuleNames.Add("AnimationCore");

@@ -1,4 +1,5 @@
 #include "BotwMoveSet.h"
+#include "JapanNetwork.h"
 #include "BotwMoveSetDetail.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -190,8 +191,13 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
     }
     // The shield is the "Shield" setting's (off by default); -shield / -noshield decide for a scripted session.
     const TCHAR* Line = FCommandLine::Get();
-    SetShield(FParse::Param(Line, TEXT("shield")) || (!FParse::Param(Line, TEXT("noshield")) && UJapanPreferences::Saved(TEXT("shield"), 0.f) > .5f));
-    SetLegacy(Chosen() == LegacyBotw);
+    if (JapanNetwork::IsOnline(Owner->GetWorld()) && !Owner->IsNpc())
+    { SetShield(Owner->GetNetworkShield()); SetLegacy(false); }
+    else
+    {
+        SetShield(FParse::Param(Line, TEXT("shield")) || (!FParse::Param(Line, TEXT("noshield")) && UJapanPreferences::Saved(TEXT("shield"), 0.f) > .5f));
+        SetLegacy(Chosen() == LegacyBotw);
+    }
     Mode = EBotwMoveMode::Ground;
     UE_LOG(LogTemp, Display, TEXT("BOTW move set: %d actions, %d parameters, %d props%s, scale %.2f, %s, double jump %s"), Moves.Num(), Params.Num(), Props.Num(),
         Glider ? TEXT(" and the paraglider") : TEXT(""), Scale(), bLegacy ? TEXT("legacy BOTW") : bShield ? TEXT("shield") : TEXT("no shield"),
@@ -347,7 +353,7 @@ void UBotwMoveSet::Advance(float Dt)
     NoClimb = FMath::Max(0.f, NoClimb - Dt); SinceImpact += Dt; Invulnerable = FMath::Max(0.f, Invulnerable - Dt); JustAvoid = FMath::Max(0.f, JustAvoid - Dt);
     GuardBroken = FMath::Max(0.f, GuardBroken - Dt); SinceHit += Dt;
     if (FlinchTime >= 0.f) { FlinchTime += Dt; if (FlinchTime > FlinchPeak * 9.f) FlinchTime = -1.f; }
-    AdvanceFlurry();
+    AdvanceFlurry(Dt);
     // Leaving the move set's movement mode from outside (travel, the board) ends gliding, climbing and swimming.
     const bool bCustom = Movement->MovementMode == MOVE_Custom && Movement->CustomMovementMode == MovementMode;
     if (Mode == EBotwMoveMode::Glide || Mode == EBotwMoveMode::Climb || Mode == EBotwMoveMode::Swim)
@@ -904,7 +910,7 @@ void UBotwMoveSet::Reset()
     Target = nullptr; HopVelocity = DriveVelocity = FVector::ZeroVector;
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
     FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
-    if (FlurryTime > 0.f) { FlurryTime = 0.f; Character->CustomTimeDilation = 1.f; }
+    if (FlurryTime > 0.f) { FlurryTime = 0.f; if (!JapanNetwork::IsOnline(Character->GetWorld())) Character->CustomTimeDilation = 1.f; }
     ClimbShift = ClimbShiftTarget = 0.f; MeshOffsetLength = 0.f; MeshDriveLocal = DriveMesh = FVector::ZeroVector;
     FlipTime = -1.f; FlipAngle = FlipLift = FlipSettle = 0.f; bAirJumpUsed = false;
     if ((bMeshOffset || bMeshTurned) && Character->GetMesh())

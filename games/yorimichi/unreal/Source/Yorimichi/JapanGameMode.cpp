@@ -1,4 +1,5 @@
 #include "JapanGameMode.h"
+#include "JapanSession.h"
 #include "BotwRider.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
@@ -48,6 +49,7 @@ AJapanGameMode::AJapanGameMode()
     // Wanderer is a village NPC; the yellow kid is the player character.
     DefaultPawnClass = ACairoCharacter::StaticClass();
     HUDClass = AJapanHUD::StaticClass();
+    PlayerControllerClass = AJapanPlayerController::StaticClass();
 }
 
 void AJapanGameMode::BeginPlay()

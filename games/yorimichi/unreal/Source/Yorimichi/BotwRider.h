@@ -17,6 +17,7 @@ class YORIMICHI_API ABotwRider : public AWandererCharacter
 public:
     ABotwRider(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     virtual void BeginPlay() override;
+    virtual void ConfigureNetworkRider(const FString& Name, bool bShield) override;
     // Crouching keeps the mesh where Fit stood it (ACharacter puts it back to the class default's height).
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;

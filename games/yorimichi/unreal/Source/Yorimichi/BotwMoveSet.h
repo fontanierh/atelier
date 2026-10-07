@@ -301,7 +301,7 @@ private:
     void AdvanceSwim(float Dt);
     void AdvanceDown(float Dt);
     void AdvanceCombat(float Dt);
-    void AdvanceFlurry();
+    void AdvanceFlurry(float Dt);
     void AdvanceEquipment(float Dt);
     void AdvanceMeshOffset(float Dt);
     void AdvanceEffects(float Dt);

@@ -1,4 +1,5 @@
 #include "Hippodrome.h"
+#include "JapanNetwork.h"
 #include "AtelierData.h"
 #include "HorseRace.h"
 #include "Animation/AnimSequence.h"
@@ -319,6 +320,7 @@ bool AHippodrome::Initialize(const FString& Path)
     UE_LOG(LogTemp, Display, TEXT("Hippodrome: %d meshes at %s, lap %.1f m, gate at %.1f m, master %s"), Placed, *GetActorLocation().ToString(),
         Course.Lap, Course.GateS, Master.IsValid() ? TEXT("standing") : TEXT("MISSING"));
     FActorSpawnParameters Params; Params.Owner = this;
-    if (AHorseRace* Race = GetWorld()->SpawnActor<AHorseRace>(Params)) Race->Bind(this);
+    if (JapanNetwork::Allows(GetWorld(), JapanNetwork::EActivity::Race))
+        if (AHorseRace* Race = GetWorld()->SpawnActor<AHorseRace>(Params)) Race->Bind(this);
     return true;
 }

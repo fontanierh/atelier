@@ -1,4 +1,5 @@
 #include "BotwRider.h"
+#include "JapanNetwork.h"
 #include "BotwCreature.h"
 #include "BotwMoveSet.h"
 #include "CairoCharacter.h"
@@ -80,8 +81,20 @@ void ABotwRider::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjus
     BaseTranslationOffset.Z = FitMeshZ;
 }
 
+void ABotwRider::ConfigureNetworkRider(const FString& Name, bool bShield)
+{
+    Super::ConfigureNetworkRider(Name, bShield);
+    RiderName = Name;
+    DefinitionAssetPath = DefinitionPath(Name);
+    Fit();
+}
 void ABotwRider::BeginPlay()
 {
+    if (!GetNetworkRiderName().IsEmpty())
+    {
+        RiderName = GetNetworkRiderName();
+        DefinitionAssetPath = DefinitionPath(RiderName);
+    }
     // Size the capsule and stand the mesh in it before the character reads its definition and the board saves the
     // mesh's walking transform.
     Fit();
@@ -119,6 +132,7 @@ FString ABotwRider::Label(const FString& Name)
 
 AWandererCharacter* ABotwRider::SwitchPlayer(AWandererCharacter* From, const FString& Name)
 {
+    if (From && JapanNetwork::IsOnline(From->GetWorld())) return nullptr; // Network character switching is server-owned.
     APlayerController* PC = From ? Cast<APlayerController>(From->GetController()) : nullptr;
     UWorld* World = From ? From->GetWorld() : nullptr;
     const bool bCairo = Name == TEXT("Cairo") || (Name == ACairoCharacter::BotwName() && ACairoCharacter::HasBotw());

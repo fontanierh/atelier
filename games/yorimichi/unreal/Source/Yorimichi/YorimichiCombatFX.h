@@ -15,6 +15,9 @@ class YORIMICHI_API AYorimichiCombatFX : public AAtelierFX
 public:
     static AYorimichiCombatFX* Get(const UObject* WorldContext);
 
+    // Presentation must never change the shared gameplay clock.
+    void HitStop(float Seconds, AActor* A, AActor* B);
+    void SlowMotion(float Seconds, float Dilation);
     void SwordSwing(const FVector& At, int32 Strength);
     void SwordHit(const FVector& At, const FVector& SwingDir, int32 Strength, AActor* Wielder, AActor* Victim);
     void Parry(const FVector& At, AActor* Defender, AActor* Attacker);

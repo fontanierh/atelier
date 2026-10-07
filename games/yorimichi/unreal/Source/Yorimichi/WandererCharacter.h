@@ -35,6 +35,11 @@ class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTar
 public:
     AWandererCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     virtual void BeginPlay() override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
+    virtual void PawnClientRestart() override;
+    virtual void ConfigureNetworkRider(const FString& Name, bool bShield);
+    const FString& GetNetworkRiderName() const { return NetworkRiderName; }
+    bool GetNetworkShield() const { return bNetworkShield; }
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult) override;
@@ -144,6 +149,11 @@ protected:
     void StopGesture(float BlendSeconds = .3f) { SetAction(NAME_None, false, BlendSeconds); }
 
 private:
+    void InitializeLocalPlayer();
+    UFUNCTION() void OnRep_NetworkLoadout();
+    UPROPERTY(Replicated) FString NetworkRiderName;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkLoadout) bool bNetworkShield = false;
+    bool bLocalPlayerInitialized = false;
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;

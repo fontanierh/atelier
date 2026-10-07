@@ -57,6 +57,8 @@ public:
     FJapanMarkers Markers;
     TArray<FWorldShot> Shots;
     bool bLoaded = false;
+    /** Completed all synchronous region/collision and rail bootstrap, not just the terrain. */
+    bool bGameplayReady = false;
     /** Momiji Hamlet's record in world.json (offset, buildings, residents), for what lives there (ASwordTrainer). */
     TSharedPtr<FJsonObject> VillageRecord;
     bool bHidamariLoaded = false;

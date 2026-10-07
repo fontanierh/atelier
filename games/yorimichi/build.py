@@ -106,7 +106,7 @@ def cook_step(ctx, steps):
                 [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
                  Call('certify_cook', package_cook.finish)],
                 inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config', TOOLS / 'package_cook.py', *engine_inputs],
-                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage'], heavy=True, explicit=True,
+                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage', 'data.network'], heavy=True, explicit=True,
                 outputs=[out / 'package' / 'cook.json'], verify=lambda: package_cook.cook_present(out / 'package'),
                 about='cook the macOS app once and certify its source and immutable archived files')
 
@@ -548,4 +548,13 @@ def steps(ctx):
     park = communitypark(ctx.out)
     result = (world_steps(ctx, park) + character_steps(ctx) + sound_effect_steps(ctx)
               + unreal_steps(ctx) + staging_steps(ctx, park) + botw_steps(ctx.out) + hippodrome_steps(ctx.out))
+    identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
+    identity = importlib.util.module_from_spec(identity_spec)
+    identity_spec.loader.exec_module(identity)
+    content = GAME / 'unreal' / 'Content'
+    result.append(Step('data.network', [Call('network_identity', identity.stage)],
+                       inputs=[GAME / 'network_identity.py', SOURCE, paths.ENGINE_PLUGINS, *identity.content_files(content)],
+                       needs=[s.name for s in result if s.name.startswith('unreal.')] + ['data.stage'],
+                       outputs=[content / 'Data/Network/session.json'],
+                       about='matching multiplayer code, imported assets and staged gameplay data'))
     return result + [cook_step(ctx, result), package_step(ctx, result)]

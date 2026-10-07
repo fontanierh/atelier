@@ -1,4 +1,5 @@
 #include "CairoCharacter.h"
+#include "JapanNetwork.h"
 #include "AtelierData.h"
 #include "BotwMoveSet.h"
 #include "AtelierStream.h"
@@ -57,7 +58,8 @@ void ACairoCharacter::BeginPlay()
     // Where a person plays, the "Move set" setting picks: the merged set (the default) or the legacy BOTW set on Link's
     // retargeted clips, whenever they are built, or his legacy moves. QA, reviews and benchmarks keep his legacy moves
     // unless the command line asks (-rider=CairoBotw). A switched-in Cairo was told by the switch.
-    if (!bSwitchedIn)
+    if (JapanNetwork::IsOnline(GetWorld()) && !IsNpc()) bBotw = true;
+    else if (!bSwitchedIn)
     {
         const FString Requested = ABotwRider::Requested();
         const bool bPlayed = !AJapanGameMode::IsScriptedSession() || FAtelierStream::IsRequested();
@@ -79,6 +81,7 @@ void ACairoCharacter::BeginPlay()
 void ACairoCharacter::Tick(float Dt)
 {
     Super::Tick(Dt);
+    if(GetNetMode()==NM_DedicatedServer)return;
     if(Dt<=SMALL_NUMBER || !GetMesh()->GetSkeletalMeshAsset())return;
     const FTransform Head=GetMesh()->GetSocketTransform(TEXT("head"));
     const FVector Position=Head.GetLocation();

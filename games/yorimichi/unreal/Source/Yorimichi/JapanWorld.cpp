@@ -524,7 +524,7 @@ void AJapanWorld::Load()
     if (Root->TryGetObjectField(TEXT("village"),Village))
     {
         VillageRecord=*Village;
-        if (auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,*Village);
+        if (GetNetMode()!=NM_DedicatedServer) if (auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,*Village);
     }
     const TSharedPtr<FJsonObject>* Lake=nullptr;
     if(Root->TryGetObjectField(TEXT("forest_lake"),Lake))
@@ -567,13 +567,14 @@ void AJapanWorld::Load()
                 Rails->Add(MoveTemp(Rail));
             }
     }
-    if(City.IsValid())
+    if(City.IsValid() && GetNetMode()!=NM_DedicatedServer)
         for(const auto& Group:City->GetArrayField(TEXT("resident_groups")))
             if(auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,Group->AsObject());
     WindMPC = LoadObject<UMaterialParameterCollection>(nullptr, TEXT("/Game/Japan/Materials/MPC_Wind.MPC_Wind"));
-    GetWorld()->SpawnActor<ALeafStorm>(FVector::ZeroVector, FRotator::ZeroRotator);
+    if (GetNetMode()!=NM_DedicatedServer) GetWorld()->SpawnActor<ALeafStorm>(FVector::ZeroVector, FRotator::ZeroRotator);
     // gulls over the sea, a little off the middle of the road
-    AGullFlock* Flock = GetWorld()->SpawnActor<AGullFlock>(ToUE(20, -170, 45), FRotator::ZeroRotator);
+    AGullFlock* Flock = GetNetMode()==NM_DedicatedServer ? nullptr : GetWorld()->SpawnActor<AGullFlock>(ToUE(20, -170, 45), FRotator::ZeroRotator);
+    bGameplayReady = bLoaded && TotalInstances > 0;
     UE_LOG(LogTemp, Log, TEXT("world loaded: %d groups, %d instances, %d shots, flock %d, %.1f ms"), Groups.Num(), TotalInstances, Shots.Num(), Flock ? 1 : 0, (FPlatformTime::Seconds() - Started) * 1000.0);
 }
 
@@ -770,6 +771,7 @@ float AJapanWorld::WindStrength(const FVector& P, float T) const
 void AJapanWorld::Tick(float Dt)
 {
     Super::Tick(Dt);
+    if (GetNetMode()==NM_DedicatedServer) return;
     UpdateHarborLook(this);
     UpdateFogDensity(Dt);
     ApplyGroupDiagnostics();
