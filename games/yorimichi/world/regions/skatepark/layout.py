@@ -3,6 +3,10 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json
 import math
 import numpy as np
+try:
+    from . import modules as M   # imported as skatepark.layout (gen_world, other regions)
+except ImportError:
+    import modules as M
 JAPAN = yori.REGIONS
 ORIGIN = (-110., -234., 1.8)
 HALF_X, HALF_Y = 85., 66.
@@ -28,9 +32,16 @@ QUARTERS = [dict(id='mini_west', lip=-36., sign=-1, y0=-23., y1=-13., radius=2.5
             dict(id='east_return', lip=70., sign=1, y0=18., y1=34., radius=2., vert=.15, deck=3.),
             dict(id='mellow_return', lip=68., sign=1, y0=-54., y1=-34., radius=1.5, vert=.1, deck=3.)]
 BOWL = dict(x=29., y=-10., core_x=7., core_y=5., floor_radius=3., radius=3., vert=.2, deck=1.5, skirt=7.)
-TERRACES = [dict(id='seven', x0=-70., x1=-48., y0=21., y1=36., height=1.26, steps=7, tread=.65, stair0=24., stair1=30., bank_sign=1, bank_run=8.),
-            dict(id='four', x0=-70., x1=-48., y0=6., y1=17., height=.72, steps=4, tread=.60, stair0=9., stair1=15., bank_sign=-1, bank_run=7.),
-            dict(id='market', x0=-76., x1=-56., y0=-28., y1=-10., height=.60, steps=3, tread=.7, stair0=-25., stair1=-17., bank_sign=-1, bank_run=7.)]
+# Each terrace's stairs and handrails are extracted modules (modules.py): the kit's eight-stair (two sets side by side,
+# 0.1875 m risers on 0.375 m treads) with its sloped rails on the big terrace, the park's two-step 0.75 m set with its
+# handrails on the other two, sunk 40 cm into the ground: 55 cm over the top nosing like the kit's, 22 cm over the last.
+# A set's top tread continues the deck: its risers stand at x1 + tread * (k + 1).
+TERRACES = [dict(id='seven', x0=-70., x1=-48., y0=21., y1=36., height=1.5, steps=8, tread=.375, stair0=24., stair1=30., bank_sign=1, bank_run=8.,
+                 stairs='kit_stairs', stairs_width=3., handrail='kit_handrail'),
+            dict(id='four', x0=-70., x1=-48., y0=6., y1=17., height=.75, steps=2, tread=3., stair0=9., stair1=15., bank_sign=-1, bank_run=7.,
+                 stairs='stairs_sml', stairs_width=6., handrail='handrail_sml', handrail_z=-.4),
+            dict(id='market', x0=-76., x1=-56., y0=-28., y1=-10., height=.75, steps=2, tread=3., stair0=-24., stair1=-18., bank_sign=-1, bank_run=7.,
+                 stairs='stairs_sml', stairs_width=6., handrail='handrail_sml', handrail_z=-.4)]
 PADS = [dict(id='manny_low',x0=-40.,x1=-26.,y0=53.,y1=56.,height=.22),
         dict(id='manny_high',x0=-17.,x1=-3.,y0=53.,y1=56.,height=.30),
         dict(id='long_ledge',x0=-28.,x1=-8.,y0=25.,y1=28.,height=.32),
@@ -38,11 +49,74 @@ PADS = [dict(id='manny_low',x0=-40.,x1=-26.,y0=53.,y1=56.,height=.22),
         dict(id='harbour_bench',x0=42.,x1=56.,y0=22.,y1=23.2,height=.40),
         dict(id='low_curb',x0=-73.,x1=-52.,y0=-52.,y1=-50.8,height=.16),
         dict(id='sunset_manny',x0=-24.,x1=-10.,y0=-56.,y1=-52.,height=.24)]
-BARS = [dict(id='flatbar_red',x0=-28.,x1=-10.,y=43.,top=.36,color='red',square=False),
-        dict(id='flatbar_square',x0=4.,x1=24.,y=43.,top=.30,color='sage',square=True),
-        dict(id='flatbar_long',x0=41.,x1=61.,y=43.,top=.42,color='red',square=False),
-        dict(id='sunset_bar',x0=0.,x1=20.,y=-46.,top=.32,color='dusty_blue',square=True)]
 BAR_R=.025
+
+
+# Extracted obstacles (modules.py): a part, its centre (x, y, deck height) and yaw (its local +y turned anticlockwise
+# from north: -90 lays a bar east-west), its paint, and how it is ground: along its measured top line (a bar, a
+# handrail) or along its two top edges (a ledge, a bench). Bars in a row share one grind line (GRIND_LINES).
+def _row(prefix, name, xs, y, colour):
+    return [dict(id=f'{prefix}_{i}', part=name, at=(x, y, 0.), yaw=-90., colour=colour, finish='painted') for i, x in enumerate(xs)]
+
+
+MODULES = (_row('flatbar_red', 'park_flatbar', (-25., -19., -13.), 43., 'red')
+           # Sunk into the deck to ollie height: the hi-lo kink from 0.96 m down to 0.2 m, then a 0.5 m round rail after a run-out.
+           + [dict(id='kink_rail', part='kink_rail', at=(9., 43., -.5), yaw=-90., colour='sage', finish='painted'),
+              dict(id='round_rail', part='round_rail', at=(24., 43., -.2), yaw=-90., colour='sage', finish='painted'),
+              dict(id='rainbow_medium', part='rainbow_medium', at=(46., 43., 0.), yaw=-90., colour='dusty_blue', finish='painted'),
+              dict(id='rainbow_low', part='rainbow_low', at=(55., 43., 0.), yaw=-90., colour='dusty_blue', finish='painted')]
+           + _row('sunset_bar', 'kit_flatrail', (5.5, 8.5, 11.5, 14.5), -46., 'mustard')
+           # The street plaza north of the rainbows: a ledge, a manual pad, two benches, a curb rail, barriers and a table.
+           + [dict(id='plaza_ledge', part='park_ledge', at=(45., 51., 0.), yaw=-90., colour='concrete_light', finish='concrete', grind='edges'),
+              dict(id='plaza_pad', part='manual_pad', at=(54., 51., 0.), yaw=-90., colour='concrete_light', finish='concrete', grind='edges'),
+              dict(id='plaza_bench_0', part='bench', at=(40., 56., 0.), yaw=0., colour='concrete_light', finish='concrete', grind='edges'),
+              dict(id='plaza_bench_1', part='bench', at=(43.5, 56., 0.), yaw=0., colour='concrete_light', finish='concrete', grind='edges'),
+              dict(id='plaza_curb_rail', part='curb_rail', at=(61., 51., 0.), yaw=0., colour='steel', finish='steel', grind='line', radius=None),
+              dict(id='plaza_barrier_0', part='jersey', at=(51.3, 56.5, 0.), yaw=-90., colour='concrete', finish='concrete'),
+              dict(id='plaza_barrier_1', part='jersey', at=(53.9, 56.5, 0.), yaw=-90., colour='concrete', finish='concrete'),
+              dict(id='plaza_table', part='picnic_table', at=(60.5, 56., 0.), yaw=0., colour='timber', finish='wood')])
+GRIND_LINES = [dict(id='flatbar_red', pieces=('flatbar_red_0', 'flatbar_red_1', 'flatbar_red_2'), radius=None),
+               dict(id='kink_rail', pieces=('kink_rail',), radius=.065),
+               dict(id='round_rail', pieces=('round_rail',), radius=.065),
+               dict(id='rainbow_medium', pieces=('rainbow_medium',), radius=.042),
+               dict(id='rainbow_low', pieces=('rainbow_low',), radius=.042),
+               dict(id='sunset_bar', pieces=tuple(f'sunset_bar_{i}' for i in range(4)), radius=None)]
+MODULE = {m['id']: m for m in MODULES}
+
+
+def terrace_modules(t):
+    """A terrace's stair sets and its two handrails, as module placements (yaw 90: the uphill side faces west)."""
+    x1 = t['x1']; run = t['steps']*t['tread']; w = t['stairs_width']
+    out = [dict(id=f"{t['id']}_stairs_{i}", part=t['stairs'], at=(x1+run/2, t['stair0']+w*(i+.5), 0.), yaw=90.,
+                colour='concrete_light', finish='stairs') for i in range(int(round((t['stair1']-t['stair0'])/w)))]
+    for i, y in enumerate((t['stair0']+1.5, t['stair1']-1.5)):
+        part = M.part(t['handrail']); half = (part['bounds'][1][1]-part['bounds'][0][1])/2
+        out.append(dict(id=f"{t['id']}_handrail_{i}", part=t['handrail'], at=(x1+half, y, t.get('handrail_z', 0.)), yaw=90., colour='red',
+                        finish='painted'))
+    return out
+
+
+def joints(item_id):
+    """Where a grind line's pieces meet, as (point, unit direction along the line): their facing end caps are buried
+    in the bar and the board's sweep catches on them, so features.py leaves them out."""
+    out = []
+    for g in GRIND_LINES:
+        if item_id not in g['pieces']: continue
+        for a, b in zip(g['pieces'], g['pieces'][1:]):
+            if item_id not in (a, b): continue
+            end, start = M.line(MODULE[a])[-1], M.line(MODULE[b])[0]
+            d = np.subtract(M.line(MODULE[a])[-1], M.line(MODULE[a])[0])[:2]
+            out.append(((np.add(end, start)/2)[:2], d/np.linalg.norm(d)))
+    return out
+
+
+def grind_line(pieces):
+    """One line through several modules' measured top lines, end to end."""
+    pts = []
+    for piece in pieces:
+        for p in M.line(MODULE[piece]):
+            if not pts or math.dist(p, pts[-1]) > .01: pts.append(p)
+    return pts
 FUNBOX=dict(x0=-26.,x1=0.,top0=-16.,top1=-10.,y0=-5.,y1=13.,height=.65)
 HIPS=[dict(id='sunset_hip',x0=6.,x1=38.,top0=18.,top1=24.,y0=-57.,y1=-49.,height=.75)]
 CURVE_LEDGE=dict(id='wave_ledge',x=-1.,y=29.,radius=11.,width=.8,height=.34,a0=-150.,a1=-30.)
@@ -144,15 +218,12 @@ def bowl_ring(radius,z):
     return out
 
 def terrace_rails(t):
-    x=t['x1']; h=t['height']; end=x+(t['steps']-1)*t['tread']
-    # Horizontal lead-in, sloped stair section, horizontal run-out. Height .65m over each nosing.
-    z=lambda u: h-(u-x)*h/t['steps']/t['tread']
-    top=[(x-4.,h+.55),(x,h+.55),(end,z(end)+.55),(end+3.,z(end)+.55)]
-    return [(t['stair0']+1.5,top),(t['stair1']-1.5,top)]
+    """The handrail modules' top lines, as (y, [(x, z), ...]) down the stairs."""
+    return [(m['at'][1], [(p[0], p[2]) for p in M.line(m)]) for m in terrace_modules(t) if m['finish'] == 'painted']
 
 def hubba_profile(t):
-    x=t['x1']; end=x+(t['steps']-1)*t['tread']
-    return [(x-3.,t['height']+.32),(x,t['height']+.32),(end+2.,.32)]
+    x=t['x1']+t['tread']; end=t['x1']+t['steps']*t['tread']
+    return [(t['x1']-3.,t['height']+.32),(x,t['height']+.32),(end+2.,.32)]
 
 def footprints():
     out={}
@@ -164,7 +235,7 @@ def footprints():
         out[b['id']]=(*ends,b['w0'],b['w1']) if b['axis']=='x' else (b['w0'],b['w1'],*ends)
     for t in TERRACES:
         out[t['id']+'_terrace']=(t['x0'],t['x1'],t['y0'],t['y1'])
-        out[t['id']+'_stairs']=(t['x1'],t['x1']+(t['steps']-1)*t['tread'],t['stair0'],t['stair1'])
+        out[t['id']+'_stairs']=(t['x1'],t['x1']+t['steps']*t['tread'],t['stair0'],t['stair1'])
         for side in (-1,1):
             y=t['stair0']-.7 if side<0 else t['stair1']
             out[t['id']+'_hubba_'+str(side)]=(t['x1'],hubba_profile(t)[-1][0],y,y+.7)
@@ -348,11 +419,16 @@ def rails():
     b=BOWL; ring=bowl_ring(b['floor_radius']+b['radius']+COPING_R,b['radius']+b['vert'])
     add('bowl_coping','coping',ring+[ring[0]],radius=COPING_R)
     for t in TERRACES:
-        for i,(y,p) in enumerate(terrace_rails(t)):add(t['id']+'_handrail_'+str(i),'rail',[(x,y,z) for x,z in p],radius=BAR_R)
+        radius={'kit_handrail':.045,'handrail_sml':.065}[t['handrail']]
+        for i,(y,p) in enumerate(terrace_rails(t)):add(t['id']+'_handrail_'+str(i),'rail',[(x,y,z) for x,z in p],radius=radius)
         for side in (-1,1):
             y=t['stair0']-.7 if side<0 else t['stair1']
             for offset,sgn in [(0,-1),(.7,1)]:add(t['id']+'_hubba_'+str(side)+'_'+str(sgn),'ledge',[(x,y+offset,z) for x,z in hubba_profile(t)],[0,sgn])
-    for bar in BARS:add(bar['id'],'rail',[(bar['x0'],bar['y'],bar['top']),(bar['x1'],bar['y'],bar['top'])],radius=None if bar['square'] else BAR_R)
+    for g in GRIND_LINES:add(g['id'],'rail',grind_line(g['pieces']),radius=g['radius'])
+    for m in MODULES:
+        if m.get('grind')=='line':add(m['id'],'rail',M.line(m),radius=m.get('radius'))
+        if m.get('grind')=='edges':
+            for i,(pts,side) in enumerate(M.edges(m)):add(m['id']+('-1' if i==0 else '1'),'ledge',pts,list(side))
     add(CURVE_BAR['id'],'rail',arc_points(CURVE_BAR),radius=BAR_R)
     for side in (-1,1):
         add(CURVE_LEDGE['id']+str(side),'ledge',arc_points(CURVE_LEDGE,CURVE_LEDGE['radius']+side*CURVE_LEDGE['width']/2))

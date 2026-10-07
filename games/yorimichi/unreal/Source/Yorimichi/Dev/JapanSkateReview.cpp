@@ -15,6 +15,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "SkateComponent.h"
+#include "SkateRails.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Containers/Ticker.h"
 #include "HAL/IConsoleManager.h"
@@ -288,5 +289,70 @@ static FAutoConsoleCommandWithWorldAndArgs SkateGroundCheckCommand(TEXT("japan.S
                 return true;
             }
             return StepSkateGroundCheck(C,Dt);
+        });
+    }));
+
+// The skate pier check (packaged QA, no Python): every rail, ledge and curb in the staged skatepark/park.json must be
+// registered with the skate rail subsystem under its id, and a surface with collision must lie on its line: a complex
+// trace down at its middle (3 cm inside a ledge's lip) finds a surface within 3 cm of the line's height. This proves the
+// fetched pier modules (their meshes, collision and grind lines) made it into the package. One SKATE PIER line per
+// line, then the summary line, which is the result; `quit` then exits and asks for status 1 on a failure (macOS exits
+// with 0 regardless). Usage: japan.SkatePierCheck [quit]
+static FAutoConsoleCommandWithWorldAndArgs SkatePierCheckCommand(TEXT("japan.SkatePierCheck"),
+    TEXT("Packaged QA: the skate pier's grind lines are registered and lie on surfaces with collision, logging SKATE PIER lines. Args: [quit]."),
+    FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args,UWorld* Game)
+    {
+        const bool bQuit=Args.Contains(TEXT("quit"));
+        TWeakObjectPtr<UWorld> World=Game; float Waited=0;
+        FTSTicker::GetCoreTicker().AddTicker(TEXT("SkatePierCheck"),0.f,[World,bQuit,Waited](float Dt) mutable
+        {
+            auto Finish=[bQuit](int32 Failed){ if (bQuit) FPlatformMisc::RequestExitWithStatus(false,Failed ? 1 : 0); return false; };
+            UWorld* W=World.Get(); USkateRailSubsystem* Registry=W ? W->GetSubsystem<USkateRailSubsystem>() : nullptr;
+            Waited+=Dt;
+            if (!Registry || Registry->Rails.IsEmpty())
+            {
+                if (Waited<60) return true;
+                UE_LOG(LogTemp,Error,TEXT("SKATE PIER CHECK FAIL: no rails registered after 60 s")); return Finish(1);
+            }
+            if (Waited<10) return true;   // the world around the player loads first
+            FString Text; TSharedPtr<FJsonObject> Json; const TArray<TSharedPtr<FJsonValue>>* Lines=nullptr;
+            if (!FFileHelper::LoadFileToString(Text,*AtelierDataPath(TEXT("skatepark/park.json"))) ||
+                !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Json) || !Json->TryGetArrayField(TEXT("rails"),Lines))
+            { UE_LOG(LogTemp,Error,TEXT("SKATE PIER CHECK FAIL: skatepark/park.json is missing or has no rails")); return Finish(1); }
+            int32 Failed=0,Checked=0;
+            for (const auto& Value : *Lines)
+            {
+                const TSharedPtr<FJsonObject> Line=Value->AsObject();
+                const FString Id=Line->GetStringField(TEXT("id")), Kind=Line->GetStringField(TEXT("kind"));
+                if (Kind==TEXT("coping")) continue;   // the transitions' lips are not the modules'
+                ++Checked;
+                const FSkateRail* Rail=Registry->Rails.FindByPredicate([&](const FSkateRail& R){ return R.Id==FName(*Id); });
+                if (!Rail || Rail->Points.Num()<2)
+                { ++Failed; UE_LOG(LogTemp,Display,TEXT("SKATE PIER %s %s: not registered FAIL"),*Id,*Kind); continue; }
+                FVector Tangent; const FVector Mid=Registry->Sample(int32(Rail-Registry->Rails.GetData()),Rail->Length()*.5f,Tangent);
+                // A line without a side is tried on it (a thin round rail) and 3 cm to either side (a curved ledge's
+                // lip); the nearest surface counts.
+                const FVector Across=FVector(-Tangent.Y,Tangent.X,0).GetSafeNormal();
+                TArray<FVector,TInlineAllocator<3>> Tries;
+                if (Rail->Side.IsNearlyZero()) Tries={Mid,Mid+Across*3.f,Mid-Across*3.f}; else Tries={Mid-Rail->Side*3.f};
+                FHitResult Hit; FCollisionQueryParams Params(TEXT("SkatePierCheck"),true);
+                bool bHit=false; float Off=NAN;
+                for (const FVector& At : Tries)
+                {
+                    FHitResult Try;
+                    if (!W->LineTraceSingleByChannel(Try,At+FVector(0,0,40),At-FVector(0,0,40),ECC_Visibility,Params)) continue;
+                    const float TryOff=float(Try.ImpactPoint.Z-Mid.Z);
+                    if (!bHit || FMath::Abs(TryOff)<FMath::Abs(Off)) { bHit=true; Off=TryOff; Hit=Try; }
+                }
+                const bool bOk=bHit && FMath::Abs(Off)<=3.f;
+                Failed+=!bOk;
+                UE_LOG(LogTemp,Display,TEXT("SKATE PIER %s %s: %d points, %.1f m, surface %s cm from the line (%s) %s"),*Id,*Kind,Rail->Points.Num(),
+                    Rail->Length()/100.f,bHit ? *FString::Printf(TEXT("%.1f"),Off) : TEXT("-"),
+                    bHit && Hit.GetComponent() ? *Hit.GetComponent()->GetName() : TEXT("nothing"),bOk ? TEXT("PASS") : TEXT("FAIL"));
+            }
+            if (!Checked)   // a package gate: no line to check is a failure, not a pass
+            { UE_LOG(LogTemp,Error,TEXT("SKATE PIER CHECK FAIL: skatepark/park.json has no rail, ledge or curb lines")); return Finish(1); }
+            UE_LOG(LogTemp,Display,TEXT("SKATE PIER CHECK %s: %d of %d lines failed"),Failed ? TEXT("FAIL") : TEXT("PASS"),Failed,Checked);
+            return Finish(Failed);
         });
     }));
