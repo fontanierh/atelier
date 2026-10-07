@@ -215,7 +215,9 @@ knocks and landings, and feet that stay on the board.
 - **Bodies.** The mesh's own physics asset when it has six or more bodies (`RideConstraintProfile` riding,
   `BailConstraintProfile` in a bail); otherwise an asset built from the bone contract: 16 bodies, each fitted to the
   skin it carries (the convex hull of its vertices in 256 directions, `bFitBodiesToSkin`), with human joint ranges and
-  a kinematic root body. While riding, a limit the animation passes widens to it; a bail puts each joint back. Joint
+  a kinematic root body. The asset is built in the rider's world, because a cooked game makes a hull's collision
+  only for a body in a game world (the editor makes it anyway), and then kept for the session outside it. The log
+  counts the bodies fitted; a hull without collision falls back to the contract's capsule. While riding, a limit the animation passes widens to it; a bail puts each joint back. Joint
   ranges in degrees:
 
   | Joint | Flexion / extension | Abduction / adduction | Twist |
