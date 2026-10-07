@@ -61,10 +61,24 @@ CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else
 # down still reached into it).
 PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
         {'sword': [5., 0., -12.], 'sheath': [5., 0., -12.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
-# Carried pieces pitched about his left axis through their pivot (degrees; positive brings the part below the pivot out
-# backward). Modori's sword and sheath share a pivot at his collar, and his coat flares out over the small of his back,
-# where the sheath's lower half sank into it (the operator's photo from behind, standing).
+# Carried pieces pitched about his left axis (degrees; positive brings the lower end out backward) through the top end of
+# the first of them (the sword's pommel), which keeps the place PUSH gives it. Modori's coat flares out over the small of
+# his back, where the sheath's lower half sank into it (the operator's photo from behind, standing); pitched about their
+# pivot at his collar instead, the hilt came forward into his hair as he leaned into a run or a crouch.
 TILT = {'sword': 10., 'sheath': 10.} if CHARACTER == 'modori' else {}
+
+
+def top_end(mesh, R, p, scale):
+    """The end of a piece's longest axis that sits higher on him (component cm), from its mesh's bounds."""
+    box = E.load_asset(mesh).get_bounding_box()
+    lo, hi = [box.min.x, box.min.y, box.min.z], [box.max.x, box.max.y, box.max.z]
+    k = max(range(3), key=lambda i: hi[i] - lo[i])
+    middle = [(a + b) * .5 for a, b in zip(lo, hi)]
+    ends = []
+    for v in (lo[k], hi[k]):
+        local = list(middle); local[k] = v
+        ends.append(add(p, mul(apply(R, local), scale)))
+    return max(ends, key=lambda e: e[2])
 
 
 def digests(folder):
@@ -229,7 +243,7 @@ def equipment(link, cairo, glide):
     paraglider (the piece with a clip) is held as in `glide`, the two rigs posed at the glide."""
     C = compose(cairo.body(), [apply_t(link.body(), axis) for axis in ([1., 0, 0], [0., 1, 0], [0., 0, 1])])   # A_t A_s^T
     scale = ROSTER['scale'] * SIZE
-    record, checks = {}, {}
+    record, checks, tilt_centre = {}, {}, {}
     for slot, item in ROSTER['moves']['equipment'].items():
         entry = {key: item[key] for key in ('mesh', 'clip', 'looks') if key in item}
         entry['hand'] = entry['back'] = ''
@@ -258,10 +272,12 @@ def equipment(link, cairo, glide):
             R, p = compose(C, Rp), add(cairo.at('chest'), mul(apply(C, offset), BODY))
             if slot in CARRY:
                 R, p = fitted(R, cairo, CARRY[slot])
-            if slot in TILT:
-                R = compose(turn(cairo.body()[1], -TILT[slot]), R)
             if slot in PUSH:
                 p = add(p, apply(cairo.body(), PUSH[slot]))
+            if slot in TILT:
+                T = turn(cairo.body()[1], -TILT[slot])
+                centre = tilt_centre.setdefault('top', top_end(item['mesh'], R, p, scale))
+                R, p = compose(T, R), add(centre, apply(T, sub(p, centre)))
             on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))
             entry['back'], entry['carry'] = 'chest', record_of(on_back)
             # Where it sits in his reference pose (component cm): the fit's frame, for checking it offline.
