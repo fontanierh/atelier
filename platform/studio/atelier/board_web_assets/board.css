@@ -636,4 +636,130 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 /* One ambience per screen: the chat pane's own on a phone, the app's behind all three columns on a wide screen. */
 @media (max-width: 1099px) { .app[data-view="messages"] > .ambience { display: none; } }
 @media (min-width: 1100px) { .chat-pane > .ambience { display: none; } }
+/* Playful motion (board-fx.js; the switch under Agents). Messages land with a bounce, orbs bob and the listening
+   ones glint, tabs hop, a release glows, butterflies cross the meadow by day and fireflies come out after dusk. The
+   particle canvas floats above the app and never takes a tap. Transforms and opacity, except the composer's ring. */
+.fx-layer { position: fixed; inset: 0; z-index: 12; width: 100%; height: 100%; pointer-events: none; }
+@keyframes land { 0% { opacity: 0; transform: translateY(26px) scale(.9, .84); } 42% { opacity: 1; transform: translateY(-5px) scale(1.02, 1.05); }
+  64% { transform: translateY(1.5px) scale(.995, .975); } 82% { transform: translateY(-.5px) scale(1, 1.008); } 100% { transform: none; } }
+.app.playful .message.enter { animation: land .78s cubic-bezier(.2, .8, .3, 1) both; transform-origin: 0 100%; }
+.app.playful .message.mine.enter { animation-duration: .7s; transform-origin: 100% 100%; }
+@keyframes nudge { 0%, 100% { translate: 0; } 15%, 55% { translate: -5px 0; } 35%, 75% { translate: 5px 0; } }
+.app.playful .message.enter.urgent .bubble { animation: nudge .55s ease-in-out .55s 1; }
+@keyframes chip-pop { 0% { scale: .4; opacity: 0; } 60% { scale: 1.25; opacity: 1; } 100% { scale: 1; } }
+.app.playful .message.enter .topic { display: inline-block; animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) .3s both; }
+/* A release keeps a slowly travelling rainbow edge and a shine across its label. */
+@keyframes rainbow-edge { to { background-position: 0 0, 300% 0; } }
+.app.playful .message:has(.topic.release) .bubble { border-color: transparent;
+  background: linear-gradient(var(--card-hi), var(--card-hi)) padding-box, linear-gradient(100deg, #f7c96b, #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #f29ac0) border-box;
+  background-size: auto, 300% 100%; animation: rainbow-edge 9s linear infinite; box-shadow: 0 8px 26px #f29ac033, 0 1px 0 #fff inset; }
+@keyframes shine { 0%, 70% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+.app.playful .topic.release, .app.playful .topic.ack { background-image: linear-gradient(100deg, transparent 35%, #ffffffd9 50%, transparent 65%); background-size: 250% 100%; background-repeat: no-repeat; animation: shine 4.5s ease-in-out infinite; }
+.app.playful .message.enter .topic.release, .app.playful .message.enter .topic.ack { animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) .3s both, shine 4.5s ease-in-out .8s infinite; }
+/* The day line draws out from its label. */
+@keyframes draw-left { from { transform: scaleX(0); } } @keyframes draw-right { from { transform: scaleX(0); } }
+.app.playful .day.enter::before { transform-origin: 100% 50%; animation: draw-left .7s cubic-bezier(.2, .8, .3, 1) both; }
+.app.playful .day.enter::after { transform-origin: 0 50%; animation: draw-right .7s cubic-bezier(.2, .8, .3, 1) both; }
+@media (hover: hover) { .app.playful .bubble.card { transition: translate .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s; } .app.playful .bubble.card:hover { translate: 0 -2px; } }
+
+/* Orbs bob on their own beat; a listening agent's orb has a glint travelling round its rim. */
+@keyframes bob-orb { from { translate: 0 -2px; } to { translate: 0 2.5px; } }
+.app.playful .orb-button .orb, .app.playful .agent-row .orb { animation: bob-orb 2.6s ease-in-out infinite alternate; }
+.app.playful .orb-button:nth-child(3n+1) .orb, .app.playful .agent-cell:nth-child(3n+1) .orb { animation-duration: 3.1s; animation-delay: -1.2s; }
+.app.playful .orb-button:nth-child(3n+2) .orb, .app.playful .agent-cell:nth-child(3n+2) .orb { animation-duration: 2.3s; animation-delay: -.5s; }
+@keyframes glint { to { rotate: 360deg; } }
+.app.playful .orb:has(> .badge.live)::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, #fff0 0 58%, hsl(var(--hue) 90% 58% / .95) 76%, #fff 82%, #fff0 92%);
+  -webkit-mask: radial-gradient(circle, #0000 calc(100% - 5px), #000 calc(100% - 4px)); mask: radial-gradient(circle, #0000 calc(100% - 5px), #000 calc(100% - 4px));
+  animation: glint 3.4s linear infinite; }
+@keyframes wobble { 0%, 100% { rotate: 0deg; } 25% { rotate: -12deg; } 55% { rotate: 9deg; } 80% { rotate: -4deg; } }
+@media (hover: hover) {
+  .app.playful .agent-row:hover .orb, .app.playful .orb-button:hover .orb { animation: wobble .6s ease-in-out, bob-orb 2.6s ease-in-out infinite alternate; }
+  .app.playful .agent-row { transition: background .2s, border-color .2s, translate .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s; }
+  .app.playful .agent-row:hover { translate: 0 -2px; box-shadow: 0 1px 0 #ffffffb3 inset, 0 12px 28px #2a4a461f; }
+}
+.app.playful .thread-faces .orb + .orb { transition: margin .25s cubic-bezier(.3, 1.4, .5, 1); }
+.app.playful .thread-bar:hover .thread-faces .orb + .orb { margin-left: -2px; }
+
+/* Tabs hop, the highlight squishes as it lands, and new counts jiggle. */
+@keyframes hop { 0% { translate: 0; scale: 1; } 30% { translate: 0 -6px; scale: 1.18 .9; } 55% { translate: 0 0; scale: .92 1.08; } 75% { scale: 1.04 .97; } 100% { scale: 1; } }
+.app.playful .tab[aria-current="page"] .icon { animation: hop .6s cubic-bezier(.3, 1.3, .5, 1); }
+@keyframes squish { 0% { scale: 1; } 35% { scale: 1.14 .82; } 65% { scale: .96 1.06; } 100% { scale: 1; } }
+.app.playful .tab-indicator.squish { animation: squish .55s cubic-bezier(.3, 1.3, .5, 1) .08s; }
+@keyframes jiggle { 0%, 100% { rotate: 0deg; scale: 1; } 20% { rotate: -16deg; scale: 1.3; } 45% { rotate: 12deg; scale: 1.1; } 70% { rotate: -6deg; } }
+.app.playful .jiggle { animation: jiggle .6s ease-in-out; }
+.app.playful .count-badge, .app.playful .count { animation: chip-pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+
+/* The composer: a pastel ring turns round it while you write; the send button glows when there is something to send. */
+@property --ring { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes ring-turn { to { --ring: 360deg; } }
+.app.playful .composer { position: relative; }
+.app.playful .composer::before { content: ""; position: absolute; inset: -1.5px; border-radius: inherit; padding: 2px; pointer-events: none; opacity: 0; transition: opacity .35s;
+  background: conic-gradient(from var(--ring), #f29ac0, #9cc8f0, #a8e0b8, #f7c96b, #f29ac0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.app.playful .composer:focus-within::before { opacity: 1; animation: ring-turn 5s linear infinite; }
+@keyframes send-glow { 0%, 100% { box-shadow: 0 6px 16px #4f8fc440, 0 1px 0 #ffffff80 inset; } 50% { box-shadow: 0 6px 22px #4f8fc499, 0 0 0 4px #4f8fc41f, 0 1px 0 #ffffff80 inset; } }
+.app.playful .send-button:not(:disabled) { animation: pop .3s cubic-bezier(.3, 1.4, .5, 1), send-glow 2.4s ease-in-out .3s infinite; }
+@media (hover: hover) { .app.playful .send-button:not(:disabled):hover { rotate: -14deg; scale: 1.08; } .app.playful .send-button { transition: rotate .25s cubic-bezier(.3, 1.6, .5, 1), scale .25s, opacity .15s; } }
+@keyframes nod { 0%, 100% { translate: 0 0; } 50% { translate: 0 3px; } }
+.app.playful .jump-latest .icon { animation: nod 1.2s ease-in-out infinite; }
+@keyframes float-icon { from { translate: 0 -4px; rotate: -4deg; } to { translate: 0 4px; rotate: 4deg; } }
+.app.playful .empty .icon { animation: float-icon 2.8s ease-in-out infinite alternate; }
+.app.playful .mention-menu .mention-option { animation: rise .32s cubic-bezier(.2, .9, .25, 1.04) both; }
+.app.playful .mention-menu .mention-option:nth-child(2) { animation-delay: 40ms; } .app.playful .mention-menu .mention-option:nth-child(3) { animation-delay: 80ms; }
+.app.playful .mention-menu .mention-option:nth-child(n+4) { animation-delay: 120ms; }
+
+/* The wordmark catches the light now and then (and tapping it blows on the dandelion). */
+@keyframes wordmark-shine { 0%, 82% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
+.app.playful .wordmark { cursor: pointer; background: linear-gradient(100deg, var(--ink) 42%, var(--coral) 50%, #e0a43a 54%, var(--ink) 62%) 120% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: wordmark-shine 9s ease-in-out infinite; }
+.app.playful .wordmark small { -webkit-text-fill-color: var(--muted); }
+
+/* Render floor: a live job has a scanning light along its top and a beating dot. */
+@keyframes scan { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
+.app.playful .job::before { content: ""; display: block; height: 3px; margin-bottom: 6px; border-radius: 2px; background: #3fae7a1f linear-gradient(90deg, transparent, var(--live), #9cc8f0, transparent) -60% 0 / 45% 100% no-repeat; animation: scan 1.9s ease-in-out infinite; }
+@keyframes beat { 0%, 100% { scale: 1; opacity: 1; } 15% { scale: 1.45; } 30% { scale: 1; } 45% { scale: 1.25; opacity: .8; } }
+.app.playful .job-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--live); box-shadow: 0 0 8px var(--live); animation: beat 1.4s ease-in-out infinite; }
+.app.playful .schedule-card[open] .entries li { animation: rise .4s cubic-bezier(.2, .9, .25, 1.04) both; }
+.app.playful .schedule-card[open] .entries li:nth-child(2) { animation-delay: 50ms; } .app.playful .schedule-card[open] .entries li:nth-child(3) { animation-delay: 100ms; }
+.app.playful .schedule-card[open] .entries li:nth-child(n+4) { animation-delay: 150ms; }
+
+/* The meadow: two butterflies, sunbeams by day, a warm cast before sunset and fireflies after dark. */
+.tint, .sunbeams, .butterfly, .firefly { display: none; }
+.app.playful .tint, .app.playful .sunbeams, .app.playful .butterfly { display: block; }
+.app.playful .sunbeams { position: absolute; top: -30%; left: -10%; width: 120%; height: 130%; opacity: .55; transform-origin: 20% 0; will-change: transform, opacity;
+  background: linear-gradient(104deg, #fff8e000 18%, #fff8e0aa 24%, #fff8e000 31%, #fff8e000 44%, #fff8e080 49%, #fff8e000 55%, #fff8e000 66%, #fff8e066 70%, #fff8e000 76%);
+  animation: beams 18s ease-in-out infinite alternate; }
+@keyframes beams { from { transform: rotate(-3deg); opacity: .35; } to { transform: rotate(3deg); opacity: .7; } }
+.app.playful .tint { position: absolute; inset: 0; opacity: 0; transition: opacity 2s; }
+.app.playful.golden .tint { opacity: 1; background: linear-gradient(#f7c96b00 30%, #f7a96b2e); }
+.app.playful.dusk .tint { opacity: 1; background: linear-gradient(#4a5290d9 0%, #7a6aa880 45%, #e3a07a4d); mix-blend-mode: multiply; }
+.app.playful.dusk .sunbeams { display: none; }
+.app.playful.dusk .firefly { display: block; }
+.butterfly { position: absolute; left: 0; top: 34%; width: 24px; height: 18px; opacity: 0; will-change: transform, opacity; animation: wander 44s linear -9s infinite; }
+.butterfly.b2 { --bh: 48; top: 62%; width: 20px; height: 15px; animation-duration: 57s; animation-delay: -38s; animation-direction: reverse; }
+.butterfly i { position: absolute; inset: 0; animation: flutter-bob 1.9s ease-in-out infinite alternate; }
+.butterfly i::before, .butterfly i::after { content: ""; position: absolute; top: 0; width: 50%; height: 100%;
+  background: radial-gradient(circle at 50% 38%, hsl(var(--bh, 330) 90% 86%), hsl(var(--bh, 330) 72% 66%) 70%, hsl(var(--bh, 330) 50% 45%)); }
+.butterfly i::before { left: 0; border-radius: 70% 20% 40% 60%; transform-origin: 100% 50%; animation: wing-left .18s ease-in-out infinite alternate; }
+.butterfly i::after { right: 0; border-radius: 20% 70% 60% 40%; transform-origin: 0 50%; animation: wing-right .18s ease-in-out infinite alternate; }
+@keyframes wing-left { from { transform: scaleX(1); } to { transform: scaleX(.2); } }
+@keyframes wing-right { from { transform: scaleX(1); } to { transform: scaleX(.2); } }
+@keyframes flutter-bob { from { transform: translateY(-7px) rotate(-10deg); } to { transform: translateY(7px) rotate(8deg); } }
+@keyframes wander {
+  0% { transform: translate3d(-30px, 0, 0); opacity: 0; } 2% { opacity: .95; }
+  9% { transform: translate3d(14vw, -7vh, 0); } 17% { transform: translate3d(27vw, 2vh, 0); } 25% { transform: translate3d(42vw, -9vh, 0); }
+  33% { transform: translate3d(60vw, -3vh, 0); } 41% { transform: translate3d(80vw, -11vh, 0); opacity: .95; }
+  47% { transform: translate3d(calc(100vw + 30px), -6vh, 0); opacity: 0; } 100% { transform: translate3d(calc(100vw + 30px), -6vh, 0); opacity: 0; } }
+.firefly { position: absolute; width: 9px; height: 9px; border-radius: 50%; left: 18%; top: 70%; opacity: 0; will-change: transform, opacity;
+  background: radial-gradient(circle, #fffbd0 0 2px, #f7e27a 3px, #f7e27a00 9px); box-shadow: 0 0 18px 5px #f7e27a73;
+  animation: firefly-path 13s ease-in-out infinite alternate, blink 3.2s ease-in-out infinite; }
+.firefly:nth-of-type(2) { left: 72%; top: 58%; animation-duration: 17s, 4.1s; animation-delay: -4s, -1s; }
+.firefly:nth-of-type(3) { left: 44%; top: 82%; animation-duration: 11s, 2.7s; animation-delay: -7s, -2s; }
+.firefly:nth-of-type(4) { left: 86%; top: 40%; animation-duration: 15s, 3.6s; animation-delay: -2s, -.4s; }
+.firefly:nth-of-type(5) { left: 8%; top: 46%; animation-duration: 19s, 4.6s; animation-delay: -11s, -3s; }
+.firefly:nth-of-type(6) { left: 58%; top: 30%; animation-duration: 14s, 3s; animation-delay: -6s, -1.6s; }
+.firefly:nth-of-type(7) { left: 30%; top: 54%; animation-duration: 16s, 3.9s; animation-delay: -9s, -2.4s; }
+@keyframes firefly-path { 0% { transform: translate3d(0, 0, 0); } 33% { transform: translate3d(34px, -26px, 0); } 66% { transform: translate3d(-22px, -48px, 0); } 100% { transform: translate3d(18px, -12px, 0); } }
+@keyframes blink { 0%, 100% { opacity: 0; } 40%, 60% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

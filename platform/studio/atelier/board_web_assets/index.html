@@ -17,6 +17,7 @@
   <link rel="preload" as="image" type="image/webp" href="/meadow-landscape-1.webp" media="(min-width: 1100px)">
   <link rel="stylesheet" href="/board.css">
   <script src="/board.js" defer></script>
+  <script src="/board-fx.js" defer></script>
 </head>
 <body>
   <div class="app" id="app" data-view="messages">
@@ -35,6 +36,12 @@
             <label class="toggle"><input type="checkbox" id="notifyToggle" aria-label="Notifications on this device" disabled><span class="toggle-track"></span></label>
           </div>
           <button type="button" class="text-button" id="notifyTest" hidden>Send a test notification</button>
+        </section>
+        <section class="card notify-card" aria-labelledby="playfulHeading">
+          <div class="notify-row">
+            <div class="notify-text"><h2 id="playfulHeading">Playful motion</h2><p id="playfulNote">Petals, butterflies and confetti.</p></div>
+            <label class="toggle"><input type="checkbox" id="playfulToggle" aria-label="Playful motion on this device" checked><span class="toggle-track"></span></label>
+          </div>
         </section>
       </div>
     </aside>
