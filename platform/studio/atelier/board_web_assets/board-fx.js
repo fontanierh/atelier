@@ -192,14 +192,14 @@
 
   function fresh(article, i) {
     const mine=article.classList.contains("mine"), b=article.getBoundingClientRect();
-    stream(article);
-    if(!inView(b))return;
-    if(mine){if(sent&&performance.now()-sent.at<8000&&morph(article))sent=null;return;}
+    // The comet's flight is set before the words are wrapped: stream() times their unwrapping from it.
+    if(!inView(b)||mine){stream(article);if(mine&&inView(b)&&sent&&performance.now()-sent.at<8000&&morph(article))sent=null;return;}
     const o=article.querySelector(":scope > .orb-link .orb"), name=senderOf(article), src=name&&sourceOf(name);
     const to=o?centre(o.getBoundingClientRect()):{x:b.left+20,y:b.top+16};
     const from=src?centre(src.r):{x:Math.min(W-30,to.x+W*.45),y:-20};
     // The bubble waits for its comet.
     const wait=.4+i*.16;article.style.setProperty("--d",`${wait}s`);
+    stream(article);
     setTimeout(()=>{speak(src?.el);comet(from,to,o?hueOf(o):(src?hueOf(src.el):330),()=>arrive(article));},i*160);
   }
   const feeds=new MutationObserver(records=>{

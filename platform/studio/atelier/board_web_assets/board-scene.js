@@ -81,16 +81,22 @@ void main(){
   gl_FragColor=vec4(c,1.);
 }`;
   function shader(type, src) { const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.warn(gl.getShaderInfoLog(s));return null;}return s; }
-  const vs=shader(gl.VERTEX_SHADER,VERT), fs=shader(gl.FRAGMENT_SHADER,FRAG);
-  if(!vs||!fs)return;
-  const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
-  if(!gl.getProgramParameter(prog,gl.LINK_STATUS))return;
-  gl.useProgram(prog);
-  const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
-  const loc=gl.getAttribLocation(prog,"p");gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-  const U={};for(const name of ["T","R","I","S","M","P","t","night","gold","day","flowers","river","mouseOn","flash"])U[name]=gl.getUniformLocation(prog,name);
-  const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
-  for(const [k,val] of [[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,val);
+  // Program, quad and texture. A restored context starts empty, so this runs again then.
+  let U={}, tex=null;
+  function init() {
+    const vs=shader(gl.VERTEX_SHADER,VERT), fs=shader(gl.FRAGMENT_SHADER,FRAG);
+    if(!vs||!fs)return false;
+    const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog,gl.LINK_STATUS))return false;
+    gl.useProgram(prog);
+    const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+    const loc=gl.getAttribLocation(prog,"p");gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+    U={};for(const name of ["T","R","I","S","M","P","t","night","gold","day","flowers","river","mouseOn","flash"])U[name]=gl.getUniformLocation(prog,name);
+    tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+    for(const [k,val] of [[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,val);
+    return true;
+  }
+  if(!init())return;
 
   let painting=null, ready=false, raf=0, lastFrame=0, start=performance.now();
   function load() {
@@ -153,7 +159,8 @@ void main(){
   }
   function wake() { if(!raf&&on()){lastFrame=0;raf=requestAnimationFrame(frame);} else if(!on())app.classList.remove("scene-on"); }
   canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();ready=false;app.classList.remove("scene-on");});
-  canvas.addEventListener("webglcontextrestored",()=>{painting=null;load();});
+  // Until the program is rebuilt the scene stays off and the still painting shows.
+  canvas.addEventListener("webglcontextrestored",()=>{painting=null;canvas.width=canvas.height=0;if(init())load();});
   wide.addEventListener?.("change",load);reduce.addEventListener?.("change",wake);
   document.addEventListener("visibilitychange",wake);
   new MutationObserver(wake).observe(app,{attributes:true,attributeFilter:["class"]});
