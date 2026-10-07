@@ -109,7 +109,7 @@ def main():
             assert report['rollin_max_speed_mps']>5
             popped=exercise('bowl_ollie',29,-10,9,5,pop=True)
             report['bowl_ollie']=air_return(popped,42,3.2)
-            rail=exercise('seven_stair_handrail',-64,25.5,5.2,5,z=1.5,gesture=(1.8,.2))
+            rail=exercise('seven_stair_handrail',-64,25.5,5.2,5,z=1.5,gesture=(2.5,.2))
             assert any('Grind' in r['state'] for r in rail),'Handrail was not acquired'
             report['stair_handrail']=sorted({r['state'] for r in rail if 'Grind' in r['state']})
             report['passed']=True

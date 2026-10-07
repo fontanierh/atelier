@@ -330,10 +330,11 @@ static FAutoConsoleCommandWithWorldAndArgs SkatePierCheckCommand(TEXT("japan.Ska
                 if (!Rail || Rail->Points.Num()<2)
                 { ++Failed; UE_LOG(LogTemp,Display,TEXT("SKATE PIER %s %s: not registered FAIL"),*Id,*Kind); continue; }
                 FVector Tangent; const FVector Mid=Registry->Sample(int32(Rail-Registry->Rails.GetData()),Rail->Length()*.5f,Tangent);
-                // A line without a side (a curved ledge's lip) is tried 3 cm to either side of it; the nearer surface counts.
+                // A line without a side is tried on it (a thin round rail) and 3 cm to either side (a curved ledge's
+                // lip); the nearest surface counts.
                 const FVector Across=FVector(-Tangent.Y,Tangent.X,0).GetSafeNormal();
-                TArray<FVector,TInlineAllocator<2>> Tries;
-                if (Rail->Side.IsNearlyZero()) Tries={Mid+Across*3.f,Mid-Across*3.f}; else Tries={Mid-Rail->Side*3.f};
+                TArray<FVector,TInlineAllocator<3>> Tries;
+                if (Rail->Side.IsNearlyZero()) Tries={Mid,Mid+Across*3.f,Mid-Across*3.f}; else Tries={Mid-Rail->Side*3.f};
                 FHitResult Hit; FCollisionQueryParams Params(TEXT("SkatePierCheck"),true);
                 bool bHit=false; float Off=NAN;
                 for (const FVector& At : Tries)

@@ -32,21 +32,18 @@ def main():
         # common 4 m/s floor even without friction.
         minimum=.9*math.sqrt(200**2+2*981*drop*100)
         record(name+'_rollin',speed>minimum and not qa.count(rows,'bails') and rows[-1]['mode']=='1',max_speed_cm_s=speed,minimum_speed_cm_s=round(minimum,1),states=sorted(qa.modes(rows)))
-    # The seven's handrail starts at the top nosing (x1 = -48) with no lead-in, 16 m from the start: pop about 2 m short of it.
-    for pop in (2.3,2.5,2.7):
-        rows=qa.run_scenario(f"-64,25.5,0,520,[({pop},('flick','ollie',(0,0),.2))],duration=4.5",4.5)
-        if '3' in qa.modes(rows) and not qa.count(rows,'bails'):break
-    record('stair_handrail','3' in qa.modes(rows) and not qa.count(rows,'bails'),pop_s=pop,tricks=qa.combos(rows))
+    # The seven's handrail starts at the top nosing (x1 = -48) with no lead-in, 16 m from the start: popped about 3 m short.
+    rows=qa.run_scenario("-64,25.5,0,520,[(2.5,('flick','ollie',(0,0),.2))],duration=4.5",4.5)
+    record('stair_handrail','3' in qa.modes(rows) and not qa.count(rows,'bails'),tricks=qa.combos(rows))
     # The extracted modules (layout.MODULES): ridden straight along each line from 8 m before it at 5.2 m/s, popped
     # 2.9 m short of it (as skate_ride's flatbar row), into a grind or a 50-50 on a ledge's lip without a bail.
     for name,x,y,heading in [('kink_rail',-2,43,0),('round_rail',13,43,0),('rainbow_medium',36.5,43,0),('rainbow_low',45.76,43,0),
                              ('sunset_bar',-4,-46,0),('plaza_curb_rail',69.93,51,180),('plaza_ledge',34,51.38,0),('plaza_pad',63.5,51.75,180),
                              ('plaza_bench',31,55.74,0)]:
-        # The benches are 2 m long: their pop is tried a little either side of the bars'.
-        for pop in ((.98,) if name!='plaza_bench' else (.98,.8,1.15)):
-            rows=qa.run_scenario(f"{x},{y},{heading},520,[({pop},('flick','ollie',(0,0),.2))],duration=4",4)
-            if '3' in qa.modes(rows) and not qa.count(rows,'bails'):break
-        record('module_'+name,'3' in qa.modes(rows) and not qa.count(rows,'bails'),pop_s=pop,states=sorted(qa.modes(rows)),tricks=qa.combos(rows))
+        # The benches are only 2 m long: popped earlier, 3.8 m short of them, the board comes down on them.
+        pop=.8 if name=='plaza_bench' else .98
+        rows=qa.run_scenario(f"{x},{y},{heading},520,[({pop},('flick','ollie',(0,0),.2))],duration=4",4)
+        record('module_'+name,'3' in qa.modes(rows) and not qa.count(rows,'bails'),states=sorted(qa.modes(rows)),tricks=qa.combos(rows))
     qa.py("live.park.place(29,-10,0); live.skate_input(); p=unreal.GameplayStatics.get_player_character(live.L.game_world(),0); deck=next(c for c in p.get_components_by_class(unreal.StaticMeshComponent) if c.get_name()=='SkateDeck')")
     time.sleep(1.2)
     qa.py('''
