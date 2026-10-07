@@ -15,7 +15,9 @@ namespace JapanNetwork
     enum class EActivity : uint8 { Horse, Race, WorldEdit };
     /** One policy for every entry point, including menus and live commands. */
     bool Allows(UWorld* World, EActivity Activity);
-    /** Copyable Tailscale IPv4 endpoint if the adapter is available; otherwise empty. */
+    bool IsTailnetIPv4(const FString& Address);
+    bool PrivateHostAddress(FString& Address, FString& Error);
+    /** Copyable bound private endpoint, or the available tailnet adapter before hosting. */
     FString LocalEndpoint(UWorld* World);
     /** A strict host[:port] endpoint; never accept travel options, paths or console commands from the join field. */
     bool ParseEndpoint(const FString& Input, FString& Endpoint, FString& Error);

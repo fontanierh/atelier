@@ -57,6 +57,19 @@ def test_process_exit_without_native_receipt_is_not_success(receipts):
         review.compare_receipts(receipts)
 
 
+def test_private_listener_requires_the_actual_driver_and_bound_address(receipts):
+    endpoint = '127.0.0.1:7777'
+    assert not all(review.compare_receipts(receipts, bound_endpoint=endpoint).values())
+    change(receipts, 'server-connected', lambda v: v.update(
+        bound_endpoint=endpoint, driver_class='/Script/Yorimichi.JapanIpNetDriver'))
+    assert all(review.compare_receipts(receipts, bound_endpoint=endpoint).values())
+    change(receipts, 'server-connected', lambda v: v.update(bound_endpoint='0.0.0.0:7777'))
+    assert not all(review.compare_receipts(receipts, bound_endpoint=endpoint).values())
+    change(receipts, 'server-connected', lambda v: v.update(
+        bound_endpoint=endpoint, driver_class='/Script/OnlineSubsystemUtils.IpNetDriver'))
+    assert not all(review.compare_receipts(receipts, bound_endpoint=endpoint).values())
+
+
 @pytest.mark.parametrize('lag,variance,loss', [(0, 0, 0), (60, 15, 2)])
 def test_emulation_requires_both_live_drivers_to_match(receipts, lag, variance, loss):
     requested = dict(lag_ms=lag, variance_ms=variance, loss_percent=loss)

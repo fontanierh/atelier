@@ -38,6 +38,7 @@ public class Yorimichi : ModuleRules
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AtelierCore", "AtelierAnimation", "AtelierLive", "AtelierFX", "AtelierSkate", "AtelierStream", "EnhancedInput", "AnimGraphRuntime", "Json", "AssetRegistry", "RenderCore", "Slate", "SlateCore", "ProceduralMeshComponent", "HTTPServer", "Sockets", "GLTFCore", "MeshDescription", "StaticMeshDescription" });
         // The live bridge runs agent Python in uncooked (editor-binary) sessions only.
         if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("PythonScriptPlugin");
+        PublicDependencyModuleNames.Add("OnlineSubsystemUtils");
         PrivateDependencyModuleNames.Add("AnimationCore");
         PrivateDependencyModuleNames.Add("RHI");
         PrivateDependencyModuleNames.Add("AIModule");

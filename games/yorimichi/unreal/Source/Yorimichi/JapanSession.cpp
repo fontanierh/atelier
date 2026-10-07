@@ -68,6 +68,8 @@ void UJapanGameInstance::HostGame(int32 Capacity)
     if (!JapanNetwork::Identity(Identity, Error)) { Status = Error; return; }
     if (!JapanNetwork::IsPlayableRider(JapanNetwork::DefaultRider()))
     { Status = TEXT("The merged player character is missing from this build."); return; }
+    FString PrivateAddress;
+    if (!JapanNetwork::PrivateHostAddress(PrivateAddress, Error)) { Status = Error; return; }
     RememberRider();
     Capacity = FMath::Clamp(Capacity, 2, JapanNetwork::MaximumCapacity);
     CloseFriends();
@@ -102,10 +104,11 @@ void UJapanGameInstance::ReturnWithError(const FString& Message)
 {
     LeaveGame(); Status = Message;
 }
-void UJapanGameInstance::NetworkFailure(UWorld* World, UNetDriver*, ENetworkFailure::Type, const FString& Reason)
+void UJapanGameInstance::NetworkFailure(UWorld* World, UNetDriver*, ENetworkFailure::Type Failure, const FString& Reason)
 {
     if (World && World != GetWorld()) return;
     Status = Reason.IsEmpty() ? TEXT("Connection lost. Check that the host is running and reachable, then join again.") : Reason;
+    bReturnSoloAfterListenFailure = Failure == ENetworkFailure::NetDriverListenFailure;
     bShowAfterTravel = true; CloseFriends();
     // Engine disconnect handling returns to the default map; do not start a second competing travel here.
     UE_LOG(LogTemp, Warning, TEXT("NETWORK failure: %s"), *Status);
@@ -120,13 +123,21 @@ void UJapanGameInstance::TravelFailure(UWorld* World, ETravelFailure::Type, cons
 void UJapanGameInstance::MapLoaded(UWorld* World)
 {
     if (World == GetWorld() && JapanNetwork::IsOnline(World)) AtelierLive::Stop();
-    if (World == GetWorld()) ShowPendingStatus();
+    if (World == GetWorld() && !bReturnSoloAfterListenFailure) ShowPendingStatus();
 }
 
 void UJapanGameInstance::ShowPendingStatus()
 {
     // PostLoadMap may run before the replacement local controller exists. Keep the notice
     // pending until its UI really opens; the controller retries on its first standalone tick.
+    if (bReturnSoloAfterListenFailure && GetWorld() && GetWorld()->GetNetMode() == NM_Standalone && GetFirstLocalPlayerController())
+    {
+        bReturnSoloAfterListenFailure = false;
+        // This runs on the controller tick, not inside the failed Listen/LoadMap stack.
+        const FString FailureStatus = Status;
+        LeaveGame(); Status = FailureStatus;
+        return;
+    }
     if (bShowAfterTravel && GetWorld() && GetWorld()->GetNetMode() == NM_Standalone) Friends();
 }
 

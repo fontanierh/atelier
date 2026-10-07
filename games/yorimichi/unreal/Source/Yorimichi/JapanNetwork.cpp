@@ -5,6 +5,7 @@
 #include "JapanWorld.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
+#include "Engine/NetDriver.h"
 #include "EngineUtils.h"
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
@@ -37,21 +38,28 @@ bool Allows(UWorld* World, EActivity Activity)
     return false;
 }
 
+bool IsTailnetIPv4(const FString& Address)
+{
+    TArray<FString> Octets; Address.ParseIntoArray(Octets, TEXT("."), false);
+    if (Octets.Num() != 4) return false;
+    int32 Parts[4];
+    for (int32 I = 0; I < 4; ++I)
+    {
+        if (Octets[I].IsEmpty() || Octets[I].Len() > 3) return false;
+        for (TCHAR C : Octets[I]) if (C < '0' || C > '9') return false;
+        Parts[I] = FCString::Atoi(*Octets[I]);
+        if (Parts[I] > 255) return false;
+    }
+    return Parts[0] == 100 && Parts[1] >= 64 && Parts[1] <= 127;
+}
+
 FString LocalEndpoint(UWorld* World)
 {
-    ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
-    TArray<TSharedPtr<FInternetAddr>> Addresses;
-    if (!Sockets || !Sockets->GetLocalAdapterAddresses(Addresses)) return FString();
-    for (const TSharedPtr<FInternetAddr>& Address : Addresses)
-    {
-        if (!Address.IsValid()) continue;
-        const FString Host = Address->ToString(false);
-        TArray<FString> Octets; Host.ParseIntoArray(Octets, TEXT("."));
-        // Tailscale's IPv4 range. Never copy unrelated private or public adapters by accident.
-        if (Octets.Num() == 4 && Octets[0] == TEXT("100") && FCString::Atoi(*Octets[1]) >= 64 && FCString::Atoi(*Octets[1]) <= 127)
-            return FString::Printf(TEXT("%s:%d"), *Host, World ? World->URL.Port : 7777);
-    }
-    return FString();
+    // The active driver reports the address actually bound, including its real port.
+    if (World && World->GetNetMode() != NM_Client)
+        if (UNetDriver* Driver = World->GetNetDriver()) return Driver->LowLevelGetNetworkNumber();
+    FString Address, Error;
+    return PrivateHostAddress(Address, Error) ? FString::Printf(TEXT("%s:%d"), *Address, World ? World->URL.Port : 7777) : FString();
 }
 
 bool ParseEndpoint(const FString& Input, FString& Endpoint, FString& Error)

@@ -67,6 +67,11 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
             Report->SetObjectField(TEXT("emulation"), Emulation);
         }
 #endif
+        if (UNetDriver* Driver = World->GetNetDriver())
+        {
+            Report->SetStringField(TEXT("driver_class"), Driver->GetClass()->GetPathName());
+            Report->SetStringField(TEXT("bound_endpoint"), Driver->LowLevelGetNetworkNumber());
+        }
         int32 Pawns = 0;
         for (TActorIterator<AWandererCharacter> It(World); It; ++It) if (!It->IsNpc()) ++Pawns;
         Report->SetNumberField(TEXT("player_pawns"), Pawns);

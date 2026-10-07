@@ -8,6 +8,12 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanEndpointTest, "Yorimichi.Network.JoinEndp
 
 bool FJapanEndpointTest::RunTest(const FString&)
 {
+    for (const TCHAR* Address : { TEXT("100.64.0.0"), TEXT("100.127.255.255"), TEXT("100.100.1.2") })
+        TestTrue(TEXT("Tailnet IPv4"), JapanNetwork::IsTailnetIPv4(Address));
+    for (const TCHAR* Address : { TEXT("0.0.0.0"), TEXT("127.0.0.1"), TEXT("192.168.1.2"),
+            TEXT("100.63.255.255"), TEXT("100.128.0.0"), TEXT("100.64.0.256"), TEXT("100.64.a.1"),
+            TEXT("100.64.1"), TEXT("100.64..1"), TEXT("100.64.1.2:7777"), TEXT("::") })
+        TestFalse(TEXT("Not a tailnet address"), JapanNetwork::IsTailnetIPv4(Address));
     struct FCase { const TCHAR* Input; const TCHAR* Expected; };
     for (const FCase& Case : { FCase{TEXT(" 100.64.12.3 "), TEXT("100.64.12.3:7777")},
             FCase{TEXT("shared-device.example.ts.net:8888"), TEXT("shared-device.example.ts.net:8888")},

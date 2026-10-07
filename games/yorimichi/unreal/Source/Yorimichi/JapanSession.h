@@ -37,6 +37,7 @@ private:
     FString JoinRider;
     FString JoinAddress;
     bool bShowAfterTravel = false;
+    bool bReturnSoloAfterListenFailure = false;
     TSharedPtr<SWidget> Menu;
     void NetworkFailure(UWorld*, UNetDriver*, ENetworkFailure::Type, const FString&);
     void TravelFailure(UWorld*, ETravelFailure::Type, const FString&);
