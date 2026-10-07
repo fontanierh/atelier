@@ -121,6 +121,8 @@ void UBikeComponent::Initialize(AWandererCharacter* C)
  BikeRoot->SetVisibility(false,true);
  bool bParts=true;for(const UStaticMeshComponent* P:TArray<UStaticMeshComponent*>{Frame,Steer,WheelFront,WheelRear,Crank,PedalL,Kickstand,RackBoard})bParts&=P->GetStaticMesh()!=nullptr;
  bAssetsReady=bParts&&LoadData();
+ if(!bAssetsReady)UE_LOG(LogTemp,Warning,TEXT("BIKE not installed for %s: parts %d, data %s (rig %s)"),*C->GetName(),bParts?1:0,
+     *AtelierDataPath(RiderRig().ToLower()/TEXT("bike/export.json")),*RiderRig());
  if(bAssetsReady)for(const auto& Pair:Clips)
  {
   const FString Name=Pair.Key.ToString();
