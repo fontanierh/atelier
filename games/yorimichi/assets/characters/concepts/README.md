@@ -63,14 +63,17 @@ Tripo Studio built both parts (Smart Mesh, then Smart UV; the body also rigged, 
 `build/yorimichi/characters/came-back/` (`tripo-body-r01/`, its `rigged/` copy, `tripo-coat-r01/`).
 
 [`came_back_texture.py`](../tools/came_back_texture.py) cleans the body texture and paints the face. Every texel is
-placed on the body in 3D, so it works on any UV layout. On the head, a texel whose colour disagrees with the surface
-round it (skin colour on a lock, hair colour or a thin dark line on the cheek) takes that surface's colour. The vote is
-taken within the texel's own UV island, so a lock lying over the cheek keeps its hair. Tripo's baked shadow behind the
-ears and under the hair stays. The eyes, brows and mouth are then drawn from the `FACE` table, measured on the concept
-and projected from the front onto the skin only. `--variant redo` is the comparison: Tripo's colours on the head are
-dropped, only the labels (skin, hair, the white streak, the collar) stay, and the skin and hair are painted fresh with
-soft shading from the geometry (`basecolor-redo.png`). The rigged FBX has the same mesh and UVs, so the texture
-applies to it.
+placed on the body in 3D and on its mesh triangle, so it works on any UV layout. The head is low-poly and its locks
+are geometry, so the line between hair and skin runs along triangle edges, while Tripo's paint wanders across it. Each
+head triangle is therefore labelled skin, hair or collar by the colour most of its texels have; a triangle painted half
+and half takes the label of the triangles round it. The white streak is painted, not modelled, so it stays a
+soft-edged share of the hair. A texel whose colour disagrees with its label is filled from the agreeing texels round
+it on its own UV island; so are Tripo's dark brown baked shadow, thin dark lines and blotches on the skin. The edge
+between skin and hair is anti-aliased over a texel. The eyes, brows and mouth are then drawn from the `FACE` table,
+measured on the concept and projected from the front onto the skin only. `--variant redo` keeps only the labels and
+paints the skin and hair fresh, with soft shading from the geometry (`basecolor-redo.png`). The pack stage makes the
+material matte: Tripo's faint specular drew pale streaks along the creases of the cheek. The rigged FBX has the same
+mesh and UVs, so the texture applies to it.
 
 [`came_back_coat.py`](../tools/came_back_coat.py) fits the coat: scaled until its cuffs sit on the wrist bones
 (0.766), centred on the chest, then pushed 4 mm clear of the body. It takes the body's bone weights, the skirt
