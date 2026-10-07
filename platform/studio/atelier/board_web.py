@@ -274,7 +274,10 @@ class Handler(BaseHTTPRequestHandler):
         """Fast loads: the versioned paintings cache for a year (a new painting gets a new name); the app's own files
         revalidate with an ETag, so a reload costs a 304 until they change, and travel gzipped."""
         data, tag, packed = asset(filename)
-        cache = 'public, max-age=31536000, immutable' if filename.endswith('.webp') else 'no-cache'
+        # The page itself is never stored: a home-screen app launched before the network was up used to show an old
+        # copy of the board from the browser's cache (fewer tabs, no dark theme) stuck on 'Connecting'.
+        cache = ('public, max-age=31536000, immutable' if filename.endswith('.webp')
+                 else 'no-store' if mime.startswith('text/html') else 'no-cache')
         if self.headers.get('If-None-Match') == tag:
             self.send_response(304)
             self.send_header('ETag', tag)
