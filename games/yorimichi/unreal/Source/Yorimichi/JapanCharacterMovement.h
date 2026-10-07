@@ -88,6 +88,7 @@ private:
     bool bRecoveryQueued = false, bReceivedMoveInEpoch = false;
     void AcknowledgeEdges(uint16 Through);
     bool bInputPrepared = false, bExecutingMove = false, bReplaying = false;
+    bool bAcceptedDefenceMove = false;
     double LastCustomCorrection = -1.;
     FJapanMovementStats NetworkStats;
     uint32 ClientTraceRows = 0, ServerTraceRows = 0, ForcedTraceRows = 0;

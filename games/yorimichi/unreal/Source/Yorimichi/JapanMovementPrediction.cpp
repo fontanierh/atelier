@@ -226,7 +226,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
     TGuardValue<bool> Executing(bExecutingMove, true);
     UBotwMoveSet* Moves = Rider->GetMoves();
     if (bReplaying) ++NetworkStats.ReplayedMoves;
-    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge);
+    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge, Dt, bAcceptedDefenceMove);
     ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
     {
         if (!Rider->bReady || Rider->bMenuOpen || Rider->OnVehicle() || Rider->IsZeppelinPassenger()) return;
@@ -258,7 +258,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
         : ConstrainInputAcceleration(Wish) * GetMaxAcceleration();
     AnalogInputModifier = ComputeAnalogInputModifier();
     Super::PerformMovement(Dt);
-    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge);
+    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge, 0., bAcceptedDefenceMove);
     bInputPrepared = false;
     // Quantized simulation inputs must not rewrite the user's actual stick state or menu after the prediction step.
     if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
@@ -266,6 +266,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
 
 void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Flags, const FVector& Accel)
 {
+    TGuardValue<bool> DefenceMoveScope(bAcceptedDefenceMove, false);
     if (PredictsMoves())
         if (const auto* Data = static_cast<const FJapanNetworkMoveData*>(GetCurrentNetworkMoveData()))
         {
@@ -277,7 +278,8 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
                     UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK movement start epoch=%u timestamp=%.4f dt=%.4f initial_forced_skips=%u loading_moves=%u pre_ack_moves=%u"),
                         GetActivityEpoch(), Timestamp, Dt, NetworkStats.InitialForcedUpdatesSkipped, NetworkStats.MovesBeforeReady, NetworkStats.MovesBeforeAck);
             }
-            if (CharacterOwner->HasAuthority()) CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->MapDefenceMove(Timestamp, Dt);
+            if (CharacterOwner->HasAuthority() && Dt > 0.f)
+                bAcceptedDefenceMove = CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->MapDefenceMove(Timestamp, Dt);
             SetMoveInput(Data->Input);
             LastServerHolds = Data->Input.Flags & (FJapanMoveInput::AttackHeld | FJapanMoveInput::GuardHeld | FJapanMoveInput::JumpHeld | FJapanMoveInput::Menu);
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);

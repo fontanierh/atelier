@@ -13,6 +13,19 @@ void FJapanDefenceTimeline::Trace(double Time, const TCHAR* Reason) const
 #endif
 }
 
+void FJapanDefenceTimeline::RecordMapped(FJapanDefenceSample Sample, double Mapped, double BeforeStep)
+{
+    if (!FMath::IsFinite(Mapped) || !FMath::IsFinite(BeforeStep) || Mapped < 0. || BeforeStep < 0.) return;
+    // A timestamp dates the END of its accepted movement step. Eligibility at
+    // an edge inside that step must still see the state before its own action.
+    // Changes to the estimated transit cannot move recorded history backwards.
+    // If the mapped clock plateaus, its post-state cannot replace the pre-state
+    // at the same time. The next accepted step's pre-sample carries that state.
+    if (BeforeStep == 0. && Mapped <= LatestTime()) return;
+    Sample.Time = FMath::Max(FMath::Max(0., Mapped - BeforeStep), LatestTime());
+    Record(Sample);
+}
+
 void FJapanDefenceTimeline::Record(const FJapanDefenceSample& Sample)
 {
     if (!FMath::IsFinite(Sample.Time) || Sample.Location.ContainsNaN() || Sample.Forward.ContainsNaN()) return;

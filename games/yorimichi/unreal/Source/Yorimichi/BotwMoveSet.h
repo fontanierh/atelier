@@ -96,8 +96,8 @@ public:
     void DropHolds();
     /** An enemy strike: 0 hit, 1 parried, 2 dodged, 3 absorbed (guarded or recovering) (UWandererSwordComponent's contract). */
     int32 IncomingStrike(AActor* Source, float Damage, const FVector& From);
-    void MapDefenceMove(float Timestamp, float Dt);
-    void RecordDefence(uint16 ThroughEdge);
+    bool MapDefenceMove(float Timestamp, float Dt);
+    void RecordDefence(uint16 ThroughEdge, double BeforeStep = 0., bool bAcceptedMove = false);
     bool PressNetwork(FName Button, uint16 Edge, uint16 AgeMilliseconds);
     void ResetDefence();
     double DefenceWait() const;

@@ -35,9 +35,9 @@ double UBotwMoveSet::DefenceWait() const
     return Character && !Character->IsLocallyControlled() ? DefenceClock.Wait : 0.;
 }
 
-void UBotwMoveSet::MapDefenceMove(float Timestamp, float Dt)
+bool UBotwMoveSet::MapDefenceMove(float Timestamp, float Dt)
 {
-    if (!Character || !Character->HasAuthority() || Character->IsNpc()) return;
+    if (!Character || !Character->HasAuthority() || Character->IsNpc()) return false;
     const auto* Controller = Cast<APlayerController>(Character->Controller);
     const UNetConnection* Conn = Controller ? Controller->GetNetConnection() : nullptr;
     double Mapped = 0.;
@@ -49,11 +49,16 @@ void UBotwMoveSet::MapDefenceMove(float Timestamp, float Dt)
             Timestamp, Dt, Character->GetWorld()->GetDeltaSeconds(), Character->GetWorld()->GetTimeSeconds(),
             Conn ? Conn->RawPingInSeconds : 0., Conn ? Conn->AvgLag : 0.,
             Conn ? Conn->GetAverageJitterInMS() * .001 : 0., Mapped, DefenceClock.OneWay, DefenceClock.Wait, bDefenceMapped);
+    return bDefenceMapped;
 }
 
-void UBotwMoveSet::RecordDefence(uint16 ThroughEdge)
+void UBotwMoveSet::RecordDefence(uint16 ThroughEdge, double BeforeStep, bool bAcceptedMove)
 {
     if (!Character || !Character->HasAuthority() || Character->IsNpc() || !JapanNetwork::IsOnline(Character->GetWorld())) return;
+    // A forced server tick has no fresh accepted input timestamp. It may simulate
+    // movement, but must never rewrite old eligibility at the previous mapping.
+    const bool bRemote = !Character->IsLocallyControlled();
+    if (bRemote && (!bAcceptedMove || !bDefenceMapped)) return;
     const FBotwMove* Action = Current();
     FJapanDefenceSample S;
     S.Time = Character->GetWorld()->GetTimeSeconds(); S.ThroughEdge = ThroughEdge;
@@ -67,10 +72,11 @@ void UBotwMoveSet::RecordDefence(uint16 ThroughEdge)
     // original timeline window. Damage/flurry/down recovery remains world state.
     S.bRecovering = bDown || InFlurry() || (Invulnerable > 0.f && !bHopInvulnerability);
     S.Location = Character->GetActorLocation(); S.Forward = Character->GetActorForwardVector();
-    DefenceTimeline.Record(S);
+    if (bRemote) DefenceTimeline.RecordMapped(S, DefenceClock.LastMapped, BeforeStep);
+    else DefenceTimeline.Record(S);
     if (TraceNetworkDefence() && !Character->IsLocallyControlled())
         UE_LOG(LogTemp, Display, TEXT("NETWORK defence sample time=%.6f mapped=%.6f ts=%.6f through=%u ground=%d armed=%d can_parry=%d can_dodge=%d held=%d broken=%d recovering=%d busy=%d action=%s source_time=%.6f serial=%u"),
-            S.Time, DefenceClock.LastMapped, DefenceClock.LastTimestamp, ThroughEdge,
+            DefenceTimeline.LatestTime(), DefenceClock.LastMapped, DefenceClock.LastTimestamp, ThroughEdge,
             S.bGround, S.bArmed, S.bCanParry, S.bCanDodge, S.bGuardHeld, S.bGuardBroken,
             S.bRecovering, Busy(), *CurrentName().ToString(), SourceTime(), Character->GetActionSerial());
 }

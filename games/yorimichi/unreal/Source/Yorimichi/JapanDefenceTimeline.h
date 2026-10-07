@@ -43,6 +43,9 @@ public:
     /** A later input's cancellation already has an original host-mapped time. */
     void CancelByInput(uint32 Serial, double OriginalTime);
     void Record(const FJapanDefenceSample& Sample);
+    /** Record the pre-step (BeforeStep=accepted Dt) or post-step (=0) state on
+     * the input origin clock. Never call this for an unmapped/forced update. */
+    void RecordMapped(FJapanDefenceSample Sample, double Mapped, double BeforeStep);
     /** Earlier contacts adjudicated in order are real world changes, at contact time.
      * Unlike a projected late live animation, these can invalidate later defence. */
     void Reaction(double Contact, double RecoverySeconds, double GuardBrokenSeconds);

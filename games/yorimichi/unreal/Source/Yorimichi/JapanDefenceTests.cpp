@@ -81,6 +81,60 @@ bool FJapanDefenceTimelineTest::RunTest(const FString&)
     for (int32 I = 1; I <= 700; ++I) Clock.MapAccepted(2. + I / 60., 11. + I / 60., .12, 0., Mapped);
     TestTrue(TEXT("The ten-second window has bounded bucket storage"), Clock.Samples.Num() <= 102);
 
+    // The host may process an input 150 ms after its original movement step.
+    // Eligibility uses that step's origin, not the time its packet was received.
+    FJapanDefenceTimeline MappedHistory, ArrivalHistory;
+    FJapanDefenceSample Eligible;
+    Eligible.Time = 9.98; ArrivalHistory.Record(Eligible);
+    MappedHistory.RecordMapped(Eligible, 9.966667, 0.);
+    Eligible.bGround = Eligible.bArmed = Eligible.bCanParry = true;
+    Eligible.Time = 10.15; ArrivalHistory.Record(Eligible);
+    MappedHistory.RecordMapped(Eligible, 10., 0.);
+    // The next move covers [10, 10.033333]. A press halfway through it sees
+    // eligible pre-state, even when the action locks after this move advances.
+    MappedHistory.RecordMapped(Eligible, 10.033333, .033333);
+    constexpr double MidPress = 10.016;
+    MappedHistory.Hold(1, MidPress, true); ArrivalHistory.Hold(1, MidPress, true);
+    TestTrue(TEXT("Mapped pre-step eligibility admits a delayed mid-step press"),
+        MappedHistory.Add(2, MidPress, EJapanDefence::Parry, .02, .2));
+    TestFalse(TEXT("Arrival-stamped history reproduces the stale eligibility rejection"),
+        ArrivalHistory.Add(2, MidPress, EJapanDefence::Parry, .02, .2));
+    MappedHistory.BindAction(2, 42, 10.2);
+    Eligible.bCanParry = false; Eligible.ThroughEdge = 2;
+    MappedHistory.RecordMapped(Eligible, 10.033333, 0.);
+    const auto* MidState = MappedHistory.At(MidPress);
+    TestTrue(TEXT("Post-step state does not rewrite eligibility inside its own step"), MidState && MidState->bCanParry);
+    uint16 MappedEdge = 0;
+    TestEqual(TEXT("Delayed parry resolves its original contact with mapped history"),
+        MappedHistory.Resolve(10.058, FVector(100, 0, 0), .5f, MappedEdge), EJapanDefence::Parry);
+    TestEqual(TEXT("The mapped result keeps the original edge"), MappedEdge, uint16(2));
+    TestEqual(TEXT("The mapped result is bound to its real live action"), MappedHistory.AuthoredFallbacks, uint32(0));
+    // No accepted move means no new remote sample: forced host ticks cannot
+    // fill a starvation gap with state stamped using a stale input clock.
+    MappedHistory.Reset(); Eligible.bCanParry = true; Eligible.ThroughEdge = 0;
+    MappedHistory.RecordMapped(Eligible, 20., 0.);
+    MappedHistory.RecordMapped(Eligible, 20.533333, .033333);
+    MappedHistory.RecordMapped(Eligible, 20.533333, 0.);
+    TestTrue(TEXT("Input starvation over 150 ms intentionally leaves no eligibility"), MappedHistory.At(20.2) == nullptr);
+    MappedHistory.Hold(3, 20.2, true);
+    TestFalse(TEXT("A press inside an unsampled starvation gap fails conservatively"),
+        MappedHistory.Add(4, 20.2, EJapanDefence::Parry, .02, .2));
+    const double LastSample = MappedHistory.LatestTime();
+    MappedHistory.RecordMapped(Eligible, 20.50, .033333);
+    Eligible.bCanParry = false;
+    MappedHistory.RecordMapped(Eligible, 20.50, 0.);
+    TestTrue(TEXT("Both mapped pre and post stamps remain monotonic during an offset plateau"),
+        MappedHistory.LatestTime() == LastSample);
+    const auto* PlateauState = MappedHistory.At(LastSample);
+    TestTrue(TEXT("A plateau post cannot replace its own eligible pre-state"), PlateauState && PlateauState->bCanParry);
+    MappedHistory.Reset(); Eligible.bGuardHeld = true;
+    MappedHistory.RecordMapped(Eligible, 30., 0.);
+    uint16 StarvedEdge = 0;
+    TestEqual(TEXT("A bounded contact with history over 50 ms behind cannot invent a held guard"),
+        MappedHistory.Resolve(30.08, FVector(100, 0, 0), .5f, StarvedEdge), EJapanDefence::None);
+    TestEqual(TEXT("Starved held-guard resolution records its loss of compensation"),
+        MappedHistory.MissingSamples, uint32(1));
+
     FJapanDefenceTimeline History;
     FJapanDefenceSample Sample;
     Sample.Time = 1.; Sample.bCanParry = Sample.bCanDodge = Sample.bArmed = Sample.bGround = true;
