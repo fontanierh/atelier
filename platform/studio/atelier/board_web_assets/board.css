@@ -1065,7 +1065,7 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .inbox-meta b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inbox-meta .time { color: var(--muted); font-size: 12.5px; margin-left: auto; white-space: nowrap; }
 .inbox-message .body { font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
-.inbox-message .body.collapsed.short { max-height: 7.5em; }
+.inbox-message .body.collapsed { max-height: 11.6em; -webkit-mask-image: linear-gradient(#000 calc(100% - 1.8em), transparent); mask-image: linear-gradient(#000 calc(100% - 1.8em), transparent); }
 .inbox-root { cursor: pointer; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .inbox-reply-row { padding-left: 14px; }
 .inbox-message.unread .inbox-meta b::after { content: ""; display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--coral); vertical-align: 2px; }
@@ -1097,3 +1097,7 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 .activity-item > .inbox-actions { justify-content: flex-end; margin-top: -4px; }
 .activity-item .inbox-reply { margin-top: 2px; }
 .app.scene-on .activity-item { background: rgb(var(--frost-2) / .9); }
+
+/* Scroll areas: a thin bar in the theme's tint instead of the platform's default track. */
+.pane-body, .feed, .thread-feed, .reader-body, .mention-menu { scrollbar-width: thin; scrollbar-color: rgb(var(--tint) / .26) transparent; }
+.inbox-column > .more { justify-self: start; }

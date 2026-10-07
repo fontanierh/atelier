@@ -1128,6 +1128,7 @@ function sendReply(audience, replyTo) {
     return target;
   };
 }
+const inboxExpanded=new Set();
 function openFromInbox(id, focus=false) { const from=inboxView();setView("messages",false);openThread(id,focus,from); }
 function inboxMessage(m, cls="") {
   const row=node("div","inbox-message"+(m.unread?" unread":"")+(cls?" "+cls:""));
@@ -1136,9 +1137,13 @@ function inboxMessage(m, cls="") {
   head.append(node("b","",who(m.sender)));
   if(m.topic!=="info")head.append(node("span","topic "+m.topic,names[m.topic]||m.topic));
   head.append(time);
-  const text=snippetless(m.body), long=text.length>280||text.split("\n").length>5;
-  const body=node("div","body"+(long?" collapsed short":""));markdown(body,m.body_html,m.body);
+  // Long messages fold as in the chat, with the same Read more, and stay open across refreshes.
+  const text=snippetless(m.body), long=text.length>500||text.split("\n").length>8;
+  const body=node("div","body"+(long&&!inboxExpanded.has(m.id)?" collapsed":""));markdown(body,m.body_html,m.body);
   const column=node("div","inbox-column");column.append(head,body);
+  if(long){const more=node("button","more",inboxExpanded.has(m.id)?"Show less":"Read more");more.type="button";
+    more.addEventListener("click",()=>{const folded=body.classList.toggle("collapsed");folded?inboxExpanded.delete(m.id):inboxExpanded.add(m.id);more.textContent=folded?"Read more":"Show less";});
+    column.append(more);}
   if(m.attachments?.length)column.append(attachmentNodes(m.attachments));
   row.append(orb(m.sender===state.sender?"you":m.sender,state.agents.find(a=>a.agent===m.sender)),column);
   return row;
