@@ -521,6 +521,7 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
     undersides of that piece, lower them by two weld cells, and skirt free edges whose sole reverse partner
     was the mirror. Unpaired T-edges and rims joined to non-mirror faces do not gain a contact partner.
     Flush neighbours are checked spatially too; partly joined patches retain their original geometry.
+    Patches with every mirrored riding rim covered by another top within 3 cm also stay unchanged.
     Existing solid slabs, tilted shells and obstacles retain their original geometry and collision.
     """
     triangles = vertices[faces]; normals = _normals(triangles)[0]
@@ -541,7 +542,8 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
                    for j, x, y in edges[tuple(sorted((int(a), int(b))))]):
                 seeds.add(k)
     tops = Surfaces(triangles[normals[:, 2] > .99999], part[normals[:, 2] > .99999])
-    selected, visited, extra, extra_owner, patches, partial = set(), set(), [], [], 0, 0
+    riding = Surfaces(triangles[normals[:, 2] > 0], part[normals[:, 2] > 0])
+    selected, visited, extra, extra_owner, patches, partial, covered = set(), set(), [], [], 0, 0, 0
     for seed in sorted(seeds):
         if seed in visited: continue
         patch, pending = set(), [seed]
@@ -561,7 +563,7 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
                 key = tuple(sorted((int(a), int(b))))
                 if key in boundary: boundary.pop(key)
                 else: boundary[key] = (k, int(a), int(b))
-        skirt = []; partly_joined = False
+        skirt = []; partly_joined = False; exposed = False
         for k, a, b in boundary.values():
             partners = [j for j, x, y in edges[tuple(sorted((a, b)))]
                         if j not in patch and x == b and y == a]
@@ -570,6 +572,13 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
                                    for j in partners):
                 continue
             a, b = vertices[[a, b]]
+            fractions = np.unique([0., 1., *riding.crossings(a[:2], b[:2])])
+            for fraction in (fractions[:-1]+fractions[1:])/2:
+                point = a+(b-a)*fraction
+                if not any(riding.owner[j] != part[seed]
+                           and -WELD <= riding.height(j, *point[:2])-point[2] <= .03
+                           for j in riding.over(*point[:2])):
+                    exposed = True; break
             direction = b[:2]-a[:2]; out = np.array([-direction[1], direction[0]])/np.linalg.norm(direction)
             # A flush neighbour can meet a long rim through a T-junction, with no equal edge key.
             # Check every plan interval on both probes; a partial join keeps the original patch rather
@@ -588,6 +597,8 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
             skirt.append((a, b))
         if partly_joined:
             partial += 1; continue
+        if not exposed:
+            covered += 1; continue
         for k in sorted(patch):
             lowered = triangles[k].copy(); lowered[:, 2] -= 2*WELD
             extra.append(lowered); extra_owner.append(owner[k])
@@ -598,6 +609,7 @@ def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
             extra_owner.extend((owner[seed], owner[seed]))
         selected.update(patch); patches += 1
     report = {'solid_sheet_patches': patches, 'partial_sheet_patches_kept': partial,
+              'covered_sheet_patches_kept': covered,
               'lowered_sheet_triangles': len(selected),
               'sheet_skirt_triangles': len(extra)-len(selected)}
     if not selected: return vertices, faces, owner, report

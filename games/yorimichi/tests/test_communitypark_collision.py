@@ -39,6 +39,7 @@ class RidingCollisionTest(unittest.TestCase):
         owner = np.zeros(len(faces), int)
         v, f, _, report = C.solid_sheet_undersides(vertices, faces, owner)
         self.assertEqual(report, {'solid_sheet_patches': 1, 'partial_sheet_patches_kept': 0,
+                                  'covered_sheet_patches_kept': 0,
                                   'lowered_sheet_triangles': 2,
                                   'sheet_skirt_triangles': 8})
         triangles = v[f]; normals = C._normals(triangles)[0]
@@ -105,6 +106,16 @@ class RidingCollisionTest(unittest.TestCase):
         self.assertEqual(report['sheet_skirt_triangles'], 6)
         triangles = v[f]; normals = C._normals(triangles)[0]
         self.assertFalse(any(np.all(t[:, 0] == 2) for t in triangles[abs(normals[:, 2]) < .01]))
+
+    def test_plate_buried_under_another_riding_floor_stays_unchanged(self):
+        top = np.array([(-1, -1, .025), (3, -1, .025), (3, 3, .025), (-1, 3, .025)])
+        vertices, faces, owner = C.weld([thin_plate(0, 0, 2, 2),
+                                         (top, np.array([(0, 1, 2), (0, 2, 3)]))])
+        v, f, o, report = C.solid_sheet_undersides(vertices, faces, owner)
+        self.assertEqual(report['solid_sheet_patches'], 0)
+        self.assertEqual(report['covered_sheet_patches_kept'], 1)
+        np.testing.assert_array_equal(v[f], vertices[faces])
+        np.testing.assert_array_equal(o, owner)
 
     def test_flush_tiles_weld_without_ramps(self):
         vertices, faces, owner, report = C.riding_collision(floor_tiles())
