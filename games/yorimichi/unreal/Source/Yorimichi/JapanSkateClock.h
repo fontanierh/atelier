@@ -7,7 +7,7 @@ struct FJapanSkateClock
 {
     struct FSample { double At, Offset; };
     TArray<FSample, TInlineAllocator<24>> Samples;
-    double SmoothedOffset = 0., LastArrival = -1.;
+    double SmoothedOffset = 0., LastArrival = -1., LastSender = -1.;
     double Map(double SenderTime, double Now)
     {
         while (!Samples.IsEmpty() && Now - Samples[0].At > 2.) Samples.RemoveAt(0, 1, EAllowShrinking::No);
@@ -20,10 +20,16 @@ struct FJapanSkateClock
         // Changing routes or expiring a minimum cannot jump one new frame across
         // already buffered frames. Sender clocks are monotonic local world time.
         if (LastArrival < 0.) SmoothedOffset = Offset;
-        else SmoothedOffset += FMath::Clamp(Offset - SmoothedOffset,
-            -.25 * FMath::Max(0., Now - LastArrival), .25 * FMath::Max(0., Now - LastArrival));
-        LastArrival = Now;
-        return FMath::Clamp(SenderTime + SmoothedOffset, FMath::Max(0., Now - .5), Now);
+        else
+        {
+            const double Elapsed = FMath::Min(FMath::Max(0., Now - LastArrival), FMath::Max(0., SenderTime - LastSender));
+            SmoothedOffset += FMath::Clamp(Offset - SmoothedOffset, -.25 * Elapsed, .25 * Elapsed);
+        }
+        LastArrival = Now; LastSender = FMath::Max(LastSender, SenderTime);
+        // During a route improvement the slewed capture clock can briefly lead
+        // arrival. Clamping to this tick would merge every packet in a burst.
+        // Playback clamps to its buffer; this clock never adjudicates gameplay.
+        return FMath::Max(0., SenderTime + SmoothedOffset);
     }
 };
 
@@ -41,6 +47,12 @@ struct FJapanSkatePlayout
         float Alpha = 1.f;
         bool bBefore = false, bAfter = false;
     };
+    static bool CanApplyBodies(const FSample& Sample, double RequestedTime, double A, double B)
+    {
+        // Never pull the first bail anchors into an earlier rider pose, or blend
+        // two separate bails across the gap between their streams.
+        return !Sample.bBefore && B - A <= .1 && RequestedTime - B <= .1;
+    }
     double Map(double Stamp, double Arrival) { return Clock.Map(Stamp, Arrival); }
     void Decay(double Now)
     {

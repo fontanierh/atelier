@@ -62,7 +62,14 @@ void UJapanSkateNetwork::TickComponent(float Dt, ELevelTick Type, FActorComponen
         bWarnedRoot = false; HostMode = 0;
         ArrivalClock = FJapanSkateClock(); Playout = FJapanSkatePlayout();
         Boards.Reset();
-        if (Board.Sequence && !Rider->IsLocallyControlled()) OnRep_Board();
+        if (Board.Sequence && !Rider->IsLocallyControlled())
+        {
+            // The retained board is a visible snapshot, not a newly arrived clock
+            // sample. Its stamp may precede this rider epoch by several seconds.
+            FJapanBoardState Snapshot = Board;
+            Snapshot.Time = GetWorld()->GetTimeSeconds() - .5;
+            Boards.Add(MoveTemp(Snapshot));
+        }
         LastHostRoot = Rider->GetActorLocation(); LastHostRootTime = GetWorld()->GetTimeSeconds();
         if (!Rider->IsLocallyControlled()) Rider->GetSkate()->ClearNetworkPose();
     }
@@ -210,8 +217,10 @@ void UJapanSkateNetwork::Show(float Dt)
     if (B.Bones.IsEmpty()) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(RequestedTime); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
     if (Now - Playout.LastPose > FMath::Max(.5, 2.5 * Playout.Interval + .1))
     {
+        if (Rider->GetNetworkActivity() == EJapanActivity::Skate) { ++HeldFrameCount; ++AfterBufferCount; }
         Rider->GetSkate()->SilenceNetworkAudio(Dt);
-        if (Rider->GetNetworkActivity() == EJapanActivity::OnFoot) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(RequestedTime); }
+        if (Rider->GetNetworkActivity() == EJapanActivity::OnFoot) Rider->GetSkate()->ClearNetworkPose();
+        ShowBoard(RequestedTime);
         return; // Freeze a stale skater; never extrapolate through the ground.
     }
     const float Alpha = Sample.Alpha;
@@ -329,7 +338,7 @@ void UJapanSkateNetwork::ShowBodies(double ShowAt, TArray<FTransform>& Pose, FTr
     if (Bodies.IsEmpty() || Pose.IsEmpty()) return;
     const auto Sample = FJapanSkatePlayout::Sample(Bodies, ShowAt, [](const auto& Frame) { return double(Frame.Pose.Time); });
     const auto& A = Bodies[Sample.A]; const auto& B = Bodies[Sample.B];
-    if (ShowAt - B.Pose.Time > .1 || A.Indices != B.Indices) return;
+    if (!FJapanSkatePlayout::CanApplyBodies(Sample, ShowAt, A.Pose.Time, B.Pose.Time) || A.Indices != B.Indices) return;
     const float Alpha = Sample.Alpha;
     const auto& Skeleton = Rider->GetMesh()->GetSkeletalMeshAsset()->GetRefSkeleton();
     TArray<FTransform> Local; Local.SetNum(Pose.Num());

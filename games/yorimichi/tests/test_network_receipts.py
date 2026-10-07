@@ -131,3 +131,8 @@ def test_listen_pair_requires_both_observers_and_host_survives_leave(listen_rece
 def test_received_packets_alone_or_bad_listen_teardown_fail(listen_receipts, name, field, value):
     change(listen_receipts, name, lambda v: v.update({field: value}))
     assert not all(review.compare_receipts(listen_receipts, gameplay=True, listen=True).values())
+
+
+def test_listen_requires_held_frame_measurement(listen_receipts):
+    change(listen_receipts, 'client-gameplay', lambda v: v.pop('held_peer_frames'))
+    assert not all(review.compare_receipts(listen_receipts, gameplay=True, listen=True).values())

@@ -95,6 +95,55 @@ bool FJapanSkateWireTest::RunTest(const FString&)
         TestTrue(TEXT("A late board hide reaches its own newest sample after the rider pose stops"),
             Pose.Time == 1.03 && Board.Time == 1.4 && Board.Alpha == 1.f);
     }
+    {
+        // Network packets are dispatched on a game tick, not at their individual
+        // transport arrival times. Preserve every capture in an ordered burst.
+        struct FArrival { double Sender, At; };
+        TArray<FArrival> Packets;
+        double PreviousArrival = 0.;
+        for (int32 I = 0; I < 240; ++I)
+        {
+            const double Sender = 20. + I / 30.;
+            double Arrival = Sender - 12. + (I >= 60 && I < 150 ? .2 : .06);
+            if (I >= 180 && I <= 184) Arrival = 20. + 184. / 30. - 12. + .06;
+            Arrival = FMath::Max(Arrival, PreviousArrival); // Preserve packet order through the faster route.
+            Packets.Add({Sender, Arrival}); PreviousArrival = Arrival;
+        }
+        FJapanSkatePlayout Observer; TArray<double> Frames;
+        int32 Next = 0, Drops = 0, Interpolated = 0, Outside = 0, Rendered = 0;
+        double Previous = -1.;
+        for (double Now = 8.011; Now < 16.; Now += 1./30.)
+        {
+            while (Next < Packets.Num() && Packets[Next].At <= Now)
+            {
+                const double Stamp = Observer.Map(Packets[Next++].Sender, Now);
+                if (!Frames.IsEmpty() && Stamp <= Frames.Last()) { ++Drops; continue; }
+                Frames.Add(Stamp); if (Frames.Num() > 32) Frames.RemoveAt(0);
+                Observer.ReceivePose(Stamp, Now, 1./30.);
+            }
+            const double Requested = Observer.Advance(Now);
+            if (Frames.IsEmpty()) continue;
+            const auto Sample = FJapanSkatePlayout::Sample(Frames, Requested, [](double T) { return T; });
+            TestTrue(TEXT("Tick-quantized ordered bursts never rewind the Show sampler"), Sample.Time >= Previous);
+            Previous = Sample.Time;
+            if (Now > 9.)
+            {
+                ++Rendered; Interpolated += Sample.Alpha > 0.f && Sample.Alpha < 1.f;
+                Outside += Sample.bBefore || Sample.bAfter;
+            }
+        }
+        TestEqual(TEXT("Same-tick captures remain distinct after an ordered route drop"), Drops, 0);
+        TestTrue(TEXT("Ordered bursts retain the required interpolation fraction"), Interpolated >= Rendered * .7);
+        TestTrue(TEXT("Ordered bursts stay within the outside-buffer allowance"), Outside <= Rendered * .15);
+        TArray<double> Anchors = {10., 10.03};
+        const auto Early = FJapanSkatePlayout::Sample(Anchors, 9.5, [](double T) { return T; });
+        TestFalse(TEXT("A bail cannot apply ahead of its capture time"), FJapanSkatePlayout::CanApplyBodies(Early, 9.5, 10., 10.03));
+        const auto During = FJapanSkatePlayout::Sample(Anchors, 10.02, [](double T) { return T; });
+        TestTrue(TEXT("Contiguous bail anchors apply inside the sample window"), FJapanSkatePlayout::CanApplyBodies(During, 10.02, 10., 10.03));
+        Anchors = {10., 12.};
+        const auto Gap = FJapanSkatePlayout::Sample(Anchors, 11.9, [](double T) { return T; });
+        TestFalse(TEXT("Two bails never interpolate across their inactive gap"), FJapanSkatePlayout::CanApplyBodies(Gap, 11.9, 10., 12.));
+    }
     FJapanSkateChunk Chunk;
     Chunk.Epoch = 3; Chunk.Frame = 10; Chunk.Time = 5.f; Chunk.TotalBones = 64;
     Chunk.Bones.Init(FTransform(FRotator(25,-60,170), FVector(-120,53.2,240.5), FVector(1)), 32);
