@@ -5,8 +5,8 @@
    brighter day, a golden hour, then dusk); dark mode shows the moonlit painting with stars, a faint aurora,
    shooting stars and fireflies. The meadow shifts with the pointer, a tilt of the conversation and scrolling, and a
    finger or cursor carries a soft light. It draws about one canvas pixel per CSS pixel (fewer if frames run slow)
-   at most 30 times a second (fewer while the window is in the background), rests while the board is hidden or the
-   reader covers it, and stays the still painting with Reduce Motion, the Playful switch off, or no WebGL. */
+   at most 30 times a second, holds still on its last frame while the window is in the background, hidden or covered
+   by the reader, and stays the still painting with Reduce Motion, the Playful switch off, or no WebGL. */
 (()=>{
   const app=document.getElementById("app");
   if(!app)return;
@@ -115,7 +115,7 @@ void main(){
   }
   // About one canvas pixel per CSS pixel (a little more on a sharp screen), at most 2.2 million of them, and fewer
   // while the frame rate is low.
-  let quality=1, slow=0, wasFocused=false;
+  let quality=1, slow=0;
   function size() {
     const area=canvas.clientWidth*canvas.clientHeight||1;
     const scale=Math.min(Math.min(devicePixelRatio||1,1.25),Math.sqrt(2.2e6/area))*quality;
@@ -153,16 +153,16 @@ void main(){
   const on=()=>!reduce.matches&&app.classList.contains("playful")&&ready&&!document.hidden;
   const resting=()=>app.classList.contains("reader-open");
   function frame(now) {
-    raf=0;if(!on()){app.classList.remove("scene-on");return;}
+    raf=0;if(!on()){still();return;}
     if(resting())return;
+    // A window in the background keeps its last frame and draws nothing until it comes back to the front.
+    if(!document.hasFocus())return;
     raf=requestAnimationFrame(frame);
     const gap=now-lastFrame;
-    const focused=document.hasFocus();
-    if(gap<(focused?32:90))return;
+    if(gap<32)return;
     // Two seconds of frames slower than about 22 a second lower the resolution a step; it never goes below half.
-    // Frames in a background window are slow on purpose and do not count.
-    if(lastFrame&&focused&&wasFocused&&gap<250){slow=gap>45?slow+1:Math.max(0,slow-1);if(slow>40&&quality>.5){quality=Math.max(.5,quality*.8);slow=0;}}
-    const dt=Math.min(.1,gap/1000);lastFrame=now;wasFocused=focused;
+    if(lastFrame&&gap<250){slow=gap>45?slow+1:Math.max(0,slow-1);if(slow>40&&quality>.5){quality=Math.max(.5,quality*.8);slow=0;}}
+    const dt=Math.min(.1,gap/1000);lastFrame=now;
     size();
     const scroll=feed?Math.min(1,feed.scrollTop/Math.max(1,feed.scrollHeight-feed.clientHeight)):0;
     const k=1-Math.pow(.04,dt);
@@ -174,13 +174,17 @@ void main(){
     gl.drawArrays(gl.TRIANGLES,0,3);
     if(!app.classList.contains("scene-on"))app.classList.add("scene-on");
   }
-  function wake() { if(!raf&&on()){lastFrame=0;raf=requestAnimationFrame(frame);} else if(!on())app.classList.remove("scene-on"); }
-  canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();ready=false;app.classList.remove("scene-on");});
+  // The observer below calls wake on every class change of the app, and a class removal that changes nothing still
+  // counts as one: so wake (and frame) touch the class only when it is there, or the two would call each other forever
+  // and freeze the page whenever the scene is off.
+  function still() { if(app.classList.contains("scene-on"))app.classList.remove("scene-on"); }
+  function wake() { if(on()){if(!raf){lastFrame=0;raf=requestAnimationFrame(frame);}} else still(); }
+  canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();ready=false;still();});
   // Until the program is rebuilt the scene stays off and the still painting shows.
   canvas.addEventListener("webglcontextrestored",()=>{painting=null;canvas.width=canvas.height=0;if(init())load();});
   wide.addEventListener?.("change",load);reduce.addEventListener?.("change",wake);
   addEventListener("boardtheme",load);
-  document.addEventListener("visibilitychange",wake);
+  document.addEventListener("visibilitychange",wake);addEventListener("focus",wake);
   new MutationObserver(wake).observe(app,{attributes:true,attributeFilter:["class"]});
   load();
   window.boardScene={
