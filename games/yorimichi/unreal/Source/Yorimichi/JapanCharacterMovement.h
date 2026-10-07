@@ -4,6 +4,8 @@
 #include "JapanMovementNet.h"
 #include "JapanCharacterMovement.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogJapanMovementQA, Log, All);
+
 struct FJapanCorrectionSample
 {
     double WorldTime = 0.;
@@ -48,6 +50,7 @@ public:
     virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
     uint16 GetProcessedEdge() const { return ProcessedEdge; }
     uint16 PendingAcknowledgedEdge = 0;
+    bool TraceClientStep(float Timestamp) { return Timestamp <= .8f && ClientTraceRows++ < 64; }
     bool IsReplaying() const { return bReplaying; }
     bool IsExecutingMove() const { return bExecutingMove; }
     const FJapanMovementStats& GetNetworkStats() const { return NetworkStats; }
@@ -86,4 +89,5 @@ private:
     bool bInputPrepared = false, bExecutingMove = false, bReplaying = false;
     double LastCustomCorrection = -1.;
     FJapanMovementStats NetworkStats;
+    uint32 ClientTraceRows = 0, ServerTraceRows = 0, ForcedTraceRows = 0;
 };

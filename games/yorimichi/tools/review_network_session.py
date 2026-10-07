@@ -87,8 +87,12 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
             checks['both_peers_applied_skating'] = (gameplay_client.get('applied_peer_frames', 0) >= 60 and
                                                      gameplay_host.get('applied_peer_frames', 0) >= 60)
             checks['listen_host_drove'] = gameplay_host.get('passed') is True and gameplay_host.get('skate_seconds', 0) >= 5
-            checks['both_peers_interpolated_skating'] = (gameplay_client.get('interpolated_peer_frames', 0) > 0 and
-                                                         gameplay_host.get('interpolated_peer_frames', 0) > 0)
+            for role, receipt in (('guest', gameplay_client), ('host', gameplay_host)):
+                total = receipt.get('interpolated_peer_frames', 0) + receipt.get('held_peer_frames', 0)
+                outside = receipt.get('before_buffer_peer_frames', total) + receipt.get('after_buffer_peer_frames', total)
+                checks[role + '_interpolated_skating'] = (total > 0 and receipt.get('interpolated_peer_frames', 0) / total >= .7)
+                checks[role + '_within_pose_buffer'] = total > 0 and outside / total <= .15
+                checks[role + '_bounded_timestamp_drops'] = 0 <= receipt.get('peer_timestamp_drops', -1) <= 2
     return checks
 
 

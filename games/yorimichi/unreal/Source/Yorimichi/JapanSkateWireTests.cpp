@@ -24,18 +24,76 @@ bool FJapanSkateWireTest::RunTest(const FString&)
     TestTrue(TEXT("The shared pose/body/board clock has bounded history"), Clock.Samples.Num() <= 22);
     for (double ObserverOffset : {-12., 12.})
     {
-        FJapanSkateClock Observer;
-        TArray<double> LocalFrames;
-        for (int32 I = 0; I < 12; ++I)
+        FJapanSkatePlayout Observer;
+        TArray<double> Frames;
+        double Previous = -1.; int32 Interpolated = 0, Outside = 0;
+        for (int32 I = 0; I < 180; ++I)
         {
-            const double Capture = 20. + I / 30.;
-            LocalFrames.Add(Observer.Map(Capture, Capture + ObserverOffset + .06));
+            const double Capture = 20. + I / 30., Arrival = Capture + ObserverOffset + .06;
+            const double Stamp = Observer.Map(Capture, Arrival);
+            Frames.Add(Stamp); if (Frames.Num() > 32) Frames.RemoveAt(0);
+            Observer.ReceivePose(Stamp, Arrival, 1./30.);
+            const double Requested = Observer.Advance(Arrival + .013);
+            const auto Sample = FJapanSkatePlayout::Sample(Frames, Requested, [](double T) { return T; });
+            TestTrue(TEXT("The actual Show sampler never rewinds with observer clock skew"), Sample.Time >= Previous);
+            Previous = Sample.Time;
+            if (I >= 12)
+            {
+                Interpolated += Sample.Alpha > 0.f && Sample.Alpha < 1.f;
+                Outside += Sample.bBefore || Sample.bAfter;
+            }
         }
-        const double ShowAt = 20. + 11./30. + ObserverOffset + .06 - .1;
-        TestTrue(TEXT("An observer with either clock skew has buffered interpolation history"),
-            LocalFrames[0] < ShowAt && ShowAt < LocalFrames.Last());
-        TestTrue(TEXT("Observer mapping preserves capture spacing"),
-            FMath::IsNearlyEqual(LocalFrames.Last() - LocalFrames[0], 11./30., .00001));
+        TestTrue(TEXT("Steady skewed playback interpolates rather than holding each packet"), Interpolated > 160);
+        TestEqual(TEXT("Steady playback stays within its real buffer"), Outside, 0);
+    }
+    {
+        struct FArrival { double Sender, At; };
+        TArray<FArrival> Packets;
+        for (int32 I = 0; I < 240; ++I)
+        {
+            const double Sender = 20. + I / 30.;
+            const double Route = I >= 60 && I < 150 ? .20 : .06;
+            const double Jitter = (I % 3) * .005 + (I >= 180 && I < 184 ? .15 : 0.);
+            Packets.Add({Sender, Sender - 12. + Route + Jitter});
+        }
+        Packets.Sort([](const auto& A, const auto& B) { return A.At < B.At; });
+        FJapanSkatePlayout Observer;
+        TArray<double> Frames;
+        int32 Next = 0, Interpolated = 0, Rendered = 0, ClockDrops = 0;
+        double LatestSender = -1., Previous = -1.;
+        for (double Now = 8.011; Now < 16.; Now += 1./60.)
+        {
+            while (Next < Packets.Num() && Packets[Next].At <= Now)
+            {
+                const FArrival P = Packets[Next++];
+                if (P.Sender <= LatestSender) continue; // Same ordered-frame gate as ReceivePose.
+                LatestSender = P.Sender;
+                const double Stamp = Observer.Map(P.Sender, P.At);
+                if (!Frames.IsEmpty() && Stamp <= Frames.Last()) { ++ClockDrops; continue; }
+                Frames.Add(Stamp); if (Frames.Num() > 32) Frames.RemoveAt(0);
+                Observer.ReceivePose(Stamp, P.At, 1./30.);
+            }
+            const double Requested = Observer.Advance(Now);
+            if (Frames.IsEmpty()) continue;
+            const auto Sample = FJapanSkatePlayout::Sample(Frames, Requested, [](double T) { return T; });
+            TestTrue(TEXT("Latency changes and a packet burst never rewind rendered time"), Sample.Time >= Previous);
+            Previous = Sample.Time;
+            if (Now > 9.) { ++Rendered; Interpolated += Sample.Alpha > 0.f && Sample.Alpha < 1.f; }
+        }
+        TestEqual(TEXT("Slewing an offset does not discard ordered packets"), ClockDrops, 0);
+        TestTrue(TEXT("Changing latency retains mostly interpolated playback"), Interpolated > Rendered * .75);
+    }
+    {
+        FJapanSkatePlayout Fast, Slow;
+        Fast.Jitter = Slow.Jitter = .4; Fast.LastDecay = Slow.LastDecay = 0.;
+        for (int32 I = 1; I <= 60; ++I) Fast.Advance(I / 60.);
+        for (int32 I = 1; I <= 15; ++I) Slow.Advance(I / 15.);
+        TestTrue(TEXT("Jitter decay depends on elapsed seconds, not frame rate"), FMath::IsNearlyEqual(Fast.Jitter, Slow.Jitter, .000001));
+        TArray<double> PoseTimes = {1., 1.03}, BoardTimes = {1., 1.4};
+        const auto Pose = FJapanSkatePlayout::Sample(PoseTimes, 1.5, [](double T) { return T; });
+        const auto Board = FJapanSkatePlayout::Sample(BoardTimes, 1.5, [](double T) { return T; });
+        TestTrue(TEXT("A late board hide reaches its own newest sample after the rider pose stops"),
+            Pose.Time == 1.03 && Board.Time == 1.4 && Board.Alpha == 1.f);
     }
     FJapanSkateChunk Chunk;
     Chunk.Epoch = 3; Chunk.Frame = 10; Chunk.Time = 5.f; Chunk.TotalBones = 64;

@@ -14,6 +14,16 @@
 #include "TimerManager.h"
 #include "Misc/CommandLine.h"
 
+DEFINE_LOG_CATEGORY(LogJapanMovementQA);
+namespace
+{
+bool TraceNetworkGameplay()
+{
+    static const bool Enabled = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));
+    return Enabled;
+}
+}
+
 UJapanCharacterMovement::UJapanCharacterMovement(const FObjectInitializer& Initializer) : Super(Initializer)
 {
     SetNetworkMoveDataContainer(NetworkMoves);
@@ -72,9 +82,10 @@ bool UJapanCharacterMovement::ForcePositionUpdate(float Dt)
         ++NetworkStats.InitialForcedUpdatesSkipped;
         return false;
     }
-    if (PredictsMoves() && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
-        UE_LOG(LogTemp, Display, TEXT("NETWORK forced move epoch=%u dt=%.6f timestamp=%.6f"),
-            GetActivityEpoch(), Dt, GetPredictionData_Server_Character()->CurrentClientTimeStamp);
+    if (PredictsMoves() && TraceNetworkGameplay() && ForcedTraceRows++ < 16)
+        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK forced move epoch=%u dt=%.6f timestamp=%.6f mode=%u position=%s velocity=%s"),
+            GetActivityEpoch(), Dt, GetPredictionData_Server_Character()->CurrentClientTimeStamp, PackNetworkMovementMode(),
+            *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString());
     return Super::ForcePositionUpdate(Dt);
 }
 
@@ -247,8 +258,8 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             {
                 bReceivedMoveInEpoch = true; ++NetworkStats.StartedEpochs;
                 if (NetworkStats.FirstMoveTimestamp < 0.f) NetworkStats.FirstMoveTimestamp = Timestamp;
-                if (FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
-                    UE_LOG(LogTemp, Display, TEXT("NETWORK movement start epoch=%u timestamp=%.4f dt=%.4f initial_forced_skips=%u loading_moves=%u pre_ack_moves=%u"),
+                if (TraceNetworkGameplay())
+                    UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK movement start epoch=%u timestamp=%.4f dt=%.4f initial_forced_skips=%u loading_moves=%u pre_ack_moves=%u"),
                         GetActivityEpoch(), Timestamp, Dt, NetworkStats.InitialForcedUpdatesSkipped, NetworkStats.MovesBeforeReady, NetworkStats.MovesBeforeAck);
             }
             SetMoveInput(Data->Input);
@@ -257,10 +268,14 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
         }
     Super::MoveAutonomous(Timestamp, Dt, Flags, Accel);
     if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= .8f &&
-        FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
-        UE_LOG(LogTemp, Display, TEXT("NETWORK move server epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u accel=%s maxspeed=%.3f position=%s velocity=%s"),
-            GetActivityEpoch(), Timestamp, Dt, ActiveInput.X, ActiveInput.Y, ActiveInput.Flags,
-            *Acceleration.ToString(), GetMaxSpeed(), *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString());
+        TraceNetworkGameplay() && ServerTraceRows++ < 64)
+    {
+        const auto* Move = GetCurrentNetworkMoveData();
+        const FString ClientLocation = Move ? Move->Location.ToString() : TEXT("unavailable");
+        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move server epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s sent_client_loc=%s"),
+            GetActivityEpoch(), Timestamp, Dt, ActiveInput.X, ActiveInput.Y, ActiveInput.Flags, PackNetworkMovementMode(),
+            *Acceleration.ToString(), GetMaxSpeed(), *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString(), *ClientLocation);
+    }
 }
 
 bool UJapanCharacterMovement::ClientUpdatePositionAfterServerUpdate()
@@ -339,8 +354,8 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
         Detail.PredictedAction = Saved.PostState.Action; Detail.AuthoritativeAction = Custom.Checkpoint.Action;
         Detail.CheckpointBytes = Custom.bHasCheckpoint ? Custom.Checkpoint.Bytes.Num() : 0;
     }
-    if (CorrectionCm > 1.f && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
-        UE_LOG(LogTemp, Display, TEXT("NETWORK position correction cm=%.3f world=%.3f timestamp=%.3f dt=%.4f epoch=%u edge=%u/%u mode=%u/%u checkpoint=%d action=%s/%s predicted=%s authoritative=%s velocity=%s/%s"),
+    if (CorrectionCm > 1.f && TraceNetworkGameplay())
+        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK position correction cm=%.3f world=%.3f timestamp=%.3f dt=%.4f epoch=%u edge=%u/%u mode=%u/%u checkpoint=%d action=%s/%s predicted=%s authoritative=%s velocity=%s/%s"),
             CorrectionCm, GetWorld()->GetTimeSeconds(), Saved.TimeStamp, Saved.DeltaTime, GetActivityEpoch(), Saved.PostEdge, Custom.AcknowledgedEdge,
             Saved.EndPackedMovementMode, PackNetworkMovementMode(), Custom.bHasCheckpoint ? Custom.Checkpoint.Bytes.Num() : 0,
             *Saved.PostState.Action.ToString(), *Custom.Checkpoint.Action.ToString(), *Saved.SavedLocation.ToString(),

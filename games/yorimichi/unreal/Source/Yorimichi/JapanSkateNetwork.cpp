@@ -60,8 +60,9 @@ void UJapanSkateNetwork::TickComponent(float Dt, ELevelTick Type, FActorComponen
         HostAssembly.Reset(); ViewAssembly.Reset(); Frames.Reset();
         ReceivedFrame = HostFrame = ReceivedBodies = HostBodies = 0; Bodies.Reset();
         bWarnedRoot = false; HostMode = 0;
-        DeliveryInterval = 1./30.; ViewDelay = .1; PreviousArrival = -1.;
-        DeliveryAge = 0.; ArrivalClock = FJapanSkateClock();
+        ArrivalClock = FJapanSkateClock(); Playout = FJapanSkatePlayout();
+        Boards.Reset();
+        if (Board.Sequence && !Rider->IsLocallyControlled()) OnRep_Board();
         LastHostRoot = Rider->GetActorLocation(); LastHostRootTime = GetWorld()->GetTimeSeconds();
         if (!Rider->IsLocallyControlled()) Rider->GetSkate()->ClearNetworkPose();
     }
@@ -80,9 +81,9 @@ void UJapanSkateNetwork::Capture()
 {
     const double Now = GetWorld()->GetTimeSeconds();
     auto* Skate = Rider->GetSkate();
-    const auto* Clock = GetWorld()->GetGameState();
-    if (!Clock) return;
-    const double CaptureTime = Clock->GetServerWorldTimeSeconds();
+    // Sender-local time is monotonic; the host maps its offset on arrival.
+    // GameState clock synchronization must never retime captures mid-stream.
+    const double CaptureTime = Now;
     const FTransform Deck = Skate->GetDeckWorld();
     const float Shown = Skate->GetBoardShown();
     const bool bBoardChanged = Shown != LastCapturedBoard.Shown || !Deck.Equals(LastCapturedBoard.Deck, .01);
@@ -188,15 +189,10 @@ void UJapanSkateNetwork::Accept(const FJapanSkateFrame& Frame)
     // A newly joined client's replicated GameState clock can lag or lead while
     // loading. Presentation needs capture spacing on this observer's clock,
     // including outbound transit, rather than an assumed world-clock offset.
-    Local.Time = ViewClock.Map(Frame.Time, Arrival);
-    if (!Frames.IsEmpty() && Local.Time <= Frames.Last().Time) return;
+    Local.Time = Playout.Map(Frame.Time, Arrival);
+    if (!Frames.IsEmpty() && Local.Time <= Frames.Last().Time) { ++TimestampDropCount; return; }
     ++ReceivedFrameCount;
-    const double Spacing = PreviousArrival < 0. ? double(Frame.Interval) : FMath::Clamp(Arrival - PreviousArrival, 1./120., 30.);
-    DeliveryInterval = FMath::Max(double(Frame.Interval), FMath::Lerp(DeliveryInterval, Spacing, .2));
-    // The offset removes constant transit; the remaining age measures jitter.
-    // Retain its decaying peak so a burst is not hidden by a small average.
-    DeliveryAge = FMath::Max(FMath::Clamp(Arrival - Local.Time, 0., .5), DeliveryAge * .98);
-    PreviousArrival = Arrival;
+    Playout.ReceivePose(Local.Time, Arrival, Frame.Interval);
     Frames.Add(MoveTemp(Local));
     // Keep enough history for the bounded 500 ms age plus interpolation delay
     // at 30 Hz. Six frames discarded the target during a jitter burst.
@@ -206,24 +202,19 @@ void UJapanSkateNetwork::Accept(const FJapanSkateFrame& Frame)
 void UJapanSkateNetwork::Show(float Dt)
 {
     const double Now = GetWorld()->GetTimeSeconds();
-    const double TargetDelay = FMath::Clamp(DeliveryAge + 1.5 * DeliveryInterval + .05, .1, 30.);
-    // At most 250 ms/s of adjustment: growing delay cannot rewind the display clock.
-    ViewDelay += FMath::Clamp(TargetDelay - ViewDelay, -.25 * double(Dt), .25 * double(Dt));
-    const double RequestedTime = Now - ViewDelay;
+    const double RequestedTime = Playout.Advance(Now);
     if (Frames.IsEmpty()) { ShowBoard(RequestedTime); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
-    const bool bBefore = RequestedTime < Frames[0].Time, bAfter = RequestedTime > Frames.Last().Time;
-    const double ShowAt = FMath::Clamp(RequestedTime, Frames[0].Time, Frames.Last().Time);
-    while (Frames.Num() >= 3 && Frames[1].Time <= ShowAt) Frames.RemoveAt(0, 1, EAllowShrinking::No);
-    const FJapanSkateFrame& A = Frames[0];
-    const FJapanSkateFrame& B = Frames.Num() > 1 ? Frames[1] : A;
-    if (B.Bones.IsEmpty()) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(ShowAt); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
-    if (GetWorld()->GetTimeSeconds() - PreviousArrival > FMath::Max(.5, 2.5 * DeliveryInterval + .1))
+    const auto Sample = FJapanSkatePlayout::Sample(Frames, RequestedTime, [](const auto& Frame) { return double(Frame.Time); });
+    const FJapanSkateFrame& A = Frames[Sample.A];
+    const FJapanSkateFrame& B = Frames[Sample.B];
+    if (B.Bones.IsEmpty()) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(RequestedTime); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
+    if (Now - Playout.LastPose > FMath::Max(.5, 2.5 * Playout.Interval + .1))
     {
         Rider->GetSkate()->SilenceNetworkAudio(Dt);
-        if (Rider->GetNetworkActivity() == EJapanActivity::OnFoot) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(ShowAt); }
+        if (Rider->GetNetworkActivity() == EJapanActivity::OnFoot) { Rider->GetSkate()->ClearNetworkPose(); ShowBoard(RequestedTime); }
         return; // Freeze a stale skater; never extrapolate through the ground.
     }
-    const float Alpha = B.Time > A.Time ? FMath::Clamp(float((ShowAt - A.Time) / (B.Time - A.Time)), 0.f, 1.f) : 1.f;
+    const float Alpha = Sample.Alpha;
     TArray<FTransform> Pose = B.Bones;
     FTransform Mesh = B.Mesh, Deck = B.Deck;
     float Shown = B.Shown;
@@ -233,12 +224,12 @@ void UJapanSkateNetwork::Show(float Dt)
         Mesh.Blend(A.Mesh, B.Mesh, Alpha);
         Deck.Blend(A.Deck, B.Deck, Alpha); Shown = FMath::Lerp(A.Shown, B.Shown, Alpha);
     }
-    ShowBodies(ShowAt, Pose, Mesh, Deck, Shown);
+    ShowBodies(RequestedTime, Pose, Mesh, Deck, Shown);
     Rider->GetSkate()->ApplyNetworkBoard(Deck, Shown);
     if (Rider->GetSkate()->ApplyNetworkPose(Pose, Mesh))
     {
-        if (bBefore) ++BeforeBufferCount;
-        if (bAfter) ++AfterBufferCount;
+        if (Sample.bBefore) ++BeforeBufferCount;
+        if (Sample.bAfter) ++AfterBufferCount;
         if (Alpha > 0.f && Alpha < 1.f) ++InterpolatedFrameCount; else ++HeldFrameCount;
         const auto& Applied = Alpha < .5f ? A : B;
         if (LastAppliedEpoch != Applied.Epoch || LastAppliedFrame != Applied.Frame)
@@ -276,7 +267,7 @@ void UJapanSkateNetwork::CaptureBodies(double Now)
     }
     const auto& ComponentPose = Mesh->GetComponentSpaceTransforms();
     FJapanSkateBodies State;
-    State.Pose.Epoch = Epoch; State.Pose.Frame = ++SentBodies; State.Pose.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+    State.Pose.Epoch = Epoch; State.Pose.Frame = ++SentBodies; State.Pose.Time = Now;
     State.Pose.Root = Rider->GetActorTransform(); State.Pose.Mesh = Mesh->GetComponentTransform();
     State.Pose.Velocity = Rider->GetCharacterMovement()->Velocity;
     State.Pose.Deck = Skate->GetDeckWorld(); State.Pose.Shown = Skate->GetBoardShown();
@@ -327,20 +318,19 @@ void UJapanSkateNetwork::ReceiveBodies(const FJapanSkateBodies& State)
     if (!Rider || Rider->IsLocallyControlled() || !Newer(State.Pose.Frame, ReceivedBodies) || !ValidBodies(State)) return;
     ReceivedBodies = State.Pose.Frame;
     FJapanSkateBodies Local = State;
-    Local.Pose.Time = ViewClock.Map(State.Pose.Time, GetWorld()->GetTimeSeconds());
-    if (!Bodies.IsEmpty() && Local.Pose.Time <= Bodies.Last().Pose.Time) return;
+    Local.Pose.Time = Playout.Map(State.Pose.Time, GetWorld()->GetTimeSeconds());
+    if (!Bodies.IsEmpty() && Local.Pose.Time <= Bodies.Last().Pose.Time) { ++TimestampDropCount; return; }
     Bodies.Add(MoveTemp(Local));
-    while (Bodies.Num() > 12) Bodies.RemoveAt(0, 1, EAllowShrinking::No);
+    while (Bodies.Num() > 64) Bodies.RemoveAt(0, 1, EAllowShrinking::No);
 }
 
 void UJapanSkateNetwork::ShowBodies(double ShowAt, TArray<FTransform>& Pose, FTransform& Mesh, FTransform& Deck, float& Shown)
 {
     if (Bodies.IsEmpty() || Pose.IsEmpty()) return;
-    while (Bodies.Num() >= 3 && Bodies[1].Pose.Time <= ShowAt) Bodies.RemoveAt(0, 1, EAllowShrinking::No);
-    const auto& A = Bodies[0]; const auto& B = Bodies.Num() > 1 ? Bodies[1] : A;
-    if (FMath::Abs(ShowAt - B.Pose.Time) > .1 || A.Indices != B.Indices) return;
-    const float Alpha = B.Pose.Time > A.Pose.Time ? FMath::Clamp(float((ShowAt - A.Pose.Time) /
-        (B.Pose.Time - A.Pose.Time)), 0.f, 1.f) : 1.f;
+    const auto Sample = FJapanSkatePlayout::Sample(Bodies, ShowAt, [](const auto& Frame) { return double(Frame.Pose.Time); });
+    const auto& A = Bodies[Sample.A]; const auto& B = Bodies[Sample.B];
+    if (ShowAt - B.Pose.Time > .1 || A.Indices != B.Indices) return;
+    const float Alpha = Sample.Alpha;
     const auto& Skeleton = Rider->GetMesh()->GetSkeletalMeshAsset()->GetRefSkeleton();
     TArray<FTransform> Local; Local.SetNum(Pose.Num());
     for (int32 I = 0; I < Pose.Num(); ++I)
@@ -364,18 +354,18 @@ void UJapanSkateNetwork::OnRep_Board()
 {
     if (!Boards.IsEmpty() && !Newer(Board.Sequence, Boards.Last().Sequence)) return;
     FJapanBoardState Local = Board;
-    Local.Time = ViewClock.Map(Board.Time, GetWorld()->GetTimeSeconds());
-    if (!Boards.IsEmpty() && Local.Time <= Boards.Last().Time) return;
+    Local.Time = Playout.Map(Board.Time, GetWorld()->GetTimeSeconds());
+    if (!Boards.IsEmpty() && Local.Time <= Boards.Last().Time) { ++TimestampDropCount; return; }
     Boards.Add(MoveTemp(Local));
-    while (Boards.Num() > 12) Boards.RemoveAt(0, 1, EAllowShrinking::No);
+    while (Boards.Num() > 64) Boards.RemoveAt(0, 1, EAllowShrinking::No);
 }
 
 void UJapanSkateNetwork::ShowBoard(double ShowAt)
 {
     if (Boards.IsEmpty()) return;
-    while (Boards.Num() >= 3 && Boards[1].Time <= ShowAt) Boards.RemoveAt(0, 1, EAllowShrinking::No);
-    const auto& A = Boards[0]; const auto& B = Boards.Num() > 1 ? Boards[1] : A;
-    const float Alpha = B.Time > A.Time ? FMath::Clamp(float((ShowAt - A.Time) / (B.Time - A.Time)), 0.f, 1.f) : 1.f;
+    const auto Sample = FJapanSkatePlayout::Sample(Boards, ShowAt, [](const auto& Frame) { return double(Frame.Time); });
+    const auto& A = Boards[Sample.A]; const auto& B = Boards[Sample.B];
+    const float Alpha = Sample.Alpha;
     if (A.Shown == 0.f && B.Shown == 0.f && Rider->GetSkate()->GetBoardShown() == 0.f) return;
     FTransform Deck; Deck.Blend(A.Deck, B.Deck, Alpha);
     Rider->GetSkate()->ApplyNetworkBoard(Deck, FMath::Lerp(A.Shown, B.Shown, Alpha));

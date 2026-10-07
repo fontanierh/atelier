@@ -22,6 +22,7 @@ public:
     uint32 GetHeldFrameCount() const { return HeldFrameCount; }
     uint32 GetBeforeBufferCount() const { return BeforeBufferCount; }
     uint32 GetAfterBufferCount() const { return AfterBufferCount; }
+    uint32 GetTimestampDropCount() const { return TimestampDropCount; }
     uint8 GetHostMode() const { return HostMode; }
     uint32 GetAcceptedFrameCount() const { return AcceptedFrameCount; }
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
@@ -41,11 +42,11 @@ private:
     double LastHostRootTime = 0.;
     bool bWarnedBodyLimit = false, bWarnedSkeletonLimit = false, bWarnedRoot = false;
     double LastActivePose = -2.;
-    double DeliveryInterval = 1./30., ViewDelay = .1, PreviousArrival = -1.;
-    double DeliveryAge = 0.;
-    FJapanSkateClock ArrivalClock, ViewClock;
+    FJapanSkateClock ArrivalClock;
+    FJapanSkatePlayout Playout;
     uint32 InterpolatedFrameCount = 0, HeldFrameCount = 0;
     uint32 BeforeBufferCount = 0, AfterBufferCount = 0;
+    uint32 TimestampDropCount = 0;
     void ShowBoard(double ShowAt);
     FJapanSkateAssembly HostAssembly, ViewAssembly;
     TArray<FJapanSkateFrame> Frames;
