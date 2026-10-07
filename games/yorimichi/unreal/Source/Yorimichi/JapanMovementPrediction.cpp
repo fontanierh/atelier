@@ -7,6 +7,7 @@
 #include "BotwMoveSet.h"
 #include "SkateComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
 #include "Interfaces/MovementBaseInterface.h"
 #include "Components/PrimitiveComponent.h"
@@ -58,6 +59,9 @@ void UJapanCharacterMovement::ResetActivityPrediction()
 
 bool UJapanCharacterMovement::ForcePositionUpdate(float Dt)
 {
+    const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() != EJapanActivity::OnFoot)
+        return false; // Trusted skating owns its clock and root; CMC does not advance either.
     if (PredictsMoves() && !bReceivedMoveInEpoch)
     {
         // UE advances CurrentClientTimeStamp in a forced update. During initial
@@ -95,6 +99,12 @@ void UJapanCharacterMovement::ServerMove_PerformMovement(const FCharacterNetwork
     {
         const auto* Rider = CastChecked<AWandererCharacter>(CharacterOwner);
         if (!Rider->Definition || !Rider->Landscape || !Rider->bReady) { ++NetworkStats.MovesBeforeReady; return; }
+        if (auto* PC = Cast<APlayerController>(Rider->Controller); PC && PC->AcknowledgedPawn != Rider)
+        {
+            ++NetworkStats.MovesBeforeAck;
+            PC->SafeRetryClientRestart();
+            return; // UE otherwise advances the timestamp while skipping MoveAutonomous.
+        }
     }
     Super::ServerMove_PerformMovement(MoveData);
 }
@@ -235,8 +245,8 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
                 bReceivedMoveInEpoch = true; ++NetworkStats.StartedEpochs;
                 if (NetworkStats.FirstMoveTimestamp < 0.f) NetworkStats.FirstMoveTimestamp = Timestamp;
                 if (FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")))
-                    UE_LOG(LogTemp, Display, TEXT("NETWORK movement start epoch=%u timestamp=%.4f dt=%.4f initial_forced_skips=%u loading_moves=%u"),
-                        GetActivityEpoch(), Timestamp, Dt, NetworkStats.InitialForcedUpdatesSkipped, NetworkStats.MovesBeforeReady);
+                    UE_LOG(LogTemp, Display, TEXT("NETWORK movement start epoch=%u timestamp=%.4f dt=%.4f initial_forced_skips=%u loading_moves=%u pre_ack_moves=%u"),
+                        GetActivityEpoch(), Timestamp, Dt, NetworkStats.InitialForcedUpdatesSkipped, NetworkStats.MovesBeforeReady, NetworkStats.MovesBeforeAck);
             }
             SetMoveInput(Data->Input);
             LastServerHolds = Data->Input.Flags & (FJapanMoveInput::AttackHeld | FJapanMoveInput::GuardHeld | FJapanMoveInput::JumpHeld | FJapanMoveInput::Menu);

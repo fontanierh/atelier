@@ -20,7 +20,7 @@ struct FJapanCorrectionSample
 struct FJapanMovementStats
 {
     uint32 Corrections = 0, PositionCorrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
-    uint32 InitialForcedUpdatesSkipped = 0, MovesBeforeReady = 0, StartedEpochs = 0;
+    uint32 InitialForcedUpdatesSkipped = 0, MovesBeforeReady = 0, MovesBeforeAck = 0, StartedEpochs = 0;
     float FirstMoveTimestamp = -1.f;
     float LargestCorrectionCm = 0.f;
     FJapanCorrectionSample LargestCorrection;

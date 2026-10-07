@@ -1349,7 +1349,13 @@ void AWandererCharacter::Tick(float Dt)
     {
         // Start owner prediction only after both local setup and the host pawn are
         // ready. World admission alone precedes character initialization.
-        bReady = ReadyTime > 1.5f && (!JapanNetwork::IsOnline(GetWorld()) || HasAuthority() || bNetworkMovementReady);
+        APlayerController* PC = Cast<APlayerController>(Controller);
+        const bool NeedsAck = JapanNetwork::IsOnline(GetWorld()) && HasAuthority() && !IsNpc() &&
+            (!PC || (!PC->IsLocalController() && PC->AcknowledgedPawn != this));
+        // SafeRetry has its own rate limit. Retry even while the owner sends no
+        // moves, otherwise a lost initial restart would leave both sides waiting.
+        if (NeedsAck && PC) PC->SafeRetryClientRestart();
+        bReady = ReadyTime > 1.5f && !NeedsAck && (!JapanNetwork::IsOnline(GetWorld()) || HasAuthority() || bNetworkMovementReady);
         if (bReady && HasAuthority() && JapanNetwork::IsOnline(GetWorld()))
         { bNetworkMovementReady = true; ForceNetUpdate(); }
         if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))

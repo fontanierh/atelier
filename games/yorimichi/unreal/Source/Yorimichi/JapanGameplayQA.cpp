@@ -26,7 +26,7 @@ struct FScript
     uint16 MaximumProcessedEdge = 0;
     uint32 InterpolatedFrames = 0, HeldFrames = 0;
     FVector Start = FVector::ZeroVector, Foot = FVector::ZeroVector;
-    float WalkDistance = 0.f, JumpHeight = 0.f, SkateSeconds = 0.f;
+    float WalkDistance = 0.f, JumpHeight = 0.f, SkateSeconds = 0.f, ResumedWalkDistance = 0.f;
     uint32 HighestEpoch = 1, AcceptedFrames = 0, MaximumSavedMoves = 0, PeerFrames = 0, ReceivedPeerFrames = 0;
     bool SawPlayer = false, SawSkate = false, Finished = false, JumpReleased = false;
     bool SawHostTakeoff = false;
@@ -40,6 +40,7 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("applied_peer_frames"), State.PeerFrames);
     Data->SetNumberField(TEXT("received_peer_frames"), State.ReceivedPeerFrames);
     Data->SetNumberField(TEXT("walk_cm"), State.WalkDistance);
+    Data->SetNumberField(TEXT("resumed_walk_cm"), State.ResumedWalkDistance);
     Data->SetNumberField(TEXT("jump_cm"), State.JumpHeight);
     Data->SetNumberField(TEXT("skate_seconds"), State.SkateSeconds);
     Data->SetNumberField(TEXT("activity_epoch"), State.HighestEpoch);
@@ -61,6 +62,7 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("replayed_moves"), State.MovementStats.ReplayedMoves);
     Data->SetNumberField(TEXT("initial_forced_updates_skipped"), State.MovementStats.InitialForcedUpdatesSkipped);
     Data->SetNumberField(TEXT("moves_before_host_ready"), State.MovementStats.MovesBeforeReady);
+    Data->SetNumberField(TEXT("moves_before_possession_ack"), State.MovementStats.MovesBeforeAck);
     Data->SetNumberField(TEXT("started_movement_epochs"), State.MovementStats.StartedEpochs);
     Data->SetNumberField(TEXT("first_accepted_move_timestamp"), State.MovementStats.FirstMoveTimestamp);
     Data->SetNumberField(TEXT("largest_correction_cm"), State.MovementStats.LargestCorrectionCm);
@@ -201,10 +203,19 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
         if (Player->GetNetworkActivity() == EJapanActivity::OnFoot && !Player->IsNetworkActivityPending())
         {
             if (Script.HighestEpoch < 3) { Error = TEXT("Skate handoff did not advance the activity epoch"); break; }
-            if (!Save(Folder, false, Script)) Error = TEXT("Could not save client gameplay receipt");
-            else { Script.Finished = true; UE_LOG(LogTemp, Display, TEXT("NETWORK gameplay walking/jump/skate/handoff PASS")); }
+            Script.Start = Player->GetActorLocation(); Next();
         }
         else if (Elapsed > 12.) Error = TEXT("Skate dismount did not return to predicted walking");
+        break;
+    case 6:
+        Player->Live_Drive(Elapsed < 1. ? FVector2D(0,1) : FVector2D::ZeroVector, Elapsed < 1. ? 0 : 1);
+        Script.ResumedWalkDistance = FVector::Dist2D(Script.Start, Player->GetActorLocation());
+        if (Elapsed > 1.5)
+        {
+            if (Script.ResumedWalkDistance < 40.f) { Error = TEXT("Walking did not resume after the skate epoch"); break; }
+            if (!Save(Folder, false, Script)) Error = TEXT("Could not save client gameplay receipt");
+            else { Script.Finished = true; UE_LOG(LogTemp, Display, TEXT("NETWORK gameplay walking/jump/skate/resumed-walk PASS")); }
+        }
         break;
     }
     return Script.Finished;
