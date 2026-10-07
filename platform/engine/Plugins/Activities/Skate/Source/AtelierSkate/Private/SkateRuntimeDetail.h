@@ -275,12 +275,16 @@ namespace SkateRuntimeDetail
             return Cache.Add(Key,Surface);
         };
         if (CVarSkateCookedSurface.GetValueOnGameThread()>0) return Collision();
+        // A cooked build keeps the CPU copy of a mesh's render buffers only when the mesh allows CPU access (the engine's
+        // own rule, FStaticMeshLODResources::SerializeBuffers). Without it the buffers still report their counts, but the
+        // index view is empty and the vertex pointer is not to be read.
+        if (FPlatformProperties::RequiresCookedData() && !Mesh->bAllowCPUAccess) return Collision();
         if (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return Collision();
         const auto& LODs=Mesh->GetRenderData()->LODResources;
         const FStaticMeshLODResources& LOD=LODs[FMath::Clamp(Mesh->LODForCollision,0,LODs.Num()-1)];
         const FPositionVertexBuffer& Positions=LOD.VertexBuffers.PositionVertexBuffer;
-        if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || LOD.IndexBuffer.GetNumIndices()==0) return Collision();
-        const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();
+        const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();   // the indices held, not the count it reports
+        if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || Indices.Num()<3) return Collision();
         auto Surface=MakeShared<FMeshSurface,ESPMode::ThreadSafe>();
         Surface->Points.Reserve(Indices.Num()/3*3); Surface->Normals.Reserve(Indices.Num()/3);
         Surface->Slots.SetNumZeroed(Indices.Num()/3);
