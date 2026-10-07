@@ -405,6 +405,8 @@ def test_static_files_load_fast_gzipped_revalidated_and_paintings_cached(http_se
     assert status == 200 and headers['Content-Encoding'] == 'gzip' and headers['Cache-Control'] == 'no-cache'
     assert gzip.decompress(body) == (board_web.ASSETS / 'board.js').read_bytes()
     assert request(http_server, '/board.js', headers={'If-None-Match': headers['ETag']})[0] == 304
+    # The page is never kept, so a launch without network can't show an old board.
+    assert request(http_server, '/')[2]['Cache-Control'] == 'no-store'
     for painting in ('/meadow-portrait-1.webp', '/meadow-night-portrait-1.webp'):
         status, body, headers = request(http_server, painting)
         assert status == 200 and headers['Content-Type'] == 'image/webp' and 'immutable' in headers['Cache-Control']

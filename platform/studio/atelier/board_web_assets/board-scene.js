@@ -4,16 +4,17 @@
    river, and motes of light float in the air. In light mode the light follows the local clock (dawn as painted, a
    brighter day, a golden hour, then dusk); dark mode shows the moonlit painting with stars, a faint aurora,
    shooting stars and fireflies. The meadow shifts with the pointer, a tilt of the conversation and scrolling, and a
-   finger or cursor carries a soft light. It draws about one canvas pixel per CSS pixel (fewer if frames run slow)
-   at most 30 times a second, holds still on its last frame while the window is in the background, hidden or covered
+   finger or cursor carries a soft light. It draws at most one canvas pixel per CSS pixel (fewer if frames run slow)
+   at most 30 times a second, holds still on its last frame while the window is in the background, hidden, at rest or covered
    by the reader, and stays the still painting with Reduce Motion, the Playful switch off, or no WebGL. */
 (()=>{
   const app=document.getElementById("app");
   if(!app)return;
   const canvas=document.createElement("canvas");canvas.className="scene-canvas";canvas.setAttribute("aria-hidden","true");
   app.prepend(canvas);
-  const gl=canvas.getContext("webgl",{alpha:false,antialias:false,depth:false,stencil:false,premultipliedAlpha:false,powerPreference:"low-power"});
-  if(!gl)return;
+  // The context and program are made only once the scene will run, after the page is up: the first WebGL context
+  // after the browser starts held the main thread for about five seconds, and the whole board's load waited on it.
+  let gl=null;
   const reduce=matchMedia("(prefers-reduced-motion: reduce)"), wide=matchMedia("(min-width: 1100px)");
   // Where each painting's sun (or moon), river and flower line are, as fractions of its width and height.
   const PAINTINGS={
@@ -101,14 +102,24 @@ void main(){
   vec2 vg=v-.5;c*=1.-dot(vg,vg)*.28;
   gl_FragColor=vec4(c,1.);
 }`;
-  function shader(type, src) { const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.warn(gl.getShaderInfoLog(s));return null;}return s; }
-  // Program, quad and texture. A restored context starts empty, so this runs again then.
-  let U={}, tex=null;
-  function init() {
+  function shader(type, src) { const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s; }
+  // Program, quad and texture. A restored context starts empty, so this runs again then. Compiling goes on in the
+  // background where the browser can (KHR_parallel_shader_compile); asking for a status before then would wait.
+  let U={}, tex=null, compiling=false;
+  function compile() {
+    if(compiling)return;compiling=true;
+    const parallel=gl.getExtension("KHR_parallel_shader_compile");
     const vs=shader(gl.VERTEX_SHADER,VERT), fs=shader(gl.FRAGMENT_SHADER,FRAG);
-    if(!vs||!fs)return false;
     const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
-    if(!gl.getProgramParameter(prog,gl.LINK_STATUS))return false;
+    const check=()=>{
+      if(parallel&&!gl.getProgramParameter(prog,parallel.COMPLETION_STATUS_KHR)){setTimeout(check,50);return;}
+      compiling=false;
+      if(init(prog,vs,fs))load();
+    };
+    check();
+  }
+  function init(prog, vs, fs) {
+    if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){for(const s of [vs,fs])if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.warn(gl.getShaderInfoLog(s));return false;}
     gl.useProgram(prog);
     const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
     const loc=gl.getAttribLocation(prog,"p");gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
@@ -117,10 +128,16 @@ void main(){
     for(const [k,val] of [[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,val);
     return true;
   }
-  if(!init())return;
+  function boot() {
+    if(gl)return;
+    gl=canvas.getContext("webgl",{alpha:false,antialias:false,depth:false,stencil:false,premultipliedAlpha:false,powerPreference:"low-power"});
+    if(!gl){gl=false;return;}
+    compile();
+  }
 
   let painting=null, ready=false, raf=0, lastFrame=0, start=performance.now();
   function load() {
+    if(!gl)return;
     const want=(wide.matches?PAINTINGS.landscape:PAINTINGS.portrait)[dark()?"night":"day"];
     if(painting===want)return;painting=want;
     const img=new Image();img.decoding="async";
@@ -128,14 +145,14 @@ void main(){
       gl.uniform2f(U.I,img.naturalWidth,img.naturalHeight);gl.uniform2f(U.S,...want.sun);gl.uniform1f(U.river,want.river);gl.uniform1f(U.flowers,want.flowers);gl.uniform1f(U.moonlit,dark()?1:0);ready=true;wake();};
     img.src=want.src;
   }
-  // About one canvas pixel per CSS pixel (a little more on a sharp screen), at most 2.2 million of them, and fewer
-  // while the frame rate is low.
+  // At most one canvas pixel per CSS pixel and 1.2 million of them (a soft watercolor needs no more; a large desktop
+  // window at 2.2 million kept the GPU busy enough to slow the whole board), and fewer while the frame rate is low.
   // The canvas's CSS size comes from a ResizeObserver, so a frame never reads layout.
   let quality=1, slow=0, cssW=canvas.clientWidth, cssH=canvas.clientHeight;
   new ResizeObserver(([entry])=>{cssW=entry.contentRect.width;cssH=entry.contentRect.height;}).observe(canvas);
   function size() {
     const area=cssW*cssH||1;
-    const scale=Math.min(Math.min(devicePixelRatio||1,1.25),Math.sqrt(2.2e6/area))*quality;
+    const scale=Math.min(Math.min(devicePixelRatio||1,1),Math.sqrt(1.2e6/area))*quality;
     const w=Math.max(2,Math.round(cssW*scale)), hgt=Math.max(2,Math.round(cssH*scale));
     if(canvas.width!==w||canvas.height!==hgt){canvas.width=w;canvas.height=hgt;gl.viewport(0,0,w,hgt);}
     gl.uniform2f(U.R,w,hgt);
@@ -168,7 +185,7 @@ void main(){
   const feed=document.getElementById("feed");
 
   const on=()=>!reduce.matches&&app.classList.contains("playful")&&ready&&!document.hidden;
-  const resting=()=>app.classList.contains("reader-open");
+  const resting=()=>app.classList.contains("reader-open")||app.classList.contains("at-rest");
   function frame(now) {
     raf=0;if(!on()){still();return;}
     if(resting())return;
@@ -195,15 +212,16 @@ void main(){
   // counts as one: so wake (and frame) touch the class only when it is there, or the two would call each other forever
   // and freeze the page whenever the scene is off.
   function still() { if(app.classList.contains("scene-on"))app.classList.remove("scene-on"); }
-  function wake() { if(on()){if(!raf){lastFrame=0;raf=requestAnimationFrame(frame);}} else still(); }
+  const wanted=()=>!reduce.matches&&app.classList.contains("playful")&&!document.hidden;
+  function wake() { if(gl===null){if(wanted())setTimeout(boot,0);return;} if(on()){if(!raf){lastFrame=0;raf=requestAnimationFrame(frame);}} else still(); }
   canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();ready=false;still();});
   // Until the program is rebuilt the scene stays off and the still painting shows.
-  canvas.addEventListener("webglcontextrestored",()=>{painting=null;canvas.width=canvas.height=0;if(init())load();});
+  canvas.addEventListener("webglcontextrestored",()=>{painting=null;canvas.width=canvas.height=0;compile();});
   wide.addEventListener?.("change",load);reduce.addEventListener?.("change",wake);
   addEventListener("boardtheme",load);
   document.addEventListener("visibilitychange",wake);addEventListener("focus",wake);
   new MutationObserver(wake).observe(app,{attributes:true,attributeFilter:["class"]});
-  load();
+  if(document.readyState==="complete")wake();else addEventListener("load",wake,{once:true});
   window.boardScene={
     pin(hour){pinned=hour;},
     timelapse(ms=12000){lapse={start:performance.now(),ms,from:hourNow(performance.now())};},

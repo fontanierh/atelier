@@ -333,6 +333,25 @@
   }
   daylight();setInterval(daylight,300000);
 
+  /* Rest: twenty seconds without a pointer, key, wheel or scroll, the meadow's endless motion (fireflies, seeds,
+     butterflies, mist, bobbing orbs) pauses where it is and the living scene holds its frame; any input resumes it.
+     Each running loop makes the browser redraw the board every frame, which on a large desktop window kept it busy
+     enough to feel slow. Animations that end (a message landing) are left alone. */
+  const IDLE=20000, rested=new Set();
+  let lastInput=performance.now();
+  const endless=a=>a.effect?.getComputedTiming?.().iterations===Infinity;
+  function rest() {
+    if(!app.classList.contains("at-rest"))app.classList.add("at-rest");
+    for(const a of document.getAnimations())if(a.playState==="running"&&endless(a)){a.pause();rested.add(a);}
+  }
+  function resume() {
+    lastInput=performance.now();if(!app.classList.contains("at-rest"))return;
+    app.classList.remove("at-rest");for(const a of rested)if(a.playState==="paused")a.play();rested.clear();
+  }
+  for(const type of ["pointermove","pointerdown","keydown","wheel","touchstart","scroll"])addEventListener(type,resume,{capture:true,passive:true});
+  // Loops started while resting (a new message's orb) rest at the next check too.
+  setInterval(()=>{if(performance.now()-lastInput>IDLE)rest();},3000);
+
   function apply() {
     app.classList.toggle("playful",on());
     if(toggle){toggle.checked=wanted;toggle.disabled=reduce.matches;}
