@@ -10,12 +10,15 @@ rendered remote poses, or clean-machine/Tailscale acceptance.
 import argparse
 from contextlib import ExitStack
 import json
+import math
 from pathlib import Path
+import re
 import socket
 import subprocess
 import sys
 import time
 import os
+import statistics
 
 
 def load(path):
@@ -23,6 +26,60 @@ def load(path):
         return json.loads(path.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         return None
+
+
+def host_frame_statistics(folder):
+    """Each server world timestamp is one processing frame, even in a move burst."""
+    frames = {}
+    invalid = 0
+    try:
+        lines = (folder / 'server.log').read_text(errors='replace').splitlines()
+    except FileNotFoundError:
+        lines = []
+    for line in lines:
+        if 'NETWORK defence move ' not in line:
+            continue
+        fields = dict(re.findall(r'(\w+)=([^\s]+)', line))
+        try:
+            at, dt = float(fields['now']), float(fields['host_dt'])
+            if not math.isfinite(at) or not math.isfinite(dt) or dt <= 0:
+                raise ValueError('invalid host frame')
+            if at in frames and frames[at] != dt:
+                raise ValueError('inconsistent frame duration in a move burst')
+            frames[at] = dt
+        except (KeyError, ValueError):
+            invalid += 1
+    values = sorted(frames.values())
+    p95 = values[math.ceil(.95 * len(values)) - 1] if values else 0.
+    return dict(count=len(values), invalid=invalid, median=statistics.median(values) if values else 0.,
+                p95=p95, maximum=max(values, default=0.),
+                slow_host_p95=max(0., min(p95, .1) - 1 / 60))
+
+
+def defence_edge_statistics(folder):
+    """Report the actual acceptance window for every remote defensive press."""
+    edges, invalid = [], 0
+    try:
+        lines = (folder / 'server.log').read_text(errors='replace').splitlines()
+    except FileNotFoundError:
+        lines = []
+    for line in lines:
+        if 'NETWORK defence edge=' not in line:
+            continue
+        fields = dict(re.findall(r'(\w+)=([^\s]+)', line))
+        if fields.get('button') not in ('guard', 'jump', 'dodge'):
+            continue
+        try:
+            at, press, oldest = (float(fields[k]) for k in ('now', 'press', 'oldest'))
+            accepted = int(fields['valid'])
+            if (not all(math.isfinite(v) for v in (at, press, oldest)) or accepted not in (0, 1)
+                    or oldest > at or press > at):
+                raise ValueError('invalid defence edge')
+            edges.append(dict(edge=int(fields['edge']), button=fields['button'], accepted=bool(accepted),
+                              now=at, press=press, oldest=oldest, bound=at-oldest, margin=press-oldest))
+        except (KeyError, ValueError):
+            invalid += 1
+    return dict(edges=edges, invalid=invalid)
 
 
 def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20):
@@ -98,6 +155,15 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
                     checks[role + '_zero_lag_prediction'] = (receipt.get('position_corrections_over_1cm') == 0 and
                         0 <= receipt.get('largest_correction_cm', -1) < 1)
     if combat:
+        if combat_host_fps == 60:
+            timing = host_frame_statistics(folder)
+            checks['combat_fast_host_clock'] = (timing['count'] >= 30 and timing['invalid'] == 0 and
+                .015 <= timing['median'] <= .0185 and timing['p95'] <= .022)
+            defence = defence_edge_statistics(folder)
+            accepted = [edge for edge in defence['edges'] if edge['accepted']]
+            checks['combat_fast_defence_edges'] = (defence['invalid'] == 0 and
+                {edge['button'] for edge in accepted} == {'guard', 'jump', 'dodge'} and
+                all(edge['bound'] <= .152 + 1e-6 and edge['margin'] >= .010 - 1e-6 for edge in accepted))
         # D1 is a latency test, not just a successful local hit.
         expected_lag = dict(lag_ms=60, variance_ms=15, loss_percent=2)
         checks['combat_emulated_defence'] = all(
@@ -128,8 +194,8 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
                 if phase < 2:
                     for role, frames, fps in (('host', receipt, combat_host_fps), ('owner', confirmed, combat_host_fps if person_id == 0 else 30)):
                         checks[f'combat_{person}_{phase}_{role}_fps'] = (frames.get('frame_count', 0) >= 2 and
-                            frames.get('frame_min', 0) >= (.045 if fps == 20 else .030) and
-                            frames.get('frame_min', 100) <= frames.get('frame_max', 0) <= .1)
+                            frames.get('frame_min', 0) >= (.045 if fps == 20 else .015 if fps == 60 else .030) and
+                            frames.get('frame_min', 100) <= frames.get('frame_max', 0) <= (.025 if fps == 60 else .1))
                     checks[f'combat_{person}_{phase}_stimulus_in_window'] = (receipt.get('contact_lateness_ms', -1) >= 0 and
                         receipt.get('window_margin_ms', -1) >= 15)
                 if phase == 2:
@@ -267,6 +333,9 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                       emulation=emulation, source=revision, native_build=binary,
                       scope=('Same-machine Tailscale listener; ' if tailnet else 'Loopback listener; ') +
                             'NullRHI editor smoke. Packaged, rendered and two-machine acceptance remain separate')
+        if combat:
+            report['combat_host_frames'] = host_frame_statistics(folder)
+            report['combat_defence_edges'] = defence_edge_statistics(folder)
         (folder / 'checks.json').write_text(json.dumps(report, indent=2) + '\n')
         for name, ok in checks.items():
             print(('PASS ' if ok else 'FAIL ') + name, flush=True)
@@ -284,7 +353,7 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--port', type=int)
     parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
-    parser.add_argument('--combat-host-fps', type=int, choices=(20, 30), default=20)
+    parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
     parser.add_argument('--listen', action='store_true', help='Two local players across listen-host/client processes; validates the observer relay within the same aggregate guard')

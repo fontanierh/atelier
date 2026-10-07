@@ -222,3 +222,74 @@ def test_combat_requires_actual_lag(combat_receipts):
 def test_combat_requires_gate_measurements(combat_receipts, key):
     change(combat_receipts, 'combat-guest-0-result', lambda v: v.pop(key))
     assert not all(review.compare_receipts(combat_receipts, listen=True, combat=True).values())
+
+
+@pytest.fixture
+def fast_combat_receipts(combat_receipts):
+    for person in ('host', 'guest'):
+        for phase in range(5):
+            change(combat_receipts, f'combat-{person}-{phase}-result', lambda v: v.update(
+                host_fps=60, frame_min=.01667, frame_max=.0168))
+            if person == 'host':
+                change(combat_receipts, f'combat-{person}-{phase}-confirmed', lambda v: v.update(
+                    frame_min=.01667, frame_max=.0168))
+    # Duplicate moves from one arrival frame must not inflate the evidence count.
+    (combat_receipts / 'server.log').write_text(''.join(
+        f'NETWORK defence move ts={i} host_dt=0.016670 now={i / 60:.6f}\n' * 2 for i in range(60)) + ''.join(
+        f'NETWORK defence edge={i} button={button} now=1.000000 press=.880000 oldest=.850000 valid=1\n'
+        for i, button in enumerate(('guard', 'jump', 'dodge'))))
+    return combat_receipts
+
+
+def test_fast_host_uses_measured_frames_and_preserves_guest_rate(fast_combat_receipts):
+    assert all(review.compare_receipts(fast_combat_receipts, listen=True, combat=True, combat_host_fps=60).values())
+    timing = review.host_frame_statistics(fast_combat_receipts)
+    assert timing['count'] == 60
+    assert timing['median'] == timing['p95'] == .01667
+    assert timing['slow_host_p95'] < .00001
+
+
+@pytest.mark.parametrize('trace', [
+    '',
+    'NETWORK defence move ts=1 host_dt=.01667 now=1\n' * 60,
+    ''.join(f'NETWORK defence move ts={i} host_dt=.05 now={i}\n' for i in range(60)),
+    ''.join(f'NETWORK defence move ts={i} host_dt={.01667 if i < 50 else .05} now={i}\n' for i in range(60)),
+    ''.join(f'NETWORK defence move ts={i} host_dt=.01667 now={i}\n' for i in range(60)) +
+        'NETWORK defence move ts=70 host_dt=nan now=70\n',
+])
+def test_fast_host_refuses_missing_duplicated_slow_or_invalid_clock(fast_combat_receipts, trace):
+    (fast_combat_receipts / 'server.log').write_text(trace)
+    assert not review.compare_receipts(fast_combat_receipts, listen=True, combat=True, combat_host_fps=60)['combat_fast_host_clock']
+
+
+def test_fast_global_clock_does_not_hide_a_slow_actual_parry(fast_combat_receipts):
+    change(fast_combat_receipts, 'combat-host-0-result', lambda v: v.update(frame_max=.05))
+    checks = review.compare_receipts(fast_combat_receipts, listen=True, combat=True, combat_host_fps=60)
+    assert checks['combat_fast_host_clock']
+    assert not checks['combat_host_0_host_fps']
+
+
+@pytest.mark.parametrize('edit', [
+    lambda s: s.replace('oldest=.850000', 'oldest=.842000'),  # 158 ms bound hides a slow host.
+    lambda s: s.replace('press=.880000', 'press=.855000'),  # Less than 10 ms margin.
+    lambda s: '\n'.join(line for line in s.splitlines() if 'NETWORK defence edge=' not in line),
+    lambda s: s.replace('button=dodge', 'button=attack'),
+    lambda s: s.replace('valid=1', 'valid=0'),
+    lambda s: s.replace('oldest=.850000', 'oldest=nan'),
+])
+def test_fast_host_requires_real_bounded_defence_edges(fast_combat_receipts, edit):
+    path = fast_combat_receipts / 'server.log'
+    path.write_text(edit(path.read_text()))
+    checks = review.compare_receipts(fast_combat_receipts, listen=True, combat=True, combat_host_fps=60)
+    assert checks['combat_fast_host_clock']
+    assert not checks['combat_fast_defence_edges']
+
+
+def test_defence_edge_evidence_reports_bound_and_margin(fast_combat_receipts):
+    evidence = review.defence_edge_statistics(fast_combat_receipts)
+    assert evidence['invalid'] == 0
+    assert [e['button'] for e in evidence['edges']] == ['guard', 'jump', 'dodge']
+    for edge in evidence['edges']:
+        assert edge['accepted']
+        assert edge['bound'] == pytest.approx(.150)
+        assert edge['margin'] == pytest.approx(.030)
