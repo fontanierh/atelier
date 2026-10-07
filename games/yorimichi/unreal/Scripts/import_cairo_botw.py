@@ -61,6 +61,10 @@ CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else
 # down still reached into it).
 PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
         {'sword': [5., 0., -12.], 'sheath': [5., 0., -12.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
+# Carried pieces pitched about his left axis through their pivot (degrees; positive brings the part below the pivot out
+# backward). Modori's sword and sheath share a pivot at his collar, and his coat flares out over the small of his back,
+# where the sheath's lower half sank into it (the operator's photo from behind, standing).
+TILT = {'sword': 10., 'sheath': 10.} if CHARACTER == 'modori' else {}
 
 
 def digests(folder):
@@ -254,6 +258,8 @@ def equipment(link, cairo, glide):
             R, p = compose(C, Rp), add(cairo.at('chest'), mul(apply(C, offset), BODY))
             if slot in CARRY:
                 R, p = fitted(R, cairo, CARRY[slot])
+            if slot in TILT:
+                R = compose(turn(cairo.body()[1], -TILT[slot]), R)
             if slot in PUSH:
                 p = add(p, apply(cairo.body(), PUSH[slot]))
             on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))

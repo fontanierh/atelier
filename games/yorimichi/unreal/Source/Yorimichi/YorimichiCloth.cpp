@@ -123,7 +123,9 @@ FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotN
     Cloth->ApplyParameterMasks();
 
     // A long wool coat: heavier than the default, damped so it settles behind the legs, a little thicker than the skin
-    // for its collision, and tethered to its pinned part so it never stretches down.
+    // for its collision, and tethered to its pinned part so it never stretches down. A light drive toward the skinned
+    // coat keeps its cut: without it the free panels fell in from where they flare at the hips and folded below the
+    // belt onto his legs.
     if (UChaosClothConfig* Config = Cloth->GetClothConfig<UChaosClothConfig>())
     {
         Config->Density = .6f;
@@ -132,6 +134,7 @@ FString UYorimichiClothLibrary::AddSectionCloth(USkeletalMesh* Mesh, FName SlotN
         Config->FrictionCoefficient = .3f;
         Config->bUseCCD = true;
         Config->bUseSelfCollisions = false;
+        Config->AnimDriveStiffness.Low = Config->AnimDriveStiffness.High = .15f;
     }
     if (UChaosClothSharedSimConfig* Shared = Cloth->GetClothConfig<UChaosClothSharedSimConfig>())
     {
