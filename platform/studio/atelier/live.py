@@ -8,7 +8,7 @@
 
 Exit code 1 when the game is unreachable or the Python raised.
 """
-import json, sys, time, urllib.request
+import base64, json, sys, time, urllib.request
 from pathlib import Path
 
 from .paths import build_root
@@ -16,7 +16,17 @@ from .paths import build_root
 URL = 'http://127.0.0.1:8830'
 
 
+def python_body(code):
+    """The /python body that runs `code` as it is. The bridge hands a body to Unreal's ExecuteFile, which takes a
+    first token ending in .py for a script to open (a module docstring that names one ran as a missing file): the code
+    goes as data instead, decoded and executed in the shared namespace, its tracebacks naming <atelier live>."""
+    data = base64.b64encode(code.encode()).decode()
+    return f"import base64 as _live_b64\nexec(compile(_live_b64.b64decode('{data}').decode(), '<atelier live>', 'exec'))\n"
+
+
 def request(path, body=None, timeout=120):
+    if path == '/python' and body is not None:
+        body = python_body(body)
     data = body.encode() if body is not None else None
     req = urllib.request.Request(URL + path, data=data, method='POST' if body is not None else 'GET')
     with urllib.request.urlopen(req, timeout=timeout) as r:
