@@ -84,6 +84,15 @@ h1, h2, p { margin: 0; }
 .title-text p { display: flex; align-items: center; gap: 7px; margin-top: 1px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; }
 .back-button { flex: none; margin-left: -10px; width: 30px; height: 38px; border: 0; background: none; color: var(--coral); display: grid; place-items: center; }
 .back-button .icon svg { width: 28px; height: 28px; stroke-width: 2.2; }
+.back-label { display: none; }
+/* On a wide screen the thread says plainly how to leave it. */
+@media (min-width: 1100px) {
+  #threadBack { width: auto; height: 34px; margin-left: -8px; padding: 0 14px 0 4px; gap: 1px; display: inline-flex; align-items: center;
+    border-radius: 17px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s ease; }
+  #threadBack:hover { background: rgb(var(--tint) / .08); }
+  #threadBack .icon svg { width: 24px; height: 24px; }
+  #threadBack .back-label { display: inline; }
+}
 .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
 .dot.live { background: var(--live); box-shadow: 0 0 10px #3fae7a99; }
 .dot.error { background: var(--error); box-shadow: 0 0 10px #d9546a99; }
@@ -346,7 +355,7 @@ h1, h2, p { margin: 0; }
   :root { --tab-space: 18px; }
   .app { display: grid; grid-template-columns: 300px minmax(0, 1fr) 370px; height: 100dvh; top: 0; }
   .pane, .app[data-view] .pane { position: relative; inset: auto; display: flex; }
-  .tabbar, .orbs, .back-button, .app::after { display: none !important; }
+  .tabbar, .orbs, #backButton, .app::after { display: none !important; }
   .agents-pane, .render-pane { background: rgb(var(--frost-2) / .702); }
   .agents-pane { border-right: 1px solid var(--line); }
   .render-pane { border-left: 1px solid var(--line); }
@@ -451,6 +460,9 @@ h1, h2, p { margin: 0; }
 .thread-bar { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; margin: 4px 0 0 4px; padding: 3px 8px 3px 4px; border-radius: 13px; border: 1px solid var(--line); background: rgb(var(--tint) / .031); color: var(--ink-2); font-size: 12.5px; transition: background .2s, transform .2s; animation: fade .4s ease both; }
 .message.mine .thread-bar { align-self: flex-end; margin-right: 4px; }
 .thread-bar:hover { background: rgb(var(--tint) / .071); }
+/* Over the painting the reply bar and the board's quiet notices carry their own glass, so their small text reads. */
+.app .thread-bar, .app .notice { background: rgb(var(--frost) / .8); border-color: var(--line-strong); box-shadow: 0 2px 10px rgb(var(--shade-deep) / .08); }
+.app .thread-bar:hover { background: rgb(var(--frost-3) / .92); }
 .thread-bar:active { transform: scale(.97); }
 .thread-faces { display: flex; }
 .thread-faces .orb { width: 20px; height: 20px; font-size: 9px; border-width: 1.5px; box-shadow: 0 0 0 2px var(--bg); }
@@ -472,6 +484,12 @@ h1, h2, p { margin: 0; }
 .thread-divider { display: flex; align-items: center; gap: 12px; margin: 18px 4px 2px; color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
 .thread-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .app.in-thread .jump-latest { display: none !important; }
+.app.in-thread:not(.navigating) :is(#topbar, #feed, #errorBanner) { visibility: hidden; }
+/* On a wide screen a thread opens in place, and closing it brings the conversation back; nothing slides. */
+@keyframes thread-in { from { opacity: 0; transform: translate3d(16px, 0, 0); } }
+@keyframes view-in { from { opacity: 0; transform: translate3d(-10px, 0, 0); } }
+.thread-in { animation: thread-in .22s cubic-bezier(.2, .8, .2, 1) both; }
+.view-in { animation: view-in .22s cubic-bezier(.2, .8, .2, 1) both; }
 @media (min-width: 1100px) { .thread-head { padding-top: 20px; } .thread-feed { padding: 6px 28px calc(var(--dock-h, 120px) + 34px); } }
 
 /* Direct conversations */
@@ -904,6 +922,8 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
   [data-theme="dark"] .orbs { background: rgb(var(--frost-2) / .97); }
 }
 [data-theme="dark"] .count { color: #f3c47c; }
+[data-theme="dark"] .notice { color: var(--ink-2); }
+[data-theme="dark"] .thread-last, [data-theme="dark"] .notice time, [data-theme="dark"] .thread-bar > .icon svg, [data-theme="dark"] .notice .icon svg { color: var(--muted); }
 [data-theme="dark"] .banner { color: #ffb3c0; }
 [data-theme="dark"] .markdown code, [data-theme="dark"] .entries code { color: #f4a7cc; }
 [data-theme="dark"] .message.mine .markdown code, [data-theme="dark"] .message.mine .markdown pre code { color: var(--ink); }
