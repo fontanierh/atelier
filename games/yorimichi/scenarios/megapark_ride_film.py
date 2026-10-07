@@ -723,6 +723,10 @@ def rail_ready(s, c):
     v_in = -(c.vx * t[1] - c.vy * t[0])
     load = s.get('rail_load', .32)
     horizon = load + .2 + math.sqrt(2. * pop_height(load) / G_AIR)
+    if s.get('rail_path'):
+        # Where the line curves into the path, it closes faster than v_in: measure the peak's own point against it.
+        d = rail_lateral(c.x + c.vx * horizon, c.y + c.vy * horizon, s.get('rail_line', RAIL0))[1]
+        return v_in > .3 and d <= s.get('apex_d', .12)
     return v_in > .3 and d - v_in * horizon <= s.get('apex_d', .12)
 
 
@@ -842,9 +846,10 @@ SHOTS = [
          cams=[(0., chase(back=2.3, side=-2.4, up=.8))], expect=['Switch Kickflip', 'Switch Heelflip', 'Switch 360 Flip']),
     # The long 50-50: along the parapet's inside, an ollie onto its edge 22 m from the end and down it to the end. The
     # line closes on the parapet steeply enough (b_d) for the air to come down through the grind edge's height near it,
-    # which is where native's grind assist looks; it misses about one take in six, hence the retries.
+    # which is where native's grind assist looks. The parapet curves into the line there, so the pop is timed from the
+    # peak's own point (rail_path) rather than the closing speed at the trigger; the retries cover a missed assist.
     dict(name='rail_5050', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.34, secs=11.,
-         gain=12., b_d=-1.9, keep=grind_held, retry=2,
+         gain=12., b_d=-1.9, keep=grind_held, retry=2, rail_path=True,
          cams=[(0., chase(back=3.0, side=-1.8, up=1.0)), (lambda s, c: c.mode == 3 and rail_lateral(c.x, c.y)[0] < 12., PLAZA_RAIL_CAM)],
          expect=['50-50']),
     # A boardslide: the board turned across the line in the air (onto the parapet 22 m from its end, before the lamp post).
