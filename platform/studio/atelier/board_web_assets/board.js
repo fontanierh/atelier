@@ -367,14 +367,32 @@ function attachmentNodes(files, many) {
       const img=node("img");img.src=f.url;img.alt=f.name;img.loading="lazy";if(f.width){img.width=f.width;img.height=f.height;}b.append(img);b.addEventListener("click",()=>openLightbox(f));wrap.append(b);}
     else if(kind==="video"){const v=node("video","att-video");if(ratio)v.style.setProperty("--ratio",ratio);v.src=f.url;v.controls=true;v.playsInline=true;v.preload="metadata";wrap.append(v);}
     else if(kind==="audio"){const a=node("audio","att-audio");a.src=f.url;a.controls=true;a.preload="none";wrap.append(a);}
-    else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
+    else {const a=node("a","att-file");a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";
+      if(f.readable)a.addEventListener("click",event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();openReader(f);});const text=node("span");text.append(node("b","",f.name),node("small","",`${sizeText(f.size)} · ${(f.name.split(".").pop()||"file").toUpperCase()}`));a.append(icon("file"),text);wrap.append(a);}
   }
   return wrap;
 }
 function openLightbox(f) { $("lightboxImage").src=f.url;$("lightboxImage").alt=f.name;$("lightboxName").textContent=f.name;$("lightboxOpen").href=f.url;$("lightbox").hidden=false;$("lightboxClose").focus(); }
 function closeLightbox() { $("lightbox").hidden=true;$("lightboxImage").removeAttribute("src"); }
 $("lightbox").addEventListener("click",event=>{if(event.target!==$("lightboxOpen"))closeLightbox();});
-addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
+// Markdown and text attachments open in a reader over the board (rendered by the server) instead of downloading.
+// While it is open the meadow behind it rests.
+let readerFor=null, readerReturn=null;
+async function openReader(f) {
+  readerFor=f.id;readerReturn=document.activeElement;
+  $("readerTitle").textContent=f.name;$("readerOpen").href=f.url;$("readerOpen").download=f.name;
+  $("readerBody").replaceChildren(node("p","quiet","Opening…"));$("readerBody").scrollTop=0;
+  $("reader").hidden=false;$("app").classList.add("reader-open");$("readerClose").focus();
+  try {
+    const response=await fetch(`/api/document/${f.id}`);const result=await response.json();
+    if(!response.ok)throw Error(result.error||"This file could not be opened.");
+    if(readerFor===f.id)markdown($("readerBody"),result.html);
+  } catch(error) { if(readerFor===f.id)$("readerBody").replaceChildren(node("p","quiet",error.message||"This file could not be opened.")); }
+}
+function closeReader() { readerFor=null;$("reader").hidden=true;$("app").classList.remove("reader-open");$("readerBody").replaceChildren();readerReturn?.focus?.();readerReturn=null; }
+$("readerClose").addEventListener("click",closeReader);
+$("reader").addEventListener("click",event=>{if(event.target===$("reader"))closeReader();});
+addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$("reader").hidden)closeReader();else if(!$("lightbox").hidden)closeLightbox();else if(thread)navBack();}});
 
 /* Agents: the list pane and the orb row share one render. */
 let seen={};
@@ -1101,12 +1119,29 @@ $("notifyToggle").addEventListener("change",async()=>{
       notifyNote("Off. Flagged messages still appear on the board.");
     }
   } catch(error) { $("notifyToggle").checked=!on;notifyNote(error.message); }
-  finally { $("notifyToggle").disabled=false;$("notifyTest").hidden=!$("notifyToggle").checked; }
+  finally { $("notifyToggle").disabled=false;$("notifyTest").hidden=!$("notifyToggle").checked;settingsSummary(); }
 });
 $("notifyTest").addEventListener("click",async()=>{
   try { const result=await postJSON("/api/push/test",{});notifyNote(result.delivered?"Test sent; it should arrive in a moment.":"No device received it. Turn notifications off and on again."); }
   catch(error) { notifyNote(error.message); }
 });
+// Settings fold away under Agents; their row says how they are set.
+const THEMES={auto:"Auto",light:"Light",dark:"Dark"};
+function settingsSummary() {
+  $("settingsSummary").textContent=[`Notifications ${$("notifyToggle").checked?"on":"off"}`,$("playfulToggle").checked?"Playful":"Calm",
+    THEMES[window.boardTheme?.choice]||"Auto"].join(" · ");
+}
+function themeSwitch() {
+  const choice=window.boardTheme?.choice||"auto";
+  document.querySelectorAll("[data-theme-choice]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.themeChoice===choice)));
+  $("themeNote").textContent=choice==="auto"?`Follows this device: ${window.boardTheme?.dark?"dark":"light"} now.`:choice==="dark"?"The meadow by moonlight.":"The misty morning meadow.";
+  settingsSummary();
+}
+document.querySelectorAll("[data-theme-choice]").forEach(b=>b.addEventListener("click",()=>window.boardTheme?.set(b.dataset.themeChoice)));
+addEventListener("boardtheme",themeSwitch);
+$("settings").addEventListener("change",settingsSummary);
+$("settings").addEventListener("toggle",()=>{if($("settings").open)requestAnimationFrame(()=>$("settings").scrollIntoView({block:"end",behavior:"smooth"}));});
+themeSwitch();
 // A notification links to /?m=ID: open that message's thread, whether the app was closed or already open.
 function openLink(url) {
   const id=Number(new URL(url,location.href).searchParams.get("m"));if(!(id>0))return;
@@ -1115,7 +1150,7 @@ function openLink(url) {
 navigator.serviceWorker?.addEventListener("message",event=>{if(event.data?.open)openLink(event.data.open);});
 waitFor(()=>state,15000).then(()=>{
   if(!state)return;
-  setupPush();
+  setupPush().finally(settingsSummary);
   if(new URLSearchParams(location.search).has("m")){openLink(location.href);history.replaceState(history.state,"","/");}
 });
 
