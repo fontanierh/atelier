@@ -128,10 +128,11 @@ RENDERER=0; RENDER=(@FORWARD@); COMMANDS=@FORWARD_COMMANDS@
 LOG="$LOGS/game.log"
 ARGS=(-fullscreen -ForceRes -resx=2560 -resy=1440 -desktopnative1440 -nosplash -abslog="$LOG"
   -set="$PROFILE;renderer=$RENDERER" -preferencesfile="$PREFS" "${RENDER[@]}" -ExecCmds="$COMMANDS" "$@")
-# A Development package can segfault at startup: the engine's memory tracker frees itself on the game thread while
-# AppKit's launch event allocates through it on the main thread (docs/PACKAGING.md). Retry that crash once, and only
-# when it ended the game within @STARTUP_SECONDS@ s without touching game.log; a crash after the engine started is real.
-log_identity() { stat -f '%i:%z:%m' "$LOG" 2>/dev/null || echo none; }
+# A Development package can segfault at startup, before it logs anything. Crash reports and engine source point to
+# the memory tracker freeing itself on the game thread while AppKit's launch event allocates through it on the main
+# thread (docs/PACKAGING.md). The launcher cannot see the stack, so it retries only that shape of crash, once: SIGSEGV
+# within @STARTUP_SECONDS@ s with game.log untouched (inode, size, and sub-second modify and change times).
+log_identity() { stat -f '%i:%z:%Fm:%Fc' "$LOG" 2>/dev/null || echo none; }
 BEFORE=$(log_identity); START=$SECONDS
 "$GAME" "${ARGS[@]}"; STATUS=$?
 if [ "$STATUS" -eq 139 ] && [ $((SECONDS - START)) -lt @STARTUP_SECONDS@ ] && [ "$(log_identity)" = "$BEFORE" ]; then

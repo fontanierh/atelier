@@ -140,7 +140,7 @@ Upload the verified ZIP or all numbered parts, SHA256SUMS, manifest.json and the
 
 ## A launch can crash before the game starts
 
-**An engine race, seen three times, each time fixed by launching the same unchanged app again.** The game's process
+**Seen three times, each time fixed by launching the same unchanged app again.** The game's process
 ends with SIGSEGV (exit status 139) within a second, before `game.log` exists. macOS writes `Yorimichi-<date>.ips`
 under `~/Library/Logs/DiagnosticReports/`. `Play Yorimichi.command` now retries that crash once by itself (below).
 
@@ -166,6 +166,7 @@ LaunchServices asString / _LSCopyApplicationInformation
 -[NSApplication run] / tchar_main / main
 ```
 
+The stacks and the engine source support the following explanation; the race has not been reproduced on demand.
 The engine's low-level memory tracker (LLM) is compiled into Development and Test packages by default
 (`LLM_ENABLED_IN_CONFIG` and `ALLOW_LOW_LEVEL_MEM_TRACKER_IN_TEST` in
 `Runtime/Core/Public/HAL/LowLevelMemTrackerDefines.h`) and tracks every allocation from process start. Without `-llm`
@@ -176,8 +177,9 @@ new allocation handlers. An `FLLMScope` that opened while LLM was still enabled 
 `DestructInTheOpen` pops its tag from the freed tracker without checking again. Nothing in the project configures LLM.
 LaunchServices does more of that work for a newly registered app, which is why a first launch is the usual victim.
 
-The launcher retries exactly that case once: the game ended with SIGSEGV within 20 seconds and this launch did not
-create or change `game.log`. It appends a line to `launcher.log` beside `game.log`, and macOS keeps the first `.ips`.
+The launcher cannot see the crash stack, so it retries the crash's observable shape, once: the game ended with
+SIGSEGV within 20 seconds, and this launch did not create or change `game.log` (same inode, size, and sub-second
+modify and change times). It appends a line to `launcher.log` beside `game.log`, and macOS keeps the first `.ips`.
 Any other exit, a crash after the engine wrote its log, or a second crash ends the launcher with the game's status.
 Double-clicking `Yorimichi.app` itself has no retry. In release checks, a first crash with this stack followed by a
 clean retry is the known limitation; a crash with a different stack, or after `game.log` exists, is a new failure.
