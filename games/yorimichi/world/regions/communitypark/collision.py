@@ -159,17 +159,19 @@ def buried_walls(vertices, faces, owner, obstacles=(), groups=None):
     down = normals[:, 2] < -1e-4
     undersides = Surfaces(triangles[down], part[down])
     def closed_shell(point, direction, neighbour, riding_height, base):
-        """The shell closes within the joint reach to this cap triangle's lowest vertex."""
+        """The shell closes within the longest lip ramp to this cap triangle's lowest vertex."""
         outside = point[:2]+direction*PROBE
         if not any(undersides.owner[j] == neighbour and
                    abs(undersides.height(j, *point[:2])-riding_height) <= WELD
                    for j in undersides.over(*outside)):
             return False
-        end = point[:2]+direction*MIN_RUN
-        fractions = np.unique([0., 1., *undersides.crossings(outside, end)])
+        # Probe selects the neighbour; coverage must also include the space next to the cap.
+        start = point[:2]+direction*WELD
+        end = point[:2]+direction*SLOPE*LIP[1]
+        fractions = np.unique([0., 1., *undersides.crossings(start, end)])
         fractions = np.sort(np.r_[fractions, (fractions[:-1]+fractions[1:])/2])
         for fraction in fractions:
-            xy = outside+(end-outside)*fraction
+            xy = start+(end-start)*fraction
             heights = [undersides.height(j, *xy) for j in undersides.over(*xy)
                        if undersides.owner[j] == neighbour]
             if not heights: return False

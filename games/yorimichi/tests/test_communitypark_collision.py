@@ -170,23 +170,27 @@ class RidingCollisionTest(unittest.TestCase):
         # The measured bowl transition meets the slab in a knife edge. Its underside
         # closes the small void within 30 cm; the crest must not snag the board.
         floor = slab(-2, -1, 0, 1, -.3, 0.)
-        def shell(x0, x1):
+        def shell(x0, x1, fall=.96):
             vertices, faces = slab(x0, -1, x1, 1, -.3, 0.)
-            vertices[:4, 2] = -.96*vertices[:4, 0]
+            vertices[:4, 2] = -fall*vertices[:4, 0]
             vertices[4:, 2] = -vertices[4:, 0]/6
             return vertices, faces
-        for kind in ('closed', 'short', 'gap', 'underpass'):
+        for kind in ('closed', 'wider_closed', 'short', 'gap', 'adjacent_gap', 'long_void', 'underpass'):
             with self.subTest(neighbour=kind):
                 pieces = [floor, shell(0., .2 if kind == 'short' else 1.)]
                 groups = None
                 if kind == 'gap':
                     pieces = [floor, shell(0., .1), shell(.12, 1.)]
                     groups = [0, 1, 1]
+                elif kind == 'adjacent_gap':
+                    pieces[1] = shell(.01, 1.)
+                elif kind in ('wider_closed', 'long_void'):
+                    pieces[1] = shell(0., 1., .6 if kind == 'wider_closed' else .4)
                 elif kind == 'underpass':
                     pieces[0] = slab(-2, -1, 0, 1, -1.5, 0.)
                 vertices, faces, owner, _ = C.riding_collision(pieces, groups=groups)
                 cap = (owner == 0) & np.all(abs(vertices[faces, 0]) < 1e-9, axis=1)
-                self.assertEqual(sum(cap), 0 if kind == 'closed' else 2)
+                self.assertEqual(sum(cap), 0 if kind in ('closed', 'wider_closed') else 2)
 
     def test_measured_bowl_shell_closes_before_its_short_edge_ends(self):
         joint, end = -10.19744873046875, -9.89764404296875
