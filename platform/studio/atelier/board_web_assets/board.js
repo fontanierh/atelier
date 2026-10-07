@@ -874,15 +874,28 @@ async function pushConversation(name) {
 // Pop the top screen. A swipe hands over its scene, position and speed; the browser's back asks for no animation.
 async function navBack({scene:given=null,from=0,velocity=0,instant=false}={}) {
   const entry=nav.at(-1);if(!entry){if(given)end(given);return;}
-  const animate=!instant&&!motion.matches&&(entry.kind==="thread"||!desktop.matches);
+  const animate=!instant&&!motion.matches&&!desktop.matches;
   let s=given;
   if(animate){if(!s){if(moving)return;s=scene(entry);begin(s);}await glide(s,from,1,velocity);}
-  if(entry.kind==="thread"){closeThread();if(s)end(s);return;}
+  if(entry.kind==="thread"){
+    closeThread();if(s)end(s);
+    else if(desktop.matches&&!instant&&!motion.matches)enter([$("topbar"),$("feed")],"view-in");
+    return;
+  }
   const underlay=entry.underlay;entry.underlay=null;
   selectAgent("","dm",entry.from,false);
   // The live pane stays off to the right, behind the still copy, until the full conversation has painted again.
   if(entry.from==="messages"&&s)await waitFor(()=>feedPainted,1200);
   if(s)end(s);underlay?.remove();
+}
+
+// A short entrance (on a wide screen, instead of a slide); the class goes once its own animation has played.
+function enter(nodes, name) {
+  for(const n of nodes){
+    n.classList.remove(name);void n.offsetWidth;n.classList.add(name);
+    const done=event=>{if(event.target!==n)return;n.classList.remove(name);n.removeEventListener("animationend",done);};
+    n.addEventListener("animationend",done);
+  }
 }
 
 /* Thread view: the original and every reply, with the composer replying in the thread. */
@@ -894,7 +907,9 @@ async function openThread(id, focus=false) {
   const loaded=loadThread();
   if(!nested){
     const entry={kind:"thread"};navPush(entry);
-    if(!motion.matches&&!moving){
+    // A wide screen opens the thread in place over the conversation, which steps out of sight; a phone pushes it.
+    if(desktop.matches){if(!motion.matches)enter([$("threadView")],"thread-in");}
+    else if(!motion.matches&&!moving){
       const s=scene(entry);begin(s);paint(s,1);
       await waitFor(()=>thread?.data,220);
       if(thread&&nav.at(-1)===entry){
