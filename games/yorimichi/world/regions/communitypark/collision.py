@@ -12,6 +12,8 @@ steps and exposed walls stay, and so do the grind obstacles (ledges, rails), whi
 An angled underside meeting a riding crest can create a speculative contact above the crest. Fill its small
 closed pocket down to the neighbouring slab foundation, retaining a flat ceiling and the outside walls. Riding
 tops stay exact. Exposed overhangs, steep kicker noses and pockets over other source riding surfaces stay exact.
+Horizontal zero-thickness plates keep their tops and gain a 4 mm underside and perimeter. A coincident ceiling
+can make the native solver treat a riding rim as a 180-degree fold; a closed thin plate retains the real rim.
 """
 import numpy as np
 
@@ -505,9 +507,80 @@ def riding_collision(parts, obstacles=(), groups=None):
     report['fill_skirt_triangles'] = len(added_faces)-len(undersides)
     if added or added_faces:
         vertices, faces, keep = _merge(vertices, faces); owner = owner[keep]
+    vertices, faces, owner, sheet_report = solid_sheet_undersides(vertices, faces, owner, obstacles, groups)
+    report.update(sheet_report)
     report['buried_wall_triangles'] = len(buried)
     report['triangles'] = len(faces)
     return vertices, faces, owner, report
+
+
+def solid_sheet_undersides(vertices, faces, owner, obstacles=(), groups=None):
+    """Give horizontal, coincident top/back plates thickness without moving their riding faces.
+
+    Only a surviving reversed rim with the same piece's coplanar top seeds a patch. Follow connected flat
+    undersides of that piece, lower them by two weld cells, and skirt the free perimeter. A rim already joined
+    to a non-mirror face retains that join rather than gain another contact partner.
+    Existing solid slabs, tilted shells and obstacles retain their original geometry and collision.
+    """
+    triangles = vertices[faces]; normals = _normals(triangles)[0]
+    part = np.where(owner < 0, -1-owner, owner)
+    if groups is not None: part = np.asarray(groups)[part]
+    down = set(np.flatnonzero((normals[:, 2] < -.99999) & (owner >= 0)
+                             & ~np.isin(owner, list(obstacles))).tolist())
+    edges = {}
+    for k, face in enumerate(faces):
+        for a, b in zip(face, np.roll(face, -1)):
+            edges.setdefault(tuple(sorted((int(a), int(b)))), []).append((k, int(a), int(b)))
+    seeds = set()
+    for k in down:
+        for a, b in zip(faces[k], np.roll(faces[k], -1)):
+            if any(j != k and x == b and y == a and part[j] == part[k]
+                   and normals[j, 2] > .99999
+                   and np.max(abs((triangles[j]-triangles[k, 0])@normals[k])) <= .0001
+                   for j, x, y in edges[tuple(sorted((int(a), int(b))))]):
+                seeds.add(k)
+    selected, extra, extra_owner, patches = set(), [], [], 0
+    for seed in sorted(seeds):
+        if seed in selected: continue
+        patch, pending = set(), [seed]
+        while pending:
+            k = pending.pop()
+            if k in patch: continue
+            patch.add(k)
+            for a, b in zip(faces[k], np.roll(faces[k], -1)):
+                for j, _, _ in edges[tuple(sorted((int(a), int(b))))]:
+                    if (j in down and j not in patch and part[j] == part[seed]
+                            and np.max(abs((triangles[j]-triangles[seed, 0])@normals[seed])) <= .0001):
+                        pending.append(j)
+        boundary = {}
+        for k in sorted(patch):
+            lowered = triangles[k].copy(); lowered[:, 2] -= 2*WELD
+            extra.append(lowered); extra_owner.append(owner[k])
+            for a, b in zip(faces[k], np.roll(faces[k], -1)):
+                key = tuple(sorted((int(a), int(b))))
+                if key in boundary: boundary.pop(key)
+                else: boundary[key] = (k, int(a), int(b))
+        for k, a, b in boundary.values():
+            if any(j not in patch and x == b and y == a
+                   and (normals[j]@normals[k] >= -.99
+                        or np.max(abs((triangles[j]-triangles[k, 0])@normals[k])) > .0001)
+                   for j, x, y in edges[tuple(sorted((a, b)))]):
+                continue
+            a, b = vertices[[a, b]]; fa, fb = a.copy(), b.copy()
+            fa[2] -= 2*WELD; fb[2] -= 2*WELD
+            extra.extend((np.array([a, b, fb]), np.array([a, fb, fa])))
+            extra_owner.extend((owner[seed], owner[seed]))
+        selected.update(patch); patches += 1
+    report = {'solid_sheet_patches': patches, 'lowered_sheet_triangles': len(selected),
+              'sheet_skirt_triangles': len(extra)-len(selected)}
+    if not selected: return vertices, faces, owner, report
+    keep = np.ones(len(faces), bool); keep[list(selected)] = False
+    start = len(vertices)
+    vertices = np.vstack([vertices, np.concatenate(extra)])
+    faces = np.vstack([faces[keep], start+np.arange(3*len(extra)).reshape(-1, 3)])
+    owner = np.r_[owner[keep], extra_owner]
+    vertices, faces, keep = _merge(vertices, faces)
+    return vertices, faces, owner[keep], report
 
 
 def steps(vertices, faces, owner, obstacles=(), limit=ROLLABLE):

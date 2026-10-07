@@ -6,10 +6,6 @@ source, checks protocol and records hashes. Triangle/rail/platform samples are
 explicit external inputs; actual collision_map, collision compiler, static grind
 provider, controller/cache/Pad/action owner bodies execute unchanged. This proof
 does not establish session/global frame or live operating-system polling parity.
-
-Imported-mesh coincident-backface exclusion is an explicit opt-in C++ host
-policy, not part of the recovered reference. This corpus leaves that flag off;
-check_gameplay_sheet_edges.cpp exercises the extension's contacts and queries.
 """
 import argparse
 from collections import Counter

@@ -172,11 +172,9 @@ bool ReadWorld(const std::string& path,World& result,std::string& error)
     if(input.bad()){error="Cannot read collision snapshot: "+path;return false;}
     Json object;
     if(!Parse(text,object,error)
-        || !Fields(object,{"triangles","rails","spawn","heading","surfaces","exclude_coincident_backfaces"},{"triangles","rails","spawn","heading"},error)
+        || !Fields(object,{"triangles","rails","spawn","heading","surfaces"},{"triangles","rails","spawn","heading"},error)
         || !Vector(*Field(object,"spawn"),result.spawn,error)
         || !Float(*Field(object,"heading"),result.heading,error))return false;
-    if(const auto* policy=Field(object,"exclude_coincident_backfaces"))
-        if(!Boolean(*policy,result.collision.exclude_coincident_backfaces,error))return false;
     const auto& triangles=*Field(object,"triangles");
     const auto& rails=*Field(object,"rails");
     if(triangles.kind!=Json::Array || rails.kind!=Json::Array)

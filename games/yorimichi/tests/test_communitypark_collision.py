@@ -23,6 +23,51 @@ def floor_tiles():
 
 
 class RidingCollisionTest(unittest.TestCase):
+    def test_zero_thickness_plate_keeps_its_top_and_a_closed_ceiling(self):
+        vertices = np.array([(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0), (1, 1, 0.)])
+        faces = np.array([(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4), (0, 2, 1), (0, 3, 2)])
+        owner = np.zeros(len(faces), int)
+        v, f, _, report = C.solid_sheet_undersides(vertices, faces, owner)
+        self.assertEqual(report, {'solid_sheet_patches': 1, 'lowered_sheet_triangles': 2,
+                                  'sheet_skirt_triangles': 8})
+        triangles = v[f]; normals = C._normals(triangles)[0]
+        np.testing.assert_array_equal(triangles[normals[:, 2] > .99], vertices[faces[:4]])
+        self.assertTrue(np.all(triangles[normals[:, 2] < -.99, :, 2] == -2*C.WELD))
+        # Every exposed rim stays a real corner: the new skirts face outwards, and the volume is closed.
+        centre = np.array([1, 1, -C.WELD]); side = abs(normals[:, 2]) < .01
+        self.assertTrue(np.all(np.sum(normals[side]*(triangles[side].mean(1)-centre), axis=1) > 0))
+        edges = {}
+        for face in f:
+            for a, b in zip(face, np.roll(face, -1)):
+                key = tuple(sorted((int(a), int(b)))); edges[key] = edges.get(key, 0)+1
+        self.assertEqual(set(edges.values()), {2})
+
+    def test_solid_sloped_and_obstacle_plates_keep_their_collision(self):
+        v = np.array([(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0), (1, 1, 0.)])
+        f = np.array([(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4), (0, 2, 1), (0, 3, 2)])
+        sloped = v.copy(); sloped[:, 2] = .1*sloped[:, 0]
+        for vertices, faces, obstacles in ((*slab(0, 0, 2, 2, -.1, 0), ()),
+                                          (sloped, f, ()), (v, f, (0,))):
+            with self.subTest(obstacle=bool(obstacles), vertices=vertices.tolist()):
+                actual_v, actual_f, _, report = C.solid_sheet_undersides(vertices, faces,
+                                                                         np.zeros(len(faces), int), obstacles)
+                np.testing.assert_array_equal(actual_v, vertices)
+                np.testing.assert_array_equal(actual_f, faces)
+                self.assertEqual(report['solid_sheet_patches'], 0)
+
+    def test_plate_rim_with_a_real_wall_does_not_get_an_extra_skirt(self):
+        vertices = np.array([(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0), (1, 1, 0.),
+                             (0, 0, 1), (2, 0, 1)])
+        faces = np.array([(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4), (0, 2, 1), (0, 3, 2),
+                          (0, 1, 6), (0, 6, 5)])
+        v, f, _, report = C.solid_sheet_undersides(vertices, faces, np.zeros(len(faces), int))
+        self.assertEqual(report['sheet_skirt_triangles'], 6)
+        # Retain both authored wall triangles, and add no new wall between the ceiling and this join.
+        triangles = v[f]
+        for triangle in vertices[faces[-2:]]:
+            self.assertTrue(any(np.array_equal(t, triangle) for t in triangles))
+        self.assertFalse(any(np.all(t[:, 1] == 0) and np.min(t[:, 2]) < 0 for t in triangles))
+
     def test_flush_tiles_weld_without_ramps(self):
         vertices, faces, owner, report = C.riding_collision(floor_tiles())
         self.assertEqual(report['wedges'], 0)

@@ -518,7 +518,6 @@ namespace SkateRuntimeDetail
     inline atelier::skate::GameplayWorldSnapshot NativeSnapshot(const FSnapshot& S)
     {
         atelier::skate::GameplayWorldSnapshot Out;Out.triangles.reserve(S.Num());
-        Out.exclude_coincident_backfaces=true;
         for(int32 I=0;I<S.Points.Num();I+=3)
             Out.triangles.push_back({SnapshotPoint(S.Points[I]),SnapshotPoint(S.Points[I+1]),SnapshotPoint(S.Points[I+2])});
         if(S.Surfaces.Num()==S.Num())Out.surfaces.assign(S.Surfaces.GetData(),S.Surfaces.GetData()+S.Surfaces.Num());
