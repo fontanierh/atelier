@@ -331,7 +331,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                     };
                     LegLength = FVector::Dist(Where(TEXT("thigh_L")), Where(TEXT("shin_L"))) + FVector::Dist(Where(TEXT("shin_L")), Where(TEXT("foot_L")));
                 }
-            const float Reach = FMath::Clamp(LegLength / 55.f, 1.f, 1.6f);
+            // Only Modori's longer legs move them; Cairo and the others keep the stance as it was fitted.
+            const float Reach = Pawn->IsA<AModoriCharacter>() ? FMath::Clamp(LegLength / 55.f, 1.f, 1.6f) : 1.f;
             const FVector HullRight=(SailboatC->PosePoint(FVector(0,1,0))-SailboatC->PosePoint(FVector::ZeroVector)).GetSafeNormal();
             const float GripSide=FVector::DotProduct(SailboatC->HandPoint(1)-SailboatC->PosePoint(FVector::ZeroVector),HullRight);
             // Slide naturally along the wide thwart to keep the moving tiller within the child's reach.
