@@ -43,12 +43,27 @@ class RidingCollisionTest(unittest.TestCase):
         self.assertEqual([x for x in C.steps(vertices, faces, owner) if x[2] >= 0], [])
         self.assertAlmostEqual(report['max_rise_m'], .02)
         ramps = vertices[faces[owner < 0]]
-        # 1:8 at most (the run is never shorter than 10 cm), and never above the pad or below the floor.
+        # 1:8 at most, and never above the pad or below the floor.
         self.assertGreaterEqual(ramps[..., 2].min(), -1e-9); self.assertLessEqual(ramps[..., 2].max(), .02+1e-9)
         normals = C._normals(ramps)[0]
         self.assertTrue(np.all(normals[:, 2] > np.cos(np.arctan(.2/.1))-1e-9))
         self.assertTrue(np.all(normals[:, 2] > 0))
         self.assertAlmostEqual(report['wedged_length_m'], 8., places=6)
+
+    def test_small_floor_lip_has_a_gentle_transition(self):
+        # The real bowl-floor joint rises 12.04 mm. Its old 10 cm wedge abruptly slowed the board;
+        # exact recorded-input replays cleared that loss with a 30 cm run, keeping the lip smoothed.
+        pieces = [slab(-4, -4, 0, 4, -.2, 0.), slab(0, -4, 4, 4, -.18796, .01204)]
+        vertices, faces, owner, report = C.riding_collision(pieces)
+        ramps = vertices[faces[owner < 0]]
+        self.assertGreater(report['wedges'], 0)
+        self.assertGreater(len(ramps), 0)
+        normals = C._normals(ramps)[0]
+        grade = np.linalg.norm(normals[:, :2], axis=1)/normals[:, 2]
+        self.assertLessEqual(grade.max(), .05)
+        self.assertGreaterEqual(ramps[..., 2].min(), -1e-9)
+        self.assertLessEqual(ramps[..., 2].max(), .01204+1e-9)
+        self.assertEqual(C.steps(vertices, faces, owner), [])
 
     def test_ledges_and_real_steps_stay_sharp(self):
         ledge = slab(-1, -.2, 1, .2, -.1, .04)

@@ -4,6 +4,7 @@ The native skate rolls over an edge of at most 12 mm; a taller lip where two sep
 the wheels and bails the rider. The rendered pieces keep their exact geometry and stop blocking. This mesh welds
 coincident vertices across placements and, wherever a riding edge stands 4 mm to 8 cm proud of the neighbouring
 piece's surface, adds a 1:8 wedge from the edge down onto that surface, laid in its plane so bowl walls blend too.
+The run is at least 30 cm: a short wedge over a small floor lip can abruptly slow the board.
 Closed pieces also carry vertical end caps at their joins: a swept board can hit them through the meeting
 riding surfaces. Remove only caps covered on both sides by adjoining pieces at the same riding height. Taller
 steps and exposed walls stay, and so do the grind obstacles (ledges, rails), which are meant to be ollied onto.
@@ -12,6 +13,7 @@ import numpy as np
 
 LIP = (.004, .08)       # rises that get a wedge; below is flush, above is a ledge
 SLOPE = 8.              # wedge run per metre of rise
+MIN_RUN = .3           # small floor lips need a gentle change in slope
 UP = .5                 # riding surfaces face up at least this much
 WELD = .002
 ROLLABLE = .012
@@ -227,7 +229,7 @@ def riding_collision(parts, obstacles=(), groups=None):
     def slope(point, under, drop, direction):
         """Foot of a 1:SLOPE run from an edge point down onto the neighbour's plane, heading `direction` in plan."""
         n = surfaces.normal[under]; slide = np.array([*direction, 0.]); slide -= (slide@n)*n
-        return point-drop*n+slide/np.linalg.norm(slide)*max(SLOPE*drop, .1)
+        return point-drop*n+slide/np.linalg.norm(slide)*max(SLOPE*drop, MIN_RUN)
 
     def add(tri, k, part):
         tri = np.asarray(tri)
