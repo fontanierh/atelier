@@ -256,6 +256,8 @@ void AJapanPlayerController::Tick(float Dt)
     if (!State->StartupError.IsEmpty())
     { bReadinessSent = true; ClientAdmissionFailure_Implementation(State->StartupError); return; }
     AJapanWorld* World = JapanNetwork::FindWorld(GetWorld());
+    if (World && !World->BootstrapError.IsEmpty())
+    { bReadinessSent = true; ClientAdmissionFailure_Implementation(TEXT("Incomplete local world: ") + World->BootstrapError); return; }
     if (!World || !World->bGameplayReady || !State->bWorldReady || State->ContentIdentity.IsEmpty()) return;
     FString Identity, Error;
     if (!JapanNetwork::Identity(Identity, Error) || Identity != State->ContentIdentity)
@@ -316,7 +318,8 @@ void AJapanNetworkGameMode::BeginPlay()
         State->Capacity = SessionCapacity;
         JapanNetwork::Identity(State->ContentIdentity, State->StartupError);
         State->bWorldReady = SessionWorld && SessionWorld->bGameplayReady;
-        if (!State->bWorldReady) State->StartupError = TEXT("The server could not finish loading gameplay collision and rails.");
+        if (!State->bWorldReady) State->StartupError = TEXT("The server could not finish loading gameplay collision and rails: ") +
+            (SessionWorld ? SessionWorld->BootstrapError : TEXT("world actor missing"));
         State->ForceNetUpdate();
         UE_LOG(LogTemp, Display, TEXT("NETWORK server session=%s capacity=%d ready=%d dedicated=%d"),
             *State->SessionId, SessionCapacity, State->bWorldReady, GetNetMode() == NM_DedicatedServer);

@@ -54,6 +54,7 @@ static UStaticMesh* LoadMesh(const FString& Name)
 void AJapanWorld::Load()
 {
     const double Started = FPlatformTime::Seconds();
+    TArray<FString> Incomplete;
     const FString JsonPath = AtelierDataPath(TEXT("world.json"));
     FString Text;
     if (!FFileHelper::LoadFileToString(Text, *JsonPath)) { UE_LOG(LogTemp, Error, TEXT("world.json not found at %s"), *JsonPath); return; }
@@ -307,7 +308,7 @@ void AJapanWorld::Load()
         {
             const FString Key(Pair.Key);
             UStaticMesh* Mesh = LoadMesh(Key);
-            if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
+            if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
             const bool bGrass = Key.StartsWith(TEXT("Grass"));
             const bool bBush = Key.StartsWith(TEXT("Bush"));
             const bool bTree = Key.StartsWith(TEXT("Tree")) || Key.StartsWith(TEXT("HD_NorthTree"));
@@ -542,14 +543,24 @@ void AJapanWorld::Load()
     { Zeppelin=GetWorld()->SpawnActor<AZeppelinService>();if(Zeppelin)Zeppelin->Initialize(*ZeppelinData); }
     const TSharedPtr<FJsonObject>* Mega=nullptr;
     if(Root->TryGetObjectField(TEXT("mega"),Mega))
-        if(auto* Ramp=GetWorld()->SpawnActor<AMegaRamp>()) Ramp->Initialize(*Mega);
-    if(FPaths::FileExists(ParkPath))
-        if(auto* Park=GetWorld()->SpawnActor<ASkatePark>()) Park->Initialize(ParkPath);
+    {
+        auto* Ramp=GetWorld()->SpawnActor<AMegaRamp>();
+        if (Ramp) Ramp->Initialize(*Mega);
+        if (!Ramp || !Ramp->bGameplayReady) Incomplete.Add(TEXT("mini-mega"));
+    }
+    else Incomplete.Add(TEXT("mini-mega data"));
+    auto InstallPark = [&](const FString& Path, const TCHAR* Label)
+    {
+        auto* Park = FPaths::FileExists(Path) ? GetWorld()->SpawnActor<ASkatePark>() : nullptr;
+        if (!Park || !Park->Initialize(Path)) Incomplete.Add(Label);
+    };
+    InstallPark(ParkPath, TEXT("skate pier"));
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
-    ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
-    if (FPaths::FileExists(CommunityParkPath))
-        if (auto* Park = GetWorld()->SpawnActor<ASkatePark>()) Park->Initialize(CommunityParkPath);
-    if (FPaths::FileExists(HippodromePath)) AHippodrome::Spawn(GetWorld(), HippodromePath);
+    const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
+    if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));
+    InstallPark(CommunityParkPath, TEXT("community park"));
+    const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
+    if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK cleared %d vegetation instances"), Cleared);
     // The road guardrails are grindable: the W-beam's top edge is 85 cm over the rail line.
     if (USkateRailSubsystem* Rails = GetWorld()->GetSubsystem<USkateRailSubsystem>())
@@ -574,7 +585,12 @@ void AJapanWorld::Load()
     if (GetNetMode()!=NM_DedicatedServer) GetWorld()->SpawnActor<ALeafStorm>(FVector::ZeroVector, FRotator::ZeroRotator);
     // gulls over the sea, a little off the middle of the road
     AGullFlock* Flock = GetNetMode()==NM_DedicatedServer ? nullptr : GetWorld()->SpawnActor<AGullFlock>(ToUE(20, -170, 45), FRotator::ZeroRotator);
-    bGameplayReady = bLoaded && TotalInstances > 0;
+    if (!City.IsValid()) Incomplete.Add(TEXT("Hidamari data"));
+    if (HouseLayout && !HouseRuntime.IsValid()) Incomplete.Add(TEXT("tree house data"));
+    if (TotalInstances == 0) Incomplete.Add(TEXT("world geometry"));
+    BootstrapError = FString::Join(Incomplete, TEXT(", "));
+    bGameplayReady = bLoaded && Incomplete.IsEmpty();
+    if (!bGameplayReady) UE_LOG(LogTemp, Warning, TEXT("NETWORK world incomplete: %s"), *BootstrapError);
     UE_LOG(LogTemp, Log, TEXT("world loaded: %d groups, %d instances, %d shots, flock %d, %.1f ms"), Groups.Num(), TotalInstances, Shots.Num(), Flock ? 1 : 0, (FPlatformTime::Seconds() - Started) * 1000.0);
 }
 

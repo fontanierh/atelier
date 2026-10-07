@@ -126,7 +126,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
             const TSharedPtr<FJsonObject> Entry = Value->AsObject();
             const FString Name = Entry->GetStringField(TEXT("mesh"));
             UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name));
-            if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing prop mesh %s"), *Name); continue; }
+            if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing prop mesh %s"), *Name); continue; }
             const FMatrix Basis = FRotationMatrix::MakeFromXZ(JsonVector(Entry->GetArrayField(TEXT("forward"))),
                                                                JsonVector(Entry->GetArrayField(TEXT("up"))));
             auto* C = NewObject<UStaticMeshComponent>(Park, *Name);
@@ -141,13 +141,16 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     Park->SpawnYaw = Start->GetNumberField(TEXT("yaw_deg"));
     UE_LOG(LogTemp, Display, TEXT("MEGAPARK placed at %s yaw %.1f: %d meshes (%d not imported), %d rails, %d trees, %d props"),
         *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Rails.Num(), Trees, Props);
+    Park->bGameplayReady = Missing == 0 && Meshes > 0 && !Park->Rails.IsEmpty() && Park->RegisteredRailCount == Park->Rails.Num();
     return Park;
 }
 
 void ASuperUltraMegaPark::RegisterRails()
 {
     USkateRailSubsystem* Registry = GetWorld()->GetSubsystem<USkateRailSubsystem>();
-    if (!Registry || bRailsRegistered) return;
+    // Runtime-spawned client worlds can BeginPlay before Spawn has filled the manifest.
+    // Do not mark an empty list registered and permanently lose its grind paths.
+    if (!Registry || bRailsRegistered || Rails.IsEmpty()) return;
     bRailsRegistered = true;
     int32 Count = 0;
     for (const FMegaParkRail& Source : Rails)
@@ -164,6 +167,7 @@ void ASuperUltraMegaPark::RegisterRails()
         if (Registry->Add(MoveTemp(Rail)) != INDEX_NONE) ++Count;
     }
     UE_LOG(LogTemp, Display, TEXT("MEGAPARK registered %d original grind paths"), Count);
+    RegisteredRailCount = Count;
 }
 
 UClass* AMegaParkGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)

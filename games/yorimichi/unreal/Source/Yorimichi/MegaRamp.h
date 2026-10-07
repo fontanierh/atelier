@@ -14,4 +14,5 @@ class YORIMICHI_API AMegaRamp : public AActor
 public:
     AMegaRamp();
     void Initialize(const TSharedPtr<FJsonObject>& Data);
+    bool bGameplayReady = false;
 };

@@ -96,7 +96,7 @@ def worker(folder, port):
             def launch(role, destination):
                 log = guards.enter_context((folder / (role + '.log')).open('w'))
                 command = [str(ctx.unreal_app), str(ctx.uproject), destination,
-                           '-server' if role == 'server' else '-game', '-nullrhi', '-nosound', '-nosplash',
+                           '-server' if role == 'server' else '-game', '-nullrhi', '-nosound', '-nosplash', '-nolive',
                            '-unattended', '-stdout', '-FullStdOutLogOutput',
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),

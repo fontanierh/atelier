@@ -304,6 +304,7 @@ bool AHippodrome::Initialize(const FString& Path)
         if (Name == TEXT("SM_HD_StartingGate")) GateMesh = Component;
     }
     RootComponent->SetMobility(EComponentMobility::Static);
+    bGameplayReady = Placed > 0 && Placed == Root_->GetArrayField(TEXT("meshes")).Num();
     if (Placed == 0) return false;
     auto Spot = [&](const TCHAR* Key, FVector& Out, float& Yaw)
     {
