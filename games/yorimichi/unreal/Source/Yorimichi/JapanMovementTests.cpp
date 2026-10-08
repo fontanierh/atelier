@@ -52,6 +52,30 @@ bool FJapanMoveClockTest::RunTest(const FString&)
     Burst.Refill(120.);
     TestEqual(TEXT("A long outage cannot bank more than the timeout"), Burst.Credit, FJapanMoveClock::Timeout);
     TestFalse(TEXT("Nonfinite elapsed input is refused"), Burst.Allows(120., std::numeric_limits<double>::infinity()));
+    FJapanMoveClock Recovery;
+    Recovery.BeginEpoch(20.);
+    TestTrue(TEXT("The first capped move includes host time since the epoch handoff"), Recovery.Allows(20.299, .125));
+    Recovery.Accepted(20.299, .125);
+    // Recorded recovery: the .125 first step consumed all initial slack when
+    // refilling began at first arrival. Ordinary arrival jitter then reset again.
+    for (int32 I = 1; I <= 30; ++I)
+    {
+        const double Arrival = 20.299 + I * .033;
+        TestTrue(TEXT("Normal recovery frames fit after the capped first move"), Recovery.Allows(Arrival, 1. / 30.));
+        Recovery.Accepted(Arrival, 1. / 30.);
+    }
+    Recovery.BeginEpoch(30.);
+    TestFalse(TEXT("Old epoch acceptance does not start the new timeout"), Recovery.Expired(31.));
+    TestEqual(TEXT("An epoch clears old credit"), Recovery.Credit, FJapanMoveClock::InitialSlack);
+    double RecoveryAccepted = 0.;
+    for (int32 I = 0; I < 100; ++I)
+        if (Recovery.Allows(30.299, .025)) { Recovery.Accepted(30.299, .025); RecoveryAccepted += .025; }
+    TestTrue(TEXT("Recovery burst cannot exceed elapsed host time plus unchanged slack"),
+        RecoveryAccepted <= .299 + FJapanMoveClock::InitialSlack + 1.e-6);
+    TestFalse(TEXT("Recovery burst beyond its budget is still rejected"), Recovery.Allows(30.299, .025));
+    Recovery.BeginEpoch(40.);
+    Recovery.Refill(42.);
+    TestEqual(TEXT("First-arrival waiting cannot bank more than the existing cap"), Recovery.Credit, FJapanMoveClock::Timeout);
 #if !UE_BUILD_SHIPPING
     UWorld* TestWorld = nullptr;
     for (const FWorldContext& Context : GEngine->GetWorldContexts())

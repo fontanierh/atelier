@@ -68,19 +68,28 @@ def test_live_socket_probe_checks_local_port_on_every_address(monkeypatch, socke
     assert calls == [['lsof', '-nP', '-a', '-p', '99', '-iUDP', '-Fpn']]
 
 
+@pytest.fixture(params=['review_network_bind.py', 'review_network_session.py'])
+def process_runner(request):
+    path = Path(__file__).resolve().parents[1] / 'tools' / request.param
+    spec = importlib.util.spec_from_file_location('guard_lifecycle_review', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 @pytest.mark.parametrize('exit_code', [0, 1])
-def test_normal_child_exit_between_guard_polls_is_reaped(exit_code):
+def test_normal_child_exit_between_guard_polls_is_reaped(process_runner, exit_code):
     from unittest.mock import Mock
     game = Mock(); game.poll.side_effect = [None, exit_code]
     guard = Mock(); guard.poll.return_value = 0
-    assert review.guarded_game_running(game, guard, 'host') is False
+    assert process_runner.guarded_game_running(game, guard, 'host') is False
     assert game.poll.call_count == 2
 
 
 @pytest.mark.parametrize('guard_exit,child_exit', [(0, None), (1, None), (1, 0), (-9, None)])
-def test_stopped_guard_never_leaves_live_game_running(guard_exit, child_exit):
+def test_stopped_guard_never_leaves_live_game_running(process_runner, guard_exit, child_exit):
     from unittest.mock import Mock
     game = Mock(); game.poll.side_effect = [None, child_exit]
     guard = Mock(); guard.poll.return_value = guard_exit
     with pytest.raises(RuntimeError, match='lost its actual-child guard'):
-        review.guarded_game_running(game, guard, 'host')
+        process_runner.guarded_game_running(game, guard, 'host')

@@ -66,7 +66,7 @@ void UJapanCharacterMovement::ResetActivityPrediction()
     HeldButtons = LastServerHolds = 0; bRecoveryQueued = false; bInputPrepared = false; ActiveInput = FJapanMoveInput();
     PendingCheckpoint = FJapanMoveCheckpoint(); PendingCheckpointTime = -1.f;
     LastCustomCorrection = -1.; bReceivedMoveInEpoch = false;
-    MoveClock = FJapanMoveClock(); bClockResetPending = bWaitingAfterClockReset = false;
+    MoveClock.BeginEpoch(FPlatformTime::Seconds()); bClockResetPending = bWaitingAfterClockReset = false;
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->ResetDefence();
     ClearAccumulatedForces(); CurrentRootMotion.Clear();
 }

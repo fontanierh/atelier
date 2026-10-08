@@ -28,6 +28,19 @@ def load(path):
         return None
 
 
+def guarded_game_running(game, guard, role):
+    if game.poll() is not None:
+        return False
+    stopped = guard.poll()
+    if stopped is not None:
+        # The child can exit between polls. A normal monitor exit must be
+        # followed by reaping the child; exact exit codes remain checked below.
+        if stopped == 0 and game.poll() is not None:
+            return False
+        raise RuntimeError(role + ' lost its actual-child guard')
+    return True
+
+
 def host_frame_statistics(folder):
     """Each server world timestamp is one processing frame, even in a move burst."""
     frames = {}
@@ -348,8 +361,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     if time.time() - health.get('time', 0) > 3:
                         raise RuntimeError('Aggregate monitor heartbeat is stale')
                     for role, game, guard in running:
-                        if game.poll() is None and guard.poll() is not None:
-                            raise RuntimeError(role + ' lost its actual-child guard')
+                        guarded_game_running(game, guard, role)
                         failed = load(folder / (role + '-failed.json'))
                         if failed:
                             raise RuntimeError(str(failed))
