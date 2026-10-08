@@ -14,8 +14,8 @@ Development reaction-delivery probes use --reaction-delivery-case N (0..7):
 --reaction-delivery-moving, which requires measured pre-hit forward motion.
 Both peers run at 30 fps. Use zero lag or --lag-ms 60 --variance-ms 15 --loss-percent 2.
 The probe uses the ordinary aggregate/child guards and admission above.
-Expected recoil failures are labelled diagnostics, never excluded from passed:
-all cases retain the strict <1 cm correction check. Stationary and moving variants
+Scheduled reactions require identical payloads and saved-move boundaries on both
+peers, no forced recovery, and the strict <1 cm correction check; no recoil exemption. Stationary and moving variants
 are separate runs; none establishes rendered, packaged or two-machine acceptance.
 """
 import argparse
@@ -448,8 +448,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             checks.update(modori_checks(folder, modori_shield))
         reaction_delivery = None
         if reaction_delivery_case is not None:
-            from network_reaction_delivery_review import reaction_delivery_checks
-            reaction_checks, reaction_delivery = reaction_delivery_checks(load(folder / 'reaction-server.json') or {},
+            from network_scheduled_reaction_review import scheduled_reaction_checks
+            reaction_checks, reaction_delivery = scheduled_reaction_checks(load(folder / 'reaction-server.json') or {},
                 load(folder / 'reaction-client.json') or {}, reaction_delivery_case, reaction_delivery_moving)
             checks.update(reaction_checks)
         checks['source_unchanged'] = source_revision() == revision
@@ -474,7 +474,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             report['reaction_delivery_case'] = reaction_delivery_case
             report['reaction_delivery_moving'] = reaction_delivery_moving
             # Diagnostic expectations never alter passed or any strict check.
-            expected_failures = ['reaction_strict_prediction'] if reaction_delivery_case in (0, 2, 3, 4, 5) else []
+            expected_failures = [] # Scheduled production reactions must pass the unchanged strict position gate.
             report['diagnostic_expected_failures'] = expected_failures
             report['unexpected_failed_checks'] = [name for name, ok in checks.items() if not ok and name not in expected_failures]
             report['reaction_delivery'] = reaction_delivery
