@@ -61,8 +61,8 @@ CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else
 # down still reached into it; 12 cm, standing clear, still met his hair crouched, his chest leant 70 degrees forward).
 PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
         {'sword': [5., 0., -17.], 'sheath': [5., 0., -17.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
-# Carried pieces pitched about his left axis (degrees; positive brings the lower end out backward) through the top end of
-# the first of them (the sword's pommel), which keeps the place PUSH gives it. Modori's coat flares out over the small of
+# Carried pieces pitched about his left axis (degrees; positive brings the lower end out backward) through the sword's top
+# end (its pommel), which keeps the place PUSH gives it. Modori's coat flares out over the small of
 # his back, where the sheath's lower half sank into it (the operator's photo from behind, standing); pitched about their
 # pivot at his collar instead, the hilt came forward into his hair as he leaned into a run or a crouch.
 TILT = {'sword': 10., 'sheath': 10.} if CHARACTER == 'modori' else {}
@@ -244,7 +244,7 @@ def equipment(link, cairo, glide):
     C = compose(cairo.body(), [apply_t(link.body(), axis) for axis in ([1., 0, 0], [0., 1, 0], [0., 0, 1])])   # A_t A_s^T
     scale = ROSTER['scale'] * SIZE
     record, checks, tilt_centre = {}, {}, {}
-    for slot, item in ROSTER['moves']['equipment'].items():
+    for slot, item in sorted(ROSTER['moves']['equipment'].items(), key=lambda kv: kv[0] != 'sword'):   # the sword's pommel is TILT's centre
         entry = {key: item[key] for key in ('mesh', 'clip', 'looks') if key in item}
         entry['hand'] = entry['back'] = ''
         if item.get('hand'):
@@ -284,7 +284,9 @@ def equipment(link, cairo, glide):
                 p = add(p, apply(cairo.body(), PUSH[slot]))
             if slot in TILT:
                 T = turn(cairo.body()[1], -TILT[slot])
-                centre = tilt_centre.setdefault('top', top_end(item['mesh'], R, p, scale))
+                if slot == 'sword':
+                    tilt_centre['sword'] = top_end(item['mesh'], R, p, scale)
+                centre = tilt_centre['sword']
                 R, p = compose(T, R), add(centre, apply(T, sub(p, centre)))
             on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))
             entry['back'], entry['carry'] = 'chest', record_of(on_back)
