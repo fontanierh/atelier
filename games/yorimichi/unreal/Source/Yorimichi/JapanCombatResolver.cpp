@@ -4,6 +4,10 @@
 #include "WandererSword.h"
 #include "BotwMoveSet.h"
 #include "Engine/World.h"
+#if !UE_BUILD_SHIPPING
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Misc/CommandLine.h"
+#endif
 
 bool UJapanCombatResolver::DoesSupportWorldType(EWorldType::Type Type) const
 {
@@ -109,8 +113,22 @@ void UJapanCombatResolver::Resolve(FContact&& Contact)
     // IncomingStrike accepts null Source; its position/damage were already captured.
     // State may have changed while awaiting input. A dead or already down victim
     // stays down; no delayed decision resurrects or rewrites previous health loss.
+#if !UE_BUILD_SHIPPING
+    static const bool TraceVehicleReaction = FParse::Param(FCommandLine::Get(), TEXT("networkvehicles"));
+    const FVector BeforeLocation = TraceVehicleReaction ? Victim->GetActorLocation() : FVector::ZeroVector;
+    const FVector BeforeVelocity = TraceVehicleReaction ? Victim->GetCharacterMovement()->Velocity : FVector::ZeroVector;
+    const FName BeforeAction = TraceVehicleReaction ? Victim->GetAnimationAction() : NAME_None;
+#endif
     const int32 Outcome = Victim->GetSword()->GetHealth() <= 0.f || Victim->GetMoves()->IsDown() ? 3 :
         Victim->GetMoves()->ResolveNetworkStrike(Source, Contact.Damage, Contact.From, Contact.Time);
+#if !UE_BUILD_SHIPPING
+    if (TraceVehicleReaction)
+        UE_LOG(LogTemp, Display, TEXT("NETWORK foot reaction pawn=%s epoch=%u world=%.6f contact=%.6f due=%.6f outcome=%d damage=%.3f position_before=%s position_after=%s velocity_before=%s velocity_after=%s action_before=%s action_after=%s action_time=%.6f"),
+            *Victim->GetName(), Victim->GetActivityEpoch(), GetWorld()->GetTimeSeconds(), Contact.Time, Contact.Due, Outcome, Contact.Damage,
+            *BeforeLocation.ToString(), *Victim->GetActorLocation().ToString(), *BeforeVelocity.ToString(),
+            *Victim->GetCharacterMovement()->Velocity.ToString(), *BeforeAction.ToString(),
+            *Victim->GetAnimationAction().ToString(), Victim->GetActionTime());
+#endif
     ++Resolved;
     if (Contact.Result) Contact.Result(Outcome);
 }

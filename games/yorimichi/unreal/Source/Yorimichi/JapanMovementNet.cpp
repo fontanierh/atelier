@@ -107,7 +107,8 @@ void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
         PostCrouch = Movement->bWantsToCrouch;
         JapanJumpReplayQA::Move(Movement, *this, Mode == PostUpdate_Replay, OriginalLocation, OriginalVelocity);
 #if !UE_BUILD_SHIPPING
-        static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));
+        static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")) ||
+            FParse::Param(FCommandLine::Get(), TEXT("networkvehicles"));
         if (Trace && Movement->TraceClientStep(TimeStamp))
             UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move client epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s replay=%d first_edge=%u edges=%d applied_edge=%u action=%s action_time=%.6f pending_launch=%s"),
                 Input.ActivityEpoch, TimeStamp, DeltaTime, Input.X, Input.Y, Input.Flags, Movement->PackNetworkMovementMode(), *Movement->GetCurrentAcceleration().ToString(),

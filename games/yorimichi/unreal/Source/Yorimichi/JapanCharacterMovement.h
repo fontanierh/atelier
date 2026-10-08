@@ -63,7 +63,7 @@ public:
     virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
     uint16 GetProcessedEdge() const { return ProcessedEdge; }
     uint16 PendingAcknowledgedEdge = 0;
-    bool TraceClientStep(float Timestamp) { return Timestamp <= 4.f && ClientTraceRows++ < 512; }
+    bool TraceClientStep(float Timestamp) { return Timestamp <= 6.f && ClientTraceRows++ < 512; }
     bool IsReplaying() const { return bReplaying; }
     bool IsExecutingMove() const { return bExecutingMove; }
     const FJapanMovementStats& GetNetworkStats() const { return NetworkStats; }
