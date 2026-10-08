@@ -1,8 +1,7 @@
-import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+import {openTouchPage,playTouchPage,buildDir} from '../../../platform/web/stream/smoke.mjs';
 const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
-const browser=await chromium.launch({executablePath:CHROME,headless:true});
-const page=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true});
+const {browser,page}=await openTouchPage({args:[]});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const settingsFile=new URL('../unreal/Saved/settings.txt',import.meta.url);
 const out=new URL('stream/smoke/',BUILD);await fs.mkdir(out,{recursive:true});
@@ -19,8 +18,7 @@ async function set(key,value){
  if(!line||Math.abs(Number(line.split('=')[1])-value)>.001)throw Error(key+' not saved');
 }
 try{
- await page.goto(STREAM_URL);await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:60000});
- await page.click('#play');await page.click('#settings-button');await page.waitForFunction(()=>window.yorimichi.settings?.length>0);
+ await playTouchPage(page,{telemetry:'yorimichi'});await page.click('#settings-button');await page.waitForFunction(()=>window.yorimichi.settings?.length>0);
  original=await page.evaluate(()=>window.yorimichi.settings);
  if(await page.locator('#settings-rows input,#settings-rows select').count()!==original.length)throw Error('Missing settings controls');
  // Drive a real rendered range control, then verify the authoritative response and disk.

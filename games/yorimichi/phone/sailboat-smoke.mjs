@@ -1,11 +1,10 @@
 // Actual Pixel Streaming transport, touch controls and modal reset regression.
-import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+import {openTouchPage,playTouchPage,buildDir} from '../../../platform/web/stream/smoke.mjs';
 const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
 const out=new URL('stream/smoke/',BUILD);
 await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
-const context=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true}),page=await context.newPage(),cdp=await context.newCDPSession(page);
+const {browser,context,page}=await openTouchPage(),cdp=await context.newCDPSession(page);
 const report={};let touches=[];
 async function touch(id,selector,down){
  if(down){const b=await page.locator(selector).boundingBox();if(!b)throw Error('Missing control '+selector);touches.push({id,x:b.x+b.width/2,y:b.y+b.height/2});}else touches=touches.filter(t=>t.id!==id);
@@ -17,8 +16,7 @@ const state=()=>page.evaluate(()=>window.yorimichi.state);
 async function drive(selector){await touch(7,selector,true);await page.waitForTimeout(160);await touch(7,selector,false);}
 const angleDelta=(a,b)=>((a-b+540)%360)-180;
 try{
- await page.goto(STREAM_URL);
- await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:90000});await page.click('#play');
+ await playTouchPage(page,{telemetry:'yorimichi',ready:90000});
  await page.locator('#spawn').tap();await page.waitForTimeout(600);
  await page.locator('#map-button').tap();await page.waitForFunction(()=>window.yorimichi.map?.zones?.length);
  // Pins near the southwest shore overlap at whole-world zoom. The visible list
