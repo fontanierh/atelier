@@ -174,10 +174,14 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
     const bool bGliding = Mode == EBotwMoveMode::Glide && bGliderShown;
     const bool bNeutral = bGliding && In(Name, { TEXT("Glide"), TEXT("GlideF") }) && GlideTime > .5f && FMath::Abs(GlideTurn) < 8.f;
     const FName HandBone[2] = { Character->GetSkateBone(TEXT("hand_R")), Character->GetSkateBone(TEXT("hand_L")) };
+    // The import's fit, carried by the root bone as the mesh has it now. It is kept, not fitted again to the hands: by
+    // then the hand IK has turned each fist round its handle, and a fit from that hand rolled the canopy about 116 degrees
+    // about the bar, standing it up behind his head (the operator, #7296).
+    if (bGliderOnRoot) GliderOnBody = GliderOnRoot * Body->GetSocketTransform(Body->GetBoneName(0), RTS_Component);
     if (!bGliderOnBody)
     {
         // Fit the one-handed hold onto both hands, then keep it once it has settled on the neutral glide.
-        const FTransform Bone = Body->GetSocketTransform(Glider->GetAttachSocketName());
+        const FTransform Bone = Body->GetSocketTransform(GliderSocket);
         const FTransform Base = GliderHeld * Bone;
         const FTransform& MeshT = Body->GetComponentTransform();
         if (bOwnGlide && !bPalmKnown)
@@ -211,7 +215,11 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         else return;
     }
     // On the body: carried by the mesh itself (no lag behind a moving hand bone), banked into the turn about the bar.
-    GlideHands = FMath::FInterpConstantTo(GlideHands, bGliding && !In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall"), TEXT("GlideOff") }) ? 1.f : 0.f, Dt, 6.f);
+    // The opening takes the handles at its bind point, where the glider appears, not when its clip ends (#7296).
+    const FBotwMove* Now = Current();
+    const bool bOpening = In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall") });
+    const bool bHolding = bGliding && Name != TEXT("GlideOff") && (!bOpening || (Now && SourceTime() >= FMath::Max(Now->Bind, 0.f)));
+    GlideHands = FMath::FInterpConstantTo(GlideHands, bHolding ? 1.f : 0.f, Dt, 6.f);
     if (bGliding && !bGliderBodyAttached)
     {
         Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform);
@@ -260,7 +268,7 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         FVector Along = (To - From).GetSafeNormal();
         if ((Along | Forward) < 0.f) Along = -Along;
         const FVector GripLocal = Hand.InverseTransformPosition(Grip);
-        const FVector Axis = FistAxis.GetSafeNormal();
+        const FVector Axis = FistAxisOf(I);
         const FVector Out = (GripLocal - Axis * (GripLocal | Axis)).GetSafeNormal();
         const FVector Away = OnGrip - GlideElbow[I];
         const FVector Want = (Away - Along * (Away | Along)).GetSafeNormal();
@@ -295,6 +303,19 @@ FVector UBotwMoveSet::FingersOf(int32 Side) const
             Sum += Body->GetSocketTransform(Bone, RTS_Component).GetLocation(); ++Count;
         }
     return Count ? Sum / Count : Body->GetSocketTransform(Hand, RTS_Component).GetLocation();
+}
+
+FVector UBotwMoveSet::FistAxisOf(int32 Side) const
+{
+    // The sword hand closes as the sword's hold has it. The off hand's bone is that one mirrored, so the same vector in its
+    // frame points along the handle the wrong way round (the knuckles tilted off it): its own knuckle line is its axis.
+    if (!Side) return FistAxis.GetSafeNormal();
+    const USkeletalMeshComponent* Body = Character->GetMesh();
+    const FName Index(TEXT("finger_0_L")), Little(TEXT("finger_3_L"));
+    if (Body->GetBoneIndex(Index) == INDEX_NONE || Body->GetBoneIndex(Little) == INDEX_NONE) return FistAxis.GetSafeNormal();
+    const FTransform Hand = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component);
+    return Hand.InverseTransformVectorNoScale(
+        Body->GetSocketTransform(Index, RTS_Component).GetLocation() - Body->GetSocketTransform(Little, RTS_Component).GetLocation()).GetSafeNormal();
 }
 
 void UBotwMoveSet::ShowGlider(bool bShow)

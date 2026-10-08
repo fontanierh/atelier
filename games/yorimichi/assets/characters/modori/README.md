@@ -41,7 +41,9 @@ are the model:
    [`platform/conventions/rigs/humanoid.toml`](../../../../../platform/conventions/rigs/humanoid.toml)), drop the
    Blender cloth modifier and the test action, and write the skinned mesh (body and coat) and textures to FBX.
 2. **Coat in Unreal:** Chaos Cloth on the coat's skirt, its max-distance mask painted from `cloth_pin` (max
-   distance 0 where `cloth_pin` is 1, free where it is 0), the body as the collider; or skirt bones if cloth costs too much.
+   distance 0 where `cloth_pin` is 1, free where it is 0), colliding with capsules on his hips, spine, thighs and shins
+   (`export_unreal.colliders`: each holds 90% of the skin around it but stays 1.5 cm inside the coat's simulated
+   surface at rest, so no capsule pushes the coat out); or skirt bones if cloth costs too much.
 3. **Moves:** retarget the merged move set onto him as for Kaede (`cairo/botw.py --character modori`, which loads
    this folder's `export_unreal.py` for its `prepare`, `SOURCE` and `OUT`). His own weapon
    (a knotted rope with a bell-metal weight, left off the T-pose) and its clips come later.

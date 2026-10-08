@@ -142,6 +142,19 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                     BarGrip[I] = (GripEnds[I][0] + GripEnds[I][1]) * .5f;
                 }
                 bOwnGlide = Body->GetBoneIndex(TEXT("Weapon_R")) != INDEX_NONE && Body->GetBoneIndex(TEXT("Weapon_L")) != INDEX_NONE;
+                // A fitted body's place for it on the neutral glide, from the import (its first frame, and the elbows
+                // there): held there from the first frame of a glide, even one that steers at once.
+                const TArray<TSharedPtr<FJsonValue>>* Elbows = nullptr;
+                if (!bOwnGlide && O->HasField(TEXT("on_root")) && O->TryGetArrayField(TEXT("elbows_on_root"), Elbows) && Elbows->Num() == 2)
+                {
+                    ReadTransform(O, TEXT("on_root"), GliderOnRoot);
+                    for (int32 I = 0; I < 2; ++I)
+                    {
+                        const TArray<TSharedPtr<FJsonValue>>& E = (*Elbows)[I]->AsArray();
+                        if (E.Num() == 3) ElbowLocal[I] = GliderOnRoot.InverseTransformPosition(FVector(E[0]->AsNumber(), E[1]->AsNumber(), E[2]->AsNumber()));
+                    }
+                    bGliderOnBody = bGliderOnRoot = true;
+                }
                 Glider->SetVisibility(false, true);
                 continue;
             }
@@ -169,6 +182,8 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
         const double Far = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? Box.Max[Axis] : Box.Min[Axis];
         FVector Tip = FVector::ZeroVector; Tip[Axis] = Far;
         BladeBase = Tip * .18; BladeTip = Tip;
+        const double Near = Far == Box.Max[Axis] ? Box.Min[Axis] : Box.Max[Axis];
+        HiltEnd = FVector::ZeroVector; if (Near * Far < 0.) HiltEnd[Axis] = Near;
         if (const FSlot* S = Slots.Find(TEXT("sword")))
         {
             FistAxis = S->Held.GetRotation().RotateVector(Tip.GetSafeNormal());
@@ -966,6 +981,7 @@ FString UBotwMoveSet::Describe() const
     O->SetBoolField(TEXT("sword_guard"), IsSwordGuarding());
     O->SetNumberField(TEXT("sword_guard_carry"), SwordGuardCarry);
     O->SetNumberField(TEXT("sword_carry"), SwordCarry);
+    O->SetNumberField(TEXT("crouch_carry"), CrouchCarry);
     O->SetNumberField(TEXT("guard_carry"), GuardCarry);
     O->SetNumberField(TEXT("speed"), Movement->Velocity.Size2D());
     O->SetNumberField(TEXT("vz"), Movement->Velocity.Z);

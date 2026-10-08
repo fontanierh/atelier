@@ -250,7 +250,8 @@ namespace RidePhysicalRiderDetail
     }
 
     // LOD0's vertices in the bind pose (component space) and the bone of each one's strongest weight (INDEX_NONE
-    // outside every section). False when the mesh keeps no CPU copy of them.
+    // outside every section, and in a section simulated as cloth: a long coat swings free of the body, and fitted
+    // into the pelvis's hull it made a body 35 x 58 x 62 cm). False when the mesh keeps no CPU copy of them.
     inline bool ReadSkin(const USkeletalMesh* Skeletal, TArray<FVector>& Positions, TArray<int32>& Dominant)
     {
         const FSkeletalMeshRenderData* Render = Skeletal ? Skeletal->GetResourceForRendering() : nullptr;
@@ -265,14 +266,15 @@ namespace RidePhysicalRiderDetail
         Dominant.Init(INDEX_NONE, Count);
         const uint32 Influences = Weights.GetMaxBoneInfluences();
         for (const FSkelMeshRenderSection& Section : LOD.RenderSections)
-            for (uint32 V = Section.BaseVertexIndex; V < FMath::Min(Count, Section.BaseVertexIndex + Section.NumVertices); ++V)
-            {
-                Positions[V] = FVector(Points.VertexPosition(V));
-                uint32 Best = 0; uint16 Most = 0;
-                for (uint32 I = 0; I < Influences; ++I)
-                    if (const uint16 W = Weights.GetBoneWeight(V, I); W > Most) { Most = W; Best = Weights.GetBoneIndex(V, I); }
-                if (Most > 0 && Section.BoneMap.IsValidIndex(int32(Best))) Dominant[V] = Section.BoneMap[Best];
-            }
+            if (!Section.HasClothingData())
+                for (uint32 V = Section.BaseVertexIndex; V < FMath::Min(Count, Section.BaseVertexIndex + Section.NumVertices); ++V)
+                {
+                    Positions[V] = FVector(Points.VertexPosition(V));
+                    uint32 Best = 0; uint16 Most = 0;
+                    for (uint32 I = 0; I < Influences; ++I)
+                        if (const uint16 W = Weights.GetBoneWeight(V, I); W > Most) { Most = W; Best = Weights.GetBoneIndex(V, I); }
+                    if (Most > 0 && Section.BoneMap.IsValidIndex(int32(Best))) Dominant[V] = Section.BoneMap[Best];
+                }
         return true;
     }
 

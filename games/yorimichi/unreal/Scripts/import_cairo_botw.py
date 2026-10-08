@@ -57,10 +57,28 @@ CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else
 # and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
 # Modori's coat stands off his back and his hair reaches his collar: from Link's chest his sword and sheath sank 2 cm into
 # the coat with the hilt in his hair, and the shield 10 cm (YorimichiFit in game: clear from 4 and 6 cm back). The sword
-# also comes down 12 cm, so the hilt's tip sits at his collar below the hair (close shots standing and crouched: 4 cm
-# down still reached into it).
+# also comes down 17 cm, so the hilt's tip sits at his collar below the hair (close shots standing and crouched: 4 cm
+# down still reached into it; 12 cm, standing clear, still met his hair crouched, his chest leant 70 degrees forward).
 PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
-        {'sword': [5., 0., -12.], 'sheath': [5., 0., -12.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
+        {'sword': [5., 0., -17.], 'sheath': [5., 0., -17.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
+# Carried pieces pitched about his left axis (degrees; positive brings the lower end out backward) through the sword's top
+# end (its pommel), which keeps the place PUSH gives it. Modori's coat flares out over the small of
+# his back, where the sheath's lower half sank into it (the operator's photo from behind, standing); pitched about their
+# pivot at his collar instead, the hilt came forward into his hair as he leaned into a run or a crouch.
+TILT = {'sword': 10., 'sheath': 10.} if CHARACTER == 'modori' else {}
+
+
+def top_end(mesh, R, p, scale):
+    """The end of a piece's longest axis that sits higher on him (component cm), from its mesh's bounds."""
+    box = E.load_asset(mesh).get_bounding_box()
+    lo, hi = [box.min.x, box.min.y, box.min.z], [box.max.x, box.max.y, box.max.z]
+    k = max(range(3), key=lambda i: hi[i] - lo[i])
+    middle = [(a + b) * .5 for a, b in zip(lo, hi)]
+    ends = []
+    for v in (lo[k], hi[k]):
+        local = list(middle); local[k] = v
+        ends.append(add(p, mul(apply(R, local), scale)))
+    return max(ends, key=lambda e: e[2])
 
 
 def digests(folder):
@@ -225,8 +243,8 @@ def equipment(link, cairo, glide):
     paraglider (the piece with a clip) is held as in `glide`, the two rigs posed at the glide."""
     C = compose(cairo.body(), [apply_t(link.body(), axis) for axis in ([1., 0, 0], [0., 1, 0], [0., 0, 1])])   # A_t A_s^T
     scale = ROSTER['scale'] * SIZE
-    record, checks = {}, {}
-    for slot, item in ROSTER['moves']['equipment'].items():
+    record, checks, tilt_centre = {}, {}, {}
+    for slot, item in sorted(ROSTER['moves']['equipment'].items(), key=lambda kv: kv[0] != 'sword'):   # the sword's pommel is TILT's centre
         entry = {key: item[key] for key in ('mesh', 'clip', 'looks') if key in item}
         entry['hand'] = entry['back'] = ''
         if item.get('hand'):
@@ -244,6 +262,14 @@ def equipment(link, cairo, glide):
             if 'clip' in item:
                 held, miss = glider(*glide, item, scale)
                 entry['held'], checks[slot]['grip_miss_cm'] = record_of(held), miss
+                # Its place on the body on the neutral glide and the elbows there, in the root bone's frame (the clip's
+                # root is turned from the game's: in component space the glider came out a quarter turn off): the game
+                # holds the glider from a glide's first frame, before a straight glide has fitted it to his hands.
+                root = glide[1].transform(P.get_bone_names(glide[1].pose)[0])
+                on_body = U.MathLibrary.compose_transforms(held, glide[1].transform('hand_R'))
+                entry['on_root'] = record_of(U.MathLibrary.make_relative_transform(on_body, root))
+                entry['elbows_on_root'] = [[round(v, 3) for v in (lambda e: [e.x, e.y, e.z])(U.MathLibrary.inverse_transform_location(
+                    root, U.Vector(*glide[1].at(f'forearm_{side}'))))] for side in 'RL']
         if item.get('back') and item.get('carry'):
             carry = item['carry']
             local = U.Transform(U.Vector(*carry['location']), U.Quat(*carry['rotation']).rotator(), U.Vector(1, 1, 1))
@@ -256,6 +282,12 @@ def equipment(link, cairo, glide):
                 R, p = fitted(R, cairo, CARRY[slot])
             if slot in PUSH:
                 p = add(p, apply(cairo.body(), PUSH[slot]))
+            if slot in TILT:
+                T = turn(cairo.body()[1], -TILT[slot])
+                if slot == 'sword':
+                    tilt_centre['sword'] = top_end(item['mesh'], R, p, scale)
+                centre = tilt_centre['sword']
+                R, p = compose(T, R), add(centre, apply(T, sub(p, centre)))
             on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))
             entry['back'], entry['carry'] = 'chest', record_of(on_back)
             # Where it sits in his reference pose (component cm): the fit's frame, for checking it offline.
@@ -351,6 +383,11 @@ params = dict(ROSTER['moves']['params'])
 params['SwimHang'] = round(params['SwimHang'] * SIZE, 2)
 params['BodyScale'] = BODY
 params['TwoHandedGuard'] = 1   # his own bokken guard (OWN) holds the grip with both hands
+if CHARACTER == 'modori':
+    # Crouched, his chest leans 70 degrees forward and his head dips toward the hilt: 17 cm down standing still met his
+    # hair there, so the carried sword and sheath slide further down their length in the crouch only (12 cm moved the
+    # hilt only to his hair's edge, the sword lying on the line through his head; 28 left its end at his nape).
+    params['CrouchCarryDrop'] = 36
 names = {**LINK['skate'], 'pelvis': 'Waist'}   # botw.py's bone map
 link, cairo = Rig(link_mesh.skeleton, names), Rig(skeleton, {})
 glide, options = ROSTER['moves']['actions']['Glide']['clip'], U.AnimPoseEvaluationOptions()

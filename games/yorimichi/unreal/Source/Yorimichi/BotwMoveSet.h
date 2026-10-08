@@ -139,6 +139,9 @@ public:
      *  its handle, and where that is from the sword hand's bone (one hand's width along the handle toward the pommel). */
     float TwoHandGripWeight() const { return TwoHandGrip; }
     FVector TwoHandGripOffset() const { return GripOffset; }   // the off hand's wrist on the handle, in the sword hand's frame
+    /** The two-handed grip: how much the off hand is a fist turned round the handle, and its rotation (component space). */
+    float TwoHandFistWeight() const { return bFistAxis ? TwoHandGrip : 0.f; }
+    FQuat TwoHandRotation() const { return TwoHandTurn; }
     /** Gliding: how much each wrist is put on its grip on the bar, and where (mesh component space; 0 right, 1 left). */
     float GlideHandWeight() const { return GlideHands; }
     FVector GlideHandLocation(int32 Side) const { return GlideHandTarget[Side & 1]; }
@@ -251,6 +254,7 @@ private:
     bool bShield = false, bLegacy = false;
     float FreeArm = 0.f, TwoHandGrip = 0.f;
     FVector GripOffset = FVector::ZeroVector;
+    FQuat TwoHandTurn = FQuat::Identity;
     // The paraglider's grips, right then left, in its own frame: each a stretch of handle a hand closes round, and its
     // middle (or, on Link, where his neutral glide holds it).
     FTransform GliderHeld = FTransform::Identity;
@@ -265,6 +269,9 @@ private:
     FVector PalmOf(int32 Side) const;
     /** The middle of a hand's curled index and middle fingers, in the mesh's component space. */
     FVector FingersOf(int32 Side) const;
+    /** A fist's grip axis in its hand bone's frame, toward the thumb: the sword hand's from the sword's own hold, the off
+     *  hand's from its knuckle line (little finger's base to the index's), as its hand bone is the sword hand's mirrored. */
+    FVector FistAxisOf(int32 Side) const;
     FName GliderSocket;   // the hand bone it is held at
     // Once fitted to the neutral glide, the glider keeps that place on the body (banking about its grips as he turns) and
     // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.
@@ -280,6 +287,8 @@ private:
     FQuat GlideHandTurn[2] = { FQuat::Identity, FQuat::Identity };
     float GlideBank = 0.f, GlideHands = 0.f;
     bool bGliderOnBody = false, bGliderBodyAttached = false;
+    bool bGliderOnRoot = false;   // placed from the import's fit, carried by the root bone
+    FTransform GliderOnRoot = FTransform::Identity;   // the import's fit, in the root bone's frame
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
     TWeakObjectPtr<AActor> LungeTarget;
     float LungeTime = 0.f, LungeStand = 0.f;
@@ -288,6 +297,7 @@ private:
     FVector LockPoint = FVector::ZeroVector;
     bool bLockPoint = false;
     float ArcEnd = -1.f;   // a homing cut's contact lasts to here (clip seconds): past its swing, until it has closed in
+    float CrouchCarry = 0.f;   // how far the carried sword and sheath have slid down for the crouch, 0..1
     float SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
     bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
     int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, DoubleJumpCount = 0, Strength = 1;
@@ -304,6 +314,7 @@ private:
     TSet<TWeakObjectPtr<AActor>> HitThisSwing;
     TArray<FVector> PreviousBlade;
     FVector BladeBase = FVector::ZeroVector, BladeTip = FVector::ZeroVector;   // in the sword mesh's frame
+    FVector HiltEnd = FVector::ZeroVector;   // the handle's end behind the grip, in the sword mesh's frame
     FName LastPlayed;
 
     // Actions
