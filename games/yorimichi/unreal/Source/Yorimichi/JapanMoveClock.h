@@ -8,6 +8,14 @@ struct FJapanMoveClock
     static constexpr double InitialSlack = .125;
     double LastRefill = -1., LastAccepted = -1., Credit = InitialSlack;
 
+    void BeginEpoch(double Now)
+    {
+        *this = FJapanMoveClock();
+        // Count real host time from the handoff, including the wait for the
+        // owner's first move. A capped first step must not erase that interval.
+        Refill(Now);
+    }
+
     void Refill(double Now)
     {
         if (LastRefill >= 0.) Credit = FMath::Min(Timeout, Credit + FMath::Max(0., Now - LastRefill));

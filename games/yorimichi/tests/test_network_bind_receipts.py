@@ -66,3 +66,35 @@ def test_live_socket_probe_checks_local_port_on_every_address(monkeypatch, socke
     monkeypatch.setattr(review.subprocess, 'run', run)
     assert review.process_udp(99, 7777)['no_game_port'] is expected
     assert calls == [['lsof', '-nP', '-a', '-p', '99', '-iUDP', '-Fpn']]
+
+
+@pytest.fixture(params=['review_network_bind.py', 'review_network_session.py'])
+def process_runner(request):
+    path = Path(__file__).resolve().parents[1] / 'tools' / request.param
+    spec = importlib.util.spec_from_file_location('guard_lifecycle_review', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize('exit_code', [0, 1])
+def test_normal_child_exit_between_guard_polls_is_reaped(process_runner, exit_code):
+    from unittest.mock import Mock
+    game = Mock(); game.poll.return_value = None; game.wait.return_value = exit_code
+    guard = Mock(); guard.poll.return_value = 0
+    assert process_runner.guarded_game_running(game, guard, 'host') is False
+    game.wait.assert_called_once_with(timeout=2)
+
+
+@pytest.mark.parametrize('guard_exit,child_exit', [(0, None), (1, None), (1, 0), (-9, None)])
+def test_stopped_guard_never_leaves_live_game_running(process_runner, guard_exit, child_exit):
+    from unittest.mock import Mock
+    game = Mock(); game.poll.side_effect = [None, child_exit]
+    game.wait.side_effect = process_runner.subprocess.TimeoutExpired('game', 2)
+    guard = Mock(); guard.poll.return_value = guard_exit
+    with pytest.raises(RuntimeError, match='lost its actual-child guard'):
+        process_runner.guarded_game_running(game, guard, 'host')
+    if guard_exit == 0:
+        game.wait.assert_called_once_with(timeout=2)
+    else:
+        game.wait.assert_not_called()

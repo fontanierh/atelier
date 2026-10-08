@@ -183,6 +183,14 @@ keeps moving. If it has not moved 1.5 m in 1.2 s, it is turned around and put ba
 logged as `ROUTE RECOVERY` and counted (harness runs only, never a player session). `road_walk` runs at the default
 run gait.
 
+A trailer shot can set `follow_road: 0` to disable route steering and stall recovery, including while skating. This is required for a custom stationary fixture or a launched coast: route recovery otherwise moves it back onto the authored path. The default remains route following.
+
+`camera_mode: "player"` keeps the normal player camera, spring arm and skating camera blend; `camera_pitch` sets the initial control pitch (default -14 degrees). Without this option, the existing trailer camera remains in use. Camera telemetry in player mode records the last rendered view.
+
+A `place_on_board` event uses the existing QA placement at `player_position`, bypasses the mount animation and holds empty skate input. It requires a skate shot and fails if placement fails. A `launch` event takes a positive `speed` in Unreal cm/s along `player_yaw`, requires a ready `PhysicsGround` ride, logs the launch frame/position/vector, and holds empty scripted skate input for the remaining coast. `capture.py` also requires measured telemetry to reach the requested speed within 100 ms (5% or 5 cm/s tolerance).
+
+See `tools/shadow-player.json`: explicit CairoBotw rider, board placement at frame 0, launch at frame 40, then inspect frames 50–139. It captures at fixed 60 Hz and exits after 140 frames. Verify the requested start, launch speed, no `ROUTE RECOVERY`, uninterrupted motion and a non-empty shadow crop before comparing shadows. Screenshot readback is not a frame-pacing measurement. CSV state/action strings are quoted; `capture.py` refuses malformed columns, missing rows and out-of-order frames.
+
 ## Reference measurements
 
 Measured on the M3 Pro, visible fullscreen at 2228×1440, 100% scale, dynamic resolution off, uncapped, no fixed

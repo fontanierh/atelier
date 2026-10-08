@@ -24,5 +24,8 @@ struct FeelTuning
     // -1 keeps the difficulty's choice; 0 off; 1 on. Auto push keeps rolling speed; assisted air completes body
     // spins and flips for you.
     std::int8_t auto_push=-1,assisted_air=-1;
+    // 0 off (stock); 1 on. Tight flicks also read a hardflip or inward heelflip flicked close to straight down then
+    // up, as in newer skate games, beside the authored wide arc.
+    std::int8_t tight_flicks=0;
 };
 }

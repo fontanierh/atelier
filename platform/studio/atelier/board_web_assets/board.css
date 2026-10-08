@@ -1113,8 +1113,11 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 /* Phones: one thread per screen. The pane snaps a whole card at a time; each card is exactly the room between the
    header and the tab bar (or the keyboard), its root and reply box fixed and the latest replies in between. */
 @media (max-width: 699px) {
-  .threads-pane .pane-body { container-type: size; scroll-snap-type: y mandatory; scroll-padding-block: 6px calc(var(--tab-space) + 18px); }
-  .app.typing .threads-pane .pane-body { padding-bottom: 10px; scroll-padding-bottom: 10px; }
+  /* The room for the tab bar is a margin, not padding: the pane's own size then changes as the keyboard comes and
+     goes, and Safari recomputes the cards' 100cqh. It kept the typing height when only the padding changed, and
+     the reply box sat under the tab bar. */
+  .threads-pane .pane-body { container-type: size; scroll-snap-type: y mandatory; scroll-padding-block: 6px 0; padding-bottom: 0; margin-bottom: calc(var(--tab-space) + 18px); }
+  .app.typing .threads-pane .pane-body { margin-bottom: 10px; }
   .threads-pane .inbox-thread { height: 100cqh; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; overflow: hidden; }
   .threads-pane .inbox-thread-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
   .threads-pane .inbox-root .body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-height: 5.8em; overflow: hidden; -webkit-mask-image: none; mask-image: none; }

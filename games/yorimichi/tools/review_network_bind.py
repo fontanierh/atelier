@@ -38,6 +38,23 @@ def load(path):
         return None
 
 
+def guarded_game_running(game, guard, role):
+    if game.poll() is not None:
+        return False
+    stopped = guard.poll()
+    if stopped is not None:
+        # The monitor can observe exit before the parent can reap its child.
+        # The caller still checks the exact exit code and native shutdown evidence.
+        if stopped == 0:
+            try:
+                game.wait(timeout=2)
+                return False
+            except subprocess.TimeoutExpired:
+                pass
+        raise RuntimeError(role + ' lost its actual-child guard')
+    return True
+
+
 def bind_checks(code, dedicated, text, owners, blocker_pid, receipt=None, live=None):
     checks = dict(exit_code=code == int(dedicated),
                   real_bind_failed='Private listener initialization failed:' in text,
@@ -99,9 +116,7 @@ def worker(folder):
                         if guard is None:
                             raise RuntimeError('Actual-child guard could not attach')
                         began, spoken = time.monotonic(), 0.
-                        while game.poll() is None:
-                            if guard.poll() is not None:
-                                raise RuntimeError(role + ' lost its actual-child guard')
+                        while guarded_game_running(game, guard, role):
                             now = time.monotonic()
                             if now - began > 95:
                                 raise RuntimeError(role + ' bind-failure proof exceeded its deadline')

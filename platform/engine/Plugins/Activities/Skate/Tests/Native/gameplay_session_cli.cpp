@@ -114,6 +114,12 @@ bool Feel(const Json& value,FeelTuning& feel,std::string& error)
             if(!(choice==-1 || choice==0 || choice==1)){error="`"+key+"` is -1, 0 or 1";return false;}
             (key=="auto_push"?feel.auto_push:feel.assisted_air)=std::int8_t(choice);continue;
         }
+        if(key=="tight_flicks")
+        {
+            float choice=0;if(!Float(child,choice,error))return false;
+            if(!(choice==0 || choice==1)){error="`tight_flicks` is 0 or 1";return false;}
+            feel.tight_flicks=std::int8_t(choice);continue;
+        }
         bool known=false;
         for(const auto& [name,field]:fields)if(key==name){if(!Float(child,feel.*field,error))return false;known=true;}
         if(!known){error="unknown feel field `"+key+"`";return false;}

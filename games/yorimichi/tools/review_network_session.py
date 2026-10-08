@@ -28,6 +28,23 @@ def load(path):
         return None
 
 
+def guarded_game_running(game, guard, role):
+    if game.poll() is not None:
+        return False
+    stopped = guard.poll()
+    if stopped is not None:
+        # The monitor can observe exit before the parent can reap its child.
+        # Bound that wait; exact child exit codes remain checked below.
+        if stopped == 0:
+            try:
+                game.wait(timeout=2)
+                return False
+            except subprocess.TimeoutExpired:
+                pass
+        raise RuntimeError(role + ' lost its actual-child guard')
+    return True
+
+
 def host_frame_statistics(folder):
     """Each server world timestamp is one processing frame, even in a move burst."""
     frames = {}
@@ -252,7 +269,7 @@ def modori_checks(folder, shield):
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -312,6 +329,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
                            '-ExecCmds=t.MaxFPS ' + ('60' if vehicle_case and role == 'server' else str(combat_host_fps) if combat and role == 'server' else '30')]
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
+                if jump_replay is not None:
+                    command.append('-networkjumpreplay=' + str(jump_replay))
                 if modori_shield is not None:
                     command += ['-rider=Modori', '-set=shield=' + str(modori_shield if role == 'server' else 1-modori_shield)]
                 if not tailnet:
@@ -355,8 +374,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     if time.time() - health.get('time', 0) > 3:
                         raise RuntimeError('Aggregate monitor heartbeat is stale')
                     for role, game, guard in running:
-                        if game.poll() is None and guard.poll() is not None:
-                            raise RuntimeError(role + ' lost its actual-child guard')
+                        guarded_game_running(game, guard, role)
                         failed = load(folder / (role + '-failed.json'))
                         if failed:
                             raise RuntimeError(str(failed))
@@ -409,6 +427,9 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             from network_clock_review import clock_checks
             checks.update(clock_checks(load(folder / 'server-gameplay.json') or {},
                 load(folder / 'client-gameplay.json') or {}, movement_hitch_ms, skate_hitch_ms))
+        if jump_replay is not None:
+            from network_jump_replay_review import jump_replay_checks
+            checks.update(jump_replay_checks(load(folder / 'server-gameplay.json') or {}, load(folder / 'client-gameplay.json') or {}, jump_replay))
         if modori_shield is not None:
             checks.update(modori_checks(folder, modori_shield))
         checks['source_unchanged'] = source_revision() == revision
@@ -427,6 +448,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                                'Same-machine packaged listen/client; cooked collision and compiled identity; ') + 'NullRHI. Rendered and two-machine acceptance remain separate.'
         if modori_shield is not None:
             report['modori_shield'] = dict(host=modori_shield, guest=1-modori_shield)
+        if jump_replay is not None:
+            report['jump_replay_case'] = jump_replay
         if combat:
             report['combat_host_frames'] = host_frame_statistics(folder)
             report['combat_defence_edges'] = defence_edge_statistics(folder)
@@ -447,7 +470,8 @@ def main():
     parser.add_argument('--cook-receipt', type=Path, help='Cook receipt on the current clean source commit')
     parser.add_argument('--expected-identity', help='Identity from the accepted native receipt at that cook revision')
     parser.add_argument('--plain-package', action='store_true', help='Ordinary Solo with no network QA flags, bounded by UE seconds')
-    parser.add_argument('--movement-hitch-ms', type=int, choices=(0, 229, 1050), default=0)
+    parser.add_argument('--jump-replay', type=int, choices=range(6), help='Real correction at 0 pre-press, 1 takeoff, 2 first air; 3/4/5 also deliver a later real good ACK before replay')
+    parser.add_argument('--movement-hitch-ms', type=int, choices=(0, 229, 500, 1050), default=0)
     parser.add_argument('--skate-hitch-ms', type=int, choices=(0, 229), default=0)
     parser.add_argument('--modori-shield', type=int, choices=(0, 1), help='Modori host shield; guest uses the opposite value, checked per pawn')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
@@ -493,6 +517,8 @@ def main():
         args.gameplay = True
     if (args.movement_hitch_ms or args.skate_hitch_ms) and (not args.listen or args.combat or args.enemy or args.plain_package or args.lag_ms or args.variance_ms or args.loss_percent):
         parser.error('Hitch regressions require a zero-lag listen/gameplay pair')
+    if args.jump_replay is not None and (not args.listen or args.app or args.combat or args.enemy or args.modori_shield is not None or args.lag_ms or args.variance_ms or args.loss_percent):
+        parser.error('Jump replay regression requires an editor Cairo zero-lag listen/gameplay pair')
     if args.app:
         if not args.cook_receipt or not args.expected_identity:
             parser.error('--app requires --cook-receipt and --expected-identity')
@@ -517,7 +543,7 @@ def main():
         folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
         folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case, args.jump_replay)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -525,6 +551,7 @@ def main():
         port = sock.getsockname()[1]
     return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port), '--combat-host-fps', str(args.combat_host_fps),
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent), '--movement-hitch-ms', str(args.movement_hitch_ms), '--skate-hitch-ms', str(args.skate_hitch_ms)] +
+                       (['--jump-replay', str(args.jump_replay)] if args.jump_replay is not None else []) +
                        (['--modori-shield', str(args.modori_shield)] if args.modori_shield is not None else []) +
                        (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []) +
                        (['--app', str(args.app.resolve()), '--cook-receipt', str(args.cook_receipt.resolve()), '--expected-identity', args.expected_identity] if args.app else []) +

@@ -426,7 +426,7 @@ def main(args):
     module, out = character(args.character)
     export = json.loads((LINK / 'export.json').read_text())
     link = next(c for c in export['characters'] if c['name'] == 'Link')
-    glb = Glb(link['glb'])
+    glb = Glb(LINK / link['glb'])   # relative to the export's folder (older exports hold an absolute path)
     prepared = module.prepare(module.SOURCE)
     scene, arm = prepared.scene, prepared.arm
     scene.render.fps, scene.render.fps_base = FPS, 1

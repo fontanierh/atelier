@@ -69,6 +69,10 @@ void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling
     NetworkActivity.Location = GetActorLocation();
     NetworkActivity.Rotation = GetActorRotation();
     NetworkActivity.Velocity = GetCharacterMovement()->Velocity;
+    // A grounded clock reset drops held drive. Share the stopped velocity so
+    // different first-step lengths cannot integrate different braking distances.
+    if (ClockCorrection && Kind == EJapanActivity::OnFoot && !bFalling && GetCharacterMovement()->IsMovingOnGround())
+        NetworkActivity.Velocity = FVector::ZeroVector;
     NetworkActivity.bFalling = bFalling;
     NetworkActivity.ClockCorrection = ClockCorrection;
     NetworkActivity.Sail = Kind == EJapanActivity::Sailboat ? Sailboat->CaptureNetworkState() : FJapanSailState();

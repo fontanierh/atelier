@@ -1,6 +1,7 @@
 #include "JapanCharacterMovement.h"
 #include "JapanEnemyQA.h"
 #include "JapanVehicleTelemetry.h"
+#include "JapanJumpReplayQA.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
@@ -69,7 +70,8 @@ void UJapanCharacterMovement::ResetActivityPrediction()
     HeldButtons = LastServerHolds = 0; bRecoveryQueued = false; bInputPrepared = false; ActiveInput = FJapanMoveInput();
     PendingCheckpoint = FJapanMoveCheckpoint(); PendingCheckpointTime = -1.f;
     LastCustomCorrection = -1.; bReceivedMoveInEpoch = false;
-    MoveClock = FJapanMoveClock(); bClockResetPending = bWaitingAfterClockReset = false;
+    ClientTraceRows = ServerTraceRows = 0;
+    MoveClock.BeginEpoch(FPlatformTime::Seconds()); bClockResetPending = bWaitingAfterClockReset = false;
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->ResetDefence();
     ClearAccumulatedForces(); CurrentRootMotion.Clear();
 }
@@ -118,6 +120,9 @@ void UJapanCharacterMovement::QueueClockReset(uint8 Reason)
             Rider->BeginNetworkActivity(EJapanActivity::OnFoot, !IsMovingOnGround(), Reason);
         bWaitingAfterClockReset = true;
         ClockResetAt = FPlatformTime::Seconds();
+#if !UE_BUILD_SHIPPING
+        if (TraceNetworkGameplay()) NetworkStats.ClockHandoffRoot = CharacterOwner->GetActorLocation();
+#endif
         UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK movement clock reset reason=%u old_epoch=%u epoch=%u"),
             Reason, Epoch, GetActivityEpoch());
     }));
@@ -132,7 +137,14 @@ void UJapanCharacterMovement::TickComponent(float Dt, ELevelTick TickType, FActo
         // until the first move in the new epoch arrives. No client time is consumed.
         FJapanMoveInput Neutral; Neutral.ActivityEpoch = GetActivityEpoch(); SetMoveInput(Neutral);
         Acceleration = FVector::ZeroVector;
+#if !UE_BUILD_SHIPPING
+        const FVector NeutralBefore = CharacterOwner->GetActorLocation();
+#endif
         PerformMovement(FMath::Min(Dt, .125f));
+#if !UE_BUILD_SHIPPING
+        if (TraceNetworkGameplay())
+            NetworkStats.NeutralPathCm += float(FVector::Dist(NeutralBefore, CharacterOwner->GetActorLocation()));
+#endif
         NetworkStats.NeutralMaxAcceleration = FMath::Max(NetworkStats.NeutralMaxAcceleration, float(Acceleration.Size()));
         if (IsMovingOnGround() && FPlatformTime::Seconds() - ClockResetAt >= .2)
         {
@@ -219,15 +231,12 @@ void UJapanCharacterMovement::SendStaleClockProbe()
 #if !UE_BUILD_SHIPPING
     if (!TraceNetworkGameplay() || GetNetMode() != NM_Client || !CharacterOwner->IsLocallyControlled() ||
         !NetworkStats.TimeoutCorrections || NetworkStats.StaleProbeSent) return;
-    FSavedMove_Japan Probe;
-    Probe.Clear(); Probe.TimeStamp = 123.25f; Probe.DeltaTime = .125f;
-    Probe.Input.ActivityEpoch = GetActivityEpoch() - 1;
-    Probe.Input.FirstEdge = 60000; Probe.Input.Y = 127; Probe.Input.Flags = FJapanMoveInput::Sprint;
-    Probe.Acceleration = FVector(1000., 0., 0.);
-    Probe.SavedLocation = CharacterOwner->GetActorLocation() + FVector(1000., 0., 0.);
-    Probe.EndPackedMovementMode = PackNetworkMovementMode();
+    auto* ClientData = GetPredictionData_Client_Character();
+    FSavedMovePtr Probe = ClientData->CreateSavedMove();
+    static_cast<FSavedMove_Japan&>(*Probe).PrepareStaleClockProbe(CharacterOwner, *ClientData, GetActivityEpoch() - 1);
     ++NetworkStats.StaleProbeSent;
-    CallServerMovePacked(&Probe, nullptr, nullptr);
+    CallServerMovePacked(Probe.Get(), nullptr, nullptr);
+    ClientData->FreeMove(Probe);
 #endif
 }
 
@@ -439,6 +448,13 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             }
             if (CharacterOwner->HasAuthority() && Dt > 0.f)
             {
+#if !UE_BUILD_SHIPPING
+                if (bWaitingAfterClockReset && TraceNetworkGameplay())
+                {
+                    ++NetworkStats.ClockArrivals;
+                    NetworkStats.ClockArrivalRoot = CharacterOwner->GetActorLocation();
+                }
+#endif
                 MoveClock.Accepted(FPlatformTime::Seconds(), Dt);
                 bWaitingAfterClockReset = false;
                 bAcceptedDefenceMove = CastChecked<AWandererCharacter>(CharacterOwner)->GetNetworkActivity() == EJapanActivity::OnFoot &&
@@ -449,15 +465,20 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);
         }
     Super::MoveAutonomous(Timestamp, Dt, Flags, Accel);
-    if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= .8f &&
-        TraceNetworkGameplay() && ServerTraceRows++ < 64)
+#if !UE_BUILD_SHIPPING
+    if (PredictsMoves() && CharacterOwner->HasAuthority()) JapanJumpReplayQA::HostMove(this, Timestamp, Dt);
+    if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= 4.f &&
+        TraceNetworkGameplay() && ServerTraceRows++ < 512)
     {
         const auto* Move = GetCurrentNetworkMoveData();
         const FString ClientLocation = Move ? Move->Location.ToString() : TEXT("unavailable");
-        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move server epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s sent_client_loc=%s"),
+        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move server epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s sent_client_loc=%s first_edge=%u edges=%d applied_edge=%u action=%s action_time=%.6f pending_launch=%s"),
             GetActivityEpoch(), Timestamp, Dt, ActiveInput.X, ActiveInput.Y, ActiveInput.Flags, PackNetworkMovementMode(),
-            *Acceleration.ToString(), GetMaxSpeed(), *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString(), *ClientLocation);
+            *Acceleration.ToString(), GetMaxSpeed(), *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString(), *ClientLocation,
+            ActiveInput.FirstEdge, ActiveInput.Edges.Num(), ProcessedEdge, *CastChecked<AWandererCharacter>(CharacterOwner)->AnimationAction.ToString(),
+            CastChecked<AWandererCharacter>(CharacterOwner)->GetActionTime(), *PendingLaunchVelocity.ToString());
     }
+#endif
 }
 
 bool UJapanCharacterMovement::ClientUpdatePositionAfterServerUpdate()
@@ -491,6 +512,9 @@ void UJapanCharacterMovement::ServerMoveHandleClientError(float Timestamp, float
     const FVector& RelativeLocation, FMovementBaseInterfaceData* Base, FName Bone, uint8 Mode)
 {
     if (JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves()) return;
+    const bool ForceProbe = JapanJumpReplayQA::ForceResponse(this);
+    TGuardValue<float> ProbeRate(NetworkMinTimeBetweenClientAdjustments, ForceProbe ? 0.f : NetworkMinTimeBetweenClientAdjustments);
+    TGuardValue<float> ProbeLargeRate(NetworkMinTimeBetweenClientAdjustmentsLargeCorrection, ForceProbe ? 0.f : NetworkMinTimeBetweenClientAdjustmentsLargeCorrection);
     Super::ServerMoveHandleClientError(Timestamp, Dt, Accel, RelativeLocation, Base, Bone, Mode);
     const auto* Server = GetPredictionData_Server_Character();
     if (!Server || Server->PendingAdjustment.TimeStamp != Timestamp) return;
@@ -501,11 +525,13 @@ void UJapanCharacterMovement::ServerMoveHandleClientError(float Timestamp, float
         PendingCheckpoint = CaptureMovementState();
 
     }
+    if (ForceProbe) SendClientAdjustment();
 }
 
 void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& Response)
 {
     const auto& Custom = static_cast<const FJapanMoveResponse&>(Response);
+    if (JapanJumpReplayQA::Defer(this, Custom)) return;
     if (Custom.ActivityEpoch != GetActivityEpoch()) return;
     if (JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves())
     {
@@ -513,6 +539,9 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
         return;
     }
     auto* Client = GetPredictionData_Client_Character();
+    // A good ACK can free moves still needed by the previous correction.
+    // Finish that replay before the ACK advances LastAckedMove.
+    if (!Custom.IsCorrection() && Client->bUpdatePosition) ClientUpdatePositionAfterServerUpdate();
     const FSavedMovePtr PreviousAck = Client->LastAckedMove;
     Super::ClientHandleMoveResponse(Response);
     // A duplicate or stale response must not rewind state. CMC must have accepted this exact correction first.

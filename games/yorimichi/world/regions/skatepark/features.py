@@ -258,6 +258,17 @@ def module(m, item):
             else: steel_side_band(m, 'y', x0, min(y0, y1), max(y0, y1), z, 1 if sx > 0 else -1)
 
 
+def _under(line, r):
+    """A tube's centre line whose top runs along `line`: each point moved r down square to the line, as MeshData.tube
+    sets its top vertex (straight down would leave a sloped handrail's ends r*sin(slope) off its line)."""
+    p = np.asarray(line, float); out = []
+    for k in range(len(p)):
+        d = p[min(k+1, len(p)-1)] - p[max(k-1, 0)]; d /= np.linalg.norm(d)
+        up = np.array([0., 0., 1.]) - d * d[2]; up /= np.linalg.norm(up)
+        out.append(tuple(p[k] - r * up))
+    return out
+
+
 def stand_in(m, item):
     """A procedural obstacle where the extracted mesh is missing: bars and handrails as a tube on their line with posts
     at the ends, solids as concrete boxes on their footprint."""
@@ -265,13 +276,13 @@ def stand_in(m, item):
         width = MOD.part(item['part'])['bounds'][1][0] - MOD.part(item['part'])['bounds'][0][0]
         r = min(.045, width/2); colour = item['colour'] if item['finish'] == 'painted' else 'steel'
         tag = 'rail' if item['finish'] == 'painted' else 'steel'
-        pts = [(x, y, z-r) for x, y, z in MOD.line(item)]
+        pts = _under(MOD.line(item), r)
         # A line of several pieces is one tube, drawn with its first piece: no caps buried at the joints.
         pieces = next((g['pieces'] for g in L.GRIND_LINES if item['id'] in g['pieces'] and len(g['pieces']) > 1), None)
         if pieces is None:
             m.tube(pts, r, colour, tag, sides=10)
         elif pieces[0] == item['id']:
-            m.tube([(x, y, z-r) for x, y, z in L.grind_line(pieces)], r, colour, tag, sides=10)
+            m.tube(_under(L.grind_line(pieces), r), r, colour, tag, sides=10)
         for x, y, z in (pts[0], pts[-1]):
             m.box((x-r, y-r, 0), (x+r, y+r, z), colour, tag)
         return

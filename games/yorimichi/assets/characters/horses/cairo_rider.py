@@ -37,7 +37,7 @@ def main():
     bone_map = {**(rider['skate'] or link['skate']), 'root': '', 'spine_mid': '', 'pelvis': 'Waist'}
     missing = sorted(b.name for b in arm.data.bones if b.name not in bone_map)
     assert not missing, ('Cairo bones without a Link bone', missing)
-    solver = retarget.Retarget(retarget.Glb(rider['glb']), arm, bone_map)
+    solver = retarget.Retarget(retarget.Glb(HORSES / rider['glb']), arm, bone_map)
     (OUT / 'fbx').mkdir(parents=True, exist_ok=True)
     clips = {}
     for clip in rider['clips']:

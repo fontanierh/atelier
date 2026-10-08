@@ -1,5 +1,6 @@
 #include "JapanMovementNet.h"
 #include "JapanCharacterMovement.h"
+#include "JapanJumpReplayQA.h"
 #include "WandererCharacter.h"
 #include "BotwMoveSet.h"
 #include "Engine/PackageMapClient.h"
@@ -75,19 +76,45 @@ void FSavedMove_Japan::Clear()
     Super::Clear(); Input = FJapanMoveInput(); PostState = FJapanMoveCheckpoint(); PostEdge = 0; PostCrouch = false;
 }
 
+#if !UE_BUILD_SHIPPING
+void FSavedMove_Japan::PrepareStaleClockProbe(ACharacter* Character,
+    FNetworkPredictionData_Client_Character& ClientData, uint32 OldEpoch)
+{
+    Clear();
+    // UE's packet builder dereferences CharacterOwner; Clear alone does not initialize it.
+    // Use the base initializer so this diagnostic does not consume the real input journal.
+    Super::SetMoveFor(Character, .125f, FVector(1000., 0., 0.), ClientData);
+    TimeStamp = 123.25f;
+    Input.ActivityEpoch = OldEpoch;
+    Input.FirstEdge = 60000; Input.Y = 127; Input.Flags = FJapanMoveInput::Sprint;
+    // Deliberately absolute and far away: stale rejection must leave the host root unchanged.
+    // Clear has removed any pooled end base and relative-location state.
+    SavedLocation = Character->GetActorLocation() + FVector(1000., 0., 0.);
+    SavedControlRotation = Character->GetControlRotation().Clamp();
+    EndPackedMovementMode = Character->GetCharacterMovement()->PackNetworkMovementMode();
+}
+#endif
+
 void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
 {
+    const FVector OriginalLocation = Mode == PostUpdate_Replay ? SavedLocation : FVector::ZeroVector;
+    const FVector OriginalVelocity = Mode == PostUpdate_Replay ? SavedVelocity : FVector::ZeroVector;
     Super::PostUpdate(Character, Mode);
     if (auto* Movement = MovementOf(Character); Movement && Movement->PredictsMoves())
     {
         PostState = Movement->CaptureMovementState();
         PostEdge = Movement->GetProcessedEdge();
         PostCrouch = Movement->bWantsToCrouch;
+        JapanJumpReplayQA::Move(Movement, *this, Mode == PostUpdate_Replay, OriginalLocation, OriginalVelocity);
+#if !UE_BUILD_SHIPPING
         static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));
-        if (Mode == PostUpdate_Record && Trace && Movement->TraceClientStep(TimeStamp))
-            UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move client epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s"),
+        if (Trace && Movement->TraceClientStep(TimeStamp))
+            UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move client epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s replay=%d first_edge=%u edges=%d applied_edge=%u action=%s action_time=%.6f pending_launch=%s"),
                 Input.ActivityEpoch, TimeStamp, DeltaTime, Input.X, Input.Y, Input.Flags, Movement->PackNetworkMovementMode(), *Movement->GetCurrentAcceleration().ToString(),
-                Movement->GetMaxSpeed(), *SavedLocation.ToString(), *SavedVelocity.ToString());
+                Movement->GetMaxSpeed(), *SavedLocation.ToString(), *SavedVelocity.ToString(), Mode == PostUpdate_Replay,
+                Input.FirstEdge, Input.Edges.Num(), PostEdge, *PostState.Action.ToString(),
+                CastChecked<AWandererCharacter>(Character)->GetActionTime(), *Movement->GetPendingLaunch().ToString());
+#endif
     }
 }
 
@@ -151,6 +178,7 @@ void FJapanMoveResponse::ServerFillResponseData(const UCharacterMovementComponen
     Checkpoint = static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpoint;
     bHasCheckpoint = IsCorrection() && !Checkpoint.Bytes.IsEmpty() &&
         static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpointTime == Adjustment.TimeStamp;
+    JapanJumpReplayQA::Sent(*this);
 }
 
 bool FJapanMoveResponse::Serialize(UCharacterMovementComponent& Movement, FArchive& Ar, UPackageMap* Map)

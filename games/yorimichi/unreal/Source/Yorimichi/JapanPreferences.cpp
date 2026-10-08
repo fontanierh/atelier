@@ -62,9 +62,9 @@ constexpr bool bLumenAvailable = WITH_EDITOR != 0;
 const TCHAR* const LumenUnavailable = TEXT("Lumen is not available in this build: it is packaged for forward lighting only.");
 // The Skate feel page (docs/SKATE.md, "Skate feel menu"): every value that changes how the board rides, saved as
 // skate_<name>. The mode picks Easy, Normal or Hardcore as made, or Custom, where every value below is tuned on a base
-// difficulty; the stick, mouse and camera (bAlways) apply in every mode. A knob without a field is a choice: the mode
-// (0 easy, 1 normal, 2 hardcore, 3 custom), the base difficulty (0 easy, 1 normal, 2 hardcore) or a switch (0 the
-// difficulty's own, 1 off, 2 on).
+// difficulty; the stick, mouse, tight flicks and camera (bAlways) apply in every mode. A knob without a field is a choice:
+// the mode (0 easy, 1 normal, 2 hardcore, 3 custom), the base difficulty (0 easy, 1 normal, 2 hardcore), tight flicks
+// (0 off, 1 on) or a switch (0 the difficulty's own, 1 off, 2 on).
 struct FSkateKnob { const TCHAR* Key; const TCHAR* Label; const TCHAR* Hint; float Minimum, Maximum, Step; float FSkateFeel::* Field; bool bAlways = false; };
 struct FSkateGroup { const TCHAR* Name; TArray<FSkateKnob> Knobs; };
 const TArray<FSkateGroup>& SkateGroups()
@@ -116,6 +116,7 @@ const TArray<FSkateGroup>& SkateGroups()
             {TEXT("skate_dead_zone"), TEXT("Stick dead zone"), TEXT("Stick travel ignored around the centre. Raise it for a worn stick."), .25f, .6f, .01f, &FSkateFeel::StickDeadZone, true},
             {TEXT("skate_stick_reach"), TEXT("Stick full tilt at"), TEXT("Stick travel that counts as fully pushed. Lower reaches the edge sooner."), .6f, 1, .01f, &FSkateFeel::StickReach, true},
             {TEXT("skate_mouse_flick"), TEXT("Mouse flick strength"), TEXT("How far a mouse movement moves the trick stick, beside look sensitivity."), .25f, 4, .05f, &FSkateFeel::MouseFlick, true},
+            {TEXT("skate_tight_flicks"), TEXT("Tight hardflips and inwards"), TEXT("Also reads a hardflip or inward heelflip flicked close to straight down then up, as newer skate games do, beside the wide arc."), 0, 1, 1, nullptr, true},
             {TEXT("skate_cam_dist"), TEXT("Skate camera distance"), TEXT("Nearer or farther than the skate camera's own."), .6f, 1.6f, .05f, &FSkateFeel::CameraDistance, true},
             {TEXT("skate_cam_fov"), TEXT("Skate camera field of view"), TEXT("Degrees added to the skate camera's view."), -20, 20, 1, &FSkateFeel::CameraFOV, true}}}};
     return Groups;
@@ -128,6 +129,7 @@ FString SkateChoice(const FString& Key, int32 Choice)
     if (Key == TEXT("skate_mode")) return SkateModes[FMath::Clamp(Choice, 0, SkateCustom)];
     if (Key == TEXT("skate_difficulty"))
         return Choice == 0 ? TEXT("Easy · forgiving") : Choice == 2 ? TEXT("Hardcore · strict") : TEXT("Normal");
+    if (Key == TEXT("skate_tight_flicks")) return Choice == 1 ? TEXT("On") : TEXT("Off");
     return Choice == 1 ? TEXT("Off") : Choice == 2 ? TEXT("On") : TEXT("As the difficulty has it");
 }
 // The value a knob starts at: the game's DefaultGame.ini for the settings it had, the stock feel for the rest.
@@ -139,6 +141,7 @@ float SkateDefault(const FSkateKnob& Knob, const FSkateFeel& Defaults)
         for (int32 I = 0; I < 3; ++I) if (Defaults.Difficulty.Equals(SkateDifficulties[I], ESearchCase::IgnoreCase)) return float(I);
         return 1.f;
     }
+    if (FCString::Strcmp(Knob.Key, TEXT("skate_tight_flicks")) == 0) return float(Defaults.TightFlicks);
     return float((FCString::Strcmp(Knob.Key, TEXT("skate_auto_push")) == 0 ? Defaults.AutoPush : Defaults.AssistedAir) + 1);
 }
 }
@@ -516,12 +519,13 @@ void UJapanPreferences::Apply()
 FSkateFeel UJapanPreferences::GetSkateFeel() const
 {
     // Easy, Normal and Hardcore are the difficulty as made; Custom tunes every value on its base difficulty. The stick,
-    // mouse and camera apply in every mode. Custom values stay saved while a preset is played.
+    // mouse, tight flicks and camera apply in every mode. Custom values stay saved while a preset is played.
     FSkateFeel Feel = FSkateFeel::Defaults();
     const int32 Mode = FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))), 0, SkateCustom);
     for (const FSkateGroup& Group : SkateGroups())
         for (const FSkateKnob& Knob : Group.Knobs)
             if (Knob.Field && (Knob.bAlways || Mode == SkateCustom)) Feel.*Knob.Field = Get(Knob.Key);
+    Feel.TightFlicks = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_tight_flicks"))), 0, 1));
     if (Mode != SkateCustom) Feel.Difficulty = SkateDifficulties[Mode];
     else
     {

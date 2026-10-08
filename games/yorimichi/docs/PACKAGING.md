@@ -114,8 +114,9 @@ Editor builds keep both renderers.
 
 4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
    the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.
-   If the game quits within seconds of its first launch, before any window, open the launcher again (see "A first
-   launch can crash before the game starts").
+   The launcher keeps the engine's memory tracker on (`-llm`, about 0.25 GiB) to sidestep a suspected startup crash.
+   If the game still quits within seconds of starting, before any window, the launcher opens it once more by itself (see
+   "A launch can crash before the game starts"). If that also fails, open the launcher again.
 
 ## Before publishing a release
 
@@ -138,44 +139,74 @@ This verifies the download, not gameplay. Run a separate, guarded standalone smo
 folder and quit it promptly. Check that captures and logs were written inside the app's writable sandbox container.
 Upload the verified ZIP or all numbered parts, SHA256SUMS, manifest.json and the verification report together.
 
-## A first launch can crash before the game starts
+## A launch can crash before the game starts
 
-**Observed twice, each time on the first launch of a freshly signed or extracted app; the next launch of the same,
-unchanged app started normally.** The launcher's process ends with SIGSEGV (exit -11) within seconds, before
-`game.log` exists. macOS writes `Yorimichi-<date>.ips` under `~/Library/Logs/DiagnosticReports/`.
+**Seen three times, each time fixed by launching the same unchanged app again.** The game's process
+ends with SIGSEGV (exit status 139) within a second, before `game.log` exists. macOS writes `Yorimichi-<date>.ips`
+under `~/Library/Logs/DiagnosticReports/`. `Play Yorimichi.command` now launches with `-llm` to avoid the engine path
+the stacks implicate, and still retries that crash once by itself (below).
 
 - 2026-10-06 12:05: the first launch of the re-signed `afc541e1` package, an earlier build that day (not a
   published release). A launch six seconds later started.
 - 2026-10-07 03:06: the first launch of an extracted r4 package build (`7250edaf`, before the release was rebuilt
   at `5452c5dd`). The unchanged app's next launch started and its map check ran.
+- 2026-10-07 23:13: the ground check's launch of the extracted r5 release (`6f1bf097`). An unchanged relaunch passed.
 
-Both reports have the same main-thread stack and the same faulting address (`KERN_INVALID_ADDRESS at 0x3`):
+All three reports have the same two threads at the moment of the crash, and the same faulting address
+(`KERN_INVALID_ADDRESS at 0x3`):
 
 ```text
-FGenericPlatformMisc::RaiseException
-UE::LLMPrivate::FLLMTracker::PopTag
-FLLMScope::DestructInTheOpen
-FMallocBinned3::PushNewPoolToFront / FMallocBinned3::Malloc
-FMallocPoisonProxy::Malloc
-operator new
+main thread                                              GameThread
+FGenericPlatformMisc::RaiseException                     munmap / LLMFree
+UE::LLMPrivate::FLLMTracker::PopTag                      FLLMAllocator::Free
+FLLMScope::DestructInTheOpen                             FLLMTracker::Clear
+FMallocBinned3::PushNewPoolToFront / Malloc              FLLMGlobals::Clear
+FMallocPoisonProxy::Malloc                               FLLMGlobals::ProcessCommandLineInner
+operator new                                             FEngineLoop::PreInitPreStartupScreen
 LaunchServices asString / _LSCopyApplicationInformation
--[NSApplication _sendFinishLaunchingNotification] (via _handleAEOpenEvent)
+-[NSApplication _sendFinishLaunchingNotification]
 -[NSApplication run] / tchar_main / main
 ```
 
-The matching stacks establish where it crashes: AppKit's launch event makes LaunchServices allocate on the main
-thread before the engine has started, and the engine's low-level memory tracker (LLM), compiled into Development and
-Test packages by default (`LLM_ENABLED_IN_CONFIG` and `ALLOW_LOW_LEVEL_MEM_TRACKER_IN_TEST` in
-`Runtime/Core/Public/HAL/LowLevelMemTrackerDefines.h`), wraps that allocation in its bootstrap scope and fails in
-`PopTag`. Nothing in the project configures LLM. Why it fails is not established: a race between the engine and
-LaunchServices on a newly registered app is one possible explanation, inferred from the stacks and the retries, not
-reproduced or proven.
+The stacks and the engine source support the following explanation; the race has not been reproduced on demand.
+The engine's low-level memory tracker (LLM) is compiled into Development and Test packages by default
+(`LLM_ENABLED_IN_CONFIG` and `ALLOW_LOW_LEVEL_MEM_TRACKER_IN_TEST` in
+`Runtime/Core/Public/HAL/LowLevelMemTrackerDefines.h`) and tracks every allocation from process start. Without `-llm`
+on the command line, `FLLMGlobals::ProcessCommandLineInner` (`Runtime/Core/Private/HAL/LLM/LLM.cpp`) disables it and
+`Clear()` frees its trackers. On macOS that runs on the game thread while AppKit's launch event still runs on the main
+thread, where LaunchServices allocates through the engine's allocator. The lock taken while disabling only holds back
+new allocation handlers. An `FLLMScope` that opened while LLM was still enabled then closes after `Clear()`, and
+`DestructInTheOpen` pops its tag from the freed tracker without checking again. Nothing in the project configures LLM.
+LaunchServices does more of that work for a newly registered app, which is why a first launch is the usual victim.
 
-When it happens, keep the `.ips` report and launch the same extracted app once more. Report it as a known first-launch
-limitation if that launch starts. A crash on a second launch, or a different stack, is a new failure.
+The launcher passes `-llm`, so `ProcessCommandLineInner` keeps LLM enabled and never runs the disable-and-`Clear()`
+branch; the only other `Clear()` is the tracker's destructor at process exit. This is a mitigation of the implicated
+path, not a measured reduction in crashes: the crash was seen three times, so many fresh-extraction launches would be
+needed to show a change in its rate. LLM still counts every allocation for the whole session, but with no `-llmcsv` and
+no memory trace channel it writes no CSV or trace files (`LLM enabled CsvWriter: off TraceWriter: off` in `game.log`).
+Its cost, measured 2026-10-08 on the published r5 package (`6f1bf097`) with the shipped launcher's `road_walk`
+benchmark, in the order default, `-llm`, `-llm`, default:
 
-Two mitigations are **unvalidated**; neither is in use, and each needs a cook and repeated first launches of
-freshly extracted copies before adoption:
+| | default | `-llm` |
+|---|---|---|
+| peak footprint | 5.37 GiB | 5.62 GiB |
+| average FPS | 32.4 | 32.1 |
+| p95 / p99 frame time | 44.4 / 52.3 ms | 43.6 / 47.8 ms |
+
+The FPS differences are smaller than the spread between runs of the same condition (about 5 FPS). They are relative
+only: three unrelated `CrashReportClient` processes used about 190% CPU throughout, so every run was near 35 FPS rather
+than the 60 FPS r5 baseline. The 180-frame warmup also skips a longer stretch of the route at lower FPS. Re-measure on
+an idle machine, trimming by time or distance, before quoting an absolute cost.
+
+The launcher cannot see the crash stack, so it still retries the crash's observable shape, once: the game ended with
+SIGSEGV within 20 seconds, and this launch did not create or change `game.log` (same inode, size, and sub-second
+modify and change times). It appends a line to `launcher.log` beside `game.log`, and macOS keeps the first `.ips`.
+Any other exit, a crash after the engine wrote its log, or a second crash ends the launcher with the game's status.
+Double-clicking `Yorimichi.app` itself has no retry. In release checks, a first crash with this stack followed by a
+clean retry is the known limitation; a crash with a different stack, or after `game.log` exists, is a new failure.
+
+Removing the race outright needs an engine-side change, and each option here is **unvalidated**: it needs a cook and
+repeated launches of freshly extracted copies before adoption:
 
 - Build the game target with `LLM_ENABLED_IN_CONFIG=0`. This needs a unique build environment for the target, so the
   engine modules it uses compile with the game.

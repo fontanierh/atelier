@@ -52,6 +52,63 @@ bool FJapanMoveClockTest::RunTest(const FString&)
     Burst.Refill(120.);
     TestEqual(TEXT("A long outage cannot bank more than the timeout"), Burst.Credit, FJapanMoveClock::Timeout);
     TestFalse(TEXT("Nonfinite elapsed input is refused"), Burst.Allows(120., std::numeric_limits<double>::infinity()));
+    FJapanMoveClock Recovery;
+    Recovery.BeginEpoch(20.);
+    TestTrue(TEXT("The first capped move includes host time since the epoch handoff"), Recovery.Allows(20.299, .125));
+    Recovery.Accepted(20.299, .125);
+    // Recorded recovery: the .125 first step consumed all initial slack when
+    // refilling began at first arrival. Ordinary arrival jitter then reset again.
+    for (int32 I = 1; I <= 30; ++I)
+    {
+        const double Arrival = 20.299 + I * .033;
+        TestTrue(TEXT("Normal recovery frames fit after the capped first move"), Recovery.Allows(Arrival, 1. / 30.));
+        Recovery.Accepted(Arrival, 1. / 30.);
+    }
+    Recovery.BeginEpoch(30.);
+    TestFalse(TEXT("Old epoch acceptance does not start the new timeout"), Recovery.Expired(31.));
+    TestEqual(TEXT("An epoch clears old credit"), Recovery.Credit, FJapanMoveClock::InitialSlack);
+    double RecoveryAccepted = 0.;
+    for (int32 I = 0; I < 100; ++I)
+        if (Recovery.Allows(30.299, .025)) { Recovery.Accepted(30.299, .025); RecoveryAccepted += .025; }
+    TestTrue(TEXT("Recovery burst cannot exceed elapsed host time plus unchanged slack"),
+        RecoveryAccepted <= .299 + FJapanMoveClock::InitialSlack + 1.e-6);
+    TestFalse(TEXT("Recovery burst beyond its budget is still rejected"), Recovery.Allows(30.299, .025));
+    Recovery.BeginEpoch(40.);
+    Recovery.Refill(42.);
+    TestEqual(TEXT("First-arrival waiting cannot bank more than the existing cap"), Recovery.Credit, FJapanMoveClock::Timeout);
+#if !UE_BUILD_SHIPPING
+    UWorld* TestWorld = nullptr;
+    for (const FWorldContext& Context : GEngine->GetWorldContexts())
+        if (Context.World() && Context.World()->IsGameWorld()) { TestWorld = Context.World(); break; }
+    if (!TestNotNull(TEXT("Stale move regression has a native game world"), TestWorld)) return false;
+    FActorSpawnParameters Spawn;
+    Spawn.ObjectFlags |= RF_Transient;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    auto* Character = TestWorld->SpawnActor<ACharacter>(FVector(200., 300., 400.), FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("Stale move regression owns a character"), Character)) return false;
+    ON_SCOPE_EXIT { Character->Destroy(); };
+    auto* Movement = Character->GetCharacterMovement();
+    FNetworkPredictionData_Client_Japan Client(*Movement);
+    Client.CurrentTimeStamp = .625f;
+    const FVector Before = Character->GetActorLocation();
+    FSavedMovePtr Storage = Client.CreateSavedMove();
+    auto& Probe = static_cast<FSavedMove_Japan&>(*Storage);
+    Probe.CharacterOwner = nullptr; // Deterministic negative for the old Clear-only construction.
+    Probe.PrepareStaleClockProbe(Character, Client, 4);
+    if (!TestTrue(TEXT("Stale probe initializes UE's required character owner"), Probe.CharacterOwner == Character)) return false;
+    FJapanNetworkMoveData Data;
+    Data.ClientFillNetworkMoveData(Probe, FCharacterNetworkMoveData::ENetworkMoveType::NewMove);
+    TestEqual(TEXT("Stale probe retains its adversarial timestamp"), Data.TimeStamp, 123.25f);
+    TestEqual(TEXT("Stale probe retains its old activity epoch"), Data.Input.ActivityEpoch, uint32(4));
+    TestEqual(TEXT("Stale probe retains its unique diagnostic marker"), Data.Input.FirstEdge, uint16(60000));
+    TestTrue(TEXT("Stale probe sends its large absolute displacement"), Data.Location.Equals(Before + FVector(1000., 0., 0.)));
+    TestTrue(TEXT("Stale probe preserves acceleration in the real packet builder"), Data.Acceleration.Equals(FVector(1000., 0., 0.)));
+    TestEqual(TEXT("Stale probe captures the real movement mode"), Data.MovementMode, Movement->PackNetworkMovementMode());
+    TestEqual(TEXT("Probe construction leaves the live client clock unchanged"), Client.CurrentTimeStamp, .625f);
+    TestTrue(TEXT("Probe construction does not move the character"), Character->GetActorLocation().Equals(Before));
+    TestEqual(TEXT("Probe is not retained as a real predicted move"), Client.SavedMoves.Num(), 0);
+    Client.FreeMove(Storage);
+#endif
     return true;
 }
 

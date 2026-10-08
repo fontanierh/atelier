@@ -29,6 +29,9 @@ struct FJapanMovementStats
     uint32 StaleProbeSent = 0, StaleProbeRejected = 0, NeutralLateGroundFrames = 0;
     float StaleProbeRootCm = 0.f, StaleProbeClockDelta = 0.f;
     float NeutralMaxAcceleration = 0.f, NeutralLateMaxSpeed = 0.f;
+    uint32 ClockArrivals = 0;
+    float NeutralPathCm = 0.f;
+    FVector ClockHandoffRoot = FVector::ZeroVector, ClockArrivalRoot = FVector::ZeroVector;
     float FirstMoveTimestamp = -1.f;
     float LargestCorrectionCm = 0.f;
     FJapanCorrectionSample LargestCorrection;
@@ -60,7 +63,7 @@ public:
     virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
     uint16 GetProcessedEdge() const { return ProcessedEdge; }
     uint16 PendingAcknowledgedEdge = 0;
-    bool TraceClientStep(float Timestamp) { return Timestamp <= .8f && ClientTraceRows++ < 64; }
+    bool TraceClientStep(float Timestamp) { return Timestamp <= 4.f && ClientTraceRows++ < 512; }
     bool IsReplaying() const { return bReplaying; }
     bool IsExecutingMove() const { return bExecutingMove; }
     const FJapanMovementStats& GetNetworkStats() const { return NetworkStats; }
