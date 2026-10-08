@@ -9,8 +9,8 @@
 #include "TimerManager.h"
 
 #if !UE_BUILD_SHIPPING
-namespace
-{
+namespace JapanJumpReplayQA
+{ namespace {
 int32 Case()
 {
     static const int32 Value = [] { int32 N = -1; FParse::Value(FCommandLine::Get(), TEXT("networkjumpreplay="), N); return N; }();
@@ -100,7 +100,7 @@ void Schedule(UJapanCharacterMovement* Movement)
             Probe.Error = TEXT("Could not close jump replay host window");
     }));
 }
-}
+} }
 
 bool JapanJumpReplayQA::Enabled() { return Case() >= 0 && Case() <= 5 && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")); }
 void JapanJumpReplayQA::Arm(UJapanCharacterMovement* Movement, const FString& Folder)

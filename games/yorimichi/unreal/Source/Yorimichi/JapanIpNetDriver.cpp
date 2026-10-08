@@ -7,7 +7,7 @@
 
 UJapanIpNetDriver::UJapanIpNetDriver(const FObjectInitializer& Initializer) : Super(Initializer) {}
 
-bool UJapanIpNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* Notify, const FURL& URL,
+bool UJapanIpNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL,
     bool bReuseAddressAndPort, FString& Error)
 {
     PrivateAddress.Reset();
@@ -23,7 +23,7 @@ bool UJapanIpNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* Notify, con
         MaxPortCountToTry = 0;
         bExitOnBindFailure = false;
     }
-    if (!Super::InitBase(bInitAsClient, Notify, URL, bReuseAddressAndPort, Error))
+    if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
     {
         if (!bInitAsClient)
         {
@@ -63,9 +63,9 @@ FUniqueSocket UJapanIpNetDriver::CreateAndBindSocket(TSharedRef<FInternetAddr> B
     return Super::CreateAndBindSocket(BindAddr, Port, bReuseAddressAndPort, ReceiveBytes, SendBytes, Error);
 }
 
-bool UJapanIpNetDriver::InitListen(FNetworkNotify* Notify, FURL& URL, bool bReuseAddressAndPort, FString& Error)
+bool UJapanIpNetDriver::InitListen(FNetworkNotify* InNotify, FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
-    const bool bListening = Super::InitListen(Notify, URL, bReuseAddressAndPort, Error);
+    const bool bListening = Super::InitListen(InNotify, URL, bReuseAddressAndPort, Error);
     if (!bListening && IsRunningDedicatedServer())
     {
         UE_LOG(LogTemp, Error, TEXT("Private dedicated listener failed: %s"), *Error);

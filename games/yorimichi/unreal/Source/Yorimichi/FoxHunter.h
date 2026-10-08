@@ -11,6 +11,7 @@ class UBlendSpace;
 class AWandererCharacter;
 class UMaterialInstanceDynamic;
 struct FFoxReview;
+namespace JapanEnemyQA { struct FJapanEnemyProbe; }
 
 /** Gameplay data of one fox clip, in clip seconds at 1x (from the animation-r04 manifest through the export). */
 USTRUCT(BlueprintType)
@@ -165,6 +166,6 @@ private:
     FRandomStream Rand;
     // -foxqa: the scripted fight review
     friend struct FFoxReview;
-    friend struct FJapanEnemyProbe;
+    friend struct JapanEnemyQA::FJapanEnemyProbe;
     TSharedPtr<FFoxReview> Review;
 };
