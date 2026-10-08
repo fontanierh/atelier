@@ -386,17 +386,14 @@ def test_each_agent_has_a_one_line_task_on_the_board(http_server):
     assert json.loads(request(http_server, '/api/state')[1])['agents'][0]['task'] is None
 
 
-def test_posts_that_would_fold_on_the_web_board_warn_the_agent(cache, capsys):
+def test_long_posts_go_out_without_a_length_warning(cache, capsys):
+    # Agents shortened posts to dodge the old 500-character note; clarity is the rule, not a cap (operator, #7528).
     from types import SimpleNamespace
-    assert not board.folds('Short and to the point.')
-    assert board.folds('x' * 501) and board.folds('\n'.join('line' for _ in range(9)))
-    assert not board.folds('Fits.\n\nAttachments (files on this machine):\n' + '\n'.join(f'- /tmp/{i}' for i in range(20)))
     args = SimpleNamespace(action='post', agent='one', to='*', topic='info', reply_to=None, attach=[], all_agents=False,
                            notify_operator=False)
     assert board.main(SimpleNamespace(**vars(args), message='Short.')) == 0
-    assert 'folded' not in capsys.readouterr().err
-    assert board.main(SimpleNamespace(**vars(args), message='y' * 600)) == 0
-    assert 'folded behind "Read more"' in capsys.readouterr().err
+    assert board.main(SimpleNamespace(**vars(args), message='y' * 2000)) == 0
+    assert capsys.readouterr().err == ''
 
 
 def test_static_files_load_fast_gzipped_revalidated_and_paintings_cached(http_server):
@@ -581,3 +578,27 @@ def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
             return None
     with ThreadPoolExecutor(8) as pool:
         assert sum(result is not None for result in pool.map(ask, range(8))) == board.OPEN_TASKS
+
+
+def test_board_village_is_served_beside_the_classic_board(http_server, tmp_path, monkeypatch):
+    # The village may compile wasm; the classic page keeps its stricter policy.
+    status, body, headers = request(http_server, '/world')
+    assert status == 200 and b'/world/world.js' in body and headers['Cache-Control'] == 'no-store'
+    assert "'wasm-unsafe-eval'" in headers['Content-Security-Policy']
+    assert 'wasm' not in request(http_server, '/')[2]['Content-Security-Policy']
+    # The compiled scene is a local build product: absent until built, then served with its unpacked size.
+    monkeypatch.setitem(board_web.WORLD, '/world/board_world_bg.wasm', (tmp_path / 'scene.wasm', 'application/wasm'))
+    assert request(http_server, '/world/board_world_bg.wasm')[0] == 404
+    (tmp_path / 'scene.wasm').write_bytes(b'\0asm' + bytes(4000))
+    status, body, headers = request(http_server, '/world/board_world_bg.wasm')
+    assert status == 200 and headers['Content-Type'] == 'application/wasm' and headers['X-Uncompressed-Length'] == '4004'
+    assert "'wasm-unsafe-eval'" in headers['Content-Security-Policy']
+
+
+def test_board_village_records_phone_timings(http_server, cache):
+    report = {'kind': 'cold', 'total_ms': 2400, 'compile_ms': 700, 'standalone': True}
+    assert request(http_server, '/api/world/timing', report)[0] == 200
+    assert request(http_server, '/api/world/timing', report, headers={'X-Board-CSRF': 'wrong'})[0] == 403
+    assert request(http_server, '/api/world/timing', {'ua': 'x' * 5000})[0] == 400
+    lines = (board.root() / 'world-timings.jsonl').read_text().splitlines()
+    assert len(lines) == 1 and json.loads(lines[0])['total_ms'] == 2400

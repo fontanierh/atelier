@@ -126,14 +126,12 @@ PROFILE="desktop=1"
 [ -n "$(saved render_scale)" ] || PROFILE="$PROFILE;render_scale=100"
 RENDERER=0; RENDER=(@FORWARD@); COMMANDS=@FORWARD_COMMANDS@
 LOG="$LOGS/game.log"
+ARGS=(-fullscreen -ForceRes -resx=2560 -resy=1440 -desktopnative1440 -nosplash -abslog="$LOG"
+  -set="$PROFILE;renderer=$RENDERER" -preferencesfile="$PREFS" "${RENDER[@]}" -ExecCmds="$COMMANDS" "$@")
 # A Development package can segfault at startup, before it logs anything. Crash reports and engine source point to
 # the memory tracker freeing itself on the game thread while AppKit's launch event allocates through it on the main
-# thread (docs/PACKAGING.md). -llm keeps the tracker enabled, so the engine never takes that disable-and-free path;
-# this is a mitigation, not a measured fix. It writes no LLM CSV or trace files and costs about 0.25 GiB.
-ARGS=(-fullscreen -ForceRes -resx=2560 -resy=1440 -desktopnative1440 -nosplash -llm -abslog="$LOG"
-  -set="$PROFILE;renderer=$RENDERER" -preferencesfile="$PREFS" "${RENDER[@]}" -ExecCmds="$COMMANDS" "$@")
-# The launcher cannot see the stack, so it still retries only that shape of crash, once: SIGSEGV within
-# @STARTUP_SECONDS@ s with game.log untouched (inode, size, and sub-second modify and change times).
+# thread (docs/PACKAGING.md). The launcher cannot see the stack, so it retries only that shape of crash, once: SIGSEGV
+# within @STARTUP_SECONDS@ s with game.log untouched (inode, size, and sub-second modify and change times).
 log_identity() { stat -f '%i:%z:%Fm:%Fc' "$LOG" 2>/dev/null || echo none; }
 BEFORE=$(log_identity); START=$SECONDS
 "$GAME" "${ARGS[@]}"; STATUS=$?

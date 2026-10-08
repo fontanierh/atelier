@@ -10,8 +10,8 @@ from pathlib import Path
 
 from . import paths
 from .board_store import (
-    NOTIFY_PER_HOUR, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TASK_CHARS, TOPICS, agent_name, close_task,
-    database, edit_task, folds, messages, notify_allowed, open_task, post, send_web, set_task, tasks, thread_rows,
+    NOTIFY_PER_HOUR, OPERATOR, TASK_CHARS, TOPICS, agent_name, close_task,
+    database, edit_task, messages, notify_allowed, open_task, post, send_web, set_task, tasks, thread_rows,
 )
 
 
@@ -133,10 +133,6 @@ def main(args):
                 print(' '.join(str(row['id']) for row in rows))
             else:
                 print(post(args.agent, text, args.to, args.topic, args.reply_to, notify=notify))
-            if folds(text):
-                print(f'Note: over {PREVIEW_CHARS} characters or {PREVIEW_LINES} lines, so people see this folded behind '
-                      '"Read more". Lead with the point and keep posts short; put detail in an attachment or a thread '
-                      'reply.', file=sys.stderr)
         elif args.action == 'task':
             text = set_task(args.agent, args.text)
             print(f'{args.agent}: {text}' if text else f'{args.agent}: task cleared')

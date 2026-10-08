@@ -700,8 +700,7 @@ function messageNode(group, ctx) {
   }
   const hasText=Boolean(m.body_html&&m.body_html.trim());
   if(hasText) {
-    // Long messages start folded to about nine lines; "Read more" opens them in place. The limits match board.py's
-    // PREVIEW_CHARS and PREVIEW_LINES, which warn agents whose posts would fold.
+    // Long messages start folded to about nine lines; "Read more" opens them in place.
     const text=snippetless(m.body), long=text.length>500||text.split("\n").length>8, collapsed=long&&!expanded.has(group.key);
     const body=node("div","body"+(collapsed?" collapsed":""));markdown(body,m.body_html,m.body);bubble.append(body);
     if(long){const more=node("button","more",collapsed?"Read more":"Show less");more.type="button";more.addEventListener("click",()=>{collapsed?expanded.add(group.key):expanded.delete(group.key);ctx.inThread?renderThread(true):(feedSignature="",renderFeed());});bubble.append(more);}
