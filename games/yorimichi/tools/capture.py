@@ -21,6 +21,8 @@ PROJECT=ROOT/'unreal'
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from benchmark import other_render_processes
 from contextlib import ExitStack
+from atelier.engine import unreal_root
+from atelier.provenance import head
 from atelier.safety.guard import attach as attach_memory_guard, reap
 from atelier.safety.process import spawn_game
 from atelier.safety.render_lock import render_lock
@@ -88,7 +90,7 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
         spec['events']=[e for e in spec['events'] if e['time']<0]
     config=folder/'shot.json'
     config.write_text(json.dumps(spec,indent=2)+'\n')
-    engine=Path(os.environ.get('UE_ROOT','/Users/Shared/Epic Games/UE_5.8'))
+    engine=unreal_root()
     cmd=[str(engine/'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'),
          str(PROJECT/'Yorimichi.uproject'),'-game','-RenderOffscreen','-ForceRes',f'-resx={width}',f'-resy={height}',
          '-trailershot='+str(config),'-reviewdir='+str(folder),
@@ -106,7 +108,7 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
     if spec.get('route'): cmd += ['-reviewroute='+spec['route']]
     if spec.get('rider'): cmd += ['-rider='+spec['rider']]
     saved=(PROJECT/'Saved/settings.txt').read_bytes()
-    manifest={'command':cmd,'spec':spec,'git_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+    manifest={'command':cmd,'spec':spec,'git_head':head(),
         'native_binary_sha256':hashlib.sha256((PROJECT/'Binaries/Mac/libUnrealEditor-Yorimichi.dylib').read_bytes()).hexdigest(),
         'settings':saved.decode(),'fixed_step_video':True,'performance_evidence':False,'concurrent_render_processes':busy}
     inputs=[yori.OUT/'world.json',yori.OUT/'hidamari/city.json',PROJECT/'Content/Japan/Terrain.uasset',PROJECT/'Config/DefaultEngine.ini']

@@ -291,7 +291,7 @@ keikogi with hakama, basketball jersey and long coat outfits
 $0.15 for the dodge roll), [Seedance](https://seed.bytedance.com) when its quality justifies the cost (about $1.40 a
 take), both through the Vercel AI Gateway. The video is a reference, not the animation: an agent reads it frame by
 frame and writes the clip in Blender pose by pose, with foot planting and clipping checks, so it loops, lands and
-reads well in the game ([H3 workflow](games/yorimichi/docs/H3_ANIMATION_REFERENCE_WORKFLOW.md)).
+reads well in the game ([H3 workflow](docs/H3_ANIMATION_REFERENCE_WORKFLOW.md)).
 
 <table><tr>
 <td width="62%"><img src="docs/media/character/06-motion.jpg" alt="Seedance sprint frames above, the authored Blender sprint below"></td>

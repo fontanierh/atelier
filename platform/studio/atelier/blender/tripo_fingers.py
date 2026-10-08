@@ -1,12 +1,12 @@
-"""Three-bone fingers for a Tripo body rig, fitted from the mesh (add_fox_fingers.py's method as a reusable function).
+"""Three-bone fingers for a Tripo body rig, fitted from the mesh.
 
-    from tripo_fingers import add_fingers
+    from atelier.blender.tripo_fingers import add_fingers
     report = add_fingers(arm, body)      # in Blender, the rigged body in its T-pose, facing +X, palms forward
 
 Tripo's auto-rig (Mixamo names) has no fingers. For each hand, the vertices its hand bone owns (weight over 0.5) are
 sliced along the hand: the cut at which the far part splits into exactly four finger-height pieces gives the fingers
 (index highest, little finger lowest; their middles below the top `thumb_band` of the hand's height above its bone,
-0.2 here where the fox hunter's long claws took 0.35), and the narrow piece standing up above them the thumb. Each piece's centreline
+0.2 by default, 0.35 for long claws), and the narrow piece standing up above them the thumb. Each piece's centreline
 gives four joint centres, three bones per digit named mixamorig:<Side>Hand<Finger><1-3>, rolled so a positive turn
 about local X curls toward the palm. Only the digits' vertices are reweighted: smoothly from the palm over the first
 joint, then joint by joint, relaxed twice over their neighbours, four influences at most. Body bones and every other

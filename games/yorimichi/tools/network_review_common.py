@@ -8,19 +8,12 @@ import shutil
 import subprocess
 import sys
 
-
-def source_revision():
-    root = Path(__file__).resolve().parents[3]
-    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True, timeout=5).strip()
-    status = subprocess.check_output(['git', 'status', '--porcelain'], cwd=root, text=True, timeout=5)
-    return dict(head_sha=head, dirty=bool(status.strip()))
+from atelier.provenance import source_revision  # noqa: F401 - the review runners import it from here
 
 
 def require_clean_source():
-    revision = source_revision()
-    if revision['dirty']:
-        raise RuntimeError('Commit the reviewed source before recording native acceptance evidence')
-    return revision
+    from atelier import provenance
+    return provenance.require_clean_source('Commit the reviewed source before recording native acceptance evidence')
 
 
 def current_native_build(ctx):

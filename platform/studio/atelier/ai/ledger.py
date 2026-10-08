@@ -6,6 +6,7 @@ uncertain until reconciled with the provider: this module never retries a paid c
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import re
 
 
 def run_once(path, metadata, operation):
@@ -32,11 +33,23 @@ def run_once(path, metadata, operation):
         temporary.replace(path)
 
 
+def set_aside(path):
+    """Rename path to <stem>.rejected-N<suffix>, so a record or its output is kept rather than overwritten when a call
+    is paid for again. Returns the new path."""
+    path = Path(path); n = 1
+    while path.with_name(f'{path.stem}.rejected-{n}{path.suffix}').exists(): n += 1
+    return path.rename(path.with_name(f'{path.stem}.rejected-{n}{path.suffix}'))
+
+
+def redact(text):
+    """An error message safe to print and record: signed download URLs removed."""
+    return re.sub(r'https://\S+', '<URL omitted>', str(text))
+
+
 def try_once(path, metadata, operation):
     """`run_once` for a batch that goes on: (record, None) when the call is done, else (None, why). why says that the
     path was recorded before (set the record aside to pay again) or names this call's error, with any URL left out;
     it is for printing only, never recorded. A failed call stays recorded as uncertain."""
-    import re
     try:
         return run_once(path, metadata, operation), None
     except FileExistsError as error:
@@ -44,4 +57,4 @@ def try_once(path, metadata, operation):
             return None, f'{type(error).__name__}: {error}'
         return None, f'already recorded in {Path(path).name}; set it aside to pay for this call again'
     except Exception as error:  # noqa: BLE001 - run_once has recorded it
-        return None, re.sub(r'https://\S+', '<URL omitted>', f'{type(error).__name__}: {error}')[:600]
+        return None, redact(f'{type(error).__name__}: {error}')[:600]

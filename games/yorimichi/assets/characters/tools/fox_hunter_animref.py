@@ -6,7 +6,7 @@ Stage A (Blender):  blender -b --python-exit-code 1 --python games/yorimichi/ass
     into animref/inputs/: side-centred, side-left-third (for rightward travel) and three-quarter front.
 Stage B (plain python):  python games/yorimichi/assets/characters/tools/fox_hunter_animref.py prepare
     Writes one revision folder per action under animref/<slug>-r01/ with prompt.txt, inputs/ and .gitignore,
-    following games/yorimichi/docs/H3_ANIMATION_REFERENCE_WORKFLOW.md. Submission is done by the shell loop in
+    following docs/H3_ANIMATION_REFERENCE_WORKFLOW.md. Submission is done by the shell loop in
     animref/submit_all.sh (gh-hosted input URL, then platform/studio/node/h3_max_reference.mjs submit/status).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402

@@ -19,7 +19,7 @@ capture when a library has a good match.
 
 Video references are the right tool when no library has a match, or when the move should look like *this* character
 rather than an adult stuntman: the dodge roll is authored from an H3 Max reference, the sprint and the dive roll from
-Seedance ([H3 workflow](H3_ANIMATION_REFERENCE_WORKFLOW.md)). In both routes the game clip is authored in Blender on
+Seedance ([H3 workflow](../../../docs/H3_ANIMATION_REFERENCE_WORKFLOW.md)). In both routes the game clip is authored in Blender on
 Cairo's rig, and a human reviews it in motion.
 
 ## The chain at a glance

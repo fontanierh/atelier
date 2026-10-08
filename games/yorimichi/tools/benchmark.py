@@ -19,14 +19,16 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'world')); import yori  # noqa: E402
 from contextlib import ExitStack
+from atelier.engine import unreal_root
+from atelier.provenance import head, status
 from atelier.safety.guard import attach as attach_memory_guard, reap
 from atelier.safety.process import spawn_game
-from atelier.safety.render_lock import render_lock
+from atelier.safety.render_lock import render_lock, render_processes
 from atelier.safety.provenance import profile_from_log
 
 ROOT = yori.GAME
 PROJECT = ROOT / 'unreal'
-ENGINE = Path(os.environ.get('UE_ROOT', '/Users/Shared/Epic Games/UE_5.8'))
+ENGINE = unreal_root()
 
 
 def desktop_value(settings):
@@ -55,16 +57,7 @@ def verify_desktop_profile(profile, settings):
 
 def other_render_processes(ignore_pid=None):
     """Reject overlapping game/editor/art jobs instead of reporting their slowdown."""
-    processes = subprocess.check_output(['ps','-axo','pid=,comm='],text=True)
-    busy = []
-    for line in processes.splitlines():
-        fields = line.strip().split(None,1)
-        if len(fields) != 2: continue
-        pid, command = int(fields[0]), fields[1]
-        if pid != ignore_pid and Path(command).name in (
-                'UnrealEditor','UnrealEditor-Cmd','ShaderCompileWorker','blender','Blender'):
-            busy.append({'pid':pid,'command':command})
-    return busy
+    return render_processes(() if ignore_pid is None else (ignore_pid,))
 
 
 def summarize(path, warmup=300, phase=None):
@@ -284,8 +277,7 @@ def main():
     else:
         cmd += ['-benchmarkview='+args.view, f'-benchmarkseconds={args.seconds}',
                 '-benchmarkdir='+str(folder)]
-    manifest = dict(command=cmd, commit=subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
-                    dirty=subprocess.check_output(['git','status','--porcelain'], text=True),
+    manifest = dict(command=cmd, commit=head(), dirty=status(),
                     settings=(PROJECT/'Saved/settings.txt').read_text(),
                     engine_config=(PROJECT/'Config/DefaultEngine.ini').read_text(),
                     binary_sha256=hashlib.sha256((PROJECT/'Binaries/Mac/libUnrealEditor-Yorimichi.dylib').read_bytes()).hexdigest())

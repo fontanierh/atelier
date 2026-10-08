@@ -17,12 +17,13 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import importlib.util, json, math, os, shutil, subprocess, sys, time, urllib.request
 from pathlib import Path
 import numpy as np
+from atelier.engine import unreal_app
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 WALK = yori.OUT/'treehouse'/'walk'
 STEP = .25                    # route spacing (m)
-UNREAL = Path(os.environ.get('UE_ROOT', '/Users/Shared/Epic Games/UE_5.8'))/'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
+UNREAL = unreal_app()
 PROJECT = REPO/'games/yorimichi/unreal'
 BRIDGE = 'http://127.0.0.1:8830'
 

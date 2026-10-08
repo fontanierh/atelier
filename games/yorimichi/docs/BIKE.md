@@ -36,10 +36,10 @@ the next V brings it out fresh.
 - `assets/vehicles/bike/rider.py` (Blender) authors every rider move on that bike: BikeRide (the pedalling loop),
   BikeMount, BikeDismount, BikeKickstand, BikeHop, BikeSkid, BikeFootDown (the stopped loop), BikeBell, BikeWave and
   BikeCrash. Hands and feet are solved onto the grips, pedals, stand and ground in their contact windows; timing for the
-  mount, wave and crash follows the H3 video references (docs/H3_ANIMATION_REFERENCE_WORKFLOW.md). Each clip goes out
-  as an FBX on SK_Cairo's skeleton, and `export.json` keeps, per frame, the bike's channels (crank, stand, lift, pitch,
-  lean, yaw, steer), the contact windows and the reach errors. Step `characters.cairo_bike`; `unreal.cairo_bike`
-  imports the clips to `/Game/CairoBike` (outside DA_Cairo, so Cairo's own imports leave them alone) and `data.stage`
+  mount, wave and crash follows the H3 video references ([H3 workflow](../../../docs/H3_ANIMATION_REFERENCE_WORKFLOW.md)).
+  Each clip goes out as an FBX on SK_Cairo's skeleton, and `export.json` keeps, per frame, the bike's channels
+  (crank, stand, lift, pitch, lean, yaw, steer), the contact windows and the reach errors. Step `characters.cairo_bike`;
+  `unreal.cairo_bike` imports the clips to `/Game/CairoBike` (outside DA_Cairo, so Cairo's own imports leave them alone) and `data.stage`
   copies `export.json` to `Content/Data/cairo/bike/`.
 - `UBikeComponent` (`unreal/Source/Yorimichi/BikeComponent.*`) owns the bike's parts as components on the rider's mesh
   and the ride. Each tick it sets his speed and heading before the movement component moves him (floors, slopes and

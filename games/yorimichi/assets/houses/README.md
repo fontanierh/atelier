@@ -23,4 +23,5 @@ file is written with status `submitted` before the call and completed when it re
 The key comes from `OPENAI_API_KEY` (or the ignored `.env`) and is never printed. The two reference screenshots are
 not in git: put them in `build/yorimichi/houses/refs/` as `playtest-road-house.webp` and `playtest-bank-house.webp`.
 A concept whose JPEG is here is skipped. A concept with a provenance file but no JPEG (a call that failed or never
-came back) is not asked for again unless `--again` names it, so a paid call is never repeated blindly.
+came back) is not asked for again unless `--again` names it, which sets the earlier record aside as
+`<slug>.provenance.rejected-N.json` (kept out of git), so a paid call is never repeated blindly.

@@ -1,5 +1,5 @@
 """A Tripo character's texture made game-ready: flat painted colour in place of Tripo's noise and baked light, the
-chips of wrong colour gone, eyes and brows solid, a clean face (docs/TRIPO_CHARACTERS.md, "Eyes, light and noise").
+chips of wrong colour gone, eyes and brows solid, a clean face drawn from the character's face spec (--face).
 
     blender -b --python-exit-code 1 --python tripo_character_texture.py -- --input <rev>/<Name>-Rig-rNN.blend --output <out> --stage raster
     python tripo_character_texture.py --input ... --output <out> --face <character>/face.json --stage paint [--merge-l 10] [--chip 3000]

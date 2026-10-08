@@ -48,4 +48,4 @@ revision folders in the prototype archive. An approved revision comes into this 
 its blend (renamed `Cairo-<stage>-rNN.blend`) and JSON records here and updates `revision` and `source` in
 `character.toml`; the next build re-exports and re-imports Cairo. Animation and outfit workflows:
 [Mixamo](../../../docs/MIXAMO_WORKFLOW.md), [body swap](../../../docs/BODY_SWAP_GUIDE.md),
-[animation principles](../../../docs/ANIMATION_PRINCIPLES.md).
+[animation principles](../../../../../docs/ANIMATION_PRINCIPLES.md).
