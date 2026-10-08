@@ -15,6 +15,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
 #include "GameFramework/HUD.h"
 #include "Engine/GameViewportClient.h"
 #include "Misc/FileHelper.h"
@@ -146,6 +147,12 @@ void AWandererCharacter::SaveTrailerFilmFrame(int32 Width,int32 Height,const TAr
     TrailerPending=-1;
 }
 
+static FString TrailerCSVField(FString Value)
+{
+    Value.ReplaceInline(TEXT("\""),TEXT("\"\""));
+    return TEXT("\"")+Value+TEXT("\"");
+}
+
 // Deliberate camera moves over the real world and gameplay. Capture at 60 Hz;
 // PNG readbacks slow wall-clock rendering and are not performance evidence.
 void AWandererCharacter::AdvanceTrailer(float Dt)
@@ -164,7 +171,11 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         double Warmup=3.; TrailerSpec->TryGetNumberField(TEXT("warmup"),Warmup);
         TrailerFrame=-FMath::RoundToInt(FMath::Clamp(Warmup,3.,90.)*60.);
         if (auto* PC = Cast<APlayerController>(Controller); PC && PC->GetHUD()) PC->GetHUD()->bShowHUD = false;
-        FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+        FString CameraMode;TrailerSpec->TryGetStringField(TEXT("camera_mode"),CameraMode);
+        if(CameraMode!=TEXT("") && CameraMode!=TEXT("player"))
+        {UE_LOG(LogTemp,Error,TEXT("Unknown trailer camera_mode"));FPlatformMisc::RequestExitWithStatus(false,2);return;}
+        bFixedView=CameraMode!=TEXT("player");
+        if(bFixedView)FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
         bool AuditCity=false;
         TrailerSpec->TryGetBoolField(TEXT("validate_hidamari"),AuditCity);
         if(AuditCity && !ValidateHidamari(GetWorld(),this,ReviewDirectory))
@@ -187,8 +198,16 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         SetActorRotation(ReviewForward.Rotation());
         GetCharacterMovement()->StopMovementImmediately();
         TrailerHeading = GetActorRotation().Yaw;
+        if(!bFixedView)
+        {
+            double Pitch=-14.;TrailerSpec->TryGetNumberField(TEXT("camera_pitch"),Pitch);
+            Controller->SetControlRotation(FRotator(Pitch,TrailerHeading,0));
+        }
     }
     auto Number = [&](const TCHAR* Name,double Default) { double Value=Default; TrailerSpec->TryGetNumberField(Name,Value); return Value; };
+    FString CameraMode;TrailerSpec->TryGetStringField(TEXT("camera_mode"),CameraMode);
+    const bool PlayerCamera=CameraMode==TEXT("player");
+    const bool FollowRoad=Number(TEXT("follow_road"),1)>.5;
     const int32 Frames = FMath::RoundToInt(Number(TEXT("seconds"),5)*60);
     const int32 CaptureFPS=Number(TEXT("capture_fps"),60)==30?30:60;
     const int32 CaptureStride=60/CaptureFPS;
@@ -217,6 +236,27 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         if (TrailerFrame != EventFrame) continue;
         const FString Action = E->GetStringField(TEXT("action"));
         if (Action == TEXT("equip")) ToggleSkateboard(FInputActionValue());
+        if(Action==TEXT("place_on_board"))
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Start=nullptr;
+            if(!Skate || !TrailerSpec->TryGetArrayField(TEXT("player_position"),Start) || Start->Num()!=3 ||
+               !SkateRide->PlaceAt(AJapanWorld::ToUE((*Start)[0]->AsNumber(),(*Start)[1]->AsNumber(),(*Start)[2]->AsNumber()),TrailerHeading))
+            {UE_LOG(LogTemp,Error,TEXT("TRAILER place_on_board requires a skate shot, player_position and a placed ride"));FPlatformMisc::RequestExitWithStatus(false,2);return;}
+            const FSkateInput Still;SkateRide->SetScriptedInput(&Still);
+            UE_LOG(LogTemp,Display,TEXT("TRAILER BOARD PLACED frame=%d at=%s"),TrailerFrame,*GetActorLocation().ToString());
+        }
+        if(Action==TEXT("launch"))
+        {
+            double Speed=0.;E->TryGetNumberField(TEXT("speed"),Speed);
+            // IsRiding also covers the mount clip, before Launch can reach the Native session.
+            if(SkateRide->GetMode()!=ESkateMode::Ground || !SkateRide->GetRetailState().StartsWith(TEXT("PhysicsGround ")) ||
+               !FMath::IsFinite(Speed) || Speed<=0.)
+            {UE_LOG(LogTemp,Error,TEXT("TRAILER LAUNCH requires a ready PhysicsGround ride and positive speed in cm/s: %s"),*SkateRide->GetRetailState());FPlatformMisc::RequestExitWithStatus(false,2);return;}
+            const FSkateInput Coast;SkateRide->SetScriptedInput(&Coast);
+            const FVector Velocity=ReviewForward*Speed;
+            SkateRide->Launch(Velocity);
+            UE_LOG(LogTemp,Display,TEXT("TRAILER LAUNCH frame=%d speed=%.3f at=%s velocity=%s"),TrailerFrame,Speed,*GetActorLocation().ToString(),*Velocity.ToString());
+        }
         if (Action == TEXT("jump")) RequestJump(FInputActionValue());
         if (Action == TEXT("wave")) Wave(FInputActionValue());
         if (Action == TEXT("use")) Interact(FInputActionValue());
@@ -230,17 +270,24 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
     bSprintHeld = Number(TEXT("sprint"),0) > .5;
     const bool Sailing=Sailboat->IsEquipped();
     const float Steer=T>=Number(TEXT("steer_start"),0) && T<Number(TEXT("steer_end"),1000)?Number(TEXT("steer"),0):0.;
-    MoveIntent = FVector2D(Skate ? GetRoadSteering()+Steer : Steer,Moving ? 1.f : 0.f);
-    if (!Skate && !Sailing && !IsZeppelinPassenger() && Moving && Number(TEXT("follow_road"),1) > .5)
+    MoveIntent = FVector2D(Skate && FollowRoad ? GetRoadSteering()+Steer : Steer,Moving ? 1.f : 0.f);
+    if (!Skate && !Sailing && !IsZeppelinPassenger() && Moving && FollowRoad)
         ReviewForward = FRotator(0,GetActorRotation().Yaw+GetRoadSteering()*120.f*Dt,0).Vector();
-    Controller->SetControlRotation(ReviewForward.Rotation());
-    PreferredFOV = Number(TEXT("fov"),55);
+    if(!PlayerCamera)Controller->SetControlRotation(ReviewForward.Rotation());
+    PreferredFOV = Number(TEXT("fov"),PlayerCamera?PreferredFOV:55);
     FVector Camera;
     FRotator Rotation;
     const TArray<TSharedPtr<FJsonValue>>* CustomCamera=nullptr;
     const TArray<TSharedPtr<FJsonValue>>* CustomTarget=nullptr;
     const TArray<TSharedPtr<FJsonValue>>* Keys=nullptr;
-    if(Environment && TrailerSpec->TryGetArrayField(TEXT("keys"),Keys) && Keys->Num()>=2)
+    if(PlayerCamera)
+    {
+        // The normal camera owns its spring arm and native ride blend. Log the last rendered view.
+        const auto* PC=Cast<APlayerController>(Controller);
+        Camera=PC && PC->PlayerCameraManager?PC->PlayerCameraManager->GetCameraLocation():FollowCamera->GetComponentLocation();
+        Rotation=PC && PC->PlayerCameraManager?PC->PlayerCameraManager->GetCameraRotation():FollowCamera->GetComponentRotation();
+    }
+    else if(Environment && TrailerSpec->TryGetArrayField(TEXT("keys"),Keys) && Keys->Num()>=2)
     {
         // A camera path: keys [seconds, camera x y z, target x y z, fov] in Blender metres, through which camera and
         // target follow Catmull-Rom curves (the tree house tour glides along bridges and up the lookout stairs).
@@ -293,13 +340,13 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         Camera = Focus + FRotator(0,TrailerHeading+Orbit,0).Vector()*Distance+FVector(0,0,Number(TEXT("camera_height"),25));
         Rotation = (Focus-Camera).Rotation();
     }
-    FollowCamera->SetWorldLocationAndRotation(Camera,Rotation);
+    if(!PlayerCamera)FollowCamera->SetWorldLocationAndRotation(Camera,Rotation);
     if (TrailerFrame >= 0 && TrailerFrame%CaptureStride==0)
     {
         const FVector P = GetActorLocation();
         TrailerTelemetry += FString::Printf(TEXT("%d,%.4f,%.4f,%.4f,%.4f,%d,%d,%s,%.4f,%.4f,%.4f,%s,%d,%d,%.4f,%d,%.4f\n"),
             TrailerFrame/CaptureStride,GetVelocity().Size2D(),P.X,P.Y,P.Z,GetCharacterMovement()->IsFalling(),SkateRide->IsRiding(),
-            *SkateRide->GetRetailState(),Camera.X,Camera.Y,Camera.Z,*AnimationAction.ToString(),
+            *TrailerCSVField(SkateRide->GetRetailState()),Camera.X,Camera.Y,Camera.Z,*TrailerCSVField(AnimationAction.ToString()),
             Stamina.Sprinting,Sailing,Sailboat->GetSailAmount(),GetZeppelin()?GetZeppelin()->GetStage():-1,
             GetZeppelin()?GetZeppelin()->GetPropellerAngle():0.f);
         TrailerPending=TrailerFrame/CaptureStride;

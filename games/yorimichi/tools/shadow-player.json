@@ -1,0 +1,33 @@
+{
+  "pier_shadow": {
+    "kind": "skate",
+    "road_index": 0,
+    "follow_road": 0,
+    "camera_mode": "player",
+    "camera_pitch": -14,
+    "warmup": 8,
+    "seconds": 2.3333333333333335,
+    "format": "jpg",
+    "player_position": [
+      -138,
+      -196,
+      1.8
+    ],
+    "player_yaw": -20,
+    "events": [
+      {
+        "time": 0,
+        "action": "place_on_board"
+      },
+      {
+        "time": 0.6666666666666666,
+        "action": "launch",
+        "speed": 500
+      }
+    ],
+    "width": 1280,
+    "height": 720,
+    "settings": "performance=1",
+    "rider": "CairoBotw"
+  }
+}
