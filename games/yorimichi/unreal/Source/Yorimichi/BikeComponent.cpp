@@ -3,6 +3,7 @@
 #include "PhysicsEngine/SkeletalBodySetup.h"
 #include "JapanVehicleTelemetry.h"
 #include "JapanVehicleVisuals.h"
+#include "JapanBikeGround.h"
 #include "JapanNetwork.h"
 #include "JapanGameplayCollision.h"
 #include "WandererCharacter.h"
@@ -424,6 +425,7 @@ void UBikeComponent::Park()
  }
  M->bForceNextFloorCheck=true;
  State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=WheelFall[0]=WheelFall[1]=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;ClothColliders(false);
+ if(JapanNetwork::IsOnline(GetWorld()))JapanBikeGround::SettlePark(Rider);
  for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
 

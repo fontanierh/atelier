@@ -1,7 +1,13 @@
 #include "JapanBikeState.h"
 #include "JapanBikeSubsteps.h"
+#include "JapanBikeGround.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
+#include "Misc/ScopeExit.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "HAL/IConsoleManager.h"
 #include "Serialization/MemoryReader.h"
@@ -68,6 +74,43 @@ bool FJapanBikeCheckpointTest::RunTest(const FString&)
     const auto* Scalar=IConsoleManager::Get().FindConsoleVariable(TEXT("p.NetServerMaxMoveDeltaTimeScalar"));
     TestTrue(TEXT("The bike and ordinary CMC move caps agree"),Scalar&&
         FMath::IsNearlyEqual(GetDefault<AGameNetworkManager>()->MaxMoveDeltaTime*Scalar->GetFloat(),JapanBikeSubsteps::MaximumDelta,1.e-6f));
+    UWorld* World=nullptr;
+    for(const FWorldContext& Context:GEngine->GetWorldContexts())
+        if(Context.World()&&Context.World()->IsGameWorld()){World=Context.World();break;}
+    if(!TestNotNull(TEXT("Park placement regression has a game world"),World))return false;
+    FActorSpawnParameters Spawn;Spawn.ObjectFlags|=RF_Transient;
+    Spawn.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    auto* Floor=World->SpawnActor<AActor>(Spawn);
+    auto* Rider=World->SpawnActor<ACharacter>(Spawn);
+    if(!Floor||!Rider){if(Floor)Floor->Destroy();if(Rider)Rider->Destroy();return false;}
+    ON_SCOPE_EXIT {Rider->Destroy();Floor->Destroy();};
+    auto* Box=NewObject<UBoxComponent>(Floor);Floor->SetRootComponent(Box);Floor->AddInstanceComponent(Box);
+    Box->SetBoxExtent(FVector(200,200,10));Box->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    Box->SetCollisionResponseToAllChannels(ECR_Block);Box->RegisterComponent();
+    const FVector Origin(10000,0,100000);Floor->SetActorLocation(Origin);
+    auto* Movement=Rider->GetCharacterMovement();Movement->bRunPhysicsWithNoController=true;
+    const double Gap=(UCharacterMovementComponent::MIN_FLOOR_DIST+UCharacterMovementComponent::MAX_FLOOR_DIST)*.5+1.0890856;
+    const FVector Raised=Origin+FVector(0,0,10+Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+Gap);
+    Movement->SetMovementMode(MOVE_Walking);Movement->StopMovementImmediately();
+    Rider->SetActorLocation(Raised,false,nullptr,ETeleportType::TeleportPhysics);
+    // Reproduce the exact-sized delayed floor adjustment without the repair.
+    Movement->bForceNextFloorCheck=true;Movement->PerformMovement(1.f/60.f);
+    TestTrue(TEXT("An unsettled step-off moves more than a centimetre on its first neutral tick"),
+        FVector::Dist(Raised,Rider->GetActorLocation())>1.);
+    Rider->SetActorLocation(Raised,false,nullptr,ETeleportType::TeleportPhysics);
+    TestTrue(TEXT("A grounded park resolves its support before snapshot"),JapanBikeGround::SettlePark(Rider));
+    TestTrue(TEXT("The settled capsule is in CMC's floor-distance band"),
+        Movement->CurrentFloor.FloorDist>=UCharacterMovementComponent::MIN_FLOOR_DIST&&
+        Movement->CurrentFloor.FloorDist<=UCharacterMovementComponent::MAX_FLOOR_DIST);
+    const FVector Settled=Rider->GetActorLocation();
+    TestTrue(TEXT("The recorded vertical step-off gap is resolved before commit"),
+        FMath::Abs((Raised.Z-Settled.Z)-1.0890856)<=.01);
+    Movement->bForceNextFloorCheck=true;Movement->PerformMovement(1.f/60.f);
+    TestTrue(TEXT("The next neutral tick does not alter the committed grounded pose"),
+        FVector::Dist(Settled,Rider->GetActorLocation())<=.01);
+    Movement->SetMovementMode(MOVE_Falling);Rider->SetActorLocation(Raised,false,nullptr,ETeleportType::TeleportPhysics);
+    TestFalse(TEXT("Falling exits are not settled"),JapanBikeGround::SettlePark(Rider));
+    TestTrue(TEXT("Falling pose stays unchanged"),Rider->GetActorLocation().Equals(Raised,.001));
     return true;
 }
 #endif

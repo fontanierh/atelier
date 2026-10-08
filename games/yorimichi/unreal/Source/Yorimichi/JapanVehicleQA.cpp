@@ -251,6 +251,8 @@ struct FVehicleProbe
              Data->SetNumberField(TEXT("stale_probe_root_cm"),Stats.StaleProbeRootCm);
              Data->SetNumberField(TEXT("stale_probe_clock_delta"),Stats.StaleProbeClockDelta);
              Data->SetNumberField(TEXT("clock_arrivals"),Stats.ClockArrivals);
+             Data->SetStringField(TEXT("clock_handoff_root"),Stats.ClockHandoffRoot.ToString());
+             Data->SetStringField(TEXT("clock_arrival_root"),Stats.ClockArrivalRoot.ToString());
              Data->SetNumberField(TEXT("neutral_path_cm"),Stats.NeutralPathCm);
              Data->SetNumberField(TEXT("clock_arrival_drift_cm"),FVector::Dist(Stats.ClockArrivalRoot,Stats.ClockHandoffRoot));
              Data->SetNumberField(TEXT("neutral_max_acceleration"),Stats.NeutralMaxAcceleration);
