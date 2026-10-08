@@ -19,8 +19,8 @@ from pathlib import Path
 from . import paths
 # The store's names stay importable from here, as they were before the split.
 from .board_store import (
-    NOTIFY_PER_HOUR, OPEN_TASKS, OPERATOR, PREVIEW_CHARS, PREVIEW_LINES, TASK_CHARS, TOPICS, agent_name, audience_text,
-    close_task, database, edit_task, folds, messages, notify_allowed, open_task, post, remove, root, send_web, set_task,
+    NOTIFY_PER_HOUR, OPEN_TASKS, OPERATOR, TASK_CHARS, TOPICS, agent_name, audience_text,
+    close_task, database, edit_task, messages, notify_allowed, open_task, post, remove, root, send_web, set_task,
     tasks, thread_rows, with_audience
 )  # noqa: F401
 
@@ -36,10 +36,9 @@ def notification(batch):
                      f"[{item['topic']}]: {item['body'][:600]}")
     lines.append('Read full messages with atelier board read; check render-board.md and live locks. '
                  'Acknowledge actionable handoffs through atelier board post --topic ack --reply-to ID. '
-                 f'Keep posts short ({PREVIEW_CHARS} characters, {PREVIEW_LINES} lines): point first, detail in '
-                 'an attachment or the thread. Blocked on the operator\'s guidance or confirmation? Open one operator '
-                 'task (board operator-task open), sparingly, and dismiss it when unblocked. Preserve first-ready age; '
-                 'never signal other owners or bypass safety.')
+                 'Write clear, well-formatted posts in plain words, point first; there is no length cap. Blocked on the '
+                 'operator\'s guidance or confirmation? Open one operator task (board operator-task open), sparingly, '
+                 'and dismiss it when unblocked. Preserve first-ready age; never signal other owners or bypass safety.')
     return '\n'.join(lines)
 
 

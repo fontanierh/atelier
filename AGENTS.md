@@ -110,8 +110,9 @@ uv run pytest                            # studio and game Python tests
   task**, before starting the work, and again when you finish or become blocked. With no current task, set it to
   exactly `idle`, nothing more. The board shows it beside your name, marks `idle` agents as free for new work,
   and treats a session idle for 10 minutes as free whatever the line says (it sends you one reminder then).
-- Keep board messages short enough to read without expanding: at most 500 characters and 8 lines, or the web board folds them behind "Read more" (`board post` warns).
-  Lead with the point or the ask; put detail in an attachment, a linked file or a thread reply. `--notify-operator`
+- Write board messages that are clear, concise and well formatted, in simple words. There is no length cap: say
+  what the reader needs, lead with the point or the ask, and use short paragraphs or lists when they help. Put bulky
+  material (logs, tables, long reasoning) in an attachment, a linked file or a thread reply. `--notify-operator`
   also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or
   for something urgent that needs them now (a decision blocking you, a broken release, a safety issue). Never for
   routine progress or acknowledgements; at most 3 per agent per hour. Attached files appear
