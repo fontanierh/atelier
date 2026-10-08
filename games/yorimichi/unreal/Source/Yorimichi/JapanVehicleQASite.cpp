@@ -52,7 +52,8 @@ bool JapanVehicleQASite::Circuit(AWandererCharacter* Rider,bool Guest,FVector& S
     Evidence->SetStringField(TEXT("mesh"),Asset);Evidence->SetNumberField(TEXT("z"),High);
     const bool Clear=Samples==441&&Blocked==0&&High-Low<=3.&&MinNormal>=.98;
     Evidence->SetBoolField(TEXT("clear"),Clear);
-    Start=FVector(Centre.X-1200,Centre.Y,High+3.);
+    // Centre the measured sprint/skid route inside the unchanged checked disk.
+    Start=FVector(Centre.X-1200,Centre.Y-870.,High+3.);
     return Clear;
 }
 

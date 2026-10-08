@@ -10,6 +10,7 @@
 #include "BotwMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "JapanBikeSubsteps.h"
 #include "SailboatComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerController.h"
@@ -386,9 +387,12 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
             JapanVehicleTelemetry::Action(Rider,Button,ProcessedEdge,Accepted,bReplaying);
         });
         if (Rider->HasAuthority() && Rider->IsLocallyControlled()) AcknowledgeEdges(ProcessedEdge);
-        Bike->SimulateNetwork(Dt, ActiveInput.Stick(), MoveMenu);
-        Acceleration = FVector::ZeroVector; AnalogInputModifier = 0.f; MaxWalkSpeed = 1200.f;
-        Super::PerformMovement(Dt);
+        JapanBikeSubsteps::Run(Dt,[&](float Step)
+        {
+            Bike->SimulateNetwork(Step, ActiveInput.Stick(), MoveMenu);
+            Acceleration = FVector::ZeroVector; AnalogInputModifier = 0.f; MaxWalkSpeed = 1200.f;
+            Super::PerformMovement(Step);
+        });
         JapanVehicleTelemetry::Move(Rider,ActiveInput,Dt,bReplaying,VehicleBefore,VehicleYawBefore);
         bInputPrepared = false;
         if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);

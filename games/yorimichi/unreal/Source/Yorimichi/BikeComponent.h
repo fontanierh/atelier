@@ -28,7 +28,7 @@ public:
  bool IsSprinting() const { return bSprint; }
  bool Hop(); bool Skid(); bool Bell(); bool Wave();
  virtual void TickComponent(float,ELevelTick,FActorComponentTickFunction*) override;
- /** Online simulation is called once inside the saved movement step. It emits no presentation or parking side effects. */
+ /** Online simulation advances with CMC in bounded substeps inside each saved move. No presentation or parking side effects. */
  void RefreshTickOrder();
  void SimulateNetwork(float Dt,FVector2D Stick,bool Menu);
  FJapanBikeState CaptureNetworkState() const;

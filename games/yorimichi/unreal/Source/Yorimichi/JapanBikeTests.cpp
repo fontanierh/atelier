@@ -1,6 +1,9 @@
 #include "JapanBikeState.h"
+#include "JapanBikeSubsteps.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
+#include "GameFramework/GameNetworkManager.h"
+#include "HAL/IConsoleManager.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
 
@@ -32,6 +35,39 @@ bool FJapanBikeCheckpointTest::RunTest(const FString&)
     Bad=Restored;Bad.Speed=1201.f;TestFalse(TEXT("Out-of-policy velocity rejected"),Bad.IsValid());
     Bytes[1]=255;FMemoryReader BadReader(Bytes,true);FJapanBikeState Rejected;
     TestFalse(TEXT("Wire vocabulary out of bounds is rejected before lookup"),Rejected.SerializeCheckpoint(BadReader));
+
+    // The 063828 sprint receipt had a 1.125495 cm correction: a lost packet
+    // merged these two owner frames into one final-heading host chord.
+    const float First=.033333778381347656f,Second=.03336524963378906f;
+    auto Path=[&](bool Split,bool Substeps,float InitialSpeed,float InitialSteering,float Target,float Rate)
+    {
+        FVector Position=FVector::ZeroVector;
+        float Speed=InitialSpeed,Steering=InitialSteering,Yaw=38.00771713256836f;
+        auto Advance=[&](float Dt)
+        {
+            Speed=FMath::FInterpConstantTo(Speed,Target,Dt,Rate);
+            Steering=FMath::FInterpTo(Steering,65.f/127.f,Dt,5.f);
+            Yaw+=FMath::Clamp(FMath::RadiansToDegrees(Speed/260.f),0.f,110.f)*Steering*Dt;
+            Position+=FRotator(0,Yaw,0).Vector()*Speed*Dt;
+        };
+        auto Move=[&](float Dt){if(Substeps)JapanBikeSubsteps::Run(Dt,Advance);else Advance(Dt);};
+        if(Split){Move(First);Move(Second);}else Move(First+Second);
+        return Position;
+    };
+    const float Sprint=1029.9212646484375f,Steer=65.f/127.f;
+    const double OldError=FVector::Dist(Path(true,false,Sprint,Steer,Sprint,0),Path(false,false,Sprint,Steer,Sprint,0));
+    TestTrue(TEXT("Recorded unsplit sprint chord reproduces the strict-gate failure"),OldError>1.&&FMath::Abs(OldError-1.125495)<.001);
+    for(const FVector4 Case:{FVector4(Sprint,Steer,Sprint,0),FVector4(400,0,Sprint,420),FVector4(Sprint,Steer,0,950)})
+        TestTrue(TEXT("Merged and split sprint, acceleration and braking stay within a tenth centimetre"),
+            FVector::Dist(Path(true,true,Case.X,Case.Y,Case.Z,Case.W),Path(false,true,Case.X,Case.Y,Case.Z,Case.W))<.1);
+    int32 Count=0;float Total=0.f,Largest=0.f;
+    JapanBikeSubsteps::Run(1.f,[&](float Dt){++Count;Total+=Dt;Largest=FMath::Max(Largest,Dt);});
+    TestEqual(TEXT("Oversized intervals stay bounded on every role"),Count,16);
+    TestTrue(TEXT("The cap preserves the bounded total and maximum substep"),
+        FMath::Abs(Total-JapanBikeSubsteps::MaximumDelta)<1.e-6f&&Largest<=JapanBikeSubsteps::MaximumStep);
+    const auto* Scalar=IConsoleManager::Get().FindConsoleVariable(TEXT("p.NetServerMaxMoveDeltaTimeScalar"));
+    TestTrue(TEXT("The ordinary CMC move cap fits within the bike substep budget"),Scalar&&
+        GetDefault<AGameNetworkManager>()->MaxMoveDeltaTime*Scalar->GetFloat()<=JapanBikeSubsteps::MaximumDelta);
     return true;
 }
 #endif
