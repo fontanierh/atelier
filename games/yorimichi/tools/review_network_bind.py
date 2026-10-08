@@ -43,11 +43,14 @@ def guarded_game_running(game, guard, role):
         return False
     stopped = guard.poll()
     if stopped is not None:
-        # The child can exit between these polls; the monitor then exits normally
-        # too. Reap its status before declaring a live child unguarded. The caller
-        # still checks the game's exact exit code and native shutdown evidence.
-        if stopped == 0 and game.poll() is not None:
-            return False
+        # The monitor can observe exit before the parent can reap its child.
+        # The caller still checks the exact exit code and native shutdown evidence.
+        if stopped == 0:
+            try:
+                game.wait(timeout=2)
+                return False
+            except subprocess.TimeoutExpired:
+                pass
         raise RuntimeError(role + ' lost its actual-child guard')
     return True
 
