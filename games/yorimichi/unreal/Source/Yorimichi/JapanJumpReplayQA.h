@@ -3,7 +3,7 @@
 class UJapanCharacterMovement;
 class FJsonObject;
 struct FJapanMoveResponse;
-struct FSavedMove_Japan;
+class FSavedMove_Japan;
 
 /** Development-only delivery delay of a real host correction; production replay remains unchanged. */
 namespace JapanJumpReplayQA
