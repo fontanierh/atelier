@@ -267,9 +267,11 @@ async function load() {
   data = moments; saved = poses; bodyGltf = body;
   props = { 'LinkSword.glb': sword.scene, 'LinkGlider.glb': glider.scene };
   if (saved.grips) state.grips = saved.grips;
+  const remirror = placeGliderPoses();
   $('character').textContent = data.character[0].toUpperCase() + data.character.slice(1);
   $('status').textContent = saved.saved ? `Last saved ${stamp(saved.saved.at)}` : 'Nothing saved yet';
   buildGripList();
+  for (const id of remirror) select(id);
   select(data.grips[0].id);
   try { if (!localStorage.getItem('grip-poser-help')) $('help').hidden = false; } catch { $('help').hidden = false; }
 }
@@ -327,7 +329,7 @@ function select(id) {
   scene.add(other.group);
   // the prop and its handle
   const pm = grip.prop_mesh;
-  propObject = props[pm.file].clone(true);
+  propObject = cloneScene(props[pm.file]);   // the glider is skinned: a plain clone would draw it at its own origin
   propObject.position.fromArray(pm.position); propObject.quaternion.fromArray(pm.quaternion); propObject.scale.setScalar(pm.scale);
   propObject.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.frustumCulled = false; } });
   scene.add(propObject);
@@ -347,6 +349,7 @@ function select(id) {
   }));
   momentIndex = anchorOf(grip);
   hand.place(grip.moments[momentIndex].hand);
+  if (st.remirror) { delete st.remirror; mirrorOther(); changed('mirror other hand again (glider drawn in place)'); }
   undo = []; redo = [];
   $('notes').value = st.notes || '';
   const offer = st.status === 'untouched' && ps?.params;
@@ -373,6 +376,28 @@ function anchorOf(g) {   // grips posed before pinning keep the moment they were
 function holdOf(g) {   // the grip's hand bone in its own handle frame
   const st = gripState(g.id), M = matrixOf(g.moments[anchorOf(g)].hand);
   return st.offset ? M.multiply(matrixOf(st.offset)) : M;
+}
+// Glider poses saved before the glider was drawn in place were posed against it at its own origin and size: keep each
+// hand where it was on the glider's bars. A hand that was only mirrored is mirrored again from its corrected partner.
+function placeGliderPoses() {
+  const remirror = [];
+  let moved = false;
+  for (const g of data.grips) {
+    const st = state.grips[g.id];
+    if (g.prop_mesh.file !== 'LinkGlider.glb' || !st?.offset || st.prop_placed) continue;
+    if (st.log.length && st.log.every(l => l.action.startsWith('mirror'))) { st.remirror = true; remirror.push(g.id); }
+    else {
+      const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+      const pp = new THREE.Vector3(), pq = new THREE.Quaternion(), ps = new THREE.Vector3(), P = matrixOf(g.prop_mesh);
+      holdOf(g).decompose(p, q, s); P.decompose(pp, pq, ps);
+      const held = new THREE.Matrix4().compose(p.applyMatrix4(P), pq.multiply(q), new THREE.Vector3(1, 1, 1));
+      st.offset = placementOf(matrixOf(g.moments[anchorOf(g)].hand).invert().multiply(held));
+      st.log.push({ at: new Date().toISOString(), action: 'kept on the glider when it was drawn in place', moment: st.anchor });
+    }
+    st.prop_placed = moved = true;
+  }
+  if (moved) scheduleSave();
+  return remirror;
 }
 const toFrame = (g, from) => matrixOf(g.prop_mesh).multiply(matrixOf(from.prop_mesh).invert());   // from's frame to g's
 
@@ -738,4 +763,4 @@ addEventListener('resize', () => resize());
 resize();
 renderer.setAnimationLoop(() => { orbit.update(); renderer.render(scene, camera); });
 load().catch(err => { $('status').textContent = `Could not load: ${err.message}`; console.error(err); });
-window.poser = { get hand() { return hand; }, get other() { return other; }, get grip() { return grip; }, get dots() { return dots; }, camera, orbit, renderer, gizmo, contact, refresh, select };
+window.poser = { get hand() { return hand; }, get other() { return other; }, get grip() { return grip; }, get dots() { return dots; }, get prop() { return propObject; }, camera, orbit, renderer, gizmo, contact, refresh, select };
