@@ -357,6 +357,9 @@ void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const 
 {
     JapanEnemyQA::BladeCandidate(Character, Victim);
     if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
+    if (Character->HasAuthority() && !Character->IsLocallyControlled())
+        if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement());
+            Movement && !Movement->AllowScheduledAttack(ReactionActionEdge)) return;
     // A sparring partner meets the blow with its own move set: its guard, parry and dodges answer it as they answer a
     // fox's claw, and only a blow that lands counts (the guard, parry and dodge make their own effects).
     if (AWandererCharacter* Other = Cast<AWandererCharacter>(Victim))
@@ -574,7 +577,7 @@ void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActo
     Sword->Health = FMath::Max(0.f, Sword->Health - Damage);
     FBotwMovementReaction Reaction;
     Reaction.Flags = FBotwMovementReaction::ClearHop | FBotwMovementReaction::Immunity;
-    Reaction.Invulnerable = .7f;
+    Reaction.Invulnerable = FBotwMovementReaction::HitImmunitySeconds;
     ON_SCOPE_EXIT { SubmitMovementReaction(Reaction); };
     const bool bKnock = bHeavy || Sword->Health <= 0.f;
     if (!Character->IsNpc())
@@ -680,6 +683,9 @@ void UBotwMoveSet::AdvanceDown(float Dt)
         if (Over() || (Now->Idle >= 0.f && SourceTime() >= Now->Idle))
         {
             bDown = false; Invulnerable = 1.f;
+            // Authority records this simulated get-up at the next post-step
+            // defence sample; later ACK-applied timers cannot extend it.
+            if (Character->HasAuthority() && JapanNetwork::IsOnline(Character->GetWorld())) bDefenceGetUpPending = true;
             if (UWandererSwordComponent* Sword = Character->GetSword(); Sword && Sword->Health <= 0.f && (!JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority())) Sword->Health = UWandererSwordComponent::MaxHealth;
             Stop(.25f);
         }

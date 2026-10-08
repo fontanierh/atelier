@@ -30,7 +30,7 @@ def main():
     outcomes = {name: state for state, name in rows}
     names = [name for _, name in rows if name.startswith('Yorimichi.Network.')]
     duplicates = sorted({name for name in names if names.count(name) > 1})
-    expected = {'Yorimichi.Network.' + name for name in ('JoinEndpoint', 'OrderedInput', 'TraversalCheckpoint', 'SkateWire', 'SkateBudget', 'DefenceTimeline', 'PlayerCollision', 'MoveClock', 'BikeCheckpoint', 'SailCheckpoint', 'FixedCollision', 'BikeSupport', 'ReactionDelivery', 'ReactionJournal', 'ReactionTiming', 'ReactionPayload')}
+    expected = {'Yorimichi.Network.' + name for name in ('JoinEndpoint', 'OrderedInput', 'TraversalCheckpoint', 'SkateWire', 'SkateBudget', 'DefenceTimeline', 'PlayerCollision', 'MoveClock', 'BikeCheckpoint', 'SailCheckpoint', 'FixedCollision', 'BikeSupport', 'ReactionDelivery', 'ReactionJournal', 'ReactionTiming', 'ReactionPayload', 'ReactionTransport')}
     unchanged = source_revision() == revision and current_native_build(ctx) == binary
     passed = not duplicates and unchanged and result == 0 and expected <= outcomes.keys() and all(state == 'Success' for name, state in outcomes.items() if name.startswith('Yorimichi.Network.'))
     receipt = dict(passed=passed, process_exit=result, tests=outcomes, duplicates=duplicates, missing=sorted(expected - outcomes.keys()),

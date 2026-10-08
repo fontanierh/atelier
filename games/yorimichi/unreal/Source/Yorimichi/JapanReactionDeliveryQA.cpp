@@ -64,6 +64,7 @@ void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const
         Data->SetNumberField(TEXT("edge"), ResponseData.AcknowledgedEdge);
         Data->SetBoolField(TEXT("correction"), ResponseData.IsCorrection());
         Data->SetBoolField(TEXT("checkpoint"), ResponseData.bHasCheckpoint);
+        Data->SetNumberField(TEXT("reaction_through"), ResponseData.bHasCheckpoint ? ResponseData.Checkpoint.ReactionThrough : 0);
         Data->SetStringField(TEXT("action"), ResponseData.bHasCheckpoint ? ResponseData.Checkpoint.Action.ToString() : FString());
         FString Digest;
         if (ResponseData.bHasCheckpoint)
@@ -73,6 +74,36 @@ void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const
             Digest = BytesToHex(Hash, 20).ToLower();
         }
         Data->SetStringField(TEXT("digest"), Digest);
+    }
+}
+void Scheduled(const UJapanCharacterMovement* Movement, const TCHAR* Event,
+    const FJapanScheduledReaction& Reaction, const FJapanReactionMarker* Marker)
+{
+    if (auto Data = DeliveryRow(Movement, Event))
+    {
+        Data->SetNumberField(TEXT("reaction_epoch"), Reaction.Epoch);
+        Data->SetNumberField(TEXT("sequence"), Reaction.Sequence);
+        Data->SetNumberField(TEXT("resolved_generation"), Reaction.Resolved.Generation);
+        Data->SetNumberField(TEXT("resolved_stamp"), Reaction.Resolved.Time);
+        Data->SetStringField(TEXT("reaction_action"), Reaction.Value.Action.ToString());
+        uint8 Hash[20]; FSHA1::HashBuffer(Reaction.Value.Bytes.GetData(), Reaction.Value.Bytes.Num(), Hash);
+        Data->SetStringField(TEXT("payload_digest"), BytesToHex(Hash, 20).ToLower());
+        Data->SetNumberField(TEXT("payload_bytes"), Reaction.Value.Bytes.Num());
+        Data->SetNumberField(TEXT("applied_through"), Movement->GetScheduledReactionThrough());
+        Data->SetBoolField(TEXT("replay"), Movement->IsReplaying());
+        const auto Clock = Movement->GetReactionMoveStamp();
+        Data->SetNumberField(TEXT("host_move_generation"), Clock.Generation);
+        Data->SetNumberField(TEXT("host_move_stamp"), Clock.Time);
+        if (Marker)
+        {
+            Data->SetNumberField(TEXT("previous_generation"), Marker->Origin.Previous.Generation);
+            Data->SetNumberField(TEXT("previous_stamp"), Marker->Origin.Previous.Time);
+            Data->SetNumberField(TEXT("end_generation"), Marker->Origin.End.Generation);
+            Data->SetNumberField(TEXT("end_stamp"), Marker->Origin.End.Time);
+            Data->SetNumberField(TEXT("saved_dt"), Marker->Origin.DeltaTime);
+            Data->SetNumberField(TEXT("edge_before"), Marker->EdgeBefore);
+            Data->SetNumberField(TEXT("edge_after"), Marker->EdgeAfter);
+        }
     }
 }
 TSharedPtr<FJsonObject> LargestCorrection(const FJapanMovementStats& Stats)
@@ -114,6 +145,28 @@ TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement)
     Data->SetBoolField(TEXT("enabled"), Enabled());
     if (!Enabled() || !Movement) return Data;
     Data->SetBoolField(TEXT("packed_responses"), Movement->ShouldUsePackedMovementRPCs());
+    Data->SetBoolField(TEXT("scheduled_reactions"), true);
+    auto ScheduledStats = MakeShared<FJsonObject>();
+    const auto& Stats = Movement->GetScheduledReactionStats();
+    ScheduledStats->SetNumberField(TEXT("issued"), Stats.Issued);
+    ScheduledStats->SetNumberField(TEXT("received"), Stats.Received);
+    ScheduledStats->SetNumberField(TEXT("applied"), Stats.Applied);
+    ScheduledStats->SetNumberField(TEXT("replayed"), Stats.Replayed);
+    ScheduledStats->SetNumberField(TEXT("forced"), Stats.Forced);
+    ScheduledStats->SetNumberField(TEXT("invalid_payloads"), Stats.InvalidPayloads);
+    ScheduledStats->SetNumberField(TEXT("invalid_origins"), Stats.InvalidOrigins);
+    ScheduledStats->SetNumberField(TEXT("failed_apply"), Stats.FailedApply);
+    ScheduledStats->SetNumberField(TEXT("failed_restore"), Stats.FailedRestore);
+    ScheduledStats->SetNumberField(TEXT("recoveries"), Stats.Recoveries);
+    ScheduledStats->SetNumberField(TEXT("rejected_resets"), Stats.RejectedResets);
+    ScheduledStats->SetNumberField(TEXT("rejected_recoveries"), Stats.RejectedRecoveries);
+    ScheduledStats->SetNumberField(TEXT("lethal_superseded"), Stats.LethalSuperseded);
+    ScheduledStats->SetNumberField(TEXT("folded_slices"), Stats.FoldedSlices);
+    ScheduledStats->SetNumberField(TEXT("suppressed_attacks"), Stats.SuppressedAttacks);
+    ScheduledStats->SetNumberField(TEXT("suppressed_defence_inputs"), Stats.SuppressedDefenceInputs);
+    ScheduledStats->SetNumberField(TEXT("known"), Movement->GetScheduledReactionKnown());
+    ScheduledStats->SetNumberField(TEXT("through"), Movement->GetScheduledReactionThrough());
+    Data->SetObjectField(TEXT("scheduled_stats"), ScheduledStats);
     Data->SetNumberField(TEXT("minimum_adjustment_interval"),FMath::Min(Movement->NetworkMinTimeBetweenClientAdjustments,Movement->NetworkMinTimeBetweenClientAdjustmentsLargeCorrection));
     const auto* Rider = Cast<AWandererCharacter>(Movement->GetOwner());
     const auto* Person = Rider ? Rider->GetPlayerState<AJapanPlayerState>() : nullptr;
@@ -131,6 +184,7 @@ TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement)
 #else
 void JapanReactionDeliveryQA::State(const UJapanCharacterMovement*, const TCHAR*, bool, bool, float) {}
 void JapanReactionDeliveryQA::Response(const UJapanCharacterMovement*, const TCHAR*, const FJapanMoveResponse&) {}
+void JapanReactionDeliveryQA::Scheduled(const UJapanCharacterMovement*, const TCHAR*, const FJapanScheduledReaction&, const FJapanReactionMarker*) {}
 TSharedPtr<FJsonObject> JapanReactionDeliveryQA::Snapshot(const UJapanCharacterMovement*) { return {}; }
 TSharedPtr<FJsonObject> JapanReactionDeliveryQA::LargestCorrection(const FJapanMovementStats&) { return {}; }
 #endif

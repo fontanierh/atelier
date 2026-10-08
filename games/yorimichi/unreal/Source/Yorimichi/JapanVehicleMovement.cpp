@@ -10,7 +10,10 @@ FJapanMoveCheckpoint UJapanCharacterMovement::CaptureMovementState() const
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     if (!Rider) return {};
-    if (Rider->GetNetworkActivity() == EJapanActivity::OnFoot) return Rider->GetMoves()->CaptureNetworkState();
+    if (Rider->GetNetworkActivity() == EJapanActivity::OnFoot)
+    {
+        auto State = Rider->GetMoves()->CaptureNetworkState(); State.ReactionThrough = ReactionJournal.Applied(); return State;
+    }
     FJapanMoveCheckpoint Result;
     if (Rider->GetNetworkActivity() == EJapanActivity::Bike && Rider->GetBike())
     {

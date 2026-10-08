@@ -26,11 +26,14 @@ int32 FJapanMoveInput::ButtonIndex(FName Name)
 
 FName FJapanMoveInput::ButtonName(uint8 Index) { return Index < UE_ARRAY_COUNT(Buttons) ? Buttons[Index] : NAME_None; }
 
-void FJapanMoveInput::ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply) const
+void FJapanMoveInput::ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply, TOptional<uint16> Through) const
 {
     for (int32 I = 0; I < Edges.Num(); ++I)
         if (uint16(FirstEdge + I) == uint16(LastApplied + 1))
         {
+            // A lost marked move carries exact journal boundaries; wall-clock
+            // sample ages cannot locate an edge inside CMC simulation time.
+            if (Through.IsSet() && int16(uint16(FirstEdge + I) - Through.GetValue()) > 0) break;
             ++LastApplied;
             Apply(Edges[I]);
         }
@@ -53,11 +56,30 @@ bool FJapanMoveInput::Serialize(FArchive& Ar)
         Ar.SerializeBits(&EdgeAgeMilliseconds[I], 9);
         if (Edges[I] >= UE_ARRAY_COUNT(Buttons) || (EdgeAgeMilliseconds[I] > 500 && EdgeAgeMilliseconds[I] != 511)) { Ar.SetError(); return false; }
     }
+    Ar << ReactionThrough;
+    uint8 Reactions = uint8(ReactionOrigins.Num());
+    Ar.SerializeBits(&Reactions, 4);
+    if (Reactions > FJapanReactionJournal::RetainedCapacity) { Ar.SetError(); return false; }
+    if (Ar.IsLoading()) ReactionOrigins.SetNum(Reactions);
+    uint32 PreviousSequence = 0;
+    for (auto& Marker : ReactionOrigins)
+    {
+        Ar << Marker.Sequence << Marker.Origin.Previous.Generation << Marker.Origin.Previous.Time;
+        Ar << Marker.Origin.End.Generation << Marker.Origin.End.Time << Marker.Origin.DeltaTime;
+        Ar << Marker.EdgeBefore << Marker.EdgeAfter;
+        if (Marker.Sequence <= PreviousSequence || Marker.Sequence > ReactionThrough ||
+            !Marker.Origin.Previous.IsValid() || !Marker.Origin.End.IsValid() ||
+            !FMath::IsFinite(Marker.Origin.DeltaTime) || Marker.Origin.DeltaTime <= 0.f ||
+            uint16(Marker.EdgeAfter - Marker.EdgeBefore) > MaximumEdges)
+        { Ar.SetError(); return false; }
+        PreviousSequence = Marker.Sequence;
+    }
     return !Ar.IsError();
 }
 
 bool FJapanMoveCheckpoint::Serialize(FArchive& Ar, UPackageMap* Map)
 {
+    Ar << ReactionThrough;
     uint32 Count = Bytes.Num();
     Ar.SerializeIntPacked(Count);
     if (Count == 0 || Count > MaximumBytes || !Map) { Ar.SetError(); return false; }
@@ -127,6 +149,7 @@ void FSavedMove_Japan::SetMoveFor(ACharacter* Character, float Dt, const FVector
     if (UJapanCharacterMovement* Movement = MovementOf(Character))
     {
         Input = Movement->ConsumeMoveInput(Dt);
+        Movement->PrepareReactionMove(Input, TimeStamp, Dt);
         Movement->SetMoveInput(Input);
     }
 }
@@ -142,7 +165,8 @@ bool FSavedMove_Japan::CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* 
 {
     const auto& Next = static_cast<const FSavedMove_Japan&>(*NewMove);
     if (!Input.Edges.IsEmpty() || !Next.Input.Edges.IsEmpty() || Input.Flags != Next.Input.Flags ||
-        Input.X != Next.Input.X || Input.Y != Next.Input.Y || Input.ActivityEpoch != Next.Input.ActivityEpoch) return false;
+        Input.X != Next.Input.X || Input.Y != Next.Input.Y || Input.ActivityEpoch != Next.Input.ActivityEpoch ||
+        Input.ReactionThrough != Next.Input.ReactionThrough || Input.ReactionOrigins != Next.Input.ReactionOrigins) return false;
     if (const UJapanCharacterMovement* Movement = MovementOf(Character); Movement && Movement->PredictsMoves()) return false;
     return Super::CanCombineWith(NewMove, Character, MaxDelta);
 }
@@ -153,6 +177,7 @@ bool FSavedMove_Japan::IsImportantMove(const FSavedMovePtr& LastAcked) const
     if (LastAcked.IsValid())
     {
         const FJapanMoveInput& Previous = static_cast<const FSavedMove_Japan&>(*LastAcked).Input;
+        if (Input.ReactionThrough != Previous.ReactionThrough) return true;
         if (Input.Flags != Previous.Flags || Input.X != Previous.X || Input.Y != Previous.Y) return true;
     }
     return Super::IsImportantMove(LastAcked);

@@ -3,6 +3,7 @@
 #include "UObject/Object.h"
 #include "JapanDefenceTimeline.h"
 #include "JapanDefenceClock.h"
+#include "JapanReactionJournal.h"
 #include "BotwMoveSet.generated.h"
 
 class AWandererCharacter;
@@ -186,6 +187,7 @@ public:
     FString Describe() const;
 
 private:
+    friend class FJapanReactionTransportTest;
     friend class FJapanReactionPayloadTest;
     void SubmitMovementReaction(const FBotwMovementReaction& Reaction);
     void FreezeReactionAction(FBotwMovementReaction& Reaction, FName Name, float Blend) const;
@@ -197,7 +199,12 @@ private:
     uint32 DefenceActionSerial = 0;
     double DefenceActionStart = 0., DefenceInputTime = -1., DefenceLastPress = -1.;
     bool bExternalDefenceChange = false, bHopInvulnerability = false, bDefenceMapped = false;
+    float ResolvedRecoverySeconds = 0.f, ResolvedGuardBrokenSeconds = 0.f;
+    TOptional<uint16> ReactionActionEdge, ReactionAttackEdge, ReactionGuardEdge;
+    bool bDefenceGetUpPending = false;
+    double DefenceGetUpUntil = -1.;
     TOptional<EJapanDefence> DefenceOverride;
+    bool GetUpProtectedAt(double SampleTime);
     void EndDefenceAction();
     struct FSlot
     {

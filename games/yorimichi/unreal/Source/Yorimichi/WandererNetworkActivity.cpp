@@ -86,6 +86,7 @@ void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling
         // Old moves are already stale and the host has cleared mounted/held
         // state. Apply damage once, then publish the resulting reaction in this
         // same epoch. No actor tick or network send can interleave this call.
+        TGuardValue<bool> Immediate(CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->bImmediateMovementReaction, true);
         FootReaction();
         NetworkActivity.Location = GetActorLocation(); NetworkActivity.Rotation = GetActorRotation();
         NetworkActivity.Velocity = GetCharacterMovement()->Velocity;

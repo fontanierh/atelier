@@ -127,6 +127,8 @@ public:
     UFUNCTION(Server, Reliable) void ServerFinishSkate(uint32 Epoch, FVector_NetQuantize100 Location,
         FRotator Rotation, FVector_NetQuantize100 Velocity, bool bFalling);
     UFUNCTION(Client, Reliable) void ClientActivityRejected(const FString& Reason);
+    UFUNCTION(Client, Reliable) void ClientReceiveMovementReaction(const TArray<uint8>& Encoded);
+    UFUNCTION(Server, Reliable) void ServerRecoverMovementReactions(uint32 Epoch);
     bool RequestNetworkSkate();
     void TickNetworkActivity();
     bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
@@ -205,6 +207,7 @@ private:
     UFUNCTION() void OnRep_NetworkHealth();
     bool bNetworkAvatarReceived = false;
     float LastAvatarPublication = -1.f;
+    friend class FJapanReactionTransportTest;
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;

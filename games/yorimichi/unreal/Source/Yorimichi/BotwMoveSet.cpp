@@ -253,6 +253,12 @@ void UBotwMoveSet::Play(FName Name, float Blend, float StartAt, float Speed)
     bDriving = false; DriveVelocity = FVector::ZeroVector; DriveMesh = FVector::ZeroVector;
     HitThisSwing.Reset(); PreviousBlade.Reset(); bSwung = false;
     Strength = StrengthOf(Name);
+    if (Character->HasAuthority() && !Character->IsLocallyControlled())
+        if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()))
+        {
+            const bool FromAttack = IsAttack(Name) || Prefixed(Name, {TEXT("Charge")});
+            ReactionActionEdge = FromAttack ? ReactionAttackEdge : TOptional<uint16>();
+        }
     LastPlayed = Name;
 }
 

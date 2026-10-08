@@ -1,5 +1,6 @@
 #include "JapanCombatResolver.h"
 #include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
 #include "BotwMoveSet.h"
@@ -144,7 +145,9 @@ void UJapanCombatResolver::RefreshRetention(AWandererCharacter* Victim)
 
 bool UJapanCombatResolver::HasPending(const AWandererCharacter* Victim) const
 {
-    return Victim && Pending.ContainsByPredicate([&](const FContact& Contact)
+    if (!Victim) return false;
+    const auto* Movement = Cast<UJapanCharacterMovement>(Victim->GetCharacterMovement());
+    return (Movement && Movement->HasScheduledReaction()) || Pending.ContainsByPredicate([&](const FContact& Contact)
         { return Contact.Victim == Victim && Contact.Epoch == Victim->GetActivityEpoch(); });
 }
 

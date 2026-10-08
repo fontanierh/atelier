@@ -125,7 +125,7 @@ bool FJapanMoveInputTest::RunTest(const FString&)
     Input.EdgeAgeMilliseconds = {0, 67, 511};
     FBitWriter Writer(256, true);
     TestTrue(TEXT("Input encodes"), Input.Serialize(Writer));
-    TestTrue(TEXT("Three timed edges and journal identity fit in fifteen bytes"), Writer.GetNumBits() <= 120);
+    TestTrue(TEXT("Three timed edges plus reaction identity fit in twenty bytes"), Writer.GetNumBits() <= 160);
     FBitReader Reader(Writer.GetData(), Writer.GetNumBits());
     FJapanMoveInput Decoded;
     TestTrue(TEXT("Input decodes"), Decoded.Serialize(Reader));

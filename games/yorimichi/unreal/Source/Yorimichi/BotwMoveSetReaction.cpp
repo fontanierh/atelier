@@ -2,6 +2,7 @@
 #include "BotwMovementReaction.h"
 #include "WandererCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "JapanCharacterMovement.h"
 
 void UBotwMoveSet::FreezeReactionAction(FBotwMovementReaction& Reaction, FName Name, float Blend) const
 {
@@ -25,9 +26,19 @@ void UBotwMoveSet::FreezeReactionFlinch(FBotwMovementReaction& Reaction, const F
 
 void UBotwMoveSet::SubmitMovementReaction(const FBotwMovementReaction& Reaction)
 {
-    // The transport layer will schedule only eligible remote on-foot reactions.
-    // This extraction keeps the immediate path shared with offline/NPC/host play.
+    if (!Character || !ensure(Reaction.IsValid())) return;
     const bool Draw = (Reaction.Flags & FBotwMovementReaction::PerfectDodge) && !bArmed;
+    if (Reaction.Flags & (FBotwMovementReaction::Immunity | FBotwMovementReaction::PerfectDodge))
+        ResolvedRecoverySeconds = FMath::Max(ResolvedRecoverySeconds, Reaction.Invulnerable);
+    if (Reaction.Flags & FBotwMovementReaction::BreakGuard) ResolvedGuardBrokenSeconds = Reaction.GuardBroken;
+    FJapanReactionValue Value;
+    if (Reaction.Encode(Value))
+        if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()); Movement &&
+            (Movement->QueueLethalReaction(Value) || Movement->QueueScheduledReaction(Value)))
+        {
+            if (Draw) ArmedFeedback(true); // Immediate confirmed cue; movement applies at its marked move.
+            return;
+        }
     ApplyMovementReaction(Reaction);
     if (Draw && bArmed) ArmedFeedback(true); // Resolve only; replayed Apply never publishes a second cue.
 }

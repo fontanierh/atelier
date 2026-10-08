@@ -5,6 +5,7 @@
  * actor references or unrelated prediction state can travel in this payload. */
 struct FBotwMovementReaction
 {
+    static constexpr float HitImmunitySeconds = .7f;
     static constexpr int32 WireBytes = 2 + 10 * 4 + 12 * 8;
     enum : uint16
     {

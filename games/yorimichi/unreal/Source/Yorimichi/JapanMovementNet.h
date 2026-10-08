@@ -2,6 +2,20 @@
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/CharacterMovementReplication.h"
+#include "JapanReactionTiming.h"
+
+struct FJapanReactionMarker
+{
+    uint32 Sequence = 0;
+    FJapanReactionOrigin Origin;
+    uint16 EdgeBefore = 0, EdgeAfter = 0;
+    bool operator==(const FJapanReactionMarker& Other) const
+    {
+        return Sequence == Other.Sequence && Origin.Previous == Other.Origin.Previous &&
+            Origin.End == Other.Origin.End && Origin.DeltaTime == Other.Origin.DeltaTime &&
+            EdgeBefore == Other.EdgeBefore && EdgeAfter == Other.EdgeAfter;
+    }
+};
 
 /** The input sampled for one CMC move. Button transitions keep their order, including press/release in one frame. */
 struct FJapanMoveInput
@@ -15,9 +29,13 @@ struct FJapanMoveInput
     TArray<uint8, TInlineAllocator<MaximumEdges>> Edges;
     // 511 marks an input too old for historical defence; it may still drive the live action.
     TArray<uint16, TInlineAllocator<MaximumEdges>> EdgeAgeMilliseconds;
+    // Each saved Old/Pending/New move owns its marker. Retained origins repeat
+    // until a checkpoint permits retirement, independently of UE OldMove choice.
+    uint32 ReactionThrough = 0;
+    TArray<FJapanReactionMarker, TInlineAllocator<FJapanReactionJournal::RetainedCapacity>> ReactionOrigins;
     FVector2D Stick() const { return FVector2D(X / 127., Y / 127.).GetClampedToMaxSize(1.); }
     bool Serialize(FArchive& Ar);
-    void ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply) const;
+    void ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply, TOptional<uint16> Through = {}) const;
     static int32 ButtonIndex(FName Name);
     static FName ButtonName(uint8 Index);
 };
@@ -31,6 +49,7 @@ struct FJapanMoveCheckpoint
     TArray<uint8> Bytes;
     FName Action;
     TWeakObjectPtr<AActor> Target, LungeTarget;
+    uint32 ReactionThrough = 0;
     bool Serialize(FArchive& Ar, UPackageMap* Map);
 };
 

@@ -85,6 +85,7 @@ void UJapanCharacterMovement::ResetActivityPrediction()
     MoveClock.BeginEpoch(FPlatformTime::Seconds()); bClockResetPending = bWaitingAfterClockReset = false;
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->ResetDefence();
     ClearAccumulatedForces(); CurrentRootMotion.Clear();
+    ResetScheduledReactions();
 }
 
 bool UJapanCharacterMovement::ForcePositionUpdate(float Dt)
@@ -142,6 +143,7 @@ void UJapanCharacterMovement::QueueClockReset(uint8 Reason)
 void UJapanCharacterMovement::TickComponent(float Dt, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(Dt, TickType, ThisTickFunction);
+    TickScheduledReactions();
     if (bWaitingAfterClockReset && PredictsMoves() && CharacterOwner->HasAuthority() && !CharacterOwner->IsLocallyControlled())
     {
         // After timeout the host advances neutral physics (including gravity),
@@ -223,7 +225,7 @@ void UJapanCharacterMovement::ServerMove_PerformMovement(const FCharacterNetwork
     }
     if (PredictsMoves())
     {
-        if (bClockResetPending) return;
+        if (bClockResetPending || bLethalReactionQueued) return;
         if (MoveClock.Expired(FPlatformTime::Seconds())) { QueueClockReset(1); return; }
         const auto* Rider = CastChecked<AWandererCharacter>(CharacterOwner);
         if (!Rider->Definition || !Rider->Landscape || !Rider->bReady) { ++NetworkStats.MovesBeforeReady; return; }
@@ -403,7 +405,9 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
         if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
         return;
     }
-    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge, Dt, bAcceptedDefenceMove);
+    SimulateReactionMove(Dt, [&](float StepDt, float Remaining, TOptional<uint16> EdgeThrough)
+    {
+    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge, StepDt + Remaining, bAcceptedDefenceMove);
     ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
     {
         if (!Rider->bReady || Rider->bMenuOpen || Rider->OnVehicle() || Rider->IsZeppelinPassenger()) return;
@@ -418,14 +422,15 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
         {
             if (Rider->bIsCrouched) Rider->UnCrouch(); else Rider->Crouch();
         }
-    });
+    }, EdgeThrough);
+    if (StepDt < MIN_TICK_TIME) return;
     Moves->ApplyInputHolds(Rider->bMenuOpen ? 0 : ActiveInput.Flags);
     if (Rider->HasAuthority() && Rider->IsLocallyControlled()) AcknowledgeEdges(ProcessedEdge);
     // The clock and action transitions advance once per simulated move, including each replayed move.
-    Moves->Advance(Dt);
+    Moves->Advance(StepDt);
     const bool CanSprint = !Rider->bWalk && !Rider->bJog && !Rider->bIsCrouched && !Rider->MovementLocked() &&
         !Rider->MoveIntent.IsNearlyZero() && Velocity.Size2D() > 40.f && Moves->CanSprint();
-    Rider->Stamina.Tick(Dt, Rider->bSprintHeld, CanSprint, Rider->bMenuOpen || Moves->HoldsStamina());
+    Rider->Stamina.Tick(StepDt, Rider->bSprintHeld, CanSprint, Rider->bMenuOpen || Moves->HoldsStamina());
     const auto* Definition = Rider->Definition.Get();
     MaxWalkSpeed = Definition->UseAuthoredMovement
         ? ((Rider->bWalk || Rider->bJog) ? Definition->WalkSpeed : Rider->Stamina.Sprinting ? Rider->GetSprintSpeed() : Definition->RunSpeed)
@@ -436,8 +441,9 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
     Acceleration = Rider->bMenuOpen || Rider->MovementLocked() ? FVector::ZeroVector
         : ConstrainInputAcceleration(Wish) * GetMaxAcceleration();
     AnalogInputModifier = ComputeAnalogInputModifier();
-    Super::PerformMovement(Dt);
-    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge, 0., bAcceptedDefenceMove);
+    Super::PerformMovement(StepDt);
+    if (Rider->HasAuthority()) Moves->RecordDefence(ProcessedEdge, Remaining, bAcceptedDefenceMove);
+    });
     bInputPrepared = false;
     // Quantized simulation inputs must not rewrite the user's actual stick state or menu after the prediction step.
     if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
@@ -471,6 +477,7 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
                 }
 #endif
                 MoveClock.Accepted(FPlatformTime::Seconds(), Dt);
+                AcceptReactionMove(Timestamp);
                 bWaitingAfterClockReset = false;
                 bAcceptedDefenceMove = CastChecked<AWandererCharacter>(CharacterOwner)->GetNetworkActivity() == EJapanActivity::OnFoot &&
                     CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->MapDefenceMove(Timestamp, Dt);
@@ -592,7 +599,11 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
         Client->LastAckedMove->TimeStamp != Response.ClientAdjustment.TimeStamp) return;
     JapanReactionDeliveryQA::Response(this, TEXT("accepted"), Custom);
     AcknowledgeEdges(Custom.AcknowledgedEdge);
-    if (!Custom.IsCorrection()) return;
+    if (!Custom.IsCorrection())
+    {
+        DisposeReactionMoves(static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove).PostState.ReactionThrough);
+        return;
+    }
     const auto& Saved = static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove);
     ++NetworkStats.Corrections;
     const float CorrectionCm = float(FVector::Dist(Saved.SavedLocation, CharacterOwner->GetActorLocation()));
@@ -632,8 +643,10 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
         if (auto* Session = GetWorld()->GetGameInstance<UJapanGameInstance>())
             Session->ReturnWithError(TEXT("The host sent incompatible movement state. Rejoin using the same build."));
     }
-    else if (PredictsMoves() && Custom.bHasCheckpoint)
+    else if (PredictsMoves())
     {
+        AcceptReactionCheckpoint(State, Saved.PostState.ReactionThrough, Custom.bHasCheckpoint);
+        if (!Custom.bHasCheckpoint) return;
         ++NetworkStats.Checkpoints;
         JapanReactionDeliveryQA::Response(this, TEXT("applied"), Custom);
         if(Rider)JapanVehicleTelemetry::Checkpoint(Rider,true,State.Bytes.Num());
@@ -643,6 +656,11 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
 void UJapanCharacterMovement::MovementCheckpointSerialized(uint32 Epoch, float Timestamp)
 {
     bCheckpointSerialized = Epoch == GetActivityEpoch() && Timestamp == PendingCheckpointTime;
+    if (bCheckpointSerialized)
+    {
+        ReactionJournal.Retire(ReactionJournal.Applied(), PendingCheckpoint.ReactionThrough);
+        RetireReactionOrigins();
+    }
 }
 
 void UJapanCharacterMovement::SendClientAdjustment()
