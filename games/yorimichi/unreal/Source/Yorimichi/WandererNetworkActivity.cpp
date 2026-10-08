@@ -7,6 +7,7 @@
 #include "JapanSession.h"
 #include "JapanSkateNetwork.h"
 #include "JapanVehicleTelemetry.h"
+#include "JapanReactionDeliveryQA.h"
 #include "BotwMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
@@ -100,6 +101,7 @@ void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling
             !Checkpoint.Target.IsValid() && !Checkpoint.LungeTarget.IsValid(),TEXT("Invalid target-free vehicle exit reaction"));
         NetworkActivity.FootBytes = Checkpoint.Bytes; NetworkActivity.FootAction = Checkpoint.Action;
         JapanVehicleTelemetry::Handoff(this,Checkpoint);
+        JapanReactionDeliveryQA::Activity(CastChecked<UJapanCharacterMovement>(GetCharacterMovement()), TEXT("activity_committed"), NetworkActivity);
     }
     ForceNetUpdate();
 }
@@ -151,6 +153,7 @@ void AWandererCharacter::OnRep_NetworkActivity()
                 return;
             }
             JapanVehicleTelemetry::Handoff(this,Checkpoint);
+            JapanReactionDeliveryQA::Activity(Movement, TEXT("activity_restored"), NetworkActivity);
         }
         return;
     }

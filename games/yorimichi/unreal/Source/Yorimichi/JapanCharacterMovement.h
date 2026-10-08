@@ -72,6 +72,7 @@ public:
     void PrepareReactionMove(FJapanMoveInput& Input, float Timestamp, float Dt);
     bool HasScheduledReaction() const { return ReactionJournal.HasPending(); }
     uint32 GetScheduledReactionThrough() const { return ReactionJournal.Applied(); }
+    uint32 GetScheduledReactionEpoch() const { return ReactionJournal.GetEpoch(); }
     uint32 GetScheduledReactionKnown() const { return ReactionJournal.Known(); }
     const FJapanScheduledReactionStats& GetScheduledReactionStats() const { return ReactionStats; }
     FJapanReactionStamp GetReactionMoveStamp() const { return ReactionCurrent; }

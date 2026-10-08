@@ -3,18 +3,14 @@ import math
 import re
 
 from network_reaction_delivery_review import delivery_outcomes
+from network_reaction_review_common import ERROR_COUNTERS, finite
+from network_lethal_reaction_review import lethal_reaction_checks
 
 
-ERROR_COUNTERS = ('forced', 'invalid_payloads', 'invalid_origins', 'failed_apply', 'failed_restore',
-                  'recoveries', 'rejected_resets', 'rejected_recoveries', 'lethal_superseded')
 ORIGIN = ('previous_generation', 'previous_stamp', 'end_generation', 'end_stamp',
           'saved_dt', 'edge_before', 'edge_after')
 IDENTITY = ('reaction_epoch', 'sequence', 'resolved_generation', 'resolved_stamp',
             'reaction_action', 'payload_digest', 'payload_bytes')
-
-
-def finite(value):
-    return type(value) in (int, float) and math.isfinite(value)
 
 
 def _checks(host, guest, case, moving):
@@ -211,6 +207,8 @@ def _checks(host, guest, case, moving):
 
 
 def scheduled_reaction_checks(host, guest, case, moving=False):
+    if type(case) is int and case in (8, 9):
+        return lethal_reaction_checks(host, guest, case, moving)
     try:
         return _checks(host, guest, case, moving)
     except (KeyError, TypeError, ValueError, AttributeError):

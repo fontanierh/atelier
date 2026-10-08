@@ -7,10 +7,11 @@ aggregate guard from before either game starts, and the normal per-game guards. 
 editor processes prove session/collision diagnostics only, never a packaged server cook,
 rendered remote poses, or clean-machine/Tailscale acceptance.
 
-Development reaction-delivery probes use --reaction-delivery-case N (0..7):
+Development reaction-delivery probes use --reaction-delivery-case N (0..9):
 0 hit after correction; 1 zero-impulse guard; 2 labelled send hold across captures;
 3 stale good ACK; 4 second hit after capture; 5 stale correction then real throttle;
-6 epoch cancellation; 7 host-own hit. Cases 0 and 5 also support
+6 epoch cancellation; 7 host-own hit; 8 moving lethal; 9 moving lethal with one pending hit.
+Cases 8/9 require moving; cases 0 and 5 also support
 --reaction-delivery-moving, which requires measured pre-hit forward motion.
 Both peers run at 30 fps. Use zero lag or --lag-ms 60 --variance-ms 15 --loss-percent 2.
 The probe uses the ordinary aggregate/child guards and admission above.
@@ -515,8 +516,8 @@ def main():
     parser.add_argument('--port', type=int)
     parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
     parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
-    parser.add_argument('--reaction-delivery-moving', action='store_true', help='Keep forward drive through reaction case 0 or 5; report measured pre-hit motion')
-    parser.add_argument('--reaction-delivery-case', type=int, choices=range(8), help='Development-only real hit/capture/send ordering probe; held case 2 is labelled in receipts')
+    parser.add_argument('--reaction-delivery-moving', action='store_true', help='Keep forward drive through reaction case 0, 5, 8 or 9; report measured pre-hit motion')
+    parser.add_argument('--reaction-delivery-case', type=int, choices=range(10), help='Development-only ordering/death probe; intentional holds and stale deliveries are labelled')
     parser.add_argument('--vehicle-case', choices=('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash', 'clock-bike'), help='Native vehicle route; clock-bike injects one real 1050 ms owner outage at zero lag')
     parser.add_argument('--enemy', action='store_true', help='Real shared-hunter attacks, AI claw and replicated death')
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
@@ -528,8 +529,10 @@ def main():
     args = parser.parse_args()
     if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
         parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
-    if args.reaction_delivery_moving and args.reaction_delivery_case not in (0, 5):
-        parser.error('Moving reaction delivery requires case 0 or 5')
+    if args.reaction_delivery_moving and args.reaction_delivery_case not in (0, 5, 8, 9):
+        parser.error('Moving reaction delivery requires case 0, 5, 8 or 9')
+    if args.reaction_delivery_case in (8, 9) and not args.reaction_delivery_moving:
+        parser.error('Lethal reaction proof requires a moving victim')
     if args.reaction_delivery_case is not None:
         if (args.app or args.gameplay or args.combat or args.enemy or args.vehicle_case or
                 args.modori_shield is not None or args.jump_replay is not None or args.movement_hitch_ms or args.skate_hitch_ms):

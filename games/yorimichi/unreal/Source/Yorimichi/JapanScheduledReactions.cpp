@@ -117,6 +117,7 @@ bool UJapanCharacterMovement::QueueLethalReaction(const FJapanReactionValue& Val
         }
         if (ReactionJournal.Applied() < ReactionJournal.Known())
         { ++ReactionStats.Forced; ApplyScheduledThrough(ReactionJournal.Known()); }
+        JapanReactionDeliveryQA::State(this, TEXT("lethal_before_epoch"), ReactionJournal.HasPending(), false, ReactionCurrent.Time);
         auto* Victim = CastChecked<AWandererCharacter>(CharacterOwner);
         Victim->BeginNetworkActivity(EJapanActivity::OnFoot, IsFalling(), 0,
             [Victim, Payload]() { Victim->GetMoves()->ApplyMovementReaction(Payload); });
@@ -164,6 +165,8 @@ void UJapanCharacterMovement::ReceiveScheduledReaction(const TArray<uint8>& Enco
     // bounded deadline/periodic checkpoints cover later in-flight events.
     using E = FJapanReactionJournal::EReceive;
     const E Result = ReactionJournal.Receive(Event);
+    if (Result == E::WrongEpoch)
+        JapanReactionDeliveryQA::Scheduled(this, TEXT("reaction_wrong_epoch"), Event);
     if (Result == E::Added)
     { ++ReactionStats.Received; JapanReactionDeliveryQA::Scheduled(this, TEXT("reaction_received"), Event); }
     if (Result == E::Invalid) ++ReactionStats.InvalidPayloads;
@@ -178,6 +181,8 @@ void UJapanCharacterMovement::PrepareReactionMove(FJapanMoveInput& Input, float 
 {
     if (!PredictsMoves() || !CharacterOwner || CharacterOwner->GetLocalRole() != ROLE_AutonomousProxy) return;
     FJapanReactionStamp End = ReactionOwnerEnd;
+    if (End.Generation == 0 && End.Time == 0.f)
+        JapanReactionDeliveryQA::FirstMove(this, Timestamp, Dt, CharacterOwner->GetActorLocation());
     if (Timestamp < End.Time) ++End.Generation; // UE has already performed its periodic reset.
     End.Time = Timestamp;
     if (!ReactionJournal.NeedsRecovery())

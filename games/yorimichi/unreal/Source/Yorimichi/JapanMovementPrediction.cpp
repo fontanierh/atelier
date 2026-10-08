@@ -228,7 +228,9 @@ void UJapanCharacterMovement::ServerMove_PerformMovement(const FCharacterNetwork
     }
     if (PredictsMoves())
     {
-        if (bClockResetPending || bLethalReactionQueued) return;
+        if (bLethalReactionQueued)
+        { JapanReactionDeliveryQA::State(this, TEXT("lethal_move_suppressed"), true, false, MoveData.TimeStamp); return; }
+        if (bClockResetPending) return;
         if (MoveClock.Expired(FPlatformTime::Seconds())) { QueueClockReset(1); return; }
         const auto* Rider = CastChecked<AWandererCharacter>(CharacterOwner);
         if (!Rider->Definition || !Rider->Landscape || !Rider->bReady) { ++NetworkStats.MovesBeforeReady; return; }
@@ -421,6 +423,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
             JapanEnemyQA::AcceptedAttack(Rider, GetActivityEpoch(), ProcessedEdge);
         const bool Handled = Rider->HasAuthority() ? Moves->PressNetwork(Button, ProcessedEdge, Age)
             : Button == TEXT("drop_holds") ? (Moves->DropHolds(), true) : Moves->Press(Button);
+        JapanReactionDeliveryQA::DeadInput(this, Button, ProcessedEdge);
         if (!Handled && Button == TEXT("crouch"))
         {
             if (Rider->bIsCrouched) Rider->UnCrouch(); else Rider->Crouch();
@@ -455,6 +458,8 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
 void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Flags, const FVector& Accel)
 {
     TGuardValue<bool> DefenceMoveScope(bAcceptedDefenceMove, false);
+    bool FirstReactionMove = false;
+    FVector FirstReactionStart = FVector::ZeroVector;
     if (CharacterOwner && CharacterOwner->HasAuthority() && Dt > 0.f)
         if (const auto* Data = static_cast<const FJapanNetworkMoveData*>(GetCurrentNetworkMoveData()))
             JapanVehicleTelemetry::AcceptedMove(CastChecked<AWandererCharacter>(CharacterOwner), Data->Input.ActivityEpoch);
@@ -463,6 +468,7 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
         {
             if (CharacterOwner->HasAuthority() && Dt > 0.f && !bReceivedMoveInEpoch)
             {
+                FirstReactionMove = true; FirstReactionStart = CharacterOwner->GetActorLocation();
                 JapanVehicleTelemetry::FirstMove(CastChecked<AWandererCharacter>(CharacterOwner));
                 bReceivedMoveInEpoch = true; ++NetworkStats.StartedEpochs;
                 if (NetworkStats.FirstMoveTimestamp < 0.f) NetworkStats.FirstMoveTimestamp = Timestamp;
@@ -490,6 +496,7 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);
         }
     Super::MoveAutonomous(Timestamp, Dt, Flags, Accel);
+    if (FirstReactionMove) JapanReactionDeliveryQA::FirstMove(this, Timestamp, Dt, FirstReactionStart);
 #if !UE_BUILD_SHIPPING
     if (PredictsMoves() && CharacterOwner->HasAuthority()) JapanJumpReplayQA::HostMove(this, Timestamp, Dt);
     if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= 6.f &&

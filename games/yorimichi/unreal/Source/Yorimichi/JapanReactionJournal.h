@@ -62,6 +62,7 @@ public:
     // never a strict-pass exemption; the runtime must request host reconciliation.
     uint32 RecoveryRequests = 0, FailedRestores = 0, RejectedResets = 0;
     bool NeedsRecovery() const { return bRecovery; }
+    uint32 GetEpoch() const { return Epoch; }
     uint32 Known() const { return KnownThrough; }
     uint32 Applied() const { return AppliedThrough; }
     uint32 Retired() const { return RetiredThrough; }

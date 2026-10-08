@@ -3,6 +3,9 @@
 #include "JapanCharacterMovement.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
+#include "WandererSword.h"
+#include "BotwMoveSet.h"
+#include "BotwMoveSetDetail.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
 #include "Misc/CommandLine.h"
@@ -35,12 +38,72 @@ TSharedPtr<FJsonObject> DeliveryRow(const UJapanCharacterMovement* Movement, con
     Data->SetNumberField(TEXT("at"), FPlatformTime::Seconds());
     Data->SetNumberField(TEXT("world_time"), Movement->GetWorld()->GetTimeSeconds());
     Data->SetNumberField(TEXT("epoch"), Movement->GetActivityEpoch());
+    Data->SetNumberField(TEXT("journal_epoch"), Movement->GetScheduledReactionEpoch());
+    Data->SetNumberField(TEXT("known"), Movement->GetScheduledReactionKnown());
+    Data->SetNumberField(TEXT("through"), Movement->GetScheduledReactionThrough());
+    Data->SetNumberField(TEXT("forced"), Movement->GetScheduledReactionStats().Forced);
     Data->SetBoolField(TEXT("authority"), Rider->HasAuthority());
     Data->SetBoolField(TEXT("local"), Rider->IsLocallyControlled());
     Data->SetNumberField(TEXT("remote_role"), int32(Rider->GetRemoteRole()));
     Record.Rows.Add(MakeShared<FJsonValueObject>(Data));
     return Data;
 }
+void PutVector(const TSharedPtr<FJsonObject>& Data, const TCHAR* Name, const FVector& Value)
+{
+    Data->SetArrayField(Name, {MakeShared<FJsonValueNumber>(Value.X),
+        MakeShared<FJsonValueNumber>(Value.Y), MakeShared<FJsonValueNumber>(Value.Z)});
+}
+FString ByteDigest(const TArray<uint8>& Bytes)
+{
+    uint8 Hash[20]; FSHA1::HashBuffer(Bytes.GetData(), Bytes.Num(), Hash);
+    return BytesToHex(Hash, 20).ToLower();
+}
+}
+void DeadInput(const UJapanCharacterMovement* Movement, FName Button, uint16 Edge)
+{
+    if (!Enabled() || !Movement) return;
+    const auto* Rider = Cast<AWandererCharacter>(Movement->GetOwner());
+    if (!Rider || !Rider->HasAuthority() || !Rider->GetSword() || !Rider->GetMoves() || Rider->GetSword()->GetHealth() > 0.f) return;
+    if (auto Data = DeliveryRow(Movement, TEXT("dead_input")))
+    {
+        Data->SetStringField(TEXT("button"), Button.ToString()); Data->SetNumberField(TEXT("edge"), Edge);
+        Data->SetNumberField(TEXT("health"), Rider->GetSword()->GetHealth());
+        Data->SetBoolField(TEXT("down"), Rider->GetMoves()->IsDown());
+        Data->SetBoolField(TEXT("attacking"), Rider->GetMoves()->IsAttacking());
+        Data->SetBoolField(TEXT("guarding"), Rider->GetMoves()->IsGuarding());
+        Data->SetBoolField(TEXT("parrying"), BotwMoveSetDetail::IsParry(Rider->GetAnimationAction()));
+    }
+}
+void Activity(const UJapanCharacterMovement* Movement, const TCHAR* Event, const FJapanActivityState& State)
+{
+    if (auto Data = DeliveryRow(Movement, Event))
+    {
+        const auto* Rider = CastChecked<AWandererCharacter>(Movement->GetOwner());
+        Data->SetBoolField(TEXT("state_available"), Rider->GetMoves() && Rider->GetSword());
+        if (!Rider->GetMoves() || !Rider->GetSword()) return;
+        const auto Applied = Rider->GetMoves()->CaptureNetworkState();
+        Data->SetNumberField(TEXT("health"), Rider->GetSword()->GetHealth());
+        Data->SetNumberField(TEXT("forced"), Movement->GetScheduledReactionStats().Forced);
+        Data->SetBoolField(TEXT("foot_reaction"), State.bFootReaction);
+        Data->SetBoolField(TEXT("target_free"), !Applied.Target.IsValid() && !Applied.LungeTarget.IsValid());
+        Data->SetStringField(TEXT("handoff_digest"), ByteDigest(State.FootBytes));
+        Data->SetStringField(TEXT("applied_digest"), ByteDigest(Applied.Bytes));
+        Data->SetStringField(TEXT("action"), Rider->GetAnimationAction().ToString());
+        Data->SetStringField(TEXT("handoff_action"), State.FootAction.ToString());
+        PutVector(Data, TEXT("location"), Rider->GetActorLocation());
+        PutVector(Data, TEXT("handoff_location"), State.Location);
+        PutVector(Data, TEXT("velocity"), Movement->Velocity);
+        PutVector(Data, TEXT("pending_launch"), Movement->GetPendingLaunch());
+    }
+}
+void FirstMove(const UJapanCharacterMovement* Movement, float Stamp, float Dt, const FVector& Start)
+{
+    if (auto Data = DeliveryRow(Movement, TEXT("epoch_first_move")))
+    {
+        Data->SetNumberField(TEXT("stamp"), Stamp); Data->SetNumberField(TEXT("dt"), Dt);
+        PutVector(Data, TEXT("start"), Start);
+        PutVector(Data, TEXT("end"), Movement->GetOwner()->GetActorLocation());
+    }
 }
 void State(const UJapanCharacterMovement* Movement, const TCHAR* Event, bool Pending, bool Captured, float Stamp)
 {
@@ -148,6 +211,8 @@ TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement)
     if (!Enabled() || !Movement) return Data;
     Data->SetBoolField(TEXT("packed_responses"), Movement->ShouldUsePackedMovementRPCs());
     Data->SetBoolField(TEXT("scheduled_reactions"), true);
+    Data->SetNumberField(TEXT("epoch"), Movement->GetActivityEpoch());
+    Data->SetNumberField(TEXT("journal_epoch"), Movement->GetScheduledReactionEpoch());
     auto ScheduledStats = MakeShared<FJsonObject>();
     const auto& Stats = Movement->GetScheduledReactionStats();
     ScheduledStats->SetNumberField(TEXT("issued"), Stats.Issued);
@@ -187,6 +252,9 @@ TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement)
 void JapanReactionDeliveryQA::State(const UJapanCharacterMovement*, const TCHAR*, bool, bool, float) {}
 void JapanReactionDeliveryQA::Response(const UJapanCharacterMovement*, const TCHAR*, const FJapanMoveResponse&, float) {}
 void JapanReactionDeliveryQA::Scheduled(const UJapanCharacterMovement*, const TCHAR*, const FJapanScheduledReaction&, const FJapanReactionMarker*) {}
+void JapanReactionDeliveryQA::DeadInput(const UJapanCharacterMovement*, FName, uint16) {}
+void JapanReactionDeliveryQA::Activity(const UJapanCharacterMovement*, const TCHAR*, const FJapanActivityState&) {}
+void JapanReactionDeliveryQA::FirstMove(const UJapanCharacterMovement*, float, float, const FVector&) {}
 TSharedPtr<FJsonObject> JapanReactionDeliveryQA::Snapshot(const UJapanCharacterMovement*) { return {}; }
 TSharedPtr<FJsonObject> JapanReactionDeliveryQA::LargestCorrection(const FJapanMovementStats&) { return {}; }
 #endif

@@ -5,14 +5,19 @@
 #include "JapanSession.h"
 #include "WandererCharacter.h"
 #include "BotwMoveSet.h"
+#include "BotwMoveSetDetail.h"
+#include "BotwMovementReaction.h"
+#include "WandererSword.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "HAL/FileManager.h"
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
+#include "Misc/SecureHash.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Serialization/MemoryWriter.h"
 
 namespace JapanReactionDeliveryQA
 {
@@ -44,6 +49,7 @@ bool MovingDelivery()
     static const bool Value=FParse::Param(FCommandLine::Get(),TEXT("networkreactionmoving"));
     return Value;
 }
+bool LethalDelivery() { return DeliveryCase() == 8 || DeliveryCase() == 9; }
 bool SaveDelivery(const FString& File,const TSharedPtr<FJsonObject>& Data)
 {
     FString Text;
@@ -62,11 +68,25 @@ struct FDeliveryStimulusState
     TWeakObjectPtr<AWandererCharacter> Host, Guest;
     double Began=0., TriggerAt=0., MovingSeconds=0.;
     bool Active=false, Triggered=false, SecondTriggered=false, Complete=false, Saved=false;
+    bool StaleSent=false, EpochAckWritten=false, DeadInputAttempted=false, DeadAttack=false, DeadDefence=false;
+    double ZeroHealthAt=0., LastDeadAt=0.; int32 DeadFrames=0;
+    float LastHealth=-1.f;
+    TArray<TSharedPtr<FJsonValue>> HealthChanges;
     int32 Captures=0, Holds=0, Serialized=0;
     uint32 InitialEpoch=0;
     TArray<TSharedPtr<FJsonValue>> Events;
     TArray<double> FrameTimes;
     FString Failure;
+    void ObserveHealth(AWandererCharacter* Rider)
+    {
+        if(!LethalDelivery()||!Rider->GetSword()||!Rider->GetMoves())return;
+        const float Health=Rider->GetSword()->GetHealth();if(Health==LastHealth)return;
+        LastHealth=Health;auto Row=MakeShared<FJsonObject>();
+        Row->SetNumberField(TEXT("at"),FPlatformTime::Seconds());Row->SetNumberField(TEXT("health"),Health);
+        Row->SetNumberField(TEXT("epoch"),Rider->GetActivityEpoch());
+        Row->SetBoolField(TEXT("down"),Rider->GetMoves()->IsDown());
+        HealthChanges.Add(MakeShared<FJsonValueObject>(Row));
+    }
     bool Owns(const UJapanCharacterMovement* Movement) const
     {return Active&&Movement&&Guest.IsValid()&&Movement->GetOwner()==Guest.Get()&&Guest->HasAuthority();}
     void Event(const TCHAR* Name,const UJapanCharacterMovement* Movement)
@@ -74,22 +94,29 @@ struct FDeliveryStimulusState
         auto Row=MakeShared<FJsonObject>();Row->SetStringField(TEXT("event"),Name);
         Row->SetNumberField(TEXT("at"),FPlatformTime::Seconds());
         Row->SetNumberField(TEXT("epoch"),Movement->GetActivityEpoch());
+        Row->SetNumberField(TEXT("world_time"),Movement->GetWorld()->GetTimeSeconds());
         Row->SetNumberField(TEXT("checkpoint_stamp"),Movement->PendingCheckpointTime);
         Events.Add(MakeShared<FJsonValueObject>(Row));
     }
-    void Hit(bool Guard=false,bool OwnPawn=false)
+    void Hit(bool Guard=false,bool OwnPawn=false,float Damage=1.f)
     {
         auto* Rider=OwnPawn?Host.Get():Guest.Get();
         auto* Movement=Rider?Cast<UJapanCharacterMovement>(Rider->GetCharacterMovement()):nullptr;
-        if(!Rider||!Movement||!Rider->GetMoves()){Failure=TEXT("Reaction stimulus lost its pawn/move set");return;}
+        if(!Rider||!Movement||!Rider->GetMoves()||!Rider->GetSword()){Failure=TEXT("Reaction stimulus lost its pawn/move set");return;}
         Triggered=true;if(!TriggerAt)TriggerAt=FPlatformTime::Seconds();
         const FVector From=Rider->GetActorLocation()+(Guard?FVector::ZeroVector:Rider->GetActorForwardVector()*100.);
         const double BeforeSpeed=Movement->Velocity.Size2D();
         const int32 BeforeY=Movement->ReadMoveInput().Y;
+        const float BeforeHealth=Rider->GetSword()->GetHealth();
+        const uint32 Pending=Movement->GetScheduledReactionKnown()-Movement->GetScheduledReactionThrough();
         const int32 Outcome=Guard?FStimulus::Guard(*Rider->GetMoves(),OwnPawn?Guest.Get():Host.Get(),From):
-            Rider->GetMoves()->ResolveUnprotectedStrike(OwnPawn?Guest.Get():Host.Get(),1.f,From);
-        Event(OwnPawn?TEXT("host_own_hit"):Guard?TEXT("zero_impulse_guard"):TEXT("hit"),Movement);
+            Rider->GetMoves()->ResolveUnprotectedStrike(OwnPawn?Guest.Get():Host.Get(),Damage,From);
+        Event(Damage>=100.f?TEXT("lethal_hit"):OwnPawn?TEXT("host_own_hit"):Guard?TEXT("zero_impulse_guard"):TEXT("hit"),Movement);
         auto Row=Events.Last()->AsObject();Row->SetNumberField(TEXT("outcome"),Outcome);
+        Row->SetNumberField(TEXT("health_before"),BeforeHealth);
+        Row->SetNumberField(TEXT("health_after"),Rider->GetSword()->GetHealth());
+        Row->SetNumberField(TEXT("pending_before"),Pending);
+        Row->SetNumberField(TEXT("issued_after"),Movement->GetScheduledReactionStats().Issued);
         Row->SetNumberField(TEXT("pre_hit_speed"),BeforeSpeed);Row->SetNumberField(TEXT("pre_hit_input_y"),BeforeY);
         Row->SetNumberField(TEXT("moving_seconds_before_hit"),MovingSeconds);
         Row->SetStringField(TEXT("action"),Rider->GetAnimationAction().ToString());
@@ -115,6 +142,11 @@ struct FDeliveryStimulusState
         Data->SetNumberField(TEXT("response_window_end"),TriggerAt+2.);
         Data->SetNumberField(TEXT("observed_until"),FPlatformTime::Seconds());
         Data->SetNumberField(TEXT("held_sends"),Holds);Data->SetNumberField(TEXT("post_hit_captures"),Captures);
+        Data->SetNumberField(TEXT("dead_frames"),DeadFrames);
+        Data->SetNumberField(TEXT("last_dead_at"),LastDeadAt);
+        Data->SetBoolField(TEXT("dead_attack"),DeadAttack);
+        Data->SetBoolField(TEXT("dead_defence"),DeadDefence);
+        Data->SetArrayField(TEXT("health_changes"),HealthChanges);
         Data->SetArrayField(TEXT("stimuli"),Events);
         Data->SetObjectField(TEXT("frame_statistics"),Frames());
         if(Host.IsValid())Data->SetObjectField(TEXT("host_own"),Snapshot(Cast<UJapanCharacterMovement>(Host->GetCharacterMovement())));
@@ -160,8 +192,9 @@ void AfterSend(UJapanCharacterMovement* Movement,bool Serialized)
 
 bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
 {
-    const int32 Case=DeliveryCase();if(Case<0||Case>7){Error=TEXT("Invalid reaction delivery case");return false;}
-    if(MovingDelivery()&&Case!=0&&Case!=5){Error=TEXT("Moving delivery only supports cases 0 and 5");return false;}
+    const int32 Case=DeliveryCase();if(Case<0||Case>9){Error=TEXT("Invalid reaction delivery case");return false;}
+    if(MovingDelivery()&&Case!=0&&Case!=5&&!LethalDelivery()){Error=TEXT("Moving delivery only supports cases 0, 5, 8 and 9");return false;}
+    if(LethalDelivery()&&!MovingDelivery()){Error=TEXT("Lethal delivery requires the moving victim");return false;}
     if(DeliveryStimulus.Saved)return true;
     const auto* Session=World->GetGameState<AJapanGameState>();
     if(!Session||!Session->bWorldReady||Session->PlayerArray.Num()!=2)return false;
@@ -178,14 +211,41 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
     if(!Movement){Error=TEXT("Missing reaction delivery movement");return false;}
     if(DeliveryStimulus.FrameTimes.Num()>=1024){Error=TEXT("Reaction delivery frame history overflow");return false;}
     DeliveryStimulus.FrameTimes.Add(World->GetDeltaSeconds());
+    DeliveryStimulus.ObserveHealth(Guest);
     if(!Server)
     {
+        auto& S=DeliveryStimulus;
+        if(!S.InitialEpoch)S.InitialEpoch=Guest->GetActivityEpoch();
         Guest->Live_Drive(MovingDelivery()?FVector2D(0,1):FVector2D::ZeroVector,0.f);
+        if(LethalDelivery()&&Guest->GetActivityEpoch()==S.InitialEpoch+1&&Guest->GetSword()->GetHealth()==0.f)
+        {
+            if(!S.ZeroHealthAt)S.ZeroHealthAt=FPlatformTime::Seconds();
+            if(!S.EpochAckWritten)
+            {
+                auto Ack=MakeShared<FJsonObject>();Ack->SetNumberField(TEXT("epoch"),Guest->GetActivityEpoch());
+                Ack->SetNumberField(TEXT("health"),Guest->GetSword()->GetHealth());
+                S.EpochAckWritten=SaveDelivery(Folder/TEXT("reaction-epoch-owner.json"),Ack);
+            }
+            if(Guest->GetMoves()->IsDown())
+            {
+                if(!S.DeadInputAttempted)
+                {Guest->Live_Press(TEXT("attack"));Guest->Live_Press(TEXT("guard"));S.DeadInputAttempted=true;}
+                ++S.DeadFrames;
+            }
+        }
+        if(LethalDelivery()&&S.DeadInputAttempted&&Guest->GetSword()->GetHealth()==0.f)
+            S.DeadAttack|=Guest->GetMoves()->IsAttacking();
         auto Control=ReadDelivery(Folder/TEXT("reaction-control.json"));
         if(!Control||!Control->GetBoolField(TEXT("complete")))return false;
         auto Data=Snapshot(Movement);Data->SetNumberField(TEXT("case"),Case);
         Data->SetBoolField(TEXT("moving"),MovingDelivery());
         Data->SetNumberField(TEXT("drive_y"),Movement->ReadMoveInput().Y);
+        Data->SetNumberField(TEXT("initial_epoch"),S.InitialEpoch);
+        Data->SetNumberField(TEXT("zero_health_at"),S.ZeroHealthAt);
+        Data->SetArrayField(TEXT("health_changes"),S.HealthChanges);
+        Data->SetBoolField(TEXT("dead_input_attempted"),S.DeadInputAttempted);
+        Data->SetBoolField(TEXT("dead_attack"),S.DeadAttack);
+        Data->SetNumberField(TEXT("dead_frames"),S.DeadFrames);
         Data->SetObjectField(TEXT("frame_statistics"),DeliveryStimulus.Frames());
         Data->SetBoolField(TEXT("complete"),true);
         Data->SetStringField(TEXT("error"),TEXT(""));
@@ -202,6 +262,11 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
     }
     auto& S=DeliveryStimulus;const double Now=FPlatformTime::Seconds();
     if(!S.Began){S.Began=Now;S.Host=Host;S.Guest=Guest;S.InitialEpoch=Guest->GetActivityEpoch();}
+    if(LethalDelivery()&&Guest->GetActivityEpoch()==S.InitialEpoch+1&&Guest->GetSword()->GetHealth()==0.f)
+    {
+        ++S.DeadFrames;S.LastDeadAt=Now;S.DeadAttack|=Guest->GetMoves()->IsAttacking();
+        S.DeadDefence|=Guest->GetMoves()->IsGuarding()||BotwMoveSetDetail::IsParry(Guest->GetAnimationAction());
+    }
     if(Now-S.Began>12.&&!S.Complete){Error=TEXT("Reaction delivery stimulus deadline expired");return false;}
     if(!S.Failure.IsEmpty()){Error=S.Failure;return false;}
     if(Now-S.Began<1.)return false;
@@ -224,8 +289,34 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
             S.Event(TEXT("cancel_after_epoch"),Movement);
         }
         if(Case==7)S.Hit(false,true);
+        if(Case==8)S.Hit(false,false,100.f);
+        if(Case==9){S.Hit();S.Hit(false,false,100.f);}
+    }
+    if(LethalDelivery()&&S.Triggered&&!S.StaleSent)
+    {
+        const auto Ack=ReadDelivery(Folder/TEXT("reaction-epoch-owner.json"));
+        double Epoch=0.,Health=-1.;
+        if(Ack&&Ack->TryGetNumberField(TEXT("epoch"),Epoch)&&Ack->TryGetNumberField(TEXT("health"),Health)&&
+            Epoch==S.InitialEpoch+1&&Health==0.&&Guest->GetActivityEpoch()==S.InitialEpoch+1)
+        {
+            // Deliberate valid old-epoch delivery only after the owner reports
+            // applying epoch+1. This is labelled, never a production retry.
+            FBotwMovementReaction Payload;Payload.Flags=FBotwMovementReaction::ClearHop;
+            FJapanReactionValue Value;
+            if(!Payload.Encode(Value)){Error=TEXT("Cannot encode stale lethal probe");return false;}
+            FJapanScheduledReaction Old{S.InitialEpoch,1,{0,0.f},Value};
+            TArray<uint8> Encoded;FMemoryWriter Writer(Encoded,true);
+            if(!Old.Serialize(Writer)){Error=TEXT("Cannot serialize stale lethal probe");return false;}
+            Guest->ClientReceiveMovementReaction(Encoded);S.StaleSent=true;
+            S.Event(TEXT("stale_reaction_sent"),Movement);
+            auto Sent=S.Events.Last()->AsObject();
+            Sent->SetNumberField(TEXT("sent_epoch"),Old.Epoch);
+            uint8 Hash[20];FSHA1::HashBuffer(Value.Bytes.GetData(),Value.Bytes.Num(),Hash);
+            Sent->SetStringField(TEXT("payload_digest"),BytesToHex(Hash,20).ToLower());
+        }
     }
     if(S.Triggered&&Now-S.TriggerAt>3.)S.Complete=true;
+    if(LethalDelivery()&&!S.StaleSent)S.Complete=false;
     if(!S.Complete)return false;
     if(!SaveDelivery(Folder/TEXT("reaction-server.json"),S.Receipt(Movement)))
     {Error=TEXT("Cannot save reaction host receipt");return false;}
