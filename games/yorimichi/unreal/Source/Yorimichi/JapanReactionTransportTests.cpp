@@ -32,11 +32,17 @@ bool FJapanReactionTransportTest::RunTest(const FString&)
         Movement->ResetActivityPrediction();
         Movement->SetMovementMode(MOVE_Walking);
     };
-    Reset();
     FBotwMovementReaction Hit; Hit.Flags = FBotwMovementReaction::SetVelocity;
     Hit.Impulse = FVector(-46.9, 0., 0.);
     FJapanReactionValue Value; if (!TestTrue(TEXT("Transport uses the actual payload codec"), Hit.Encode(Value))) return false;
     FJapanScheduledReaction Event;
+    TestTrue(TEXT("Freshly spawned host can issue before any activity reset"), Movement->ReactionJournal.Issue({0, 0.f}, Value, Event));
+    TestEqual(TEXT("Initial journal matches the character's already-applied spawn epoch"), Event.Epoch, Rider->GetActivityEpoch());
+    auto* FreshOwnerMovement = NewObject<UJapanCharacterMovement>();
+    TestTrue(TEXT("Fresh owner journal receives the same initial-epoch event without an activity reset"),
+        FreshOwnerMovement->ReactionJournal.Receive(Event) == FJapanReactionJournal::EReceive::Added);
+    TestEqual(TEXT("Constructor initialization is not a rejected reset"), Movement->ReactionStats.RejectedResets, 0u);
+    Reset();
     const float Step = 1.f / 30.f;
     TestTrue(TEXT("Host resolves a reaction before a lost predecessor"), Movement->ReactionJournal.Issue({0, 0.f}, Value, Event));
     Movement->ReactionCurrent = {0, Step * 3.f}; Movement->ReactionPrevious = {0, 0.f};

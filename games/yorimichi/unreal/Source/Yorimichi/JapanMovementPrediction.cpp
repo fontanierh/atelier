@@ -42,6 +42,9 @@ UJapanCharacterMovement::UJapanCharacterMovement(const FObjectInitializer& Initi
 {
     SetNetworkMoveDataContainer(NetworkMoves);
     SetMoveResponseDataContainer(NetworkResponse);
+    // Spawn starts in the already-applied default activity: no OnRep/reset runs
+    // for epoch 1. Seed only this fresh journal; later epochs reset with CMC.
+    ReactionJournal.Reset(FJapanActivityState().Epoch);
 }
 
 void UJapanCharacterMovement::SetBase(FMovementBaseInterfaceData* Base, const FName Bone, bool bNotifyActor)
