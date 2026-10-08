@@ -807,7 +807,8 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     const bool bTwoHand = bTwoHanded && bArmed && !bDown && (bSwordGuard || In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit") }));
     TwoHandGrip = FMath::FInterpConstantTo(TwoHandGrip, bTwoHand ? 1.f : 0.f, Dt, 12.f);
     // The off hand closed round the handle: the middle of its curled fingers on the sword's axis, one hand's width
-    // (BOTW's 13 cm) toward the pommel from where the sword hand closes round it; its wrist moved with it.
+    // (BOTW's 13 cm) toward the pommel from where the sword hand closes round it, but never past the handle's end (on
+    // Link's short hilt it closed round nothing, a finger past the cap); its wrist moved with it.
     const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
     USkeletalMeshComponent* Body = Character->GetMesh();
     if (TwoHandGrip > 0.f && Sword && *Sword && Body && !BladeTip.IsNearlyZero())
@@ -817,7 +818,15 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
         const FVector Origin = MeshT.InverseTransformPosition(SwordT.GetLocation());
         const FVector Pommel = MeshT.InverseTransformVectorNoScale(SwordT.TransformVectorNoScale(-BladeTip)).GetSafeNormal();
         const FVector SwordHand = Origin + Pommel * ((FingersOf(0) - Origin) | Pommel);
-        const FVector OnGrip = SwordHand + Pommel * 13.f * Scale();
+        float Reach = 13.f * Scale();
+        const FName Index(TEXT("finger_0_L")), Little(TEXT("finger_3_L"));
+        if (!HiltEnd.IsNearlyZero() && Body->GetBoneIndex(Index) != INDEX_NONE && Body->GetBoneIndex(Little) != INDEX_NONE)
+        {
+            const FVector Hilt = MeshT.InverseTransformPosition(SwordT.TransformPosition(HiltEnd));
+            const float Palm = (Body->GetSocketTransform(Index, RTS_Component).GetLocation() - Body->GetSocketTransform(Little, RTS_Component).GetLocation()).Size();
+            Reach = FMath::Min(Reach, ((Hilt - SwordHand) | Pommel) - Palm * .5f - 1.f);   // its little finger inside the cap
+        }
+        const FVector OnGrip = SwordHand + Pommel * Reach;
         const FTransform Hand = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component);
         FVector Wrist = Hand.GetLocation() + (OnGrip - FingersOf(1));
         if (bFistAxis)
@@ -827,7 +836,7 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
             // thumbs forward) and its fingers on the far side from the elbow, the wrist placed under them.
             const FVector Along = -Pommel;
             const FVector GripLocal = Hand.InverseTransformPosition(FingersOf(1));
-            const FVector Axis = FistAxis.GetSafeNormal();
+            const FVector Axis = FistAxisOf(1);
             const FVector Out = (GripLocal - Axis * (GripLocal | Axis)).GetSafeNormal();
             const FVector Elbow = Body->GetSocketTransform(Character->GetSkateBone(TEXT("forearm_L")), RTS_Component).GetLocation();
             const FVector Away = OnGrip - Elbow;

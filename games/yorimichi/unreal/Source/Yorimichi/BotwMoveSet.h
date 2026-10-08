@@ -269,6 +269,9 @@ private:
     FVector PalmOf(int32 Side) const;
     /** The middle of a hand's curled index and middle fingers, in the mesh's component space. */
     FVector FingersOf(int32 Side) const;
+    /** A fist's grip axis in its hand bone's frame, toward the thumb: the sword hand's from the sword's own hold, the off
+     *  hand's from its knuckle line (little finger's base to the index's), as its hand bone is the sword hand's mirrored. */
+    FVector FistAxisOf(int32 Side) const;
     FName GliderSocket;   // the hand bone it is held at
     // Once fitted to the neutral glide, the glider keeps that place on the body (banking about its grips as he turns) and
     // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.
@@ -310,6 +313,7 @@ private:
     TSet<TWeakObjectPtr<AActor>> HitThisSwing;
     TArray<FVector> PreviousBlade;
     FVector BladeBase = FVector::ZeroVector, BladeTip = FVector::ZeroVector;   // in the sword mesh's frame
+    FVector HiltEnd = FVector::ZeroVector;   // the handle's end behind the grip, in the sword mesh's frame
     FName LastPlayed;
 
     // Actions

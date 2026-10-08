@@ -182,6 +182,8 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
         const double Far = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? Box.Max[Axis] : Box.Min[Axis];
         FVector Tip = FVector::ZeroVector; Tip[Axis] = Far;
         BladeBase = Tip * .18; BladeTip = Tip;
+        const double Near = Far == Box.Max[Axis] ? Box.Min[Axis] : Box.Max[Axis];
+        HiltEnd = FVector::ZeroVector; if (Near * Far < 0.) HiltEnd[Axis] = Near;
         if (const FSlot* S = Slots.Find(TEXT("sword")))
         {
             FistAxis = S->Held.GetRotation().RotateVector(Tip.GetSafeNormal());
