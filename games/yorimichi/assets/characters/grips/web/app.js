@@ -122,6 +122,7 @@ class Hand {
     this.mesh = new THREE.SkinnedMesh(out, material);
     this.mesh.bind(this.skeleton, body.bindMatrix);
     this.mesh.frustumCulled = false;
+    this.restWorld = new Map([this.hand, ...this.digits.flat()].map(b => [b.name, b.matrixWorld.clone()]));
     // the hand bone hangs from a pivot (the moment's hold) through an adjustment (the person's own move of the hand)
     this.pivot = new THREE.Group(); this.adjust = new THREE.Group();
     this.pivot.add(this.adjust); this.adjust.add(this.hand);
@@ -244,12 +245,15 @@ const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(.4, 1, .
 const fill = new THREE.DirectionalLight(0xbfd4ff, .7); fill.position.set(-.6, -.3, -.5); scene.add(fill);
 const gizmo = new TransformControls(camera, renderer.domElement);
 gizmo.setSize(.7);
-gizmo.addEventListener('dragging-changed', e => { orbit.enabled = !e.value; if (!e.value) changed('move hand'); });
+gizmo.addEventListener('dragging-changed', e => {
+  orbit.enabled = !e.value;
+  if (e.value) pushUndo(); else changed(gizmo.mode === 'rotate' ? 'turn hand' : 'move hand');
+});
 gizmo.addEventListener('objectChange', () => refresh());
 scene.add(gizmo.getHelper());
 
 let data, saved, bodyGltf, props = {}, grip, hand, other, propObject, collision, ghost, dots = [], selected = 0;
-let state = { grips: {} }, undo = [], redo = [], saveTimer = null, playing = null, momentIndex = 0, worstCache = null;
+let state = { grips: {} }, undo = [], redo = [], saveTimer = null, momentIndex = 0;
 
 function gripState(id) {
   return state.grips[id] ??= { status: 'untouched', notes: '', edits: 0, params: null, offset: null, log: [], derived: null };
@@ -300,10 +304,9 @@ function startParams(h, g) {
 }
 
 function select(id) {
-  stopPlay();
   grip = data.grips.find(g => g.id === id);
   for (const o of [hand?.group, other?.group, propObject, collision, ghost]) if (o) scene.remove(o);
-  gizmo.detach(); $('move-hand').classList.remove('on');
+  handMode(null);
   dots.forEach(d => scene.remove(d)); dots = [];
   hand = makeHand(grip, grip.side, false);
   const st = gripState(id);
@@ -312,13 +315,14 @@ function select(id) {
   if (st.offset) { hand.adjust.position.fromArray(st.offset.position); hand.adjust.quaternion.fromArray(st.offset.quaternion); }
   hand.apply();
   scene.add(hand.group);
-  // the other hand on this prop, as it is posed now (or as the game has it)
-  const partner = data.grips.find(g => g.prop === grip.prop && g.side !== grip.side);
-  other = makeHand(grip, grip.side === 'R' ? 'L' : 'R', true);
-  const ps = partner && gripState(partner.id);
-  other.params = ps?.params ? clone(ps.params) : partner ? startParams(other, partner) : other.params;
-  if (ps?.offset) { other.adjust.position.fromArray(ps.offset.position); other.adjust.quaternion.fromArray(ps.offset.quaternion); }
-  other.apply();
+  // the other hand on this prop, exactly as it is posed on its own grip (or as the game has it)
+  const partner = partnerOf(grip), ps = partner && gripState(partner.id);
+  if (partner) {
+    other = makeHand(partner, partner.side, true);   // its joint axes as on its own grip, so its angles mean the same
+    other.params = ps.params ? clone(ps.params) : startParams(other, partner);
+    other.apply();
+    other.place(placementOf(toFrame(grip, partner).multiply(holdOf(partner))));
+  } else other = makeHand(grip, grip.side === 'R' ? 'L' : 'R', true);
   other.group.visible = $('show-other').checked;
   scene.add(other.group);
   // the prop and its handle
@@ -341,29 +345,71 @@ function select(id) {
     hit.userData = m.userData; m.add(hit);
     scene.add(m); dots.push(m);
   }));
-  momentIndex = grip.typical;
-  const slider = $('moment');
-  slider.max = grip.moments.length - 1; slider.value = momentIndex;
-  $('moments').style.display = grip.moments.length > 1 ? '' : 'none';
-  worstCache = null;
+  momentIndex = anchorOf(grip);
+  hand.place(grip.moments[momentIndex].hand);
   undo = []; redo = [];
   $('notes').value = st.notes || '';
-  buildGripList(); buildDigits(); placeMoment(momentIndex); frame('palm');
-  if (grip.moments.length > 1) checkMoments();
+  const offer = st.status === 'untouched' && ps?.params;
+  $('offer').hidden = !offer;
+  if (offer) $('offer-side').textContent = partner.side === 'R' ? 'right' : 'left';
+  buildGripList(); buildDigits(); refresh(); frame('palm');
+}
+
+// Each grip's hand is pinned to the prop: the game's place at the moment the person posed it, then their own move.
+// The pose holds through the whole animation (the game reaches the arm to it).
+const matrixOf = p => new THREE.Matrix4().compose(new THREE.Vector3().fromArray(p.position),
+  new THREE.Quaternion().fromArray(p.quaternion), new THREE.Vector3().setScalar(p.scale ?? 1));
+function placementOf(M) {
+  const position = new THREE.Vector3(), quaternion = new THREE.Quaternion(), scale = new THREE.Vector3();
+  M.decompose(position, quaternion, scale);
+  return { position: position.toArray(), quaternion: quaternion.toArray(), scale: scale.x };
+}
+const partnerOf = g => data.grips.find(o => o.prop === g.prop && o.side !== g.side);
+function anchorOf(g) {   // grips posed before pinning keep the moment they were posed at
+  const st = gripState(g.id);
+  st.anchor ??= st.params ? (st.derived?.moment ?? st.log.at(-1)?.moment ?? g.typical) : g.typical;
+  return st.anchor;
+}
+function holdOf(g) {   // the grip's hand bone in its own handle frame
+  const st = gripState(g.id), M = matrixOf(g.moments[anchorOf(g)].hand);
+  return st.offset ? M.multiply(matrixOf(st.offset)) : M;
+}
+const toFrame = (g, from) => matrixOf(g.prop_mesh).multiply(matrixOf(from.prop_mesh).invert());   // from's frame to g's
+
+// The other hand's grip mirrored onto this one: its place through the prop's mirror plane (between the two handles),
+// each joint through the body's own left/right mirror (the body's z: its hands lie along z at rest).
+
+function restReflection(src, dst, a, b) {   // S with dst's rest frame of b = Mirror x src's rest frame of a x S
+  const Ra = new THREE.Matrix4().extractRotation(src.restWorld.get(a.name));
+  const Rb = new THREE.Matrix4().extractRotation(dst.restWorld.get(b.name));
+  return new THREE.Matrix4().makeScale(1, 1, -1).multiply(Ra).transpose().multiply(Rb);
+}
+function mirrorOther() {
+  const partner = partnerOf(grip);
+  if (!partner) return;
+  const Pd = matrixOf(grip.prop_mesh), Ps = matrixOf(partner.prop_mesh);
+  const centre = (g, P) => new THREE.Vector3(g.handle.length / 2, 0, 0).applyMatrix4(P.clone().invert());
+  const cd = centre(grip, Pd), cs = centre(partner, Ps);
+  const n = cd.clone().sub(cs).normalize(), t = n.clone().multiplyScalar(2 * n.dot(cd.clone().add(cs).multiplyScalar(.5)));
+  const plane = new THREE.Matrix4().set(
+    1 - 2 * n.x * n.x, -2 * n.x * n.y, -2 * n.x * n.z, t.x,
+    -2 * n.x * n.y, 1 - 2 * n.y * n.y, -2 * n.y * n.z, t.y,
+    -2 * n.x * n.z, -2 * n.y * n.z, 1 - 2 * n.z * n.z, t.z,
+    0, 0, 0, 1);
+  const S = restReflection(other, hand, other.hand, hand.hand);
+  const H = Pd.clone().multiply(plane).multiply(Ps.clone().invert()).multiply(holdOf(partner)).multiply(S);
+  const offset = placementOf(matrixOf(grip.moments[momentIndex].hand).invert().multiply(H));
+  hand.adjust.position.fromArray(offset.position); hand.adjust.quaternion.fromArray(offset.quaternion);
+  hand.params = hand.digits.map((d, k) => d.map((b, j) => {
+    const Sp = j === 0 ? S : restReflection(other, hand, other.digits[k][j - 1], d[j - 1]);
+    const L = Sp.clone().transpose().multiply(new THREE.Matrix4().makeRotationFromQuaternion(other.rotationOf(k, j)))
+      .multiply(restReflection(other, hand, other.digits[k][j], b));
+    return hand.paramsFrom(k, j, new THREE.Quaternion().setFromRotationMatrix(L));
+  }));
+  hand.apply(); refresh();
 }
 
 function clone(v) { return JSON.parse(JSON.stringify(v)); }
-
-function placeMoment(i) {
-  momentIndex = i;
-  const m = grip.moments[i];
-  hand.place(m.hand); other.place(m.other);
-  $('moment-label').textContent = `Moment ${i + 1} of ${grip.moments.length}`;
-  $('moment-note').textContent = i === grip.typical
-    ? 'The typical moment (the grey dots show the game\'s current grip here).'
-    : 'The hand drifts a little on the handle during the glide; the fingers keep your pose.';
-  refresh();
-}
 
 function setPropLook() {
   const op = +$('prop-opacity').value;
@@ -425,41 +471,11 @@ function refresh() {
   $('readout').innerHTML = `Palm: <span class="${pcls}">${ptext}</span> · deepest skin ` +
     (deepest < 0 ? `<span class="in">${(-deepest * 1000).toFixed(1)} mm inside</span>` : `<span class="ok">none inside</span>`);
   dots.forEach(m => m.position.copy(hand.points(m.userData.digit)[m.userData.effector]));
+  const moved = hand.adjust.position.length() * 1000, turned = THREE.MathUtils.radToDeg(2 * Math.acos(Math.min(1, Math.abs(hand.adjust.quaternion.w))));
+  $('hand-offset').textContent = moved < .05 && turned < .05 ? 'Where the game holds it.'
+    : `Moved ${moved.toFixed(1)} mm and turned ${turned.toFixed(1)}° from where the game holds it.`;
   dots.forEach(m => { m.visible = $('show-dots').checked; m.scale.setScalar(m.userData.digit === selected ? 1.25 : 1); });
   syncSliders();
-}
-
-function checkMoments() {
-  // the person's pose at every moment: the deepest skin inside the handle at each
-  const keep = momentIndex, out = [];
-  for (let i = 0; i < grip.moments.length; i++) {
-    hand.place(grip.moments[i].hand);
-    const c = contact(hand);
-    out.push(Math.min(...c.digits.map(d => d.min), c.palm.min));
-  }
-  worstCache = out;
-  placeMoment(keep);
-  drawWorst();
-}
-
-function drawWorst() {
-  const cv = $('worst'), ctx = cv.getContext('2d');
-  cv.width = cv.clientWidth * devicePixelRatio; cv.height = 34 * devicePixelRatio;
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  if (!worstCache) return;
-  const n = worstCache.length, w = cv.width / n, H = cv.height;
-  worstCache.forEach((d, i) => {
-    const depth = Math.max(0, -d * 1000), gap = Math.max(0, d * 1000);
-    ctx.fillStyle = depth > 0 ? '#ff5d5d' : gap < 1.5 ? '#3ddc84' : '#ffb347';
-    const h = depth > 0 ? Math.min(1, depth / 4) * H : Math.max(.12, 1 - Math.min(1, gap / 6)) * H * .35;
-    ctx.fillRect(i * w + 1, H - h, Math.max(1, w - 2), h);
-    if (i === momentIndex) { ctx.strokeStyle = '#e8eaf0'; ctx.lineWidth = 2; ctx.strokeRect(i * w + 1, 1, Math.max(1, w - 2), H - 2); }
-  });
-  const worst = worstCache.indexOf(Math.min(...worstCache));
-  const deep = -worstCache[worst] * 1000;
-  $('moment-note').textContent = deep > 0
-    ? `Deepest skin inside the handle across moments: ${deep.toFixed(1)} mm at moment ${worst + 1} (click a bar to jump there).`
-    : 'No skin inside the handle at any moment.';
 }
 
 // ------------------------------------------------------------------------------------------------ controls
@@ -515,11 +531,10 @@ function changed(action) {
   const s = snapshot();
   st.params = s.params; st.offset = s.offset; st.edits++;
   if (st.status === 'untouched') st.status = 'draft';
+  $('offer').hidden = true;
   st.log.push({ at: new Date().toISOString(), action, moment: momentIndex });
   if (st.log.length > 600) st.log.splice(0, st.log.length - 600);
   buildGripList();
-  worstCache = null;
-  if (grip.moments.length > 1) checkMoments();
   scheduleSave();
 }
 
@@ -532,7 +547,7 @@ function pick(e) {
   ray.setFromCamera(pointer, camera);
 }
 renderer.domElement.addEventListener('pointerdown', e => {
-  if (!$('show-dots').checked || gizmo.dragging) return;
+  if (!$('show-dots').checked || gizmo.dragging || gizmo.axis) return;
   pick(e);
   const hits = ray.intersectObjects(dots, true);
   if (!hits.length) return;
@@ -581,16 +596,19 @@ $('close-all').onclick = () => { pushUndo(); [0, 1, 2, 3].forEach(closeDigit); r
 $('close-one').onclick = () => { pushUndo(); closeDigit(selected); refresh(); changed(`close ${NAMES[selected]}`); };
 $('reset-game').onclick = () => { pushUndo(); hand.params = clone(hand.start); hand.apply(); refresh(); changed('reset to game pose'); };
 $('reset-open').onclick = () => { pushUndo(); hand.params = hand.params.map(d => d.map(() => [0, 0, 0])); hand.apply(); refresh(); changed('open hand'); };
-$('mirror').onclick = () => {
-  pushUndo();
-  hand.params = other.params.map(d => d.map(([f, s, t]) => [f, -s, -t]));
-  hand.apply(); refresh(); changed('copy other hand mirrored');
-};
-$('move-hand').onclick = () => {
-  const on = !$('move-hand').classList.contains('on');
-  $('move-hand').classList.toggle('on', on);
-  if (on) { pushUndo(); gizmo.attach(hand.adjust); gizmo.setSpace('local'); } else gizmo.detach();
-  $('move-hand').textContent = on ? 'Done moving (R: turn, T: move)' : 'Move hand…';
+$('mirror').onclick = () => { pushUndo(); mirrorOther(); changed('mirror other hand'); };
+$('offer-yes').onclick = () => $('mirror').click();
+$('offer-no').onclick = () => { $('offer').hidden = true; };
+function handMode(mode) {   // null, 'translate' or 'rotate': the gizmo on the hand's own adjustment, pivoting at the wrist
+  $('hand-move').classList.toggle('on', mode === 'translate');
+  $('hand-turn').classList.toggle('on', mode === 'rotate');
+  if (!mode) { gizmo.detach(); return; }
+  gizmo.attach(hand.adjust); gizmo.setMode(mode); gizmo.setSpace('local');
+}
+$('hand-move').onclick = () => handMode($('hand-move').classList.contains('on') ? null : 'translate');
+$('hand-turn').onclick = () => handMode($('hand-turn').classList.contains('on') ? null : 'rotate');
+$('hand-reset').onclick = () => {
+  pushUndo(); hand.adjust.position.set(0, 0, 0); hand.adjust.quaternion.identity(); refresh(); changed('hand back to game place');
 };
 $('undo').onclick = () => { if (undo.length) { redo.push(snapshot()); restore(undo.pop()); changed('undo'); } };
 $('redo').onclick = () => { if (redo.length) { undo.push(snapshot()); restore(redo.pop()); changed('redo'); } };
@@ -601,20 +619,6 @@ $('show-ghost').onchange = e => { ghost.visible = e.target.checked; };
 $('show-other').onchange = e => { other.group.visible = e.target.checked; };
 $('show-dots').onchange = () => refresh();
 $('notes').oninput = () => { gripState(grip.id).notes = $('notes').value; scheduleSave(); };
-$('moment').oninput = e => { stopPlay(); placeMoment(+e.target.value); drawWorst(); };
-$('worst').onclick = e => {
-  const r = e.target.getBoundingClientRect(), i = Math.floor((e.clientX - r.left) / r.width * grip.moments.length);
-  stopPlay(); $('moment').value = i; placeMoment(i); drawWorst();
-};
-$('play').onclick = () => {
-  if (playing) return stopPlay();
-  $('play').textContent = 'Stop';
-  playing = setInterval(() => {
-    const i = (momentIndex + 1) % grip.moments.length;
-    $('moment').value = i; placeMoment(i); drawWorst();
-  }, 180);
-};
-function stopPlay() { if (playing) { clearInterval(playing); playing = null; $('play').textContent = 'Play'; } }
 $('help-button').onclick = () => { $('help').hidden = false; };
 $('help-close').onclick = () => { $('help').hidden = true; try { localStorage.setItem('grip-poser-help', '1'); } catch { /* private window */ } };
 document.querySelectorAll('#views button').forEach(b => { b.onclick = () => frame(b.dataset.view); });
@@ -623,8 +627,9 @@ addEventListener('keydown', e => {
   if (e.key === 'z' || e.key === 'Z') (e.shiftKey ? $('redo') : $('undo')).click();
   else if (e.key === 'h') { $('show-prop').checked = !$('show-prop').checked; setPropLook(); }
   else if (e.key >= '1' && e.key <= '5') { selected = +e.key - 1; buildDigits(); refresh(); }
-  else if (e.key === 'r' && gizmo.object) gizmo.setMode('rotate');
-  else if (e.key === 't' && gizmo.object) gizmo.setMode('translate');
+  else if (e.key === 'm') $('hand-move').click();
+  else if (e.key === 'r') $('hand-turn').click();
+  else if (e.key === 'Escape') handMode(null);
 });
 $('done').onclick = async () => {
   const st = gripState(grip.id);
@@ -674,14 +679,13 @@ function derived() {   // what the game needs from this pose, in the handle's fr
   }));
   joints[hand.hand.name] = w(hand.hand);
   return {
-    moment: momentIndex, hand_world: { position: hand.hand.getWorldPosition(new THREE.Vector3()).toArray(),
+    moment: momentIndex, pinned: true, hand_world: { position: hand.hand.getWorldPosition(new THREE.Vector3()).toArray(),
       quaternion: hand.hand.getWorldQuaternion(new THREE.Quaternion()).toArray() },
     joints, tips: hand.digits.map((d, k) => hand.points(k)[3].toArray().map(v => +v.toFixed(5))), quaternions, axes,
     digits: NAMES.map((n, k) => ({ name: n, min_mm: +(c.digits[k].min * 1000).toFixed(2), inside_vertices: c.digits[k].inside,
                                    touching_vertices: c.digits[k].touching })),
     palm: { min_mm: +(c.palm.min * 1000).toFixed(2), inside_vertices: c.palm.inside, touching_vertices: c.palm.touching },
     capsules_cm: capsules(hand),
-    moments_min_mm: worstCache ? worstCache.map(v => +(v * 1000).toFixed(2)) : null,
   };
 }
 
@@ -730,8 +734,8 @@ function resize(size) {
   const w = size?.x ?? s.clientWidth, h = size?.y ?? s.clientHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
 }
-addEventListener('resize', () => { resize(); drawWorst(); });
+addEventListener('resize', () => resize());
 resize();
 renderer.setAnimationLoop(() => { orbit.update(); renderer.render(scene, camera); });
 load().catch(err => { $('status').textContent = `Could not load: ${err.message}`; console.error(err); });
-window.poser = { get hand() { return hand; }, get grip() { return grip; }, get dots() { return dots; }, camera, renderer, contact, refresh, select };
+window.poser = { get hand() { return hand; }, get other() { return other; }, get grip() { return grip; }, get dots() { return dots; }, camera, orbit, renderer, gizmo, contact, refresh, select };

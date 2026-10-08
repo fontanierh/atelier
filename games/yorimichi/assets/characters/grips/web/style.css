@@ -22,6 +22,8 @@ button.ghost { background: transparent; }
 button.on { border-color: var(--accent); background: #24324a; }
 .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .buttons.small { margin-top: 6px; }
+.buttons.three { grid-template-columns: 1fr 1fr 1fr; }
+.hint-line { font-size: 12px; color: var(--muted); margin-top: 6px; }
 .buttons button { font-size: 13px; }
 #grips { display: grid; gap: 6px; }
 .grip { display: flex; align-items: center; justify-content: space-between; text-align: left; }
@@ -49,6 +51,9 @@ textarea { width: 100%; background: #15181e; color: var(--text); border: 1px sol
 #readout .in { color: var(--red); } #readout .ok { color: var(--green); }
 #views { position: absolute; top: 10px; right: 12px; display: flex; gap: 4px; }
 #views button { font-size: 12px; padding: 4px 8px; background: rgba(42,47,58,.85); }
+#offer { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: rgba(29,32,39,.95); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; }
+#offer[hidden] { display: none; }
+#offer .primary { width: auto; margin: 0; }
 #moments { position: absolute; left: 12px; right: 12px; bottom: 10px; background: rgba(29,32,39,.92); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 #moments .row { display: flex; align-items: center; gap: 10px; }
 #moment-label { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 110px; }

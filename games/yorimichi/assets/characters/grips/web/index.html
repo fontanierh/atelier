@@ -24,6 +24,15 @@
       <div id="grips"></div>
     </section>
     <section>
+      <h2>Whole hand <span class="hint">slide or turn it on the handle</span></h2>
+      <div class="buttons three">
+        <button id="hand-move" title="Arrows slide the hand (M)">Move</button>
+        <button id="hand-turn" title="Rings turn the hand about the wrist (R)">Turn</button>
+        <button id="hand-reset" title="Back to where the game holds it">Game's place</button>
+      </div>
+      <div class="hint-line" id="hand-offset">Where the game holds it.</div>
+    </section>
+    <section>
       <h2>Fingers <span class="hint">drag the dots, or use the sliders</span></h2>
       <div id="digits"></div>
       <div id="sliders"></div>
@@ -34,10 +43,9 @@
       <div class="buttons">
         <button id="close-all" title="Curl every finger until its skin meets the handle">Close fingers onto handle</button>
         <button id="close-one" title="Curl the selected digit until it meets the handle">Close selected</button>
-        <button id="mirror" title="Copy the other hand's pose on this prop, mirrored">Copy other hand</button>
+        <button id="mirror" title="The other hand's grip, mirrored: where it sits and every finger">Mirror other hand</button>
         <button id="reset-game" title="Back to the pose the game shows now">Game's pose</button>
         <button id="reset-open" title="All joints straight">Open hand</button>
-        <button id="move-hand" title="Move or turn the whole hand on the handle">Move hand…</button>
       </div>
       <div class="buttons small">
         <button id="undo" title="Undo (Z)">Undo</button>
@@ -65,14 +73,10 @@
       <button data-view="palm">Palm</button><button data-view="back">Back</button>
       <button data-view="thumb">Thumb side</button><button data-view="end">Along handle</button>
     </div>
-    <div id="moments">
-      <div class="row">
-        <span id="moment-label">Moment</span>
-        <input type="range" id="moment" min="0" max="0" step="1" value="0">
-        <button id="play" class="ghost" title="Step through every moment">Play</button>
-      </div>
-      <canvas id="worst" height="34"></canvas>
-      <div id="moment-note"></div>
+    <div id="offer" hidden>
+      <span>Mirror your <b id="offer-side"></b> hand's grip onto this hand?</span>
+      <button id="offer-yes" class="primary">Mirror it</button>
+      <button id="offer-no" class="ghost">Start from the game's grip</button>
     </div>
   </div>
 </main>
@@ -83,11 +87,12 @@
       <li><b>Pick a grip</b> on the left: the sword or the glider, right or left hand. Each shows Modori's hand exactly where the game holds it.</li>
       <li><b>Drag a coloured dot.</b> The dot at a fingertip bends the whole finger to follow it; a dot at a joint bends the joints before it. Drag empty space to orbit, scroll or pinch to zoom.</li>
       <li><b>Watch the colours on the skin:</b> <span class="red">red</span> is skin inside the handle, <span class="green">green</span> is touching it. Aim for green on the pads and no red.</li>
+      <li><b>Move the whole hand</b> with Move or Turn: drag the gizmo's arrows to slide it, its rings to turn it about the wrist. Click the button again (or <kbd>Esc</kbd>) when done.</li>
       <li><b>Fine-tune</b> with the sliders: pick a finger (its chip, or a click on its dot), then bend, spread or twist each joint.</li>
-      <li>On the glider the hands move a little during the glide. <b>Scrub the moments</b> at the bottom; the bar chart shows how deep the skin goes into the handle at each one.</li>
+      <li><b>Your pose stays put.</b> The hand is pinned to the prop where you leave it, for the whole animation. For the second hand on a prop, <b>Mirror other hand</b> gives a mirrored start.</li>
       <li><b>Mark the grip done</b> when it looks right. Everything saves automatically as you go; nothing is lost if you close the page.</li>
     </ol>
-    <p>Keys: <kbd>Z</kbd> undo, <kbd>Shift</kbd>+<kbd>Z</kbd> redo, <kbd>H</kbd> hide the prop, <kbd>1</kbd>–<kbd>5</kbd> pick index … thumb.</p>
+    <p>Keys: <kbd>Z</kbd> undo, <kbd>Shift</kbd>+<kbd>Z</kbd> redo, <kbd>M</kbd> move hand, <kbd>R</kbd> turn hand, <kbd>Esc</kbd> stop, <kbd>H</kbd> hide the prop, <kbd>1</kbd>–<kbd>5</kbd> pick index … thumb.</p>
     <button id="help-close" class="primary">Start posing</button>
   </div>
 </div>
