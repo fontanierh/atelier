@@ -223,6 +223,48 @@ def colliders(arm, body, coat, simulated):
     return out
 
 
+# His baggy trousers under the coat (fattest behind the thigh joint, 11-12 cm out at the back) follow the thighs, while
+# the skirt over them follows the hips: in the idle stance the thighs came through the back and sides of the coat at rest,
+# with the cloth simulation off as well (the operator, #7451). Where the coat hides them, behind and beside each thigh
+# from a hand above its hem up to the hip, they are pulled TUCK in toward the thigh's bone (never more than TUCK_SHARE
+# of their distance from it). Their front, in the coat's opening, and their legs below the hem keep their cut.
+TUCK = .03
+TUCK_SHARE = .35
+
+
+def tuck_trousers(arm, body, coat):
+    """Pull the hidden back and sides of the trousers in toward each thigh bone; returns how many vertices moved and the
+    largest move (cm)."""
+    import numpy as np
+    from mathutils import Vector
+    hem = min((coat.matrix_world @ v.co).z for v in coat.data.vertices)
+    thighs = {g.index: arm.data.bones[g.name] for g in body.vertex_groups if g.name in ('thigh_L', 'thigh_R')}
+    inverse = body.matrix_world.inverted()
+    moved, largest = 0, 0.
+    for v in body.data.vertices:
+        g = max(v.groups, key=lambda g: g.weight, default=None)
+        if g is None or g.group not in thighs:
+            continue
+        bone = thighs[g.group]
+        p = np.array(body.matrix_world @ v.co)
+        a, b = np.array(arm.matrix_world @ bone.head_local), np.array(arm.matrix_world @ bone.tail_local)
+        d = b - a
+        t = float(np.clip((p - a) @ d / (d @ d), 0., 1.))
+        r = p - (a + t * d)
+        out = float(np.linalg.norm(r))
+        if out < 1e-4:
+            continue
+        facing = r[0] / out   # +X is his front: 1 in front, -1 behind
+        side = float(np.clip((.3 - facing) / .5, 0., 1.))
+        height = float(np.clip((p[2] - hem - .02) / .06, 0., 1.))
+        move = min(TUCK, TUCK_SHARE * out) * side * height
+        if move <= 0.:
+            continue
+        v.co = inverse @ Vector(p - r / out * move)
+        moved += 1; largest = max(largest, move)
+    return moved, round(largest * 100, 2)
+
+
 def main(args):
     (OUT / 'fbx').mkdir(parents=True, exist_ok=True)
     (OUT / 'textures').mkdir(exist_ok=True)
@@ -255,6 +297,7 @@ def main(args):
             materials[material.name] = {'source_name': old, 'base_color': list(color.default_value), 'texture': texture,
                                         'two_sided': obj.name.endswith('Coat'), 'roughness': 1., 'metallic': 0., 'specular': 0.}
     coat = next(o for o in meshes if o.name.endswith('Coat'))
+    tucked = tuck_trousers(arm, next(o for o in meshes if o.name.endswith('Body')), coat)
     pins = pin_colours(coat, arm)
     capsules = colliders(arm, next(o for o in meshes if o.name.endswith('Body')), coat, pins.pop('simulated'))
     bpy.ops.object.select_all(action='DESELECT')
@@ -267,7 +310,7 @@ def main(args):
     bpy.ops.export_scene.fbx(filepath=str(OUT / 'fbx' / 'Modori.fbx'), object_types={'ARMATURE', 'MESH'}, bake_anim=False,
                              colors_type='LINEAR', **FBX)
     report = {'source': modori.native.name, 'source_sha256': record['native_sha256'], 'model_scale': modori.scale,
-              'height_cm': HEIGHT * 100, 'sole_cm': .65, 'source_floor': modori.floor, 'facing': '+X',
+              'height_cm': HEIGHT * 100, 'trousers_tucked': {'vertices': tucked[0], 'largest_cm': tucked[1]}, 'sole_cm': .65, 'source_floor': modori.floor, 'facing': '+X',
               'rest_ankles_cm': {side: p[2] * 100 for side, p in feet.items()}, 'bones': modori.original_names,
               'dropped_bones': modori.dropped, 'meshes': {o.name: len(o.data.vertices) for o in meshes},
               'cloth': {'mesh': coat.name, 'mask': PIN, 'channel': 'vertex colour red (pin), green (outer surface)', 'colliders': capsules, **pins},

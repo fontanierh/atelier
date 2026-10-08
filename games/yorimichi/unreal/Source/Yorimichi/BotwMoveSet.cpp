@@ -981,6 +981,7 @@ FString UBotwMoveSet::Describe() const
     O->SetBoolField(TEXT("sword_guard"), IsSwordGuarding());
     O->SetNumberField(TEXT("sword_guard_carry"), SwordGuardCarry);
     O->SetNumberField(TEXT("sword_carry"), SwordCarry);
+    O->SetNumberField(TEXT("crouch_carry"), CrouchCarry);
     O->SetNumberField(TEXT("guard_carry"), GuardCarry);
     O->SetNumberField(TEXT("speed"), Movement->Velocity.Size2D());
     O->SetNumberField(TEXT("vz"), Movement->Velocity.Z);
