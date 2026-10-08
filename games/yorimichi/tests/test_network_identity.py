@@ -67,6 +67,50 @@ def test_missing_world_cannot_be_certified(project):
 
 
 @pytest.mark.parametrize('relative', [
+    'games/yorimichi/unreal/Source/Yorimichi/Player.cpp',
+    'games/yorimichi/unreal/Config/DefaultEngine.ini',
+    'platform/engine/Plugins/Skate/Source/Ride.cpp',
+])
+def test_source_line_endings_preserve_identity_but_code_edits_do_not(project, relative):
+    repo, content = project
+    source = b'first line\nsecond line\n'
+    write(repo, relative, source)
+    expected = identity.create(repo, content, io.StringIO())
+    write(repo, relative, source.replace(b'\n', b'\r\n'))
+    assert identity.create(repo, content, io.StringIO()) == expected
+    write(repo, relative, source.replace(b'first', b'changed'))
+    assert identity.create(repo, content, io.StringIO())['code'] != expected['code']
+
+
+def test_lone_carriage_return_in_source_is_not_normalized(project):
+    repo, content = project
+    path = 'games/yorimichi/unreal/Source/Yorimichi/Player.cpp'
+    write(repo, path, b'first\rsecond\n')
+    first = identity.create(repo, content, io.StringIO())
+    write(repo, path, b'first\nsecond\n')
+    assert identity.create(repo, content, io.StringIO())['code'] != first['code']
+
+
+@pytest.mark.parametrize('relative', ['Data/moves.json', 'Japan/Collision.uasset'])
+def test_runtime_content_line_endings_are_still_byte_exact(project, relative):
+    repo, content = project
+    write(content, relative, b'first\nsecond\n')
+    first = identity.create(repo, content, io.StringIO())
+    write(content, relative, b'first\r\nsecond\r\n')
+    assert identity.create(repo, content, io.StringIO())['signature'] != first['signature']
+
+
+@pytest.mark.parametrize('name', ['Thumbs.db', 'THUMBS.DB', '.DS_Store'])
+def test_desktop_metadata_does_not_join_the_gameplay_manifest(project, name):
+    repo, content = project
+    first = identity.create(repo, content, io.StringIO())
+    write(content, 'Data/nested/' + name, b'desktop cache')
+    assert identity.create(repo, content, io.StringIO()) == first
+    write(content, 'Data/nested/' + name + '.json', b'gameplay data')
+    assert identity.create(repo, content, io.StringIO())['signature'] != first['signature']
+
+
+@pytest.mark.parametrize('relative', [
     'games/yorimichi/unreal/Config/DefaultEngine.ini',
     'games/yorimichi/unreal/Yorimichi.uproject',
     'platform/engine/Plugins/Skate/Config/DefaultSkate.ini',

@@ -74,7 +74,7 @@ def check_data(data, entitlements, expected_identity):
             print(f'network package: checked {len(seen)}/{len(entries)} gameplay files', flush=True)
             spoken = now
     actual_files = {p.relative_to(data).as_posix() for p in data.rglob('*') if p.is_file()
-                    and p.name != '.DS_Store' and not p.is_relative_to(data / 'Network')}
+                    and p.name.casefold() not in {'.ds_store', 'thumbs.db'} and not p.is_relative_to(data / 'Network')}
     require(actual_files == seen, 'unexpected or missing gameplay files')
     digest = hashlib.sha1()
     for name, value in sorted(records):
