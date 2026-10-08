@@ -38,6 +38,7 @@ WORLD = {'/world': ('world/index.html', 'text/html; charset=utf-8'),
          '/world/': ('world/index.html', 'text/html; charset=utf-8'),
          '/world/world.css': ('world/world.css', 'text/css; charset=utf-8'),
          '/world/world.js': ('world/world.js', 'text/javascript; charset=utf-8'),
+         '/world/ui.js': ('world/ui.js', 'text/javascript; charset=utf-8'),
          '/world/manifest.webmanifest': ('world/manifest.webmanifest', 'application/manifest+json'),
          '/world/board_world.js': (WORLD_BUILD / 'board_world.js', 'text/javascript; charset=utf-8'),
          '/world/board_world_bg.wasm': (WORLD_BUILD / 'board_world_bg.wasm', 'application/wasm')}

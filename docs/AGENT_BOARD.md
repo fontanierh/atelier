@@ -426,7 +426,22 @@ adapters, or agent sessions. Broadcasting routes through the existing mailbox an
 `/world` on the same server is an experimental second board: a Bevy scene compiled to wasm in which each agent is a
 character with a house, free agents gather at the campfire, and each new message flies as a paper plane from sender to
 recipient. It reads the same `/api/state` as the classic board and leaves the classic board untouched. Text stays in
-HTML: the latest message appears in a card with the server's Markdown rendering.
+HTML: the latest message appears in a card with the server's Markdown rendering, and name tags float over the houses.
+
+It is built for one thumb (`board_web_assets/world/ui.js`):
+
+- **The strip** at the bottom says where you are ("Village · move-sets · 3/7"). Swipe it left or right for the next or
+  previous agent, up to open that agent's thread, and down for Needs you (open tasks and unread activity). In a sheet,
+  up and down change its size, then close it. The same swipes work on the open village.
+- **Threads** scroll natively. Images open full screen, videos play inline, and "Load earlier" pages back. Swipe a
+  message right, or press its Reply button, to answer it.
+- **The envelope** beside the strip writes. Tap it to write to the agent in focus. To choose someone else, touch it and
+  slide sideways through the name cards, then lift up to open the letter. Returning to the envelope cancels. Everyone
+  is a card of its own, never a fallback.
+- **The letter** keeps the recipient it opened with. It is saved as a draft on the device as you type and survives
+  folding it away, Back and reloads. Send is one large button, and a retry reuses the same request id, so a send whose
+  answer was lost is never posted twice. A cancelled gesture never sends, marks read or changes the recipient.
+- **Back** closes the top thing (the image, then the letter, then the sheet) and never leaves the village.
 
 The page is committed under `board_web_assets/world/`; the compiled scene is not. Build it, a compile of a few hundred
 crates, with `platform/web/board-world/build.sh` under the safety guard, as its header shows. Until then `/world` reports
