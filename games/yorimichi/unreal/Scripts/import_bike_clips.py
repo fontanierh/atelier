@@ -1,15 +1,14 @@
-"""Import Cairo's bike clips (assets/vehicles/bike/rider.py) into /Game/CairoBike.
+"""Import a playable character's bike clips (assets/vehicles/bike/rider.py) into /Game/<Name>Bike. BIKE_CHARACTER picks
+the character folder (default: cairo; <Name> is its id in PascalCase, as its SK_<Name> is named).
 
-    UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_cairo_bike.py -unattended -nosplash -NullRHI -stdout
+    UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_bike_clips.py -unattended -nosplash -NullRHI -stdout
 
-Each build/yorimichi/cairo/bike/fbx/A_<Clip>.fbx is imported onto SK_Cairo's skeleton at the export rate as A_<Clip>,
-with the shared character compression and no root motion. The clips live in their own folder rather than in DA_Cairo's
-action map, which Cairo's own imports rewrite: UBikeComponent loads them by path. The bike's channels for each frame
-(crank, stand, lift, pitch, lean, yaw, steer) and the limb contact windows stay in export.json, which data.stage copies
-to Content/Data/cairo/bike/export.json for the component. Writes build/yorimichi/cairo/bike/unreal_import.json.
-
-BIKE_CHARACTER=modori imports another playable character's clips the same way (rider.py --character modori): onto
-SK_Modori's skeleton, into /Game/ModoriBike, from build/yorimichi/modori/bike/.
+Each build/yorimichi/<id>/bike/fbx/A_<Clip>.fbx is imported onto the character's skeleton at the export rate as A_<Clip>,
+with the shared character compression and no root motion. The clips live in their own folder rather than in the
+character's definition's action map, which its own imports rewrite: UBikeComponent loads them by path. The bike's
+channels for each frame (crank, stand, lift, pitch, lean, yaw, steer) and the limb contact windows stay in export.json,
+which data.stage copies to Content/Data/<id>/bike/export.json for the component. Writes
+build/yorimichi/<id>/bike/unreal_import.json.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import json, os, sys
@@ -19,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import animation_compression
 
 CHARACTER = os.environ.get('BIKE_CHARACTER', 'cairo')
-NAME = {'cairo': 'Cairo', 'modori': 'Modori'}[CHARACTER]
+NAME = ''.join(word.title() for word in CHARACTER.split('-'))   # sword-trainer: SwordTrainer
 OUT = yori.OUT / CHARACTER / 'bike'
 CONFIG = json.loads((OUT / 'export.json').read_text())
 DEST = f'/Game/{NAME}Bike'

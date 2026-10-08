@@ -38,7 +38,8 @@ public:
     FString GetHorse() const { return HorseName; }
     FString GetStatus() const { return Hint; }
     AHippodromeFigure* GetFigure() const;
-    /** The roster rider for this character in the saddle: RiderCairo for Cairo, Rider<Name> for a BOTW rider; empty if none. */
+    /** The roster rider for this character in the saddle: its own (GetHorseRider: RiderCairo for Cairo), else Rider<Name>
+     *  for the BOTW rider -rider= names; empty if none. */
     static FString RiderFor(const AWandererCharacter* Character);
     static constexpr int32 MaxSpurs = 3;
 

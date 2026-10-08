@@ -38,7 +38,8 @@ struct FHorseSpec
     FName Role(FName R) const { const FName* C = Roles.Find(R); return C ? *C : NAME_None; }
     static const TMap<FString, FHorseSpec>& All();
     static const FHorseSpec* Find(const FString& Name);
-    /** The player in the saddle: Cairo (RiderCairo, cairo_rider.py) when imported, else Link. */
+    /** The player in the saddle: the playable character's own rider when imported (import_horses.py's "hero" kind:
+     *  RiderCairo, from cairo_rider.py), else Link. */
     static FString PlayerRider();
 };
 

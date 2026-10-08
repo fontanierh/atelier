@@ -6,8 +6,7 @@
 #include "JapanHUD.h"
 #include "BotwRider.h"
 #include "BotwMoveSet.h"
-#include "CairoCharacter.h"
-#include "ModoriCharacter.h"
+#include "PlayableCharacter.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -315,7 +314,7 @@ AJapanNetworkGameMode::AJapanNetworkGameMode()
     PlayerControllerClass = AJapanPlayerController::StaticClass();
     PlayerStateClass = AJapanPlayerState::StaticClass();
     GameStateClass = AJapanGameState::StaticClass();
-    DefaultPawnClass = ACairoCharacter::StaticClass();
+    DefaultPawnClass = FPlayableCharacter::Default().Class();
     HUDClass = AJapanHUD::StaticClass();
     bStartPlayersAsSpectators = true;
     bPauseable = false;
@@ -368,8 +367,9 @@ void AJapanNetworkGameMode::HandleStartingNewPlayer_Implementation(APlayerContro
 UClass* AJapanNetworkGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
 {
     const auto* State = Controller ? Controller->GetPlayerState<AJapanPlayerState>() : nullptr;
-    if (State && State->RiderName == AModoriCharacter::Name()) return AModoriCharacter::StaticClass();
-    return State && State->RiderName != ACairoCharacter::BotwName() ? ABotwRider::StaticClass() : ACairoCharacter::StaticClass();
+    if (!State) return FPlayableCharacter::Default().Class();
+    const FPlayableCharacter* Character = FPlayableCharacter::Find(State->RiderName);
+    return Character && Character->IsRequestable() ? Character->Class() : ABotwRider::StaticClass();
 }
 APawn* AJapanNetworkGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* Controller, const FTransform& Transform)
 {

@@ -16,16 +16,16 @@ reactions answer both sides alike.
 Concept to rig through the Tripo workflow, with the eyes and the baked light fixed
 ([TRIPO_CHARACTERS.md](TRIPO_CHARACTERS.md)); source `assets/characters/sword-trainer/` (the rig revision's blend,
 `source-manifest.json`, `face.json`, `texture.json`). 1.68 m, the humanoid contract's 53 bones, her own clips Bow and
-Talk, and the merged move set retargeted onto her by `cairo/botw.py --character sword-trainer`: Link's 106 clips, and
+Talk, and the merged move set retargeted onto her by `botw/retarget.py --character sword-trainer`: Link's 106 clips, and
 Cairo's own four (his double jump, his two-handed guard stance, parry and recoil), sampled from his source
-(`botw.py --dump-own`) and retargeted bone for bone, so her set is Cairo's.
+(`botw/retarget.py --dump-own`) and retargeted bone for bone, so her set is Cairo's.
 
 ```sh
 atelier build yorimichi characters.sword_trainer unreal.sword_trainer characters.sword_trainer_botw unreal.sword_trainer_botw
 ```
 
 `unreal.sword_trainer` (`Scripts/import_sword_trainer.py`) imports `SK_SwordTrainer`, her material and clips and
-`DA_SwordTrainerBase`; `unreal.sword_trainer_botw` runs `import_cairo_botw.py` with `BOTW_CHARACTER=sword-trainer`:
+`DA_SwordTrainerBase`; `unreal.sword_trainer_botw` runs `import_botw_moveset.py` with `BOTW_CHARACTER=sword-trainer`:
 her move clips into `/Game/SwordTrainer/Botw`, `DA_SwordTrainer` and her move record `Content/Data/sword-trainer/botw.json`.
 Until her body is built, Cairo's merged-move-set body stands in for her (`DA_CairoBotw`), so the fights work from a
 plain build.

@@ -4,7 +4,7 @@
 
 Reads the current revision (character.toml `source`, checked against source-manifest.json) and writes
 build/yorimichi/sword-trainer/: fbx/SwordTrainer.fbx, fbx/A_<Clip>.fbx, textures/ and export.json. `prepare` is also what
-cairo/botw.py --character sword-trainer retargets Link's move set onto: the revision scaled to 1.68 m with the soles
+botw/retarget.py --character sword-trainer retargets Link's move set onto: the revision scaled to 1.68 m with the soles
 on the floor (0.65 cm under, as Cairo's), and her Tripo rig's Mixamo bone names renamed to the humanoid contract's.
 """
 from pathlib import Path

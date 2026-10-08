@@ -3,7 +3,7 @@
 #include "BotwRider.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
-#include "CairoCharacter.h"
+#include "PlayableCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "JapanHUD.h"
 #include "FoxHunter.h"
@@ -47,7 +47,7 @@ UClass* AJapanGameMode::GetDefaultPawnClassForController_Implementation(AControl
 AJapanGameMode::AJapanGameMode()
 {
     // Wanderer is a village NPC; the yellow kid is the player character.
-    DefaultPawnClass = ACairoCharacter::StaticClass();
+    DefaultPawnClass = FPlayableCharacter::Default().Class();
     HUDClass = AJapanHUD::StaticClass();
     PlayerControllerClass = AJapanPlayerController::StaticClass();
 }

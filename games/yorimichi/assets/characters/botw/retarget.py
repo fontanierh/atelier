@@ -1,19 +1,20 @@
-"""Retarget Link's Breath of the Wild clips onto Cairo, for Cairo's move set (assets/characters/botw/README.md).
+"""Retarget Link's Breath of the Wild clips onto a character, for its merged move set (botw/README.md).
 
-    blender -b --python games/yorimichi/assets/characters/cairo/botw.py [-- --clips Nml_Wait,Nml_Move_Run]
-    blender -b --python games/yorimichi/assets/characters/cairo/botw.py -- --character sword-trainer
-    blender -b --python games/yorimichi/assets/characters/cairo/botw.py -- --dump-own   # Cairo's own clips, for the next
+    blender -b --python games/yorimichi/assets/characters/botw/retarget.py [-- --clips Nml_Wait,Nml_Move_Run]
+    blender -b --python games/yorimichi/assets/characters/botw/retarget.py -- --character sword-trainer
+    blender -b --python games/yorimichi/assets/characters/botw/retarget.py -- --dump-own   # the donor's own clips, for the next
 
-The same retarget gives any character on the humanoid contract the merged move set: `--character sword-trainer` reads
-Kaede's source (sword-trainer/export_unreal.prepare) and writes build/yorimichi/sword-trainer/botw/. A character other
-than Cairo also takes Cairo's own clips in the merged set (OWN_CLIPS: his double jump, his two-handed guard, parry and
-recoil), from build/yorimichi/cairo/botw/own.npz, which `--dump-own` writes from Cairo's source: the same retarget with
-Cairo in Link's place (bone for bone, at 60 fps, his clips' rate).
+Any character on the humanoid contract with a botw.toml takes the merged move set: `--character sword-trainer` reads
+Kaede's source (sword-trainer/export_unreal.prepare) and writes build/yorimichi/sword-trainer/botw/ (default: cairo). A
+character other than the donor (the one whose botw.toml has a [donor] table, Cairo) also takes the donor's own clips in
+the merged set ([donor] clips: his double jump, his two-handed guard, parry and recoil, and its gestures), from
+build/yorimichi/<donor>/botw/own.npz, which `--dump-own` writes from the donor's source: the same retarget with the
+donor in Link's place (bone for bone, at [donor] fps, its clips' rate).
 
-Reads Link's baked clips (build/yorimichi/botw/glb/Link.glb and export.json, from botw/export.py) and Cairo's source
-(export_unreal.prepare), and writes build/yorimichi/cairo/botw/: fbx/A_<Clip>.fbx for each of Link's clips, on Cairo's
-skeleton at 30 fps, and export.json: the clips, Cairo's body scale against Link's, and per clip how far the solved
-ankles and hips sit from where they were asked to be.
+Reads Link's baked clips (build/yorimichi/botw/glb/Link.glb and export.json, from botw/export.py) and the character's
+source (its export_unreal.prepare), and writes build/yorimichi/<id>/botw/: fbx/A_<Clip>.fbx for each of Link's clips,
+on its skeleton at 30 fps, and export.json: the clips, its body scale against Link's, and per clip how far the solved
+ankles and hips sit from where they were asked to be. The comments below say Cairo for the character retargeted onto.
 
 Both rest poses are T-poses. Each Cairo bone takes its Link bone's turn from rest, carried into Cairo's frame: a limb or
 finger is first swung to point where Link's points, a hand keeps its palm frame and a foot its level heading, at its own rest pitch, and the
@@ -24,30 +25,30 @@ planted feet stay planted and the stride matches the move set's scaled speeds; h
 swimming, gliding, climbing), where Cairo's own leg reaches bent as Link's is.
 """
 import argparse
+import importlib.util
 import json
 import sys
+import tomllib
 from pathlib import Path
 
 import bpy
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
+CHARS = HERE.parent
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(HERE.parent / 'botw'))
-import export_unreal as cairo   # noqa: E402  (also puts the world folder, and yori, on the path)
+sys.path.insert(0, str(CHARS.parent.parent / 'world')); import yori  # noqa: E402
 import bake   # noqa: E402
-import yori   # noqa: E402
 
 LINK = yori.OUT / 'botw'
-OUT = yori.OUT / 'cairo' / 'botw'
-OWN = OUT / 'own.npz'   # Cairo's own clips in the merged set, sampled for other characters (--dump-own)
 FPS = bake.FPS
-# Cairo's clips the merged set plays on him (import_cairo_botw.py: DoubleJump and OWN), by role, at their 60 fps.
-OWN_CLIPS = ('DoubleJump', 'SwordIdle', 'SwordParry', 'SwordParryHit')
-# Cairo's everyday gestures the merged set has no clip for (WandererCharacter's Wave and Interact, WandererSword's sit):
-# retargeted with OWN_CLIPS onto another character, whose base definition then carries them as Cairo's DA_CairoBotw does.
-GAME_CLIPS = ('Interact', 'Wave', 'SitDown', 'SitIdle', 'StandUp')
-OWN_FPS = 60
+# The donor of the merged set's own clips: the character whose botw.toml has a [donor] table (its clips by role, and
+# their rate). Its own clips play on it as imported; everyone else takes them retargeted from OWN (--dump-own).
+DONOR_ID = next(p.parent.name for p in sorted(CHARS.glob('*/botw.toml')) if 'donor' in tomllib.loads(p.read_text()))
+DONOR = tomllib.loads((CHARS / DONOR_ID / 'botw.toml').read_text())['donor']
+OWN = yori.OUT / DONOR_ID / 'botw' / 'own.npz'
+OWN_CLIPS = tuple(DONOR['clips']) + tuple(DONOR['gestures'])
+OWN_FPS = DONOR['fps']
 GLTF_TO_BLENDER = np.array([[1., 0, 0], [0, 0, -1], [0, 1, 0]])   # glTF is Y up, Blender Z up
 # The bones that keep Cairo's own rest posture (no swing onto Link's directions).
 POSTURE = ('pelvis', 'spine', 'spine_mid', 'chest', 'neck', 'head')
@@ -162,8 +163,9 @@ class Own:
 
 
 def dump_own():
-    """Sample Cairo's own clips (OWN_CLIPS) as world matrices of his contract bones, in glTF's axes, into OWN."""
-    prepared = cairo.prepare(cairo.SOURCE)
+    """Sample the donor's own clips (OWN_CLIPS) as world matrices of its contract bones, in glTF's axes, into OWN."""
+    donor, _ = character(DONOR_ID)
+    prepared = donor.prepare(donor.SOURCE)
     scene, arm = prepared.scene, prepared.arm
     roles = {r['role']: r['clip'] for r in prepared.record['roles']}
     names = [b.name for b in arm.data.bones]
@@ -175,20 +177,20 @@ def dump_own():
         pb.matrix_basis.identity()
     bpy.context.view_layer.update()
     rest = np.stack([to_gltf @ A @ np.array(arm.data.bones[n].matrix_local) for n in names])
-    out = {'names': np.array(names), 'rest': rest, 'clips': np.array(OWN_CLIPS + GAME_CLIPS)}
-    for role in OWN_CLIPS + GAME_CLIPS:
+    out = {'names': np.array(names), 'rest': rest, 'clips': np.array(OWN_CLIPS)}
+    for role in OWN_CLIPS:
         action = bpy.data.actions[roles[role]]
-        cairo.set_clip(arm, action)
+        donor.set_clip(arm, action)
         start, end = map(int, action.frame_range)
         frames = []
         for f in range(start, end + 1):
             scene.frame_set(f)
             frames.append(np.stack([to_gltf @ A @ np.array(arm.pose.bones[n].matrix) for n in names]))
         out['clip_' + role] = np.stack(frames)
-        print('CAIRO OWN CLIP', role, len(frames), 'frames', flush=True)
-    OUT.mkdir(parents=True, exist_ok=True)
+        print(DONOR_ID.upper(), 'OWN CLIP', role, len(frames), 'frames', flush=True)
+    OWN.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(OWN, **out)
-    print('CAIRO OWN DUMP COMPLETE', OWN, flush=True)
+    print(DONOR_ID.upper(), 'OWN DUMP COMPLETE', OWN, flush=True)
 
 
 # --- Rotation helpers ---------------------------------------------------------------------------------------------
@@ -395,10 +397,7 @@ def write_action(arm, name, basis, location):
 
 def character(name):
     """The character's export module (its `prepare`, `SOURCE` and FBX settings) and its output folder."""
-    if name == 'cairo':
-        return cairo, OUT
-    import importlib.util
-    folder = HERE.parent / name
+    folder = CHARS / name
     spec = importlib.util.spec_from_file_location(f'{name.replace("-", "_")}_export', folder / 'export_unreal.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -447,9 +446,9 @@ def main(args):
         checks = export_clip(scene, arm, out, name, clip['frames'], retarget, module, FPS)
         clips[name] = {'frames': clip['frames'], 'duration': round(clip['frames'] / FPS, 4), 'loop': clip['loop'], 'fps': FPS, **checks}
     own = {}
-    if args.character != 'cairo' and not wanted:
-        # Cairo's own clips in the merged set, Cairo in Link's place: bone for bone, the hips at the two hip heights' ratio.
-        assert OWN.exists(), f'{OWN} is missing: run botw.py -- --dump-own first'
+    if args.character != DONOR_ID and not wanted:
+        # The donor's own clips in the merged set, the donor in Link's place: bone for bone, the hips at the two hip heights' ratio.
+        assert OWN.exists(), f'{OWN} is missing: run retarget.py -- --dump-own first'
         source = Own(OWN)
         own_retarget = Retarget(source, arm, {**{b.name: b.name for b in arm.data.bones}, 'root': '', 'spine_mid': ''})
         for name, world in source.clips.items():
@@ -463,12 +462,12 @@ def main(args):
     if own:
         report.update(own=own, own_body=own_body, own_source=str(OWN))
     (out / ('export.json' if not wanted else 'export-partial.json')).write_text(json.dumps(report, indent=1) + '\n')
-    print(f'BOTW EXPORT COMPLETE ({args.character}): {len(clips)} clips, {len(own)} of Cairo\'s, body {retarget.body:.3f}', flush=True)
+    print(f'BOTW EXPORT COMPLETE ({args.character}): {len(clips)} clips, {len(own)} of the donor\'s, body {retarget.body:.3f}', flush=True)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--clips', help='comma-separated Link clips (default: all)')
-    parser.add_argument('--character', default='cairo', help='the character folder to retarget onto (cairo, sword-trainer, modori)')
-    parser.add_argument('--dump-own', action='store_true', help="sample Cairo's own merged-set clips for other characters")
+    parser.add_argument('--character', default='cairo', help='the character folder to retarget onto (one with a botw.toml)')
+    parser.add_argument('--dump-own', action='store_true', help="sample the donor's own merged-set clips for other characters")
     main(parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []))

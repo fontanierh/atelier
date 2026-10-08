@@ -14,7 +14,7 @@ there, so every clip is authored with the rig's origin at the bike's.
 A clip is a list of keys. Each key sets some channels and the rest hold. The pelvis, spine and head are posed
 directly. Each hand and foot either holds its grip or pedal, which moves with the crank, steering and the bike's
 own lift, pitch and lean, or goes to an explicit point; a solved two-bone IK reaches it. Every frame is solved and
-keyed as plain bone rotations at 60 fps, then exported like botw.py to build/yorimichi/cairo/bike/fbx/A_<Clip>.fbx.
+keyed as plain bone rotations at 60 fps, then exported like botw/retarget.py to build/yorimichi/cairo/bike/fbx/A_<Clip>.fbx.
 
 export.json lists each clip with:
 - frames and loop;
@@ -35,12 +35,10 @@ import bpy
 from mathutils import Matrix, Quaternion, Vector
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / 'characters' / 'cairo'))
-import export_unreal as cairo   # noqa: E402  (also puts the world folder, and yori, on the path)
-import yori   # noqa: E402
+sys.path.insert(0, str(HERE.parents[2] / 'world')); import yori   # noqa: E402
 
 BIKE = yori.OUT / 'bike'
-OUT = yori.OUT / 'cairo' / 'bike'   # the character's own folder with --character (main)
+OUT = yori.OUT / 'cairo' / 'bike'   # the character's own folder (main)
 FPS = 60
 GROUND_SPACE = 'g'   # a target tagged ('g', x, y, z) is on the ground, not carried by the bike's lift, pitch or lean
 
@@ -573,8 +571,6 @@ def render_clip(scene, cam, parts, base, rig, hands, name, clip, out, count=7):
 
 def character(name):
     """The character's export module (its prepare, SOURCE and FBX) and its bike output folder."""
-    if name == 'cairo':
-        return cairo, OUT
     import importlib.util
     folder = HERE.parents[1] / 'characters' / name
     spec = importlib.util.spec_from_file_location(f'{name.replace("-", "_")}_export', folder / 'export_unreal.py')

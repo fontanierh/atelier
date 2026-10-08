@@ -128,14 +128,17 @@ scores it.
 Where a person plays, Cairo has the merged move set whenever it is built, unless the "Move set" setting picks his
 legacy moves (the character switch follows it too). QA, reviews and benchmarks keep his legacy moves (his roll, dashes
 and sword) unless the command line asks with `-rider=CairoBotw`; without the local library he has only those.
-`characters.cairo_botw` runs [`../cairo/botw.py`](../cairo/botw.py) in Blender, which retargets every Link clip onto
+`characters.cairo_botw` runs [`retarget.py`](retarget.py) in Blender, which retargets every Link clip onto
 Cairo's skeleton (`build/yorimichi/cairo/botw/`). Both rest poses are T-poses. Each limb and finger swings to point
 where Link's points, the hands keep their palm frames, the feet keep their level heading at Cairo's own rest pitch (so his
 flat shoes stay flat on the ground), and the spine and head keep
 Cairo's own posture. The hips move as Link's do, at the ratio of the two hip heights (`body`, 0.63). The legs are then
 solved so that planted feet stay planted, at that same scale, from Cairo's own stance. `unreal.cairo_botw`
-(`Scripts/import_cairo_botw.py`) imports the clips into `/Game/CairoBotw` and copies `DA_Cairo` into `DA_CairoBotw`
-with Link's blends and actions. It also writes Cairo's move record, `Content/Data/cairo/botw.json`. In that record:
+(`Scripts/import_botw_moveset.py`) imports the clips into `/Game/CairoBotw` and copies `DA_Cairo` into `DA_CairoBotw`
+with Link's blends and actions. Both scripts are the same for every character with the set: each character's own
+`botw.toml` ([`../cairo/botw.toml`](../cairo/botw.toml), `../modori/botw.toml`, `../sword-trainer/botw.toml`) gives its
+paths, whether its base definition's own clips stay, and the fit of the carried pieces to its own mesh; Cairo's also
+names him the set's donor (`[donor]`: his double jump and bokken guard clips with their timing, and his gestures). It also writes Cairo's move record, `Content/Data/cairo/botw.json`. In that record:
 
 - Link's action paths, gait speeds and swim hang are scaled to Cairo's size.
 - His own `DoubleJump` clip joins `DA_CairoBotw`'s actions, so his double jump is his somersault, and his own bokken
@@ -143,7 +146,7 @@ with Link's blends and actions. It also writes Cairo's move record, `Content/Dat
 - `BodyScale` converts BOTW's metres for him.
 - Link's sword, sheath, shield and paraglider are scaled with Cairo. Each piece is moved from Link's weapon bones to
   Cairo's hands in the palm's frame (`held`), and from Link's back bone to Cairo's chest (`carry`). The shield's
-  carry is fitted to Cairo's own mesh instead (`CARRY` in the import): his deeper torso and bigger head ran through it
+  carry is fitted to Cairo's own mesh instead (`[fit.carry]` in his `botw.toml`): his deeper torso and bigger head ran through it
   where Link's chest put it.
 
 ```sh

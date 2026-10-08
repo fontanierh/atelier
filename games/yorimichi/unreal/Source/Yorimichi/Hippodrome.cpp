@@ -87,7 +87,11 @@ const TMap<FString, FHorseSpec>& FHorseSpec::All()
 
 const FHorseSpec* FHorseSpec::Find(const FString& Name) { return All().Find(Name); }
 
-FString FHorseSpec::PlayerRider() { return Find(TEXT("RiderCairo")) ? FString(TEXT("RiderCairo")) : FString(TEXT("RiderLink")); }
+FString FHorseSpec::PlayerRider()
+{
+    for (const auto& Pair : All()) if (Pair.Value.Kind == TEXT("hero")) return Pair.Key;
+    return TEXT("RiderLink");
+}
 
 // ------------------------------------------------------------------------------------------------------------ Figure
 
