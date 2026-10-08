@@ -5,6 +5,7 @@
 #include "Misc/Paths.h"
 #include "Misc/ScopeExit.h"
 #include "SocketSubsystem.h"
+#include "Sockets.h"
 #include "IPAddress.h"
 
 namespace
@@ -97,12 +98,25 @@ bool JapanNetwork::PrivateHostAddress(FString& Address, FString& Error)
         { Error = TEXT("Start Tailscale and connect it before hosting. The game could not verify its private address."); return false; }
         VerifiedAt = FPlatformTime::Seconds();
     }
+    // UE's Windows adapter enumeration filters to Ethernet and Wi-Fi, omitting
+    // tunnel interfaces. An exact-address bind asks the OS whether this verified
+    // address is local. Port zero is temporary; no packets are sent and the real
+    // listener must still bind its requested port through JapanIpNetDriver.
     ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
-    TArray<TSharedPtr<FInternetAddr>> Addresses;
-    if (Sockets && Sockets->GetLocalAdapterAddresses(Addresses))
-        for (const auto& Candidate : Addresses)
-            if (Candidate.IsValid() && Candidate->ToString(false) == Verified)
-            { Address = Verified; return true; }
+    if (Sockets)
+    {
+        TSharedRef<FInternetAddr> Local = Sockets->CreateInternetAddr();
+        bool Valid = false; Local->SetIp(*Verified, Valid); Local->SetPort(0);
+        if (Valid)
+        {
+            FSocket* AddressProbe = Sockets->CreateSocket(NAME_DGram, TEXT("Verify private local address"), ESocketProtocolFamily::IPv4);
+            if (AddressProbe)
+            {
+                ON_SCOPE_EXIT { Sockets->DestroySocket(AddressProbe); };
+                if (AddressProbe->Bind(*Local)) { Address = Verified; return true; }
+            }
+        }
+    }
     Verified.Reset();
     Error = TEXT("Tailscale has no matching local network adapter. Reconnect Tailscale and try hosting again.");
     return false;

@@ -86,7 +86,7 @@ def test_external_symlink_cannot_supply_packaged_data(tmp_path):
         tool.check_data(data, entitlements, identity)
 
 
-@pytest.mark.parametrize('entry', ['extra.json', 'nested'])
+@pytest.mark.parametrize('entry', ['extra.json', 'nested', 'Thumbs.db', '.DS_Store'])
 def test_network_directory_is_exact(tmp_path, entry):
     data, entitlements, identity, _ = staged(tmp_path)
     if entry == 'nested':
@@ -110,3 +110,13 @@ def test_symlinked_directories_are_rejected(tmp_path, target):
 def test_unsandboxed_report_is_explicit(tmp_path):
     data, _, identity, _ = staged(tmp_path)
     assert tool.check_data(data, {}, identity)['sandboxed'] is False
+
+
+@pytest.mark.parametrize('name', ['Thumbs.db', 'THUMBS.DB', '.DS_Store'])
+def test_desktop_metadata_outside_network_is_ignored(tmp_path, name):
+    data, entitlements, identity, _ = staged(tmp_path)
+    (data / name).write_bytes(b'desktop cache')
+    assert tool.check_data(data, entitlements, identity)['data_files'] == 1
+    (data / (name + '.json')).write_bytes(b'unexpected gameplay')
+    with pytest.raises(RuntimeError, match='unexpected'):
+        tool.check_data(data, entitlements, identity)
