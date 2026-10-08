@@ -16,19 +16,18 @@ place on the prop.
 ## The pipeline
 
 Everything lives in `games/yorimichi/assets/characters/grips/` and writes under `build/yorimichi/grips/<character>/`.
-Modori's posed grips are committed in `grips/modori/`:
+Modori's posed grips are committed in `grips/modori/`, every file the poser made:
 - `poses.json`, the saves the game uses, and `poses/`, every save in order, with its edit log;
-- `moments.json`, the scenes the grips were posed in;
+- `snapshots/`, the page's views of each grip at each save;
+- `moments.json`, the scenes the grips were posed in, and `samples/surface28.jsonl.gz`, the game samples they came from
+  (gzipped to fit GitHub's file limit; `moments.py` reads it as it is);
 - `body.glb` and `body.json`, his posing body;
 - `grips.json`, what the game reads.
 
 `game.py --source games/yorimichi/assets/characters/grips/modori` rebuilds the game's file from them, and gives the
-same grips. To pose further, copy the folder to `build/yorimichi/grips/modori/` and run `serve.py`.
-
-Three things stay out of the public repository:
-- the BOTW prop meshes (`LinkSword.glb`, `LinkGlider.glb`), which come from the private library and are never committed;
-- the raw samples (about 160 MB, holding the props' vertices);
-- the page's view snapshots (renders of the props).
+same grips. To pose further, copy the folder to `build/yorimichi/grips/modori/` and run `serve.py`. The props' meshes
+(`LinkSword.glb`, `LinkGlider.glb`) are not in it: `moments.py` and `serve.py` read them from the BOTW library
+([botw/README.md](../assets/characters/botw/README.md)).
 
 A save records the visitor's Tailscale login in `by`, which the committed copy replaces with `operator`. Scrub it the
 same way before committing new saves.

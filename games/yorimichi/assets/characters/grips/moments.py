@@ -2,9 +2,9 @@
 
     uv run python games/yorimichi/assets/characters/grips/moments.py --character modori --samples SAMPLES.jsonl
 
-SAMPLES.jsonl holds sample.py's rows: the game's world-space joints and skin of both hands while they hold the sword
-(the two-handed guard) or the glider, and the held prop's vertices (or the glider's handle axes). For each grip (a prop
-and a hand) it writes, to build/yorimichi/grips/<character>/moments.json:
+SAMPLES.jsonl (or .jsonl.gz) holds sample.py's rows: the game's world-space joints and skin of both hands while they
+hold the sword (the two-handed guard) or the glider, and the held prop's vertices (or the glider's handle axes). For each
+grip (a prop and a hand) it writes, to build/yorimichi/grips/<character>/moments.json:
 
 - the handle as the finger wrap sees it (FingerWrapNode.h): its usable span from A to B, its oval's radii at either end
   and at its waist, in a frame with A at the origin, the span along +x and the oval's major axis along +y;
@@ -18,6 +18,7 @@ closely the fitted hand's skin lies on the game's) go in the file's `checks`.
 """
 from pathlib import Path
 import argparse
+import gzip
 import hashlib
 import itertools
 import json
@@ -307,7 +308,10 @@ def sword_handle(glb_path):
 
 
 def main(args):
-    rows = [json.loads(line) for line in args.samples.read_text().splitlines() if line.strip()]
+    data = args.samples.read_bytes()
+    if args.samples.suffix == '.gz':   # the committed copy (grips/modori/samples/) is gzipped; its hash is the samples'
+        data = gzip.decompress(data)
+    rows = [json.loads(line) for line in data.decode().splitlines() if line.strip()]
     held = [r for r in rows if r.get('handle') in ('sword', 'glider') and all(h['weight'] > .99 for h in r['grip']['hands'])]
     body = Body(yori.OUT / 'grips' / args.character / 'body.glb')
     sword_vertices, hilt, major = sword_handle(BOTW / 'LinkSword.glb')
@@ -394,7 +398,7 @@ def main(args):
             print(gid, json.dumps(checks[gid]), flush=True)
     out = yori.OUT / 'grips' / args.character
     record = {'character': args.character, 'frame': 'glTF: Y up, metres; the handle frame has A at the origin, the span along +x, the oval major axis along +y',
-              'samples': {'file': args.samples.name, 'sha256': hashlib.sha256(args.samples.read_bytes()).hexdigest(), 'rows': len(rows), 'held': len(held)},
+              'samples': {'file': args.samples.name.removesuffix('.gz'), 'sha256': hashlib.sha256(data).hexdigest(), 'rows': len(rows), 'held': len(held)},
               'grips': grips, 'checks': checks}
     (out / 'moments.json').write_text(json.dumps(record) + '\n')
     print('GRIP MOMENTS COMPLETE', json.dumps(checks), flush=True)
