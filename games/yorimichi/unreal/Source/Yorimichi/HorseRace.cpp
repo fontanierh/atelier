@@ -160,9 +160,8 @@ void AHorseRace::LoadResults()
 {
     if (bResultsLoaded) return;
     bResultsLoaded = true;
-    FString Text; TSharedPtr<FJsonObject> Root;
-    if (!FFileHelper::LoadFileToString(Text, *(FPaths::ProjectSavedDir() / TEXT("hippodrome.json"))) ||
-        !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid()) return;
+    const TSharedPtr<FJsonObject> Root = AtelierReadJson(FPaths::ProjectSavedDir() / TEXT("hippodrome.json"));
+    if (!Root) return;
     for (const FRaceCup& Cup : Cups)
     {
         const TSharedPtr<FJsonObject>* Entry = nullptr;
@@ -254,9 +253,8 @@ void AHorseRace::StartMusic(double At)
 
 bool AHorseRace::LoadChart(const FRaceCup& Cup)
 {
-    FString Text; TSharedPtr<FJsonObject> Root;
-    if (!FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("hippodrome/charts.json"))) ||
-        !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid())
+    const TSharedPtr<FJsonObject> Root = AtelierReadJson(AtelierDataPath(TEXT("hippodrome/charts.json")));
+    if (!Root)
     { UE_LOG(LogTemp, Warning, TEXT("Hippodrome: no charts.json (run unreal.hippodrome_audio)")); return false; }
     const TSharedPtr<FJsonObject>* Cups_ = nullptr; const TSharedPtr<FJsonObject>* Chart = nullptr;
     if (!Root->TryGetObjectField(TEXT("cups"), Cups_) || !(*Cups_)->TryGetObjectField(Cup.Key, Chart)) return false;

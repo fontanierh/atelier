@@ -28,9 +28,7 @@ namespace
         if (!bLoaded)
         {
             bLoaded = true;
-            FString Text;
-            if (FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("cairo/botw.json"))))
-                FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Record);
+            Record = AtelierReadJson(AtelierDataPath(TEXT("cairo/botw.json")));
         }
         return Record;
     }

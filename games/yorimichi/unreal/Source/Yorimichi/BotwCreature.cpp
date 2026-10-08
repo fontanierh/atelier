@@ -27,10 +27,8 @@ const TMap<FString, FBotwSpec>& FBotwSpec::All()
     static bool bLoaded = false;
     if (bLoaded) return Roster;
     bLoaded = true;
-    FString Text; TSharedPtr<FJsonObject> Root;
-    if (!FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("botw/roster.json"))) ||
-        !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid())
-        return Roster;
+    const TSharedPtr<FJsonObject> Root = AtelierReadJson(AtelierDataPath(TEXT("botw/roster.json")));
+    if (!Root) return Roster;
     for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("characters")))
     {
         const TSharedPtr<FJsonObject>& C = Value->AsObject();

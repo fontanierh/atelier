@@ -12,9 +12,8 @@
 
 bool ValidateHidamari(UWorld* World,AActor* Player,const FString& Directory)
 {
-    FString Text;TSharedPtr<FJsonObject> City;
-    if(!FFileHelper::LoadFileToString(Text,*(AtelierDataPath(TEXT("hidamari/city.json")))) ||
-       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),City)) return false;
+    const TSharedPtr<FJsonObject> City=AtelierReadJson(AtelierDataPath(TEXT("hidamari/city.json")));
+    if(!City) return false;
     auto P=[](const TSharedPtr<FJsonValue>& V){const auto& A=V->AsArray();return AJapanWorld::ToUE(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber());};
     FCollisionQueryParams Params(SCENE_QUERY_STAT(HidamariAudit),false,Player);
     TArray<TSharedPtr<FJsonValue>> Errors;int32 Samples=0,Sweeps=0;double MaxError=0;

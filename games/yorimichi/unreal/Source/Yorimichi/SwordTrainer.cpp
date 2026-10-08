@@ -44,10 +44,7 @@ namespace
 
     TSharedPtr<FJsonObject> Record(const TCHAR* Relative)
     {
-        TSharedPtr<FJsonObject> Out;
-        FString Text;
-        if (FFileHelper::LoadFileToString(Text, *AtelierDataPath(Relative))) FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Out);
-        return Out;
+        return AtelierReadJson(AtelierDataPath(Relative));
     }
 
     // The levels (docs/SWORD_TRAINER.md). Gentle telegraphs single cuts and stands open after them; Steady reads and

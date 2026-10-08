@@ -1,4 +1,5 @@
 #include "SkatePark.h"
+#include "AtelierData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "SeeThrough.h"
@@ -19,10 +20,7 @@ ASkatePark::ASkatePark()
 
 static TSharedPtr<FJsonObject> ReadJson(const FString& Path)
 {
-    FString Text; TSharedPtr<FJsonObject> Root;
-    if (!FFileHelper::LoadFileToString(Text, *Path)) return nullptr;
-    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid()) return nullptr;
-    return Root;
+    return AtelierReadJson(Path);
 }
 
 static FVector ArrayVector(const TArray<TSharedPtr<FJsonValue>>& A)

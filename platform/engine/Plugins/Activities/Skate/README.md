@@ -250,6 +250,23 @@ output from a previous ride never moves a new one.
   board; the player keeps walking. Under the Ride backend a session error during a ride bails the body instead and
   loads a fresh session (see [RIDE.md](RIDE.md#failures)).
 
+## Showing a remote rider
+
+The plugin does not replicate a ride; a networked game sends the riding player's state itself and shows it on the
+other machines through a proxy component. `InitializeNetworkProxy(Character)` sets one up: no Native session, input,
+physics bodies or local simulation, only the board, the pose and the sound.
+
+- **Pose.** `ApplyNetworkPose(ComponentPose, MeshWorld)` takes the rider's component-space bone transforms (one per
+  bone of the proxy's skeleton, else it returns false) and the mesh's world transform; `ClearNetworkPose` blends back to
+  the character's own animation.
+- **Board.** `ApplyNetworkBoard(DeckWorld, Shown)` places the deck in the world and shows it from 0 (hidden) to 1;
+  the sender reads `GetBoardShown`.
+- **Sound.** `ApplyNetworkAudio(Mode, Surface, Flags, Velocity, Dt)` plays the rolling loops and the pop, land and
+  clatter cues from the sender's `GetMode`, `GetNetworkSurface` and `GetNetworkAudioFlags` (bit 1 powerslide, 2
+  braking, 4 slide); `SilenceNetworkAudio(Dt)` fades the loops out while no state arrives.
+
+The wire format, timing and interest are the game's.
+
 ## Data and limits
 
 The session reads the game's tracked `unreal/Content/Data/SkateNative` bundle: settings, graphs, gesture sets,
