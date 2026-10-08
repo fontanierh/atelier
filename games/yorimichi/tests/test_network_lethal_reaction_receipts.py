@@ -139,3 +139,11 @@ def test_getup_cannot_hide_a_health_or_dead_witness_error(mutation):
     elif mutation == 'partial_health': guest['health_changes'][-1]['health'] = 99
     else: host['last_dead_at'] = 12.6
     assert not all(checks((host, guest)).values())
+
+
+def test_zero_before_epoch_must_be_reobserved_in_new_epoch():
+    host, guest = receipts()
+    guest['health_changes'][0]['epoch'] = 1
+    assert not all(checks((host, guest)).values())
+    guest['health_changes'].append(dict(at=10.12, health=0, down=True, epoch=2))
+    assert all(checks((host, guest)).values())

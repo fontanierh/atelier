@@ -70,7 +70,7 @@ struct FDeliveryStimulusState
     bool Active=false, Triggered=false, SecondTriggered=false, Complete=false, Saved=false;
     bool StaleSent=false, EpochAckWritten=false, DeadInputAttempted=false, DeadAttack=false, DeadDefence=false;
     double ZeroHealthAt=0., LastDeadAt=0.; int32 DeadFrames=0;
-    float LastHealth=-1.f;
+    float LastHealth=-1.f; uint32 LastHealthEpoch=0;
     TArray<TSharedPtr<FJsonValue>> HealthChanges;
     int32 Captures=0, Holds=0, Serialized=0;
     uint32 InitialEpoch=0;
@@ -80,10 +80,11 @@ struct FDeliveryStimulusState
     void ObserveHealth(AWandererCharacter* Rider)
     {
         if(!LethalDelivery()||!Rider->GetSword()||!Rider->GetMoves())return;
-        const float Health=Rider->GetSword()->GetHealth();if(Health==LastHealth)return;
-        LastHealth=Health;auto Row=MakeShared<FJsonObject>();
+        const float Health=Rider->GetSword()->GetHealth();const uint32 Epoch=Rider->GetActivityEpoch();
+        if(Health==LastHealth&&Epoch==LastHealthEpoch)return;
+        LastHealth=Health;LastHealthEpoch=Epoch;auto Row=MakeShared<FJsonObject>();
         Row->SetNumberField(TEXT("at"),FPlatformTime::Seconds());Row->SetNumberField(TEXT("health"),Health);
-        Row->SetNumberField(TEXT("epoch"),Rider->GetActivityEpoch());
+        Row->SetNumberField(TEXT("epoch"),Epoch);
         Row->SetBoolField(TEXT("down"),Rider->GetMoves()->IsDown());
         HealthChanges.Add(MakeShared<FJsonValueObject>(Row));
     }
