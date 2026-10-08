@@ -62,12 +62,12 @@ bool FJapanBikeCheckpointTest::RunTest(const FString&)
             FVector::Dist(Path(true,true,Case.X,Case.Y,Case.Z,Case.W),Path(false,true,Case.X,Case.Y,Case.Z,Case.W))<.1);
     int32 Count=0;float Total=0.f,Largest=0.f;
     JapanBikeSubsteps::Run(1.f,[&](float Dt){++Count;Total+=Dt;Largest=FMath::Max(Largest,Dt);});
-    TestEqual(TEXT("Oversized intervals stay bounded on every role"),Count,16);
+    TestEqual(TEXT("Oversized intervals stay bounded on every role"),Count,15);
     TestTrue(TEXT("The cap preserves the bounded total and maximum substep"),
         FMath::Abs(Total-JapanBikeSubsteps::MaximumDelta)<1.e-6f&&Largest<=JapanBikeSubsteps::MaximumStep);
     const auto* Scalar=IConsoleManager::Get().FindConsoleVariable(TEXT("p.NetServerMaxMoveDeltaTimeScalar"));
-    TestTrue(TEXT("The ordinary CMC move cap fits within the bike substep budget"),Scalar&&
-        GetDefault<AGameNetworkManager>()->MaxMoveDeltaTime*Scalar->GetFloat()<=JapanBikeSubsteps::MaximumDelta);
+    TestTrue(TEXT("The bike and ordinary CMC move caps agree"),Scalar&&
+        FMath::IsNearlyEqual(GetDefault<AGameNetworkManager>()->MaxMoveDeltaTime*Scalar->GetFloat(),JapanBikeSubsteps::MaximumDelta,1.e-6f));
     return true;
 }
 #endif

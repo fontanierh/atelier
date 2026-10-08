@@ -4,8 +4,8 @@
 namespace JapanBikeSubsteps
 {
 constexpr float MaximumStep=1.f/120.f;
-constexpr int32 MaximumSteps=16;
-constexpr float MaximumDelta=MaximumSteps*MaximumStep;
+constexpr int32 MaximumSteps=15;
+constexpr float MaximumDelta=.125f;
 
 // A lost packet can make one host move span several owner frames. Advance the
 // bike and CMC together so that turning does not move the entire gap along its
