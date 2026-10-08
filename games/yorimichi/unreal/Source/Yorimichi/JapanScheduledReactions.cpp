@@ -5,6 +5,7 @@
 #include "WandererSword.h"
 #include "JapanNetwork.h"
 #include "JapanReactionDeliveryQA.h"
+#include "JapanCombatQA.h"
 #include "Engine/NetConnection.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
@@ -232,6 +233,7 @@ void UJapanCharacterMovement::ApplyScheduledThrough(uint32 Through)
         if (bReplaying) ++ReactionStats.Replayed; else ++ReactionStats.Applied;
         const auto* Marker = ActiveInput.ReactionOrigins.FindByPredicate([&](const FJapanReactionMarker& M) { return M.Sequence == Event.Sequence; });
         JapanReactionDeliveryQA::Scheduled(this, TEXT("reaction_applied"), Event, Marker);
+        JapanCombatQA::ReactionApplied(this, Event.Epoch, Event.Sequence);
     }))
     {
         ++ReactionStats.FailedApply;

@@ -155,6 +155,8 @@ def combat_receipts(listen_receipts):
                           dodges=int(phase == 1), frame_count=4, frame_min=.05, frame_max=.051,
                           overflows=0, missing_samples=0, authored_fallbacks=0, rejected_defence_times=0,
                           guard_hit=phase == 2, recovering_at_contact=False,
+                          scheduled_guard=person_id == 1 and phase == 2, reaction_sequence=1, reaction_epoch=2,
+                          reaction_action='GuardHit', reaction_apply_delay=.1, reaction_forced=0,
                           contact_lateness_ms=10, window_margin_ms=40, pending_gate_passed=True,
                           pending_skate_refusals=1, pending_travel_refusals=1,
                           source_destroyed_before_resolution=True, forced_flush_passed=True,
@@ -366,3 +368,11 @@ def test_modori_loadout_must_follow_its_own_identity(modori_receipts, fault):
                 value.pop('local_player_id')
         change(folder, role + '-connected', corrupt)
     assert not all(review.modori_checks(folder, shield).values())
+
+
+@pytest.mark.parametrize('field,value', [('scheduled_guard', False), ('reaction_sequence', 0),
+    ('reaction_epoch', True), ('reaction_action', 'Idle'), ('reaction_apply_delay', .501),
+    ('reaction_apply_delay', float('nan')), ('reaction_forced', 1)])
+def test_scheduled_guard_requires_matching_applied_reaction(combat_receipts, field, value):
+    change(combat_receipts, 'combat-guest-2-result', lambda v: v.update({field: value}))
+    assert not all(review.compare_receipts(combat_receipts, gameplay=False, listen=True, combat=True).values())

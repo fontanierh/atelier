@@ -238,6 +238,14 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
                 if phase == 2:
                     checks[f'combat_{person}_actual_guard'] = (receipt.get('guard_hit') is True and
                         receipt.get('recovering_at_contact') is False)
+                    if person_id == 1:
+                        delay = receipt.get('reaction_apply_delay')
+                        checks['combat_guest_scheduled_guard'] = (receipt.get('scheduled_guard') is True and
+                            type(receipt.get('reaction_sequence')) is int and receipt['reaction_sequence'] > 0 and
+                            type(receipt.get('reaction_epoch')) is int and receipt['reaction_epoch'] > 0 and
+                            receipt.get('reaction_action') in ('GuardHit', 'SwordGuardHit') and
+                            type(delay) in (int, float) and math.isfinite(delay) and 0 <= delay <= .5 and
+                            type(receipt.get('reaction_forced')) is int and receipt['reaction_forced'] == 0)
         pending = read('combat-guest-3-result')
         checks['pending_contact_blocks_optional_activity'] = (pending.get('pending_gate_passed') is True and
             pending.get('pending_skate_refusals') == pending.get('pending_travel_refusals') == 1)

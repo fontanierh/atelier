@@ -1,6 +1,7 @@
 #include "JapanCombatQA.h"
 #if !UE_BUILD_SHIPPING
 #include "JapanCombatResolver.h"
+#include "JapanCharacterMovement.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -44,7 +45,7 @@ struct FCounters
 };
 FCounters Before[2][5];
 TWeakObjectPtr<UWorld> HostWorld;
-struct FReport { FString File; TSharedPtr<FJsonObject> Data; double Began; bool Written = false; };
+struct FReport { FString File; TSharedPtr<FJsonObject> Data; double Began; bool Written = false; TWeakObjectPtr<AWandererCharacter> Victim; };
 void FrameStats(const TSharedPtr<FJsonObject>& Data, double From, double Through)
 {
     double Minimum = 100., Maximum = 0.; int32 Count = 0;
@@ -61,6 +62,14 @@ void FrameStats(const TSharedPtr<FJsonObject>& Data, double From, double Through
     Data->SetNumberField(TEXT("frame_max"), Maximum);
 }
 TArray<FReport> Reports;
+struct FReactionProof
+{
+    TWeakObjectPtr<const UJapanCharacterMovement> Movement;
+    uint32 Epoch, Sequence, Forced;
+    double At;
+    FName Action;
+};
+TArray<FReactionProof, TInlineAllocator<32>> ReactionProofs;
 const TCHAR* CaseNames[] = {TEXT("parry"), TEXT("dodge"), TEXT("guard"), TEXT("destroyed-source"), TEXT("forced-recovery")};
 
 FString Path(const FString& Folder, int32 Person, int32 Phase, const TCHAR* Kind)
@@ -235,9 +244,14 @@ void Contact(AWandererCharacter* Victim, int32 Person, int32 Phase, const TShare
             Report->SetNumberField(TEXT("authored_fallbacks"), After.Fallback - Baseline.Fallback);
             Report->SetNumberField(TEXT("rejected_defence_times"), After.Rejected - Baseline.Rejected);
             Report->SetBoolField(TEXT("guard_hit"), BotwMoveSetDetail::IsGuardHit(Player->GetAnimationAction()));
+            const auto* Movement = Cast<UJapanCharacterMovement>(Player->GetCharacterMovement());
+            const bool ScheduledGuard = Expected == 3 && !Player->IsLocallyControlled() && Movement && Movement->HasScheduledReaction();
+            Report->SetBoolField(TEXT("scheduled_guard"), ScheduledGuard);
+            Report->SetNumberField(TEXT("reaction_epoch"), Player->GetActivityEpoch());
+            Report->SetNumberField(TEXT("reaction_sequence"), ScheduledGuard ? Movement->GetScheduledReactionKnown() : 0);
             const bool HealthOK = FMath::IsNearlyEqual(BeforeHealth - Health, Expected == 0 ? 8.f : 0.f, .01f);
             Report->SetBoolField(TEXT("decision_passed"), Calls == 1. && Outcome == Expected && HealthOK &&
-                (Expected != 3 || (Report->GetBoolField(TEXT("guard_hit")) && !Report->GetBoolField(TEXT("recovering_at_contact")))) &&
+                (Expected != 3 || ((ScheduledGuard || Report->GetBoolField(TEXT("guard_hit"))) && !Report->GetBoolField(TEXT("recovering_at_contact")))) &&
                 (Expected != 1 || Player->GetMoves()->Parries() == BeforeParries + 1) &&
                 (Expected != 2 || Player->GetMoves()->Dodges() == BeforeDodges + 1));
             // The caller adds synchronous pending/flush evidence before the next Tick writes the result.
@@ -270,8 +284,18 @@ void Contact(AWandererCharacter* Victim, int32 Person, int32 Phase, const TShare
             Resolver->Resolved == Resolved + 1 && Resolver->Flushed == Flushed + 1 && Resolver->Cancelled == Cancelled &&
             Victim->GetActivityEpoch() != Epoch);
     }
-    Reports.Add({Path(Folder, Person, Phase, TEXT("result")), Report, Now});
+    Reports.Add({Path(Folder, Person, Phase, TEXT("result")), Report, Now, false, Victim});
 }
+}
+
+void JapanCombatQA::ReactionApplied(const UJapanCharacterMovement* Movement, uint32 Epoch, uint32 Sequence)
+{
+    static const bool Enabled = FParse::Param(FCommandLine::Get(), TEXT("networkcombat"));
+    const auto* Victim = Movement ? Cast<AWandererCharacter>(Movement->GetOwner()) : nullptr;
+    if (!Enabled || !Victim || !Victim->HasAuthority() || Victim->IsLocallyControlled()) return;
+    if (ReactionProofs.Num() >= 32) return; // Missing proof fails the bounded fixture below.
+    ReactionProofs.Add({Movement, Epoch, Sequence, Movement->GetScheduledReactionStats().Forced,
+        FPlatformTime::Seconds(), Victim->GetAnimationAction()});
 }
 
 bool JapanCombatQA::Tick(UWorld* World, bool Server, const FString& Folder, FString& Error)
@@ -299,7 +323,7 @@ bool JapanCombatQA::Tick(UWorld* World, bool Server, const FString& Folder, FStr
     if (!Error.IsEmpty()) return false;
     if (Server)
     {
-        if (HostWorld.Get() != World) { HostWorld = World; HostSent[0] = HostSent[1] = -1; Reports.Reset(); }
+        if (HostWorld.Get() != World) { HostWorld = World; HostSent[0] = HostSent[1] = -1; Reports.Reset(); ReactionProofs.Reset(); }
         for (FReport& Report : Reports)
         {
             if (Report.Data->GetNumberField(TEXT("callbacks")) > 1.)
@@ -311,7 +335,30 @@ bool JapanCombatQA::Tick(UWorld* World, bool Server, const FString& Folder, FStr
                 { Error = TEXT("A queued combat contact missed its bounded resolution deadline"); return false; }
                 continue;
             }
-            Report.Data->SetBoolField(TEXT("passed"), Report.Data->GetBoolField(TEXT("decision_passed")) &&
+            bool ReactionOK = true;
+            if (Report.Data->GetBoolField(TEXT("scheduled_guard")))
+            {
+                const uint32 Epoch = uint32(Report.Data->GetNumberField(TEXT("reaction_epoch")));
+                const uint32 Sequence = uint32(Report.Data->GetNumberField(TEXT("reaction_sequence")));
+                const auto* Movement = Report.Victim.IsValid() ? Cast<UJapanCharacterMovement>(Report.Victim->GetCharacterMovement()) : nullptr;
+                const auto* Proof = ReactionProofs.FindByPredicate([&](const FReactionProof& P)
+                    { return P.Movement.Get() == Movement && P.Epoch == Epoch && P.Sequence == Sequence; });
+                if (!Proof)
+                {
+                    if (FPlatformTime::Seconds() - Report.Data->GetNumberField(TEXT("resolved_at")) > .5)
+                    { Error = TEXT("Scheduled guard missed its bounded apply deadline"); return false; }
+                    continue;
+                }
+                const double Delay = Proof->At - Report.Data->GetNumberField(TEXT("resolved_at"));
+                Report.Data->SetStringField(TEXT("reaction_action"), Proof->Action.ToString());
+                Report.Data->SetNumberField(TEXT("reaction_apply_delay"), Delay);
+                Report.Data->SetNumberField(TEXT("reaction_forced"), Proof->Forced);
+                Report.Data->SetBoolField(TEXT("guard_hit"), BotwMoveSetDetail::IsGuardHit(Proof->Action));
+                ReactionOK = Sequence > 0 && Delay >= 0. && Delay <= .5 && Proof->Forced == 0 && Report.Data->GetBoolField(TEXT("guard_hit"));
+                ReactionProofs.RemoveAll([&](const FReactionProof& P)
+                    { return P.Movement.Get() == Movement && P.Epoch == Epoch && P.Sequence == Sequence; });
+            }
+            Report.Data->SetBoolField(TEXT("passed"), ReactionOK && Report.Data->GetBoolField(TEXT("decision_passed")) &&
                 Report.Data->GetBoolField(TEXT("pending_gate_passed")) && Report.Data->GetBoolField(TEXT("forced_flush_passed")));
             if (!Write(Report.File, Report.Data)) { Error = TEXT("Could not save combat result"); return false; }
             Report.Written = true;
@@ -362,6 +409,7 @@ bool JapanCombatQA::Finalize(const FString& Folder, FString& Error)
     return Write(Folder / TEXT("combat-final.json"), Summary);
 }
 #else
+void JapanCombatQA::ReactionApplied(const UJapanCharacterMovement*, uint32, uint32) {}
 bool JapanCombatQA::Tick(UWorld*, bool, const FString&, FString&) { return false; }
 bool JapanCombatQA::Finalize(const FString&, FString&) { return false; }
 #endif
