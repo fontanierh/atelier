@@ -186,9 +186,10 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         ThumbIK[1].ComponentPose.SetLinkNode(&ThumbIK[0]);
         for (FAnimNode_TwoBoneIK& IK : ThumbIK)
         {
+            // The thumb's last bone keeps its turn on the middle one, so the tip curls with it (#7565).
             IK.EffectorLocationSpace = BCS_BoneSpace; IK.JointTargetLocationSpace = BCS_BoneSpace;
             IK.EffectorLocation = IK.JointTargetLocation = FVector::ZeroVector;
-            IK.bAllowStretching = false; IK.bTakeRotationFromEffectorSpace = false; IK.bMaintainEffectorRelRot = false;
+            IK.bAllowStretching = false; IK.bTakeRotationFromEffectorSpace = false; IK.bMaintainEffectorRelRot = true;
             IK.Alpha = 0.f;
         }
         GripIK.ComponentPose.SetLinkNode(&ThumbIK[1]);
