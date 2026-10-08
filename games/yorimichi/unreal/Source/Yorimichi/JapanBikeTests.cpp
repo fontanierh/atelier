@@ -94,7 +94,7 @@ bool FJapanBikeCheckpointTest::RunTest(const FString&)
     Movement->SetMovementMode(MOVE_Walking);Movement->StopMovementImmediately();
     Rider->SetActorLocation(Raised,false,nullptr,ETeleportType::TeleportPhysics);
     // Reproduce the exact-sized delayed floor adjustment without the repair.
-    Movement->bForceNextFloorCheck=true;Movement->PerformMovement(1.f/60.f);
+    Movement->bForceNextFloorCheck=true;Movement->TickComponent(1.f/60.f,LEVELTICK_All,&Movement->PrimaryComponentTick);
     TestTrue(TEXT("An unsettled step-off moves more than a centimetre on its first neutral tick"),
         FVector::Dist(Raised,Rider->GetActorLocation())>1.);
     Rider->SetActorLocation(Raised,false,nullptr,ETeleportType::TeleportPhysics);
@@ -105,7 +105,7 @@ bool FJapanBikeCheckpointTest::RunTest(const FString&)
     const FVector Settled=Rider->GetActorLocation();
     TestTrue(TEXT("The recorded vertical step-off gap is resolved before commit"),
         FMath::Abs((Raised.Z-Settled.Z)-1.0890856)<=.01);
-    Movement->bForceNextFloorCheck=true;Movement->PerformMovement(1.f/60.f);
+    Movement->bForceNextFloorCheck=true;Movement->TickComponent(1.f/60.f,LEVELTICK_All,&Movement->PrimaryComponentTick);
     TestTrue(TEXT("The next neutral tick does not alter the committed grounded pose"),
         FVector::Dist(Settled,Rider->GetActorLocation())<=.01);
     Movement->SetMovementMode(MOVE_Falling);Rider->SetActorLocation(Raised,false,nullptr,ETeleportType::TeleportPhysics);
