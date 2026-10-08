@@ -102,11 +102,15 @@ void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
         PostState = CastChecked<AWandererCharacter>(Character)->GetMoves()->CaptureNetworkState();
         PostEdge = Movement->GetProcessedEdge();
         PostCrouch = Movement->bWantsToCrouch;
+#if !UE_BUILD_SHIPPING
         static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));
-        if (Mode == PostUpdate_Record && Trace && Movement->TraceClientStep(TimeStamp))
-            UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move client epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s"),
+        if (Trace && Movement->TraceClientStep(TimeStamp))
+            UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move client epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s replay=%d first_edge=%u edges=%d applied_edge=%u action=%s action_time=%.6f pending_launch=%s"),
                 Input.ActivityEpoch, TimeStamp, DeltaTime, Input.X, Input.Y, Input.Flags, Movement->PackNetworkMovementMode(), *Movement->GetCurrentAcceleration().ToString(),
-                Movement->GetMaxSpeed(), *SavedLocation.ToString(), *SavedVelocity.ToString());
+                Movement->GetMaxSpeed(), *SavedLocation.ToString(), *SavedVelocity.ToString(), Mode == PostUpdate_Replay,
+                Input.FirstEdge, Input.Edges.Num(), PostEdge, *PostState.Action.ToString(),
+                CastChecked<AWandererCharacter>(Character)->GetActionTime(), *Movement->GetPendingLaunch().ToString());
+#endif
     }
 }
 

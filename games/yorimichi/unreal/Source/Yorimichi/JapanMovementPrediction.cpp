@@ -66,6 +66,7 @@ void UJapanCharacterMovement::ResetActivityPrediction()
     HeldButtons = LastServerHolds = 0; bRecoveryQueued = false; bInputPrepared = false; ActiveInput = FJapanMoveInput();
     PendingCheckpoint = FJapanMoveCheckpoint(); PendingCheckpointTime = -1.f;
     LastCustomCorrection = -1.; bReceivedMoveInEpoch = false;
+    ClientTraceRows = ServerTraceRows = 0;
     MoveClock.BeginEpoch(FPlatformTime::Seconds()); bClockResetPending = bWaitingAfterClockReset = false;
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->ResetDefence();
     ClearAccumulatedForces(); CurrentRootMotion.Clear();
@@ -412,15 +413,19 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);
         }
     Super::MoveAutonomous(Timestamp, Dt, Flags, Accel);
-    if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= .8f &&
-        TraceNetworkGameplay() && ServerTraceRows++ < 64)
+#if !UE_BUILD_SHIPPING
+    if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= 4.f &&
+        TraceNetworkGameplay() && ServerTraceRows++ < 512)
     {
         const auto* Move = GetCurrentNetworkMoveData();
         const FString ClientLocation = Move ? Move->Location.ToString() : TEXT("unavailable");
-        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move server epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s sent_client_loc=%s"),
+        UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move server epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s sent_client_loc=%s first_edge=%u edges=%d applied_edge=%u action=%s action_time=%.6f pending_launch=%s"),
             GetActivityEpoch(), Timestamp, Dt, ActiveInput.X, ActiveInput.Y, ActiveInput.Flags, PackNetworkMovementMode(),
-            *Acceleration.ToString(), GetMaxSpeed(), *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString(), *ClientLocation);
+            *Acceleration.ToString(), GetMaxSpeed(), *CharacterOwner->GetActorLocation().ToString(), *Velocity.ToString(), *ClientLocation,
+            ActiveInput.FirstEdge, ActiveInput.Edges.Num(), ProcessedEdge, *CastChecked<AWandererCharacter>(CharacterOwner)->AnimationAction.ToString(),
+            CastChecked<AWandererCharacter>(CharacterOwner)->GetActionTime(), *PendingLaunchVelocity.ToString());
     }
+#endif
 }
 
 bool UJapanCharacterMovement::ClientUpdatePositionAfterServerUpdate()
