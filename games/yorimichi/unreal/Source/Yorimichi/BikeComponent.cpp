@@ -4,6 +4,7 @@
 #include "JapanVehicleTelemetry.h"
 #include "JapanVehicleVisuals.h"
 #include "JapanBikeGround.h"
+#include "JapanBikeSupport.h"
 #include "JapanNetwork.h"
 #include "JapanGameplayCollision.h"
 #include "WandererCharacter.h"
@@ -642,14 +643,34 @@ void UBikeComponent::FollowGround(float Dt)
 
 FVector2D UBikeComponent::GetWheelGaps() const
 {
- FVector2D Gaps(0,0);if(!BikeRoot)return Gaps;
- FCollisionQueryParams Q(SCENE_QUERY_STAT(BikeGaps),false,Rider);
+ FVector2D Gaps(JapanBikeSupport::InvalidGap,JapanBikeSupport::InvalidGap);
+ // This diagnostic is not part of ordinary play. Build once on its first query,
+ // not during every pawn's loading or every observation.
+ if(!bWheelSupportLoaded)
+ {
+  const double Began=FPlatformTime::Seconds();
+  bWheelSupportLoaded=true;
+  JapanBikeSupport::Load(WheelFront?WheelFront->GetStaticMesh():nullptr,WheelSupport[0]);
+  JapanBikeSupport::Load(WheelRear?WheelRear->GetStaticMesh():nullptr,WheelSupport[1]);
+  WheelSupportBuildMs=(FPlatformTime::Seconds()-Began)*1000.;
+ }
+ const double QueryBegan=FPlatformTime::Seconds();
+ const bool Online=JapanNetwork::IsOnline(GetWorld());
+ FCollisionQueryParams Q=Online?JapanGameplayCollision::Query(GetWorld(),SCENE_QUERY_STAT(BikeGaps),false):FCollisionQueryParams(SCENE_QUERY_STAT(BikeGaps),false,Rider);
+ Q.AddIgnoredActor(Rider);
  for(int32 I=0;I<2;++I)
  {
-  const FVector Axle=BikeRoot->GetComponentTransform().TransformPosition(I?RearAxle:FrontAxle);FHitResult H;
-  if(GetWorld()->LineTraceSingleByChannel(H,Axle+FVector(0,0,60),Axle-FVector(0,0,150),ECC_Visibility,Q))Gaps[I]=Axle.Z-WheelRadius-H.ImpactPoint.Z;
+  const auto* Wheel=I?WheelRear.Get():WheelFront.Get();if(!Wheel)continue;
+  // Pose animates these static components, including front-wheel steering. The
+  // upright axle-minus-radius estimate is wrong when BikeCrash lies on its side.
+  Gaps[I]=JapanBikeSupport::Gap(WheelSupport[I],Wheel->GetComponentTransform(),[&](const FVector& Point,double& Height)
+  {
+   FHitResult Hit;
+   if(!GetWorld()->LineTraceSingleByChannel(Hit,Point+FVector(0,0,60),Point-FVector(0,0,150),Online?JapanGameplayCollision::Channel:ECC_Visibility,Q)||Hit.ImpactNormal.Z<.6f)return false;
+   Height=Hit.ImpactPoint.Z;return true;
+  });
  }
- return Gaps;
+ WheelSupportQueryMs=(FPlatformTime::Seconds()-QueryBegan)*1000.;return Gaps;
 }
 
 FString UBikeComponent::GetLoopState() const

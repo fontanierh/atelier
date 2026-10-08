@@ -63,8 +63,12 @@ public:
  /** The bike's assembled world transform and its parts, for QA and reviews. */
  FTransform GetBikeTransform() const;
  bool IsParked() const { return bParked; }
- /** How far each wheel's lowest point is above the ground straight under it (cm; negative: sunk in), front then rear. */
+ /** Minimum mesh-support gap to ground under each wheel (cm; negative: sunk in), front then rear.
+  * Unavailable CPU geometry or ground returns a large invalid value, never zero. */
  FVector2D GetWheelGaps() const;
+ FIntPoint GetWheelSupportCounts() const { return FIntPoint(WheelSupport[0].Num(),WheelSupport[1].Num()); }
+ double GetWheelSupportBuildMs() const { return WheelSupportBuildMs; }
+ double GetWheelSupportQueryMs() const { return WheelSupportQueryMs; }
  /** The pitch (degrees, nose up) the bike and he take from the ground under the wheels. */
  float GetGroundPitch() const { return GroundPitch; }
  /** Each loop's "volume pitch" (tyre, tyre_wood, tyre_stone, tyre_dirt, tyre_grass, freewheel, chain, wind, skid,
@@ -78,6 +82,9 @@ private:
  UPROPERTY() TObjectPtr<UStaticMeshComponent> Steer;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelFront;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelRear;
+ mutable TArray<FVector> WheelSupport[2];
+ mutable bool bWheelSupportLoaded=false;
+ mutable double WheelSupportBuildMs=0.,WheelSupportQueryMs=0.;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> Crank;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> PedalL;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> PedalR;

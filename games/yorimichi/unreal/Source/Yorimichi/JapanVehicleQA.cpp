@@ -1,6 +1,7 @@
 #include "JapanVehicleQA.h"
 #if !UE_BUILD_SHIPPING
 #include "JapanVehicleTelemetry.h"
+#include "JapanBikeSupport.h"
 #include "JapanVehicleQASite.h"
 #include "JapanCombatResolver.h"
 #include "JapanSession.h"
@@ -210,8 +211,15 @@ struct FVehicleProbe
         Data->SetStringField(TEXT("parked_clip"),ParkedState.Pose.Clip.ToString());
         Data->SetNumberField(TEXT("parked_clip_time"),ParkedState.Pose.ClipTime);
         Data->SetNumberField(TEXT("parked_steering"),ParkedState.Pose.Steering);
-        const FVector2D Gaps=P->GetBike()->GetWheelGaps();
+        // Support is an end-pose check. Do not run hull/ground queries in the
+        // 10 Hz compact live receipt or before the bike has actually parked.
+        const FVector2D Gaps=Detailed&&P->GetBike()->IsParked()?P->GetBike()->GetWheelGaps():
+            FVector2D(JapanBikeSupport::InvalidGap,JapanBikeSupport::InvalidGap);
         Data->SetNumberField(TEXT("wheel_front_gap_cm"),Gaps.X);Data->SetNumberField(TEXT("wheel_rear_gap_cm"),Gaps.Y);
+        const FIntPoint SupportCounts=P->GetBike()->GetWheelSupportCounts();
+        Data->SetNumberField(TEXT("wheel_front_support_points"),SupportCounts.X);Data->SetNumberField(TEXT("wheel_rear_support_points"),SupportCounts.Y);
+        Data->SetNumberField(TEXT("wheel_support_build_ms"),P->GetBike()->GetWheelSupportBuildMs());
+        Data->SetNumberField(TEXT("wheel_support_query_ms"),P->GetBike()->GetWheelSupportQueryMs());
         Data->SetBoolField(TEXT("parked"),P->GetBike()->IsParked());Data->SetBoolField(TEXT("riding"),Riding(P));
         if(ClockCase()||Case==TEXT("park")||Case==TEXT("crash"))
         {
