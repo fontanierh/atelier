@@ -1,0 +1,9 @@
+{
+  "character": "modori",
+  "source": "modori/fbx/Modori.fbx",
+  "meshes": {
+    "Modori_Body": 5172,
+    "Modori_Coat": 5404
+  },
+  "bones": 53
+}

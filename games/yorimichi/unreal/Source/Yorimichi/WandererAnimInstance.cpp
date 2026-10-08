@@ -5,6 +5,7 @@
 #include "BikeComponent.h"
 #include "BikeGripNode.h"
 #include "FingerWrapNode.h"
+#include "GripPoseNode.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimNodeSpaceConversions.h"
 #include "SkateComponent.h"
@@ -146,6 +147,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FSailboatStanceNode Stance;
     // On the bike: the gripping hands follow bars the player steers past the clip's own steering.
     FBikeGripNode Grip;
+    // Last, the grips posed in the grip poser (UBotwMoveSet::GripPose): each hand exactly where it was posed on its prop.
+    FGripPoseNode Pose;
     FAnimNode_ConvertComponentToLocalSpace ToLocal;
     float Speed = 0.f, CrouchTarget = 0.f, CrouchWeight = 0.f, StanceWeight = 0.f, ArmedTarget = 0.f, ArmedWeight = 0.f;
     float AuthoredTopSpeed = 300.f, AuthoredCrouchSpeed = 50.f;
@@ -219,7 +222,9 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         Stance.Alpha = 0.f;
         Grip.ComponentPose.SetLinkNode(&Stance);
         Grip.Alpha = 0.f;
-        ToLocal.ComponentPose.SetLinkNode(&Grip);
+        Pose.ComponentPose.SetLinkNode(&Grip);
+        Pose.Alpha = 1.f;
+        ToLocal.ComponentPose.SetLinkNode(&Pose);
         Skate.OnFoot.SetLinkNode(&ToLocal);
         Moving.SetGroupName(TEXT("Stride")); Crouching.SetGroupName(TEXT("Stride"));
         Moving.SetGroupMethod(EAnimSyncMethod::SyncGroup); Crouching.SetGroupMethod(EAnimSyncMethod::SyncGroup);
@@ -230,7 +235,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Wrap, &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Wrap, &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &Pose, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -258,6 +263,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                     const TCHAR* Side = I ? TEXT("L") : TEXT("R");
                     GlideIK[I].IKBone.BoneName = Pawn->GetSkateBone(FName(*FString::Printf(TEXT("hand_%s"), Side)));
                     GlideTurn[I].BoneToModify.BoneName = GlideIK[I].IKBone.BoneName;
+                    Pose.Hands[I].Hand.BoneName = GlideIK[I].IKBone.BoneName;
                     for (int32 F = 0; F < 5; ++F)
                         for (int32 K = 0; K < 3; ++K)
                         {
@@ -265,9 +271,11 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                             const TCHAR* const Thumb[3] = { TEXT("thumb_"), TEXT("thumb_tip_"), TEXT("thumb_end_") };
                             Wrap.Hands[I].Bones[F][K].BoneName = F < 4 ? FName(*FString::Printf(TEXT("%s%d_%s"), Joint[K], F, Side))
                                 : FName(*FString::Printf(TEXT("%s%s"), Thumb[K], Side));
+                            Pose.Hands[I].Bones[F][K].BoneName = Wrap.Hands[I].Bones[F][K].BoneName;
                         }
                 }
                 Wrap.Frame.BoneName = GripIK.EffectorTarget.BoneReference.BoneName;   // the sword hand, which carries the sword
+                Pose.Frame.BoneName = Wrap.Frame.BoneName;
                 const TCHAR* const Chain[4] = { TEXT("spine"), TEXT("chest"), TEXT("neck"), TEXT("head") };
                 for (int32 I = 0; I < 4; ++I) Flinch[I].BoneToModify.BoneName = Pawn->GetSkateBone(Chain[I]);
             }
@@ -394,6 +402,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         Action.SetPlayRate(bRiding || bBiking ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
         if (bBiking) Action.SetAccumulatedTime(BikeC->GetPoseTime());
         const bool bCarrying = !bSailing && !bRiding && !bBiking && !Pawn->IsZeppelinPassenger();
+        // The glider on the body where the grips read it, this tick.
+        if (UBotwMoveSet* Set = Pawn->GetMoves(); Set && !bRiding && !bSailing && !bBiking) Set->PlaceGliderForPose();
         const UBotwMoveSet* Moves = Pawn->GetMoves();
         if (Moves && JapanNetwork::IsOnline(Pawn->GetWorld()) && !bSailing && !bRiding && !bBiking && State.bAction)
         {
@@ -446,6 +456,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 const FFingerWrapNode::FHand& W = Wrap.Hands[I];
                 R.Evaluated[I] = W.Evaluated; R.Pinch[I] = W.Pinch;
                 for (int32 F = 0; F < 5; ++F) { R.State[I][F] = uint8(W.State[F]); R.Residual[I][F] = W.Residual[F]; R.Grip[I][F] = W.Grip[F]; }
+                R.PoseWeight[I] = Pose.Hands[I].Weight; R.PoseMiss[I] = Pose.Hands[I].Miss;
             }
         }
         UBotwMoveSet::FHeldHandle Held[2];
@@ -456,6 +467,13 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
             W.Weight = Held[I].Weight; W.bInFrame = Held[I].bSword;
             W.A = Held[I].A; W.B = Held[I].B; W.Major = Held[I].Major; W.R0 = Held[I].R0; W.R1 = Held[I].R1;
             W.RM = Held[I].RM; W.MidAt = Held[I].MidAt;
+        }
+        for (int32 I = 0; I < 2; ++I)
+        {
+            const UBotwMoveSet::FGripPose G = bHands ? Moves->GripPose(I) : UBotwMoveSet::FGripPose();
+            FGripPoseNode::FHand& P = Pose.Hands[I];
+            P.Weight = G.Local ? G.Weight : 0.f; P.bPin = G.bPin; P.bInFrame = G.bInFrame; P.Target = G.Target;
+            if (G.Local) for (int32 F = 0; F < 5; ++F) for (int32 K = 0; K < 3; ++K) P.Local[F][K] = G.Local[F][K];
         }
         const bool bFlinch = Moves && Moves->IsFlinching() && !bRiding && !bSailing && !bBiking;
         for (int32 I = 0; I < 4; ++I)
@@ -503,7 +521,7 @@ FString UWandererAnimInstance::GripReport() const
         for (int32 F = 0; F < 5; ++F)
             Out += FString::Printf(TEXT("%s{\"state\":\"%s\",\"residual\":%.4f,\"grip\":%.4f}"), F ? TEXT(",") : TEXT(""),
                 States[FMath::Min<int32>(R.State[I][F], 2)], R.Residual[I][F], R.Grip[I][F]);
-        Out += TEXT("]}");
+        Out += FString::Printf(TEXT("],\"pose\":{\"weight\":%.4f,\"miss\":%.4f}}"), R.PoseWeight[I], R.PoseMiss[I]);
     }
     return Out + TEXT("]}");
 }

@@ -52,7 +52,7 @@ bool FBotwMove::InWindow(const TArray<FVector2f>& Windows, float SourceTime) con
 
 // ------------------------------------------------------------------------------------------------------------- Setup
 
-bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonObject>& Record)
+bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonObject>& Record, const TSharedPtr<FJsonObject>& Grips)
 {
     Character = Owner;
     const UWandererDefinition* Definition = Owner ? Owner->GetDefinition() : nullptr;
@@ -175,6 +175,7 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
             Slots.Add(Slot, S);
             Attach(Slot);
         }
+    ReadGrips(Grips);
     // The blade runs along the sword mesh's longest axis, from its origin (the grip) to the far end of its bounds.
     if (const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword")))
     {
@@ -995,6 +996,11 @@ FString UBotwMoveSet::Describe() const
     O->SetNumberField(TEXT("sword_guard_carry"), SwordGuardCarry);
     O->SetNumberField(TEXT("sword_carry"), SwordCarry);
     O->SetNumberField(TEXT("sword_hold"), SwordHold);
+    {
+        TArray<TSharedPtr<FJsonValue>> Pose;
+        for (int32 I = 0; I < 2; ++I) Pose.Add(MakeShared<FJsonValueNumber>(GripPose(I).Weight));
+        O->SetArrayField(TEXT("grip_pose"), Pose);
+    }
     O->SetNumberField(TEXT("guard_carry"), GuardCarry);
     O->SetNumberField(TEXT("speed"), Movement->Velocity.Size2D());
     O->SetNumberField(TEXT("vz"), Movement->Velocity.Z);

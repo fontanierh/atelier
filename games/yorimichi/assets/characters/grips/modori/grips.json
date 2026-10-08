@@ -1,0 +1,641 @@
+{
+ "character": "modori",
+ "source": {
+  "poses_sha256": "1cf40b96593c2da387fd746e9eae678369b68c3590cb9a0dcba7b2a5e307b1af",
+  "saved": {
+   "at": "20261008-194818-869",
+   "snapshots": [
+    "20261008-194818-869-glider_L-palm.png",
+    "20261008-194818-869-glider_L-back.png",
+    "20261008-194818-869-glider_L-thumb.png",
+    "20261008-194818-869-glider_L-end.png"
+   ]
+  }
+ },
+ "grips": {
+  "sword_R": {
+   "prop": "sword",
+   "side": "R",
+   "status": "done",
+   "anchor": 0,
+   "hand": {
+    "location": [
+     13.9683,
+     0.0372,
+     3.5
+    ],
+    "rotation": [
+     -0.0012503,
+     0.0556749,
+     0.7260953,
+     0.6853352
+    ]
+   },
+   "bones": {
+    "finger_0_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.2636755,
+      0.0081358,
+      0.0655737,
+      0.9623456
+     ]
+    },
+    "finger_tip_0_R": {
+     "parent": "finger_0_R",
+     "rotation": [
+      -0.3530984,
+      0.0381395,
+      0.035778,
+      0.9341236
+     ]
+    },
+    "finger_end_0_R": {
+     "parent": "finger_tip_0_R",
+     "rotation": [
+      -0.5649208,
+      0.0160211,
+      0.25779,
+      0.7836786
+     ]
+    },
+    "finger_1_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.3527545,
+      0.0029444,
+      0.0795005,
+      0.9323279
+     ]
+    },
+    "finger_tip_1_R": {
+     "parent": "finger_1_R",
+     "rotation": [
+      -0.4634899,
+      0.0682257,
+      0.0691185,
+      0.8807639
+     ]
+    },
+    "finger_end_1_R": {
+     "parent": "finger_tip_1_R",
+     "rotation": [
+      -0.3479491,
+      0.0034721,
+      0.1448455,
+      0.92625
+     ]
+    },
+    "finger_2_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.2053015,
+      -0.2127723,
+      0.1382885,
+      0.9452278
+     ]
+    },
+    "finger_tip_2_R": {
+     "parent": "finger_2_R",
+     "rotation": [
+      -0.1045915,
+      -0.2861519,
+      0.4735041,
+      0.8264209
+     ]
+    },
+    "finger_end_2_R": {
+     "parent": "finger_tip_2_R",
+     "rotation": [
+      -0.1618848,
+      -0.1175738,
+      0.2940621,
+      0.9346107
+     ]
+    },
+    "finger_3_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.0940997,
+      -0.0037434,
+      0.0117594,
+      0.9954863
+     ]
+    },
+    "finger_tip_3_R": {
+     "parent": "finger_3_R",
+     "rotation": [
+      -0.3306232,
+      -0.0393952,
+      0.2358202,
+      0.912976
+     ]
+    },
+    "finger_end_3_R": {
+     "parent": "finger_tip_3_R",
+     "rotation": [
+      -0.2396808,
+      0.010436,
+      0.0124102,
+      0.9707163
+     ]
+    },
+    "thumb_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.1155423,
+      0.140228,
+      0.2316737,
+      0.9556743
+     ]
+    },
+    "thumb_tip_R": {
+     "parent": "thumb_R",
+     "rotation": [
+      -0.0669041,
+      0.0274316,
+      0.0007045,
+      0.997382
+     ]
+    },
+    "thumb_end_R": {
+     "parent": "thumb_tip_R",
+     "rotation": [
+      0.0113932,
+      -0.0031375,
+      -0.1193527,
+      0.9927816
+     ]
+    }
+   }
+  },
+  "sword_L": {
+   "prop": "sword",
+   "side": "L",
+   "status": "done",
+   "anchor": 2,
+   "hand": {
+    "location": [
+     12.6638,
+     -14.8272,
+     -4.7294
+    ],
+    "rotation": [
+     -0.8232012,
+     -0.5665332,
+     -0.0246579,
+     0.0277832
+    ]
+   },
+   "bones": {
+    "finger_0_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.2640993,
+      -0.1845711,
+      -0.0628228,
+      0.9445837
+     ]
+    },
+    "finger_tip_0_L": {
+     "parent": "finger_0_L",
+     "rotation": [
+      -0.1209574,
+      -0.3396516,
+      -0.4286148,
+      0.8284295
+     ]
+    },
+    "finger_end_0_L": {
+     "parent": "finger_tip_0_L",
+     "rotation": [
+      0.1701679,
+      -0.0446554,
+      -0.4940288,
+      0.8514601
+     ]
+    },
+    "finger_1_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.2824762,
+      0.0319294,
+      -0.1032354,
+      0.9531685
+     ]
+    },
+    "finger_tip_1_L": {
+     "parent": "finger_1_L",
+     "rotation": [
+      0.42438,
+      0.0380507,
+      -0.0788932,
+      0.9012378
+     ]
+    },
+    "finger_end_1_L": {
+     "parent": "finger_tip_1_L",
+     "rotation": [
+      0.2639732,
+      -0.0264904,
+      -0.236586,
+      0.934689
+     ]
+    },
+    "finger_2_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.2687195,
+      0.0434755,
+      -0.1483494,
+      0.9507324
+     ]
+    },
+    "finger_tip_2_L": {
+     "parent": "finger_2_L",
+     "rotation": [
+      0.4402458,
+      0.0351038,
+      -0.0739014,
+      0.894142
+     ]
+    },
+    "finger_end_2_L": {
+     "parent": "finger_tip_2_L",
+     "rotation": [
+      0.2755404,
+      -0.125901,
+      -0.1773424,
+      0.9363632
+     ]
+    },
+    "finger_3_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.1585533,
+      -0.0100332,
+      -0.0295361,
+      0.9868575
+     ]
+    },
+    "finger_tip_3_L": {
+     "parent": "finger_3_L",
+     "rotation": [
+      0.4164014,
+      -0.0045508,
+      -0.2678455,
+      0.8688199
+     ]
+    },
+    "finger_end_3_L": {
+     "parent": "finger_tip_3_L",
+     "rotation": [
+      0.3030746,
+      -0.098157,
+      -0.0439173,
+      0.9468803
+     ]
+    },
+    "thumb_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.1272466,
+      0.1908334,
+      -0.2497777,
+      0.9407455
+     ]
+    },
+    "thumb_tip_L": {
+     "parent": "thumb_L",
+     "rotation": [
+      -0.0006738,
+      0.1242454,
+      -0.0246089,
+      0.9919461
+     ]
+    },
+    "thumb_end_L": {
+     "parent": "thumb_tip_L",
+     "rotation": [
+      -0.0201459,
+      0.007482,
+      0.1547545,
+      0.9877192
+     ]
+    }
+   }
+  },
+  "glider_R": {
+   "prop": "glider",
+   "side": "R",
+   "status": "done",
+   "anchor": 9,
+   "hand": {
+    "location": [
+     -30.7008,
+     -5.6197,
+     -12.4681
+    ],
+    "rotation": [
+     0.4955039,
+     -0.6108693,
+     -0.4443824,
+     0.4287644
+    ]
+   },
+   "bones": {
+    "finger_0_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.2778467,
+      0.0118989,
+      0.012398,
+      0.9604717
+     ]
+    },
+    "finger_tip_0_R": {
+     "parent": "finger_0_R",
+     "rotation": [
+      -0.444941,
+      -0.0307744,
+      -0.1149713,
+      0.887616
+     ]
+    },
+    "finger_end_0_R": {
+     "parent": "finger_tip_0_R",
+     "rotation": [
+      -0.0119686,
+      0.0080519,
+      0.0860636,
+      0.9961852
+     ]
+    },
+    "finger_1_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.4091227,
+      -0.0013384,
+      -0.0361507,
+      0.911762
+     ]
+    },
+    "finger_tip_1_R": {
+     "parent": "finger_1_R",
+     "rotation": [
+      -0.163959,
+      0.0188876,
+      0.0355974,
+      0.9856437
+     ]
+    },
+    "finger_end_1_R": {
+     "parent": "finger_tip_1_R",
+     "rotation": [
+      -0.1352901,
+      0.0070289,
+      0.0004146,
+      0.990781
+     ]
+    },
+    "finger_2_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.26603,
+      -0.0115455,
+      -0.0226074,
+      0.9636304
+     ]
+    },
+    "finger_tip_2_R": {
+     "parent": "finger_2_R",
+     "rotation": [
+      -0.1127642,
+      -0.0008271,
+      -0.0099254,
+      0.9935719
+     ]
+    },
+    "finger_end_2_R": {
+     "parent": "finger_tip_2_R",
+     "rotation": [
+      -0.459958,
+      -0.0033739,
+      -0.0404851,
+      0.8870108
+     ]
+    },
+    "finger_3_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.0390822,
+      -0.0016991,
+      -0.003321,
+      0.999229
+     ]
+    },
+    "finger_tip_3_R": {
+     "parent": "finger_3_R",
+     "rotation": [
+      0.0347262,
+      0.0018823,
+      0.0029195,
+      0.9993908
+     ]
+    },
+    "finger_end_3_R": {
+     "parent": "finger_tip_3_R",
+     "rotation": [
+      -0.6495184,
+      -0.0352061,
+      -0.0546051,
+      0.757565
+     ]
+    },
+    "thumb_R": {
+     "parent": "hand_R",
+     "rotation": [
+      -0.364282,
+      0.1030927,
+      -0.0920409,
+      0.9209772
+     ]
+    },
+    "thumb_tip_R": {
+     "parent": "thumb_R",
+     "rotation": [
+      -0.0649507,
+      0.0289233,
+      0.0006703,
+      0.997469
+     ]
+    },
+    "thumb_end_R": {
+     "parent": "thumb_tip_R",
+     "rotation": [
+      -0.0006976,
+      0.0002908,
+      -8.63e-05,
+      0.9999997
+     ]
+    }
+   }
+  },
+  "glider_L": {
+   "prop": "glider",
+   "side": "L",
+   "status": "done",
+   "anchor": 9,
+   "hand": {
+    "location": [
+     30.873,
+     -5.5639,
+     -12.3021
+    ],
+    "rotation": [
+     -0.6101596,
+     0.4937509,
+     -0.430007,
+     0.4461045
+    ]
+   },
+   "bones": {
+    "finger_0_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.2778467,
+      0.0118989,
+      -0.012398,
+      0.9604717
+     ]
+    },
+    "finger_tip_0_L": {
+     "parent": "finger_0_L",
+     "rotation": [
+      0.444941,
+      -0.0307744,
+      0.1149713,
+      0.8876159
+     ]
+    },
+    "finger_end_0_L": {
+     "parent": "finger_tip_0_L",
+     "rotation": [
+      0.0119685,
+      0.0080519,
+      -0.0860635,
+      0.9961852
+     ]
+    },
+    "finger_1_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.4091227,
+      -0.0013384,
+      0.0361508,
+      0.911762
+     ]
+    },
+    "finger_tip_1_L": {
+     "parent": "finger_1_L",
+     "rotation": [
+      0.163959,
+      0.0188875,
+      -0.0355974,
+      0.9856437
+     ]
+    },
+    "finger_end_1_L": {
+     "parent": "finger_tip_1_L",
+     "rotation": [
+      0.1352901,
+      0.0070288,
+      -0.0004145,
+      0.990781
+     ]
+    },
+    "finger_2_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.26603,
+      -0.0115454,
+      0.0226074,
+      0.9636304
+     ]
+    },
+    "finger_tip_2_L": {
+     "parent": "finger_2_L",
+     "rotation": [
+      0.1127643,
+      -0.0008272,
+      0.0099255,
+      0.9935718
+     ]
+    },
+    "finger_end_2_L": {
+     "parent": "finger_tip_2_L",
+     "rotation": [
+      0.459958,
+      -0.0033739,
+      0.0404852,
+      0.8870108
+     ]
+    },
+    "finger_3_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.0390822,
+      -0.0016991,
+      0.003321,
+      0.999229
+     ]
+    },
+    "finger_tip_3_L": {
+     "parent": "finger_3_L",
+     "rotation": [
+      -0.0347262,
+      0.0018822,
+      -0.0029194,
+      0.9993908
+     ]
+    },
+    "finger_end_3_L": {
+     "parent": "finger_tip_3_L",
+     "rotation": [
+      0.6495184,
+      -0.0352061,
+      0.0546051,
+      0.7575649
+     ]
+    },
+    "thumb_L": {
+     "parent": "hand_L",
+     "rotation": [
+      0.364282,
+      0.1030927,
+      0.092041,
+      0.9209772
+     ]
+    },
+    "thumb_tip_L": {
+     "parent": "thumb_L",
+     "rotation": [
+      0.0649507,
+      0.0289232,
+      -0.0006703,
+      0.997469
+     ]
+    },
+    "thumb_end_L": {
+     "parent": "thumb_tip_L",
+     "rotation": [
+      0.0006976,
+      0.0002908,
+      8.63e-05,
+      0.9999997
+     ]
+    }
+   }
+  }
+ }
+}

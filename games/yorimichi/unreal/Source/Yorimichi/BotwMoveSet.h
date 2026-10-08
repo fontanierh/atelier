@@ -65,7 +65,7 @@ public:
     static bool IsTraversalMode(uint8 Value) { return Value >= MovementMode && Value <= SwimMovementMode; }
     void ApplyInputHolds(uint8 Flags);
     /** Read the record and attach the equipment; false when the character lacks an action the set needs. */
-    bool Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonObject>& Record);
+    bool Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonObject>& Record, const TSharedPtr<FJsonObject>& Grips = nullptr);
     /** Per frame, in place of the character's own action bookkeeping. */
     void Advance(float Dt);
     FJapanMoveCheckpoint CaptureNetworkState() const;
@@ -172,6 +172,22 @@ public:
         float MidAt = -1.f;
     };
     FHeldHandle HeldHandle(int32 Side, bool bShape = false) const;   // bShape: its shape even before the hand closes
+    /** A grip posed in the grip poser (assets/characters/grips/game.py), held exactly as posed: how much (0 none), whether
+     *  the hand is moved onto its prop (the sword hand carries the sword, so only its fingers are posed), where its hand
+     *  bone goes (location and rotation) in the sword hand's bone space (bInFrame) or the component's, and each finger
+     *  bone's rotation on its parent (index to little, then the thumb; base, middle, end). 0 right, 1 left. */
+    struct FGripPose
+    {
+        float Weight = 0.f;
+        bool bPin = false, bInFrame = false;
+        FTransform Target = FTransform::Identity;
+        const FQuat (*Local)[3] = nullptr;
+    };
+    FGripPose GripPose(int32 Side) const;
+    /** Puts the glider where the move set last placed it on the body. The animation calls it as it reads the grips, so
+     *  the glider and the hands posed on it are placed in the same tick: put on in the actor's tick, the glider was a
+     *  tick ahead of the hands, whose animation updates first (3 to 5 mm off the posed grip while it banked). */
+    void PlaceGliderForPose();
     /** A hit's recoil over the clip (the animation graph's flinch layer): the turn added to the spine (0), chest (1),
      *  neck (2) and head (3), component space. The body bends away from the blow and springs back, the head last. */
     FQuat FlinchRotation(int32 Bone) const;
@@ -330,7 +346,20 @@ private:
     FVector GlideGripUp = FVector::UpVector;   // the handles' ovals' major axis, component space
     float GlideGripScale = 1.f;
     float SwordHold = 0.f;   // the sword hand's wrap round the drawn sword, 0..1
+    // The posed grips (ReadGrips), by prop (0 the sword, 1 the glider) and hand: the hand bone's place in the prop's own
+    // frame and each finger bone's rotation on its parent, turned onto this skeleton's bone frames.
+    struct FPosedGrip
+    {
+        bool bValid = false;
+        FTransform Hand = FTransform::Identity;
+        FQuat Local[5][3];
+    };
+    FPosedGrip Posed[2][2];
+    void ReadGrips(const TSharedPtr<FJsonObject>& Grips);
     bool bGliderOnBody = false, bGliderBodyAttached = false;
+    FTransform GliderPlaced = FTransform::Identity;   // its place on the body, put on by PlaceGliderForPose
+    bool bGliderPlaced = false;
+    uint64 GliderPoseFrame = 0;   // the frame the animation last put it on
     bool bGliderOnRoot = false;   // placed from the import's fit, carried by the root bone
     FTransform GliderOnRoot = FTransform::Identity;   // the import's fit, in the root bone's frame
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.

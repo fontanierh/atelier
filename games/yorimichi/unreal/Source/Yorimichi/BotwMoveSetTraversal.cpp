@@ -231,7 +231,7 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         {
             Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, GliderSocket);
             Glider->SetRelativeTransform(GliderHeld);
-            bGliderBodyAttached = false;
+            bGliderBodyAttached = bGliderPlaced = false;
         }
         GlideHands = 0.f;
         return;
@@ -252,7 +252,10 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
     for (int32 I = 0; I < 2 && bOwnGlide; ++I)
         Rise = FMath::Max(Rise, (Placed.TransformPosition(BarGrip[I]) - GliderOnBody.TransformPosition(BarGrip[I])) | Up);
     Placed.AddToTranslation(-Up * Rise);
-    Glider->SetRelativeTransform(Placed);
+    // Put on as the animation reads the grips (PlaceGliderForPose); here only when none does, or on its first frame.
+    GliderPlaced = Placed;
+    if (!bGliderPlaced || GFrameCounter > GliderPoseFrame + 1) Glider->SetRelativeTransform(Placed);
+    bGliderPlaced = true;
     GlideGripUp = Placed.TransformVectorNoScale(FVector::UpVector);
     GlideGripScale = Placed.GetScale3D().GetAbsMax();
     // Each hand onto its handle where it reaches it: its grip point moved to the nearest point of its grip, the wrist
