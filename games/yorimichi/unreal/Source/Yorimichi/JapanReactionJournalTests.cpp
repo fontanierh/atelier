@@ -1,6 +1,8 @@
 #include "JapanReactionJournal.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
+#include "Serialization/BitReader.h"
+#include "Serialization/BitWriter.h"
 #include <limits>
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanReactionJournalTest, "Yorimichi.Network.ReactionJournal",
@@ -151,6 +153,59 @@ bool FJapanReactionJournalTest::RunTest(const FString&)
     AheadHost.Retire(11, 11);
     TestTrue(TEXT("Host resumes after recovery"), AheadHost.Issue({0, 5.4f}, Guard, First));
     TestTrue(TEXT("Owner resumes at the next sequence without a permanent gap"), LaggedOwner.Receive(First) == EReceive::Added);
+
+    First.Resolved = {123, 1.09610915184021f};
+    FBitWriter Encoded(8192, true);
+    TestTrue(TEXT("Real delivery codec serializes the immutable event"), First.Serialize(Encoded));
+    FJapanScheduledReaction Decoded = Second;
+    FBitReader Reader(Encoded.GetData(), Encoded.GetNumBits());
+    TestTrue(TEXT("Real delivery codec decodes into a reused value"), Decoded.Serialize(Reader));
+    TestTrue(TEXT("Epoch, sequence, float bits, generation, action and bytes roundtrip exactly"), Decoded == First);
+    FJapanReactionJournal CodecOwner;
+    CodecOwner.Reset(First.Epoch);
+    CodecOwner.Restore(First.Sequence - 1);
+    TestTrue(TEXT("Original value is delivered"), CodecOwner.Receive(First) == EReceive::Added);
+    TestTrue(TEXT("Real wire retransmission remains Duplicate, not Invalid"), CodecOwner.Receive(Decoded) == EReceive::Duplicate);
+    const FName AllowedActions[] = {NAME_None, TEXT("HitF"), TEXT("HitB"), TEXT("HitL"), TEXT("HitR"),
+        TEXT("HitMF"), TEXT("HitMB"), TEXT("HitML"), TEXT("HitMR"),
+        TEXT("KnockF"), TEXT("KnockB"), TEXT("KnockL"), TEXT("KnockR"),
+        TEXT("GuardHit"), TEXT("GuardBreak"), TEXT("SwordGuardHit"), TEXT("SwordGuardBreak")};
+    for (const FName Allowed : AllowedActions)
+    {
+        auto Each = First; Each.Value.Action = Allowed;
+        FBitWriter EachWriter(8192, true);
+        TestTrue(TEXT("Every allowed action encodes"), Each.Serialize(EachWriter));
+        FBitReader EachReader(EachWriter.GetData(), EachWriter.GetNumBits());
+        TestTrue(TEXT("Every allowed action decodes"), Decoded.Serialize(EachReader));
+        TestTrue(TEXT("Every allowed action roundtrips exactly"), Decoded == Each);
+    }
+    AddExpectedError(TEXT("FBitReader::SetOverflowed"), EAutomationExpectedErrorFlags::Contains, 0);
+    for (int64 Bits = 0; Bits < Encoded.GetNumBits(); ++Bits)
+    {
+        Decoded = First;
+        FBitReader Truncated(Encoded.GetData(), Bits);
+        TestFalse(TEXT("Every truncated bit length fails"), Decoded.Serialize(Truncated));
+        TestTrue(TEXT("Failed reused decoder leaves no stale payload"), Decoded.Value.Bytes.IsEmpty());
+        TestEqual(TEXT("Failed reused decoder leaves no stale event id"), Decoded.Sequence, 0u);
+    }
+    auto UnknownAction = First; UnknownAction.Value.Action = TEXT("NotAReaction");
+    FBitWriter UnknownWriter(8192, true);
+    TestFalse(TEXT("Unknown action cannot be serialized"), UnknownAction.Serialize(UnknownWriter));
+    TestEqual(TEXT("The fixed action index is the last whole byte"), Encoded.GetNumBits() % 8, int64(0));
+    TArray<uint8> BadAction(Encoded.GetData(), Encoded.GetNumBytes());
+    BadAction.Last() = 255;
+    FBitReader BadActionReader(BadAction.GetData(), Encoded.GetNumBits());
+    TestFalse(TEXT("Unknown action index cannot be decoded"), Decoded.Serialize(BadActionReader));
+    TestTrue(TEXT("Unknown action leaves reused receiver empty"), Decoded.Value.Bytes.IsEmpty());
+    FBitWriter Forged(8192, true);
+    uint32 Epoch = 20, Sequence = 12, Generation = 123, Count = FJapanReactionValue::MaximumBytes + 1;
+    float Stamp = 1.5f;
+    Forged << Epoch << Sequence << Generation << Stamp;
+    Forged.SerializeIntPacked(Count);
+    FBitReader OversizedReader(Forged.GetData(), Forged.GetNumBits());
+    TestFalse(TEXT("Oversized wire payload is refused before allocation"), Decoded.Serialize(OversizedReader));
+    TestTrue(TEXT("Oversized wire payload leaves the receiver empty"), Decoded.Value.Bytes.IsEmpty());
+
     return true;
 }
 #endif

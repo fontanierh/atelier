@@ -31,6 +31,9 @@ struct FJapanScheduledReaction
     uint32 Epoch = 0, Sequence = 0;
     FJapanReactionStamp Resolved;
     FJapanReactionValue Value;
+    /** Reliable owner delivery uses this same codec as the native roundtrip test.
+     * Epoch, generation and float timestamp are exact; no quantization. */
+    bool Serialize(FArchive& Ar);
     bool IsValid() const { return Epoch && Sequence && Resolved.IsValid() && Value.IsValid(); }
     bool operator==(const FJapanScheduledReaction& Other) const
     {
