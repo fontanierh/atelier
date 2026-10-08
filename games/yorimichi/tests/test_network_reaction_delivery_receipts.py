@@ -134,6 +134,7 @@ def native_ordering(case):
     guard = case == 1
     action = 'GuardHit' if guard else 'HitF'
     state('queued', 10.01, 1., action)
+    if not guard: state('queued', 10.0105, 1., action)
     host['stimuli'] = [dict(event='zero_impulse_guard' if guard else 'hit', at=10.011,
                            guard=guard, outcome=3 if guard else 0, speed=0 if guard else 160.)]
     if case == 0:
@@ -270,3 +271,35 @@ def test_moving_reaction_cli_rejects_unsupported_case_before_admission(monkeypat
                        ([] if case is None else ['--reaction-delivery-case', str(case)]))
     with pytest.raises(SystemExit) as raised: module.main()
     assert raised.value.code == 2
+
+
+@pytest.mark.parametrize('case', [0, 2, 3, 4, 5, 6])
+def test_nested_hit_requests_are_one_stimulus_but_both_calls_remain_proven(case):
+    checks, report = _module.reaction_delivery_checks(*native_ordering(case), case)
+    assert all(checks.values()), checks
+    assert report['raw_queue_count'] == (3 if case == 4 else 2)
+    assert [g['calls'] for g in report['queue_groups']] == ([2, 1] if case == 4 else [2])
+    assert len(report['deliveries']) == (2 if case == 4 else 1)
+
+
+@pytest.mark.parametrize('mutation', ['missing', 'extra', 'stamp', 'epoch', 'action', 'interleaved', 'after_hit'])
+def test_duplicate_requests_cannot_hide_an_extra_hit_or_intervening_capture(mutation):
+    host, guest = native_ordering(0)
+    queues = [r for r in host['rows'] if r['event'] == 'queued']
+    if mutation == 'missing': host['rows'].remove(queues[0])
+    elif mutation == 'extra': host['rows'].append(queues[0] | dict(at=10.0102))
+    elif mutation == 'stamp': queues[1]['stamp'] += .033
+    elif mutation == 'epoch': queues[1]['epoch'] += 1
+    elif mutation == 'action': queues[1]['live_action'] = 'GuardHit'
+    elif mutation == 'interleaved': host['rows'].append(queues[0] | dict(event='capture', at=10.0102, captured=True))
+    else: queues[1]['at'] = 10.012
+    host['rows'].sort(key=lambda r:r['at'])
+    assert not all(_module.reaction_delivery_checks(host, guest, 0)[0].values())
+
+
+def test_second_hit_remains_a_distinct_delivery_after_first_capture():
+    host, guest = native_ordering(4)
+    last = [r for r in host['rows'] if r['event'] == 'queued'][-1]
+    last['at'] = 10.0107
+    host['rows'].sort(key=lambda r:r['at'])
+    assert not all(_module.reaction_delivery_checks(host, guest, 4)[0].values())

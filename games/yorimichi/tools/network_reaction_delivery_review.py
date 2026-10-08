@@ -140,14 +140,39 @@ def _reaction_delivery_checks(host, guest, case, moving=False):
     def events(name, source=rows):
         return [r for r in source if r.get('event') == name]
 
-    queues = events('queued')
+    raw_queues = events('queued')
+    # IncomingStrike and its nested TakeHit each request the same delivery.
+    # Bind those two calls to one observed hit, keeping both raw witnesses.
+    # A guard has no nested TakeHit and therefore makes exactly one request.
+    hits = [r for r in stimuli if r.get('event') in ('hit', 'zero_impulse_guard')]
+    queue_groups, queues, grouped = [], [], []
+    previous_hit = -float('inf')
+    groups_valid = True
+    for hit in hits:
+        group = [r for r in raw_queues if previous_hit < r['at'] <= hit['at']]
+        expected_calls = 2 if hit['event'] == 'hit' else 1
+        valid = len(group) == expected_calls
+        if valid:
+            valid = all(tuple(r.get(k) for k in ('epoch', 'stamp', 'live_action')) ==
+                        tuple(group[0].get(k) for k in ('epoch', 'stamp', 'live_action')) for r in group)
+            # The synchronous nested calls cannot contain a capture or send.
+            between = [r for r in rows if group[0]['at'] <= r['at'] <= group[-1]['at']]
+            valid = valid and len(between) == expected_calls and all(r.get('event') == 'queued' for r in between)
+            queues.append(group[-1])
+        groups_valid = groups_valid and valid
+        queue_groups.append(dict(stimulus=hit['event'], stimulus_at=hit['at'], calls=len(group),
+                                 first_queue_at=group[0]['at'] if group else None,
+                                 last_queue_at=group[-1]['at'] if group else None))
+        grouped.extend(group)
+        previous_hit = hit['at']
+    groups_valid = groups_valid and len(grouped) == len(raw_queues)
     captures = [r for r in events('capture') if r.get('pending') is True and r.get('captured') is True]
     expected = 0 if case == 7 else 2 if case == 4 else 1
-    checks['reaction_queue_count'] = (len(queues) == expected and all(r.get('authority') is True and
+    checks['reaction_queue_count'] = (groups_valid and len(queues) == expected and all(r.get('authority') is True and
         r.get('local') is False and r.get('remote_role') == 2 and type(r.get('remote_role')) is int and
         r.get('pending') is True and r.get('captured') is False and
         type(r.get('stamp')) in (int, float) and math.isfinite(r['stamp']) and r['stamp'] > 0 and
-        r.get('live_action') in ('HitF', 'GuardHit', 'SwordGuardHit') for r in queues))
+        r.get('live_action') in ('HitF', 'GuardHit', 'SwordGuardHit') for r in raw_queues))
     checks['reaction_stimulus'] = (len([r for r in stimuli if r.get('event') in
         ('hit', 'zero_impulse_guard', 'host_own_hit')]) == (2 if case == 4 else 1))
     deliveries = []
@@ -223,7 +248,7 @@ def _reaction_delivery_checks(host, guest, case, moving=False):
             len(events('host_own_hit', stimuli)) == 1 and not events('queued', own_rows) and any(
             r.get('event') == 'ineligible_queue' and r.get('local') is True and r.get('authority') is True and
             r.get('pending') is False for r in own_rows))
-    return checks, outcomes | dict(deliveries=deliveries)
+    return checks, outcomes | dict(deliveries=deliveries, queue_groups=queue_groups, raw_queue_count=len(raw_queues))
 
 
 def reaction_delivery_checks(host, guest, case, moving=False):
