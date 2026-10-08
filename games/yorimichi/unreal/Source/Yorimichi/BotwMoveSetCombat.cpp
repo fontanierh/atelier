@@ -393,7 +393,7 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
     {
         if (JapanNetwork::IsOnline(Character->GetWorld()))
         {
-            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->ForceClientAdjustment();
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->QueueReactionCheckpoint();
             Character->ForceNetUpdate();
         }
     };
@@ -556,7 +556,7 @@ void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActo
     {
         if (JapanNetwork::IsOnline(Character->GetWorld()))
         {
-            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->ForceClientAdjustment();
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->QueueReactionCheckpoint();
             Character->ForceNetUpdate();
         }
     };

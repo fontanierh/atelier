@@ -6,6 +6,7 @@
 #include "BotwMoveSet.generated.h"
 
 class AWandererCharacter;
+namespace JapanReactionDeliveryQA { struct FStimulus; }
 struct FJapanMoveCheckpoint;
 struct FBotwNetworkState;
 struct FJapanAvatarState;
@@ -183,6 +184,7 @@ public:
 
 private:
     friend struct FBotwNetworkState;
+    friend struct JapanReactionDeliveryQA::FStimulus;
     FJapanDefenceTimeline DefenceTimeline;
     FJapanDefenceClock DefenceClock;
     uint32 DefenceActionSerial = 0;

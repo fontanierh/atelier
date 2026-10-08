@@ -1,6 +1,7 @@
 #include "JapanMovementNet.h"
 #include "JapanCharacterMovement.h"
 #include "JapanJumpReplayQA.h"
+#include "JapanReactionDeliveryQA.h"
 #include "WandererCharacter.h"
 #include "BotwMoveSet.h"
 #include "Engine/PackageMapClient.h"
@@ -180,13 +181,24 @@ void FJapanMoveResponse::ServerFillResponseData(const UCharacterMovementComponen
     bHasCheckpoint = IsCorrection() && !Checkpoint.Bytes.IsEmpty() &&
         static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpointTime == Adjustment.TimeStamp;
     JapanJumpReplayQA::Sent(*this);
+    JapanReactionDeliveryQA::Response(static_cast<const UJapanCharacterMovement*>(&Movement), TEXT("prepared"), *this);
 }
 
 bool FJapanMoveResponse::Serialize(UCharacterMovementComponent& Movement, FArchive& Ar, UPackageMap* Map)
 {
     if (!FCharacterMoveResponseDataContainer::Serialize(Movement, Ar, Map)) return false;
     Ar << AcknowledgedEdge << ActivityEpoch;
-    if (!IsCorrection()) return !Ar.IsError();
-    Ar.SerializeBits(&bHasCheckpoint, 1);
-    return !bHasCheckpoint || Checkpoint.Serialize(Ar, Map);
+    bool Result = !Ar.IsError();
+    if (IsCorrection())
+    {
+        Ar.SerializeBits(&bHasCheckpoint, 1);
+        Result = !bHasCheckpoint || Checkpoint.Serialize(Ar, Map);
+    }
+    if (Result && !Ar.IsError() && Ar.IsSaving())
+    {
+        if (IsCorrection() && bHasCheckpoint)
+            static_cast<UJapanCharacterMovement&>(Movement).MovementCheckpointSerialized(ActivityEpoch, ClientAdjustment.TimeStamp);
+        JapanReactionDeliveryQA::Response(static_cast<const UJapanCharacterMovement*>(&Movement), TEXT("serialized"), *this);
+    }
+    return Result;
 }

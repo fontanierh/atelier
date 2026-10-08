@@ -45,6 +45,7 @@ UCLASS()
 class YORIMICHI_API UJapanCharacterMovement : public UCharacterMovementComponent
 {
     GENERATED_BODY()
+    friend class FJapanReactionSerializationTest;
 public:
     UJapanCharacterMovement(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     bool PredictsMoves() const;
@@ -52,6 +53,10 @@ public:
     bool ApplyMovementState(const FJapanMoveCheckpoint& State);
     bool QueueMoveButton(FName Button);
     bool QueueAuthoritativeRecovery(FVector Shore, float Yaw, float Damage);
+    // Publish externally resolved combat state on the next accepted movement response.
+    void QueueReactionCheckpoint();
+    // Called only after successful saving of the matching packed response.
+    void MovementCheckpointSerialized(uint32 Epoch, float Timestamp);
     virtual void SendClientAdjustment() override;
     FJapanMoveInput ReadMoveInput() const;
     FJapanMoveInput ConsumeMoveInput(float Dt);
@@ -109,6 +114,8 @@ private:
     double ClockResetAt = 0.;
     void QueueClockReset(uint8 Reason);
     double LastCustomCorrection = -1.;
+    bool bReactionCheckpointPending = false, bReactionCheckpointCaptured = false;
+    bool bCheckpointSerialized = false;
     FJapanMovementStats NetworkStats;
     uint32 ClientTraceRows = 0, ServerTraceRows = 0, ForcedTraceRows = 0;
 };

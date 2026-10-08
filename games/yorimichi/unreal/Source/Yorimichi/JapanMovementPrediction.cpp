@@ -2,6 +2,8 @@
 #include "JapanEnemyQA.h"
 #include "JapanVehicleTelemetry.h"
 #include "JapanJumpReplayQA.h"
+#include "JapanReactionDeliveryQA.h"
+#include "JapanReactionDeliveryProbe.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
@@ -71,11 +73,14 @@ uint32 UJapanCharacterMovement::GetActivityEpoch() const
 
 void UJapanCharacterMovement::ResetActivityPrediction()
 {
+    JapanReactionDeliveryQA::State(this, TEXT("epoch_reset"), bReactionCheckpointPending, bReactionCheckpointCaptured);
     ResetPredictionData_Client(); ResetPredictionData_Server();
     PendingEdges.Reset(); JournalFirstEdge = 1; ProcessedEdge = PendingAcknowledgedEdge = 0;
     HeldButtons = LastServerHolds = 0; bRecoveryQueued = false; bInputPrepared = false; ActiveInput = FJapanMoveInput();
     PendingCheckpoint = FJapanMoveCheckpoint(); PendingCheckpointTime = -1.f;
     LastCustomCorrection = -1.; bReceivedMoveInEpoch = false;
+    bReactionCheckpointPending = bReactionCheckpointCaptured = bCheckpointSerialized = false;
+    JapanReactionDeliveryQA::State(this, TEXT("epoch_reset_complete"), false, false);
     ClientTraceRows = ServerTraceRows = 0;
     MoveClock.BeginEpoch(FPlatformTime::Seconds()); bClockResetPending = bWaitingAfterClockReset = false;
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->ResetDefence();
@@ -518,10 +523,33 @@ bool UJapanCharacterMovement::ServerCheckClientError(float Timestamp, float Dt, 
         Super::ServerCheckClientError(Timestamp, Dt, Accel, ClientLocation, RelativeLocation, Base, Bone, Mode);
 }
 
+void UJapanCharacterMovement::QueueReactionCheckpoint()
+{
+    if (!CharacterOwner || !CharacterOwner->HasAuthority() || CharacterOwner->GetRemoteRole()!=ROLE_AutonomousProxy || !PredictsMoves())
+    {
+        JapanReactionDeliveryQA::State(this, TEXT("ineligible_queue"), bReactionCheckpointPending, bReactionCheckpointCaptured);
+        return;
+    }
+    bReactionCheckpointPending = true;
+    bReactionCheckpointCaptured = bCheckpointSerialized = false;
+    ensureMsgf(ShouldUsePackedMovementRPCs(), TEXT("Reaction checkpoints require packed movement responses"));
+    // ForceClientAdjustment alone clears delivery throttling; it does not make
+    // a matching-position response carry the new action/velocity checkpoint.
+    // ForceReplicationUpdate needs existing server prediction data. It moves
+    // LastUpdateTime back so UE's WithinUpdateDelayBounds cannot skip capture.
+    const auto* Server=GetPredictionData_Server_Character();
+    JapanReactionDeliveryQA::State(this, TEXT("queued"), true, false, Server->CurrentClientTimeStamp);
+    ForceReplicationUpdate();
+    ForceClientAdjustment();
+}
+
 void UJapanCharacterMovement::ServerMoveHandleClientError(float Timestamp, float Dt, const FVector& Accel,
     const FVector& RelativeLocation, FMovementBaseInterfaceData* Base, FName Bone, uint8 Mode)
 {
     if (JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves()) return;
+    // Keep forcing until an adjustment is actually sent: several packed moves
+    // can replace the pending response in one frame. Never emit a stale stamp.
+    if (bReactionCheckpointPending) GetPredictionData_Server_Character()->bForceClientUpdate = true;
     const bool ForceProbe = JapanJumpReplayQA::ForceResponse(this);
     TGuardValue<float> ProbeRate(NetworkMinTimeBetweenClientAdjustments, ForceProbe ? 0.f : NetworkMinTimeBetweenClientAdjustments);
     TGuardValue<float> ProbeLargeRate(NetworkMinTimeBetweenClientAdjustmentsLargeCorrection, ForceProbe ? 0.f : NetworkMinTimeBetweenClientAdjustmentsLargeCorrection);
@@ -535,12 +563,17 @@ void UJapanCharacterMovement::ServerMoveHandleClientError(float Timestamp, float
         PendingCheckpoint = CaptureMovementState();
 
     }
+    bReactionCheckpointCaptured = bReactionCheckpointPending && !PendingCheckpoint.Bytes.IsEmpty();
+    JapanReactionDeliveryQA::State(this, TEXT("capture"), bReactionCheckpointPending, bReactionCheckpointCaptured, Timestamp);
+    JapanReactionDeliveryQA::AfterCapture(this, bReactionCheckpointPending, bReactionCheckpointCaptured,
+        GetWorld()->GetTimeSeconds()-ServerLastClientGoodMoveAckTime>NetworkMinTimeBetweenClientAckGoodMoves);
     if (ForceProbe) SendClientAdjustment();
 }
 
 void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& Response)
 {
     const auto& Custom = static_cast<const FJapanMoveResponse&>(Response);
+    JapanReactionDeliveryQA::Response(this, TEXT("received"), Custom);
     if (JapanJumpReplayQA::Defer(this, Custom)) return;
     if (Custom.ActivityEpoch != GetActivityEpoch()) return;
     if (JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves())
@@ -557,6 +590,7 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     // A duplicate or stale response must not rewind state. CMC must have accepted this exact correction first.
     if (Client->LastAckedMove == PreviousAck || !Client->LastAckedMove.IsValid() ||
         Client->LastAckedMove->TimeStamp != Response.ClientAdjustment.TimeStamp) return;
+    JapanReactionDeliveryQA::Response(this, TEXT("accepted"), Custom);
     AcknowledgeEdges(Custom.AcknowledgedEdge);
     if (!Custom.IsCorrection()) return;
     const auto& Saved = static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove);
@@ -601,16 +635,35 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     else if (PredictsMoves() && Custom.bHasCheckpoint)
     {
         ++NetworkStats.Checkpoints;
+        JapanReactionDeliveryQA::Response(this, TEXT("applied"), Custom);
         if(Rider)JapanVehicleTelemetry::Checkpoint(Rider,true,State.Bytes.Num());
     }
 }
 
+void UJapanCharacterMovement::MovementCheckpointSerialized(uint32 Epoch, float Timestamp)
+{
+    bCheckpointSerialized = Epoch == GetActivityEpoch() && Timestamp == PendingCheckpointTime;
+}
+
 void UJapanCharacterMovement::SendClientAdjustment()
 {
+    bCheckpointSerialized = false;
+    if (JapanReactionDeliveryQA::HoldSend(this)) return;
     const float Before = ServerLastClientAdjustmentTime;
     Super::SendClientAdjustment();
     // Capture is not delivery: UE may throttle or replace pending responses within a frame.
-    if (ServerLastClientAdjustmentTime != Before) LastCustomCorrection = ServerLastClientAdjustmentTime;
+    if (ServerLastClientAdjustmentTime != Before)
+    {
+        LastCustomCorrection = ServerLastClientAdjustmentTime;
+        // Sending an older ACK/checkpoint before the first post-hit move must
+        // not consume the queued reaction. Capture and delivery are separate.
+        // UE stamps the timer before serialization, which can fail. Consume
+        // only a successfully serialized matching checkpoint from this call.
+        if (bReactionCheckpointPending && bReactionCheckpointCaptured && bCheckpointSerialized)
+            bReactionCheckpointPending = bReactionCheckpointCaptured = false;
+        JapanReactionDeliveryQA::State(this, TEXT("send_timer_advanced"), bReactionCheckpointPending, bReactionCheckpointCaptured);
+    }
+    JapanReactionDeliveryQA::AfterSend(this, bCheckpointSerialized);
 }
 
 bool UJapanCharacterMovement::QueueAuthoritativeRecovery(FVector Shore, float Yaw, float Damage)

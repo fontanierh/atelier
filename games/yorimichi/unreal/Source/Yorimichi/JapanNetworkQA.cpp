@@ -4,6 +4,7 @@
 #include "JapanCombatQA.h"
 #include "JapanEnemyQA.h"
 #include "JapanVehicleQA.h"
+#include "JapanReactionDeliveryProbe.h"
 #include "JapanGameplayCollisionQA.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
@@ -29,10 +30,11 @@ void UJapanGameInstance::StartNetworkQA()
 {
     if (!FParse::Value(FCommandLine::Get(), TEXT("networkqa="), NetworkQARole))
     {
-        UE_LOG(LogTemp, Display, TEXT("NETWORK diagnostics session=%d gameplay=%d combat=%d enemy=%d vehicles=%d code=%s target=%s input=%s"),
+        UE_LOG(LogTemp, Display, TEXT("NETWORK diagnostics session=%d gameplay=%d combat=%d enemy=%d vehicles=%d reaction=%d code=%s target=%s input=%s"),
             NetworkQATicker.IsValid() ? 1 : 0, FParse::Param(FCommandLine::Get(),TEXT("networkgameplay")) ? 1 : 0,
             FParse::Param(FCommandLine::Get(),TEXT("networkcombat")) ? 1 : 0, FParse::Param(FCommandLine::Get(),TEXT("networkenemy")) ? 1 : 0,
             FParse::Param(FCommandLine::Get(),TEXT("networkvehicles")) ? 1 : 0,
+            FParse::Param(FCommandLine::Get(),TEXT("networkreactiondelivery")) ? 1 : 0,
             UTF8_TO_TCHAR(YORIMICHI_NETWORK_BUILD_ID),UTF8_TO_TCHAR(YORIMICHI_COMPILED_TARGET),UTF8_TO_TCHAR(YORIMICHI_COMPILED_INPUT_DIGEST));
         return;
     }
@@ -241,7 +243,13 @@ bool UJapanGameInstance::TickNetworkQA(float)
     const auto* State = World->GetGameState<AJapanGameState>();
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     bool GameplayDone = true;
-    if (FParse::Param(FCommandLine::Get(), TEXT("networkvehicles")) && World->GetNetMode() != NM_Standalone)
+    if (FParse::Param(FCommandLine::Get(), TEXT("networkreactiondelivery")) && World->GetNetMode() != NM_Standalone)
+    {
+        FString Error;
+        GameplayDone = JapanReactionDeliveryQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
+        if (!Error.IsEmpty()) return Fail(Error);
+    }
+    else if (FParse::Param(FCommandLine::Get(), TEXT("networkvehicles")) && World->GetNetMode() != NM_Standalone)
     {
         FString Error;
         GameplayDone = JapanVehicleQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
