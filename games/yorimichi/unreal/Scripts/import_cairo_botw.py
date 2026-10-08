@@ -262,14 +262,10 @@ def equipment(link, cairo, glide):
             if 'clip' in item:
                 held, miss = glider(*glide, item, scale)
                 entry['held'], checks[slot]['grip_miss_cm'] = record_of(held), miss
-                # Its place on the body on the neutral glide and the elbows there, in the root bone's frame (the clip's
-                # root is turned from the game's: in component space the glider came out a quarter turn off): the game
-                # holds the glider from a glide's first frame, before a straight glide has fitted it to his hands.
-                root = glide[1].transform(P.get_bone_names(glide[1].pose)[0])
-                on_body = U.MathLibrary.compose_transforms(held, glide[1].transform('hand_R'))
-                entry['on_root'] = record_of(U.MathLibrary.make_relative_transform(on_body, root))
-                entry['elbows_on_root'] = [[round(v, 3) for v in (lambda e: [e.x, e.y, e.z])(U.MathLibrary.inverse_transform_location(
-                    root, U.Vector(*glide[1].at(f'forearm_{side}'))))] for side in 'RL']
+                # Its place on the body on the neutral glide (component space) and the elbows there: the game holds the
+                # glider from a glide's first frame, before a straight glide has fitted it to his hands.
+                entry['on_body'] = record_of(U.MathLibrary.compose_transforms(held, glide[1].transform('hand_R')))
+                entry['elbows'] = [[round(v, 3) for v in glide[1].at(f'forearm_{side}')] for side in 'RL']
         if item.get('back') and item.get('carry'):
             carry = item['carry']
             local = U.Transform(U.Vector(*carry['location']), U.Quat(*carry['rotation']).rotator(), U.Vector(1, 1, 1))
