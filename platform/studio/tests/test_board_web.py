@@ -1,8 +1,6 @@
 """Private HTTP boundary and durable broadcast fanout, with an isolated mailbox."""
 import gzip
 import json
-import sqlite3
-import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -12,6 +10,8 @@ from urllib.request import Request, urlopen
 import pytest
 
 from atelier import board, board_files, board_web
+
+from board_server import ORIGIN, USER, Server, call, snapshot
 
 
 @pytest.fixture
@@ -66,57 +66,44 @@ def test_invalid_broadcast_never_writes(cache, body, key, topic):
     assert board.messages() == []
 
 
-def test_read_only_history_filters_literal_search_and_complete_broadcast_groups(cache):
+def test_read_only_history_filters_literal_search_and_complete_broadcast_groups(http_server):
     for i in range(4):
         board.post('one', f'ordinary {i}')
     rows = board.send_web('operator', '100% ready _literal_', str(uuid.uuid4()))
     board.root().joinpath('render-board.md').write_text('## Holding\nNone\n## Waiting\n- review\n')
-    initial = board_web.snapshot({'limit': ['1']})
+    initial = snapshot(http_server, limit=1)
     assert [m['id'] for m in initial['messages']] == [rows[1]['id'], rows[0]['id']]
     assert initial['has_more']
     assert initial['schedule']['Waiting'] == '- review'
-    previous = board_web.snapshot({'before': [str(rows[0]['id'])], 'limit': ['2']})
+    previous = snapshot(http_server, before=rows[0]['id'], limit=2)
     assert [m['id'] for m in previous['messages']] == [4, 3]
-    assert len(board_web.snapshot({'q': ['%']})['messages']) == 2
-    assert board_web.snapshot({'q': ['%not-a-wildcard']})['messages'] == []
-    assert len(board_web.snapshot({'agent': ['one'], 'topic': ['request']})['messages']) == 2
+    assert len(snapshot(http_server, q='%')['messages']) == 2
+    assert snapshot(http_server, q='%not-a-wildcard')['messages'] == []
+    assert len(snapshot(http_server, agent='one', topic='request')['messages']) == 2
     assert {a['agent']: a['cursor'] for a in initial['agents']} == {'one': 0, 'two': 0, 'paused': 0}
     assert [a['pending'] for a in initial['agents'] if a['agent'] == 'two'] == [1]
 
 
-def test_snapshot_carries_only_the_recent_render_log(cache):
+def test_snapshot_carries_only_the_recent_render_log(http_server):
     log = '\n'.join(f'- entry {i}\n  detail {i}' for i in range(100))
     board.root().joinpath('render-board.md').write_text(f'## Holding\nNone\n## Log\nheader line\n{log}\n')
-    state = board_web.snapshot({'log': ['3']})
+    state = snapshot(http_server, log=3)
     assert state['schedule']['Log'] == '- entry 97\n  detail 97\n- entry 98\n  detail 98\n- entry 99\n  detail 99'
     assert state['log_total'] == 101
-    assert board_web.snapshot({})['schedule']['Log'].count('- entry') == 30
+    assert snapshot(http_server)['schedule']['Log'].count('- entry') == 30
     with pytest.raises(ValueError):
-        board_web.snapshot({'log': ['0']})
+        snapshot(http_server, log=0)
 
 
 @pytest.fixture
 def http_server(cache):
-    server = board_web.Server(('127.0.0.1', 0), origins=['https://board.example.ts.net'], allowed_user='owner@example.test')
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
+    server = Server(cache, origins=[ORIGIN], allowed_user=USER)
     yield server
-    server.shutdown(); server.server_close(); thread.join(timeout=3)
+    server.stop()
 
 
 def request(server, path='/', payload=None, headers=None):
-    url = f'http://127.0.0.1:{server.server_port}'
-    values = {'Origin': url, 'Content-Type': 'application/json', 'X-Board-CSRF': server.csrf}
-    values.update(headers or {})
-    data = None if payload is None else json.dumps(payload).encode()
-    req = Request(url+path, data=data, headers=values)
-    try:
-        response = urlopen(req, timeout=3)
-    except HTTPError as error:
-        response = error
-    with response:
-        body = response.read()
-        return response.status, body, response.headers
+    return call(server, path, payload, headers)
 
 
 def test_http_static_and_read_only_api(http_server):
@@ -202,16 +189,16 @@ def test_preview_and_history_share_safe_markdown_without_posts_or_cursor_changes
     assert '<script' not in rendered and '<img' not in rendered and 'href="javascript:' not in rendered
     assert board.messages() == []
     number = board.post('one', body, recipient='two')
-    state = board_web.snapshot({})
+    state = snapshot(http_server)
     assert state['messages'][0]['body_html'] == rendered
     assert not state['messages'][0]['acknowledged']
     # A transport cursor and an unrelated sender's reply are not an acknowledgement.
     with board.database() as db:
         db.execute("UPDATE subscribers SET cursor=? WHERE agent='two'", (number,))
     board.post('one', 'wrong owner ack', recipient='operator', topic='ack', reply_to=number)
-    assert not next(m for m in board_web.snapshot({})['messages'] if m['id'] == number)['acknowledged']
+    assert not next(m for m in snapshot(http_server)['messages'] if m['id'] == number)['acknowledged']
     board.post('two', '**Received** — review in two minutes.', recipient='one', topic='ack', reply_to=number)
-    assert next(m for m in board_web.snapshot({})['messages'] if m['id'] == number)['acknowledged']
+    assert next(m for m in snapshot(http_server)['messages'] if m['id'] == number)['acknowledged']
     assert request(http_server, '/api/preview', {'body': body}, {'Origin': 'https://attacker.test'})[0] == 403
 
 
@@ -220,7 +207,7 @@ def upload(server, data, name, mime, headers=None):
     values = {'Origin': url, 'Content-Type': mime, 'X-Board-CSRF': server.csrf, 'X-File-Name': name}
     values.update(headers or {})
     try:
-        response = urlopen(Request(url+'/api/upload', data=data, headers=values), timeout=3)
+        response = urlopen(Request(url+'/api/upload', data=data, headers=values), timeout=5)
     except HTTPError as error:
         response = error
     with response:
@@ -361,12 +348,17 @@ def test_removing_an_evicted_agent_hides_it_and_stops_delivery_but_keeps_history
     assert request(http_server, '/api/remove', {'agent': 'one'}, headers={'X-Board-CSRF': 'wrong'})[0] == 403
 
     # A supervised listener is retired through its service manager, so launchd cannot bring it back.
-    from atelier import board_service
-    retired = []
-    monkeypatch.setattr(board_service, 'retire', retired.append)
+    import os
+    plist = http_server.launchctl.parent / 'home/Library/LaunchAgents/com.atelier.board.one.plist'
+    plist.parent.mkdir(parents=True)
+    plist.write_text('<plist/>')
     with board.database() as db:
         db.execute("UPDATE subscribers SET supervised='label' WHERE agent='one'")
-    assert request(http_server, '/api/remove', {'agent': 'one'})[0] == 200 and retired == ['one']
+    assert request(http_server, '/api/remove', {'agent': 'one'})[0] == 200
+    assert http_server.retired() == [f'bootout gui/{os.getuid()}/com.atelier.board.one'] and not plist.exists()
+    with board.database() as db:
+        row = db.execute("SELECT supervised, stop, removed FROM subscribers WHERE agent='one'").fetchone()
+    assert tuple(row) == (None, 1, 1)
 
     # Subscribing again brings an agent back.
     with board.subscriber('two', http_server.server_address[0]):
@@ -433,16 +425,17 @@ def test_review_pages_are_static_and_only_from_the_reviews_folder(http_server):
         assert request(http_server, path)[0] == 404
 
 
-def test_bare_addresses_become_safe_readable_links():
-    from atelier import board_markdown
-    html = board_markdown.render('Report: https://claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf. See (https://github.com/o/r/pull/85) '
+def test_bare_addresses_become_safe_readable_links(http_server):
+    def render(body):
+        return json.loads(request(http_server, '/api/preview', {'body': body})[1])['html']
+    html = render('Report: https://claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf. See (https://github.com/o/r/pull/85) '
                                  'and `https://in.code/x` or [docs](https://example.com/guide) javascript:alert(1)')
     assert '<a href="https://claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf" class="url"' in html
     assert '>claude.ai/artifact/U72bM2LBs3oQRADZXpnmAf</a>.' in html, 'the full stop stays outside the link'
     assert 'href="https://github.com/o/r/pull/85"' in html and '85</a>)' in html, 'so does the closing bracket'
     assert '<code>https://in.code/x</code>' in html and html.count('href="https://example.com/guide"') == 1
     assert 'href="javascript' not in html
-    long = board_markdown.render('https://example.com/a/very/long/path/that/goes/on/and/on/to/the/final-segment-name')
+    long = render('https://example.com/a/very/long/path/that/goes/on/and/on/to/the/final-segment-name')
     assert '>example.com/…/final-segment-name</a>' in long
 
 
@@ -580,7 +573,7 @@ def test_operator_task_cli_opens_and_lists(cache, capsys, monkeypatch):
         assert sum(result is not None for result in pool.map(ask, range(8))) == board.OPEN_TASKS
 
 
-def test_board_village_is_served_beside_the_classic_board(http_server, tmp_path, monkeypatch):
+def test_board_village_is_served_beside_the_classic_board(http_server):
     # The village may compile wasm; the classic page keeps its stricter policy.
     status, body, headers = request(http_server, '/world')
     assert status == 200 and b'/world/world.js' in body and headers['Cache-Control'] == 'no-store'
@@ -590,9 +583,9 @@ def test_board_village_is_served_beside_the_classic_board(http_server, tmp_path,
     status, body, headers = request(http_server, '/world/ui.js')
     assert status == 200 and b'/api/send' in body and headers['Content-Type'].startswith('text/javascript')
     # The compiled scene is a local build product: absent until built, then served with its unpacked size.
-    monkeypatch.setitem(board_web.WORLD, '/world/board_world_bg.wasm', (tmp_path / 'scene.wasm', 'application/wasm'))
     assert request(http_server, '/world/board_world_bg.wasm')[0] == 404
-    (tmp_path / 'scene.wasm').write_bytes(b'\0asm' + bytes(4000))
+    http_server.world.mkdir()
+    (http_server.world / 'board_world_bg.wasm').write_bytes(b'\0asm' + bytes(4000))
     status, body, headers = request(http_server, '/world/board_world_bg.wasm')
     assert status == 200 and headers['Content-Type'] == 'application/wasm' and headers['X-Uncompressed-Length'] == '4004'
     assert "'wasm-unsafe-eval'" in headers['Content-Security-Policy']
@@ -605,3 +598,13 @@ def test_board_village_records_phone_timings(http_server, cache):
     assert request(http_server, '/api/world/timing', {'ua': 'x' * 5000})[0] == 400
     lines = (board.root() / 'world-timings.jsonl').read_text().splitlines()
     assert len(lines) == 1 and json.loads(lines[0])['total_ms'] == 2400
+
+
+def test_the_api_contract_is_the_servers_own(cache):
+    # Clients build their types from the committed schema, so it must be what the server actually speaks.
+    import subprocess
+    from board_server import binary
+    from atelier import paths
+    committed = (paths.PLATFORM / 'web' / 'board' / 'api' / 'board-api.schema.json').read_text()
+    current = subprocess.run([str(binary()), '--schema'], capture_output=True, text=True, check=True).stdout
+    assert committed == current, 'regenerate it: atelier-board-server --schema > platform/web/board/api/board-api.schema.json'

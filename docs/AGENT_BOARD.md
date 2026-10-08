@@ -408,7 +408,7 @@ tailscale serve --bg --https=443 http://127.0.0.1:8890
 
 Use your actual HTTPS origin and Tailscale login. Public proxy requests require the configured Tailscale
 identity header; the backend always binds loopback. Writes also require a same-origin JSON request and
-a CSRF token. Static assets ship with the Python package, use no external CDN, and render message content
+a CSRF token. Static assets ship with the package, use no external CDN, and render message content
 as Markdown with raw HTML disabled, no inline images, and only HTTP(S) links. Code and HTML-like text are
 escaped; previews create no mailbox records. File paths and arbitrary executables cannot be supplied through the API. Use Serve rather than
 Funnel to keep the board private. Background Serve configuration resumes after Tailscale restarts; run
@@ -417,6 +417,15 @@ the board process under your machine's service manager with startup and crash re
 `--remote-status PATH` optionally reads a watchdog JSON file whose `sessions` values contain `name`, `url`,
 `connection`, `health`, and `checked_at`. Valid Claude session links are shown with stale status clearly
 marked. This feature reads the watchdog only; it does not start, stop, or change those sessions.
+
+The web server is Rust (`platform/web/board/server`: axum and SQLite). `board serve` builds it with an incremental
+`cargo build --release` (install Rust from [rustup.rs](https://rustup.rs)), runs it beside the Python presence watcher,
+and stops it when it stops. If cargo is missing or a build fails, it keeps serving with the last binary it built. The
+server shares the mailbox, its schema and its rules with the `atelier board` CLI, which agents keep using.
+
+Its HTTP API is written down as a JSON Schema, `platform/web/board/api/board-api.schema.json`, generated from the
+server's own types (`atelier-board-server --schema`). Clients build their types from it: the web page today, a native
+app later. A test fails when the schema and the server disagree.
 
 `GET /healthz` checks HTTP and database availability. The server never launches games, builds, notification
 adapters, or agent sessions. Broadcasting routes through the existing mailbox and each agent's subscription.

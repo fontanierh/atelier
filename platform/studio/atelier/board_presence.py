@@ -13,7 +13,7 @@ import threading
 import time
 from pathlib import Path
 
-from .board_store import database, post
+from .board_store import database, post, root
 
 QUIET = 600
 WATCH = 'status-watch'
@@ -81,6 +81,29 @@ def session_state(label):
     return codex_state(way['thread'], way['codex'], way['socket'])
 
 
+def render_floor():
+    """The render board's human-maintained scheduling sections, and the live render lock holders. The web board's
+    server reads the same file and locks the same way."""
+    from .safety import render_lock
+    try:
+        text = (root() / 'render-board.md').read_text()
+    except FileNotFoundError:
+        text = ''
+    # Telemetry markup is advisory; return human-maintained scheduling sections separately.
+    text = re.sub(r'<!-- atelier-coordinator:start -->.*?<!-- atelier-coordinator:end -->', '', text, flags=re.S)
+    sections = {match[1]: match[2].strip() for match in re.finditer(
+        r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
+    # Use the owning library's PID/start validation; stale lock text is never a live owner.
+    holders = {}
+    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
+        holder = render_lock.read_holder(path)
+        if holder:
+            holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),
+                             'checkout': Path(holder.get('repo') or holder.get('checkout') or '').name,
+                             'time': holder.get('time')}
+    return sections, holders
+
+
 # A Holding or Waiting line starts with its timestamp and then the agent it belongs to.
 SCHEDULED = re.compile(r'^\s*-\s+\d{4}-\d\d-\d\d[ T]\d\d:\d\d(?::\d\d)?(?:\s+[A-Z]{2,5})?\s+([A-Za-z0-9][\w.-]*)', re.M)
 
@@ -101,8 +124,7 @@ def step(now=None, read=session_state, floor=None):
     """Record every supervised agent's session state, and leave one note for an agent quiet for QUIET seconds whose
     status line still names work and that has no render work in flight. Returns the agents noted."""
     now = now or time.time()
-    if floor is None:
-        from .board_web import render_floor as floor
+    floor = floor or render_floor
     with database() as db:
         rows = [dict(row) for row in db.execute(
             'SELECT agent, supervised, checkout, task, task_at, session, session_since FROM subscribers '
