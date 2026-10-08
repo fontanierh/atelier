@@ -432,26 +432,26 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     if(Began>=0.&&!Complete&&Now-Began>120.)Fail(FString::Printf(TEXT("Vehicle deadline: %s phase %d"),*Case,Phase));
     // Unsupported routes fail explicitly until their real stimulus is implemented.
     if(Case!=TEXT("bike")&&Case!=TEXT("sail")&&Case!=TEXT("mount-bike")&&Case!=TEXT("mount-sail")&&Case!=TEXT("park")&&Case!=TEXT("crash")&&!ClockCase())Fail(TEXT("Vehicle case has no native stimulus yet"));
-    int32 Count=0;bool Ready=true;Host.Reset();Guest.Reset();
+    int32 Count=0;bool AllPawnsReady=true;Host.Reset();Guest.Reset();
     for(TActorIterator<AWandererCharacter> It(World.Get());It;++It)
     {
         if(It->IsNpc())continue;
         const auto* State=It->GetPlayerState<AJapanPlayerState>();
-        Ready&=State&&State->bWorldReady&&It->IsReady()&&It->GetLandscape()&&It->GetLandscape()->bGameplayReady;
+        AllPawnsReady&=State&&State->bWorldReady&&It->IsReady()&&It->GetLandscape()&&It->GetLandscape()->bGameplayReady;
         ++Count;
         if(Server?It->IsLocallyControlled():!It->IsLocallyControlled())Host=*It;else Guest=*It;
     }
-    if(!Ready||Count!=2||!Host.IsValid()||!Guest.IsValid())
+    if(!AllPawnsReady||Count!=2||!Host.IsValid()||!Guest.IsValid())
     {
         if(Began>=0.&&MissingReadySince<0.)MissingReadySince=Now;
         const bool LostReady=MissingReadySince>=0.&&Now-MissingReadySince>2.;
         if(LostReady)Fail(FString::Printf(TEXT("Vehicle phase %d lost ready replicated pawns for 2s: count=%d ready=%d host=%d guest=%d"),
-            Phase,Count,Ready,Host.IsValid(),Guest.IsValid()));
+            Phase,Count,AllPawnsReady,Host.IsValid(),Guest.IsValid()));
         if(Began>=0.&&(LostReady||Now-LastReadinessWrite>=1.))
         {
             LastReadinessWrite=Now;auto Gate=MakeShared<FJsonObject>();
             Gate->SetNumberField(TEXT("at"),Now);Gate->SetNumberField(TEXT("phase"),Phase);Gate->SetNumberField(TEXT("pawns"),Count);
-            Gate->SetBoolField(TEXT("ready"),Ready);Gate->SetBoolField(TEXT("host_present"),Host.IsValid());Gate->SetBoolField(TEXT("guest_present"),Guest.IsValid());
+            Gate->SetBoolField(TEXT("ready"),AllPawnsReady);Gate->SetBoolField(TEXT("host_present"),Host.IsValid());Gate->SetBoolField(TEXT("guest_present"),Guest.IsValid());
             Gate->SetNumberField(TEXT("missing_seconds"),Now-MissingReadySince);Gate->SetStringField(TEXT("error"),Error);
             Write(Folder/(Server?TEXT("vehicle-host-readiness.json"):TEXT("vehicle-guest-readiness.json")),Gate);
             if(LostReady)Write(Folder/(Server?TEXT("vehicle-failed.json"):TEXT("vehicle-client-failed.json")),Gate);
