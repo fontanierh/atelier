@@ -1,4 +1,5 @@
 #include "HorseRideComponent.h"
+#include "JapanNetwork.h"
 #include "AtelierFX.h"
 #include "BotwRider.h"
 #include "CairoCharacter.h"
@@ -50,7 +51,7 @@ void UHorseRideComponent::Initialize(AWandererCharacter* Character)
 bool UHorseRideComponent::IsAvailable() const
 {
     const FString Name = RiderFor(Rider);
-    return !Name.IsEmpty() && FHorseSpec::Find(ChosenHorse()) != nullptr;
+    return JapanNetwork::Allows(GetWorld(), JapanNetwork::EActivity::Horse) && !Name.IsEmpty() && FHorseSpec::Find(ChosenHorse()) != nullptr;
 }
 
 AHippodromeFigure* UHorseRideComponent::GetFigure() const { return Figure.Get(); }
@@ -94,6 +95,7 @@ bool UHorseRideComponent::ClearFor(const FVector& Ground, float Yaw) const
 
 bool UHorseRideComponent::Toggle()
 {
+    if (!JapanNetwork::Allows(GetWorld(), JapanNetwork::EActivity::Horse)) { Hint = TEXT("Horse riding is available in solo play."); return false; }
     if (!Rider) return false;
     if (bRiding)
     {

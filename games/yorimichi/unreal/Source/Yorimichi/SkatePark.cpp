@@ -114,7 +114,7 @@ bool ASkatePark::Initialize(const FString& Path)
     Look->Settings.DynamicGlobalIlluminationMethod=EDynamicGlobalIlluminationMethod::None;
     Look->RegisterComponent();
 
-    int32 Meshes = 0;
+    int32 Meshes = 0, Missing = 0;
     for (const auto& Entry : Root->GetArrayField(TEXT("meshes")))
     {
         FString Name; bool bBlocks = true, bHidden = false;
@@ -125,7 +125,7 @@ bool ASkatePark::Initialize(const FString& Path)
             Entry->AsObject()->TryGetBoolField(TEXT("blocks"), bBlocks); Entry->AsObject()->TryGetBoolField(TEXT("hidden"), bHidden);
         }
         UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
-        if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Skate park: mesh %s is not imported"), *Name); continue; }
+        if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("Skate park: mesh %s is not imported"), *Name); continue; }
         auto* C = NewObject<UStaticMeshComponent>(this, *Name);
         // Static children only attach to a static root: the root is placed first, then fixed.
         C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(RootComponent);
@@ -194,5 +194,5 @@ bool ASkatePark::Initialize(const FString& Path)
         }
     }
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK loaded: %d meshes, %d rails, spawn %s"), Meshes, RailCount, *ParkSpawn.ToString());
-    return true;
+    return Missing == 0 && Meshes > 0 && Rails && RailCount == Rails->Num() && RailCount > 0;
 }

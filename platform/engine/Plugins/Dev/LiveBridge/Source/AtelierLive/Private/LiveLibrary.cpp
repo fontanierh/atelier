@@ -365,9 +365,15 @@ static bool LoopbackOnly(int32 Port)
 
 void AtelierLive::SetTeleport(TFunction<bool(APawn*, const FVector&, float)> InTeleport) { Teleport = MoveTemp(InTeleport); }
 
+void AtelierLive::Stop()
+{
+    if (Router) for (const FHttpRouteHandle& Route : Routes) Router->UnbindRoute(Route);
+    Routes.Reset(); Router.Reset(); bStarted = false; Teleport = nullptr;
+}
+
 void AtelierLive::Start(UWorld* World)
 {
-    if (bStarted || !World || FParse::Param(FCommandLine::Get(), TEXT("nolive"))) return;
+    if (bStarted || !World || World->GetNetMode() != NM_Standalone || FParse::Param(FCommandLine::Get(), TEXT("nolive"))) return;
 #if !WITH_EDITOR
     // A packaged game is not inside the repository its overlays and Python helper come from, and should not listen
     // for remote control: the bridge runs only when the player passes -live.

@@ -1,5 +1,6 @@
 #include "FoxHunterAnimInstance.h"
 #include "FoxHunter.h"
+#include "JapanNetwork.h"
 #include "WandererAnimInstance.h"
 #include "Animation/AnimInstanceProxy.h"
 #include "Animation/AnimNode_SequencePlayer.h"
@@ -46,6 +47,10 @@ struct FFoxHunterAnimProxy final : public FAnimInstanceProxy
             {
                 Action.SetSequence(Clip); Action.SetAccumulatedTime(0.f); Action.SetLoopAnimation(Fox->DoesActionLoop()); Action.SetPlayRate(1.f);
             }
+        }
+        if (State.bAction && JapanNetwork::IsOnline(Fox->GetWorld()) && !Fox->HasAuthority())
+        {
+            Action.SetAccumulatedTime(Fox->GetActionTime()); Action.SetPlayRate(0.f);
         }
         AppliedSerial = State.Serial;
     }

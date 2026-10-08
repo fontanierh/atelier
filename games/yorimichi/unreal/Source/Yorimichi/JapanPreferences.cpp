@@ -1,4 +1,6 @@
 #include "JapanPreferences.h"
+#include "JapanNetwork.h"
+#include "JapanSession.h"
 #include "BotwRider.h"
 #include "BotwMoveSet.h"
 #include "CairoCharacter.h"
@@ -384,18 +386,18 @@ bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
 }
 void UJapanPreferences::Apply()
 {
-    if (!Owner) return;
-    Owner->SetStaminaRings(FMath::RoundToInt(Get(TEXT("stamina_rings"))));
+    if (!Owner || !Owner->IsLocallyControlled()) return;
+    if (!JapanNetwork::IsOnline(Owner->GetWorld())) Owner->SetStaminaRings(FMath::RoundToInt(Get(TEXT("stamina_rings"))));
     if (USkateComponent* Skate = Owner->GetSkate())
     {
         Skate->SetGoofy(Get(TEXT("goofy")) > .5f);
         // At once, mid-ride too; an unchanged feel leaves the session alone.
         FString Error;
-        if (!Skate->SetFeel(GetSkateFeel(), Error)) UE_LOG(LogTemp, Warning, TEXT("PREFERENCES skate feel refused: %s"), *Error);
+        if (!Skate->SetFeel(JapanNetwork::IsOnline(Owner->GetWorld()) ? FSkateFeel::Defaults() : GetSkateFeel(), Error)) UE_LOG(LogTemp, Warning, TEXT("PREFERENCES skate feel refused: %s"), *Error);
     }
     // The move set takes the shield and the merged or legacy BOTW rules at once; Cairo's legacy moves need the
     // character switch (ToggleMenu).
-    if (UBotwMoveSet* Moves = Owner->GetMoves(); Moves && Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); }))
+    if (UBotwMoveSet* Moves = Owner->GetMoves(); !JapanNetwork::IsOnline(Owner->GetWorld()) && Moves && Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); }))
     {
         Moves->SetLegacy(FMath::RoundToInt(Get(TEXT("moveset"))) == UBotwMoveSet::LegacyBotw);
         Moves->SetShield(Get(TEXT("shield")) > .5f);
@@ -823,6 +825,8 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         })];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(STextBlock).AutoWrapText(true)
         .Text(FText::FromString(TEXT("Automatic changes distant leaf outlines only. Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default. Turning optimization off restores original full-detail trees immediately.")))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
+        .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); })];
     // The character switch (ABotwRider::SwitchPlayer): Cairo, with the merged move set when it is built, and every BOTW
     // character with a rider definition. The switch waits for the next tick, out of the menu's click.
     const auto Switch = [this](const FString& Name)
@@ -842,18 +846,22 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         for (const FString& Name : Names)
         {
             const bool bCairo = Name == TEXT("Cairo");
-            Characters->AddSlot()[SNew(SButton).IsEnabled(bCairo ? !bPlayingCairo : Name != Playing)
+            Characters->AddSlot()[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && (bCairo ? !bPlayingCairo : Name != Playing))
                 .Text(FText::FromString(ABotwRider::Label(Name)))
                 .OnClicked_Lambda([Switch,CairoName,Name,bCairo] { Switch(bCairo ? CairoName() : Name); return FReply::Handled(); })];
         }
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
     }
+    if (JapanNetwork::IsOnline(Owner->GetWorld()))
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
+            .Text(FText::FromString(TEXT("Choose your character and shield before joining. Shared games use the merged move set, two stamina rings and default skate physics. Horses and races are available in solo play.")))];
     TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("show_fps"),TEXT("goofy")};
     if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); })) Toggles.Append({TEXT("moveset"),TEXT("shield")});
     for (const FString& Key : Toggles)
     {
         TSharedRef<SButton> Button = SNew(SButton)
+            .IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) || (Key != TEXT("moveset") && Key != TEXT("shield")))
             .Text_Lambda([this,Key]
             {
                 const bool Enabled = Get(*Key) > .5f;
@@ -895,7 +903,7 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Button];
     }
     // Every way the board rides, on a page of its own.
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton).Text(FText::FromString(TEXT("Skate feel · pop, flicks, rails, speed, bails...")))
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld())).Text(FText::FromString(TEXT("Skate feel · pop, flicks, rails, speed, bails...")))
         .OnClicked_Lambda([ShowPage] { ShowPage(true); return FReply::Handled(); })];
     for (int32 I = 0; I < Values.Num(); ++I)
     {
@@ -906,6 +914,7 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         if (Values[I].Key.StartsWith(TEXT("skate_"))) continue;                       // the Skate feel page
         if (Values[I].Key == LightKeys[0])
             Rows->AddSlot().AutoHeight().Padding(0,16,0,4)[SNew(STextBlock).Text(FText::FromString(TEXT("Light"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
+        if (Values[I].Key == TEXT("stamina_rings") && JapanNetwork::IsOnline(Owner->GetWorld())) continue;
         const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
         if (Values[I].Key==TEXT("tree_lod_distance"))
         { AddSlider(I,[this] { return Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },FString());continue; }

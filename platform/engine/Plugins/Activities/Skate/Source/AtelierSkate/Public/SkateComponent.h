@@ -40,6 +40,17 @@ public:
     static constexpr uint8 MovementMode = 2;
     /** Character must implement ISkateRider. */
     void Initialize(ACharacter* Character);
+    /** Visual-only peer: no Native preload, input, physics bodies or local rider simulation. */
+    void InitializeNetworkProxy(ACharacter* Character);
+    bool ApplyNetworkPose(const TArray<FTransform>& ComponentPose, const FTransform& MeshWorld);
+    void ClearNetworkPose();
+    void ApplyNetworkBoard(const FTransform& DeckWorld, float Shown);
+    void SilenceNetworkAudio(float Dt);
+    void ApplyNetworkAudio(uint8 InMode, uint8 InSurface, uint8 Flags, const FVector& Velocity, float Dt);
+    uint8 GetNetworkSurface() const { return uint8(Surface); }
+    uint8 GetNetworkAudioFlags() const { return (bPowerslide ? 1 : 0) | (bBraking ? 2 : 0) | (bSlide ? 4 : 0); }
+    float GetBoardShown() const;
+    bool IsNetworkProxy() const { return bNetworkProxy; }
     bool IsAvailable() const { return bAvailable; }
     /** On the board, including a bail (the component drives the character until they are back on it), or getting on
      *  or off it with the Ride backend (a mount or dismount clip drives the character). */
@@ -149,6 +160,8 @@ private:
     void PlaySurfaceCue(FName Cue, float Volume, float Pitch = 1.f);
     static const TArray<const TCHAR*> SurfaceRolls;
     void UpdateAudio(float Dt);
+    bool bNetworkProxy = false;
+    ESkateMode NetworkAudioMode = ESkateMode::Off;
     bool bAvailable=false, bGoofy=false, bScripted=false;
     FSkateFeel Feel;                 // FSkateFeel::Defaults() at Initialize unless SetFeel came first
     bool bFeelSet=false;

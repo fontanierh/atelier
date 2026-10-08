@@ -1,4 +1,10 @@
 #include "FoxHunter.h"
+#include "JapanEnemyQA.h"
+#include "JapanCombat.h"
+#include "JapanEncounters.h"
+#include "JapanNetwork.h"
+#include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
 #include "FoxHunterAnimInstance.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -25,6 +31,7 @@ const FFoxHunterClip* UFoxHunterDefinition::FindClip(FName Role) const { return 
 AFoxHunter::AFoxHunter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
     PrimaryActorTick.bCanEverTick = true;
+    bReplicates = true; SetReplicateMovement(true); SetNetUpdateFrequency(30.f); SetMinNetUpdateFrequency(10.f);
     AutoPossessAI = EAutoPossessAI::Disabled;
     bUseControllerRotationYaw = false;
     GetCapsuleComponent()->InitCapsuleSize(26.f, 86.f);
@@ -68,21 +75,28 @@ void AFoxHunter::BeginPlay()
         if (RootScale > 1.5f) RootMotionScale = 1.f / RootScale;
         SetAnimRootMotionTranslationScale(RootMotionScale);
     }
-    Paint = GetMesh()->CreateDynamicMaterialInstance(0);
+    if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority())
+    {
+        GetCharacterMovement()->bRunPhysicsWithNoController = false;
+        if (auto* Animation = GetMesh()->GetAnimInstance()) Animation->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
+    }
+    Paint = GetNetMode() == NM_DedicatedServer ? nullptr : GetMesh()->CreateDynamicMaterialInstance(0);
     Home = GetActorLocation(); HomeYaw = GetActorRotation().Yaw;
     Rand.Initialize(int32(FPlatformTime::Cycles() & 0x7fffffff));
+    JapanEnemyQA::BeginHunter(this);
     if (FParse::Param(FCommandLine::Get(), TEXT("foxqa"))) Review = CreateFoxReview(this);
     UE_LOG(LogTemp, Display, TEXT("Fox hunter ready: %d clips, capsule %.0f/%.0f, home %s"), Definition->Clips.Num(), Definition->CapsuleRadius, Definition->CapsuleHalfHeight, *Home.ToString());
 }
 
 const FFoxHunterClip* AFoxHunter::Clip(FName Role) const { return Definition ? Definition->FindClip(Role) : nullptr; }
 void AFoxHunter::Note(const FString& Text) { Event = Text; EventTime = Clock; UE_LOG(LogTemp, Verbose, TEXT("Fox: %s"), *Text); }
-void AFoxHunter::Cue(FName Sound, const FVector& At, float Volume) { if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this)) FX->Play(Sound, At, Volume, .06f); }
+void AFoxHunter::Cue(FName Sound, const FVector& At, float Volume) { if (JapanCombat::Publish(this, EJapanCombatCue::Sound, At, FVector::ZeroVector, Volume, this, nullptr, false, Sound)) return; if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this)) FX->Play(Sound, At, Volume, .06f); }
 void AFoxHunter::DashDust()
 {
+    const FVector Ground = GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    if (JapanCombat::Publish(this, EJapanCombatCue::Dash, Ground, -GetActorForwardVector()*.5f, 0.f, this)) return;
     if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this))
     {
-        const FVector Ground = GetActorLocation() - FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
         FX->Dust(Ground, 1.f, -GetActorForwardVector() * .5f); FX->Play(TEXT("dash"), Ground, .8f, .06f);
     }
 }
@@ -110,6 +124,15 @@ void AFoxHunter::AdvanceAction(float Dt) { ActionTime += Dt; }
 
 void AFoxHunter::Enter(EFoxState Next, FName ClipName, float Blend, bool bLoop)
 {
+    if (JapanNetwork::IsOnline(GetWorld()) && HasAuthority())
+    {
+        auto* Encounters = GetWorld()->GetSubsystem<UJapanEncounters>();
+        if (Next == EFoxState::Approach) EngageNetworkEncounter();
+        if (Next != EFoxState::Attack && Next != EFoxState::Lunge) Encounters->ReleaseAttack(this);
+        if (Next == EFoxState::Return || Next == EFoxState::Dead || Next == EFoxState::Idle) Encounters->End(this);
+        if (Next == EFoxState::Idle) { Health = MaxHealth; EncounterHealth = MaxHealth; bHealthScaled = false; }
+    }
+    if (State == EFoxState::Idle && Next == EFoxState::Approach) JapanEnemyQA::Noticed(this);
     State = Next; StateTime = 0.f; CurrentClip = ClipName; PreviousStrike.Reset();
     SetAnimRootMotionTranslationScale(RootMotionScale);
     if (ClipName.IsNone()) { if (!AnimationAction.IsNone()) SetAction(NAME_None, false, Blend); }
@@ -131,6 +154,8 @@ void AFoxHunter::MoveToward(const FVector& Where, float Speed)
 
 void AFoxHunter::StartAttack()
 {
+    if (JapanNetwork::IsOnline(GetWorld()) && !GetWorld()->GetSubsystem<UJapanEncounters>()->ReserveAttack(this, Target, 3.f))
+    { Enter(EFoxState::Recover, NAME_None, .16f); Cooldown = .35f; return; }
     FName Role = ForcedAttack; ForcedAttack = NAME_None;
     if (Role.IsNone())
     {
@@ -152,8 +177,9 @@ FVector AFoxHunter::StrikePoint() const
 /** Spheres along the striking hand or foot, swept between frames inside the clip's window; one contact per attack. */
 void AFoxHunter::SweepStrike()
 {
+    JapanEnemyQA::Sweep(this);
     const FFoxHunterClip* C = Clip(CurrentClip);
-    if (!C || bStruckThisAttack || !Target) return;
+    if (!HasAuthority() || !C || bStruckThisAttack || !Target) return;
     const FVector A = GetMesh()->GetSocketLocation(C->StrikeBone), B = GetMesh()->GetSocketLocation(C->StrikeTipBone);
     const FVector Dir = (B - A).GetSafeNormal();
     TArray<FVector> Now = { A, (A + B) * .5f, B, B + Dir * 8.f };
@@ -169,20 +195,29 @@ void AFoxHunter::SweepStrike()
                 if (H.GetActor() != Target) continue;
                 bStruckThisAttack = true;
                 const float Damage = CurrentClip == TEXT("Kick") ? KickDamage : ClawDamage;
-                const int32 Outcome = Target->GetSword() ? Target->GetSword()->IncomingStrike(this, Damage, GetActorLocation()) : 0;
-                if (Outcome == 1)
+                TWeakObjectPtr<AFoxHunter> WeakSelf(this);
+                TWeakObjectPtr<AWandererCharacter> Victim(Target);
+                const uint32 ProbeContact = JapanEnemyQA::Contact(this, Target, Damage);
+                JapanCombat::Strike(this, Target, Damage, GetActorLocation(), [WeakSelf, Victim, ProbeContact](int32 Outcome)
                 {
-                    // Deflected: the stagger plays almost in place (a quarter of its authored step) so the counter can reach.
-                    ++StrikesParried; Note(TEXT("parried!")); ConsecutiveAttacks = 0; Enter(EFoxState::Hurt, TEXT("Hurt"), .04f); Cooldown = 1.3f;
-                    SetAnimRootMotionTranslationScale(RootMotionScale * .25f);
-                }
-                else if (Outcome == 2) { ++StrikesDodged; Note(TEXT("swipes at air")); }
-                else if (Outcome == 3) { ++StrikesMissed; }
-                else
-                {
-                    ++StrikesLanded; Note(TEXT("hits you"));
-                    if (Target->GetSword() && Target->GetSword()->IsDown()) bKnockedPlayerDown = true;
-                }
+                    JapanEnemyQA::Resolved(ProbeContact, Outcome);
+                    auto* Self = WeakSelf.Get();
+                    if (!Self || !Self->IsAlive()) return;
+                    if (Outcome == 1)
+                    {
+                        ++Self->StrikesParried; Self->Note(TEXT("parried!")); Self->ConsecutiveAttacks = 0;
+                        if (Self->State != EFoxState::Hurt) Self->Enter(EFoxState::Hurt, TEXT("Hurt"), .04f);
+                        Self->Cooldown = 1.3f;
+                        Self->SetAnimRootMotionTranslationScale(Self->RootMotionScale * .25f);
+                    }
+                    else if (Outcome == 2) { ++Self->StrikesDodged; Self->Note(TEXT("swipes at air")); }
+                    else if (Outcome == 3) ++Self->StrikesMissed;
+                    else
+                    {
+                        ++Self->StrikesLanded; Self->Note(TEXT("hits you"));
+                        if (Victim.IsValid() && Victim->GetSword() && Victim->GetSword()->IsDown()) Self->bKnockedPlayerDown = true;
+                    }
+                });
                 break;
             }
         }
@@ -192,8 +227,18 @@ void AFoxHunter::SweepStrike()
 
 void AFoxHunter::TakeSwordHit(int32 Strength, AActor* From)
 {
-    if (!IsReady() || !IsAlive()) return;
-    Health = FMath::Max(0, Health - Strength); ++HitsTaken; Flash = .22f; NoticeBlock = 0.f;
+    if (!HasAuthority() || !IsReady() || !IsAlive()) return;
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        auto* Player = Cast<AWandererCharacter>(From);
+        if (!UJapanEncounters::Eligible(Player)) return;
+        EngageNetworkEncounter();
+        GetWorld()->GetSubsystem<UJapanEncounters>()->AddThreat(this, Player, Strength);
+    }
+    const int32 BeforeHealth = Health;
+    Health = FMath::Max(0, Health - Strength);
+    JapanEnemyQA::SwordDamage(this, From, Strength, BeforeHealth, Health);
+    ++HitsTaken; Flash = .22f; NoticeBlock = 0.f;
     // The fox's cry is sparing: the first hit, heavy hits and the death always, otherwise every other hit.
     if (Health <= 0 || Strength >= 2 || HitsTaken % 2 == 1) Cue(TEXT("fox_hurt"), GetActorLocation() + FVector(0, 0, 60), Health <= 0 ? 1.f : .8f);
     if (!Target) Target = Cast<AWandererCharacter>(From);
@@ -230,6 +275,7 @@ void AFoxHunter::Respawn()
 {
     SetActorHiddenInGame(false);
     if (Paint) Paint->SetScalarParameterValue(TEXT("Dissolve"), 0.f);
+    bHealthScaled = false; EncounterHealth = MaxHealth;
     Health = MaxHealth; Poise = 2.f; ConsecutiveAttacks = 0; bKnockedPlayerDown = false;
     SetCollisionAlive(true);
     GetCharacterMovement()->SetMovementMode(MOVE_Walking);
@@ -243,8 +289,24 @@ void AFoxHunter::Tick(float Dt)
 {
     Super::Tick(Dt);
     if (!IsReady()) return;
+    if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority()) { PresentNetworkState(); return; }
+    JapanEnemyQA::AuthorityTick(this);
     Clock += Dt;
-    if (!IsValid(Target)) Target = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));   // also after a character switch
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        auto* Encounters = GetWorld()->GetSubsystem<UJapanEncounters>();
+        Encounters->Refresh(this, ForgetRadius);
+        if (Encounters->Identity(this))
+        {
+            if ((State != EFoxState::Attack && State != EFoxState::Lunge) || !UJapanEncounters::Eligible(Target))
+            {
+                if (!UJapanEncounters::Eligible(Target)) Encounters->ReleaseAttack(this);
+                Target = Encounters->Select(this, Target);
+            }
+        }
+        else Target = JapanCombat::FindPlayer(this, Target, ForgetRadius);
+    }
+    else if (!IsValid(Target)) Target = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));   // also after a character switch
     if (Review) AdvanceFoxReview(*Review, Dt);
     if (Target && !Target->IsReady()) return;
     AdvanceAction(Dt);
@@ -268,7 +330,8 @@ void AFoxHunter::Tick(float Dt)
             if (Dist > ForgetRadius || bTargetDown) { Enter(EFoxState::Return, NAME_None, .2f); Note(TEXT("loses interest")); break; }
             if (Dist <= RunUntil) { Enter(EFoxState::Stalk, NAME_None, .2f); StalkClock = 0.f; break; }
             // A closing dive from mid range: the authored dash carries the fox about three metres.
-            if (!bPassive && Cooldown <= 0.f && Dist >= 300.f && Dist <= 380.f && FMath::Abs(YawError) < 12.f && Rand.FRand() < Dt * 1.5f)
+            if (!bPassive && Cooldown <= 0.f && Dist >= 300.f && Dist <= 380.f && FMath::Abs(YawError) < 12.f && Rand.FRand() < Dt * 1.5f &&
+                (!JapanNetwork::IsOnline(GetWorld()) || GetWorld()->GetSubsystem<UJapanEncounters>()->ReserveAttack(this, Target, 2.f)))
             { Enter(EFoxState::Lunge, TEXT("DashForward"), .08f); Note(TEXT("lunges")); DashDust(); break; }
             FaceYaw(TargetYaw, 420.f, Dt); MoveToward(Target->GetActorLocation(), ChaseSpeed);
             break;
@@ -310,24 +373,7 @@ void AFoxHunter::Tick(float Dt)
         case EFoxState::Hurt: if (bClipDone) { Enter(EFoxState::Stalk, NAME_None, .14f); Cooldown = FMath::Max(Cooldown, .5f); } break;
         case EFoxState::Dead:
         {
-            AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this);
-            const FVector Ground = GetActorLocation() - FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-            if (!bDeathCues[0] && StateTime >= DeathFallTime) { bDeathCues[0] = true; Cue(TEXT("body_fall"), Ground); if (FX) FX->Dust(Ground + GetActorForwardVector() * 60.f, 1.3f); }
-            if (!bDeathCues[1] && StateTime >= DissolveStart) { bDeathCues[1] = true; Cue(TEXT("fox_death"), Ground + FVector(0, 0, 40)); }
-            const float Burn = FMath::Clamp((StateTime - DissolveStart) / DissolveTime, 0.f, 1.f);
-            if (Paint) Paint->SetScalarParameterValue(TEXT("Dissolve"), Burn);
-            if (FX && Burn > 0.f && Burn < 1.f && !IsHidden())
-            {
-                // Embers rise from the body while it burns away: a few per frame from random bones.
-                static const FName Bones[] = { TEXT("pelvis"), TEXT("spine"), TEXT("chest"), TEXT("head"), TEXT("hand_L"), TEXT("hand_R"), TEXT("foot_L"), TEXT("foot_R"), TEXT("thigh_L"), TEXT("thigh_R") };
-                const int32 Count = FMath::RoundToInt(2 + 5 * FMath::Sin(PI * Burn));
-                for (int32 I = 0; I < Count; ++I)
-                {
-                    const FName Bone = Bones[Rand.RandHelper(UE_ARRAY_COUNT(Bones))];
-                    FX->SpiritEmbers(GetMesh()->GetBoneLocation(Bone), 1, 18.f, 140.f);
-                }
-                if (!bDeathCues[2] && Burn > .82f) { bDeathCues[2] = true; FX->SpiritEmbers(GetMesh()->GetBoneLocation(TEXT("chest")), 40, 40.f, 220.f); FX->Flash(GetMesh()->GetBoneLocation(TEXT("chest")), 120.f, FLinearColor(1.f, .45f, .18f) * 4.f, .35f); }
-            }
+            PresentDeath();
             if (StateTime >= DeadBodyTime && !IsHidden()) SetActorHiddenInGame(true);
             if (StateTime >= DeadBodyTime + RespawnTime) Respawn();
             break;
@@ -340,5 +386,82 @@ void AFoxHunter::Tick(float Dt)
             else { FaceYaw(ToHome.Rotation().Yaw, 420.f, Dt); MoveToward(Home, ChaseSpeed * .7f); }
             break;
         }
+    }
+    PublishNetworkState();
+}
+
+void AFoxHunter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AFoxHunter, NetworkState);
+}
+
+void AFoxHunter::PublishNetworkState()
+{
+    if (!JapanNetwork::IsOnline(GetWorld()) || !HasAuthority()) return;
+    const double Now = GetWorld()->GetTimeSeconds();
+    if (Now - LastNetworkPublication < .05 && NetworkState.Serial == ActionSerial && NetworkState.Health == Health) return;
+    LastNetworkPublication = Now;
+    NetworkState.Target = Target; NetworkState.Encounter = GetWorld()->GetSubsystem<UJapanEncounters>()->Identity(this);
+    NetworkState.MaximumHealth = EncounterHealth;
+    NetworkState.Action = AnimationAction; NetworkState.Serial = ActionSerial; NetworkState.Time = ActionTime;
+    NetworkState.StateTime = StateTime; NetworkState.Blend = ActionBlendTime; NetworkState.bLoop = bActionLoops;
+    NetworkState.Health = Health; NetworkState.State = uint8(State); NetworkState.Flash = Flash;
+    NetworkState.ServerTime = Now;
+    ForceNetUpdate();
+}
+
+void AFoxHunter::OnRep_NetworkState() { PresentNetworkState(); }
+
+void AFoxHunter::PresentNetworkState()
+{
+    if (HasAuthority() || !IsReady()) return;
+    const auto* Time = GetWorld()->GetGameState();
+    const float Age = Time ? FMath::Clamp(float(Time->GetServerWorldTimeSeconds() - NetworkState.ServerTime), 0.f, .25f) : 0.f;
+    AnimationAction = NetworkState.Action; ActionSerial = NetworkState.Serial;
+    ActionTime = NetworkState.Time + Age; ActionBlendTime = NetworkState.Blend; bActionLoops = NetworkState.bLoop;
+    ActionDuration = Definition->FindAction(AnimationAction) ? Definition->FindAction(AnimationAction)->GetPlayLength() : 0.f;
+    if (State != EFoxState::Dead && EFoxState(NetworkState.State) == EFoxState::Dead)
+        bDeathCues[0] = bDeathCues[1] = bDeathCues[2] = false;
+    State = EFoxState(NetworkState.State); StateTime = NetworkState.StateTime + Age;
+    Target = NetworkState.Target; EncounterHealth = NetworkState.MaximumHealth;
+    Health = NetworkState.Health;
+    SetCollisionAlive(Health > 0);
+    if (State == EFoxState::Dead) PresentDeath();
+    if (Paint)
+    {
+        Paint->SetScalarParameterValue(TEXT("HitFlash"), FMath::Max(0.f, NetworkState.Flash - Age) / .22f * .5f);
+        Paint->SetScalarParameterValue(TEXT("Dissolve"), State == EFoxState::Dead ? FMath::Clamp((StateTime - DissolveStart) / DissolveTime, 0.f, 1.f) : 0.f);
+    }
+}
+
+
+void AFoxHunter::EngageNetworkEncounter()
+{
+    if (!HasAuthority() || !JapanNetwork::IsOnline(GetWorld())) return;
+    const int32 Scaled = GetWorld()->GetSubsystem<UJapanEncounters>()->Engage(this, NoticeRadius, MaxHealth);
+    if (!bHealthScaled) { EncounterHealth = Scaled; Health += Scaled - MaxHealth; bHealthScaled = true; }
+}
+
+void AFoxHunter::PresentDeath()
+{
+    if (GetNetMode() == NM_DedicatedServer) return;
+    AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(this);
+    const FVector Ground = GetActorLocation() - FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    if (!bDeathCues[0] && StateTime >= DeathFallTime) { bDeathCues[0] = true; if (FX) FX->Play(TEXT("body_fall"), Ground, 1.f, .06f); if (FX) FX->Dust(Ground + GetActorForwardVector() * 60.f, 1.3f); }
+    if (!bDeathCues[1] && StateTime >= DissolveStart) { bDeathCues[1] = true; if (FX) FX->Play(TEXT("fox_death"), Ground + FVector(0, 0, 40), 1.f, .06f); }
+    const float Burn = FMath::Clamp((StateTime - DissolveStart) / DissolveTime, 0.f, 1.f);
+    if (Paint) Paint->SetScalarParameterValue(TEXT("Dissolve"), Burn);
+    if (FX && Burn > 0.f && Burn < 1.f && !IsHidden())
+    {
+        // Embers rise from the body while it burns away: a few per frame from random bones.
+        static const FName Bones[] = { TEXT("pelvis"), TEXT("spine"), TEXT("chest"), TEXT("head"), TEXT("hand_L"), TEXT("hand_R"), TEXT("foot_L"), TEXT("foot_R"), TEXT("thigh_L"), TEXT("thigh_R") };
+        const int32 Count = FMath::RoundToInt(2 + 5 * FMath::Sin(PI * Burn));
+        for (int32 I = 0; I < Count; ++I)
+        {
+            const FName Bone = Bones[Rand.RandHelper(UE_ARRAY_COUNT(Bones))];
+            FX->SpiritEmbers(GetMesh()->GetBoneLocation(Bone), 1, 18.f, 140.f);
+        }
+        if (!bDeathCues[2] && Burn > .82f) { bDeathCues[2] = true; FX->SpiritEmbers(GetMesh()->GetBoneLocation(TEXT("chest")), 40, 40.f, 220.f); FX->Flash(GetMesh()->GetBoneLocation(TEXT("chest")), 120.f, FLinearColor(1.f, .45f, .18f) * 4.f, .35f); }
     }
 }

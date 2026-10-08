@@ -13,7 +13,7 @@ class YORIMICHI_API ASkatePark : public AActor
     GENERATED_BODY()
 public:
     ASkatePark();
-    /** Reads park.json; returns false if the file is missing. Meshes that are not imported yet are skipped. */
+    /** Reads park.json; returns false when a required mesh or rail could not be installed. */
     bool Initialize(const FString& Path);
     /** Vegetation clearance polygons (UE cm, XY) read before the world's instances are built. */
     static TArray<TArray<FVector2D>> LoadClearance(const FString& Path);

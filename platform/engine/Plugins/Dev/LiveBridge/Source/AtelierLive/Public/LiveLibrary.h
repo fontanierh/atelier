@@ -98,6 +98,8 @@ namespace AtelierLive
     /** Start the bridge (HTTP on localhost), boot the game's Python helper and load every overlay. Call once the world
      *  and the player are ready. */
     ATELIERLIVE_API void Start(UWorld* World);
+    /** Remove only this bridge's routes before entering a shared game; other HTTP services keep running. */
+    ATELIERLIVE_API void Stop();
     /** Route TeleportPlayer through the game's own travel (so it can stow vehicles, settle the camera...). */
     ATELIERLIVE_API void SetTeleport(TFunction<bool(APawn*, const FVector&, float)> Teleport);
 }

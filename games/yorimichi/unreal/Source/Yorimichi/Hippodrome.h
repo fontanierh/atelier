@@ -96,6 +96,7 @@ class YORIMICHI_API AHippodrome : public AActor
 {
     GENERATED_BODY()
 public:
+    bool bGameplayReady = false;
     AHippodrome();
     /** The hippodrome described by Path (hippodrome.json); null when the file or its meshes are missing. */
     static AHippodrome* Spawn(UWorld* World, const FString& Path);

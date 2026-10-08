@@ -1,4 +1,9 @@
 #include "WandererCharacter.h"
+#include "JapanCombatResolver.h"
+#include "JapanNetwork.h"
+#include "JapanSkateNetwork.h"
+#include "JapanSession.h"
+#include "Net/UnrealNetwork.h"
 #include "AtelierData.h"
 #include "YorimichiCombatFX.h"
 #include "LiveLibrary.h"
@@ -121,27 +126,12 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     FollowCamera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
     FollowCamera->FieldOfView = PreferredFOV;
     SeeThrough = CreateDefaultSubobject<USeeThroughComponent>(TEXT("SeeThrough"));
+    NetworkSkate = CreateDefaultSubobject<UJapanSkateNetwork>(TEXT("NetworkSkate"));
 }
 
 void AWandererCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    if (FParse::Param(FCommandLine::Get(),TEXT("controllertrace")))
-    {
-#if WITH_EDITOR
-        FSlateApplication::Get().OnApplicationPreInputKeyDownListener().AddWeakLambda(this,[](const FKeyEvent& Event)
-        {
-            if (Event.GetKey().IsGamepadKey() || Event.GetKey()==EKeys::Escape)
-                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE slate key=%s repeat=%d device=%d"),*Event.GetKey().ToString(),Event.IsRepeat(),Event.GetInputDeviceId().GetId());
-        });
-#endif
-        GetWorld()->GetGameViewport()->OnInputKey().AddWeakLambda(this,[](const FInputKeyEventArgs& Event)
-        {
-            if (Event.Key.IsGamepadKey() || Event.Key==EKeys::Escape)
-                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE viewport key=%s event=%d value=%.2f device=%d"),*Event.Key.ToString(),int32(Event.Event),Event.AmountDepressed,Event.InputDevice.GetId());
-        });
-    }
-    if (FAtelierStream::IsRequested()) PhoneInput=MakeShared<FYorimichiPhone>(this);
     Definition = LoadObject<UWandererDefinition>(nullptr,*DefinitionAssetPath);
     if (Definition && Definition->Mesh && Definition->Locomotion && Definition->Crouching)
     {
@@ -161,6 +151,78 @@ void AWandererCharacter::BeginPlay()
         FollowCamera->Deactivate();
         return;
     }
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        JapanNetwork::ConfigurePlayerCollision(GetCapsuleComponent());
+        NetUpdateFrequency = 30.f;
+        MinNetUpdateFrequency = 10.f;
+        if (!IsLocallyControlled())
+        {
+            SkateRide->SetComponentTickEnabled(false);
+            CameraArm->SetComponentTickEnabled(false);
+            SeeThrough->SetComponentTickEnabled(false);
+            FollowCamera->Deactivate();
+        }
+    }
+    InitializeLocalPlayer();
+}
+
+void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkRiderName, COND_InitialOnly);
+    DOREPLIFETIME(AWandererCharacter, bNetworkShield);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkAvatar, COND_SimulatedOnly);
+    DOREPLIFETIME(AWandererCharacter, NetworkHealth);
+    DOREPLIFETIME(AWandererCharacter, NetworkHitsTaken);
+    DOREPLIFETIME(AWandererCharacter, NetworkActivity);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, bNetworkMovementReady, COND_OwnerOnly);
+}
+void AWandererCharacter::OnRep_NetworkAvatar() { bNetworkAvatarReceived = true; }
+void AWandererCharacter::OnRep_NetworkHealth() { if (Sword) Sword->ApplyNetworkHealth(NetworkHealth, NetworkHitsTaken); }
+
+void AWandererCharacter::ConfigureNetworkRider(const FString& Name, bool bShield)
+{
+    NetworkRiderName = Name;
+    bNetworkShield = bShield;
+    OnRep_NetworkLoadout();
+}
+void AWandererCharacter::OnRep_NetworkLoadout()
+{
+    if (Moves) { Moves->SetLegacy(false); Moves->SetShield(bNetworkShield); }
+}
+void AWandererCharacter::PawnClientRestart()
+{
+    Super::PawnClientRestart();
+    InitializeLocalPlayer();
+}
+void AWandererCharacter::InitializeLocalPlayer()
+{
+    if (bLocalPlayerInitialized || IsNpc() || !Definition || !IsLocallyControlled() || GetNetMode() == NM_DedicatedServer) return;
+    bLocalPlayerInitialized = true;
+    // A replicated pawn can tick as a presentation proxy before possession arrives.
+    // Its proxy-ready flag must not bypass the owner's prediction startup gate.
+    if (JapanNetwork::IsOnline(GetWorld())) bReady = false;
+    SkateRide->SetComponentTickEnabled(true);
+    CameraArm->SetComponentTickEnabled(true);
+    SeeThrough->SetComponentTickEnabled(true);
+    FollowCamera->Activate();
+    if (FParse::Param(FCommandLine::Get(),TEXT("controllertrace")))
+    {
+#if WITH_EDITOR
+        FSlateApplication::Get().OnApplicationPreInputKeyDownListener().AddWeakLambda(this,[](const FKeyEvent& Event)
+        {
+            if (Event.GetKey().IsGamepadKey() || Event.GetKey()==EKeys::Escape)
+                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE slate key=%s repeat=%d device=%d"),*Event.GetKey().ToString(),Event.IsRepeat(),Event.GetInputDeviceId().GetId());
+        });
+#endif
+        GetWorld()->GetGameViewport()->OnInputKey().AddWeakLambda(this,[](const FInputKeyEventArgs& Event)
+        {
+            if (Event.Key.IsGamepadKey() || Event.Key==EKeys::Escape)
+                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE viewport key=%s event=%d value=%.2f device=%d"),*Event.Key.ToString(),int32(Event.Event),Event.AmountDepressed,Event.InputDevice.GetId());
+        });
+    }
+    if (FAtelierStream::IsRequested()) PhoneInput=MakeShared<FYorimichiPhone>(this);
     SkateRide->Initialize(this);
     Preferences = NewObject<UJapanPreferences>(this);
     Preferences->Initialize(this);
@@ -205,6 +267,12 @@ void AWandererCharacter::BeginPlay()
         IFileManager::Get().MakeDirectory(*ReviewDirectory,true);
     }
     SetMouseReleased(!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty());
+    if (Landscape && Landscape->bGameplayReady)
+    {
+        if (JapanNetwork::IsOnline(GetWorld()))
+        { Sailboat->Initialize(this,Landscape); Bike->Initialize(this); Horse->Initialize(this); }
+        if (Preferences) Preferences->Apply();
+    }
 }
 
 void AWandererCharacter::EndPlay(const EEndPlayReason::Type Reason)
@@ -224,10 +292,13 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
 {
     Landscape = World;
     if (!World || !World->bLoaded || IsNpc()) return;
-    Sailboat->Initialize(this,World);
-    Bike->Initialize(this);
-    Horse->Initialize(this);
-    if (!bSwitchedIn)
+    if (!JapanNetwork::IsOnline(GetWorld()) || IsLocallyControlled())
+    {
+        Sailboat->Initialize(this,World);
+        Bike->Initialize(this);
+        Horse->Initialize(this);
+    }
+    if (!bSwitchedIn && !JapanNetwork::IsOnline(GetWorld()))
     {
         SetActorLocation(World->PlayerStart.GetLocation()+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),false,nullptr,ETeleportType::TeleportPhysics);
         SetActorRotation(World->PlayerStart.Rotator());
@@ -263,6 +334,18 @@ void AWandererCharacter::ReturnToSpawn()
 bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason, float Above)
 {
     if (!bReady || !Landscape || !Landscape->bLoaded) return false;
+    if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority())
+    {
+        if (IsLocallyControlled() && !bNetworkActivityPending && !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsExecutingMove() &&
+            !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsReplaying())
+        {
+            bNetworkActivityPending = true;
+            NetworkActivityRequestTime = GetWorld()->GetTimeSeconds();
+            ServerTravelTo(Target, Yaw, NetworkActivity.Epoch);
+        }
+        return false; // The map closes when the authoritative handoff arrives.
+    }
+    if (JapanNetwork::IsOnline(GetWorld())) GetWorld()->GetSubsystem<UJapanCombatResolver>()->Flush(this);
     if(GetZeppelin())GetZeppelin()->Cancel(this);
     auto* Movement = GetCharacterMovement();
     // Leave custom ramp physics before restoring the ordinary character pose.
@@ -289,6 +372,7 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     if (Moves) Moves->Reset();   // after the move, so a fall is measured from the new place
     bHasSafeCityLocation = bHasSafeCoastLocation = false;
     if (Controller) Controller->SetControlRotation(FRotator(-8,Yaw,0));
+    if (JapanNetwork::IsOnline(GetWorld())) BeginNetworkActivity(EJapanActivity::OnFoot, true);
     UE_LOG(LogTemp,Display,TEXT("Travelled to %s: (%.0f, %.0f, %.0f) yaw %.0f%s"),Reason,Target.X,Target.Y,Target.Z,Yaw,Hit.bBlockingHit ? TEXT("") : TEXT(" (no ground hit)"));
     return true;
 }
@@ -535,6 +619,7 @@ bool AWandererCharacter::PressMove(FName Button)
 }
 void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 {
+    if (JapanNetwork::IsOnline(GetWorld())) return; // Enabled by the vehicle prediction layer.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding()) return;
     if (Sailboat->IsEquipped()) { Sailboat->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
@@ -543,6 +628,7 @@ void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped() || Horse->IsEquipped(); }
 void AWandererCharacter::ToggleHorse(const FInputActionValue&)
 {
+    if (JapanNetwork::IsOnline(GetWorld())) return; // Horse/race networking is not enabled.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || Bike->IsEquipped()) return;
     if (Horse->IsEquipped()) { Horse->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
@@ -550,6 +636,7 @@ void AWandererCharacter::ToggleHorse(const FInputActionValue&)
 }
 void AWandererCharacter::ToggleBike(const FInputActionValue&)
 {
+    if (JapanNetwork::IsOnline(GetWorld())) return; // Enabled by the vehicle prediction layer.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped()) return;
     if (Bike->IsEquipped()) { Bike->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
@@ -557,6 +644,7 @@ void AWandererCharacter::ToggleBike(const FInputActionValue&)
 }
 void AWandererCharacter::ToggleSkateboard(const FInputActionValue&)
 {
+    if (JapanNetwork::IsOnline(GetWorld()) && !bApplyingNetworkActivity && RequestNetworkSkate()) return;
     if (SkateRide->IsAvailable())
     {
         if (!bReady || bMenuOpen || IsZeppelinPassenger() || OnVehicle()) return;
@@ -579,6 +667,7 @@ bool AWandererCharacter::CanCarrySkateBoard() const
 }
 void AWandererCharacter::ToggleCrouch(const FInputActionValue&)
 {
+    if (JapanNetwork::IsOnline(GetWorld())) { PressMove(TEXT("crouch")); return; }
     if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Skid(); return; }   // on the bike: a skid stop
     if (Horse->IsEquipped()) return;
     if (PressMove(TEXT("crouch"))) return;   // gliding, climbing, swimming or busy: no crouch
@@ -767,7 +856,7 @@ void AWandererCharacter::Dash(const FInputActionValue&)
     M->ApplyRootMotionSource(Source);
     // Neither dash consumes nor restores the separate double-jump allowance.
 }
-void AWandererCharacter::Wave(const FInputActionValue&) { if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Wave(); return; } if (Horse->IsEquipped()) { if (bReady && !bMenuOpen) Horse->Rear(); return; } if (SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
+void AWandererCharacter::Wave(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) { PressMove(TEXT("wave")); return; } if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Wave(); return; } if (Horse->IsEquipped()) { if (bReady && !bMenuOpen) Horse->Rear(); return; } if (SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
 void AWandererCharacter::AttackPressed(const FInputActionValue&)
 {
     if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Bell(); return; }   // before the move set, which is idle on the bike
@@ -796,7 +885,8 @@ void AWandererCharacter::ZeppelinStep(int32 Direction)
     if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
-void AWandererCharacter::Interact(const FInputActionValue&) { if(SkateRide->IsRiding()||Horse->IsEquipped())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if(bReady&&!bMenuOpen&&AHorseRace::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
+void AWandererCharacter::Interact(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) return; // Shared interaction routing follows the activity layer.
+ if(SkateRide->IsRiding()||Horse->IsEquipped())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if(bReady&&!bMenuOpen&&AHorseRace::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {
     if (!bReady) return;
@@ -864,7 +954,13 @@ void AWandererCharacter::SetMouseReleased(bool bReleased)
     }
 }
 void AWandererCharacter::ApplyCameraPreferences(float Sensitivity,float Distance,float FieldOfView)
-{ MouseSensitivity = Sensitivity; PreferredArmLength = Distance; if(Sailboat)Sailboat->SetCameraDistance(Distance);else CameraArm->TargetArmLength = Distance; PreferredFOV = FieldOfView; if(IsZeppelinPassenger())GetZeppelin()->SetPassengerCameraDistance(Distance); }
+{
+    MouseSensitivity = Sensitivity; PreferredArmLength = Distance; PreferredFOV = FieldOfView;
+    CameraArm->TargetArmLength = Distance;
+    // A replicated pawn can receive its local preferences before EnterWorld initializes its boat.
+    if (Sailboat && Sailboat->IsEquipped()) Sailboat->SetCameraDistance(Distance);
+    if (IsZeppelinPassenger()) GetZeppelin()->SetPassengerCameraDistance(Distance);
+}
 
 void AWandererCharacter::SetAction(FName Action,bool bLoop,float BlendSeconds,bool bRestart)
 {
@@ -1181,6 +1277,29 @@ void AWandererCharacter::Landed(const FHitResult& Hit)
 void AWandererCharacter::Tick(float Dt)
 {
     Super::Tick(Dt);
+    InitializeLocalPlayer();
+    if (!Landscape && JapanNetwork::IsOnline(GetWorld()))
+        if (AJapanWorld* World = JapanNetwork::FindWorld(GetWorld()); World && World->bGameplayReady) EnterWorld(World);
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        TickNetworkActivity();
+        if (NetworkActivity.Kind == EJapanActivity::Skate && !IsLocallyControlled()) return;
+        if (!HasAuthority() && !IsLocallyControlled())
+        {
+            bReady = true;
+            if (Moves && bNetworkAvatarReceived && SkateRide->GetRetailPose().IsEmpty()) Moves->ApplyPresentation(NetworkAvatar, Dt);
+            return;
+        }
+        if (HasAuthority())
+        {
+            if (Sword) { NetworkHealth = Sword->GetHealth(); NetworkHitsTaken = Sword->HitsTaken(); }
+            if (Moves && NetworkActivity.Kind == EJapanActivity::OnFoot && GetWorld()->GetTimeSeconds() - LastAvatarPublication >= .05f)
+            {
+                NetworkAvatar = Moves->CapturePresentation();
+                LastAvatarPublication = GetWorld()->GetTimeSeconds();
+            }
+        }
+    }
     if (!Definition || !Landscape || !Landscape->bLoaded) return;
     if(!BuildingReviewSpecPath.IsEmpty())
     {
@@ -1238,16 +1357,39 @@ void AWandererCharacter::Tick(float Dt)
         else if(GetCharacterMovement()->IsMovingOnGround())
         {LastSafeCityLocation=Here;bHasSafeCityLocation=true;}
     }
-    if(bRemountSkate && GetCharacterMovement()->IsMovingOnGround()){bRemountSkate=false;if(!SkateRide->IsRiding())SkateRide->Toggle();}
-    ReadyTime += Dt;
-    if (!bReady) { bReady = ReadyTime > 1.5f; if (bReady && IsPlayerControlled())
+    if (bRemountSkate && GetCharacterMovement()->IsMovingOnGround() &&
+        (!JapanNetwork::IsOnline(GetWorld()) || (!bNetworkActivityPending && !MovementLocked())))
     {
-        // Live bridge teleports go through the game's own travel (stows the board or boat, settles the camera).
-        AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
-        { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
-        AtelierLive::Start(GetWorld());
+        bRemountSkate = false;
+        if (!SkateRide->IsRiding())
+        {
+            if (JapanNetwork::IsOnline(GetWorld())) RequestNetworkSkate();
+            else SkateRide->Toggle();
+        }
     }
-    return; }
+    ReadyTime += Dt;
+    if (!bReady)
+    {
+        // Start owner prediction only after both local setup and the host pawn are
+        // ready. World admission alone precedes character initialization.
+        APlayerController* PC = Cast<APlayerController>(Controller);
+        const bool NeedsAck = JapanNetwork::IsOnline(GetWorld()) && HasAuthority() && !IsNpc() &&
+            (!PC || (!PC->IsLocalController() && PC->AcknowledgedPawn != this));
+        // SafeRetry has its own rate limit. Retry even while the owner sends no
+        // moves, otherwise a lost initial restart would leave both sides waiting.
+        if (NeedsAck && PC) PC->SafeRetryClientRestart();
+        bReady = ReadyTime > 1.5f && !NeedsAck && (!JapanNetwork::IsOnline(GetWorld()) || HasAuthority() || bNetworkMovementReady);
+        if (bReady && HasAuthority() && JapanNetwork::IsOnline(GetWorld()))
+        { bNetworkMovementReady = true; ForceNetUpdate(); }
+        if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
+        {
+            // Live bridge teleports go through the game's own travel (stows the board or boat, settles the camera).
+            AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
+            { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
+            AtelierLive::Start(GetWorld());
+        }
+        return;
+    }
     if (bCairoReview) AdvanceCairoReview(Dt);
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview) AdvanceMapReview(Dt);
@@ -1259,7 +1401,8 @@ void AWandererCharacter::Tick(float Dt)
     Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
     Bike->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
     Horse->SetInput(MoveIntent,bSprintHeld,bWalk,bMenuOpen || (Map && Map->IsOpen()));
-    if (!OnVehicle() && !SkateRide->IsRiding())   // keep state time aligned while settings are open
+    const bool bPredictedMoves = CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->PredictsMoves();
+    if (!bPredictedMoves && !OnVehicle() && !SkateRide->IsRiding())   // offline moves advance in actor Tick
     {
         if (Moves) Moves->Advance(Dt);
         else { if (Sword) Sword->Advance(Dt); AdvanceAction(Dt); }
@@ -1283,21 +1426,23 @@ void AWandererCharacter::Tick(float Dt)
         if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend+.55f*HorseCameraBlend);
     }
     // Riding the bike, the camera settles in behind him the same way.
-    if(Bike->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&Bike->GetSpeed()>80.f)
+    if(IsLocallyControlled()&&Bike->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&Bike->GetSpeed()>80.f)
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-10.f,GetActorRotation().Yaw,0),Dt,1.6f));
     }
-    if(Horse->IsEquipped()&&Controller&&!bMenuOpen&&LookGrace<=0&&Horse->GetSpeed()>80.f)
+    if(IsLocallyControlled()&&Horse->IsEquipped()&&Controller&&!bMenuOpen&&LookGrace<=0&&Horse->GetSpeed()>80.f)
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-12.f,GetActorRotation().Yaw,0),Dt,1.4f));
     }
-    if(SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
+    if(IsLocallyControlled()&&SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-8.f,SkateYaw,0),Dt,2.4f));
     }
+    if (!bPredictedMoves)
+    {
     const bool CanSprint=!bWalk&&!bJog&&!bIsCrouched&&!MovementLocked()&&!SkateRide->IsRiding()&&!OnVehicle()&&!MoveIntent.IsNearlyZero()&&M->Velocity.Size2D()>40.f&&(!Moves||Moves->CanSprint());
     // A move set spends stamina itself (climbing, gliding, swimming, a charge) and refills it only on foot.
     Stamina.Tick(Dt,bSprintHeld,CanSprint,bMenuOpen||(Moves&&Moves->HoldsStamina()));
@@ -1314,6 +1459,7 @@ void AWandererCharacter::Tick(float Dt)
             AddMovementInput(Basis.GetUnitAxis(EAxis::X),MoveIntent.Y);
             AddMovementInput(Basis.GetUnitAxis(EAxis::Y),MoveIntent.X);
         }
+    }
     }
     // Riding fast widens the view a little (up to 9 degrees at 45 km/h).
     const float SkateFOV=SkateRide->IsRiding()?9.f*FMath::Clamp((SkateRide->GetSpeed()-500.f)/750.f,0.f,1.f):0.f;

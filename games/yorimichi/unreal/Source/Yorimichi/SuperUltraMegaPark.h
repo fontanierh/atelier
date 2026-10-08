@@ -35,6 +35,7 @@ public:
      *  collision meshes (with the seam's) from /Game/MegaPark/Meshes, the original grind paths, the island trees that
      *  replace the original plants and the kei cars that replace its traffic cars. Null if the file is missing. */
     static ASuperUltraMegaPark* Spawn(UWorld* World, const FString& Path);
+    bool bGameplayReady = false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") FString SourceManifestHash;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") TArray<FMegaParkRail> Rails;
     /** The upper deck start, in Unreal world space. */
@@ -43,6 +44,7 @@ public:
 private:
     void RegisterRails();
     bool bRailsRegistered = false;
+    int32 RegisteredRailCount = 0;
 };
 
 /** Standalone park level: uses the existing player without spawning the island over the imported park. */
