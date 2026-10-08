@@ -156,8 +156,6 @@ public:
     USpringArmComponent* GetCameraArm() const { return CameraArm; }
     /** A fixed review or trailer view (-fixedview, benchmarkview=, trailershot=): the camera does not follow Cairo. */
     bool IsFixedView() const { return bFixedView; }
-    /** -fightfilm: the scripted, filmed fight against the fox hunter (JapanFightFilm.cpp). */
-    TSharedPtr<struct FFightFilm> FightFilm;
     void Review_Move(FVector2D Intent) { MoveIntent = Intent; }
     /** Live bridge: hold a movement intent (camera-relative, like the stick) at a gait: 0 walk, 1 run, 2 sprint. Input replaces it. */
     /** Live bridge: press a button through the real input handler: "jump", "jump_release", "roll", "crouch", "interact",
@@ -276,19 +274,8 @@ private:
     float BenchmarkTime = 0.f, BenchmarkSeconds = 25.f;
     bool bBenchmarkCapturing = false, bBenchmarkFinished = false;
     void AdvanceBenchmark(float Dt);
-    void AdvanceCairoReview(float Dt);
-    bool bCairoReview=false, CairoInverted=false;
-    float CairoTime=0.f, CairoMaxWaist=0.f, CairoMaxHair=0.f;
-    FVector CairoOrigin=FVector::ZeroVector;
-    FVector CairoRollOrigin=FVector::ZeroVector;
-    bool CairoRollInverted=false;
-    UPROPERTY() TObjectPtr<AActor> CairoRollObstacle;
-    TArray<FString> CairoErrors;
-    FString CairoTelemetry=TEXT("time,action,speed,height,falling,air_jump,air_dash,pelvis_up,waist_curve\n");
     void AdvanceSailboatReview(float Dt);
-    // Film frames for the character review (-cairofilm), numbered on a fixed clock.
-    void RecordFrame();
-    bool bCinematic=false; int32 DemoFrame=0;
+    bool bCinematic=false;
 public:
     bool IsCinematic() const { return bCinematic; }
     class AZeppelinService* GetZeppelin() const;

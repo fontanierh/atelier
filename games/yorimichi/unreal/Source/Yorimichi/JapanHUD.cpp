@@ -157,32 +157,6 @@ void AJapanHUD::DrawHUD()
     if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawTrainer(false, false); return; }
     // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
     if (Pawn->GetDamageFlash()>0.f) DrawRect(FLinearColor(.75f,.08f,.04f,.13f*Pawn->GetDamageFlash()),0,0,Canvas->SizeX,Canvas->SizeY);
-    // -fightfilm: the filmed fight keeps only the player's health and the fox's bar.
-    const bool bFilm=FParse::Param(FCommandLine::Get(),TEXT("fightfilm"));
-    if (bFilm)
-    {
-        const float Scale=Canvas->SizeY/1080.f;
-        if (const UWandererSwordComponent* Sword=Pawn->GetSword())
-        {
-            const float Health=FMath::Clamp(Sword->GetHealth()/UWandererSwordComponent::MaxHealth,0.f,1.f);
-            const float X=48*Scale,Y=Canvas->SizeY-78*Scale,W=300*Scale,H=12*Scale;
-            DrawRect(FLinearColor(0,0,0,.4f),X-3*Scale,Y-3*Scale,W+6*Scale,H+6*Scale);
-            DrawRect(FLinearColor(.2f,.08f,.06f,.8f),X,Y,W,H);
-            DrawRect(Health>.3f?FLinearColor(.86f,.32f,.28f):FLinearColor(1.f,.15f,.1f),X,Y,W*Health,H);
-        }
-        for (TActorIterator<AFoxHunter> It(GetWorld());It;++It)
-        {
-            if (!It->IsReady() || (!It->IsEngaged() && It->IsAlive()) || It->IsHidden()) continue;
-            const float W=420*Scale,X=Canvas->SizeX*.5f-W*.5f,Y=44*Scale;
-            DrawText(TEXT("FOX HUNTER"),FLinearColor(.97f,.9f,.76f),X,Y-26*Scale,Font,1.4f*Scale);
-            DrawRect(FLinearColor(0,0,0,.42f),X-3*Scale,Y-3*Scale,W+6*Scale,14*Scale);
-            const float Seg=W/AFoxHunter::MaxHealth;
-            for (int32 Pip=0;Pip<AFoxHunter::MaxHealth;++Pip)
-                DrawRect(Pip<It->GetHealth()?FLinearColor(.95f,.52f,.18f):FLinearColor(.22f,.16f,.12f,.9f),X+Pip*Seg+1.5f*Scale,Y,Seg-3*Scale,8*Scale);
-            break;
-        }
-        return;
-    }
     const double Now = FPlatformTime::Seconds();
     if (Now >= NextControllerCheck)
     {

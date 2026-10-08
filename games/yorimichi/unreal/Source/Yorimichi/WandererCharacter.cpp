@@ -10,8 +10,6 @@
 #include "LiveLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundWave.h"
-TSharedPtr<struct FFightFilm> CreateFightFilm(AWandererCharacter* P);
-void AdvanceFightFilm(struct FFightFilm& F, float Dt);
 #include "JapanFootsteps.h"
 #include "WandererSword.h"
 #include "AdventureMoveSet.h"
@@ -242,15 +240,12 @@ void AWandererCharacter::InitializeLocalPlayer()
     if (bSwitchedIn) ReadyTime = 1.3f;
     else if (USoundWave* Ambience = LoadObject<USoundWave>(nullptr, TEXT("/Game/Audio/Combat/ambience_countryside_01.ambience_countryside_01"), nullptr, LOAD_NoWarn | LOAD_Quiet))
         UGameplayStatics::SpawnSound2D(this, Ambience, .5f);
-    if (FParse::Param(FCommandLine::Get(),TEXT("fightfilm")))
-    { FightFilm = CreateFightFilm(this); FApp::SetFixedDeltaTime(1.0/60.0); FApp::SetUseFixedTimeStep(true); }
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
         PC->PlayerCameraManager->ViewPitchMin = -65.f;
         PC->PlayerCameraManager->ViewPitchMax = 45.f;
     }
     bSailboatReview=FParse::Param(FCommandLine::Get(),TEXT("sailboatqa"));
-    bCairoReview = FParse::Param(FCommandLine::Get(),TEXT("cairoqa"));
     bFixedView = FParse::Param(FCommandLine::Get(),TEXT("fixedview"));
     FParse::Value(FCommandLine::Get(),TEXT("benchmarkview="),BenchmarkView);
     FParse::Value(FCommandLine::Get(),TEXT("trailershot="),TrailerSpecPath);
@@ -267,7 +262,7 @@ void AWandererCharacter::InitializeLocalPlayer()
         bFixedView = true;
         DisableInput(Cast<APlayerController>(Controller));
     }
-    if (bCairoReview || bMapReview || !TrailerSpecPath.IsEmpty())
+    if (bMapReview || !TrailerSpecPath.IsEmpty())
     {
         FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory);
         if (ReviewDirectory.IsEmpty()) ReviewDirectory = FPaths::ProjectSavedDir()/TEXT("Screenshots/Wanderer")/FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"));
@@ -335,7 +330,7 @@ void AWandererCharacter::ReturnToSpawn()
 
 bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason, float Above)
 {
-    if (!bReady || !Landscape || !Landscape->bLoaded) return false;
+    if (bMoveSetUnavailable || !bReady || !Landscape || !Landscape->bLoaded) return false;
     if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority())
     {
         if (IsLocallyControlled() && !bNetworkActivityPending && !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsExecutingMove() &&
@@ -1240,14 +1235,6 @@ void AWandererCharacter::AdvanceSailboatReview(float Dt)
     UE_LOG(LogTemp,Display,TEXT("SAILBOAT QA COMPLETE: %d checks, %d failures"),SailboatReviewChecks,SailboatReviewErrors.Num());
     bSailboatReview=false;FPlatformMisc::RequestExit(false);
 }
-void AWandererCharacter::RecordFrame()
-{
-    // Frames are JPG like the village film; -framestride=N keeps one frame in N (a rehearsal at 60 is one every two seconds)
-    static int32 Stride = -1; if (Stride < 0) { Stride = 1; FParse::Value(FCommandLine::Get(),TEXT("framestride="),Stride); Stride = FMath::Max(1,Stride); }
-    if (ReviewDirectory.IsEmpty()) { FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory); if (ReviewDirectory.IsEmpty()) ReviewDirectory = FPaths::ProjectSavedDir()/TEXT("Screenshots/Demo")/FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")); IFileManager::Get().MakeDirectory(*ReviewDirectory,true); }
-    const int32 Index = DemoFrame++;
-    if (Index % Stride == 0) FScreenshotRequest::RequestScreenshot(ReviewDirectory/FString::Printf(TEXT("frame_%05d.jpg"),Index),false,false);
-}
 /** Ground demo: spawn, road, the lane through the fishing village, a wave at the coconut stand, the sailboat crossing with
  *  to the island landing, a cut to the last stretch of the stairway, the temple, a slow orbit. */
 /** Flyover: a detached camera along keyframes with look targets, easing per segment. */
@@ -1383,7 +1370,6 @@ void AWandererCharacter::Tick(float Dt)
         }
         return;
     }
-    if (bCairoReview) AdvanceCairoReview(Dt);
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview) AdvanceMapReview(Dt);
     if (!BenchmarkView.IsEmpty()) AdvanceBenchmark(Dt);
@@ -1456,7 +1442,6 @@ void AWandererCharacter::Tick(float Dt)
             FollowCamera->SetRelativeLocation(Offset); FollowCamera->SetRelativeRotation(Rotation);
         }
     }
-    if(FightFilm) AdvanceFightFilm(*FightFilm,Dt);
 }
 
 void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)

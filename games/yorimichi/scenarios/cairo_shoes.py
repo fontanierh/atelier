@@ -22,7 +22,7 @@ floor. Before the level-foot retarget (adventure/retarget.py) the reference rig'
 ground. Checks per place: standing, both toes within 1.5-5 cm; walking, each foot's planted height (its lowest 15% of
 frames) within 1.5-5 cm, and no frame under 0.5 cm. done.json lists every check with what it measured, log.json the per-frame heights, and the stills
 are saved beside them. Optional globals: SHOTS (False for no stills), ONLY (place names: concrete, grass), RIDER
-(CairoAdventure by default). An existing take is refused, never overwritten; an error mid-run still writes done.json (failed,
+(Cairo by default). An existing take is refused, never overwritten; an error mid-run still writes done.json (failed,
 with the error) and gives the camera and controls back.
 """
 import json, math, os
@@ -31,7 +31,9 @@ import unreal
 L = live.L
 TAKE = globals().get('TAKE', 'take1')
 SHOTS = globals().get('SHOTS', True)
-RIDER = globals().get('RIDER') or 'CairoAdventure'
+RIDER = globals().get('RIDER') or 'Cairo'
+if RIDER == 'CairoAdventure':
+    RIDER = 'Cairo'
 OUT = os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'), 'yorimichi/cairo/shoes', TAKE)
 if os.path.isdir(OUT) and os.listdir(OUT):
     raise RuntimeError(f'take {TAKE} already exists at {OUT}: choose a new TAKE')

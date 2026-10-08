@@ -1,6 +1,6 @@
-"""Mix the sound of a filmed fight (-fightfilm) and encode the video.
+"""Mix a live capture's sound and encode the video.
 
-    python games/yorimichi/tools/mix_fight_film.py build/yorimichi/fightfilm/<take> [--out name]
+    python games/yorimichi/tools/mix_capture.py build/yorimichi/capture/<take> [--out name]
 
 The game logs every sound it starts (AJapanCombatFX and the footsteps) with the captured frame, its position,
 volume and pitch (audio.json), and the camera for every frame (camera.csv). This rebuilds the soundtrack offline,

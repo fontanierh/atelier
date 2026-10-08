@@ -118,8 +118,8 @@ bool UYorimichiLive::Launch(FVector Velocity)
 
 bool UYorimichiLive::ToggleSword()
 {
-    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); if (!P || !P->GetSword() || !P->GetSword()->IsInstalled()) return false;
-    P->GetSword()->ToggleWeapon(); return true;
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    return P && P->GetMoves() && P->Live_Press(FName(TEXT("weapon")));
 }
 
 static USkateComponent* PlayerSkate() { AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); return P ? P->GetSkate() : nullptr; }

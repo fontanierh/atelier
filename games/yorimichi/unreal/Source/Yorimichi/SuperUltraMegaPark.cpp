@@ -1,5 +1,6 @@
 #include "SuperUltraMegaPark.h"
 #include "PlayableCharacter.h"
+#include "WandererCharacter.h"
 #include "JapanHUD.h"
 #include "SkateRails.h"
 #include "Engine/World.h"

@@ -23,6 +23,7 @@ CHARACTER_DATA = {
     'cairo': {'adventure.json', 'bike'},
     'modori': {'adventure.json', 'bike', 'grips.json'},
     'sword-trainer': {'adventure.json'},
+    'hippodrome': {'hippodrome.json'},
 }
 CHARACTER_ASSET_DIRECTORIES = {
     'Modori': {'Adventure', 'Textures'},
@@ -72,3 +73,5 @@ def archive(ctx, log):
         log.write(f'archived retired content {relative}\n')
     report = ctx.out / 'runtime-content.json'
     report.write_text(json.dumps({'archived': moved}, indent=2) + '\n')
+    if moved:
+        print(f'WARNING: archived {len(moved)} retired Content entries to {archive_root}; details in {report}', flush=True)

@@ -1,4 +1,4 @@
-"""Check several named markers and safe returns in a guarded CairoAdventure game using an isolated -markersave file.
+"""Check several named markers and safe returns in a guarded Cairo game using an isolated -markersave file.
 
     atelier qa yorimichi session_marker --port 8830 --save-file build/yorimichi/marker-test.json
 
@@ -194,14 +194,14 @@ def main():
 
             assert value(f'm.select_marker({first["key"]!r})')
             saved = snapshot()
-            py('print(unreal.YorimichiLive.switch_character("the reference rig"))')
+            py('print(unreal.YorimichiLive.switch_character("Modori"))')
             time.sleep(2)
             switched = snapshot()
             record('character_switch_keeps_saved_places', switched['pawn'] != saved['pawn'] and switched['marker'] == saved['marker'] and switched['keys'] == saved['keys'], switched)
             travel([anchor[0]+1000, anchor[1], anchor[2]], 133)
             key('F9')
             returned('new_character_keyboard_return', saved['marker'])
-            py('print(unreal.YorimichiLive.switch_character("CairoAdventure"))')
+            py('print(unreal.YorimichiLive.switch_character("Cairo"))')
             time.sleep(2)
             key('M')
             prior = snapshot()
