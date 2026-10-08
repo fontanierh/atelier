@@ -7,6 +7,7 @@
 #include "JapanCharacterMovement.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "Components/CapsuleComponent.h"
 #include "Misc/ScopeExit.h"
 #include <limits>
 
@@ -64,6 +65,11 @@ bool FJapanReactionPayloadTest::RunTest(const FString&)
     if (!TestNotNull(TEXT("Application fixture owns a deferred actor with real movement"), Rider)) return false;
     ON_SCOPE_EXIT { Rider->Destroy(); };
     auto* Movement = CastChecked<UJapanCharacterMovement>(Rider->GetCharacterMovement());
+    // Deferred construction avoids asset initialization, but CMC Launch still
+    // requires an active component with a valid body and a movement mode.
+    Movement->SetUpdatedComponent(Rider->GetCapsuleComponent());
+    Movement->Activate(true); Movement->SetMovementMode(MOVE_Walking);
+    TestTrue(TEXT("Deferred launch fixture has active valid CMC data"), Movement->IsActive() && Movement->HasValidData());
     auto* Moves = NewObject<UBotwMoveSet>(Rider); Moves->Character = Rider;
     const float Health = Rider->GetSword()->GetHealth();
     const int32 Hits = Rider->GetSword()->HitsTaken();
@@ -78,6 +84,7 @@ bool FJapanReactionPayloadTest::RunTest(const FString&)
         Moves->FlinchTime = -1.f; Moves->Clock = 42.f; Moves->JumpBuffer = .123f;
         Moves->GuardBroken = 0.f; Moves->FlurryTime = 0.f; Moves->FlurryPoint = FVector::ZeroVector;
         Moves->bFlurryPoint = false; Moves->bHopInvulnerability = true; Moves->bArmed = false;
+        Movement->SetMovementMode(MOVE_Walking);
         Movement->SetPendingLaunch(FVector::ZeroVector);
         Movement->Velocity = FVector(100., 20., 0.);
     };

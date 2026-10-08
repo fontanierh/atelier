@@ -1,6 +1,7 @@
 #include "JapanReactionJournal.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
+#include "Misc/ScopedCVar.h"
 #include "Serialization/BitReader.h"
 #include "Serialization/BitWriter.h"
 #include <limits>
@@ -179,14 +180,18 @@ bool FJapanReactionJournalTest::RunTest(const FString&)
         TestTrue(TEXT("Every allowed action decodes"), Decoded.Serialize(EachReader));
         TestTrue(TEXT("Every allowed action roundtrips exactly"), Decoded == Each);
     }
-    AddExpectedError(TEXT("FBitReader::SetOverflowed"), EAutomationExpectedErrorFlags::Contains, 0);
-    for (int64 Bits = 0; Bits < Encoded.GetNumBits(); ++Bits)
     {
-        Decoded = First;
-        FBitReader Truncated(Encoded.GetData(), Bits);
-        TestFalse(TEXT("Every truncated bit length fails"), Decoded.Serialize(Truncated));
-        TestTrue(TEXT("Failed reused decoder leaves no stale payload"), Decoded.Value.Bytes.IsEmpty());
-        TestEqual(TEXT("Failed reused decoder leaves no stale event id"), Decoded.Sequence, 0u);
+        // Deliberate malformed input reports errors without a handled ensure.
+        FScopedCVar<int32> OverflowLog(TEXT("net.BitReader.EnsureOnOverflow"), 0);
+        AddExpectedError(TEXT("FBitReader::SetOverflowed"), EAutomationExpectedErrorFlags::Contains, 0);
+        for (int64 Bits = 0; Bits < Encoded.GetNumBits(); ++Bits)
+        {
+            Decoded = First;
+            FBitReader Truncated(Encoded.GetData(), Bits);
+            TestFalse(TEXT("Every truncated bit length fails"), Decoded.Serialize(Truncated));
+            TestTrue(TEXT("Failed reused decoder leaves no stale payload"), Decoded.Value.Bytes.IsEmpty());
+            TestEqual(TEXT("Failed reused decoder leaves no stale event id"), Decoded.Sequence, 0u);
+        }
     }
     auto UnknownAction = First; UnknownAction.Value.Action = TEXT("NotAReaction");
     FBitWriter UnknownWriter(8192, true);
