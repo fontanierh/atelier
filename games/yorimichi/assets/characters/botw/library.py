@@ -1,11 +1,13 @@
 """Where the BOTW asset library is, and what one of its entries is made of.
 
-The library is a local extraction kept outside the repository (~/.cache/atelier/botw/library, see README.md); Link and
-his clothing come from the botw-extract repository's extended catalog (~/.cache/atelier/botw/botw-extract). This
-module only reads them. Standard library only.
+The files the game uses are committed in ../botw-library (vendor.py copies them there, README.md), and this module
+reads them from there. Without that copy, or with ATELIER_BOTW_CACHE=1 (vendor.py), it reads the full local extraction
+(~/.cache/atelier/botw/library) and the botw-extract repository's extended catalog, which adds Link and his clothing
+(~/.cache/atelier/botw/botw-extract). Standard library only.
 """
 import functools
 import json
+import os
 import tomllib
 from pathlib import Path
 
@@ -13,16 +15,24 @@ from atelier.paths import cache_dir
 
 HERE = Path(__file__).resolve().parent
 ROSTER = HERE / 'roster.toml'
+VENDOR = HERE.parent / 'botw-library'   # the committed copy: library/ and botw-extract/, laid out as in the cache
+
+
+def base():
+    """The committed copy, or the cache when there is none or ATELIER_BOTW_CACHE is set."""
+    if not os.environ.get('ATELIER_BOTW_CACHE') and (VENDOR / 'library' / 'catalog' / 'archive-info.json').is_file():
+        return VENDOR
+    return cache_dir('botw')
 
 
 def root():
-    """The extracted library folder (it holds START_HERE.md, library/, viewer/)."""
-    return cache_dir('botw') / 'library'
+    """The extracted library folder (it holds catalog/, library/, viewer/)."""
+    return base() / 'library'
 
 
 def extract():
     """The botw-extract clone with its metadata and viewer packs restored (README.md)."""
-    return cache_dir('botw') / 'botw-extract'
+    return base() / 'botw-extract'
 
 
 def mechanics():

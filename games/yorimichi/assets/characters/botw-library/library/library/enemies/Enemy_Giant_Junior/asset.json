@@ -1,0 +1,44 @@
+{
+  "id": "Enemy_Giant_Junior",
+  "name": "Hinox",
+  "kind": "enemy",
+  "actors": [
+    "Enemy_Giant_Junior"
+  ],
+  "units": [
+    {
+      "model": "Enemy_Giant",
+      "resource": "Enemy_Giant",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/f7db00d14f880624.glb",
+      "bytes": 2352576,
+      "animation_asset": "../../../viewer/public/assets/library/8c67b1aa732561ec.json",
+      "animation_bytes": 18163242,
+      "clip_count": 133,
+      "bone_count": 108,
+      "vertices": 11058,
+      "triangles": 11880,
+      "weapon_bones": [
+        "Wrist_L",
+        "Weapon_L",
+        "Wrist_R",
+        "Weapon_R"
+      ],
+      "source_bfres": "../../../work/enemies/source/Enemy_Giant.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Enemy_Giant/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 133,
+  "profile": "GiantEnemy",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Enemy_Giant_Junior",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Enemy_Giant_Junior.sbactorpack"
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "id": "Npc_Musician_001",
+  "name": "Kass",
+  "kind": "npc",
+  "actors": [
+    "Npc_Musician_001"
+  ],
+  "units": [
+    {
+      "model": "Npc_Rito_Musician",
+      "resource": "Npc_Rito_Musician",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/d6357c84105d8069.glb",
+      "bytes": 1554648,
+      "animation_asset": "../../../viewer/public/assets/library/a5a5bbba0642f3d6.json",
+      "animation_bytes": 21899527,
+      "clip_count": 386,
+      "bone_count": 137,
+      "vertices": 16642,
+      "triangles": 13823,
+      "weapon_bones": [
+        "Wrist_L",
+        "Weapon_L",
+        "Wrist_R",
+        "Weapon_R",
+        "Pod_A",
+        "Pod_B"
+      ],
+      "source_bfres": "../../../work/enemies/source/Npc_Rito_Musician.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Npc_Rito_Musician/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 386,
+  "profile": "NPC",
+  "assembly_preview": false,
+  "umii": {
+    "body": {
+      "type": 0,
+      "number": 0,
+      "race": 6,
+      "height": 0,
+      "weight": 1
+    },
+    "personal": {
+      "sex_age": 1,
+      "fav_color": 0,
+      "sub_color_1": -1,
+      "sub_color_2": -1,
+      "head_fav_color": -1,
+      "voice_type": "Hylia_Man_Young_Normal04"
+    },
+    "shape": {
+      "jaw": 0,
+      "skin_color": 0,
+      "wrinkle": 0,
+      "make": 0,
+      "trans_v": 0.0,
+      "scale": 1.0
+    },
+    "eye": {
+      "type": 2,
+      "color": 0,
+      "trans_v": 3.0,
+      "trans_u": 2.0,
+      "rotate": 0.0,
+      "scale": 4.0,
+      "aspect": 3.0
+    },
+    "eyebrow": {
+      "type": 6,
+      "color": 0,
+      "trans_v": 7.0,
+      "trans_u": 2.0,
+      "rotate": 0.0,
+      "scale": 4.0,
+      "aspect": 3.0
+    },
+    "nose": {
+      "type": 1,
+      "trans_v": 9.0,
+      "scale": 4.0
+    },
+    "mouth": {
+      "type": 3,
+      "color": 0,
+      "trans_v": 13.0,
+      "scale": 4.0,
+      "aspect": 3.0
+    },
+    "beard": {
+      "mustache": 0,
+      "type": 0,
+      "color": 0,
+      "scale": 4.0
+    },
+    "glass": {},
+    "common": {
+      "backpack": -1,
+      "hat": -1,
+      "no_hat_always": false
+    },
+    "gerudo": {
+      "skin_color": 0,
+      "hair": 0,
+      "hair_color": 0,
+      "lip_color": 0,
+      "glass": 0,
+      "glass_color": 0
+    },
+    "goron": {
+      "skin_color": 0
+    },
+    "rito": {
+      "body_color": 0,
+      "hair_color": -1
+    },
+    "zora": {
+      "body_color": 0
+    },
+    "korog": {
+      "mask": 0,
+      "skin_color": 0,
+      "left_plant": 0,
+      "right_plant": 0
+    }
+  },
+  "viewer_url": "../../../viewer/public/index.html#asset=Npc_Musician_001",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Npc_Musician_001.sbactorpack"
+  ]
+}

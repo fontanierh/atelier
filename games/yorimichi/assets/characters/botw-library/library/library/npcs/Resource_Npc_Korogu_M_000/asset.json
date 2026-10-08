@@ -1,0 +1,40 @@
+{
+  "id": "Resource_Npc_Korogu_M_000",
+  "name": "Korok 1",
+  "kind": "npc",
+  "actors": [
+    "Npc_Korogu_M_000"
+  ],
+  "units": [
+    {
+      "model": "Npc_Korogu_M_000",
+      "resource": "Npc_Korogu_M_000",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/b19474c35166aadb.glb",
+      "bytes": 327316,
+      "animation_asset": "../../../viewer/public/assets/library/329f455712488469.json",
+      "animation_bytes": 2359710,
+      "clip_count": 96,
+      "bone_count": 23,
+      "vertices": 3010,
+      "triangles": 2738,
+      "weapon_bones": [
+        "Weapon_L",
+        "Weapon_R"
+      ],
+      "source_bfres": "../../../work/enemies/source/Npc_Korogu_M_000.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Npc_Korogu_M_000/resource.json"
+    }
+  ],
+  "scale": [
+    1,
+    1,
+    1
+  ],
+  "fps": 30,
+  "clip_count": 96,
+  "profile": "Original NPC model",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Resource_Npc_Korogu_M_000",
+  "actor_packs": []
+}

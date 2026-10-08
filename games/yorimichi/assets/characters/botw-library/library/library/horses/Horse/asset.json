@@ -1,0 +1,77 @@
+{
+ "id": "Horse",
+ "name": "Horse",
+ "kind": "horse",
+ "actors": [
+  "GameRomHorse",
+  "GameRomHorse01",
+  "GameRomHorse02",
+  "GameRomHorse03",
+  "GameRomHorse04",
+  "GameRomHorse05",
+  "GameRomHorse06",
+  "GameRomHorse07",
+  "GameRomHorse08",
+  "GameRomHorse09",
+  "GameRomHorse10",
+  "GameRomHorse11",
+  "GameRomHorse12",
+  "GameRomHorse13",
+  "GameRomHorse14",
+  "GameRomHorse15",
+  "GameRomHorse16",
+  "GameRomHorse17",
+  "GameRomHorse18",
+  "GameRomHorse19",
+  "GameRomHorse20",
+  "GameRomHorse21",
+  "GameRomHorse22",
+  "GameRomHorse23",
+  "Animal_Horse_A"
+ ],
+ "units": [
+  {
+   "model": "Horse_Link",
+   "resource": "Horse_Link",
+   "bind": "",
+   "asset": "../../../viewer/public/assets/library/7967ac2830f040a4.glb",
+   "bytes": 640324,
+   "animation_asset": "../../../viewer/public/assets/library/34876c2eb74821fe.json",
+   "animation_bytes": 13424405,
+   "clip_count": 179,
+   "bone_count": 47,
+   "vertices": 4914,
+   "triangles": 4620,
+   "weapon_bones": [
+    "Wrist_L",
+    "Wrist_R"
+   ],
+   "source_bfres": "../../../work/enemies/source/Horse_Link.bfres",
+   "decoded_resource": "../../../work/enemies/resources/Horse_Link/resource.json"
+  }
+ ],
+ "scale": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "fps": 30,
+ "clip_count": 179,
+ "profile": "Horse",
+ "assembly_preview": false,
+ "coat": {
+  "palette": "Touchy",
+  "frame": 6,
+  "mane_colour": [
+   0.086,
+   0.039,
+   0.01
+  ],
+  "mane_base_colour": [
+   0.473,
+   0.2145,
+   0.055,
+   1.0
+  ]
+ }
+}

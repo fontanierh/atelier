@@ -1,0 +1,49 @@
+{
+  "id": "Enemy_Keese_Swarm",
+  "name": "Keese · Keese",
+  "kind": "enemy",
+  "actors": [
+    "Enemy_Keese_Swarm",
+    "Enemy_Keese_AllDay",
+    "Enemy_Keese",
+    "Enemy_Keese_Swarm_HeapMeasure",
+    "Enemy_Keese_Swarm_AllDay_HeapMeasure",
+    "Enemy_Keese_Swarm_AllDay"
+  ],
+  "units": [
+    {
+      "model": "Keese",
+      "resource": "Enemy_Keese",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/63a4b62e3808b949.glb",
+      "bytes": 119568,
+      "animation_asset": "../../../viewer/public/assets/library/3ee9bf98e2d7fe78.json",
+      "animation_bytes": 117256,
+      "clip_count": 9,
+      "bone_count": 7,
+      "vertices": 421,
+      "triangles": 388,
+      "weapon_bones": [],
+      "source_bfres": "../../../work/enemies/source/Enemy_Keese.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Enemy_Keese/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 9,
+  "profile": "EnemySwarm",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Enemy_Keese_Swarm",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Enemy_Keese.sbactorpack",
+    "../../../work/romfs/base/Actor/Pack/Enemy_Keese_AllDay.sbactorpack",
+    "../../../work/romfs/base/Actor/Pack/Enemy_Keese_Swarm.sbactorpack",
+    "../../../work/romfs/base/Actor/Pack/Enemy_Keese_Swarm_AllDay.sbactorpack",
+    "../../../work/romfs/base/Actor/Pack/Enemy_Keese_Swarm_AllDay_HeapMeasure.sbactorpack",
+    "../../../work/romfs/base/Actor/Pack/Enemy_Keese_Swarm_HeapMeasure.sbactorpack"
+  ]
+}

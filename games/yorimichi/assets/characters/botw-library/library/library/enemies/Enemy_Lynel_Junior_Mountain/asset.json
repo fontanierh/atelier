@@ -1,0 +1,52 @@
+{
+  "id": "Enemy_Lynel_Junior_Mountain",
+  "name": "Lynel",
+  "kind": "enemy",
+  "actors": [
+    "Enemy_Lynel_Junior_Mountain",
+    "Enemy_Lynel_Junior"
+  ],
+  "units": [
+    {
+      "model": "Lynel",
+      "resource": "Enemy_Lynel",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/dd147126fa7730fc.glb",
+      "bytes": 1423208,
+      "animation_asset": "../../../viewer/public/assets/library/7962b882dff92acd.json",
+      "animation_bytes": 31959930,
+      "clip_count": 371,
+      "bone_count": 115,
+      "vertices": 9157,
+      "triangles": 10746,
+      "weapon_bones": [
+        "Wrist_L",
+        "Wrist_R",
+        "Man_Wrist_L",
+        "Weapon_L",
+        "Man_Wrist_R",
+        "Weapon_R",
+        "Pod_A",
+        "Pod_B",
+        "Pod_C",
+        "Pod_D"
+      ],
+      "source_bfres": "../../../work/enemies/source/Enemy_Lynel.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Enemy_Lynel/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 371,
+  "profile": "Enemy",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Enemy_Lynel_Junior_Mountain",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Enemy_Lynel_Junior.sbactorpack",
+    "../../../work/romfs/base/Actor/Pack/Enemy_Lynel_Junior_Mountain.sbactorpack"
+  ]
+}

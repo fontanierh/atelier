@@ -1,0 +1,44 @@
+{
+  "id": "Enemy_Bokoblin_Dark",
+  "name": "Silver Bokoblin",
+  "kind": "enemy",
+  "actors": [
+    "Enemy_Bokoblin_Dark"
+  ],
+  "units": [
+    {
+      "model": "Bokoblin_Red",
+      "resource": "Enemy_Bokoblin",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/cfc1cbb5469a2a0a.glb",
+      "bytes": 829460,
+      "animation_asset": "../../../viewer/public/assets/library/0abf724ee9c61c41.json",
+      "animation_bytes": 14448195,
+      "clip_count": 130,
+      "bone_count": 75,
+      "vertices": 4732,
+      "triangles": 4937,
+      "weapon_bones": [
+        "Wrist_L",
+        "Weapon_L",
+        "Wrist_R",
+        "Weapon_R"
+      ],
+      "source_bfres": "../../../work/enemies/source/Enemy_Bokoblin.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Enemy_Bokoblin/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 130,
+  "profile": "Enemy",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Enemy_Bokoblin_Dark",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Enemy_Bokoblin_Dark.sbactorpack"
+  ]
+}
