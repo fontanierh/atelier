@@ -695,8 +695,16 @@ void UBotwMoveSet::Attach(FName Slot)
     const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Slot);
     if (!S || !Prop || !*Prop || !Character->GetMesh()) return;
     (*Prop)->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, S->bInHand ? S->Hand : S->Back);
-    (*Prop)->SetRelativeTransform(S->bInHand ? S->Held : S->Carry);
+    (*Prop)->SetRelativeTransform(S->bInHand ? S->Held : CarryOf(*S));
     if (Slot == TEXT("sword")) BladeCloth(S->bInHand);
+}
+
+FTransform UBotwMoveSet::CarryOf(const FSlot& S) const
+{
+    if (!S.bCrouched || CrouchCarry <= 0.f) return S.Carry;
+    FTransform Out;
+    Out.Blend(S.Carry, S.Crouched, CrouchCarry);
+    return Out;
 }
 
 void UBotwMoveSet::BladeCloth(bool bInHand)
@@ -787,6 +795,15 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     if (Now && Name == TEXT("GlideOff") && T < (Now->Unbind >= 0.f ? Now->Unbind : .1f)) bGlider = true;
     ShowGlider(bGlider);
     }
+    // Crouched, the carried pieces swing down toward his hip: carried as standing, his chest's lean left the sheath's end
+    // hanging clear of his side, 36 cm from him, with the hilt at his hair (#7633). At the rate and on the linear ramp
+    // the anim instance blends his crouching pose (CrouchWeight), so the carry follows his back between the two.
+    const float WasCrouched = CrouchCarry;
+    CrouchCarry = FMath::FInterpConstantTo(CrouchCarry, Character->bIsCrouched ? 1.f : 0.f, Dt, 7.f);
+    if (CrouchCarry != WasCrouched)
+        for (const auto& Pair : Slots)
+            if (const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Pair.Key); Prop && *Prop && Pair.Value.bCrouched && !Pair.Value.bInHand)
+                (*Prop)->SetRelativeTransform(CarryOf(Pair.Value));
     // The carry layers: the sword arm over everything but blade work, and while guarding on foot the raised shield, or
     // without it the sword raised across the body (both arms).
     const bool bGuardPose = IsGuarding() && Mode == EBotwMoveMode::Ground && (Name.IsNone() || IsLockLoop(Name));
@@ -795,31 +812,6 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     SwordCarry = FMath::FInterpConstantTo(SwordCarry, bCarry ? 1.f : 0.f, Dt, 8.f);
     GuardCarry = FMath::FInterpConstantTo(GuardCarry, bGuardPose && HasShield() ? 1.f : 0.f, Dt, 10.f);
     SwordGuardCarry = FMath::FInterpConstantTo(SwordGuardCarry, bSwordGuard ? 1.f : 0.f, Dt, 10.f);
-    // Crouched, a fitted body's chest leans 70 degrees forward and its head dips toward the hilt on its back (Modori's
-    // hair ran through it): the carried sword and sheath slide CrouchCarryDrop cm down their own length toward their far
-    // end, and back up as he stands.
-    if (const float Drop = GetParam(TEXT("CrouchCarryDrop")); Drop > 0.f)
-    {
-        const float Was = CrouchCarry;
-        CrouchCarry = FMath::FInterpConstantTo(CrouchCarry, Character->bIsCrouched ? 1.f : 0.f, Dt, 4.f);
-        if (CrouchCarry > 0.f || Was > 0.f)
-            for (const TCHAR* Slot : { TEXT("sword"), TEXT("sheath") })
-            {
-                const FSlot* S = Slots.Find(Slot);
-                const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Slot);
-                if (!S || S->bInHand || !Prop || !*Prop || !(*Prop)->GetStaticMesh()) continue;
-                const FBox Box = (*Prop)->GetStaticMesh()->GetBoundingBox();
-                const FVector Size = Box.GetSize();
-                const int32 Axis = Size.X >= Size.Y && Size.X >= Size.Z ? 0 : Size.Y >= Size.Z ? 1 : 2;
-                FVector Down = FVector::ZeroVector;
-                Down[Axis] = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? 1. : -1.;
-                const FTransform BackT = Character->GetMesh()->GetSocketTransform(S->Back);
-                const FVector World = BackT.TransformVectorNoScale(S->Carry.TransformVectorNoScale(Down)) * Drop * CrouchCarry;
-                FTransform Carry = S->Carry;
-                Carry.AddToTranslation(BackT.InverseTransformVector(World));
-                (*Prop)->SetRelativeTransform(Carry);
-            }
-    }
     // Without the shield the off hand holds nothing: over sword work and the lock-on strafe its arm swings free rather
     // than holding the shield pose the BOTW clips give it (not in Cairo's two-handed guard, parry and recoil, nor
     // drawing and sheathing).
@@ -831,7 +823,10 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     // Cairo's own two-handed clips were made for his longer bokken: on this sword the off hand is moved onto the handle.
     const bool bTwoHand = bTwoHanded && bArmed && !bDown && (bSwordGuard || In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit") }));
     TwoHandGrip = FMath::FInterpConstantTo(TwoHandGrip, bTwoHand ? 1.f : 0.f, Dt, 12.f);
-    // The off hand closed round the handle: the middle of its curled fingers on the sword's axis, one hand's width
+    // A fitted body's sword hand wraps the drawn sword's grip (Link's own clips hold it).
+    const FSlot* Held = Slots.Find(TEXT("sword"));
+    SwordHold = FMath::FInterpConstantTo(SwordHold, Held && Held->bInHand && bFistAxis && !bOwnGlide ? 1.f : 0.f, Dt, 8.f);
+    // The off hand closed round the handle: the space its fist closes round on the sword's axis, one hand's width
     // (BOTW's 13 cm) toward the pommel from where the sword hand closes round it, but never past the handle's end (on
     // Link's short hilt it closed round nothing, a finger past the cap); its wrist moved with it.
     const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
@@ -847,20 +842,25 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
         const FName Index(TEXT("finger_0_L")), Little(TEXT("finger_3_L"));
         if (!HiltEnd.IsNearlyZero() && Body->GetBoneIndex(Index) != INDEX_NONE && Body->GetBoneIndex(Little) != INDEX_NONE)
         {
-            const FVector Hilt = MeshT.InverseTransformPosition(SwordT.TransformPosition(HiltEnd));
+            // Its little finger inside the cap; a fist's short of the pommel's flare, by its skin (#7735: it lay on the flare).
+            const FVector Hilt = MeshT.InverseTransformPosition(SwordT.TransformPosition(HiltEnd * (bFistAxis ? SwordGripSpan[0] : 1.f)));
             const float Palm = (Body->GetSocketTransform(Index, RTS_Component).GetLocation() - Body->GetSocketTransform(Little, RTS_Component).GetLocation()).Size();
-            Reach = FMath::Min(Reach, ((Hilt - SwordHand) | Pommel) - Palm * .5f - 1.f);   // its little finger inside the cap
+            const float Margin = bFistAxis ? 1.f / FMath::Max(float(MeshT.GetScale3D().GetAbsMax()), KINDA_SMALL_NUMBER) : 1.f;
+            Reach = FMath::Min(Reach, ((Hilt - SwordHand) | Pommel) - Palm * .5f - Margin);
         }
         const FVector OnGrip = SwordHand + Pommel * Reach;
         const FTransform Hand = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component);
-        FVector Wrist = Hand.GetLocation() + (OnGrip - FingersOf(1));
+        // A fist's grip point is the grip's radius in front of its knuckles (#7633: the curled fingers' middle, put on
+        // the axis, buried them in the grip).
+        const FVector Grip = bFistAxis ? CavityOf(1, GripReach(true)) : FingersOf(1);
+        FVector Wrist = Hand.GetLocation() + (OnGrip - Grip);
         if (bFistAxis)
         {
             // The clip's hand kept its own turn (Cairo's guard on his thicker bokken left Modori's palm flat beside the
             // handle): a fist turned round the handle as on the glider's, its grip axis along it toward the blade (both
             // thumbs forward) and its fingers on the far side from the elbow, the wrist placed under them.
             const FVector Along = -Pommel;
-            const FVector GripLocal = Hand.InverseTransformPosition(FingersOf(1));
+            const FVector GripLocal = Hand.InverseTransformPosition(Grip);
             const FVector Axis = FistAxisOf(1);
             const FVector Out = (GripLocal - Axis * (GripLocal | Axis)).GetSafeNormal();
             const FVector Elbow = Body->GetSocketTransform(Character->GetSkateBone(TEXT("forearm_L")), RTS_Component).GetLocation();

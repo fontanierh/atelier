@@ -34,6 +34,19 @@ class YORIMICHI_API UWandererAnimInstance : public UAnimInstance
     GENERATED_BODY()
 public:
     UWandererAnimInstance();
+    /** The finger wrap's last evaluation, as JSON for the live probe (#7633): per hand (sword hand, off hand) the weight
+     *  it was evaluated at and, per digit (index to little, thumb), its state (unmeasured, straight, solved), deepest
+     *  overlap with the handle (cm), nearest approach on the usable span (cm; 100: none) and the thumb-to-index skin gap.
+     *  Copied before each update, so it is the previous frame's: Evaluations and Frame tell a fresh one from a stale one. */
+    UFUNCTION(BlueprintCallable, Category = "Animation") FString GripReport() const;
+    struct FGripDigits
+    {
+        uint32 Evaluations = 0;
+        uint64 Frame = 0;   // the frame it was copied in
+        float Evaluated[2] = { 0.f, 0.f }, Pinch[2] = { 100.f, 100.f };
+        uint8 State[2][5] = {};
+        float Residual[2][5] = {}, Grip[2][5] = {};
+    } GripDigits;
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
     virtual void DestroyAnimInstanceProxy(FAnimInstanceProxy* Proxy) override;

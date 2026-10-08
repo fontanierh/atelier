@@ -1,6 +1,10 @@
 #include "LiveLibrary.h"
 #include "Misc/App.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Rendering/SkeletalMeshRenderData.h"
+#include "ClothingSystemRuntimeTypes.h"
+#include "StaticMeshResources.h"
 #include "Engine/Engine.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
@@ -302,6 +306,62 @@ bool ULiveLibrary::CurrentMessage(FString& Text, float& Alpha)
 {
     const double Now = FPlatformTime::Seconds(); if (Now > MessageUntil || Message.IsEmpty()) return false;
     Text = Message; Alpha = FMath::Clamp(float(FMath::Min(Now - MessageFrom, MessageUntil - Now) / .35), 0.f, 1.f); return true;
+}
+
+TArray<FVector> ULiveLibrary::SkinnedVertices(USkeletalMeshComponent* Mesh, const TArray<FName>& Bones)
+{
+    TArray<FVector> Out;
+    FSkeletalMeshRenderData* Render = Mesh ? Mesh->GetSkeletalMeshRenderData() : nullptr;
+    if (!Render || !Render->LODRenderData.Num() || !Mesh->GetSkinWeightBuffer(0)) return Out;
+    const FSkeletalMeshLODRenderData& LOD = Render->LODRenderData[0];
+    const FSkinWeightVertexBuffer& Weights = *Mesh->GetSkinWeightBuffer(0);
+    TArray<FMatrix44f> RefToLocals;
+    TArray<FVector3f> Positions;
+    Mesh->CacheRefToLocalMatrices(RefToLocals);
+    USkinnedMeshComponent::ComputeSkinnedPositions(Mesh, Positions, RefToLocals, LOD, Weights);
+    TSet<int32> Wanted;
+    for (const FName& Bone : Bones) if (const int32 I = Mesh->GetBoneIndex(Bone); I != INDEX_NONE) Wanted.Add(I);
+    const TMap<int32, FClothSimulData>& Cloth = Mesh->GetCurrentClothingData_GameThread();
+    const FTransform& ToWorld = Mesh->GetComponentTransform();
+    for (const FSkelMeshRenderSection& Section : LOD.RenderSections)
+    {
+        // A section its cloth asset is simulating shows that asset's particles (added below), not its skinned vertices.
+        const bool bSimulated = Section.HasClothingData() && Cloth.Contains(Section.CorrespondClothAssetIndex);
+        if (bSimulated && !Bones.Num()) continue;
+        for (uint32 V = Section.BaseVertexIndex; V < Section.BaseVertexIndex + Section.NumVertices && V < (uint32)Positions.Num(); ++V)
+        {
+            if (Bones.Num())
+            {
+                // A third of its weight on those bones counts (blended skin between two finger bones included).
+                uint32 On = 0, All = 0;
+                for (uint32 K = 0; K < Weights.GetMaxBoneInfluences(); ++K)
+                {
+                    const uint32 W = Weights.GetBoneWeight(V, K), Bone = Weights.GetBoneIndex(V, K);
+                    All += W;
+                    if (W && Section.BoneMap.IsValidIndex(Bone) && Wanted.Contains(Section.BoneMap[Bone])) On += W;
+                }
+                if (!All || On * 3 < All) continue;
+            }
+            Out.Add(ToWorld.TransformPosition(FVector(Positions[V])));
+        }
+    }
+    if (!Bones.Num())
+        for (const TPair<int32, FClothSimulData>& Pair : Cloth)
+            for (const FVector3f& P : Pair.Value.Positions) Out.Add(Pair.Value.Transform.TransformPosition(FVector(P)));
+    return Out;
+}
+
+TArray<FVector> ULiveLibrary::StaticVertices(UStaticMeshComponent* Mesh)
+{
+    TArray<FVector> Out;
+    const UStaticMesh* Asset = Mesh ? Mesh->GetStaticMesh() : nullptr;
+    const FStaticMeshRenderData* Render = Asset ? Asset->GetRenderData() : nullptr;
+    if (!Render || !Render->LODResources.Num()) return Out;
+    const FPositionVertexBuffer& Buffer = Render->LODResources[0].VertexBuffers.PositionVertexBuffer;
+    if (!Buffer.GetVertexData()) return Out;   // no CPU copy
+    const FTransform& ToWorld = Mesh->GetComponentTransform();
+    for (uint32 V = 0; V < Buffer.GetNumVertices(); ++V) Out.Add(ToWorld.TransformPosition(FVector(Buffer.VertexPosition(V))));
+    return Out;
 }
 
 void ULiveLibrary::Screenshot(const FString& Path) { FScreenshotRequest::RequestScreenshot(Resolve(Path), true, false); }

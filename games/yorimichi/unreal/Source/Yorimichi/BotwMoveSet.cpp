@@ -163,6 +163,8 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
             FSlot S; S.Hand = Hand.IsEmpty() ? NAME_None : FName(*Hand); S.Back = FName(*Back);
             ReadTransform(O, TEXT("held"), S.Held);
             ReadTransform(O, TEXT("carry"), S.Carry);
+            S.bCrouched = O->HasField(TEXT("crouch"));
+            if (S.bCrouched) ReadTransform(O, TEXT("crouch"), S.Crouched);
             UStaticMeshComponent* Prop = NewObject<UStaticMeshComponent>(Owner, *(FString(TEXT("Botw")) + *Pair.Key));
             Prop->SetStaticMesh(Asset);
             Prop->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -184,6 +186,9 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
         BladeBase = Tip * .18; BladeTip = Tip;
         const double Near = Far == Box.Max[Axis] ? Box.Min[Axis] : Box.Max[Axis];
         HiltEnd = FVector::ZeroVector; if (Near * Far < 0.) HiltEnd[Axis] = Near;
+        // The blade's width: the middle of the bounds' three sizes.
+        const int32 Thin = Size.X <= Size.Y && Size.X <= Size.Z ? 0 : Size.Y <= Size.Z ? 1 : 2;
+        SwordMajor = FVector::ZeroVector; SwordMajor[3 - Axis - Thin] = 1.;
         if (const FSlot* S = Slots.Find(TEXT("sword")))
         {
             FistAxis = S->Held.GetRotation().RotateVector(Tip.GetSafeNormal());
@@ -981,7 +986,7 @@ FString UBotwMoveSet::Describe() const
     O->SetBoolField(TEXT("sword_guard"), IsSwordGuarding());
     O->SetNumberField(TEXT("sword_guard_carry"), SwordGuardCarry);
     O->SetNumberField(TEXT("sword_carry"), SwordCarry);
-    O->SetNumberField(TEXT("crouch_carry"), CrouchCarry);
+    O->SetNumberField(TEXT("sword_hold"), SwordHold);
     O->SetNumberField(TEXT("guard_carry"), GuardCarry);
     O->SetNumberField(TEXT("speed"), Movement->Velocity.Size2D());
     O->SetNumberField(TEXT("vz"), Movement->Velocity.Z);

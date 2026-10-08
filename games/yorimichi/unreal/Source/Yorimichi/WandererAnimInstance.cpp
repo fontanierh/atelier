@@ -4,6 +4,7 @@
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
 #include "BikeGripNode.h"
+#include "FingerWrapNode.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimNodeSpaceConversions.h"
 #include "SkateComponent.h"
@@ -128,10 +129,6 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_SequencePlayer_Standalone Fist;
     FAnimNode_LayeredBoneBlend FistLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
-    // Each fist's thumb closed round the handle too (the guard clip's thumb lies nearly straight, so from the front a
-    // closed hand read as an open one, #7296): its tip onto the curled index finger's outside, in the hand's own frame,
-    // so the arms' IK after it carries it. Weighted as the fist layer.
-    FAnimNode_TwoBoneIK ThumbIK[2];
     // A two-handed hold on a sword shorter than the clip's own (Cairo's bokken clips on Link's sword): the off hand is put
     // on the handle beside the sword hand, its elbow bending as the clip has it.
     FAnimNode_TwoBoneIK GripIK;
@@ -139,6 +136,11 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     // place on the neutral glide; then each fist turned round its handle (UBotwMoveSet::GlideHandRotation).
     FAnimNode_TwoBoneIK GlideIK[2];
     FAnimNode_ModifyBone GlideTurn[2];
+    // Then each hand's fingers wrapped round the handle it holds, its surface and not its axis (UBotwMoveSet::HeldHandle,
+    // #7633): the sword's grip in either hand, the glider's handles; and its thumb closed round it too (the guard clip's
+    // thumb lies nearly straight, so from the front a closed hand read as an open one, #7296), onto the wrapped index
+    // finger's outside.
+    FFingerWrapNode Wrap;
     // A hit's recoil (UBotwMoveSet::FlinchRotation): the spine, chest, neck and head each turned a little further,
     // added in component space, the bones above following.
     FAnimNode_ModifyBone Flinch[4];
@@ -182,17 +184,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         FistLayer.BlendWeights.SetNum(2); FistLayer.BlendWeights[0] = FistLayer.BlendWeights[1] = 0.f;
         FistLayer.bMeshSpaceRotationBlend = false; FistLayer.bBlendRootMotionBasedOnRootBone = false;
         ToComponent.LocalPose.SetLinkNode(&FistLayer);
-        ThumbIK[0].ComponentPose.SetLinkNode(&ToComponent);
-        ThumbIK[1].ComponentPose.SetLinkNode(&ThumbIK[0]);
-        for (FAnimNode_TwoBoneIK& IK : ThumbIK)
-        {
-            // The thumb's last bone keeps its turn on the middle one, so the tip curls with it (#7565).
-            IK.EffectorLocationSpace = BCS_BoneSpace; IK.JointTargetLocationSpace = BCS_BoneSpace;
-            IK.EffectorLocation = IK.JointTargetLocation = FVector::ZeroVector;
-            IK.bAllowStretching = false; IK.bTakeRotationFromEffectorSpace = false; IK.bMaintainEffectorRelRot = true;
-            IK.Alpha = 0.f;
-        }
-        GripIK.ComponentPose.SetLinkNode(&ThumbIK[1]);
+        GripIK.ComponentPose.SetLinkNode(&ToComponent);
         GripIK.EffectorLocationSpace = BCS_BoneSpace; GripIK.JointTargetLocationSpace = BCS_BoneSpace;
         GripIK.EffectorLocation = GripIK.JointTargetLocation = FVector::ZeroVector;
         GripIK.bAllowStretching = false; GripIK.bTakeRotationFromEffectorSpace = false; GripIK.bMaintainEffectorRelRot = false;
@@ -214,9 +206,11 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
             Turn.TranslationMode = BMM_Ignore; Turn.ScaleMode = BMM_Ignore;
             Turn.Alpha = 0.f;
         }
+        Wrap.ComponentPose.SetLinkNode(&GlideTurn[1]);
+        Wrap.Alpha = 1.f;
         for (int32 I = 0; I < 4; ++I)
         {
-            Flinch[I].ComponentPose.SetLinkNode(I ? static_cast<FAnimNode_Base*>(&Flinch[I - 1]) : &GlideTurn[1]);
+            Flinch[I].ComponentPose.SetLinkNode(I ? static_cast<FAnimNode_Base*>(&Flinch[I - 1]) : &Wrap);
             Flinch[I].RotationMode = BMM_Additive; Flinch[I].RotationSpace = BCS_ComponentSpace;
             Flinch[I].TranslationMode = BMM_Ignore; Flinch[I].ScaleMode = BMM_Ignore;
             Flinch[I].Alpha = 0.f;
@@ -238,7 +232,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &ThumbIK[0], &ThumbIK[1], &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Wrap, &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -266,9 +260,16 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                     const TCHAR* Side = I ? TEXT("L") : TEXT("R");
                     GlideIK[I].IKBone.BoneName = Pawn->GetSkateBone(FName(*FString::Printf(TEXT("hand_%s"), Side)));
                     GlideTurn[I].BoneToModify.BoneName = GlideIK[I].IKBone.BoneName;
-                    ThumbIK[I].IKBone.BoneName = FName(*FString::Printf(TEXT("thumb_end_%s"), Side));
-                    ThumbIK[I].EffectorTarget = ThumbIK[I].JointTarget = FBoneSocketTarget(GlideIK[I].IKBone.BoneName);
+                    for (int32 F = 0; F < 5; ++F)
+                        for (int32 K = 0; K < 3; ++K)
+                        {
+                            const TCHAR* const Joint[3] = { TEXT("finger_"), TEXT("finger_tip_"), TEXT("finger_end_") };
+                            const TCHAR* const Thumb[3] = { TEXT("thumb_"), TEXT("thumb_tip_"), TEXT("thumb_end_") };
+                            Wrap.Hands[I].Bones[F][K].BoneName = F < 4 ? FName(*FString::Printf(TEXT("%s%d_%s"), Joint[K], F, Side))
+                                : FName(*FString::Printf(TEXT("%s%s"), Thumb[K], Side));
+                        }
                 }
+                Wrap.Frame.BoneName = GripIK.EffectorTarget.BoneReference.BoneName;   // the sword hand, which carries the sword
                 const TCHAR* const Chain[4] = { TEXT("spine"), TEXT("chest"), TEXT("neck"), TEXT("head") };
                 for (int32 I = 0; I < 4; ++I) Flinch[I].BoneToModify.BoneName = Pawn->GetSkateBone(Chain[I]);
             }
@@ -434,24 +435,30 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         const float GlideFist = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
         FistLayer.BlendWeights[0] = GlideFist;
         FistLayer.BlendWeights[1] = FMath::Max(GlideFist, GripFist);   // the off hand closes round the sword's handle too
-        // The thumbs' targets from the last pose, in each hand's frame: the tip onto the middle of the index finger's
-        // outer half, the middle joint where it was (so the thumb keeps bending the way it did).
+        // Each hand's fingers round the handle it holds; a sword's grip goes with the sword hand (it is the hand's child).
         const USkeletalMeshComponent* Body = Instance->GetSkelMeshComponent();
+        const bool bHands = Moves && Body && !bRiding && !bSailing && !bBiking && !Pawn->IsZeppelinPassenger();
+        Wrap.Units = Body ? 1.f / FMath::Max(float(Body->GetComponentTransform().GetScale3D().GetAbsMax()), KINDA_SMALL_NUMBER) : 1.f;
+        // The last evaluation's grip, for the probe, before this update's inputs replace it.
+        if (UWandererAnimInstance* Owner = Cast<UWandererAnimInstance>(Instance))
+        {
+            UWandererAnimInstance::FGripDigits& R = Owner->GripDigits;
+            if (R.Evaluations != Wrap.Evaluations) { R.Evaluations = Wrap.Evaluations; R.Frame = GFrameCounter; }
+            for (int32 I = 0; I < 2; ++I)
+            {
+                const FFingerWrapNode::FHand& W = Wrap.Hands[I];
+                R.Evaluated[I] = W.Evaluated; R.Pinch[I] = W.Pinch;
+                for (int32 F = 0; F < 5; ++F) { R.State[I][F] = uint8(W.State[F]); R.Residual[I][F] = W.Residual[F]; R.Grip[I][F] = W.Grip[F]; }
+            }
+        }
+        UBotwMoveSet::FHeldHandle Held[2];
         for (int32 I = 0; I < 2; ++I)
         {
-            const TCHAR* Side = I ? TEXT("L") : TEXT("R");
-            const FName Hand = ThumbIK[I].EffectorTarget.BoneReference.BoneName;
-            const FName Index[2] = { FName(*FString::Printf(TEXT("finger_tip_0_%s"), Side)), FName(*FString::Printf(TEXT("finger_end_0_%s"), Side)) };
-            const FName Joint(*FString::Printf(TEXT("thumb_tip_%s"), Side));
-            ThumbIK[I].Alpha = 0.f;
-            if (!Body || FistLayer.BlendWeights[I] <= 0.f || Body->GetBoneIndex(ThumbIK[I].IKBone.BoneName) == INDEX_NONE || Body->GetBoneIndex(Hand) == INDEX_NONE
-                || Body->GetBoneIndex(Index[0]) == INDEX_NONE || Body->GetBoneIndex(Index[1]) == INDEX_NONE || Body->GetBoneIndex(Joint) == INDEX_NONE)
-                continue;
-            const FTransform H = Body->GetSocketTransform(Hand, RTS_Component);
-            const FVector Outside = (Body->GetSocketTransform(Index[0], RTS_Component).GetLocation() + Body->GetSocketTransform(Index[1], RTS_Component).GetLocation()) * .5f;
-            ThumbIK[I].EffectorLocation = H.InverseTransformPosition(Outside);
-            ThumbIK[I].JointTargetLocation = H.InverseTransformPosition(Body->GetSocketTransform(Joint, RTS_Component).GetLocation());
-            ThumbIK[I].Alpha = FistLayer.BlendWeights[I];
+            if (bHands) Held[I] = Moves->HeldHandle(I);
+            FFingerWrapNode::FHand& W = Wrap.Hands[I];
+            W.Weight = Held[I].Weight; W.bInFrame = Held[I].bSword;
+            W.A = Held[I].A; W.B = Held[I].B; W.Major = Held[I].Major; W.R0 = Held[I].R0; W.R1 = Held[I].R1;
+            W.RM = Held[I].RM; W.MidAt = Held[I].MidAt;
         }
         const bool bFlinch = Moves && Moves->IsFlinching() && !bRiding && !bSailing && !bBiking;
         for (int32 I = 0; I < 4; ++I)
@@ -488,4 +495,19 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
 // Sword clips carry their captured travel and turning on the root bone; library clips keep an identity root.
 UWandererAnimInstance::UWandererAnimInstance() { RootMotionMode = ERootMotionMode::RootMotionFromEverything; }
 FAnimInstanceProxy* UWandererAnimInstance::CreateAnimInstanceProxy() { return new FWandererAnimProxy(this); }
+FString UWandererAnimInstance::GripReport() const
+{
+    const FGripDigits& R = GripDigits;
+    const TCHAR* const States[3] = { TEXT("unmeasured"), TEXT("straight"), TEXT("solved") };
+    FString Out = FString::Printf(TEXT("{\"evaluations\":%u,\"frame\":%llu,\"hands\":["), R.Evaluations, R.Frame);
+    for (int32 I = 0; I < 2; ++I)
+    {
+        Out += FString::Printf(TEXT("%s{\"weight\":%.4f,\"pinch\":%.4f,\"digits\":["), I ? TEXT(",") : TEXT(""), R.Evaluated[I], R.Pinch[I]);
+        for (int32 F = 0; F < 5; ++F)
+            Out += FString::Printf(TEXT("%s{\"state\":\"%s\",\"residual\":%.4f,\"grip\":%.4f}"), F ? TEXT(",") : TEXT(""),
+                States[FMath::Min<int32>(R.State[I][F], 2)], R.Residual[I][F], R.Grip[I][F]);
+        Out += TEXT("]}");
+    }
+    return Out + TEXT("]}");
+}
 void UWandererAnimInstance::DestroyAnimInstanceProxy(FAnimInstanceProxy* Proxy) { delete static_cast<FWandererAnimProxy*>(Proxy); }
