@@ -336,12 +336,12 @@ private:
     {
         FSlateDrawElement::MakeBox(Out,Layer,G.ToPaintGeometry(FVector2f(Radius*2,Radius*2),FSlateLayoutTransform(FVector2f(Centre-FVector2D(Radius,Radius)))),&DiscBrush,ESlateDrawEffect::None,Colour);
     }
-    int32 PickAt(const FGeometry& G, const FVector2D& Local, float Reach = 26.f) const
+    int32 PickAt(const FGeometry& G, const FVector2D& Local, float PickRadius = 26.f) const
     {
         const UJapanMap* M = Map.Get();
         if (!M) return -1;
         Fit(G);
-        int32 Best = -1; float BestD = Reach;
+        int32 Best = -1; float BestD = PickRadius;
         for (int32 I = 0; I < M->GetZones().Num(); ++I)
         {
             const float D = FVector2D::Distance(Local,SheetOffset + M->ToSheet(M->GetZones()[I].Location)*SheetSize);

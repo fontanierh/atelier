@@ -37,7 +37,7 @@ struct FHorseSpec
     TMap<FName, FName> Roles;
     FName Role(FName R) const { const FName* C = Roles.Find(R); return C ? *C : NAME_None; }
     static const TMap<FString, FHorseSpec>& All();
-    static const FHorseSpec* Find(const FString& Name);
+    static const FHorseSpec* Find(const FString& InName);
     /** The player in the saddle: Cairo (RiderCairo, cairo_rider.py) when imported, else Link. */
     static FString PlayerRider();
 };

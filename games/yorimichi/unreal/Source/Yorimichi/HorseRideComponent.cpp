@@ -21,7 +21,7 @@ namespace
 {
     // cm/s: the roster horse's own gaits (speeds_cm at rate 1), so each plays near its natural rate.
     constexpr float WalkSpeed = 190.f, TrotSpeed = 440.f, GallopSpeed = 830.f, SpurSpeed = 1040.f;
-    constexpr float SpurSeconds = 1.8f, SpurRefillSeconds = 4.f, OffSpeed = 250.f, Reach = 1500.f;
+    constexpr float SpurSeconds = 1.8f, SpurRefillSeconds = 4.f, OffSpeed = 250.f, MountReach = 1500.f;
     // The horse is 2.7 m long round the rider's capsule: its nose and tail are this far ahead of and behind the feet.
     constexpr float HalfLength = 120.f;
 }
@@ -111,7 +111,7 @@ bool UHorseRideComponent::Toggle()
     // The horse left standing nearby takes him back; anywhere else the chosen horse is brought round beside him.
     AHippodromeFigure* Horse = Figure.Get();
     const float Half = Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-    if (Horse && FVector::Dist2D(Horse->GetActorLocation(), Feet()) < Reach && Horse->GetRider().Name == RiderName)
+    if (Horse && FVector::Dist2D(Horse->GetActorLocation(), Feet()) < MountReach && Horse->GetRider().Name == RiderName)
     {
         const FVector At = Horse->GetActorLocation() + FVector(0, 0, Half + 2.f);
         FCollisionQueryParams Q(SCENE_QUERY_STAT(HorseMount), false, Rider);

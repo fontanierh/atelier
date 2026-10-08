@@ -103,8 +103,8 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                 Game->GetTimerManager().SetTimer(Refresh,FTimerDelegate::CreateWeakLambda(World,[World]()
                 {
                     int32 Count=0;
-                    for (TActorIterator<ASkyLight> It(World->GetWorld());It;++It)
-                        if (auto* Sky=It->GetLightComponent(); Sky && !Sky->IsRealTimeCaptureEnabled())
+                    for (TActorIterator<ASkyLight> SkyIt(World->GetWorld());SkyIt;++SkyIt)
+                        if (auto* Sky=SkyIt->GetLightComponent(); Sky && !Sky->IsRealTimeCaptureEnabled())
                         { Sky->RecaptureSky(); ++Count; }
                     USkyLightComponent::UpdateSkyCaptureContents(World->GetWorld());
                     UE_LOG(LogTemp,Display,TEXT("CITY TILES refreshed startup sky captures=%d"),Count);

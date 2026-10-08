@@ -207,7 +207,7 @@ namespace
             if (C->Time<10.3f) return true;
             const bool bSunk=C->Skin[0]>2 || C->Skin[1]>2, bUnmeasured=C->Skin[0]<-1e8f || C->Skin[1]<-1e8f;
             C->Failed+=!C->bBailed || bUnmeasured || bSunk;
-            auto Shown=[](float Depth){ return Depth<-1e8f ? FString(TEXT("-")) : FString::Printf(TEXT("%.1f"),Depth); };
+            auto Shown=[](float D){ return D<-1e8f ? FString(TEXT("-")) : FString::Printf(TEXT("%.1f"),D); };
             UE_LOG(LogTemp,Display,TEXT("SKATE GROUND %s bail: skin %s cm under the ground lying, %s getting up (%d readings of 20+ cm set apart) %s"),
                 *S.Name,*Shown(C->Skin[0]),*Shown(C->Skin[1]),C->Occluded,!C->bBailed ? TEXT("FAIL (no bail)") : bUnmeasured ? TEXT("FAIL (no reading)") : bSunk ? TEXT("FAIL") : TEXT("PASS"));
         }

@@ -85,7 +85,11 @@ namespace SkateRuntimeDetail
     }
 
     // Match the standalone runtime's floating environment (the defaults, denormals flushed to zero), and restore
-    // the caller's complete environment before returning to Unreal.
+    // the caller's complete environment before returning to Unreal. MSVC accepts fenv_access only at namespace
+    // scope, so it brackets the class; Clang takes the standard pragma inside each function.
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma fenv_access(on)
+#endif
     class FScopedNativeFloatEnvironment
     {
     public:
@@ -93,8 +97,6 @@ namespace SkateRuntimeDetail
         {
 #if defined(__clang__)
 #pragma STDC FENV_ACCESS ON
-#elif defined(_MSC_VER)
-#pragma fenv_access(on)
 #endif
             SavedOkay_=std::fegetenv(&Saved_)==0;
             Ready_=SavedOkay_&&std::fesetenv(FE_DFL_ENV)==0&&atelier::skate::FlushDenormalsToZero();
@@ -103,8 +105,6 @@ namespace SkateRuntimeDetail
         {
 #if defined(__clang__)
 #pragma STDC FENV_ACCESS ON
-#elif defined(_MSC_VER)
-#pragma fenv_access(on)
 #endif
             if(SavedOkay_)std::fesetenv(&Saved_);
         }
@@ -115,6 +115,9 @@ namespace SkateRuntimeDetail
         std::fenv_t Saved_{};
         bool SavedOkay_=false,Ready_=false;
     };
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma fenv_access(off)
+#endif
 
     // Native left/up/forward metres -> UE forward/right/up centimetres (change handedness).
     inline FVector FromNative(const FVector& V) { return FVector(V.Z, -V.X, V.Y) * 100.; }
