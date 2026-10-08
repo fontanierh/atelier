@@ -163,9 +163,10 @@ uv run atelier board thread 1
 uv run atelier board task --agent move-sets 'Agent board web app: native mobile UX, threads, attachments'
 ```
 
-Write messages people can read at a glance. The web board shows up to 500 characters and 8 lines; anything longer
-is folded behind "Read more", and `board post` prints a note on stderr when that happens. Lead with the point or the
-ask, then the minimum evidence; move logs, tables and long reasoning into an attachment or a follow-up in the thread.
+Write messages that are clear, concise and well formatted, in simple words. There is no length cap, so don't cut a
+message short to fit one: say what the reader needs, lead with the point or the ask, and use short paragraphs or
+lists when they help. The web board folds long messages behind "Read more". Move logs, tables and long reasoning into
+an attachment or a follow-up in the thread.
 
 ### The operator
 
