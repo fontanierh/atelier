@@ -103,62 +103,7 @@ def defence_edge_statistics(folder):
     return dict(edges=edges, invalid=invalid)
 
 
-def timeout_recovery_prediction(server, guest):
-    """Only the first timeout move may reconcile measured host neutral braking."""
-    def finite(value):
-        return type(value) in (float, int) and math.isfinite(value)
-
-    def vector(value):
-        match = re.fullmatch(r'X=([-+\d.eE]+) Y=([-+\d.eE]+) Z=([-+\d.eE]+)', value) if isinstance(value, str) else None
-        if not match:
-            raise ValueError('missing vector')
-        result = tuple(float(v) for v in match.groups())
-        if not all(math.isfinite(v) for v in result):
-            raise ValueError('nonfinite vector')
-        return result
-
-    recovery = server.get('timeout_recovery')
-    if not isinstance(recovery, dict):
-        return False
-    count, largest = guest.get('position_corrections_over_1cm'), guest.get('largest_correction_cm')
-    fields = ('first_timestamp', 'first_dt', 'initial_speed', 'maximum_speed', 'minimum_braking', 'path_cm')
-    if (any(type(r.get('timeout_corrections')) is not int or r['timeout_corrections'] != 1 for r in (server, guest)) or
-        type(recovery.get('reason')) is not int or recovery['reason'] != 1 or
-        type(recovery.get('epoch')) is not int or recovery['epoch'] <= 0 or
-        recovery.get('arrived') is not True or recovery.get('all_grounded') is not True or
-        type(recovery.get('neutral_frames')) is not int or recovery['neutral_frames'] <= 0 or
-        not all(finite(recovery.get(key)) for key in fields) or
-        not 0 < recovery['first_dt'] <= .125001 or recovery['first_timestamp'] <= 0 or
-        recovery['initial_speed'] <= 0 or recovery['minimum_braking'] <= 0 or
-        not recovery['initial_speed'] <= recovery['maximum_speed'] <= recovery['initial_speed'] + .1 or
-        type(count) is not int or count not in (0, 1) or not finite(largest) or largest < 0):
-        return False
-    try:
-        handoff, arrival, first = (vector(recovery.get(k)) for k in ('handoff_root', 'arrival_root', 'first_move_root'))
-        distance = math.dist(handoff[:2], arrival[:2])
-        bound = recovery['initial_speed'] ** 2 / (2 * recovery['minimum_braking'])
-        if not max(0., distance - .05) <= recovery['path_cm'] <= bound + .1 or math.dist(arrival, first) > .1:
-            return False
-        if count == 0:
-            return largest < 1  # Original strict gate, with no correction exception used.
-        event = guest.get('largest_correction')
-        if not isinstance(event, dict):
-            return False
-        if (type(event.get('epoch')) is not int or event['epoch'] != recovery['epoch'] or largest <= 1 or
-            not all(finite(event.get(k)) for k in ('move_timestamp', 'move_dt')) or
-            abs(event['move_timestamp'] - recovery['first_timestamp']) > 1e-5 or
-            abs(event['move_dt'] - recovery['first_dt']) > 1e-5):
-            return False
-        predicted, authoritative = (vector(event.get(k)) for k in ('predicted_position', 'authoritative_position'))
-        error = tuple(a-p for a, p in zip(authoritative, predicted))
-        neutral = tuple(a-h for a, h in zip(arrival, handoff))
-        return (math.dist(error, neutral) <= .1 and abs(largest - math.dist(predicted, authoritative)) <= .1 and
-                math.dist(predicted, handoff) <= .1 and math.dist(authoritative, arrival) <= .1)
-    except (ValueError, TypeError, OverflowError):
-        return False
-
-
-def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20, enemy=False, movement_hitch_ms=0):
+def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20, enemy=False):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -228,11 +173,8 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
                 checks[role + '_within_pose_buffer'] = total > 0 and outside / total <= .15
                 checks[role + '_bounded_timestamp_drops'] = 0 <= receipt.get('peer_timestamp_drops', -1) <= 2
                 if not any((emulation or {}).get(key, 0) for key in ('lag_ms', 'variance_ms', 'loss_percent')):
-                    if role == 'guest' and movement_hitch_ms > 750:
-                        checks['guest_timeout_recovery_prediction'] = timeout_recovery_prediction(gameplay_server, receipt)
-                    else:
-                        checks[role + '_zero_lag_prediction'] = (receipt.get('position_corrections_over_1cm') == 0 and
-                            0 <= receipt.get('largest_correction_cm', -1) < 1)
+                    checks[role + '_zero_lag_prediction'] = (receipt.get('position_corrections_over_1cm') == 0 and
+                        0 <= receipt.get('largest_correction_cm', -1) < 1)
     if combat:
         if combat_host_fps == 60:
             timing = host_frame_statistics(folder)
@@ -465,7 +407,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         if plain_package:
             checks = plain_launch_checks(folder, (folder / 'plain.log').read_text(errors='replace'), games[0][1].returncode, package_source['code_digest'])
         else:
-            checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy, movement_hitch_ms)
+            checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy)
             if app:
                 checks.update(runtime_identity_checks(folder, expected_identity, package_source['code_digest']))
         if movement_hitch_ms or skate_hitch_ms:

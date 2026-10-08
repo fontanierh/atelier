@@ -40,4 +40,7 @@ def clock_checks(server, guest, movement_ms, skate_ms):
             server['neutral_max_acceleration'] == 0 and type(server.get('neutral_late_ground_frames')) is int and
             server['neutral_late_ground_frames'] > 0 and type(server.get('neutral_late_max_speed')) in (float, int) and
             0 <= server['neutral_late_max_speed'] < 1)
+        checks['clock_ground_handoff_stationary'] = (count(server, 'clock_arrivals', 1) and
+            all(type(server.get(k)) in (float, int) and math.isfinite(server[k]) and 0 <= server[k] <= .01
+                for k in ('neutral_path_cm', 'clock_arrival_drift_cm')))
     return checks
