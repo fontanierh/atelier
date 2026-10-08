@@ -10,17 +10,23 @@ spec.loader.exec_module(review)
 
 
 def receipts(case):
-    target = [.9, 1., 1.1][case]
-    selected = dict(epoch=2, timestamp=target, edge=2, mode=1 if case == 0 else 3, z=1000., vz=0. if case == 0 else 441., checkpoint=True, checkpoint_bytes=599)
+    boundary = case % 3
+    target = [.9, 1., 1.1][boundary]
+    selected = dict(epoch=2, timestamp=target, edge=2, correction=True, mode=1 if boundary == 0 else 3, z=1000., vz=0. if boundary == 0 else 441., checkpoint=True, checkpoint_bytes=599)
     moves = [dict(timestamp=round(target + .1*i, 6), dt=.1, epoch=2, mode=3,
                   original_z=1000.+i, replayed_z=1000.+i, original_vz=400.-49*i, replayed_vz=400.-49*i) for i in range(1, 4)]
-    return (dict(jump_replay=dict(enabled=True, case=case, responses=[copy.deepcopy(selected)],
+    host, guest = (dict(jump_replay=dict(enabled=True, case=case, responses=[copy.deepcopy(selected)],
                                  forced_epoch=2, forced_count=20, first_force_seconds=.03, last_force_seconds=.7, window_closed=True)),
             dict(jump_replay=dict(enabled=True, case=case, complete=True, replayed=True, error='', applications=1,
                                  epoch=2, target=target, takeoff=1., first_air=1.1, selected=selected, moves=moves)))
+    if case >= 3:
+        ack = dict(epoch=2, timestamp=round(target + .1, 6), edge=2, correction=False)
+        guest['jump_replay'].update(ack=ack, ack_applied=True, pending_before_ack=True, saved_before_ack=3)
+        host['jump_replay']['responses'].append(copy.deepcopy(ack))
+    return host, guest
 
 
-@pytest.mark.parametrize('case', [0, 1, 2])
+@pytest.mark.parametrize('case', range(6))
 def test_real_host_boundary_and_replay_pass(case):
     host, guest = receipts(case)
     assert all(review.jump_replay_checks(host, guest, case).values())
@@ -74,3 +80,26 @@ def test_missing_or_excessive_force_window_fails(key, value):
     host, guest = receipts(1)
     host['jump_replay'][key] = value
     assert not review.jump_replay_checks(host, guest, 1)['jump_replay_scoped_window']
+
+
+@pytest.mark.parametrize('key,value', [('ack', {}), ('ack', None), ('ack_applied', False),
+    ('pending_before_ack', False), ('saved_before_ack', True), ('saved_before_ack', 2)])
+def test_missing_paired_response_or_pending_replay_fails(key, value):
+    host, guest = receipts(4)
+    guest['jump_replay'][key] = value
+    assert not review.jump_replay_checks(host, guest, 4)['jump_replay_ack_order']
+
+
+@pytest.mark.parametrize('key,value', [('correction', True), ('timestamp', .9), ('timestamp', float('nan')),
+    ('epoch', 1), ('edge', True), ('edge', 3)])
+def test_wrong_paired_ack_fails(key, value):
+    host, guest = receipts(4)
+    guest['jump_replay']['ack'][key] = value
+    assert not review.jump_replay_checks(host, guest, 4)['jump_replay_ack_order']
+
+
+@pytest.mark.parametrize('case', [3, 4, 5])
+def test_ack_discarding_first_replay_move_fails(case):
+    host, guest = receipts(case)
+    guest['jump_replay']['moves'].pop(0)
+    assert not review.jump_replay_checks(host, guest, case)['jump_replay_coverage']

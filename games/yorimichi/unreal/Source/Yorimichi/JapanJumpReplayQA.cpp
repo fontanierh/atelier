@@ -23,19 +23,20 @@ struct FProbe
     float PreviousStamp = -1.f, Takeoff = -1.f, FirstAir = -1.f, Target = -1.f, Latest = -1.f;
     double Began = 0.;
     bool Armed = false, Scheduled = false, Injecting = false, Done = false, Replayed = false;
-    int32 Applications = 0;
+    bool AckApplied = false, PendingBeforeAck = false;
+    int32 Applications = 0, SavedBeforeAck = 0;
     FString Error;
     FString Folder;
     TArray<FJapanMoveResponse> Responses;
     TArray<TSharedPtr<FJsonValue>> Comparisons;
-    FJapanMoveResponse Selected;
+    FJapanMoveResponse Selected, Ack;
 };
 FProbe Probe;
 TArray<TSharedPtr<FJsonValue>> HostResponses;
 TWeakObjectPtr<UJapanCharacterMovement> HostMovement;
 uint32 HostEpoch = 0;
 double HostBegan = 0., HostFirstForce = 0., HostLastForce = 0.;
-int32 HostForced = 0;
+int32 HostForced = 0, HostAirMoves = 0;
 bool HostStopped = false;
 
 TSharedPtr<FJsonObject> ResponseRow(const FJapanMoveResponse& Response)
@@ -44,6 +45,9 @@ TSharedPtr<FJsonObject> ResponseRow(const FJapanMoveResponse& Response)
     O->SetNumberField(TEXT("epoch"), Response.ActivityEpoch);
     O->SetNumberField(TEXT("timestamp"), Response.ClientAdjustment.TimeStamp);
     O->SetNumberField(TEXT("edge"), Response.AcknowledgedEdge);
+    O->SetBoolField(TEXT("correction"), Response.IsCorrection());
+    // Good ACKs carry no position/checkpoint fields on the wire.
+    if (!Response.IsCorrection()) return O;
     O->SetNumberField(TEXT("mode"), Response.ClientAdjustment.MovementMode);
     O->SetNumberField(TEXT("z"), Response.ClientAdjustment.NewLoc.Z);
     O->SetNumberField(TEXT("vz"), Response.ClientAdjustment.NewVel.Z);
@@ -57,6 +61,14 @@ void Schedule(UJapanCharacterMovement* Movement)
     const auto* Packet = Probe.Responses.FindByPredicate([](const FJapanMoveResponse& R)
     { return R.ActivityEpoch == Probe.Epoch && R.ClientAdjustment.TimeStamp == Probe.Target && R.IsCorrection() && R.bHasCheckpoint; });
     if (!Packet) return;
+    if (Case() >= 3)
+    {
+        const auto* Ack = Probe.Responses.FindByPredicate([](const FJapanMoveResponse& R)
+        { return R.ActivityEpoch == Probe.Epoch && R.IsGoodMove() && R.ClientAdjustment.TimeStamp > Probe.Target &&
+            R.ClientAdjustment.TimeStamp <= Probe.Latest; });
+        if (!Ack) return;
+        Probe.Ack = *Ack;
+    }
     Probe.Selected = *Packet; Probe.Scheduled = true;
     Movement->GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Movement, [Movement]
     {
@@ -69,7 +81,17 @@ void Schedule(UJapanCharacterMovement* Movement)
         else
         {
             ++Probe.Applications;
-            Probe.Replayed = Movement->ClientUpdatePositionAfterServerUpdate();
+            if (Case() >= 3)
+            {
+                Probe.PendingBeforeAck = Client->bUpdatePosition;
+                Probe.SavedBeforeAck = Client->SavedMoves.Num();
+                Movement->ClientHandleMoveResponse(Probe.Ack);
+                Probe.AckApplied = Client->LastAckedMove.IsValid() && Client->LastAckedMove->TimeStamp == Probe.Ack.ClientAdjustment.TimeStamp;
+            }
+            const bool ExplicitReplay = Movement->ClientUpdatePositionAfterServerUpdate();
+            // A production ordering fix may replay inside the next-response handler.
+            // PostUpdate receipts still prove which moves actually ran.
+            Probe.Replayed = ExplicitReplay || !Probe.Comparisons.IsEmpty();
         }
         Probe.Injecting = false; Probe.Armed = false; Probe.Done = true; Probe.Responses.Reset();
         if (!FFileHelper::SaveStringToFile(FString::FromInt(Probe.Epoch), *(Probe.Folder / TEXT("jump-replay-done.txt"))))
@@ -78,7 +100,7 @@ void Schedule(UJapanCharacterMovement* Movement)
 }
 }
 
-bool JapanJumpReplayQA::Enabled() { return Case() >= 0 && Case() <= 2 && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")); }
+bool JapanJumpReplayQA::Enabled() { return Case() >= 0 && Case() <= 5 && FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")); }
 void JapanJumpReplayQA::Arm(UJapanCharacterMovement* Movement, const FString& Folder)
 {
     if (!Enabled() || !Movement || Movement->GetNetMode() != NM_Client || Probe.Armed || Probe.Done) return;
@@ -114,6 +136,10 @@ bool JapanJumpReplayQA::ForceResponse(UJapanCharacterMovement* Movement)
     if (!Enabled() || HostStopped || !HostEpoch || Movement != HostMovement.Get() || Movement->GetActivityEpoch() != HostEpoch) return false;
     const double Age = FPlatformTime::Seconds() - HostBegan;
     if (Age >= 3.) { HostStopped = true; return false; }
+    // Paired cases stop forcing just after the chosen boundary, so a later
+    // response is a real ordinary good ACK, not a fabricated packet.
+    if (Case() >= 3 && Movement->IsFalling() && Movement->Velocity.Z > 0. && ++HostAirMoves > Case() - 3)
+    { HostStopped = true; return false; }
     if (!HostForced++) HostFirstForce = Age;
     HostLastForce = Age;
     Movement->GetPredictionData_Server_Character()->bForceClientUpdate = true;
@@ -121,7 +147,7 @@ bool JapanJumpReplayQA::ForceResponse(UJapanCharacterMovement* Movement)
 }
 void JapanJumpReplayQA::Sent(const FJapanMoveResponse& Response)
 {
-    if (!Enabled() || HostResponses.Num() >= 512 || !Response.IsCorrection()) return;
+    if (!Enabled() || HostResponses.Num() >= 512) return;
     HostResponses.Add(MakeShared<FJsonValueObject>(ResponseRow(Response)));
 }
 bool JapanJumpReplayQA::Defer(UJapanCharacterMovement* Movement, const FJapanMoveResponse& Response)
@@ -158,13 +184,13 @@ void JapanJumpReplayQA::Move(UJapanCharacterMovement* Movement, const FSavedMove
             if (Saved.EndPackedMovementMode != MOVE_Falling || Saved.SavedVelocity.Z <= 0. || Saved.PostState.Action != TEXT("Jump"))
                 Probe.Error = TEXT("Jump replay did not capture an actual upward takeoff");
             Probe.Takeoff = Saved.TimeStamp;
-            if (Case() == 0) Probe.Target = Probe.PreviousStamp;
-            if (Case() == 1) Probe.Target = Saved.TimeStamp;
+            if (Case() % 3 == 0) Probe.Target = Probe.PreviousStamp;
+            if (Case() % 3 == 1) Probe.Target = Saved.TimeStamp;
         }
         else if (Probe.Takeoff > 0.f && Probe.FirstAir < 0.f)
         {
             Probe.FirstAir = Saved.TimeStamp;
-            if (Case() == 2) Probe.Target = Saved.TimeStamp;
+            if (Case() % 3 == 2) Probe.Target = Saved.TimeStamp;
         }
         Schedule(Movement);
     }
@@ -188,6 +214,12 @@ TSharedPtr<FJsonObject> JapanJumpReplayQA::Receipt(bool Server)
         O->SetNumberField(TEXT("epoch"), Probe.Epoch); O->SetNumberField(TEXT("takeoff"), Probe.Takeoff);
         O->SetNumberField(TEXT("first_air"), Probe.FirstAir); O->SetNumberField(TEXT("target"), Probe.Target);
         O->SetObjectField(TEXT("selected"), ResponseRow(Probe.Selected));
+        if (Case() >= 3)
+        {
+            O->SetObjectField(TEXT("ack"), ResponseRow(Probe.Ack));
+            O->SetBoolField(TEXT("ack_applied"), Probe.AckApplied); O->SetBoolField(TEXT("pending_before_ack"), Probe.PendingBeforeAck);
+            O->SetNumberField(TEXT("saved_before_ack"), Probe.SavedBeforeAck);
+        }
         O->SetArrayField(TEXT("moves"), Probe.Comparisons);
     }
     return O;
