@@ -124,6 +124,32 @@ struct FVehicleProbe
     {return P&&P->GetNetworkActivity()==Activity()&&(Sail()?P->GetSailboat()->IsEquipped():P->GetBike()->IsRiding());}
     bool Request(AWandererCharacter* P)const{return FJapanVehicleQAAccess::Request(P,Sail());}
     void Step(int32 Next){Phase=Next;PhaseBegan=FPlatformTime::Seconds();StableSince=-1;}
+    double PhaseLimit()const
+    {
+        // Bound each stimulus even when replication or the other rider prevents
+        // advancement. Never keep steering until the global session deadline.
+        switch(Phase)
+        {
+        case 0:return 5.; case 1:return 10.; case 2:case 8:return 15.;
+        case 3:return 6.; case 4:return 5.; case 5:return Sail()?7.:16.;
+        case 6:return 5.; case 7:return 8.; case 9:return 12.; case 10:return 12.;
+        case 30:return 3.; case 31:return 15.; case 32:return 8.;
+        case 40:return 5.; case 41:return 9.; default:return 5.;
+        }
+    }
+    TSharedPtr<FJsonObject> RiderGate(AWandererCharacter* P)const
+    {
+        auto Row=MakeShared<FJsonObject>();auto* Movement=CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement());
+        const auto& Stats=Movement->GetNetworkStats();const FVector Position=P->GetActorLocation();
+        Row->SetStringField(TEXT("player"),Identity(P));Row->SetNumberField(TEXT("epoch"),P->GetActivityEpoch());
+        Row->SetNumberField(TEXT("activity"),uint8(P->GetNetworkActivity()));Row->SetBoolField(TEXT("riding"),Riding(P));
+        Row->SetBoolField(TEXT("pending"),P->IsNetworkActivityPending());Row->SetNumberField(TEXT("movement_mode"),uint8(Movement->MovementMode));
+        Row->SetNumberField(TEXT("speed"),Movement->Velocity.Size2D());Row->SetStringField(TEXT("bike_clip"),P->GetBike()->GetClip().ToString());
+        Row->SetBoolField(TEXT("parked"),P->GetBike()->IsParked());Row->SetNumberField(TEXT("timeouts"),Stats.TimeoutCorrections);
+        Row->SetNumberField(TEXT("budget_resets"),Stats.TimeBudgetCorrections);
+        Row->SetNumberField(TEXT("x"),Position.X);Row->SetNumberField(TEXT("y"),Position.Y);Row->SetNumberField(TEXT("z"),Position.Z);
+        return Row;
+    }
     TSharedPtr<FJsonObject> Snapshot(AWandererCharacter* P)
     {
         auto Data=MakeShared<FJsonObject>();
@@ -402,18 +428,34 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
         if(!Write(Folder/TEXT("vehicle-observed.json"),Row))Fail(TEXT("Could not save vehicle owner observation"));
         return Complete;
     }
-    auto Control=MakeShared<FJsonObject>();Control->SetNumberField(TEXT("phase"),Phase);Control->SetBoolField(TEXT("complete"),Complete);Control->SetObjectField(TEXT("crash_site"),CrashSite);
-    if(!Write(Folder/TEXT("vehicle-control.json"),Control)){Fail(TEXT("Could not save vehicle control"));return false;}
     const auto Peer=ReadPeer(Folder);
+    const bool Matches=PeerMatches(Peer);
+    const bool BothRiding=Riding(Host.Get())&&Riding(Guest.Get())&&Peer&&Peer->GetBoolField(TEXT("riding"));
+    const double Elapsed=Now-PhaseBegan;
+    auto Control=MakeShared<FJsonObject>();Control->SetNumberField(TEXT("phase"),Phase);Control->SetBoolField(TEXT("complete"),Complete);Control->SetObjectField(TEXT("crash_site"),CrashSite);
+    Control->SetNumberField(TEXT("phase_elapsed"),Elapsed);Control->SetNumberField(TEXT("phase_limit"),PhaseLimit());
+    Control->SetBoolField(TEXT("peer_matches"),Matches);Control->SetBoolField(TEXT("both_riding"),BothRiding);
+    Control->SetObjectField(TEXT("host_rider"),RiderGate(Host.Get()));Control->SetObjectField(TEXT("guest_rider"),RiderGate(Guest.Get()));
+    if(Peer)
+    {
+        Control->SetNumberField(TEXT("peer_age"),Now-Peer->GetNumberField(TEXT("at")));
+        for(const TCHAR* Key:{TEXT("phase"),TEXT("epoch"),TEXT("activity")})Control->SetNumberField(FString(TEXT("peer_"))+Key,Peer->GetNumberField(Key));
+    }
+    if(!Write(Folder/TEXT("vehicle-control.json"),Control)){Fail(TEXT("Could not save vehicle control"));return false;}
     if(Peer&&!Peer->GetStringField(TEXT("error")).IsEmpty()){Fail(Peer->GetStringField(TEXT("error")));return false;}
+    if(!Complete&&Elapsed>PhaseLimit())
+    {
+        Fail(FString::Printf(TEXT("Vehicle phase %d deadline %.1fs: peer_matches=%d both_riding=%d host_activity=%u guest_activity=%u"),
+            Phase,PhaseLimit(),Matches,BothRiding,uint32(Host->GetNetworkActivity()),uint32(Guest->GetNetworkActivity())));
+        auto Failed=Snapshot(Guest.Get());Failed->SetObjectField(TEXT("phase_gate"),Control);
+        Write(Folder/TEXT("vehicle-failed.json"),Failed);return false;
+    }
     if(Complete)
     {
         if(Callbacks!=(ClockCase()?0:1)||Guest->GetActivityEpoch()!=EndEpoch||!FMath::IsNearlyEqual(HealthBefore-Health,ClockCase()?0.f:8.f,.01f))Fail(TEXT("Vehicle outcome changed after completion"));
         return Error.IsEmpty();
     }
-    if(!PeerMatches(Peer))return false;
-    const bool BothRiding=Riding(Host.Get())&&Riding(Guest.Get())&&Peer->GetBoolField(TEXT("riding"));
-    const double Elapsed=Now-PhaseBegan;
+    if(!Matches)return false;
     bool DisabledRequestObserved=false;
     if(Phase==0)
     {
