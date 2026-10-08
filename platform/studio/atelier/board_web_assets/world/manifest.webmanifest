@@ -1,0 +1,14 @@
+{
+  "name": "Atelier board village",
+  "short_name": "Village",
+  "id": "/world",
+  "start_url": "/world",
+  "scope": "/world",
+  "display": "standalone",
+  "background_color": "#f4e8d4",
+  "theme_color": "#f4e8d4",
+  "icons": [
+    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"},
+    {"src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"}
+  ]
+}
