@@ -10,6 +10,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Misc/CommandLine.h"
+#include "Misc/SecureHash.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 namespace
 {
@@ -21,6 +23,8 @@ bool Enabled()
 struct FRecord
 {
     TArray<TSharedPtr<FJsonValue>> Moves, Actions, Requests, Crashes, RejectedMoves, OldAcceptedMoves;
+    TArray<TSharedPtr<FJsonValue>> Handoffs, Arrivals;
+    uint32 ReactionEpoch=0;
     uint32 Rejected=0, OldAccepted=0, Checkpoints=0, InvalidCheckpoints=0, Presentations=0, Overflow=0;
     double LastPresentation=-1.;
 };
@@ -50,6 +54,36 @@ TSharedPtr<FJsonObject> Row(const AWandererCharacter* Rider)
 }
 void JapanVehicleTelemetry::Reset(UWorld* World)
 {if(Enabled()){ObservedWorld=World;Records.Reset();}}
+namespace
+{
+TSharedPtr<FJsonObject> VehicleReactionRow(const AWandererCharacter* Rider)
+{
+    auto Data=Row(Rider);
+    const auto Vector=[](const FVector& V)
+    {return TArray<TSharedPtr<FJsonValue>>{MakeShared<FJsonValueNumber>(V.X),MakeShared<FJsonValueNumber>(V.Y),MakeShared<FJsonValueNumber>(V.Z)};};
+    Data->SetArrayField(TEXT("position"),Vector(Rider->GetActorLocation()));
+    Data->SetArrayField(TEXT("velocity"),Vector(Rider->GetCharacterMovement()->Velocity));
+    Data->SetStringField(TEXT("action"),Rider->GetAnimationAction().ToString());
+    Data->SetNumberField(TEXT("action_time"),Rider->GetActionTime());
+    return Data;
+}
+}
+void JapanVehicleTelemetry::Handoff(AWandererCharacter* Rider,const FJapanMoveCheckpoint& Checkpoint)
+{
+    auto* R=Get(Rider);if(!R)return;
+    auto Data=VehicleReactionRow(Rider);
+    Data->SetNumberField(TEXT("bytes"),Checkpoint.Bytes.Num());
+    Data->SetBoolField(TEXT("target_free"),!Checkpoint.Target.IsValid()&&!Checkpoint.LungeTarget.IsValid());
+    uint8 Hash[20];FSHA1::HashBuffer(Checkpoint.Bytes.GetData(),Checkpoint.Bytes.Num(),Hash);
+    Data->SetStringField(TEXT("digest"),BytesToHex(Hash,20).ToLower());
+    R->ReactionEpoch=Rider->GetActivityEpoch();Append(*R,R->Handoffs,Data);
+}
+void JapanVehicleTelemetry::FirstMove(AWandererCharacter* Rider)
+{
+    auto* R=Get(Rider);
+    if(R&&Rider->HasAuthority()&&R->ReactionEpoch==Rider->GetActivityEpoch())
+        Append(*R,R->Arrivals,VehicleReactionRow(Rider));
+}
 void JapanVehicleTelemetry::Move(AWandererCharacter* Rider,const FJapanMoveInput& Input,float Dt,bool Replay,
     const FVector& Before,float BeforeYaw)
 {
@@ -123,6 +157,7 @@ TSharedPtr<FJsonObject> JapanVehicleTelemetry::Snapshot(const AWandererCharacter
     Data->SetBoolField(TEXT("authority"),Rider->HasAuthority());Data->SetBoolField(TEXT("local"),Rider->IsLocallyControlled());
     Data->SetArrayField(TEXT("crashes"),R->Crashes);Data->SetArrayField(TEXT("moves"),R->Moves);Data->SetArrayField(TEXT("actions"),R->Actions);Data->SetArrayField(TEXT("requests"),R->Requests);
     Data->SetArrayField(TEXT("rejected_moves"),R->RejectedMoves);Data->SetArrayField(TEXT("old_accepted_moves"),R->OldAcceptedMoves);
+    Data->SetArrayField(TEXT("handoffs"),R->Handoffs);Data->SetArrayField(TEXT("arrivals"),R->Arrivals);
     Data->SetNumberField(TEXT("stale_moves_rejected"),R->Rejected);Data->SetNumberField(TEXT("stale_moves_accepted"),R->OldAccepted);
     Data->SetNumberField(TEXT("checkpoints"),R->Checkpoints);Data->SetNumberField(TEXT("invalid_checkpoints"),R->InvalidCheckpoints);
     Data->SetNumberField(TEXT("applied_presentations"),R->Presentations);Data->SetNumberField(TEXT("overflow"),R->Overflow);
@@ -130,6 +165,8 @@ TSharedPtr<FJsonObject> JapanVehicleTelemetry::Snapshot(const AWandererCharacter
 }
 #else
 void JapanVehicleTelemetry::Reset(UWorld*){}
+void JapanVehicleTelemetry::Handoff(AWandererCharacter*,const FJapanMoveCheckpoint&){}
+void JapanVehicleTelemetry::FirstMove(AWandererCharacter*){}
 void JapanVehicleTelemetry::Move(AWandererCharacter*,const FJapanMoveInput&,float,bool,const FVector&,float){}
 void JapanVehicleTelemetry::Crash(AWandererCharacter*,const FHitResult&,float){}
 void JapanVehicleTelemetry::AcceptedMove(AWandererCharacter*,uint32){}

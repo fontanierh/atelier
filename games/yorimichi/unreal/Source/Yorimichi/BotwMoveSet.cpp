@@ -916,6 +916,8 @@ void UBotwMoveSet::Reset()
     SetArmed(false);
     bLocked = bGuardHeld = bAttackHeld = bJumpHeld = bCharging = bDown = bDriving = bJumped = false;
     Target = nullptr; bLockPoint = false; HopVelocity = DriveVelocity = FVector::ZeroVector;
+    // An activity reset cannot retain an old cut's lunge or actor reference.
+    LungeTarget = nullptr; LungeTime = 0.f; bLungePoint = false;
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
     FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
     if (FlurryTime > 0.f) { FlurryTime = 0.f; if (!JapanNetwork::IsOnline(Character->GetWorld())) Character->CustomTimeDilation = 1.f; }

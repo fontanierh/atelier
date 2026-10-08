@@ -5,6 +5,7 @@ Each route needs its own native receipt before enabling the default-off rule.
 """
 import json
 import math
+import re
 
 
 def finite(value):
@@ -13,6 +14,26 @@ def finite(value):
 
 def integer(value):
     return type(value) is int
+
+
+def reaction_handoff(host, guest, epoch):
+    a, b, arrivals = (host.get('handoffs', []), guest.get('handoffs', []), host.get('arrivals', []))
+    if not all(isinstance(rows, list) and len(rows) == 1 and isinstance(rows[0], dict) for rows in (a, b, arrivals)):
+        return False
+    a, b, arrival = a[0], b[0], arrivals[0]
+    def near(left, right, key, limit):
+        x, y = left.get(key), right.get(key)
+        return (isinstance(x, list) and isinstance(y, list) and len(x) == len(y) == 3 and
+                all(finite(v) for v in x + y) and math.dist(x, y) <= limit)
+    return (all(integer(r.get('epoch')) and r['epoch'] == epoch and r.get('activity') == 0 and
+                isinstance(r.get('action'), str) and r['action'].startswith(('Hit', 'Knock')) and
+                finite(r.get('action_time')) and r['action_time'] >= 0 for r in (a, b, arrival)) and
+            a['action'] == b['action'] == arrival['action'] and
+            abs(a['action_time'] - b['action_time']) <= 1.e-6 and abs(a['action_time'] - arrival['action_time']) <= 1.e-6 and
+            all(r.get('target_free') is True and integer(r.get('bytes')) and 0 < r['bytes'] <= 768 and
+                isinstance(r.get('digest'), str) and re.fullmatch('[0-9a-f]{40}', r['digest']) for r in (a, b)) and
+            a['bytes'] == b['bytes'] and a['digest'] == b['digest'] and
+            all(near(a, other, key, .01) for other in (b, arrival) for key in ('position', 'velocity')))
 
 
 def frame_rate(row, fps):
@@ -84,6 +105,7 @@ def compare_vehicle(folder, case):
         'vehicle_on_foot': all(integer(r.get('activity')) for r in (result, guest)) and result.get('activity') == guest.get('activity') == 0 and all(r.get('bike_equipped') is False and r.get('sail_equipped') is False for r in (result, guest)),
         'vehicle_normal_park': case == 'crash' or result.get('normal_park_and_remount') is True,
         'vehicle_recovery_deadline': pending or (finite(result.get('since_resolve')) and 2 <= result['since_resolve'] <= 12),
+        'vehicle_strict_prediction': finite(guest.get('largest_correction_cm')) and 0 <= guest['largest_correction_cm'] < 1.,
     }
     if case in ('bike', 'park'):
         checks['vehicle_supported_circuit'] = circuit_agrees(result.get('circuit_site'), guest.get('circuit_site'))
@@ -117,6 +139,8 @@ def compare_vehicle(folder, case):
     checks['vehicle_contact_fps'] = (frame_rate({'frame_statistics': result.get('contact_frame_statistics', {})}, 60) and
         finite(result.get('contact_frame_dt')) and .9 / 60 <= result['contact_frame_dt'] <= 1.5 / 60)
     host_telemetry = result.get('telemetry', {})
+    if not pending:
+        checks['vehicle_atomic_reaction'] = reaction_handoff(host_telemetry, guest.get('telemetry', {}), result.get('end_epoch'))
     checks['vehicle_no_stale_acceptance'] = (integer(host_telemetry.get('stale_moves_accepted')) and host_telemetry['stale_moves_accepted'] == 0 and host_telemetry.get('old_accepted_moves') == [])
     if not pending:
         rejected = host_telemetry.get('rejected_moves', [])

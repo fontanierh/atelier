@@ -29,9 +29,12 @@ def fixture(folder, case):
     start, end = (1, 3) if pending else (4, 5)
     kind = 'sail' if sail else 'bike'
     def telemetry(authority):
+        handoff = dict(epoch=end, activity=0, position=[10., 20., 30.], velocity=[160., 0., 0.],
+                       action='HitF', action_time=0., bytes=600, digest='a' * 40, target_free=True)
         moves = [dict(distance_cm=10, turn_degrees=.4, dt=.033, replay=False, flags=8,
                       platform_at=21+i*.033, y=-127 if i < 20 else 127) for i in range(40)]
         return dict(overflow=0, invalid_checkpoints=0, stale_moves_accepted=0, old_accepted_moves=[],
+                    handoffs=[handoff], arrivals=[copy.deepcopy(handoff)] if authority else [],
                     stale_moves_rejected=3, rejected_moves=[dict(input_epoch=start, epoch=end, platform_at=101)],
                     checkpoints=8, applied_presentations=20,
                     moves=moves + [dict(distance_cm=10, turn_degrees=.4, dt=.033, replay=True, flags=0)],
@@ -40,7 +43,7 @@ def fixture(folder, case):
     guest = dict(case=case, player='guest', authority=False, local=True, epoch=end, activity=0,
                  health=92, health_changes=1, complete=True, bike_equipped=False, sail_equipped=False,
                  parked=case in ('park', 'crash'), walking=True, swimming=False,
-                 riding=False, movement_mode=1, telemetry=telemetry(False), peer_telemetry=dict(applied_presentations=20))
+                 riding=False, movement_mode=1, largest_correction_cm=.05, telemetry=telemetry(False), peer_telemetry=dict(applied_presentations=20))
     if case in ('bike', 'park'):
         sites = dict(observations=200, min_peer_distance_cm=3800)
         for role, x in (('host', 54500), ('guest', 58500)):
@@ -95,6 +98,36 @@ def vehicle(tmp_path):
 def test_native_vehicle_observations_pass(tmp_path, case):
     checks = review.compare_vehicle(fixture(tmp_path, case), case)
     assert all(checks.values()), [k for k, v in checks.items() if not v]
+
+
+@pytest.mark.parametrize('value', [None, True, -1, 1., 1.56, float('nan')])
+def test_vehicle_prediction_limit_also_applies_with_emulation(vehicle, value):
+    mutate(vehicle, 'vehicle-observed', lambda r: r.update(largest_correction_cm=value))
+    assert review.compare_vehicle(vehicle, 'bike')['vehicle_strict_prediction'] is False
+
+
+@pytest.mark.parametrize('file,edit', [
+    ('vehicle-result', lambda t: t.update(handoffs=[])),
+    ('vehicle-observed', lambda t: t.update(handoffs=[])),
+    ('vehicle-result', lambda t: t.update(arrivals=[])),
+    ('vehicle-result', lambda t: t['arrivals'].append(t['arrivals'][0])),
+    ('vehicle-result', lambda t: t['arrivals'][0].update(position=[10.02, 20., 30.])),
+    ('vehicle-result', lambda t: t['arrivals'][0].update(velocity=[0., 0., 0.])),
+    ('vehicle-result', lambda t: t['arrivals'][0].update(action_time=.033)),
+    ('vehicle-result', lambda t: t['arrivals'][0].update(epoch=4)),
+    ('vehicle-observed', lambda t: t['handoffs'][0].update(action='None')),
+    ('vehicle-observed', lambda t: t['handoffs'][0].update(action_time=.033)),
+    ('vehicle-observed', lambda t: t['handoffs'][0].update(velocity=[0., 0., 0.])),
+    ('vehicle-observed', lambda t: t['handoffs'][0].update(digest='b'*40)),
+    ('vehicle-observed', lambda t: t['handoffs'][0].update(bytes=0)),
+    ('vehicle-result', lambda t: t['handoffs'][0].update(target_free=False)),
+    ('vehicle-observed', lambda t: t['handoffs'][0].pop('target_free')),
+    ('vehicle-result', lambda t: t['handoffs'][0].update(bytes=769)),
+    ('vehicle-result', lambda t: t['handoffs'][0].update(epoch=True)),
+])
+def test_reaction_must_arrive_atomically_without_host_advance(vehicle, file, edit):
+    mutate(vehicle, file, lambda r: edit(r['telemetry']))
+    assert review.compare_vehicle(vehicle, 'bike')['vehicle_atomic_reaction'] is False
 
 
 @pytest.mark.parametrize('file,edit', [

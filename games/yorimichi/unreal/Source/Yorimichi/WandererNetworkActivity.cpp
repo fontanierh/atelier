@@ -6,6 +6,7 @@
 #include "JapanCombatResolver.h"
 #include "JapanSession.h"
 #include "JapanSkateNetwork.h"
+#include "JapanVehicleTelemetry.h"
 #include "BotwMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
@@ -23,7 +24,7 @@ bool FiniteInWorld(const FVector& Value, double Maximum)
 }
 }
 
-bool AWandererCharacter::ExitNetworkVehicle(uint8 ClockCorrection)
+bool AWandererCharacter::ExitNetworkVehicle(uint8 ClockCorrection,TFunction<void()> FootReaction)
 {
     if(!HasAuthority()||!JapanNetwork::IsOnline(GetWorld()))return false;
     bool Falling=GetCharacterMovement()->IsFalling();
@@ -54,11 +55,12 @@ bool AWandererCharacter::ExitNetworkVehicle(uint8 ClockCorrection)
     if(ClockCorrection)GetCharacterMovement()->StopMovementImmediately();
     // Strikes commit this same exit before damage. Outstanding vehicle moves
     // carry a stale epoch and cannot restore the mounted state.
-    BeginNetworkActivity(EJapanActivity::OnFoot,Falling,ClockCorrection);
+    BeginNetworkActivity(EJapanActivity::OnFoot,Falling,ClockCorrection,MoveTemp(FootReaction));
     return true;
 }
 
-void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling, uint8 ClockCorrection)
+void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling, uint8 ClockCorrection,
+    TFunction<void()> FootReaction)
 {
     if (!HasAuthority() || !JapanNetwork::IsOnline(GetWorld())) return;
     // Automatic server recoveries cannot erase a contact made in the old epoch.
@@ -77,7 +79,27 @@ void AWandererCharacter::BeginNetworkActivity(EJapanActivity Kind, bool bFalling
     NetworkActivity.ClockCorrection = ClockCorrection;
     NetworkActivity.Sail = Kind == EJapanActivity::Sailboat ? Sailboat->CaptureNetworkState() : FJapanSailState();
     NetworkActivity.Bike = Kind == EJapanActivity::Bike ? Bike->CaptureNetworkState() : FJapanBikeState();
+    NetworkActivity.bFootReaction = false; NetworkActivity.FootBytes.Reset(); NetworkActivity.FootAction = NAME_None;
     OnRep_NetworkActivity();
+    if (Kind == EJapanActivity::OnFoot && FootReaction)
+    {
+        // Old moves are already stale and the host has cleared mounted/held
+        // state. Apply damage once, then publish the resulting reaction in this
+        // same epoch. No actor tick or network send can interleave this call.
+        FootReaction();
+        NetworkActivity.Location = GetActorLocation(); NetworkActivity.Rotation = GetActorRotation();
+        NetworkActivity.Velocity = GetCharacterMovement()->Velocity;
+        NetworkActivity.bFalling = GetCharacterMovement()->IsFalling();
+        NetworkActivity.bFootReaction = true;
+        if (Moves) Moves->ClearNetworkReactionTargets();
+        const FJapanMoveCheckpoint Checkpoint = Moves ? Moves->CaptureNetworkState() : FJapanMoveCheckpoint();
+        // A fresh undefended reaction has no lock/lunge target. Do not put
+        // server-only strike actors or unresolved NetGUIDs in the handoff.
+        ensureMsgf(!Checkpoint.Bytes.IsEmpty() && Checkpoint.Bytes.Num() <= FJapanMoveCheckpoint::MaximumBytes &&
+            !Checkpoint.Target.IsValid() && !Checkpoint.LungeTarget.IsValid(),TEXT("Invalid target-free vehicle exit reaction"));
+        NetworkActivity.FootBytes = Checkpoint.Bytes; NetworkActivity.FootAction = Checkpoint.Action;
+        JapanVehicleTelemetry::Handoff(this,Checkpoint);
+    }
     ForceNetUpdate();
 }
 
@@ -111,6 +133,24 @@ void AWandererCharacter::OnRep_NetworkActivity()
         if (Sailboat->IsEquipped()) Sailboat->StowImmediately();
         OnRep_NetworkParkedBike();
         Movement->SetMovementMode(NetworkActivity.bFalling ? MOVE_Falling : MOVE_Walking);
+        if (NetworkActivity.bFootReaction)
+        {
+            // Stowing the old vehicle above clears movement. The committed
+            // reaction velocity must be applied after that presentation cleanup.
+            Movement->Velocity = NetworkActivity.Velocity;
+            // Simulated proxies consume NetworkAvatar presentation; only the
+            // owning predictor needs a simulation checkpoint or can reject it.
+            if (!IsLocallyControlled()) return;
+            FJapanMoveCheckpoint Checkpoint;
+            Checkpoint.Bytes = NetworkActivity.FootBytes; Checkpoint.Action = NetworkActivity.FootAction;
+            if (!Moves || !Moves->ApplyNetworkState(Checkpoint))
+            {
+                if (auto* Session=GetWorld()->GetGameInstance<UJapanGameInstance>())
+                    Session->ReturnWithError(TEXT("The vehicle exit reaction does not match the host. Rejoin using the same build."));
+                return;
+            }
+            JapanVehicleTelemetry::Handoff(this,Checkpoint);
+        }
         return;
     }
     if (NetworkActivity.Kind == EJapanActivity::Sailboat)

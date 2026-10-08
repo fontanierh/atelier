@@ -449,6 +449,7 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
         {
             if (CharacterOwner->HasAuthority() && Dt > 0.f && !bReceivedMoveInEpoch)
             {
+                JapanVehicleTelemetry::FirstMove(CastChecked<AWandererCharacter>(CharacterOwner));
                 bReceivedMoveInEpoch = true; ++NetworkStats.StartedEpochs;
                 if (NetworkStats.FirstMoveTimestamp < 0.f) NetworkStats.FirstMoveTimestamp = Timestamp;
                 if (TraceNetworkGameplay())

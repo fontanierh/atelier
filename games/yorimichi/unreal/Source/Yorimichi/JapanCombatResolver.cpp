@@ -33,10 +33,18 @@ void UJapanCombatResolver::Strike(AActor* Source, AWandererCharacter* Victim,
         (Victim->GetNetworkActivity()==EJapanActivity::Bike||Victim->GetNetworkActivity()==EJapanActivity::Sailboat))
     {
         const bool Alive=Victim->GetSword()->GetHealth()>0.f;
-        const int32 Outcome=Alive&&Victim->ExitNetworkVehicle()?
-            (Victim->GetMoves()?Victim->GetMoves()->ResolveUnprotectedStrike(Source,Damage,From):
-                Victim->GetSword()->IncomingStrike(Source,Damage,From)):3;
-        ++Resolved;if(Result)Result(Outcome);return;
+        if (!Alive) { ++Resolved;if(Result)Result(3);return; }
+        bool Applied=false; int32 Outcome=3;
+        Victim->ExitNetworkVehicle(0,[&]()
+        {
+            if (Applied) return;
+            Applied=true;
+            Outcome=Victim->GetMoves()?Victim->GetMoves()->ResolveUnprotectedStrike(Source,Damage,From):
+                Victim->GetSword()->IncomingStrike(Source,Damage,From);
+        });
+        if (Applied) { ++Resolved;if(Result)Result(Outcome);return; }
+        // A refused/no-op handoff cannot swallow damage. The ordinary path below
+        // still owns the contact; it also handles already-on-foot/pending mounts.
     }
     if (!JapanNetwork::IsOnline(GetWorld()) || !Victim->GetMoves() || Victim->IsNpc() || Victim->IsLocallyControlled())
     {

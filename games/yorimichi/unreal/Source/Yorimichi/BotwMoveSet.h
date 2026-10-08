@@ -66,6 +66,7 @@ public:
     /** Per frame, in place of the character's own action bookkeeping. */
     void Advance(float Dt);
     FJapanMoveCheckpoint CaptureNetworkState() const;
+    void ClearNetworkReactionTargets();
     bool ApplyNetworkState(const FJapanMoveCheckpoint& Checkpoint);
     FJapanAvatarState CapturePresentation() const;
     void ApplyPresentation(const FJapanAvatarState& State, float Dt);

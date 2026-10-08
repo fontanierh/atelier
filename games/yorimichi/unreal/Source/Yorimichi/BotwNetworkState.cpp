@@ -142,6 +142,14 @@ FJapanMoveCheckpoint UBotwMoveSet::CaptureNetworkState() const
     return Checkpoint;
 }
 
+void UBotwMoveSet::ClearNetworkReactionTargets()
+{
+    // A mounted strike starts a fresh, untargeted foot reaction. Its handoff
+    // must never depend on the network mapping of an attacker or old cut target.
+    Target = nullptr; LungeTarget = nullptr;
+    bLockPoint = bLungePoint = false; LungeTime = 0.f;
+}
+
 bool UBotwMoveSet::ApplyNetworkState(const FJapanMoveCheckpoint& Checkpoint)
 {
     if (!Character || Checkpoint.Bytes.IsEmpty() || Checkpoint.Bytes.Num() > FJapanMoveCheckpoint::MaximumBytes) return false;

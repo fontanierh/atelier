@@ -4,12 +4,15 @@ class AWandererCharacter;
 class UWorld;
 class FJsonObject;
 struct FJapanMoveInput;
+struct FJapanMoveCheckpoint;
 struct FHitResult;
 
 /** Bounded nonshipping observations; never mutates movement, activity or input. */
 namespace JapanVehicleTelemetry
 {
     void Reset(UWorld* World);
+    void Handoff(AWandererCharacter* Rider,const FJapanMoveCheckpoint& Checkpoint);
+    void FirstMove(AWandererCharacter* Rider);
     void Move(AWandererCharacter* Rider, const FJapanMoveInput& Input, float Dt, bool Replay,
         const FVector& Before, float BeforeYaw);
     void Crash(AWandererCharacter* Rider,const FHitResult& Hit,float Speed);

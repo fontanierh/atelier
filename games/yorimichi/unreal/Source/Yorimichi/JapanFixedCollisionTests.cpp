@@ -24,16 +24,15 @@ bool FJapanFixedCollisionTest::RunTest(const FString&)
     if(!TestNotNull(TEXT("Collision cache exists"),Cache)||!TestNotNull(TEXT("Authored test mesh exists"),Cube))return false;
     FActorSpawnParameters Spawn;Spawn.ObjectFlags|=RF_Transient;
     Spawn.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    auto* Fixed=World->SpawnActor<AStaticMeshActor>(Spawn);
+    const FVector Origin(0,0,100000);
+    auto* Fixed=World->SpawnActor<AStaticMeshActor>(Origin+FVector(200,0,0),FRotator::ZeroRotator,Spawn);
     auto* Dynamic=World->SpawnActor<AActor>(Spawn);
     if(!Fixed||!Dynamic){if(Fixed)Fixed->Destroy();if(Dynamic)Dynamic->Destroy();return false;}
     ON_SCOPE_EXIT {Fixed->Destroy();Dynamic->Destroy();Cache->Install();};
-    const FVector Origin(0,0,100000);
     auto* Mesh=Fixed->GetStaticMeshComponent();
     Mesh->SetStaticMesh(Cube);Mesh->SetMobility(EComponentMobility::Static);
     Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     Mesh->SetCollisionResponseToAllChannels(ECR_Block);
-    Fixed->SetActorLocation(Origin+FVector(200,0,0));
     // Mixed-case authored names expose FString's default case-insensitive sort.
     for(const FName Name:{FName(TEXT("zFixed")),FName(TEXT("AFixed"))})
     {
