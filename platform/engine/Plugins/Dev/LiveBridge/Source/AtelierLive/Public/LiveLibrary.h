@@ -7,6 +7,7 @@
 
 class UStaticMesh;
 class UStaticMeshComponent;
+class USkeletalMeshComponent;
 class UMaterialInterface;
 
 /** What the bridge needs from the game, set in the game's DefaultGame.ini under [/Script/AtelierLive.AtelierLiveSettings]. */
@@ -91,6 +92,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static void Say(const FString& Text, float Seconds = 4.f);
     /** A screenshot of the game view (with the HUD) written to Path on the next frame. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void Screenshot(const FString& Path);
+    /** World positions of a skinned mesh's vertices as posed this frame (LOD 0, skinned on the CPU), for measuring contact
+     *  and clearance on the final geometry. With Bones, only the vertices with at least a third of their weight on them;
+     *  without, every vertex, and a simulated cloth section's particles in place of its skinned vertices. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static TArray<FVector> SkinnedVertices(USkeletalMeshComponent* Mesh, const TArray<FName>& Bones);
+    /** World positions of a static mesh component's LOD 0 vertices. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static TArray<FVector> StaticVertices(UStaticMeshComponent* Mesh);
     /** Overlays: <OverlayFolder>/<Name>.json lists props with their GLB, transform and collision. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SaveOverlay(const FString& Name);
     UFUNCTION(BlueprintCallable, Category = "Live") static int32 LoadOverlay(const FString& Name);

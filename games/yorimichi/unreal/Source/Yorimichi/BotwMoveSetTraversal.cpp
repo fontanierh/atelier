@@ -253,16 +253,20 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         Rise = FMath::Max(Rise, (Placed.TransformPosition(BarGrip[I]) - GliderOnBody.TransformPosition(BarGrip[I])) | Up);
     Placed.AddToTranslation(-Up * Rise);
     Glider->SetRelativeTransform(Placed);
+    GlideGripUp = Placed.TransformVectorNoScale(FVector::UpVector);
+    GlideGripScale = Placed.GetScale3D().GetAbsMax();
     // Each hand onto its handle where it reaches it: its grip point moved to the nearest point of its grip, the wrist
     // moved with it. A fitted body's hand is a fist turned round the handle: its grip axis along it (thumb forward) and
-    // its grip point away from the elbow, the wrist placed under it.
+    // its grip point away from the elbow, the wrist placed under it. Its grip point is the space its fist closes round,
+    // the tube's radius in front of the knuckles (#7633: the curled fingers' middle put the tube through them).
     const bool bFist = GlideFistWeight() > 0.f;
     for (int32 I = 0; I < 2; ++I)
     {
         GlideElbow[I] = Placed.TransformPosition(ElbowLocal[I]);
         const FVector From = Placed.TransformPosition(GripEnds[I][0]), To = Placed.TransformPosition(GripEnds[I][1]);
+        GlideGrip[I][0] = From; GlideGrip[I][1] = To;
         const FTransform Hand = Body->GetSocketTransform(HandBone[I], RTS_Component);
-        const FVector Grip = PalmOf(I);
+        const FVector Grip = bFist ? CavityOf(I, GripReach(false)) : PalmOf(I);
         const FVector OnGrip = FMath::ClosestPointOnSegment(Grip, From, To);
         if (!bFist) { GlideHandTarget[I] = Hand.GetLocation() + (OnGrip - Grip); continue; }
         FVector Along = (To - From).GetSafeNormal();
@@ -303,6 +307,68 @@ FVector UBotwMoveSet::FingersOf(int32 Side) const
             Sum += Body->GetSocketTransform(Bone, RTS_Component).GetLocation(); ++Count;
         }
     return Count ? Sum / Count : Body->GetSocketTransform(Hand, RTS_Component).GetLocation();
+}
+
+FVector UBotwMoveSet::CavityOf(int32 Side, float Reach) const
+{
+    // The knuckles' line and the palm's normal, on the side the fingers curl to: the base joints do not move as the
+    // fingers open or close round the handle, so neither does the handle's place in the hand.
+    const USkeletalMeshComponent* Body = Character->GetMesh();
+    const TCHAR* S = Side ? TEXT("_L") : TEXT("_R");
+    FVector Knuckles = FVector::ZeroVector, Ends = FVector::ZeroVector, Index = FVector::ZeroVector, Little = FVector::ZeroVector;
+    for (int32 Finger = 0; Finger < 4; ++Finger)
+    {
+        const FName Base(*FString::Printf(TEXT("finger_%d%s"), Finger, S)), End(*FString::Printf(TEXT("finger_end_%d%s"), Finger, S));
+        if (Body->GetBoneIndex(Base) == INDEX_NONE || Body->GetBoneIndex(End) == INDEX_NONE) return FingersOf(Side);
+        const FVector K = Body->GetSocketTransform(Base, RTS_Component).GetLocation();
+        Knuckles += K * .25f;
+        Ends += Body->GetSocketTransform(End, RTS_Component).GetLocation() * .25f;
+        if (Finger == 0) Index = K;
+        if (Finger == 3) Little = K;
+    }
+    const FVector Wrist = Body->GetSocketTransform(Character->GetSkateBone(Side ? TEXT("hand_L") : TEXT("hand_R")), RTS_Component).GetLocation();
+    FVector Normal = ((Knuckles - Wrist) ^ (Index - Little)).GetSafeNormal();
+    if ((Normal | (Ends - Knuckles)) < 0.f) Normal = -Normal;
+    return Knuckles + Normal * Reach;
+}
+
+float UBotwMoveSet::GripReach(bool bSword) const
+{
+    // The palm under the knuckles is 1.2 cm thick on Modori (posed-mesh measurement, #7633).
+    const USkeletalMeshComponent* Body = Character->GetMesh();
+    const float Component = Body ? FMath::Max(float(Body->GetComponentTransform().GetScale3D().GetAbsMax()), KINDA_SMALL_NUMBER) : 1.f;
+    const FHeldHandle H = HeldHandle(bSword ? 1 : 0, true);
+    return FMath::Max(H.R0.X, H.R1.X) + 1.2f / Component;
+}
+
+UBotwMoveSet::FHeldHandle UBotwMoveSet::HeldHandle(int32 Side, bool bShape) const
+{
+    // The glider's handles in the component's space as AdvanceGliderGrip placed them; the sword's in its hand bone's,
+    // which carries it (the off hand wraps the same grip).
+    FHeldHandle H;
+    Side &= 1;
+    const USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
+    if (!Body) return H;
+    const float Glide = GlideFistWeight();
+    if ((bShape && GlideHands > 0.f) || (!bShape && Glide > 0.f))
+    {
+        H.Weight = Glide;
+        H.A = GlideGrip[Side][0]; H.B = GlideGrip[Side][1]; H.Major = GlideGripUp;
+        H.R0 = GliderHandleRadii[0] * GlideGripScale; H.R1 = GliderHandleRadii[1] * GlideGripScale;
+        return H;
+    }
+    const FSlot* S = Slots.Find(TEXT("sword"));
+    if (!S || HiltEnd.IsNearlyZero() || bOwnGlide || !bFistAxis || Body->GetBoneIndex(S->Hand) == INDEX_NONE) return H;
+    H.Weight = Side ? TwoHandFistWeight() : SwordHold;
+    H.bSword = true;
+    H.A = S->Held.TransformPosition(HiltEnd * SwordGripSpan[0]);
+    H.B = S->Held.TransformPosition(HiltEnd * SwordGripSpan[1]);
+    H.Major = S->Held.TransformVectorNoScale(SwordMajor);
+    // Radii in the component's units: the mesh's handle length through the held scale and the hand bone's own.
+    const float Length = HiltEnd.Size() * S->Held.GetScale3D().GetAbsMax() * Body->GetSocketTransform(S->Hand, RTS_Component).GetScale3D().GetAbsMax();
+    H.R0 = SwordGripRadii[0] * Length; H.R1 = SwordGripRadii[1] * Length; H.RM = SwordGripRadii[2] * Length;
+    H.MidAt = SwordGripWaist;
+    return H;
 }
 
 FVector UBotwMoveSet::FistAxisOf(int32 Side) const

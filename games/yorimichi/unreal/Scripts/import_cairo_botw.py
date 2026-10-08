@@ -60,25 +60,40 @@ CARRY = {'shield': {'offset': [16.59, 8.69, -13.13], 'pitch': 16}} if CAIRO else
 # also comes down 17 cm, so the hilt's tip sits at his collar below the hair (close shots standing and crouched: 4 cm
 # down still reached into it; 12 cm, standing clear, still met his hair crouched, his chest leant 70 degrees forward).
 PUSH = ({'sword': [7., 0., 0.], 'sheath': [7., 0., 0.]} if CAIRO else   # fitted in game: 4 cm still sank in at the hip running, 12 floated
-        {'sword': [5., 0., -17.], 'sheath': [5., 0., -17.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
+        {'sword': [6.5, 0., -17.], 'sheath': [6.5, 0., -17.], 'shield': [7., 0., 0.]} if CHARACTER == 'modori' else {})
 # Carried pieces pitched about his left axis (degrees; positive brings the lower end out backward) through the sword's top
-# end (its pommel), which keeps the place PUSH gives it. Modori's coat flares out over the small of
-# his back, where the sheath's lower half sank into it (the operator's photo from behind, standing); pitched about their
-# pivot at his collar instead, the hilt came forward into his hair as he leaned into a run or a crouch.
-TILT = {'sword': 10., 'sheath': 10.} if CHARACTER == 'modori' else {}
+# end (its pommel), which keeps the place PUSH gives it. Modori's coat flares out over the small of his back, so the
+# sheath's lower half needs a little: 10 degrees left it 8-16 cm off the coat standing (#7633, posed-mesh gaps along the
+# sheath); 3, with PUSH 1.5 cm further back, keeps it 2-6 cm off the coat standing and walking. Closer (PUSH 4.5, TILT 1)
+# its lower end went 1-3 cm into the flared coat.
+TILT = {'sword': 3., 'sheath': 3.} if CHARACTER == 'modori' else {}
+# Carried pieces turned across his back (degrees about his backward axis; positive takes the hilt toward his right
+# shoulder) about a mount on his upper back, MOUNT of the sword's length below its pommel: turned 15 degrees, the hilt
+# sits beside his head standing and walking, clear of his hair (#7633).
+YAW, MOUNT = ({'sword': 15., 'sheath': 15.}, .45) if CHARACTER == 'modori' else ({}, 0.)
+# Crouched, his chest leans 50-70 degrees forward and the carry above lay almost flat across his shoulders, the hilt at
+# his hair and the sheath's lower end 36 cm off his back (#7633: "really weird" crouched). The game blends to a second
+# carry as he crouches: the pieces turned by CROUCH['yaw'] degrees about his chest's backward axis (negative takes the
+# lower end in toward his spine), then pitched by CROUCH['pitch'] about the sword's lateral axis (negative brings the
+# lower end in to his back), both through CROUCH['pivot'] of the sword's length below its pommel, then moved
+# CROUCH['out'] cm backward. Fitted against his posed crouching mesh as a height field along his back (a sheath vertex
+# under its outermost surface is inside him): his rounded upper back is the nearest point, 2 cm under the sheath, its
+# ends 6-12 cm off as a straight sheath must be over that curve; the hilt stays 10 cm clear of his hair. Out 6 sank the
+# sheath's middle 10 cm into his shoulders (seen clipping in game 24).
+CROUCH = {'pivot': 0., 'yaw': -25., 'pitch': -25., 'out': 12.} if CHARACTER == 'modori' else {}
 
 
-def top_end(mesh, R, p, scale):
-    """The end of a piece's longest axis that sits higher on him (component cm), from its mesh's bounds."""
+def ends(mesh, R, p, scale):
+    """The two ends of a piece's longest axis (component cm), from its mesh's bounds: the one higher on him first."""
     box = E.load_asset(mesh).get_bounding_box()
     lo, hi = [box.min.x, box.min.y, box.min.z], [box.max.x, box.max.y, box.max.z]
     k = max(range(3), key=lambda i: hi[i] - lo[i])
     middle = [(a + b) * .5 for a, b in zip(lo, hi)]
-    ends = []
+    out = []
     for v in (lo[k], hi[k]):
         local = list(middle); local[k] = v
-        ends.append(add(p, mul(apply(R, local), scale)))
-    return max(ends, key=lambda e: e[2])
+        out.append(add(p, mul(apply(R, local), scale)))
+    return sorted(out, key=lambda e: -e[2])
 
 
 def digests(folder):
@@ -285,11 +300,32 @@ def equipment(link, cairo, glide):
             if slot in TILT:
                 T = turn(cairo.body()[1], -TILT[slot])
                 if slot == 'sword':
-                    tilt_centre['sword'] = top_end(item['mesh'], R, p, scale)
+                    tilt_centre['sword'] = ends(item['mesh'], R, p, scale)[0]
                 centre = tilt_centre['sword']
+                R, p = compose(T, R), add(centre, apply(T, sub(p, centre)))
+            if slot in YAW:
+                T = turn(cairo.body()[0], YAW[slot])
+                if slot == 'sword':
+                    top, bottom = ends(item['mesh'], R, p, scale)
+                    tilt_centre['mount'] = add(top, mul(sub(bottom, top), MOUNT))
+                centre = tilt_centre['mount']
                 R, p = compose(T, R), add(centre, apply(T, sub(p, centre)))
             on_back = U.MathLibrary.make_relative_transform(transform(R, p, scale), cairo.transform('chest'))
             entry['back'], entry['carry'] = 'chest', record_of(on_back)
+            if CROUCH and slot in YAW:
+                if slot == 'sword':
+                    top, bottom = ends(item['mesh'], R, p, scale)
+                    along = unit(sub(top, bottom))
+                    # his chest's backward axis, as the candidates were filmed
+                    back = cross(sub(cairo.at('clavicle_L'), cairo.at('clavicle_R')), sub(cairo.at('neck'), cairo.at('chest')))
+                    back = mul(back, 1. if dot(back, sub(p, cairo.at('chest'))) > 0. else -1.)
+                    back = unit(sub(back, mul(along, dot(back, along))))
+                    tilt_centre['crouch'] = (add(top, mul(sub(bottom, top), CROUCH['pivot'])), back, cross(back, along))
+                centre, back, side = tilt_centre['crouch']
+                T = compose(turn(side, CROUCH['pitch']), turn(back, CROUCH['yaw']))
+                Rc, pc = compose(T, R), add(add(centre, apply(T, sub(p, centre))), mul(back, CROUCH['out']))
+                crouched = U.MathLibrary.make_relative_transform(transform(Rc, pc, scale), cairo.transform('chest'))
+                entry['crouch'] = record_of(crouched)
             # Where it sits in his reference pose (component cm): the fit's frame, for checking it offline.
             checks.setdefault(slot, {})['carry'] = {'pivot': [round(v, 2) for v in p], 'axes': [[round(v, 5) for v in a] for a in R],
                                                     'chest': [round(v, 2) for v in cairo.at('chest')],
@@ -383,11 +419,6 @@ params = dict(ROSTER['moves']['params'])
 params['SwimHang'] = round(params['SwimHang'] * SIZE, 2)
 params['BodyScale'] = BODY
 params['TwoHandedGuard'] = 1   # his own bokken guard (OWN) holds the grip with both hands
-if CHARACTER == 'modori':
-    # Crouched, his chest leans 70 degrees forward and his head dips toward the hilt: 17 cm down standing still met his
-    # hair there, so the carried sword and sheath slide further down their length in the crouch only (12 cm moved the
-    # hilt only to his hair's edge, the sword lying on the line through his head; 28 left its end at his nape).
-    params['CrouchCarryDrop'] = 36
 names = {**LINK['skate'], 'pelvis': 'Waist'}   # botw.py's bone map
 link, cairo = Rig(link_mesh.skeleton, names), Rig(skeleton, {})
 glide, options = ROSTER['moves']['actions']['Glide']['clip'], U.AnimPoseEvaluationOptions()
