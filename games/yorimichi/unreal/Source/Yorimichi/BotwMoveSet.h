@@ -297,6 +297,7 @@ private:
     FVector LockPoint = FVector::ZeroVector;
     bool bLockPoint = false;
     float ArcEnd = -1.f;   // a homing cut's contact lasts to here (clip seconds): past its swing, until it has closed in
+    float CrouchCarry = 0.f;   // how far the carried sword and sheath have slid down for the crouch, 0..1
     float SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
     bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
     int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, DoubleJumpCount = 0, Strength = 1;

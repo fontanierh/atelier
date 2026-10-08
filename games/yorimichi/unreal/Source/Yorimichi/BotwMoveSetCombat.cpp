@@ -795,6 +795,31 @@ void UBotwMoveSet::AdvanceEquipment(float Dt)
     SwordCarry = FMath::FInterpConstantTo(SwordCarry, bCarry ? 1.f : 0.f, Dt, 8.f);
     GuardCarry = FMath::FInterpConstantTo(GuardCarry, bGuardPose && HasShield() ? 1.f : 0.f, Dt, 10.f);
     SwordGuardCarry = FMath::FInterpConstantTo(SwordGuardCarry, bSwordGuard ? 1.f : 0.f, Dt, 10.f);
+    // Crouched, a fitted body's chest leans 70 degrees forward and its head dips toward the hilt on its back (Modori's
+    // hair ran through it): the carried sword and sheath slide CrouchCarryDrop cm down their own length toward their far
+    // end, and back up as he stands.
+    if (const float Drop = GetParam(TEXT("CrouchCarryDrop")); Drop > 0.f)
+    {
+        const float Was = CrouchCarry;
+        CrouchCarry = FMath::FInterpConstantTo(CrouchCarry, Character->bIsCrouched ? 1.f : 0.f, Dt, 4.f);
+        if (CrouchCarry > 0.f || Was > 0.f)
+            for (const TCHAR* Slot : { TEXT("sword"), TEXT("sheath") })
+            {
+                const FSlot* S = Slots.Find(Slot);
+                const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Slot);
+                if (!S || S->bInHand || !Prop || !*Prop || !(*Prop)->GetStaticMesh()) continue;
+                const FBox Box = (*Prop)->GetStaticMesh()->GetBoundingBox();
+                const FVector Size = Box.GetSize();
+                const int32 Axis = Size.X >= Size.Y && Size.X >= Size.Z ? 0 : Size.Y >= Size.Z ? 1 : 2;
+                FVector Down = FVector::ZeroVector;
+                Down[Axis] = FMath::Abs(Box.Max[Axis]) >= FMath::Abs(Box.Min[Axis]) ? 1. : -1.;
+                const FTransform BackT = Character->GetMesh()->GetSocketTransform(S->Back);
+                const FVector World = BackT.TransformVectorNoScale(S->Carry.TransformVectorNoScale(Down)) * Drop * CrouchCarry;
+                FTransform Carry = S->Carry;
+                Carry.AddToTranslation(BackT.InverseTransformVector(World));
+                (*Prop)->SetRelativeTransform(Carry);
+            }
+    }
     // Without the shield the off hand holds nothing: over sword work and the lock-on strafe its arm swings free rather
     // than holding the shield pose the BOTW clips give it (not in Cairo's two-handed guard, parry and recoil, nor
     // drawing and sheathing).

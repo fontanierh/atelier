@@ -383,6 +383,10 @@ params = dict(ROSTER['moves']['params'])
 params['SwimHang'] = round(params['SwimHang'] * SIZE, 2)
 params['BodyScale'] = BODY
 params['TwoHandedGuard'] = 1   # his own bokken guard (OWN) holds the grip with both hands
+if CHARACTER == 'modori':
+    # Crouched, his chest leans 70 degrees forward and his head dips toward the hilt: 17 cm down standing still met his
+    # hair there, so the carried sword and sheath slide further down their length in the crouch only.
+    params['CrouchCarryDrop'] = 12
 names = {**LINK['skate'], 'pelvis': 'Waist'}   # botw.py's bone map
 link, cairo = Rig(link_mesh.skeleton, names), Rig(skeleton, {})
 glide, options = ROSTER['moves']['actions']['Glide']['clip'], U.AnimPoseEvaluationOptions()
