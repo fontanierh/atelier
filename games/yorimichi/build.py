@@ -233,7 +233,7 @@ def modori_steps(out):
              heavy=True, about='/Game/Modori: his mesh, materials and base definition'),
         Step('characters.modori_botw', [retarget], inputs=retarget_inputs, needs=['characters.botw', 'characters.cairo_botw'],
              outputs=[out / 'modori' / 'botw' / 'export.json'], about="The merged move set retargeted onto Modori, to FBX"),
-        Step('unreal.modori_botw', [importer], inputs=import_inputs, needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw', 'characters.modori_grips'],
+        Step('unreal.modori_botw', [importer], inputs=import_inputs, needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'botw.json'], heavy=True,
              about='/Game/Modori/Botw and DA_Modori: his merged move set, definition and move record'),
         Step('characters.modori_grips', [Python(grips / 'game.py', ('--character', 'modori', '--source', grips / 'modori'))],
@@ -584,6 +584,7 @@ def staging_steps(ctx, park):
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike', 'characters.modori_bike',
+                    'characters.modori_grips',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
     ]
