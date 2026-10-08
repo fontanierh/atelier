@@ -123,7 +123,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_BlendSpacePlayer_Standalone FreeArm;
     FAnimNode_TwoWayBlend LeftHand;
     FAnimNode_LayeredBoneBlend CarryLayer;
-    // Gliding on a fitted body, the hands' fingers closed into the sword guard's fists round the paraglider's handles.
+    // Gliding on a fitted body, the hands' fingers closed into the sword guard's fists round the paraglider's handles;
+    // in the two-handed grip, the off hand's round the sword's handle. One layer per hand (R, then L).
     FAnimNode_SequencePlayer_Standalone Fist;
     FAnimNode_LayeredBoneBlend FistLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
@@ -169,12 +170,12 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         CarryLayer.BlendWeights.SetNum(2); CarryLayer.BlendWeights[0] = CarryLayer.BlendWeights[1] = 0.f;
         CarryLayer.bMeshSpaceRotationBlend = false; CarryLayer.bBlendRootMotionBasedOnRootBone = false;
         FistLayer.BasePose.SetLinkNode(&CarryLayer);
-        FistLayer.BlendPoses.SetNum(1); FistLayer.BlendPoses[0].SetLinkNode(&Fist);
-        FistLayer.LayerSetup.SetNum(1);
-        for (const TCHAR* Side : { TEXT("_R"), TEXT("_L") })
+        FistLayer.BlendPoses.SetNum(2); FistLayer.BlendPoses[0].SetLinkNode(&Fist); FistLayer.BlendPoses[1].SetLinkNode(&Fist);
+        FistLayer.LayerSetup.SetNum(2);
+        for (int32 Hand = 0; Hand < 2; ++Hand)
             for (const TCHAR* Digit : { TEXT("thumb"), TEXT("finger_0"), TEXT("finger_1"), TEXT("finger_2"), TEXT("finger_3") })
-                FistLayer.LayerSetup[0].BranchFilters.Add(FBranchFilter{FName(*(FString(Digit) + Side)), 0});
-        FistLayer.BlendWeights.SetNum(1); FistLayer.BlendWeights[0] = 0.f;
+                FistLayer.LayerSetup[Hand].BranchFilters.Add(FBranchFilter{FName(*(FString(Digit) + (Hand ? TEXT("_L") : TEXT("_R")))), 0});
+        FistLayer.BlendWeights.SetNum(2); FistLayer.BlendWeights[0] = FistLayer.BlendWeights[1] = 0.f;
         FistLayer.bMeshSpaceRotationBlend = false; FistLayer.bBlendRootMotionBasedOnRootBone = false;
         ToComponent.LocalPose.SetLinkNode(&FistLayer);
         GripIK.ComponentPose.SetLinkNode(&ToComponent);
@@ -414,7 +415,9 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         // In the two-handed grip the off hand's turn is the grip's (the glide's turn is idle then).
         const float GripFist = bCarrying && Moves ? Moves->TwoHandFistWeight() : 0.f;
         if (GripFist > GlideTurn[1].Alpha) { GlideTurn[1].Alpha = GripFist; GlideTurn[1].Rotation = Moves->TwoHandRotation().Rotator(); }
-        FistLayer.BlendWeights[0] = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
+        const float GlideFist = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
+        FistLayer.BlendWeights[0] = GlideFist;
+        FistLayer.BlendWeights[1] = FMath::Max(GlideFist, GripFist);   // the off hand closes round the sword's handle too
         const bool bFlinch = Moves && Moves->IsFlinching() && !bRiding && !bSailing && !bBiking;
         for (int32 I = 0; I < 4; ++I)
         {
