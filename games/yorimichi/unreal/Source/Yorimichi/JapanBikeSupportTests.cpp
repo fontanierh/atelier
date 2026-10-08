@@ -8,6 +8,10 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanBikeSupportTest,"Yorimichi.Network.BikeSu
 
 bool FJapanBikeSupportTest::RunTest(const FString&)
 {
+    const TArray<FVector> Tetrahedron={FVector(0,0,0),FVector(10,0,0),FVector(0,10,0),FVector(0,0,10),FVector(1,1,1)};
+    TArray<FVector> TetrahedronHull;
+    TestTrue(TEXT("Unreal-wound hull faces contain their interior points"),JapanBikeSupport::Build(Tetrahedron,TetrahedronHull));
+    TestEqual(TEXT("Interior point is not needed for support"),TetrahedronHull.Num(),4);
     // A finite-width wheel fixture. Its side hub, not the upright radius, supports
     // the 84-degree crash. The independent oracle scans every source point.
     TArray<FVector> Vertices;

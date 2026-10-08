@@ -19,7 +19,9 @@ bool JapanBikeSupport::Build(TConstArrayView<FVector> Vertices, TArray<FVector>&
     {
         Used.Add(Face.A);Used.Add(Face.B);Used.Add(Face.C);
         const FVector A=Vertices[Face.A];
-        const FVector Normal=FVector::CrossProduct(Vertices[Face.B]-A,Vertices[Face.C]-A).GetSafeNormal();
+        // GeometryCore hull faces use Unreal's winding: outward is C-A cross
+        // B-A (also used by VectorUtil::Normal), not the opposite inward normal.
+        const FVector Normal=FVector::CrossProduct(Vertices[Face.C]-A,Vertices[Face.B]-A).GetSafeNormal();
         if(Normal.IsNearlyZero())return false;
         for(const FVector& Point:Vertices)
             if(FVector::DotProduct(Point-A,Normal)>.051)return false;
