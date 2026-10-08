@@ -215,7 +215,11 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         else return;
     }
     // On the body: carried by the mesh itself (no lag behind a moving hand bone), banked into the turn about the bar.
-    GlideHands = FMath::FInterpConstantTo(GlideHands, bGliding && !In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall"), TEXT("GlideOff") }) ? 1.f : 0.f, Dt, 6.f);
+    // The opening takes the handles at its bind point, where the glider appears, not when its clip ends (#7296).
+    const FBotwMove* Now = Current();
+    const bool bOpening = In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall") });
+    const bool bHolding = bGliding && Name != TEXT("GlideOff") && (!bOpening || (Now && SourceTime() >= FMath::Max(Now->Bind, 0.f)));
+    GlideHands = FMath::FInterpConstantTo(GlideHands, bHolding ? 1.f : 0.f, Dt, 6.f);
     if (bGliding && !bGliderBodyAttached)
     {
         Glider->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform);
