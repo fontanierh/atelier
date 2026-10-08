@@ -1,4 +1,4 @@
-#include "../../../platform/engine/Plugins/AtelierCore/Source/AtelierCore/Public/SprintStamina.h"
+#include "../../engine/Plugins/AtelierCore/Source/AtelierCore/Public/SprintStamina.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>

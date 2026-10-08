@@ -45,7 +45,7 @@ under `output/imagegen/yorimichi-fox-hunter-2026-09-13/`, and write each new rev
 | `fox_hunter_clip.py`, `fox_hunter_clipcheck.py` | self-intersection check on the deformed mesh (shared code, and a standalone runner) |
 | `fox_hunter_captures.py` | review captures: 12 frames per clip from three cameras, then tiled |
 | `review_fox_rig.py`, `add_fox_fingers.py` | rig diagnostics and the finger bones |
-| `fox_hunter_animref.py` | starting frames and prompts for H3 Max motion references ([H3_ANIMATION_REFERENCE_WORKFLOW.md](H3_ANIMATION_REFERENCE_WORKFLOW.md)) |
+| `fox_hunter_animref.py` | starting frames and prompts for H3 Max motion references ([H3_ANIMATION_REFERENCE_WORKFLOW.md](../../../docs/H3_ANIMATION_REFERENCE_WORKFLOW.md)) |
 | `fox_hunter_pipeline.py` | the earlier stages: concept views, Tripo mesh, clean-up, rig |
 | `promote.py` | copies an approved revision into `assets/characters/fox-hunter/` and updates `character.toml` |
 

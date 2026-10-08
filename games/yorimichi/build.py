@@ -264,7 +264,7 @@ def communitypark_steps(out):
     return [
         Step('world.communitypark_restyle', [Python(TOOLS / 'communitypark_textures.py', ('finish',))],
              inputs=[TOOLS / 'communitypark_textures.py', TOOLS / 'megapark_textures.py', TOOLS / 'treehouse_art.py',
-                     ASSETS / 'communitypark' / 'restyle'],
+                     paths.STUDIO / 'atelier' / 'ai' / 'images.py', ASSETS / 'communitypark' / 'restyle'],
              outputs=[out / 'communitypark' / 'restyle' / 'textures.json'], pool_roots=[out / 'communitypark' / 'restyle'],
              about='community park restyle: painterly concrete, honey boards, indigo coping and mural panels'),
         Step('world.communitypark', [Blender(REGIONS / 'communitypark' / 'build.py', threads=4)],

@@ -1,4 +1,4 @@
-"""Pure C++ logic tested outside Unreal: compile each test with clang++ and run it."""
+"""Pure C++ logic of the platform plugins tested outside Unreal: compile each test with clang++ and run it."""
 import shutil, subprocess, tempfile, unittest
 from pathlib import Path
 

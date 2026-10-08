@@ -65,8 +65,9 @@ against a concrete observed failure, keep the other inputs fixed when comparing,
 take is only partly right, use the clearly useful poses and author the missing mechanics locally. Human review is the
 creative acceptance step.
 
-`games/yorimichi/assets/characters/tools/fox_hunter_animref.py` follows these rules: it renders the starting frames
-and writes one revision folder per action with the shared appearance paragraph.
+For example, Yorimichi's [`fox_hunter_animref.py`](../games/yorimichi/assets/characters/tools/fox_hunter_animref.py)
+follows these rules: it renders the starting frames and writes one revision folder per action with the shared
+appearance paragraph.
 
 ## Preparing a revision
 
@@ -122,5 +123,5 @@ on a real phone.
 Name which phases and poses of the accepted video are useful and which need correction. The approved character's
 proportions and rig stay authoritative: solve the game timing, root ownership and contacts explicitly, and compare the
 equipped model in motion. Keep the prompt, inputs, original video, review and findings together in the revision folder
-(the existing characters' revisions are in the prototype archive, under `$YORIMICHI_ARCHIVE`), and the code that
-reproduces them in this repository.
+(Yorimichi keeps its existing characters' revisions in the prototype archive, under `$YORIMICHI_ARCHIVE`), and the
+code that reproduces them in this repository.

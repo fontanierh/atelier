@@ -3,7 +3,6 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess
 import time
 
 
@@ -68,12 +67,11 @@ def cook_present(root):
 
 
 def source_snapshot(ctx):
-    from atelier import paths
     from atelier.build import fingerprint, load_recipe
+    from atelier.provenance import head, status
     cook = next(step for step in load_recipe(ctx.game).steps(ctx) if step.name == 'unreal.cook')
     done = {name: json.loads((ctx.stamps / (name + '.json')).read_text())['fingerprint'] for name in cook.needs}
-    revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=paths.REPO, text=True).strip()
-    dirty = bool(subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=paths.REPO))
+    revision, dirty = head(), bool(status(untracked=False))
     engine = json.loads((ctx.unreal_root / 'Engine/Build/Build.version').read_text())
     return dict(revision=revision, source_dirty=dirty, fingerprint=fingerprint(cook, done), engine=engine)
 

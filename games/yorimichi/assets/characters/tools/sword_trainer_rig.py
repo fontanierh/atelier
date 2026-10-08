@@ -18,8 +18,8 @@ from pathlib import Path
 import bpy
 from mathutils import Matrix, Vector
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from tripo_fingers import add_fingers  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E401,E402,F401 - puts atelier on the path
+from atelier.blender.tripo_fingers import add_fingers  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--input', required=True)

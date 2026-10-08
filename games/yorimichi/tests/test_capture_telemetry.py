@@ -81,7 +81,7 @@ def test_capture_hashes_generated_and_game_inputs_before_render_admission(captur
     monkeypatch.setattr(capture, 'PROJECT', project)
     monkeypatch.setattr(capture.yori, 'OUT', output)
     monkeypatch.setattr(capture, 'other_render_processes', lambda: [])
-    monkeypatch.setattr(capture.subprocess, 'check_output', lambda *args, **kwargs: 'a' * 40)
+    monkeypatch.setattr(capture, 'head', lambda: 'a' * 40)
 
     class AtAdmission(Exception):
         pass

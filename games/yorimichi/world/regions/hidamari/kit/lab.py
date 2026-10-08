@@ -16,7 +16,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[3]));import yori  # noqa:
 ROOT=yori.REGIONS;sys.path.insert(0,str(yori.GAME/'tools'))
 PROJECT=yori.GAME/'unreal';OUT=yori.OUT/'hidamari';DOCS=yori.OUT/'kit';LOCKS=yori.OUT/'locks'
 BRIEFS=ROOT/'hidamari/kit/briefs.json'
-ENGINE=Path(os.environ.get('UE_ROOT','/Users/Shared/Epic Games/UE_5.8'))
+from atelier.engine import unreal_root;ENGINE=unreal_root()
 STYLE_STILLS=[p for p in (yori.OUT/'kit'/'style').glob('*.png')]  # put a few in-game stills here to steer the reference style
 STYLE=("The attached images are screenshots of our low-poly Unreal game (painted flat-shaded polygons with vertex colours, "
  "chunky timber, cream plaster, slate-blue tiled roofs, warm paper-lantern glow, autumn palette, soft daylight, no outlines). "

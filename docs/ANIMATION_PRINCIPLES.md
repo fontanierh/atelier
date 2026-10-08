@@ -1,10 +1,11 @@
 # Animation principles
 
-The craft rules behind Yorimichi's authored clips, distilled from Richard Williams' *The Animator's Survival Kit* and
+The craft rules behind the games' authored clips, distilled from Richard Williams' *The Animator's Survival Kit* and
 translated for procedurally authored clips on skinned rigs, played by a state machine in Unreal. Section 1 is the
 ideas, section 2 the numbers (the walk chart the gait code follows), section 3 how they apply to game clips. Code cites
-these sections by number: `cairo_clips.py` and `fox_hunter_animate.py` take their weight and arm phasing from §2 and
-their hard accents from §1.
+these sections by number: in Yorimichi, for example, [`cairo_clips.py`](../games/yorimichi/assets/characters/tools/cairo_clips.py)
+and [`fox_hunter_animate.py`](../games/yorimichi/assets/characters/tools/fox_hunter_animate.py) take their weight and
+arm phasing from §2 and their hard accents from §1.
 
 ## 1. The load-bearing ideas
 
@@ -154,4 +155,4 @@ blurs), squash and stretch of volumes and faces (the characters are skinned low-
 facial rig), and lip sync (no dialogue). If dialogue ever comes: move the body somewhere while the character speaks,
 and put the head accent 3 to 4 frames ahead of the sound.
 
-Related: [FOX_HUNTER_ANIMATION.md](FOX_HUNTER_ANIMATION.md).
+Related: Yorimichi's [FOX_HUNTER_ANIMATION.md](../games/yorimichi/docs/FOX_HUNTER_ANIMATION.md).
