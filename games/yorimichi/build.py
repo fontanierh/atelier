@@ -23,6 +23,7 @@ WORLD = GAME / 'world'
 REGIONS = WORLD / 'regions'
 ASSETS = GAME / 'assets'
 CHARS = ASSETS / 'characters'
+GRIPS = CHARS / 'grips'
 AUDIO = ASSETS / 'audio'
 SCRIPTS = GAME / 'unreal' / 'Scripts'
 TOOLS = GAME / 'tools'
@@ -222,7 +223,6 @@ def modori_steps(out):
     """Modori, the rival (assets/characters/modori/README.md), as a playable character: his body and coat, and the merged
     move set retargeted onto him."""
     modori = CHARS / 'modori'
-    grips = CHARS / 'grips'
     (retarget, retarget_inputs), (importer, import_inputs) = moveset_retarget('modori'), moveset_import('modori')
     return [
         Step('characters.modori', [Blender(modori / 'export_unreal.py', threads=4)], inputs=[modori, NAMES],
@@ -236,10 +236,6 @@ def modori_steps(out):
         Step('unreal.modori_botw', [importer], inputs=import_inputs, needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'botw.json'], heavy=True,
              about='/Game/Modori/Botw and DA_Modori: his merged move set, definition and move record'),
-        Step('characters.modori_grips', [Python(grips / 'game.py', ('--character', 'modori', '--source', grips / 'modori'))],
-             inputs=[grips / 'game.py', grips / 'moments.py', *(grips / 'modori' / f for f in ('poses.json', 'moments.json', 'body.glb'))],
-             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'grips.json'],
-             about="His posed grips (assets/characters/grips/modori, docs/GRIPS.md), for the move set's grip node"),
         Step('unreal.modori_bike', [UnrealScript(SCRIPTS / 'import_bike_clips.py', 'MODORI BIKE IMPORT COMPLETE', null_rhi=True,
                                                  env=(('BIKE_CHARACTER', 'modori'),))],
              inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'], needs=['characters.modori_bike', 'unreal.modori'],
@@ -431,6 +427,11 @@ def character_steps(ctx):
         Step('characters.modori_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py', ('--character', 'modori'))],
              inputs=[CHARS / 'modori', NAMES, ASSETS / 'vehicles' / 'bike'], needs=['world.bike'],
              outputs=[out / 'modori' / 'bike' / 'export.json'], about="Cairo's bike clips authored on Modori's rig, and the bike's channels"),
+        # Likewise before data.stage, which needs it so the cook carries it; it reads only committed files.
+        Step('characters.modori_grips', [Python(GRIPS / 'game.py', ('--character', 'modori', '--source', GRIPS / 'modori'))],
+             inputs=[GRIPS / 'game.py', GRIPS / 'moments.py', *(GRIPS / 'modori' / f for f in ('poses.json', 'moments.json', 'body.glb'))],
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'grips.json'],
+             about="His posed grips (assets/characters/grips/modori, docs/GRIPS.md), for the move set's grip node"),
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips'),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
