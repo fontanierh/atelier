@@ -17,6 +17,10 @@ extern "C" {
     /// Lets the page time the first frame and notice when frames resume after the app was in the background.
     #[wasm_bindgen(js_namespace = window, js_name = boardWorldFrame)]
     fn board_world_frame(frame: u32);
+    /// Where each home is on screen, so the page can pin readable HTML name tags to them: `[[name, x, y], ...]`, with x
+    /// and y in ten-thousandths of the viewport.
+    #[wasm_bindgen(js_namespace = window, js_name = boardWorldLabels)]
+    fn board_world_labels(json: &str);
 }
 
 #[derive(Deserialize)]
@@ -29,6 +33,8 @@ struct AgentIn {
 enum Inbound {
     Agents(Vec<AgentIn>),
     Plane { from: String, to: String, topic: String },
+    Focus(Option<String>),
+    Inset(f32),
 }
 
 static INBOX: Mutex<Vec<Inbound>> = Mutex::new(Vec::new());
@@ -57,6 +63,18 @@ pub fn fly(from: &str, to: &str, topic: &str) {
     push(Inbound::Plane { from: from.into(), to: to.into(), topic: topic.into() });
 }
 
+/// Eases the view toward one agent's home (an empty name returns to the whole village).
+#[wasm_bindgen]
+pub fn focus(name: &str) {
+    push(Inbound::Focus((!name.is_empty()).then(|| name.to_string())));
+}
+
+/// How much of the screen's height a sheet covers (0 to 1), so the village slides up to stay in view above it.
+#[wasm_bindgen]
+pub fn inset(fraction: f32) {
+    push(Inbound::Inset(fraction.clamp(0.0, 0.9)));
+}
+
 #[wasm_bindgen]
 pub fn run() {
     App::new()
@@ -73,7 +91,7 @@ pub fn run() {
             ..default()
         }))
         .add_systems(Startup, setup)
-        .add_systems(Update, (drain_inbox, walk, bob, fly_planes, flicker, sway_trees, report_frame))
+        .add_systems(Update, (drain_inbox, walk, bob, fly_planes, flicker, sway_trees, look, report_labels, report_frame))
         .run();
 }
 
@@ -100,6 +118,8 @@ struct Village {
     residents: HashMap<String, Resident>,
     operator_door: Vec3,
     shapes: Option<Shapes>,
+    focus: Option<String>,
+    inset: f32,
 }
 
 #[derive(Clone)]
@@ -163,7 +183,7 @@ fn setup(
             scaling_mode: ScalingMode::AutoMin { min_width: 20.5, min_height: 16.5 },
             ..OrthographicProjection::default_3d()
         }),
-        Transform::from_xyz(0.0, 30.0, 19.0).looking_at(Vec3::new(0.0, 0.4, 0.4), Vec3::Y),
+        Transform::from_translation(VIEW).looking_at(AIM, Vec3::Y),
         DistanceFog {
             color: SKY,
             directional_light_color: Color::srgba(1.0, 0.85, 0.65, 0.25),
@@ -338,6 +358,8 @@ fn drain_inbox(
                     }
                 }
             }
+            Inbound::Focus(name) => village.focus = name,
+            Inbound::Inset(fraction) => village.inset = fraction,
             Inbound::Plane { from, to, topic } => {
                 let place = |name: &str| {
                     village.residents.get(name).map(|r| on_ring(r.angle, RING - 0.4) + Vec3::Y * 1.0)
@@ -427,6 +449,48 @@ fn sway_trees(time: Res<Time>, mut trees: Query<(&Tree, &mut Transform)>) {
     let t = time.elapsed_secs();
     for (tree, mut transform) in &mut trees {
         transform.rotation = Quat::from_rotation_z((t * 0.9 + tree.0).sin() * 0.035) * Quat::from_rotation_x((t * 0.7 + tree.0 * 1.3).sin() * 0.03);
+    }
+}
+
+const VIEW: Vec3 = Vec3::new(0.0, 30.0, 19.0);
+const AIM: Vec3 = Vec3::new(0.0, 0.4, 0.4);
+
+/// The camera keeps its angle and glides: over the whole village, or closer over the focused home.
+fn look(time: Res<Time>, village: Res<Village>, mut eye: Query<(&mut Transform, &mut Projection), With<Camera3d>>) {
+    let goal = village.focus.as_ref().and_then(|name| village.residents.get(name))
+        .map(|r| (on_ring(r.angle, RING) * 0.55, 0.62))
+        .unwrap_or((Vec3::ZERO, 1.0));
+    // Moving the aim toward the viewer (+z) slides the scene up the screen, clear of a sheet covering the bottom.
+    let goal = (goal.0 + Vec3::Z * village.inset * 11.0 * goal.1, goal.1);
+    let step = 1.0 - (-time.delta_secs() * 4.5).exp();
+    for (mut transform, mut projection) in &mut eye {
+        let aim = transform.translation - VIEW;
+        let next = aim.lerp(goal.0, step);
+        *transform = Transform::from_translation(VIEW + next).looking_at(AIM + next, Vec3::Y);
+        if let Projection::Orthographic(ortho) = projection.as_mut() {
+            ortho.scale += (goal.1 - ortho.scale) * step;
+        }
+    }
+}
+
+fn report_labels(village: Res<Village>, eye: Query<(&Camera, &GlobalTransform)>, mut last: Local<String>) {
+    let Ok((camera, view)) = eye.single() else { return };
+    let Some(size) = camera.logical_viewport_size().filter(|s| s.x > 0.0 && s.y > 0.0) else { return };
+    // Fractions of the viewport (in ten-thousandths), so the page places tags in its own CSS pixels whatever scale
+    // factor the canvas reports.
+    let at = |point: Vec3| camera.world_to_viewport(view, point).ok()
+        .map(|p| ((p.x / size.x * 10000.0).round() as i32, (p.y / size.y * 10000.0).round() as i32));
+    let mut tags: Vec<(&str, i32, i32)> = village.residents.iter()
+        .filter_map(|(name, r)| at(on_ring(r.angle, RING + 0.9) + Vec3::Y * 2.3).map(|(x, y)| (name.as_str(), x, y)))
+        .collect();
+    if let Some((x, y)) = at(village.operator_door + Vec3::Y * 1.6) {
+        tags.push((OPERATOR, x, y));
+    }
+    tags.sort();
+    let json = serde_json::to_string(&tags).unwrap_or_default();
+    if *last != json {
+        board_world_labels(&json);
+        *last = json;
     }
 }
 

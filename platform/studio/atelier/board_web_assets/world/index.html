@@ -41,6 +41,55 @@
   <span id="timings"></span>
 </header>
 
+<div id="tags" aria-label="Agents"></div>
+
+<section id="sheet" hidden aria-label="Conversation">
+  <div id="sheetLip">
+    <span class="grabber" aria-hidden="true"></span>
+    <h2 id="sheetTitle"></h2>
+    <p id="sheetSub"></p>
+  </div>
+  <div id="sheetBody"></div>
+</section>
+
+<div id="controls" hidden>
+  <div id="fan" hidden aria-hidden="true"></div>
+  <p id="fanHint" aria-hidden="true">Slide to choose · lift to write</p>
+  <div id="strip" role="toolbar" aria-label="Swipe left or right for the next agent, up to open, down for Needs you">
+    <span id="stripPrev" class="peek"></span>
+    <span id="stripLabel"></span>
+    <span id="stripNext" class="peek"></span>
+    <span id="stripHint"></span>
+    <span class="needs" aria-label="Needs you"><span id="needsCount">0</span></span>
+  </div>
+  <button id="envelope" type="button" aria-label="Write a letter">
+    <svg viewBox="0 0 32 24" aria-hidden="true"><rect x="1.5" y="1.5" width="29" height="21" rx="3"/><path d="M2.5 3 L16 13.5 L29.5 3"/></svg>
+  </button>
+</div>
+
+<section id="composer" hidden aria-label="Write a letter">
+  <div id="composeHandle"><span class="grabber" aria-hidden="true"></span></div>
+  <div class="row">
+    <span class="label">To</span>
+    <button id="composeTo" type="button"></button>
+    <button id="composeFold" type="button" class="fold">Keep as draft</button>
+  </div>
+  <div id="composePicker" hidden></div>
+  <blockquote id="composeQuote" hidden></blockquote>
+  <textarea id="composeText" rows="5" placeholder="Write in plain words, point first" enterkeyhint="enter"></textarea>
+  <div class="row">
+    <div id="composeTopics" role="group" aria-label="Kind">
+      <button type="button" data-topic="request">Request</button>
+      <button type="button" data-topic="info">Info</button>
+      <button type="button" data-topic="alert">Alert</button>
+    </div>
+    <span id="composeStatus" role="status"></span>
+  </div>
+  <button id="composeSend" type="button" class="send">Send</button>
+</section>
+
+<div id="lightbox" hidden role="dialog" aria-label="Image"></div>
+
 <article id="card" hidden>
   <div class="who"><span id="cardFrom"></span><span class="arrow" aria-hidden="true">→</span><span id="cardTo"></span><span id="cardTopic" class="topic"></span></div>
   <div id="cardBody" class="body"></div>

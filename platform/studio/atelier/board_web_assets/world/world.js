@@ -2,15 +2,17 @@
 // decides whether this approach works on a phone (download, compile, first frame, resume after the background) and
 // reports those numbers to the board server, so they can be read without anyone copying them from a screen.
 import init, {run, set_agents, fly} from "/world/board_world.js";
+import * as ui from "/world/ui.js";
 
 const $ = (id) => document.getElementById(id);
 const now = () => performance.now();
 const marks = {start: 0};
 const resumes = [];
-let frames = 0, lastFrameAt = 0, csrf = "", lastId = 0, firstPoll = true, contextLost = 0, hiddenAt = 0;
+let frames = 0, lastFrameAt = 0, csrf = "", me = "operator", lastId = 0, firstPoll = true, contextLost = 0, hiddenAt = 0;
 
 // --- Frames from the scene ----------------------------------------------------------------------------------------
 let waitingFrame = null;
+window.boardWorldLabels = ui.labels;
 window.boardWorldFrame = (n) => {
   frames = n; lastFrameAt = now();
   if (n === 1) { marks.firstFrame = lastFrameAt; reveal(); }
@@ -77,6 +79,8 @@ async function start() {
 function reveal() {
   $("splash").classList.add("gone");
   $("hud").hidden = false;
+  $("controls").hidden = false;
+  ui.start();
   setTimeout(() => { $("splash").hidden = true; }, 1000);
   const s = (a, b) => ((marks[b] - marks[a]) / 1000).toFixed(2);
   const mb = (marks.bytes / 1048576).toFixed(1);
@@ -98,6 +102,8 @@ async function poll() {
     const state = await response.json();
     if (!state || !Array.isArray(state.agents) || !Array.isArray(state.messages)) throw new Error("bad state");
     csrf = state.csrf || csrf;
+    me = state.sender || me;
+    ui.update(state);
     const agents = state.agents.map((a) => ({
       name: a.agent,
       busy: a.session === "busy" && !String(a.task || "").trim().toLowerCase().startsWith("idle"),
@@ -131,6 +137,7 @@ function arrive(message, agents, more, cardOnly = false) {
     for (const name of to) fly(message.sender, name, message.topic || "info");
     return;
   }
+  $("card").dataset.agent = message.sender === me ? message.recipient : message.sender;
   $("cardFrom").textContent = message.sender;
   $("cardTo").textContent = message.recipient === "*" ? "everyone" : message.recipient;
   $("cardTopic").textContent = more > 0 ? `${message.topic || ""} · +${more} more` : (message.topic || "");
@@ -140,6 +147,9 @@ function arrive(message, agents, more, cardOnly = false) {
   card.hidden = false;
   card.classList.remove("arrive"); void card.offsetWidth; card.classList.add("arrive");
 }
+
+// Tapping the arrival card opens that conversation.
+$("card").addEventListener("click", (e) => { if (!e.target.closest("a")) ui.openAgent($("card").dataset.agent); });
 
 // --- Resume and context loss ---------------------------------------------------------------------------------------
 $("world").addEventListener("webglcontextlost", () => { contextLost += 1; });

@@ -586,6 +586,9 @@ def test_board_village_is_served_beside_the_classic_board(http_server, tmp_path,
     assert status == 200 and b'/world/world.js' in body and headers['Cache-Control'] == 'no-store'
     assert "'wasm-unsafe-eval'" in headers['Content-Security-Policy']
     assert 'wasm' not in request(http_server, '/')[2]['Content-Security-Policy']
+    # Reading and writing live in plain modules beside the scene.
+    status, body, headers = request(http_server, '/world/ui.js')
+    assert status == 200 and b'/api/send' in body and headers['Content-Type'].startswith('text/javascript')
     # The compiled scene is a local build product: absent until built, then served with its unpacked size.
     monkeypatch.setitem(board_web.WORLD, '/world/board_world_bg.wasm', (tmp_path / 'scene.wasm', 'application/wasm'))
     assert request(http_server, '/world/board_world_bg.wasm')[0] == 404
