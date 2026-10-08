@@ -200,7 +200,9 @@ bool Identity(FString& Signature, FString& Error)
                 for (FString File : Actual)
                 {
                     FPaths::MakePathRelativeTo(File, *Root);
-                    if (File.StartsWith(TEXT("Network/")) || FPaths::GetCleanFilename(File) == TEXT(".DS_Store")) continue;
+                    const FString Name = FPaths::GetCleanFilename(File);
+                    if (File.StartsWith(TEXT("Network/")) || Name.Equals(TEXT(".DS_Store"), ESearchCase::IgnoreCase) ||
+                        Name.Equals(TEXT("Thumbs.db"), ESearchCase::IgnoreCase)) continue;
                     if (!Expected.Contains(File))
                     { CachedError = TEXT("Unexpected gameplay data is installed. Install a clean matching multiplayer build."); break; }
                 }

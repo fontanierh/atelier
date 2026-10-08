@@ -9,7 +9,8 @@ public class Yorimichi : ModuleRules
 {
     public Yorimichi(ReadOnlyTargetRules Target) : base(Target)
     {
-        // Match network_identity.py: relative UTF-8 path, NUL, file SHA1, newline.
+        // Match network_identity.py: relative UTF-8 path, NUL, source SHA1, newline.
+        // Normalize CRLF to LF only for source; content identity remains byte-exact.
         // Track every enumerated source so UBT cannot reuse an old compatibility definition.
         string Root = Path.GetFullPath(Path.Combine(ModuleDirectory, "../../../../.."));
         string[] Roots = { Path.Combine(Root, "games/yorimichi/unreal/Source"), Path.Combine(Root, "games/yorimichi/unreal/Config"), Path.Combine(Root, "platform/engine/Plugins") };
@@ -24,10 +25,16 @@ public class Yorimichi : ModuleRules
         foreach (string File in Files)
         {
             ExternalDependencies.Add(File);
+            byte[] Bytes = System.IO.File.ReadAllBytes(File);
+            int Count = 0;
+            for (int Index = 0; Index < Bytes.Length; ++Index)
+            {
+                if (Bytes[Index] == 13 && Index + 1 < Bytes.Length && Bytes[Index + 1] == 10) continue;
+                Bytes[Count++] = Bytes[Index];
+            }
             using (SHA1 Hash = SHA1.Create())
-            using (FileStream Stream = System.IO.File.OpenRead(File))
                 Records.Append(Path.GetRelativePath(Root, File).Replace('\\', '/')).Append('\0')
-                    .Append(Convert.ToHexString(Hash.ComputeHash(Stream)).ToLowerInvariant()).Append('\n');
+                    .Append(Convert.ToHexString(Hash.ComputeHash(Bytes, 0, Count)).ToLowerInvariant()).Append('\n');
         }
         string Code;
         using (SHA1 Hash = SHA1.Create())
