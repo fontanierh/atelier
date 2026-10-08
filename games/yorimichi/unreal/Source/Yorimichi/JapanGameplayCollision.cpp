@@ -111,6 +111,8 @@ TArray<FString> JapanGameplayCollision::Inventory(UWorld* World, TArray<FString>
             if (Queries && Visible != Vehicle) Errors.Add(Key);
         }
     }
-    Records.Sort();
+    // FString's default ordering ignores case; the cross-language receipt uses
+    // exact asset/component spelling and a case-sensitive canonical order.
+    Records.Sort([](const FString& A, const FString& B) { return A.Compare(B, ESearchCase::CaseSensitive) < 0; });
     return Records;
 }

@@ -172,6 +172,24 @@ def test_sail_missing_depth_controls_or_safe_end_fails(tmp_path, edit):
     assert not all(review.compare_vehicle(tmp_path, 'sail').values())
 
 
+def test_sail_compact_phase_uses_final_owner_trace(tmp_path):
+    fixture(tmp_path, 'sail')
+    mutate(tmp_path, 'vehicle-result', lambda r: phase(r, 5)['owner_observation'].pop('telemetry'))
+    assert all(review.compare_vehicle(tmp_path, 'sail').values())
+
+
+@pytest.mark.parametrize('edit', [
+    lambda r: r['telemetry'].update(moves=[]),
+    lambda r: [m.update(y=127) for m in r['telemetry']['moves']],
+    lambda r: [m.update(platform_at=19) for m in r['telemetry']['moves']],
+    lambda r: [m.update(platform_at=26) for m in r['telemetry']['moves']],
+    lambda r: [m.update(replay=True) for m in r['telemetry']['moves']],
+])
+def test_sail_final_owner_trace_must_cover_the_measured_phase(tmp_path, edit):
+    fixture(tmp_path, 'sail');mutate(tmp_path, 'vehicle-observed', edit)
+    assert review.compare_vehicle(tmp_path, 'sail')['vehicle_sail_controls_guest'] is False
+
+
 @pytest.mark.parametrize('case', ['mount-bike', 'mount-sail'])
 @pytest.mark.parametrize('edit', [
     lambda r: r.update(pending_request_at=r['due']),

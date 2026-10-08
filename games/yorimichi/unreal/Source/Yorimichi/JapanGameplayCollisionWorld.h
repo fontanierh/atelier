@@ -19,11 +19,13 @@ protected:
     virtual bool DoesSupportWorldType(const EWorldType::Type Type) const override
     { return Type == EWorldType::Game || Type == EWorldType::PIE; }
 private:
+    friend class FJapanFixedCollisionTest;
     void Spawned(AActor* Actor);
     void Removed(AActor* Actor);
     void Rebuild();
     FDelegateHandle SpawnHandle, DestroyHandle, RemoveHandle;
     TSet<TWeakObjectPtr<AActor>> DynamicOwners;
+    TSet<TWeakObjectPtr<AActor>> InstalledOwners;
     TArray<TWeakObjectPtr<UPrimitiveComponent>> ExcludedParts;
     FCollisionQueryParams Cached;
 };

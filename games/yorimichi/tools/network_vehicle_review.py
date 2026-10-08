@@ -193,7 +193,10 @@ def compare_vehicle(folder, case):
         for label, row in (('host', reverse), ('guest', reverse.get('owner_observation', {}))):
             start, low, end = (row.get(k) for k in ('sail_start', 'sail_min', 'sail'))
             began, at = row.get('phase_began'), row.get('at')
-            moves = [m for m in row.get('telemetry', {}).get('moves', []) if
+            # Phase observations are compact. The final owner receipt retains
+            # the complete trace; select only this measured phase's interval.
+            trace = guest if label == 'guest' else row
+            moves = [m for m in trace.get('telemetry', {}).get('moves', []) if
                      finite(began) and finite(at) and finite(m.get('platform_at')) and began <= m['platform_at'] <= at and m.get('replay') is False]
             checks[f'vehicle_sail_controls_{label}'] = (all(finite(x) for x in (start, low, end)) and start >= .8 and low <= .2 and end >= .8 and
                 any(finite(m.get('y')) and m['y'] < -15 for m in moves) and any(finite(m.get('y')) and m['y'] > 15 for m in moves))

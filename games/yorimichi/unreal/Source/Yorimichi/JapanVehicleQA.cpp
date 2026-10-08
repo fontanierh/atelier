@@ -156,7 +156,7 @@ struct FVehicleProbe
         Row->SetNumberField(TEXT("x"),Position.X);Row->SetNumberField(TEXT("y"),Position.Y);Row->SetNumberField(TEXT("z"),Position.Z);
         return Row;
     }
-    TSharedPtr<FJsonObject> Snapshot(AWandererCharacter* P)
+    TSharedPtr<FJsonObject> Snapshot(AWandererCharacter* P,bool Detailed=true)
     {
         auto Data=MakeShared<FJsonObject>();
         const auto* Rules=World->GetGameState<AJapanGameState>();
@@ -262,9 +262,15 @@ struct FVehicleProbe
         Data->SetArrayField(TEXT("phases"),Phases);Data->SetObjectField(TEXT("crash_site"),CrashSite);
         Data->SetBoolField(TEXT("complete"),Complete);Data->SetStringField(TEXT("error"),Error);
         Data->SetNumberField(TEXT("at"),FPlatformTime::Seconds());
-        Data->SetObjectField(TEXT("telemetry"),JapanVehicleTelemetry::Snapshot(P));
-        AWandererCharacter* Other=P==Host.Get()?Guest.Get():Host.Get();
-        if(Other)Data->SetObjectField(TEXT("peer_telemetry"),JapanVehicleTelemetry::Snapshot(Other));
+        // Live coordination needs current state, not the cumulative replay log.
+        // Keep full traces in phase/result/failure evidence and the final owner
+        // receipt; serializing/parsing them at 10 Hz would skew the fps proof.
+        if(Detailed)
+        {
+            Data->SetObjectField(TEXT("telemetry"),JapanVehicleTelemetry::Snapshot(P));
+            AWandererCharacter* Other=P==Host.Get()?Guest.Get():Host.Get();
+            if(Other)Data->SetObjectField(TEXT("peer_telemetry"),JapanVehicleTelemetry::Snapshot(Other));
+        }
         return Data;
     }
     void Drive(AWandererCharacter* P)
@@ -455,7 +461,16 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
             if(CircuitMaxRadius[I]>2200.)Fail(TEXT("Bike fixture left its certified infield circuit"));
         }
     }
-    Observe();Drive(Server?Host.Get():Guest.Get());
+    Observe();
+    if(!Server&&Seen!=Phase)
+    {
+        // Preserve the cumulative owner trace at each boundary without putting
+        // it in the live file the host reads for phase coordination.
+        auto Evidence=Snapshot(Guest.Get());Evidence->RemoveField(TEXT("phases"));
+        if(!Write(Folder/FString::Printf(TEXT("vehicle-owner-phase-%d.json"),Phase),Evidence))
+            Fail(TEXT("Could not save vehicle owner phase evidence"));
+    }
+    Drive(Server?Host.Get():Guest.Get());
     // Sample authored hop lift at the world tick cadence, not the 10 Hz receipt
     // cadence. The peer must have observed this phase before the host stimulus.
     if(Server&&Phase==9&&Now-PhaseBegan>=1.1&&Case!=TEXT("park")&&Case!=TEXT("crash")&&Riding(Host.Get())&&Riding(Guest.Get()))
@@ -474,7 +489,7 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     LastWrite=Now;
     if(!Server)
     {
-        auto Row=Snapshot(Guest.Get());Row->RemoveField(TEXT("phases"));
+        auto Row=Snapshot(Guest.Get(),Complete);Row->RemoveField(TEXT("phases"));
         if(!Write(Folder/TEXT("vehicle-observed.json"),Row))Fail(TEXT("Could not save vehicle owner observation"));
         return Complete;
     }

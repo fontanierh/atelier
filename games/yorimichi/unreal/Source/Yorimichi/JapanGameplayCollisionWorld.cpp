@@ -17,12 +17,15 @@ void UJapanGameplayCollisionWorld::Deinitialize()
     GetWorld()->RemoveOnActorSpawnedHandler(SpawnHandle);
     GetWorld()->RemoveOnActorDestroyedHandler(DestroyHandle);
     GetWorld()->RemoveOnActorRemovedFromWorldHandler(RemoveHandle);
-    DynamicOwners.Reset(); ExcludedParts.Reset(); Cached = FCollisionQueryParams();
+    DynamicOwners.Reset(); InstalledOwners.Reset(); ExcludedParts.Reset(); Cached = FCollisionQueryParams();
     Super::Deinitialize();
 }
 void UJapanGameplayCollisionWorld::Spawned(AActor* Actor)
 {
     if (!Actor) return;
+    // UE sends OnActorSpawned after BeginPlay. JapanWorld completes Install in
+    // BeginPlay, so that late notification must not undo its certified channels.
+    if (InstalledOwners.Contains(Actor)) return;
     // A newly spawned actor is dynamic until static-world Install certifies its
     // final authored class/mobility. Deferred constructors may add parts later.
     DynamicOwners.Add(Actor); Cached.AddIgnoredActor(Actor);
@@ -31,6 +34,7 @@ void UJapanGameplayCollisionWorld::Spawned(AActor* Actor)
 }
 void UJapanGameplayCollisionWorld::Removed(AActor* Actor)
 {
+    InstalledOwners.Remove(Actor);
     if (DynamicOwners.Remove(Actor)) Rebuild();
 }
 void UJapanGameplayCollisionWorld::Rebuild()
@@ -43,10 +47,11 @@ void UJapanGameplayCollisionWorld::Rebuild()
 }
 void UJapanGameplayCollisionWorld::Install()
 {
-    DynamicOwners.Reset(); ExcludedParts.Reset();
+    DynamicOwners.Reset(); InstalledOwners.Reset(); ExcludedParts.Reset();
     for (TActorIterator<AActor> It(GetWorld()); It; ++It)
     {
         const bool FixedOwner = JapanGameplayCollision::IsFixed(*It);
+        if (FixedOwner) InstalledOwners.Add(*It);
         if (!FixedOwner) DynamicOwners.Add(*It);
         TArray<UPrimitiveComponent*> Parts; It->GetComponents(Parts);
         for (auto* Part : Parts)
