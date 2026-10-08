@@ -24,7 +24,6 @@ struct FGripPoseNode final : public FAnimNode_SkeletalControlBase
     };
     FHand Hands[2];
     FBoneReference Frame;
-    uint32 Evaluations = 0;
 
     virtual void InitializeBoneReferences(const FBoneContainer& C) override
     {
@@ -43,7 +42,6 @@ struct FGripPoseNode final : public FAnimNode_SkeletalControlBase
     }
     virtual void EvaluateSkeletalControl_AnyThread(FComponentSpacePoseContext& Output, TArray<FBoneTransform>& Result) override
     {
-        ++Evaluations;
         const FBoneContainer& C = Output.Pose.GetPose().GetBoneContainer();
         TMap<int32, FTransform> Posed;   // the moved bones' new component transforms, by compact index
         for (FHand& H : Hands)

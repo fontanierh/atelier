@@ -24,8 +24,11 @@ Modori's posed grips are committed in `grips/modori/`, every file the poser made
 - `body.glb` and `body.json`, his posing body;
 - `grips.json`, what the game reads.
 
-`game.py --source games/yorimichi/assets/characters/grips/modori` rebuilds the game's file from them, and gives the
-same grips. To pose further, copy the folder to `build/yorimichi/grips/modori/` and run `serve.py`. The props' meshes
+The build's `characters.modori_grips` step runs `game.py --source games/yorimichi/assets/characters/grips/modori`, so a
+fresh clone or package gets the game's file from them; `tests/test_grips.py` checks it rebuilds the committed
+`grips.json` exactly. Without the file, Modori logs a warning and his hands keep the clips' grips. To pose further, copy
+the folder to `build/yorimichi/grips/modori/`, run `serve.py`, then copy `poses.json`, `poses/` and the new `grips.json`
+back. The props' meshes
 (`LinkSword.glb`, `LinkGlider.glb`) are not in it: `moments.py` and `serve.py` read them from the BOTW library
 ([botw/README.md](../assets/characters/botw/README.md)).
 
