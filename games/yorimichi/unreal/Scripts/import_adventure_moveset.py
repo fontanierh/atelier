@@ -365,16 +365,19 @@ for action, timing in DONOR['actions'].items():
                           'end': length, 'blend': .05, 'active': [], 'guard': [], 'input': -1, 'cancel': -1, 'idle': -1, 'bind': -1,
                           'unbind': -1, **timing}
 
-if E.does_asset_exist(target):
-    E.delete_asset(target)
-definition = E.duplicate_asset(base, target)
+base_definition = E.load_asset(base)
+assert base_definition, f'{base} could not be loaded'
+# Class defaults can keep a deleted definition alive. Preserve the target and its references on incremental imports.
+definition = E.load_asset(target) if E.does_asset_exist(target) else E.duplicate_asset(base, target)
 assert definition, f'{base} could not be copied'
+for key in ('mesh', 'rest_ankle_heights', 'sole_height', 'camera_height', 'skate_bones', 'skate_board_scale'):
+    definition.set_editor_property(key, base_definition.get_editor_property(key))
 # The donor's everyday gestures ([donor] gestures: wave, interact, sit), retargeted, where the base has none of its own.
 for name in DONOR['gestures']:
     if 'Own' + name in clips:
         actions.setdefault(name, clips['Own' + name])
 # The base's own clips (another character's gestures: Kaede's bow and words) stay beside the move set's.
-for action, sequence in (dict(definition.get_editor_property('actions')) if SPEC['keep_base_actions'] else {}).items():
+for action, sequence in (dict(base_definition.get_editor_property('actions')) if SPEC['keep_base_actions'] else {}).items():
     actions.setdefault(str(action), sequence)
 for key, value in dict(locomotion=locomotion, crouching=crouching, armed_locomotion=armed, armed_crouching=None, actions=actions,
                        use_authored_movement=True, walk_speed=gaits[1], jog_speed=gaits[1], run_speed=gaits[2], sprint_speed=gaits[3],
