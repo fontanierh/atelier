@@ -49,6 +49,9 @@ public:
     virtual void PrepMoveFor(ACharacter* Character) override;
     virtual bool CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* Character, float MaxDelta) const override;
     virtual bool IsImportantMove(const FSavedMovePtr& LastAckedMove) const override;
+#if !UE_BUILD_SHIPPING
+    void PrepareStaleClockProbe(ACharacter* Character, FNetworkPredictionData_Client_Character& ClientData, uint32 OldEpoch);
+#endif
 };
 
 class FNetworkPredictionData_Client_Japan : public FNetworkPredictionData_Client_Character

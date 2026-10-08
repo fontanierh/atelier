@@ -75,6 +75,25 @@ void FSavedMove_Japan::Clear()
     Super::Clear(); Input = FJapanMoveInput(); PostState = FJapanMoveCheckpoint(); PostEdge = 0; PostCrouch = false;
 }
 
+#if !UE_BUILD_SHIPPING
+void FSavedMove_Japan::PrepareStaleClockProbe(ACharacter* Character,
+    FNetworkPredictionData_Client_Character& ClientData, uint32 OldEpoch)
+{
+    Clear();
+    // UE's packet builder dereferences CharacterOwner; Clear alone does not initialize it.
+    // Use the base initializer so this diagnostic does not consume the real input journal.
+    Super::SetMoveFor(Character, .125f, FVector(1000., 0., 0.), ClientData);
+    TimeStamp = 123.25f;
+    Input.ActivityEpoch = OldEpoch;
+    Input.FirstEdge = 60000; Input.Y = 127; Input.Flags = FJapanMoveInput::Sprint;
+    // Deliberately absolute and far away: stale rejection must leave the host root unchanged.
+    // Clear has removed any pooled end base and relative-location state.
+    SavedLocation = Character->GetActorLocation() + FVector(1000., 0., 0.);
+    SavedControlRotation = Character->GetControlRotation().Clamp();
+    EndPackedMovementMode = Character->GetCharacterMovement()->PackNetworkMovementMode();
+}
+#endif
+
 void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
 {
     Super::PostUpdate(Character, Mode);

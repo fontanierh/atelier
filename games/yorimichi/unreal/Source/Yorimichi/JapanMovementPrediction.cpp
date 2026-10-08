@@ -214,15 +214,12 @@ void UJapanCharacterMovement::SendStaleClockProbe()
 #if !UE_BUILD_SHIPPING
     if (!TraceNetworkGameplay() || GetNetMode() != NM_Client || !CharacterOwner->IsLocallyControlled() ||
         !NetworkStats.TimeoutCorrections || NetworkStats.StaleProbeSent) return;
-    FSavedMove_Japan Probe;
-    Probe.Clear(); Probe.TimeStamp = 123.25f; Probe.DeltaTime = .125f;
-    Probe.Input.ActivityEpoch = GetActivityEpoch() - 1;
-    Probe.Input.FirstEdge = 60000; Probe.Input.Y = 127; Probe.Input.Flags = FJapanMoveInput::Sprint;
-    Probe.Acceleration = FVector(1000., 0., 0.);
-    Probe.SavedLocation = CharacterOwner->GetActorLocation() + FVector(1000., 0., 0.);
-    Probe.EndPackedMovementMode = PackNetworkMovementMode();
+    auto* ClientData = GetPredictionData_Client_Character();
+    FSavedMovePtr Probe = ClientData->CreateSavedMove();
+    static_cast<FSavedMove_Japan&>(*Probe).PrepareStaleClockProbe(CharacterOwner, *ClientData, GetActivityEpoch() - 1);
     ++NetworkStats.StaleProbeSent;
-    CallServerMovePacked(&Probe, nullptr, nullptr);
+    CallServerMovePacked(Probe.Get(), nullptr, nullptr);
+    ClientData->FreeMove(Probe);
 #endif
 }
 

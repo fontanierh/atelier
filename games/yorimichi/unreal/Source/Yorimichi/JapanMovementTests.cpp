@@ -52,6 +52,39 @@ bool FJapanMoveClockTest::RunTest(const FString&)
     Burst.Refill(120.);
     TestEqual(TEXT("A long outage cannot bank more than the timeout"), Burst.Credit, FJapanMoveClock::Timeout);
     TestFalse(TEXT("Nonfinite elapsed input is refused"), Burst.Allows(120., std::numeric_limits<double>::infinity()));
+#if !UE_BUILD_SHIPPING
+    UWorld* TestWorld = nullptr;
+    for (const FWorldContext& Context : GEngine->GetWorldContexts())
+        if (Context.World() && Context.World()->IsGameWorld()) { TestWorld = Context.World(); break; }
+    if (!TestNotNull(TEXT("Stale move regression has a native game world"), TestWorld)) return false;
+    FActorSpawnParameters Spawn;
+    Spawn.ObjectFlags |= RF_Transient;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    auto* Character = TestWorld->SpawnActor<ACharacter>(FVector(200., 300., 400.), FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("Stale move regression owns a character"), Character)) return false;
+    ON_SCOPE_EXIT { Character->Destroy(); };
+    auto* Movement = Character->GetCharacterMovement();
+    FNetworkPredictionData_Client_Japan Client(*Movement);
+    Client.CurrentTimeStamp = .625f;
+    const FVector Before = Character->GetActorLocation();
+    FSavedMovePtr Storage = Client.CreateSavedMove();
+    auto& Probe = static_cast<FSavedMove_Japan&>(*Storage);
+    Probe.CharacterOwner = nullptr; // Deterministic negative for the old Clear-only construction.
+    Probe.PrepareStaleClockProbe(Character, Client, 4);
+    if (!TestTrue(TEXT("Stale probe initializes UE's required character owner"), Probe.CharacterOwner == Character)) return false;
+    FJapanNetworkMoveData Data;
+    Data.ClientFillNetworkMoveData(Probe, FCharacterNetworkMoveData::ENetworkMoveType::NewMove);
+    TestEqual(TEXT("Stale probe retains its adversarial timestamp"), Data.TimeStamp, 123.25f);
+    TestEqual(TEXT("Stale probe retains its old activity epoch"), Data.Input.ActivityEpoch, uint32(4));
+    TestEqual(TEXT("Stale probe retains its unique diagnostic marker"), Data.Input.FirstEdge, uint16(60000));
+    TestTrue(TEXT("Stale probe sends its large absolute displacement"), Data.Location.Equals(Before + FVector(1000., 0., 0.)));
+    TestTrue(TEXT("Stale probe preserves acceleration in the real packet builder"), Data.Acceleration.Equals(FVector(1000., 0., 0.)));
+    TestEqual(TEXT("Stale probe captures the real movement mode"), Data.MovementMode, Movement->PackNetworkMovementMode());
+    TestEqual(TEXT("Probe construction leaves the live client clock unchanged"), Client.CurrentTimeStamp, .625f);
+    TestTrue(TEXT("Probe construction does not move the character"), Character->GetActorLocation().Equals(Before));
+    TestEqual(TEXT("Probe is not retained as a real predicted move"), Client.SavedMoves.Num(), 0);
+    Client.FreeMove(Storage);
+#endif
     return true;
 }
 
